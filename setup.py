@@ -12,7 +12,7 @@ def read(filename):
 
 setup(name='veriloggen',
       version=version,
-      description='Refactoring Tool for Verilog HDL',
+      description='A library for constructing a Verilog HDL source code in Python',
       long_description=read('README.rst'),
       keywords = 'FPGA, Verilog HDL',
       author='Shinya Takamaeda-Yamazaki',
