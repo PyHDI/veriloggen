@@ -60,14 +60,14 @@ def mkUser(bram):
         return state.set( state + 1 )
     
     m.Always(Posedge(clk),
-             [ If(rst,
-                  [ addr.set(0), datain.set(0), write.set(0), state.set(0) ],
-                  [ If(cond(), [ addr.set(0), datain.set(0), write.set(0), goto_next() ]),
-                    If(cond(), [ write.set(1), datain.set(datain + 4), goto_next() ]),
-                    If(cond(), [ write.set(0), goto_next() ]),
-                    If(cond(), [ If(addr == 128,
-                                    [ addr.set(0), state.set(label[0]) ],
-                                    [ addr.set(addr + 1), state.set(label[1]) ])])])])
+             ( If(rst,
+                  ( addr.set(0), datain.set(0), write.set(0), state.set(0) ),
+                  ( If(cond(), ( addr.set(0), datain.set(0), write.set(0), goto_next() )),
+                    If(cond(), ( write.set(1), datain.set(datain + 4), goto_next() )),
+                    If(cond(), ( write.set(0), goto_next() )),
+                    If(cond(), ( If(addr == 128,
+                                    ( addr.set(0), state.set(label[0]) ),
+                                    ( addr.set(addr + 1), state.set(label[1]) ))))))))
     return m
 
 #-------------------------------------------------------------------------------
