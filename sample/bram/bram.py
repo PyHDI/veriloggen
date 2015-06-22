@@ -73,5 +73,5 @@ def mkUser(bram):
 #-------------------------------------------------------------------------------
 bram = mkBram('my')
 user = mkUser(bram)
-verilog = ''.join( [bram.toVerilog(), user.toVerilog()] )
+verilog = ''.join( (bram.toVerilog(), user.toVerilog()) )
 print(verilog)
