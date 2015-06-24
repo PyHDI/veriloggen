@@ -14,7 +14,8 @@ import utils.version
 
 import module
 from module import Module
-from vtypes import Posedge, Negedge, Subst, If, For, While, Bit, Slice, Cond
+import vtypes
+from vtypes import Posedge, Negedge, Subst, If, For, While, Bit, Slice, Cond, Not, Unot, Ulnot, Land, Lor
 
 #-------------------------------------------------------------------------------
 if __name__ == '__main__':

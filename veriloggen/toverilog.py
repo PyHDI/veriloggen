@@ -266,6 +266,15 @@ class VerilogModuleVisitor(object):
         return vast.Lor(left, right)
     
     #---------------------------------------------------------------------------
+    def visit_Unot(self, node):
+        right = self.visit(node.right)
+        return vast.Unot(right)
+    
+    def visit_Ulnot(self, node):
+        right = self.visit(node.right)
+        return vast.Ulnot(right)
+    
+    #---------------------------------------------------------------------------
     def visit_int(self, node):
         return vast.IntConst(str(node))
 
@@ -440,6 +449,15 @@ class VerilogBindVisitor(object):
         left = self.visit(node.left)
         right = self.visit(node.right)
         return vast.Lor(left, right)
+    
+    #---------------------------------------------------------------------------
+    def visit_Unot(self, node):
+        right = self.visit(node.right)
+        return vast.Unot(right)
+    
+    def visit_Ulnot(self, node):
+        right = self.visit(node.right)
+        return vast.Ulnot(right)
     
     #---------------------------------------------------------------------------
     def visit_Bit(self, node):
