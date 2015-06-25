@@ -140,6 +140,25 @@ class Lor(_BinaryOperator): pass
 class Unot(_UnaryOperator): pass
 class Ulnot(_UnaryOperator): pass
 Not = Unot
+def LandList(*args):
+    if len(args) == 0:
+        raise ValueError("LandList requires at least one argument.")
+    if len(args) == 1:
+        return args[0]
+    left = args[0]
+    for right in args[1:]:
+        left = Land(left, right)
+    return left
+
+def LorList(*args):
+    if len(args) == 0:
+        raise ValueError("LorList requires at least one argument.")
+    if len(args) == 1:
+        return args[0]
+    left = args[0]
+    for right in args[1:]:
+        left = Lor(left, right)
+    return left
 
 #-------------------------------------------------------------------------------
 class _SpecialOperator(_Operator):
