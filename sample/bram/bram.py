@@ -27,10 +27,11 @@ def mkBram(name):
     d_addr = m.Reg('d_' + addr.name, datawidth)
     mem = m.Reg('mem', datawidth, addrwidth)
     
-    m.Always(Posedge(clk),
-             [ If(write, [ mem[addr].set(datain) ]),
-               d_addr.set(addr) ])
-    m.Assign(dataout, mem[d_addr])
+    m.Always(Posedge(clk))(
+        If(write)( mem[addr](datain) ),
+        d_addr(addr)
+    )
+    m.Assign(dataout(mem[d_addr]))
 
     return m
 
@@ -57,17 +58,23 @@ def mkUser(bram):
         return ret
     
     def goto_next():
-        return state.set( state + 1 )
+        return state( state + 1 )
     
-    m.Always(Posedge(clk),
-             ( If(rst,
-                  ( addr.set(0), datain.set(0), write.set(0), state.set(0) ),
-                  ( If(cond(), ( addr.set(0), datain.set(0), write.set(0), goto_next() )),
-                    If(cond(), ( write.set(1), datain.set(datain + 4), goto_next() )),
-                    If(cond(), ( write.set(0), goto_next() )),
-                    If(cond(), ( If(addr == 128,
-                                    ( addr.set(0), state.set(label[0]) ),
-                                    ( addr.set(addr + 1), state.set(label[1]) ))))))))
+    m.Always(Posedge(clk))(
+        If(rst)(
+            addr(0), datain(0), write(0), state(0)
+        ).els(
+            If(cond())( addr(0), datain(0), write(0), goto_next() ),
+            If(cond())( write(1), datain(datain + 4), goto_next() ),
+            If(cond())( write(0), goto_next() ),
+            If(cond())(
+                If(addr == 128)(
+                    addr(0), state(label[0])
+                ).els(
+                    addr(addr + 1), state(label[1])
+                )
+            )))
+
     return m
 
 #-------------------------------------------------------------------------------

@@ -79,13 +79,13 @@ class Module(object):
         return t
 
     #---------------------------------------------------------------------------
-    def Always(self, sensitivity, statement):
-        t = vtypes.Always(sensitivity, statement)
+    def Always(self, sensitivity, *statement):
+        t = vtypes.Always(sensitivity, *statement)
         self.always.append(t)
         return t
     
-    def Assign(self, left, right):
-        t = vtypes.Assign(left, right)
+    def Assign(self, statement):
+        t = vtypes.Assign(statement)
         self.assign.append(t)
         return t
 

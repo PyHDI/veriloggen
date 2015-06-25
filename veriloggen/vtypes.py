@@ -70,6 +70,9 @@ class _Variable(_Numeric):
     def set(self, r):
         return self.assign(r)
     
+    def __call__(self, r):
+        return self.assign(r)
+        
     def __ilshift__(self, r):
         return self.assign(r)
             
@@ -78,6 +81,7 @@ class _Variable(_Numeric):
             return self.assign(value)
         else:
             _Numeric.__setattr__(self, name, value)
+            
         
 #-------------------------------------------------------------------------------
 class Reg(_Variable): pass
@@ -195,14 +199,19 @@ class Prev(_SpecialOperator):
 
 #-------------------------------------------------------------------------------
 class Always(_VtypesObject):
-    def __init__(self, sensitivity, statement):
+    def __init__(self, sensitivity, *statement):
         self.sensitivity = sensitivity
-        self.statement = statement
+        self.statement = tuple(statement)
+
+    def __call__(self, *statement):
+        if self.statement:
+            raise ValueError("Statement is already assigned.")
+        self.statement = tuple(statement)
+        return self
 
 class Assign(_VtypesObject):
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
+    def __init__(self, statement):
+        self.statement = statement
 
 #-------------------------------------------------------------------------------
 class Edge(_VtypesObject):
@@ -219,11 +228,26 @@ class Subst(_VtypesObject):
         self.right = right
 
 class If(_VtypesObject):
-    def __init__(self, condition, true_statement, false_statement=None):
+    def __init__(self, condition, true_statement=None, false_statement=None):
         self.condition = condition
         self.true_statement = true_statement
         self.false_statement = false_statement
 
+    def __call__(self, *args):
+        if self.true_statement is None:
+            self.true_statement = tuple(args)
+            return self
+        if self.false_statement is None:
+            self.false_statement = tuple(args)
+            return self
+        raise ValueError("True statement and False statement are already assigned.")
+
+    def els(self, *args):
+        if self.false_statement is None:
+            self.false_statement = tuple(args)
+            return self
+        raise ValueError("False statement is already assigned.")
+        
 class For(_VtypesObject):
     def __init__(self, pre, condition, post, statement):
         self.pre = pre

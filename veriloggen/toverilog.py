@@ -125,8 +125,10 @@ class VerilogModuleVisitor(object):
 
     #---------------------------------------------------------------------------
     def visit_Assign(self, node):
-        left = self.bind_visitor.visit(node.left)
-        right = self.bind_visitor.visit(node.right)
+        if not isinstance(node.statement, vtypes.Subst):
+            raise TypeError("Assign expects Subst object.")
+        left = self.bind_visitor.visit(node.statement.left)
+        right = self.bind_visitor.visit(node.statement.right)
         return vast.Assign(left, right)
     
     #---------------------------------------------------------------------------
