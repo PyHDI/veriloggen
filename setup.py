@@ -18,7 +18,7 @@ setup(name='veriloggen',
       author='Shinya Takamaeda-Yamazaki',
       author_email='shinya.takamaeda_at_gmail_com',
       license="Apache License 2.0",
-      url='http://shtaxxx.github.io/veriloggen/',
+      url='https://github.com/shtaxxx/veriloggen',
       packages=find_packages(),
 #      package_data={ 'veriloggen.template' : ['*.*'], },
 )
