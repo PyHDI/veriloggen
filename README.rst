@@ -73,6 +73,7 @@ Python as below. A blinking LED hardware is modeled in Python.
     import os
 
     from veriloggen import *
+
     def mkLed():
         m = Module('blinkled')
         width = m.Parameter('WIDTH', 8)
@@ -81,16 +82,21 @@ Python as below. A blinking LED hardware is modeled in Python.
         led = m.OutputReg('LED', width)
         count = m.Reg('count', 32)
 
-        m.Always(Posedge(clk),
-                 ( If(rst,
-                      ( count.set(0), ),
-                      ( count.set(count + 1), )), ))
+        m.Always(Posedge(clk))(
+            If(rst)(
+                count(0)
+            ).els(
+                count(count + 1)
+            ))
         
-        m.Always(Posedge(clk),
-                 ( If(rst,
-                      ( led.set(0), ),
-                      ( If(count == 1024 - 1,
-                           ( led.set(led + 1), )))), ))
+        m.Always(Posedge(clk))(
+            If(rst)(
+                led(0)
+            ).els(
+                If(count == 1024 - 1)(
+                    led(led + 1)
+                )
+            ))
         
         return m
 
