@@ -59,6 +59,17 @@ If Python 3.x is used,
 
     python3 setup.py install
 
+Docker
+------
+
+Dockerfile is available. Please try Veriloggen by using Dockerfile.
+
+::
+
+    cd docker
+    sudo docker build -t user/ubuntu:14.04-veriloggen .
+    sudo docker run --name veriloggen -i -t user/ubuntu:14.04-veriloggen /bin/bash
+
 Getting Started
 ===============
 

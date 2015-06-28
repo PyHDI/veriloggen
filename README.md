@@ -39,6 +39,22 @@ Requirements
 Installation
 ==============================
 
+On Docker
+------------------------------
+
+Dockerfile is available, so that you can try Veriloggen on Docker without any installation on your host platform.
+
+```
+cd docker
+sudo docker build -t user/veriloggen .
+sudo docker run --name veriloggen -i -t user/veriloggen /bin/bash
+cd veriloggen/sample/led/
+make
+```
+
+On your host platform
+------------------------------
+
 If you want to use Veriloggen as a general library, you can install on your environment by using setup.py.
 
 If Python 2.7 is used,

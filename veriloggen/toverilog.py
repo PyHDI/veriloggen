@@ -12,6 +12,7 @@ from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
 #-------------------------------------------------------------------------------
 def toVerilog(node):
     visitor = VerilogModuleVisitor()
+    #verilogdef = visitor.visit(node)
     verilogdef = visitor.visit(node)
     codegen = ASTCodeGenerator()
     return codegen.visit(verilogdef)
@@ -26,6 +27,7 @@ class VerilogModuleVisitor(object):
         raise TypeError("Type %s is not supported." % str(type(node)))
     
     def visit(self, node):
+        if isinstance(node, module.Module): return self.visit_Module(node)
         visitor = getattr(self, 'visit_' + node.__class__.__name__, self.generic_visit)
         return visitor(node)
 
@@ -134,8 +136,8 @@ class VerilogModuleVisitor(object):
     #---------------------------------------------------------------------------
     def visit_Instance(self, node):
         module = node.module.name
-        parameterlist = [ vast.ParamArg(p, self.bind_visitor.visit(a)) for p, a in node.params ] 
-        portlist = [ vast.PortArg(p, self.bind_visitor.visit(a)) for p, a in node.ports ]
+        parameterlist = [ vast.ParamArg(p, self.bind_visitor.visit(a)) for p, a in node.params.items() ] 
+        portlist = [ vast.PortArg(p, self.bind_visitor.visit(a)) for p, a in node.ports.items() ]
         name = node.instname
         instance = vast.Instance(module, name, portlist, parameterlist)
         return vast.InstanceList(module, parameterlist, (instance,) )
@@ -276,6 +278,17 @@ class VerilogModuleVisitor(object):
         right = self.visit(node.right)
         return vast.Ulnot(right)
     
+    #---------------------------------------------------------------------------
+    # First clas object wrapper
+    def visit_Int(self, node):
+        return vast.IntConst(str(node))
+
+    def visit_Float(self, node):
+        return vast.FloatConst(str(node))
+    
+    def visit_Str(self, node):
+        return vast.StringConst(node)
+
     #---------------------------------------------------------------------------
     def visit_int(self, node):
         return vast.IntConst(str(node))
@@ -479,6 +492,17 @@ class VerilogBindVisitor(object):
         false_value = self.visit(node.false_value)
         return vast.Cond(cond, true_value, false_value)
     
+    #---------------------------------------------------------------------------
+    # First clas object wrapper
+    def visit_Int(self, node):
+        return vast.IntConst(str(node))
+
+    def visit_Float(self, node):
+        return vast.FloatConst(str(node))
+    
+    def visit_Str(self, node):
+        return vast.StringConst(node)
+
     #---------------------------------------------------------------------------
     def visit_int(self, node):
         return vast.IntConst(str(node))

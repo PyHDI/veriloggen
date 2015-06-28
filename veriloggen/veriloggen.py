@@ -14,12 +14,20 @@ import utils.version
 
 import module
 from module import Module
+
+import interface
+from interface import Interface
+
 import vtypes
-from vtypes import (Posedge, Negedge, Subst,
+from vtypes import (VeriloggenNode,
+                    Int, Float, Str,
+                    Posedge, Negedge, Subst,
                     If, For, While,
                     Bit, Slice, Cond,
                     Not, Unot, Ulnot, Land, Lor,
                     LandList, LorList)
+
+import lib
 
 #-------------------------------------------------------------------------------
 if __name__ == '__main__':

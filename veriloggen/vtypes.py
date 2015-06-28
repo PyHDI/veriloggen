@@ -1,7 +1,8 @@
-class _VtypesObject(object):
+class VeriloggenNode(object):
+    """ Base class of Veriloggen AST object """
     pass
 
-class _Numeric(_VtypesObject):
+class _Numeric(VeriloggenNode):
     def __lt__(self, r):
         return LessThan(self, r)
     
@@ -25,6 +26,9 @@ class _Numeric(_VtypesObject):
     
     def __sub__(self, r):
         return Minus(self, r)
+    
+    def __pow__(self, r):
+        return Power(self, r)
     
     def __mul__(self, r):
         return Times(self, r)
@@ -64,24 +68,17 @@ class _Variable(_Numeric):
         self.signed = signed
         self.value = value
 
-    def assign(self, r):
-        return Subst(self, r)
-
     def set(self, r):
-        return self.assign(r)
+        return Subst(self, r)
     
     def __call__(self, r):
-        return self.assign(r)
-        
-    def __ilshift__(self, r):
-        return self.assign(r)
-            
-    def __setattr__(self, name, value):
-        if name == 'next':
-            return self.assign(value)
-        else:
-            _Numeric.__setattr__(self, name, value)
-            
+        return self.set(r)
+
+    def connect(self, prefix='', postfix=''):
+        ret = {
+            prefix + self.name + postfix : self,
+        }
+        return ret
         
 #-------------------------------------------------------------------------------
 class Reg(_Variable): pass
@@ -93,10 +90,25 @@ class Inout(_Variable): pass
 #-------------------------------------------------------------------------------
 class _Constant(_Variable):
     def __init__(self, name, value, width=None, signed=False):
+        if isinstance(value, _Constant):
+            value = value.value
         _Variable.__init__(self, name, width=width, signed=signed, value=value)
         
 class Parameter(_Constant): pass
 class Localparam(_Constant): pass
+
+#-------------------------------------------------------------------------------
+class Int(_Numeric):
+    def __init__(self, value):
+        self.value = value
+
+class Float(_Numeric):
+    def __init__(self, value):
+        self.value = value
+
+class Str(_Numeric):
+    def __init__(self, value):
+        self.value = value
 
 #-------------------------------------------------------------------------------
 class _Operator(_Numeric): pass
@@ -110,6 +122,7 @@ class _UnaryOperator(_Operator):
     def __init__(self, right):
         self.right = right
         
+#-------------------------------------------------------------------------------
 # class names should be same the ones in pyverilog.vparser.ast
 class Power(_BinaryOperator): pass
 class Times(_BinaryOperator): pass
@@ -140,10 +153,10 @@ class Or(_BinaryOperator): pass
 class Land(_BinaryOperator): pass
 class Lor(_BinaryOperator): pass
 
-#-------------------------------------------------------------------------------
 class Unot(_UnaryOperator): pass
 class Ulnot(_UnaryOperator): pass
 Not = Unot
+
 def LandList(*args):
     if len(args) == 0:
         raise ValueError("LandList requires at least one argument.")
@@ -198,7 +211,7 @@ class Prev(_SpecialOperator):
         self.step = step
 
 #-------------------------------------------------------------------------------
-class Always(_VtypesObject):
+class Always(VeriloggenNode):
     def __init__(self, sensitivity, *statement):
         self.sensitivity = sensitivity
         self.statement = tuple(statement)
@@ -209,12 +222,12 @@ class Always(_VtypesObject):
         self.statement = tuple(statement)
         return self
 
-class Assign(_VtypesObject):
+class Assign(VeriloggenNode):
     def __init__(self, statement):
         self.statement = statement
 
 #-------------------------------------------------------------------------------
-class Edge(_VtypesObject):
+class Edge(VeriloggenNode):
     def __init__(self, name):
         self.name = name
 
@@ -222,12 +235,12 @@ class Posedge(Edge): pass
 class Negedge(Edge): pass
 
 #-------------------------------------------------------------------------------
-class Subst(_VtypesObject):
+class Subst(VeriloggenNode):
     def __init__(self, left, right):
         self.left = left
         self.right = right
 
-class If(_VtypesObject):
+class If(VeriloggenNode):
     def __init__(self, condition, true_statement=None, false_statement=None):
         self.condition = condition
         self.true_statement = true_statement
@@ -248,22 +261,23 @@ class If(_VtypesObject):
             return self
         raise ValueError("False statement is already assigned.")
         
-class For(_VtypesObject):
+class For(VeriloggenNode):
     def __init__(self, pre, condition, post, statement):
         self.pre = pre
         self.condition = condition
         self.post = post
         self.statement = statement
 
-class While(_VtypesObject):
+class While(VeriloggenNode):
     def __init__(self, condition, statement):
         self.condition = condition
         self.statement = statement
 
 #-------------------------------------------------------------------------------
-class Instance(_VtypesObject):
+class Instance(VeriloggenNode):
     def __init__(self, module, instname, params, ports):
         self.module = module
         self.instname = instname
         self.params = params
         self.ports = ports
+
