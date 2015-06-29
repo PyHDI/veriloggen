@@ -22,6 +22,10 @@ class Interface(vtypes.VeriloggenNode):
         new_name = self.prefix + name + self.postfix
         return self.module.Output(name, width, length, signed, value)
         
+    def OutputReg(self, name, width=1, length=None, signed=False, value=None):
+        new_name = self.prefix + name + self.postfix
+        return self.module.OutputReg(name, width, length, signed, value)
+        
     def Inout(self, name, width=1, length=None, signed=False, value=None):
         new_name = self.prefix + name + self.postfix
         return self.module.Inout(name, width, length, signed, value)

@@ -12,7 +12,6 @@ from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
 #-------------------------------------------------------------------------------
 def toVerilog(node):
     visitor = VerilogModuleVisitor()
-    #verilogdef = visitor.visit(node)
     verilogdef = visitor.visit(node)
     codegen = ASTCodeGenerator()
     return codegen.visit(verilogdef)
