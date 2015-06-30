@@ -11,7 +11,7 @@ class FSM(object):
 
     def next(self, index=None):
         if index is None:
-            return self.state( self.state + 1 )
+            return self.state( len(self) )
         return self.state(index)
 
     def cond(self, name='fsm_label'):
