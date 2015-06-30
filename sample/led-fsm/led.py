@@ -12,12 +12,6 @@ def mkLed():
     count = m.Reg('count', 32)
 
     fsm = lib.FSM(m, '')
-    fsm_contents = []
-    fsm_contents.append( fsm(count(count + 1), fsm.next()) )
-    fsm_contents.append( fsm(count(count + 2), fsm.next()) )
-    fsm_contents.append( fsm(count(count + 3), fsm.next()) )
-    fsm_contents.append( fsm(If(count < 1024)( fsm.next(0) ).els( fsm.next() )) )
-    fsm_contents.append( fsm(led(led + 1), fsm.next(0)) )
     
     m.Always(Posedge(clk))(
         If(rst)(
@@ -25,7 +19,11 @@ def mkLed():
             led(0),
             fsm.next(0)
         ).els(
-            tuple(fsm_contents)
+            fsm(count(count + 1), fsm.next()),
+            fsm(count(count + 2), fsm.next()),
+            fsm(count(count + 3), fsm.next()),
+            fsm(If(count < 1024)( fsm.next(0) ).els( fsm.next() )),
+            fsm(led(led + 1), fsm.next(0))
         ))
 
     return m
