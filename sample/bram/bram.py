@@ -5,14 +5,15 @@ import collections
 from veriloggen import *
 
 class BramInterface(Interface):
-    def __init__(self, m, prefix, postfix, addrwidth, datawidth, io=False):
-        Interface.__init__(self, m, prefix, postfix, io)
-        
+    def __init__(self, m, prefix, postfix, addrwidth, datawidth, direction):
+        Interface.__init__(self, m, prefix, postfix)
+
+        self.direction = direction
         self.addrwidth = self.Parameter('ADDR_WIDTH', addrwidth)
         self.datawidth = self.Parameter('DATA_WIDTH', datawidth)
         
-        In = self.Input if self.io else self.Reg # self.Wire
-        Out = self.Output if self.io else self.Wire 
+        In = self.Input if self.direction == 'in' else self.Reg # self.Wire
+        Out = self.Output if self.direction == 'in' else self.Wire 
         
         self.addr = In('addr', addrwidth)
         self.datain = In('datain', datawidth)
@@ -26,7 +27,7 @@ def mkBram(name):
     datawidth = m.Parameter('DATA_WIDTH', 32)
     
     clk = m.Input('CLK')
-    bramif = BramInterface(m, '', '', addrwidth, datawidth, io=True)
+    bramif = BramInterface(m, '', '', addrwidth, datawidth, direction='in')
     
     d_addr = m.Reg('d_' + bramif.addr.name, datawidth)
     mem = m.Reg('mem', datawidth, Int(2)**addrwidth)
@@ -46,7 +47,7 @@ def mkTop():
     datawidth = m.Parameter('DATA_WIDTH', 32)
     clk = m.Input('CLK')
     rst = m.Input('RST')
-    bramif = BramInterface(m, 'bram_', '', addrwidth, datawidth)
+    bramif = BramInterface(m, 'bram_', '', addrwidth, datawidth, direction='out')
 
     params = collections.OrderedDict()
     params.update(bramif.connectAllParameters())

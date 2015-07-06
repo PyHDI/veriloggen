@@ -280,13 +280,13 @@ class VerilogModuleVisitor(object):
     #---------------------------------------------------------------------------
     # First clas object wrapper
     def visit_Int(self, node):
-        return vast.IntConst(str(node))
+        return vast.IntConst(str(node.value))
 
     def visit_Float(self, node):
-        return vast.FloatConst(str(node))
+        return vast.FloatConst(str(node.value))
     
     def visit_Str(self, node):
-        return vast.StringConst(node)
+        return vast.StringConst(node.value)
 
     #---------------------------------------------------------------------------
     def visit_int(self, node):
@@ -494,13 +494,13 @@ class VerilogBindVisitor(object):
     #---------------------------------------------------------------------------
     # First clas object wrapper
     def visit_Int(self, node):
-        return vast.IntConst(str(node))
+        return vast.IntConst(str(node.value))
 
     def visit_Float(self, node):
-        return vast.FloatConst(str(node))
+        return vast.FloatConst(str(node.value))
     
     def visit_Str(self, node):
-        return vast.StringConst(node)
+        return vast.StringConst(node.value)
 
     #---------------------------------------------------------------------------
     def visit_int(self, node):

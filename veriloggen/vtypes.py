@@ -16,10 +16,10 @@ class _Numeric(VeriloggenNode):
         return NotEq(self, r)
 
     def __ge__(self, r):
-        return GreaerEq(self, r)
+        return GreaterEq(self, r)
     
     def __gt__(self, r):
-        return GreaerThan(self, r)
+        return GreaterThan(self, r)
 
     def __add__(self, r):
         return Plus(self, r)
