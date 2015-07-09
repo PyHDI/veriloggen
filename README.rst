@@ -31,7 +31,6 @@ Requirements
 ============
 
 -  Python (2.7 or later, 3.3 or later)
-
 -  Pyverilog (Python-based Verilog HDL Design Processing Toolkit)
 
    -  Install from pip: 'pip install pyverilog' for Python2.7 or 'pip3
@@ -44,6 +43,10 @@ Requirements
 -  The code generator uses Jinja2 template engine.
 -  'pip install jinja2' (for Python 2.x) or 'pip3 install jinja2' (for
    Python 3.x)
+-  Icarus Verilog (0.9.6 or later)
+
+   -  'iverilog -E' command is used for preprocessing Verilog source
+      code in Pyverilog.
 
 Installation
 ============
@@ -180,5 +183,5 @@ Not yet.
 Related Project
 ===============
 
-`Pyverilog <http://shtaxxx.github.io/Pyverilog/>`__ - Python-based
+`Pyverilog <https://github.com/shtaxxx/Pyverilog>`__ - Python-based
 Hardware Design Processing Toolkit for Verilog HDL
