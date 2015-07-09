@@ -23,6 +23,10 @@ Veriloggen provides a lightweight abstraction of Verilog HDL AST. You
 can build up a hardware design written in Verilog HDL very easily by
 using the AST abstraction and the entire functionality of Python.
 
+Veriloggen is not designed for designing a hardware by programmer
+directly, but is for providing an efficient abstraction to develop a
+more efficient domain specific language and tools.
+
 Requirements
 ============
 
@@ -32,8 +36,8 @@ Requirements
 
    -  Install from pip: 'pip install pyverilog' for Python2.7 or 'pip3
       install pyverilog' for Python3
-   -  Install from github into this package: 'cd Pycoram; git clone
-      https://github.com/shtaxxx/Pyverilog.git; cd pycoram; ln -s
+   -  Otherwise, install from github into this package: 'cd Pycoram; git
+      clone https://github.com/shtaxxx/Pyverilog.git; cd pycoram; ln -s
       ../Pyverilog/pyverilog'
 
 -  Jinja2 (2.7 or later)
@@ -43,6 +47,23 @@ Requirements
 
 Installation
 ============
+
+On Docker
+---------
+
+Dockerfile is available, so that you can try Veriloggen on Docker
+without any installation on your host platform.
+
+::
+
+    cd docker
+    sudo docker build -t user/veriloggen .
+    sudo docker run --name veriloggen -i -t user/veriloggen /bin/bash
+    cd veriloggen/sample/led/
+    make
+
+On your host platform
+---------------------
 
 If you want to use Veriloggen as a general library, you can install on
 your environment by using setup.py.
@@ -58,17 +79,6 @@ If Python 3.x is used,
 ::
 
     python3 setup.py install
-
-Docker
-------
-
-Dockerfile is available. Please try Veriloggen by using Dockerfile.
-
-::
-
-    cd docker
-    sudo docker build -t user/ubuntu:14.04-veriloggen .
-    sudo docker run --name veriloggen -i -t user/ubuntu:14.04-veriloggen /bin/bash
 
 Getting Started
 ===============
@@ -163,51 +173,6 @@ standard text editor.
     end 
     endmodule
 
-Class and method
-================
-
-Module(name)
-------------
-
-is corresponding to 'module' in Verilog HDL. The Module class has
-several class methods to describe signals and assignments.
-
-Module.Input(name, width=None, length=None, signed=False, value=None)
----------------------------------------------------------------------
-
-is a class method to add a input port to the module.
-
-Module.Output(name, width=None, length=None, signed=False, value=None)
-----------------------------------------------------------------------
-
-is a class method to add a output port to the module.
-
-Module.Inout(name, width=None, length=None, signed=False, value=None)
----------------------------------------------------------------------
-
-is a class method to add a inout port to the module.
-
-Module.Reg(name, width=None, length=None, signed=False, value=None)
--------------------------------------------------------------------
-
-Module.Wire(name, width=None, length=None, signed=False, value=None)
---------------------------------------------------------------------
-
-Module.Parameter(name, value, width=None, length=None, signed=False)
---------------------------------------------------------------------
-
-Module.Localparam(name, value, width=None, length=None, signed=False)
----------------------------------------------------------------------
-
-Module.Always(sensitivity, statement)
--------------------------------------
-
-Module.Assign(left, right)
---------------------------
-
-Module.Instance(module, instname, params, ports)
-------------------------------------------------
-
 Publication
 ===========
 
@@ -218,6 +183,3 @@ Related Project
 
 `Pyverilog <http://shtaxxx.github.io/Pyverilog/>`__ - Python-based
 Hardware Design Processing Toolkit for Verilog HDL
-
-`PyCoRAM <http://shtaxxx.github.io/PyCoRAM/>`__ - Python-based Portable
-IP-core Synthesis Framework for FPGA-based Computing
