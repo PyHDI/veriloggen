@@ -2,6 +2,7 @@ class VeriloggenNode(object):
     """ Base class of Veriloggen AST object """
     pass
 
+#-------------------------------------------------------------------------------
 class _Numeric(VeriloggenNode):
     def __lt__(self, r):
         return LessThan(self, r)
@@ -49,17 +50,12 @@ class _Numeric(VeriloggenNode):
         return Or(self, r)
     
     def __getitem__(self, r):
-        return Bit(self, r)
+        return Pointer(self, r)
     
     def __getslice__(self, l, r):
         return Slice(self, l, r)
 
-    def delay(self, r):
-        return Delay(self, r)
-    
-    def prev(self, r):
-        return Prev(self, r)
-    
+#-------------------------------------------------------------------------------
 class _Variable(_Numeric):
     def __init__(self, name, width=1, length=None, signed=False, value=None):
         self.name = name
@@ -67,12 +63,9 @@ class _Variable(_Numeric):
         self.length = length
         self.signed = signed
         self.value = value
-
-    def set(self, r):
-        return Subst(self, r)
     
     def __call__(self, r):
-        return self.set(r)
+        return Subst(self, r)
 
     def connect(self, prefix='', postfix=''):
         ret = {
@@ -113,6 +106,7 @@ class Str(_Numeric):
 #-------------------------------------------------------------------------------
 class _Operator(_Numeric): pass
     
+#-------------------------------------------------------------------------------
 class _BinaryOperator(_Operator):
     def __init__(self, left, right):
         self.left = left
@@ -155,9 +149,13 @@ class Lor(_BinaryOperator): pass
 
 class Unot(_UnaryOperator): pass
 class Ulnot(_UnaryOperator): pass
-Not = Unot
 
-def LandList(*args):
+#-------------------------------------------------------------------------------
+# alias
+def Not(*args):
+    return Ulnot(*args)
+
+def AndList(*args):
     if len(args) == 0:
         raise ValueError("LandList requires at least one argument.")
     if len(args) == 1:
@@ -167,7 +165,7 @@ def LandList(*args):
         left = Land(left, right)
     return left
 
-def LorList(*args):
+def OrList(*args):
     if len(args) == 0:
         raise ValueError("LorList requires at least one argument.")
     if len(args) == 1:
@@ -183,33 +181,31 @@ class _SpecialOperator(_Operator):
         self.args = args
         self.kwargs = kwargs
 
-class Bit(_Variable):
+#-------------------------------------------------------------------------------
+class Pointer(_SpecialOperator):
     def __init__(self, var, pos):
         self.var = var
         self.pos = pos
         
+    def __call__(self, r):
+        return Subst(self, r)
+
 class Slice(_SpecialOperator):
     def __init__(self, var, msb, lsb):
         self.var = var
         self.msb = msb
         self.lsb = lsb
 
+    def __call__(self, r):
+        return Subst(self, r)
+
+#-------------------------------------------------------------------------------
 class Cond(_SpecialOperator):
     def __init__(self, condition, true_value, false_value):
         self.condition = condition
         self.true_value = true_value
         self.false_value = false_value
         
-class Delay(_SpecialOperator):
-    def __init__(self, var, step):
-        self.var = var
-        self.step = step
-                 
-class Prev(_SpecialOperator):
-    def __init__(self, var, step):
-        self.var = var
-        self.step = step
-
 #-------------------------------------------------------------------------------
 class Always(VeriloggenNode):
     def __init__(self, sensitivity, *statement):
@@ -222,17 +218,10 @@ class Always(VeriloggenNode):
         self.statement = tuple(statement)
         return self
 
+#-------------------------------------------------------------------------------
 class Assign(VeriloggenNode):
     def __init__(self, statement):
         self.statement = statement
-
-#-------------------------------------------------------------------------------
-class Edge(VeriloggenNode):
-    def __init__(self, name):
-        self.name = name
-
-class Posedge(Edge): pass
-class Negedge(Edge): pass
 
 #-------------------------------------------------------------------------------
 class Subst(VeriloggenNode):
@@ -240,11 +229,21 @@ class Subst(VeriloggenNode):
         self.left = left
         self.right = right
 
+#-------------------------------------------------------------------------------
+class Edge(VeriloggenNode):
+    def __init__(self, name):
+        self.name = name
+
+#-------------------------------------------------------------------------------
+class Posedge(Edge): pass
+class Negedge(Edge): pass
+
+#-------------------------------------------------------------------------------
 class If(VeriloggenNode):
-    def __init__(self, condition, true_statement=None, false_statement=None):
+    def __init__(self, condition):
         self.condition = condition
-        self.true_statement = true_statement
-        self.false_statement = false_statement
+        self.true_statement = None
+        self.false_statement = None
 
     def __call__(self, *args):
         if self.true_statement is None:
@@ -255,24 +254,38 @@ class If(VeriloggenNode):
             return self
         raise ValueError("True statement and False statement are already assigned.")
 
-    def els(self, *args):
+    def Else(self, *args):
         if self.false_statement is None:
             self.false_statement = tuple(args)
             return self
         raise ValueError("False statement is already assigned.")
         
+#-------------------------------------------------------------------------------
 class For(VeriloggenNode):
-    def __init__(self, pre, condition, post, statement):
+    def __init__(self, pre, condition, post):
         self.pre = pre
         self.condition = condition
         self.post = post
-        self.statement = statement
+        self.statement = None
 
+    def __call__(self, *args):
+        if self.statement is None:
+            self.statement = tuple(args)
+            return self
+        raise ValueError("Statement body is already assigned.")
+        
+#-------------------------------------------------------------------------------
 class While(VeriloggenNode):
-    def __init__(self, condition, statement):
+    def __init__(self, condition):
         self.condition = condition
-        self.statement = statement
+        self.statement = None
 
+    def __call__(self, *args):
+        if self.statement is None:
+            self.statement = tuple(args)
+            return self
+        raise ValueError("Statement body is already assigned.")
+        
 #-------------------------------------------------------------------------------
 class Instance(VeriloggenNode):
     def __init__(self, module, instname, params, ports):
@@ -280,4 +293,3 @@ class Instance(VeriloggenNode):
         self.instname = instname
         self.params = params
         self.ports = ports
-

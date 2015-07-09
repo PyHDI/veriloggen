@@ -13,13 +13,14 @@ class Interface(vtypes.VeriloggenNode):
         self.prefix = prefix
         self.postfix = postfix
 
+    #---------------------------------------------------------------------------
     def get_name(self, name):
         return self.prefix + name + self.postfix
 
     def get_basename(self, name):
         return re.sub(r'' + self.postfix + '$', '', name.replace(self.prefix, '', 1))
 
-    
+    #---------------------------------------------------------------------------
     def Input(self, name, width=1, length=None, signed=False, value=None):
         new_name = self.get_name(name)
         return self.module.Input(name, width, length, signed, value)
@@ -52,7 +53,8 @@ class Interface(vtypes.VeriloggenNode):
         new_name = self.get_name(name)
         return self.module.Localparam(name, value, width, signed)
         
-    def connectAllPorts(self, prefix='', postfix=''):
+    #---------------------------------------------------------------------------
+    def connect_all_ports(self, prefix='', postfix=''):
         inputs = [ s for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Input) ]
         outputs = [ s for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Output) ]
         inouts = [ s for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Inout) ]
@@ -76,7 +78,8 @@ class Interface(vtypes.VeriloggenNode):
             ret[name] = getattr(self, p)
         return ret
 
-    def connectAllParameters(self, prefix='', postfix=''):
+    #---------------------------------------------------------------------------
+    def connect_all_parameters(self, prefix='', postfix=''):
         parameters = [ s for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Parameter) ]
         localparams = [ s for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Localparam) ]
         ret = collections.OrderedDict()
@@ -88,13 +91,13 @@ class Interface(vtypes.VeriloggenNode):
             ret[name] = getattr(self, p)
         return ret
     
-    def getPorts(self):
+    def get_ports(self):
         return ([ getattr(self, s) for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Input) ] +
                 [ getattr(self, s) for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Output) ] +
                 [ getattr(self, s) for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Inout) ] +
                 [ getattr(self, s) for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Reg) ] +
                 [ getattr(self, s) for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Wire) ])
         
-    def getParameters(self):
+    def get_parameters(self):
         return ([ getattr(self, s) for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Parameter) ] +
                 [ getattr(self, s) for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Localparam) ])

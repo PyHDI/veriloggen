@@ -13,14 +13,14 @@ def mkLed():
     m.Always(Posedge(clk))(
         If(rst)(
             count(0)
-        ).els(
+        ).Else(
             count(count + 1)
         ))
     
     m.Always(Posedge(clk))(
         If(rst)(
             led(0)
-        ).els(
+        ).Else(
             If(count == 1024 - 1)(
                 led(led + 1)
             )
@@ -30,7 +30,8 @@ def mkLed():
 
 #-------------------------------------------------------------------------------
 led = mkLed()
-verilog = led.toVerilog()
+## if filename is not None: the generated source code is written to the file.
+verilog = led.to_verilog(filename='tmp.v')
 print(verilog)
 
 #-------------------------------------------------------------------------------
@@ -65,16 +66,13 @@ module blinkled #
 endmodule
 """
 
-#from pyverilog.vparser.parser import VerilogParser
-#from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
-#parser = VerilogParser()
-#expected_verilog_ast = parser.parse(expected_verilog)
-#codegen = ASTCodeGenerator()
-#expected_verilog_code = codegen.visit(expected_verilog_ast)
+from pyverilog.vparser.parser import VerilogParser
+from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
+parser = VerilogParser()
+expected_verilog_ast = parser.parse(expected_verilog)
+codegen = ASTCodeGenerator()
+expected_verilog_code = codegen.visit(expected_verilog_ast)
 
-#print('// Sample Verilog code -> AST -> Verilog code')
-#print(expected_verilog_code)
-
-#import difflib
-#diff = difflib.unified_diff(verilog.splitlines(), expected_verilog_code.splitlines())
-#print('\n'.join(list(diff)))
+import difflib
+diff = difflib.unified_diff(verilog.splitlines(), expected_verilog_code.splitlines())
+print('\n'.join(list(diff)))

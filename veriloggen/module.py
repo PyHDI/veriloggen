@@ -5,12 +5,12 @@ import collections
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import vtypes
-import toverilog
+import to_verilog
 
 class Module(object):
     """ Verilog Module class """
-    def __init__(self, name):
-        self.name = name
+    def __init__(self, name=None):
+        self.name = name if name is not None else self.__class__.__name__
         self.variable = collections.OrderedDict()
         self.io_variable = collections.OrderedDict()
         self.constant = collections.OrderedDict()
@@ -79,31 +79,30 @@ class Module(object):
         return t
     
     #---------------------------------------------------------------------------
-    def isReg(self, name):
+    def is_reg(self, name):
         if name not in self.variable: return False
         if isinstance(self.variable[name], vtypes.Reg): return True
         return False
         
-    def isWire(self, name):
+    def is_wire(self, name):
         if name not in self.variable and name not in self.io_variable: return False
         if name in self.variable and isinstance(self.variable[name], vtypes.Wire): return True
         if name in self.variable and isinstance(self.variable[name], vtypes.Reg): return False
         if name in self.io_variable: return True
         return False
 
-    def isOutput(self, name):
+    def is_output(self, name):
         if name not in self.io_variable: return False
         if isinstance(self.io_variable[name], vtypes.Output): return True
         return False
 
     #---------------------------------------------------------------------------
-    def getIO(self):
+    def get_io(self):
         return self.io_variable
     
-    def getIOname(self):
+    def get_io_name(self):
         return tuple(self.io_variable.keys())
     
     #---------------------------------------------------------------------------
-    def toVerilog(self):
-        return toverilog.toVerilog(self)
-
+    def to_verilog(self, filename=None):
+        return to_verilog.to_verilog(self, filename)

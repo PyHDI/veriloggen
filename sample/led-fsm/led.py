@@ -18,16 +18,16 @@ def mkLed():
             count(0),
             led(0),
             fsm.next(0)
-        ).els(
+        ).Else(
             fsm(count(count + 1), fsm.next()),
             fsm(count(count + 2), fsm.next()),
             fsm(count(count + 3), fsm.next()),
-            fsm(If(count < 1024)( fsm.next(0) ).els( fsm.next() )),
+            fsm(If(count < 1024)( fsm.next(0) ).Else( fsm.next() )),
             fsm(led(led + 1), fsm.next(0))
         ))
 
     return m
 
 led = mkLed()
-verilog = led.toVerilog()
+verilog = led.to_verilog("tmp.v")
 print(verilog)
