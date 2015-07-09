@@ -92,7 +92,6 @@ Python as below. A blinking LED hardware is modeled in Python.
 
     import sys
     import os
-
     from veriloggen import *
 
     def mkLed():
@@ -106,14 +105,14 @@ Python as below. A blinking LED hardware is modeled in Python.
         m.Always(Posedge(clk))(
             If(rst)(
                 count(0)
-            ).els(
+            ).Else(
                 count(count + 1)
             ))
         
         m.Always(Posedge(clk))(
             If(rst)(
                 led(0)
-            ).els(
+            ).Else(
                 If(count == 1024 - 1)(
                     led(led + 1)
                 )
@@ -122,7 +121,7 @@ Python as below. A blinking LED hardware is modeled in Python.
         return m
 
     led = mkLed()
-    verilog = led.toVerilog()
+    verilog = led.to_verilog()
     print(verilog)
 
 Run the script.

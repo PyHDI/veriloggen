@@ -78,7 +78,6 @@ Let's begin veriloggen by an example. Create a example Python script in Python a
 ```python
 import sys
 import os
-
 from veriloggen import *
 
 def mkLed():
@@ -92,14 +91,14 @@ def mkLed():
     m.Always(Posedge(clk))(
         If(rst)(
             count(0)
-        ).els(
+        ).Else(
             count(count + 1)
         ))
     
     m.Always(Posedge(clk))(
         If(rst)(
             led(0)
-        ).els(
+        ).Else(
             If(count == 1024 - 1)(
                 led(led + 1)
             )
@@ -108,7 +107,7 @@ def mkLed():
     return m
 
 led = mkLed()
-verilog = led.toVerilog()
+verilog = led.to_verilog()
 print(verilog)
 ```
 
