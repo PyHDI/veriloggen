@@ -50,10 +50,15 @@ class _Numeric(VeriloggenNode):
         return Or(self, r)
     
     def __getitem__(self, r):
+        if isinstance(r, slice):
+            left = r.start
+            right = r.stop
+            step = r.step
+            if step is None:
+                return Slice(self, left, right)
+            else:
+                raise ValueError("slice with step is not supported in Verilog Slice.")
         return Pointer(self, r)
-    
-    def __getslice__(self, l, r):
-        return Slice(self, l, r)
 
 #-------------------------------------------------------------------------------
 class _Variable(_Numeric):
@@ -92,8 +97,10 @@ class Localparam(_Constant): pass
 
 #-------------------------------------------------------------------------------
 class Int(_Numeric):
-    def __init__(self, value):
+    def __init__(self, value, width=None, base=None):
         self.value = value
+        self.width = width
+        self.base = base
 
 class Float(_Numeric):
     def __init__(self, value):
@@ -196,6 +203,13 @@ class Slice(_SpecialOperator):
         self.msb = msb
         self.lsb = lsb
 
+    def __call__(self, r):
+        return Subst(self, r)
+
+class Cat(_SpecialOperator):
+    def __init__(self, *vars):
+        self.vars = vars
+    
     def __call__(self, r):
         return Subst(self, r)
 

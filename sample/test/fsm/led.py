@@ -29,5 +29,5 @@ def mkLed():
     return m
 
 led = mkLed()
-verilog = led.to_verilog("tmp.v")
+verilog = led.to_verilog()
 print(verilog)

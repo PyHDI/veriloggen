@@ -196,6 +196,11 @@ class VerilogCommonVisitor(object):
         lsb = self.visit(node.lsb)
         return vast.Partselect(var, msb, lsb)
 
+    def visit_Cat(self, node):
+        vars = tuple([ self.visit(var) for var in node.vars ])
+        return vast.Concat(vars)
+
+    #---------------------------------------------------------------------------
     def visit_Cond(self, node):
         cond = self.visit(node.condition)
         true_value = self.visit(node.true_value)
@@ -205,7 +210,30 @@ class VerilogCommonVisitor(object):
     #---------------------------------------------------------------------------
     # First clas object wrapper
     def visit_Int(self, node):
-        return vast.IntConst(str(node.value))
+        value_list = []
+        if node.width:
+            value_list.append(str(node.width))
+            
+        if node.base is None:
+            if node.width:
+                value_list.append("'d")
+            value_list.append(str(node.value))
+        elif node.base == 2:
+            value_list.append("'b")
+            value_list.append(bin(node.value).replace('0b', ''))
+        elif node.base == 8:
+            value_list.append("'o")
+            value_list.append(oct(node.value).replace('0o', ''))
+        elif node.base == 10:
+            value_list.append("'d")
+            value_list.append(str(node.value))
+        elif node.base == 16:
+            value_list.append("'h")
+            value_list.append(hex(node.value).replace('0x', ''))
+        else:
+            raise ValueError("Int.base should be 2, 8, 10, or 16")
+        
+        return vast.IntConst(''.join(value_list))
 
     def visit_Float(self, node):
         return vast.FloatConst(str(node.value))
