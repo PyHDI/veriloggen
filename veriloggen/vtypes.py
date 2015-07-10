@@ -62,12 +62,13 @@ class _Numeric(VeriloggenNode):
 
 #-------------------------------------------------------------------------------
 class _Variable(_Numeric):
-    def __init__(self, name, width=1, length=None, signed=False, value=None):
+    def __init__(self, name, width=1, length=None, signed=False, value=None, initvalue=None):
         self.name = name
         self.width = width
         self.length = length
         self.signed = signed
         self.value = value
+        self.initvalue = initvalue
     
     def __call__(self, r):
         return Subst(self, r)

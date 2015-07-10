@@ -72,29 +72,28 @@ def mkTop():
 
     m.Instance(mkBram('my_'), 'inst_bram', params, ports)
 
+    # FSM definition
     fsm = lib.FSM(m, 'fsm')
     init = fsm.get_index()
-    fsmbody = []
-    fsmbody.append(
-            fsm( bramif.addr(0), bramif.datain(0), bramif.write(0), fsm.next() ))
+    
+    fsm( bramif.addr(0), bramif.datain(0), bramif.write(0), fsm.next() )
     first = fsm.get_index()
-    fsmbody.append(
-            fsm( bramif.datain(bramif.datain + 4), fsm.next() ))
-    fsmbody.append(
-            fsm( bramif.write(0), fsm.next() ))
-    fsmbody.append(
-            fsm( 
-                If(bramif.addr == 128)(
-                    bramif.addr(0), fsm.goto(init)
-                ).Else(
-                    bramif.addr(bramif.addr + 1), fsm.goto(first)
-                )))
+    
+    fsm( bramif.datain(bramif.datain + 4), fsm.next() )
+    fsm( bramif.write(0), fsm.next() )
+    fsm( 
+        If(bramif.addr == 128)(
+            bramif.addr(0), fsm.goto(init)
+        ).Else(
+            bramif.addr(bramif.addr + 1), fsm.goto(first)
+        ))
     
     m.Always(Posedge(clk))(
         If(rst)(
             bramif.addr(0), bramif.datain(0), bramif.write(0), fsm.init()
         ).Else(
-            *fsmbody
+            # inserting FSM body
+            *fsm.get_all()
         ))
 
     return m
