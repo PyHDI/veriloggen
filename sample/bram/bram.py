@@ -5,11 +5,11 @@ import collections
 from veriloggen import *
 
 #-------------------------------------------------------------------------------
-# BRAM interface
+# BRAM bundle
 #-------------------------------------------------------------------------------
-class BramInterface(lib.Interface):
+class BramBundle(lib.Bundle):
     def __init__(self, m, prefix='', postfix='', addrwidth=10, datawidth=32, direction='child'):
-        lib.Interface.__init__(self, m, prefix, postfix)
+        lib.Bundle.__init__(self, m, prefix, postfix)
 
         if direction != 'child' and direction != 'parent':
             raise ValueError("direction should be 'in or 'parent''")
@@ -41,7 +41,7 @@ def mkBram(name):
     datawidth = m.Parameter('DATA_WIDTH', 32)
     
     clk = m.Input('CLK')
-    bramif = BramInterface(m, addrwidth=addrwidth, datawidth=datawidth, direction='child')
+    bramif = BramBundle(m, addrwidth=addrwidth, datawidth=datawidth, direction='child')
     
     d_addr = m.Reg('d_' + bramif.addr.name, datawidth)
     mem = m.Reg('mem', datawidth, Int(2)**addrwidth)
@@ -65,8 +65,8 @@ def mkTop():
     clk = m.Input('CLK')
     rst = m.Input('RST')
 
-    bramif = BramInterface(m, prefix='bram_',
-                           addrwidth=addrwidth, datawidth=datawidth, direction='parent')
+    bramif = BramBundle(m, prefix='bram_',
+                        addrwidth=addrwidth, datawidth=datawidth, direction='parent')
 
     params = collections.OrderedDict()
     params.update(bramif.connect_all_parameters())

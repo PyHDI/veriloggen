@@ -4,9 +4,9 @@ import collections
 
 from veriloggen import *
 
-class LedInterface(lib.Interface):
+class LedBundle(lib.Bundle):
     def __init__(self, m, prefix='', postfix='', width=8, maxvalue=1024, direction='child'):
-        lib.Interface.__init__(self, m, prefix, postfix)
+        lib.Bundle.__init__(self, m, prefix, postfix)
 
         if direction != 'child' and direction != 'parent':
             raise ValueError("direction should be 'in or 'parent''")
@@ -41,7 +41,7 @@ def mkLed():
     width = m.Parameter('WIDTH', 8)
     clk = m.Input('CLK')
     rst = m.Input('RST')
-    ledif = LedInterface(m, width=width, direction='child')
+    ledif = LedBundle(m, width=width, direction='child')
 
     m.Always(Posedge(clk))(
         If(rst)(
@@ -58,7 +58,7 @@ def mkTop(wid=8):
     width = m.Parameter('WIDTH', wid)
     clk = m.Input('CLK')
     rst = m.Input('RST')
-    ledif = LedInterface(m, width=width, direction='parent')
+    ledif = LedBundle(m, width=width, direction='parent')
     
     params = collections.OrderedDict()
     params.update(width.connect())
