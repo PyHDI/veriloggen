@@ -1,5 +1,6 @@
 import sys
 import os
+import collections
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -12,14 +13,27 @@ from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
 #-------------------------------------------------------------------------------
 def to_verilog(node, filename=None):
     visitor = VerilogModuleVisitor()
-    verilogdef = visitor.visit(node)
+    modules = tuple(get_modules(node).values())
+    
+    module_ast_list = [ visitor.visit(module) for module in modules ]
+    description = vast.Description(module_ast_list)
+    source = vast.Source(filename, description)
+    
     codegen = ASTCodeGenerator()
-    code = codegen.visit(verilogdef)
+    code = codegen.visit(source)
     if filename:
         with open(filename, 'w') as f:
             f.write(code)
     return code
 
+def get_modules(node):
+    modules = collections.OrderedDict()
+    modules[node.name] = node
+    modules.update(node.submodule)
+    for sub in node.submodule.values():
+        modules.update( get_modules(sub) )
+    return modules
+    
 #-------------------------------------------------------------------------------
 class VerilogCommonVisitor(object):
     def generic_visit(self, node):
@@ -56,6 +70,18 @@ class VerilogCommonVisitor(object):
         return vast.Identifier(name)
     
     def visit_Wire(self, node):
+        name = node.name
+        return vast.Identifier(name)
+    
+    def visit_Integer(self, node):
+        name = node.name
+        return vast.Identifier(name)
+    
+    def visit_Real(self, node):
+        name = node.name
+        return vast.Identifier(name)
+    
+    def visit_Genvar(self, node):
         name = node.name
         return vast.Identifier(name)
     
@@ -208,7 +234,7 @@ class VerilogCommonVisitor(object):
         return vast.Cond(cond, true_value, false_value)
     
     #---------------------------------------------------------------------------
-    # First clas object wrapper
+    # First class object wrapper
     def visit_Int(self, node):
         value_list = []
         if node.width:
@@ -265,16 +291,23 @@ class VerilogCommonVisitor(object):
                            if node.false_statement is not None else None)
         return vast.IfStatement(cond, true_statement, false_statement)
 
-    def visit_Subst(self, node):
-        left = self.visit(node.left)
-        right = self.visit(node.right)
-        return vast.NonblockingSubstitution(left, right)
+    #---------------------------------------------------------------------------
+    def visit_Function(self, node):
+        name = node.name
+        return vast.Identifier(name)
+    
+    def visit_FunctionCall(self, node):
+        name = vast.Identifier(node.name)
+        args = tuple([ self.visit(a) for a in node.args ])
+        return vast.FunctionCall(name, args)
     
 #-------------------------------------------------------------------------------
 class VerilogModuleVisitor(VerilogCommonVisitor):
     def __init__(self):
         VerilogCommonVisitor.__init__(self)
         self.bind_visitor = VerilogBindVisitor()
+        self.always_visitor = VerilogAlwaysVisitor()
+        self.function_visitor = VerilogFunctionVisitor()
         self.module = None
     
     #---------------------------------------------------------------------------
@@ -305,7 +338,8 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
         ports = [ i for i in ports if i is not None ]
         portlist = vast.Portlist(ports)
         items = ([ self.visit(v) for v in node.constant.values() ] + 
-                 [ self.visit(v) for v in node.variable.values() ] + 
+                 [ self.visit(v) for v in node.variable.values() ] +
+                 [ self.visit(v) for v in node.function ] +
                  [ self.visit(v) for v in node.assign ] +
                  [ self.visit(v) for v in node.always ] +
                  [ self.visit(v) for v in node.instance.values() ])
@@ -369,6 +403,24 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
             return vast.WireArray(name, width, length, signed)
         return vast.Wire(name, width, signed)
     
+    def visit_Integer(self, node):
+        name = node.name
+        width = None if node.width is None else self.make_width(node.width)
+        signed = node.signed
+        return vast.Integer(name, width, signed)
+    
+    def visit_Real(self, node):
+        name = node.name
+        width = None if node.width is None else self.make_width(node.width)
+        signed = node.signed
+        return vast.Real(name, width, signed)
+    
+    def visit_Genvar(self, node):
+        name = node.name
+        width = None if node.width is None else self.make_width(node.width)
+        signed = node.signed
+        return vast.Genvar(name, width, signed)
+    
     #---------------------------------------------------------------------------
     def visit_Posedge(self, node):
         sig = self.bind_visitor.visit(node.name)
@@ -394,9 +446,9 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
 
         statement = vast.Block([])
         if isinstance(node.statement, list) or isinstance(node.statement, tuple):
-            statement = vast.Block(tuple([ self.bind_visitor.visit(n) for n in node.statement ]))
+            statement = vast.Block(tuple([ self.always_visitor.visit(n) for n in node.statement ]))
         else:
-            statement = self.bind_visitor.visit(node.statement)
+            statement = self.always_visitor.visit(node.statement)
         return vast.Always(sensitivity, statement)
 
     #---------------------------------------------------------------------------
@@ -408,6 +460,15 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
         return vast.Assign(left, right)
     
     #---------------------------------------------------------------------------
+    def visit_Function(self, node):
+        name = node.name
+        retwidth = None if node.width is None else self.make_width(node.width)
+        statement = ([ self.visit(v).first for v in node.io_variable.values() ] +
+                     [ self.visit(v) for v in node.variable.values() ])
+        statement.append(vast.Block(tuple([ self.function_visitor.visit(s) for s in node.statement])))
+        return vast.Function(name, retwidth, statement)
+    
+    #---------------------------------------------------------------------------
     def visit_Instance(self, node):
         module = node.module.name
         parameterlist = [ vast.ParamArg(p, self.bind_visitor.visit(a)) for p, a in node.params.items() ] 
@@ -415,7 +476,22 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
         name = node.instname
         instance = vast.Instance(module, name, portlist, parameterlist)
         return vast.InstanceList(module, parameterlist, (instance,) )
-        
+
+    
 #-------------------------------------------------------------------------------
 class VerilogBindVisitor(VerilogCommonVisitor):
     pass
+
+#-------------------------------------------------------------------------------
+class VerilogAlwaysVisitor(VerilogCommonVisitor):
+    def visit_Subst(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vast.NonblockingSubstitution(left, right)
+
+#-------------------------------------------------------------------------------
+class VerilogFunctionVisitor(VerilogCommonVisitor):
+    def visit_Subst(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vast.BlockingSubstitution(left, right)

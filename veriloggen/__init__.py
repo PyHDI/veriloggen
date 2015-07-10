@@ -17,6 +17,7 @@ import vtypes
 
 from module import Module
 from interface import Interface
+from function import Function
 from vtypes import *
 
 import lib

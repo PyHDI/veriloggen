@@ -5,6 +5,8 @@ import collections
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import vtypes
+import function
+
 import to_verilog
 
 class Module(object):
@@ -15,9 +17,11 @@ class Module(object):
         self.io_variable = collections.OrderedDict()
         self.constant = collections.OrderedDict()
         self.global_constant = collections.OrderedDict()
+        self.function = []
         self.assign = []
         self.always = []
         self.instance = collections.OrderedDict()
+        self.submodule = {}
 
     #---------------------------------------------------------------------------
     def Input(self, name, width=None, length=None, signed=False, value=None):
@@ -52,6 +56,21 @@ class Module(object):
         self.variable[name] = t
         return t
     
+    def Integer(self, name, width=None, length=None, signed=False, value=None):
+        t = vtypes.Integer(name, width, length, signed, value)
+        self.variable[name] = t
+        return t
+    
+    def Real(self, name, width=None, length=None, signed=False, value=None):
+        t = vtypes.Real(name, width, length, signed, value)
+        self.variable[name] = t
+        return t
+    
+    def Genvar(self, name, width=None, length=None, signed=False, value=None):
+        t = vtypes.Genvar(name, width, length, signed, value)
+        self.variable[name] = t
+        return t
+    
     def Parameter(self, name, value, width=None, signed=False, length=None):
         t = vtypes.Parameter(name, value, width, signed)
         self.global_constant[name] = t
@@ -73,9 +92,17 @@ class Module(object):
         self.assign.append(t)
         return t
 
+    #---------------------------------------------------------------------------
+    def Function(self, name, width=1):
+        t = function.Function(name, width)
+        self.function.append(t)
+        return t
+        
+    #---------------------------------------------------------------------------
     def Instance(self, module, instname, params, ports):
         t = vtypes.Instance(module, instname, params, ports)
         self.instance[instname] = t
+        self.submodule[module.name] = module
         return t
     
     #---------------------------------------------------------------------------

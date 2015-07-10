@@ -4,6 +4,9 @@ import collections
 
 from veriloggen import *
 
+#-------------------------------------------------------------------------------
+# BRAM interface
+#-------------------------------------------------------------------------------
 class BramInterface(Interface):
     def __init__(self, m, prefix='', postfix='', addrwidth=10, datawidth=32, direction='in'):
         Interface.__init__(self, m, prefix, postfix)
@@ -23,6 +26,9 @@ class BramInterface(Interface):
         self.write = In('write')
         self.dataout = Out('dataout', datawidth)
     
+#-------------------------------------------------------------------------------
+# BRAM module
+#-------------------------------------------------------------------------------
 def mkBram(name):
     m = Module(name + 'bram')
     
@@ -44,12 +50,16 @@ def mkBram(name):
     
     return m
 
+#-------------------------------------------------------------------------------
+# Top module
+#-------------------------------------------------------------------------------
 def mkTop():
     m = Module('TOP')
     addrwidth = m.Parameter('ADDR_WIDTH', 10)
     datawidth = m.Parameter('DATA_WIDTH', 32)
     clk = m.Input('CLK')
     rst = m.Input('RST')
+
     bramif = BramInterface(m, prefix='bram_',
                            addrwidth=addrwidth, datawidth=datawidth, direction='out')
 
@@ -60,7 +70,7 @@ def mkTop():
     ports.update(clk.connect())
     ports.update(bramif.connect_all_ports())
 
-    m.Instance(bram, 'inst_bram', params, ports)
+    m.Instance(mkBram('my_'), 'inst_bram', params, ports)
 
     fsm = lib.FSM(m, 'fsm')
     m.Always(Posedge(clk))(
@@ -81,7 +91,7 @@ def mkTop():
     return m
 
 #-------------------------------------------------------------------------------
-bram = mkBram('my_')
 top = mkTop()
-verilog = ''.join( (bram.to_verilog(), top.to_verilog()) )
+# top.to_verilog('tmp.v')
+verilog = top.to_verilog()
 print(verilog)

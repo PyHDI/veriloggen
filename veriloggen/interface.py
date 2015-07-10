@@ -6,10 +6,13 @@ import re
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import vtypes
+import module
 
 class Interface(vtypes.VeriloggenNode):
-    def __init__(self, module, prefix='', postfix=''):
-        self.module = module
+    def __init__(self, m, prefix='', postfix=''):
+        if not isinstance(m, module.Module):
+            raise TypeError("module should be an instance of module.Module.")
+        self.module = m
         self.prefix = prefix
         self.postfix = postfix
 

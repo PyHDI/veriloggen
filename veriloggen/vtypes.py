@@ -72,6 +72,9 @@ class _Variable(_Numeric):
     def __call__(self, r):
         return Subst(self, r)
 
+    def next(self, r):
+        return self.__call__(r)
+    
     def connect(self, prefix='', postfix=''):
         ret = {
             prefix + self.name + postfix : self,
@@ -79,11 +82,14 @@ class _Variable(_Numeric):
         return ret
         
 #-------------------------------------------------------------------------------
-class Reg(_Variable): pass
-class Wire(_Variable): pass
 class Input(_Variable): pass
 class Output(_Variable): pass
 class Inout(_Variable): pass
+class Reg(_Variable): pass
+class Wire(_Variable): pass
+class Integer(_Variable): pass
+class Real(_Variable): pass
+class Genvar(_Variable): pass
 
 #-------------------------------------------------------------------------------
 class _Constant(_Variable):
@@ -197,6 +203,9 @@ class Pointer(_SpecialOperator):
     def __call__(self, r):
         return Subst(self, r)
 
+    def next(self, r):
+        return self.__call__(r)
+    
 class Slice(_SpecialOperator):
     def __init__(self, var, msb, lsb):
         self.var = var
@@ -206,6 +215,9 @@ class Slice(_SpecialOperator):
     def __call__(self, r):
         return Subst(self, r)
 
+    def next(self, r):
+        return self.__call__(r)
+    
 class Cat(_SpecialOperator):
     def __init__(self, *vars):
         self.vars = vars
@@ -213,6 +225,9 @@ class Cat(_SpecialOperator):
     def __call__(self, r):
         return Subst(self, r)
 
+    def next(self, r):
+        return self.__call__(r)
+    
 #-------------------------------------------------------------------------------
 class Cond(_SpecialOperator):
     def __init__(self, condition, true_value, false_value):
@@ -221,13 +236,29 @@ class Cond(_SpecialOperator):
         self.false_value = false_value
         
 #-------------------------------------------------------------------------------
+class Edge(VeriloggenNode):
+    def __init__(self, name):
+        self.name = name
+
+#-------------------------------------------------------------------------------
+class Posedge(Edge): pass
+class Negedge(Edge): pass
+
+#-------------------------------------------------------------------------------
+class Subst(VeriloggenNode):
+    def __init__(self, left, right, blk=False):
+        self.left = left
+        self.right = right
+        self.blk = blk
+
+#-------------------------------------------------------------------------------
 class Always(VeriloggenNode):
-    def __init__(self, sensitivity, *statement):
+    def __init__(self, sensitivity):
         self.sensitivity = sensitivity
-        self.statement = tuple(statement)
+        self.statement = None
 
     def __call__(self, *statement):
-        if self.statement:
+        if self.statement is not None:
             raise ValueError("Statement is already assigned.")
         self.statement = tuple(statement)
         return self
@@ -236,21 +267,6 @@ class Always(VeriloggenNode):
 class Assign(VeriloggenNode):
     def __init__(self, statement):
         self.statement = statement
-
-#-------------------------------------------------------------------------------
-class Subst(VeriloggenNode):
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
-#-------------------------------------------------------------------------------
-class Edge(VeriloggenNode):
-    def __init__(self, name):
-        self.name = name
-
-#-------------------------------------------------------------------------------
-class Posedge(Edge): pass
-class Negedge(Edge): pass
 
 #-------------------------------------------------------------------------------
 class If(VeriloggenNode):
