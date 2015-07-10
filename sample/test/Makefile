@@ -1,15 +1,7 @@
 .PHONY: clean
 clean:
-	make clean -C cat
-	make clean -C class
-	make clean -C function
-	make clean -C lib-fsm
-	make clean -C slice
+	find . -maxdepth 1 -type d |grep "./" | xargs -I {} make clean -C {} 
 
 .PHONY: test
 test:
-	make test -C cat
-	make test -C class
-	make test -C function
-	make test -C lib-fsm
-	make test -C slice
+	find . -maxdepth 1 -type d |grep "./" | xargs -I {} make test -C {} 

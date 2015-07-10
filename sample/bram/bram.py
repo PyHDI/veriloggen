@@ -7,25 +7,30 @@ from veriloggen import *
 #-------------------------------------------------------------------------------
 # BRAM interface
 #-------------------------------------------------------------------------------
-class BramInterface(Interface):
-    def __init__(self, m, prefix='', postfix='', addrwidth=10, datawidth=32, direction='in'):
-        Interface.__init__(self, m, prefix, postfix)
+class BramInterface(lib.Interface):
+    def __init__(self, m, prefix='', postfix='', addrwidth=10, datawidth=32, direction='child'):
+        lib.Interface.__init__(self, m, prefix, postfix)
 
-        if direction != 'in' and direction != 'out':
-            raise ValueError("direction should be 'in or 'out''")
+        if direction != 'child' and direction != 'parent':
+            raise ValueError("direction should be 'in or 'parent''")
         self.direction = direction
         
         self.addrwidth = self.Parameter('ADDR_WIDTH', addrwidth)
         self.datawidth = self.Parameter('DATA_WIDTH', datawidth)
         
-        In = self.Input if self.direction == 'in' else self.Reg # self.Wire
-        Out = self.Output if self.direction == 'in' else self.Wire 
+        In = self.Input if self.direction == 'child' else self.Reg # self.Wire
+        Out = self.Output if self.direction == 'child' else self.Wire 
         
         self.addr = In('addr', addrwidth)
         self.datain = In('datain', datawidth)
         self.write = In('write')
         self.dataout = Out('dataout', datawidth)
-    
+
+    def init(self):
+        if self.direction == 'parent':
+            return self.addr(0), self.datain(0), self.write(0)
+        raise Exception("init() is not allowed.")
+        
 #-------------------------------------------------------------------------------
 # BRAM module
 #-------------------------------------------------------------------------------
@@ -36,7 +41,7 @@ def mkBram(name):
     datawidth = m.Parameter('DATA_WIDTH', 32)
     
     clk = m.Input('CLK')
-    bramif = BramInterface(m, addrwidth=addrwidth, datawidth=datawidth, direction='in')
+    bramif = BramInterface(m, addrwidth=addrwidth, datawidth=datawidth, direction='child')
     
     d_addr = m.Reg('d_' + bramif.addr.name, datawidth)
     mem = m.Reg('mem', datawidth, Int(2)**addrwidth)
@@ -61,7 +66,7 @@ def mkTop():
     rst = m.Input('RST')
 
     bramif = BramInterface(m, prefix='bram_',
-                           addrwidth=addrwidth, datawidth=datawidth, direction='out')
+                           addrwidth=addrwidth, datawidth=datawidth, direction='parent')
 
     params = collections.OrderedDict()
     params.update(bramif.connect_all_parameters())
@@ -76,7 +81,7 @@ def mkTop():
     fsm = lib.FSM(m, 'fsm')
     init = fsm.get_index()
     
-    fsm( bramif.addr(0), bramif.datain(0), bramif.write(0), fsm.next() )
+    fsm( bramif.init(), fsm.next() )
     first = fsm.get_index()
     
     fsm( bramif.datain(bramif.datain + 4), fsm.next() )

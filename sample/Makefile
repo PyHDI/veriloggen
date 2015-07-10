@@ -3,6 +3,4 @@ all: clean
 
 .PHONY: clean
 clean:
-	make clean -C bram
-	make clean -C led
-	make clean -C test
+	find . -maxdepth 1 -type d |grep "./" | xargs -I {} make clean -C {} 

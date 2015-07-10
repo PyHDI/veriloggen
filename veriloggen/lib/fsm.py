@@ -1,11 +1,11 @@
 import os
 import sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import collections
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import vtypes
 
-class FSM(object):
+class FSM(vtypes.VeriloggenNode):
     """ Finite State Machine Generator """
     def __init__(self, m, name, width=32, initname='init'):
         self.m = m
