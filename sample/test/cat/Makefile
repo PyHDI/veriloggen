@@ -1,4 +1,5 @@
 TARGET=led.py
+TEST=test_led.py
 ARGS=
 
 PYTHON=python3
@@ -8,11 +9,15 @@ PYTHON=python3
 #OPT=-m cProfile -o profile.rslt
 
 .PHONY: all
-all: run
+all: test
 
 .PHONY: run
 run:
 	$(PYTHON) $(OPT) $(TARGET) $(ARGS)
+
+.PHONY: test
+test:
+	$(PYTHON) -m pytest -vv $(TEST)
 
 .PHONY: check
 check:

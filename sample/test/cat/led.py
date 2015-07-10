@@ -20,7 +20,7 @@ def mkLed():
     
     m.Always(Posedge(clk))(
         If(rst)(
-            led(Int(0b00000001, width=8, base=2))
+            led( Int(0b00000001, width=8, base=2) )
         ).Else(
             If(count == 1024 - 1)(
                 led( Cat(led[width-2:0], led[width-1]) )
@@ -29,6 +29,7 @@ def mkLed():
 
     return m
 
-led = mkLed()
-verilog = led.to_verilog()
-print(verilog)
+if __name__ == '__main__':
+    led_module = mkLed()
+    led_code = led_module.to_verilog()
+    print(led_code)

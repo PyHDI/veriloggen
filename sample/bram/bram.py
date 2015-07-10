@@ -73,25 +73,35 @@ def mkTop():
     m.Instance(mkBram('my_'), 'inst_bram', params, ports)
 
     fsm = lib.FSM(m, 'fsm')
-    m.Always(Posedge(clk))(
-        If(rst)(
-            bramif.addr(0), bramif.datain(0), bramif.write(0), fsm.next(0)
-        ).Else(
-            fsm( bramif.addr(0), bramif.datain(0), bramif.write(0), fsm.next() ),
-            fsm( bramif.datain(bramif.datain + 4), fsm.next() ),
-            fsm( bramif.write(0), fsm.next() ),
+    init = fsm.get_index()
+    fsmbody = []
+    fsmbody.append(
+            fsm( bramif.addr(0), bramif.datain(0), bramif.write(0), fsm.next() ))
+    first = fsm.get_index()
+    fsmbody.append(
+            fsm( bramif.datain(bramif.datain + 4), fsm.next() ))
+    fsmbody.append(
+            fsm( bramif.write(0), fsm.next() ))
+    fsmbody.append(
             fsm( 
                 If(bramif.addr == 128)(
-                    bramif.addr(0), fsm.next(0)
+                    bramif.addr(0), fsm.goto(init)
                 ).Else(
-                    bramif.addr(bramif.addr + 1), fsm.next(1)
-                ))
-            ))
+                    bramif.addr(bramif.addr + 1), fsm.goto(first)
+                )))
+    
+    m.Always(Posedge(clk))(
+        If(rst)(
+            bramif.addr(0), bramif.datain(0), bramif.write(0), fsm.init()
+        ).Else(
+            *fsmbody
+        ))
 
     return m
 
 #-------------------------------------------------------------------------------
-top = mkTop()
-# top.to_verilog('tmp.v')
-verilog = top.to_verilog()
-print(verilog)
+if __name__ == '__main__':
+    top = mkTop()
+    # top.to_verilog(filename='tmp.v')
+    verilog = top.to_verilog()
+    print(verilog)

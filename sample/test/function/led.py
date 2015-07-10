@@ -39,76 +39,7 @@ def mkLed():
 
     return m
 
-#-------------------------------------------------------------------------------
-import unittest
-
-expected_verilog = """
-module blinkled #
- (
-  parameter WIDTH = 8
- )
- (
-  input CLK, 
-  input RST, 
-  output reg [(WIDTH - 1):0] LED
- );
-  reg [(32 - 1):0] count;
-
-  function [(WIDTH - 1):0] inc;
-    input [(WIDTH - 1):0] v;
-    input [(WIDTH - 1):0] o;
-    reg [(WIDTH - 1):0] tmp;
-    begin        
-      tmp = (v + 1);        
-      inc = tmp;
-    end 
-  endfunction
-
-  always @(posedge CLK)
-    begin        
-      if(RST) begin        
-        count <= 0;
-      end  
-      else begin        
-        count <= inc(count, 1);
-      end 
-    end 
-
-  always @(posedge CLK)
-    begin        
-      if(RST) begin        
-        LED <= 1;
-      end  
-      else begin        
-        if((count == 1023)) begin        
-          LED[0] <= LED[(WIDTH - 1)];        
-          LED[(WIDTH - 1):1] <= LED[(WIDTH - 2):0];
-        end  
-      end 
-    end 
-
-endmodule
-"""
-
-class TestLed(unittest.TestCase):
-    def setUp(self):
-        pass
-
-    def test_sample(self):
-        from pyverilog.vparser.parser import VerilogParser
-        from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
-        led = mkLed()
-        verilog = led.to_verilog()
-        parser = VerilogParser()
-        expected_ast = parser.parse(expected_verilog)
-        codegen = ASTCodeGenerator()
-        expected_code = codegen.visit(expected_ast)
-        self.assertTrue( expected_code == verilog )
-        
-        #import difflib
-        #diff = difflib.unified_diff(verilog.splitlines(), expected_code.splitlines())
-        #print('\n'.join(list(diff)))
-        #self.assertTrue( len(list(diff)) == 0 )
-    
 if __name__ == '__main__':
-    unittest.main()
+    led_module = mkLed()
+    led_code = led_module.to_verilog()
+    print(led_code)
