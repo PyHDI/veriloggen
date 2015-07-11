@@ -58,7 +58,7 @@ class FSM(vtypes.VeriloggenNode):
     def add(self, *statement):
         index = self.get_index()
         self.body[index] = statement # tuple
-        self.update_state()
+        self.set_index()
         ret = self.get(index)
         return ret
 
@@ -71,8 +71,12 @@ class FSM(vtypes.VeriloggenNode):
             ret.append(self.get(index))
         return tuple(ret)
     
-    def update_state(self):
-        self.state_count += 1
+    def set_index(self, index=None):
+        if index is None:
+            self.state_count += 1
+            return self.state_count
+        self.state_count = index
+        return self.state_count
         
     def cond(self, index):
         if index not in self.mark:
