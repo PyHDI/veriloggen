@@ -33,8 +33,11 @@ Requirements
     - Install from pip: 'pip install pyverilog' for Python2.7 or 'pip3 install pyverilog' for Python3
     - Otherwise, install from github into this package: 'cd Pycoram; git clone https://github.com/shtaxxx/Pyverilog.git; cd pycoram; ln -s ../Pyverilog/pyverilog'
 * Jinja2 (2.7 or later)
-   - The code generator uses Jinja2 template engine.
+   - The code generator (in Pyverilog) uses Jinja2 template engine.
    - 'pip install jinja2' (for Python 2.x) or 'pip3 install jinja2' (for Python 3.x)
+* pytest (2.7.2 or later)
+   - Examples in Veriloggen use pytest. Install pytest if you check the correctness of the example by yourself.
+   - 'pip install -U pytest' (for Python 2.x) or 'pip3 install -U pytest' (for Python 3.x)
 * Icarus Verilog (0.9.6 or later)
     - 'iverilog -E' command is used for preprocessing Verilog source code in Pyverilog.
 

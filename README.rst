@@ -40,9 +40,14 @@ Requirements
       ../Pyverilog/pyverilog'
 
 -  Jinja2 (2.7 or later)
--  The code generator uses Jinja2 template engine.
+-  The code generator (in Pyverilog) uses Jinja2 template engine.
 -  'pip install jinja2' (for Python 2.x) or 'pip3 install jinja2' (for
    Python 3.x)
+-  pytest (2.7.2 or later)
+-  Examples in Veriloggen use pytest. Install pytest if you check the
+   correctness of the example by yourself.
+-  'pip install -U pytest' (for Python 2.x) or 'pip3 install -U pytest'
+   (for Python 3.x)
 -  Icarus Verilog (0.9.6 or later)
 
    -  'iverilog -E' command is used for preprocessing Verilog source
