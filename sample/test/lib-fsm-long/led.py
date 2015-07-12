@@ -11,7 +11,7 @@ def mkLed():
 
     fsm = lib.FSM(m, 'fsm')
     init = fsm.get_index()
-    for i in range(1023):
+    for i in range(15):
         fsm( fsm.next() )
     fsm( led(led + 1), fsm.goto(init) )
     
