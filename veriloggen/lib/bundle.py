@@ -57,11 +57,12 @@ class Bundle(vtypes.VeriloggenNode):
         
     #---------------------------------------------------------------------------
     def connect_all_ports(self, prefix='', postfix=''):
-        inputs = [ s for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Input) ]
-        outputs = [ s for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Output) ]
-        inouts = [ s for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Inout) ]
-        regs = [ s for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Reg) ]
-        wires = [ s for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Wire) ]
+        instances = sorted(self.__dir__())
+        inputs = [ s for s in instances if isinstance(getattr(self, s), vtypes.Input) ]
+        outputs = [ s for s in instances if isinstance(getattr(self, s), vtypes.Output) ]
+        inouts = [ s for s in instances if isinstance(getattr(self, s), vtypes.Inout) ]
+        regs = [ s for s in instances if isinstance(getattr(self, s), vtypes.Reg) ]
+        wires = [ s for s in instances if isinstance(getattr(self, s), vtypes.Wire) ]
         ret = collections.OrderedDict()
         for p in inputs:
             name = prefix + self.get_basename(getattr(self, p).name) + postfix
@@ -82,8 +83,9 @@ class Bundle(vtypes.VeriloggenNode):
 
     #---------------------------------------------------------------------------
     def connect_all_parameters(self, prefix='', postfix=''):
-        parameters = [ s for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Parameter) ]
-        localparams = [ s for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Localparam) ]
+        instances = sorted(self.__dir__())
+        parameters = [ s for s in instances if isinstance(getattr(self, s), vtypes.Parameter) ]
+        localparams = [ s for s in instances if isinstance(getattr(self, s), vtypes.Localparam) ]
         ret = collections.OrderedDict()
         for p in parameters:
             name = prefix + self.get_basename(getattr(self, p).name) + postfix

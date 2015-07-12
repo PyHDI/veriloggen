@@ -1,3 +1,5 @@
+import collections
+
 class VeriloggenNode(object):
     """ Base class of Veriloggen AST object """
     pass
@@ -77,9 +79,8 @@ class _Variable(_Numeric):
         return self.__call__(r)
     
     def connect(self, prefix='', postfix=''):
-        ret = {
-            prefix + self.name + postfix : self,
-        }
+        ret = collections.OrderedDict()
+        ret[prefix + self.name + postfix] = self
         return ret
         
 #-------------------------------------------------------------------------------
