@@ -293,9 +293,10 @@ class VerilogCommonVisitor(object):
 
     #---------------------------------------------------------------------------
     def visit_For(self, node):
-        pre = self.visit(node.pre)
+        for_visitor = VerilogForVisitor()
+        pre = for_visitor.visit(node.pre)
         cond = self.visit(node.condition)
-        post = self.visit(node.post)
+        post = for_visitor.visit(node.post)
         statement = self.visit(node.statement)
         return vast.ForStatement(pre, cond, post, statement)
 
@@ -521,3 +522,11 @@ class VerilogFunctionVisitor(VerilogCommonVisitor):
         left = self.visit(node.left)
         right = self.visit(node.right)
         return vast.BlockingSubstitution(left, right)
+
+#-------------------------------------------------------------------------------
+class VerilogForVisitor(VerilogCommonVisitor):
+    def visit_Subst(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vast.BlockingSubstitution(left, right)
+    
