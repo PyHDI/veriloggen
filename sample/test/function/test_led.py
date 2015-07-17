@@ -2,14 +2,14 @@ import led
 
 expected_verilog = """
 module blinkled #
- (
-  parameter WIDTH = 8
- )
- (
-  input CLK, 
-  input RST, 
-  output reg [WIDTH-1:0] LED
- );
+  (
+   parameter WIDTH = 8
+  )
+  (
+   input CLK, 
+   input RST, 
+   output reg [WIDTH-1:0] LED
+  );
   reg [32-1:0] count;
 
   function [WIDTH-1:0] inc;
@@ -22,29 +22,24 @@ module blinkled #
     end 
   endfunction
 
-  always @(posedge CLK)
-    begin        
-      if(RST) begin        
-        count <= 0;
-      end  
-      else begin        
-        count <= inc(count, 1);
-      end 
+  always @(posedge CLK) begin
+    if(RST) begin        
+      count <= 0;
+    end else begin
+      count <= inc(count, 1);
     end 
+  end 
 
-  always @(posedge CLK)
-    begin        
-      if(RST) begin        
-        LED <= 1;
+  always @(posedge CLK) begin
+    if(RST) begin        
+      LED <= 1;
+    end else begin
+      if(count == 1023) begin        
+        LED[0] <= LED[WIDTH-1];
+        LED[WIDTH-1:1] <= LED[WIDTH-2:0];
       end  
-      else begin        
-        if(count == 1023) begin        
-          LED[0] <= LED[WIDTH-1];
-          LED[WIDTH-1:1] <= LED[WIDTH-2:0];
-        end  
-      end 
     end 
-
+  end 
 endmodule
 """
 

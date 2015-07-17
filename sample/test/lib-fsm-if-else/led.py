@@ -3,7 +3,7 @@ import os
 
 from veriloggen import *
 
-def add_if_then_else(fsm, condition, true_statements, false_statements):
+def add_if_else(fsm, condition, true_statements, false_statements):
     # future index
     index_else = fsm.get_index() + len(true_statements) + 1
     index_merge = fsm.get_index() + len(true_statements) + len(false_statements) + 1
@@ -45,7 +45,7 @@ def mkLed():
                         [ count(count + 3) ] ]
     false_statements = [ [ led(led + 1) ],
                          [ led(led + 2) ] ]
-    add_if_then_else(fsm, condition, true_statements, false_statements)
+    add_if_else(fsm, condition, true_statements, false_statements)
     
     # goto first
     fsm( fsm.goto(init) )
@@ -57,7 +57,7 @@ def mkLed():
             fsm.init()
         ).Else(
             # inserting the FSM body
-            *fsm.get_all()
+            *fsm.to_if()
         ))
 
     return m

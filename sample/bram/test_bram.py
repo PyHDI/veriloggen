@@ -14,50 +14,47 @@ module TOP #
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
   localparam fsm_3 = 3;
-  reg [ADDR_WIDTH - 1:0] addr;
-  reg [DATA_WIDTH - 1:0] datain;
+  reg [ADDR_WIDTH-1:0] addr;
+  reg [DATA_WIDTH-1:0] datain;
   reg [1-1:0] write;
-  wire [DATA_WIDTH - 1:0] dataout;
+  wire [DATA_WIDTH-1:0] dataout;
   reg [32-1:0] fsm;
   
-  always @(posedge CLK)
-    begin        
-      if(RST) begin        
-        addr <= 0;        
-        datain <= 0;        
-        write <= 0;        
-        fsm <= fsm_init;
+  always @(posedge CLK) begin
+    if(RST) begin        
+      addr <= 0;        
+      datain <= 0;        
+      write <= 0;        
+      fsm <= fsm_init;
+    end else begin
+      if(fsm == fsm_init) begin        
+        begin        
+          addr <= 0;        
+          datain <= 0;        
+          write <= 0;
+        end         
+        fsm <= fsm_1;
       end  
-      else begin        
-        if(fsm == fsm_init) begin        
-          begin        
-            addr <= 0;        
-            datain <= 0;        
-            write <= 0;
-          end         
+      if(fsm == fsm_1) begin        
+        datain <= datain + 4;
+        fsm <= fsm_2;
+      end  
+      if(fsm == fsm_2) begin        
+        write <= 0;        
+        fsm <= fsm_3;
+      end  
+      if(fsm == fsm_3) begin        
+        if(addr == 128) begin        
+          addr <= 0;        
+          fsm <= fsm_init;
+        end  
+        else begin        
+          addr <= addr + 1;        
           fsm <= fsm_1;
-        end  
-        if(fsm == fsm_1) begin        
-          datain <= datain + 4;
-          fsm <= fsm_2;
-        end  
-        if(fsm == fsm_2) begin        
-          write <= 0;        
-          fsm <= fsm_3;
-        end  
-        if(fsm == fsm_3) begin        
-          if(addr == 128) begin        
-            addr <= 0;        
-            fsm <= fsm_init;
-          end  
-          else begin        
-            addr <= addr + 1;        
-            fsm <= fsm_1;
-          end 
-        end  
-
-      end 
-    end
+        end 
+      end  
+    end 
+  end
   
   my_bram
     #(
@@ -72,6 +69,7 @@ module TOP #
      .write(write),
      .dataout(dataout)
      );
+
 endmodule
 
 module my_bram #
@@ -81,22 +79,20 @@ module my_bram #
    )
   (
    input CLK, 
-   input [ADDR_WIDTH - 1:0] addr, 
-   input [DATA_WIDTH - 1:0] datain, 
+   input [ADDR_WIDTH-1:0] addr, 
+   input [DATA_WIDTH-1:0] datain, 
    input [1-1:0] write, 
    output [DATA_WIDTH-1:0] dataout
    );
-  
-  reg [DATA_WIDTH-1:0] d_addr;
-  reg [DATA_WIDTH-1:0] mem [0:DATA_WIDTH - 1];
+   reg [DATA_WIDTH-1:0] d_addr;
+  reg [DATA_WIDTH-1:0] mem [0:DATA_WIDTH-1];
   assign dataout = mem[d_addr];
-  always @(posedge CLK)
-    begin        
-      if(write) begin        
-        mem[addr] <= datain;
-      end  
-      d_addr <= addr;
-    end 
+  always @(posedge CLK) begin
+    if(write) begin        
+      mem[addr] <= datain;
+    end  
+    d_addr <= addr;
+  end 
 endmodule
 """
 

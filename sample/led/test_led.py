@@ -11,7 +11,6 @@ module blinkled #
    output reg [WIDTH-1:0] LED
   );
   reg [32-1:0] count;
-
   always @(posedge CLK) begin
     if(RST) begin
       count <= 0;
