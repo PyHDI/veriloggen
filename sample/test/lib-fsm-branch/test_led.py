@@ -25,36 +25,38 @@ module blinkled #
       LED <= 0;
       fsm <= fsm_init;
     end else begin
-      if(fsm == fsm_init) begin
-        count <= count + 1;
-        fsm <= fsm_1;
-      end
-      if(fsm == fsm_1) begin
-        if(count < 1024) begin
-          fsm <= fsm_2;
-        end else begin
-          fsm <= fsm_4;
+      case(fsm)
+        fsm_init: begin
+          count <= count + 1;
+          fsm <= fsm_1;
         end
-      end 
-      if(fsm == fsm_2) begin
-        count <= count + 2;
-        fsm <= fsm_3;
-      end
-      if(fsm == fsm_3) begin
-        count <= count + 3;
-        fsm <= fsm_6;
-      end
-      if(fsm == fsm_4) begin
-        LED <= LED + 1;
-        fsm <= fsm_5;
-      end
-      if(fsm == fsm_5) begin
-        LED <= LED + 2;
-        fsm <= fsm_6;
-      end
-      if(fsm == fsm_6) begin
-        fsm <= fsm_init;
-      end
+        fsm_1: begin
+          if(count < 1024) begin
+            fsm <= fsm_2;
+          end else begin
+            fsm <= fsm_4;
+          end
+        end 
+        fsm_2: begin
+          count <= count + 2;
+          fsm <= fsm_3;
+        end
+        fsm_3: begin
+          count <= count + 3;
+          fsm <= fsm_6;
+        end
+        fsm_4: begin
+          LED <= LED + 1;
+          fsm <= fsm_5;
+        end
+        fsm_5: begin
+          LED <= LED + 2;
+          fsm <= fsm_6;
+        end
+        fsm_6: begin
+          fsm <= fsm_init;
+        end
+      endcase
     end
   end
 endmodule

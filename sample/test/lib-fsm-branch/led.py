@@ -57,7 +57,8 @@ def mkLed():
             fsm.init()
         ).Else(
             # inserting the FSM body
-            *fsm.to_if()
+            #*fsm.to_if()
+            fsm.to_case()
         ))
 
     return m
