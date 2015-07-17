@@ -20,7 +20,7 @@ def mkLed():
             led(0),
             fsm.init()
         ).Else(
-            *fsm.get_all()
+            fsm.to_case()
         ))
     
     return m
