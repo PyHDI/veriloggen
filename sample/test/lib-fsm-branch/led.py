@@ -3,24 +3,30 @@ import os
 
 from veriloggen import *
 
-def add_if_else(fsm, condition, true_statements, false_statements):
+class SeqIfElse(object):
+    def __init__(self, condition, true_statements, false_statements=()):
+        self.condition = condition
+        self.true_statements = true_statements
+        self.false_statements = false_statements
+
+def add_if_else(fsm, ifelse):
     # future index
-    index_else = fsm.get_index() + len(true_statements) + 1
-    index_merge = fsm.get_index() + len(true_statements) + len(false_statements) + 1
-    index_true = fsm.get_index() + 1 if true_statements else index_merge
+    index_else = fsm.get_index() + len(ifelse.true_statements) + 1
+    index_merge = fsm.get_index() + len(ifelse.true_statements) + len(ifelse.false_statements) + 1
+    index_true = fsm.get_index() + 1 if ifelse.true_statements else index_merge
     
-    fsm(If(condition)( fsm.goto(index_true) ).Else( fsm.goto(index_else) ))
+    fsm(If(ifelse.condition)( fsm.goto(index_true) ).Else( fsm.goto(index_else) ))
 
     # then
-    for i, s in enumerate(true_statements):
-        if i < len(true_statements) - 1:
+    for i, s in enumerate(ifelse.true_statements):
+        if i < len(ifelse.true_statements) - 1:
             fsm( *(s+[fsm.next()]) )
         else:
             fsm( *(s+[fsm.goto(index_merge)]) )
 
     # else
-    for i, s in enumerate(false_statements):
-        if i < len(false_statements) - 1:
+    for i, s in enumerate(ifelse.false_statements):
+        if i < len(ifelse.false_statements) - 1:
             fsm( *(s+[fsm.next()]) )
         else:
             fsm( *(s+[fsm.next()]) )
@@ -45,7 +51,8 @@ def mkLed():
                         [ count(count + 3) ] ]
     false_statements = [ [ led(led + 1) ],
                          [ led(led + 2) ] ]
-    add_if_else(fsm, condition, true_statements, false_statements)
+    ifelse = SeqIfElse(condition, true_statements, false_statements)
+    add_if_else(fsm, ifelse)
     
     # goto first
     fsm( fsm.goto(init) )
