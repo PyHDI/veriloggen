@@ -16,6 +16,14 @@ class FSM(vtypes.VeriloggenNode):
         self.set_mark(0, self.name + '_' + initname)
         self.body = collections.OrderedDict()
 
+    def to_case(self):
+        ret = [ self.get_when_statement(index) for index in self.body.keys() ]
+        return vtypes.Case(self.state)(*ret)
+    
+    def to_if(self):
+        ret = [ self.get_if_statement(index) for index in self.body.keys() ]
+        return tuple(ret)
+    
     def init(self):
         return self.goto(0)
     
@@ -59,17 +67,14 @@ class FSM(vtypes.VeriloggenNode):
         index = self.get_index()
         self.body[index] = statement # tuple
         self.set_index()
-        ret = self.get(index)
+        ret = self.get_if_statement(index)
         return ret
 
-    def get(self, index):
-        return vtypes.If(self.cond(index))( *self.body[index] ) # tuple
+    def get_when_statement(self, index):
+        return vtypes.When(self.cond_case(index))( *self.body[index] )
     
-    def get_all(self):
-        ret = []
-        for index in self.body.keys():
-            ret.append(self.get(index))
-        return tuple(ret)
+    def get_if_statement(self, index):
+        return vtypes.If(self.cond_if(index))( *self.body[index] )
     
     def set_index(self, index=None):
         if index is None:
@@ -78,7 +83,12 @@ class FSM(vtypes.VeriloggenNode):
         self.state_count = index
         return self.state_count
         
-    def cond(self, index):
+    def cond_case(self, index):
+        if index not in self.mark:
+            self.set_mark(index)
+        return self.mark[index]
+
+    def cond_if(self, index):
         if index not in self.mark:
             self.set_mark(index)
         return (self.state == self.mark[index])
