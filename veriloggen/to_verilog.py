@@ -292,6 +292,32 @@ class VerilogCommonVisitor(object):
         return vast.IfStatement(cond, true_statement, false_statement)
 
     #---------------------------------------------------------------------------
+    def visit_For(self, node):
+        pre = self.visit(node.pre)
+        cond = self.visit(node.condition)
+        post = self.visit(node.post)
+        statement = self.visit(node.statement)
+        return vast.ForStatement(pre, cond, post, statement)
+
+    #---------------------------------------------------------------------------
+    def visit_While(self, node):
+        cond = self.visit(node.condition)
+        statement = self.visit(node.statement)
+        return vast.WhileStatement(cond, statement)
+
+    #---------------------------------------------------------------------------
+    def visit_Case(self, node):
+        comp = self.visit(node.comp)
+        statement = tuple([ self.visit(s) for s in node.statement ])
+        return vast.CaseStatement(comp, statement)
+    
+    #---------------------------------------------------------------------------
+    def visit_When(self, node):
+        cond = tuple([ self.visit(c) for c in node.condition ]) if node.condition else None
+        statement = self.visit(node.statement)
+        return vast.Case(cond, statement)
+    
+    #---------------------------------------------------------------------------
     def visit_Function(self, node):
         name = node.name
         return vast.Identifier(name)

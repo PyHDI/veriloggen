@@ -73,10 +73,10 @@ class _Variable(_Numeric):
         self.initvalue = initvalue
     
     def __call__(self, r):
-        return Subst(self, r)
+        return self.next(r)
 
     def next(self, r):
-        return self.__call__(r)
+        return Subst(self, r)
     
     def connect(self, prefix='', postfix=''):
         ret = collections.OrderedDict()
@@ -203,10 +203,10 @@ class Pointer(_SpecialOperator):
         self.pos = pos
         
     def __call__(self, r):
-        return Subst(self, r)
+        return self.next(r)
 
     def next(self, r):
-        return self.__call__(r)
+        return Subst(self, r)
     
 class Slice(_SpecialOperator):
     def __init__(self, var, msb, lsb):
@@ -215,20 +215,20 @@ class Slice(_SpecialOperator):
         self.lsb = lsb
 
     def __call__(self, r):
-        return Subst(self, r)
+        return self.next(r)
 
     def next(self, r):
-        return self.__call__(r)
+        return Subst(self, r)
     
 class Cat(_SpecialOperator):
     def __init__(self, *vars):
         self.vars = vars
     
     def __call__(self, r):
-        return Subst(self, r)
+        return self.next(r)
 
     def next(self, r):
-        return self.__call__(r)
+        return Subst(self, r)
     
 #-------------------------------------------------------------------------------
 class Cond(_SpecialOperator):
@@ -260,11 +260,14 @@ class Always(VeriloggenNode):
         self.statement = None
 
     def __call__(self, *statement):
+        return self.set_statement(*statement)
+
+    def set_statement(self, *statement):
         if self.statement is not None:
             raise ValueError("Statement is already assigned.")
         self.statement = tuple(statement)
         return self
-
+    
 #-------------------------------------------------------------------------------
 class Assign(VeriloggenNode):
     def __init__(self, statement):
@@ -279,17 +282,22 @@ class If(VeriloggenNode):
 
     def __call__(self, *args):
         if self.true_statement is None:
-            self.true_statement = tuple(args)
-            return self
+            return self.set_true_statement(*args)
         if self.false_statement is None:
-            self.false_statement = tuple(args)
-            return self
+            return self.set_false_statement(*args)
         raise ValueError("True statement and False statement are already assigned.")
 
-    def Else(self, *args):
+    def set_true_statement(self, *statement):
+        self.true_statement = tuple(statement)
+        return self
+    
+    def set_false_statement(self, *statement):
+        self.false_statement = tuple(statement)
+        return self
+    
+    def Else(self, *statement):
         if self.false_statement is None:
-            self.false_statement = tuple(args)
-            return self
+            return self.set_false_statement(*statement)
         raise ValueError("False statement is already assigned.")
         
 #-------------------------------------------------------------------------------
@@ -302,10 +310,19 @@ class For(VeriloggenNode):
 
     def __call__(self, *args):
         if self.statement is None:
-            self.statement = tuple(args)
-            return self
+            return self.set_statement(*args)
         raise ValueError("Statement body is already assigned.")
-        
+
+    def set_statement(self, *statement):
+        self.statement = tuple(statement)
+        return self
+
+    def add(self, *statement):
+        if self.statement is None:
+            return self.set_statement(*statement)
+        self.statement = tuple(list(self.statement).extend(*statement))
+        return self
+    
 #-------------------------------------------------------------------------------
 class While(VeriloggenNode):
     def __init__(self, condition):
@@ -314,10 +331,93 @@ class While(VeriloggenNode):
 
     def __call__(self, *args):
         if self.statement is None:
-            self.statement = tuple(args)
-            return self
+            return self.set_statement(*args)
         raise ValueError("Statement body is already assigned.")
+
+    def set_statement(self, *statement):
+        self.statement = tuple(statement)
+        return self
+    
+    def add(self, *statement):
+        if self.statement is None:
+            return self.set_statement(*statement)
+        self.statement = tuple(list(self.statement).extend(*statement))
+        return self
+    
+#-------------------------------------------------------------------------------
+class Case(VeriloggenNode):
+    def __init__(self, comp):
+        self.comp = comp
+        self.statement = None
+        self.last = False
         
+    def __call__(self, *args):
+        if self.statement is None:
+            return self.set_statement(*args)
+        raise ValueError("Case statement list is already assigned.")
+
+    def type_check_statement(self, *statement):
+        for s in statement:
+            if not isinstance(s, When):
+                raise TypeError("Case statement requires When() object as statement list.")
+            if self.last:
+                raise ValueError("When() with None condition should be last.")
+            if s.condition is None:
+                self.last = True
+    
+    def set_statement(self, *statement):
+        self.type_check_statement(*statement)
+        self.statement = tuple(statement)
+        return self
+
+    def add(self, *statement):
+        if self.statement is None:
+            return self.set_statement(*statement)
+        self.type_check_statement(*statement)
+        self.statement = tuple(list(self.statement).extend(*statement))
+        return self
+
+#-------------------------------------------------------------------------------
+class When(VeriloggenNode) :
+    def __init__(self, *condition):
+        self.type_check_condition(*condition)
+        self.condition = None if len(condition) == 0 or condition[0] is None else condition
+        self.statement = None
+
+    def __call__(self, *args):
+        if self.statement is None:
+            return self.set_statement(*args)
+        raise ValueError("Statement body is already assigned.")
+
+    def type_check_condition(self, *args):
+        if len(args) == 0:
+            return
+        if len(args) == 1 and args[0] is None:
+            return
+        for i, a in enumerate(args):        
+            if a is None:
+                raise ValueError("None condition should not mixed in When() statement.")
+            if isinstance(a, _Numeric): continue
+            if isinstance(a, int): continue
+            if isinstance(a, float): continue
+            if isinstance(a, str): continue
+            raise TypeError("Condition shuold be Numeric value.")
+    
+    def type_check_statement(self, *args):
+        pass
+    
+    def set_statement(self, *statement):
+        self.type_check_statement(*statement)
+        self.statement = tuple(statement)
+        return self
+    
+    def add(self, *statement):
+        if self.statement is None:
+            return self.set_statement(*statement)
+        self.type_check_statement(*statement)
+        self.statement = tuple(list(self.statement).extend(*statement))
+        return self
+    
 #-------------------------------------------------------------------------------
 class Instance(VeriloggenNode):
     def __init__(self, module, instname, params, ports):
