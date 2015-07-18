@@ -9,6 +9,9 @@ class SeqIfElse(object):
         self.true_statements = true_statements
         self.false_statements = false_statements
 
+    def __len__(self):
+        return len(self.true_statements) + len(self.true_statements)
+        
 def add_if_else(fsm, ifelse):
     # future index
     index_else = fsm.get_index() + len(ifelse.true_statements) + 1
