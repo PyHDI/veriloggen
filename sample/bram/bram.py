@@ -1,6 +1,5 @@
 import sys
 import os
-import collections
 
 from veriloggen import *
 
@@ -68,12 +67,11 @@ def mkTop():
     bramif = BramBundle(m, prefix='bram_',
                         addrwidth=addrwidth, datawidth=datawidth, direction='parent')
 
-    params = collections.OrderedDict()
-    params.update(bramif.connect_all_parameters())
-    
-    ports = collections.OrderedDict()
-    ports.update(clk.connect())
-    ports.update(bramif.connect_all_ports())
+    params = []
+    params.extend( bramif.connect_all_parameters() )
+
+    ports = [ clk.connect() ]
+    ports.extend( bramif.connect_all_ports() )
 
     m.Instance(mkBram('my_'), 'inst_bram', params, ports)
 

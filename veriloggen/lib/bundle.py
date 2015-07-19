@@ -1,6 +1,5 @@
 import os
 import sys
-import collections
 import re
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -63,37 +62,37 @@ class Bundle(vtypes.VeriloggenNode):
         inouts = [ s for s in instances if isinstance(getattr(self, s), vtypes.Inout) ]
         regs = [ s for s in instances if isinstance(getattr(self, s), vtypes.Reg) ]
         wires = [ s for s in instances if isinstance(getattr(self, s), vtypes.Wire) ]
-        ret = collections.OrderedDict()
+        ret = []
         for p in inputs:
             name = prefix + self.get_basename(getattr(self, p).name) + postfix
-            ret[name] = getattr(self, p)
+            ret.append( (name, getattr(self, p)) )
         for p in outputs:
             name = prefix + self.get_basename(getattr(self, p).name) + postfix
-            ret[name] = getattr(self, p)
+            ret.append( (name, getattr(self, p)) )
         for p in inouts:
             name = prefix + self.get_basename(getattr(self, p).name) + postfix
-            ret[name] = getattr(self, p)
+            ret.append( (name, getattr(self, p)) )
         for p in regs:
             name = prefix + self.get_basename(getattr(self, p).name) + postfix
-            ret[name] = getattr(self, p)
+            ret.append( (name, getattr(self, p)) )
         for p in wires:
             name = prefix + self.get_basename(getattr(self, p).name) + postfix
-            ret[name] = getattr(self, p)
-        return ret
+            ret.append( (name, getattr(self, p)) )
+        return tuple(ret)
 
     #---------------------------------------------------------------------------
     def connect_all_parameters(self, prefix='', postfix=''):
         instances = sorted(self.__dir__())
         parameters = [ s for s in instances if isinstance(getattr(self, s), vtypes.Parameter) ]
         localparams = [ s for s in instances if isinstance(getattr(self, s), vtypes.Localparam) ]
-        ret = collections.OrderedDict()
+        ret = []
         for p in parameters:
             name = prefix + self.get_basename(getattr(self, p).name) + postfix
-            ret[name] = getattr(self, p)
+            ret.append( (name, getattr(self, p)) )
         for p in localparams:
             name = prefix + self.get_basename(getattr(self, p).name) + postfix
-            ret[name] = getattr(self, p)
-        return ret
+            ret.append( (name, getattr(self, p)) )
+        return tuple(ret)
     
     def get_ports(self):
         return ([ getattr(self, s) for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Input) ] +
