@@ -62,6 +62,9 @@ class _Numeric(VeriloggenNode):
                 raise ValueError("slice with step is not supported in Verilog Slice.")
         return Pointer(self, r)
 
+    def repeat(self, times):
+        return Repeat(self, times)
+
 #-------------------------------------------------------------------------------
 class _Variable(_Numeric):
     def __init__(self, name, width=1, length=None, signed=False, value=None, initvalue=None):
@@ -94,29 +97,61 @@ class Real(_Variable): pass
 class Genvar(_Variable): pass
 
 #-------------------------------------------------------------------------------
-class _Constant(_Variable):
+class _ParameterVairable(_Variable):
     def __init__(self, name, value, width=None, signed=False):
-        if isinstance(value, _Constant):
+        if isinstance(value, _ParameterVairable):
             value = value.value
         _Variable.__init__(self, name, width=width, signed=signed, value=value)
         
-class Parameter(_Constant): pass
-class Localparam(_Constant): pass
+class Parameter(_ParameterVairable): pass
+class Localparam(_ParameterVairable): pass
 
 #-------------------------------------------------------------------------------
-class Int(_Numeric):
+class _Constant(_Numeric):
     def __init__(self, value, width=None, base=None):
+        self.type_check_value(value)
+        self.type_check_width(width)
+        self.type_check_base(base)
+    def type_check_value(self, value): pass
+    def type_check_width(self, width): pass
+    def type_check_base(self, base): pass
+
+class Int(_Constant):
+    def __init__(self, value, width=None, base=None):
+        _Constant.__init__(self, value, width, base)
         self.value = value
         self.width = width
         self.base = base
 
-class Float(_Numeric):
+    def type_check_value(self, value):
+        if not isinstance(value, int):
+            raise TypeError('value of Int should be int, not %s.' % type(value))
+
+    def type_check_width(self, width):
+        if not isinstance(width, int):
+            raise TypeError('width of Int should be int, not %s.' % type(width))
+
+    def type_check_base(self, base):
+        if not isinstance(base, int):
+            raise TypeError('base of Int should be int, not %s.' % type(base))
+
+class Float(_Constant):
     def __init__(self, value):
+        _Constant.__init__(self, value, None, None)
         self.value = value
 
-class Str(_Numeric):
+    def type_check_value(self, value):
+        if not isinstance(value, float) and not isinstance(value, int):
+            raise TypeError('value of Float should be float, not %s.' % type(value))
+
+class Str(_Constant):
     def __init__(self, value):
+        _Constant.__init__(self, value, None, None)
         self.value = value
+
+    def type_check_value(self, value):
+        if not isinstance(value, str):
+            raise TypeError('value of Str should be str, not %s.' % type(value))
 
 #-------------------------------------------------------------------------------
 class _Operator(_Numeric): pass
@@ -230,6 +265,11 @@ class Cat(_SpecialOperator):
     def next(self, r):
         return Subst(self, r)
     
+class Repeat(_SpecialOperator):
+    def __init__(self, var, times):
+        self.var = var
+        self.times = times
+
 #-------------------------------------------------------------------------------
 class Cond(_SpecialOperator):
     def __init__(self, condition, true_value, false_value):

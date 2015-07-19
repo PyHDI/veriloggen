@@ -226,6 +226,12 @@ class VerilogCommonVisitor(object):
         vars = tuple([ self.visit(var) for var in node.vars ])
         return vast.Concat(vars)
 
+    def visit_Repeat(self, node):
+        var = (self.visit(node.var) if isinstance(node.var, vtypes.Cat) else
+               self.visit(vtypes.Cat(node.var)) )
+        times = self.visit(node.times)
+        return vast.Repeat(var, times)
+
     #---------------------------------------------------------------------------
     def visit_Cond(self, node):
         cond = self.visit(node.condition)
