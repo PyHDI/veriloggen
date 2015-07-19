@@ -114,7 +114,11 @@ Python as below. A blinking LED hardware is modeled in Python.
             If(rst)(
                 count(0)
             ).Else(
-                count(count + 1)
+                If(count == 1023)(
+                    count(0)
+                ).Else(
+                    count(count + 1)
+                )
             ))
         
         m.Always(Posedge(clk))(
@@ -165,7 +169,12 @@ standard text editor.
       count <= 0;
     end  
     else begin        
+      if((count == 1023)) begin        
+      count <= 0;
+    end  
+    else begin        
       count <= (count + 1);
+    end 
     end 
     end 
       always @(posedge CLK)

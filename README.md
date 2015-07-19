@@ -96,7 +96,11 @@ def mkLed():
         If(rst)(
             count(0)
         ).Else(
-            count(count + 1)
+            If(count == 1023)(
+                count(0)
+            ).Else(
+                count(count + 1)
+            )
         ))
     
     m.Always(Posedge(clk))(
@@ -145,7 +149,12 @@ output reg [(WIDTH - 1):0] LED
   count <= 0;
 end  
 else begin        
+  if((count == 1023)) begin        
+  count <= 0;
+end  
+else begin        
   count <= (count + 1);
+end 
 end 
 end 
   always @(posedge CLK)
