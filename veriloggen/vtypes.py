@@ -1,5 +1,3 @@
-import collections
-
 class VeriloggenNode(object):
     """ Base class of Veriloggen AST object """
     pass
@@ -82,9 +80,7 @@ class _Variable(_Numeric):
         return Subst(self, r)
     
     def connect(self, prefix='', postfix=''):
-        ret = collections.OrderedDict()
-        ret[prefix + self.name + postfix] = self
-        return ret
+        return ( prefix + self.name + postfix, self )
         
 #-------------------------------------------------------------------------------
 class Input(_Variable): pass
@@ -128,10 +124,12 @@ class Int(_Constant):
             raise TypeError('value of Int should be int, not %s.' % type(value))
 
     def type_check_width(self, width):
+        if width is None: return
         if not isinstance(width, int):
             raise TypeError('width of Int should be int, not %s.' % type(width))
 
     def type_check_base(self, base):
+        if base is None: return 
         if not isinstance(base, int):
             raise TypeError('base of Int should be int, not %s.' % type(base))
 
@@ -461,7 +459,23 @@ class When(VeriloggenNode) :
 #-------------------------------------------------------------------------------
 class Instance(VeriloggenNode):
     def __init__(self, module, instname, params, ports):
+        self.type_check_params(params)
+        self.type_check_ports(ports)
         self.module = module
         self.instname = instname
-        self.params = params
-        self.ports = ports
+        if isinstance(params[0], tuple) or isinstance(params[0], list):
+            self.params = params
+        else:
+            self.params = [ (None, p) for p in params ]
+        if isinstance(ports[0], tuple) or isinstance(ports[0], list):
+            self.ports = ports
+        else:
+            self.ports = [ (None, p) for p in ports ]
+
+    def type_check_params(self, params):
+        if not isinstance(params, tuple) and not isinstance(params, list):
+            raise TypeError("params of Instance require tuple, not %s." % type(params))
+        
+    def type_check_ports(self, ports):
+        if not isinstance(ports, tuple) and not isinstance(ports, list):
+            raise TypeError("ports of Instance require tuple, not %s." % type(ports))

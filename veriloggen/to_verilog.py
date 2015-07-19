@@ -504,12 +504,11 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
     #---------------------------------------------------------------------------
     def visit_Instance(self, node):
         module = node.module.name
-        parameterlist = [ vast.ParamArg(p, self.bind_visitor.visit(a)) for p, a in node.params.items() ] 
-        portlist = [ vast.PortArg(p, self.bind_visitor.visit(a)) for p, a in node.ports.items() ]
+        parameterlist = [ vast.ParamArg(p, self.bind_visitor.visit(a)) for p, a in node.params ] 
+        portlist = [ vast.PortArg(p, self.bind_visitor.visit(a)) for p, a in node.ports ]
         name = node.instname
         instance = vast.Instance(module, name, portlist, parameterlist)
         return vast.InstanceList(module, parameterlist, (instance,) )
-
     
 #-------------------------------------------------------------------------------
 class VerilogBindVisitor(VerilogCommonVisitor):
