@@ -46,7 +46,6 @@ def mkLed():
     m.Always(Posedge(clk))(
         If(rst)(
             *ledif.init()
-
         ).Else(
             ledif.step()
         ))

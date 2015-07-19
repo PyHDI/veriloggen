@@ -16,14 +16,18 @@ class Led(Module):
             If(self.rst)(
                 self.count(0)
             ).Else(
-                self.count(self.count + 1)
+                If(self.count == 1023)(
+                    self.count(0)
+                ).Else(
+                    self.count(self.count + 1)
+                )
             ))
         
         self.Always(Posedge(self.clk))(
             If(self.rst)(
                 self.led(0)
             ).Else(
-                If(self.count == 1024 - 1)(
+                If(self.count == 1023)(
                     self.led(self.led + 1)
                 )
             ))

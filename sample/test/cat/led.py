@@ -15,14 +15,18 @@ def mkLed():
         If(rst)(
             count(0)
         ).Else(
-            count(count + 1)
+            If(count == 1023)(
+                count(0)
+            ).Else(
+                count(count + 1)
+            )
         ))
     
     m.Always(Posedge(clk))(
         If(rst)(
             led( Int(0b00000001, width=8, base=2) )
         ).Else(
-            If(count == 1024 - 1)(
+            If(count == 1023)(
                 led( Cat(led[width-2:0], led[width-1]) )
             )
         ))

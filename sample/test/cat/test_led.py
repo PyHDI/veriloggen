@@ -15,7 +15,11 @@ module blinkled #
     if(RST) begin        
       count <= 0;
     end else begin
-      count <= count + 1;
+      if(count == 1023) begin
+        count <= 0;
+      end else begin
+        count <= count + 1;
+      end
     end 
   end 
   always @(posedge CLK) begin
