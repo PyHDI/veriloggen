@@ -472,6 +472,11 @@ class Instance(VeriloggenNode):
         else:
             self.ports = [ (None, p) for p in ports ]
 
+    def type_check_module(self, module):
+        if not isinstance(module, module.Module) and not isinstance(module, module.Module):
+            raise TypeError("module of Instance should be Module or StubModule, not %s" %
+                            type(module))
+            
     def type_check_params(self, params):
         if not isinstance(params, tuple) and not isinstance(params, list):
             raise TypeError("params of Instance require tuple, not %s." % type(params))

@@ -102,6 +102,8 @@ class Module(object):
     def Instance(self, module, instname, params, ports):
         t = vtypes.Instance(module, instname, params, ports)
         self.instance[instname] = t
+        if isinstance(module, StubModule):
+            return None
         self.submodule[module.name] = module
         return t
     
@@ -133,3 +135,13 @@ class Module(object):
     #---------------------------------------------------------------------------
     def to_verilog(self, filename=None):
         return to_verilog.to_verilog(self, filename)
+
+#-------------------------------------------------------------------------------
+class StubModule(Module):
+    """ Verilog Module class """
+    def __init__(self, name=None):
+        self.name = name if name is not None else self.__class__.__name__
+
+    def to_verilog(self, filename=None):
+        return ''
+

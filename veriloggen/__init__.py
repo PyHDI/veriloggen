@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import utils.version
 import vtypes
 
-from module import Module
+from module import Module, StubModule
 from function import Function
 from vtypes import *
 
