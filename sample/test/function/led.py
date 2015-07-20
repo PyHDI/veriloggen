@@ -3,6 +3,18 @@ import os
 
 from veriloggen import *
 
+# external function definition
+def get_ext():
+    ext = Function('ext', 32)
+    ext_v = ext.Input('v', 32)
+    ext_o = ext.Input('o', 32)
+    ext_tmp = ext.Reg('tmp', 32)
+    ext.Body(
+        ext_tmp(ext_v + 1),
+        ext(ext_tmp)
+    )
+    return ext
+    
 def mkLed():
     m = Module('blinkled')
     width = m.Parameter('WIDTH', 8)
@@ -19,6 +31,9 @@ def mkLed():
         inc_tmp(inc_v + 1),
         inc(inc_tmp)
     )
+
+    # import an external function definition
+    m.add_function(get_ext())
     
     m.Always(Posedge(clk))(
         If(rst)(

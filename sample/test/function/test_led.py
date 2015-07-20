@@ -22,6 +22,16 @@ module blinkled #
     end 
   endfunction
 
+  function [32-1:0] ext;
+    input [32-1:0] v;
+    input [32-1:0] o;
+    reg [32-1:0] tmp;
+    begin        
+      tmp = v + 1;
+      ext = tmp;
+    end 
+  endfunction
+
   always @(posedge CLK) begin
     if(RST) begin        
       count <= 0;
