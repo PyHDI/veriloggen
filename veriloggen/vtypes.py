@@ -139,7 +139,7 @@ class Float(_Constant):
         self.value = value
 
     def type_check_value(self, value):
-        if not isinstance(value, float) and not isinstance(value, int):
+        if not isinstance(value, (float, int)):
             raise TypeError('value of Float should be float, not %s.' % type(value))
 
 class Str(_Constant):
@@ -435,10 +435,7 @@ class When(VeriloggenNode) :
         for i, a in enumerate(args):        
             if a is None:
                 raise ValueError("None condition should not mixed in When() statement.")
-            if isinstance(a, _Numeric): continue
-            if isinstance(a, int): continue
-            if isinstance(a, float): continue
-            if isinstance(a, str): continue
+            if isinstance(a, (_Numeric, int, float, str)): continue
             raise TypeError("Condition shuold be Numeric value.")
     
     def type_check_statement(self, *args):
@@ -463,24 +460,24 @@ class Instance(VeriloggenNode):
         self.type_check_ports(ports)
         self.module = module
         self.instname = instname
-        if isinstance(params[0], tuple) or isinstance(params[0], list):
+        if isinstance(params[0], (tuple, list)):
             self.params = params
         else:
             self.params = [ (None, p) for p in params ]
-        if isinstance(ports[0], tuple) or isinstance(ports[0], list):
+        if isinstance(ports[0], (tuple, list)):
             self.ports = ports
         else:
             self.ports = [ (None, p) for p in ports ]
 
     def type_check_module(self, module):
-        if not isinstance(module, module.Module) and not isinstance(module, module.Module):
+        if not isinstance(module, module.Module):
             raise TypeError("module of Instance should be Module or StubModule, not %s" %
                             type(module))
             
     def type_check_params(self, params):
-        if not isinstance(params, tuple) and not isinstance(params, list):
+        if not isinstance(params, (tuple, list)):
             raise TypeError("params of Instance require tuple, not %s." % type(params))
         
     def type_check_ports(self, ports):
-        if not isinstance(ports, tuple) and not isinstance(ports, list):
+        if not isinstance(ports, (tuple, list)):
             raise TypeError("ports of Instance require tuple, not %s." % type(ports))
