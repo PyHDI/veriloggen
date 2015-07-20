@@ -18,5 +18,6 @@ import vtypes
 from module import Module, StubModule
 from function import Function
 from vtypes import *
+from from_verilog import read_verilog
 
 import lib
