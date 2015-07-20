@@ -18,7 +18,11 @@ def mkTop():
     params = ( width, )
     ports = ( clk, rst, led )
     
-    m.Instance(mkLed(), 'inst_blinkled', params, ports)
+    # Passing a StubModule
+    #m.Instance(mkLed(), 'inst_blinkled', params, ports)
+
+    # StubModule is automatically created inside
+    m.Instance('blinkled', 'inst_blinkled', params, ports)
 
     return m
 

@@ -100,6 +100,10 @@ class Module(object):
         
     #---------------------------------------------------------------------------
     def Instance(self, module, instname, params, ports):
+        if isinstance(module, str): module = StubModule(module)
+        if not isinstance(module, (Module, StubModule, str)):
+            raise TypeError('"module" of Instance should be Module, StubModule, or str, not %s'
+                            % type(module))
         t = vtypes.Instance(module, instname, params, ports)
         self.instance[instname] = t
         if isinstance(module, StubModule):
@@ -126,6 +130,13 @@ class Module(object):
         return False
 
     #---------------------------------------------------------------------------
+    def add_function(self, t):
+        if not isinstance(t, function.Function):
+            raise TypeError("add_function requires a Function, not %s" % type(t))
+        self.function.append(t)
+        return t
+            
+    #---------------------------------------------------------------------------
     def get_io(self):
         return self.io_variable
     
@@ -134,7 +145,7 @@ class Module(object):
     
     #---------------------------------------------------------------------------
     def to_verilog(self, filename=None):
-        return to_verilog.to_verilog(self, filename)
+        return to_verilog.write_verilog(self, filename)
 
 #-------------------------------------------------------------------------------
 class StubModule(Module):
