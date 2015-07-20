@@ -121,17 +121,17 @@ class Int(_Constant):
 
     def type_check_value(self, value):
         if not isinstance(value, int):
-            raise TypeError('value of Int should be int, not %s.' % type(value))
+            raise TypeError('value of Int must be int, not %s.' % type(value))
 
     def type_check_width(self, width):
         if width is None: return
         if not isinstance(width, int):
-            raise TypeError('width of Int should be int, not %s.' % type(width))
+            raise TypeError('width of Int must be int, not %s.' % type(width))
 
     def type_check_base(self, base):
         if base is None: return 
         if not isinstance(base, int):
-            raise TypeError('base of Int should be int, not %s.' % type(base))
+            raise TypeError('base of Int must be int, not %s.' % type(base))
 
 class Float(_Constant):
     def __init__(self, value):
@@ -140,7 +140,7 @@ class Float(_Constant):
 
     def type_check_value(self, value):
         if not isinstance(value, (float, int)):
-            raise TypeError('value of Float should be float, not %s.' % type(value))
+            raise TypeError('value of Float must be float, not %s.' % type(value))
 
 class Str(_Constant):
     def __init__(self, value):
@@ -149,7 +149,7 @@ class Str(_Constant):
 
     def type_check_value(self, value):
         if not isinstance(value, str):
-            raise TypeError('value of Str should be str, not %s.' % type(value))
+            raise TypeError('value of Str must be str, not %s.' % type(value))
 
 #-------------------------------------------------------------------------------
 class _Operator(_Numeric): pass
@@ -165,7 +165,7 @@ class _UnaryOperator(_Operator):
         self.right = right
         
 #-------------------------------------------------------------------------------
-# class names should be same the ones in pyverilog.vparser.ast
+# class names must be same the ones in pyverilog.vparser.ast
 class Power(_BinaryOperator): pass
 class Times(_BinaryOperator): pass
 class Divide(_BinaryOperator): pass
@@ -399,7 +399,7 @@ class Case(VeriloggenNode):
             if not isinstance(s, When):
                 raise TypeError("Case statement requires When() object as statement list.")
             if self.last:
-                raise ValueError("When() with None condition should be last.")
+                raise ValueError("When() with None condition must be last.")
             if s.condition is None:
                 self.last = True
     
@@ -434,7 +434,7 @@ class When(VeriloggenNode) :
             return
         for i, a in enumerate(args):        
             if a is None:
-                raise ValueError("None condition should not mixed in When() statement.")
+                raise ValueError("None condition must not mixed in When() statement.")
             if isinstance(a, (_Numeric, int, float, str)): continue
             raise TypeError("Condition shuold be Numeric value.")
     
@@ -471,7 +471,7 @@ class Instance(VeriloggenNode):
 
     def type_check_module(self, module):
         if not isinstance(module, module.Module):
-            raise TypeError("module of Instance should be Module or StubModule, not %s" %
+            raise TypeError("module of Instance must be Module or StubModule, not %s" %
                             type(module))
             
     def type_check_params(self, params):

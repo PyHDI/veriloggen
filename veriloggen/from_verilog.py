@@ -7,6 +7,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 import module
 import vtypes
 
+import pyverilog.vparser.ast as vast
 from pyverilog.vparser.parser import VerilogCodeParser
 from pyverilog.dataflow.modulevisitor import ModuleVisitor
 
@@ -33,24 +34,19 @@ class VerilogModuleVisitor(object):
         visitor = getattr(self, 'visit_' + node.__class__.__name__, self.generic_visit)
         return visitor(node)
 
-    def visit_Source(self, node):
-        pass
-
-    def visit_Description(self, node):
-        pass
-
-    def visit_ModuleDef(self, node):
-        pass
+    def start_visit(self, node):
+        if not isinstance(node, vast.Module):
+            raise TypeError("node must be ast.Module, not %s." % type(node))
     
 #-------------------------------------------------------------------------------
 def read_verilog(*filelist, **opt):
     include = opt['include'] if 'include' in opt else ()
     define = opt['define'] if 'define' in opt else ()
     if not isinstance(include, tuple) and not isinstance(include, list):
-        raise TypeError('"include" option of read_verilog should be tuple or list, not %s' %
+        raise TypeError('"include" option of read_verilog must be tuple or list, not %s' %
                         type(include))
     if not isinstance(include, tuple) and not isinstance(include, list):
-        raise TypeError('"include" option of read_verilog should be tuple or list, not %s' %
+        raise TypeError('"include" option of read_verilog must be tuple or list, not %s' %
                         type(include))
     
     code_parser = VerilogCodeParser(filelist,

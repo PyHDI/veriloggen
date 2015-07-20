@@ -102,7 +102,7 @@ class Module(object):
     def Instance(self, module, instname, params, ports):
         if isinstance(module, str): module = StubModule(module)
         if not isinstance(module, (Module, StubModule, str)):
-            raise TypeError('"module" of Instance should be Module, StubModule, or str, not %s'
+            raise TypeError('"module" of Instance must be Module, StubModule, or str, not %s'
                             % type(module))
         t = vtypes.Instance(module, instname, params, ports)
         self.instance[instname] = t

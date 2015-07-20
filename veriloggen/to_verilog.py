@@ -263,7 +263,7 @@ class VerilogCommonVisitor(object):
             value_list.append("'h")
             value_list.append(hex(node.value).replace('0x', ''))
         else:
-            raise ValueError("Int.base should be 2, 8, 10, or 16")
+            raise ValueError("Int.base must be 2, 8, 10, or 16")
         
         return vast.IntConst(''.join(value_list))
 
