@@ -11,7 +11,7 @@ import pyverilog.vparser.ast as vast
 from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
 
 #-------------------------------------------------------------------------------
-def to_verilog(node, filename=None):
+def write_verilog(node, filename=None):
     visitor = VerilogModuleVisitor()
     modules = tuple(get_modules(node).values())
     
