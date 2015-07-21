@@ -54,19 +54,18 @@ def mkLed():
 
 def mkTop(wid=8):
     m = Module('top')
-    width = m.Parameter('WIDTH', wid)
     clk = m.Input('CLK')
     rst = m.Input('RST')
+    width = m.Parameter('WIDTH', wid)
     ledif = LedBundle(m, width=width, direction='parent')
     
-    params = collections.OrderedDict()
-    params.update(width.connect())
-    params.update(ledif.connect_all_parameters())
+    params = []
+    params.extend(ledif.connect_all_parameters())
     
-    ports = collections.OrderedDict()
-    ports.update(clk.connect())
-    ports.update(rst.connect())
-    ports.update(ledif.connect_all_ports())
+    ports = []
+    ports.append(clk.connect())
+    ports.append(rst.connect())
+    ports.extend(ledif.connect_all_ports())
     
     m.Instance(mkLed(), 'inst_led', params, ports)
     
