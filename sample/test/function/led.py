@@ -5,12 +5,12 @@ from veriloggen import *
 
 # external function definition
 def get_ext():
-    ext = Function('ext', 32)
+    ext = Function('ext_inc', 32)
     ext_v = ext.Input('v', 32)
     ext_o = ext.Input('o', 32)
     ext_tmp = ext.Reg('tmp', 32)
     ext.Body(
-        ext_tmp(ext_v + 1),
+        ext_tmp(ext_v + ext_o),
         ext(ext_tmp)
     )
     return ext
@@ -28,7 +28,7 @@ def mkLed():
     inc_o = inc.Input('o', width)
     inc_tmp = inc.Reg('tmp', width)
     inc.Body(
-        inc_tmp(inc_v + 1),
+        inc_tmp(inc_v + inc_o),
         inc(inc_tmp)
     )
 
@@ -42,7 +42,8 @@ def mkLed():
             If(count == 1023)(
                 count(0)
             ).Else(
-                count( inc.call(count, 1) )
+                count( FunctionCall(inc.name, count, 1) )
+                #count( inc.call(count, 1) )
             )
         ))
     

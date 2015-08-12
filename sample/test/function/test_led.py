@@ -17,18 +17,18 @@ module blinkled #
     input [WIDTH-1:0] o;
     reg [WIDTH-1:0] tmp;
     begin        
-      tmp = v + 1;
+      tmp = v + o;
       inc = tmp;
     end 
   endfunction
 
-  function [32-1:0] ext;
+  function [32-1:0] ext_inc;
     input [32-1:0] v;
     input [32-1:0] o;
     reg [32-1:0] tmp;
     begin        
-      tmp = v + 1;
-      ext = tmp;
+      tmp = v + o;
+      ext_inc = tmp;
     end 
   endfunction
 
