@@ -84,6 +84,10 @@ class VerilogCommonVisitor(object):
     def visit_Genvar(self, node):
         name = node.name
         return vast.Identifier(name)
+
+    def visit_AnyType(self, node):
+        name = node.name
+        return vast.Identifier(name)
     
     #---------------------------------------------------------------------------
     def visit_Power(self, node):
@@ -202,15 +206,47 @@ class VerilogCommonVisitor(object):
         return vast.Lor(left, right)
     
     #---------------------------------------------------------------------------
-    def visit_Unot(self, node):
+    def visit_Uplus(self, node):
         right = self.visit(node.right)
-        return vast.Unot(right)
-    
+        return vast.Uplus(right)
+        
+    def visit_Uminus(self, node):
+        right = self.visit(node.right)
+        return vast.Uminus(right)
+        
     def visit_Ulnot(self, node):
         right = self.visit(node.right)
         return vast.Ulnot(right)
     
-    #---------------------------------------------------------------------------
+    def visit_Unot(self, node):
+        right = self.visit(node.right)
+        return vast.Unot(right)
+    
+    def visit_Uand(self, node):
+        right = self.visit(node.right)
+        return vast.Uand(right)
+    
+    def visit_Unand(self, node):
+        right = self.visit(node.right)
+        return vast.Unand(right)
+     
+    def visit_Uor(self, node):
+        right = self.visit(node.right)
+        return vast.Uor(right)
+     
+    def visit_Unor(self, node):
+        right = self.visit(node.right)
+        return vast.Unor(right)
+     
+    def visit_Uxor(self, node):
+        right = self.visit(node.right)
+        return vast.Uxor(right)
+     
+    def visit_Uxnor(self, node):
+        right = self.visit(node.right)
+        return vast.Uxnor(right)
+     
+   #---------------------------------------------------------------------------
     def visit_Pointer(self, node):
         var = self.visit(node.var)
         pos = self.visit(node.pos)
@@ -274,6 +310,10 @@ class VerilogCommonVisitor(object):
         return vast.StringConst(node.value)
 
     #---------------------------------------------------------------------------
+    def visit_bool(self, node):
+        if node: return vast.IntConst('1')
+        return vast.IntConst('0')
+    
     def visit_int(self, node):
         return vast.IntConst(str(node))
 
@@ -317,6 +357,12 @@ class VerilogCommonVisitor(object):
         comp = self.visit(node.comp)
         statement = tuple([ self.visit(s) for s in node.statement ])
         return vast.CaseStatement(comp, statement)
+
+    #---------------------------------------------------------------------------
+    def visit_Casex(self, node):
+        comp = self.visit(node.comp)
+        statement = tuple([ self.visit(s) for s in node.statement ])
+        return vast.CasexStatement(comp, statement)
     
     #---------------------------------------------------------------------------
     def visit_When(self, node):
@@ -372,7 +418,7 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
         portlist = vast.Portlist(ports)
         items = ([ self.visit(v) for v in node.constant.values() ] + 
                  [ self.visit(v) for v in node.variable.values() ] +
-                 [ self.visit(v) for v in node.function ] +
+                 [ self.visit(v) for v in node.function.values() ] +
                  [ self.visit(v) for v in node.assign ] +
                  [ self.visit(v) for v in node.always ] +
                  [ self.visit(v) for v in node.instance.values() ])
@@ -468,17 +514,17 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
     #---------------------------------------------------------------------------
     def visit_Always(self, node):
         sensitivity = None
-        if isinstance(node.sensitivity, list) or isinstance(node.sensitivity, tuple):
-            sensitivity = vast.SensList(tuple([ self.visit(n) if isinstance(n, vtypes.Edge) else
+        if isinstance(node.sensitivity, (list, tuple)):
+            sensitivity = vast.SensList(tuple([ self.visit(n) if isinstance(n, vtypes.Sensitive) else
                                                 vast.Sens(self.visit(n))
                                                 for n in node.sensitivity ]))
         else:
             sensitivity = vast.SensList((self.visit(node.sensitivity),)
-                                        if isinstance(node.sensitivity, vtypes.Edge) else
+                                        if isinstance(node.sensitivity, vtypes.Sensitive) else
                                         vast.Sens(self.visit(node.sensitivity)))
 
         statement = vast.Block([])
-        if isinstance(node.statement, list) or isinstance(node.statement, tuple):
+        if isinstance(node.statement, (list, tuple)):
             statement = vast.Block(tuple([ self.always_visitor.visit(n) for n in node.statement ]))
         else:
             statement = self.always_visitor.visit(node.statement)
@@ -519,6 +565,7 @@ class VerilogAlwaysVisitor(VerilogCommonVisitor):
     def visit_Subst(self, node):
         left = self.visit(node.left)
         right = self.visit(node.right)
+        if node.blk: vast.BlockingSubstitution(left, right)
         return vast.NonblockingSubstitution(left, right)
 
 #-------------------------------------------------------------------------------

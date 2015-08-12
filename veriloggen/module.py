@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import vtypes
 import function
+import task
 
 import to_verilog
 
@@ -17,9 +18,11 @@ class Module(object):
         self.io_variable = collections.OrderedDict()
         self.constant = collections.OrderedDict()
         self.global_constant = collections.OrderedDict()
-        self.function = []
+        self.function = collections.OrderedDict()
+        self.task = collections.OrderedDict()
         self.assign = []
         self.always = []
+        self.initial = []
         self.instance = collections.OrderedDict()
         self.submodule = {}
 
@@ -82,8 +85,8 @@ class Module(object):
         return t
 
     #---------------------------------------------------------------------------
-    def Always(self, sensitivity, *statement):
-        t = vtypes.Always(sensitivity, *statement)
+    def Always(self, sensitivity):
+        t = vtypes.Always(sensitivity)
         self.always.append(t)
         return t
     
@@ -92,10 +95,18 @@ class Module(object):
         self.assign.append(t)
         return t
 
-    #---------------------------------------------------------------------------
+    def Initial(self, *statement):
+        t = vtypes.Initial(*statement)
+        self.initial.append(t)
+    
     def Function(self, name, width=1):
         t = function.Function(name, width)
-        self.function.append(t)
+        self.function[name] = t
+        return t
+        
+    def Task(self, name, width=1):
+        t = task.Task(name, width)
+        self.task[name] = t
         return t
         
     #---------------------------------------------------------------------------
@@ -110,6 +121,80 @@ class Module(object):
             return None
         self.submodule[module.name] = module
         return t
+    
+    #---------------------------------------------------------------------------
+    def add_object(self, obj):
+        if isinstance(obj, (vtypes.Input, vtypes.Output, vtypes.Inout)):
+            self.io_variable[obj.name] = obj
+            # no return here
+            
+        if isinstance(obj, (vtypes.Reg, vtypes.Wire)):
+            self.variable[obj.name] = obj
+            return
+        
+        if isinstance(obj, (vtypes.Input, vtypes.Output, vtypes.Inout)):
+            return
+            
+        if isinstance(obj, (vtypes.Integer, vtypes.Real, vtypes.Genvar)):
+            self.variable[obj.name] = obj
+            return
+        
+        if isinstance(obj, vtypes.Parameter):
+            self.global_constant[obj.name] = obj
+            return
+        
+        if isinstance(obj, vtypes.Localparam):
+            self.constant[obj.name] = obj
+            return
+
+        if isinstance(obj, function.Function):
+            self.function[obj.name] = obj
+            return
+
+        if isinstance(obj, task.Task):
+            self.task[obj.name] = obj
+            return
+
+        if isinstance(obj, vtypes.Assign):
+            self.assign.append(obj)
+            return
+
+        if isinstance(obj, vtypes.Always):
+            self.always.append(obj)
+            return
+
+        if isinstance(obj, vtypes.Initial):
+            self.initial.append(obj)
+            return
+
+        raise TypeError("Object type '%s' is not supported." % str(type(obj)))
+        
+    #---------------------------------------------------------------------------
+    def add_function(self, t):
+        if not isinstance(t, function.Function):
+            raise TypeError("add_function requires a Function, not %s" % type(t))
+        name = t.name
+        self.function[name] = t
+        return t
+            
+    def add_task(self, t):
+        if not isinstance(t, task.Task):
+            raise TypeError("add_task requires a Task, not %s" % type(t))
+        name = t.name
+        self.task[name] = t
+        return t
+            
+    #---------------------------------------------------------------------------
+    def find_identifier(self, name):
+        if name in self.variable: return self.variable[name]
+        if name in self.io_variable: return self.io_variable[name]
+        if name in self.constant: return self.constant[name]
+        if name in self.global_constant: return self.global_constant[name]
+        if name in self.function: return self.function[name]
+        if name in self.task: return self.task[name]
+        if name in self.instance: return self.instance[name]
+        # raise KeyError("No such identifier in module '%s': '%s'" % (self.name, name))
+        return vtypes.AnyType(name)
     
     #---------------------------------------------------------------------------
     def is_reg(self, name):
@@ -130,13 +215,6 @@ class Module(object):
         return False
 
     #---------------------------------------------------------------------------
-    def add_function(self, t):
-        if not isinstance(t, function.Function):
-            raise TypeError("add_function requires a Function, not %s" % type(t))
-        self.function.append(t)
-        return t
-            
-    #---------------------------------------------------------------------------
     def get_io(self):
         return self.io_variable
     
@@ -155,4 +233,3 @@ class StubModule(Module):
 
     def to_verilog(self, filename=None):
         return ''
-

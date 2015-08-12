@@ -5,8 +5,8 @@ import collections
 from veriloggen import *
 
 def mkLed():
-    stubs = read_verilog_stubmodule('led.v')
-    m = stubs['blinkled']
+    modules = read_verilog_module('led.v')
+    m = modules['blinkled']
     return m
 
 def mkTop():

@@ -10,12 +10,10 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-import utils.version
-import vtypes
-
-from module import Module, StubModule
-from function import Function
 from vtypes import *
-from from_verilog import read_verilog
+from module import Module, StubModule
+from function import Function, FunctionCall
+from task import Task, TaskCall
+from from_verilog import read_verilog_stubmodule, read_verilog_module
 
 import lib

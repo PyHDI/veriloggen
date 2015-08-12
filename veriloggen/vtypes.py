@@ -86,11 +86,15 @@ class _Variable(_Numeric):
 class Input(_Variable): pass
 class Output(_Variable): pass
 class Inout(_Variable): pass
+class Tri(_Variable): pass
 class Reg(_Variable): pass
 class Wire(_Variable): pass
 class Integer(_Variable): pass
 class Real(_Variable): pass
 class Genvar(_Variable): pass
+
+# for undetermined identifier
+class AnyType(_Variable): pass
 
 #-------------------------------------------------------------------------------
 class _ParameterVairable(_Variable):
@@ -101,6 +105,7 @@ class _ParameterVairable(_Variable):
         
 class Parameter(_ParameterVairable): pass
 class Localparam(_ParameterVairable): pass
+class Supply(_ParameterVairable): pass
 
 #-------------------------------------------------------------------------------
 class _Constant(_Numeric):
@@ -113,11 +118,12 @@ class _Constant(_Numeric):
     def type_check_base(self, base): pass
 
 class Int(_Constant):
-    def __init__(self, value, width=None, base=None):
+    def __init__(self, value, width=None, base=None, signed=False):
         _Constant.__init__(self, value, width, base)
         self.value = value
         self.width = width
         self.base = base
+        self.signed = False
 
     def type_check_value(self, value):
         if not isinstance(value, int):
@@ -195,8 +201,16 @@ class Or(_BinaryOperator): pass
 class Land(_BinaryOperator): pass
 class Lor(_BinaryOperator): pass
 
-class Unot(_UnaryOperator): pass
+class Uplus(_UnaryOperator): pass
+class Uminus(_UnaryOperator): pass
 class Ulnot(_UnaryOperator): pass
+class Unot(_UnaryOperator): pass
+class Uand(_UnaryOperator): pass
+class Unand(_UnaryOperator): pass
+class Uor(_UnaryOperator): pass
+class Unor(_UnaryOperator): pass
+class Uxor(_UnaryOperator): pass
+class Uxnor(_UnaryOperator): pass
 
 #-------------------------------------------------------------------------------
 # alias
@@ -276,20 +290,27 @@ class Cond(_SpecialOperator):
         self.false_value = false_value
         
 #-------------------------------------------------------------------------------
-class Edge(VeriloggenNode):
+class Sensitive(VeriloggenNode):
     def __init__(self, name):
         self.name = name
 
 #-------------------------------------------------------------------------------
-class Posedge(Edge): pass
-class Negedge(Edge): pass
+class Posedge(Sensitive): pass
+class Negedge(Sensitive): pass
+
+#-------------------------------------------------------------------------------
+class SensitiveAll(Sensitive):
+    def __init__(self):
+        Sensitive.__init__('all')
 
 #-------------------------------------------------------------------------------
 class Subst(VeriloggenNode):
-    def __init__(self, left, right, blk=False):
+    def __init__(self, left, right, blk=False, ldelay=None, rdelay=None):
         self.left = left
         self.right = right
         self.blk = blk
+        self.ldelay = ldelay
+        self.rdelay = rdelay
 
 #-------------------------------------------------------------------------------
 class Always(VeriloggenNode):
@@ -309,6 +330,11 @@ class Always(VeriloggenNode):
 #-------------------------------------------------------------------------------
 class Assign(VeriloggenNode):
     def __init__(self, statement):
+        self.statement = statement
+
+#-------------------------------------------------------------------------------
+class Initial(VeriloggenNode):
+    def __init__(self, *statement):
         self.statement = statement
 
 #-------------------------------------------------------------------------------
@@ -415,6 +441,8 @@ class Case(VeriloggenNode):
         self.statement = tuple(list(self.statement).extend(*statement))
         return self
 
+class Casex(Case): pass
+    
 #-------------------------------------------------------------------------------
 class When(VeriloggenNode) :
     def __init__(self, *condition):
@@ -454,6 +482,42 @@ class When(VeriloggenNode) :
         return self
     
 #-------------------------------------------------------------------------------
+class Event(VeriloggenNode):
+    def __init__(self, sensitivity):
+        self.sensitivity = sensitivity
+
+#-------------------------------------------------------------------------------
+class Wait(VeriloggenNode):
+    def __init__(self, condition):
+        self.condition = condition
+        self.statement = None
+
+    def __call__(self, *statement):
+        return self.set_statement(*statement)
+
+    def set_statement(self, *statement):
+        if self.statement is not None:
+            raise ValueError("Statement is already assigned.")
+        self.statement = tuple(statement)
+        return self
+        
+#-------------------------------------------------------------------------------
+class Forever(VeriloggenNode):
+    def __init__(self, *statement):
+        self.statement = statement
+
+#-------------------------------------------------------------------------------
+class Delay(VeriloggenNode):
+    def __init__(self, value):
+        self.value = value
+
+#-------------------------------------------------------------------------------
+class NamedBlock(list, VeriloggenNode):
+    def __init__(self, scope):
+        list.__init__(self)
+        self.scope = scope
+
+#-------------------------------------------------------------------------------
 class Instance(VeriloggenNode):
     def __init__(self, module, instname, params, ports):
         self.type_check_params(params)
@@ -481,3 +545,4 @@ class Instance(VeriloggenNode):
     def type_check_ports(self, ports):
         if not isinstance(ports, (tuple, list)):
             raise TypeError("ports of Instance require tuple, not %s." % type(ports))
+

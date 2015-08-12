@@ -1,38 +1,77 @@
 import sys
 import os
+import re
 import collections
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 import module
 import vtypes
+import function
+import task
 
 import pyverilog.vparser.ast as vast
 from pyverilog.vparser.parser import VerilogCodeParser
 from pyverilog.dataflow.modulevisitor import ModuleVisitor
 
 #-------------------------------------------------------------------------------
-class VerilogModules(object):
-    def __init__(self, module_dict):
-        self.module_dict = module_dict
+def str_to_signed(s):
+    targ = s.replace('_','')
+    match = re.search(r's(.+)', targ)
+    if match is not None:
+        return True
+    return False
 
-    def get_stubmodules(self):
-        return collections.OrderedDict([ (name, module.StubModule(name))
-                                         for name in self.module_dict.keys() ])
+def str_to_value(s):
+    targ = s.replace('_','')
+    match = re.search(r'h(.+)', targ)
+    if match is not None:
+        return int(match.group(1), 16), 16
+    match = re.search(r'd(.+)', targ)
+    if match is not None:
+        return int(match.group(1), 10), 10
+    match = re.search(r'o(.+)', targ)
+    if match is not None:
+        return int(match.group(1), 8), 8
+    match = re.search(r'b(.+)', targ)
+    if match is not None:
+        return int(match.group(1), 2), 2
+    return int(targ, 10), None
+        
+def str_to_width(s):
+    targ = s.replace('_','')
+    match = re.search(r'(.+)\'h.+', targ)
+    if match is not None:
+        return int(match.group(1), 10)
+    match = re.search(r'(.+)\'d.+', targ)
+    if match is not None:
+        return int(match.group(1), 10)
+    match = re.search(r'(.+)\'o.+', targ)
+    if match is not None:
+        return int(match.group(1), 10)
+    match = re.search(r'(.+)\'b.+', targ)
+    if match is not None:
+        return int(match.group(1), 10)
+    return None
 
-    def get_modules(self):
-        modules = collections.OrderedDict([ (name, module.Module(name))
-                                         for name in self.module_dict.keys() ])
-        return modules
+def to_tuple(s):
+    if not isinstance(s, (list, tuple)):
+        return tuple([s])
+    return s
 
 #-------------------------------------------------------------------------------
-class VerilogModuleVisitor(object):
+class VerilogReadVisitor(object):
     def __init__(self):
         self.m = None
-    
+
+    def add_object(self, obj):
+        if isinstance(self.m, module.Module):
+            self.m.add_object(obj)
+        
     def generic_visit(self, node):
         for c in node.children():
             self.visit(c)
+        #raise TypeError("Unsupported object '%s'" % str(type(node)))
             
     def visit(self, node):
         method = 'visit_' + node.__class__.__name__
@@ -40,109 +79,576 @@ class VerilogModuleVisitor(object):
         return visitor(node)
 
     def visit_ModuleDef(self, node):
-        if not isinstance(node, vast.Module):
-            raise TypeError("node must be ast.Module, not %s." % type(node))
+        # create new Verilog module
         self.m = module.Module(node.name)
         self.generic_visit(node)
+        return self.m
 
-    def visit_Paramlist(self, node): pass
-    def visit_Portlist(self, node): pass
-    def visit_Port(self, node): pass
-    def visit_Width(self, node): pass
-    def visit_Length(self, node): pass
-    def visit_Identifier(self, node): pass
-    def visit_Value(self, node): pass
-    def visit_Constant(self, node): pass
-    def visit_IntConst(self, node): pass
-    def visit_FloatConst(self, node): pass
-    def visit_StringConst(self, node): pass
-    def visit_Variable(self, node): pass
-    def visit_Input(self, node): pass
-    def visit_Output(self, node): pass
-    def visit_Inout(self, node): pass
-    def visit_Tri(self, node): pass
-    def visit_Wire(self, node): pass
-    def visit_Reg(self, node): pass
-    def visit_WireArray(self, node): pass
-    def visit_RegArray(self, node): pass
-    def visit_Integer(self, node): pass
-    def visit_Real(self, node): pass
-    def visit_Genvar(self, node): pass
-    def visit_Ioport(self, node): pass
-    def visit_Parameter(self, node): pass
-    def visit_Localparam(self, node): pass
-    def visit_Supply(self, node) : pass
-    def visit_Decl(self, node): pass
-    def visit_Concat(self, node): pass
-    def visit_LConcat(self, node): pass
-    def visit_Repeat(self, node): pass
-    def visit_Partselect(self, node): pass
-    def visit_Pointer(self, node): pass
-    def visit_Lvalue(self, node): pass
-    def visit_Rvalue(self, node): pass
-    def visit_Operator(self, node): pass
-    def visit_UnaryOperator(self, node): pass
-    def visit_Uplus(self, node): pass
-    def visit_Uminus(self, node): pass
-    def visit_Ulnot(self, node): pass
-    def visit_Unot(self, node): pass
-    def visit_Uand(self, node): pass
-    def visit_Unand(self, node): pass
-    def visit_Uor(self, node): pass
-    def visit_Unor(self, node): pass
-    def visit_Uxor(self, node): pass
-    def visit_Uxnor(self, node): pass
-    def visit_Power(self, node): pass
-    def visit_Times(self, node): pass
-    def visit_Divide(self, node): pass
-    def visit_Mod(self, node): pass
-    def visit_Plus(self, node): pass
-    def visit_Minus(self, node): pass
-    def visit_Sll(self, node): pass
-    def visit_Srl(self, node): pass
-    def visit_Sra(self, node): pass
-    def visit_LessThan(self, node): pass
-    def visit_GreaterThan(self, node): pass
-    def visit_LessEq(self, node): pass
-    def visit_GreaterEq(self, node): pass
-    def visit_Eq(self, node): pass
-    def visit_NotEq(self, node): pass
-    def visit_Eql(self, node):  pass
-    def visit_NotEql(self, node):  pass
-    def visit_And(self, node): pass
-    def visit_Xor(self, node): pass
-    def visit_Xnor(self, node): pass
-    def visit_Or(self, node): pass
-    def visit_Land(self, node): pass
-    def visit_Lor(self, node): pass
-    def visit_Cond(self, node): pass
-    def visit_Assign(self, node): pass
-    def visit_Always(self, node): pass
-    def visit_SensList(self, node): pass
-    def visit_Sens(self, node): pass
-    def visit_Substitution(self, node): pass
-    def visit_BlockingSubstitution(self, node): pass
-    def visit_NonblockingSubstitution(self, node): pass
-    def visit_IfStatement(self, node): pass
-    def visit_ForStatement(self, node): pass
-    def visit_WhileStatement(self, node): pass
-    def visit_CaseStatement(self, node): pass
-    def visit_CasexStatement(self, node): pass
-    def visit_Case(self, node): pass
-    def visit_Block(self, node): pass
-    def visit_Initial(self, node): pass
-    def visit_EventStatement(self, node): pass
-    def visit_WaitStatement(self, node): pass
-    def visit_ForeverStatement(self, node): pass
-    def visit_DelayStatement(self, node): pass
-    def visit_InstanceList(self, node): pass
-    def visit_Instance(self, node): pass
-    def visit_ParamArg(self, node): pass
-    def visit_PortArg(self, node): pass
-    def visit_Function(self, node): pass
-    def visit_FunctionCall(self, node): pass
-    def visit_Task(self, node): pass
-    def visit_TaskCall(self, node): pass
+    def visit_Paramlist(self, node):
+        params = []
+        for param in node.params:
+            p = self.visit(param)
+            params.append(p)
+        return params
+            
+    def visit_Portlist(self, node):
+        ports = []
+        for port in node.ports:
+            p = self.visit(port)
+            ports.append(p)
+        return ports
+        
+    def visit_Port(self, node):
+        name = node.name
+        width = self.visit(node.width) if node.width is not None else None
+        _type = getattr(vtypes, node.type, None)
+        if _type is None:
+            raise TypeError("No such port type '%s'" % node.type)
+        p = _type(name, width)
+        self.add_object(p)
+        return p
+        
+    def visit_Width(self, node):
+        msb = self.visit(node.msb)
+        width = msb + 1
+        return width
+        
+    def visit_Length(self, node):
+        lsb = self.visit(node.lsb)
+        length = lsb + 1
+        return length
+        
+    def visit_Identifier(self, node):
+        if node.scope is not None:
+            raise ValueError("Identifier with scope label is not currently supported.")
+        if not isinstance(self.m, module.Module):
+            return vtypes.AnyType(node.name)
+        return self.m.find_identifier(node.name)
+        
+    def visit_IntConst(self, node):
+        value, base = str_to_value(node.value)
+        width = str_to_width(node.value)
+        signed = str_to_signed(node.value)
+        return vtypes.Int(value, width, base, signed)
+
+    def visit_FloatConst(self, node):
+        return vtypes.Float(node.value)
+        
+    def visit_StringConst(self, node):
+        return vtypes.Str(node.value)
+        
+    def visit_Input(self, node):
+        name = node.name
+        width = self.visit(node.width) if node.width is not None else None
+        signed = node.signed
+        obj = vtypes.Input(name, width, signed=signed)
+        self.add_object(obj)
+        return obj
+        
+    def visit_Output(self, node):
+        name = node.name
+        width = self.visit(node.width) if node.width is not None else None
+        signed = node.signed
+        obj = vtypes.Output(name, width, signed=signed)
+        self.add_object(obj)
+        return obj
+        
+    def visit_Inout(self, node):
+        name = node.name
+        width = self.visit(node.width) if node.width is not None else None
+        signed = node.signed
+        obj = vtypes.Inout(name, width, signed=signed)
+        self.add_object(obj)
+        return obj
+        
+    def visit_Tri(self, node):
+        name = node.name
+        width = self.visit(node.width) if node.width is not None else None
+        signed = node.signed
+        obj = vtypes.Tri(name, width, signed=signed)
+        self.add_object(obj)
+        return obj
+        
+    def visit_Wire(self, node):
+        name = node.name
+        width = self.visit(node.width) if node.width is not None else None
+        signed = node.signed
+        obj = vtypes.Wire(name, width, signed=signed)
+        self.add_object(obj)
+        return obj
+    
+    def visit_Reg(self, node):
+        name = node.name
+        width = self.visit(node.width) if node.width is not None else None
+        signed = node.signed
+        obj = vtypes.Reg(name, width, signed=signed)
+        self.add_object(obj)
+        return obj
+    
+    def visit_WireArray(self, node):
+        name = node.name
+        width = self.visit(node.width) if node.width is not None else None
+        length = self.visit(node.length)
+        signed = node.signed
+        obj = vtypes.Wire(name, width, length=length, signed=signed)
+        self.add_object(obj)
+        return obj
+    
+    def visit_RegArray(self, node):
+        name = node.name
+        width = self.visit(node.width) if node.width is not None else None
+        length = self.visit(node.length)
+        signed = node.signed
+        obj = vtypes.Reg(name, width, length=length, signed=signed)
+        self.add_object(obj)
+        return obj
+        
+    def visit_Integer(self, node):
+        name = node.name
+        width = self.visit(node.width) if node.width is not None else None
+        signed = node.signed
+        obj = vtypes.Integer(name, width, signed=signed)
+        self.add_object(obj)
+        return obj
+        
+    def visit_Real(self, node):
+        name = node.name
+        width = self.visit(node.width) if node.width is not None else None
+        obj = vtypes.Real(name, width)
+        self.add_object(obj)
+        return obj
+        
+    def visit_Genvar(self, node):
+        name = node.name
+        width = self.visit(node.width) if node.width is not None else None
+        obj = vtypes.Genvar(name, width)
+        self.add_object(obj)
+        return obj
+        
+    def visit_Ioport(self, node):
+        first = self.visit(node.first)
+        second = self.visit(node.second) if node.second is not None else None
+        return (first, second)
+        
+    def visit_Parameter(self, node):
+        name = node.name
+        value = self.visit(node.value)
+        width = self.visit(node.width) if node.width is not None else None
+        signed = node.signed
+        param = vtypes.Parameter(name, value, width, signed)
+        self.add_object(param)
+        return param
+
+    def visit_Localparam(self, node):
+        name = node.name
+        value = self.visit(node.value)
+        width = self.visit(node.width) if node.width is not None else None
+        signed = node.signed
+        param = vtypes.Localparam(name, value, width, signed)
+        self.add_object(param)
+        return param
+        
+    def visit_Supply(self, node):
+        name = node.name
+        value = self.visit(node.value)
+        width = self.visit(node.width) if node.width is not None else None
+        signed = node.signed
+        param = vtypes.Supply(name, value, width, signed)
+        self.add_object(param)
+        return param
+        
+    def visit_Decl(self, node):
+        decl = [ self.visit(d) for d in node.list ]
+        return decl
+        
+    def visit_Concat(self, node):
+        vars = [ self.visit(var) for var in node.list ]
+        return vtypes.Cat(*vars)
+        
+    def visit_LConcat(self, node):
+        vars = [ self.visit(var) for var in node.list ]
+        return vtypes.Cat(*vars)
+        
+    def visit_Repeat(self, node):
+        var = self.visit(node.value)
+        times = self.visit(node.times)
+        return vtypes.Repeat(var, times)
+        
+    def visit_Partselect(self, node):
+        var = self.visit(node.var)
+        msb = self.visit(node.msb)
+        lsb = self.visit(node.lsb)
+        return vtypes.Slice(var, msb, lsb)
+        
+    def visit_Pointer(self, node):
+        var = self.visit(node.var)
+        pos = self.visit(node.ptr)
+        return vtypes.Pointer(var, pos)
+        
+    def visit_Lvalue(self, node):
+        return self.visit(node.var)
+        
+    def visit_Rvalue(self, node):
+        return self.visit(node.var)
+        
+    def visit_Uplus(self, node):
+        return vtypes.Uplus(self.visit(node.right))
+        
+    def visit_Uminus(self, node):
+        return vtype.Uminus(self.visit(node.right))
+        
+    def visit_Ulnot(self, node):
+        return vtypes.Ulnot(self.visit(node.right))
+        
+    def visit_Unot(self, node):
+        return vtypes.Unot(self.visit(node.right))
+    
+    def visit_Uand(self, node):
+        return vtypes.Uand(self.visit(node.right))
+
+    def visit_Unand(self, node):
+        return vtypes.Unand(self.visit(node.right))
+        
+    def visit_Uor(self, node):
+        return vtypes.Uor(self.visit(node.right))
+
+    def visit_Unor(self, node):
+        return vtypes.Unor(self.visit(node.right))
+        
+    def visit_Uxor(self, node):
+        return vtypes.Uxor(self.visit(node.right))
+
+    def visit_Uxnor(self, node):
+        return vtypes.Uxnor(self.visit(node.right))
+        
+    def visit_Power(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vtypes.Power(left, right)
+        
+    def visit_Times(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vtypes.Times(left, right)
+        
+    def visit_Divide(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vtypes.Divide(left, right)
+        
+    def visit_Mod(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vtypes.Mod(left, right)
+        
+    def visit_Plus(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vtypes.Plus(left, right)
+        
+    def visit_Minus(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vtypes.Minus(left, right)
+        
+    def visit_Sll(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vtypes.Sll(left, right)
+        
+    def visit_Srl(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vtypes.Srl(left, right)
+        
+    def visit_Sra(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vtypes.Sra(left, right)
+        
+    def visit_LessThan(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vtypes.LessThan(left, right)
+        
+    def visit_GreaterThan(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vtypes.GreaterThan(left, right)
+        
+    def visit_LessEq(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vtypes.LessEq(left, right)
+        
+    def visit_GreaterEq(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vtypes.GreaterEq(left, right)
+        
+    def visit_Eq(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vtypes.Eq(left, right)
+        
+    def visit_NotEq(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vtypes.NotEq(left, right)
+        
+    def visit_Eql(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vtypes.Eql(left, right)
+        
+    def visit_NotEql(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vtypes.NotEql(left, right)
+        
+    def visit_And(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vtypes.And(left, right)
+        
+    def visit_Xor(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vtypes.Xor(left, right)
+        
+    def visit_Xnor(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vtypes.Xnor(left, right)
+        
+    def visit_Or(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vtypes.Or(left, right)
+        
+    def visit_Land(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vtypes.Land(left, right)
+        
+    def visit_Lor(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vtypes.Lor(left, right)
+        
+    def visit_Cond(self, node):
+        condition = self.visit(node.cond)
+        true_value = self.visit(node.true_value)
+        false_value = self.visit(node.false_value)
+        return vtypes.Cond(condition, true_value, false_value)
+        
+    def visit_Assign(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        ldelay= self.visit(node.ldelay) if node.ldelay is not None else None
+        rdelay = self.visit(node.rdelay) if node.rdelay is not None else None
+        subst = vtypes.Subst(left, right, ldelay=ldelay, rdelay=rdelay)
+        assign = vtypes.Assign(subst)
+        self.add_object(assign)
+        return assign
+        
+    def visit_Always(self, node):
+        sensitivity = self.visit(node.sens_list)
+        statement = to_tuple(self.visit(node.statement))
+        always = vtypes.Always(sensitivity)
+        always = always(*statement)
+        self.add_object(always)
+        return always
+        
+    def visit_SensList(self, node):
+        return [ self.visit(s) for s in node.list ]
+        
+    def visit_Sens(self, node):
+        if node.type == 'posedge':
+            sig = self.visit(node.sig)
+            return vtypes.Posedge(sig)
+        if node.type == 'negedge':
+            sig = self.visit(node.sig)
+            return vtypes.Negedge(sig)
+        if node.type == 'all':
+            return vtypes.SensitiveAll()
+        if node.type == 'level':
+            sig = self.visit(node.sig)
+            return sig
+        
+    def visit_BlockingSubstitution(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        ldelay= self.visit(node.ldelay) if node.ldelay is not None else None
+        rdelay = self.visit(node.rdelay) if node.rdelay is not None else None
+        return vtypes.Subst(left, right, blk=True, ldelay=ldelay, rdelay=rdelay)
+        
+    def visit_NonblockingSubstitution(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        ldelay= self.visit(node.ldelay) if node.ldelay is not None else None
+        rdelay = self.visit(node.rdelay) if node.rdelay is not None else None
+        return vtypes.Subst(left, right, blk=False, ldelay=ldelay, rdelay=rdelay)
+        
+    def visit_IfStatement(self, node):
+        condition = self.visit(node.cond)
+        true_statement = self.visit(node.true_statement)
+        false_statement = (self.visit(node.false_statement)
+                           if node.false_statement is not None else None)
+        true_statement = to_tuple(true_statement)
+        false_statement = (to_tuple(false_statement)
+                           if false_statement is not None else None)
+        _if = vtypes.If(condition)
+        _if = _if(*true_statement)
+        if false_statement is not None:
+            _if = _if(*false_statement)
+        return _if
+        
+    def visit_ForStatement(self, node):
+        pre = self.visit(node.pre)
+        condition = self.visit(node.cond)
+        post = self.visit(node.post)
+        statement = to_tuple(self.visit(node.statement))
+        _for = vtypes.For(pre, condition, post)
+        _for = _for(*statement)
+        return _for
+        
+    def visit_WhileStatement(self, node):
+        condition = self.visit(node.cond)
+        statement = to_tuple(self.visit(node.statement))
+        _while = vtypes.While(pre, condition, post)
+        _while = _while(*statement)
+        return _while
+        
+    def visit_CaseStatement(self, node):
+        comp = self.visit(node.comp)
+        statement = tuple([ self.visit(case) for case in node.caselist ])
+        case = vtypes.Case(comp)
+        case = case(*statement)
+        return case
+        
+    def visit_CasexStatement(self, node):
+        comp = self.visit(node.comp)
+        statement = tuple([ self.visit(case) for case in node.caselist ])
+        case = vtypes.Casex(comp)
+        case = case(*statement)
+        return case
+        
+    def visit_Case(self, node):
+        condition = tuple([ self.visit(c) for c in node.cond ])
+        statement = to_tuple(self.visit(node.statement))
+        when = vtypes.When(*condition)
+        when = when(*statement)
+        return when
+        
+    def visit_Block(self, node):
+        statements = [ self.visit(statement) for statement in  node.statements ]
+        if node.scope is None: return statements
+        block = vtypes.NamedBlock(scope)
+        block.extends(statements)
+        return block
+        
+    def visit_Initial(self, node):
+        statement = to_tuple(self.visit(node.statement))
+        initial = vtypes.Initial(*statement)
+        self.add_object(initial)
+        return initial
+        
+    def visit_EventStatement(self, node):
+        sensitivity = self.visit(node.sens_list)
+        event = vtypes.Event(sensitivity)
+        return event
+        
+    def visit_WaitStatement(self, node):
+        condition = self.visit(node.cond)
+        statement = to_tuple(self.visit(node.statement))
+        wait = vtypes.Wait()
+        wait = wait(*statement)
+        return wait
+        
+    def visit_ForeverStatement(self, node):
+        statement = to_tuple(self.visit(node.statement))
+        forever = vtypes.Forever(*statement)
+        return forever
+        
+    def visit_DelayStatement(self, node):
+        value = self.visit(node.delay)
+        delay = vtypes.Delay(value)
+        return delay
+        
+    def visit_InstanceList(self, node):
+        return [ self.visit(instance) for instance in node.instances ]
+        
+    def visit_Instance(self, node):
+        module = module.StubModule(node.module)
+        instname = node.name
+        params = [ self.visit(param) for param in node.parameterlist ]
+        ports = [ self.visit(port) for port in node.portlist ]
+        if node.array is not None:
+            raise ValueError("Instance array is not currently supported.")
+        instance = vtypes.Instance(module, instname, params, ports)
+        return instance
+        
+    def visit_ParamArg(self, node):
+        paramname = node.paramname
+        argname = self.visit(node.argname)
+        return (paramname, argname)
+        
+    def visit_PortArg(self, node):
+        portname = node.portname
+        argname = self.visit(node.argname)
+        return (portname, argname)
+    
+    def visit_Function(self, node):
+        name = node.name
+        width = self.visit(retwidth) if node.width is not None else None
+        function = vtypes.Function(name, width)
+        statement = [ self.visit(s) for s in node.statement ]
+        body = []
+        for s in statement:
+            if isinstance(s, vtypes.Input):
+                function.Input(s.name, s.width, s.length, s.signed, s.value)
+            elif isinstance(s, vtypes.Reg):
+                function.Reg(s.name, s.width, s.length, s.signed, s.value)
+            elif isinstance(s, vtypes.Integer):
+                function.Integer(s.name, s.width, s.length, s.signed, s.value)
+            else:
+                body.append(s)
+        function.Body(*body)
+        self.add_object(function)
+        return function
+        
+    def visit_FunctionCall(self, node):
+        name = self.visit(node.name)
+        args = tuple([ self.visit(arg) for arg in ndoe.args ])
+        call = vtypes.FunctionCall(name, args)
+        return call
+        
+    def visit_Task(self, node):
+        name = node.name
+        width = self.visit(retwidth) if node.width is not None else None
+        task = vtypes.Task(name, width)
+        statement = [ self.visit(s) for s in node.statement ]
+        body = []
+        for s in statement:
+            if isinstance(s, vtypes.Input):
+                task.Input(s.name, s.width, s.length, s.signed, s.value)
+            elif isinstance(s, vtypes.Reg):
+                task.Reg(s.name, s.width, s.length, s.signed, s.value)
+            elif isinstance(s, vtypes.Integer):
+                task.Integer(s.name, s.width, s.length, s.signed, s.value)
+            else:
+                body.append(s)
+        task.Body(*body)
+        self.add_object(task)
+        return task
+        
+    def visit_TaskCall(self, node):
+        name = self.visit(node.name)
+        args = tuple([ self.visit(arg) for arg in ndoe.args ])
+        call = vtypes.TaskCall(name, args)
+        return call
+        
     def visit_GenerateStatement(self, node): pass
     def visit_SystemCall(self, node): pass
     def visit_IdentifierScopeLabel(self, node): pass
@@ -152,9 +658,9 @@ class VerilogModuleVisitor(object):
     def visit_Disable(self, node): pass
     def visit_ParallelBlock(self, node): pass
     def visit_SingleStatement(self, node): pass
-    
+        
 #-------------------------------------------------------------------------------
-def read_verilog(*filelist, **opt):
+def to_ast(*filelist, **opt):
     include = opt['include'] if 'include' in opt else ()
     define = opt['define'] if 'define' in opt else ()
     if not isinstance(include, tuple) and not isinstance(include, list):
@@ -168,13 +674,33 @@ def read_verilog(*filelist, **opt):
                                     preprocess_include=include,
                                     preprocess_define=define)
     ast = code_parser.parse()
+
+    return ast
+
+#-------------------------------------------------------------------------------
+def to_module_dict(*filelist, **opt):
+    ast = to_ast(*filelist, **opt)
     
     module_visitor = ModuleVisitor()
     module_visitor.visit(ast)
     module_names = module_visitor.get_modulenames()
     moduleinfotable = module_visitor.get_moduleinfotable()
     moduleinfo = moduleinfotable.getDefinitions()
-    
     module_dict = collections.OrderedDict([ (n, d.definition) for n, d in moduleinfo.items() ])
 
-    return VerilogModules(module_dict)
+    return module_dict
+
+#-------------------------------------------------------------------------------
+def read_verilog_stubmodule(*filelist, **opt):
+    module_dict = to_module_dict(*filelist, **opt)
+    stubs = collections.OrderedDict([ (name, module.StubModule(name)) 
+                                      for name in module_dict.keys() ])
+    return stubs
+    
+#-------------------------------------------------------------------------------
+def read_verilog_module(*filelist, **opt):
+    module_dict = to_module_dict(*filelist, **opt)
+    visitor = VerilogReadVisitor()
+    modules = collections.OrderedDict([ (name, visitor.visit(m) )
+                                        for name, m in module_dict.items() ])
+    return modules
