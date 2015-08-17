@@ -11,7 +11,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from vtypes import *
-from module import Module, StubModule
+from module import Module, StubModule, Instance, GenerateFor, GenerateIf
 from function import Function, FunctionCall
 from task import Task, TaskCall
 from from_verilog import read_verilog_stubmodule, read_verilog_module

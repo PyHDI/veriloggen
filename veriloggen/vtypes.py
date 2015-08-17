@@ -1,3 +1,4 @@
+#-------------------------------------------------------------------------------
 class VeriloggenNode(object):
     """ Base class of Veriloggen AST object """
     pass
@@ -386,7 +387,7 @@ class For(VeriloggenNode):
             return self.set_statement(*statement)
         self.statement = tuple(list(self.statement).extend(*statement))
         return self
-    
+
 #-------------------------------------------------------------------------------
 class While(VeriloggenNode):
     def __init__(self, condition):
@@ -512,37 +513,13 @@ class Delay(VeriloggenNode):
         self.value = value
 
 #-------------------------------------------------------------------------------
-class NamedBlock(list, VeriloggenNode):
-    def __init__(self, scope):
-        list.__init__(self)
-        self.scope = scope
-
-#-------------------------------------------------------------------------------
-class Instance(VeriloggenNode):
-    def __init__(self, module, instname, params, ports):
-        self.type_check_params(params)
-        self.type_check_ports(ports)
-        self.module = module
-        self.instname = instname
-        if isinstance(params[0], (tuple, list)):
-            self.params = params
-        else:
-            self.params = [ (None, p) for p in params ]
-        if isinstance(ports[0], (tuple, list)):
-            self.ports = ports
-        else:
-            self.ports = [ (None, p) for p in ports ]
-
-    def type_check_module(self, module):
-        if not isinstance(module, module.Module):
-            raise TypeError("module of Instance must be Module or StubModule, not %s" %
-                            type(module))
-            
-    def type_check_params(self, params):
-        if not isinstance(params, (tuple, list)):
-            raise TypeError("params of Instance require tuple, not %s." % type(params))
+class ScopeIndex(VeriloggenNode):
+    def __init__(self, name, index):
+        self.name = name
+        self.index = index
         
-    def type_check_ports(self, ports):
-        if not isinstance(ports, (tuple, list)):
-            raise TypeError("ports of Instance require tuple, not %s." % type(ports))
-
+class Scope(AnyType):
+    def __init__(self, *args):
+        self.args = args
+        if not args:
+            raise ValueError("Scope requires at least one argument.")

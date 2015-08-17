@@ -4,8 +4,8 @@ import collections
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-import module
 import vtypes
+import module
 
 import pyverilog.vparser.ast as vast
 from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
@@ -380,6 +380,42 @@ class VerilogCommonVisitor(object):
         args = tuple([ self.visit(a) for a in node.args ])
         return vast.FunctionCall(name, args)
     
+    #---------------------------------------------------------------------------
+    def visit_ScopeIndex(self, node):
+        name = node.name
+        index = self.visit(node.index)
+        return vast.IdentifierScopeLabel(name, index)
+    
+    def visit_Scope(self, node):
+        scope = []
+        for a in node.args:
+            if isinstance(a, module.GenerateIf):
+                if a.true_scope is None:
+                    raise TypeError("GenerateIf statement without scope name"
+                                    "can not be used as an scope index.")
+                scope.append(vast.IdentifierScopeLabel(a.true_scope))
+            elif isinstance(a, module.GenerateIfElse):
+                if a.false_scope is None:
+                    raise TypeError("GenerateIfElse statement without scope name"
+                                    "can not be used as an scope index.")
+                scope.append(vast.IdentifierScopeLabel(a.false_scope))
+            elif isinstance(a, module.GenerateFor):
+                raise TypeError("Scope index must not be GenerateFor. "
+                                "Use slice, like 'obj[index]'")
+            elif isinstance(a, vtypes.ScopeIndex):
+                scope.append(self.visit(a))
+            elif isinstance(a, str):
+                scope.append(vast.IdentifierScopeLabel(a))
+            else:
+                _id = self.visit(a)
+                if not isinstance(_id, vast.Identifier):
+                    raise TypeError("Could not conver into IdentifierScopeLabel from %s." %
+                                    str(type(_id)))
+                scope.append(vast.IdentifierScopeLabel(_id.name))
+                
+        if len(scope) == 1: return vast.Identifier(scope[0].name)
+        return vast.Identifier(scope[-1].name, vast.IdentifierScope(tuple(scope[:-1])))
+        
 #-------------------------------------------------------------------------------
 class VerilogModuleVisitor(VerilogCommonVisitor):
     def __init__(self):
@@ -402,7 +438,6 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
 
     #---------------------------------------------------------------------------
     def visit(self, node):
-        if isinstance(node, module.Module): return self.visit_Module(node)
         visitor = getattr(self, 'visit_' + node.__class__.__name__, self.generic_visit)
         return visitor(node)
 
@@ -410,20 +445,30 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
     def visit_Module(self, node):
         self.module = node
         name = node.name
+        
         params = ([ self.visit(v) for v in node.global_constant.values() ])
         params = [ i for i in params if i is not None ]
-        paramlist = vast.Paramlist(params)
+        paramlist = vast.Paramlist(tuple(params))
+        
         ports = [ self.visit(v) for v in node.io_variable.values() ]
         ports = [ i for i in ports if i is not None ]
-        portlist = vast.Portlist(ports)
-        items = ([ self.visit(v) for v in node.constant.values() ] + 
-                 [ self.visit(v) for v in node.variable.values() ] +
-                 [ self.visit(v) for v in node.function.values() ] +
-                 [ self.visit(v) for v in node.assign ] +
-                 [ self.visit(v) for v in node.always ] +
-                 [ self.visit(v) for v in node.instance.values() ])
+        portlist = vast.Portlist(tuple(ports))
+        
+        #items = ([ self.visit(v) for v in node.local_constant.values() ] + 
+        #         [ self.visit(v) for v in node.variable.values() ] +
+        #         [ self.visit(v) for v in node.function.values() ] +
+        #         [ self.visit(v) for v in node.assign ] +
+        #         [ self.visit(v) for v in node.always ] +
+        #         [ self.visit(v) for v in node.initial ] +
+        #         [ self.visit(v) for v in node.generate.values() ] +
+        #         [ self.visit(v) for v in node.instance.values() ])
+        #items = [ i for i in items if i is not None ]
+        items = [ self.visit(i) for i in node.items
+                  if not isinstance(i, (vtypes.Input, vtypes.Output, vtypes.Inout, vtypes.Parameter)) ]
         items = [ i for i in items if i is not None ]
+        
         m = vast.ModuleDef(name, paramlist, portlist, items)
+        
         self.module = None
         return m
 
@@ -555,6 +600,43 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
         name = node.instname
         instance = vast.Instance(module, name, portlist, parameterlist)
         return vast.InstanceList(module, parameterlist, (instance,) )
+
+    #---------------------------------------------------------------------------
+    def _visit_Generate(self, node):
+        params = ([ self.visit(v) for v in node.global_constant.values() ])
+        params = [ i for i in params if i is not None ]
+        paramlist = [ vast.Decl(p) for p in params ]
+        items = [ self.visit(i) for i in node.items
+                  if not isinstance(i, (vtypes.Input, vtypes.Output, vtypes.Inout, vtypes.Parameter)) ]
+        items = [ i for i in items if i is not None ]
+        ret = paramlist
+        for i in items:
+            if isinstance(i, vast.GenerateStatement):
+                ret.extend(i.items)
+            else:
+                ret.append(i)
+        return tuple(ret)
+    
+    def visit_GenerateFor(self, node):
+        genfor_visitor = VerilogGenerateForVisitor()
+        pre = genfor_visitor.visit(node.pre)
+        cond = genfor_visitor.visit(node.cond)
+        post = genfor_visitor.visit(node.post)
+        items = self._visit_Generate(node)
+        block = vast.Block(items, scope=node.scope)
+        _for = vast.ForStatement(pre, cond, post, block)
+        return vast.GenerateStatement(tuple([_for]))
+
+    def visit_GenerateIf(self, node):
+        genif_visitor = VerilogGenerateIfVisitor()
+        cond = genif_visitor.visit(node.cond)
+        true_items = self._visit_Generate(node)
+        true_block = vast.Block(true_items, scope=node.true_scope)
+        false_items = self._visit_Generate(node.Else)
+        false_block = (vast.Block(false_items, scope=node.Else.false_scope)
+                       if false_items else None)
+        _if = vast.IfStatement(cond, true_block, false_block)
+        return vast.GenerateStatement(tuple([_if]))
     
 #-------------------------------------------------------------------------------
 class VerilogBindVisitor(VerilogCommonVisitor):
@@ -582,3 +664,11 @@ class VerilogForVisitor(VerilogCommonVisitor):
         right = self.visit(node.right)
         return vast.BlockingSubstitution(left, right)
     
+class VerilogGenerateForVisitor(VerilogCommonVisitor):
+    def visit_Subst(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        return vast.BlockingSubstitution(left, right)
+    
+class VerilogGenerateIfVisitor(VerilogCommonVisitor):
+    pass
