@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import vtypes
 
+#-------------------------------------------------------------------------------
 class Task(vtypes.VeriloggenNode):
     def __init__(self, name, width=1):
         self.name = name
