@@ -63,7 +63,15 @@ def to_tuple(s):
 class VerilogReadVisitor(object):
     def __init__(self):
         self.m = None
+        self.module_stack = []
 
+    def push_module(self, m):
+        self.module_stack.append(self.m)
+        self.m = m
+
+    def pop_module(self):
+        self.m = self.module_stack.pop()
+        
     def add_object(self, obj):
         if isinstance(self.m, module.Module):
             self.m.add_object(obj)
@@ -80,9 +88,11 @@ class VerilogReadVisitor(object):
 
     def visit_ModuleDef(self, node):
         # create new Verilog module
-        self.m = module.Module(node.name)
+        m = module.Module(node.name)
+        self.push_module(m)
         self.generic_visit(node)
-        return self.m
+        self.pop_module()
+        return m
 
     def visit_Paramlist(self, node):
         params = []
@@ -120,7 +130,9 @@ class VerilogReadVisitor(object):
         
     def visit_Identifier(self, node):
         if node.scope is not None:
-            raise ValueError("Identifier with scope label is not currently supported.")
+            labels = self.visit(node.scope)
+            labels.append(node.name)
+            return vtypes.Scope(*labels)
         if not isinstance(self.m, module.Module):
             return vtypes.AnyType(node.name)
         return self.m.find_identifier(node.name)
@@ -491,6 +503,8 @@ class VerilogReadVisitor(object):
         return vtypes.Subst(left, right, blk=False, ldelay=ldelay, rdelay=rdelay)
         
     def visit_IfStatement(self, node):
+        if isinstance(self.m, (module.GenerateFor, module.GenerateIf)):
+            return self._visit_GenerateIf(node)
         condition = self.visit(node.cond)
         true_statement = self.visit(node.true_statement)
         false_statement = (self.visit(node.false_statement)
@@ -505,6 +519,8 @@ class VerilogReadVisitor(object):
         return _if
         
     def visit_ForStatement(self, node):
+        if isinstance(self.m, (module.GenerateFor, module.GenerateIf)):
+            return self._visit_GenerateFor(node)
         pre = self.visit(node.pre)
         condition = self.visit(node.cond)
         post = self.visit(node.post)
@@ -543,10 +559,7 @@ class VerilogReadVisitor(object):
         
     def visit_Block(self, node):
         statements = [ self.visit(statement) for statement in  node.statements ]
-        if node.scope is None: return statements
-        block = vtypes.NamedBlock(scope)
-        block.extends(statements)
-        return block
+        return statements
         
     def visit_Initial(self, node):
         statement = to_tuple(self.visit(node.statement))
@@ -587,6 +600,7 @@ class VerilogReadVisitor(object):
         if node.array is not None:
             raise ValueError("Instance array is not currently supported.")
         instance = vtypes.Instance(module, instname, params, ports)
+        self.add_object(instance)
         return instance
         
     def visit_ParamArg(self, node):
@@ -648,16 +662,83 @@ class VerilogReadVisitor(object):
         args = tuple([ self.visit(arg) for arg in ndoe.args ])
         call = vtypes.TaskCall(name, args)
         return call
+
+    def _visit_GenerateFor(self, item):
+        pre = self.visit(item.pre)
+        cond = self.visit(item.cond)
+        post = self.visit(item.post)
+        scope = (item.statement.scope
+                 if isinstance(item.statement, vast.Block)
+                 else None)
+        _for = module.GenerateFor(pre, cond, post, scope)
+        ret = _for
+        self.add_object(_for)
+        self.push_module(_for)
+        statement = self.visit(item.statement)
+        self.pop_module()
+        return ret
+    
+    def _visit_GenerateIf(self, item):
+        cond = self.visit(item.cond)
+        true_scope = (item.true_statement.scope
+                      if isinstance(item.true_statement, vast.Block)
+                      else None)
+        false_scope = (item.false_statement.scope
+                      if isinstance(item.false_statement, vast.Block)
+                      else None)
+        _if_true = module.GenerateIf(cond, true_scope)
+        ret = _if_true
+        self.add_object(_if_true)
+        self.push_module(_if_true)
+        statement = self.visit(item.true_statement)
+        self.pop_module()
+        _if_false = _if_true.Else(false_scope)
+        self.push_module(_if_false)
+        statement = self.visit(item.false_statement)
+        self.pop_module()
+        return ret
         
-    def visit_GenerateStatement(self, node): pass
-    def visit_SystemCall(self, node): pass
-    def visit_IdentifierScopeLabel(self, node): pass
-    def visit_IdentifierScope(self, node): pass
-    def visit_Pragma(self, node): pass
-    def visit_PragmaEntry(self, node): pass
-    def visit_Disable(self, node): pass
-    def visit_ParallelBlock(self, node): pass
-    def visit_SingleStatement(self, node): pass
+    def visit_GenerateStatement(self, node):
+        ret = []
+        for item in node.items:
+            if isinstance(item, vast.ForStatement):
+                ret.append( self._visit_GenerateFor(item) )
+            elif isinstance(item, vsat.IfStatement):
+                ret.append( self._visit_GenerateIf(item) )
+            else:
+                raise TypeError("Only generate-for and generate-if statements are supported.")
+        return ret
+    
+    def visit_SystemCall(self, node):
+        cmd = node.syscall
+        args = tuple([ self.visit(a) for arg in node.args ])
+        systask = vtypes.SystemTask(cmd, *args)
+        return systask
+    
+    def visit_IdentifierScopeLabel(self, node):
+        if node.loop is None:
+            return node.name
+        index = self.visit(node.loop)
+        return vtypes.ScopeIndex(node.name, index)
+    
+    def visit_IdentifierScope(self, node):
+        args = [ self.visit(label) for label in node.labellist ]
+        return args
+        
+    def visit_Pragma(self, node):
+        raise TypeError("Pragma is not currently supported.")
+    
+    def visit_PragmaEntry(self, node):
+        raise TypeError("Pragma is not currently supported.")
+    
+    def visit_Disable(self, node):
+        raise TypeError("Disable is not currently supported.")
+    
+    def visit_ParallelBlock(self, node):
+        raise TypeError("Fork/Join is not currently supported.")
+    
+    def visit_SingleStatement(self, node):
+        return self.visit(node.statement)
         
 #-------------------------------------------------------------------------------
 def to_ast(*filelist, **opt):
