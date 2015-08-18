@@ -466,7 +466,8 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
 
     #---------------------------------------------------------------------------
     def visit(self, node):
-        if isinstance(node, module.Module): return self.visit_Module(node)
+        if isinstance(node, module.Module) and not isinstance(node, module.Generate):
+            return self.visit_Module(node)
         visitor = getattr(self, 'visit_' + node.__class__.__name__, self.generic_visit)
         return visitor(node)
 
