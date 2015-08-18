@@ -582,13 +582,14 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
     def visit_Always(self, node):
         sensitivity = None
         if isinstance(node.sensitivity, (list, tuple)):
-            sensitivity = vast.SensList(tuple([ self.visit(n) if isinstance(n, vtypes.Sensitive) else
-                                                vast.Sens(self.visit(n))
-                                                for n in node.sensitivity ]))
+            sensitivity = vast.SensList(
+                tuple([ self.visit(n) if isinstance(n, vtypes.Sensitive) else
+                        vast.Sens(self.visit(n)) for n in node.sensitivity ]))
         else:
-            sensitivity = vast.SensList((self.visit(node.sensitivity),)
-                                        if isinstance(node.sensitivity, vtypes.Sensitive) else
-                                        vast.Sens(self.visit(node.sensitivity)))
+            sensitivity = vast.SensList(
+                (self.visit(node.sensitivity),)
+                if isinstance(node.sensitivity, vtypes.Sensitive) else
+                vast.Sens(self.visit(node.sensitivity)))
 
         statement = vast.Block([])
         if isinstance(node.statement, (list, tuple)):
