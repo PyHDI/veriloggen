@@ -509,7 +509,7 @@ class When(VeriloggenNode) :
             if a is None:
                 raise ValueError("None condition must not mixed in When() statement.")
             if isinstance(a, (_Numeric, int, float, str)): continue
-            raise TypeError("Condition shuold be Numeric value.")
+            raise TypeError("Condition must be _Numeric object, not '%s'" % str(type(a)))
     
     def type_check_statement(self, *args):
         pass

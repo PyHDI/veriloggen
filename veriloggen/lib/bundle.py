@@ -1,10 +1,15 @@
 import os
 import sys
 import re
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import vtypes
-import module
+if sys.version_info[0] >= 3:
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    import vtypes
+    import module
+else:
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    import veriloggen.vtypes as vtypes
+    import veriloggen.module as module
 
 class Bundle(vtypes.VeriloggenNode):
     def __init__(self, m, prefix='', postfix=''):
