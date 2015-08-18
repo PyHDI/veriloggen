@@ -36,7 +36,7 @@ Requirements
    -  Install from pip: 'pip install pyverilog' for Python2.7 or 'pip3
       install pyverilog' for Python3
    -  Otherwise, install from github into this package: 'cd Pycoram; git
-      clone https://github.com/shtaxxx/Pyverilog.git; cd pycoram; ln -s
+      clone https://github.com/PyHDI/Pyverilog.git; cd pycoram; ln -s
       ../Pyverilog/pyverilog'
 
 -  Jinja2 (2.7 or later)
@@ -195,5 +195,5 @@ Not yet.
 Related Project
 ===============
 
-`Pyverilog <https://github.com/shtaxxx/Pyverilog>`__ - Python-based
+`Pyverilog <https://github.com/PyHDI/Pyverilog>`__ - Python-based
 Hardware Design Processing Toolkit for Verilog HDL
