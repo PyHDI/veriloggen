@@ -214,6 +214,28 @@ class Module(vtypes.VeriloggenNode):
             self.initial.append(obj)
             return
 
+        if isinstance(obj, GenerateFor):
+            if obj.scope is None:
+                if None not in self.generate: self.generate[None] = []
+                self.generate[None].append(obj)
+                return
+            self.generate[obj.scope] = obj
+            return
+
+        if isinstance(obj, GenerateIf):
+            if obj.true_scope is None:
+                if None not in self.generate: self.generate[None] = []
+                self.generate[None].append(obj)
+                return
+            self.generate[obj.true_scope] = obj
+            return
+
+        if isinstance(obj, Instance):
+            self.instance[obj.name] = obj
+            if isinstance(obj.module, Module):
+                self.submodule[obj.module.name] = obj.module
+            return
+
         raise TypeError("Object type '%s' is not supported." % str(type(obj)))
         
     #---------------------------------------------------------------------------
@@ -278,7 +300,7 @@ class Module(vtypes.VeriloggenNode):
         return to_verilog.write_verilog(self, filename)
 
 #-------------------------------------------------------------------------------
-class StubModule(Module):
+class StubModule(vtypes.VeriloggenNode):
     """ Verilog Module class """
     def __init__(self, name=None):
         self.name = name if name is not None else self.__class__.__name__
@@ -303,7 +325,7 @@ class Instance(vtypes.VeriloggenNode):
             self.ports = [ (None, p) for p in ports ]
 
     def type_check_module(self, module):
-        if not isinstance(module, Module):
+        if not isinstance(module, (Module, StubModule)):
             raise TypeError("module of Instance must be Module or StubModule, not %s" %
                             type(module))
             

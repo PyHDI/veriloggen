@@ -18,8 +18,9 @@ def mkTop():
     
     params = ( width, )
     ports = ( clk, rst, led )
-    
-    m.Instance(mkLed(), 'inst_blinkled', params, ports)
+
+    led = mkLed()
+    m.Instance(led, 'inst_blinkled', params, ports)
 
     return m
 

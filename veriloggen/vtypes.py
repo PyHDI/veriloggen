@@ -1,7 +1,52 @@
-#-------------------------------------------------------------------------------
 class VeriloggenNode(object):
     """ Base class of Veriloggen AST object """
-    pass
+    def __lt__(self, r):
+        raise TypeError('Not allowed operation.')
+    
+    def __le__(self, r):
+        raise TypeError('Not allowed operation.')
+    
+    #def __eq__(self, r):
+    #    raise TypeError('Not allowed operation.')
+    
+    #def __ne__(self, r):
+    #    raise TypeError('Not allowed operation.')
+
+    def __ge__(self, r):
+        raise TypeError('Not allowed operation.')
+    
+    def __gt__(self, r):
+        raise TypeError('Not allowed operation.')
+
+    def __add__(self, r):
+        raise TypeError('Not allowed operation.')
+    
+    def __sub__(self, r):
+        raise TypeError('Not allowed operation.')
+    
+    def __pow__(self, r):
+        raise TypeError('Not allowed operation.')
+    
+    def __mul__(self, r):
+        raise TypeError('Not allowed operation.')
+    
+    def __div__(self, r):
+        raise TypeError('Not allowed operation.')
+    
+    def __truediv__(self, r):
+        raise TypeError('Not allowed operation.')
+    
+    def __and__(self, r):
+        raise TypeError('Not allowed operation.')
+
+    def __or__(self, r):
+        raise TypeError('Not allowed operation.')
+    
+    def __xor__(self, r):
+        raise TypeError('Not allowed operation.')
+    
+    def __getitem__(self, r):
+        raise TypeError('Not allowed operation.')
 
 #-------------------------------------------------------------------------------
 class _Numeric(VeriloggenNode):
@@ -44,11 +89,11 @@ class _Numeric(VeriloggenNode):
     def __and__(self, r):
         return And(self, r)
 
-    def __and__(self, r):
-        return And(self, r)
-
     def __or__(self, r):
         return Or(self, r)
+    
+    def __xor__(self, r):
+        return Xor(self, r)
     
     def __getitem__(self, r):
         if isinstance(r, slice):
@@ -444,7 +489,6 @@ class Case(VeriloggenNode):
 
 class Casex(Case): pass
     
-#-------------------------------------------------------------------------------
 class When(VeriloggenNode) :
     def __init__(self, *condition):
         self.type_check_condition(*condition)
@@ -483,11 +527,28 @@ class When(VeriloggenNode) :
         return self
     
 #-------------------------------------------------------------------------------
+class ScopeIndex(VeriloggenNode):
+    def __init__(self, name, index):
+        self.name = name
+        self.index = index
+        
+class Scope(_Numeric):
+    def __init__(self, *args):
+        self.args = args
+        if not args:
+            raise ValueError("Scope requires at least one argument.")
+
+#-------------------------------------------------------------------------------
+class SystemTask(_Numeric):
+    def __init__(self, cmd, *args):
+        self.cmd = cmd
+        self.args = args
+        
+#-------------------------------------------------------------------------------
 class Event(VeriloggenNode):
     def __init__(self, sensitivity):
         self.sensitivity = sensitivity
 
-#-------------------------------------------------------------------------------
 class Wait(VeriloggenNode):
     def __init__(self, condition):
         self.condition = condition
@@ -502,24 +563,10 @@ class Wait(VeriloggenNode):
         self.statement = tuple(statement)
         return self
         
-#-------------------------------------------------------------------------------
 class Forever(VeriloggenNode):
     def __init__(self, *statement):
         self.statement = statement
 
-#-------------------------------------------------------------------------------
 class Delay(VeriloggenNode):
     def __init__(self, value):
         self.value = value
-
-#-------------------------------------------------------------------------------
-class ScopeIndex(VeriloggenNode):
-    def __init__(self, name, index):
-        self.name = name
-        self.index = index
-        
-class Scope(AnyType):
-    def __init__(self, *args):
-        self.args = args
-        if not args:
-            raise ValueError("Scope requires at least one argument.")

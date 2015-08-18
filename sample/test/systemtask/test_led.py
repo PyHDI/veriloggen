@@ -2,58 +2,36 @@ import led
 
 expected_verilog = """
 module blinkled #
-  (
+  ( 
    parameter WIDTH = 8
   )
-  (
+  ( 
    input CLK, 
-   input RST, 
+   input RST,
    output reg [WIDTH-1:0] LED
   );
   reg [32-1:0] count;
-
-  function [WIDTH-1:0] inc;
-    input [WIDTH-1:0] v;
-    input [WIDTH-1:0] o;
-    reg [WIDTH-1:0] tmp;
-    begin        
-      tmp = v + o;
-      inc = tmp;
-    end 
-  endfunction
-
-  function [32-1:0] ext_inc;
-    input [32-1:0] v;
-    input [32-1:0] o;
-    reg [32-1:0] tmp;
-    begin        
-      tmp = v + o;
-      ext_inc = tmp;
-    end 
-  endfunction
-
   always @(posedge CLK) begin
-    if(RST) begin        
+    if(RST) begin
       count <= 0;
     end else begin
       if(count == 1023) begin
         count <= 0;
       end else begin
-        count <= inc(count, 1) + 1 - 1;
+        count <= count + 1;
       end
-    end 
-  end 
-
+    end
+  end
   always @(posedge CLK) begin
-    if(RST) begin        
-      LED <= 1;
+    if(RST) begin
+      LED <= 0;
     end else begin
-      if(count == 1023) begin        
-        LED[0] <= LED[WIDTH-1];
-        LED[WIDTH-1:1] <= LED[WIDTH-2:0];
-      end  
-    end 
-  end 
+      if(count == 1023) begin
+        LED <= LED + 1;
+        $display("led:%x", LED);
+      end 
+    end
+  end
 endmodule
 """
 

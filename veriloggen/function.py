@@ -46,7 +46,7 @@ class Function(vtypes.VeriloggenNode):
     def call(self, *args):
         return FunctionCall(self.name, *args)
 
-class FunctionCall(vtypes.VeriloggenNode):
+class FunctionCall(vtypes._Numeric):
     def __init__(self, name, *args):
         self.name = name
         self.args = tuple(args)

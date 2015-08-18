@@ -42,8 +42,8 @@ def mkLed():
             If(count == 1023)(
                 count(0)
             ).Else(
-                count( FunctionCall(inc.name, count, 1) )
-                #count( inc.call(count, 1) )
+                #count( FunctionCall(inc.name, count, 1) + 1 - 1 )
+                count( inc.call(count, 1) + 1 - 1 )
             )
         ))
     

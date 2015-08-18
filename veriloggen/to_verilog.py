@@ -42,6 +42,60 @@ class VerilogCommonVisitor(object):
     def visit(self, node):
         visitor = getattr(self, 'visit_' + node.__class__.__name__, self.generic_visit)
         return visitor(node)
+    
+    #---------------------------------------------------------------------------
+    # First class object wrapper
+    def visit_Int(self, node):
+        value_list = []
+        if node.width:
+            value_list.append(str(node.width))
+            
+        if node.base is None:
+            if node.width:
+                value_list.append("'d")
+            value_list.append(str(node.value))
+        elif node.base == 2:
+            value_list.append("'b")
+            value_list.append(bin(node.value).replace('0b', ''))
+        elif node.base == 8:
+            value_list.append("'o")
+            value_list.append(oct(node.value).replace('0o', ''))
+        elif node.base == 10:
+            value_list.append("'d")
+            value_list.append(str(node.value))
+        elif node.base == 16:
+            value_list.append("'h")
+            value_list.append(hex(node.value).replace('0x', ''))
+        else:
+            raise ValueError("Int.base must be 2, 8, 10, or 16")
+        
+        return vast.IntConst(''.join(value_list))
+
+    def visit_Float(self, node):
+        return vast.FloatConst(str(node.value))
+    
+    def visit_Str(self, node):
+        return vast.StringConst(node.value)
+
+    #---------------------------------------------------------------------------
+    def visit_bool(self, node):
+        if node: return vast.IntConst('1')
+        return vast.IntConst('0')
+    
+    def visit_int(self, node):
+        return vast.IntConst(str(node))
+
+    def visit_str(self, node):
+        return vast.StringConst(node)
+
+    def visit_float(self, node):
+        return vast.FloatConst(str(node))
+    
+    def visit_list(self, node):
+        return vast.Block(tuple([ self.visit(n) for n in node ]))
+
+    def visit_tuple(self, node):
+        return self.visit_list(node)
 
     #---------------------------------------------------------------------------
     def visit_Parameter(self, node):
@@ -274,60 +328,6 @@ class VerilogCommonVisitor(object):
         true_value = self.visit(node.true_value)
         false_value = self.visit(node.false_value)
         return vast.Cond(cond, true_value, false_value)
-    
-    #---------------------------------------------------------------------------
-    # First class object wrapper
-    def visit_Int(self, node):
-        value_list = []
-        if node.width:
-            value_list.append(str(node.width))
-            
-        if node.base is None:
-            if node.width:
-                value_list.append("'d")
-            value_list.append(str(node.value))
-        elif node.base == 2:
-            value_list.append("'b")
-            value_list.append(bin(node.value).replace('0b', ''))
-        elif node.base == 8:
-            value_list.append("'o")
-            value_list.append(oct(node.value).replace('0o', ''))
-        elif node.base == 10:
-            value_list.append("'d")
-            value_list.append(str(node.value))
-        elif node.base == 16:
-            value_list.append("'h")
-            value_list.append(hex(node.value).replace('0x', ''))
-        else:
-            raise ValueError("Int.base must be 2, 8, 10, or 16")
-        
-        return vast.IntConst(''.join(value_list))
-
-    def visit_Float(self, node):
-        return vast.FloatConst(str(node.value))
-    
-    def visit_Str(self, node):
-        return vast.StringConst(node.value)
-
-    #---------------------------------------------------------------------------
-    def visit_bool(self, node):
-        if node: return vast.IntConst('1')
-        return vast.IntConst('0')
-    
-    def visit_int(self, node):
-        return vast.IntConst(str(node))
-
-    def visit_str(self, node):
-        return vast.StringConst(node)
-
-    def visit_float(self, node):
-        return vast.FloatConst(str(node))
-    
-    def visit_list(self, node):
-        return vast.Block(tuple([ self.visit(n) for n in node ]))
-
-    def visit_tuple(self, node):
-        return self.visit_list(node)
 
     #---------------------------------------------------------------------------
     def visit_If(self, node):
@@ -339,7 +339,7 @@ class VerilogCommonVisitor(object):
 
     #---------------------------------------------------------------------------
     def visit_For(self, node):
-        for_visitor = VerilogForVisitor()
+        for_visitor = VerilogBlockingVisitor()
         pre = for_visitor.visit(node.pre)
         cond = self.visit(node.condition)
         post = for_visitor.visit(node.post)
@@ -358,27 +358,15 @@ class VerilogCommonVisitor(object):
         statement = tuple([ self.visit(s) for s in node.statement ])
         return vast.CaseStatement(comp, statement)
 
-    #---------------------------------------------------------------------------
     def visit_Casex(self, node):
         comp = self.visit(node.comp)
         statement = tuple([ self.visit(s) for s in node.statement ])
         return vast.CasexStatement(comp, statement)
     
-    #---------------------------------------------------------------------------
     def visit_When(self, node):
         cond = tuple([ self.visit(c) for c in node.condition ]) if node.condition else None
         statement = self.visit(node.statement)
         return vast.Case(cond, statement)
-    
-    #---------------------------------------------------------------------------
-    def visit_Function(self, node):
-        name = node.name
-        return vast.Identifier(name)
-    
-    def visit_FunctionCall(self, node):
-        name = vast.Identifier(node.name)
-        args = tuple([ self.visit(a) for a in node.args ])
-        return vast.FunctionCall(name, args)
     
     #---------------------------------------------------------------------------
     def visit_ScopeIndex(self, node):
@@ -409,20 +397,60 @@ class VerilogCommonVisitor(object):
             else:
                 _id = self.visit(a)
                 if not isinstance(_id, vast.Identifier):
-                    raise TypeError("Could not conver into IdentifierScopeLabel from %s." %
+                    raise TypeError("Cannot convert into IdentifierScopeLabel from %s." %
                                     str(type(_id)))
                 scope.append(vast.IdentifierScopeLabel(_id.name))
                 
         if len(scope) == 1: return vast.Identifier(scope[0].name)
         return vast.Identifier(scope[-1].name, vast.IdentifierScope(tuple(scope[:-1])))
         
+    #---------------------------------------------------------------------------
+    def visit_SystemTask(self, node):
+        cmd = node.cmd
+        args = tuple([ self.visit(a) for a in node.args ])
+        syscall = vast.SystemCall(cmd, args)
+        return vast.SingleStatement(syscall)
+    
+    #---------------------------------------------------------------------------
+    def visit_Event(self, node):
+        raise TypeError("Type %s is not supported." % str(type(node)))
+    
+    def visit_Wait(self, node):
+        raise TypeError("Type %s is not supported." % str(type(node)))
+    
+    def visit_Forever(self, node):
+        raise TypeError("Type %s is not supported." % str(type(node)))
+    
+    def visit_Delay(self, node):
+        raise TypeError("Type %s is not supported." % str(type(node)))
+    
+    #---------------------------------------------------------------------------
+    def visit_Function(self, node):
+        name = node.name
+        return vast.Identifier(name)
+    
+    def visit_FunctionCall(self, node):
+        name = vast.Identifier(node.name)
+        args = tuple([ self.visit(a) for a in node.args ])
+        return vast.FunctionCall(name, args)
+    
+    #---------------------------------------------------------------------------
+    def visit_Task(self, node):
+        name = node.name
+        return vast.Identifier(name)
+    
+    def visit_TaskCall(self, node):
+        name = vast.Identifier(node.name)
+        args = tuple([ self.visit(a) for a in node.args ])
+        return vast.TaskCall(name, args)
+    
 #-------------------------------------------------------------------------------
 class VerilogModuleVisitor(VerilogCommonVisitor):
     def __init__(self):
         VerilogCommonVisitor.__init__(self)
         self.bind_visitor = VerilogBindVisitor()
         self.always_visitor = VerilogAlwaysVisitor()
-        self.function_visitor = VerilogFunctionVisitor()
+        self.blocking_visitor = VerilogBlockingVisitor()
         self.module = None
     
     #---------------------------------------------------------------------------
@@ -589,8 +617,17 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
         retwidth = None if node.width is None else self.make_width(node.width)
         statement = ([ self.visit(v).first for v in node.io_variable.values() ] +
                      [ self.visit(v) for v in node.variable.values() ])
-        statement.append(vast.Block(tuple([ self.function_visitor.visit(s) for s in node.statement])))
+        statement.append(vast.Block(tuple([ self.blocking_visitor.visit(s) for s in node.statement])))
         return vast.Function(name, retwidth, statement)
+    
+    #---------------------------------------------------------------------------
+    def visit_Task(self, node):
+        name = node.name
+        retwidth = None if node.width is None else self.make_width(node.width)
+        statement = ([ self.visit(v).first for v in node.io_variable.values() ] +
+                     [ self.visit(v) for v in node.variable.values() ])
+        statement.append(vast.Block(tuple([ self.blocking_visitor.visit(s) for s in node.statement])))
+        return vast.Task(name, retwidth, statement)
     
     #---------------------------------------------------------------------------
     def visit_Instance(self, node):
@@ -618,7 +655,7 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
         return tuple(ret)
     
     def visit_GenerateFor(self, node):
-        genfor_visitor = VerilogGenerateForVisitor()
+        genfor_visitor = VerilogBlockingVisitor()
         pre = genfor_visitor.visit(node.pre)
         cond = genfor_visitor.visit(node.cond)
         post = genfor_visitor.visit(node.post)
@@ -628,7 +665,7 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
         return vast.GenerateStatement(tuple([_for]))
 
     def visit_GenerateIf(self, node):
-        genif_visitor = VerilogGenerateIfVisitor()
+        genif_visitor = VerilogBlockingVisitor()
         cond = genif_visitor.visit(node.cond)
         true_items = self._visit_Generate(node)
         true_block = vast.Block(true_items, scope=node.true_scope)
@@ -651,24 +688,8 @@ class VerilogAlwaysVisitor(VerilogCommonVisitor):
         return vast.NonblockingSubstitution(left, right)
 
 #-------------------------------------------------------------------------------
-class VerilogFunctionVisitor(VerilogCommonVisitor):
+class VerilogBlockingVisitor(VerilogCommonVisitor):
     def visit_Subst(self, node):
         left = self.visit(node.left)
         right = self.visit(node.right)
         return vast.BlockingSubstitution(left, right)
-
-#-------------------------------------------------------------------------------
-class VerilogForVisitor(VerilogCommonVisitor):
-    def visit_Subst(self, node):
-        left = self.visit(node.left)
-        right = self.visit(node.right)
-        return vast.BlockingSubstitution(left, right)
-    
-class VerilogGenerateForVisitor(VerilogCommonVisitor):
-    def visit_Subst(self, node):
-        left = self.visit(node.left)
-        right = self.visit(node.right)
-        return vast.BlockingSubstitution(left, right)
-    
-class VerilogGenerateIfVisitor(VerilogCommonVisitor):
-    pass

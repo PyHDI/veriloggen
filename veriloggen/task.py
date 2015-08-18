@@ -40,7 +40,7 @@ class Task(vtypes.VeriloggenNode):
     def call(self, *args):
         return TaskCall(self.name, *args)
 
-class TaskCall(vtypes.VeriloggenNode):
+class TaskCall(vtypes._Numeric):
     def __init__(self, name, *args):
         self.name = name
         self.args = tuple(args)
