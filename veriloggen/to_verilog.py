@@ -482,17 +482,9 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
         ports = [ i for i in ports if i is not None ]
         portlist = vast.Portlist(tuple(ports))
         
-        #items = ([ self.visit(v) for v in node.local_constant.values() ] + 
-        #         [ self.visit(v) for v in node.variable.values() ] +
-        #         [ self.visit(v) for v in node.function.values() ] +
-        #         [ self.visit(v) for v in node.assign ] +
-        #         [ self.visit(v) for v in node.always ] +
-        #         [ self.visit(v) for v in node.initial ] +
-        #         [ self.visit(v) for v in node.generate.values() ] +
-        #         [ self.visit(v) for v in node.instance.values() ])
-        #items = [ i for i in items if i is not None ]
         items = [ self.visit(i) for i in node.items
-                  if not isinstance(i, (vtypes.Input, vtypes.Output, vtypes.Inout, vtypes.Parameter)) ]
+                  if not isinstance(i, (vtypes.Input, vtypes.Output,
+                                        vtypes.Inout, vtypes.Parameter)) ]
         items = [ i for i in items if i is not None ]
         
         m = vast.ModuleDef(name, paramlist, portlist, items)
@@ -644,7 +636,8 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
         params = [ i for i in params if i is not None ]
         paramlist = [ vast.Decl(p) for p in params ]
         items = [ self.visit(i) for i in node.items
-                  if not isinstance(i, (vtypes.Input, vtypes.Output, vtypes.Inout, vtypes.Parameter)) ]
+                  if not isinstance(i, (vtypes.Input, vtypes.Output,
+                                        vtypes.Inout, vtypes.Parameter)) ]
         items = [ i for i in items if i is not None ]
         ret = paramlist
         for i in items:
