@@ -14,9 +14,6 @@ module blinkled #
    output reg [WIDTH-1:0] LED_3
   );
   reg [32-1:0] count_0;
-  reg [32-1:0] count_1;
-  reg [32-1:0] count_2;
-  reg [32-1:0] count_3;
   always @(posedge CLK) begin
     if(RST) begin
       count_0 <= 0;
@@ -37,6 +34,7 @@ module blinkled #
       end 
     end
   end
+  reg [32-1:0] count_1;
   always @(posedge CLK) begin
     if(RST) begin
       count_1 <= 0;
@@ -57,6 +55,7 @@ module blinkled #
       end 
     end
   end
+  reg [32-1:0] count_2;
   always @(posedge CLK) begin
     if(RST) begin
       count_2 <= 0;
@@ -77,6 +76,7 @@ module blinkled #
       end 
     end
   end
+  reg [32-1:0] count_3;
   always @(posedge CLK) begin
     if(RST) begin
       count_3 <= 0;
@@ -111,4 +111,4 @@ def test_led():
     codegen = ASTCodeGenerator()
     expected_code = codegen.visit(expected_ast)
 
-    assert(led_code == expected_code)
+    assert(expected_code == led_code)

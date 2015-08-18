@@ -10,16 +10,32 @@ module TOP #
    input CLK, 
    input RST
    );
-  localparam fsm_init = 0;
-  localparam fsm_1 = 1;
-  localparam fsm_2 = 2;
-  localparam fsm_3 = 3;
   reg [ADDR_WIDTH-1:0] addr;
   reg [DATA_WIDTH-1:0] datain;
   reg [1-1:0] write;
   wire [DATA_WIDTH-1:0] dataout;
-  reg [32-1:0] fsm;
+
+  my_bram
+    #(
+      .ADDR_WIDTH(ADDR_WIDTH),
+      .DATA_WIDTH(DATA_WIDTH)
+      )
+  inst_bram
+    (
+     .CLK(CLK),
+     .addr(addr),
+     .datain(datain),
+     .write(write),
+     .dataout(dataout)
+     );
   
+  reg [32-1:0] fsm;
+
+  localparam fsm_init = 0;
+  localparam fsm_1 = 1;
+  localparam fsm_2 = 2;
+  localparam fsm_3 = 3;
+
   always @(posedge CLK) begin
     if(RST) begin        
       addr <= 0;        
@@ -56,20 +72,6 @@ module TOP #
     end 
   end
   
-  my_bram
-    #(
-      .ADDR_WIDTH(ADDR_WIDTH),
-      .DATA_WIDTH(DATA_WIDTH)
-      )
-  inst_bram
-    (
-     .CLK(CLK),
-     .addr(addr),
-     .datain(datain),
-     .write(write),
-     .dataout(dataout)
-     );
-
 endmodule
 
 module my_bram #
@@ -84,15 +86,18 @@ module my_bram #
    input [1-1:0] write, 
    output [DATA_WIDTH-1:0] dataout
    );
-   reg [DATA_WIDTH-1:0] d_addr;
+
+  reg [DATA_WIDTH-1:0] d_addr;
   reg [DATA_WIDTH-1:0] mem [0:DATA_WIDTH-1];
-  assign dataout = mem[d_addr];
+
   always @(posedge CLK) begin
     if(write) begin        
       mem[addr] <= datain;
     end  
     d_addr <= addr;
   end 
+
+  assign dataout = mem[d_addr];
 endmodule
 """
 
@@ -107,4 +112,4 @@ def test_bram():
     codegen = ASTCodeGenerator()
     expected_code = codegen.visit(expected_ast)
 
-    assert(bram_code == expected_code)
+    assert(expected_code == bram_code)
