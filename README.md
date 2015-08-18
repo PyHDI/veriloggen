@@ -179,5 +179,5 @@ Not yet.
 Related Project
 ==============================
 
-[Pyverilog](https://github.com/shtaxxx/Pyverilog)
+[Pyverilog](https://github.com/Pyverilog/Pyverilog)
 - Python-based Hardware Design Processing Toolkit for Verilog HDL
