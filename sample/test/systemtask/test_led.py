@@ -46,4 +46,4 @@ def test_led():
     codegen = ASTCodeGenerator()
     expected_code = codegen.visit(expected_ast)
 
-    assert(led_code == expected_code)
+    assert(expected_code == led_code)

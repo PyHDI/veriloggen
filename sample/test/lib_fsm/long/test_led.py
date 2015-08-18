@@ -11,6 +11,7 @@ module blinkled #
    output reg [WIDTH-1:0] LED
    );
   
+  reg [32-1:0] fsm;
   localparam fsm_init = 0;
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
@@ -27,7 +28,6 @@ module blinkled #
   localparam fsm_13 = 13;
   localparam fsm_14 = 14;
   localparam fsm_15 = 15;
-  reg [32-1:0] fsm;
   
   always @(posedge CLK) begin
     if(RST) begin        
@@ -101,4 +101,4 @@ def test_led():
     codegen = ASTCodeGenerator()
     expected_code = codegen.visit(expected_ast)
 
-    assert(led_code == expected_code)
+    assert(expected_code == led_code)
