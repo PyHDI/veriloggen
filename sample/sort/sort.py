@@ -40,7 +40,7 @@ def mkSort(numports=4):
 
     # build up
     fsm = lib.FSM(m, 'fsm')
-    idle = fsm.get_index()
+    idle = fsm.current()
 
     # init state
     fsm.add(*[registers[i](inputs[i]) for i in range(numports)], cond=kick)
