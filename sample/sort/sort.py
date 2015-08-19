@@ -29,29 +29,35 @@ def mkSort(numports=4):
 
     def chain_net(regs, fsm, e):
         x = regs[0]
-        bind = []
         for i in range(e):
             s, l = prim_net(x, regs[i+1])
-            bind.append( regs[i](s) )
+            fsm.add( regs[i](s) )
             x = l
-        bind.append( regs[e](x) )
+        fsm.add( regs[e](x) )
         for i in range(e + 1, len(regs)):
-            bind.append( regs[i](regs[i]) )
-        fsm( bind, fsm.next() )
-    
+            fsm.add( regs[i](regs[i]) )
+        fsm.goto_next()
+
+    # build up
     fsm = lib.FSM(m, 'fsm')
     idle = fsm.get_index()
 
-    fsm([ If(kick)([ registers[i](inputs[i]) for i in range(numports) ] +
-                   [ busy(1), fsm.next()] ) ])
+    # init state
+    fsm.add(*[registers[i](inputs[i]) for i in range(numports)], cond=kick)
+    fsm.add(busy(1), cond=kick)
+    fsm.goto_next(cond=kick)
 
+    # connect network
     for i in range(numports):
         chain_net(registers, fsm, numports-i-1)
 
-    fsm( busy(0), fsm.goto(idle) )
+    # finalize
+    fsm.add(busy(0))
+    fsm.goto(idle)
 
-    init = [ busy(0) ] + [ r(0) for r in registers ] + [ fsm.init() ]
+    init = [ busy(0) ] + [ r(0) for r in registers ] + [ fsm.set_init() ]
 
+    # import assignment into always statement
     m.Always(Posedge(clk))(
         If(rst)(
             *init

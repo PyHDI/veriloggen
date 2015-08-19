@@ -81,60 +81,52 @@ module sort #
       fsm <= fsm_init;
     end else begin
       case(fsm)
-      fsm_init: begin
-        begin
+        fsm_init: begin
           if(kick) begin
-            begin
-              registers_0 <= input_0;
-              registers_1 <= input_1;
-              registers_2 <= input_2;
-              registers_3 <= input_3;
-              busy <= 1;
-              fsm <= fsm_1;
-            end
+            registers_0 <= input_0;
+            registers_1 <= input_1;
+            registers_2 <= input_2;
+            registers_3 <= input_3;
+          end
+          if(kick) begin
+            busy <= 1;
+          end
+          if(kick) begin
+            fsm <= fsm_1;
           end 
         end
-      end
-      fsm_1: begin
-        begin
+        fsm_1: begin
           registers_0 <= small_0;
           registers_1 <= small_1;
           registers_2 <= small_2;
           registers_3 <= large_2;
+          fsm <= fsm_2;
         end
-        fsm <= fsm_2;
-      end
-      fsm_2: begin
-        begin
+        fsm_2: begin
           registers_0 <= small_3;
           registers_1 <= small_4;
           registers_2 <= large_4;
           registers_3 <= registers_3;
+          fsm <= fsm_3;
         end
-        fsm <= fsm_3;
-      end
-      fsm_3: begin
-        begin
+        fsm_3: begin
           registers_0 <= small_5;
           registers_1 <= large_5;
           registers_2 <= registers_2;
           registers_3 <= registers_3;
+          fsm <= fsm_4;
         end
-        fsm <= fsm_4;
-      end
-      fsm_4: begin
-        begin
+        fsm_4: begin
           registers_0 <= registers_0;
           registers_1 <= registers_1;
           registers_2 <= registers_2;
           registers_3 <= registers_3;
+          fsm <= fsm_5;
         end
-        fsm <= fsm_5;
-      end
-      fsm_5: begin
-        busy <= 0;
-        fsm <= fsm_init;
-      end
+        fsm_5: begin
+          busy <= 0;
+          fsm <= fsm_init;
+        end
       endcase
     end
   end

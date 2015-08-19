@@ -77,23 +77,28 @@ def mkTop():
 
     # FSM definition
     fsm = lib.FSM(m, 'fsm')
-    init = fsm.get_index()
+    init = fsm.current()
+    fsm.add( bramif.init() )
+    fsm.goto_next()
     
-    fsm( bramif.init(), fsm.next() )
-    first = fsm.get_index()
+    first = fsm.current()
     
-    fsm( bramif.datain(bramif.datain + 4), fsm.next() )
-    fsm( bramif.write(0), fsm.next() )
-    fsm( 
+    fsm.add( bramif.datain(bramif.datain + 4) )
+    fsm.goto_next()
+    
+    fsm.add( bramif.write(0) )
+    fsm.goto_next()
+    
+    fsm.add( 
         If(bramif.addr == 128)(
-            bramif.addr(0), fsm.goto(init)
+            bramif.addr(0), fsm.set(init)
         ).Else(
-            bramif.addr(bramif.addr + 1), fsm.goto(first)
+            bramif.addr(bramif.addr + 1), fsm.set(first)
         ))
     
     m.Always(Posedge(clk))(
         If(rst)(
-            bramif.addr(0), bramif.datain(0), bramif.write(0), fsm.init()
+            bramif.addr(0), bramif.datain(0), bramif.write(0), fsm.set_init()
         ).Else(
             # inserting FSM body
             *fsm.to_if()

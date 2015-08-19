@@ -14,25 +14,34 @@ class SeqIfElse(object):
         
 def add_if_else(fsm, ifelse):
     # future index
-    index_else = fsm.get_index() + len(ifelse.true_statements) + 1
-    index_merge = fsm.get_index() + len(ifelse.true_statements) + len(ifelse.false_statements) + 1
-    index_true = fsm.get_index() + 1 if ifelse.true_statements else index_merge
+    index_else = fsm.current() + len(ifelse.true_statements) + 1
+    index_merge = fsm.current() + len(ifelse.true_statements) + len(ifelse.false_statements) + 1
+    index_true = fsm.current() + 1 if ifelse.true_statements else index_merge
     
-    fsm(If(ifelse.condition)( fsm.goto(index_true) ).Else( fsm.goto(index_else) ))
+    fsm.goto( index=index_true, cond=ifelse.condition, else_index=index_else ).inc()
+    # = fsm.add(If(ifelse.condition)( fsm.set(index_true) ).Else( fsm.set(index_else) )).inc()
 
     # then
     for i, s in enumerate(ifelse.true_statements):
         if i < len(ifelse.true_statements) - 1:
-            fsm( *(s+[fsm.next()]) )
+            fsm.add( *s )
+            fsm.goto_next()
+            # = fsm.add( *(s+[fsm.set_next()]) ).inc()
         else:
-            fsm( *(s+[fsm.goto(index_merge)]) )
+            fsm.add( *s )
+            fsm.goto(index_merge).inc()
+            # = fsm.add( *(s+[fsm.set(index_merge)]) ).inc()
 
     # else
     for i, s in enumerate(ifelse.false_statements):
         if i < len(ifelse.false_statements) - 1:
-            fsm( *(s+[fsm.next()]) )
+            fsm.add( *s )
+            fsm.goto_next()
+            # = fsm.add( *(s+[fsm.set_next()]) ).inc()
         else:
-            fsm( *(s+[fsm.next()]) )
+            fsm.add( *s )
+            fsm.goto_next()
+            # = fsm.add( *(s+[fsm.set_next()]) ).inc()
 
 def mkLed():
     m = Module('blinkled')
@@ -44,9 +53,11 @@ def mkLed():
 
     fsm = lib.FSM(m, 'fsm')
     # get the initial index (= 0)
-    init = fsm.get_index()
+    init = fsm.current()
 
-    fsm(count(count + 1), fsm.next())
+    fsm.add( count(count + 1) )
+    fsm.goto_next()
+    # = fsm.add(count(count + 1), fsm.set_next()).inc()
 
     # if-then-else statements
     condition = count < 1024
@@ -57,14 +68,14 @@ def mkLed():
     ifelse = SeqIfElse(condition, true_statements, false_statements)
     add_if_else(fsm, ifelse)
     
-    # goto first
-    fsm( fsm.goto(init) )
+    # go to first
+    fsm.goto(init) # = fsm.add( fsm.set(init) )
     
     m.Always(Posedge(clk))(
         If(rst)(
             count(0),
             led(0),
-            fsm.init()
+            fsm.set_init()
         ).Else(
             # inserting the FSM body
             #*fsm.to_if()

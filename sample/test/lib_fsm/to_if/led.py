@@ -13,26 +13,31 @@ def mkLed():
 
     fsm = lib.FSM(m, 'fsm')
     # get the initial index (= 0)
-    init = fsm.get_index()
+    init = fsm.current()
 
-    fsm(count(count + 1), fsm.next())
-    fsm(count(count + 2), fsm.next())
+    fsm.add( count(count + 1) )
+    fsm.goto_next()
+    fsm.add( count(count + 2) )
+    fsm.goto_next()
     
     # get the current index (= 2)
-    here = fsm.get_index()
-    fsm(count(count + 3), fsm.next())
+    here = fsm.current()
+    fsm.add( count(count + 3) )
+    fsm.goto_next()
 
     # jump by using label "init"
-    fsm(If(count < 1024)( fsm.goto(init) ).Else( fsm.next() ))
+    fsm.goto( index=init, cond=(count < 1024), else_index=fsm.next() ).inc()
+    # = fsm.add( If(count < 1024)( fsm.set(init) ).Else( fsm.set_next() ) ).inc()
     
+    fsm.add( led(led + 1) )
     # jump by using label "here"
-    fsm(led(led + 1), fsm.goto(here))
+    fsm.goto(here)
     
     m.Always(Posedge(clk))(
         If(rst)(
             count(0),
             led(0),
-            fsm.init()
+            fsm.set_init()
         ).Else(
             # inserting the FSM body
             *fsm.to_if()

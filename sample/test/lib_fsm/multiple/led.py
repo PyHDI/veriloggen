@@ -10,15 +10,22 @@ def mkLed():
     led = m.OutputReg('LED', width)
 
     fsm = lib.FSM(m, 'fsm')
-    init = fsm.get_index()
-    for i in range(15):
-        fsm( fsm.next() )
-    fsm( led(led + 1), fsm.goto(init) )
+    init = fsm.current()
+
+    tmp = []
+    for i in range(4):
+        tmp.append( m.Reg('tmp_' + str(i), width) )
+        
+    for i in range(4):
+        fsm.add( tmp[i](fsm.current()) ) 
+        fsm.goto_next(cond=None) # = fsm.add( fsm.set_next() ).inc()
+        
+    fsm.add( led(led + 1) )
+    fsm.goto(init, cond=None) # = fsm.add( fsm.set(init) )
     
     m.Always(Posedge(clk))(
         If(rst)(
-            led(0),
-            fsm.init()
+            *([ t(0) for t in tmp ] + [ led(0), fsm.set_init() ])
         ).Else(
             fsm.to_case()
         ))
@@ -27,6 +34,5 @@ def mkLed():
 
 if __name__ == '__main__':
     led = mkLed()
-    # led.to_verilog(filename='tmp.v')
     verilog = led.to_verilog()
     print(verilog)
