@@ -61,7 +61,7 @@ class Bundle(vtypes.VeriloggenNode):
         
     #---------------------------------------------------------------------------
     def connect_all_ports(self, prefix='', postfix=''):
-        instances = sorted(self.__dir__())
+        instances = sorted(dir(self))
         inputs = [ s for s in instances if isinstance(getattr(self, s), vtypes.Input) ]
         outputs = [ s for s in instances if isinstance(getattr(self, s), vtypes.Output) ]
         inouts = [ s for s in instances if isinstance(getattr(self, s), vtypes.Inout) ]
@@ -87,7 +87,7 @@ class Bundle(vtypes.VeriloggenNode):
 
     #---------------------------------------------------------------------------
     def connect_all_parameters(self, prefix='', postfix=''):
-        instances = sorted(self.__dir__())
+        instances = sorted(dir(self))
         parameters = [ s for s in instances if isinstance(getattr(self, s), vtypes.Parameter) ]
         localparams = [ s for s in instances if isinstance(getattr(self, s), vtypes.Localparam) ]
         ret = []
@@ -100,12 +100,12 @@ class Bundle(vtypes.VeriloggenNode):
         return tuple(ret)
     
     def get_ports(self):
-        return ([ getattr(self, s) for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Input) ] +
-                [ getattr(self, s) for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Output) ] +
-                [ getattr(self, s) for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Inout) ] +
-                [ getattr(self, s) for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Reg) ] +
-                [ getattr(self, s) for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Wire) ])
+        return ([ getattr(self, s) for s in dir(self) if isinstance(getattr(self, s), vtypes.Input) ] +
+                [ getattr(self, s) for s in dir(self) if isinstance(getattr(self, s), vtypes.Output) ] +
+                [ getattr(self, s) for s in dir(self) if isinstance(getattr(self, s), vtypes.Inout) ] +
+                [ getattr(self, s) for s in dir(self) if isinstance(getattr(self, s), vtypes.Reg) ] +
+                [ getattr(self, s) for s in dir(self) if isinstance(getattr(self, s), vtypes.Wire) ])
         
     def get_parameters(self):
-        return ([ getattr(self, s) for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Parameter) ] +
-                [ getattr(self, s) for s in self.__dir__() if isinstance(getattr(self, s), vtypes.Localparam) ])
+        return ([ getattr(self, s) for s in dir(self) if isinstance(getattr(self, s), vtypes.Parameter) ] +
+                [ getattr(self, s) for s in dir(self) if isinstance(getattr(self, s), vtypes.Localparam) ])

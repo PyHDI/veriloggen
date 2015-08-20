@@ -3,7 +3,7 @@ import os
 import re
 import collections
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import module
 import vtypes
@@ -703,7 +703,7 @@ class VerilogReadVisitor(object):
         for item in node.items:
             if isinstance(item, vast.ForStatement):
                 ret.append( self._visit_GenerateFor(item) )
-            elif isinstance(item, vsat.IfStatement):
+            elif isinstance(item, vast.IfStatement):
                 ret.append( self._visit_GenerateIf(item) )
             else:
                 raise TypeError("Only generate-for and generate-if statements are supported.")
