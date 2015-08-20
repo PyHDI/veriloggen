@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+from __future__ import print_function
+
 class VeriloggenNode(object):
     """ Base class of Veriloggen AST object """
     def __lt__(self, r):
