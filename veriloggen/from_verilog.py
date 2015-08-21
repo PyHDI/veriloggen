@@ -4,6 +4,7 @@ import sys
 import os
 import re
 import collections
+import tempfile
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import module
@@ -14,6 +15,71 @@ import task
 import pyverilog.vparser.ast as vast
 from pyverilog.vparser.parser import VerilogCodeParser
 from pyverilog.dataflow.modulevisitor import ModuleVisitor
+
+#-------------------------------------------------------------------------------
+# User interfaces to read Verilog source code
+#-------------------------------------------------------------------------------
+def read_verilog_stubmodule(*filelist, **opt):
+    module_dict = to_module_dict(*filelist, **opt)
+    stubs = collections.OrderedDict([ (name, module.StubModule(name)) 
+                                      for name in module_dict.keys() ])
+    return stubs
+    
+def read_verilog_module(*filelist, **opt):
+    module_dict = to_module_dict(*filelist, **opt)
+    visitor = VerilogReadVisitor()
+    modules = collections.OrderedDict([ (name, visitor.visit(m) )
+                                        for name, m in module_dict.items() ])
+    return modules
+
+def read_verilog_module_str(code, encode='utf-8'):
+    tmp = tempfile.NamedTemporaryFile()
+    tmp.write(code.encode(encode))
+    tmp.read()
+    filename = tmp.name
+    ret = read_verilog_module(filename)
+    tmp.close()
+    return ret
+    
+def read_verilog_stubmodule_str(code, encode='utf-8'):
+    tmp = tempfile.NamedTemporaryFile()
+    tmp.write(code.encode(encode))
+    tmp.read()
+    filename = tmp.name
+    ret = read_verilog_stubmodule(filename)
+    tmp.close()
+    return ret
+    
+#-------------------------------------------------------------------------------
+def to_module_dict(*filelist, **opt):
+    ast = to_ast(*filelist, **opt)
+    
+    module_visitor = ModuleVisitor()
+    module_visitor.visit(ast)
+    module_names = module_visitor.get_modulenames()
+    moduleinfotable = module_visitor.get_moduleinfotable()
+    moduleinfo = moduleinfotable.getDefinitions()
+    module_dict = collections.OrderedDict([ (n, d.definition) for n, d in moduleinfo.items() ])
+
+    return module_dict
+
+#-------------------------------------------------------------------------------
+def to_ast(*filelist, **opt):
+    include = opt['include'] if 'include' in opt else ()
+    define = opt['define'] if 'define' in opt else ()
+    if not isinstance(include, tuple) and not isinstance(include, list):
+        raise TypeError('"include" option of read_verilog must be tuple or list, not %s' %
+                        type(include))
+    if not isinstance(include, tuple) and not isinstance(include, list):
+        raise TypeError('"include" option of read_verilog must be tuple or list, not %s' %
+                        type(include))
+    
+    code_parser = VerilogCodeParser(filelist,
+                                    preprocess_include=include,
+                                    preprocess_define=define)
+    ast = code_parser.parse()
+
+    return ast
 
 #-------------------------------------------------------------------------------
 def str_to_signed(s):
@@ -741,48 +807,3 @@ class VerilogReadVisitor(object):
     def visit_SingleStatement(self, node):
         return self.visit(node.statement)
         
-#-------------------------------------------------------------------------------
-def to_ast(*filelist, **opt):
-    include = opt['include'] if 'include' in opt else ()
-    define = opt['define'] if 'define' in opt else ()
-    if not isinstance(include, tuple) and not isinstance(include, list):
-        raise TypeError('"include" option of read_verilog must be tuple or list, not %s' %
-                        type(include))
-    if not isinstance(include, tuple) and not isinstance(include, list):
-        raise TypeError('"include" option of read_verilog must be tuple or list, not %s' %
-                        type(include))
-    
-    code_parser = VerilogCodeParser(filelist,
-                                    preprocess_include=include,
-                                    preprocess_define=define)
-    ast = code_parser.parse()
-
-    return ast
-
-#-------------------------------------------------------------------------------
-def to_module_dict(*filelist, **opt):
-    ast = to_ast(*filelist, **opt)
-    
-    module_visitor = ModuleVisitor()
-    module_visitor.visit(ast)
-    module_names = module_visitor.get_modulenames()
-    moduleinfotable = module_visitor.get_moduleinfotable()
-    moduleinfo = moduleinfotable.getDefinitions()
-    module_dict = collections.OrderedDict([ (n, d.definition) for n, d in moduleinfo.items() ])
-
-    return module_dict
-
-#-------------------------------------------------------------------------------
-def read_verilog_stubmodule(*filelist, **opt):
-    module_dict = to_module_dict(*filelist, **opt)
-    stubs = collections.OrderedDict([ (name, module.StubModule(name)) 
-                                      for name in module_dict.keys() ])
-    return stubs
-    
-#-------------------------------------------------------------------------------
-def read_verilog_module(*filelist, **opt):
-    module_dict = to_module_dict(*filelist, **opt)
-    visitor = VerilogReadVisitor()
-    modules = collections.OrderedDict([ (name, visitor.visit(m) )
-                                        for name, m in module_dict.items() ])
-    return modules
