@@ -232,9 +232,11 @@ class Module(vtypes.VeriloggenNode):
             return
 
         if isinstance(obj, Instance):
-            self.instance[obj.name] = obj
             if isinstance(obj.module, Module):
+                self.instance[obj.module.name] = obj
                 self.submodule[obj.module.name] = obj.module
+            elif isinstance(obj.module, str):
+                self.instance[obj.module] = obj
             return
 
         raise TypeError("Object type '%s' is not supported." % str(type(obj)))

@@ -10,9 +10,8 @@ import vtypes
 
 #-------------------------------------------------------------------------------
 class Task(vtypes.VeriloggenNode):
-    def __init__(self, name, width=1):
+    def __init__(self, name):
         self.name = name
-        self.width = width
         self.io_variable = collections.OrderedDict()
         self.variable = collections.OrderedDict()
         self.statement = None

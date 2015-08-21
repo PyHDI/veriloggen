@@ -661,13 +661,13 @@ class VerilogReadVisitor(object):
         return [ self.visit(instance) for instance in node.instances ]
         
     def visit_Instance(self, node):
-        module = module.StubModule(node.module)
+        m = module.StubModule(node.module)
         instname = node.name
         params = [ self.visit(param) for param in node.parameterlist ]
         ports = [ self.visit(port) for port in node.portlist ]
         if node.array is not None:
             raise ValueError("Instance array is not currently supported.")
-        instance = vtypes.Instance(module, instname, params, ports)
+        instance = module.Instance(m, instname, params, ports)
         self.add_object(instance)
         return instance
         
@@ -678,57 +678,56 @@ class VerilogReadVisitor(object):
         
     def visit_PortArg(self, node):
         portname = node.portname
-        argname = self.visit(node.argname)
+        argname = self.visit(node.argname) if node.argname is not None else None
         return (portname, argname)
     
     def visit_Function(self, node):
         name = node.name
-        width = self.visit(retwidth) if node.width is not None else None
-        function = vtypes.Function(name, width)
+        width = self.visit(node.retwidth) if node.retwidth is not None else None
+        func = function.Function(name, width)
         statement = [ self.visit(s) for s in node.statement ]
         body = []
         for s in statement:
             if isinstance(s, vtypes.Input):
-                function.Input(s.name, s.width, s.length, s.signed, s.value)
+                func.Input(s.name, s.width, s.length, s.signed, s.value)
             elif isinstance(s, vtypes.Reg):
-                function.Reg(s.name, s.width, s.length, s.signed, s.value)
+                func.Reg(s.name, s.width, s.length, s.signed, s.value)
             elif isinstance(s, vtypes.Integer):
-                function.Integer(s.name, s.width, s.length, s.signed, s.value)
+                func.Integer(s.name, s.width, s.length, s.signed, s.value)
             else:
                 body.append(s)
-        function.Body(*body)
-        self.add_object(function)
-        return function
+        func.Body(*body)
+        self.add_object(func)
+        return func
         
     def visit_FunctionCall(self, node):
         name = self.visit(node.name)
-        args = tuple([ self.visit(arg) for arg in ndoe.args ])
-        call = vtypes.FunctionCall(name, args)
+        args = tuple([ self.visit(arg) for arg in node.args ])
+        call = function.FunctionCall(name, args)
         return call
         
     def visit_Task(self, node):
         name = node.name
-        width = self.visit(retwidth) if node.width is not None else None
-        task = vtypes.Task(name, width)
+        _task = task.Task(name)
         statement = [ self.visit(s) for s in node.statement ]
         body = []
         for s in statement:
             if isinstance(s, vtypes.Input):
-                task.Input(s.name, s.width, s.length, s.signed, s.value)
+                _task.Input(s.name, s.width, s.length, s.signed, s.value)
             elif isinstance(s, vtypes.Reg):
-                task.Reg(s.name, s.width, s.length, s.signed, s.value)
+                _task.Reg(s.name, s.width, s.length, s.signed, s.value)
             elif isinstance(s, vtypes.Integer):
-                task.Integer(s.name, s.width, s.length, s.signed, s.value)
+                _task.Integer(s.name, s.width, s.length, s.signed, s.value)
             else:
                 body.append(s)
-        task.Body(*body)
-        self.add_object(task)
-        return task
+        _task.Body(*body)
+        self.add_object(_task)
+        return _task
         
     def visit_TaskCall(self, node):
         name = self.visit(node.name)
-        args = tuple([ self.visit(arg) for arg in ndoe.args ])
-        call = vtypes.TaskCall(name, args)
+        args = tuple([ self.visit(arg) for arg in node.args ])
+        call = task.TaskCall(name, args)
         return call
 
     def _visit_GenerateFor(self, item):
@@ -762,7 +761,8 @@ class VerilogReadVisitor(object):
         self.pop_module()
         _if_false = _if_true.Else(false_scope)
         self.push_module(_if_false)
-        statement = self.visit(item.false_statement)
+        statement = (self.visit(item.false_statement)
+                     if item.false_statement is not None else None)
         self.pop_module()
         return ret
         
