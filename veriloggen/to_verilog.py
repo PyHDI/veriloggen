@@ -498,14 +498,15 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
     #---------------------------------------------------------------------------
     def visit_Parameter(self, node):
         name = node.name
-        value = self.visit(node.value)
+        value = self.bind_visitor.visit(node.value)
         width = None if node.width is None else self.visit(node.width)
         signed = node.signed
         return vast.Parameter(name, value, width, signed)
 
     def visit_Localparam(self, node):
         name = node.name
-        value = self.visit(node.value)
+
+        value = self.bind_visitor.visit(node.value)
         width = None if node.width is None else self.visit(node.width)
         signed = node.signed
         return vast.Localparam(name, value, width, signed)

@@ -176,6 +176,7 @@ class VerilogReadVisitor(object):
         return ports
         
     def visit_Port(self, node):
+        if node.type is None: return None
         name = node.name
         width = self.visit(node.width) if node.width is not None else None
         _type = getattr(vtypes, node.type, None)
