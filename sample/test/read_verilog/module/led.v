@@ -3,8 +3,8 @@ module blinkled #
    parameter WIDTH = 8
   )
   (
-   input [0:0] CLK, 
-   input [0:0] RST, 
+   input CLK, 
+   input RST, 
    output reg [WIDTH-1:0] LED
   );
   reg [32-1:0] count;

@@ -6,8 +6,8 @@ module modified_led #
    parameter WIDTH = 8
   )
   (
-   input [(0+1)-1:0] CLK, 
-   input [(0+1)-1:0] RST, 
+   input CLK, 
+   input RST, 
    output reg [((WIDTH-1)+1)-1:0] LED,
    input enable,
    output busy
