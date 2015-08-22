@@ -779,7 +779,7 @@ class VerilogReadVisitor(object):
     
     def visit_SystemCall(self, node):
         cmd = node.syscall
-        args = tuple([ self.visit(a) for arg in node.args ])
+        args = tuple([ self.visit(arg) for arg in node.args ])
         systask = vtypes.SystemTask(cmd, *args)
         return systask
     
@@ -806,5 +806,5 @@ class VerilogReadVisitor(object):
         raise TypeError("Fork/Join is not currently supported.")
     
     def visit_SingleStatement(self, node):
-        return self.visit(node.statement)
-        
+        statement = self.visit(node.statement)
+        return vtypes.SingleStatement(statement)

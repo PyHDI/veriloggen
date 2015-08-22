@@ -409,8 +409,11 @@ class VerilogCommonVisitor(object):
     def visit_SystemTask(self, node):
         cmd = node.cmd
         args = tuple([ self.visit(a) for a in node.args ])
-        syscall = vast.SystemCall(cmd, args)
-        return vast.SingleStatement(syscall)
+        return vast.SystemCall(cmd, args)
+        
+    def visit_SingleStatement(self, node):
+        statement = self.visit(node.statement)
+        return vast.SingleStatement(statement)
     
     #---------------------------------------------------------------------------
     def visit_Event(self, node):
