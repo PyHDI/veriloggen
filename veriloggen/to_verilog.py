@@ -422,11 +422,9 @@ class VerilogCommonVisitor(object):
     def visit_Wait(self, node):
         raise TypeError("Type %s is not supported." % str(type(node)))
     
-    def visit_Forever(self, node):
-        raise TypeError("Type %s is not supported." % str(type(node)))
-    
     def visit_Delay(self, node):
-        raise TypeError("Type %s is not supported." % str(type(node)))
+        delay = self.visit(node.value)
+        return vast.DelayStatement(delay)
     
     #---------------------------------------------------------------------------
     def visit_Function(self, node):
@@ -678,12 +676,20 @@ class VerilogAlwaysVisitor(VerilogCommonVisitor):
     def visit_Subst(self, node):
         left = self.visit(node.left)
         right = self.visit(node.right)
-        if node.blk: vast.BlockingSubstitution(left, right)
-        return vast.NonblockingSubstitution(left, right)
+        ldelay = self.visit(node.ldelay) if node.ldelay else None
+        rdelay = self.visit(node.rdelay) if node.rdelay else None
+        if node.blk: vast.BlockingSubstitution(left, right, ldelay, rdelay)
+        return vast.NonblockingSubstitution(left, right, ldelay, rdelay)
 
 #-------------------------------------------------------------------------------
 class VerilogBlockingVisitor(VerilogCommonVisitor):
     def visit_Subst(self, node):
         left = self.visit(node.left)
         right = self.visit(node.right)
-        return vast.BlockingSubstitution(left, right)
+        ldelay = vast.DelayStatement(self.visit(node.ldelay)) if node.ldelay else None
+        rdelay = vast.DelayStatement(self.visit(node.rdelay)) if node.rdelay else None
+        return vast.BlockingSubstitution(left, right, ldelay, rdelay)
+
+    def visit_Forever(self, node):
+        statement = vast.Block(tuple([ self.visit(s) for s in node.statement ]))
+        return vast.ForeverStatement(statement)

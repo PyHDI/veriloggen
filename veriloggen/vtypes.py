@@ -137,11 +137,11 @@ class _Variable(_Numeric):
         self.value = value
         self.initvalue = initvalue
     
-    def __call__(self, r):
-        return self.next(r)
+    def __call__(self, r, ldelay=None, rdelay=None):
+        return self.next(r, ldelay, rdelay)
 
-    def next(self, r):
-        return Subst(self, r)
+    def next(self, r, ldelay=None, rdelay=None):
+        return Subst(self, r, ldelay=ldelay, rdelay=rdelay)
     
     def connect(self, prefix='', postfix=''):
         return ( prefix + self.name + postfix, self )
@@ -562,14 +562,6 @@ class SystemTask(_Numeric):
         self.cmd = cmd
         self.args = tuple(args)
         
-def SystemStatement(cmd, *args):
-    return SingleStatement(SystemTask(cmd, *args))
-
-#-------------------------------------------------------------------------------
-class SingleStatement(VeriloggenNode):
-    def __init__(self, statement):
-        self.statement = statement
-
 #-------------------------------------------------------------------------------
 class Event(VeriloggenNode):
     def __init__(self, sensitivity):
@@ -596,3 +588,14 @@ class Forever(VeriloggenNode):
 class Delay(VeriloggenNode):
     def __init__(self, value):
         self.value = value
+
+#-------------------------------------------------------------------------------
+class SingleStatement(VeriloggenNode):
+    def __init__(self, statement):
+        self.statement = statement
+
+def SystemStatement(cmd, *args):
+    return SingleStatement(SystemTask(cmd, *args))
+
+def DelayStatement(value):
+    return SingleStatement(Delay(value))
