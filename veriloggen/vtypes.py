@@ -48,6 +48,12 @@ class VeriloggenNode(object):
     def __xor__(self, r):
         raise TypeError('Not allowed operation.')
     
+    def __lshift__(self, r):
+        raise TypeError('Not allowed operation.')
+
+    def __rshift__(self, r):
+        raise TypeError('Not allowed operation.')
+
     def __getitem__(self, r):
         raise TypeError('Not allowed operation.')
 
@@ -98,6 +104,12 @@ class _Numeric(VeriloggenNode):
     def __xor__(self, r):
         return Xor(self, r)
     
+    def __lshift__(self, r):
+        return Sll(self, r)
+
+    def __rshift__(self, r):
+        return Srl(self, r)
+
     def __getitem__(self, r):
         if isinstance(r, slice):
             left = r.start
@@ -109,6 +121,9 @@ class _Numeric(VeriloggenNode):
                 raise ValueError("slice with step is not supported in Verilog Slice.")
         return Pointer(self, r)
 
+    def sra(self, r): # shift right arithmetically
+        return Sra(self, r)
+    
     def repeat(self, times):
         return Repeat(self, times)
 

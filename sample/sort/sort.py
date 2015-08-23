@@ -68,6 +68,6 @@ def mkSort(numports=4):
     return m
 
 if __name__ == '__main__':
-    led = mkSort()
-    verilog = led.to_verilog()
+    sort = mkSort()
+    verilog = sort.to_verilog()
     print(verilog)
