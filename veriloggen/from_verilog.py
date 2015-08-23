@@ -559,15 +559,15 @@ class VerilogReadVisitor(object):
     def visit_BlockingSubstitution(self, node):
         left = self.visit(node.left)
         right = self.visit(node.right)
-        ldelay= self.visit(node.ldelay) if node.ldelay is not None else None
-        rdelay = self.visit(node.rdelay) if node.rdelay is not None else None
+        ldelay= self.visit(node.ldelay.delay) if node.ldelay is not None else None
+        rdelay = self.visit(node.rdelay.delay) if node.rdelay is not None else None
         return vtypes.Subst(left, right, blk=True, ldelay=ldelay, rdelay=rdelay)
         
     def visit_NonblockingSubstitution(self, node):
         left = self.visit(node.left)
         right = self.visit(node.right)
-        ldelay= self.visit(node.ldelay) if node.ldelay is not None else None
-        rdelay = self.visit(node.rdelay) if node.rdelay is not None else None
+        ldelay= self.visit(node.ldelay.delay) if node.ldelay is not None else None
+        rdelay = self.visit(node.rdelay.delay) if node.rdelay is not None else None
         return vtypes.Subst(left, right, blk=False, ldelay=ldelay, rdelay=rdelay)
         
     def visit_IfStatement(self, node):
