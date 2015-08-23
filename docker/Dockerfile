@@ -9,9 +9,9 @@ RUN pip install jedi epc virtualenv jinja2
 RUN pip3 install jedi epc virtualenv jinja2
 RUN mkdir /home/veriloggen/
 WORKDIR "/home/veriloggen"
-RUN git clone https://github.com/shtaxxx/Pyverilog.git
+RUN git clone https://github.com/PyHDI/Pyverilog.git
 RUN cd Pyverilog && python setup.py install && cd ../
 RUN cd Pyverilog && python3 setup.py install && cd ../
-RUN git clone https://github.com/shtaxxx/veriloggen.git
+RUN git clone https://github.com/PyHDI/veriloggen.git
 RUN cd veriloggen && python setup.py install && cd ../
 RUN cd veriloggen && python3 setup.py install && cd ../
