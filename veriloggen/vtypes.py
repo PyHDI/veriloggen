@@ -561,12 +561,15 @@ class SystemTask(_Numeric):
     def __init__(self, cmd, *args):
         self.cmd = cmd
         self.args = args
+        
+def SystemStatement(cmd, *args):
+    return SingleStatement(SystemTask(cmd, *args))
 
 #-------------------------------------------------------------------------------
 class SingleStatement(VeriloggenNode):
     def __init__(self, statement):
         self.statement = statement
-        
+
 #-------------------------------------------------------------------------------
 class Event(VeriloggenNode):
     def __init__(self, sensitivity):

@@ -27,7 +27,8 @@ def mkLed():
         ).Else(
             If(count == 1024 - 1)(
                 led(led + 1),
-                SystemTask('display', 'led:%x', led)
+                #SystemStatement('display', 'led:%x', led)
+                SingleStatement(SystemTask('display', 'led:%x', led))
             )
         ))
     
@@ -35,6 +36,5 @@ def mkLed():
 
 if __name__ == '__main__':
     led = mkLed()
-    # led.to_verilog(filename='tmp.v')
     verilog = led.to_verilog()
     print(verilog)
