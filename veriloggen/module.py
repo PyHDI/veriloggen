@@ -100,8 +100,8 @@ class Module(vtypes.VeriloggenNode):
         return t
 
     #---------------------------------------------------------------------------
-    def Always(self, sensitivity):
-        t = vtypes.Always(sensitivity)
+    def Always(self, *sensitivity):
+        t = vtypes.Always(*sensitivity)
         self.always.append(t)
         self.items.append(t)
         return t
