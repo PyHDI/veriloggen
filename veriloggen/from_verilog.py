@@ -535,7 +535,7 @@ class VerilogReadVisitor(object):
     def visit_Always(self, node):
         sensitivity = self.visit(node.sens_list)
         statement = to_tuple(self.visit(node.statement))
-        always = vtypes.Always(sensitivity)
+        always = vtypes.Always(*sensitivity)
         always = always(*statement)
         self.add_object(always)
         return always

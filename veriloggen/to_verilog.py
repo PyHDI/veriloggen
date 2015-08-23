@@ -585,22 +585,10 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
     
     #---------------------------------------------------------------------------
     def visit_Always(self, node):
-        sensitivity = None
-        if isinstance(node.sensitivity, (list, tuple)):
-            sensitivity = vast.SensList(
-                tuple([ self.visit(n) if isinstance(n, vtypes.Sensitive) else
-                        vast.Sens(self.visit(n)) for n in node.sensitivity ]))
-        else:
-            sensitivity = vast.SensList(
-                (self.visit(node.sensitivity),)
-                if isinstance(node.sensitivity, vtypes.Sensitive) else
-                vast.Sens(self.visit(node.sensitivity)))
-
-        statement = vast.Block([])
-        if isinstance(node.statement, (list, tuple)):
-            statement = vast.Block(tuple([ self.always_visitor.visit(n) for n in node.statement ]))
-        else:
-            statement = self.always_visitor.visit(node.statement)
+        sensitivity = vast.SensList(
+            tuple([ self.visit(n) if isinstance(n, vtypes.Sensitive) else
+                    vast.Sens(self.visit(n)) for n in node.sensitivity ]))
+        statement = vast.Block(tuple([ self.always_visitor.visit(n) for n in node.statement ]))
         return vast.Always(sensitivity, statement)
 
     #---------------------------------------------------------------------------
@@ -610,6 +598,11 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
         left = self.bind_visitor.visit(node.statement.left)
         right = self.bind_visitor.visit(node.statement.right)
         return vast.Assign(left, right)
+    
+    #---------------------------------------------------------------------------
+    def visit_Initial(self, node):
+        statement = vast.Block(tuple([ self.blocking_visitor.visit(s) for s in node.statement ]))
+        return vast.Initial(statement)
     
     #---------------------------------------------------------------------------
     def visit_Function(self, node):

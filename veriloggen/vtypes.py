@@ -333,7 +333,7 @@ class Slice(_SpecialOperator):
     
 class Cat(_SpecialOperator):
     def __init__(self, *vars):
-        self.vars = vars
+        self.vars = tuple(vars)
     
     def __call__(self, r):
         return self.next(r)
@@ -378,8 +378,8 @@ class Subst(VeriloggenNode):
 
 #-------------------------------------------------------------------------------
 class Always(VeriloggenNode):
-    def __init__(self, sensitivity):
-        self.sensitivity = sensitivity
+    def __init__(self, *sensitivity):
+        self.sensitivity = tuple(sensitivity)
         self.statement = None
 
     def __call__(self, *statement):
@@ -399,7 +399,7 @@ class Assign(VeriloggenNode):
 #-------------------------------------------------------------------------------
 class Initial(VeriloggenNode):
     def __init__(self, *statement):
-        self.statement = statement
+        self.statement = tuple(statement)
 
 #-------------------------------------------------------------------------------
 class If(VeriloggenNode):
@@ -510,7 +510,7 @@ class Casex(Case): pass
 class When(VeriloggenNode) :
     def __init__(self, *condition):
         self.type_check_condition(*condition)
-        self.condition = None if len(condition) == 0 or condition[0] is None else condition
+        self.condition = None if len(condition) == 0 or condition[0] is None else tuple(condition)
         self.statement = None
 
     def __call__(self, *args):
@@ -552,7 +552,7 @@ class ScopeIndex(VeriloggenNode):
         
 class Scope(_Numeric):
     def __init__(self, *args):
-        self.args = args
+        self.args = tuple(args)
         if not args:
             raise ValueError("Scope requires at least one argument.")
 
@@ -560,7 +560,7 @@ class Scope(_Numeric):
 class SystemTask(_Numeric):
     def __init__(self, cmd, *args):
         self.cmd = cmd
-        self.args = args
+        self.args = tuple(args)
         
 def SystemStatement(cmd, *args):
     return SingleStatement(SystemTask(cmd, *args))
@@ -576,8 +576,8 @@ class Event(VeriloggenNode):
         self.sensitivity = sensitivity
 
 class Wait(VeriloggenNode):
-    def __init__(self, condition):
-        self.condition = condition
+    def __init__(self, *condition):
+        self.condition = tuple(condition)
         self.statement = None
 
     def __call__(self, *statement):
@@ -591,7 +591,7 @@ class Wait(VeriloggenNode):
         
 class Forever(VeriloggenNode):
     def __init__(self, *statement):
-        self.statement = statement
+        self.statement = tuple(statement)
 
 class Delay(VeriloggenNode):
     def __init__(self, value):
