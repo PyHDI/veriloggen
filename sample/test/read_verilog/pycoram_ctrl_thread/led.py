@@ -10,5 +10,5 @@ def mkThread():
 
 if __name__ == '__main__':
     modules = mkThread()
-    code = ''.join([ m.to_verilog() for m in modules.values() ])
-    print(code)
+    verilog = ''.join([ m.to_verilog() for m in modules.values() ])
+    print(verilog)

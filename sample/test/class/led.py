@@ -33,6 +33,6 @@ class Led(Module):
             ))
         
 if __name__ == '__main__':
-    led_module = Led()
-    led_code = led_module.to_verilog()
-    print(led_code)
+    led = Led()
+    verilog = led.to_verilog()
+    print(verilog)

@@ -109,6 +109,5 @@ def mkTop():
 #-------------------------------------------------------------------------------
 if __name__ == '__main__':
     top = mkTop()
-    # top.to_verilog(filename='tmp.v')
     verilog = top.to_verilog()
     print(verilog)

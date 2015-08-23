@@ -46,6 +46,6 @@ def mkLed():
     return m
 
 if __name__ == '__main__':
-    led_module = mkLed()
-    led_code = led_module.to_verilog()
-    print(led_code)
+    led = mkLed()
+    verilog = led.to_verilog()
+    print(verilog)

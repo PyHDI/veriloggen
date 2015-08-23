@@ -72,6 +72,6 @@ def mkTop(wid=8):
     return m
 
 if __name__ == '__main__':
-    led_module = mkTop()
-    led_code = led_module.to_verilog()
-    print(led_code)
+    led = mkTop()
+    verilog = led.to_verilog()
+    print(verilog)

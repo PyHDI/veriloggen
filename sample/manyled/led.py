@@ -41,6 +41,5 @@ def mkLed():
 
 if __name__ == '__main__':
     led = mkLed()
-    # led.to_verilog(filename='tmp.v')
     verilog = led.to_verilog()
     print(verilog)

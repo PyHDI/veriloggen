@@ -49,6 +49,6 @@ def mkTop():
     return m
 
 if __name__ == '__main__':
-    top_module = mkTop()
-    top_code = top_module.to_verilog()
-    print(top_code)
+    top = mkTop()
+    verilog = top.to_verilog()
+    print(verilog)
