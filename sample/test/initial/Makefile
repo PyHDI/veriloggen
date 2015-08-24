@@ -27,4 +27,13 @@ check:
 
 .PHONY: clean
 clean:
-	rm -rf *.pyc __pycache__ parsetab.py *.out
+	rm -rf *.pyc __pycache__ parsetab.py *.out tmp.v uut.vcd
+
+.PHONY: sim
+sim:
+	iverilog -Wall tmp.v
+	./a.out
+
+.PHONY: view
+view:
+	gtkwave --giga uut.vcd &
