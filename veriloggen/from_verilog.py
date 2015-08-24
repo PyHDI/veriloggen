@@ -807,4 +807,5 @@ class VerilogReadVisitor(object):
     
     def visit_SingleStatement(self, node):
         statement = self.visit(node.statement)
+        if isinstance(statement, vtypes.Delay): return statement
         return vtypes.SingleStatement(statement)
