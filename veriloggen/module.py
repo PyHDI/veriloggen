@@ -116,6 +116,7 @@ class Module(vtypes.VeriloggenNode):
         t = vtypes.Initial(*statement)
         self.initial.append(t)
         self.items.append(t)
+        return t
     
     def Function(self, name, width=1):
         t = function.Function(name, width)

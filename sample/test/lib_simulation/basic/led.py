@@ -43,22 +43,11 @@ def mkTest():
                      params=(('WIDTH', width),),
                      ports=(('CLK', clk), ('RST', rst), ('LED', led)))
 
-    m.Initial(
-        SystemStatement('dumpfile', 'uut.vcd'),
-        SystemStatement('dumpvars', 0, uut)
-    )
+    lib.simulation.setup_waveform(m, uut)
+    lib.simulation.setup_clock(m, clk, hperiod=5)
+    init = lib.simulation.setup_reset(m, rst, period=100)
 
-    m.Initial(
-        clk(0),
-        Forever(clk(Not(clk), ldelay=5)) # forever #5 CLK = ~CLK;
-    )
-
-    m.Initial(
-        rst(0),
-        DelayStatement(100),
-        rst(1),
-        DelayStatement(100),
-        rst(0),
+    init.add(
         DelayStatement(1000),
         SystemStatement('finish'),
     )
@@ -67,5 +56,5 @@ def mkTest():
 
 if __name__ == '__main__':
     test = mkTest()
-    verilog = test.to_verilog()
+    verilog = test.to_verilog('tmp.v')
     print(verilog)

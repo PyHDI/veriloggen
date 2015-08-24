@@ -404,7 +404,7 @@ class Initial(VeriloggenNode):
     def add(self, *statement):
         if self.statement is None:
             return self.set_statement(*statement)
-        self.statement = tuple(list(self.statement).extend(*statement))
+        self.statement = tuple(self.statement + statement)
         return self
 
 #-------------------------------------------------------------------------------
@@ -454,7 +454,7 @@ class For(VeriloggenNode):
     def add(self, *statement):
         if self.statement is None:
             return self.set_statement(*statement)
-        self.statement = tuple(list(self.statement).extend(*statement))
+        self.statement = tuple(self.statement + statement)
         return self
 
 #-------------------------------------------------------------------------------
@@ -475,7 +475,7 @@ class While(VeriloggenNode):
     def add(self, *statement):
         if self.statement is None:
             return self.set_statement(*statement)
-        self.statement = tuple(list(self.statement).extend(*statement))
+        self.statement = tuple(self.statement + statement)
         return self
     
 #-------------------------------------------------------------------------------
@@ -508,7 +508,7 @@ class Case(VeriloggenNode):
         if self.statement is None:
             return self.set_statement(*statement)
         self.type_check_statement(*statement)
-        self.statement = tuple(list(self.statement).extend(*statement))
+        self.statement = tuple(self.statement + statement)
         return self
 
 class Casex(Case): pass
@@ -547,7 +547,7 @@ class When(VeriloggenNode) :
         if self.statement is None:
             return self.set_statement(*statement)
         self.type_check_statement(*statement)
-        self.statement = tuple(list(self.statement).extend(*statement))
+        self.statement = tuple(self.statement + statement)
         return self
     
 #-------------------------------------------------------------------------------
