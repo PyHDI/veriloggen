@@ -1,6 +1,98 @@
 import sort
 
 expected_verilog = """
+module simsort #
+ (
+  parameter WIDTH = 32
+ )
+ (
+ );
+
+  reg CLK;
+  reg RST;
+  reg [WIDTH-1:0] input_0;
+  reg [WIDTH-1:0] input_1;
+  reg [WIDTH-1:0] input_2;
+  reg [WIDTH-1:0] input_3;
+  wire [WIDTH-1:0] output_0;
+  wire [WIDTH-1:0] output_1;
+  wire [WIDTH-1:0] output_2;
+  wire [WIDTH-1:0] output_3;
+  reg kick;
+  wire busy;
+
+  sort #
+   (
+    WIDTH
+   )
+  uut
+   (
+    CLK,
+    RST,
+    input_0,
+    input_1,
+    input_2,
+    input_3,
+    output_0,
+    output_1,
+    output_2,
+    output_3,
+    kick,
+    busy
+   );
+
+  initial begin
+    $dumpfile("uut.vcd");
+    $dumpvars(0, uut);
+  end
+
+  initial begin
+    CLK = 0; 
+    forever begin
+      #5 CLK = !CLK;
+    end
+  end
+
+  initial begin
+    RST = 0;
+    #100;
+    RST = 1;
+    #100;
+    RST = 0;
+  end
+
+  initial begin
+    begin
+      input_0 = 100;
+      input_1 = 99;
+      input_2 = 98;
+      input_3 = 97;
+    end
+    kick = 0;
+    wait(RST);
+    @(posedge CLK);
+    wait(!RST);
+    @(posedge CLK);
+    @(posedge CLK);
+    @(posedge CLK);
+    kick = 1;
+    @(posedge CLK);
+    kick = 0;
+  end
+
+  initial begin
+    #100;
+    wait(kick);
+    @(posedge CLK);
+    wait(busy);
+    @(posedge CLK);
+    wait(!busy);
+    @(posedge CLK);
+    $finish;
+  end
+
+endmodule
+
 module sort #
  (
   parameter WIDTH = 32
@@ -134,7 +226,7 @@ endmodule
 """
 
 def test_sort():
-    sort_module = sort.mkSort()
+    sort_module = sort.mkSimSort()
     sort_code = sort_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

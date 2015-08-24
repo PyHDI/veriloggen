@@ -525,8 +525,8 @@ class VerilogReadVisitor(object):
     def visit_Assign(self, node):
         left = self.visit(node.left)
         right = self.visit(node.right)
-        ldelay= self.visit(node.ldelay) if node.ldelay is not None else None
-        rdelay = self.visit(node.rdelay) if node.rdelay is not None else None
+        ldelay= self.visit(node.ldelay.value) if node.ldelay is not None else None
+        rdelay = self.visit(node.rdelay.value) if node.rdelay is not None else None
         subst = vtypes.Subst(left, right, ldelay=ldelay, rdelay=rdelay)
         assign = vtypes.Assign(subst)
         self.add_object(assign)
@@ -637,14 +637,14 @@ class VerilogReadVisitor(object):
         
     def visit_EventStatement(self, node):
         sensitivity = self.visit(node.sens_list)
-        event = vtypes.Event(sensitivity)
+        event = vtypes.Event(*sensitivity)
         return event
         
     def visit_WaitStatement(self, node):
         condition = self.visit(node.cond)
-        statement = to_tuple(self.visit(node.statement))
-        wait = vtypes.Wait()
-        wait = wait(*statement)
+        statement = to_tuple(self.visit(node.statement)) if node.statement else None
+        wait = vtypes.Wait(condition)
+        if statement: wait = wait(*statement)
         return wait
         
     def visit_ForeverStatement(self, node):

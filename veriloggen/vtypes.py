@@ -568,14 +568,17 @@ class SystemTask(_Numeric):
         self.cmd = cmd
         self.args = tuple(args)
         
+def Systask(cmd, *args):
+    return SingleStatement(SystemTask(cmd, *args))
+
 #-------------------------------------------------------------------------------
 class Event(VeriloggenNode):
-    def __init__(self, sensitivity):
+    def __init__(self, *sensitivity):
         self.sensitivity = sensitivity
 
 class Wait(VeriloggenNode):
-    def __init__(self, *condition):
-        self.condition = tuple(condition)
+    def __init__(self, condition):
+        self.condition = condition
         self.statement = None
 
     def __call__(self, *statement):
@@ -600,8 +603,3 @@ class SingleStatement(VeriloggenNode):
     def __init__(self, statement):
         self.statement = statement
 
-def SystemStatement(cmd, *args):
-    return SingleStatement(SystemTask(cmd, *args))
-
-def DelayStatement(value):
-    return SingleStatement(Delay(value))

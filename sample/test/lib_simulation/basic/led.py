@@ -48,8 +48,8 @@ def mkTest():
     init = lib.simulation.setup_reset(m, rst, period=100)
 
     init.add(
-        DelayStatement(1000),
-        SystemStatement('finish'),
+        Delay(1000),
+        Systask('finish'),
     )
 
     return m

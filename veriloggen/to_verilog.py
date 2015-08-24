@@ -417,14 +417,14 @@ class VerilogCommonVisitor(object):
     
     #---------------------------------------------------------------------------
     def visit_Event(self, node):
-        raise TypeError("Type %s is not supported." % str(type(node)))
-    
-    def visit_Wait(self, node):
-        raise TypeError("Type %s is not supported." % str(type(node)))
+        sensitivity = vast.SensList(
+            tuple([ self.visit(n) if isinstance(n, vtypes.Sensitive) else
+                    vast.Sens(self.visit(n)) for n in node.sensitivity ]))
+        return vast.EventStatement(sensitivity)
     
     def visit_Delay(self, node):
         delay = self.visit(node.value)
-        return vast.DelayStatement(delay)
+        return vast.SingleStatement(vast.DelayStatement(delay))
     
     #---------------------------------------------------------------------------
     def visit_Function(self, node):
@@ -697,3 +697,20 @@ class VerilogBlockingVisitor(VerilogCommonVisitor):
     def visit_Forever(self, node):
         statement = vast.Block(tuple([ self.visit(s) for s in node.statement ]))
         return vast.ForeverStatement(statement)
+
+    def visit_Wait(self, node):
+        cond = self.visit(node.condition)
+        if node.statement is None:
+            return vast.WaitStatement(cond, None)
+        statement = vast.Block(tuple([ self.visit(s) for s in node.statement ]))
+        return vast.WaitStatement(cond, statement)
+
+    def visit_Posedge(self, node):
+        sig = self.visit(node.name)
+        t = 'posedge'
+        return vast.Sens(sig, t)
+    
+    def visit_Negedge(self, node):
+        sig = self.visit(node.name)
+        t = 'negedge'
+        return vast.Sens(sig, t)

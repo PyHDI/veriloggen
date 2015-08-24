@@ -67,7 +67,57 @@ def mkSort(numports=4):
     
     return m
 
+def mkSimSort(numports=4):
+    m = Module('simsort')
+    width = m.Parameter('WIDTH', 32)
+    clk = m.Reg('CLK')
+    rst = m.Reg('RST')
+    inputs = [ m.Reg('input_' + str(i), width) for i in range(numports) ] 
+    outputs = [ m.Wire('output_' + str(i), width) for i in range(numports) ]
+    kick = m.Reg('kick')
+    busy = m.Wire('busy')
+
+    uut = m.Instance(mkSort(numports), 'uut', (width,),
+                     [clk, rst] + inputs + outputs + [kick, busy])
+    
+    lib.simulation.setup_waveform(m, uut)
+    lib.simulation.setup_clock(m, clk)
+    lib.simulation.setup_reset(m, rst)
+
+    m.Initial(
+        [ ip(100 - i) for i, ip in enumerate(inputs) ],
+        kick(0),
+        
+        Wait(rst),
+        lib.simulation.next_clock(clk),
+        
+        Wait(Not(rst)),
+        lib.simulation.next_clock(clk),
+        lib.simulation.next_clock(clk),
+        lib.simulation.next_clock(clk),
+        
+        kick(1),
+        lib.simulation.next_clock(clk),
+        kick(0),
+    )
+
+    m.Initial(
+        Delay(100),
+        Wait(kick),
+        lib.simulation.next_clock(clk),
+        
+        Wait(busy),
+        lib.simulation.next_clock(clk),
+        
+        Wait(Not(busy)),
+        lib.simulation.next_clock(clk),
+        
+        Systask('finish'),
+    )
+
+    return m
+
 if __name__ == '__main__':
-    sort = mkSort()
-    verilog = sort.to_verilog()
+    sort = mkSimSort()
+    verilog = sort.to_verilog('tmp.v')
     print(verilog)

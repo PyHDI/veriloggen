@@ -44,8 +44,8 @@ def mkTest():
                      ports=(('CLK', clk), ('RST', rst), ('LED', led)))
 
     m.Initial(
-        SystemStatement('dumpfile', 'uut.vcd'),
-        SystemStatement('dumpvars', 0, uut)
+        Systask('dumpfile', 'uut.vcd'),
+        Systask('dumpvars', 0, uut)
     )
 
     m.Initial(
@@ -55,12 +55,12 @@ def mkTest():
 
     m.Initial(
         rst(0),
-        DelayStatement(100),
+        Delay(100),
         rst(1),
-        DelayStatement(100),
+        Delay(100),
         rst(0),
-        DelayStatement(1000),
-        SystemStatement('finish'),
+        Delay(1000),
+        Systask('finish'),
     )
 
     return m
