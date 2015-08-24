@@ -446,6 +446,10 @@ class VerilogCommonVisitor(object):
         args = tuple([ self.visit(a) for a in node.args ])
         return vast.TaskCall(name, args)
     
+    #---------------------------------------------------------------------------
+    def visit_Instance(self, node):
+        return vast.Identifier(node.instname)
+
 #-------------------------------------------------------------------------------
 class VerilogModuleVisitor(VerilogCommonVisitor):
     def __init__(self):

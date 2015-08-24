@@ -401,6 +401,12 @@ class Initial(VeriloggenNode):
     def __init__(self, *statement):
         self.statement = tuple(statement)
 
+    def add(self, *statement):
+        if self.statement is None:
+            return self.set_statement(*statement)
+        self.statement = tuple(list(self.statement).extend(*statement))
+        return self
+
 #-------------------------------------------------------------------------------
 class If(VeriloggenNode):
     def __init__(self, condition):

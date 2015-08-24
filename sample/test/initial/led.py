@@ -39,9 +39,14 @@ def mkTest():
     rst = m.Reg('RST')
     led = m.Wire('LED', width)
 
-    m.Instance(mkLed(), 'uut',
-               params=(('WIDTH', width),),
-               ports=(('CLK', clk), ('RST', rst), ('LED', led)))
+    uut = m.Instance(mkLed(), 'uut',
+                     params=(('WIDTH', width),),
+                     ports=(('CLK', clk), ('RST', rst), ('LED', led)))
+
+    m.Initial(
+        SystemStatement('dumpfile', 'uut.vcd'),
+        SystemStatement('dumpvars', 0, uut)
+    )
 
     m.Initial(
         clk(0),
@@ -64,3 +69,4 @@ if __name__ == '__main__':
     test = mkTest()
     verilog = test.to_verilog()
     print(verilog)
+    #open('led.v', 'w').write(verilog)
