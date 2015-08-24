@@ -2,6 +2,8 @@ import sys
 import os
 from veriloggen import *
 
+nclk = lib.simulation.next_clock 
+
 def mkSort(numports=4):
     m = Module('sort')
     width = m.Parameter('WIDTH', 32)
@@ -89,28 +91,28 @@ def mkSimSort(numports=4):
         kick(0),
         
         Wait(rst),
-        lib.simulation.next_clock(clk),
+        nclk(clk),
         
         Wait(Not(rst)),
-        lib.simulation.next_clock(clk),
-        lib.simulation.next_clock(clk),
-        lib.simulation.next_clock(clk),
+        nclk(clk),
+        nclk(clk),
+        nclk(clk),
         
         kick(1),
-        lib.simulation.next_clock(clk),
+        nclk(clk),
         kick(0),
     )
 
     m.Initial(
         Delay(100),
         Wait(kick),
-        lib.simulation.next_clock(clk),
+        nclk(clk),
         
         Wait(busy),
-        lib.simulation.next_clock(clk),
+        nclk(clk),
         
         Wait(Not(busy)),
-        lib.simulation.next_clock(clk),
+        nclk(clk),
         
         Systask('finish'),
     )
