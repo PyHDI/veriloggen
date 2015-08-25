@@ -15,7 +15,11 @@ def mkLed():
     for i in range(4):
         fsm.goto_next()
 
+    # condition alias
     c = count >= 16
+
+    # assert valid if the condition is satisfied
+    # then de-assert 3 cycles later with same condition
     fsm.add( valid(1), cond=c)
     fsm.add( valid(0), cond=c, delay=3)
     fsm.goto_next(cond=c)
@@ -23,19 +27,19 @@ def mkLed():
     for i in range(8):
         fsm.goto_next()
 
+    # condition alias
     c = count >= 32
+
+    # assert valid 1 cycle later if the condition is satisfied now
+    # then de-assert 4 cycles later with same condition
     for i in range(8):
-        fsm.add( valid(1), cond=c)
-        fsm.add( valid(0), cond=c, delay=3 )
+        fsm.add( valid(1), cond=c, delay=1)
+        fsm.add( valid(0), cond=c, delay=4 )
         fsm.goto_next(cond=c)
-    
-    for i in range(4):
-        fsm.goto_next()
     
     m.Always(Posedge(clk))(
         If(rst)(
             m.reset(),
-            fsm.reset()
         ).Else(
             count(count + 1),
             fsm.to_case()

@@ -1,79 +1,202 @@
 import led
 
 expected_verilog = """
-module userlogic #
-  (
-   parameter DATA_WIDTH = 32,
-   parameter ADDR_LEN = 10
-  )
-  (
-   input CLK,
-   input RST
-  );
+module test #
+ (
+  parameter DATA_WIDTH = 32,
+  parameter ADDR_LEN = 10
+ )
+ (
+ );
 
-  reg [ADDR_LEN-1:0] mem_addr;
-  reg [DATA_WIDTH-1:0] mem_wdata;
-  wire [DATA_WIDTH-1:0] mem_rdata;
-  reg mem_wvalid;
-  reg [DATA_WIDTH-1:0] ch_wdata;
-  reg ch_enq;
-  wire ch_almfull;
-  wire [DATA_WIDTH-1:0] ch_rdata;
-  reg ch_deq;
-  wire ch_empty;
+  reg CLK;
+  reg RST;
+  wire [ADDR_LEN-1:0] mem_addr;
+  wire [DATA_WIDTH-1:0] mem_wdata;
+  reg [DATA_WIDTH-1:0] mem_rdata;
+  wire mem_wvalid;
+  wire mem_rvalid;
+  wire [DATA_WIDTH-1:0] ch_wdata;
+  wire ch_enq;
+  reg ch_almfull;
+  reg [DATA_WIDTH-1:0] ch_rdata;
+  wire ch_deq;
+  reg ch_empty;
 
-  CoramMemory1P
+  userlogic
   #(
-    .CORAM_THREAD_NAME("ctrl_thread"),
-    .CORAM_THREAD_ID(0),
-    .CORAM_ID(0),
-    .CORAM_SUB_ID(0),
-    .CORAM_ADDR_LEN(ADDR_LEN),
-    .CORAM_DATA_WIDTH(DATA_WIDTH)
+    .DATA_WIDTH(DATA_WIDTH),
+    .ADDR_LEN(ADDR_LEN)
   )
-  mem
-  (
-    .CLK(CLK),
-    .ADDR(mem_addr),
-    .D(mem_wdata),
-    .WE(mem_wvalid),
-    .Q(mem_rdata)
-  );
-
-  CoramChannel
-  #(
-    .CORAM_THREAD_NAME("ctrl_thread"),
-    .CORAM_THREAD_ID(0),
-    .CORAM_ID(0),
-    .CORAM_SUB_ID(0),
-    .CORAM_ADDR_LEN(4),
-    .CORAM_DATA_WIDTH(DATA_WIDTH)
-  )
-  ch
+  uut
   (
     .CLK(CLK),
     .RST(RST),
-    .D(ch_wdata),
-    .ENQ(ch_enq),
-    .ALM_FULL(ch_almfull),
-    .Q(ch_rdata),
-    .DEQ(ch_deq),
-    .EMPTY(ch_empty)
+    .mem_addr(mem_addr),
+    .mem_wdata(mem_wdata),
+    .mem_rdata(mem_rdata),
+    .mem_wvalid(mem_wvalid),
+    .mem_rvalid(mem_rvalid),
+    .ch_wdata(ch_wdata),
+    .ch_enq(ch_enq),
+    .ch_almfull(ch_almfull),
+    .ch_rdata(ch_rdata),
+    .ch_deq(ch_deq),
+    .ch_empty(ch_empty)
   );
+
+  reg [32-1:0] test_fsm;
+  localparam test_fsm_init = 0;
+
+  initial begin
+    $dumpfile("uut.vcd");
+    $dumpvars(0, uut, test_fsm);
+  end
+
+  initial begin
+    CLK = 0;
+    forever begin
+      #5 CLK = (!CLK);
+    end
+  end
+
+  initial begin
+    RST = 0;
+    mem_rdata = 0;
+    ch_almfull = 0;
+    ch_rdata = 0;
+    ch_empty = 1;
+    test_fsm = test_fsm_init;
+    #100;
+    RST = 1;
+    #100;
+    RST = 0;
+  end
+
+  localparam test_fsm_1 = 1;
+  localparam test_fsm_2 = 2;
+  localparam test_fsm_3 = 3;
+  localparam test_fsm_4 = 4;
+  localparam test_fsm_5 = 5;
+  localparam test_fsm_6 = 6;
+  localparam test_fsm_7 = 7;
+  localparam test_fsm_8 = 8;
+  localparam test_fsm_9 = 9;
+  localparam test_fsm_10 = 10;
+  localparam test_fsm_11 = 11;
+  localparam test_fsm_12 = 12;
+
+  reg [32-1:0] d1_test_fsm;
+  reg test_fsm_cond_12_1_0;
+  localparam test_fsm_13 = 13;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      mem_rdata <= 0;
+      ch_almfull <= 0;
+      ch_rdata <= 0;
+      ch_empty <= 1;
+      test_fsm <= test_fsm_init;
+      d1_test_fsm <= test_fsm_init;
+      test_fsm_cond_12_1_0 <= 0;
+    end else begin
+      d1_test_fsm <= test_fsm;
+      case(d1_test_fsm)
+        test_fsm_12: begin
+          if(test_fsm_cond_12_1_0) begin
+            mem_rdata <= mem_rdata + 1;
+          end 
+        end
+      endcase
+      case(test_fsm)
+        test_fsm_init: begin
+          test_fsm <= test_fsm_1;
+        end
+        test_fsm_1: begin
+          test_fsm <= test_fsm_2;
+        end
+        test_fsm_2: begin
+          test_fsm <= test_fsm_3;
+        end
+        test_fsm_3: begin
+          test_fsm <= test_fsm_4;
+        end
+        test_fsm_4: begin
+          test_fsm <= test_fsm_5;
+        end
+        test_fsm_5: begin
+          test_fsm <= test_fsm_6;
+        end
+        test_fsm_6: begin
+          test_fsm <= test_fsm_7;
+        end
+        test_fsm_7: begin
+          test_fsm <= test_fsm_8;
+        end
+        test_fsm_8: begin
+          test_fsm <= test_fsm_9;
+        end
+        test_fsm_9: begin
+          test_fsm <= test_fsm_10;
+        end
+        test_fsm_10: begin
+          ch_empty <= 0;
+          ch_rdata <= 10;
+          test_fsm <= test_fsm_11;
+        end
+        test_fsm_11: begin
+          if(ch_deq) begin
+            ch_empty <= 1;
+          end 
+          mem_rdata <= 0;
+          if(ch_deq) begin
+            test_fsm <= test_fsm_12;
+          end 
+        end
+        test_fsm_12: begin
+          test_fsm_cond_12_1_0 <= mem_rvalid;
+          if(ch_enq) begin
+            test_fsm <= test_fsm_13;
+          end 
+        end
+        test_fsm_13: begin
+          $finish;
+        end
+      endcase
+    end
+  end
+endmodule
+
+module userlogic #
+ (
+  parameter DATA_WIDTH = 32,
+  parameter ADDR_LEN = 10
+ )
+ (
+  input CLK,
+  input RST,
+  output reg [ADDR_LEN-1:0] mem_addr,
+  output reg [DATA_WIDTH-1:0] mem_wdata,
+  input [DATA_WIDTH-1:0] mem_rdata,
+  output reg mem_wvalid,
+  output reg mem_rvalid,
+  output reg [DATA_WIDTH-1:0] ch_wdata,
+  output reg ch_enq,
+  input ch_almfull,
+  input [DATA_WIDTH-1:0] ch_rdata,
+  output reg ch_deq,
+  input ch_empty
+ );
 
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
-
   reg [32-1:0] read_count;
   reg [32-1:0] sum;
   reg [32-1:0] size;
-
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
-
   reg [32-1:0] d1_fsm;
   reg [32-1:0] d2_fsm;
-
   localparam fsm_3 = 3;
   localparam fsm_4 = 4;
   localparam fsm_5 = 5;
@@ -83,13 +206,14 @@ module userlogic #
       mem_addr <= 0;
       mem_wdata <= 0;
       mem_wvalid <= 0;
+      mem_rvalid <= 0;
       ch_wdata <= 0;
       ch_enq <= 0;
       ch_deq <= 0;
+      fsm <= fsm_init;
       read_count <= 0;
       sum <= 0;
       size <= 0;
-      fsm <= fsm_init;
       d1_fsm <= fsm_init;
       d2_fsm <= fsm_init;
     end else begin
@@ -100,7 +224,7 @@ module userlogic #
           size <= ch_rdata;
         end
         fsm_4: begin
-          sum <= mem_rdata;
+          sum <= sum + mem_rdata;
         end
         fsm_5: begin
           $display("sum=%d", sum);
@@ -109,6 +233,9 @@ module userlogic #
       case(d1_fsm)
         fsm_2: begin
           ch_deq <= 0;
+        end
+        fsm_4: begin
+          mem_rvalid <= 0;
         end
         fsm_5: begin
           ch_enq <= 0;
@@ -125,13 +252,17 @@ module userlogic #
           if(!ch_empty) begin
             ch_deq <= 1;
           end 
-          fsm <= fsm_3;
+          if(!ch_empty) begin
+            fsm <= fsm_3;
+          end 
         end
         fsm_3: begin
+          mem_addr <= -1;
           fsm <= fsm_4;
         end
         fsm_4: begin
-          mem_addr <= 0;
+          mem_rvalid <= 1;
+          mem_addr <= mem_addr + 1;
           read_count <= read_count + 1;
           if(read_count == size - 1) begin
             fsm <= fsm_5;
@@ -148,226 +279,11 @@ module userlogic #
     end
   end
 endmodule
-
-module CoramMemory1P #
-(
-  parameter CORAM_THREAD_NAME = "undefined",
-  parameter CORAM_THREAD_ID = 0,
-  parameter CORAM_ID = 0,
-  parameter CORAM_SUB_ID = 0,
-  parameter CORAM_ADDR_LEN = 10,
-  parameter CORAM_DATA_WIDTH = 32
-)
-(
-  input CLK,
-  input [(((CORAM_ADDR_LEN - 1) + 1) - 1):0] ADDR,
-  input [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] D,
-  input WE,
-  output [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] Q
-);
-
-  localparam CORAM_MEM_SIZE = (2 ** CORAM_ADDR_LEN);
-
-endmodule
-
-module CoramMemoryBE1P #
-(
-  parameter CORAM_THREAD_NAME = "undefined",
-  parameter CORAM_THREAD_ID = 0,
-  parameter CORAM_ID = 0,
-  parameter CORAM_SUB_ID = 0,
-  parameter CORAM_ADDR_LEN = 10,
-  parameter CORAM_DATA_WIDTH = 32
-)
-(
-  input CLK,
-  input [(((CORAM_ADDR_LEN - 1) + 1) - 1):0] ADDR,
-  input [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] D,
-  input WE,
-  input [(((CORAM_MASK_WIDTH - 1) + 1) - 1):0] MASK,
-  output [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] Q
-);
-
-  localparam CORAM_MEM_SIZE = (2 ** CORAM_ADDR_LEN);
-  localparam CORAM_MASK_WIDTH = (CORAM_DATA_WIDTH / 8);
-
-endmodule
-
-module CoramMemory2P #
-(
-  parameter CORAM_THREAD_NAME = "undefined",
-  parameter CORAM_THREAD_ID = 0,
-  parameter CORAM_ID = 0,
-  parameter CORAM_SUB_ID = 0,
-  parameter CORAM_ADDR_LEN = 10,
-  parameter CORAM_DATA_WIDTH = 32
-)
-(
-  input CLK,
-  input [(((CORAM_ADDR_LEN - 1) + 1) - 1):0] ADDR0,
-  input [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] D0,
-  input WE0,
-  output [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] Q0,
-  input [(((CORAM_ADDR_LEN - 1) + 1) - 1):0] ADDR1,
-  input [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] D1,
-  input WE1,
-  output [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] Q1
-);
-
-  localparam CORAM_MEM_SIZE = (2 ** CORAM_ADDR_LEN);
-
-endmodule
-
-module CoramMemoryBE2P #
-(
-  parameter CORAM_THREAD_NAME = "undefined",
-  parameter CORAM_THREAD_ID = 0,
-  parameter CORAM_ID = 0,
-  parameter CORAM_SUB_ID = 0,
-  parameter CORAM_ADDR_LEN = 10,
-  parameter CORAM_DATA_WIDTH = 32
-)
-(
-  input CLK,
-  input [(((CORAM_ADDR_LEN - 1) + 1) - 1):0] ADDR0,
-  input [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] D0,
-  input WE0,
-  input [(((CORAM_MASK_WIDTH - 1) + 1) - 1):0] MASK0,
-  output [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] Q0,
-  input [(((CORAM_ADDR_LEN - 1) + 1) - 1):0] ADDR1,
-  input [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] D1,
-  input WE1,
-  input [(((CORAM_MASK_WIDTH - 1) + 1) - 1):0] MASK1,
-  output [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] Q1
-);
-
-  localparam CORAM_MEM_SIZE = (2 ** CORAM_ADDR_LEN);
-  localparam CORAM_MASK_WIDTH = (CORAM_DATA_WIDTH / 8);
-
-endmodule
-
-module CoramInStream #
-(
-  parameter CORAM_THREAD_NAME = "undefined",
-  parameter CORAM_THREAD_ID = 0,
-  parameter CORAM_ID = 0,
-  parameter CORAM_SUB_ID = 0,
-  parameter CORAM_ADDR_LEN = 10,
-  parameter CORAM_DATA_WIDTH = 32
-)
-(
-  input CLK,
-  input RST,
-  output [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] Q,
-  input DEQ,
-  output EMPTY,
-  output ALM_EMPTY
-);
-
-  localparam CORAM_MEM_SIZE = (2 ** CORAM_ADDR_LEN);
-
-endmodule
-
-module CoramOutStream #
-(
-  parameter CORAM_THREAD_NAME = "undefined",
-  parameter CORAM_THREAD_ID = 0,
-  parameter CORAM_ID = 0,
-  parameter CORAM_SUB_ID = 0,
-  parameter CORAM_ADDR_LEN = 4,
-  parameter CORAM_DATA_WIDTH = 32
-)
-(
-  input CLK,
-  input RST,
-  input [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] D,
-  input ENQ,
-  output FULL,
-  output ALM_FULL
-);
-
-  localparam CORAM_MEM_SIZE = (2 ** CORAM_ADDR_LEN);
-
-endmodule
-
-module CoramChannel #
-(
-  parameter CORAM_THREAD_NAME = "undefined",
-  parameter CORAM_THREAD_ID = 0,
-  parameter CORAM_ID = 0,
-  parameter CORAM_SUB_ID = 0,
-  parameter CORAM_ADDR_LEN = 4,
-  parameter CORAM_DATA_WIDTH = 32
-)
-(
-  input CLK,
-  input RST,
-  input [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] D,
-  input ENQ,
-  output FULL,
-  output ALM_FULL,
-  output [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] Q,
-  input DEQ,
-  output EMPTY,
-  output ALM_EMPTY
-);
-
-  localparam CORAM_MEM_SIZE = (2 ** CORAM_ADDR_LEN);
-
-endmodule
-
-module CoramRegister #
-(
-  parameter CORAM_THREAD_NAME = "undefined",
-  parameter CORAM_THREAD_ID = 0,
-  parameter CORAM_ID = 0,
-  parameter CORAM_SUB_ID = 0,
-  parameter CORAM_ADDR_LEN = 10,
-  parameter CORAM_DATA_WIDTH = 32
-)
-(
-  input CLK,
-  input [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] D,
-  input WE,
-  output [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] Q
-);
-
-  localparam CORAM_MEM_SIZE = (2 ** CORAM_ADDR_LEN);
-
-endmodule
-
-module CoramSlaveStream #
-(
-  parameter CORAM_THREAD_NAME = "undefined",
-  parameter CORAM_THREAD_ID = 0,
-  parameter CORAM_ID = 0,
-  parameter CORAM_SUB_ID = 0,
-  parameter CORAM_ADDR_LEN = 4,
-  parameter CORAM_DATA_WIDTH = 32
-)
-(
-  input CLK,
-  input RST,
-  input [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] D,
-  input ENQ,
-  output FULL,
-  output ALM_FULL,
-  output [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] Q,
-  input DEQ,
-  output EMPTY,
-  output ALM_EMPTY
-);
-
-  localparam CORAM_MEM_SIZE = (2 ** CORAM_ADDR_LEN);
-
-endmodule
 """
 
 def test_led():
-    userlogic = led.mkUserlogic()
-    pycoram_modules = led.mkPycoram()
-    code = ''.join([userlogic.to_verilog()] +
-                   [p.to_verilog() for p in pycoram_modules.values()])
+    test = led.mkTest()
+    code = test.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
     from pyverilog.ast_code_generator.codegen import ASTCodeGenerator

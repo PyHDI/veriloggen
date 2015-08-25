@@ -58,10 +58,6 @@ module blinkled
   localparam fsm_8 = 8;
   localparam fsm_9 = 9;
   localparam fsm_10 = 10;
-  localparam fsm_11 = 11;
-  localparam fsm_12 = 12;
-  localparam fsm_13 = 13;
-  localparam fsm_14 = 14;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -122,18 +118,6 @@ module blinkled
         fsm_9: begin
           valid <= 1;
           fsm <= fsm_10;
-        end
-        fsm_10: begin
-          fsm <= fsm_11;
-        end
-        fsm_11: begin
-          fsm <= fsm_12;
-        end
-        fsm_12: begin
-          fsm <= fsm_13;
-        end
-        fsm_13: begin
-          fsm <= fsm_14;
         end
       endcase
     end

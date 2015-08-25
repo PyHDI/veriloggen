@@ -4,65 +4,68 @@ import collections
 
 from veriloggen import *
 
-def mkPycoram():
-    modules = read_verilog_module('pycoram.v')
-    return modules
-
 def mkUserlogic():
     m = Module('userlogic')
     data_width = m.Parameter('DATA_WIDTH', 32)
     addr_len = m.Parameter('ADDR_LEN', 10)
     clk = m.Input('CLK')
     rst = m.Input('RST')
-    mem_addr = m.Reg('mem_addr', addr_len, initval=0)
-    mem_wdata = m.Reg('mem_wdata', data_width, initval=0)
-    mem_rdata = m.Wire('mem_rdata', data_width)
-    mem_wvalid = m.Reg('mem_wvalid', initval=0)
-    ch_wdata = m.Reg('ch_wdata', data_width, initval=0)
-    ch_enq = m.Reg('ch_enq', initval=0)
-    ch_almfull = m.Wire('ch_almfull')
-    ch_rdata = m.Wire('ch_rdata', data_width)
-    ch_deq = m.Reg('ch_deq', initval=0)
-    ch_empty = m.Wire('ch_empty')
     
-    m.Instance('CoramMemory1P', 'mem',
-               (('CORAM_THREAD_NAME', 'ctrl_thread'),
-                ('CORAM_THREAD_ID', 0),
-                ('CORAM_ID', 0),
-                ('CORAM_SUB_ID', 0),
-                ('CORAM_ADDR_LEN', addr_len),
-                ('CORAM_DATA_WIDTH', data_width)),
-               (('CLK', clk),
-                ('ADDR', mem_addr),
-                ('D', mem_wdata),
-                ('WE', mem_wvalid),
-                ('Q', mem_rdata)))
-
-    m.Instance('CoramChannel', 'ch',
-               (('CORAM_THREAD_NAME', 'ctrl_thread'),
-                ('CORAM_THREAD_ID', 0),
-                ('CORAM_ID', 0),
-                ('CORAM_SUB_ID', 0),
-                ('CORAM_ADDR_LEN', 4),
-                ('CORAM_DATA_WIDTH', data_width)),
-               (('CLK', clk),
-                ('RST', rst),
-                ('D', ch_wdata),
-                ('ENQ', ch_enq),
-                ('ALM_FULL', ch_almfull),
-                ('Q', ch_rdata),
-                ('DEQ', ch_deq),
-                ('EMPTY', ch_empty)))
+    mem_addr = m.OutputReg('mem_addr', addr_len, initval=0)
+    mem_wdata = m.OutputReg('mem_wdata', data_width, initval=0)
+    mem_rdata = m.Input('mem_rdata', data_width)
+    mem_wvalid = m.OutputReg('mem_wvalid', initval=0)
+    mem_rvalid = m.OutputReg('mem_rvalid', initval=0)
+    ch_wdata = m.OutputReg('ch_wdata', data_width, initval=0)
+    ch_enq = m.OutputReg('ch_enq', initval=0)
+    ch_almfull = m.Input('ch_almfull')
+    ch_rdata = m.Input('ch_rdata', data_width)
+    ch_deq = m.OutputReg('ch_deq', initval=0)
+    ch_empty = m.Input('ch_empty')
+    
+    #mem_addr = m.Reg('mem_addr', addr_len, initval=0)
+    #mem_wdata = m.Reg('mem_wdata', data_width, initval=0)
+    #mem_rdata = m.Wire('mem_rdata', data_width)
+    #mem_wvalid = m.Reg('mem_wvalid', initval=0)
+    #mem_rvalid = m.Reg('mem_rvalid', initval=0)
+    #ch_wdata = m.Reg('ch_wdata', data_width, initval=0)
+    #ch_enq = m.Reg('ch_enq', initval=0)
+    #ch_almfull = m.Wire('ch_almfull')
+    #ch_rdata = m.Wire('ch_rdata', data_width)
+    #ch_deq = m.Reg('ch_deq', initval=0)
+    #ch_empty = m.Wire('ch_empty')
+    #
+    #m.Instance('CoramMemory1P', 'mem',
+    #           (('CORAM_THREAD_NAME', 'ctrl_thread'),
+    #            ('CORAM_THREAD_ID', 0),
+    #            ('CORAM_ID', 0),
+    #            ('CORAM_SUB_ID', 0),
+    #            ('CORAM_ADDR_LEN', addr_len),
+    #            ('CORAM_DATA_WIDTH', data_width)),
+    #           (('CLK', clk),
+    #            ('ADDR', mem_addr),
+    #            ('D', mem_wdata),
+    #            ('WE', mem_wvalid),
+    #            ('Q', mem_rdata)))
+    #
+    #m.Instance('CoramChannel', 'ch',
+    #           (('CORAM_THREAD_NAME', 'ctrl_thread'),
+    #            ('CORAM_THREAD_ID', 0),
+    #            ('CORAM_ID', 0),
+    #            ('CORAM_SUB_ID', 0),
+    #            ('CORAM_ADDR_LEN', 4),
+    #            ('CORAM_DATA_WIDTH', data_width)),
+    #           (('CLK', clk),
+    #            ('RST', rst),
+    #            ('D', ch_wdata),
+    #            ('ENQ', ch_enq),
+    #            ('ALM_FULL', ch_almfull),
+    #            ('Q', ch_rdata),
+    #            ('DEQ', ch_deq),
+    #            ('EMPTY', ch_empty)))
 
     # Finite State Machine
     fsm = lib.FSM(m, 'fsm')
-
-    def mem_write(addr, wdata):
-        return mem_addr(addr), mem_wdata(wdata), mem_wvalid(1)
-    def mem_read_request(addr):
-        return mem_addr(addr)
-    def mem_read_data(rdata):
-        return rdata(mem_rdata)
 
     read_count = m.Reg('read_count', width=32, initval=0)
     sum = m.Reg('sum', width=32, initval=0)
@@ -76,11 +79,13 @@ def mkUserlogic():
     fsm.add( ch_deq(1), cond=Not(ch_empty) )
     fsm.add( ch_deq(0), delay=1 )
     fsm.add( size(ch_rdata), delay=2 )
-    fsm.goto_next()
+    fsm.goto_next(cond=Not(ch_empty))
+    fsm.add( mem_addr( -Int(1) ))
     fsm.goto_next()
     
-    fsm.add( mem_read_request(0), read_count.inc() )
-    fsm.add( mem_read_data(sum), delay=2 )
+    fsm.add( mem_rvalid(1), mem_addr.inc(), read_count.inc() )
+    fsm.add( mem_rvalid(0), delay=1 )
+    fsm.add( sum.add(mem_rdata), delay=2 )
     fsm.goto_next( cond=(read_count==size-1) )
     
     fsm.add( Systask('display', 'sum=%d', sum), delay=2)
@@ -92,14 +97,68 @@ def mkUserlogic():
     
     # building always statement
     m.Always(Posedge(clk))(
-        If(rst)( m.reset(), fsm.reset()
+        If(rst)( m.reset()
         ).Else( fsm.to_case() ))
     
     return m
 
+def mkTest():
+    m = Module('test')
+    data_width = m.Parameter('DATA_WIDTH', 32)
+    addr_len = m.Parameter('ADDR_LEN', 10)
+    clk = m.Reg('CLK')
+    rst = m.Reg('RST')
+    mem_addr = m.Wire('mem_addr', addr_len)
+    mem_wdata = m.Wire('mem_wdata', data_width)
+    mem_rdata = m.Reg('mem_rdata', data_width, initval=0)
+    mem_wvalid = m.Wire('mem_wvalid')
+    mem_rvalid = m.Wire('mem_rvalid')
+    ch_wdata = m.Wire('ch_wdata', data_width)
+    ch_enq = m.Wire('ch_enq')
+    ch_almfull = m.Reg('ch_almfull', initval=0)
+    ch_rdata = m.Reg('ch_rdata', data_width, initval=0)
+    ch_deq = m.Wire('ch_deq')
+    ch_empty = m.Reg('ch_empty', initval=1)
+
+    uut = m.Instance(mkUserlogic(), 'uut',
+                     params=connect_same_name(data_width, addr_len),
+                     ports=connect_same_name(clk, rst,
+                                             mem_addr, mem_wdata, mem_rdata,
+                                             mem_wvalid, mem_rvalid,
+                                             ch_wdata, ch_enq, ch_almfull,
+                                             ch_rdata, ch_deq, ch_empty))
+
+    fsm = lib.FSM(m, 'test_fsm')
+    lib.simulation.setup_waveform(m, uut, fsm.state)
+    lib.simulation.setup_clock(m, clk, hperiod=5)
+    init = lib.simulation.setup_reset(m, rst, m.reset(), period=100)
+
+    #init.add(
+    #    Delay(1000),
+    #    Systask('finish'),
+    #)
+
+    for i in range(10):
+        fsm.goto_next()
+    
+    fsm.add( ch_empty(0) )
+    fsm.add( ch_rdata(10) )
+    fsm.goto_next()
+    
+    fsm.add( ch_empty(1), cond=ch_deq)
+    fsm.add( mem_rdata(0) )
+    fsm.goto_next(cond=ch_deq)
+
+    fsm.add( mem_rdata.inc(), cond=mem_rvalid, delay=1 )
+    fsm.goto_next(cond=ch_enq)
+
+    fsm.add( Systask('finish') )
+
+    fsm.make_always(clk, rst)
+    
+    return m
+
 if __name__ == '__main__':
-    userlogic = mkUserlogic()
-    pycoram_modules = mkPycoram()
-    verilog = ''.join([userlogic.to_verilog()] +
-                      [p.to_verilog() for p in pycoram_modules.values()])
+    test = mkTest()
+    verilog = test.to_verilog('tmp.v')
     print(verilog)

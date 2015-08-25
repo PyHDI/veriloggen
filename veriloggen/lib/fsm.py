@@ -13,14 +13,18 @@ class FSM(vtypes.VeriloggenNode):
         self.m = m
         self.name = name
         self.width = width
-        self.state = self.m.Reg(name, width)
         self.state_count = 0
+        self.state = self.m.Reg(name, width)  # set initval later
+        
         self.mark = {} # key:index
         self.set_mark(0, self.name + '_' + initname)
+        self.state.initval = self.get_mark(0)
+        
         self.body = collections.defaultdict(list)
         self.delay_amount = 0
         self.delayed_state = {} # key:delay
-        self.delayed_body = collections.defaultdict(functools.partial(collections.defaultdict, list)) # key:delay
+        self.delayed_body = collections.defaultdict(
+            functools.partial(collections.defaultdict, list)) # key:delay
         self.tmp_count = 0
 
     #---------------------------------------------------------------------------
@@ -78,9 +82,10 @@ class FSM(vtypes.VeriloggenNode):
     def add_delayed_cond(self, statement, index, delay):
         prev = statement
         for i in range(delay):
-            tmp_name = '_'.join([self.name, 'cond', str(index), str(delay), str(self.tmp_count)])
+            tmp_name = '_'.join([self.name, 'cond', str(index),
+                                 str(delay), str(self.tmp_count)])
             self.tmp_count += 1
-            tmp = self.m.Reg(tmp_name)
+            tmp = self.m.Reg(tmp_name, initval=0)
             self.add(tmp(prev), delay=i)
             prev = tmp
         return prev
@@ -139,6 +144,15 @@ class FSM(vtypes.VeriloggenNode):
         return tuple(ret)
 
     #---------------------------------------------------------------------------
+    def make_always(self, clk, rst):
+        self.m.Always(vtypes.Posedge(clk))(
+            vtypes.If(rst)(
+                self.m.reset()
+            )(
+                self.to_case()
+            ))
+    
+    #---------------------------------------------------------------------------
     def get_index(self):
         return self.state_count
         
@@ -184,7 +198,8 @@ class FSM(vtypes.VeriloggenNode):
             return self.get_delayed_state(value)
 
         for i in range(self.delay_amount+1, value+1):
-            d = self.m.Reg(''.join(['d', str(i), '_', self.name]), self.width)
+            d = self.m.Reg(''.join(['d', str(i), '_', self.name]), self.width,
+                           initval=self.get_mark(0))
             self.delayed_state[i] = d
 
         self.delay_amount = value
@@ -249,3 +264,4 @@ class FSM(vtypes.VeriloggenNode):
 
     def __len__(self):
         return self.state_count + 1
+

@@ -14,27 +14,26 @@ def mkLed():
     for i in range(2):
         fsm.goto_next()
 
+    # assert valid, then de-assert at the next cycle
     fsm.add( valid(1) )
     fsm.add( valid(0), delay=1 )
     
     for i in range(4):
         fsm.goto_next()
-    
+
+    # assert valid, then de-assert at the next cycle if not asserted again
     for i in range(4):
         fsm.add( valid(1) )
         fsm.add( valid(0), delay=1 )
         fsm.goto_next()
     
-    for i in range(4):
-        fsm.goto_next()
-    
-    m.Always(Posedge(clk))(
-        If(rst)(
-            m.reset(),
-            fsm.reset()
-        ).Else(
-            fsm.to_case()
-        ))
+    #m.Always(Posedge(clk))(
+    #    If(rst)(
+    #        m.reset(),
+    #    ).Else(
+    #        fsm.to_case()
+    #    ))
+    fsm.make_always(clk, rst)
 
     return m
 
