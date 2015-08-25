@@ -6,10 +6,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import vtypes
 
-def setup_waveform(m, uut):
+def setup_waveform(m, *uuts):
     ret = m.Initial(
         vtypes.Systask('dumpfile', 'uut.vcd'),
-        vtypes.Systask('dumpvars', 0, uut)
+        vtypes.Systask('dumpvars', 0, *uuts)
     )
     return ret
 
@@ -20,9 +20,10 @@ def setup_clock(m, clk, hperiod=5):
     )
     return ret
 
-def setup_reset(m, reset, period=100):
+def setup_reset(m, reset, *statement, period=100):
     ret = m.Initial(
         reset(0),
+        statement,
         vtypes.Delay(100),
         reset(1),
         vtypes.Delay(100),
