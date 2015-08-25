@@ -62,12 +62,10 @@ module simsort #
   end
 
   initial begin
-    begin
-      input_0 = 100;
-      input_1 = 99;
-      input_2 = 98;
-      input_3 = 97;
-    end
+    input_0 = 100;
+    input_1 = 99;
+    input_2 = 98;
+    input_3 = 97;
     kick = 0;
     wait(RST);
     @(posedge CLK);
