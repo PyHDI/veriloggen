@@ -42,11 +42,11 @@ class Module(vtypes.VeriloggenNode):
         self.items.append(t)
         return t
     
-    def OutputReg(self, name, width=None, length=None, signed=False, value=None):
+    def OutputReg(self, name, width=None, length=None, signed=False, value=None, initval=None):
         t = vtypes.Output(name, width, length, signed, value)
         self.io_variable[name] = t
         self.items.append(t)
-        t = vtypes.Reg(name, width, length, signed, value)
+        t = vtypes.Reg(name, width, length, signed, value, initval)
         self.variable[name] = t
         self.items.append(t)
         return t
@@ -63,20 +63,20 @@ class Module(vtypes.VeriloggenNode):
         self.items.append(t)
         return t
     
-    def Reg(self, name, width=None, length=None, signed=False, value=None):
-        t = vtypes.Reg(name, width, length, signed, value)
+    def Reg(self, name, width=None, length=None, signed=False, value=None, initval=None):
+        t = vtypes.Reg(name, width, length, signed, value, initval)
         self.variable[name] = t
         self.items.append(t)
         return t
     
-    def Integer(self, name, width=None, length=None, signed=False, value=None):
-        t = vtypes.Integer(name, width, length, signed, value)
+    def Integer(self, name, width=None, length=None, signed=False, value=None, initval=None):
+        t = vtypes.Integer(name, width, length, signed, value, initval)
         self.variable[name] = t
         self.items.append(t)
         return t
     
-    def Real(self, name, width=None, length=None, signed=False, value=None):
-        t = vtypes.Real(name, width, length, signed, value)
+    def Real(self, name, width=None, length=None, signed=False, value=None, initval=None):
+        t = vtypes.Real(name, width, length, signed, value, initval)
         self.variable[name] = t
         self.items.append(t)
         return t
@@ -303,6 +303,14 @@ class Module(vtypes.VeriloggenNode):
     def to_verilog(self, filename=None):
         return to_verilog.write_verilog(self, filename)
 
+    #---------------------------------------------------------------------------
+    def reset(self):
+        ret = []
+        for vname, var in self.variable.items():
+            r = var.reset()
+            if r: ret.append(r)
+        return tuple(ret)
+    
 #-------------------------------------------------------------------------------
 class StubModule(vtypes.VeriloggenNode):
     """ Verilog Module class """

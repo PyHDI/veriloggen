@@ -129,13 +129,13 @@ class _Numeric(VeriloggenNode):
 
 #-------------------------------------------------------------------------------
 class _Variable(_Numeric):
-    def __init__(self, name, width=1, length=None, signed=False, value=None, initvalue=None):
+    def __init__(self, name, width=1, length=None, signed=False, value=None, initval=None):
         self.name = name
         self.width = width
         self.length = length
         self.signed = signed
         self.value = value
-        self.initvalue = initvalue
+        self.initval = initval
     
     def __call__(self, r, ldelay=None, rdelay=None):
         return self.next(r, ldelay, rdelay)
@@ -145,17 +145,68 @@ class _Variable(_Numeric):
     
     def connect(self, prefix='', postfix=''):
         return ( prefix + self.name + postfix, self )
-        
+
+    def reset(self):
+        return None
+
 #-------------------------------------------------------------------------------
 class Input(_Variable): pass
 class Output(_Variable): pass
 class Inout(_Variable): pass
 class Tri(_Variable): pass
-class Reg(_Variable): pass
+
+class Reg(_Variable):
+    def reset(self):
+        if self.initval is None:
+            return None
+        return self.next(self.initval)
+    def add(self, r):
+        return Subst(self, Plus(self, r))
+    def sub(self, r):
+        return Subst(self, Minus(self, r))
+    def inc(self):
+        return self.add(1)
+    def dec(self):
+        return self.sub(1)
+    
 class Wire(_Variable): pass
-class Integer(_Variable): pass
-class Real(_Variable): pass
-class Genvar(_Variable): pass
+class Integer(_Variable):
+    def reset(self):
+        if self.initval is None:
+            return None
+        return self.next(self.initval)
+    def add(self, r):
+        return Subst(self, Plus(self, r))
+    def sub(self, r):
+        return Subst(self, Minus(self, r))
+    def inc(self):
+        return self.add(1)
+    def dec(self):
+        return self.sub(1)
+    
+class Real(_Variable):
+    def reset(self):
+        if self.initval is None:
+            return None
+        return self.next(self.initval)
+    def add(self, r):
+        return Subst(self, Plus(self, r))
+    def sub(self, r):
+        return Subst(self, Minus(self, r))
+    def inc(self):
+        return self.add(1)
+    def dec(self):
+        return self.sub(1)
+    
+class Genvar(_Variable):
+    def add(self, r):
+        return Subst(self, Plus(self, r))
+    def sub(self, r):
+        return Subst(self, Minus(self, r))
+    def inc(self):
+        return self.add(1)
+    def dec(self):
+        return self.sub(1)
 
 # for undetermined identifier
 class AnyType(_Variable): pass
