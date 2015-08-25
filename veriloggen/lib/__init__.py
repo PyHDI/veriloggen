@@ -14,6 +14,5 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 ## Please add import notations here for additional library
 from bundle import Bundle
 from fsm import FSM
-from pipeline import Pipeline
 import simulation
 

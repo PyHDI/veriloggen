@@ -442,5 +442,10 @@ class GenerateIfElse(Generate):
 
 #-------------------------------------------------------------------------------
 def connect_same_name(*args):
-    return [ (a.name, a) for a in args ]
-
+    ret = []
+    for arg in args:
+        if isinstance(arg, (list, tuple)):
+            ret.extend([ (a.name, a) for a in arg ])
+        else:
+            ret.append( (arg.name, arg) )
+    return ret
