@@ -93,11 +93,21 @@ class VerilogCommonVisitor(object):
         return vast.FloatConst(str(node))
     
     def visit_list(self, node):
-        return vast.Block(tuple([ self.visit(n) for n in node ]))
+        return self._optimize_block(vast.Block(tuple([ self.visit(n) for n in node ])))
 
     def visit_tuple(self, node):
         return self.visit_list(node)
 
+    def _optimize_block(self, node):
+        if not isinstance(node, vast.Block): return node
+        ret = []
+        for n in node.statements:
+            if isinstance(n, vast.Block) and n.scope is None:
+                ret.extend(n.statements)
+            else:
+                ret.append(n)
+        return vast.Block(tuple(ret))
+    
     #---------------------------------------------------------------------------
     def visit_Parameter(self, node):
         name = node.name
@@ -590,7 +600,8 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
         sensitivity = vast.SensList(
             tuple([ self.visit(n) if isinstance(n, vtypes.Sensitive) else
                     vast.Sens(self.visit(n)) for n in node.sensitivity ]))
-        statement = vast.Block(tuple([ self.always_visitor.visit(n) for n in node.statement ]))
+        statement = self._optimize_block(
+            vast.Block(tuple([ self.always_visitor.visit(n) for n in node.statement ])))
         return vast.Always(sensitivity, statement)
 
     #---------------------------------------------------------------------------
@@ -603,7 +614,8 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
     
     #---------------------------------------------------------------------------
     def visit_Initial(self, node):
-        statement = vast.Block(tuple([ self.blocking_visitor.visit(s) for s in node.statement ]))
+        statement = self._optimize_block(
+            vast.Block(tuple([ self.blocking_visitor.visit(s) for s in node.statement ])))
         return vast.Initial(statement)
     
     #---------------------------------------------------------------------------
@@ -612,7 +624,8 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
         retwidth = None if node.width is None else self.make_width(node.width)
         statement = ([ self.visit(v).first for v in node.io_variable.values() ] +
                      [ self.visit(v) for v in node.variable.values() ])
-        statement.append(vast.Block(tuple([ self.blocking_visitor.visit(s) for s in node.statement])))
+        statement.append(self._optimize_block(
+            vast.Block(tuple([ self.blocking_visitor.visit(s) for s in node.statement]))))
         return vast.Function(name, retwidth, statement)
     
     #---------------------------------------------------------------------------
@@ -621,7 +634,8 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
         retwidth = None if node.width is None else self.make_width(node.width)
         statement = ([ self.visit(v).first for v in node.io_variable.values() ] +
                      [ self.visit(v) for v in node.variable.values() ])
-        statement.append(vast.Block(tuple([ self.blocking_visitor.visit(s) for s in node.statement])))
+        statement.append(self._optimize_block(
+            vast.Block(tuple([ self.blocking_visitor.visit(s) for s in node.statement]))))
         return vast.Task(name, retwidth, statement)
     
     #---------------------------------------------------------------------------
@@ -695,14 +709,16 @@ class VerilogBlockingVisitor(VerilogCommonVisitor):
         return vast.BlockingSubstitution(left, right, ldelay, rdelay)
 
     def visit_Forever(self, node):
-        statement = vast.Block(tuple([ self.visit(s) for s in node.statement ]))
+        statement = self._optimize_block(
+            vast.Block(tuple([ self.visit(s) for s in node.statement ])))
         return vast.ForeverStatement(statement)
 
     def visit_Wait(self, node):
         cond = self.visit(node.condition)
         if node.statement is None:
             return vast.WaitStatement(cond, None)
-        statement = vast.Block(tuple([ self.visit(s) for s in node.statement ]))
+        statement = self._optimize_block(
+            vast.Block(tuple([ self.visit(s) for s in node.statement ])))
         return vast.WaitStatement(cond, statement)
 
     def visit_Posedge(self, node):
