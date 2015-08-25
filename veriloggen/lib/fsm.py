@@ -21,6 +21,7 @@ class FSM(vtypes.VeriloggenNode):
         self.delay_amount = 0
         self.delayed_state = {} # key:delay
         self.delayed_body = collections.defaultdict(functools.partial(collections.defaultdict, list)) # key:delay
+        self.tmp_count = 0
 
     #---------------------------------------------------------------------------
     def current(self):
@@ -74,19 +75,34 @@ class FSM(vtypes.VeriloggenNode):
         return self
 
     #---------------------------------------------------------------------------
+    def add_delayed_cond(self, statement, index, delay):
+        prev = statement
+        for i in range(delay):
+            tmp_name = '_'.join([self.name, 'cond', str(index), str(delay), str(self.tmp_count)])
+            self.tmp_count += 1
+            tmp = self.m.Reg(tmp_name)
+            self.add(tmp(prev), delay=i)
+            prev = tmp
+        return prev
+    
+    #---------------------------------------------------------------------------
     def add(self, *statement, **kwargs):
-        cond = kwargs['cond'] if 'cond' in kwargs else None
-        if cond is not None:
-            statement = [ vtypes.If(cond)(*statement) ]
-            
         delay = kwargs['delay'] if 'delay' in kwargs else None
-        if delay is not None:
+        if delay is not None and delay > 0:
             self.add_delayed_state(delay)
             index = self.current()
             if delay > index:
                 raise ValueError("Illegal delay amount: current=%d delay=%d" % (index, delay))
+            cond = kwargs['cond'] if 'cond' in kwargs else None
+            if cond is not None:
+                d_cond = self.add_delayed_cond(cond, index, delay)
+                statement = [ vtypes.If(d_cond)(*statement) ]
             self.delayed_body[delay][index].extend(statement)
             return self
+            
+        cond = kwargs['cond'] if 'cond' in kwargs else None
+        if cond is not None:
+            statement = [ vtypes.If(cond)(*statement) ]
             
         index = self.current()
         self.body[index].extend(statement)

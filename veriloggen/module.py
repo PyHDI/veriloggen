@@ -156,7 +156,7 @@ class Module(vtypes.VeriloggenNode):
         return t
             
     #---------------------------------------------------------------------------
-    def Instance(self, module, instname, params, ports):
+    def Instance(self, module, instname, params=None, ports=None):
         if isinstance(module, str): module = StubModule(module)
         if not isinstance(module, (Module, StubModule, str)):
             raise TypeError('"module" of Instance must be Module, StubModule, or str, not %s'
@@ -322,16 +322,22 @@ class StubModule(vtypes.VeriloggenNode):
 
 #-------------------------------------------------------------------------------
 class Instance(vtypes.VeriloggenNode):
-    def __init__(self, module, instname, params, ports):
+    def __init__(self, module, instname, params=None, ports=None):
+        if params is None: params = ()
+        if ports is None: ports = ()
         self.type_check_params(params)
         self.type_check_ports(ports)
         self.module = module
         self.instname = instname
-        if isinstance(params[0], (tuple, list)):
+        if not params:
+            self.params = ()
+        elif isinstance(params[0], (tuple, list)):
             self.params = params
         else:
             self.params = [ (None, p) for p in params ]
-        if isinstance(ports[0], (tuple, list)):
+        if not ports:
+            self.ports = ()
+        elif isinstance(ports[0], (tuple, list)):
             self.ports = ports
         else:
             self.ports = [ (None, p) for p in ports ]
