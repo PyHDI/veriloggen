@@ -408,3 +408,8 @@ class GenerateIfElse(Generate):
     def __call__(self, false_scope):
         self.false_scope = false_scope
         return self
+
+#-------------------------------------------------------------------------------
+def connect_same_name(*args):
+    return [ (a.name, a) for a in args ]
+
