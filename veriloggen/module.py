@@ -28,6 +28,7 @@ class Module(vtypes.VeriloggenNode):
         self.submodule = collections.OrderedDict()
         self.generate = collections.OrderedDict()
         self.items = []
+        self.tmp_count = 0
         
     #---------------------------------------------------------------------------
     def Input(self, name, width=None, length=None, signed=False, value=None):
@@ -63,30 +64,55 @@ class Module(vtypes.VeriloggenNode):
         self.items.append(t)
         return t
     
+    def TmpWire(self, width=None, length=None, signed=False, value=None):
+        name = '_'.join(['tmp', str(self.tmp_count)])
+        self.tmp_count += 1
+        return self.Wire(name, width, length, signed, value)
+
     def Reg(self, name, width=None, length=None, signed=False, value=None, initval=None):
         t = vtypes.Reg(name, width, length, signed, value, initval)
         self.variable[name] = t
         self.items.append(t)
         return t
     
+    def TmpReg(self, width=None, length=None, signed=False, value=None, initval=None):
+        name = '_'.join(['tmp', str(self.tmp_count)])
+        self.tmp_count += 1
+        return self.Reg(name, width, length, signed, value, initval)
+
     def Integer(self, name, width=None, length=None, signed=False, value=None, initval=None):
         t = vtypes.Integer(name, width, length, signed, value, initval)
         self.variable[name] = t
         self.items.append(t)
         return t
     
+    def TmpInteger(self, width=None, length=None, signed=False, value=None, initval=None):
+        name = '_'.join(['tmp', str(self.tmp_count)])
+        self.tmp_count += 1
+        return self.Integer(name, width, length, signed, value, initval)
+
     def Real(self, name, width=None, length=None, signed=False, value=None, initval=None):
         t = vtypes.Real(name, width, length, signed, value, initval)
         self.variable[name] = t
         self.items.append(t)
         return t
     
+    def TmpReal(self, width=None, length=None, signed=False, value=None, initval=None):
+        name = '_'.join(['tmp', str(self.tmp_count)])
+        self.tmp_count += 1
+        return self.Real(name, width, length, signed, value, initval)
+
     def Genvar(self, name, width=None, length=None, signed=False, value=None):
         t = vtypes.Genvar(name, width, length, signed, value)
         self.variable[name] = t
         self.items.append(t)
         return t
     
+    def TmpGenvar(self, width=None, length=None, signed=False, value=None):
+        name = '_'.join(['tmp', str(self.tmp_count)])
+        self.tmp_count += 1
+        return self.Genvar(name, width, length, signed, value)
+
     def Parameter(self, name, value, width=None, signed=False, length=None):
         t = vtypes.Parameter(name, value, width, signed)
         self.global_constant[name] = t
@@ -98,6 +124,11 @@ class Module(vtypes.VeriloggenNode):
         self.local_constant[name] = t
         self.items.append(t)
         return t
+
+    def TmpLocalparam(self, value, width=None, signed=False, length=None):
+        name = '_'.join(['tmp', str(self.tmp_count)])
+        self.tmp_count += 1
+        return self.Localparam(name, value, width, signed, length)
 
     #---------------------------------------------------------------------------
     def Always(self, *sensitivity):
