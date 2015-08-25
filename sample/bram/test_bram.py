@@ -44,11 +44,9 @@ module TOP #
       fsm <= fsm_init;
     end else begin
       if(fsm == fsm_init) begin        
-        begin        
-          addr <= 0;        
-          datain <= 0;        
-          write <= 0;
-        end         
+        addr <= 0;        
+        datain <= 0;        
+        write <= 0;
         fsm <= fsm_1;
       end  
       if(fsm == fsm_1) begin        
