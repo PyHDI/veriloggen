@@ -54,6 +54,12 @@ class VeriloggenNode(object):
     def __rshift__(self, r):
         raise TypeError('Not allowed operation.')
 
+    def __neg__(self):
+        raise TypeError('Not allowed operation.')
+    
+    def __pos__(self):
+        raise TypeError('Not allowed operation.')
+    
     def __getitem__(self, r):
         raise TypeError('Not allowed operation.')
 
@@ -110,6 +116,12 @@ class _Numeric(VeriloggenNode):
     def __rshift__(self, r):
         return Srl(self, r)
 
+    def __neg__(self):
+        return Uminus(self)
+    
+    def __pos__(self):
+        return Uplus(self)
+    
     def __getitem__(self, r):
         if isinstance(r, slice):
             left = r.start
