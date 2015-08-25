@@ -40,8 +40,8 @@ def mkTest():
     led = m.Wire('LED', width)
 
     uut = m.Instance(mkLed(), 'uut',
-                     params=(('WIDTH', width),),
-                     ports=(('CLK', clk), ('RST', rst), ('LED', led)))
+                     params=connect_same_name(width),
+                     ports=connect_same_name(clk, rst, led))
 
     lib.simulation.setup_waveform(m, uut)
     lib.simulation.setup_clock(m, clk, hperiod=5)
