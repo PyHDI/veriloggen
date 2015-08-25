@@ -22,47 +22,6 @@ def mkUserlogic():
     ch_rdata = m.Input('ch_rdata', data_width)
     ch_deq = m.OutputReg('ch_deq', initval=0)
     ch_empty = m.Input('ch_empty')
-    
-    #mem_addr = m.Reg('mem_addr', addr_len, initval=0)
-    #mem_wdata = m.Reg('mem_wdata', data_width, initval=0)
-    #mem_rdata = m.Wire('mem_rdata', data_width)
-    #mem_wvalid = m.Reg('mem_wvalid', initval=0)
-    #mem_rvalid = m.Reg('mem_rvalid', initval=0)
-    #ch_wdata = m.Reg('ch_wdata', data_width, initval=0)
-    #ch_enq = m.Reg('ch_enq', initval=0)
-    #ch_almfull = m.Wire('ch_almfull')
-    #ch_rdata = m.Wire('ch_rdata', data_width)
-    #ch_deq = m.Reg('ch_deq', initval=0)
-    #ch_empty = m.Wire('ch_empty')
-    #
-    #m.Instance('CoramMemory1P', 'mem',
-    #           (('CORAM_THREAD_NAME', 'ctrl_thread'),
-    #            ('CORAM_THREAD_ID', 0),
-    #            ('CORAM_ID', 0),
-    #            ('CORAM_SUB_ID', 0),
-    #            ('CORAM_ADDR_LEN', addr_len),
-    #            ('CORAM_DATA_WIDTH', data_width)),
-    #           (('CLK', clk),
-    #            ('ADDR', mem_addr),
-    #            ('D', mem_wdata),
-    #            ('WE', mem_wvalid),
-    #            ('Q', mem_rdata)))
-    #
-    #m.Instance('CoramChannel', 'ch',
-    #           (('CORAM_THREAD_NAME', 'ctrl_thread'),
-    #            ('CORAM_THREAD_ID', 0),
-    #            ('CORAM_ID', 0),
-    #            ('CORAM_SUB_ID', 0),
-    #            ('CORAM_ADDR_LEN', 4),
-    #            ('CORAM_DATA_WIDTH', data_width)),
-    #           (('CLK', clk),
-    #            ('RST', rst),
-    #            ('D', ch_wdata),
-    #            ('ENQ', ch_enq),
-    #            ('ALM_FULL', ch_almfull),
-    #            ('Q', ch_rdata),
-    #            ('DEQ', ch_deq),
-    #            ('EMPTY', ch_empty)))
 
     # Finite State Machine
     fsm = lib.FSM(m, 'fsm')
@@ -80,6 +39,7 @@ def mkUserlogic():
     fsm.add( ch_deq(0), delay=1 )
     fsm.add( size(ch_rdata), delay=2 )
     fsm.goto_next(cond=Not(ch_empty))
+    
     fsm.add( mem_addr( -Int(1) ))
     fsm.goto_next()
     
@@ -92,13 +52,10 @@ def mkUserlogic():
     fsm.add( ch_enq(1), cond=Not(ch_almfull) )
     fsm.add( ch_enq(0), delay=1 )
     fsm.add( ch_wdata(sum) )
-    
     fsm.goto(start)
     
     # building always statement
-    m.Always(Posedge(clk))(
-        If(rst)( m.reset()
-        ).Else( fsm.to_case() ))
+    fsm.make_always(clk, rst)
     
     return m
 
@@ -153,7 +110,7 @@ def mkTest():
     fsm.goto_next(cond=ch_enq)
 
     fsm.add( Systask('finish') )
-
+    
     fsm.make_always(clk, rst)
     
     return m
