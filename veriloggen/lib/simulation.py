@@ -20,7 +20,8 @@ def setup_clock(m, clk, hperiod=5):
     )
     return ret
 
-def setup_reset(m, reset, *statement, period=100):
+def setup_reset(m, reset, *statement, **kwargs):
+    period = kwargs['period'] if 'period' in kwargs else 100
     ret = m.Initial(
         reset(0),
         statement,
