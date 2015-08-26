@@ -27,7 +27,7 @@ def mkLed():
         ).Else(
             If(count == 1024 - 1)(
                 led(led + 1),
-                #SystemStatement('display', 'led:%x', led)
+                #Systask('display', 'led:%x', led)
                 SingleStatement(SystemTask('display', 'led:%x', led))
             )
         ))
