@@ -20,7 +20,7 @@ def mkLed():
 
     # assert valid if the condition is satisfied
     # then de-assert 3 cycles later with same condition
-    fsm.add( valid(1), cond=c)
+    fsm.add( valid(1), cond=c, keep=3)
     fsm.add( valid(0), cond=c, delay=3)
     fsm.goto_next(cond=c)
     
@@ -33,7 +33,7 @@ def mkLed():
     # assert valid 1 cycle later if the condition is satisfied now
     # then de-assert 4 cycles later with same condition
     for i in range(8):
-        fsm.add( valid(1), cond=c, delay=1)
+        fsm.add( valid(1), cond=c, delay=1, keep=3)
         fsm.add( valid(0), cond=c, delay=4 )
         fsm.goto_next(cond=c)
     

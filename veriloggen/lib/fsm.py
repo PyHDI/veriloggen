@@ -92,7 +92,16 @@ class FSM(vtypes.VeriloggenNode):
     
     #---------------------------------------------------------------------------
     def add(self, *statement, **kwargs):
+        keep = kwargs['keep'] if 'keep' in kwargs else None
         delay = kwargs['delay'] if 'delay' in kwargs else None
+        
+        if keep is not None:
+            del kwargs['keep']
+            for i in range(keep):
+                kwargs['delay'] = i if delay is None else delay + i
+                self.add(*statement, **kwargs)
+            return self
+        
         if delay is not None and delay > 0:
             self.add_delayed_state(delay)
             index = self.current()
@@ -106,6 +115,7 @@ class FSM(vtypes.VeriloggenNode):
             return self
             
         cond = kwargs['cond'] if 'cond' in kwargs else None
+        
         if cond is not None:
             statement = [ vtypes.If(cond)(*statement) ]
             
