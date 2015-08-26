@@ -105,8 +105,8 @@ class FSM(vtypes.VeriloggenNode):
         if delay is not None and delay > 0:
             self.add_delayed_state(delay)
             index = self.current()
-            if delay > index:
-                raise ValueError("Illegal delay amount: current=%d delay=%d" % (index, delay))
+            #if delay > index:
+            #    raise ValueError("Illegal delay amount: current=%d delay=%d" % (index, delay))
             cond = kwargs['cond'] if 'cond' in kwargs else None
             if cond is not None:
                 d_cond = self.add_delayed_cond(cond, index, delay)
