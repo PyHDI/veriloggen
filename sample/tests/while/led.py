@@ -10,6 +10,11 @@ def mkTest():
     count = m.Reg('count', width=32)
 
     m.Initial(
+        Systask('dumpfile', 'uut.vcd'),
+        Systask('dumpvars', 0, clk, rst, count),
+    )
+    
+    m.Initial(
         clk(0),
         Forever(clk(Not(clk), ldelay=5)) # forever #5 CLK = ~CLK;
     )
@@ -25,7 +30,8 @@ def mkTest():
         count(0),
         
         While(count < 1024)(
-            count( count + 1 )
+            count( count + 1 ),
+            Event(Posedge(clk))
         ),
         
         Systask('finish'),

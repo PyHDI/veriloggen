@@ -7,6 +7,11 @@ module test;
   reg [32-1:0] count;
 
   initial begin
+    $dumpfile("uut.vcd");
+    $dumpvars(0, CLK, RST, count);
+  end
+
+  initial begin
     CLK = 0;
     forever begin
       #5 CLK = !CLK;
@@ -24,6 +29,7 @@ module test;
     count = 0;
     while(count < 1024) begin
       count = count + 1;
+      @(posedge CLK);
     end
 
     $finish;
