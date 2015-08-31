@@ -7,6 +7,15 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import vtypes
 
 def setup_waveform(m, *uuts):
+    new_uuts = []
+    for u in uuts:
+        if isinstance(u, (tuple, list)):
+            new_uuts.extend(u)
+        elif isinstance(u, dict):
+            new_uuts.extend(list(u.values()))
+        else:
+            new_uuts.append(u)
+    uuts = new_uuts
     ret = m.Initial(
         vtypes.Systask('dumpfile', 'uut.vcd'),
         vtypes.Systask('dumpvars', 0, *uuts)
@@ -34,4 +43,3 @@ def setup_reset(m, reset, *statement, **kwargs):
 
 def next_clock(clk):
     return vtypes.Event(vtypes.Posedge(clk))
-
