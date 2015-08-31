@@ -1,6 +1,51 @@
 import led
 
 expected_verilog = """
+module test #
+(
+  parameter WIDTH = 8
+)
+(
+);
+
+  reg CLK;
+  reg RST;
+  wire [(WIDTH - 1):0] LED;
+
+  blinkled
+  #(
+    .WIDTH(WIDTH)
+  )
+  uut
+  (
+    .CLK(CLK),
+    .RST(RST),
+    .LED(LED)
+  );
+
+  initial begin
+    $dumpfile("uut.vcd");
+    $dumpvars(0, uut, CLK, RST, LED);
+  end
+
+  initial begin
+    CLK = 0;
+    forever begin
+      #5 CLK = (!CLK);
+    end
+  end
+
+  initial begin
+    RST = 0;
+    #100;
+    RST = 1;
+    #100;
+    RST = 0;
+    #100000;
+    $finish;
+  end
+endmodule
+
 module blinkled #
   ( 
    parameter WIDTH = 8
@@ -35,8 +80,8 @@ endmodule
 """
 
 def test_led():
-    led_module = led.mkLed()
-    led_code = led_module.to_verilog()
+    test_module = led.mkTest()
+    code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
     from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
@@ -45,4 +90,4 @@ def test_led():
     codegen = ASTCodeGenerator()
     expected_code = codegen.visit(expected_ast)
 
-    assert(expected_code == led_code)
+    assert(expected_code == code)
