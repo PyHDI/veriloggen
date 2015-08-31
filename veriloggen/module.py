@@ -3,6 +3,7 @@ from __future__ import print_function
 import os
 import sys
 import collections
+import copy
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import vtypes
@@ -30,6 +31,8 @@ class Module(vtypes.VeriloggenNode):
         self.items = []
         self.tmp_count = 0
         
+    #---------------------------------------------------------------------------
+    # User interface for variables
     #---------------------------------------------------------------------------
     def Input(self, name, width=None, length=None, signed=False, value=None):
         t = vtypes.Input(name, width, length, signed, value)
@@ -131,6 +134,8 @@ class Module(vtypes.VeriloggenNode):
         return self.Localparam(name, value, width, signed, length)
 
     #---------------------------------------------------------------------------
+    # User interface for control statements
+    #---------------------------------------------------------------------------
     def Always(self, *sensitivity):
         t = vtypes.Always(*sensitivity)
         self.always.append(t)
@@ -200,6 +205,103 @@ class Module(vtypes.VeriloggenNode):
         self.submodule[module.name] = module
         return t
     
+    #---------------------------------------------------------------------------
+    # User intarface for reset assignments
+    #---------------------------------------------------------------------------
+    def reset(self):
+        ret = []
+        for vname, var in self.variable.items():
+            r = var.reset()
+            if r: ret.append(r)
+        return tuple(ret)
+
+    #---------------------------------------------------------------------------
+    # User interface for accessing internal information
+    #---------------------------------------------------------------------------
+    def get_params(self):
+        return list(self.global_constant.values())
+    
+    def get_localparams(self):
+        return list(self.constant.values())
+    
+    def get_ports(self):
+        return list(self.io_variable.values())
+    
+    def get_vars(self):
+        return list(self.variable.values())
+    
+    #---------------------------------------------------------------------------
+    def copy_params(self, src):
+        ret = collections.OrderedDict()
+        for key, obj in src.global_constant.items():
+            copy_obj = copy.deepcopy(obj)
+            self.add_object( copy_obj )
+            ret[key] = copy_obj
+        return ret
+    
+    def copy_localparams(self, src):
+        ret = collections.OrderedDict()
+        for key, obj in src.constant.items():
+            copy_obj = copy.deepcopy(obj)
+            self.add_object( copy_obj )
+            ret[key] = copy_obj
+        return ret
+    
+    def copy_ports(self, src):
+        ret = collections.OrderedDict()
+        for key, obj in src.io_variable.items():
+            copy_obj = copy.deepcopy(obj)
+            self.add_object( copy_obj )
+            ret[key] = copy_obj
+        return ret
+
+    def copy_vars(self, src):
+        ret = collections.OrderedDict()
+        for key, obj in src.variable.items():
+            copy_obj = copy.deepcopy(obj)
+            self.add_object( copy_obj )
+            ret[key] = copy_obj
+        return ret
+
+    def copy_sim_ports(self, src):
+        ret = collections.OrderedDict()
+        for key, obj in src.io_variable.items():
+            copy_obj = self.get_corresponding_variable(obj)(key, copy.deepcopy(obj.width))
+            self.add_object( copy_obj )
+            ret[key] = copy_obj
+        return ret
+
+    #---------------------------------------------------------------------------
+    def connect_params(self, targ):
+        ret = []
+        for key, obj in targ.global_constant.items():
+            if (key not in self.global_constant) and (key not in self.constant):
+                raise IndexError("No such constant in module %s" % self.name)
+            if key in self.global_constant:
+                ret.append( (key, self.global_constant[key]) )
+            elif key in self.constant:
+                ret.append( (key, self.constant[key]) )
+        return tuple(ret)
+    
+    def connect_ports(self, targ):
+        ret = []
+        for key, obj in targ.io_variable.items():
+            if (key not in self.io_variable) and (key not in self.variable):
+                raise IndexError("No such IO in module %s" % self.name)
+            if key in self.io_variable:
+                ret.append( (key, self.io_variable[key]) )
+            elif key in self.variable:
+                ret.append( (key, self.variable[key]) )
+        return tuple(ret)
+    
+    #---------------------------------------------------------------------------
+    # User interface for code generation
+    #---------------------------------------------------------------------------
+    def to_verilog(self, filename=None):
+        return to_verilog.write_verilog(self, filename)
+
+    #---------------------------------------------------------------------------
+    # Internal methods
     #---------------------------------------------------------------------------
     def add_object(self, obj):
         self.items.append(obj)
@@ -331,17 +433,16 @@ class Module(vtypes.VeriloggenNode):
         return False
 
     #---------------------------------------------------------------------------
-    def to_verilog(self, filename=None):
-        return to_verilog.write_verilog(self, filename)
+    def get_corresponding_variable(self, var, use_wire=False):
+        if isinstance(var, vtypes.Input):
+            if use_wire: return vtypes.Wire
+            return vtypes.Reg
+        if isinstance(var, vtypes.Output):
+            return vtypes.Wire
+        if isinstance(var, vtypes.Inout):
+            return vtypes.Wire
+        raise TypeError('No corresponding IO type for %s' % str(type(var)))
 
-    #---------------------------------------------------------------------------
-    def reset(self):
-        ret = []
-        for vname, var in self.variable.items():
-            r = var.reset()
-            if r: ret.append(r)
-        return tuple(ret)
-    
 #-------------------------------------------------------------------------------
 class StubModule(vtypes.VeriloggenNode):
     """ Verilog Module class """
