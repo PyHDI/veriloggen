@@ -42,4 +42,4 @@ def setup_reset(m, reset, *statement, **kwargs):
     return ret
 
 def next_clock(clk):
-    return vtypes.Event(vtypes.Posedge(clk))
+    return ( vtypes.Event(vtypes.Posedge(clk)), vtypes.Delay(1) )
