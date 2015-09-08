@@ -82,7 +82,7 @@ class FSM(vtypes.VeriloggenNode):
     def add_delayed_cond(self, statement, index, delay):
         prev = statement
         for i in range(delay):
-            tmp_name = '_'.join([self.name, 'cond', str(index),
+            tmp_name = '_'.join(['', self.name, 'cond', str(index),
                                  str(delay), str(self.tmp_count)])
             self.tmp_count += 1
             tmp = self.m.Reg(tmp_name, initval=0)
@@ -91,9 +91,37 @@ class FSM(vtypes.VeriloggenNode):
         return prev
     
     #---------------------------------------------------------------------------
+    def add_delayed_subst(self, subst, index, delay):
+        if not isinstance(subst, vtypes.Subst):
+            return subst
+        left = subst.left
+        right = subst.right
+        if isinstance(right, (int, float, str, vtypes._Constant, vtypes._ParameterVairable)):
+            return subst
+        width = left.bit_length()
+        prev = right
+        name_prefix = ('_' + left.name if isinstance(left, vtypes._Variable) else
+                       '_' + self.name + '_sbst')
+        for i in range(delay):
+            tmp_name = '_'.join([name_prefix, str(index),
+                                 str(delay), str(self.tmp_count)])
+            self.tmp_count += 1
+            tmp = self.m.Reg(tmp_name, width, initval=0)
+            self.add(tmp(prev), delay=i)
+            prev = tmp
+        return left(prev)
+    
+    #---------------------------------------------------------------------------
     def add(self, *statement, **kwargs):
+        for k in kwargs.keys():
+            if k not in ('keep', 'delay', 'cond', 'lazy_cond', 'eager_val'):
+                raise NameError('Keyword argument %s is not supported.' % k)
+            
         keep = kwargs['keep'] if 'keep' in kwargs else None
         delay = kwargs['delay'] if 'delay' in kwargs else None
+        cond = kwargs['cond'] if 'cond' in kwargs else None
+        lazy_cond = kwargs['lazy_cond'] if 'lazy_cond' in kwargs else False
+        eager_val = kwargs['eager_val'] if 'eager_val' in kwargs else False
         
         if keep is not None:
             del kwargs['keep']
@@ -105,17 +133,15 @@ class FSM(vtypes.VeriloggenNode):
         if delay is not None and delay > 0:
             self.add_delayed_state(delay)
             index = self.current()
-            #if delay > index:
-            #    raise ValueError("Illegal delay amount: current=%d delay=%d" % (index, delay))
-            cond = kwargs['cond'] if 'cond' in kwargs else None
+            if eager_val:
+                statement = [ self.add_delayed_subst(s, index, delay) for s in statement ]
             if cond is not None:
-                d_cond = self.add_delayed_cond(cond, index, delay)
-                statement = [ vtypes.If(d_cond)(*statement) ]
+                if not lazy_cond:
+                    cond = self.add_delayed_cond(cond, index, delay)
+                statement = [ vtypes.If(cond)(*statement) ]
             self.delayed_body[delay][index].extend(statement)
             return self
             
-        cond = kwargs['cond'] if 'cond' in kwargs else None
-        
         if cond is not None:
             statement = [ vtypes.If(cond)(*statement) ]
             
@@ -208,7 +234,7 @@ class FSM(vtypes.VeriloggenNode):
             return self.get_delayed_state(value)
 
         for i in range(self.delay_amount+1, value+1):
-            d = self.m.Reg(''.join(['d', str(i), '_', self.name]), self.width,
+            d = self.m.Reg(''.join(['_d', str(i), '_', self.name]), self.width,
                            initval=self.get_mark(0))
             self.delayed_state[i] = d
 

@@ -8,7 +8,7 @@ def mkLed():
     clk = m.Input('CLK')
     rst = m.Input('RST')
     valid = m.OutputReg('valid', initval=0)
-    
+
     fsm = lib.FSM(m, 'fsm')
     
     for i in range(2):

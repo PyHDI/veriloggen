@@ -49,7 +49,7 @@ module blinkled
   localparam fsm_init = 0;
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
-  reg [32-1:0] d1_fsm;
+  reg [32-1:0] _d1_fsm;
   localparam fsm_3 = 3;
   localparam fsm_4 = 4;
   localparam fsm_5 = 5;
@@ -63,10 +63,10 @@ module blinkled
     if(RST) begin
       valid <= 0;
       fsm <= fsm_init;
-      d1_fsm <= fsm_init;
+      _d1_fsm <= fsm_init;
     end else begin
-      d1_fsm <= fsm;
-      case(d1_fsm)
+      _d1_fsm <= fsm;
+      case(_d1_fsm)
         fsm_2: begin
           valid <= 0;
         end
