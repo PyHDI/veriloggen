@@ -14,7 +14,7 @@ import to_verilog
 #-------------------------------------------------------------------------------
 class Module(vtypes.VeriloggenNode):
     """ Verilog Module class """
-    def __init__(self, name=None):
+    def __init__(self, name=None, tmp_prefix='_tmp'):
         self.name = name if name is not None else self.__class__.__name__
         self.io_variable = collections.OrderedDict()
         self.variable = collections.OrderedDict()
@@ -29,6 +29,7 @@ class Module(vtypes.VeriloggenNode):
         self.submodule = collections.OrderedDict()
         self.generate = collections.OrderedDict()
         self.items = []
+        self.tmp_prefix = tmp_prefix
         self.tmp_count = 0
         
     #---------------------------------------------------------------------------
@@ -68,7 +69,7 @@ class Module(vtypes.VeriloggenNode):
         return t
     
     def TmpWire(self, width=None, length=None, signed=False, value=None):
-        name = '_'.join(['tmp', str(self.tmp_count)])
+        name = '_'.join([self.tmp_prefix, str(self.tmp_count)])
         self.tmp_count += 1
         return self.Wire(name, width, length, signed, value)
 
@@ -79,7 +80,7 @@ class Module(vtypes.VeriloggenNode):
         return t
     
     def TmpReg(self, width=None, length=None, signed=False, value=None, initval=None):
-        name = '_'.join(['tmp', str(self.tmp_count)])
+        name = '_'.join([self.tmp_prefix, str(self.tmp_count)])
         self.tmp_count += 1
         return self.Reg(name, width, length, signed, value, initval)
 
@@ -90,7 +91,7 @@ class Module(vtypes.VeriloggenNode):
         return t
     
     def TmpInteger(self, width=None, length=None, signed=False, value=None, initval=None):
-        name = '_'.join(['tmp', str(self.tmp_count)])
+        name = '_'.join([self.tmp_prefix, str(self.tmp_count)])
         self.tmp_count += 1
         return self.Integer(name, width, length, signed, value, initval)
 
@@ -101,7 +102,7 @@ class Module(vtypes.VeriloggenNode):
         return t
     
     def TmpReal(self, width=None, length=None, signed=False, value=None, initval=None):
-        name = '_'.join(['tmp', str(self.tmp_count)])
+        name = '_'.join([self.tmp_prefix, str(self.tmp_count)])
         self.tmp_count += 1
         return self.Real(name, width, length, signed, value, initval)
 
@@ -112,7 +113,7 @@ class Module(vtypes.VeriloggenNode):
         return t
     
     def TmpGenvar(self, width=None, length=None, signed=False, value=None):
-        name = '_'.join(['tmp', str(self.tmp_count)])
+        name = '_'.join([self.tmp_prefix, str(self.tmp_count)])
         self.tmp_count += 1
         return self.Genvar(name, width, length, signed, value)
 
@@ -129,7 +130,7 @@ class Module(vtypes.VeriloggenNode):
         return t
 
     def TmpLocalparam(self, value, width=None, signed=False, length=None):
-        name = '_'.join(['tmp', str(self.tmp_count)])
+        name = '_'.join([self.tmp_prefix, str(self.tmp_count)])
         self.tmp_count += 1
         return self.Localparam(name, value, width, signed, length)
 
