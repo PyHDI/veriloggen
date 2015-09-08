@@ -139,6 +139,9 @@ class _Numeric(VeriloggenNode):
     def repeat(self, times):
         return Repeat(self, times)
 
+    def bit_length(self):
+        return None
+
 #-------------------------------------------------------------------------------
 class _Variable(_Numeric):
     def __init__(self, name, width=1, length=None, signed=False, value=None, initval=None):
@@ -160,6 +163,9 @@ class _Variable(_Numeric):
 
     def reset(self):
         return None
+
+    def bit_length(self):
+        return self.width
 
 #-------------------------------------------------------------------------------
 class Input(_Variable): pass
@@ -381,6 +387,11 @@ class Pointer(_SpecialOperator):
 
     def next(self, r):
         return Subst(self, r)
+
+    def bit_length(self):
+        if isinstance(var, _Variable) and var.length is not None:
+            return self.var.bit_length()
+        return 1
     
 class Slice(_SpecialOperator):
     def __init__(self, var, msb, lsb):
@@ -394,6 +405,9 @@ class Slice(_SpecialOperator):
     def next(self, r):
         return Subst(self, r)
     
+    def bit_length(self):
+        return self.msb - self.lsb + 1
+    
 class Cat(_SpecialOperator):
     def __init__(self, *vars):
         self.vars = tuple(vars)
@@ -403,18 +417,31 @@ class Cat(_SpecialOperator):
 
     def next(self, r):
         return Subst(self, r)
+
+    def bit_length(self):
+        values = [ v.bit_length() for v in self.vars ]
+        ret = values[0]
+        for v in values[1:]:
+            ret = ret + v
+        return ret
     
 class Repeat(_SpecialOperator):
     def __init__(self, var, times):
         self.var = var
         self.times = times
 
+    def bit_length(self):
+        return self.var.bit_length() * self.times
+        
 #-------------------------------------------------------------------------------
 class Cond(_SpecialOperator):
     def __init__(self, condition, true_value, false_value):
         self.condition = condition
         self.true_value = true_value
         self.false_value = false_value
+        
+    def bit_length(self):
+        raise NotImplementedError('bit_length is not implemented on Cond.')
         
 #-------------------------------------------------------------------------------
 class Sensitive(VeriloggenNode):
