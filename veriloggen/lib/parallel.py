@@ -87,7 +87,7 @@ class Parallel(vtypes.VeriloggenNode):
         return self
 
     #---------------------------------------------------------------------------
-    def to_code(self):
+    def make_code(self):
         ret = []
         
         for delay, body in sorted(self.delayed_body.items(), key=lambda x:x[0],
@@ -98,12 +98,14 @@ class Parallel(vtypes.VeriloggenNode):
         return tuple(ret)
     
     #---------------------------------------------------------------------------
-    def make_always(self, clk, rst):
+    def make_always(self, clk, rst, reset=(), body=()):
         self.m.Always(vtypes.Posedge(clk))(
             vtypes.If(rst)(
-                self.m.reset()
+                reset,
+                self.m.make_reset()
             )(
-                self.to_code()
+                body,
+                self.make_code()
             ))
     
     #---------------------------------------------------------------------------

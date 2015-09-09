@@ -62,9 +62,9 @@ def mkSort(numports=4):
     # import assignment into always statement
     m.Always(Posedge(clk))(
         If(rst)(
-            *init
+            init
         ).Else(
-            fsm.to_case()
+            fsm.make_case()
         ))
     
     return m

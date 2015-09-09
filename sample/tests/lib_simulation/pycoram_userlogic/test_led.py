@@ -86,8 +86,8 @@ module test #
   localparam test_fsm_11 = 11;
   localparam test_fsm_12 = 12;
 
-  reg [32-1:0] d1_test_fsm;
-  reg test_fsm_cond_12_1_0;
+  reg [32-1:0] _d1_test_fsm;
+  reg _test_fsm_cond_12_1_0;
   localparam test_fsm_13 = 13;
 
   always @(posedge CLK) begin
@@ -97,13 +97,13 @@ module test #
       ch_rdata <= 0;
       ch_empty <= 1;
       test_fsm <= test_fsm_init;
-      d1_test_fsm <= test_fsm_init;
-      test_fsm_cond_12_1_0 <= 0;
+      _d1_test_fsm <= test_fsm_init;
+      _test_fsm_cond_12_1_0 <= 0;
     end else begin
-      d1_test_fsm <= test_fsm;
-      case(d1_test_fsm)
+      _d1_test_fsm <= test_fsm;
+      case(_d1_test_fsm)
         test_fsm_12: begin
-          if(test_fsm_cond_12_1_0) begin
+          if(_test_fsm_cond_12_1_0) begin
             mem_rdata <= mem_rdata + 1;
           end 
         end
@@ -154,7 +154,7 @@ module test #
           end 
         end
         test_fsm_12: begin
-          test_fsm_cond_12_1_0 <= mem_rvalid;
+          _test_fsm_cond_12_1_0 <= mem_rvalid;
           if(ch_enq) begin
             test_fsm <= test_fsm_13;
           end 
@@ -195,8 +195,8 @@ module userlogic #
   reg [32-1:0] size;
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
-  reg [32-1:0] d1_fsm;
-  reg [32-1:0] d2_fsm;
+  reg [32-1:0] _d1_fsm;
+  reg [32-1:0] _d2_fsm;
   localparam fsm_3 = 3;
   localparam fsm_4 = 4;
   localparam fsm_5 = 5;
@@ -214,12 +214,12 @@ module userlogic #
       read_count <= 0;
       sum <= 0;
       size <= 0;
-      d1_fsm <= fsm_init;
-      d2_fsm <= fsm_init;
+      _d1_fsm <= fsm_init;
+      _d2_fsm <= fsm_init;
     end else begin
-      d1_fsm <= fsm;
-      d2_fsm <= d1_fsm;
-      case(d2_fsm)
+      _d1_fsm <= fsm;
+      _d2_fsm <= _d1_fsm;
+      case(_d2_fsm)
         fsm_2: begin
           size <= ch_rdata;
         end
@@ -230,7 +230,7 @@ module userlogic #
           $display("sum=%d", sum);
         end
       endcase
-      case(d1_fsm)
+      case(_d1_fsm)
         fsm_2: begin
           ch_deq <= 0;
         end

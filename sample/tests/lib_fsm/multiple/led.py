@@ -7,14 +7,14 @@ def mkLed():
     width = m.Parameter('WIDTH', 8)
     clk = m.Input('CLK')
     rst = m.Input('RST')
-    led = m.OutputReg('LED', width)
+    led = m.OutputReg('LED', width, initval=0)
 
     fsm = lib.FSM(m, 'fsm')
     init = fsm.current()
 
     tmp = []
     for i in range(4):
-        tmp.append( m.Reg('tmp_' + str(i), width) )
+        tmp.append( m.Reg('tmp_' + str(i), width, initval=0) )
         
     for i in range(4):
         fsm.add( tmp[i](fsm.current()) ) 
@@ -25,9 +25,9 @@ def mkLed():
     
     m.Always(Posedge(clk))(
         If(rst)(
-            *([ t(0) for t in tmp ] + [ led(0), fsm.set_init() ])
+            m.make_reset(),
         ).Else(
-            fsm.to_case()
+            fsm.make_case()
         ))
     
     return m

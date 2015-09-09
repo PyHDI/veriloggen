@@ -209,7 +209,7 @@ class Module(vtypes.VeriloggenNode):
     #---------------------------------------------------------------------------
     # User intarface for reset assignments
     #---------------------------------------------------------------------------
-    def reset(self):
+    def make_reset(self):
         ret = []
         for vname, var in self.variable.items():
             r = var.reset()

@@ -42,13 +42,7 @@ def mkLed():
         fsm.add( valid(down), cond=c, delay=4, eager_val=True, lazy_cond=True)
         fsm.goto_next(cond=c)
     
-    m.Always(Posedge(clk))(
-        If(rst)(
-            m.reset(),
-        ).Else(
-            count(count + 1),
-            fsm.to_case()
-        ))
+    fsm.make_always(clk, rst, body=[count(count+1)])
 
     return m
 

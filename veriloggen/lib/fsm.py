@@ -150,7 +150,7 @@ class FSM(vtypes.VeriloggenNode):
         return self
 
     #---------------------------------------------------------------------------
-    def to_case(self):
+    def make_case(self):
         ret = self.get_delayed_substs()
         
         for delay, dct in sorted(self.delayed_body.items(),
@@ -167,7 +167,7 @@ class FSM(vtypes.VeriloggenNode):
 
         return tuple(ret)
     
-    def to_if(self):
+    def make_if(self):
         ret = self.get_delayed_substs()
         
         for delay, dct in sorted(self.delayed_body.items(),
@@ -180,12 +180,14 @@ class FSM(vtypes.VeriloggenNode):
         return tuple(ret)
 
     #---------------------------------------------------------------------------
-    def make_always(self, clk, rst):
+    def make_always(self, clk, rst, reset=(), body=(), case=True):
         self.m.Always(vtypes.Posedge(clk))(
             vtypes.If(rst)(
-                self.m.reset()
+                reset,
+                self.m.make_reset()
             )(
-                self.to_case()
+                body,
+                self.make_case() if case else self.make_if()
             ))
     
     #---------------------------------------------------------------------------

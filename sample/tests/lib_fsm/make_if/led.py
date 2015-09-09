@@ -40,7 +40,7 @@ def mkLed():
             fsm.set_init()
         ).Else(
             # inserting the FSM body
-            *fsm.to_if()
+            fsm.make_if()
         ))
 
     return m

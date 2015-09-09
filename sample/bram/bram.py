@@ -101,7 +101,7 @@ def mkTop():
             bramif.addr(0), bramif.datain(0), bramif.write(0), fsm.set_init()
         ).Else(
             # inserting FSM body
-            *fsm.to_if()
+            fsm.make_if()
         ))
 
     return m

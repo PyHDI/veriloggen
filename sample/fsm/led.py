@@ -45,10 +45,10 @@ def mkLed():
     # build always statement
     m.Always(Posedge(clk))(
         If(rst)(
-            m.reset(),
+            m.make_reset(),
         ).Else(
             count(count + 1),
-            fsm.to_case()
+            fsm.make_case()
         ))
 
     return m
@@ -66,7 +66,7 @@ def mkTest():
 
     lib.simulation.setup_waveform(m, uut)
     lib.simulation.setup_clock(m, clk, hperiod=5)
-    init = lib.simulation.setup_reset(m, rst, m.reset(), period=100)
+    init = lib.simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
     init.add(
         [ lib.simulation.next_clock(clk) for i in range(8) ],

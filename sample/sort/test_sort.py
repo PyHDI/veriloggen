@@ -69,12 +69,17 @@ module simsort #
     kick = 0;
     wait(RST);
     @(posedge CLK);
+    #1;
     wait(!RST);
     @(posedge CLK);
+    #1;
     @(posedge CLK);
+    #1;
     @(posedge CLK);
+    #1;
     kick = 1;
     @(posedge CLK);
+    #1;
     kick = 0;
   end
 
@@ -82,10 +87,13 @@ module simsort #
     #100;
     wait(kick);
     @(posedge CLK);
+    #1;
     wait(busy);
     @(posedge CLK);
+    #1;
     wait(!busy);
     @(posedge CLK);
+    #1;
     $finish;
   end
 

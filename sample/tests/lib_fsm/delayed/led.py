@@ -27,12 +27,6 @@ def mkLed():
         fsm.add( valid(0), delay=1 )
         fsm.goto_next()
     
-    #m.Always(Posedge(clk))(
-    #    If(rst)(
-    #        m.reset(),
-    #    ).Else(
-    #        fsm.to_case()
-    #    ))
     fsm.make_always(clk, rst)
 
     return m

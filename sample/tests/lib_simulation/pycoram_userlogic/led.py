@@ -88,7 +88,7 @@ def mkTest():
     fsm = lib.FSM(m, 'test_fsm')
     lib.simulation.setup_waveform(m, uut, fsm.state)
     lib.simulation.setup_clock(m, clk, hperiod=5)
-    init = lib.simulation.setup_reset(m, rst, m.reset(), period=100)
+    init = lib.simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
     #init.add(
     #    Delay(1000),

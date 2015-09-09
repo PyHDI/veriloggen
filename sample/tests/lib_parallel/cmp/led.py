@@ -1,60 +1,61 @@
 import sys
 import os
+
 from veriloggen import *
 
 def mkLed():
     m = Module('blinkled')
-    width = m.Parameter('WIDTH', 8)
     clk = m.Input('CLK')
     rst = m.Input('RST')
-    led = m.OutputReg('LED', width)
-    count = m.Reg('count', 32)
+    x = m.Input('x', 32)
+    y = m.OutputReg('y', initval=0)
+    
+    par = lib.Parallel(m, 'par')
+    par.add( y(0), cond=(x<10) )
+    par.add( y(1), cond=(x>=10) )
+    par.add( y(0), cond=(x>100) )
+    
+    par.make_always(clk, rst)
 
-    m.Always(Posedge(clk))(
-        If(rst)(
-            count(0)
-        ).Else(
-            If(count == 1023)(
-                count(0)
-            ).Else(
-                count(count + 1)
-            )
-        ))
-    
-    m.Always(Posedge(clk))(
-        If(rst)(
-            led(0)
-        ).Else(
-            If(count == 1024 - 1)(
-                led(led + 1)
-            )
-        ))
-    
     return m
 
 def mkTest():
     m = Module('test')
-    
+
     # target instance
     led = mkLed()
     
     # copy paras and ports
     params = m.copy_params(led)
     ports = m.copy_sim_ports(led)
-    
+
     clk = ports['CLK']
     rst = ports['RST']
+    x = ports['x']
+    y = ports['y']
     
     uut = m.Instance(led, 'uut',
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
+
+    reset_stmt = []
+    reset_stmt.append( x(0) )
     
-    lib.simulation.setup_waveform(m, uut, m.get_vars())
+    lib.simulation.setup_waveform(m, uut)
     lib.simulation.setup_clock(m, clk, hperiod=5)
-    init = lib.simulation.setup_reset(m, rst, m.make_reset(), period=100)
+    init = lib.simulation.setup_reset(m, rst, reset_stmt, period=100)
+
+    nclk = lib.simulation.next_clock
     
     init.add(
-        Delay(1000 * 100),
+        Delay(1000),
+        nclk(clk),
+        x(9),
+        nclk(clk),
+        x(10),
+        nclk(clk),
+        x(101),
+        Delay(1000),
         Systask('finish'),
     )
 
