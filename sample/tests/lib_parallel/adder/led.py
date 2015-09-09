@@ -10,7 +10,7 @@ except:
     def log2(v):
         return math.log(v, 2)
 
-def mkLed(numports=4):
+def mkLed(numports=32):
     if log2(numports) % 1.0 != 0.0:
         raise ValueError('numports must be power of 2')
     
@@ -40,6 +40,8 @@ def mkLed(numports=4):
             par.add( td(pdata[i*2] + pdata[i*2+1]), cond=cond )
         pdata = ndata
         pvalid = nvalid
+        ndata = []
+        nvalid = []
 
     par.add( odata(pdata[-1]) )
     par.add( ovalid(pvalid[-1]) )
