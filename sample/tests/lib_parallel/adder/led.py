@@ -10,7 +10,7 @@ except:
     def log2(v):
         return math.log(v, 2)
 
-def mkLed(numports=32):
+def mkLed(numports=8):
     if log2(numports) % 1.0 != 0.0:
         raise ValueError('numports must be power of 2')
     
@@ -18,8 +18,8 @@ def mkLed(numports=32):
     clk = m.Input('CLK')
     rst = m.Input('RST')
     
-    idata = [ m.Input('idata' + str(i), 32) for i in range(numports) ]
-    ivalid = [ m.Input('ivalid' + str(i)) for i in range(numports) ]
+    idata = [ m.Input('idata_%02d' % i, 32) for i in range(numports) ]
+    ivalid = [ m.Input('ivalid_%02d' % i) for i in range(numports) ]
     odata = m.OutputReg('odata', 32, initval=0)
     ovalid = m.OutputReg('ovalid', initval=0)
 
