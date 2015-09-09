@@ -296,13 +296,25 @@ class _Operator(_Numeric): pass
 #-------------------------------------------------------------------------------
 class _BinaryOperator(_Operator):
     def __init__(self, left, right):
+        self.type_check(left, right)
         self.left = left
         self.right = right
 
+    def type_check(self, left, right):
+        if not isinstance(left, (_Numeric, int, float, str)):
+            raise TypeError('BinaryOperator does not support Type %s' % str(type(left)))
+        if not isinstance(right, (_Numeric, int, float, str)):
+            raise TypeError('BinaryOperator does not support Type %s' % str(type(right)))
+
 class _UnaryOperator(_Operator):
     def __init__(self, right):
+        self.type_check(right)
         self.right = right
         
+    def type_check(self, right):
+        if not isinstance(right, (_Numeric, int, float, str)):
+            raise TypeError('BinaryOperator does not support Type %s' % str(type(right)))
+
 #-------------------------------------------------------------------------------
 # class names must be same the ones in pyverilog.vparser.ast
 class Power(_BinaryOperator): pass
