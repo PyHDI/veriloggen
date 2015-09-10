@@ -23,6 +23,9 @@ def mkLed(numports=8, delay_amount=2):
     for i in range(numports):
         par.add( led[i](up), cond=(count==i), eager_val=True )
         par.add( led[i](down), cond=(count==i), delay=delay_amount, eager_val=True )
+        # a case of overwrraped assignment with a same delay and difference condition
+        if i > 1:
+            par.add( led[i](up), cond=(count==0), delay=delay_amount, eager_val=True )
         
     par.make_always(clk, rst)
 

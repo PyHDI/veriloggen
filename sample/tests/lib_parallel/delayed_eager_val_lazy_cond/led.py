@@ -15,9 +15,9 @@ def mkLed(numports=8, delay_amount=2):
 
     par = lib.Parallel(m, 'par')
     
-    count = m.Reg('count', (numports-1).bit_length() + 32, initval=0)
-    par.add( count(zero), cond=count>=numports-1, delay=1, eager_val=True, lazy_cond=True )
-    par.add( count.inc(), cond=count<numports-1, delay=2 )
+    count = m.Reg('count', (numports-1).bit_length() + 1, initval=0)
+    par.add( count.inc(), delay=2 )
+    par.add( count(zero), cond=count>=numports-1, delay=2, eager_val=True, lazy_cond=True )
     
     for i in range(numports):
         par.add( led[i](1), cond=(count==i) )

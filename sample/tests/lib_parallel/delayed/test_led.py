@@ -67,22 +67,22 @@ module blinkled
   );
 
   reg [3-1:0] count;
-  reg _par_cond_2_0;
+  reg _par_cond_0_1;
+  reg _par_cond_0_2;
+  reg _par_cond_1_1;
+  reg _par_cond_1_2;
   reg _par_cond_2_1;
   reg _par_cond_2_2;
-  reg _par_cond_2_3;
-  reg _par_cond_2_4;
-  reg _par_cond_2_5;
-  reg _par_cond_2_6;
-  reg _par_cond_2_7;
-  reg _par_cond_2_8;
-  reg _par_cond_2_9;
-  reg _par_cond_2_10;
-  reg _par_cond_2_11;
-  reg _par_cond_2_12;
-  reg _par_cond_2_13;
-  reg _par_cond_2_14;
-  reg _par_cond_2_15;
+  reg _par_cond_3_1;
+  reg _par_cond_3_2;
+  reg _par_cond_4_1;
+  reg _par_cond_4_2;
+  reg _par_cond_5_1;
+  reg _par_cond_5_2;
+  reg _par_cond_6_1;
+  reg _par_cond_6_2;
+  reg _par_cond_7_1;
+  reg _par_cond_7_2;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -95,88 +95,88 @@ module blinkled
       led6 <= 0;
       led7 <= 0;
       count <= 0;
-      _par_cond_2_0 <= 0;
+      _par_cond_0_1 <= 0;
+      _par_cond_0_2 <= 0;
+      _par_cond_1_1 <= 0;
+      _par_cond_1_2 <= 0;
       _par_cond_2_1 <= 0;
       _par_cond_2_2 <= 0;
-      _par_cond_2_3 <= 0;
-      _par_cond_2_4 <= 0;
-      _par_cond_2_5 <= 0;
-      _par_cond_2_6 <= 0;
-      _par_cond_2_7 <= 0;
-      _par_cond_2_8 <= 0;
-      _par_cond_2_9 <= 0;
-      _par_cond_2_10 <= 0;
-      _par_cond_2_11 <= 0;
-      _par_cond_2_12 <= 0;
-      _par_cond_2_13 <= 0;
-      _par_cond_2_14 <= 0;
-      _par_cond_2_15 <= 0;
+      _par_cond_3_1 <= 0;
+      _par_cond_3_2 <= 0;
+      _par_cond_4_1 <= 0;
+      _par_cond_4_2 <= 0;
+      _par_cond_5_1 <= 0;
+      _par_cond_5_2 <= 0;
+      _par_cond_6_1 <= 0;
+      _par_cond_6_2 <= 0;
+      _par_cond_7_1 <= 0;
+      _par_cond_7_2 <= 0;
     end else begin
-      if(_par_cond_2_1) begin
+      if(_par_cond_0_2) begin
         led0 <= 0;
       end 
-      if(_par_cond_2_3) begin
+      if(_par_cond_1_2) begin
         led1 <= 0;
       end 
-      if(_par_cond_2_5) begin
+      if(_par_cond_2_2) begin
         led2 <= 0;
       end 
-      if(_par_cond_2_7) begin
+      if(_par_cond_3_2) begin
         led3 <= 0;
       end 
-      if(_par_cond_2_9) begin
+      if(_par_cond_4_2) begin
         led4 <= 0;
       end 
-      if(_par_cond_2_11) begin
+      if(_par_cond_5_2) begin
         led5 <= 0;
       end 
-      if(_par_cond_2_13) begin
+      if(_par_cond_6_2) begin
         led6 <= 0;
       end 
-      if(_par_cond_2_15) begin
+      if(_par_cond_7_2) begin
         led7 <= 0;
       end 
-      _par_cond_2_1 <= _par_cond_2_0;
-      _par_cond_2_3 <= _par_cond_2_2;
-      _par_cond_2_5 <= _par_cond_2_4;
-      _par_cond_2_7 <= _par_cond_2_6;
-      _par_cond_2_9 <= _par_cond_2_8;
-      _par_cond_2_11 <= _par_cond_2_10;
-      _par_cond_2_13 <= _par_cond_2_12;
-      _par_cond_2_15 <= _par_cond_2_14;
-      count <= (count + 1);
-      if((count == 0)) begin
+      _par_cond_0_2 <= _par_cond_0_1;
+      _par_cond_1_2 <= _par_cond_1_1;
+      _par_cond_2_2 <= _par_cond_2_1;
+      _par_cond_3_2 <= _par_cond_3_1;
+      _par_cond_4_2 <= _par_cond_4_1;
+      _par_cond_5_2 <= _par_cond_5_1;
+      _par_cond_6_2 <= _par_cond_6_1;
+      _par_cond_7_2 <= _par_cond_7_1;
+      count <= count + 1;
+      if(count == 0) begin
         led0 <= 1;
       end 
-      _par_cond_2_0 <= (count == 0);
-      if((count == 1)) begin
+      _par_cond_0_1 <= (count == 0);
+      if(count == 1) begin
         led1 <= 1;
       end 
-      _par_cond_2_2 <= (count == 1);
-      if((count == 2)) begin
+      _par_cond_1_1 <= (count == 1);
+      if(count == 2) begin
         led2 <= 1;
       end 
-      _par_cond_2_4 <= (count == 2);
-      if((count == 3)) begin
+      _par_cond_2_1 <= (count == 2);
+      if(count == 3) begin
         led3 <= 1;
       end 
-      _par_cond_2_6 <= (count == 3);
-      if((count == 4)) begin
+      _par_cond_3_1 <= (count == 3);
+      if(count == 4) begin
         led4 <= 1;
       end 
-      _par_cond_2_8 <= (count == 4);
-      if((count == 5)) begin
+      _par_cond_4_1 <= (count == 4);
+      if(count == 5) begin
         led5 <= 1;
       end 
-      _par_cond_2_10 <= (count == 5);
-      if((count == 6)) begin
+      _par_cond_5_1 <= (count == 5);
+      if(count == 6) begin
         led6 <= 1;
       end 
-      _par_cond_2_12 <= (count == 6);
-      if((count == 7)) begin
+      _par_cond_6_1 <= (count == 6);
+      if(count == 7) begin
         led7 <= 1;
       end 
-      _par_cond_2_14 <= (count == 7);
+      _par_cond_7_1 <= (count == 7);
     end
   end
 
