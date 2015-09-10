@@ -1,6 +1,21 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+operator_dict = {
+    'Uminus':'-', 'Ulnot':'!', 'Unot':'~', 'Uand':'&', 'Unand':'~&',
+    'Uor':'|', 'Unor':'~|', 'Uxor':'^', 'Uxnor':'~^',
+    'Power':'**', 'Times':'*', 'Divide':'/', 'Mod':'%', 
+    'Plus':'+', 'Minus':'-',
+    'Sll':'<<', 'Srl':'>>', 'Sra':'>>>',
+    'LessThan':'<', 'GreaterThan':'>', 'LessEq':'<=', 'GreaterEq':'>=',
+    'Eq':'==', 'NotEq':'!=', 'Eql':'===', 'NotEql':'!==',
+    'And':'&', 'Xor':'^', 'Xnor':'~^',
+    'Or':'|', 'Land':'&&', 'Lor':'||'
+    }
+
+def op2mark(op):
+    return operator_dict[op]
+
 class VeriloggenNode(object):
     """ Base class of Veriloggen AST object """
     def __lt__(self, r):
@@ -151,6 +166,7 @@ class _Variable(_Numeric):
         self.signed = signed
         self.value = value
         self.initval = initval
+        self.subst = []
     
     def __call__(self, r, ldelay=None, rdelay=None):
         return self.next(r, ldelay, rdelay)
@@ -164,8 +180,17 @@ class _Variable(_Numeric):
     def reset(self):
         return None
 
+    def add_subst(self, s):
+        self.subst.append(s)
+
+    def get_subst(self):
+        return self.subst
+    
     def bit_length(self):
         return self.width
+
+    def __str__(self):
+        return self.name
 
 #-------------------------------------------------------------------------------
 class Input(_Variable): pass
@@ -250,6 +275,9 @@ class _Constant(_Numeric):
     def type_check_width(self, width): pass
     def type_check_base(self, base): pass
 
+    def __str__(self):
+        return str(value)
+        
 class Int(_Constant):
     def __init__(self, value, width=None, base=None, signed=False):
         _Constant.__init__(self, value, width, base)
@@ -272,6 +300,46 @@ class Int(_Constant):
         if not isinstance(base, int):
             raise TypeError('base of Int must be int, not %s.' % type(base))
 
+    def __str__(self):
+        value_list = []
+        if node.width:
+            value_list.append(str(node.width))
+            
+        if node.base is None:
+            if node.signed:
+                value_list.append("'sd")
+            elif node.width:
+                value_list.append("'d")
+            value_list.append(str(node.value))
+        elif node.base == 2:
+            if node.signed:
+                value_list.append("'sb")
+            else:
+                value_list.append("'b")
+            value_list.append(bin(node.value).replace('0b', ''))
+        elif node.base == 8:
+            if node.signed:
+                value_list.append("'so")
+            else:
+                value_list.append("'o")
+            value_list.append(oct(node.value).replace('0o', ''))
+        elif node.base == 10:
+            if node.signed:
+                value_list.append("'sd")
+            else:
+                value_list.append("'d")
+            value_list.append(str(node.value))
+        elif node.base == 16:
+            if node.signed:
+                value_list.append("'sh")
+            else:
+                value_list.append("'h")
+            value_list.append(hex(node.value).replace('0x', ''))
+        else:
+            raise ValueError("Int.base must be 2, 8, 10, or 16")
+
+        return ''.join(value_list)
+
 class Float(_Constant):
     def __init__(self, value):
         _Constant.__init__(self, value, None, None)
@@ -281,6 +349,9 @@ class Float(_Constant):
         if not isinstance(value, (float, int)):
             raise TypeError('value of Float must be float, not %s.' % type(value))
 
+    def __str__(self):
+        return str(node.value)
+
 class Str(_Constant):
     def __init__(self, value):
         _Constant.__init__(self, value, None, None)
@@ -289,6 +360,9 @@ class Str(_Constant):
     def type_check_value(self, value):
         if not isinstance(value, str):
             raise TypeError('value of Str must be str, not %s.' % type(value))
+
+    def __str__(self):
+        return str(node.value)
 
 #-------------------------------------------------------------------------------
 class _Operator(_Numeric): pass
@@ -306,6 +380,10 @@ class _BinaryOperator(_Operator):
         if not isinstance(right, (_Numeric, int, float, str)):
             raise TypeError('BinaryOperator does not support Type %s' % str(type(right)))
 
+    def __str__(self):
+        return ''.join(['(', str(self.left), ' ', op2mark(self.__class__.__name__), ' ',
+                         str(self.right), ')'])
+
 class _UnaryOperator(_Operator):
     def __init__(self, right):
         self.type_check(right)
@@ -314,6 +392,9 @@ class _UnaryOperator(_Operator):
     def type_check(self, right):
         if not isinstance(right, (_Numeric, int, float, str)):
             raise TypeError('BinaryOperator does not support Type %s' % str(type(right)))
+
+    def __str__(self):
+        return ''.join(['(', op2mark(self.__class__.__name__), str(self.right), ')'])
 
 #-------------------------------------------------------------------------------
 # class names must be same the ones in pyverilog.vparser.ast
@@ -405,6 +486,9 @@ class Pointer(_SpecialOperator):
             return self.var.bit_length()
         return 1
     
+    def __str__(self):
+        return ''.join([str(self.var), '[', str(self.pos), ']'])
+
 class Slice(_SpecialOperator):
     def __init__(self, var, msb, lsb):
         self.var = var
@@ -420,6 +504,9 @@ class Slice(_SpecialOperator):
     def bit_length(self):
         return self.msb - self.lsb + 1
     
+    def __str__(self):
+        return ''.join([str(self.var), '[', str(self.msb), ':', str(self.lsb), ']'])
+
 class Cat(_SpecialOperator):
     def __init__(self, *vars):
         self.vars = tuple(vars)
@@ -437,6 +524,16 @@ class Cat(_SpecialOperator):
             ret = ret + v
         return ret
     
+    def __str__(self):
+        ret = []
+        ret.append('{')
+        for v in self.vars:
+            ret.append(str(v))
+            ret.append(', ')
+        ret.pop()
+        ret.append('}')
+        return ''.join(ret)
+       
 class Repeat(_SpecialOperator):
     def __init__(self, var, times):
         self.var = var
@@ -445,6 +542,9 @@ class Repeat(_SpecialOperator):
     def bit_length(self):
         return self.var.bit_length() * self.times
         
+    def __str__(self):
+        return ''.join(['{', str(self.times), '{', str(self.var), '}}'])
+       
 #-------------------------------------------------------------------------------
 class Cond(_SpecialOperator):
     def __init__(self, condition, true_value, false_value):
@@ -455,6 +555,9 @@ class Cond(_SpecialOperator):
     def bit_length(self):
         raise NotImplementedError('bit_length is not implemented on Cond.')
         
+    def __str__(self):
+        return ''.join(['(', str(self.condition), ')?', str(self.true_value), ' : ', str(self.false_value)])
+       
 #-------------------------------------------------------------------------------
 class Sensitive(VeriloggenNode):
     def __init__(self, name):
@@ -477,6 +580,10 @@ class Subst(VeriloggenNode):
         self.blk = blk
         self.ldelay = ldelay
         self.rdelay = rdelay
+        self.left.add_subst(self)
+
+    def __str__(self):
+        return ''.join([str(self.left), ' <- ', str(self.right)])
 
 #-------------------------------------------------------------------------------
 class Always(VeriloggenNode):

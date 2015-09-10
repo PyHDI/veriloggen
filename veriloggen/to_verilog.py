@@ -52,20 +52,34 @@ class VerilogCommonVisitor(object):
             value_list.append(str(node.width))
             
         if node.base is None:
-            if node.width:
+            if node.signed:
+                value_list.append("'sd")
+            elif node.width:
                 value_list.append("'d")
             value_list.append(str(node.value))
         elif node.base == 2:
-            value_list.append("'b")
+            if node.signed:
+                value_list.append("'sb")
+            else:
+                value_list.append("'b")
             value_list.append(bin(node.value).replace('0b', ''))
         elif node.base == 8:
-            value_list.append("'o")
+            if node.signed:
+                value_list.append("'so")
+            else:
+                value_list.append("'o")
             value_list.append(oct(node.value).replace('0o', ''))
         elif node.base == 10:
-            value_list.append("'d")
+            if node.signed:
+                value_list.append("'sd")
+            else:
+                value_list.append("'d")
             value_list.append(str(node.value))
         elif node.base == 16:
-            value_list.append("'h")
+            if node.signed:
+                value_list.append("'sh")
+            else:
+                value_list.append("'h")
             value_list.append(hex(node.value).replace('0x', ''))
         else:
             raise ValueError("Int.base must be 2, 8, 10, or 16")
