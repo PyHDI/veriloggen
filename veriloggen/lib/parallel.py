@@ -17,14 +17,45 @@ class Parallel(vtypes.VeriloggenNode):
         self.delay_amount = 0
         self.delayed_body = collections.defaultdict(list)
         self.tmp_count = 0
+        self.prev_dict = {}
 
     #---------------------------------------------------------------------------
+    def prev(self, var, delay, initval=0):
+        if isinstance(var, (int, float, str, vtypes._Constant, vtypes._ParameterVairable)):
+            return var
+        if not isinstance(var, vtypes._Variable):
+            raise TypeError('var must be vtypes._Variable, not %s' % str(type(var)))
+        if not isinstance(delay, int):
+            raise TypeError('delay must be int, not %s' % str(type(delay)))
+        if delay <= 0:
+            return var
+        
+        name_prefix = '_' + var.name
+        key = '_'.join([name_prefix, str(delay)])
+        if key in self.prev_dict:
+            return self.prev_dict[key]
+        
+        width = var.bit_length()
+        p = var
+        for i in range(delay):
+            tmp_name = '_'.join([name_prefix, str(i+1)])
+            if tmp_name in self.prev_dict:
+                p = self.prev_dict[tmp_name]
+                continue
+            tmp = self.m.Reg(tmp_name, width, initval=initval)
+            self.prev_dict[tmp_name] = tmp;
+            self.add(tmp(p))
+            p = tmp
+            
+        return p
+    
+    #---------------------------------------------------------------------------
     def add_delayed_cond(self, statement, delay):
+        name_prefix = '_'.join(['', self.name, 'cond', str(self.tmp_count)])
+        self.tmp_count += 1
         prev = statement
         for i in range(delay):
-            tmp_name = '_'.join(['', self.name, 'cond', 
-                                 str(delay), str(self.tmp_count)])
-            self.tmp_count += 1
+            tmp_name = '_'.join([name_prefix, str(i+1)])
             tmp = self.m.Reg(tmp_name, initval=0)
             self.add(tmp(prev), delay=i)
             prev = tmp
@@ -40,12 +71,14 @@ class Parallel(vtypes.VeriloggenNode):
             return subst
         width = left.bit_length()
         prev = right
-        name_prefix = ('_' + left.name if isinstance(left, vtypes._Variable) else
-                       '_' + self.name + '_sbst')
+
+        name_prefix = ('_'.join(['', left.name, str(self.tmp_count)]) 
+                       if isinstance(left, vtypes._Variable) else
+                       '_'.join(['', self.name, 'sbst', str(self.tmp_count)]))
+        self.tmp_count += 1
+            
         for i in range(delay):
-            tmp_name = '_'.join([name_prefix,
-                                 str(delay), str(self.tmp_count)])
-            self.tmp_count += 1
+            tmp_name = '_'.join([name_prefix, str(i+1)])
             tmp = self.m.Reg(tmp_name, width, initval=0)
             self.add(tmp(prev), delay=i)
             prev = tmp
