@@ -59,21 +59,22 @@ module blinkled
   localparam fsm_2 = 2;
   localparam fsm_3 = 3;
   localparam fsm_4 = 4;
+
   reg [32-1:0] _d1_fsm;
-  reg [8-1:0] _valid_reg_4_1_0;
+  reg [8-1:0] _valid_reg_4_0_1;
   reg _fsm_cond_4_1_1;
   reg [32-1:0] _d2_fsm;
+  reg [8-1:0] _valid_reg_4_2_1;
   reg [8-1:0] _valid_reg_4_2_2;
-  reg [8-1:0] _valid_reg_4_2_3;
-  reg _fsm_cond_4_2_4;
-  reg _fsm_cond_4_2_5;
+  reg _fsm_cond_4_3_1;
+  reg _fsm_cond_4_3_2;
   reg [32-1:0] _d3_fsm;
-  reg [8-1:0] _valid_reg_4_3_6;
-  reg [8-1:0] _valid_reg_4_3_7;
-  reg [8-1:0] _valid_reg_4_3_8;
-  reg _fsm_cond_4_3_9;
-  reg _fsm_cond_4_3_10;
-  reg _fsm_cond_4_3_11;
+  reg [8-1:0] _valid_reg_4_4_1;
+  reg [8-1:0] _valid_reg_4_4_2;
+  reg [8-1:0] _valid_reg_4_4_3;
+  reg _fsm_cond_4_5_1;
+  reg _fsm_cond_4_5_2;
+  reg _fsm_cond_4_5_3;
   localparam fsm_5 = 5;
   localparam fsm_6 = 6;
   localparam fsm_7 = 7;
@@ -83,174 +84,174 @@ module blinkled
   localparam fsm_11 = 11;
   localparam fsm_12 = 12;
   localparam fsm_13 = 13;
-  reg [8-1:0] _valid_reg_13_1_12;
-  reg _fsm_cond_13_1_13;
-  reg [8-1:0] _valid_reg_13_2_14;
-  reg [8-1:0] _valid_reg_13_2_15;
-  reg _fsm_cond_13_2_16;
-  reg _fsm_cond_13_2_17;
-  reg [8-1:0] _valid_reg_13_3_18;
-  reg [8-1:0] _valid_reg_13_3_19;
-  reg [8-1:0] _valid_reg_13_3_20;
-  reg _fsm_cond_13_3_21;
-  reg _fsm_cond_13_3_22;
-  reg _fsm_cond_13_3_23;
+  reg [8-1:0] _valid_reg_13_6_1;
+  reg _fsm_cond_13_7_1;
+  reg [8-1:0] _valid_reg_13_8_1;
+  reg [8-1:0] _valid_reg_13_8_2;
+  reg _fsm_cond_13_9_1;
+  reg _fsm_cond_13_9_2;
+  reg [8-1:0] _valid_reg_13_10_1;
+  reg [8-1:0] _valid_reg_13_10_2;
+  reg [8-1:0] _valid_reg_13_10_3;
+  reg _fsm_cond_13_11_1;
+  reg _fsm_cond_13_11_2;
+  reg _fsm_cond_13_11_3;
   reg [32-1:0] _d4_fsm;
-  reg [8-1:0] _valid_reg_13_4_24;
-  reg [8-1:0] _valid_reg_13_4_25;
-  reg [8-1:0] _valid_reg_13_4_26;
-  reg [8-1:0] _valid_reg_13_4_27;
-  reg _fsm_cond_13_4_28;
-  reg _fsm_cond_13_4_29;
-  reg _fsm_cond_13_4_30;
-  reg _fsm_cond_13_4_31;
+  reg [8-1:0] _valid_reg_13_12_1;
+  reg [8-1:0] _valid_reg_13_12_2;
+  reg [8-1:0] _valid_reg_13_12_3;
+  reg [8-1:0] _valid_reg_13_12_4;
+  reg _fsm_cond_13_13_1;
+  reg _fsm_cond_13_13_2;
+  reg _fsm_cond_13_13_3;
+  reg _fsm_cond_13_13_4;
   localparam fsm_14 = 14;
-  reg [8-1:0] _valid_reg_14_1_32;
-  reg _fsm_cond_14_1_33;
-  reg [8-1:0] _valid_reg_14_2_34;
-  reg [8-1:0] _valid_reg_14_2_35;
-  reg _fsm_cond_14_2_36;
-  reg _fsm_cond_14_2_37;
-  reg [8-1:0] _valid_reg_14_3_38;
-  reg [8-1:0] _valid_reg_14_3_39;
-  reg [8-1:0] _valid_reg_14_3_40;
-  reg _fsm_cond_14_3_41;
-  reg _fsm_cond_14_3_42;
-  reg _fsm_cond_14_3_43;
-  reg [8-1:0] _valid_reg_14_4_44;
-  reg [8-1:0] _valid_reg_14_4_45;
-  reg [8-1:0] _valid_reg_14_4_46;
-  reg [8-1:0] _valid_reg_14_4_47;
-  reg _fsm_cond_14_4_48;
-  reg _fsm_cond_14_4_49;
-  reg _fsm_cond_14_4_50;
-  reg _fsm_cond_14_4_51;
+  reg [8-1:0] _valid_reg_14_14_1;
+  reg _fsm_cond_14_15_1;
+  reg [8-1:0] _valid_reg_14_16_1;
+  reg [8-1:0] _valid_reg_14_16_2;
+  reg _fsm_cond_14_17_1;
+  reg _fsm_cond_14_17_2;
+  reg [8-1:0] _valid_reg_14_18_1;
+  reg [8-1:0] _valid_reg_14_18_2;
+  reg [8-1:0] _valid_reg_14_18_3;
+  reg _fsm_cond_14_19_1;
+  reg _fsm_cond_14_19_2;
+  reg _fsm_cond_14_19_3;
+  reg [8-1:0] _valid_reg_14_20_1;
+  reg [8-1:0] _valid_reg_14_20_2;
+  reg [8-1:0] _valid_reg_14_20_3;
+  reg [8-1:0] _valid_reg_14_20_4;
+  reg _fsm_cond_14_21_1;
+  reg _fsm_cond_14_21_2;
+  reg _fsm_cond_14_21_3;
+  reg _fsm_cond_14_21_4;
   localparam fsm_15 = 15;
-  reg [8-1:0] _valid_reg_15_1_52;
-  reg _fsm_cond_15_1_53;
-  reg [8-1:0] _valid_reg_15_2_54;
-  reg [8-1:0] _valid_reg_15_2_55;
-  reg _fsm_cond_15_2_56;
-  reg _fsm_cond_15_2_57;
-  reg [8-1:0] _valid_reg_15_3_58;
-  reg [8-1:0] _valid_reg_15_3_59;
-  reg [8-1:0] _valid_reg_15_3_60;
-  reg _fsm_cond_15_3_61;
-  reg _fsm_cond_15_3_62;
-  reg _fsm_cond_15_3_63;
-  reg [8-1:0] _valid_reg_15_4_64;
-  reg [8-1:0] _valid_reg_15_4_65;
-  reg [8-1:0] _valid_reg_15_4_66;
-  reg [8-1:0] _valid_reg_15_4_67;
-  reg _fsm_cond_15_4_68;
-  reg _fsm_cond_15_4_69;
-  reg _fsm_cond_15_4_70;
-  reg _fsm_cond_15_4_71;
+  reg [8-1:0] _valid_reg_15_22_1;
+  reg _fsm_cond_15_23_1;
+  reg [8-1:0] _valid_reg_15_24_1;
+  reg [8-1:0] _valid_reg_15_24_2;
+  reg _fsm_cond_15_25_1;
+  reg _fsm_cond_15_25_2;
+  reg [8-1:0] _valid_reg_15_26_1;
+  reg [8-1:0] _valid_reg_15_26_2;
+  reg [8-1:0] _valid_reg_15_26_3;
+  reg _fsm_cond_15_27_1;
+  reg _fsm_cond_15_27_2;
+  reg _fsm_cond_15_27_3;
+  reg [8-1:0] _valid_reg_15_28_1;
+  reg [8-1:0] _valid_reg_15_28_2;
+  reg [8-1:0] _valid_reg_15_28_3;
+  reg [8-1:0] _valid_reg_15_28_4;
+  reg _fsm_cond_15_29_1;
+  reg _fsm_cond_15_29_2;
+  reg _fsm_cond_15_29_3;
+  reg _fsm_cond_15_29_4;
   localparam fsm_16 = 16;
-  reg [8-1:0] _valid_reg_16_1_72;
-  reg _fsm_cond_16_1_73;
-  reg [8-1:0] _valid_reg_16_2_74;
-  reg [8-1:0] _valid_reg_16_2_75;
-  reg _fsm_cond_16_2_76;
-  reg _fsm_cond_16_2_77;
-  reg [8-1:0] _valid_reg_16_3_78;
-  reg [8-1:0] _valid_reg_16_3_79;
-  reg [8-1:0] _valid_reg_16_3_80;
-  reg _fsm_cond_16_3_81;
-  reg _fsm_cond_16_3_82;
-  reg _fsm_cond_16_3_83;
-  reg [8-1:0] _valid_reg_16_4_84;
-  reg [8-1:0] _valid_reg_16_4_85;
-  reg [8-1:0] _valid_reg_16_4_86;
-  reg [8-1:0] _valid_reg_16_4_87;
-  reg _fsm_cond_16_4_88;
-  reg _fsm_cond_16_4_89;
-  reg _fsm_cond_16_4_90;
-  reg _fsm_cond_16_4_91;
+  reg [8-1:0] _valid_reg_16_30_1;
+  reg _fsm_cond_16_31_1;
+  reg [8-1:0] _valid_reg_16_32_1;
+  reg [8-1:0] _valid_reg_16_32_2;
+  reg _fsm_cond_16_33_1;
+  reg _fsm_cond_16_33_2;
+  reg [8-1:0] _valid_reg_16_34_1;
+  reg [8-1:0] _valid_reg_16_34_2;
+  reg [8-1:0] _valid_reg_16_34_3;
+  reg _fsm_cond_16_35_1;
+  reg _fsm_cond_16_35_2;
+  reg _fsm_cond_16_35_3;
+  reg [8-1:0] _valid_reg_16_36_1;
+  reg [8-1:0] _valid_reg_16_36_2;
+  reg [8-1:0] _valid_reg_16_36_3;
+  reg [8-1:0] _valid_reg_16_36_4;
+  reg _fsm_cond_16_37_1;
+  reg _fsm_cond_16_37_2;
+  reg _fsm_cond_16_37_3;
+  reg _fsm_cond_16_37_4;
   localparam fsm_17 = 17;
-  reg [8-1:0] _valid_reg_17_1_92;
-  reg _fsm_cond_17_1_93;
-  reg [8-1:0] _valid_reg_17_2_94;
-  reg [8-1:0] _valid_reg_17_2_95;
-  reg _fsm_cond_17_2_96;
-  reg _fsm_cond_17_2_97;
-  reg [8-1:0] _valid_reg_17_3_98;
-  reg [8-1:0] _valid_reg_17_3_99;
-  reg [8-1:0] _valid_reg_17_3_100;
-  reg _fsm_cond_17_3_101;
-  reg _fsm_cond_17_3_102;
-  reg _fsm_cond_17_3_103;
-  reg [8-1:0] _valid_reg_17_4_104;
-  reg [8-1:0] _valid_reg_17_4_105;
-  reg [8-1:0] _valid_reg_17_4_106;
-  reg [8-1:0] _valid_reg_17_4_107;
-  reg _fsm_cond_17_4_108;
-  reg _fsm_cond_17_4_109;
-  reg _fsm_cond_17_4_110;
-  reg _fsm_cond_17_4_111;
+  reg [8-1:0] _valid_reg_17_38_1;
+  reg _fsm_cond_17_39_1;
+  reg [8-1:0] _valid_reg_17_40_1;
+  reg [8-1:0] _valid_reg_17_40_2;
+  reg _fsm_cond_17_41_1;
+  reg _fsm_cond_17_41_2;
+  reg [8-1:0] _valid_reg_17_42_1;
+  reg [8-1:0] _valid_reg_17_42_2;
+  reg [8-1:0] _valid_reg_17_42_3;
+  reg _fsm_cond_17_43_1;
+  reg _fsm_cond_17_43_2;
+  reg _fsm_cond_17_43_3;
+  reg [8-1:0] _valid_reg_17_44_1;
+  reg [8-1:0] _valid_reg_17_44_2;
+  reg [8-1:0] _valid_reg_17_44_3;
+  reg [8-1:0] _valid_reg_17_44_4;
+  reg _fsm_cond_17_45_1;
+  reg _fsm_cond_17_45_2;
+  reg _fsm_cond_17_45_3;
+  reg _fsm_cond_17_45_4;
   localparam fsm_18 = 18;
-  reg [8-1:0] _valid_reg_18_1_112;
-  reg _fsm_cond_18_1_113;
-  reg [8-1:0] _valid_reg_18_2_114;
-  reg [8-1:0] _valid_reg_18_2_115;
-  reg _fsm_cond_18_2_116;
-  reg _fsm_cond_18_2_117;
-  reg [8-1:0] _valid_reg_18_3_118;
-  reg [8-1:0] _valid_reg_18_3_119;
-  reg [8-1:0] _valid_reg_18_3_120;
-  reg _fsm_cond_18_3_121;
-  reg _fsm_cond_18_3_122;
-  reg _fsm_cond_18_3_123;
-  reg [8-1:0] _valid_reg_18_4_124;
-  reg [8-1:0] _valid_reg_18_4_125;
-  reg [8-1:0] _valid_reg_18_4_126;
-  reg [8-1:0] _valid_reg_18_4_127;
-  reg _fsm_cond_18_4_128;
-  reg _fsm_cond_18_4_129;
-  reg _fsm_cond_18_4_130;
-  reg _fsm_cond_18_4_131;
+  reg [8-1:0] _valid_reg_18_46_1;
+  reg _fsm_cond_18_47_1;
+  reg [8-1:0] _valid_reg_18_48_1;
+  reg [8-1:0] _valid_reg_18_48_2;
+  reg _fsm_cond_18_49_1;
+  reg _fsm_cond_18_49_2;
+  reg [8-1:0] _valid_reg_18_50_1;
+  reg [8-1:0] _valid_reg_18_50_2;
+  reg [8-1:0] _valid_reg_18_50_3;
+  reg _fsm_cond_18_51_1;
+  reg _fsm_cond_18_51_2;
+  reg _fsm_cond_18_51_3;
+  reg [8-1:0] _valid_reg_18_52_1;
+  reg [8-1:0] _valid_reg_18_52_2;
+  reg [8-1:0] _valid_reg_18_52_3;
+  reg [8-1:0] _valid_reg_18_52_4;
+  reg _fsm_cond_18_53_1;
+  reg _fsm_cond_18_53_2;
+  reg _fsm_cond_18_53_3;
+  reg _fsm_cond_18_53_4;
   localparam fsm_19 = 19;
-  reg [8-1:0] _valid_reg_19_1_132;
-  reg _fsm_cond_19_1_133;
-  reg [8-1:0] _valid_reg_19_2_134;
-  reg [8-1:0] _valid_reg_19_2_135;
-  reg _fsm_cond_19_2_136;
-  reg _fsm_cond_19_2_137;
-  reg [8-1:0] _valid_reg_19_3_138;
-  reg [8-1:0] _valid_reg_19_3_139;
-  reg [8-1:0] _valid_reg_19_3_140;
-  reg _fsm_cond_19_3_141;
-  reg _fsm_cond_19_3_142;
-  reg _fsm_cond_19_3_143;
-  reg [8-1:0] _valid_reg_19_4_144;
-  reg [8-1:0] _valid_reg_19_4_145;
-  reg [8-1:0] _valid_reg_19_4_146;
-  reg [8-1:0] _valid_reg_19_4_147;
-  reg _fsm_cond_19_4_148;
-  reg _fsm_cond_19_4_149;
-  reg _fsm_cond_19_4_150;
-  reg _fsm_cond_19_4_151;
+  reg [8-1:0] _valid_reg_19_54_1;
+  reg _fsm_cond_19_55_1;
+  reg [8-1:0] _valid_reg_19_56_1;
+  reg [8-1:0] _valid_reg_19_56_2;
+  reg _fsm_cond_19_57_1;
+  reg _fsm_cond_19_57_2;
+  reg [8-1:0] _valid_reg_19_58_1;
+  reg [8-1:0] _valid_reg_19_58_2;
+  reg [8-1:0] _valid_reg_19_58_3;
+  reg _fsm_cond_19_59_1;
+  reg _fsm_cond_19_59_2;
+  reg _fsm_cond_19_59_3;
+  reg [8-1:0] _valid_reg_19_60_1;
+  reg [8-1:0] _valid_reg_19_60_2;
+  reg [8-1:0] _valid_reg_19_60_3;
+  reg [8-1:0] _valid_reg_19_60_4;
+  reg _fsm_cond_19_61_1;
+  reg _fsm_cond_19_61_2;
+  reg _fsm_cond_19_61_3;
+  reg _fsm_cond_19_61_4;
   localparam fsm_20 = 20;
-  reg [8-1:0] _valid_reg_20_1_152;
-  reg _fsm_cond_20_1_153;
-  reg [8-1:0] _valid_reg_20_2_154;
-  reg [8-1:0] _valid_reg_20_2_155;
-  reg _fsm_cond_20_2_156;
-  reg _fsm_cond_20_2_157;
-  reg [8-1:0] _valid_reg_20_3_158;
-  reg [8-1:0] _valid_reg_20_3_159;
-  reg [8-1:0] _valid_reg_20_3_160;
-  reg _fsm_cond_20_3_161;
-  reg _fsm_cond_20_3_162;
-  reg _fsm_cond_20_3_163;
-  reg [8-1:0] _valid_reg_20_4_164;
-  reg [8-1:0] _valid_reg_20_4_165;
-  reg [8-1:0] _valid_reg_20_4_166;
-  reg [8-1:0] _valid_reg_20_4_167;
-  reg _fsm_cond_20_4_168;
-  reg _fsm_cond_20_4_169;
-  reg _fsm_cond_20_4_170;
-  reg _fsm_cond_20_4_171;
+  reg [8-1:0] _valid_reg_20_62_1;
+  reg _fsm_cond_20_63_1;
+  reg [8-1:0] _valid_reg_20_64_1;
+  reg [8-1:0] _valid_reg_20_64_2;
+  reg _fsm_cond_20_65_1;
+  reg _fsm_cond_20_65_2;
+  reg [8-1:0] _valid_reg_20_66_1;
+  reg [8-1:0] _valid_reg_20_66_2;
+  reg [8-1:0] _valid_reg_20_66_3;
+  reg _fsm_cond_20_67_1;
+  reg _fsm_cond_20_67_2;
+  reg _fsm_cond_20_67_3;
+  reg [8-1:0] _valid_reg_20_68_1;
+  reg [8-1:0] _valid_reg_20_68_2;
+  reg [8-1:0] _valid_reg_20_68_3;
+  reg [8-1:0] _valid_reg_20_68_4;
+  reg _fsm_cond_20_69_1;
+  reg _fsm_cond_20_69_2;
+  reg _fsm_cond_20_69_3;
+  reg _fsm_cond_20_69_4;
   localparam fsm_21 = 21;
 
   always @(posedge CLK) begin
@@ -259,181 +260,181 @@ module blinkled
       valid_reg <= 0;
       fsm <= fsm_init;
       _d1_fsm <= fsm_init;
-      _valid_reg_4_1_0 <= 0;
+      _valid_reg_4_0_1 <= 0;
       _fsm_cond_4_1_1 <= 0;
       _d2_fsm <= fsm_init;
+      _valid_reg_4_2_1 <= 0;
       _valid_reg_4_2_2 <= 0;
-      _valid_reg_4_2_3 <= 0;
-      _fsm_cond_4_2_4 <= 0;
-      _fsm_cond_4_2_5 <= 0;
+      _fsm_cond_4_3_1 <= 0;
+      _fsm_cond_4_3_2 <= 0;
       _d3_fsm <= fsm_init;
-      _valid_reg_4_3_6 <= 0;
-      _valid_reg_4_3_7 <= 0;
-      _valid_reg_4_3_8 <= 0;
-      _fsm_cond_4_3_9 <= 0;
-      _fsm_cond_4_3_10 <= 0;
-      _fsm_cond_4_3_11 <= 0;
-      _valid_reg_13_1_12 <= 0;
-      _fsm_cond_13_1_13 <= 0;
-      _valid_reg_13_2_14 <= 0;
-      _valid_reg_13_2_15 <= 0;
-      _fsm_cond_13_2_16 <= 0;
-      _fsm_cond_13_2_17 <= 0;
-      _valid_reg_13_3_18 <= 0;
-      _valid_reg_13_3_19 <= 0;
-      _valid_reg_13_3_20 <= 0;
-      _fsm_cond_13_3_21 <= 0;
-      _fsm_cond_13_3_22 <= 0;
-      _fsm_cond_13_3_23 <= 0;
+      _valid_reg_4_4_1 <= 0;
+      _valid_reg_4_4_2 <= 0;
+      _valid_reg_4_4_3 <= 0;
+      _fsm_cond_4_5_1 <= 0;
+      _fsm_cond_4_5_2 <= 0;
+      _fsm_cond_4_5_3 <= 0;
+      _valid_reg_13_6_1 <= 0;
+      _fsm_cond_13_7_1 <= 0;
+      _valid_reg_13_8_1 <= 0;
+      _valid_reg_13_8_2 <= 0;
+      _fsm_cond_13_9_1 <= 0;
+      _fsm_cond_13_9_2 <= 0;
+      _valid_reg_13_10_1 <= 0;
+      _valid_reg_13_10_2 <= 0;
+      _valid_reg_13_10_3 <= 0;
+      _fsm_cond_13_11_1 <= 0;
+      _fsm_cond_13_11_2 <= 0;
+      _fsm_cond_13_11_3 <= 0;
       _d4_fsm <= fsm_init;
-      _valid_reg_13_4_24 <= 0;
-      _valid_reg_13_4_25 <= 0;
-      _valid_reg_13_4_26 <= 0;
-      _valid_reg_13_4_27 <= 0;
-      _fsm_cond_13_4_28 <= 0;
-      _fsm_cond_13_4_29 <= 0;
-      _fsm_cond_13_4_30 <= 0;
-      _fsm_cond_13_4_31 <= 0;
-      _valid_reg_14_1_32 <= 0;
-      _fsm_cond_14_1_33 <= 0;
-      _valid_reg_14_2_34 <= 0;
-      _valid_reg_14_2_35 <= 0;
-      _fsm_cond_14_2_36 <= 0;
-      _fsm_cond_14_2_37 <= 0;
-      _valid_reg_14_3_38 <= 0;
-      _valid_reg_14_3_39 <= 0;
-      _valid_reg_14_3_40 <= 0;
-      _fsm_cond_14_3_41 <= 0;
-      _fsm_cond_14_3_42 <= 0;
-      _fsm_cond_14_3_43 <= 0;
-      _valid_reg_14_4_44 <= 0;
-      _valid_reg_14_4_45 <= 0;
-      _valid_reg_14_4_46 <= 0;
-      _valid_reg_14_4_47 <= 0;
-      _fsm_cond_14_4_48 <= 0;
-      _fsm_cond_14_4_49 <= 0;
-      _fsm_cond_14_4_50 <= 0;
-      _fsm_cond_14_4_51 <= 0;
-      _valid_reg_15_1_52 <= 0;
-      _fsm_cond_15_1_53 <= 0;
-      _valid_reg_15_2_54 <= 0;
-      _valid_reg_15_2_55 <= 0;
-      _fsm_cond_15_2_56 <= 0;
-      _fsm_cond_15_2_57 <= 0;
-      _valid_reg_15_3_58 <= 0;
-      _valid_reg_15_3_59 <= 0;
-      _valid_reg_15_3_60 <= 0;
-      _fsm_cond_15_3_61 <= 0;
-      _fsm_cond_15_3_62 <= 0;
-      _fsm_cond_15_3_63 <= 0;
-      _valid_reg_15_4_64 <= 0;
-      _valid_reg_15_4_65 <= 0;
-      _valid_reg_15_4_66 <= 0;
-      _valid_reg_15_4_67 <= 0;
-      _fsm_cond_15_4_68 <= 0;
-      _fsm_cond_15_4_69 <= 0;
-      _fsm_cond_15_4_70 <= 0;
-      _fsm_cond_15_4_71 <= 0;
-      _valid_reg_16_1_72 <= 0;
-      _fsm_cond_16_1_73 <= 0;
-      _valid_reg_16_2_74 <= 0;
-      _valid_reg_16_2_75 <= 0;
-      _fsm_cond_16_2_76 <= 0;
-      _fsm_cond_16_2_77 <= 0;
-      _valid_reg_16_3_78 <= 0;
-      _valid_reg_16_3_79 <= 0;
-      _valid_reg_16_3_80 <= 0;
-      _fsm_cond_16_3_81 <= 0;
-      _fsm_cond_16_3_82 <= 0;
-      _fsm_cond_16_3_83 <= 0;
-      _valid_reg_16_4_84 <= 0;
-      _valid_reg_16_4_85 <= 0;
-      _valid_reg_16_4_86 <= 0;
-      _valid_reg_16_4_87 <= 0;
-      _fsm_cond_16_4_88 <= 0;
-      _fsm_cond_16_4_89 <= 0;
-      _fsm_cond_16_4_90 <= 0;
-      _fsm_cond_16_4_91 <= 0;
-      _valid_reg_17_1_92 <= 0;
-      _fsm_cond_17_1_93 <= 0;
-      _valid_reg_17_2_94 <= 0;
-      _valid_reg_17_2_95 <= 0;
-      _fsm_cond_17_2_96 <= 0;
-      _fsm_cond_17_2_97 <= 0;
-      _valid_reg_17_3_98 <= 0;
-      _valid_reg_17_3_99 <= 0;
-      _valid_reg_17_3_100 <= 0;
-      _fsm_cond_17_3_101 <= 0;
-      _fsm_cond_17_3_102 <= 0;
-      _fsm_cond_17_3_103 <= 0;
-      _valid_reg_17_4_104 <= 0;
-      _valid_reg_17_4_105 <= 0;
-      _valid_reg_17_4_106 <= 0;
-      _valid_reg_17_4_107 <= 0;
-      _fsm_cond_17_4_108 <= 0;
-      _fsm_cond_17_4_109 <= 0;
-      _fsm_cond_17_4_110 <= 0;
-      _fsm_cond_17_4_111 <= 0;
-      _valid_reg_18_1_112 <= 0;
-      _fsm_cond_18_1_113 <= 0;
-      _valid_reg_18_2_114 <= 0;
-      _valid_reg_18_2_115 <= 0;
-      _fsm_cond_18_2_116 <= 0;
-      _fsm_cond_18_2_117 <= 0;
-      _valid_reg_18_3_118 <= 0;
-      _valid_reg_18_3_119 <= 0;
-      _valid_reg_18_3_120 <= 0;
-      _fsm_cond_18_3_121 <= 0;
-      _fsm_cond_18_3_122 <= 0;
-      _fsm_cond_18_3_123 <= 0;
-      _valid_reg_18_4_124 <= 0;
-      _valid_reg_18_4_125 <= 0;
-      _valid_reg_18_4_126 <= 0;
-      _valid_reg_18_4_127 <= 0;
-      _fsm_cond_18_4_128 <= 0;
-      _fsm_cond_18_4_129 <= 0;
-      _fsm_cond_18_4_130 <= 0;
-      _fsm_cond_18_4_131 <= 0;
-      _valid_reg_19_1_132 <= 0;
-      _fsm_cond_19_1_133 <= 0;
-      _valid_reg_19_2_134 <= 0;
-      _valid_reg_19_2_135 <= 0;
-      _fsm_cond_19_2_136 <= 0;
-      _fsm_cond_19_2_137 <= 0;
-      _valid_reg_19_3_138 <= 0;
-      _valid_reg_19_3_139 <= 0;
-      _valid_reg_19_3_140 <= 0;
-      _fsm_cond_19_3_141 <= 0;
-      _fsm_cond_19_3_142 <= 0;
-      _fsm_cond_19_3_143 <= 0;
-      _valid_reg_19_4_144 <= 0;
-      _valid_reg_19_4_145 <= 0;
-      _valid_reg_19_4_146 <= 0;
-      _valid_reg_19_4_147 <= 0;
-      _fsm_cond_19_4_148 <= 0;
-      _fsm_cond_19_4_149 <= 0;
-      _fsm_cond_19_4_150 <= 0;
-      _fsm_cond_19_4_151 <= 0;
-      _valid_reg_20_1_152 <= 0;
-      _fsm_cond_20_1_153 <= 0;
-      _valid_reg_20_2_154 <= 0;
-      _valid_reg_20_2_155 <= 0;
-      _fsm_cond_20_2_156 <= 0;
-      _fsm_cond_20_2_157 <= 0;
-      _valid_reg_20_3_158 <= 0;
-      _valid_reg_20_3_159 <= 0;
-      _valid_reg_20_3_160 <= 0;
-      _fsm_cond_20_3_161 <= 0;
-      _fsm_cond_20_3_162 <= 0;
-      _fsm_cond_20_3_163 <= 0;
-      _valid_reg_20_4_164 <= 0;
-      _valid_reg_20_4_165 <= 0;
-      _valid_reg_20_4_166 <= 0;
-      _valid_reg_20_4_167 <= 0;
-      _fsm_cond_20_4_168 <= 0;
-      _fsm_cond_20_4_169 <= 0;
-      _fsm_cond_20_4_170 <= 0;
-      _fsm_cond_20_4_171 <= 0;
+      _valid_reg_13_12_1 <= 0;
+      _valid_reg_13_12_2 <= 0;
+      _valid_reg_13_12_3 <= 0;
+      _valid_reg_13_12_4 <= 0;
+      _fsm_cond_13_13_1 <= 0;
+      _fsm_cond_13_13_2 <= 0;
+      _fsm_cond_13_13_3 <= 0;
+      _fsm_cond_13_13_4 <= 0;
+      _valid_reg_14_14_1 <= 0;
+      _fsm_cond_14_15_1 <= 0;
+      _valid_reg_14_16_1 <= 0;
+      _valid_reg_14_16_2 <= 0;
+      _fsm_cond_14_17_1 <= 0;
+      _fsm_cond_14_17_2 <= 0;
+      _valid_reg_14_18_1 <= 0;
+      _valid_reg_14_18_2 <= 0;
+      _valid_reg_14_18_3 <= 0;
+      _fsm_cond_14_19_1 <= 0;
+      _fsm_cond_14_19_2 <= 0;
+      _fsm_cond_14_19_3 <= 0;
+      _valid_reg_14_20_1 <= 0;
+      _valid_reg_14_20_2 <= 0;
+      _valid_reg_14_20_3 <= 0;
+      _valid_reg_14_20_4 <= 0;
+      _fsm_cond_14_21_1 <= 0;
+      _fsm_cond_14_21_2 <= 0;
+      _fsm_cond_14_21_3 <= 0;
+      _fsm_cond_14_21_4 <= 0;
+      _valid_reg_15_22_1 <= 0;
+      _fsm_cond_15_23_1 <= 0;
+      _valid_reg_15_24_1 <= 0;
+      _valid_reg_15_24_2 <= 0;
+      _fsm_cond_15_25_1 <= 0;
+      _fsm_cond_15_25_2 <= 0;
+      _valid_reg_15_26_1 <= 0;
+      _valid_reg_15_26_2 <= 0;
+      _valid_reg_15_26_3 <= 0;
+      _fsm_cond_15_27_1 <= 0;
+      _fsm_cond_15_27_2 <= 0;
+      _fsm_cond_15_27_3 <= 0;
+      _valid_reg_15_28_1 <= 0;
+      _valid_reg_15_28_2 <= 0;
+      _valid_reg_15_28_3 <= 0;
+      _valid_reg_15_28_4 <= 0;
+      _fsm_cond_15_29_1 <= 0;
+      _fsm_cond_15_29_2 <= 0;
+      _fsm_cond_15_29_3 <= 0;
+      _fsm_cond_15_29_4 <= 0;
+      _valid_reg_16_30_1 <= 0;
+      _fsm_cond_16_31_1 <= 0;
+      _valid_reg_16_32_1 <= 0;
+      _valid_reg_16_32_2 <= 0;
+      _fsm_cond_16_33_1 <= 0;
+      _fsm_cond_16_33_2 <= 0;
+      _valid_reg_16_34_1 <= 0;
+      _valid_reg_16_34_2 <= 0;
+      _valid_reg_16_34_3 <= 0;
+      _fsm_cond_16_35_1 <= 0;
+      _fsm_cond_16_35_2 <= 0;
+      _fsm_cond_16_35_3 <= 0;
+      _valid_reg_16_36_1 <= 0;
+      _valid_reg_16_36_2 <= 0;
+      _valid_reg_16_36_3 <= 0;
+      _valid_reg_16_36_4 <= 0;
+      _fsm_cond_16_37_1 <= 0;
+      _fsm_cond_16_37_2 <= 0;
+      _fsm_cond_16_37_3 <= 0;
+      _fsm_cond_16_37_4 <= 0;
+      _valid_reg_17_38_1 <= 0;
+      _fsm_cond_17_39_1 <= 0;
+      _valid_reg_17_40_1 <= 0;
+      _valid_reg_17_40_2 <= 0;
+      _fsm_cond_17_41_1 <= 0;
+      _fsm_cond_17_41_2 <= 0;
+      _valid_reg_17_42_1 <= 0;
+      _valid_reg_17_42_2 <= 0;
+      _valid_reg_17_42_3 <= 0;
+      _fsm_cond_17_43_1 <= 0;
+      _fsm_cond_17_43_2 <= 0;
+      _fsm_cond_17_43_3 <= 0;
+      _valid_reg_17_44_1 <= 0;
+      _valid_reg_17_44_2 <= 0;
+      _valid_reg_17_44_3 <= 0;
+      _valid_reg_17_44_4 <= 0;
+      _fsm_cond_17_45_1 <= 0;
+      _fsm_cond_17_45_2 <= 0;
+      _fsm_cond_17_45_3 <= 0;
+      _fsm_cond_17_45_4 <= 0;
+      _valid_reg_18_46_1 <= 0;
+      _fsm_cond_18_47_1 <= 0;
+      _valid_reg_18_48_1 <= 0;
+      _valid_reg_18_48_2 <= 0;
+      _fsm_cond_18_49_1 <= 0;
+      _fsm_cond_18_49_2 <= 0;
+      _valid_reg_18_50_1 <= 0;
+      _valid_reg_18_50_2 <= 0;
+      _valid_reg_18_50_3 <= 0;
+      _fsm_cond_18_51_1 <= 0;
+      _fsm_cond_18_51_2 <= 0;
+      _fsm_cond_18_51_3 <= 0;
+      _valid_reg_18_52_1 <= 0;
+      _valid_reg_18_52_2 <= 0;
+      _valid_reg_18_52_3 <= 0;
+      _valid_reg_18_52_4 <= 0;
+      _fsm_cond_18_53_1 <= 0;
+      _fsm_cond_18_53_2 <= 0;
+      _fsm_cond_18_53_3 <= 0;
+      _fsm_cond_18_53_4 <= 0;
+      _valid_reg_19_54_1 <= 0;
+      _fsm_cond_19_55_1 <= 0;
+      _valid_reg_19_56_1 <= 0;
+      _valid_reg_19_56_2 <= 0;
+      _fsm_cond_19_57_1 <= 0;
+      _fsm_cond_19_57_2 <= 0;
+      _valid_reg_19_58_1 <= 0;
+      _valid_reg_19_58_2 <= 0;
+      _valid_reg_19_58_3 <= 0;
+      _fsm_cond_19_59_1 <= 0;
+      _fsm_cond_19_59_2 <= 0;
+      _fsm_cond_19_59_3 <= 0;
+      _valid_reg_19_60_1 <= 0;
+      _valid_reg_19_60_2 <= 0;
+      _valid_reg_19_60_3 <= 0;
+      _valid_reg_19_60_4 <= 0;
+      _fsm_cond_19_61_1 <= 0;
+      _fsm_cond_19_61_2 <= 0;
+      _fsm_cond_19_61_3 <= 0;
+      _fsm_cond_19_61_4 <= 0;
+      _valid_reg_20_62_1 <= 0;
+      _fsm_cond_20_63_1 <= 0;
+      _valid_reg_20_64_1 <= 0;
+      _valid_reg_20_64_2 <= 0;
+      _fsm_cond_20_65_1 <= 0;
+      _fsm_cond_20_65_2 <= 0;
+      _valid_reg_20_66_1 <= 0;
+      _valid_reg_20_66_2 <= 0;
+      _valid_reg_20_66_3 <= 0;
+      _fsm_cond_20_67_1 <= 0;
+      _fsm_cond_20_67_2 <= 0;
+      _fsm_cond_20_67_3 <= 0;
+      _valid_reg_20_68_1 <= 0;
+      _valid_reg_20_68_2 <= 0;
+      _valid_reg_20_68_3 <= 0;
+      _valid_reg_20_68_4 <= 0;
+      _fsm_cond_20_69_1 <= 0;
+      _fsm_cond_20_69_2 <= 0;
+      _fsm_cond_20_69_3 <= 0;
+      _fsm_cond_20_69_4 <= 0;
     end else begin
       count <= (count + 1);
       _d1_fsm <= fsm;
@@ -442,287 +443,287 @@ module blinkled
       _d4_fsm <= _d3_fsm;
       case(_d4_fsm)
         fsm_13: begin
-          if(_fsm_cond_13_4_31) begin
-            valid_reg <= _valid_reg_13_4_27;
+          if(_fsm_cond_13_13_4) begin
+            valid_reg <= _valid_reg_13_12_4;
           end 
         end
         fsm_14: begin
-          if(_fsm_cond_14_4_51) begin
-            valid_reg <= _valid_reg_14_4_47;
+          if(_fsm_cond_14_21_4) begin
+            valid_reg <= _valid_reg_14_20_4;
           end 
         end
         fsm_15: begin
-          if(_fsm_cond_15_4_71) begin
-            valid_reg <= _valid_reg_15_4_67;
+          if(_fsm_cond_15_29_4) begin
+            valid_reg <= _valid_reg_15_28_4;
           end 
         end
         fsm_16: begin
-          if(_fsm_cond_16_4_91) begin
-            valid_reg <= _valid_reg_16_4_87;
+          if(_fsm_cond_16_37_4) begin
+            valid_reg <= _valid_reg_16_36_4;
           end 
         end
         fsm_17: begin
-          if(_fsm_cond_17_4_111) begin
-            valid_reg <= _valid_reg_17_4_107;
+          if(_fsm_cond_17_45_4) begin
+            valid_reg <= _valid_reg_17_44_4;
           end 
         end
         fsm_18: begin
-          if(_fsm_cond_18_4_131) begin
-            valid_reg <= _valid_reg_18_4_127;
+          if(_fsm_cond_18_53_4) begin
+            valid_reg <= _valid_reg_18_52_4;
           end 
         end
         fsm_19: begin
-          if(_fsm_cond_19_4_151) begin
-            valid_reg <= _valid_reg_19_4_147;
+          if(_fsm_cond_19_61_4) begin
+            valid_reg <= _valid_reg_19_60_4;
           end 
         end
         fsm_20: begin
-          if(_fsm_cond_20_4_171) begin
-            valid_reg <= _valid_reg_20_4_167;
+          if(_fsm_cond_20_69_4) begin
+            valid_reg <= _valid_reg_20_68_4;
           end 
         end
       endcase
       case(_d3_fsm)
         fsm_4: begin
-          if(_fsm_cond_4_3_11) begin
-            valid_reg <= _valid_reg_4_3_8;
+          if(_fsm_cond_4_5_3) begin
+            valid_reg <= _valid_reg_4_4_3;
           end 
         end
         fsm_13: begin
-          if(_fsm_cond_13_3_23) begin
-            valid_reg <= _valid_reg_13_3_20;
+          if(_fsm_cond_13_11_3) begin
+            valid_reg <= _valid_reg_13_10_3;
           end 
-          _valid_reg_13_4_27 <= _valid_reg_13_4_26;
-          _fsm_cond_13_4_31 <= _fsm_cond_13_4_30;
+          _valid_reg_13_12_4 <= _valid_reg_13_12_3;
+          _fsm_cond_13_13_4 <= _fsm_cond_13_13_3;
         end
         fsm_14: begin
-          if(_fsm_cond_14_3_43) begin
-            valid_reg <= _valid_reg_14_3_40;
+          if(_fsm_cond_14_19_3) begin
+            valid_reg <= _valid_reg_14_18_3;
           end 
-          _valid_reg_14_4_47 <= _valid_reg_14_4_46;
-          _fsm_cond_14_4_51 <= _fsm_cond_14_4_50;
+          _valid_reg_14_20_4 <= _valid_reg_14_20_3;
+          _fsm_cond_14_21_4 <= _fsm_cond_14_21_3;
         end
         fsm_15: begin
-          if(_fsm_cond_15_3_63) begin
-            valid_reg <= _valid_reg_15_3_60;
+          if(_fsm_cond_15_27_3) begin
+            valid_reg <= _valid_reg_15_26_3;
           end 
-          _valid_reg_15_4_67 <= _valid_reg_15_4_66;
-          _fsm_cond_15_4_71 <= _fsm_cond_15_4_70;
+          _valid_reg_15_28_4 <= _valid_reg_15_28_3;
+          _fsm_cond_15_29_4 <= _fsm_cond_15_29_3;
         end
         fsm_16: begin
-          if(_fsm_cond_16_3_83) begin
-            valid_reg <= _valid_reg_16_3_80;
+          if(_fsm_cond_16_35_3) begin
+            valid_reg <= _valid_reg_16_34_3;
           end 
-          _valid_reg_16_4_87 <= _valid_reg_16_4_86;
-          _fsm_cond_16_4_91 <= _fsm_cond_16_4_90;
+          _valid_reg_16_36_4 <= _valid_reg_16_36_3;
+          _fsm_cond_16_37_4 <= _fsm_cond_16_37_3;
         end
         fsm_17: begin
-          if(_fsm_cond_17_3_103) begin
-            valid_reg <= _valid_reg_17_3_100;
+          if(_fsm_cond_17_43_3) begin
+            valid_reg <= _valid_reg_17_42_3;
           end 
-          _valid_reg_17_4_107 <= _valid_reg_17_4_106;
-          _fsm_cond_17_4_111 <= _fsm_cond_17_4_110;
+          _valid_reg_17_44_4 <= _valid_reg_17_44_3;
+          _fsm_cond_17_45_4 <= _fsm_cond_17_45_3;
         end
         fsm_18: begin
-          if(_fsm_cond_18_3_123) begin
-            valid_reg <= _valid_reg_18_3_120;
+          if(_fsm_cond_18_51_3) begin
+            valid_reg <= _valid_reg_18_50_3;
           end 
-          _valid_reg_18_4_127 <= _valid_reg_18_4_126;
-          _fsm_cond_18_4_131 <= _fsm_cond_18_4_130;
+          _valid_reg_18_52_4 <= _valid_reg_18_52_3;
+          _fsm_cond_18_53_4 <= _fsm_cond_18_53_3;
         end
         fsm_19: begin
-          if(_fsm_cond_19_3_143) begin
-            valid_reg <= _valid_reg_19_3_140;
+          if(_fsm_cond_19_59_3) begin
+            valid_reg <= _valid_reg_19_58_3;
           end 
-          _valid_reg_19_4_147 <= _valid_reg_19_4_146;
-          _fsm_cond_19_4_151 <= _fsm_cond_19_4_150;
+          _valid_reg_19_60_4 <= _valid_reg_19_60_3;
+          _fsm_cond_19_61_4 <= _fsm_cond_19_61_3;
         end
         fsm_20: begin
-          if(_fsm_cond_20_3_163) begin
-            valid_reg <= _valid_reg_20_3_160;
+          if(_fsm_cond_20_67_3) begin
+            valid_reg <= _valid_reg_20_66_3;
           end 
-          _valid_reg_20_4_167 <= _valid_reg_20_4_166;
-          _fsm_cond_20_4_171 <= _fsm_cond_20_4_170;
+          _valid_reg_20_68_4 <= _valid_reg_20_68_3;
+          _fsm_cond_20_69_4 <= _fsm_cond_20_69_3;
         end
       endcase
       case(_d2_fsm)
         fsm_4: begin
-          if(_fsm_cond_4_2_5) begin
-            valid_reg <= _valid_reg_4_2_3;
+          if(_fsm_cond_4_3_2) begin
+            valid_reg <= _valid_reg_4_2_2;
           end 
-          _valid_reg_4_3_8 <= _valid_reg_4_3_7;
-          _fsm_cond_4_3_11 <= _fsm_cond_4_3_10;
+          _valid_reg_4_4_3 <= _valid_reg_4_4_2;
+          _fsm_cond_4_5_3 <= _fsm_cond_4_5_2;
         end
         fsm_13: begin
-          if(_fsm_cond_13_2_17) begin
-            valid_reg <= _valid_reg_13_2_15;
+          if(_fsm_cond_13_9_2) begin
+            valid_reg <= _valid_reg_13_8_2;
           end 
-          _valid_reg_13_3_20 <= _valid_reg_13_3_19;
-          _fsm_cond_13_3_23 <= _fsm_cond_13_3_22;
-          _valid_reg_13_4_26 <= _valid_reg_13_4_25;
-          _fsm_cond_13_4_30 <= _fsm_cond_13_4_29;
+          _valid_reg_13_10_3 <= _valid_reg_13_10_2;
+          _fsm_cond_13_11_3 <= _fsm_cond_13_11_2;
+          _valid_reg_13_12_3 <= _valid_reg_13_12_2;
+          _fsm_cond_13_13_3 <= _fsm_cond_13_13_2;
         end
         fsm_14: begin
-          if(_fsm_cond_14_2_37) begin
-            valid_reg <= _valid_reg_14_2_35;
+          if(_fsm_cond_14_17_2) begin
+            valid_reg <= _valid_reg_14_16_2;
           end 
-          _valid_reg_14_3_40 <= _valid_reg_14_3_39;
-          _fsm_cond_14_3_43 <= _fsm_cond_14_3_42;
-          _valid_reg_14_4_46 <= _valid_reg_14_4_45;
-          _fsm_cond_14_4_50 <= _fsm_cond_14_4_49;
+          _valid_reg_14_18_3 <= _valid_reg_14_18_2;
+          _fsm_cond_14_19_3 <= _fsm_cond_14_19_2;
+          _valid_reg_14_20_3 <= _valid_reg_14_20_2;
+          _fsm_cond_14_21_3 <= _fsm_cond_14_21_2;
         end
         fsm_15: begin
-          if(_fsm_cond_15_2_57) begin
-            valid_reg <= _valid_reg_15_2_55;
+          if(_fsm_cond_15_25_2) begin
+            valid_reg <= _valid_reg_15_24_2;
           end 
-          _valid_reg_15_3_60 <= _valid_reg_15_3_59;
-          _fsm_cond_15_3_63 <= _fsm_cond_15_3_62;
-          _valid_reg_15_4_66 <= _valid_reg_15_4_65;
-          _fsm_cond_15_4_70 <= _fsm_cond_15_4_69;
+          _valid_reg_15_26_3 <= _valid_reg_15_26_2;
+          _fsm_cond_15_27_3 <= _fsm_cond_15_27_2;
+          _valid_reg_15_28_3 <= _valid_reg_15_28_2;
+          _fsm_cond_15_29_3 <= _fsm_cond_15_29_2;
         end
         fsm_16: begin
-          if(_fsm_cond_16_2_77) begin
-            valid_reg <= _valid_reg_16_2_75;
+          if(_fsm_cond_16_33_2) begin
+            valid_reg <= _valid_reg_16_32_2;
           end 
-          _valid_reg_16_3_80 <= _valid_reg_16_3_79;
-          _fsm_cond_16_3_83 <= _fsm_cond_16_3_82;
-          _valid_reg_16_4_86 <= _valid_reg_16_4_85;
-          _fsm_cond_16_4_90 <= _fsm_cond_16_4_89;
+          _valid_reg_16_34_3 <= _valid_reg_16_34_2;
+          _fsm_cond_16_35_3 <= _fsm_cond_16_35_2;
+          _valid_reg_16_36_3 <= _valid_reg_16_36_2;
+          _fsm_cond_16_37_3 <= _fsm_cond_16_37_2;
         end
         fsm_17: begin
-          if(_fsm_cond_17_2_97) begin
-            valid_reg <= _valid_reg_17_2_95;
+          if(_fsm_cond_17_41_2) begin
+            valid_reg <= _valid_reg_17_40_2;
           end 
-          _valid_reg_17_3_100 <= _valid_reg_17_3_99;
-          _fsm_cond_17_3_103 <= _fsm_cond_17_3_102;
-          _valid_reg_17_4_106 <= _valid_reg_17_4_105;
-          _fsm_cond_17_4_110 <= _fsm_cond_17_4_109;
+          _valid_reg_17_42_3 <= _valid_reg_17_42_2;
+          _fsm_cond_17_43_3 <= _fsm_cond_17_43_2;
+          _valid_reg_17_44_3 <= _valid_reg_17_44_2;
+          _fsm_cond_17_45_3 <= _fsm_cond_17_45_2;
         end
         fsm_18: begin
-          if(_fsm_cond_18_2_117) begin
-            valid_reg <= _valid_reg_18_2_115;
+          if(_fsm_cond_18_49_2) begin
+            valid_reg <= _valid_reg_18_48_2;
           end 
-          _valid_reg_18_3_120 <= _valid_reg_18_3_119;
-          _fsm_cond_18_3_123 <= _fsm_cond_18_3_122;
-          _valid_reg_18_4_126 <= _valid_reg_18_4_125;
-          _fsm_cond_18_4_130 <= _fsm_cond_18_4_129;
+          _valid_reg_18_50_3 <= _valid_reg_18_50_2;
+          _fsm_cond_18_51_3 <= _fsm_cond_18_51_2;
+          _valid_reg_18_52_3 <= _valid_reg_18_52_2;
+          _fsm_cond_18_53_3 <= _fsm_cond_18_53_2;
         end
         fsm_19: begin
-          if(_fsm_cond_19_2_137) begin
-            valid_reg <= _valid_reg_19_2_135;
+          if(_fsm_cond_19_57_2) begin
+            valid_reg <= _valid_reg_19_56_2;
           end 
-          _valid_reg_19_3_140 <= _valid_reg_19_3_139;
-          _fsm_cond_19_3_143 <= _fsm_cond_19_3_142;
-          _valid_reg_19_4_146 <= _valid_reg_19_4_145;
-          _fsm_cond_19_4_150 <= _fsm_cond_19_4_149;
+          _valid_reg_19_58_3 <= _valid_reg_19_58_2;
+          _fsm_cond_19_59_3 <= _fsm_cond_19_59_2;
+          _valid_reg_19_60_3 <= _valid_reg_19_60_2;
+          _fsm_cond_19_61_3 <= _fsm_cond_19_61_2;
         end
         fsm_20: begin
-          if(_fsm_cond_20_2_157) begin
-            valid_reg <= _valid_reg_20_2_155;
+          if(_fsm_cond_20_65_2) begin
+            valid_reg <= _valid_reg_20_64_2;
           end 
-          _valid_reg_20_3_160 <= _valid_reg_20_3_159;
-          _fsm_cond_20_3_163 <= _fsm_cond_20_3_162;
-          _valid_reg_20_4_166 <= _valid_reg_20_4_165;
-          _fsm_cond_20_4_170 <= _fsm_cond_20_4_169;
+          _valid_reg_20_66_3 <= _valid_reg_20_66_2;
+          _fsm_cond_20_67_3 <= _fsm_cond_20_67_2;
+          _valid_reg_20_68_3 <= _valid_reg_20_68_2;
+          _fsm_cond_20_69_3 <= _fsm_cond_20_69_2;
         end
       endcase
       case(_d1_fsm)
         fsm_4: begin
           if(_fsm_cond_4_1_1) begin
-            valid_reg <= _valid_reg_4_1_0;
+            valid_reg <= _valid_reg_4_0_1;
           end 
-          _valid_reg_4_2_3 <= _valid_reg_4_2_2;
-          _fsm_cond_4_2_5 <= _fsm_cond_4_2_4;
-          _valid_reg_4_3_7 <= _valid_reg_4_3_6;
-          _fsm_cond_4_3_10 <= _fsm_cond_4_3_9;
+          _valid_reg_4_2_2 <= _valid_reg_4_2_1;
+          _fsm_cond_4_3_2 <= _fsm_cond_4_3_1;
+          _valid_reg_4_4_2 <= _valid_reg_4_4_1;
+          _fsm_cond_4_5_2 <= _fsm_cond_4_5_1;
         end
         fsm_13: begin
-          if(_fsm_cond_13_1_13) begin
-            valid_reg <= _valid_reg_13_1_12;
+          if(_fsm_cond_13_7_1) begin
+            valid_reg <= _valid_reg_13_6_1;
           end 
-          _valid_reg_13_2_15 <= _valid_reg_13_2_14;
-          _fsm_cond_13_2_17 <= _fsm_cond_13_2_16;
-          _valid_reg_13_3_19 <= _valid_reg_13_3_18;
-          _fsm_cond_13_3_22 <= _fsm_cond_13_3_21;
-          _valid_reg_13_4_25 <= _valid_reg_13_4_24;
-          _fsm_cond_13_4_29 <= _fsm_cond_13_4_28;
+          _valid_reg_13_8_2 <= _valid_reg_13_8_1;
+          _fsm_cond_13_9_2 <= _fsm_cond_13_9_1;
+          _valid_reg_13_10_2 <= _valid_reg_13_10_1;
+          _fsm_cond_13_11_2 <= _fsm_cond_13_11_1;
+          _valid_reg_13_12_2 <= _valid_reg_13_12_1;
+          _fsm_cond_13_13_2 <= _fsm_cond_13_13_1;
         end
         fsm_14: begin
-          if(_fsm_cond_14_1_33) begin
-            valid_reg <= _valid_reg_14_1_32;
+          if(_fsm_cond_14_15_1) begin
+            valid_reg <= _valid_reg_14_14_1;
           end 
-          _valid_reg_14_2_35 <= _valid_reg_14_2_34;
-          _fsm_cond_14_2_37 <= _fsm_cond_14_2_36;
-          _valid_reg_14_3_39 <= _valid_reg_14_3_38;
-          _fsm_cond_14_3_42 <= _fsm_cond_14_3_41;
-          _valid_reg_14_4_45 <= _valid_reg_14_4_44;
-          _fsm_cond_14_4_49 <= _fsm_cond_14_4_48;
+          _valid_reg_14_16_2 <= _valid_reg_14_16_1;
+          _fsm_cond_14_17_2 <= _fsm_cond_14_17_1;
+          _valid_reg_14_18_2 <= _valid_reg_14_18_1;
+          _fsm_cond_14_19_2 <= _fsm_cond_14_19_1;
+          _valid_reg_14_20_2 <= _valid_reg_14_20_1;
+          _fsm_cond_14_21_2 <= _fsm_cond_14_21_1;
         end
         fsm_15: begin
-          if(_fsm_cond_15_1_53) begin
-            valid_reg <= _valid_reg_15_1_52;
+          if(_fsm_cond_15_23_1) begin
+            valid_reg <= _valid_reg_15_22_1;
           end 
-          _valid_reg_15_2_55 <= _valid_reg_15_2_54;
-          _fsm_cond_15_2_57 <= _fsm_cond_15_2_56;
-          _valid_reg_15_3_59 <= _valid_reg_15_3_58;
-          _fsm_cond_15_3_62 <= _fsm_cond_15_3_61;
-          _valid_reg_15_4_65 <= _valid_reg_15_4_64;
-          _fsm_cond_15_4_69 <= _fsm_cond_15_4_68;
+          _valid_reg_15_24_2 <= _valid_reg_15_24_1;
+          _fsm_cond_15_25_2 <= _fsm_cond_15_25_1;
+          _valid_reg_15_26_2 <= _valid_reg_15_26_1;
+          _fsm_cond_15_27_2 <= _fsm_cond_15_27_1;
+          _valid_reg_15_28_2 <= _valid_reg_15_28_1;
+          _fsm_cond_15_29_2 <= _fsm_cond_15_29_1;
         end
         fsm_16: begin
-          if(_fsm_cond_16_1_73) begin
-            valid_reg <= _valid_reg_16_1_72;
+          if(_fsm_cond_16_31_1) begin
+            valid_reg <= _valid_reg_16_30_1;
           end 
-          _valid_reg_16_2_75 <= _valid_reg_16_2_74;
-          _fsm_cond_16_2_77 <= _fsm_cond_16_2_76;
-          _valid_reg_16_3_79 <= _valid_reg_16_3_78;
-          _fsm_cond_16_3_82 <= _fsm_cond_16_3_81;
-          _valid_reg_16_4_85 <= _valid_reg_16_4_84;
-          _fsm_cond_16_4_89 <= _fsm_cond_16_4_88;
+          _valid_reg_16_32_2 <= _valid_reg_16_32_1;
+          _fsm_cond_16_33_2 <= _fsm_cond_16_33_1;
+          _valid_reg_16_34_2 <= _valid_reg_16_34_1;
+          _fsm_cond_16_35_2 <= _fsm_cond_16_35_1;
+          _valid_reg_16_36_2 <= _valid_reg_16_36_1;
+          _fsm_cond_16_37_2 <= _fsm_cond_16_37_1;
         end
         fsm_17: begin
-          if(_fsm_cond_17_1_93) begin
-            valid_reg <= _valid_reg_17_1_92;
+          if(_fsm_cond_17_39_1) begin
+            valid_reg <= _valid_reg_17_38_1;
           end 
-          _valid_reg_17_2_95 <= _valid_reg_17_2_94;
-          _fsm_cond_17_2_97 <= _fsm_cond_17_2_96;
-          _valid_reg_17_3_99 <= _valid_reg_17_3_98;
-          _fsm_cond_17_3_102 <= _fsm_cond_17_3_101;
-          _valid_reg_17_4_105 <= _valid_reg_17_4_104;
-          _fsm_cond_17_4_109 <= _fsm_cond_17_4_108;
+          _valid_reg_17_40_2 <= _valid_reg_17_40_1;
+          _fsm_cond_17_41_2 <= _fsm_cond_17_41_1;
+          _valid_reg_17_42_2 <= _valid_reg_17_42_1;
+          _fsm_cond_17_43_2 <= _fsm_cond_17_43_1;
+          _valid_reg_17_44_2 <= _valid_reg_17_44_1;
+          _fsm_cond_17_45_2 <= _fsm_cond_17_45_1;
         end
         fsm_18: begin
-          if(_fsm_cond_18_1_113) begin
-            valid_reg <= _valid_reg_18_1_112;
+          if(_fsm_cond_18_47_1) begin
+            valid_reg <= _valid_reg_18_46_1;
           end 
-          _valid_reg_18_2_115 <= _valid_reg_18_2_114;
-          _fsm_cond_18_2_117 <= _fsm_cond_18_2_116;
-          _valid_reg_18_3_119 <= _valid_reg_18_3_118;
-          _fsm_cond_18_3_122 <= _fsm_cond_18_3_121;
-          _valid_reg_18_4_125 <= _valid_reg_18_4_124;
-          _fsm_cond_18_4_129 <= _fsm_cond_18_4_128;
+          _valid_reg_18_48_2 <= _valid_reg_18_48_1;
+          _fsm_cond_18_49_2 <= _fsm_cond_18_49_1;
+          _valid_reg_18_50_2 <= _valid_reg_18_50_1;
+          _fsm_cond_18_51_2 <= _fsm_cond_18_51_1;
+          _valid_reg_18_52_2 <= _valid_reg_18_52_1;
+          _fsm_cond_18_53_2 <= _fsm_cond_18_53_1;
         end
         fsm_19: begin
-          if(_fsm_cond_19_1_133) begin
-            valid_reg <= _valid_reg_19_1_132;
+          if(_fsm_cond_19_55_1) begin
+            valid_reg <= _valid_reg_19_54_1;
           end 
-          _valid_reg_19_2_135 <= _valid_reg_19_2_134;
-          _fsm_cond_19_2_137 <= _fsm_cond_19_2_136;
-          _valid_reg_19_3_139 <= _valid_reg_19_3_138;
-          _fsm_cond_19_3_142 <= _fsm_cond_19_3_141;
-          _valid_reg_19_4_145 <= _valid_reg_19_4_144;
-          _fsm_cond_19_4_149 <= _fsm_cond_19_4_148;
+          _valid_reg_19_56_2 <= _valid_reg_19_56_1;
+          _fsm_cond_19_57_2 <= _fsm_cond_19_57_1;
+          _valid_reg_19_58_2 <= _valid_reg_19_58_1;
+          _fsm_cond_19_59_2 <= _fsm_cond_19_59_1;
+          _valid_reg_19_60_2 <= _valid_reg_19_60_1;
+          _fsm_cond_19_61_2 <= _fsm_cond_19_61_1;
         end
         fsm_20: begin
-          if(_fsm_cond_20_1_153) begin
-            valid_reg <= _valid_reg_20_1_152;
+          if(_fsm_cond_20_63_1) begin
+            valid_reg <= _valid_reg_20_62_1;
           end 
-          _valid_reg_20_2_155 <= _valid_reg_20_2_154;
-          _fsm_cond_20_2_157 <= _fsm_cond_20_2_156;
-          _valid_reg_20_3_159 <= _valid_reg_20_3_158;
-          _fsm_cond_20_3_162 <= _fsm_cond_20_3_161;
-          _valid_reg_20_4_165 <= _valid_reg_20_4_164;
-          _fsm_cond_20_4_169 <= _fsm_cond_20_4_168;
+          _valid_reg_20_64_2 <= _valid_reg_20_64_1;
+          _fsm_cond_20_65_2 <= _fsm_cond_20_65_1;
+          _valid_reg_20_66_2 <= _valid_reg_20_66_1;
+          _fsm_cond_20_67_2 <= _fsm_cond_20_67_1;
+          _valid_reg_20_68_2 <= _valid_reg_20_68_1;
+          _fsm_cond_20_69_2 <= _fsm_cond_20_69_1;
         end
       endcase
       case(fsm)
@@ -742,12 +743,12 @@ module blinkled
           if(count >= 16) begin
             valid_reg <= up;
           end 
-          _valid_reg_4_1_0 <= up;
+          _valid_reg_4_0_1 <= up;
           _fsm_cond_4_1_1 <= (count >= 16);
-          _valid_reg_4_2_2 <= up;
-          _fsm_cond_4_2_4 <= (count >= 16);
-          _valid_reg_4_3_6 <= down;
-          _fsm_cond_4_3_9 <= (count >= 16);
+          _valid_reg_4_2_1 <= up;
+          _fsm_cond_4_3_1 <= (count >= 16);
+          _valid_reg_4_4_1 <= down;
+          _fsm_cond_4_5_1 <= (count >= 16);
           if(count >= 16) begin
             fsm <= fsm_5;
           end 
@@ -777,112 +778,114 @@ module blinkled
           fsm <= fsm_13;
         end
         fsm_13: begin
-          _valid_reg_13_1_12 <= up;
-          _fsm_cond_13_1_13 <= (count >= 32);
-          _valid_reg_13_2_14 <= up;
-          _fsm_cond_13_2_16 <= (count >= 32);
-          _valid_reg_13_3_18 <= up;
-          _fsm_cond_13_3_21 <= (count >= 32);
-          _valid_reg_13_4_24 <= down;
-          _fsm_cond_13_4_28 <= (count >= 32);
+          _valid_reg_13_6_1 <= up;
+          _fsm_cond_13_7_1 <= (count >= 32);
+          _valid_reg_13_8_1 <= up;
+          _fsm_cond_13_9_1 <= (count >= 32);
+          _valid_reg_13_10_1 <= up;
+          _fsm_cond_13_11_1 <= (count >= 32);
+          _valid_reg_13_12_1 <= down;
+          _fsm_cond_13_13_1 <= (count >= 32);
           if(count >= 32) begin
             fsm <= fsm_14;
           end 
         end
         fsm_14: begin
-          _valid_reg_14_1_32 <= up;
-          _fsm_cond_14_1_33 <= (count >= 32);
-          _valid_reg_14_2_34 <= up;
-          _fsm_cond_14_2_36 <= (count >= 32);
-          _valid_reg_14_3_38 <= up;
-          _fsm_cond_14_3_41 <= (count >= 32);
-          _valid_reg_14_4_44 <= down;
-          _fsm_cond_14_4_48 <= (count >= 32);
+          _valid_reg_14_14_1 <= up;
+          _fsm_cond_14_15_1 <= (count >= 32);
+          _valid_reg_14_16_1 <= up;
+          _fsm_cond_14_17_1 <= (count >= 32);
+          _valid_reg_14_18_1 <= up;
+          _fsm_cond_14_19_1 <= (count >= 32);
+          _valid_reg_14_20_1 <= down;
+          _fsm_cond_14_21_1 <= (count >= 32);
           if(count >= 32) begin
             fsm <= fsm_15;
           end 
         end
         fsm_15: begin
-          _valid_reg_15_1_52 <= up;
-          _fsm_cond_15_1_53 <= (count >= 32);
-          _valid_reg_15_2_54 <= up;
-          _fsm_cond_15_2_56 <= (count >= 32);
-          _valid_reg_15_3_58 <= up;
-          _fsm_cond_15_3_61 <= (count >= 32);
-          _valid_reg_15_4_64 <= down;
-          _fsm_cond_15_4_68 <= (count >= 32);
+          _valid_reg_15_22_1 <= up;
+          _fsm_cond_15_23_1 <= (count >= 32);
+          _valid_reg_15_24_1 <= up;
+          _fsm_cond_15_25_1 <= (count >= 32);
+          _valid_reg_15_26_1 <= up;
+          _fsm_cond_15_27_1 <= (count >= 32);
+          _valid_reg_15_28_1 <= down;
+          _fsm_cond_15_29_1 <= (count >= 32);
           if(count >= 32) begin
             fsm <= fsm_16;
           end 
         end
         fsm_16: begin
-          _valid_reg_16_1_72 <= up;
-          _fsm_cond_16_1_73 <= (count >= 32);
-          _valid_reg_16_2_74 <= up;
-          _fsm_cond_16_2_76 <= (count >= 32);
-          _valid_reg_16_3_78 <= up;
-          _fsm_cond_16_3_81 <= (count >= 32);
-          _valid_reg_16_4_84 <= down;
-          _fsm_cond_16_4_88 <= (count >= 32);
+          _valid_reg_16_30_1 <= up;
+          _fsm_cond_16_31_1 <= (count >= 32);
+          _valid_reg_16_32_1 <= up;
+          _fsm_cond_16_33_1 <= (count >= 32);
+          _valid_reg_16_34_1 <= up;
+          _fsm_cond_16_35_1 <= (count >= 32);
+          _valid_reg_16_36_1 <= down;
+          _fsm_cond_16_37_1 <= (count >= 32);
           if(count >= 32) begin
             fsm <= fsm_17;
           end 
         end
         fsm_17: begin
-          _valid_reg_17_1_92 <= up;
-          _fsm_cond_17_1_93 <= (count >= 32);
-          _valid_reg_17_2_94 <= up;
-          _fsm_cond_17_2_96 <= (count >= 32);
-          _valid_reg_17_3_98 <= up;
-          _fsm_cond_17_3_101 <= (count >= 32);
-          _valid_reg_17_4_104 <= down;
-          _fsm_cond_17_4_108 <= (count >= 32);
+          _valid_reg_17_38_1 <= up;
+          _fsm_cond_17_39_1 <= (count >= 32);
+          _valid_reg_17_40_1 <= up;
+          _fsm_cond_17_41_1 <= (count >= 32);
+          _valid_reg_17_42_1 <= up;
+          _fsm_cond_17_43_1 <= (count >= 32);
+          _valid_reg_17_44_1 <= down;
+          _fsm_cond_17_45_1 <= (count >= 32);
           if(count >= 32) begin
             fsm <= fsm_18;
           end 
         end
         fsm_18: begin
-          _valid_reg_18_1_112 <= up;
-          _fsm_cond_18_1_113 <= (count >= 32);
-          _valid_reg_18_2_114 <= up;
-          _fsm_cond_18_2_116 <= (count >= 32);
-          _valid_reg_18_3_118 <= up;
-          _fsm_cond_18_3_121 <= (count >= 32);
-          _valid_reg_18_4_124 <= down;
-          _fsm_cond_18_4_128 <= (count >= 32);
+          _valid_reg_18_46_1 <= up;
+          _fsm_cond_18_47_1 <= (count >= 32);
+          _valid_reg_18_48_1 <= up;
+          _fsm_cond_18_49_1 <= (count >= 32);
+          _valid_reg_18_50_1 <= up;
+          _fsm_cond_18_51_1 <= (count >= 32);
+          _valid_reg_18_52_1 <= down;
+          _fsm_cond_18_53_1 <= (count >= 32);
           if(count >= 32) begin
             fsm <= fsm_19;
           end 
         end
         fsm_19: begin
-          _valid_reg_19_1_132 <= up;
-          _fsm_cond_19_1_133 <= (count >= 32);
-          _valid_reg_19_2_134 <= up;
-          _fsm_cond_19_2_136 <= (count >= 32);
-          _valid_reg_19_3_138 <= up;
-          _fsm_cond_19_3_141 <= (count >= 32);
-          _valid_reg_19_4_144 <= down;
-          _fsm_cond_19_4_148 <= (count >= 32);
+          _valid_reg_19_54_1 <= up;
+          _fsm_cond_19_55_1 <= (count >= 32);
+          _valid_reg_19_56_1 <= up;
+          _fsm_cond_19_57_1 <= (count >= 32);
+          _valid_reg_19_58_1 <= up;
+          _fsm_cond_19_59_1 <= (count >= 32);
+          _valid_reg_19_60_1 <= down;
+          _fsm_cond_19_61_1 <= (count >= 32);
           if(count >= 32) begin
             fsm <= fsm_20;
           end 
         end
         fsm_20: begin
-          _valid_reg_20_1_152 <= up;
-          _fsm_cond_20_1_153 <= (count >= 32);
-          _valid_reg_20_2_154 <= up;
-          _fsm_cond_20_2_156 <= (count >= 32);
-          _valid_reg_20_3_158 <= up;
-          _fsm_cond_20_3_161 <= (count >= 32);
-          _valid_reg_20_4_164 <= down;
-          _fsm_cond_20_4_168 <= (count >= 32);
+          _valid_reg_20_62_1 <= up;
+          _fsm_cond_20_63_1 <= (count >= 32);
+          _valid_reg_20_64_1 <= up;
+          _fsm_cond_20_65_1 <= (count >= 32);
+          _valid_reg_20_66_1 <= up;
+          _fsm_cond_20_67_1 <= (count >= 32);
+          _valid_reg_20_68_1 <= down;
+          _fsm_cond_20_69_1 <= (count >= 32);
           if(count >= 32) begin
             fsm <= fsm_21;
           end 
         end
       endcase
+
     end
   end
+
 endmodule
 """
 

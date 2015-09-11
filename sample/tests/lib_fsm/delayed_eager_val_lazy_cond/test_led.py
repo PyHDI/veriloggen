@@ -56,15 +56,16 @@ module blinkled
   localparam fsm_2 = 2;
   localparam fsm_3 = 3;
   localparam fsm_4 = 4;
+
   reg [32-1:0] _d1_fsm;
-  reg _valid_4_1_0;
+  reg _valid_4_0_1;
   reg [32-1:0] _d2_fsm;
+  reg _valid_4_1_1;
+  reg _valid_4_1_2;
+  reg [32-1:0] _d3_fsm;
   reg _valid_4_2_1;
   reg _valid_4_2_2;
-  reg [32-1:0] _d3_fsm;
-  reg _valid_4_3_3;
-  reg _valid_4_3_4;
-  reg _valid_4_3_5;
+  reg _valid_4_2_3;
   localparam fsm_5 = 5;
   localparam fsm_6 = 6;
   localparam fsm_7 = 7;
@@ -74,94 +75,94 @@ module blinkled
   localparam fsm_11 = 11;
   localparam fsm_12 = 12;
   localparam fsm_13 = 13;
-  reg _valid_13_1_6;
-  reg _valid_13_2_7;
-  reg _valid_13_2_8;
-  reg _valid_13_3_9;
-  reg _valid_13_3_10;
-  reg _valid_13_3_11;
+  reg _valid_13_3_1;
+  reg _valid_13_4_1;
+  reg _valid_13_4_2;
+  reg _valid_13_5_1;
+  reg _valid_13_5_2;
+  reg _valid_13_5_3;
   reg [32-1:0] _d4_fsm;
-  reg _valid_13_4_12;
-  reg _valid_13_4_13;
-  reg _valid_13_4_14;
-  reg _valid_13_4_15;
+  reg _valid_13_6_1;
+  reg _valid_13_6_2;
+  reg _valid_13_6_3;
+  reg _valid_13_6_4;
   localparam fsm_14 = 14;
-  reg _valid_14_1_16;
-  reg _valid_14_2_17;
-  reg _valid_14_2_18;
-  reg _valid_14_3_19;
-  reg _valid_14_3_20;
-  reg _valid_14_3_21;
-  reg _valid_14_4_22;
-  reg _valid_14_4_23;
-  reg _valid_14_4_24;
-  reg _valid_14_4_25;
+  reg _valid_14_7_1;
+  reg _valid_14_8_1;
+  reg _valid_14_8_2;
+  reg _valid_14_9_1;
+  reg _valid_14_9_2;
+  reg _valid_14_9_3;
+  reg _valid_14_10_1;
+  reg _valid_14_10_2;
+  reg _valid_14_10_3;
+  reg _valid_14_10_4;
   localparam fsm_15 = 15;
-  reg _valid_15_1_26;
-  reg _valid_15_2_27;
-  reg _valid_15_2_28;
-  reg _valid_15_3_29;
-  reg _valid_15_3_30;
-  reg _valid_15_3_31;
-  reg _valid_15_4_32;
-  reg _valid_15_4_33;
-  reg _valid_15_4_34;
-  reg _valid_15_4_35;
+  reg _valid_15_11_1;
+  reg _valid_15_12_1;
+  reg _valid_15_12_2;
+  reg _valid_15_13_1;
+  reg _valid_15_13_2;
+  reg _valid_15_13_3;
+  reg _valid_15_14_1;
+  reg _valid_15_14_2;
+  reg _valid_15_14_3;
+  reg _valid_15_14_4;
   localparam fsm_16 = 16;
-  reg _valid_16_1_36;
-  reg _valid_16_2_37;
-  reg _valid_16_2_38;
-  reg _valid_16_3_39;
-  reg _valid_16_3_40;
-  reg _valid_16_3_41;
-  reg _valid_16_4_42;
-  reg _valid_16_4_43;
-  reg _valid_16_4_44;
-  reg _valid_16_4_45;
+  reg _valid_16_15_1;
+  reg _valid_16_16_1;
+  reg _valid_16_16_2;
+  reg _valid_16_17_1;
+  reg _valid_16_17_2;
+  reg _valid_16_17_3;
+  reg _valid_16_18_1;
+  reg _valid_16_18_2;
+  reg _valid_16_18_3;
+  reg _valid_16_18_4;
   localparam fsm_17 = 17;
-  reg _valid_17_1_46;
-  reg _valid_17_2_47;
-  reg _valid_17_2_48;
-  reg _valid_17_3_49;
-  reg _valid_17_3_50;
-  reg _valid_17_3_51;
-  reg _valid_17_4_52;
-  reg _valid_17_4_53;
-  reg _valid_17_4_54;
-  reg _valid_17_4_55;
+  reg _valid_17_19_1;
+  reg _valid_17_20_1;
+  reg _valid_17_20_2;
+  reg _valid_17_21_1;
+  reg _valid_17_21_2;
+  reg _valid_17_21_3;
+  reg _valid_17_22_1;
+  reg _valid_17_22_2;
+  reg _valid_17_22_3;
+  reg _valid_17_22_4;
   localparam fsm_18 = 18;
-  reg _valid_18_1_56;
-  reg _valid_18_2_57;
-  reg _valid_18_2_58;
-  reg _valid_18_3_59;
-  reg _valid_18_3_60;
-  reg _valid_18_3_61;
-  reg _valid_18_4_62;
-  reg _valid_18_4_63;
-  reg _valid_18_4_64;
-  reg _valid_18_4_65;
+  reg _valid_18_23_1;
+  reg _valid_18_24_1;
+  reg _valid_18_24_2;
+  reg _valid_18_25_1;
+  reg _valid_18_25_2;
+  reg _valid_18_25_3;
+  reg _valid_18_26_1;
+  reg _valid_18_26_2;
+  reg _valid_18_26_3;
+  reg _valid_18_26_4;
   localparam fsm_19 = 19;
-  reg _valid_19_1_66;
-  reg _valid_19_2_67;
-  reg _valid_19_2_68;
-  reg _valid_19_3_69;
-  reg _valid_19_3_70;
-  reg _valid_19_3_71;
-  reg _valid_19_4_72;
-  reg _valid_19_4_73;
-  reg _valid_19_4_74;
-  reg _valid_19_4_75;
+  reg _valid_19_27_1;
+  reg _valid_19_28_1;
+  reg _valid_19_28_2;
+  reg _valid_19_29_1;
+  reg _valid_19_29_2;
+  reg _valid_19_29_3;
+  reg _valid_19_30_1;
+  reg _valid_19_30_2;
+  reg _valid_19_30_3;
+  reg _valid_19_30_4;
   localparam fsm_20 = 20;
-  reg _valid_20_1_76;
-  reg _valid_20_2_77;
-  reg _valid_20_2_78;
-  reg _valid_20_3_79;
-  reg _valid_20_3_80;
-  reg _valid_20_3_81;
-  reg _valid_20_4_82;
-  reg _valid_20_4_83;
-  reg _valid_20_4_84;
-  reg _valid_20_4_85;
+  reg _valid_20_31_1;
+  reg _valid_20_32_1;
+  reg _valid_20_32_2;
+  reg _valid_20_33_1;
+  reg _valid_20_33_2;
+  reg _valid_20_33_3;
+  reg _valid_20_34_1;
+  reg _valid_20_34_2;
+  reg _valid_20_34_3;
+  reg _valid_20_34_4;
   localparam fsm_21 = 21;
 
   always @(posedge CLK) begin
@@ -170,95 +171,95 @@ module blinkled
       count <= 0;
       fsm <= fsm_init;
       _d1_fsm <= fsm_init;
-      _valid_4_1_0 <= 0;
+      _valid_4_0_1 <= 0;
       _d2_fsm <= fsm_init;
+      _valid_4_1_1 <= 0;
+      _valid_4_1_2 <= 0;
+      _d3_fsm <= fsm_init;
       _valid_4_2_1 <= 0;
       _valid_4_2_2 <= 0;
-      _d3_fsm <= fsm_init;
-      _valid_4_3_3 <= 0;
-      _valid_4_3_4 <= 0;
-      _valid_4_3_5 <= 0;
-      _valid_13_1_6 <= 0;
-      _valid_13_2_7 <= 0;
-      _valid_13_2_8 <= 0;
-      _valid_13_3_9 <= 0;
-      _valid_13_3_10 <= 0;
-      _valid_13_3_11 <= 0;
+      _valid_4_2_3 <= 0;
+      _valid_13_3_1 <= 0;
+      _valid_13_4_1 <= 0;
+      _valid_13_4_2 <= 0;
+      _valid_13_5_1 <= 0;
+      _valid_13_5_2 <= 0;
+      _valid_13_5_3 <= 0;
       _d4_fsm <= fsm_init;
-      _valid_13_4_12 <= 0;
-      _valid_13_4_13 <= 0;
-      _valid_13_4_14 <= 0;
-      _valid_13_4_15 <= 0;
-      _valid_14_1_16 <= 0;
-      _valid_14_2_17 <= 0;
-      _valid_14_2_18 <= 0;
-      _valid_14_3_19 <= 0;
-      _valid_14_3_20 <= 0;
-      _valid_14_3_21 <= 0;
-      _valid_14_4_22 <= 0;
-      _valid_14_4_23 <= 0;
-      _valid_14_4_24 <= 0;
-      _valid_14_4_25 <= 0;
-      _valid_15_1_26 <= 0;
-      _valid_15_2_27 <= 0;
-      _valid_15_2_28 <= 0;
-      _valid_15_3_29 <= 0;
-      _valid_15_3_30 <= 0;
-      _valid_15_3_31 <= 0;
-      _valid_15_4_32 <= 0;
-      _valid_15_4_33 <= 0;
-      _valid_15_4_34 <= 0;
-      _valid_15_4_35 <= 0;
-      _valid_16_1_36 <= 0;
-      _valid_16_2_37 <= 0;
-      _valid_16_2_38 <= 0;
-      _valid_16_3_39 <= 0;
-      _valid_16_3_40 <= 0;
-      _valid_16_3_41 <= 0;
-      _valid_16_4_42 <= 0;
-      _valid_16_4_43 <= 0;
-      _valid_16_4_44 <= 0;
-      _valid_16_4_45 <= 0;
-      _valid_17_1_46 <= 0;
-      _valid_17_2_47 <= 0;
-      _valid_17_2_48 <= 0;
-      _valid_17_3_49 <= 0;
-      _valid_17_3_50 <= 0;
-      _valid_17_3_51 <= 0;
-      _valid_17_4_52 <= 0;
-      _valid_17_4_53 <= 0;
-      _valid_17_4_54 <= 0;
-      _valid_17_4_55 <= 0;
-      _valid_18_1_56 <= 0;
-      _valid_18_2_57 <= 0;
-      _valid_18_2_58 <= 0;
-      _valid_18_3_59 <= 0;
-      _valid_18_3_60 <= 0;
-      _valid_18_3_61 <= 0;
-      _valid_18_4_62 <= 0;
-      _valid_18_4_63 <= 0;
-      _valid_18_4_64 <= 0;
-      _valid_18_4_65 <= 0;
-      _valid_19_1_66 <= 0;
-      _valid_19_2_67 <= 0;
-      _valid_19_2_68 <= 0;
-      _valid_19_3_69 <= 0;
-      _valid_19_3_70 <= 0;
-      _valid_19_3_71 <= 0;
-      _valid_19_4_72 <= 0;
-      _valid_19_4_73 <= 0;
-      _valid_19_4_74 <= 0;
-      _valid_19_4_75 <= 0;
-      _valid_20_1_76 <= 0;
-      _valid_20_2_77 <= 0;
-      _valid_20_2_78 <= 0;
-      _valid_20_3_79 <= 0;
-      _valid_20_3_80 <= 0;
-      _valid_20_3_81 <= 0;
-      _valid_20_4_82 <= 0;
-      _valid_20_4_83 <= 0;
-      _valid_20_4_84 <= 0;
-      _valid_20_4_85 <= 0;
+      _valid_13_6_1 <= 0;
+      _valid_13_6_2 <= 0;
+      _valid_13_6_3 <= 0;
+      _valid_13_6_4 <= 0;
+      _valid_14_7_1 <= 0;
+      _valid_14_8_1 <= 0;
+      _valid_14_8_2 <= 0;
+      _valid_14_9_1 <= 0;
+      _valid_14_9_2 <= 0;
+      _valid_14_9_3 <= 0;
+      _valid_14_10_1 <= 0;
+      _valid_14_10_2 <= 0;
+      _valid_14_10_3 <= 0;
+      _valid_14_10_4 <= 0;
+      _valid_15_11_1 <= 0;
+      _valid_15_12_1 <= 0;
+      _valid_15_12_2 <= 0;
+      _valid_15_13_1 <= 0;
+      _valid_15_13_2 <= 0;
+      _valid_15_13_3 <= 0;
+      _valid_15_14_1 <= 0;
+      _valid_15_14_2 <= 0;
+      _valid_15_14_3 <= 0;
+      _valid_15_14_4 <= 0;
+      _valid_16_15_1 <= 0;
+      _valid_16_16_1 <= 0;
+      _valid_16_16_2 <= 0;
+      _valid_16_17_1 <= 0;
+      _valid_16_17_2 <= 0;
+      _valid_16_17_3 <= 0;
+      _valid_16_18_1 <= 0;
+      _valid_16_18_2 <= 0;
+      _valid_16_18_3 <= 0;
+      _valid_16_18_4 <= 0;
+      _valid_17_19_1 <= 0;
+      _valid_17_20_1 <= 0;
+      _valid_17_20_2 <= 0;
+      _valid_17_21_1 <= 0;
+      _valid_17_21_2 <= 0;
+      _valid_17_21_3 <= 0;
+      _valid_17_22_1 <= 0;
+      _valid_17_22_2 <= 0;
+      _valid_17_22_3 <= 0;
+      _valid_17_22_4 <= 0;
+      _valid_18_23_1 <= 0;
+      _valid_18_24_1 <= 0;
+      _valid_18_24_2 <= 0;
+      _valid_18_25_1 <= 0;
+      _valid_18_25_2 <= 0;
+      _valid_18_25_3 <= 0;
+      _valid_18_26_1 <= 0;
+      _valid_18_26_2 <= 0;
+      _valid_18_26_3 <= 0;
+      _valid_18_26_4 <= 0;
+      _valid_19_27_1 <= 0;
+      _valid_19_28_1 <= 0;
+      _valid_19_28_2 <= 0;
+      _valid_19_29_1 <= 0;
+      _valid_19_29_2 <= 0;
+      _valid_19_29_3 <= 0;
+      _valid_19_30_1 <= 0;
+      _valid_19_30_2 <= 0;
+      _valid_19_30_3 <= 0;
+      _valid_19_30_4 <= 0;
+      _valid_20_31_1 <= 0;
+      _valid_20_32_1 <= 0;
+      _valid_20_32_2 <= 0;
+      _valid_20_33_1 <= 0;
+      _valid_20_33_2 <= 0;
+      _valid_20_33_3 <= 0;
+      _valid_20_34_1 <= 0;
+      _valid_20_34_2 <= 0;
+      _valid_20_34_3 <= 0;
+      _valid_20_34_4 <= 0;
     end else begin
       count <= (count + 1);
       _d1_fsm <= fsm;
@@ -268,235 +269,235 @@ module blinkled
       case(_d4_fsm)
         fsm_13: begin
           if(count >= 32) begin
-            valid <= _valid_13_4_15;
+            valid <= _valid_13_6_4;
           end 
         end
         fsm_14: begin
           if(count >= 32) begin
-            valid <= _valid_14_4_25;
+            valid <= _valid_14_10_4;
           end 
         end
         fsm_15: begin
           if(count >= 32) begin
-            valid <= _valid_15_4_35;
+            valid <= _valid_15_14_4;
           end 
         end
         fsm_16: begin
           if(count >= 32) begin
-            valid <= _valid_16_4_45;
+            valid <= _valid_16_18_4;
           end 
         end
         fsm_17: begin
           if(count >= 32) begin
-            valid <= _valid_17_4_55;
+            valid <= _valid_17_22_4;
           end 
         end
         fsm_18: begin
           if(count >= 32) begin
-            valid <= _valid_18_4_65;
+            valid <= _valid_18_26_4;
           end 
         end
         fsm_19: begin
           if(count >= 32) begin
-            valid <= _valid_19_4_75;
+            valid <= _valid_19_30_4;
           end 
         end
         fsm_20: begin
           if(count >= 32) begin
-            valid <= _valid_20_4_85;
+            valid <= _valid_20_34_4;
           end 
         end
       endcase
       case(_d3_fsm)
         fsm_4: begin
           if(count >= 16) begin
-            valid <= _valid_4_3_5;
+            valid <= _valid_4_2_3;
           end 
         end
         fsm_13: begin
           if(count >= 32) begin
-            valid <= _valid_13_3_11;
+            valid <= _valid_13_5_3;
           end 
-          _valid_13_4_15 <= _valid_13_4_14;
+          _valid_13_6_4 <= _valid_13_6_3;
         end
         fsm_14: begin
           if(count >= 32) begin
-            valid <= _valid_14_3_21;
+            valid <= _valid_14_9_3;
           end 
-          _valid_14_4_25 <= _valid_14_4_24;
+          _valid_14_10_4 <= _valid_14_10_3;
         end
         fsm_15: begin
           if(count >= 32) begin
-            valid <= _valid_15_3_31;
+            valid <= _valid_15_13_3;
           end 
-          _valid_15_4_35 <= _valid_15_4_34;
+          _valid_15_14_4 <= _valid_15_14_3;
         end
         fsm_16: begin
           if(count >= 32) begin
-            valid <= _valid_16_3_41;
+            valid <= _valid_16_17_3;
           end 
-          _valid_16_4_45 <= _valid_16_4_44;
+          _valid_16_18_4 <= _valid_16_18_3;
         end
         fsm_17: begin
           if(count >= 32) begin
-            valid <= _valid_17_3_51;
+            valid <= _valid_17_21_3;
           end 
-          _valid_17_4_55 <= _valid_17_4_54;
+          _valid_17_22_4 <= _valid_17_22_3;
         end
         fsm_18: begin
           if(count >= 32) begin
-            valid <= _valid_18_3_61;
+            valid <= _valid_18_25_3;
           end 
-          _valid_18_4_65 <= _valid_18_4_64;
+          _valid_18_26_4 <= _valid_18_26_3;
         end
         fsm_19: begin
           if(count >= 32) begin
-            valid <= _valid_19_3_71;
+            valid <= _valid_19_29_3;
           end 
-          _valid_19_4_75 <= _valid_19_4_74;
+          _valid_19_30_4 <= _valid_19_30_3;
         end
         fsm_20: begin
           if(count >= 32) begin
-            valid <= _valid_20_3_81;
+            valid <= _valid_20_33_3;
           end 
-          _valid_20_4_85 <= _valid_20_4_84;
+          _valid_20_34_4 <= _valid_20_34_3;
         end
       endcase
       case(_d2_fsm)
         fsm_4: begin
           if(count >= 16) begin
-            valid <= _valid_4_2_2;
+            valid <= _valid_4_1_2;
           end 
-          _valid_4_3_5 <= _valid_4_3_4;
+          _valid_4_2_3 <= _valid_4_2_2;
         end
         fsm_13: begin
           if(count >= 32) begin
-            valid <= _valid_13_2_8;
+            valid <= _valid_13_4_2;
           end 
-          _valid_13_3_11 <= _valid_13_3_10;
-          _valid_13_4_14 <= _valid_13_4_13;
+          _valid_13_5_3 <= _valid_13_5_2;
+          _valid_13_6_3 <= _valid_13_6_2;
         end
         fsm_14: begin
           if(count >= 32) begin
-            valid <= _valid_14_2_18;
+            valid <= _valid_14_8_2;
           end 
-          _valid_14_3_21 <= _valid_14_3_20;
-          _valid_14_4_24 <= _valid_14_4_23;
+          _valid_14_9_3 <= _valid_14_9_2;
+          _valid_14_10_3 <= _valid_14_10_2;
         end
         fsm_15: begin
           if(count >= 32) begin
-            valid <= _valid_15_2_28;
+            valid <= _valid_15_12_2;
           end 
-          _valid_15_3_31 <= _valid_15_3_30;
-          _valid_15_4_34 <= _valid_15_4_33;
+          _valid_15_13_3 <= _valid_15_13_2;
+          _valid_15_14_3 <= _valid_15_14_2;
         end
         fsm_16: begin
           if(count >= 32) begin
-            valid <= _valid_16_2_38;
+            valid <= _valid_16_16_2;
           end 
-          _valid_16_3_41 <= _valid_16_3_40;
-          _valid_16_4_44 <= _valid_16_4_43;
+          _valid_16_17_3 <= _valid_16_17_2;
+          _valid_16_18_3 <= _valid_16_18_2;
         end
         fsm_17: begin
           if(count >= 32) begin
-            valid <= _valid_17_2_48;
+            valid <= _valid_17_20_2;
           end 
-          _valid_17_3_51 <= _valid_17_3_50;
-          _valid_17_4_54 <= _valid_17_4_53;
+          _valid_17_21_3 <= _valid_17_21_2;
+          _valid_17_22_3 <= _valid_17_22_2;
         end
         fsm_18: begin
           if(count >= 32) begin
-            valid <= _valid_18_2_58;
+            valid <= _valid_18_24_2;
           end 
-          _valid_18_3_61 <= _valid_18_3_60;
-          _valid_18_4_64 <= _valid_18_4_63;
+          _valid_18_25_3 <= _valid_18_25_2;
+          _valid_18_26_3 <= _valid_18_26_2;
         end
         fsm_19: begin
           if(count >= 32) begin
-            valid <= _valid_19_2_68;
+            valid <= _valid_19_28_2;
           end 
-          _valid_19_3_71 <= _valid_19_3_70;
-          _valid_19_4_74 <= _valid_19_4_73;
+          _valid_19_29_3 <= _valid_19_29_2;
+          _valid_19_30_3 <= _valid_19_30_2;
         end
         fsm_20: begin
           if(count >= 32) begin
-            valid <= _valid_20_2_78;
+            valid <= _valid_20_32_2;
           end 
-          _valid_20_3_81 <= _valid_20_3_80;
-          _valid_20_4_84 <= _valid_20_4_83;
+          _valid_20_33_3 <= _valid_20_33_2;
+          _valid_20_34_3 <= _valid_20_34_2;
         end
       endcase
       case(_d1_fsm)
         fsm_4: begin
           if(count >= 16) begin
-            valid <= _valid_4_1_0;
+            valid <= _valid_4_0_1;
           end 
+          _valid_4_1_2 <= _valid_4_1_1;
           _valid_4_2_2 <= _valid_4_2_1;
-          _valid_4_3_4 <= _valid_4_3_3;
         end
         fsm_13: begin
           if(count >= 32) begin
-            valid <= _valid_13_1_6;
+            valid <= _valid_13_3_1;
           end 
-          _valid_13_2_8 <= _valid_13_2_7;
-          _valid_13_3_10 <= _valid_13_3_9;
-          _valid_13_4_13 <= _valid_13_4_12;
+          _valid_13_4_2 <= _valid_13_4_1;
+          _valid_13_5_2 <= _valid_13_5_1;
+          _valid_13_6_2 <= _valid_13_6_1;
         end
         fsm_14: begin
           if(count >= 32) begin
-            valid <= _valid_14_1_16;
+            valid <= _valid_14_7_1;
           end 
-          _valid_14_2_18 <= _valid_14_2_17;
-          _valid_14_3_20 <= _valid_14_3_19;
-          _valid_14_4_23 <= _valid_14_4_22;
+          _valid_14_8_2 <= _valid_14_8_1;
+          _valid_14_9_2 <= _valid_14_9_1;
+          _valid_14_10_2 <= _valid_14_10_1;
         end
         fsm_15: begin
           if(count >= 32) begin
-            valid <= _valid_15_1_26;
+            valid <= _valid_15_11_1;
           end 
-          _valid_15_2_28 <= _valid_15_2_27;
-          _valid_15_3_30 <= _valid_15_3_29;
-          _valid_15_4_33 <= _valid_15_4_32;
+          _valid_15_12_2 <= _valid_15_12_1;
+          _valid_15_13_2 <= _valid_15_13_1;
+          _valid_15_14_2 <= _valid_15_14_1;
         end
         fsm_16: begin
           if(count >= 32) begin
-            valid <= _valid_16_1_36;
+            valid <= _valid_16_15_1;
           end 
-          _valid_16_2_38 <= _valid_16_2_37;
-          _valid_16_3_40 <= _valid_16_3_39;
-          _valid_16_4_43 <= _valid_16_4_42;
+          _valid_16_16_2 <= _valid_16_16_1;
+          _valid_16_17_2 <= _valid_16_17_1;
+          _valid_16_18_2 <= _valid_16_18_1;
         end
         fsm_17: begin
           if(count >= 32) begin
-            valid <= _valid_17_1_46;
+            valid <= _valid_17_19_1;
           end 
-          _valid_17_2_48 <= _valid_17_2_47;
-          _valid_17_3_50 <= _valid_17_3_49;
-          _valid_17_4_53 <= _valid_17_4_52;
+          _valid_17_20_2 <= _valid_17_20_1;
+          _valid_17_21_2 <= _valid_17_21_1;
+          _valid_17_22_2 <= _valid_17_22_1;
         end
         fsm_18: begin
           if(count >= 32) begin
-            valid <= _valid_18_1_56;
+            valid <= _valid_18_23_1;
           end 
-          _valid_18_2_58 <= _valid_18_2_57;
-          _valid_18_3_60 <= _valid_18_3_59;
-          _valid_18_4_63 <= _valid_18_4_62;
+          _valid_18_24_2 <= _valid_18_24_1;
+          _valid_18_25_2 <= _valid_18_25_1;
+          _valid_18_26_2 <= _valid_18_26_1;
         end
         fsm_19: begin
           if(count >= 32) begin
-            valid <= _valid_19_1_66;
+            valid <= _valid_19_27_1;
           end 
-          _valid_19_2_68 <= _valid_19_2_67;
-          _valid_19_3_70 <= _valid_19_3_69;
-          _valid_19_4_73 <= _valid_19_4_72;
+          _valid_19_28_2 <= _valid_19_28_1;
+          _valid_19_29_2 <= _valid_19_29_1;
+          _valid_19_30_2 <= _valid_19_30_1;
         end
         fsm_20: begin
           if(count >= 32) begin
-            valid <= _valid_20_1_76;
+            valid <= _valid_20_31_1;
           end 
-          _valid_20_2_78 <= _valid_20_2_77;
-          _valid_20_3_80 <= _valid_20_3_79;
-          _valid_20_4_83 <= _valid_20_4_82;
+          _valid_20_32_2 <= _valid_20_32_1;
+          _valid_20_33_2 <= _valid_20_33_1;
+          _valid_20_34_2 <= _valid_20_34_1;
         end
       endcase
       case(fsm)
@@ -516,9 +517,9 @@ module blinkled
           if(count >= 16) begin
             valid <= up;
           end 
-          _valid_4_1_0 <= up;
-          _valid_4_2_1 <= up;
-          _valid_4_3_3 <= down;
+          _valid_4_0_1 <= up;
+          _valid_4_1_1 <= up;
+          _valid_4_2_1 <= down;
           if(count >= 16) begin
             fsm <= fsm_5;
           end 
@@ -548,73 +549,73 @@ module blinkled
           fsm <= fsm_13;
         end
         fsm_13: begin
-          _valid_13_1_6 <= up;
-          _valid_13_2_7 <= up;
-          _valid_13_3_9 <= up;
-          _valid_13_4_12 <= down;
+          _valid_13_3_1 <= up;
+          _valid_13_4_1 <= up;
+          _valid_13_5_1 <= up;
+          _valid_13_6_1 <= down;
           if(count >= 32) begin
             fsm <= fsm_14;
           end 
         end
         fsm_14: begin
-          _valid_14_1_16 <= up;
-          _valid_14_2_17 <= up;
-          _valid_14_3_19 <= up;
-          _valid_14_4_22 <= down;
+          _valid_14_7_1 <= up;
+          _valid_14_8_1 <= up;
+          _valid_14_9_1 <= up;
+          _valid_14_10_1 <= down;
           if(count >= 32) begin
             fsm <= fsm_15;
           end 
         end
         fsm_15: begin
-          _valid_15_1_26 <= up;
-          _valid_15_2_27 <= up;
-          _valid_15_3_29 <= up;
-          _valid_15_4_32 <= down;
+          _valid_15_11_1 <= up;
+          _valid_15_12_1 <= up;
+          _valid_15_13_1 <= up;
+          _valid_15_14_1 <= down;
           if(count >= 32) begin
             fsm <= fsm_16;
           end 
         end
         fsm_16: begin
-          _valid_16_1_36 <= up;
-          _valid_16_2_37 <= up;
-          _valid_16_3_39 <= up;
-          _valid_16_4_42 <= down;
+          _valid_16_15_1 <= up;
+          _valid_16_16_1 <= up;
+          _valid_16_17_1 <= up;
+          _valid_16_18_1 <= down;
           if(count >= 32) begin
             fsm <= fsm_17;
           end 
         end
         fsm_17: begin
-          _valid_17_1_46 <= up;
-          _valid_17_2_47 <= up;
-          _valid_17_3_49 <= up;
-          _valid_17_4_52 <= down;
+          _valid_17_19_1 <= up;
+          _valid_17_20_1 <= up;
+          _valid_17_21_1 <= up;
+          _valid_17_22_1 <= down;
           if(count >= 32) begin
             fsm <= fsm_18;
           end 
         end
         fsm_18: begin
-          _valid_18_1_56 <= up;
-          _valid_18_2_57 <= up;
-          _valid_18_3_59 <= up;
-          _valid_18_4_62 <= down;
+          _valid_18_23_1 <= up;
+          _valid_18_24_1 <= up;
+          _valid_18_25_1 <= up;
+          _valid_18_26_1 <= down;
           if(count >= 32) begin
             fsm <= fsm_19;
           end 
         end
         fsm_19: begin
-          _valid_19_1_66 <= up;
-          _valid_19_2_67 <= up;
-          _valid_19_3_69 <= up;
-          _valid_19_4_72 <= down;
+          _valid_19_27_1 <= up;
+          _valid_19_28_1 <= up;
+          _valid_19_29_1 <= up;
+          _valid_19_30_1 <= down;
           if(count >= 32) begin
             fsm <= fsm_20;
           end 
         end
         fsm_20: begin
-          _valid_20_1_76 <= up;
-          _valid_20_2_77 <= up;
-          _valid_20_3_79 <= up;
-          _valid_20_4_82 <= down;
+          _valid_20_31_1 <= up;
+          _valid_20_32_1 <= up;
+          _valid_20_33_1 <= up;
+          _valid_20_34_1 <= down;
           if(count >= 32) begin
             fsm <= fsm_21;
           end 

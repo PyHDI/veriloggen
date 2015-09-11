@@ -47,25 +47,20 @@ module blinkled
 
   reg [32-1:0] count;
   reg [32-1:0] fsm;
-
   localparam fsm_init = 0;
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
   localparam fsm_3 = 3;
   localparam fsm_4 = 4;
-
   reg [32-1:0] _d1_fsm;
-  reg _fsm_cond_4_1_0;
-
+  reg _fsm_cond_4_0_1;
   reg [32-1:0] _d2_fsm;
+  reg _fsm_cond_4_1_1;
+  reg _fsm_cond_4_1_2;
+  reg [32-1:0] _d3_fsm;
   reg _fsm_cond_4_2_1;
   reg _fsm_cond_4_2_2;
-
-  reg [32-1:0] _d3_fsm;
-  reg _fsm_cond_4_3_3;
-  reg _fsm_cond_4_3_4;
-  reg _fsm_cond_4_3_5;
-
+  reg _fsm_cond_4_2_3;
   localparam fsm_5 = 5;
   localparam fsm_6 = 6;
   localparam fsm_7 = 7;
@@ -75,111 +70,94 @@ module blinkled
   localparam fsm_11 = 11;
   localparam fsm_12 = 12;
   localparam fsm_13 = 13;
-
-  reg _fsm_cond_13_1_6;
-  reg _fsm_cond_13_2_7;
-  reg _fsm_cond_13_2_8;
-  reg _fsm_cond_13_3_9;
-  reg _fsm_cond_13_3_10;
-  reg _fsm_cond_13_3_11;
-
+  reg _fsm_cond_13_3_1;
+  reg _fsm_cond_13_4_1;
+  reg _fsm_cond_13_4_2;
+  reg _fsm_cond_13_5_1;
+  reg _fsm_cond_13_5_2;
+  reg _fsm_cond_13_5_3;
   reg [32-1:0] _d4_fsm;
-  reg _fsm_cond_13_4_12;
-  reg _fsm_cond_13_4_13;
-  reg _fsm_cond_13_4_14;
-  reg _fsm_cond_13_4_15;
-
+  reg _fsm_cond_13_6_1;
+  reg _fsm_cond_13_6_2;
+  reg _fsm_cond_13_6_3;
+  reg _fsm_cond_13_6_4;
   localparam fsm_14 = 14;
-
-  reg _fsm_cond_14_1_16;
-  reg _fsm_cond_14_2_17;
-  reg _fsm_cond_14_2_18;
-  reg _fsm_cond_14_3_19;
-  reg _fsm_cond_14_3_20;
-  reg _fsm_cond_14_3_21;
-  reg _fsm_cond_14_4_22;
-  reg _fsm_cond_14_4_23;
-  reg _fsm_cond_14_4_24;
-  reg _fsm_cond_14_4_25;
-
+  reg _fsm_cond_14_7_1;
+  reg _fsm_cond_14_8_1;
+  reg _fsm_cond_14_8_2;
+  reg _fsm_cond_14_9_1;
+  reg _fsm_cond_14_9_2;
+  reg _fsm_cond_14_9_3;
+  reg _fsm_cond_14_10_1;
+  reg _fsm_cond_14_10_2;
+  reg _fsm_cond_14_10_3;
+  reg _fsm_cond_14_10_4;
   localparam fsm_15 = 15;
-
-  reg _fsm_cond_15_1_26;
-  reg _fsm_cond_15_2_27;
-  reg _fsm_cond_15_2_28;
-  reg _fsm_cond_15_3_29;
-  reg _fsm_cond_15_3_30;
-  reg _fsm_cond_15_3_31;
-  reg _fsm_cond_15_4_32;
-  reg _fsm_cond_15_4_33;
-  reg _fsm_cond_15_4_34;
-  reg _fsm_cond_15_4_35;
-
+  reg _fsm_cond_15_11_1;
+  reg _fsm_cond_15_12_1;
+  reg _fsm_cond_15_12_2;
+  reg _fsm_cond_15_13_1;
+  reg _fsm_cond_15_13_2;
+  reg _fsm_cond_15_13_3;
+  reg _fsm_cond_15_14_1;
+  reg _fsm_cond_15_14_2;
+  reg _fsm_cond_15_14_3;
+  reg _fsm_cond_15_14_4;
   localparam fsm_16 = 16;
-
-  reg _fsm_cond_16_1_36;
-  reg _fsm_cond_16_2_37;
-  reg _fsm_cond_16_2_38;
-  reg _fsm_cond_16_3_39;
-  reg _fsm_cond_16_3_40;
-  reg _fsm_cond_16_3_41;
-  reg _fsm_cond_16_4_42;
-  reg _fsm_cond_16_4_43;
-  reg _fsm_cond_16_4_44;
-  reg _fsm_cond_16_4_45;
-
+  reg _fsm_cond_16_15_1;
+  reg _fsm_cond_16_16_1;
+  reg _fsm_cond_16_16_2;
+  reg _fsm_cond_16_17_1;
+  reg _fsm_cond_16_17_2;
+  reg _fsm_cond_16_17_3;
+  reg _fsm_cond_16_18_1;
+  reg _fsm_cond_16_18_2;
+  reg _fsm_cond_16_18_3;
+  reg _fsm_cond_16_18_4;
   localparam fsm_17 = 17;
-
-  reg _fsm_cond_17_1_46;
-  reg _fsm_cond_17_2_47;
-  reg _fsm_cond_17_2_48;
-  reg _fsm_cond_17_3_49;
-  reg _fsm_cond_17_3_50;
-  reg _fsm_cond_17_3_51;
-  reg _fsm_cond_17_4_52;
-  reg _fsm_cond_17_4_53;
-  reg _fsm_cond_17_4_54;
-  reg _fsm_cond_17_4_55;
-
+  reg _fsm_cond_17_19_1;
+  reg _fsm_cond_17_20_1;
+  reg _fsm_cond_17_20_2;
+  reg _fsm_cond_17_21_1;
+  reg _fsm_cond_17_21_2;
+  reg _fsm_cond_17_21_3;
+  reg _fsm_cond_17_22_1;
+  reg _fsm_cond_17_22_2;
+  reg _fsm_cond_17_22_3;
+  reg _fsm_cond_17_22_4;
   localparam fsm_18 = 18;
-
-  reg _fsm_cond_18_1_56;
-  reg _fsm_cond_18_2_57;
-  reg _fsm_cond_18_2_58;
-  reg _fsm_cond_18_3_59;
-  reg _fsm_cond_18_3_60;
-  reg _fsm_cond_18_3_61;
-  reg _fsm_cond_18_4_62;
-  reg _fsm_cond_18_4_63;
-  reg _fsm_cond_18_4_64;
-  reg _fsm_cond_18_4_65;
-
+  reg _fsm_cond_18_23_1;
+  reg _fsm_cond_18_24_1;
+  reg _fsm_cond_18_24_2;
+  reg _fsm_cond_18_25_1;
+  reg _fsm_cond_18_25_2;
+  reg _fsm_cond_18_25_3;
+  reg _fsm_cond_18_26_1;
+  reg _fsm_cond_18_26_2;
+  reg _fsm_cond_18_26_3;
+  reg _fsm_cond_18_26_4;
   localparam fsm_19 = 19;
-
-  reg _fsm_cond_19_1_66;
-  reg _fsm_cond_19_2_67;
-  reg _fsm_cond_19_2_68;
-  reg _fsm_cond_19_3_69;
-  reg _fsm_cond_19_3_70;
-  reg _fsm_cond_19_3_71;
-  reg _fsm_cond_19_4_72;
-  reg _fsm_cond_19_4_73;
-  reg _fsm_cond_19_4_74;
-  reg _fsm_cond_19_4_75;
-
+  reg _fsm_cond_19_27_1;
+  reg _fsm_cond_19_28_1;
+  reg _fsm_cond_19_28_2;
+  reg _fsm_cond_19_29_1;
+  reg _fsm_cond_19_29_2;
+  reg _fsm_cond_19_29_3;
+  reg _fsm_cond_19_30_1;
+  reg _fsm_cond_19_30_2;
+  reg _fsm_cond_19_30_3;
+  reg _fsm_cond_19_30_4;
   localparam fsm_20 = 20;
-
-  reg _fsm_cond_20_1_76;
-  reg _fsm_cond_20_2_77;
-  reg _fsm_cond_20_2_78;
-  reg _fsm_cond_20_3_79;
-  reg _fsm_cond_20_3_80;
-  reg _fsm_cond_20_3_81;
-  reg _fsm_cond_20_4_82;
-  reg _fsm_cond_20_4_83;
-  reg _fsm_cond_20_4_84;
-  reg _fsm_cond_20_4_85;
-
+  reg _fsm_cond_20_31_1;
+  reg _fsm_cond_20_32_1;
+  reg _fsm_cond_20_32_2;
+  reg _fsm_cond_20_33_1;
+  reg _fsm_cond_20_33_2;
+  reg _fsm_cond_20_33_3;
+  reg _fsm_cond_20_34_1;
+  reg _fsm_cond_20_34_2;
+  reg _fsm_cond_20_34_3;
+  reg _fsm_cond_20_34_4;
   localparam fsm_21 = 21;
 
   always @(posedge CLK) begin
@@ -188,95 +166,95 @@ module blinkled
       count <= 0;
       fsm <= fsm_init;
       _d1_fsm <= fsm_init;
-      _fsm_cond_4_1_0 <= 0;
+      _fsm_cond_4_0_1 <= 0;
       _d2_fsm <= fsm_init;
+      _fsm_cond_4_1_1 <= 0;
+      _fsm_cond_4_1_2 <= 0;
+      _d3_fsm <= fsm_init;
       _fsm_cond_4_2_1 <= 0;
       _fsm_cond_4_2_2 <= 0;
-      _d3_fsm <= fsm_init;
-      _fsm_cond_4_3_3 <= 0;
-      _fsm_cond_4_3_4 <= 0;
-      _fsm_cond_4_3_5 <= 0;
-      _fsm_cond_13_1_6 <= 0;
-      _fsm_cond_13_2_7 <= 0;
-      _fsm_cond_13_2_8 <= 0;
-      _fsm_cond_13_3_9 <= 0;
-      _fsm_cond_13_3_10 <= 0;
-      _fsm_cond_13_3_11 <= 0;
+      _fsm_cond_4_2_3 <= 0;
+      _fsm_cond_13_3_1 <= 0;
+      _fsm_cond_13_4_1 <= 0;
+      _fsm_cond_13_4_2 <= 0;
+      _fsm_cond_13_5_1 <= 0;
+      _fsm_cond_13_5_2 <= 0;
+      _fsm_cond_13_5_3 <= 0;
       _d4_fsm <= fsm_init;
-      _fsm_cond_13_4_12 <= 0;
-      _fsm_cond_13_4_13 <= 0;
-      _fsm_cond_13_4_14 <= 0;
-      _fsm_cond_13_4_15 <= 0;
-      _fsm_cond_14_1_16 <= 0;
-      _fsm_cond_14_2_17 <= 0;
-      _fsm_cond_14_2_18 <= 0;
-      _fsm_cond_14_3_19 <= 0;
-      _fsm_cond_14_3_20 <= 0;
-      _fsm_cond_14_3_21 <= 0;
-      _fsm_cond_14_4_22 <= 0;
-      _fsm_cond_14_4_23 <= 0;
-      _fsm_cond_14_4_24 <= 0;
-      _fsm_cond_14_4_25 <= 0;
-      _fsm_cond_15_1_26 <= 0;
-      _fsm_cond_15_2_27 <= 0;
-      _fsm_cond_15_2_28 <= 0;
-      _fsm_cond_15_3_29 <= 0;
-      _fsm_cond_15_3_30 <= 0;
-      _fsm_cond_15_3_31 <= 0;
-      _fsm_cond_15_4_32 <= 0;
-      _fsm_cond_15_4_33 <= 0;
-      _fsm_cond_15_4_34 <= 0;
-      _fsm_cond_15_4_35 <= 0;
-      _fsm_cond_16_1_36 <= 0;
-      _fsm_cond_16_2_37 <= 0;
-      _fsm_cond_16_2_38 <= 0;
-      _fsm_cond_16_3_39 <= 0;
-      _fsm_cond_16_3_40 <= 0;
-      _fsm_cond_16_3_41 <= 0;
-      _fsm_cond_16_4_42 <= 0;
-      _fsm_cond_16_4_43 <= 0;
-      _fsm_cond_16_4_44 <= 0;
-      _fsm_cond_16_4_45 <= 0;
-      _fsm_cond_17_1_46 <= 0;
-      _fsm_cond_17_2_47 <= 0;
-      _fsm_cond_17_2_48 <= 0;
-      _fsm_cond_17_3_49 <= 0;
-      _fsm_cond_17_3_50 <= 0;
-      _fsm_cond_17_3_51 <= 0;
-      _fsm_cond_17_4_52 <= 0;
-      _fsm_cond_17_4_53 <= 0;
-      _fsm_cond_17_4_54 <= 0;
-      _fsm_cond_17_4_55 <= 0;
-      _fsm_cond_18_1_56 <= 0;
-      _fsm_cond_18_2_57 <= 0;
-      _fsm_cond_18_2_58 <= 0;
-      _fsm_cond_18_3_59 <= 0;
-      _fsm_cond_18_3_60 <= 0;
-      _fsm_cond_18_3_61 <= 0;
-      _fsm_cond_18_4_62 <= 0;
-      _fsm_cond_18_4_63 <= 0;
-      _fsm_cond_18_4_64 <= 0;
-      _fsm_cond_18_4_65 <= 0;
-      _fsm_cond_19_1_66 <= 0;
-      _fsm_cond_19_2_67 <= 0;
-      _fsm_cond_19_2_68 <= 0;
-      _fsm_cond_19_3_69 <= 0;
-      _fsm_cond_19_3_70 <= 0;
-      _fsm_cond_19_3_71 <= 0;
-      _fsm_cond_19_4_72 <= 0;
-      _fsm_cond_19_4_73 <= 0;
-      _fsm_cond_19_4_74 <= 0;
-      _fsm_cond_19_4_75 <= 0;
-      _fsm_cond_20_1_76 <= 0;
-      _fsm_cond_20_2_77 <= 0;
-      _fsm_cond_20_2_78 <= 0;
-      _fsm_cond_20_3_79 <= 0;
-      _fsm_cond_20_3_80 <= 0;
-      _fsm_cond_20_3_81 <= 0;
-      _fsm_cond_20_4_82 <= 0;
-      _fsm_cond_20_4_83 <= 0;
-      _fsm_cond_20_4_84 <= 0;
-      _fsm_cond_20_4_85 <= 0;
+      _fsm_cond_13_6_1 <= 0;
+      _fsm_cond_13_6_2 <= 0;
+      _fsm_cond_13_6_3 <= 0;
+      _fsm_cond_13_6_4 <= 0;
+      _fsm_cond_14_7_1 <= 0;
+      _fsm_cond_14_8_1 <= 0;
+      _fsm_cond_14_8_2 <= 0;
+      _fsm_cond_14_9_1 <= 0;
+      _fsm_cond_14_9_2 <= 0;
+      _fsm_cond_14_9_3 <= 0;
+      _fsm_cond_14_10_1 <= 0;
+      _fsm_cond_14_10_2 <= 0;
+      _fsm_cond_14_10_3 <= 0;
+      _fsm_cond_14_10_4 <= 0;
+      _fsm_cond_15_11_1 <= 0;
+      _fsm_cond_15_12_1 <= 0;
+      _fsm_cond_15_12_2 <= 0;
+      _fsm_cond_15_13_1 <= 0;
+      _fsm_cond_15_13_2 <= 0;
+      _fsm_cond_15_13_3 <= 0;
+      _fsm_cond_15_14_1 <= 0;
+      _fsm_cond_15_14_2 <= 0;
+      _fsm_cond_15_14_3 <= 0;
+      _fsm_cond_15_14_4 <= 0;
+      _fsm_cond_16_15_1 <= 0;
+      _fsm_cond_16_16_1 <= 0;
+      _fsm_cond_16_16_2 <= 0;
+      _fsm_cond_16_17_1 <= 0;
+      _fsm_cond_16_17_2 <= 0;
+      _fsm_cond_16_17_3 <= 0;
+      _fsm_cond_16_18_1 <= 0;
+      _fsm_cond_16_18_2 <= 0;
+      _fsm_cond_16_18_3 <= 0;
+      _fsm_cond_16_18_4 <= 0;
+      _fsm_cond_17_19_1 <= 0;
+      _fsm_cond_17_20_1 <= 0;
+      _fsm_cond_17_20_2 <= 0;
+      _fsm_cond_17_21_1 <= 0;
+      _fsm_cond_17_21_2 <= 0;
+      _fsm_cond_17_21_3 <= 0;
+      _fsm_cond_17_22_1 <= 0;
+      _fsm_cond_17_22_2 <= 0;
+      _fsm_cond_17_22_3 <= 0;
+      _fsm_cond_17_22_4 <= 0;
+      _fsm_cond_18_23_1 <= 0;
+      _fsm_cond_18_24_1 <= 0;
+      _fsm_cond_18_24_2 <= 0;
+      _fsm_cond_18_25_1 <= 0;
+      _fsm_cond_18_25_2 <= 0;
+      _fsm_cond_18_25_3 <= 0;
+      _fsm_cond_18_26_1 <= 0;
+      _fsm_cond_18_26_2 <= 0;
+      _fsm_cond_18_26_3 <= 0;
+      _fsm_cond_18_26_4 <= 0;
+      _fsm_cond_19_27_1 <= 0;
+      _fsm_cond_19_28_1 <= 0;
+      _fsm_cond_19_28_2 <= 0;
+      _fsm_cond_19_29_1 <= 0;
+      _fsm_cond_19_29_2 <= 0;
+      _fsm_cond_19_29_3 <= 0;
+      _fsm_cond_19_30_1 <= 0;
+      _fsm_cond_19_30_2 <= 0;
+      _fsm_cond_19_30_3 <= 0;
+      _fsm_cond_19_30_4 <= 0;
+      _fsm_cond_20_31_1 <= 0;
+      _fsm_cond_20_32_1 <= 0;
+      _fsm_cond_20_32_2 <= 0;
+      _fsm_cond_20_33_1 <= 0;
+      _fsm_cond_20_33_2 <= 0;
+      _fsm_cond_20_33_3 <= 0;
+      _fsm_cond_20_34_1 <= 0;
+      _fsm_cond_20_34_2 <= 0;
+      _fsm_cond_20_34_3 <= 0;
+      _fsm_cond_20_34_4 <= 0;
     end else begin
       count <= count + 1;
       _d1_fsm <= fsm;
@@ -286,242 +264,238 @@ module blinkled
 
       case(_d4_fsm)
         fsm_13: begin
-          if(_fsm_cond_13_4_15) begin
+          if(_fsm_cond_13_6_4) begin
             valid <= 0;
           end 
         end
         fsm_14: begin
-          if(_fsm_cond_14_4_25) begin
+          if(_fsm_cond_14_10_4) begin
             valid <= 0;
           end 
         end
         fsm_15: begin
-          if(_fsm_cond_15_4_35) begin
+          if(_fsm_cond_15_14_4) begin
             valid <= 0;
           end 
         end
         fsm_16: begin
-          if(_fsm_cond_16_4_45) begin
+          if(_fsm_cond_16_18_4) begin
             valid <= 0;
           end 
         end
         fsm_17: begin
-          if(_fsm_cond_17_4_55) begin
+          if(_fsm_cond_17_22_4) begin
             valid <= 0;
           end 
         end
         fsm_18: begin
-          if(_fsm_cond_18_4_65) begin
+          if(_fsm_cond_18_26_4) begin
             valid <= 0;
           end 
         end
         fsm_19: begin
-          if(_fsm_cond_19_4_75) begin
+          if(_fsm_cond_19_30_4) begin
             valid <= 0;
           end 
         end
         fsm_20: begin
-          if(_fsm_cond_20_4_85) begin
+          if(_fsm_cond_20_34_4) begin
             valid <= 0;
           end 
         end
       endcase
-
       case(_d3_fsm)
         fsm_4: begin
-          if(_fsm_cond_4_3_5) begin
+          if(_fsm_cond_4_2_3) begin
             valid <= 0;
           end 
         end
         fsm_13: begin
-          if(_fsm_cond_13_3_11) begin
+          if(_fsm_cond_13_5_3) begin
             valid <= 1;
           end 
-          _fsm_cond_13_4_15 <= _fsm_cond_13_4_14;
+          _fsm_cond_13_6_4 <= _fsm_cond_13_6_3;
         end
         fsm_14: begin
-          if(_fsm_cond_14_3_21) begin
+          if(_fsm_cond_14_9_3) begin
             valid <= 1;
           end 
-          _fsm_cond_14_4_25 <= _fsm_cond_14_4_24;
+          _fsm_cond_14_10_4 <= _fsm_cond_14_10_3;
         end
         fsm_15: begin
-          if(_fsm_cond_15_3_31) begin
+          if(_fsm_cond_15_13_3) begin
             valid <= 1;
           end 
-          _fsm_cond_15_4_35 <= _fsm_cond_15_4_34;
+          _fsm_cond_15_14_4 <= _fsm_cond_15_14_3;
         end
         fsm_16: begin
-          if(_fsm_cond_16_3_41) begin
+          if(_fsm_cond_16_17_3) begin
             valid <= 1;
           end 
-          _fsm_cond_16_4_45 <= _fsm_cond_16_4_44;
+          _fsm_cond_16_18_4 <= _fsm_cond_16_18_3;
         end
         fsm_17: begin
-          if(_fsm_cond_17_3_51) begin
+          if(_fsm_cond_17_21_3) begin
             valid <= 1;
           end 
-          _fsm_cond_17_4_55 <= _fsm_cond_17_4_54;
+          _fsm_cond_17_22_4 <= _fsm_cond_17_22_3;
         end
         fsm_18: begin
-          if(_fsm_cond_18_3_61) begin
+          if(_fsm_cond_18_25_3) begin
             valid <= 1;
           end 
-          _fsm_cond_18_4_65 <= _fsm_cond_18_4_64;
+          _fsm_cond_18_26_4 <= _fsm_cond_18_26_3;
         end
         fsm_19: begin
-          if(_fsm_cond_19_3_71) begin
+          if(_fsm_cond_19_29_3) begin
             valid <= 1;
           end 
-          _fsm_cond_19_4_75 <= _fsm_cond_19_4_74;
+          _fsm_cond_19_30_4 <= _fsm_cond_19_30_3;
         end
         fsm_20: begin
-          if(_fsm_cond_20_3_81) begin
+          if(_fsm_cond_20_33_3) begin
             valid <= 1;
           end 
-          _fsm_cond_20_4_85 <= _fsm_cond_20_4_84;
+          _fsm_cond_20_34_4 <= _fsm_cond_20_34_3;
         end
       endcase
-
       case(_d2_fsm)
         fsm_4: begin
-          if(_fsm_cond_4_2_2) begin
+          if(_fsm_cond_4_1_2) begin
             valid <= 1;
           end 
-          _fsm_cond_4_3_5 <= _fsm_cond_4_3_4;
+          _fsm_cond_4_2_3 <= _fsm_cond_4_2_2;
         end
         fsm_13: begin
-          if(_fsm_cond_13_2_8) begin
+          if(_fsm_cond_13_4_2) begin
             valid <= 1;
           end 
-          _fsm_cond_13_3_11 <= _fsm_cond_13_3_10;
-          _fsm_cond_13_4_14 <= _fsm_cond_13_4_13;
+          _fsm_cond_13_5_3 <= _fsm_cond_13_5_2;
+          _fsm_cond_13_6_3 <= _fsm_cond_13_6_2;
         end
         fsm_14: begin
-          if(_fsm_cond_14_2_18) begin
+          if(_fsm_cond_14_8_2) begin
             valid <= 1;
           end 
-          _fsm_cond_14_3_21 <= _fsm_cond_14_3_20;
-          _fsm_cond_14_4_24 <= _fsm_cond_14_4_23;
+          _fsm_cond_14_9_3 <= _fsm_cond_14_9_2;
+          _fsm_cond_14_10_3 <= _fsm_cond_14_10_2;
         end
         fsm_15: begin
-          if(_fsm_cond_15_2_28) begin
+          if(_fsm_cond_15_12_2) begin
             valid <= 1;
           end 
-          _fsm_cond_15_3_31 <= _fsm_cond_15_3_30;
-          _fsm_cond_15_4_34 <= _fsm_cond_15_4_33;
+          _fsm_cond_15_13_3 <= _fsm_cond_15_13_2;
+          _fsm_cond_15_14_3 <= _fsm_cond_15_14_2;
         end
         fsm_16: begin
-          if(_fsm_cond_16_2_38) begin
+          if(_fsm_cond_16_16_2) begin
             valid <= 1;
           end 
-          _fsm_cond_16_3_41 <= _fsm_cond_16_3_40;
-          _fsm_cond_16_4_44 <= _fsm_cond_16_4_43;
+          _fsm_cond_16_17_3 <= _fsm_cond_16_17_2;
+          _fsm_cond_16_18_3 <= _fsm_cond_16_18_2;
         end
         fsm_17: begin
-          if(_fsm_cond_17_2_48) begin
+          if(_fsm_cond_17_20_2) begin
             valid <= 1;
           end 
-          _fsm_cond_17_3_51 <= _fsm_cond_17_3_50;
-          _fsm_cond_17_4_54 <= _fsm_cond_17_4_53;
+          _fsm_cond_17_21_3 <= _fsm_cond_17_21_2;
+          _fsm_cond_17_22_3 <= _fsm_cond_17_22_2;
         end
         fsm_18: begin
-          if(_fsm_cond_18_2_58) begin
+          if(_fsm_cond_18_24_2) begin
             valid <= 1;
           end 
-          _fsm_cond_18_3_61 <= _fsm_cond_18_3_60;
-          _fsm_cond_18_4_64 <= _fsm_cond_18_4_63;
+          _fsm_cond_18_25_3 <= _fsm_cond_18_25_2;
+          _fsm_cond_18_26_3 <= _fsm_cond_18_26_2;
         end
         fsm_19: begin
-          if(_fsm_cond_19_2_68) begin
+          if(_fsm_cond_19_28_2) begin
             valid <= 1;
           end 
-          _fsm_cond_19_3_71 <= _fsm_cond_19_3_70;
-          _fsm_cond_19_4_74 <= _fsm_cond_19_4_73;
+          _fsm_cond_19_29_3 <= _fsm_cond_19_29_2;
+          _fsm_cond_19_30_3 <= _fsm_cond_19_30_2;
         end
         fsm_20: begin
-          if(_fsm_cond_20_2_78) begin
+          if(_fsm_cond_20_32_2) begin
             valid <= 1;
           end 
-          _fsm_cond_20_3_81 <= _fsm_cond_20_3_80;
-          _fsm_cond_20_4_84 <= _fsm_cond_20_4_83;
+          _fsm_cond_20_33_3 <= _fsm_cond_20_33_2;
+          _fsm_cond_20_34_3 <= _fsm_cond_20_34_2;
         end
       endcase
-
       case(_d1_fsm)
         fsm_4: begin
-          if(_fsm_cond_4_1_0) begin
+          if(_fsm_cond_4_0_1) begin
             valid <= 1;
           end 
+          _fsm_cond_4_1_2 <= _fsm_cond_4_1_1;
           _fsm_cond_4_2_2 <= _fsm_cond_4_2_1;
-          _fsm_cond_4_3_4 <= _fsm_cond_4_3_3;
         end
         fsm_13: begin
-          if(_fsm_cond_13_1_6) begin
+          if(_fsm_cond_13_3_1) begin
             valid <= 1;
           end 
-          _fsm_cond_13_2_8 <= _fsm_cond_13_2_7;
-          _fsm_cond_13_3_10 <= _fsm_cond_13_3_9;
-          _fsm_cond_13_4_13 <= _fsm_cond_13_4_12;
+          _fsm_cond_13_4_2 <= _fsm_cond_13_4_1;
+          _fsm_cond_13_5_2 <= _fsm_cond_13_5_1;
+          _fsm_cond_13_6_2 <= _fsm_cond_13_6_1;
         end
         fsm_14: begin
-          if(_fsm_cond_14_1_16) begin
+          if(_fsm_cond_14_7_1) begin
             valid <= 1;
           end 
-          _fsm_cond_14_2_18 <= _fsm_cond_14_2_17;
-          _fsm_cond_14_3_20 <= _fsm_cond_14_3_19;
-          _fsm_cond_14_4_23 <= _fsm_cond_14_4_22;
+          _fsm_cond_14_8_2 <= _fsm_cond_14_8_1;
+          _fsm_cond_14_9_2 <= _fsm_cond_14_9_1;
+          _fsm_cond_14_10_2 <= _fsm_cond_14_10_1;
         end
         fsm_15: begin
-          if(_fsm_cond_15_1_26) begin
+          if(_fsm_cond_15_11_1) begin
             valid <= 1;
           end 
-          _fsm_cond_15_2_28 <= _fsm_cond_15_2_27;
-          _fsm_cond_15_3_30 <= _fsm_cond_15_3_29;
-          _fsm_cond_15_4_33 <= _fsm_cond_15_4_32;
+          _fsm_cond_15_12_2 <= _fsm_cond_15_12_1;
+          _fsm_cond_15_13_2 <= _fsm_cond_15_13_1;
+          _fsm_cond_15_14_2 <= _fsm_cond_15_14_1;
         end
         fsm_16: begin
-          if(_fsm_cond_16_1_36) begin
+          if(_fsm_cond_16_15_1) begin
             valid <= 1;
           end 
-          _fsm_cond_16_2_38 <= _fsm_cond_16_2_37;
-          _fsm_cond_16_3_40 <= _fsm_cond_16_3_39;
-          _fsm_cond_16_4_43 <= _fsm_cond_16_4_42;
+          _fsm_cond_16_16_2 <= _fsm_cond_16_16_1;
+          _fsm_cond_16_17_2 <= _fsm_cond_16_17_1;
+          _fsm_cond_16_18_2 <= _fsm_cond_16_18_1;
         end
         fsm_17: begin
-          if(_fsm_cond_17_1_46) begin
+          if(_fsm_cond_17_19_1) begin
             valid <= 1;
           end 
-          _fsm_cond_17_2_48 <= _fsm_cond_17_2_47;
-          _fsm_cond_17_3_50 <= _fsm_cond_17_3_49;
-          _fsm_cond_17_4_53 <= _fsm_cond_17_4_52;
+          _fsm_cond_17_20_2 <= _fsm_cond_17_20_1;
+          _fsm_cond_17_21_2 <= _fsm_cond_17_21_1;
+          _fsm_cond_17_22_2 <= _fsm_cond_17_22_1;
         end
         fsm_18: begin
-          if(_fsm_cond_18_1_56) begin
+          if(_fsm_cond_18_23_1) begin
             valid <= 1;
           end 
-          _fsm_cond_18_2_58 <= _fsm_cond_18_2_57;
-          _fsm_cond_18_3_60 <= _fsm_cond_18_3_59;
-          _fsm_cond_18_4_63 <= _fsm_cond_18_4_62;
+          _fsm_cond_18_24_2 <= _fsm_cond_18_24_1;
+          _fsm_cond_18_25_2 <= _fsm_cond_18_25_1;
+          _fsm_cond_18_26_2 <= _fsm_cond_18_26_1;
         end
         fsm_19: begin
-          if(_fsm_cond_19_1_66) begin
+          if(_fsm_cond_19_27_1) begin
             valid <= 1;
           end 
-          _fsm_cond_19_2_68 <= _fsm_cond_19_2_67;
-          _fsm_cond_19_3_70 <= _fsm_cond_19_3_69;
-          _fsm_cond_19_4_73 <= _fsm_cond_19_4_72;
+          _fsm_cond_19_28_2 <= _fsm_cond_19_28_1;
+          _fsm_cond_19_29_2 <= _fsm_cond_19_29_1;
+          _fsm_cond_19_30_2 <= _fsm_cond_19_30_1;
         end
         fsm_20: begin
-          if(_fsm_cond_20_1_76) begin
+          if(_fsm_cond_20_31_1) begin
             valid <= 1;
           end 
-          _fsm_cond_20_2_78 <= _fsm_cond_20_2_77;
-          _fsm_cond_20_3_80 <= _fsm_cond_20_3_79;
-          _fsm_cond_20_4_83 <= _fsm_cond_20_4_82;
+          _fsm_cond_20_32_2 <= _fsm_cond_20_32_1;
+          _fsm_cond_20_33_2 <= _fsm_cond_20_33_1;
+          _fsm_cond_20_34_2 <= _fsm_cond_20_34_1;
         end
       endcase
-
       case(fsm)
         fsm_init: begin
           fsm <= fsm_1;
@@ -539,9 +513,9 @@ module blinkled
           if(count >= 16) begin
             valid <= 1;
           end 
-          _fsm_cond_4_1_0 <= (count >= 16);
+          _fsm_cond_4_0_1 <= (count >= 16);
+          _fsm_cond_4_1_1 <= (count >= 16);
           _fsm_cond_4_2_1 <= (count >= 16);
-          _fsm_cond_4_3_3 <= (count >= 16);
           if(count >= 16) begin
             fsm <= fsm_5;
           end 
@@ -571,73 +545,73 @@ module blinkled
           fsm <= fsm_13;
         end
         fsm_13: begin
-          _fsm_cond_13_1_6 <= (count >= 32);
-          _fsm_cond_13_2_7 <= (count >= 32);
-          _fsm_cond_13_3_9 <= (count >= 32);
-          _fsm_cond_13_4_12 <= (count >= 32);
+          _fsm_cond_13_3_1 <= (count >= 32);
+          _fsm_cond_13_4_1 <= (count >= 32);
+          _fsm_cond_13_5_1 <= (count >= 32);
+          _fsm_cond_13_6_1 <= (count >= 32);
           if(count >= 32) begin
             fsm <= fsm_14;
           end 
         end
         fsm_14: begin
-          _fsm_cond_14_1_16 <= (count >= 32);
-          _fsm_cond_14_2_17 <= (count >= 32);
-          _fsm_cond_14_3_19 <= (count >= 32);
-          _fsm_cond_14_4_22 <= (count >= 32);
+          _fsm_cond_14_7_1 <= (count >= 32);
+          _fsm_cond_14_8_1 <= (count >= 32);
+          _fsm_cond_14_9_1 <= (count >= 32);
+          _fsm_cond_14_10_1 <= (count >= 32);
           if(count >= 32) begin
             fsm <= fsm_15;
           end 
         end
         fsm_15: begin
-          _fsm_cond_15_1_26 <= (count >= 32);
-          _fsm_cond_15_2_27 <= (count >= 32);
-          _fsm_cond_15_3_29 <= (count >= 32);
-          _fsm_cond_15_4_32 <= (count >= 32);
+          _fsm_cond_15_11_1 <= (count >= 32);
+          _fsm_cond_15_12_1 <= (count >= 32);
+          _fsm_cond_15_13_1 <= (count >= 32);
+          _fsm_cond_15_14_1 <= (count >= 32);
           if(count >= 32) begin
             fsm <= fsm_16;
           end 
         end
         fsm_16: begin
-          _fsm_cond_16_1_36 <= (count >= 32);
-          _fsm_cond_16_2_37 <= (count >= 32);
-          _fsm_cond_16_3_39 <= (count >= 32);
-          _fsm_cond_16_4_42 <= (count >= 32);
+          _fsm_cond_16_15_1 <= (count >= 32);
+          _fsm_cond_16_16_1 <= (count >= 32);
+          _fsm_cond_16_17_1 <= (count >= 32);
+          _fsm_cond_16_18_1 <= (count >= 32);
           if(count >= 32) begin
             fsm <= fsm_17;
           end 
         end
         fsm_17: begin
-          _fsm_cond_17_1_46 <= (count >= 32);
-          _fsm_cond_17_2_47 <= (count >= 32);
-          _fsm_cond_17_3_49 <= (count >= 32);
-          _fsm_cond_17_4_52 <= (count >= 32);
+          _fsm_cond_17_19_1 <= (count >= 32);
+          _fsm_cond_17_20_1 <= (count >= 32);
+          _fsm_cond_17_21_1 <= (count >= 32);
+          _fsm_cond_17_22_1 <= (count >= 32);
           if(count >= 32) begin
             fsm <= fsm_18;
           end 
         end
         fsm_18: begin
-          _fsm_cond_18_1_56 <= (count >= 32);
-          _fsm_cond_18_2_57 <= (count >= 32);
-          _fsm_cond_18_3_59 <= (count >= 32);
-          _fsm_cond_18_4_62 <= (count >= 32);
+          _fsm_cond_18_23_1 <= (count >= 32);
+          _fsm_cond_18_24_1 <= (count >= 32);
+          _fsm_cond_18_25_1 <= (count >= 32);
+          _fsm_cond_18_26_1 <= (count >= 32);
           if(count >= 32) begin
             fsm <= fsm_19;
           end 
         end
         fsm_19: begin
-          _fsm_cond_19_1_66 <= (count >= 32);
-          _fsm_cond_19_2_67 <= (count >= 32);
-          _fsm_cond_19_3_69 <= (count >= 32);
-          _fsm_cond_19_4_72 <= (count >= 32);
+          _fsm_cond_19_27_1 <= (count >= 32);
+          _fsm_cond_19_28_1 <= (count >= 32);
+          _fsm_cond_19_29_1 <= (count >= 32);
+          _fsm_cond_19_30_1 <= (count >= 32);
           if(count >= 32) begin
             fsm <= fsm_20;
           end 
         end
         fsm_20: begin
-          _fsm_cond_20_1_76 <= (count >= 32);
-          _fsm_cond_20_2_77 <= (count >= 32);
-          _fsm_cond_20_3_79 <= (count >= 32);
-          _fsm_cond_20_4_82 <= (count >= 32);
+          _fsm_cond_20_31_1 <= (count >= 32);
+          _fsm_cond_20_32_1 <= (count >= 32);
+          _fsm_cond_20_33_1 <= (count >= 32);
+          _fsm_cond_20_34_1 <= (count >= 32);
           if(count >= 32) begin
             fsm <= fsm_21;
           end 

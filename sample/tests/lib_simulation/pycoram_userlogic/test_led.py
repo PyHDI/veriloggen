@@ -87,7 +87,7 @@ module test #
   localparam test_fsm_12 = 12;
 
   reg [32-1:0] _d1_test_fsm;
-  reg _test_fsm_cond_12_1_0;
+  reg _test_fsm_cond_12_0_1;
   localparam test_fsm_13 = 13;
 
   always @(posedge CLK) begin
@@ -98,12 +98,12 @@ module test #
       ch_empty <= 1;
       test_fsm <= test_fsm_init;
       _d1_test_fsm <= test_fsm_init;
-      _test_fsm_cond_12_1_0 <= 0;
+      _test_fsm_cond_12_0_1 <= 0;
     end else begin
       _d1_test_fsm <= test_fsm;
       case(_d1_test_fsm)
         test_fsm_12: begin
-          if(_test_fsm_cond_12_1_0) begin
+          if(_test_fsm_cond_12_0_1) begin
             mem_rdata <= mem_rdata + 1;
           end 
         end
@@ -154,7 +154,7 @@ module test #
           end 
         end
         test_fsm_12: begin
-          _test_fsm_cond_12_1_0 <= mem_rvalid;
+          _test_fsm_cond_12_0_1 <= mem_rvalid;
           if(ch_enq) begin
             test_fsm <= test_fsm_13;
           end 
