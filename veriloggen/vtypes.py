@@ -474,6 +474,7 @@ class Pointer(_SpecialOperator):
     def __init__(self, var, pos):
         self.var = var
         self.pos = pos
+        self.subst = []
         
     def __call__(self, r):
         return self.next(r)
@@ -481,6 +482,9 @@ class Pointer(_SpecialOperator):
     def next(self, r):
         return Subst(self, r)
 
+    def add_subst(self, s):
+        self.subst.append(s)
+    
     def bit_length(self):
         if isinstance(var, _Variable) and var.length is not None:
             return self.var.bit_length()
@@ -494,12 +498,16 @@ class Slice(_SpecialOperator):
         self.var = var
         self.msb = msb
         self.lsb = lsb
+        self.subst = []
 
     def __call__(self, r):
         return self.next(r)
 
     def next(self, r):
         return Subst(self, r)
+    
+    def add_subst(self, s):
+        self.subst.append(s)
     
     def bit_length(self):
         return self.msb - self.lsb + 1
@@ -510,6 +518,7 @@ class Slice(_SpecialOperator):
 class Cat(_SpecialOperator):
     def __init__(self, *vars):
         self.vars = tuple(vars)
+        self.subst = []
     
     def __call__(self, r):
         return self.next(r)
@@ -517,6 +526,9 @@ class Cat(_SpecialOperator):
     def next(self, r):
         return Subst(self, r)
 
+    def add_subst(self, s):
+        self.subst.append(s)
+    
     def bit_length(self):
         values = [ v.bit_length() for v in self.vars ]
         ret = values[0]

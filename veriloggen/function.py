@@ -15,6 +15,7 @@ class Function(vtypes.VeriloggenNode):
         self.io_variable = collections.OrderedDict()
         self.variable = collections.OrderedDict()
         self.statement = None
+        self.subst = []
 
     #---------------------------------------------------------------------------
     def Input(self, name, width=None, length=None, signed=False, value=None):
@@ -37,6 +38,9 @@ class Function(vtypes.VeriloggenNode):
             raise ValueError("Statement is already assigned.")
         self.statement = tuple(statement)
         return self
+
+    def add_subst(self, s):
+        self.subst.append(s)
 
     def __call__(self, r):
         return vtypes.Subst(self, r)
