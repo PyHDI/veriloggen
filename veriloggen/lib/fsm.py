@@ -6,6 +6,7 @@ import functools
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import vtypes
+import lib.parallel
 
 class FSM(vtypes.VeriloggenNode):
     """ Finite State Machine Generator """
@@ -26,6 +27,8 @@ class FSM(vtypes.VeriloggenNode):
         self.delayed_body = collections.defaultdict(
             functools.partial(collections.defaultdict, list)) # key:delay
         self.tmp_count = 0
+
+        self.par = lib.parallel.Parallel(self.m, self.name + '_par')
 
     #---------------------------------------------------------------------------
     def current(self):
@@ -79,12 +82,16 @@ class FSM(vtypes.VeriloggenNode):
         return self
 
     #---------------------------------------------------------------------------
+    def prev(self, var, delay, initval=0):
+        return self.par.prev(var, delay, initval)
+        
+    #---------------------------------------------------------------------------
     def add_delayed_cond(self, statement, index, delay):
+        name_prefix = '_'.join(['', self.name, 'cond', str(index), str(self.tmp_count)])
+        self.tmp_count += 1
         prev = statement
         for i in range(delay):
-            tmp_name = '_'.join(['', self.name, 'cond', str(index),
-                                 str(delay), str(self.tmp_count)])
-            self.tmp_count += 1
+            tmp_name = '_'.join([name_prefix, str(i+1)])
             tmp = self.m.Reg(tmp_name, initval=0)
             self.add(tmp(prev), delay=i)
             prev = tmp
@@ -100,12 +107,14 @@ class FSM(vtypes.VeriloggenNode):
             return subst
         width = left.bit_length()
         prev = right
-        name_prefix = ('_' + left.name if isinstance(left, vtypes._Variable) else
-                       '_' + self.name + '_sbst')
+        
+        name_prefix = ('_'.join(['', left.name, str(index), str(self.tmp_count)]) 
+                       if isinstance(left, vtypes._Variable) else
+                       '_'.join(['', self.name, 'sbst', str(index), str(self.tmp_count)]))
+        self.tmp_count += 1
+
         for i in range(delay):
-            tmp_name = '_'.join([name_prefix, str(index),
-                                 str(delay), str(self.tmp_count)])
-            self.tmp_count += 1
+            tmp_name = '_'.join([name_prefix, str(i+1)])
             tmp = self.m.Reg(tmp_name, width, initval=0)
             self.add(tmp(prev), delay=i)
             prev = tmp
@@ -151,7 +160,9 @@ class FSM(vtypes.VeriloggenNode):
 
     #---------------------------------------------------------------------------
     def make_case(self):
-        ret = self.get_delayed_substs()
+        ret = []
+        ret.extend( self.par.make_code() )
+        ret.extend( self.get_delayed_substs() )
         
         for delay, dct in sorted(self.delayed_body.items(),
                                  key=lambda x:x[0], reverse=True):
@@ -168,7 +179,9 @@ class FSM(vtypes.VeriloggenNode):
         return tuple(ret)
     
     def make_if(self):
-        ret = self.get_delayed_substs()
+        ret = []
+        ret.extend( self.par.make_code() )
+        ret.extend( self.get_delayed_substs() )
         
         for delay, dct in sorted(self.delayed_body.items(),
                                  key=lambda x:x[0], reverse=True):
