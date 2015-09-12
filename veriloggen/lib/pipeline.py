@@ -46,16 +46,62 @@ class Pipeline(vtypes.VeriloggenNode):
 
     def make_tmp(self, data, valid, ready, width=None, initval=0):
         tmp_data = self.add_reg('data', self.tmp_count, width=width, initval=initval)
-        #tmp_valid = self.add_reg('valid', self.tmp_count, initval=0)
-        #tmp_ready = self.add_wire('ready', self.tmp_count)
-        tmp_valid = None
-        tmp_ready = None
+        
+        if valid is not None:
+            tmp_valid = self.add_reg('valid', self.tmp_count, initval=0)
+        else:
+            tmp_valid = None
+            
+        if ready:
+            #tmp_ready = self.add_wire('ready', self.tmp_count)
+            tmp_ready = None
+        else:
+            tmp_ready = None
+            
         self.tmp_count += 1
+        
         self.par.add( tmp_data(data), cond=valid )
-        #self.par.add( tmp_valid(valid) )
-        #for r in ready:
-        #    if r: self.m.Assign( r(tmp_ready) )
+        
+        if valid is not None:
+            self.par.add( tmp_valid(valid) )
+            
+        if ready:
+            #for r in ready:
+            #    if r: self.m.Assign( r(tmp_ready) )
+            pass
+        
         return tmp_data, tmp_valid, tmp_ready
+    
+    def make_prev(self, data, valid, ready, root_valid=None, width=None, initval=0):
+        tmp_data = self.add_reg('data', self.tmp_count, width=width, initval=initval)
+        
+        if valid is not None:
+            tmp_valid = self.add_reg('valid', self.tmp_count, initval=0)
+            next_valid = self.add_wire('nvalid', self.tmp_count)
+        else:
+            tmp_valid = None
+            next_valid = None
+            
+        if ready:
+            #tmp_ready = self.add_wire('ready', self.tmp_count)
+            tmp_ready = None
+        else:
+            tmp_ready = None
+            
+        self.tmp_count += 1
+        
+        self.par.add( tmp_data(data), cond=valid )
+        
+        if valid is not None:
+            self.par.add( tmp_valid(valid), cond=valid )
+            self.m.Assign( next_valid(vtypes.AndList(tmp_valid, root_valid)) )
+            
+        if ready:
+            #for r in ready:
+            #    if r: self.m.Assign( r(tmp_ready) )
+            pass
+            
+        return tmp_data, next_valid, tmp_ready
     
     def make_code(self):
         return self.par.make_code()
@@ -84,6 +130,11 @@ class _PipelineVariable(_PipelineNumeric):
         self.prev_dict = {}
         
     def prev(self, index, initval=0):
+        if index == 0:
+            return self
+        if index < 0:
+            raise ValueError('Index to a previous value must be positive.')
+        
         if index in self.prev_dict:
             return self.prev_dict[index]
 
@@ -95,8 +146,8 @@ class _PipelineVariable(_PipelineNumeric):
                 p = self.prev_dict[i+1]
                 continue
             
-            tmp_data, tmp_valid, tmp_ready = self.pipe.make_tmp(p.data, p.valid, p.ready,
-                                                                width, initval)
+            tmp_data, tmp_valid, tmp_ready = self.pipe.make_prev(p.data, p.valid, p.ready,
+                                                                 self.valid, width, initval)
             p = _PipelineVariable(self, p.stage_id, tmp_data, tmp_valid, tmp_ready)
             self.prev_dict[i+1] = p
             
@@ -178,6 +229,20 @@ class DataVisitor(_PipelineVisitor):
     def __init__(self, pipe):
         self.pipe = pipe
 
+    def make_valid(self, lvalid, rvalid):
+        if rvalid is not None and lvalid is not None:
+            return vtypes.And(lvalid, rvalid)
+        elif rvalid is None and lvalid is None:
+            return None
+        elif rvalid is None:
+            return lvalid
+        elif lvalid is None:
+            return rvalid
+        return None
+
+    def make_ready(self, lready, rready):
+        return lready + rready
+    
     def visit__PipelineVariable(self, node):
         ready = [] if node.ready is None else node.ready
         return (node.stage_id, node.data, node.valid, ready )
@@ -195,17 +260,8 @@ class DataVisitor(_PipelineVisitor):
         cls = type(node)
         data = cls(ldata, rdata)
         
-        valid = None
-        if rvalid is not None and lvalid is not None:
-            valid = vtypes.And(lvalid, rvalid)
-        elif rvalid is None and lvalid is None:
-            valid = None
-        elif rvalid is None:
-            valid = lvalid
-        elif lvalid is None:
-            valid = rvalid
-            
-        ready = lready + rready
+        valid = self.make_valid(lvalid, rvalid)
+        ready = self.make_ready(lready, rready)
         
         if rstage is None and lstage is None:
             return (None, data, valid, ready)
@@ -221,7 +277,7 @@ class DataVisitor(_PipelineVisitor):
                 width = rdata.bit_length()
                 p = self.pipe.stage(p, width=width)
             data = cls(ldata, p.data)
-            valid = None ##
+            valid = self.make_valid(lvalid, p.valid)
             ready = [] ##
             return (max(lstage, rstage), data, valid, ready)
 
@@ -232,7 +288,7 @@ class DataVisitor(_PipelineVisitor):
                 width = ldata.bit_length()
                 p = self.pipe.stage(p, width=width)
             data = cls(p.data, rdata)
-            valid = None ##
+            valid = self.make_valid(p.valid, rvalid)
             ready = [] ##
             return (max(lstage, rstage), data, valid, ready)
 
