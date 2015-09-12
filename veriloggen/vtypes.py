@@ -375,9 +375,9 @@ class _BinaryOperator(_Operator):
         self.right = right
 
     def type_check(self, left, right):
-        if not isinstance(left, (_Numeric, int, float, str)):
+        if not isinstance(left, (_Numeric, bool, int, float, str)):
             raise TypeError('BinaryOperator does not support Type %s' % str(type(left)))
-        if not isinstance(right, (_Numeric, int, float, str)):
+        if not isinstance(right, (_Numeric, bool, int, float, str)):
             raise TypeError('BinaryOperator does not support Type %s' % str(type(right)))
 
     def __str__(self):
@@ -390,7 +390,7 @@ class _UnaryOperator(_Operator):
         self.right = right
         
     def type_check(self, right):
-        if not isinstance(right, (_Numeric, int, float, str)):
+        if not isinstance(right, (_Numeric, bool, int, float, str)):
             raise TypeError('BinaryOperator does not support Type %s' % str(type(right)))
 
     def __str__(self):
@@ -753,7 +753,7 @@ class When(VeriloggenNode) :
         for i, a in enumerate(args):        
             if a is None:
                 raise ValueError("None condition must not mixed in When() statement.")
-            if isinstance(a, (_Numeric, int, float, str)): continue
+            if isinstance(a, (_Numeric, bool, int, float, str)): continue
             raise TypeError("Condition must be _Numeric object, not '%s'" % str(type(a)))
     
     def type_check_statement(self, *args):
