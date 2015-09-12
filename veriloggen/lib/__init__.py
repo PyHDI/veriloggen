@@ -16,3 +16,4 @@ from fsm import FSM
 from parallel import Parallel
 from bundle import Bundle
 import simulation
+from pipeline import Pipeline
