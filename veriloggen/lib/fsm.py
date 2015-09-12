@@ -103,7 +103,8 @@ class FSM(vtypes.VeriloggenNode):
             return subst
         left = subst.left
         right = subst.right
-        if isinstance(right, (int, float, str, vtypes._Constant, vtypes._ParameterVairable)):
+        if isinstance(right, (bool, int, float, str,
+                              vtypes._Constant, vtypes._ParameterVairable)):
             return subst
         width = left.bit_length()
         prev = right

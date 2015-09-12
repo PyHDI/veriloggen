@@ -21,7 +21,8 @@ class Parallel(vtypes.VeriloggenNode):
 
     #---------------------------------------------------------------------------
     def prev(self, var, delay, initval=0):
-        if isinstance(var, (int, float, str, vtypes._Constant, vtypes._ParameterVairable)):
+        if isinstance(var, (bool, int, float, str,
+                            vtypes._Constant, vtypes._ParameterVairable)):
             return var
         if not isinstance(var, vtypes._Variable):
             raise TypeError('var must be vtypes._Variable, not %s' % str(type(var)))
@@ -67,7 +68,8 @@ class Parallel(vtypes.VeriloggenNode):
             return subst
         left = subst.left
         right = subst.right
-        if isinstance(right, (int, float, str, vtypes._Constant, vtypes._ParameterVairable)):
+        if isinstance(right, (bool, int, float, str,
+                              vtypes._Constant, vtypes._ParameterVairable)):
             return subst
         width = left.bit_length()
         prev = right
