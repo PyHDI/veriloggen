@@ -20,6 +20,24 @@ class Pipeline(vtypes.VeriloggenNode):
         self.tmp_count = 0
         self.par = lib.parallel.Parallel(self.m, self.name)
         self.data_visitor = DataVisitor(self)
+        self.vars = []
+
+    #---------------------------------------------------------------------------
+    def input(self, data, valid=None, ready=None, width=None):
+        ret = _PipelineVariable(self, 0, data, valid, ready)
+        self.vars.append(ret)
+        return ret
+        
+    #---------------------------------------------------------------------------
+    def stage(self, data, width=None, initval=0):
+        if width is None: width = self.width
+        stage_id, raw_data, raw_valid, raw_ready = self.data_visitor.visit(data)
+        tmp_data, tmp_valid, tmp_ready = self.make_tmp(raw_data, raw_valid, raw_ready,
+                                                       width, initval)
+        next_stage_id = stage_id + 1 if stage_id is not None else None
+        ret = _PipelineVariable(self, next_stage_id, tmp_data, tmp_valid, tmp_ready)
+        self.vars.append(ret)
+        return ret
 
     #---------------------------------------------------------------------------
     def add_reg(self, prefix, count, width=None, initval=0):
@@ -33,17 +51,6 @@ class Pipeline(vtypes.VeriloggenNode):
         return tmp
         
     #---------------------------------------------------------------------------
-    def input(self, data, valid=None, ready=None, width=None):
-        return _PipelineVariable(self, 0, data, valid, ready)
-        
-    def stage(self, data, width=None, initval=0):
-        if width is None: width = self.width
-        stage_id, raw_data, raw_valid, raw_ready = self.data_visitor.visit(data)
-        tmp_data, tmp_valid, tmp_ready = self.make_tmp(raw_data, raw_valid, raw_ready,
-                                                       width, initval)
-        next_stage_id = stage_id + 1 if stage_id is not None else None
-        return _PipelineVariable(self, next_stage_id, tmp_data, tmp_valid, tmp_ready)
-
     def make_tmp(self, data, valid, ready, width=None, initval=0):
         tmp_data = self.add_reg('data', self.tmp_count, width=width, initval=initval)
         
@@ -75,6 +82,7 @@ class Pipeline(vtypes.VeriloggenNode):
         
         return tmp_data, tmp_valid, tmp_ready
     
+    #---------------------------------------------------------------------------
     def make_prev(self, data, valid, ready, root_valid=None, width=None, initval=0):
         tmp_data = self.add_reg('data', self.tmp_count, width=width, initval=initval)
         
@@ -117,6 +125,7 @@ class Pipeline(vtypes.VeriloggenNode):
             
         return tmp_data, next_valid, tmp_ready
     
+    #---------------------------------------------------------------------------
     def make_code(self):
         return self.par.make_code()
     
@@ -163,6 +172,7 @@ class _PipelineVariable(_PipelineNumeric):
             tmp_data, tmp_valid, tmp_ready = self.pipe.make_prev(p.data, p.valid, p.ready,
                                                                  self.valid, width, initval)
             p = _PipelineVariable(self, p.stage_id, tmp_data, tmp_valid, tmp_ready)
+            self.pipe.vars.append(p)
             self.prev_dict[i+1] = p
             
         return p
@@ -187,6 +197,11 @@ class _PipelineVariable(_PipelineNumeric):
         if self.ready is not None:
             self.pipe.m.Assign( self.ready(ready) )
 
+    def reset(self, cond, initval=0):
+        self.pipe.par.add( self.data(initval), cond=cond )
+        if self.valid is not None:
+            self.pipe.par.add( self.valid(0), cond=cond )
+            
     def bit_length(self):
         return self.data.bit_length()
             
