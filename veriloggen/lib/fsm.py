@@ -308,8 +308,8 @@ class FSM(vtypes.VeriloggenNode):
         return vtypes.If(self.delayed_cond_if(index, delay))( *self.delayed_body[delay][index] )
     
     #---------------------------------------------------------------------------
-    def __call__(self, *statement):
-        return self.add(*statement)
+    def __call__(self, *statement, **kwargs):
+        return self.add(*statement, **kwargs)
 
     def __getitem__(self, index):
         return self.body[index]

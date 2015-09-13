@@ -144,6 +144,6 @@ class Parallel(vtypes.VeriloggenNode):
             ))
     
     #---------------------------------------------------------------------------
-    def __call__(self, *statement):
-        return self.add(*statement)
+    def __call__(self, *statement, **kwargs):
+        return self.add(*statement, **kwargs)
 
