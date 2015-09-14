@@ -16,6 +16,7 @@ operator_dict = {
 def op2mark(op):
     return operator_dict[op]
 
+#-------------------------------------------------------------------------------
 class VeriloggenNode(object):
     """ Base class of Veriloggen AST object """
     def __lt__(self, r):
