@@ -20,8 +20,8 @@ class Parallel(vtypes.VeriloggenNode):
         self.delayed_body = collections.defaultdict(list)
         self.tmp_count = 0
         self.prev_dict = collections.OrderedDict()
-        self.dst_var = collections.OrderedDict()
         
+        self.dst_var = collections.OrderedDict()
         self.dst_visitor = subst_visitor.SubstDstVisitor()
         self.reset_visitor = reset_visitor.ResetVisitor()
 
