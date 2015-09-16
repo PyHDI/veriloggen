@@ -92,31 +92,31 @@ module blinkled
 
   always @(posedge CLK) begin
     if(RST) begin
-      led0 <= 0;
-      led1 <= 0;
-      led2 <= 0;
-      led3 <= 0;
-      led4 <= 0;
-      led5 <= 0;
-      led6 <= 0;
-      led7 <= 0;
       count <= 0;
       _count_0_1 <= 0;
       _count_0_2 <= 0;
+      led0 <= 0;
       _par_cond_1_1 <= 0;
       _par_cond_1_2 <= 0;
+      led1 <= 0;
       _par_cond_2_1 <= 0;
       _par_cond_2_2 <= 0;
+      led2 <= 0;
       _par_cond_3_1 <= 0;
       _par_cond_3_2 <= 0;
+      led3 <= 0;
       _par_cond_4_1 <= 0;
       _par_cond_4_2 <= 0;
+      led4 <= 0;
       _par_cond_5_1 <= 0;
       _par_cond_5_2 <= 0;
+      led5 <= 0;
       _par_cond_6_1 <= 0;
       _par_cond_6_2 <= 0;
+      led6 <= 0;
       _par_cond_7_1 <= 0;
       _par_cond_7_2 <= 0;
+      led7 <= 0;
       _par_cond_8_1 <= 0;
       _par_cond_8_2 <= 0;
     end else begin

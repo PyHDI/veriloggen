@@ -132,24 +132,19 @@ module blinkled
 
   always @(posedge CLK) begin
     if(RST) begin
-      led0 <= 0;
-      led1 <= 0;
-      led2 <= 0;
-      led3 <= 0;
-      led4 <= 0;
-      led5 <= 0;
-      led6 <= 0;
-      led7 <= 0;
       count <= 0;
 
+      led0 <= 0;
       _led0_0_1 <= 0;
       _led0_0_2 <= 0;
       _par_cond_1_1 <= 0;
       _par_cond_1_2 <= 0;
+      led1 <= 0;
       _led1_2_1 <= 0;
       _led1_2_2 <= 0;
       _par_cond_3_1 <= 0;
       _par_cond_3_2 <= 0;
+      led2 <= 0;
       _led2_4_1 <= 0;
       _led2_4_2 <= 0;
       _par_cond_5_1 <= 0;
@@ -158,6 +153,7 @@ module blinkled
       _led2_6_2 <= 0;
       _par_cond_7_1 <= 0;
       _par_cond_7_2 <= 0;
+      led3 <= 0;
       _led3_8_1 <= 0;
       _led3_8_2 <= 0;
       _par_cond_9_1 <= 0;
@@ -166,6 +162,7 @@ module blinkled
       _led3_10_2 <= 0;
       _par_cond_11_1 <= 0;
       _par_cond_11_2 <= 0;
+      led4 <= 0;
       _led4_12_1 <= 0;
       _led4_12_2 <= 0;
       _par_cond_13_1 <= 0;
@@ -174,6 +171,7 @@ module blinkled
       _led4_14_2 <= 0;
       _par_cond_15_1 <= 0;
       _par_cond_15_2 <= 0;
+      led5 <= 0;
       _led5_16_1 <= 0;
       _led5_16_2 <= 0;
       _par_cond_17_1 <= 0;
@@ -182,6 +180,7 @@ module blinkled
       _led5_18_2 <= 0;
       _par_cond_19_1 <= 0;
       _par_cond_19_2 <= 0;
+      led6 <= 0;
       _led6_20_1 <= 0;
       _led6_20_2 <= 0;
       _par_cond_21_1 <= 0;
@@ -190,6 +189,7 @@ module blinkled
       _led6_22_2 <= 0;
       _par_cond_23_1 <= 0;
       _par_cond_23_2 <= 0;
+      led7 <= 0;
       _led7_24_1 <= 0;
       _led7_24_2 <= 0;
       _par_cond_25_1 <= 0;

@@ -231,8 +231,6 @@ module blinkled
 
   always @(posedge CLK) begin
     if(RST) begin
-      odata <= 0;
-      ovalid <= 0;
       _tmp_0 <= 0;
       _tmp_1 <= 0;
       _tmp_2 <= 0;
@@ -247,35 +245,37 @@ module blinkled
       _tmp_11 <= 0;
       _tmp_12 <= 0;
       _tmp_13 <= 0;
+      odata <= 0;
+      ovalid <= 0;
     end else begin
-      _tmp_1 <= (ivalid_00 && ivalid_01);
       if((ivalid_00 && ivalid_01)) begin
         _tmp_0 <= (idata_00 + idata_01);
       end 
-      _tmp_3 <= (ivalid_02 && ivalid_03);
+      _tmp_1 <= (ivalid_00 && ivalid_01);
       if((ivalid_02 && ivalid_03)) begin
         _tmp_2 <= (idata_02 + idata_03);
       end 
-      _tmp_5 <= (ivalid_04 && ivalid_05);
+      _tmp_3 <= (ivalid_02 && ivalid_03);
       if((ivalid_04 && ivalid_05)) begin
         _tmp_4 <= (idata_04 + idata_05);
       end 
-      _tmp_7 <= (ivalid_06 && ivalid_07);
+      _tmp_5 <= (ivalid_04 && ivalid_05);
       if((ivalid_06 && ivalid_07)) begin
         _tmp_6 <= (idata_06 + idata_07);
       end 
-      _tmp_9 <= (_tmp_1 && _tmp_3);
+      _tmp_7 <= (ivalid_06 && ivalid_07);
       if((_tmp_1 && _tmp_3)) begin
         _tmp_8 <= (_tmp_0 + _tmp_2);
       end 
-      _tmp_11 <= (_tmp_5 && _tmp_7);
+      _tmp_9 <= (_tmp_1 && _tmp_3);
       if((_tmp_5 && _tmp_7)) begin
         _tmp_10 <= (_tmp_4 + _tmp_6);
       end 
-      _tmp_13 <= (_tmp_9 && _tmp_11);
+      _tmp_11 <= (_tmp_5 && _tmp_7);
       if((_tmp_9 && _tmp_11)) begin
         _tmp_12 <= (_tmp_8 + _tmp_10);
       end 
+      _tmp_13 <= (_tmp_9 && _tmp_11);
       odata <= _tmp_12;
       ovalid <= _tmp_13;
     end

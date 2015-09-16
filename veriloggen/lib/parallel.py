@@ -6,18 +6,24 @@ import functools
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import vtypes
+import subst_visitor
+import reset_visitor
 
 class Parallel(vtypes.VeriloggenNode):
     """ Parallel Assignment Manager """
     def __init__(self, m, name):
         self.m = m
         self.name = name
-        
+
         self.body = []
         self.delay_amount = 0
         self.delayed_body = collections.defaultdict(list)
         self.tmp_count = 0
-        self.prev_dict = {}
+        self.prev_dict = collections.OrderedDict()
+        self.dst_var = collections.OrderedDict()
+        
+        self.dst_visitor = subst_visitor.SubstDstVisitor()
+        self.reset_visitor = reset_visitor.ResetVisitor()
 
     #---------------------------------------------------------------------------
     def prev(self, var, delay, initval=0):
@@ -50,6 +56,15 @@ class Parallel(vtypes.VeriloggenNode):
             
         return p
     
+    #---------------------------------------------------------------------------
+    def add_dst_var(self, statement):
+        for s in statement:
+            values = self.dst_visitor.visit(s)
+            for v in values:
+                k = str(v)
+                if k not in self.dst_var:
+                    self.dst_var[k] = v
+                
     #---------------------------------------------------------------------------
     def add_delayed_cond(self, statement, delay):
         name_prefix = '_'.join(['', self.name, 'cond', str(self.tmp_count)])
@@ -113,12 +128,14 @@ class Parallel(vtypes.VeriloggenNode):
                     cond = self.add_delayed_cond(cond, delay)
                 statement = [ vtypes.If(cond)(*statement) ]
             self.delayed_body[delay].extend(statement)
+            self.add_dst_var(statement)
             return self
             
         if cond is not None:
             statement = [ vtypes.If(cond)(*statement) ]
             
         self.body.extend(statement)
+        self.add_dst_var(statement)
         return self
 
     #---------------------------------------------------------------------------
@@ -133,11 +150,20 @@ class Parallel(vtypes.VeriloggenNode):
         return tuple(ret)
     
     #---------------------------------------------------------------------------
+    def make_reset(self):
+        ret = []
+        for dst in self.dst_var.values():
+            v = self.reset_visitor.visit(dst)
+            if v is not None:
+                ret.append(v)
+        return ret
+        
+    #---------------------------------------------------------------------------
     def make_always(self, clk, rst, reset=(), body=()):
         self.m.Always(vtypes.Posedge(clk))(
             vtypes.If(rst)(
                 reset,
-                self.m.make_reset()
+                self.make_reset()
             )(
                 body,
                 self.make_code()

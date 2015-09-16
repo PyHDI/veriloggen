@@ -36,8 +36,8 @@ def mkLed(numports=8):
             ndata.append(td)
             nvalid.append(tv)
             cond = AndList(pvalid[i*2], pvalid[i*2+1])
-            par.add( tv(cond) )
             par.add( td(pdata[i*2] + pdata[i*2+1]), cond=cond )
+            par.add( tv(cond) )
         pdata = ndata
         pvalid = nvalid
         ndata = []

@@ -94,7 +94,6 @@ module blinkled
 
   always @(posedge CLK) begin
     if(RST) begin
-      y <= 0;
       _x_1 <= 0;
       _x_2 <= 0;
       _x_3 <= 0;
@@ -102,6 +101,7 @@ module blinkled
       _x_5 <= 0;
       _x_6 <= 0;
       _x_7 <= 0;
+      y <= 0;
     end else begin
       _x_1 <= x;
       _x_2 <= _x_1;
