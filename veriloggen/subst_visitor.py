@@ -48,18 +48,12 @@ class SubstDstVisitor(object):
         return statement
 
     def visit_Pointer(self, node):
-        #return self.visit(node.var)
         return [ node ]
 
     def visit_Slice(self, node):
-        #return self.visit(node.var)
         return [ node ]
 
     def visit_Cat(self, node):
-        #ret = []
-        #for v in node.vars:
-        #    ret.extend(self.visit(v))
-        #return ret
         return [ node ]
 
     def visit_Subst(self, node):
