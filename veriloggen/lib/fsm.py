@@ -6,6 +6,8 @@ import functools
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import vtypes
+import subst_visitor
+import reset_visitor
 import lib.parallel
 
 class FSM(vtypes.VeriloggenNode):
@@ -27,6 +29,10 @@ class FSM(vtypes.VeriloggenNode):
         self.delayed_body = collections.defaultdict(
             functools.partial(collections.defaultdict, list)) # key:delay
         self.tmp_count = 0
+        
+        self.dst_var = collections.OrderedDict()
+        self.dst_visitor = subst_visitor.SubstDstVisitor()
+        self.reset_visitor = reset_visitor.ResetVisitor()
 
         self.par = lib.parallel.Parallel(self.m, self.name + '_par')
 
@@ -85,6 +91,15 @@ class FSM(vtypes.VeriloggenNode):
     def prev(self, var, delay, initval=0):
         return self.par.prev(var, delay, initval)
         
+    #---------------------------------------------------------------------------
+    def add_dst_var(self, statement):
+        for s in statement:
+            values = self.dst_visitor.visit(s)
+            for v in values:
+                k = str(v)
+                if k not in self.dst_var:
+                    self.dst_var[k] = v
+                
     #---------------------------------------------------------------------------
     def add_delayed_cond(self, statement, index, delay):
         name_prefix = '_'.join(['', self.name, 'cond', str(index), str(self.tmp_count)])
@@ -150,6 +165,7 @@ class FSM(vtypes.VeriloggenNode):
                     cond = self.add_delayed_cond(cond, index, delay)
                 statement = [ vtypes.If(cond)(*statement) ]
             self.delayed_body[delay][index].extend(statement)
+            self.add_dst_var(statement)
             return self
             
         if cond is not None:
@@ -157,6 +173,7 @@ class FSM(vtypes.VeriloggenNode):
             
         index = self.current()
         self.body[index].extend(statement)
+        self.add_dst_var(statement)
         return self
 
     #---------------------------------------------------------------------------
@@ -194,11 +211,37 @@ class FSM(vtypes.VeriloggenNode):
         return tuple(ret)
 
     #---------------------------------------------------------------------------
+    def make_reset(self):
+        ret = collections.OrderedDict()
+        
+        v = self.reset_visitor.visit(self.state)
+        key = str(self.state)
+        if v is not None and key not in ret:
+            ret[key] = v
+            
+        for key, dst in self.delayed_state.items():
+            v = self.reset_visitor.visit(dst)
+            if v is not None and key not in ret:
+                ret[key] = v
+
+        for key, dst in self.dst_var.items():
+            v = self.reset_visitor.visit(dst)
+            if v is not None and key not in ret:
+                ret[key] = v
+
+        for v in self.par.make_reset():
+            key = str(v.left)
+            if v is not None and key not in ret:
+                ret[key] = v
+            
+        return list(ret.values())
+        
+    #---------------------------------------------------------------------------
     def make_always(self, clk, rst, reset=(), body=(), case=True):
         self.m.Always(vtypes.Posedge(clk))(
             vtypes.If(rst)(
                 reset,
-                self.m.make_reset()
+                self.make_reset()
             )(
                 body,
                 self.make_case() if case else self.make_if()
@@ -253,6 +296,7 @@ class FSM(vtypes.VeriloggenNode):
             d = self.m.Reg(''.join(['_d', str(i), '_', self.name]), self.width,
                            initval=self.get_mark(0))
             self.delayed_state[i] = d
+            ###self.add_dst_var( [d] )
 
         self.delay_amount = value
         return d

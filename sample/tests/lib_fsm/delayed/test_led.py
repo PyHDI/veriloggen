@@ -61,9 +61,9 @@ module blinkled
 
   always @(posedge CLK) begin
     if(RST) begin
-      valid <= 0;
       fsm <= fsm_init;
       _d1_fsm <= fsm_init;
+      valid <= 0;
     end else begin
       _d1_fsm <= fsm;
       case(_d1_fsm)

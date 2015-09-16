@@ -45,7 +45,7 @@ def mkLed():
         fsm.add( valid_reg(down), cond=c, delay=4, eager_val=True)
         fsm.goto_next(cond=c)
     
-    fsm.make_always(clk, rst, body=[count(count+1)])
+    fsm.make_always(clk, rst, reset=[count.reset()], body=[count(count+1)])
 
     return m
 

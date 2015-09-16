@@ -257,17 +257,18 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       count <= 0;
-      valid_reg <= 0;
       fsm <= fsm_init;
       _d1_fsm <= fsm_init;
+      _d2_fsm <= fsm_init;
+      _d3_fsm <= fsm_init;
+      _d4_fsm <= fsm_init;
+      valid_reg <= 0;
       _valid_reg_4_0_1 <= 0;
       _fsm_cond_4_1_1 <= 0;
-      _d2_fsm <= fsm_init;
       _valid_reg_4_2_1 <= 0;
       _valid_reg_4_2_2 <= 0;
       _fsm_cond_4_3_1 <= 0;
       _fsm_cond_4_3_2 <= 0;
-      _d3_fsm <= fsm_init;
       _valid_reg_4_4_1 <= 0;
       _valid_reg_4_4_2 <= 0;
       _valid_reg_4_4_3 <= 0;
@@ -286,7 +287,6 @@ module blinkled
       _fsm_cond_13_11_1 <= 0;
       _fsm_cond_13_11_2 <= 0;
       _fsm_cond_13_11_3 <= 0;
-      _d4_fsm <= fsm_init;
       _valid_reg_13_12_1 <= 0;
       _valid_reg_13_12_2 <= 0;
       _valid_reg_13_12_3 <= 0;

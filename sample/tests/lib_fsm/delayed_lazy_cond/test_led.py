@@ -80,13 +80,13 @@ module blinkled
 
   always @(posedge CLK) begin
     if(RST) begin
-      valid <= 0;
       count <= 0;
       fsm <= fsm_init;
       _d1_fsm <= fsm_init;
       _d2_fsm <= fsm_init;
       _d3_fsm <= fsm_init;
       _d4_fsm <= fsm_init;
+      valid <= 0;
     end else begin
       count <= count + 1;
       _d1_fsm <= fsm;
