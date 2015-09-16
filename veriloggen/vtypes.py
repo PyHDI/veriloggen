@@ -285,7 +285,7 @@ class Int(_Constant):
         self.value = value
         self.width = width
         self.base = base
-        self.signed = False
+        self.signed = signed
 
     def type_check_value(self, value):
         if not isinstance(value, int):
@@ -336,6 +336,108 @@ class Int(_Constant):
             else:
                 value_list.append("'h")
             value_list.append(hex(node.value).replace('0x', ''))
+        else:
+            raise ValueError("Int.base must be 2, 8, 10, or 16")
+
+        return ''.join(value_list)
+
+class IntX(Int):
+    def __init__(self, width=None, base=None, signed=False):
+        _Constant.__init__(self, None, width, base)
+        self.value = 'x'
+        self.width = width
+        self.base = base
+        self.signed = signed
+    
+    def type_check_value(self, value):
+        pass
+
+    def __str__(self):
+        value_list = []
+        if node.width:
+            value_list.append(str(node.width))
+            
+        if node.base is None:
+            if node.signed:
+                value_list.append("'sd")
+            else:
+                value_list.append("'d")
+            value_list.append(node.value)
+        elif node.base == 2:
+            if node.signed:
+                value_list.append("'sb")
+            else:
+                value_list.append("'b")
+            value_list.append(node.value)
+        elif node.base == 8:
+            if node.signed:
+                value_list.append("'so")
+            else:
+                value_list.append("'o")
+            value_list.append(node.value)
+        elif node.base == 10:
+            if node.signed:
+                value_list.append("'sd")
+            else:
+                value_list.append("'d")
+            value_list.append(node.value)
+        elif node.base == 16:
+            if node.signed:
+                value_list.append("'sh")
+            else:
+                value_list.append("'h")
+            value_list.append(node.value)
+        else:
+            raise ValueError("Int.base must be 2, 8, 10, or 16")
+
+        return ''.join(value_list)
+
+class IntZ(Int):
+    def __init__(self, width=None, base=None, signed=False):
+        _Constant.__init__(self, None, width, base)
+        self.value = 'z'
+        self.width = width
+        self.base = base
+        self.signed = False
+    
+    def type_check_value(self, value):
+        pass
+
+    def __str__(self):
+        value_list = []
+        if node.width:
+            value_list.append(str(node.width))
+            
+        if node.base is None:
+            if node.signed:
+                value_list.append("'sd")
+            else:
+                value_list.append("'d")
+            value_list.append(node.value)
+        elif node.base == 2:
+            if node.signed:
+                value_list.append("'sb")
+            else:
+                value_list.append("'b")
+            value_list.append(node.value)
+        elif node.base == 8:
+            if node.signed:
+                value_list.append("'so")
+            else:
+                value_list.append("'o")
+            value_list.append(node.value)
+        elif node.base == 10:
+            if node.signed:
+                value_list.append("'sd")
+            else:
+                value_list.append("'d")
+            value_list.append(node.value)
+        elif node.base == 16:
+            if node.signed:
+                value_list.append("'sh")
+            else:
+                value_list.append("'h")
+            value_list.append(node.value)
         else:
             raise ValueError("Int.base must be 2, 8, 10, or 16")
 

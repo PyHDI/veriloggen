@@ -86,6 +86,86 @@ class VerilogCommonVisitor(object):
         
         return vast.IntConst(''.join(value_list))
 
+    def visit_IntX(self, node):
+        value_list = []
+        if node.width:
+            value_list.append(str(node.width))
+            
+        if node.base is None:
+            if node.signed:
+                value_list.append("'sd")
+            else:
+                value_list.append("'d")
+            value_list.append(node.value)
+        elif node.base == 2:
+            if node.signed:
+                value_list.append("'sb")
+            else:
+                value_list.append("'b")
+            value_list.append(node.value)
+        elif node.base == 8:
+            if node.signed:
+                value_list.append("'so")
+            else:
+                value_list.append("'o")
+            value_list.append(node.value)
+        elif node.base == 10:
+            if node.signed:
+                value_list.append("'sd")
+            else:
+                value_list.append("'d")
+            value_list.append(node.value)
+        elif node.base == 16:
+            if node.signed:
+                value_list.append("'sh")
+            else:
+                value_list.append("'h")
+            value_list.append(node.value)
+        else:
+            raise ValueError("Int.base must be 2, 8, 10, or 16")
+        
+        return vast.IntConst(''.join(value_list))
+    
+    def visit_IntZ(self, node):
+        value_list = []
+        if node.width:
+            value_list.append(str(node.width))
+            
+        if node.base is None:
+            if node.signed:
+                value_list.append("'sd")
+            else:
+                value_list.append("'d")
+            value_list.append(node.value)
+        elif node.base == 2:
+            if node.signed:
+                value_list.append("'sb")
+            else:
+                value_list.append("'b")
+            value_list.append(node.value)
+        elif node.base == 8:
+            if node.signed:
+                value_list.append("'so")
+            else:
+                value_list.append("'o")
+            value_list.append(node.value)
+        elif node.base == 10:
+            if node.signed:
+                value_list.append("'sd")
+            else:
+                value_list.append("'d")
+            value_list.append(node.value)
+        elif node.base == 16:
+            if node.signed:
+                value_list.append("'sh")
+            else:
+                value_list.append("'h")
+            value_list.append(node.value)
+        else:
+            raise ValueError("Int.base must be 2, 8, 10, or 16")
+        
+        return vast.IntConst(''.join(value_list))
+    
     def visit_Float(self, node):
         return vast.FloatConst(str(node.value))
     
