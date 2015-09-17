@@ -66,17 +66,39 @@ class Pipeline(vtypes.VeriloggenNode):
             
         self.tmp_count += 1
 
-        if valid is not None and ready:
-            self.par.add( tmp_data(data), cond=vtypes.AndList(valid, tmp_ready) )
-        elif valid is None and ready:
-            self.par.add( tmp_data(data), cond=tmp_ready )
-        else:
-            self.par.add( tmp_data(data), cond=valid )
-        
+        # data
+        data_valid_vars = []
         if valid is not None:
-            self.par.add( tmp_valid(valid), cond=tmp_ready )
+            data_valid_vars.append(valid)
+        if tmp_ready is not None:
+            data_valid_vars.append(tmp_ready)
+
+        if len(data_valid_vars) == 0:
+            data_cond = None
+        elif len(data_valid_vars) == 1:
+            data_cond = data_valid_vars[0]
+        else:
+            data_cond = vtypes.AndList(*data_valid_vars)
+
+        self.par.add( tmp_data(data), cond=data_cond )
             
-        if ready:
+        # valid
+        valid_valid_vars = []
+        if tmp_ready is not None:
+            valid_valid_vars.append( tmp_ready )
+
+        if len(valid_valid_vars) == 0:
+            valid_cond = None
+        elif len(valid_valid_vars) == 1:
+            valid_cond = valid_valid_vars[0]
+        else:
+            valid_cond = vtypes.AndList(*valid_valid_vars)
+
+        if tmp_valid is not None:
+            self.par.add( tmp_valid(valid), cond=tmp_ready )
+
+        # ready
+        if tmp_ready is not None:
             for r in ready:
                 if r: self.m.Assign( r(tmp_ready) )
         
@@ -102,27 +124,62 @@ class Pipeline(vtypes.VeriloggenNode):
             next_valid = None
             
         self.tmp_count += 1
+
+        # data
+        data_valid_vars = []
+        if valid is not None:
+            data_valid_vars.append(valid)
+        if tmp_ready is not None:
+            data_valid_vars.append(tmp_ready)
+
+        if len(data_valid_vars) == 0:
+            data_cond = None
+        elif len(data_valid_vars) == 1:
+            data_cond = data_valid_vars[0]
+        else:
+            data_cond = vtypes.AndList(*data_valid_vars)
         
-        if valid is not None and ready is not None:
-            self.par.add( tmp_data(data), cond=vtypes.AndList(valid, tmp_ready) )
-        elif valid is None and ready is not Noone:
-            self.par.add( tmp_data(data), cond=tmp_ready )
+        self.par.add( tmp_data(data), cond=data_cond )
+
+        # valid
+        valid_valid_vars = []
+        if valid is not None:
+            valid_valid_vars.append(valid)
+        if tmp_ready is not None:
+            valid_valid_vars.append(tmp_ready)
+
+        if len(valid_valid_vars) == 0:
+            valid_cond = None
+        elif len(valid_valid_vars) == 1:
+            valid_cond = valid_valid_vars[0]
         else:
-            self.par.add( tmp_data(data), cond=valid )
+            valid_cond = vtypes.AndList(*valid_valid_vars)
+        
+        if tmp_valid is not None:
+            self.par.add( tmp_valid(valid), cond=valid_cond )
+
+        next_valid_valid_vars = []
+        if root_valid is not None:
+            next_valid_valid_vars.append(root_valid)
+        if tmp_valid is not None:
+            next_valid_valid_vars.append(tmp_valid)
+        if tmp_ready is not None:
+            next_valid_valid_vars.append(tmp_ready)
             
-        if valid is not None and ready is not None:
-            self.par.add( tmp_valid(valid), cond=vtypes.AndList(valid, tmp_ready) )
-            self.m.Assign( next_valid(vtypes.AndList(tmp_valid, root_valid, tmp_ready)) )
-        elif valid is None and ready is not None:
-            self.par.add( tmp_valid(valid), cond=tmp_ready )
-            self.m.Assign( next_valid(tmp_ready) )
+        if len(next_valid_valid_vars) == 0:
+            next_valid_cond = None
+        elif len(next_valid_valid_vars) == 1:
+            next_valid_cond = next_valid_valid_vars[0]
         else:
-            self.par.add( tmp_valid(valid), cond=valid )
-            self.m.Assign( next_valid(vtypes.AndList(tmp_valid, root_valid)) )
+            next_valid_cond = vtypes.AndList(*next_valid_valid_vars)
+        
+        if next_valid is not None:
+            self.m.Assign( next_valid(next_valid_cond) )
             
+        # ready
         if ready is not None:
             self.m.Assign( ready(tmp_ready) )
-            
+        
         return tmp_data, next_valid, tmp_ready
     
     #---------------------------------------------------------------------------
@@ -260,7 +317,7 @@ class DataVisitor(_PipelineVisitor):
 
     def make_valid(self, lvalid, rvalid):
         if rvalid is not None and lvalid is not None:
-            return vtypes.And(lvalid, rvalid)
+            return vtypes.AndList(lvalid, rvalid)
         elif rvalid is None and lvalid is None:
             return None
         elif rvalid is None:
