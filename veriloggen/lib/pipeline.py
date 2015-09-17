@@ -100,7 +100,13 @@ class Pipeline(vtypes.VeriloggenNode):
         # ready
         if tmp_ready is not None:
             for r in ready:
-                if r: self.m.Assign( r(tmp_ready) )
+                if not r: continue
+                if len(r.subst) > 1:
+                    raise ValueError("Ready signal is already assigned externally.")
+                if r.subst:
+                    r.subst[0].right = vtypes.AndList(r.subst[0].right, tmp_ready)
+                else:
+                    self.m.Assign( r(tmp_ready) )
         
         return tmp_data, tmp_valid, tmp_ready
     
