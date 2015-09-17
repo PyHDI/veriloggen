@@ -112,14 +112,23 @@ module blinkled
 
   always @(posedge CLK) begin
     if(RST) begin
-      count <= 0;
       _pipe_data_0 <= 0;
     end else begin
-      count <= count + 1;
       _pipe_data_0 <= x + sum;
       if(prst) begin
         _pipe_data_0 <= 0;
       end 
+    end
+  end
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      count <= 0;
+    end else begin
+      count <= count + 1;
+      if(count == 1023) begin
+        count <= 0;
+      end
     end
   end
 
