@@ -183,14 +183,21 @@ class Pipeline(vtypes.VeriloggenNode):
         return tmp_data, next_valid, tmp_ready
     
     #---------------------------------------------------------------------------
+    def make_reset(self):
+        return self.par.make_reset()
+    
+    #---------------------------------------------------------------------------
     def make_code(self):
         return self.par.make_code()
     
-    def make_always(self, clk, rst):
+    #---------------------------------------------------------------------------
+    def make_always(self, clk, rst, reset=(), body=()):
         self.m.Always(vtypes.Posedge(clk))(
             vtypes.If(rst)(
-                self.m.make_reset()
+                reset,
+                self.make_reset()
             )(
+                body,
                 self.make_code()
             ))
         

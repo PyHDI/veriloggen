@@ -108,12 +108,12 @@ module blinkled
 
   always @(posedge CLK) begin
     if(RST) begin
-      y <= 0;
       _pipe_data_0 <= 0;
       _pipe_data_1 <= 0;
       _pipe_data_2 <= 0;
       _pipe_data_3 <= 0;
       _pipe_data_4 <= 0;
+      y <= 0;
     end else begin
       _pipe_data_0 <= x;
       _pipe_data_1 <= _pipe_data_0;

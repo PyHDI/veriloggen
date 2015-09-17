@@ -14,6 +14,8 @@ def mkLed():
     pipe = lib.Pipeline(m, 'pipe')
     
     sum = m.Wire('sum', 32)
+
+    count = m.Reg('count', 32, initval=0)
     
     px = pipe.input(x)
     psum = pipe.input(sum)
@@ -24,7 +26,7 @@ def mkLed():
     
     m.Assign( y(sum) )
     
-    pipe.make_always(clk, rst)
+    pipe.make_always(clk, rst, reset=[count.reset()], body=[count(count + 1)])
 
     return m
 
