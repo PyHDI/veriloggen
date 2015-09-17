@@ -55,7 +55,7 @@ def mkUserlogic():
     fsm.goto(start)
     
     # building always statement
-    fsm.make_always(clk, rst)
+    fsm.make_always(clk, rst, reset=m.make_reset())
     
     return m
 

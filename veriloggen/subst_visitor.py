@@ -58,3 +58,6 @@ class SubstDstVisitor(object):
 
     def visit_Subst(self, node):
         return self.visit(node.left)
+
+    def visit_SingleStatement(self, node):
+        return []

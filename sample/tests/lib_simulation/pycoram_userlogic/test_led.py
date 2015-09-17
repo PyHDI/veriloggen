@@ -92,12 +92,11 @@ module test #
 
   always @(posedge CLK) begin
     if(RST) begin
-      mem_rdata <= 0;
-      ch_almfull <= 0;
-      ch_rdata <= 0;
-      ch_empty <= 1;
       test_fsm <= test_fsm_init;
       _d1_test_fsm <= test_fsm_init;
+      ch_empty <= 1;
+      ch_rdata <= 0;
+      mem_rdata <= 0;
       _test_fsm_cond_12_0_1 <= 0;
     end else begin
       _d1_test_fsm <= test_fsm;

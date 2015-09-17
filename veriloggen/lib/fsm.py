@@ -211,21 +211,28 @@ class FSM(vtypes.VeriloggenNode):
         return tuple(ret)
 
     #---------------------------------------------------------------------------
-    def make_reset(self):
+    def make_reset(self, reset):
         ret = collections.OrderedDict()
         
+        for v in reset:
+            key = str(v.left)
+            if v is not None and key not in ret:
+                ret[key] = v
+            
         v = self.reset_visitor.visit(self.state)
         key = str(self.state)
         if v is not None and key not in ret:
             ret[key] = v
             
-        for key, dst in self.delayed_state.items():
+        for dst in self.delayed_state.values():
             v = self.reset_visitor.visit(dst)
+            key = str(v.left)
             if v is not None and key not in ret:
                 ret[key] = v
 
-        for key, dst in self.dst_var.items():
+        for dst in self.dst_var.values():
             v = self.reset_visitor.visit(dst)
+            key = str(v.left)
             if v is not None and key not in ret:
                 ret[key] = v
 
@@ -240,8 +247,7 @@ class FSM(vtypes.VeriloggenNode):
     def make_always(self, clk, rst, reset=(), body=(), case=True):
         self.m.Always(vtypes.Posedge(clk))(
             vtypes.If(rst)(
-                reset,
-                self.make_reset()
+                self.make_reset(reset)
             )(
                 body,
                 self.make_case() if case else self.make_if()
