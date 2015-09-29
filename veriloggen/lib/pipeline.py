@@ -95,7 +95,7 @@ class Pipeline(vtypes.VeriloggenNode):
             valid_cond = vtypes.AndList(*valid_valid_vars)
 
         if tmp_valid is not None:
-            self.par.add( tmp_valid(valid), cond=tmp_ready )
+            self.par.add( tmp_valid(valid), cond=valid_cond )
 
         # ready
         if tmp_ready is not None:
