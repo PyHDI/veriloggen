@@ -406,20 +406,28 @@ module blinkled
   input ra
 );
 
+  assign rx = ((_pipe_ready_0 || (!_pipe_valid_0)) && (_pipe_ready_1 || (!_pipe_valid_1)));
+  assign ry = ((_pipe_ready_0 || (!_pipe_valid_0)) && (_pipe_ready_1 || (!_pipe_valid_1)));
   reg [32-1:0] _pipe_data_0;
   reg _pipe_valid_0;
   wire _pipe_ready_0;
-  assign rx = ((_pipe_ready_0 || (!_pipe_valid_0)) && (_pipe_ready_1 || (!_pipe_valid_1)));
-  assign ry = ((_pipe_ready_0 || (!_pipe_valid_0)) && (_pipe_ready_1 || (!_pipe_valid_1)));
+  assign _pipe_ready_0 = (_pipe_ready_2 || (!_pipe_valid_2));
   reg [32-1:0] _pipe_data_1;
   reg _pipe_valid_1;
   wire _pipe_ready_1;
-  assign z = _pipe_data_0;
-  assign vz = _pipe_valid_0;
-  assign _pipe_ready_0 = rz;
-  assign a = _pipe_data_1;
-  assign va = _pipe_valid_1;
-  assign _pipe_ready_1 = ra;
+  assign _pipe_ready_1 = (_pipe_ready_3 || (!_pipe_valid_3));
+  reg [32-1:0] _pipe_data_2;
+  reg _pipe_valid_2;
+  wire _pipe_ready_2;
+  assign _pipe_ready_2 = rz;
+  assign z = _pipe_data_2;
+  assign vz = _pipe_valid_2;
+  reg [32-1:0] _pipe_data_3;
+  reg _pipe_valid_3;
+  wire _pipe_ready_3;
+  assign _pipe_ready_3 = ra;
+  assign a = _pipe_data_3;
+  assign va = _pipe_valid_3;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -427,6 +435,10 @@ module blinkled
       _pipe_valid_0 <= 0;
       _pipe_data_1 <= 0;
       _pipe_valid_1 <= 0;
+      _pipe_data_2 <= 0;
+      _pipe_valid_2 <= 0;
+      _pipe_data_3 <= 0;
+      _pipe_valid_3 <= 0;
     end else begin
       if((((vx && rx) && (vy && ry)) && (_pipe_ready_0 || (!_pipe_valid_0)))) begin
         _pipe_data_0 <= (x + y);
@@ -439,6 +451,18 @@ module blinkled
       end 
       if((_pipe_ready_1 || (!_pipe_valid_1))) begin
         _pipe_valid_1 <= ((vy && ry) && (vx && rx));
+      end 
+      if(((_pipe_valid_0 && _pipe_ready_0) && (_pipe_ready_2 || (!_pipe_valid_2)))) begin
+        _pipe_data_2 <= _pipe_data_0;
+      end 
+      if((_pipe_ready_2 || (!_pipe_valid_2))) begin
+        _pipe_valid_2 <= (_pipe_valid_0 && _pipe_ready_0);
+      end 
+      if(((_pipe_valid_1 && _pipe_ready_1) && (_pipe_ready_3 || (!_pipe_valid_3)))) begin
+        _pipe_data_3 <= _pipe_data_1;
+      end 
+      if((_pipe_ready_3 || (!_pipe_valid_3))) begin
+        _pipe_valid_3 <= (_pipe_valid_1 && _pipe_ready_1);
       end 
     end
   end

@@ -199,36 +199,42 @@ module blinkled
   input [32-1:0] x,
   input vx,
   output rx,
-  output reg [32-1:0] y,
-  output reg vy,
+  output [32-1:0] y,
+  output vy,
   input ry
 );
 
+  assign rx = ((_pipe_ready_0 || (!_pipe_valid_0)) && (_pipe_ready_3 || (!_pipe_valid_3)));
   reg [32-1:0] _pipe_data_0;
   reg _pipe_valid_0;
   wire _pipe_ready_0;
   wire _pipe_nvalid_0;
   assign _pipe_nvalid_0 = ((vx && _pipe_valid_0) && _pipe_ready_0);
-  assign rx = (_pipe_ready_0 && (_pipe_ready_3 || (!_pipe_valid_3)));
+  assign _pipe_ready_0 = ((_pipe_ready_1 || (!_pipe_valid_1)) && (_pipe_ready_2 || (!_pipe_valid_2)));
   reg [32-1:0] _pipe_data_1;
   reg _pipe_valid_1;
   wire _pipe_ready_1;
   wire _pipe_nvalid_1;
   assign _pipe_nvalid_1 = ((vx && _pipe_valid_1) && _pipe_ready_1);
-  assign _pipe_ready_0 = (_pipe_ready_1 && (_pipe_ready_2 || (!_pipe_valid_2)));
+  assign _pipe_ready_1 = (_pipe_ready_2 || (!_pipe_valid_2));
   reg [32-1:0] _pipe_data_2;
   reg _pipe_valid_2;
   wire _pipe_ready_2;
-  assign _pipe_ready_1 = (_pipe_ready_2 || (!_pipe_valid_2));
+  assign _pipe_ready_2 = (_pipe_ready_4 || (!_pipe_valid_4));
   reg [32-1:0] _pipe_data_3;
   reg _pipe_valid_3;
   wire _pipe_ready_3;
+  assign _pipe_ready_3 = (_pipe_ready_4 || (!_pipe_valid_4));
   reg [32-1:0] _pipe_data_4;
   reg _pipe_valid_4;
   wire _pipe_ready_4;
-  assign _pipe_ready_2 = (_pipe_ready_4 || (!_pipe_valid_4));
-  assign _pipe_ready_3 = (_pipe_ready_4 || (!_pipe_valid_4));
-  assign _pipe_ready_4 = ry;
+  assign _pipe_ready_4 = (_pipe_ready_5 || (!_pipe_valid_5));
+  reg [32-1:0] _pipe_data_5;
+  reg _pipe_valid_5;
+  wire _pipe_ready_5;
+  assign _pipe_ready_5 = ry;
+  assign y = _pipe_data_5;
+  assign vy = _pipe_valid_5;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -242,8 +248,8 @@ module blinkled
       _pipe_valid_3 <= 0;
       _pipe_data_4 <= 0;
       _pipe_valid_4 <= 0;
-      y <= 0;
-      vy <= 0;
+      _pipe_data_5 <= 0;
+      _pipe_valid_5 <= 0;
     end else begin
       if((vx && (_pipe_ready_0 || (!_pipe_valid_0)))) begin
         _pipe_data_0 <= x;
@@ -275,8 +281,12 @@ module blinkled
       if((_pipe_ready_4 || (!_pipe_valid_4))) begin
         _pipe_valid_4 <= ((_pipe_valid_2 && _pipe_ready_2) && _pipe_valid_3);
       end 
-      y <= _pipe_data_4;
-      vy <= _pipe_valid_4;
+      if(((_pipe_valid_4 && _pipe_ready_4) && (_pipe_ready_5 || (!_pipe_valid_5)))) begin
+        _pipe_data_5 <= _pipe_data_4;
+      end 
+      if((_pipe_ready_5 || (!_pipe_valid_5))) begin
+        _pipe_valid_5 <= (_pipe_valid_4 && _pipe_ready_4);
+      end 
     end
   end
 

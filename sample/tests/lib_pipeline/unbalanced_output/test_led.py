@@ -7,9 +7,9 @@ module test;
   reg [32-1:0] x;
   reg vx;
   wire rx;
-  reg [32-1:0] y;
-  reg vy;
-  wire ry;
+  wire [32-1:0] y;
+  wire vy;
+  reg ry;
   wire [32-1:0] z;
   wire vz;
   reg rz;
@@ -50,9 +50,8 @@ module test;
     RST = 0;
     reset_done = 0;
     x = 0;
-    y = 0;
     vx = 0;
-    vy = 0;
+    ry = 0;
     rz = 0;
     #100;
     RST = 1;
@@ -94,7 +93,7 @@ module test;
           if(rx) begin
             _tmp_0 <= (_tmp_0 + 1);
           end 
-          if((_tmp_0 == 10) && rx) begin
+          if(((_tmp_0 == 10) && rx)) begin
             xfsm <= xfsm_2;
           end 
         end
@@ -109,33 +108,57 @@ module test;
   localparam yfsm_init = 0;
   localparam yfsm_1 = 1;
   localparam yfsm_2 = 2;
+  localparam yfsm_3 = 3;
+  localparam yfsm_4 = 4;
+  localparam yfsm_5 = 5;
+  localparam yfsm_6 = 6;
+  localparam yfsm_7 = 7;
+  localparam yfsm_8 = 8;
 
   always @(posedge CLK) begin
     if(RST) begin
       yfsm <= yfsm_init;
-      _tmp_1 <= 0;
     end else begin
       case(yfsm)
         yfsm_init: begin
-          vy <= 0;
+          ry <= 0;
           if(reset_done) begin
             yfsm <= yfsm_1;
           end 
         end
         yfsm_1: begin
-          vy <= 1;
-          if(ry) begin
-            y <= (y + 2);
-          end 
-          if(ry) begin
-            _tmp_1 <= (_tmp_1 + 1);
-          end 
-          if((_tmp_1 == 10) && ry) begin
-            yfsm <= yfsm_2;
-          end 
+          yfsm <= yfsm_2;
         end
         yfsm_2: begin
-          vy <= 0;
+          if(vy) begin
+            ry <= 1;
+          end 
+          if(vy) begin
+            yfsm <= yfsm_3;
+          end 
+        end
+        yfsm_3: begin
+          ry <= 0;
+          yfsm <= yfsm_4;
+        end
+        yfsm_4: begin
+          ry <= 0;
+          yfsm <= yfsm_5;
+        end
+        yfsm_5: begin
+          ry <= 0;
+          yfsm <= yfsm_6;
+        end
+        yfsm_6: begin
+          ry <= 0;
+          yfsm <= yfsm_7;
+        end
+        yfsm_7: begin
+          ry <= 0;
+          yfsm <= yfsm_8;
+        end
+        yfsm_8: begin
+          yfsm <= yfsm_2;
         end
       endcase
     end
@@ -156,6 +179,16 @@ module test;
   localparam zfsm_11 = 11;
   localparam zfsm_12 = 12;
   localparam zfsm_13 = 13;
+  localparam zfsm_14 = 14;
+  localparam zfsm_15 = 15;
+  localparam zfsm_16 = 16;
+  localparam zfsm_17 = 17;
+  localparam zfsm_18 = 18;
+  localparam zfsm_19 = 19;
+  localparam zfsm_20 = 20;
+  localparam zfsm_21 = 21;
+  localparam zfsm_22 = 22;
+  localparam zfsm_23 = 23;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -220,6 +253,46 @@ module test;
           zfsm <= zfsm_13;
         end
         zfsm_13: begin
+          rz <= 0;
+          zfsm <= zfsm_14;
+        end
+        zfsm_14: begin
+          rz <= 0;
+          zfsm <= zfsm_15;
+        end
+        zfsm_15: begin
+          rz <= 0;
+          zfsm <= zfsm_16;
+        end
+        zfsm_16: begin
+          rz <= 0;
+          zfsm <= zfsm_17;
+        end
+        zfsm_17: begin
+          rz <= 0;
+          zfsm <= zfsm_18;
+        end
+        zfsm_18: begin
+          rz <= 0;
+          zfsm <= zfsm_19;
+        end
+        zfsm_19: begin
+          rz <= 0;
+          zfsm <= zfsm_20;
+        end
+        zfsm_20: begin
+          rz <= 0;
+          zfsm <= zfsm_21;
+        end
+        zfsm_21: begin
+          rz <= 0;
+          zfsm <= zfsm_22;
+        end
+        zfsm_22: begin
+          rz <= 0;
+          zfsm <= zfsm_23;
+        end
+        zfsm_23: begin
           zfsm <= zfsm_2;
         end
       endcase
@@ -229,19 +302,22 @@ module test;
 
   always @(posedge CLK) begin
     if(reset_done) begin
-      if(vx && rx) begin
+      if((vx && rx)) begin
         $display("x=%d", x);
       end 
-      if(vy && ry) begin
+      if((vy && ry)) begin
         $display("y=%d", y);
       end 
-      if(vz && rz) begin
+      if((vz && rz)) begin
         $display("z=%d", z);
       end 
     end 
   end
 
+
 endmodule
+
+
 
 module blinkled
 (
@@ -250,26 +326,35 @@ module blinkled
   input [32-1:0] x,
   input vx,
   output rx,
-  input [32-1:0] y,
-  input vy,
-  output ry,
+  output [32-1:0] y,
+  output vy,
+  input ry,
   output [32-1:0] z,
   output vz,
   input rz
 );
 
   assign rx = (_pipe_ready_0 || (!_pipe_valid_0));
-  assign ry = (_pipe_ready_0 || (!_pipe_valid_0));
   reg [32-1:0] _pipe_data_0;
   reg _pipe_valid_0;
   wire _pipe_ready_0;
-  assign _pipe_ready_0 = (_pipe_ready_1 || (!_pipe_valid_1));
+  assign _pipe_ready_0 = ((_pipe_ready_1 || (!_pipe_valid_1)) && (_pipe_ready_2 || (!_pipe_valid_2)));
   reg [32-1:0] _pipe_data_1;
   reg _pipe_valid_1;
   wire _pipe_ready_1;
-  assign _pipe_ready_1 = rz;
-  assign z = _pipe_data_1;
-  assign vz = _pipe_valid_1;
+  assign _pipe_ready_1 = (_pipe_ready_3 || (!_pipe_valid_3));
+  reg [32-1:0] _pipe_data_2;
+  reg _pipe_valid_2;
+  wire _pipe_ready_2;
+  assign _pipe_ready_2 = ry;
+  assign y = _pipe_data_2;
+  assign vy = _pipe_valid_2;
+  reg [32-1:0] _pipe_data_3;
+  reg _pipe_valid_3;
+  wire _pipe_ready_3;
+  assign _pipe_ready_3 = rz;
+  assign z = _pipe_data_3;
+  assign vz = _pipe_valid_3;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -277,18 +362,34 @@ module blinkled
       _pipe_valid_0 <= 0;
       _pipe_data_1 <= 0;
       _pipe_valid_1 <= 0;
+      _pipe_data_2 <= 0;
+      _pipe_valid_2 <= 0;
+      _pipe_data_3 <= 0;
+      _pipe_valid_3 <= 0;
     end else begin
-      if((((vx && rx) && (vy && ry)) && (_pipe_ready_0 || (!_pipe_valid_0)))) begin
-        _pipe_data_0 <= (x + y);
+      if(((vx && rx) && (_pipe_ready_0 || (!_pipe_valid_0)))) begin
+        _pipe_data_0 <= (x + 1);
       end 
       if((_pipe_ready_0 || (!_pipe_valid_0))) begin
-        _pipe_valid_0 <= ((vx && rx) && (vy && ry));
+        _pipe_valid_0 <= (vx && rx);
       end 
       if(((_pipe_valid_0 && _pipe_ready_0) && (_pipe_ready_1 || (!_pipe_valid_1)))) begin
-        _pipe_data_1 <= _pipe_data_0;
+        _pipe_data_1 <= (_pipe_data_0 + 1);
       end 
       if((_pipe_ready_1 || (!_pipe_valid_1))) begin
         _pipe_valid_1 <= (_pipe_valid_0 && _pipe_ready_0);
+      end 
+      if(((_pipe_valid_0 && _pipe_ready_0) && (_pipe_ready_2 || (!_pipe_valid_2)))) begin
+        _pipe_data_2 <= _pipe_data_0;
+      end 
+      if((_pipe_ready_2 || (!_pipe_valid_2))) begin
+        _pipe_valid_2 <= (_pipe_valid_0 && _pipe_ready_0);
+      end 
+      if(((_pipe_valid_1 && _pipe_ready_1) && (_pipe_ready_3 || (!_pipe_valid_3)))) begin
+        _pipe_data_3 <= _pipe_data_1;
+      end 
+      if((_pipe_ready_3 || (!_pipe_valid_3))) begin
+        _pipe_valid_3 <= (_pipe_valid_1 && _pipe_ready_1);
       end 
     end
   end

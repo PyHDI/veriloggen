@@ -93,8 +93,6 @@ module test;
 
 endmodule
 
-
-
 module blinkled
 (
   input CLK,
@@ -107,26 +105,28 @@ module blinkled
   wire [32-1:0] sum;
   reg [32-1:0] count;
   reg [32-1:0] _pipe_data_0;
-  assign sum = _pipe_data_0;
+  reg [32-1:0] _pipe_data_1;
+  assign sum = _pipe_data_1;
   assign y = sum;
 
   always @(posedge CLK) begin
     if(RST) begin
       _pipe_data_0 <= 0;
+      _pipe_data_1 <= 0;
     end else begin
       _pipe_data_0 <= (x + sum);
+      _pipe_data_1 <= _pipe_data_0;
       if(prst) begin
         _pipe_data_0 <= 0;
       end 
     end
   end
 
-
   always @(posedge CLK) begin
     if(RST) begin
       count <= 0;
     end else begin
-      count <= count + 1;
+      count <= (count + 1);
       if(count == 1023) begin
         count <= 0;
       end 

@@ -17,9 +17,8 @@ def mkLed():
     pipe = lib.Pipeline(m, 'pipe')
     
     px = pipe.input(x, valid=vx, ready=rx)
-    t0 = pipe(px.prev(1) + px.prev(2))
-    py = pipe(t0 + px)
-    py.output(y, valid=vy, ready=ry)
+    dummy = pipe(px)
+    px.output(y, valid=vy, ready=ry)
     
     pipe.make_always(clk, rst)
 

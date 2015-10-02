@@ -91,7 +91,7 @@ module blinkled
   input CLK,
   input RST,
   input [32-1:0] x,
-  output reg [32-1:0] y
+  output [32-1:0] y
 );
 
   reg [32-1:0] _pipe_data_0;
@@ -99,6 +99,8 @@ module blinkled
   reg [32-1:0] _pipe_data_2;
   reg [32-1:0] _pipe_data_3;
   reg [32-1:0] _pipe_data_4;
+  reg [32-1:0] _pipe_data_5;
+  assign y = _pipe_data_5;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -107,14 +109,14 @@ module blinkled
       _pipe_data_2 <= 0;
       _pipe_data_3 <= 0;
       _pipe_data_4 <= 0;
-      y <= 0;
+      _pipe_data_5 <= 0;
     end else begin
       _pipe_data_0 <= x;
       _pipe_data_1 <= _pipe_data_0;
       _pipe_data_2 <= (_pipe_data_0 + _pipe_data_1);
       _pipe_data_3 <= x;
       _pipe_data_4 <= (_pipe_data_2 + _pipe_data_3);
-      y <= _pipe_data_4;
+      _pipe_data_5 <= _pipe_data_4;
     end
   end
 

@@ -106,14 +106,15 @@ class Pipeline(vtypes.VeriloggenNode):
 
         # ready
         if tmp_ready is not None:
+            ordy = vtypes.OrList(tmp_ready, vtypes.Not(tmp_valid))
             for r in ready:
                 if not r: continue
-                if len(r.subst) > 1:
-                    raise ValueError("Ready signal is already assigned externally.")
-                if r.subst:
-                    r.subst[0].right = vtypes.AndList(r.subst[0].right, ordy)
-                else:
+                if len(r.subst) == 0:
                     self.m.Assign( r(ordy) )
+                elif isinstance(r.subst[0].right, vtypes.Int) and (r.subst[0].right.value==1):
+                    r.subst[0].overwrite_right( ordy )
+                else:
+                    r.subst[0].overwrite_right( vtypes.AndList(r.subst[0].right, ordy ) )
         
         return tmp_data, tmp_valid, tmp_ready
     
@@ -195,8 +196,14 @@ class Pipeline(vtypes.VeriloggenNode):
             self.m.Assign( next_valid(next_valid_cond) )
             
         # ready
-        if ready is not None:
-            self.m.Assign( ready(tmp_ready) )
+        if tmp_ready is not None:
+            ordy = vtypes.OrList(tmp_ready, vtypes.Not(tmp_valid))
+            if len(ready.subst) == 0:
+                self.m.Assign( ready(ordy) )
+            elif isinstance(ready.subst[0].right, vtypes.Int) and (ready.subst[0].right.value == 1):
+                ready.subst[0].overwrite_right( ordy )
+            else:
+                ready.subst[0].overwrite_right( vtypes.AndList(ready.subst[0].right, ordy ) )
         
         return tmp_data, next_valid, tmp_ready
     
@@ -233,6 +240,9 @@ class _PipelineVariable(_PipelineNumeric):
         self.valid = valid
         self.ready = ready
         self.prev_dict = {}
+        if self.ready is not None:
+            ready = vtypes.Int(1)
+            self.pipe.m.Assign( self.ready(ready) )
         
     def prev(self, index, initval=0):
         if index == 0:
@@ -253,31 +263,40 @@ class _PipelineVariable(_PipelineNumeric):
             
             tmp_data, tmp_valid, tmp_ready = self.pipe.make_prev(p.data, p.valid, p.ready,
                                                                  self.valid, width, initval)
-            p = _PipelineVariable(self, p.stage_id, tmp_data, tmp_valid, tmp_ready)
+            p = _PipelineVariable(self.pipe, p.stage_id, tmp_data, tmp_valid, tmp_ready)
             self.pipe.vars.append(p)
             self.prev_dict[i+1] = p
             
         return p
         
     def output(self, data, valid=None, ready=None):
-        if isinstance(data, vtypes.Reg):
-            self.pipe.par.add( data(self.data) )
+        # Inserting output stage register
+        ovar = self.pipe(self)
+        
+        if not isinstance(data, (vtypes.Wire, vtypes.Output)):
+            raise TypeError('Data signal must be Wire, not %s' % str(type(data)))
         else:
-            self.pipe.m.Assign( data(self.data) )
+            ovar.pipe.m.Assign( data(ovar.data) )
 
-        my_valid = vtypes.Int(1) if self.valid is None else self.valid 
+        my_valid = vtypes.Int(1) if ovar.valid is None else ovar.valid 
         if valid is None:
             pass
-        elif isinstance(valid, vtypes.Reg):
-            self.pipe.par.add( valid(my_valid) )
+        elif not isinstance(valid, (vtypes.Wire, vtypes.Output)):
+            raise TypeError('Valid signal must be Wire, not %s' % str(type(valid)))
         else:
-            self.pipe.m.Assign( valid(my_valid) )
+            ovar.pipe.m.Assign( valid(my_valid) )
 
         if not ready:
             ready = vtypes.Int(1)
 
-        if self.ready is not None:
-            self.pipe.m.Assign( self.ready(ready) )
+        if ovar.ready is not None:
+            prev_subst = ovar.ready.get_subst()
+            if len(prev_subst) == 0:
+                ovar.pipe.m.Assign( ovar.ready(ready) )
+            elif isinstance(prev_subst[0].right, vtypes.Int) and (prev_subst[0].right.value==1):
+                ovar.ready.subst[0].overwrite_right( ready )
+            else:
+                ovar.ready.subst[0].overwrite_right( vtypes.AndList(prev_subst[0].right, ready) )
 
     def reset(self, cond, initval=0):
         self.pipe.par.add( self.data(initval), cond=cond )

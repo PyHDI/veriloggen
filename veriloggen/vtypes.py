@@ -213,7 +213,12 @@ class Reg(_Variable):
     def dec(self):
         return self.sub(1)
     
-class Wire(_Variable): pass
+class Wire(_Variable):
+    def add_subst(self, s):
+        if len(self.subst) > 0:
+            raise ValueError('Wire %s is already assigned.' % self.name)
+        self.subst.append(s)
+    
 class Integer(_Variable):
     def reset(self):
         if self.initval is None:
@@ -697,6 +702,9 @@ class Subst(VeriloggenNode):
         self.rdelay = rdelay
         self.left.add_subst(self)
 
+    def overwrite_right(self, right):
+        self.right = right
+        
     def __str__(self):
         return ''.join([str(self.left), ' <- ', str(self.right)])
 

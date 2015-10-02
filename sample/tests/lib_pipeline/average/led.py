@@ -8,7 +8,7 @@ def mkLed():
     clk = m.Input('CLK')
     rst = m.Input('RST')
     x = m.Input('x', 32)
-    y = m.OutputReg('y', 32, initval=0)
+    y = m.Output('y', 32)
     
     pipe = lib.Pipeline(m, 'pipe')
     

@@ -9,8 +9,8 @@ def mkLed():
     rst = m.Input('RST')
     x = m.Input('x', 32)
     vx = m.Input('vx')
-    y = m.OutputReg('y', 32, initval=0)
-    vy = m.OutputReg('vy', initval=0)
+    y = m.Output('y', 32)
+    vy = m.Output('vy')
     
     pipe = lib.Pipeline(m, 'pipe')
     
