@@ -215,8 +215,10 @@ class FSM(vtypes.VeriloggenNode):
         ret = collections.OrderedDict()
         
         for v in reset:
+            if not isinstance(v, vtypes.Subst):
+                raise TypeError('make_reset requires Subst, not %s' % str(type(v)))
             key = str(v.left)
-            if v is not None and key not in ret:
+            if key not in ret:
                 ret[key] = v
             
         v = self.reset_visitor.visit(self.state)
@@ -226,19 +228,23 @@ class FSM(vtypes.VeriloggenNode):
             
         for dst in self.delayed_state.values():
             v = self.reset_visitor.visit(dst)
+            if v is None: continue
             key = str(v.left)
-            if v is not None and key not in ret:
+            if key not in ret:
                 ret[key] = v
 
         for dst in self.dst_var.values():
             v = self.reset_visitor.visit(dst)
+            if v is None: continue
             key = str(v.left)
-            if v is not None and key not in ret:
+            if key not in ret:
                 ret[key] = v
 
         for v in self.par.make_reset():
+            if not isinstance(v, vtypes.Subst):
+                raise TypeError('make_reset requires Subst, not %s' % str(type(v)))
             key = str(v.left)
-            if v is not None and key not in ret:
+            if key not in ret:
                 ret[key] = v
             
         return list(ret.values())

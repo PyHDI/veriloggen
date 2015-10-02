@@ -69,8 +69,11 @@ def mkTest(numports=8):
     uut = m.Instance(led, 'uut',
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
+    
+    reset_done = m.Reg('reset_done', initval=0)
 
     reset_stmt = []
+    reset_stmt.append( reset_done(0) )
     reset_stmt.append( x(0) )
     reset_stmt.append( y(0) )
     reset_stmt.append( vx(0) )
@@ -86,49 +89,84 @@ def mkTest(numports=8):
     
     init.add(
         Delay(1000),
+        reset_done(1),
         nclk(clk),
         Delay(10000),
         Systask('finish'),
     )
     
-    m.Initial(
-        Delay(2000),
-        nclk(clk),
-        [( nclk(clk), Delay(3), rz(vx),
-            nclk(clk), nclk(clk),
-            nclk(clk), Delay(3), rz(0),
-            nclk(clk), nclk(clk))
-         for _ in range(20) ],
-        rz(1),
-    )
-        
-    m.Initial(
-        Delay(2000),
-        nclk(clk),
-        [( nclk(clk), Delay(3), ra(vx),
-            nclk(clk), nclk(clk), nclk(clk), nclk(clk),
-            nclk(clk), Delay(3), ra(0),
-            nclk(clk), nclk(clk), nclk(clk), nclk(clk))
-         for _ in range(20) ],
-        ra(1),
-    )
     
-    m.Initial(
-        Delay(1000),
-        nclk(clk),
-        vx(1),
-        [ (While(Not(rx))(nclk(clk)), x(x + 1), nclk(clk)) for _ in range(10) ],
-        nclk(clk),
-        vx(0),
-    )
+    x_count = m.TmpReg(32, initval=0)
+    y_count = m.TmpReg(32, initval=0)
+    z_count = m.TmpReg(32, initval=0)
+    a_count = m.TmpReg(32, initval=0)
+
     
-    m.Initial(
-        Delay(1000),
-        nclk(clk),
-        vy(1),
-        [ (While(Not(ry))(nclk(clk)), y(y + 2), nclk(clk)) for _ in range(10) ],
-        nclk(clk),
-        vy(0),
+    xfsm = lib.FSM(m, 'xfsm')
+    xfsm.add(vx(0))
+    xfsm.goto_next(cond=reset_done)
+    xfsm.add(vx(1))
+    xfsm.add(x.inc(), cond=rx)
+    xfsm.add(x_count.inc(), cond=rx)
+    xfsm.goto_next(cond=AndList(x_count==10, rx))
+    xfsm.add(vx(0))
+    xfsm.make_always(clk, rst)
+    
+    
+    yfsm = lib.FSM(m, 'yfsm')
+    yfsm.add(vy(0))
+    yfsm.goto_next(cond=reset_done)
+    yfsm.add(vy(1))
+    yfsm.add(y.add(2), cond=ry)
+    yfsm.add(y_count.inc(), cond=ry)
+    yfsm.goto_next(cond=AndList(y_count==10, ry))
+    yfsm.add(vy(0))
+    yfsm.make_always(clk, rst)
+
+    
+    zfsm = lib.FSM(m, 'zfsm')
+    zfsm.add(rz(0))
+    zfsm.goto_next(cond=reset_done)
+    zfsm.goto_next()
+    zinit= zfsm.current()
+    zfsm.add(rz(1), cond=vz)
+    zfsm.goto_next(cond=vz)
+    for i in range(10):
+        zfsm.add(rz(0))
+        zfsm.goto_next()
+    zfsm.goto(zinit)
+    zfsm.make_always(clk, rst)
+
+
+    afsm = lib.FSM(m, 'afsm')
+    afsm.add(ra(0))
+    afsm.goto_next(cond=reset_done)
+    afsm.goto_next()
+    ainit= afsm.current()
+    afsm.add(ra(1), cond=va)
+    afsm.goto_next(cond=va)
+    for i in range(20):
+        afsm.add(ra(0))
+        afsm.goto_next()
+    afsm.goto(ainit)
+    afsm.make_always(clk, rst)
+
+
+    m.Always(Posedge(clk))(
+        If(reset_done)(
+            If(AndList(vx, rx))(
+                Systask('display', 'x=%d', x)
+            ),
+            If(AndList(vy, ry))(
+                Systask('display', 'y=%d', y)
+            ),
+            If(AndList(vz, rz))(
+                Systask('display', 'z=%d', z)
+            ),
+            If(AndList(va, ra))(
+                Systask('display', 'a=%d', a)
+            )
+        )
     )
     
     return m

@@ -44,7 +44,10 @@ def mkTest(numports=8):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
+    reset_done = m.Reg('reset_done', initval=0)
+    
     reset_stmt = []
+    reset_stmt.append( reset_done(0) )
     reset_stmt.append( x(0) )
     reset_stmt.append( vx(0) )
     
@@ -56,15 +59,37 @@ def mkTest(numports=8):
     
     init.add(
         Delay(1000),
+        reset_done(1),
         nclk(clk),
-        
-        [ ( x(i), vx(1), nclk(clk), [ (vx(0), nclk(clk)) for _ in range(3)] ) for i in range(10) ],
-        vx(0),
-        [ nclk(clk) for _ in range(10) ],
-        
+        Delay(10000),
         Systask('finish'),
     )
 
+
+    x_count = m.TmpReg(32, initval=0)
+    
+    xfsm = lib.FSM(m, 'xfsm')
+    xfsm.add(vx(0))
+    xfsm.goto_next(cond=reset_done)
+    xfsm.add(vx(1))
+    xfsm.add(x.inc())
+    xfsm.add(x_count.inc())
+    xfsm.goto_next(cond=x_count==10)
+    xfsm.add(vx(0))
+    xfsm.make_always(clk, rst)
+
+    
+    m.Always(Posedge(clk))(
+        If(reset_done)(
+            If(vx)(
+                Systask('display', 'x=%d', x)
+            ),
+            If(vy)(
+                Systask('display', 'y=%d', y)
+            )
+        )
+    )
+    
     return m
     
 if __name__ == '__main__':

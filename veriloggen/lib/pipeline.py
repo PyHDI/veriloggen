@@ -24,6 +24,9 @@ class Pipeline(vtypes.VeriloggenNode):
 
     #---------------------------------------------------------------------------
     def input(self, data, valid=None, ready=None, width=None):
+        if ready is not None and not isinstance(ready, (vtypes.Wire, vtypes.Output)):
+            raise TypeError('ready port of PipelineVariable must be Wire., not %s' %
+                            str(type(ready)))
         ret = _PipelineVariable(self, 0, data, valid, ready)
         self.vars.append(ret)
         return ret
@@ -63,36 +66,40 @@ class Pipeline(vtypes.VeriloggenNode):
             tmp_ready = self.add_wire('ready', self.tmp_count)
         else:
             tmp_ready = None
-            
+
         self.tmp_count += 1
 
         # data
-        data_valid_vars = []
+        data_cond_vars = []
         if valid is not None:
-            data_valid_vars.append(valid)
+            data_cond_vars.append(valid)
         if tmp_ready is not None:
-            data_valid_vars.append(tmp_ready)
+            if tmp_valid is not None:
+                data_cond_vars.append(vtypes.OrList(tmp_ready, vtypes.Not(tmp_valid)))
+            else:
+                data_cond_vars.append(tmp_ready)
 
-        if len(data_valid_vars) == 0:
+        if len(data_cond_vars) == 0:
             data_cond = None
-        elif len(data_valid_vars) == 1:
-            data_cond = data_valid_vars[0]
+        elif len(data_cond_vars) == 1:
+            data_cond = data_cond_vars[0]
         else:
-            data_cond = vtypes.AndList(*data_valid_vars)
+            data_cond = vtypes.AndList(*data_cond_vars)
 
         self.par.add( tmp_data(data), cond=data_cond )
             
         # valid
-        valid_valid_vars = []
+        valid_cond_vars = []
         if tmp_ready is not None:
-            valid_valid_vars.append( tmp_ready )
+            ordy = vtypes.OrList(tmp_ready, vtypes.Not(tmp_valid))
+            valid_cond_vars.append(ordy)
 
-        if len(valid_valid_vars) == 0:
+        if len(valid_cond_vars) == 0:
             valid_cond = None
-        elif len(valid_valid_vars) == 1:
-            valid_cond = valid_valid_vars[0]
+        elif len(valid_cond_vars) == 1:
+            valid_cond = valid_cond_vars[0]
         else:
-            valid_cond = vtypes.AndList(*valid_valid_vars)
+            valid_cond = vtypes.AndList(*valid_cond_vars)
 
         if tmp_valid is not None:
             self.par.add( tmp_valid(valid), cond=valid_cond )
@@ -104,9 +111,9 @@ class Pipeline(vtypes.VeriloggenNode):
                 if len(r.subst) > 1:
                     raise ValueError("Ready signal is already assigned externally.")
                 if r.subst:
-                    r.subst[0].right = vtypes.AndList(r.subst[0].right, tmp_ready)
+                    r.subst[0].right = vtypes.AndList(r.subst[0].right, ordy)
                 else:
-                    self.m.Assign( r(tmp_ready) )
+                    self.m.Assign( r(ordy) )
         
         return tmp_data, tmp_valid, tmp_ready
     
@@ -132,52 +139,57 @@ class Pipeline(vtypes.VeriloggenNode):
         self.tmp_count += 1
 
         # data
-        data_valid_vars = []
+        data_cond_vars = []
         if valid is not None:
-            data_valid_vars.append(valid)
+            data_cond_vars.append(valid)
         if tmp_ready is not None:
-            data_valid_vars.append(tmp_ready)
+            if tmp_valid is not None:
+                data_cond_vars.append(vtypes.OrList(tmp_ready, vtypes.Not(tmp_valid)))
+            else:
+                data_cond_vars.append(tmp_ready)
 
-        if len(data_valid_vars) == 0:
+        if len(data_cond_vars) == 0:
             data_cond = None
-        elif len(data_valid_vars) == 1:
-            data_cond = data_valid_vars[0]
+        elif len(data_cond_vars) == 1:
+            data_cond = data_cond_vars[0]
         else:
-            data_cond = vtypes.AndList(*data_valid_vars)
+            data_cond = vtypes.AndList(*data_cond_vars)
         
         self.par.add( tmp_data(data), cond=data_cond )
 
         # valid
-        valid_valid_vars = []
+        valid_cond_vars = []
         if valid is not None:
-            valid_valid_vars.append(valid)
+            valid_cond_vars.append(valid)
         if tmp_ready is not None:
-            valid_valid_vars.append(tmp_ready)
+            ordy = vtypes.OrList(tmp_ready, vtypes.Not(tmp_valid))
+            valid_cond_vars.append(ordy)
 
-        if len(valid_valid_vars) == 0:
+        if len(valid_cond_vars) == 0:
             valid_cond = None
-        elif len(valid_valid_vars) == 1:
-            valid_cond = valid_valid_vars[0]
+        elif len(valid_cond_vars) == 1:
+            valid_cond = valid_cond_vars[0]
         else:
-            valid_cond = vtypes.AndList(*valid_valid_vars)
+            valid_cond = vtypes.AndList(*valid_cond_vars)
         
         if tmp_valid is not None:
             self.par.add( tmp_valid(valid), cond=valid_cond )
 
-        next_valid_valid_vars = []
+        # next_valid
+        next_valid_cond_vars = []
         if root_valid is not None:
-            next_valid_valid_vars.append(root_valid)
+            next_valid_cond_vars.append(root_valid)
         if tmp_valid is not None:
-            next_valid_valid_vars.append(tmp_valid)
+            next_valid_cond_vars.append(tmp_valid)
         if tmp_ready is not None:
-            next_valid_valid_vars.append(tmp_ready)
+            next_valid_cond_vars.append(tmp_ready)
             
-        if len(next_valid_valid_vars) == 0:
+        if len(next_valid_cond_vars) == 0:
             next_valid_cond = None
-        elif len(next_valid_valid_vars) == 1:
-            next_valid_cond = next_valid_valid_vars[0]
+        elif len(next_valid_cond_vars) == 1:
+            next_valid_cond = next_valid_cond_vars[0]
         else:
-            next_valid_cond = vtypes.AndList(*next_valid_valid_vars)
+            next_valid_cond = vtypes.AndList(*next_valid_cond_vars)
         
         if next_valid is not None:
             self.m.Assign( next_valid(next_valid_cond) )
@@ -328,7 +340,7 @@ class DataVisitor(_PipelineVisitor):
     def __init__(self, pipe):
         self.pipe = pipe
 
-    def make_valid(self, lvalid, rvalid):
+    def pack_valid(self, lvalid, rvalid):
         if rvalid is not None and lvalid is not None:
             return vtypes.AndList(lvalid, rvalid)
         elif rvalid is None and lvalid is None:
@@ -339,12 +351,24 @@ class DataVisitor(_PipelineVisitor):
             return rvalid
         return None
 
-    def make_ready(self, lready, rready):
+    def pack_ready(self, lready, rready):
         return lready + rready
+
+    def make_valid(self, valid, ready):
+        if ready is not None and valid is not None:
+            next_valid = vtypes.AndList(valid, ready)
+        elif ready is not None:
+            next_valid = ready
+        elif valid is not None:
+            next_valid = valid
+        else:
+            next_valid = None
+        return next_valid
     
     def visit__PipelineVariable(self, node):
         ready = [] if node.ready is None else [ node.ready ]
-        return (node.stage_id, node.data, node.valid, ready )
+        valid = self.make_valid(node.valid, node.ready)
+        return (node.stage_id, node.data, valid, ready )
 
     def visit__Variable(self, node):
         return (None, node, None, [])
@@ -359,8 +383,8 @@ class DataVisitor(_PipelineVisitor):
         cls = type(node)
         data = cls(ldata, rdata)
         
-        valid = self.make_valid(lvalid, rvalid)
-        ready = self.make_ready(lready, rready)
+        valid = self.pack_valid(lvalid, rvalid)
+        ready = self.pack_ready(lready, rready)
         
         if rstage is None and lstage is None:
             return (None, data, valid, ready)
@@ -376,9 +400,9 @@ class DataVisitor(_PipelineVisitor):
                 width = rdata.bit_length()
                 p = self.pipe.stage(p, width=width)
             data = cls(ldata, p.data)
-            valid = self.make_valid(lvalid, p.valid)
+            valid = self.pack_valid(lvalid, p.valid)
             rready = [] if p.ready is None else [ p.ready ]
-            ready = self.make_ready(lready, rready)
+            ready = self.pack_ready(lready, rready)
             return (max(lstage, rstage), data, valid, ready)
 
         if lstage < rstage:
@@ -388,9 +412,9 @@ class DataVisitor(_PipelineVisitor):
                 width = ldata.bit_length()
                 p = self.pipe.stage(p, width=width)
             data = cls(p.data, rdata)
-            valid = self.make_valid(p.valid, rvalid)
+            valid = self.pack_valid(p.valid, rvalid)
             lready = [] if p.ready is None else [ p.ready ]
-            ready = self.make_ready(lready, rready)
+            ready = self.pack_ready(lready, rready)
             return (max(lstage, rstage), data, valid, ready)
 
         return (max(lstage, rstage), data, valid, ready)
