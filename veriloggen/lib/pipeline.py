@@ -8,9 +8,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import vtypes
 import lib.parallel
 
-def to_pipeline_node():
-    pass
-
 class Pipeline(vtypes.VeriloggenNode):
     """ Pipeline Generator """
     def __init__(self, m, name, width=32):
@@ -32,7 +29,8 @@ class Pipeline(vtypes.VeriloggenNode):
         return ret
         
     #---------------------------------------------------------------------------
-    def stage(self, data, width=None, initval=0):
+    # self.__call__() calls this method
+    def stage(self, data, initval=0, width=None):
         if width is None: width = self.width
         stage_id, raw_data, raw_valid, raw_ready = self.data_visitor.visit(data)
         tmp_data, tmp_valid, tmp_ready = self.make_tmp(raw_data, raw_valid, raw_ready,
@@ -42,6 +40,54 @@ class Pipeline(vtypes.VeriloggenNode):
         self.vars.append(ret)
         return ret
 
+    #---------------------------------------------------------------------------
+    # Accumulator 
+    def acc_and(self, data, initval=0, resetcond=None, width=None):
+        return self.accumulate([vtypes.And], data, width, initval, resetcond)
+
+    def acc_nand(self, data, initval=0, resetcond=None, width=None):
+        return self.accumulate([vtypes.And, vtypes.Unot], data, width, initval, resetcond)
+
+    def acc_or(self, data, initval=0, resetcond=None, width=None):
+        return self.accumulate([vtypes.Or], data, width, initval, resetcond)
+
+    def acc_xor(self, data, initval=0, resetcond=None, width=None):
+        return self.accumulate([vtypes.Xor], data, width, initval, resetcond)
+
+    def acc_xnor(self, data, initval=0, resetcond=None, width=None):
+        return self.accumulate([vtypes.Xor, vtypes.Unot], data, width, initval, resetcond)
+
+    def acc_nor(self, data, initval=0, resetcond=None, width=None):
+        return self.accumulate([vtypes.Or, vtypes.Unot], data, width, initval, resetcond)
+
+    def acc_add(self, data, initval=0, resetcond=None, width=None):
+        return self.accumulate([vtypes.Plus], data, width, initval, resetcond)
+
+    def acc_sub(self, data, initval=0, resetcond=None, width=None):
+        return self.accumulate([vtypes.Minus], data, width, initval, resetcond)
+
+    def acc_mul(self, data, initval=0, resetcond=None, width=None):
+        return self.accumulate([vtypes.Times], data, width, initval, resetcond)
+
+    def acc_div(self, data, initval=0, resetcond=None, width=None):
+        return self.accumulate([vtypes.Divide], data, width, initval, resetcond)
+
+    def acc_mod(self, data, initval=0, resetcond=None, width=None):
+        return self.accumulate([vtypes.Mod], data, width, initval, resetcond)
+    
+    #---------------------------------------------------------------------------
+    def accumulate(self, ops, data, width=None, initval=0, resetcond=None):
+        if width is None: width = self.width
+        stage_id, raw_data, raw_valid, raw_ready = self.data_visitor.visit(data)
+        tmp_data, tmp_valid, tmp_ready = self.make_tmp(raw_data, raw_valid, raw_ready,
+                                                       width, initval, acc_ops=ops)
+        next_stage_id = stage_id + 1 if stage_id is not None else None
+        ret = _PipelineVariable(self, next_stage_id, tmp_data, tmp_valid, tmp_ready)
+        if resetcond is not None:
+            ret.reset(resetcond, initval)
+        self.vars.append(ret)
+        return ret
+    
     #---------------------------------------------------------------------------
     def add_reg(self, prefix, count, width=None, initval=0):
         tmp_name = '_'.join(['', self.name, prefix, str(count)])
@@ -54,7 +100,7 @@ class Pipeline(vtypes.VeriloggenNode):
         return tmp
         
     #---------------------------------------------------------------------------
-    def make_tmp(self, data, valid, ready, width=None, initval=0):
+    def make_tmp(self, data, valid, ready, width=None, initval=0, acc_ops=()):
         tmp_data = self.add_reg('data', self.tmp_count, width=width, initval=initval)
         
         if valid is not None:
@@ -86,6 +132,13 @@ class Pipeline(vtypes.VeriloggenNode):
         else:
             data_cond = vtypes.AndList(*data_cond_vars)
 
+        # Accumulator
+        for op in acc_ops:
+            if issubclass(op, vtypes._BinaryOperator):
+                data = op(tmp_data, data)
+            elif issubclass(op, vtypes._UnaryOperator):
+                data = op(data)
+            
         self.par.add( tmp_data(data), cond=data_cond )
             
         # valid
@@ -226,8 +279,8 @@ class Pipeline(vtypes.VeriloggenNode):
                 self.make_code()
             ))
         
-    def __call__(self, data, width=None, initval=0):
-        return self.stage(data, width, initval)
+    def __call__(self, data, initval=0, width=None):
+        return self.stage(data, initval=initval, width=width)
     
 #-------------------------------------------------------------------------------
 class _PipelineNumeric(vtypes._Numeric): pass
@@ -243,7 +296,7 @@ class _PipelineVariable(_PipelineNumeric):
         if self.ready is not None:
             ready = vtypes.Int(1)
             self.pipe.m.Assign( self.ready(ready) )
-        
+
     def prev(self, index, initval=0):
         if index == 0:
             return self
