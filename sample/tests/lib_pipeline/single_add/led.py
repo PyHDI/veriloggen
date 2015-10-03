@@ -67,6 +67,9 @@ def mkTest(numports=8):
     xfsm.add(x.inc())
     xfsm.add(x_count.inc())
     xfsm.goto_next(cond=x_count==10)
+    xfsm.add(x(0))
+    for i in range(5):
+        xfsm.goto_next()
     xfsm.add( Systask('finish') )
     
     xfsm.make_always(clk, rst)

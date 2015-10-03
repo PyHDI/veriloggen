@@ -51,6 +51,11 @@ module test;
   localparam xfsm_init = 0;
   localparam xfsm_1 = 1;
   localparam xfsm_2 = 2;
+  localparam xfsm_3 = 3;
+  localparam xfsm_4 = 4;
+  localparam xfsm_5 = 5;
+  localparam xfsm_6 = 6;
+  localparam xfsm_7 = 7;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -71,6 +76,22 @@ module test;
           end 
         end
         xfsm_2: begin
+          x <= 0;
+          xfsm <= xfsm_3;
+        end
+        xfsm_3: begin
+          xfsm <= xfsm_4;
+        end
+        xfsm_4: begin
+          xfsm <= xfsm_5;
+        end
+        xfsm_5: begin
+          xfsm <= xfsm_6;
+        end
+        xfsm_6: begin
+          xfsm <= xfsm_7;
+        end
+        xfsm_7: begin
           $finish;
         end
       endcase
