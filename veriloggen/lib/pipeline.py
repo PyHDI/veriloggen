@@ -2,7 +2,7 @@ from __future__ import absolute_import
 import os
 import sys
 import collections
-import functools
+from functools import reduce
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import vtypes
@@ -322,9 +322,12 @@ class _PipelineVariable(_PipelineNumeric):
             
         return p
         
-    def output(self, data, valid=None, ready=None):
+    def output(self, data, valid=None, ready=None, nobuf=False):
         # Inserting output stage register
-        ovar = self.pipe(self)
+        if nobuf:
+            ovar = self
+        else:
+            ovar = self.pipe.stage(self)
         
         if not isinstance(data, (vtypes.Wire, vtypes.Output)):
             raise TypeError('Data signal must be Wire, not %s' % str(type(data)))
@@ -385,10 +388,25 @@ class _PipelineVisitor(object):
         
     def visit__BinaryOperator(self, node):
         raise NotImplementedError('visit__BinaryOperator() must be implemented')
-        
+
     def visit__UnaryOperator(self, node):
         raise NotImplementedError('visit__UnaryOperator() must be implemented')        
 
+    def visit_Pointer(self, node):
+        raise NotImplementedError('visit_Pointer() must be implemented')
+    
+    def visit_Slice(self, node):
+        raise NotImplementedError('visit_Slice() must be implemented')
+    
+    def visit_Cat(self, node):
+        raise NotImplementedError('visit_Cat() must be implemented')
+    
+    def visit_Repeat(self, node):
+        raise NotImplementedError('visit_Repeat() must be implemented')
+    
+    def visit_Cond(self, node):
+        raise NotImplementedError('visit_Cond() must be implemented')
+    
     def visit__Variable(self, node):
         raise NotImplementedError('visit__Variable() must be implemented')        
     
@@ -426,6 +444,88 @@ class DataVisitor(_PipelineVisitor):
     def pack_ready(self, lready, rready):
         return lready + rready
 
+    def pack(self, left, right):
+        rstage, rdata, rvalid, rready = self.visit(right)
+        lstage, ldata, lvalid, lready = self.visit(left)
+        
+        data = [ ldata, rdata ]
+        valid = self.pack_valid(lvalid, rvalid)
+        ready = self.pack_ready(lready, rready)
+
+        if rstage is None and lstage is None:
+            return (None, data, valid, ready)
+        if rstage is None:
+            return (lstage, data, valid, ready)
+        if lstage is None:
+            return (rstage, data, valid, ready)
+        
+        if lstage > rstage:
+            diff = lstage - rstage
+            p = right
+            for i in range(diff):
+                width = rdata.bit_length()
+                p = self.pipe.stage(p, width=width)
+            data = [ ldata, p.data ]
+            valid = self.pack_valid(lvalid, p.valid)
+            rready = [] if p.ready is None else [ p.ready ]
+            ready = self.pack_ready(lready, rready)
+            return (max(lstage, rstage), data, valid, ready)
+
+        if lstage < rstage:
+            diff = rstage - lstage
+            p = left
+            for i in range(diff):
+                width = ldata.bit_length()
+                p = self.pipe.stage(p, width=width)
+            data = [ p.data, rdata ]
+            valid = self.pack_valid(p.valid, rvalid)
+            lready = [] if p.ready is None else [ p.ready ]
+            ready = self.pack_ready(lready, rready)
+            return (max(lstage, rstage), data, valid, ready)
+
+        return (max(lstage, rstage), data, valid, ready)
+        
+    def pack_multi(self, *args):
+        rslts = [ self.visit(arg) for arg in args ]
+        all_stage_none = reduce(lambda t,x:t and x is None, [ rslt[0] for rslt in rslts ], True)
+
+        if all_stage_none:
+            data = [ rslt[1] for rslt in rslts ]
+            valid = reduce(self.pack_valid, [ rslt[2] for rslt in rslts ], None)
+            ready = reduce(self.pack_ready, [ rslt[3] for rslt in rslts ], [])
+            return (None, data, valid, ready)
+
+        max_stage = reduce(lambda x,y:
+                           None if x is None and y is None else
+                           x if x is not None and y is None else
+                           y if y is not None and x is None else
+                           max(x, y), [ rslt[0] for rslt in rslts ], None)
+        
+        new_args = []
+        for rslt, arg in zip(rslts, args):
+            stage = rslt[0]
+            if stage is None:
+                new_args.append(arg)
+                continue
+            if stage == max_stage:
+                new_args.append(arg)
+                continue
+            
+            diff = max_stage - stage
+            p = arg
+            for i in range(diff):
+                width = rslt[1].bit_length()
+                p = self.pipe.stage(p, width=width)
+
+            new_args.append(p)
+
+        new_rslts = [ self.visit(arg) for arg in new_args ]
+        data = [ rslt[1] for rslt in new_rslts ]
+        valid = reduce(self.pack_valid, [ rslt[2] for rslt in new_rslts ], None)
+        ready = reduce(self.pack_ready, [ rslt[3] for rslt in new_rslts ], [])
+
+        return (max_stage, data, valid, ready)
+        
     def make_valid(self, valid, ready):
         if ready is not None and valid is not None:
             next_valid = vtypes.AndList(valid, ready)
@@ -447,53 +547,41 @@ class DataVisitor(_PipelineVisitor):
     
     def visit__Constant(self, node):
         return (None, node, None, [])
-    
+
     def visit__BinaryOperator(self, node):
-        rstage, rdata, rvalid, rready = self.visit(node.right)
-        lstage, ldata, lvalid, lready = self.visit(node.left)
-        
+        stage, data, valid, ready = self.pack_multi(node.left, node.right)
         cls = type(node)
-        data = cls(ldata, rdata)
-        
-        valid = self.pack_valid(lvalid, rvalid)
-        ready = self.pack_ready(lready, rready)
-        
-        if rstage is None and lstage is None:
-            return (None, data, valid, ready)
-        if rstage is None:
-            return (lstage, data, valid, ready)
-        if lstage is None:
-            return (rstage, data, valid, ready)
-        
-        if lstage > rstage:
-            diff = lstage - rstage
-            p = node.right
-            for i in range(diff):
-                width = rdata.bit_length()
-                p = self.pipe.stage(p, width=width)
-            data = cls(ldata, p.data)
-            valid = self.pack_valid(lvalid, p.valid)
-            rready = [] if p.ready is None else [ p.ready ]
-            ready = self.pack_ready(lready, rready)
-            return (max(lstage, rstage), data, valid, ready)
-
-        if lstage < rstage:
-            diff = rstage - lstage
-            p = node.left
-            for i in range(diff):
-                width = ldata.bit_length()
-                p = self.pipe.stage(p, width=width)
-            data = cls(p.data, rdata)
-            valid = self.pack_valid(p.valid, rvalid)
-            lready = [] if p.ready is None else [ p.ready ]
-            ready = self.pack_ready(lready, rready)
-            return (max(lstage, rstage), data, valid, ready)
-
-        return (max(lstage, rstage), data, valid, ready)
-        
+        return stage, cls(*data), valid, ready
+    
     def visit__UnaryOperator(self, node):
         return self.visit(node.right)
         
+    def visit_Pointer(self, node):
+        stage, data, valid, ready = self.pack_multi(node.var, node.pos)
+        cls = type(node)
+        return stage, cls(*data), valid, ready
+    
+    def visit_Slice(self, node):
+        stage, data, valid, ready = self.pack_multi(node.var, node.msb, node.lsb)
+        cls = type(node)
+        return stage, cls(*data), valid, ready
+    
+    def visit_Cat(self, node):
+        stage, data, valid, ready = self.pack_multi(*node.vars)
+        cls = type(node)
+        return stage, cls(*data), valid, ready
+    
+    def visit_Repeat(self, node):
+        stage, data, valid, ready = self.pack_multi(node.var, node.times)
+        cls = type(node)
+        return stage, cls(*data), valid, ready
+    
+    def visit_Cond(self, node):
+        stage, data, valid, ready = self.pack_multi(node.condition,
+                                                    node.true_value, node.false_value)
+        cls = type(node)
+        return stage, cls(*data), valid, ready
+    
     def visit_bool(self, node):
         if node: return (None, vtypes.Int(1), None, [])
         return (None, vtypes.Int(0), None, [])
