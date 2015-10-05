@@ -275,11 +275,11 @@ module blinkled
       if((_pipe_ready_3 || (!_pipe_valid_3))) begin
         _pipe_valid_3 <= (vx && rx);
       end 
-      if((((_pipe_valid_2 && _pipe_ready_2) && _pipe_valid_3) && (_pipe_ready_4 || (!_pipe_valid_4)))) begin
+      if((((_pipe_valid_2 && _pipe_ready_2) && (_pipe_valid_3 && _pipe_ready_3)) && (_pipe_ready_4 || (!_pipe_valid_4)))) begin
         _pipe_data_4 <= (_pipe_data_2 + _pipe_data_3);
       end 
       if((_pipe_ready_4 || (!_pipe_valid_4))) begin
-        _pipe_valid_4 <= ((_pipe_valid_2 && _pipe_ready_2) && _pipe_valid_3);
+        _pipe_valid_4 <= ((_pipe_valid_2 && _pipe_ready_2) && (_pipe_valid_3 && _pipe_ready_3));
       end 
       if(((_pipe_valid_4 && _pipe_ready_4) && (_pipe_ready_5 || (!_pipe_valid_5)))) begin
         _pipe_data_5 <= _pipe_data_4;
