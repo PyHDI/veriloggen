@@ -1,4 +1,4 @@
-import led
+import systemtask
 
 expected_verilog = """
 module blinkled #
@@ -36,8 +36,8 @@ endmodule
 """
 
 def test_led():
-    led_module = led.mkLed()
-    led_code = led_module.to_verilog()
+    test_module = systemtask.mkLed()
+    code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
     from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
@@ -46,4 +46,4 @@ def test_led():
     codegen = ASTCodeGenerator()
     expected_code = codegen.visit(expected_ast)
 
-    assert(expected_code == led_code)
+    assert(expected_code == code)

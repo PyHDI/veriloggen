@@ -1,4 +1,4 @@
-import led
+import intz
 
 expected_verilog = """
 module test #
@@ -80,7 +80,7 @@ endmodule
 """
 
 def test_led():
-    test_module = led.mkTest()
+    test_module = intz.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

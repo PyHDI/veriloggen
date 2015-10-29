@@ -14,23 +14,21 @@ def mkLed():
     led = m.OutputReg('LED', width)
     count = m.Reg('count', 32)
 
-    m.Always(Posedge(clk))(
-        If(rst)(
-            count(0)
-        ).Else(
-            If(count == 1023)(
-                count(0)
-            ).Else(
-                count(count + 1)
-            )
-        ))
+    i = m.Integer('i')
     
     m.Always(Posedge(clk))(
         If(rst)(
-            led( Int(0b00000001, width=8, base=2) )
+            count(0),
+            led(1)
         ).Else(
             If(count == 1023)(
-                led( Cat(led[width-2:0], led[width-1]) )
+                count(0),
+                led[0](led[width-1]),
+                For(i(1), i<width, i(i+1))(
+                    led[i](led[i-1])
+                ),
+            ).Else(
+                count(count + 1),
             )
         ))
 
