@@ -20,5 +20,9 @@ setup(name='veriloggen',
       license="Apache License 2.0",
       url='https://github.com/PyHDI/veriloggen',
       packages=find_packages(),
-#      package_data={ 'veriloggen.template' : ['*.*'], },
+#      package_data={ 'path' : ['*.*'], },
+      install_requires=[ 'pyverilog', 'Jinja2' ],
+      extras_require={
+          'test' : [ 'pytest', 'pytest-pythonpath' ],
+      },
 )

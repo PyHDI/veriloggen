@@ -99,9 +99,9 @@ module my_bram #
 endmodule
 """
 
-def test_bram():
-    bram_module = bram.mkTop()
-    bram_code = bram_module.to_verilog()
+def test():
+    test_module = bram.mkTop()
+    test_code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
     from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
@@ -110,4 +110,4 @@ def test_bram():
     codegen = ASTCodeGenerator()
     expected_code = codegen.visit(expected_ast)
 
-    assert(expected_code == bram_code)
+    assert(expected_code == test_code)

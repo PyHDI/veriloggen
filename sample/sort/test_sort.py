@@ -231,7 +231,7 @@ module sort #
 endmodule
 """
 
-def test_sort():
+def test():
     sort_module = sort.mkSimSort()
     sort_code = sort_module.to_verilog()
 

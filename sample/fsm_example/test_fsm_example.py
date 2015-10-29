@@ -1,4 +1,4 @@
-import led
+import fsm_example
 
 expected_verilog = """
 module test;
@@ -302,8 +302,8 @@ module blinkled
 endmodule
 """
 
-def test_led():
-    test_module = led.mkTest()
+def test():
+    test_module = fsm_example.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

@@ -1,8 +1,18 @@
-.PHONY: clean
-clean:
-	rm -rf *.pyc __pycache__ parsetab.py *.out tmp.v uut.vcd
-	find . -maxdepth 1 -type d |grep "./" | xargs -I {} make clean -C {} 
+PYTHON=python3
+#PYTHON=python
+
+.PHONY: all
+all: clean
 
 .PHONY: test
 test:
-	find . -maxdepth 1 -type d |grep "./" | xargs -I {} make test -C {} 
+	$(PYTHON) -m pytest -vv
+
+.PHONY: run
+run:
+	find . -maxdepth 1 -type d |grep "./" | xargs -I {} make run -C {}
+
+.PHONY: clean
+clean:
+	rm -rf *.pyc __pycache__ parsetab.py *.out .cache
+	find . -maxdepth 1 -type d |grep "./" | xargs -I {} make clean -C {}

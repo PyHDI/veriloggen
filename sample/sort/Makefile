@@ -1,5 +1,4 @@
-TARGET=sort.py
-TEST=test_sort.py
+TARGET=*.py
 ARGS=
 
 PYTHON=python3
@@ -17,7 +16,7 @@ run:
 
 .PHONY: test
 test:
-	$(PYTHON) -m pytest -vv $(TEST)
+	$(PYTHON) -m pytest -vv
 
 .PHONY: check
 check:
@@ -28,12 +27,3 @@ check:
 .PHONY: clean
 clean:
 	rm -rf *.pyc __pycache__ parsetab.py *.out tmp.v uut.vcd
-
-.PHONY: sim
-sim:
-	iverilog -Wall tmp.v
-	./a.out
-
-.PHONY: view
-view:
-	gtkwave --giga uut.vcd &

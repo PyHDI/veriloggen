@@ -25,28 +25,45 @@ Veriloggen is not a behavior synthesis (or high level synthesis). Veriloggen pro
 Veriloggen is not designed for designing a hardware by programmer directly, but is for providing an efficient abstraction to develop a more efficient domain specific language and tools.
 
 
-Requirements
-==============================
-
-* Python (2.7 or later, 3.3 or later)
-* Pyverilog (Python-based Verilog HDL Design Processing Toolkit)
-    - Install from pip: 'pip install pyverilog' for Python2.7 or 'pip3 install pyverilog' for Python3
-    - Otherwise, download and install from github into this package: 'cd veriloggen; git clone https://github.com/PyHDI/Pyverilog.git; cd veriloggen; ln -s ../Pyverilog/pyverilog'
-* Jinja2 (2.7 or later)
-   - The code generator (in Pyverilog) uses Jinja2 template engine.
-   - 'pip install jinja2' (for Python 2.x) or 'pip3 install jinja2' (for Python 3.x)
-* pytest (2.7.2 or later)
-   - Examples in Veriloggen use pytest. Install pytest if you check the correctness of the example by yourself.
-   - 'pip install -U pytest' (for Python 2.x) or 'pip3 install -U pytest' (for Python 3.x)
-* Icarus Verilog (0.9.6 or later)
-    - 'iverilog -E' command is used for preprocessing Verilog source code in Pyverilog.
-
-
 Installation
 ==============================
 
+Requirements
+--------------------
+
+- Python: 2.7, 3.4 or later
+
+Python3 is recommended.
+
+- Icarus Verilog: 0.9.7 or later
+
+Install on your platform. For exmple, on Ubuntu:
+
+    sudo apt-get install iverilog
+
+- Jinja2: 2.8 or later
+- pytest: 2.8.2 or later
+- pytest-pythonpath: 0.7 or later
+
+Install on your python environment by using pip.
+
+    pip install jinja2 pytest pytest-pythonpath
+
+- Pyverilog: 1.0.0 or later
+
+Install from pip:
+
+    pip install pyverilog
+
+Install
+--------------------
+
+Install Veriloggen.
+
+    python setup.py install
+
 On Docker
-------------------------------
+--------------------
 
 Dockerfile is available, so that you can try Veriloggen on Docker without any installation on your host platform.
 
@@ -57,19 +74,6 @@ sudo docker run --name veriloggen -i -t user/veriloggen /bin/bash
 cd veriloggen/sample/led/
 make
 ```
-
-On your host platform
-------------------------------
-
-If you want to use Veriloggen as a general library, you can install on your environment by using setup.py.
-
-If Python 2.7 is used,
-
-    python setup.py install
-
-If Python 3.x is used,
-
-    python3 setup.py install
 
 
 Getting Started
