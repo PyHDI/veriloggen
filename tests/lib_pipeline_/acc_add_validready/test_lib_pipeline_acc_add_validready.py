@@ -1,4 +1,4 @@
-import led
+import lib_pipeline_acc_add_validready
 
 expected_verilog = """
 module test;
@@ -255,8 +255,8 @@ module blinkled
 endmodule
 """
 
-def test_led():
-    test_module = led.mkTest()
+def test():
+    test_module = lib_pipeline_acc_add_validready.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
