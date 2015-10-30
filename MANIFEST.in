@@ -1,5 +1,7 @@
 include README.md
 include README.rst
+include led.py
 include docker/Dockerfile
+recursive-include utils *
 recursive-include sample *
 recursive-include tests *
