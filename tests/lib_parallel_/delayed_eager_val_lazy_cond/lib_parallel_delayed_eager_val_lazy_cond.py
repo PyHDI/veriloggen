@@ -2,6 +2,9 @@ import sys
 import os
 import math
 
+# the next line can be removed after installation
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+
 from veriloggen import *
 
 def mkLed(numports=8, delay_amount=2):
