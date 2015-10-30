@@ -1,4 +1,4 @@
-import led
+import lib_simulation_pycoram_userlogic
 
 expected_verilog = """
 module test #
@@ -280,9 +280,9 @@ module userlogic #
 endmodule
 """
 
-def test_led():
-    test = led.mkTest()
-    code = test.to_verilog()
+def test():
+    test_module = lib_simulation_pycoram_userlogic.mkTest()
+    code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
     from pyverilog.ast_code_generator.codegen import ASTCodeGenerator

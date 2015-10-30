@@ -1,4 +1,4 @@
-import led
+import lib_simulation_basic
 
 expected_verilog = """
 module test #
@@ -80,9 +80,9 @@ module blinkled #
 endmodule
 """
 
-def test_led():
-    test_module = led.mkTest()
-    test_code = test_module.to_verilog()
+def test():
+    test_module = lib_simulation_basic.mkTest()
+    code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
     from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
@@ -91,4 +91,4 @@ def test_led():
     codegen = ASTCodeGenerator()
     expected_code = codegen.visit(expected_ast)
 
-    assert(expected_code == test_code)
+    assert(expected_code == code)
