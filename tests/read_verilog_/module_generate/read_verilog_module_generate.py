@@ -2,10 +2,14 @@ import sys
 import os
 import collections
 
+# the next line can be removed after installation
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+
 from veriloggen import *
 
 def mkLed():
-    modules = read_verilog_module('led.v')
+    filename = os.path.dirname(os.path.abspath(__file__)) + '/led.v'
+    modules = read_verilog_module(filename)
     m = modules['blinkled']
     return m
 

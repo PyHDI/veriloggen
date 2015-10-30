@@ -1,4 +1,4 @@
-import led
+import read_verilog_pycoram_object
 
 expected_verilog = """
 module CoramMemory1P #
@@ -293,8 +293,8 @@ module userlogic #
 endmodule
 """
 
-def test_led():
-    modules = led.mkUserlogic()
+def test():
+    modules = read_verilog_pycoram_object.mkUserlogic()
     code = ''.join([ m.to_verilog() for m in modules.values() ])
 
     from pyverilog.vparser.parser import VerilogParser

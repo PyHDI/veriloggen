@@ -1,4 +1,4 @@
-import led
+import read_verilog_module_initial
 
 expected_verilog = """
 module test #
@@ -76,10 +76,9 @@ module blinkled #
 endmodule
 """
 
-def test_led():
-    led_module, test = led.mkLedTest()
-    code = ''.join([ test.to_verilog(), led_module.to_verilog() ])
-
+def test():
+    test_module, test_bench = read_verilog_module_initial.mkLedTest()
+    code = ''.join([ test_bench.to_verilog(), test_module.to_verilog() ])
     from pyverilog.vparser.parser import VerilogParser
     from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
     parser = VerilogParser()

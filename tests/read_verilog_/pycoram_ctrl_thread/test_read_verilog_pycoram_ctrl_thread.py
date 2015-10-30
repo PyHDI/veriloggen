@@ -1,4 +1,4 @@
-import led
+import read_verilog_pycoram_ctrl_thread
 
 expected_verilog = """
 module ctrl_thread
@@ -241,8 +241,8 @@ module ctrl_thread
 endmodule
 """
 
-def test_led():
-    modules = led.mkThread()
+def test():
+    modules = read_verilog_pycoram_ctrl_thread.mkThread()
     code = ''.join([ m.to_verilog() for m in modules.values() ])
 
     from pyverilog.vparser.parser import VerilogParser
