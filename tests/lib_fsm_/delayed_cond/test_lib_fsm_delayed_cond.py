@@ -1,4 +1,4 @@
-import led
+import lib_fsm_delayed_cond
 
 expected_verilog = """
 module test;
@@ -624,8 +624,8 @@ module blinkled
 endmodule
 """
 
-def test_led():
-    test_module = led.mkTest()
+def test():
+    test_module = lib_fsm_delayed_cond.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
