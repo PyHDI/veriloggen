@@ -19,16 +19,16 @@ def mkLed(window_size=8):
     x = m.Input('x', 32)
     y = m.OutputReg('y', 32, initval=0)
     
-    par = lib.Parallel(m, 'par')
+    seq = lib.Seq(m, 'seq')
     v = x
     for w in range(window_size-1):
-        v = v + par.prev(x, w + 1)
+        v = v + seq.prev(x, w + 1)
         
     t = m.TmpReg(32)
-    par.add( t(v) )
-    par.add( y(t >> int(math.log(window_size, 2))) )
+    seq.add( t(v) )
+    seq.add( y(t >> int(math.log(window_size, 2))) )
     
-    par.make_always(clk, rst)
+    seq.make_always(clk, rst)
 
     return m
 

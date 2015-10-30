@@ -9,8 +9,8 @@ import vtypes
 import subst_visitor
 import reset_visitor
 
-class Parallel(vtypes.VeriloggenNode):
-    """ Parallel Assignment Manager """
+class Seq(vtypes.VeriloggenNode):
+    """ Sequential Logic Manager """
     def __init__(self, m, name):
         self.m = m
         self.name = name

@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import vtypes
 import subst_visitor
 import reset_visitor
-import lib.parallel
+import lib.seq
 
 class FSM(vtypes.VeriloggenNode):
     """ Finite State Machine Generator """
@@ -34,7 +34,7 @@ class FSM(vtypes.VeriloggenNode):
         self.dst_visitor = subst_visitor.SubstDstVisitor()
         self.reset_visitor = reset_visitor.ResetVisitor()
 
-        self.par = lib.parallel.Parallel(self.m, self.name + '_par')
+        self.seq = lib.seq.Seq(self.m, self.name + '_par')
 
     #---------------------------------------------------------------------------
     def current(self):
@@ -89,7 +89,7 @@ class FSM(vtypes.VeriloggenNode):
 
     #---------------------------------------------------------------------------
     def prev(self, var, delay, initval=0):
-        return self.par.prev(var, delay, initval)
+        return self.seq.prev(var, delay, initval)
         
     #---------------------------------------------------------------------------
     def add_dst_var(self, statement):
@@ -179,7 +179,7 @@ class FSM(vtypes.VeriloggenNode):
     #---------------------------------------------------------------------------
     def make_case(self):
         ret = []
-        ret.extend( self.par.make_code() )
+        ret.extend( self.seq.make_code() )
         ret.extend( self.get_delayed_substs() )
         
         for delay, dct in sorted(self.delayed_body.items(),
@@ -198,7 +198,7 @@ class FSM(vtypes.VeriloggenNode):
     
     def make_if(self):
         ret = []
-        ret.extend( self.par.make_code() )
+        ret.extend( self.seq.make_code() )
         ret.extend( self.get_delayed_substs() )
         
         for delay, dct in sorted(self.delayed_body.items(),
@@ -240,7 +240,7 @@ class FSM(vtypes.VeriloggenNode):
             if key not in ret:
                 ret[key] = v
 
-        for v in self.par.make_reset():
+        for v in self.seq.make_reset():
             if not isinstance(v, vtypes.Subst):
                 raise TypeError('make_reset requires Subst, not %s' % str(type(v)))
             key = str(v.left)

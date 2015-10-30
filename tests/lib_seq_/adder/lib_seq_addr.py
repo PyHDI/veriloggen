@@ -26,7 +26,7 @@ def mkLed(numports=8):
     odata = m.OutputReg('odata', 32, initval=0)
     ovalid = m.OutputReg('ovalid', initval=0)
 
-    par = lib.Parallel(m, 'par')
+    seq = lib.Seq(m, 'seq')
     pdata = idata
     pvalid = ivalid
     ndata = []
@@ -39,17 +39,17 @@ def mkLed(numports=8):
             ndata.append(td)
             nvalid.append(tv)
             cond = AndList(pvalid[i*2], pvalid[i*2+1])
-            par.add( td(pdata[i*2] + pdata[i*2+1]), cond=cond )
-            par.add( tv(cond) )
+            seq.add( td(pdata[i*2] + pdata[i*2+1]), cond=cond )
+            seq.add( tv(cond) )
         pdata = ndata
         pvalid = nvalid
         ndata = []
         nvalid = []
 
-    par.add( odata(pdata[-1]) )
-    par.add( ovalid(pvalid[-1]) )
+    seq.add( odata(pdata[-1]) )
+    seq.add( ovalid(pvalid[-1]) )
         
-    par.make_always(clk, rst)
+    seq.make_always(clk, rst)
 
     return m
 

@@ -1,4 +1,4 @@
-import lib_parallel_addr
+import lib_seq_addr
 
 expected_verilog = """
 module test;
@@ -285,7 +285,7 @@ endmodule
 """
 
 def test():
-    test_module = lib_parallel_addr.mkTest()
+    test_module = lib_seq_addr.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

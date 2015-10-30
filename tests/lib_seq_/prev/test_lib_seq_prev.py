@@ -1,11 +1,11 @@
-import lib_parallel_cmp
+import lib_seq_prev
 
 expected_verilog = """
 module test;
   reg CLK;
   reg RST;
   reg [32-1:0] x;
-  wire y;
+  wire [32-1:0] y;
 
   blinkled
   uut
@@ -38,13 +38,37 @@ module test;
     #1000;
     @(posedge CLK);
     #1;
-    x = 9;
-    @(posedge CLK);
-    #1;
     x = 10;
     @(posedge CLK);
     #1;
-    x = 101;
+    x = 11;
+    @(posedge CLK);
+    #1;
+    x = 12;
+    @(posedge CLK);
+    #1;
+    x = 13;
+    @(posedge CLK);
+    #1;
+    x = 14;
+    @(posedge CLK);
+    #1;
+    x = 15;
+    @(posedge CLK);
+    #1;
+    x = 16;
+    @(posedge CLK);
+    #1;
+    x = 17;
+    @(posedge CLK);
+    #1;
+    x = 18;
+    @(posedge CLK);
+    #1;
+    x = 19;
+    @(posedge CLK);
+    #1;
+    x = 0;
     #1000;
     $finish;
   end
@@ -56,22 +80,38 @@ module blinkled
    input CLK,
    input RST,
    input [32-1:0] x,
-   output reg y
+   output reg [32-1:0] y
   );
+
+  reg [32-1:0] _x_1;
+  reg [32-1:0] _x_2;
+  reg [32-1:0] _x_3;
+  reg [32-1:0] _x_4;
+  reg [32-1:0] _x_5;
+  reg [32-1:0] _x_6;
+  reg [32-1:0] _x_7;
+  reg [32-1:0] _tmp_0;
 
   always @(posedge CLK) begin
     if(RST) begin
+      _x_1 <= 0;
+      _x_2 <= 0;
+      _x_3 <= 0;
+      _x_4 <= 0;
+      _x_5 <= 0;
+      _x_6 <= 0;
+      _x_7 <= 0;
       y <= 0;
     end else begin
-      if(x < 10) begin
-        y <= 0;
-      end 
-      if(x >= 10) begin
-        y <= 1;
-      end 
-      if(x > 100) begin
-        y <= 0;
-      end 
+      _x_1 <= x;
+      _x_2 <= _x_1;
+      _x_3 <= _x_2;
+      _x_4 <= _x_3;
+      _x_5 <= _x_4;
+      _x_6 <= _x_5;
+      _x_7 <= _x_6;
+      _tmp_0 <= (((((((x + _x_1) + _x_2) + _x_3) + _x_4) + _x_5) + _x_6) + _x_7);
+      y <= (_tmp_0 >> 3);
     end
   end
 
@@ -79,7 +119,7 @@ endmodule
 """
 
 def test():
-    test_module = lib_parallel_cmp.mkTest()
+    test_module = lib_seq_prev.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

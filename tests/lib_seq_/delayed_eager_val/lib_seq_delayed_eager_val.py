@@ -1,24 +1,36 @@
 import sys
 import os
+import math
 
 # the next line can be removed after installation
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
 from veriloggen import *
 
-def mkLed():
+def mkLed(numports=8, delay_amount=2):
     m = Module('blinkled')
     clk = m.Input('CLK')
     rst = m.Input('RST')
-    x = m.Input('x', 32)
-    y = m.OutputReg('y', initval=0)
+    led = [ m.OutputReg('led'+str(i), initval=0) for i in range(numports) ]
+
+    up = m.Wire('up')
+    down = m.Wire('down')
+    m.Assign(up(1))
+    m.Assign(down(0))
     
-    par = lib.Parallel(m, 'par')
-    par.add( y(0), cond=(x<10) )
-    par.add( y(1), cond=(x>=10) )
-    par.add( y(0), cond=(x>100) )
+    seq = lib.Seq(m, 'seq')
     
-    par.make_always(clk, rst)
+    count = m.Reg('count', (numports-1).bit_length(), initval=0)
+    seq.add( count.inc() )
+    
+    for i in range(numports):
+        seq.add( led[i](up), cond=(count==i), eager_val=True )
+        seq.add( led[i](down), cond=(count==i), delay=delay_amount, eager_val=True )
+        # a case of overwrraped assignment with a same delay and difference condition
+        if i > 1:
+            seq.add( led[i](up), cond=(count==0), delay=delay_amount, eager_val=True )
+        
+    seq.make_always(clk, rst)
 
     return m
 
@@ -34,30 +46,18 @@ def mkTest():
 
     clk = ports['CLK']
     rst = ports['RST']
-    x = ports['x']
-    y = ports['y']
     
     uut = m.Instance(led, 'uut',
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    reset_stmt = []
-    reset_stmt.append( x(0) )
-    
     lib.simulation.setup_waveform(m, uut)
     lib.simulation.setup_clock(m, clk, hperiod=5)
-    init = lib.simulation.setup_reset(m, rst, reset_stmt, period=100)
+    init = lib.simulation.setup_reset(m, rst, period=100)
 
     nclk = lib.simulation.next_clock
     
     init.add(
-        Delay(1000),
-        nclk(clk),
-        x(9),
-        nclk(clk),
-        x(10),
-        nclk(clk),
-        x(101),
         Delay(1000),
         Systask('finish'),
     )

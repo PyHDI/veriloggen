@@ -6,7 +6,7 @@ from functools import reduce
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import vtypes
-import lib.parallel
+import lib.seq
 
 class Pipeline(vtypes.VeriloggenNode):
     """ Pipeline Generator """
@@ -15,7 +15,7 @@ class Pipeline(vtypes.VeriloggenNode):
         self.name = name
         self.width = 32
         self.tmp_count = 0
-        self.par = lib.parallel.Parallel(self.m, self.name)
+        self.seq = lib.seq.Seq(self.m, self.name)
         self.data_visitor = DataVisitor(self)
         self.vars = []
 
@@ -139,7 +139,7 @@ class Pipeline(vtypes.VeriloggenNode):
             elif issubclass(op, vtypes._UnaryOperator):
                 data = op(data)
             
-        self.par.add( tmp_data(data), cond=data_cond )
+        self.seq.add( tmp_data(data), cond=data_cond )
             
         # valid
         valid_cond_vars = []
@@ -155,7 +155,7 @@ class Pipeline(vtypes.VeriloggenNode):
             valid_cond = vtypes.AndList(*valid_cond_vars)
 
         if tmp_valid is not None:
-            self.par.add( tmp_valid(valid), cond=valid_cond )
+            self.seq.add( tmp_valid(valid), cond=valid_cond )
 
         # ready
         if tmp_ready is not None:
@@ -209,7 +209,7 @@ class Pipeline(vtypes.VeriloggenNode):
         else:
             data_cond = vtypes.AndList(*data_cond_vars)
         
-        self.par.add( tmp_data(data), cond=data_cond )
+        self.seq.add( tmp_data(data), cond=data_cond )
 
         # valid
         valid_cond_vars = []
@@ -227,7 +227,7 @@ class Pipeline(vtypes.VeriloggenNode):
             valid_cond = vtypes.AndList(*valid_cond_vars)
         
         if tmp_valid is not None:
-            self.par.add( tmp_valid(valid), cond=valid_cond )
+            self.seq.add( tmp_valid(valid), cond=valid_cond )
 
         # next_valid
         next_valid_cond_vars = []
@@ -262,11 +262,11 @@ class Pipeline(vtypes.VeriloggenNode):
     
     #---------------------------------------------------------------------------
     def make_reset(self):
-        return self.par.make_reset()
+        return self.seq.make_reset()
     
     #---------------------------------------------------------------------------
     def make_code(self):
-        return self.par.make_code()
+        return self.seq.make_code()
     
     #---------------------------------------------------------------------------
     def make_always(self, clk, rst, reset=(), body=()):
@@ -355,9 +355,9 @@ class _PipelineVariable(_PipelineNumeric):
                 ovar.ready.subst[0].overwrite_right( vtypes.AndList(prev_subst[0].right, ready) )
 
     def reset(self, cond, initval=0):
-        self.pipe.par.add( self.data(initval), cond=cond )
+        self.pipe.seq.add( self.data(initval), cond=cond )
         if self.valid is not None:
-            self.pipe.par.add( self.valid(0), cond=cond )
+            self.pipe.seq.add( self.valid(0), cond=cond )
             
     def bit_length(self):
         return self.data.bit_length()

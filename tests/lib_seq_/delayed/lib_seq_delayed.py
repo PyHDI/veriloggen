@@ -13,24 +13,16 @@ def mkLed(numports=8, delay_amount=2):
     rst = m.Input('RST')
     led = [ m.OutputReg('led'+str(i), initval=0) for i in range(numports) ]
 
-    up = m.Wire('up')
-    down = m.Wire('down')
-    m.Assign(up(1))
-    m.Assign(down(0))
-    
-    par = lib.Parallel(m, 'par')
+    seq = lib.Seq(m, 'seq')
     
     count = m.Reg('count', (numports-1).bit_length(), initval=0)
-    par.add( count.inc() )
+    seq.add( count.inc() )
     
     for i in range(numports):
-        par.add( led[i](up), cond=(count==i), eager_val=True )
-        par.add( led[i](down), cond=(count==i), delay=delay_amount, eager_val=True )
-        # a case of overwrraped assignment with a same delay and difference condition
-        if i > 1:
-            par.add( led[i](up), cond=(count==0), delay=delay_amount, eager_val=True )
+        seq.add( led[i](1), cond=(count==i) )
+        seq.add( led[i](0), cond=(count==i), delay=delay_amount )
         
-    par.make_always(clk, rst)
+    seq.make_always(clk, rst)
 
     return m
 

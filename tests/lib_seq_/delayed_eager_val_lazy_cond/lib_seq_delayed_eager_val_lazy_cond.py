@@ -12,17 +12,21 @@ def mkLed(numports=8, delay_amount=2):
     clk = m.Input('CLK')
     rst = m.Input('RST')
     led = [ m.OutputReg('led'+str(i), initval=0) for i in range(numports) ]
-
-    par = lib.Parallel(m, 'par')
     
-    count = m.Reg('count', (numports-1).bit_length(), initval=0)
-    par.add( count.inc() )
+    zero = m.TmpWire()
+    m.Assign(zero(0))
+
+    seq = lib.Seq(m, 'seq')
+    
+    count = m.Reg('count', (numports-1).bit_length() + 1, initval=0)
+    seq.add( count.inc(), delay=2 )
+    seq.add( count(zero), cond=count>=numports-1, delay=2, eager_val=True, lazy_cond=True )
     
     for i in range(numports):
-        par.add( led[i](1), cond=(count==i) )
-        par.add( led[i](0), cond=(count==i), delay=delay_amount )
+        seq.add( led[i](1), cond=(count==i) )
+        seq.add( led[i](0), cond=(count==i), delay=delay_amount )
         
-    par.make_always(clk, rst)
+    seq.make_always(clk, rst)
 
     return m
 
