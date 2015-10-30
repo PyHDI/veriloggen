@@ -8,8 +8,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirna
 from veriloggen import *
 
 def mkUserlogic():
-    filename = os.path.dirname(os.path.abspath(__file__)) + '/userlogic.v'
-    modules = read_verilog_module(filename)
+    here = os.path.dirname(os.path.abspath(__file__))
+    filename = here + '/userlogic.v'
+    modules = read_verilog_module(filename, include=[here])
     return modules
 
 if __name__ == '__main__':
