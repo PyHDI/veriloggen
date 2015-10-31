@@ -4,12 +4,11 @@ import os
 import sys
 import collections
 import copy
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-import vtypes
-import function
-import task
-import to_verilog
+import veriloggen.vtypes as vtypes
+import veriloggen.function as function
+import veriloggen.task as task
+#import veriloggen.to_verilog as to_verilog
 
 #-------------------------------------------------------------------------------
 class Module(vtypes.VeriloggenNode):
@@ -299,6 +298,7 @@ class Module(vtypes.VeriloggenNode):
     # User interface for code generation
     #---------------------------------------------------------------------------
     def to_verilog(self, filename=None):
+        import veriloggen.to_verilog as to_verilog
         return to_verilog.write_verilog(self, filename)
 
     #---------------------------------------------------------------------------

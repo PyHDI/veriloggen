@@ -1,16 +1,16 @@
 from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 import re
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import vtypes
-import module
+import veriloggen.vtypes as vtypes
+from veriloggen.module import Module
 
 class Bundle(vtypes.VeriloggenNode):
     def __init__(self, m, prefix='', postfix=''):
-        if not isinstance(m, module.Module):
-            raise TypeError("module should be an instance of module.Module.")
+        if not isinstance(m, Module):
+            raise TypeError("module should be an instance of Module.")
         self.module = m
         self.prefix = prefix
         self.postfix = postfix

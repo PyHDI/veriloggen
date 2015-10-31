@@ -71,7 +71,7 @@ Dockerfile is available, so that you can try Veriloggen on Docker without any in
 cd docker
 sudo docker build -t user/veriloggen .
 sudo docker run --name veriloggen -i -t user/veriloggen /bin/bash
-cd veriloggen/sample/led/
+cd veriloggen/examples/led/
 make
 ```
 
@@ -79,10 +79,10 @@ make
 Getting Started
 ==============================
 
-You can find some examples in 'veriloggen/sample/' and 'veriloggen/tests'.
+You can find some examples in 'veriloggen/examples/' and 'veriloggen/tests'.
 
 Let's begin veriloggen by an example. Create a example Python script in Python as below. A blinking LED hardware is modeled in Python.
-Open 'led.py' in the root directory.
+Open 'hello_led.py' in the root directory.
 
 ```python
 import sys

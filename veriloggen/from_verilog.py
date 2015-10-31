@@ -5,12 +5,11 @@ import os
 import re
 import collections
 import tempfile
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-import module
-import vtypes
-import function
-import task
+import veriloggen.vtypes as vtypes
+import veriloggen.module as module
+import veriloggen.function as function
+import veriloggen.task as task
 
 import pyverilog.vparser.ast as vast
 from pyverilog.vparser.parser import VerilogCodeParser

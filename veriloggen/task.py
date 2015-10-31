@@ -4,9 +4,7 @@ import sys
 import os
 import collections
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-import vtypes
+import veriloggen.vtypes as vtypes
 
 #-------------------------------------------------------------------------------
 class Task(vtypes.VeriloggenNode):

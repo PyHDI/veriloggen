@@ -1,13 +1,10 @@
-.PHONY: all
-all: clean
-
 .PHONY: clean
 clean:
 	make clean -C ./veriloggen
 	make clean -C ./utils
-	make clean -C ./sample
+	make clean -C ./examples
 	make clean -C ./tests
-	rm -rf *.pyc __pycache__ veriloggen.egg-info build dist
+	rm -rf *.pyc __pycache__ *.out veriloggen.egg-info build dist
 
 .PHONY: release
 release:

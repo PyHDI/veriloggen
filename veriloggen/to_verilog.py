@@ -3,10 +3,9 @@ from __future__ import print_function
 import sys
 import os
 import collections
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-import vtypes
-import module
+import veriloggen.vtypes as vtypes
+import veriloggen.module as module
 
 import pyverilog.vparser.ast as vast
 from pyverilog.ast_code_generator.codegen import ASTCodeGenerator

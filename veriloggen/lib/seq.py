@@ -1,13 +1,13 @@
 from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 import collections
 import functools
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import vtypes
-import subst_visitor
-import reset_visitor
+import veriloggen.vtypes as vtypes
+from veriloggen.subst_visitor import SubstDstVisitor
+from veriloggen.reset_visitor import ResetVisitor
 
 class Seq(vtypes.VeriloggenNode):
     """ Sequential Logic Manager """
@@ -22,8 +22,8 @@ class Seq(vtypes.VeriloggenNode):
         self.prev_dict = collections.OrderedDict()
         
         self.dst_var = collections.OrderedDict()
-        self.dst_visitor = subst_visitor.SubstDstVisitor()
-        self.reset_visitor = reset_visitor.ResetVisitor()
+        self.dst_visitor = SubstDstVisitor()
+        self.reset_visitor = ResetVisitor()
 
     #---------------------------------------------------------------------------
     def prev(self, var, delay, initval=0):

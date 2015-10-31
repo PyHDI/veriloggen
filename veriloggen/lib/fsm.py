@@ -1,14 +1,14 @@
 from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 import collections
 import functools
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import vtypes
-import subst_visitor
-import reset_visitor
-import lib.seq
+import veriloggen.vtypes as vtypes
+from veriloggen.subst_visitor import SubstDstVisitor
+from veriloggen.reset_visitor import ResetVisitor
+from veriloggen.lib.seq import Seq
 
 class FSM(vtypes.VeriloggenNode):
     """ Finite State Machine Generator """
@@ -31,10 +31,10 @@ class FSM(vtypes.VeriloggenNode):
         self.tmp_count = 0
         
         self.dst_var = collections.OrderedDict()
-        self.dst_visitor = subst_visitor.SubstDstVisitor()
-        self.reset_visitor = reset_visitor.ResetVisitor()
+        self.dst_visitor = SubstDstVisitor()
+        self.reset_visitor = ResetVisitor()
 
-        self.seq = lib.seq.Seq(self.m, self.name + '_par')
+        self.seq = Seq(self.m, self.name + '_par')
 
     #---------------------------------------------------------------------------
     def current(self):

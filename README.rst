@@ -83,18 +83,18 @@ without any installation on your host platform.
     cd docker
     sudo docker build -t user/veriloggen .
     sudo docker run --name veriloggen -i -t user/veriloggen /bin/bash
-    cd veriloggen/sample/led/
+    cd veriloggen/examples/led/
     make
 
 Getting Started
 ===============
 
-You can find some examples in 'veriloggen/sample/' and
+You can find some examples in 'veriloggen/examples/' and
 'veriloggen/tests'.
 
 Let's begin veriloggen by an example. Create a example Python script in
 Python as below. A blinking LED hardware is modeled in Python. Open
-'led.py' in the root directory.
+'hello\_led.py' in the root directory.
 
 .. code:: python
 

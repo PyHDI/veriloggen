@@ -3,9 +3,8 @@ from __future__ import print_function
 
 import os
 import sys
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-import vtypes
+import veriloggen.vtypes as vtypes
 
 class ResetVisitor(object):
     def generic_visit(self, node):

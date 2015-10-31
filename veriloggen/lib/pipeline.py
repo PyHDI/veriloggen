@@ -1,12 +1,12 @@
 from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 import collections
 from functools import reduce
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import vtypes
-import lib.seq
+import veriloggen.vtypes as vtypes
+from veriloggen.lib.seq import Seq
 
 class Pipeline(vtypes.VeriloggenNode):
     """ Pipeline Generator """
@@ -15,7 +15,7 @@ class Pipeline(vtypes.VeriloggenNode):
         self.name = name
         self.width = 32
         self.tmp_count = 0
-        self.seq = lib.seq.Seq(self.m, self.name)
+        self.seq = Seq(self.m, self.name)
         self.data_visitor = DataVisitor(self)
         self.vars = []
 
