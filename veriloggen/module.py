@@ -458,8 +458,8 @@ class Instance(vtypes.VeriloggenNode):
     def __init__(self, module, instname, params=None, ports=None):
         if params is None: params = ()
         if ports is None: ports = ()
-        self.type_check_params(params)
-        self.type_check_ports(ports)
+        self._type_check_params(params)
+        self._type_check_ports(ports)
         self.module = module
         self.instname = instname
         if not params:
@@ -475,16 +475,16 @@ class Instance(vtypes.VeriloggenNode):
         else:
             self.ports = [ (None, p) for p in ports ]
 
-    def type_check_module(self, module):
+    def _type_check_module(self, module):
         if not isinstance(module, (Module, StubModule)):
             raise TypeError("module of Instance must be Module or StubModule, not %s" %
                             type(module))
             
-    def type_check_params(self, params):
+    def _type_check_params(self, params):
         if not isinstance(params, (tuple, list)):
             raise TypeError("params of Instance require tuple, not %s." % type(params))
         
-    def type_check_ports(self, ports):
+    def _type_check_ports(self, ports):
         if not isinstance(ports, (tuple, list)):
             raise TypeError("ports of Instance require tuple, not %s." % type(ports))
 
@@ -506,7 +506,7 @@ class Generate(Module):
     def Inout(self, name, width=None, length=None, signed=False, value=None):
         raise TypeError("Inout port is not allowed in generate statement")
 
-    def type_check_scope(self, scope):
+    def _type_check_scope(self, scope):
         if scope is None: return
         if not isinstance(scope, str):
             raise TypeError("Scope name should be str, not %s." % type(scope))
@@ -519,7 +519,7 @@ class GenerateFor(Generate):
         self.cond = cond
         self.post = post
         self.scope = scope
-        self.type_check_scope(scope)
+        self._type_check_scope(scope)
 
     def __getitem__(self, index):
         return vtypes.ScopeIndex(self.scope, index)
@@ -530,13 +530,13 @@ class GenerateIf(Generate):
         self.cond = cond
         self.true_scope = true_scope
         self.Else = GenerateIfElse()
-        self.type_check_scope(true_scope)
+        self._type_check_scope(true_scope)
 
 class GenerateIfElse(Generate):
     def __init__(self, false_scope=None):
         Generate.__init__(self)
         self.false_scope = false_scope
-        self.type_check_scope(false_scope)
+        self._type_check_scope(false_scope)
 
     def __call__(self, false_scope):
         self.false_scope = false_scope

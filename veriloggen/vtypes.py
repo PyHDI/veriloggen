@@ -274,12 +274,12 @@ class Supply(_ParameterVairable): pass
 #-------------------------------------------------------------------------------
 class _Constant(_Numeric):
     def __init__(self, value, width=None, base=None):
-        self.type_check_value(value)
-        self.type_check_width(width)
-        self.type_check_base(base)
-    def type_check_value(self, value): pass
-    def type_check_width(self, width): pass
-    def type_check_base(self, base): pass
+        self._type_check_value(value)
+        self._type_check_width(width)
+        self._type_check_base(base)
+    def _type_check_value(self, value): pass
+    def _type_check_width(self, width): pass
+    def _type_check_base(self, base): pass
 
     def __str__(self):
         return str(value)
@@ -292,16 +292,16 @@ class Int(_Constant):
         self.base = base
         self.signed = signed
 
-    def type_check_value(self, value):
+    def _type_check_value(self, value):
         if not isinstance(value, int):
             raise TypeError('value of Int must be int, not %s.' % type(value))
 
-    def type_check_width(self, width):
+    def _type_check_width(self, width):
         if width is None: return
         if not isinstance(width, int):
             raise TypeError('width of Int must be int, not %s.' % type(width))
 
-    def type_check_base(self, base):
+    def _type_check_base(self, base):
         if base is None: return 
         if not isinstance(base, int):
             raise TypeError('base of Int must be int, not %s.' % type(base))
@@ -354,7 +354,7 @@ class IntX(Int):
         self.base = base
         self.signed = signed
     
-    def type_check_value(self, value):
+    def _type_check_value(self, value):
         pass
 
     def __str__(self):
@@ -405,7 +405,7 @@ class IntZ(Int):
         self.base = base
         self.signed = False
     
-    def type_check_value(self, value):
+    def _type_check_value(self, value):
         pass
 
     def __str__(self):
@@ -453,7 +453,7 @@ class Float(_Constant):
         _Constant.__init__(self, value, None, None)
         self.value = value
 
-    def type_check_value(self, value):
+    def _type_check_value(self, value):
         if not isinstance(value, (float, int)):
             raise TypeError('value of Float must be float, not %s.' % type(value))
 
@@ -465,7 +465,7 @@ class Str(_Constant):
         _Constant.__init__(self, value, None, None)
         self.value = value
 
-    def type_check_value(self, value):
+    def _type_check_value(self, value):
         if not isinstance(value, str):
             raise TypeError('value of Str must be str, not %s.' % type(value))
 
@@ -478,11 +478,11 @@ class _Operator(_Numeric): pass
 #-------------------------------------------------------------------------------
 class _BinaryOperator(_Operator):
     def __init__(self, left, right):
-        self.type_check(left, right)
+        self._type_check(left, right)
         self.left = left
         self.right = right
 
-    def type_check(self, left, right):
+    def _type_check(self, left, right):
         if not isinstance(left, (_Numeric, bool, int, float, str)):
             raise TypeError('BinaryOperator does not support Type %s' % str(type(left)))
         if not isinstance(right, (_Numeric, bool, int, float, str)):
@@ -494,10 +494,10 @@ class _BinaryOperator(_Operator):
 
 class _UnaryOperator(_Operator):
     def __init__(self, right):
-        self.type_check(right)
+        self._type_check(right)
         self.right = right
         
-    def type_check(self, right):
+    def _type_check(self, right):
         if not isinstance(right, (_Numeric, bool, int, float, str)):
             raise TypeError('BinaryOperator does not support Type %s' % str(type(right)))
 
@@ -822,7 +822,7 @@ class Case(VeriloggenNode):
             return self.set_statement(*args)
         raise ValueError("Case statement list is already assigned.")
 
-    def type_check_statement(self, *statement):
+    def _type_check_statement(self, *statement):
         for s in statement:
             if not isinstance(s, When):
                 raise TypeError("Case statement requires When() object as statement list.")
@@ -832,14 +832,14 @@ class Case(VeriloggenNode):
                 self.last = True
     
     def set_statement(self, *statement):
-        self.type_check_statement(*statement)
+        self._type_check_statement(*statement)
         self.statement = tuple(statement)
         return self
 
     def add(self, *statement):
         if self.statement is None:
             return self.set_statement(*statement)
-        self.type_check_statement(*statement)
+        self._type_check_statement(*statement)
         self.statement = tuple(self.statement + statement)
         return self
 
@@ -847,7 +847,7 @@ class Casex(Case): pass
     
 class When(VeriloggenNode) :
     def __init__(self, *condition):
-        self.type_check_condition(*condition)
+        self._type_check_condition(*condition)
         self.condition = None if len(condition) == 0 or condition[0] is None else tuple(condition)
         self.statement = None
 
@@ -856,7 +856,7 @@ class When(VeriloggenNode) :
             return self.set_statement(*args)
         raise ValueError("Statement body is already assigned.")
 
-    def type_check_condition(self, *args):
+    def _type_check_condition(self, *args):
         if len(args) == 0:
             return
         if len(args) == 1 and args[0] is None:
@@ -867,18 +867,18 @@ class When(VeriloggenNode) :
             if isinstance(a, (_Numeric, bool, int, float, str)): continue
             raise TypeError("Condition must be _Numeric object, not '%s'" % str(type(a)))
     
-    def type_check_statement(self, *args):
+    def _type_check_statement(self, *args):
         pass
     
     def set_statement(self, *statement):
-        self.type_check_statement(*statement)
+        self._type_check_statement(*statement)
         self.statement = tuple(statement)
         return self
     
     def add(self, *statement):
         if self.statement is None:
             return self.set_statement(*statement)
-        self.type_check_statement(*statement)
+        self._type_check_statement(*statement)
         self.statement = tuple(self.statement + statement)
         return self
     
