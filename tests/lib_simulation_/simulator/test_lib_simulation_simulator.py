@@ -24,10 +24,10 @@ module test #
     .LED(LED)
    );
 
-  initial begin
-    $dumpfile("uut.vcd");
-    $dumpvars(0, uut);
-  end
+//  initial begin
+//    $dumpfile("uut.vcd");
+//    $dumpvars(0, uut);
+//  end
 
   initial begin
     CLK = 0;
@@ -83,7 +83,6 @@ endmodule
 """
 
 expected_rslt = """\
-VCD info: dumpfile uut.vcd opened for output.
 LED:  x count:         x
 LED:  x count:         x
 LED:  x count:         x
