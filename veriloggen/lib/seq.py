@@ -3,7 +3,6 @@ from __future__ import print_function
 import os
 import sys
 import collections
-import functools
 
 import veriloggen.vtypes as vtypes
 from veriloggen.subst_visitor import SubstDstVisitor
