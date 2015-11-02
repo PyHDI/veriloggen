@@ -18,7 +18,7 @@ def mkLed():
         If(rst)(
             count(0)
         ).Else(
-            If(count == 1023)(
+            If(count == 16 - 1)(
                 count(0)
             ).Else(
                 count(count + 1)
@@ -29,7 +29,7 @@ def mkLed():
         If(rst)(
             led(0)
         ).Else(
-            If(count == 1024 - 1)(
+            If(count == 16 - 1)(
                 led(led + 1)
             )
         ))
