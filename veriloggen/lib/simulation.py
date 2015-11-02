@@ -151,10 +151,10 @@ class Simulator(object):
                 code.append('\n')
         return ''.join(code)
     
-    def view_waveform(self, filename):
+    def view_waveform(self, filename='uut.vcd'):
         return self._view_waveform_gtkwave(filename)
 
-    def _view_waveform_gtkwave(self, filename):
+    def _view_waveform_gtkwave(self, filename='uut.vcd'):
         cmd = []
         cmd.append('gtkwave')
         cmd.append('--giga')
