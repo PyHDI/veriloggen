@@ -103,7 +103,7 @@ class Simulator(object):
         # encoding: 'utf-8' ?
         encode = sys.getdefaultencoding()
         
-        code = self.to_code()
+        code = self._to_code()
         tmp = tempfile.NamedTemporaryFile()
         tmp.write(code.encode(encode))
         tmp.read()
@@ -140,7 +140,7 @@ class Simulator(object):
         
         return ''.join([syn_rslt, sim_rslt])
 
-    def to_code(self):
+    def _to_code(self):
         code = []
         for obj in self.objs:
             if isinstance(obj, module.Module):
@@ -151,12 +151,14 @@ class Simulator(object):
                 code.append('\n')
         return ''.join(code)
     
-    def view_waveform(self, filename='uut.vcd'):
-        return self._view_waveform_gtkwave(filename)
+    def view_waveform(self, filename='uut.vcd', background=False):
+        return self._view_waveform_gtkwave(filename, background)
 
-    def _view_waveform_gtkwave(self, filename='uut.vcd'):
+    def _view_waveform_gtkwave(self, filename='uut.vcd', background=False):
         cmd = []
         cmd.append('gtkwave')
         cmd.append('--giga')
         cmd.append(filename)
+        if background:
+            cmd.append('&')
         subprocess.call(' '.join(cmd), shell=True)

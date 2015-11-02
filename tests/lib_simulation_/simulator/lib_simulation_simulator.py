@@ -71,4 +71,5 @@ if __name__ == '__main__':
     print(rslt)
 
     # launch waveform viewer (GTKwave)
-    #sim.view_waveform()
+    #sim.view_waveform() # background=False
+    #sim.view_waveform(background=True)
