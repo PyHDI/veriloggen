@@ -32,7 +32,7 @@ class Pipeline(vtypes.VeriloggenNode):
     def stage(self, data, initval=0, width=None):
         if width is None: width = self.width
         stage_id, raw_data, raw_valid, raw_ready = self.data_visitor.visit(data)
-        tmp_data, tmp_valid, tmp_ready = self.make_tmp(raw_data, raw_valid, raw_ready,
+        tmp_data, tmp_valid, tmp_ready = self._make_tmp(raw_data, raw_valid, raw_ready,
                                                        width, initval)
         next_stage_id = stage_id + 1 if stage_id is not None else None
         ret = _PipelineVariable(self, next_stage_id, tmp_data, tmp_valid, tmp_ready)
@@ -42,43 +42,62 @@ class Pipeline(vtypes.VeriloggenNode):
     #---------------------------------------------------------------------------
     # Accumulator 
     def acc_and(self, data, initval=0, resetcond=None, width=None):
-        return self.accumulate([vtypes.And], data, width, initval, resetcond)
+        return self._accumulate([vtypes.And], data, width, initval, resetcond)
 
     def acc_nand(self, data, initval=0, resetcond=None, width=None):
-        return self.accumulate([vtypes.And, vtypes.Unot], data, width, initval, resetcond)
+        return self._accumulate([vtypes.And, vtypes.Unot], data, width, initval, resetcond)
 
     def acc_or(self, data, initval=0, resetcond=None, width=None):
-        return self.accumulate([vtypes.Or], data, width, initval, resetcond)
+        return self._accumulate([vtypes.Or], data, width, initval, resetcond)
 
     def acc_xor(self, data, initval=0, resetcond=None, width=None):
-        return self.accumulate([vtypes.Xor], data, width, initval, resetcond)
+        return self._accumulate([vtypes.Xor], data, width, initval, resetcond)
 
     def acc_xnor(self, data, initval=0, resetcond=None, width=None):
-        return self.accumulate([vtypes.Xor, vtypes.Unot], data, width, initval, resetcond)
+        return self._accumulate([vtypes.Xor, vtypes.Unot], data, width, initval, resetcond)
 
     def acc_nor(self, data, initval=0, resetcond=None, width=None):
-        return self.accumulate([vtypes.Or, vtypes.Unot], data, width, initval, resetcond)
+        return self._accumulate([vtypes.Or, vtypes.Unot], data, width, initval, resetcond)
 
     def acc_add(self, data, initval=0, resetcond=None, width=None):
-        return self.accumulate([vtypes.Plus], data, width, initval, resetcond)
+        return self._accumulate([vtypes.Plus], data, width, initval, resetcond)
 
     def acc_sub(self, data, initval=0, resetcond=None, width=None):
-        return self.accumulate([vtypes.Minus], data, width, initval, resetcond)
+        return self._accumulate([vtypes.Minus], data, width, initval, resetcond)
 
     def acc_mul(self, data, initval=0, resetcond=None, width=None):
-        return self.accumulate([vtypes.Times], data, width, initval, resetcond)
+        return self._accumulate([vtypes.Times], data, width, initval, resetcond)
 
     def acc_div(self, data, initval=0, resetcond=None, width=None):
-        return self.accumulate([vtypes.Divide], data, width, initval, resetcond)
+        return self._accumulate([vtypes.Divide], data, width, initval, resetcond)
 
     def acc_mod(self, data, initval=0, resetcond=None, width=None):
-        return self.accumulate([vtypes.Mod], data, width, initval, resetcond)
+        return self._accumulate([vtypes.Mod], data, width, initval, resetcond)
     
     #---------------------------------------------------------------------------
-    def accumulate(self, ops, data, width=None, initval=0, resetcond=None):
+    def make_always(self, clk, rst, reset=(), body=()):
+        self.m.Always(vtypes.Posedge(clk))(
+            vtypes.If(rst)(
+                reset,
+                self.make_reset()
+            )(
+                body,
+                self.make_code()
+            ))
+        
+    #---------------------------------------------------------------------------
+    def make_reset(self):
+        return self.seq.make_reset()
+    
+    #---------------------------------------------------------------------------
+    def make_code(self):
+        return self.seq.make_code()
+    
+    #---------------------------------------------------------------------------
+    def _accumulate(self, ops, data, width=None, initval=0, resetcond=None):
         if width is None: width = self.width
         stage_id, raw_data, raw_valid, raw_ready = self.data_visitor.visit(data)
-        tmp_data, tmp_valid, tmp_ready = self.make_tmp(raw_data, raw_valid, raw_ready,
+        tmp_data, tmp_valid, tmp_ready = self._make_tmp(raw_data, raw_valid, raw_ready,
                                                        width, initval, acc_ops=ops)
         next_stage_id = stage_id + 1 if stage_id is not None else None
         ret = _PipelineVariable(self, next_stage_id, tmp_data, tmp_valid, tmp_ready)
@@ -88,27 +107,27 @@ class Pipeline(vtypes.VeriloggenNode):
         return ret
     
     #---------------------------------------------------------------------------
-    def add_reg(self, prefix, count, width=None, initval=0):
+    def _add_reg(self, prefix, count, width=None, initval=0):
         tmp_name = '_'.join(['', self.name, prefix, str(count)])
         tmp = self.m.Reg(tmp_name, width, initval=initval)
         return tmp
         
-    def add_wire(self, prefix, count, width=None):
+    def _add_wire(self, prefix, count, width=None):
         tmp_name = '_'.join(['', self.name, prefix, str(count)])
         tmp = self.m.Wire(tmp_name, width)
         return tmp
         
     #---------------------------------------------------------------------------
-    def make_tmp(self, data, valid, ready, width=None, initval=0, acc_ops=()):
-        tmp_data = self.add_reg('data', self.tmp_count, width=width, initval=initval)
+    def _make_tmp(self, data, valid, ready, width=None, initval=0, acc_ops=()):
+        tmp_data = self._add_reg('data', self.tmp_count, width=width, initval=initval)
         
         if valid is not None:
-            tmp_valid = self.add_reg('valid', self.tmp_count, initval=0)
+            tmp_valid = self._add_reg('valid', self.tmp_count, initval=0)
         else:
             tmp_valid = None
 
         if ready:
-            tmp_ready = self.add_wire('ready', self.tmp_count)
+            tmp_ready = self._add_wire('ready', self.tmp_count)
         else:
             tmp_ready = None
 
@@ -171,21 +190,21 @@ class Pipeline(vtypes.VeriloggenNode):
         return tmp_data, tmp_valid, tmp_ready
     
     #---------------------------------------------------------------------------
-    def make_prev(self, data, valid, ready, root_valid=None, width=None, initval=0):
-        tmp_data = self.add_reg('data', self.tmp_count, width=width, initval=initval)
+    def _make_prev(self, data, valid, ready, root_valid=None, width=None, initval=0):
+        tmp_data = self._add_reg('data', self.tmp_count, width=width, initval=initval)
         
         if valid is not None:
-            tmp_valid = self.add_reg('valid', self.tmp_count, initval=0)
+            tmp_valid = self._add_reg('valid', self.tmp_count, initval=0)
         else:
             tmp_valid = None
             
         if ready is not None:
-            tmp_ready = self.add_wire('ready', self.tmp_count)
+            tmp_ready = self._add_wire('ready', self.tmp_count)
         else:
             tmp_ready = None
 
         if valid or ready:
-            next_valid = self.add_wire('nvalid', self.tmp_count)
+            next_valid = self._add_wire('nvalid', self.tmp_count)
         else:
             next_valid = None
             
@@ -260,24 +279,6 @@ class Pipeline(vtypes.VeriloggenNode):
         return tmp_data, next_valid, tmp_ready
     
     #---------------------------------------------------------------------------
-    def make_reset(self):
-        return self.seq.make_reset()
-    
-    #---------------------------------------------------------------------------
-    def make_code(self):
-        return self.seq.make_code()
-    
-    #---------------------------------------------------------------------------
-    def make_always(self, clk, rst, reset=(), body=()):
-        self.m.Always(vtypes.Posedge(clk))(
-            vtypes.If(rst)(
-                reset,
-                self.make_reset()
-            )(
-                body,
-                self.make_code()
-            ))
-        
     def __call__(self, data, initval=0, width=None):
         return self.stage(data, initval=initval, width=width)
     
@@ -313,7 +314,7 @@ class _PipelineVariable(_PipelineNumeric):
                 p = self.prev_dict[i+1]
                 continue
             
-            tmp_data, tmp_valid, tmp_ready = self.pipe.make_prev(p.data, p.valid, p.ready,
+            tmp_data, tmp_valid, tmp_ready = self.pipe._make_prev(p.data, p.valid, p.ready,
                                                                  self.valid, width, initval)
             p = _PipelineVariable(self.pipe, p.stage_id, tmp_data, tmp_valid, tmp_ready)
             self.pipe.vars.append(p)

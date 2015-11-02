@@ -56,51 +56,6 @@ class Seq(vtypes.VeriloggenNode):
         return p
     
     #---------------------------------------------------------------------------
-    def add_dst_var(self, statement):
-        for s in statement:
-            values = self.dst_visitor.visit(s)
-            for v in values:
-                k = str(v)
-                if k not in self.dst_var:
-                    self.dst_var[k] = v
-                
-    #---------------------------------------------------------------------------
-    def add_delayed_cond(self, statement, delay):
-        name_prefix = '_'.join(['', self.name, 'cond', str(self.tmp_count)])
-        self.tmp_count += 1
-        prev = statement
-        for i in range(delay):
-            tmp_name = '_'.join([name_prefix, str(i+1)])
-            tmp = self.m.Reg(tmp_name, initval=0)
-            self.add(tmp(prev), delay=i)
-            prev = tmp
-        return prev
-    
-    #---------------------------------------------------------------------------
-    def add_delayed_subst(self, subst, delay):
-        if not isinstance(subst, vtypes.Subst):
-            return subst
-        left = subst.left
-        right = subst.right
-        if isinstance(right, (bool, int, float, str,
-                              vtypes._Constant, vtypes._ParameterVairable)):
-            return subst
-        width = left.bit_length()
-        prev = right
-
-        name_prefix = ('_'.join(['', left.name, str(self.tmp_count)]) 
-                       if isinstance(left, vtypes._Variable) else
-                       '_'.join(['', self.name, 'sbst', str(self.tmp_count)]))
-        self.tmp_count += 1
-            
-        for i in range(delay):
-            tmp_name = '_'.join([name_prefix, str(i+1)])
-            tmp = self.m.Reg(tmp_name, width, initval=0)
-            self.add(tmp(prev), delay=i)
-            prev = tmp
-        return left(prev)
-    
-    #---------------------------------------------------------------------------
     def add(self, *statement, **kwargs):
         for k in kwargs.keys():
             if k not in ('keep', 'delay', 'cond', 'lazy_cond', 'eager_val'):
@@ -121,22 +76,33 @@ class Seq(vtypes.VeriloggenNode):
         
         if delay is not None and delay > 0:
             if eager_val:
-                statement = [ self.add_delayed_subst(s, delay) for s in statement ]
+                statement = [ self._add_delayed_subst(s, delay) for s in statement ]
             if cond is not None:
                 if not lazy_cond:
-                    cond = self.add_delayed_cond(cond, delay)
+                    cond = self._add_delayed_cond(cond, delay)
                 statement = [ vtypes.If(cond)(*statement) ]
             self.delayed_body[delay].extend(statement)
-            self.add_dst_var(statement)
+            self._add_dst_var(statement)
             return self
             
         if cond is not None:
             statement = [ vtypes.If(cond)(*statement) ]
             
         self.body.extend(statement)
-        self.add_dst_var(statement)
+        self._add_dst_var(statement)
         return self
 
+    #---------------------------------------------------------------------------
+    def make_always(self, clk, rst, reset=(), body=()):
+        self.m.Always(vtypes.Posedge(clk))(
+            vtypes.If(rst)(
+                reset,
+                self.make_reset()
+            )(
+                body,
+                self.make_code()
+            ))
+    
     #---------------------------------------------------------------------------
     def make_code(self):
         ret = []
@@ -158,15 +124,49 @@ class Seq(vtypes.VeriloggenNode):
         return ret
         
     #---------------------------------------------------------------------------
-    def make_always(self, clk, rst, reset=(), body=()):
-        self.m.Always(vtypes.Posedge(clk))(
-            vtypes.If(rst)(
-                reset,
-                self.make_reset()
-            )(
-                body,
-                self.make_code()
-            ))
+    def _add_dst_var(self, statement):
+        for s in statement:
+            values = self.dst_visitor.visit(s)
+            for v in values:
+                k = str(v)
+                if k not in self.dst_var:
+                    self.dst_var[k] = v
+                
+    #---------------------------------------------------------------------------
+    def _add_delayed_cond(self, statement, delay):
+        name_prefix = '_'.join(['', self.name, 'cond', str(self.tmp_count)])
+        self.tmp_count += 1
+        prev = statement
+        for i in range(delay):
+            tmp_name = '_'.join([name_prefix, str(i+1)])
+            tmp = self.m.Reg(tmp_name, initval=0)
+            self.add(tmp(prev), delay=i)
+            prev = tmp
+        return prev
+    
+    #---------------------------------------------------------------------------
+    def _add_delayed_subst(self, subst, delay):
+        if not isinstance(subst, vtypes.Subst):
+            return subst
+        left = subst.left
+        right = subst.right
+        if isinstance(right, (bool, int, float, str,
+                              vtypes._Constant, vtypes._ParameterVairable)):
+            return subst
+        width = left.bit_length()
+        prev = right
+
+        name_prefix = ('_'.join(['', left.name, str(self.tmp_count)]) 
+                       if isinstance(left, vtypes._Variable) else
+                       '_'.join(['', self.name, 'sbst', str(self.tmp_count)]))
+        self.tmp_count += 1
+            
+        for i in range(delay):
+            tmp_name = '_'.join([name_prefix, str(i+1)])
+            tmp = self.m.Reg(tmp_name, width, initval=0)
+            self.add(tmp(prev), delay=i)
+            prev = tmp
+        return left(prev)
     
     #---------------------------------------------------------------------------
     def __call__(self, *statement, **kwargs):
