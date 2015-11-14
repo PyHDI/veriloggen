@@ -10,9 +10,11 @@ from veriloggen.reset_visitor import ResetVisitor
 
 class Seq(vtypes.VeriloggenNode):
     """ Sequential Logic Manager """
-    def __init__(self, m, name):
+    def __init__(self, m, name, clk, rst):
         self.m = m
         self.name = name
+        self.clk = clk
+        self.rst = rst
 
         self.body = []
         self.delay_amount = 0
@@ -93,14 +95,14 @@ class Seq(vtypes.VeriloggenNode):
         return self
 
     #---------------------------------------------------------------------------
-    def make_always(self, clk, rst, reset=(), body=()):
-        self.m.Always(vtypes.Posedge(clk))(
-            vtypes.If(rst)(
-                reset,
-                self.make_reset()
+    def make_always(self, reset=(), body=()):
+        part_reset = list(reset) + list(self.make_reset())
+        part_body = list(body) + list(self.make_code())
+        self.m.Always(vtypes.Posedge(self.clk))(
+            vtypes.If(self.rst)(
+                part_reset,
             )(
-                body,
-                self.make_code()
+                part_body,
             ))
     
     #---------------------------------------------------------------------------
