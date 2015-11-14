@@ -303,14 +303,14 @@ class Module(vtypes.VeriloggenNode):
         self.resolve_hook()
         return to_verilog.write_verilog(self, filename)
 
-    def add_hook(self, obj, method='to_verilog'):
-        self.hook.append( (obj, method) )
+    def add_hook(self, method, args=None, kwargs=None):
+        self.hook.append( (method, args, kwargs) )
 
     def resolve_hook(self):
-        for obj, method in self.hook:
-            func = self.getattr(obj, method, None)
-            if func is not None:
-                func()
+        for method, args, kwargs in self.hook:
+            if args is None: args = ()
+            if kwargs is None: kwargs = {}
+            method(*args, **kwargs)
 
     #---------------------------------------------------------------------------
     # Internal methods
