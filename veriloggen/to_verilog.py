@@ -644,7 +644,7 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
         name = node.name
         if self.module.is_output(name): return None
         width = None if node.width is None else self.make_width(node.width)
-        length = None if node.length is None else self.make_length(node.width)
+        length = None if node.length is None else self.make_length(node.length)
         signed = node.signed
         if length is not None:
             return vast.RegArray(name, width, length, signed)
@@ -653,7 +653,7 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
     def visit_Wire(self, node):
         name = node.name
         width = None if node.width is None else self.make_width(node.width)
-        length = None if node.length is None else self.make_length(node.width)
+        length = None if node.length is None else self.make_length(node.length)
         signed = node.signed
         if length is not None:
             return vast.WireArray(name, width, length, signed)

@@ -80,33 +80,73 @@ def mkTop():
 
     # FSM definition
     fsm = lib.FSM(m, 'fsm', clk, rst)
-    
-    init = fsm.current()
-    fsm.add( bramif.init() )
-    fsm.goto_next()
-    
-    first = fsm.current()
-    
-    fsm.add( bramif.datain(bramif.datain + 4) )
-    fsm.goto_next()
-    
-    fsm.add( bramif.write(0) )
-    fsm.goto_next()
-    
-    fsm.add( 
-        If(bramif.addr == 128)(
-            bramif.addr(0)
-        ).Else(
-            bramif.addr(bramif.addr + 1)
-        ))
-    fsm.goto(init, cond=(bramif.addr==128), else_dst=first)
 
-    fsm.make_always(reset=[bramif.addr(0), bramif.datain(0), bramif.write(0)])
+    # initialize
+    fsm.add( bramif.init() )
+    fsm.add(bramif.datain(-Int(4)))
+    fsm.goto_next()
+
+    # write
+    cond = bramif.addr<128
+    fsm.add(bramif.addr.inc(), bramif.write(1), bramif.datain(bramif.datain + 4), cond=cond)
+    fsm.add(Systask('display', 'addr:%x write: %x', bramif.addr-1, bramif.datain),
+            cond=cond, delay=1)
+    
+    fsm.add(bramif.init(), cond=Not(cond))
+    fsm.goto_next(cond=Not(cond))
+
+    # read
+    cond = bramif.addr<128
+    fsm.add(bramif.addr.inc(), cond=cond)
+    prev_addr = m.TmpReg(addrwidth, initval=0)
+    fsm.add(prev_addr(bramif.addr), delay=1)
+    fsm.add(Systask('display', 'addr:%x read : %x', prev_addr-1, bramif.dataout),
+            cond=cond, delay=2)
+    
+    fsm.add(bramif.init(), cond=Not(cond))
+    fsm.goto_next(cond=Not(cond))
+
+    fsm.make_always(reset=bramif.init())
     
     return m
 
 #-------------------------------------------------------------------------------
-if __name__ == '__main__':
+# Testbench
+#-------------------------------------------------------------------------------
+def mkTest():
+    m = Module('test')
+
+    # target instance
     top = mkTop()
-    verilog = top.to_verilog()
+
+    # copy paras and ports
+    params = m.copy_params(top)
+    ports = m.copy_sim_ports(top)
+
+    clk = ports['CLK']
+    rst = ports['RST']
+    
+    uut = m.Instance(top, 'uut',
+                     params=m.connect_params(top),
+                     ports=m.connect_ports(top))
+    
+    #lib.simulation.setup_waveform(m, uut)
+    lib.simulation.setup_clock(m, clk, hperiod=5)
+    init = lib.simulation.setup_reset(m, rst, m.make_reset(), period=100)
+
+    init.add(
+        Delay(10000),
+        Systask('finish'),
+    )
+
+    return m
+
+#-------------------------------------------------------------------------------
+if __name__ == '__main__':
+    test = mkTest()
+    verilog = test.to_verilog()
     print(verilog)
+
+    sim = lib.simulation.Simulator(test)
+    rslt = sim.run()
+    print(rslt)
