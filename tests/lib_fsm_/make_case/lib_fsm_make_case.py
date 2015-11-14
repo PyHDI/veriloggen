@@ -11,8 +11,8 @@ def mkLed():
     width = m.Parameter('WIDTH', 8)
     clk = m.Input('CLK')
     rst = m.Input('RST')
-    led = m.OutputReg('LED', width)
-    count = m.Reg('count', 32)
+    led = m.OutputReg('LED', width, initval=0)
+    count = m.Reg('count', 32, initval=0)
 
     fsm = lib.FSM(m, 'fsm', clk, rst)
     # get the initial index (= 0)
@@ -35,7 +35,7 @@ def mkLed():
     # jump by using label "here"
     fsm.goto(here)
 
-    fsm.make_always(reset=[count(0), led(0)])
+    fsm.make_always()
 
     return m
 

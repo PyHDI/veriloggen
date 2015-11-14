@@ -50,11 +50,12 @@ def mkLed():
     fsm.inc()
     
     tail = fsm.current()
-    fsm.add( led.inc() )
     fsm.goto_from(head, tail, cond=Not(cond))
+    
+    fsm.add( led.inc() )
     fsm.goto(init)
     
-    fsm.make_always(reset=[count(0), led(0)])
+    fsm.make_always()
     
     return m
 

@@ -23,9 +23,9 @@ module blinkled #
 
   always @(posedge CLK) begin
     if(RST) begin
+      fsm <= fsm_init;
       count <= 0;
       LED <= 0;
-      fsm <= fsm_init;
     end else begin
       case(fsm)
         fsm_init: begin

@@ -17,11 +17,12 @@ module blinkled #
   localparam fsm_2 = 2;
   localparam fsm_3 = 3;
   localparam fsm_4 = 4;
+
   always @(posedge CLK) begin
     if(RST) begin
+      fsm <= fsm_init;
       count <= 0;
       LED <= 0;
-      fsm <= fsm_init;
     end else begin
       case(fsm)
         fsm_init: begin
