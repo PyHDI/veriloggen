@@ -49,15 +49,15 @@ module blinkled
   reg [32-1:0] fsm;
 
   localparam fsm_init = 0;
+  reg [32-1:0] _d1_fsm;
+  reg [32-1:0] _d2_fsm;
+  reg [32-1:0] _d3_fsm;
+  reg [32-1:0] _d4_fsm;
+
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
   localparam fsm_3 = 3;
   localparam fsm_4 = 4;
-
-  reg [32-1:0] _d1_fsm;
-  reg [32-1:0] _d2_fsm;
-  reg [32-1:0] _d3_fsm;
-
   localparam fsm_5 = 5;
   localparam fsm_6 = 6;
   localparam fsm_7 = 7;
@@ -67,8 +67,6 @@ module blinkled
   localparam fsm_11 = 11;
   localparam fsm_12 = 12;
   localparam fsm_13 = 13;
-
-  reg [32-1:0] _d4_fsm;
   localparam fsm_14 = 14;
   localparam fsm_15 = 15;
   localparam fsm_16 = 16;

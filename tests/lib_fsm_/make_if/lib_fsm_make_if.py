@@ -14,7 +14,7 @@ def mkLed():
     led = m.OutputReg('LED', width)
     count = m.Reg('count', 32)
 
-    fsm = lib.FSM(m, 'fsm')
+    fsm = lib.FSM(m, 'fsm', clk, rst)
     # get the initial index (= 0)
     init = fsm.current()
 
@@ -29,22 +29,13 @@ def mkLed():
     fsm.goto_next()
 
     # jump by using label "init"
-    fsm.goto( index=init, cond=(count < 1024), else_index=fsm.next() ).inc()
-    # = fsm.add( If(count < 1024)( fsm.set(init) ).Else( fsm.set_next() ) ).inc()
+    fsm.goto( dst=init, cond=(count < 1024), else_dst=fsm.next() ).inc()
     
     fsm.add( led(led + 1) )
     # jump by using label "here"
     fsm.goto(here)
     
-    m.Always(Posedge(clk))(
-        If(rst)(
-            count(0),
-            led(0),
-            fsm.set_init()
-        ).Else(
-            # inserting the FSM body
-            fsm.make_if()
-        ))
+    fsm.make_always(reset=[count(0), led(0)], case=False)
 
     return m
 

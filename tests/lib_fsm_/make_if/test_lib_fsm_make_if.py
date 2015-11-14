@@ -17,6 +17,7 @@ module blinkled #
   localparam fsm_2 = 2;
   localparam fsm_3 = 3;
   localparam fsm_4 = 4;
+
   always @(posedge CLK) begin
     if(RST) begin
       count <= 0;

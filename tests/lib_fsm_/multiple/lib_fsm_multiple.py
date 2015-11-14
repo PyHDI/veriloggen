@@ -13,7 +13,7 @@ def mkLed():
     rst = m.Input('RST')
     led = m.OutputReg('LED', width, initval=0)
 
-    fsm = lib.FSM(m, 'fsm')
+    fsm = lib.FSM(m, 'fsm', clk, rst)
     init = fsm.current()
 
     tmp = []
@@ -22,17 +22,12 @@ def mkLed():
         
     for i in range(4):
         fsm.add( tmp[i](fsm.current()) ) 
-        fsm.goto_next(cond=None) # = fsm.add( fsm.set_next() ).inc()
+        fsm.goto_next(cond=None)
         
     fsm.add( led(led + 1) )
-    fsm.goto(init, cond=None) # = fsm.add( fsm.set(init) )
+    fsm.goto(init, cond=None)
     
-    m.Always(Posedge(clk))(
-        If(rst)(
-            m.make_reset(),
-        ).Else(
-            fsm.make_case()
-        ))
+    fsm.make_always()
     
     return m
 

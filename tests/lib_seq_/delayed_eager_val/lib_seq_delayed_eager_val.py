@@ -18,7 +18,7 @@ def mkLed(numports=8, delay_amount=2):
     m.Assign(up(1))
     m.Assign(down(0))
     
-    seq = lib.Seq(m, 'seq')
+    seq = lib.Seq(m, 'seq', clk, rst)
     
     count = m.Reg('count', (numports-1).bit_length(), initval=0)
     seq.add( count.inc() )
@@ -30,7 +30,7 @@ def mkLed(numports=8, delay_amount=2):
         if i > 1:
             seq.add( led[i](up), cond=(count==0), delay=delay_amount, eager_val=True )
         
-    seq.make_always(clk, rst)
+    seq.make_always()
 
     return m
 

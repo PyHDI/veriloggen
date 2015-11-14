@@ -55,10 +55,6 @@ module blinkled
   assign down = 0;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
-  localparam fsm_1 = 1;
-  localparam fsm_2 = 2;
-  localparam fsm_3 = 3;
-  localparam fsm_4 = 4;
 
   reg [32-1:0] _d1_fsm;
   reg [8-1:0] _valid_reg_4_0_1;
@@ -75,15 +71,6 @@ module blinkled
   reg _fsm_cond_4_5_1;
   reg _fsm_cond_4_5_2;
   reg _fsm_cond_4_5_3;
-  localparam fsm_5 = 5;
-  localparam fsm_6 = 6;
-  localparam fsm_7 = 7;
-  localparam fsm_8 = 8;
-  localparam fsm_9 = 9;
-  localparam fsm_10 = 10;
-  localparam fsm_11 = 11;
-  localparam fsm_12 = 12;
-  localparam fsm_13 = 13;
   reg [8-1:0] _valid_reg_13_6_1;
   reg _fsm_cond_13_7_1;
   reg [8-1:0] _valid_reg_13_8_1;
@@ -105,7 +92,6 @@ module blinkled
   reg _fsm_cond_13_13_2;
   reg _fsm_cond_13_13_3;
   reg _fsm_cond_13_13_4;
-  localparam fsm_14 = 14;
   reg [8-1:0] _valid_reg_14_14_1;
   reg _fsm_cond_14_15_1;
   reg [8-1:0] _valid_reg_14_16_1;
@@ -126,7 +112,6 @@ module blinkled
   reg _fsm_cond_14_21_2;
   reg _fsm_cond_14_21_3;
   reg _fsm_cond_14_21_4;
-  localparam fsm_15 = 15;
   reg [8-1:0] _valid_reg_15_22_1;
   reg _fsm_cond_15_23_1;
   reg [8-1:0] _valid_reg_15_24_1;
@@ -147,7 +132,6 @@ module blinkled
   reg _fsm_cond_15_29_2;
   reg _fsm_cond_15_29_3;
   reg _fsm_cond_15_29_4;
-  localparam fsm_16 = 16;
   reg [8-1:0] _valid_reg_16_30_1;
   reg _fsm_cond_16_31_1;
   reg [8-1:0] _valid_reg_16_32_1;
@@ -168,7 +152,6 @@ module blinkled
   reg _fsm_cond_16_37_2;
   reg _fsm_cond_16_37_3;
   reg _fsm_cond_16_37_4;
-  localparam fsm_17 = 17;
   reg [8-1:0] _valid_reg_17_38_1;
   reg _fsm_cond_17_39_1;
   reg [8-1:0] _valid_reg_17_40_1;
@@ -189,7 +172,6 @@ module blinkled
   reg _fsm_cond_17_45_2;
   reg _fsm_cond_17_45_3;
   reg _fsm_cond_17_45_4;
-  localparam fsm_18 = 18;
   reg [8-1:0] _valid_reg_18_46_1;
   reg _fsm_cond_18_47_1;
   reg [8-1:0] _valid_reg_18_48_1;
@@ -210,7 +192,6 @@ module blinkled
   reg _fsm_cond_18_53_2;
   reg _fsm_cond_18_53_3;
   reg _fsm_cond_18_53_4;
-  localparam fsm_19 = 19;
   reg [8-1:0] _valid_reg_19_54_1;
   reg _fsm_cond_19_55_1;
   reg [8-1:0] _valid_reg_19_56_1;
@@ -231,7 +212,6 @@ module blinkled
   reg _fsm_cond_19_61_2;
   reg _fsm_cond_19_61_3;
   reg _fsm_cond_19_61_4;
-  localparam fsm_20 = 20;
   reg [8-1:0] _valid_reg_20_62_1;
   reg _fsm_cond_20_63_1;
   reg [8-1:0] _valid_reg_20_64_1;
@@ -252,6 +232,27 @@ module blinkled
   reg _fsm_cond_20_69_2;
   reg _fsm_cond_20_69_3;
   reg _fsm_cond_20_69_4;
+
+  localparam fsm_1 = 1;
+  localparam fsm_2 = 2;
+  localparam fsm_3 = 3;
+  localparam fsm_4 = 4;
+  localparam fsm_5 = 5;
+  localparam fsm_6 = 6;
+  localparam fsm_7 = 7;
+  localparam fsm_8 = 8;
+  localparam fsm_9 = 9;
+  localparam fsm_10 = 10;
+  localparam fsm_11 = 11;
+  localparam fsm_12 = 12;
+  localparam fsm_13 = 13;
+  localparam fsm_14 = 14;
+  localparam fsm_15 = 15;
+  localparam fsm_16 = 16;
+  localparam fsm_17 = 17;
+  localparam fsm_18 = 18;
+  localparam fsm_19 = 19;
+  localparam fsm_20 = 20;
   localparam fsm_21 = 21;
 
   always @(posedge CLK) begin

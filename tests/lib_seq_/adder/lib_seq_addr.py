@@ -26,7 +26,7 @@ def mkLed(numports=8):
     odata = m.OutputReg('odata', 32, initval=0)
     ovalid = m.OutputReg('ovalid', initval=0)
 
-    seq = lib.Seq(m, 'seq')
+    seq = lib.Seq(m, 'seq', clk, rst)
     pdata = idata
     pvalid = ivalid
     ndata = []
@@ -49,7 +49,7 @@ def mkLed(numports=8):
     seq.add( odata(pdata[-1]) )
     seq.add( ovalid(pvalid[-1]) )
         
-    seq.make_always(clk, rst)
+    seq.make_always()
 
     return m
 

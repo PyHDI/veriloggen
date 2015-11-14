@@ -16,13 +16,13 @@ def mkLed():
     vy = m.Output('vy')
     prst = m.Input('prst')
     
-    pipe = lib.Pipeline(m, 'pipe')
+    pipe = lib.Pipeline(m, 'pipe', clk, rst)
 
     px = pipe.input(x, valid=vx)
     psum = pipe.acc_add(px, initval=0, resetcond=prst)
     psum.output(y, valid=vy)
     
-    pipe.make_always(clk, rst)
+    pipe.make_always()
 
     return m
 
@@ -72,7 +72,7 @@ def mkTest(numports=8):
 
     x_count = m.TmpReg(32, initval=0)
 
-    xfsm = lib.FSM(m, 'xfsm')
+    xfsm = lib.FSM(m, 'xfsm', clk, rst)
     xfsm.add(vx(0))
     xfsm.goto_next(cond=reset_done)
     xfsm.add(vx(1))
@@ -81,8 +81,7 @@ def mkTest(numports=8):
     xfsm.goto_next(cond=x_count==10)
     xfsm.add(vx(0))
     
-    xfsm.make_always(clk, rst)
-    
+    xfsm.make_always()
     
     m.Always(Posedge(clk))(
         If(reset_done)(

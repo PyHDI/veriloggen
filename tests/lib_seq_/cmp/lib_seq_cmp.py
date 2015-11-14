@@ -13,12 +13,12 @@ def mkLed():
     x = m.Input('x', 32)
     y = m.OutputReg('y', initval=0)
     
-    seq = lib.Seq(m, 'seq')
+    seq = lib.Seq(m, 'seq', clk, rst)
     seq.add( y(0), cond=(x<10) )
     seq.add( y(1), cond=(x>=10) )
     seq.add( y(0), cond=(x>100) )
     
-    seq.make_always(clk, rst)
+    seq.make_always()
 
     return m
 

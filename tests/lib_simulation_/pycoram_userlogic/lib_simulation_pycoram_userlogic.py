@@ -27,7 +27,7 @@ def mkUserlogic():
     ch_empty = m.Input('ch_empty')
 
     # Finite State Machine
-    fsm = lib.FSM(m, 'fsm')
+    fsm = lib.FSM(m, 'fsm', clk, rst)
 
     read_count = m.Reg('read_count', width=32, initval=0)
     sum = m.Reg('sum', width=32, initval=0)
@@ -58,7 +58,7 @@ def mkUserlogic():
     fsm.goto(start)
     
     # building always statement
-    fsm.make_always(clk, rst, reset=m.make_reset())
+    fsm.make_always(reset=m.make_reset())
     
     return m
 
@@ -88,7 +88,7 @@ def mkTest():
                                              ch_wdata, ch_enq, ch_almfull,
                                              ch_rdata, ch_deq, ch_empty))
 
-    fsm = lib.FSM(m, 'test_fsm')
+    fsm = lib.FSM(m, 'test_fsm', clk, rst)
     lib.simulation.setup_waveform(m, uut, fsm.state)
     lib.simulation.setup_clock(m, clk, hperiod=5)
     init = lib.simulation.setup_reset(m, rst, m.make_reset(), period=100)
@@ -114,7 +114,7 @@ def mkTest():
 
     fsm.add( Systask('finish') )
     
-    fsm.make_always(clk, rst)
+    fsm.make_always()
     
     return m
 

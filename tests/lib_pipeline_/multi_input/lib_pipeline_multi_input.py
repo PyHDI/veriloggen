@@ -23,14 +23,14 @@ def mkLed():
     vz = m.Output('vz')
     rz = m.Input('rz')
     
-    pipe = lib.Pipeline(m, 'pipe')
+    pipe = lib.Pipeline(m, 'pipe', clk, rst)
     
     px = pipe.input(x, valid=vx, ready=rx)
     py = pipe.input(y, valid=vy, ready=ry)
     pz = pipe(px + py)
     pz.output(z, valid=vz, ready=rz)
     
-    pipe.make_always(clk, rst)
+    pipe.make_always()
 
     return m
 
@@ -91,7 +91,7 @@ def mkTest(numports=8):
     z_count = m.TmpReg(32, initval=0)
 
     
-    xfsm = lib.FSM(m, 'xfsm')
+    xfsm = lib.FSM(m, 'xfsm', clk, rst)
     xfsm.add(vx(0))
     xfsm.goto_next(cond=reset_done)
     xfsm.add(vx(1))
@@ -99,10 +99,10 @@ def mkTest(numports=8):
     xfsm.add(x_count.inc(), cond=rx)
     xfsm.goto_next(cond=AndList(x_count==10, rx))
     xfsm.add(vx(0))
-    xfsm.make_always(clk, rst)
+    xfsm.make_always()
     
     
-    yfsm = lib.FSM(m, 'yfsm')
+    yfsm = lib.FSM(m, 'yfsm', clk, rst)
     yfsm.add(vy(0))
     yfsm.goto_next(cond=reset_done)
     yfsm.add(vy(1))
@@ -110,10 +110,10 @@ def mkTest(numports=8):
     yfsm.add(y_count.inc(), cond=ry)
     yfsm.goto_next(cond=AndList(y_count==10, ry))
     yfsm.add(vy(0))
-    yfsm.make_always(clk, rst)
+    yfsm.make_always()
 
     
-    zfsm = lib.FSM(m, 'zfsm')
+    zfsm = lib.FSM(m, 'zfsm', clk, rst)
     zfsm.add(rz(0))
     zfsm.goto_next(cond=reset_done)
     zfsm.goto_next()
@@ -124,7 +124,7 @@ def mkTest(numports=8):
         zfsm.add(rz(0))
         zfsm.goto_next()
     zfsm.goto(zinit)
-    zfsm.make_always(clk, rst)
+    zfsm.make_always()
 
     
     m.Always(Posedge(clk))(

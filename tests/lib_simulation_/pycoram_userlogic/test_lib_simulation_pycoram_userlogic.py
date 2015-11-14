@@ -73,6 +73,9 @@ module test #
     RST = 0;
   end
 
+  reg [32-1:0] _d1_test_fsm;
+  reg _test_fsm_cond_12_0_1;
+
   localparam test_fsm_1 = 1;
   localparam test_fsm_2 = 2;
   localparam test_fsm_3 = 3;
@@ -85,9 +88,6 @@ module test #
   localparam test_fsm_10 = 10;
   localparam test_fsm_11 = 11;
   localparam test_fsm_12 = 12;
-
-  reg [32-1:0] _d1_test_fsm;
-  reg _test_fsm_cond_12_0_1;
   localparam test_fsm_13 = 13;
 
   always @(posedge CLK) begin
@@ -192,10 +192,10 @@ module userlogic #
   reg [32-1:0] read_count;
   reg [32-1:0] sum;
   reg [32-1:0] size;
-  localparam fsm_1 = 1;
-  localparam fsm_2 = 2;
   reg [32-1:0] _d1_fsm;
   reg [32-1:0] _d2_fsm;
+  localparam fsm_1 = 1;
+  localparam fsm_2 = 2;
   localparam fsm_3 = 3;
   localparam fsm_4 = 4;
   localparam fsm_5 = 5;

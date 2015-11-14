@@ -13,7 +13,7 @@ def mkLed():
     valid = m.OutputReg('valid', initval=0)
     count = m.Reg('count', width=32, initval=0)
     
-    fsm = lib.FSM(m, 'fsm')
+    fsm = lib.FSM(m, 'fsm', clk, rst)
     
     for i in range(4):
         fsm.goto_next()
@@ -40,7 +40,7 @@ def mkLed():
         fsm.add( valid(0), cond=c, delay=4 )
         fsm.goto_next(cond=c)
 
-    fsm.make_always(clk, rst, reset=[count.reset()], body=[count(count+1)])
+    fsm.make_always(reset=[count.reset()], body=[count(count+1)])
         
     return m
 
