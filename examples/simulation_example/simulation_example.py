@@ -56,3 +56,7 @@ if __name__ == '__main__':
     test = mkTest()
     verilog = test.to_verilog()
     print(verilog)
+
+    sim = lib.simulation.Simulator(test)
+    rslt = sim.run()
+    print(rslt)
