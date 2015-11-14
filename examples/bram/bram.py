@@ -79,7 +79,8 @@ def mkTop():
     m.Instance(mkBram('my_'), 'inst_bram', params, ports)
 
     # FSM definition
-    fsm = lib.FSM(m, 'fsm')
+    fsm = lib.FSM(m, 'fsm', clk, rst)
+    
     init = fsm.current()
     fsm.add( bramif.init() )
     fsm.goto_next()
@@ -94,19 +95,14 @@ def mkTop():
     
     fsm.add( 
         If(bramif.addr == 128)(
-            bramif.addr(0), fsm.set(init)
+            bramif.addr(0)
         ).Else(
-            bramif.addr(bramif.addr + 1), fsm.set(first)
+            bramif.addr(bramif.addr + 1)
         ))
-    
-    m.Always(Posedge(clk))(
-        If(rst)(
-            bramif.addr(0), bramif.datain(0), bramif.write(0), fsm.set_init()
-        ).Else(
-            # inserting FSM body
-            fsm.make_if()
-        ))
+    fsm.goto(init, cond=(bramif.addr==128), else_dst=first)
 
+    fsm.make_always(reset=[bramif.addr(0), bramif.datain(0), bramif.write(0)])
+    
     return m
 
 #-------------------------------------------------------------------------------

@@ -45,7 +45,7 @@ def mkSort(numports=4):
         fsm.goto_next()
 
     # build up
-    fsm = lib.FSM(m, 'fsm')
+    fsm = lib.FSM(m, 'fsm', clk, rst)
     idle = fsm.current()
 
     # init state
@@ -61,15 +61,8 @@ def mkSort(numports=4):
     fsm.add(busy(0))
     fsm.goto(idle)
 
-    init = [ busy(0) ] + [ r(0) for r in registers ] + [ fsm.set_init() ]
-
-    # import assignment into always statement
-    m.Always(Posedge(clk))(
-        If(rst)(
-            init
-        ).Else(
-            fsm.make_case()
-        ))
+    fsm.make_always([ busy(0) ] + [ r(0) for r in registers ],
+                    [Systask('display', r.name + ': %d', r) for r in registers])
     
     return m
 
@@ -127,3 +120,7 @@ if __name__ == '__main__':
     sort = mkSimSort()
     verilog = sort.to_verilog('tmp.v')
     print(verilog)
+
+    sim = lib.simulation.Simulator(sort)
+    rslt = sim.run()
+    print(rslt)

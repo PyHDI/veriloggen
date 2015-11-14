@@ -68,17 +68,10 @@ module blinkled
 
   reg [32-1:0] count;
   reg [32-1:0] fsm;
-
   localparam fsm_init = 0;
-  localparam fsm_1 = 1;
-  localparam fsm_2 = 2;
+
   reg [32-1:0] _d1_fsm;
-  localparam fsm_3 = 3;
-  localparam fsm_4 = 4;
   reg _fsm_cond_4_0_1;
-  localparam fsm_5 = 5;
-  localparam fsm_6 = 6;
-  localparam fsm_7 = 7;
   reg _fsm_cond_7_1_1;
   reg [32-1:0] _d2_fsm;
   reg _fsm_cond_7_2_1;
@@ -87,41 +80,49 @@ module blinkled
   reg _fsm_cond_7_3_1;
   reg _fsm_cond_7_3_2;
   reg _fsm_cond_7_3_3;
-  localparam fsm_8 = 8;
   reg _fsm_cond_8_4_1;
   reg _fsm_cond_8_5_1;
   reg _fsm_cond_8_5_2;
   reg _fsm_cond_8_6_1;
   reg _fsm_cond_8_6_2;
   reg _fsm_cond_8_6_3;
-  localparam fsm_9 = 9;
   reg _fsm_cond_9_7_1;
   reg _fsm_cond_9_8_1;
   reg _fsm_cond_9_8_2;
   reg _fsm_cond_9_9_1;
   reg _fsm_cond_9_9_2;
   reg _fsm_cond_9_9_3;
-  localparam fsm_10 = 10;
   reg _fsm_cond_10_10_1;
   reg _fsm_cond_10_11_1;
   reg _fsm_cond_10_11_2;
   reg _fsm_cond_10_12_1;
   reg _fsm_cond_10_12_2;
   reg _fsm_cond_10_12_3;
+
+  localparam fsm_1 = 1;
+  localparam fsm_2 = 2;
+  localparam fsm_3 = 3;
+  localparam fsm_4 = 4;
+  localparam fsm_5 = 5;
+  localparam fsm_6 = 6;
+  localparam fsm_7 = 7;
+  localparam fsm_8 = 8;
+  localparam fsm_9 = 9;
+  localparam fsm_10 = 10;
   localparam fsm_11 = 11;
 
   always @(posedge CLK) begin
     if(RST) begin
-      valid <= 0;
       count <= 0;
       fsm <= fsm_init;
       _d1_fsm <= fsm_init;
+      _d2_fsm <= fsm_init;
+      _d3_fsm <= fsm_init;
+      valid <= 0;
       _fsm_cond_4_0_1 <= 0;
       _fsm_cond_7_1_1 <= 0;
-      _d2_fsm <= fsm_init;
       _fsm_cond_7_2_1 <= 0;
       _fsm_cond_7_2_2 <= 0;
-      _d3_fsm <= fsm_init;
       _fsm_cond_7_3_1 <= 0;
       _fsm_cond_7_3_2 <= 0;
       _fsm_cond_7_3_3 <= 0;

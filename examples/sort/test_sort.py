@@ -132,7 +132,6 @@ module sort #
 
   localparam fsm_init = 0;
 
-  localparam fsm_1 = 1;
   wire [(WIDTH - 1):0] small_0;
   wire [(WIDTH - 1):0] large_0;
   assign small_0 = (((registers_0 < registers_1))? registers_0 : registers_1);
@@ -148,7 +147,6 @@ module sort #
   assign small_2 = (((large_1 < registers_3))? large_1 : registers_3);
   assign large_2 = (((large_1 < registers_3))? registers_3 : large_1);
 
-  localparam fsm_2 = 2;
   wire [(WIDTH - 1):0] small_3;
   wire [(WIDTH - 1):0] large_3;
   assign small_3 = (((registers_0 < registers_1))? registers_0 : registers_1);
@@ -159,14 +157,15 @@ module sort #
   assign small_4 = (((large_3 < registers_2))? large_3 : registers_2);
   assign large_4 = (((large_3 < registers_2))? registers_2 : large_3);
 
-  localparam fsm_3 = 3;
   wire [(WIDTH - 1):0] small_5;
   wire [(WIDTH - 1):0] large_5;
   assign small_5 = (((registers_0 < registers_1))? registers_0 : registers_1);
   assign large_5 = (((registers_0 < registers_1))? registers_1 : registers_0);
 
+  localparam fsm_1 = 1;
+  localparam fsm_2 = 2;
+  localparam fsm_3 = 3;
   localparam fsm_4 = 4;
-
   localparam fsm_5 = 5;
 
   always @(posedge CLK) begin
@@ -178,6 +177,10 @@ module sort #
       registers_3 <= 0;
       fsm <= fsm_init;
     end else begin
+      $display("registers_0: %d", registers_0);
+      $display("registers_1: %d", registers_1);
+      $display("registers_2: %d", registers_2);
+      $display("registers_3: %d", registers_3);
       case(fsm)
         fsm_init: begin
           if(kick) begin
@@ -229,6 +232,90 @@ module sort #
     end
   end
 endmodule
+"""
+
+expected_rslt = """\
+VCD info: dumpfile uut.vcd opened for output.
+registers_0:          x
+registers_1:          x
+registers_2:          x
+registers_3:          x
+registers_0:          x
+registers_1:          x
+registers_2:          x
+registers_3:          x
+registers_0:          x
+registers_1:          x
+registers_2:          x
+registers_3:          x
+registers_0:          x
+registers_1:          x
+registers_2:          x
+registers_3:          x
+registers_0:          x
+registers_1:          x
+registers_2:          x
+registers_3:          x
+registers_0:          x
+registers_1:          x
+registers_2:          x
+registers_3:          x
+registers_0:          x
+registers_1:          x
+registers_2:          x
+registers_3:          x
+registers_0:          x
+registers_1:          x
+registers_2:          x
+registers_3:          x
+registers_0:          x
+registers_1:          x
+registers_2:          x
+registers_3:          x
+registers_0:          x
+registers_1:          x
+registers_2:          x
+registers_3:          x
+registers_0:          0
+registers_1:          0
+registers_2:          0
+registers_3:          0
+registers_0:          0
+registers_1:          0
+registers_2:          0
+registers_3:          0
+registers_0:          0
+registers_1:          0
+registers_2:          0
+registers_3:          0
+registers_0:          0
+registers_1:          0
+registers_2:          0
+registers_3:          0
+registers_0:        100
+registers_1:         99
+registers_2:         98
+registers_3:         97
+registers_0:         99
+registers_1:         98
+registers_2:         97
+registers_3:        100
+registers_0:         98
+registers_1:         97
+registers_2:         99
+registers_3:        100
+registers_0:         97
+registers_1:         98
+registers_2:         99
+registers_3:        100
+registers_0:         97
+registers_1:         98
+registers_2:         99
+registers_3:        100
+registers_0:         97
+registers_1:         98
+registers_2:         99
+registers_3:        100
 """
 
 def test():

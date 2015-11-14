@@ -14,13 +14,13 @@ def mkLed():
     led = m.OutputReg('LED', 8, initval=0)
     count = m.Reg('count', 32, initval=0)
     
-    seq = lib.Seq(m, 'seq')
+    seq = lib.Seq(m, 'seq', clk, rst)
     seq.add( Systask('display', 'LED:%d count:%d', led, count) )
     seq.add( count(count + 1), cond=count<interval-1 )
     seq.add( count(0), cond=count==interval-1 )
     seq.add( led(led + 1), cond=count==interval-1 )
 
-    seq.make_always(clk, rst)
+    seq.make_always()
     
     return m
 

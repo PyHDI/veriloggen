@@ -43,30 +43,36 @@ module TOP #
       write <= 0;        
       fsm <= fsm_init;
     end else begin
-      if(fsm == fsm_init) begin        
-        addr <= 0;        
-        datain <= 0;        
-        write <= 0;
-        fsm <= fsm_1;
-      end  
-      if(fsm == fsm_1) begin        
-        datain <= datain + 4;
-        fsm <= fsm_2;
-      end  
-      if(fsm == fsm_2) begin        
-        write <= 0;        
-        fsm <= fsm_3;
-      end  
-      if(fsm == fsm_3) begin        
-        if(addr == 128) begin        
+      case(fsm)
+        fsm_init: begin
           addr <= 0;        
-          fsm <= fsm_init;
-        end  
-        else begin        
-          addr <= addr + 1;        
+          datain <= 0;        
+          write <= 0;
           fsm <= fsm_1;
-        end 
-      end  
+        end  
+        fsm_1: begin
+          datain <= datain + 4;
+          fsm <= fsm_2;
+        end  
+        fsm_2: begin
+          write <= 0;        
+          fsm <= fsm_3;
+        end  
+        fsm_3: begin
+          if(addr == 128) begin        
+            addr <= 0;        
+          end  
+          else begin        
+            addr <= addr + 1;        
+          end 
+          if(addr == 128) begin        
+            fsm <= fsm_init;
+          end  
+          else begin        
+            fsm <= fsm_1;
+          end 
+        end  
+      endcase
     end 
   end
   
