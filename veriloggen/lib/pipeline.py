@@ -9,12 +9,14 @@ from veriloggen.lib.seq import Seq
 
 class Pipeline(vtypes.VeriloggenNode):
     """ Pipeline Generator """
-    def __init__(self, m, name, width=32):
+    def __init__(self, m, name, clk, rst, width=32):
         self.m = m
         self.name = name
+        self.clk = clk
+        self.rst = rst
         self.width = 32
         self.tmp_count = 0
-        self.seq = Seq(self.m, self.name)
+        self.seq = Seq(self.m, self.name, clk, rst)
         self.data_visitor = DataVisitor(self)
         self.vars = []
 
@@ -75,9 +77,9 @@ class Pipeline(vtypes.VeriloggenNode):
         return self._accumulate([vtypes.Mod], data, width, initval, resetcond)
     
     #---------------------------------------------------------------------------
-    def make_always(self, clk, rst, reset=(), body=()):
-        self.m.Always(vtypes.Posedge(clk))(
-            vtypes.If(rst)(
+    def make_always(self, reset=(), body=()):
+        self.m.Always(vtypes.Posedge(self.clk))(
+            vtypes.If(self.rst)(
                 reset,
                 self.make_reset()
             )(
