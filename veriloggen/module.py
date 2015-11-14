@@ -30,6 +30,7 @@ class Module(vtypes.VeriloggenNode):
         self.items = []
         self.tmp_prefix = tmp_prefix
         self.tmp_count = 0
+        self.hook = []
         
     #---------------------------------------------------------------------------
     # User interface for variables
@@ -299,7 +300,17 @@ class Module(vtypes.VeriloggenNode):
     #---------------------------------------------------------------------------
     def to_verilog(self, filename=None):
         import veriloggen.to_verilog as to_verilog
+        self.resolve_hook()
         return to_verilog.write_verilog(self, filename)
+
+    def add_hook(self, obj, method='to_verilog'):
+        self.hook.append( (obj, method) )
+
+    def resolve_hook(self):
+        for obj, method in self.hook:
+            func = self.getattr(obj, method, None)
+            if func is not None:
+                func()
 
     #---------------------------------------------------------------------------
     # Internal methods
