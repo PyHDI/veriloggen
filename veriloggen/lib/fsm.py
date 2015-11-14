@@ -12,9 +12,11 @@ from veriloggen.lib.seq import Seq
 
 class FSM(vtypes.VeriloggenNode):
     """ Finite State Machine Generator """
-    def __init__(self, m, name, width=32, initname='init'):
+    def __init__(self, m, name, clk, rst, width=32, initname='init'):
         self.m = m
         self.name = name
+        self.clk = clk
+        self.rst = rst
         self.width = width
         self.state_count = 0
         self.state = self.m.Reg(name, width)  # set initval later
@@ -24,6 +26,8 @@ class FSM(vtypes.VeriloggenNode):
         self.state.initval = self._get_mark(0)
         
         self.body = collections.defaultdict(list)
+        self.jump = collections.defaultdict(list)
+        
         self.delay_amount = 0
         self.delayed_state = {} # key:delay
         self.delayed_body = collections.defaultdict(
@@ -34,58 +38,38 @@ class FSM(vtypes.VeriloggenNode):
         self.dst_visitor = SubstDstVisitor()
         self.reset_visitor = ResetVisitor()
 
-        self.seq = Seq(self.m, self.name + '_par')
+        self.seq = Seq(self.m, self.name + '_par', clk, rst)
 
     #---------------------------------------------------------------------------
     def current(self):
-        return self._get_index()
+        return self.state_count
         
     def next(self):
-        return self._get_index() + 1
+        return self.current() + 1
         
-    def increment(self):
+    def inc(self):
         self._set_index(None)
     
-    def inc(self):
-        self.increment()
-    
     #---------------------------------------------------------------------------
-    def goto(self, index=None, cond=None, else_index=None):
-        g = self.set(index)
-        if cond is not None:
-            g = vtypes.If(cond)(g)
-            if else_index is not None:
-                g = g.Else( self.set(else_index) )
-        self.add(g)
-        return self
+    def goto(self, dst, cond=None, else_dst=None):
+        src = self.current()
+        return self._go(src, dst, cond, else_dst)
 
     def goto_init(self, cond=None):
-        self.goto(0, cond=cond)
-        return self
+        src = self.current()
+        dst = 0
+        return self._go(src, dst, cond)
 
     def goto_next(self, cond=None):
-        self.goto(None, cond=cond)
+        src = self.current()
+        dst = self.current() + 1
+        ret = self._go(src, dst, cond=cond)
         self.inc()
-        return self
+        return ret
 
-    #---------------------------------------------------------------------------
-    def set(self, index=None):
-        if index is None: index = self.current() + 1
-        if isinstance(index, vtypes.Localparam):
-            index = self._get_mark_index(index)
-        if index not in self.mark:
-            self._set_mark(index)
-        return self.state( self.mark[index] )
+    def goto_from(self, src, dst, cond=None, else_dst=None):
+        return self._go(src, dst, cond, else_dst)
 
-    def set_init(self):
-        return [ self.set(0) ] + self._init_delayed_state()
-
-    def set_next(self):
-        return self.set(None)
-
-    def reset(self):
-        return self.set_init()
-    
     #---------------------------------------------------------------------------
     def prev(self, var, delay, initval=0):
         return self.seq.prev(var, delay, initval)
@@ -101,6 +85,7 @@ class FSM(vtypes.VeriloggenNode):
         cond = kwargs['cond'] if 'cond' in kwargs else None
         lazy_cond = kwargs['lazy_cond'] if 'lazy_cond' in kwargs else False
         eager_val = kwargs['eager_val'] if 'eager_val' in kwargs else False
+        index = self._to_index(kwargs['index']) if 'index' in kwargs else self.current()
         
         if keep is not None:
             del kwargs['keep']
@@ -111,7 +96,6 @@ class FSM(vtypes.VeriloggenNode):
         
         if delay is not None and delay > 0:
             self._add_delayed_state(delay)
-            index = self.current()
             if eager_val:
                 statement = [ self._add_delayed_subst(s, index, delay) for s in statement ]
             if cond is not None:
@@ -125,23 +109,29 @@ class FSM(vtypes.VeriloggenNode):
         if cond is not None:
             statement = [ vtypes.If(cond)(*statement) ]
             
-        index = self.current()
         self.body[index].extend(statement)
         self._add_dst_var(statement)
         return self
 
     #---------------------------------------------------------------------------
-    def make_always(self, clk, rst, reset=(), body=(), case=True):
-        self.m.Always(vtypes.Posedge(clk))(
-            vtypes.If(rst)(
-                self.make_reset(reset)
+    def make_always(self, reset=(), body=(), case=True):
+        part_reset = self.make_reset(reset)
+        part_body = list(body) + list( self.make_case() if case else self.make_if() )
+        self.m.Always(vtypes.Posedge(self.clk))(
+            vtypes.If(self.rst)(
+                part_reset,
             )(
-                body,
-                self.make_case() if case else self.make_if()
+                part_body,
             ))
     
     #---------------------------------------------------------------------------
     def make_case(self):
+        indexes = set(self.body.keys())
+        indexes.update( set(self.jump.keys()) )
+        
+        for index in indexes:
+            self._add_mark(index)
+        
         ret = []
         ret.extend( self.seq.make_code() )
         ret.extend( self._get_delayed_substs() )
@@ -154,13 +144,19 @@ class FSM(vtypes.VeriloggenNode):
             ret.append(case)
             
         body = tuple([ self._get_when_statement(index)
-                       for index in sorted(self.body.keys(), key=lambda x:x) ])
+                       for index in sorted(indexes, key=lambda x:x) ])
         case = vtypes.Case(self.state)(*body)
         ret.append(case)
 
         return tuple(ret)
     
     def make_if(self):
+        indexes = set(self.body.keys())
+        indexes.update( set(self.jump.keys()) )
+
+        for index in indexes:
+            self._add_mark(index)
+            
         ret = []
         ret.extend( self.seq.make_code() )
         ret.extend( self._get_delayed_substs() )
@@ -169,15 +165,15 @@ class FSM(vtypes.VeriloggenNode):
                                  key=lambda x:x[0], reverse=True):
             ret.append([ self._get_delayed_if_statement(index, delay)
                          for index in sorted(dct.keys(), key=lambda x:x) ])
-            
+
         ret.extend([ self._get_if_statement(index)
-                     for index in sorted(self.body.keys(), key=lambda x:x) ])
+                     for index in sorted(indexes, key=lambda x:x) ])
         return tuple(ret)
 
     #---------------------------------------------------------------------------
     def make_reset(self, reset):
         ret = collections.OrderedDict()
-        
+
         for v in reset:
             if not isinstance(v, vtypes.Subst):
                 raise TypeError('make_reset requires Subst, not %s' % str(type(v)))
@@ -213,6 +209,14 @@ class FSM(vtypes.VeriloggenNode):
             
         return list(ret.values())
         
+    #---------------------------------------------------------------------------
+    def _go(self, src, dst, cond=None, else_dst=None):
+        self._add_jump(src, dst, cond, else_dst)
+        return self
+
+    def _add_jump(self, src, dst, cond=None, else_dst=None):
+        self.jump[src].append( (dst, cond, else_dst) )
+    
     #---------------------------------------------------------------------------
     def _add_dst_var(self, statement):
         for s in statement:
@@ -259,9 +263,6 @@ class FSM(vtypes.VeriloggenNode):
         return left(prev)
     
     #---------------------------------------------------------------------------
-    def _get_index(self):
-        return self.state_count
-        
     def _set_index(self, index=None):
         if index is None:
             self.state_count += 1
@@ -288,6 +289,19 @@ class FSM(vtypes.VeriloggenNode):
             if m.name == s.name:
                 return index
         raise KeyError("No such mark in FSM marks: %s" % s.name)
+    
+    #---------------------------------------------------------------------------
+    def _add_mark(self, index):
+        index = self._to_index(index)
+        if index not in self.mark:
+            self._set_mark(index)
+        mark = self._get_mark(index)
+        return mark
+
+    def _to_index(self, index):
+        if not isinstance(index, int):
+            index = self._get_mark_index(index)
+        return index
     
     #---------------------------------------------------------------------------
     def _add_delayed_state(self, value):
@@ -328,35 +342,59 @@ class FSM(vtypes.VeriloggenNode):
     def _init_delayed_state(self):
         ret = []
         for d in range(1, self.delay_amount+1):
-            ret.append(vtypes.Subst(self.delayed_state[d], self.mark[0]))
+            ret.append(vtypes.Subst(self.delayed_state[d], self._get_mark(0)))
         return ret
-            
+
+    def _to_state_assign(self, dst, cond=None, else_dst=None):
+        dst_mark = self._get_mark(dst)
+        value = self.state(dst_mark)
+        if cond is not None:
+            value = vtypes.If(cond)(value)
+            if else_dst is not None:
+                else_dst_mark = self._get_mark(else_dst)
+                value = value.Else( self.state(else_dst_mark) )
+        return value
+    
     #---------------------------------------------------------------------------
     def _cond_case(self, index):
         if index not in self.mark:
             self._set_mark(index)
-        return self.mark[index]
+        return self._get_mark(index)
 
     def _cond_if(self, index):
         if index not in self.mark:
             self._set_mark(index)
-        return (self.state == self.mark[index])
+        return (self.state == self._get_mark(index))
 
     def _delayed_cond_if(self, index, delay):
         if index not in self.mark:
             self._set_mark(index)
         if delay > 0 and delay not in self.delayed_state:
             self._add_delayed_state(delay)
-        return (self._get_delayed_state(delay) == self.mark[index])
+        return (self._get_delayed_state(delay) == self._get_mark(index))
 
     def _get_when_statement(self, index):
-        return vtypes.When(self._cond_case(index))( *self.body[index] )
+        body = []
+        body.extend( self.body[index] )
+        for dst, cond, else_dst in self.jump[index]:
+            self._add_mark(dst)
+            if else_dst is not None:
+                self._add_mark(else_dst)
+            body.append( self._to_state_assign(dst, cond, else_dst) )
+        return vtypes.When(self._cond_case(index))( *body )
     
     def _get_delayed_when_statement(self, index, delay):
         return vtypes.When(self._cond_case(index))( *self.delayed_body[delay][index] )
     
     def _get_if_statement(self, index):
-        return vtypes.If(self._cond_if(index))( *self.body[index] )
+        body = []
+        body.extend( self.body[index] )
+        for dst, cond, else_dst in self.jump[index]:
+            self._add_mark(dst)
+            if else_dst is not None:
+                self._add_mark(else_dst)
+            body.append( self._to_state_assign(dst, cond, else_dst) )
+        return vtypes.If(self._cond_if(index))( *body )
 
     def _get_delayed_if_statement(self, index, delay):
         return vtypes.If(self._delayed_cond_if(index, delay))( *self.delayed_body[delay][index] )
