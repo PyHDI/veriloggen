@@ -1,4 +1,4 @@
-import seq_example
+import lib_seq_basic
 
 expected_verilog = """
 module test #
@@ -72,7 +72,7 @@ module blinkled #
 endmodule
 """
 def test():
-    test_module = seq_example.mkTest()
+    test_module = lib_seq_basic.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

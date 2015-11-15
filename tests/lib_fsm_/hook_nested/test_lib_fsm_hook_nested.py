@@ -1,6 +1,28 @@
-import lib_fsm_hook
+import lib_fsm_hook_nested
 
 expected_verilog = """
+module top #
+(
+  parameter WIDTH = 8
+) 
+(
+  input CLK,
+  input RST,
+  output [WIDTH-1:0] LED
+);
+
+  blinkled
+  #(
+    .WIDTH(WIDTH)
+  ) 
+  inst_blinkled
+  (
+    .CLK(CLK),
+    .RST(RST),
+    .LED(LED)
+  );
+endmodule
+
 module blinkled #
   (
    parameter WIDTH = 8
@@ -62,7 +84,7 @@ endmodule
 """
 
 def test():
-    test_module = lib_fsm_hook.mkLed()
+    test_module = lib_fsm_hook_nested.mkTop()
     dummy = test_module.to_verilog()
     code = test_module.to_verilog()
 

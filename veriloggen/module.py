@@ -8,7 +8,6 @@ import copy
 import veriloggen.vtypes as vtypes
 import veriloggen.function as function
 import veriloggen.task as task
-#import veriloggen.to_verilog as to_verilog
 
 #-------------------------------------------------------------------------------
 class Module(vtypes.VeriloggenNode):
@@ -296,21 +295,16 @@ class Module(vtypes.VeriloggenNode):
         return tuple(ret)
     
     #---------------------------------------------------------------------------
-    # User interface for code generation
+    # User interface for Verilog code generation
     #---------------------------------------------------------------------------
     def to_verilog(self, filename=None):
         import veriloggen.to_verilog as to_verilog
-        self.resolve_hook()
-        return to_verilog.write_verilog(self, filename)
+        obj = self.to_hook_resolved_obj()
+        return to_verilog.write_verilog(obj, filename)
 
     def add_hook(self, method, args=None, kwargs=None):
+        """ add a hooked method to 'to_verilog()' """
         self.hook.append( (method, args, kwargs) )
-
-    def resolve_hook(self):
-        for method, args, kwargs in self.hook:
-            if args is None: args = ()
-            if kwargs is None: kwargs = {}
-            method(*args, **kwargs)
 
     #---------------------------------------------------------------------------
     # Internal methods
@@ -454,6 +448,30 @@ class Module(vtypes.VeriloggenNode):
         if isinstance(var, vtypes.Inout):
             return vtypes.Wire
         raise TypeError('No corresponding IO type for %s' % str(type(var)))
+
+    #---------------------------------------------------------------------------
+    def to_hook_resolved_obj(self):
+        # if there is no hooked method, object copy is not required.
+        if not self.has_hook():
+            return self
+        copied = copy.deepcopy(self)
+        copied.resolve_hook()
+        return copied
+        
+    def resolve_hook(self):
+        for method, args, kwargs in self.hook:
+            if args is None: args = ()
+            if kwargs is None: kwargs = {}
+            method(*args, **kwargs)
+            
+        for sub in self.submodule.values():
+            sub.resolve_hook()
+
+    def has_hook(self):
+        if self.hook: return True
+        for sub in self.submodule.values():
+            if sub.has_hook(): return True
+        return False
 
 #-------------------------------------------------------------------------------
 class StubModule(vtypes.VeriloggenNode):

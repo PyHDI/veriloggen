@@ -26,10 +26,20 @@ def mkLed():
     
     return m
 
-if __name__ == '__main__':
+def mkTop():
+    m = Module('top')
     led = mkLed()
+    params = m.copy_params(led)
+    ports = m.copy_ports(led)
+    m.Instance(led, 'inst_' + led.name,
+               connect_same_name(*params.values()),
+               connect_same_name(*ports.values()))
+    return m
+
+if __name__ == '__main__':
+    top = mkTop()
     # to_verilog() method is immuatable.
     # Hooked methods are called for the copied object to keep the internal state.
-    dummy = led.to_verilog()
-    verilog = led.to_verilog()
+    dummy = top.to_verilog()
+    verilog = top.to_verilog()
     print(verilog)
