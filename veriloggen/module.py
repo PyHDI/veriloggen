@@ -272,22 +272,22 @@ class Module(vtypes.VeriloggenNode):
         return ret
 
     #---------------------------------------------------------------------------
-    def connect_params(self, targ):
+    def connect_params(self, targ, strict=False):
         ret = []
         for key, obj in targ.global_constant.items():
-            if (key not in self.global_constant) and (key not in self.constant):
-                raise IndexError("No such constant in module %s" % self.name)
+            if strict and (key not in self.global_constant) and (key not in self.constant):
+                raise IndexError("No such constant '%s' in module '%s'" % (key, self.name))
             if key in self.global_constant:
                 ret.append( (key, self.global_constant[key]) )
             elif key in self.constant:
                 ret.append( (key, self.constant[key]) )
         return tuple(ret)
     
-    def connect_ports(self, targ):
+    def connect_ports(self, targ, strict=False):
         ret = []
         for key, obj in targ.io_variable.items():
-            if (key not in self.io_variable) and (key not in self.variable):
-                raise IndexError("No such IO in module %s" % self.name)
+            if strict and (key not in self.io_variable) and (key not in self.variable):
+                raise IndexError("No such IO '%s' in module '%s'" % (key, self.name))
             if key in self.io_variable:
                 ret.append( (key, self.io_variable[key]) )
             elif key in self.variable:
@@ -577,6 +577,8 @@ def connect_same_name(*args):
     for arg in args:
         if isinstance(arg, (list, tuple)):
             ret.extend([ (a.name, a) for a in arg ])
-        else:
+        elif isinstance(arg, vtypes._Variable):
             ret.append( (arg.name, arg) )
+        else:
+            raise TypeError('connect_same_name supports Variables, lists and tuples of them.')
     return ret

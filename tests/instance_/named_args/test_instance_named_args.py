@@ -1,4 +1,4 @@
-import named_args
+import instance_named_args
 
 expected_verilog = """
 module top #
@@ -56,7 +56,7 @@ endmodule
 """
 
 def test_led():
-    test_module = named_args.mkTop()
+    test_module = instance_named_args.mkTop()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
