@@ -27,16 +27,16 @@ def mkLed():
     va = m.Output('va')
     ra = m.Input('ra')
     
-    pipe = lib.Dataflow(m, 'pipe', clk, rst)
+    df = lib.Dataflow(m, 'df', clk, rst)
     
-    px = pipe.input(x, valid=vx, ready=rx)
-    py = pipe.input(y, valid=vy, ready=ry)
-    pz = pipe(px + py)
-    pa = pipe(py - px)
+    px = df.input(x, valid=vx, ready=rx)
+    py = df.input(y, valid=vy, ready=ry)
+    pz = df(px + py)
+    pa = df(py - px)
     pz.output(z, valid=vz, ready=rz)
     pa.output(a, valid=va, ready=ra)
     
-    pipe.make_always()
+    df.make_always()
 
     return m
 

@@ -18,13 +18,13 @@ def mkLed():
     ry = m.Input('ry')
     prst = m.Input('prst')
     
-    pipe = lib.Dataflow(m, 'pipe', clk, rst)
+    df = lib.Dataflow(m, 'df', clk, rst)
 
-    px = pipe.input(x, valid=vx, ready=rx)
-    psum = pipe.acc_add(px, initval=0, resetcond=prst)
+    px = df.input(x, valid=vx, ready=rx)
+    psum = df.acc_add(px, initval=0, resetcond=prst)
     psum.output(y, valid=vy, ready=ry)
     
-    pipe.make_always()
+    df.make_always()
 
     return m
 

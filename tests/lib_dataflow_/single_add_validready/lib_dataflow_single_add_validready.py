@@ -17,14 +17,14 @@ def mkLed():
     vy = m.Output('vy')
     ry = m.Input('ry')
     
-    pipe = lib.Dataflow(m, 'pipe', clk, rst)
+    df = lib.Dataflow(m, 'df', clk, rst)
     
-    px = pipe.input(x, valid=vx, ready=rx)
-    t0 = pipe(px.prev(1) + px.prev(2))
-    py = pipe(t0 + px)
+    px = df.input(x, valid=vx, ready=rx)
+    t0 = df(px.prev(1) + px.prev(2))
+    py = df(t0 + px)
     py.output(y, valid=vy, ready=ry)
     
-    pipe.make_always()
+    df.make_always()
 
     return m
 

@@ -204,36 +204,36 @@ module blinkled
   input ry
 );
 
-  assign rx = ((_pipe_ready_0 || (!_pipe_valid_0)) && (_pipe_ready_1 || (!_pipe_valid_1)));
-  reg [32-1:0] _pipe_data_0;
-  reg _pipe_valid_0;
-  wire _pipe_ready_0;
-  assign _pipe_ready_0 = 1;
-  reg [32-1:0] _pipe_data_1;
-  reg _pipe_valid_1;
-  wire _pipe_ready_1;
-  assign _pipe_ready_1 = ry;
-  assign y = _pipe_data_1;
-  assign vy = _pipe_valid_1;
+  assign rx = ((_df_ready_0 || (!_df_valid_0)) && (_df_ready_1 || (!_df_valid_1)));
+  reg [32-1:0] _df_data_0;
+  reg _df_valid_0;
+  wire _df_ready_0;
+  assign _df_ready_0 = 1;
+  reg [32-1:0] _df_data_1;
+  reg _df_valid_1;
+  wire _df_ready_1;
+  assign _df_ready_1 = ry;
+  assign y = _df_data_1;
+  assign vy = _df_valid_1;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _pipe_data_0 <= 0;
-      _pipe_valid_0 <= 0;
-      _pipe_data_1 <= 0;
-      _pipe_valid_1 <= 0;
+      _df_data_0 <= 0;
+      _df_valid_0 <= 0;
+      _df_data_1 <= 0;
+      _df_valid_1 <= 0;
     end else begin
-      if(((vx && rx) && (_pipe_ready_0 || (!_pipe_valid_0)))) begin
-        _pipe_data_0 <= x;
+      if(((vx && rx) && (_df_ready_0 || (!_df_valid_0)))) begin
+        _df_data_0 <= x;
       end 
-      if((_pipe_ready_0 || (!_pipe_valid_0))) begin
-        _pipe_valid_0 <= (vx && rx);
+      if((_df_ready_0 || (!_df_valid_0))) begin
+        _df_valid_0 <= (vx && rx);
       end 
-      if(((vx && rx) && (_pipe_ready_1 || (!_pipe_valid_1)))) begin
-        _pipe_data_1 <= x;
+      if(((vx && rx) && (_df_ready_1 || (!_df_valid_1)))) begin
+        _df_data_1 <= x;
       end 
-      if((_pipe_ready_1 || (!_pipe_valid_1))) begin
-        _pipe_valid_1 <= (vx && rx);
+      if((_df_ready_1 || (!_df_valid_1))) begin
+        _df_valid_1 <= (vx && rx);
       end 
     end
   end

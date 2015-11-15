@@ -111,34 +111,34 @@ module blinkled
   input prst
 );
 
-  reg [32-1:0] _pipe_data_0;
-  reg _pipe_valid_0;
-  reg [32-1:0] _pipe_data_1;
-  reg _pipe_valid_1;
-  assign y = _pipe_data_1;
-  assign vy = _pipe_valid_1;
+  reg [32-1:0] _df_data_0;
+  reg _df_valid_0;
+  reg [32-1:0] _df_data_1;
+  reg _df_valid_1;
+  assign y = _df_data_1;
+  assign vy = _df_valid_1;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _pipe_data_0 <= 0;
-      _pipe_valid_0 <= 0;
-      _pipe_data_1 <= 0;
-      _pipe_valid_1 <= 0;
+      _df_data_0 <= 0;
+      _df_valid_0 <= 0;
+      _df_data_1 <= 0;
+      _df_valid_1 <= 0;
     end else begin
       if(vx) begin
-        _pipe_data_0 <= _pipe_data_0 + x;
+        _df_data_0 <= _df_data_0 + x;
       end 
-      _pipe_valid_0 <= vx;
+      _df_valid_0 <= vx;
       if(prst) begin
-        _pipe_data_0 <= 0;
+        _df_data_0 <= 0;
       end 
       if(prst) begin
-        _pipe_valid_0 <= 0;
+        _df_valid_0 <= 0;
       end 
-      if(_pipe_valid_0) begin
-        _pipe_data_1 <= _pipe_data_0;
+      if(_df_valid_0) begin
+        _df_data_1 <= _df_data_0;
       end 
-      _pipe_valid_1 <= _pipe_valid_0;
+      _df_valid_1 <= _df_valid_0;
     end
   end
 

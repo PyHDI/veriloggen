@@ -258,37 +258,37 @@ module blinkled
   input rz
 );
 
-  assign rx = (_pipe_ready_0 || (!_pipe_valid_0));
-  assign ry = (_pipe_ready_0 || (!_pipe_valid_0));
-  reg [32-1:0] _pipe_data_0;
-  reg _pipe_valid_0;
-  wire _pipe_ready_0;
-  assign _pipe_ready_0 = (_pipe_ready_1 || (!_pipe_valid_1));
-  reg [32-1:0] _pipe_data_1;
-  reg _pipe_valid_1;
-  wire _pipe_ready_1;
-  assign _pipe_ready_1 = rz;
-  assign z = _pipe_data_1;
-  assign vz = _pipe_valid_1;
+  assign rx = (_df_ready_0 || (!_df_valid_0));
+  assign ry = (_df_ready_0 || (!_df_valid_0));
+  reg [32-1:0] _df_data_0;
+  reg _df_valid_0;
+  wire _df_ready_0;
+  assign _df_ready_0 = (_df_ready_1 || (!_df_valid_1));
+  reg [32-1:0] _df_data_1;
+  reg _df_valid_1;
+  wire _df_ready_1;
+  assign _df_ready_1 = rz;
+  assign z = _df_data_1;
+  assign vz = _df_valid_1;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _pipe_data_0 <= 0;
-      _pipe_valid_0 <= 0;
-      _pipe_data_1 <= 0;
-      _pipe_valid_1 <= 0;
+      _df_data_0 <= 0;
+      _df_valid_0 <= 0;
+      _df_data_1 <= 0;
+      _df_valid_1 <= 0;
     end else begin
-      if((((vx && rx) && (vy && ry)) && (_pipe_ready_0 || (!_pipe_valid_0)))) begin
-        _pipe_data_0 <= (x + y);
+      if((((vx && rx) && (vy && ry)) && (_df_ready_0 || (!_df_valid_0)))) begin
+        _df_data_0 <= (x + y);
       end 
-      if((_pipe_ready_0 || (!_pipe_valid_0))) begin
-        _pipe_valid_0 <= ((vx && rx) && (vy && ry));
+      if((_df_ready_0 || (!_df_valid_0))) begin
+        _df_valid_0 <= ((vx && rx) && (vy && ry));
       end 
-      if(((_pipe_valid_0 && _pipe_ready_0) && (_pipe_ready_1 || (!_pipe_valid_1)))) begin
-        _pipe_data_1 <= _pipe_data_0;
+      if(((_df_valid_0 && _df_ready_0) && (_df_ready_1 || (!_df_valid_1)))) begin
+        _df_data_1 <= _df_data_0;
       end 
-      if((_pipe_ready_1 || (!_pipe_valid_1))) begin
-        _pipe_valid_1 <= (_pipe_valid_0 && _pipe_ready_0);
+      if((_df_ready_1 || (!_df_valid_1))) begin
+        _df_valid_1 <= (_df_valid_0 && _df_ready_0);
       end 
     end
   end
