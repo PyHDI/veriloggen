@@ -35,7 +35,7 @@ class Dataflow(vtypes.VeriloggenNode):
         if width is None: width = self.width
         stage_id, raw_data, raw_valid, raw_ready = self.data_visitor.visit(data)
         tmp_data, tmp_valid, tmp_ready = self._make_tmp(raw_data, raw_valid, raw_ready,
-                                                       width, initval)
+                                                        width, initval)
         next_stage_id = stage_id + 1 if stage_id is not None else None
         ret = _DataflowVariable(self, next_stage_id, tmp_data, tmp_valid, tmp_ready)
         self.vars.append(ret)
@@ -100,7 +100,7 @@ class Dataflow(vtypes.VeriloggenNode):
         if width is None: width = self.width
         stage_id, raw_data, raw_valid, raw_ready = self.data_visitor.visit(data)
         tmp_data, tmp_valid, tmp_ready = self._make_tmp(raw_data, raw_valid, raw_ready,
-                                                       width, initval, acc_ops=ops)
+                                                        width, initval, acc_ops=ops)
         next_stage_id = stage_id + 1 if stage_id is not None else None
         ret = _DataflowVariable(self, next_stage_id, tmp_data, tmp_valid, tmp_ready)
         if resetcond is not None:
