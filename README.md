@@ -59,7 +59,7 @@ Options
 - pytest: 2.8.2 or later
 - pytest-pythonpath: 0.7 or later
 
-These softwares are required for the test of tests and examples.
+These softwares are required for running the tests in tests and examples.
 
     pip install pytest pytest-pythonpath
 
