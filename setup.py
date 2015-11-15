@@ -23,6 +23,7 @@ setup(name='veriloggen',
       #package_data={ 'path' : ['*.*'], },
       install_requires=[ 'pyverilog>=1.0.1', 'Jinja2>=2.8' ],
       extras_require={
+          'graph' : [ 'pygraphviz>=1.3.1' ],
           'test' : [ 'pytest>=2.8.2', 'pytest-pythonpath>=0.7' ],
       },
 )

@@ -25,20 +25,23 @@ class Dataflow(vtypes.VeriloggenNode):
         if ready is not None and not isinstance(ready, (vtypes.Wire, vtypes.Output)):
             raise TypeError('ready port of DataflowVariable must be Wire., not %s' %
                             str(type(ready)))
-        ret = _DataflowVariable(self, 0, data, valid, ready)
+        ret = _DataflowVariable(self, 0, data, valid, ready,
+                                _DataflowInterface(data, valid, ready))
         self.vars.append(ret)
         return ret
         
     #---------------------------------------------------------------------------
     # self.__call__() calls this method
-    def stage(self, data, initval=0, width=None):
+    def stage(self, data, initval=0, width=None, preg=None):
         if width is None: width = self.width
         stage_id, raw_data, raw_valid, raw_ready = self.data_visitor.visit(data)
         tmp_data, tmp_valid, tmp_ready = self._make_tmp(raw_data, raw_valid, raw_ready,
                                                         width, initval)
         next_stage_id = stage_id + 1 if stage_id is not None else None
-        ret = _DataflowVariable(self, next_stage_id, tmp_data, tmp_valid, tmp_ready)
+        ret = _DataflowVariable(self, next_stage_id, tmp_data, tmp_valid, tmp_ready, data)
         self.vars.append(ret)
+        if isinstance(preg, _DataflowVariable):
+            preg._add_preg(next_stage_id, ret)
         return ret
 
     #---------------------------------------------------------------------------
@@ -96,13 +99,17 @@ class Dataflow(vtypes.VeriloggenNode):
         return self.seq.make_code()
     
     #---------------------------------------------------------------------------
+    def draw_graph(self, filename='out.png', prog='dot'):
+        _draw_graph(self, filename, prog)
+    
+    #---------------------------------------------------------------------------
     def _accumulate(self, ops, data, width=None, initval=0, resetcond=None):
         if width is None: width = self.width
         stage_id, raw_data, raw_valid, raw_ready = self.data_visitor.visit(data)
         tmp_data, tmp_valid, tmp_ready = self._make_tmp(raw_data, raw_valid, raw_ready,
                                                         width, initval, acc_ops=ops)
         next_stage_id = stage_id + 1 if stage_id is not None else None
-        ret = _DataflowVariable(self, next_stage_id, tmp_data, tmp_valid, tmp_ready)
+        ret = _DataflowVariable(self, next_stage_id, tmp_data, tmp_valid, tmp_ready, None, ops)
         if resetcond is not None:
             ret.reset(resetcond, initval)
         self.vars.append(ret)
@@ -285,16 +292,32 @@ class Dataflow(vtypes.VeriloggenNode):
         return self.stage(data, initval=initval, width=width)
     
 #-------------------------------------------------------------------------------
+class _DataflowInterface(object):
+    def __init__(self, data, valid=None, ready=None, output=False):
+        self.data = data
+        self.valid = valid
+        self.ready = ready
+        self.output = output
+
+    def __str__(self):
+        args = [ self.data, self.valid, self.ready ]
+        return ','.join([ str(arg) for arg in args ]) 
+
+#-------------------------------------------------------------------------------
 class _DataflowNumeric(vtypes._Numeric): pass
 
 class _DataflowVariable(_DataflowNumeric):
-    def __init__(self, pipe, stage_id, data, valid=None, ready=None):
+    def __init__(self, pipe, stage_id, data, valid=None, ready=None, src_data=None, ops=None):
         self.pipe = pipe
         self.stage_id = stage_id
         self.data = data
         self.valid = valid
         self.ready = ready
+        self.src_data = src_data
+        self.dst_data = None
+        self.ops = ops
         self.prev_dict = {}
+        self.preg_dict = {}
         if self.ready is not None:
             ready = vtypes.Int(1)
             self.pipe.m.Assign( self.ready(ready) )
@@ -317,8 +340,8 @@ class _DataflowVariable(_DataflowNumeric):
                 continue
             
             tmp_data, tmp_valid, tmp_ready = self.pipe._make_prev(p.data, p.valid, p.ready,
-                                                                 self.valid, width, initval)
-            p = _DataflowVariable(self.pipe, p.stage_id, tmp_data, tmp_valid, tmp_ready)
+                                                                  self.valid, width, initval)
+            p = _DataflowVariable(self.pipe, p.stage_id, tmp_data, tmp_valid, tmp_ready, p)
             self.pipe.vars.append(p)
             self.prev_dict[i+1] = p
             
@@ -329,7 +352,7 @@ class _DataflowVariable(_DataflowNumeric):
         if nobuf:
             ovar = self
         else:
-            ovar = self.pipe.stage(self)
+            ovar = self.pipe.stage(self, preg=self)
         
         if not isinstance(data, (vtypes.Wire, vtypes.Output)):
             raise TypeError('Data signal must be Wire, not %s' % str(type(data)))
@@ -356,6 +379,8 @@ class _DataflowVariable(_DataflowNumeric):
             else:
                 ovar.ready.subst[0].overwrite_right( vtypes.AndList(prev_subst[0].right, ready) )
 
+        ovar.dst_data = _DataflowInterface(data, valid, ready, output=True)
+                
     def reset(self, cond, initval=0):
         self.pipe.seq.add( self.data(initval), cond=cond )
         if self.valid is not None:
@@ -363,7 +388,17 @@ class _DataflowVariable(_DataflowNumeric):
             
     def bit_length(self):
         return self.data.bit_length()
-            
+
+    def _add_preg(self, stage_id, var):
+        self.preg_dict[stage_id] = var
+
+    def _get_preg(self, stage_id=None):
+        if stage_id is None:
+            return self
+        if stage_id == self.stage_id:
+            return self
+        return self.preg_dict[stage_id]
+    
 #-------------------------------------------------------------------------------
 class _DataflowVisitor(object):
     def generic_visit(self, node):
@@ -476,7 +511,7 @@ class DataVisitor(_DataflowVisitor):
             p = arg
             for i in range(diff):
                 width = rslt[1].bit_length()
-                p = self.pipe.stage(p, width=width)
+                p = self.pipe.stage(p, width=width, preg=arg)
 
             new_args.append(p)
 
@@ -554,3 +589,175 @@ class DataVisitor(_DataflowVisitor):
 
     def visit_float(self, node):
         return (None, vtypes.Float(node), None, [])
+
+#-------------------------------------------------------------------------------
+def _draw_graph(df, filename='out.png', prog='dot'):
+    gg = GraphGenerator(df)
+    gg.draw(filename, prog)
+
+class GraphGenerator(_DataflowVisitor):
+    def __init__(self, df):
+        try:
+            import pygraphviz as pgv
+        except:
+            raise ImportError('Graph generator of lib.Dataflow requires Pygraphviz.')
+        self.df = df
+        self.graph = pgv.AGraph(directed=True)
+
+    def draw(self, filename='out.png', prog='dot'):
+        for var in self.df.vars:
+            self.visit(var)
+
+        self.graph.write('out.dot')
+        self.graph.layout(prog=prog)
+        self.graph.draw(filename)
+            
+    def _add_node(self, node, label=None, color='black', shape='box'):
+        if label is None:
+            self.graph.add_node(str(node), color=color, shape=shape)
+        else:
+            self.graph.add_node(str(node), label=label, color=color, shape=shape)
+
+    def _add_edge(self, start, end, color='black', label=None, style='solid'):
+        if label:
+            self.graph.add_edge(str(start), str(end), color=color, label=label, style=style)
+        else:
+            self.graph.add_edge(str(start), str(end), color=color, style=style)
+
+    def _max_stage_id(self, *args):
+        maxval = None
+        for arg in args:
+            if arg is None or not hasattr(arg, 'stage_id'):
+                continue
+            if maxval is None:
+                maxval = arg.stage_id
+                continue
+            if arg.stage_id > maxval:
+                maxval = arg.stage_id
+        return maxval
+
+    def visit__DataflowInterface(self, node):
+        if node.output:
+            self._add_node(node, label=str(node), shape='trapezium')
+        else:
+            self._add_node(node, label=str(node), shape='invtrapezium')
+            
+    def visit__DataflowVariable(self, node):
+        if node.src_data is not None:
+            self._add_node(node, label=str(node.data), shape='box')
+            self.visit(node.src_data)
+            self._add_edge(node.src_data, node)
+        if node.src_data is None and node.ops:
+            label = [ str(node.data) ]
+            for op in node.ops:
+                label.append(vtypes.op2mark(op))
+            self._add_node(node, label=' '.join(label), shape='box')
+        if isinstance(node.dst_data, _DataflowInterface):
+            self.visit(node.dst_data)
+            self._add_edge(node, node.dst_data)
+
+    def visit__Variable(self, node):
+        self._add_node(node, label=node.name, shape='invhouse')
+    
+    def visit__Constant(self, node):
+        self._add_node(node, label=node.value, shape='invhouse')
+
+    def visit__BinaryOperator(self, node):
+        mark = vtypes.op2mark(node.__class__.__name__)
+        self._add_node(node, label=mark, shape='ellipse')
+        maxid = self._max_stage_id(node.left, node.right)
+        left = node.left
+        right = node.right
+        if hasattr(left, '_get_preg'):
+            left = left._get_preg(maxid)
+        if hasattr(right, '_get_preg'):
+            right = right._get_preg(maxid)
+        self._add_edge(left, node, label='L')
+        self._add_edge(right, node, label='R')
+    
+    def visit__UnaryOperator(self, node):
+        mark = vtypes.op2mark(node.__class__.__name__)
+        self._add_node(node, label=mark, shape='ellipse')
+        self.visit(node.right)
+        self._add_edge(node.right, node)
+        
+    def visit_Pointer(self, node):
+        mark = 'sel'
+        self._add_node(node, label=mark, shape='ellipse')
+        maxid = self._max_stage_id(node.var, node.pos)
+        var = node.var
+        pos = node.pos
+        if hasattr(var, '_get_preg'):
+            var = var._get_preg(maxid)
+        if hasattr(pos, '_get_preg'):
+            pos = pos._get_preg(maxid)
+        self._add_edge(var, node, label='V')
+        self._add_edge(pos, node, label='P')
+    
+    def visit_Slice(self, node):
+        mark = 'slice'
+        self._add_node(node, label=mark, shape='ellipse')
+        maxid = self._max_stage_id(node.var, node.msb, node.lsb)
+        var = node.var
+        msb = node.msb
+        lsb = node.lsb
+        if hasattr(var, '_get_preg'):
+            var = var._get_preg(maxid)
+        if hasattr(msb, '_get_preg'):
+            msb = msb._get_preg(maxid)
+        if hasattr(lsb, '_get_preg'):
+            lsb = lsb._get_preg(maxid)
+        self._add_edge(var, node, label='V')
+        self._add_edge(msb, node, label='M')
+        self._add_edge(lsb, node, label='L')
+    
+    def visit_Cat(self, node):
+        mark = 'cat'
+        self._add_node(node, label=mark, shape='ellipse')
+        maxid = self._max_stage_id(*node.vars)
+        for var in node.vars:
+            if hasattr(var, '_get_preg'):
+                var = var._get_preg(maxid)
+            self._add_edge(var, node)
+    
+    def visit_Repeat(self, node):
+        mark = 'repeat'
+        self._add_node(node, label=mark, shape='ellipse')
+        maxid = self._max_stage_id(node.var, node.times)
+        var = node.var
+        times = node.times
+        if hasattr(var, '_get_preg'):
+            var = var._get_preg(maxid)
+        if hasattr(times, '_get_preg'):
+            times = times._get_preg(maxid)
+        self._add_edge(var, node, label='V')
+        self._add_edge(times, node, label='T')
+    
+    def visit_Cond(self, node):
+        mark = 'cond'
+        self._add_node(node, label=mark, shape='ellipse')
+        maxid = self._max_stage_id(node.condition, node.true_value, node.false_value)
+        condition = node.condition
+        true_value = node.true_value
+        false_value = node.false_value
+        if hasattr(condition, '_get_preg'):
+            condition = condition._get_preg(maxid)
+        if hasattr(true_value, '_get_preg'):
+            true_value = true_value._get_preg(maxid)
+        if hasattr(false_value, '_get_preg'):
+            false_value = false_value._get_preg(maxid)
+        self._add_edge(condition, node, label='C')
+        self._add_edge(true_value, node, label='T')
+        self._add_edge(false_value, node, label='F')
+    
+    def visit_bool(self, node):
+        self._add_node(node, label=str(node), shape='invhouse')
+    
+    def visit_int(self, node):
+        self._add_node(node, label=str(node), shape='invhouse')
+
+    def visit_str(self, node):
+        self._add_node(node, label=str(node), shape='invhouse')
+
+    def visit_float(self, node):
+        self._add_node(node, label=str(node), shape='invhouse')
