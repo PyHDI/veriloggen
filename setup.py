@@ -21,8 +21,8 @@ setup(name='veriloggen',
       url='https://github.com/PyHDI/veriloggen',
       packages=find_packages(),
       #package_data={ 'path' : ['*.*'], },
-      install_requires=[ 'pyverilog', 'Jinja2' ],
+      install_requires=[ 'pyverilog>=1.0.1', 'Jinja2>=2.8' ],
       extras_require={
-          'test' : [ 'pytest', 'pytest-pythonpath' ],
+          'test' : [ 'pytest>=2.8.2', 'pytest-pythonpath>=0.7' ],
       },
 )

@@ -49,7 +49,7 @@ Install on your python environment by using pip.
 
     pip install jinja2 pytest pytest-pythonpath
 
-- Pyverilog: 1.0.0 or later
+- Pyverilog: 1.0.1 or later
 
 Install from pip:
 
