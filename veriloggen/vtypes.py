@@ -274,6 +274,9 @@ class Supply(_ParameterVairable): pass
 #-------------------------------------------------------------------------------
 class _Constant(_Numeric):
     def __init__(self, value, width=None, base=None):
+        self.value = value
+        self.width = width
+        self.base = base
         self._type_check_value(value)
         self._type_check_width(width)
         self._type_check_base(base)
@@ -282,7 +285,7 @@ class _Constant(_Numeric):
     def _type_check_base(self, base): pass
 
     def __str__(self):
-        return str(value)
+        return str(self.value)
         
 class Int(_Constant):
     def __init__(self, value, width=None, base=None, signed=False):

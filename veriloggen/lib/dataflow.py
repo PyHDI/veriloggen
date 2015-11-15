@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 import os
 import sys
+import copy
 from functools import reduce
 
 import veriloggen.vtypes as vtypes
@@ -109,7 +110,8 @@ class Dataflow(vtypes.VeriloggenNode):
         tmp_data, tmp_valid, tmp_ready = self._make_tmp(raw_data, raw_valid, raw_ready,
                                                         width, initval, acc_ops=ops)
         next_stage_id = stage_id + 1 if stage_id is not None else None
-        ret = _DataflowVariable(self, next_stage_id, tmp_data, tmp_valid, tmp_ready, None, ops)
+        ret = _DataflowVariable(self, next_stage_id, tmp_data, tmp_valid, tmp_ready,
+                                data, ops, resetcond)
         if resetcond is not None:
             ret.reset(resetcond, initval)
         self.vars.append(ret)
@@ -307,7 +309,8 @@ class _DataflowInterface(object):
 class _DataflowNumeric(vtypes._Numeric): pass
 
 class _DataflowVariable(_DataflowNumeric):
-    def __init__(self, pipe, stage_id, data, valid=None, ready=None, src_data=None, ops=None):
+    def __init__(self, pipe, stage_id, data, valid=None, ready=None,
+                 src_data=None, ops=None, resetcond=None, initval=None):
         self.pipe = pipe
         self.stage_id = stage_id
         self.data = data
@@ -316,6 +319,8 @@ class _DataflowVariable(_DataflowNumeric):
         self.src_data = src_data
         self.dst_data = None
         self.ops = ops
+        self.resetcond = resetcond
+        self.initval = initval
         self.prev_dict = {}
         self.preg_dict = {}
         if self.ready is not None:
@@ -382,6 +387,8 @@ class _DataflowVariable(_DataflowNumeric):
         ovar.dst_data = _DataflowInterface(data, valid, ready, output=True)
                 
     def reset(self, cond, initval=0):
+        self.resetcond = cond
+        self.initval = initval
         self.pipe.seq.add( self.data(initval), cond=cond )
         if self.valid is not None:
             self.pipe.seq.add( self.valid(0), cond=cond )
@@ -392,7 +399,7 @@ class _DataflowVariable(_DataflowNumeric):
     def _add_preg(self, stage_id, var):
         self.preg_dict[stage_id] = var
 
-    def _get_preg(self, stage_id=None):
+    def _get_preg(self, stage_id):
         if stage_id is None:
             return self
         if stage_id == self.stage_id:
@@ -606,23 +613,33 @@ class GraphGenerator(_DataflowVisitor):
 
     def draw(self, filename='out.png', prog='dot'):
         for var in self.df.vars:
-            self.visit(var)
+            # traverse from only output nodes
+            if isinstance(var.dst_data, _DataflowInterface):
+                self.visit(var)
 
         self.graph.write('out.dot')
         self.graph.layout(prog=prog)
         self.graph.draw(filename)
             
-    def _add_node(self, node, label=None, color='black', shape='box'):
+    def _add_node(self, node, label=None, color='black', shape='box', style='solid'):
         if label is None:
-            self.graph.add_node(str(node), color=color, shape=shape)
+            self.graph.add_node(id(node), color=color, shape=shape, style=style)
         else:
-            self.graph.add_node(str(node), label=label, color=color, shape=shape)
+            self.graph.add_node(id(node), label=label, color=color, shape=shape, style=style)
 
     def _add_edge(self, start, end, color='black', label=None, style='solid'):
+        if isinstance(start, (bool, int, str, float)):
+            # to append multiple first-class objects with same values
+            start = copy.deepcopy(vtypes._Constant(start))
+            self._add_node(start, label=str(start), shape='invtriangle')
+        if isinstance(end, (bool, int, str, float)):
+            # to append multiple first-class objects with same values
+            end = copy.deepcopy(vtypes._Constant(end))
+            self._add_node(end, label=str(end), shape='invtriangle')
         if label:
-            self.graph.add_edge(str(start), str(end), color=color, label=label, style=style)
+            self.graph.add_edge(id(start), id(end), color=color, label=label, style=style)
         else:
-            self.graph.add_edge(str(start), str(end), color=color, style=style)
+            self.graph.add_edge(id(start), id(end), color=color, style=style)
 
     def _max_stage_id(self, *args):
         maxval = None
@@ -643,24 +660,30 @@ class GraphGenerator(_DataflowVisitor):
             self._add_node(node, label=str(node), shape='invtrapezium')
             
     def visit__DataflowVariable(self, node):
-        if node.src_data is not None:
+        if node.src_data is not None and not node.ops:
             self._add_node(node, label=str(node.data), shape='box')
             self.visit(node.src_data)
             self._add_edge(node.src_data, node)
-        if node.src_data is None and node.ops:
+        if node.src_data is not None and node.ops:
             label = [ str(node.data) ]
             for op in node.ops:
-                label.append(vtypes.op2mark(op))
-            self._add_node(node, label=' '.join(label), shape='box')
+                label.append(vtypes.op2mark(op.__name__))
+            label.append('=')
+            self._add_node(node, label=''.join(label), shape='box', style='rounded')
+            self.visit(node.src_data)
+            self._add_edge(node.src_data, node)
+            if node.resetcond:
+                self.visit(node.resetcond)
+                self._add_edge(node.resetcond, node, label='RST', style='dashed')
         if isinstance(node.dst_data, _DataflowInterface):
             self.visit(node.dst_data)
             self._add_edge(node, node.dst_data)
 
     def visit__Variable(self, node):
-        self._add_node(node, label=node.name, shape='invhouse')
+        self._add_node(node, label=node.name, shape='invtriangle')
     
     def visit__Constant(self, node):
-        self._add_node(node, label=node.value, shape='invhouse')
+        self._add_node(node, label=node.value, shape='invtriangle')
 
     def visit__BinaryOperator(self, node):
         mark = vtypes.op2mark(node.__class__.__name__)
@@ -672,6 +695,8 @@ class GraphGenerator(_DataflowVisitor):
             left = left._get_preg(maxid)
         if hasattr(right, '_get_preg'):
             right = right._get_preg(maxid)
+        self.visit(left)
+        self.visit(right)
         self._add_edge(left, node, label='L')
         self._add_edge(right, node, label='R')
     
@@ -691,8 +716,10 @@ class GraphGenerator(_DataflowVisitor):
             var = var._get_preg(maxid)
         if hasattr(pos, '_get_preg'):
             pos = pos._get_preg(maxid)
+        self.visit(var)
+        self.visit(pos)
         self._add_edge(var, node, label='V')
-        self._add_edge(pos, node, label='P')
+        self._add_edge(pos, node, label='P', style='dashed')
     
     def visit_Slice(self, node):
         mark = 'slice'
@@ -707,9 +734,12 @@ class GraphGenerator(_DataflowVisitor):
             msb = msb._get_preg(maxid)
         if hasattr(lsb, '_get_preg'):
             lsb = lsb._get_preg(maxid)
+        self.visit(var)
+        self.visit(msb)
+        self.visit(lsb)
         self._add_edge(var, node, label='V')
-        self._add_edge(msb, node, label='M')
-        self._add_edge(lsb, node, label='L')
+        self._add_edge(msb, node, label='M', style='dashed')
+        self._add_edge(lsb, node, label='L', style='dashed')
     
     def visit_Cat(self, node):
         mark = 'cat'
@@ -718,6 +748,7 @@ class GraphGenerator(_DataflowVisitor):
         for var in node.vars:
             if hasattr(var, '_get_preg'):
                 var = var._get_preg(maxid)
+            self.visit(var)
             self._add_edge(var, node)
     
     def visit_Repeat(self, node):
@@ -730,8 +761,10 @@ class GraphGenerator(_DataflowVisitor):
             var = var._get_preg(maxid)
         if hasattr(times, '_get_preg'):
             times = times._get_preg(maxid)
+        self.visit(var)
+        self.visit(times)
         self._add_edge(var, node, label='V')
-        self._add_edge(times, node, label='T')
+        self._add_edge(times, node, label='T', style='dashed')
     
     def visit_Cond(self, node):
         mark = 'cond'
@@ -746,18 +779,25 @@ class GraphGenerator(_DataflowVisitor):
             true_value = true_value._get_preg(maxid)
         if hasattr(false_value, '_get_preg'):
             false_value = false_value._get_preg(maxid)
-        self._add_edge(condition, node, label='C')
+        self.visit(condition)
+        self.visit(true_value)
+        self.visit(false_value)
+        self._add_edge(condition, node, label='C', style='dashed')
         self._add_edge(true_value, node, label='T')
         self._add_edge(false_value, node, label='F')
     
     def visit_bool(self, node):
-        self._add_node(node, label=str(node), shape='invhouse')
+        pass
+        #self._add_node(node, label=str(node), shape='invtriangle')
     
     def visit_int(self, node):
-        self._add_node(node, label=str(node), shape='invhouse')
+        pass
+        #self._add_node(node, label=str(node), shape='invtriangle')
 
     def visit_str(self, node):
-        self._add_node(node, label=str(node), shape='invhouse')
+        pass
+        #self._add_node(node, label=str(node), shape='invtriangle')
 
     def visit_float(self, node):
-        self._add_node(node, label=str(node), shape='invhouse')
+        pass
+        #self._add_node(node, label=str(node), shape='invtriangle')
