@@ -309,9 +309,9 @@ class _DataflowInterface(object):
 class _DataflowNumeric(vtypes._Numeric): pass
 
 class _DataflowVariable(_DataflowNumeric):
-    def __init__(self, pipe, stage_id, data, valid=None, ready=None,
+    def __init__(self, df, stage_id, data, valid=None, ready=None,
                  src_data=None, ops=None, resetcond=None, initval=None):
-        self.pipe = pipe
+        self.df = df
         self.stage_id = stage_id
         self.data = data
         self.valid = valid
@@ -325,7 +325,7 @@ class _DataflowVariable(_DataflowNumeric):
         self.preg_dict = {}
         if self.ready is not None:
             ready = vtypes.Int(1)
-            self.pipe.m.Assign( self.ready(ready) )
+            self.df.m.Assign( self.ready(ready) )
 
     def prev(self, index, initval=0):
         if index == 0:
@@ -344,10 +344,10 @@ class _DataflowVariable(_DataflowNumeric):
                 p = self.prev_dict[i+1]
                 continue
             
-            tmp_data, tmp_valid, tmp_ready = self.pipe._make_prev(p.data, p.valid, p.ready,
-                                                                  self.valid, width, initval)
-            p = _DataflowVariable(self.pipe, p.stage_id, tmp_data, tmp_valid, tmp_ready, p)
-            self.pipe.vars.append(p)
+            tmp_data, tmp_valid, tmp_ready = self.df._make_prev(p.data, p.valid, p.ready,
+                                                                self.valid, width, initval)
+            p = _DataflowVariable(self.df, p.stage_id, tmp_data, tmp_valid, tmp_ready, p)
+            self.df.vars.append(p)
             self.prev_dict[i+1] = p
             
         return p
@@ -357,12 +357,12 @@ class _DataflowVariable(_DataflowNumeric):
         if nobuf:
             ovar = self
         else:
-            ovar = self.pipe.stage(self, preg=self)
+            ovar = self.df.stage(self, preg=self)
         
         if not isinstance(data, (vtypes.Wire, vtypes.Output)):
             raise TypeError('Data signal must be Wire, not %s' % str(type(data)))
         else:
-            ovar.pipe.m.Assign( data(ovar.data) )
+            ovar.df.m.Assign( data(ovar.data) )
 
         my_valid = vtypes.Int(1) if ovar.valid is None else ovar.valid 
         if valid is None:
@@ -370,7 +370,7 @@ class _DataflowVariable(_DataflowNumeric):
         elif not isinstance(valid, (vtypes.Wire, vtypes.Output)):
             raise TypeError('Valid signal must be Wire, not %s' % str(type(valid)))
         else:
-            ovar.pipe.m.Assign( valid(my_valid) )
+            ovar.df.m.Assign( valid(my_valid) )
 
         if not ready:
             ready = vtypes.Int(1)
@@ -378,7 +378,7 @@ class _DataflowVariable(_DataflowNumeric):
         if ovar.ready is not None:
             prev_subst = ovar.ready.get_subst()
             if len(prev_subst) == 0:
-                ovar.pipe.m.Assign( ovar.ready(ready) )
+                ovar.df.m.Assign( ovar.ready(ready) )
             elif isinstance(prev_subst[0].right, vtypes.Int) and (prev_subst[0].right.value==1):
                 ovar.ready.subst[0].overwrite_right( ready )
             else:
@@ -389,9 +389,9 @@ class _DataflowVariable(_DataflowNumeric):
     def reset(self, cond, initval=0):
         self.resetcond = cond
         self.initval = initval
-        self.pipe.seq.add( self.data(initval), cond=cond )
+        self.df.seq.add( self.data(initval), cond=cond )
         if self.valid is not None:
-            self.pipe.seq.add( self.valid(0), cond=cond )
+            self.df.seq.add( self.valid(0), cond=cond )
             
     def bit_length(self):
         return self.data.bit_length()
@@ -471,8 +471,8 @@ class _DataflowVisitor(object):
     
 #-------------------------------------------------------------------------------
 class DataVisitor(_DataflowVisitor):
-    def __init__(self, pipe):
-        self.pipe = pipe
+    def __init__(self, df):
+        self.df = df
 
     def pack_valid(self, lvalid, rvalid):
         if rvalid is not None and lvalid is not None:
@@ -518,7 +518,7 @@ class DataVisitor(_DataflowVisitor):
             p = arg
             for i in range(diff):
                 width = rslt[1].bit_length()
-                p = self.pipe.stage(p, width=width, preg=arg)
+                p = self.df.stage(p, width=width, preg=arg)
 
             new_args.append(p)
 
