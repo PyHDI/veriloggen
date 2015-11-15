@@ -14,6 +14,6 @@ import sys
 ## Please add import notations here for additional library
 from .fsm import FSM
 from .seq import Seq
-from .pipeline import Pipeline
+from .dataflow import Dataflow
 from .bundle import Bundle
 from . import simulation
