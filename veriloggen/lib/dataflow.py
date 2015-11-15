@@ -402,6 +402,8 @@ class _DataflowVariable(_DataflowNumeric):
     def _get_preg(self, stage_id):
         if stage_id is None:
             return self
+        if self.stage_id is None:
+            return self
         if stage_id == self.stage_id:
             return self
         return self.preg_dict[stage_id]
@@ -646,6 +648,8 @@ class GraphGenerator(_DataflowVisitor):
         for arg in args:
             if arg is None or not hasattr(arg, 'stage_id'):
                 continue
+            if arg.stage_id is None:
+                continue
             if maxval is None:
                 maxval = arg.stage_id
                 continue
@@ -660,12 +664,19 @@ class GraphGenerator(_DataflowVisitor):
             self._add_node(node, label=str(node), shape='invtrapezium')
             
     def visit__DataflowVariable(self, node):
+        # standard
         if node.src_data is not None and not node.ops:
-            self._add_node(node, label=str(node.data), shape='box')
+            if node.stage_id is None:
+                self._add_node(node, label=str(node.data), shape='box', style='dashed')
+            else:
+                self._add_node(node, label=''.join([str(node.stage_id), ':', str(node.data)]), shape='box')
             self.visit(node.src_data)
             self._add_edge(node.src_data, node)
+        # accumulator
         if node.src_data is not None and node.ops:
-            label = [ str(node.data) ]
+            label = [ str(node.stage_id) ]
+            label.append(':')
+            label.append( str(node.data) )
             for op in node.ops:
                 label.append(vtypes.op2mark(op.__name__))
             label.append('=')
