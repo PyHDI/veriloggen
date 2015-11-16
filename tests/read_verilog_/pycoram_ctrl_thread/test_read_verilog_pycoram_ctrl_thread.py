@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import read_verilog_pycoram_ctrl_thread
 
 expected_verilog = """

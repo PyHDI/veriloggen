@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import lib_simulation_pycoram_userlogic
 
 expected_verilog = """

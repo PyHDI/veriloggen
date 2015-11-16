@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import lib_fsm_delayed_lazy_cond
 
 expected_verilog = """
