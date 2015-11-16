@@ -50,7 +50,7 @@ def mkMultAdd():
     try:
         df.draw_graph()
     except:
-        print('Dataflow graph could not be generated.')
+        print('Dataflow graph could not be generated.', sys.stderr)
     
     return m
 
