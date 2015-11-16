@@ -32,7 +32,10 @@ def mkLed():
     
     df.make_always()
 
-    df.draw_graph('out.png')
+    try:
+        df.draw_graph()
+    except:
+        print('Dataflow graph could not be generated.')
     
     return m
 

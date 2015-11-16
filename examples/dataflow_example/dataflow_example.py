@@ -47,7 +47,10 @@ def mkMultAdd():
     df.make_always()
 
     # draw dataflow graph in png
-    df.draw_graph()
+    try:
+        df.draw_graph()
+    except:
+        print('Dataflow graph could not be generated.')
     
     return m
 
