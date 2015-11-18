@@ -79,7 +79,22 @@ class Dataflow(vtypes.VeriloggenNode):
 
     def acc_mod(self, data, initval=0, resetcond=None, width=None):
         return self._accumulate([vtypes.Mod], data, width, initval, resetcond)
+
+    def acc_max(self, data, initval=0, resetcond=None, width=None):
+        def op(left, right):
+            return vtypes.Cond(left > right, left, right)
+        return self._accumulate([op], data, width, initval, resetcond)
     
+    def acc_min(self, data, initval=0, resetcond=None, width=None):
+        def op(left, right):
+            return vtypes.Cond(left < right, left, right)
+        return self._accumulate([op], data, width, initval, resetcond)
+    
+    def acc_custom(self, data, ops, initval=0, resetcond=None, width=None):
+        if not isinstance(ops, (tuple, list)):
+            ops = [ ops ]
+        return self._accumulate(ops, data, width, initval, resetcond)
+
     #---------------------------------------------------------------------------
     def make_always(self, reset=(), body=()):
         self.m.Always(vtypes.Posedge(self.clk))(
@@ -163,10 +178,16 @@ class Dataflow(vtypes.VeriloggenNode):
 
         # Accumulator
         for op in acc_ops:
-            if issubclass(op, vtypes._BinaryOperator):
+            if not isinstance(op, type):
+                data = op(tmp_data, data)
+            elif issubclass(op, vtypes._BinaryOperator):
                 data = op(tmp_data, data)
             elif issubclass(op, vtypes._UnaryOperator):
                 data = op(data)
+
+            if not isinstance(data, vtypes._Numeric):
+                raise TypeError("Operator '%s' returns unsupported object type '%s'."
+                                % (str(op), str(type(data))))
             
         self.seq.add( tmp_data(data), cond=data_cond )
             
