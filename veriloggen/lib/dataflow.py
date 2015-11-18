@@ -83,12 +83,12 @@ class Dataflow(vtypes.VeriloggenNode):
     def acc_max(self, data, initval=0, resetcond=None, width=None):
         def op(left, right):
             return vtypes.Cond(left > right, left, right)
-        return self._accumulate([op], data, width, initval, resetcond)
+        return self._accumulate([op], data, width, initval, resetcond, 'max')
     
     def acc_min(self, data, initval=0, resetcond=None, width=None):
         def op(left, right):
             return vtypes.Cond(left < right, left, right)
-        return self._accumulate([op], data, width, initval, resetcond)
+        return self._accumulate([op], data, width, initval, resetcond, 'min')
     
     def acc_custom(self, data, ops, initval=0, resetcond=None, width=None):
         if not isinstance(ops, (tuple, list)):
@@ -119,14 +119,14 @@ class Dataflow(vtypes.VeriloggenNode):
         _draw_graph(self, filename, prog)
     
     #---------------------------------------------------------------------------
-    def _accumulate(self, ops, data, width=None, initval=0, resetcond=None):
+    def _accumulate(self, ops, data, width=None, initval=0, resetcond=None, oplabel=None):
         if width is None: width = self.width
         stage_id, raw_data, raw_valid, raw_ready = self.data_visitor.visit(data)
         tmp_data, tmp_valid, tmp_ready = self._make_tmp(raw_data, raw_valid, raw_ready,
                                                         width, initval, acc_ops=ops)
         next_stage_id = stage_id + 1 if stage_id is not None else None
         ret = _DataflowVariable(self, next_stage_id, tmp_data, tmp_valid, tmp_ready,
-                                data, ops, resetcond)
+                                data, ops, resetcond, initval, oplabel)
         if resetcond is not None:
             ret.reset(resetcond, initval)
         self.vars.append(ret)
@@ -331,7 +331,7 @@ class _DataflowNumeric(vtypes._Numeric): pass
 
 class _DataflowVariable(_DataflowNumeric):
     def __init__(self, df, stage_id, data, valid=None, ready=None,
-                 src_data=None, ops=None, resetcond=None, initval=None):
+                 src_data=None, ops=None, resetcond=None, initval=None, oplabel=None):
         self.df = df
         self.stage_id = stage_id
         self.data = data
@@ -342,6 +342,7 @@ class _DataflowVariable(_DataflowNumeric):
         self.ops = ops
         self.resetcond = resetcond
         self.initval = initval
+        self.oplabel= oplabel
         self.prev_dict = {}
         self.preg_dict = {}
         if self.ready is not None:
@@ -698,8 +699,16 @@ class GraphGenerator(_DataflowVisitor):
             label = [ str(node.stage_id) ]
             label.append(':')
             label.append( str(node.data) )
-            for op in node.ops:
-                label.append(vtypes.op2mark(op.__name__))
+            if node.oplabel is not None:
+                label.append(' ')
+                label.append(node.oplabel)
+            else:
+                for op in node.ops:
+                    if isinstance(op, type):
+                        label.append(' ')
+                        label.append(vtypes.op2mark(op.__name__))
+                    else:
+                        label.append(' C')
             label.append('=')
             self._add_node(node, label=''.join(label), shape='box', style='rounded')
             self.visit(node.src_data)
