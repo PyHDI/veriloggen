@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 import sys
 import os
-import re
 import collections
 import tempfile
 
@@ -166,10 +165,7 @@ class VerilogReadVisitor(object):
         return self.m.find_identifier(node.name)
         
     def visit_IntConst(self, node):
-        value, base = vtypes.str_to_value(node.value)
-        width = vtypes.str_to_width(node.value)
-        signed = vtypes.str_to_signed(node.value)
-        return vtypes.Int(value, width, base, signed)
+        return vtypes.Int(node.value)
 
     def visit_FloatConst(self, node):
         return vtypes.Float(node.value)
