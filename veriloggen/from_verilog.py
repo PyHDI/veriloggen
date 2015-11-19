@@ -618,7 +618,7 @@ class VerilogReadVisitor(object):
         return case
         
     def visit_Case(self, node):
-        condition = tuple([ self.visit(c) for c in node.cond ])
+        condition = tuple([ self.visit(c) for c in node.cond ]) if node.cond else [ None ]
         statement = to_tuple(self.visit(node.statement))
         when = vtypes.When(*condition)
         when = when(*statement)
