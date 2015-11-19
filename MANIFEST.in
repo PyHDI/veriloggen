@@ -7,3 +7,4 @@ include hello_led.py
 recursive-include utils *
 recursive-include examples *
 recursive-include tests *
+recursive-include img *
