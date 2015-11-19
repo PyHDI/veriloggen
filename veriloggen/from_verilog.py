@@ -135,7 +135,12 @@ class VerilogReadVisitor(object):
         return ports
         
     def visit_Port(self, node):
-        if node.type is None: return None
+        if node.type is None:
+            name = node.name
+            p = vtypes.AnyType(name)
+            self.add_object(p)
+            return p
+        
         name = node.name
         width = self.visit(node.width) if node.width is not None else None
         _type = getattr(vtypes, node.type, None)
@@ -489,10 +494,17 @@ class VerilogReadVisitor(object):
         return assign
         
     def visit_Always(self, node):
+        # to avoid to call self.add_object() for the current Module
+        self.push_module(None)
+        
         sensitivity = self.visit(node.sens_list)
         statement = to_tuple(self.visit(node.statement))
         always = vtypes.Always(*sensitivity)
         always = always(*statement)
+        
+        # to restore the current Module
+        self.pop_module()
+        
         self.add_object(always)
         return always
         
@@ -511,6 +523,7 @@ class VerilogReadVisitor(object):
         if node.type == 'level':
             sig = self.visit(node.sig)
             return sig
+        raise TypeError("Unsupported sensitivity type '%s'" % node.type)
         
     def visit_BlockingSubstitution(self, node):
         left = self.visit(node.left)
@@ -638,45 +651,71 @@ class VerilogReadVisitor(object):
         return (portname, argname)
     
     def visit_Function(self, node):
+        # to avoid to call self.add_object() for the current Module
+        self.push_module(None)
+        
         name = node.name
         width = self.visit(node.retwidth) if node.retwidth is not None else None
         func = function.Function(name, width)
         statement = [ self.visit(s) for s in node.statement ]
         body = []
+        
         for s in statement:
-            if isinstance(s, vtypes.Input):
-                func.Input(s.name, s.width, s.length, s.signed, s.value)
-            elif isinstance(s, vtypes.Reg):
-                func.Reg(s.name, s.width, s.length, s.signed, s.value)
-            elif isinstance(s, vtypes.Integer):
-                func.Integer(s.name, s.width, s.length, s.signed, s.value)
+            if isinstance(s, (tuple, list)): # from the visitor result of decl 
+                for d in s:
+                    if isinstance(d, vtypes.Input):
+                        func.Input(d.name, d.width, d.length, d.signed, d.value)
+                    elif isinstance(d, vtypes.Reg):
+                        func.Reg(d.name, d.width, d.length, d.signed, d.value)
+                    elif isinstance(d, vtypes.Integer):
+                        func.Integer(d.name, d.width, d.length, d.signed, d.value)
+                    else:
+                        body.append(s)
             else:
                 body.append(s)
+                
         func.Body(*body)
+
+        # to restore the current Module
+        self.pop_module()
+        
         self.add_object(func)
         return func
         
     def visit_FunctionCall(self, node):
         name = self.visit(node.name)
         args = tuple([ self.visit(arg) for arg in node.args ])
-        call = function.FunctionCall(name, args)
+        call = function.FunctionCall(name, *args)
         return call
         
     def visit_Task(self, node):
+        # to avoid to call self.add_object() for the current Module
+        self.push_module(None)
+        
         name = node.name
         _task = task.Task(name)
         statement = [ self.visit(s) for s in node.statement ]
         body = []
+        
         for s in statement:
-            if isinstance(s, vtypes.Input):
-                _task.Input(s.name, s.width, s.length, s.signed, s.value)
-            elif isinstance(s, vtypes.Reg):
-                _task.Reg(s.name, s.width, s.length, s.signed, s.value)
-            elif isinstance(s, vtypes.Integer):
-                _task.Integer(s.name, s.width, s.length, s.signed, s.value)
+            if isinstance(s, (tuple, list)): # from the visitor result of decl 
+                for d in s:
+                    if isinstance(d, vtypes.Input):
+                        _task.Input(d.name, d.width, d.length, d.signed, d.value)
+                    elif isinstance(d, vtypes.Reg):
+                        _task.Reg(d.name, d.width, d.length, d.signed, d.value)
+                    elif isinstance(d, vtypes.Integer):
+                        _task.Integer(d.name, d.width, d.length, d.signed, d.value)
+                    else:
+                        body.append(s)
             else:
                 body.append(s)
+                
         _task.Body(*body)
+        
+        # to restore the current Module
+        self.pop_module()
+        
         self.add_object(_task)
         return _task
         

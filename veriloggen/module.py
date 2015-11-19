@@ -311,10 +311,16 @@ class Module(vtypes.VeriloggenNode):
     #---------------------------------------------------------------------------
     def add_object(self, obj):
         self.items.append(obj)
+
+        if isinstance(obj, vtypes.AnyType):
+            self.io_variable[obj.name] = obj
+            self.variable[obj.name] = obj
+            return
         
         if isinstance(obj, (vtypes.Input, vtypes.Output, vtypes.Inout)):
             self.io_variable[obj.name] = obj
-            # no return here
+            ## no return here
+            return ###
             
         if isinstance(obj, (vtypes.Reg, vtypes.Wire)):
             self.variable[obj.name] = obj

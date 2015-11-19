@@ -611,6 +611,9 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
         width = None if node.width is None else self.make_width(node.width)
         signed = node.signed
         return vast.Genvar(name, width, signed)
+
+    def visit_AnyType(self, node):
+        return None
     
     #---------------------------------------------------------------------------
     def visit_Posedge(self, node):
@@ -627,7 +630,8 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
     def visit_Always(self, node):
         sensitivity = vast.SensList(
             tuple([ self.visit(n) if isinstance(n, vtypes.Sensitive) else
-                    vast.Sens(self.visit(n)) for n in node.sensitivity ]))
+                    vast.Sens(self.always_visitor.visit(n), 'level')
+                    for n in node.sensitivity ]))
         statement = self._optimize_block(
             vast.Block(tuple([ self.always_visitor.visit(n) for n in node.statement ])))
         return vast.Always(sensitivity, statement)
