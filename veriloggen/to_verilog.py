@@ -542,14 +542,15 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
     def visit_Parameter(self, node):
         name = node.name
         value = self.bind_visitor.visit(node.value)
+        value = vast.Rvalue(value)
         width = None if node.width is None else self.visit(node.width)
         signed = node.signed
         return vast.Parameter(name, value, width, signed)
 
     def visit_Localparam(self, node):
         name = node.name
-
         value = self.bind_visitor.visit(node.value)
+        value = vast.Rvalue(value)
         width = None if node.width is None else self.visit(node.width)
         signed = node.signed
         return vast.Localparam(name, value, width, signed)
@@ -642,7 +643,9 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
             raise TypeError("Assign expects Subst object.")
         left = self.bind_visitor.visit(node.statement.left)
         right = self.bind_visitor.visit(node.statement.right)
-        return vast.Assign(left, right)
+        lvalue = vast.Lvalue(left)
+        rvalue = vast.Rvalue(right)
+        return vast.Assign(lvalue, rvalue)
     
     #---------------------------------------------------------------------------
     def visit_Initial(self, node):
@@ -728,8 +731,10 @@ class VerilogAlwaysVisitor(VerilogCommonVisitor):
         right = self.visit(node.right)
         ldelay = self.visit(node.ldelay) if node.ldelay else None
         rdelay = self.visit(node.rdelay) if node.rdelay else None
-        if node.blk: vast.BlockingSubstitution(left, right, ldelay, rdelay)
-        return vast.NonblockingSubstitution(left, right, ldelay, rdelay)
+        lvalue = vast.Lvalue(left)
+        rvalue = vast.Rvalue(right)
+        if node.blk: vast.BlockingSubstitution(lvalue, rvalue, ldelay, rdelay)
+        return vast.NonblockingSubstitution(lvalue, rvalue, ldelay, rdelay)
 
 #-------------------------------------------------------------------------------
 class VerilogBlockingVisitor(VerilogCommonVisitor):
@@ -738,7 +743,9 @@ class VerilogBlockingVisitor(VerilogCommonVisitor):
         right = self.visit(node.right)
         ldelay = vast.DelayStatement(self.visit(node.ldelay)) if node.ldelay else None
         rdelay = vast.DelayStatement(self.visit(node.rdelay)) if node.rdelay else None
-        return vast.BlockingSubstitution(left, right, ldelay, rdelay)
+        lvalue = vast.Lvalue(left)
+        rvalue = vast.Rvalue(right)
+        return vast.BlockingSubstitution(lvalue, rvalue, ldelay, rdelay)
 
     def visit_Forever(self, node):
         statement = self._optimize_block(
