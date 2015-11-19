@@ -48,9 +48,9 @@ class Function(vtypes.VeriloggenNode):
         return self.__call__(r)
     
     def call(self, *args):
-        return FunctionCall(self.name, *args)
+        return FunctionCall(self, *args)
 
 class FunctionCall(vtypes._Numeric):
-    def __init__(self, name, *args):
-        self.name = name
+    def __init__(self, func, *args):
+        self.func = func
         self.args = tuple(args)
