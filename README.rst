@@ -55,7 +55,7 @@ Install on your python environment by using pip:
 
 -  Pyverilog: 1.0.2 or later
 
-Install from pip (or download from GitHub):
+Install from pip (or download and install from GitHub):
 
 ::
 
