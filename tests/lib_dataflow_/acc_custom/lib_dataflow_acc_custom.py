@@ -28,10 +28,15 @@ def mkLed():
     def op_max(left, right):
         return Cond(left > right, left, right)
     
-    psum = df.acc_custom(px, op_max, initval=0, resetcond=prst)
+    psum = df.acc_custom(px, op_max, initval=0, resetcond=prst, label='custom')
     psum.output(y, valid=vy, ready=ry)
     
     df.make_always()
+    
+    try:
+        df.draw_graph()
+    except:
+        print('Dataflow graph could not be generated.', file=sys.stderr)
 
     return m
 

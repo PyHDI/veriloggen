@@ -90,10 +90,10 @@ class Dataflow(vtypes.VeriloggenNode):
             return vtypes.Cond(left < right, left, right)
         return self._accumulate([op], data, width, initval, resetcond, 'min')
     
-    def acc_custom(self, data, ops, initval=0, resetcond=None, width=None):
+    def acc_custom(self, data, ops, initval=0, resetcond=None, width=None, label=None):
         if not isinstance(ops, (tuple, list)):
             ops = [ ops ]
-        return self._accumulate(ops, data, width, initval, resetcond)
+        return self._accumulate(ops, data, width, initval, resetcond, label)
 
     #---------------------------------------------------------------------------
     def make_always(self, reset=(), body=()):
