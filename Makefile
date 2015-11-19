@@ -4,7 +4,7 @@ clean:
 	make clean -C ./utils
 	make clean -C ./examples
 	make clean -C ./tests
-	rm -rf *.pyc __pycache__ *.out uut.vcd veriloggen.egg-info build dist
+	rm -rf *.pyc __pycache__ *.out uut.vcd tmp.v veriloggen.egg-info build dist
 
 .PHONY: release
 release:
