@@ -74,7 +74,7 @@ module blinkled #
       LED <= 0;
     end else begin
       if(count == 1023) begin
-        LED <= 'dz;
+        LED <= 'hz;
       end 
     end
   end

@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import intx
+import _int
 
 expected_verilog = """
 module test #
@@ -74,7 +74,7 @@ module blinkled #
       LED <= 0;
     end else begin
       if(count == 1023) begin
-        LED <= 'hx;
+        LED <= 'h10;
       end 
     end
   end
@@ -82,7 +82,7 @@ endmodule
 """
 
 def test():
-    test_module = intx.mkTest()
+    test_module = _int.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

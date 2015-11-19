@@ -81,45 +81,6 @@ def to_ast(*filelist, **opt):
     return ast
 
 #-------------------------------------------------------------------------------
-def str_to_signed(s):
-    targ = s.replace('_','')
-    match = re.search(r's(.+)', targ)
-    if match is not None:
-        return True
-    return False
-
-def str_to_value(s):
-    targ = s.replace('_','')
-    match = re.search(r'h(.+)', targ)
-    if match is not None:
-        return int(match.group(1), 16), 16
-    match = re.search(r'd(.+)', targ)
-    if match is not None:
-        return int(match.group(1), 10), 10
-    match = re.search(r'o(.+)', targ)
-    if match is not None:
-        return int(match.group(1), 8), 8
-    match = re.search(r'b(.+)', targ)
-    if match is not None:
-        return int(match.group(1), 2), 2
-    return int(targ, 10), None
-        
-def str_to_width(s):
-    targ = s.replace('_','')
-    match = re.search(r'(.+)\'h.+', targ)
-    if match is not None:
-        return int(match.group(1), 10)
-    match = re.search(r'(.+)\'d.+', targ)
-    if match is not None:
-        return int(match.group(1), 10)
-    match = re.search(r'(.+)\'o.+', targ)
-    if match is not None:
-        return int(match.group(1), 10)
-    match = re.search(r'(.+)\'b.+', targ)
-    if match is not None:
-        return int(match.group(1), 10)
-    return None
-
 def to_tuple(s):
     if not isinstance(s, (list, tuple)):
         return tuple([s])
@@ -205,9 +166,9 @@ class VerilogReadVisitor(object):
         return self.m.find_identifier(node.name)
         
     def visit_IntConst(self, node):
-        value, base = str_to_value(node.value)
-        width = str_to_width(node.value)
-        signed = str_to_signed(node.value)
+        value, base = vtypes.str_to_value(node.value)
+        width = vtypes.str_to_width(node.value)
+        signed = vtypes.str_to_signed(node.value)
         return vtypes.Int(value, width, base, signed)
 
     def visit_FloatConst(self, node):

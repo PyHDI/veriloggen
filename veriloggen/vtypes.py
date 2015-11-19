@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import re
 
 operator_dict = {
     'Uminus':'-', 'Ulnot':'!', 'Unot':'~', 'Uand':'&', 'Unand':'~&',
@@ -15,6 +16,96 @@ operator_dict = {
 
 def op2mark(op):
     return operator_dict[op]
+
+#-------------------------------------------------------------------------------
+def str_to_signed(s):
+    targ = s.replace('_','')
+    match = re.search(r's(.+)', targ)
+    if match is not None:
+        return True
+    return False
+
+def check_int_hex(v):
+    if not re.search(r'^[0-9a-fA-FxzXZ]+$', v):
+        raise ValueError("Illegal value format '%s' for hex" % v)
+
+def check_int_dec(v):
+    if not re.search(r'^[0-9xzXZ]+$', v):
+        raise ValueError("Illegal value format '%s' for dec" % v)
+
+def check_int_dec_pure(v):
+    if not re.search(r'^[0-9]+$', v):
+        raise ValueError("Illegal value format '%s' for dec" % v)
+
+def check_int_oct(v):
+    if not re.search(r'^[0-7xzXZ]+$', v):
+        raise ValueError("Illegal value format '%s' for oct" % v)
+
+def check_int_bin(v):
+    if not re.search(r'^[01xzXZ]+$', v):
+        raise ValueError("Illegal value format '%s' for bin" % v)
+    
+def str_to_value(s):
+    targ = s.replace('_','')
+    
+    match = re.search(r'h(.+)', targ)
+    if match is not None:
+        try:
+            v = int(match.group(1), 16)
+        except:
+            v = match.group(1)
+            check_int_hex(v)
+        return v, 16
+    
+    match = re.search(r'd(.+)', targ)
+    if match is not None:
+        try:
+            v = int(match.group(1), 10)
+        except:
+            v = match.group(1)
+            check_int_dec(v)
+        return v, 10
+    
+    match = re.search(r'o(.+)', targ)
+    if match is not None:
+        try:
+            v = int(match.group(1), 8)
+        except:
+            v = match.group(1)
+            check_int_oct(v)
+        return v, 8
+    
+    match = re.search(r'b(.+)', targ)
+    if match is not None:
+        try:
+            v = int(match.group(1), 2)
+        except:
+            v = match.group(1)
+            check_int_bin(v)
+        return v, 2
+    
+    try:
+        v = int(targ, 10)
+    except:
+        v = targ
+        check_int_dec_pure(v)
+    return v, None
+        
+def str_to_width(s):
+    targ = s.replace('_','')
+    match = re.search(r'(.+)\'h.+', targ)
+    if match is not None:
+        return int(match.group(1), 10)
+    match = re.search(r'(.+)\'d.+', targ)
+    if match is not None:
+        return int(match.group(1), 10)
+    match = re.search(r'(.+)\'o.+', targ)
+    if match is not None:
+        return int(match.group(1), 10)
+    match = re.search(r'(.+)\'b.+', targ)
+    if match is not None:
+        return int(match.group(1), 10)
+    return None
 
 #-------------------------------------------------------------------------------
 class VeriloggenNode(object):
@@ -290,14 +381,28 @@ class _Constant(_Numeric):
 class Int(_Constant):
     def __init__(self, value, width=None, base=None, signed=False):
         _Constant.__init__(self, value, width, base)
-        self.value = value
-        self.width = width
-        self.base = base
-        self.signed = signed
+        if isinstance(value, int):
+            self.value = value
+            self.width = width
+            self.base = base
+            self.signed = signed
+        else:
+            self.value, self.base = str_to_value(value)
+            if base is not None:
+                self.base = base
+            if not isinstance(self.value, int):
+                if   self.base is None: check_int_dec_pure(self.value)
+                elif self.base == 16: check_int_hex(self.value)
+                elif self.base == 10: check_int_dec(self.value)
+                elif self.base ==  8: check_int_oct(self.value)
+                elif self.base ==  2: check_int_bin(self.value)
+                else: raise ValueError("Illegal base number %d for Int." % self.base)
+            self.width = str_to_width(value) if width is None else width
+            self.signed = str_to_signed(value) if signed == False else signed
 
     def _type_check_value(self, value):
-        if not isinstance(value, int):
-            raise TypeError('value of Int must be int, not %s.' % type(value))
+        if not isinstance(value, (int, str)):
+            raise TypeError('value of Int must be int or str, not %s.' % type(value))
 
     def _type_check_width(self, width):
         if width is None: return
@@ -308,148 +413,67 @@ class Int(_Constant):
         if base is None: return 
         if not isinstance(base, int):
             raise TypeError('base of Int must be int, not %s.' % type(base))
-
+        
     def __str__(self):
         value_list = []
-        if node.width:
-            value_list.append(str(node.width))
+        if self.width:
+            value_list.append(str(self.width))
             
-        if node.base is None:
-            if node.signed:
+        if self.base is None:
+            if self.signed:
                 value_list.append("'sd")
-            elif node.width:
+            elif self.width:
                 value_list.append("'d")
-            value_list.append(str(node.value))
-        elif node.base == 2:
-            if node.signed:
+            if isinstance(self.value, str):
+                value_list.append(self.value)
+            else:
+                value_list.append(str(self.value))
+        elif self.base == 2:
+            if self.signed:
                 value_list.append("'sb")
             else:
                 value_list.append("'b")
-            value_list.append(bin(node.value).replace('0b', ''))
-        elif node.base == 8:
-            if node.signed:
+            if isinstance(self.value, str):
+                value_list.append(self.value)
+            else:
+                value_list.append(bin(self .value).replace('0b', ''))
+        elif self.base == 8:
+            if self.signed:
                 value_list.append("'so")
             else:
                 value_list.append("'o")
-            value_list.append(oct(node.value).replace('0o', ''))
-        elif node.base == 10:
-            if node.signed:
+            if isinstance(self.value, str):
+                value_list.append(self.value)
+            else:
+                value_list.append(oct(self.value).replace('0o', ''))
+        elif self.base == 10:
+            if self.signed:
                 value_list.append("'sd")
             else:
                 value_list.append("'d")
-            value_list.append(str(node.value))
-        elif node.base == 16:
-            if node.signed:
+            if isinstance(self.value, str):
+                value_list.append(self.value)
+            else:
+                value_list.append(str(self.value))
+        elif self.base == 16:
+            if self.signed:
                 value_list.append("'sh")
             else:
                 value_list.append("'h")
-            value_list.append(hex(node.value).replace('0x', ''))
+            if isinstance(self.value, str):
+                value_list.append(self.value)
+            else:
+                value_list.append(hex(self.value).replace('0x', ''))
         else:
             raise ValueError("Int.base must be 2, 8, 10, or 16")
 
         return ''.join(value_list)
 
-class IntX(Int):
-    def __init__(self, width=None, base=None, signed=False):
-        _Constant.__init__(self, None, width, base)
-        self.value = 'x'
-        self.width = width
-        self.base = base
-        self.signed = signed
-    
-    def _type_check_value(self, value):
-        pass
+def IntX(width=None, base=None, signed=False):
+    return Int("'hx", width, base, signed)
 
-    def __str__(self):
-        value_list = []
-        if node.width:
-            value_list.append(str(node.width))
-            
-        if node.base is None:
-            if node.signed:
-                value_list.append("'sd")
-            else:
-                value_list.append("'d")
-            value_list.append(node.value)
-        elif node.base == 2:
-            if node.signed:
-                value_list.append("'sb")
-            else:
-                value_list.append("'b")
-            value_list.append(node.value)
-        elif node.base == 8:
-            if node.signed:
-                value_list.append("'so")
-            else:
-                value_list.append("'o")
-            value_list.append(node.value)
-        elif node.base == 10:
-            if node.signed:
-                value_list.append("'sd")
-            else:
-                value_list.append("'d")
-            value_list.append(node.value)
-        elif node.base == 16:
-            if node.signed:
-                value_list.append("'sh")
-            else:
-                value_list.append("'h")
-            value_list.append(node.value)
-        else:
-            raise ValueError("Int.base must be 2, 8, 10, or 16")
-
-        return ''.join(value_list)
-
-class IntZ(Int):
-    def __init__(self, width=None, base=None, signed=False):
-        _Constant.__init__(self, None, width, base)
-        self.value = 'z'
-        self.width = width
-        self.base = base
-        self.signed = False
-    
-    def _type_check_value(self, value):
-        pass
-
-    def __str__(self):
-        value_list = []
-        if node.width:
-            value_list.append(str(node.width))
-            
-        if node.base is None:
-            if node.signed:
-                value_list.append("'sd")
-            else:
-                value_list.append("'d")
-            value_list.append(node.value)
-        elif node.base == 2:
-            if node.signed:
-                value_list.append("'sb")
-            else:
-                value_list.append("'b")
-            value_list.append(node.value)
-        elif node.base == 8:
-            if node.signed:
-                value_list.append("'so")
-            else:
-                value_list.append("'o")
-            value_list.append(node.value)
-        elif node.base == 10:
-            if node.signed:
-                value_list.append("'sd")
-            else:
-                value_list.append("'d")
-            value_list.append(node.value)
-        elif node.base == 16:
-            if node.signed:
-                value_list.append("'sh")
-            else:
-                value_list.append("'h")
-            value_list.append(node.value)
-        else:
-            raise ValueError("Int.base must be 2, 8, 10, or 16")
-
-        return ''.join(value_list)
+def IntZ(width=None, base=None, signed=False):
+    return Int("'hz", width, base, signed)
 
 class Float(_Constant):
     def __init__(self, value):
