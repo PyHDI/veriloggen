@@ -315,20 +315,18 @@ class Module(vtypes.VeriloggenNode):
         if isinstance(obj, vtypes.AnyType):
             self.io_variable[obj.name] = obj
             self.variable[obj.name] = obj
+            self.global_constant[obj.name] = obj
+            self.local_constant[obj.name] = obj
             return
         
         if isinstance(obj, (vtypes.Input, vtypes.Output, vtypes.Inout)):
             self.io_variable[obj.name] = obj
-            ## no return here
-            return ###
+            return
             
         if isinstance(obj, (vtypes.Reg, vtypes.Wire)):
             self.variable[obj.name] = obj
             return
         
-        if isinstance(obj, (vtypes.Input, vtypes.Output, vtypes.Inout)):
-            return
-            
         if isinstance(obj, (vtypes.Integer, vtypes.Real, vtypes.Genvar)):
             self.variable[obj.name] = obj
             return
