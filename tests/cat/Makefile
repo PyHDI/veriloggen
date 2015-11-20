@@ -1,4 +1,4 @@
-TARGET=*.py
+TARGET=$(shell ls *.py | grep -v test)
 ARGS=
 
 PYTHON=python3
