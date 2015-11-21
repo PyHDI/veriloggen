@@ -374,6 +374,13 @@ class VerilogCommonVisitor(object):
         true_statement = self.visit(node.true_statement)
         false_statement = (self.visit(node.false_statement)
                            if node.false_statement is not None else None)
+        # remove a redundant begin-end, if the true_statement is not for reset
+        cond_str = str(cond).lower()
+        if ((not cond_str.count('rst') and not cond_str.count('reset')) and
+            isinstance(false_statement, vast.Block) and
+            len(false_statement.statements) == 1 and
+            isinstance(false_statement.statements[0], vast.IfStatement)):
+            false_statement = false_statement.statements[0]
         return vast.IfStatement(cond, true_statement, false_statement)
 
     #---------------------------------------------------------------------------
