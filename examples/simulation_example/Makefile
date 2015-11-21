@@ -1,4 +1,4 @@
-TARGET=$(shell ls *.py |grep -v test)
+TARGET=$(shell ls *.py | grep -v test | grep -v parsetab.py)
 ARGS=
 
 PYTHON=python3
