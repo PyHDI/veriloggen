@@ -47,7 +47,7 @@ Install on your python environment by using pip:
 
     pip install jinja2
 
-- Pyverilog: 1.0.2 or later
+- Pyverilog: 1.0.3 or later
 
 Install from pip (or download and install from GitHub):
 
@@ -203,7 +203,7 @@ module test #
 
   reg CLK;
   reg RST;
-  wire [WIDTH - 1:0] LED;
+  wire [WIDTH-1:0] LED;
 
   blinkled
   #(
@@ -253,10 +253,10 @@ module blinkled #
 (
   input CLK,
   input RST,
-  output reg [WIDTH - 1:0] LED
+  output reg [WIDTH-1:0] LED
 );
 
-  reg [32 - 1:0] count;
+  reg [32-1:0] count;
 
   always @(posedge CLK) begin
     if(RST) begin
