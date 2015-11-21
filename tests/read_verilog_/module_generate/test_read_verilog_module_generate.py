@@ -32,10 +32,10 @@ module blinkled #
   ( 
    input CLK, 
    input RST,
-   output reg [(WIDTH-1)+1-1:0] LED
+   output reg [(WIDTH-1):0] LED
   );
 
-  reg [(32-1)+1-1:0] count;
+  reg [(32-1):0] count;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -51,13 +51,13 @@ module blinkled #
 
   genvar i;
   generate for(i=0; i<NUM_INST; i=i+1) begin: gen_for
-    reg [(32-1)+1-1:0] gen_count;
+    reg [(32-1):0] gen_count;
     if(i == 0) begin: gen_if_true
       always @(posedge CLK) begin
         gen_count <= count;
       end
     end else begin: gen_if_false
-      reg [(32-1)+1-1:0] gen_if_count;
+      reg [(32-1):0] gen_if_count;
       always @(posedge CLK) begin
         gen_count <= gen_for[i-1].gen_count;
         gen_if_count <= gen_count;

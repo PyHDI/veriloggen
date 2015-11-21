@@ -8,28 +8,28 @@ module ctrl_thread
   input CLK,
   input RST,
   output reg finish,
-  output reg [(63+1)-1:0] corammemory_0_ext_addr,
-  output reg [(63+1)-1:0] corammemory_0_core_addr,
+  output reg [63:0] corammemory_0_ext_addr,
+  output reg [63:0] corammemory_0_core_addr,
   output reg corammemory_0_read_enable,
   output reg corammemory_0_write_enable,
-  output reg [(64+1)-1:0] corammemory_0_word_size,
+  output reg [64:0] corammemory_0_word_size,
   input corammemory_0_ready,
   input corammemory_0_busy,
-  input [(31+1)-1:0] coramchannel_0_q,
+  input [31:0] coramchannel_0_q,
   output reg coramchannel_0_deq,
   input coramchannel_0_empty,
-  output reg [(31+1)-1:0] coramchannel_0_d,
+  output reg [31:0] coramchannel_0_d,
   output reg coramchannel_0_enq,
   input coramchannel_0_almost_full
 );
 
-  reg [(63+1)-1:0] __s0_ram;
-  reg [(63+1)-1:0] __s0_channel;
-  reg [(63+1)-1:0] __s0_addr;
-  reg [(63+1)-1:0] __s0_sum;
-  reg [(63+1)-1:0] __s0_i;
-  reg [(63+1)-1:0] __s0_s1_tmp0;
-  reg [(5+1)-1:0] state;
+  reg [63:0] __s0_ram;
+  reg [63:0] __s0_channel;
+  reg [63:0] __s0_addr;
+  reg [63:0] __s0_sum;
+  reg [63:0] __s0_i;
+  reg [63:0] __s0_s1_tmp0;
+  reg [5:0] state;
 
   always @(posedge CLK) begin
     if((RST == 1)) begin

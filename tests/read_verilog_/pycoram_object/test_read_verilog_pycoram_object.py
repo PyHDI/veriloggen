@@ -14,10 +14,10 @@ module CoramMemory1P #
 )
 (
   input CLK,
-  input [(((CORAM_ADDR_LEN - 1) + 1) - 1):0] ADDR,
-  input [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] D,
+  input [CORAM_ADDR_LEN - 1:0] ADDR,
+  input [CORAM_DATA_WIDTH - 1:0] D,
   input WE,
-  output [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] Q
+  output [CORAM_DATA_WIDTH - 1:0] Q
 );
 
   localparam CORAM_MEM_SIZE = (2 ** CORAM_ADDR_LEN);
@@ -35,11 +35,11 @@ module CoramMemoryBE1P #
 )
 (
   input CLK,
-  input [(((CORAM_ADDR_LEN - 1) + 1) - 1):0] ADDR,
-  input [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] D,
+  input [CORAM_ADDR_LEN - 1:0] ADDR,
+  input [CORAM_DATA_WIDTH - 1:0] D,
   input WE,
-  input [(((CORAM_MASK_WIDTH - 1) + 1) - 1):0] MASK,
-  output [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] Q
+  input [CORAM_MASK_WIDTH - 1:0] MASK,
+  output [CORAM_DATA_WIDTH - 1:0] Q
 );
 
   localparam CORAM_MEM_SIZE = (2 ** CORAM_ADDR_LEN);
@@ -58,14 +58,14 @@ module CoramMemory2P #
 )
 (
   input CLK,
-  input [(((CORAM_ADDR_LEN - 1) + 1) - 1):0] ADDR0,
-  input [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] D0,
+  input [CORAM_ADDR_LEN - 1:0] ADDR0,
+  input [CORAM_DATA_WIDTH - 1:0] D0,
   input WE0,
-  output [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] Q0,
-  input [(((CORAM_ADDR_LEN - 1) + 1) - 1):0] ADDR1,
-  input [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] D1,
+  output [CORAM_DATA_WIDTH - 1:0] Q0,
+  input [CORAM_ADDR_LEN - 1:0] ADDR1,
+  input [CORAM_DATA_WIDTH - 1:0] D1,
   input WE1,
-  output [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] Q1
+  output [CORAM_DATA_WIDTH - 1:0] Q1
 );
 
   localparam CORAM_MEM_SIZE = (2 ** CORAM_ADDR_LEN);
@@ -83,16 +83,16 @@ module CoramMemoryBE2P #
 )
 (
   input CLK,
-  input [(((CORAM_ADDR_LEN - 1) + 1) - 1):0] ADDR0,
-  input [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] D0,
+  input [CORAM_ADDR_LEN - 1:0] ADDR0,
+  input [CORAM_DATA_WIDTH - 1:0] D0,
   input WE0,
-  input [(((CORAM_MASK_WIDTH - 1) + 1) - 1):0] MASK0,
-  output [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] Q0,
-  input [(((CORAM_ADDR_LEN - 1) + 1) - 1):0] ADDR1,
-  input [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] D1,
+  input [CORAM_MASK_WIDTH - 1:0] MASK0,
+  output [CORAM_DATA_WIDTH - 1:0] Q0,
+  input [CORAM_ADDR_LEN - 1:0] ADDR1,
+  input [CORAM_DATA_WIDTH - 1:0] D1,
   input WE1,
-  input [(((CORAM_MASK_WIDTH - 1) + 1) - 1):0] MASK1,
-  output [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] Q1
+  input [CORAM_MASK_WIDTH - 1:0] MASK1,
+  output [CORAM_DATA_WIDTH - 1:0] Q1
 );
 
   localparam CORAM_MEM_SIZE = (2 ** CORAM_ADDR_LEN);
@@ -112,7 +112,7 @@ module CoramInStream #
 (
   input CLK,
   input RST,
-  output [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] Q,
+  output [CORAM_DATA_WIDTH - 1:0] Q,
   input DEQ,
   output EMPTY,
   output ALM_EMPTY
@@ -134,7 +134,7 @@ module CoramOutStream #
 (
   input CLK,
   input RST,
-  input [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] D,
+  input [CORAM_DATA_WIDTH - 1:0] D,
   input ENQ,
   output FULL,
   output ALM_FULL
@@ -156,11 +156,11 @@ module CoramChannel #
 (
   input CLK,
   input RST,
-  input [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] D,
+  input [CORAM_DATA_WIDTH - 1:0] D,
   input ENQ,
   output FULL,
   output ALM_FULL,
-  output [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] Q,
+  output [CORAM_DATA_WIDTH - 1:0] Q,
   input DEQ,
   output EMPTY,
   output ALM_EMPTY
@@ -181,9 +181,9 @@ module CoramRegister #
 )
 (
   input CLK,
-  input [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] D,
+  input [CORAM_DATA_WIDTH - 1:0] D,
   input WE,
-  output [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] Q
+  output [CORAM_DATA_WIDTH - 1:0] Q
 );
 
   localparam CORAM_MEM_SIZE = (2 ** CORAM_ADDR_LEN);
@@ -202,11 +202,11 @@ module CoramSlaveStream #
 (
   input CLK,
   input RST,
-  input [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] D,
+  input [CORAM_DATA_WIDTH - 1:0] D,
   input ENQ,
   output FULL,
   output ALM_FULL,
-  output [(((CORAM_DATA_WIDTH - 1) + 1) - 1):0] Q,
+  output [CORAM_DATA_WIDTH - 1:0] Q,
   input DEQ,
   output EMPTY,
   output ALM_EMPTY
@@ -227,14 +227,14 @@ module userlogic #
   input RST
 );
 
-  reg [(((W_A - 1) + 1) - 1):0] mem_addr;
-  reg [(((W_D - 1) + 1) - 1):0] mem_d;
+  reg [W_A - 1:0] mem_addr;
+  reg [W_D - 1:0] mem_d;
   reg mem_we;
-  wire [(((W_D - 1) + 1) - 1):0] mem_q;
-  reg [(((W_D - 1) + 1) - 1):0] comm_d;
+  wire [W_D - 1:0] mem_q;
+  reg [W_D - 1:0] comm_d;
   reg comm_enq;
   wire comm_full;
-  wire [(((W_D - 1) + 1) - 1):0] comm_q;
+  wire [W_D - 1:0] comm_q;
   reg comm_deq;
   wire comm_empty;
 

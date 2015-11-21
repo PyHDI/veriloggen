@@ -219,16 +219,16 @@ class Module(vtypes.VeriloggenNode):
     # User interface for accessing internal information
     #---------------------------------------------------------------------------
     def get_params(self):
-        return list(self.global_constant.values())
+        return self.global_constant
     
     def get_localparams(self):
-        return list(self.constant.values())
+        return self.constant
     
     def get_ports(self):
-        return list(self.io_variable.values())
+        return self.io_variable
     
     def get_vars(self):
-        return list(self.variable.values())
+        return self.variable
     
     #---------------------------------------------------------------------------
     def copy_params(self, src):

@@ -254,7 +254,11 @@ class _Variable(_Numeric):
     def __init__(self, name, width=1, length=None, signed=False, value=None, initval=None):
         self.name = name
         self.width = width
+        self.width_msb = None
+        self.width_lsb = None
         self.length = length
+        self.length_msb = None
+        self.length_lsb = None
         self.signed = signed
         self.value = value
         self.initval = initval
@@ -281,9 +285,26 @@ class _Variable(_Numeric):
     def bit_length(self):
         return self.width
 
+    def set_raw_width(self, msb, lsb):
+        self.width_msb = msb
+        self.width_lsb = lsb
+    
+    def set_raw_length(self, msb, lsb):
+        self.length_msb = msb
+        self.length_lsb = lsb
+    
     def __str__(self):
         return self.name
 
+    def __setattr__(self, attr, value):
+        if attr == 'width':
+            object.__setattr__(self, 'width_msb', None)
+            object.__setattr__(self, 'width_lsb', None)
+        if attr == 'length':
+            object.__setattr__(self, 'length_msb', None)
+            object.__setattr__(self, 'length_lsb', None)
+        object.__setattr__(self, attr, value)
+            
 #-------------------------------------------------------------------------------
 class Input(_Variable): pass
 class Output(_Variable): pass

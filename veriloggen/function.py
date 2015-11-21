@@ -14,6 +14,8 @@ class Function(vtypes.VeriloggenNode):
         self.io_variable = collections.OrderedDict()
         self.variable = collections.OrderedDict()
         self.statement = None
+        self.width_msb = None
+        self.width_lsb = None
         self.subst = []
 
     #---------------------------------------------------------------------------
@@ -41,6 +43,10 @@ class Function(vtypes.VeriloggenNode):
     def add_subst(self, s):
         self.subst.append(s)
 
+    def set_raw_width(self, msb, lsb):
+        self.width_msb = msb
+        self.width_lsb = lsb
+    
     def __call__(self, r):
         return vtypes.Subst(self, r)
 

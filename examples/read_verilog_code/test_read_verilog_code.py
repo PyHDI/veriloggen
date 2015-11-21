@@ -10,11 +10,11 @@ module modified_led #
   (
    input CLK, 
    input RST, 
-   output reg [((WIDTH-1)+1)-1:0] LED,
+   output reg [WIDTH-1:0] LED,
    input enable,
    output busy
   );
-  reg [((32-1)+1)-1:0] count;
+  reg [32-1:0] count;
   always @(posedge CLK) begin
     if(RST) begin        
       count <= 0;

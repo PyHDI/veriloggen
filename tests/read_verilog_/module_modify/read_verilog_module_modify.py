@@ -21,6 +21,13 @@ def mkLed():
     enable = m.Input('enable')
     busy = m.Output('busy')
 
+    # get current ports
+    ports = m.get_ports()
+    led = ports['LED']
+
+    # modify the data width
+    led.width = 32
+    
     old_statement = m.always[0].statement[0].false_statement
     m.always[0].statement[0].false_statement = If(enable)(*old_statement)
     m.Assign( busy(m.variable['count'] < 1023) )
@@ -33,12 +40,12 @@ def mkTop():
     clk = m.Input('CLK')
     rst = m.Input('RST')
     led = m.Output('LED', width)
-    
-    params = ( width, )
-    ports = ( clk, rst, led )
 
     led = mkLed()
-    m.Instance(led, 'inst_blinkled', params, ports)
+    params = m.copy_params(led)
+    ports = m.copy_ports(led)
+    
+    m.Instance(led, 'inst_blinkled', m.connect_params(led), m.connect_ports(led))
 
     return m
 

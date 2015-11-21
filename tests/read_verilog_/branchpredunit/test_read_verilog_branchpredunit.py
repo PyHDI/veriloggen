@@ -21,24 +21,24 @@ module BP #
     input CLK,
     input RST_X,
     input EN,
-    input [((W_A-1)+1)-1:0] pc,
+    input [W_A-1:0] pc,
     output pred,
-    input [((W_A-1)+1)-1:0] update_pc,
+    input [W_A-1:0] update_pc,
     input update,
     input rslt
   );
 
     //Branch History Register
-    reg [((W_BHR-1)+1)-1:0] bhr;
+    reg [W_BHR-1:0] bhr;
     //Pattern History Table
-    wire [(1+1)-1:0] read_pht;
-    wire [(1+1)-1:0] update_read_pht;
-    wire [(1+1)-1:0] write_pht;
+    wire [1:0] read_pht;
+    wire [1:0] update_read_pht;
+    wire [1:0] write_pht;
 
-    reg [((W_BHR-1)+1)-1:0] d_bhr;
+    reg [W_BHR-1:0] d_bhr;
     reg d_update;
     reg d_rslt;
-    reg [((W_A-1)+1)-1:0] d_update_pc;
+    reg [W_A-1:0] d_update_pc;
 
     pht_mem #(.W_PHT(W_PHT), .N_PHT(N_PHT))
     pht_mem(CLK, EN, pht_index(bhr, pc), read_pht,
@@ -68,16 +68,16 @@ module BP #
         end
     end
     
-    function [((W_PHT-1)+1)-1:0] pht_index;
-        input [((W_BHR-1)+1)-1:0] bhr;
-        input [((W_A-1)+1)-1:0] pc;
+    function [W_PHT-1:0] pht_index;
+        input [W_BHR-1:0] bhr;
+        input [W_A-1:0] pc;
         begin
           pht_index = (bhr << BHR_OFFSET) ^ (pc >> 2);
         end 
     endfunction
 
-    function [(1+1)-1:0] pht_update;
-        input [(1+1)-1:0] current;
+    function [1:0] pht_update;
+        input [1:0] current;
         input rslt;
         begin
             if(rslt) begin
@@ -88,8 +88,8 @@ module BP #
         end
     endfunction
     
-    function [(0+1)-1:0] get_pred;
-        input [(1+1)-1:0] cnt;
+    function [0:0] get_pred;
+        input [1:0] cnt;
         begin
           get_pred = (cnt >= 2)? 1:0;
         end
@@ -104,18 +104,18 @@ module pht_mem #
  (
     input CLK,
     input EN,
-    input [((W_PHT-1)+1)-1:0] I_A0,
-    output [(1+1)-1:0] O_Q0,
-    input [((W_PHT-1)+1)-1:0] I_A1,
-    output [(1+1)-1:0] O_Q1,
-    input [((W_PHT-1)+1)-1:0] I_A2,
-    input [(1+1)-1:0] I_D2,
+    input [W_PHT-1:0] I_A0,
+    output [1:0] O_Q0,
+    input [W_PHT-1:0] I_A1,
+    output [1:0] O_Q1,
+    input [W_PHT-1:0] I_A2,
+    input [1:0] I_D2,
     input I_WE2
  );
 
-    reg [(1+1)-1:0] mem [0:((N_PHT-1)+1)-1];
-    reg [((W_PHT-1)+1)-1:0] d_I_A0;
-    reg [((W_PHT-1)+1)-1:0] d_I_A1;
+    reg [1:0] mem [0:N_PHT-1];
+    reg [W_PHT-1:0] d_I_A0;
+    reg [W_PHT-1:0] d_I_A1;
 
     integer i;
     initial begin
@@ -148,12 +148,12 @@ module BTB #
  (
     input CLK, RST_X,
     input EN,
-    input [((W_A-1)+1)-1:0] pc,
-    output [((W_A-1)+1)-1:0] pred_target,
+    input [W_A-1:0] pc,
+    output [W_A-1:0] pred_target,
     output exist,
     output read_ras,
-    input [((W_A-1)+1)-1:0] update_pc,
-    input [((W_A-1)+1)-1:0] update_target,
+    input [W_A-1:0] update_pc,
+    input [W_A-1:0] update_target,
     input update_read_ras,
     input update,
     input rslt
@@ -161,25 +161,25 @@ module BTB #
 
     localparam W_TAG = W_A - (W_TAB + 2);
 
-    reg [((W_A-1)+1)-1:0] d_pc;
-    reg [((W_A-1)+1)-1:0] d_update_pc;
-    reg [((W_A-1)+1)-1:0] d_update_target;
+    reg [W_A-1:0] d_pc;
+    reg [W_A-1:0] d_update_pc;
+    reg [W_A-1:0] d_update_target;
     reg d_update;
     reg d_rslt;
     reg d_update_read_ras;
     
-//    reg [(0+1)-1:0] last [0:((N_TAB-1)+1)-1]; //LRU
-//    reg [(0+1)-1:0] d_last;
+//    reg [0:0] last [0:N_TAB-1]; //LRU
+//    reg [0:0] d_last;
     
-    function [((W_TAB-1)+1)-1:0] btb_index;
-        input [((W_A-1)+1)-1:0] pc;
+    function [W_TAB-1:0] btb_index;
+        input [W_A-1:0] pc;
         begin
           btb_index = pc >> 2;
         end
     endfunction
     
-    function [((W_TAG-1)+1)-1:0] get_tag;
-        input [((W_A-1)+1)-1:0] pc;
+    function [W_TAG-1:0] get_tag;
+        input [W_A-1:0] pc;
         begin
            get_tag = pc[W_A-1:(W_A-W_TAG)];
         end
@@ -200,13 +200,13 @@ module BTB #
         wire read_hit;
         wire update_hit;
         wire victim;
-        reg [((W_A-1)+1)-1:0] btb [0:((N_TAB-1)+1)-1];
-        reg [((W_TAG-1)+1)-1:0] tag [0:((N_TAB-1)+1)-1];
-        wire [((W_TAG-1)+1)-1:0] read_tag;
-        wire [((W_A-1)+1)-1:0] read_target;
-        wire [((W_TAG-1)+1)-1:0] update_tag;
+        reg [W_A-1:0] btb [0:N_TAB-1];
+        reg [W_TAG-1:0] tag [0:N_TAB-1];
+        wire [W_TAG-1:0] read_tag;
+        wire [W_A-1:0] read_target;
+        wire [W_TAG-1:0] update_tag;
         wire t_read_ras;
-        reg [(0+1)-1:0] ras [0:((N_TAB-1)+1)-1];
+        reg [0:0] ras [0:N_TAB-1];
         wire btb_we;
         assign btb_we = d_rslt && d_update && (update_hit || victim);
         btb_mem #(.W_A(W_A), .W_TAB(W_TAB), .N_TAB(N_TAB))
@@ -301,15 +301,15 @@ module btb_mem #
  (
     input CLK,
     input EN,
-    input [((W_TAB-1)+1)-1:0] I_A0,
-    output [((W_A-1)+1)-1:0] O_Q0,
-    input [((W_TAB-1)+1)-1:0] I_A1,
-    input [((W_A-1)+1)-1:0] I_D1,
+    input [W_TAB-1:0] I_A0,
+    output [W_A-1:0] O_Q0,
+    input [W_TAB-1:0] I_A1,
+    input [W_A-1:0] I_D1,
     input I_WE1
   );  
 
-    reg [((W_A-1)+1)-1:0] btb [0:((N_TAB-1)+1)-1];
-    reg [((W_TAB-1)+1)-1:0] d_I_A0;
+    reg [W_A-1:0] btb [0:N_TAB-1];
+    reg [W_TAB-1:0] d_I_A0;
 
     integer i;
     initial begin
@@ -336,19 +336,19 @@ module btb_tag #
  (
     input CLK,
     input EN,
-    input [((W_TAB-1)+1)-1:0] I_A0,
-    output [((W_TAG-1)+1)-1:0] O_Q0,
-    input [((W_TAB-1)+1)-1:0] I_A1,
-    output [((W_TAG-1)+1)-1:0] O_Q1,
-    input [((W_TAB-1)+1)-1:0] I_A2,
-    input [((W_TAG-1)+1)-1:0] I_D2,
+    input [W_TAB-1:0] I_A0,
+    output [W_TAG-1:0] O_Q0,
+    input [W_TAB-1:0] I_A1,
+    output [W_TAG-1:0] O_Q1,
+    input [W_TAB-1:0] I_A2,
+    input [W_TAG-1:0] I_D2,
     input I_WE2
   );
     
     localparam W_TAG = W_A - (W_TAB + 2);
-    reg [((W_TAG-1)+1)-1:0] tag [0:((N_TAB-1)+1)-1];
-    reg [((W_TAB-1)+1)-1:0] d_I_A0;
-    reg [((W_TAB-1)+1)-1:0] d_I_A1;
+    reg [W_TAG-1:0] tag [0:N_TAB-1];
+    reg [W_TAB-1:0] d_I_A0;
+    reg [W_TAB-1:0] d_I_A1;
 
     integer i;
     initial begin
@@ -378,15 +378,15 @@ module read_ras_mem #
   (
     input CLK,
     input EN,
-    input [((W_TAB-1)+1)-1:0] I_A0,
-    output [(0+1)-1:0] O_Q0,
-    input [((W_TAB-1)+1)-1:0] I_A1,
-    input [(0+1)-1:0] I_D1,
+    input [W_TAB-1:0] I_A0,
+    output [0:0] O_Q0,
+    input [W_TAB-1:0] I_A1,
+    input [0:0] I_D1,
     input I_WE1
   );
 
-    reg [(0+1)-1:0] ras [0:((N_TAB-1)+1)-1];
-    reg [((W_TAB-1)+1)-1:0] d_I_A0;
+    reg [0:0] ras [0:N_TAB-1];
+    reg [W_TAB-1:0] d_I_A0;
     
     integer i;
     initial begin
@@ -419,17 +419,17 @@ module RAS #
     input EN,
     input I_PUSH,
     input I_POP,
-    input [((W_A-1)+1)-1:0] I_ADDR,
-    output reg [((W_A-1)+1)-1:0] O_ADDR,
+    input [W_A-1:0] I_ADDR,
+    output reg [W_A-1:0] O_ADDR,
     output O_OVERFLOW
   );
 
-    reg [((W_A-1)+1)-1:0] stack [0:(N_STACK+1)-1];
-    reg [((W_STACK-1)+1)-1:0] head;
-    reg [((W_CNT-1)+1)-1:0] over_cnt;
+    reg [W_A-1:0] stack [0:N_STACK];
+    reg [W_STACK-1:0] head;
+    reg [W_CNT-1:0] over_cnt;
     
     assign O_OVERFLOW = (over_cnt > 0);
-    wire [((W_STACK-1)+1)-1:0] read_ptr;
+    wire [W_STACK-1:0] read_ptr;
     assign read_ptr = (head == 0)? 0 : head -1;
     //assign O_ADDR = (head == 0)? 0: stack[read_ptr];
     
@@ -470,9 +470,9 @@ module BP #
  )    
     input CLK, RST_X;
     input EN;
-    input [((W_A-1)+1)-1:0] pc;
+    input [W_A-1:0] pc;
     output pred;
-    input [((W_A-1)+1)-1:0] update_pc;
+    input [W_A-1:0] update_pc;
     input update;
     input rslt;
     assign pred = 0;
@@ -492,12 +492,12 @@ module BTB #
  (
     input CLK, RST_X,
     input EN,
-    input [((W_A-1)+1)-1:0] pc,
-    output [((W_A-1)+1)-1:0] pred_target,
+    input [W_A-1:0] pc,
+    output [W_A-1:0] pred_target,
     output exist,
     output read_ras,
-    input [((W_A-1)+1)-1:0] update_pc,
-    input [((W_A-1)+1)-1:0] update_target,
+    input [W_A-1:0] update_pc,
+    input [W_A-1:0] update_target,
     input update_read_ras,
     input update,
     input rslt
@@ -521,8 +521,8 @@ module RAS #
     input EN,
     input I_PUSH,
     input I_POP,
-    input [((W_A-1)+1)-1:0] I_ADDR,
-    output [((W_A-1)+1)-1:0] O_ADDR,
+    input [W_A-1:0] I_ADDR,
+    output [W_A-1:0] O_ADDR,
     output O_OVERFLOW
   );
     assign O_ADDR = 0;

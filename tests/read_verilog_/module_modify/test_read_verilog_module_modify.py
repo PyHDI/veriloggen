@@ -10,17 +10,21 @@ module top #
   (
    input CLK, 
    input RST, 
-   output [WIDTH-1:0] LED
+   output [32-1:0] LED,
+   input enable,
+   output busy
   );
   modified_led #
   (
-   WIDTH
+   .WIDTH(WIDTH)
   )
   inst_blinkled
   (
-   CLK,
-   RST,
-   LED
+   .CLK(CLK),
+   .RST(RST),
+   .LED(LED),
+   .enable(enable),
+   .busy(busy)
   );
 endmodule
 
@@ -31,11 +35,11 @@ module modified_led #
   (
    input CLK, 
    input RST, 
-   output reg [((WIDTH-1)+1)-1:0] LED,
+   output reg [32-1:0] LED,
    input enable,
    output busy
   );
-  reg [((32-1)+1)-1:0] count;
+  reg [32-1:0] count;
   always @(posedge CLK) begin
     if(RST) begin        
       count <= 0;

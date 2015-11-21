@@ -503,11 +503,21 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
         lsb = vast.IntConst('0')
         return vast.Width(msb, lsb)
     
+    def make_width_msb_lsb(self, msb, lsb):
+        msb = self.bind_visitor.visit(msb)
+        lsb = self.bind_visitor.visit(lsb)
+        return vast.Width(msb, lsb)
+    
     def make_length(self, node):
         msb = vast.IntConst('0')
         lsb = vast.Minus(self.bind_visitor.visit(node), vast.IntConst('1'))
         return vast.Length(msb, lsb)
 
+    def make_length_msb_lsb(self, msb, lsb):
+        msb = self.bind_visitor.visit(msb)
+        lsb = self.bind_visitor.visit(lsb)
+        return vast.Length(msb, lsb)
+    
     #---------------------------------------------------------------------------
     def visit(self, node):
         if isinstance(node, module.Module) and not isinstance(node, module.Generate):
@@ -543,7 +553,10 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
         name = node.name
         value = self.bind_visitor.visit(node.value)
         value = vast.Rvalue(value)
-        width = None if node.width is None else self.visit(node.width)
+        width = (None if node.width is None else
+                 self.make_width_msb_lsb(node.width_msb, node.width_lsb)
+                 if node.width_msb is not None and node.width_lsb is not None else
+                 self.make_width(node.width))
         signed = node.signed
         return vast.Parameter(name, value, width, signed)
 
@@ -551,20 +564,29 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
         name = node.name
         value = self.bind_visitor.visit(node.value)
         value = vast.Rvalue(value)
-        width = None if node.width is None else self.visit(node.width)
+        width = (None if node.width is None else
+                 self.make_width_msb_lsb(node.width_msb, node.width_lsb)
+                 if node.width_msb is not None and node.width_lsb is not None else
+                 self.make_width(node.width))
         signed = node.signed
         return vast.Localparam(name, value, width, signed)
     
     #---------------------------------------------------------------------------
     def visit_Input(self, node):
         name = node.name
-        width = None if node.width is None else self.make_width(node.width)
+        width = (None if node.width is None else
+                 self.make_width_msb_lsb(node.width_msb, node.width_lsb)
+                 if node.width_msb is not None and node.width_lsb is not None else
+                 self.make_width(node.width))
         signed = node.signed
         return vast.Ioport(vast.Input(name, width, signed))
     
     def visit_Output(self, node):
         name = node.name
-        width = None if node.width is None else self.make_width(node.width)
+        width = (None if node.width is None else
+                 self.make_width_msb_lsb(node.width_msb, node.width_lsb)
+                 if node.width_msb is not None and node.width_lsb is not None else
+                 self.make_width(node.width))
         signed = node.signed
         first = vast.Output(name, width, signed)
         second = vast.Reg(name, width, signed) if self.module.is_reg(name) else None
@@ -572,15 +594,24 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
     
     def visit_Inout(self, node):
         name = node.name
-        width = None if node.width is None else self.make_width(node.width)
+        width = (None if node.width is None else
+                 self.make_width_msb_lsb(node.width_msb, node.width_lsb)
+                 if node.width_msb is not None and node.width_lsb is not None else
+                 self.make_width(node.width))
         signed = node.signed
         return vast.Ioport(vast.Inout(name, width, signed))
     
     def visit_Reg(self, node):
         name = node.name
         if self.module.is_output(name): return None
-        width = None if node.width is None else self.make_width(node.width)
-        length = None if node.length is None else self.make_length(node.length)
+        width = (None if node.width is None else
+                 self.make_width_msb_lsb(node.width_msb, node.width_lsb)
+                 if node.width_msb is not None and node.width_lsb is not None else
+                 self.make_width(node.width))
+        length = (None if node.length is None else
+                  self.make_length_msb_lsb(node.length_msb, node.length_lsb)
+                  if node.length_msb is not None and node.length_lsb is not None else
+                  self.make_length(node.length))
         signed = node.signed
         if length is not None:
             return vast.RegArray(name, width, length, signed)
@@ -588,8 +619,14 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
     
     def visit_Wire(self, node):
         name = node.name
-        width = None if node.width is None else self.make_width(node.width)
-        length = None if node.length is None else self.make_length(node.length)
+        width = (None if node.width is None else
+                 self.make_width_msb_lsb(node.width_msb, node.width_lsb)
+                 if node.width_msb is not None and node.width_lsb is not None else
+                 self.make_width(node.width))
+        length = (None if node.length is None else
+                  self.make_length_msb_lsb(node.length_msb, node.length_lsb)
+                  if node.length_msb is not None and node.length_lsb is not None else
+                  self.make_length(node.length))
         signed = node.signed
         if length is not None:
             return vast.WireArray(name, width, length, signed)
@@ -597,19 +634,28 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
     
     def visit_Integer(self, node):
         name = node.name
-        width = None if node.width is None else self.make_width(node.width)
+        width = (None if node.width is None else
+                 self.make_width_msb_lsb(node.width_msb, node.width_lsb)
+                 if node.width_msb is not None and node.width_lsb is not None else
+                 self.make_width(node.width))
         signed = node.signed
         return vast.Integer(name, width, signed)
     
     def visit_Real(self, node):
         name = node.name
-        width = None if node.width is None else self.make_width(node.width)
+        width = (None if node.width is None else
+                 self.make_width_msb_lsb(node.width_msb, node.width_lsb)
+                 if node.width_msb is not None and node.width_lsb is not None else
+                 self.make_width(node.width))
         signed = node.signed
         return vast.Real(name, width, signed)
     
     def visit_Genvar(self, node):
         name = node.name
-        width = None if node.width is None else self.make_width(node.width)
+        width = (None if node.width is None else
+                 self.make_width_msb_lsb(node.width_msb, node.width_lsb)
+                 if node.width_msb is not None and node.width_lsb is not None else
+                 self.make_width(node.width))
         signed = node.signed
         return vast.Genvar(name, width, signed)
 
@@ -656,7 +702,10 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
     #---------------------------------------------------------------------------
     def visit_Function(self, node):
         name = node.name
-        retwidth = None if node.width is None else self.make_width(node.width)
+        retwidth = (None if node.width is None else
+                    self.make_width_msb_lsb(node.width_msb, node.width_lsb)
+                    if node.width_msb is not None and node.width_lsb is not None else
+                    self.make_width(node.width))
         statement = ([ self.visit(v).first for v in node.io_variable.values() ] +
                      [ self.visit(v) for v in node.variable.values() ])
         statement.append(self._optimize_block(
@@ -666,12 +715,11 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
     #---------------------------------------------------------------------------
     def visit_Task(self, node):
         name = node.name
-        retwidth = None if node.width is None else self.make_width(node.width)
         statement = ([ self.visit(v).first for v in node.io_variable.values() ] +
                      [ self.visit(v) for v in node.variable.values() ])
         statement.append(self._optimize_block(
             vast.Block(tuple([ self.blocking_visitor.visit(s) for s in node.statement]))))
-        return vast.Task(name, retwidth, statement)
+        return vast.Task(name, statement)
     
     #---------------------------------------------------------------------------
     def visit_Instance(self, node):
