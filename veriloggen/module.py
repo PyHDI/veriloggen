@@ -497,12 +497,16 @@ class Instance(vtypes.VeriloggenNode):
         self.instname = instname
         if not params:
             self.params = ()
+        elif isinstance(params, dict):
+            self.params = [ (k, v) for k, v in params.items() ]
         elif isinstance(params[0], (tuple, list)):
             self.params = params
         else:
             self.params = [ (None, p) for p in params ]
         if not ports:
             self.ports = ()
+        elif isinstance(ports, dict):
+            self.ports = [ (k, v) for k, v in ports.items() ]
         elif isinstance(ports[0], (tuple, list)):
             self.ports = ports
         else:
@@ -514,12 +518,12 @@ class Instance(vtypes.VeriloggenNode):
                             type(module))
             
     def _type_check_params(self, params):
-        if not isinstance(params, (tuple, list)):
-            raise TypeError("params of Instance require tuple, not %s." % type(params))
+        if not isinstance(params, (tuple, list, dict)):
+            raise TypeError("params of Instance require tuple, list, or dict, not %s." % type(params))
         
     def _type_check_ports(self, ports):
-        if not isinstance(ports, (tuple, list)):
-            raise TypeError("ports of Instance require tuple, not %s." % type(ports))
+        if not isinstance(ports, (tuple, list, dict)):
+            raise TypeError("ports of Instance require tuple, list, or dict, not %s." % type(ports))
 
 #-------------------------------------------------------------------------------
 class Generate(Module):

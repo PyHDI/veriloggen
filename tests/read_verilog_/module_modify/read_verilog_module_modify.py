@@ -45,7 +45,7 @@ def mkTop():
     params = m.copy_params(led)
     ports = m.copy_ports(led)
     
-    m.Instance(led, 'inst_blinkled', m.connect_params(led), m.connect_ports(led))
+    m.Instance(led, 'inst_blinkled', params, ports)
 
     return m
 
