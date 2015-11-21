@@ -11,11 +11,11 @@ class Function(vtypes.VeriloggenNode):
     def __init__(self, name, width=1):
         self.name = name
         self.width = width
+        self.width_msb = None
+        self.width_lsb = None
         self.io_variable = collections.OrderedDict()
         self.variable = collections.OrderedDict()
         self.statement = None
-        self.width_msb = None
-        self.width_lsb = None
         self.subst = []
 
     #---------------------------------------------------------------------------
@@ -40,6 +40,13 @@ class Function(vtypes.VeriloggenNode):
         self.statement = tuple(statement)
         return self
 
+    # function call
+    def call(self, *args):
+        return FunctionCall(self, *args)
+
+    def next(self, r):
+        return self.__call__(r)
+    
     def add_subst(self, s):
         self.subst.append(s)
 
@@ -47,14 +54,15 @@ class Function(vtypes.VeriloggenNode):
         self.width_msb = msb
         self.width_lsb = lsb
     
+    def __setattr__(self, attr, value):
+        # when width or length is overwritten, msb and lsb values are reset.
+        if attr == 'width':
+            object.__setattr__(self, 'width_msb', None)
+            object.__setattr__(self, 'width_lsb', None)
+        object.__setattr__(self, attr, value)
+            
     def __call__(self, r):
         return vtypes.Subst(self, r)
-
-    def next(self, r):
-        return self.__call__(r)
-    
-    def call(self, *args):
-        return FunctionCall(self, *args)
 
 class FunctionCall(vtypes._Numeric):
     def __init__(self, func, *args):
