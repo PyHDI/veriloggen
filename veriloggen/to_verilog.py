@@ -666,12 +666,11 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
     #---------------------------------------------------------------------------
     def visit_Task(self, node):
         name = node.name
-        retwidth = None if node.width is None else self.make_width(node.width)
         statement = ([ self.visit(v).first for v in node.io_variable.values() ] +
                      [ self.visit(v) for v in node.variable.values() ])
         statement.append(self._optimize_block(
             vast.Block(tuple([ self.blocking_visitor.visit(s) for s in node.statement]))))
-        return vast.Task(name, retwidth, statement)
+        return vast.Task(name, statement)
     
     #---------------------------------------------------------------------------
     def visit_Instance(self, node):
