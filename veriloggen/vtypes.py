@@ -264,17 +264,11 @@ class _Variable(_Numeric):
         self.initval = initval
         self.subst = []
     
-    def __call__(self, r, ldelay=None, rdelay=None):
-        return self.next(r, ldelay, rdelay)
-
     def next(self, r, ldelay=None, rdelay=None):
         return Subst(self, r, ldelay=ldelay, rdelay=rdelay)
     
     def connect(self, prefix='', postfix=''):
         return ( prefix + self.name + postfix, self )
-
-    def reset(self):
-        return None
 
     def add_subst(self, s):
         self.subst.append(s)
@@ -282,6 +276,9 @@ class _Variable(_Numeric):
     def get_subst(self):
         return self.subst
     
+    def reset(self):
+        return None
+
     def bit_length(self):
         return self.width
 
@@ -293,10 +290,8 @@ class _Variable(_Numeric):
         self.length_msb = msb
         self.length_lsb = lsb
     
-    def __str__(self):
-        return self.name
-
     def __setattr__(self, attr, value):
+        # when width or length is overwritten, msb and lsb values are reset.
         if attr == 'width':
             object.__setattr__(self, 'width_msb', None)
             object.__setattr__(self, 'width_lsb', None)
@@ -305,6 +300,12 @@ class _Variable(_Numeric):
             object.__setattr__(self, 'length_lsb', None)
         object.__setattr__(self, attr, value)
             
+    def __str__(self):
+        return self.name
+
+    def __call__(self, r, ldelay=None, rdelay=None):
+        return self.next(r, ldelay, rdelay)
+
 #-------------------------------------------------------------------------------
 class Input(_Variable): pass
 class Output(_Variable): pass
@@ -632,9 +633,6 @@ class Pointer(_SpecialOperator):
         self.pos = pos
         self.subst = []
         
-    def __call__(self, r):
-        return self.next(r)
-
     def next(self, r):
         return Subst(self, r)
 
@@ -649,15 +647,15 @@ class Pointer(_SpecialOperator):
     def __str__(self):
         return ''.join([str(self.var), '[', str(self.pos), ']'])
 
+    def __call__(self, r):
+        return self.next(r)
+
 class Slice(_SpecialOperator):
     def __init__(self, var, msb, lsb):
         self.var = var
         self.msb = msb
         self.lsb = lsb
         self.subst = []
-
-    def __call__(self, r):
-        return self.next(r)
 
     def next(self, r):
         return Subst(self, r)
@@ -671,14 +669,14 @@ class Slice(_SpecialOperator):
     def __str__(self):
         return ''.join([str(self.var), '[', str(self.msb), ':', str(self.lsb), ']'])
 
+    def __call__(self, r):
+        return self.next(r)
+
 class Cat(_SpecialOperator):
     def __init__(self, *vars):
         self.vars = tuple(vars)
         self.subst = []
     
-    def __call__(self, r):
-        return self.next(r)
-
     def next(self, r):
         return Subst(self, r)
 
@@ -702,6 +700,9 @@ class Cat(_SpecialOperator):
         ret.append('}')
         return ''.join(ret)
        
+    def __call__(self, r):
+        return self.next(r)
+
 class Repeat(_SpecialOperator):
     def __init__(self, var, times):
         self.var = var
@@ -762,15 +763,15 @@ class Always(VeriloggenNode):
         self.sensitivity = tuple(sensitivity)
         self.statement = None
 
-    def __call__(self, *statement):
-        return self.set_statement(*statement)
-
     def set_statement(self, *statement):
         if self.statement is not None:
             raise ValueError("Statement is already assigned.")
         self.statement = tuple(statement)
         return self
     
+    def __call__(self, *statement):
+        return self.set_statement(*statement)
+
 #-------------------------------------------------------------------------------
 class Assign(VeriloggenNode):
     def __init__(self, statement):
@@ -794,13 +795,6 @@ class If(VeriloggenNode):
         self.true_statement = None
         self.false_statement = None
 
-    def __call__(self, *args):
-        if self.true_statement is None:
-            return self.set_true_statement(*args)
-        if self.false_statement is None:
-            return self.set_false_statement(*args)
-        raise ValueError("True statement and False statement are already assigned.")
-
     def set_true_statement(self, *statement):
         self.true_statement = tuple(statement)
         return self
@@ -814,6 +808,13 @@ class If(VeriloggenNode):
             return self.set_false_statement(*statement)
         raise ValueError("False statement is already assigned.")
         
+    def __call__(self, *args):
+        if self.true_statement is None:
+            return self.set_true_statement(*args)
+        if self.false_statement is None:
+            return self.set_false_statement(*args)
+        raise ValueError("True statement and False statement are already assigned.")
+
 #-------------------------------------------------------------------------------
 class For(VeriloggenNode):
     def __init__(self, pre, condition, post):
@@ -822,11 +823,6 @@ class For(VeriloggenNode):
         self.post = post
         self.statement = None
 
-    def __call__(self, *args):
-        if self.statement is None:
-            return self.set_statement(*args)
-        raise ValueError("Statement body is already assigned.")
-
     def set_statement(self, *statement):
         self.statement = tuple(statement)
         return self
@@ -836,6 +832,11 @@ class For(VeriloggenNode):
             return self.set_statement(*statement)
         self.statement = tuple(self.statement + statement)
         return self
+
+    def __call__(self, *args):
+        if self.statement is None:
+            return self.set_statement(*args)
+        raise ValueError("Statement body is already assigned.")
 
 #-------------------------------------------------------------------------------
 class While(VeriloggenNode):
@@ -843,11 +844,6 @@ class While(VeriloggenNode):
         self.condition = condition
         self.statement = None
 
-    def __call__(self, *args):
-        if self.statement is None:
-            return self.set_statement(*args)
-        raise ValueError("Statement body is already assigned.")
-
     def set_statement(self, *statement):
         self.statement = tuple(statement)
         return self
@@ -858,6 +854,11 @@ class While(VeriloggenNode):
         self.statement = tuple(self.statement + statement)
         return self
     
+    def __call__(self, *args):
+        if self.statement is None:
+            return self.set_statement(*args)
+        raise ValueError("Statement body is already assigned.")
+
 #-------------------------------------------------------------------------------
 class Case(VeriloggenNode):
     def __init__(self, comp):
@@ -865,11 +866,6 @@ class Case(VeriloggenNode):
         self.statement = None
         self.last = False
         
-    def __call__(self, *args):
-        if self.statement is None:
-            return self.set_statement(*args)
-        raise ValueError("Case statement list is already assigned.")
-
     def _type_check_statement(self, *statement):
         for s in statement:
             if not isinstance(s, When):
@@ -891,6 +887,11 @@ class Case(VeriloggenNode):
         self.statement = tuple(self.statement + statement)
         return self
 
+    def __call__(self, *args):
+        if self.statement is None:
+            return self.set_statement(*args)
+        raise ValueError("Case statement list is already assigned.")
+
 class Casex(Case): pass
     
 class When(VeriloggenNode) :
@@ -898,11 +899,6 @@ class When(VeriloggenNode) :
         self._type_check_condition(*condition)
         self.condition = None if len(condition) == 0 or condition[0] is None else tuple(condition)
         self.statement = None
-
-    def __call__(self, *args):
-        if self.statement is None:
-            return self.set_statement(*args)
-        raise ValueError("Statement body is already assigned.")
 
     def _type_check_condition(self, *args):
         if len(args) == 0:
@@ -930,6 +926,11 @@ class When(VeriloggenNode) :
         self.statement = tuple(self.statement + statement)
         return self
     
+    def __call__(self, *args):
+        if self.statement is None:
+            return self.set_statement(*args)
+        raise ValueError("Statement body is already assigned.")
+
 #-------------------------------------------------------------------------------
 class ScopeIndex(VeriloggenNode):
     def __init__(self, name, index):
@@ -961,15 +962,15 @@ class Wait(VeriloggenNode):
         self.condition = condition
         self.statement = None
 
-    def __call__(self, *statement):
-        return self.set_statement(*statement)
-
     def set_statement(self, *statement):
         if self.statement is not None:
             raise ValueError("Statement is already assigned.")
         self.statement = tuple(statement)
         return self
         
+    def __call__(self, *statement):
+        return self.set_statement(*statement)
+
 class Forever(VeriloggenNode):
     def __init__(self, *statement):
         self.statement = tuple(statement)
@@ -982,4 +983,3 @@ class Delay(VeriloggenNode):
 class SingleStatement(VeriloggenNode):
     def __init__(self, statement):
         self.statement = statement
-
