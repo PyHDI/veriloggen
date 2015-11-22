@@ -1,5 +1,5 @@
 #!/bin/sh
-set -eu
+set -e
 
 mkdir 2.7
 cd 2.7

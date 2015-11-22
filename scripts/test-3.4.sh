@@ -1,5 +1,5 @@
 #!/bin/sh
-set -eu
+set -e
 
 mkdir 3.4
 cd 3.4
