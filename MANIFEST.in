@@ -8,3 +8,4 @@ recursive-include utils *
 recursive-include examples *
 recursive-include tests *
 recursive-include img *
+recursive-include scripts *
