@@ -1,3 +1,6 @@
+#!/bin/sh
+set -eu
+
 mkdir 3.5
 cd 3.5
 virtualenv --python=python3 .

@@ -1,3 +1,6 @@
+#!/bin/sh
+set -eu
+
 mkdir 2.7
 cd 2.7
 virtualenv --python=python .
