@@ -26,4 +26,5 @@ make test PYTHON=python
 cd ..
 mv veriloggen.old veriloggen
 cd ..
+deactivate
 cd ..

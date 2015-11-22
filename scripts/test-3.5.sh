@@ -26,4 +26,5 @@ make test
 cd ..
 mv veriloggen.old veriloggen
 cd ..
+deactivate
 cd ..
