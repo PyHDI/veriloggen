@@ -8,14 +8,18 @@ python setup.py install
 pip install pytest pytest-pythonpath
 mv veriloggen veriloggen.old
 cd tests
-make test PYTHON=python
-make clean
 make run PYTHON=python
+make clean
+cd ..
+cd examples
+make run PYTHON=python
+make clean
+cd ..
+cd tests
+make test PYTHON=python
 cd ..
 cd examples
 make test PYTHON=python
-make clean
-make run PYTHON=python
 cd ..
 mv veriloggen.old veriloggen
 cd ..

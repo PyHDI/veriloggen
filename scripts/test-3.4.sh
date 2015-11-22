@@ -8,14 +8,18 @@ python3 setup.py install
 pip install pytest pytest-pythonpath
 mv veriloggen veriloggen.old
 cd tests
-make test
-make clean
 make run
+make clean
+cd ..
+cd examples
+make run
+make clean
+cd ..
+cd tests
+make test
 cd ..
 cd examples
 make test
-make clean
-make run
 cd ..
 mv veriloggen.old veriloggen
 cd ..
