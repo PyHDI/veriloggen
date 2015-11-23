@@ -1,6 +1,4 @@
 language: python
-sudo: required
-dist: trusty
 
 python:
   - 2.7
