@@ -18,12 +18,7 @@ cd examples
 make run
 make clean
 cd ..
-cd tests
 make test
-cd ..
-cd examples
-make test
-cd ..
 mv veriloggen.old veriloggen
 cd ..
 deactivate

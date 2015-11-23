@@ -18,12 +18,7 @@ cd examples
 make run PYTHON=python
 make clean
 cd ..
-cd tests
 make test PYTHON=python
-cd ..
-cd examples
-make test PYTHON=python
-cd ..
 mv veriloggen.old veriloggen
 cd ..
 deactivate
