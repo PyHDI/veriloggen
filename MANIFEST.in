@@ -7,7 +7,7 @@ include Makefile
 include docker/Dockerfile
 include hello_led.py
 recursive-include utils *
-recursive-include examples *
 recursive-include tests *
+recursive-include examples *
 recursive-include img *
 recursive-include scripts *
