@@ -1,6 +1,8 @@
 Veriloggen
 ==============================
 
+[![Build Status](https://travis-ci.org/PyHDI/veriloggen.svg)](https://travis-ci.org/PyHDI/veriloggen)
+
 A library for constructing a Verilog HDL source code in Python
 
 Copyright (C) 2015, Shinya Takamaeda-Yamazaki

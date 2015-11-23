@@ -1,6 +1,8 @@
 Veriloggen
 ==========
 
+|Build Status|
+
 A library for constructing a Verilog HDL source code in Python
 
 Copyright (C) 2015, Shinya Takamaeda-Yamazaki
@@ -359,3 +361,6 @@ Related Project
 
 `Pyverilog <https://github.com/PyHDI/Pyverilog>`__ - Python-based
 Hardware Design Processing Toolkit for Verilog HDL
+
+.. |Build Status| image:: https://travis-ci.org/PyHDI/veriloggen.svg
+   :target: https://travis-ci.org/PyHDI/veriloggen
