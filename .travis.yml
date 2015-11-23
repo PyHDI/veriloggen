@@ -10,4 +10,4 @@ install:
   - pip install pytest pytest-pythonpath pyverilog
 
 script:
-  - python -m pytest .
+  - python -m pytest tests examples

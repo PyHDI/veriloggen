@@ -10,14 +10,10 @@ cd veriloggen
 python3 setup.py install
 pip install pytest pytest-pythonpath
 mv veriloggen veriloggen.old
-cd tests
-make run
-make clean
-cd ..
-cd examples
-make run
-make clean
-cd ..
+make run -C tests
+make clean -C tests
+make run -C examples
+make clean -C examples
 make test
 mv veriloggen.old veriloggen
 cd ..
