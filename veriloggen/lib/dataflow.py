@@ -19,7 +19,9 @@ class Dataflow(vtypes.VeriloggenNode):
         self.tmp_count = 0
         self.seq = Seq(self.m, self.name, clk, rst)
         self.data_visitor = DataVisitor(self)
+        self.max_stage_id = 0
         self.vars = []
+        self.done = False
 
     #---------------------------------------------------------------------------
     def input(self, data, valid=None, ready=None, width=None):
@@ -43,6 +45,10 @@ class Dataflow(vtypes.VeriloggenNode):
         self.vars.append(ret)
         if isinstance(preg, _DataflowVariable):
             preg._add_preg(next_stage_id, ret)
+
+        if next_stage_id > self.max_stage_id:
+            self.max_stage_id = next_stage_id
+            
         return ret
 
     #---------------------------------------------------------------------------
@@ -97,6 +103,14 @@ class Dataflow(vtypes.VeriloggenNode):
 
     #---------------------------------------------------------------------------
     def make_always(self, reset=(), body=()):
+        if self.done:
+            raise ValueError('make_always() has been already called.')
+        self.done = True
+        
+        for var in self.vars:
+            if var.output_vars is not None:
+                var.make_output()
+       
         self.m.Always(vtypes.Posedge(self.clk))(
             vtypes.If(self.rst)(
                 reset,
@@ -337,6 +351,7 @@ class _DataflowVariable(_DataflowNumeric):
         self.data = data
         self.valid = valid
         self.ready = ready
+        self.output_vars = None
         self.src_data = src_data
         self.dst_data = None
         self.ops = ops
@@ -374,12 +389,16 @@ class _DataflowVariable(_DataflowNumeric):
             
         return p
         
-    def output(self, data, valid=None, ready=None, nobuf=False):
-        # Inserting output stage register
-        if nobuf:
-            ovar = self
-        else:
-            ovar = self.df.stage(self, preg=self)
+    def output(self, data, valid=None, ready=None):
+        self.output_vars = (data, valid, ready)
+        
+    def make_output(self):
+        data, valid, ready = self.output_vars
+        
+        # Inserting delayed registers
+        ovar = self
+        for i in range(self.stage_id, self.df.max_stage_id):
+            ovar = self.df.stage(ovar, preg=ovar)
         
         if not isinstance(data, (vtypes.Wire, vtypes.Output)):
             raise TypeError('Data signal must be Wire, not %s' % str(type(data)))
@@ -634,6 +653,8 @@ class GraphGenerator(_DataflowVisitor):
             raise ImportError('Graph generator of lib.Dataflow requires Pygraphviz.')
         self.df = df
         self.graph = pgv.AGraph(directed=True)
+        self.visited_node = set()
+        self.const_node = []
 
     def draw(self, filename='out.png', prog='dot'):
         for var in self.df.vars:
@@ -646,6 +667,7 @@ class GraphGenerator(_DataflowVisitor):
         self.graph.draw(filename)
             
     def _add_node(self, node, label=None, color='black', shape='box', style='solid'):
+        self.visited_node.add(id(node))
         if label is None:
             self.graph.add_node(id(node), color=color, shape=shape, style=style)
         else:
@@ -656,10 +678,14 @@ class GraphGenerator(_DataflowVisitor):
             # to append multiple first-class objects with same values
             start = copy.deepcopy(vtypes._Constant(start))
             self._add_node(start, label=str(start), shape='invtriangle')
+            self.const_node.append(start)
+            
         if isinstance(end, (bool, int, str, float)):
             # to append multiple first-class objects with same values
             end = copy.deepcopy(vtypes._Constant(end))
             self._add_node(end, label=str(end), shape='invtriangle')
+            self.const_node.append(end)
+            
         if label:
             self.graph.add_edge(id(start), id(end), color=color, label=label, style=style)
         else:
@@ -679,6 +705,14 @@ class GraphGenerator(_DataflowVisitor):
                 maxval = arg.stage_id
         return maxval
 
+    def _visited(self, node):
+        return id(node) in self.visited_node
+    
+    def visit(self, node):
+        if self._visited(node):
+            return None
+        return _DataflowVisitor.visit(self, node)
+    
     def visit__DataflowInterface(self, node):
         if node.output:
             self._add_node(node, label=str(node), shape='trapezium')
