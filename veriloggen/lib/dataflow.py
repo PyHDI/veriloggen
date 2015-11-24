@@ -15,14 +15,17 @@ class Dataflow(vtypes.VeriloggenNode):
         self.name = name
         self.clk = clk
         self.rst = rst
-        self.width = 32
+        self.width = width
+        
         self.tmp_count = 0
-        self.seq = Seq(self.m, self.name, clk, rst)
-        self.data_visitor = DataVisitor(self)
         self.max_stage_id = 0
         self.vars = []
-        self.done = False
+        
+        self.seq = Seq(self.m, self.name, clk, rst)
+        self.data_visitor = DataVisitor(self)
 
+        self.done = False
+        
     #---------------------------------------------------------------------------
     def input(self, data, valid=None, ready=None, width=None):
         if ready is not None and not isinstance(ready, (vtypes.Wire, vtypes.Output)):

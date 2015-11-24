@@ -20,7 +20,7 @@ class FSM(vtypes.VeriloggenNode):
         self.width = width
         self.state_count = 0
         self.state = self.m.Reg(name, width)  # set initval later
-        
+
         self.mark = {} # key:index
         self._set_mark(0, self.name + '_' + initname)
         self.state.initval = self._get_mark(0)
@@ -39,7 +39,7 @@ class FSM(vtypes.VeriloggenNode):
         self.reset_visitor = ResetVisitor()
 
         self.seq = Seq(self.m, self.name + '_par', clk, rst)
-
+        
         self.done = False
 
     #---------------------------------------------------------------------------

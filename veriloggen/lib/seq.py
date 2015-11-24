@@ -16,16 +16,16 @@ class Seq(vtypes.VeriloggenNode):
         self.clk = clk
         self.rst = rst
 
-        self.body = []
+        self.tmp_count = 0
         self.delay_amount = 0
         self.delayed_body = collections.defaultdict(list)
-        self.tmp_count = 0
         self.prev_dict = collections.OrderedDict()
+        self.body = []
         
         self.dst_var = collections.OrderedDict()
         self.dst_visitor = SubstDstVisitor()
         self.reset_visitor = ResetVisitor()
-
+        
         self.done = False
         
     #---------------------------------------------------------------------------
