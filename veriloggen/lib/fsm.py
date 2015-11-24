@@ -40,6 +40,8 @@ class FSM(vtypes.VeriloggenNode):
 
         self.seq = Seq(self.m, self.name + '_par', clk, rst)
 
+        self.done = False
+
     #---------------------------------------------------------------------------
     def current(self):
         return self.state_count
@@ -115,6 +117,10 @@ class FSM(vtypes.VeriloggenNode):
 
     #---------------------------------------------------------------------------
     def make_always(self, reset=(), body=(), case=True):
+        if self.done:
+            raise ValueError('make_always() has been already called.')
+        self.done = True
+        
         part_reset = self.make_reset(reset)
         part_body = list(body) + list( self.make_case() if case else self.make_if() )
         self.m.Always(vtypes.Posedge(self.clk))(

@@ -26,6 +26,8 @@ class Seq(vtypes.VeriloggenNode):
         self.dst_visitor = SubstDstVisitor()
         self.reset_visitor = ResetVisitor()
 
+        self.done = False
+        
     #---------------------------------------------------------------------------
     def prev(self, var, delay, initval=0):
         if isinstance(var, (bool, int, float, str,
@@ -96,6 +98,10 @@ class Seq(vtypes.VeriloggenNode):
 
     #---------------------------------------------------------------------------
     def make_always(self, reset=(), body=()):
+        if self.done:
+            raise ValueError('make_always() has been already called.')
+        self.done = True
+        
         part_reset = list(reset) + list(self.make_reset())
         part_body = list(body) + list(self.make_code())
         self.m.Always(vtypes.Posedge(self.clk))(
