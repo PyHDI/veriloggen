@@ -49,7 +49,7 @@ class Dataflow(vtypes.VeriloggenNode):
         if isinstance(preg, _DataflowVariable):
             preg._add_preg(next_stage_id, ret)
 
-        if next_stage_id > self.max_stage_id:
+        if next_stage_id is not None and next_stage_id > self.max_stage_id:
             self.max_stage_id = next_stage_id
             
         return ret
@@ -400,8 +400,9 @@ class _DataflowVariable(_DataflowNumeric):
         
         # Inserting delayed registers
         ovar = self
-        for i in range(self.stage_id, self.df.max_stage_id):
-            ovar = self.df.stage(ovar, preg=ovar)
+        if self.stage_id is not None:
+            for i in range(self.stage_id, self.df.max_stage_id):
+                ovar = self.df.stage(ovar, preg=ovar)
         
         if not isinstance(data, (vtypes.Wire, vtypes.Output)):
             raise TypeError('Data signal must be Wire, not %s' % str(type(data)))
