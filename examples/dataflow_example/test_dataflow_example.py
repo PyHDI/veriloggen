@@ -277,13 +277,9 @@ module multadd
   reg [32-1:0] _df_data_2;
   reg _df_valid_2;
   wire _df_ready_2;
-  assign _df_ready_2 = (_df_ready_3 || (!_df_valid_3));
-  reg [32-1:0] _df_data_3;
-  reg _df_valid_3;
-  wire _df_ready_3;
-  assign _df_ready_3 = rz;
-  assign z = _df_data_3;
-  assign vz = _df_valid_3;
+  assign _df_ready_2 = rz;
+  assign z = _df_data_2;
+  assign vz = _df_valid_2;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -293,8 +289,6 @@ module multadd
       _df_valid_1 <= 0;
       _df_data_2 <= 0;
       _df_valid_2 <= 0;
-      _df_data_3 <= 0;
-      _df_valid_3 <= 0;
     end else begin
       if(((vx && rx) && (_df_ready_0 || (!_df_valid_0)))) begin
         _df_data_0 <= (x * c);
@@ -314,12 +308,6 @@ module multadd
       if((_df_ready_2 || (!_df_valid_2))) begin
         _df_valid_2 <= ((_df_valid_0 && _df_ready_0) && (_df_valid_1 && _df_ready_1));
       end 
-      if(((_df_valid_2 && _df_ready_2) && (_df_ready_3 || (!_df_valid_3)))) begin
-        _df_data_3 <= _df_data_2;
-      end 
-      if((_df_ready_3 || (!_df_valid_3))) begin
-        _df_valid_3 <= (_df_valid_2 && _df_ready_2);
-      end 
     end
   end
 
@@ -334,27 +322,27 @@ x=         2
 y=         4
 x=         3
 y=         6
+z=        10
 x=         4
 y=         8
-z=        10
+z=        20
 x=         5
 y=        10
-z=        20
+z=        30
 x=         6
 y=        12
-z=        30
+z=        40
 x=         7
 y=        14
-z=        40
+z=        50
 x=         8
 y=        16
-z=        50
+z=        60
 x=         9
 y=        18
-z=        60
+z=        70
 x=        10
 y=        20
-z=        70
 z=        80
 z=        90
 z=       100

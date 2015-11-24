@@ -265,32 +265,20 @@ module blinkled
   reg [32-1:0] _df_data_0;
   reg _df_valid_0;
   wire _df_ready_0;
-  assign _df_ready_0 = (_df_ready_1 || (!_df_valid_1));
-  reg [32-1:0] _df_data_1;
-  reg _df_valid_1;
-  wire _df_ready_1;
-  assign _df_ready_1 = rz;
-  assign z = _df_data_1;
-  assign vz = _df_valid_1;
+  assign _df_ready_0 = rz;
+  assign z = _df_data_0;
+  assign vz = _df_valid_0;
 
   always @(posedge CLK) begin
     if(RST) begin
       _df_data_0 <= 0;
       _df_valid_0 <= 0;
-      _df_data_1 <= 0;
-      _df_valid_1 <= 0;
     end else begin
       if((((vx && rx) && (vy && ry)) && (_df_ready_0 || (!_df_valid_0)))) begin
         _df_data_0 <= (x + y);
       end 
       if((_df_ready_0 || (!_df_valid_0))) begin
         _df_valid_0 <= ((vx && rx) && (vy && ry));
-      end 
-      if(((_df_valid_0 && _df_ready_0) && (_df_ready_1 || (!_df_valid_1)))) begin
-        _df_data_1 <= _df_data_0;
-      end 
-      if((_df_ready_1 || (!_df_valid_1))) begin
-        _df_valid_1 <= (_df_valid_0 && _df_ready_0);
       end 
     end
   end

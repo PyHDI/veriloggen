@@ -122,8 +122,7 @@ module blinkled
   reg [32-1:0] _df_data_2;
   reg [32-1:0] _df_data_3;
   reg [32-1:0] _df_data_4;
-  reg [32-1:0] _df_data_5;
-  assign y = _df_data_5;
+  assign y = _df_data_4;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -132,14 +131,12 @@ module blinkled
       _df_data_2 <= 0;
       _df_data_3 <= 0;
       _df_data_4 <= 0;
-      _df_data_5 <= 0;
     end else begin
       _df_data_0 <= x;
       _df_data_1 <= _df_data_0;
       _df_data_2 <= (_df_data_0 + _df_data_1);
       _df_data_3 <= x;
       _df_data_4 <= (_df_data_2 + _df_data_3);
-      _df_data_5 <= _df_data_4;
     end
   end
 

@@ -319,8 +319,6 @@ module test;
 
 endmodule
 
-
-
 module blinkled
 (
   input CLK,
@@ -336,27 +334,23 @@ module blinkled
   input rz
 );
 
-  assign rx = (_df_ready_0 || (!_df_valid_0));
+  assign rx = _df_ready_0 || !_df_valid_0;
   reg [32-1:0] _df_data_0;
   reg _df_valid_0;
   wire _df_ready_0;
-  assign _df_ready_0 = ((_df_ready_1 || (!_df_valid_1)) && (_df_ready_2 || (!_df_valid_2)));
+  assign _df_ready_0 = (_df_ready_1 || !_df_valid_1) && (_df_ready_2 || !_df_valid_2);
   reg [32-1:0] _df_data_1;
   reg _df_valid_1;
   wire _df_ready_1;
-  assign _df_ready_1 = (_df_ready_3 || (!_df_valid_3));
+  assign _df_ready_1 = rz;
   reg [32-1:0] _df_data_2;
   reg _df_valid_2;
   wire _df_ready_2;
   assign _df_ready_2 = ry;
   assign y = _df_data_2;
   assign vy = _df_valid_2;
-  reg [32-1:0] _df_data_3;
-  reg _df_valid_3;
-  wire _df_ready_3;
-  assign _df_ready_3 = rz;
-  assign z = _df_data_3;
-  assign vz = _df_valid_3;
+  assign z = _df_data_1;
+  assign vz = _df_valid_1;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -366,35 +360,28 @@ module blinkled
       _df_valid_1 <= 0;
       _df_data_2 <= 0;
       _df_valid_2 <= 0;
-      _df_data_3 <= 0;
-      _df_valid_3 <= 0;
     end else begin
-      if(((vx && rx) && (_df_ready_0 || (!_df_valid_0)))) begin
-        _df_data_0 <= (x + 1);
+      if(vx && rx && (_df_ready_0 || !_df_valid_0)) begin
+        _df_data_0 <= x + 1;
       end 
-      if((_df_ready_0 || (!_df_valid_0))) begin
-        _df_valid_0 <= (vx && rx);
+      if(_df_ready_0 || !_df_valid_0) begin
+        _df_valid_0 <= vx && rx;
       end 
-      if(((_df_valid_0 && _df_ready_0) && (_df_ready_1 || (!_df_valid_1)))) begin
-        _df_data_1 <= (_df_data_0 + 1);
+      if(_df_valid_0 && _df_ready_0 && (_df_ready_1 || !_df_valid_1)) begin
+        _df_data_1 <= _df_data_0 + 1;
       end 
-      if((_df_ready_1 || (!_df_valid_1))) begin
-        _df_valid_1 <= (_df_valid_0 && _df_ready_0);
+      if(_df_ready_1 || !_df_valid_1) begin
+        _df_valid_1 <= _df_valid_0 && _df_ready_0;
       end 
-      if(((_df_valid_0 && _df_ready_0) && (_df_ready_2 || (!_df_valid_2)))) begin
+      if(_df_valid_0 && _df_ready_0 && (_df_ready_2 || !_df_valid_2)) begin
         _df_data_2 <= _df_data_0;
       end 
-      if((_df_ready_2 || (!_df_valid_2))) begin
-        _df_valid_2 <= (_df_valid_0 && _df_ready_0);
-      end 
-      if(((_df_valid_1 && _df_ready_1) && (_df_ready_3 || (!_df_valid_3)))) begin
-        _df_data_3 <= _df_data_1;
-      end 
-      if((_df_ready_3 || (!_df_valid_3))) begin
-        _df_valid_3 <= (_df_valid_1 && _df_ready_1);
+      if(_df_ready_2 || !_df_valid_2) begin
+        _df_valid_2 <= _df_valid_0 && _df_ready_0;
       end 
     end
   end
+
 
 endmodule
 """

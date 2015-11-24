@@ -125,19 +125,16 @@ module blinkled
 );
 
   reg [32-1:0] _df_data_0;
-  reg [32-1:0] _df_data_1;
-  assign y = _df_data_1;
+  assign y = _df_data_0;
 
   always @(posedge CLK) begin
     if(RST) begin
       _df_data_0 <= 0;
-      _df_data_1 <= 0;
     end else begin
       _df_data_0 <= _df_data_0 + x;
       if(prst) begin
         _df_data_0 <= 0;
       end 
-      _df_data_1 <= _df_data_0;
     end
   end
 

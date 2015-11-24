@@ -133,3 +133,13 @@ if __name__ == '__main__':
     test = mkTest()
     verilog = test.to_verilog('tmp.v')
     print(verilog)
+
+    # run simulator (Icarus Verilog)
+    sim = lib.simulation.Simulator(test)
+    rslt = sim.run() # display=False
+    #rslt = sim.run(display=True)
+    print(rslt)
+
+    # launch waveform viewer (GTKwave)
+    #sim.view_waveform() # background=False
+    #sim.view_waveform(background=True)

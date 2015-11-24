@@ -20,11 +20,16 @@ def mkLed():
     df = lib.Dataflow(m, 'df', clk, rst)
     
     px = df.input(x, valid=vx)
-    t0 = df(px.prev(2) + px.prev(3))
+    t0 = df(px.prev(1) + px.prev(2))
     py = df(t0 + px.prev(1))
     py.output(y, valid=vy)
     
     df.make_always()
+
+    try:
+        df.draw_graph()
+    except:
+        print('Dataflow graph could not be generated.', file=sys.stderr)
 
     return m
 
@@ -101,3 +106,13 @@ if __name__ == '__main__':
     test = mkTest()
     verilog = test.to_verilog('tmp.v')
     print(verilog)
+
+    # run simulator (Icarus Verilog)
+    sim = lib.simulation.Simulator(test)
+    rslt = sim.run() # display=False
+    #rslt = sim.run(display=True)
+    print(rslt)
+
+    # launch waveform viewer (GTKwave)
+    #sim.view_waveform() # background=False
+    #sim.view_waveform(background=True)

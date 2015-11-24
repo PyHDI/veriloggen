@@ -230,13 +230,9 @@ module blinkled
   reg [32-1:0] _df_data_4;
   reg _df_valid_4;
   wire _df_ready_4;
-  assign _df_ready_4 = (_df_ready_5 || (!_df_valid_5));
-  reg [32-1:0] _df_data_5;
-  reg _df_valid_5;
-  wire _df_ready_5;
-  assign _df_ready_5 = ry;
-  assign y = _df_data_5;
-  assign vy = _df_valid_5;
+  assign _df_ready_4 = ry;
+  assign y = _df_data_4;
+  assign vy = _df_valid_4;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -250,8 +246,6 @@ module blinkled
       _df_valid_3 <= 0;
       _df_data_4 <= 0;
       _df_valid_4 <= 0;
-      _df_data_5 <= 0;
-      _df_valid_5 <= 0;
     end else begin
       if((vx && (_df_ready_0 || (!_df_valid_0)))) begin
         _df_data_0 <= x;
@@ -282,12 +276,6 @@ module blinkled
       end 
       if((_df_ready_4 || (!_df_valid_4))) begin
         _df_valid_4 <= ((_df_valid_2 && _df_ready_2) && (_df_valid_3 && _df_ready_3));
-      end 
-      if(((_df_valid_4 && _df_ready_4) && (_df_ready_5 || (!_df_valid_5)))) begin
-        _df_data_5 <= _df_data_4;
-      end 
-      if((_df_ready_5 || (!_df_valid_5))) begin
-        _df_valid_5 <= (_df_valid_4 && _df_ready_4);
       end 
     end
   end

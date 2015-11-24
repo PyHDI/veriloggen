@@ -112,26 +112,19 @@ module blinkled
   reg [32-1:0] _df_data_0;
   reg _df_valid_0;
   wire _df_nvalid_0;
-  assign _df_nvalid_0 = (vx && _df_valid_0);
+  assign _df_nvalid_0 = vx && _df_valid_0;
   reg [32-1:0] _df_data_1;
   reg _df_valid_1;
   wire _df_nvalid_1;
-  assign _df_nvalid_1 = (vx && _df_valid_1);
+  assign _df_nvalid_1 = vx && _df_valid_1;
   reg [32-1:0] _df_data_2;
   reg _df_valid_2;
-  wire _df_nvalid_2;
-  assign _df_nvalid_2 = (vx && _df_valid_2);
   reg [32-1:0] _df_data_3;
   reg _df_valid_3;
   reg [32-1:0] _df_data_4;
   reg _df_valid_4;
-  reg [32-1:0] _df_data_5;
-  reg _df_valid_5;
-  reg [32-1:0] _df_data_6;
-  reg _df_valid_6;
-
-  assign y = _df_data_6;
-  assign vy = _df_valid_6;
+  assign y = _df_data_4;
+  assign vy = _df_valid_4;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -145,10 +138,6 @@ module blinkled
       _df_valid_3 <= 0;
       _df_data_4 <= 0;
       _df_valid_4 <= 0;
-      _df_data_5 <= 0;
-      _df_valid_5 <= 0;
-      _df_data_6 <= 0;
-      _df_valid_6 <= 0;
     end else begin
       if(vx) begin
         _df_data_0 <= x;
@@ -162,28 +151,18 @@ module blinkled
       if(_df_nvalid_0) begin
         _df_valid_1 <= _df_nvalid_0;
       end 
-      if(_df_nvalid_1) begin
-        _df_data_2 <= _df_data_1;
+      if(_df_nvalid_0 && _df_nvalid_1) begin
+        _df_data_2 <= _df_data_0 + _df_data_1;
       end 
-      if(_df_nvalid_1) begin
-        _df_valid_2 <= _df_nvalid_1;
-      end 
-      if(_df_nvalid_1 && _df_nvalid_2) begin
-        _df_data_3 <= (_df_data_1 + _df_data_2);
-      end 
-      _df_valid_3 <= (_df_nvalid_1 && _df_nvalid_2);
+      _df_valid_2 <= _df_nvalid_0 && _df_nvalid_1;
       if(_df_nvalid_0) begin
-        _df_data_4 <= _df_data_0;
+        _df_data_3 <= _df_data_0;
       end 
-      _df_valid_4 <= _df_nvalid_0;
-      if(_df_valid_3 && _df_valid_4) begin
-        _df_data_5 <= (_df_data_3 + _df_data_4);
+      _df_valid_3 <= _df_nvalid_0;
+      if(_df_valid_2 && _df_valid_3) begin
+        _df_data_4 <= _df_data_2 + _df_data_3;
       end 
-      _df_valid_5 <= (_df_valid_3 && _df_valid_4);
-      if(_df_valid_5) begin
-        _df_data_6 <= _df_data_5;
-      end 
-      _df_valid_6 <= _df_valid_5;
+      _df_valid_4 <= _df_valid_2 && _df_valid_3;
     end
   end
 
