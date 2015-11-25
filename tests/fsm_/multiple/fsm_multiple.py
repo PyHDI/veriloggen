@@ -1,0 +1,39 @@
+from __future__ import absolute_import
+from __future__ import print_function
+import sys
+import os
+
+# the next line can be removed after installation
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+
+from veriloggen import *
+
+def mkLed():
+    m = Module('blinkled')
+    width = m.Parameter('WIDTH', 8)
+    clk = m.Input('CLK')
+    rst = m.Input('RST')
+    led = m.OutputReg('LED', width, initval=0)
+
+    fsm = m.FSM('fsm', clk, rst)
+    init = fsm.current()
+
+    tmp = []
+    for i in range(4):
+        tmp.append( m.Reg('tmp_' + str(i), width, initval=0) )
+        
+    for i in range(4):
+        fsm.add( tmp[i](fsm.current()) ) 
+        fsm.goto_next(cond=None)
+        
+    fsm.add( led(led + 1) )
+    fsm.goto(init, cond=None)
+    
+    fsm.make_always()
+    
+    return m
+
+if __name__ == '__main__':
+    led = mkLed()
+    verilog = led.to_verilog()
+    print(verilog)

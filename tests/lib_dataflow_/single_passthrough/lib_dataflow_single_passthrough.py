@@ -83,7 +83,7 @@ def mkTest(numports=8):
     y_count = m.TmpReg(32, initval=0)
 
     
-    xfsm = lib.FSM(m, 'xfsm', clk, rst)
+    xfsm = m.FSM('xfsm', clk, rst)
     xfsm.add(vx(0))
     xfsm.goto_next(cond=reset_done)
     xfsm.add(vx(1))
@@ -94,7 +94,7 @@ def mkTest(numports=8):
     xfsm.make_always()
     
     
-    yfsm = lib.FSM(m, 'yfsm', clk, rst)
+    yfsm = m.FSM('yfsm', clk, rst)
     yfsm.add(ry(0))
     yfsm.goto_next(cond=reset_done)
     yfsm.goto_next()

@@ -72,7 +72,7 @@ def mkTest(numports=8):
 
     x_count = m.TmpReg(32, initval=0)
 
-    xfsm = lib.FSM(m, 'xfsm', clk, rst)
+    xfsm = m.FSM('xfsm', clk, rst)
     xfsm.goto_next(cond=reset_done)
     xfsm.add(x.inc())
     xfsm.add(x_count.inc())

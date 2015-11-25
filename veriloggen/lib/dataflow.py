@@ -6,7 +6,7 @@ import copy
 from functools import reduce
 
 import veriloggen.vtypes as vtypes
-from veriloggen.lib.seq import Seq
+from veriloggen.seq import Seq
 
 class Dataflow(vtypes.VeriloggenNode):
     """ Dataflow Generator """

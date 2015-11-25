@@ -8,6 +8,8 @@ import copy
 import veriloggen.vtypes as vtypes
 import veriloggen.function as function
 import veriloggen.task as task
+import veriloggen.seq as seq
+import veriloggen.fsm as fsm
 
 #-------------------------------------------------------------------------------
 class Module(vtypes.VeriloggenNode):
@@ -204,6 +206,15 @@ class Module(vtypes.VeriloggenNode):
             return None
         self.submodule[module.name] = module
         return t
+    
+    #---------------------------------------------------------------------------
+    # User intarface for Seq and FSM
+    #---------------------------------------------------------------------------
+    def Seq(self, name, clk, rst):
+        return seq.Seq(self, name, clk, rst)
+    
+    def FSM(self, name, clk, rst, width=32, initname='init'):
+        return fsm.FSM(self, name, clk, rst, width, initname)
     
     #---------------------------------------------------------------------------
     # User intarface for reset assignments
