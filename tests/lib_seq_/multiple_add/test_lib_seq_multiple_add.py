@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import lib_seq_addr
+import lib_seq_multiple_add
 
 expected_verilog = """
 module test;
@@ -287,7 +287,7 @@ endmodule
 """
 
 def test():
-    test_module = lib_seq_addr.mkTest()
+    test_module = lib_seq_multiple_add.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

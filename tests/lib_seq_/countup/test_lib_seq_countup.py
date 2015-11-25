@@ -1,39 +1,33 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import simulation_basic
+import lib_seq_countup
 
 expected_verilog = """
 module test #
-  ( 
-   parameter WIDTH = 8
-  )
-  (
-  );
+(
+  parameter INTERVAL = 16
+);
 
   reg CLK;
   reg RST;
-  wire [WIDTH-1:0] LED;
+  wire [(8 - 1):0] LED;
 
-  blinkled #
-   (
-    .WIDTH(WIDTH)
-   )
+  blinkled
+  #(
+    .INTERVAL(INTERVAL)
+  )
   uut
-   (
+  (
     .CLK(CLK),
     .RST(RST),
     .LED(LED)
-   );
+  );
 
-  initial begin
-    $dumpfile("uut.vcd");
-    $dumpvars(0, uut);
-  end
 
   initial begin
     CLK = 0;
     forever begin
-      #5 CLK = !CLK;
+      #5 CLK = (!CLK);
     end
   end
 
@@ -46,44 +40,41 @@ module test #
     #1000;
     $finish;
   end
-
 endmodule
 
 module blinkled #
-  ( 
-   parameter WIDTH = 8
-  )
-  ( 
-   input CLK, 
-   input RST,
-   output reg [WIDTH-1:0] LED
-  );
-  reg [32-1:0] count;
+(
+  parameter INTERVAL = 16
+)
+(
+  input CLK,
+  input RST,
+  output reg [(8 - 1):0] LED
+);
+
+  reg [(32 - 1):0] count;
+
   always @(posedge CLK) begin
     if(RST) begin
       count <= 0;
-    end else begin
-      if(count == 15) begin
-        count <= 0;
-      end else begin
-        count <= count + 1;
-      end
-    end
-  end
-  always @(posedge CLK) begin
-    if(RST) begin
       LED <= 0;
     end else begin
-      if(count == 15) begin
-        LED <= LED + 1;
+      $display("LED:%d count:%d", LED, count);
+      if((count < (INTERVAL - 1))) begin
+        count <= (count + 1);
+      end 
+      if((count == (INTERVAL - 1))) begin
+        count <= 0;
+      end 
+      if((count == (INTERVAL - 1))) begin
+        LED <= (LED + 1);
       end 
     end
   end
 endmodule
 """
-
 def test():
-    test_module = simulation_basic.mkTest()
+    test_module = lib_seq_countup.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

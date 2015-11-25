@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import lib_seq_cmp
+import lib_seq_compare
 
 expected_verilog = """
 module test;
@@ -81,7 +81,7 @@ endmodule
 """
 
 def test():
-    test_module = lib_seq_cmp.mkTest()
+    test_module = lib_seq_compare.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
