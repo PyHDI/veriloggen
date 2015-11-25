@@ -49,11 +49,11 @@ def mkTest():
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    lib.simulation.setup_waveform(m, uut)
-    lib.simulation.setup_clock(m, clk, hperiod=5)
-    init = lib.simulation.setup_reset(m, rst, period=100)
+    simulation.setup_waveform(m, uut)
+    simulation.setup_clock(m, clk, hperiod=5)
+    init = simulation.setup_reset(m, rst, period=100)
 
-    nclk = lib.simulation.next_clock
+    nclk = simulation.next_clock
     
     init.add(
         Delay(1000),

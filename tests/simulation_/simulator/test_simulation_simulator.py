@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import lib_simulation_simulator
+import simulation_simulator
 from veriloggen import *
 
 expected_verilog = """
@@ -198,7 +198,7 @@ LED:  6 count:         3
 """
 
 def test():
-    test_module = lib_simulation_simulator.mkTest()
+    test_module = simulation_simulator.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
@@ -210,7 +210,7 @@ def test():
 
     assert(expected_code == code)
 
-    sim = lib.simulation.Simulator(test_module)
+    sim = simulation.Simulator(test_module)
     rslt = sim.run()
     
     assert(expected_rslt == rslt)

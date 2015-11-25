@@ -361,7 +361,7 @@ def test():
 
     assert(expected_code == code)
 
-    sim = lib.simulation.Simulator(test_module)
+    sim = simulation.Simulator(test_module)
     rslt = sim.run()
 
     assert(expected_rslt == rslt)

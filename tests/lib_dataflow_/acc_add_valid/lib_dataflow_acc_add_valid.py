@@ -63,11 +63,11 @@ def mkTest(numports=8):
     reset_stmt.append( x(0) )
     reset_stmt.append( vx(0) )
     
-    lib.simulation.setup_waveform(m, uut)
-    lib.simulation.setup_clock(m, clk, hperiod=5)
-    init = lib.simulation.setup_reset(m, rst, reset_stmt, period=100)
+    simulation.setup_waveform(m, uut)
+    simulation.setup_clock(m, clk, hperiod=5)
+    init = simulation.setup_reset(m, rst, reset_stmt, period=100)
 
-    nclk = lib.simulation.next_clock
+    nclk = simulation.next_clock
     
     init.add(
         Delay(1000),
@@ -109,7 +109,7 @@ if __name__ == '__main__':
     print(verilog)
 
     # run simulator (Icarus Verilog)
-    sim = lib.simulation.Simulator(test)
+    sim = simulation.Simulator(test)
     rslt = sim.run() # display=False
     #rslt = sim.run(display=True)
     print(rslt)

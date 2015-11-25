@@ -63,12 +63,12 @@ def mkTest():
                      #ports=(('CLK', clk), ('RST', rst), ('ready', ready), ('valid', valid)))
                      ports=connect_same_name(clk, rst, ready, valid))
 
-    lib.simulation.setup_waveform(m, uut)
-    lib.simulation.setup_clock(m, clk, hperiod=5)
-    init = lib.simulation.setup_reset(m, rst, m.make_reset(), period=100)
+    simulation.setup_waveform(m, uut)
+    simulation.setup_clock(m, clk, hperiod=5)
+    init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
     init.add(
-        [ lib.simulation.next_clock(clk) for i in range(8) ],
+        [ simulation.next_clock(clk) for i in range(8) ],
         ready(1),
         Delay(1000),
         Systask('finish'),

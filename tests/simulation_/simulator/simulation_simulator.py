@@ -50,9 +50,9 @@ def mkTest():
                      params=connect_same_name(width),
                      ports=connect_same_name(clk, rst, led))
 
-    #lib.simulation.setup_waveform(m, uut)
-    lib.simulation.setup_clock(m, clk, hperiod=5)
-    init = lib.simulation.setup_reset(m, rst, period=100)
+    #simulation.setup_waveform(m, uut)
+    simulation.setup_clock(m, clk, hperiod=5)
+    init = simulation.setup_reset(m, rst, period=100)
 
     init.add(
         Delay(1000),
@@ -67,7 +67,7 @@ if __name__ == '__main__':
     print(verilog)
 
     # run simulator (Icarus Verilog)
-    sim = lib.simulation.Simulator(test)
+    sim = simulation.Simulator(test)
     rslt = sim.run() # display=False
     #rslt = sim.run(display=True)
     print(rslt)

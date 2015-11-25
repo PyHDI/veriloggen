@@ -83,11 +83,11 @@ def mkTest(numports=8):
     for p in inputs:
         reset_stmt.extend( [ p[0](0), p[1](0) ] )
 
-    lib.simulation.setup_waveform(m, uut)
-    lib.simulation.setup_clock(m, clk, hperiod=5)
-    init = lib.simulation.setup_reset(m, rst, reset_stmt, period=100)
+    simulation.setup_waveform(m, uut)
+    simulation.setup_clock(m, clk, hperiod=5)
+    init = simulation.setup_reset(m, rst, reset_stmt, period=100)
 
-    nclk = lib.simulation.next_clock
+    nclk = simulation.next_clock
     
     init.add(
         Delay(1000),
@@ -147,7 +147,7 @@ if __name__ == '__main__':
     verilog = test.to_verilog('tmp.v')
     print(verilog)
 
-    sim = lib.simulation.Simulator(test)
+    sim = simulation.Simulator(test)
     rslt = sim.run()
     print(rslt)
 

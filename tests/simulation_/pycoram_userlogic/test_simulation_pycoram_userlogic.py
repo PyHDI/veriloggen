@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import lib_simulation_pycoram_userlogic
+import simulation_pycoram_userlogic
 
 expected_verilog = """
 module test #
@@ -283,7 +283,7 @@ endmodule
 """
 
 def test():
-    test_module = lib_simulation_pycoram_userlogic.mkTest()
+    test_module = simulation_pycoram_userlogic.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

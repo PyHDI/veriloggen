@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 from veriloggen import *
 
-nclk = lib.simulation.next_clock 
+nclk = simulation.next_clock 
 
 def mkSort(numports=4):
     m = Module('sort')
@@ -81,9 +81,9 @@ def mkSimSort(numports=4):
     uut = m.Instance(mkSort(numports), 'uut', (width,),
                      [clk, rst] + inputs + outputs + [kick, busy])
     
-    lib.simulation.setup_waveform(m, uut)
-    lib.simulation.setup_clock(m, clk)
-    lib.simulation.setup_reset(m, rst)
+    simulation.setup_waveform(m, uut)
+    simulation.setup_clock(m, clk)
+    simulation.setup_reset(m, rst)
 
     m.Initial(
         [ ip(100 - i) for i, ip in enumerate(inputs) ],
@@ -123,6 +123,6 @@ if __name__ == '__main__':
     verilog = sort.to_verilog('tmp.v')
     print(verilog)
 
-    sim = lib.simulation.Simulator(sort)
+    sim = simulation.Simulator(sort)
     rslt = sim.run()
     print(rslt)
