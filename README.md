@@ -162,9 +162,9 @@ def mkTest():
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
     
-    lib.simulation.setup_waveform(m, uut, m.get_vars())
-    lib.simulation.setup_clock(m, clk, hperiod=5)
-    init = lib.simulation.setup_reset(m, rst, m.make_reset(), period=100)
+    simulation.setup_waveform(m, uut, m.get_vars())
+    simulation.setup_clock(m, clk, hperiod=5)
+    init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
     
     init.add(
         Delay(1000 * 100),
@@ -179,7 +179,7 @@ if __name__ == '__main__':
     #verilog = test.to_verilog()
     print(verilog)
 
-    sim = lib.simulation.Simulator(test)
+    sim = simulation.Simulator(test)
     rslt = sim.run()
     print(rslt)
 
