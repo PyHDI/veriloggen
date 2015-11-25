@@ -21,7 +21,7 @@ def mkLed(window_size=8):
     x = m.Input('x', 32)
     y = m.OutputReg('y', 32, initval=0)
     
-    seq = m.Seq('seq', clk, rst)
+    seq = Seq(m, 'seq', clk, rst)
     v = x
     for w in range(window_size-1):
         v = v + seq.prev(x, w + 1)

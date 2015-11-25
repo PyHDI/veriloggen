@@ -15,7 +15,7 @@ def mkLed():
     rst = m.Input('RST')
     led = m.OutputReg('LED', width, initval=0)
 
-    fsm = m.FSM('fsm', clk, rst)
+    fsm = FSM(m, 'fsm', clk, rst)
     init = fsm.current()
 
     tmp = []

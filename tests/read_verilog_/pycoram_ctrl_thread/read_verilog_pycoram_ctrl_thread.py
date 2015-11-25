@@ -11,7 +11,7 @@ from veriloggen import *
 
 def mkThread():
     filename = os.path.dirname(os.path.abspath(__file__)) + '/ctrl_thread.v'
-    modules = read_verilog_module(filename)
+    modules = from_verilog.read_verilog_module(filename)
     return modules
 
 if __name__ == '__main__':

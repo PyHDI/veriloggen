@@ -14,7 +14,7 @@ def mkLed():
     rst = m.Input('RST')
     valid = m.OutputReg('valid', initval=0)
 
-    fsm = m.FSM('fsm', clk, rst)
+    fsm = FSM(m, 'fsm', clk, rst)
     
     for i in range(2):
         fsm.goto_next()

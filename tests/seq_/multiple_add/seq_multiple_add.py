@@ -28,7 +28,7 @@ def mkLed(numports=8):
     odata = m.OutputReg('odata', 32, initval=0)
     ovalid = m.OutputReg('ovalid', initval=0)
 
-    seq = m.Seq('seq', clk, rst)
+    seq = Seq(m, 'seq', clk, rst)
     pdata = idata
     pvalid = ivalid
     ndata = []

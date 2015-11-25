@@ -11,7 +11,7 @@ from veriloggen import *
 
 def mkLed():
     filename = os.path.dirname(os.path.abspath(__file__)) + '/led.v'
-    stubs = read_verilog_stubmodule(filename)
+    stubs = from_verilog.read_verilog_stubmodule(filename)
     m = stubs['blinkled']
     return m
 

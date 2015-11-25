@@ -21,7 +21,7 @@ def mkAdd(numports=8, mode=1):
     vz = m.Output('vz')
     rz = m.Input('rz')
     
-    df = lib.Dataflow(m, 'df', clk, rst)
+    df = Dataflow(m, 'df', clk, rst)
 
     dfvars = [ df.input(*p) for p in inputs ]
 
@@ -102,7 +102,7 @@ def mkTest(numports=8):
         d = p[0]
         v = p[1]
         r = p[2]
-        fsm = m.FSM('fsm'+str(i), clk, rst)
+        fsm = FSM(m, 'fsm'+str(i), clk, rst)
         fsm.add(v(0))
         fsm.goto_next(cond=reset_done)
         fsm.add(v(1))
@@ -112,7 +112,7 @@ def mkTest(numports=8):
         fsm.add(v(0))
         fsm.make_always()
 
-    zfsm = m.FSM('zfsm', clk, rst)
+    zfsm = FSM(m, 'zfsm', clk, rst)
     zfsm.add(rz(0))
     zfsm.goto_next(cond=reset_done)
     zfsm.goto_next()

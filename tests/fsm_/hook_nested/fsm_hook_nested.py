@@ -25,7 +25,7 @@ def mkLed():
         led += 1
     """
     
-    fsm = m.FSM('fsm', clk, rst)
+    fsm = FSM(m, 'fsm', clk, rst)
 
     fsm.add( led(0) )
     fsm.goto_next()

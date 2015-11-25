@@ -12,7 +12,7 @@ from veriloggen import *
 def mkUserlogic():
     here = os.path.dirname(os.path.abspath(__file__))
     filename = here + '/userlogic.v'
-    modules = read_verilog_module(filename, include=[here])
+    modules = from_verilog.read_verilog_module(filename, include=[here])
     return modules
 
 if __name__ == '__main__':

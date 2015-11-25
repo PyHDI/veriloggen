@@ -15,7 +15,7 @@ def mkLed():
     x = m.Input('x', 32)
     y = m.OutputReg('y', initval=0)
     
-    seq = m.Seq('seq', clk, rst)
+    seq = Seq(m, 'seq', clk, rst)
     seq.add( y(0), cond=(x<10) )
     seq.add( y(1), cond=(x>=10) )
     seq.add( y(0), cond=(x>100) )

@@ -23,7 +23,7 @@ def mkLed():
     m.Assign(up(1))
     m.Assign(down(0))
     
-    fsm = m.FSM('fsm', clk, rst)
+    fsm = FSM(m, 'fsm', clk, rst)
     
     for i in range(4):
         fsm.goto_next()

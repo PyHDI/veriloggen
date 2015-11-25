@@ -29,7 +29,7 @@ def mkUserlogic():
     ch_empty = m.Input('ch_empty')
 
     # Finite State Machine
-    fsm = m.FSM('fsm', clk, rst)
+    fsm = FSM(m, 'fsm', clk, rst)
 
     read_count = m.Reg('read_count', width=32, initval=0)
     sum = m.Reg('sum', width=32, initval=0)
@@ -90,7 +90,7 @@ def mkTest():
                                              ch_wdata, ch_enq, ch_almfull,
                                              ch_rdata, ch_deq, ch_empty))
 
-    fsm = m.FSM('test_fsm', clk, rst)
+    fsm = FSM(m, 'test_fsm', clk, rst)
     simulation.setup_waveform(m, uut, fsm.state)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)

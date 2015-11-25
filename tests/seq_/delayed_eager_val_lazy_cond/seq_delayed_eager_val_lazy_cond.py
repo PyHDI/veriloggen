@@ -18,7 +18,7 @@ def mkLed(numports=8, delay_amount=2):
     zero = m.TmpWire()
     m.Assign(zero(0))
 
-    seq = m.Seq('seq', clk, rst)
+    seq = Seq(m, 'seq', clk, rst)
     
     count = m.Reg('count', (numports-1).bit_length() + 1, initval=0)
     seq.add( count.inc(), delay=2 )

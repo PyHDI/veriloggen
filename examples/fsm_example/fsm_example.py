@@ -16,7 +16,7 @@ def mkLed():
     valid = m.OutputReg('valid', initval=0)
     count = m.Reg('count', width=32, initval=0)
     
-    fsm = m.FSM('fsm', clk, rst)
+    fsm = FSM(m, 'fsm', clk, rst)
 
     for i in range(2):
         fsm.goto_next()

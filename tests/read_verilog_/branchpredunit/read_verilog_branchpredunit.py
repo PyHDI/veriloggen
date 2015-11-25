@@ -11,7 +11,7 @@ from veriloggen import *
 
 def mkMips():
     file = os.path.dirname(os.path.abspath(__file__)) + '/branch.v'
-    modules = read_verilog_module(file)
+    modules = from_verilog.read_verilog_module(file)
     return modules
 
 if __name__ == '__main__':

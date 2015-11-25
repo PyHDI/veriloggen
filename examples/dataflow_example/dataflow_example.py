@@ -32,7 +32,7 @@ def mkMultAdd():
     rz = m.Input('rz')
 
     # dataflow manager
-    df = lib.Dataflow(m, 'df', clk, rst)
+    df = Dataflow(m, 'df', clk, rst)
 
     # input -> dataflow variable
     px = df.input(x, valid=vx, ready=rx)
@@ -112,7 +112,7 @@ def mkTest():
     y_count = m.TmpReg(32, initval=0)
     z_count = m.TmpReg(32, initval=0)
     
-    xfsm = m.FSM('xfsm', clk, rst)
+    xfsm = FSM(m, 'xfsm', clk, rst)
     xfsm.add(vx(0))
     xfsm.goto_next(cond=reset_done)
     xfsm.add(vx(1))
@@ -123,7 +123,7 @@ def mkTest():
     xfsm.make_always()
     
     
-    yfsm = m.FSM('yfsm', clk, rst)
+    yfsm = FSM(m, 'yfsm', clk, rst)
     yfsm.add(vy(0))
     yfsm.goto_next(cond=reset_done)
     yfsm.add(vy(1))
@@ -134,7 +134,7 @@ def mkTest():
     yfsm.make_always()
 
     
-    zfsm = m.FSM('zfsm', clk, rst)
+    zfsm = FSM(m, 'zfsm', clk, rst)
     zfsm.add(rz(0))
     zfsm.goto_next(cond=reset_done)
     zfsm.goto_next()

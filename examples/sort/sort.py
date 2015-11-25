@@ -47,7 +47,7 @@ def mkSort(numports=4):
         fsm.goto_next()
 
     # build up
-    fsm = m.FSM('fsm', clk, rst)
+    fsm = FSM(m, 'fsm', clk, rst)
     idle = fsm.current()
 
     # init state

@@ -16,7 +16,7 @@ def mkLed():
     led = m.OutputReg('LED', width, initval=0)
     count = m.Reg('count', 32, initval=0)
     
-    seq = m.Seq('seq', clk, rst)
+    seq = Seq(m, 'seq', clk, rst)
 
     seq.add( count.inc(), cond=(count<1024-1) )
     seq.add( count(0), cond=(count>=1024-1) )

@@ -11,7 +11,7 @@ from veriloggen import *
 
 def mkLedTest():
     filename = os.path.dirname(os.path.abspath(__file__)) + '/led.v'
-    modules = read_verilog_module(filename)
+    modules = from_verilog.read_verilog_module(filename)
     led = modules['blinkled']
     test = modules['test']
     return led, test

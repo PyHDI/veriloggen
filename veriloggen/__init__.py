@@ -6,15 +6,18 @@
 #-------------------------------------------------------------------------------
 from __future__ import absolute_import
 from __future__ import print_function
-import os
-import sys
 
-from .vtypes import *
-from .module import Module, StubModule, Instance, GenerateFor, GenerateIf, connect_same_name
-from .function import Function, FunctionCall
-from .task import Task, TaskCall
+# Verilog HDL Core
+from .core.vtypes import *
+from .core.module import Module, StubModule, Instance, GenerateFor, GenerateIf, connect_same_name
+from .core.function import Function, FunctionCall
+from .core.task import Task, TaskCall
 
-from .from_verilog import read_verilog_stubmodule, read_verilog_module, read_verilog_stubmodule_str, read_verilog_module_str
-from . import simulation
+# Verilog 
+from .verilog import from_verilog
+from .verilog import simulation
 
-from . import lib
+# Extension
+from .extension.seq import Seq
+from .extension.fsm import FSM
+from .extension.dataflow import Dataflow

@@ -44,7 +44,7 @@ endmodule
 '''
 
 def mkLed():
-    modules = read_verilog_module_str(led_v)
+    modules = from_verilog.read_verilog_module_str(led_v)
     m = modules['blinkled']
     return m
 

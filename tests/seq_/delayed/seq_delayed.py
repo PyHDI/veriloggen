@@ -15,7 +15,7 @@ def mkLed(numports=8, delay_amount=2):
     rst = m.Input('RST')
     led = [ m.OutputReg('led'+str(i), initval=0) for i in range(numports) ]
 
-    seq = m.Seq('seq', clk, rst)
+    seq = Seq(m, 'seq', clk, rst)
     
     count = m.Reg('count', (numports-1).bit_length(), initval=0)
     seq.add( count.inc() )
