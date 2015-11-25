@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import dataflow_addpipe
+import dataflow_multiple_add
 from veriloggen import *
 
 expected_verilog = """
@@ -1024,7 +1024,7 @@ dz=       360
 """
 
 def test():
-    test_module = dataflow_addpipe.mkTest()
+    test_module = dataflow_multiple_add.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
