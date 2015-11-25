@@ -3,51 +3,6 @@ from __future__ import print_function
 import intz
 
 expected_verilog = """
-module test #
-(
-  parameter WIDTH = 8
-)
-(
-);
-
-  reg CLK;
-  reg RST;
-  wire [(WIDTH - 1):0] LED;
-
-  blinkled
-  #(
-    .WIDTH(WIDTH)
-  )
-  uut
-  (
-    .CLK(CLK),
-    .RST(RST),
-    .LED(LED)
-  );
-
-  initial begin
-    $dumpfile("uut.vcd");
-    $dumpvars(0, uut, CLK, RST, LED);
-  end
-
-  initial begin
-    CLK = 0;
-    forever begin
-      #5 CLK = (!CLK);
-    end
-  end
-
-  initial begin
-    RST = 0;
-    #100;
-    RST = 1;
-    #100;
-    RST = 0;
-    #100000;
-    $finish;
-  end
-endmodule
-
 module blinkled #
   ( 
    parameter WIDTH = 8
@@ -82,7 +37,7 @@ endmodule
 """
 
 def test_led():
-    test_module = intz.mkTest()
+    test_module = intz.mkLed()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

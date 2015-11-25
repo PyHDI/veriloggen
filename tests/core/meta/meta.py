@@ -22,11 +22,27 @@ def mkLed(width=8, maxcount=1024):
     m = NewModule('blinkled')
     clk, rst = m.recipe_control()
     led, count = m.recipe_led(width)
-    seq = Seq(m, 'seq', clk, rst)
-    seq( count.inc() )
-    seq( count(0), cond=count==maxcount-1 )
-    seq( led.inc(), cond=count==maxcount-1 )
-    seq.make_always()
+    
+    m.Always(Posedge(clk))(
+        If(rst)(
+            count(0)
+        ).Else(
+            If(count == 1023)(
+                count(0)
+            ).Else(
+                count(count + 1)
+            )
+        ))
+    
+    m.Always(Posedge(clk))(
+        If(rst)(
+            led(0)
+        ).Else(
+            If(count == 1024 - 1)(
+                led(led + 1)
+            )
+        ))
+    
     return m
 
 if __name__ == '__main__':

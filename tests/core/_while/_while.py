@@ -46,5 +46,5 @@ def mkTest():
 
 if __name__ == '__main__':
     test = mkTest()
-    verilog = test.to_verilog('tmp.v')
+    verilog = test.to_verilog('')
     print(verilog)

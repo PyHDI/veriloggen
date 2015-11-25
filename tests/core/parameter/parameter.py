@@ -39,35 +39,7 @@ def mkLed():
 
     return m
 
-def mkTest():
-    m = Module('test')
-    
-    # target instance
-    led = mkLed()
-    
-    # copy paras and ports
-    params = m.copy_params(led)
-    ports = m.copy_sim_ports(led)
-    
-    clk = ports['CLK']
-    rst = ports['RST']
-    
-    uut = m.Instance(led, 'uut',
-                     params=m.connect_params(led),
-                     ports=m.connect_ports(led))
-    
-    simulation.setup_waveform(m, uut, m.get_vars())
-    simulation.setup_clock(m, clk, hperiod=5)
-    init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
-    
-    init.add(
-        Delay(1000 * 100),
-        Systask('finish'),
-    )
-
-    return m
-    
 if __name__ == '__main__':
-    test = mkTest()
-    verilog = test.to_verilog('tmp.v')
+    led = mkLed()
+    verilog = led.to_verilog('')
     print(verilog)
