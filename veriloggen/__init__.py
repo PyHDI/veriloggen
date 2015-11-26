@@ -20,4 +20,4 @@ from .verilog import simulation
 # Extension
 from .extension.seq import Seq
 from .extension.fsm import FSM
-from .extension.dataflow import Dataflow
+from .extension.pipeline import Pipeline
