@@ -52,7 +52,7 @@ def mkMultAdd():
     try:
         df.draw_graph()
     except:
-        print('Pipeline graph could not be generated.', file=sys.stderr)
+        print('Dataflow graph could not be generated.', file=sys.stderr)
     
     return m
 

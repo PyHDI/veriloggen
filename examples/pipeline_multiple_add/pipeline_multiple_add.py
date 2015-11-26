@@ -48,7 +48,7 @@ def mkAdd(numports=8, mode=1):
     try:
         df.draw_graph()
     except:
-        print('Pipeline graph could not be generated.', file=sys.stderr)
+        print('Dataflow graph could not be generated.', file=sys.stderr)
 
     return m
 
