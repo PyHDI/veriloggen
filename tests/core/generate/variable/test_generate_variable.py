@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import generate
+import generate_variable
 
 expected_verilog = """
 module blinkled #
@@ -57,7 +57,7 @@ endmodule
 """
 
 def test():
-    test_module = generate.mkLed()
+    test_module = generate_variable.mkLed()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

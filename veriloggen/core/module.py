@@ -36,18 +36,24 @@ class Module(vtypes.VeriloggenNode):
     #---------------------------------------------------------------------------
     def Input(self, name, width=None, length=None, signed=False, value=None):
         t = vtypes.Input(name, width, length, signed, value)
+        if not isinstance(self.find_identifier(name), (vtypes.AnyType, vtypes.Wire)):
+            raise ValueError("Object '%s' is already defined." % name)
         self.io_variable[name] = t
         self.items.append(t)
         return t
     
     def Output(self, name, width=None, length=None, signed=False, value=None):
         t = vtypes.Output(name, width, length, signed, value)
+        if not isinstance(self.find_identifier(name), (vtypes.AnyType, vtypes.Wire, vtypes.Reg)):
+            raise ValueError("Object '%s' is already defined." % name)
         self.io_variable[name] = t
         self.items.append(t)
         return t
     
     def OutputReg(self, name, width=None, length=None, signed=False, value=None, initval=None):
         t = vtypes.Output(name, width, length, signed, value)
+        if not isinstance(self.find_identifier(name), vtypes.AnyType):
+            raise ValueError("Object '%s' is already defined." % name)
         self.io_variable[name] = t
         self.items.append(t)
         t = vtypes.Reg(name, width, length, signed, value, initval)
@@ -57,12 +63,17 @@ class Module(vtypes.VeriloggenNode):
     
     def Inout(self, name, width=None, length=None, signed=False, value=None):
         t = vtypes.Inout(name, width, length, signed, value)
+        if not isinstance(self.find_identifier(name), (vtypes.AnyType, vtypes.Wire)):
+            raise ValueError("Object '%s' is already defined." % name)
         self.io_variable[name] = t
         self.items.append(t)
         return t
 
     def Wire(self, name, width=None, length=None, signed=False, value=None):
         t = vtypes.Wire(name, width, length, signed, value)
+        if not isinstance(self.find_identifier(name),
+                          (vtypes.AnyType, vtypes.Input, vtypes.Output)):
+            raise ValueError("Object '%s' is already defined." % name)
         self.variable[name] = t
         self.items.append(t)
         return t
@@ -74,6 +85,8 @@ class Module(vtypes.VeriloggenNode):
 
     def Reg(self, name, width=None, length=None, signed=False, value=None, initval=None):
         t = vtypes.Reg(name, width, length, signed, value, initval)
+        if not isinstance(self.find_identifier(name), (vtypes.AnyType, vtypes.Output)):
+            raise ValueError("Object '%s' is already defined." % name)
         self.variable[name] = t
         self.items.append(t)
         return t
@@ -85,6 +98,8 @@ class Module(vtypes.VeriloggenNode):
 
     def Integer(self, name, width=None, length=None, signed=False, value=None, initval=None):
         t = vtypes.Integer(name, width, length, signed, value, initval)
+        if not isinstance(self.find_identifier(name), vtypes.AnyType):
+            raise ValueError("Object '%s' is already defined." % name)
         self.variable[name] = t
         self.items.append(t)
         return t
@@ -96,6 +111,8 @@ class Module(vtypes.VeriloggenNode):
 
     def Real(self, name, width=None, length=None, signed=False, value=None, initval=None):
         t = vtypes.Real(name, width, length, signed, value, initval)
+        if not isinstance(self.find_identifier(name), vtypes.AnyType):
+            raise ValueError("Object '%s' is already defined." % name)
         self.variable[name] = t
         self.items.append(t)
         return t
@@ -107,6 +124,8 @@ class Module(vtypes.VeriloggenNode):
 
     def Genvar(self, name, width=None, length=None, signed=False, value=None):
         t = vtypes.Genvar(name, width, length, signed, value)
+        if not isinstance(self.find_identifier(name), vtypes.AnyType):
+            raise ValueError("Object '%s' is already defined." % name)
         self.variable[name] = t
         self.items.append(t)
         return t
@@ -118,12 +137,16 @@ class Module(vtypes.VeriloggenNode):
 
     def Parameter(self, name, value, width=None, signed=False, length=None):
         t = vtypes.Parameter(name, value, width, signed)
+        if not isinstance(self.find_identifier(name), vtypes.AnyType):
+            raise ValueError("Object '%s' is already defined." % name)
         self.global_constant[name] = t
         self.items.append(t)
         return t
     
     def Localparam(self, name, value, width=None, signed=False, length=None):
         t = vtypes.Localparam(name, value, width, signed)
+        if not isinstance(self.find_identifier(name), vtypes.AnyType):
+            raise ValueError("Object '%s' is already defined." % name)
         self.local_constant[name] = t
         self.items.append(t)
         return t
@@ -156,23 +179,29 @@ class Module(vtypes.VeriloggenNode):
     
     def Function(self, name, width=1):
         t = function.Function(name, width)
+        if not isinstance(self.find_identifier(name), vtypes.AnyType):
+            raise ValueError("Object '%s' is already defined." % name)
         self.function[name] = t
         self.items.append(t)
         return t
         
     def Task(self, name, width=1):
         t = task.Task(name, width)
+        if not isinstance(self.find_identifier(name), vtypes.AnyType):
+            raise ValueError("Object '%s' is already defined." % name)
         self.task[name] = t
         self.items.append(t)
         return t
         
     #---------------------------------------------------------------------------
     def GenerateFor(self, pre, cond, post, scope=None):
-        t = GenerateFor(pre, cond, post, scope)
+        t = GenerateFor(self, pre, cond, post, scope)
         if scope is None:
             if None not in self.generate: self.generate[None] = []
             self.generate[None].append(t)
             return
+        if not isinstance(self.find_identifier(scope), vtypes.AnyType):
+            raise ValueError("Object '%s' is already defined." % scope)
         if scope in self.generate:
             raise ValueError("scope '%s' is already defined." % scope)
         self.generate[scope] = t
@@ -180,11 +209,13 @@ class Module(vtypes.VeriloggenNode):
         return t
             
     def GenerateIf(self, cond, scope=None):
-        t = GenerateIf(cond, scope)
+        t = GenerateIf(self, cond, scope)
         if scope is None:
             if None not in self.generate: self.generate[None] = []
             self.generate[None].append(t)
             return
+        if not isinstance(self.find_identifier(scope), vtypes.AnyType):
+            raise ValueError("Object '%s' is already defined." % scope)
         if scope in self.generate:
             raise ValueError("scope '%s' is already defined." % scope)
         self.generate[scope] = t
@@ -197,11 +228,15 @@ class Module(vtypes.VeriloggenNode):
         if not isinstance(module, (Module, StubModule, str)):
             raise TypeError('"module" of Instance must be Module, StubModule, or str, not %s'
                             % type(module))
+        if not isinstance(self.find_identifier(instname), vtypes.AnyType):
+            raise ValueError("Object '%s' is already defined." % instname)
         t = Instance(module, instname, params, ports)
         self.instance[instname] = t
         self.items.append(t)
         if isinstance(module, StubModule):
             return None
+        if self.find_module(module.name):
+            raise ValueError("Module '%s' is already defined." % module.name)
         self.submodule[module.name] = module
         return t
     
@@ -266,7 +301,7 @@ class Module(vtypes.VeriloggenNode):
     def copy_sim_ports(self, src):
         ret = collections.OrderedDict()
         for key, obj in src.io_variable.items():
-            copy_obj = self.get_corresponding_variable(obj)(key, copy.deepcopy(obj.width))
+            copy_obj = self.get_opposite_variable(obj)(key, copy.deepcopy(obj.width))
             self.add_object( copy_obj )
             ret[key] = copy_obj
         return ret
@@ -306,8 +341,6 @@ class Module(vtypes.VeriloggenNode):
         """ add a hooked method to 'to_verilog()' """
         self.hook.append( (method, args, kwargs) )
 
-    #---------------------------------------------------------------------------
-    # Internal methods
     #---------------------------------------------------------------------------
     def add_object(self, obj):
         self.items.append(obj)
@@ -411,9 +444,9 @@ class Module(vtypes.VeriloggenNode):
         if name in self.function: return self.function[name]
         if name in self.task: return self.task[name]
         if name in self.instance: return self.instance[name]
-        # raise KeyError("No such identifier in module '%s': '%s'" % (self.name, name))
+        if name in self.generate: return self.generate[name]
         return vtypes.AnyType(name)
-    
+
     #---------------------------------------------------------------------------
     def is_input(self, name):
         if name not in self.io_variable: return False
@@ -443,7 +476,7 @@ class Module(vtypes.VeriloggenNode):
         return False
 
     #---------------------------------------------------------------------------
-    def get_corresponding_variable(self, var, use_wire=False):
+    def get_opposite_variable(self, var, use_wire=False):
         if isinstance(var, vtypes.Input):
             if use_wire: return vtypes.Wire
             return vtypes.Reg
@@ -477,6 +510,27 @@ class Module(vtypes.VeriloggenNode):
             if sub.has_hook(): return True
         return False
 
+    #---------------------------------------------------------------------------
+    def find_module(self, name):
+        if name in self.submodule:
+            return self.submodule[name]
+        for gen in self.generate.values():
+            r = gen.find_module(name)
+            if r: return r
+        for sub in self.submodule.values():
+            r = sub.find_module(name)
+            if r: return r
+        return None
+
+    def get_modules(self):
+        modules = collections.OrderedDict()
+        modules[self.name] = self
+        for gen in self.generate.values():
+            modules.update( gen.get_modules() )
+        for sub in self.submodule.values():
+            modules.update( sub.get_modules() )
+        return modules
+    
 #-------------------------------------------------------------------------------
 class StubModule(vtypes.VeriloggenNode):
     """ Verilog Module class """
@@ -528,8 +582,9 @@ class Instance(vtypes.VeriloggenNode):
 #-------------------------------------------------------------------------------
 class Generate(Module):
     """ Base class of generate statement """
-    def __init__(self):
+    def __init__(self, m):
         Module.__init__(self)
+        self.m = m
     
     def Input(self, name, width=None, length=None, signed=False, value=None):
         raise TypeError("Input port is not allowed in generate statement")
@@ -543,6 +598,23 @@ class Generate(Module):
     def Inout(self, name, width=None, length=None, signed=False, value=None):
         raise TypeError("Inout port is not allowed in generate statement")
 
+    def find_identifier(self, name):
+        r = Module.find_identifier(self, name)
+        if r:
+            return r
+        r = self.m.find_identifier(name)
+        if r:
+            return r
+        return vtypes.AnyType(name)
+
+    def get_modules(self):
+        modules = collections.OrderedDict()
+        for gen in self.generate.values():
+            modules.update( gen.get_modules() )
+        for sub in self.submodule.values():
+            modules.update( sub.get_modules() )
+        return modules
+    
     def _type_check_scope(self, scope):
         if scope is None: return
         if not isinstance(scope, str):
@@ -550,8 +622,8 @@ class Generate(Module):
         
 #-------------------------------------------------------------------------------
 class GenerateFor(Generate):
-    def __init__(self, pre, cond, post, scope=None):
-        Generate.__init__(self)
+    def __init__(self, m, pre, cond, post, scope=None):
+        Generate.__init__(self, m)
         self.pre = pre
         self.cond = cond
         self.post = post
@@ -562,16 +634,16 @@ class GenerateFor(Generate):
         return vtypes.ScopeIndex(self.scope, index)
 
 class GenerateIf(Generate):
-    def __init__(self, cond, true_scope=None):
-        Generate.__init__(self)
+    def __init__(self, m, cond, true_scope=None):
+        Generate.__init__(self, m)
         self.cond = cond
         self.true_scope = true_scope
-        self.Else = GenerateIfElse()
+        self.Else = GenerateIfElse(m)
         self._type_check_scope(true_scope)
 
 class GenerateIfElse(Generate):
-    def __init__(self, false_scope=None):
-        Generate.__init__(self)
+    def __init__(self, m, false_scope=None):
+        Generate.__init__(self, m)
         self.false_scope = false_scope
         self._type_check_scope(false_scope)
 

@@ -13,7 +13,7 @@ from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
 #-------------------------------------------------------------------------------
 def write_verilog(node, filename=None):
     visitor = VerilogModuleVisitor()
-    modules = tuple(get_modules(node).values())
+    modules = tuple(node.get_modules().values())
     
     module_ast_list = [ visitor.visit(module) for module in modules ]
     description = vast.Description(module_ast_list)
@@ -26,14 +26,6 @@ def write_verilog(node, filename=None):
             f.write(code)
     return code
 
-def get_modules(node):
-    modules = collections.OrderedDict()
-    modules[node.name] = node
-    modules.update(node.submodule)
-    for sub in node.submodule.values():
-        modules.update( get_modules(sub) )
-    return modules
-    
 #-------------------------------------------------------------------------------
 class VerilogCommonVisitor(object):
     def generic_visit(self, node):
