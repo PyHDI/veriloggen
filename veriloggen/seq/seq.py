@@ -5,8 +5,8 @@ import sys
 import collections
 
 import veriloggen.core.vtypes as vtypes
-from veriloggen.extension.subst_visitor import SubstDstVisitor
-from veriloggen.extension.reset_visitor import ResetVisitor
+from veriloggen.seq.subst_visitor import SubstDstVisitor
+from veriloggen.seq.reset_visitor import ResetVisitor
 
 class Seq(vtypes.VeriloggenNode):
     """ Sequential Logic Manager """

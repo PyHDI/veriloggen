@@ -6,9 +6,9 @@ import collections
 import functools
 
 import veriloggen.core.vtypes as vtypes
-from veriloggen.extension.subst_visitor import SubstDstVisitor
-from veriloggen.extension.reset_visitor import ResetVisitor
-from veriloggen.extension.seq import Seq
+from veriloggen.seq.subst_visitor import SubstDstVisitor
+from veriloggen.seq.reset_visitor import ResetVisitor
+from veriloggen.seq.seq import Seq
 
 class FSM(vtypes.VeriloggenNode):
     """ Finite State Machine Generator """

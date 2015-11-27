@@ -6,7 +6,7 @@ import copy
 from functools import reduce
 
 import veriloggen.core.vtypes as vtypes
-from veriloggen.extension.seq import Seq
+from veriloggen.seq.seq import Seq
 
 class Pipeline(vtypes.VeriloggenNode):
     """ Pipeline Generator """

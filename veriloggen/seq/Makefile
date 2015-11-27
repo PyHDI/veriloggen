@@ -1,4 +1,3 @@
 .PHONY: clean
 clean:
 	rm -rf *.pyc __pycache__ parsetab.py *.out *.html
-	find . -maxdepth 1 -type d | grep "./" | xargs -I {} make clean -C {}
