@@ -776,7 +776,7 @@ class VerilogReadVisitor(object):
         scope = (item.statement.scope
                  if isinstance(item.statement, vast.Block)
                  else None)
-        _for = module.GenerateFor(pre, cond, post, scope)
+        _for = module.GenerateFor(self.m, pre, cond, post, scope)
         ret = _for
         self.add_object(_for)
         self.push_module(_for)
@@ -792,7 +792,7 @@ class VerilogReadVisitor(object):
         false_scope = (item.false_statement.scope
                       if isinstance(item.false_statement, vast.Block)
                       else None)
-        _if_true = module.GenerateIf(cond, true_scope)
+        _if_true = module.GenerateIf(self.m, cond, true_scope)
         ret = _if_true
         self.add_object(_if_true)
         self.push_module(_if_true)

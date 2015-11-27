@@ -515,8 +515,13 @@ class Module(vtypes.VeriloggenNode):
         if name in self.submodule:
             return self.submodule[name]
         for gen in self.generate.values():
-            r = gen.find_module(name)
-            if r: return r
+            if isinstance(gen, (tuple, list)):
+                for g in gen:
+                    r = g.find_module(name)
+                    if r: return r
+            else:
+                r = gen.find_module(name)
+                if r: return r
         for sub in self.submodule.values():
             r = sub.find_module(name)
             if r: return r
@@ -526,7 +531,11 @@ class Module(vtypes.VeriloggenNode):
         modules = collections.OrderedDict()
         modules[self.name] = self
         for gen in self.generate.values():
-            modules.update( gen.get_modules() )
+            if isinstance(gen, (tuple, list)):
+                for g in gen:
+                    modules.update( g.get_modules() )
+            else:
+                modules.update( gen.get_modules() )
         for sub in self.submodule.values():
             modules.update( sub.get_modules() )
         return modules
@@ -610,7 +619,11 @@ class Generate(Module):
     def get_modules(self):
         modules = collections.OrderedDict()
         for gen in self.generate.values():
-            modules.update( gen.get_modules() )
+            if isinstance(gen, (tuple, list)):
+                for g in gen:
+                    modules.update( g.get_modules() )
+            else:
+                modules.update( gen.get_modules() )
         for sub in self.submodule.values():
             modules.update( sub.get_modules() )
         return modules
