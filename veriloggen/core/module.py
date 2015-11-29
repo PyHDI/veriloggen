@@ -157,6 +157,104 @@ class Module(vtypes.VeriloggenNode):
         return self.Localparam(name, value, width, signed, length)
 
     #---------------------------------------------------------------------------
+    def InputLike(self, src, name=None, width=None, length=None, signed=None, value=None):
+        if name is None: name = src.name
+        if width is None: width = src.width
+        #if length is None: length = src.length
+        if length is None: length = None
+        if signed is None: signed = src.signed
+        if value is None: value = src.value
+        return self.Input(name, width, length, signed, value)
+        
+    def OutputLike(self, src, name=None, width=None, length=None, signed=None, value=None):
+        if name is None: name = src.name
+        if width is None: width = src.width
+        #if length is None: length = src.length
+        if length is None: length = None
+        if signed is None: signed = src.signed
+        if value is None: value = src.value
+        return self.Output(name, width, length, signed, value)
+        
+    def OutputRegLike(self, src, name=None, width=None, length=None, signed=None, value=None, initval=None):
+        if name is None: name = src.name
+        if width is None: width = src.width
+        #if length is None: length = src.length
+        if length is None: length = None
+        if signed is None: signed = src.signed
+        if value is None: value = src.value
+        if initval is None: initval = src.initval
+        return self.OutputReg(name, width, length, signed, value, initval)
+        
+    def InoutLike(self, src, name=None, width=None, length=None, signed=None, value=None):
+        if name is None: name = src.name
+        if width is None: width = src.width
+        #if length is None: length = src.length
+        if length is None: length = None
+        if signed is None: signed = src.signed
+        if value is None: value = src.value
+        return self.Inout(name, width, length, signed, value)
+        
+    def WireLike(self, src, name=None, width=None, length=None, signed=None, value=None):
+        if name is None: name = src.name
+        if width is None: width = src.width
+        if length is None: length = src.length
+        if signed is None: signed = src.signed
+        if value is None: value = src.value
+        return self.Wire(name, width, length, signed, value)
+        
+    def RegLike(self, src, name=None, width=None, length=None, signed=None, value=None, initval=None):
+        if name is None: name = src.name
+        if width is None: width = src.width
+        if length is None: length = src.length
+        if signed is None: signed = src.signed
+        if value is None: value = src.value
+        if initval is None: initval = src.initval
+        return self.Reg(name, width, length, signed, value, initval)
+
+    def IntegerLike(self, src, name=None, width=None, length=None, signed=None, value=None, initval=None):
+        if name is None: name = src.name
+        if width is None: width = src.width
+        if length is None: length = src.length
+        if signed is None: signed = src.signed
+        if value is None: value = src.value
+        if initval is None: initval = src.initval
+        return self.Integer(name, width, length, signed, value, initval)
+
+    def RealLike(self, src, name=None, width=None, length=None, signed=None, value=None, initval=None):
+        if name is None: name = src.name
+        if width is None: width = src.width
+        if length is None: length = src.length
+        if signed is None: signed = src.signed
+        if value is None: value = src.value
+        if initval is None: initval = src.initval
+        return self.Real(name, width, length, signed, value, initval)
+
+    def GenvarLike(self, src, name=None, width=None, length=None, signed=None, value=None):
+        if name is None: name = src.name
+        if width is None: width = src.width
+        #if length is None: length = src.length
+        if length is None: length = None
+        if signed is None: signed = src.signed
+        if value is None: value = src.value
+        return self.Genvar(name, width, length, signed, value)
+
+    def ParameterLike(self, src, name=None, value=None, width=None, signed=False, length=None):
+        if name is None: name = src.name
+        if value is None: value = src.value
+        if width is None: width = src.width
+        if signed is None: signed = src.signed
+        if length is None: length = src.length
+        return self.Parameter(name, value, width, signed, length)
+    
+    def LocalparamLike(self, src, name=None, value=None, width=None, signed=False, length=None):
+        if name is None: name = src.name
+        if value is None: value = src.value
+        if width is None: width = src.width
+        if signed is None: signed = src.signed
+        if length is None: length = src.length
+        return self.Localparam(name, value, width, signed, length)
+    
+    #---------------------------------------------------------------------------
     # User interface for control statements
     #---------------------------------------------------------------------------
     def Always(self, *sensitivity):
