@@ -26,12 +26,15 @@ def mkLed():
     # signals with different name
     width1 = m.ParameterLike(width, name='WIDTH1')
     width2 = m.LocalparamLike(width, name='WIDTH2')
+    width3 = m.TmpLocalparamLike(width)
     
     input_count = m.OutputLike(count, name='input_count')
     output_count = m.OutputLike(count, name='output_count')
     wire_count = m.WireLike(count, name='wire_count')
     reg_count = m.RegLike(count, name='reg_count', initval=8)
-
+    tmpwire_count = m.TmpWireLike(count)
+    tmpreg_count = m.TmpRegLike(count)
+    
     m.Assign( wire_count(input_count) )
     m.Assign( output_count(reg_count) )
     

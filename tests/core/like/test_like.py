@@ -18,9 +18,13 @@ module blinkled #
  );
 
   localparam WIDTH2 = 8;
+  localparam _tmp_0 = 8;
 
   wire [32-1:0] wire_count;
   reg [32-1:0] reg_count;
+  wire [32-1:0] _tmp_1;
+  reg [32-1:0] _tmp_2;
+
   assign wire_count = input_count;
   assign output_count = reg_count;
 

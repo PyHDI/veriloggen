@@ -202,6 +202,13 @@ class Module(vtypes.VeriloggenNode):
         if value is None: value = src.value
         return self.Wire(name, width, length, signed, value)
         
+    def TmpWireLike(self, src, width=None, length=None, signed=None, value=None):
+        if width is None: width = src.width
+        if length is None: length = src.length
+        if signed is None: signed = src.signed
+        if value is None: value = src.value
+        return self.TmpWire(width, length, signed, value)
+        
     def RegLike(self, src, name=None, width=None, length=None, signed=None, value=None, initval=None):
         if name is None: name = src.name
         if width is None: width = src.width
@@ -210,6 +217,14 @@ class Module(vtypes.VeriloggenNode):
         if value is None: value = src.value
         if initval is None: initval = src.initval
         return self.Reg(name, width, length, signed, value, initval)
+
+    def TmpRegLike(self, src, width=None, length=None, signed=None, value=None, initval=None):
+        if width is None: width = src.width
+        if length is None: length = src.length
+        if signed is None: signed = src.signed
+        if value is None: value = src.value
+        if initval is None: initval = src.initval
+        return self.TmpReg(width, length, signed, value, initval)
 
     def IntegerLike(self, src, name=None, width=None, length=None, signed=None, value=None, initval=None):
         if name is None: name = src.name
@@ -220,6 +235,14 @@ class Module(vtypes.VeriloggenNode):
         if initval is None: initval = src.initval
         return self.Integer(name, width, length, signed, value, initval)
 
+    def TmpIntegerLike(self, src, width=None, length=None, signed=None, value=None, initval=None):
+        if width is None: width = src.width
+        if length is None: length = src.length
+        if signed is None: signed = src.signed
+        if value is None: value = src.value
+        if initval is None: initval = src.initval
+        return self.TmpInteger(width, length, signed, value, initval)
+
     def RealLike(self, src, name=None, width=None, length=None, signed=None, value=None, initval=None):
         if name is None: name = src.name
         if width is None: width = src.width
@@ -229,6 +252,14 @@ class Module(vtypes.VeriloggenNode):
         if initval is None: initval = src.initval
         return self.Real(name, width, length, signed, value, initval)
 
+    def TmpRealLike(self, src, width=None, length=None, signed=None, value=None, initval=None):
+        if width is None: width = src.width
+        if length is None: length = src.length
+        if signed is None: signed = src.signed
+        if value is None: value = src.value
+        if initval is None: initval = src.initval
+        return self.TmpReal(width, length, signed, value, initval)
+
     def GenvarLike(self, src, name=None, width=None, length=None, signed=None, value=None):
         if name is None: name = src.name
         if width is None: width = src.width
@@ -237,6 +268,14 @@ class Module(vtypes.VeriloggenNode):
         if signed is None: signed = src.signed
         if value is None: value = src.value
         return self.Genvar(name, width, length, signed, value)
+
+    def TmpGenvarLike(self, src, width=None, length=None, signed=None, value=None):
+        if width is None: width = src.width
+        #if length is None: length = src.length
+        if length is None: length = None
+        if signed is None: signed = src.signed
+        if value is None: value = src.value
+        return self.TmpGenvar(width, length, signed, value)
 
     def ParameterLike(self, src, name=None, value=None, width=None, signed=False, length=None):
         if name is None: name = src.name
@@ -253,6 +292,13 @@ class Module(vtypes.VeriloggenNode):
         if signed is None: signed = src.signed
         if length is None: length = src.length
         return self.Localparam(name, value, width, signed, length)
+    
+    def TmpLocalparamLike(self, src, value=None, width=None, signed=False, length=None):
+        if value is None: value = src.value
+        if width is None: width = src.width
+        if signed is None: signed = src.signed
+        if length is None: length = src.length
+        return self.TmpLocalparam(value, width, signed, length)
     
     #---------------------------------------------------------------------------
     # User interface for control statements
