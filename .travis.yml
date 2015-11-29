@@ -13,7 +13,7 @@ addons:
     - iverilog
 
 install:
-  - pip install --user pytest pytest-pythonpath pyverilog
+  - pip install pytest pytest-pythonpath pyverilog
 
 script:
   - python -m pytest tests examples
