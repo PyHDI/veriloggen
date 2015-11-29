@@ -726,6 +726,9 @@ class Cond(_SpecialOperator):
         
     def __str__(self):
         return ''.join(['(', str(self.condition), ')?', str(self.true_value), ' : ', str(self.false_value)])
+
+# Alias of Cond
+Mux = Cond
        
 #-------------------------------------------------------------------------------
 class Sensitive(VeriloggenNode):
