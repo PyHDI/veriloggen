@@ -25,12 +25,14 @@ module test;
     $dumpvars(0, uut);
   end
 
+
   initial begin
     CLK = 0;
     forever begin
-      #5 CLK = (!CLK);
+      #5 CLK = !CLK;
     end
   end
+
 
   initial begin
     RST = 0;
@@ -100,6 +102,7 @@ module test;
     end
   end
 
+
   always @(posedge CLK) begin
     if(reset_done) begin
       $display("x=%d", x);
@@ -107,7 +110,10 @@ module test;
     end 
   end
 
+
 endmodule
+
+
 
 module blinkled
 (
@@ -134,9 +140,9 @@ module blinkled
     end else begin
       _df_data_0 <= x;
       _df_data_1 <= _df_data_0;
-      _df_data_2 <= (_df_data_0 + _df_data_1);
+      _df_data_2 <= _df_data_0 + _df_data_1;
       _df_data_3 <= x;
-      _df_data_4 <= (_df_data_2 + _df_data_3);
+      _df_data_4 <= _df_data_2 + _df_data_3;
     end
   end
 

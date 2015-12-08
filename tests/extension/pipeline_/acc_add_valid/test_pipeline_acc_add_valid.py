@@ -31,12 +31,14 @@ module test;
     $dumpvars(0, uut);
   end
 
+
   initial begin
     CLK = 0;
     forever begin
-      #5 CLK = (!CLK);
+      #5 CLK = !CLK;
     end
   end
+
 
   initial begin
     RST = 0;
@@ -61,6 +63,28 @@ module test;
   localparam xfsm_init = 0;
   localparam xfsm_1 = 1;
   localparam xfsm_2 = 2;
+  localparam xfsm_3 = 3;
+  localparam xfsm_4 = 4;
+  localparam xfsm_5 = 5;
+  localparam xfsm_6 = 6;
+  localparam xfsm_7 = 7;
+  localparam xfsm_8 = 8;
+  localparam xfsm_9 = 9;
+  localparam xfsm_10 = 10;
+  localparam xfsm_11 = 11;
+  localparam xfsm_12 = 12;
+  localparam xfsm_13 = 13;
+  localparam xfsm_14 = 14;
+  localparam xfsm_15 = 15;
+  localparam xfsm_16 = 16;
+  localparam xfsm_17 = 17;
+  localparam xfsm_18 = 18;
+  localparam xfsm_19 = 19;
+  localparam xfsm_20 = 20;
+  localparam xfsm_21 = 21;
+  localparam xfsm_22 = 22;
+  localparam xfsm_23 = 23;
+  localparam xfsm_24 = 24;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -75,19 +99,92 @@ module test;
           end 
         end
         xfsm_1: begin
-          vx <= 1;
-          x <= (x + 1);
-          _tmp_0 <= (_tmp_0 + 1);
-          if((_tmp_0 == 10)) begin
-            xfsm <= xfsm_2;
-          end 
+          xfsm <= xfsm_2;
         end
         xfsm_2: begin
+          xfsm <= xfsm_3;
+        end
+        xfsm_3: begin
+          xfsm <= xfsm_4;
+        end
+        xfsm_4: begin
+          xfsm <= xfsm_5;
+        end
+        xfsm_5: begin
+          xfsm <= xfsm_6;
+        end
+        xfsm_6: begin
+          xfsm <= xfsm_7;
+        end
+        xfsm_7: begin
+          xfsm <= xfsm_8;
+        end
+        xfsm_8: begin
+          xfsm <= xfsm_9;
+        end
+        xfsm_9: begin
+          xfsm <= xfsm_10;
+        end
+        xfsm_10: begin
+          xfsm <= xfsm_11;
+        end
+        xfsm_11: begin
+          vx <= 1;
+          xfsm <= xfsm_12;
+        end
+        xfsm_12: begin
+          x <= x + 1;
+          _tmp_0 <= _tmp_0 + 1;
+          if(_tmp_0 == 5) begin
+            xfsm <= xfsm_13;
+          end 
+        end
+        xfsm_13: begin
+          vx <= 0;
+          xfsm <= xfsm_14;
+        end
+        xfsm_14: begin
+          xfsm <= xfsm_15;
+        end
+        xfsm_15: begin
+          xfsm <= xfsm_16;
+        end
+        xfsm_16: begin
+          xfsm <= xfsm_17;
+        end
+        xfsm_17: begin
+          xfsm <= xfsm_18;
+        end
+        xfsm_18: begin
+          xfsm <= xfsm_19;
+        end
+        xfsm_19: begin
+          xfsm <= xfsm_20;
+        end
+        xfsm_20: begin
+          xfsm <= xfsm_21;
+        end
+        xfsm_21: begin
+          xfsm <= xfsm_22;
+        end
+        xfsm_22: begin
+          xfsm <= xfsm_23;
+        end
+        xfsm_23: begin
+          vx <= 1;
+          x <= x + 1;
+          _tmp_0 <= _tmp_0 + 1;
+          if(_tmp_0 == 10) begin
+            xfsm <= xfsm_24;
+          end 
+        end
+        xfsm_24: begin
           vx <= 0;
         end
       endcase
     end
   end
+
 
   always @(posedge CLK) begin
     if(reset_done) begin

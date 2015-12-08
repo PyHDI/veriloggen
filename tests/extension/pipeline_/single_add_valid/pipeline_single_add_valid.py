@@ -21,7 +21,7 @@ def mkLed():
     
     px = df.input(x, valid=vx)
     t0 = df(px.prev(1) + px.prev(2))
-    py = df(t0 + px.prev(1))
+    py = df(t0 + px)
     py.output(y, valid=vy)
     
     df.make_always()
@@ -81,6 +81,16 @@ def mkTest(numports=8):
     xfsm = FSM(m, 'xfsm', clk, rst)
     xfsm.add(vx(0))
     xfsm.goto_next(cond=reset_done)
+    for _ in range(10):
+        xfsm.goto_next()
+    xfsm.add(vx(1))
+    xfsm.goto_next()
+    xfsm.add(x.inc())
+    xfsm.add(x_count.inc())
+    xfsm.goto_next(cond=x_count==5)
+    xfsm.add(vx(0))
+    for _ in range(10):
+        xfsm.goto_next()
     xfsm.add(vx(1))
     xfsm.add(x.inc())
     xfsm.add(x_count.inc())

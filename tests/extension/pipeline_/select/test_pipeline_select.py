@@ -4,6 +4,7 @@ import pipeline_select
 
 expected_verilog = """
 module test;
+
   reg CLK;
   reg RST;
   reg [32-1:0] x;
@@ -43,7 +44,7 @@ module test;
   initial begin
     CLK = 0;
     forever begin
-      #5 CLK = (!CLK);
+      #5 CLK = !CLK;
     end
   end
 
@@ -91,10 +92,10 @@ module test;
         xfsm_1: begin
           vx <= 1;
           if(rx) begin
-            x <= (x - 1);
+            x <= x - 1;
           end 
           if(rx) begin
-            _tmp_0 <= (_tmp_0 + 1);
+            _tmp_0 <= _tmp_0 + 1;
           end 
           if((_tmp_0 == 10) && rx) begin
             xfsm <= xfsm_2;
@@ -111,6 +112,17 @@ module test;
   localparam yfsm_init = 0;
   localparam yfsm_1 = 1;
   localparam yfsm_2 = 2;
+  localparam yfsm_3 = 3;
+  localparam yfsm_4 = 4;
+  localparam yfsm_5 = 5;
+  localparam yfsm_6 = 6;
+  localparam yfsm_7 = 7;
+  localparam yfsm_8 = 8;
+  localparam yfsm_9 = 9;
+  localparam yfsm_10 = 10;
+  localparam yfsm_11 = 11;
+  localparam yfsm_12 = 12;
+  localparam yfsm_13 = 13;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -125,18 +137,51 @@ module test;
           end 
         end
         yfsm_1: begin
-          vy <= 1;
-          if(ry) begin
-            y <= (y + 1);
-          end 
-          if(ry) begin
-            _tmp_1 <= (_tmp_1 + 1);
-          end 
-          if((_tmp_1 == 10) && ry) begin
-            yfsm <= yfsm_2;
-          end 
+          yfsm <= yfsm_2;
         end
         yfsm_2: begin
+          yfsm <= yfsm_3;
+        end
+        yfsm_3: begin
+          yfsm <= yfsm_4;
+        end
+        yfsm_4: begin
+          yfsm <= yfsm_5;
+        end
+        yfsm_5: begin
+          yfsm <= yfsm_6;
+        end
+        yfsm_6: begin
+          yfsm <= yfsm_7;
+        end
+        yfsm_7: begin
+          yfsm <= yfsm_8;
+        end
+        yfsm_8: begin
+          yfsm <= yfsm_9;
+        end
+        yfsm_9: begin
+          yfsm <= yfsm_10;
+        end
+        yfsm_10: begin
+          yfsm <= yfsm_11;
+        end
+        yfsm_11: begin
+          vy <= 1;
+          yfsm <= yfsm_12;
+        end
+        yfsm_12: begin
+          if(ry) begin
+            y <= y + 1;
+          end 
+          if(ry) begin
+            _tmp_1 <= _tmp_1 + 1;
+          end 
+          if((_tmp_1 == 10) && ry) begin
+            yfsm <= yfsm_13;
+          end 
+        end
+        yfsm_13: begin
           vy <= 0;
         end
       endcase
@@ -243,7 +288,10 @@ module test;
     end 
   end
 
+
 endmodule
+
+
 
 module blinkled
 (
@@ -260,8 +308,8 @@ module blinkled
   input rz
 );
 
-  assign rx = ((_df_ready_0 || (!_df_valid_0)) && (_df_ready_0 || (!_df_valid_0)));
-  assign ry = ((_df_ready_0 || (!_df_valid_0)) && (_df_ready_0 || (!_df_valid_0)));
+  assign rx = (_df_ready_0 || !_df_valid_0) && (vx && vy && vx && vy) && ((_df_ready_0 || !_df_valid_0) && (vx && vy && vx && vy));
+  assign ry = (_df_ready_0 || !_df_valid_0) && (vx && vy && vx && vy) && ((_df_ready_0 || !_df_valid_0) && (vx && vy && vx && vy));
   reg [32-1:0] _df_data_0;
   reg _df_valid_0;
   wire _df_ready_0;
@@ -274,11 +322,14 @@ module blinkled
       _df_data_0 <= 0;
       _df_valid_0 <= 0;
     end else begin
-      if((((((vx && rx) && (vy && ry)) && (vx && rx)) && (vy && ry)) && (_df_ready_0 || (!_df_valid_0)))) begin
-        _df_data_0 <= (((x > y))? x : y);
+      if(vx && vy && vx && vy && (rx && ry && rx && ry) && (_df_ready_0 || !_df_valid_0)) begin
+        _df_data_0 <= (x > y)? x : y;
       end 
-      if(_df_ready_0 || !_df_valid_0) begin
-        _df_valid_0 <= ((((vx && rx) && (vy && ry)) && (vx && rx)) && (vy && ry));
+      if(_df_valid_0 && _df_ready_0) begin
+        _df_valid_0 <= 0;
+      end 
+      if(rx && ry && rx && ry && (_df_ready_0 || !_df_valid_0)) begin
+        _df_valid_0 <= vx && vy && vx && vy;
       end 
     end
   end

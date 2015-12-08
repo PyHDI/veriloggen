@@ -112,7 +112,10 @@ def mkTest(numports=8):
     yfsm = FSM(m, 'yfsm', clk, rst)
     yfsm.add(vy(0))
     yfsm.goto_next(cond=reset_done)
+    for _ in range(10):
+        yfsm.goto_next() # delay
     yfsm.add(vy(1))
+    yfsm.goto_next()
     yfsm.add(y.inc(), cond=ry)
     yfsm.add(y_count.inc(), cond=ry)
     yfsm.goto_next(cond=AndList(y_count==10, ry))

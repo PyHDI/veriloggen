@@ -4,10 +4,7 @@ import pipeline_multiple_add
 from veriloggen import *
 
 expected_verilog = """
-module test
-(
-
-);
+module test;
 
   reg CLK;
   reg RST;
@@ -125,6 +122,7 @@ module test
   localparam fsm0_init = 0;
   localparam fsm0_1 = 1;
   localparam fsm0_2 = 2;
+  localparam fsm0_3 = 3;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -140,6 +138,9 @@ module test
         end
         fsm0_1: begin
           v0 <= 1;
+          fsm0 <= fsm0_2;
+        end
+        fsm0_2: begin
           if(r0) begin
             d0 <= d0 + 0 + 1;
           end 
@@ -147,10 +148,10 @@ module test
             _tmp_0 <= _tmp_0 + 1;
           end 
           if((_tmp_0 == 10) && r0) begin
-            fsm0 <= fsm0_2;
+            fsm0 <= fsm0_3;
           end 
         end
-        fsm0_2: begin
+        fsm0_3: begin
           v0 <= 0;
         end
       endcase
@@ -162,6 +163,7 @@ module test
   localparam fsm1_init = 0;
   localparam fsm1_1 = 1;
   localparam fsm1_2 = 2;
+  localparam fsm1_3 = 3;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -177,6 +179,9 @@ module test
         end
         fsm1_1: begin
           v1 <= 1;
+          fsm1 <= fsm1_2;
+        end
+        fsm1_2: begin
           if(r1) begin
             d1 <= d1 + 1 + 1;
           end 
@@ -184,10 +189,10 @@ module test
             _tmp_1 <= _tmp_1 + 1;
           end 
           if((_tmp_1 == 10) && r1) begin
-            fsm1 <= fsm1_2;
+            fsm1 <= fsm1_3;
           end 
         end
-        fsm1_2: begin
+        fsm1_3: begin
           v1 <= 0;
         end
       endcase
@@ -199,6 +204,7 @@ module test
   localparam fsm2_init = 0;
   localparam fsm2_1 = 1;
   localparam fsm2_2 = 2;
+  localparam fsm2_3 = 3;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -214,6 +220,9 @@ module test
         end
         fsm2_1: begin
           v2 <= 1;
+          fsm2 <= fsm2_2;
+        end
+        fsm2_2: begin
           if(r2) begin
             d2 <= d2 + 2 + 1;
           end 
@@ -221,10 +230,10 @@ module test
             _tmp_2 <= _tmp_2 + 1;
           end 
           if((_tmp_2 == 10) && r2) begin
-            fsm2 <= fsm2_2;
+            fsm2 <= fsm2_3;
           end 
         end
-        fsm2_2: begin
+        fsm2_3: begin
           v2 <= 0;
         end
       endcase
@@ -236,6 +245,7 @@ module test
   localparam fsm3_init = 0;
   localparam fsm3_1 = 1;
   localparam fsm3_2 = 2;
+  localparam fsm3_3 = 3;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -251,6 +261,9 @@ module test
         end
         fsm3_1: begin
           v3 <= 1;
+          fsm3 <= fsm3_2;
+        end
+        fsm3_2: begin
           if(r3) begin
             d3 <= d3 + 3 + 1;
           end 
@@ -258,10 +271,10 @@ module test
             _tmp_3 <= _tmp_3 + 1;
           end 
           if((_tmp_3 == 10) && r3) begin
-            fsm3 <= fsm3_2;
+            fsm3 <= fsm3_3;
           end 
         end
-        fsm3_2: begin
+        fsm3_3: begin
           v3 <= 0;
         end
       endcase
@@ -273,6 +286,7 @@ module test
   localparam fsm4_init = 0;
   localparam fsm4_1 = 1;
   localparam fsm4_2 = 2;
+  localparam fsm4_3 = 3;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -288,6 +302,9 @@ module test
         end
         fsm4_1: begin
           v4 <= 1;
+          fsm4 <= fsm4_2;
+        end
+        fsm4_2: begin
           if(r4) begin
             d4 <= d4 + 4 + 1;
           end 
@@ -295,10 +312,10 @@ module test
             _tmp_4 <= _tmp_4 + 1;
           end 
           if((_tmp_4 == 10) && r4) begin
-            fsm4 <= fsm4_2;
+            fsm4 <= fsm4_3;
           end 
         end
-        fsm4_2: begin
+        fsm4_3: begin
           v4 <= 0;
         end
       endcase
@@ -310,6 +327,7 @@ module test
   localparam fsm5_init = 0;
   localparam fsm5_1 = 1;
   localparam fsm5_2 = 2;
+  localparam fsm5_3 = 3;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -325,6 +343,9 @@ module test
         end
         fsm5_1: begin
           v5 <= 1;
+          fsm5 <= fsm5_2;
+        end
+        fsm5_2: begin
           if(r5) begin
             d5 <= d5 + 5 + 1;
           end 
@@ -332,10 +353,10 @@ module test
             _tmp_5 <= _tmp_5 + 1;
           end 
           if((_tmp_5 == 10) && r5) begin
-            fsm5 <= fsm5_2;
+            fsm5 <= fsm5_3;
           end 
         end
-        fsm5_2: begin
+        fsm5_3: begin
           v5 <= 0;
         end
       endcase
@@ -347,6 +368,7 @@ module test
   localparam fsm6_init = 0;
   localparam fsm6_1 = 1;
   localparam fsm6_2 = 2;
+  localparam fsm6_3 = 3;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -362,6 +384,9 @@ module test
         end
         fsm6_1: begin
           v6 <= 1;
+          fsm6 <= fsm6_2;
+        end
+        fsm6_2: begin
           if(r6) begin
             d6 <= d6 + 6 + 1;
           end 
@@ -369,10 +394,10 @@ module test
             _tmp_6 <= _tmp_6 + 1;
           end 
           if((_tmp_6 == 10) && r6) begin
-            fsm6 <= fsm6_2;
+            fsm6 <= fsm6_3;
           end 
         end
-        fsm6_2: begin
+        fsm6_3: begin
           v6 <= 0;
         end
       endcase
@@ -384,6 +409,7 @@ module test
   localparam fsm7_init = 0;
   localparam fsm7_1 = 1;
   localparam fsm7_2 = 2;
+  localparam fsm7_3 = 3;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -399,6 +425,9 @@ module test
         end
         fsm7_1: begin
           v7 <= 1;
+          fsm7 <= fsm7_2;
+        end
+        fsm7_2: begin
           if(r7) begin
             d7 <= d7 + 7 + 1;
           end 
@@ -406,10 +435,10 @@ module test
             _tmp_7 <= _tmp_7 + 1;
           end 
           if((_tmp_7 == 10) && r7) begin
-            fsm7 <= fsm7_2;
+            fsm7 <= fsm7_3;
           end 
         end
-        fsm7_2: begin
+        fsm7_3: begin
           v7 <= 0;
         end
       endcase
@@ -572,122 +601,122 @@ module blinkled
   input rz
 );
 
-  assign r0 = _df_ready_0 || !_df_valid_0;
-  assign r1 = _df_ready_0 || !_df_valid_0;
-  assign r2 = _df_ready_1 || !_df_valid_1;
-  assign r3 = _df_ready_3 || !_df_valid_3;
-  assign r4 = _df_ready_6 || !_df_valid_6;
-  assign r5 = _df_ready_10 || !_df_valid_10;
-  assign r6 = _df_ready_15 || !_df_valid_15;
-  assign r7 = _df_ready_21 || !_df_valid_21;
+  assign r0 = (_df_ready_0 || !_df_valid_0) && (v0 && v1);
+  assign r1 = (_df_ready_0 || !_df_valid_0) && (v0 && v1);
+  assign r2 = (_df_ready_1 || !_df_valid_1) && v2;
+  assign r3 = (_df_ready_3 || !_df_valid_3) && v3;
+  assign r4 = (_df_ready_6 || !_df_valid_6) && v4;
+  assign r5 = (_df_ready_10 || !_df_valid_10) && v5;
+  assign r6 = (_df_ready_15 || !_df_valid_15) && v6;
+  assign r7 = (_df_ready_21 || !_df_valid_21) && v7;
   reg [32-1:0] _df_data_0;
   reg _df_valid_0;
   wire _df_ready_0;
-  assign _df_ready_0 = _df_ready_2 || !_df_valid_2;
+  assign _df_ready_0 = (_df_ready_2 || !_df_valid_2) && (_df_valid_0 && _df_valid_1);
   reg [32-1:0] _df_data_1;
   reg _df_valid_1;
   wire _df_ready_1;
-  assign _df_ready_1 = _df_ready_2 || !_df_valid_2;
+  assign _df_ready_1 = (_df_ready_2 || !_df_valid_2) && (_df_valid_0 && _df_valid_1);
   reg [32-1:0] _df_data_2;
   reg _df_valid_2;
   wire _df_ready_2;
-  assign _df_ready_2 = _df_ready_5 || !_df_valid_5;
+  assign _df_ready_2 = (_df_ready_5 || !_df_valid_5) && (_df_valid_2 && _df_valid_4);
   reg [32-1:0] _df_data_3;
   reg _df_valid_3;
   wire _df_ready_3;
-  assign _df_ready_3 = _df_ready_4 || !_df_valid_4;
+  assign _df_ready_3 = (_df_ready_4 || !_df_valid_4) && _df_valid_3;
   reg [32-1:0] _df_data_4;
   reg _df_valid_4;
   wire _df_ready_4;
-  assign _df_ready_4 = _df_ready_5 || !_df_valid_5;
+  assign _df_ready_4 = (_df_ready_5 || !_df_valid_5) && (_df_valid_2 && _df_valid_4);
   reg [32-1:0] _df_data_5;
   reg _df_valid_5;
   wire _df_ready_5;
-  assign _df_ready_5 = _df_ready_9 || !_df_valid_9;
+  assign _df_ready_5 = (_df_ready_9 || !_df_valid_9) && (_df_valid_5 && _df_valid_8);
   reg [32-1:0] _df_data_6;
   reg _df_valid_6;
   wire _df_ready_6;
-  assign _df_ready_6 = _df_ready_7 || !_df_valid_7;
+  assign _df_ready_6 = (_df_ready_7 || !_df_valid_7) && _df_valid_6;
   reg [32-1:0] _df_data_7;
   reg _df_valid_7;
   wire _df_ready_7;
-  assign _df_ready_7 = _df_ready_8 || !_df_valid_8;
+  assign _df_ready_7 = (_df_ready_8 || !_df_valid_8) && _df_valid_7;
   reg [32-1:0] _df_data_8;
   reg _df_valid_8;
   wire _df_ready_8;
-  assign _df_ready_8 = _df_ready_9 || !_df_valid_9;
+  assign _df_ready_8 = (_df_ready_9 || !_df_valid_9) && (_df_valid_5 && _df_valid_8);
   reg [32-1:0] _df_data_9;
   reg _df_valid_9;
   wire _df_ready_9;
-  assign _df_ready_9 = _df_ready_14 || !_df_valid_14;
+  assign _df_ready_9 = (_df_ready_14 || !_df_valid_14) && (_df_valid_9 && _df_valid_13);
   reg [32-1:0] _df_data_10;
   reg _df_valid_10;
   wire _df_ready_10;
-  assign _df_ready_10 = _df_ready_11 || !_df_valid_11;
+  assign _df_ready_10 = (_df_ready_11 || !_df_valid_11) && _df_valid_10;
   reg [32-1:0] _df_data_11;
   reg _df_valid_11;
   wire _df_ready_11;
-  assign _df_ready_11 = _df_ready_12 || !_df_valid_12;
+  assign _df_ready_11 = (_df_ready_12 || !_df_valid_12) && _df_valid_11;
   reg [32-1:0] _df_data_12;
   reg _df_valid_12;
   wire _df_ready_12;
-  assign _df_ready_12 = _df_ready_13 || !_df_valid_13;
+  assign _df_ready_12 = (_df_ready_13 || !_df_valid_13) && _df_valid_12;
   reg [32-1:0] _df_data_13;
   reg _df_valid_13;
   wire _df_ready_13;
-  assign _df_ready_13 = _df_ready_14 || !_df_valid_14;
+  assign _df_ready_13 = (_df_ready_14 || !_df_valid_14) && (_df_valid_9 && _df_valid_13);
   reg [32-1:0] _df_data_14;
   reg _df_valid_14;
   wire _df_ready_14;
-  assign _df_ready_14 = _df_ready_20 || !_df_valid_20;
+  assign _df_ready_14 = (_df_ready_20 || !_df_valid_20) && (_df_valid_14 && _df_valid_19);
   reg [32-1:0] _df_data_15;
   reg _df_valid_15;
   wire _df_ready_15;
-  assign _df_ready_15 = _df_ready_16 || !_df_valid_16;
+  assign _df_ready_15 = (_df_ready_16 || !_df_valid_16) && _df_valid_15;
   reg [32-1:0] _df_data_16;
   reg _df_valid_16;
   wire _df_ready_16;
-  assign _df_ready_16 = _df_ready_17 || !_df_valid_17;
+  assign _df_ready_16 = (_df_ready_17 || !_df_valid_17) && _df_valid_16;
   reg [32-1:0] _df_data_17;
   reg _df_valid_17;
   wire _df_ready_17;
-  assign _df_ready_17 = _df_ready_18 || !_df_valid_18;
+  assign _df_ready_17 = (_df_ready_18 || !_df_valid_18) && _df_valid_17;
   reg [32-1:0] _df_data_18;
   reg _df_valid_18;
   wire _df_ready_18;
-  assign _df_ready_18 = _df_ready_19 || !_df_valid_19;
+  assign _df_ready_18 = (_df_ready_19 || !_df_valid_19) && _df_valid_18;
   reg [32-1:0] _df_data_19;
   reg _df_valid_19;
   wire _df_ready_19;
-  assign _df_ready_19 = _df_ready_20 || !_df_valid_20;
+  assign _df_ready_19 = (_df_ready_20 || !_df_valid_20) && (_df_valid_14 && _df_valid_19);
   reg [32-1:0] _df_data_20;
   reg _df_valid_20;
   wire _df_ready_20;
-  assign _df_ready_20 = _df_ready_27 || !_df_valid_27;
+  assign _df_ready_20 = (_df_ready_27 || !_df_valid_27) && (_df_valid_20 && _df_valid_26);
   reg [32-1:0] _df_data_21;
   reg _df_valid_21;
   wire _df_ready_21;
-  assign _df_ready_21 = _df_ready_22 || !_df_valid_22;
+  assign _df_ready_21 = (_df_ready_22 || !_df_valid_22) && _df_valid_21;
   reg [32-1:0] _df_data_22;
   reg _df_valid_22;
   wire _df_ready_22;
-  assign _df_ready_22 = _df_ready_23 || !_df_valid_23;
+  assign _df_ready_22 = (_df_ready_23 || !_df_valid_23) && _df_valid_22;
   reg [32-1:0] _df_data_23;
   reg _df_valid_23;
   wire _df_ready_23;
-  assign _df_ready_23 = _df_ready_24 || !_df_valid_24;
+  assign _df_ready_23 = (_df_ready_24 || !_df_valid_24) && _df_valid_23;
   reg [32-1:0] _df_data_24;
   reg _df_valid_24;
   wire _df_ready_24;
-  assign _df_ready_24 = _df_ready_25 || !_df_valid_25;
+  assign _df_ready_24 = (_df_ready_25 || !_df_valid_25) && _df_valid_24;
   reg [32-1:0] _df_data_25;
   reg _df_valid_25;
   wire _df_ready_25;
-  assign _df_ready_25 = _df_ready_26 || !_df_valid_26;
+  assign _df_ready_25 = (_df_ready_26 || !_df_valid_26) && _df_valid_25;
   reg [32-1:0] _df_data_26;
   reg _df_valid_26;
   wire _df_ready_26;
-  assign _df_ready_26 = _df_ready_27 || !_df_valid_27;
+  assign _df_ready_26 = (_df_ready_27 || !_df_valid_27) && (_df_valid_20 && _df_valid_26);
   reg [32-1:0] _df_data_27;
   reg _df_valid_27;
   wire _df_ready_27;
@@ -754,173 +783,257 @@ module blinkled
       _df_data_27 <= 0;
       _df_valid_27 <= 0;
     end else begin
-      if(v0 && r0 && (v1 && r1) && (_df_ready_0 || !_df_valid_0)) begin
+      if(v0 && v1 && (r0 && r1) && (_df_ready_0 || !_df_valid_0)) begin
         _df_data_0 <= d0 + d1;
       end 
-      if(_df_ready_0 || !_df_valid_0) begin
-        _df_valid_0 <= v0 && r0 && (v1 && r1);
+      if(_df_valid_0 && _df_ready_0) begin
+        _df_valid_0 <= 0;
+      end 
+      if(r0 && r1 && (_df_ready_0 || !_df_valid_0)) begin
+        _df_valid_0 <= v0 && v1;
       end 
       if(v2 && r2 && (_df_ready_1 || !_df_valid_1)) begin
         _df_data_1 <= d2;
       end 
-      if(_df_ready_1 || !_df_valid_1) begin
-        _df_valid_1 <= v2 && r2;
+      if(_df_valid_1 && _df_ready_1) begin
+        _df_valid_1 <= 0;
       end 
-      if(_df_valid_0 && _df_ready_0 && (_df_valid_1 && _df_ready_1) && (_df_ready_2 || !_df_valid_2)) begin
+      if(r2 && (_df_ready_1 || !_df_valid_1)) begin
+        _df_valid_1 <= v2;
+      end 
+      if(_df_valid_0 && _df_valid_1 && (_df_ready_0 && _df_ready_1) && (_df_ready_2 || !_df_valid_2)) begin
         _df_data_2 <= _df_data_0 + _df_data_1;
       end 
-      if(_df_ready_2 || !_df_valid_2) begin
-        _df_valid_2 <= _df_valid_0 && _df_ready_0 && (_df_valid_1 && _df_ready_1);
+      if(_df_valid_2 && _df_ready_2) begin
+        _df_valid_2 <= 0;
+      end 
+      if(_df_ready_0 && _df_ready_1 && (_df_ready_2 || !_df_valid_2)) begin
+        _df_valid_2 <= _df_valid_0 && _df_valid_1;
       end 
       if(v3 && r3 && (_df_ready_3 || !_df_valid_3)) begin
         _df_data_3 <= d3;
       end 
-      if(_df_ready_3 || !_df_valid_3) begin
-        _df_valid_3 <= v3 && r3;
+      if(_df_valid_3 && _df_ready_3) begin
+        _df_valid_3 <= 0;
+      end 
+      if(r3 && (_df_ready_3 || !_df_valid_3)) begin
+        _df_valid_3 <= v3;
       end 
       if(_df_valid_3 && _df_ready_3 && (_df_ready_4 || !_df_valid_4)) begin
         _df_data_4 <= _df_data_3;
       end 
-      if(_df_ready_4 || !_df_valid_4) begin
-        _df_valid_4 <= _df_valid_3 && _df_ready_3;
+      if(_df_valid_4 && _df_ready_4) begin
+        _df_valid_4 <= 0;
       end 
-      if(_df_valid_2 && _df_ready_2 && (_df_valid_4 && _df_ready_4) && (_df_ready_5 || !_df_valid_5)) begin
+      if(_df_ready_3 && (_df_ready_4 || !_df_valid_4)) begin
+        _df_valid_4 <= _df_valid_3;
+      end 
+      if(_df_valid_2 && _df_valid_4 && (_df_ready_2 && _df_ready_4) && (_df_ready_5 || !_df_valid_5)) begin
         _df_data_5 <= _df_data_2 + _df_data_4;
       end 
-      if(_df_ready_5 || !_df_valid_5) begin
-        _df_valid_5 <= _df_valid_2 && _df_ready_2 && (_df_valid_4 && _df_ready_4);
+      if(_df_valid_5 && _df_ready_5) begin
+        _df_valid_5 <= 0;
+      end 
+      if(_df_ready_2 && _df_ready_4 && (_df_ready_5 || !_df_valid_5)) begin
+        _df_valid_5 <= _df_valid_2 && _df_valid_4;
       end 
       if(v4 && r4 && (_df_ready_6 || !_df_valid_6)) begin
         _df_data_6 <= d4;
       end 
-      if(_df_ready_6 || !_df_valid_6) begin
-        _df_valid_6 <= v4 && r4;
+      if(_df_valid_6 && _df_ready_6) begin
+        _df_valid_6 <= 0;
+      end 
+      if(r4 && (_df_ready_6 || !_df_valid_6)) begin
+        _df_valid_6 <= v4;
       end 
       if(_df_valid_6 && _df_ready_6 && (_df_ready_7 || !_df_valid_7)) begin
         _df_data_7 <= _df_data_6;
       end 
-      if(_df_ready_7 || !_df_valid_7) begin
-        _df_valid_7 <= _df_valid_6 && _df_ready_6;
+      if(_df_valid_7 && _df_ready_7) begin
+        _df_valid_7 <= 0;
+      end 
+      if(_df_ready_6 && (_df_ready_7 || !_df_valid_7)) begin
+        _df_valid_7 <= _df_valid_6;
       end 
       if(_df_valid_7 && _df_ready_7 && (_df_ready_8 || !_df_valid_8)) begin
         _df_data_8 <= _df_data_7;
       end 
-      if(_df_ready_8 || !_df_valid_8) begin
-        _df_valid_8 <= _df_valid_7 && _df_ready_7;
+      if(_df_valid_8 && _df_ready_8) begin
+        _df_valid_8 <= 0;
       end 
-      if(_df_valid_5 && _df_ready_5 && (_df_valid_8 && _df_ready_8) && (_df_ready_9 || !_df_valid_9)) begin
+      if(_df_ready_7 && (_df_ready_8 || !_df_valid_8)) begin
+        _df_valid_8 <= _df_valid_7;
+      end 
+      if(_df_valid_5 && _df_valid_8 && (_df_ready_5 && _df_ready_8) && (_df_ready_9 || !_df_valid_9)) begin
         _df_data_9 <= _df_data_5 + _df_data_8;
       end 
-      if(_df_ready_9 || !_df_valid_9) begin
-        _df_valid_9 <= _df_valid_5 && _df_ready_5 && (_df_valid_8 && _df_ready_8);
+      if(_df_valid_9 && _df_ready_9) begin
+        _df_valid_9 <= 0;
+      end 
+      if(_df_ready_5 && _df_ready_8 && (_df_ready_9 || !_df_valid_9)) begin
+        _df_valid_9 <= _df_valid_5 && _df_valid_8;
       end 
       if(v5 && r5 && (_df_ready_10 || !_df_valid_10)) begin
         _df_data_10 <= d5;
       end 
-      if(_df_ready_10 || !_df_valid_10) begin
-        _df_valid_10 <= v5 && r5;
+      if(_df_valid_10 && _df_ready_10) begin
+        _df_valid_10 <= 0;
+      end 
+      if(r5 && (_df_ready_10 || !_df_valid_10)) begin
+        _df_valid_10 <= v5;
       end 
       if(_df_valid_10 && _df_ready_10 && (_df_ready_11 || !_df_valid_11)) begin
         _df_data_11 <= _df_data_10;
       end 
-      if(_df_ready_11 || !_df_valid_11) begin
-        _df_valid_11 <= _df_valid_10 && _df_ready_10;
+      if(_df_valid_11 && _df_ready_11) begin
+        _df_valid_11 <= 0;
+      end 
+      if(_df_ready_10 && (_df_ready_11 || !_df_valid_11)) begin
+        _df_valid_11 <= _df_valid_10;
       end 
       if(_df_valid_11 && _df_ready_11 && (_df_ready_12 || !_df_valid_12)) begin
         _df_data_12 <= _df_data_11;
       end 
-      if(_df_ready_12 || !_df_valid_12) begin
-        _df_valid_12 <= _df_valid_11 && _df_ready_11;
+      if(_df_valid_12 && _df_ready_12) begin
+        _df_valid_12 <= 0;
+      end 
+      if(_df_ready_11 && (_df_ready_12 || !_df_valid_12)) begin
+        _df_valid_12 <= _df_valid_11;
       end 
       if(_df_valid_12 && _df_ready_12 && (_df_ready_13 || !_df_valid_13)) begin
         _df_data_13 <= _df_data_12;
       end 
-      if(_df_ready_13 || !_df_valid_13) begin
-        _df_valid_13 <= _df_valid_12 && _df_ready_12;
+      if(_df_valid_13 && _df_ready_13) begin
+        _df_valid_13 <= 0;
       end 
-      if(_df_valid_9 && _df_ready_9 && (_df_valid_13 && _df_ready_13) && (_df_ready_14 || !_df_valid_14)) begin
+      if(_df_ready_12 && (_df_ready_13 || !_df_valid_13)) begin
+        _df_valid_13 <= _df_valid_12;
+      end 
+      if(_df_valid_9 && _df_valid_13 && (_df_ready_9 && _df_ready_13) && (_df_ready_14 || !_df_valid_14)) begin
         _df_data_14 <= _df_data_9 + _df_data_13;
       end 
-      if(_df_ready_14 || !_df_valid_14) begin
-        _df_valid_14 <= _df_valid_9 && _df_ready_9 && (_df_valid_13 && _df_ready_13);
+      if(_df_valid_14 && _df_ready_14) begin
+        _df_valid_14 <= 0;
+      end 
+      if(_df_ready_9 && _df_ready_13 && (_df_ready_14 || !_df_valid_14)) begin
+        _df_valid_14 <= _df_valid_9 && _df_valid_13;
       end 
       if(v6 && r6 && (_df_ready_15 || !_df_valid_15)) begin
         _df_data_15 <= d6;
       end 
-      if(_df_ready_15 || !_df_valid_15) begin
-        _df_valid_15 <= v6 && r6;
+      if(_df_valid_15 && _df_ready_15) begin
+        _df_valid_15 <= 0;
+      end 
+      if(r6 && (_df_ready_15 || !_df_valid_15)) begin
+        _df_valid_15 <= v6;
       end 
       if(_df_valid_15 && _df_ready_15 && (_df_ready_16 || !_df_valid_16)) begin
         _df_data_16 <= _df_data_15;
       end 
-      if(_df_ready_16 || !_df_valid_16) begin
-        _df_valid_16 <= _df_valid_15 && _df_ready_15;
+      if(_df_valid_16 && _df_ready_16) begin
+        _df_valid_16 <= 0;
+      end 
+      if(_df_ready_15 && (_df_ready_16 || !_df_valid_16)) begin
+        _df_valid_16 <= _df_valid_15;
       end 
       if(_df_valid_16 && _df_ready_16 && (_df_ready_17 || !_df_valid_17)) begin
         _df_data_17 <= _df_data_16;
       end 
-      if(_df_ready_17 || !_df_valid_17) begin
-        _df_valid_17 <= _df_valid_16 && _df_ready_16;
+      if(_df_valid_17 && _df_ready_17) begin
+        _df_valid_17 <= 0;
+      end 
+      if(_df_ready_16 && (_df_ready_17 || !_df_valid_17)) begin
+        _df_valid_17 <= _df_valid_16;
       end 
       if(_df_valid_17 && _df_ready_17 && (_df_ready_18 || !_df_valid_18)) begin
         _df_data_18 <= _df_data_17;
       end 
-      if(_df_ready_18 || !_df_valid_18) begin
-        _df_valid_18 <= _df_valid_17 && _df_ready_17;
+      if(_df_valid_18 && _df_ready_18) begin
+        _df_valid_18 <= 0;
+      end 
+      if(_df_ready_17 && (_df_ready_18 || !_df_valid_18)) begin
+        _df_valid_18 <= _df_valid_17;
       end 
       if(_df_valid_18 && _df_ready_18 && (_df_ready_19 || !_df_valid_19)) begin
         _df_data_19 <= _df_data_18;
       end 
-      if(_df_ready_19 || !_df_valid_19) begin
-        _df_valid_19 <= _df_valid_18 && _df_ready_18;
+      if(_df_valid_19 && _df_ready_19) begin
+        _df_valid_19 <= 0;
       end 
-      if(_df_valid_14 && _df_ready_14 && (_df_valid_19 && _df_ready_19) && (_df_ready_20 || !_df_valid_20)) begin
+      if(_df_ready_18 && (_df_ready_19 || !_df_valid_19)) begin
+        _df_valid_19 <= _df_valid_18;
+      end 
+      if(_df_valid_14 && _df_valid_19 && (_df_ready_14 && _df_ready_19) && (_df_ready_20 || !_df_valid_20)) begin
         _df_data_20 <= _df_data_14 + _df_data_19;
       end 
-      if(_df_ready_20 || !_df_valid_20) begin
-        _df_valid_20 <= _df_valid_14 && _df_ready_14 && (_df_valid_19 && _df_ready_19);
+      if(_df_valid_20 && _df_ready_20) begin
+        _df_valid_20 <= 0;
+      end 
+      if(_df_ready_14 && _df_ready_19 && (_df_ready_20 || !_df_valid_20)) begin
+        _df_valid_20 <= _df_valid_14 && _df_valid_19;
       end 
       if(v7 && r7 && (_df_ready_21 || !_df_valid_21)) begin
         _df_data_21 <= d7;
       end 
-      if(_df_ready_21 || !_df_valid_21) begin
-        _df_valid_21 <= v7 && r7;
+      if(_df_valid_21 && _df_ready_21) begin
+        _df_valid_21 <= 0;
+      end 
+      if(r7 && (_df_ready_21 || !_df_valid_21)) begin
+        _df_valid_21 <= v7;
       end 
       if(_df_valid_21 && _df_ready_21 && (_df_ready_22 || !_df_valid_22)) begin
         _df_data_22 <= _df_data_21;
       end 
-      if(_df_ready_22 || !_df_valid_22) begin
-        _df_valid_22 <= _df_valid_21 && _df_ready_21;
+      if(_df_valid_22 && _df_ready_22) begin
+        _df_valid_22 <= 0;
+      end 
+      if(_df_ready_21 && (_df_ready_22 || !_df_valid_22)) begin
+        _df_valid_22 <= _df_valid_21;
       end 
       if(_df_valid_22 && _df_ready_22 && (_df_ready_23 || !_df_valid_23)) begin
         _df_data_23 <= _df_data_22;
       end 
-      if(_df_ready_23 || !_df_valid_23) begin
-        _df_valid_23 <= _df_valid_22 && _df_ready_22;
+      if(_df_valid_23 && _df_ready_23) begin
+        _df_valid_23 <= 0;
+      end 
+      if(_df_ready_22 && (_df_ready_23 || !_df_valid_23)) begin
+        _df_valid_23 <= _df_valid_22;
       end 
       if(_df_valid_23 && _df_ready_23 && (_df_ready_24 || !_df_valid_24)) begin
         _df_data_24 <= _df_data_23;
       end 
-      if(_df_ready_24 || !_df_valid_24) begin
-        _df_valid_24 <= _df_valid_23 && _df_ready_23;
+      if(_df_valid_24 && _df_ready_24) begin
+        _df_valid_24 <= 0;
+      end 
+      if(_df_ready_23 && (_df_ready_24 || !_df_valid_24)) begin
+        _df_valid_24 <= _df_valid_23;
       end 
       if(_df_valid_24 && _df_ready_24 && (_df_ready_25 || !_df_valid_25)) begin
         _df_data_25 <= _df_data_24;
       end 
-      if(_df_ready_25 || !_df_valid_25) begin
-        _df_valid_25 <= _df_valid_24 && _df_ready_24;
+      if(_df_valid_25 && _df_ready_25) begin
+        _df_valid_25 <= 0;
+      end 
+      if(_df_ready_24 && (_df_ready_25 || !_df_valid_25)) begin
+        _df_valid_25 <= _df_valid_24;
       end 
       if(_df_valid_25 && _df_ready_25 && (_df_ready_26 || !_df_valid_26)) begin
         _df_data_26 <= _df_data_25;
       end 
-      if(_df_ready_26 || !_df_valid_26) begin
-        _df_valid_26 <= _df_valid_25 && _df_ready_25;
+      if(_df_valid_26 && _df_ready_26) begin
+        _df_valid_26 <= 0;
       end 
-      if(_df_valid_20 && _df_ready_20 && (_df_valid_26 && _df_ready_26) && (_df_ready_27 || !_df_valid_27)) begin
+      if(_df_ready_25 && (_df_ready_26 || !_df_valid_26)) begin
+        _df_valid_26 <= _df_valid_25;
+      end 
+      if(_df_valid_20 && _df_valid_26 && (_df_ready_20 && _df_ready_26) && (_df_ready_27 || !_df_valid_27)) begin
         _df_data_27 <= _df_data_20 + _df_data_26;
       end 
-      if(_df_ready_27 || !_df_valid_27) begin
-        _df_valid_27 <= _df_valid_20 && _df_ready_20 && (_df_valid_26 && _df_ready_26);
+      if(_df_valid_27 && _df_ready_27) begin
+        _df_valid_27 <= 0;
+      end 
+      if(_df_ready_20 && _df_ready_26 && (_df_ready_27 || !_df_valid_27)) begin
+        _df_valid_27 <= _df_valid_20 && _df_valid_26;
       end 
     end
   end
@@ -931,6 +1044,14 @@ endmodule
 
 expected_rslt = """\
 VCD info: dumpfile uut.vcd opened for output.
+d0=         0
+d1=         0
+d2=         0
+d3=         0
+d4=         0
+d5=         0
+d6=         0
+d7=         0
 d0=         1
 d1=         2
 d2=         3
@@ -987,6 +1108,7 @@ d4=        35
 d5=        42
 d6=        49
 d7=        56
+dz=         0
 d0=         8
 d1=        16
 d2=        24

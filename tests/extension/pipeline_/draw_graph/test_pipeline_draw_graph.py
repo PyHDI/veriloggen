@@ -3,7 +3,10 @@ from __future__ import print_function
 import pipeline_draw_graph
 
 expected_verilog = """
-module test;
+module test
+(
+);
+
   reg CLK;
   reg RST;
   reg [32-1:0] x;
@@ -43,10 +46,9 @@ module test;
   initial begin
     CLK = 0;
     forever begin
-      #5 CLK = (!CLK);
+      #5 CLK = !CLK;
     end
   end
-
 
   initial begin
     RST = 0;
@@ -91,10 +93,10 @@ module test;
         xfsm_1: begin
           vx <= 1;
           if(rx) begin
-            x <= (x + 1);
+            x <= x + 1;
           end 
           if(rx) begin
-            _tmp_0 <= (_tmp_0 + 1);
+            _tmp_0 <= _tmp_0 + 1;
           end 
           if((_tmp_0 == 10) && rx) begin
             xfsm <= xfsm_2;
@@ -127,10 +129,10 @@ module test;
         yfsm_1: begin
           vy <= 1;
           if(ry) begin
-            y <= (y + 2);
+            y <= y + 2;
           end 
           if(ry) begin
-            _tmp_1 <= (_tmp_1 + 1);
+            _tmp_1 <= _tmp_1 + 1;
           end 
           if((_tmp_1 == 10) && ry) begin
             yfsm <= yfsm_2;
@@ -228,7 +230,6 @@ module test;
     end
   end
 
-
   always @(posedge CLK) begin
     if(reset_done) begin
       if(vx && rx) begin
@@ -260,8 +261,8 @@ module blinkled
   input rz
 );
 
-  assign rx = (_df_ready_0 || (!_df_valid_0));
-  assign ry = (_df_ready_0 || (!_df_valid_0));
+  assign rx = (_df_ready_0 || !_df_valid_0) && (vx && vy);
+  assign ry = (_df_ready_0 || !_df_valid_0) && (vx && vy);
   reg [32-1:0] _df_data_0;
   reg _df_valid_0;
   wire _df_ready_0;
@@ -274,11 +275,14 @@ module blinkled
       _df_data_0 <= 0;
       _df_valid_0 <= 0;
     end else begin
-      if((((vx && rx) && (vy && ry)) && (_df_ready_0 || (!_df_valid_0)))) begin
-        _df_data_0 <= (x + y);
+      if(vx && vy && (rx && ry) && (_df_ready_0 || !_df_valid_0)) begin
+        _df_data_0 <= x + y;
       end 
-      if((_df_ready_0 || (!_df_valid_0))) begin
-        _df_valid_0 <= ((vx && rx) && (vy && ry));
+      if(_df_valid_0 && _df_ready_0) begin
+        _df_valid_0 <= 0;
+      end 
+      if(rx && ry && (_df_ready_0 || !_df_valid_0)) begin
+        _df_valid_0 <= vx && vy;
       end 
     end
   end

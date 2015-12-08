@@ -104,6 +104,16 @@ def mkTest(numports=8):
     xfsm = FSM(m, 'xfsm', clk, rst)
     xfsm.add(vx(0))
     xfsm.goto_next(cond=reset_done)
+    for _ in range(10):
+        xfsm.goto_next()
+    xfsm.add(vx(1))
+    xfsm.goto_next()
+    xfsm.add(x.inc(), cond=rx)
+    xfsm.add(x_count.inc(), cond=rx)
+    xfsm.goto_next(cond=AndList(x_count==5, rx))
+    xfsm.add(vx(0))
+    for _ in range(10):
+        xfsm.goto_next()
     xfsm.add(vx(1))
     xfsm.add(x.inc(), cond=rx)
     xfsm.add(x_count.inc(), cond=rx)

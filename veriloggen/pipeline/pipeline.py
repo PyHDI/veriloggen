@@ -44,11 +44,13 @@ class Pipeline(vtypes.VeriloggenNode):
         tmp_data, tmp_valid, tmp_ready = self._make_tmp(raw_data, raw_valid, raw_ready,
                                                         width, initval)
         next_stage_id = stage_id + 1 if stage_id is not None else None
+        
         ret = _PipelineVariable(self, next_stage_id, tmp_data, tmp_valid, tmp_ready, data)
+        
         self.vars.append(ret)
         if isinstance(preg, _PipelineVariable):
             preg._add_preg(next_stage_id, ret)
-
+            
         if next_stage_id is not None and next_stage_id > self.max_stage_id:
             self.max_stage_id = next_stage_id
             
@@ -142,11 +144,15 @@ class Pipeline(vtypes.VeriloggenNode):
         tmp_data, tmp_valid, tmp_ready = self._make_tmp(raw_data, raw_valid, raw_ready,
                                                         width, initval, acc_ops=ops)
         next_stage_id = stage_id + 1 if stage_id is not None else None
+        
         ret = _PipelineVariable(self, next_stage_id, tmp_data, tmp_valid, tmp_ready,
                                 data, ops, resetcond, initval, oplabel)
+        
         if resetcond is not None:
             ret.reset(resetcond, initval)
+            
         self.vars.append(ret)
+        
         return ret
     
     #---------------------------------------------------------------------------
@@ -176,11 +182,21 @@ class Pipeline(vtypes.VeriloggenNode):
 
         self.tmp_count += 1
 
+        # all ready
+        all_ready = None
+        for r in ready:
+            if not r: continue
+            if all_ready is None:
+                all_ready = r
+            else:
+                all_ready = vtypes.AndList(all_ready, r)
+                
         # data
         data_cond_vars = []
         if valid is not None:
             data_cond_vars.append(valid)
         if tmp_ready is not None:
+            data_cond_vars.append(all_ready)
             if tmp_valid is not None:
                 data_cond_vars.append(vtypes.OrList(tmp_ready, vtypes.Not(tmp_valid)))
             else:
@@ -211,6 +227,7 @@ class Pipeline(vtypes.VeriloggenNode):
         # valid
         valid_cond_vars = []
         if tmp_ready is not None:
+            valid_cond_vars.append(all_ready)
             ordy = vtypes.OrList(tmp_ready, vtypes.Not(tmp_valid))
             valid_cond_vars.append(ordy)
 
@@ -222,11 +239,13 @@ class Pipeline(vtypes.VeriloggenNode):
             valid_cond = vtypes.AndList(*valid_cond_vars)
 
         if tmp_valid is not None:
+            if tmp_ready is not None:
+                self.seq.add( tmp_valid(0), cond=vtypes.AndList(tmp_valid, tmp_ready) )
             self.seq.add( tmp_valid(valid), cond=valid_cond )
 
         # ready
         if tmp_ready is not None:
-            ordy = vtypes.OrList(tmp_ready, vtypes.Not(tmp_valid))
+            ordy = vtypes.AndList(vtypes.OrList(tmp_ready, vtypes.Not(tmp_valid)), valid)
             for r in ready:
                 if not r: continue
                 if len(r.subst) == 0:
@@ -237,95 +256,27 @@ class Pipeline(vtypes.VeriloggenNode):
                     r.subst[0].overwrite_right( vtypes.AndList(r.subst[0].right, ordy ) )
         
         return tmp_data, tmp_valid, tmp_ready
-    
+   
     #---------------------------------------------------------------------------
-    def _make_prev(self, data, valid, ready, root_valid=None, width=None, initval=0):
+    def _make_prev(self, data, valid, ready, width=None, initval=0):
         tmp_data = self._add_reg('data', self.tmp_count, width=width, initval=initval)
+        tmp_valid = valid
+        tmp_ready = ready
         
-        if valid is not None:
-            tmp_valid = self._add_reg('valid', self.tmp_count, initval=0)
-        else:
-            tmp_valid = None
-            
-        if ready is not None:
-            tmp_ready = self._add_wire('ready', self.tmp_count)
-        else:
-            tmp_ready = None
-
-        if valid or ready:
-            next_valid = self._add_wire('nvalid', self.tmp_count)
-        else:
-            next_valid = None
-            
         self.tmp_count += 1
 
-        # data
-        data_cond_vars = []
-        if valid is not None:
-            data_cond_vars.append(valid)
-        if tmp_ready is not None:
-            if tmp_valid is not None:
-                data_cond_vars.append(vtypes.OrList(tmp_ready, vtypes.Not(tmp_valid)))
-            else:
-                data_cond_vars.append(tmp_ready)
-
-        if len(data_cond_vars) == 0:
-            data_cond = None
-        elif len(data_cond_vars) == 1:
-            data_cond = data_cond_vars[0]
+        if valid is not None and ready is not None:
+            data_cond = vtypes.AndList(valid, ready)
+        elif valid is not None:
+            data_cond = valid
+        elif ready is not None:
+            data_cond = ready
         else:
-            data_cond = vtypes.AndList(*data_cond_vars)
+            data_cond = None
         
         self.seq.add( tmp_data(data), cond=data_cond )
 
-        # valid
-        valid_cond_vars = []
-        if valid is not None:
-            valid_cond_vars.append(valid)
-        if tmp_ready is not None:
-            ordy = vtypes.OrList(tmp_ready, vtypes.Not(tmp_valid))
-            valid_cond_vars.append(ordy)
-
-        if len(valid_cond_vars) == 0:
-            valid_cond = None
-        elif len(valid_cond_vars) == 1:
-            valid_cond = valid_cond_vars[0]
-        else:
-            valid_cond = vtypes.AndList(*valid_cond_vars)
-        
-        if tmp_valid is not None:
-            self.seq.add( tmp_valid(valid), cond=valid_cond )
-
-        # next_valid
-        next_valid_cond_vars = []
-        if root_valid is not None:
-            next_valid_cond_vars.append(root_valid)
-        if tmp_valid is not None:
-            next_valid_cond_vars.append(tmp_valid)
-        if tmp_ready is not None:
-            next_valid_cond_vars.append(tmp_ready)
-            
-        if len(next_valid_cond_vars) == 0:
-            next_valid_cond = None
-        elif len(next_valid_cond_vars) == 1:
-            next_valid_cond = next_valid_cond_vars[0]
-        else:
-            next_valid_cond = vtypes.AndList(*next_valid_cond_vars)
-        
-        if next_valid is not None:
-            self.m.Assign( next_valid(next_valid_cond) )
-            
-        # ready
-        if tmp_ready is not None:
-            ordy = vtypes.OrList(tmp_ready, vtypes.Not(tmp_valid))
-            if len(ready.subst) == 0:
-                self.m.Assign( ready(ordy) )
-            elif isinstance(ready.subst[0].right, vtypes.Int) and (ready.subst[0].right.value == 1):
-                ready.subst[0].overwrite_right( ordy )
-            else:
-                ready.subst[0].overwrite_right( vtypes.AndList(ready.subst[0].right, ordy ) )
-        
-        return tmp_data, next_valid, tmp_ready
+        return tmp_data, tmp_valid, tmp_ready
     
     #---------------------------------------------------------------------------
     def __call__(self, data, initval=0, width=None):
@@ -363,6 +314,7 @@ class _PipelineVariable(_PipelineNumeric):
         self.oplabel= oplabel
         self.prev_dict = {}
         self.preg_dict = {}
+
         if self.ready is not None:
             ready = vtypes.Int(1)
             self.df.m.Assign( self.ready(ready) )
@@ -383,9 +335,9 @@ class _PipelineVariable(_PipelineNumeric):
             if (i+1) in self.prev_dict:
                 p = self.prev_dict[i+1]
                 continue
-            
+
             tmp_data, tmp_valid, tmp_ready = self.df._make_prev(p.data, p.valid, p.ready,
-                                                                self.valid, width, initval)
+                                                                width, initval)
             p = _PipelineVariable(self.df, p.stage_id, tmp_data, tmp_valid, tmp_ready, p)
             self.df.vars.append(p)
             self.prev_dict[i+1] = p
@@ -452,7 +404,7 @@ class _PipelineVariable(_PipelineNumeric):
         if stage_id == self.stage_id:
             return self
         return self.preg_dict[stage_id]
-    
+
 #-------------------------------------------------------------------------------
 class _PipelineVisitor(object):
     def generic_visit(self, node):
@@ -589,7 +541,8 @@ class DataVisitor(_PipelineVisitor):
     
     def visit__PipelineVariable(self, node):
         ready = [] if node.ready is None else [ node.ready ]
-        valid = self.make_valid(node.valid, node.ready)
+        #valid = self.make_valid(node.valid, node.ready)
+        valid = node.valid
         return (node.stage_id, node.data, valid, ready )
 
     def visit__Variable(self, node):

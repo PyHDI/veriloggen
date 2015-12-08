@@ -106,6 +106,7 @@ def mkTest(numports=8):
         fsm.add(v(0))
         fsm.goto_next(cond=reset_done)
         fsm.add(v(1))
+        fsm.goto_next()
         fsm.add(d(d + i + 1), cond=r)
         fsm.add(count.inc(), cond=r)
         fsm.goto_next(cond=AndList(count==10, r))
