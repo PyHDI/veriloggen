@@ -4,10 +4,12 @@ import os
 import sys
 import collections
 import copy
+import re
 
 import veriloggen.core.vtypes as vtypes
 import veriloggen.core.function as function
 import veriloggen.core.task as task
+import veriloggen.core.width_visitor as width_visitor
 
 #-------------------------------------------------------------------------------
 class Module(vtypes.VeriloggenNode):
@@ -379,9 +381,14 @@ class Module(vtypes.VeriloggenNode):
         self.items.append(t)
         if isinstance(module, StubModule):
             return None
-        if self.find_module(module.name):
-            raise ValueError("Module '%s' is already defined." % module.name)
-        self.submodule[module.name] = module
+        #if self.find_module(module.name):
+        #    raise ValueError("Module '%s' is already defined." % module.name)
+        #self.submodule[module.name] = module
+        if self.find_module(module.name) is not None:
+            if self.submodule[module.name] != module:
+                raise ValueError("Module '%s' is already defined." % module.name)
+        else:
+            self.submodule[module.name] = module
         return t
     
     #---------------------------------------------------------------------------
@@ -392,7 +399,7 @@ class Module(vtypes.VeriloggenNode):
         for vname, var in self.variable.items():
             r = var.reset()
             if r: ret.append(r)
-        return tuple(ret)
+        return ret
 
     #---------------------------------------------------------------------------
     # User interface for accessing internal information
@@ -401,7 +408,7 @@ class Module(vtypes.VeriloggenNode):
         return self.global_constant
     
     def get_localparams(self):
-        return self.constant
+        return self.local_constant
     
     def get_ports(self):
         return self.io_variable
@@ -410,68 +417,141 @@ class Module(vtypes.VeriloggenNode):
         return self.variable
     
     #---------------------------------------------------------------------------
-    def copy_params(self, src):
+    def copy_params(self, src, prefix=None, postfix=None, exclude=None):
+        if prefix is None: prefix = ''
+        if postfix is None: postfix = ''
+        if exclude is None: exclude = ()
+        if isinstance(exclude, str): exclude = [ exclude ] 
+        visitor = width_visitor.WidthVisitor(prefix, postfix)
         ret = collections.OrderedDict()
         for key, obj in src.global_constant.items():
+            skip = False
+            for ex in exclude:
+                if re.match(ex, key): skip = True
+            if skip: continue
             copy_obj = copy.deepcopy(obj)
+            copy_obj.name = ''.join([prefix, copy_obj.name, postfix])
+            copy_obj.width = visitor.visit(copy_obj.width)
             self.add_object( copy_obj )
-            ret[key] = copy_obj
+            ret[copy_obj.name] = copy_obj
         return ret
     
-    def copy_localparams(self, src):
+    def copy_localparams(self, src, prefix=None, postfix=None, exclude=None):
+        if prefix is None: prefix = ''
+        if postfix is None: postfix = ''
+        if exclude is None: exclude = ()
+        if isinstance(exclude, str): exclude = [ exclude ] 
+        visitor = width_visitor.WidthVisitor(prefix, postfix)
         ret = collections.OrderedDict()
         for key, obj in src.constant.items():
+            skip = False
+            for ex in exclude:
+                if re.match(ex, key): skip = True
+            if skip: continue
             copy_obj = copy.deepcopy(obj)
+            copy_obj.name = ''.join([prefix, copy_obj.name, postfix])
+            copy_obj.width = visitor.visit(copy_obj.width)
             self.add_object( copy_obj )
-            ret[key] = copy_obj
+            ret[copy_obj.name] = copy_obj
         return ret
     
-    def copy_ports(self, src):
+    def copy_ports(self, src, prefix=None, postfix=None, exclude=None):
+        if prefix is None: prefix = ''
+        if postfix is None: postfix = ''
+        if exclude is None: exclude = ()
+        if isinstance(exclude, str): exclude = [ exclude ] 
+        visitor = width_visitor.WidthVisitor(prefix, postfix)
         ret = collections.OrderedDict()
         for key, obj in src.io_variable.items():
+            skip = False
+            for ex in exclude:
+                if re.match(ex, key): skip = True
+            if skip: continue
             copy_obj = copy.deepcopy(obj)
+            copy_obj.name = ''.join([prefix, copy_obj.name, postfix])
+            copy_obj.width = visitor.visit(copy_obj.width)
             self.add_object( copy_obj )
-            ret[key] = copy_obj
+            ret[copy_obj.name] = copy_obj
         return ret
 
-    def copy_vars(self, src):
+    def copy_vars(self, src, prefix=None, postfix=None, exclude=None):
+        if prefix is None: prefix = ''
+        if postfix is None: postfix = ''
+        if exclude is None: exclude = ()
+        if isinstance(exclude, str): exclude = [ exclude ] 
+        visitor = width_visitor.WidthVisitor(prefix, postfix)
         ret = collections.OrderedDict()
         for key, obj in src.variable.items():
+            skip = False
+            for ex in exclude:
+                if re.match(ex, key): skip = True
+            if skip: continue
             copy_obj = copy.deepcopy(obj)
+            copy_obj.name = ''.join([prefix, copy_obj.name, postfix])
+            copy_obj.width = visitor.visit(copy_obj.width)
             self.add_object( copy_obj )
-            ret[key] = copy_obj
+            ret[copy_obj.name] = copy_obj
         return ret
 
-    def copy_sim_ports(self, src):
+    def copy_sim_ports(self, src, prefix=None, postfix=None, exclude=None):
+        if prefix is None: prefix = ''
+        if postfix is None: postfix = ''
+        if exclude is None: exclude = ()
+        if isinstance(exclude, str): exclude = [ exclude ] 
+        visitor = width_visitor.WidthVisitor(prefix, postfix)
         ret = collections.OrderedDict()
         for key, obj in src.io_variable.items():
+            skip = False
+            for ex in exclude:
+                if re.match(ex, key): skip = True
+            if skip: continue
             copy_obj = self.get_opposite_variable(obj)(key, copy.deepcopy(obj.width))
+            copy_obj.name = ''.join([prefix, copy_obj.name, postfix])
+            copy_obj.width = visitor.visit(copy_obj.width)
             self.add_object( copy_obj )
-            ret[key] = copy_obj
+            ret[copy_obj.name] = copy_obj
         return ret
 
     #---------------------------------------------------------------------------
-    def connect_params(self, targ, strict=False):
+    def connect_params(self, targ, prefix=None, postfix=None, exclude=None, strict=False):
+        if prefix is None: prefix = ''
+        if postfix is None: postfix = ''
+        if exclude is None: exclude = ()
+        if isinstance(exclude, str): exclude = [ exclude ] 
         ret = []
         for key, obj in targ.global_constant.items():
-            if strict and (key not in self.global_constant) and (key not in self.constant):
+            skip = False
+            for ex in exclude:
+                if re.match(ex, key): skip = True
+            if skip: continue
+            my_key = ''.join([prefix, key, postfix])
+            if strict and (my_key not in self.global_constant) and (my_key not in self.local_constant):
                 raise IndexError("No such constant '%s' in module '%s'" % (key, self.name))
-            if key in self.global_constant:
-                ret.append( (key, self.global_constant[key]) )
-            elif key in self.constant:
-                ret.append( (key, self.constant[key]) )
-        return tuple(ret)
+            if my_key in self.global_constant:
+                ret.append( (key, self.global_constant[my_key]) )
+            elif my_key in self.local_constant:
+                ret.append( (key, self.local_constant[my_key]) )
+        return ret
     
-    def connect_ports(self, targ, strict=False):
+    def connect_ports(self, targ, prefix=None, postfix=None, exclude=None, strict=False):
+        if prefix is None: prefix = ''
+        if postfix is None: postfix = ''
+        if exclude is None: exclude = ()
+        if isinstance(exclude, str): exclude = [ exclude ] 
         ret = []
         for key, obj in targ.io_variable.items():
-            if strict and (key not in self.io_variable) and (key not in self.variable):
+            skip = False
+            for ex in exclude:
+                if re.match(ex, key): skip = True
+            if skip: continue
+            my_key = ''.join([prefix, key, postfix])
+            if strict and (my_key not in self.io_variable) and (my_key not in self.variable):
                 raise IndexError("No such IO '%s' in module '%s'" % (key, self.name))
-            if key in self.io_variable:
-                ret.append( (key, self.io_variable[key]) )
-            elif key in self.variable:
-                ret.append( (key, self.variable[key]) )
-        return tuple(ret)
+            if my_key in self.io_variable:
+                ret.append( (key, self.io_variable[my_key]) )
+            elif my_key in self.variable:
+                ret.append( (key, self.variable[my_key]) )
+        return ret
     
     #---------------------------------------------------------------------------
     # User interface for Verilog code generation
