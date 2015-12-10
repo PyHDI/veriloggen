@@ -154,7 +154,7 @@ class FSM(vtypes.VeriloggenNode):
         case = vtypes.Case(self.state)(*body)
         ret.append(case)
 
-        return tuple(ret)
+        return ret
     
     def make_if(self):
         indexes = set(self.body.keys())
@@ -174,7 +174,7 @@ class FSM(vtypes.VeriloggenNode):
 
         ret.extend([ self._get_if_statement(index)
                      for index in sorted(indexes, key=lambda x:x) ])
-        return tuple(ret)
+        return ret
 
     #---------------------------------------------------------------------------
     def make_reset(self, reset):

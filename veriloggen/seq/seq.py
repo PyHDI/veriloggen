@@ -120,7 +120,7 @@ class Seq(vtypes.VeriloggenNode):
             ret.extend(body)
             
         ret.extend(self.body)
-        return tuple(ret)
+        return ret
     
     #---------------------------------------------------------------------------
     def make_reset(self):
