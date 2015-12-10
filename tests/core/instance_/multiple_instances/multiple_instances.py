@@ -55,7 +55,6 @@ def mkTop():
     m.Instance(led, 'inst_blinkled_a',
                m.connect_params(led, prefix='A_'),
                m.connect_ports(led, prefix='') + m.connect_ports(led, prefix='A_'))
-               
     
     m.Instance(led, 'inst_blinkled_b',
                m.connect_params(led, prefix='B_'),
