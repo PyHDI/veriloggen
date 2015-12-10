@@ -9,7 +9,7 @@ import re
 import veriloggen.core.vtypes as vtypes
 import veriloggen.core.function as function
 import veriloggen.core.task as task
-import veriloggen.core.width_visitor as width_visitor
+import veriloggen.core.rename_visitor as rename_visitor
 
 #-------------------------------------------------------------------------------
 class Module(vtypes.VeriloggenNode):
@@ -422,7 +422,7 @@ class Module(vtypes.VeriloggenNode):
         if postfix is None: postfix = ''
         if exclude is None: exclude = ()
         if isinstance(exclude, str): exclude = [ exclude ] 
-        visitor = width_visitor.WidthVisitor(prefix, postfix)
+        visitor = rename_visitor.RenameVisitor(prefix, postfix)
         ret = collections.OrderedDict()
         for key, obj in src.global_constant.items():
             skip = False
@@ -441,7 +441,7 @@ class Module(vtypes.VeriloggenNode):
         if postfix is None: postfix = ''
         if exclude is None: exclude = ()
         if isinstance(exclude, str): exclude = [ exclude ] 
-        visitor = width_visitor.WidthVisitor(prefix, postfix)
+        visitor = rename_visitor.RenameVisitor(prefix, postfix)
         ret = collections.OrderedDict()
         for key, obj in src.constant.items():
             skip = False
@@ -460,7 +460,7 @@ class Module(vtypes.VeriloggenNode):
         if postfix is None: postfix = ''
         if exclude is None: exclude = ()
         if isinstance(exclude, str): exclude = [ exclude ] 
-        visitor = width_visitor.WidthVisitor(prefix, postfix)
+        visitor = rename_visitor.RenameVisitor(prefix, postfix)
         ret = collections.OrderedDict()
         for key, obj in src.io_variable.items():
             skip = False
@@ -479,7 +479,7 @@ class Module(vtypes.VeriloggenNode):
         if postfix is None: postfix = ''
         if exclude is None: exclude = ()
         if isinstance(exclude, str): exclude = [ exclude ] 
-        visitor = width_visitor.WidthVisitor(prefix, postfix)
+        visitor = rename_visitor.RenameVisitor(prefix, postfix)
         ret = collections.OrderedDict()
         for key, obj in src.variable.items():
             skip = False
@@ -498,7 +498,7 @@ class Module(vtypes.VeriloggenNode):
         if postfix is None: postfix = ''
         if exclude is None: exclude = ()
         if isinstance(exclude, str): exclude = [ exclude ] 
-        visitor = width_visitor.WidthVisitor(prefix, postfix)
+        visitor = rename_visitor.RenameVisitor(prefix, postfix)
         ret = collections.OrderedDict()
         for key, obj in src.io_variable.items():
             skip = False

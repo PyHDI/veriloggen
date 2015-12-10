@@ -7,7 +7,7 @@ import copy
 
 import veriloggen.core.vtypes as vtypes
 
-class WidthVisitor(object):
+class RenameVisitor(object):
     def __init__(self, prefix=None, postfix=None):
         self.prefix = prefix if prefix is not None else ''
         self.postfix = postfix if postfix is not None else ''
@@ -26,6 +26,27 @@ class WidthVisitor(object):
         
         visitor = getattr(self, 'visit_' + node.__class__.__name__, self.generic_visit)
         return visitor(node)
+
+    def visit_Int(self, node):
+        return node
+        
+    def visit_Float(self, node):
+        return node
+    
+    def visit_Str(self, node):
+        return node
+    
+    def visit_bool(self, node):
+        return node
+    
+    def visit_int(self, node):
+        return node
+
+    def visit_str(self, node):
+        return node
+
+    def visit_float(self, node):
+        return node
 
     def visit__Variable(self, node):
         ret = copy.deepcopy(node)
@@ -51,6 +72,12 @@ class WidthVisitor(object):
         var = self.visit(node.var)
         times = self.visit(node.times)
         return vtypes.Repeat(var, times)
+
+    def visit_Cond(self, node):
+        cond = self.visit(node.condition)
+        true_value = self.visit(node.true_value)
+        false_value = self.visit(node.false_value)
+        return vtype.Cond(cond, true_value, false_value)
     
     def visit__BinaryOperator(self, node):
         op = type(node)
