@@ -381,9 +381,6 @@ class Module(vtypes.VeriloggenNode):
         self.items.append(t)
         if isinstance(module, StubModule):
             return None
-        #if self.find_module(module.name):
-        #    raise ValueError("Module '%s' is already defined." % module.name)
-        #self.submodule[module.name] = module
         if self.find_module(module.name) is not None:
             if self.submodule[module.name] != module:
                 raise ValueError("Module '%s' is already defined." % module.name)
