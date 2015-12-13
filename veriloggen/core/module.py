@@ -81,8 +81,7 @@ class Module(vtypes.VeriloggenNode):
         return t
     
     def TmpWire(self, width=None, length=None, signed=False, value=None):
-        name = '_'.join([self.tmp_prefix, str(self.tmp_count)])
-        self.tmp_count += 1
+        name = '_'.join([self.tmp_prefix, str(self.get_tmp())])
         return self.Wire(name, width, length, signed, value)
 
     def Reg(self, name, width=None, length=None, signed=False, value=None, initval=None):
@@ -94,8 +93,7 @@ class Module(vtypes.VeriloggenNode):
         return t
     
     def TmpReg(self, width=None, length=None, signed=False, value=None, initval=None):
-        name = '_'.join([self.tmp_prefix, str(self.tmp_count)])
-        self.tmp_count += 1
+        name = '_'.join([self.tmp_prefix, str(self.get_tmp())])
         return self.Reg(name, width, length, signed, value, initval)
 
     def Integer(self, name, width=None, length=None, signed=False, value=None, initval=None):
@@ -107,8 +105,7 @@ class Module(vtypes.VeriloggenNode):
         return t
     
     def TmpInteger(self, width=None, length=None, signed=False, value=None, initval=None):
-        name = '_'.join([self.tmp_prefix, str(self.tmp_count)])
-        self.tmp_count += 1
+        name = '_'.join([self.tmp_prefix, str(self.get_tmp())])
         return self.Integer(name, width, length, signed, value, initval)
 
     def Real(self, name, width=None, length=None, signed=False, value=None, initval=None):
@@ -120,8 +117,7 @@ class Module(vtypes.VeriloggenNode):
         return t
     
     def TmpReal(self, width=None, length=None, signed=False, value=None, initval=None):
-        name = '_'.join([self.tmp_prefix, str(self.tmp_count)])
-        self.tmp_count += 1
+        name = '_'.join([self.tmp_prefix, str(self.get_tmp())])
         return self.Real(name, width, length, signed, value, initval)
 
     def Genvar(self, name, width=None, length=None, signed=False, value=None):
@@ -133,8 +129,7 @@ class Module(vtypes.VeriloggenNode):
         return t
     
     def TmpGenvar(self, width=None, length=None, signed=False, value=None):
-        name = '_'.join([self.tmp_prefix, str(self.tmp_count)])
-        self.tmp_count += 1
+        name = '_'.join([self.tmp_prefix, str(self.get_tmp())])
         return self.Genvar(name, width, length, signed, value)
 
     def Parameter(self, name, value, width=None, signed=False, length=None):
@@ -154,8 +149,7 @@ class Module(vtypes.VeriloggenNode):
         return t
 
     def TmpLocalparam(self, value, width=None, signed=False, length=None):
-        name = '_'.join([self.tmp_prefix, str(self.tmp_count)])
-        self.tmp_count += 1
+        name = '_'.join([self.tmp_prefix, str(self.get_tmp())])
         return self.Localparam(name, value, width, signed, length)
 
     #---------------------------------------------------------------------------
@@ -668,6 +662,12 @@ class Module(vtypes.VeriloggenNode):
         if name in self.generate: return self.generate[name]
         return vtypes.AnyType(name)
 
+    #---------------------------------------------------------------------------
+    def get_tmp(self):
+        ret = self.tmp_count
+        self.tmp_count += 1
+        return ret
+    
     #---------------------------------------------------------------------------
     def is_input(self, name):
         if name not in self.io_variable: return False
