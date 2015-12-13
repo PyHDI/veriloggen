@@ -986,3 +986,6 @@ class Delay(VeriloggenNode):
 class SingleStatement(VeriloggenNode):
     def __init__(self, statement):
         self.statement = statement
+        
+#-------------------------------------------------------------------------------
+numerical_types = ( _Numeric, int, bool, float, str )

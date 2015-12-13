@@ -74,7 +74,7 @@ class Module(vtypes.VeriloggenNode):
     def Wire(self, name, width=None, length=None, signed=False, value=None):
         t = vtypes.Wire(name, width, length, signed, value)
         if not isinstance(self.find_identifier(name),
-                          (vtypes.AnyType, vtypes.Input, vtypes.Output)):
+                          (vtypes.AnyType, vtypes.Input, vtypes.Output)) or self.is_reg(name):
             raise ValueError("Object '%s' is already defined." % name)
         self.variable[name] = t
         self.items.append(t)
@@ -652,10 +652,10 @@ class Module(vtypes.VeriloggenNode):
             
     #---------------------------------------------------------------------------
     def find_identifier(self, name):
-        if name in self.variable: return self.variable[name]
         if name in self.io_variable: return self.io_variable[name]
-        if name in self.local_constant: return self.local_constant[name]
+        if name in self.variable: return self.variable[name]
         if name in self.global_constant: return self.global_constant[name]
+        if name in self.local_constant: return self.local_constant[name]
         if name in self.function: return self.function[name]
         if name in self.task: return self.task[name]
         if name in self.instance: return self.instance[name]
@@ -779,23 +779,58 @@ class Instance(vtypes.VeriloggenNode):
         self._type_check_ports(ports)
         self.module = module
         self.instname = instname
+        
         if not params:
             self.params = ()
-        elif isinstance(params, dict):
+        elif isinstance(params, dict): # named
             self.params = [ (k, v) for k, v in params.items() ]
-        elif isinstance(params[0], (tuple, list)):
+        elif isinstance(params[0], (tuple, list)): # named
+            for param in params:
+                if not isinstance(param, (tuple, list)) or len(param) != 2:
+                    raise ValueError("Illegal parameter argument")
             self.params = params
-        else:
-            self.params = [ (None, p) for p in params ]
+        else: # noname
+            for param in params:
+                if not isinstance(param, vtypes.numerical_types):
+                    raise ValueError("Illegal parameter argument")
+            if not isinstance(module, Module) or isinstance(module, StubModule):
+                self.params = [ (None, p) for p in params ]
+            else:
+                self.params = [ (v.name, p) for v, p in zip(module.global_constant.values(), params) ]
+
+        if isinstance(module, Module) and not isinstance(module, StubModule):
+            for name, port in self.params:
+                if name is None: continue
+                if not isinstance(module.find_identifier(name), vtypes.Parameter):
+                    raise ValueError("No such parameter '%s' in module '%s'" %
+                                     (name, module.name))
+            
         if not ports:
             self.ports = ()
-        elif isinstance(ports, dict):
+        elif isinstance(ports, dict): # named
             self.ports = [ (k, v) for k, v in ports.items() ]
-        elif isinstance(ports[0], (tuple, list)):
+        elif isinstance(ports[0], (tuple, list)): # named
+            for port in ports:
+                if not isinstance(port, (tuple, list)) or len(port) != 2:
+                    raise ValueError("Illegal port argument")
             self.ports = ports
-        else:
-            self.ports = [ (None, p) for p in ports ]
+        else: # noname
+            for port in ports:
+                if port is not None and not isinstance(port, vtypes.numerical_types):
+                    raise ValueError("Illegal port argument")
+            if not isinstance(module, Module) or isinstance(module, StubModule):
+                self.ports = [ (None, p) for p in ports ]
+            else:
+                self.ports = [ (v.name, p) for v, p in zip(module.io_variable.values(), ports) ]
 
+        if isinstance(module, Module) and not isinstance(module, StubModule):
+            for name, port in self.ports:
+                if name is None: continue
+                if not isinstance(module.find_identifier(name),
+                                  (vtypes.Input, vtypes.Output, vtypes.Inout)):
+                    raise ValueError("No such port '%s' in module '%s'" %
+                                     (name, module.name))
+            
     def _type_check_module(self, module):
         if not isinstance(module, (Module, StubModule)):
             raise TypeError("module of Instance must be Module or StubModule, not %s" %

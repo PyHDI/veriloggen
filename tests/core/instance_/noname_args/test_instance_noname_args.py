@@ -14,13 +14,13 @@ module top #
   );
   blinkled #
   (
-   WIDTH
+   .WIDTH(WIDTH)
   )
   inst_blinkled
   (
-   CLK,
-   RST,
-   LED
+   .CLK(CLK),
+   .RST(RST),
+   .LED(LED)
   );
 endmodule
 
