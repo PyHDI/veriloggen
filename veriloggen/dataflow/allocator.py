@@ -9,7 +9,8 @@ class Allocator(_Visitor):
         self.custom_methods = custom_methods
     
     def allocate(self, m, seq, nodes):
-        for node in sorted(nodes, key=lambda x:0 if x.start_stage is None else x.start_stage):
+        for node in sorted(nodes, key=lambda x:(-1, x.object_id) if x.start_stage is None else
+                           (x.start_stage, x.object_id) ):
             self.implement(m, seq, node)
 
     def implement(self, m, seq, node):

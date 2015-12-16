@@ -3,6 +3,7 @@ from __future__ import print_function
 
 from collections import OrderedDict
 import veriloggen.core.vtypes as vtypes
+from . import template
 
 def max(*vars):
     m = None
@@ -42,12 +43,21 @@ def to_constant(obj):
     return obj
 
 #-------------------------------------------------------------------------------
-class _Node(object): pass
+# Object ID counter for object sorting key
+global_object_counter = 0
+
+#-------------------------------------------------------------------------------
+class _Node(object):
+    def __init__(self):
+        global global_object_counter
+        self.object_id = global_object_counter
+        global_object_counter += 1
 
 #-------------------------------------------------------------------------------
 class _Numeric(_Node):
     latency = 0
     def __init__(self):
+        _Node.__init__(self)
         self.output_data = None
         self.output_valid = None
         self.output_ready = None
@@ -268,17 +278,17 @@ class _BinaryOperator(_Operator):
         all_valid = vtypes.AndList(lvalid, rvalid)
         all_ready = vtypes.AndList(lready, rready)
 
-        ack = vtypes.AndList(valid, ready)
         accept = vtypes.OrList(ready, vtypes.Not(valid))
 
         valid_cond = vtypes.AndList(accept, all_ready)
+        valid_reset_cond = vtypes.AndList(valid, ready)
         data_cond = vtypes.AndList(valid_cond, all_valid)
         ready_cond = vtypes.AndList(accept, all_valid)
         
         op = getattr(vtypes, self.__class__.__name__)
 
         seq( data(op(ldata, rdata)), cond=data_cond )
-        seq( valid(0), cond=ack )
+        seq( valid(0), cond=valid_reset_cond )
         seq( valid(all_valid), cond=valid_cond )
         connect_ready(m, lready, ready_cond)
         connect_ready(m, rready, ready_cond)
@@ -316,17 +326,17 @@ class _UnaryOperator(_Operator):
         all_valid = rvalid
         all_ready = rready
 
-        ack = vtypes.AndList(valid, ready)
         accept = vtypes.OrList(ready, vtypes.Not(valid))
 
         valid_cond = vtypes.AndList(accept, all_ready)
+        valid_reset_cond = vtypes.AndList(valid, ready)
         data_cond = vtypes.AndList(valid_cond, all_valid)
         ready_cond = vtypes.AndList(accept, all_valid)
         
         op = getattr(vtypes, self.__class__.__name__)
         
         seq( data(op(rdata)), cond=data_cond )
-        seq( valid(0), cond=ack )
+        seq( valid(0), cond=valid_reset_cond )
         seq( valid(all_valid), cond=valid_cond )
         connect_ready(m, rready, ready_cond)
         
@@ -334,7 +344,63 @@ class _UnaryOperator(_Operator):
             connect_ready(m, ready, vtypes.Int(1))
 
 class Power(_BinaryOperator): latency = 0
-class Times(_BinaryOperator): latency = 6
+class Times(_BinaryOperator):
+    latency = 6
+
+    def _implement(self, m, seq, width=32):
+        if self.latency <= 1:
+            raise ValueError("Latency of '*' operator must be greater than 1")
+
+        tmp = m.get_tmp()
+        data = m.Wire(tmp_data(tmp), width)
+        valid = m.Wire(tmp_valid(tmp))
+        ready = m.Wire(tmp_ready(tmp))
+        self.sig_data = data
+        self.sig_valid = valid
+        self.sig_ready = ready
+        
+        ldata = self.left.sig_data
+        rdata = self.right.sig_data
+        
+        lvalid = self.left.sig_valid
+        rvalid = self.right.sig_valid
+        
+        lready = self.left.sig_ready
+        rready = self.right.sig_ready
+        
+        all_valid = vtypes.AndList(lvalid, rvalid)
+        all_ready = vtypes.AndList(lready, rready)
+
+        accept = vtypes.OrList(ready, vtypes.Not(valid))
+        
+        valid_cond = vtypes.AndList(accept, all_ready)
+        valid_reset_cond = vtypes.AndList(valid, ready)
+        data_cond = vtypes.AndList(valid_cond, all_valid)
+        ready_cond = vtypes.AndList(accept, all_valid)
+        
+        inst = template.multiplier
+        clk = m._clock
+        rst = m._reset
+
+        enable = m.Wire(tmp_data(tmp, prefix='_tmp_enable_') )
+        update = m.Wire(tmp_data(tmp, prefix='_tmp_update_') )
+        m.Assign( enable(data_cond) )
+        m.Assign( update(accept) ) # NOT valid_cond
+        
+        params = [ ('datawidth', width), ('depth', self.latency-1) ]
+        ports = [ ('CLK', clk), ('RST', rst),
+                  ('update', update), ('enable', enable), ('valid', valid),
+                  ('a', ldata), ('b', rdata), ('c', data) ]
+        
+        m.Instance(inst, ''.join(['mult', str(tmp)]), params, ports)
+        
+        connect_ready(m, lready, ready_cond)
+        connect_ready(m, rready, ready_cond)
+        
+        if not self._has_output():
+            connect_ready(m, ready, vtypes.Int(1))
+    
+    
 class Divide(_BinaryOperator): latency = 32
 class Mod(_BinaryOperator): latency = 32
 class Plus(_BinaryOperator): pass
@@ -482,15 +548,15 @@ class _Delay(_UnaryOperator):
         all_valid = rvalid
         all_ready = rready
 
-        ack = vtypes.AndList(valid, ready)
         accept = vtypes.OrList(ready, vtypes.Not(valid))
 
         valid_cond = vtypes.AndList(accept, all_ready)
+        valid_reset_cond = vtypes.AndList(valid, ready)
         data_cond = vtypes.AndList(valid_cond, all_valid)
         ready_cond = vtypes.AndList(accept, all_valid)
         
         seq( data(rdata), cond=data_cond )
-        seq( valid(0), cond=ack )
+        seq( valid(0), cond=valid_reset_cond )
         seq( valid(all_valid), cond=valid_cond )
         connect_ready(m, rready, ready_cond)
         

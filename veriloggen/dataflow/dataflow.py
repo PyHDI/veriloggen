@@ -32,20 +32,24 @@ class Dataflow(object):
         rst = m.Input(reset)
         seq = Seq(m, 'seq', clk, rst)
 
+        # for mult and div
+        m._clock = clk
+        m._reset = rst
+        
         dataflow_nodes = copy.deepcopy(self.nodes)
         
         input_visitor = visitor.InputVisitor()
         input_vars = set()
-        for node in dataflow_nodes:
+        for node in sorted(dataflow_nodes, key=lambda x:x.object_id):
             input_vars.update( input_visitor.visit(node) )
 
         output_visitor = visitor.OutputVisitor()
         output_vars = set()
-        for node in dataflow_nodes:
+        for node in sorted(dataflow_nodes, key=lambda x:x.object_id):
             output_vars.update( output_visitor.visit(node) )
 
         # add input ports
-        for input_var in sorted(input_vars, key=lambda x:x.input_data):
+        for input_var in sorted(input_vars, key=lambda x:x.object_id):
             input_var._implement_input(m, seq)
 
         # schedule
@@ -54,23 +58,23 @@ class Dataflow(object):
         
         # balance output stage depth
         max_stage = None
-        for var in output_vars:
-            max_stage = dtypes.max(max_stage, var.end_stage)
+        for output_var in sorted(output_vars, key=lambda x:x.object_id):
+            max_stage = dtypes.max(max_stage, output_var.end_stage)
 
         output_vars = sched.balance_output(output_vars, max_stage)
 
         # get all vars
         all_visitor = visitor.AllVisitor()
         all_vars = set()
-        for var in output_vars:
-            all_vars.update( all_visitor.visit(var) )
+        for output_var in sorted(output_vars, key=lambda x:x.object_id):
+            all_vars.update( all_visitor.visit(output_var) )
 
         # allocate (implement signals)
         alloc = allocator.Allocator()
         alloc.allocate(m, seq, all_vars)
 
         # add output ports
-        for output_var in sorted(output_vars, key=lambda x:x.output_data):
+        for output_var in sorted(output_vars, key=lambda x:x.object_id):
             output_var._implement_output(m, seq)
 
         # add always statement
@@ -82,10 +86,14 @@ class Dataflow(object):
     # Add a new variable
     #---------------------------------------------------------------------------
     def Constant(self, value):
-        raise NotImplementedError()
+        v = dtypes.Constant(value)
+        self.add(v)
+        return v
     
     def Variable(self, name=None, valid=None, ready=None):
-        raise NotImplementedError()
+        v = dtypes.Variable(name, valid, ready)
+        self.add(v)
+        return v
     
     def Iadd(self, data, init=None, reset=None):
         raise NotImplementedError()
