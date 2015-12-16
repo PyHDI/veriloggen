@@ -25,22 +25,22 @@ module simsort #
 
   sort #
    (
-    WIDTH
+    .WIDTH(WIDTH)
    )
   uut
    (
-    CLK,
-    RST,
-    input_0,
-    input_1,
-    input_2,
-    input_3,
-    output_0,
-    output_1,
-    output_2,
-    output_3,
-    kick,
-    busy
+    .CLK(CLK),
+    .RST(RST),
+    .input_0(input_0),
+    .input_1(input_1),
+    .input_2(input_2),
+    .input_3(input_3),
+    .output_0(output_0),
+    .output_1(output_1),
+    .output_2(output_2),
+    .output_3(output_3),
+    .kick(kick),
+    .busy(busy)
    );
 
   initial begin
