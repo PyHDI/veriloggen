@@ -87,13 +87,18 @@ class _Numeric(_Node):
         if index < 0:
             raise ValueError("index must be greater than 0")
 
-        r = self
+        prev = self
         for i in range(index):
-            r = _Prev(r)
+            r = self._get_previous_value(i + 1)
+            if r is not None:
+                prev = r
+                continue
+            r = _Prev(prev)
             r._set_parent_value(self)
             self._add_previous_value(i + 1, r)
+            prev = r
 
-        return r
+        return prev
         
     #--------------------------------------------------------------------------
     def __hash__(self):

@@ -289,20 +289,19 @@ module main
   reg [32-1:0] _tmp_data_1;
   reg _tmp_valid_1;
   wire _tmp_ready_1;
-  assign xready = (_tmp_ready_1 || !_tmp_valid_1) && (xvalid && xvalid) && ((_tmp_ready_1 || !_tmp_valid_1) && (xvalid && xvalid)) && ((_tmp_ready_4 || !_tmp_valid_4) && xvalid);
-  assign _tmp_ready_1 = (_tmp_ready_5 || !_tmp_valid_5) && (_tmp_valid_1 && _tmp_valid_4);
+  assign xready = (_tmp_ready_1 || !_tmp_valid_1) && (xvalid && xvalid) && ((_tmp_ready_1 || !_tmp_valid_1) && (xvalid && xvalid)) && ((_tmp_ready_3 || !_tmp_valid_3) && xvalid);
+  assign _tmp_ready_1 = (_tmp_ready_4 || !_tmp_valid_4) && (_tmp_valid_1 && _tmp_valid_3);
   reg [32-1:0] _tmp_data_2;
   reg [32-1:0] _tmp_data_3;
+  reg _tmp_valid_3;
+  wire _tmp_ready_3;
+  assign _tmp_ready_3 = (_tmp_ready_4 || !_tmp_valid_4) && (_tmp_valid_1 && _tmp_valid_3);
   reg [32-1:0] _tmp_data_4;
   reg _tmp_valid_4;
   wire _tmp_ready_4;
-  assign _tmp_ready_4 = (_tmp_ready_5 || !_tmp_valid_5) && (_tmp_valid_1 && _tmp_valid_4);
-  reg [32-1:0] _tmp_data_5;
-  reg _tmp_valid_5;
-  wire _tmp_ready_5;
-  assign zdata = _tmp_data_5;
-  assign zvalid = _tmp_valid_5;
-  assign _tmp_ready_5 = zready;
+  assign zdata = _tmp_data_4;
+  assign zvalid = _tmp_valid_4;
+  assign _tmp_ready_4 = zready;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -311,10 +310,9 @@ module main
       _tmp_valid_1 <= 0;
       _tmp_data_2 <= 0;
       _tmp_data_3 <= 0;
+      _tmp_valid_3 <= 0;
       _tmp_data_4 <= 0;
       _tmp_valid_4 <= 0;
-      _tmp_data_5 <= 0;
-      _tmp_valid_5 <= 0;
     end else begin
       if(xvalid && xready) begin
         _tmp_data_0 <= xdata;
@@ -329,28 +327,25 @@ module main
         _tmp_valid_1 <= xvalid && xvalid;
       end 
       if(xvalid && xready) begin
-        _tmp_data_2 <= xdata;
+        _tmp_data_2 <= _tmp_data_0;
       end 
-      if(xvalid && xready) begin
+      if((_tmp_ready_3 || !_tmp_valid_3) && xready && xvalid) begin
         _tmp_data_3 <= _tmp_data_2;
       end 
-      if((_tmp_ready_4 || !_tmp_valid_4) && xready && xvalid) begin
-        _tmp_data_4 <= _tmp_data_3;
+      if(_tmp_valid_3 && _tmp_ready_3) begin
+        _tmp_valid_3 <= 0;
+      end 
+      if((_tmp_ready_3 || !_tmp_valid_3) && xready) begin
+        _tmp_valid_3 <= xvalid;
+      end 
+      if((_tmp_ready_4 || !_tmp_valid_4) && (_tmp_ready_1 && _tmp_ready_3) && (_tmp_valid_1 && _tmp_valid_3)) begin
+        _tmp_data_4 <= _tmp_data_1 + _tmp_data_3;
       end 
       if(_tmp_valid_4 && _tmp_ready_4) begin
         _tmp_valid_4 <= 0;
       end 
-      if((_tmp_ready_4 || !_tmp_valid_4) && xready) begin
-        _tmp_valid_4 <= xvalid;
-      end 
-      if((_tmp_ready_5 || !_tmp_valid_5) && (_tmp_ready_1 && _tmp_ready_4) && (_tmp_valid_1 && _tmp_valid_4)) begin
-        _tmp_data_5 <= _tmp_data_1 + _tmp_data_4;
-      end 
-      if(_tmp_valid_5 && _tmp_ready_5) begin
-        _tmp_valid_5 <= 0;
-      end 
-      if((_tmp_ready_5 || !_tmp_valid_5) && (_tmp_ready_1 && _tmp_ready_4)) begin
-        _tmp_valid_5 <= _tmp_valid_1 && _tmp_valid_4;
+      if((_tmp_ready_4 || !_tmp_valid_4) && (_tmp_ready_1 && _tmp_ready_3)) begin
+        _tmp_valid_4 <= _tmp_valid_1 && _tmp_valid_3;
       end 
     end
   end
