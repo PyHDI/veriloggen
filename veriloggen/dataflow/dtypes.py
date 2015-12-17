@@ -83,6 +83,18 @@ class _Numeric(_Node):
         self.output_valid = valid
         self.output_ready = ready
 
+    def prev(self, index):
+        if index < 0:
+            raise ValueError("index must be greater than 0")
+
+        r = self
+        for i in range(index):
+            r = _Prev(r)
+            r._set_parent_value(self)
+            self._add_previous_value(i + 1, r)
+
+        return r
+        
     #--------------------------------------------------------------------------
     def __hash__(self):
         return id(self)
@@ -242,6 +254,8 @@ class _Numeric(_Node):
 #-------------------------------------------------------------------------------
 class _Operator(_Numeric):
     latency = 1
+    def _implement(self, m, seq, width=32):
+        raise NotImplementedError()
     
 class _BinaryOperator(_Operator):
     def __init__(self, left, right):
@@ -343,10 +357,13 @@ class _UnaryOperator(_Operator):
         if not self._has_output():
             connect_ready(m, ready, vtypes.Int(1))
 
-class Power(_BinaryOperator): latency = 0
+class Power(_BinaryOperator):
+    latency = 0
+    def _implement(self, m, seq, width=32):
+        raise NotImplementedError()
+
 class Times(_BinaryOperator):
     latency = 6
-
     def _implement(self, m, seq, width=32):
         if self.latency <= 1:
             raise ValueError("Latency of '*' operator must be greater than 1")
@@ -401,8 +418,16 @@ class Times(_BinaryOperator):
             connect_ready(m, ready, vtypes.Int(1))
     
     
-class Divide(_BinaryOperator): latency = 32
-class Mod(_BinaryOperator): latency = 32
+class Divide(_BinaryOperator):
+    latency = 32
+    def _implement(self, m, seq, width=32):
+        raise NotImplementedError()
+    
+class Mod(_BinaryOperator):
+    latency = 32
+    def _implement(self, m, seq, width=32):
+        raise NotImplementedError()
+    
 class Plus(_BinaryOperator): pass
 class Minus(_BinaryOperator): pass
 
@@ -562,6 +587,38 @@ class _Delay(_UnaryOperator):
         
         if not self._has_output():
             connect_ready(m, ready, vtypes.Int(1))
+
+#-------------------------------------------------------------------------------
+class _Prev(_UnaryOperator):
+    latency = 0
+    def __init__(self, right):
+        _UnaryOperator.__init__(self, right)
+        # parent value for delayed_value and previous_value
+        self.parent_value = None
+        
+    def _set_parent_value(self, value):
+        self.parent_value = value
+
+    def _get_parent_value(self):
+        return self.parent_value
+        
+    def _implement(self, m, seq, width=32):
+        if self.latency != 0:
+            raise ValueError('This implement() is designed for %d latency' % self.latency)
+        
+        tmp = m.get_tmp()
+        data = m.Reg(tmp_data(tmp), width, initval=0)
+        valid = self.parent_value.sig_valid
+        ready  = self.parent_value.sig_ready
+        self.sig_data = data
+        self.sig_valid = valid
+        self.sig_ready = ready
+        
+        rdata = self.right.sig_data
+
+        data_cond = vtypes.AndList(valid, ready)
+        
+        seq( data(rdata), cond=data_cond )
 
 #-------------------------------------------------------------------------------
 class _Constant(_Numeric):
