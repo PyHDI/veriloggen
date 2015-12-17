@@ -683,11 +683,77 @@ class _Variable(_Numeric):
             
 
 #-------------------------------------------------------------------------------
-class _Accumulator(_Variable):
+class _Accumulator(_UnaryOperator):
     latency = 1
-    def __init__(self, data, init=None, reset=None):
-        _Variable.__init__(self, data=data, valid=None, ready=None)
-        self.init = init
+    ops = ( vtypes.Plus, )
+    
+    def __init__(self, right, initval=None, reset=None):
+        _UnaryOperator.__init__(self, right)
+        self.initval = initval
+        self.reset = reset
+
+    def _implement(self, m, seq, width=32):
+        if self.latency != 1:
+            raise ValueError('This implement() is designed for %d latency' % self.latency)
+        
+        tmp = m.get_tmp()
+        data = m.Reg(tmp_data(tmp), width, initval=0)
+        valid = m.Reg(tmp_valid(tmp), initval=0)
+        ready = m.Wire(tmp_ready(tmp))
+        self.sig_data = data
+        self.sig_valid = valid
+        self.sig_ready = ready
+        
+        rdata = self.right.sig_data
+        
+        rvalid = self.right.sig_valid
+        
+        rready = self.right.sig_ready
+
+        all_valid = rvalid
+        all_ready = rready
+
+        accept = vtypes.OrList(ready, vtypes.Not(valid))
+
+        valid_cond = vtypes.AndList(accept, all_ready)
+        valid_reset_cond = vtypes.AndList(valid, ready)
+        data_cond = vtypes.AndList(valid_cond, all_valid)
+        ready_cond = vtypes.AndList(accept, all_valid)
+
+        value = data
+        for op in self.ops:
+            if issubclass(op, vtypes._UnaryOperator):
+                value = op(value)
+            elif issubclass(op, vtypes._BinaryOperator):
+                value = op(value, rdata)
+                
+        seq( data(value), cond=data_cond )
+        seq( valid(0), cond=valid_reset_cond )
+        seq( valid(all_valid), cond=valid_cond )
+        connect_ready(m, rready, ready_cond)
+        
+        if not self._has_output():
+            connect_ready(m, ready, vtypes.Int(1))
+
+class Iadd(_Accumulator):
+    ops = ( vtypes.Plus, )
+
+class Isub(_Accumulator):
+    ops = ( vtypes.Minus, )
+
+class Imul(_Accumulator):
+    latency = 6
+    ops = ()
+
+class Idiv(_Accumulator):
+    latency = 32
+    op = ()
+
+class Icustom(_Accumulator):
+    def __init__(self, ops, right, initval=None, reset=None):
+        _UnaryOperator.__init__(self, right)
+        self.ops = ops
+        self.initval = initval
         self.reset = reset
 
 #-------------------------------------------------------------------------------
@@ -703,6 +769,7 @@ class Float(_Constant):
 class Str(_Constant):
     pass
 
+#-------------------------------------------------------------------------------
 def Constant(value):
     if isinstance(value, int):
         return Int(value)
@@ -714,22 +781,5 @@ def Constant(value):
         return Str(value)
     raise TypeError("Unsupported type for Constant '%s'" % str(type(value)))
 
-#-------------------------------------------------------------------------------
-class Variable(_Variable):
-    pass
-
-#-------------------------------------------------------------------------------
-class Iadd(_Accumulator):
-    pass
-
-class Isub(_Accumulator):
-    pass
-
-class Imul(_Accumulator):
-    pass
-
-class Idiv(_Accumulator):
-    pass
-
-class Icustom(_Accumulator):
-    pass
+def Variable(data=None, valid=None, ready=None):
+    return _Variable(data, valid, ready)

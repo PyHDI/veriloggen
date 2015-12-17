@@ -95,17 +95,21 @@ class Dataflow(object):
         self.add(v)
         return v
     
-    def Iadd(self, data, init=None, reset=None):
+    def Iadd(self, data, initval=None, reset=None):
+        v = dtypes.Iadd(data, initval, reset)
+        self.add(v)
+        return v
+    
+    def Isub(self, data, initval=None, reset=None):
+        v = dtypes.Isub(data, initval, reset)
+        self.add(v)
+        return v
+    
+    def Imul(self, data, initval=None, reset=None):
         raise NotImplementedError()
     
-    def Isub(self, data, init=None, reset=None):
+    def Idiv(self, data, initval=None, reset=None):
         raise NotImplementedError()
     
-    def Imul(self, data, init=None, reset=None):
-        raise NotImplementedError()
-    
-    def Idiv(self, data, init=None, reset=None):
-        raise NotImplementedError()
-    
-    def Icustom(self, data, init=None, reset=None):
+    def Icustom(self, data, initval=None, reset=None):
         raise NotImplementedError()
