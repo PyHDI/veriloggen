@@ -269,6 +269,7 @@ class _BinaryOperator(_Operator):
         self.right = to_constant(right)
         self.left._add_sink(self)
         self.right._add_sink(self)
+        self.op = getattr(vtypes, self.__class__.__name__, None)
         
     def bit_length(self):
         return max(self.left.bit_length(), self.right.bit_length())
@@ -304,9 +305,7 @@ class _BinaryOperator(_Operator):
         data_cond = vtypes.AndList(valid_cond, all_valid)
         ready_cond = vtypes.AndList(accept, all_valid)
         
-        op = getattr(vtypes, self.__class__.__name__)
-
-        seq( data(op(ldata, rdata)), cond=data_cond )
+        seq( data(self.op(ldata, rdata)), cond=data_cond )
         seq( valid(0), cond=valid_reset_cond )
         seq( valid(all_valid), cond=valid_cond )
         connect_ready(m, lready, ready_cond)
@@ -320,6 +319,7 @@ class _UnaryOperator(_Operator):
         _Operator.__init__(self)
         self.right = to_constant(right)
         self.right._add_sink(self)
+        self.op = getattr(vtypes, self.__class__.__name__, None)
         
     def bit_length(self):
         return self.right.bit_length()
@@ -352,9 +352,7 @@ class _UnaryOperator(_Operator):
         data_cond = vtypes.AndList(valid_cond, all_valid)
         ready_cond = vtypes.AndList(accept, all_valid)
         
-        op = getattr(vtypes, self.__class__.__name__)
-        
-        seq( data(op(rdata)), cond=data_cond )
+        seq( data(self.op(rdata)), cond=data_cond )
         seq( valid(0), cond=valid_reset_cond )
         seq( valid(all_valid), cond=valid_cond )
         connect_ready(m, rready, ready_cond)
@@ -468,6 +466,18 @@ class Unor(_UnaryOperator): pass
 class Uxor(_UnaryOperator): pass
 class Uxnor(_UnaryOperator): pass
         
+#-------------------------------------------------------------------------------
+class CustomBinOp(_BinaryOperator):
+    def __init__(self, op, left, right):
+        _BinaryOperator.__init__(self, left, right)
+        self.op = op
+
+#-------------------------------------------------------------------------------
+class CustomUnaryOp(_UnaryOperator):
+    def __init__(self, op, right):
+        _UnaryOperator.__init__(self, right)
+        self.op = op
+
 #-------------------------------------------------------------------------------
 class _SpecialOperator(_Operator):
     def __init__(self, *args, **kwargs):
@@ -722,10 +732,16 @@ class _Accumulator(_UnaryOperator):
 
         value = data
         for op in self.ops:
-            if issubclass(op, vtypes._UnaryOperator):
-                value = op(value)
+            if not isinstance(op, type):
+                value = op(value, rdata)
             elif issubclass(op, vtypes._BinaryOperator):
                 value = op(value, rdata)
+            elif issubclass(op, vtypes._UnaryOperator):
+                value = op(value)
+                
+            if not isinstance(value, vtypes._Numeric):
+                raise TypeError("Operator '%s' returns unsupported object type '%s'."
+                                % (str(op), str(type(value))))
                 
         seq( data(value), cond=data_cond )
         seq( valid(0), cond=valid_reset_cond )
@@ -752,6 +768,8 @@ class Idiv(_Accumulator):
 class Icustom(_Accumulator):
     def __init__(self, ops, right, initval=None, reset=None):
         _UnaryOperator.__init__(self, right)
+        if not isinstance(ops, (tuple, list)):
+            ops = tuple([ ops ])
         self.ops = ops
         self.initval = initval
         self.reset = reset
