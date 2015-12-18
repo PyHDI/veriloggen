@@ -310,8 +310,6 @@ class _BinaryOperator(_Operator):
         lready = self.left.sig_ready
         rready = self.right.sig_ready
         
-        #all_valid = vtypes.AndList(lvalid, rvalid)
-        #all_ready = vtypes.AndList(lready, rready)
         all_valid = and_vars(lvalid, rvalid)
         all_ready = and_vars(lready, rready)
 
@@ -359,8 +357,6 @@ class _UnaryOperator(_Operator):
         
         rready = self.right.sig_ready
 
-        #all_valid = rvalid
-        #all_ready = rready
         all_valid = and_vars(rvalid)
         all_ready = and_vars(rready)
 
