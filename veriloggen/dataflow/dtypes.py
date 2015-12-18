@@ -468,9 +468,12 @@ class Uxnor(_UnaryOperator): pass
         
 #-------------------------------------------------------------------------------
 class _SpecialOperator(_Operator):
+    latency = 1
     def __init__(self, *args, **kwargs):
         _Operator.__init__(self)
         self.args = args
+        for var in self.args:
+            var._add_sink(self) 
         self.kwargs = kwargs
         self.op = None
 
@@ -527,8 +530,6 @@ class Pointer(_SpecialOperator):
         _SpecialOperator.__init__(self, var, pos)
         self.var = var
         self.pos = pos
-        self.var._add_sink(self)
-        self.pos._add_sink(self)
         self.op = vtypes.Pointer
         
     def bit_length(self):
@@ -542,9 +543,6 @@ class Slice(_SpecialOperator):
         self.var = var
         self.msb = msb
         self.lsb = lsb
-        self.var._add_sink(self)
-        self.msb._add_sink(self)
-        self.lsb._add_sink(self)
         self.op = vtypes.Slice
 
     def bit_length(self):
@@ -554,8 +552,6 @@ class Cat(_SpecialOperator):
     def __init__(self, *vars):
         _SpecialOperator.__init__(self, *vars)
         self.vars = tuple(vars)
-        for var in self.vars:
-            var._add_sink(self)
         self.op = vtypes.Cat
     
     def bit_length(self):
@@ -570,8 +566,6 @@ class Repeat(_SpecialOperator):
         _SpecialOperator.__init__(self, var, times)
         self.var = var
         self.times = times
-        self.var._add_sink(self)
-        self.times._add_sink(self)
         self.op = vtypes.Repeat
 
     def bit_length(self):
@@ -583,9 +577,6 @@ class Cond(_SpecialOperator):
         self.condition = condition
         self.true_value = true_value
         self.false_value = false_value
-        self.condition._add_sink(self)
-        self.true_value._add_sink(self)
-        self.false_value._add_sink(self)
         self.op = vtypes.Cond
         
     def bit_length(self):

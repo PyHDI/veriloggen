@@ -94,7 +94,7 @@ class ASAPScheduler(_Scheduler):
             var = self.visit(var)
             ret.append(var)
         mine = self.max_stage(*ret)
-        node.arg = [ self.fill_gap(var, mine) for var in node.args ]
+        node.args = [ self.fill_gap(var, mine) for var in node.args ]
         node._set_start_stage(mine)
         end = mine + node.latency
         node._set_end_stage(end)
