@@ -17,17 +17,6 @@ def max(*vars):
             m = v
     return m
 
-def connect_ready(m, var, ready):
-    if var is None:
-        return
-    prev_subst = var.get_subst()
-    if not prev_subst:
-        m.Assign( var(ready) )
-    elif isinstance(prev_subst[0].right, vtypes.Int) and (prev_subst[0].right.value==1):
-        var.subst[0].overwrite_right( ready )
-    else:
-        var.subst[0].overwrite_right( vtypes.AndList(prev_subst[0].right, ready) )
-
 def and_vars(*vars):
     if not vars:
         return vtypes.Int(1)
@@ -39,8 +28,21 @@ def and_vars(*vars):
             ret = var
         else:
             ret = vtypes.AndList(ret, var)
+    if ret is None:
+        return vtypes.Int(1)
     return ret
         
+def connect_ready(m, var, ready):
+    if var is None:
+        return
+    prev_subst = var.get_subst()
+    if not prev_subst:
+        m.Assign( var(ready) )
+    elif isinstance(prev_subst[0].right, vtypes.Int) and (prev_subst[0].right.value==1):
+        var.subst[0].overwrite_right( ready )
+    else:
+        var.subst[0].overwrite_right( and_vars(prev_subst[0].right, ready) )
+
 #-------------------------------------------------------------------------------
 def tmp_data(val, prefix='_tmp_data_'):
     return ''.join([prefix, str(val)])
@@ -145,10 +147,14 @@ class _Numeric(_Node):
             ready = m.Input(self.output_ready)
             
         m.Assign( data(self.sig_data) )
+        
         if self.output_valid is not None:
             m.Assign( valid(self.sig_valid) )
+            
         if self.output_ready is not None:
             m.Assign( self.sig_ready(ready) )
+        elif self.sig_ready is not None:
+            m.Assign( self.sig_ready(1) )
 
     def _set_start_stage(self, stage):
         self.start_stage = stage
@@ -315,10 +321,10 @@ class _BinaryOperator(_Operator):
 
         accept = vtypes.OrList(ready, vtypes.Not(valid))
 
-        valid_cond = vtypes.AndList(accept, all_ready)
-        valid_reset_cond = vtypes.AndList(valid, ready)
-        data_cond = vtypes.AndList(valid_cond, all_valid)
-        ready_cond = vtypes.AndList(accept, all_valid)
+        valid_cond = and_vars(accept, all_ready)
+        valid_reset_cond = and_vars(valid, ready)
+        data_cond = and_vars(valid_cond, all_valid)
+        ready_cond = and_vars(accept, all_valid)
         
         seq( data(self.op(ldata, rdata)), cond=data_cond )
         seq( valid(0), cond=valid_reset_cond )
@@ -362,10 +368,10 @@ class _UnaryOperator(_Operator):
 
         accept = vtypes.OrList(ready, vtypes.Not(valid))
 
-        valid_cond = vtypes.AndList(accept, all_ready)
-        valid_reset_cond = vtypes.AndList(valid, ready)
-        data_cond = vtypes.AndList(valid_cond, all_valid)
-        ready_cond = vtypes.AndList(accept, all_valid)
+        valid_cond = and_vars(accept, all_ready)
+        valid_reset_cond = and_vars(valid, ready)
+        data_cond = and_vars(valid_cond, all_valid)
+        ready_cond = and_vars(accept, all_valid)
         
         seq( data(self.op(rdata)), cond=data_cond )
         seq( valid(0), cond=valid_reset_cond )
@@ -403,15 +409,15 @@ class Times(_BinaryOperator):
         lready = self.left.sig_ready
         rready = self.right.sig_ready
         
-        all_valid = vtypes.AndList(lvalid, rvalid)
-        all_ready = vtypes.AndList(lready, rready)
+        all_valid = and_vars(lvalid, rvalid)
+        all_ready = and_vars(lready, rready)
 
         accept = vtypes.OrList(ready, vtypes.Not(valid))
         
-        valid_cond = vtypes.AndList(accept, all_ready)
-        valid_reset_cond = vtypes.AndList(valid, ready)
-        data_cond = vtypes.AndList(valid_cond, all_valid)
-        ready_cond = vtypes.AndList(accept, all_valid)
+        valid_cond = and_vars(accept, all_ready)
+        valid_reset_cond = and_vars(valid, ready)
+        data_cond = and_vars(valid_cond, all_valid)
+        ready_cond = and_vars(accept, all_valid)
         
         inst = template.multiplier
         clk = m._clock
@@ -513,21 +519,21 @@ class _SpecialOperator(_Operator):
             if all_valid is None:
                 all_valid = v
             else:
-                all_valid = vtypes.AndList(all_valid, v)
+                all_valid = and_vars(all_valid, v)
 
         all_ready = None
         for r in arg_ready:
             if all_ready is None:
                 all_ready = r
             else:
-                all_ready = vtypes.AndList(all_ready, r)
+                all_ready = and_vars(all_ready, r)
 
         accept = vtypes.OrList(ready, vtypes.Not(valid))
 
-        valid_cond = vtypes.AndList(accept, all_ready)
-        valid_reset_cond = vtypes.AndList(valid, ready)
-        data_cond = vtypes.AndList(valid_cond, all_valid)
-        ready_cond = vtypes.AndList(accept, all_valid)
+        valid_cond = and_vars(accept, all_ready)
+        valid_reset_cond = and_vars(valid, ready)
+        data_cond = and_vars(valid_cond, all_valid)
+        ready_cond = and_vars(accept, all_valid)
         
         seq( data(self.op(*arg_data)), cond=data_cond )
         seq( valid(0), cond=valid_reset_cond )
@@ -642,10 +648,10 @@ class _Delay(_UnaryOperator):
 
         accept = vtypes.OrList(ready, vtypes.Not(valid))
 
-        valid_cond = vtypes.AndList(accept, all_ready)
-        valid_reset_cond = vtypes.AndList(valid, ready)
-        data_cond = vtypes.AndList(valid_cond, all_valid)
-        ready_cond = vtypes.AndList(accept, all_valid)
+        valid_cond = and_vars(accept, all_ready)
+        valid_reset_cond = and_vars(valid, ready)
+        data_cond = and_vars(valid_cond, all_valid)
+        ready_cond = and_vars(accept, all_valid)
         
         seq( data(rdata), cond=data_cond )
         seq( valid(0), cond=valid_reset_cond )
@@ -683,7 +689,7 @@ class _Prev(_UnaryOperator):
         
         rdata = self.right.sig_data
 
-        data_cond = vtypes.AndList(valid, ready)
+        data_cond = and_vars(valid, ready)
         
         seq( data(rdata), cond=data_cond )
 
@@ -731,16 +737,21 @@ class _Variable(_Numeric):
     def _implement_input(self, m, seq, width=32):
         if isinstance(self.input_data, _Numeric):
             return
+        
         self.sig_data = m.Input(self.input_data, width)
+        
         if self.input_valid is not None:
             self.sig_valid = m.Input(self.input_valid)
         else:
-            self.sig_valid = vtypes.Int(1)
+            #self.sig_valid = vtypes.Int(1)
+            self.sig_valid = None
+            
         if self.input_ready is not None:
             self.sig_ready = m.Output(self.input_ready)
         else:
-            tmp = m.get_tmp()
-            self.sig_ready = m.Wire(tmp_ready(tmp))
+            #tmp = m.get_tmp()
+            #self.sig_ready = m.Wire(tmp_ready(tmp))
+            self.sig_ready = None
             
 
 #-------------------------------------------------------------------------------
@@ -782,10 +793,10 @@ class _Accumulator(_UnaryOperator):
 
         accept = vtypes.OrList(ready, vtypes.Not(valid))
 
-        valid_cond = vtypes.AndList(accept, all_ready)
-        valid_reset_cond = vtypes.AndList(valid, ready)
-        data_cond = vtypes.AndList(valid_cond, all_valid)
-        ready_cond = vtypes.AndList(accept, all_valid)
+        valid_cond = and_vars(accept, all_ready)
+        valid_reset_cond = and_vars(valid, ready)
+        data_cond = and_vars(valid_cond, all_valid)
+        ready_cond = and_vars(accept, all_valid)
 
         value = data
         for op in self.ops:
@@ -804,7 +815,7 @@ class _Accumulator(_UnaryOperator):
             reset_data = self.reset.sig_data
             reset_valid = self.reset.sig_valid
             reset_ready = self.reset.sig_ready
-            data_reset_cond = vtypes.AndList(reset_valid, reset_ready)
+            data_reset_cond = and_vars(reset_valid, reset_ready)
             seq( data(reset_data), cond=data_reset_cond )
             connect_ready(m, reset_ready, vtypes.Int(1))
         
