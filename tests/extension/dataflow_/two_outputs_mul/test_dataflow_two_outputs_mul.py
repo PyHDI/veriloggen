@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import dataflow_two_outputs_mult
+import dataflow_two_outputs_mul
 
 expected_verilog = """
 module test;
@@ -625,7 +625,7 @@ module main
     .datawidth(32),
     .depth(5)
   )
-  mult0
+  mul0
   (
     .CLK(CLK),
     .RST(RST),
@@ -652,7 +652,7 @@ module main
     .datawidth(32),
     .depth(5)
   )
-  mult1
+  mul1
   (
     .CLK(CLK),
     .RST(RST),
@@ -770,7 +770,7 @@ endmodule
 """
 
 def test():
-    test_module = dataflow_two_outputs_mult.mkTest()
+    test_module = dataflow_two_outputs_mul.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

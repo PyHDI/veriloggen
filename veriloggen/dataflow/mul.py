@@ -61,4 +61,9 @@ def mkMultiplier(datawidth=32, depth=6):
     return m
 
 # global multiplier definition
-multiplier = mkMultiplier()
+mul = None
+def get_mul():
+    global mul
+    if mul is None:
+        mul = mkMultiplier()
+    return mul

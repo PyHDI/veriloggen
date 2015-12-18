@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import dataflow_madd
+import dataflow_div
 
 expected_verilog = """
 module test;
@@ -13,9 +13,6 @@ module test;
   reg [32-1:0] ydata;
   reg yvalid;
   wire yready;
-  reg [32-1:0] resetdata;
-  reg resetvalid;
-  wire resetready;
   wire [32-1:0] zdata;
   wire zvalid;
   reg zready;
@@ -31,9 +28,6 @@ module test;
     .ydata(ydata),
     .yvalid(yvalid),
     .yready(yready),
-    .resetdata(resetdata),
-    .resetvalid(resetvalid),
-    .resetready(resetready),
     .zdata(zdata),
     .zvalid(zvalid),
     .zready(zready)
@@ -58,7 +52,7 @@ module test;
   initial begin
     RST = 0;
     reset_done = 0;
-    xdata = 0;
+    xdata = 2;
     xvalid = 0;
     ydata = 0;
     yvalid = 0;
@@ -151,7 +145,7 @@ module test;
         end
         xfsm_12: begin
           if(xready) begin
-            xdata <= xdata + 1;
+            xdata <= xdata + 2;
           end 
           if(xready) begin
             _tmp_0 <= _tmp_0 + 1;
@@ -194,7 +188,7 @@ module test;
         xfsm_23: begin
           xvalid <= 1;
           if(xready) begin
-            xdata <= xdata + 1;
+            xdata <= xdata + 2;
           end 
           if(xready) begin
             _tmp_0 <= _tmp_0 + 1;
@@ -710,36 +704,6 @@ module test;
     end
   end
 
-  reg [32-1:0] reset;
-  localparam reset_init = 0;
-  reg [32-1:0] reset_count;
-  localparam reset_1 = 1;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      reset <= reset_init;
-      reset_count <= 0;
-    end else begin
-      case(reset)
-        reset_init: begin
-          resetdata <= 0;
-          resetvalid <= 0;
-          if(zvalid && zready) begin
-            reset_count <= reset_count + 1;
-          end 
-          if(reset_count == 10) begin
-            reset <= reset_1;
-          end 
-        end
-        reset_1: begin
-          resetvalid <= 1;
-          reset_count <= 0;
-          reset <= reset_init;
-        end
-      endcase
-    end
-  end
-
 
   always @(posedge CLK) begin
     if(reset_done) begin
@@ -770,9 +734,6 @@ module main
   input [32-1:0] ydata,
   input yvalid,
   output yready,
-  input [32-1:0] resetdata,
-  input resetvalid,
-  output resetready,
   output [32-1:0] zdata,
   output zvalid,
   input zready
@@ -783,33 +744,31 @@ module main
   wire _tmp_ready_0;
   wire _tmp_enable_0;
   wire _tmp_update_0;
-  assign _tmp_enable_0 = (_tmp_ready_0 || !_tmp_valid_0) && (xready && yready) && (xvalid && yvalid);
+  assign _tmp_enable_0 = (_tmp_ready_0 || !_tmp_valid_0) && xready && xvalid;
   assign _tmp_update_0 = _tmp_ready_0 || !_tmp_valid_0;
 
-  multiplier
+  Divider
   #(
-    .datawidth(32),
-    .depth(5)
+    .W_D(32)
   )
-  mul0
+  div0
   (
     .CLK(CLK),
     .RST(RST),
     .update(_tmp_update_0),
     .enable(_tmp_enable_0),
     .valid(_tmp_valid_0),
-    .a(xdata),
-    .b(ydata),
-    .c(_tmp_data_0)
+    .in_a(xdata),
+    .in_b(2),
+    .rslt(_tmp_data_0)
   );
 
-  assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
-  assign yready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
-  assign _tmp_ready_0 = (_tmp_ready_7 || !_tmp_valid_7) && _tmp_valid_0;
+  assign xready = (_tmp_ready_0 || !_tmp_valid_0) && xvalid;
+  assign _tmp_ready_0 = (_tmp_ready_33 || !_tmp_valid_33) && (_tmp_valid_0 && _tmp_valid_32);
   reg [32-1:0] _tmp_data_1;
   reg _tmp_valid_1;
   wire _tmp_ready_1;
-  assign resetready = (_tmp_ready_1 || !_tmp_valid_1) && resetvalid;
+  assign yready = (_tmp_ready_1 || !_tmp_valid_1) && yvalid;
   assign _tmp_ready_1 = (_tmp_ready_2 || !_tmp_valid_2) && _tmp_valid_1;
   reg [32-1:0] _tmp_data_2;
   reg _tmp_valid_2;
@@ -830,13 +789,117 @@ module main
   reg [32-1:0] _tmp_data_6;
   reg _tmp_valid_6;
   wire _tmp_ready_6;
-  assign _tmp_ready_6 = 1;
+  assign _tmp_ready_6 = (_tmp_ready_7 || !_tmp_valid_7) && _tmp_valid_6;
   reg [32-1:0] _tmp_data_7;
   reg _tmp_valid_7;
   wire _tmp_ready_7;
-  assign zdata = _tmp_data_7;
-  assign zvalid = _tmp_valid_7;
-  assign _tmp_ready_7 = zready;
+  assign _tmp_ready_7 = (_tmp_ready_8 || !_tmp_valid_8) && _tmp_valid_7;
+  reg [32-1:0] _tmp_data_8;
+  reg _tmp_valid_8;
+  wire _tmp_ready_8;
+  assign _tmp_ready_8 = (_tmp_ready_9 || !_tmp_valid_9) && _tmp_valid_8;
+  reg [32-1:0] _tmp_data_9;
+  reg _tmp_valid_9;
+  wire _tmp_ready_9;
+  assign _tmp_ready_9 = (_tmp_ready_10 || !_tmp_valid_10) && _tmp_valid_9;
+  reg [32-1:0] _tmp_data_10;
+  reg _tmp_valid_10;
+  wire _tmp_ready_10;
+  assign _tmp_ready_10 = (_tmp_ready_11 || !_tmp_valid_11) && _tmp_valid_10;
+  reg [32-1:0] _tmp_data_11;
+  reg _tmp_valid_11;
+  wire _tmp_ready_11;
+  assign _tmp_ready_11 = (_tmp_ready_12 || !_tmp_valid_12) && _tmp_valid_11;
+  reg [32-1:0] _tmp_data_12;
+  reg _tmp_valid_12;
+  wire _tmp_ready_12;
+  assign _tmp_ready_12 = (_tmp_ready_13 || !_tmp_valid_13) && _tmp_valid_12;
+  reg [32-1:0] _tmp_data_13;
+  reg _tmp_valid_13;
+  wire _tmp_ready_13;
+  assign _tmp_ready_13 = (_tmp_ready_14 || !_tmp_valid_14) && _tmp_valid_13;
+  reg [32-1:0] _tmp_data_14;
+  reg _tmp_valid_14;
+  wire _tmp_ready_14;
+  assign _tmp_ready_14 = (_tmp_ready_15 || !_tmp_valid_15) && _tmp_valid_14;
+  reg [32-1:0] _tmp_data_15;
+  reg _tmp_valid_15;
+  wire _tmp_ready_15;
+  assign _tmp_ready_15 = (_tmp_ready_16 || !_tmp_valid_16) && _tmp_valid_15;
+  reg [32-1:0] _tmp_data_16;
+  reg _tmp_valid_16;
+  wire _tmp_ready_16;
+  assign _tmp_ready_16 = (_tmp_ready_17 || !_tmp_valid_17) && _tmp_valid_16;
+  reg [32-1:0] _tmp_data_17;
+  reg _tmp_valid_17;
+  wire _tmp_ready_17;
+  assign _tmp_ready_17 = (_tmp_ready_18 || !_tmp_valid_18) && _tmp_valid_17;
+  reg [32-1:0] _tmp_data_18;
+  reg _tmp_valid_18;
+  wire _tmp_ready_18;
+  assign _tmp_ready_18 = (_tmp_ready_19 || !_tmp_valid_19) && _tmp_valid_18;
+  reg [32-1:0] _tmp_data_19;
+  reg _tmp_valid_19;
+  wire _tmp_ready_19;
+  assign _tmp_ready_19 = (_tmp_ready_20 || !_tmp_valid_20) && _tmp_valid_19;
+  reg [32-1:0] _tmp_data_20;
+  reg _tmp_valid_20;
+  wire _tmp_ready_20;
+  assign _tmp_ready_20 = (_tmp_ready_21 || !_tmp_valid_21) && _tmp_valid_20;
+  reg [32-1:0] _tmp_data_21;
+  reg _tmp_valid_21;
+  wire _tmp_ready_21;
+  assign _tmp_ready_21 = (_tmp_ready_22 || !_tmp_valid_22) && _tmp_valid_21;
+  reg [32-1:0] _tmp_data_22;
+  reg _tmp_valid_22;
+  wire _tmp_ready_22;
+  assign _tmp_ready_22 = (_tmp_ready_23 || !_tmp_valid_23) && _tmp_valid_22;
+  reg [32-1:0] _tmp_data_23;
+  reg _tmp_valid_23;
+  wire _tmp_ready_23;
+  assign _tmp_ready_23 = (_tmp_ready_24 || !_tmp_valid_24) && _tmp_valid_23;
+  reg [32-1:0] _tmp_data_24;
+  reg _tmp_valid_24;
+  wire _tmp_ready_24;
+  assign _tmp_ready_24 = (_tmp_ready_25 || !_tmp_valid_25) && _tmp_valid_24;
+  reg [32-1:0] _tmp_data_25;
+  reg _tmp_valid_25;
+  wire _tmp_ready_25;
+  assign _tmp_ready_25 = (_tmp_ready_26 || !_tmp_valid_26) && _tmp_valid_25;
+  reg [32-1:0] _tmp_data_26;
+  reg _tmp_valid_26;
+  wire _tmp_ready_26;
+  assign _tmp_ready_26 = (_tmp_ready_27 || !_tmp_valid_27) && _tmp_valid_26;
+  reg [32-1:0] _tmp_data_27;
+  reg _tmp_valid_27;
+  wire _tmp_ready_27;
+  assign _tmp_ready_27 = (_tmp_ready_28 || !_tmp_valid_28) && _tmp_valid_27;
+  reg [32-1:0] _tmp_data_28;
+  reg _tmp_valid_28;
+  wire _tmp_ready_28;
+  assign _tmp_ready_28 = (_tmp_ready_29 || !_tmp_valid_29) && _tmp_valid_28;
+  reg [32-1:0] _tmp_data_29;
+  reg _tmp_valid_29;
+  wire _tmp_ready_29;
+  assign _tmp_ready_29 = (_tmp_ready_30 || !_tmp_valid_30) && _tmp_valid_29;
+  reg [32-1:0] _tmp_data_30;
+  reg _tmp_valid_30;
+  wire _tmp_ready_30;
+  assign _tmp_ready_30 = (_tmp_ready_31 || !_tmp_valid_31) && _tmp_valid_30;
+  reg [32-1:0] _tmp_data_31;
+  reg _tmp_valid_31;
+  wire _tmp_ready_31;
+  assign _tmp_ready_31 = (_tmp_ready_32 || !_tmp_valid_32) && _tmp_valid_31;
+  reg [32-1:0] _tmp_data_32;
+  reg _tmp_valid_32;
+  wire _tmp_ready_32;
+  assign _tmp_ready_32 = (_tmp_ready_33 || !_tmp_valid_33) && (_tmp_valid_0 && _tmp_valid_32);
+  reg [32-1:0] _tmp_data_33;
+  reg _tmp_valid_33;
+  wire _tmp_ready_33;
+  assign zdata = _tmp_data_33;
+  assign zvalid = _tmp_valid_33;
+  assign _tmp_ready_33 = zready;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -854,15 +917,67 @@ module main
       _tmp_valid_6 <= 0;
       _tmp_data_7 <= 0;
       _tmp_valid_7 <= 0;
+      _tmp_data_8 <= 0;
+      _tmp_valid_8 <= 0;
+      _tmp_data_9 <= 0;
+      _tmp_valid_9 <= 0;
+      _tmp_data_10 <= 0;
+      _tmp_valid_10 <= 0;
+      _tmp_data_11 <= 0;
+      _tmp_valid_11 <= 0;
+      _tmp_data_12 <= 0;
+      _tmp_valid_12 <= 0;
+      _tmp_data_13 <= 0;
+      _tmp_valid_13 <= 0;
+      _tmp_data_14 <= 0;
+      _tmp_valid_14 <= 0;
+      _tmp_data_15 <= 0;
+      _tmp_valid_15 <= 0;
+      _tmp_data_16 <= 0;
+      _tmp_valid_16 <= 0;
+      _tmp_data_17 <= 0;
+      _tmp_valid_17 <= 0;
+      _tmp_data_18 <= 0;
+      _tmp_valid_18 <= 0;
+      _tmp_data_19 <= 0;
+      _tmp_valid_19 <= 0;
+      _tmp_data_20 <= 0;
+      _tmp_valid_20 <= 0;
+      _tmp_data_21 <= 0;
+      _tmp_valid_21 <= 0;
+      _tmp_data_22 <= 0;
+      _tmp_valid_22 <= 0;
+      _tmp_data_23 <= 0;
+      _tmp_valid_23 <= 0;
+      _tmp_data_24 <= 0;
+      _tmp_valid_24 <= 0;
+      _tmp_data_25 <= 0;
+      _tmp_valid_25 <= 0;
+      _tmp_data_26 <= 0;
+      _tmp_valid_26 <= 0;
+      _tmp_data_27 <= 0;
+      _tmp_valid_27 <= 0;
+      _tmp_data_28 <= 0;
+      _tmp_valid_28 <= 0;
+      _tmp_data_29 <= 0;
+      _tmp_valid_29 <= 0;
+      _tmp_data_30 <= 0;
+      _tmp_valid_30 <= 0;
+      _tmp_data_31 <= 0;
+      _tmp_valid_31 <= 0;
+      _tmp_data_32 <= 0;
+      _tmp_valid_32 <= 0;
+      _tmp_data_33 <= 0;
+      _tmp_valid_33 <= 0;
     end else begin
-      if((_tmp_ready_1 || !_tmp_valid_1) && resetready && resetvalid) begin
-        _tmp_data_1 <= resetdata;
+      if((_tmp_ready_1 || !_tmp_valid_1) && yready && yvalid) begin
+        _tmp_data_1 <= ydata;
       end 
       if(_tmp_valid_1 && _tmp_ready_1) begin
         _tmp_valid_1 <= 0;
       end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && resetready) begin
-        _tmp_valid_1 <= resetvalid;
+      if((_tmp_ready_1 || !_tmp_valid_1) && yready) begin
+        _tmp_valid_1 <= yvalid;
       end 
       if((_tmp_ready_2 || !_tmp_valid_2) && _tmp_ready_1 && _tmp_valid_1) begin
         _tmp_data_2 <= _tmp_data_1;
@@ -909,17 +1024,248 @@ module main
       if((_tmp_ready_6 || !_tmp_valid_6) && _tmp_ready_5) begin
         _tmp_valid_6 <= _tmp_valid_5;
       end 
-      if(_tmp_valid_6 && _tmp_ready_6) begin
+      if((_tmp_ready_7 || !_tmp_valid_7) && _tmp_ready_6 && _tmp_valid_6) begin
         _tmp_data_7 <= _tmp_data_6;
-      end 
-      if((_tmp_ready_7 || !_tmp_valid_7) && _tmp_ready_0 && _tmp_valid_0) begin
-        _tmp_data_7 <= _tmp_data_7 + _tmp_data_0;
       end 
       if(_tmp_valid_7 && _tmp_ready_7) begin
         _tmp_valid_7 <= 0;
       end 
-      if((_tmp_ready_7 || !_tmp_valid_7) && _tmp_ready_0) begin
-        _tmp_valid_7 <= _tmp_valid_0;
+      if((_tmp_ready_7 || !_tmp_valid_7) && _tmp_ready_6) begin
+        _tmp_valid_7 <= _tmp_valid_6;
+      end 
+      if((_tmp_ready_8 || !_tmp_valid_8) && _tmp_ready_7 && _tmp_valid_7) begin
+        _tmp_data_8 <= _tmp_data_7;
+      end 
+      if(_tmp_valid_8 && _tmp_ready_8) begin
+        _tmp_valid_8 <= 0;
+      end 
+      if((_tmp_ready_8 || !_tmp_valid_8) && _tmp_ready_7) begin
+        _tmp_valid_8 <= _tmp_valid_7;
+      end 
+      if((_tmp_ready_9 || !_tmp_valid_9) && _tmp_ready_8 && _tmp_valid_8) begin
+        _tmp_data_9 <= _tmp_data_8;
+      end 
+      if(_tmp_valid_9 && _tmp_ready_9) begin
+        _tmp_valid_9 <= 0;
+      end 
+      if((_tmp_ready_9 || !_tmp_valid_9) && _tmp_ready_8) begin
+        _tmp_valid_9 <= _tmp_valid_8;
+      end 
+      if((_tmp_ready_10 || !_tmp_valid_10) && _tmp_ready_9 && _tmp_valid_9) begin
+        _tmp_data_10 <= _tmp_data_9;
+      end 
+      if(_tmp_valid_10 && _tmp_ready_10) begin
+        _tmp_valid_10 <= 0;
+      end 
+      if((_tmp_ready_10 || !_tmp_valid_10) && _tmp_ready_9) begin
+        _tmp_valid_10 <= _tmp_valid_9;
+      end 
+      if((_tmp_ready_11 || !_tmp_valid_11) && _tmp_ready_10 && _tmp_valid_10) begin
+        _tmp_data_11 <= _tmp_data_10;
+      end 
+      if(_tmp_valid_11 && _tmp_ready_11) begin
+        _tmp_valid_11 <= 0;
+      end 
+      if((_tmp_ready_11 || !_tmp_valid_11) && _tmp_ready_10) begin
+        _tmp_valid_11 <= _tmp_valid_10;
+      end 
+      if((_tmp_ready_12 || !_tmp_valid_12) && _tmp_ready_11 && _tmp_valid_11) begin
+        _tmp_data_12 <= _tmp_data_11;
+      end 
+      if(_tmp_valid_12 && _tmp_ready_12) begin
+        _tmp_valid_12 <= 0;
+      end 
+      if((_tmp_ready_12 || !_tmp_valid_12) && _tmp_ready_11) begin
+        _tmp_valid_12 <= _tmp_valid_11;
+      end 
+      if((_tmp_ready_13 || !_tmp_valid_13) && _tmp_ready_12 && _tmp_valid_12) begin
+        _tmp_data_13 <= _tmp_data_12;
+      end 
+      if(_tmp_valid_13 && _tmp_ready_13) begin
+        _tmp_valid_13 <= 0;
+      end 
+      if((_tmp_ready_13 || !_tmp_valid_13) && _tmp_ready_12) begin
+        _tmp_valid_13 <= _tmp_valid_12;
+      end 
+      if((_tmp_ready_14 || !_tmp_valid_14) && _tmp_ready_13 && _tmp_valid_13) begin
+        _tmp_data_14 <= _tmp_data_13;
+      end 
+      if(_tmp_valid_14 && _tmp_ready_14) begin
+        _tmp_valid_14 <= 0;
+      end 
+      if((_tmp_ready_14 || !_tmp_valid_14) && _tmp_ready_13) begin
+        _tmp_valid_14 <= _tmp_valid_13;
+      end 
+      if((_tmp_ready_15 || !_tmp_valid_15) && _tmp_ready_14 && _tmp_valid_14) begin
+        _tmp_data_15 <= _tmp_data_14;
+      end 
+      if(_tmp_valid_15 && _tmp_ready_15) begin
+        _tmp_valid_15 <= 0;
+      end 
+      if((_tmp_ready_15 || !_tmp_valid_15) && _tmp_ready_14) begin
+        _tmp_valid_15 <= _tmp_valid_14;
+      end 
+      if((_tmp_ready_16 || !_tmp_valid_16) && _tmp_ready_15 && _tmp_valid_15) begin
+        _tmp_data_16 <= _tmp_data_15;
+      end 
+      if(_tmp_valid_16 && _tmp_ready_16) begin
+        _tmp_valid_16 <= 0;
+      end 
+      if((_tmp_ready_16 || !_tmp_valid_16) && _tmp_ready_15) begin
+        _tmp_valid_16 <= _tmp_valid_15;
+      end 
+      if((_tmp_ready_17 || !_tmp_valid_17) && _tmp_ready_16 && _tmp_valid_16) begin
+        _tmp_data_17 <= _tmp_data_16;
+      end 
+      if(_tmp_valid_17 && _tmp_ready_17) begin
+        _tmp_valid_17 <= 0;
+      end 
+      if((_tmp_ready_17 || !_tmp_valid_17) && _tmp_ready_16) begin
+        _tmp_valid_17 <= _tmp_valid_16;
+      end 
+      if((_tmp_ready_18 || !_tmp_valid_18) && _tmp_ready_17 && _tmp_valid_17) begin
+        _tmp_data_18 <= _tmp_data_17;
+      end 
+      if(_tmp_valid_18 && _tmp_ready_18) begin
+        _tmp_valid_18 <= 0;
+      end 
+      if((_tmp_ready_18 || !_tmp_valid_18) && _tmp_ready_17) begin
+        _tmp_valid_18 <= _tmp_valid_17;
+      end 
+      if((_tmp_ready_19 || !_tmp_valid_19) && _tmp_ready_18 && _tmp_valid_18) begin
+        _tmp_data_19 <= _tmp_data_18;
+      end 
+      if(_tmp_valid_19 && _tmp_ready_19) begin
+        _tmp_valid_19 <= 0;
+      end 
+      if((_tmp_ready_19 || !_tmp_valid_19) && _tmp_ready_18) begin
+        _tmp_valid_19 <= _tmp_valid_18;
+      end 
+      if((_tmp_ready_20 || !_tmp_valid_20) && _tmp_ready_19 && _tmp_valid_19) begin
+        _tmp_data_20 <= _tmp_data_19;
+      end 
+      if(_tmp_valid_20 && _tmp_ready_20) begin
+        _tmp_valid_20 <= 0;
+      end 
+      if((_tmp_ready_20 || !_tmp_valid_20) && _tmp_ready_19) begin
+        _tmp_valid_20 <= _tmp_valid_19;
+      end 
+      if((_tmp_ready_21 || !_tmp_valid_21) && _tmp_ready_20 && _tmp_valid_20) begin
+        _tmp_data_21 <= _tmp_data_20;
+      end 
+      if(_tmp_valid_21 && _tmp_ready_21) begin
+        _tmp_valid_21 <= 0;
+      end 
+      if((_tmp_ready_21 || !_tmp_valid_21) && _tmp_ready_20) begin
+        _tmp_valid_21 <= _tmp_valid_20;
+      end 
+      if((_tmp_ready_22 || !_tmp_valid_22) && _tmp_ready_21 && _tmp_valid_21) begin
+        _tmp_data_22 <= _tmp_data_21;
+      end 
+      if(_tmp_valid_22 && _tmp_ready_22) begin
+        _tmp_valid_22 <= 0;
+      end 
+      if((_tmp_ready_22 || !_tmp_valid_22) && _tmp_ready_21) begin
+        _tmp_valid_22 <= _tmp_valid_21;
+      end 
+      if((_tmp_ready_23 || !_tmp_valid_23) && _tmp_ready_22 && _tmp_valid_22) begin
+        _tmp_data_23 <= _tmp_data_22;
+      end 
+      if(_tmp_valid_23 && _tmp_ready_23) begin
+        _tmp_valid_23 <= 0;
+      end 
+      if((_tmp_ready_23 || !_tmp_valid_23) && _tmp_ready_22) begin
+        _tmp_valid_23 <= _tmp_valid_22;
+      end 
+      if((_tmp_ready_24 || !_tmp_valid_24) && _tmp_ready_23 && _tmp_valid_23) begin
+        _tmp_data_24 <= _tmp_data_23;
+      end 
+      if(_tmp_valid_24 && _tmp_ready_24) begin
+        _tmp_valid_24 <= 0;
+      end 
+      if((_tmp_ready_24 || !_tmp_valid_24) && _tmp_ready_23) begin
+        _tmp_valid_24 <= _tmp_valid_23;
+      end 
+      if((_tmp_ready_25 || !_tmp_valid_25) && _tmp_ready_24 && _tmp_valid_24) begin
+        _tmp_data_25 <= _tmp_data_24;
+      end 
+      if(_tmp_valid_25 && _tmp_ready_25) begin
+        _tmp_valid_25 <= 0;
+      end 
+      if((_tmp_ready_25 || !_tmp_valid_25) && _tmp_ready_24) begin
+        _tmp_valid_25 <= _tmp_valid_24;
+      end 
+      if((_tmp_ready_26 || !_tmp_valid_26) && _tmp_ready_25 && _tmp_valid_25) begin
+        _tmp_data_26 <= _tmp_data_25;
+      end 
+      if(_tmp_valid_26 && _tmp_ready_26) begin
+        _tmp_valid_26 <= 0;
+      end 
+      if((_tmp_ready_26 || !_tmp_valid_26) && _tmp_ready_25) begin
+        _tmp_valid_26 <= _tmp_valid_25;
+      end 
+      if((_tmp_ready_27 || !_tmp_valid_27) && _tmp_ready_26 && _tmp_valid_26) begin
+        _tmp_data_27 <= _tmp_data_26;
+      end 
+      if(_tmp_valid_27 && _tmp_ready_27) begin
+        _tmp_valid_27 <= 0;
+      end 
+      if((_tmp_ready_27 || !_tmp_valid_27) && _tmp_ready_26) begin
+        _tmp_valid_27 <= _tmp_valid_26;
+      end 
+      if((_tmp_ready_28 || !_tmp_valid_28) && _tmp_ready_27 && _tmp_valid_27) begin
+        _tmp_data_28 <= _tmp_data_27;
+      end 
+      if(_tmp_valid_28 && _tmp_ready_28) begin
+        _tmp_valid_28 <= 0;
+      end 
+      if((_tmp_ready_28 || !_tmp_valid_28) && _tmp_ready_27) begin
+        _tmp_valid_28 <= _tmp_valid_27;
+      end 
+      if((_tmp_ready_29 || !_tmp_valid_29) && _tmp_ready_28 && _tmp_valid_28) begin
+        _tmp_data_29 <= _tmp_data_28;
+      end 
+      if(_tmp_valid_29 && _tmp_ready_29) begin
+        _tmp_valid_29 <= 0;
+      end 
+      if((_tmp_ready_29 || !_tmp_valid_29) && _tmp_ready_28) begin
+        _tmp_valid_29 <= _tmp_valid_28;
+      end 
+      if((_tmp_ready_30 || !_tmp_valid_30) && _tmp_ready_29 && _tmp_valid_29) begin
+        _tmp_data_30 <= _tmp_data_29;
+      end 
+      if(_tmp_valid_30 && _tmp_ready_30) begin
+        _tmp_valid_30 <= 0;
+      end 
+      if((_tmp_ready_30 || !_tmp_valid_30) && _tmp_ready_29) begin
+        _tmp_valid_30 <= _tmp_valid_29;
+      end 
+      if((_tmp_ready_31 || !_tmp_valid_31) && _tmp_ready_30 && _tmp_valid_30) begin
+        _tmp_data_31 <= _tmp_data_30;
+      end 
+      if(_tmp_valid_31 && _tmp_ready_31) begin
+        _tmp_valid_31 <= 0;
+      end 
+      if((_tmp_ready_31 || !_tmp_valid_31) && _tmp_ready_30) begin
+        _tmp_valid_31 <= _tmp_valid_30;
+      end 
+      if((_tmp_ready_32 || !_tmp_valid_32) && _tmp_ready_31 && _tmp_valid_31) begin
+        _tmp_data_32 <= _tmp_data_31;
+      end 
+      if(_tmp_valid_32 && _tmp_ready_32) begin
+        _tmp_valid_32 <= 0;
+      end 
+      if((_tmp_ready_32 || !_tmp_valid_32) && _tmp_ready_31) begin
+        _tmp_valid_32 <= _tmp_valid_31;
+      end 
+      if((_tmp_ready_33 || !_tmp_valid_33) && (_tmp_ready_0 && _tmp_ready_32) && (_tmp_valid_0 && _tmp_valid_32)) begin
+        _tmp_data_33 <= _tmp_data_0 + _tmp_data_32;
+      end 
+      if(_tmp_valid_33 && _tmp_ready_33) begin
+        _tmp_valid_33 <= 0;
+      end 
+      if((_tmp_ready_33 || !_tmp_valid_33) && (_tmp_ready_0 && _tmp_ready_32)) begin
+        _tmp_valid_33 <= _tmp_valid_0 && _tmp_valid_32;
       end 
     end
   end
@@ -929,86 +1275,163 @@ endmodule
 
 
 
-module multiplier #
+module Divider #
 (
-  parameter datawidth = 32,
-  parameter depth = 6
+  parameter W_D = 32
 )
 (
   input CLK,
   input RST,
+  input [W_D-1:0] in_a,
+  input [W_D-1:0] in_b,
   input update,
   input enable,
-  output valid,
-  input [datawidth-1:0] a,
-  input [datawidth-1:0] b,
-  output [datawidth-1:0] c
+  output reg [W_D-1:0] rslt,
+  output reg [W_D-1:0] mod,
+  output reg valid
 );
 
-  wire [datawidth*2-1:0] _c;
-  reg [depth-1:0] valid_reg;
-  assign c = _c[datawidth-1:0];
-  assign valid = valid_reg[depth - 1];
-  integer i;
+  localparam DEPTH = W_D + 1;
+
+  function [0:0] getsign;
+    input [W_D-1:0] in;
+    begin
+      getsign = in[W_D - 1];
+    end
+  endfunction
+
+
+  function [0:0] is_positive;
+    input [W_D-1:0] in;
+    begin
+      is_positive = getsign(in) == 0;
+    end
+  endfunction
+
+
+  function [W_D-1:0] complement2;
+    input [W_D-1:0] in;
+    begin
+      complement2 = ~in + { { W_D - 1{ 1'b0 } }, 1'b1 };
+    end
+  endfunction
+
+
+  function [W_D*2-1:0] complement2_2x;
+    input [W_D*2-1:0] in;
+    begin
+      complement2_2x = ~in + { { W_D * 2 - 1{ 1'b0 } }, 1'b1 };
+    end
+  endfunction
+
+
+  function [W_D-1:0] absolute;
+    input [W_D-1:0] in;
+    begin
+      if(getsign(in)) begin
+        absolute = complement2(in);
+      end else begin
+        absolute = in;
+      end
+    end
+  endfunction
+
+  wire [W_D-1:0] abs_in_a;
+  wire [W_D-1:0] abs_in_b;
+  assign abs_in_a = absolute(in_a);
+  assign abs_in_b = absolute(in_b);
+  genvar d;
+
+  generate for(d=0; d<DEPTH; d=d+1) begin : s_depth
+    reg stage_valid;
+    reg in_a_positive;
+    reg in_b_positive;
+    reg [W_D*2-1:0] dividend;
+    reg [W_D*2-1:0] divisor;
+    reg [W_D*2-1:0] stage_rslt;
+    wire [W_D*2-1:0] sub_value;
+    wire is_large;
+    assign sub_value = dividend - divisor;
+    assign is_large = !sub_value[W_D * 2 - 1];
+    if(d == 0) begin
+
+      always @(posedge CLK) begin
+        if(RST) begin
+          stage_valid <= 0;
+          in_a_positive <= 0;
+          in_b_positive <= 0;
+        end else begin
+          if(update) begin
+            stage_valid <= enable;
+            in_a_positive <= is_positive(in_a);
+            in_b_positive <= is_positive(in_b);
+          end 
+        end
+      end
+
+    end else begin
+
+      always @(posedge CLK) begin
+        if(RST) begin
+          stage_valid <= 0;
+          in_a_positive <= 0;
+          in_b_positive <= 0;
+        end else begin
+          if(update) begin
+            stage_valid <= s_depth[(d - 1)].stage_valid;
+            in_a_positive <= s_depth[(d - 1)].in_a_positive;
+            in_b_positive <= s_depth[(d - 1)].in_b_positive;
+          end 
+        end
+      end
+
+    end
+    if(d == 0) begin
+
+      always @(posedge CLK) begin
+        if(update) begin
+          dividend <= abs_in_a;
+          divisor <= abs_in_b << W_D - 1;
+          stage_rslt <= 0;
+        end 
+      end
+
+    end else begin
+
+      always @(posedge CLK) begin
+        if(update) begin
+          dividend <= (s_depth[(d - 1)].is_large)? s_depth[(d - 1)].sub_value : s_depth[(d - 1)].dividend;
+          divisor <= s_depth[(d - 1)].divisor >> 1;
+          stage_rslt <= { s_depth[(d - 1)].stage_rslt, s_depth[(d - 1)].is_large };
+        end 
+      end
+
+    end
+  end
+  endgenerate
+
 
   always @(posedge CLK) begin
     if(RST) begin
-      valid_reg <= 0;
+      valid <= 0;
     end else begin
       if(update) begin
-        valid_reg[0] <= enable;
-        for(i=1; i<depth; i=i+1) begin
-          valid_reg[i] <= valid_reg[i - 1];
-        end
+        valid <= s_depth[(DEPTH - 1)].stage_valid;
       end 
     end
   end
 
 
-  multiplier_core
-  #(
-    .datawidth(datawidth),
-    .depth(depth)
-  )
-  mult
-  (
-    .CLK(CLK),
-    .update(update),
-    .a(a),
-    .b(b),
-    .c(_c)
-  );
-
-
-endmodule
-
-
-
-module multiplier_core #
-(
-  parameter datawidth = 32,
-  parameter depth = 6
-)
-(
-  input CLK,
-  input update,
-  input [datawidth-1:0] a,
-  input [datawidth-1:0] b,
-  output [datawidth*2-1:0] c
-);
-
-  wire [datawidth*2-1:0] rslt;
-  reg [datawidth*2-1:0] mem [0:depth-1];
-  assign rslt = a * b;
-  assign c = mem[depth - 1];
-  integer i;
-
   always @(posedge CLK) begin
     if(update) begin
-      mem[0] <= rslt;
-      for(i=1; i<depth; i=i+1) begin
-        mem[i] <= mem[i - 1];
-      end
+      rslt <= (s_depth[(DEPTH - 1)].in_a_positive && s_depth[(DEPTH - 1)].in_b_positive)? s_depth[(DEPTH - 1)].stage_rslt : 
+              (!s_depth[(DEPTH - 1)].in_a_positive && s_depth[(DEPTH - 1)].in_b_positive)? complement2_2x(s_depth[(DEPTH - 1)].stage_rslt) : 
+              (s_depth[(DEPTH - 1)].in_a_positive && !s_depth[(DEPTH - 1)].in_b_positive)? complement2_2x(s_depth[(DEPTH - 1)].stage_rslt) : 
+              (!s_depth[(DEPTH - 1)].in_a_positive && !s_depth[(DEPTH - 1)].in_b_positive)? s_depth[(DEPTH - 1)].stage_rslt : 'hx;
+      mod <= (s_depth[(DEPTH - 1)].in_a_positive && s_depth[(DEPTH - 1)].in_b_positive)? s_depth[(DEPTH - 1)].dividend[W_D-1:0] : 
+             (!s_depth[(DEPTH - 1)].in_a_positive && s_depth[(DEPTH - 1)].in_b_positive)? complement2_2x(s_depth[(DEPTH - 1)].dividend[W_D-1:0]) : 
+             (s_depth[(DEPTH - 1)].in_a_positive && !s_depth[(DEPTH - 1)].in_b_positive)? s_depth[(DEPTH - 1)].dividend[W_D-1:0] : 
+             (!s_depth[(DEPTH - 1)].in_a_positive && !s_depth[(DEPTH - 1)].in_b_positive)? complement2_2x(s_depth[(DEPTH - 1)].dividend[W_D-1:0]) : 'hx;
     end 
   end
 
@@ -1017,7 +1440,7 @@ endmodule
 """
 
 def test():
-    test_module = dataflow_madd.mkTest()
+    test_module = dataflow_div.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
