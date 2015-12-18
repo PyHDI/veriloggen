@@ -757,12 +757,12 @@ class Subst(VeriloggenNode):
         self.left.add_subst(self)
 
     def _type_check_left(self, left):
-        if not isinstance(left, _Numeric):
-            raise TypeError("left must be _Numeric, not '%s'" % str(type(left)))
+        if not isinstance(left, VeriloggenNode):
+            raise TypeError("left must be VeriloggenNode, not '%s'" % str(type(left)))
         
     def _type_check_right(self, right):
-        if not isinstance(right, _Numeric) and not isinstance(right, (int, float, bool, str)):
-            raise TypeError("right must be _Numeric, not '%s'" % str(type(right)))
+        if not isinstance(right, (VeriloggenNode, int, float, bool, str)):
+            raise TypeError("right must be VeriloggenNode, not '%s'" % str(type(right)))
         
     def overwrite_right(self, right):
         self.right = right
