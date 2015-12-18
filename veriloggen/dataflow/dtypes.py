@@ -467,32 +467,69 @@ class Uxor(_UnaryOperator): pass
 class Uxnor(_UnaryOperator): pass
         
 #-------------------------------------------------------------------------------
-class CustomBinOp(_BinaryOperator):
-    def __init__(self, op, left, right):
-        _BinaryOperator.__init__(self, left, right)
-        self.op = op
-
-#-------------------------------------------------------------------------------
-class CustomUnaryOp(_UnaryOperator):
-    def __init__(self, op, right):
-        _UnaryOperator.__init__(self, right)
-        self.op = op
-
-#-------------------------------------------------------------------------------
 class _SpecialOperator(_Operator):
     def __init__(self, *args, **kwargs):
         _Operator.__init__(self)
         self.args = args
         self.kwargs = kwargs
+        self.op = None
 
+    def _implement(self, m, seq, width=32):
+        if self.latency != 1:
+            raise ValueError('This implement() is designed for %d latency' % self.latency)
+
+        tmp = m.get_tmp()
+        data = m.Reg(tmp_data(tmp), width, initval=0)
+        valid = m.Reg(tmp_valid(tmp), initval=0)
+        ready = m.Wire(tmp_ready(tmp))
+        self.sig_data = data
+        self.sig_valid = valid
+        self.sig_ready = ready
+
+        arg_data = [ arg.sig_data for arg in self.args ]
+        arg_valid = [ arg.sig_valid for arg in self.args ]
+        arg_ready = [ arg.sig_ready for arg in self.args ]
+
+        all_valid = None
+        for v in arg_valid:
+            if all_valid is None:
+                all_valid = v
+            else:
+                all_valid = vtypes.AndList(all_valid, v)
+
+        all_ready = None
+        for r in arg_ready:
+            if all_ready is None:
+                all_ready = r
+            else:
+                all_ready = vtypes.AndList(all_ready, r)
+
+        accept = vtypes.OrList(ready, vtypes.Not(valid))
+
+        valid_cond = vtypes.AndList(accept, all_ready)
+        valid_reset_cond = vtypes.AndList(valid, ready)
+        data_cond = vtypes.AndList(valid_cond, all_valid)
+        ready_cond = vtypes.AndList(accept, all_valid)
+        
+        seq( data(self.op(*arg_data)), cond=data_cond )
+        seq( valid(0), cond=valid_reset_cond )
+        seq( valid(all_valid), cond=valid_cond )
+
+        for r in arg_ready:
+            connect_ready(m, r, ready_cond)
+
+        if not self._has_output():
+            connect_ready(m, ready, vtypes.Int(1))
+            
 #-------------------------------------------------------------------------------
 class Pointer(_SpecialOperator):
     def __init__(self, var, pos):
-        _SpecialOperator.__init__(self)
+        _SpecialOperator.__init__(self, var, pos)
         self.var = var
         self.pos = pos
         self.var._add_sink(self)
         self.pos._add_sink(self)
+        self.op = vtypes.Pointer
         
     def bit_length(self):
         if isinstance(var, _Variable) and var.length is not None:
@@ -501,23 +538,25 @@ class Pointer(_SpecialOperator):
     
 class Slice(_SpecialOperator):
     def __init__(self, var, msb, lsb):
-        _SpecialOperator.__init__(self)
+        _SpecialOperator.__init__(self, var, msb, lsb)
         self.var = var
         self.msb = msb
         self.lsb = lsb
         self.var._add_sink(self)
         self.msb._add_sink(self)
         self.lsb._add_sink(self)
+        self.op = vtypes.Slice
 
     def bit_length(self):
         raise NotImplementedError('bit_length is not implemented.')
     
 class Cat(_SpecialOperator):
     def __init__(self, *vars):
-        _SpecialOperator.__init__(self)
+        _SpecialOperator.__init__(self, *vars)
         self.vars = tuple(vars)
         for var in self.vars:
             var._add_sink(self)
+        self.op = vtypes.Cat
     
     def bit_length(self):
         values = [ v.bit_length() for v in self.vars ]
@@ -528,25 +567,26 @@ class Cat(_SpecialOperator):
 
 class Repeat(_SpecialOperator):
     def __init__(self, var, times):
-        _SpecialOperator.__init__(self)
+        _SpecialOperator.__init__(self, var, times)
         self.var = var
         self.times = times
         self.var._add_sink(self)
         self.times._add_sink(self)
+        self.op = vtypes.Repeat
 
     def bit_length(self):
         return self.var.bit_length() * self.times
         
-#-------------------------------------------------------------------------------
 class Cond(_SpecialOperator):
     def __init__(self, condition, true_value, false_value):
-        _Operator.__init__(self)
+        _SpecialOperator.__init__(self, condition, true_value, false_value)
         self.condition = condition
         self.true_value = true_value
         self.false_value = false_value
         self.condition._add_sink(self)
         self.true_value._add_sink(self)
         self.false_value._add_sink(self)
+        self.op = vtypes.Cond
         
     def bit_length(self):
         raise NotImplementedError('bit_length is not implemented.')
@@ -554,6 +594,12 @@ class Cond(_SpecialOperator):
 # Alias of Cond
 Mux = Cond
     
+#-------------------------------------------------------------------------------
+class CustomOp(_SpecialOperator):
+    def __init__(self, op, *vars):
+        _SpecialOperator.__init__(self, *vars)
+        self.op = op
+
 #-------------------------------------------------------------------------------
 class _Delay(_UnaryOperator):
     def __init__(self, right):

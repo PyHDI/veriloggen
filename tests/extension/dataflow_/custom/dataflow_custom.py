@@ -18,7 +18,7 @@ def mkMain():
     y = dataflow.Variable('ydata', valid='yvalid', ready='yready')
 
     # dataflow definition
-    z = dataflow.CustomBinOp(add, x, y)
+    z = dataflow.CustomOp(add, x, y)
 
     # set output attribute
     z.output('zdata', valid='zvalid', ready='zready')
