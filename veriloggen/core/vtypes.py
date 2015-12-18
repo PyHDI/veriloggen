@@ -747,6 +747,8 @@ class SensitiveAll(Sensitive):
 #-------------------------------------------------------------------------------
 class Subst(VeriloggenNode):
     def __init__(self, left, right, blk=False, ldelay=None, rdelay=None):
+        self._type_check_left(left)
+        self._type_check_right(right)
         self.left = left
         self.right = right
         self.blk = blk
@@ -754,6 +756,14 @@ class Subst(VeriloggenNode):
         self.rdelay = rdelay
         self.left.add_subst(self)
 
+    def _type_check_left(self, left):
+        if not isinstance(left, _Numeric):
+            raise TypeError("left must be _Numeric, not '%s'" % str(type(left)))
+        
+    def _type_check_right(self, right):
+        if not isinstance(right, _Numeric) and not isinstance(right, (int, float, bool, str)):
+            raise TypeError("right must be _Numeric, not '%s'" % str(type(right)))
+        
     def overwrite_right(self, right):
         self.right = right
         
