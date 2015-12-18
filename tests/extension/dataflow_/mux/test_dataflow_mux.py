@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import dataflow_add
+import dataflow_mux
 
 expected_verilog = """
 module test;
@@ -52,7 +52,7 @@ module test;
   initial begin
     RST = 0;
     reset_done = 0;
-    xdata = 0;
+    xdata = 5;
     xvalid = 0;
     ydata = 0;
     yvalid = 0;
@@ -517,25 +517,70 @@ module main
   reg [32-1:0] _tmp_data_0;
   reg _tmp_valid_0;
   wire _tmp_ready_0;
-  assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
-  assign yready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
-  assign zdata = _tmp_data_0;
-  assign zvalid = _tmp_valid_0;
-  assign _tmp_ready_0 = zready;
+  assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid) && ((_tmp_ready_1 || !_tmp_valid_1) && xvalid);
+  assign yready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid) && ((_tmp_ready_2 || !_tmp_valid_2) && yvalid);
+  assign _tmp_ready_0 = (_tmp_ready_3 || !_tmp_valid_3) && (_tmp_valid_0 && _tmp_valid_1 && _tmp_valid_2);
+  reg [32-1:0] _tmp_data_1;
+  reg _tmp_valid_1;
+  wire _tmp_ready_1;
+  assign _tmp_ready_1 = (_tmp_ready_3 || !_tmp_valid_3) && (_tmp_valid_0 && _tmp_valid_1 && _tmp_valid_2);
+  reg [32-1:0] _tmp_data_2;
+  reg _tmp_valid_2;
+  wire _tmp_ready_2;
+  assign _tmp_ready_2 = (_tmp_ready_3 || !_tmp_valid_3) && (_tmp_valid_0 && _tmp_valid_1 && _tmp_valid_2);
+  reg [32-1:0] _tmp_data_3;
+  reg _tmp_valid_3;
+  wire _tmp_ready_3;
+  assign zdata = _tmp_data_3;
+  assign zvalid = _tmp_valid_3;
+  assign _tmp_ready_3 = zready;
 
   always @(posedge CLK) begin
     if(RST) begin
       _tmp_data_0 <= 0;
       _tmp_valid_0 <= 0;
+      _tmp_data_1 <= 0;
+      _tmp_valid_1 <= 0;
+      _tmp_data_2 <= 0;
+      _tmp_valid_2 <= 0;
+      _tmp_data_3 <= 0;
+      _tmp_valid_3 <= 0;
     end else begin
       if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
-        _tmp_data_0 <= xdata + ydata;
+        _tmp_data_0 <= xdata < ydata;
       end 
       if(_tmp_valid_0 && _tmp_ready_0) begin
         _tmp_valid_0 <= 0;
       end 
       if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready)) begin
         _tmp_valid_0 <= xvalid && yvalid;
+      end 
+      if((_tmp_ready_1 || !_tmp_valid_1) && xready && xvalid) begin
+        _tmp_data_1 <= xdata;
+      end 
+      if(_tmp_valid_1 && _tmp_ready_1) begin
+        _tmp_valid_1 <= 0;
+      end 
+      if((_tmp_ready_1 || !_tmp_valid_1) && xready) begin
+        _tmp_valid_1 <= xvalid;
+      end 
+      if((_tmp_ready_2 || !_tmp_valid_2) && yready && yvalid) begin
+        _tmp_data_2 <= ydata;
+      end 
+      if(_tmp_valid_2 && _tmp_ready_2) begin
+        _tmp_valid_2 <= 0;
+      end 
+      if((_tmp_ready_2 || !_tmp_valid_2) && yready) begin
+        _tmp_valid_2 <= yvalid;
+      end 
+      if((_tmp_ready_3 || !_tmp_valid_3) && (_tmp_ready_0 && _tmp_ready_1 && _tmp_ready_2) && (_tmp_valid_0 && _tmp_valid_1 && _tmp_valid_2)) begin
+        _tmp_data_3 <= (_tmp_data_0)? _tmp_data_1 : _tmp_data_2;
+      end 
+      if(_tmp_valid_3 && _tmp_ready_3) begin
+        _tmp_valid_3 <= 0;
+      end 
+      if((_tmp_ready_3 || !_tmp_valid_3) && (_tmp_ready_0 && _tmp_ready_1 && _tmp_ready_2)) begin
+        _tmp_valid_3 <= _tmp_valid_0 && _tmp_valid_1 && _tmp_valid_2;
       end 
     end
   end
@@ -545,7 +590,7 @@ endmodule
 """
 
 def test():
-    test_module = dataflow_add.mkTest()
+    test_module = dataflow_mux.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

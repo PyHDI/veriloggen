@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import dataflow_inc
+import dataflow_imul
 
 expected_verilog = """
 module test;
@@ -46,7 +46,7 @@ module test;
   initial begin
     RST = 0;
     reset_done = 0;
-    xdata = 0;
+    xdata = 1;
     xvalid = 0;
     zready = 0;
     #100;
@@ -295,11 +295,11 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_0 <= 0;
+      _tmp_data_0 <= 1;
       _tmp_valid_0 <= 0;
     end else begin
       if((_tmp_ready_0 || !_tmp_valid_0) && xready && xvalid) begin
-        _tmp_data_0 <= xdata + 1;
+        _tmp_data_0 <= _tmp_data_0 * xdata;
       end 
       if(_tmp_valid_0 && _tmp_ready_0) begin
         _tmp_valid_0 <= 0;
@@ -315,7 +315,7 @@ endmodule
 """
 
 def test():
-    test_module = dataflow_inc.mkTest()
+    test_module = dataflow_imul.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

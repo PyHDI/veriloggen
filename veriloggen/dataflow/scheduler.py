@@ -100,6 +100,20 @@ class ASAPScheduler(_Scheduler):
         node._set_end_stage(end)
         return end
     
+    def visit__Accumulator(self, node):
+        if node._has_start_stage(): return node._get_end_stage()
+        right = self.visit(node.right)
+        initval = self.visit(node.initval)
+        reset = self.visit(node.reset)
+        mine = self.max_stage(right, initval, reset)
+        node.right = self.fill_gap(node.right, mine)
+        node.initval = self.fill_gap(node.initval, mine)
+        node.reset = self.fill_gap(node.reset, mine)
+        node._set_start_stage(mine)
+        end = mine + node.latency
+        node._set_end_stage(end)
+        return end
+    
     def visit__Variable(self, node):
         if node._has_start_stage(): return node._get_end_stage()
         if isinstance(node.input_data, dtypes._Numeric):

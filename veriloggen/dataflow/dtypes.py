@@ -18,6 +18,8 @@ def max(*vars):
     return m
 
 def connect_ready(m, var, ready):
+    if var is None:
+        return
     prev_subst = var.get_subst()
     if not prev_subst:
         m.Assign( var(ready) )
@@ -26,6 +28,19 @@ def connect_ready(m, var, ready):
     else:
         var.subst[0].overwrite_right( vtypes.AndList(prev_subst[0].right, ready) )
 
+def and_vars(*vars):
+    if not vars:
+        return vtypes.Int(1)
+    ret = None
+    for var in vars:
+        if var is None:
+            continue
+        if ret is None:
+            ret = var
+        else:
+            ret = vtypes.AndList(ret, var)
+    return ret
+        
 #-------------------------------------------------------------------------------
 def tmp_data(val, prefix='_tmp_data_'):
     return ''.join([prefix, str(val)])
@@ -276,7 +291,7 @@ class _BinaryOperator(_Operator):
 
     def _implement(self, m, seq, width=32):
         if self.latency != 1:
-            raise ValueError('This implement() is designed for %d latency' % self.latency)
+            raise ValueError("Latency mismatch '%d' vs '%s'" % (self.latency, 1))
 
         tmp = m.get_tmp()
         data = m.Reg(tmp_data(tmp), width, initval=0)
@@ -295,8 +310,10 @@ class _BinaryOperator(_Operator):
         lready = self.left.sig_ready
         rready = self.right.sig_ready
         
-        all_valid = vtypes.AndList(lvalid, rvalid)
-        all_ready = vtypes.AndList(lready, rready)
+        #all_valid = vtypes.AndList(lvalid, rvalid)
+        #all_ready = vtypes.AndList(lready, rready)
+        all_valid = and_vars(lvalid, rvalid)
+        all_ready = and_vars(lready, rready)
 
         accept = vtypes.OrList(ready, vtypes.Not(valid))
 
@@ -326,7 +343,7 @@ class _UnaryOperator(_Operator):
 
     def _implement(self, m, seq, width=32):
         if self.latency != 1:
-            raise ValueError('This implement() is designed for %d latency' % self.latency)
+            raise ValueError("Latency mismatch '%d' vs '%s'" % (self.latency, 1))
         
         tmp = m.get_tmp()
         data = m.Reg(tmp_data(tmp), width, initval=0)
@@ -342,8 +359,10 @@ class _UnaryOperator(_Operator):
         
         rready = self.right.sig_ready
 
-        all_valid = rvalid
-        all_ready = rready
+        #all_valid = rvalid
+        #all_ready = rready
+        all_valid = and_vars(rvalid)
+        all_ready = and_vars(rready)
 
         accept = vtypes.OrList(ready, vtypes.Not(valid))
 
@@ -479,7 +498,7 @@ class _SpecialOperator(_Operator):
 
     def _implement(self, m, seq, width=32):
         if self.latency != 1:
-            raise ValueError('This implement() is designed for %d latency' % self.latency)
+            raise ValueError("Latency mismatch '%d' vs '%s'" % (self.latency, 1))
 
         tmp = m.get_tmp()
         data = m.Reg(tmp_data(tmp), width, initval=0)
@@ -606,7 +625,7 @@ class _Delay(_UnaryOperator):
         
     def _implement(self, m, seq, width=32):
         if self.latency != 1:
-            raise ValueError('This implement() is designed for %d latency' % self.latency)
+            raise ValueError("Latency mismatch '%d' vs '%s'" % (self.latency, 1))
         
         tmp = m.get_tmp()
         data = m.Reg(tmp_data(tmp), width, initval=0)
@@ -656,7 +675,7 @@ class _Prev(_UnaryOperator):
         
     def _implement(self, m, seq, width=32):
         if self.latency != 0:
-            raise ValueError('This implement() is designed for %d latency' % self.latency)
+            raise ValueError("Latency mismatch '%d' vs '%s'" % (self.latency, 0))
         
         tmp = m.get_tmp()
         data = m.Reg(tmp_data(tmp), width, initval=0)
@@ -682,10 +701,9 @@ class _Constant(_Numeric):
         return hash(self.value)
 
     def _implement(self, m, seq, width=32):
-        tmp = m.get_tmp()
         data = self.value
-        valid = vtypes.Int(1, base=2, width=1)
-        ready = m.Wire(tmp_ready(tmp))
+        valid = None
+        ready = None
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
@@ -736,15 +754,21 @@ class _Accumulator(_UnaryOperator):
     
     def __init__(self, right, initval=None, reset=None):
         _UnaryOperator.__init__(self, right)
-        self.initval = initval
-        self.reset = reset
+        self.initval = to_constant(initval) if initval is not None else to_constant(0)
+        if not isinstance(self.initval, _Constant):
+            raise TypeError("initval must be Constant, not '%s'" % str(type(self.initval)))
+        self.reset = to_constant(reset) if reset is not None else to_constant(0)
 
     def _implement(self, m, seq, width=32):
         if self.latency != 1:
-            raise ValueError('This implement() is designed for %d latency' % self.latency)
+            raise ValueError("Latency mismatch '%d' vs '%s'" % (self.latency, 1))
+
+        initval_data = self.initval.sig_data
+        #initval_valid = self.initval.sig_valid
+        #initval_ready = self.initval.sig_ready
         
         tmp = m.get_tmp()
-        data = m.Reg(tmp_data(tmp), width, initval=0)
+        data = m.Reg(tmp_data(tmp), width, initval=initval_data)
         valid = m.Reg(tmp_valid(tmp), initval=0)
         ready = m.Wire(tmp_ready(tmp))
         self.sig_data = data
@@ -779,7 +803,15 @@ class _Accumulator(_UnaryOperator):
             if not isinstance(value, vtypes._Numeric):
                 raise TypeError("Operator '%s' returns unsupported object type '%s'."
                                 % (str(op), str(type(value))))
-                
+
+        if not isinstance(self.reset, _Constant):
+            reset_data = self.reset.sig_data
+            reset_valid = self.reset.sig_valid
+            reset_ready = self.reset.sig_ready
+            data_reset_cond = vtypes.AndList(reset_valid, reset_ready)
+            seq( data(reset_data), cond=data_reset_cond )
+            connect_ready(m, reset_ready, vtypes.Int(1))
+        
         seq( data(value), cond=data_cond )
         seq( valid(0), cond=valid_reset_cond )
         seq( valid(all_valid), cond=valid_cond )
@@ -790,26 +822,34 @@ class _Accumulator(_UnaryOperator):
 
 class Iadd(_Accumulator):
     ops = ( vtypes.Plus, )
+    def __init__(self, right, initval=0, reset=None):
+        _Accumulator.__init__(self, right, initval, reset)
 
 class Isub(_Accumulator):
     ops = ( vtypes.Minus, )
+    def __init__(self, right, initval=0, reset=None):
+        _Accumulator.__init__(self, right, initval, reset)
 
 class Imul(_Accumulator):
-    latency = 6
-    ops = ()
+    #latency = 6
+    latency = 1 
+    ops = ( vtypes.Times, )
+    def __init__(self, right, initval=1, reset=None):
+        _Accumulator.__init__(self, right, initval, reset)
 
 class Idiv(_Accumulator):
     latency = 32
     op = ()
+    def __init__(self, right, initval=1, reset=None):
+        raise NotImplementedError()
+        _Accumulator.__init__(self, right, initval, reset)
 
 class Icustom(_Accumulator):
-    def __init__(self, ops, right, initval=None, reset=None):
-        _UnaryOperator.__init__(self, right)
+    def __init__(self, ops, right, initval=0, reset=None):
+        _Accumulator.__init__(self, right, initval, reset)
         if not isinstance(ops, (tuple, list)):
             ops = tuple([ ops ])
         self.ops = ops
-        self.initval = initval
-        self.reset = reset
 
 #-------------------------------------------------------------------------------
 class Int(_Constant):

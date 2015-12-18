@@ -17,7 +17,7 @@ def mkMain():
     x = dataflow.Variable('xdata', valid='xvalid', ready='xready')
 
     # dataflow definition
-    z = dataflow.Icustom(add, x, initval=0, reset=None)
+    z = dataflow.Icustom(add, x, initval=0)
 
     # set output attribute
     z.output('zdata', valid='zvalid', ready='zready')

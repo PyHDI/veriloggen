@@ -9,6 +9,9 @@ class _Visitor(object):
         raise TypeError("Type '%s' is not supported." % str(type(node)))
     
     def visit(self, node):
+        if isinstance(node, dtypes._Accumulator):
+            return self.visit__Accumulator(node)
+        
         if isinstance(node, dtypes._BinaryOperator):
             return self.visit__BinaryOperator(node)
 
@@ -34,6 +37,9 @@ class _Visitor(object):
         raise NotImplementedError()
     
     def visit__SpecialOperator(self, node):
+        raise NotImplementedError()
+    
+    def visit__Accumulator(self, node):
         raise NotImplementedError()
     
     def visit__Variable(self, node):
@@ -75,6 +81,12 @@ class InputVisitor(_Visitor):
             ret.update(var)
         return ret
     
+    def visit__Accumulator(self, node):
+        right = self.visit(node.right)
+        initval = self.visit(node.initval) if node.initval is not None else set()
+        reset = self.visit(node.reset) if node.reset is not None else set()
+        return right | initval | reset
+
     def visit__Variable(self, node):
         return set([node])
         
@@ -131,6 +143,11 @@ class OutputVisitor(_Visitor):
         mine = set([node]) if node._has_output() else set()
         return ret | mine
     
+    def visit__Accumulator(self, node):
+        right = self.visit(node.right)
+        mine = set([node]) if node._has_output() else set()
+        return right | mine
+        
     def visit__Variable(self, node):
         mine = set([node]) if node._has_output() else set()
         return mine
@@ -193,7 +210,14 @@ class OperatorVisitor(_Visitor):
             ret.update(var)
         mine = set([node])
         return ret | mine
-    
+
+    def visit__Accumulator(self, node):
+        right = self.visit(node.right)
+        initval = self.visit(node.initval) if node.initval is not None else set()
+        reset = self.visit(node.reset) if node.reset is not None else set()
+        mine = set([node])
+        return right | initval | reset | mine
+            
     def visit__Variable(self, node):
         return set()
         
