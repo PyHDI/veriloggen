@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import dataflow_multadd
+import dataflow_madd
 
 expected_verilog = """
 module test;
@@ -13,9 +13,9 @@ module test;
   reg [32-1:0] ydata;
   reg yvalid;
   wire yready;
-  reg [32-1:0] cdata;
-  reg cvalid;
-  wire cready;
+  reg [32-1:0] resetdata;
+  reg resetvalid;
+  wire resetready;
   wire [32-1:0] zdata;
   wire zvalid;
   reg zready;
@@ -31,9 +31,9 @@ module test;
     .ydata(ydata),
     .yvalid(yvalid),
     .yready(yready),
-    .cdata(cdata),
-    .cvalid(cvalid),
-    .cready(cready),
+    .resetdata(resetdata),
+    .resetvalid(resetvalid),
+    .resetready(resetready),
     .zdata(zdata),
     .zvalid(zvalid),
     .zready(zready)
@@ -62,8 +62,6 @@ module test;
     xvalid = 0;
     ydata = 0;
     yvalid = 0;
-    cdata = 0;
-    cvalid = 0;
     zready = 0;
     #100;
     RST = 1;
@@ -427,61 +425,6 @@ module test;
     end
   end
 
-  reg [32-1:0] cfsm;
-  localparam cfsm_init = 0;
-  reg [32-1:0] _tmp_2;
-  localparam cfsm_1 = 1;
-  localparam cfsm_2 = 2;
-  localparam cfsm_3 = 3;
-  localparam cfsm_4 = 4;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      cfsm <= cfsm_init;
-      _tmp_2 <= 0;
-    end else begin
-      case(cfsm)
-        cfsm_init: begin
-          cvalid <= 0;
-          if(reset_done) begin
-            cfsm <= cfsm_1;
-          end 
-        end
-        cfsm_1: begin
-          cvalid <= 1;
-          cfsm <= cfsm_2;
-        end
-        cfsm_2: begin
-          if(cready) begin
-            cdata <= cdata + 1;
-          end 
-          if(cready) begin
-            _tmp_2 <= _tmp_2 + 1;
-          end 
-          if((_tmp_2 == 5) && cready) begin
-            cfsm <= cfsm_3;
-          end 
-        end
-        cfsm_3: begin
-          cvalid <= 0;
-          cvalid <= 1;
-          if(cready) begin
-            cdata <= cdata + 1;
-          end 
-          if(cready) begin
-            _tmp_2 <= _tmp_2 + 1;
-          end 
-          if((_tmp_2 == 10) && cready) begin
-            cfsm <= cfsm_4;
-          end 
-        end
-        cfsm_4: begin
-          cvalid <= 0;
-        end
-      endcase
-    end
-  end
-
   reg [32-1:0] zfsm;
   localparam zfsm_init = 0;
   localparam zfsm_1 = 1;
@@ -767,6 +710,36 @@ module test;
     end
   end
 
+  reg [32-1:0] reset;
+  localparam reset_init = 0;
+  reg [32-1:0] reset_count;
+  localparam reset_1 = 1;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      reset <= reset_init;
+      reset_count <= 0;
+    end else begin
+      case(reset)
+        reset_init: begin
+          resetdata <= 0;
+          resetvalid <= 0;
+          if(zvalid && zready) begin
+            reset_count <= reset_count + 1;
+          end 
+          if(reset_count == 10) begin
+            reset <= reset_1;
+          end 
+        end
+        reset_1: begin
+          resetvalid <= 1;
+          reset_count <= 0;
+          reset <= reset_init;
+        end
+      endcase
+    end
+  end
+
 
   always @(posedge CLK) begin
     if(reset_done) begin
@@ -775,9 +748,6 @@ module test;
       end 
       if(yvalid && yready) begin
         $display("ydata=%d", ydata);
-      end 
-      if(cvalid && cready) begin
-        $display("cdata=%d", cdata);
       end 
       if(zvalid && zready) begin
         $display("zdata=%d", zdata);
@@ -800,9 +770,9 @@ module main
   input [32-1:0] ydata,
   input yvalid,
   output yready,
-  input [32-1:0] cdata,
-  input cvalid,
-  output cready,
+  input [32-1:0] resetdata,
+  input resetvalid,
+  output resetready,
   output [32-1:0] zdata,
   output zvalid,
   input zready
@@ -835,11 +805,11 @@ module main
 
   assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
   assign yready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
-  assign _tmp_ready_0 = (_tmp_ready_7 || !_tmp_valid_7) && (_tmp_valid_0 && _tmp_valid_6);
+  assign _tmp_ready_0 = (_tmp_ready_7 || !_tmp_valid_7) && _tmp_valid_0;
   reg [32-1:0] _tmp_data_1;
   reg _tmp_valid_1;
   wire _tmp_ready_1;
-  assign cready = (_tmp_ready_1 || !_tmp_valid_1) && cvalid;
+  assign resetready = (_tmp_ready_1 || !_tmp_valid_1) && resetvalid;
   assign _tmp_ready_1 = (_tmp_ready_2 || !_tmp_valid_2) && _tmp_valid_1;
   reg [32-1:0] _tmp_data_2;
   reg _tmp_valid_2;
@@ -860,7 +830,7 @@ module main
   reg [32-1:0] _tmp_data_6;
   reg _tmp_valid_6;
   wire _tmp_ready_6;
-  assign _tmp_ready_6 = (_tmp_ready_7 || !_tmp_valid_7) && (_tmp_valid_0 && _tmp_valid_6);
+  assign _tmp_ready_6 = 1;
   reg [32-1:0] _tmp_data_7;
   reg _tmp_valid_7;
   wire _tmp_ready_7;
@@ -885,14 +855,14 @@ module main
       _tmp_data_7 <= 0;
       _tmp_valid_7 <= 0;
     end else begin
-      if((_tmp_ready_1 || !_tmp_valid_1) && cready && cvalid) begin
-        _tmp_data_1 <= cdata;
+      if((_tmp_ready_1 || !_tmp_valid_1) && resetready && resetvalid) begin
+        _tmp_data_1 <= resetdata;
       end 
       if(_tmp_valid_1 && _tmp_ready_1) begin
         _tmp_valid_1 <= 0;
       end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && cready) begin
-        _tmp_valid_1 <= cvalid;
+      if((_tmp_ready_1 || !_tmp_valid_1) && resetready) begin
+        _tmp_valid_1 <= resetvalid;
       end 
       if((_tmp_ready_2 || !_tmp_valid_2) && _tmp_ready_1 && _tmp_valid_1) begin
         _tmp_data_2 <= _tmp_data_1;
@@ -939,14 +909,17 @@ module main
       if((_tmp_ready_6 || !_tmp_valid_6) && _tmp_ready_5) begin
         _tmp_valid_6 <= _tmp_valid_5;
       end 
-      if((_tmp_ready_7 || !_tmp_valid_7) && (_tmp_ready_0 && _tmp_ready_6) && (_tmp_valid_0 && _tmp_valid_6)) begin
-        _tmp_data_7 <= _tmp_data_0 + _tmp_data_6;
+      if(_tmp_valid_6 && _tmp_ready_6) begin
+        _tmp_data_7 <= _tmp_data_6;
+      end 
+      if((_tmp_ready_7 || !_tmp_valid_7) && _tmp_ready_0 && _tmp_valid_0) begin
+        _tmp_data_7 <= _tmp_data_7 + _tmp_data_0;
       end 
       if(_tmp_valid_7 && _tmp_ready_7) begin
         _tmp_valid_7 <= 0;
       end 
-      if((_tmp_ready_7 || !_tmp_valid_7) && (_tmp_ready_0 && _tmp_ready_6)) begin
-        _tmp_valid_7 <= _tmp_valid_0 && _tmp_valid_6;
+      if((_tmp_ready_7 || !_tmp_valid_7) && _tmp_ready_0) begin
+        _tmp_valid_7 <= _tmp_valid_0;
       end 
     end
   end
@@ -1044,7 +1017,7 @@ endmodule
 """
 
 def test():
-    test_module = dataflow_multadd.mkTest()
+    test_module = dataflow_madd.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

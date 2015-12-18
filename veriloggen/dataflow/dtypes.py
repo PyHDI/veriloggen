@@ -815,6 +815,8 @@ class _Accumulator(_UnaryOperator):
             reset_data = self.reset.sig_data
             reset_valid = self.reset.sig_valid
             reset_ready = self.reset.sig_ready
+            if reset_valid is None:
+                raise TypeError('Reset condition of Accumulator must have a valid port')
             data_reset_cond = and_vars(reset_valid, reset_ready)
             seq( data(reset_data), cond=data_reset_cond )
             connect_ready(m, reset_ready, vtypes.Int(1))
