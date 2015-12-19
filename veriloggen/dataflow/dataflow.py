@@ -18,6 +18,7 @@ class Dataflow(object):
     def __init__(self, *nodes, **opts):
         self.datawidth = opts['datawidth'] if 'datawidth' in opts else 32
         self.nodes = set(nodes)
+        self.last_result = None
         
     def add(self, *nodes):
         self.nodes.extend(nodes)
@@ -88,8 +89,18 @@ class Dataflow(object):
         # add always statement
         seq.make_always()
 
+        # save schedule result
+        self.last_result = output_vars
+
         return m
             
+    #---------------------------------------------------------------------------
+    def draw_graph(self, filename='out.png', prog='dot'):
+        if self.last_result is None:
+            self.to_module()
+            
+        graph.draw_graph(self.last_result, filename, prog)
+    
     #---------------------------------------------------------------------------
     # Add a new variable
     #---------------------------------------------------------------------------
