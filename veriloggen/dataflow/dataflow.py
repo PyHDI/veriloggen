@@ -22,20 +22,27 @@ class Dataflow(object):
     def add(self, *nodes):
         self.nodes.extend(nodes)
     
-    def implement(self, m, clock, reset, name=None, aswire=False):
-        """ implemente actual registers and operations in Verilog """
-            
+    #---------------------------------------------------------------------------
     def to_module(self, name, clock='CLK', reset='RST'):
         """ generate a Module definion """
         
         m = Module(name)
         clk = m.Input(clock)
         rst = m.Input(reset)
-        seq = Seq(m, 'seq', clk, rst)
+
+        m = self.implement(m, clk, rst)
+
+        return m
+
+    #---------------------------------------------------------------------------
+    def implement(self, m, clock, reset, seq_name='seq', aswire=False):
+        """ implemente actual registers and operations in Verilog """
+
+        seq = Seq(m, seq_name, clock, reset)
 
         # for mult and div
-        m._clock = clk
-        m._reset = rst
+        m._clock = clock
+        m._reset = reset
         
         dataflow_nodes = copy.deepcopy(self.nodes)
         
@@ -82,7 +89,7 @@ class Dataflow(object):
         seq.make_always()
 
         return m
-
+            
     #---------------------------------------------------------------------------
     # Add a new variable
     #---------------------------------------------------------------------------

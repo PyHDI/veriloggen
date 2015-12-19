@@ -132,7 +132,7 @@ class _Numeric(_Node):
     def _implement(self, m, seq, width=32):
         raise TypeError('_implement() is not implemented on this class.')
     
-    def _implement_input(self, m, seq, width=32):
+    def _implement_input(self, m, seq, width=32, aswire=False):
         raise TypeError('_implement_input() is not implemented on this class.')
 
     def _disable_output(self):
@@ -140,15 +140,20 @@ class _Numeric(_Node):
         self.output_valid = None
         self.output_ready = None
     
-    def _implement_output(self, m, seq, width=32):
+    def _implement_output(self, m, seq, width=32, aswire=False):
         if self.end_stage is None:
             raise ValueError('end_stage is not fixed yet.')
+
+        type_i = m.Wire if aswire else m.Input
+        type_o = m.Wire if aswire else m.Output
         
-        data = m.Output(self.output_data, width=width)
+        data = type_o(self.output_data, width=width)
+        
         if self.output_valid is not None:
-            valid = m.Output(self.output_valid)
+            valid = type_o(self.output_valid)
+            
         if self.output_ready is not None:
-            ready = m.Input(self.output_ready)
+            ready = type_i(self.output_ready)
             
         m.Assign( data(self.sig_data) )
         
@@ -919,23 +924,23 @@ class _Variable(_Numeric):
         m.Assign( valid(self.input_data.sig_valid) )
         connect_ready(m, self.input_data.sig_ready, ready)
             
-    def _implement_input(self, m, seq, width=32):
+    def _implement_input(self, m, seq, width=32, aswire=False):
         if isinstance(self.input_data, _Numeric):
             return
+
+        type_i = m.Wire if aswire else m.Input
+        type_o = m.Wire if aswire else m.Output
         
-        self.sig_data = m.Input(self.input_data, width)
+        self.sig_data = type_i(self.input_data, width)
         
         if self.input_valid is not None:
-            self.sig_valid = m.Input(self.input_valid)
+            self.sig_valid = type_i(self.input_valid)
         else:
-            #self.sig_valid = vtypes.Int(1)
             self.sig_valid = None
             
         if self.input_ready is not None:
-            self.sig_ready = m.Output(self.input_ready)
+            self.sig_ready = type_o(self.input_ready)
         else:
-            #tmp = m.get_tmp()
-            #self.sig_ready = m.Wire(tmp_ready(tmp))
             self.sig_ready = None
             
 
