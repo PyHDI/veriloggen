@@ -71,9 +71,15 @@ class _Node(object):
         self.object_id = global_object_counter
         global_object_counter += 1
 
+    def __hash__(self):
+        return hash((id(self), self.object_id))
+    
 #-------------------------------------------------------------------------------
 class _Numeric(_Node):
     latency = 0
+    def __hash__(self):
+        return hash((id(self), self.object_id))
+    
     def __init__(self):
         _Node.__init__(self)
         self.output_data = None
@@ -119,9 +125,6 @@ class _Numeric(_Node):
         return prev
         
     #--------------------------------------------------------------------------
-    def __hash__(self):
-        return id(self)
-
     def _has_output(self):
         if self.output_data is not None: return True
         return False
@@ -236,6 +239,9 @@ class _Numeric(_Node):
     
     def __truediv__(self, r):
         return Divide(self, r)
+    
+    def __mod__(self, r):
+        return Mod(self, r)
     
     def __and__(self, r):
         return And(self, r)
@@ -446,7 +452,8 @@ class Times(_BinaryOperator):
 class Divide(_BinaryOperator):
     latency = 32
     def _implement(self, m, seq, width=32):
-        self.latency = width + 1
+        if width < 32:
+            width = 32
         
         if self.latency <= 1:
             raise ValueError("Latency of '*' operator must be greater than 1")
@@ -504,8 +511,62 @@ class Divide(_BinaryOperator):
 class Mod(_BinaryOperator):
     latency = 32
     def _implement(self, m, seq, width=32):
-        raise NotImplementedError()
-    
+        if width < 32:
+            width = 32
+        
+        if self.latency <= 1:
+            raise ValueError("Latency of '*' operator must be greater than 1")
+
+        tmp = m.get_tmp()
+        data = m.Wire(tmp_data(tmp), width)
+        valid = m.Wire(tmp_valid(tmp))
+        ready = m.Wire(tmp_ready(tmp))
+        self.sig_data = data
+        self.sig_valid = valid
+        self.sig_ready = ready
+        
+        ldata = self.left.sig_data
+        rdata = self.right.sig_data
+        
+        lvalid = self.left.sig_valid
+        rvalid = self.right.sig_valid
+        
+        lready = self.left.sig_ready
+        rready = self.right.sig_ready
+        
+        all_valid = and_vars(lvalid, rvalid)
+        all_ready = and_vars(lready, rready)
+
+        accept = vtypes.OrList(ready, vtypes.Not(valid))
+        
+        valid_cond = and_vars(accept, all_ready)
+        valid_reset_cond = and_vars(valid, ready)
+        data_cond = and_vars(valid_cond, all_valid)
+        ready_cond = and_vars(accept, all_valid)
+        
+        inst = div.get_div()
+        clk = m._clock
+        rst = m._reset
+
+        enable = m.Wire(tmp_data(tmp, prefix='_tmp_enable_') )
+        update = m.Wire(tmp_data(tmp, prefix='_tmp_update_') )
+        m.Assign( enable(data_cond) )
+        m.Assign( update(accept) ) # NOT valid_cond
+        
+        params = [ ('W_D', width) ]
+        ports = [ ('CLK', clk), ('RST', rst),
+                  ('update', update), ('enable', enable), ('valid', valid),
+                  ('in_a', ldata), ('in_b', rdata), ('mod', data) ]
+        
+        m.Instance(inst, ''.join(['div', str(tmp)]), params, ports)
+        
+        connect_ready(m, lready, ready_cond)
+        connect_ready(m, rready, ready_cond)
+        
+        if not self._has_output():
+            connect_ready(m, ready, vtypes.Int(1))
+
+            
 class Plus(_BinaryOperator): pass
 class Minus(_BinaryOperator): pass
 
@@ -753,9 +814,6 @@ class _Constant(_Numeric):
         _Numeric.__init__(self)
         self.value = value
 
-    def __hash__(self):
-        return hash(self.value)
-
     def _implement(self, m, seq, width=32):
         data = self.value
         valid = None
@@ -774,9 +832,6 @@ class _Variable(_Numeric):
         if isinstance(self.input_data, _Numeric):
             self.input_data._add_sink(self)
         
-    def __hash__(self):
-        return id(self)
-
     def _implement(self, m, seq, width=32):
         if not isinstance(self.input_data, _Numeric):
             return
