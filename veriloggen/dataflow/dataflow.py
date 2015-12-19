@@ -12,6 +12,7 @@ from . import visitor
 from . import dtypes
 from . import scheduler
 from . import allocator
+from . import graph
 
 class Dataflow(object):
     def __init__(self, *nodes, **opts):
@@ -106,10 +107,16 @@ class Dataflow(object):
         return v
     
     def Imul(self, data, initval=None, reset=None):
-        raise NotImplementedError()
+        v = dtypes.Imul(data, initval, reset)
+        self.add(v)
+        return v
     
     def Idiv(self, data, initval=None, reset=None):
-        raise NotImplementedError()
+        v = dtypes.Idiv(data, initval, reset)
+        self.add(v)
+        return v
     
-    def Icustom(self, data, initval=None, reset=None):
-        raise NotImplementedError()
+    def Icustom(self, ops, data, initval=None, reset=None):
+        v = dtypes.Icustom(ops, data, initval, reset)
+        self.add(v)
+        return v
