@@ -21,7 +21,10 @@ def mkMain():
 
     df = dataflow.Dataflow(z)
     m = df.to_module('main')
-    df.draw_graph()
+    try:
+        df.draw_graph()
+    except:
+        print('Pygraphviz is not installed.')
     
     return m
 
