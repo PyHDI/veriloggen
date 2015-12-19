@@ -15,12 +15,18 @@ def write_verilog(node, filename=None):
     visitor = VerilogModuleVisitor()
     modules = tuple(node.get_modules().values())
     
-    module_ast_list = [ visitor.visit(module) for module in modules ]
+    module_ast_list = [ visitor.visit(mod) for mod in modules
+                        if not isinstance(mod, module.StubModule) ]
     description = vast.Description(module_ast_list)
     source = vast.Source(filename, description)
     
     codegen = ASTCodeGenerator()
-    code = codegen.visit(source)
+    main = codegen.visit(source)
+
+    stub = [ mod.get_code() for mod in modules if isinstance(mod, module.StubModule) ]
+
+    code = ''.join([ main ] + stub)
+    
     if filename:
         with open(filename, 'w') as f:
             f.write(code)

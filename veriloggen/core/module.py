@@ -373,8 +373,8 @@ class Module(vtypes.VeriloggenNode):
         t = Instance(module, instname, params, ports)
         self.instance[instname] = t
         self.items.append(t)
-        if isinstance(module, StubModule):
-            return None
+        #if isinstance(module, StubModule):
+        #    return None
         if self.find_module(module.name) is not None:
             if self.submodule[module.name] != module:
                 raise ValueError("Module '%s' is already defined." % module.name)
@@ -764,12 +764,28 @@ class Module(vtypes.VeriloggenNode):
 #-------------------------------------------------------------------------------
 class StubModule(vtypes.VeriloggenNode):
     """ Verilog Module class """
-    def __init__(self, name=None):
+    def __init__(self, name=None, code=''):
         self.name = name if name is not None else self.__class__.__name__
+        self.code = code
 
+    def set_code(self, code):
+        self.code = code
+    
+    def get_code(self):
+        return self.code
+    
     def to_verilog(self, filename=None):
-        return ''
+        import veriloggen.verilog.to_verilog as to_verilog
+        return to_verilog.write_verilog(self, filename)
 
+    def has_hook(self):
+        return False
+    
+    def get_modules(self):
+        modules = collections.OrderedDict()
+        modules[self.name] = self
+        return modules
+        
 #-------------------------------------------------------------------------------
 class Instance(vtypes.VeriloggenNode):
     def __init__(self, module, instname, params=None, ports=None):
