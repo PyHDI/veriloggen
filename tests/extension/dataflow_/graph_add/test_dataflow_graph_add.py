@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import dataflow_graph
+import dataflow_graph_add
 
 expected_verilog = """
 module test;
@@ -545,7 +545,7 @@ endmodule
 """
 
 def test():
-    test_module = dataflow_graph.mkTest()
+    test_module = dataflow_graph_add.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

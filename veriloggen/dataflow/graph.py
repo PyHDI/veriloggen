@@ -9,17 +9,18 @@ import veriloggen.core.vtypes as vtypes
 from . import dtypes
 from .visitor import _Visitor
 
-def draw_graph(vars, filename='out.png', prog='dot'):
-    gg = GraphGenerator()
+def draw_graph(vars, filename='out.png', prog='dot', skip_gap=False):
+    gg = GraphGenerator(skip_gap=skip_gap)
     gg.draw(vars, filename, prog)
 
 class GraphGenerator(_Visitor):
-    def __init__(self):
+    def __init__(self, skip_gap=False):
         try:
             import pygraphviz as pgv
         except:
             raise ImportError('Graph generator requires Pygraphviz.')
-        
+
+        self.skip_gap = skip_gap
         self.graph = pgv.AGraph(directed=True)
         self.visited_node = {}
         self.tmp_count = 0
@@ -53,6 +54,7 @@ class GraphGenerator(_Visitor):
             self._add_edge(src, outobj)
 
     def _add_gap(self, node, mark=''):
+        if self.skip_gap: return node
         prev = node
         for i in range(node.end_stage - node.start_stage - 1):
             tmp = self._get_tmp()
@@ -89,7 +91,7 @@ class GraphGenerator(_Visitor):
     
     def visit__UnaryOperator(self, node):
         mark = ('delay' if isinstance(node, dtypes._Delay) else
-                'prev' if isinstance(node, dtypes._Delay) else
+                'prev' if isinstance(node, dtypes._Prev) else
                 self._get_mark(node.op) )
         shape = 'box' if isinstance(node, (dtypes._Delay, dtypes._Prev)) else 'ellipse' 
         self._add_node(node, label=mark, shape=shape)

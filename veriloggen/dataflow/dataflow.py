@@ -95,11 +95,11 @@ class Dataflow(object):
         return m
             
     #---------------------------------------------------------------------------
-    def draw_graph(self, filename='out.png', prog='dot'):
+    def draw_graph(self, filename='out.png', prog='dot', skip_gap=False):
         if self.last_result is None:
             self.to_module()
             
-        graph.draw_graph(self.last_result, filename, prog)
+        graph.draw_graph(self.last_result, filename, prog, skip_gap)
     
     #---------------------------------------------------------------------------
     # Add a new variable
