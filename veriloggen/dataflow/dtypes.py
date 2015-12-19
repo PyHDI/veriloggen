@@ -605,12 +605,11 @@ class Uxnor(_UnaryOperator): pass
 #-------------------------------------------------------------------------------
 class _SpecialOperator(_Operator):
     latency = 1
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args):
         _Operator.__init__(self)
-        self.args = args
+        self.args = list(args)
         for var in self.args:
             var._add_sink(self) 
-        self.kwargs = kwargs
         self.op = None
 
     def _implement(self, m, seq, width=32):
@@ -664,32 +663,74 @@ class _SpecialOperator(_Operator):
 class Pointer(_SpecialOperator):
     def __init__(self, var, pos):
         _SpecialOperator.__init__(self, var, pos)
-        self.var = var
-        self.pos = pos
         self.op = vtypes.Pointer
+
+    @property
+    def var(self):
+        return self.args[0]
+
+    @var.setter
+    def var(self, var):
+        self.args[0] = var
+        
+    @property
+    def pos(self):
+        return self.args[1]
+
+    @pos.setter
+    def pos(self, pos):
+        self.args[1] = pos
         
     def bit_length(self):
-        if isinstance(var, _Variable) and var.length is not None:
+        if isinstance(self.var, _Variable) and self.var.length is not None:
             return self.var.bit_length()
         return 1
     
 class Slice(_SpecialOperator):
     def __init__(self, var, msb, lsb):
         _SpecialOperator.__init__(self, var, msb, lsb)
-        self.var = var
-        self.msb = msb
-        self.lsb = lsb
         self.op = vtypes.Slice
 
+    @property
+    def var(self):
+        return self.args[0]
+
+    @var.setter
+    def var(self, var):
+        self.args[0] = var
+        
+    @property
+    def msb(self):
+        return self.args[1]
+
+    @msb.setter
+    def msb(self, msb):
+        self.args[1] = msb
+        
+    @property
+    def lsb(self):
+        return self.args[2]
+
+    @lsb.setter
+    def lsb(self, lsb):
+        self.args[2] = lsb
+        
     def bit_length(self):
         raise NotImplementedError('bit_length is not implemented.')
     
 class Cat(_SpecialOperator):
     def __init__(self, *vars):
         _SpecialOperator.__init__(self, *vars)
-        self.vars = tuple(vars)
         self.op = vtypes.Cat
     
+    @property
+    def vars(self):
+        return self.args
+
+    @vars.setter
+    def vars(self, vars):
+        self.args = list(vars)
+        
     def bit_length(self):
         values = [ v.bit_length() for v in self.vars ]
         ret = values[0]
@@ -700,20 +741,55 @@ class Cat(_SpecialOperator):
 class Repeat(_SpecialOperator):
     def __init__(self, var, times):
         _SpecialOperator.__init__(self, var, times)
-        self.var = var
-        self.times = times
         self.op = vtypes.Repeat
 
+    @property
+    def var(self):
+        return self.args[0]
+
+    @var.setter
+    def var(self, var):
+        self.args[0] = var
+        
+    @property
+    def times(self):
+        return self.args[1]
+
+    @times.setter
+    def times(self, times):
+        self.args[1] = times
+        
     def bit_length(self):
         return self.var.bit_length() * self.times
         
 class Cond(_SpecialOperator):
     def __init__(self, condition, true_value, false_value):
         _SpecialOperator.__init__(self, condition, true_value, false_value)
-        self.condition = condition
-        self.true_value = true_value
-        self.false_value = false_value
         self.op = vtypes.Cond
+        
+    @property
+    def condition(self):
+        return self.args[0]
+
+    @condition.setter
+    def condition(self, condition):
+        self.args[0] = condition
+        
+    @property
+    def true_value(self):
+        return self.args[1]
+
+    @true_value.setter
+    def true_value(self, true_value):
+        self.args[1] = true_value
+        
+    @property
+    def false_value(self):
+        return self.args[2]
+
+    @false_value.setter
+    def false_value(self, false_value):
+        self.args[2] = false_value
         
     def bit_length(self):
         raise NotImplementedError('bit_length is not implemented.')
