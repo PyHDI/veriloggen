@@ -73,6 +73,8 @@ class ASAPScheduler(_Scheduler):
         node.left = self.fill_gap(node.left, mine)
         node.right = self.fill_gap(node.right, mine)
         node._set_start_stage(mine)
+        if isinstance(node, (dtypes.Divide, dtypes.Mod)):
+            node.latency = node.bit_length()
         end = mine + node.latency
         node._set_end_stage(end)
         return end

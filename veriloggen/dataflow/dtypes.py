@@ -125,24 +125,33 @@ class _Numeric(_Node):
         return prev
         
     #--------------------------------------------------------------------------
+    def bit_length(self):
+        raise NotImplementedError('bit_length() is not implemented')
+
+    def eval(self):
+        raise NotImplementedError('eval() is not implemented')
+    
+    #--------------------------------------------------------------------------
     def _has_output(self):
         if self.output_data is not None: return True
         return False
 
-    def _implement(self, m, seq, width=32):
-        raise TypeError('_implement() is not implemented on this class.')
+    def _implement(self, m, seq):
+        raise NotImplementedError('_implement() is not implemented.')
     
-    def _implement_input(self, m, seq, width=32, aswire=False):
-        raise TypeError('_implement_input() is not implemented on this class.')
+    def _implement_input(self, m, seq, aswire=False):
+        raise NotImplementedError('_implement_input() is not implemented.')
 
     def _disable_output(self):
         self.output_data = None
         self.output_valid = None
         self.output_ready = None
     
-    def _implement_output(self, m, seq, width=32, aswire=False):
+    def _implement_output(self, m, seq, aswire=False):
         if self.end_stage is None:
             raise ValueError('end_stage is not fixed yet.')
+
+        width = self.bit_length()
 
         type_i = m.Wire if aswire else m.Input
         type_o = m.Wire if aswire else m.Output
@@ -286,19 +295,16 @@ class _Numeric(_Node):
     def repeat(self, times):
         return Repeat(self, times)
 
-    def bit_length(self):
-        return None
-
 #-------------------------------------------------------------------------------
 class _Operator(_Numeric):
     latency = 1
-    def _implement(self, m, seq, width=32):
-        raise NotImplementedError()
+    def _implement(self, m, seq):
+        raise NotImplementedError('_implement() is not implemented.')
     
 class _BinaryOperator(_Operator):
     def __init__(self, left, right):
         _Operator.__init__(self)
-        self.left = left
+        self.left = to_constant(left)
         self.right = to_constant(right)
         self.left._add_sink(self)
         self.right._add_sink(self)
@@ -307,9 +313,11 @@ class _BinaryOperator(_Operator):
     def bit_length(self):
         return max(self.left.bit_length(), self.right.bit_length())
 
-    def _implement(self, m, seq, width=32):
+    def _implement(self, m, seq):
         if self.latency != 1:
             raise ValueError("Latency mismatch '%d' vs '%s'" % (self.latency, 1))
+
+        width = self.bit_length()
 
         tmp = m.get_tmp()
         data = m.Reg(tmp_data(tmp), width, initval=0)
@@ -357,10 +365,12 @@ class _UnaryOperator(_Operator):
     def bit_length(self):
         return self.right.bit_length()
 
-    def _implement(self, m, seq, width=32):
+    def _implement(self, m, seq):
         if self.latency != 1:
             raise ValueError("Latency mismatch '%d' vs '%s'" % (self.latency, 1))
         
+        width = self.bit_length()
+
         tmp = m.get_tmp()
         data = m.Reg(tmp_data(tmp), width, initval=0)
         valid = m.Reg(tmp_valid(tmp), initval=0)
@@ -395,14 +405,22 @@ class _UnaryOperator(_Operator):
 
 class Power(_BinaryOperator):
     latency = 0
-    def _implement(self, m, seq, width=32):
-        raise NotImplementedError()
+    def eval(self):
+        return self.left.eval() ** self.right.eval()
+    
+    def _implement(self, m, seq):
+        raise NotImplementedError('_implement() is not implemented.')
 
 class Times(_BinaryOperator):
     latency = 6
-    def _implement(self, m, seq, width=32):
+    def eval(self):
+        return self.left.eval() * self.right.eval()
+    
+    def _implement(self, m, seq):
         if self.latency <= 1:
             raise ValueError("Latency of '*' operator must be greater than 1")
+
+        width = self.bit_length()
 
         tmp = m.get_tmp()
         data = m.Wire(tmp_data(tmp), width)
@@ -456,12 +474,18 @@ class Times(_BinaryOperator):
     
 class Divide(_BinaryOperator):
     latency = 32
-    def _implement(self, m, seq, width=32):
-        if width < 32:
-            width = 32
-        
+    def eval(self):
+        left = self.left.eval()
+        right = self.right.eval()
+        if isinstance(left, int) and isinstance(right, int):
+            return int(left / right)
+        return Divide(left, right)
+    
+    def _implement(self, m, seq):
         if self.latency <= 1:
             raise ValueError("Latency of '*' operator must be greater than 1")
+
+        width = self.bit_length()
 
         tmp = m.get_tmp()
         data = m.Wire(tmp_data(tmp), width)
@@ -515,12 +539,14 @@ class Divide(_BinaryOperator):
     
 class Mod(_BinaryOperator):
     latency = 32
-    def _implement(self, m, seq, width=32):
-        if width < 32:
-            width = 32
-        
+    def eval(self):
+        return self.left.eval() % self.right.eval()
+    
+    def _implement(self, m, seq):
         if self.latency <= 1:
             raise ValueError("Latency of '*' operator must be greater than 1")
+
+        width = self.bit_length()
 
         tmp = m.get_tmp()
         data = m.Wire(tmp_data(tmp), width)
@@ -572,54 +598,229 @@ class Mod(_BinaryOperator):
             connect_ready(m, ready, vtypes.Int(1))
 
             
-class Plus(_BinaryOperator): pass
-class Minus(_BinaryOperator): pass
+class Plus(_BinaryOperator):
+    def eval(self):
+        return self.left.eval() + self.right.eval()
+    
+class Minus(_BinaryOperator):
+    def eval(self):
+        return self.left.eval() - self.right.eval()
 
-class Sll(_BinaryOperator): pass
-class Srl(_BinaryOperator): pass
-class Sra(_BinaryOperator): pass
+class Sll(_BinaryOperator):
+    max_width = 1024
+    def bit_length(self):
+        v = self.right.eval()
+        if isinstance(v, int):
+            return self.left.bit_length() + v
+        v = 2 ** self.right.bit_length()
+        ret = self.left.bit_length() + v
+        if ret > self.max_width:
+            raise ValueError("bit_length is too large '%d'" % ret)
+        return ret
+    
+    def eval(self):
+        return self.left.eval() << self.right.eval()
+    
+class Srl(_BinaryOperator):
+    def eval(self):
+        return self.left.eval() >> self.right.eval()
+    
+class Sra(_BinaryOperator):
+    def eval(self):
+        left = self.left.eval()
+        right = self.right.eval()
+        if isinstance(left, int) and isinstance(right, int):
+            sign = left >= 0
+            left = abs(left)
+            ret = left >> right
+            if not sign:
+                return -1 * ret
+            return ret
+        return Sra(left, right)
 
-class LessThan(_BinaryOperator): pass
-class GreaterThan(_BinaryOperator): pass
-class LessEq(_BinaryOperator): pass
-class GreaterEq(_BinaryOperator): pass
+class LessThan(_BinaryOperator):
+    def eval(self):
+        return self.left.eval() < self.right.eval()
+    
+class GreaterThan(_BinaryOperator):
+    def eval(self):
+        return self.left.eval() > self.right.eval()
+    
+class LessEq(_BinaryOperator):
+    def eval(self):
+        return self.left.eval() <= self.right.eval()
 
-class Eq(_BinaryOperator): pass
-class NotEq(_BinaryOperator): pass
-class Eql(_BinaryOperator): pass # ===
-class NotEql(_BinaryOperator): pass # !==
+class GreaterEq(_BinaryOperator):
+    def eval(self):
+        return self.left.eval() >= self.right.eval()
 
-class And(_BinaryOperator): pass
-class Xor(_BinaryOperator): pass
-class Xnor(_BinaryOperator): pass
-class Or(_BinaryOperator): pass
-class Land(_BinaryOperator): pass
-class Lor(_BinaryOperator): pass
+class Eq(_BinaryOperator):
+    def eval(self):
+        return self.left.eval() == self.right.eval()
+    
+class NotEq(_BinaryOperator):
+    def eval(self):
+        return self.left.eval() != self.right.eval()
+    
+class And(_BinaryOperator):
+    def eval(self):
+        return self.left.eval() & self.right.eval()
+    
+class Xor(_BinaryOperator):
+    def eval(self):
+        return self.left.eval() ^ self.right.eval()
+    
+class Xnor(_BinaryOperator):
+    def eval(self):
+        left = self.left.eval()
+        right = self.right.eval()
+        ret =  left ^ right
+        if isinstance(ret, int):
+            return ret == 0
+        return Xnor(left, right)
+    
+class Or(_BinaryOperator):
+    def eval(self):
+        return self.left.eval() | self.right.eval()
+    
+class Land(_BinaryOperator):
+    def eval(self):
+        left = self.left.eval()
+        right = self.right.eval()
+        if isinstance(left, (int, bool)) and isinstance(right, (int, bool)):
+            return left and right
+        return Land(left, right)
+    
+class Lor(_BinaryOperator):
+    def eval(self):
+        left = self.left.eval()
+        right = self.right.eval()
+        if isinstance(left, (int, bool)) and isinstance(right, (int, bool)):
+            return left or right
+        return Land(left, right)
 
-class Uplus(_UnaryOperator): pass
-class Uminus(_UnaryOperator): pass
-class Ulnot(_UnaryOperator): pass
-class Unot(_UnaryOperator): pass
-class Uand(_UnaryOperator): pass
-class Unand(_UnaryOperator): pass
-class Uor(_UnaryOperator): pass
-class Unor(_UnaryOperator): pass
-class Uxor(_UnaryOperator): pass
-class Uxnor(_UnaryOperator): pass
+class Uplus(_UnaryOperator):
+    def eval(self):
+        return self.right.eval()
+    
+class Uminus(_UnaryOperator):
+    def eval(self):
+        return - self.right.eval()
+    
+class Ulnot(_UnaryOperator):
+    def eval(self):
+        right = self.right.eval()
+        if isinstance(right, (int, bool)):
+            return not right
+        return Ulnot(right)
+    
+class Unot(_UnaryOperator):
+    def eval(self):
+        return ~ self.right.eval()
+    
+class Uand(_UnaryOperator):
+    def eval(self):
+        right = self.right.eval()
+        if isinstance(right, bool):
+            return right
+        if isinstance(right, int):
+            width = self.right.bit_length()
+            for i in range(width):
+                if right & 0x1 == 0:
+                    return False
+                right = right >> 1
+            return True
+        return Uand(right)
+    
+class Unand(_UnaryOperator):
+    def eval(self):
+        right = self.right.eval()
+        if isinstance(right, bool):
+            return not right
+        if isinstance(right, int):
+            width = self.right.bit_length()
+            for i in range(width):
+                if right & 0x1 == 0:
+                    return True
+                right = right >> 1
+            return False
+        return Unand(right)
+    
+class Uor(_UnaryOperator):
+    def eval(self):
+        right = self.right.eval()
+        if isinstance(right, bool):
+            return right
+        if isinstance(right, int):
+            width = self.right.bit_length()
+            for i in range(width):
+                if right & 0x1 == 1:
+                    return True
+                right = right >> 1
+            return False
+        return Uor(right)
+    
+class Unor(_UnaryOperator):
+    def eval(self):
+        right = self.right.eval()
+        if isinstance(right, bool):
+            return not right
+        if isinstance(right, int):
+            width = self.right.bit_length()
+            for i in range(width):
+                if right & 0x1 == 1:
+                    return False
+                right = right >> 1
+            return True
+        return Unor(right)
+    
+class Uxor(_UnaryOperator):
+    def eval(self):
+        right = self.right.eval()
+        if isinstance(right, bool):
+            return right
+        if isinstance(right, int):
+            width = self.right.bit_length()
+            ret = 1
+            for i in range(width):
+                ret = ret ^ (right & 0x1)
+                right = right >> 1
+            return ret == 1
+        return Uxor(right)
+    
+class Uxnor(_UnaryOperator):
+    def eval(self):
+        right = self.right.eval()
+        if isinstance(right, bool):
+            return not right
+        if isinstance(right, int):
+            width = self.right.bit_length()
+            ret = 1
+            for i in range(width):
+                ret = ret ^ (right & 0x1)
+                right = right >> 1
+            return ret == 0
+        return Uxnor(right)
         
 #-------------------------------------------------------------------------------
 class _SpecialOperator(_Operator):
     latency = 1
     def __init__(self, *args):
         _Operator.__init__(self)
-        self.args = list(args)
+        self.args = [ to_constant(arg) for arg in args ]
         for var in self.args:
             var._add_sink(self) 
         self.op = None
 
-    def _implement(self, m, seq, width=32):
+    def bit_length(self):
+        args = [ arg.bit_length() for arg in self.args ]
+        return max(*args)
+    
+    def _implement(self, m, seq):
         if self.latency != 1:
             raise ValueError("Latency mismatch '%d' vs '%s'" % (self.latency, 1))
+
+        width = self.bit_length()
 
         tmp = m.get_tmp()
         data = m.Reg(tmp_data(tmp), width, initval=0)
@@ -687,12 +888,21 @@ class Pointer(_SpecialOperator):
         self.args[1] = pos
         
     def bit_length(self):
-        if isinstance(self.var, _Variable) and self.var.length is not None:
-            return self.var.bit_length()
         return 1
+
+    def eval(self):
+        var = self.var.eval()
+        pos = self.pos.eval()
+        if isinstance(var, int) and isinstance(pos, int):
+            return (var >> pos) & 0x1
+        return Pointer(var, pos)
     
 class Slice(_SpecialOperator):
     def __init__(self, var, msb, lsb):
+        msb = msb.eval() if isinstance(msb, _Constant) else msb
+        lsb = lsb.eval() if isinstance(lsb, _Constant) else lsb
+        if not isinstance(msb, int) or not isinstance(lsb, int):
+            raise TypeError('msb and lsb must be int')
         _SpecialOperator.__init__(self, var, msb, lsb)
         self.op = vtypes.Slice
 
@@ -721,7 +931,18 @@ class Slice(_SpecialOperator):
         self.args[2] = lsb
         
     def bit_length(self):
-        raise NotImplementedError('bit_length is not implemented.')
+        return self.msb - self.lsb + 1
+    
+    def eval(self):
+        var = self.var.eval()
+        msb = self.msb.eval()
+        lsb = self.lsb.eval()
+        if isinstance(var, int) and isinstance(msb, int) and isinstance(lsb, int):
+            mask = 0
+            for i in range(msb - lsb + 1):
+                mask = (mask << 1) | 0x1
+            return (var >> lsb) & mask
+        return Slice(var, msb, lsb)
     
 class Cat(_SpecialOperator):
     def __init__(self, *vars):
@@ -737,14 +958,26 @@ class Cat(_SpecialOperator):
         self.args = list(vars)
         
     def bit_length(self):
-        values = [ v.bit_length() for v in self.vars ]
-        ret = values[0]
-        for v in values[1:]:
-            ret = ret + v
+        ret = 0
+        for v in self.vars:
+             ret += v.bit_length() 
         return ret
 
+    def eval(self):
+        vars = [ var.eval() for var in self.vars ]
+        for var in vars:
+            if not isinstance(var, int):
+                return Cat(*vars)
+        ret = 0
+        for var in vars:
+            ret = (ret << var.bit_length()) | var
+        return ret
+    
 class Repeat(_SpecialOperator):
     def __init__(self, var, times):
+        times = times.eval() if isinstance(times, _Constant) else times
+        if not isinstance(times, int):
+            raise TypeError('times must be int')
         _SpecialOperator.__init__(self, var, times)
         self.op = vtypes.Repeat
 
@@ -766,7 +999,15 @@ class Repeat(_SpecialOperator):
         
     def bit_length(self):
         return self.var.bit_length() * self.times
-        
+
+    def eval(self):
+        var = self.var.eval()
+        times = self.times.eval()
+        ret = 0
+        for i in times:
+            ret = (ret << var.bit_length()) | var
+        return ret
+    
 class Cond(_SpecialOperator):
     def __init__(self, condition, true_value, false_value):
         _SpecialOperator.__init__(self, condition, true_value, false_value)
@@ -797,8 +1038,19 @@ class Cond(_SpecialOperator):
         self.args[2] = false_value
         
     def bit_length(self):
-        raise NotImplementedError('bit_length is not implemented.')
+        return max(self.true_value.bit_length(), self.false_value.bit_length())
 
+    def eval(self):
+        condition = self.condition.eval()
+        true_value = self.true_value.eval()
+        false_value = self.false_value.eval()
+        if isinstance(condition, (int, bool)):
+            if condition:
+                return true_value
+            else:
+                return false_value
+        return Cond(condition, true_value, false_value)
+    
 # Alias of Cond
 Mux = Cond
     
@@ -807,6 +1059,9 @@ class CustomOp(_SpecialOperator):
     def __init__(self, op, *vars):
         _SpecialOperator.__init__(self, *vars)
         self.op = op
+
+    def eval(self):
+        return self
 
 #-------------------------------------------------------------------------------
 class _Delay(_UnaryOperator):
@@ -821,10 +1076,15 @@ class _Delay(_UnaryOperator):
     def _get_parent_value(self):
         return self.parent_value
         
-    def _implement(self, m, seq, width=32):
+    def eval(self):
+        return self
+
+    def _implement(self, m, seq):
         if self.latency != 1:
             raise ValueError("Latency mismatch '%d' vs '%s'" % (self.latency, 1))
         
+        width = self.bit_length()
+
         tmp = m.get_tmp()
         data = m.Reg(tmp_data(tmp), width, initval=0)
         valid = m.Reg(tmp_valid(tmp), initval=0)
@@ -871,10 +1131,15 @@ class _Prev(_UnaryOperator):
     def _get_parent_value(self):
         return self.parent_value
         
-    def _implement(self, m, seq, width=32):
+    def eval(self):
+        return self
+
+    def _implement(self, m, seq):
         if self.latency != 0:
             raise ValueError("Latency mismatch '%d' vs '%s'" % (self.latency, 0))
         
+        width = self.bit_length()
+
         tmp = m.get_tmp()
         data = m.Reg(tmp_data(tmp), width, initval=0)
         valid = self.parent_value.sig_valid
@@ -895,42 +1160,61 @@ class _Constant(_Numeric):
         _Numeric.__init__(self)
         self.value = value
 
-    def _implement(self, m, seq, width=32):
+    def bit_length(self):
+        return self.value.bit_length()
+
+    def eval(self):
+        return self.value
+        
+    def _implement(self, m, seq):
         data = self.value
         valid = None
         ready = None
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
-        
+
 #-------------------------------------------------------------------------------
 class _Variable(_Numeric):
-    def __init__(self, data=None, valid=None, ready=None):
+    def __init__(self, data=None, valid=None, ready=None, width=32):
         _Numeric.__init__(self)
         self.input_data = data
         self.input_valid = valid
         self.input_ready = ready
         if isinstance(self.input_data, _Numeric):
             self.input_data._add_sink(self)
+        self.width = width
         
-    def _implement(self, m, seq, width=32):
+    def bit_length(self):
+        return self.width
+
+    def eval(self):
+        return self
+    
+    def _implement(self, m, seq):
         if not isinstance(self.input_data, _Numeric):
             return
+        
+        width = self.bit_length()
+
         tmp = m.get_tmp()
         data = m.Wire(tmp_data(tmp), width)
         valid = m.Wire(tmp_valid(tmp))
         ready = m.Wire(tmp_ready(tmp))
+        
         m.Assign( data(self.input_data.sig_data) )
         m.Assign( valid(self.input_data.sig_valid) )
         connect_ready(m, self.input_data.sig_ready, ready)
             
-    def _implement_input(self, m, seq, width=32, aswire=False):
+    def _implement_input(self, m, seq, aswire=False):
         if isinstance(self.input_data, _Numeric):
             return
 
         type_i = m.Wire if aswire else m.Input
         type_o = m.Wire if aswire else m.Output
         
+        width = self.bit_length()
+
         self.sig_data = type_i(self.input_data, width)
         
         if self.input_valid is not None:
@@ -943,20 +1227,26 @@ class _Variable(_Numeric):
         else:
             self.sig_ready = None
             
-
 #-------------------------------------------------------------------------------
 class _Accumulator(_UnaryOperator):
     latency = 1
     ops = ( vtypes.Plus, )
     
-    def __init__(self, right, initval=None, reset=None):
+    def __init__(self, right, initval=None, reset=None, width=32):
         _UnaryOperator.__init__(self, right)
         self.initval = to_constant(initval) if initval is not None else to_constant(0)
         if not isinstance(self.initval, _Constant):
             raise TypeError("initval must be Constant, not '%s'" % str(type(self.initval)))
         self.reset = to_constant(reset) if reset is not None else to_constant(0)
+        self.width = width
 
-    def _implement(self, m, seq, width=32):
+    def bit_length(self):
+        return max(self.width, self.right.bit_length())
+
+    def eval(self):
+        return self
+    
+    def _implement(self, m, seq):
         if self.latency != 1:
             raise ValueError("Latency mismatch '%d' vs '%s'" % (self.latency, 1))
 
@@ -964,6 +1254,8 @@ class _Accumulator(_UnaryOperator):
         #initval_valid = self.initval.sig_valid
         #initval_ready = self.initval.sig_ready
         
+        width = self.bit_length()
+
         tmp = m.get_tmp()
         data = m.Reg(tmp_data(tmp), width, initval=initval_data)
         valid = m.Reg(tmp_valid(tmp), initval=0)
@@ -1021,31 +1313,31 @@ class _Accumulator(_UnaryOperator):
 
 class Iadd(_Accumulator):
     ops = ( vtypes.Plus, )
-    def __init__(self, right, initval=0, reset=None):
-        _Accumulator.__init__(self, right, initval, reset)
+    def __init__(self, right, initval=0, reset=None, width=32):
+        _Accumulator.__init__(self, right, initval, reset, width)
 
 class Isub(_Accumulator):
     ops = ( vtypes.Minus, )
-    def __init__(self, right, initval=0, reset=None):
-        _Accumulator.__init__(self, right, initval, reset)
+    def __init__(self, right, initval=0, reset=None, width=32):
+        _Accumulator.__init__(self, right, initval, reset, width)
 
 class Imul(_Accumulator):
     #latency = 6
     latency = 1 
     ops = ( vtypes.Times, )
-    def __init__(self, right, initval=1, reset=None):
-        _Accumulator.__init__(self, right, initval, reset)
+    def __init__(self, right, initval=1, reset=None, width=32):
+        _Accumulator.__init__(self, right, initval, reset, width)
 
 class Idiv(_Accumulator):
     latency = 32
     op = ()
-    def __init__(self, right, initval=1, reset=None):
+    def __init__(self, right, initval=1, reset=None, width=32):
         raise NotImplementedError()
-        _Accumulator.__init__(self, right, initval, reset)
+        _Accumulator.__init__(self, right, initval, reset, width)
 
 class Icustom(_Accumulator):
-    def __init__(self, ops, right, initval=0, reset=None):
-        _Accumulator.__init__(self, right, initval, reset)
+    def __init__(self, ops, right, initval=0, reset=None, width=32):
+        _Accumulator.__init__(self, right, initval, reset, width)
         if not isinstance(ops, (tuple, list)):
             ops = tuple([ ops ])
         self.ops = ops
@@ -1075,5 +1367,5 @@ def Constant(value):
         return Str(value)
     raise TypeError("Unsupported type for Constant '%s'" % str(type(value)))
 
-def Variable(data=None, valid=None, ready=None):
-    return _Variable(data, valid, ready)
+def Variable(data=None, valid=None, ready=None, width=32):
+    return _Variable(data, valid, ready, width)

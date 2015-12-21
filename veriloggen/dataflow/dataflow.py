@@ -109,32 +109,32 @@ class Dataflow(object):
         self.add(v)
         return v
     
-    def Variable(self, name=None, valid=None, ready=None):
-        v = dtypes.Variable(name, valid, ready)
+    def Variable(self, name=None, valid=None, ready=None, width=32):
+        v = dtypes.Variable(name, valid, ready, width)
         self.add(v)
         return v
     
-    def Iadd(self, data, initval=None, reset=None):
-        v = dtypes.Iadd(data, initval, reset)
+    def Iadd(self, data, initval=None, reset=None, width=32):
+        v = dtypes.Iadd(data, initval, reset, width)
         self.add(v)
         return v
     
-    def Isub(self, data, initval=None, reset=None):
-        v = dtypes.Isub(data, initval, reset)
+    def Isub(self, data, initval=None, reset=None, width=32):
+        v = dtypes.Isub(data, initval, reset, width)
         self.add(v)
         return v
     
-    def Imul(self, data, initval=None, reset=None):
-        v = dtypes.Imul(data, initval, reset)
+    def Imul(self, data, initval=None, reset=None, width=32):
+        v = dtypes.Imul(data, initval, reset, width)
         self.add(v)
         return v
     
-    def Idiv(self, data, initval=None, reset=None):
-        v = dtypes.Idiv(data, initval, reset)
+    def Idiv(self, data, initval=None, reset=None, width=32):
+        v = dtypes.Idiv(data, initval, reset, width)
         self.add(v)
         return v
     
-    def Icustom(self, ops, data, initval=None, reset=None):
-        v = dtypes.Icustom(ops, data, initval, reset)
+    def Icustom(self, ops, data, initval=None, reset=None, width=32):
+        v = dtypes.Icustom(ops, data, initval, reset, width)
         self.add(v)
         return v
