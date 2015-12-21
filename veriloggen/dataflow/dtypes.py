@@ -44,6 +44,37 @@ def connect_ready(m, var, ready):
     else:
         var.subst[0].overwrite_right( and_vars(prev_subst[0].right, ready) )
 
+def set_width(node):
+    if isinstance(node, int):
+        node = vtypes.Int(node)
+    if isinstance(node, vtypes.Int) and node.width is None:
+        node.width = max(node.value.bit_length(), 32)
+    return node
+        
+def fit_width(node, node_width, targ_width):
+    node = set_width(node)
+    
+    if isinstance(node, vtypes.Int) and targ_width <= 32:
+        return node
+    
+    if node_width < targ_width:
+        if isinstance(node, vtypes.Int):
+            node.width = targ_width
+            return node
+        
+        return vtypes.Cat(vtypes.Int(0, width=targ_width-node_width), node)
+    
+    if node_width > targ_width:
+        if isinstance(node, vtypes.Int):
+            if node.value.bit_length() > targ_width:
+                raise ValueError("Illegal target width")
+            node.width = targ_width
+            return node
+        
+        return vtypes.Slice(node, targ_width-1, 0)
+    
+    return node
+        
 #-------------------------------------------------------------------------------
 def tmp_data(val, prefix='_tmp_data_'):
     return ''.join([prefix, str(val)])
@@ -430,8 +461,8 @@ class Times(_BinaryOperator):
         self.sig_valid = valid
         self.sig_ready = ready
         
-        ldata = self.left.sig_data
-        rdata = self.right.sig_data
+        ldata = fit_width(self.left.sig_data, self.left.bit_length(), width)
+        rdata = fit_width(self.right.sig_data, self.right.bit_length(), width)
         
         lvalid = self.left.sig_valid
         rvalid = self.right.sig_valid
@@ -495,8 +526,8 @@ class Divide(_BinaryOperator):
         self.sig_valid = valid
         self.sig_ready = ready
         
-        ldata = self.left.sig_data
-        rdata = self.right.sig_data
+        ldata = fit_width(self.left.sig_data, self.left.bit_length(), width)
+        rdata = fit_width(self.right.sig_data, self.right.bit_length(), width)
         
         lvalid = self.left.sig_valid
         rvalid = self.right.sig_valid
@@ -556,8 +587,8 @@ class Mod(_BinaryOperator):
         self.sig_valid = valid
         self.sig_ready = ready
         
-        ldata = self.left.sig_data
-        rdata = self.right.sig_data
+        ldata = fit_width(self.left.sig_data, self.left.bit_length(), width)
+        rdata = fit_width(self.right.sig_data, self.right.bit_length(), width)
         
         lvalid = self.left.sig_valid
         rvalid = self.right.sig_valid
@@ -998,7 +1029,7 @@ class Repeat(_SpecialOperator):
         self.args[1] = times
         
     def bit_length(self):
-        return self.var.bit_length() * self.times
+        return self.var.bit_length() * self.times.eval()
 
     def eval(self):
         var = self.var.eval()

@@ -759,7 +759,7 @@ module main
     .enable(_tmp_enable_0),
     .valid(_tmp_valid_0),
     .in_a(xdata),
-    .in_b(2),
+    .in_b(32'd2),
     .rslt(_tmp_data_0)
   );
 

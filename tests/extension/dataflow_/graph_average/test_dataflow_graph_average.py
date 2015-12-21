@@ -789,7 +789,7 @@ module main
     .enable(_tmp_enable_6),
     .valid(_tmp_valid_6),
     .in_a(_tmp_data_5),
-    .in_b(3),
+    .in_b(32'd3),
     .rslt(_tmp_data_6)
   );
 
