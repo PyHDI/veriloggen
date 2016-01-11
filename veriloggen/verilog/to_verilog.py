@@ -45,6 +45,17 @@ class VerilogCommonVisitor(object):
     # First class object wrapper
     def visit_Int(self, node):
         value_list = []
+        value = node.value
+        
+        if isinstance(node.value, str) and node.value.find('-') >= 0:
+            pos = node.value.find('-') + 1
+            value = node.value[pos:]
+            value_list.append('-')
+        
+        if isinstance(node.value, int) and node.value < 0:
+            value = abs(node.value)
+            value_list.append('-')
+
         if node.width:
             value_list.append(str(node.width))
             
@@ -53,46 +64,46 @@ class VerilogCommonVisitor(object):
                 value_list.append("'sd")
             elif node.width:
                 value_list.append("'d")
-            if isinstance(node.value, str):
-                value_list.append(node.value)
+            if isinstance(value, str):
+                value_list.append(value)
             else:
-                value_list.append(str(node.value))
+                value_list.append(str(value))
         elif node.base == 2:
             if node.signed:
                 value_list.append("'sb")
             else:
                 value_list.append("'b")
-            if isinstance(node.value, str):
-                value_list.append(node.value)
+            if isinstance(value, str):
+                value_list.append(value)
             else:
-                value_list.append(bin(node.value).replace('0b', ''))
+                value_list.append(bin(value).replace('0b', ''))
         elif node.base == 8:
             if node.signed:
                 value_list.append("'so")
             else:
                 value_list.append("'o")
-            if isinstance(node.value, str):
-                value_list.append(node.value)
+            if isinstance(value, str):
+                value_list.append(value)
             else:
-                value_list.append(oct(node.value).replace('0o', ''))
+                value_list.append(oct(value).replace('0o', ''))
         elif node.base == 10:
             if node.signed:
                 value_list.append("'sd")
             else:
                 value_list.append("'d")
-            if isinstance(node.value, str):
-                value_list.append(node.value)
+            if isinstance(value, str):
+                value_list.append(value)
             else:
-                value_list.append(str(node.value))
+                value_list.append(str(value))
         elif node.base == 16:
             if node.signed:
                 value_list.append("'sh")
             else:
                 value_list.append("'h")
-            if isinstance(node.value, str):
-                value_list.append(node.value)
+            if isinstance(value, str):
+                value_list.append(value)
             else:
-                value_list.append(hex(node.value).replace('0x', ''))
+                value_list.append(hex(value).replace('0x', ''))
         else:
             raise ValueError("Int.base must be 2, 8, 10, or 16")
         
