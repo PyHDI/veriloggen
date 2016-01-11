@@ -489,7 +489,7 @@ class Times(_BinaryOperator):
         m.Assign( enable(data_cond) )
         m.Assign( update(accept) ) # NOT valid_cond
         
-        params = [ ('datawidth', width), ('depth', self.latency-1) ]
+        params = [ ('datawidth', width), ('depth', self.latency) ]
         ports = [ ('CLK', clk), ('RST', rst),
                   ('update', update), ('enable', enable), ('valid', valid),
                   ('a', ldata), ('b', rdata), ('c', data) ]
@@ -1130,8 +1130,8 @@ class _Delay(_UnaryOperator):
         
         rready = self.right.sig_ready
 
-        all_valid = rvalid
-        all_ready = rready
+        all_valid = and_vars(rvalid)
+        all_ready = and_vars(rready)
 
         accept = vtypes.OrList(ready, vtypes.Not(valid))
 
@@ -1301,8 +1301,8 @@ class _Accumulator(_UnaryOperator):
         
         rready = self.right.sig_ready
 
-        all_valid = rvalid
-        all_ready = rready
+        all_valid = and_vars(rvalid)
+        all_ready = and_vars(rready)
 
         accept = vtypes.OrList(ready, vtypes.Not(valid))
 

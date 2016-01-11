@@ -623,7 +623,7 @@ module main
   multiplier
   #(
     .datawidth(32),
-    .depth(5)
+    .depth(6)
   )
   mul0
   (
@@ -650,7 +650,7 @@ module main
   multiplier
   #(
     .datawidth(32),
-    .depth(5)
+    .depth(6)
   )
   mul1
   (
