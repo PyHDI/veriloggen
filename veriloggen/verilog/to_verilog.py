@@ -691,10 +691,11 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
     
     #---------------------------------------------------------------------------
     def visit_Always(self, node):
-        sensitivity = vast.SensList(
-            tuple([ self.visit(n) if isinstance(n, vtypes.Sensitive) else
-                    vast.Sens(self.always_visitor.visit(n), 'level')
-                    for n in node.sensitivity ]))
+        sens = ( tuple([ self.visit(n) if isinstance(n, vtypes.Sensitive) else
+                         vast.Sens(self.always_visitor.visit(n), 'level')
+                         for n in node.sensitivity ]) if node.sensitivity else
+                 tuple([ vast.Sens(None, 'all') ]) )
+        sensitivity = vast.SensList(sens)
         statement = self._optimize_block(
             vast.Block(tuple([ self.always_visitor.visit(n) for n in node.statement ])))
         return vast.Always(sensitivity, statement)
