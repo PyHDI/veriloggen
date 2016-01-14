@@ -18,6 +18,7 @@ class Dataflow(object):
     def __init__(self, *nodes, **opts):
         self.datawidth = opts['datawidth'] if 'datawidth' in opts else 32
         self.nodes = set(nodes)
+        self.max_stage = None
         self.last_result = None
         
     def add(self, *nodes):
@@ -69,6 +70,7 @@ class Dataflow(object):
         max_stage = None
         for output_var in sorted(output_vars, key=lambda x:x.object_id):
             max_stage = dtypes.max(max_stage, output_var.end_stage)
+        self.max_stage = max_stage
 
         output_vars = sched.balance_output(output_vars, max_stage)
 
@@ -100,41 +102,7 @@ class Dataflow(object):
             self.to_module()
             
         graph.draw_graph(self.last_result, filename, prog, skip_gap)
-    
+        
     #---------------------------------------------------------------------------
-    # Add a new variable
-    #---------------------------------------------------------------------------
-    def Constant(self, value):
-        v = dtypes.Constant(value)
-        self.add(v)
-        return v
-    
-    def Variable(self, name=None, valid=None, ready=None, width=32):
-        v = dtypes.Variable(name, valid, ready, width)
-        self.add(v)
-        return v
-    
-    def Iadd(self, data, initval=None, reset=None, width=32):
-        v = dtypes.Iadd(data, initval, reset, width)
-        self.add(v)
-        return v
-    
-    def Isub(self, data, initval=None, reset=None, width=32):
-        v = dtypes.Isub(data, initval, reset, width)
-        self.add(v)
-        return v
-    
-    def Imul(self, data, initval=None, reset=None, width=32):
-        v = dtypes.Imul(data, initval, reset, width)
-        self.add(v)
-        return v
-    
-    def Idiv(self, data, initval=None, reset=None, width=32):
-        v = dtypes.Idiv(data, initval, reset, width)
-        self.add(v)
-        return v
-    
-    def Icustom(self, ops, data, initval=None, reset=None, width=32):
-        v = dtypes.Icustom(ops, data, initval, reset, width)
-        self.add(v)
-        return v
+    def pipeline_depth(self):
+        return self.max_stage
