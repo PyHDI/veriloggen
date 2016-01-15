@@ -1529,28 +1529,3 @@ def Constant(value, fixed=True, point=0):
 
 def Variable(data=None, valid=None, ready=None, width=32, point=0):
     return _Variable(data, valid, ready, width, point)
-
-#-------------------------------------------------------------------------------
-def to_fixedpoint(value, point):
-    if isinstance(value, (int, float)):
-        if not isinstance(point, int):
-            raise TypeError('point field must be int')
-        mag = 2 ** point
-        return int(value * mag)
-    return value << point
-
-def from_fixedpoint(value, point):
-    if isinstance(value, (int, float)):
-        if not isinstance(point, int):
-            raise TypeError('point field must be int')
-        mag = 2 ** point
-        return float(value) / mag
-    return value >> point
-
-def from_fixedpoint_lowerpart(value, point):
-    if isinstance(value, (int, float)):
-        if not isinstance(point, int):
-            raise TypeError('point field must be int')
-        mag = 2 ** point
-        return (float(value) / mag) % 1.0
-    return value[point-1:0]

@@ -17,6 +17,9 @@ from .core.task import Task, TaskCall
 from .verilog import from_verilog
 from .verilog import simulation
 
+# Utility
+from .utils import fixed
+
 # Extension
 from .seq.seq import Seq
 from .fsm.fsm import FSM

@@ -52,9 +52,9 @@ def mkTest(point=8):
     xdata_orig = m.RegLike(ports['xdata'], name='xdata_orig', initval=0)
     ydata_orig = m.RegLike(ports['ydata'], name='ydata_orig', initval=0)
     zdata_orig = m.WireLike(ports['zdata'], name='zdata_orig')
-    m.Always()( xdata(dataflow.to_fixedpoint(xdata_orig, point)) )
-    m.Always()( ydata(dataflow.to_fixedpoint(ydata_orig, point)) )
-    m.Assign( zdata_orig(dataflow.from_fixedpoint(zdata, point)) )
+    m.Always()( xdata(fixed.to_fixed(xdata_orig, point)) )
+    m.Always()( ydata(fixed.to_fixed(ydata_orig, point)) )
+    m.Assign( zdata_orig(fixed.fixed_to_int(zdata, point)) )
     
     uut = m.Instance(main, 'uut',
                      params=m.connect_params(main),
