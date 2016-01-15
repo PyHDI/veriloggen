@@ -41,10 +41,8 @@ def mkMultiplier(datawidth=32, depth=6):
     valid = m.Output('valid')
     a = m.Input('a', datawidth)
     b = m.Input('b', datawidth)
-    c = m.Output('c', datawidth)
-    _c = m.Wire('_c', datawidth*2)
+    c = m.Output('c', datawidth*2)
     valid_reg = m.Reg('valid_reg', depth, initval=0)
-    m.Assign(c(_c[datawidth-1:0]))
     m.Assign( valid(valid_reg[depth-1]) )
     i = m.Integer('i')
     m.Always(vtypes.Posedge(clk))(
@@ -56,7 +54,7 @@ def mkMultiplier(datawidth=32, depth=6):
                 vtypes.For(i(1), i<depth, i.inc())(
                     valid_reg[i](valid_reg[i-1])
                 ))))
-    ports = [ ('CLK', clk), ('update', update), ('a', a), ('b', b), ('c', _c) ]
+    ports = [ ('CLK', clk), ('update', update), ('a', a), ('b', b), ('c', c) ]
     m.Instance(mult, 'mult', m.connect_params(mult), ports)
     return m
 

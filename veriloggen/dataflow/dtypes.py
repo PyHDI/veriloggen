@@ -48,7 +48,7 @@ def set_width(node):
     if isinstance(node, int):
         node = vtypes.Int(node)
     if isinstance(node, vtypes.Int) and node.width is None:
-        node.width = max(node.value.get_width(), 32)
+        node.width = max(node.value.bit_length(), 32)
     return node
         
 def fit_width(node, node_width, targ_width):
@@ -66,7 +66,7 @@ def fit_width(node, node_width, targ_width):
     
     if node_width > targ_width:
         if isinstance(node, vtypes.Int):
-            if node.value.get_width() > targ_width:
+            if node.value.bit_length() > targ_width:
                 raise ValueError("Illegal target width")
             node.width = targ_width
             return node
@@ -74,7 +74,16 @@ def fit_width(node, node_width, targ_width):
         return vtypes.Slice(node, targ_width-1, 0)
     
     return node
-        
+
+def adjust_point(left, right, lpoint, rpoint):
+    diff_lpoint = rpoint - lpoint
+    diff_rpoint = lpoint - rpoint
+    if diff_lpoint < 0: diff_lpoint = 0
+    if diff_rpoint < 0: diff_rpoint = 0
+    ldata = left if diff_lpoint == 0 else left << diff_lpoint
+    rdata = right if diff_rpoint == 0 else right << diff_rpoint
+    return ldata, rdata
+
 #-------------------------------------------------------------------------------
 def tmp_data(val, prefix='_tmp_data_'):
     return ''.join([prefix, str(val)])
@@ -156,9 +165,6 @@ class _Numeric(_Node):
         return prev
         
     #--------------------------------------------------------------------------
-    def get_width(self):
-        return self.bit_length()
-
     def get_point(self):
         return self.bit_length_fixedpoint()
     
@@ -192,7 +198,7 @@ class _Numeric(_Node):
         if self.end_stage is None:
             raise ValueError('end_stage is not fixed yet.')
 
-        width = self.get_width()
+        width = self.bit_length()
 
         type_i = m.Wire if aswire else m.Input
         type_o = m.Wire if aswire else m.Output
@@ -354,8 +360,8 @@ class _BinaryOperator(_Operator):
     def bit_length(self):
         left_fp = self.left.get_point()
         right_fp = self.right.get_point()
-        left = self.left.get_width() - left_fp
-        right = self.right.get_width() - right_fp
+        left = self.left.bit_length() - left_fp
+        right = self.right.bit_length() - right_fp
         return max(left, right) + max(left_fp, right_fp)
 
     def bit_length_fixedpoint(self):
@@ -367,7 +373,7 @@ class _BinaryOperator(_Operator):
         if self.latency != 1:
             raise ValueError("Latency mismatch '%d' vs '%s'" % (self.latency, 1))
 
-        width = self.get_width()
+        width = self.bit_length()
 
         tmp = m.get_tmp()
         data = m.Reg(tmp_data(tmp), width, initval=0)
@@ -379,13 +385,7 @@ class _BinaryOperator(_Operator):
 
         lpoint = self.left.get_point()
         rpoint = self.right.get_point()
-        diff_lpoint = rpoint - lpoint
-        diff_rpoint = lpoint - rpoint
-        if diff_lpoint < 0: diff_lpoint = 0
-        if diff_rpoint < 0: diff_rpoint = 0
-        
-        ldata = self.left.sig_data if diff_lpoint == 0 else self.left.sig_data << diff_lpoint
-        rdata = self.right.sig_data if diff_rpoint == 0 else self.right.sig_data << diff_rpoint
+        ldata, rdata = adjust_point(self.left.sig_data, self.right.sig_data, lpoint, rpoint)
         
         lvalid = self.left.sig_valid
         rvalid = self.right.sig_valid
@@ -420,7 +420,7 @@ class _UnaryOperator(_Operator):
         self.op = getattr(vtypes, self.__class__.__name__, None)
         
     def bit_length(self):
-        right = self.right.get_width()
+        right = self.right.bit_length()
         return right
 
     def bit_length_fixedpoint(self):
@@ -431,7 +431,7 @@ class _UnaryOperator(_Operator):
         if self.latency != 1:
             raise ValueError("Latency mismatch '%d' vs '%s'" % (self.latency, 1))
         
-        width = self.get_width()
+        width = self.bit_length()
 
         tmp = m.get_tmp()
         data = m.Reg(tmp_data(tmp), width, initval=0)
@@ -482,7 +482,7 @@ class Times(_BinaryOperator):
         if self.latency <= 1:
             raise ValueError("Latency of '*' operator must be greater than 1")
 
-        width = self.get_width()
+        width = self.bit_length()
 
         tmp = m.get_tmp()
         data = m.Wire(tmp_data(tmp), width)
@@ -492,8 +492,15 @@ class Times(_BinaryOperator):
         self.sig_valid = valid
         self.sig_ready = ready
 
-        ldata = fit_width(self.left.sig_data, self.left.get_width(), width)
-        rdata = fit_width(self.right.sig_data, self.right.get_width(), width)
+        odata = m.Wire(tmp_data(tmp, prefix='_tmp_odata_'), width*2)
+        rev_shift = min(self.left.get_point(), self.right.get_point())
+        if rev_shift > 0:
+            m.Assign( data(odata >> rev_shift) )
+        else:
+            m.Assign( data(odata) )
+        
+        ldata = fit_width(self.left.sig_data, self.left.bit_length(), width)
+        rdata = fit_width(self.right.sig_data, self.right.bit_length(), width)
         
         lvalid = self.left.sig_valid
         rvalid = self.right.sig_valid
@@ -520,17 +527,10 @@ class Times(_BinaryOperator):
         m.Assign( enable(data_cond) )
         m.Assign( update(accept) ) # NOT valid_cond
         
-        _data = data
-        rev_shift = min(self.left.get_point(), self.right.get_point())
-        if rev_shift > 0:
-            odata = m.Wire(tmp_data(tmp, prefix='_tmp_odata_'), width)
-            _data = odata
-            m.Assign( data(odata >> rev_shift) )
-        
         params = [ ('datawidth', width), ('depth', self.latency) ]
         ports = [ ('CLK', clk), ('RST', rst),
                   ('update', update), ('enable', enable), ('valid', valid),
-                  ('a', ldata), ('b', rdata), ('c', _data) ]
+                  ('a', ldata), ('b', rdata), ('c', odata) ]
         
         m.Instance(inst, ''.join(['mul', str(tmp)]), params, ports)
         
@@ -554,7 +554,7 @@ class Divide(_BinaryOperator):
         if self.latency <= 1:
             raise ValueError("Latency of '*' operator must be greater than 1")
 
-        width = self.get_width()
+        width = self.bit_length()
 
         tmp = m.get_tmp()
         data = m.Wire(tmp_data(tmp), width)
@@ -564,8 +564,15 @@ class Divide(_BinaryOperator):
         self.sig_valid = valid
         self.sig_ready = ready
         
-        ldata = fit_width(self.left.sig_data, self.left.get_width(), width)
-        rdata = fit_width(self.right.sig_data, self.right.get_width(), width)
+        lpoint = self.left.get_point()
+        rpoint = self.right.get_point()
+        ldata, rdata = adjust_point(self.left.sig_data, self.right.sig_data, lpoint, rpoint)
+        
+        lwidth = self.left.bit_length() - lpoint + max(lpoint, rpoint)
+        rwidth = self.right.bit_length() - rpoint + max(lpoint, rpoint)
+        
+        ldata = fit_width(ldata, lwidth, width)
+        rdata = fit_width(rdata, rwidth, width)
         
         lvalid = self.left.sig_valid
         rvalid = self.right.sig_valid
@@ -615,7 +622,7 @@ class Mod(_BinaryOperator):
         if self.latency <= 1:
             raise ValueError("Latency of '*' operator must be greater than 1")
 
-        width = self.get_width()
+        width = self.bit_length()
 
         tmp = m.get_tmp()
         data = m.Wire(tmp_data(tmp), width)
@@ -625,8 +632,15 @@ class Mod(_BinaryOperator):
         self.sig_valid = valid
         self.sig_ready = ready
         
-        ldata = fit_width(self.left.sig_data, self.left.get_width(), width)
-        rdata = fit_width(self.right.sig_data, self.right.get_width(), width)
+        lpoint = self.left.get_point()
+        rpoint = self.right.get_point()
+        ldata, rdata = adjust_point(self.left.sig_data, self.right.sig_data, lpoint, rpoint)
+        
+        lwidth = self.left.bit_length() - lpoint + max(lpoint, rpoint)
+        rwidth = self.right.bit_length() - rpoint + max(lpoint, rpoint)
+        
+        ldata = fit_width(ldata, lwidth, width)
+        rdata = fit_width(rdata, rwidth, width)
         
         lvalid = self.left.sig_valid
         rvalid = self.right.sig_valid
@@ -680,9 +694,9 @@ class Sll(_BinaryOperator):
     def bit_length(self):
         v = self.right.eval()
         if isinstance(v, int):
-            return self.left.get_width() + v
-        v = 2 ** self.right.get_width()
-        ret = self.left.get_width() + v
+            return self.left.bit_length() + v
+        v = 2 ** self.right.bit_length()
+        ret = self.left.bit_length() + v
         if ret > self.max_width:
             raise ValueError("bit_length is too large '%d'" % ret)
         return ret
@@ -813,7 +827,7 @@ class Uand(_UnaryOperator):
         if isinstance(right, bool):
             return right
         if isinstance(right, int):
-            width = self.right.get_width()
+            width = self.right.bit_length()
             for i in range(width):
                 if right & 0x1 == 0:
                     return False
@@ -827,7 +841,7 @@ class Unand(_UnaryOperator):
         if isinstance(right, bool):
             return not right
         if isinstance(right, int):
-            width = self.right.get_width()
+            width = self.right.bit_length()
             for i in range(width):
                 if right & 0x1 == 0:
                     return True
@@ -841,7 +855,7 @@ class Uor(_UnaryOperator):
         if isinstance(right, bool):
             return right
         if isinstance(right, int):
-            width = self.right.get_width()
+            width = self.right.bit_length()
             for i in range(width):
                 if right & 0x1 == 1:
                     return True
@@ -855,7 +869,7 @@ class Unor(_UnaryOperator):
         if isinstance(right, bool):
             return not right
         if isinstance(right, int):
-            width = self.right.get_width()
+            width = self.right.bit_length()
             for i in range(width):
                 if right & 0x1 == 1:
                     return False
@@ -869,7 +883,7 @@ class Uxor(_UnaryOperator):
         if isinstance(right, bool):
             return right
         if isinstance(right, int):
-            width = self.right.get_width()
+            width = self.right.bit_length()
             ret = 1
             for i in range(width):
                 ret = ret ^ (right & 0x1)
@@ -883,7 +897,7 @@ class Uxnor(_UnaryOperator):
         if isinstance(right, bool):
             return not right
         if isinstance(right, int):
-            width = self.right.get_width()
+            width = self.right.bit_length()
             ret = 1
             for i in range(width):
                 ret = ret ^ (right & 0x1)
@@ -902,7 +916,7 @@ class _SpecialOperator(_Operator):
         self.op = None
 
     def bit_length(self):
-        args = [ arg.get_width() for arg in self.args ]
+        args = [ arg.bit_length() for arg in self.args ]
         return max(*args)
     
     def bit_length_fixedpoint(self):
@@ -913,7 +927,7 @@ class _SpecialOperator(_Operator):
         if self.latency != 1:
             raise ValueError("Latency mismatch '%d' vs '%s'" % (self.latency, 1))
 
-        width = self.get_width()
+        width = self.bit_length()
 
         tmp = m.get_tmp()
         data = m.Reg(tmp_data(tmp), width, initval=0)
@@ -1059,7 +1073,7 @@ class Cat(_SpecialOperator):
     def bit_length(self):
         ret = 0
         for v in self.vars:
-             ret += v.get_width() 
+             ret += v.bit_length() 
         return ret
 
     def bit_length_fixedpoint(self):
@@ -1072,7 +1086,7 @@ class Cat(_SpecialOperator):
                 return Cat(*vars)
         ret = 0
         for var in vars:
-            ret = (ret << var.get_width()) | var
+            ret = (ret << var.bit_length()) | var
         return ret
     
 class Repeat(_SpecialOperator):
@@ -1100,7 +1114,7 @@ class Repeat(_SpecialOperator):
         self.args[1] = times
         
     def bit_length(self):
-        return self.var.get_width() * self.times.eval()
+        return self.var.bit_length() * self.times.eval()
 
     def bit_length_fixedpoint(self):
         return 0
@@ -1110,7 +1124,7 @@ class Repeat(_SpecialOperator):
         times = self.times.eval()
         ret = 0
         for i in times:
-            ret = (ret << var.get_width()) | var
+            ret = (ret << var.bit_length()) | var
         return ret
     
 class Cond(_SpecialOperator):
@@ -1145,8 +1159,8 @@ class Cond(_SpecialOperator):
     def bit_length(self):
         true_value_fp = self.true_value.get_point()
         false_value_fp = self.false_value.get_point()
-        true_value = self.true_value.get_width() - true_value_fp
-        false_value = self.false_value.get_width() - false_value_fp
+        true_value = self.true_value.bit_length() - true_value_fp
+        false_value = self.false_value.bit_length() - false_value_fp
         return max(true_value, false_value) + max(true_value_fp, false_value_fp)
 
     def bit_length_fixedpoint(self):
@@ -1197,7 +1211,7 @@ class _Delay(_UnaryOperator):
         if self.latency != 1:
             raise ValueError("Latency mismatch '%d' vs '%s'" % (self.latency, 1))
         
-        width = self.get_width()
+        width = self.bit_length()
 
         tmp = m.get_tmp()
         data = m.Reg(tmp_data(tmp), width, initval=0)
@@ -1252,7 +1266,7 @@ class _Prev(_UnaryOperator):
         if self.latency != 0:
             raise ValueError("Latency mismatch '%d' vs '%s'" % (self.latency, 0))
         
-        width = self.get_width()
+        width = self.bit_length()
 
         tmp = m.get_tmp()
         data = m.Reg(tmp_data(tmp), width, initval=0)
@@ -1275,7 +1289,7 @@ class _Constant(_Numeric):
         self.value = value
 
     def bit_length(self):
-        return self.value.get_width()
+        return self.value.bit_length()
 
     def bit_length_fixedpoint(self):
         return 0
@@ -1316,7 +1330,7 @@ class _Variable(_Numeric):
         if not isinstance(self.input_data, _Numeric):
             return
         
-        width = self.get_width()
+        width = self.bit_length()
 
         tmp = m.get_tmp()
         data = m.Wire(tmp_data(tmp), width)
@@ -1334,7 +1348,7 @@ class _Variable(_Numeric):
         type_i = m.Wire if aswire else m.Input
         type_o = m.Wire if aswire else m.Output
         
-        width = self.get_width()
+        width = self.bit_length()
 
         self.sig_data = type_i(self.input_data, width)
         
@@ -1364,7 +1378,7 @@ class _Accumulator(_UnaryOperator):
     def bit_length(self):
         right_fp = self.right.get_point()
         value = self.width
-        right = self.right.get_width() - right_fp
+        right = self.right.bit_length() - right_fp
         return max(value, right) + right_fp
 
     def bit_length_fixedpoint(self):
@@ -1382,7 +1396,7 @@ class _Accumulator(_UnaryOperator):
         #initval_valid = self.initval.sig_valid
         #initval_ready = self.initval.sig_ready
         
-        width = self.get_width()
+        width = self.bit_length()
 
         tmp = m.get_tmp()
         data = m.Reg(tmp_data(tmp), width, initval=initval_data)
@@ -1487,7 +1501,7 @@ class FixedPoint(_Constant):
         
     def bit_length(self):
         value = int(self.value)
-        return value.get_width()
+        return value.bit_length()
 
     def bit_length_fixedpoint(self):
         return point
