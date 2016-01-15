@@ -781,6 +781,8 @@ module main
   wire [32-1:0] _tmp_data_0;
   wire _tmp_valid_0;
   wire _tmp_ready_0;
+  wire [64-1:0] _tmp_odata_0;
+  assign _tmp_data_0 = _tmp_odata_0;
   wire _tmp_enable_0;
   wire _tmp_update_0;
   assign _tmp_enable_0 = (_tmp_ready_0 || !_tmp_valid_0) && (xready && yready) && (xvalid && yvalid);
@@ -800,7 +802,7 @@ module main
     .valid(_tmp_valid_0),
     .a(xdata),
     .b(ydata),
-    .c(_tmp_data_0)
+    .c(_tmp_odata_0)
   );
 
   assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
@@ -942,12 +944,10 @@ module multiplier #
   output valid,
   input [datawidth-1:0] a,
   input [datawidth-1:0] b,
-  output [datawidth-1:0] c
+  output [datawidth*2-1:0] c
 );
 
-  wire [datawidth*2-1:0] _c;
   reg [depth-1:0] valid_reg;
-  assign c = _c[datawidth-1:0];
   assign valid = valid_reg[depth - 1];
   integer i;
 
@@ -976,7 +976,7 @@ module multiplier #
     .update(update),
     .a(a),
     .b(b),
-    .c(_c)
+    .c(c)
   );
 
 

@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import dataflow_mul
+import dataflow_fixed_mul
 
 expected_verilog = """
 module test;
@@ -16,6 +16,20 @@ module test;
   wire [32-1:0] zdata;
   wire zvalid;
   reg zready;
+  reg [32-1:0] xdata_orig;
+  reg [32-1:0] ydata_orig;
+  wire [32-1:0] zdata_orig;
+
+  always @(*) begin
+    xdata <= xdata_orig << 8;
+  end
+
+
+  always @(*) begin
+    ydata <= ydata_orig << 8;
+  end
+
+  assign zdata_orig = zdata >> 8;
 
   main
   uut
@@ -37,7 +51,7 @@ module test;
 
   initial begin
     $dumpfile("uut.vcd");
-    $dumpvars(0, uut);
+    $dumpvars(0, uut, xdata_orig, ydata_orig, zdata_orig);
   end
 
 
@@ -57,6 +71,8 @@ module test;
     ydata = 0;
     yvalid = 0;
     zready = 0;
+    xdata_orig = 0;
+    ydata_orig = 0;
     #100;
     RST = 1;
     #100;
@@ -100,6 +116,7 @@ module test;
   always @(posedge CLK) begin
     if(RST) begin
       xfsm <= xfsm_init;
+      xdata_orig <= 0;
       _tmp_0 <= 0;
     end else begin
       case(xfsm)
@@ -145,7 +162,7 @@ module test;
         end
         xfsm_12: begin
           if(xready) begin
-            xdata <= xdata + 1;
+            xdata_orig <= xdata_orig + 1;
           end 
           if(xready) begin
             _tmp_0 <= _tmp_0 + 1;
@@ -188,7 +205,7 @@ module test;
         xfsm_23: begin
           xvalid <= 1;
           if(xready) begin
-            xdata <= xdata + 1;
+            xdata_orig <= xdata_orig + 1;
           end 
           if(xready) begin
             _tmp_0 <= _tmp_0 + 1;
@@ -255,6 +272,7 @@ module test;
   always @(posedge CLK) begin
     if(RST) begin
       yfsm <= yfsm_init;
+      ydata_orig <= 0;
       _tmp_1 <= 0;
     end else begin
       case(yfsm)
@@ -330,7 +348,7 @@ module test;
         end
         yfsm_22: begin
           if(yready) begin
-            ydata <= ydata + 1;
+            ydata_orig <= ydata_orig + 1;
           end 
           if(yready) begin
             _tmp_1 <= _tmp_1 + 1;
@@ -403,7 +421,7 @@ module test;
         yfsm_43: begin
           yvalid <= 1;
           if(yready) begin
-            ydata <= ydata + 1;
+            ydata_orig <= ydata_orig + 1;
           end 
           if(yready) begin
             _tmp_1 <= _tmp_1 + 1;
@@ -708,13 +726,13 @@ module test;
   always @(posedge CLK) begin
     if(reset_done) begin
       if(xvalid && xready) begin
-        $display("xdata=%d", xdata);
+        $display("xdata=%d", xdata_orig);
       end 
       if(yvalid && yready) begin
-        $display("ydata=%d", ydata);
+        $display("ydata=%d", ydata_orig);
       end 
       if(zvalid && zready) begin
-        $display("zdata=%d", zdata);
+        $display("zdata=%d", zdata_orig);
       end 
     end 
   end
@@ -743,7 +761,7 @@ module main
   wire _tmp_valid_0;
   wire _tmp_ready_0;
   wire [64-1:0] _tmp_odata_0;
-  assign _tmp_data_0 = _tmp_odata_0;
+  assign _tmp_data_0 = _tmp_odata_0 >> 8;
   wire _tmp_enable_0;
   wire _tmp_update_0;
   assign _tmp_enable_0 = (_tmp_ready_0 || !_tmp_valid_0) && (xready && yready) && (xvalid && yvalid);
@@ -778,10 +796,7 @@ module main
     end
   end
 
-
 endmodule
-
-
 
 module multiplier #
 (
@@ -831,10 +846,7 @@ module multiplier #
     .c(c)
   );
 
-
 endmodule
-
-
 
 module multiplier_core #
 (
@@ -864,12 +876,11 @@ module multiplier_core #
     end 
   end
 
-
 endmodule
 """
 
 def test():
-    test_module = dataflow_mul.mkTest()
+    test_module = dataflow_fixed_mul.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

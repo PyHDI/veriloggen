@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import dataflow_mul
+import dataflow_fixed_add
 
 expected_verilog = """
 module test;
@@ -16,6 +16,20 @@ module test;
   wire [32-1:0] zdata;
   wire zvalid;
   reg zready;
+  reg [32-1:0] xdata_orig;
+  reg [32-1:0] ydata_orig;
+  wire [32-1:0] zdata_orig;
+
+  always @(*) begin
+    xdata <= xdata_orig << 8;
+  end
+
+
+  always @(*) begin
+    ydata <= ydata_orig << 8;
+  end
+
+  assign zdata_orig = zdata >> 8;
 
   main
   uut
@@ -57,6 +71,8 @@ module test;
     ydata = 0;
     yvalid = 0;
     zready = 0;
+    xdata_orig = 0;
+    ydata_orig = 0;
     #100;
     RST = 1;
     #100;
@@ -100,6 +116,7 @@ module test;
   always @(posedge CLK) begin
     if(RST) begin
       xfsm <= xfsm_init;
+      xdata_orig <= 0;
       _tmp_0 <= 0;
     end else begin
       case(xfsm)
@@ -145,7 +162,7 @@ module test;
         end
         xfsm_12: begin
           if(xready) begin
-            xdata <= xdata + 1;
+            xdata_orig <= xdata_orig + 1;
           end 
           if(xready) begin
             _tmp_0 <= _tmp_0 + 1;
@@ -188,7 +205,7 @@ module test;
         xfsm_23: begin
           xvalid <= 1;
           if(xready) begin
-            xdata <= xdata + 1;
+            xdata_orig <= xdata_orig + 1;
           end 
           if(xready) begin
             _tmp_0 <= _tmp_0 + 1;
@@ -255,6 +272,7 @@ module test;
   always @(posedge CLK) begin
     if(RST) begin
       yfsm <= yfsm_init;
+      ydata_orig <= 0;
       _tmp_1 <= 0;
     end else begin
       case(yfsm)
@@ -330,7 +348,7 @@ module test;
         end
         yfsm_22: begin
           if(yready) begin
-            ydata <= ydata + 1;
+            ydata_orig <= ydata_orig + 2;
           end 
           if(yready) begin
             _tmp_1 <= _tmp_1 + 1;
@@ -403,7 +421,7 @@ module test;
         yfsm_43: begin
           yvalid <= 1;
           if(yready) begin
-            ydata <= ydata + 1;
+            ydata_orig <= ydata_orig + 2;
           end 
           if(yready) begin
             _tmp_1 <= _tmp_1 + 1;
@@ -429,51 +447,6 @@ module test;
   localparam zfsm_6 = 6;
   localparam zfsm_7 = 7;
   localparam zfsm_8 = 8;
-  localparam zfsm_9 = 9;
-  localparam zfsm_10 = 10;
-  localparam zfsm_11 = 11;
-  localparam zfsm_12 = 12;
-  localparam zfsm_13 = 13;
-  localparam zfsm_14 = 14;
-  localparam zfsm_15 = 15;
-  localparam zfsm_16 = 16;
-  localparam zfsm_17 = 17;
-  localparam zfsm_18 = 18;
-  localparam zfsm_19 = 19;
-  localparam zfsm_20 = 20;
-  localparam zfsm_21 = 21;
-  localparam zfsm_22 = 22;
-  localparam zfsm_23 = 23;
-  localparam zfsm_24 = 24;
-  localparam zfsm_25 = 25;
-  localparam zfsm_26 = 26;
-  localparam zfsm_27 = 27;
-  localparam zfsm_28 = 28;
-  localparam zfsm_29 = 29;
-  localparam zfsm_30 = 30;
-  localparam zfsm_31 = 31;
-  localparam zfsm_32 = 32;
-  localparam zfsm_33 = 33;
-  localparam zfsm_34 = 34;
-  localparam zfsm_35 = 35;
-  localparam zfsm_36 = 36;
-  localparam zfsm_37 = 37;
-  localparam zfsm_38 = 38;
-  localparam zfsm_39 = 39;
-  localparam zfsm_40 = 40;
-  localparam zfsm_41 = 41;
-  localparam zfsm_42 = 42;
-  localparam zfsm_43 = 43;
-  localparam zfsm_44 = 44;
-  localparam zfsm_45 = 45;
-  localparam zfsm_46 = 46;
-  localparam zfsm_47 = 47;
-  localparam zfsm_48 = 48;
-  localparam zfsm_49 = 49;
-  localparam zfsm_50 = 50;
-  localparam zfsm_51 = 51;
-  localparam zfsm_52 = 52;
-  localparam zfsm_53 = 53;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -518,186 +491,6 @@ module test;
           zfsm <= zfsm_8;
         end
         zfsm_8: begin
-          zready <= 0;
-          zfsm <= zfsm_9;
-        end
-        zfsm_9: begin
-          zready <= 0;
-          zfsm <= zfsm_10;
-        end
-        zfsm_10: begin
-          zready <= 0;
-          zfsm <= zfsm_11;
-        end
-        zfsm_11: begin
-          zready <= 0;
-          zfsm <= zfsm_12;
-        end
-        zfsm_12: begin
-          zready <= 0;
-          zfsm <= zfsm_13;
-        end
-        zfsm_13: begin
-          zready <= 0;
-          zfsm <= zfsm_14;
-        end
-        zfsm_14: begin
-          zready <= 0;
-          zfsm <= zfsm_15;
-        end
-        zfsm_15: begin
-          zready <= 0;
-          zfsm <= zfsm_16;
-        end
-        zfsm_16: begin
-          zready <= 0;
-          zfsm <= zfsm_17;
-        end
-        zfsm_17: begin
-          zready <= 0;
-          zfsm <= zfsm_18;
-        end
-        zfsm_18: begin
-          zready <= 0;
-          zfsm <= zfsm_19;
-        end
-        zfsm_19: begin
-          zready <= 0;
-          zfsm <= zfsm_20;
-        end
-        zfsm_20: begin
-          zready <= 0;
-          zfsm <= zfsm_21;
-        end
-        zfsm_21: begin
-          zready <= 0;
-          zfsm <= zfsm_22;
-        end
-        zfsm_22: begin
-          zready <= 0;
-          zfsm <= zfsm_23;
-        end
-        zfsm_23: begin
-          zready <= 0;
-          zfsm <= zfsm_24;
-        end
-        zfsm_24: begin
-          zready <= 0;
-          zfsm <= zfsm_25;
-        end
-        zfsm_25: begin
-          zready <= 0;
-          zfsm <= zfsm_26;
-        end
-        zfsm_26: begin
-          zready <= 0;
-          zfsm <= zfsm_27;
-        end
-        zfsm_27: begin
-          zready <= 0;
-          zfsm <= zfsm_28;
-        end
-        zfsm_28: begin
-          zready <= 0;
-          zfsm <= zfsm_29;
-        end
-        zfsm_29: begin
-          zready <= 0;
-          zfsm <= zfsm_30;
-        end
-        zfsm_30: begin
-          zready <= 0;
-          zfsm <= zfsm_31;
-        end
-        zfsm_31: begin
-          zready <= 0;
-          zfsm <= zfsm_32;
-        end
-        zfsm_32: begin
-          zready <= 0;
-          zfsm <= zfsm_33;
-        end
-        zfsm_33: begin
-          zready <= 0;
-          zfsm <= zfsm_34;
-        end
-        zfsm_34: begin
-          zready <= 0;
-          zfsm <= zfsm_35;
-        end
-        zfsm_35: begin
-          zready <= 0;
-          zfsm <= zfsm_36;
-        end
-        zfsm_36: begin
-          zready <= 0;
-          zfsm <= zfsm_37;
-        end
-        zfsm_37: begin
-          zready <= 0;
-          zfsm <= zfsm_38;
-        end
-        zfsm_38: begin
-          zready <= 0;
-          zfsm <= zfsm_39;
-        end
-        zfsm_39: begin
-          zready <= 0;
-          zfsm <= zfsm_40;
-        end
-        zfsm_40: begin
-          zready <= 0;
-          zfsm <= zfsm_41;
-        end
-        zfsm_41: begin
-          zready <= 0;
-          zfsm <= zfsm_42;
-        end
-        zfsm_42: begin
-          zready <= 0;
-          zfsm <= zfsm_43;
-        end
-        zfsm_43: begin
-          zready <= 0;
-          zfsm <= zfsm_44;
-        end
-        zfsm_44: begin
-          zready <= 0;
-          zfsm <= zfsm_45;
-        end
-        zfsm_45: begin
-          zready <= 0;
-          zfsm <= zfsm_46;
-        end
-        zfsm_46: begin
-          zready <= 0;
-          zfsm <= zfsm_47;
-        end
-        zfsm_47: begin
-          zready <= 0;
-          zfsm <= zfsm_48;
-        end
-        zfsm_48: begin
-          zready <= 0;
-          zfsm <= zfsm_49;
-        end
-        zfsm_49: begin
-          zready <= 0;
-          zfsm <= zfsm_50;
-        end
-        zfsm_50: begin
-          zready <= 0;
-          zfsm <= zfsm_51;
-        end
-        zfsm_51: begin
-          zready <= 0;
-          zfsm <= zfsm_52;
-        end
-        zfsm_52: begin
-          zready <= 0;
-          zfsm <= zfsm_53;
-        end
-        zfsm_53: begin
           zfsm <= zfsm_2;
         end
       endcase
@@ -708,13 +501,13 @@ module test;
   always @(posedge CLK) begin
     if(reset_done) begin
       if(xvalid && xready) begin
-        $display("xdata=%d", xdata);
+        $display("xdata=%d", xdata_orig);
       end 
       if(yvalid && yready) begin
-        $display("ydata=%d", ydata);
+        $display("ydata=%d", ydata_orig);
       end 
       if(zvalid && zready) begin
-        $display("zdata=%d", zdata);
+        $display("zdata=%d", zdata_orig);
       end 
     end 
   end
@@ -739,33 +532,9 @@ module main
   input zready
 );
 
-  wire [32-1:0] _tmp_data_0;
-  wire _tmp_valid_0;
+  reg [32-1:0] _tmp_data_0;
+  reg _tmp_valid_0;
   wire _tmp_ready_0;
-  wire [64-1:0] _tmp_odata_0;
-  assign _tmp_data_0 = _tmp_odata_0;
-  wire _tmp_enable_0;
-  wire _tmp_update_0;
-  assign _tmp_enable_0 = (_tmp_ready_0 || !_tmp_valid_0) && (xready && yready) && (xvalid && yvalid);
-  assign _tmp_update_0 = _tmp_ready_0 || !_tmp_valid_0;
-
-  multiplier
-  #(
-    .datawidth(32),
-    .depth(6)
-  )
-  mul0
-  (
-    .CLK(CLK),
-    .RST(RST),
-    .update(_tmp_update_0),
-    .enable(_tmp_enable_0),
-    .valid(_tmp_valid_0),
-    .a(xdata),
-    .b(ydata),
-    .c(_tmp_odata_0)
-  );
-
   assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
   assign yready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
   assign zdata = _tmp_data_0;
@@ -774,94 +543,19 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
+      _tmp_data_0 <= 0;
+      _tmp_valid_0 <= 0;
     end else begin
-    end
-  end
-
-
-endmodule
-
-
-
-module multiplier #
-(
-  parameter datawidth = 32,
-  parameter depth = 6
-)
-(
-  input CLK,
-  input RST,
-  input update,
-  input enable,
-  output valid,
-  input [datawidth-1:0] a,
-  input [datawidth-1:0] b,
-  output [datawidth*2-1:0] c
-);
-
-  reg [depth-1:0] valid_reg;
-  assign valid = valid_reg[depth - 1];
-  integer i;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      valid_reg <= 0;
-    end else begin
-      if(update) begin
-        valid_reg[0] <= enable;
-        for(i=1; i<depth; i=i+1) begin
-          valid_reg[i] <= valid_reg[i - 1];
-        end
+      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
+        _tmp_data_0 <= xdata + ydata;
+      end 
+      if(_tmp_valid_0 && _tmp_ready_0) begin
+        _tmp_valid_0 <= 0;
+      end 
+      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready)) begin
+        _tmp_valid_0 <= xvalid && yvalid;
       end 
     end
-  end
-
-
-  multiplier_core
-  #(
-    .datawidth(datawidth),
-    .depth(depth)
-  )
-  mult
-  (
-    .CLK(CLK),
-    .update(update),
-    .a(a),
-    .b(b),
-    .c(c)
-  );
-
-
-endmodule
-
-
-
-module multiplier_core #
-(
-  parameter datawidth = 32,
-  parameter depth = 6
-)
-(
-  input CLK,
-  input update,
-  input [datawidth-1:0] a,
-  input [datawidth-1:0] b,
-  output [datawidth*2-1:0] c
-);
-
-  wire [datawidth*2-1:0] rslt;
-  reg [datawidth*2-1:0] mem [0:depth-1];
-  assign rslt = a * b;
-  assign c = mem[depth - 1];
-  integer i;
-
-  always @(posedge CLK) begin
-    if(update) begin
-      mem[0] <= rslt;
-      for(i=1; i<depth; i=i+1) begin
-        mem[i] <= mem[i - 1];
-      end
-    end 
   end
 
 
@@ -869,7 +563,7 @@ endmodule
 """
 
 def test():
-    test_module = dataflow_mul.mkTest()
+    test_module = dataflow_fixed_add.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
