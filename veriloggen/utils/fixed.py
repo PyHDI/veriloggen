@@ -29,7 +29,7 @@ def fixed_to_int_low(value, point):
 
 def fixed_to_real(value, point):
     if not isinstance(value, vtypes._Variable):
-        raise TypeError('fixed_to_real supports only pure signal instances.')
+        raise TypeError('fixed_to_real supports only _Variable .')
     
     msb = value[value.width - 1]
     
@@ -41,3 +41,45 @@ def fixed_to_real(value, point):
            vtypes.SystemTask('itor', fixed_to_int_low(nv, point)) / (2 ** point))) * -1
     
     return vtypes.Mux(msb == 0, v0, v1)
+
+#-------------------------------------------------------------------------------
+def adjust(left, right, lpoint, rpoint, lsigned=True, rsigned=True):
+    diff_lpoint = rpoint - lpoint
+    diff_rpoint = lpoint - rpoint
+    if diff_lpoint < 0: diff_lpoint = 0
+    if diff_rpoint < 0: diff_rpoint = 0
+    ldata = left if diff_lpoint == 0 else shift_left(left, diff_lpoint, lsigned)
+    rdata = right if diff_rpoint == 0 else shift_left(right, diff_rpoint, rsigned)
+    return ldata, rdata
+    
+def shift_left(value, size, signed=True):
+    if isinstance(value, vtypes.Int):
+        v = value.value & 0x1
+        ret = value
+        for i in range(size):
+            ret = (ret << 1) | v
+        return ret
+    
+    if isinstance(value, int):
+        v = value & 0x1
+        ret = value
+        for i in range(size):
+            ret = (ret << 1) | v
+        return ret
+    
+    if isinstance(value, bool):
+        return value << size
+    
+    if not isinstance(value, vtypes._Variable):
+        raise TypeError("shift_left not support type '%s'" % str(type(value)))
+    
+    if signed:
+        return vtypes.Cat(value, vtypes.Repeat(value[0], size))
+    
+    return vtypes.Sll(value, size)
+
+def shift_right(value, size, signed=True):
+    if signed:
+        return vtypes.Sra(value, size)
+    
+    return vtypes.Srl(value, size)

@@ -3,10 +3,37 @@ from __future__ import print_function
 
 from collections import OrderedDict
 import veriloggen.core.vtypes as vtypes
+import veriloggen.utils.fixed as fx
 from . import mul
 from . import div
 
-def max(*vars):
+# Object ID counter for object sorting key
+global_object_counter = 0
+
+#-------------------------------------------------------------------------------
+def Constant(value, fixed=True, point=0):
+    if isinstance(value, int):
+        return Int(value)
+    
+    if isinstance(value, bool):
+        v = 1 if value else 0
+        return Int(v)
+    
+    if isinstance(value, float):
+        if fixed:
+            return FixedPoint(value, point)
+        return Float(value)
+    
+    if isinstance(value, str):
+        return Str(value)
+    
+    raise TypeError("Unsupported type for Constant '%s'" % str(type(value)))
+
+def Variable(data=None, valid=None, ready=None, width=32, point=0, signed=False):
+    return _Variable(data, valid, ready, width, point, signed)
+
+#-------------------------------------------------------------------------------
+def _max(*vars):
     m = None
     for v in vars:
         if v is None:
@@ -18,7 +45,7 @@ def max(*vars):
             m = v
     return m
 
-def and_vars(*vars):
+def _and_vars(*vars):
     if not vars:
         return vtypes.Int(1)
     ret = None
@@ -33,7 +60,7 @@ def and_vars(*vars):
         return vtypes.Int(1)
     return ret
         
-def connect_ready(m, var, ready):
+def _connect_ready(m, var, ready):
     if var is None:
         return
     prev_subst = var.get_subst()
@@ -42,67 +69,23 @@ def connect_ready(m, var, ready):
     elif isinstance(prev_subst[0].right, vtypes.Int) and (prev_subst[0].right.value==1):
         var.subst[0].overwrite_right( ready )
     else:
-        var.subst[0].overwrite_right( and_vars(prev_subst[0].right, ready) )
-
-def set_width(node):
-    if isinstance(node, int):
-        node = vtypes.Int(node)
-    if isinstance(node, vtypes.Int) and node.width is None:
-        node.width = max(node.value.bit_length(), 32)
-    return node
-        
-def fit_width(node, node_width, targ_width):
-    node = set_width(node)
-    
-    if isinstance(node, vtypes.Int) and targ_width <= 32:
-        return node
-    
-    if node_width < targ_width:
-        if isinstance(node, vtypes.Int):
-            node.width = targ_width
-            return node
-        
-        return vtypes.Cat(vtypes.Int(0, width=targ_width-node_width), node)
-    
-    if node_width > targ_width:
-        if isinstance(node, vtypes.Int):
-            if node.value.bit_length() > targ_width:
-                raise ValueError("Illegal target width")
-            node.width = targ_width
-            return node
-        
-        return vtypes.Slice(node, targ_width-1, 0)
-    
-    return node
-
-def adjust_point(left, right, lpoint, rpoint):
-    diff_lpoint = rpoint - lpoint
-    diff_rpoint = lpoint - rpoint
-    if diff_lpoint < 0: diff_lpoint = 0
-    if diff_rpoint < 0: diff_rpoint = 0
-    ldata = left if diff_lpoint == 0 else left << diff_lpoint
-    rdata = right if diff_rpoint == 0 else right << diff_rpoint
-    return ldata, rdata
+        var.subst[0].overwrite_right( _and_vars(prev_subst[0].right, ready) )
 
 #-------------------------------------------------------------------------------
-def tmp_data(val, prefix='_tmp_data_'):
-    return ''.join([prefix, str(val)])
-
-def tmp_valid(val, prefix='_tmp_valid_'):
-    return ''.join([prefix, str(val)])
-
-def tmp_ready(val, prefix='_tmp_ready_'):
-    return ''.join([prefix, str(val)])
-
-#-------------------------------------------------------------------------------
-def to_constant(obj):
+def _to_constant(obj):
     if isinstance(obj, (int, float, bool, str)):
         return Constant(obj)
     return obj
 
 #-------------------------------------------------------------------------------
-# Object ID counter for object sorting key
-global_object_counter = 0
+def _tmp_data(val, prefix='_tmp_data_'):
+    return ''.join([prefix, str(val)])
+
+def _tmp_valid(val, prefix='_tmp_valid_'):
+    return ''.join([prefix, str(val)])
+
+def _tmp_ready(val, prefix='_tmp_ready_'):
+    return ''.join([prefix, str(val)])
 
 #-------------------------------------------------------------------------------
 class _Node(object):
@@ -133,6 +116,11 @@ class _Numeric(_Node):
         self.start_stage = None
         self.end_stage = None
         self.sink = []
+
+        # set up by set_attributes()
+        self.width = None
+        self.point = None
+        self.signed = False
         
         # stage numbers incremented
         self.delayed_value = OrderedDict()
@@ -165,15 +153,17 @@ class _Numeric(_Node):
         return prev
         
     #--------------------------------------------------------------------------
-    def get_point(self):
-        return self.bit_length_fixedpoint()
-    
-    #--------------------------------------------------------------------------
-    def bit_length(self):
-        raise NotImplementedError('bit_length() is not implemented')
+    def set_attributes(self):
+        raise NotImplementedError('set_attributes() is not implemented')
 
-    def bit_length_fixedpoint(self):
-        raise NotImplementedError('bit_length_fixedpoint() is not implemented')
+    def get_signed(self):
+        return self.signed
+    
+    def get_point(self):
+        return self.point
+    
+    def bit_length(self):
+        return self.width
 
     def eval(self):
         raise NotImplementedError('eval() is not implemented')
@@ -199,11 +189,12 @@ class _Numeric(_Node):
             raise ValueError('end_stage is not fixed yet.')
 
         width = self.bit_length()
+        signed = self.get_signed()
 
         type_i = m.Wire if aswire else m.Input
         type_o = m.Wire if aswire else m.Output
         
-        data = type_o(self.output_data, width=width)
+        data = type_o(self.output_data, width=width, signed=signed)
         
         if self.output_valid is not None:
             valid = type_o(self.output_valid)
@@ -351,41 +342,43 @@ class _Operator(_Numeric):
 class _BinaryOperator(_Operator):
     def __init__(self, left, right):
         _Operator.__init__(self)
-        self.left = to_constant(left)
-        self.right = to_constant(right)
+        self.left = _to_constant(left)
+        self.right = _to_constant(right)
         self.left._add_sink(self)
         self.right._add_sink(self)
         self.op = getattr(vtypes, self.__class__.__name__, None)
-        
-    def bit_length(self):
+        self.set_attributes()
+
+    def set_attributes(self):
         left_fp = self.left.get_point()
         right_fp = self.right.get_point()
         left = self.left.bit_length() - left_fp
         right = self.right.bit_length() - right_fp
-        return max(left, right) + max(left_fp, right_fp)
-
-    def bit_length_fixedpoint(self):
-        left = self.left.get_point()
-        right = self.right.get_point()
-        return max(left, right)
-    
+        self.width = max(left, right) + max(left_fp, right_fp)
+        self.point = max(left_fp, right_fp)
+        self.signed = self.left.get_signed() or self.right.get_signed()
+                
     def _implement(self, m, seq):
         if self.latency != 1:
             raise ValueError("Latency mismatch '%d' vs '%s'" % (self.latency, 1))
 
         width = self.bit_length()
+        signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Reg(tmp_data(tmp), width, initval=0)
-        valid = m.Reg(tmp_valid(tmp), initval=0)
-        ready = m.Wire(tmp_ready(tmp))
+        data = m.Reg(_tmp_data(tmp), width, initval=0, signed=signed)
+        valid = m.Reg(_tmp_valid(tmp), initval=0)
+        ready = m.Wire(_tmp_ready(tmp))
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
 
         lpoint = self.left.get_point()
         rpoint = self.right.get_point()
-        ldata, rdata = adjust_point(self.left.sig_data, self.right.sig_data, lpoint, rpoint)
+        lsigned = self.left.get_signed()
+        rsigned = self.right.get_signed()
+        ldata, rdata = fx.adjust(self.left.sig_data, self.right.sig_data,
+                                 lpoint, rpoint, lsigned, rsigned)
         
         lvalid = self.left.sig_valid
         rvalid = self.right.sig_valid
@@ -393,50 +386,51 @@ class _BinaryOperator(_Operator):
         lready = self.left.sig_ready
         rready = self.right.sig_ready
         
-        all_valid = and_vars(lvalid, rvalid)
-        all_ready = and_vars(lready, rready)
+        all_valid = _and_vars(lvalid, rvalid)
+        all_ready = _and_vars(lready, rready)
 
         accept = vtypes.OrList(ready, vtypes.Not(valid))
 
-        valid_cond = and_vars(accept, all_ready)
-        valid_reset_cond = and_vars(valid, ready)
-        data_cond = and_vars(valid_cond, all_valid)
-        ready_cond = and_vars(accept, all_valid)
+        valid_cond = _and_vars(accept, all_ready)
+        valid_reset_cond = _and_vars(valid, ready)
+        data_cond = _and_vars(valid_cond, all_valid)
+        ready_cond = _and_vars(accept, all_valid)
         
         seq( data(self.op(ldata, rdata)), cond=data_cond )
         seq( valid(0), cond=valid_reset_cond )
         seq( valid(all_valid), cond=valid_cond )
-        connect_ready(m, lready, ready_cond)
-        connect_ready(m, rready, ready_cond)
+        _connect_ready(m, lready, ready_cond)
+        _connect_ready(m, rready, ready_cond)
 
         if not self._has_output():
-            connect_ready(m, ready, vtypes.Int(1))
+            _connect_ready(m, ready, vtypes.Int(1))
             
 class _UnaryOperator(_Operator):
     def __init__(self, right):
         _Operator.__init__(self)
-        self.right = to_constant(right)
+        self.right = _to_constant(right)
         self.right._add_sink(self)
         self.op = getattr(vtypes, self.__class__.__name__, None)
+        self.set_attributes()
         
-    def bit_length(self):
+    def set_attributes(self):
         right = self.right.bit_length()
-        return right
-
-    def bit_length_fixedpoint(self):
-        right = self.right.get_point()
-        return right
-    
+        right_fp = self.right.get_point()
+        self.width = right
+        self.point = right_fp
+        self.signed = self.right.get_signed()
+                
     def _implement(self, m, seq):
         if self.latency != 1:
             raise ValueError("Latency mismatch '%d' vs '%s'" % (self.latency, 1))
         
         width = self.bit_length()
+        signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Reg(tmp_data(tmp), width, initval=0)
-        valid = m.Reg(tmp_valid(tmp), initval=0)
-        ready = m.Wire(tmp_ready(tmp))
+        data = m.Reg(_tmp_data(tmp), width, initval=0, signed=signed)
+        valid = m.Reg(_tmp_valid(tmp), initval=0)
+        ready = m.Wire(_tmp_ready(tmp))
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
@@ -447,23 +441,23 @@ class _UnaryOperator(_Operator):
         
         rready = self.right.sig_ready
 
-        all_valid = and_vars(rvalid)
-        all_ready = and_vars(rready)
+        all_valid = _and_vars(rvalid)
+        all_ready = _and_vars(rready)
 
         accept = vtypes.OrList(ready, vtypes.Not(valid))
 
-        valid_cond = and_vars(accept, all_ready)
-        valid_reset_cond = and_vars(valid, ready)
-        data_cond = and_vars(valid_cond, all_valid)
-        ready_cond = and_vars(accept, all_valid)
+        valid_cond = _and_vars(accept, all_ready)
+        valid_reset_cond = _and_vars(valid, ready)
+        data_cond = _and_vars(valid_cond, all_valid)
+        ready_cond = _and_vars(accept, all_valid)
         
         seq( data(self.op(rdata)), cond=data_cond )
         seq( valid(0), cond=valid_reset_cond )
         seq( valid(all_valid), cond=valid_cond )
-        connect_ready(m, rready, ready_cond)
+        _connect_ready(m, rready, ready_cond)
         
         if not self._has_output():
-            connect_ready(m, ready, vtypes.Int(1))
+            _connect_ready(m, ready, vtypes.Int(1))
 
 class Power(_BinaryOperator):
     latency = 0
@@ -483,47 +477,52 @@ class Times(_BinaryOperator):
             raise ValueError("Latency of '*' operator must be greater than 1")
 
         width = self.bit_length()
+        signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Wire(tmp_data(tmp), width)
-        valid = m.Wire(tmp_valid(tmp))
-        ready = m.Wire(tmp_ready(tmp))
+        data = m.Wire(_tmp_data(tmp), width, signed=signed)
+        valid = m.Wire(_tmp_valid(tmp))
+        ready = m.Wire(_tmp_ready(tmp))
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
 
-        odata = m.Wire(tmp_data(tmp, prefix='_tmp_odata_'), width*2)
-        rev_shift = min(self.left.get_point(), self.right.get_point())
-        if rev_shift > 0:
-            m.Assign( data(odata >> rev_shift) )
+        lsigned = self.left.get_signed()
+        rsigned = self.right.get_signed()
+        ldata = m.Wire(_tmp_data(tmp, prefix='_tmp_ldata_'), width, signed=lsigned)
+        rdata = m.Wire(_tmp_data(tmp, prefix='_tmp_rdata_'), width, signed=rsigned)
+        m.Assign( ldata(self.left.sig_data) )
+        m.Assign( rdata(self.right.sig_data) )
+        
+        odata = m.Wire(_tmp_data(tmp, prefix='_tmp_odata_'), width*2, signed=signed)
+        shift_size = min(self.left.get_point(), self.right.get_point())
+        if shift_size > 0:
+            m.Assign( data(fx.shift_right(odata, shift_size, signed=signed)) )
         else:
             m.Assign( data(odata) )
-        
-        ldata = fit_width(self.left.sig_data, self.left.bit_length(), width)
-        rdata = fit_width(self.right.sig_data, self.right.bit_length(), width)
-        
+
         lvalid = self.left.sig_valid
         rvalid = self.right.sig_valid
         
         lready = self.left.sig_ready
         rready = self.right.sig_ready
         
-        all_valid = and_vars(lvalid, rvalid)
-        all_ready = and_vars(lready, rready)
+        all_valid = _and_vars(lvalid, rvalid)
+        all_ready = _and_vars(lready, rready)
 
         accept = vtypes.OrList(ready, vtypes.Not(valid))
         
-        valid_cond = and_vars(accept, all_ready)
-        valid_reset_cond = and_vars(valid, ready)
-        data_cond = and_vars(valid_cond, all_valid)
-        ready_cond = and_vars(accept, all_valid)
+        valid_cond = _and_vars(accept, all_ready)
+        valid_reset_cond = _and_vars(valid, ready)
+        data_cond = _and_vars(valid_cond, all_valid)
+        ready_cond = _and_vars(accept, all_valid)
         
         inst = mul.get_mul()
         clk = m._clock
         rst = m._reset
 
-        enable = m.Wire(tmp_data(tmp, prefix='_tmp_enable_') )
-        update = m.Wire(tmp_data(tmp, prefix='_tmp_update_') )
+        enable = m.Wire(_tmp_data(tmp, prefix='_tmp_enable_') )
+        update = m.Wire(_tmp_data(tmp, prefix='_tmp_update_') )
         m.Assign( enable(data_cond) )
         m.Assign( update(accept) ) # NOT valid_cond
         
@@ -534,12 +533,11 @@ class Times(_BinaryOperator):
         
         m.Instance(inst, ''.join(['mul', str(tmp)]), params, ports)
         
-        connect_ready(m, lready, ready_cond)
-        connect_ready(m, rready, ready_cond)
+        _connect_ready(m, lready, ready_cond)
+        _connect_ready(m, rready, ready_cond)
         
         if not self._has_output():
-            connect_ready(m, ready, vtypes.Int(1))
-    
+            _connect_ready(m, ready, vtypes.Int(1))
     
 class Divide(_BinaryOperator):
     latency = 32
@@ -555,24 +553,29 @@ class Divide(_BinaryOperator):
             raise ValueError("Latency of '*' operator must be greater than 1")
 
         width = self.bit_length()
+        signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Wire(tmp_data(tmp), width)
-        valid = m.Wire(tmp_valid(tmp))
-        ready = m.Wire(tmp_ready(tmp))
+        data = m.Wire(_tmp_data(tmp), width, signed=signed)
+        valid = m.Wire(_tmp_valid(tmp))
+        ready = m.Wire(_tmp_ready(tmp))
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
         
         lpoint = self.left.get_point()
         rpoint = self.right.get_point()
-        ldata, rdata = adjust_point(self.left.sig_data, self.right.sig_data, lpoint, rpoint)
-        
-        lwidth = self.left.bit_length() - lpoint + max(lpoint, rpoint)
-        rwidth = self.right.bit_length() - rpoint + max(lpoint, rpoint)
-        
-        ldata = fit_width(ldata, lwidth, width)
-        rdata = fit_width(rdata, rwidth, width)
+        lsigned = self.left.get_signed()
+        rsigned = self.right.get_signed()
+        ldata = m.Wire(_tmp_data(tmp, prefix='_tmp_ldata_'), width, signed=lsigned)
+        rdata = m.Wire(_tmp_data(tmp, prefix='_tmp_rdata_'), width, signed=rsigned)
+        lval, rval = fx.adjust(self.left.sig_data, self.right.sig_data,
+                               lpoint, rpoint, lsigned, rsigned)
+        m.Assign( ldata(lval) )
+        m.Assign( rdata(rval) )
+
+        if signed:
+            raise TypeError('Signed divide operation is not supported.')
         
         lvalid = self.left.sig_valid
         rvalid = self.right.sig_valid
@@ -580,22 +583,22 @@ class Divide(_BinaryOperator):
         lready = self.left.sig_ready
         rready = self.right.sig_ready
         
-        all_valid = and_vars(lvalid, rvalid)
-        all_ready = and_vars(lready, rready)
+        all_valid = _and_vars(lvalid, rvalid)
+        all_ready = _and_vars(lready, rready)
 
         accept = vtypes.OrList(ready, vtypes.Not(valid))
         
-        valid_cond = and_vars(accept, all_ready)
-        valid_reset_cond = and_vars(valid, ready)
-        data_cond = and_vars(valid_cond, all_valid)
-        ready_cond = and_vars(accept, all_valid)
+        valid_cond = _and_vars(accept, all_ready)
+        valid_reset_cond = _and_vars(valid, ready)
+        data_cond = _and_vars(valid_cond, all_valid)
+        ready_cond = _and_vars(accept, all_valid)
         
         inst = div.get_div()
         clk = m._clock
         rst = m._reset
 
-        enable = m.Wire(tmp_data(tmp, prefix='_tmp_enable_') )
-        update = m.Wire(tmp_data(tmp, prefix='_tmp_update_') )
+        enable = m.Wire(_tmp_data(tmp, prefix='_tmp_enable_') )
+        update = m.Wire(_tmp_data(tmp, prefix='_tmp_update_') )
         m.Assign( enable(data_cond) )
         m.Assign( update(accept) ) # NOT valid_cond
         
@@ -606,12 +609,11 @@ class Divide(_BinaryOperator):
         
         m.Instance(inst, ''.join(['div', str(tmp)]), params, ports)
         
-        connect_ready(m, lready, ready_cond)
-        connect_ready(m, rready, ready_cond)
+        _connect_ready(m, lready, ready_cond)
+        _connect_ready(m, rready, ready_cond)
         
         if not self._has_output():
-            connect_ready(m, ready, vtypes.Int(1))
-    
+            _connect_ready(m, ready, vtypes.Int(1))
     
 class Mod(_BinaryOperator):
     latency = 32
@@ -623,24 +625,22 @@ class Mod(_BinaryOperator):
             raise ValueError("Latency of '*' operator must be greater than 1")
 
         width = self.bit_length()
+        signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Wire(tmp_data(tmp), width)
-        valid = m.Wire(tmp_valid(tmp))
-        ready = m.Wire(tmp_ready(tmp))
+        data = m.Wire(_tmp_data(tmp), width, signed=signed)
+        valid = m.Wire(_tmp_valid(tmp))
+        ready = m.Wire(_tmp_ready(tmp))
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
         
         lpoint = self.left.get_point()
         rpoint = self.right.get_point()
-        ldata, rdata = adjust_point(self.left.sig_data, self.right.sig_data, lpoint, rpoint)
-        
-        lwidth = self.left.bit_length() - lpoint + max(lpoint, rpoint)
-        rwidth = self.right.bit_length() - rpoint + max(lpoint, rpoint)
-        
-        ldata = fit_width(ldata, lwidth, width)
-        rdata = fit_width(rdata, rwidth, width)
+        lsigned = self.left.get_signed()
+        rsigned = self.right.get_signed()
+        ldata, rdata = fx.adjust(self.left.sig_data, self.right.sig_data,
+                                 lpoint, rpoint, lsigned, rsigned)
         
         lvalid = self.left.sig_valid
         rvalid = self.right.sig_valid
@@ -648,22 +648,22 @@ class Mod(_BinaryOperator):
         lready = self.left.sig_ready
         rready = self.right.sig_ready
         
-        all_valid = and_vars(lvalid, rvalid)
-        all_ready = and_vars(lready, rready)
+        all_valid = _and_vars(lvalid, rvalid)
+        all_ready = _and_vars(lready, rready)
 
         accept = vtypes.OrList(ready, vtypes.Not(valid))
         
-        valid_cond = and_vars(accept, all_ready)
-        valid_reset_cond = and_vars(valid, ready)
-        data_cond = and_vars(valid_cond, all_valid)
-        ready_cond = and_vars(accept, all_valid)
+        valid_cond = _and_vars(accept, all_ready)
+        valid_reset_cond = _and_vars(valid, ready)
+        data_cond = _and_vars(valid_cond, all_valid)
+        ready_cond = _and_vars(accept, all_valid)
         
         inst = div.get_div()
         clk = m._clock
         rst = m._reset
 
-        enable = m.Wire(tmp_data(tmp, prefix='_tmp_enable_') )
-        update = m.Wire(tmp_data(tmp, prefix='_tmp_update_') )
+        enable = m.Wire(_tmp_data(tmp, prefix='_tmp_enable_') )
+        update = m.Wire(_tmp_data(tmp, prefix='_tmp_update_') )
         m.Assign( enable(data_cond) )
         m.Assign( update(accept) ) # NOT valid_cond
         
@@ -674,12 +674,11 @@ class Mod(_BinaryOperator):
         
         m.Instance(inst, ''.join(['div', str(tmp)]), params, ports)
         
-        connect_ready(m, lready, ready_cond)
-        connect_ready(m, rready, ready_cond)
+        _connect_ready(m, lready, ready_cond)
+        _connect_ready(m, rready, ready_cond)
         
         if not self._has_output():
-            connect_ready(m, ready, vtypes.Int(1))
-
+            _connect_ready(m, ready, vtypes.Int(1))
             
 class Plus(_BinaryOperator):
     def eval(self):
@@ -691,7 +690,7 @@ class Minus(_BinaryOperator):
 
 class Sll(_BinaryOperator):
     max_width = 1024
-    def bit_length(self):
+    def set_attributes(self):
         v = self.right.eval()
         if isinstance(v, int):
             return self.left.bit_length() + v
@@ -699,12 +698,10 @@ class Sll(_BinaryOperator):
         ret = self.left.bit_length() + v
         if ret > self.max_width:
             raise ValueError("bit_length is too large '%d'" % ret)
-        return ret
-    
-    def bit_length_fixedpoint(self):
-        left = self.left.get_point()
-        right = 0
-        return max(left, right)
+        self.width = ret
+        left_fp = self.left.get_point()
+        self.point = left_fp
+        self.signed = False
     
     def _implement(self, m, seq):
         if self.right.get_point() != 0:
@@ -715,6 +712,11 @@ class Sll(_BinaryOperator):
         return self.left.eval() << self.right.eval()
     
 class Srl(_BinaryOperator):
+    def set_attributes(self):
+        self.width = self.left.bit_length()
+        self.point = self.left.get_point()
+        self.signed = False
+    
     def _implement(self, m, seq):
         if self.right.get_point() != 0:
             raise TypeError("shift amount must be int")
@@ -724,6 +726,11 @@ class Srl(_BinaryOperator):
         return self.left.eval() >> self.right.eval()
     
 class Sra(_BinaryOperator):
+    def set_attributes(self):
+        self.width = self.left.bit_length()
+        self.point = self.left.get_point()
+        self.signed = self.left.get_signed()
+    
     def _implement(self, m, seq):
         if self.right.get_point() != 0:
             raise TypeError("shift amount must be int")
@@ -742,38 +749,119 @@ class Sra(_BinaryOperator):
         return Sra(left, right)
 
 class LessThan(_BinaryOperator):
+    def set_attributes(self):
+        self.width = 1
+        self.point = 0
+        self.signed = False
+        
     def eval(self):
         return self.left.eval() < self.right.eval()
     
 class GreaterThan(_BinaryOperator):
+    def set_attributes(self):
+        self.width = 1
+        self.point = 0
+        self.signed = False
+        
     def eval(self):
         return self.left.eval() > self.right.eval()
     
 class LessEq(_BinaryOperator):
+    def set_attributes(self):
+        self.width = 1
+        self.point = 0
+        self.signed = False
+        
     def eval(self):
         return self.left.eval() <= self.right.eval()
 
 class GreaterEq(_BinaryOperator):
+    def set_attributes(self):
+        self.width = 1
+        self.point = 0
+        self.signed = False
+        
     def eval(self):
         return self.left.eval() >= self.right.eval()
 
 class Eq(_BinaryOperator):
+    def set_attributes(self):
+        self.width = 1
+        self.point = 0
+        self.signed = False
+        
     def eval(self):
         return self.left.eval() == self.right.eval()
     
 class NotEq(_BinaryOperator):
+    def set_attributes(self):
+        self.width = 1
+        self.point = 0
+        self.signed = False
+        
     def eval(self):
         return self.left.eval() != self.right.eval()
+
+class _BinaryLogicalOperator(_BinaryOperator):
+    def set_attributes(self):
+        left = self.left.bit_length() 
+        right = self.right.bit_length()
+        self.width = max(left, right)
+        self.point = 0
+        self.signed = False
+                
+    def _implement(self, m, seq):
+        if self.latency != 1:
+            raise ValueError("Latency mismatch '%d' vs '%s'" % (self.latency, 1))
+
+        width = self.bit_length()
+        signed = False
+
+        tmp = m.get_tmp()
+        data = m.Reg(_tmp_data(tmp), width, initval=0, signed=signed)
+        valid = m.Reg(_tmp_valid(tmp), initval=0)
+        ready = m.Wire(_tmp_ready(tmp))
+        self.sig_data = data
+        self.sig_valid = valid
+        self.sig_ready = ready
+
+        ldata = self.left.sig_data
+        right = self.right.sig_data
+        
+        lvalid = self.left.sig_valid
+        rvalid = self.right.sig_valid
+        
+        lready = self.left.sig_ready
+        rready = self.right.sig_ready
+        
+        all_valid = _and_vars(lvalid, rvalid)
+        all_ready = _and_vars(lready, rready)
+
+        accept = vtypes.OrList(ready, vtypes.Not(valid))
+
+        valid_cond = _and_vars(accept, all_ready)
+        valid_reset_cond = _and_vars(valid, ready)
+        data_cond = _and_vars(valid_cond, all_valid)
+        ready_cond = _and_vars(accept, all_valid)
+        
+        seq( data(self.op(ldata, rdata)), cond=data_cond )
+        seq( valid(0), cond=valid_reset_cond )
+        seq( valid(all_valid), cond=valid_cond )
+        _connect_ready(m, lready, ready_cond)
+        _connect_ready(m, rready, ready_cond)
+
+        if not self._has_output():
+            _connect_ready(m, ready, vtypes.Int(1))
     
-class And(_BinaryOperator):
+class And(_BinaryLogicalOperator):
     def eval(self):
         return self.left.eval() & self.right.eval()
     
-class Xor(_BinaryOperator):
+class Xor(_BinaryLogicalOperator):
     def eval(self):
         return self.left.eval() ^ self.right.eval()
     
-class Xnor(_BinaryOperator):
+class Xnor(_BinaryLogicalOperator):
     def eval(self):
         left = self.left.eval()
         right = self.right.eval()
@@ -782,11 +870,11 @@ class Xnor(_BinaryOperator):
             return ret == 0
         return Xnor(left, right)
     
-class Or(_BinaryOperator):
+class Or(_BinaryLogicalOperator):
     def eval(self):
         return self.left.eval() | self.right.eval()
     
-class Land(_BinaryOperator):
+class Land(_BinaryLogicalOperator):
     def eval(self):
         left = self.left.eval()
         right = self.right.eval()
@@ -794,7 +882,7 @@ class Land(_BinaryOperator):
             return left and right
         return Land(left, right)
     
-class Lor(_BinaryOperator):
+class Lor(_BinaryLogicalOperator):
     def eval(self):
         left = self.left.eval()
         right = self.right.eval()
@@ -810,18 +898,35 @@ class Uminus(_UnaryOperator):
     def eval(self):
         return - self.right.eval()
     
-class Ulnot(_UnaryOperator):
+class _UnaryLogicalOperator(_UnaryOperator):
+    def set_attributes(self):
+        right = self.right.bit_length()
+        self.width = right
+        self.point = 0
+        self.signed = False
+                
+class Ulnot(_UnaryLogicalOperator):
+    def set_attributes(self):
+        self.width = 1
+        self.point = 0
+        self.signed = False
+        
     def eval(self):
         right = self.right.eval()
         if isinstance(right, (int, bool)):
             return not right
         return Ulnot(right)
     
-class Unot(_UnaryOperator):
+class Unot(_UnaryLogicalOperator):
     def eval(self):
         return ~ self.right.eval()
     
-class Uand(_UnaryOperator):
+class Uand(_UnaryLogicalOperator):
+    def set_attributes(self):
+        self.width = 1
+        self.point = 0
+        self.signed = False
+        
     def eval(self):
         right = self.right.eval()
         if isinstance(right, bool):
@@ -835,7 +940,12 @@ class Uand(_UnaryOperator):
             return True
         return Uand(right)
     
-class Unand(_UnaryOperator):
+class Unand(_UnaryLogicalOperator):
+    def set_attributes(self):
+        self.width = 1
+        self.point = 0
+        self.signed = False
+        
     def eval(self):
         right = self.right.eval()
         if isinstance(right, bool):
@@ -849,7 +959,12 @@ class Unand(_UnaryOperator):
             return False
         return Unand(right)
     
-class Uor(_UnaryOperator):
+class Uor(_UnaryLogicalOperator):
+    def set_attributes(self):
+        self.width = 1
+        self.point = 0
+        self.signed = False
+        
     def eval(self):
         right = self.right.eval()
         if isinstance(right, bool):
@@ -863,7 +978,12 @@ class Uor(_UnaryOperator):
             return False
         return Uor(right)
     
-class Unor(_UnaryOperator):
+class Unor(_UnaryLogicalOperator):
+    def set_attributes(self):
+        self.width = 1
+        self.point = 0
+        self.signed = False
+        
     def eval(self):
         right = self.right.eval()
         if isinstance(right, bool):
@@ -877,7 +997,12 @@ class Unor(_UnaryOperator):
             return True
         return Unor(right)
     
-class Uxor(_UnaryOperator):
+class Uxor(_UnaryLogicalOperator):
+    def set_attributes(self):
+        self.width = 1
+        self.point = 0
+        self.signed = False
+        
     def eval(self):
         right = self.right.eval()
         if isinstance(right, bool):
@@ -891,7 +1016,12 @@ class Uxor(_UnaryOperator):
             return ret == 1
         return Uxor(right)
     
-class Uxnor(_UnaryOperator):
+class Uxnor(_UnaryLogicalOperator):
+    def set_attributes(self):
+        self.width = 1
+        self.point = 0
+        self.signed = False
+        
     def eval(self):
         right = self.right.eval()
         if isinstance(right, bool):
@@ -910,29 +1040,34 @@ class _SpecialOperator(_Operator):
     latency = 1
     def __init__(self, *args):
         _Operator.__init__(self)
-        self.args = [ to_constant(arg) for arg in args ]
+        self.args = [ _to_constant(arg) for arg in args ]
         for var in self.args:
             var._add_sink(self) 
         self.op = None
+        self.set_attributes()
 
-    def bit_length(self):
-        args = [ arg.bit_length() for arg in self.args ]
-        return max(*args)
-    
-    def bit_length_fixedpoint(self):
-        args = [ arg.get_point() for arg in self.args ]
-        return max(left, right)
-    
+    def set_attributes(self):
+        wargs = [ arg.bit_length() for arg in self.args ]
+        self.width = max(*wargs)
+        pargs = [ arg.get_point() for arg in self.args ]
+        self.point = max(*pargs)
+        self.signed = False
+        for arg in self.args:
+            if arg.get_signed():
+                self.signed = True
+                break
+                
     def _implement(self, m, seq):
         if self.latency != 1:
             raise ValueError("Latency mismatch '%d' vs '%s'" % (self.latency, 1))
 
         width = self.bit_length()
+        signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Reg(tmp_data(tmp), width, initval=0)
-        valid = m.Reg(tmp_valid(tmp), initval=0)
-        ready = m.Wire(tmp_ready(tmp))
+        data = m.Reg(_tmp_data(tmp), width, initval=0, signed=signed)
+        valid = m.Reg(_tmp_valid(tmp), initval=0)
+        ready = m.Wire(_tmp_ready(tmp))
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
@@ -946,31 +1081,31 @@ class _SpecialOperator(_Operator):
             if all_valid is None:
                 all_valid = v
             else:
-                all_valid = and_vars(all_valid, v)
+                all_valid = _and_vars(all_valid, v)
 
         all_ready = None
         for r in arg_ready:
             if all_ready is None:
                 all_ready = r
             else:
-                all_ready = and_vars(all_ready, r)
+                all_ready = _and_vars(all_ready, r)
 
         accept = vtypes.OrList(ready, vtypes.Not(valid))
 
-        valid_cond = and_vars(accept, all_ready)
-        valid_reset_cond = and_vars(valid, ready)
-        data_cond = and_vars(valid_cond, all_valid)
-        ready_cond = and_vars(accept, all_valid)
+        valid_cond = _and_vars(accept, all_ready)
+        valid_reset_cond = _and_vars(valid, ready)
+        data_cond = _and_vars(valid_cond, all_valid)
+        ready_cond = _and_vars(accept, all_valid)
         
         seq( data(self.op(*arg_data)), cond=data_cond )
         seq( valid(0), cond=valid_reset_cond )
         seq( valid(all_valid), cond=valid_cond )
 
         for r in arg_ready:
-            connect_ready(m, r, ready_cond)
+            _connect_ready(m, r, ready_cond)
 
         if not self._has_output():
-            connect_ready(m, ready, vtypes.Int(1))
+            _connect_ready(m, ready, vtypes.Int(1))
             
 #-------------------------------------------------------------------------------
 class Pointer(_SpecialOperator):
@@ -978,6 +1113,11 @@ class Pointer(_SpecialOperator):
         _SpecialOperator.__init__(self, var, pos)
         self.op = vtypes.Pointer
 
+    def set_attributes(self):
+        self.width = 1
+        self.point = 0
+        self.signed = False
+        
     @property
     def var(self):
         return self.args[0]
@@ -994,12 +1134,6 @@ class Pointer(_SpecialOperator):
     def pos(self, pos):
         self.args[1] = pos
         
-    def bit_length(self):
-        return 1
-
-    def bit_length_fixedpoint(self):
-        return 0
-
     def eval(self):
         var = self.var.eval()
         pos = self.pos.eval()
@@ -1016,6 +1150,11 @@ class Slice(_SpecialOperator):
         _SpecialOperator.__init__(self, var, msb, lsb)
         self.op = vtypes.Slice
 
+    def set_attributes(self):
+        self.width = self.msb - self.lsb + 1
+        self.point = 0
+        self.signed = False
+        
     @property
     def var(self):
         return self.args[0]
@@ -1040,12 +1179,6 @@ class Slice(_SpecialOperator):
     def lsb(self, lsb):
         self.args[2] = lsb
         
-    def bit_length(self):
-        return self.msb - self.lsb + 1
-    
-    def bit_length_fixedpoint(self):
-        return 0
-    
     def eval(self):
         var = self.var.eval()
         msb = self.msb.eval()
@@ -1062,6 +1195,14 @@ class Cat(_SpecialOperator):
         _SpecialOperator.__init__(self, *vars)
         self.op = vtypes.Cat
     
+    def set_attributes(self):
+        ret = 0
+        for v in self.vars:
+             ret += v.bit_length() 
+        self.width = ret
+        self.point = 0
+        self.signed = False
+        
     @property
     def vars(self):
         return self.args
@@ -1070,15 +1211,6 @@ class Cat(_SpecialOperator):
     def vars(self, vars):
         self.args = list(vars)
         
-    def bit_length(self):
-        ret = 0
-        for v in self.vars:
-             ret += v.bit_length() 
-        return ret
-
-    def bit_length_fixedpoint(self):
-        return 0
-
     def eval(self):
         vars = [ var.eval() for var in self.vars ]
         for var in vars:
@@ -1097,6 +1229,11 @@ class Repeat(_SpecialOperator):
         _SpecialOperator.__init__(self, var, times)
         self.op = vtypes.Repeat
 
+    def set_attributes(self):
+        self.width = self.var.bit_length() * self.times.eval()
+        self.point = 0
+        self.signed = False
+        
     @property
     def var(self):
         return self.args[0]
@@ -1113,12 +1250,6 @@ class Repeat(_SpecialOperator):
     def times(self, times):
         self.args[1] = times
         
-    def bit_length(self):
-        return self.var.bit_length() * self.times.eval()
-
-    def bit_length_fixedpoint(self):
-        return 0
-
     def eval(self):
         var = self.var.eval()
         times = self.times.eval()
@@ -1131,7 +1262,16 @@ class Cond(_SpecialOperator):
     def __init__(self, condition, true_value, false_value):
         _SpecialOperator.__init__(self, condition, true_value, false_value)
         self.op = vtypes.Cond
-        
+
+    def set_attributes(self):
+        true_value_fp = self.true_value.get_point()
+        false_value_fp = self.false_value.get_point()
+        true_value = self.true_value.bit_length() - true_value_fp
+        false_value = self.false_value.bit_length() - false_value_fp
+        self.width = max(true_value, false_value) + max(true_value_fp, false_value_fp)
+        self.point = max(true_value_fp, false_value_fp)
+        self.signed = self.true_value.get_signed() or self.false_value.get_signed()
+
     @property
     def condition(self):
         return self.args[0]
@@ -1156,18 +1296,6 @@ class Cond(_SpecialOperator):
     def false_value(self, false_value):
         self.args[2] = false_value
         
-    def bit_length(self):
-        true_value_fp = self.true_value.get_point()
-        false_value_fp = self.false_value.get_point()
-        true_value = self.true_value.bit_length() - true_value_fp
-        false_value = self.false_value.bit_length() - false_value_fp
-        return max(true_value, false_value) + max(true_value_fp, false_value_fp)
-
-    def bit_length_fixedpoint(self):
-        left = self.true_value.get_point()
-        right = self.false_value.get_point()
-        return max(left, right)
-
     def eval(self):
         condition = self.condition.eval()
         true_value = self.true_value.eval()
@@ -1212,11 +1340,12 @@ class _Delay(_UnaryOperator):
             raise ValueError("Latency mismatch '%d' vs '%s'" % (self.latency, 1))
         
         width = self.bit_length()
+        signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Reg(tmp_data(tmp), width, initval=0)
-        valid = m.Reg(tmp_valid(tmp), initval=0)
-        ready = m.Wire(tmp_ready(tmp))
+        data = m.Reg(_tmp_data(tmp), width, initval=0, signed=signed)
+        valid = m.Reg(_tmp_valid(tmp), initval=0)
+        ready = m.Wire(_tmp_ready(tmp))
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
@@ -1227,23 +1356,23 @@ class _Delay(_UnaryOperator):
         
         rready = self.right.sig_ready
 
-        all_valid = and_vars(rvalid)
-        all_ready = and_vars(rready)
+        all_valid = _and_vars(rvalid)
+        all_ready = _and_vars(rready)
 
         accept = vtypes.OrList(ready, vtypes.Not(valid))
 
-        valid_cond = and_vars(accept, all_ready)
-        valid_reset_cond = and_vars(valid, ready)
-        data_cond = and_vars(valid_cond, all_valid)
-        ready_cond = and_vars(accept, all_valid)
+        valid_cond = _and_vars(accept, all_ready)
+        valid_reset_cond = _and_vars(valid, ready)
+        data_cond = _and_vars(valid_cond, all_valid)
+        ready_cond = _and_vars(accept, all_valid)
         
         seq( data(rdata), cond=data_cond )
         seq( valid(0), cond=valid_reset_cond )
         seq( valid(all_valid), cond=valid_cond )
-        connect_ready(m, rready, ready_cond)
+        _connect_ready(m, rready, ready_cond)
         
         if not self._has_output():
-            connect_ready(m, ready, vtypes.Int(1))
+            _connect_ready(m, ready, vtypes.Int(1))
 
 #-------------------------------------------------------------------------------
 class _Prev(_UnaryOperator):
@@ -1267,9 +1396,10 @@ class _Prev(_UnaryOperator):
             raise ValueError("Latency mismatch '%d' vs '%s'" % (self.latency, 0))
         
         width = self.bit_length()
+        signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Reg(tmp_data(tmp), width, initval=0)
+        data = m.Reg(_tmp_data(tmp), width, initval=0, signed=signed)
         valid = self.parent_value.sig_valid
         ready  = self.parent_value.sig_ready
         self.sig_data = data
@@ -1278,7 +1408,7 @@ class _Prev(_UnaryOperator):
         
         rdata = self.right.sig_data
 
-        data_cond = and_vars(valid, ready)
+        data_cond = _and_vars(valid, ready)
         
         seq( data(rdata), cond=data_cond )
 
@@ -1287,12 +1417,12 @@ class _Constant(_Numeric):
     def __init__(self, value):
         _Numeric.__init__(self)
         self.value = value
+        self.signed = False
+        self.set_attributes()
 
-    def bit_length(self):
-        return self.value.bit_length()
-
-    def bit_length_fixedpoint(self):
-        return 0
+    def set_attributes(self):
+        self.width = self.value.bit_length()
+        self.point = 0
 
     def eval(self):
         return self.value
@@ -1307,7 +1437,7 @@ class _Constant(_Numeric):
 
 #-------------------------------------------------------------------------------
 class _Variable(_Numeric):
-    def __init__(self, data=None, valid=None, ready=None, width=32, point=0):
+    def __init__(self, data=None, valid=None, ready=None, width=32, point=0, signed=False):
         _Numeric.__init__(self)
         self.input_data = data
         self.input_valid = valid
@@ -1316,12 +1446,7 @@ class _Variable(_Numeric):
             self.input_data._add_sink(self)
         self.width = width
         self.point = point
-        
-    def bit_length(self):
-        return self.width
-
-    def bit_length_fixedpoint(self):
-        return self.point
+        self.signed = signed
 
     def eval(self):
         return self
@@ -1331,15 +1456,16 @@ class _Variable(_Numeric):
             return
         
         width = self.bit_length()
+        signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Wire(tmp_data(tmp), width)
-        valid = m.Wire(tmp_valid(tmp))
-        ready = m.Wire(tmp_ready(tmp))
+        data = m.Wire(_tmp_data(tmp), width, signed=signed)
+        valid = m.Wire(_tmp_valid(tmp))
+        ready = m.Wire(_tmp_ready(tmp))
         
         m.Assign( data(self.input_data.sig_data) )
         m.Assign( valid(self.input_data.sig_valid) )
-        connect_ready(m, self.input_data.sig_ready, ready)
+        _connect_ready(m, self.input_data.sig_ready, ready)
             
     def _implement_input(self, m, seq, aswire=False):
         if isinstance(self.input_data, _Numeric):
@@ -1349,8 +1475,9 @@ class _Variable(_Numeric):
         type_o = m.Wire if aswire else m.Output
         
         width = self.bit_length()
+        signed = self.get_signed()
 
-        self.sig_data = type_i(self.input_data, width)
+        self.sig_data = type_i(self.input_data, width, signed=signed)
         
         if self.input_valid is not None:
             self.sig_valid = type_i(self.input_valid)
@@ -1367,24 +1494,18 @@ class _Accumulator(_UnaryOperator):
     latency = 1
     ops = ( vtypes.Plus, )
     
-    def __init__(self, right, initval=None, reset=None, width=32):
+    def __init__(self, right, initval=None, reset=None, width=32, signed=True):
         _UnaryOperator.__init__(self, right)
-        self.initval = to_constant(initval) if initval is not None else to_constant(0)
+        self.initval = _to_constant(initval) if initval is not None else _to_constant(0)
         if not isinstance(self.initval, _Constant):
             raise TypeError("initval must be Constant, not '%s'" % str(type(self.initval)))
-        self.reset = to_constant(reset) if reset is not None else to_constant(0)
+        self.reset = _to_constant(reset) if reset is not None else _to_constant(0)
         self.width = width
+        self.signed = signed
 
-    def bit_length(self):
-        right_fp = self.right.get_point()
-        value = self.width
-        right = self.right.bit_length() - right_fp
-        return max(value, right) + right_fp
-
-    def bit_length_fixedpoint(self):
-        right = self.right.get_point()
-        return right
-
+    def set_attributes(self):
+        self.point = self.right.get_point()
+        
     def eval(self):
         return self
     
@@ -1397,11 +1518,12 @@ class _Accumulator(_UnaryOperator):
         #initval_ready = self.initval.sig_ready
         
         width = self.bit_length()
+        signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Reg(tmp_data(tmp), width, initval=initval_data)
-        valid = m.Reg(tmp_valid(tmp), initval=0)
-        ready = m.Wire(tmp_ready(tmp))
+        data = m.Reg(_tmp_data(tmp), width, initval=initval_data, signed=signed)
+        valid = m.Reg(_tmp_valid(tmp), initval=0)
+        ready = m.Wire(_tmp_ready(tmp))
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
@@ -1412,15 +1534,15 @@ class _Accumulator(_UnaryOperator):
         
         rready = self.right.sig_ready
 
-        all_valid = and_vars(rvalid)
-        all_ready = and_vars(rready)
+        all_valid = _and_vars(rvalid)
+        all_ready = _and_vars(rready)
 
         accept = vtypes.OrList(ready, vtypes.Not(valid))
 
-        valid_cond = and_vars(accept, all_ready)
-        valid_reset_cond = and_vars(valid, ready)
-        data_cond = and_vars(valid_cond, all_valid)
-        ready_cond = and_vars(accept, all_valid)
+        valid_cond = _and_vars(accept, all_ready)
+        valid_reset_cond = _and_vars(valid, ready)
+        data_cond = _and_vars(valid_cond, all_valid)
+        ready_cond = _and_vars(accept, all_valid)
 
         value = data
         for op in self.ops:
@@ -1441,17 +1563,17 @@ class _Accumulator(_UnaryOperator):
             reset_ready = self.reset.sig_ready
             if reset_valid is None:
                 raise TypeError('Reset condition of Accumulator must have a valid port')
-            data_reset_cond = and_vars(reset_valid, reset_ready)
+            data_reset_cond = _and_vars(reset_valid, reset_ready)
             seq( data(reset_data), cond=data_reset_cond )
-            connect_ready(m, reset_ready, vtypes.Int(1))
+            _connect_ready(m, reset_ready, vtypes.Int(1))
         
         seq( data(value), cond=data_cond )
         seq( valid(0), cond=valid_reset_cond )
         seq( valid(all_valid), cond=valid_cond )
-        connect_ready(m, rready, ready_cond)
+        _connect_ready(m, rready, ready_cond)
         
         if not self._has_output():
-            connect_ready(m, ready, vtypes.Int(1))
+            _connect_ready(m, ready, vtypes.Int(1))
 
 class Iadd(_Accumulator):
     ops = ( vtypes.Plus, )
@@ -1488,44 +1610,23 @@ class Icustom(_Accumulator):
 class Int(_Constant):
     pass
 
-class Bool(_Constant):
-    pass
-
 class Float(_Constant):
-    pass
+    def set_attributes(self):
+        self.width = 32
+        self.point = 0
+        self.signed = True
 
 class FixedPoint(_Constant):
     def __init__(self, value, point=0):
         _Constant.__init__(self, value)
         self.point = point
-        
-    def bit_length(self):
-        value = int(self.value)
-        return value.bit_length()
 
-    def bit_length_fixedpoint(self):
-        return point
+    def set_attributes(self):
+        self.width = self.value.bit_length()
+        self.value = self.value < 0
 
 class Str(_Constant):
-    pass
-
-#-------------------------------------------------------------------------------
-def Constant(value, fixed=True, point=0):
-    if isinstance(value, int):
-        return Int(value)
-    
-    if isinstance(value, bool):
-        return Bool(value)
-    
-    if isinstance(value, float):
-        if fixed:
-            return FixedPoint(value, point)
-        return Float(value)
-    
-    if isinstance(value, str):
-        return Str(value)
-    
-    raise TypeError("Unsupported type for Constant '%s'" % str(type(value)))
-
-def Variable(data=None, valid=None, ready=None, width=32, point=0):
-    return _Variable(data, valid, ready, width, point)
+    def set_attributes(self):
+        self.width = 0
+        self.point = 0
+        self.value = False

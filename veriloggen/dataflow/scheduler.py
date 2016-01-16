@@ -7,7 +7,7 @@ from .visitor import _Visitor
 #-------------------------------------------------------------------------------
 class _Scheduler(_Visitor):
     def max_stage(self, *vars):
-        return dtypes.max(*vars)
+        return dtypes._max(*vars)
     
     def next_stage(self, node, stage):
         if stage is None: return None

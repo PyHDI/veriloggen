@@ -69,7 +69,7 @@ class Dataflow(object):
         # balance output stage depth
         max_stage = None
         for output_var in sorted(output_vars, key=lambda x:x.object_id):
-            max_stage = dtypes.max(max_stage, output_var.end_stage)
+            max_stage = dtypes._max(max_stage, output_var.end_stage)
         self.max_stage = max_stage
 
         output_vars = sched.balance_output(output_vars, max_stage)
