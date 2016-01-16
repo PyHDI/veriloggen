@@ -514,7 +514,7 @@ module main
   input zready
 );
 
-  reg [32-1:0] _tmp_data_0;
+  reg [1-1:0] _tmp_data_0;
   reg _tmp_valid_0;
   wire _tmp_ready_0;
   assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid) && ((_tmp_ready_1 || !_tmp_valid_1) && xvalid);
