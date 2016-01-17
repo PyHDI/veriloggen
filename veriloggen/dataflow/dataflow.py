@@ -48,7 +48,7 @@ class Dataflow(object):
 
         try:
             dataflow_nodes = copy.deepcopy(self.nodes)
-        except RecursionError:
+        except RuntimeError:
             dataflow_nodes = self.nodes
             limit = sys.getrecursionlimit()
             print("Warning: Current dataflow definitions are not copied.", file=sys.stderr)
