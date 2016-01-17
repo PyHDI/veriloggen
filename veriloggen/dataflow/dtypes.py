@@ -1529,6 +1529,7 @@ class _Constant(_Numeric):
     def set_attributes(self):
         self.width = self.value.bit_length()
         self.point = 0
+        self.signed = False
 
     def eval(self):
         return self.value
@@ -1714,7 +1715,10 @@ class Icustom(_Accumulator):
 
 #-------------------------------------------------------------------------------
 class Int(_Constant):
-    pass
+    def set_attributes(self):
+        self.width = self.value.bit_length()
+        self.point = 0
+        self.signed = self.value < 0
 
 class Float(_Constant):
     def set_attributes(self):
@@ -1729,10 +1733,11 @@ class FixedPoint(_Constant):
 
     def set_attributes(self):
         self.width = self.value.bit_length()
-        self.value = self.value < 0
+        self.point = 0
+        self.signed = self.value < 0
 
 class Str(_Constant):
     def set_attributes(self):
         self.width = 0
         self.point = 0
-        self.value = False
+        self.signed = False
