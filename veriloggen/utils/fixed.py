@@ -4,6 +4,12 @@ from __future__ import print_function
 import veriloggen.core.vtypes as vtypes
 
 def to_fixed(value, point, signed=False):
+    if point < 0:
+        raise ValueError('point must be more than 0')
+    
+    if point == 0:
+        return value
+    
     if isinstance(value, (int, float)):
         if not isinstance(point, int):
             raise TypeError('point field must be int')
@@ -16,6 +22,12 @@ def to_fixed(value, point, signed=False):
     return shift_left(value, point, signed)
 
 def fixed_to_int(value, point, signed=False):
+    if point < 0:
+        raise ValueError('point must be more than 0')
+    
+    if point == 0:
+        return value
+    
     if isinstance(value, (int, float)):
         if not isinstance(point, int):
             raise TypeError('point field must be int')
@@ -28,6 +40,12 @@ def fixed_to_int(value, point, signed=False):
     return shift_right(value, point, signed)
 
 def fixed_to_int_low(value, point):
+    if point < 0:
+        raise ValueError('point must be more than 0')
+    
+    if point == 0:
+        return 0
+    
     if isinstance(value, (int, float)):
         if not isinstance(point, int):
             raise TypeError('point field must be int')
@@ -37,6 +55,12 @@ def fixed_to_int_low(value, point):
     return vtypes.And(value, vtypes.Repeat(vtypes.Int(1, 1), point))
 
 def fixed_to_real(value, point, signed=False):
+    if point < 0:
+        raise ValueError('point must be more than 0')
+    
+    if point == 0:
+        return vtypes.SystemTask('itor', value)
+    
     if not isinstance(value, vtypes._Variable):
         raise TypeError('fixed_to_real supports only _Variable .')
     if hasattr(value, 'signed') and value.signed:
