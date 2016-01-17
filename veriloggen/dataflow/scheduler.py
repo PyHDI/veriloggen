@@ -21,12 +21,12 @@ class ASAPScheduler(_Scheduler):
     """ Determine the scheduled cycle and insert delay variables to fill the gap """
     
     def schedule(self, nodes):
-        for node in nodes:
+        for node in sorted(nodes, key=lambda x:x.object_id):
             self.visit(node)
 
     def balance_output(self, nodes, max_stage):
         ret = []
-        for node in nodes:
+        for node in sorted(nodes, key=lambda x:x.object_id):
             if not node._has_output(): continue
             r = self.fill_gap(node, max_stage)
             t_data, t_valid, t_ready = node.output_data, node.output_valid, node.output_ready
