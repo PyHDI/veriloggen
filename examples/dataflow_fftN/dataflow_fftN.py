@@ -2,12 +2,19 @@ from __future__ import absolute_import
 from __future__ import print_function
 import sys
 import os
+import math
+import cmath
 
 # the next line can be removed after installation
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from veriloggen import *
 import veriloggen.dataflow as dataflow
+
+def _log2(v): 
+    return math.log(v, 2)
+
+log2 = math.log2 if hasattr(math, 'log2') else _log2
 
 #-------------------------------------------------------------------------------
 def complex_add(x, y):
@@ -46,35 +53,87 @@ def radix2(x, y, c):
     return r0, r1
 
 #-------------------------------------------------------------------------------
-def fft4(din):
-    w = [ (1, 0), (0, -1), (1, 0), (1, 0) ]
-    a, b = radix2(din[0], din[2], w[0])
-    c, d = radix2(din[1], din[3], w[1])
+def gen_weight(n):
+    c = cmath.rect(1, -2 * cmath.pi / n)
+    weight = []
     
-    rslt = []
-    rslt.extend( radix2(a, c, w[2]) )
-    rslt.extend( radix2(b, d, w[3]) )
+    for i in range(int(log2(n))):
+        offset = 0
+        offset_count = 0
+        for k in range(int(n / 2)):
+            first = k + offset
+            p = (first * (2 ** i)) % int(n / 2)
+            _w = c ** p
+            w = (_w.real, _w.imag)
+            weight.append(w)
+            
+            offset_count += 1
+            if offset_count == (n >> (i+1)):
+                offset_count = 0
+                offset += (n >> (i+1))
+                
+    return weight
+
+def fft_weight(din, n, weight):
+    for i in range(int(log2(n))):
+        offset = 0
+        offset_count = 0
+        
+        ndin0 = []
+        ndin1 = []
+        ndin = []
+
+        for k in range(int(n / 2)):
+            first = k + offset
+            second = k + offset + (n >> (i+1))
+            
+            w = weight.pop(0)
+            r0, r1 = radix2(din[first], din[second], w)
+            
+            ndin0.append(r0)
+            ndin1.append(r1)
+            
+            offset_count += 1
+            if offset_count == (n >> (i+1)):
+                offset_count = 0
+                offset += (n >> (i+1))
+                ndin.extend(ndin0)
+                ndin.extend(ndin1)
+                ndin0 = []
+                ndin1 = []
+            
+        din = ndin
 
     # reorder by bit-inversed index
     ret = []
-    for i in range(len(rslt)):
+    for i in range(len(din)):
         # bit-inversion
-        fm = '{:02b}'
+        fm = '{:0' + str(int(log2(n))) + 'b}'
         index = int(fm.format(i)[::-1], 2)
         #print(i, '->', index)
-        re, im = rslt[index]
+        re, im = din[index]
         ret.append( (re, im) )
 
     return ret
 
+def fft(din, n):
+    weight = gen_weight(n)
+    return fft_weight(din, n, weight)
+    
 #-------------------------------------------------------------------------------
-def mkFFT4(datawidth=16, point=8):
+def mkFFT(n, datawidth=16, point=8):
     din = [ (dataflow.Variable('din' + str(i) + 're', width=datawidth, point=point, signed=True),
              dataflow.Variable('din' + str(i) + 'im', width=datawidth, point=point, signed=True))
-            for i in range(4) ]
+            for i in range(n) ]
 
+    weight = [ (dataflow.Variable('weight' + str(i) + 're', width=datawidth,
+                                  point=point, signed=True),
+                dataflow.Variable('weight' + str(i) + 'im', width=datawidth,
+                                  point=point, signed=True))
+               for i in range(int(n * log2(n) / 2)) ]
+    
     # call software-defined method
-    rslt = fft4(din)
+    rslt = fft_weight(din, n, weight)
 
     vars = []
     for i, (re, im) in enumerate(rslt):
@@ -84,7 +143,7 @@ def mkFFT4(datawidth=16, point=8):
         vars.append(im)
 
     df = dataflow.Dataflow(*vars)
-    m = df.to_module('fft4')
+    m = df.to_module('fft')
 
     #try:
     #    df.draw_graph()
@@ -94,10 +153,10 @@ def mkFFT4(datawidth=16, point=8):
     return m
 
 #-------------------------------------------------------------------------------
-def mkTest(datawidth=16, point=8):
+def mkTest(n=8, datawidth=16, point=8):
     m = Module('test')
-
-    main = mkFFT4(datawidth, point)
+    
+    main = mkFFT(n, datawidth, point)
     
     params = m.copy_params(main)
     ports = m.copy_sim_ports(main)
@@ -105,8 +164,10 @@ def mkTest(datawidth=16, point=8):
     clk = ports['CLK']
     rst = ports['RST']
 
-    din = [ (ports['din' + str(i) + 're'], ports['din' + str(i) + 'im']) for i in range(4) ]
-    dout = [ (ports['dout' + str(i) + 're'], ports['dout' + str(i) + 'im']) for i in range(4) ]
+    din = [ (ports['din' + str(i) + 're'], ports['din' + str(i) + 'im']) for i in range(n) ]
+    dout = [ (ports['dout' + str(i) + 're'], ports['dout' + str(i) + 'im']) for i in range(n) ]
+    weight = [ (ports['weight' + str(i) + 're'], ports['weight' + str(i) + 'im'])
+               for i in range(int(n * log2(n) / 2)) ]
 
     _din = [ (m.WireLike(re, name='_' + re.name, width=datawidth-point),
               m.WireLike(im, name='_' + im.name, width=datawidth-point))
@@ -114,12 +175,19 @@ def mkTest(datawidth=16, point=8):
     _dout = [ (m.WireLike(re, name='_' + re.name, width=datawidth-point),
                m.WireLike(im, name='_' + im.name, width=datawidth-point))
               for re, im in dout ]
+    _weight = [ (m.WireLike(re, name='_' + re.name, width=datawidth-point),
+                 m.WireLike(im, name='_' + im.name, width=datawidth-point))
+                for re, im in weight ]
     
     for (lre, lim), (rre, rim) in zip(_din, din):
         m.Assign( lre(fixed.fixed_to_int(rre, point)) )
         m.Assign( lim(fixed.fixed_to_int(rim, point)) )
     
     for (lre, lim), (rre, rim) in zip(_dout, dout):
+        m.Assign( lre(fixed.fixed_to_int(rre, point)) )
+        m.Assign( lim(fixed.fixed_to_int(rim, point)) )
+    
+    for (lre, lim), (rre, rim) in zip(_weight, weight):
         m.Assign( lre(fixed.fixed_to_int(rre, point)) )
         m.Assign( lim(fixed.fixed_to_int(rim, point)) )
     
@@ -133,8 +201,15 @@ def mkTest(datawidth=16, point=8):
     for i, (re, im) in enumerate(din):
         reset_stmt.append( re(fixed.to_fixed(i, point)) )
         reset_stmt.append( im(fixed.to_fixed(i, point)) )
+
+    weight_value = gen_weight(n)
+        
+    for i, (re, im) in enumerate(weight):
+        wr, wi = weight_value[i]
+        reset_stmt.append( re(fixed.to_fixed(wr, point)) )
+        reset_stmt.append( im(fixed.to_fixed(wi, point)) )
     
-    simulation.setup_waveform(m, uut, *(_din + _dout))
+    simulation.setup_waveform(m, uut, *(_din + _dout + _weight))
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, reset_stmt, period=100)
 
@@ -154,6 +229,10 @@ def mkTest(datawidth=16, point=8):
     send_fsm = FSM(m, 'send_fsm', clk, rst)
     send_fsm.goto_next(cond=reset_done)
 
+    #for i, (re, im) in enumerate(weight):
+    #    send_fsm.add( dump('w[%d]re' % i, re, point) )
+    #    send_fsm.add( dump('w[%d]im' % i, im, point) )
+    
     for i, (re, im) in enumerate(din):
         send_fsm.add( re(fixed.to_fixed(i, point)) )
         send_fsm.add( im(fixed.to_fixed(i, point)) )
@@ -182,9 +261,9 @@ def mkTest(datawidth=16, point=8):
     return m
 
 if __name__ == '__main__':
-    n = 4
+    n = 8
     point = 8
-    test = mkTest(point=point)
+    test = mkTest(n, point=point)
     verilog = test.to_verilog('tmp.v')
     #print(verilog)
 
@@ -194,12 +273,12 @@ if __name__ == '__main__':
     print(rslt)
 
     ## only target RTL
-    #main = mkFFT4()
+    #main = mkFFT(n)
     #verilog = main.to_verilog('tmp.v')
     #print(verilog)
 
-    din = [ (0, 0), (1, 1), (2, 2), (3, 3) ]
-    rslt = fft4(din)
+    din = [ (i, i) for i in range(n) ]
+    rslt = fft(din, n)
     for r in rslt:
         print( complex(round(r[0] * (2 ** point), 5), round(r[1] * (2 ** point), 5)), ':',
                complex(round(r[0], 5), round(r[1], 5)) )
