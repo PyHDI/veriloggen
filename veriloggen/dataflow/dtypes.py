@@ -472,6 +472,15 @@ class Times(_BinaryOperator):
     def eval(self):
         return self.left.eval() * self.right.eval()
     
+    def set_attributes(self):
+        left_fp = self.left.get_point()
+        right_fp = self.right.get_point()
+        left = self.left.bit_length()
+        right = self.right.bit_length()
+        self.width = max(left, right)
+        self.point = max(left_fp, right_fp)
+        self.signed = self.left.get_signed() or self.right.get_signed()
+                
     def _implement(self, m, seq):
         if self.latency <= 1:
             raise ValueError("Latency of '*' operator must be greater than 1")
@@ -493,8 +502,31 @@ class Times(_BinaryOperator):
         rdata = m.Wire(_tmp_data(tmp, prefix='_tmp_rdata_'), width, signed=rsigned)
         m.Assign( ldata(self.left.sig_data) )
         m.Assign( rdata(self.right.sig_data) )
+
+        abs_ldata = m.Wire(_tmp_data(tmp, prefix='_tmp_abs_ldata_'), width)
+        abs_rdata = m.Wire(_tmp_data(tmp, prefix='_tmp_abs_rdata_'), width)
+        if not lsigned:
+            m.Assign( abs_ldata(ldata) )
+        else:
+            m.Assign( abs_ldata(vtypes.Mux(ldata[width-1] == 0, ldata, vtypes.Unot(ldata) + 1)) )
         
+        if not rsigned:
+            m.Assign( abs_rdata(rdata) )
+        else:
+            m.Assign( abs_rdata(vtypes.Mux(rdata[width-1] == 0, rdata, vtypes.Unot(rdata) + 1)) )
+        
+        sign = vtypes.OrList(vtypes.AndList(ldata[width-1] == 0, rdata[width-1] == 0), # + , +
+                             vtypes.AndList(ldata[width-1] == 1, rdata[width-1] == 1)) # - , -
+
+        osign = m.Wire(_tmp_data(tmp, prefix='_tmp_osign_'))
+        abs_odata = m.Wire(_tmp_data(tmp, prefix='_tmp_abs_odata_'), width*2, signed=signed)
         odata = m.Wire(_tmp_data(tmp, prefix='_tmp_odata_'), width*2, signed=signed)
+        
+        if not signed:
+            m.Assign( odata(abs_odata) )
+        else:
+            m.Assign( odata(vtypes.Mux(osign, abs_odata, vtypes.Unot(abs_odata) + 1)) )
+
         shift_size = min(self.left.get_point(), self.right.get_point())
         if shift_size > 0:
             m.Assign( data(fx.shift_right(odata, shift_size, signed=signed)) )
@@ -529,9 +561,16 @@ class Times(_BinaryOperator):
         params = [ ('datawidth', width), ('depth', self.latency) ]
         ports = [ ('CLK', clk), ('RST', rst),
                   ('update', update), ('enable', enable), ('valid', valid),
-                  ('a', ldata), ('b', rdata), ('c', odata) ]
+                  ('a', abs_ldata), ('b', abs_rdata), ('c', abs_odata) ]
         
         m.Instance(inst, ''.join(['mul', str(tmp)]), params, ports)
+
+        s = sign
+        for i in range(self.latency):
+            ns = m.Reg(_tmp_data(tmp, prefix='_tmp_sign' + str(i) + '_'), initval=0)
+            seq( ns(s), cond=accept)
+            s = ns
+        m.Assign( osign(s) )
         
         _connect_ready(m, lready, ready_cond)
         _connect_ready(m, rready, ready_cond)
@@ -574,8 +613,31 @@ class Divide(_BinaryOperator):
         m.Assign( ldata(lval) )
         m.Assign( rdata(rval) )
 
-        if signed:
-            raise TypeError('Signed divide operation is not supported.')
+        abs_ldata = m.Wire(_tmp_data(tmp, prefix='_tmp_abs_ldata_'), width)
+        abs_rdata = m.Wire(_tmp_data(tmp, prefix='_tmp_abs_rdata_'), width)
+        if not lsigned:
+            m.Assign( abs_ldata(ldata) )
+        else:
+            m.Assign( abs_ldata(vtypes.Mux(ldata[width-1] == 0, ldata, vtypes.Unot(ldata) + 1)) )
+        
+        if not rsigned:
+            m.Assign( abs_rdata(rdata) )
+        else:
+            m.Assign( abs_rdata(vtypes.Mux(rdata[width-1] == 0, rdata, vtypes.Unot(rdata) + 1)) )
+
+        sign = vtypes.OrList(vtypes.AndList(ldata[width-1] == 0, rdata[width-1] == 0), # + , +
+                             vtypes.AndList(ldata[width-1] == 1, rdata[width-1] == 1)) # - , -
+
+        osign = m.Wire(_tmp_data(tmp, prefix='_tmp_osign_'))
+        abs_odata = m.Wire(_tmp_data(tmp, prefix='_tmp_abs_odata_'), width, signed=signed)
+        odata = m.Wire(_tmp_data(tmp, prefix='_tmp_odata_'), width, signed=signed)
+            
+        if not signed:
+            m.Assign( odata(abs_odata) )
+        else:
+            m.Assign( odata(vtypes.Mux(osign, abs_odata, vtypes.Unot(abs_odata) + 1)) )
+        
+        m.Assign( data(odata) )
         
         lvalid = self.left.sig_valid
         rvalid = self.right.sig_valid
@@ -605,9 +667,16 @@ class Divide(_BinaryOperator):
         params = [ ('W_D', width) ]
         ports = [ ('CLK', clk), ('RST', rst),
                   ('update', update), ('enable', enable), ('valid', valid),
-                  ('in_a', ldata), ('in_b', rdata), ('rslt', data) ]
+                  ('in_a', abs_ldata), ('in_b', abs_rdata), ('rslt', abs_odata) ]
         
         m.Instance(inst, ''.join(['div', str(tmp)]), params, ports)
+
+        s = sign
+        for i in range(self.latency):
+            ns = m.Reg(_tmp_data(tmp, prefix='_tmp_sign' + str(i) + '_'), initval=0)
+            seq( ns(s), cond=accept)
+            s = ns
+        m.Assign( osign(s) )
         
         _connect_ready(m, lready, ready_cond)
         _connect_ready(m, rready, ready_cond)
@@ -639,8 +708,38 @@ class Mod(_BinaryOperator):
         rpoint = self.right.get_point()
         lsigned = self.left.get_signed()
         rsigned = self.right.get_signed()
-        ldata, rdata = fx.adjust(self.left.sig_data, self.right.sig_data,
-                                 lpoint, rpoint, lsigned, rsigned)
+        ldata = m.Wire(_tmp_data(tmp, prefix='_tmp_ldata_'), width, signed=lsigned)
+        rdata = m.Wire(_tmp_data(tmp, prefix='_tmp_rdata_'), width, signed=rsigned)
+        lval, rval = fx.adjust(self.left.sig_data, self.right.sig_data,
+                               lpoint, rpoint, lsigned, rsigned)
+        m.Assign( ldata(lval) )
+        m.Assign( rdata(rval) )
+
+        abs_ldata = m.Wire(_tmp_data(tmp, prefix='_tmp_abs_ldata_'), width)
+        abs_rdata = m.Wire(_tmp_data(tmp, prefix='_tmp_abs_rdata_'), width)
+        if not lsigned:
+            m.Assign( abs_ldata(ldata) )
+        else:
+            m.Assign( abs_ldata(vtypes.Mux(ldata[width-1] == 0, ldata, vtypes.Unot(ldata) + 1)) )
+        
+        if not rsigned:
+            m.Assign( abs_rdata(rdata) )
+        else:
+            m.Assign( abs_rdata(vtypes.Mux(rdata[width-1] == 0, rdata, vtypes.Unot(rdata) + 1)) )
+
+        sign = vtypes.OrList(vtypes.AndList(ldata[width-1] == 0, rdata[width-1] == 0), # + , +
+                             vtypes.AndList(ldata[width-1] == 1, rdata[width-1] == 1)) # - , -
+
+        osign = m.Wire(_tmp_data(tmp, prefix='_tmp_osign_'))
+        abs_odata = m.Wire(_tmp_data(tmp, prefix='_tmp_abs_odata_'), width, signed=signed)
+        odata = m.Wire(_tmp_data(tmp, prefix='_tmp_odata_'), width, signed=signed)
+            
+        if not signed:
+            m.Assign( odata(abs_odata) )
+        else:
+            m.Assign( odata(vtypes.Mux(osign, abs_odata, vtypes.Unot(abs_odata) + 1)) )
+        
+        m.Assign( data(odata) )
         
         lvalid = self.left.sig_valid
         rvalid = self.right.sig_valid
@@ -670,9 +769,16 @@ class Mod(_BinaryOperator):
         params = [ ('W_D', width) ]
         ports = [ ('CLK', clk), ('RST', rst),
                   ('update', update), ('enable', enable), ('valid', valid),
-                  ('in_a', ldata), ('in_b', rdata), ('mod', data) ]
+                  ('in_a', abs_ldata), ('in_b', abs_rdata), ('mod', abs_odata) ]
         
         m.Instance(inst, ''.join(['div', str(tmp)]), params, ports)
+        
+        s = sign
+        for i in range(self.latency):
+            ns = m.Reg(_tmp_data(tmp, prefix='_tmp_sign' + str(i) + '_'), initval=0)
+            seq( ns(s), cond=accept)
+            s = ns
+        m.Assign( osign(s) )
         
         _connect_ready(m, lready, ready_cond)
         _connect_ready(m, rready, ready_cond)
@@ -1494,7 +1600,7 @@ class _Accumulator(_UnaryOperator):
     latency = 1
     ops = ( vtypes.Plus, )
     
-    def __init__(self, right, initval=None, reset=None, width=32, signed=True):
+    def __init__(self, right, initval=None, reset=None, width=32, signed=False):
         _UnaryOperator.__init__(self, right)
         self.initval = _to_constant(initval) if initval is not None else _to_constant(0)
         if not isinstance(self.initval, _Constant):
@@ -1577,31 +1683,31 @@ class _Accumulator(_UnaryOperator):
 
 class Iadd(_Accumulator):
     ops = ( vtypes.Plus, )
-    def __init__(self, right, initval=0, reset=None, width=32):
-        _Accumulator.__init__(self, right, initval, reset, width)
+    def __init__(self, right, initval=0, reset=None, width=32, signed=False):
+        _Accumulator.__init__(self, right, initval, reset, width, signed)
 
 class Isub(_Accumulator):
     ops = ( vtypes.Minus, )
-    def __init__(self, right, initval=0, reset=None, width=32):
-        _Accumulator.__init__(self, right, initval, reset, width)
+    def __init__(self, right, initval=0, reset=None, width=32, signed=False):
+        _Accumulator.__init__(self, right, initval, reset, width, signed)
 
 class Imul(_Accumulator):
     #latency = 6
     latency = 1 
     ops = ( vtypes.Times, )
-    def __init__(self, right, initval=1, reset=None, width=32):
-        _Accumulator.__init__(self, right, initval, reset, width)
+    def __init__(self, right, initval=1, reset=None, width=32, signed=False):
+        _Accumulator.__init__(self, right, initval, reset, width, signed)
 
 class Idiv(_Accumulator):
     latency = 32
     op = ()
-    def __init__(self, right, initval=1, reset=None, width=32):
+    def __init__(self, right, initval=1, reset=None, width=32, signed=False):
         raise NotImplementedError()
-        _Accumulator.__init__(self, right, initval, reset, width)
+        _Accumulator.__init__(self, right, initval, reset, width, signed)
 
 class Icustom(_Accumulator):
-    def __init__(self, ops, right, initval=0, reset=None, width=32):
-        _Accumulator.__init__(self, right, initval, reset, width)
+    def __init__(self, ops, right, initval=0, reset=None, width=32, signed=False):
+        _Accumulator.__init__(self, right, initval, reset, width, signed)
         if not isinstance(ops, (tuple, list)):
             ops = tuple([ ops ])
         self.ops = ops

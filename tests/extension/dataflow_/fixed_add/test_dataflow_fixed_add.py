@@ -51,7 +51,7 @@ module test;
 
   initial begin
     $dumpfile("uut.vcd");
-    $dumpvars(0, uut);
+    $dumpvars(0, uut, xdata_orig, ydata_orig, zdata_orig);
   end
 
 
@@ -168,11 +168,13 @@ module test;
             _tmp_0 <= _tmp_0 + 1;
           end 
           if((_tmp_0 == 5) && xready) begin
+            xvalid <= 0;
+          end 
+          if((_tmp_0 == 5) && xready) begin
             xfsm <= xfsm_13;
           end 
         end
         xfsm_13: begin
-          xvalid <= 0;
           xfsm <= xfsm_14;
         end
         xfsm_14: begin
@@ -211,11 +213,11 @@ module test;
             _tmp_0 <= _tmp_0 + 1;
           end 
           if((_tmp_0 == 10) && xready) begin
+            xvalid <= 0;
+          end 
+          if((_tmp_0 == 10) && xready) begin
             xfsm <= xfsm_24;
           end 
-        end
-        xfsm_24: begin
-          xvalid <= 0;
         end
       endcase
     end
@@ -354,11 +356,13 @@ module test;
             _tmp_1 <= _tmp_1 + 1;
           end 
           if((_tmp_1 == 5) && yready) begin
+            yvalid <= 0;
+          end 
+          if((_tmp_1 == 5) && yready) begin
             yfsm <= yfsm_23;
           end 
         end
         yfsm_23: begin
-          yvalid <= 0;
           yfsm <= yfsm_24;
         end
         yfsm_24: begin
@@ -427,11 +431,11 @@ module test;
             _tmp_1 <= _tmp_1 + 1;
           end 
           if((_tmp_1 == 10) && yready) begin
+            yvalid <= 0;
+          end 
+          if((_tmp_1 == 10) && yready) begin
             yfsm <= yfsm_44;
           end 
-        end
-        yfsm_44: begin
-          yvalid <= 0;
         end
       endcase
     end

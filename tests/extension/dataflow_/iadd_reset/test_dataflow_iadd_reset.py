@@ -151,11 +151,13 @@ module test;
             _tmp_0 <= _tmp_0 + 1;
           end 
           if((_tmp_0 == 5) && xready) begin
+            xvalid <= 0;
+          end 
+          if((_tmp_0 == 5) && xready) begin
             xfsm <= xfsm_13;
           end 
         end
         xfsm_13: begin
-          xvalid <= 0;
           xfsm <= xfsm_14;
         end
         xfsm_14: begin
@@ -194,11 +196,11 @@ module test;
             _tmp_0 <= _tmp_0 + 1;
           end 
           if((_tmp_0 == 10) && xready) begin
+            xvalid <= 0;
+          end 
+          if((_tmp_0 == 10) && xready) begin
             xfsm <= xfsm_24;
           end 
-        end
-        xfsm_24: begin
-          xvalid <= 0;
         end
       endcase
     end

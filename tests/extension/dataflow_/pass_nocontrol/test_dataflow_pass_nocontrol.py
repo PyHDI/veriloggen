@@ -105,9 +105,6 @@ module test;
             xfsm <= xfsm_4;
           end 
         end
-        xfsm_4: begin
-          xvalid <= 0;
-        end
       endcase
     end
   end

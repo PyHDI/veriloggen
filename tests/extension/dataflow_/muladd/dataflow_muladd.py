@@ -97,18 +97,17 @@ def mkTest(numports=8):
         
         fsm.add(data(data + step), cond=ready)
         fsm.add(count.inc(), cond=ready)
+        fsm.add(valid(0), cond=AndList(count==5, ready))
         fsm.goto_next(cond=AndList(count==5, ready))
         
-        fsm.add(valid(0))
         for _ in range(waitnum):
             fsm.goto_next()
         fsm.add(valid(1))
         
         fsm.add(data(data + step), cond=ready)
         fsm.add(count.inc(), cond=ready)
+        fsm.add(valid(0), cond=AndList(count==10, ready))
         fsm.goto_next(cond=AndList(count==10, ready))
-        
-        fsm.add(valid(0))
         
         fsm.make_always()
     
@@ -134,7 +133,7 @@ def mkTest(numports=8):
         
     send('x', xdata, xvalid, xready, step=1, waitnum=10)
     send('y', ydata, yvalid, yready, step=1, waitnum=20)
-    send('c', cdata, cvalid, cready, step=1, waitnum=0)
+    send('c', cdata, cvalid, cready, step=1, waitnum=5)
     receive('z', zdata, zvalid, zready, waitnum=50)
     
     

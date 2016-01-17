@@ -3,21 +3,29 @@ from __future__ import print_function
 
 import veriloggen.core.vtypes as vtypes
 
-def to_fixed(value, point):
+def to_fixed(value, point, signed=False):
     if isinstance(value, (int, float)):
         if not isinstance(point, int):
             raise TypeError('point field must be int')
         mag = 2 ** point
         return int(value * mag)
-    return value << point
+    
+    if hasattr(value, 'signed') and value.signed:
+        signed = True
+        
+    return shift_left(value, point, signed)
 
-def fixed_to_int(value, point):
+def fixed_to_int(value, point, signed=False):
     if isinstance(value, (int, float)):
         if not isinstance(point, int):
             raise TypeError('point field must be int')
         mag = 2 ** point
         return float(value) / mag
-    return value >> point
+    
+    if hasattr(value, 'signed') and value.signed:
+        signed = True
+        
+    return shift_right(value, point, signed)
 
 def fixed_to_int_low(value, point):
     if isinstance(value, (int, float)):
@@ -25,11 +33,14 @@ def fixed_to_int_low(value, point):
             raise TypeError('point field must be int')
         mag = 2 ** point
         return (float(value) / mag) % 1.0
+    
     return vtypes.And(value, vtypes.Repeat(vtypes.Int(1, 1), point))
 
-def fixed_to_real(value, point):
+def fixed_to_real(value, point, signed=False):
     if not isinstance(value, vtypes._Variable):
         raise TypeError('fixed_to_real supports only _Variable .')
+    if hasattr(value, 'signed') and value.signed:
+        signed = True
     
     msb = value[value.width - 1]
     
@@ -40,7 +51,7 @@ def fixed_to_real(value, point):
     v1 = ((vtypes.SystemTask('itor', fixed_to_int(nv, point)) +
            vtypes.SystemTask('itor', fixed_to_int_low(nv, point)) / (2 ** point))) * -1
     
-    return vtypes.Mux(msb == 0, v0, v1)
+    return vtypes.Mux(signed and msb == 0, v0, v1)
 
 #-------------------------------------------------------------------------------
 def adjust(left, right, lpoint, rpoint, lsigned=True, rsigned=True):

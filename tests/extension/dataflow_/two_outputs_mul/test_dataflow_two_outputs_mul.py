@@ -13,12 +13,12 @@ module test;
   reg [32-1:0] ydata;
   reg yvalid;
   wire yready;
-  wire [32-1:0] z1data;
-  wire z1valid;
-  reg z1ready;
   wire [32-1:0] z2data;
   wire z2valid;
   reg z2ready;
+  wire [32-1:0] z1data;
+  wire z1valid;
+  reg z1ready;
 
   main
   uut
@@ -31,12 +31,12 @@ module test;
     .ydata(ydata),
     .yvalid(yvalid),
     .yready(yready),
-    .z1data(z1data),
-    .z1valid(z1valid),
-    .z1ready(z1ready),
     .z2data(z2data),
     .z2valid(z2valid),
-    .z2ready(z2ready)
+    .z2ready(z2ready),
+    .z1data(z1data),
+    .z1valid(z1valid),
+    .z1ready(z1ready)
   );
 
   reg reset_done;
@@ -158,11 +158,13 @@ module test;
             _tmp_0 <= _tmp_0 + 1;
           end 
           if((_tmp_0 == 5) && xready) begin
+            xvalid <= 0;
+          end 
+          if((_tmp_0 == 5) && xready) begin
             xfsm <= xfsm_13;
           end 
         end
         xfsm_13: begin
-          xvalid <= 0;
           xfsm <= xfsm_14;
         end
         xfsm_14: begin
@@ -201,11 +203,11 @@ module test;
             _tmp_0 <= _tmp_0 + 1;
           end 
           if((_tmp_0 == 10) && xready) begin
+            xvalid <= 0;
+          end 
+          if((_tmp_0 == 10) && xready) begin
             xfsm <= xfsm_24;
           end 
-        end
-        xfsm_24: begin
-          xvalid <= 0;
         end
       endcase
     end
@@ -343,11 +345,13 @@ module test;
             _tmp_1 <= _tmp_1 + 1;
           end 
           if((_tmp_1 == 5) && yready) begin
+            yvalid <= 0;
+          end 
+          if((_tmp_1 == 5) && yready) begin
             yfsm <= yfsm_23;
           end 
         end
         yfsm_23: begin
-          yvalid <= 0;
           yfsm <= yfsm_24;
         end
         yfsm_24: begin
@@ -416,11 +420,11 @@ module test;
             _tmp_1 <= _tmp_1 + 1;
           end 
           if((_tmp_1 == 10) && yready) begin
+            yvalid <= 0;
+          end 
+          if((_tmp_1 == 10) && yready) begin
             yfsm <= yfsm_44;
           end 
-        end
-        yfsm_44: begin
-          yvalid <= 0;
         end
       endcase
     end
@@ -604,18 +608,29 @@ module main
   input [32-1:0] ydata,
   input yvalid,
   output yready,
-  output [32-1:0] z1data,
-  output z1valid,
-  input z1ready,
   output [32-1:0] z2data,
   output z2valid,
-  input z2ready
+  input z2ready,
+  output [32-1:0] z1data,
+  output z1valid,
+  input z1ready
 );
 
   wire [32-1:0] _tmp_data_0;
   wire _tmp_valid_0;
   wire _tmp_ready_0;
+  wire [32-1:0] _tmp_ldata_0;
+  wire [32-1:0] _tmp_rdata_0;
+  assign _tmp_ldata_0 = xdata;
+  assign _tmp_rdata_0 = ydata;
+  wire [32-1:0] _tmp_abs_ldata_0;
+  wire [32-1:0] _tmp_abs_rdata_0;
+  assign _tmp_abs_ldata_0 = _tmp_ldata_0;
+  assign _tmp_abs_rdata_0 = _tmp_rdata_0;
+  wire _tmp_osign_0;
+  wire [64-1:0] _tmp_abs_odata_0;
   wire [64-1:0] _tmp_odata_0;
+  assign _tmp_odata_0 = _tmp_abs_odata_0;
   assign _tmp_data_0 = _tmp_odata_0;
   wire _tmp_enable_0;
   wire _tmp_update_0;
@@ -634,17 +649,36 @@ module main
     .update(_tmp_update_0),
     .enable(_tmp_enable_0),
     .valid(_tmp_valid_0),
-    .a(xdata),
-    .b(ydata),
-    .c(_tmp_odata_0)
+    .a(_tmp_abs_ldata_0),
+    .b(_tmp_abs_rdata_0),
+    .c(_tmp_abs_odata_0)
   );
 
+  reg _tmp_sign0_0;
+  reg _tmp_sign1_0;
+  reg _tmp_sign2_0;
+  reg _tmp_sign3_0;
+  reg _tmp_sign4_0;
+  reg _tmp_sign5_0;
+  assign _tmp_osign_0 = _tmp_sign5_0;
   assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid) && ((_tmp_ready_1 || !_tmp_valid_1) && (xvalid && yvalid));
   assign yready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid) && ((_tmp_ready_1 || !_tmp_valid_1) && (xvalid && yvalid));
+  assign _tmp_ready_0 = (_tmp_ready_3 || !_tmp_valid_3) && _tmp_valid_0;
   wire [32-1:0] _tmp_data_1;
   wire _tmp_valid_1;
   wire _tmp_ready_1;
+  wire [32-1:0] _tmp_ldata_1;
+  wire [32-1:0] _tmp_rdata_1;
+  assign _tmp_ldata_1 = xdata;
+  assign _tmp_rdata_1 = ydata;
+  wire [32-1:0] _tmp_abs_ldata_1;
+  wire [32-1:0] _tmp_abs_rdata_1;
+  assign _tmp_abs_ldata_1 = _tmp_ldata_1;
+  assign _tmp_abs_rdata_1 = _tmp_rdata_1;
+  wire _tmp_osign_1;
+  wire [64-1:0] _tmp_abs_odata_1;
   wire [64-1:0] _tmp_odata_1;
+  assign _tmp_odata_1 = _tmp_abs_odata_1;
   assign _tmp_data_1 = _tmp_odata_1;
   wire _tmp_enable_1;
   wire _tmp_update_1;
@@ -663,21 +697,105 @@ module main
     .update(_tmp_update_1),
     .enable(_tmp_enable_1),
     .valid(_tmp_valid_1),
-    .a(xdata),
-    .b(ydata),
-    .c(_tmp_odata_1)
+    .a(_tmp_abs_ldata_1),
+    .b(_tmp_abs_rdata_1),
+    .c(_tmp_abs_odata_1)
   );
 
-  assign z1data = _tmp_data_0;
-  assign z1valid = _tmp_valid_0;
-  assign _tmp_ready_0 = z1ready;
-  assign z2data = _tmp_data_1;
-  assign z2valid = _tmp_valid_1;
-  assign _tmp_ready_1 = z2ready;
+  reg _tmp_sign0_1;
+  reg _tmp_sign1_1;
+  reg _tmp_sign2_1;
+  reg _tmp_sign3_1;
+  reg _tmp_sign4_1;
+  reg _tmp_sign5_1;
+  assign _tmp_osign_1 = _tmp_sign5_1;
+  assign _tmp_ready_1 = (_tmp_ready_2 || !_tmp_valid_2) && _tmp_valid_1;
+  reg [32-1:0] _tmp_data_2;
+  reg _tmp_valid_2;
+  wire _tmp_ready_2;
+  reg [32-1:0] _tmp_data_3;
+  reg _tmp_valid_3;
+  wire _tmp_ready_3;
+  assign z2data = _tmp_data_2;
+  assign z2valid = _tmp_valid_2;
+  assign _tmp_ready_2 = z2ready;
+  assign z1data = _tmp_data_3;
+  assign z1valid = _tmp_valid_3;
+  assign _tmp_ready_3 = z1ready;
 
   always @(posedge CLK) begin
     if(RST) begin
+      _tmp_sign0_0 <= 0;
+      _tmp_sign1_0 <= 0;
+      _tmp_sign2_0 <= 0;
+      _tmp_sign3_0 <= 0;
+      _tmp_sign4_0 <= 0;
+      _tmp_sign5_0 <= 0;
+      _tmp_sign0_1 <= 0;
+      _tmp_sign1_1 <= 0;
+      _tmp_sign2_1 <= 0;
+      _tmp_sign3_1 <= 0;
+      _tmp_sign4_1 <= 0;
+      _tmp_sign5_1 <= 0;
+      _tmp_data_2 <= 0;
+      _tmp_valid_2 <= 0;
+      _tmp_data_3 <= 0;
+      _tmp_valid_3 <= 0;
     end else begin
+      if(_tmp_ready_0 || !_tmp_valid_0) begin
+        _tmp_sign0_0 <= (_tmp_ldata_0[31] == 0) && (_tmp_rdata_0[31] == 0) || (_tmp_ldata_0[31] == 1) && (_tmp_rdata_0[31] == 1);
+      end 
+      if(_tmp_ready_0 || !_tmp_valid_0) begin
+        _tmp_sign1_0 <= _tmp_sign0_0;
+      end 
+      if(_tmp_ready_0 || !_tmp_valid_0) begin
+        _tmp_sign2_0 <= _tmp_sign1_0;
+      end 
+      if(_tmp_ready_0 || !_tmp_valid_0) begin
+        _tmp_sign3_0 <= _tmp_sign2_0;
+      end 
+      if(_tmp_ready_0 || !_tmp_valid_0) begin
+        _tmp_sign4_0 <= _tmp_sign3_0;
+      end 
+      if(_tmp_ready_0 || !_tmp_valid_0) begin
+        _tmp_sign5_0 <= _tmp_sign4_0;
+      end 
+      if(_tmp_ready_1 || !_tmp_valid_1) begin
+        _tmp_sign0_1 <= (_tmp_ldata_1[31] == 0) && (_tmp_rdata_1[31] == 0) || (_tmp_ldata_1[31] == 1) && (_tmp_rdata_1[31] == 1);
+      end 
+      if(_tmp_ready_1 || !_tmp_valid_1) begin
+        _tmp_sign1_1 <= _tmp_sign0_1;
+      end 
+      if(_tmp_ready_1 || !_tmp_valid_1) begin
+        _tmp_sign2_1 <= _tmp_sign1_1;
+      end 
+      if(_tmp_ready_1 || !_tmp_valid_1) begin
+        _tmp_sign3_1 <= _tmp_sign2_1;
+      end 
+      if(_tmp_ready_1 || !_tmp_valid_1) begin
+        _tmp_sign4_1 <= _tmp_sign3_1;
+      end 
+      if(_tmp_ready_1 || !_tmp_valid_1) begin
+        _tmp_sign5_1 <= _tmp_sign4_1;
+      end 
+      if((_tmp_ready_2 || !_tmp_valid_2) && _tmp_ready_1 && _tmp_valid_1) begin
+        _tmp_data_2 <= _tmp_data_1 + 1;
+      end 
+      if(_tmp_valid_2 && _tmp_ready_2) begin
+        _tmp_valid_2 <= 0;
+      end 
+      if((_tmp_ready_2 || !_tmp_valid_2) && _tmp_ready_1) begin
+        _tmp_valid_2 <= _tmp_valid_1;
+      end 
+      if((_tmp_ready_3 || !_tmp_valid_3) && _tmp_ready_0 && _tmp_valid_0) begin
+        _tmp_data_3 <= _tmp_data_0;
+      end 
+      if(_tmp_valid_3 && _tmp_ready_3) begin
+        _tmp_valid_3 <= 0;
+      end 
+      if((_tmp_ready_3 || !_tmp_valid_3) && _tmp_ready_0) begin
+        _tmp_valid_3 <= _tmp_valid_0;
+      end 
     end
   end
 

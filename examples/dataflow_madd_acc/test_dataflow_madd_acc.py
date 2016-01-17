@@ -781,7 +781,18 @@ module main
   wire [32-1:0] _tmp_data_0;
   wire _tmp_valid_0;
   wire _tmp_ready_0;
+  wire [32-1:0] _tmp_ldata_0;
+  wire [32-1:0] _tmp_rdata_0;
+  assign _tmp_ldata_0 = xdata;
+  assign _tmp_rdata_0 = ydata;
+  wire [32-1:0] _tmp_abs_ldata_0;
+  wire [32-1:0] _tmp_abs_rdata_0;
+  assign _tmp_abs_ldata_0 = _tmp_ldata_0;
+  assign _tmp_abs_rdata_0 = _tmp_rdata_0;
+  wire _tmp_osign_0;
+  wire [64-1:0] _tmp_abs_odata_0;
   wire [64-1:0] _tmp_odata_0;
+  assign _tmp_odata_0 = _tmp_abs_odata_0;
   assign _tmp_data_0 = _tmp_odata_0;
   wire _tmp_enable_0;
   wire _tmp_update_0;
@@ -800,11 +811,18 @@ module main
     .update(_tmp_update_0),
     .enable(_tmp_enable_0),
     .valid(_tmp_valid_0),
-    .a(xdata),
-    .b(ydata),
-    .c(_tmp_odata_0)
+    .a(_tmp_abs_ldata_0),
+    .b(_tmp_abs_rdata_0),
+    .c(_tmp_abs_odata_0)
   );
 
+  reg _tmp_sign0_0;
+  reg _tmp_sign1_0;
+  reg _tmp_sign2_0;
+  reg _tmp_sign3_0;
+  reg _tmp_sign4_0;
+  reg _tmp_sign5_0;
+  assign _tmp_osign_0 = _tmp_sign5_0;
   assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
   assign yready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
   assign _tmp_ready_0 = (_tmp_ready_7 || !_tmp_valid_7) && _tmp_valid_0;
@@ -842,6 +860,12 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
+      _tmp_sign0_0 <= 0;
+      _tmp_sign1_0 <= 0;
+      _tmp_sign2_0 <= 0;
+      _tmp_sign3_0 <= 0;
+      _tmp_sign4_0 <= 0;
+      _tmp_sign5_0 <= 0;
       _tmp_data_1 <= 0;
       _tmp_valid_1 <= 0;
       _tmp_data_2 <= 0;
@@ -857,6 +881,24 @@ module main
       _tmp_data_7 <= 0;
       _tmp_valid_7 <= 0;
     end else begin
+      if(_tmp_ready_0 || !_tmp_valid_0) begin
+        _tmp_sign0_0 <= (_tmp_ldata_0[31] == 0) && (_tmp_rdata_0[31] == 0) || (_tmp_ldata_0[31] == 1) && (_tmp_rdata_0[31] == 1);
+      end 
+      if(_tmp_ready_0 || !_tmp_valid_0) begin
+        _tmp_sign1_0 <= _tmp_sign0_0;
+      end 
+      if(_tmp_ready_0 || !_tmp_valid_0) begin
+        _tmp_sign2_0 <= _tmp_sign1_0;
+      end 
+      if(_tmp_ready_0 || !_tmp_valid_0) begin
+        _tmp_sign3_0 <= _tmp_sign2_0;
+      end 
+      if(_tmp_ready_0 || !_tmp_valid_0) begin
+        _tmp_sign4_0 <= _tmp_sign3_0;
+      end 
+      if(_tmp_ready_0 || !_tmp_valid_0) begin
+        _tmp_sign5_0 <= _tmp_sign4_0;
+      end 
       if((_tmp_ready_1 || !_tmp_valid_1) && resetready && resetvalid) begin
         _tmp_data_1 <= resetdata;
       end 

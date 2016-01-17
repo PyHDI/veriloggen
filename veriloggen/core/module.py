@@ -423,6 +423,7 @@ class Module(vtypes.VeriloggenNode):
             copy_obj = copy.deepcopy(obj)
             copy_obj.name = ''.join([prefix, copy_obj.name, postfix])
             copy_obj.width = visitor.visit(copy_obj.width)
+            copy_obj.signed = obj.signed
             self.add_object( copy_obj )
             ret[copy_obj.name] = copy_obj
         return ret
@@ -442,6 +443,7 @@ class Module(vtypes.VeriloggenNode):
             copy_obj = copy.deepcopy(obj)
             copy_obj.name = ''.join([prefix, copy_obj.name, postfix])
             copy_obj.width = visitor.visit(copy_obj.width)
+            copy_obj.signed = obj.signed
             self.add_object( copy_obj )
             ret[copy_obj.name] = copy_obj
         return ret
@@ -461,6 +463,7 @@ class Module(vtypes.VeriloggenNode):
             copy_obj = copy.deepcopy(obj)
             copy_obj.name = ''.join([prefix, copy_obj.name, postfix])
             copy_obj.width = visitor.visit(copy_obj.width)
+            copy_obj.signed = obj.signed
             self.add_object( copy_obj )
             ret[copy_obj.name] = copy_obj
         return ret
@@ -480,6 +483,7 @@ class Module(vtypes.VeriloggenNode):
             copy_obj = copy.deepcopy(obj)
             copy_obj.name = ''.join([prefix, copy_obj.name, postfix])
             copy_obj.width = visitor.visit(copy_obj.width)
+            copy_obj.signed = obj.signed
             self.add_object( copy_obj )
             ret[copy_obj.name] = copy_obj
         return ret
@@ -499,6 +503,7 @@ class Module(vtypes.VeriloggenNode):
             copy_obj = self.get_opposite_variable(obj)(key, copy.deepcopy(obj.width))
             copy_obj.name = ''.join([prefix, copy_obj.name, postfix])
             copy_obj.width = visitor.visit(copy_obj.width)
+            copy_obj.signed = obj.signed
             self.add_object( copy_obj )
             ret[copy_obj.name] = copy_obj
         return ret

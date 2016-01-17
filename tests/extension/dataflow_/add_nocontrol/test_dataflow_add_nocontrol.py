@@ -112,9 +112,6 @@ module test;
             xfsm <= xfsm_4;
           end 
         end
-        xfsm_4: begin
-          xvalid <= 0;
-        end
       endcase
     end
   end
@@ -164,9 +161,6 @@ module test;
           if((_tmp_1 == 10) && yready) begin
             yfsm <= yfsm_4;
           end 
-        end
-        yfsm_4: begin
-          yvalid <= 0;
         end
       endcase
     end

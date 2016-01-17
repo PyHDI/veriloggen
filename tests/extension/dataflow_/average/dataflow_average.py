@@ -93,21 +93,17 @@ def mkTest(numports=8):
         
         fsm.add(data(data + step), cond=ready)
         fsm.add(count.inc(), cond=ready)
+        fsm.add(valid(0), cond=AndList(count==5, ready))
         fsm.goto_next(cond=AndList(count==5, ready))
         
-        fsm.add(valid(0))
         for _ in range(waitnum):
             fsm.goto_next()
-            
         fsm.add(valid(1))
-        fsm.add(data(data + step))
-        fsm.goto_next()
         
         fsm.add(data(data + step), cond=ready)
         fsm.add(count.inc(), cond=ready)
+        fsm.add(valid(0), cond=AndList(count==10, ready))
         fsm.goto_next(cond=AndList(count==10, ready))
-        
-        fsm.add(valid(0))
         
         fsm.make_always()
     

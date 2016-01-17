@@ -96,7 +96,6 @@ module test;
   localparam xfsm_22 = 22;
   localparam xfsm_23 = 23;
   localparam xfsm_24 = 24;
-  localparam xfsm_25 = 25;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -152,11 +151,13 @@ module test;
             _tmp_0 <= _tmp_0 + 1;
           end 
           if((_tmp_0 == 5) && xready) begin
+            xvalid <= 0;
+          end 
+          if((_tmp_0 == 5) && xready) begin
             xfsm <= xfsm_13;
           end 
         end
         xfsm_13: begin
-          xvalid <= 0;
           xfsm <= xfsm_14;
         end
         xfsm_14: begin
@@ -188,10 +189,6 @@ module test;
         end
         xfsm_23: begin
           xvalid <= 1;
-          xdata <= xdata + 2;
-          xfsm <= xfsm_24;
-        end
-        xfsm_24: begin
           if(xready) begin
             xdata <= xdata + 2;
           end 
@@ -199,11 +196,11 @@ module test;
             _tmp_0 <= _tmp_0 + 1;
           end 
           if((_tmp_0 == 10) && xready) begin
-            xfsm <= xfsm_25;
+            xvalid <= 0;
           end 
-        end
-        xfsm_25: begin
-          xvalid <= 0;
+          if((_tmp_0 == 10) && xready) begin
+            xfsm <= xfsm_24;
+          end 
         end
       endcase
     end
@@ -256,7 +253,6 @@ module test;
   localparam yfsm_42 = 42;
   localparam yfsm_43 = 43;
   localparam yfsm_44 = 44;
-  localparam yfsm_45 = 45;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -342,11 +338,13 @@ module test;
             _tmp_1 <= _tmp_1 + 1;
           end 
           if((_tmp_1 == 5) && yready) begin
+            yvalid <= 0;
+          end 
+          if((_tmp_1 == 5) && yready) begin
             yfsm <= yfsm_23;
           end 
         end
         yfsm_23: begin
-          yvalid <= 0;
           yfsm <= yfsm_24;
         end
         yfsm_24: begin
@@ -408,10 +406,6 @@ module test;
         end
         yfsm_43: begin
           yvalid <= 1;
-          ydata <= ydata + 1;
-          yfsm <= yfsm_44;
-        end
-        yfsm_44: begin
           if(yready) begin
             ydata <= ydata + 1;
           end 
@@ -419,11 +413,11 @@ module test;
             _tmp_1 <= _tmp_1 + 1;
           end 
           if((_tmp_1 == 10) && yready) begin
-            yfsm <= yfsm_45;
+            yvalid <= 0;
           end 
-        end
-        yfsm_45: begin
-          yvalid <= 0;
+          if((_tmp_1 == 10) && yready) begin
+            yfsm <= yfsm_44;
+          end 
         end
       endcase
     end
@@ -772,6 +766,19 @@ module main
   wire [32-1:0] _tmp_data_6;
   wire _tmp_valid_6;
   wire _tmp_ready_6;
+  wire [32-1:0] _tmp_ldata_6;
+  wire [32-1:0] _tmp_rdata_6;
+  assign _tmp_ldata_6 = _tmp_data_5;
+  assign _tmp_rdata_6 = 3;
+  wire [32-1:0] _tmp_abs_ldata_6;
+  wire [32-1:0] _tmp_abs_rdata_6;
+  assign _tmp_abs_ldata_6 = _tmp_ldata_6;
+  assign _tmp_abs_rdata_6 = _tmp_rdata_6;
+  wire _tmp_osign_6;
+  wire [32-1:0] _tmp_abs_odata_6;
+  wire [32-1:0] _tmp_odata_6;
+  assign _tmp_odata_6 = _tmp_abs_odata_6;
+  assign _tmp_data_6 = _tmp_odata_6;
   wire _tmp_enable_6;
   wire _tmp_update_6;
   assign _tmp_enable_6 = (_tmp_ready_6 || !_tmp_valid_6) && _tmp_ready_5 && _tmp_valid_5;
@@ -788,11 +795,44 @@ module main
     .update(_tmp_update_6),
     .enable(_tmp_enable_6),
     .valid(_tmp_valid_6),
-    .in_a(_tmp_data_5),
-    .in_b(32'd3),
-    .rslt(_tmp_data_6)
+    .in_a(_tmp_abs_ldata_6),
+    .in_b(_tmp_abs_rdata_6),
+    .rslt(_tmp_abs_odata_6)
   );
 
+  reg _tmp_sign0_6;
+  reg _tmp_sign1_6;
+  reg _tmp_sign2_6;
+  reg _tmp_sign3_6;
+  reg _tmp_sign4_6;
+  reg _tmp_sign5_6;
+  reg _tmp_sign6_6;
+  reg _tmp_sign7_6;
+  reg _tmp_sign8_6;
+  reg _tmp_sign9_6;
+  reg _tmp_sign10_6;
+  reg _tmp_sign11_6;
+  reg _tmp_sign12_6;
+  reg _tmp_sign13_6;
+  reg _tmp_sign14_6;
+  reg _tmp_sign15_6;
+  reg _tmp_sign16_6;
+  reg _tmp_sign17_6;
+  reg _tmp_sign18_6;
+  reg _tmp_sign19_6;
+  reg _tmp_sign20_6;
+  reg _tmp_sign21_6;
+  reg _tmp_sign22_6;
+  reg _tmp_sign23_6;
+  reg _tmp_sign24_6;
+  reg _tmp_sign25_6;
+  reg _tmp_sign26_6;
+  reg _tmp_sign27_6;
+  reg _tmp_sign28_6;
+  reg _tmp_sign29_6;
+  reg _tmp_sign30_6;
+  reg _tmp_sign31_6;
+  assign _tmp_osign_6 = _tmp_sign31_6;
   assign zdata = _tmp_data_6;
   assign zvalid = _tmp_valid_6;
   assign _tmp_ready_6 = zready;
@@ -809,6 +849,38 @@ module main
       _tmp_valid_4 <= 0;
       _tmp_data_5 <= 0;
       _tmp_valid_5 <= 0;
+      _tmp_sign0_6 <= 0;
+      _tmp_sign1_6 <= 0;
+      _tmp_sign2_6 <= 0;
+      _tmp_sign3_6 <= 0;
+      _tmp_sign4_6 <= 0;
+      _tmp_sign5_6 <= 0;
+      _tmp_sign6_6 <= 0;
+      _tmp_sign7_6 <= 0;
+      _tmp_sign8_6 <= 0;
+      _tmp_sign9_6 <= 0;
+      _tmp_sign10_6 <= 0;
+      _tmp_sign11_6 <= 0;
+      _tmp_sign12_6 <= 0;
+      _tmp_sign13_6 <= 0;
+      _tmp_sign14_6 <= 0;
+      _tmp_sign15_6 <= 0;
+      _tmp_sign16_6 <= 0;
+      _tmp_sign17_6 <= 0;
+      _tmp_sign18_6 <= 0;
+      _tmp_sign19_6 <= 0;
+      _tmp_sign20_6 <= 0;
+      _tmp_sign21_6 <= 0;
+      _tmp_sign22_6 <= 0;
+      _tmp_sign23_6 <= 0;
+      _tmp_sign24_6 <= 0;
+      _tmp_sign25_6 <= 0;
+      _tmp_sign26_6 <= 0;
+      _tmp_sign27_6 <= 0;
+      _tmp_sign28_6 <= 0;
+      _tmp_sign29_6 <= 0;
+      _tmp_sign30_6 <= 0;
+      _tmp_sign31_6 <= 0;
     end else begin
       if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
         _tmp_data_0 <= xdata + ydata;
@@ -851,6 +923,102 @@ module main
       end 
       if((_tmp_ready_5 || !_tmp_valid_5) && (_tmp_ready_2 && _tmp_ready_4)) begin
         _tmp_valid_5 <= _tmp_valid_2 && _tmp_valid_4;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign0_6 <= (_tmp_ldata_6[31] == 0) && (_tmp_rdata_6[31] == 0) || (_tmp_ldata_6[31] == 1) && (_tmp_rdata_6[31] == 1);
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign1_6 <= _tmp_sign0_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign2_6 <= _tmp_sign1_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign3_6 <= _tmp_sign2_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign4_6 <= _tmp_sign3_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign5_6 <= _tmp_sign4_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign6_6 <= _tmp_sign5_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign7_6 <= _tmp_sign6_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign8_6 <= _tmp_sign7_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign9_6 <= _tmp_sign8_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign10_6 <= _tmp_sign9_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign11_6 <= _tmp_sign10_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign12_6 <= _tmp_sign11_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign13_6 <= _tmp_sign12_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign14_6 <= _tmp_sign13_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign15_6 <= _tmp_sign14_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign16_6 <= _tmp_sign15_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign17_6 <= _tmp_sign16_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign18_6 <= _tmp_sign17_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign19_6 <= _tmp_sign18_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign20_6 <= _tmp_sign19_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign21_6 <= _tmp_sign20_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign22_6 <= _tmp_sign21_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign23_6 <= _tmp_sign22_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign24_6 <= _tmp_sign23_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign25_6 <= _tmp_sign24_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign26_6 <= _tmp_sign25_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign27_6 <= _tmp_sign26_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign28_6 <= _tmp_sign27_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign29_6 <= _tmp_sign28_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign30_6 <= _tmp_sign29_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_sign31_6 <= _tmp_sign30_6;
       end 
     end
   end

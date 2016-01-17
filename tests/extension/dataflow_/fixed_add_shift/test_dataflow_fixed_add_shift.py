@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import dataflow_add_nostall
+import dataflow_fixed_add_shift
 
 expected_verilog = """
 module test;
@@ -13,9 +13,23 @@ module test;
   reg [32-1:0] ydata;
   reg yvalid;
   wire yready;
-  wire [32-1:0] zdata;
+  wire [36-1:0] zdata;
   wire zvalid;
   reg zready;
+  reg [32-1:0] xdata_orig;
+  reg [32-1:0] ydata_orig;
+  wire [36-1:0] zdata_orig;
+
+  always @(*) begin
+    xdata <= xdata_orig << 8;
+  end
+
+
+  always @(*) begin
+    ydata <= ydata_orig << 4;
+  end
+
+  assign zdata_orig = zdata >> 8;
 
   main
   uut
@@ -37,7 +51,7 @@ module test;
 
   initial begin
     $dumpfile("uut.vcd");
-    $dumpvars(0, uut);
+    $dumpvars(0, uut, xdata_orig, ydata_orig, zdata_orig);
   end
 
 
@@ -57,6 +71,8 @@ module test;
     ydata = 0;
     yvalid = 0;
     zready = 0;
+    xdata_orig = 0;
+    ydata_orig = 0;
     #100;
     RST = 1;
     #100;
@@ -100,6 +116,7 @@ module test;
   always @(posedge CLK) begin
     if(RST) begin
       xfsm <= xfsm_init;
+      xdata_orig <= 0;
       _tmp_0 <= 0;
     end else begin
       case(xfsm)
@@ -145,7 +162,7 @@ module test;
         end
         xfsm_12: begin
           if(xready) begin
-            xdata <= xdata + 1;
+            xdata_orig <= xdata_orig + 1;
           end 
           if(xready) begin
             _tmp_0 <= _tmp_0 + 1;
@@ -190,7 +207,7 @@ module test;
         xfsm_23: begin
           xvalid <= 1;
           if(xready) begin
-            xdata <= xdata + 1;
+            xdata_orig <= xdata_orig + 1;
           end 
           if(xready) begin
             _tmp_0 <= _tmp_0 + 1;
@@ -257,6 +274,7 @@ module test;
   always @(posedge CLK) begin
     if(RST) begin
       yfsm <= yfsm_init;
+      ydata_orig <= 0;
       _tmp_1 <= 0;
     end else begin
       case(yfsm)
@@ -332,7 +350,7 @@ module test;
         end
         yfsm_22: begin
           if(yready) begin
-            ydata <= ydata + 2;
+            ydata_orig <= ydata_orig + 2;
           end 
           if(yready) begin
             _tmp_1 <= _tmp_1 + 1;
@@ -407,7 +425,7 @@ module test;
         yfsm_43: begin
           yvalid <= 1;
           if(yready) begin
-            ydata <= ydata + 2;
+            ydata_orig <= ydata_orig + 2;
           end 
           if(yready) begin
             _tmp_1 <= _tmp_1 + 1;
@@ -427,6 +445,12 @@ module test;
   localparam zfsm_init = 0;
   localparam zfsm_1 = 1;
   localparam zfsm_2 = 2;
+  localparam zfsm_3 = 3;
+  localparam zfsm_4 = 4;
+  localparam zfsm_5 = 5;
+  localparam zfsm_6 = 6;
+  localparam zfsm_7 = 7;
+  localparam zfsm_8 = 8;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -446,6 +470,31 @@ module test;
           if(zvalid) begin
             zready <= 1;
           end 
+          if(zvalid) begin
+            zfsm <= zfsm_3;
+          end 
+        end
+        zfsm_3: begin
+          zready <= 0;
+          zfsm <= zfsm_4;
+        end
+        zfsm_4: begin
+          zready <= 0;
+          zfsm <= zfsm_5;
+        end
+        zfsm_5: begin
+          zready <= 0;
+          zfsm <= zfsm_6;
+        end
+        zfsm_6: begin
+          zready <= 0;
+          zfsm <= zfsm_7;
+        end
+        zfsm_7: begin
+          zready <= 0;
+          zfsm <= zfsm_8;
+        end
+        zfsm_8: begin
           zfsm <= zfsm_2;
         end
       endcase
@@ -456,13 +505,13 @@ module test;
   always @(posedge CLK) begin
     if(reset_done) begin
       if(xvalid && xready) begin
-        $display("xdata=%d", xdata);
+        $display("xdata=%d", xdata_orig);
       end 
       if(yvalid && yready) begin
-        $display("ydata=%d", ydata);
+        $display("ydata=%d", ydata_orig);
       end 
       if(zvalid && zready) begin
-        $display("zdata=%d", zdata);
+        $display("zdata=%d", zdata_orig);
       end 
     end 
   end
@@ -482,12 +531,12 @@ module main
   input [32-1:0] ydata,
   input yvalid,
   output yready,
-  output [32-1:0] zdata,
+  output [36-1:0] zdata,
   output zvalid,
   input zready
 );
 
-  reg [32-1:0] _tmp_data_0;
+  reg [36-1:0] _tmp_data_0;
   reg _tmp_valid_0;
   wire _tmp_ready_0;
   assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
@@ -502,7 +551,7 @@ module main
       _tmp_valid_0 <= 0;
     end else begin
       if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
-        _tmp_data_0 <= xdata + ydata;
+        _tmp_data_0 <= xdata + (ydata << 4);
       end 
       if(_tmp_valid_0 && _tmp_ready_0) begin
         _tmp_valid_0 <= 0;
@@ -518,7 +567,7 @@ endmodule
 """
 
 def test():
-    test_module = dataflow_add_nostall.mkTest()
+    test_module = dataflow_fixed_add_shift.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

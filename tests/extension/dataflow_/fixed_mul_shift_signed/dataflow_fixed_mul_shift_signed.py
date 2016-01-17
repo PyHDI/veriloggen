@@ -11,23 +11,21 @@ import veriloggen.dataflow as dataflow
 
 def mkMain():
     # input variiable
-    x = dataflow.Variable('xdata', valid='xvalid', ready='xready')
-    y = dataflow.Variable('ydata', valid='yvalid', ready='yready')
+    x = dataflow.Variable('xdata', valid='xvalid', ready='xready', point=8, signed=True)
+    y = dataflow.Variable('ydata', valid='yvalid', ready='yready', point=4, signed=True)
 
     # dataflow definition
-    z1 = x * y
-    z2 = x * y + 1
+    z = x * y
 
     # set output attribute
-    z1.output('z1data', valid='z1valid', ready='z1ready')
-    z2.output('z2data', valid='z2valid', ready='z2ready')
+    z.output('zdata', valid='zvalid', ready='zready')
 
-    df = dataflow.Dataflow(z1, z2)
+    df = dataflow.Dataflow(z)
     m = df.to_module('main')
     
     return m
 
-def mkTest(numports=8):
+def mkTest():
     m = Module('test')
 
     # target instance
@@ -47,13 +45,16 @@ def mkTest(numports=8):
     yvalid = ports['yvalid']
     yready = ports['yready']
     
-    z1data = ports['z1data']
-    z1valid = ports['z1valid']
-    z1ready = ports['z1ready']
-    
-    z2data = ports['z2data']
-    z2valid = ports['z2valid']
-    z2ready = ports['z2ready']
+    zdata = ports['zdata']
+    zvalid = ports['zvalid']
+    zready = ports['zready']
+
+    xdata_orig = m.RegLike(ports['xdata'], name='xdata_orig', initval=0)
+    ydata_orig = m.RegLike(ports['ydata'], name='ydata_orig', initval=0)
+    zdata_orig = m.WireLike(ports['zdata'], name='zdata_orig')
+    m.Always()( xdata(fixed.to_fixed(xdata_orig, 8)) )
+    m.Always()( ydata(fixed.to_fixed(ydata_orig, 4)) )
+    m.Assign( zdata_orig(fixed.fixed_to_int(zdata, 8)) )
     
     uut = m.Instance(main, 'uut',
                      params=m.connect_params(main),
@@ -66,10 +67,11 @@ def mkTest(numports=8):
     reset_stmt.append( xvalid(0) )
     reset_stmt.append( ydata(0) )
     reset_stmt.append( yvalid(0) )
-    reset_stmt.append( z1ready(0) )
-    reset_stmt.append( z2ready(0) )
+    reset_stmt.append( zready(0) )
+    reset_stmt.append( xdata_orig(0) )
+    reset_stmt.append( ydata_orig(0) )
 
-    simulation.setup_waveform(m, uut)
+    simulation.setup_waveform(m, uut, xdata_orig, ydata_orig, zdata_orig)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, reset_stmt, period=100)
 
@@ -131,24 +133,20 @@ def mkTest(numports=8):
         fsm.make_always()
 
         
-    send('x', xdata, xvalid, xready, step=1, waitnum=10)
-    send('y', ydata, yvalid, yready, step=2, waitnum=20)
-    receive('z1', z1data, z1valid, z1ready, waitnum=5)
-    receive('z2', z2data, z2valid, z2ready, waitnum=10)
-    
+    send('x', xdata_orig, xvalid, xready, step=1, waitnum=10)
+    send('y', ydata_orig, yvalid, yready, step=-2, waitnum=20)
+    receive('z', zdata, zvalid, zready, waitnum=50)
+
     m.Always(Posedge(clk))(
         If(reset_done)(
             If(AndList(xvalid, xready))(
-                Systask('display', 'xdata=%d', xdata)
+                Systask('display', 'xdata=%d', xdata_orig)
             ),
             If(AndList(yvalid, yready))(
-                Systask('display', 'ydata=%d', ydata)
+                Systask('display', 'ydata=%d', ydata_orig)
             ),
-            If(AndList(z1valid, z1ready))(
-                Systask('display', 'z1data=%d', z1data)
-            ),
-            If(AndList(z2valid, z2ready))(
-                Systask('display', 'z2data=%d', z2data)
+            If(AndList(zvalid, zready))(
+                Systask('display', 'zdata=%d', zdata_orig)
             )
         )
     )

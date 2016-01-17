@@ -159,11 +159,13 @@ module test;
             _tmp_0 <= _tmp_0 + 1;
           end 
           if((_tmp_0 == 5) && xready) begin
+            xvalid <= 0;
+          end 
+          if((_tmp_0 == 5) && xready) begin
             xfsm <= xfsm_13;
           end 
         end
         xfsm_13: begin
-          xvalid <= 0;
           xfsm <= xfsm_14;
         end
         xfsm_14: begin
@@ -202,11 +204,11 @@ module test;
             _tmp_0 <= _tmp_0 + 1;
           end 
           if((_tmp_0 == 10) && xready) begin
+            xvalid <= 0;
+          end 
+          if((_tmp_0 == 10) && xready) begin
             xfsm <= xfsm_24;
           end 
-        end
-        xfsm_24: begin
-          xvalid <= 0;
         end
       endcase
     end
@@ -344,11 +346,13 @@ module test;
             _tmp_1 <= _tmp_1 + 1;
           end 
           if((_tmp_1 == 5) && yready) begin
+            yvalid <= 0;
+          end 
+          if((_tmp_1 == 5) && yready) begin
             yfsm <= yfsm_23;
           end 
         end
         yfsm_23: begin
-          yvalid <= 0;
           yfsm <= yfsm_24;
         end
         yfsm_24: begin
@@ -417,11 +421,11 @@ module test;
             _tmp_1 <= _tmp_1 + 1;
           end 
           if((_tmp_1 == 10) && yready) begin
+            yvalid <= 0;
+          end 
+          if((_tmp_1 == 10) && yready) begin
             yfsm <= yfsm_44;
           end 
-        end
-        yfsm_44: begin
-          yvalid <= 0;
         end
       endcase
     end
@@ -434,6 +438,16 @@ module test;
   localparam cfsm_2 = 2;
   localparam cfsm_3 = 3;
   localparam cfsm_4 = 4;
+  localparam cfsm_5 = 5;
+  localparam cfsm_6 = 6;
+  localparam cfsm_7 = 7;
+  localparam cfsm_8 = 8;
+  localparam cfsm_9 = 9;
+  localparam cfsm_10 = 10;
+  localparam cfsm_11 = 11;
+  localparam cfsm_12 = 12;
+  localparam cfsm_13 = 13;
+  localparam cfsm_14 = 14;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -448,10 +462,25 @@ module test;
           end 
         end
         cfsm_1: begin
-          cvalid <= 1;
           cfsm <= cfsm_2;
         end
         cfsm_2: begin
+          cfsm <= cfsm_3;
+        end
+        cfsm_3: begin
+          cfsm <= cfsm_4;
+        end
+        cfsm_4: begin
+          cfsm <= cfsm_5;
+        end
+        cfsm_5: begin
+          cfsm <= cfsm_6;
+        end
+        cfsm_6: begin
+          cvalid <= 1;
+          cfsm <= cfsm_7;
+        end
+        cfsm_7: begin
           if(cready) begin
             cdata <= cdata + 1;
           end 
@@ -459,11 +488,28 @@ module test;
             _tmp_2 <= _tmp_2 + 1;
           end 
           if((_tmp_2 == 5) && cready) begin
-            cfsm <= cfsm_3;
+            cvalid <= 0;
+          end 
+          if((_tmp_2 == 5) && cready) begin
+            cfsm <= cfsm_8;
           end 
         end
-        cfsm_3: begin
-          cvalid <= 0;
+        cfsm_8: begin
+          cfsm <= cfsm_9;
+        end
+        cfsm_9: begin
+          cfsm <= cfsm_10;
+        end
+        cfsm_10: begin
+          cfsm <= cfsm_11;
+        end
+        cfsm_11: begin
+          cfsm <= cfsm_12;
+        end
+        cfsm_12: begin
+          cfsm <= cfsm_13;
+        end
+        cfsm_13: begin
           cvalid <= 1;
           if(cready) begin
             cdata <= cdata + 1;
@@ -472,11 +518,11 @@ module test;
             _tmp_2 <= _tmp_2 + 1;
           end 
           if((_tmp_2 == 10) && cready) begin
-            cfsm <= cfsm_4;
+            cvalid <= 0;
           end 
-        end
-        cfsm_4: begin
-          cvalid <= 0;
+          if((_tmp_2 == 10) && cready) begin
+            cfsm <= cfsm_14;
+          end 
         end
       endcase
     end
@@ -811,7 +857,18 @@ module main
   wire [32-1:0] _tmp_data_0;
   wire _tmp_valid_0;
   wire _tmp_ready_0;
+  wire [32-1:0] _tmp_ldata_0;
+  wire [32-1:0] _tmp_rdata_0;
+  assign _tmp_ldata_0 = xdata;
+  assign _tmp_rdata_0 = ydata;
+  wire [32-1:0] _tmp_abs_ldata_0;
+  wire [32-1:0] _tmp_abs_rdata_0;
+  assign _tmp_abs_ldata_0 = _tmp_ldata_0;
+  assign _tmp_abs_rdata_0 = _tmp_rdata_0;
+  wire _tmp_osign_0;
+  wire [64-1:0] _tmp_abs_odata_0;
   wire [64-1:0] _tmp_odata_0;
+  assign _tmp_odata_0 = _tmp_abs_odata_0;
   assign _tmp_data_0 = _tmp_odata_0;
   wire _tmp_enable_0;
   wire _tmp_update_0;
@@ -830,11 +887,18 @@ module main
     .update(_tmp_update_0),
     .enable(_tmp_enable_0),
     .valid(_tmp_valid_0),
-    .a(xdata),
-    .b(ydata),
-    .c(_tmp_odata_0)
+    .a(_tmp_abs_ldata_0),
+    .b(_tmp_abs_rdata_0),
+    .c(_tmp_abs_odata_0)
   );
 
+  reg _tmp_sign0_0;
+  reg _tmp_sign1_0;
+  reg _tmp_sign2_0;
+  reg _tmp_sign3_0;
+  reg _tmp_sign4_0;
+  reg _tmp_sign5_0;
+  assign _tmp_osign_0 = _tmp_sign5_0;
   assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
   assign yready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
   assign _tmp_ready_0 = (_tmp_ready_7 || !_tmp_valid_7) && (_tmp_valid_0 && _tmp_valid_6);
@@ -872,6 +936,12 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
+      _tmp_sign0_0 <= 0;
+      _tmp_sign1_0 <= 0;
+      _tmp_sign2_0 <= 0;
+      _tmp_sign3_0 <= 0;
+      _tmp_sign4_0 <= 0;
+      _tmp_sign5_0 <= 0;
       _tmp_data_1 <= 0;
       _tmp_valid_1 <= 0;
       _tmp_data_2 <= 0;
@@ -887,6 +957,24 @@ module main
       _tmp_data_7 <= 0;
       _tmp_valid_7 <= 0;
     end else begin
+      if(_tmp_ready_0 || !_tmp_valid_0) begin
+        _tmp_sign0_0 <= (_tmp_ldata_0[31] == 0) && (_tmp_rdata_0[31] == 0) || (_tmp_ldata_0[31] == 1) && (_tmp_rdata_0[31] == 1);
+      end 
+      if(_tmp_ready_0 || !_tmp_valid_0) begin
+        _tmp_sign1_0 <= _tmp_sign0_0;
+      end 
+      if(_tmp_ready_0 || !_tmp_valid_0) begin
+        _tmp_sign2_0 <= _tmp_sign1_0;
+      end 
+      if(_tmp_ready_0 || !_tmp_valid_0) begin
+        _tmp_sign3_0 <= _tmp_sign2_0;
+      end 
+      if(_tmp_ready_0 || !_tmp_valid_0) begin
+        _tmp_sign4_0 <= _tmp_sign3_0;
+      end 
+      if(_tmp_ready_0 || !_tmp_valid_0) begin
+        _tmp_sign5_0 <= _tmp_sign4_0;
+      end 
       if((_tmp_ready_1 || !_tmp_valid_1) && cready && cvalid) begin
         _tmp_data_1 <= cdata;
       end 
