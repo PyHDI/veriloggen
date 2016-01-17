@@ -45,9 +45,17 @@ class Dataflow(object):
         # for mult and div
         m._clock = clock
         m._reset = reset
-        
-        dataflow_nodes = copy.deepcopy(self.nodes)
-        
+
+        try:
+            dataflow_nodes = copy.deepcopy(self.nodes)
+        except RecursionError:
+            dataflow_nodes = self.nodes
+            limit = sys.getrecursionlimit()
+            print("Warning: Current dataflow definitions are not copied.", file=sys.stderr)
+            print(" If object backup is required, enlarge maximum recursion depth"
+                  " by 'sys.setrecursionlimit(v)'.")
+            print(" Current maximum depth is %d." % limit, file=sys.stderr)
+
         input_visitor = visitor.InputVisitor()
         input_vars = set()
         for node in sorted(dataflow_nodes, key=lambda x:x.object_id):
