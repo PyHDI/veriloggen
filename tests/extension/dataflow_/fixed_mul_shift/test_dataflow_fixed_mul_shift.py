@@ -764,48 +764,30 @@ module main
   wire [32-1:0] _tmp_data_0;
   wire _tmp_valid_0;
   wire _tmp_ready_0;
-  wire [32-1:0] _tmp_ldata_0;
-  wire [32-1:0] _tmp_rdata_0;
-  assign _tmp_ldata_0 = xdata;
-  assign _tmp_rdata_0 = ydata;
-  wire [32-1:0] _tmp_abs_ldata_0;
-  wire [32-1:0] _tmp_abs_rdata_0;
-  assign _tmp_abs_ldata_0 = _tmp_ldata_0;
-  assign _tmp_abs_rdata_0 = _tmp_rdata_0;
-  wire _tmp_osign_0;
-  wire [64-1:0] _tmp_abs_odata_0;
   wire [64-1:0] _tmp_odata_0;
-  assign _tmp_odata_0 = _tmp_abs_odata_0;
-  assign _tmp_data_0 = _tmp_odata_0 >> 4;
+  reg [64-1:0] _tmp_data_reg_0;
+  assign _tmp_data_0 = _tmp_data_reg_0;
+  wire _tmp_ovalid_0;
+  reg _tmp_valid_reg_0;
+  assign _tmp_valid_0 = _tmp_valid_reg_0;
   wire _tmp_enable_0;
   wire _tmp_update_0;
   assign _tmp_enable_0 = (_tmp_ready_0 || !_tmp_valid_0) && (xready && yready) && (xvalid && yvalid);
   assign _tmp_update_0 = _tmp_ready_0 || !_tmp_valid_0;
 
-  multiplier
-  #(
-    .datawidth(32),
-    .depth(6)
-  )
+  multiplier_0
   mul0
   (
     .CLK(CLK),
     .RST(RST),
     .update(_tmp_update_0),
     .enable(_tmp_enable_0),
-    .valid(_tmp_valid_0),
-    .a(_tmp_abs_ldata_0),
-    .b(_tmp_abs_rdata_0),
-    .c(_tmp_abs_odata_0)
+    .valid(_tmp_ovalid_0),
+    .a(xdata),
+    .b(ydata),
+    .c(_tmp_odata_0)
   );
 
-  reg _tmp_sign0_0;
-  reg _tmp_sign1_0;
-  reg _tmp_sign2_0;
-  reg _tmp_sign3_0;
-  reg _tmp_sign4_0;
-  reg _tmp_sign5_0;
-  assign _tmp_osign_0 = _tmp_sign5_0;
   assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
   assign yready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
   assign zdata = _tmp_data_0;
@@ -814,30 +796,14 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_sign0_0 <= 0;
-      _tmp_sign1_0 <= 0;
-      _tmp_sign2_0 <= 0;
-      _tmp_sign3_0 <= 0;
-      _tmp_sign4_0 <= 0;
-      _tmp_sign5_0 <= 0;
+      _tmp_data_reg_0 <= 0;
+      _tmp_valid_reg_0 <= 0;
     end else begin
       if(_tmp_ready_0 || !_tmp_valid_0) begin
-        _tmp_sign0_0 <= (_tmp_ldata_0[31] == 0) && (_tmp_rdata_0[31] == 0) || (_tmp_ldata_0[31] == 1) && (_tmp_rdata_0[31] == 1);
+        _tmp_data_reg_0 <= _tmp_odata_0 >> 4;
       end 
       if(_tmp_ready_0 || !_tmp_valid_0) begin
-        _tmp_sign1_0 <= _tmp_sign0_0;
-      end 
-      if(_tmp_ready_0 || !_tmp_valid_0) begin
-        _tmp_sign2_0 <= _tmp_sign1_0;
-      end 
-      if(_tmp_ready_0 || !_tmp_valid_0) begin
-        _tmp_sign3_0 <= _tmp_sign2_0;
-      end 
-      if(_tmp_ready_0 || !_tmp_valid_0) begin
-        _tmp_sign4_0 <= _tmp_sign3_0;
-      end 
-      if(_tmp_ready_0 || !_tmp_valid_0) begin
-        _tmp_sign5_0 <= _tmp_sign4_0;
+        _tmp_valid_reg_0 <= _tmp_ovalid_0;
       end 
     end
   end
@@ -847,45 +813,48 @@ endmodule
 
 
 
-module multiplier #
-(
-  parameter datawidth = 32,
-  parameter depth = 6
-)
+module multiplier_0
 (
   input CLK,
   input RST,
   input update,
   input enable,
   output valid,
-  input [datawidth-1:0] a,
-  input [datawidth-1:0] b,
-  output [datawidth*2-1:0] c
+  input [32-1:0] a,
+  input [32-1:0] b,
+  output [64-1:0] c
 );
 
-  reg [depth-1:0] valid_reg;
-  assign valid = valid_reg[depth - 1];
-  integer i;
+  reg valid_reg0;
+  reg valid_reg1;
+  reg valid_reg2;
+  reg valid_reg3;
+  reg valid_reg4;
+  reg valid_reg5;
+  assign valid = valid_reg5;
 
   always @(posedge CLK) begin
     if(RST) begin
-      valid_reg <= 0;
+      valid_reg0 <= 0;
+      valid_reg1 <= 0;
+      valid_reg2 <= 0;
+      valid_reg3 <= 0;
+      valid_reg4 <= 0;
+      valid_reg5 <= 0;
     end else begin
       if(update) begin
-        valid_reg[0] <= enable;
-        for(i=1; i<depth; i=i+1) begin
-          valid_reg[i] <= valid_reg[i - 1];
-        end
+        valid_reg0 <= enable;
+        valid_reg1 <= valid_reg0;
+        valid_reg2 <= valid_reg1;
+        valid_reg3 <= valid_reg2;
+        valid_reg4 <= valid_reg3;
+        valid_reg5 <= valid_reg4;
       end 
     end
   end
 
 
-  multiplier_core
-  #(
-    .datawidth(datawidth),
-    .depth(depth)
-  )
+  multiplier_core_0
   mult
   (
     .CLK(CLK),
@@ -900,31 +869,35 @@ endmodule
 
 
 
-module multiplier_core #
-(
-  parameter datawidth = 32,
-  parameter depth = 6
-)
+module multiplier_core_0
 (
   input CLK,
   input update,
-  input [datawidth-1:0] a,
-  input [datawidth-1:0] b,
-  output [datawidth*2-1:0] c
+  input [32-1:0] a,
+  input [32-1:0] b,
+  output [64-1:0] c
 );
 
-  wire [datawidth*2-1:0] rslt;
-  reg [datawidth*2-1:0] mem [0:depth-1];
-  assign rslt = a * b;
-  assign c = mem[depth - 1];
-  integer i;
+  reg [32-1:0] _a;
+  reg [32-1:0] _b;
+  reg signed [64-1:0] _tmpval0;
+  reg signed [64-1:0] _tmpval1;
+  reg signed [64-1:0] _tmpval2;
+  reg signed [64-1:0] _tmpval3;
+  reg signed [64-1:0] _tmpval4;
+  wire signed [64-1:0] rslt;
+  assign rslt = $signed({ 1'd0, _a }) * $signed({ 1'd0, _b });
+  assign c = _tmpval4;
 
   always @(posedge CLK) begin
     if(update) begin
-      mem[0] <= rslt;
-      for(i=1; i<depth; i=i+1) begin
-        mem[i] <= mem[i - 1];
-      end
+      _a <= a;
+      _b <= b;
+      _tmpval0 <= rslt;
+      _tmpval1 <= _tmpval0;
+      _tmpval2 <= _tmpval1;
+      _tmpval3 <= _tmpval2;
+      _tmpval4 <= _tmpval3;
     end 
   end
 

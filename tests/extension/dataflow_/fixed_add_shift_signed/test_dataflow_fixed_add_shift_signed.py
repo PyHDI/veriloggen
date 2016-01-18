@@ -551,7 +551,7 @@ module main
       _tmp_valid_0 <= 0;
     end else begin
       if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
-        _tmp_data_0 <= xdata + { ydata, { 4{ ydata[0] } } };
+        _tmp_data_0 <= $signed(xdata) + $signed({ ydata, { 4{ ydata[0] } } });
       end 
       if(_tmp_valid_0 && _tmp_ready_0) begin
         _tmp_valid_0 <= 0;

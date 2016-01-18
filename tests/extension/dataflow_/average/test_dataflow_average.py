@@ -766,40 +766,19 @@ module main
   wire [32-1:0] _tmp_data_6;
   wire _tmp_valid_6;
   wire _tmp_ready_6;
-  wire [32-1:0] _tmp_ldata_6;
-  wire [32-1:0] _tmp_rdata_6;
-  assign _tmp_ldata_6 = _tmp_data_5;
-  assign _tmp_rdata_6 = 3;
-  wire [32-1:0] _tmp_abs_ldata_6;
-  wire [32-1:0] _tmp_abs_rdata_6;
-  assign _tmp_abs_ldata_6 = _tmp_ldata_6;
-  assign _tmp_abs_rdata_6 = _tmp_rdata_6;
+  reg [32-1:0] _tmp_ldata_6;
+  reg signed [32-1:0] _tmp_rdata_6;
+  reg [32-1:0] _tmp_abs_ldata_6;
+  reg [32-1:0] _tmp_abs_rdata_6;
   wire _tmp_osign_6;
   wire [32-1:0] _tmp_abs_odata_6;
-  wire [32-1:0] _tmp_odata_6;
-  assign _tmp_odata_6 = _tmp_abs_odata_6;
+  reg [32-1:0] _tmp_odata_6;
   assign _tmp_data_6 = _tmp_odata_6;
-  wire _tmp_enable_6;
-  wire _tmp_update_6;
-  assign _tmp_enable_6 = (_tmp_ready_6 || !_tmp_valid_6) && _tmp_ready_5 && _tmp_valid_5;
-  assign _tmp_update_6 = _tmp_ready_6 || !_tmp_valid_6;
-
-  Divider
-  #(
-    .W_D(32)
-  )
-  div6
-  (
-    .CLK(CLK),
-    .RST(RST),
-    .update(_tmp_update_6),
-    .enable(_tmp_enable_6),
-    .valid(_tmp_valid_6),
-    .in_a(_tmp_abs_ldata_6),
-    .in_b(_tmp_abs_rdata_6),
-    .rslt(_tmp_abs_odata_6)
-  );
-
+  wire _tmp_ovalid_6;
+  reg _tmp_valid_reg0_6;
+  reg _tmp_valid_reg1_6;
+  reg _tmp_valid_reg2_6;
+  assign _tmp_valid_6 = _tmp_valid_reg2_6;
   reg _tmp_sign0_6;
   reg _tmp_sign1_6;
   reg _tmp_sign2_6;
@@ -833,6 +812,27 @@ module main
   reg _tmp_sign30_6;
   reg _tmp_sign31_6;
   assign _tmp_osign_6 = _tmp_sign31_6;
+  wire _tmp_enable_6;
+  wire _tmp_update_6;
+  assign _tmp_enable_6 = (_tmp_ready_6 || !_tmp_valid_6) && _tmp_ready_5 && _tmp_valid_5;
+  assign _tmp_update_6 = _tmp_ready_6 || !_tmp_valid_6;
+
+  Divider
+  #(
+    .W_D(32)
+  )
+  div6
+  (
+    .CLK(CLK),
+    .RST(RST),
+    .update(_tmp_update_6),
+    .enable(_tmp_enable_6),
+    .valid(_tmp_ovalid_6),
+    .in_a(_tmp_abs_ldata_6),
+    .in_b(_tmp_abs_rdata_6),
+    .rslt(_tmp_abs_odata_6)
+  );
+
   assign zdata = _tmp_data_6;
   assign zvalid = _tmp_valid_6;
   assign _tmp_ready_6 = zready;
@@ -849,6 +849,14 @@ module main
       _tmp_valid_4 <= 0;
       _tmp_data_5 <= 0;
       _tmp_valid_5 <= 0;
+      _tmp_ldata_6 <= 0;
+      _tmp_rdata_6 <= 0;
+      _tmp_abs_ldata_6 <= 0;
+      _tmp_abs_rdata_6 <= 0;
+      _tmp_odata_6 <= 0;
+      _tmp_valid_reg0_6 <= 0;
+      _tmp_valid_reg1_6 <= 0;
+      _tmp_valid_reg2_6 <= 0;
       _tmp_sign0_6 <= 0;
       _tmp_sign1_6 <= 0;
       _tmp_sign2_6 <= 0;
@@ -923,6 +931,30 @@ module main
       end 
       if((_tmp_ready_5 || !_tmp_valid_5) && (_tmp_ready_2 && _tmp_ready_4)) begin
         _tmp_valid_5 <= _tmp_valid_2 && _tmp_valid_4;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_ldata_6 <= _tmp_data_5;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_rdata_6 <= 3'd3;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_abs_ldata_6 <= _tmp_ldata_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_abs_rdata_6 <= (_tmp_rdata_6[31] == 0)? _tmp_rdata_6 : ~_tmp_rdata_6 + 1;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_odata_6 <= _tmp_abs_odata_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_valid_reg0_6 <= _tmp_ovalid_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_valid_reg1_6 <= _tmp_valid_reg0_6;
+      end 
+      if(_tmp_ready_6 || !_tmp_valid_6) begin
+        _tmp_valid_reg2_6 <= _tmp_valid_reg1_6;
       end 
       if(_tmp_ready_6 || !_tmp_valid_6) begin
         _tmp_sign0_6 <= (_tmp_ldata_6[31] == 0) && (_tmp_rdata_6[31] == 0) || (_tmp_ldata_6[31] == 1) && (_tmp_rdata_6[31] == 1);

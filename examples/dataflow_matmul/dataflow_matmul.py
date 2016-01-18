@@ -61,9 +61,9 @@ def mkMatmul(n=16, datawidth=32):
                        ('xd', xdin), ('xv', ivalid), ('yd', ydin), ('yv', ivalid),
                        ('zd', odata), ('zv', ovalid), ('vreset_data', 0), ('vreset', vreset) ])
 
-    read_count = m.TmpReg(32, initval=0)
+    read_count = m.TmpReg(int(addrwidth/2)+1, initval=0)
     sum_value = m.TmpReg(datawidth, initval=0)
-    sum_count = m.TmpReg(32, initval=0)
+    sum_count = m.TmpReg(int(addrwidth/2)+1, initval=0)
     
     # main FSM
     fsm = FSM(m, 'fsm', clk, rst)

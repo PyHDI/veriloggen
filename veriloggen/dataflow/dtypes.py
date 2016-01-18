@@ -356,7 +356,7 @@ class _BinaryOperator(_Operator):
         right = self.right.bit_length() - right_fp
         self.width = max(left, right) + max(left_fp, right_fp)
         self.point = max(left_fp, right_fp)
-        self.signed = self.left.get_signed() or self.right.get_signed()
+        self.signed = self.left.get_signed() and self.right.get_signed()
                 
     def _implement(self, m, seq):
         if self.latency != 1:
@@ -375,10 +375,8 @@ class _BinaryOperator(_Operator):
 
         lpoint = self.left.get_point()
         rpoint = self.right.get_point()
-        lsigned = self.left.get_signed()
-        rsigned = self.right.get_signed()
-        ldata, rdata = fx.adjust(self.left.sig_data, self.right.sig_data,
-                                 lpoint, rpoint, lsigned, rsigned)
+        
+        ldata, rdata = fx.adjust(self.left.sig_data, self.right.sig_data, lpoint, rpoint, signed)
         
         lvalid = self.left.sig_valid
         rvalid = self.right.sig_valid
@@ -468,7 +466,7 @@ class Power(_BinaryOperator):
         raise NotImplementedError('_implement() is not implemented.')
 
 class Times(_BinaryOperator):
-    latency = 6
+    latency = 6 + 1
     def eval(self):
         return self.left.eval() * self.right.eval()
     
@@ -479,11 +477,11 @@ class Times(_BinaryOperator):
         right = self.right.bit_length()
         self.width = max(left, right)
         self.point = max(left_fp, right_fp)
-        self.signed = self.left.get_signed() or self.right.get_signed()
+        self.signed = self.left.get_signed() and self.right.get_signed()
                 
     def _implement(self, m, seq):
-        if self.latency <= 1:
-            raise ValueError("Latency of '*' operator must be greater than 1")
+        if self.latency <= 3:
+            raise ValueError("Latency of '*' operator must be greater than 3")
 
         width = self.bit_length()
         signed = self.get_signed()
@@ -496,42 +494,37 @@ class Times(_BinaryOperator):
         self.sig_valid = valid
         self.sig_ready = ready
 
+        lwidth = self.left.bit_length()
+        rwidth = self.right.bit_length()
+        
+        lpoint = self.left.get_point()
+        rpoint = self.right.get_point()
+
         lsigned = self.left.get_signed()
         rsigned = self.right.get_signed()
-        ldata = m.Wire(_tmp_data(tmp, prefix='_tmp_ldata_'), width, signed=lsigned)
-        rdata = m.Wire(_tmp_data(tmp, prefix='_tmp_rdata_'), width, signed=rsigned)
-        m.Assign( ldata(self.left.sig_data) )
-        m.Assign( rdata(self.right.sig_data) )
 
-        abs_ldata = m.Wire(_tmp_data(tmp, prefix='_tmp_abs_ldata_'), width)
-        abs_rdata = m.Wire(_tmp_data(tmp, prefix='_tmp_abs_rdata_'), width)
-        if not lsigned:
-            m.Assign( abs_ldata(ldata) )
-        else:
-            m.Assign( abs_ldata(vtypes.Mux(ldata[width-1] == 0, ldata, vtypes.Unot(ldata) + 1)) )
-        
-        if not rsigned:
-            m.Assign( abs_rdata(rdata) )
-        else:
-            m.Assign( abs_rdata(vtypes.Mux(rdata[width-1] == 0, rdata, vtypes.Unot(rdata) + 1)) )
-        
-        sign = vtypes.OrList(vtypes.AndList(ldata[width-1] == 0, rdata[width-1] == 0), # + , +
-                             vtypes.AndList(ldata[width-1] == 1, rdata[width-1] == 1)) # - , -
+        ldata = self.left.sig_data
+        rdata = self.right.sig_data
 
-        osign = m.Wire(_tmp_data(tmp, prefix='_tmp_osign_'))
-        abs_odata = m.Wire(_tmp_data(tmp, prefix='_tmp_abs_odata_'), width*2, signed=signed)
-        odata = m.Wire(_tmp_data(tmp, prefix='_tmp_odata_'), width*2, signed=signed)
+        accept = vtypes.OrList(ready, vtypes.Not(valid))
         
-        if not signed:
-            m.Assign( odata(abs_odata) )
-        else:
-            m.Assign( odata(vtypes.Mux(osign, abs_odata, vtypes.Unot(abs_odata) + 1)) )
-
-        shift_size = min(self.left.get_point(), self.right.get_point())
+        odata = m.Wire(_tmp_data(tmp, prefix='_tmp_odata_'), lwidth+rwidth, signed=signed)
+        data_reg = m.Reg(_tmp_data(tmp, prefix='_tmp_data_reg_'), lwidth+rwidth,
+                         signed=signed, initval=0)
+        
+        shift_size = min(lpoint, rpoint)
         if shift_size > 0:
-            m.Assign( data(fx.shift_right(odata, shift_size, signed=signed)) )
+            seq( data_reg(fx.shift_right(odata, shift_size, signed=signed)), cond=accept )
         else:
-            m.Assign( data(odata) )
+            seq( data_reg(odata), cond=accept )
+            
+        m.Assign( data(data_reg) )
+        
+        ovalid = m.Wire(_tmp_valid(tmp, prefix='_tmp_ovalid_'))
+        valid_reg = m.Reg(_tmp_valid(tmp, prefix='_tmp_valid_reg_'), initval=0)
+        
+        seq( valid_reg(ovalid), cond=accept )
+        m.Assign( valid(valid_reg) )
 
         lvalid = self.left.sig_valid
         rvalid = self.right.sig_valid
@@ -542,35 +535,28 @@ class Times(_BinaryOperator):
         all_valid = _and_vars(lvalid, rvalid)
         all_ready = _and_vars(lready, rready)
 
-        accept = vtypes.OrList(ready, vtypes.Not(valid))
-        
         valid_cond = _and_vars(accept, all_ready)
         valid_reset_cond = _and_vars(valid, ready)
         data_cond = _and_vars(valid_cond, all_valid)
         ready_cond = _and_vars(accept, all_valid)
+
+        depth = self.latency - 1
         
-        inst = mul.get_mul()
+        inst = mul.get_mul(lwidth, rwidth, lsigned, rsigned, depth)
         clk = m._clock
         rst = m._reset
 
         enable = m.Wire(_tmp_data(tmp, prefix='_tmp_enable_') )
         update = m.Wire(_tmp_data(tmp, prefix='_tmp_update_') )
+        
         m.Assign( enable(data_cond) )
         m.Assign( update(accept) ) # NOT valid_cond
         
-        params = [ ('datawidth', width), ('depth', self.latency) ]
         ports = [ ('CLK', clk), ('RST', rst),
-                  ('update', update), ('enable', enable), ('valid', valid),
-                  ('a', abs_ldata), ('b', abs_rdata), ('c', abs_odata) ]
+                  ('update', update), ('enable', enable), ('valid', ovalid),
+                  ('a', ldata), ('b', rdata), ('c', odata) ]
         
-        m.Instance(inst, ''.join(['mul', str(tmp)]), params, ports)
-
-        s = sign
-        for i in range(self.latency):
-            ns = m.Reg(_tmp_data(tmp, prefix='_tmp_sign' + str(i) + '_'), initval=0)
-            seq( ns(s), cond=accept)
-            s = ns
-        m.Assign( osign(s) )
+        m.Instance(inst, ''.join(['mul', str(tmp)]), ports=ports)
         
         _connect_ready(m, lready, ready_cond)
         _connect_ready(m, rready, ready_cond)
@@ -579,7 +565,7 @@ class Times(_BinaryOperator):
             _connect_ready(m, ready, vtypes.Int(1))
     
 class Divide(_BinaryOperator):
-    latency = 32
+    latency = 32 + 3
     def eval(self):
         left = self.left.eval()
         right = self.right.eval()
@@ -588,8 +574,8 @@ class Divide(_BinaryOperator):
         return Divide(left, right)
     
     def _implement(self, m, seq):
-        if self.latency <= 1:
-            raise ValueError("Latency of '*' operator must be greater than 1")
+        if self.latency <= 3:
+            raise ValueError("Latency of '*' operator must be greater than 3")
 
         width = self.bit_length()
         signed = self.get_signed()
@@ -604,40 +590,66 @@ class Divide(_BinaryOperator):
         
         lpoint = self.left.get_point()
         rpoint = self.right.get_point()
+        
         lsigned = self.left.get_signed()
         rsigned = self.right.get_signed()
-        ldata = m.Wire(_tmp_data(tmp, prefix='_tmp_ldata_'), width, signed=lsigned)
-        rdata = m.Wire(_tmp_data(tmp, prefix='_tmp_rdata_'), width, signed=rsigned)
-        lval, rval = fx.adjust(self.left.sig_data, self.right.sig_data,
-                               lpoint, rpoint, lsigned, rsigned)
-        m.Assign( ldata(lval) )
-        m.Assign( rdata(rval) )
-
-        abs_ldata = m.Wire(_tmp_data(tmp, prefix='_tmp_abs_ldata_'), width)
-        abs_rdata = m.Wire(_tmp_data(tmp, prefix='_tmp_abs_rdata_'), width)
-        if not lsigned:
-            m.Assign( abs_ldata(ldata) )
-        else:
-            m.Assign( abs_ldata(vtypes.Mux(ldata[width-1] == 0, ldata, vtypes.Unot(ldata) + 1)) )
         
-        if not rsigned:
-            m.Assign( abs_rdata(rdata) )
-        else:
-            m.Assign( abs_rdata(vtypes.Mux(rdata[width-1] == 0, rdata, vtypes.Unot(rdata) + 1)) )
+        ldata = m.Reg(_tmp_data(tmp, prefix='_tmp_ldata_'), width, signed=lsigned, initval=0)
+        rdata = m.Reg(_tmp_data(tmp, prefix='_tmp_rdata_'), width, signed=rsigned, initval=0)
+        
+        lval, rval = fx.adjust(self.left.sig_data, self.right.sig_data, lpoint, rpoint, signed)
 
+        accept = vtypes.OrList(ready, vtypes.Not(valid))
+        
+        seq( ldata(lval), cond=accept )
+        seq( rdata(rval), cond=accept )
+        
         sign = vtypes.OrList(vtypes.AndList(ldata[width-1] == 0, rdata[width-1] == 0), # + , +
                              vtypes.AndList(ldata[width-1] == 1, rdata[width-1] == 1)) # - , -
 
+        abs_ldata = m.Reg(_tmp_data(tmp, prefix='_tmp_abs_ldata_'), width, initval=0)
+        abs_rdata = m.Reg(_tmp_data(tmp, prefix='_tmp_abs_rdata_'), width, initval=0)
+
+        if not lsigned:
+            seq( abs_ldata(ldata), cond=accept )
+        else:
+            seq( abs_ldata(vtypes.Mux(ldata[width-1] == 0, ldata, vtypes.Unot(ldata) + 1)),
+                 cond=accept )
+        
+        if not rsigned:
+            seq( abs_rdata(rdata), cond=accept )
+        else:
+            seq( abs_rdata(vtypes.Mux(rdata[width-1] == 0, rdata, vtypes.Unot(rdata) + 1)),
+                 cond=accept )
+
         osign = m.Wire(_tmp_data(tmp, prefix='_tmp_osign_'))
         abs_odata = m.Wire(_tmp_data(tmp, prefix='_tmp_abs_odata_'), width, signed=signed)
-        odata = m.Wire(_tmp_data(tmp, prefix='_tmp_odata_'), width, signed=signed)
+        
+        odata = m.Reg(_tmp_data(tmp, prefix='_tmp_odata_'), width, signed=signed, initval=0)
             
         if not signed:
-            m.Assign( odata(abs_odata) )
+            seq( odata(abs_odata), cond=accept )
         else:
-            m.Assign( odata(vtypes.Mux(osign, abs_odata, vtypes.Unot(abs_odata) + 1)) )
+            seq( odata(vtypes.Mux(osign, abs_odata, vtypes.Unot(abs_odata) + 1)),
+                 cond=accept )
         
         m.Assign( data(odata) )
+        
+        ovalid = m.Wire(_tmp_valid(tmp, prefix='_tmp_ovalid_'))    
+                    
+        v = ovalid
+        for i in range(3):
+            nv = m.Reg(_tmp_valid(tmp, prefix='_tmp_valid_reg' + str(i) + '_'), initval=0)
+            seq( nv(v), cond=accept )
+            v = nv
+        m.Assign( valid(v) )
+
+        s = sign
+        for i in range(self.latency):
+            ns = m.Reg(_tmp_data(tmp, prefix='_tmp_sign' + str(i) + '_'), initval=0)
+            seq( ns(s), cond=accept )
+            s = ns
+        m.Assign( osign(s) )
         
         lvalid = self.left.sig_valid
         rvalid = self.right.sig_valid
@@ -648,8 +660,6 @@ class Divide(_BinaryOperator):
         all_valid = _and_vars(lvalid, rvalid)
         all_ready = _and_vars(lready, rready)
 
-        accept = vtypes.OrList(ready, vtypes.Not(valid))
-        
         valid_cond = _and_vars(accept, all_ready)
         valid_reset_cond = _and_vars(valid, ready)
         data_cond = _and_vars(valid_cond, all_valid)
@@ -666,18 +676,11 @@ class Divide(_BinaryOperator):
         
         params = [ ('W_D', width) ]
         ports = [ ('CLK', clk), ('RST', rst),
-                  ('update', update), ('enable', enable), ('valid', valid),
+                  ('update', update), ('enable', enable), ('valid', ovalid),
                   ('in_a', abs_ldata), ('in_b', abs_rdata), ('rslt', abs_odata) ]
         
         m.Instance(inst, ''.join(['div', str(tmp)]), params, ports)
 
-        s = sign
-        for i in range(self.latency):
-            ns = m.Reg(_tmp_data(tmp, prefix='_tmp_sign' + str(i) + '_'), initval=0)
-            seq( ns(s), cond=accept)
-            s = ns
-        m.Assign( osign(s) )
-        
         _connect_ready(m, lready, ready_cond)
         _connect_ready(m, rready, ready_cond)
         
@@ -685,13 +688,13 @@ class Divide(_BinaryOperator):
             _connect_ready(m, ready, vtypes.Int(1))
     
 class Mod(_BinaryOperator):
-    latency = 32
+    latency = 32 + 3
     def eval(self):
         return self.left.eval() % self.right.eval()
     
     def _implement(self, m, seq):
-        if self.latency <= 1:
-            raise ValueError("Latency of '*' operator must be greater than 1")
+        if self.latency <= 3:
+            raise ValueError("Latency of '*' operator must be greater than 3")
 
         width = self.bit_length()
         signed = self.get_signed()
@@ -706,40 +709,66 @@ class Mod(_BinaryOperator):
         
         lpoint = self.left.get_point()
         rpoint = self.right.get_point()
+        
         lsigned = self.left.get_signed()
         rsigned = self.right.get_signed()
-        ldata = m.Wire(_tmp_data(tmp, prefix='_tmp_ldata_'), width, signed=lsigned)
-        rdata = m.Wire(_tmp_data(tmp, prefix='_tmp_rdata_'), width, signed=rsigned)
-        lval, rval = fx.adjust(self.left.sig_data, self.right.sig_data,
-                               lpoint, rpoint, lsigned, rsigned)
-        m.Assign( ldata(lval) )
-        m.Assign( rdata(rval) )
-
-        abs_ldata = m.Wire(_tmp_data(tmp, prefix='_tmp_abs_ldata_'), width)
-        abs_rdata = m.Wire(_tmp_data(tmp, prefix='_tmp_abs_rdata_'), width)
-        if not lsigned:
-            m.Assign( abs_ldata(ldata) )
-        else:
-            m.Assign( abs_ldata(vtypes.Mux(ldata[width-1] == 0, ldata, vtypes.Unot(ldata) + 1)) )
         
-        if not rsigned:
-            m.Assign( abs_rdata(rdata) )
-        else:
-            m.Assign( abs_rdata(vtypes.Mux(rdata[width-1] == 0, rdata, vtypes.Unot(rdata) + 1)) )
+        ldata = m.Reg(_tmp_data(tmp, prefix='_tmp_ldata_'), width, signed=lsigned, initval=0)
+        rdata = m.Reg(_tmp_data(tmp, prefix='_tmp_rdata_'), width, signed=rsigned, initval=0)
+        
+        lval, rval = fx.adjust(self.left.sig_data, self.right.sig_data, lpoint, rpoint, signed)
 
+        accept = vtypes.OrList(ready, vtypes.Not(valid))
+        
+        seq( ldata(lval), cond=accept )
+        seq( rdata(rval), cond=accept )
+        
         sign = vtypes.OrList(vtypes.AndList(ldata[width-1] == 0, rdata[width-1] == 0), # + , +
                              vtypes.AndList(ldata[width-1] == 1, rdata[width-1] == 1)) # - , -
 
+        abs_ldata = m.Reg(_tmp_data(tmp, prefix='_tmp_abs_ldata_'), width, initval=0)
+        abs_rdata = m.Reg(_tmp_data(tmp, prefix='_tmp_abs_rdata_'), width, initval=0)
+
+        if not lsigned:
+            seq( abs_ldata(ldata), cond=accept )
+        else:
+            seq( abs_ldata(vtypes.Mux(ldata[width-1] == 0, ldata, vtypes.Unot(ldata) + 1)),
+                 cond=accept )
+        
+        if not rsigned:
+            seq( abs_rdata(rdata), cond=accept )
+        else:
+            seq( abs_rdata(vtypes.Mux(rdata[width-1] == 0, rdata, vtypes.Unot(rdata) + 1)),
+                 cond=accept )
+
         osign = m.Wire(_tmp_data(tmp, prefix='_tmp_osign_'))
         abs_odata = m.Wire(_tmp_data(tmp, prefix='_tmp_abs_odata_'), width, signed=signed)
-        odata = m.Wire(_tmp_data(tmp, prefix='_tmp_odata_'), width, signed=signed)
+        
+        odata = m.Reg(_tmp_data(tmp, prefix='_tmp_odata_'), width, signed=signed, initval=0)
             
         if not signed:
-            m.Assign( odata(abs_odata) )
+            seq( odata(abs_odata), cond=accept )
         else:
-            m.Assign( odata(vtypes.Mux(osign, abs_odata, vtypes.Unot(abs_odata) + 1)) )
+            seq( odata(vtypes.Mux(osign, abs_odata, vtypes.Unot(abs_odata) + 1)),
+                 cond=accept )
         
         m.Assign( data(odata) )
+        
+        ovalid = m.Wire(_tmp_valid(tmp, prefix='_tmp_ovalid_'))    
+                    
+        v = ovalid
+        for i in range(3):
+            nv = m.Reg(_tmp_valid(tmp, prefix='_tmp_valid_reg' + str(i) + '_'), initval=0)
+            seq( nv(v), cond=accept )
+            v = nv
+        m.Assign( valid(v) )
+
+        s = sign
+        for i in range(self.latency):
+            ns = m.Reg(_tmp_data(tmp, prefix='_tmp_sign' + str(i) + '_'), initval=0)
+            seq( ns(s), cond=accept )
+            s = ns
+        m.Assign( osign(s) )
         
         lvalid = self.left.sig_valid
         rvalid = self.right.sig_valid
@@ -750,8 +779,6 @@ class Mod(_BinaryOperator):
         all_valid = _and_vars(lvalid, rvalid)
         all_ready = _and_vars(lready, rready)
 
-        accept = vtypes.OrList(ready, vtypes.Not(valid))
-        
         valid_cond = _and_vars(accept, all_ready)
         valid_reset_cond = _and_vars(valid, ready)
         data_cond = _and_vars(valid_cond, all_valid)
@@ -768,24 +795,17 @@ class Mod(_BinaryOperator):
         
         params = [ ('W_D', width) ]
         ports = [ ('CLK', clk), ('RST', rst),
-                  ('update', update), ('enable', enable), ('valid', valid),
+                  ('update', update), ('enable', enable), ('valid', ovalid),
                   ('in_a', abs_ldata), ('in_b', abs_rdata), ('mod', abs_odata) ]
         
         m.Instance(inst, ''.join(['div', str(tmp)]), params, ports)
-        
-        s = sign
-        for i in range(self.latency):
-            ns = m.Reg(_tmp_data(tmp, prefix='_tmp_sign' + str(i) + '_'), initval=0)
-            seq( ns(s), cond=accept)
-            s = ns
-        m.Assign( osign(s) )
-        
+
         _connect_ready(m, lready, ready_cond)
         _connect_ready(m, rready, ready_cond)
         
         if not self._has_output():
             _connect_ready(m, ready, vtypes.Int(1))
-            
+    
 class Plus(_BinaryOperator):
     def eval(self):
         return self.left.eval() + self.right.eval()
@@ -1527,7 +1547,7 @@ class _Constant(_Numeric):
         self.set_attributes()
 
     def set_attributes(self):
-        self.width = self.value.bit_length()
+        self.width = self.value.bit_length() + 1
         self.point = 0
         self.signed = False
 
@@ -1715,10 +1735,21 @@ class Icustom(_Accumulator):
 
 #-------------------------------------------------------------------------------
 class Int(_Constant):
+    def __init__(self, value, signed=True):
+        _Constant.__init__(self, value)
+        self.signed = signed
+        
     def set_attributes(self):
-        self.width = self.value.bit_length()
+        self.width = self.value.bit_length() + 1
         self.point = 0
-        self.signed = self.value < 0
+
+    def _implement(self, m, seq):
+        data = vtypes.Int(self.value, width=self.width)
+        valid = None
+        ready = None
+        self.sig_data = data
+        self.sig_valid = valid
+        self.sig_ready = ready
 
 class Float(_Constant):
     def set_attributes(self):
@@ -1727,14 +1758,22 @@ class Float(_Constant):
         self.signed = True
 
 class FixedPoint(_Constant):
-    def __init__(self, value, point=0):
+    def __init__(self, value, point=0, signed=True):
         _Constant.__init__(self, value)
         self.point = point
+        self.signed = signed
 
     def set_attributes(self):
-        self.width = self.value.bit_length()
+        self.width = self.value.bit_length() + 1
         self.point = 0
-        self.signed = self.value < 0
+
+    def _implement(self, m, seq):
+        data = vtypes.Int(self.value, width=self.width)
+        valid = None
+        ready = None
+        self.sig_data = data
+        self.sig_valid = valid
+        self.sig_ready = ready
 
 class Str(_Constant):
     def set_attributes(self):

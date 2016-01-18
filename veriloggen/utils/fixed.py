@@ -78,13 +78,16 @@ def fixed_to_real(value, point, signed=False):
     return vtypes.Mux(signed and msb == 0, v0, v1)
 
 #-------------------------------------------------------------------------------
-def adjust(left, right, lpoint, rpoint, lsigned=True, rsigned=True):
+def adjust(left, right, lpoint, rpoint, signed=True):
     diff_lpoint = rpoint - lpoint
     diff_rpoint = lpoint - rpoint
     if diff_lpoint < 0: diff_lpoint = 0
     if diff_rpoint < 0: diff_rpoint = 0
-    ldata = left if diff_lpoint == 0 else shift_left(left, diff_lpoint, lsigned)
-    rdata = right if diff_rpoint == 0 else shift_left(right, diff_rpoint, rsigned)
+    ldata = left if diff_lpoint == 0 else shift_left(left, diff_lpoint, signed)
+    rdata = right if diff_rpoint == 0 else shift_left(right, diff_rpoint, signed)
+    if signed:
+        ldata = vtypes.SystemTask('signed', ldata)
+        rdata = vtypes.SystemTask('signed', rdata)
     return ldata, rdata
     
 def shift_left(value, size, signed=True):

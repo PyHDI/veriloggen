@@ -297,7 +297,7 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_0 <= 1;
+      _tmp_data_0 <= 2'd1;
       _tmp_valid_0 <= 0;
     end else begin
       if((_tmp_ready_0 || !_tmp_valid_0) && xready && xvalid) begin

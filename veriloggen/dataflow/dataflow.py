@@ -10,6 +10,7 @@ from veriloggen.seq.seq import Seq
 
 from . import visitor
 from . import dtypes
+from . import mul
 from . import scheduler
 from . import allocator
 from . import graph
@@ -40,6 +41,8 @@ class Dataflow(object):
     def implement(self, m, clock, reset, seq_name='seq', aswire=False):
         """ implemente actual registers and operations in Verilog """
 
+        mul.reset()
+        
         seq = Seq(m, seq_name, clock, reset)
 
         # for mult and div

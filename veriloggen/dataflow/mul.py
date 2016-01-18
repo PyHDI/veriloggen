@@ -4,64 +4,92 @@ from __future__ import print_function
 import veriloggen.core.vtypes as vtypes
 import veriloggen.core.module as module
 
-def mkMultiplierCore(datawidth=32, depth=6):
-    m = module.Module('multiplier_core')
-    datawidth = m.Parameter('datawidth', datawidth)
-    depth = m.Parameter('depth', depth)
+def mkMultiplierCore(index, lwidth=32, rwidth=32, lsigned=True, rsigned=True, depth=6):
+    retwidth = lwidth + rwidth
+    
+    m = module.Module('multiplier_core_%d' % index)
+    
     clk = m.Input('CLK')
     update = m.Input('update')
-    a = m.Input('a', datawidth)
-    b = m.Input('b', datawidth)
-    c = m.Output('c', datawidth*2)
-    rslt = m.Wire('rslt', datawidth*2)
-    mem = m.Reg('mem', datawidth*2, depth)
-    m.Assign( rslt(a * b) )
-    m.Assign( c(mem[depth-1]) )
-    i = m.Integer('i')
+    
+    a = m.Input('a', lwidth)
+    b = m.Input('b', rwidth)
+    c = m.Output('c', retwidth)
+    
+    _a = m.Reg('_a', lwidth, signed=lsigned)
+    _b = m.Reg('_b', rwidth, signed=rsigned)
+    tmpval = [ m.Reg('_tmpval%d' % i, retwidth, signed=True) for i in range(depth-1) ]
+    rslt = m.Wire('rslt', retwidth, signed=True)
+
+    __a = _a
+    __b = _b
+    if not lsigned:
+        __a = vtypes.SystemTask('signed', vtypes.Cat(vtypes.Int(0, width=1), _a))
+    if not rsigned:
+        __b = vtypes.SystemTask('signed', vtypes.Cat(vtypes.Int(0, width=1), _b))
+    
+    m.Assign( rslt(__a * __b) )
+    m.Assign( c(tmpval[depth-2]) )
+    
     m.Always(vtypes.Posedge(clk))(
         vtypes.If(update)(
-            mem[0](rslt),
-            vtypes.For(i(1), i<depth, i.inc())(
-                mem[i](mem[i-1])
-            )))
+            _a(a),
+            _b(b),
+            tmpval[0](rslt),
+            [ tmpval[i](tmpval[i-1]) for i in range(1, depth-1) ]
+        ))
+    
     return m
 
-def mkMultiplier(datawidth=32, depth=6):
-    if datawidth < 0: raise ValueError("datawidth must be greater than 0.")
-    if depth < 0: raise ValueError("depth must be greater than 0.")
+def mkMultiplier(index, lwidth=32, rwidth=32, lsigned=True, rsigned=True, depth=6):
+    if lwidth < 0: raise ValueError("data width must be greater than 0.")
+    if rwidth < 0: raise ValueError("data width must be greater than 0.")
+    if depth < 2: raise ValueError("depth must be greater than 2.")
     
-    mult = mkMultiplierCore(datawidth, depth)
-    m = module.Module('multiplier')
-    datawidth = m.Parameter('datawidth', datawidth)
-    depth = m.Parameter('depth', depth)
+    retwidth = lwidth + rwidth
+    
+    mult = mkMultiplierCore(index, lwidth, rwidth, lsigned, rsigned, depth)
+    
+    m = module.Module('multiplier_%d' % index)
+    
     clk = m.Input('CLK')
     rst = m.Input('RST')
+    
     update = m.Input('update')
     enable = m.Input('enable')
     valid = m.Output('valid')
-    a = m.Input('a', datawidth)
-    b = m.Input('b', datawidth)
-    c = m.Output('c', datawidth*2)
-    valid_reg = m.Reg('valid_reg', depth, initval=0)
+    
+    a = m.Input('a', lwidth)
+    b = m.Input('b', rwidth)
+    c = m.Output('c', retwidth)
+
+    valid_reg = [ m.Reg('valid_reg%d' % i) for i in range(depth) ]
+
     m.Assign( valid(valid_reg[depth-1]) )
-    i = m.Integer('i')
+
     m.Always(vtypes.Posedge(clk))(
         vtypes.If(rst)(
-            valid_reg(0)
+            [ valid_reg[i](0) for i in range(depth) ]
         ).Else(
             vtypes.If(update)(
                 valid_reg[0](enable),
-                vtypes.For(i(1), i<depth, i.inc())(
-                    valid_reg[i](valid_reg[i-1])
-                ))))
+                [ valid_reg[i](valid_reg[i-1]) for i in range(1, depth) ]
+            )
+        ))
+    
     ports = [ ('CLK', clk), ('update', update), ('a', a), ('b', b), ('c', c) ]
-    m.Instance(mult, 'mult', m.connect_params(mult), ports)
+    m.Instance(mult, 'mult', ports=ports)
+    
     return m
 
-# global multiplier definition
-mul = None
-def get_mul():
-    global mul
-    if mul is None:
-        mul = mkMultiplier()
+# global multiplier count
+index_count = 0
+def get_mul(lwidth=32, rwidth=32, lsigned=True, rsigned=True, depth=6):
+    global index_count
+    mul = mkMultiplier(index_count, lwidth, rwidth, lsigned, rsigned, depth)
+    index_count += 1
     return mul
+
+def reset():
+    global index_count
+    index_count = 0

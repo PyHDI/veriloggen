@@ -339,7 +339,7 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_0 <= 0;
+      _tmp_data_0 <= 1'd0;
       _tmp_valid_0 <= 0;
     end else begin
       if(resetvalid && resetready) begin

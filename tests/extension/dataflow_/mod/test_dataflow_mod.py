@@ -746,40 +746,19 @@ module main
   wire [32-1:0] _tmp_data_0;
   wire _tmp_valid_0;
   wire _tmp_ready_0;
-  wire [32-1:0] _tmp_ldata_0;
-  wire [32-1:0] _tmp_rdata_0;
-  assign _tmp_ldata_0 = xdata;
-  assign _tmp_rdata_0 = 4;
-  wire [32-1:0] _tmp_abs_ldata_0;
-  wire [32-1:0] _tmp_abs_rdata_0;
-  assign _tmp_abs_ldata_0 = _tmp_ldata_0;
-  assign _tmp_abs_rdata_0 = _tmp_rdata_0;
+  reg [32-1:0] _tmp_ldata_0;
+  reg signed [32-1:0] _tmp_rdata_0;
+  reg [32-1:0] _tmp_abs_ldata_0;
+  reg [32-1:0] _tmp_abs_rdata_0;
   wire _tmp_osign_0;
   wire [32-1:0] _tmp_abs_odata_0;
-  wire [32-1:0] _tmp_odata_0;
-  assign _tmp_odata_0 = _tmp_abs_odata_0;
+  reg [32-1:0] _tmp_odata_0;
   assign _tmp_data_0 = _tmp_odata_0;
-  wire _tmp_enable_0;
-  wire _tmp_update_0;
-  assign _tmp_enable_0 = (_tmp_ready_0 || !_tmp_valid_0) && xready && xvalid;
-  assign _tmp_update_0 = _tmp_ready_0 || !_tmp_valid_0;
-
-  Divider
-  #(
-    .W_D(32)
-  )
-  div0
-  (
-    .CLK(CLK),
-    .RST(RST),
-    .update(_tmp_update_0),
-    .enable(_tmp_enable_0),
-    .valid(_tmp_valid_0),
-    .in_a(_tmp_abs_ldata_0),
-    .in_b(_tmp_abs_rdata_0),
-    .mod(_tmp_abs_odata_0)
-  );
-
+  wire _tmp_ovalid_0;
+  reg _tmp_valid_reg0_0;
+  reg _tmp_valid_reg1_0;
+  reg _tmp_valid_reg2_0;
+  assign _tmp_valid_0 = _tmp_valid_reg2_0;
   reg _tmp_sign0_0;
   reg _tmp_sign1_0;
   reg _tmp_sign2_0;
@@ -813,6 +792,27 @@ module main
   reg _tmp_sign30_0;
   reg _tmp_sign31_0;
   assign _tmp_osign_0 = _tmp_sign31_0;
+  wire _tmp_enable_0;
+  wire _tmp_update_0;
+  assign _tmp_enable_0 = (_tmp_ready_0 || !_tmp_valid_0) && xready && xvalid;
+  assign _tmp_update_0 = _tmp_ready_0 || !_tmp_valid_0;
+
+  Divider
+  #(
+    .W_D(32)
+  )
+  div0
+  (
+    .CLK(CLK),
+    .RST(RST),
+    .update(_tmp_update_0),
+    .enable(_tmp_enable_0),
+    .valid(_tmp_ovalid_0),
+    .in_a(_tmp_abs_ldata_0),
+    .in_b(_tmp_abs_rdata_0),
+    .mod(_tmp_abs_odata_0)
+  );
+
   assign xready = (_tmp_ready_0 || !_tmp_valid_0) && xvalid;
   assign _tmp_ready_0 = (_tmp_ready_33 || !_tmp_valid_33) && (_tmp_valid_0 && _tmp_valid_32);
   reg [32-1:0] _tmp_data_1;
@@ -953,6 +953,14 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
+      _tmp_ldata_0 <= 0;
+      _tmp_rdata_0 <= 0;
+      _tmp_abs_ldata_0 <= 0;
+      _tmp_abs_rdata_0 <= 0;
+      _tmp_odata_0 <= 0;
+      _tmp_valid_reg0_0 <= 0;
+      _tmp_valid_reg1_0 <= 0;
+      _tmp_valid_reg2_0 <= 0;
       _tmp_sign0_0 <= 0;
       _tmp_sign1_0 <= 0;
       _tmp_sign2_0 <= 0;
@@ -1052,6 +1060,30 @@ module main
       _tmp_data_33 <= 0;
       _tmp_valid_33 <= 0;
     end else begin
+      if(_tmp_ready_0 || !_tmp_valid_0) begin
+        _tmp_ldata_0 <= xdata;
+      end 
+      if(_tmp_ready_0 || !_tmp_valid_0) begin
+        _tmp_rdata_0 <= 4'd4;
+      end 
+      if(_tmp_ready_0 || !_tmp_valid_0) begin
+        _tmp_abs_ldata_0 <= _tmp_ldata_0;
+      end 
+      if(_tmp_ready_0 || !_tmp_valid_0) begin
+        _tmp_abs_rdata_0 <= (_tmp_rdata_0[31] == 0)? _tmp_rdata_0 : ~_tmp_rdata_0 + 1;
+      end 
+      if(_tmp_ready_0 || !_tmp_valid_0) begin
+        _tmp_odata_0 <= _tmp_abs_odata_0;
+      end 
+      if(_tmp_ready_0 || !_tmp_valid_0) begin
+        _tmp_valid_reg0_0 <= _tmp_ovalid_0;
+      end 
+      if(_tmp_ready_0 || !_tmp_valid_0) begin
+        _tmp_valid_reg1_0 <= _tmp_valid_reg0_0;
+      end 
+      if(_tmp_ready_0 || !_tmp_valid_0) begin
+        _tmp_valid_reg2_0 <= _tmp_valid_reg1_0;
+      end 
       if(_tmp_ready_0 || !_tmp_valid_0) begin
         _tmp_sign0_0 <= (_tmp_ldata_0[31] == 0) && (_tmp_rdata_0[31] == 0) || (_tmp_ldata_0[31] == 1) && (_tmp_rdata_0[31] == 1);
       end 
