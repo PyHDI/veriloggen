@@ -11,6 +11,13 @@ from . import div
 global_object_counter = 0
 
 #-------------------------------------------------------------------------------
+def is_dataflow_object(*objs):
+    for obj in objs:
+        if isinstance(obj, _Node):
+            return True
+    return False
+
+#-------------------------------------------------------------------------------
 def Constant(value, fixed=True, point=0):
     if isinstance(value, int):
         return Int(value)

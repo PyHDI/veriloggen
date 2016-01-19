@@ -54,6 +54,7 @@ class ASAPScheduler(_Scheduler):
             r = node._get_delayed_value(i + 1)
             if r is not None:
                 prev = r
+                cur_end_stage += 1
                 continue
             r = dtypes._Delay(prev)
             r._set_start_stage(cur_end_stage)
