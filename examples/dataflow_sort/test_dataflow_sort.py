@@ -77,6 +77,14 @@ module test;
   localparam fsm_8 = 8;
   localparam fsm_9 = 9;
   localparam fsm_10 = 10;
+  localparam fsm_11 = 11;
+  localparam fsm_12 = 12;
+  localparam fsm_13 = 13;
+  localparam fsm_14 = 14;
+  localparam fsm_15 = 15;
+  localparam fsm_16 = 16;
+  localparam fsm_17 = 17;
+  localparam fsm_18 = 18;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -160,6 +168,70 @@ module test;
           fsm <= fsm_10;
         end
         fsm_10: begin
+          $display("%s = %d", "dout0", dout0);
+          $display("%s = %d", "dout1", dout1);
+          $display("%s = %d", "dout2", dout2);
+          $display("%s = %d", "dout3", dout3);
+          $display("----");
+          fsm <= fsm_11;
+        end
+        fsm_11: begin
+          $display("%s = %d", "dout0", dout0);
+          $display("%s = %d", "dout1", dout1);
+          $display("%s = %d", "dout2", dout2);
+          $display("%s = %d", "dout3", dout3);
+          $display("----");
+          fsm <= fsm_12;
+        end
+        fsm_12: begin
+          $display("%s = %d", "dout0", dout0);
+          $display("%s = %d", "dout1", dout1);
+          $display("%s = %d", "dout2", dout2);
+          $display("%s = %d", "dout3", dout3);
+          $display("----");
+          fsm <= fsm_13;
+        end
+        fsm_13: begin
+          $display("%s = %d", "dout0", dout0);
+          $display("%s = %d", "dout1", dout1);
+          $display("%s = %d", "dout2", dout2);
+          $display("%s = %d", "dout3", dout3);
+          $display("----");
+          fsm <= fsm_14;
+        end
+        fsm_14: begin
+          $display("%s = %d", "dout0", dout0);
+          $display("%s = %d", "dout1", dout1);
+          $display("%s = %d", "dout2", dout2);
+          $display("%s = %d", "dout3", dout3);
+          $display("----");
+          fsm <= fsm_15;
+        end
+        fsm_15: begin
+          $display("%s = %d", "dout0", dout0);
+          $display("%s = %d", "dout1", dout1);
+          $display("%s = %d", "dout2", dout2);
+          $display("%s = %d", "dout3", dout3);
+          $display("----");
+          fsm <= fsm_16;
+        end
+        fsm_16: begin
+          $display("%s = %d", "dout0", dout0);
+          $display("%s = %d", "dout1", dout1);
+          $display("%s = %d", "dout2", dout2);
+          $display("%s = %d", "dout3", dout3);
+          $display("----");
+          fsm <= fsm_17;
+        end
+        fsm_17: begin
+          $display("%s = %d", "dout0", dout0);
+          $display("%s = %d", "dout1", dout1);
+          $display("%s = %d", "dout2", dout2);
+          $display("%s = %d", "dout3", dout3);
+          $display("----");
+          fsm <= fsm_18;
+        end
+        fsm_18: begin
           $finish;
         end
       endcase
