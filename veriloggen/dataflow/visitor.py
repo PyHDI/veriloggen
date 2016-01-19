@@ -5,10 +5,21 @@ from . import dtypes
 
 #-------------------------------------------------------------------------------
 class _Visitor(object):
+    def __init__(self):
+        self.visited_node = {}
+
     def generic_visit(self, node):
         raise TypeError("Type '%s' is not supported." % str(type(node)))
     
     def visit(self, node):
+        if node in self.visited_node:
+            return self.visited_node[node]
+        
+        ret = self._visit(node)
+        self.visited_node[node] = ret
+        return ret
+        
+    def _visit(self, node):
         if isinstance(node, dtypes._Accumulator):
             return self.visit__Accumulator(node)
         
