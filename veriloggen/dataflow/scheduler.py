@@ -19,7 +19,18 @@ class _Scheduler(_Visitor):
 #-------------------------------------------------------------------------------
 class ASAPScheduler(_Scheduler):
     """ Determine the scheduled cycle and insert delay variables to fill the gap """
-    
+
+    def __init__(self):
+        self.visited_node = {}
+
+    def visit(self, node):
+        if node in self.visited_node:
+            return self.visited_node[node]
+        
+        ret = _Scheduler.visit(self, node)
+        self.visited_node[node] = ret
+        return ret
+        
     def schedule(self, nodes):
         for node in sorted(nodes, key=lambda x:x.object_id):
             self.visit(node)

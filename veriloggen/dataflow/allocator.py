@@ -1,10 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-from . import dtypes
-from .visitor import _Visitor
-
-class Allocator(_Visitor):
+class Allocator(object):
     def __init__(self, **custom_methods):
         self.custom_methods = custom_methods
     
