@@ -103,6 +103,9 @@ class _Node(object):
 
     def __hash__(self):
         return hash((id(self), self.object_id))
+
+    def __eq__(self, other):
+        return (id(self), self.object_id) == (id(other), other.object_id)
     
 #-------------------------------------------------------------------------------
 class _Numeric(_Node):
