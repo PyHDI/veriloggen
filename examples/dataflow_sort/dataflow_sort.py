@@ -103,7 +103,7 @@ def mkTest(numports=4):
         
     fsm.goto_next()
     
-    for i in range(int(math.log(numports, 2)) * 8):
+    for i in range(numports, 2):
         for d in dout:
             fsm.add( Systask('display', '%s = %d', d.name, d))
         fsm.add( Systask('display', '----') )
