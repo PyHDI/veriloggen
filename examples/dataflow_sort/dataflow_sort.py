@@ -43,7 +43,7 @@ def sort(values):
         values = network(values, num-i-1)
     return values
 
-def mkSort(numports=4):
+def mkSort(numports=8):
     values = [ dataflow.Variable('din%d' % i) for i in range(numports) ]
     rslt = sort(values)
 
@@ -55,7 +55,7 @@ def mkSort(numports=4):
 
     return m
 
-def mkTest(numports=4):
+def mkTest(numports=8):
 
     m = Module('test')
     
@@ -115,7 +115,7 @@ def mkTest(numports=4):
     return m
     
 if __name__ == '__main__':
-    n = 4
+    n = 8
     test = mkTest(n)
     verilog = test.to_verilog('tmp.v')
     #print(verilog)
