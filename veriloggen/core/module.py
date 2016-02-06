@@ -37,7 +37,7 @@ class Module(vtypes.VeriloggenNode):
     # User interface for variables
     #---------------------------------------------------------------------------
     def Input(self, name, width=None, length=None, signed=False, value=None):
-        t = vtypes.Input(name, width, length, signed, value)
+        t = vtypes.Input(width, length, signed, value, name=name)
         if not isinstance(self.find_identifier(name), (vtypes.AnyType, vtypes.Wire)):
             raise ValueError("Object '%s' is already defined." % name)
         self.io_variable[name] = t
@@ -45,7 +45,7 @@ class Module(vtypes.VeriloggenNode):
         return t
     
     def Output(self, name, width=None, length=None, signed=False, value=None):
-        t = vtypes.Output(name, width, length, signed, value)
+        t = vtypes.Output(width, length, signed, value, name=name)
         if not isinstance(self.find_identifier(name), (vtypes.AnyType, vtypes.Wire, vtypes.Reg)):
             raise ValueError("Object '%s' is already defined." % name)
         self.io_variable[name] = t
@@ -53,18 +53,18 @@ class Module(vtypes.VeriloggenNode):
         return t
     
     def OutputReg(self, name, width=None, length=None, signed=False, value=None, initval=None):
-        t = vtypes.Output(name, width, length, signed, value)
+        t = vtypes.Output(width, length, signed, value, name=name)
         if not isinstance(self.find_identifier(name), vtypes.AnyType):
             raise ValueError("Object '%s' is already defined." % name)
         self.io_variable[name] = t
         self.items.append(t)
-        t = vtypes.Reg(name, width, length, signed, value, initval)
+        t = vtypes.Reg(width, length, signed, value, initval, name=name)
         self.variable[name] = t
         self.items.append(t)
         return t
     
     def Inout(self, name, width=None, length=None, signed=False, value=None):
-        t = vtypes.Inout(name, width, length, signed, value)
+        t = vtypes.Inout(width, length, signed, value, name=name)
         if not isinstance(self.find_identifier(name), (vtypes.AnyType, vtypes.Wire)):
             raise ValueError("Object '%s' is already defined." % name)
         self.io_variable[name] = t
@@ -72,7 +72,7 @@ class Module(vtypes.VeriloggenNode):
         return t
 
     def Wire(self, name, width=None, length=None, signed=False, value=None):
-        t = vtypes.Wire(name, width, length, signed, value)
+        t = vtypes.Wire(width, length, signed, value, name=name)
         if not isinstance(self.find_identifier(name),
                           (vtypes.AnyType, vtypes.Input, vtypes.Output)) or self.is_reg(name):
             raise ValueError("Object '%s' is already defined." % name)
@@ -85,7 +85,7 @@ class Module(vtypes.VeriloggenNode):
         return self.Wire(name, width, length, signed, value)
 
     def Reg(self, name, width=None, length=None, signed=False, value=None, initval=None):
-        t = vtypes.Reg(name, width, length, signed, value, initval)
+        t = vtypes.Reg(width, length, signed, value, initval, name=name)
         if not isinstance(self.find_identifier(name), (vtypes.AnyType, vtypes.Output)):
             raise ValueError("Object '%s' is already defined." % name)
         self.variable[name] = t
@@ -97,7 +97,7 @@ class Module(vtypes.VeriloggenNode):
         return self.Reg(name, width, length, signed, value, initval)
 
     def Integer(self, name, width=None, length=None, signed=False, value=None, initval=None):
-        t = vtypes.Integer(name, width, length, signed, value, initval)
+        t = vtypes.Integer(width, length, signed, value, initval, name=name)
         if not isinstance(self.find_identifier(name), vtypes.AnyType):
             raise ValueError("Object '%s' is already defined." % name)
         self.variable[name] = t
@@ -109,7 +109,7 @@ class Module(vtypes.VeriloggenNode):
         return self.Integer(name, width, length, signed, value, initval)
 
     def Real(self, name, width=None, length=None, signed=False, value=None, initval=None):
-        t = vtypes.Real(name, width, length, signed, value, initval)
+        t = vtypes.Real(width, length, signed, value, initval, name=name)
         if not isinstance(self.find_identifier(name), vtypes.AnyType):
             raise ValueError("Object '%s' is already defined." % name)
         self.variable[name] = t
@@ -121,7 +121,7 @@ class Module(vtypes.VeriloggenNode):
         return self.Real(name, width, length, signed, value, initval)
 
     def Genvar(self, name, width=None, length=None, signed=False, value=None):
-        t = vtypes.Genvar(name, width, length, signed, value)
+        t = vtypes.Genvar(width, length, signed, value, name=name)
         if not isinstance(self.find_identifier(name), vtypes.AnyType):
             raise ValueError("Object '%s' is already defined." % name)
         self.variable[name] = t
@@ -133,7 +133,7 @@ class Module(vtypes.VeriloggenNode):
         return self.Genvar(name, width, length, signed, value)
 
     def Parameter(self, name, value, width=None, signed=False, length=None):
-        t = vtypes.Parameter(name, value, width, signed)
+        t = vtypes.Parameter(value, width, signed, name=name)
         if not isinstance(self.find_identifier(name), vtypes.AnyType):
             raise ValueError("Object '%s' is already defined." % name)
         self.global_constant[name] = t
@@ -141,7 +141,7 @@ class Module(vtypes.VeriloggenNode):
         return t
     
     def Localparam(self, name, value, width=None, signed=False, length=None):
-        t = vtypes.Localparam(name, value, width, signed)
+        t = vtypes.Localparam(value, width, signed, name=name)
         if not isinstance(self.find_identifier(name), vtypes.AnyType):
             raise ValueError("Object '%s' is already defined." % name)
         self.local_constant[name] = t
@@ -500,7 +500,7 @@ class Module(vtypes.VeriloggenNode):
             for ex in exclude:
                 if re.match(ex, key): skip = True
             if skip: continue
-            copy_obj = self.get_opposite_variable(obj)(key, copy.deepcopy(obj.width))
+            copy_obj = self.get_opposite_variable(obj)(name=key, width=copy.deepcopy(obj.width))
             copy_obj.name = ''.join([prefix, copy_obj.name, postfix])
             copy_obj.width = visitor.visit(copy_obj.width)
             copy_obj.signed = obj.signed
@@ -563,6 +563,9 @@ class Module(vtypes.VeriloggenNode):
 
     #---------------------------------------------------------------------------
     def add_object(self, obj):
+        if isinstance(obj, vtypes._Variable) and obj.name is None:
+            raise ValueError("Object must have a name.")
+        
         self.items.append(obj)
 
         if isinstance(obj, vtypes.AnyType):
@@ -665,7 +668,7 @@ class Module(vtypes.VeriloggenNode):
         if name in self.task: return self.task[name]
         if name in self.instance: return self.instance[name]
         if name in self.generate: return self.generate[name]
-        return vtypes.AnyType(name)
+        return vtypes.AnyType(name=name)
 
     #---------------------------------------------------------------------------
     def get_tmp(self):
@@ -711,7 +714,7 @@ class Module(vtypes.VeriloggenNode):
         if isinstance(var, vtypes.Inout):
             return vtypes.Wire
         raise TypeError('No corresponding IO type for %s' % str(type(var)))
-
+    
     #---------------------------------------------------------------------------
     def to_hook_resolved_obj(self):
         # if there is no hooked method, object copy is not required.
@@ -783,6 +786,9 @@ class StubModule(vtypes.VeriloggenNode):
         import veriloggen.verilog.to_verilog as to_verilog
         return to_verilog.write_verilog(self, filename)
 
+    def resolve_hook(self):
+        pass
+    
     def has_hook(self):
         return False
     
@@ -891,7 +897,7 @@ class Generate(Module):
         r = self.m.find_identifier(name)
         if r:
             return r
-        return vtypes.AnyType(name)
+        return vtypes.AnyType(name=name)
 
     def get_modules(self):
         modules = collections.OrderedDict()

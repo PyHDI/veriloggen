@@ -257,7 +257,7 @@ class _Numeric(VeriloggenNode):
 
 #-------------------------------------------------------------------------------
 class _Variable(_Numeric):
-    def __init__(self, name, width=1, length=None, signed=False, value=None, initval=None):
+    def __init__(self, width=1, length=None, signed=False, value=None, initval=None, name=None):
         self.name = name
         self.width = width
         self.width_msb = None
@@ -381,10 +381,10 @@ class AnyType(_Variable): pass
 
 #-------------------------------------------------------------------------------
 class _ParameterVairable(_Variable):
-    def __init__(self, name, value, width=None, signed=False):
+    def __init__(self, value, width=None, signed=False, name=None):
         if isinstance(value, _ParameterVairable):
             value = value.value
-        _Variable.__init__(self, name, width=width, signed=signed, value=value)
+        _Variable.__init__(self, width=width, signed=signed, value=value, name=name)
         
 class Parameter(_ParameterVairable): pass
 class Localparam(_ParameterVairable): pass

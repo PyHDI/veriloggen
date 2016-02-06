@@ -16,17 +16,17 @@ class Task(vtypes.VeriloggenNode):
 
     #---------------------------------------------------------------------------
     def Input(self, name, width=None, length=None, signed=False, value=None):
-        t = vtypes.Input(name, width, length, signed, value)
+        t = vtypes.Input(width, length, signed, value, name=name)
         self.io_variable[name] = t
         return t
     
     def Reg(self, name, width=None, length=None, signed=False, value=None):
-        t = vtypes.Reg(name, width, length, signed, value)
+        t = vtypes.Reg(width, length, signed, value, name=name)
         self.variable[name] = t
         return t
     
     def Integer(self, name, width=None, length=None, signed=False, value=None):
-        t = vtypes.Integer(name, width, length, signed, value)
+        t = vtypes.Integer(width, length, signed, value, name=name)
         self.variable[name] = t
         return t
     
