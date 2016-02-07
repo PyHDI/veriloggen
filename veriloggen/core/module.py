@@ -791,6 +791,9 @@ class StubModule(vtypes.VeriloggenNode):
     
     def has_hook(self):
         return False
+
+    def find_module(self, name):
+        return None
     
     def get_modules(self):
         modules = collections.OrderedDict()
