@@ -11,7 +11,7 @@ from veriloggen import *
 def mkChatterClear(length=1024):
     m = Module("chatter_clear")
 
-    _length = m.Parameter('length', length)
+    length = m.Parameter('length', length)
     
     clk = m.Input('CLK')
     rst = m.Input('RST')
@@ -25,8 +25,8 @@ def mkChatterClear(length=1024):
     
     seq.add( count(0), cond=din==dout )
     seq.add( count.inc(), cond=din!=dout )
-    seq.add( count(0), cond=count==_length )
-    seq.add( dout(din), cond=count==_length )
+    seq.add( count(0), cond=count==length )
+    seq.add( dout(din), cond=count==length )
 
     seq.make_always()
 
