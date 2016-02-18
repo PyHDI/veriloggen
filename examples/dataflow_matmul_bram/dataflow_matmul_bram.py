@@ -29,7 +29,6 @@ def mkBram(datawidth=32, addrwidth=10, numports=2):
     m = Module('BRAM%d' % numports)
     
     clk = m.Input('CLK')
-    rst = m.Input('RST')
     ports = []
     for i in range(numports):
         addr = m.Input('ADDR%d' % i, addrwidth)
@@ -80,7 +79,7 @@ def mkMatmulBram(n=16, datawidth=32):
         int_ports.append( [addr, din, we, dout] )
 
     for i in range(3):
-        ports = [ clk, rst ] + ext_ports[i] + int_ports[i]
+        ports = [ clk ] + ext_ports[i] + int_ports[i]
         m.Instance(bram, 'inst_bram%d' % i, ports=ports)
 
     xaddr = m.Reg('xaddr', addrwidth, initval=0)

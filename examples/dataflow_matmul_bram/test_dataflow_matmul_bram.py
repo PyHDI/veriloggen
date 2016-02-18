@@ -219,7 +219,6 @@ module Matmul
   inst_bram0
   (
     .CLK(CLK),
-    .RST(RST),
     .ADDR0(bram_addr0),
     .DIN0(bram_din0),
     .WE0(bram_we0),
@@ -235,7 +234,6 @@ module Matmul
   inst_bram1
   (
     .CLK(CLK),
-    .RST(RST),
     .ADDR0(bram_addr1),
     .DIN0(bram_din1),
     .WE0(bram_we1),
@@ -251,7 +249,6 @@ module Matmul
   inst_bram2
   (
     .CLK(CLK),
-    .RST(RST),
     .ADDR0(bram_addr2),
     .DIN0(bram_din2),
     .WE0(bram_we2),
@@ -408,7 +405,6 @@ endmodule
 module BRAM2
 (
   input CLK,
-  input RST,
   input [8-1:0] ADDR0,
   input [32-1:0] DIN0,
   input WE0,
