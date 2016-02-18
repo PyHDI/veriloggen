@@ -291,13 +291,6 @@ module main
   assign zvalid = xvalid;
   assign xready = zready;
 
-  always @(posedge CLK) begin
-    if(RST) begin
-    end else begin
-    end
-  end
-
-
 endmodule
 """
 

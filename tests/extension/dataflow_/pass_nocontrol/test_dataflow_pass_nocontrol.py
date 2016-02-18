@@ -160,13 +160,6 @@ module main
 
   assign zdata = xdata;
 
-  always @(posedge CLK) begin
-    if(RST) begin
-    end else begin
-    end
-  end
-
-
 endmodule
 """
 
