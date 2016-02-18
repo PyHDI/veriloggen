@@ -639,22 +639,28 @@ class Pointer(_SpecialOperator):
         self.pos = pos
         self.subst = []
         
-    def next(self, r):
-        return Subst(self, r)
+    def next(self, value, blk=False, ldelay=None, rdelay=None):
+        return Subst(self, value, blk=blk, ldelay=ldelay, rdelay=rdelay)
 
-    def _add_subst(self, s):
-        self.subst.append(s)
+    def write(self, value, blk=False, ldelay=None, rdelay=None):
+        return self.next(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
     
     def bit_length(self):
         if isinstance(var, _Variable) and var.length is not None:
             return self.var.bit_length()
         return 1
     
+    def _add_subst(self, s):
+        self.subst.append(s)
+    
+    def _get_subst(self):
+        return self.subst
+    
     def __str__(self):
         return ''.join([str(self.var), '[', str(self.pos), ']'])
 
-    def __call__(self, r):
-        return self.next(r)
+    def __call__(self, value, blk=False, ldelay=None, rdelay=None):
+        return self.next(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
 
 class Slice(_SpecialOperator):
     def __init__(self, var, msb, lsb):
@@ -663,31 +669,37 @@ class Slice(_SpecialOperator):
         self.lsb = lsb
         self.subst = []
 
-    def next(self, r):
-        return Subst(self, r)
+    def next(self, value, blk=False, ldelay=None, rdelay=None):
+        return Subst(self, value, blk=blk, ldelay=ldelay, rdelay=rdelay)
     
-    def _add_subst(self, s):
-        self.subst.append(s)
+    def write(self, value, blk=False, ldelay=None, rdelay=None):
+        return self.next(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
     
     def bit_length(self):
         return self.msb - self.lsb + 1
     
+    def _add_subst(self, s):
+        self.subst.append(s)
+    
+    def _get_subst(self):
+        return self.subst
+    
     def __str__(self):
         return ''.join([str(self.var), '[', str(self.msb), ':', str(self.lsb), ']'])
 
-    def __call__(self, r):
-        return self.next(r)
+    def __call__(self, value, blk=False, ldelay=None, rdelay=None):
+        return self.next(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
 
 class Cat(_SpecialOperator):
     def __init__(self, *vars):
         self.vars = tuple(vars)
         self.subst = []
     
-    def next(self, r):
-        return Subst(self, r)
+    def next(self, value, blk=False, ldelay=None, rdelay=None):
+        return Subst(self, value, blk=blk, ldelay=ldelay, rdelay=rdelay)
 
-    def _add_subst(self, s):
-        self.subst.append(s)
+    def write(self, value, blk=False, ldelay=None, rdelay=None):
+        return self.next(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
     
     def bit_length(self):
         values = [ v.bit_length() for v in self.vars ]
@@ -695,6 +707,12 @@ class Cat(_SpecialOperator):
         for v in values[1:]:
             ret = ret + v
         return ret
+    
+    def _add_subst(self, s):
+        self.subst.append(s)
+    
+    def _get_subst(self):
+        return self.subst
     
     def __str__(self):
         ret = []
@@ -706,8 +724,8 @@ class Cat(_SpecialOperator):
         ret.append('}')
         return ''.join(ret)
        
-    def __call__(self, r):
-        return self.next(r)
+    def __call__(self, value, blk=False, ldelay=None, rdelay=None):
+        return self.next(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
 
 class Repeat(_SpecialOperator):
     def __init__(self, var, times):
@@ -731,7 +749,8 @@ class Cond(_SpecialOperator):
         raise NotImplementedError('bit_length is not implemented on Cond.')
         
     def __str__(self):
-        return ''.join(['(', str(self.condition), ')?', str(self.true_value), ' : ', str(self.false_value)])
+        return ''.join(['(', str(self.condition), ')?',
+                        str(self.true_value), ' : ', str(self.false_value)])
 
 # Alias of Cond
 Mux = Cond
