@@ -270,17 +270,11 @@ class _Variable(_Numeric):
         self.initval = initval
         self.subst = []
     
-    def next(self, r, ldelay=None, rdelay=None):
-        return Subst(self, r, ldelay=ldelay, rdelay=rdelay)
-    
-    def connect(self, prefix='', postfix=''):
-        return ( prefix + self.name + postfix, self )
+    def next(self, value, blk=False, ldelay=None, rdelay=None):
+        return Subst(self, value, blk=blk, ldelay=ldelay, rdelay=rdelay)
 
-    def add_subst(self, s):
-        self.subst.append(s)
-
-    def get_subst(self):
-        return self.subst
+    def write(self, value, blk=False, ldelay=None, rdelay=None):
+        return self.next(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
     
     def reset(self):
         return None
@@ -288,11 +282,17 @@ class _Variable(_Numeric):
     def bit_length(self):
         return self.width
 
-    def set_raw_width(self, msb, lsb):
+    def _add_subst(self, s):
+        self.subst.append(s)
+
+    def _get_subst(self):
+        return self.subst
+    
+    def _set_raw_width(self, msb, lsb):
         self.width_msb = msb
         self.width_lsb = lsb
     
-    def set_raw_length(self, msb, lsb):
+    def _set_raw_length(self, msb, lsb):
         self.length_msb = msb
         self.length_lsb = lsb
     
@@ -309,8 +309,8 @@ class _Variable(_Numeric):
     def __str__(self):
         return self.name
 
-    def __call__(self, r, ldelay=None, rdelay=None):
-        return self.next(r, ldelay, rdelay)
+    def __call__(self, value, blk=False, ldelay=None, rdelay=None):
+        return self.next(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
 
 #-------------------------------------------------------------------------------
 class Input(_Variable): pass
@@ -333,7 +333,7 @@ class Reg(_Variable):
         return self.sub(1)
     
 class Wire(_Variable):
-    def add_subst(self, s):
+    def _add_subst(self, s):
         if len(self.subst) > 0:
             raise ValueError('Wire %s is already assigned.' % self.name)
         self.subst.append(s)
@@ -642,7 +642,7 @@ class Pointer(_SpecialOperator):
     def next(self, r):
         return Subst(self, r)
 
-    def add_subst(self, s):
+    def _add_subst(self, s):
         self.subst.append(s)
     
     def bit_length(self):
@@ -666,7 +666,7 @@ class Slice(_SpecialOperator):
     def next(self, r):
         return Subst(self, r)
     
-    def add_subst(self, s):
+    def _add_subst(self, s):
         self.subst.append(s)
     
     def bit_length(self):
@@ -686,7 +686,7 @@ class Cat(_SpecialOperator):
     def next(self, r):
         return Subst(self, r)
 
-    def add_subst(self, s):
+    def _add_subst(self, s):
         self.subst.append(s)
     
     def bit_length(self):
@@ -760,7 +760,7 @@ class Subst(VeriloggenNode):
         self.blk = blk
         self.ldelay = ldelay
         self.rdelay = rdelay
-        self.left.add_subst(self)
+        self.left._add_subst(self)
 
     def _type_check_left(self, left):
         if not isinstance(left, VeriloggenNode):

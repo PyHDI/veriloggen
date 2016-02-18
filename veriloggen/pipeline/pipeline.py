@@ -373,7 +373,7 @@ class _PipelineVariable(_PipelineNumeric):
             ready = vtypes.Int(1)
 
         if ovar.ready is not None:
-            prev_subst = ovar.ready.get_subst()
+            prev_subst = ovar.ready._get_subst()
             if len(prev_subst) == 0:
                 ovar.df.m.Assign( ovar.ready(ready) )
             elif isinstance(prev_subst[0].right, vtypes.Int) and (prev_subst[0].right.value==1):

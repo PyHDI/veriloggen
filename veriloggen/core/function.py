@@ -44,13 +44,22 @@ class Function(vtypes.VeriloggenNode):
     def call(self, *args):
         return FunctionCall(self, *args)
 
-    def next(self, r):
-        return self.__call__(r)
+    def next(self, value):
+        return vtypes.Subst(self, value)
     
-    def add_subst(self, s):
+    def bit_length(self):
+        return self.width
+
+    def write(self, value):
+        return self.next(value)
+    
+    def _add_subst(self, s):
         self.subst.append(s)
 
-    def set_raw_width(self, msb, lsb):
+    def _get_subst(self):
+        return self.subst
+    
+    def _set_raw_width(self, msb, lsb):
         self.width_msb = msb
         self.width_lsb = lsb
     
@@ -61,8 +70,8 @@ class Function(vtypes.VeriloggenNode):
             object.__setattr__(self, 'width_lsb', None)
         object.__setattr__(self, attr, value)
             
-    def __call__(self, r):
-        return vtypes.Subst(self, r)
+    def __call__(self, value):
+        return self.next(value)
 
 class FunctionCall(vtypes._Numeric):
     def __init__(self, func, *args):

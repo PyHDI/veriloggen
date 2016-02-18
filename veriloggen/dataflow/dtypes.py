@@ -70,7 +70,7 @@ def _and_vars(*vars):
 def _connect_ready(m, var, ready):
     if var is None:
         return
-    prev_subst = var.get_subst()
+    prev_subst = var._get_subst()
     if not prev_subst:
         m.Assign( var(ready) )
     elif isinstance(prev_subst[0].right, vtypes.Int) and (prev_subst[0].right.value==1):
