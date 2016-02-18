@@ -44,15 +44,15 @@ class Function(vtypes.VeriloggenNode):
     def call(self, *args):
         return FunctionCall(self, *args)
 
-    def next(self, value):
+    def write(self, value):
         return vtypes.Subst(self, value)
+    
+    def read(self):
+        return self
     
     def bit_length(self):
         return self.width
 
-    def write(self, value):
-        return self.next(value)
-    
     def _add_subst(self, s):
         self.subst.append(s)
 
@@ -71,7 +71,7 @@ class Function(vtypes.VeriloggenNode):
         object.__setattr__(self, attr, value)
             
     def __call__(self, value):
-        return self.next(value)
+        return self.write(value)
 
 class FunctionCall(vtypes._Numeric):
     def __init__(self, func, *args):

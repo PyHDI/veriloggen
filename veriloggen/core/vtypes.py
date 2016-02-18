@@ -270,11 +270,11 @@ class _Variable(_Numeric):
         self.initval = initval
         self.subst = []
     
-    def next(self, value, blk=False, ldelay=None, rdelay=None):
+    def write(self, value, blk=False, ldelay=None, rdelay=None):
         return Subst(self, value, blk=blk, ldelay=ldelay, rdelay=rdelay)
 
-    def write(self, value, blk=False, ldelay=None, rdelay=None):
-        return self.next(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
+    def read(self):
+        return self
     
     def reset(self):
         return None
@@ -310,7 +310,7 @@ class _Variable(_Numeric):
         return self.name
 
     def __call__(self, value, blk=False, ldelay=None, rdelay=None):
-        return self.next(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
+        return self.write(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
 
 #-------------------------------------------------------------------------------
 class Input(_Variable): pass
@@ -322,7 +322,7 @@ class Reg(_Variable):
     def reset(self):
         if self.initval is None:
             return None
-        return self.next(self.initval)
+        return self.write(self.initval)
     def add(self, r):
         return Subst(self, Plus(self, r))
     def sub(self, r):
@@ -342,7 +342,7 @@ class Integer(_Variable):
     def reset(self):
         if self.initval is None:
             return None
-        return self.next(self.initval)
+        return self.write(self.initval)
     def add(self, r):
         return Subst(self, Plus(self, r))
     def sub(self, r):
@@ -356,7 +356,7 @@ class Real(_Variable):
     def reset(self):
         if self.initval is None:
             return None
-        return self.next(self.initval)
+        return self.write(self.initval)
     def add(self, r):
         return Subst(self, Plus(self, r))
     def sub(self, r):
@@ -639,11 +639,11 @@ class Pointer(_SpecialOperator):
         self.pos = pos
         self.subst = []
         
-    def next(self, value, blk=False, ldelay=None, rdelay=None):
+    def write(self, value, blk=False, ldelay=None, rdelay=None):
         return Subst(self, value, blk=blk, ldelay=ldelay, rdelay=rdelay)
 
-    def write(self, value, blk=False, ldelay=None, rdelay=None):
-        return self.next(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
+    def read(self):
+        return self
     
     def bit_length(self):
         if isinstance(var, _Variable) and var.length is not None:
@@ -660,7 +660,7 @@ class Pointer(_SpecialOperator):
         return ''.join([str(self.var), '[', str(self.pos), ']'])
 
     def __call__(self, value, blk=False, ldelay=None, rdelay=None):
-        return self.next(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
+        return self.write(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
 
 class Slice(_SpecialOperator):
     def __init__(self, var, msb, lsb):
@@ -669,11 +669,11 @@ class Slice(_SpecialOperator):
         self.lsb = lsb
         self.subst = []
 
-    def next(self, value, blk=False, ldelay=None, rdelay=None):
+    def write(self, value, blk=False, ldelay=None, rdelay=None):
         return Subst(self, value, blk=blk, ldelay=ldelay, rdelay=rdelay)
     
-    def write(self, value, blk=False, ldelay=None, rdelay=None):
-        return self.next(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
+    def read(self):
+        return self
     
     def bit_length(self):
         return self.msb - self.lsb + 1
@@ -688,18 +688,18 @@ class Slice(_SpecialOperator):
         return ''.join([str(self.var), '[', str(self.msb), ':', str(self.lsb), ']'])
 
     def __call__(self, value, blk=False, ldelay=None, rdelay=None):
-        return self.next(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
+        return self.write(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
 
 class Cat(_SpecialOperator):
     def __init__(self, *vars):
         self.vars = tuple(vars)
         self.subst = []
     
-    def next(self, value, blk=False, ldelay=None, rdelay=None):
+    def write(self, value, blk=False, ldelay=None, rdelay=None):
         return Subst(self, value, blk=blk, ldelay=ldelay, rdelay=rdelay)
 
-    def write(self, value, blk=False, ldelay=None, rdelay=None):
-        return self.next(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
+    def read(self):
+        return self
     
     def bit_length(self):
         values = [ v.bit_length() for v in self.vars ]
@@ -725,7 +725,7 @@ class Cat(_SpecialOperator):
         return ''.join(ret)
        
     def __call__(self, value, blk=False, ldelay=None, rdelay=None):
-        return self.next(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
+        return self.write(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
 
 class Repeat(_SpecialOperator):
     def __init__(self, var, times):
