@@ -798,7 +798,8 @@ class VerilogAlwaysVisitor(VerilogCommonVisitor):
         rdelay = self.visit(node.rdelay) if node.rdelay else None
         lvalue = vast.Lvalue(left)
         rvalue = vast.Rvalue(right)
-        if node.blk: vast.BlockingSubstitution(lvalue, rvalue, ldelay, rdelay)
+        if node.blk:
+            return vast.BlockingSubstitution(lvalue, rvalue, ldelay, rdelay)
         return vast.NonblockingSubstitution(lvalue, rvalue, ldelay, rdelay)
 
 #-------------------------------------------------------------------------------
