@@ -441,17 +441,17 @@ class Int(_Constant):
 
     def _type_check_value(self, value):
         if not isinstance(value, (int, str)):
-            raise TypeError('value of Int must be int or str, not %s.' % type(value))
+            raise TypeError('value of Int must be int or str, not %s.' % str(type(value)))
 
     def _type_check_width(self, width):
         if width is None: return
         if not isinstance(width, int):
-            raise TypeError('width of Int must be int, not %s.' % type(width))
+            raise TypeError('width of Int must be int, not %s.' % str(type(width)))
 
     def _type_check_base(self, base):
         if base is None: return 
         if not isinstance(base, int):
-            raise TypeError('base of Int must be int, not %s.' % type(base))
+            raise TypeError('base of Int must be int, not %s.' % str(type(base)))
         
     def __str__(self):
         value_list = []
@@ -521,7 +521,7 @@ class Float(_Constant):
 
     def _type_check_value(self, value):
         if not isinstance(value, (float, int)):
-            raise TypeError('value of Float must be float, not %s.' % type(value))
+            raise TypeError('value of Float must be float, not %s.' % str(type(value)))
 
     def __str__(self):
         return str(node.value)
@@ -533,7 +533,7 @@ class Str(_Constant):
 
     def _type_check_value(self, value):
         if not isinstance(value, str):
-            raise TypeError('value of Str must be str, not %s.' % type(value))
+            raise TypeError('value of Str must be str, not %s.' % str(type(value)))
 
     def __str__(self):
         return str(node.value)
@@ -667,6 +667,7 @@ class Pointer(_SpecialOperator):
         self.var = var
         self.pos = pos
         self.subst = []
+        self._type_check_var(var)
         
     def write(self, value, blk=False, ldelay=None, rdelay=None):
         return Subst(self, value, blk=blk, ldelay=ldelay, rdelay=rdelay)
@@ -684,6 +685,10 @@ class Pointer(_SpecialOperator):
         if module is None:
             raise ValueError("This Pointer has no parent module information")
         return module.Assign( self.write(value) )
+
+    def _type_check_var(self, var):
+        if not isinstance(var, _Variable):
+            raise TypeError('var of Pointer must be Variable, not %s' % str(type(var)))
     
     def _add_subst(self, s):
         self.subst.append(s)
@@ -708,6 +713,7 @@ class Slice(_SpecialOperator):
         self.msb = msb
         self.lsb = lsb
         self.subst = []
+        self._type_check_var(var)
 
     def write(self, value, blk=False, ldelay=None, rdelay=None):
         return Subst(self, value, blk=blk, ldelay=ldelay, rdelay=rdelay)
@@ -723,6 +729,10 @@ class Slice(_SpecialOperator):
         if module is None:
             raise ValueError("This Slice has no parent module information")
         return module.Assign( self.write(value) )
+    
+    def _type_check_var(self, var):
+        if not isinstance(var, _Variable):
+            raise TypeError('var of Pointer must be Variable, not %s' % str(type(var)))
     
     def _add_subst(self, s):
         self.subst.append(s)
