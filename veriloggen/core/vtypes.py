@@ -687,7 +687,7 @@ class Pointer(_SpecialOperator):
         return module.Assign( self.write(value) )
 
     def _type_check_var(self, var):
-        if not isinstance(var, _Variable):
+        if not isinstance(var, (_Variable, Scope)):
             raise TypeError('var of Pointer must be Variable, not %s' % str(type(var)))
     
     def _add_subst(self, s):
@@ -731,7 +731,7 @@ class Slice(_SpecialOperator):
         return module.Assign( self.write(value) )
     
     def _type_check_var(self, var):
-        if not isinstance(var, _Variable):
+        if not isinstance(var, (_Variable, Scope)):
             raise TypeError('var of Pointer must be Variable, not %s' % str(type(var)))
     
     def _add_subst(self, s):
