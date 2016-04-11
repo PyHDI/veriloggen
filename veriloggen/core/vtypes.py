@@ -257,7 +257,8 @@ class _Numeric(VeriloggenNode):
 
 #-------------------------------------------------------------------------------
 class _Variable(_Numeric):
-    def __init__(self, width=1, length=None, signed=False, value=None, initval=None, name=None):
+    def __init__(self, width=1, length=None, signed=False, value=None, initval=None, name=None,
+                 module=None):
         self.name = name
         self.width = width
         self.width_msb = None
@@ -268,6 +269,7 @@ class _Variable(_Numeric):
         self.signed = signed
         self.value = value
         self.initval = initval
+        self.module = module
         self.subst = []
     
     def write(self, value, blk=False, ldelay=None, rdelay=None):
@@ -275,7 +277,12 @@ class _Variable(_Numeric):
 
     def read(self):
         return self
-    
+
+    def assign(self, value):
+        if self.module is None:
+            raise ValueError("Variable '%s' has no parent module information" % self.name)
+        return self.module.Assign( self.write(value) )
+
     def reset(self):
         return None
 
@@ -295,6 +302,9 @@ class _Variable(_Numeric):
     def _set_raw_length(self, msb, lsb):
         self.length_msb = msb
         self.length_lsb = lsb
+
+    def _get_module(self):
+        return self.module
     
     def __setattr__(self, attr, value):
         # when width or length is overwritten, msb and lsb values are reset.
@@ -381,10 +391,11 @@ class AnyType(_Variable): pass
 
 #-------------------------------------------------------------------------------
 class _ParameterVairable(_Variable):
-    def __init__(self, value, width=None, signed=False, name=None):
+    def __init__(self, value, width=None, signed=False, name=None, module=None):
         if isinstance(value, _ParameterVairable):
             value = value.value
-        _Variable.__init__(self, width=width, signed=signed, value=value, name=name)
+        _Variable.__init__(self, width=width, signed=signed, value=value, name=name,
+                           module=module)
         
 class Parameter(_ParameterVairable): pass
 class Localparam(_ParameterVairable): pass
@@ -543,6 +554,13 @@ class _BinaryOperator(_Operator):
         if not isinstance(right, (_Numeric, bool, int, float, str)):
             raise TypeError('BinaryOperator does not support Type %s' % str(type(right)))
 
+    def _get_module(self):
+        if hasattr(self.left, '_get_module'):
+            return self.left._get_module()
+        if hasattr(self.right, '_get_module'):
+            return self.right._get_module()
+        return None
+    
     def __str__(self):
         return ''.join(['(', str(self.left), ' ', op2mark(self.__class__.__name__), ' ',
                          str(self.right), ')'])
@@ -556,6 +574,11 @@ class _UnaryOperator(_Operator):
         if not isinstance(right, (_Numeric, bool, int, float, str)):
             raise TypeError('BinaryOperator does not support Type %s' % str(type(right)))
 
+    def _get_module(self):
+        if hasattr(self.right, '_get_module'):
+            return self.right._get_module()
+        return None
+    
     def __str__(self):
         return ''.join(['(', op2mark(self.__class__.__name__), str(self.right), ')'])
 
@@ -626,12 +649,18 @@ def OrList(*args):
         left = Lor(left, right)
     return left
 
+Ands = AndList
+Ors = OrList
+
 #-------------------------------------------------------------------------------
 class _SpecialOperator(_Operator):
     def __init__(self, *args, **kwargs):
         self.args = args
         self.kwargs = kwargs
 
+    def _get_module(self):
+        return None
+    
 #-------------------------------------------------------------------------------
 class Pointer(_SpecialOperator):
     def __init__(self, var, pos):
@@ -649,12 +678,23 @@ class Pointer(_SpecialOperator):
         if isinstance(var, _Variable) and var.length is not None:
             return self.var.bit_length()
         return 1
+
+    def assign(self, value):
+        module = self._get_module()
+        if module is None:
+            raise ValueError("This Pointer has no parent module information")
+        return module.Assign( self.write(value) )
     
     def _add_subst(self, s):
         self.subst.append(s)
     
     def _get_subst(self):
         return self.subst
+
+    def _get_module(self):
+        if not hasattr(self.var, '_get_module'):
+            return None
+        return self.var._get_module()
     
     def __str__(self):
         return ''.join([str(self.var), '[', str(self.pos), ']'])
@@ -678,11 +718,22 @@ class Slice(_SpecialOperator):
     def bit_length(self):
         return self.msb - self.lsb + 1
     
+    def assign(self, value):
+        module = self._get_module()
+        if module is None:
+            raise ValueError("This Slice has no parent module information")
+        return module.Assign( self.write(value) )
+    
     def _add_subst(self, s):
         self.subst.append(s)
     
     def _get_subst(self):
         return self.subst
+    
+    def _get_module(self):
+        if not hasattr(self.var, '_get_module'):
+            return None
+        return self.var._get_module()
     
     def __str__(self):
         return ''.join([str(self.var), '[', str(self.msb), ':', str(self.lsb), ']'])
@@ -708,11 +759,23 @@ class Cat(_SpecialOperator):
             ret = ret + v
         return ret
     
+    def assign(self, value):
+        module = self._get_module()
+        if module is None:
+            raise ValueError("This Cat has no parent module information")
+        return module.Assign( self.write(value) )
+    
     def _add_subst(self, s):
         self.subst.append(s)
     
     def _get_subst(self):
         return self.subst
+    
+    def _get_module(self):
+        for var in self.vars:
+            if hasattr(var, '_get_module'):
+                return self.var._get_module()
+        return None
     
     def __str__(self):
         ret = []
