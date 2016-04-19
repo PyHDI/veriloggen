@@ -7,6 +7,16 @@ from collections import OrderedDict
 import veriloggen.core.vtypes as vtypes
 import veriloggen.core.module as module
 
+def get_width(node):
+    if isinstance(node, int):
+        return 32
+    if isinstance(node, vtypes.AnyType):
+        return 32
+    ret = node.bit_length()
+    if ret is None:
+        return 32
+    return ret
+
 class _Visitor(object):
     def generic_visit(self, node):
         raise TypeError("Type %s is not supported." % str(type(node)))
@@ -46,7 +56,6 @@ class _CommonVisitor(_CachedVisitor):
 
         raise TypeError("Type %s is not supported." % str(type(node)))
     
-    #---------------------------------------------------------------------------
     def visit_int(self, node):
         return node
     
@@ -59,23 +68,79 @@ class _CommonVisitor(_CachedVisitor):
     def visit_str(self, node):
         return node
     
-    #---------------------------------------------------------------------------
     def visit__BinaryOperator(self, node):
         left = self.visit(node.left)
         right = self.visit(node.right)
-        value = node.op(left, right) if callable(node.op) else getattr(left, node.op)(right)
-        return value
+        lwidth = self.visit(get_width(node.left))
+        rwidth = self.visit(get_width(node.right))
+        if (not isinstance(left, vtypes.VeriloggenNode) and
+            not isinstance(right, vtypes.VeriloggenNode) and 
+            not isinstance(lwidth, vtypes.VeriloggenNode) and
+            not isinstance(rwidth, vtypes.VeriloggenNode)):
+            return node.op(left, right, lwidth, rwidth) 
+        return node
 
     def visit__UnaryOperator(self, node):
         right = self.visit(node.right)
-        value = node.op(right) if callable(node.op) else getattr(right, node.op)()
-        return value
+        rwidth = self.visit(get_width(node.right))
+        if (not isinstance(right, vtypes.VeriloggenNode) and 
+            not isinstance(rwidth, vtypes.VeriloggenNode)):
+            return node.op(right, rwidth) 
+        return node
+
+    def visit_Pointer(self, node):
+        var = self.visit(node.var)
+        pos = self.visit(node.pos)
+        if (not isinstance(var, vtypes.VeriloggenNode) and
+            not isinstance(pos, vtypes.VeriloggenNode)):
+            return node.op(var, pos)
+        return node
+
+    def visit_Slice(self, node):
+        var = self.visit(node.var)
+        msb = self.visit(node.msb)
+        lsb = self.visit(node.lsb)
+        if (not isinstance(var, vtypes.VeriloggenNode) and
+            not isinstance(msb, vtypes.VeriloggenNode) and
+            not isinstance(lsb, vtypes.VeriloggenNode)):
+            return node.op(var, msb, lsb)
+        return node
+
+    def visit_Cat(self, node):
+        vars = [ self.visit(var) for var in node.vars ]
+        widths = [ self.visit(get_width(var)) for var in node.vars ]
+        for var, width in zip(vars, widths):
+            if isinstance(var, vtypes.VeriloggenNode):
+                return node
+            if isinstance(width, vtypes.VeriloggenNode):
+                return node
+        return node.op(vars, widths)
+
+    def visit_Repeat(self, node):
+        var = self.visit(node.var)
+        width = self.visit(get_width(node.var))
+        times = self.visit(node.times)
+        if (not isinstance(var, vtypes.VeriloggenNode) and
+            not isinstance(width, vtypes.VeriloggenNode) and
+            not isinstance(times, vtypes.VeriloggenNode)):
+            return node.op(var, width, times)
+        return node
+
+    def visit_Cond(self, node):
+        condition = self.visit(node.condition)
+        true_value = self.visit(node.true_value)
+        false_value = self.visit(node.false_value)
+        if (not isinstance(condition, vtypes.VeriloggenNode) and
+            not isinstance(true_value, vtypes.VeriloggenNode) and
+            not isinstance(false_value, vtypes.VeriloggenNode)):
+            return node.op(condition, true_value, false_value)
+        return node
 
     def visit__Variable(self, node):
         return node
     
 #-------------------------------------------------------------------------------
-class ConstantResolver(_CommonVisitor):
+class ConstantVisitor(_CommonVisitor):
     def __init__(self, const_dict):
         _CommonVisitor.__init__(self)
         self.const_dict = const_dict
@@ -147,44 +212,44 @@ def _resolve_params(params, localparams):
     return const_dict
 
 def _resolve_params_iter(const_dict, unresolved):
-    const_resolver = ConstantResolver(const_dict)
+    const_visitor = ConstantVisitor(const_dict)
     next_unresolved = OrderedDict()
     
     for name, param in unresolved.items():
-        value = const_resolver.visit(param.value)
+        value = const_visitor.visit(param.value)
         
         if isinstance(value, vtypes.VeriloggenNode):
             next_unresolved[name] = param
             continue
         
-        const_resolver.update_const(name, value)
+        const_visitor.update_const(name, value)
 
-    const_dict = const_resolver.get_const_dict()
+    const_dict = const_visitor.get_const_dict()
 
     return const_dict, next_unresolved
 
 #-------------------------------------------------------------------------------
 def _resolve_module(m, const_dict):
-    const_resolver = ConstantResolver(const_dict)
+    const_visitor = ConstantVisitor(const_dict)
     
     params = m.get_params()
     for param in params.values():
         if param.width is not None:
-            param.width = const_resolver.visit(param.width)
-        param.value = const_resolver.visit(param.value)
+            param.width = const_visitor.visit(param.width)
+        param.value = const_visitor.visit(param.value)
 
     localparams = m.get_localparams()
     for localparam in localparams.values():
         if localparam.width is not None:
-            localparam.width = const_resolver.visit(localparam.width)
-        localparam.value = const_resolver.visit(localparam.value)
+            localparam.width = const_visitor.visit(localparam.width)
+        localparam.value = const_visitor.visit(localparam.value)
 
     ports = m.get_ports()
     for port in ports.values():
         if port.width is not None:
-            port.width = const_resolver.visit(port.width)
+            port.width = const_visitor.visit(port.width)
 
     vars = m.get_vars()
     for var in vars.values():
         if var.width is not None:
-            var.width = const_resolver.visit(var.width)
+            var.width = const_visitor.visit(var.width)

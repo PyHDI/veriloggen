@@ -607,113 +607,202 @@ class _UnaryOperator(_Operator):
 
 #-------------------------------------------------------------------------------
 # class names must be same the ones in pyverilog.vparser.ast
-class Power(_BinaryOperator): op = '__pow__'
-class Times(_BinaryOperator): op = '__mul__'
-class Divide(_BinaryOperator): op = '__div__'
-class Mod(_BinaryOperator): op = '__mod__'
+class Power(_BinaryOperator):
+    @staticmethod
+    def op(left, right, lwidth, rwidth):
+        return left ** right
+    
+class Times(_BinaryOperator):
+    @staticmethod
+    def op(left, right, lwidth, rwidth):
+        return left * right
+    
+class Divide(_BinaryOperator):
+    @staticmethod
+    def op(left, right, lwidth, rwidth):
+        return left // right
+    
+class Mod(_BinaryOperator):
+    @staticmethod
+    def op(left, right, lwidth, rwidth):
+        return left % right
 
-class Plus(_BinaryOperator): op = '__add__'
-class Minus(_BinaryOperator): op = '__sub__'
+class Plus(_BinaryOperator):
+    @staticmethod
+    def op(left, right, lwidth, rwidth):
+        return left + right
+    
+class Minus(_BinaryOperator):
+    @staticmethod
+    def op(left, right, lwidth, rwidth):
+        return left - right
 
-class Sll(_BinaryOperator): op = '__lshift__'
-class Srl(_BinaryOperator): op = '__rshift__'
+class Sll(_BinaryOperator):
+    @staticmethod
+    def op(left, right, lwidth, rwidth):
+        return left << right
+    
+class Srl(_BinaryOperator):
+    @staticmethod
+    def op(left, right, lwidth, rwidth):
+        return left >> right
+    
 class Sra(_BinaryOperator):
     @staticmethod
-    def op(a, b):
-        sign = a >= 0
-        a = abs(a)
-        ret = a >> b
+    def op(left, right, lwidth, rwidth):
+        sign = left >= 0
+        left = abs(left)
+        ret = left >> right
         if not sign:
             return -1 * ret
         return ret
 
-class LessThan(_BinaryOperator): op = '__lt__'
-class GreaterThan(_BinaryOperator): op = '__gt__'
-class LessEq(_BinaryOperator): op = '__le__'
-class GreaterEq(_BinaryOperator): op = '__ge__'
+class LessThan(_BinaryOperator):
+    @staticmethod
+    def op(left, right, lwidth, rwidth):
+        return left < right
+    
+class GreaterThan(_BinaryOperator):
+    @staticmethod
+    def op(left, right, lwidth, rwidth):
+        return left > right
+    
+class LessEq(_BinaryOperator):
+    @staticmethod
+    def op(left, right, lwidth, rwidth):
+        return left <= right
+    
+class GreaterEq(_BinaryOperator):
+    @staticmethod
+    def op(left, right, lwidth, rwidth):
+        return left >= right
 
-class Eq(_BinaryOperator): op = '__eq__'
-class NotEq(_BinaryOperator): op = '__ne__'
-class Eql(_BinaryOperator): op = '__eq__' # ===
-class NotEql(_BinaryOperator): op = '__ne__' # !==
+class Eq(_BinaryOperator):
+    @staticmethod
+    def op(left, right, lwidth, rwidth):
+        return left == right
 
-class And(_BinaryOperator): op = '__and__'
-class Xor(_BinaryOperator): op = '__xor__'
-class Xnor(_BinaryOperator): op = '__xor__'
-class Or(_BinaryOperator): op = '__or__'
+class NotEq(_BinaryOperator):
+    @staticmethod
+    def op(left, right, lwidth, rwidth):
+        return left != right
+
+class Eql(_BinaryOperator): # ===
+    @staticmethod
+    def op(left, right, lwidth, rwidth):
+        return left == right
+    
+class NotEql(_BinaryOperator): # !==
+    @staticmethod
+    def op(left, right, lwidth, rwidth):
+        return left != right
+
+class And(_BinaryOperator):
+    @staticmethod
+    def op(left, right, lwidth, rwidth):
+        return left & right
+
+class Xor(_BinaryOperator):
+    @staticmethod
+    def op(left, right, lwidth, rwidth):
+        return left ^ right
+    
+class Xnor(_BinaryOperator):
+    @staticmethod
+    def op(left, right, lwidth, rwidth):
+        width = max(lwdith, rwidth)
+        value = ~(left ^ right)
+        mask = 0
+        for i in range(width):
+            mask = (0x1 << i) | mask
+        return mask & value
+        
+class Or(_BinaryOperator):
+    @staticmethod
+    def op(left, right, lwidth, rwidth):
+        return left | right
+    
 class Land(_BinaryOperator):
     @staticmethod
-    def op(a, b):
-        if a and b:
+    def op(left, right, lwidth, rwidth):
+        if left and right:
             return True
         return False
     
 class Lor(_BinaryOperator):
     @staticmethod
-    def op(a, b):
-        if a or b:
+    def op(left, right, lwidth, rwidth):
+        if left or right:
             return True
         return False
     
-class Uplus(_UnaryOperator): op = '__pos__'
-class Uminus(_UnaryOperator): op = '__neg__'
+class Uplus(_UnaryOperator):
+    @staticmethod
+    def op(right, rwidth):
+        return right
+    
+class Uminus(_UnaryOperator):
+    @staticmethod
+    def op(right, rwidth):
+        return -right
+    
 class Ulnot(_UnaryOperator):
     @staticmethod
-    def op(a):
-        return not a
+    def op(right, rwidth):
+        return not right
     
 class Unot(_UnaryOperator):
     @staticmethod
-    def op(a):
-        return ~a
+    def op(right, rwidth):
+        return ~right
     
 class Uand(_UnaryOperator):
     @staticmethod
-    def op(a):
-        for i in range(a.bit_length()):
-            v = (a >> i) & 0x1
+    def op(right, rwidth):
+        for i in range(rwidth):
+            v = (right >> i) & 0x1
             if not v: return False
         return True
     
 class Unand(_UnaryOperator):
     @staticmethod
-    def op(a):
-        for i in range(a.bit_length()):
-            v = (a >> i) & 0x1
+    def op(right, rwidth):
+        for i in range(rwidth):
+            v = (right >> i) & 0x1
             if not v: return True
         return False
     
 class Uor(_UnaryOperator):
     @staticmethod
-    def op(a):
-        for i in range(a.bit_length()):
-            v = (a >> i) & 0x1
+    def op(right, rwidth):
+        for i in range(rwidth):
+            v = (right >> i) & 0x1
             if v: return True
         return False
     
 class Unor(_UnaryOperator):
     @staticmethod
-    def op(a):
-        for i in range(a.bit_length()):
-            v = (a >> i) & 0x1
+    def op(right, rwidth):
+        for i in range(rwidth):
+            v = (right >> i) & 0x1
             if v: return False
         return True
     
 class Uxor(_UnaryOperator):
     @staticmethod
-    def op(a):
+    def op(right, rwidth):
         ret = False
-        for i in range(a.bit_length()):
-            v = (a >> i) & 0x1
+        for i in range(rwidth):
+            v = (right >> i) & 0x1
             ret = ret ^ v
         return ret
     
 class Uxnor(_UnaryOperator):
     @staticmethod
-    def op(a):
+    def op(right, rwidth):
         ret = True
-        for i in range(a.bit_length()):
-            v = (a >> i) & 0x1
+        for i in range(rwidth):
+            v = (right >> i) & 0x1
             ret = ret ^ v
         return ret
 
@@ -802,6 +891,10 @@ class Pointer(_SpecialOperator):
     def __call__(self, value, blk=False, ldelay=None, rdelay=None):
         return self.write(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
 
+    @staticmethod
+    def op(var, pos):
+        return (var >> pos) & 0x1
+
 class Slice(_SpecialOperator):
     def __init__(self, var, msb, lsb):
         _SpecialOperator.__init__(self)
@@ -828,7 +921,7 @@ class Slice(_SpecialOperator):
     
     def _type_check_var(self, var):
         if not isinstance(var, (_Variable, Scope)):
-            raise TypeError('var of Pointer must be Variable, not %s' % str(type(var)))
+            raise TypeError('var of Slice must be Variable, not %s' % str(type(var)))
     
     def _add_subst(self, s):
         self.subst.append(s)
@@ -846,6 +939,13 @@ class Slice(_SpecialOperator):
 
     def __call__(self, value, blk=False, ldelay=None, rdelay=None):
         return self.write(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
+
+    @staticmethod
+    def op(var, msb, lsb):
+        mask = 0
+        for i in range(msb - lsb + 1):
+            mask = (mask << 1) | 0x1
+        return (var >> lsb) & mask
 
 class Cat(_SpecialOperator):
     def __init__(self, *vars):
@@ -897,6 +997,13 @@ class Cat(_SpecialOperator):
     def __call__(self, value, blk=False, ldelay=None, rdelay=None):
         return self.write(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
 
+    @staticmethod
+    def op(vars, widths):
+        ret = 0
+        for var, width in zip(vars, width):
+            ret = (ret << width) | var
+        return ret
+    
 class Repeat(_SpecialOperator):
     def __init__(self, var, times):
         _SpecialOperator.__init__(self)
@@ -909,6 +1016,13 @@ class Repeat(_SpecialOperator):
     def __str__(self):
         return ''.join(['{', str(self.times), '{', str(self.var), '}}'])
        
+    @staticmethod
+    def op(var, width, times):
+        ret = 0
+        for i in times:
+            ret = (ret << width) | var
+        return ret
+        
 #-------------------------------------------------------------------------------
 class Cond(_SpecialOperator):
     def __init__(self, condition, true_value, false_value):
@@ -918,11 +1032,20 @@ class Cond(_SpecialOperator):
         self.false_value = false_value
         
     def bit_length(self):
-        raise NotImplementedError('bit_length is not implemented on Cond.')
+        t = self.true_value.bit_length()
+        f = self.false_value.bit_length()
+        return Cond(t >= f, t, f)
         
     def __str__(self):
         return ''.join(['(', str(self.condition), ')?',
                         str(self.true_value), ' : ', str(self.false_value)])
+
+    @staticmethod
+    def op(condition, true_value, false_value):
+        if condition:
+            return true_value
+        else:
+            return false_value
 
 # Alias of Cond
 Mux = Cond
