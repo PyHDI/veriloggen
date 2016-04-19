@@ -437,6 +437,9 @@ class _Constant(_Numeric):
 
     def __str__(self):
         return str(self.value)
+
+    def bit_length(self):
+        return self.width
         
 class Int(_Constant):
     def __init__(self, value, width=None, base=None, signed=False):
@@ -587,6 +590,11 @@ class _BinaryOperator(_Operator):
         return ''.join(['(', str(self.left), ' ', op2mark(self.__class__.__name__), ' ',
                          str(self.right), ')'])
 
+    def bit_length(self):
+        left = self.left.bit_length()
+        right = self.right.bit_length()
+        return Cond(left >= right, left, right) + 1
+
 class _UnaryOperator(_Operator):
     def __init__(self, right):
         _Operator.__init__(self)
@@ -605,6 +613,9 @@ class _UnaryOperator(_Operator):
     def __str__(self):
         return ''.join(['(', op2mark(self.__class__.__name__), str(self.right), ')'])
 
+    def bit_length(self):
+        return self.right.bit_length()
+
 #-------------------------------------------------------------------------------
 # class names must be same the ones in pyverilog.vparser.ast
 class Power(_BinaryOperator):
@@ -616,17 +627,32 @@ class Times(_BinaryOperator):
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left * right
+
+    def bit_length(self):
+        left = self.left.bit_length()
+        right = self.right.bit_length()
+        return left + right
     
 class Divide(_BinaryOperator):
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left // right
     
+    def bit_length(self):
+        left = self.left.bit_length()
+        right = self.right.bit_length()
+        return Cond(left >= right, left, right)
+    
 class Mod(_BinaryOperator):
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left % right
 
+    def bit_length(self):
+        left = self.left.bit_length()
+        right = self.right.bit_length()
+        return Cond(left >= right, left, right)
+    
 class Plus(_BinaryOperator):
     @staticmethod
     def op(left, right, lwidth, rwidth):
@@ -641,11 +667,20 @@ class Sll(_BinaryOperator):
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left << right
+
+    def bit_length(self):
+        left = self.left.bit_length()
+        right = self.right.bit_length()
+        return left + Int(2) ** right
     
 class Srl(_BinaryOperator):
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left >> right
+    
+    def bit_length(self):
+        left = self.left.bit_length()
+        return left
     
 class Sra(_BinaryOperator):
     @staticmethod
@@ -657,55 +692,93 @@ class Sra(_BinaryOperator):
             return -1 * ret
         return ret
 
+    def bit_length(self):
+        left = self.left.bit_length()
+        return left
+    
 class LessThan(_BinaryOperator):
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left < right
+    
+    def bit_length(self):
+        return 1
     
 class GreaterThan(_BinaryOperator):
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left > right
     
+    def bit_length(self):
+        return 1
+    
 class LessEq(_BinaryOperator):
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left <= right
+    
+    def bit_length(self):
+        return 1
     
 class GreaterEq(_BinaryOperator):
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left >= right
 
+    def bit_length(self):
+        return 1
+    
 class Eq(_BinaryOperator):
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left == right
 
+    def bit_length(self):
+        return 1
+    
 class NotEq(_BinaryOperator):
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left != right
 
+    def bit_length(self):
+        return 1
+    
 class Eql(_BinaryOperator): # ===
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left == right
+    
+    def bit_length(self):
+        return 1
     
 class NotEql(_BinaryOperator): # !==
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left != right
 
+    def bit_length(self):
+        return 1
+    
 class And(_BinaryOperator):
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left & right
 
+    def bit_length(self):
+        left = self.left.bit_length()
+        right = self.right.bit_length()
+        return Cond(left >= right, left, right)
+    
 class Xor(_BinaryOperator):
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left ^ right
+    
+    def bit_length(self):
+        left = self.left.bit_length()
+        right = self.right.bit_length()
+        return Cond(left >= right, left, right)
     
 class Xnor(_BinaryOperator):
     @staticmethod
@@ -717,10 +790,20 @@ class Xnor(_BinaryOperator):
             mask = (0x1 << i) | mask
         return mask & value
         
+    def bit_length(self):
+        left = self.left.bit_length()
+        right = self.right.bit_length()
+        return Cond(left >= right, left, right)
+    
 class Or(_BinaryOperator):
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left | right
+    
+    def bit_length(self):
+        left = self.left.bit_length()
+        right = self.right.bit_length()
+        return Cond(left >= right, left, right)
     
 class Land(_BinaryOperator):
     @staticmethod
@@ -729,12 +812,22 @@ class Land(_BinaryOperator):
             return True
         return False
     
+    def bit_length(self):
+        left = self.left.bit_length()
+        right = self.right.bit_length()
+        return Cond(left >= right, left, right)
+    
 class Lor(_BinaryOperator):
     @staticmethod
     def op(left, right, lwidth, rwidth):
         if left or right:
             return True
         return False
+    
+    def bit_length(self):
+        left = self.left.bit_length()
+        right = self.right.bit_length()
+        return Cond(left >= right, left, right)
     
 class Uplus(_UnaryOperator):
     @staticmethod
@@ -751,6 +844,9 @@ class Ulnot(_UnaryOperator):
     def op(right, rwidth):
         return not right
     
+    def bit_length(self):
+        return 1
+    
 class Unot(_UnaryOperator):
     @staticmethod
     def op(right, rwidth):
@@ -764,6 +860,9 @@ class Uand(_UnaryOperator):
             if not v: return False
         return True
     
+    def bit_length(self):
+        return 1
+    
 class Unand(_UnaryOperator):
     @staticmethod
     def op(right, rwidth):
@@ -771,6 +870,9 @@ class Unand(_UnaryOperator):
             v = (right >> i) & 0x1
             if not v: return True
         return False
+    
+    def bit_length(self):
+        return 1
     
 class Uor(_UnaryOperator):
     @staticmethod
@@ -780,6 +882,9 @@ class Uor(_UnaryOperator):
             if v: return True
         return False
     
+    def bit_length(self):
+        return 1
+    
 class Unor(_UnaryOperator):
     @staticmethod
     def op(right, rwidth):
@@ -787,6 +892,9 @@ class Unor(_UnaryOperator):
             v = (right >> i) & 0x1
             if v: return False
         return True
+    
+    def bit_length(self):
+        return 1
     
 class Uxor(_UnaryOperator):
     @staticmethod
@@ -797,6 +905,9 @@ class Uxor(_UnaryOperator):
             ret = ret ^ v
         return ret
     
+    def bit_length(self):
+        return 1
+    
 class Uxnor(_UnaryOperator):
     @staticmethod
     def op(right, rwidth):
@@ -806,6 +917,9 @@ class Uxnor(_UnaryOperator):
             ret = ret ^ v
         return ret
 
+    def bit_length(self):
+        return 1
+    
 #-------------------------------------------------------------------------------
 # alias
 def Not(*args):
