@@ -9,6 +9,7 @@ import veriloggen.core.vtypes as vtypes
 #-------------------------------------------------------------------------------
 class Task(vtypes.VeriloggenNode):
     def __init__(self, name):
+        vtypes.VeriloggenNode.__init__(self)
         self.name = name
         self.io_variable = collections.OrderedDict()
         self.variable = collections.OrderedDict()
@@ -41,5 +42,6 @@ class Task(vtypes.VeriloggenNode):
 
 class TaskCall(vtypes._Numeric):
     def __init__(self, name, *args):
+        vtypes._Numeric.__init__(self)
         self.name = name
         self.args = tuple(args)

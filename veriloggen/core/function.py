@@ -9,6 +9,7 @@ import veriloggen.core.vtypes as vtypes
 #-------------------------------------------------------------------------------
 class Function(vtypes.VeriloggenNode):
     def __init__(self, name, width=1):
+        vtypes.VeriloggenNode.__init__(self)
         self.name = name
         self.width = width
         self.width_msb = None
@@ -75,5 +76,6 @@ class Function(vtypes.VeriloggenNode):
 
 class FunctionCall(vtypes._Numeric):
     def __init__(self, func, *args):
+        vtypes._Numeric.__init__(self)
         self.func = func
         self.args = tuple(args)
