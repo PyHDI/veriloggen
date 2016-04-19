@@ -2,6 +2,9 @@ from __future__ import absolute_import
 from __future__ import print_function
 import re
 
+# Object ID counter for object sorting key
+global_object_counter = 0
+
 operator_dict = {
     'Uminus':'-', 'Ulnot':'!', 'Unot':'~', 'Uand':'&', 'Unand':'~&',
     'Uor':'|', 'Unor':'~|', 'Uxor':'^', 'Uxnor':'~^',
@@ -17,7 +20,6 @@ operator_dict = {
 def op2mark(op):
     return operator_dict[op]
 
-#-------------------------------------------------------------------------------
 def str_to_signed(s):
     targ = s.replace('_','')
     match = re.search(r's(.+)', targ)
@@ -110,6 +112,17 @@ def str_to_width(s):
 #-------------------------------------------------------------------------------
 class VeriloggenNode(object):
     """ Base class of Veriloggen AST object """
+    def __init__(self):
+        global global_object_counter
+        self.object_id = global_object_counter
+        global_object_counter += 1
+    
+    def __hash__(self):
+        return hash((id(self), self.object_id))
+
+    def __eq__(self, other):
+        return (id(self), self.object_id) == (id(other), other.object_id)
+    
     def __lt__(self, r):
         raise TypeError('Not allowed operation.')
     
@@ -175,6 +188,12 @@ class VeriloggenNode(object):
 
 #-------------------------------------------------------------------------------
 class _Numeric(VeriloggenNode):
+    def __init__(self):
+        VeriloggenNode.__init__(self)
+    
+    def __hash__(self):
+        return hash((id(self), self.object_id))
+
     def __lt__(self, r):
         return LessThan(self, r)
     
@@ -259,6 +278,7 @@ class _Numeric(VeriloggenNode):
 class _Variable(_Numeric):
     def __init__(self, width=1, length=None, signed=False, value=None, initval=None, name=None,
                  module=None):
+        _Numeric.__init__(self)
         self.name = name
         self.width = width
         self.width_msb = None
@@ -404,6 +424,7 @@ class Supply(_ParameterVairable): pass
 #-------------------------------------------------------------------------------
 class _Constant(_Numeric):
     def __init__(self, value, width=None, base=None):
+        _Numeric.__init__(self)
         self.value = value
         self.width = width
         self.base = base
@@ -544,6 +565,7 @@ class _Operator(_Numeric): pass
 #-------------------------------------------------------------------------------
 class _BinaryOperator(_Operator):
     def __init__(self, left, right):
+        _Operator.__init__(self)
         self._type_check(left, right)
         self.left = left
         self.right = right
@@ -567,6 +589,7 @@ class _BinaryOperator(_Operator):
 
 class _UnaryOperator(_Operator):
     def __init__(self, right):
+        _Operator.__init__(self)
         self._type_check(right)
         self.right = right
         
@@ -584,45 +607,115 @@ class _UnaryOperator(_Operator):
 
 #-------------------------------------------------------------------------------
 # class names must be same the ones in pyverilog.vparser.ast
-class Power(_BinaryOperator): pass
-class Times(_BinaryOperator): pass
-class Divide(_BinaryOperator): pass
-class Mod(_BinaryOperator): pass
+class Power(_BinaryOperator): op = '__pow__'
+class Times(_BinaryOperator): op = '__mul__'
+class Divide(_BinaryOperator): op = '__div__'
+class Mod(_BinaryOperator): op = '__mod__'
 
-class Plus(_BinaryOperator): pass
-class Minus(_BinaryOperator): pass
+class Plus(_BinaryOperator): op = '__add__'
+class Minus(_BinaryOperator): op = '__sub__'
 
-class Sll(_BinaryOperator): pass
-class Srl(_BinaryOperator): pass
-class Sra(_BinaryOperator): pass
+class Sll(_BinaryOperator): op = '__lshift__'
+class Srl(_BinaryOperator): op = '__rshift__'
+class Sra(_BinaryOperator):
+    @staticmethod
+    def op(a, b):
+        sign = a >= 0
+        a = abs(a)
+        ret = a >> b
+        if not sign:
+            return -1 * ret
+        return ret
 
-class LessThan(_BinaryOperator): pass
-class GreaterThan(_BinaryOperator): pass
-class LessEq(_BinaryOperator): pass
-class GreaterEq(_BinaryOperator): pass
+class LessThan(_BinaryOperator): op = '__lt__'
+class GreaterThan(_BinaryOperator): op = '__gt__'
+class LessEq(_BinaryOperator): op = '__le__'
+class GreaterEq(_BinaryOperator): op = '__ge__'
 
-class Eq(_BinaryOperator): pass
-class NotEq(_BinaryOperator): pass
-class Eql(_BinaryOperator): pass # ===
-class NotEql(_BinaryOperator): pass # !==
+class Eq(_BinaryOperator): op = '__eq__'
+class NotEq(_BinaryOperator): op = '__ne__'
+class Eql(_BinaryOperator): op = '__eq__' # ===
+class NotEql(_BinaryOperator): op = '__ne__' # !==
 
-class And(_BinaryOperator): pass
-class Xor(_BinaryOperator): pass
-class Xnor(_BinaryOperator): pass
-class Or(_BinaryOperator): pass
-class Land(_BinaryOperator): pass
-class Lor(_BinaryOperator): pass
-
-class Uplus(_UnaryOperator): pass
-class Uminus(_UnaryOperator): pass
-class Ulnot(_UnaryOperator): pass
-class Unot(_UnaryOperator): pass
-class Uand(_UnaryOperator): pass
-class Unand(_UnaryOperator): pass
-class Uor(_UnaryOperator): pass
-class Unor(_UnaryOperator): pass
-class Uxor(_UnaryOperator): pass
-class Uxnor(_UnaryOperator): pass
+class And(_BinaryOperator): op = '__and__'
+class Xor(_BinaryOperator): op = '__xor__'
+class Xnor(_BinaryOperator): op = '__xor__'
+class Or(_BinaryOperator): op = '__or__'
+class Land(_BinaryOperator):
+    @staticmethod
+    def op(a, b):
+        if a and b:
+            return True
+        return False
+    
+class Lor(_BinaryOperator):
+    @staticmethod
+    def op(a, b):
+        if a or b:
+            return True
+        return False
+    
+class Uplus(_UnaryOperator): op = '__pos__'
+class Uminus(_UnaryOperator): op = '__neg__'
+class Ulnot(_UnaryOperator):
+    @staticmethod
+    def op(a):
+        return not a
+    
+class Unot(_UnaryOperator):
+    @staticmethod
+    def op(a):
+        return ~a
+    
+class Uand(_UnaryOperator):
+    @staticmethod
+    def op(a):
+        for i in range(a.bit_length()):
+            v = (a >> i) & 0x1
+            if not v: return False
+        return True
+    
+class Unand(_UnaryOperator):
+    @staticmethod
+    def op(a):
+        for i in range(a.bit_length()):
+            v = (a >> i) & 0x1
+            if not v: return True
+        return False
+    
+class Uor(_UnaryOperator):
+    @staticmethod
+    def op(a):
+        for i in range(a.bit_length()):
+            v = (a >> i) & 0x1
+            if v: return True
+        return False
+    
+class Unor(_UnaryOperator):
+    @staticmethod
+    def op(a):
+        for i in range(a.bit_length()):
+            v = (a >> i) & 0x1
+            if v: return False
+        return True
+    
+class Uxor(_UnaryOperator):
+    @staticmethod
+    def op(a):
+        ret = False
+        for i in range(a.bit_length()):
+            v = (a >> i) & 0x1
+            ret = ret ^ v
+        return ret
+    
+class Uxnor(_UnaryOperator):
+    @staticmethod
+    def op(a):
+        ret = True
+        for i in range(a.bit_length()):
+            v = (a >> i) & 0x1
+            ret = ret ^ v
+        return ret
 
 #-------------------------------------------------------------------------------
 # alias
@@ -655,6 +748,7 @@ Ors = OrList
 #-------------------------------------------------------------------------------
 class _SpecialOperator(_Operator):
     def __init__(self, *args, **kwargs):
+        _Operator.__init__(self)
         self.args = args
         self.kwargs = kwargs
 
@@ -664,6 +758,7 @@ class _SpecialOperator(_Operator):
 #-------------------------------------------------------------------------------
 class Pointer(_SpecialOperator):
     def __init__(self, var, pos):
+        _SpecialOperator.__init__(self)
         self.var = var
         self.pos = pos
         self.subst = []
@@ -709,6 +804,7 @@ class Pointer(_SpecialOperator):
 
 class Slice(_SpecialOperator):
     def __init__(self, var, msb, lsb):
+        _SpecialOperator.__init__(self)
         self.var = var
         self.msb = msb
         self.lsb = lsb
@@ -753,6 +849,7 @@ class Slice(_SpecialOperator):
 
 class Cat(_SpecialOperator):
     def __init__(self, *vars):
+        _SpecialOperator.__init__(self)
         self.vars = tuple(vars)
         self.subst = []
     
@@ -802,6 +899,7 @@ class Cat(_SpecialOperator):
 
 class Repeat(_SpecialOperator):
     def __init__(self, var, times):
+        _SpecialOperator.__init__(self)
         self.var = var
         self.times = times
 
@@ -814,6 +912,7 @@ class Repeat(_SpecialOperator):
 #-------------------------------------------------------------------------------
 class Cond(_SpecialOperator):
     def __init__(self, condition, true_value, false_value):
+        _SpecialOperator.__init__(self)
         self.condition = condition
         self.true_value = true_value
         self.false_value = false_value
@@ -831,6 +930,7 @@ Mux = Cond
 #-------------------------------------------------------------------------------
 class Sensitive(VeriloggenNode):
     def __init__(self, name):
+        VeriloggenNode.__init__(self)
         self.name = name
 
 #-------------------------------------------------------------------------------
@@ -845,6 +945,7 @@ class SensitiveAll(Sensitive):
 #-------------------------------------------------------------------------------
 class Subst(VeriloggenNode):
     def __init__(self, left, right, blk=False, ldelay=None, rdelay=None):
+        VeriloggenNode.__init__(self)
         self._type_check_left(left)
         self._type_check_right(right)
         self.left = left
@@ -871,6 +972,7 @@ class Subst(VeriloggenNode):
 #-------------------------------------------------------------------------------
 class Always(VeriloggenNode):
     def __init__(self, *sensitivity):
+        VeriloggenNode.__init__(self)
         self.sensitivity = tuple(sensitivity)
         self.statement = None
 
@@ -886,11 +988,13 @@ class Always(VeriloggenNode):
 #-------------------------------------------------------------------------------
 class Assign(VeriloggenNode):
     def __init__(self, statement):
+        VeriloggenNode.__init__(self)
         self.statement = statement
 
 #-------------------------------------------------------------------------------
 class Initial(VeriloggenNode):
     def __init__(self, *statement):
+        VeriloggenNode.__init__(self)
         self.statement = tuple(statement)
 
     def add(self, *statement):
@@ -902,6 +1006,7 @@ class Initial(VeriloggenNode):
 #-------------------------------------------------------------------------------
 class If(VeriloggenNode):
     def __init__(self, condition):
+        VeriloggenNode.__init__(self)
         self.condition = condition
         self.true_statement = None
         self.false_statement = None
@@ -929,6 +1034,7 @@ class If(VeriloggenNode):
 #-------------------------------------------------------------------------------
 class For(VeriloggenNode):
     def __init__(self, pre, condition, post):
+        VeriloggenNode.__init__(self)
         self.pre = pre
         self.condition = condition
         self.post = post
@@ -952,6 +1058,7 @@ class For(VeriloggenNode):
 #-------------------------------------------------------------------------------
 class While(VeriloggenNode):
     def __init__(self, condition):
+        VeriloggenNode.__init__(self)
         self.condition = condition
         self.statement = None
 
@@ -973,6 +1080,7 @@ class While(VeriloggenNode):
 #-------------------------------------------------------------------------------
 class Case(VeriloggenNode):
     def __init__(self, comp):
+        VeriloggenNode.__init__(self)
         self.comp = comp
         self.statement = None
         self.last = False
@@ -1007,6 +1115,7 @@ class Casex(Case): pass
     
 class When(VeriloggenNode) :
     def __init__(self, *condition):
+        VeriloggenNode.__init__(self)
         self._type_check_condition(*condition)
         self.condition = None if len(condition) == 0 or condition[0] is None else tuple(condition)
         self.statement = None
@@ -1045,11 +1154,13 @@ class When(VeriloggenNode) :
 #-------------------------------------------------------------------------------
 class ScopeIndex(VeriloggenNode):
     def __init__(self, name, index):
+        VeriloggenNode.__init__(self)
         self.name = name
         self.index = index
         
 class Scope(_Numeric):
     def __init__(self, *args):
+        _Numeric.__init__(self)
         self.args = tuple(args)
         if not args:
             raise ValueError("Scope requires at least one argument.")
@@ -1057,6 +1168,7 @@ class Scope(_Numeric):
 #-------------------------------------------------------------------------------
 class SystemTask(_Numeric):
     def __init__(self, cmd, *args):
+        _Numeric.__init__(self)
         self.cmd = cmd
         self.args = tuple(args)
         
@@ -1066,10 +1178,12 @@ def Systask(cmd, *args):
 #-------------------------------------------------------------------------------
 class Event(VeriloggenNode):
     def __init__(self, *sensitivity):
+        VeriloggenNode.__init__(self)
         self.sensitivity = sensitivity
 
 class Wait(VeriloggenNode):
     def __init__(self, condition):
+        VeriloggenNode.__init__(self)
         self.condition = condition
         self.statement = None
 
@@ -1084,15 +1198,18 @@ class Wait(VeriloggenNode):
 
 class Forever(VeriloggenNode):
     def __init__(self, *statement):
+        VeriloggenNode.__init__(self)
         self.statement = tuple(statement)
 
 class Delay(VeriloggenNode):
     def __init__(self, value):
+        VeriloggenNode.__init__(self)
         self.value = value
 
 #-------------------------------------------------------------------------------
 class SingleStatement(VeriloggenNode):
     def __init__(self, statement):
+        VeriloggenNode.__init__(self)
         self.statement = statement
         
 #-------------------------------------------------------------------------------
