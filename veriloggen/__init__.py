@@ -24,3 +24,4 @@ from .utils import fixed
 from .seq.seq import Seq
 from .fsm.fsm import FSM
 from .pipeline.pipeline import Pipeline
+from .resolver import resolver
