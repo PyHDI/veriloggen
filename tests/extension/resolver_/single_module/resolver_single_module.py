@@ -11,17 +11,14 @@ from veriloggen import *
 def mkOrigLed():
     m = Module('blinkled')
 
-    # dummy parameter definition for the next
-    inc = AnyType(name='INC')
-    width = m.Parameter('WIDTH', inc + 7)
-    # overwrite the dummy
+    width = m.Parameter('WIDTH', 8)
     inc = m.Parameter('INC', 1)
     
     clk = m.Input('CLK')
     rst = m.Input('RST')
     led = m.OutputReg('LED', width)
     
-    count = m.Reg('count', 32)
+    count = m.Reg('count', width + 10)
 
     m.Always(Posedge(clk))(
         If(rst)(

@@ -13,7 +13,7 @@ module blinkled #
    input RST, 
    output reg [8-1:0] LED
   );
-  reg [32-1:0] count;
+  reg [18-1:0] count;
   always @(posedge CLK) begin
     if(RST) begin        
       count <= 0;
