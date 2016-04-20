@@ -44,6 +44,9 @@ class _CachedVisitor(_Visitor):
 
     def visit(self, node):
         # check the cache
+        if isinstance(node, (tuple, list)):
+            return self._visit(node)
+            
         if node in self.visited_node:
             return self.visited_node[node]
         

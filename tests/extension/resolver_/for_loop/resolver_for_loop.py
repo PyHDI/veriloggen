@@ -53,6 +53,10 @@ def mkOrigLed():
 
 def mkLed():
     led = mkOrigLed()
+    # resolve() is idempotent
+    led = resolver.resolve(led)
+    led = resolver.resolve(led)
+    led = resolver.resolve(led)
     return resolver.resolve(led)
 
 if __name__ == '__main__':
