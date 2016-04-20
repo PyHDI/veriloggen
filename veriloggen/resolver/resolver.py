@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 import os
 import sys
+import copy
 from collections import OrderedDict
 
 import veriloggen.core.vtypes as vtypes
@@ -417,116 +418,173 @@ class ReplaceVisitor(ConstantVisitor):
         return node
 
 #-------------------------------------------------------------------------------
-class ModuleVisitor(ReplaceVisitor):
-    #def visit__Variable(self, node):
-    #    width = self.visit(node.width) if node.width is not None else None
-    #    length = self.visit(node.length) if node.length is not None else None
-    #    initval = self.visit(node.initval) if node.initval is not None else None
-    #    if not isinstance(width, vtypes.VeriloggenNode):
-    #        node.width = width
-    #    if not isinstance(length, vtypes.VeriloggenNode):
-    #        node.length = length
-    #    if not isinstance(initval, vtypes.VeriloggenNode):
-    #        node.initval = initval
-    #    return node
+class ModuleReplaceVisitor(_CachedVisitor):
+    tmp_count = 0
+    
+    def __init__(self, mod, const_dict=None, submodule=None):
+        _CachedVisitor.__init__(self)
+        
+        if not isinstance(mod, module.Module) and not isinstance(mod, module.Generate):
+            raise TypeError("Not supported object type: '%s'", str(type(mod)))
+        
+        if const_dict is None:
+            const_dict = OrderedDict()
+
+        if submodule is None:
+            submodule = OrderedDict()
+
+        self.mod = mod
+        self.const_dict = const_dict
+        self.submodule = submodule
+
+        self.replace_visitor = None
+    
+    def resolve(self):
+        self._update_const_dict()
+        self.replace_visitor = ReplaceVisitor(self.const_dict)
+        return self.visit(self.mod)
+
+    def _update_const_dict(self):
+        params = self.mod.get_params()
+        localparams = self.mod.get_localparams()
+
+        unresolved = OrderedDict()
+        unresolved.update(params)
+        unresolved.update(localparams)
+
+        prev_size = len(unresolved) + 1
+        
+        while unresolved and len(unresolved) < prev_size:
+            prev_size = len(unresolved)
+            unresolved = self._update_const_dict_iter(unresolved)
+            
+        if unresolved:
+            varlist = ', '.join(unresolved.keys())
+            raise ValueError('Not all parameters could be resolved: %s' % varlist)
+
+    def _update_const_dict_iter(self, unresolved):
+        const_visitor = ConstantVisitor(self.const_dict)
+        next_unresolved = OrderedDict()
+        
+        for name, param in unresolved.items():
+            value = const_visitor.visit(param.value)
+            
+            if isinstance(value, vtypes.VeriloggenNode):
+                next_unresolved[name] = param
+                continue
+
+            if name not in self.const_dict:
+                const_visitor.update_const(name, value)
+    
+        self.const_dict = const_visitor.get_const_dict()
+    
+        return next_unresolved
+
+    def visit_Module(self, node):
+        params = node.get_params()
+        for param in params.values():
+            if param.width is not None:
+                param.width = self.replace_visitor.visit(param.width)
+            param.value = self.replace_visitor.visit(param.value)
+            
+        localparams = node.get_localparams()
+        for localparam in localparams.values():
+            if localparam.width is not None:
+                localparam.width = self.replace_visitor.visit(localparam.width)
+            localparam.value = self.replace_visitor.visit(localparam.value)
+
+        ports = node.get_ports()
+        for port in ports.values():
+            if port.width is not None:
+                 port.width = self.replace_visitor.visit(port.width)
+
+        vars = node.get_vars()
+        for var in vars.values():
+            if var.width is not None:
+                var.width = self.replace_visitor.visit(var.width)
+
+        for asg in node.assign:
+            self.visit(asg)
+
+        for alw in node.always:
+            self.visit(alw)
+
+        for ini in node.initial:
+            self.visit(ini)
+
+        for ins in node.instance.values():
+            self.visit(ins)
+
+        return node
+
+    def visit__Variable(self, node):
+        width = self.replace_visitor.visit(node.width) if node.width is not None else None
+        length = self.replace_visitor.visit(node.length) if node.length is not None else None
+        initval = self.replace_visitor.visit(node.initval) if node.initval is not None else None
+        if not isinstance(width, vtypes.VeriloggenNode):
+            node.width = width
+        if not isinstance(length, vtypes.VeriloggenNode):
+            node.length = length
+        if not isinstance(initval, vtypes.VeriloggenNode):
+            node.initval = initval
+        return node
 
     def visit_Always(self, node):
-        sensitivity = self.visit(node.sensitivity)
-        self.visit(node.statement)
+        sensitivity = self.replace_visitor.visit(node.sensitivity)
+        self.replace_visitor.visit(node.statement)
         if not isinstance(sensitivity, vtypes.VeriloggenNode):
             node.sensitivity = sensitivity
         return node
 
     def visit_Assign(self, node):
-        self.visit(node.statement)
+        self.replace_visitor.visit(node.statement)
         return node
 
     def visit_Initial(self, node):
         for s in node.statement:
-            self.visit(s)
+            self.replace_visitor.visit(s)
         return node
-    
-#-------------------------------------------------------------------------------
-def resolve_constant(m):
-    const_dict = _get_const_dict(m)
-    _resolve_module(m, const_dict)
-    return m
 
-#-------------------------------------------------------------------------------
-def _get_const_dict(m):
-    params = m.get_params()
-    localparams = m.get_localparams()
-    const_dict = _resolve_params(params, localparams)
-    return const_dict
+    def visit_Instance(self, node):
+        params = [ (k, self.replace_visitor.visit(v)) for k, v in node.params ]
+        ports = [ (k, self.replace_visitor.visit(v)) for k, v in node.ports ]
+        node.params = params
+        node.ports = ports
 
-def _resolve_params(params, localparams):
-    unresolved = OrderedDict()
-    unresolved.update(params)
-    unresolved.update(localparams)
-    
-    const_dict = OrderedDict()
-    prev_size = len(unresolved) + 1
-    
-    while unresolved and len(unresolved) < prev_size:
-        prev_size = len(unresolved)
-        const_dict, unresolved = _resolve_params_iter(const_dict, unresolved)
+        inst_const_dict = OrderedDict()
+        for k, v in params:
+            inst_const_dict[k] = v
 
-    if unresolved:
-        varlist = ', '.join(unresolved.keys())
-        raise ValueError('Not all parameters could be resolved: %s' % varlist)
+        if isinstance(node.module, (module.StubModule, str)):
+            return node
 
-    return const_dict
+        mod = copy.deepcopy(node.module)
+        prev_name = mod.name
+        new_name = prev_name
 
-def _resolve_params_iter(const_dict, unresolved):
-    const_visitor = ConstantVisitor(const_dict)
-    next_unresolved = OrderedDict()
-    
-    for name, param in unresolved.items():
-        value = const_visitor.visit(param.value)
+        while True:
+            if new_name not in self.submodule:
+                self.submodule[new_name] = mod
+                self.mod.submodule[new_name] = mod
+                mod.name = new_name
+                break
+
+            new_name = '_'.join([prev_name, 'copy', str(ModuleReplaceVisitor.tmp_count)])
+            ModuleReplaceVisitor.tmp_count += 1
         
-        if isinstance(value, vtypes.VeriloggenNode):
-            next_unresolved[name] = param
-            continue
+        mvisitor = ModuleReplaceVisitor(mod, inst_const_dict, self.submodule)
+        mod = mvisitor.resolve()
+        node.module = mod
         
-        const_visitor.update_const(name, value)
+        return node
 
-    const_dict = const_visitor.get_const_dict()
+    def visit_GenerateFor(self, node):
+        pass
 
-    return const_dict, next_unresolved
-
+    def visit_GenerateIf(self, node):
+        pass
+    
 #-------------------------------------------------------------------------------
-def _resolve_module(m, const_dict):
-    replace_visitor = ReplaceVisitor(const_dict)
-    
-    params = m.get_params()
-    for param in params.values():
-        if param.width is not None:
-            param.width = replace_visitor.visit(param.width)
-        param.value = replace_visitor.visit(param.value)
-
-    localparams = m.get_localparams()
-    for localparam in localparams.values():
-        if localparam.width is not None:
-            localparam.width = replace_visitor.visit(localparam.width)
-        localparam.value = replace_visitor.visit(localparam.value)
-
-    ports = m.get_ports()
-    for port in ports.values():
-        if port.width is not None:
-            port.width = replace_visitor.visit(port.width)
-
-    vars = m.get_vars()
-    for var in vars.values():
-        if var.width is not None:
-            var.width = replace_visitor.visit(var.width)
-
-    module_visitor = ModuleVisitor(const_dict)
-
-    for asg in m.assign:
-        module_visitor.visit(asg)
-    
-    for alw in m.always:
-        module_visitor.visit(alw)
-
-    #for inst in m.instance.values():
-    #    module_visitor.visit(inst)
+def resolve(m, const_dict=None):
+    mvisitor = ModuleReplaceVisitor(m, const_dict)
+    return mvisitor.resolve()
