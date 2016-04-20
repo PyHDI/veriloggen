@@ -638,10 +638,10 @@ class ModuleReplaceVisitor(_CachedVisitor):
         return node
 
     def visit_GenerateFor(self, node):
-        pass
+        raise NotImplementedError("GenerateFor statement is not currently supported.")
 
     def visit_GenerateIf(self, node):
-        pass
+        raise NotImplementedError("GenerateIf statement is not currently supported.")
     
 #-------------------------------------------------------------------------------
 def resolve(m, const_dict=None):
