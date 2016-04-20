@@ -416,6 +416,11 @@ class _ParameterVairable(_Variable):
             value = value.value
         _Variable.__init__(self, width=width, signed=signed, value=value, name=name,
                            module=module)
+
+    def bit_length(self):
+        if self.width is None:
+            return 32
+        return self.width
         
 class Parameter(_ParameterVairable): pass
 class Localparam(_ParameterVairable): pass
@@ -439,6 +444,8 @@ class _Constant(_Numeric):
         return str(self.value)
 
     def bit_length(self):
+        if self.width is None:
+            return 32
         return self.width
         
 class Int(_Constant):
@@ -542,6 +549,7 @@ class Float(_Constant):
     def __init__(self, value):
         _Constant.__init__(self, value, None, None)
         self.value = value
+        self.width = 32
 
     def _type_check_value(self, value):
         if not isinstance(value, (float, int)):
@@ -974,7 +982,7 @@ class Pointer(_SpecialOperator):
         return self
     
     def bit_length(self):
-        if isinstance(var, _Variable) and var.length is not None:
+        if isinstance(self.var, _Variable) and self.var.length is not None:
             return self.var.bit_length()
         return 1
 

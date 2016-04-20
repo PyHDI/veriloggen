@@ -16,6 +16,18 @@ def get_width(node):
         return 32
     return ret
 
+def check_constant(obj):
+    if not isinstance(obj, vtypes.VeriloggenNode):
+        return True
+    return False
+
+def check_overwrite(obj):
+    if check_constant(obj):
+        return True
+    if isinstance(obj, (tuple, list)):
+        return True
+    return False
+
 #-------------------------------------------------------------------------------
 class _Visitor(object):
     def generic_visit(self, node):
@@ -116,18 +128,18 @@ class ConstantVisitor(_CommonVisitor):
         right = self.visit(node.right)
         lwidth = self.visit(get_width(node.left))
         rwidth = self.visit(get_width(node.right))
-        if (not isinstance(left, vtypes.VeriloggenNode) and
-            not isinstance(right, vtypes.VeriloggenNode) and 
-            not isinstance(lwidth, vtypes.VeriloggenNode) and
-            not isinstance(rwidth, vtypes.VeriloggenNode)):
+        if (check_constant(left) and
+            check_constant(right) and 
+            check_constant(lwidth) and
+            check_constant(rwidth)):
             return node.op(left, right, lwidth, rwidth)
         return node
 
     def visit__UnaryOperator(self, node):
         right = self.visit(node.right)
         rwidth = self.visit(get_width(node.right))
-        if (not isinstance(right, vtypes.VeriloggenNode) and 
-            not isinstance(rwidth, vtypes.VeriloggenNode)):
+        if (check_constant(right) and 
+            check_constant(rwidth)):
             return node.op(right, rwidth) 
         return node
 
@@ -135,8 +147,8 @@ class ConstantVisitor(_CommonVisitor):
     def visit_Pointer(self, node):
         var = self.visit(node.var)
         pos = self.visit(node.pos)
-        if (not isinstance(var, vtypes.VeriloggenNode) and
-            not isinstance(pos, vtypes.VeriloggenNode)):
+        if (check_constant(var) and
+            check_constant(pos)):
             return node.op(var, pos)
         return node
 
@@ -144,9 +156,9 @@ class ConstantVisitor(_CommonVisitor):
         var = self.visit(node.var)
         msb = self.visit(node.msb)
         lsb = self.visit(node.lsb)
-        if (not isinstance(var, vtypes.VeriloggenNode) and
-            not isinstance(msb, vtypes.VeriloggenNode) and
-            not isinstance(lsb, vtypes.VeriloggenNode)):
+        if (check_constant(var) and
+            check_constant(msb) and
+            check_constant(lsb)):
             return node.op(var, msb, lsb)
         return node
 
@@ -154,9 +166,9 @@ class ConstantVisitor(_CommonVisitor):
         vars = [ self.visit(var) for var in node.vars ]
         widths = [ self.visit(get_width(var)) for var in node.vars ]
         for var, width in zip(vars, widths):
-            if isinstance(var, vtypes.VeriloggenNode):
+            if not check_constant(var):
                 return node
-            if isinstance(width, vtypes.VeriloggenNode):
+            if not check_constant(width):
                 return node
         return node.op(vars, widths)
 
@@ -164,9 +176,9 @@ class ConstantVisitor(_CommonVisitor):
         var = self.visit(node.var)
         width = self.visit(get_width(node.var))
         times = self.visit(node.times)
-        if (not isinstance(var, vtypes.VeriloggenNode) and
-            not isinstance(width, vtypes.VeriloggenNode) and
-            not isinstance(times, vtypes.VeriloggenNode)):
+        if (check_constant(var) and
+            check_constant(width) and
+            check_constant(times)):
             return node.op(var, width, times)
         return node
 
@@ -174,9 +186,9 @@ class ConstantVisitor(_CommonVisitor):
         condition = self.visit(node.condition)
         true_value = self.visit(node.true_value)
         false_value = self.visit(node.false_value)
-        if (not isinstance(condition, vtypes.VeriloggenNode) and
-            not isinstance(true_value, vtypes.VeriloggenNode) and
-            not isinstance(false_value, vtypes.VeriloggenNode)):
+        if (check_constant(condition) and
+            check_constant(true_value) and
+            check_constant(false_value)):
             return node.op(condition, true_value, false_value)
         return node
 
@@ -194,36 +206,36 @@ class ReplaceVisitor(ConstantVisitor):
         right = self.visit(node.right)
         lwidth = self.visit(get_width(node.left))
         rwidth = self.visit(get_width(node.right))
-        if (not isinstance(left, vtypes.VeriloggenNode) and
-            not isinstance(right, vtypes.VeriloggenNode) and 
-            not isinstance(lwidth, vtypes.VeriloggenNode) and
-            not isinstance(rwidth, vtypes.VeriloggenNode)):
+        if (check_constant(left) and
+            check_constant(right) and 
+            check_constant(lwidth) and
+            check_constant(rwidth)):
             return node.op(left, right, lwidth, rwidth)
-        if not isinstance(left, vtypes.VeriloggenNode):
+        if check_constant(left):
             node.left = left
-        if not isinstance(right, vtypes.VeriloggenNode):
+        if check_constant(right):
             node.right = right
         return node
 
     def visit__UnaryOperator(self, node):
         right = self.visit(node.right)
         rwidth = self.visit(get_width(node.right))
-        if (not isinstance(right, vtypes.VeriloggenNode) and 
-            not isinstance(rwidth, vtypes.VeriloggenNode)):
+        if (check_constant(right) and 
+            check_constant(rwidth)):
             return node.op(right, rwidth) 
-        if not isinstance(right, vtypes.VeriloggenNode):
+        if check_constant(right):
             node.right = right
         return node
 
     def visit_Pointer(self, node):
         var = self.visit(node.var)
         pos = self.visit(node.pos)
-        if (not isinstance(var, vtypes.VeriloggenNode) and
-            not isinstance(pos, vtypes.VeriloggenNode)):
+        if (check_constant(var) and
+            check_constant(pos)):
             return node.op(var, pos)
-        if not isinstance(var, vtypes.VeriloggenNode):
+        if check_constant(var):
             node.var = var
-        if not isinstance(pos, vtypes.VeriloggenNode):
+        if check_constant(pos):
             node.pos = pos
         return node
 
@@ -231,15 +243,15 @@ class ReplaceVisitor(ConstantVisitor):
         var = self.visit(node.var)
         msb = self.visit(node.msb)
         lsb = self.visit(node.lsb)
-        if (not isinstance(var, vtypes.VeriloggenNode) and
-            not isinstance(msb, vtypes.VeriloggenNode) and
-            not isinstance(lsb, vtypes.VeriloggenNode)):
+        if (check_constant(var) and
+            check_constant(msb) and
+            check_constant(lsb)):
             return node.op(var, msb, lsb)
-        if not isinstance(var, vtypes.VeriloggenNode):
+        if check_constant(var):
             node.var = var
-        if not isinstance(msb, vtypes.VeriloggenNode):
+        if check_constant(msb):
             node.msb = msb
-        if not isinstance(lsb, vtypes.VeriloggenNode):
+        if check_constant(lsb):
             node.lsb = lsb
         return node
 
@@ -248,9 +260,9 @@ class ReplaceVisitor(ConstantVisitor):
         widths = [ self.visit(get_width(var)) for var in node.vars ]
         node.vars = vars
         for var, width in zip(vars, widths):
-            if isinstance(var, vtypes.VeriloggenNode):
+            if not check_constant(var):
                 return node
-            if isinstance(width, vtypes.VeriloggenNode):
+            if not check_constant(width):
                 return node
         return node.op(vars, widths)
 
@@ -258,13 +270,13 @@ class ReplaceVisitor(ConstantVisitor):
         var = self.visit(node.var)
         width = self.visit(get_width(node.var))
         times = self.visit(node.times)
-        if (not isinstance(var, vtypes.VeriloggenNode) and
-            not isinstance(width, vtypes.VeriloggenNode) and
-            not isinstance(times, vtypes.VeriloggenNode)):
+        if (check_constant(var) and
+            check_constant(width) and
+            check_constant(times)):
             return node.op(var, width, times)
-        if not isinstance(var, vtypes.VeriloggenNode):
+        if check_constant(var):
             node.var = var
-        if not isinstance(times, vtypes.VeriloggenNode):
+        if check_constant(times):
             node.times = times
         return node
 
@@ -272,28 +284,28 @@ class ReplaceVisitor(ConstantVisitor):
         condition = self.visit(node.condition)
         true_value = self.visit(node.true_value)
         false_value = self.visit(node.false_value)
-        if (not isinstance(condition, vtypes.VeriloggenNode) and
-            not isinstance(true_value, vtypes.VeriloggenNode) and
-            not isinstance(false_value, vtypes.VeriloggenNode)):
+        if (check_constant(condition) and
+            check_constant(true_value) and
+            check_constant(false_value)):
             return node.op(condition, true_value, false_value)
-        if not isinstance(condition, vtypes.VeriloggenNode):
+        if check_constant(condition):
             node.condition = condition
-        if not isinstance(true_value, vtypes.VeriloggenNode):
+        if check_constant(true_value):
             node.true_value = true_value
-        if not isinstance(false_value, vtypes.VeriloggenNode):
+        if check_constant(false_value):
             node.false_value = false_value
         return node
 
     #---------------------------------------------------------------------------
     def visit_Posedge(self, node):
         name = self.visit(node.name)
-        if not isinstance(name, vtypes.VeriloggenNode):
+        if check_overwrite(name):
             node.name = name
         return node
     
     def visit_Negedge(self, node):
         name = self.visit(node.name)
-        if not isinstance(name, vtypes.VeriloggenNode):
+        if check_overwrite(name):
             node.name = name
         return node
     
@@ -302,70 +314,109 @@ class ReplaceVisitor(ConstantVisitor):
     
     #---------------------------------------------------------------------------
     def visit_Subst(self, node):
+        left = self.visit(node.left)
         right = self.visit(node.right)
         ldelay = self.visit(node.ldelay) if node.ldelay is not None else None
         rdelay = self.visit(node.rdelay) if node.rdelay is not None else None
-        if not isinstance(right, vtypes.VeriloggenNode):
+        node.left = left
+        if check_constant(right):
             node.right = right
-        if not isinstance(ldelay, vtypes.VeriloggenNode):
+        if check_constant(ldelay):
             node.ldelay = ldelay
-        if not isinstance(rdelay, vtypes.VeriloggenNode):
+        if check_constant(rdelay):
             node.rdelay = rdelay
         return node
 
     #---------------------------------------------------------------------------
     def visit_If(self, node):
         condition = self.visit(node.condition)
-        self.visit(node.true_statement)
+        true_statement = self.visit(node.true_statement)
         if node.false_statement is not None:
-            self.visit(node.false_statement)
-        if not isinstance(condition, vtypes.VeriloggenNode):
+            false_statement = self.visit(node.false_statement)
+            
+        if check_overwrite(condition):
             node.condition = condition
+            
+        node.true_statement = true_statement
+        if node.false_statement is not None:
+            node.false_statement = false_statement
+            
         return node
 
     def visit_For(self, node):
         pre = self.visit(node.pre)
         condition = self.visit(node.condition)
         post = self.visit(node.post)
-        self.visit(node.statement)
-        if not isinstance(condition, vtypes.VeriloggenNode):
+
+        if check_overwrite(condition):
             node.condition = condition
-        return node
+        
+        new_statement = []
+        const_dict = copy.deepcopy(self.const_dict)
+        
+        # pre
+        dst = pre.left.name
+        val = pre.right
+        const_dict[dst] = val
+
+        while True:
+            # cond
+            cvisitor = ForReplaceVisitor(const_dict)
+            cond = cvisitor.visit(condition)
+            
+            if not check_constant(cond):
+                return node
+            
+            if not cond:
+                break
+
+            rslt = cvisitor.visit(copy.deepcopy(node.statement))
+            new_statement.append(rslt)
+
+            # post
+            if post.left.name != dst:
+                raise ValueError("Destination of 'post' must be same with 'pre': %s" % dst)
+
+            const_dict[dst] = cvisitor.visit(post.right)
+
+        return new_statement
 
     def visit_While(self, node):
         condition = self.visit(node.condition)
-        self.visit(node.statement)
-        if not isinstance(condition, vtypes.VeriloggenNode):
+        statement = self.visit(node.statement)
+        if check_constant(condition):
             node.condition = condition
+        node.statement = statement
         return node
 
     def visit_Case(self, node):
         comp = self.visit(node.comp)
-        for s in node.statement:
-            self.visit(s) 
-        if not isinstance(comp, vtypes.VeriloggenNode):
+        statement = [ self.visit(s) for s in node.statement ]
+        if check_constant(comp):
             node.comp = comp
+        node.statement = statement
         return node
 
     def visit_Casex(self, node):
         comp = self.visit(node.comp)
-        for s in node.statement:
-            self.visit(s) 
-        if not isinstance(comp, vtypes.VeriloggenNode):
+        statement = [ self.visit(s) for s in node.statement ]
+        if check_constant(comp):
             node.comp = comp
+        node.statement = statement
         return node
 
     def visit_When(self, node):
         condition = self.visit(node.condition)
-        self.visit(node.statement)
-        if not isinstance(condition, vtypes.VeriloggenNode):
+        statement = self.visit(node.statement)
+        if check_constant(condition):
             node.condition = condition
+        node.statement = statement
         return node
 
     def visit_ScopeIndex(self, node):
         self.visit(node.name)
         index = self.visit(node.index)
-        if not isinstance(index, vtypes.VeriloggenNode):
+        if check_constant(index):
             node.index = index
         return node
         
@@ -385,21 +436,23 @@ class ReplaceVisitor(ConstantVisitor):
         return node
 
     def visit_Forever(self, node):
-        for s in node.statement:
-            self.visit(s)
+        statement = [ self.visit(s) for s in node.statement ]
+        node.statement = statement
         return node
     
     def visit_Delay(self, node):
         delay = self.visit(node.delay)
-        if not isinstance(delay, vtypes.VeriloggenNode):
+        if check_constant(delay):
             node.delay = delay
         return node
 
     def visit_SingleStatement(self, node):
-        self.visit(node.statement)
+        statement = self.visit(node.statement)
+        node.statement = statement
         return node
 
     def visit_Function(self, node):
+        # not implemented
         return node
 
     def visit_FunctionCall(self, node):
@@ -409,6 +462,7 @@ class ReplaceVisitor(ConstantVisitor):
         return node
     
     def visit_Task(self, node):
+        # not implemented
         return node
 
     def visit_TaskCall(self, node):
@@ -417,6 +471,11 @@ class ReplaceVisitor(ConstantVisitor):
         node.args = args
         return node
 
+#-------------------------------------------------------------------------------
+class ForReplaceVisitor(ReplaceVisitor):
+    def visit__Variable(self, node):
+        return self._visit_param(node)
+    
 #-------------------------------------------------------------------------------
 class ModuleReplaceVisitor(_CachedVisitor):
     tmp_count = 0
@@ -469,7 +528,7 @@ class ModuleReplaceVisitor(_CachedVisitor):
         for name, param in unresolved.items():
             value = const_visitor.visit(param.value)
             
-            if isinstance(value, vtypes.VeriloggenNode):
+            if not check_constant(value):
                 next_unresolved[name] = param
                 continue
 
@@ -521,18 +580,18 @@ class ModuleReplaceVisitor(_CachedVisitor):
         width = self.replace_visitor.visit(node.width) if node.width is not None else None
         length = self.replace_visitor.visit(node.length) if node.length is not None else None
         initval = self.replace_visitor.visit(node.initval) if node.initval is not None else None
-        if not isinstance(width, vtypes.VeriloggenNode):
+        if check_constant(width):
             node.width = width
-        if not isinstance(length, vtypes.VeriloggenNode):
+        if check_constant(length):
             node.length = length
-        if not isinstance(initval, vtypes.VeriloggenNode):
+        if check_constant(initval):
             node.initval = initval
         return node
 
     def visit_Always(self, node):
         sensitivity = self.replace_visitor.visit(node.sensitivity)
         self.replace_visitor.visit(node.statement)
-        if not isinstance(sensitivity, vtypes.VeriloggenNode):
+        if check_constant(sensitivity):
             node.sensitivity = sensitivity
         return node
 
