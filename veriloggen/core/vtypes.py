@@ -1169,8 +1169,11 @@ class Cond(_SpecialOperator):
         else:
             return false_value
 
-# Alias of Cond
-Mux = Cond
+def Mux(condition, true_value, false_value):
+    # return the result immediately if the condition can be resolved now
+    if isinstance(condition, (bool, int, float, str, list, tuple)):
+        return true_value if condition else false_value
+    return Cond(condition, true_value, false_value)
        
 #-------------------------------------------------------------------------------
 class Sensitive(VeriloggenNode):
