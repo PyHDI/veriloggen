@@ -1258,21 +1258,35 @@ class If(VeriloggenNode):
         self.condition = condition
         self.true_statement = None
         self.false_statement = None
+        
+        self.root = self
+        self.next_call = None
 
     def set_true_statement(self, *statement):
         self.true_statement = tuple(statement)
-        return self
+        return self.root
     
     def set_false_statement(self, *statement):
         self.false_statement = tuple(statement)
-        return self
+        return self.root
     
     def Else(self, *statement):
+        if self.next_call is not None:
+            return self.next_call.Else(*statement)
         if self.false_statement is None:
             return self.set_false_statement(*statement)
         raise ValueError("False statement is already assigned.")
+
+    def Elif(self, condition):
+        next_If = If(condition)
+        next_If.root = self.root
+        self.Else(next_If)
+        self.next_call = next_If
+        return self
         
     def __call__(self, *args):
+        if self.next_call is not None:
+            return self.next_call(*args)
         if self.true_statement is None:
             return self.set_true_statement(*args)
         if self.false_statement is None:
