@@ -303,6 +303,9 @@ class _Variable(_Numeric):
             raise ValueError("Variable '%s' has no parent module information" % self.name)
         return self.module.Assign( self.write(value) )
 
+    def comb(self, value):
+        return self.assign(value)
+
     def reset(self):
         return None
 
@@ -349,6 +352,8 @@ class Inout(_Variable): pass
 class Tri(_Variable): pass
 
 class Reg(_Variable):
+    def assign(self, value):
+        raise TypeError("Reg object accept no combinational assignment.")
     def reset(self):
         if self.initval is None:
             return None
