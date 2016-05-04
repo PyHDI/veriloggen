@@ -46,8 +46,11 @@ def mkMovAvg(length=8, datawidth=32):
     y.output('ydata', valid='yvalid', ready='yready')
     df = dataflow.Dataflow(y)
     m = df.to_module('movavg')
-
-    df.draw_graph()
+    
+    #try:
+    #    df.draw_graph()
+    #except:
+    #    print('Dataflow graph could not be generated.', file=sys.stderr)
 
     return m
 
