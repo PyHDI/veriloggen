@@ -1045,7 +1045,6 @@ class Ulnot(_UnaryLogicalOperator):
     def set_attributes(self):
         self.width = 1
         self.point = 0
-        self.signed = False
         
     def eval(self):
         right = self.right.eval()
@@ -1061,7 +1060,6 @@ class Uand(_UnaryLogicalOperator):
     def set_attributes(self):
         self.width = 1
         self.point = 0
-        self.signed = False
         
     def eval(self):
         right = self.right.eval()
@@ -1080,7 +1078,6 @@ class Unand(_UnaryLogicalOperator):
     def set_attributes(self):
         self.width = 1
         self.point = 0
-        self.signed = False
         
     def eval(self):
         right = self.right.eval()
@@ -1099,7 +1096,6 @@ class Uor(_UnaryLogicalOperator):
     def set_attributes(self):
         self.width = 1
         self.point = 0
-        self.signed = False
         
     def eval(self):
         right = self.right.eval()
@@ -1118,7 +1114,6 @@ class Unor(_UnaryLogicalOperator):
     def set_attributes(self):
         self.width = 1
         self.point = 0
-        self.signed = False
         
     def eval(self):
         right = self.right.eval()
@@ -1137,7 +1132,6 @@ class Uxor(_UnaryLogicalOperator):
     def set_attributes(self):
         self.width = 1
         self.point = 0
-        self.signed = False
         
     def eval(self):
         right = self.right.eval()
@@ -1156,7 +1150,6 @@ class Uxnor(_UnaryLogicalOperator):
     def set_attributes(self):
         self.width = 1
         self.point = 0
-        self.signed = False
         
     def eval(self):
         right = self.right.eval()
