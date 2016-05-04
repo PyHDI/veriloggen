@@ -3,7 +3,7 @@ from __future__ import print_function
 
 from collections import OrderedDict
 import veriloggen.core.vtypes as vtypes
-import veriloggen.utils.fixed as fx
+import veriloggen.types.fixed as fx
 from . import mul
 from . import div
 
