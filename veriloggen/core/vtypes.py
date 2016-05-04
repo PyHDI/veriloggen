@@ -109,6 +109,11 @@ def str_to_width(s):
         return int(match.group(1), 10)
     return None
 
+def get_signed(obj):
+    if hasattr(obj, 'get_signed'):
+        return obj.get_signed()
+    return True
+
 #-------------------------------------------------------------------------------
 class VeriloggenNode(object):
     """ Base class of Veriloggen AST object """
@@ -190,7 +195,7 @@ class VeriloggenNode(object):
 class _Numeric(VeriloggenNode):
     def __init__(self):
         VeriloggenNode.__init__(self)
-    
+
     def __hash__(self):
         return hash((id(self), self.object_id))
 
@@ -274,6 +279,9 @@ class _Numeric(VeriloggenNode):
     def bit_length(self):
         return None
 
+    def get_signed(self):
+        return False
+
 #-------------------------------------------------------------------------------
 class _Variable(_Numeric):
     def __init__(self, width=1, length=None, signed=False, value=None, initval=None, name=None,
@@ -312,6 +320,9 @@ class _Variable(_Numeric):
     def bit_length(self):
         return self.width
 
+    def get_signed(self):
+        return self.signed
+    
     def _add_subst(self, s):
         self.subst.append(s)
 
@@ -359,9 +370,9 @@ class Reg(_Variable):
             return None
         return self.write(self.initval)
     def add(self, r):
-        return Subst(self, Plus(self, r))
+        return Subst(self, self + r)
     def sub(self, r):
-        return Subst(self, Minus(self, r))
+        return Subst(self, self - r)
     def inc(self):
         return self.add(1)
     def dec(self):
@@ -379,9 +390,9 @@ class Integer(_Variable):
             return None
         return self.write(self.initval)
     def add(self, r):
-        return Subst(self, Plus(self, r))
+        return Subst(self, self + r)
     def sub(self, r):
-        return Subst(self, Minus(self, r))
+        return Subst(self, self - r)
     def inc(self):
         return self.add(1)
     def dec(self):
@@ -393,9 +404,9 @@ class Real(_Variable):
             return None
         return self.write(self.initval)
     def add(self, r):
-        return Subst(self, Plus(self, r))
+        return Subst(self, self + r)
     def sub(self, r):
-        return Subst(self, Minus(self, r))
+        return Subst(self, self - r)
     def inc(self):
         return self.add(1)
     def dec(self):
@@ -403,9 +414,9 @@ class Real(_Variable):
     
 class Genvar(_Variable):
     def add(self, r):
-        return Subst(self, Plus(self, r))
+        return Subst(self, self + r)
     def sub(self, r):
-        return Subst(self, Minus(self, r))
+        return Subst(self, self - r)
     def inc(self):
         return self.add(1)
     def dec(self):
@@ -544,6 +555,9 @@ class Int(_Constant):
 
         return ''.join(value_list)
 
+    def get_signed(self):
+        return self.signed
+        
 def IntX(width=None, base=None, signed=False):
     return Int("'hx", width, base, signed)
 
@@ -563,6 +577,9 @@ class Float(_Constant):
     def __str__(self):
         return str(node.value)
 
+    def get_signed(self):
+        return True
+        
 class Str(_Constant):
     def __init__(self, value):
         _Constant.__init__(self, value, None, None)
@@ -576,7 +593,9 @@ class Str(_Constant):
         return str(node.value)
 
 #-------------------------------------------------------------------------------
-class _Operator(_Numeric): pass
+class _Operator(_Numeric):
+    def get_signed(self):
+        return self.signed
     
 #-------------------------------------------------------------------------------
 class _BinaryOperator(_Operator):
@@ -585,6 +604,7 @@ class _BinaryOperator(_Operator):
         self._type_check(left, right)
         self.left = left
         self.right = right
+        self.signed = get_signed(self.left) and get_signed(self.right)
 
     def _type_check(self, left, right):
         if not isinstance(left, (_Numeric, bool, int, float, str)):
@@ -608,11 +628,15 @@ class _BinaryOperator(_Operator):
         right = self.right.bit_length()
         return Cond(left >= right, left, right) + 1
 
+    def get_signed(self):
+        return self.signed
+        
 class _UnaryOperator(_Operator):
     def __init__(self, right):
         _Operator.__init__(self)
         self._type_check(right)
         self.right = right
+        self.signed = get_signed(self.right)
         
     def _type_check(self, right):
         if not isinstance(right, (_Numeric, bool, int, float, str)):
@@ -677,6 +701,10 @@ class Minus(_BinaryOperator):
         return left - right
 
 class Sll(_BinaryOperator):
+    def __init__(self, left, right):
+        _BinaryOperator.__init__(self, left, right)
+        self.signed = False
+        
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left << right
@@ -684,9 +712,13 @@ class Sll(_BinaryOperator):
     def bit_length(self):
         left = self.left.bit_length()
         right = self.right.bit_length()
-        return left + Int(2) ** right
+        return Int(2) ** right + left
     
 class Srl(_BinaryOperator):
+    def __init__(self, left, right):
+        _BinaryOperator.__init__(self, left, right)
+        self.signed = False
+        
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left >> right
@@ -696,6 +728,10 @@ class Srl(_BinaryOperator):
         return left
     
 class Sra(_BinaryOperator):
+    def __init__(self, left, right):
+        _BinaryOperator.__init__(self, left, right)
+        self.signed = get_signed(self.left)
+        
     @staticmethod
     def op(left, right, lwidth, rwidth):
         sign = left >= 0
@@ -710,6 +746,10 @@ class Sra(_BinaryOperator):
         return left
     
 class LessThan(_BinaryOperator):
+    def __init__(self, left, right):
+        _BinaryOperator.__init__(self, left, right)
+        self.signed = False
+        
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left < right
@@ -718,6 +758,10 @@ class LessThan(_BinaryOperator):
         return 1
     
 class GreaterThan(_BinaryOperator):
+    def __init__(self, left, right):
+        _BinaryOperator.__init__(self, left, right)
+        self.signed = False
+        
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left > right
@@ -726,6 +770,10 @@ class GreaterThan(_BinaryOperator):
         return 1
     
 class LessEq(_BinaryOperator):
+    def __init__(self, left, right):
+        _BinaryOperator.__init__(self, left, right)
+        self.signed = False
+        
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left <= right
@@ -734,6 +782,10 @@ class LessEq(_BinaryOperator):
         return 1
     
 class GreaterEq(_BinaryOperator):
+    def __init__(self, left, right):
+        _BinaryOperator.__init__(self, left, right)
+        self.signed = False
+        
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left >= right
@@ -742,6 +794,10 @@ class GreaterEq(_BinaryOperator):
         return 1
     
 class Eq(_BinaryOperator):
+    def __init__(self, left, right):
+        _BinaryOperator.__init__(self, left, right)
+        self.signed = False
+        
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left == right
@@ -750,6 +806,10 @@ class Eq(_BinaryOperator):
         return 1
     
 class NotEq(_BinaryOperator):
+    def __init__(self, left, right):
+        _BinaryOperator.__init__(self, left, right)
+        self.signed = False
+        
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left != right
@@ -758,6 +818,10 @@ class NotEq(_BinaryOperator):
         return 1
     
 class Eql(_BinaryOperator): # ===
+    def __init__(self, left, right):
+        _BinaryOperator.__init__(self, left, right)
+        self.signed = False
+        
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left == right
@@ -766,6 +830,10 @@ class Eql(_BinaryOperator): # ===
         return 1
     
 class NotEql(_BinaryOperator): # !==
+    def __init__(self, left, right):
+        _BinaryOperator.__init__(self, left, right)
+        self.signed = False
+        
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left != right
@@ -774,6 +842,10 @@ class NotEql(_BinaryOperator): # !==
         return 1
     
 class And(_BinaryOperator):
+    def __init__(self, left, right):
+        _BinaryOperator.__init__(self, left, right)
+        self.signed = False
+        
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left & right
@@ -784,6 +856,10 @@ class And(_BinaryOperator):
         return Cond(left >= right, left, right)
     
 class Xor(_BinaryOperator):
+    def __init__(self, left, right):
+        _BinaryOperator.__init__(self, left, right)
+        self.signed = False
+        
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left ^ right
@@ -794,6 +870,10 @@ class Xor(_BinaryOperator):
         return Cond(left >= right, left, right)
     
 class Xnor(_BinaryOperator):
+    def __init__(self, left, right):
+        _BinaryOperator.__init__(self, left, right)
+        self.signed = False
+        
     @staticmethod
     def op(left, right, lwidth, rwidth):
         width = max(lwdith, rwidth)
@@ -809,6 +889,10 @@ class Xnor(_BinaryOperator):
         return Cond(left >= right, left, right)
     
 class Or(_BinaryOperator):
+    def __init__(self, left, right):
+        _BinaryOperator.__init__(self, left, right)
+        self.signed = False
+        
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left | right
@@ -819,6 +903,10 @@ class Or(_BinaryOperator):
         return Cond(left >= right, left, right)
     
 class Land(_BinaryOperator):
+    def __init__(self, left, right):
+        _BinaryOperator.__init__(self, left, right)
+        self.signed = False
+        
     @staticmethod
     def op(left, right, lwidth, rwidth):
         if left and right:
@@ -831,6 +919,10 @@ class Land(_BinaryOperator):
         return Cond(left >= right, left, right)
     
 class Lor(_BinaryOperator):
+    def __init__(self, left, right):
+        _BinaryOperator.__init__(self, left, right)
+        self.signed = False
+        
     @staticmethod
     def op(left, right, lwidth, rwidth):
         if left or right:
@@ -853,6 +945,10 @@ class Uminus(_UnaryOperator):
         return -right
     
 class Ulnot(_UnaryOperator):
+    def __init__(self, right):
+        _UnaryOperator.__init__(self, right)
+        self.signed = False
+        
     @staticmethod
     def op(right, rwidth):
         return not right
@@ -861,11 +957,19 @@ class Ulnot(_UnaryOperator):
         return 1
     
 class Unot(_UnaryOperator):
+    def __init__(self, right):
+        _UnaryOperator.__init__(self, right)
+        self.signed = False
+        
     @staticmethod
     def op(right, rwidth):
         return ~right
     
 class Uand(_UnaryOperator):
+    def __init__(self, right):
+        _UnaryOperator.__init__(self, right)
+        self.signed = False
+        
     @staticmethod
     def op(right, rwidth):
         for i in range(rwidth):
@@ -877,6 +981,10 @@ class Uand(_UnaryOperator):
         return 1
     
 class Unand(_UnaryOperator):
+    def __init__(self, right):
+        _UnaryOperator.__init__(self, right)
+        self.signed = False
+        
     @staticmethod
     def op(right, rwidth):
         for i in range(rwidth):
@@ -888,6 +996,10 @@ class Unand(_UnaryOperator):
         return 1
     
 class Uor(_UnaryOperator):
+    def __init__(self, right):
+        _UnaryOperator.__init__(self, right)
+        self.signed = False
+        
     @staticmethod
     def op(right, rwidth):
         for i in range(rwidth):
@@ -899,6 +1011,10 @@ class Uor(_UnaryOperator):
         return 1
     
 class Unor(_UnaryOperator):
+    def __init__(self, right):
+        _UnaryOperator.__init__(self, right)
+        self.signed = False
+        
     @staticmethod
     def op(right, rwidth):
         for i in range(rwidth):
@@ -910,6 +1026,10 @@ class Unor(_UnaryOperator):
         return 1
     
 class Uxor(_UnaryOperator):
+    def __init__(self, right):
+        _UnaryOperator.__init__(self, right)
+        self.signed = False
+        
     @staticmethod
     def op(right, rwidth):
         ret = False
@@ -922,6 +1042,10 @@ class Uxor(_UnaryOperator):
         return 1
     
 class Uxnor(_UnaryOperator):
+    def __init__(self, right):
+        _UnaryOperator.__init__(self, right)
+        self.signed = False
+        
     @staticmethod
     def op(right, rwidth):
         ret = True
@@ -967,6 +1091,7 @@ class _SpecialOperator(_Operator):
         _Operator.__init__(self)
         self.args = args
         self.kwargs = kwargs
+        self.signed = False
 
     def _get_module(self):
         return None
@@ -1157,6 +1282,7 @@ class Cond(_SpecialOperator):
         self.condition = condition
         self.true_value = true_value
         self.false_value = false_value
+        self.signed = get_signed(self.true_value) or get_signed(self.false_value)
         
     def bit_length(self):
         t = self.true_value.bit_length()

@@ -79,16 +79,23 @@ def fixed_to_real(value, point, signed=False):
 
 #-------------------------------------------------------------------------------
 def adjust(left, right, lpoint, rpoint, signed=True):
-    diff_lpoint = rpoint - lpoint
-    diff_rpoint = lpoint - rpoint
-    if diff_lpoint < 0: diff_lpoint = 0
-    if diff_rpoint < 0: diff_rpoint = 0
-    ldata = left if diff_lpoint == 0 else shift_left(left, diff_lpoint, signed)
-    rdata = right if diff_rpoint == 0 else shift_left(right, diff_rpoint, signed)
-    if signed:
-        ldata = vtypes.SystemTask('signed', ldata)
-        rdata = vtypes.SystemTask('signed', rdata)
-    return ldata, rdata
+    #diff_lpoint = rpoint - lpoint
+    #diff_rpoint = lpoint - rpoint
+    #if diff_lpoint < 0: diff_lpoint = 0
+    #if diff_rpoint < 0: diff_rpoint = 0
+    diff_lpoint = vtypes.Mux(rpoint < lpoint, 0, rpoint - lpoint)
+    diff_rpoint = vtypes.Mux(lpoint < rpoint, 0, lpoint - rpoint)
+    #ldata = left if diff_lpoint == 0 else shift_left(left, diff_lpoint, signed)
+    #rdata = right if diff_rpoint == 0 else shift_left(right, diff_rpoint, signed)
+    ldata = vtypes.Mux(diff_lpoint == 0, left, shift_left(left, diff_lpoint, signed))
+    rdata = vtypes.Mux(diff_rpoint == 0, right, shift_left(right, diff_rpoint, signed))
+    #if signed:
+    #    ldata = vtypes.SystemTask('signed', ldata)
+    #    rdata = vtypes.SystemTask('signed', rdata)
+    #return ldata, rdata
+    _ldata = vtypes.Mux(signed, vtypes.SystemTask('signed', ldata), ldata)
+    _rdata = vtypes.Mux(signed, vtypes.SystemTask('signed', rdata), rdata)
+    return _ldata, _rdata
     
 def shift_left(value, size, signed=True):
     if isinstance(value, vtypes.Int):
@@ -111,13 +118,18 @@ def shift_left(value, size, signed=True):
     if not isinstance(value, vtypes._Variable):
         raise TypeError("shift_left not support type '%s'" % str(type(value)))
     
-    if signed:
-        return vtypes.Cat(value, vtypes.Repeat(value[0], size))
-    
-    return vtypes.Sll(value, size)
+    #if signed:
+    #    return vtypes.Cat(value, vtypes.Repeat(value[0], size))
+    #
+    #return vtypes.Sll(value, size)
+
+    return vtypes.Mux(signed, vtypes.Cat(value, vtypes.Repeat(value[0], size)),
+                      vtypes.Sll(value, size))
 
 def shift_right(value, size, signed=True):
-    if signed:
-        return vtypes.Sra(value, size)
-    
-    return vtypes.Srl(value, size)
+    #if signed:
+    #    return vtypes.Sra(value, size)
+    #
+    #return vtypes.Srl(value, size)
+
+    return vtypes.Mux(signed, vtypes.Sra(value, size), vtypes.Srl(value, size))
