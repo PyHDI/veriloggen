@@ -248,7 +248,7 @@ def mkTest(n=8, datawidth=16, point=8):
     send_fsm.goto_next()
 
     for _ in range(100):
-        #for i, (re, im) in enumerate(din):
+        #for i, (re, im) in enumerate(dout):
         #    send_fsm.add( dump('dout[%d]re' % i, re, point), delay=1 )
         #    send_fsm.add( dump('dout[%d]im' % i, im, point), delay=1 )
             

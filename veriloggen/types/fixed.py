@@ -72,20 +72,29 @@ def fixed_to_real(value, point, signed=False):
     
     if point == 0:
         return vtypes.SystemTask('itor', value)
+
+    if isinstance(value, float):
+        raise TypeError("value is already float.")
     
-    if not isinstance(value, vtypes._Variable):
-        raise TypeError('fixed_to_real supports only _Variable .')
+    if isinstance(value, (int, bool)) and isinstance(point, int):
+        mag = 2 ** point
+        return float(value) / mag
+
     if hasattr(value, 'signed') and value.signed:
         signed = True
-    
-    msb = value[value.width - 1]
+
+    width = value.bit_length()
+    msb = (value[width - 1] if isinstance(value, vtypes._Variable) else
+           (value >> (width - 1)) & 0x1)
     
     v0 = (vtypes.SystemTask('itor', fixed_to_int(value, point)) +
-          vtypes.SystemTask('itor', fixed_to_int_low(value, point)) / (2 ** point))
+          vtypes.SystemTask('itor', fixed_to_int_low(value, point)) /
+          vtypes.SystemTask('itor', vtypes.Int(2) ** point))
     
     nv = vtypes.Unot(value) + 1
     v1 = ((vtypes.SystemTask('itor', fixed_to_int(nv, point)) +
-           vtypes.SystemTask('itor', fixed_to_int_low(nv, point)) / (2 ** point))) * -1
+           vtypes.SystemTask('itor', fixed_to_int_low(nv, point)) /
+           vtypes.SystemTask('itor', vtypes.Int(2) ** point))) * vtypes.SystemTask('itor', -1)
     
     return vtypes.Mux(signed and msb == 0, v0, v1)
 
@@ -266,7 +275,6 @@ class Fixed(vtypes.VeriloggenNode):
 
     def __sub__(self, r):
         return self._binary_op(vtypes.Minus, r)
-
 
 def FixedConst(value, point, raw=False):
     return Fixed(value, point, raw=raw)
