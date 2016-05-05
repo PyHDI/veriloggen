@@ -55,7 +55,7 @@ Install on your python environment by using pip:
 
     pip install jinja2
 
--  Pyverilog: 1.0.4 or later
+-  Pyverilog: 1.0.6 or later
 
 Install from pip (or download and install from GitHub):
 
