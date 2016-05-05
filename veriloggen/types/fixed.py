@@ -6,6 +6,8 @@ import copy
 
 import veriloggen.core.vtypes as vtypes
 from veriloggen.core.vtypes import _Numeric
+from veriloggen.core.vtypes import _Variable
+from veriloggen.core.vtypes import _Constant
 
 def to_fixed(value, point, signed=False):
     if point < 0:
@@ -14,11 +16,17 @@ def to_fixed(value, point, signed=False):
     if point == 0:
         return value
     
-    if isinstance(value, (int, float)):
-        if not isinstance(point, int):
-            raise TypeError('point field must be int')
+    if isinstance(value, (int, bool, float)) and isinstance(point, int):
         mag = 2 ** point
         return int(value * mag)
+    
+    if isinstance(value, (int, bool)):
+        mag = vtypes.Int(2) ** point
+        return vtypes.Int(value) * mag
+    
+    if isinstance(value, float):
+        mag = vtypes.Int(2) ** point
+        return vtypes.Float(value) * mag
     
     if hasattr(value, 'signed') and value.signed:
         signed = True
@@ -32,11 +40,13 @@ def fixed_to_int(value, point, signed=False):
     if point == 0:
         return value
     
-    if isinstance(value, (int, float)):
-        if not isinstance(point, int):
-            raise TypeError('point field must be int')
+    if isinstance(value, (int, bool, float)) and isinstance(point, int):
         mag = 2 ** point
-        return float(value) / mag
+        return int(value / mag)
+    
+    if isinstance(value, (int, bool, float)):
+        mag = vtypes.Int(2) ** point
+        return vtypes.Int(value) / mag
     
     if hasattr(value, 'signed') and value.signed:
         signed = True
@@ -50,11 +60,9 @@ def fixed_to_int_low(value, point):
     if point == 0:
         return 0
     
-    if isinstance(value, (int, float)):
-        if not isinstance(point, int):
-            raise TypeError('point field must be int')
+    if isinstance(value, (int, bool, float)) and isinstance(point, int):
         mag = 2 ** point
-        return (float(value) / mag) % 1.0
+        return int(value % mag)
     
     return vtypes.And(value, vtypes.Repeat(vtypes.Int(1, 1), point))
 
@@ -142,11 +150,11 @@ def FixedWire(m, name, width=32, point=0, signed=False):
 
 #-------------------------------------------------------------------------------
 class Fixed(vtypes.VeriloggenNode):
-    def __init__(self, value, point, signed=None):
+    def __init__(self, value, point, signed=None, raw=True):
         vtypes.VeriloggenNode.__init__(self)
-        self.value = value
+        self.value = value if raw else to_fixed(value, point)
         self.point = point
-        self.signed = vtypes.get_sign(value) if signed is None else signed
+        self.signed = vtypes.get_signed(value) if signed is None else signed
     
     def __hash__(self):
         return hash((id(self), self.object_id))
@@ -172,6 +180,9 @@ class Fixed(vtypes.VeriloggenNode):
     def write(self, value, blk=False, ldelay=None, rdelay=None):
         v = self._adjust(value)
         return self.value.write(v, blk=blk, ldelay=ldelay, rdelay=rdelay)
+
+    def write_raw(self, value, blk=False, ldelay=None, rdelay=None):
+        return self.value.write(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
 
     def read(self):
         return self.value.read()
@@ -256,3 +267,6 @@ class Fixed(vtypes.VeriloggenNode):
     def __sub__(self, r):
         return self._binary_op(vtypes.Minus, r)
 
+
+def FixedConst(value, point, raw=False):
+    return Fixed(value, point, raw=raw)
