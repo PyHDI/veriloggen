@@ -43,14 +43,14 @@ def mkLed():
 
     m.Always(Posedge(clk))(
         If(rst)(
-            a(0),
-            b(0),
-            c(0),
-            d.raw(0),
+            a(fixed.FixedConst(Int(2) * Int(2), 6)),
+            b(fixed.FixedConst(1, 8, raw=True)),
+            c(1),
+            d.raw(1)
         ).Else(
             a(a + 1),
             b(a + 1),
-            c(b + 1),
+            c.raw(b.raw + 1),
             d.raw((c + 1).raw)
         ))
 

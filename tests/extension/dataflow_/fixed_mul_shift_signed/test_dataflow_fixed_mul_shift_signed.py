@@ -21,12 +21,12 @@ module test;
   wire signed [32-1:0] zdata_orig;
 
   always @(*) begin
-    xdata <= { xdata_orig, { 8{ xdata_orig[0] } } };
+    xdata <= xdata_orig << 8;
   end
 
 
   always @(*) begin
-    ydata <= { ydata_orig, { 4{ ydata_orig[0] } } };
+    ydata <= ydata_orig << 4;
   end
 
   assign zdata_orig = zdata >>> 8;

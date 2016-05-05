@@ -45,14 +45,14 @@ module blinkled #
 
   always @(posedge CLK) begin
     if(RST) begin
-      a <= 0;
-      b <= 0;
-      c <= 0;
-      d <= 0;
+      a <= 2 * 2 << 6;
+      b <= 1;
+      c <= 16;
+      d <= 1;
     end else begin
       a <= a + 64;
       b <= a + 64 << 2;
-      c <= b + 256 >> 4;
+      c <= b + 1;
       d <= c + 16;
     end
   end

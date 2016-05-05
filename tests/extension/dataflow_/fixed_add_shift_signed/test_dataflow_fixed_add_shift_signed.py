@@ -21,12 +21,12 @@ module test;
   wire signed [36-1:0] zdata_orig;
 
   always @(*) begin
-    xdata <= { xdata_orig, { 8{ xdata_orig[0] } } };
+    xdata <= xdata_orig << 8;
   end
 
 
   always @(*) begin
-    ydata <= { ydata_orig, { 4{ ydata_orig[0] } } };
+    ydata <= ydata_orig << 4;
   end
 
   assign zdata_orig = zdata >>> 8;
@@ -551,7 +551,7 @@ module main
       _tmp_valid_0 <= 0;
     end else begin
       if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
-        _tmp_data_0 <= $signed(xdata) + $signed({ ydata, { 4{ ydata[0] } } });
+        _tmp_data_0 <= $signed(xdata) + $signed((ydata << 4));
       end 
       if(_tmp_valid_0 && _tmp_ready_0) begin
         _tmp_valid_0 <= 0;
