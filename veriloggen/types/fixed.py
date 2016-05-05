@@ -83,59 +83,36 @@ def fixed_to_real(value, point, signed=False):
 
 #-------------------------------------------------------------------------------
 def adjust(left, right, lpoint, rpoint, signed=True):
-    #diff_lpoint = rpoint - lpoint
-    #diff_rpoint = lpoint - rpoint
-    #if diff_lpoint < 0: diff_lpoint = 0
-    #if diff_rpoint < 0: diff_rpoint = 0
     diff_lpoint = vtypes.Mux(rpoint < lpoint, 0, rpoint - lpoint)
     diff_rpoint = vtypes.Mux(lpoint < rpoint, 0, lpoint - rpoint)
-    #ldata = left if diff_lpoint == 0 else shift_left(left, diff_lpoint, signed)
-    #rdata = right if diff_rpoint == 0 else shift_left(right, diff_rpoint, signed)
     ldata = vtypes.Mux(diff_lpoint == 0, left, shift_left(left, diff_lpoint, signed))
     rdata = vtypes.Mux(diff_rpoint == 0, right, shift_left(right, diff_rpoint, signed))
-    #if signed:
-    #    ldata = vtypes.SystemTask('signed', ldata)
-    #    rdata = vtypes.SystemTask('signed', rdata)
-    #return ldata, rdata
     _ldata = vtypes.Mux(signed, vtypes.SystemTask('signed', ldata), ldata)
     _rdata = vtypes.Mux(signed, vtypes.SystemTask('signed', rdata), rdata)
     return _ldata, _rdata
     
 def shift_left(value, size, signed=True):
     if isinstance(value, vtypes.Int):
-        v = value.value & 0x1
-        ret = value
-        for i in range(size):
-            ret = (ret << 1) | v
-        return ret
-    
-    if isinstance(value, int):
-        v = value & 0x1
-        ret = value
-        for i in range(size):
-            ret = (ret << 1) | v
-        return ret
-    
-    if isinstance(value, bool):
+        value = value.value
+        
+    if isinstance(value, int) and isinstance(size, int):
         return value << size
     
-    if not isinstance(value, vtypes._Variable):
-        raise TypeError("shift_left not support type '%s'" % str(type(value)))
+    if isinstance(value, bool) and isinstance(size, int):
+        return value << size
     
-    #if signed:
-    #    return vtypes.Cat(value, vtypes.Repeat(value[0], size))
-    #
-    #return vtypes.Sll(value, size)
-
-    return vtypes.Mux(signed, vtypes.Cat(value, vtypes.Repeat(value[0], size)),
-                      vtypes.Sll(value, size))
+    return vtypes.Sll(value, size)
 
 def shift_right(value, size, signed=True):
-    #if signed:
-    #    return vtypes.Sra(value, size)
-    #
-    #return vtypes.Srl(value, size)
-
+    if isinstance(value, vtypes.Int):
+        value = value.value
+        
+    if isinstance(value, int) and isinstance(size, int):
+        return value >> size
+    
+    if isinstance(value, bool) and isinstance(size, int):
+        return value >> size
+    
     return vtypes.Mux(signed, vtypes.Sra(value, size), vtypes.Srl(value, size))
 
 #-------------------------------------------------------------------------------
@@ -169,40 +146,79 @@ class Fixed(vtypes.VeriloggenNode):
         vtypes.VeriloggenNode.__init__(self)
         self.value = value
         self.point = point
-        self.width = value.bit_length()
         self.signed = vtypes.get_sign(value) if signed is None else signed
     
     def __hash__(self):
         return hash((id(self), self.object_id))
 
-    def write(self, value, blk=False, ldelay=None, rdelay=None):
-        lvalue = self.value
+    def _adjust(self, value):
         lpoint = self.point
-        lsigned = self.signed
-        if not isinstance(r, Fixed):
-            rvalue = r
-            rsigned = vtypes.get_signed(r)
+        if not isinstance(value, Fixed):
+            rvalue = value
+            rsigned = vtypes.get_signed(value)
             rpoint = 0
         else:
-            rvalue = r.value
-            rsigned = r.signed
-            rpoint = r.point
+            rvalue = value.value
+            rsigned = value.signed
+            rpoint = value.point
 
-        lpoint == rpoint
-        
-        return Subst(self, value, blk=blk, ldelay=ldelay, rdelay=rdelay)
+        ldiff = vtypes.Mux(lpoint <= rpoint, 0, lpoint - rpoint)
+        rdiff = vtypes.Mux(lpoint >= rpoint, 0, rpoint - lpoint)
+        v = vtypes.Mux(lpoint>rpoint, shift_left(rvalue, ldiff, rsigned),
+            vtypes.Mux(lpoint<rpoint, shift_right(rvalue, rdiff, rsigned), rvalue))
 
-    def raw_value(self):
+        return v
+    
+    def write(self, value, blk=False, ldelay=None, rdelay=None):
+        v = self._adjust(value)
+        return self.value.write(v, blk=blk, ldelay=ldelay, rdelay=rdelay)
+
+    def read(self):
+        return self.value.read()
+
+    def assign(self, value):
+        v = self._adjust(value)
+        return self.value.assign(v)
+
+    def reset(self):
+        return self.value.reset()
+
+    def bit_length(self):
+        return self.value.bit_length()
+
+    def get_signed(self):
+        return self.signed
+
+    def add(self, r):
+        return self.write(self + r)
+
+    def sub(self, r):
+        return self.write(self - r)
+
+    def inc(self):
+        return self.add(1)
+
+    def dec(self):
+        return self.sub(1)
+
+    def __call__(self, value, blk=False, ldelay=None, rdelay=None):
+        return self.write(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
+
+    #-------------------------------------------------------------------------------
+    @property
+    def raw(self):
         return self.value
 
+    @property
     def int_part(self):
         return self.value >> self.point
 
+    @property
     def dec_part(self):
         mask = vtypes.Mux(self.point==0, 0, vtypes.Repeat(vtypes.Int(1, width=1), self.point))
         return self.value & mask
 
-    def _bin_op(self, op, r):
+    def _binary_op(self, op, r):
         lvalue = self.value
         lpoint = self.point
         lsigned = self.signed
@@ -224,8 +240,19 @@ class Fixed(vtypes.VeriloggenNode):
 
         return Fixed(data, point, signed)
 
+    def _binary_logical_op(self, op, r):
+        lvalue = self.value
+        
+        if not isinstance(r, Fixed):
+            rvalue = r
+        else:
+            rvalue = r.value
+
+        return op(lvalue, rvalue)
+
     def __add__(self, r):
-        return self._bin_op(vtypes.Plus, r)
+        return self._binary_op(vtypes.Plus, r)
 
     def __sub__(self, r):
-        return self._bin_op(vtypes.Minus, r)
+        return self._binary_op(vtypes.Minus, r)
+
