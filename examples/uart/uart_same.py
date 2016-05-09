@@ -25,9 +25,11 @@ def mkUartTx(baudrate=19200, clockfreq=100*1000*1000):
 
     mem = m.TmpReg(9, initval=0)
     waitcount = m.TmpReg(int(math.log(waitnum, 2)) + 1, initval=0)
+    datacount = m.TmpReg(int(math.log(10, 2) + 1), initval=0)
 
     fsm(
         waitcount(waitnum-1),
+        datacount(10),
         txd(1),
         mem(Cat(din, Int(0, 1)))
     )
@@ -35,21 +37,17 @@ def mkUartTx(baudrate=19200, clockfreq=100*1000*1000):
     fsm.If(enable)(
         ready(0)
     ).then.goto_next()
-
-    for i in range(10):
-        fsm.If(waitcount>0)(
-            waitcount.dec()
-        ).Else(
-            txd(mem[0]),
-            mem(Cat(Int(1, 1), mem[8:1])),
-            waitcount(waitnum-1)
-        ).then.goto_next()
-
-    fsm(
-        ready(1)
-    )
     
-    fsm.goto_init()
+    fsm.If(waitcount>0)(
+        waitcount.dec()
+    ).Else(
+        txd(mem[0]),
+        mem(Cat(Int(1, 1), mem[8:1])),
+        waitcount(waitnum-1),
+        datacount.dec()
+    ).then.If(datacount==1)(
+        ready(1)
+    ).then.goto_init()
 
     fsm.make_always()
     
@@ -70,26 +68,28 @@ def mkUartRx(baudrate=19200, clockfreq=100*1000*1000):
 
     mem = m.TmpReg(9, initval=0)
     waitcount = m.TmpReg(int(math.log(waitnum, 2)) + 1, initval=0)
+    datacount = m.TmpReg(int(math.log(10, 2) + 1), initval=0)
 
     fsm(
         valid(0),
         waitcount(int(waitnum/2)-1),
+        datacount(0),
         mem(Cat(rxd, mem[8:1]))
     )
     
-    fsm.If(rxd==0).goto_next()
+    fsm.If(cond=rxd==0).goto_next()
 
-    for i in range(10):
-        if i == 0: # check the start bit again
-            fsm.If(Ands(waitcount==1, rxd!=0)).goto_init()
-            
-        fsm.If(waitcount>0)(
-            waitcount.dec()
-        ).Else(
-            mem(Cat(rxd, mem[8:1])),
-            waitcount(waitnum-1)
-        ).then.goto_next()
-        
+    # check the start bit again
+    fsm.If(waitcount==0).If(datacount==0).If(rxd!=0).goto_init()
+    
+    fsm.If(waitcount>0)(
+        waitcount.dec()
+    ).Else(
+        mem(Cat(rxd, mem[8:1])),
+        waitcount(waitnum-1),
+        datacount.inc()
+    ).then.If(datacount==9).goto_next()
+
     fsm(
         valid(1),
         dout(mem[8:0])

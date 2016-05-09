@@ -239,132 +239,122 @@ module UartTx
           end 
         end
         fsm_1: begin
-          if(_tmp_1 == 0) begin
+          if(_tmp_1 > 0) begin
+            _tmp_1 <= _tmp_1 - 1;
+          end else begin
             txd <= _tmp_0[0];
             _tmp_0 <= { 1'd1, _tmp_0[8:1] };
             _tmp_1 <= 9;
-          end 
-          if(_tmp_1 > 0) begin
-            _tmp_1 <= _tmp_1 - 1;
-          end 
-          if(_tmp_1 == 0) begin
+          end
+          if(!(_tmp_1 > 0)) begin
             fsm <= fsm_2;
           end 
         end
         fsm_2: begin
-          if(_tmp_1 == 0) begin
+          if(_tmp_1 > 0) begin
+            _tmp_1 <= _tmp_1 - 1;
+          end else begin
             txd <= _tmp_0[0];
             _tmp_0 <= { 1'd1, _tmp_0[8:1] };
             _tmp_1 <= 9;
-          end 
-          if(_tmp_1 > 0) begin
-            _tmp_1 <= _tmp_1 - 1;
-          end 
-          if(_tmp_1 == 0) begin
+          end
+          if(!(_tmp_1 > 0)) begin
             fsm <= fsm_3;
           end 
         end
         fsm_3: begin
-          if(_tmp_1 == 0) begin
+          if(_tmp_1 > 0) begin
+            _tmp_1 <= _tmp_1 - 1;
+          end else begin
             txd <= _tmp_0[0];
             _tmp_0 <= { 1'd1, _tmp_0[8:1] };
             _tmp_1 <= 9;
-          end 
-          if(_tmp_1 > 0) begin
-            _tmp_1 <= _tmp_1 - 1;
-          end 
-          if(_tmp_1 == 0) begin
+          end
+          if(!(_tmp_1 > 0)) begin
             fsm <= fsm_4;
           end 
         end
         fsm_4: begin
-          if(_tmp_1 == 0) begin
+          if(_tmp_1 > 0) begin
+            _tmp_1 <= _tmp_1 - 1;
+          end else begin
             txd <= _tmp_0[0];
             _tmp_0 <= { 1'd1, _tmp_0[8:1] };
             _tmp_1 <= 9;
-          end 
-          if(_tmp_1 > 0) begin
-            _tmp_1 <= _tmp_1 - 1;
-          end 
-          if(_tmp_1 == 0) begin
+          end
+          if(!(_tmp_1 > 0)) begin
             fsm <= fsm_5;
           end 
         end
         fsm_5: begin
-          if(_tmp_1 == 0) begin
+          if(_tmp_1 > 0) begin
+            _tmp_1 <= _tmp_1 - 1;
+          end else begin
             txd <= _tmp_0[0];
             _tmp_0 <= { 1'd1, _tmp_0[8:1] };
             _tmp_1 <= 9;
-          end 
-          if(_tmp_1 > 0) begin
-            _tmp_1 <= _tmp_1 - 1;
-          end 
-          if(_tmp_1 == 0) begin
+          end
+          if(!(_tmp_1 > 0)) begin
             fsm <= fsm_6;
           end 
         end
         fsm_6: begin
-          if(_tmp_1 == 0) begin
+          if(_tmp_1 > 0) begin
+            _tmp_1 <= _tmp_1 - 1;
+          end else begin
             txd <= _tmp_0[0];
             _tmp_0 <= { 1'd1, _tmp_0[8:1] };
             _tmp_1 <= 9;
-          end 
-          if(_tmp_1 > 0) begin
-            _tmp_1 <= _tmp_1 - 1;
-          end 
-          if(_tmp_1 == 0) begin
+          end
+          if(!(_tmp_1 > 0)) begin
             fsm <= fsm_7;
           end 
         end
         fsm_7: begin
-          if(_tmp_1 == 0) begin
+          if(_tmp_1 > 0) begin
+            _tmp_1 <= _tmp_1 - 1;
+          end else begin
             txd <= _tmp_0[0];
             _tmp_0 <= { 1'd1, _tmp_0[8:1] };
             _tmp_1 <= 9;
-          end 
-          if(_tmp_1 > 0) begin
-            _tmp_1 <= _tmp_1 - 1;
-          end 
-          if(_tmp_1 == 0) begin
+          end
+          if(!(_tmp_1 > 0)) begin
             fsm <= fsm_8;
           end 
         end
         fsm_8: begin
-          if(_tmp_1 == 0) begin
+          if(_tmp_1 > 0) begin
+            _tmp_1 <= _tmp_1 - 1;
+          end else begin
             txd <= _tmp_0[0];
             _tmp_0 <= { 1'd1, _tmp_0[8:1] };
             _tmp_1 <= 9;
-          end 
-          if(_tmp_1 > 0) begin
-            _tmp_1 <= _tmp_1 - 1;
-          end 
-          if(_tmp_1 == 0) begin
+          end
+          if(!(_tmp_1 > 0)) begin
             fsm <= fsm_9;
           end 
         end
         fsm_9: begin
-          if(_tmp_1 == 0) begin
+          if(_tmp_1 > 0) begin
+            _tmp_1 <= _tmp_1 - 1;
+          end else begin
             txd <= _tmp_0[0];
             _tmp_0 <= { 1'd1, _tmp_0[8:1] };
             _tmp_1 <= 9;
-          end 
-          if(_tmp_1 > 0) begin
-            _tmp_1 <= _tmp_1 - 1;
-          end 
-          if(_tmp_1 == 0) begin
+          end
+          if(!(_tmp_1 > 0)) begin
             fsm <= fsm_10;
           end 
         end
         fsm_10: begin
-          if(_tmp_1 == 0) begin
+          if(_tmp_1 > 0) begin
+            _tmp_1 <= _tmp_1 - 1;
+          end else begin
             txd <= _tmp_0[0];
             _tmp_0 <= { 1'd1, _tmp_0[8:1] };
             _tmp_1 <= 9;
-          end 
-          if(_tmp_1 > 0) begin
-            _tmp_1 <= _tmp_1 - 1;
-          end 
-          if(_tmp_1 == 0) begin
+          end
+          if(!(_tmp_1 > 0)) begin
             fsm <= fsm_11;
           end 
         end
@@ -424,125 +414,115 @@ module UartRx
           end 
         end
         fsm_1: begin
-          if(_tmp_1 == 0) begin
-            _tmp_0 <= { rxd, _tmp_0[8:1] };
-            _tmp_1 <= 9;
-          end 
           if(_tmp_1 > 0) begin
             _tmp_1 <= _tmp_1 - 1;
-          end 
-          if(rxd != 0) begin
+          end else begin
+            _tmp_0 <= { rxd, _tmp_0[8:1] };
+            _tmp_1 <= 9;
+          end
+          if((_tmp_1 == 1) && (rxd != 0)) begin
             fsm <= fsm_init;
           end 
-          if(_tmp_1 == 0) begin
+          if(!(_tmp_1 > 0)) begin
             fsm <= fsm_2;
           end 
         end
         fsm_2: begin
-          if(_tmp_1 == 0) begin
-            _tmp_0 <= { rxd, _tmp_0[8:1] };
-            _tmp_1 <= 9;
-          end 
           if(_tmp_1 > 0) begin
             _tmp_1 <= _tmp_1 - 1;
-          end 
-          if(_tmp_1 == 0) begin
+          end else begin
+            _tmp_0 <= { rxd, _tmp_0[8:1] };
+            _tmp_1 <= 9;
+          end
+          if(!(_tmp_1 > 0)) begin
             fsm <= fsm_3;
           end 
         end
         fsm_3: begin
-          if(_tmp_1 == 0) begin
-            _tmp_0 <= { rxd, _tmp_0[8:1] };
-            _tmp_1 <= 9;
-          end 
           if(_tmp_1 > 0) begin
             _tmp_1 <= _tmp_1 - 1;
-          end 
-          if(_tmp_1 == 0) begin
+          end else begin
+            _tmp_0 <= { rxd, _tmp_0[8:1] };
+            _tmp_1 <= 9;
+          end
+          if(!(_tmp_1 > 0)) begin
             fsm <= fsm_4;
           end 
         end
         fsm_4: begin
-          if(_tmp_1 == 0) begin
-            _tmp_0 <= { rxd, _tmp_0[8:1] };
-            _tmp_1 <= 9;
-          end 
           if(_tmp_1 > 0) begin
             _tmp_1 <= _tmp_1 - 1;
-          end 
-          if(_tmp_1 == 0) begin
+          end else begin
+            _tmp_0 <= { rxd, _tmp_0[8:1] };
+            _tmp_1 <= 9;
+          end
+          if(!(_tmp_1 > 0)) begin
             fsm <= fsm_5;
           end 
         end
         fsm_5: begin
-          if(_tmp_1 == 0) begin
-            _tmp_0 <= { rxd, _tmp_0[8:1] };
-            _tmp_1 <= 9;
-          end 
           if(_tmp_1 > 0) begin
             _tmp_1 <= _tmp_1 - 1;
-          end 
-          if(_tmp_1 == 0) begin
+          end else begin
+            _tmp_0 <= { rxd, _tmp_0[8:1] };
+            _tmp_1 <= 9;
+          end
+          if(!(_tmp_1 > 0)) begin
             fsm <= fsm_6;
           end 
         end
         fsm_6: begin
-          if(_tmp_1 == 0) begin
-            _tmp_0 <= { rxd, _tmp_0[8:1] };
-            _tmp_1 <= 9;
-          end 
           if(_tmp_1 > 0) begin
             _tmp_1 <= _tmp_1 - 1;
-          end 
-          if(_tmp_1 == 0) begin
+          end else begin
+            _tmp_0 <= { rxd, _tmp_0[8:1] };
+            _tmp_1 <= 9;
+          end
+          if(!(_tmp_1 > 0)) begin
             fsm <= fsm_7;
           end 
         end
         fsm_7: begin
-          if(_tmp_1 == 0) begin
-            _tmp_0 <= { rxd, _tmp_0[8:1] };
-            _tmp_1 <= 9;
-          end 
           if(_tmp_1 > 0) begin
             _tmp_1 <= _tmp_1 - 1;
-          end 
-          if(_tmp_1 == 0) begin
+          end else begin
+            _tmp_0 <= { rxd, _tmp_0[8:1] };
+            _tmp_1 <= 9;
+          end
+          if(!(_tmp_1 > 0)) begin
             fsm <= fsm_8;
           end 
         end
         fsm_8: begin
-          if(_tmp_1 == 0) begin
-            _tmp_0 <= { rxd, _tmp_0[8:1] };
-            _tmp_1 <= 9;
-          end 
           if(_tmp_1 > 0) begin
             _tmp_1 <= _tmp_1 - 1;
-          end 
-          if(_tmp_1 == 0) begin
+          end else begin
+            _tmp_0 <= { rxd, _tmp_0[8:1] };
+            _tmp_1 <= 9;
+          end
+          if(!(_tmp_1 > 0)) begin
             fsm <= fsm_9;
           end 
         end
         fsm_9: begin
-          if(_tmp_1 == 0) begin
-            _tmp_0 <= { rxd, _tmp_0[8:1] };
-            _tmp_1 <= 9;
-          end 
           if(_tmp_1 > 0) begin
             _tmp_1 <= _tmp_1 - 1;
-          end 
-          if(_tmp_1 == 0) begin
+          end else begin
+            _tmp_0 <= { rxd, _tmp_0[8:1] };
+            _tmp_1 <= 9;
+          end
+          if(!(_tmp_1 > 0)) begin
             fsm <= fsm_10;
           end 
         end
         fsm_10: begin
-          if(_tmp_1 == 0) begin
-            _tmp_0 <= { rxd, _tmp_0[8:1] };
-            _tmp_1 <= 9;
-          end 
           if(_tmp_1 > 0) begin
             _tmp_1 <= _tmp_1 - 1;
-          end 
-          if(_tmp_1 == 0) begin
+          end else begin
+            _tmp_0 <= { rxd, _tmp_0[8:1] };
+            _tmp_1 <= 9;
+          end
+          if(!(_tmp_1 > 0)) begin
             fsm <= fsm_11;
           end 
         end
