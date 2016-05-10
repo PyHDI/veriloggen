@@ -222,7 +222,7 @@ module UartTx
     if(RST) begin
       fsm <= fsm_init;
       _tmp_1 <= 0;
-      txd <= 0;
+      txd <= 1;
       _tmp_0 <= 0;
       ready <= 1;
     end else begin
