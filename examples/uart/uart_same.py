@@ -19,7 +19,7 @@ def mkUartTx(baudrate=19200, clockfreq=100*1000*1000):
     din = m.Input('din', 8)
     enable = m.Input('enable')
     ready = m.OutputReg('ready', initval=1)
-    txd = m.OutputReg('txd', initval=0)
+    txd = m.OutputReg('txd', initval=1)
 
     fsm = FSM(m, 'fsm', clk, rst)
 
@@ -77,7 +77,7 @@ def mkUartRx(baudrate=19200, clockfreq=100*1000*1000):
         mem(Cat(rxd, mem[8:1]))
     )
     
-    fsm.If(cond=rxd==0).goto_next()
+    fsm.If(rxd==0).goto_next()
 
     # check the start bit again
     fsm.If(waitcount==0).If(datacount==0).If(rxd!=0).goto_init()

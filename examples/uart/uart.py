@@ -19,7 +19,7 @@ def mkUartTx(baudrate=19200, clockfreq=100*1000*1000):
     din = m.Input('din', 8)
     enable = m.Input('enable')
     ready = m.OutputReg('ready', initval=1)
-    txd = m.OutputReg('txd', initval=0)
+    txd = m.OutputReg('txd', initval=1)
 
     fsm = FSM(m, 'fsm', clk, rst)
 
