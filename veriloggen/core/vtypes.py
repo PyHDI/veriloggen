@@ -261,13 +261,14 @@ class _Numeric(VeriloggenNode):
     
     def __getitem__(self, r):
         if isinstance(r, slice):
-            left = r.start
-            right = r.stop
+            right = r.start
+            left = r.stop - 1
             step = r.step
             if step is None:
                 return Slice(self, left, right)
             else:
                 raise ValueError("slice with step is not supported in Verilog Slice.")
+                
         return Pointer(self, r)
 
     def sra(self, r): # shift right arithmetically
@@ -281,6 +282,29 @@ class _Numeric(VeriloggenNode):
 
     def get_signed(self):
         return False
+
+    def __iter__(self):
+        if hasattr(self, 'length') and self.length is not None:
+            if not isinstance(length, int):
+                raise TypeError('Object without constant length can not be passed to iterator.')
+
+            self.iter_count = 0
+            self.iter_max = self.length
+            return self
+        
+        width = self.bit_length()
+        if not isinstance(width, int):
+            raise TypeError('Object without constant data width can not be passed to iterator.')
+        self.iter_count = 0
+        self.iter_max = width
+        return self
+
+    def __next__(self):
+        if self.iter_count >= self.iter_max:
+            raise StopIteration()
+        ret = Pointer(self, self.iter_count)
+        self.iter_count += 1
+        return ret
 
 #-------------------------------------------------------------------------------
 class _Variable(_Numeric):
