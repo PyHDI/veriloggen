@@ -328,6 +328,10 @@ class _Numeric(VeriloggenNode):
         self.iter_count += 1
         return ret
 
+    # for Python2
+    def next(self):
+        return self.__next__()
+
     def _len(self):
         if hasattr(self, 'length') and self.length is not None:
             ret = self.length

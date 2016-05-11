@@ -389,6 +389,10 @@ class _Numeric(_Node):
         self.iter_count += 1
         return ret
 
+    # for Python2
+    def next(self):
+        return self.__next__()
+
     def __len__(self):
         ret = self.bit_length()
         if not isinstance(ret, int):
@@ -1014,7 +1018,7 @@ class _BinaryLogicalOperator(_BinaryOperator):
         self.sig_ready = ready
 
         ldata = self.left.sig_data
-        right = self.right.sig_data
+        rdata = self.right.sig_data
         
         lvalid = self.left.sig_valid
         rvalid = self.right.sig_valid
@@ -1216,6 +1220,34 @@ class Uxnor(_UnaryLogicalOperator):
             return ret == 0
         return Uxnor(right)
         
+#-------------------------------------------------------------------------------
+# alias
+def Not(*args):
+    return Ulnot(*args)
+
+def AndList(*args):
+    if len(args) == 0:
+        raise ValueError("LandList requires at least one argument.")
+    if len(args) == 1:
+        return args[0]
+    left = args[0]
+    for right in args[1:]:
+        left = Land(left, right)
+    return left
+
+def OrList(*args):
+    if len(args) == 0:
+        raise ValueError("LorList requires at least one argument.")
+    if len(args) == 1:
+        return args[0]
+    left = args[0]
+    for right in args[1:]:
+        left = Lor(left, right)
+    return left
+
+Ands = AndList
+Ors = OrList
+
 #-------------------------------------------------------------------------------
 class _SpecialOperator(_Operator):
     latency = 1
