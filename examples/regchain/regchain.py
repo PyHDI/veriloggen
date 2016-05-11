@@ -19,10 +19,10 @@ def mkRegChain(length=120, width=8):
     seq = Seq(m, 'seq', clk, rst)
 
     update_cond_value = m.TmpReg(3, initval=0)
-    seq.add( update_cond_value(sw[2:0]) )
+    seq.add( update_cond_value(sw[0:3]) )
 
     area_size = m.TmpReg(2, initval=0)
-    seq.add( area_size(sw[4:3]) )
+    seq.add( area_size(sw[3:5]) )
     
     count = m.TmpReg(2, initval=0)
     seq.add( count.inc() )

@@ -52,7 +52,7 @@ module blinkled #
     end else begin
       if(count == 1023) begin        
         LED[0] <= LED[WIDTH-1];
-        LED[WIDTH-1:1] <= LED[WIDTH-2:0];
+        LED[WIDTH-1:1] <= LED[WIDTH-1-1:0];
       end  
     end 
   end 

@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import slice
+import _slice
 
 expected_verilog = """
 module blinkled #
@@ -32,7 +32,7 @@ module blinkled #
     end else begin
       if(count == 1023) begin
         LED[0] <= LED[WIDTH-1];
-        LED[WIDTH-1:1] <= LED[WIDTH-2:0];
+        LED[WIDTH-1:1] <= LED[WIDTH-1-1:0];
       end  
     end 
   end 
@@ -40,7 +40,7 @@ endmodule
 """
 
 def test():
-    test_module = slice.mkLed()
+    test_module = _slice.mkLed()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

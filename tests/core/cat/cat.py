@@ -32,7 +32,7 @@ def mkLed():
             led( Int(0b00000001, width=8, base=2) )
         ).Else(
             If(count == 1023)(
-                led( Cat(led[width-2:0], led[width-1]) )
+                led( Cat(led[0:width-1], led[width-1]) )
             )
         ))
 

@@ -33,7 +33,7 @@ def mkLed():
         ).Else(
             If(count == 1024 - 1)(
                 led[0](led[width-1]),
-                led[width-1:1](led[width-2:0])
+                led[1:width](led[0:width-1])
             )
         ))
 

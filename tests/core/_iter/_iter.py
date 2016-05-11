@@ -10,10 +10,9 @@ from veriloggen import *
 
 def mkLed():
     m = Module('blinkled')
-    width = m.Parameter('WIDTH', 8)
     clk = m.Input('CLK')
     rst = m.Input('RST')
-    led = [ m.OutputReg('LED_%d' % i, width) for i in range(8) ]
+    led = m.OutputReg('LED', 8)
     count = m.Reg('count', 32)
 
     m.Always(Posedge(clk))(
@@ -27,13 +26,20 @@ def mkLed():
             )
         ))
 
-    case_body = [ When(i)( led[i](count[0:width], blk=True) ) for i in range(8) ]
-    
-    m.Always()(
-        Case(count % 8)(
-            *case_body
-        )
-    )
+    led_bind = []
+    prev = led[-1]
+    for l in led:
+        led_bind.append( l(prev) )
+        prev = l
+
+    m.Always(Posedge(clk))(
+        If(rst)(
+            led(1)
+        ).Else(
+            If(count == 1024 - 1)(
+                led_bind
+            )
+        ))
 
     return m
 
