@@ -11,12 +11,10 @@ import veriloggen.dataflow as dataflow
 
 def mkMain(width=4):
     # input variiable
-    x = dataflow.Variable('xdata', valid='xvalid', ready='xready', width=width)
-    y = dataflow.Variable('ydata', valid='yvalid', ready='yready', width=width)
+    x = dataflow.Variable('xdata', width=width)
+    y = dataflow.Variable('ydata', width=width)
 
     # dataflow definition
-    z = x + y
-
     bits = []
     carry = None
     for xbit, ybit in zip(x, y):
@@ -28,11 +26,11 @@ def mkMain(width=4):
         carry = v
         
     bits.reverse()
-            
+
     z = dataflow.Cat(*bits)
 
     # set output attribute
-    z.output('zdata', valid='zvalid', ready='zready')
+    z.output('zdata')
 
     df = dataflow.Dataflow(z)
     m = df.to_module('main')
@@ -52,16 +50,25 @@ def mkTest(numports=8):
     rst = ports['RST']
 
     xdata = ports['xdata']
-    xvalid = ports['xvalid']
-    xready = ports['xready']
+    #xvalid = ports['xvalid']
+    #xready = ports['xready']
+    xvalid = m.Reg('xvalid')
+    xready = m.Wire('xready')
+    m.Assign(xready(1))
     
     ydata = ports['ydata']
-    yvalid = ports['yvalid']
-    yready = ports['yready']
+    #yvalid = ports['yvalid']
+    #yready = ports['yready']
+    yvalid = m.Reg('yvalid')
+    yready = m.Wire('yready')
+    m.Assign(yready(1))
     
     zdata = ports['zdata']
-    zvalid = ports['zvalid']
-    zready = ports['zready']
+    #zvalid = ports['zvalid']
+    #zready = ports['zready']
+    zvalid = m.Wire('zvalid')
+    zready = m.Reg('zready')
+    m.Assign(zvalid(1))
     
     uut = m.Instance(main, 'uut',
                      params=m.connect_params(main),
@@ -96,24 +103,24 @@ def mkTest(numports=8):
         
         fsm.add(valid(0))
         fsm.goto_next(cond=reset_done)
-        for _ in range(waitnum):
-            fsm.goto_next()
+        #for _ in range(waitnum):
+        #    fsm.goto_next()
             
         fsm.add(valid(1))
         fsm.goto_next()
         
         fsm.add(data(data + step), cond=ready)
         fsm.add(count.inc(), cond=ready)
-        fsm.add(valid(0), cond=AndList(count==5, ready))
+        #fsm.add(valid(0), cond=AndList(count==5, ready))
         fsm.goto_next(cond=AndList(count==5, ready))
         
-        for _ in range(waitnum):
-            fsm.goto_next()
-        fsm.add(valid(1))
+        #for _ in range(waitnum):
+        #    fsm.goto_next()
+        #fsm.add(valid(1))
         
         fsm.add(data(data + step), cond=ready)
         fsm.add(count.inc(), cond=ready)
-        fsm.add(valid(0), cond=AndList(count==10, ready))
+        #fsm.add(valid(0), cond=AndList(count==10, ready))
         fsm.goto_next(cond=AndList(count==10, ready))
         
         fsm.make_always()
@@ -128,12 +135,12 @@ def mkTest(numports=8):
         
         yinit= fsm.current()
         fsm.add(ready(1), cond=valid)
-        fsm.goto_next(cond=valid)
-        for i in range(waitnum):
-            fsm.add(ready(0))
-            fsm.goto_next()
+        #fsm.goto_next(cond=valid)
+        #for i in range(waitnum):
+        #    fsm.add(ready(0))
+        #    fsm.goto_next()
             
-        fsm.goto(yinit)
+        #fsm.goto(yinit)
         
         fsm.make_always()
 
@@ -145,15 +152,18 @@ def mkTest(numports=8):
     
     m.Always(Posedge(clk))(
         If(reset_done)(
-            If(AndList(xvalid, xready))(
-                Systask('display', 'xdata=%d', xdata)
-            ),
-            If(AndList(yvalid, yready))(
-                Systask('display', 'ydata=%d', ydata)
-            ),
-            If(AndList(zvalid, zready))(
-                Systask('display', 'zdata=%d', zdata)
-            )
+           # If(AndList(xvalid, xready))(
+           #     Systask('display', 'xdata=%d', xdata)
+           # ),
+           # If(AndList(yvalid, yready))(
+           #     Systask('display', 'ydata=%d', ydata)
+           # ),
+           # If(AndList(zvalid, zready))(
+           #     Systask('display', 'zdata=%d', zdata)
+           # )
+            Systask('display', 'xdata=%d', xdata),
+            Systask('display', 'ydata=%d', ydata),
+            Systask('display', 'zdata=%d', zdata),
         )
     )
     

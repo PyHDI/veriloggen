@@ -1289,19 +1289,8 @@ class _SpecialOperator(_Operator):
         arg_valid = [ arg.sig_valid for arg in self.args ]
         arg_ready = [ arg.sig_ready for arg in self.args ]
 
-        all_valid = None
-        for v in arg_valid:
-            if all_valid is None:
-                all_valid = v
-            else:
-                all_valid = _and_vars(all_valid, v)
-
-        all_ready = None
-        for r in arg_ready:
-            if all_ready is None:
-                all_ready = r
-            else:
-                all_ready = _and_vars(all_ready, r)
+        all_valid = _and_vars(*arg_valid)
+        all_ready = _and_vars(*arg_ready)
 
         accept = vtypes.OrList(ready, vtypes.Not(valid))
 
