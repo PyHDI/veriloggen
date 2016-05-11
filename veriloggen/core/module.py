@@ -390,7 +390,7 @@ class Module(vtypes.VeriloggenNode):
         ret = []
         for vname, var in self.variable.items():
             r = var.reset()
-            if r: ret.append(r)
+            if r is not None: ret.append(r)
         return ret
 
     #---------------------------------------------------------------------------
@@ -748,13 +748,13 @@ class Module(vtypes.VeriloggenNode):
             if isinstance(gen, (tuple, list)):
                 for g in gen:
                     r = g.find_module(name)
-                    if r: return r
+                    if r is not None: return r
             else:
                 r = gen.find_module(name)
-                if r: return r
+                if r is not None: return r
         for sub in self.submodule.values():
             r = sub.find_module(name)
-            if r: return r
+            if r is not None: return r
         return None
 
     def get_modules(self):
@@ -898,10 +898,10 @@ class Generate(Module):
 
     def find_identifier(self, name):
         r = Module.find_identifier(self, name)
-        if r:
+        if r is not None:
             return r
         r = self.m.find_identifier(name)
-        if r:
+        if r is not None:
             return r
         return vtypes.AnyType(name=name)
 

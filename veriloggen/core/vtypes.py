@@ -261,10 +261,7 @@ class _Numeric(VeriloggenNode):
 
     def __getitem__(self, r):
         if isinstance(r, slice):
-            if hasattr(self, 'length') and self.length is not None:
-                size = self.length
-            else:
-                size = self.bit_length()
+            size = self._len()
 
             right = r.start
             if right is None:
@@ -331,11 +328,15 @@ class _Numeric(VeriloggenNode):
         self.iter_count += 1
         return ret
 
-    def __len__(self):
+    def _len(self):
         if hasattr(self, 'length') and self.length is not None:
             ret = self.length
         else:
             ret = self.bit_length()
+        return ret
+    
+    def __len__(self):
+        ret = self._len()
         if not isinstance(ret, int):
             raise TypeError("Non int length.")
         return ret

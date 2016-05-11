@@ -185,7 +185,7 @@ class Pipeline(vtypes.VeriloggenNode):
         # all ready
         all_ready = None
         for r in ready:
-            if not r: continue
+            if r is None: continue
             if all_ready is None:
                 all_ready = r
             else:
@@ -247,7 +247,7 @@ class Pipeline(vtypes.VeriloggenNode):
         if tmp_ready is not None:
             ordy = vtypes.AndList(vtypes.OrList(tmp_ready, vtypes.Not(tmp_valid)), valid)
             for r in ready:
-                if not r: continue
+                if r is None: continue
                 if len(r.subst) == 0:
                     self.m.Assign( r(ordy) )
                 elif isinstance(r.subst[0].right, vtypes.Int) and (r.subst[0].right.value==1):
@@ -369,7 +369,7 @@ class _PipelineVariable(_PipelineNumeric):
         else:
             ovar.df.m.Assign( valid(my_valid) )
 
-        if not ready:
+        if ready is None:
             ready = vtypes.Int(1)
 
         if ovar.ready is not None:

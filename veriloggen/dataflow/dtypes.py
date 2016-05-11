@@ -328,13 +328,42 @@ class _Numeric(_Node):
     
     def __getitem__(self, r):
         if isinstance(r, slice):
+            size = self.bit_length()
+
             right = r.start
-            left = r.stop - 1
+            if right is None:
+                right = 0
+            elif isinstance(right, int) and right < 0:
+                right = size - abs(right)
+                
+            left = r.stop
+            if left is None:
+                left = size
+            elif isinstance(left, int) and left < 0:
+                left = size - abs(left)
+            left -= 1
+
+            if isinstance(left, int) and left < 0:
+                raise ValueError("Illegal slice index: left = %d" % left)
+
             step = r.step
             if step is None:
                 return Slice(self, left, right)
             else:
-                raise ValueError("slice with step is not supported in Verilog Slice.")
+                if not (isinstance(left, int) and 
+                        isinstance(right, int) and
+                        isinstance(step, int)):
+                    raise ValueError("Slice with step is not supported in Verilog Slice.")
+
+                if step == 0:
+                    raise ValueError("Illegal slice step: step = %d" % step)
+                
+                values = [ Pointer(self, i) for i in range(right, left+1, step) ]
+                values.reverse()
+                return Cat(*values)
+            
+        if isinstance(r, int) and r < 0:
+            r = self.bit_length() - abs(r)
             
         return Pointer(self, r)
 
@@ -344,19 +373,26 @@ class _Numeric(_Node):
     def repeat(self, times):
         return Repeat(self, times)
 
+    def slice(self, msb, lsb):
+        return Slice(self, msb, lsb)
+
     def __iter__(self):
-        width = self.bit_length()
-        if not isinstance(width, int):
-            raise TypeError('Object without constant data width can not be passed to iterator.')
+        self.iter_size = len(self)
         self.iter_count = 0
-        self.iter_max = width
         return self
 
     def __next__(self):
-        if self.iter_count >= self.iter_max:
+        if self.iter_count >= self.iter_size:
             raise StopIteration()
+        
         ret = Pointer(self, self.iter_count)
         self.iter_count += 1
+        return ret
+
+    def __len__(self):
+        ret = self.bit_length()
+        if not isinstance(ret, int):
+            raise TypeError("Non int length.")
         return ret
 
 #-------------------------------------------------------------------------------
