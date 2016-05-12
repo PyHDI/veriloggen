@@ -39,24 +39,21 @@ class Module(vtypes.VeriloggenNode):
     #---------------------------------------------------------------------------
     def Input(self, name, width=None, length=None, signed=False, value=None):
         t = vtypes.Input(width, length, signed, value, name=name, module=self)
-        if not isinstance(self.find_identifier(name), (vtypes.AnyType, vtypes.Wire)):
-            raise ValueError("Object '%s' is already defined." % name)
+        self.check_existing_identifier(name, vtypes.Wire)
         self.io_variable[name] = t
         self.items.append(t)
         return t
     
     def Output(self, name, width=None, length=None, signed=False, value=None):
         t = vtypes.Output(width, length, signed, value, name=name, module=self)
-        if not isinstance(self.find_identifier(name), (vtypes.AnyType, vtypes.Wire, vtypes.Reg)):
-            raise ValueError("Object '%s' is already defined." % name)
+        self.check_existing_identifier(name, vtypes.Wire, vtypes.Reg)
         self.io_variable[name] = t
         self.items.append(t)
         return t
     
     def OutputReg(self, name, width=None, length=None, signed=False, value=None, initval=None):
         t = vtypes.Output(width, length, signed, value, name=name, module=self)
-        if not isinstance(self.find_identifier(name), vtypes.AnyType):
-            raise ValueError("Object '%s' is already defined." % name)
+        self.check_existing_identifier(name)
         self.io_variable[name] = t
         self.items.append(t)
         t = vtypes.Reg(width, length, signed, value, initval, name=name)
@@ -66,16 +63,15 @@ class Module(vtypes.VeriloggenNode):
     
     def Inout(self, name, width=None, length=None, signed=False, value=None):
         t = vtypes.Inout(width, length, signed, value, name=name, module=self)
-        if not isinstance(self.find_identifier(name), (vtypes.AnyType, vtypes.Wire)):
-            raise ValueError("Object '%s' is already defined." % name)
+        self.check_existing_identifier(name, vtypes.Wire)
         self.io_variable[name] = t
         self.items.append(t)
         return t
 
     def Wire(self, name, width=None, length=None, signed=False, value=None):
         t = vtypes.Wire(width, length, signed, value, name=name, module=self)
-        if not isinstance(self.find_identifier(name),
-                          (vtypes.AnyType, vtypes.Input, vtypes.Output)) or self.is_reg(name):
+        self.check_existing_identifier(name, vtypes.Input, vtypes.Output)
+        if self.is_reg(name):
             raise ValueError("Object '%s' is already defined." % name)
         self.variable[name] = t
         self.items.append(t)
@@ -87,8 +83,7 @@ class Module(vtypes.VeriloggenNode):
 
     def Reg(self, name, width=None, length=None, signed=False, value=None, initval=None):
         t = vtypes.Reg(width, length, signed, value, initval, name=name, module=self)
-        if not isinstance(self.find_identifier(name), (vtypes.AnyType, vtypes.Output)):
-            raise ValueError("Object '%s' is already defined." % name)
+        self.check_existing_identifier(name, vtypes.Output)
         self.variable[name] = t
         self.items.append(t)
         return t
@@ -99,8 +94,7 @@ class Module(vtypes.VeriloggenNode):
 
     def Integer(self, name, width=None, length=None, signed=False, value=None, initval=None):
         t = vtypes.Integer(width, length, signed, value, initval, name=name, module=self)
-        if not isinstance(self.find_identifier(name), vtypes.AnyType):
-            raise ValueError("Object '%s' is already defined." % name)
+        self.check_existing_identifier(name)
         self.variable[name] = t
         self.items.append(t)
         return t
@@ -111,8 +105,7 @@ class Module(vtypes.VeriloggenNode):
 
     def Real(self, name, width=None, length=None, signed=False, value=None, initval=None):
         t = vtypes.Real(width, length, signed, value, initval, name=name, module=self)
-        if not isinstance(self.find_identifier(name), vtypes.AnyType):
-            raise ValueError("Object '%s' is already defined." % name)
+        self.check_existing_identifier(name)
         self.variable[name] = t
         self.items.append(t)
         return t
@@ -123,8 +116,7 @@ class Module(vtypes.VeriloggenNode):
 
     def Genvar(self, name, width=None, length=None, signed=False, value=None):
         t = vtypes.Genvar(width, length, signed, value, name=name, module=self)
-        if not isinstance(self.find_identifier(name), vtypes.AnyType):
-            raise ValueError("Object '%s' is already defined." % name)
+        self.check_existing_identifier(name)
         self.variable[name] = t
         self.items.append(t)
         return t
@@ -135,16 +127,14 @@ class Module(vtypes.VeriloggenNode):
 
     def Parameter(self, name, value, width=None, signed=False, length=None):
         t = vtypes.Parameter(value, width, signed, name=name, module=self)
-        if not isinstance(self.find_identifier(name), vtypes.AnyType):
-            raise ValueError("Object '%s' is already defined." % name)
+        self.check_existing_identifier(name)        
         self.global_constant[name] = t
         self.items.append(t)
         return t
     
     def Localparam(self, name, value, width=None, signed=False, length=None):
         t = vtypes.Localparam(value, width, signed, name=name, module=self)
-        if not isinstance(self.find_identifier(name), vtypes.AnyType):
-            raise ValueError("Object '%s' is already defined." % name)
+        self.check_existing_identifier(name)        
         self.local_constant[name] = t
         self.items.append(t)
         return t
@@ -320,16 +310,14 @@ class Module(vtypes.VeriloggenNode):
     
     def Function(self, name, width=1):
         t = function.Function(name, width)
-        if not isinstance(self.find_identifier(name), vtypes.AnyType):
-            raise ValueError("Object '%s' is already defined." % name)
+        self.check_existing_identifier(name)        
         self.function[name] = t
         self.items.append(t)
         return t
         
     def Task(self, name, width=1):
         t = task.Task(name, width)
-        if not isinstance(self.find_identifier(name), vtypes.AnyType):
-            raise ValueError("Object '%s' is already defined." % name)
+        self.check_existing_identifier(name)        
         self.task[name] = t
         self.items.append(t)
         return t
@@ -341,8 +329,7 @@ class Module(vtypes.VeriloggenNode):
             if None not in self.generate: self.generate[None] = []
             self.generate[None].append(t)
             return
-        if not isinstance(self.find_identifier(scope), vtypes.AnyType):
-            raise ValueError("Object '%s' is already defined." % scope)
+        self.check_existing_identifier(scope)        
         if scope in self.generate:
             raise ValueError("scope '%s' is already defined." % scope)
         self.generate[scope] = t
@@ -355,8 +342,7 @@ class Module(vtypes.VeriloggenNode):
             if None not in self.generate: self.generate[None] = []
             self.generate[None].append(t)
             return
-        if not isinstance(self.find_identifier(scope), vtypes.AnyType):
-            raise ValueError("Object '%s' is already defined." % scope)
+        self.check_existing_identifier(scope)        
         if scope in self.generate:
             raise ValueError("scope '%s' is already defined." % scope)
         self.generate[scope] = t
@@ -369,8 +355,7 @@ class Module(vtypes.VeriloggenNode):
         if not isinstance(module, (Module, StubModule, str)):
             raise TypeError('"module" of Instance must be Module, StubModule, or str, not %s'
                             % type(module))
-        if not isinstance(self.find_identifier(instname), vtypes.AnyType):
-            raise ValueError("Object '%s' is already defined." % instname)
+        self.check_existing_identifier(instname)        
         t = Instance(module, instname, params, ports)
         self.instance[instname] = t
         self.items.append(t)
@@ -571,9 +556,9 @@ class Module(vtypes.VeriloggenNode):
 
         if isinstance(obj, vtypes.AnyType):
             self.io_variable[obj.name] = obj
-            self.variable[obj.name] = obj
-            self.global_constant[obj.name] = obj
-            self.local_constant[obj.name] = obj
+            #self.variable[obj.name] = obj
+            #self.global_constant[obj.name] = obj
+            #self.local_constant[obj.name] = obj
             return
         
         if isinstance(obj, (vtypes.Input, vtypes.Output, vtypes.Inout)):
@@ -669,7 +654,7 @@ class Module(vtypes.VeriloggenNode):
         if name in self.task: return self.task[name]
         if name in self.instance: return self.instance[name]
         if name in self.generate: return self.generate[name]
-        return vtypes.AnyType(name=name)
+        return None
 
     #---------------------------------------------------------------------------
     def get_tmp(self):
@@ -769,6 +754,18 @@ class Module(vtypes.VeriloggenNode):
         for sub in self.submodule.values():
             modules.update( sub.get_modules() )
         return modules
+
+    def check_existing_identifier(self, name, *types):
+        s = self.find_identifier(name)
+        if s is None:
+            return
+        if isinstance(s, vtypes.AnyType):
+            return
+        if len(types) == 0:
+            print(s)
+            raise ValueError("Object '%s' is already defined." % name)
+        if not isinstance(s, types):
+            raise ValueError("Object '%s' is already defined." % name)
     
 #-------------------------------------------------------------------------------
 class StubModule(vtypes.VeriloggenNode):
@@ -903,7 +900,7 @@ class Generate(Module):
         r = self.m.find_identifier(name)
         if r is not None:
             return r
-        return vtypes.AnyType(name=name)
+        return None
 
     def get_modules(self):
         modules = collections.OrderedDict()

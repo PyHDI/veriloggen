@@ -74,18 +74,18 @@ class RenameVisitor(object):
         return vtypes.Repeat(var, times)
 
     def visit_Cond(self, node):
-        cond = self.visit(node.condition)
+        condition = self.visit(node.condition)
         true_value = self.visit(node.true_value)
         false_value = self.visit(node.false_value)
-        return vtype.Cond(cond, true_value, false_value)
+        return vtype.Cond(condition, true_value, false_value)
     
     def visit__BinaryOperator(self, node):
         op = type(node)
-        left = self.visit(node)
-        right = self.visit(right)
+        left = self.visit(node.left)
+        right = self.visit(node.right)
         return op(left, right)
     
     def visit__UnaryOperator(self, node):
         op = type(node)
-        right = self.visit(right)
+        right = self.visit(node.right)
         return op(right)

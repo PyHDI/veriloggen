@@ -167,7 +167,10 @@ class VerilogReadVisitor(object):
             return vtypes.Scope(*labels)
         if not isinstance(self.m, module.Module):
             return vtypes.AnyType(name=node.name)
-        return self.m.find_identifier(node.name)
+        ret = self.m.find_identifier(node.name)
+        if ret is None:
+            return vtypes.AnyType(name=node.name)
+        return ret
         
     def visit_IntConst(self, node):
         return vtypes.Int(node.value)
