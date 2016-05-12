@@ -1382,7 +1382,7 @@ class Negedge(Sensitive): pass
 #-------------------------------------------------------------------------------
 class SensitiveAll(Sensitive):
     def __init__(self):
-        Sensitive.__init__('all')
+        Sensitive.__init__(self, 'all')
 
 #-------------------------------------------------------------------------------
 class Subst(VeriloggenNode):

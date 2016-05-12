@@ -688,7 +688,12 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
         sig = self.bind_visitor.visit(node.name)
         t = 'negedge'
         return vast.Sens(sig, t)
-    
+
+    def visit_SensitiveAll(self, node):
+        sig = None
+        t = 'all'
+        return vast.Sens(sig, t)
+            
     #---------------------------------------------------------------------------
     def visit_Always(self, node):
         sens = ( tuple([ self.visit(n) if isinstance(n, vtypes.Sensitive) else
