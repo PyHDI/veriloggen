@@ -8,6 +8,18 @@ import veriloggen.core.vtypes as vtypes
 from veriloggen.seq.subst_visitor import SubstDstVisitor
 from veriloggen.seq.reset_visitor import ResetVisitor
 
+_tmp_count = 0
+def _tmp_name(prefix='_tmp_seq'):
+    global _tmp_count
+    v = _tmp_count
+    _tmp_count += 1
+    ret = '_'.join([prefix, str(v)])
+    return ret
+
+def TmpSeq(m, clk, rst=None):
+    name = _tmp_name()
+    return Seq(m, name, clk, rst)
+
 class Seq(vtypes.VeriloggenNode):
     """ Sequential Logic Manager """
     def __init__(self, m, name, clk, rst=None):

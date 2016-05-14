@@ -18,8 +18,8 @@ from .verilog import from_verilog
 from .verilog import simulation
 
 # Extension
-from .seq.seq import Seq
-from .fsm.fsm import FSM
+from .seq.seq import Seq, TmpSeq
+from .fsm.fsm import FSM, TmpFSM
 from .pipeline.pipeline import Pipeline
 
 from .types import fixed

@@ -10,6 +10,18 @@ from veriloggen.seq.subst_visitor import SubstDstVisitor
 from veriloggen.seq.reset_visitor import ResetVisitor
 from veriloggen.seq.seq import Seq
 
+_tmp_count = 0
+def _tmp_name(prefix='_tmp_fsm'):
+    global _tmp_count
+    v = _tmp_count
+    _tmp_count += 1
+    ret = '_'.join([prefix, str(v)])
+    return ret
+
+def TmpFSM(m, clk, rst, width=32, initname='init'):
+    name = _tmp_name()
+    return FSM(m, name, clk, rst, width, initname)
+
 class FSM(vtypes.VeriloggenNode):
     """ Finite State Machine Generator """
     def __init__(self, m, name, clk, rst, width=32, initname='init'):
