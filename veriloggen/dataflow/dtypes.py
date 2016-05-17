@@ -28,6 +28,7 @@ def Constant(value, fixed=True, point=0):
     
     if isinstance(value, float):
         if fixed:
+            value = fx.to_fixed(value, point)
             return FixedPoint(value, point)
         return Float(value)
     
