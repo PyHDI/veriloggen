@@ -10,14 +10,14 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 from veriloggen import *
 import veriloggen.dataflow as dataflow
 
-def add_serial(v, length):
-    ret = v
-    for i in range(1, length):
-        ret += v.prev(i)
+def add_serial(values):
+    ret = values[0]
+    for v in values[1:]:
+        ret += v
     return ret
 
-def add_parallel(v, length):
-    srcs = [ v.prev(i) for i in range(length) ]
+def add_parallel(values):
+    srcs = values
     
     while len(srcs) > 1:
         next_srcs = []
@@ -34,9 +34,11 @@ def add_parallel(v, length):
 
 def mkMovAvg(length=8, datawidth=32):
     x = dataflow.Variable('xdata', valid='xvalid', ready='xready', signed=True, width=datawidth)
+
+    srcs = [ x.prev(i) for i in range(length) ]
     
-    #y = add_serial(x, length)
-    y = add_parallel(x, length)
+    #y = add_serial(srcs)
+    y = add_parallel(srcs)
 
     if math.log(length, 2) % 1.0 == 0.0:
         y = y >> int(math.log(length, 2))
