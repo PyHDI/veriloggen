@@ -60,7 +60,11 @@ class GraphGenerator(_Visitor):
     def _add_output(self, node, src):
         if node._has_output():
             outobj = node.output_data
-            self.graph.add_node(outobj, label=outobj, shape='box',
+            label_data = [ outobj, str(node.width) ]
+            if node.point > 0:
+                label_data.append(str(node.point))
+            label = ':'.join(label_data)
+            self.graph.add_node(outobj, label=label, shape='box',
                                 color='lightblue', style='filled', peripheries=2)
             self.graph.add_edge(src, outobj)
             self.output_nodes.append(outobj)
@@ -171,7 +175,12 @@ class GraphGenerator(_Visitor):
             self.visited_node[node] = node
             return
 
-        self.graph.add_node(node, label=node.input_data, shape='box',
+        label_data = [ node.input_data, str(node.width) ]
+        if node.point > 0:
+            label_data.append(str(node.point))
+        label = ':'.join(label_data)
+        
+        self.graph.add_node(node, label=label, shape='box',
                             color='lightblue', style='filled', peripheries=2)
         
         self.input_nodes.append(node)
