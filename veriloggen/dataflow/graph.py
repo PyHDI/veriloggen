@@ -138,7 +138,13 @@ class GraphGenerator(_Visitor):
         return node
 
     def visit__Constant(self, node):
-        self._add_node(node, label=node.value, shape='invtriangle')
+        if isinstance(node, dtypes.FixedPoint):
+            value = "%f:%d" % (((1.0 * node.value) / (2.0 ** node.point)), node.point)
+        elif isinstance(node, dtypes.Float):
+            value = "%f" % node.value
+        else:
+            value = str(node.value)
+        self._add_node(node, label=value, shape='oval')
         self._add_output(node, node)
         self.visited_node[node] = node
         return node
