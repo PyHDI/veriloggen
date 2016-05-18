@@ -22,5 +22,8 @@ from .seq.seq import Seq, TmpSeq
 from .fsm.fsm import FSM, TmpFSM
 from .pipeline.pipeline import Pipeline
 
+# Additional Types
 from .types import fixed
+from .types import bram
+
 from .resolver import resolver
