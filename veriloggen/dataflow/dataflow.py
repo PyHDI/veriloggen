@@ -108,11 +108,12 @@ class Dataflow(object):
         return m
             
     #---------------------------------------------------------------------------
-    def draw_graph(self, filename='out.png', prog='dot', skip_gap=False):
+    def draw_graph(self, filename='out.png', prog='dot', rankdir='LR', nogap=False):
         if self.last_result is None:
             self.to_module()
             
-        graph.draw_graph(self.last_result, filename, prog, skip_gap)
+        graph.draw_graph(self.last_result, filename=filename, prog=prog,
+                         rankdir=rankdir, nogap=nogap)
         
     #---------------------------------------------------------------------------
     def pipeline_depth(self):

@@ -9,19 +9,20 @@ import veriloggen.core.vtypes as vtypes
 from . import dtypes
 from .visitor import _Visitor
 
-def draw_graph(vars, filename='out.png', prog='dot', skip_gap=False):
-    gg = GraphGenerator(skip_gap=skip_gap)
+def draw_graph(vars, filename='out.png', prog='dot', rankdir='LR', nogap=False):
+    gg = GraphGenerator(rankdir=rankdir, nogap=nogap)
     gg.draw(vars, filename, prog)
 
 class GraphGenerator(_Visitor):
-    def __init__(self, skip_gap=False):
+    def __init__(self, rankdir='LR', nogap=False):
         try:
             import pygraphviz as pgv
         except:
             raise ImportError('Graph generator requires Pygraphviz.')
 
-        self.skip_gap = skip_gap
-        self.graph = pgv.AGraph(directed=True)
+        self.graph = pgv.AGraph(directed=True, rankdir=rankdir)
+        
+        self.nogap = nogap
         self.visited_node = {}
         self.tmp_count = 0
 
@@ -40,26 +41,21 @@ class GraphGenerator(_Visitor):
     
     def _visited(self, node):
         return node in self.visited_node
-    
-    def _add_node(self, node, label='', color='black', shape='box', style='solid'):
-        self.graph.add_node(node, label=label, color=color, shape=shape, style=style)
-
-    def _add_edge(self, start, end, color='black', label='', style='solid'):
-        self.graph.add_edge(start, end, color=color, label=label, style=style)
 
     def _add_output(self, node, src):
         if node._has_output():
             outobj = node.output_data
-            self._add_node(outobj, label=node.output_data, shape='trapezium')
-            self._add_edge(src, outobj)
+            self.graph.add_node(outobj, label=node.output_data, shape='box',
+                           color='lightblue', style='filled', peripheries=2)
+            self.graph.add_edge(src, outobj)
 
     def _add_gap(self, node, mark=''):
-        if self.skip_gap: return node
+        if self.nogap: return node
         prev = node
         for i in range(node.end_stage - node.start_stage - 1):
             tmp = self._get_tmp()
-            self._add_node(tmp, label=mark, shape='box')
-            self._add_edge(prev, tmp)
+            self.graph.add_node(tmp, label=mark, shape='box', color='lightgray', style='filled')
+            self.graph.add_edge(prev, tmp)
             prev = tmp
         return prev
             
@@ -79,24 +75,29 @@ class GraphGenerator(_Visitor):
     
     def visit__BinaryOperator(self, node):
         mark = self._get_mark(node.op)
-        self._add_node(node, label=mark, shape='ellipse')
+        self.graph.add_node(node, label=mark, shape='circle')
         left = self.visit(node.left)
         right = self.visit(node.right)
-        self._add_edge(left, node, label='L')
-        self._add_edge(right, node, label='R')
+        self.graph.add_edge(left, node, label='L')
+        self.graph.add_edge(right, node, label='R')
         prev = self._add_gap(node, mark)
         self._add_output(node, prev)
         self.visited_node[node] = prev
         return prev
     
     def visit__UnaryOperator(self, node):
+        if self.nogap and isinstance(node, dtypes._Delay):
+            return self.visit(node.parent_value)
+        
         mark = ('delay' if isinstance(node, dtypes._Delay) else
                 'prev' if isinstance(node, dtypes._Prev) else
                 self._get_mark(node.op) )
-        shape = 'box' if isinstance(node, (dtypes._Delay, dtypes._Prev)) else 'ellipse' 
-        self._add_node(node, label=mark, shape=shape)
+        shape = 'box' if isinstance(node, (dtypes._Delay, dtypes._Prev)) else 'circle'
+        color = 'lightgray' if isinstance(node, (dtypes._Delay, dtypes._Prev)) else 'black'
+        style = 'filled' if isinstance(node, (dtypes._Delay, dtypes._Prev)) else None
+        self.graph.add_node(node, label=mark, shape=shape, color=color, style=style)
         right = self.visit(node.right)
-        self._add_edge(right, node, label='R')
+        self.graph.add_edge(right, node, label='R')
         prev = self._add_gap(node, mark)
         self._add_output(node, prev)
         self.visited_node[node] = prev
@@ -104,10 +105,10 @@ class GraphGenerator(_Visitor):
 
     def visit__SpecialOperator(self, node):
         mark = self._get_mark(node.op)
-        self._add_node(node, label=mark, shape='ellipse')
+        self.graph.add_node(node, label=mark, shape='ellipse')
         for i, arg in enumerate(node.args):
             a = self.visit(arg)
-            self._add_edge(a, node, label=str(i))
+            self.graph.add_edge(a, node, label=str(i))
         prev = self._add_gap(node, mark)
         self._add_output(node, prev)
         self.visited_node[node] = prev
@@ -115,13 +116,13 @@ class GraphGenerator(_Visitor):
 
     def visit__Accumulator(self, node):
         mark = ' '.join([ self._get_mark(op) for op in node.ops ])
-        self._add_node(node, label=mark, shape='box', style='rounded')
+        self.graph.add_node(node, label=mark, shape='box', style='rounded')
         right = self.visit(node.right)
         initval = self.visit(node.initval)
         reset = self.visit(node.reset)
-        self._add_edge(right, node, label='R')
-        self._add_edge(initval, node, label='initval')
-        self._add_edge(reset, node, label='reset')
+        self.graph.add_edge(right, node, label='R')
+        self.graph.add_edge(initval, node, label='initval')
+        self.graph.add_edge(reset, node, label='reset')
         prev = self._add_gap(node, mark)
         self._add_output(node, prev)
         self.visited_node[node] = prev
@@ -130,9 +131,11 @@ class GraphGenerator(_Visitor):
     def visit__Variable(self, node):
         if isinstance(node.input_data, dtypes._Numeric):
             self.visit(node.input_data)
+            self.visited_node[node] = node
             return
-        
-        self._add_node(node, label=node.input_data, shape='invtrapezium')
+
+        self.graph.add_node(node, label=node.input_data, shape='box', peripheries=2,
+                            color='lightblue', style='filled')
         self._add_output(node, node)
         self.visited_node[node] = node
         return node
@@ -144,7 +147,7 @@ class GraphGenerator(_Visitor):
             value = "%f" % node.value
         else:
             value = str(node.value)
-        self._add_node(node, label=value, shape='oval')
+        self.graph.add_node(node, label=value, shape='', color='lightblue', style='filled')
         self._add_output(node, node)
         self.visited_node[node] = node
         return node
