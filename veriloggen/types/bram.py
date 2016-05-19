@@ -30,6 +30,18 @@ class BramInterface(object):
             self.wdata = getattr(m, itype)(name + '_wdata', datawidth)
             self.wenable = getattr(m, itype)(name + '_wenable')
 
+    def connect(self, targ):
+        self._connect_port(self.addr, targ.addr)
+        self._connect_port(targ.rdata, self.rdata)
+        self._connect_port(self.wdata, targ.wdata)
+        self._connect_port(self.wenable, targ.wenable)
+
+    def _connect_port(self, left, right):
+        if isinstance(left, vtypes.Reg):
+            left.module.Always()( left(right, blk=True) )
+        else:
+            left.assign(right)
+
 class BramSlaveInterface(BramInterface):
     _I = 'Input'
     _O = 'Output'
