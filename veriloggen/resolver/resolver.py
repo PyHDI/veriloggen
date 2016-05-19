@@ -564,6 +564,8 @@ class ModuleReplaceVisitor(_CachedVisitor):
         for var in vars.values():
             if var.width is not None:
                 var.width = self.replace_visitor.visit(var.width)
+            if var.length is not None:
+                var.length = self.replace_visitor.visit(var.length)
 
         for asg in node.assign:
             self.visit(asg)

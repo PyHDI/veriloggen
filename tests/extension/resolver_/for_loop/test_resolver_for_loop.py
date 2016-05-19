@@ -13,7 +13,7 @@ module blinkled #
   output reg [8-1:0] LED
 );
 
-  reg [32-1:0] count [0:WIDTH-1];
+  reg [32-1:0] count [0:8-1];
   integer i;
 
   always @(posedge CLK) begin

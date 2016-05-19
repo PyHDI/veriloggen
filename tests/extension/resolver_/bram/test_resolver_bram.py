@@ -102,7 +102,7 @@ module BRAM2 #
 
   reg [14-1:0] delay_ADDR0;
   reg [14-1:0] delay_ADDR1;
-  reg [32-1:0] mem [0:2**ADDR_WIDTH-1];
+  reg [32-1:0] mem [0:16384-1];
 
   always @(posedge CLK) begin
     if(WE0) begin
