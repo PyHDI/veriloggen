@@ -44,7 +44,10 @@ def mkStencilPipeline2D(coe=None, size=3, width=32, point=16):
     df = dataflow.Dataflow(rslt)
     m = df.to_module('stencil_pipeline_2d')
 
-    df.draw_graph()
+    #try:
+    #    df.draw_graph()
+    #except:
+    #    print('Dataflow graph could not be generated.', file=sys.stderr)
 
     return m
 
