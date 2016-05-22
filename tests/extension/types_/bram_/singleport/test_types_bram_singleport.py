@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import bram_singleport
+import types_bram_singleport
 
 expected_verilog = """
 module test;
@@ -195,7 +195,7 @@ endmodule
 """
 
 def test():
-    test_module = bram_singleport.mkTest()
+    test_module = types_bram_singleport.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
