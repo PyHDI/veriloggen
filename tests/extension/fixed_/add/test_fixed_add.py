@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import add
+import fixed_add
 
 expected_verilog = """
 module blinkled #
@@ -62,7 +62,7 @@ endmodule
 """
 
 def test():
-    test_module = add.mkLed()
+    test_module = fixed_add.mkLed()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
