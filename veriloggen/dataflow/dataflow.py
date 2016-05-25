@@ -71,7 +71,7 @@ class Dataflow(object):
 
         # add input ports
         for input_var in sorted(input_vars, key=lambda x:x.object_id):
-            input_var._implement_input(m, seq)
+            input_var._implement_input(m, seq, aswire)
 
         # schedule
         sched = scheduler.ASAPScheduler()
@@ -97,7 +97,7 @@ class Dataflow(object):
 
         # add output ports
         for output_var in sorted(output_vars, key=lambda x:x.object_id):
-            output_var._implement_output(m, seq)
+            output_var._implement_output(m, seq, aswire)
 
         # add always statement
         seq.make_always()

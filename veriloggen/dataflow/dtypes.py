@@ -204,13 +204,20 @@ class _Numeric(_Node):
 
         type_i = m.Wire if aswire else m.Input
         type_o = m.Wire if aswire else m.Output
-        
-        data = type_o(self.output_data, width=width, signed=signed)
-        
-        if self.output_valid is not None:
+
+        if isinstance(self.output_data, (vtypes.Wire, vtypes.Output)):
+            data = self.output_data
+        else:
+            data = type_o(self.output_data, width=width, signed=signed)
+
+        if isinstance(self.output_valid, (vtypes.Wire, vtypes.Output)):
+            valid = self.output_valid
+        elif self.output_valid is not None:
             valid = type_o(self.output_valid)
-            
-        if self.output_ready is not None:
+
+        if isinstance(self.output_ready, (vtypes._Numeric, int, bool)):
+            ready = self.output_ready
+        elif self.output_ready is not None:
             ready = type_i(self.output_ready)
             
         m.Assign( data(self.sig_data) )
@@ -1684,14 +1691,21 @@ class _Variable(_Numeric):
         width = self.bit_length()
         signed = self.get_signed()
 
-        self.sig_data = type_i(self.input_data, width, signed=signed)
+        if isinstance(self.input_data, (vtypes._Numeric, int, bool)):
+            self.sig_data = self.input_data
+        else:
+            self.sig_data = type_i(self.input_data, width, signed=signed)
         
-        if self.input_valid is not None:
+        if isinstance(self.input_valid, (vtypes._Numeric, int, bool)):
+            self.sig_valid = self.input_valid
+        elif self.input_valid is not None:
             self.sig_valid = type_i(self.input_valid)
         else:
             self.sig_valid = None
             
-        if self.input_ready is not None:
+        if isinstance(self.input_ready, (vtypes.Wire, vtypes.Output)):
+            self.sig_ready = self.input_ready
+        elif self.input_ready is not None:
             self.sig_ready = type_o(self.input_ready)
         else:
             self.sig_ready = None
