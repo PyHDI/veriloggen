@@ -71,7 +71,7 @@ def mkBramDefinition(name, datawidth=32, addrwidth=10, numports=2):
     return m
 
 class Bram(object):
-    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=10, numports=2, wire=False):
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=10, numports=2):
         self.m = m
         self.clk = clk
         self.rst = rst
