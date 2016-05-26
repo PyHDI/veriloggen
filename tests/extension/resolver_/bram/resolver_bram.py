@@ -8,6 +8,7 @@ import math
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
 
 from veriloggen import *
+import veriloggen.resolver.resolver as resolver
 
 def mkBram(datawidth=32, addrwidth=10, numports=2):
     m = Module('BRAM%d' % numports)

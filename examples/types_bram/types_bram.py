@@ -8,6 +8,7 @@ import math
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from veriloggen import *
+import veriloggen.types.bram as bram
 
 def mkMain(n=128, datawidth=32, numports=2):
     m = Module('main')

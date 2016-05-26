@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirna
 
 from veriloggen import *
 import veriloggen.dataflow as dataflow
+import veriloggen.types.fixed as fixed
 
 def mkMain():
     # input variiable

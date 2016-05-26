@@ -8,27 +8,42 @@ class BramInterface(object):
     _I = 'Reg'
     _O = 'Wire'
     
-    def __init__(self, m, name='', datawidth=32, addrwidth=10, itype=None, otype=None):
+    def __init__(self, m, name=None, datawidth=32, addrwidth=10, itype=None, otype=None,
+                 p_addr='addr', p_rdata='rdata', p_wdata='wdata', p_wenable='wenable',
+                 index=None):
+    
         if itype is None:
             itype = self._I
         if otype is None:
             otype = self._O
             
         self.m = m
+
+        name_addr = p_addr if name is None else '_'.join([name, p_addr])
+        name_rdata = p_rdata if name is None else '_'.join([name, p_rdata])
+        name_wdata = p_wdata if name is None else '_'.join([name, p_wdata])
+        name_wenable = p_wenable if name is None else '_'.join([name, p_wenable])
+
+        if index is not None:
+            name_addr = name_addr + str(index)
+            name_rdata = name_rdata + str(index)
+            name_wdata = name_wdata + str(index)
+            name_wenable = name_wenable + str(index)
+
         if itype == 'Reg' or itype == 'OutputReg':
-            self.addr = getattr(m, itype)(name + '_addr', addrwidth, initval=0)
+            self.addr = getattr(m, itype)(name_addr, addrwidth, initval=0)
         else:
-            self.addr = getattr(m, itype)(name + '_addr', addrwidth)
+            self.addr = getattr(m, itype)(name_addr, addrwidth)
         if otype == 'Reg' or otype == 'OutputReg':
-            self.rdata = getattr(m, otype)(name + '_rdata', datawidth, initval=0)
+            self.rdata = getattr(m, otype)(name_rdata, datawidth, initval=0)
         else:
-            self.rdata = getattr(m, otype)(name + '_rdata', datawidth)
+            self.rdata = getattr(m, otype)(name_rdata, datawidth)
         if itype == 'Reg' or itype == 'OutputReg':
-            self.wdata = getattr(m, itype)(name + '_wdata', datawidth, initval=0)
-            self.wenable = getattr(m, itype)(name + '_wenable', initval=0)
+            self.wdata = getattr(m, itype)(name_wdata, datawidth, initval=0)
+            self.wenable = getattr(m, itype)(name_wenable, initval=0)
         else:
-            self.wdata = getattr(m, itype)(name + '_wdata', datawidth)
-            self.wenable = getattr(m, itype)(name + '_wenable')
+            self.wdata = getattr(m, itype)(name_wdata, datawidth)
+            self.wenable = getattr(m, itype)(name_wenable)
 
     def connect(self, targ):
         self._connect_port(self.addr, targ.addr)
@@ -46,6 +61,11 @@ class BramSlaveInterface(BramInterface):
     _I = 'Input'
     _O = 'Output'
 
+class BramMasterInterface(BramInterface):
+    _I = 'Output'
+    _O = 'Input'
+
+#-------------------------------------------------------------------------------    
 def mkBramDefinition(name, datawidth=32, addrwidth=10, numports=2):
     m = module.Module(name)
     clk = m.Input('CLK')
@@ -70,6 +90,7 @@ def mkBramDefinition(name, datawidth=32, addrwidth=10, numports=2):
 
     return m
 
+#-------------------------------------------------------------------------------    
 class Bram(object):
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=10, numports=2):
         self.m = m

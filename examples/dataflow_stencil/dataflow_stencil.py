@@ -10,6 +10,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 from veriloggen import *
 import veriloggen.dataflow as dataflow
+import veriloggen.types.bram as bram
+import veriloggen.types.fixed as fixed
 
 def stencil(coe, data):
     data = map(lambda x,y: x*y, data, coe)
