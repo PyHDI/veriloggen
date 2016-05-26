@@ -34,10 +34,12 @@ class BramInterface(object):
             self.addr = getattr(m, itype)(name_addr, addrwidth, initval=0)
         else:
             self.addr = getattr(m, itype)(name_addr, addrwidth)
+            
         if otype == 'Reg' or otype == 'OutputReg':
             self.rdata = getattr(m, otype)(name_rdata, datawidth, initval=0)
         else:
             self.rdata = getattr(m, otype)(name_rdata, datawidth)
+            
         if itype == 'Reg' or itype == 'OutputReg':
             self.wdata = getattr(m, itype)(name_wdata, datawidth, initval=0)
             self.wenable = getattr(m, itype)(name_wenable, initval=0)
