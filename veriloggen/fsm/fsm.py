@@ -174,6 +174,10 @@ class FSM(vtypes.VeriloggenNode):
 
     #---------------------------------------------------------------------------
     def Cond(self, cond):
+        if cond is None:
+            self.last_cond = []
+            return self
+
         if 'cond' not in self.next_kwargs:
             self.next_kwargs['cond'] = cond
         else:
