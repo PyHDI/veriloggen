@@ -175,41 +175,47 @@ class Fifo(object):
         self.inst = self.m.Instance(self.definition, 'inst_' + name,
                                     ports=m.connect_ports(self.definition))
 
-    def enq(self, mng, wdata, cond=None):
+    def enq(self, mng, wdata, cond=None, delay=0):
         """ Enque operation with Seq or FSM object as mng """
         if cond is not None:
             mng.If(cond)
 
-        ack = vtypes.Not(self.wif.full)
-            
-        mng(
+        not_full = vtypes.Not(self.wif.full)
+        ack = vtypes.Ands(not_full, self.wif.enq)
+        ready = vtypes.Not(self.wif.almost_full)
+
+        current_delay = mng.current_delay
+        
+        mng.Delay(current_delay + delay)(
             self.wif.wdata(wdata)
         )
-        mng.then.If(ack)(
+        mng.Then().Delay(current_delay + delay)(
             self.wif.enq(1)
         )
-        mng.then.Delay(1)(
+        mng.Then().Delay(current_delay + delay + 1)(
             self.wif.enq(0)
         )
 
-        return ack
+        return ack, ready
 
-    def deq(self, mng, rdata=None, rvalid=None, cond=None):
+    def deq(self, mng, rdata=None, rvalid=None, cond=None, delay=0):
         """ Deque operation with Seq or FSM object as mng """
         if cond is not None:
             mng.If(cond)
 
         not_empty = vtypes.Not(self.rif.empty)
 
-        mng.If(not_empty)(
+        current_delay = mng.current_delay
+        
+        mng.Delay(current_delay + delay)(
             self.rif.deq(1)
         )
-        mng.then.Delay(1)(
+        mng.Then().Delay(current_delay + delay + 1)(
             self.rif.deq(0)
         )
 
         if rdata is not None:
-            mng.then.Delay(2)(
+            mng.Then().Delay(current_delay + delay + 2)(
                 rdata(self.rif.rdata)
             )
         else:
@@ -217,21 +223,21 @@ class Fifo(object):
 
         if rvalid is not None:
             deq_valid = self.m.TmpReg(initval=0)
-            mng.then.Delay(1)(
-                deq_valid(not_empty),
+            mng.Then().Delay(current_delay + delay + 1)(
+                deq_valid(vtypes.Ands(not_empty, self.rif.deq))
             )
-            mng.then.Delay(2)(
+            mng.Then().Delay(current_delay + delay + 2)(
                 rvalid(deq_valid)
             )
-            mng.then.Delay(3)(
+            mng.Then().Delay(current_delay + delay + 3)(
                 rvalid(0)
             )
         else:
             rvalid = self.m.TmpReg(initval=0)
-            mng.then.Delay(1)(
-                rvalid(not_empty)
+            mng.Then().Delay(current_delay + delay + 1)(
+                rvalid(vtypes.Ands(not_empty, self.rif.deq))
             )
-            mng.then.Delay(2)(
+            mng.Then().Delay(current_delay + delay + 2)(
                 rvalid(0)
             )
 

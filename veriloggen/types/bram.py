@@ -3,6 +3,7 @@ from __future__ import print_function
 
 import veriloggen.core.vtypes as vtypes
 import veriloggen.core.module as module
+import veriloggen.seq.seq as seq
 
 class BramInterface(object):
     _I = 'Reg'
@@ -107,52 +108,71 @@ class Bram(object):
         self.inst = self.m.Instance(self.definition, 'inst_' + name,
                                     ports=m.connect_ports(self.definition))
 
+        self._write_disabled = [ False for i in range(numports) ]
+
     def __getitem__(self, index):
         return self.interfaces[index]
 
-    def write(self, mng, port, addr, wdata, cond=None):
+    def disable_write(self, port):
+        mng = seq.TmpSeq(self.m, self.clk, self.rst)
+        mng(
+            self.interfaces[port].wdata(0),
+            self.interfaces[port].wenable(0)
+        )
+        mng.make_always()
+        self._write_disabled[port] = True
+
+    def write(self, mng, port, addr, wdata, cond=None, delay=0):
         """ Write operation with Seq or FSM object as mng """
+        if self._write_disabled[port]:
+            raise TypeError('Write disabled.')
+        
         if cond is not None:
             mng.If(cond)
             
-        mng(
+        current_delay = mng.current_delay
+        
+        mng.Delay(current_delay + delay).EagerVal()(
             self.interfaces[port].addr(addr),
             self.interfaces[port].wdata(wdata),
             self.interfaces[port].wenable(1)
         )
-        mng.then.Delay(1)(
+
+        mng.Then().Delay(current_delay + delay + 1)(
             self.interfaces[port].wenable(0)
         )
 
-    def read(self, mng, port, addr, rdata=None, rvalid=None, cond=None):
+    def read(self, mng, port, addr, rdata=None, rvalid=None, cond=None, delay=0):
         """ Read operation with Seq or FSM object as mng """
         if cond is not None:
             mng.If(cond)
             
-        mng(
+        current_delay = mng.current_delay
+        
+        mng.Delay(current_delay + delay).EagerVal()(
             self.interfaces[port].addr(addr)
         )
 
         if rdata is not None:
-            mng.then.Delay(2)(
+            mng.Then().Delay(current_delay + delay + 2)(
                 rdata(self.interfaces[port].rdata)
             )
         else:
             rdata = self.interfaces[port].rdata
             
         if rvalid is not None:
-            mng.then.Delay(2)(
+            mng.Then().Delay(current_delay + delay + 2)(
                 rvalid(1)
             )
-            mng.then.Delay(3)(
+            mng.Then().Delay(current_delay + delay + 3)(
                 rvalid(0)
             )
         else:
             rvalid = self.m.TmpReg(initval=0)
-            mng.then.Delay(1)(
+            mng.Then().Delay(current_delay + delay + 1)(
                 rvalid(1)
             )
-            mng.then.Delay(2)(
+            mng.Then().Delay(current_delay + delay + 2)(
                 rvalid(0)
             )
 
