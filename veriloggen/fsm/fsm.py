@@ -140,10 +140,10 @@ class FSM(vtypes.VeriloggenNode):
             return self
         
         self._clear_last_if_statement()
-        return self._add_statement(*statement, **kwargs)
+        return self._add_statement(statement, **kwargs)
     
     #---------------------------------------------------------------------------
-    def _add_statement(self, *statement, index=None, keep=None, delay=None, cond=None,
+    def _add_statement(self, statement, index=None, keep=None, delay=None, cond=None,
                        lazy_cond=False, eager_val=False, no_delay_cond=False):
         
         index = self._to_index(index) if index is not None else self.current()
@@ -151,7 +151,7 @@ class FSM(vtypes.VeriloggenNode):
         if keep is not None:
             for i in range(keep):
                 new_delay = i if delay is None else delay + i
-                self._add_statement(*statement, index=index,
+                self._add_statement(statement, index=index,
                                     keep=None, delay=new_delay, cond=cond,
                                     lazy_cond=lazy_cond, eager_val=eager_val,
                                     no_delay_cond=no_delay_cond)
@@ -450,7 +450,7 @@ class FSM(vtypes.VeriloggenNode):
         for i in range(delay):
             tmp_name = '_'.join([name_prefix, str(i+1)])
             tmp = self.m.Reg(tmp_name, initval=0)
-            self._add_statement(tmp(prev), delay=i, no_delay_cond=True)
+            self._add_statement([tmp(prev)], delay=i, no_delay_cond=True)
             prev = tmp
         return prev
     
@@ -474,7 +474,7 @@ class FSM(vtypes.VeriloggenNode):
         for i in range(delay):
             tmp_name = '_'.join([name_prefix, str(i+1)])
             tmp = self.m.Reg(tmp_name, width, initval=0)
-            self._add_statement(tmp(prev), delay=i, no_delay_cond=True)
+            self._add_statement([tmp(prev)], delay=i, no_delay_cond=True)
             prev = tmp
         return left(prev)
     

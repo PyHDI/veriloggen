@@ -75,7 +75,7 @@ class Seq(vtypes.VeriloggenNode):
                 continue
             tmp = self.m.Reg(tmp_name, width, initval=initval)
             self.prev_dict[tmp_name] = tmp;
-            self._add_statement(tmp(p))
+            self._add_statement([tmp(p)])
             p = tmp
             
         return p
@@ -100,16 +100,16 @@ class Seq(vtypes.VeriloggenNode):
             return self
 
         self._clear_last_if_statement()
-        return self._add_statement(*statement, **kwargs)
+        return self._add_statement(statement, **kwargs)
         
     #---------------------------------------------------------------------------
-    def _add_statement(self, *statement, keep=None, delay=None, cond=None,
+    def _add_statement(self, statement, keep=None, delay=None, cond=None,
                        lazy_cond=False, eager_val=False, no_delay_cond=False):
         
         if keep is not None:
             for i in range(keep):
                 new_delay = i if delay is None else delay + i
-                self._add_statement(*statement,
+                self._add_statement(statement,
                                     keep=None, delay=new_delay, cond=cond,
                                     lazy_cond=lazy_cond, eager_val=eager_val,
                                     no_delay_cond=no_delay_cond)
@@ -340,7 +340,7 @@ class Seq(vtypes.VeriloggenNode):
         for i in range(delay):
             tmp_name = '_'.join([name_prefix, str(i+1)])
             tmp = self.m.Reg(tmp_name, initval=0)
-            self._add_statement(tmp(prev), delay=i, no_delay_cond=True)
+            self._add_statement([tmp(prev)], delay=i, no_delay_cond=True)
             prev = tmp
         return prev
     
@@ -364,7 +364,7 @@ class Seq(vtypes.VeriloggenNode):
         for i in range(delay):
             tmp_name = '_'.join([name_prefix, str(i+1)])
             tmp = self.m.Reg(tmp_name, width, initval=0)
-            self._add_statement(tmp(prev), delay=i, no_delay_cond=True)
+            self._add_statement([tmp(prev)], delay=i, no_delay_cond=True)
             prev = tmp
         return left(prev)
     
