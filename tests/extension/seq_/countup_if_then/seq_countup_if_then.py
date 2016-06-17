@@ -24,9 +24,6 @@ def mkLed():
     
     seq.If(count<interval-1)(
         count(count + 1)
-    ).Elif(count==100)(
-        count(101),
-        tmp.inc()
     ).Else(
         count(0),
         led(led + 1)
@@ -34,13 +31,14 @@ def mkLed():
 
     updated = m.Reg('updated', initval=0)
 
-    # recall the last condition by 'then' 
-    seq.If(count==interval-1).Delay(1).Keep(2)(
+    # recall the last condition by Then()
+    seq.Then().Delay(1)(
         updated(1)
-    ).then.Delay(3)( 
+    )
+    seq.Then().Delay(2)( 
         updated(0)
     )
-   
+
     seq.make_always()
     
     return m

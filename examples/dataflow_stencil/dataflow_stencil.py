@@ -103,7 +103,9 @@ def mkStencil(n=16, size=3, datawidth=32, point=16, coe_test=False):
 
     read_fsm.If(start)(
         busy(1)
-    ).then.goto_next()
+    )
+
+    read_fsm.Then().goto_next()
 
     read_fsm(
         read_addr.inc(),
@@ -120,11 +122,15 @@ def mkStencil(n=16, size=3, datawidth=32, point=16, coe_test=False):
     read_fsm.If(read_count == n - 1)(
         read_addr(0),
         read_count(0)
-    ).then.goto_next()
+    )
+
+    read_fsm.Then().goto_next()
 
     read_fsm.If(done)(
         busy(0)
-    ).then.goto_init()
+    )
+
+    read_fsm.Then().goto_init()
 
     read_fsm.make_always()
 
@@ -166,7 +172,7 @@ def mkStencil(n=16, size=3, datawidth=32, point=16, coe_test=False):
     
     write_fsm.If(Ands(ovalid, write_count > skip_offset))(
         write_addr.inc()
-    ).then
+    ).Then()
     dst_bram.write(write_fsm, 0, write_addr, odata)
     
     write_fsm.If(ovalid)(
@@ -177,7 +183,8 @@ def mkStencil(n=16, size=3, datawidth=32, point=16, coe_test=False):
         write_count(0),
         write_addr(skip_offset),
         done(1)
-    ).then.goto_init()
+    )
+    write_fsm.Then().goto_init()
 
     write_fsm.make_always()
 

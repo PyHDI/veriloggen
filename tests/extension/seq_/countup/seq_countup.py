@@ -17,10 +17,20 @@ def mkLed():
     count = m.Reg('count', 32, initval=0)
     
     seq = Seq(m, 'seq', clk, rst)
-    seq.add( Systask('display', 'LED:%d count:%d', led, count) )
-    seq.add( count(count + 1), cond=count<interval-1 )
-    seq.add( count(0), cond=count==interval-1 )
-    seq.add( led(led + 1), cond=count==interval-1 )
+    
+    seq(
+        Systask('display', 'LED:%d count:%d', led, count)
+    )
+
+    seq.If(count<interval-1)(
+        count(count + 1)
+    )
+    seq.If(count==interval-1)(
+        count(0)
+    ) 
+    seq.If(count==interval-1)(
+        led(led + 1)
+    )
 
     seq.make_always()
     

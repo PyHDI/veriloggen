@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import fsm_countup_if_then
+import seq_countup_keep
 
 expected_verilog = """
 module test #
@@ -22,7 +22,6 @@ module test #
     .RST(RST),
     .LED(LED)
   );
-
 
   initial begin
     CLK = 0;
@@ -58,47 +57,57 @@ module blinkled #
 );
 
   reg [32-1:0] count;
-  reg _tmp_0;
-  reg [32-1:0] fsm;
-  localparam fsm_init = 0;
-  localparam fsm_1 = 1;
+  reg _seq_cond_0_1;
+  reg _seq_cond_1_1;
+  reg _seq_cond_1_2;
+  reg _seq_cond_2_1;
+  reg _seq_cond_2_2;
+  reg _seq_cond_2_3;
 
   always @(posedge CLK) begin
     if(RST) begin
-      fsm <= fsm_init;
       count <= 0;
-      _tmp_0 <= 0;
       LED <= 0;
+      _seq_cond_0_1 <= 0;
+      _seq_cond_1_1 <= 0;
+      _seq_cond_1_2 <= 0;
+      _seq_cond_2_1 <= 0;
+      _seq_cond_2_2 <= 0;
+      _seq_cond_2_3 <= 0;
     end else begin
-      case(fsm)
-        fsm_init: begin
-          $display("LED:%d count:%d", LED, count);
-          if(count < INTERVAL - 1) begin
-            count <= count + 1;
-          end else if(count == 100) begin
-            count <= 101;
-            _tmp_0 <= _tmp_0 + 1;
-          end else begin
-            count <= 0;
-          end
-          if(!(count < INTERVAL - 1) && !(count == 100)) begin
-            fsm <= fsm_1;
-          end 
-        end
-        fsm_1: begin
-          LED <= LED + 1;
-          fsm <= fsm_init;
-        end
-      endcase
+      if(_seq_cond_2_3) begin
+        LED <= LED + 1;
+      end 
+      if(_seq_cond_1_2) begin
+        LED <= LED + 1;
+      end 
+      _seq_cond_2_3 <= _seq_cond_2_2;
+      if(_seq_cond_0_1) begin
+        LED <= LED + 1;
+      end 
+      _seq_cond_1_2 <= _seq_cond_1_1;
+      _seq_cond_2_2 <= _seq_cond_2_1;
+      $display("LED:%d count:%d", LED, count);
+      if(count < INTERVAL - 1) begin
+        count <= count + 1;
+      end 
+      if(count == INTERVAL - 1) begin
+        count <= 0;
+      end 
+      if(count == INTERVAL - 1) begin
+        LED <= LED + 1;
+      end 
+      _seq_cond_0_1 <= count == INTERVAL - 1;
+      _seq_cond_1_1 <= count == INTERVAL - 1;
+      _seq_cond_2_1 <= count == INTERVAL - 1;
     end
   end
 
 
 endmodule
 """
-
 def test():
-    test_module = fsm_countup_if_then.mkTest()
+    test_module = seq_countup_keep.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

@@ -28,19 +28,19 @@ def add_if_else(fsm, ifelse):
     # then
     for i, s in enumerate(ifelse.true_statements):
         if i < len(ifelse.true_statements) - 1:
-            fsm.add( *s )
+            fsm( *s )
             fsm.goto_next()
         else:
-            fsm.add( *s )
+            fsm( *s )
             fsm.goto(index_merge).inc()
 
     # else
     for i, s in enumerate(ifelse.false_statements):
         if i < len(ifelse.false_statements) - 1:
-            fsm.add( *s )
+            fsm( *s )
             fsm.goto_next()
         else:
-            fsm.add( *s )
+            fsm( *s )
             fsm.goto_next()
 
 def mkLed():
@@ -55,7 +55,7 @@ def mkLed():
     # get the initial index (= 0)
     init = fsm.current()
 
-    fsm.add( count(count + 1) )
+    fsm( count(count + 1) )
     fsm.goto_next()
 
     # if-then-else statements

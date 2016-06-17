@@ -23,10 +23,10 @@ def mkLed():
         tmp.append( m.Reg('tmp_' + str(i), width, initval=0) )
         
     for i in range(4):
-        fsm.add( tmp[i](fsm.current()) ) 
+        fsm( tmp[i](fsm.current()) ) 
         fsm.goto_next(cond=None)
         
-    fsm.add( led(led + 1) )
+    fsm( led(led + 1) )
     fsm.goto(init, cond=None)
     
     fsm.make_always()

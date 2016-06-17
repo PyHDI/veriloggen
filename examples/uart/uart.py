@@ -34,7 +34,9 @@ def mkUartTx(baudrate=19200, clockfreq=100*1000*1000):
     
     fsm.If(enable)(
         ready(0)
-    ).then.goto_next()
+    )
+
+    fsm.Then().goto_next()
 
     for i in range(10):
         fsm.If(waitcount>0)(
@@ -43,7 +45,8 @@ def mkUartTx(baudrate=19200, clockfreq=100*1000*1000):
             txd(mem[0]),
             mem(Cat(Int(1, 1), mem[1:9])),
             waitcount(waitnum-1)
-        ).then.goto_next()
+        )
+        fsm.Then().goto_next()
 
     fsm(
         ready(1)
@@ -88,7 +91,8 @@ def mkUartRx(baudrate=19200, clockfreq=100*1000*1000):
         ).Else(
             mem(Cat(rxd, mem[1:9])),
             waitcount(waitnum-1)
-        ).then.goto_next()
+        )
+        fsm.Then().goto_next()
         
     fsm(
         valid(1),

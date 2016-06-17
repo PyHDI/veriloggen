@@ -4,6 +4,7 @@ import fsm_delayed_eager_val
 
 expected_verilog = """
 module test;
+
   reg CLK;
   reg RST;
   wire valid;
@@ -16,17 +17,20 @@ module test;
     .valid(valid)
   );
 
+
   initial begin
     $dumpfile("uut.vcd");
     $dumpvars(0, uut);
   end
 
+
   initial begin
     CLK = 0;
     forever begin
-      #5 CLK = (!CLK);
+      #5 CLK = !CLK;
     end
   end
+
 
   initial begin
     RST = 0;
@@ -38,26 +42,27 @@ module test;
     $finish;
   end
 
+
 endmodule
 
+
+
 module blinkled
-  (
-   input CLK, 
-   input RST, 
-   output valid
-   );
+(
+  input CLK,
+  input RST,
+  output valid
+);
 
   reg [32-1:0] count;
   reg [8-1:0] valid_reg;
   assign valid = valid_reg[0];
-
   wire up;
   wire down;
   assign up = 1;
   assign down = 0;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
-
   reg [32-1:0] _d1_fsm;
   reg [8-1:0] _valid_reg_4_0_1;
   reg _fsm_cond_4_1_1;
@@ -234,7 +239,6 @@ module blinkled
   reg _fsm_cond_20_69_2;
   reg _fsm_cond_20_69_3;
   reg _fsm_cond_20_69_4;
-
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
   localparam fsm_3 = 3;
@@ -439,7 +443,7 @@ module blinkled
       _fsm_cond_20_69_3 <= 0;
       _fsm_cond_20_69_4 <= 0;
     end else begin
-      count <= (count + 1);
+      count <= count + 1;
       _d1_fsm <= fsm;
       _d2_fsm <= _d1_fsm;
       _d3_fsm <= _d2_fsm;
@@ -747,11 +751,11 @@ module blinkled
             valid_reg <= up;
           end 
           _valid_reg_4_0_1 <= up;
-          _fsm_cond_4_1_1 <= (count >= 16);
+          _fsm_cond_4_1_1 <= count >= 16;
           _valid_reg_4_2_1 <= up;
-          _fsm_cond_4_3_1 <= (count >= 16);
+          _fsm_cond_4_3_1 <= count >= 16;
           _valid_reg_4_4_1 <= down;
-          _fsm_cond_4_5_1 <= (count >= 16);
+          _fsm_cond_4_5_1 <= count >= 16;
           if(count >= 16) begin
             fsm <= fsm_5;
           end 
@@ -782,112 +786,112 @@ module blinkled
         end
         fsm_13: begin
           _valid_reg_13_6_1 <= up;
-          _fsm_cond_13_7_1 <= (count >= 32);
+          _fsm_cond_13_7_1 <= count >= 32;
           _valid_reg_13_8_1 <= up;
-          _fsm_cond_13_9_1 <= (count >= 32);
+          _fsm_cond_13_9_1 <= count >= 32;
           _valid_reg_13_10_1 <= up;
-          _fsm_cond_13_11_1 <= (count >= 32);
+          _fsm_cond_13_11_1 <= count >= 32;
           _valid_reg_13_12_1 <= down;
-          _fsm_cond_13_13_1 <= (count >= 32);
+          _fsm_cond_13_13_1 <= count >= 32;
           if(count >= 32) begin
             fsm <= fsm_14;
           end 
         end
         fsm_14: begin
           _valid_reg_14_14_1 <= up;
-          _fsm_cond_14_15_1 <= (count >= 32);
+          _fsm_cond_14_15_1 <= count >= 32;
           _valid_reg_14_16_1 <= up;
-          _fsm_cond_14_17_1 <= (count >= 32);
+          _fsm_cond_14_17_1 <= count >= 32;
           _valid_reg_14_18_1 <= up;
-          _fsm_cond_14_19_1 <= (count >= 32);
+          _fsm_cond_14_19_1 <= count >= 32;
           _valid_reg_14_20_1 <= down;
-          _fsm_cond_14_21_1 <= (count >= 32);
+          _fsm_cond_14_21_1 <= count >= 32;
           if(count >= 32) begin
             fsm <= fsm_15;
           end 
         end
         fsm_15: begin
           _valid_reg_15_22_1 <= up;
-          _fsm_cond_15_23_1 <= (count >= 32);
+          _fsm_cond_15_23_1 <= count >= 32;
           _valid_reg_15_24_1 <= up;
-          _fsm_cond_15_25_1 <= (count >= 32);
+          _fsm_cond_15_25_1 <= count >= 32;
           _valid_reg_15_26_1 <= up;
-          _fsm_cond_15_27_1 <= (count >= 32);
+          _fsm_cond_15_27_1 <= count >= 32;
           _valid_reg_15_28_1 <= down;
-          _fsm_cond_15_29_1 <= (count >= 32);
+          _fsm_cond_15_29_1 <= count >= 32;
           if(count >= 32) begin
             fsm <= fsm_16;
           end 
         end
         fsm_16: begin
           _valid_reg_16_30_1 <= up;
-          _fsm_cond_16_31_1 <= (count >= 32);
+          _fsm_cond_16_31_1 <= count >= 32;
           _valid_reg_16_32_1 <= up;
-          _fsm_cond_16_33_1 <= (count >= 32);
+          _fsm_cond_16_33_1 <= count >= 32;
           _valid_reg_16_34_1 <= up;
-          _fsm_cond_16_35_1 <= (count >= 32);
+          _fsm_cond_16_35_1 <= count >= 32;
           _valid_reg_16_36_1 <= down;
-          _fsm_cond_16_37_1 <= (count >= 32);
+          _fsm_cond_16_37_1 <= count >= 32;
           if(count >= 32) begin
             fsm <= fsm_17;
           end 
         end
         fsm_17: begin
           _valid_reg_17_38_1 <= up;
-          _fsm_cond_17_39_1 <= (count >= 32);
+          _fsm_cond_17_39_1 <= count >= 32;
           _valid_reg_17_40_1 <= up;
-          _fsm_cond_17_41_1 <= (count >= 32);
+          _fsm_cond_17_41_1 <= count >= 32;
           _valid_reg_17_42_1 <= up;
-          _fsm_cond_17_43_1 <= (count >= 32);
+          _fsm_cond_17_43_1 <= count >= 32;
           _valid_reg_17_44_1 <= down;
-          _fsm_cond_17_45_1 <= (count >= 32);
+          _fsm_cond_17_45_1 <= count >= 32;
           if(count >= 32) begin
             fsm <= fsm_18;
           end 
         end
         fsm_18: begin
           _valid_reg_18_46_1 <= up;
-          _fsm_cond_18_47_1 <= (count >= 32);
+          _fsm_cond_18_47_1 <= count >= 32;
           _valid_reg_18_48_1 <= up;
-          _fsm_cond_18_49_1 <= (count >= 32);
+          _fsm_cond_18_49_1 <= count >= 32;
           _valid_reg_18_50_1 <= up;
-          _fsm_cond_18_51_1 <= (count >= 32);
+          _fsm_cond_18_51_1 <= count >= 32;
           _valid_reg_18_52_1 <= down;
-          _fsm_cond_18_53_1 <= (count >= 32);
+          _fsm_cond_18_53_1 <= count >= 32;
           if(count >= 32) begin
             fsm <= fsm_19;
           end 
         end
         fsm_19: begin
           _valid_reg_19_54_1 <= up;
-          _fsm_cond_19_55_1 <= (count >= 32);
+          _fsm_cond_19_55_1 <= count >= 32;
           _valid_reg_19_56_1 <= up;
-          _fsm_cond_19_57_1 <= (count >= 32);
+          _fsm_cond_19_57_1 <= count >= 32;
           _valid_reg_19_58_1 <= up;
-          _fsm_cond_19_59_1 <= (count >= 32);
+          _fsm_cond_19_59_1 <= count >= 32;
           _valid_reg_19_60_1 <= down;
-          _fsm_cond_19_61_1 <= (count >= 32);
+          _fsm_cond_19_61_1 <= count >= 32;
           if(count >= 32) begin
             fsm <= fsm_20;
           end 
         end
         fsm_20: begin
           _valid_reg_20_62_1 <= up;
-          _fsm_cond_20_63_1 <= (count >= 32);
+          _fsm_cond_20_63_1 <= count >= 32;
           _valid_reg_20_64_1 <= up;
-          _fsm_cond_20_65_1 <= (count >= 32);
+          _fsm_cond_20_65_1 <= count >= 32;
           _valid_reg_20_66_1 <= up;
-          _fsm_cond_20_67_1 <= (count >= 32);
+          _fsm_cond_20_67_1 <= count >= 32;
           _valid_reg_20_68_1 <= down;
-          _fsm_cond_20_69_1 <= (count >= 32);
+          _fsm_cond_20_69_1 <= count >= 32;
           if(count >= 32) begin
             fsm <= fsm_21;
           end 
         end
       endcase
-
     end
   end
+
 
 endmodule
 """

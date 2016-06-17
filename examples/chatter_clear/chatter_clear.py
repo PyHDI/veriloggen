@@ -23,10 +23,19 @@ def mkChatterClear(length=1024):
 
     count = m.TmpReg(32)
     
-    seq.add( count(0), cond=din==dout )
-    seq.add( count.inc(), cond=din!=dout )
-    seq.add( count(0), cond=count==length )
-    seq.add( dout(din), cond=count==length )
+    seq.If(din==dout)(
+        count(0)
+    )
+    seq.If(din!=dout)(
+        count.inc()
+    )
+    
+    seq.If(count==length)(
+        count(0)
+    )
+    seq.If(count==length)(
+        dout(din)
+    )
 
     seq.make_always()
 
@@ -47,39 +56,39 @@ def mkTest(length=1024):
     fsm = FSM(m, 'fsm', clk, rst)
     count = m.TmpReg(32, initval=0)
 
-    fsm.add( din(0) )
-    fsm.add( count.inc() )
-    fsm.add( count(0), cond=count==2000 )
+    fsm( din(0) )
+    fsm( count.inc() )
+    fsm.If(count==2000)( count(0) )
     fsm.goto_next(count==2000)
 
-    fsm.add( din(1) )
-    fsm.add( count.inc() )
-    fsm.add( count(0), cond=count==10 )
+    fsm( din(1) )
+    fsm( count.inc() )
+    fsm.If(count==10)( count(0) )
     fsm.goto_next(count==10)
 
-    fsm.add( din(0) )
-    fsm.add( count.inc() )
-    fsm.add( count(0), cond=count==10 )
+    fsm( din(0) )
+    fsm( count.inc() )
+    fsm.If(count==10)( count(0) )
     fsm.goto_next(count==10)
 
-    fsm.add( din(1) )
-    fsm.add( count.inc() )
-    fsm.add( count(0), cond=count==2000 )
+    fsm( din(1) )
+    fsm( count.inc() )
+    fsm.If(count==2000)( count(0) )
     fsm.goto_next(count==2000)
 
-    fsm.add( din(0) )
-    fsm.add( count.inc() )
-    fsm.add( count(0), cond=count==10 )
+    fsm( din(0) )
+    fsm( count.inc() )
+    fsm.If(count==10)( count(0) )
     fsm.goto_next(count==10)
 
-    fsm.add( din(1) )
-    fsm.add( count.inc() )
-    fsm.add( count(0), cond=count==10 )
+    fsm( din(1) )
+    fsm( count.inc() )
+    fsm.If(count==10)( count(0) )
     fsm.goto_next(count==10)
 
-    fsm.add( din(0) )
-    fsm.add( count.inc() )
-    fsm.add( count(0), cond=count==2000 )
+    fsm( din(0) )
+    fsm( count.inc() )
+    fsm.If(count==2000)( count(0) )
     fsm.goto_next(count==2000)
 
     fsm.make_always()

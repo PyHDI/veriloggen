@@ -87,6 +87,7 @@ module test;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
   reg [32-1:0] _d1_fsm;
+  reg _fsm_cond_4_0_1;
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
   localparam fsm_3 = 3;
@@ -99,11 +100,14 @@ module test;
     if(RST) begin
       fsm <= fsm_init;
       _d1_fsm <= fsm_init;
+      _fsm_cond_4_0_1 <= 0;
     end else begin
       _d1_fsm <= fsm;
       case(_d1_fsm)
         fsm_4: begin
-          start <= 0;
+          if(_fsm_cond_4_0_1) begin
+            start <= 0;
+          end 
         end
       endcase
       case(fsm)
@@ -148,6 +152,7 @@ module test;
         end
         fsm_4: begin
           start <= 1;
+          _fsm_cond_4_0_1 <= 1;
           fsm <= fsm_5;
         end
         fsm_5: begin
@@ -302,6 +307,9 @@ module Matmul
   localparam fsm_init = 0;
   reg [32-1:0] _d1_fsm;
   reg _fsm_cond_1_0_1;
+  reg _fsm_cond_1_1_1;
+  reg _fsm_cond_2_2_1;
+  reg _fsm_cond_2_3_1;
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
 
@@ -319,19 +327,28 @@ module Matmul
       _tmp_1 <= 0;
       _tmp_2 <= 0;
       _fsm_cond_1_0_1 <= 0;
+      _fsm_cond_1_1_1 <= 0;
       zdout <= 0;
+      _fsm_cond_2_2_1 <= 0;
+      _fsm_cond_2_3_1 <= 0;
     end else begin
       _d1_fsm <= fsm;
       case(_d1_fsm)
         fsm_1: begin
-          ivalid <= 0;
           if(_fsm_cond_1_0_1) begin
+            ivalid <= 0;
+          end 
+          if(_fsm_cond_1_1_1) begin
             ivalid <= 1;
           end 
         end
         fsm_2: begin
-          zwe <= 0;
-          vreset <= 0;
+          if(_fsm_cond_2_2_1) begin
+            zwe <= 0;
+          end 
+          if(_fsm_cond_2_3_1) begin
+            vreset <= 0;
+          end 
         end
       endcase
       case(fsm)
@@ -359,7 +376,8 @@ module Matmul
             xaddr <= xaddr + 1;
             yaddr <= yaddr + 1;
           end 
-          _fsm_cond_1_0_1 <= _tmp_0 < 16;
+          _fsm_cond_1_0_1 <= 1;
+          _fsm_cond_1_1_1 <= _tmp_0 < 16;
           if(_tmp_0 < 16) begin
             _tmp_0 <= _tmp_0 + 1;
           end 
@@ -377,6 +395,7 @@ module Matmul
           zaddr <= zaddr + 1;
           zdout <= _tmp_1;
           zwe <= 1;
+          _fsm_cond_2_2_1 <= 1;
           if(yaddr == 255) begin
             yaddr <= -1;
           end 
@@ -386,6 +405,7 @@ module Matmul
           _tmp_0 <= 0;
           _tmp_2 <= 0;
           vreset <= 1;
+          _fsm_cond_2_3_1 <= 1;
           if(!(zaddr == 254)) begin
             fsm <= fsm_1;
           end 

@@ -20,7 +20,9 @@ def mkLed():
 
     fsm = FSM(m, 'fsm', clk, rst)
 
-    fsm( Systask('display', 'LED:%d count:%d', led, count) )
+    fsm(
+        Systask('display', 'LED:%d count:%d', led, count)
+    )
     
     fsm.If(count<interval-1)(
         count(count + 1)
@@ -29,11 +31,16 @@ def mkLed():
         tmp.inc()
     ).Else(
         count(0)
-    ).then.goto_next() # recall the last condition by 'then' 
+    )
+
+    # recall the last condition by 'Then()' 
+    fsm.Then().goto_next()
 
     fsm(
         led(led + 1)
-    ).then.goto_init()
+    )
+
+    fsm.Then().goto_init()
     
     fsm.make_always()
     

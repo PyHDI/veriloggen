@@ -22,11 +22,15 @@ def mkLed():
         count(count + 1)
     ).Else(
         count(0)
-    ).then.goto_next()
+    )
+
+    fsm.Then().goto_next()
 
     fsm(
         led(led + 1)
-    ).then.goto_init()
+    )
+
+    fsm.Then().goto_init()
     
     fsm.make_always()
     

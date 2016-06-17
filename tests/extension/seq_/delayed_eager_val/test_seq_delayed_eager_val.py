@@ -4,6 +4,7 @@ import seq_delayed_eager_val
 
 expected_verilog = """
 module test;
+
   reg CLK;
   reg RST;
   wire led0;
@@ -30,17 +31,20 @@ module test;
     .led7(led7)
   );
 
+
   initial begin
     $dumpfile("uut.vcd");
     $dumpvars(0, uut);
   end
 
+
   initial begin
     CLK = 0;
     forever begin
-      #5 CLK = (!CLK);
+      #5 CLK = !CLK;
     end
   end
+
 
   initial begin
     RST = 0;
@@ -52,29 +56,30 @@ module test;
     $finish;
   end
 
+
 endmodule
 
+
+
 module blinkled
-  (
-   input CLK,
-   input RST,
-   output reg led0,
-   output reg led1,
-   output reg led2,
-   output reg led3,
-   output reg led4,
-   output reg led5,
-   output reg led6,
-   output reg led7
-  );
+(
+  input CLK,
+  input RST,
+  output reg led0,
+  output reg led1,
+  output reg led2,
+  output reg led3,
+  output reg led4,
+  output reg led5,
+  output reg led6,
+  output reg led7
+);
 
   wire up;
   wire down;
   assign up = 1;
   assign down = 0;
-
   reg [3-1:0] count;
-
   reg _led0_0_1;
   reg _led0_0_2;
   reg _seq_cond_1_1;
@@ -135,7 +140,6 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       count <= 0;
-
       led0 <= 0;
       _led0_0_1 <= 0;
       _led0_0_2 <= 0;
@@ -271,61 +275,62 @@ module blinkled
       _seq_cond_25_2 <= _seq_cond_25_1;
       _led7_26_2 <= _led7_26_1;
       _seq_cond_27_2 <= _seq_cond_27_1;
-      count <= (count + 1);
+      count <= count + 1;
       if(count == 0) begin
         led0 <= up;
       end 
       _led0_0_1 <= down;
-      _seq_cond_1_1 <= (count == 0);
+      _seq_cond_1_1 <= count == 0;
       if(count == 1) begin
         led1 <= up;
       end 
       _led1_2_1 <= down;
-      _seq_cond_3_1 <= (count == 1);
+      _seq_cond_3_1 <= count == 1;
       if(count == 2) begin
         led2 <= up;
       end 
       _led2_4_1 <= down;
-      _seq_cond_5_1 <= (count == 2);
+      _seq_cond_5_1 <= count == 2;
       _led2_6_1 <= up;
-      _seq_cond_7_1 <= (count == 0);
+      _seq_cond_7_1 <= count == 0;
       if(count == 3) begin
         led3 <= up;
       end 
       _led3_8_1 <= down;
-      _seq_cond_9_1 <= (count == 3);
+      _seq_cond_9_1 <= count == 3;
       _led3_10_1 <= up;
-      _seq_cond_11_1 <= (count == 0);
+      _seq_cond_11_1 <= count == 0;
       if(count == 4) begin
         led4 <= up;
       end 
       _led4_12_1 <= down;
-      _seq_cond_13_1 <= (count == 4);
+      _seq_cond_13_1 <= count == 4;
       _led4_14_1 <= up;
-      _seq_cond_15_1 <= (count == 0);
+      _seq_cond_15_1 <= count == 0;
       if(count == 5) begin
         led5 <= up;
       end 
       _led5_16_1 <= down;
-      _seq_cond_17_1 <= (count == 5);
+      _seq_cond_17_1 <= count == 5;
       _led5_18_1 <= up;
-      _seq_cond_19_1 <= (count == 0);
+      _seq_cond_19_1 <= count == 0;
       if(count == 6) begin
         led6 <= up;
       end 
       _led6_20_1 <= down;
-      _seq_cond_21_1 <= (count == 6);
+      _seq_cond_21_1 <= count == 6;
       _led6_22_1 <= up;
-      _seq_cond_23_1 <= (count == 0);
+      _seq_cond_23_1 <= count == 0;
       if(count == 7) begin
         led7 <= up;
       end 
       _led7_24_1 <= down;
-      _seq_cond_25_1 <= (count == 7);
+      _seq_cond_25_1 <= count == 7;
       _led7_26_1 <= up;
-      _seq_cond_27_1 <= (count == 0);
+      _seq_cond_27_1 <= count == 0;
     end
   end
+
 
 endmodule
 """

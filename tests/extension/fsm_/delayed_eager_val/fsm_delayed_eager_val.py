@@ -33,9 +33,13 @@ def mkLed():
 
     # assert valid if the condition is satisfied
     # then de-assert 3 cycles later with same condition
-    fsm.add( valid_reg(up), cond=c, keep=3, eager_val=True)
-    fsm.add( valid_reg(down), cond=c, delay=3, eager_val=True)
-    fsm.goto_next(cond=c)
+    fsm.If(c).Keep(3).EagerVal()(
+        valid_reg(up)
+    )
+    fsm.If(c).Delay(3).EagerVal()(
+        valid_reg(down)
+    )
+    fsm.If(c).goto_next()
     
     for i in range(8):
         fsm.goto_next()
@@ -46,9 +50,13 @@ def mkLed():
     # assert valid 1 cycle later if the condition is satisfied now
     # then de-assert 4 cycles later with same condition
     for i in range(8):
-        fsm.add( valid_reg(up), cond=c, delay=1, keep=3, eager_val=True)
-        fsm.add( valid_reg(down), cond=c, delay=4, eager_val=True)
-        fsm.goto_next(cond=c)
+        fsm.If(c).Delay(1).Keep(3).EagerVal()(
+            valid_reg(up)
+        )
+        fsm.If(c).Delay(4).EagerVal()(
+            valid_reg(down)
+        )
+        fsm.If(c).goto_next()
     
     fsm.make_always(reset=[count.reset()], body=[count(count+1)])
 

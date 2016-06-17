@@ -41,15 +41,25 @@ def mkLed(numports=8):
             ndata.append(td)
             nvalid.append(tv)
             cond = AndList(pvalid[i*2], pvalid[i*2+1])
-            seq.add( td(pdata[i*2] + pdata[i*2+1]), cond=cond )
-            seq.add( tv(cond) )
+            
+            seq.If(cond)(
+                td(pdata[i*2] + pdata[i*2+1])
+            )
+            seq(
+                tv(cond)
+            )
+            
         pdata = ndata
         pvalid = nvalid
         ndata = []
         nvalid = []
 
-    seq.add( odata(pdata[-1]) )
-    seq.add( ovalid(pvalid[-1]) )
+    seq(
+        odata(pdata[-1])
+    )
+    seq(
+        ovalid(pvalid[-1])
+    )
         
     seq.make_always()
 

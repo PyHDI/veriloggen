@@ -18,11 +18,17 @@ def mkLed(numports=8, delay_amount=2):
     seq = Seq(m, 'seq', clk, rst)
     
     count = m.Reg('count', (numports-1).bit_length(), initval=0)
-    seq.add( count.inc() )
+    seq(
+        count.inc()
+    )
     
     for i in range(numports):
-        seq.add( led[i](1), cond=(count==i) )
-        seq.add( led[i](0), cond=(count==i), delay=delay_amount )
+        seq.If(count==i)(
+            led[i](1)
+        )
+        seq.If(count==i).Delay(delay_amount)(
+            led[i](0)
+        )
         
     seq.make_always()
 

@@ -83,8 +83,11 @@ module main
   reg _fsm_cond_1_0_1;
   reg _fsm_cond_3_1_1;
   reg _tmp_0;
-  reg [32-1:0] _d2_fsm;
   reg _fsm_cond_3_2_1;
+  reg [32-1:0] _d2_fsm;
+  reg _fsm_cond_3_3_1;
+  reg _fsm_cond_3_3_2;
+  reg _fsm_cond_3_4_1;
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
   localparam fsm_3 = 3;
@@ -101,15 +104,20 @@ module main
       _fsm_cond_1_0_1 <= 0;
       myfifo_deq <= 0;
       _fsm_cond_3_1_1 <= 0;
-      _tmp_0 <= 0;
-      sum <= 0;
       _fsm_cond_3_2_1 <= 0;
+      _tmp_0 <= 0;
+      _fsm_cond_3_3_1 <= 0;
+      _fsm_cond_3_3_2 <= 0;
+      sum <= 0;
+      _fsm_cond_3_4_1 <= 0;
     end else begin
       _d1_fsm <= fsm;
       _d2_fsm <= _d1_fsm;
       case(_d2_fsm)
         fsm_3: begin
-          _tmp_0 <= 0;
+          if(_fsm_cond_3_3_2) begin
+            _tmp_0 <= 0;
+          end 
         end
       endcase
       case(_d1_fsm)
@@ -122,8 +130,11 @@ module main
           if(_fsm_cond_3_1_1) begin
             myfifo_deq <= 0;
           end 
-          _tmp_0 <= !myfifo_empty;
           if(_fsm_cond_3_2_1) begin
+            _tmp_0 <= !myfifo_empty && myfifo_deq;
+          end 
+          _fsm_cond_3_3_2 <= _fsm_cond_3_3_1;
+          if(_fsm_cond_3_4_1) begin
             $display("sum=%d", sum);
           end 
         end
@@ -135,14 +146,12 @@ module main
         end
         fsm_1: begin
           myfifo_wdata <= count;
-          if(!myfifo_full) begin
-            myfifo_enq <= 1;
-          end 
-          _fsm_cond_1_0_1 <= !myfifo_full;
-          if(!myfifo_full) begin
+          myfifo_enq <= 1;
+          _fsm_cond_1_0_1 <= 1;
+          if(!myfifo_almost_full) begin
             count <= count + 1;
           end 
-          if(!myfifo_full && (count == 9)) begin
+          if(!myfifo_almost_full && (count == 15)) begin
             fsm <= fsm_2;
           end 
         end
@@ -151,16 +160,16 @@ module main
           fsm <= fsm_3;
         end
         fsm_3: begin
-          if(!myfifo_empty) begin
-            myfifo_deq <= 1;
-          end 
-          _fsm_cond_3_1_1 <= !myfifo_empty;
+          myfifo_deq <= 1;
+          _fsm_cond_3_1_1 <= 1;
+          _fsm_cond_3_2_1 <= 1;
+          _fsm_cond_3_3_1 <= 1;
           if(_tmp_0) begin
             sum <= sum + myfifo_rdata;
             count <= count + 1;
           end 
-          _fsm_cond_3_2_1 <= _tmp_0;
-          if(count == 10) begin
+          _fsm_cond_3_4_1 <= _tmp_0;
+          if(count == 16) begin
             fsm <= fsm_4;
           end 
         end

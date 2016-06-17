@@ -47,7 +47,9 @@ def mkMain(n=128, datawidth=32, numports=2):
     fsm.If(count == step - 1)(
         addr(0),
         count(0)
-    ).then.goto_next()
+    )
+
+    fsm.Then().goto_next()
 
     read_data, read_valid = mybram.read(fsm, 0, addr)
     
@@ -60,21 +62,23 @@ def mkMain(n=128, datawidth=32, numports=2):
         sum(sum + read_data)
     )
     
-    fsm.then.Delay(1)(
+    fsm.Then().Delay(1)(
         Systask('display', "sum=%d", sum)
     )
     
     fsm.If(count == step - 1)(
         addr(0),
         count(0)
-    ).then.goto_next()
+    )
+
+    fsm.Then().goto_next()
     
 
     fsm.If(read_valid)(
         sum(sum + read_data)
     )
     
-    fsm.then.Delay(1)(
+    fsm.Then().Delay(1)(
         Systask('display', "sum=%d", sum)
     )
 

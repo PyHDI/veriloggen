@@ -27,8 +27,12 @@ def mkLed(window_size=8):
         v = v + seq.prev(x, w + 1)
         
     t = m.TmpReg(32)
-    seq.add( t(v) )
-    seq.add( y(t >> int(math.log(window_size, 2))) )
+    seq(
+        t(v)
+    )
+    seq(
+        y(t >> int(math.log(window_size, 2)))
+    )
     
     seq.make_always()
 

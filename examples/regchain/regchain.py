@@ -19,16 +19,16 @@ def mkRegChain(length=120, width=8):
     seq = Seq(m, 'seq', clk, rst)
 
     update_cond_value = m.TmpReg(3, initval=0)
-    seq.add( update_cond_value(sw[0:3]) )
+    seq( update_cond_value(sw[0:3]) )
 
     area_size = m.TmpReg(2, initval=0)
-    seq.add( area_size(sw[3:5]) )
+    seq( area_size(sw[3:5]) )
     
     count = m.TmpReg(2, initval=0)
-    seq.add( count.inc() )
+    seq( count.inc() )
     
     update_cond = m.TmpReg(initval=0)
-    seq.add( update_cond(count < update_cond_value) )
+    seq( update_cond(count < update_cond_value) )
 
     orig = m.TmpReg(width, initval=0)
     prev = orig
@@ -39,13 +39,13 @@ def mkRegChain(length=120, width=8):
         area_id = i // (length // 4)
         r = m.TmpReg(width, initval=0)
         regs.append(r)
-        seq.add( r(prev + 1), cond=AndList(update_cond, area_id <= area_size) )
+        seq.If(AndList(update_cond, area_id <= area_size))( r(prev + 1) )
         prev = r
 
-    seq.add( orig(regs[1*length//4-1] + 3), cond=AndList(update_cond, area_size==0) )
-    seq.add( orig(regs[2*length//4-1] + 2), cond=AndList(update_cond, area_size==1) )
-    seq.add( orig(regs[3*length//4-1] + 1), cond=AndList(update_cond, area_size==2) )
-    seq.add( orig(regs[4*length//4-1] + 0), cond=AndList(update_cond, area_size==3) )
+    seq.If(AndList(update_cond, area_size==0))( orig(regs[1*length//4-1] + 3) )
+    seq.If(AndList(update_cond, area_size==1))( orig(regs[2*length//4-1] + 2) )
+    seq.If(AndList(update_cond, area_size==2))( orig(regs[3*length//4-1] + 1) )
+    seq.If(AndList(update_cond, area_size==3))( orig(regs[4*length//4-1] + 0) )
 
     seq.make_always()
     
@@ -68,44 +68,44 @@ def mkTest(length=120, width=8):
     fsm = FSM(m, 'fsm', clk, rst)
     count = m.TmpReg(32, initval=0)
     
-    fsm.add( sw((3 << 3) | 4) )
-    fsm.add( count.inc() )
-    fsm.add( count(0), cond=count==2000 )
+    fsm( sw((3 << 3) | 4) )
+    fsm( count.inc() )
+    fsm.If(count==2000)( count(0) )
     fsm.goto_next(count==2000)
 
-    fsm.add( sw((2 << 3) | 4) )
-    fsm.add( count.inc() )
-    fsm.add( count(0), cond=count==2000 )
+    fsm( sw((2 << 3) | 4) )
+    fsm( count.inc() )
+    fsm.If(count==2000)( count(0) )
     fsm.goto_next(count==2000)
 
-    fsm.add( sw((1 << 3) | 4) )
-    fsm.add( count.inc() )
-    fsm.add( count(0), cond=count==2000 )
+    fsm( sw((1 << 3) | 4) )
+    fsm( count.inc() )
+    fsm.If(count==2000)( count(0) )
     fsm.goto_next(count==2000)
 
-    fsm.add( sw((0 << 3) | 4) )
-    fsm.add( count.inc() )
-    fsm.add( count(0), cond=count==2000 )
+    fsm( sw((0 << 3) | 4) )
+    fsm( count.inc() )
+    fsm.If(count==2000)( count(0) )
     fsm.goto_next(count==2000)
 
-    fsm.add( sw((2 << 3) | 3) )
-    fsm.add( count.inc() )
-    fsm.add( count(0), cond=count==2000 )
+    fsm( sw((2 << 3) | 3) )
+    fsm( count.inc() )
+    fsm.If(count==2000)( count(0) )
     fsm.goto_next(count==2000)
 
-    fsm.add( sw((2 << 3) | 2) )
-    fsm.add( count.inc() )
-    fsm.add( count(0), cond=count==2000 )
+    fsm( sw((2 << 3) | 2) )
+    fsm( count.inc() )
+    fsm.If(count==2000)( count(0) )
     fsm.goto_next(count==2000)
 
-    fsm.add( sw((2 << 3) | 1) )
-    fsm.add( count.inc() )
-    fsm.add( count(0), cond=count==2000 )
+    fsm( sw((2 << 3) | 1) )
+    fsm( count.inc() )
+    fsm.If(count==2000)( count(0) )
     fsm.goto_next(count==2000)
 
-    fsm.add( sw((2 << 3) | 0) )
-    fsm.add( count.inc() )
-    fsm.add( count(0), cond=count==2000 )
+    fsm( sw((2 << 3) | 0) )
+    fsm( count.inc() )
+    fsm.If(count==2000)( count(0) )
     fsm.goto_next(count==2000)
 
     fsm.make_always()

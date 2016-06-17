@@ -16,9 +16,16 @@ def mkLed():
     y = m.OutputReg('y', initval=0)
     
     seq = Seq(m, 'seq', clk, rst)
-    seq.add( y(0), cond=(x<10) )
-    seq.add( y(1), cond=(x>=10) )
-    seq.add( y(0), cond=(x>100) )
+    
+    seq.If(x<10)(
+        y(0)
+    )
+    seq.If(x>=10)(
+        y(1)
+    )
+    seq.If(x>100)(
+        y(0)
+    )
     
     seq.make_always()
 

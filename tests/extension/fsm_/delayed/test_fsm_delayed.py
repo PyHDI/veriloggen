@@ -4,6 +4,7 @@ import fsm_delayed
 
 expected_verilog = """
 module test;
+
   reg CLK;
   reg RST;
   wire valid;
@@ -16,17 +17,20 @@ module test;
     .valid(valid)
   );
 
+
   initial begin
     $dumpfile("uut.vcd");
     $dumpvars(0, uut);
   end
 
+
   initial begin
     CLK = 0;
     forever begin
-      #5 CLK = (!CLK);
+      #5 CLK = !CLK;
     end
   end
+
 
   initial begin
     RST = 0;
@@ -38,18 +42,26 @@ module test;
     $finish;
   end
 
+
 endmodule
 
+
+
 module blinkled
-  (
-   input CLK, 
-   input RST, 
-   output reg valid
-   );
+(
+  input CLK,
+  input RST,
+  output reg valid
+);
 
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
   reg [32-1:0] _d1_fsm;
+  reg _fsm_cond_2_0_1;
+  reg _fsm_cond_6_1_1;
+  reg _fsm_cond_7_2_1;
+  reg _fsm_cond_8_3_1;
+  reg _fsm_cond_9_4_1;
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
   localparam fsm_3 = 3;
@@ -66,23 +78,38 @@ module blinkled
       fsm <= fsm_init;
       _d1_fsm <= fsm_init;
       valid <= 0;
+      _fsm_cond_2_0_1 <= 0;
+      _fsm_cond_6_1_1 <= 0;
+      _fsm_cond_7_2_1 <= 0;
+      _fsm_cond_8_3_1 <= 0;
+      _fsm_cond_9_4_1 <= 0;
     end else begin
       _d1_fsm <= fsm;
       case(_d1_fsm)
         fsm_2: begin
-          valid <= 0;
+          if(_fsm_cond_2_0_1) begin
+            valid <= 0;
+          end 
         end
         fsm_6: begin
-          valid <= 0;
+          if(_fsm_cond_6_1_1) begin
+            valid <= 0;
+          end 
         end
         fsm_7: begin
-          valid <= 0;
+          if(_fsm_cond_7_2_1) begin
+            valid <= 0;
+          end 
         end
         fsm_8: begin
-          valid <= 0;
+          if(_fsm_cond_8_3_1) begin
+            valid <= 0;
+          end 
         end
         fsm_9: begin
-          valid <= 0;
+          if(_fsm_cond_9_4_1) begin
+            valid <= 0;
+          end 
         end
       endcase
       case(fsm)
@@ -94,6 +121,7 @@ module blinkled
         end
         fsm_2: begin
           valid <= 1;
+          _fsm_cond_2_0_1 <= 1;
           fsm <= fsm_3;
         end
         fsm_3: begin
@@ -107,23 +135,29 @@ module blinkled
         end
         fsm_6: begin
           valid <= 1;
+          _fsm_cond_6_1_1 <= 1;
           fsm <= fsm_7;
         end
         fsm_7: begin
           valid <= 1;
+          _fsm_cond_7_2_1 <= 1;
           fsm <= fsm_8;
         end
         fsm_8: begin
           valid <= 1;
+          _fsm_cond_8_3_1 <= 1;
           fsm <= fsm_9;
         end
         fsm_9: begin
           valid <= 1;
+          _fsm_cond_9_4_1 <= 1;
           fsm <= fsm_10;
         end
       endcase
     end
   end
+
+
 endmodule
 """
 

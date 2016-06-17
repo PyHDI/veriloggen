@@ -32,15 +32,15 @@ def mkMain(n=128, datawidth=32, numports=2):
     
     fsm.goto_next()
 
-    step = 10
+    step = 16
 
-    ack = myfifo.enq(fsm, count)
+    ack, ready = myfifo.enq(fsm, count)
     
-    fsm.If(ack)(
+    fsm.If(ready)(
         count.inc()
     )
 
-    fsm.If(Ands(ack, count==step-1)).goto_next()
+    fsm.If(Ands(ready, count==step-1)).goto_next()
 
     fsm(
         count(0)
@@ -55,7 +55,7 @@ def mkMain(n=128, datawidth=32, numports=2):
         count.inc()
     )
 
-    fsm.then.Delay(1)(
+    fsm.Then().Delay(1)(
         Systask('display', "sum=%d", sum)
     )
     

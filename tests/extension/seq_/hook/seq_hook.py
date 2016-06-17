@@ -18,9 +18,15 @@ def mkLed():
     
     seq = Seq(m, 'seq', clk, rst)
 
-    seq.add( count.inc(), cond=(count<1024-1) )
-    seq.add( count(0), cond=(count>=1024-1) )
-    seq.add( led.inc(), cond=(count>=1024-1) ) 
+    seq.If(count<1024-1)(
+        count.inc()
+    )
+    seq.If(count>=1024-1)(
+        count(0)
+    )
+    seq.If(count>=1024-1)(
+        led.inc()
+    )
     
     #seq.make_always()
     # make_alway() is called when to_veirlog() is called.

@@ -23,14 +23,22 @@ def mkLed(numports=8, delay_amount=2):
     seq = Seq(m, 'seq', clk, rst)
     
     count = m.Reg('count', (numports-1).bit_length(), initval=0)
-    seq.add( count.inc() )
+    seq(
+        count.inc()
+    )
     
     for i in range(numports):
-        seq.add( led[i](up), cond=(count==i), eager_val=True )
-        seq.add( led[i](down), cond=(count==i), delay=delay_amount, eager_val=True )
+        seq.If(count==i).EagerVal()(
+            led[i](up)
+        )
+        seq.If(count==i).Delay(delay_amount).EagerVal()(
+            led[i](down)
+        )
         # a case of overwrraped assignment with a same delay and difference condition
         if i > 1:
-            seq.add( led[i](up), cond=(count==0), delay=delay_amount, eager_val=True )
+            seq.If(count==0).Delay(delay_amount).EagerVal()(
+                led[i](up)
+            )
         
     seq.make_always()
 

@@ -27,34 +27,34 @@ def mkLed():
     
     fsm = FSM(m, 'fsm', clk, rst)
 
-    fsm.add( led(0) )
+    fsm( led(0) )
     fsm.goto_next()
     
     init = fsm.current()
-    fsm.add( count(0) )
+    fsm( count(0) )
     fsm.goto_next()
     
     head = fsm.current()
     cond = count < 1024
     fsm.goto_next(cond=cond)
     
-    fsm.add( count.inc() )
+    fsm( count.inc() )
     fsm.goto_next()
     
-    fsm.add( count.inc() )
+    fsm( count.inc() )
     fsm.goto_next()
     
-    fsm.add( count.inc() )
+    fsm( count.inc() )
     fsm.goto_next()
     
-    fsm.add( count.inc() )
+    fsm( count.inc() )
     fsm.goto(head)
     fsm.inc()
     
     tail = fsm.current()
     fsm.goto_from(head, tail, cond=Not(cond))
     
-    fsm.add( led.inc() )
+    fsm( led.inc() )
     fsm.goto(init)
     
     fsm.make_always()

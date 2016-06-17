@@ -3,10 +3,7 @@ from __future__ import print_function
 import dataflow_stencil
 
 expected_verilog = """
-module test
-(
-
-);
+module test;
 
   reg CLK;
   reg RST;
@@ -101,6 +98,7 @@ module test
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
   reg [32-1:0] _d1_fsm;
+  reg _fsm_cond_4_0_1;
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
   localparam fsm_3 = 3;
@@ -113,11 +111,14 @@ module test
     if(RST) begin
       fsm <= fsm_init;
       _d1_fsm <= fsm_init;
+      _fsm_cond_4_0_1 <= 0;
     end else begin
       _d1_fsm <= fsm;
       case(_d1_fsm)
         fsm_4: begin
-          start <= 0;
+          if(_fsm_cond_4_0_1) begin
+            start <= 0;
+          end 
         end
       endcase
       case(fsm)
@@ -162,6 +163,7 @@ module test
         end
         fsm_4: begin
           start <= 1;
+          _fsm_cond_4_0_1 <= 1;
           fsm <= fsm_5;
         end
         fsm_5: begin
@@ -373,9 +375,18 @@ module stencil
   reg [32-1:0] read_addr;
   reg _tmp_1;
   reg [32-1:0] _d1_read_fsm;
+  reg _read_fsm_cond_1_0_1;
   reg [32-1:0] _d2_read_fsm;
+  reg _read_fsm_cond_1_1_1;
+  reg _read_fsm_cond_1_1_2;
   reg _tmp_2;
+  reg _read_fsm_cond_1_2_1;
+  reg _read_fsm_cond_1_3_1;
+  reg _read_fsm_cond_1_3_2;
   reg _tmp_3;
+  reg _read_fsm_cond_1_4_1;
+  reg _read_fsm_cond_1_5_1;
+  reg _read_fsm_cond_1_5_2;
   localparam read_fsm_1 = 1;
   localparam read_fsm_2 = 2;
 
@@ -388,26 +399,50 @@ module stencil
       read_count <= 0;
       busy <= 0;
       src_bram0_0_addr <= 0;
+      _read_fsm_cond_1_0_1 <= 0;
       _tmp_1 <= 0;
+      _read_fsm_cond_1_1_1 <= 0;
+      _read_fsm_cond_1_1_2 <= 0;
       src_bram1_0_addr <= 0;
+      _read_fsm_cond_1_2_1 <= 0;
       _tmp_2 <= 0;
+      _read_fsm_cond_1_3_1 <= 0;
+      _read_fsm_cond_1_3_2 <= 0;
       src_bram2_0_addr <= 0;
+      _read_fsm_cond_1_4_1 <= 0;
       _tmp_3 <= 0;
+      _read_fsm_cond_1_5_1 <= 0;
+      _read_fsm_cond_1_5_2 <= 0;
     end else begin
       _d1_read_fsm <= read_fsm;
       _d2_read_fsm <= _d1_read_fsm;
       case(_d2_read_fsm)
         read_fsm_1: begin
-          _tmp_1 <= 0;
-          _tmp_2 <= 0;
-          _tmp_3 <= 0;
+          if(_read_fsm_cond_1_1_2) begin
+            _tmp_1 <= 0;
+          end 
+          if(_read_fsm_cond_1_3_2) begin
+            _tmp_2 <= 0;
+          end 
+          if(_read_fsm_cond_1_5_2) begin
+            _tmp_3 <= 0;
+          end 
         end
       endcase
       case(_d1_read_fsm)
         read_fsm_1: begin
-          _tmp_1 <= 1;
-          _tmp_2 <= 1;
-          _tmp_3 <= 1;
+          if(_read_fsm_cond_1_0_1) begin
+            _tmp_1 <= 1;
+          end 
+          _read_fsm_cond_1_1_2 <= _read_fsm_cond_1_1_1;
+          if(_read_fsm_cond_1_2_1) begin
+            _tmp_2 <= 1;
+          end 
+          _read_fsm_cond_1_3_2 <= _read_fsm_cond_1_3_1;
+          if(_read_fsm_cond_1_4_1) begin
+            _tmp_3 <= 1;
+          end 
+          _read_fsm_cond_1_5_2 <= _read_fsm_cond_1_5_1;
         end
       endcase
       case(read_fsm)
@@ -426,8 +461,14 @@ module stencil
           read_addr <= read_addr + 1;
           read_count <= read_count + 1;
           src_bram0_0_addr <= read_addr;
+          _read_fsm_cond_1_0_1 <= 1;
+          _read_fsm_cond_1_1_1 <= 1;
           src_bram1_0_addr <= read_addr;
+          _read_fsm_cond_1_2_1 <= 1;
+          _read_fsm_cond_1_3_1 <= 1;
           src_bram2_0_addr <= read_addr;
+          _read_fsm_cond_1_4_1 <= 1;
+          _read_fsm_cond_1_5_1 <= 1;
           if(read_count == 15) begin
             read_addr <= 0;
             read_count <= 0;
@@ -471,6 +512,7 @@ module stencil
   reg [32-1:0] write_count;
   reg [32-1:0] write_addr;
   reg [32-1:0] _d1_write_fsm;
+  reg _write_fsm_cond_0_0_1;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -481,12 +523,15 @@ module stencil
       dst_bram_0_addr <= 0;
       dst_bram_0_wdata <= 0;
       dst_bram_0_wenable <= 0;
+      _write_fsm_cond_0_0_1 <= 0;
       write_count <= 0;
     end else begin
       _d1_write_fsm <= write_fsm;
       case(_d1_write_fsm)
         write_fsm_init: begin
-          dst_bram_0_wenable <= 0;
+          if(_write_fsm_cond_0_0_1) begin
+            dst_bram_0_wenable <= 0;
+          end 
         end
       endcase
       case(write_fsm)
@@ -500,6 +545,7 @@ module stencil
             dst_bram_0_wdata <= odata;
             dst_bram_0_wenable <= 1;
           end 
+          _write_fsm_cond_0_0_1 <= 1;
           if(ovalid) begin
             write_count <= write_count + 1;
           end 

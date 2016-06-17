@@ -1,11 +1,11 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import seq_countup_if_then
+import seq_countup_if_elif_delayed
 
 expected_verilog = """
 module test #
 (
-  parameter INTERVAL = 16
+  parameter INTERVAL = 32
 );
 
   reg CLK;
@@ -22,7 +22,6 @@ module test #
     .RST(RST),
     .LED(LED)
   );
-
 
   initial begin
     CLK = 0;
@@ -49,7 +48,7 @@ endmodule
 
 module blinkled #
 (
-  parameter INTERVAL = 16
+  parameter INTERVAL = 32
 )
 (
   input CLK,
@@ -59,27 +58,42 @@ module blinkled #
 
   reg [32-1:0] count;
   reg _tmp_0;
-  reg updated;
+  reg test0;
   reg _seq_cond_0_1;
   reg _seq_cond_1_1;
   reg _seq_cond_1_2;
+  reg test1;
+  reg _seq_cond_2_1;
+  reg _seq_cond_3_1;
+  reg _seq_cond_3_2;
 
   always @(posedge CLK) begin
     if(RST) begin
       count <= 0;
       LED <= 0;
       _seq_cond_0_1 <= 0;
-      updated <= 0;
+      test0 <= 0;
       _seq_cond_1_1 <= 0;
       _seq_cond_1_2 <= 0;
+      test1 <= 0;
+      _seq_cond_2_1 <= 0;
+      _seq_cond_3_1 <= 0;
+      _seq_cond_3_2 <= 0;
     end else begin
       if(_seq_cond_1_2) begin
-        updated <= 0;
+        test0 <= 0;
+      end 
+      if(_seq_cond_3_2) begin
+        test1 <= 1;
       end 
       if(_seq_cond_0_1) begin
-        updated <= 1;
+        test0 <= 1;
       end 
       _seq_cond_1_2 <= _seq_cond_1_1;
+      if(_seq_cond_2_1) begin
+        test1 <= 0;
+      end 
+      _seq_cond_3_2 <= _seq_cond_3_1;
       $display("LED:%d count:%d", LED, count);
       if(count < INTERVAL - 1) begin
         count <= count + 1;
@@ -87,8 +101,16 @@ module blinkled #
         count <= 0;
         LED <= LED + 1;
       end
-      _seq_cond_0_1 <= !(count < INTERVAL - 1);
-      _seq_cond_1_1 <= 1;
+      _seq_cond_0_1 <= count == 9;
+      _seq_cond_1_1 <= !(count == 9) && (count == 10);
+      if(!(count == 9) && !(count == 10) && (count == 15)) begin
+        test0 <= 1;
+      end 
+      if(count == 12) begin
+        test1 <= 1;
+      end 
+      _seq_cond_2_1 <= !(count == 12) && (count == 13);
+      _seq_cond_3_1 <= !(count == 12) && !(count == 13) && (count == 14);
     end
   end
 
@@ -97,7 +119,7 @@ endmodule
 """
 
 def test():
-    test_module = seq_countup_if_then.mkTest()
+    test_module = seq_countup_if_elif_delayed.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
