@@ -50,8 +50,9 @@ def mkUserlogic():
     
     fsm.add( mem_rvalid(1), mem_addr.inc(), read_count.inc() )
     fsm.add( mem_rvalid(0), delay=1 )
-    fsm.add( sum.add(mem_rdata), delay=2 )
+    fsm.add( sum.add(mem_rdata), delay=2, keep=2 )
     fsm.goto_next( cond=(read_count==size-1) )
+    fsm.goto_next()
     
     fsm.add( Systask('display', 'sum=%d', sum), delay=2)
     fsm.add( ch_enq(1), cond=Not(ch_almfull) )

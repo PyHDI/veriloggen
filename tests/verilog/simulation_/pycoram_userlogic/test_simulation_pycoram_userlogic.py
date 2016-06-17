@@ -4,12 +4,10 @@ import simulation_pycoram_userlogic
 
 expected_verilog = """
 module test #
- (
+(
   parameter DATA_WIDTH = 32,
   parameter ADDR_LEN = 10
- )
- (
- );
+);
 
   reg CLK;
   reg RST;
@@ -55,12 +53,14 @@ module test #
     $dumpvars(0, uut, test_fsm);
   end
 
+
   initial begin
     CLK = 0;
     forever begin
-      #5 CLK = (!CLK);
+      #5 CLK = !CLK;
     end
   end
+
 
   initial begin
     RST = 0;
@@ -77,7 +77,6 @@ module test #
 
   reg [32-1:0] _d1_test_fsm;
   reg _test_fsm_cond_12_0_1;
-
   localparam test_fsm_1 = 1;
   localparam test_fsm_2 = 2;
   localparam test_fsm_3 = 3;
@@ -166,14 +165,18 @@ module test #
       endcase
     end
   end
+
+
 endmodule
 
+
+
 module userlogic #
- (
+(
   parameter DATA_WIDTH = 32,
   parameter ADDR_LEN = 10
- )
- (
+)
+(
   input CLK,
   input RST,
   output reg [ADDR_LEN-1:0] mem_addr,
@@ -187,7 +190,7 @@ module userlogic #
   input [DATA_WIDTH-1:0] ch_rdata,
   output reg ch_deq,
   input ch_empty
- );
+);
 
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
@@ -195,12 +198,26 @@ module userlogic #
   reg [32-1:0] sum;
   reg [32-1:0] size;
   reg [32-1:0] _d1_fsm;
+  reg _fsm_cond_2_0_1;
   reg [32-1:0] _d2_fsm;
+  reg _fsm_cond_2_1_1;
+  reg _fsm_cond_2_1_2;
+  reg _fsm_cond_4_2_1;
+  reg _fsm_cond_4_3_1;
+  reg _fsm_cond_4_3_2;
+  reg [32-1:0] _d3_fsm;
+  reg _fsm_cond_4_4_1;
+  reg _fsm_cond_4_4_2;
+  reg _fsm_cond_4_4_3;
+  reg _fsm_cond_6_5_1;
+  reg _fsm_cond_6_5_2;
+  reg _fsm_cond_6_6_1;
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
   localparam fsm_3 = 3;
   localparam fsm_4 = 4;
   localparam fsm_5 = 5;
+  localparam fsm_6 = 6;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -216,30 +233,68 @@ module userlogic #
       sum <= 0;
       size <= 0;
       _d1_fsm <= fsm_init;
+      _fsm_cond_2_0_1 <= 0;
       _d2_fsm <= fsm_init;
+      _fsm_cond_2_1_1 <= 0;
+      _fsm_cond_2_1_2 <= 0;
+      _fsm_cond_4_2_1 <= 0;
+      _fsm_cond_4_3_1 <= 0;
+      _fsm_cond_4_3_2 <= 0;
+      _d3_fsm <= fsm_init;
+      _fsm_cond_4_4_1 <= 0;
+      _fsm_cond_4_4_2 <= 0;
+      _fsm_cond_4_4_3 <= 0;
+      _fsm_cond_6_5_1 <= 0;
+      _fsm_cond_6_5_2 <= 0;
+      _fsm_cond_6_6_1 <= 0;
     end else begin
       _d1_fsm <= fsm;
       _d2_fsm <= _d1_fsm;
+      _d3_fsm <= _d2_fsm;
+      case(_d3_fsm)
+        fsm_4: begin
+          if(_fsm_cond_4_4_3) begin
+            sum <= sum + mem_rdata;
+          end 
+        end
+      endcase
       case(_d2_fsm)
         fsm_2: begin
-          size <= ch_rdata;
+          if(_fsm_cond_2_1_2) begin
+            size <= ch_rdata;
+          end 
         end
         fsm_4: begin
-          sum <= sum + mem_rdata;
+          if(_fsm_cond_4_3_2) begin
+            sum <= sum + mem_rdata;
+          end 
+          _fsm_cond_4_4_3 <= _fsm_cond_4_4_2;
         end
-        fsm_5: begin
-          $display("sum=%d", sum);
+        fsm_6: begin
+          if(_fsm_cond_6_5_2) begin
+            $display("sum=%d", sum);
+          end 
         end
       endcase
       case(_d1_fsm)
         fsm_2: begin
-          ch_deq <= 0;
+          if(_fsm_cond_2_0_1) begin
+            ch_deq <= 0;
+          end 
+          _fsm_cond_2_1_2 <= _fsm_cond_2_1_1;
         end
         fsm_4: begin
-          mem_rvalid <= 0;
+          if(_fsm_cond_4_2_1) begin
+            mem_rvalid <= 0;
+          end 
+          _fsm_cond_4_3_2 <= _fsm_cond_4_3_1;
+          _fsm_cond_4_4_2 <= _fsm_cond_4_4_1;
         end
-        fsm_5: begin
-          ch_enq <= 0;
+        fsm_6: begin
+          _fsm_cond_6_5_2 <= _fsm_cond_6_5_1;
+          if(_fsm_cond_6_6_1) begin
+            ch_enq <= 0;
+          end 
         end
       endcase
       case(fsm)
@@ -253,6 +308,8 @@ module userlogic #
           if(!ch_empty) begin
             ch_deq <= 1;
           end 
+          _fsm_cond_2_0_1 <= 1;
+          _fsm_cond_2_1_1 <= 1;
           if(!ch_empty) begin
             fsm <= fsm_3;
           end 
@@ -265,20 +322,30 @@ module userlogic #
           mem_rvalid <= 1;
           mem_addr <= mem_addr + 1;
           read_count <= read_count + 1;
+          _fsm_cond_4_2_1 <= 1;
+          _fsm_cond_4_3_1 <= 1;
+          _fsm_cond_4_4_1 <= 1;
           if(read_count == size - 1) begin
             fsm <= fsm_5;
           end 
         end
         fsm_5: begin
+          fsm <= fsm_6;
+        end
+        fsm_6: begin
+          _fsm_cond_6_5_1 <= 1;
           if(!ch_almfull) begin
             ch_enq <= 1;
           end 
+          _fsm_cond_6_6_1 <= 1;
           ch_wdata <= sum;
           fsm <= fsm_2;
         end
       endcase
     end
   end
+
+
 endmodule
 """
 
