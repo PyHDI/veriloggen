@@ -44,7 +44,7 @@ def mkMain(n=128, datawidth=32, numports=2):
         raddr.inc(),
     )
     
-    read_data, read_valid = mybram.read(seq, 1, raddr, cond=raddr<16, delay=3)
+    read_data, read_valid = mybram.read(seq.Then().Delay(3), 1, raddr)
     
     seq.If(read_valid)(
         sum(sum + read_data)

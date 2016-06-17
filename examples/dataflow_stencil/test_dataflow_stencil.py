@@ -545,7 +545,7 @@ module stencil
             dst_bram_0_wdata <= odata;
             dst_bram_0_wenable <= 1;
           end 
-          _write_fsm_cond_0_0_1 <= 1;
+          _write_fsm_cond_0_0_1 <= ovalid && (write_count > 1);
           if(ovalid) begin
             write_count <= write_count + 1;
           end 

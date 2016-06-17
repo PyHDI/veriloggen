@@ -234,8 +234,8 @@ class Seq(vtypes.VeriloggenNode):
         
     def Then(self):
         cond = self._make_cond(self.last_cond)
-        self.If(cond)
         self._clear_last_cond()
+        self.If(cond)
         return self
 
     def LazyCond(self, value=True):

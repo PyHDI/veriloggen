@@ -88,7 +88,7 @@ module blinkled #
         LED <= LED + 1;
       end
       _seq_cond_0_1 <= !(count < INTERVAL - 1);
-      _seq_cond_1_1 <= 1;
+      _seq_cond_1_1 <= !(count < INTERVAL - 1);
     end
   end
 

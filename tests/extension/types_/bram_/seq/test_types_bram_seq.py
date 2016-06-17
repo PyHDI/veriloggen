@@ -172,14 +172,14 @@ module main
         mybram_0_wdata <= count;
         mybram_0_wenable <= 1;
       end 
-      _seq_cond_0_1 <= 1;
+      _seq_cond_0_1 <= waddr < 16;
       if(raddr < 16) begin
         raddr <= raddr + 1;
       end 
       _mybram_1_addr_1_1 <= raddr;
       _seq_cond_2_1 <= raddr < 16;
       _seq_cond_3_1 <= raddr < 16;
-      _seq_cond_4_1 <= 1;
+      _seq_cond_4_1 <= raddr < 16;
       if(_tmp_0) begin
         sum <= sum + mybram_1_rdata;
       end 
