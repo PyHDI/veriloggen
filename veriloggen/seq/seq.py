@@ -8,6 +8,7 @@ import veriloggen.core.vtypes as vtypes
 from veriloggen.seq.subst_visitor import SubstDstVisitor
 from veriloggen.seq.reset_visitor import ResetVisitor
 
+#-------------------------------------------------------------------------------
 _tmp_count = 0
 def _tmp_name(prefix='_tmp_seq'):
     global _tmp_count
@@ -20,6 +21,7 @@ def TmpSeq(m, clk, rst=None):
     name = _tmp_name()
     return Seq(m, name, clk, rst)
 
+#-------------------------------------------------------------------------------
 class Seq(vtypes.VeriloggenNode):
     """ Sequential Logic Manager """
     def __init__(self, m, name, clk, rst=None):
@@ -40,13 +42,15 @@ class Seq(vtypes.VeriloggenNode):
         
         self.done = False
 
-        self.next_kwargs = {}
-        self.last_statement = None
         self.last_cond = []
-        self.next_call = None
+        self.last_kwargs = {}
+        self.last_if_statement = None
+        self.elif_cond = None
+        self.next_kwargs = {}
         
     #---------------------------------------------------------------------------
     def prev(self, var, delay, initval=0):
+        """ return delayed values """
         if isinstance(var, (bool, int, float, str,
                             vtypes._Constant, vtypes._ParameterVairable)):
             return var
@@ -71,52 +75,66 @@ class Seq(vtypes.VeriloggenNode):
                 continue
             tmp = self.m.Reg(tmp_name, width, initval=initval)
             self.prev_dict[tmp_name] = tmp;
-            self.add(tmp(p))
+            self._add_statement(tmp(p))
             p = tmp
             
         return p
     
     #---------------------------------------------------------------------------
     def add(self, *statement, **kwargs):
-        # for Elif statement
-        if self.next_call is not None:
-            self.next_call(*statement)
-            self._add_dst_var(statement)
-            self._clear_next_call()
-            return self
-        
-        # merge the predefined keywords and flush them
+        """ add new assignments """
         kwargs.update(self.next_kwargs)
+        self.last_kwargs = kwargs
         self._clear_next_kwargs()
-        self._clear_last_statement()
         
-        for k in kwargs.keys():
-            if k not in ('keep', 'delay', 'cond', 'lazy_cond', 'eager_val'):
-                raise NameError('Keyword argument %s is not supported.' % k)
-            
-        keep = kwargs['keep'] if 'keep' in kwargs else None
-        delay = kwargs['delay'] if 'delay' in kwargs else None
-        cond = kwargs['cond'] if 'cond' in kwargs else None
-        lazy_cond = kwargs['lazy_cond'] if 'lazy_cond' in kwargs else False
-        eager_val = kwargs['eager_val'] if 'eager_val' in kwargs else False
+        # if there is no attributes, Elif object is reused.
+        has_args = not (len(kwargs) == 0 or # has no args
+                        (len(kwargs) == 1 and 'cond' in kwargs)) # has only 'cond'
+        
+        if self.elif_cond is not None and not has_args:
+            next_call = self.last_if_statement.Elif(self.elif_cond)
+            next_call(*statement)
+            self.last_if_statement = next_call
+            self._add_dst_var(statement)
+            self._clear_elif_cond()
+            return self
+
+        self._clear_last_if_statement()
+        return self._add_statement(*statement, **kwargs)
+        
+    #---------------------------------------------------------------------------
+    def _add_statement(self, *statement, keep=None, delay=None, cond=None,
+                       lazy_cond=False, eager_val=False, no_delay_cond=False):
         
         if keep is not None:
-            del kwargs['keep']
             for i in range(keep):
-                kwargs['delay'] = i if delay is None else delay + i
-                self.add(*statement, **kwargs)
+                new_delay = i if delay is None else delay + i
+                self._add_statement(*statement,
+                                    keep=None, delay=new_delay, cond=cond,
+                                    lazy_cond=lazy_cond, eager_val=eager_val,
+                                    no_delay_cond=no_delay_cond)
             return self
         
         if delay is not None and delay > 0:
             if eager_val:
                 statement = [ self._add_delayed_subst(s, delay) for s in statement ]
                 
-            if cond is not None:
+            if not no_delay_cond:
+                if cond is None:
+                    cond = 1
+
                 if not lazy_cond:
                     cond = self._add_delayed_cond(cond, delay)
+                    
+                else: # lazy condition 
+                    t = self._add_delayed_cond(1, delay)
+                    if isinstance(cond, int) and cond == 1:
+                        cond = t
+                    else:
+                        cond = vtypes.Ands(t, cond)
+                    
                 statement = [ vtypes.If(cond)(*statement) ]
-                self.last_statement = statement[0]
-                
+            
             self.delayed_body[delay].extend(statement)
             self._add_dst_var(statement)
             
@@ -124,7 +142,7 @@ class Seq(vtypes.VeriloggenNode):
             
         if cond is not None:
             statement = [ vtypes.If(cond)(*statement) ]
-            self.last_statement = statement[0]
+            self.last_if_statement = statement[0]
             
         self.body.extend(statement)
         self._add_dst_var(statement)
@@ -132,7 +150,9 @@ class Seq(vtypes.VeriloggenNode):
         return self
 
     #---------------------------------------------------------------------------
-    def Cond(self, cond):
+    def If(self, cond):
+        self._clear_elif_cond()
+        
         if cond is None:
             self.last_cond = []
             return self
@@ -140,69 +160,116 @@ class Seq(vtypes.VeriloggenNode):
         if 'cond' not in self.next_kwargs:
             self.next_kwargs['cond'] = cond
         else:
-            self.next_kwargs['cond'] = vtyeps.Ands(self.next_kwargs['cond'], cond)
+            self.next_kwargs['cond'] = vtypes.Ands(self.next_kwargs['cond'], cond)
             
         self.last_cond = [ self.next_kwargs['cond'] ]
         
         return self
 
-    def If(self, cond):
-        return self.Cond(cond)
+    def Else(self, *statement):
+        self._clear_elif_cond()
 
-    def Else(self, *statement, **kwargs):
-        if not isinstance(self.last_statement, vtypes.If):
-            raise ValueError("Last statement is not If")
-        self.last_statement.Else(*statement)
-        self._add_dst_var(statement)
+        if len(self.last_cond) == 0:
+            raise ValueError("No previous condition for Else.")
         
         old = self.last_cond.pop()
         self.last_cond.append(vtypes.Not(old))
+
+        # if the true-statement has delay attributes, Else statement is separated.
+        if 'delay' in self.last_kwargs and self.last_kwargs['delay'] > 0:
+            prev_cond = self.last_cond
+            ret = self.Then()(*statement)
+            self.last_cond = prev_cond
+            return ret
+
+        # if there is additional attribute, Else statement is separated.
+        has_args = not (len(self.next_kwargs) == 0 or # has no args
+                        (len(self.next_kwargs) == 1 and 'cond' in kwargs)) # has only 'cond'
+        if has_args:
+            prev_cond = self.last_cond
+            ret = self.Then()(*statement)
+            self.last_cond = prev_cond
+            return ret
+
+        if not isinstance(self.last_if_statement, vtypes.If):
+            raise ValueError("Last if-statement is not If")
+        
+        self.last_if_statement.Else(*statement)
+        self._add_dst_var(statement)
         
         return self
 
     def Elif(self, cond):
-        if not isinstance(self.last_statement, vtypes.If):
-            raise ValueError("Last statement is not If")
-        self.next_call = self.last_statement.Elif(cond)
+        if len(self.last_cond) == 0:
+            raise ValueError("No previous condition for Else.")
         
         old = self.last_cond.pop()
         self.last_cond.append(vtypes.Not(old))
         self.last_cond.append(cond)
         
-        return self
-        
-    @property
-    def then(self):
+        # if the true-statement has delay attributes, Else statement is separated.
+        if 'delay' in self.last_kwargs and self.last_kwargs['delay'] > 0:
+            prev_cond = self.last_cond
+            ret = self.Then()
+            self.last_cond = prev_cond
+            return ret
+
+        if not isinstance(self.last_if_statement, vtypes.If):
+            raise ValueError("Last if-statement is not If")
+
+        self.elif_cond = cond
+
         cond = self._make_cond(self.last_cond)
-        self.Cond(cond)
-        self._clear_last_cond()
+        self.next_kwargs['cond'] = cond
+        
         return self
         
     def Delay(self, delay):
-        return self._add_next_kwarg('delay', delay)
-        
+        self.next_kwargs['delay'] = delay
+        return self
+
     def Keep(self, keep):
-        return self._add_next_kwarg('keep', keep)
+        self.next_kwargs['keep'] = keep
+        return self
+        
+    def Then(self):
+        cond = self._make_cond(self.last_cond)
+        self.If(cond)
+        self._clear_last_cond()
+        return self
+
+    def LazyCond(self, value=True):
+        self.next_kwargs['lazy_cond'] = value
+        return self
+
+    def EagerVal(self, value=True):
+        self.next_kwargs['eager_val'] = value
+        return self
+
+    @property
+    def current_delay(self):
+        if 'delay' in self.next_kwargs:
+            return self.next_kwargs['delay']
+        return 0
+
+    @property
+    def last_delay(self):
+        if 'delay' in self.last_kwargs:
+            return self.last_kwargs['delay']
+        return 0
         
     #---------------------------------------------------------------------------
-    def _add_next_kwarg(self, name, value):
-        if name not in self.next_kwargs:
-            self.next_kwargs[name] = value
-        else:
-            raise ValueError("'%s' is already defined." % name)
-        return self
-    
     def _clear_next_kwargs(self):
         self.next_kwargs = {}
 
-    def _clear_last_statement(self):
-        self.last_statement = None
+    def _clear_last_if_statement(self):
+        self.last_if_statement = None
         
     def _clear_last_cond(self):
         self.last_cond = []
 
-    def _clear_next_call(self):
-        self.next_call = None
+    def _clear_elif_cond(self):
+        self.elif_cond = None
 
     def _make_cond(self, condlist):
         ret = None
@@ -273,7 +340,7 @@ class Seq(vtypes.VeriloggenNode):
         for i in range(delay):
             tmp_name = '_'.join([name_prefix, str(i+1)])
             tmp = self.m.Reg(tmp_name, initval=0)
-            self.add(tmp(prev), delay=i)
+            self._add_statement(tmp(prev), delay=i, no_delay_cond=True)
             prev = tmp
         return prev
     
@@ -297,11 +364,10 @@ class Seq(vtypes.VeriloggenNode):
         for i in range(delay):
             tmp_name = '_'.join([name_prefix, str(i+1)])
             tmp = self.m.Reg(tmp_name, width, initval=0)
-            self.add(tmp(prev), delay=i)
+            self._add_statement(tmp(prev), delay=i, no_delay_cond=True)
             prev = tmp
         return left(prev)
     
     #---------------------------------------------------------------------------
     def __call__(self, *statement, **kwargs):
         return self.add(*statement, **kwargs)
-
