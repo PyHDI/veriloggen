@@ -165,6 +165,7 @@ def mkFifoDefinition(name, datawidth=32, addrwidth=4):
 class Fifo(object):
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=4):
         self.m = m
+        self.name = name
         self.clk = clk
         self.rst = rst
         self.datawidth = datawidth
@@ -174,6 +175,24 @@ class Fifo(object):
         self.definition = mkFifoDefinition(name, datawidth, addrwidth)
         self.inst = self.m.Instance(self.definition, 'inst_' + name,
                                     ports=m.connect_ports(self.definition))
+
+        # entry counter
+        self._max_size = (2 ** self.addrwidth if isinstance(self.addrwidth, int) else
+                          vtypes.Int(2) ** self.addrwidth)
+        
+        self._count = self.m.Reg('count_' + name, self.addrwidth + 1, initval=0)
+        self._count_seq = Seq(self.m, 'seq_count_' + name, self.clk, self.rst)
+        
+        self._count_seq.If(
+            vtypes.Ands(vtypes.Ands(self.wif.enq, vtypes.Not(self.wif.full)),
+                        vtypes.Ands(self.rif.deq, vtypes.Not(self.rif.empty))))(
+            self._count(self._count)
+        ).Elif(vtypes.Ands(self.wif.enq, vtypes.Not(self.wif.full)))(
+            self._count.inc()
+        ).Elif(vtypes.Ands(self.rif.deq, vtypes.Not(self.rif.empty)))(
+            self._count.dec()
+        )
+        self._count_seq.make_always()
 
     def enq(self, mng, wdata, cond=None, delay=0):
         """ Enque operation with Seq or FSM object as mng """
@@ -266,3 +285,17 @@ class Fifo(object):
     @property
     def almost_full(self):
         return self.wif.almost_full
+
+    @property
+    def count(self):
+        return self._count
+
+    @property
+    def space(self):
+        if isinstance(self._max_size, int):
+            return vtypes.Int(self._max_size) - self.count
+        return self._max_size - self.count
+
+    def has_space(self, num=1):
+        if num < 1: return True
+        return (self._count + num < self._max_size)

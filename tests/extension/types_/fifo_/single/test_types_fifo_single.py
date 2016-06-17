@@ -75,6 +75,22 @@ module main
     .myfifo_almost_empty(myfifo_almost_empty)
   );
 
+  reg [8-1:0] count_myfifo;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      count_myfifo <= 0;
+    end else begin
+      if(myfifo_enq && !myfifo_full && (myfifo_deq && !myfifo_empty)) begin
+        count_myfifo <= count_myfifo;
+      end else if(myfifo_enq && !myfifo_full) begin
+        count_myfifo <= count_myfifo + 1;
+      end else if(myfifo_deq && !myfifo_empty) begin
+        count_myfifo <= count_myfifo - 1;
+      end 
+    end
+  end
+
   reg [32-1:0] count;
   reg [32-1:0] sum;
   reg [32-1:0] fsm;
@@ -150,6 +166,7 @@ module main
           _fsm_cond_1_0_1 <= 1;
           if(!myfifo_almost_full) begin
             count <= count + 1;
+            $display("count=%d space=%d has_space=%d", count_myfifo, (128 - count_myfifo), (count_myfifo + 1 < 128));
           end 
           if(!myfifo_almost_full && (count == 15)) begin
             fsm <= fsm_2;
@@ -167,6 +184,7 @@ module main
           if(_tmp_0) begin
             sum <= sum + myfifo_rdata;
             count <= count + 1;
+            $write("count=%d space=%d has_space=%d ", count_myfifo, (128 - count_myfifo), (count_myfifo + 1 < 128));
           end 
           _fsm_cond_3_4_1 <= _tmp_0;
           if(count == 16) begin
@@ -196,17 +214,17 @@ module myfifo
   output myfifo_almost_empty
 );
 
-  reg [32-1:0] mem [0:16384-1];
-  reg [14-1:0] head;
-  reg [14-1:0] tail;
+  reg [32-1:0] mem [0:128-1];
+  reg [7-1:0] head;
+  reg [7-1:0] tail;
   wire is_empty;
   wire is_almost_empty;
   wire is_full;
   wire is_almost_full;
   assign is_empty = head == tail;
-  assign is_almost_empty = head == (tail + 1 & 16383);
-  assign is_full = (head + 1 & 16383) == tail;
-  assign is_almost_full = (head + 2 & 16383) == tail;
+  assign is_almost_empty = head == (tail + 1 & 127);
+  assign is_full = (head + 1 & 127) == tail;
+  assign is_almost_full = (head + 2 & 127) == tail;
   reg [32-1:0] rdata_reg;
   assign myfifo_full = is_full;
   assign myfifo_almost_full = is_almost_full;

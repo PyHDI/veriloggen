@@ -75,6 +75,22 @@ module main
     .myfifo_almost_empty(myfifo_almost_empty)
   );
 
+  reg [15-1:0] count_myfifo;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      count_myfifo <= 0;
+    end else begin
+      if(myfifo_enq && !myfifo_full && (myfifo_deq && !myfifo_empty)) begin
+        count_myfifo <= count_myfifo;
+      end else if(myfifo_enq && !myfifo_full) begin
+        count_myfifo <= count_myfifo + 1;
+      end else if(myfifo_deq && !myfifo_empty) begin
+        count_myfifo <= count_myfifo - 1;
+      end 
+    end
+  end
+
   reg [32-1:0] count;
   reg [32-1:0] sum;
   reg [32-1:0] fsm;
@@ -150,6 +166,7 @@ module main
           _fsm_cond_1_0_1 <= 1;
           if(!myfifo_almost_full) begin
             count <= count + 1;
+            $display("count=%d space=%d has_space=%d", count_myfifo, (16384 - count_myfifo), (count_myfifo + 1 < 16384));
           end 
           if(!myfifo_almost_full && (count == 15)) begin
             fsm <= fsm_2;
@@ -167,6 +184,7 @@ module main
           if(_tmp_0) begin
             sum <= sum + myfifo_rdata;
             count <= count + 1;
+            $write("count=%d space=%d has_space=%d ", count_myfifo, (16384 - count_myfifo), (count_myfifo + 1 < 16384));
           end 
           _fsm_cond_3_4_1 <= _tmp_0;
           if(count == 16) begin

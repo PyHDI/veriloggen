@@ -3,7 +3,7 @@ from __future__ import print_function
 
 import veriloggen.core.vtypes as vtypes
 import veriloggen.core.module as module
-import veriloggen.seq.seq as seq
+from veriloggen.seq.seq import TmpSeq
 
 class BramInterface(object):
     _I = 'Reg'
@@ -97,6 +97,7 @@ def mkBramDefinition(name, datawidth=32, addrwidth=10, numports=2):
 class Bram(object):
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=10, numports=2):
         self.m = m
+        self.name = name
         self.clk = clk
         self.rst = rst
         self.datawidth = datawidth
@@ -114,7 +115,7 @@ class Bram(object):
         return self.interfaces[index]
 
     def disable_write(self, port):
-        mng = seq.TmpSeq(self.m, self.clk, self.rst)
+        mng = TmpSeq(self.m, self.clk, self.rst)
         mng(
             self.interfaces[port].wdata(0),
             self.interfaces[port].wenable(0)
