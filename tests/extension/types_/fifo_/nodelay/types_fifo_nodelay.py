@@ -37,7 +37,10 @@ def mkMain(n=128, datawidth=32, numports=2):
     ack, ready = myfifo.enq(fsm, count)
     
     fsm.If(ready)(
-        count.inc(),
+        count.inc()
+    )
+
+    fsm.If(ack)(
         Systask('display', 'count=%d space=%d has_space=%d',
                 myfifo.count, myfifo.space, myfifo.has_space())
     )

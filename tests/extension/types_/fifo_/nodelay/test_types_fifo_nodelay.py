@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import types_fifo
+import types_fifo_nodelay
 
 expected_verilog = """
 module test;
@@ -170,7 +170,7 @@ module main
           if(!myfifo_full && myfifo_enq) begin
             $display("count=%d space=%d has_space=%d", count_myfifo, (127 - count_myfifo), (count_myfifo + 1 < 127));
           end 
-          if(!myfifo_almost_full && (count == 126)) begin
+          if(!myfifo_almost_full && (count == 15)) begin
             fsm <= fsm_2;
           end 
         end
@@ -189,7 +189,7 @@ module main
             $write("count=%d space=%d has_space=%d ", count_myfifo, (127 - count_myfifo), (count_myfifo + 1 < 127));
           end 
           _fsm_cond_3_4_1 <= _tmp_0;
-          if(count == 127) begin
+          if(count == 16) begin
             fsm <= fsm_4;
           end 
         end
@@ -256,7 +256,7 @@ endmodule
 """
 
 def test():
-    test_module = types_fifo.mkTest()
+    test_module = types_fifo_nodelay.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

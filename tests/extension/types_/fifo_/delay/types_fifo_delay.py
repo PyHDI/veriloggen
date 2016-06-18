@@ -5,7 +5,7 @@ import os
 import math
 
 # the next line can be removed after installation
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))))
 
 from veriloggen import *
 import veriloggen.types.fifo as fifo
@@ -32,9 +32,9 @@ def mkMain(n=128, datawidth=32, numports=2):
     
     fsm.goto_next()
 
-    step = 127
+    step = 16
 
-    ack, ready = myfifo.enq(fsm, count)
+    ack, ready = myfifo.enq(fsm, count, delay=4)
     
     fsm.If(ready)(
         count.inc()

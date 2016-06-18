@@ -139,9 +139,9 @@ def mkFifoDefinition(name, datawidth=32, addrwidth=4):
     rdata = m.Reg('rdata_reg', datawidth, initval=0)
 
     wif.full.assign(is_full)
-    wif.almost_full.assign(is_almost_full)
+    wif.almost_full.assign(vtypes.Ors(is_almost_full, is_full))
     rif.empty.assign(is_empty)
-    rif.almost_empty.assign(is_almost_empty)
+    rif.almost_empty.assign(vtypes.Ors(is_almost_empty, is_empty))
 
     seq = Seq(m, '', clk, rst)
     
@@ -177,8 +177,8 @@ class Fifo(object):
                                     ports=m.connect_ports(self.definition))
 
         # entry counter
-        self._max_size = (2 ** self.addrwidth if isinstance(self.addrwidth, int) else
-                          vtypes.Int(2) ** self.addrwidth)
+        self._max_size = (2 ** self.addrwidth - 1 if isinstance(self.addrwidth, int) else
+                          vtypes.Int(2) ** self.addrwidth - 1)
         
         self._count = self.m.Reg('count_' + name, self.addrwidth + 1, initval=0)
         self._count_seq = Seq(self.m, 'seq_count_' + name, self.clk, self.rst)
@@ -199,13 +199,16 @@ class Fifo(object):
         if cond is not None:
             mng.If(cond)
 
+        current_delay = mng.current_delay
+
         not_full = vtypes.Not(self.wif.full)
         ack = vtypes.Ands(not_full, self.wif.enq)
-        ready = vtypes.Not(self.wif.almost_full)
-
-        current_delay = mng.current_delay
+        if current_delay + delay == 0:
+            ready = vtypes.Not(self.wif.almost_full)
+        else:
+            ready = self._count + (current_delay + delay + 1) < self._max_size
         
-        mng.Delay(current_delay + delay)(
+        mng.Delay(current_delay + delay).EagerVal()(
             self.wif.wdata(wdata)
         )
         mng.Then().Delay(current_delay + delay)(

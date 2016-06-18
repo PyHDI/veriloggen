@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import types_fifo_single
+import types_fifo_delay
 
 expected_verilog = """
 module test;
@@ -166,7 +166,9 @@ module main
           _fsm_cond_1_0_1 <= 1;
           if(!myfifo_almost_full) begin
             count <= count + 1;
-            $display("count=%d space=%d has_space=%d", count_myfifo, (128 - count_myfifo), (count_myfifo + 1 < 128));
+          end 
+          if(!myfifo_full && myfifo_enq) begin
+            $display("count=%d space=%d has_space=%d", count_myfifo, (127 - count_myfifo), (count_myfifo + 1 < 127));
           end 
           if(!myfifo_almost_full && (count == 15)) begin
             fsm <= fsm_2;
@@ -184,7 +186,7 @@ module main
           if(_tmp_0) begin
             sum <= sum + myfifo_rdata;
             count <= count + 1;
-            $write("count=%d space=%d has_space=%d ", count_myfifo, (128 - count_myfifo), (count_myfifo + 1 < 128));
+            $write("count=%d space=%d has_space=%d ", count_myfifo, (127 - count_myfifo), (count_myfifo + 1 < 127));
           end 
           _fsm_cond_3_4_1 <= _tmp_0;
           if(count == 16) begin
@@ -227,9 +229,9 @@ module myfifo
   assign is_almost_full = (head + 2 & 127) == tail;
   reg [32-1:0] rdata_reg;
   assign myfifo_full = is_full;
-  assign myfifo_almost_full = is_almost_full;
+  assign myfifo_almost_full = is_almost_full || is_full;
   assign myfifo_empty = is_empty;
-  assign myfifo_almost_empty = is_almost_empty;
+  assign myfifo_almost_empty = is_almost_empty || is_empty;
   assign myfifo_rdata = rdata_reg;
 
   always @(posedge CLK) begin
@@ -254,7 +256,7 @@ endmodule
 """
 
 def test():
-    test_module = types_fifo_single.mkTest()
+    test_module = types_fifo_delay.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
