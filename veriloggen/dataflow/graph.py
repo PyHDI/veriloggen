@@ -59,7 +59,7 @@ class GraphGenerator(_Visitor):
             
     def _add_output(self, node, src):
         if node._has_output():
-            outobj = node.output_data
+            outobj = str(node.output_data)
             label_data = [ outobj, str(node.width) ]
             if node.point > 0:
                 label_data.append(str(node.point))
@@ -175,7 +175,8 @@ class GraphGenerator(_Visitor):
             self.visited_node[node] = node
             return
 
-        label_data = [ node.input_data, str(node.width) ]
+        inobj = str(node.input_data)
+        label_data = [ inobj, str(node.width) ]
         if node.point > 0:
             label_data.append(str(node.point))
         label = ':'.join(label_data)
