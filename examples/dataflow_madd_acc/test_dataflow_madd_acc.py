@@ -4,6 +4,7 @@ import dataflow_madd_acc
 
 expected_verilog = """
 module test;
+
   reg CLK;
   reg RST;
   reg [32-1:0] xdata;
@@ -12,7 +13,7 @@ module test;
   reg [32-1:0] ydata;
   reg yvalid;
   wire yready;
-  reg [32-1:0] resetdata;
+  reg [1-1:0] resetdata;
   reg resetvalid;
   wire resetready;
   wire [32-1:0] zdata;
@@ -62,6 +63,8 @@ module test;
     ydata = 0;
     yvalid = 0;
     zready = 0;
+    resetdata = 0;
+    resetvalid = 0;
     #100;
     RST = 1;
     #100;
@@ -156,11 +159,13 @@ module test;
             _tmp_0 <= _tmp_0 + 1;
           end 
           if((_tmp_0 == 5) && xready) begin
+            xvalid <= 0;
+          end 
+          if((_tmp_0 == 5) && xready) begin
             xfsm <= xfsm_13;
           end 
         end
         xfsm_13: begin
-          xvalid <= 0;
           xfsm <= xfsm_14;
         end
         xfsm_14: begin
@@ -198,12 +203,12 @@ module test;
           if(xready) begin
             _tmp_0 <= _tmp_0 + 1;
           end 
-          if((_tmp_0 == 10) && xready) begin
+          if((_tmp_0 == 20) && xready) begin
+            xvalid <= 0;
+          end 
+          if((_tmp_0 == 20) && xready) begin
             xfsm <= xfsm_24;
           end 
-        end
-        xfsm_24: begin
-          xvalid <= 0;
         end
       endcase
     end
@@ -341,11 +346,13 @@ module test;
             _tmp_1 <= _tmp_1 + 1;
           end 
           if((_tmp_1 == 5) && yready) begin
+            yvalid <= 0;
+          end 
+          if((_tmp_1 == 5) && yready) begin
             yfsm <= yfsm_23;
           end 
         end
         yfsm_23: begin
-          yvalid <= 0;
           yfsm <= yfsm_24;
         end
         yfsm_24: begin
@@ -413,12 +420,12 @@ module test;
           if(yready) begin
             _tmp_1 <= _tmp_1 + 1;
           end 
-          if((_tmp_1 == 10) && yready) begin
+          if((_tmp_1 == 20) && yready) begin
+            yvalid <= 0;
+          end 
+          if((_tmp_1 == 20) && yready) begin
             yfsm <= yfsm_44;
           end 
-        end
-        yfsm_44: begin
-          yvalid <= 0;
         end
       endcase
     end
@@ -713,6 +720,7 @@ module test;
   localparam reset_init = 0;
   reg [32-1:0] reset_count;
   localparam reset_1 = 1;
+  localparam reset_2 = 2;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -721,19 +729,30 @@ module test;
     end else begin
       case(reset)
         reset_init: begin
-          resetdata <= 0;
-          resetvalid <= 0;
-          if(zvalid && zready) begin
-            reset_count <= reset_count + 1;
-          end 
-          if(reset_count == 10) begin
+          if(reset_done) begin
             reset <= reset_1;
           end 
         end
         reset_1: begin
           resetvalid <= 1;
+          if(resetvalid && resetready) begin
+            reset_count <= reset_count + 1;
+          end 
+          if(resetvalid && resetready && (reset_count == 2)) begin
+            resetdata <= 1;
+          end 
+          if(resetvalid && resetready && (reset_count == 2)) begin
+            reset <= reset_2;
+          end 
+        end
+        reset_2: begin
+          if(resetvalid && resetready) begin
+            resetdata <= 0;
+          end 
           reset_count <= 0;
-          reset <= reset_init;
+          if(resetvalid && resetready) begin
+            reset <= reset_1;
+          end 
         end
       endcase
     end
@@ -769,7 +788,7 @@ module main
   input [32-1:0] ydata,
   input yvalid,
   output yready,
-  input [32-1:0] resetdata,
+  input [1-1:0] resetdata,
   input resetvalid,
   output resetready,
   output [32-1:0] zdata,
@@ -806,36 +825,36 @@ module main
 
   assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
   assign yready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
-  assign _tmp_ready_0 = (_tmp_ready_8 || !_tmp_valid_8) && _tmp_valid_0;
-  reg [32-1:0] _tmp_data_1;
+  assign _tmp_ready_0 = (_tmp_ready_8 || !_tmp_valid_8) && (_tmp_valid_0 && _tmp_valid_7);
+  reg [1-1:0] _tmp_data_1;
   reg _tmp_valid_1;
   wire _tmp_ready_1;
   assign resetready = (_tmp_ready_1 || !_tmp_valid_1) && resetvalid;
   assign _tmp_ready_1 = (_tmp_ready_2 || !_tmp_valid_2) && _tmp_valid_1;
-  reg [32-1:0] _tmp_data_2;
+  reg [1-1:0] _tmp_data_2;
   reg _tmp_valid_2;
   wire _tmp_ready_2;
   assign _tmp_ready_2 = (_tmp_ready_3 || !_tmp_valid_3) && _tmp_valid_2;
-  reg [32-1:0] _tmp_data_3;
+  reg [1-1:0] _tmp_data_3;
   reg _tmp_valid_3;
   wire _tmp_ready_3;
   assign _tmp_ready_3 = (_tmp_ready_4 || !_tmp_valid_4) && _tmp_valid_3;
-  reg [32-1:0] _tmp_data_4;
+  reg [1-1:0] _tmp_data_4;
   reg _tmp_valid_4;
   wire _tmp_ready_4;
   assign _tmp_ready_4 = (_tmp_ready_5 || !_tmp_valid_5) && _tmp_valid_4;
-  reg [32-1:0] _tmp_data_5;
+  reg [1-1:0] _tmp_data_5;
   reg _tmp_valid_5;
   wire _tmp_ready_5;
   assign _tmp_ready_5 = (_tmp_ready_6 || !_tmp_valid_6) && _tmp_valid_5;
-  reg [32-1:0] _tmp_data_6;
+  reg [1-1:0] _tmp_data_6;
   reg _tmp_valid_6;
   wire _tmp_ready_6;
   assign _tmp_ready_6 = (_tmp_ready_7 || !_tmp_valid_7) && _tmp_valid_6;
-  reg [32-1:0] _tmp_data_7;
+  reg [1-1:0] _tmp_data_7;
   reg _tmp_valid_7;
   wire _tmp_ready_7;
-  assign _tmp_ready_7 = 1;
+  assign _tmp_ready_7 = (_tmp_ready_8 || !_tmp_valid_8) && (_tmp_valid_0 && _tmp_valid_7);
   reg [32-1:0] _tmp_data_8;
   reg _tmp_valid_8;
   wire _tmp_ready_8;
@@ -933,17 +952,17 @@ module main
       if((_tmp_ready_7 || !_tmp_valid_7) && _tmp_ready_6) begin
         _tmp_valid_7 <= _tmp_valid_6;
       end 
-      if(_tmp_valid_7 && _tmp_ready_7) begin
-        _tmp_data_8 <= _tmp_data_7;
-      end 
-      if((_tmp_ready_8 || !_tmp_valid_8) && _tmp_ready_0 && _tmp_valid_0) begin
+      if((_tmp_ready_8 || !_tmp_valid_8) && (_tmp_ready_0 && _tmp_ready_7) && (_tmp_valid_0 && _tmp_valid_7)) begin
         _tmp_data_8 <= _tmp_data_8 + _tmp_data_0;
       end 
       if(_tmp_valid_8 && _tmp_ready_8) begin
         _tmp_valid_8 <= 0;
       end 
-      if((_tmp_ready_8 || !_tmp_valid_8) && _tmp_ready_0) begin
-        _tmp_valid_8 <= _tmp_valid_0;
+      if((_tmp_ready_8 || !_tmp_valid_8) && (_tmp_ready_0 && _tmp_ready_7)) begin
+        _tmp_valid_8 <= _tmp_valid_0 && _tmp_valid_7;
+      end 
+      if((_tmp_ready_8 || !_tmp_valid_8) && (_tmp_ready_0 && _tmp_ready_7) && (_tmp_valid_0 && _tmp_valid_7) && _tmp_data_7) begin
+        _tmp_data_8 <= 1'd0 + _tmp_data_0;
       end 
     end
   end

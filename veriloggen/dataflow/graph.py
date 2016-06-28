@@ -168,10 +168,12 @@ class GraphGenerator(_Visitor):
         
         right = self.visit(node.right)
         initval = self.visit(node.initval)
-        reset = self.visit(node.reset)
+        if node.reset is not None:
+            reset = self.visit(node.reset)
         self.graph.add_edge(right, node, label='R')
         self.graph.add_edge(initval, node, label='initval')
-        self.graph.add_edge(reset, node, label='reset')
+        if node.reset is not None:
+            self.graph.add_edge(reset, node, label='reset')
         
         if node.start_stage is not None:
             self._set_rank(node.start_stage + 1, node)

@@ -1831,7 +1831,7 @@ class _Accumulator(_UnaryOperator):
         self.initval = _to_constant(initval) if initval is not None else _to_constant(0)
         if not isinstance(self.initval, _Constant):
             raise TypeError("initval must be Constant, not '%s'" % str(type(self.initval)))
-        self.reset = _to_constant(reset) if reset is not None else _to_constant(0)
+        self.reset = _to_constant(reset)
         self.width = width
         self.signed = signed
         self.label = None
@@ -1893,6 +1893,20 @@ class _Accumulator(_UnaryOperator):
                 raise TypeError("Operator '%s' returns unsupported object type '%s'."
                                 % (str(op), str(type(value))))
 
+        if self.reset is not None:
+            reset_value = initval_data
+            for op in self.ops:
+                if not isinstance(op, type):
+                    reset_value = op(reset_value, rdata)
+                elif issubclass(op, vtypes._BinaryOperator):
+                    reset_value = op(reset_value, rdata)
+                elif issubclass(op, vtypes._UnaryOperator):
+                    reset_value = op(reset_value)
+                    
+                if not isinstance(reset_value, vtypes._Numeric):
+                    raise TypeError("Operator '%s' returns unsupported object type '%s'."
+                                    % (str(op), str(type(reset_value))))
+
         seq( data(value), cond=data_cond )
         seq( valid(0), cond=valid_reset_cond )
         seq( valid(all_valid), cond=valid_cond )
@@ -1900,7 +1914,7 @@ class _Accumulator(_UnaryOperator):
 
         if self.reset is not None:
             reset_data_cond = _and_vars(data_cond, resetdata)
-            seq( data(initval_data), cond=reset_data_cond )
+            seq( data(reset_value), cond=reset_data_cond )
             _connect_ready(m, resetready, ready_cond)
         
         if not self._has_output():

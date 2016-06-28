@@ -22,6 +22,7 @@ def mkMain():
 
     df = dataflow.Dataflow(z)
     m = df.to_module('main')
+    #df.draw_graph()
     
     return m
 
@@ -75,8 +76,9 @@ def mkTest(numports=8):
         Delay(10000),
         Systask('finish'),
     )
+ 
 
-    def send(name, data, valid, ready, step=1, waitnum=10):
+    def send(name, data, valid, ready, step=1, waitnum=10, send_size=20):
         fsm = FSM(m, name + 'fsm', clk, rst)
         count = m.TmpReg(32, initval=0)
         
@@ -99,8 +101,8 @@ def mkTest(numports=8):
         
         fsm.add(data(data + step), cond=ready)
         fsm.add(count.inc(), cond=ready)
-        fsm.add(valid(0), cond=AndList(count==10, ready))
-        fsm.goto_next(cond=AndList(count==10, ready))
+        fsm.add(valid(0), cond=AndList(count==send_size, ready))
+        fsm.goto_next(cond=AndList(count==send_size, ready))
         
         fsm.make_always()
     
@@ -131,21 +133,23 @@ def mkTest(numports=8):
     # reset port
     reset_fsm = FSM(m, 'reset', clk, rst)
     reset_count = m.Reg('reset_count', 32, initval=0)
-    reset_fsm_init = reset_fsm.current()
+
+    reset_fsm.goto_next(cond=reset_done)
     
+    reset_fsm_init = reset_fsm.current()
+
     reset_fsm.add( resetvalid(1) ) # always High
     
-    reset_fsm.add( resetdata(0) )
     reset_fsm.add( reset_count.inc(), cond=AndList(resetvalid, resetready) )
-    reset_fsm.goto_next( cond=reset_count==5 )
+    reset_fsm.add( resetdata(1), cond=AndList(resetvalid, resetready, reset_count==2) )
+    reset_fsm.goto_next( cond=AndList(resetvalid, resetready, reset_count==2) )
 
-    reset_fsm.add( resetdata(1) )
     reset_fsm.add( resetdata(0), cond=AndList(resetvalid, resetready) )
     reset_fsm.add( reset_count(0) )
     reset_fsm.goto(reset_fsm_init, cond=AndList(resetvalid, resetready) )
 
     reset_fsm.make_always()
-    
+
     
     m.Always(Posedge(clk))(
         If(reset_done)(

@@ -201,10 +201,10 @@ module test;
           if(xready) begin
             _tmp_0 <= _tmp_0 + 1;
           end 
-          if((_tmp_0 == 10) && xready) begin
+          if((_tmp_0 == 20) && xready) begin
             xvalid <= 0;
           end 
-          if((_tmp_0 == 10) && xready) begin
+          if((_tmp_0 == 20) && xready) begin
             xfsm <= xfsm_24;
           end 
         end
@@ -418,10 +418,10 @@ module test;
           if(yready) begin
             _tmp_1 <= _tmp_1 + 1;
           end 
-          if((_tmp_1 == 10) && yready) begin
+          if((_tmp_1 == 20) && yready) begin
             yvalid <= 0;
           end 
-          if((_tmp_1 == 10) && yready) begin
+          if((_tmp_1 == 20) && yready) begin
             yfsm <= yfsm_44;
           end 
         end
@@ -718,6 +718,7 @@ module test;
   localparam reset_init = 0;
   reg [32-1:0] reset_count;
   localparam reset_1 = 1;
+  localparam reset_2 = 2;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -726,19 +727,30 @@ module test;
     end else begin
       case(reset)
         reset_init: begin
-          resetdata <= 0;
-          resetvalid <= 0;
-          if(zvalid && zready) begin
-            reset_count <= reset_count + 1;
-          end 
-          if(reset_count == 10) begin
+          if(reset_done) begin
             reset <= reset_1;
           end 
         end
         reset_1: begin
           resetvalid <= 1;
+          if(resetvalid && resetready) begin
+            reset_count <= reset_count + 1;
+          end 
+          if(resetvalid && resetready && (reset_count == 2)) begin
+            resetdata <= 1;
+          end 
+          if(resetvalid && resetready && (reset_count == 2)) begin
+            reset <= reset_2;
+          end 
+        end
+        reset_2: begin
+          if(resetvalid && resetready) begin
+            resetdata <= 0;
+          end 
           reset_count <= 0;
-          reset <= reset_init;
+          if(resetvalid && resetready) begin
+            reset <= reset_1;
+          end 
         end
       endcase
     end
@@ -811,7 +823,7 @@ module main
 
   assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
   assign yready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
-  assign _tmp_ready_0 = (_tmp_ready_8 || !_tmp_valid_8) && _tmp_valid_0;
+  assign _tmp_ready_0 = (_tmp_ready_8 || !_tmp_valid_8) && (_tmp_valid_0 && _tmp_valid_7);
   reg [32-1:0] _tmp_data_1;
   reg _tmp_valid_1;
   wire _tmp_ready_1;
@@ -840,7 +852,7 @@ module main
   reg [32-1:0] _tmp_data_7;
   reg _tmp_valid_7;
   wire _tmp_ready_7;
-  assign _tmp_ready_7 = 1;
+  assign _tmp_ready_7 = (_tmp_ready_8 || !_tmp_valid_8) && (_tmp_valid_0 && _tmp_valid_7);
   reg [32-1:0] _tmp_data_8;
   reg _tmp_valid_8;
   wire _tmp_ready_8;
@@ -938,17 +950,17 @@ module main
       if((_tmp_ready_7 || !_tmp_valid_7) && _tmp_ready_6) begin
         _tmp_valid_7 <= _tmp_valid_6;
       end 
-      if(_tmp_valid_7 && _tmp_ready_7) begin
-        _tmp_data_8 <= _tmp_data_7;
-      end 
-      if((_tmp_ready_8 || !_tmp_valid_8) && _tmp_ready_0 && _tmp_valid_0) begin
+      if((_tmp_ready_8 || !_tmp_valid_8) && (_tmp_ready_0 && _tmp_ready_7) && (_tmp_valid_0 && _tmp_valid_7)) begin
         _tmp_data_8 <= _tmp_data_8 + _tmp_data_0;
       end 
       if(_tmp_valid_8 && _tmp_ready_8) begin
         _tmp_valid_8 <= 0;
       end 
-      if((_tmp_ready_8 || !_tmp_valid_8) && _tmp_ready_0) begin
-        _tmp_valid_8 <= _tmp_valid_0;
+      if((_tmp_ready_8 || !_tmp_valid_8) && (_tmp_ready_0 && _tmp_ready_7)) begin
+        _tmp_valid_8 <= _tmp_valid_0 && _tmp_valid_7;
+      end 
+      if((_tmp_ready_8 || !_tmp_valid_8) && (_tmp_ready_0 && _tmp_ready_7) && (_tmp_valid_0 && _tmp_valid_7) && _tmp_data_7) begin
+        _tmp_data_8 <= 1'd0 + _tmp_data_0;
       end 
     end
   end

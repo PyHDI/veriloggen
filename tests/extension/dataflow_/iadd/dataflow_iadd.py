@@ -21,6 +21,7 @@ def mkMain():
 
     df = dataflow.Dataflow(z)
     m = df.to_module('main')
+    #df.draw_graph()
     
     return m
 
@@ -69,7 +70,8 @@ def mkTest(numports=8):
         Systask('finish'),
     )
 
-    def send(name, data, valid, ready, step=1, waitnum=10):
+    
+    def send(name, data, valid, ready, step=1, waitnum=10, send_size=10):
         fsm = FSM(m, name + 'fsm', clk, rst)
         count = m.TmpReg(32, initval=0)
         
@@ -92,12 +94,12 @@ def mkTest(numports=8):
         
         fsm.add(data(data + step), cond=ready)
         fsm.add(count.inc(), cond=ready)
-        fsm.add(valid(0), cond=AndList(count==10, ready))
-        fsm.goto_next(cond=AndList(count==10, ready))
+        fsm.add(valid(0), cond=AndList(count==send_size, ready))
+        fsm.goto_next(cond=AndList(count==send_size, ready))
         
         fsm.make_always()
-    
 
+        
     def receive(name, data, valid, ready, waitnum=10):
         fsm = FSM(m, name + 'fsm', clk, rst)
         

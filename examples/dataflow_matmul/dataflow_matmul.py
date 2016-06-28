@@ -13,7 +13,7 @@ import veriloggen.dataflow as dataflow
 def mkMadd():
     x = dataflow.Variable('xd', valid='xv', signed=True)
     y = dataflow.Variable('yd', valid='yv', signed=True)
-    vreset = dataflow.Variable('vreset_data', valid='vreset')
+    vreset = dataflow.Variable('vreset_data', valid='vreset', width=1)
     
     xy = x * y
     
@@ -59,7 +59,8 @@ def mkMatmul(n=16, datawidth=32):
     m.Instance(madd, 'madd',
                ports=[ ('CLK', clk), ('RST', rst),
                        ('xd', xdin), ('xv', ivalid), ('yd', ydin), ('yv', ivalid),
-                       ('zd', odata), ('zv', ovalid), ('vreset_data', 0), ('vreset', vreset) ])
+                       ('zd', odata), ('zv', ovalid),
+                       ('vreset_data', vreset), ('vreset', ivalid) ])
 
     read_count = m.TmpReg(int(addrwidth/2)+1, initval=0)
     sum_value = m.TmpReg(datawidth, initval=0)
@@ -72,15 +73,19 @@ def mkMatmul(n=16, datawidth=32):
 
     # initial values
     fsm.add( xaddr(0-1), yaddr(0-1), zaddr(0-1), zwe(0),
-             busy(0), vreset(1), ivalid(0), 
+             busy(0), vreset(0), ivalid(0), 
              read_count(0), sum_value(0), sum_count(0) )
 
     # start
-    fsm.add( busy(1), vreset(0), cond=start )
+    fsm.add( busy(1), cond=start )
     fsm.goto_next(cond=start)
 
     comp = fsm.current()
 
+    # reset pipeline for each 1st data
+    fsm.add( vreset(0), delay=1 )
+    fsm.add( vreset(1), delay=1, cond=read_count==0 )
+    
     # read data
     fsm.add( xaddr.inc(), yaddr.inc(), cond=read_count<n )
     fsm.add( ivalid(0), delay=1 )
@@ -107,10 +112,6 @@ def mkMatmul(n=16, datawidth=32):
     fsm.add( yaddr(0-1), cond=yaddr==n*n-1 )
     fsm.add( xaddr(xaddr-n), cond=yaddr<n*n-1)
     fsm.add( read_count(0), sum_count(0) )
-
-    # reset pipeline
-    fsm.add( vreset(1) )
-    fsm.add( vreset(0), delay=1 )
 
     done = (zaddr == n * n - 2)
     fsm.goto(comp, cond=Not(done))
@@ -171,6 +172,8 @@ def mkTest(n=16, datawidth=32):
         Systask('finish'),
     )
 
+    mag = 2
+
     fsm = FSM(m, 'fsm', clk, rst)
     
     fsm.goto_next(cond=reset_done)
@@ -181,17 +184,17 @@ def mkTest(n=16, datawidth=32):
     fsm.add( start(0), delay=1 )
     #fsm.add( xdin(Mux(xaddr % n == xaddr / n, 1, 0)) )
     fsm.add( xdin(xaddr) )
-    fsm.add( ydin(Mux(yaddr % n == yaddr / n, 1, 0)) )
+    fsm.add( ydin(Mux(yaddr % n == yaddr / n, mag, 0)) )
     fsm.goto_next()
     
     #fsm.add( xdin(Mux(xaddr % n == xaddr / n, 1, 0)) )
     fsm.add( xdin(xaddr) )
-    fsm.add( ydin(Mux(yaddr % n == yaddr / n, 1, 0)) )
+    fsm.add( ydin(Mux(yaddr % n == yaddr / n, mag, 0)) )
     fsm.goto_next(cond=busy)
 
     #fsm.add( xdin(Mux(xaddr % n == xaddr / n, 1, 0)) )
     fsm.add( xdin(xaddr) )
-    fsm.add( ydin(Mux(yaddr % n == yaddr / n, 1, 0)) )
+    fsm.add( ydin(Mux(yaddr % n == yaddr / n, mag, 0)) )
     fsm.goto_next(cond=Not(busy))
 
     fsm.add( Systask('finish') )
@@ -207,7 +210,7 @@ def mkTest(n=16, datawidth=32):
             #If(AndList(zaddr % n != zaddr / n, zdout != 0))(
             #    Systask('display', '## wrong')
             #)
-            If(zaddr != zdout)(
+            If(zaddr * mag != zdout)(
                 Systask('display', '## wrong result')
             ),
         )

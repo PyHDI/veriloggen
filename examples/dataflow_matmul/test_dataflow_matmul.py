@@ -106,19 +106,19 @@ module test;
           start <= 1;
           _fsm_cond_2_0_1 <= 1;
           xdin <= xaddr;
-          ydin <= (yaddr % 16 == yaddr / 16)? 1 : 0;
+          ydin <= (yaddr % 16 == yaddr / 16)? 2 : 0;
           fsm <= fsm_3;
         end
         fsm_3: begin
           xdin <= xaddr;
-          ydin <= (yaddr % 16 == yaddr / 16)? 1 : 0;
+          ydin <= (yaddr % 16 == yaddr / 16)? 2 : 0;
           if(busy) begin
             fsm <= fsm_4;
           end 
         end
         fsm_4: begin
           xdin <= xaddr;
-          ydin <= (yaddr % 16 == yaddr / 16)? 1 : 0;
+          ydin <= (yaddr % 16 == yaddr / 16)? 2 : 0;
           if(!busy) begin
             fsm <= fsm_5;
           end 
@@ -134,7 +134,7 @@ module test;
   always @(posedge CLK) begin
     if(zwe) begin
       $display("zaddr=%10d zdout=%10d", zaddr, zdout);
-      if(zaddr != zdout) begin
+      if(zaddr * 2 != zdout) begin
         $display("## wrong result");
       end 
     end 
@@ -176,8 +176,8 @@ module Matmul
     .yv(ivalid),
     .zd(odata),
     .zv(ovalid),
-    .vreset_data(0),
-    .vreset(vreset)
+    .vreset_data(vreset),
+    .vreset(ivalid)
   );
 
   reg [5-1:0] _tmp_0;
@@ -188,8 +188,9 @@ module Matmul
   reg [32-1:0] _d1_fsm;
   reg _fsm_cond_1_0_1;
   reg _fsm_cond_1_1_1;
-  reg _fsm_cond_2_2_1;
-  reg _fsm_cond_2_3_1;
+  reg _fsm_cond_1_2_1;
+  reg _fsm_cond_1_3_1;
+  reg _fsm_cond_2_4_1;
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
 
@@ -208,26 +209,30 @@ module Matmul
       _tmp_2 <= 0;
       _fsm_cond_1_0_1 <= 0;
       _fsm_cond_1_1_1 <= 0;
+      _fsm_cond_1_2_1 <= 0;
+      _fsm_cond_1_3_1 <= 0;
       zdout <= 0;
-      _fsm_cond_2_2_1 <= 0;
-      _fsm_cond_2_3_1 <= 0;
+      _fsm_cond_2_4_1 <= 0;
     end else begin
       _d1_fsm <= fsm;
       case(_d1_fsm)
         fsm_1: begin
           if(_fsm_cond_1_0_1) begin
-            ivalid <= 0;
+            vreset <= 0;
           end 
           if(_fsm_cond_1_1_1) begin
+            vreset <= 1;
+          end 
+          if(_fsm_cond_1_2_1) begin
+            ivalid <= 0;
+          end 
+          if(_fsm_cond_1_3_1) begin
             ivalid <= 1;
           end 
         end
         fsm_2: begin
-          if(_fsm_cond_2_2_1) begin
+          if(_fsm_cond_2_4_1) begin
             zwe <= 0;
-          end 
-          if(_fsm_cond_2_3_1) begin
-            vreset <= 0;
           end 
         end
       endcase
@@ -238,26 +243,27 @@ module Matmul
           zaddr <= -1;
           zwe <= 0;
           busy <= 0;
-          vreset <= 1;
+          vreset <= 0;
           ivalid <= 0;
           _tmp_0 <= 0;
           _tmp_1 <= 0;
           _tmp_2 <= 0;
           if(start) begin
             busy <= 1;
-            vreset <= 0;
           end 
           if(start) begin
             fsm <= fsm_1;
           end 
         end
         fsm_1: begin
+          _fsm_cond_1_0_1 <= 1;
+          _fsm_cond_1_1_1 <= _tmp_0 == 0;
           if(_tmp_0 < 16) begin
             xaddr <= xaddr + 1;
             yaddr <= yaddr + 1;
           end 
-          _fsm_cond_1_0_1 <= 1;
-          _fsm_cond_1_1_1 <= _tmp_0 < 16;
+          _fsm_cond_1_2_1 <= 1;
+          _fsm_cond_1_3_1 <= _tmp_0 < 16;
           if(_tmp_0 < 16) begin
             _tmp_0 <= _tmp_0 + 1;
           end 
@@ -275,7 +281,7 @@ module Matmul
           zaddr <= zaddr + 1;
           zdout <= _tmp_1;
           zwe <= 1;
-          _fsm_cond_2_2_1 <= 1;
+          _fsm_cond_2_4_1 <= 1;
           if(yaddr == 255) begin
             yaddr <= -1;
           end 
@@ -284,8 +290,6 @@ module Matmul
           end 
           _tmp_0 <= 0;
           _tmp_2 <= 0;
-          vreset <= 1;
-          _fsm_cond_2_3_1 <= 1;
           if(!(zaddr == 254)) begin
             fsm <= fsm_1;
           end 
@@ -310,7 +314,7 @@ module madd
   input xv,
   input signed [32-1:0] yd,
   input yv,
-  input [32-1:0] vreset_data,
+  input [1-1:0] vreset_data,
   input vreset,
   output signed [32-1:0] zd,
   output zv
@@ -343,35 +347,35 @@ module madd
     .c(_tmp_odata_0)
   );
 
-  assign _tmp_ready_0 = (_tmp_ready_8 || !_tmp_valid_8) && _tmp_valid_0;
-  reg [32-1:0] _tmp_data_1;
+  assign _tmp_ready_0 = (_tmp_ready_8 || !_tmp_valid_8) && (_tmp_valid_0 && _tmp_valid_7);
+  reg [1-1:0] _tmp_data_1;
   reg _tmp_valid_1;
   wire _tmp_ready_1;
   assign _tmp_ready_1 = (_tmp_ready_2 || !_tmp_valid_2) && _tmp_valid_1;
-  reg [32-1:0] _tmp_data_2;
+  reg [1-1:0] _tmp_data_2;
   reg _tmp_valid_2;
   wire _tmp_ready_2;
   assign _tmp_ready_2 = (_tmp_ready_3 || !_tmp_valid_3) && _tmp_valid_2;
-  reg [32-1:0] _tmp_data_3;
+  reg [1-1:0] _tmp_data_3;
   reg _tmp_valid_3;
   wire _tmp_ready_3;
   assign _tmp_ready_3 = (_tmp_ready_4 || !_tmp_valid_4) && _tmp_valid_3;
-  reg [32-1:0] _tmp_data_4;
+  reg [1-1:0] _tmp_data_4;
   reg _tmp_valid_4;
   wire _tmp_ready_4;
   assign _tmp_ready_4 = (_tmp_ready_5 || !_tmp_valid_5) && _tmp_valid_4;
-  reg [32-1:0] _tmp_data_5;
+  reg [1-1:0] _tmp_data_5;
   reg _tmp_valid_5;
   wire _tmp_ready_5;
   assign _tmp_ready_5 = (_tmp_ready_6 || !_tmp_valid_6) && _tmp_valid_5;
-  reg [32-1:0] _tmp_data_6;
+  reg [1-1:0] _tmp_data_6;
   reg _tmp_valid_6;
   wire _tmp_ready_6;
   assign _tmp_ready_6 = (_tmp_ready_7 || !_tmp_valid_7) && _tmp_valid_6;
-  reg [32-1:0] _tmp_data_7;
+  reg [1-1:0] _tmp_data_7;
   reg _tmp_valid_7;
   wire _tmp_ready_7;
-  assign _tmp_ready_7 = 1;
+  assign _tmp_ready_7 = (_tmp_ready_8 || !_tmp_valid_8) && (_tmp_valid_0 && _tmp_valid_7);
   reg signed [32-1:0] _tmp_data_8;
   reg _tmp_valid_8;
   wire _tmp_ready_8;
@@ -469,17 +473,17 @@ module madd
       if((_tmp_ready_7 || !_tmp_valid_7) && _tmp_ready_6) begin
         _tmp_valid_7 <= _tmp_valid_6;
       end 
-      if(_tmp_valid_7 && _tmp_ready_7) begin
-        _tmp_data_8 <= _tmp_data_7;
-      end 
-      if((_tmp_ready_8 || !_tmp_valid_8) && _tmp_ready_0 && _tmp_valid_0) begin
+      if((_tmp_ready_8 || !_tmp_valid_8) && (_tmp_ready_0 && _tmp_ready_7) && (_tmp_valid_0 && _tmp_valid_7)) begin
         _tmp_data_8 <= _tmp_data_8 + _tmp_data_0;
       end 
       if(_tmp_valid_8 && _tmp_ready_8) begin
         _tmp_valid_8 <= 0;
       end 
-      if((_tmp_ready_8 || !_tmp_valid_8) && _tmp_ready_0) begin
-        _tmp_valid_8 <= _tmp_valid_0;
+      if((_tmp_ready_8 || !_tmp_valid_8) && (_tmp_ready_0 && _tmp_ready_7)) begin
+        _tmp_valid_8 <= _tmp_valid_0 && _tmp_valid_7;
+      end 
+      if((_tmp_ready_8 || !_tmp_valid_8) && (_tmp_ready_0 && _tmp_ready_7) && (_tmp_valid_0 && _tmp_valid_7) && _tmp_data_7) begin
+        _tmp_data_8 <= 1'd0 + _tmp_data_0;
       end 
     end
   end

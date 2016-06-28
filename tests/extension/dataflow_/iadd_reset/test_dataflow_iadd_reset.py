@@ -195,10 +195,10 @@ module test;
           if(xready) begin
             _tmp_0 <= _tmp_0 + 1;
           end 
-          if((_tmp_0 == 10) && xready) begin
+          if((_tmp_0 == 20) && xready) begin
             xvalid <= 0;
           end 
-          if((_tmp_0 == 10) && xready) begin
+          if((_tmp_0 == 20) && xready) begin
             xfsm <= xfsm_24;
           end 
         end
@@ -270,6 +270,7 @@ module test;
   localparam reset_init = 0;
   reg [32-1:0] reset_count;
   localparam reset_1 = 1;
+  localparam reset_2 = 2;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -278,23 +279,29 @@ module test;
     end else begin
       case(reset)
         reset_init: begin
-          resetvalid <= 1;
-          resetdata <= 0;
-          if(resetvalid && resetready) begin
-            reset_count <= reset_count + 1;
-          end 
-          if(reset_count == 5) begin
+          if(reset_done) begin
             reset <= reset_1;
           end 
         end
         reset_1: begin
-          resetdata <= 1;
+          resetvalid <= 1;
+          if(resetvalid && resetready) begin
+            reset_count <= reset_count + 1;
+          end 
+          if(resetvalid && resetready && (reset_count == 2)) begin
+            resetdata <= 1;
+          end 
+          if(resetvalid && resetready && (reset_count == 2)) begin
+            reset <= reset_2;
+          end 
+        end
+        reset_2: begin
           if(resetvalid && resetready) begin
             resetdata <= 0;
           end 
           reset_count <= 0;
           if(resetvalid && resetready) begin
-            reset <= reset_init;
+            reset <= reset_1;
           end 
         end
       endcase
@@ -357,7 +364,7 @@ module main
         _tmp_valid_0 <= xvalid && resetvalid;
       end 
       if((_tmp_ready_0 || !_tmp_valid_0) && (xready && resetready) && (xvalid && resetvalid) && resetdata) begin
-        _tmp_data_0 <= 1'd0;
+        _tmp_data_0 <= 1'd0 + xdata;
       end 
     end
   end
