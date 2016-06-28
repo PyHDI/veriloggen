@@ -12,7 +12,7 @@ import veriloggen.dataflow as dataflow
 def mkMain():
     # input variiable
     x = dataflow.Variable('xdata', valid='xvalid', ready='xready')
-    reset = dataflow.Variable('resetdata', valid='resetvalid', ready='resetready')
+    reset = dataflow.Variable('resetdata', valid='resetvalid', ready='resetready', width=1)
 
     # dataflow definition
     z = dataflow.Iadd(x, initval=0, reset=reset)
@@ -132,14 +132,17 @@ def mkTest(numports=8):
     reset_fsm = FSM(m, 'reset', clk, rst)
     reset_count = m.Reg('reset_count', 32, initval=0)
     reset_fsm_init = reset_fsm.current()
+    
+    reset_fsm.add( resetvalid(1) ) # always High
+    
     reset_fsm.add( resetdata(0) )
-    reset_fsm.add( resetvalid(0) )
-    reset_fsm.add( reset_count.inc(), cond=AndList(xvalid, xready) )
+    reset_fsm.add( reset_count.inc(), cond=AndList(resetvalid, resetready) )
     reset_fsm.goto_next( cond=reset_count==5 )
 
-    reset_fsm.add( resetvalid(1) ) # reset accumulator value
+    reset_fsm.add( resetdata(1) )
+    reset_fsm.add( resetdata(0), cond=AndList(resetvalid, resetready) )
     reset_fsm.add( reset_count(0) )
-    reset_fsm.goto(reset_fsm_init)
+    reset_fsm.goto(reset_fsm_init, cond=AndList(resetvalid, resetready) )
 
     reset_fsm.make_always()
     

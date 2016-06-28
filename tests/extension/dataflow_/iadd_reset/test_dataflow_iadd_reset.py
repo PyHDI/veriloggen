@@ -10,7 +10,7 @@ module test;
   reg [32-1:0] xdata;
   reg xvalid;
   wire xready;
-  reg [32-1:0] resetdata;
+  reg [1-1:0] resetdata;
   reg resetvalid;
   wire resetready;
   wire [32-1:0] zdata;
@@ -278,9 +278,9 @@ module test;
     end else begin
       case(reset)
         reset_init: begin
+          resetvalid <= 1;
           resetdata <= 0;
-          resetvalid <= 0;
-          if(xvalid && xready) begin
+          if(resetvalid && resetready) begin
             reset_count <= reset_count + 1;
           end 
           if(reset_count == 5) begin
@@ -288,9 +288,14 @@ module test;
           end 
         end
         reset_1: begin
-          resetvalid <= 1;
+          resetdata <= 1;
+          if(resetvalid && resetready) begin
+            resetdata <= 0;
+          end 
           reset_count <= 0;
-          reset <= reset_init;
+          if(resetvalid && resetready) begin
+            reset <= reset_init;
+          end 
         end
       endcase
     end
@@ -320,7 +325,7 @@ module main
   input [32-1:0] xdata,
   input xvalid,
   output xready,
-  input [32-1:0] resetdata,
+  input [1-1:0] resetdata,
   input resetvalid,
   output resetready,
   output [32-1:0] zdata,
@@ -331,8 +336,8 @@ module main
   reg [32-1:0] _tmp_data_0;
   reg _tmp_valid_0;
   wire _tmp_ready_0;
-  assign resetready = 1;
-  assign xready = (_tmp_ready_0 || !_tmp_valid_0) && xvalid;
+  assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && resetvalid);
+  assign resetready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && resetvalid);
   assign zdata = _tmp_data_0;
   assign zvalid = _tmp_valid_0;
   assign _tmp_ready_0 = zready;
@@ -342,17 +347,17 @@ module main
       _tmp_data_0 <= 1'd0;
       _tmp_valid_0 <= 0;
     end else begin
-      if(resetvalid && resetready) begin
-        _tmp_data_0 <= resetdata;
-      end 
-      if((_tmp_ready_0 || !_tmp_valid_0) && xready && xvalid) begin
+      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && resetready) && (xvalid && resetvalid)) begin
         _tmp_data_0 <= _tmp_data_0 + xdata;
       end 
       if(_tmp_valid_0 && _tmp_ready_0) begin
         _tmp_valid_0 <= 0;
       end 
-      if((_tmp_ready_0 || !_tmp_valid_0) && xready) begin
-        _tmp_valid_0 <= xvalid;
+      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && resetready)) begin
+        _tmp_valid_0 <= xvalid && resetvalid;
+      end 
+      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && resetready) && (xvalid && resetvalid) && resetdata) begin
+        _tmp_data_0 <= 1'd0;
       end 
     end
   end

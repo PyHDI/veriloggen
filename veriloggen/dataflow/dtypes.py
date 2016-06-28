@@ -1862,13 +1862,16 @@ class _Accumulator(_UnaryOperator):
         self.sig_ready = ready
         
         rdata = self.right.sig_data
+        resetdata = self.reset.sig_data if self.reset is not None else None
         
         rvalid = self.right.sig_valid
+        resetvalid = self.reset.sig_valid if self.reset is not None else None
         
         rready = self.right.sig_ready
+        resetready = self.reset.sig_ready if self.reset is not None else None
 
-        all_valid = _and_vars(rvalid)
-        all_ready = _and_vars(rready)
+        all_valid = _and_vars(rvalid, resetvalid)
+        all_ready = _and_vars(rready, resetready)
 
         accept = vtypes.OrList(ready, vtypes.Not(valid))
 
@@ -1890,20 +1893,15 @@ class _Accumulator(_UnaryOperator):
                 raise TypeError("Operator '%s' returns unsupported object type '%s'."
                                 % (str(op), str(type(value))))
 
-        if not isinstance(self.reset, _Constant):
-            reset_data = self.reset.sig_data
-            reset_valid = self.reset.sig_valid
-            reset_ready = self.reset.sig_ready
-            if reset_valid is None:
-                raise TypeError('Reset condition of Accumulator must have a valid port')
-            data_reset_cond = _and_vars(reset_valid, reset_ready)
-            seq( data(reset_data), cond=data_reset_cond )
-            _connect_ready(m, reset_ready, vtypes.Int(1))
-        
         seq( data(value), cond=data_cond )
         seq( valid(0), cond=valid_reset_cond )
         seq( valid(all_valid), cond=valid_cond )
         _connect_ready(m, rready, ready_cond)
+
+        if self.reset is not None:
+            reset_data_cond = _and_vars(data_cond, resetdata)
+            seq( data(initval_data), cond=reset_data_cond )
+            _connect_ready(m, resetready, ready_cond)
         
         if not self._has_output():
             _connect_ready(m, ready, vtypes.Int(1))
