@@ -10,7 +10,7 @@ class _Scheduler(_Visitor):
         return dtypes._max(*vars)
     
     def next_stage(self, node, stage):
-        if stage is None: return None
+        if stage is None: return 0
         return stage + node.latency
 
     def schedule(self, nodes):
@@ -31,6 +31,7 @@ class ASAPScheduler(_Scheduler):
             r = self.fill_gap(node, max_stage)
             t_data, t_valid, t_ready = node.output_data, node.output_valid, node.output_ready
             node._disable_output()
+            node._set_output_node(r)
             r._disable_output()
             r.output(t_data, t_valid, t_ready)
             ret.append(r)
@@ -74,9 +75,9 @@ class ASAPScheduler(_Scheduler):
         node.left = self.fill_gap(node.left, mine)
         node.right = self.fill_gap(node.right, mine)
         node._set_start_stage(mine)
-        if isinstance(node, (dtypes.Divide, dtypes.Mod)):
-            node.latency = node.bit_length()
-        end = mine + node.latency
+        if getattr(node, 'variable_latency', None):
+            node.latency = getattr(node, node.variable_latency)()
+        end = self.next_stage(node, mine)
         node._set_end_stage(end)
         return end
 
@@ -86,7 +87,7 @@ class ASAPScheduler(_Scheduler):
         mine = self.max_stage(right)
         node.right = self.fill_gap(node.right, mine)
         node._set_start_stage(mine)
-        end = mine + node.latency
+        end = self.next_stage(node, mine)
         node._set_end_stage(end)
         return end
     
@@ -99,7 +100,7 @@ class ASAPScheduler(_Scheduler):
         mine = self.max_stage(*ret)
         node.args = [ self.fill_gap(var, mine) for var in node.args ]
         node._set_start_stage(mine)
-        end = mine + node.latency
+        end = self.next_stage(node, mine)
         node._set_end_stage(end)
         return end
     
@@ -113,7 +114,7 @@ class ASAPScheduler(_Scheduler):
         node.initval = self.fill_gap(node.initval, mine)
         node.reset = self.fill_gap(node.reset, mine)
         node._set_start_stage(mine)
-        end = mine + node.latency
+        end = self.next_stage(node, mine)
         node._set_end_stage(end)
         return end
     

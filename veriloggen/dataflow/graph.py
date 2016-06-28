@@ -72,6 +72,9 @@ class GraphGenerator(_Visitor):
     def _add_gap(self, node, mark=''):
         if self.approx:
             return node
+
+        if node.start_stage is None or node.end_stage is None:
+            return node
         
         prev = node
         for i in range(node.end_stage - node.start_stage - 1):
@@ -104,8 +107,10 @@ class GraphGenerator(_Visitor):
         right = self.visit(node.right)
         self.graph.add_edge(left, node, label='L')
         self.graph.add_edge(right, node, label='R')
+
+        if node.start_stage is not None:
+            self._set_rank(node.start_stage + 1, node)
         
-        self._set_rank(node.start_stage + 1, node)
         prev = self._add_gap(node, mark)
         self._add_output(node, prev)
         self.visited_node[node] = prev
@@ -128,7 +133,9 @@ class GraphGenerator(_Visitor):
         right = self.visit(node.right)
         self.graph.add_edge(right, node, label='R')
 
-        if isinstance(node, dtypes._Prev):
+        if node.start_stage is None:
+            pass
+        elif isinstance(node, dtypes._Prev):
             self._set_rank(node.start_stage, node)
         else:
             self._set_rank(node.start_stage + 1, node)
@@ -146,7 +153,9 @@ class GraphGenerator(_Visitor):
             a = self.visit(arg)
             self.graph.add_edge(a, node, label=str(i))
             
-        self._set_rank(node.start_stage + 1, node)
+        if node.start_stage is not None:
+            self._set_rank(node.start_stage + 1, node)
+            
         prev = self._add_gap(node, mark)
         self._add_output(node, prev)
         self.visited_node[node] = prev
@@ -163,7 +172,9 @@ class GraphGenerator(_Visitor):
         self.graph.add_edge(initval, node, label='initval')
         self.graph.add_edge(reset, node, label='reset')
         
-        self._set_rank(node.start_stage + 1, node)
+        if node.start_stage is not None:
+            self._set_rank(node.start_stage + 1, node)
+        
         prev = self._add_gap(node, mark)
         self._add_output(node, prev)
         self.visited_node[node] = prev

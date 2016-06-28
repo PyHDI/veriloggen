@@ -119,6 +119,8 @@ class _Numeric(_Node):
         self.output_data = None
         self.output_valid = None
         self.output_ready = None
+
+        self.output_node = None
         
         self.sig_data = None
         self.sig_valid = None
@@ -194,10 +196,14 @@ class _Numeric(_Node):
         self.output_data = None
         self.output_valid = None
         self.output_ready = None
+
+    def _set_output_node(self, node):
+        self.output_node = node
     
     def _implement_output(self, m, seq, aswire=False):
         if self.end_stage is None:
-            raise ValueError('end_stage is not fixed yet.')
+            #raise ValueError('end_stage is not fixed yet.')
+            self.end_stage = 0
 
         width = self.bit_length()
         signed = self.get_signed()
@@ -407,6 +413,44 @@ class _Numeric(_Node):
             raise TypeError("Non int length.")
         return ret
 
+    @property
+    def raw_data(self):
+        if self.sig_data is None:
+            raise TypeError("Dataflow is not synthesized yet. Run Dataflow.implement().")
+        return self.sig_data
+
+    @property
+    def raw_valid(self):
+        if self.sig_data is None:
+            raise TypeError("Dataflow is not synthesized yet. Run Dataflow.implement().")
+        if self.sig_valid is None:
+            return 1
+        return self.sig_valid
+
+    @property
+    def raw_ready(self):
+        if self.sig_data is None:
+            raise TypeError("Dataflow is not synthesized yet. Run Dataflow.implement().")
+        return self.sig_ready
+
+    @property
+    def data(self):
+        if self.output_node is not None:
+            return self.output_node.raw_data
+        return self.raw_data
+
+    @property
+    def valid(self):
+        if self.output_node is not None:
+            return self.output_node.raw_valid
+        return self.raw_valid
+
+    @property
+    def ready(self):
+        if self.output_node is not None:
+            return self.output_node.raw_ready
+        return self.raw_ready
+    
 #-------------------------------------------------------------------------------
 class _Operator(_Numeric):
     latency = 1
@@ -640,6 +684,7 @@ class Times(_BinaryOperator):
     
 class Divide(_BinaryOperator):
     latency = 32 + 3
+    variable_latency = 'bit_length'
     def eval(self):
         left = self.left.eval()
         right = self.right.eval()
@@ -763,6 +808,7 @@ class Divide(_BinaryOperator):
     
 class Mod(_BinaryOperator):
     latency = 32 + 3
+    variable_latency = 'bit_length'
     def eval(self):
         return self.left.eval() % self.right.eval()
     
@@ -1632,6 +1678,7 @@ class _Constant(_Numeric):
         self.value = value
         self.signed = False
         self.set_attributes()
+        self.sig_data = self.value
 
     def set_attributes(self):
         self.width = self.value.bit_length() + 1
@@ -1874,3 +1921,24 @@ class Str(_Constant):
         self.width = 0
         self.point = 0
         self.signed = False
+
+#-------------------------------------------------------------------------------
+def Counter(step=None, maxval=None, initval=0, reset=None, width=32, signed=False):
+    if step is None:
+        step = 1
+
+    if maxval is None:
+        return Iadd(step, initval=initval, reset=reset, width=width, signed=signed)
+
+    if not isinstance(step, (int, bool)) or not isinstance(maxval, (int, bool)):
+        raise TypeError("step and maxval must be int, when maxval is specified.")
+
+    if maxval > 2 ** width:
+        raise ValueError("maxval > 2 ** width")
+
+    return Icustom(lambda a, b: vtypes.Mux(a >= maxval - step, initval, a + b),
+                   step, initval=initval, reset=reset, width=width, signed=signed)
+
+def ConditionCounter(cond, step=1, maxval=None, initval=0, reset=None, width=32, signed=False):
+    val = Mux(cond, step, 0)
+    return Counter(val, maxval=maxval, initval=initval, reset=reset, width=width, signed=signed)

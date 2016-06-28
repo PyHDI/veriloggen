@@ -49,15 +49,7 @@ class Dataflow(object):
         m._clock = clock
         m._reset = reset
 
-        try:
-            dataflow_nodes = copy.deepcopy(self.nodes)
-        except RuntimeError:
-            dataflow_nodes = self.nodes
-            limit = sys.getrecursionlimit()
-            print("Warning: Current dataflow definitions are not copied.", file=sys.stderr)
-            print(" If object backup is required, enlarge maximum recursion depth"
-                  " by 'sys.setrecursionlimit(v)'.")
-            print(" Current maximum depth is %d." % limit, file=sys.stderr)
+        dataflow_nodes = self.nodes
 
         input_visitor = visitor.InputVisitor()
         input_vars = set()
