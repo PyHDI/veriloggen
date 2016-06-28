@@ -118,6 +118,9 @@ class ASAPScheduler(_Scheduler):
         node._set_end_stage(end)
         return end
     
+    def visit__ParameterVariable(self, node):
+        return None
+        
     def visit__Variable(self, node):
         if node._has_start_stage(): return node._get_end_stage()
         if isinstance(node.input_data, dtypes._Numeric):

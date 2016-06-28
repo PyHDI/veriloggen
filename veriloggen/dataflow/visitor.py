@@ -32,6 +32,9 @@ class _Visitor(object):
         if isinstance(node, dtypes._SpecialOperator):
             return self.visit__SpecialOperator(node)
 
+        if isinstance(node, dtypes._ParameterVariable):
+            return self.visit__ParameterVariable(node)
+
         if isinstance(node, dtypes._Variable):
             return self.visit__Variable(node)
 
@@ -53,6 +56,9 @@ class _Visitor(object):
     def visit__Accumulator(self, node):
         raise NotImplementedError()
     
+    def visit__ParameterVariable(self, node):
+        raise NotImplementedError()
+        
     def visit__Variable(self, node):
         raise NotImplementedError()
         
@@ -83,6 +89,9 @@ class InputVisitor(_Visitor):
         reset = self.visit(node.reset) if node.reset is not None else set()
         return right | initval | reset
 
+    def visit__ParameterVariable(self, node):
+        return set([node])
+        
     def visit__Variable(self, node):
         return set([node])
         
@@ -114,6 +123,10 @@ class OutputVisitor(_Visitor):
         right = self.visit(node.right)
         mine = set([node]) if node._has_output() else set()
         return right | mine
+        
+    def visit__ParameterVariable(self, node):
+        mine = set([node]) if node._has_output() else set()
+        return mine
         
     def visit__Variable(self, node):
         mine = set([node]) if node._has_output() else set()
@@ -151,6 +164,9 @@ class OperatorVisitor(_Visitor):
         mine = set([node])
         return right | initval | reset | mine
             
+    def visit__ParameterVariable(self, node):
+        return set()
+        
     def visit__Variable(self, node):
         return set()
         
@@ -158,6 +174,9 @@ class OperatorVisitor(_Visitor):
         return set()
 
 class AllVisitor(OperatorVisitor):
+    def visit__ParameterVariable(self, node):
+        return set([node])
+        
     def visit__Variable(self, node):
         return set([node])
         

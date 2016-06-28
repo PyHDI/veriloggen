@@ -34,11 +34,27 @@ def Constant(value, fixed=True, point=0):
     
     if isinstance(value, str):
         return Str(value)
-    
+
     raise TypeError("Unsupported type for Constant '%s'" % str(type(value)))
 
-def Variable(data=None, valid=None, ready=None, width=32, point=0, signed=False):
+#-------------------------------------------------------------------------------
+def Variable(data, valid=None, ready=None, width=32, point=0, signed=False):
     return _Variable(data, valid, ready, width, point, signed)
+
+#-------------------------------------------------------------------------------
+def Parameter(name, value, width=32, point=0, signed=False):
+    """ parameter with an immediate value """
+    if not isinstance(name, str):
+        raise TypeError("'name' must be str, not '%s'" % str(tyep(name)))
+    return _ParameterVariable(name, width, point, signed, value=value)
+
+def ParameterVariable(data, width=32, point=0, signed=False):
+    """ parameter with an existing object """
+    if isinstance(data, float):
+        return Constant(data, point=point)
+    if isinstance(data, (int, bool)):
+        data = vtypes.Int(data, width=width)
+    return _ParameterVariable(data, width, point, signed)
 
 #-------------------------------------------------------------------------------
 def _max(*vars):
@@ -80,9 +96,26 @@ def _connect_ready(m, var, ready):
         var.subst[0].overwrite_right( _and_vars(prev_subst[0].right, ready) )
 
 #-------------------------------------------------------------------------------
+def _from_vtypes_value(value):
+    if isinstance(value, vtypes.Int):
+        if not isinstance(value.value, int):
+            raise TypeError("Unsupported type for Constant '%s'" % str(type(value)))
+        return Int(value.value)
+
+    if isinstance(value, vtypes.Float):
+        return Float(value.value)
+
+    if isinstance(value, vtypes.Str):
+        return Str(value.value)
+
+    raise TypeError("Unsupported type '%s'" % str(type(value)))
+
+#-------------------------------------------------------------------------------
 def _to_constant(obj):
     if isinstance(obj, (int, float, bool, str)):
         return Constant(obj)
+    if isinstance(obj, vtypes._Numeric):
+        return _from_vtypes_value(obj)
     return obj
 
 #-------------------------------------------------------------------------------
@@ -202,7 +235,6 @@ class _Numeric(_Node):
     
     def _implement_output(self, m, seq, aswire=False):
         if self.end_stage is None:
-            #raise ValueError('end_stage is not fixed yet.')
             self.end_stage = 0
 
         width = self.bit_length()
@@ -1698,7 +1730,7 @@ class _Constant(_Numeric):
 
 #-------------------------------------------------------------------------------
 class _Variable(_Numeric):
-    def __init__(self, data=None, valid=None, ready=None, width=32, point=0, signed=False):
+    def __init__(self, data, valid=None, ready=None, width=32, point=0, signed=False):
         _Numeric.__init__(self)
         self.input_data = data
         self.input_valid = valid
@@ -1758,6 +1790,38 @@ class _Variable(_Numeric):
             self.sig_ready = None
             
 #-------------------------------------------------------------------------------
+class _ParameterVariable(_Variable):
+    def __init__(self, data, width=32, point=0, signed=False, value=None):
+        if isinstance(data, _Numeric):
+            raise TypeError("_ParameterVariable cannot receive type '%s'" % str(type(data)))
+        
+        if value is not None and not isinstance(data, str):
+            raise TypeError("Required str for 'data', when 'value' is assigned")
+        
+        _Variable.__init__(self, data=data, width=width, point=point, signed=signed)
+        self.value = value
+
+    def _implement(self, m, seq):
+        pass
+        
+    def _implement_input(self, m, seq, aswire=False):
+        type_i = m.Wire if aswire else m.Input
+
+        width = self.bit_length()
+        signed = self.get_signed()
+
+        if isinstance(self.input_data, (vtypes._Numeric, int, bool)):
+            self.sig_data = self.input_data
+        elif self.value is not None:
+            self.sig_data = m.Parameter(self.input_data, self.value,
+                                        width=self.width, signed=self.signed)
+        else:
+            self.sig_data = type_i(self.input_data, self.width, signed=self.signed)
+        
+        self.sig_valid = None
+        self.sig_ready = None
+
+#-------------------------------------------------------------------------------
 class _Accumulator(_UnaryOperator):
     latency = 1
     ops = ( vtypes.Plus, )
@@ -1770,6 +1834,7 @@ class _Accumulator(_UnaryOperator):
         self.reset = _to_constant(reset) if reset is not None else _to_constant(0)
         self.width = width
         self.signed = signed
+        self.label = None
 
     def set_attributes(self):
         self.point = self.right.get_point()
@@ -1868,11 +1933,12 @@ class Idiv(_Accumulator):
         _Accumulator.__init__(self, right, initval, reset, width, signed)
 
 class Icustom(_Accumulator):
-    def __init__(self, ops, right, initval=0, reset=None, width=32, signed=False):
+    def __init__(self, ops, right, initval=0, reset=None, width=32, signed=False, label=None):
         _Accumulator.__init__(self, right, initval, reset, width, signed)
         if not isinstance(ops, (tuple, list)):
             ops = tuple([ ops ])
         self.ops = ops
+        self.label = label
 
 #-------------------------------------------------------------------------------
 class Int(_Constant):
@@ -1924,21 +1990,28 @@ class Str(_Constant):
 
 #-------------------------------------------------------------------------------
 def Counter(step=None, maxval=None, initval=0, reset=None, width=32, signed=False):
-    if step is None:
-        step = 1
+    if step is None: step = 1
+
+    step = _to_constant(step)
+    if not isinstance(step, _Constant):
+        raise TypeError("'step' must be constant")
+    raw_step = step.value
+    
+    initval = _to_constant(initval)
+    if not isinstance(initval, _Constant):
+        raise TypeError("'initval' must be constant")
+    raw_initval = initval.value
 
     if maxval is None:
-        return Iadd(step, initval=initval, reset=reset, width=width, signed=signed)
+        return Icustom(lambda a, b: a + b,
+                       step, initval=initval, reset=reset, width=width, signed=signed,
+                       label='Counter')
 
-    if not isinstance(step, (int, bool)) or not isinstance(maxval, (int, bool)):
-        raise TypeError("step and maxval must be int, when maxval is specified.")
-
-    if maxval > 2 ** width:
-        raise ValueError("maxval > 2 ** width")
-
-    return Icustom(lambda a, b: vtypes.Mux(a >= maxval - step, initval, a + b),
-                   step, initval=initval, reset=reset, width=width, signed=signed)
-
-def ConditionCounter(cond, step=1, maxval=None, initval=0, reset=None, width=32, signed=False):
-    val = Mux(cond, step, 0)
-    return Counter(val, maxval=maxval, initval=initval, reset=reset, width=width, signed=signed)
+    maxval = _to_constant(maxval)
+    if not isinstance(maxval, _Constant):
+        raise TypeError("'maxval' must be constant")
+    raw_maxval = maxval.value
+    
+    return Icustom(lambda a, b: vtypes.Mux(a >= raw_maxval - raw_step, raw_initval, a + b),
+                   step, initval=initval, reset=reset, width=width, signed=signed,
+                   label='Counter')

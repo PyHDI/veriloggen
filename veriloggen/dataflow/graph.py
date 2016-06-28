@@ -162,7 +162,8 @@ class GraphGenerator(_Visitor):
         return prev
 
     def visit__Accumulator(self, node):
-        mark = ' '.join([ self._get_mark(op) for op in node.ops ])
+        mark = (' '.join([ self._get_mark(op) for op in node.ops ])
+                if node.label is None else node.label)
         self.graph.add_node(node, label=mark, shape='box', style='rounded')
         
         right = self.visit(node.right)
@@ -180,6 +181,21 @@ class GraphGenerator(_Visitor):
         self.visited_node[node] = prev
         return prev
     
+    def visit__ParameterVariable(self, node):
+        inobj = str(node.input_data)
+        label_data = [ inobj, str(node.width) ]
+        if node.point > 0:
+            label_data.append(str(node.point))
+        label = ':'.join(label_data)
+        
+        self.graph.add_node(node, label=label, shape='',
+                            color='lightblue', style='rounded,filled', peripheries=2)
+        
+        self.input_nodes.append(node)
+        self._add_output(node, node)
+        self.visited_node[node] = node
+        return node
+
     def visit__Variable(self, node):
         if isinstance(node.input_data, dtypes._Numeric):
             self.visit(node.input_data)
