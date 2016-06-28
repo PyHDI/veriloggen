@@ -24,7 +24,7 @@ def mkMain():
 
     df = dataflow.Dataflow(z)
     m = df.to_module('main')
-    df.draw_graph()
+    #df.draw_graph()
     
     return m
 
