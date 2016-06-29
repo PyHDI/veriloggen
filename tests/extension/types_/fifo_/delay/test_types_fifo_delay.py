@@ -236,9 +236,9 @@ module main
         end
         fsm_1: begin
           _myfifo_wdata_1_0_1 <= count;
-          _fsm_cond_1_1_1 <= 1;
-          _fsm_cond_1_2_1 <= 1;
-          _fsm_cond_1_3_1 <= 1;
+          _fsm_cond_1_1_1 <= !myfifo_full;
+          _fsm_cond_1_2_1 <= !myfifo_full;
+          _fsm_cond_1_3_1 <= !myfifo_full;
           if(count_myfifo + 5 < 127) begin
             count <= count + 1;
           end 

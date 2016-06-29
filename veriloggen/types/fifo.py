@@ -208,7 +208,7 @@ class Fifo(object):
         else:
             ready = self._count + (current_delay + delay + 1) < self._max_size
         
-        mng.Delay(current_delay + delay).EagerVal()(
+        mng.Delay(current_delay + delay).EagerVal().If(not_full)(
             self.wif.wdata(wdata)
         )
         mng.Then().Delay(current_delay + delay)(
@@ -222,6 +222,10 @@ class Fifo(object):
 
     def deq(self, mng, rdata=None, rvalid=None, cond=None, delay=0):
         """ Deque operation with Seq or FSM object as mng """
+        if not ((rdata is None and rvalid is None) or
+                (rdata is not None and rvalid is not None)):
+            raise ValueError("Both rdata and rvalid must use same format.")
+
         if cond is not None:
             mng.If(cond)
 

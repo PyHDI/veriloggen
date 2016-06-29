@@ -161,9 +161,13 @@ module main
           fsm <= fsm_1;
         end
         fsm_1: begin
-          myfifo_wdata <= count;
-          myfifo_enq <= 1;
-          _fsm_cond_1_0_1 <= 1;
+          if(!myfifo_full) begin
+            myfifo_wdata <= count;
+          end
+          if(!myfifo_full) begin
+            myfifo_enq <= 1;
+          end
+          _fsm_cond_1_0_1 <= !myfifo_full;
           if(!myfifo_almost_full) begin
             count <= count + 1;
           end 
