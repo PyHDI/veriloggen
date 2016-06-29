@@ -306,8 +306,10 @@ class FSM(vtypes.VeriloggenNode):
     @property
     def current_condition(self):
         cond = self._make_cond(self.last_cond)
-        mark = self.mark[self.state_count]
-        cond = vtypes.AndList(self.fsm == mark, cond)
+        if cond is not None:
+            cond = vtypes.AndList(self.state == self.state_count, cond)
+        else:
+            cond = self.state == self.state_count
         return cond
         
     #---------------------------------------------------------------------------

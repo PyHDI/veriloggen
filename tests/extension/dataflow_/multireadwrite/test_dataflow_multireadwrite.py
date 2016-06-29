@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import dataflow_readwrite
+import dataflow_multireadwrite
 
 expected_verilog = """
 module test;
@@ -91,7 +91,13 @@ module main
   reg [32-1:0] _tmp_1;
   reg [32-1:0] _d1_xfsm;
   reg _xfsm_cond_0_0_1;
+  reg _xfsm_cond_5_1_1;
   localparam xfsm_1 = 1;
+  localparam xfsm_2 = 2;
+  localparam xfsm_3 = 3;
+  localparam xfsm_4 = 4;
+  localparam xfsm_5 = 5;
+  localparam xfsm_6 = 6;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -101,11 +107,17 @@ module main
       xvalid <= 0;
       _xfsm_cond_0_0_1 <= 0;
       _tmp_1 <= 0;
+      _xfsm_cond_5_1_1 <= 0;
     end else begin
       _d1_xfsm <= xfsm;
       case(_d1_xfsm)
         xfsm_init: begin
           if(_xfsm_cond_0_0_1) begin
+            xvalid <= 0;
+          end 
+        end
+        xfsm_5: begin
+          if(_xfsm_cond_5_1_1) begin
             xvalid <= 0;
           end 
         end
@@ -125,8 +137,38 @@ module main
           if(xready || !xvalid) begin
             _tmp_1 <= _tmp_1 + 1;
           end 
-          if((xready || !xvalid) && (_tmp_1 == 15)) begin
+          if((xready || !xvalid) && (_tmp_1 == 7)) begin
             xfsm <= xfsm_1;
+          end 
+        end
+        xfsm_1: begin
+          xfsm <= xfsm_2;
+        end
+        xfsm_2: begin
+          xfsm <= xfsm_3;
+        end
+        xfsm_3: begin
+          xfsm <= xfsm_4;
+        end
+        xfsm_4: begin
+          xfsm <= xfsm_5;
+        end
+        xfsm_5: begin
+          if(xready || !xvalid) begin
+            xdata <= _tmp_1;
+          end 
+          if(xready || !xvalid) begin
+            xvalid <= 1;
+          end 
+          _xfsm_cond_5_1_1 <= xready || !xvalid;
+          if(xvalid && !xready) begin
+            xvalid <= xvalid;
+          end 
+          if(xready || !xvalid) begin
+            _tmp_1 <= _tmp_1 + 1;
+          end 
+          if((xready || !xvalid) && (_tmp_1 == 15)) begin
+            xfsm <= xfsm_6;
           end 
         end
       endcase
@@ -142,7 +184,15 @@ module main
   assign yvalid = _tmp_4;
   reg [32-1:0] _d1_yfsm;
   reg _yfsm_cond_0_0_1;
+  reg _yfsm_cond_7_1_1;
   localparam yfsm_1 = 1;
+  localparam yfsm_2 = 2;
+  localparam yfsm_3 = 3;
+  localparam yfsm_4 = 4;
+  localparam yfsm_5 = 5;
+  localparam yfsm_6 = 6;
+  localparam yfsm_7 = 7;
+  localparam yfsm_8 = 8;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -152,11 +202,17 @@ module main
       _tmp_4 <= 0;
       _yfsm_cond_0_0_1 <= 0;
       _tmp_2 <= 0;
+      _yfsm_cond_7_1_1 <= 0;
     end else begin
       _d1_yfsm <= yfsm;
       case(_d1_yfsm)
         yfsm_init: begin
           if(_yfsm_cond_0_0_1) begin
+            _tmp_4 <= 0;
+          end 
+        end
+        yfsm_7: begin
+          if(_yfsm_cond_7_1_1) begin
             _tmp_4 <= 0;
           end 
         end
@@ -176,20 +232,111 @@ module main
           if(yready || !_tmp_4) begin
             _tmp_2 <= _tmp_2 + 1;
           end 
-          if((yready || !_tmp_4) && (_tmp_2 == 15)) begin
+          if((yready || !_tmp_4) && (_tmp_2 == 7)) begin
             yfsm <= yfsm_1;
+          end 
+        end
+        yfsm_1: begin
+          yfsm <= yfsm_2;
+        end
+        yfsm_2: begin
+          yfsm <= yfsm_3;
+        end
+        yfsm_3: begin
+          yfsm <= yfsm_4;
+        end
+        yfsm_4: begin
+          yfsm <= yfsm_5;
+        end
+        yfsm_5: begin
+          yfsm <= yfsm_6;
+        end
+        yfsm_6: begin
+          yfsm <= yfsm_7;
+        end
+        yfsm_7: begin
+          if(yready || !_tmp_4) begin
+            _tmp_3 <= _tmp_2;
+          end 
+          if(yready || !_tmp_4) begin
+            _tmp_4 <= 1;
+          end 
+          _yfsm_cond_7_1_1 <= yready || !_tmp_4;
+          if(_tmp_4 && !yready) begin
+            _tmp_4 <= _tmp_4;
+          end 
+          if(yready || !_tmp_4) begin
+            _tmp_2 <= _tmp_2 + 1;
+          end 
+          if((yready || !_tmp_4) && (_tmp_2 == 15)) begin
+            yfsm <= yfsm_8;
           end 
         end
       endcase
     end
   end
 
-  assign zready = 1;
+  reg [32-1:0] zfsm;
+  localparam zfsm_init = 0;
+  reg [32-1:0] _tmp_5;
+  assign zready = (zfsm == 0) || (zfsm == 9) && (_tmp_5 < 32);
+  localparam zfsm_1 = 1;
+  localparam zfsm_2 = 2;
+  localparam zfsm_3 = 3;
+  localparam zfsm_4 = 4;
+  localparam zfsm_5 = 5;
+  localparam zfsm_6 = 6;
+  localparam zfsm_7 = 7;
+  localparam zfsm_8 = 8;
+  localparam zfsm_9 = 9;
 
   always @(posedge CLK) begin
-    if(zvalid) begin
-      $display("zdata=%d", zdata);
-    end 
+    if(RST) begin
+      zfsm <= zfsm_init;
+      _tmp_5 <= 0;
+    end else begin
+      case(zfsm)
+        zfsm_init: begin
+          if(zvalid && (zfsm == 0)) begin
+            $display("zfsm_%1d: zdata=%d", zfsm, zdata);
+            _tmp_5 <= _tmp_5 + 1;
+          end 
+          if(_tmp_5 == 8) begin
+            zfsm <= zfsm_1;
+          end 
+        end
+        zfsm_1: begin
+          zfsm <= zfsm_2;
+        end
+        zfsm_2: begin
+          zfsm <= zfsm_3;
+        end
+        zfsm_3: begin
+          zfsm <= zfsm_4;
+        end
+        zfsm_4: begin
+          zfsm <= zfsm_5;
+        end
+        zfsm_5: begin
+          zfsm <= zfsm_6;
+        end
+        zfsm_6: begin
+          zfsm <= zfsm_7;
+        end
+        zfsm_7: begin
+          zfsm <= zfsm_8;
+        end
+        zfsm_8: begin
+          zfsm <= zfsm_9;
+        end
+        zfsm_9: begin
+          if((_tmp_5 < 32) && (zvalid && ((zfsm == 9) && (_tmp_5 < 32)))) begin
+            $display("zfsm_%1d: zdata=%d", zfsm, zdata);
+            _tmp_5 <= _tmp_5 + 1;
+          end 
+        end
+      endcase
+    end
   end
 
 
@@ -197,7 +344,7 @@ endmodule
 """
 
 def test():
-    test_module = dataflow_readwrite.mkTest()
+    test_module = dataflow_multireadwrite.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

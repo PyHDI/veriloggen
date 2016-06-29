@@ -521,7 +521,7 @@ class _Numeric(_Node):
         if not prev_subst:
             self.ready.assign(val)
         else:
-            self.ready.subst[0].overwrite_right( vtypes.OrList(prev_subst[0], val) )
+            self.ready.subst[0].overwrite_right( vtypes.OrList(prev_subst[0].right, val) )
             
         if ready is not None:
             ack = vtypes.AndList(valid, ready)
@@ -1887,8 +1887,11 @@ class _Variable(_Numeric):
 
         if mng.current_delay > 0:
             raise ValueError("Delayed control is not supported.")
-        
-        ack = vtypes.OrList(ready, vtypes.Not(valid))
+
+        if self.sig_ready is None:
+            ack = vtypes.Not(valid)
+        else:
+            ack = vtypes.OrList(ready, vtypes.Not(valid))
 
         mng.EagerVal().If(ack)(
             data(wdata)
@@ -1900,6 +1903,9 @@ class _Variable(_Numeric):
             )
             mng.Then().Delay(1)(
                 valid(0)
+            )
+            mng.If(vtypes.AndList(valid, vtypes.Not(ready)))(
+                valid(valid) # overwrite previous de-assertion
             )
         
         return ack
