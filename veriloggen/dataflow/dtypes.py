@@ -498,6 +498,9 @@ class _Numeric(_Node):
         raise TypeError("Unsupported method.")
 
     def read(self, mng, rdata=None, rvalid=None, cond=None):
+        if self.sig_data is None:
+            raise ValueError("run implement() first.")
+        
         if not ((rdata is None and rvalid is None) or
                 (rdata is not None and rvalid is not None)):
             raise ValueError("Both rdata and rvalid must use same format.")
@@ -517,11 +520,12 @@ class _Numeric(_Node):
         ready = mng.current_condition
         val = 1 if ready is None else ready
 
-        prev_subst = self.ready._get_subst()
-        if not prev_subst:
-            self.ready.assign(val)
-        else:
-            self.ready.subst[0].overwrite_right( vtypes.OrList(prev_subst[0].right, val) )
+        if self.ready is not None:
+            prev_subst = self.ready._get_subst()
+            if not prev_subst:
+                self.ready.assign(val)
+            else:
+                self.ready.subst[0].overwrite_right( vtypes.OrList(prev_subst[0].right, val) )
             
         if ready is not None:
             ack = vtypes.AndList(valid, ready)
@@ -1852,6 +1856,9 @@ class _Variable(_Numeric):
 
     #---------------------------------------------------------------------------
     def write(self, mng, wdata, cond=None):
+        if self.sig_data is None:
+            raise ValueError("run implement() first.")
+        
         if isinstance(self.sig_data, vtypes.Input):
             raise TypeError("Variable with Input type is not supported.")
 
@@ -1889,24 +1896,25 @@ class _Variable(_Numeric):
             raise ValueError("Delayed control is not supported.")
 
         if self.sig_ready is None:
-            ack = vtypes.Not(valid)
+            ack = None
         else:
             ack = vtypes.OrList(ready, vtypes.Not(valid))
 
-        mng.EagerVal().If(ack)(
+        mng.If(ack)(
             data(wdata)
         )
-
+        
         if self.sig_valid is not None:
             mng.Then()(
-                valid(1)
+                valid(1),
             )
             mng.Then().Delay(1)(
                 valid(0)
             )
-            mng.If(vtypes.AndList(valid, vtypes.Not(ready)))(
-                valid(valid) # overwrite previous de-assertion
-            )
+            if self.sig_ready is not None:
+                mng.If(vtypes.AndList(valid, vtypes.Not(ready)))(
+                    valid(valid) # overwrite previous de-assertion
+                )
         
         return ack
 

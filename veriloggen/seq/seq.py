@@ -154,7 +154,6 @@ class Seq(vtypes.VeriloggenNode):
         self._clear_elif_cond()
         
         if cond is None:
-            self.last_cond = []
             return self
 
         if 'cond' not in self.next_kwargs:
