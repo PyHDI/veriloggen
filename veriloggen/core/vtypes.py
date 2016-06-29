@@ -1631,6 +1631,16 @@ class SystemTask(_Numeric):
 def Systask(cmd, *args):
     return SingleStatement(SystemTask(cmd, *args))
 
+# frequently-used system task
+def Display(*args):
+    return Systask('display', *args)
+
+def Write(*args):
+    return Systask('write', *args)
+
+def Finish():
+    return Systask('finish')
+
 #-------------------------------------------------------------------------------
 class Event(VeriloggenNode):
     def __init__(self, *sensitivity):
