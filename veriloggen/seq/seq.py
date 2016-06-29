@@ -258,6 +258,11 @@ class Seq(vtypes.VeriloggenNode):
             return self.last_kwargs['delay']
         return 0
         
+    @property
+    def current_condition(self):
+        cond = self._make_cond(self.last_cond)
+        return cond
+        
     #---------------------------------------------------------------------------
     def _clear_next_kwargs(self):
         self.next_kwargs = {}

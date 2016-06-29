@@ -294,9 +294,9 @@ module main #
           fsm <= fsm_1;
         end
         fsm_1: begin
-          if(_tmp_valid_12) begin
+          if(cvalid) begin
             _tmp_13 <= _tmp_13 + 1;
-            $display("c=%d", _tmp_data_12);
+            $display("c=%d", cdata);
           end 
           if(_tmp_13 == 4) begin
             fsm <= fsm_2;

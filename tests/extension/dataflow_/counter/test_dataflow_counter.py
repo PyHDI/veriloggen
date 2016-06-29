@@ -123,9 +123,9 @@ module main
     end else begin
       case(fsm)
         fsm_init: begin
-          if(_tmp_valid_2) begin
+          if(cvalid) begin
             _tmp_3 <= _tmp_3 + 1;
-            $display("c=%d", _tmp_data_2);
+            $display("c=%d", cdata);
           end 
           if(_tmp_3 == 32) begin
             fsm <= fsm_1;

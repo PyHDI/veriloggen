@@ -153,6 +153,10 @@ class _Numeric(_Node):
         self.output_valid = None
         self.output_ready = None
 
+        self.output_sig_data = None
+        self.output_sig_valid = None
+        self.output_sig_ready = None
+
         self.output_node = None
         
         self.sig_data = None
@@ -245,18 +249,24 @@ class _Numeric(_Node):
 
         if isinstance(self.output_data, (vtypes.Wire, vtypes.Output)):
             data = self.output_data
+            self.output_sig_data = data
         else:
             data = type_o(self.output_data, width=width, signed=signed)
+            self.output_sig_data = data
 
         if isinstance(self.output_valid, (vtypes.Wire, vtypes.Output)):
             valid = self.output_valid
+            self.output_sig_valid = valid
         elif self.output_valid is not None:
             valid = type_o(self.output_valid)
+            self.output_sig_valid = valid
 
         if isinstance(self.output_ready, (vtypes._Numeric, int, bool)):
             ready = self.output_ready
+            self.output_sig_ready = ready
         elif self.output_ready is not None:
             ready = type_i(self.output_ready)
+            self.output_sig_ready = ready
             
         m.Assign( data(self.sig_data) )
         
@@ -468,20 +478,71 @@ class _Numeric(_Node):
     @property
     def data(self):
         if self.output_node is not None:
-            return self.output_node.raw_data
+            return self.output_node.output_sig_data
         return self.raw_data
 
     @property
     def valid(self):
         if self.output_node is not None:
-            return self.output_node.raw_valid
+            return self.output_node.output_sig_valid
         return self.raw_valid
 
     @property
     def ready(self):
         if self.output_node is not None:
-            return self.output_node.raw_ready
+            return self.output_node.output_sig_ready
         return self.raw_ready
+
+    #---------------------------------------------------------------------------
+    def write(self, mng, wdata, cond=None):
+        raise TypeError("Unsupported method.")
+
+    def read(self, mng, rdata=None, rvalid=None, cond=None):
+        if not ((rdata is None and rvalid is None) or
+                (rdata is not None and rvalid is not None)):
+            raise ValueError("Both rdata and rvalid must use same format.")
+
+        data = self.data
+        valid = self.valid
+
+        if valid is None:
+            valid = 1
+
+        if cond is not None:
+            mng.If(cond)
+
+        if mng.current_delay > 0:
+            raise ValueError("Delayed control is not supported.")
+            
+        ready = mng.current_condition
+        val = 1 if ready is None else ready
+
+        prev_subst = self.ready._get_subst()
+        if not prev_subst:
+            self.ready.assign(val)
+        else:
+            self.ready.subst[0].overwrite_right( vtypes.OrList(prev_subst[0], val) )
+            
+        if ready is not None:
+            ack = vtypes.AndList(valid, ready)
+        else:
+            ack = valid
+
+        if rdata is not None:
+            mng.If(ack)(
+                rdata(data)
+            )
+        else:
+            rdata = data
+
+        if rvalid is not None:
+            mng.Then()(
+                rvalid(ack)
+            )
+        else:
+            rvalid = ack
+
+        return rdata, rvalid
     
 #-------------------------------------------------------------------------------
 class _Operator(_Numeric):
@@ -1788,7 +1849,61 @@ class _Variable(_Numeric):
             self.sig_ready = type_o(self.input_ready)
         else:
             self.sig_ready = None
-            
+
+    #---------------------------------------------------------------------------
+    def write(self, mng, wdata, cond=None):
+        if isinstance(self.sig_data, vtypes.Input):
+            raise TypeError("Variable with Input type is not supported.")
+
+        if isinstance(self.sig_data, vtypes.Wire):
+            if hasattr(self, 'sig_data_write'):             
+                data = self.sig_data_write
+            else:
+                data = mng.m.TmpReg(self.bit_length(), initval=0)
+                self.sig_data_write = data
+                self.sig_data.assign(data)
+        else:
+            data = self.sig_data
+
+        if self.sig_valid is None:
+            valid = 1
+        elif isinstance(self.sig_valid, vtypes.Wire):
+            if hasattr(self, 'sig_valid_write'):             
+                valid = self.sig_valid_write
+            else:
+                valid = mng.m.TmpReg(initval=0)
+                self.sig_valid_write = valid
+                self.sig_valid.assign(valid)
+        else:
+            valid = self.sig_valid
+
+        if self.sig_ready is None:
+            ready = 1
+        else:
+            ready = self.sig_ready
+
+        if cond is not None:
+            mng.If(cond)
+
+        if mng.current_delay > 0:
+            raise ValueError("Delayed control is not supported.")
+        
+        ack = vtypes.OrList(ready, vtypes.Not(valid))
+
+        mng.EagerVal().If(ack)(
+            data(wdata)
+        )
+
+        if self.sig_valid is not None:
+            mng.Then()(
+                valid(1)
+            )
+            mng.Then().Delay(1)(
+                valid(0)
+            )
+        
+        return ack
+
 #-------------------------------------------------------------------------------
 class _ParameterVariable(_Variable):
     def __init__(self, data, width=32, point=0, signed=False, value=None):

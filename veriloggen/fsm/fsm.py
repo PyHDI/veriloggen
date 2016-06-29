@@ -302,6 +302,13 @@ class FSM(vtypes.VeriloggenNode):
         if 'delay' in self.last_kwargs:
             return self.last_kwargs['delay']
         return 0
+
+    @property
+    def current_condition(self):
+        cond = self._make_cond(self.last_cond)
+        mark = self.mark[self.state_count]
+        cond = vtypes.AndList(self.fsm == mark, cond)
+        return cond
         
     #---------------------------------------------------------------------------
     def _clear_next_kwargs(self):
