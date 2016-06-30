@@ -38,7 +38,7 @@ def Constant(value, fixed=True, point=0):
     raise TypeError("Unsupported type for Constant '%s'" % str(type(value)))
 
 #-------------------------------------------------------------------------------
-def Variable(data, valid=None, ready=None, width=32, point=0, signed=False):
+def Variable(data=None, valid=None, ready=None, width=32, point=0, signed=False):
     return _Variable(data, valid, ready, width, point, signed)
 
 #-------------------------------------------------------------------------------
@@ -178,7 +178,7 @@ class _Numeric(_Node):
         # stage numbers NOT incremented
         self.previous_value = OrderedDict()
 
-    def output(self, data=None, valid=None, ready=None):
+    def output(self, data, valid=None, ready=None):
         if self.output_data is not None:
             raise ValueError('output_data is already assigned.')
         self.output_data = data
@@ -202,6 +202,61 @@ class _Numeric(_Node):
 
         return prev
         
+    #---------------------------------------------------------------------------
+    def write(self, mng, wdata, cond=None):
+        raise TypeError("Unsupported method.")
+
+    def read(self, mng, rdata=None, rvalid=None, cond=None):
+        if self.sig_data is None:
+            raise ValueError("Dataflow is not synthesized yet. Run Dataflow.implement().")
+        
+        if not ((rdata is None and rvalid is None) or
+                (rdata is not None and rvalid is not None)):
+            raise ValueError("Both rdata and rvalid must use same format.")
+
+        data = self.data
+        valid = self.valid
+
+        if valid is None:
+            valid = 1
+
+        if cond is not None:
+            mng.If(cond)
+
+        if mng.current_delay > 0:
+            raise ValueError("Delayed control is not supported.")
+            
+        ready = mng.current_condition
+        val = 1 if ready is None else ready
+
+        if self.ready is not None:
+            prev_subst = self.ready._get_subst()
+            if not prev_subst:
+                self.ready.assign(val)
+            else:
+                self.ready.subst[0].overwrite_right( vtypes.OrList(prev_subst[0].right, val) )
+            
+        if ready is not None:
+            ack = vtypes.AndList(valid, ready)
+        else:
+            ack = valid
+
+        if rdata is not None:
+            mng.If(ack)(
+                rdata(data)
+            )
+        else:
+            rdata = data
+
+        if rvalid is not None:
+            mng.Then()(
+                rvalid(ack)
+            )
+        else:
+            rvalid = ack
+
+        return rdata, rvalid
+    
     #--------------------------------------------------------------------------
     def set_attributes(self):
         raise NotImplementedError('set_attributes() is not implemented')
@@ -219,24 +274,12 @@ class _Numeric(_Node):
         raise NotImplementedError('eval() is not implemented')
     
     #--------------------------------------------------------------------------
-    def _has_output(self):
-        if self.output_data is not None: return True
-        return False
-
     def _implement(self, m, seq):
         raise NotImplementedError('_implement() is not implemented.')
     
     def _implement_input(self, m, seq, aswire=False):
         raise NotImplementedError('_implement_input() is not implemented.')
 
-    def _disable_output(self):
-        self.output_data = None
-        self.output_valid = None
-        self.output_ready = None
-
-    def _set_output_node(self, node):
-        self.output_node = node
-    
     def _implement_output(self, m, seq, aswire=False):
         if self.end_stage is None:
             self.end_stage = 0
@@ -278,6 +321,19 @@ class _Numeric(_Node):
         elif self.sig_ready is not None:
             m.Assign( self.sig_ready(1) )
 
+    #--------------------------------------------------------------------------
+    def _has_output(self):
+        if self.output_data is not None: return True
+        return False
+
+    def _disable_output(self):
+        self.output_data = None
+        self.output_valid = None
+        self.output_ready = None
+
+    def _set_output_node(self, node):
+        self.output_node = node
+    
     def _set_start_stage(self, stage):
         self.start_stage = stage
 
@@ -493,61 +549,6 @@ class _Numeric(_Node):
             return self.output_node.output_sig_ready
         return self.raw_ready
 
-    #---------------------------------------------------------------------------
-    def write(self, mng, wdata, cond=None):
-        raise TypeError("Unsupported method.")
-
-    def read(self, mng, rdata=None, rvalid=None, cond=None):
-        if self.sig_data is None:
-            raise ValueError("Dataflow is not synthesized yet. Run Dataflow.implement().")
-        
-        if not ((rdata is None and rvalid is None) or
-                (rdata is not None and rvalid is not None)):
-            raise ValueError("Both rdata and rvalid must use same format.")
-
-        data = self.data
-        valid = self.valid
-
-        if valid is None:
-            valid = 1
-
-        if cond is not None:
-            mng.If(cond)
-
-        if mng.current_delay > 0:
-            raise ValueError("Delayed control is not supported.")
-            
-        ready = mng.current_condition
-        val = 1 if ready is None else ready
-
-        if self.ready is not None:
-            prev_subst = self.ready._get_subst()
-            if not prev_subst:
-                self.ready.assign(val)
-            else:
-                self.ready.subst[0].overwrite_right( vtypes.OrList(prev_subst[0].right, val) )
-            
-        if ready is not None:
-            ack = vtypes.AndList(valid, ready)
-        else:
-            ack = valid
-
-        if rdata is not None:
-            mng.If(ack)(
-                rdata(data)
-            )
-        else:
-            rdata = data
-
-        if rvalid is not None:
-            mng.Then()(
-                rvalid(ack)
-            )
-        else:
-            rvalid = ack
-
-        return rdata, rvalid
-    
 #-------------------------------------------------------------------------------
 class _Operator(_Numeric):
     latency = 1
@@ -1795,7 +1796,7 @@ class _Constant(_Numeric):
 
 #-------------------------------------------------------------------------------
 class _Variable(_Numeric):
-    def __init__(self, data, valid=None, ready=None, width=32, point=0, signed=False):
+    def __init__(self, data=None, valid=None, ready=None, width=32, point=0, signed=False):
         _Numeric.__init__(self)
         self.input_data = data
         self.input_valid = valid
@@ -1808,52 +1809,27 @@ class _Variable(_Numeric):
 
     def eval(self):
         return self
-    
-    def _implement(self, m, seq):
-        if not isinstance(self.input_data, _Numeric):
-            return
-        
-        width = self.bit_length()
-        signed = self.get_signed()
 
-        tmp = m.get_tmp()
-        data = m.Wire(_tmp_data(tmp), width, signed=signed)
-        valid = m.Wire(_tmp_valid(tmp))
-        ready = m.Wire(_tmp_ready(tmp))
-        
-        m.Assign( data(self.input_data.sig_data) )
-        m.Assign( valid(self.input_data.sig_valid) )
-        _connect_ready(m, self.input_data.sig_ready, ready)
-            
-    def _implement_input(self, m, seq, aswire=False):
+    def output(self, data, valid=None, ready=None):
         if isinstance(self.input_data, _Numeric):
+            self.input_data.output(data, valid, ready)
             return
+        _Numeric.output(self, data, valid, ready)
 
-        type_i = m.Wire if aswire else m.Input
-        type_o = m.Wire if aswire else m.Output
-        
-        width = self.bit_length()
-        signed = self.get_signed()
+    def connect(self, data, valid=None, ready=None):
+        if not isinstance(data, (_Numeric, vtypes._Numeric, int, bool)):
+            raise TypeError("'data' must be dtypes._Numeric or vtypes._Numeric.")
+        if valid is not None and not isinstance(valid, (vtypes._Numeric, int, bool)):
+            raise TypeError("'valid' must be None, vtypes._Numeric, int, or bool.")
+        if ready is not None and not isinstance(ready, vtypes._Numeric):
+            raise TypeError("'ready' must be None or vtypes._Numeric.")
 
-        if isinstance(self.input_data, (vtypes._Numeric, int, bool)):
-            self.sig_data = self.input_data
-        else:
-            self.sig_data = type_i(self.input_data, width, signed=signed)
-        
-        if isinstance(self.input_valid, (vtypes._Numeric, int, bool)):
-            self.sig_valid = self.input_valid
-        elif self.input_valid is not None:
-            self.sig_valid = type_i(self.input_valid)
-        else:
-            self.sig_valid = None
-            
-        if isinstance(self.input_ready, (vtypes.Wire, vtypes.Output)):
-            self.sig_ready = self.input_ready
-        elif self.input_ready is not None:
-            self.sig_ready = type_o(self.input_ready)
-        else:
-            self.sig_ready = None
-
+        self.input_data = data
+        self.input_valid = valid
+        self.input_ready = ready
+        if isinstance(self.input_data, _Numeric):
+            self.input_data._add_sink(self)
+    
     #---------------------------------------------------------------------------
     def write(self, mng, wdata, cond=None):
         if self.sig_data is None:
@@ -1917,6 +1893,74 @@ class _Variable(_Numeric):
                 )
         
         return ack
+
+    #--------------------------------------------------------------------------
+    def _implement(self, m, seq):
+        if self.input_data is None:
+            raise TypeError("'input_data' must not be None.")
+
+        # if input_data is a standard signal, skip
+        if not isinstance(self.input_data, _Numeric):
+            return
+
+        if self.input_data.sig_data is None:
+            self.input_data._implement(m, seq)
+            
+        self.sig_data = self.input_data.sig_data
+        self.sig_valid = self.input_data.sig_valid
+        self.sig_ready = self.input_data.sig_ready
+            
+    def _implement_input(self, m, seq, aswire=False):
+        if self.input_data is None:
+            raise TypeError("'input_data' must not be None")
+
+        # if input_data is an other variable, skip
+        if isinstance(self.input_data, _Numeric):
+            return
+
+        type_i = m.Wire if aswire else m.Input
+        type_o = m.Wire if aswire else m.Output
+        
+        width = self.bit_length()
+        signed = self.get_signed()
+
+        if isinstance(self.input_data, (vtypes._Numeric, int, bool)):
+            self.sig_data = self.input_data
+        else:
+            self.sig_data = type_i(self.input_data, width, signed=signed)
+        
+        if isinstance(self.input_valid, (vtypes._Numeric, int, bool)):
+            self.sig_valid = self.input_valid
+        elif self.input_valid is not None:
+            self.sig_valid = type_i(self.input_valid)
+        else:
+            self.sig_valid = None
+            
+        if isinstance(self.input_ready, (vtypes.Wire, vtypes.Output)):
+            self.sig_ready = self.input_ready
+        elif self.input_ready is not None:
+            self.sig_ready = type_o(self.input_ready)
+        else:
+            self.sig_ready = None
+
+    def _implement_output(self, m, seq, aswire=False):
+        if isinstance(self.input_data, _Numeric):
+            if self.input_data.output_sig_data is None:
+                self.input_data._implement_output(m, seq, aswire)
+            self.output_sig_data = self.input_data.output_sig_data
+            self.output_sig_valid = self.input_data.output_sig_valid
+            self.output_sig_ready = self.input_data.output_sig_ready
+            return
+        _Numeric._implement_output(self, m, seq, aswire)
+            
+    #---------------------------------------------------------------------------
+    def __getattribute__(self, attr):
+        input_data = _Numeric.__getattribute__(self, 'input_data')
+        if attr == 'input_data':
+            return input_data
+        if isinstance(input_data, _Numeric):
+            return getattr(input_data, attr)
+        return _Numeric.__getattribute__(self, attr)
 
 #-------------------------------------------------------------------------------
 class _ParameterVariable(_Variable):

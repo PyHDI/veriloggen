@@ -200,9 +200,9 @@ class GraphGenerator(_Visitor):
 
     def visit__Variable(self, node):
         if isinstance(node.input_data, dtypes._Numeric):
-            self.visit(node.input_data)
-            self.visited_node[node] = node
-            return
+            input_data = self.visit(node.input_data)
+            self.visited_node[node.input_data] = node.input_data
+            return input_data
 
         inobj = str(node.input_data)
         label_data = [ inobj, str(node.width) ]

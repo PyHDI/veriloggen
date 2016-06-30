@@ -93,6 +93,8 @@ class InputVisitor(_Visitor):
         return set([node])
         
     def visit__Variable(self, node):
+        if isinstance(node.input_data, dtypes._Numeric):
+            return self.visit(node.input_data)
         return set([node])
         
     def visit__Constant(self, node):
@@ -129,7 +131,9 @@ class OutputVisitor(_Visitor):
         return mine
         
     def visit__Variable(self, node):
-        mine = set([node]) if node._has_output() else set()
+        if isinstance(node.input_data, dtypes._Numeric):
+            return self.visit(node.input_data)
+        mine = set([node]) if node._has_output() else set()            
         return mine
         
     def visit__Constant(self, node):
@@ -168,6 +172,8 @@ class OperatorVisitor(_Visitor):
         return set()
         
     def visit__Variable(self, node):
+        if isinstance(node.input_data, dtypes._Numeric):
+            return self.visit(node.input_data)
         return set()
         
     def visit__Constant(self, node):
@@ -178,6 +184,8 @@ class AllVisitor(OperatorVisitor):
         return set([node])
         
     def visit__Variable(self, node):
+        if isinstance(node.input_data, dtypes._Numeric):
+            return self.visit(node.input_data)
         return set([node])
         
     def visit__Constant(self, node):
