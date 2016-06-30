@@ -25,7 +25,7 @@ def mkMain(n=128, datawidth=32, numports=2):
 
     # synthesize dataflow
     df = dataflow.Dataflow(c)
-    df.implement(m, clk, rst)
+    df.implement(m, clk, rst, aswire=False)
     #df.draw_graph()
     
     fsm = FSM(m, 'fsm', clk, rst)
