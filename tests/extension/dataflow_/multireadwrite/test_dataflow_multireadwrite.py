@@ -51,8 +51,8 @@ module main
   input RST
 );
 
-  reg [32-1:0] xdata;
-  reg xvalid;
+  wire [32-1:0] xdata;
+  wire xvalid;
   wire xready;
   wire [32-1:0] ydata;
   wire yvalid;
@@ -89,6 +89,10 @@ module main
   reg [32-1:0] xfsm;
   localparam xfsm_init = 0;
   reg [32-1:0] _tmp_1;
+  reg [32-1:0] _tmp_2;
+  assign xdata = _tmp_2;
+  reg _tmp_3;
+  assign xvalid = _tmp_3;
   reg [32-1:0] _d1_xfsm;
   reg _xfsm_cond_0_0_1;
   reg _xfsm_cond_5_1_1;
@@ -103,8 +107,8 @@ module main
     if(RST) begin
       xfsm <= xfsm_init;
       _d1_xfsm <= xfsm_init;
-      xdata <= 0;
-      xvalid <= 0;
+      _tmp_2 <= 0;
+      _tmp_3 <= 0;
       _xfsm_cond_0_0_1 <= 0;
       _tmp_1 <= 0;
       _xfsm_cond_5_1_1 <= 0;
@@ -113,31 +117,31 @@ module main
       case(_d1_xfsm)
         xfsm_init: begin
           if(_xfsm_cond_0_0_1) begin
-            xvalid <= 0;
+            _tmp_3 <= 0;
           end 
         end
         xfsm_5: begin
           if(_xfsm_cond_5_1_1) begin
-            xvalid <= 0;
+            _tmp_3 <= 0;
           end 
         end
       endcase
       case(xfsm)
         xfsm_init: begin
-          if(xready || !xvalid) begin
-            xdata <= _tmp_1;
+          if(xready || !_tmp_3) begin
+            _tmp_2 <= _tmp_1;
           end 
-          if(xready || !xvalid) begin
-            xvalid <= 1;
+          if(xready || !_tmp_3) begin
+            _tmp_3 <= 1;
           end 
-          _xfsm_cond_0_0_1 <= xready || !xvalid;
-          if(xvalid && !xready) begin
-            xvalid <= xvalid;
+          _xfsm_cond_0_0_1 <= xready || !_tmp_3;
+          if(_tmp_3 && !xready) begin
+            _tmp_3 <= _tmp_3;
           end 
-          if(xready || !xvalid) begin
+          if(xready || !_tmp_3) begin
             _tmp_1 <= _tmp_1 + 1;
           end 
-          if((xready || !xvalid) && (_tmp_1 == 7)) begin
+          if((xready || !_tmp_3) && (_tmp_1 == 7)) begin
             xfsm <= xfsm_1;
           end 
         end
@@ -154,20 +158,20 @@ module main
           xfsm <= xfsm_5;
         end
         xfsm_5: begin
-          if(xready || !xvalid) begin
-            xdata <= _tmp_1;
+          if(xready || !_tmp_3) begin
+            _tmp_2 <= _tmp_1;
           end 
-          if(xready || !xvalid) begin
-            xvalid <= 1;
+          if(xready || !_tmp_3) begin
+            _tmp_3 <= 1;
           end 
-          _xfsm_cond_5_1_1 <= xready || !xvalid;
-          if(xvalid && !xready) begin
-            xvalid <= xvalid;
+          _xfsm_cond_5_1_1 <= xready || !_tmp_3;
+          if(_tmp_3 && !xready) begin
+            _tmp_3 <= _tmp_3;
           end 
-          if(xready || !xvalid) begin
+          if(xready || !_tmp_3) begin
             _tmp_1 <= _tmp_1 + 1;
           end 
-          if((xready || !xvalid) && (_tmp_1 == 15)) begin
+          if((xready || !_tmp_3) && (_tmp_1 == 15)) begin
             xfsm <= xfsm_6;
           end 
         end
@@ -177,11 +181,11 @@ module main
 
   reg [32-1:0] yfsm;
   localparam yfsm_init = 0;
-  reg [32-1:0] _tmp_2;
-  reg [32-1:0] _tmp_3;
-  assign ydata = _tmp_3;
-  reg _tmp_4;
-  assign yvalid = _tmp_4;
+  reg [32-1:0] _tmp_4;
+  reg [32-1:0] _tmp_5;
+  assign ydata = _tmp_5;
+  reg _tmp_6;
+  assign yvalid = _tmp_6;
   reg [32-1:0] _d1_yfsm;
   reg _yfsm_cond_0_0_1;
   reg _yfsm_cond_7_1_1;
@@ -198,41 +202,41 @@ module main
     if(RST) begin
       yfsm <= yfsm_init;
       _d1_yfsm <= yfsm_init;
-      _tmp_3 <= 0;
-      _tmp_4 <= 0;
+      _tmp_5 <= 0;
+      _tmp_6 <= 0;
       _yfsm_cond_0_0_1 <= 0;
-      _tmp_2 <= 0;
+      _tmp_4 <= 0;
       _yfsm_cond_7_1_1 <= 0;
     end else begin
       _d1_yfsm <= yfsm;
       case(_d1_yfsm)
         yfsm_init: begin
           if(_yfsm_cond_0_0_1) begin
-            _tmp_4 <= 0;
+            _tmp_6 <= 0;
           end 
         end
         yfsm_7: begin
           if(_yfsm_cond_7_1_1) begin
-            _tmp_4 <= 0;
+            _tmp_6 <= 0;
           end 
         end
       endcase
       case(yfsm)
         yfsm_init: begin
-          if(yready || !_tmp_4) begin
-            _tmp_3 <= _tmp_2;
+          if(yready || !_tmp_6) begin
+            _tmp_5 <= _tmp_4;
           end 
-          if(yready || !_tmp_4) begin
-            _tmp_4 <= 1;
+          if(yready || !_tmp_6) begin
+            _tmp_6 <= 1;
           end 
-          _yfsm_cond_0_0_1 <= yready || !_tmp_4;
-          if(_tmp_4 && !yready) begin
-            _tmp_4 <= _tmp_4;
+          _yfsm_cond_0_0_1 <= yready || !_tmp_6;
+          if(_tmp_6 && !yready) begin
+            _tmp_6 <= _tmp_6;
           end 
-          if(yready || !_tmp_4) begin
-            _tmp_2 <= _tmp_2 + 1;
+          if(yready || !_tmp_6) begin
+            _tmp_4 <= _tmp_4 + 1;
           end 
-          if((yready || !_tmp_4) && (_tmp_2 == 7)) begin
+          if((yready || !_tmp_6) && (_tmp_4 == 7)) begin
             yfsm <= yfsm_1;
           end 
         end
@@ -255,20 +259,20 @@ module main
           yfsm <= yfsm_7;
         end
         yfsm_7: begin
-          if(yready || !_tmp_4) begin
-            _tmp_3 <= _tmp_2;
+          if(yready || !_tmp_6) begin
+            _tmp_5 <= _tmp_4;
           end 
-          if(yready || !_tmp_4) begin
-            _tmp_4 <= 1;
+          if(yready || !_tmp_6) begin
+            _tmp_6 <= 1;
           end 
-          _yfsm_cond_7_1_1 <= yready || !_tmp_4;
-          if(_tmp_4 && !yready) begin
-            _tmp_4 <= _tmp_4;
+          _yfsm_cond_7_1_1 <= yready || !_tmp_6;
+          if(_tmp_6 && !yready) begin
+            _tmp_6 <= _tmp_6;
           end 
-          if(yready || !_tmp_4) begin
-            _tmp_2 <= _tmp_2 + 1;
+          if(yready || !_tmp_6) begin
+            _tmp_4 <= _tmp_4 + 1;
           end 
-          if((yready || !_tmp_4) && (_tmp_2 == 15)) begin
+          if((yready || !_tmp_6) && (_tmp_4 == 15)) begin
             yfsm <= yfsm_8;
           end 
         end
@@ -278,8 +282,8 @@ module main
 
   reg [32-1:0] zfsm;
   localparam zfsm_init = 0;
-  reg [32-1:0] _tmp_5;
-  assign zready = (zfsm == 0) || (zfsm == 9) && (_tmp_5 < 32);
+  reg [32-1:0] _tmp_7;
+  assign zready = (zfsm == 0) || (zfsm == 9) && (_tmp_7 < 32);
   localparam zfsm_1 = 1;
   localparam zfsm_2 = 2;
   localparam zfsm_3 = 3;
@@ -293,15 +297,15 @@ module main
   always @(posedge CLK) begin
     if(RST) begin
       zfsm <= zfsm_init;
-      _tmp_5 <= 0;
+      _tmp_7 <= 0;
     end else begin
       case(zfsm)
         zfsm_init: begin
           if(zvalid && (zfsm == 0)) begin
             $display("zfsm_%1d: zdata=%d", zfsm, zdata);
-            _tmp_5 <= _tmp_5 + 1;
+            _tmp_7 <= _tmp_7 + 1;
           end 
-          if(_tmp_5 == 8) begin
+          if(_tmp_7 == 8) begin
             zfsm <= zfsm_1;
           end 
         end
@@ -330,9 +334,9 @@ module main
           zfsm <= zfsm_9;
         end
         zfsm_9: begin
-          if((_tmp_5 < 32) && (zvalid && ((zfsm == 9) && (_tmp_5 < 32)))) begin
+          if((_tmp_7 < 32) && (zvalid && ((zfsm == 9) && (_tmp_7 < 32)))) begin
             $display("zfsm_%1d: zdata=%d", zfsm, zdata);
-            _tmp_5 <= _tmp_5 + 1;
+            _tmp_7 <= _tmp_7 + 1;
           end 
         end
       endcase

@@ -17,14 +17,8 @@ def mkMain(n=128, datawidth=32, numports=2):
     rst = m.Input('RST')
 
     # variables
-    xdata = m.Reg('xdata', 32, initval=0)
-    xvalid = m.Reg('xvalid', initval=0)
-    xready = m.Wire('xready')
-    x = dataflow.Variable(xdata, xvalid, xready)
-
-    # default type 
+    x = dataflow.Variable('xdata', 'xvalid', 'xready')
     y = dataflow.Variable('ydata', 'yvalid', 'yready')
-    
     z = x + y
     z.output('zdata', 'zvalid', 'zready')
 

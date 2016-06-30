@@ -218,6 +218,7 @@ module main
   reg [32-1:0] _d1_yfsm;
   reg _yfsm_cond_1_0_1;
   localparam yfsm_1 = 1;
+  localparam yfsm_2 = 2;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -251,6 +252,9 @@ module main
           _yfsm_cond_1_0_1 <= yvalid && (yfsm == 1);
           if(yvalid && (yfsm == 1)) begin
             yaddr <= yaddr + 1;
+          end 
+          if(yaddr == 15) begin
+            yfsm <= yfsm_2;
           end 
         end
       endcase
