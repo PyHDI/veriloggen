@@ -452,19 +452,19 @@ class _Numeric(_Node):
     def __len__(self):
         ret = self.bit_length()
         if not isinstance(ret, int):
-            raise TypeError("Non int length.")
+            raise ValueError("Non int length.")
         return ret
 
     @property
     def raw_data(self):
         if self.sig_data is None:
-            raise TypeError("Dataflow is not synthesized yet. Run Dataflow.implement().")
+            raise ValueError("Dataflow is not synthesized yet. Run Dataflow.implement().")
         return self.sig_data
 
     @property
     def raw_valid(self):
         if self.sig_data is None:
-            raise TypeError("Dataflow is not synthesized yet. Run Dataflow.implement().")
+            raise ValueError("Dataflow is not synthesized yet. Run Dataflow.implement().")
         if self.sig_valid is None:
             return 1
         return self.sig_valid
@@ -472,7 +472,7 @@ class _Numeric(_Node):
     @property
     def raw_ready(self):
         if self.sig_data is None:
-            raise TypeError("Dataflow is not synthesized yet. Run Dataflow.implement().")
+            raise ValueError("Dataflow is not synthesized yet. Run Dataflow.implement().")
         return self.sig_ready
 
     @property
@@ -499,7 +499,7 @@ class _Numeric(_Node):
 
     def read(self, mng, rdata=None, rvalid=None, cond=None):
         if self.sig_data is None:
-            raise ValueError("run implement() first.")
+            raise ValueError("Dataflow is not synthesized yet. Run Dataflow.implement().")
         
         if not ((rdata is None and rvalid is None) or
                 (rdata is not None and rvalid is not None)):
