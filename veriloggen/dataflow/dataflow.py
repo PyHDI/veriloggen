@@ -33,7 +33,7 @@ class Dataflow(object):
         clk = m.Input(clock)
         rst = m.Input(reset)
 
-        m = self.implement(m, clk, rst)
+        m = self.implement(m, clk, rst, aswire=False)
 
         return m
 
