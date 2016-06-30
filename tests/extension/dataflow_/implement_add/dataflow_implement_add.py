@@ -27,7 +27,9 @@ def mkMain():
     m = Module('main')
     clk = m.Input('CLK')
     rst = m.Input('RST')
-    m = df.implement(m, clk, rst)
+    
+    # To synthesize Variables as I/O, aswire must be False explicitly
+    m = df.implement(m, clk, rst, aswire=False)
     
     return m
 

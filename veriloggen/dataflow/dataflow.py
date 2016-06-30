@@ -38,7 +38,7 @@ class Dataflow(object):
         return m
 
     #---------------------------------------------------------------------------
-    def implement(self, m, clock, reset, seq_name='seq', aswire=False):
+    def implement(self, m, clock, reset, seq_name='seq', aswire=True):
         """ implemente actual registers and operations in Verilog """
 
         mul.reset()
