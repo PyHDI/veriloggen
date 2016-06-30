@@ -3,6 +3,7 @@ from __future__ import print_function
 import os
 import sys
 import copy
+import collections
 
 import veriloggen.core.vtypes as vtypes
 from veriloggen.core.module import Module
@@ -20,7 +21,8 @@ class Dataflow(object):
         self.datawidth = opts['datawidth'] if 'datawidth' in opts else 32
         self.nodes = set(nodes)
         self.max_stage = None
-        self.last_result = None
+        self.last_input = None
+        self.last_output = None
         
     def add(self, *nodes):
         self.nodes.extend(nodes)
@@ -95,18 +97,44 @@ class Dataflow(object):
         seq.make_always()
 
         # save schedule result
-        self.last_result = output_vars
+        self.last_input = input_vars
+        self.last_output = output_vars
 
         return m
             
     #---------------------------------------------------------------------------
     def draw_graph(self, filename='out.png', prog='dot', rankdir='LR', approx=False):
-        if self.last_result is None:
+        if self.last_output is None:
             self.to_module()
             
-        graph.draw_graph(self.last_result, filename=filename, prog=prog,
+        graph.draw_graph(self.last_output, filename=filename, prog=prog,
                          rankdir=rankdir, approx=approx)
         
+    #---------------------------------------------------------------------------
+    def get_input(self):
+        if self.last_input is None:
+            return collections.OrderedDict()
+
+        ret = collections.OrderedDict()
+        for input_var in sorted(self.last_input, key=lambda x:x.object_id):
+            key = str(input_var.input_data)
+            value = input_var
+            ret[key] = value
+
+        return ret
+
+    def get_output(self):
+        if self.last_output is None:
+            return collections.OrderedDict()
+
+        ret = collections.OrderedDict()
+        for output_var in sorted(self.last_output, key=lambda x:x.object_id):
+            key = str(output_var.output_data)
+            value = output_var
+            ret[key] = value
+
+        return ret
+    
     #---------------------------------------------------------------------------
     def pipeline_depth(self):
         return self.max_stage
