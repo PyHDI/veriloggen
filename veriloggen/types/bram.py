@@ -4,6 +4,7 @@ from __future__ import print_function
 import veriloggen.core.vtypes as vtypes
 import veriloggen.core.module as module
 from veriloggen.seq.seq import TmpSeq
+from . import util
 
 class BramInterface(object):
     _I = 'Reg'
@@ -17,7 +18,7 @@ class BramInterface(object):
             itype = self._I
         if otype is None:
             otype = self._O
-            
+
         self.m = m
 
         name_addr = p_addr if name is None else '_'.join([name, p_addr])
@@ -31,34 +32,16 @@ class BramInterface(object):
             name_wdata = name_wdata + str(index)
             name_wenable = name_wenable + str(index)
 
-        if itype == 'Reg' or itype == 'OutputReg':
-            self.addr = getattr(m, itype)(name_addr, addrwidth, initval=0)
-        else:
-            self.addr = getattr(m, itype)(name_addr, addrwidth)
-            
-        if otype == 'Reg' or otype == 'OutputReg':
-            self.rdata = getattr(m, otype)(name_rdata, datawidth, initval=0)
-        else:
-            self.rdata = getattr(m, otype)(name_rdata, datawidth)
-            
-        if itype == 'Reg' or itype == 'OutputReg':
-            self.wdata = getattr(m, itype)(name_wdata, datawidth, initval=0)
-            self.wenable = getattr(m, itype)(name_wenable, initval=0)
-        else:
-            self.wdata = getattr(m, itype)(name_wdata, datawidth)
-            self.wenable = getattr(m, itype)(name_wenable)
+        self.addr = util.make_port(m, itype, name_addr, addrwidth, initval=0)
+        self.rdata = util.make_port(m, otype, name_rdata, datawidth, initval=0)
+        self.wdata = util.make_port(m, itype, name_wdata, datawidth, initval=0)
+        self.wenable = util.make_port(m, itype, name_wenable, initval=0)
 
     def connect(self, targ):
-        self._connect_port(self.addr, targ.addr)
-        self._connect_port(targ.rdata, self.rdata)
-        self._connect_port(self.wdata, targ.wdata)
-        self._connect_port(self.wenable, targ.wenable)
-
-    def _connect_port(self, left, right):
-        if isinstance(left, vtypes.Reg):
-            left.module.Always()( left(right, blk=True) )
-        else:
-            left.assign(right)
+        util.connect_port(self.addr, targ.addr)
+        util.connect_port(targ.rdata, self.rdata)
+        util.connect_port(self.wdata, targ.wdata)
+        util.connect_port(self.wenable, targ.wenable)
 
 class BramSlaveInterface(BramInterface):
     _I = 'Input'

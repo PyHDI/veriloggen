@@ -4,6 +4,7 @@ from __future__ import print_function
 import veriloggen.core.vtypes as vtypes
 import veriloggen.core.module as module
 from veriloggen.seq.seq import Seq
+from . import util
 
 class FifoWriteInterface(object):
     _I = 'Reg'
@@ -24,31 +25,16 @@ class FifoWriteInterface(object):
         name_full = p_full if name is None else '_'.join([name, p_full])
         name_almost_full = p_almost_full if name is None else '_'.join([name, p_almost_full])
     
-        if itype == 'Reg' or itype == 'OutputReg':
-            self.enq = getattr(m, itype)(name_enq, initval=0)
-            self.wdata = getattr(m, itype)(name_wdata, datawidth, initval=0)
-        else:
-            self.enq = getattr(m, itype)(name_enq)
-            self.wdata = getattr(m, itype)(name_wdata, datawidth)
-
-        if otype == 'Reg' or otype == 'OutputReg':
-            self.full = getattr(m, otype)(name_full, initval=0)
-            self.almost_full = getattr(m, otype)(name_almost_full, initval=0)
-        else:
-            self.full = getattr(m, otype)(name_full)
-            self.almost_full = getattr(m, otype)(name_almost_full)
+        self.enq = util.make_port(m, itype, name_enq, initval=0)
+        self.wdata = util.make_port(m, itype, name_wdata, datawidth, initval=0)
+        self.full = util.make_port(m, otype, name_full, initval=0)
+        self.almost_full = util.make_port(m, otype, name_almost_full, initval=0)
 
     def connect(self, targ):
-        self._connect_port(self.enq, targ.enq)
-        self._connect_port(self.wdata, targ.wdata)
-        self._connect_port(targ.full, self.full)
-        self._connect_port(targ.almost_full, self.almost_full)
-
-    def _connect_port(self, left, right):
-        if isinstance(left, vtypes.Reg):
-            left.module.Always()( left(right, blk=True) )
-        else:
-            left.assign(right)
+        util.connect_port(self.enq, targ.enq)
+        util.connect_port(self.wdata, targ.wdata)
+        util.connect_port(targ.full, self.full)
+        util.connect_port(targ.almost_full, self.almost_full)
 
 class FifoReadInterface(object):
     _I = 'Reg'
@@ -69,31 +55,16 @@ class FifoReadInterface(object):
         name_empty = p_empty if name is None else '_'.join([name, p_empty])
         name_almost_empty = p_almost_empty if name is None else '_'.join([name, p_almost_empty])
     
-        if itype == 'Reg' or itype == 'OutputReg':
-            self.deq = getattr(m, itype)(name_deq, initval=0)
-        else:
-            self.deq = getattr(m, itype)(name_deq)
-
-        if otype == 'Reg' or otype == 'OutputReg':
-            self.rdata = getattr(m, otype)(name_rdata, datawidth, initval=0)
-            self.empty = getattr(m, otype)(name_empty, initval=0)
-            self.almost_empty = getattr(m, otype)(name_almost_empty, initval=0)
-        else:
-            self.rdata = getattr(m, otype)(name_rdata, datawidth)
-            self.empty = getattr(m, otype)(name_empty)
-            self.almost_empty = getattr(m, otype)(name_almost_empty)
+        self.deq = util.make_port(m, itype, name_deq, initval=0)
+        self.rdata = util.make_port(m, otype, name_rdata, datawidth, initval=0)
+        self.empty = util.make_port(m, otype, name_empty, initval=0)
+        self.almost_empty = util.make_port(m, otype, name_almost_empty, initval=0)
 
     def connect(self, targ):
-        self._connect_port(self.deq, targ.deq)
-        self._connect_port(targ.rdata, self.rdata)
-        self._connect_port(targ.empty, self.empty)
-        self._connect_port(targ.almost_empty, self.almost_empty)
-
-    def _connect_port(self, left, right):
-        if isinstance(left, vtypes.Reg):
-            left.module.Always()( left(right, blk=True) )
-        else:
-            left.assign(right)
+        util.connect_port(self.deq, targ.deq)
+        util.connect_port(targ.rdata, self.rdata)
+        util.connect_port(targ.empty, self.empty)
+        util.connect_port(targ.almost_empty, self.almost_empty)
 
 class FifoWriteSlaveInterface(FifoWriteInterface):
     _I = 'Input'
