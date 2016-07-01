@@ -6,18 +6,24 @@ from . import dtypes
 #-------------------------------------------------------------------------------
 class _Visitor(object):
     def __init__(self):
-        self.visited_node = {}
+        self.visited_node = set()
+        self.result_cache = {}
 
     def generic_visit(self, node):
         raise TypeError("Type '%s' is not supported." % str(type(node)))
     
     def visit(self, node):
-        if node in self.visited_node:
-            return self.visited_node[node]
+        if node in self.result_cache:
+            return self.result_cache[node]
         
-        ret = self._visit(node)
-        self.visited_node[node] = ret
-        return ret
+        if node in self.visited_node:
+            raise ValueError("Loop detected.")
+        
+        self.visited_node.add(node)
+        
+        rslt = self._visit(node)
+        self.result_cache[node] = rslt
+        return rslt
         
     def _visit(self, node):
         if isinstance(node, dtypes._Accumulator):

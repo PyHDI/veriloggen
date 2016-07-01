@@ -1955,6 +1955,8 @@ class _Variable(_Numeric):
             
     #---------------------------------------------------------------------------
     def __getattribute__(self, attr):
+        if attr == '__class__':
+            return _Numeric.__getattribute__(self, '__class__')
         input_data = _Numeric.__getattribute__(self, 'input_data')
         if attr == 'input_data':
             return input_data
