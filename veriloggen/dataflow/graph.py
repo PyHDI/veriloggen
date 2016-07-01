@@ -16,6 +16,8 @@ def draw_graph(vars, filename='out.png', prog='dot', rankdir='LR', approx=False)
 
 class GraphGenerator(_Visitor):
     def __init__(self, rankdir='LR', approx=False):
+        _Visitor.__init__(self)
+        
         try:
             import pygraphviz as pgv
         except:
@@ -24,7 +26,6 @@ class GraphGenerator(_Visitor):
         self.graph = pgv.AGraph(directed=True, rankdir=rankdir)
         
         self.approx = approx
-        self.visited_node = {}
         self.tmp_count = 0
 
         self.ranks = defaultdict(list)
@@ -45,14 +46,6 @@ class GraphGenerator(_Visitor):
         self.graph.write('out.dot')
         self.graph.layout(prog=prog)
         self.graph.draw(filename)
-
-    def visit(self, node):
-        if node in self.visited_node:
-            return self.visited_node[node]
-        return _Visitor.visit(self, node)
-    
-    def _visited(self, node):
-        return node in self.visited_node
 
     def _set_rank(self, rank, node):
         self.ranks[rank].append(node)
@@ -113,7 +106,6 @@ class GraphGenerator(_Visitor):
         
         prev = self._add_gap(node, mark)
         self._add_output(node, prev)
-        self.visited_node[node] = prev
         return prev
     
     def visit__UnaryOperator(self, node):
@@ -142,7 +134,6 @@ class GraphGenerator(_Visitor):
         
         prev = self._add_gap(node, mark)
         self._add_output(node, prev)
-        self.visited_node[node] = prev
         return prev
 
     def visit__SpecialOperator(self, node):
@@ -158,7 +149,6 @@ class GraphGenerator(_Visitor):
             
         prev = self._add_gap(node, mark)
         self._add_output(node, prev)
-        self.visited_node[node] = prev
         return prev
 
     def visit__Accumulator(self, node):
@@ -180,7 +170,6 @@ class GraphGenerator(_Visitor):
         
         prev = self._add_gap(node, mark)
         self._add_output(node, prev)
-        self.visited_node[node] = prev
         return prev
     
     def visit__ParameterVariable(self, node):
@@ -195,13 +184,11 @@ class GraphGenerator(_Visitor):
         
         self.input_nodes.append(node)
         self._add_output(node, node)
-        self.visited_node[node] = node
         return node
 
     def visit__Variable(self, node):
         if isinstance(node.input_data, dtypes._Numeric):
             input_data = self.visit(node.input_data)
-            self.visited_node[node.input_data] = node.input_data
             return input_data
 
         inobj = str(node.input_data)
@@ -215,7 +202,6 @@ class GraphGenerator(_Visitor):
         
         self.input_nodes.append(node)
         self._add_output(node, node)
-        self.visited_node[node] = node
         return node
 
     def visit__Constant(self, node):
@@ -229,5 +215,4 @@ class GraphGenerator(_Visitor):
         self.graph.add_node(node, label=value, shape='', color='lightblue', style='filled')
         
         self._add_output(node, node)
-        self.visited_node[node] = node
         return node

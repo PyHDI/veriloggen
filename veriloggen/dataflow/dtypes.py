@@ -1954,14 +1954,23 @@ class _Variable(_Numeric):
         _Numeric._implement_output(self, m, seq, aswire)
             
     #---------------------------------------------------------------------------
+    # __getattribute__() method is always called,
+    # whenever fields of the node is accessed.
     def __getattribute__(self, attr):
+        # for isinstance method
         if attr == '__class__':
             return _Numeric.__getattribute__(self, '__class__')
+        
         input_data = _Numeric.__getattribute__(self, 'input_data')
+        # always returns input_data for 'input_data' attribute
         if attr == 'input_data':
             return input_data
+        
+        # if it has a variable alias, redirect to it
         if isinstance(input_data, _Numeric):
             return getattr(input_data, attr)
+
+        # nornal access
         return _Numeric.__getattribute__(self, attr)
 
 #-------------------------------------------------------------------------------
@@ -1996,6 +2005,10 @@ class _ParameterVariable(_Variable):
         self.sig_valid = None
         self.sig_ready = None
 
+    def __getattribute__(self, attr):
+        # nornal access
+        return _Numeric.__getattribute__(self, attr)
+        
 #-------------------------------------------------------------------------------
 class _Accumulator(_UnaryOperator):
     latency = 1

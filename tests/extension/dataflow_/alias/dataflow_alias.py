@@ -19,6 +19,7 @@ def mkMain(n=128, datawidth=32, numports=2):
     # original variable
     xorig = dataflow.Variable('xdata', 'xvalid', 'xready')
     # connect an exising variable
+    xorig = dataflow.Variable(xorig)
     x = dataflow.Variable(xorig)
 
     y = x + 1

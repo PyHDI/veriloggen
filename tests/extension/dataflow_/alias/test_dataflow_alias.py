@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import dataflow_varsrc
+import dataflow_alias
 
 expected_verilog = """
 module test;
@@ -189,7 +189,7 @@ endmodule
 """
 
 def test():
-    test_module = dataflow_varsrc.mkTest()
+    test_module = dataflow_alias.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
