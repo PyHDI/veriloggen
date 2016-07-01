@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import veriloggen.core.vtypes as vtypes
+
 def make_port(m, _type, *args, **kwargs):
     if 'initval' in kwargs and 'Reg' not in _type:
         del kwargs['initval']
