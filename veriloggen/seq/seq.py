@@ -54,19 +54,26 @@ class Seq(vtypes.VeriloggenNode):
         if isinstance(var, (bool, int, float, str,
                             vtypes._Constant, vtypes._ParameterVairable)):
             return var
-        if not isinstance(var, vtypes._Variable):
-            raise TypeError('var must be vtypes._Variable, not %s' % str(type(var)))
+        
         if not isinstance(delay, int):
             raise TypeError('delay must be int, not %s' % str(type(delay)))
+        
         if delay <= 0:
             return var
+        
+        width = var.bit_length()
+        
+        if not isinstance(var, vtypes._Variable):
+            width = self.m.TmpLocalparam(width)
+            w = self.m.TmpWire(width)
+            w.assign(var)
+            var = w
         
         name_prefix = '_' + var.name
         key = '_'.join([name_prefix, str(delay)])
         if key in self.prev_dict:
             return self.prev_dict[key]
-        
-        width = var.bit_length()
+
         p = var
         for i in range(delay):
             tmp_name = '_'.join([name_prefix, str(i+1)])
