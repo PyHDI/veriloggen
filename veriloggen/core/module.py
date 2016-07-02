@@ -762,7 +762,6 @@ class Module(vtypes.VeriloggenNode):
         if isinstance(s, vtypes.AnyType):
             return
         if len(types) == 0:
-            print(s)
             raise ValueError("Object '%s' is already defined." % name)
         if not isinstance(s, types):
             raise ValueError("Object '%s' is already defined." % name)
