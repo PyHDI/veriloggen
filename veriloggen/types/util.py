@@ -19,6 +19,8 @@ def make_port(m, _type, *args, **kwargs):
 
 def connect_port(left, right):
     if isinstance(left, vtypes.Reg):
-        left.module.Always()( left(right, blk=True) )
+        wire_left = left.module.TmpWireLike(left)
+        wire_left.assign(right)
+        left.module.Always()( left(wire_left, blk=True) )
     else:
         left.assign(right)
