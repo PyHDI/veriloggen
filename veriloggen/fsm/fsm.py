@@ -18,7 +18,6 @@ def _tmp_name(prefix='_tmp_fsm'):
     _tmp_count += 1
     ret = '_'.join([prefix, str(v)])
     return ret
-
 def TmpFSM(m, clk, rst, width=32, initname='init'):
     name = _tmp_name()
     return FSM(m, name, clk, rst, width, initname)
@@ -63,16 +62,6 @@ class FSM(vtypes.VeriloggenNode):
         self.next_kwargs = {}
         
     #---------------------------------------------------------------------------
-    def current(self):
-        return self.state_count
-        
-    def next(self):
-        return self.current() + 1
-        
-    def inc(self):
-        self._set_index(None)
-    
-    #---------------------------------------------------------------------------
     def goto(self, dst, cond=None, else_dst=None):
         if cond is None and 'cond' in self.next_kwargs:
             cond = self.next_kwargs['cond']
@@ -80,7 +69,7 @@ class FSM(vtypes.VeriloggenNode):
         self._clear_last_if_statement()
         self._clear_last_cond()
         
-        src = self.current()
+        src = self.current
         return self._go(src, dst, cond, else_dst)
 
     def goto_init(self, cond=None):
@@ -90,7 +79,7 @@ class FSM(vtypes.VeriloggenNode):
         self._clear_last_if_statement()
         self._clear_last_cond()
         
-        src = self.current()
+        src = self.current
         dst = 0
         return self._go(src, dst, cond)
 
@@ -101,8 +90,8 @@ class FSM(vtypes.VeriloggenNode):
         self._clear_last_if_statement()
         self._clear_last_cond()
         
-        src = self.current()
-        dst = self.current() + 1
+        src = self.current
+        dst = self.current + 1
         ret = self._go(src, dst, cond=cond)
         self.inc()
         return ret
@@ -116,10 +105,9 @@ class FSM(vtypes.VeriloggenNode):
         
         return self._go(src, dst, cond, else_dst)
 
-    #---------------------------------------------------------------------------
-    def prev(self, var, delay, initval=0):
-        return self.seq.prev(var, delay, initval)
-        
+    def inc(self):
+        self._set_index(None)
+    
     #---------------------------------------------------------------------------
     def add(self, *statement, **kwargs):
         """ add new assignments """
@@ -143,59 +131,14 @@ class FSM(vtypes.VeriloggenNode):
         return self._add_statement(statement, **kwargs)
     
     #---------------------------------------------------------------------------
-    def _add_statement(self, statement, index=None, keep=None, delay=None, cond=None,
-                       lazy_cond=False, eager_val=False, no_delay_cond=False):
+    def Prev(self, var, delay, initval=0):
+        return self.seq.Prev(var, delay, initval)
         
-        index = self._to_index(index) if index is not None else self.current()
-        
-        if keep is not None:
-            for i in range(keep):
-                new_delay = i if delay is None else delay + i
-                self._add_statement(statement, index=index,
-                                    keep=None, delay=new_delay, cond=cond,
-                                    lazy_cond=lazy_cond, eager_val=eager_val,
-                                    no_delay_cond=no_delay_cond)
-            return self
-        
-        if delay is not None and delay > 0:
-            self._add_delayed_state(delay)
-            
-            if eager_val:
-                statement = [ self._add_delayed_subst(s, index, delay) for s in statement ]
-                
-            if not no_delay_cond:
-                if cond is None:
-                    cond = 1
-                
-                if not lazy_cond:
-                    cond = self._add_delayed_cond(cond, index, delay)
-                    
-                else: # lazy condition 
-                    t = self._add_delayed_cond(1, index, delay)
-                    if isinstance(cond, int) and cond == 1:
-                        cond = t
-                    else:
-                        cond = vtypes.Ands(t, cond)
-                    
-                statement = [ vtypes.If(cond)(*statement) ]
-            
-            self.delayed_body[delay][index].extend(statement)
-            self._add_dst_var(statement)
-            
-            return self
-            
-        if cond is not None:
-            statement = [ vtypes.If(cond)(*statement) ]
-            self.last_if_statement = statement[0]
-            
-        self.body[index].extend(statement)
-        self._add_dst_var(statement)
-        
-        return self
-
     #---------------------------------------------------------------------------
     def If(self, cond):
         self._clear_elif_cond()
+        
+        cond = self._check_cond(cond)
         
         if cond is None:
             return self
@@ -247,6 +190,8 @@ class FSM(vtypes.VeriloggenNode):
         if len(self.last_cond) == 0:
             raise ValueError("No previous condition for Else.")
         
+        cond = self._check_cond(cond)
+        
         old = self.last_cond.pop()
         self.last_cond.append(vtypes.Not(old))
         self.last_cond.append(cond)
@@ -290,6 +235,22 @@ class FSM(vtypes.VeriloggenNode):
         self.next_kwargs['eager_val'] = value
         return self
 
+    def Clear(self):
+        self._clear_next_kwargs()
+        self._clear_last_if_statement()
+        self._clear_last_cond()
+        self._clear_elif_cond()
+        return self
+
+    #---------------------------------------------------------------------------
+    @property
+    def current(self):
+        return self.state_count
+
+    @property
+    def next(self):
+        return self.current + 1
+
     @property
     def current_delay(self):
         if 'delay' in self.next_kwargs:
@@ -304,6 +265,15 @@ class FSM(vtypes.VeriloggenNode):
 
     @property
     def current_condition(self):
+        cond = self.next_kwargs['cond'] if 'cond' in self.next_kwargs else None
+        if cond is not None:
+            cond = vtypes.AndList(self.state == self.state_count, cond)
+        else:
+            cond = self.state == self.state_count
+        return cond
+        
+    @property
+    def last_condition(self):
         cond = self._make_cond(self.last_cond)
         if cond is not None:
             cond = vtypes.AndList(self.state == self.state_count, cond)
@@ -311,28 +281,10 @@ class FSM(vtypes.VeriloggenNode):
             cond = self.state == self.state_count
         return cond
         
-    #---------------------------------------------------------------------------
-    def _clear_next_kwargs(self):
-        self.next_kwargs = {}
+    @property
+    def then(self):
+        return self.last_condition
         
-    def _clear_last_if_statement(self):
-        self.last_if_statement = None
-
-    def _clear_last_cond(self):
-        self.last_cond = []
-
-    def _clear_elif_cond(self):
-        self.elif_cond = None
-
-    def _make_cond(self, condlist):
-        ret = None
-        for cond in condlist:
-            if ret is None:
-                ret = cond
-            else:
-                ret = vtypes.Ands(ret, cond)
-        return ret
-
     #---------------------------------------------------------------------------
     def make_always(self, reset=(), body=(), case=True):
         if self.done:
@@ -442,6 +394,77 @@ class FSM(vtypes.VeriloggenNode):
         self.jump[src].append( (dst, cond, else_dst) )
     
     #---------------------------------------------------------------------------
+    def _add_statement(self, statement, index=None, keep=None, delay=None, cond=None,
+                       lazy_cond=False, eager_val=False, no_delay_cond=False):
+        
+        cond = self._check_cond(cond)
+        index = self._to_index(index) if index is not None else self.current
+        
+        if keep is not None:
+            for i in range(keep):
+                new_delay = i if delay is None else delay + i
+                self._add_statement(statement, index=index,
+                                    keep=None, delay=new_delay, cond=cond,
+                                    lazy_cond=lazy_cond, eager_val=eager_val,
+                                    no_delay_cond=no_delay_cond)
+            return self
+        
+        if delay is not None and delay > 0:
+            self._add_delayed_state(delay)
+            
+            if eager_val:
+                statement = [ self._add_delayed_subst(s, index, delay) for s in statement ]
+                
+            if not no_delay_cond:
+                if cond is None:
+                    cond = 1
+                
+                if not lazy_cond:
+                    cond = self._add_delayed_cond(cond, index, delay)
+                    
+                else: # lazy condition 
+                    t = self._add_delayed_cond(1, index, delay)
+                    if isinstance(cond, int) and cond == 1:
+                        cond = t
+                    else:
+                        cond = vtypes.Ands(t, cond)
+                    
+                statement = [ vtypes.If(cond)(*statement) ]
+            
+            self.delayed_body[delay][index].extend(statement)
+            self._add_dst_var(statement)
+            
+            return self
+            
+        if cond is not None:
+            statement = [ vtypes.If(cond)(*statement) ]
+            self.last_if_statement = statement[0]
+            
+        self.body[index].extend(statement)
+        self._add_dst_var(statement)
+        
+        return self
+
+    #---------------------------------------------------------------------------
+    def _check_cond(self, cond):
+        if isinstance(cond, (tuple, list)):
+            new = self._get_manager_cond(cond[0])
+            for c in cond[1:]:
+                c = self._get_manager_cond(c)
+                new = vtypes.Ands(new, c) if c is not None else new
+            cond = new
+        else:
+            cond = self._get_manager_cond(cond)
+        return cond
+
+    def _get_manager_cond(self, cond):
+        if hasattr(cond, 'current_condition'):
+            cond = getattr(cond, 'current_condition', None)
+        if cond is not None and not isinstance(cond, (vtypes._Numeric, int, bool)):
+            raise TypeError("Unsupported condition type '%s'" % str(type(cond)))
+        return cond
+
+    #---------------------------------------------------------------------------
     def _add_dst_var(self, statement):
         for s in statement:
             values = self.dst_visitor.visit(s)
@@ -486,6 +509,28 @@ class FSM(vtypes.VeriloggenNode):
             prev = tmp
         return left(prev)
     
+    #---------------------------------------------------------------------------
+    def _clear_next_kwargs(self):
+        self.next_kwargs = {}
+        
+    def _clear_last_if_statement(self):
+        self.last_if_statement = None
+
+    def _clear_last_cond(self):
+        self.last_cond = []
+
+    def _clear_elif_cond(self):
+        self.elif_cond = None
+
+    def _make_cond(self, condlist):
+        ret = None
+        for cond in condlist:
+            if ret is None:
+                ret = cond
+            else:
+                ret = vtypes.Ands(ret, cond)
+        return ret
+
     #---------------------------------------------------------------------------
     def _set_index(self, index=None):
         if index is None:
