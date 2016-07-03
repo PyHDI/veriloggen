@@ -77,6 +77,50 @@ module main
   assign ydata = _tmp_data_2;
   assign yvalid = _tmp_valid_2;
   assign _tmp_ready_2 = yready;
+  reg [32-1:0] xfsm;
+  localparam xfsm_init = 0;
+  reg [32-1:0] _tmp_3;
+  reg [32-1:0] _tmp_4;
+  assign xdata = _tmp_4;
+  reg _tmp_5;
+  assign xvalid = _tmp_5;
+  reg _seq_cond_0_1;
+  localparam xfsm_1 = 1;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      xfsm <= xfsm_init;
+      _tmp_3 <= 0;
+    end else begin
+      case(xfsm)
+        xfsm_init: begin
+          if(xready || !_tmp_5) begin
+            _tmp_3 <= _tmp_3 + 1;
+          end 
+          if((xready || !_tmp_5) && (_tmp_3 == 15)) begin
+            xfsm <= xfsm_1;
+          end 
+        end
+      endcase
+    end
+  end
+
+  assign yready = 1;
+
+  always @(posedge CLK) begin
+    if(yvalid) begin
+      $display("ydata=%d", ydata);
+    end 
+  end
+
+  assign zready = 1;
+
+  always @(posedge CLK) begin
+    if(zvalid) begin
+      $display("zdata=%d", zdata);
+    end 
+  end
+
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -86,7 +130,13 @@ module main
       _tmp_valid_1 <= 0;
       _tmp_data_2 <= 0;
       _tmp_valid_2 <= 0;
+      _tmp_4 <= 0;
+      _tmp_5 <= 0;
+      _seq_cond_0_1 <= 0;
     end else begin
+      if(_seq_cond_0_1) begin
+        _tmp_5 <= 0;
+      end 
       if((_tmp_ready_0 || !_tmp_valid_0) && xready && xvalid) begin
         _tmp_data_0 <= xdata + 2'd1;
       end 
@@ -114,74 +164,17 @@ module main
       if((_tmp_ready_2 || !_tmp_valid_2) && _tmp_ready_0) begin
         _tmp_valid_2 <= _tmp_valid_0;
       end 
+      if((xfsm == 0) && (xready || !_tmp_5)) begin
+        _tmp_4 <= _tmp_3;
+      end 
+      if((xfsm == 0) && (xready || !_tmp_5)) begin
+        _tmp_5 <= 1;
+      end 
+      _seq_cond_0_1 <= (xfsm == 0) && (xready || !_tmp_5);
+      if(_tmp_5 && !xready) begin
+        _tmp_5 <= _tmp_5;
+      end 
     end
-  end
-
-  reg [32-1:0] xfsm;
-  localparam xfsm_init = 0;
-  reg [32-1:0] _tmp_3;
-  reg [32-1:0] _tmp_4;
-  assign xdata = _tmp_4;
-  reg _tmp_5;
-  assign xvalid = _tmp_5;
-  reg [32-1:0] _d1_xfsm;
-  reg _xfsm_cond_0_0_1;
-  localparam xfsm_1 = 1;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      xfsm <= xfsm_init;
-      _d1_xfsm <= xfsm_init;
-      _tmp_4 <= 0;
-      _tmp_5 <= 0;
-      _xfsm_cond_0_0_1 <= 0;
-      _tmp_3 <= 0;
-    end else begin
-      _d1_xfsm <= xfsm;
-      case(_d1_xfsm)
-        xfsm_init: begin
-          if(_xfsm_cond_0_0_1) begin
-            _tmp_5 <= 0;
-          end 
-        end
-      endcase
-      case(xfsm)
-        xfsm_init: begin
-          if(xready || !_tmp_5) begin
-            _tmp_4 <= _tmp_3;
-          end 
-          if(xready || !_tmp_5) begin
-            _tmp_5 <= 1;
-          end 
-          _xfsm_cond_0_0_1 <= xready || !_tmp_5;
-          if(_tmp_5 && !xready) begin
-            _tmp_5 <= _tmp_5;
-          end 
-          if(xready || !_tmp_5) begin
-            _tmp_3 <= _tmp_3 + 1;
-          end 
-          if((xready || !_tmp_5) && (_tmp_3 == 15)) begin
-            xfsm <= xfsm_1;
-          end 
-        end
-      endcase
-    end
-  end
-
-  assign yready = 1;
-
-  always @(posedge CLK) begin
-    if(yvalid) begin
-      $display("ydata=%d", ydata);
-    end 
-  end
-
-  assign zready = 1;
-
-  always @(posedge CLK) begin
-    if(zvalid) begin
-      $display("zdata=%d", zdata);
-    end 
   end
 
 

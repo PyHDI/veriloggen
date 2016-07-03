@@ -18,7 +18,7 @@ def mkMain(n=128, datawidth=32, numports=2):
     rst = m.Input('RST')
 
     x = dataflow.Variable('xdata', 'xvalid')
-    y = x + 1
+    y = x + 100
     y.output('ydata', 'yvalid')
 
     df = dataflow.Dataflow(y)
@@ -42,7 +42,7 @@ def mkMain(n=128, datawidth=32, numports=2):
 
     # write data to BRAM
     step = 16
-    mybram.write(xfsm, 0, xaddr, xcount)
+    mybram.write(0, xaddr, xcount, cond=xfsm)
     xfsm(
         xaddr.inc(),
         xcount.inc()
@@ -54,16 +54,20 @@ def mkMain(n=128, datawidth=32, numports=2):
     xfsm.Then().goto_next()
 
     # read data from BRAM
-    read_data, read_valid = mybram.read(xfsm, 0, xaddr, cond=xaddr<step)
+    read_data, read_valid = mybram.read(0, xaddr, cond=(xfsm,xaddr<step))
     # BRAM -> dataflow
-    xack = x.write(xfsm, read_data, cond=read_valid)
+    xack = x.write(read_data, cond=read_valid)
     xfsm(
         xaddr.inc()
     )
-    xfsm.If(xfsm.prev(xaddr, 1)==step).goto_next()
+    xfsm.If(read_valid)(
+        Systask('display', 'BRAM0[%d] = %d', xfsm.Prev(xaddr, 2), read_data)
+    )
+    xfsm.If(xfsm.Prev(xaddr, 1)==step).goto_next()
 
     # create always statement
     xfsm.make_always()
+    
 
     # write result to BRAM
     yfsm = FSM(m, 'yfsm', clk, rst)
@@ -76,11 +80,23 @@ def mkMain(n=128, datawidth=32, numports=2):
     # read from dataflow
     rdata, rvalid = y.read(yfsm)
     # dataflow -> BRAM
-    mybram.write(yfsm, 1, yaddr, rdata, cond=rvalid)
+    mybram.write(1, yaddr, rdata, cond=(yfsm, rvalid))
     yfsm.If(rvalid)(
         yaddr.inc()
     )
-    yfsm.If(yaddr==step-1).goto_next()
+    yfsm.If(yaddr == step - 1)(
+        yaddr(0)
+    )
+    yfsm.Then().goto_next()
+
+    # read data from BRAM
+    read_data, read_valid = mybram.read(1, yaddr, cond=(yfsm,yaddr<step))
+    yfsm(
+        yaddr.inc()
+    )
+    yfsm.If(read_valid)(
+        Systask('display', 'BRAM1[%d] = %d', yfsm.Prev(yaddr, 2), read_data)
+    )
 
     # create always statement
     yfsm.make_always()

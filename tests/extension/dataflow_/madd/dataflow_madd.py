@@ -118,7 +118,7 @@ def mkTest(numports=8):
         fsm.goto_next(cond=reset_done)
         fsm.goto_next()
         
-        yinit= fsm.current()
+        yinit= fsm.current
         fsm.add(ready(1), cond=valid)
         fsm.goto_next(cond=valid)
         for i in range(waitnum):
@@ -140,7 +140,7 @@ def mkTest(numports=8):
 
     reset_fsm.goto_next(cond=reset_done)
     
-    reset_fsm_init = reset_fsm.current()
+    reset_fsm_init = reset_fsm.current
 
     reset_fsm.add( resetvalid(1) ) # always High
     

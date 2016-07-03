@@ -123,6 +123,39 @@ module main #
   assign cdata = _tmp_data_12;
   assign cvalid = _tmp_valid_12;
   assign _tmp_ready_12 = 1;
+  reg [32-1:0] fsm;
+  localparam fsm_init = 0;
+  reg [32-1:0] _tmp_13;
+  assign bparam = 20;
+  assign vdata = 1000;
+  assign wdata = 2000;
+  localparam fsm_1 = 1;
+  localparam fsm_2 = 2;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      fsm <= fsm_init;
+      yparam <= 0;
+      _tmp_13 <= 0;
+    end else begin
+      case(fsm)
+        fsm_init: begin
+          yparam <= 200;
+          fsm <= fsm_1;
+        end
+        fsm_1: begin
+          if(cvalid) begin
+            _tmp_13 <= _tmp_13 + 1;
+            $display("c=%d", cdata);
+          end 
+          if(_tmp_13 == 4) begin
+            fsm <= fsm_2;
+          end 
+        end
+      endcase
+    end
+  end
+
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -270,39 +303,6 @@ module main #
       if((_tmp_ready_12 || !_tmp_valid_12) && (_tmp_ready_10 && _tmp_ready_11)) begin
         _tmp_valid_12 <= _tmp_valid_10 && _tmp_valid_11;
       end 
-    end
-  end
-
-  reg [32-1:0] fsm;
-  localparam fsm_init = 0;
-  reg [32-1:0] _tmp_13;
-  assign bparam = 20;
-  assign vdata = 1000;
-  assign wdata = 2000;
-  localparam fsm_1 = 1;
-  localparam fsm_2 = 2;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      fsm <= fsm_init;
-      yparam <= 0;
-      _tmp_13 <= 0;
-    end else begin
-      case(fsm)
-        fsm_init: begin
-          yparam <= 200;
-          fsm <= fsm_1;
-        end
-        fsm_1: begin
-          if(cvalid) begin
-            _tmp_13 <= _tmp_13 + 1;
-            $display("c=%d", cdata);
-          end 
-          if(_tmp_13 == 4) begin
-            fsm <= fsm_2;
-          end 
-        end
-      endcase
     end
   end
 

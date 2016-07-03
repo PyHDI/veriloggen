@@ -68,60 +68,19 @@ module main
   assign zdata = _tmp_data_0;
   assign zvalid = _tmp_valid_0;
   assign _tmp_ready_0 = zready;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      _tmp_data_0 <= 0;
-      _tmp_valid_0 <= 0;
-    end else begin
-      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
-        _tmp_data_0 <= xdata + ydata;
-      end 
-      if(_tmp_valid_0 && _tmp_ready_0) begin
-        _tmp_valid_0 <= 0;
-      end 
-      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready)) begin
-        _tmp_valid_0 <= xvalid && yvalid;
-      end 
-    end
-  end
-
   reg [32-1:0] xfsm;
   localparam xfsm_init = 0;
   reg [32-1:0] _tmp_1;
-  reg [32-1:0] _d1_xfsm;
-  reg _xfsm_cond_0_0_1;
+  reg _seq_cond_0_1;
   localparam xfsm_1 = 1;
 
   always @(posedge CLK) begin
     if(RST) begin
       xfsm <= xfsm_init;
-      _d1_xfsm <= xfsm_init;
-      xdata <= 0;
-      xvalid <= 0;
-      _xfsm_cond_0_0_1 <= 0;
       _tmp_1 <= 0;
     end else begin
-      _d1_xfsm <= xfsm;
-      case(_d1_xfsm)
-        xfsm_init: begin
-          if(_xfsm_cond_0_0_1) begin
-            xvalid <= 0;
-          end 
-        end
-      endcase
       case(xfsm)
         xfsm_init: begin
-          if(xready || !xvalid) begin
-            xdata <= _tmp_1;
-          end 
-          if(xready || !xvalid) begin
-            xvalid <= 1;
-          end 
-          _xfsm_cond_0_0_1 <= xready || !xvalid;
-          if(xvalid && !xready) begin
-            xvalid <= xvalid;
-          end 
           if(xready || !xvalid) begin
             _tmp_1 <= _tmp_1 + 1;
           end 
@@ -140,39 +99,16 @@ module main
   assign ydata = _tmp_3;
   reg _tmp_4;
   assign yvalid = _tmp_4;
-  reg [32-1:0] _d1_yfsm;
-  reg _yfsm_cond_0_0_1;
+  reg _seq_cond_1_1;
   localparam yfsm_1 = 1;
 
   always @(posedge CLK) begin
     if(RST) begin
       yfsm <= yfsm_init;
-      _d1_yfsm <= yfsm_init;
-      _tmp_3 <= 0;
-      _tmp_4 <= 0;
-      _yfsm_cond_0_0_1 <= 0;
       _tmp_2 <= 0;
     end else begin
-      _d1_yfsm <= yfsm;
-      case(_d1_yfsm)
-        yfsm_init: begin
-          if(_yfsm_cond_0_0_1) begin
-            _tmp_4 <= 0;
-          end 
-        end
-      endcase
       case(yfsm)
         yfsm_init: begin
-          if(yready || !_tmp_4) begin
-            _tmp_3 <= _tmp_2;
-          end 
-          if(yready || !_tmp_4) begin
-            _tmp_4 <= 1;
-          end 
-          _yfsm_cond_0_0_1 <= yready || !_tmp_4;
-          if(_tmp_4 && !yready) begin
-            _tmp_4 <= _tmp_4;
-          end 
           if(yready || !_tmp_4) begin
             _tmp_2 <= _tmp_2 + 1;
           end 
@@ -190,6 +126,56 @@ module main
     if(zvalid) begin
       $display("zdata=%d", zdata);
     end 
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _tmp_data_0 <= 0;
+      _tmp_valid_0 <= 0;
+      xdata <= 0;
+      xvalid <= 0;
+      _seq_cond_0_1 <= 0;
+      _tmp_3 <= 0;
+      _tmp_4 <= 0;
+      _seq_cond_1_1 <= 0;
+    end else begin
+      if(_seq_cond_0_1) begin
+        xvalid <= 0;
+      end 
+      if(_seq_cond_1_1) begin
+        _tmp_4 <= 0;
+      end 
+      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
+        _tmp_data_0 <= xdata + ydata;
+      end 
+      if(_tmp_valid_0 && _tmp_ready_0) begin
+        _tmp_valid_0 <= 0;
+      end 
+      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready)) begin
+        _tmp_valid_0 <= xvalid && yvalid;
+      end 
+      if((xfsm == 0) && (xready || !xvalid)) begin
+        xdata <= _tmp_1;
+      end 
+      if((xfsm == 0) && (xready || !xvalid)) begin
+        xvalid <= 1;
+      end 
+      _seq_cond_0_1 <= (xfsm == 0) && (xready || !xvalid);
+      if(xvalid && !xready) begin
+        xvalid <= xvalid;
+      end 
+      if((yfsm == 0) && (yready || !_tmp_4)) begin
+        _tmp_3 <= _tmp_2;
+      end 
+      if((yfsm == 0) && (yready || !_tmp_4)) begin
+        _tmp_4 <= 1;
+      end 
+      _seq_cond_1_1 <= (yfsm == 0) && (yready || !_tmp_4);
+      if(_tmp_4 && !yready) begin
+        _tmp_4 <= _tmp_4;
+      end 
+    end
   end
 
 

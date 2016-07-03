@@ -74,116 +74,116 @@ module main
     .mybram_1_wenable(mybram_1_wenable)
   );
 
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      mybram_1_wdata <= 0;
-      mybram_1_wenable <= 0;
-    end else begin
-      mybram_1_wdata <= 0;
-      mybram_1_wenable <= 0;
-    end
-  end
-
   reg [32-1:0] waddr;
   reg [32-1:0] count;
-  reg _seq_cond_0_1;
+  reg _mybram_cond_0_1;
   reg [32-1:0] raddr;
   reg [32-1:0] sum;
   reg [14-1:0] _mybram_1_addr_1_1;
   reg [14-1:0] _mybram_1_addr_1_2;
   reg [14-1:0] _mybram_1_addr_1_3;
-  reg _seq_cond_2_1;
-  reg _seq_cond_2_2;
-  reg _seq_cond_2_3;
+  reg _mybram_cond_2_1;
+  reg _mybram_cond_2_2;
+  reg _mybram_cond_2_3;
   reg _tmp_0;
-  reg _seq_cond_3_1;
-  reg _seq_cond_3_2;
-  reg _seq_cond_3_3;
-  reg _seq_cond_3_4;
-  reg _seq_cond_4_1;
-  reg _seq_cond_4_2;
-  reg _seq_cond_4_3;
-  reg _seq_cond_4_4;
-  reg _seq_cond_4_5;
-  reg _seq_cond_5_1;
+  reg _mybram_cond_3_1;
+  reg _mybram_cond_3_2;
+  reg _mybram_cond_3_3;
+  reg _mybram_cond_3_4;
+  reg _mybram_cond_4_1;
+  reg _mybram_cond_4_2;
+  reg _mybram_cond_4_3;
+  reg _mybram_cond_4_4;
+  reg _mybram_cond_4_5;
+  reg _seq_cond_0_1;
 
   always @(posedge CLK) begin
     if(RST) begin
       waddr <= 0;
       count <= 0;
-      mybram_0_addr <= 0;
-      mybram_0_wdata <= 0;
-      mybram_0_wenable <= 0;
-      _seq_cond_0_1 <= 0;
       raddr <= 0;
-      _mybram_1_addr_1_1 <= 0;
-      _mybram_1_addr_1_2 <= 0;
-      _mybram_1_addr_1_3 <= 0;
-      _seq_cond_2_1 <= 0;
-      _seq_cond_2_2 <= 0;
-      _seq_cond_2_3 <= 0;
-      mybram_1_addr <= 0;
-      _seq_cond_3_1 <= 0;
-      _seq_cond_3_2 <= 0;
-      _seq_cond_3_3 <= 0;
-      _seq_cond_3_4 <= 0;
-      _tmp_0 <= 0;
-      _seq_cond_4_1 <= 0;
-      _seq_cond_4_2 <= 0;
-      _seq_cond_4_3 <= 0;
-      _seq_cond_4_4 <= 0;
-      _seq_cond_4_5 <= 0;
       sum <= 0;
-      _seq_cond_5_1 <= 0;
+      _seq_cond_0_1 <= 0;
     end else begin
-      if(_seq_cond_4_5) begin
-        _tmp_0 <= 0;
-      end 
-      if(_seq_cond_3_4) begin
-        _tmp_0 <= 1;
-      end 
-      _seq_cond_4_5 <= _seq_cond_4_4;
-      if(_seq_cond_2_3) begin
-        mybram_1_addr <= _mybram_1_addr_1_3;
-      end 
-      _seq_cond_3_4 <= _seq_cond_3_3;
-      _seq_cond_4_4 <= _seq_cond_4_3;
-      _mybram_1_addr_1_3 <= _mybram_1_addr_1_2;
-      _seq_cond_2_3 <= _seq_cond_2_2;
-      _seq_cond_3_3 <= _seq_cond_3_2;
-      _seq_cond_4_3 <= _seq_cond_4_2;
       if(_seq_cond_0_1) begin
-        mybram_0_wenable <= 0;
-      end 
-      _mybram_1_addr_1_2 <= _mybram_1_addr_1_1;
-      _seq_cond_2_2 <= _seq_cond_2_1;
-      _seq_cond_3_2 <= _seq_cond_3_1;
-      _seq_cond_4_2 <= _seq_cond_4_1;
-      if(_seq_cond_5_1) begin
         $display("sum=%d", sum);
       end 
       if(waddr < 16) begin
         waddr <= waddr + 1;
         count <= count + 1;
       end 
+      if(raddr < 16) begin
+        raddr <= raddr + 1;
+      end 
+      if(_tmp_0) begin
+        sum <= sum + mybram_1_rdata;
+      end 
+      _seq_cond_0_1 <= _tmp_0;
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      mybram_1_wdata <= 0;
+      mybram_1_wenable <= 0;
+      mybram_0_addr <= 0;
+      mybram_0_wdata <= 0;
+      mybram_0_wenable <= 0;
+      _mybram_cond_0_1 <= 0;
+      _mybram_1_addr_1_1 <= 0;
+      _mybram_1_addr_1_2 <= 0;
+      _mybram_1_addr_1_3 <= 0;
+      _mybram_cond_2_1 <= 0;
+      _mybram_cond_2_2 <= 0;
+      _mybram_cond_2_3 <= 0;
+      mybram_1_addr <= 0;
+      _mybram_cond_3_1 <= 0;
+      _mybram_cond_3_2 <= 0;
+      _mybram_cond_3_3 <= 0;
+      _mybram_cond_3_4 <= 0;
+      _tmp_0 <= 0;
+      _mybram_cond_4_1 <= 0;
+      _mybram_cond_4_2 <= 0;
+      _mybram_cond_4_3 <= 0;
+      _mybram_cond_4_4 <= 0;
+      _mybram_cond_4_5 <= 0;
+    end else begin
+      if(_mybram_cond_4_5) begin
+        _tmp_0 <= 0;
+      end 
+      if(_mybram_cond_3_4) begin
+        _tmp_0 <= 1;
+      end 
+      _mybram_cond_4_5 <= _mybram_cond_4_4;
+      if(_mybram_cond_2_3) begin
+        mybram_1_addr <= _mybram_1_addr_1_3;
+      end 
+      _mybram_cond_3_4 <= _mybram_cond_3_3;
+      _mybram_cond_4_4 <= _mybram_cond_4_3;
+      _mybram_1_addr_1_3 <= _mybram_1_addr_1_2;
+      _mybram_cond_2_3 <= _mybram_cond_2_2;
+      _mybram_cond_3_3 <= _mybram_cond_3_2;
+      _mybram_cond_4_3 <= _mybram_cond_4_2;
+      if(_mybram_cond_0_1) begin
+        mybram_0_wenable <= 0;
+      end 
+      _mybram_1_addr_1_2 <= _mybram_1_addr_1_1;
+      _mybram_cond_2_2 <= _mybram_cond_2_1;
+      _mybram_cond_3_2 <= _mybram_cond_3_1;
+      _mybram_cond_4_2 <= _mybram_cond_4_1;
+      mybram_1_wdata <= 0;
+      mybram_1_wenable <= 0;
       if(waddr < 16) begin
         mybram_0_addr <= waddr;
         mybram_0_wdata <= count;
         mybram_0_wenable <= 1;
       end 
-      _seq_cond_0_1 <= waddr < 16;
-      if(raddr < 16) begin
-        raddr <= raddr + 1;
-      end 
+      _mybram_cond_0_1 <= waddr < 16;
       _mybram_1_addr_1_1 <= raddr;
-      _seq_cond_2_1 <= raddr < 16;
-      _seq_cond_3_1 <= raddr < 16;
-      _seq_cond_4_1 <= raddr < 16;
-      if(_tmp_0) begin
-        sum <= sum + mybram_1_rdata;
-      end 
-      _seq_cond_5_1 <= _tmp_0;
+      _mybram_cond_2_1 <= raddr < 16;
+      _mybram_cond_3_1 <= raddr < 16;
+      _mybram_cond_4_1 <= raddr < 16;
     end
   end
 

@@ -5,10 +5,12 @@ import os
 import math
 
 # the next line can be removed after installation
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))))
 
 from veriloggen import *
 import veriloggen.types.bram as bram
+
 
 def mkMain(n=128, datawidth=32, numports=2):
     m = Module('main')
@@ -24,7 +26,7 @@ def mkMain(n=128, datawidth=32, numports=2):
     count = m.Reg('count', 32, initval=0)
     sum = m.Reg('sum', 32, initval=0)
     addr = m.Reg('addr', 32, initval=0)
-    
+
     fsm = FSM(m, 'fsm', clk, rst)
 
     fsm(
@@ -32,18 +34,18 @@ def mkMain(n=128, datawidth=32, numports=2):
         count(0),
         sum(0)
     )
-    
+
     fsm.goto_next()
 
     step = 16
 
-    mybram.write(fsm, 0, addr, count)
-    
+    mybram.write(0, addr, count, cond=fsm)
+
     fsm(
         addr.inc(),
         count.inc()
     )
-    
+
     fsm.If(count == step - 1)(
         addr(0),
         count(0)
@@ -51,69 +53,69 @@ def mkMain(n=128, datawidth=32, numports=2):
 
     fsm.Then().goto_next()
 
-    read_data, read_valid = mybram.read(fsm, 0, addr)
-    
+    read_data, read_valid = mybram.read(0, addr, cond=fsm)
+
     fsm(
         addr.inc(),
         count.inc()
     )
-    
+
     fsm.If(read_valid)(
         sum(sum + read_data)
     )
-    
+
     fsm.Then().Delay(1)(
         Systask('display', "sum=%d", sum)
     )
-    
+
     fsm.If(count == step - 1)(
         addr(0),
         count(0)
     )
 
     fsm.Then().goto_next()
-    
 
     fsm.If(read_valid)(
         sum(sum + read_data)
     )
-    
+
     fsm.Then().Delay(1)(
         Systask('display', "sum=%d", sum)
     )
 
     fsm.make_always()
-    
+
     return m
-    
+
+
 def mkTest():
     m = Module('test')
-    
+
     # target instance
     main = mkMain()
-    
+
     # copy paras and ports
     params = m.copy_params(main)
     ports = m.copy_sim_ports(main)
-    
+
     clk = ports['CLK']
     rst = ports['RST']
-    
+
     uut = m.Instance(main, 'uut',
                      params=m.connect_params(main),
                      ports=m.connect_ports(main))
-    
+
     simulation.setup_waveform(m, uut, m.get_vars())
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
-    
+
     init.add(
         Delay(1000 * 100),
         Systask('finish'),
     )
 
     return m
-    
+
 if __name__ == '__main__':
     test = mkTest()
     verilog = test.to_verilog('tmp.v')
@@ -123,4 +125,4 @@ if __name__ == '__main__':
     rslt = sim.run()
     print(rslt)
 
-    #sim.view_waveform()
+    # sim.view_waveform()

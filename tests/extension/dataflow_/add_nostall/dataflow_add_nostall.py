@@ -112,7 +112,7 @@ def mkTest(numports=8):
         fsm.goto_next(cond=reset_done)
         fsm.goto_next()
         
-        yinit= fsm.current()
+        yinit= fsm.current
         fsm.add(ready(1), cond=valid)
         fsm.goto(yinit)
         

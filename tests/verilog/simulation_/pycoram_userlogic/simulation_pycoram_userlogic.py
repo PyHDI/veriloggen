@@ -38,7 +38,7 @@ def mkUserlogic():
     # building FSM
     fsm.goto_next()
     fsm.goto_next()
-    start = fsm.current()
+    start = fsm.current
 
     fsm.add( ch_deq(1), cond=Not(ch_empty) )
     fsm.add( ch_deq(0), delay=1 )

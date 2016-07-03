@@ -61,24 +61,6 @@ module main
   assign ydata = _tmp_data_0;
   assign yvalid = _tmp_valid_0;
   assign _tmp_ready_0 = 1;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      _tmp_data_0 <= 0;
-      _tmp_valid_0 <= 0;
-    end else begin
-      if((_tmp_ready_0 || !_tmp_valid_0) && 1 && xvalid) begin
-        _tmp_data_0 <= xdata + 2'd1;
-      end 
-      if(_tmp_valid_0 && _tmp_ready_0) begin
-        _tmp_valid_0 <= 0;
-      end 
-      if((_tmp_ready_0 || !_tmp_valid_0) && 1) begin
-        _tmp_valid_0 <= xvalid;
-      end 
-    end
-  end
-
   reg [14-1:0] mybram_0_addr;
   wire [32-1:0] mybram_0_rdata;
   reg [32-1:0] mybram_0_wdata;
@@ -106,19 +88,18 @@ module main
   localparam xfsm_init = 0;
   reg [32-1:0] xaddr;
   reg [32-1:0] xcount;
-  reg [32-1:0] _d1_xfsm;
-  reg _xfsm_cond_1_0_1;
+  reg _mybram_cond_0_1;
   reg _tmp_1;
-  reg _xfsm_cond_2_1_1;
-  reg [32-1:0] _d2_xfsm;
-  reg _xfsm_cond_2_2_1;
-  reg _xfsm_cond_2_2_2;
+  reg _mybram_cond_1_1;
+  reg _mybram_cond_2_1;
+  reg _mybram_cond_2_2;
   reg [32-1:0] _tmp_2;
   assign xdata = _tmp_2;
   reg _tmp_3;
   assign xvalid = _tmp_3;
-  reg _xfsm_cond_2_3_1;
+  reg _seq_cond_0_1;
   reg [32-1:0] _xaddr_1;
+  reg [32-1:0] _xaddr_2;
   localparam xfsm_1 = 1;
   localparam xfsm_2 = 2;
   localparam xfsm_3 = 3;
@@ -126,49 +107,13 @@ module main
   always @(posedge CLK) begin
     if(RST) begin
       xfsm <= xfsm_init;
-      _d1_xfsm <= xfsm_init;
-      _d2_xfsm <= xfsm_init;
       xaddr <= 0;
       xcount <= 0;
-      mybram_0_addr <= 0;
-      mybram_0_wdata <= 0;
-      mybram_0_wenable <= 0;
-      _xfsm_cond_1_0_1 <= 0;
-      _xfsm_cond_2_1_1 <= 0;
-      _tmp_1 <= 0;
-      _xfsm_cond_2_2_1 <= 0;
-      _xfsm_cond_2_2_2 <= 0;
-      _tmp_2 <= 0;
-      _tmp_3 <= 0;
-      _xfsm_cond_2_3_1 <= 0;
       _xaddr_1 <= 0;
+      _xaddr_2 <= 0;
     end else begin
       _xaddr_1 <= xaddr;
-      _d1_xfsm <= xfsm;
-      _d2_xfsm <= _d1_xfsm;
-      case(_d2_xfsm)
-        xfsm_2: begin
-          if(_xfsm_cond_2_2_2) begin
-            _tmp_1 <= 0;
-          end 
-        end
-      endcase
-      case(_d1_xfsm)
-        xfsm_1: begin
-          if(_xfsm_cond_1_0_1) begin
-            mybram_0_wenable <= 0;
-          end 
-        end
-        xfsm_2: begin
-          if(_xfsm_cond_2_1_1) begin
-            _tmp_1 <= 1;
-          end 
-          _xfsm_cond_2_2_2 <= _xfsm_cond_2_2_1;
-          if(_xfsm_cond_2_3_1) begin
-            _tmp_3 <= 0;
-          end 
-        end
-      endcase
+      _xaddr_2 <= _xaddr_1;
       case(xfsm)
         xfsm_init: begin
           xaddr <= 0;
@@ -176,10 +121,6 @@ module main
           xfsm <= xfsm_1;
         end
         xfsm_1: begin
-          mybram_0_addr <= xaddr;
-          mybram_0_wdata <= xcount;
-          mybram_0_wenable <= 1;
-          _xfsm_cond_1_0_1 <= 1;
           xaddr <= xaddr + 1;
           xcount <= xcount + 1;
           if(xcount == 15) begin
@@ -191,19 +132,10 @@ module main
           end 
         end
         xfsm_2: begin
-          if(xaddr < 16) begin
-            mybram_0_addr <= xaddr;
-          end 
-          _xfsm_cond_2_1_1 <= xaddr < 16;
-          _xfsm_cond_2_2_1 <= xaddr < 16;
-          if(_tmp_1) begin
-            _tmp_2 <= mybram_0_rdata;
-          end 
-          if(_tmp_1) begin
-            _tmp_3 <= 1;
-          end 
-          _xfsm_cond_2_3_1 <= _tmp_1;
           xaddr <= xaddr + 1;
+          if(_tmp_1) begin
+            $display("BRAM0[%d] = %d", _xaddr_2, mybram_0_rdata);
+          end 
           if(_xaddr_1 == 16) begin
             xfsm <= xfsm_3;
           end 
@@ -215,29 +147,25 @@ module main
   reg [32-1:0] yfsm;
   localparam yfsm_init = 0;
   reg [32-1:0] yaddr;
-  reg [32-1:0] _d1_yfsm;
-  reg _yfsm_cond_1_0_1;
+  reg _mybram_cond_3_1;
+  reg _tmp_4;
+  reg _mybram_cond_4_1;
+  reg _mybram_cond_5_1;
+  reg _mybram_cond_5_2;
+  reg [32-1:0] _yaddr_1;
+  reg [32-1:0] _yaddr_2;
   localparam yfsm_1 = 1;
   localparam yfsm_2 = 2;
 
   always @(posedge CLK) begin
     if(RST) begin
       yfsm <= yfsm_init;
-      _d1_yfsm <= yfsm_init;
       yaddr <= 0;
-      mybram_1_addr <= 0;
-      mybram_1_wdata <= 0;
-      mybram_1_wenable <= 0;
-      _yfsm_cond_1_0_1 <= 0;
+      _yaddr_1 <= 0;
+      _yaddr_2 <= 0;
     end else begin
-      _d1_yfsm <= yfsm;
-      case(_d1_yfsm)
-        yfsm_1: begin
-          if(_yfsm_cond_1_0_1) begin
-            mybram_1_wenable <= 0;
-          end 
-        end
-      endcase
+      _yaddr_1 <= yaddr;
+      _yaddr_2 <= _yaddr_1;
       case(yfsm)
         yfsm_init: begin
           yaddr <= 0;
@@ -245,19 +173,118 @@ module main
         end
         yfsm_1: begin
           if(yvalid && (yfsm == 1)) begin
-            mybram_1_addr <= yaddr;
-            mybram_1_wdata <= ydata;
-            mybram_1_wenable <= 1;
-          end 
-          _yfsm_cond_1_0_1 <= yvalid && (yfsm == 1);
-          if(yvalid && (yfsm == 1)) begin
             yaddr <= yaddr + 1;
+          end 
+          if(yaddr == 15) begin
+            yaddr <= 0;
           end 
           if(yaddr == 15) begin
             yfsm <= yfsm_2;
           end 
         end
+        yfsm_2: begin
+          yaddr <= yaddr + 1;
+          if(_tmp_4) begin
+            $display("BRAM1[%d] = %d", _yaddr_2, mybram_1_rdata);
+          end 
+        end
       endcase
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _tmp_data_0 <= 0;
+      _tmp_valid_0 <= 0;
+      _tmp_2 <= 0;
+      _tmp_3 <= 0;
+      _seq_cond_0_1 <= 0;
+    end else begin
+      if(_seq_cond_0_1) begin
+        _tmp_3 <= 0;
+      end 
+      if((_tmp_ready_0 || !_tmp_valid_0) && 1 && xvalid) begin
+        _tmp_data_0 <= xdata + 8'd100;
+      end 
+      if(_tmp_valid_0 && _tmp_ready_0) begin
+        _tmp_valid_0 <= 0;
+      end 
+      if((_tmp_ready_0 || !_tmp_valid_0) && 1) begin
+        _tmp_valid_0 <= xvalid;
+      end 
+      if(_tmp_1) begin
+        _tmp_2 <= mybram_0_rdata;
+      end 
+      if(_tmp_1) begin
+        _tmp_3 <= 1;
+      end 
+      _seq_cond_0_1 <= _tmp_1;
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      mybram_0_addr <= 0;
+      mybram_0_wdata <= 0;
+      mybram_0_wenable <= 0;
+      _mybram_cond_0_1 <= 0;
+      _mybram_cond_1_1 <= 0;
+      _tmp_1 <= 0;
+      _mybram_cond_2_1 <= 0;
+      _mybram_cond_2_2 <= 0;
+      mybram_1_addr <= 0;
+      mybram_1_wdata <= 0;
+      mybram_1_wenable <= 0;
+      _mybram_cond_3_1 <= 0;
+      _mybram_cond_4_1 <= 0;
+      _tmp_4 <= 0;
+      _mybram_cond_5_1 <= 0;
+      _mybram_cond_5_2 <= 0;
+    end else begin
+      if(_mybram_cond_2_2) begin
+        _tmp_1 <= 0;
+      end 
+      if(_mybram_cond_5_2) begin
+        _tmp_4 <= 0;
+      end 
+      if(_mybram_cond_0_1) begin
+        mybram_0_wenable <= 0;
+      end 
+      if(_mybram_cond_1_1) begin
+        _tmp_1 <= 1;
+      end 
+      _mybram_cond_2_2 <= _mybram_cond_2_1;
+      if(_mybram_cond_3_1) begin
+        mybram_1_wenable <= 0;
+      end 
+      if(_mybram_cond_4_1) begin
+        _tmp_4 <= 1;
+      end 
+      _mybram_cond_5_2 <= _mybram_cond_5_1;
+      if(xfsm == 1) begin
+        mybram_0_addr <= xaddr;
+        mybram_0_wdata <= xcount;
+        mybram_0_wenable <= 1;
+      end 
+      _mybram_cond_0_1 <= xfsm == 1;
+      if((xfsm == 2) && (xaddr < 16)) begin
+        mybram_0_addr <= xaddr;
+      end 
+      _mybram_cond_1_1 <= (xfsm == 2) && (xaddr < 16);
+      _mybram_cond_2_1 <= (xfsm == 2) && (xaddr < 16);
+      if((yfsm == 1) && (yvalid && (yfsm == 1))) begin
+        mybram_1_addr <= yaddr;
+        mybram_1_wdata <= ydata;
+        mybram_1_wenable <= 1;
+      end 
+      _mybram_cond_3_1 <= (yfsm == 1) && (yvalid && (yfsm == 1));
+      if((yfsm == 2) && (yaddr < 16)) begin
+        mybram_1_addr <= yaddr;
+      end 
+      _mybram_cond_4_1 <= (yfsm == 2) && (yaddr < 16);
+      _mybram_cond_5_1 <= (yfsm == 2) && (yaddr < 16);
     end
   end
 

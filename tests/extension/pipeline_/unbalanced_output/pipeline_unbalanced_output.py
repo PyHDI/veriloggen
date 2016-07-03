@@ -126,7 +126,7 @@ def mkTest(numports=8):
     yfsm.add(ry(0))
     yfsm.goto_next(cond=reset_done)
     yfsm.goto_next()
-    yinit= yfsm.current()
+    yinit= yfsm.current
     yfsm.add(ry(1), cond=vy)
     yfsm.goto_next(cond=vy)
     for i in range(5):
@@ -140,7 +140,7 @@ def mkTest(numports=8):
     zfsm.add(rz(0))
     zfsm.goto_next(cond=reset_done)
     zfsm.goto_next()
-    zinit= zfsm.current()
+    zinit= zfsm.current
     zfsm.add(rz(1), cond=vz)
     zfsm.goto_next(cond=vz)
     for i in range(20):

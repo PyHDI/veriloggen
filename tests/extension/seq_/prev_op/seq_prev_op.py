@@ -26,7 +26,7 @@ def mkLed(window_size=8):
     x = x + 100
     v = x
     for w in range(window_size-1):
-        v = v + seq.prev(x, w + 1)
+        v = v + seq.Prev(x, w + 1)
         
     t = m.TmpReg(32)
     seq(

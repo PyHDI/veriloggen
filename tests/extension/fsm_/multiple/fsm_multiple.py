@@ -16,14 +16,14 @@ def mkLed():
     led = m.OutputReg('LED', width, initval=0)
 
     fsm = FSM(m, 'fsm', clk, rst)
-    init = fsm.current()
+    init = fsm.current
 
     tmp = []
     for i in range(4):
         tmp.append( m.Reg('tmp_' + str(i), width, initval=0) )
         
     for i in range(4):
-        fsm( tmp[i](fsm.current()) ) 
+        fsm( tmp[i](fsm.current) ) 
         fsm.goto_next(cond=None)
         
     fsm( led(led + 1) )

@@ -34,7 +34,7 @@ def mkMain(n=128, datawidth=32, numports=2):
 
     step = 16
 
-    ack, ready = myfifo.enq(fsm, count, delay=4)
+    ack, ready = myfifo.enq(count, delay=4, cond=fsm)
     
     fsm.If(ready)(
         count.inc()
@@ -53,7 +53,7 @@ def mkMain(n=128, datawidth=32, numports=2):
 
     fsm.goto_next()
     
-    data, valid = myfifo.deq(fsm)
+    data, valid = myfifo.deq(cond=fsm)
 
     fsm.If(valid)(
         sum(sum + data),

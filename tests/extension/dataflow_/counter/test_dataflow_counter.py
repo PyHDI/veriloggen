@@ -71,6 +71,30 @@ module main
   assign cdata = _tmp_data_2;
   assign cvalid = _tmp_valid_2;
   assign _tmp_ready_2 = 1;
+  reg [32-1:0] fsm;
+  localparam fsm_init = 0;
+  reg [32-1:0] _tmp_3;
+  localparam fsm_1 = 1;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      fsm <= fsm_init;
+      _tmp_3 <= 0;
+    end else begin
+      case(fsm)
+        fsm_init: begin
+          if(cvalid) begin
+            _tmp_3 <= _tmp_3 + 1;
+            $display("c=%d", cdata);
+          end 
+          if(_tmp_3 == 32) begin
+            fsm <= fsm_1;
+          end 
+        end
+      endcase
+    end
+  end
+
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -108,30 +132,6 @@ module main
       if((_tmp_ready_2 || !_tmp_valid_2) && (_tmp_ready_0 && _tmp_ready_1)) begin
         _tmp_valid_2 <= _tmp_valid_0 && _tmp_valid_1;
       end 
-    end
-  end
-
-  reg [32-1:0] fsm;
-  localparam fsm_init = 0;
-  reg [32-1:0] _tmp_3;
-  localparam fsm_1 = 1;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      fsm <= fsm_init;
-      _tmp_3 <= 0;
-    end else begin
-      case(fsm)
-        fsm_init: begin
-          if(cvalid) begin
-            _tmp_3 <= _tmp_3 + 1;
-            $display("c=%d", cdata);
-          end 
-          if(_tmp_3 == 32) begin
-            fsm <= fsm_1;
-          end 
-        end
-      endcase
     end
   end
 

@@ -19,9 +19,9 @@ class SeqIfElse(object):
         
 def add_if_else(fsm, ifelse):
     # future index
-    index_else = fsm.current() + len(ifelse.true_statements) + 1
-    index_merge = fsm.current() + len(ifelse.true_statements) + len(ifelse.false_statements) + 1
-    index_true = fsm.current() + 1 if ifelse.true_statements else index_merge
+    index_else = fsm.current + len(ifelse.true_statements) + 1
+    index_merge = fsm.current + len(ifelse.true_statements) + len(ifelse.false_statements) + 1
+    index_true = fsm.current + 1 if ifelse.true_statements else index_merge
     
     fsm.goto( dst=index_true, cond=ifelse.condition, else_dst=index_else ).inc()
 
@@ -53,7 +53,7 @@ def mkLed():
 
     fsm = FSM(m, 'fsm', clk, rst)
     # get the initial index (= 0)
-    init = fsm.current()
+    init = fsm.current
 
     fsm( count(count + 1) )
     fsm.goto_next()

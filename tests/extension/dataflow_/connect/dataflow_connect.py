@@ -38,7 +38,7 @@ def mkMain(n=128, datawidth=32, numports=2):
     xfsm = FSM(m, 'xfsm', clk, rst)
     xcount = m.TmpReg(32, initval=0)
     
-    xack = x.write(xfsm, xcount)
+    xack = x.write(xcount, cond=xfsm)
     xfsm.If(xack)(
         xcount.inc()
     )
@@ -50,7 +50,7 @@ def mkMain(n=128, datawidth=32, numports=2):
     # read
     yseq = Seq(m, 'yseq', clk, rst)
     
-    ydata, yvalid = y.read(yseq)
+    ydata, yvalid = y.read(cond=yseq)
     yseq.If(yvalid)(
         Systask('display', "ydata=%d", ydata)
     )
@@ -60,7 +60,7 @@ def mkMain(n=128, datawidth=32, numports=2):
 
     zseq = Seq(m, 'zseq', clk, rst)
     
-    zdata, zvalid = z.read(zseq)
+    zdata, zvalid = z.read(cond=zseq)
     zseq.If(zvalid)(
         Systask('display', "zdata=%d", zdata)
     )

@@ -32,7 +32,7 @@ def mkMain(n=128, datawidth=32, numports=2):
     xfsm = FSM(m, 'xfsm', clk, rst)
     xcount = m.TmpReg(32, initval=0)
     
-    xack = x.write(xfsm, xcount)
+    xack = x.write(xcount, cond=xfsm)
     xfsm.If(xack)(
         xcount.inc()
     )
@@ -43,7 +43,7 @@ def mkMain(n=128, datawidth=32, numports=2):
     xfsm.goto_next()
     xfsm.goto_next()
 
-    xack = x.write(xfsm, xcount)
+    xack = x.write(xcount, cond=xfsm)
     xfsm.If(xack)(
         xcount.inc()
     )
@@ -56,7 +56,7 @@ def mkMain(n=128, datawidth=32, numports=2):
     yfsm = FSM(m, 'yfsm', clk, rst)
     ycount = m.TmpReg(32, initval=0)
     
-    yack = y.write(yfsm, ycount)
+    yack = y.write(ycount, cond=yfsm)
     yfsm.If(yack)(
         ycount( ycount + 1 )
     )
@@ -69,7 +69,7 @@ def mkMain(n=128, datawidth=32, numports=2):
     yfsm.goto_next()
     yfsm.goto_next()
 
-    yack = y.write(yfsm, ycount)
+    yack = y.write(ycount, cond=yfsm)
     yfsm.If(yack)(
         ycount( ycount + 1 )
     )
@@ -82,7 +82,7 @@ def mkMain(n=128, datawidth=32, numports=2):
     zfsm = FSM(m, 'zfsm', clk, rst)
     zcount = m.TmpReg(32, initval=0)
     
-    zdata, zvalid = z.read(zfsm)
+    zdata, zvalid = z.read(cond=zfsm)
     zfsm.If(zvalid)(
         Systask('display', "zfsm_%1d: zdata=%d", zfsm.state, zdata),
         zcount.inc()
@@ -99,7 +99,7 @@ def mkMain(n=128, datawidth=32, numports=2):
     zfsm.goto_next()
     zfsm.goto_next()
 
-    zdata, zvalid = z.read(zfsm, cond=zcount<32) # dummy condition
+    zdata, zvalid = z.read(cond=(zfsm,zcount<32)) # dummy condition
     zfsm.If(zvalid)(
         Systask('display', "zfsm_%1d: zdata=%d", zfsm.state, zdata),
         zcount.inc()

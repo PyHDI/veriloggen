@@ -20,13 +20,13 @@ def mkLed():
         fsm.goto_next()
 
     # assert valid, then de-assert at the next cycle
-    fsm.If(fsm.prev(valid, 1)==0)(
+    fsm.If(fsm.Prev(valid, 1)==0)(
         valid(1)
     )
     fsm.Delay(1)(
         valid(0)
     )
-    fsm.If(fsm.prev(valid, 1)==1).goto_next()
+    fsm.If(fsm.Prev(valid, 1)==1).goto_next()
     
     for i in range(4):
         fsm.goto_next()

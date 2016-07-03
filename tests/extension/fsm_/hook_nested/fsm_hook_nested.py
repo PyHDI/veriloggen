@@ -30,11 +30,11 @@ def mkLed():
     fsm( led(0) )
     fsm.goto_next()
     
-    init = fsm.current()
+    init = fsm.current
     fsm( count(0) )
     fsm.goto_next()
     
-    head = fsm.current()
+    head = fsm.current
     cond = count < 1024
     fsm.goto_next(cond=cond)
     
@@ -45,7 +45,7 @@ def mkLed():
     fsm.goto(head)
     fsm.inc()
     
-    tail = fsm.current()
+    tail = fsm.current
     fsm.goto_from(head, tail, cond=Not(cond))
     
     fsm( led.inc() )
