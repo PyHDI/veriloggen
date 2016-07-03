@@ -3,17 +3,18 @@ from __future__ import print_function
 
 import veriloggen.core.vtypes as vtypes
 import veriloggen.core.module as module
-from veriloggen.seq.seq import TmpSeq
+from veriloggen.seq.seq import Seq
 from . import util
+
 
 class BramInterface(object):
     _I = 'Reg'
     _O = 'Wire'
-    
+
     def __init__(self, m, name=None, datawidth=32, addrwidth=10, itype=None, otype=None,
                  p_addr='addr', p_rdata='rdata', p_wdata='wdata', p_wenable='wenable',
                  index=None):
-    
+
         if itype is None:
             itype = self._I
         if otype is None:
@@ -24,7 +25,8 @@ class BramInterface(object):
         name_addr = p_addr if name is None else '_'.join([name, p_addr])
         name_rdata = p_rdata if name is None else '_'.join([name, p_rdata])
         name_wdata = p_wdata if name is None else '_'.join([name, p_wdata])
-        name_wenable = p_wenable if name is None else '_'.join([name, p_wenable])
+        name_wenable = p_wenable if name is None else '_'.join(
+            [name, p_wenable])
 
         if index is not None:
             name_addr = name_addr + str(index)
@@ -43,23 +45,27 @@ class BramInterface(object):
         util.connect_port(self.wdata, targ.wdata)
         util.connect_port(self.wenable, targ.wenable)
 
+
 class BramSlaveInterface(BramInterface):
     _I = 'Input'
     _O = 'Output'
+
 
 class BramMasterInterface(BramInterface):
     _I = 'Output'
     _O = 'Input'
 
-#-------------------------------------------------------------------------------    
+
+#-------------------------------------------------------------------------
 def mkBramDefinition(name, datawidth=32, addrwidth=10, numports=2):
     m = module.Module(name)
     clk = m.Input('CLK')
-    
+
     interfaces = []
-    
+
     for i in range(numports):
-        interface = BramSlaveInterface(m, name + '_%d'%i, datawidth, addrwidth)
+        interface = BramSlaveInterface(
+            m, name + '_%d' % i, datawidth, addrwidth)
         interface.delay_addr = m.Reg(name + '_%d_daddr' % i, addrwidth)
         interfaces.append(interface)
 
@@ -76,8 +82,10 @@ def mkBramDefinition(name, datawidth=32, addrwidth=10, numports=2):
 
     return m
 
-#-------------------------------------------------------------------------------    
+
+#-------------------------------------------------------------------------
 class Bram(object):
+
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=10, numports=2):
         self.m = m
         self.name = name
@@ -85,79 +93,67 @@ class Bram(object):
         self.rst = rst
         self.datawidth = datawidth
         self.addrwidth = addrwidth
-        self.interfaces = [ BramInterface(m, name + '_%d'%i, datawidth, addrwidth)
-                            for i in range(numports) ]
-        
-        self.definition = mkBramDefinition(name, datawidth, addrwidth, numports)
+        self.interfaces = [BramInterface(m, name + '_%d' % i, datawidth, addrwidth)
+                           for i in range(numports)]
+
+        self.definition = mkBramDefinition(
+            name, datawidth, addrwidth, numports)
         self.inst = self.m.Instance(self.definition, 'inst_' + name,
                                     ports=m.connect_ports(self.definition))
 
-        self._write_disabled = [ False for i in range(numports) ]
+        self.seq = Seq(m, name, clk, rst)
+        self.m.add_hook(self.seq.make_always)
+
+        self._write_disabled = [False for i in range(numports)]
 
     def __getitem__(self, index):
         return self.interfaces[index]
 
     def disable_write(self, port):
-        mng = TmpSeq(self.m, self.clk, self.rst)
-        mng(
+        self.seq(
             self.interfaces[port].wdata(0),
             self.interfaces[port].wenable(0)
         )
-        mng.make_always()
         self._write_disabled[port] = True
 
-    def write(self, mng, port, addr, wdata, cond=None, delay=0):
-        """ Write operation with Seq or FSM object as mng """
+    def write(self, port, addr, wdata, cond=None, delay=0):
+        """ Write operation """
         if self._write_disabled[port]:
             raise TypeError('Write disabled.')
-        
+
         if cond is not None:
-            mng.If(cond)
-            
-        current_delay = mng.current_delay
-        
-        mng.Delay(current_delay + delay).EagerVal()(
+            self.seq.If(cond)
+
+        current_delay = self.seq.current_delay
+
+        self.seq.Delay(current_delay + delay).EagerVal()(
             self.interfaces[port].addr(addr),
             self.interfaces[port].wdata(wdata),
             self.interfaces[port].wenable(1)
         )
 
-        mng.Then().Delay(current_delay + delay + 1)(
+        self.seq.Then().Delay(current_delay + delay + 1)(
             self.interfaces[port].wenable(0)
         )
 
-    def read(self, mng, port, addr, rdata=None, rvalid=None, cond=None, delay=0):
-        """ Read operation with Seq or FSM object as mng """
+    def read(self, port, addr, cond=None, delay=0):
+        """ Read operation """
         if cond is not None:
-            mng.If(cond)
-            
-        current_delay = mng.current_delay
-        
-        mng.Delay(current_delay + delay).EagerVal()(
+            self.seq.If(cond)
+
+        current_delay = self.seq.current_delay
+
+        self.seq.Delay(current_delay + delay).EagerVal()(
             self.interfaces[port].addr(addr)
         )
 
-        if rdata is not None:
-            mng.Then().Delay(current_delay + delay + 2)(
-                rdata(self.interfaces[port].rdata)
-            )
-        else:
-            rdata = self.interfaces[port].rdata
-            
-        if rvalid is not None:
-            mng.Then().Delay(current_delay + delay + 2)(
-                rvalid(1)
-            )
-            mng.Then().Delay(current_delay + delay + 3)(
-                rvalid(0)
-            )
-        else:
-            rvalid = self.m.TmpReg(initval=0)
-            mng.Then().Delay(current_delay + delay + 1)(
-                rvalid(1)
-            )
-            mng.Then().Delay(current_delay + delay + 2)(
-                rvalid(0)
-            )
+        rdata = self.interfaces[port].rdata
+        rvalid = self.m.TmpReg(initval=0)
+        self.seq.Then().Delay(current_delay + delay + 1)(
+            rvalid(1)
+        )
+        self.seq.Then().Delay(current_delay + delay + 2)(
+            rvalid(0)
+        )
 
         return rdata, rvalid

@@ -6,6 +6,7 @@ import veriloggen.core.module as module
 from veriloggen.seq.seq import Seq
 from . import util
 
+
 class FifoWriteInterface(object):
     _I = 'Reg'
     _O = 'Wire'
@@ -17,24 +18,27 @@ class FifoWriteInterface(object):
             itype = self._I
         if otype is None:
             otype = self._O
-            
+
         self.m = m
-        
+
         name_enq = p_enq if name is None else '_'.join([name, p_enq])
         name_wdata = p_wdata if name is None else '_'.join([name, p_wdata])
         name_full = p_full if name is None else '_'.join([name, p_full])
-        name_almost_full = p_almost_full if name is None else '_'.join([name, p_almost_full])
-    
+        name_almost_full = p_almost_full if name is None else '_'.join(
+            [name, p_almost_full])
+
         self.enq = util.make_port(m, itype, name_enq, initval=0)
         self.wdata = util.make_port(m, itype, name_wdata, datawidth, initval=0)
         self.full = util.make_port(m, otype, name_full, initval=0)
-        self.almost_full = util.make_port(m, otype, name_almost_full, initval=0)
+        self.almost_full = util.make_port(
+            m, otype, name_almost_full, initval=0)
 
     def connect(self, targ):
         util.connect_port(self.enq, targ.enq)
         util.connect_port(self.wdata, targ.wdata)
         util.connect_port(targ.full, self.full)
         util.connect_port(targ.almost_full, self.almost_full)
+
 
 class FifoReadInterface(object):
     _I = 'Reg'
@@ -47,18 +51,20 @@ class FifoReadInterface(object):
             itype = self._I
         if otype is None:
             otype = self._O
-            
+
         self.m = m
-        
+
         name_deq = p_deq if name is None else '_'.join([name, p_deq])
         name_rdata = p_rdata if name is None else '_'.join([name, p_rdata])
         name_empty = p_empty if name is None else '_'.join([name, p_empty])
-        name_almost_empty = p_almost_empty if name is None else '_'.join([name, p_almost_empty])
-    
+        name_almost_empty = p_almost_empty if name is None else '_'.join(
+            [name, p_almost_empty])
+
         self.deq = util.make_port(m, itype, name_deq, initval=0)
         self.rdata = util.make_port(m, otype, name_rdata, datawidth, initval=0)
         self.empty = util.make_port(m, otype, name_empty, initval=0)
-        self.almost_empty = util.make_port(m, otype, name_almost_empty, initval=0)
+        self.almost_empty = util.make_port(
+            m, otype, name_almost_empty, initval=0)
 
     def connect(self, targ):
         util.connect_port(self.deq, targ.deq)
@@ -66,23 +72,28 @@ class FifoReadInterface(object):
         util.connect_port(targ.empty, self.empty)
         util.connect_port(targ.almost_empty, self.almost_empty)
 
+
 class FifoWriteSlaveInterface(FifoWriteInterface):
     _I = 'Input'
     _O = 'Output'
-    
+
+
 class FifoWriteMasterInterface(FifoWriteInterface):
     _I = 'Output'
-    _O = 'Input' 
+    _O = 'Input'
+
 
 class FifoReadSlaveInterface(FifoReadInterface):
     _I = 'Input'
     _O = 'Output'
-    
+
+
 class FifoReadMasterInterface(FifoReadInterface):
     _I = 'Output'
     _O = 'Input'
 
-#-------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------
 def mkFifoDefinition(name, datawidth=32, addrwidth=4):
     m = module.Module(name)
     clk = m.Input('CLK')
@@ -115,7 +126,7 @@ def mkFifoDefinition(name, datawidth=32, addrwidth=4):
     rif.almost_empty.assign(vtypes.Ors(is_almost_empty, is_empty))
 
     seq = Seq(m, '', clk, rst)
-    
+
     seq.If(vtypes.Ands(wif.enq, vtypes.Not(is_full)))(
         mem[head](wif.wdata),
         head.inc()
@@ -132,8 +143,10 @@ def mkFifoDefinition(name, datawidth=32, addrwidth=4):
 
     return m
 
-#-------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------
 class Fifo(object):
+
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=4):
         self.m = m
         self.name = name
@@ -147,14 +160,17 @@ class Fifo(object):
         self.inst = self.m.Instance(self.definition, 'inst_' + name,
                                     ports=m.connect_ports(self.definition))
 
+        self.seq = Seq(m, name, clk, rst)
+        self.m.add_hook(self.seq.make_always)
+
         # entry counter
         self._max_size = (2 ** self.addrwidth - 1 if isinstance(self.addrwidth, int) else
                           vtypes.Int(2) ** self.addrwidth - 1)
-        
-        self._count = self.m.Reg('count_' + name, self.addrwidth + 1, initval=0)
-        self._count_seq = Seq(self.m, 'seq_count_' + name, self.clk, self.rst)
-        
-        self._count_seq.If(
+
+        self._count = self.m.Reg(
+            'count_' + name, self.addrwidth + 1, initval=0)
+
+        self.seq.If(
             vtypes.Ands(vtypes.Ands(self.wif.enq, vtypes.Not(self.wif.full)),
                         vtypes.Ands(self.rif.deq, vtypes.Not(self.rif.empty))))(
             self._count(self._count)
@@ -163,14 +179,31 @@ class Fifo(object):
         ).Elif(vtypes.Ands(self.rif.deq, vtypes.Not(self.rif.empty)))(
             self._count.dec()
         )
-        self._count_seq.make_always()
 
-    def enq(self, mng, wdata, cond=None, delay=0):
-        """ Enque operation with Seq or FSM object as mng """
+        self._enq_disabled = False
+        self._deq_disabled = False
+
+    def disable_enq(self):
+        self.seq(
+            self.wif.enq(0)
+        )
+        self._enq_disabled = True
+
+    def disable_deq(self):
+        self.seq(
+            self.rif.deq(0)
+        )
+        self._deq_disabled = True
+
+    def enq(self, wdata, cond=None, delay=0):
+        """ Enque operation """
+        if self._enq_disabled:
+            raise TypeError('Enq disabled.')
+        
         if cond is not None:
-            mng.If(cond)
+            self.seq.If(cond)
 
-        current_delay = mng.current_delay
+        current_delay = self.seq.current_delay
 
         not_full = vtypes.Not(self.wif.full)
         ack = vtypes.Ands(not_full, self.wif.enq)
@@ -178,65 +211,46 @@ class Fifo(object):
             ready = vtypes.Not(self.wif.almost_full)
         else:
             ready = self._count + (current_delay + delay + 1) < self._max_size
-        
-        mng.Delay(current_delay + delay).EagerVal().If(not_full)(
+
+        self.seq.Delay(current_delay + delay).EagerVal().If(not_full)(
             self.wif.wdata(wdata)
         )
-        mng.Then().Delay(current_delay + delay)(
+        self.seq.Then().Delay(current_delay + delay)(
             self.wif.enq(1)
         )
-        mng.Then().Delay(current_delay + delay + 1)(
+        self.seq.Then().Delay(current_delay + delay + 1)(
             self.wif.enq(0)
         )
 
         return ack, ready
 
-    def deq(self, mng, rdata=None, rvalid=None, cond=None, delay=0):
-        """ Deque operation with Seq or FSM object as mng """
-        if not ((rdata is None and rvalid is None) or
-                (rdata is not None and rvalid is not None)):
-            raise ValueError("Both rdata and rvalid must use same format.")
-
+    def deq(self, cond=None, delay=0):
+        """ Deque operation """
+        if self._deq_disabled:
+            raise TypeError('Deq disabled.')
+        
         if cond is not None:
-            mng.If(cond)
+            self.seq.If(cond)
 
         not_empty = vtypes.Not(self.rif.empty)
 
-        current_delay = mng.current_delay
-        
-        mng.Delay(current_delay + delay)(
+        current_delay = self.seq.current_delay
+
+        self.seq.Delay(current_delay + delay)(
             self.rif.deq(1)
         )
-        mng.Then().Delay(current_delay + delay + 1)(
+        self.seq.Then().Delay(current_delay + delay + 1)(
             self.rif.deq(0)
         )
 
-        if rdata is not None:
-            mng.Then().Delay(current_delay + delay + 2)(
-                rdata(self.rif.rdata)
-            )
-        else:
-            rdata = self.rif.rdata
-
-        if rvalid is not None:
-            deq_valid = self.m.TmpReg(initval=0)
-            mng.Then().Delay(current_delay + delay + 1)(
-                deq_valid(vtypes.Ands(not_empty, self.rif.deq))
-            )
-            mng.Then().Delay(current_delay + delay + 2)(
-                rvalid(deq_valid)
-            )
-            mng.Then().Delay(current_delay + delay + 3)(
-                rvalid(0)
-            )
-        else:
-            rvalid = self.m.TmpReg(initval=0)
-            mng.Then().Delay(current_delay + delay + 1)(
-                rvalid(vtypes.Ands(not_empty, self.rif.deq))
-            )
-            mng.Then().Delay(current_delay + delay + 2)(
-                rvalid(0)
-            )
+        rdata = self.rif.rdata
+        rvalid = self.m.TmpReg(initval=0)
+        self.seq.Then().Delay(current_delay + delay + 1)(
+            rvalid(vtypes.Ands(not_empty, self.rif.deq))
+        )
+        self.seq.Then().Delay(current_delay + delay + 2)(
+            rvalid(0)
+        )
 
         return rdata, rvalid
 
@@ -247,11 +261,11 @@ class Fifo(object):
     @property
     def empty(self):
         return self.rif.empty
-    
+
     @property
     def almost_empty(self):
         return self.rif.almost_empty
-    
+
     @property
     def rdata(self):
         return self.rif.rdata
@@ -259,7 +273,7 @@ class Fifo(object):
     @property
     def full(self):
         return self.wif.full
-    
+
     @property
     def almost_full(self):
         return self.wif.almost_full
@@ -275,5 +289,6 @@ class Fifo(object):
         return self._max_size - self.count
 
     def has_space(self, num=1):
-        if num < 1: return True
+        if num < 1:
+            return True
         return (self._count + num < self._max_size)
