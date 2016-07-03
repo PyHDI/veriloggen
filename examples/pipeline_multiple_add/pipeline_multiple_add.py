@@ -117,7 +117,7 @@ def mkTest(numports=8):
     zfsm.add(rz(0))
     zfsm.goto_next(cond=reset_done)
     zfsm.goto_next()
-    zinit= zfsm.current()
+    zinit= zfsm.current
     zfsm.add(rz(1), cond=vz)
     zfsm.goto_next(cond=vz)
     for i in range(10):

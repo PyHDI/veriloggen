@@ -37,7 +37,7 @@ def mkMain(n=128, datawidth=32, numports=2):
 
     step = 16
 
-    mybram.write(fsm, 0, addr, count)
+    mybram.write(0, addr, count, cond=fsm)
     
     fsm(
         addr.inc(),
@@ -51,7 +51,7 @@ def mkMain(n=128, datawidth=32, numports=2):
 
     fsm.Then().goto_next()
 
-    read_data, read_valid = mybram.read(fsm, 0, addr)
+    read_data, read_valid = mybram.read(0, addr, cond=fsm)
     
     fsm(
         addr.inc(),

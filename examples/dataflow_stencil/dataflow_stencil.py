@@ -115,7 +115,8 @@ def mkStencil(n=16, size=3, datawidth=32, point=16, coe_test=False):
     idata = []
     ivalid = []
     for i, src_bram in enumerate(src_brams):
-        rdata, rvalid = src_bram.read(read_fsm, 0, read_addr)
+        src_bram.disable_write(0)
+        rdata, rvalid = src_bram.read(0, read_addr, read_fsm)
         idata.append(rdata)
         ivalid.append(rvalid)
 
@@ -172,8 +173,9 @@ def mkStencil(n=16, size=3, datawidth=32, point=16, coe_test=False):
     
     write_fsm.If(Ands(ovalid, write_count > skip_offset))(
         write_addr.inc()
-    ).Then()
-    dst_bram.write(write_fsm, 0, write_addr, odata)
+    )
+    
+    dst_bram.write(0, write_addr, odata, write_fsm.then)
     
     write_fsm.If(ovalid)(
         write_count.inc(),

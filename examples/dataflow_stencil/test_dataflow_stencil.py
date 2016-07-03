@@ -305,146 +305,120 @@ module stencil
     .dst_bram_1_wenable(dst_bram_1_wenable)
   );
 
+  wire [8-1:0] _tmp_1;
+  assign _tmp_1 = ext_src_bram0_addr;
 
   always @(*) begin
-    src_bram0_1_addr = ext_src_bram0_addr;
+    src_bram0_1_addr = _tmp_1;
   end
 
   assign ext_src_bram0_rdata = src_bram0_1_rdata;
+  wire [32-1:0] _tmp_2;
+  assign _tmp_2 = ext_src_bram0_wdata;
 
   always @(*) begin
-    src_bram0_1_wdata = ext_src_bram0_wdata;
+    src_bram0_1_wdata = _tmp_2;
   end
 
+  wire _tmp_3;
+  assign _tmp_3 = ext_src_bram0_wenable;
 
   always @(*) begin
-    src_bram0_1_wenable = ext_src_bram0_wenable;
+    src_bram0_1_wenable = _tmp_3;
   end
 
+  wire [8-1:0] _tmp_4;
+  assign _tmp_4 = ext_src_bram1_addr;
 
   always @(*) begin
-    src_bram1_1_addr = ext_src_bram1_addr;
+    src_bram1_1_addr = _tmp_4;
   end
 
   assign ext_src_bram1_rdata = src_bram1_1_rdata;
+  wire [32-1:0] _tmp_5;
+  assign _tmp_5 = ext_src_bram1_wdata;
 
   always @(*) begin
-    src_bram1_1_wdata = ext_src_bram1_wdata;
+    src_bram1_1_wdata = _tmp_5;
   end
 
+  wire _tmp_6;
+  assign _tmp_6 = ext_src_bram1_wenable;
 
   always @(*) begin
-    src_bram1_1_wenable = ext_src_bram1_wenable;
+    src_bram1_1_wenable = _tmp_6;
   end
 
+  wire [8-1:0] _tmp_7;
+  assign _tmp_7 = ext_src_bram2_addr;
 
   always @(*) begin
-    src_bram2_1_addr = ext_src_bram2_addr;
+    src_bram2_1_addr = _tmp_7;
   end
 
   assign ext_src_bram2_rdata = src_bram2_1_rdata;
+  wire [32-1:0] _tmp_8;
+  assign _tmp_8 = ext_src_bram2_wdata;
 
   always @(*) begin
-    src_bram2_1_wdata = ext_src_bram2_wdata;
+    src_bram2_1_wdata = _tmp_8;
   end
 
+  wire _tmp_9;
+  assign _tmp_9 = ext_src_bram2_wenable;
 
   always @(*) begin
-    src_bram2_1_wenable = ext_src_bram2_wenable;
+    src_bram2_1_wenable = _tmp_9;
   end
 
+  wire [8-1:0] _tmp_10;
+  assign _tmp_10 = ext_dst_bram_addr;
 
   always @(*) begin
-    dst_bram_1_addr = ext_dst_bram_addr;
+    dst_bram_1_addr = _tmp_10;
   end
 
   assign ext_dst_bram_rdata = dst_bram_1_rdata;
+  wire [32-1:0] _tmp_11;
+  assign _tmp_11 = ext_dst_bram_wdata;
 
   always @(*) begin
-    dst_bram_1_wdata = ext_dst_bram_wdata;
+    dst_bram_1_wdata = _tmp_11;
   end
 
+  wire _tmp_12;
+  assign _tmp_12 = ext_dst_bram_wenable;
 
   always @(*) begin
-    dst_bram_1_wenable = ext_dst_bram_wenable;
+    dst_bram_1_wenable = _tmp_12;
   end
 
   reg [32-1:0] read_fsm;
   localparam read_fsm_init = 0;
   reg [32-1:0] read_count;
   reg [32-1:0] read_addr;
-  reg _tmp_1;
-  reg [32-1:0] _d1_read_fsm;
-  reg _read_fsm_cond_1_0_1;
-  reg [32-1:0] _d2_read_fsm;
-  reg _read_fsm_cond_1_1_1;
-  reg _read_fsm_cond_1_1_2;
-  reg _tmp_2;
-  reg _read_fsm_cond_1_2_1;
-  reg _read_fsm_cond_1_3_1;
-  reg _read_fsm_cond_1_3_2;
-  reg _tmp_3;
-  reg _read_fsm_cond_1_4_1;
-  reg _read_fsm_cond_1_5_1;
-  reg _read_fsm_cond_1_5_2;
+  reg _tmp_13;
+  reg _src_bram0_cond_0_1;
+  reg _src_bram0_cond_1_1;
+  reg _src_bram0_cond_1_2;
+  reg _tmp_14;
+  reg _src_bram1_cond_0_1;
+  reg _src_bram1_cond_1_1;
+  reg _src_bram1_cond_1_2;
+  reg _tmp_15;
+  reg _src_bram2_cond_0_1;
+  reg _src_bram2_cond_1_1;
+  reg _src_bram2_cond_1_2;
   localparam read_fsm_1 = 1;
   localparam read_fsm_2 = 2;
 
   always @(posedge CLK) begin
     if(RST) begin
       read_fsm <= read_fsm_init;
-      _d1_read_fsm <= read_fsm_init;
-      _d2_read_fsm <= read_fsm_init;
       read_addr <= 0;
       read_count <= 0;
       busy <= 0;
-      src_bram0_0_addr <= 0;
-      _read_fsm_cond_1_0_1 <= 0;
-      _tmp_1 <= 0;
-      _read_fsm_cond_1_1_1 <= 0;
-      _read_fsm_cond_1_1_2 <= 0;
-      src_bram1_0_addr <= 0;
-      _read_fsm_cond_1_2_1 <= 0;
-      _tmp_2 <= 0;
-      _read_fsm_cond_1_3_1 <= 0;
-      _read_fsm_cond_1_3_2 <= 0;
-      src_bram2_0_addr <= 0;
-      _read_fsm_cond_1_4_1 <= 0;
-      _tmp_3 <= 0;
-      _read_fsm_cond_1_5_1 <= 0;
-      _read_fsm_cond_1_5_2 <= 0;
     end else begin
-      _d1_read_fsm <= read_fsm;
-      _d2_read_fsm <= _d1_read_fsm;
-      case(_d2_read_fsm)
-        read_fsm_1: begin
-          if(_read_fsm_cond_1_1_2) begin
-            _tmp_1 <= 0;
-          end 
-          if(_read_fsm_cond_1_3_2) begin
-            _tmp_2 <= 0;
-          end 
-          if(_read_fsm_cond_1_5_2) begin
-            _tmp_3 <= 0;
-          end 
-        end
-      endcase
-      case(_d1_read_fsm)
-        read_fsm_1: begin
-          if(_read_fsm_cond_1_0_1) begin
-            _tmp_1 <= 1;
-          end 
-          _read_fsm_cond_1_1_2 <= _read_fsm_cond_1_1_1;
-          if(_read_fsm_cond_1_2_1) begin
-            _tmp_2 <= 1;
-          end 
-          _read_fsm_cond_1_3_2 <= _read_fsm_cond_1_3_1;
-          if(_read_fsm_cond_1_4_1) begin
-            _tmp_3 <= 1;
-          end 
-          _read_fsm_cond_1_5_2 <= _read_fsm_cond_1_5_1;
-        end
-      endcase
       case(read_fsm)
         read_fsm_init: begin
           read_addr <= 0;
@@ -460,15 +434,6 @@ module stencil
         read_fsm_1: begin
           read_addr <= read_addr + 1;
           read_count <= read_count + 1;
-          src_bram0_0_addr <= read_addr;
-          _read_fsm_cond_1_0_1 <= 1;
-          _read_fsm_cond_1_1_1 <= 1;
-          src_bram1_0_addr <= read_addr;
-          _read_fsm_cond_1_2_1 <= 1;
-          _read_fsm_cond_1_3_1 <= 1;
-          src_bram2_0_addr <= read_addr;
-          _read_fsm_cond_1_4_1 <= 1;
-          _read_fsm_cond_1_5_1 <= 1;
           if(read_count == 15) begin
             read_addr <= 0;
             read_count <= 0;
@@ -498,11 +463,11 @@ module stencil
     .CLK(CLK),
     .RST(RST),
     .idata0(src_bram0_0_rdata),
-    .ivalid0(_tmp_1),
+    .ivalid0(_tmp_13),
     .idata1(src_bram1_0_rdata),
-    .ivalid1(_tmp_2),
+    .ivalid1(_tmp_14),
     .idata2(src_bram2_0_rdata),
-    .ivalid2(_tmp_3),
+    .ivalid2(_tmp_15),
     .odata(odata),
     .ovalid(ovalid)
   );
@@ -511,41 +476,21 @@ module stencil
   localparam write_fsm_init = 0;
   reg [32-1:0] write_count;
   reg [32-1:0] write_addr;
-  reg [32-1:0] _d1_write_fsm;
-  reg _write_fsm_cond_0_0_1;
+  reg _dst_bram_cond_0_1;
 
   always @(posedge CLK) begin
     if(RST) begin
       write_fsm <= write_fsm_init;
-      _d1_write_fsm <= write_fsm_init;
       _tmp_0 <= 0;
       write_addr <= 1;
-      dst_bram_0_addr <= 0;
-      dst_bram_0_wdata <= 0;
-      dst_bram_0_wenable <= 0;
-      _write_fsm_cond_0_0_1 <= 0;
       write_count <= 0;
     end else begin
-      _d1_write_fsm <= write_fsm;
-      case(_d1_write_fsm)
-        write_fsm_init: begin
-          if(_write_fsm_cond_0_0_1) begin
-            dst_bram_0_wenable <= 0;
-          end 
-        end
-      endcase
       case(write_fsm)
         write_fsm_init: begin
           _tmp_0 <= 0;
           if(ovalid && (write_count > 1)) begin
             write_addr <= write_addr + 1;
           end 
-          if(ovalid && (write_count > 1)) begin
-            dst_bram_0_addr <= write_addr;
-            dst_bram_0_wdata <= odata;
-            dst_bram_0_wenable <= 1;
-          end 
-          _write_fsm_cond_0_0_1 <= ovalid && (write_count > 1);
           if(ovalid) begin
             write_count <= write_count + 1;
           end 
@@ -559,6 +504,110 @@ module stencil
           end 
         end
       endcase
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      src_bram0_0_wdata <= 0;
+      src_bram0_0_wenable <= 0;
+      src_bram0_0_addr <= 0;
+      _src_bram0_cond_0_1 <= 0;
+      _tmp_13 <= 0;
+      _src_bram0_cond_1_1 <= 0;
+      _src_bram0_cond_1_2 <= 0;
+    end else begin
+      if(_src_bram0_cond_1_2) begin
+        _tmp_13 <= 0;
+      end 
+      if(_src_bram0_cond_0_1) begin
+        _tmp_13 <= 1;
+      end 
+      _src_bram0_cond_1_2 <= _src_bram0_cond_1_1;
+      src_bram0_0_wdata <= 0;
+      src_bram0_0_wenable <= 0;
+      if(read_fsm == 1) begin
+        src_bram0_0_addr <= read_addr;
+      end 
+      _src_bram0_cond_0_1 <= read_fsm == 1;
+      _src_bram0_cond_1_1 <= read_fsm == 1;
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      src_bram1_0_wdata <= 0;
+      src_bram1_0_wenable <= 0;
+      src_bram1_0_addr <= 0;
+      _src_bram1_cond_0_1 <= 0;
+      _tmp_14 <= 0;
+      _src_bram1_cond_1_1 <= 0;
+      _src_bram1_cond_1_2 <= 0;
+    end else begin
+      if(_src_bram1_cond_1_2) begin
+        _tmp_14 <= 0;
+      end 
+      if(_src_bram1_cond_0_1) begin
+        _tmp_14 <= 1;
+      end 
+      _src_bram1_cond_1_2 <= _src_bram1_cond_1_1;
+      src_bram1_0_wdata <= 0;
+      src_bram1_0_wenable <= 0;
+      if(read_fsm == 1) begin
+        src_bram1_0_addr <= read_addr;
+      end 
+      _src_bram1_cond_0_1 <= read_fsm == 1;
+      _src_bram1_cond_1_1 <= read_fsm == 1;
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      src_bram2_0_wdata <= 0;
+      src_bram2_0_wenable <= 0;
+      src_bram2_0_addr <= 0;
+      _src_bram2_cond_0_1 <= 0;
+      _tmp_15 <= 0;
+      _src_bram2_cond_1_1 <= 0;
+      _src_bram2_cond_1_2 <= 0;
+    end else begin
+      if(_src_bram2_cond_1_2) begin
+        _tmp_15 <= 0;
+      end 
+      if(_src_bram2_cond_0_1) begin
+        _tmp_15 <= 1;
+      end 
+      _src_bram2_cond_1_2 <= _src_bram2_cond_1_1;
+      src_bram2_0_wdata <= 0;
+      src_bram2_0_wenable <= 0;
+      if(read_fsm == 1) begin
+        src_bram2_0_addr <= read_addr;
+      end 
+      _src_bram2_cond_0_1 <= read_fsm == 1;
+      _src_bram2_cond_1_1 <= read_fsm == 1;
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      dst_bram_0_addr <= 0;
+      dst_bram_0_wdata <= 0;
+      dst_bram_0_wenable <= 0;
+      _dst_bram_cond_0_1 <= 0;
+    end else begin
+      if(_dst_bram_cond_0_1) begin
+        dst_bram_0_wenable <= 0;
+      end 
+      if((write_fsm == 0) && (ovalid && (write_count > 1))) begin
+        dst_bram_0_addr <= write_addr;
+        dst_bram_0_wdata <= odata;
+        dst_bram_0_wenable <= 1;
+      end 
+      _dst_bram_cond_0_1 <= (write_fsm == 0) && (ovalid && (write_count > 1));
     end
   end
 

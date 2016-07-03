@@ -69,7 +69,7 @@ def mkMatmul(n=16, datawidth=32):
     # main FSM
     fsm = FSM(m, 'fsm', clk, rst)
 
-    init = fsm.current()
+    init = fsm.current
 
     # initial values
     fsm.add( xaddr(0-1), yaddr(0-1), zaddr(0-1), zwe(0),
@@ -80,7 +80,7 @@ def mkMatmul(n=16, datawidth=32):
     fsm.add( busy(1), cond=start )
     fsm.goto_next(cond=start)
 
-    comp = fsm.current()
+    comp = fsm.current
 
     # reset pipeline for each 1st data
     fsm.add( vreset(0), delay=1 )

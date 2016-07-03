@@ -76,34 +76,18 @@ module main
   );
 
   reg [8-1:0] count_myfifo;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      count_myfifo <= 0;
-    end else begin
-      if(myfifo_enq && !myfifo_full && (myfifo_deq && !myfifo_empty)) begin
-        count_myfifo <= count_myfifo;
-      end else if(myfifo_enq && !myfifo_full) begin
-        count_myfifo <= count_myfifo + 1;
-      end else if(myfifo_deq && !myfifo_empty) begin
-        count_myfifo <= count_myfifo - 1;
-      end 
-    end
-  end
-
   reg [32-1:0] count;
   reg [32-1:0] sum;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
-  reg [32-1:0] _d1_fsm;
-  reg _fsm_cond_1_0_1;
-  reg _fsm_cond_3_1_1;
+  reg _myfifo_cond_0_1;
+  reg _myfifo_cond_1_1;
   reg _tmp_0;
-  reg _fsm_cond_3_2_1;
-  reg [32-1:0] _d2_fsm;
-  reg _fsm_cond_3_3_1;
-  reg _fsm_cond_3_3_2;
-  reg _fsm_cond_3_4_1;
+  reg _myfifo_cond_2_1;
+  reg _myfifo_cond_3_1;
+  reg _myfifo_cond_3_2;
+  reg [32-1:0] _d1_fsm;
+  reg _fsm_cond_3_0_1;
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
   localparam fsm_3 = 3;
@@ -113,44 +97,14 @@ module main
     if(RST) begin
       fsm <= fsm_init;
       _d1_fsm <= fsm_init;
-      _d2_fsm <= fsm_init;
       count <= 0;
-      myfifo_wdata <= 0;
-      myfifo_enq <= 0;
-      _fsm_cond_1_0_1 <= 0;
-      myfifo_deq <= 0;
-      _fsm_cond_3_1_1 <= 0;
-      _fsm_cond_3_2_1 <= 0;
-      _tmp_0 <= 0;
-      _fsm_cond_3_3_1 <= 0;
-      _fsm_cond_3_3_2 <= 0;
       sum <= 0;
-      _fsm_cond_3_4_1 <= 0;
+      _fsm_cond_3_0_1 <= 0;
     end else begin
       _d1_fsm <= fsm;
-      _d2_fsm <= _d1_fsm;
-      case(_d2_fsm)
-        fsm_3: begin
-          if(_fsm_cond_3_3_2) begin
-            _tmp_0 <= 0;
-          end 
-        end
-      endcase
       case(_d1_fsm)
-        fsm_1: begin
-          if(_fsm_cond_1_0_1) begin
-            myfifo_enq <= 0;
-          end 
-        end
         fsm_3: begin
-          if(_fsm_cond_3_1_1) begin
-            myfifo_deq <= 0;
-          end 
-          if(_fsm_cond_3_2_1) begin
-            _tmp_0 <= !myfifo_empty && myfifo_deq;
-          end 
-          _fsm_cond_3_3_2 <= _fsm_cond_3_3_1;
-          if(_fsm_cond_3_4_1) begin
+          if(_fsm_cond_3_0_1) begin
             $display("sum=%d", sum);
           end 
         end
@@ -161,13 +115,6 @@ module main
           fsm <= fsm_1;
         end
         fsm_1: begin
-          if(!myfifo_full) begin
-            myfifo_wdata <= count;
-          end
-          if(!myfifo_full) begin
-            myfifo_enq <= 1;
-          end
-          _fsm_cond_1_0_1 <= !myfifo_full;
           if(!myfifo_almost_full) begin
             count <= count + 1;
           end 
@@ -183,21 +130,67 @@ module main
           fsm <= fsm_3;
         end
         fsm_3: begin
-          myfifo_deq <= 1;
-          _fsm_cond_3_1_1 <= 1;
-          _fsm_cond_3_2_1 <= 1;
-          _fsm_cond_3_3_1 <= 1;
           if(_tmp_0) begin
             sum <= sum + myfifo_rdata;
             count <= count + 1;
             $write("count=%d space=%d has_space=%d ", count_myfifo, (127 - count_myfifo), (count_myfifo + 1 < 127));
           end 
-          _fsm_cond_3_4_1 <= _tmp_0;
+          _fsm_cond_3_0_1 <= _tmp_0;
           if(count == 127) begin
             fsm <= fsm_4;
           end 
         end
       endcase
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      count_myfifo <= 0;
+      myfifo_wdata <= 0;
+      myfifo_enq <= 0;
+      _myfifo_cond_0_1 <= 0;
+      myfifo_deq <= 0;
+      _myfifo_cond_1_1 <= 0;
+      _myfifo_cond_2_1 <= 0;
+      _tmp_0 <= 0;
+      _myfifo_cond_3_1 <= 0;
+      _myfifo_cond_3_2 <= 0;
+    end else begin
+      if(_myfifo_cond_3_2) begin
+        _tmp_0 <= 0;
+      end 
+      if(_myfifo_cond_0_1) begin
+        myfifo_enq <= 0;
+      end 
+      if(_myfifo_cond_1_1) begin
+        myfifo_deq <= 0;
+      end 
+      if(_myfifo_cond_2_1) begin
+        _tmp_0 <= !myfifo_empty && myfifo_deq;
+      end 
+      _myfifo_cond_3_2 <= _myfifo_cond_3_1;
+      if(myfifo_enq && !myfifo_full && (myfifo_deq && !myfifo_empty)) begin
+        count_myfifo <= count_myfifo;
+      end else if(myfifo_enq && !myfifo_full) begin
+        count_myfifo <= count_myfifo + 1;
+      end else if(myfifo_deq && !myfifo_empty) begin
+        count_myfifo <= count_myfifo - 1;
+      end 
+      if((fsm == 1) && !myfifo_full) begin
+        myfifo_wdata <= count;
+      end 
+      if((fsm == 1) && !myfifo_full) begin
+        myfifo_enq <= 1;
+      end 
+      _myfifo_cond_0_1 <= (fsm == 1) && !myfifo_full;
+      if(fsm == 3) begin
+        myfifo_deq <= 1;
+      end 
+      _myfifo_cond_1_1 <= fsm == 3;
+      _myfifo_cond_2_1 <= fsm == 3;
+      _myfifo_cond_3_1 <= fsm == 3;
     end
   end
 
