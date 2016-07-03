@@ -170,7 +170,7 @@ module main
       if((xfsm == 0) && (xready || !_tmp_5)) begin
         _tmp_5 <= 1;
       end 
-      _seq_cond_0_1 <= (xfsm == 0) && (xready || !_tmp_5);
+      _seq_cond_0_1 <= 1;
       if(_tmp_5 && !xready) begin
         _tmp_5 <= _tmp_5;
       end 

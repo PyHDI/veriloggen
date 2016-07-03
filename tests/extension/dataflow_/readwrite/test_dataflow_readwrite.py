@@ -161,7 +161,7 @@ module main
       if((xfsm == 0) && (xready || !xvalid)) begin
         xvalid <= 1;
       end 
-      _seq_cond_0_1 <= (xfsm == 0) && (xready || !xvalid);
+      _seq_cond_0_1 <= 1;
       if(xvalid && !xready) begin
         xvalid <= xvalid;
       end 
@@ -171,7 +171,7 @@ module main
       if((yfsm == 0) && (yready || !_tmp_4)) begin
         _tmp_4 <= 1;
       end 
-      _seq_cond_1_1 <= (yfsm == 0) && (yready || !_tmp_4);
+      _seq_cond_1_1 <= 1;
       if(_tmp_4 && !yready) begin
         _tmp_4 <= _tmp_4;
       end 

@@ -97,8 +97,8 @@ module main
   reg _myfifo_cond_3_3;
   reg _myfifo_cond_3_4;
   reg _myfifo_cond_3_5;
-  reg _myfifo_cond_4_1;
   reg _tmp_0;
+  reg _myfifo_cond_4_1;
   reg _myfifo_cond_5_1;
   reg _myfifo_cond_6_1;
   reg _myfifo_cond_6_2;
@@ -185,8 +185,8 @@ module main
       _myfifo_cond_3_5 <= 0;
       myfifo_deq <= 0;
       _myfifo_cond_4_1 <= 0;
-      _myfifo_cond_5_1 <= 0;
       _tmp_0 <= 0;
+      _myfifo_cond_5_1 <= 0;
       _myfifo_cond_6_1 <= 0;
       _myfifo_cond_6_2 <= 0;
     end else begin
@@ -216,10 +216,10 @@ module main
       _myfifo_cond_2_2 <= _myfifo_cond_2_1;
       _myfifo_cond_3_2 <= _myfifo_cond_3_1;
       if(_myfifo_cond_4_1) begin
-        myfifo_deq <= 0;
+        _tmp_0 <= !myfifo_empty && myfifo_deq;
       end 
       if(_myfifo_cond_5_1) begin
-        _tmp_0 <= !myfifo_empty && myfifo_deq;
+        myfifo_deq <= 0;
       end 
       _myfifo_cond_6_2 <= _myfifo_cond_6_1;
       if(myfifo_enq && !myfifo_full && (myfifo_deq && !myfifo_empty)) begin
@@ -232,13 +232,13 @@ module main
       _myfifo_wdata_0_1 <= count;
       _myfifo_cond_1_1 <= (fsm == 1) && !myfifo_full;
       _myfifo_cond_2_1 <= (fsm == 1) && !myfifo_full;
-      _myfifo_cond_3_1 <= (fsm == 1) && !myfifo_full;
+      _myfifo_cond_3_1 <= 1;
       if(fsm == 3) begin
         myfifo_deq <= 1;
       end 
       _myfifo_cond_4_1 <= fsm == 3;
-      _myfifo_cond_5_1 <= fsm == 3;
-      _myfifo_cond_6_1 <= fsm == 3;
+      _myfifo_cond_5_1 <= 1;
+      _myfifo_cond_6_1 <= 1;
     end
   end
 

@@ -1867,7 +1867,7 @@ class _Variable(_Numeric):
             self.seq.Then()(
                 valid(1),
             )
-            self.seq.Then().Delay(1)(
+            self.seq.Delay(1)(
                 valid(0)
             )
             if self.sig_ready is not None:

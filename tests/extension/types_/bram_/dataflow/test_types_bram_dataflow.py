@@ -219,7 +219,7 @@ module main
       if(_tmp_1) begin
         _tmp_3 <= 1;
       end 
-      _seq_cond_0_1 <= _tmp_1;
+      _seq_cond_0_1 <= 1;
     end
   end
 

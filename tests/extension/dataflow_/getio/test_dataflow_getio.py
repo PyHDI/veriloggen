@@ -166,7 +166,7 @@ module main
       if((xfsm == 0) && (xready || !_tmp_3)) begin
         _tmp_3 <= 1;
       end 
-      _seq_cond_0_1 <= (xfsm == 0) && (xready || !_tmp_3);
+      _seq_cond_0_1 <= 1;
       if(_tmp_3 && !xready) begin
         _tmp_3 <= _tmp_3;
       end 
@@ -176,7 +176,7 @@ module main
       if((yfsm == 0) && (yready || !_tmp_6)) begin
         _tmp_6 <= 1;
       end 
-      _seq_cond_1_1 <= (yfsm == 0) && (yready || !_tmp_6);
+      _seq_cond_1_1 <= 1;
       if(_tmp_6 && !yready) begin
         _tmp_6 <= _tmp_6;
       end 

@@ -218,7 +218,9 @@ class Fifo(object):
         self.seq.Then().Delay(current_delay + delay)(
             self.wif.enq(1)
         )
-        self.seq.Then().Delay(current_delay + delay + 1)(
+
+        # de-assert
+        self.seq.Delay(current_delay + delay + 1)(
             self.wif.enq(0)
         )
 
@@ -239,16 +241,19 @@ class Fifo(object):
         self.seq.Delay(current_delay + delay)(
             self.rif.deq(1)
         )
-        self.seq.Then().Delay(current_delay + delay + 1)(
-            self.rif.deq(0)
-        )
 
         rdata = self.rif.rdata
         rvalid = self.m.TmpReg(initval=0)
+        
         self.seq.Then().Delay(current_delay + delay + 1)(
             rvalid(vtypes.Ands(not_empty, self.rif.deq))
         )
-        self.seq.Then().Delay(current_delay + delay + 2)(
+        
+        # de-assert
+        self.seq.Delay(current_delay + delay + 1)(
+            self.rif.deq(0)
+        )
+        self.seq.Delay(current_delay + delay + 2)(
             rvalid(0)
         )
 
