@@ -44,7 +44,7 @@ class AxiWriteData(AxiBase):
         self.wdata = util.make_port(
             m, self.otype, name + '_wdata', self.datawidth, initval=0)
         self.wstrb = util.make_port(
-            m, self.otype, name + '_wstrb', self.datawidth / 8, initval=0)
+            m, self.otype, name + '_wstrb', self.datawidth // 8, initval=0)
         self.wlast = util.make_port(
             m, self.otype, name + '_wlast', None, initval=0)
         self.wvalid = util.make_port(
@@ -224,7 +224,7 @@ class AxiMaster(object):
             self.wdata.wdata(data),
             self.wdata.wvalid(1),
             self.wdata.wlast(0),
-            self.wdata.wstrb(vtypes.Repeat(vtypes.Int(1,1), (self.wdata.datawidth//8))),
+            self.wdata.wstrb(vtypes.Repeat(vtypes.Int(1, 1), (self.wdata.datawidth // 8))),
             counter.dec()
         )
         self.seq.Then().If(counter == 0)(

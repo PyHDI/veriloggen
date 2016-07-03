@@ -12,7 +12,7 @@ module test;
   wire myaxi_awvalid;
   reg myaxi_awready;
   wire [32-1:0] myaxi_wdata;
-  wire [4.0-1:0] myaxi_wstrb;
+  wire [4-1:0] myaxi_wstrb;
   wire myaxi_wlast;
   wire myaxi_wvalid;
   reg myaxi_wready;
@@ -178,7 +178,7 @@ module main
   output reg myaxi_awvalid,
   input myaxi_awready,
   output reg [32-1:0] myaxi_wdata,
-  output reg [4.0-1:0] myaxi_wstrb,
+  output reg [4-1:0] myaxi_wstrb,
   output reg myaxi_wlast,
   output reg myaxi_wvalid,
   input myaxi_wready,
