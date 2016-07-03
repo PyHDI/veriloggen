@@ -89,12 +89,16 @@ class Dataflow(object):
         alloc = allocator.Allocator()
         alloc.allocate(m, seq, all_vars)
 
+        # set default module information
+        for var in sorted(all_vars, key=lambda x:x.object_id):
+            var._set_default_manager(m, seq)
+
         # add output ports
         for output_var in sorted(output_vars, key=lambda x:x.object_id):
             output_var._implement_output(m, seq, aswire)
 
         # add always statement
-        seq.make_always()
+        m.add_hook(seq.make_always)
 
         # save schedule result
         self.last_input = input_vars
