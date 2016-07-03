@@ -21,7 +21,7 @@ class Pipeline(vtypes.VeriloggenNode):
         self.max_stage_id = 0
         self.vars = []
         
-        self.seq = Seq(self.m, self.name, clk, rst)
+        self.seq = Seq(self.m, self.name, clk, rst, nohook=True)
         self.data_visitor = DataVisitor(self)
 
         self.done = False

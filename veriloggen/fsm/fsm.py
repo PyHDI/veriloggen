@@ -25,7 +25,7 @@ def TmpFSM(m, clk, rst, width=32, initname='init'):
 #-------------------------------------------------------------------------------
 class FSM(vtypes.VeriloggenNode):
     """ Finite State Machine Generator """
-    def __init__(self, m, name, clk, rst, width=32, initname='init'):
+    def __init__(self, m, name, clk, rst, width=32, initname='init', nohook=False):
         self.m = m
         self.name = name
         self.clk = clk
@@ -51,7 +51,7 @@ class FSM(vtypes.VeriloggenNode):
         self.dst_visitor = SubstDstVisitor()
         self.reset_visitor = ResetVisitor()
 
-        self.seq = Seq(self.m, self.name + '_par', clk, rst)
+        self.seq = Seq(self.m, self.name + '_par', clk, rst, nohook=True)
         
         self.done = False
 
@@ -60,6 +60,9 @@ class FSM(vtypes.VeriloggenNode):
         self.last_if_statement = None
         self.elif_cond = None
         self.next_kwargs = {}
+
+        if not nohook:
+            self.m.add_hook(self.make_always)
         
     #---------------------------------------------------------------------------
     def goto(self, dst, cond=None, else_dst=None):
@@ -288,7 +291,9 @@ class FSM(vtypes.VeriloggenNode):
     #---------------------------------------------------------------------------
     def make_always(self, reset=(), body=(), case=True):
         if self.done:
-            raise ValueError('make_always() has been already called.')
+            #raise ValueError('make_always() has been already called.')
+            return
+        
         self.done = True
         
         part_reset = self.make_reset(reset)

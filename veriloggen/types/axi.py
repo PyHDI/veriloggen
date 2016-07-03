@@ -133,7 +133,7 @@ class AxiMaster(object):
         self.rdata = AxiMasterReadData(m, name, datawidth, addrwidth)
 
         self.seq = Seq(m, name, clk, rst)
-        self.m.add_hook(self.seq.make_always)
+        #self.m.add_hook(self.seq.make_always)
 
         self.write_counters = []
         self.read_counters = []

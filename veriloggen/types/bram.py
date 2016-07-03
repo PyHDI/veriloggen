@@ -102,7 +102,7 @@ class Bram(object):
                                     ports=m.connect_ports(self.definition))
 
         self.seq = Seq(m, name, clk, rst)
-        self.m.add_hook(self.seq.make_always)
+        #self.m.add_hook(self.seq.make_always)
 
         self._write_disabled = [False for i in range(numports)]
 

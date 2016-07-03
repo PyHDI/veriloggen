@@ -24,7 +24,7 @@ def TmpSeq(m, clk, rst=None):
 #-------------------------------------------------------------------------------
 class Seq(vtypes.VeriloggenNode):
     """ Sequential Logic Manager """
-    def __init__(self, m, name, clk, rst=None):
+    def __init__(self, m, name, clk, rst=None, nohook=False):
         self.m = m
         self.name = name
         self.clk = clk
@@ -47,6 +47,9 @@ class Seq(vtypes.VeriloggenNode):
         self.last_if_statement = None
         self.elif_cond = None
         self.next_kwargs = {}
+
+        if not nohook:
+            self.m.add_hook(self.make_always)
         
     #---------------------------------------------------------------------------
     def add(self, *statement, **kwargs):
@@ -246,7 +249,9 @@ class Seq(vtypes.VeriloggenNode):
     #---------------------------------------------------------------------------
     def make_always(self, reset=(), body=()):
         if self.done:
-            raise ValueError('make_always() has been already called.')
+            #raise ValueError('make_always() has been already called.')
+            return
+            
         self.done = True
         
         part_reset = list(reset) + list(self.make_reset())

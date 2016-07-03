@@ -46,6 +46,7 @@ class Dataflow(object):
         mul.reset()
         
         seq = Seq(m, seq_name, clock, reset)
+        #m.add_hook(seq.make_always)
 
         # for mult and div
         m._clock = clock
@@ -96,9 +97,6 @@ class Dataflow(object):
         # add output ports
         for output_var in sorted(output_vars, key=lambda x:x.object_id):
             output_var._implement_output(m, seq, aswire)
-
-        # add always statement
-        m.add_hook(seq.make_always)
 
         # save schedule result
         self.last_input = input_vars
