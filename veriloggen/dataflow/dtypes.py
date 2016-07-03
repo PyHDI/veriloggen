@@ -149,6 +149,9 @@ class _Numeric(_Node):
     
     def __init__(self):
         _Node.__init__(self)
+        self.m = None
+        self.seq = None
+        
         self.output_data = None
         self.output_valid = None
         self.output_ready = None
@@ -203,30 +206,20 @@ class _Numeric(_Node):
         return prev
         
     #---------------------------------------------------------------------------
-    def write(self, mng, wdata, cond=None):
+    def write(self, wdata, cond=None):
         raise TypeError("Unsupported method.")
 
-    def read(self, mng, rdata=None, rvalid=None, cond=None):
+    def read(self, cond=None):
         if self.sig_data is None:
             raise ValueError("Dataflow is not synthesized yet. Run Dataflow.implement().")
         
-        if not ((rdata is None and rvalid is None) or
-                (rdata is not None and rvalid is not None)):
-            raise ValueError("Both rdata and rvalid must use same format.")
-
         data = self.data
         valid = self.valid
 
         if valid is None:
             valid = 1
 
-        if cond is not None:
-            mng.If(cond)
-
-        if mng.current_delay > 0:
-            raise ValueError("Delayed control is not supported.")
-            
-        ready = mng.current_condition
+        ready = self.seq._check_cond(cond)
         val = 1 if ready is None else ready
 
         if self.ready is not None:
@@ -241,19 +234,8 @@ class _Numeric(_Node):
         else:
             ack = valid
 
-        if rdata is not None:
-            mng.If(ack)(
-                rdata(data)
-            )
-        else:
-            rdata = data
-
-        if rvalid is not None:
-            mng.Then()(
-                rvalid(ack)
-            )
-        else:
-            rvalid = ack
+        rdata = data
+        rvalid = ack
 
         return rdata, rvalid
     
@@ -274,6 +256,10 @@ class _Numeric(_Node):
         raise NotImplementedError('eval() is not implemented')
     
     #--------------------------------------------------------------------------
+    def _set_default_manager(self, m, seq):
+        self.m = m
+        self.seq = seq
+    
     def _implement(self, m, seq):
         raise NotImplementedError('_implement() is not implemented.')
     
@@ -1831,7 +1817,7 @@ class _Variable(_Numeric):
             self.input_data._add_sink(self)
     
     #---------------------------------------------------------------------------
-    def write(self, mng, wdata, cond=None):
+    def write(self, wdata, cond=None):
         if self.sig_data is None:
             raise ValueError("run implement() first.")
         
@@ -1842,7 +1828,7 @@ class _Variable(_Numeric):
             if hasattr(self, 'sig_data_write'):             
                 data = self.sig_data_write
             else:
-                data = mng.m.TmpReg(self.bit_length(), initval=0)
+                data = self.m.TmpReg(self.bit_length(), initval=0)
                 self.sig_data_write = data
                 self.sig_data.assign(data)
         else:
@@ -1854,7 +1840,7 @@ class _Variable(_Numeric):
             if hasattr(self, 'sig_valid_write'):             
                 valid = self.sig_valid_write
             else:
-                valid = mng.m.TmpReg(initval=0)
+                valid = self.m.TmpReg(initval=0)
                 self.sig_valid_write = valid
                 self.sig_valid.assign(valid)
         else:
@@ -1866,29 +1852,26 @@ class _Variable(_Numeric):
             ready = self.sig_ready
 
         if cond is not None:
-            mng.If(cond)
-
-        if mng.current_delay > 0:
-            raise ValueError("Delayed control is not supported.")
-
+            self.seq.If(cond)
+            
         if self.sig_ready is None:
             ack = None
         else:
             ack = vtypes.OrList(ready, vtypes.Not(valid))
 
-        mng.If(ack)(
+        self.seq.If(ack)(
             data(wdata)
         )
         
         if self.sig_valid is not None:
-            mng.Then()(
+            self.seq.Then()(
                 valid(1),
             )
-            mng.Then().Delay(1)(
+            self.seq.Then().Delay(1)(
                 valid(0)
             )
             if self.sig_ready is not None:
-                mng.If(vtypes.AndList(valid, vtypes.Not(ready)))(
+                self.seq.If(vtypes.AndList(valid, vtypes.Not(ready)))(
                     valid(valid) # overwrite previous de-assertion
                 )
         
