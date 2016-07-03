@@ -234,9 +234,7 @@ class AxiMaster(object):
 
         # de-assert
         self.seq.Delay(1)(
-            self.wdata.wvalid(0)
-        )
-        self.seq.Delay(1)(
+            self.wdata.wvalid(0),
             self.wdata.wlast(0),
             last(0)
         )

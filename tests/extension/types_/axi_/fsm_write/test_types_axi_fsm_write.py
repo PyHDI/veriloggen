@@ -199,7 +199,6 @@ module main
   reg [32-1:0] wdata;
   reg _tmp_1;
   reg _myaxi_cond_1_1;
-  reg _myaxi_cond_2_1;
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
 
@@ -244,15 +243,12 @@ module main
       myaxi_wstrb <= 0;
       _tmp_1 <= 0;
       _myaxi_cond_1_1 <= 0;
-      _myaxi_cond_2_1 <= 0;
     end else begin
       if(_myaxi_cond_0_1) begin
         myaxi_awvalid <= 0;
       end 
       if(_myaxi_cond_1_1) begin
         myaxi_wvalid <= 0;
-      end 
-      if(_myaxi_cond_2_1) begin
         myaxi_wlast <= 0;
         _tmp_1 <= 0;
       end 
@@ -282,7 +278,6 @@ module main
         _tmp_1 <= 1;
       end 
       _myaxi_cond_1_1 <= 1;
-      _myaxi_cond_2_1 <= 1;
       if(myaxi_wvalid && !myaxi_wready) begin
         myaxi_wvalid <= myaxi_wvalid;
         myaxi_wlast <= myaxi_wlast;
