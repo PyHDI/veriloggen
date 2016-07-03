@@ -30,7 +30,9 @@ def mkLed():
     
     #seq.make_always()
     # make_alway() is called when to_veirlog() is called.
-    m.add_hook(seq.make_always, args=(), kwargs={})
+    #m.add_hook(seq.make_always, args=(), kwargs={})
+    # In the current implementation, make_always() is always and
+    # automatically called with no registration.
     
     return m
 
