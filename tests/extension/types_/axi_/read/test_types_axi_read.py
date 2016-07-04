@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import types_axi_fsm_write
+import types_axi_read
 
 expected_verilog = """
 module test;
@@ -24,92 +24,95 @@ module test;
   reg myaxi_rlast;
   reg myaxi_rvalid;
   wire myaxi_rready;
-  reg [32-1:0] waddr;
-  localparam waddr_init = 0;
-  localparam waddr_1 = 1;
-  localparam waddr_2 = 2;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      waddr <= waddr_init;
-    end else begin
-      case(waddr)
-        waddr_init: begin
-          myaxi_awready <= 0;
-          if(myaxi_awvalid) begin
-            waddr <= waddr_1;
-          end 
-        end
-        waddr_1: begin
-          if(myaxi_awvalid) begin
-            myaxi_awready <= 1;
-          end 
-          waddr <= waddr_2;
-        end
-        waddr_2: begin
-          myaxi_awready <= 0;
-          waddr <= waddr_init;
-        end
-      endcase
-    end
-  end
-
-  reg [32-1:0] wdata;
-  localparam wdata_init = 0;
-  localparam wdata_1 = 1;
-  localparam wdata_2 = 2;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      wdata <= wdata_init;
-    end else begin
-      case(wdata)
-        wdata_init: begin
-          myaxi_wready <= 0;
-          if(myaxi_wvalid) begin
-            wdata <= wdata_1;
-          end 
-        end
-        wdata_1: begin
-          if(myaxi_wvalid) begin
-            myaxi_wready <= 1;
-          end 
-          wdata <= wdata_2;
-        end
-        wdata_2: begin
-          myaxi_wready <= 0;
-          wdata <= wdata_init;
-        end
-      endcase
-    end
-  end
-
   wire _tmp_0;
-  assign _tmp_0 = 0;
+  assign _tmp_0 = 1;
 
   always @(*) begin
-    myaxi_arready <= _tmp_0;
+    myaxi_awready <= _tmp_0;
   end
 
   wire _tmp_1;
-  assign _tmp_1 = 0;
+  assign _tmp_1 = 1;
 
   always @(*) begin
-    myaxi_rvalid <= _tmp_1;
+    myaxi_wready <= _tmp_1;
   end
 
-  wire [32-1:0] _tmp_2;
-  assign _tmp_2 = 0;
+  reg [32-1:0] raddr;
+  localparam raddr_init = 0;
+  reg [32-1:0] _arlen;
+  reg [32-1:0] _d1_raddr;
+  reg _raddr_cond_3_0_1;
+  localparam raddr_1 = 1;
+  localparam raddr_2 = 2;
+  localparam raddr_3 = 3;
+  localparam raddr_4 = 4;
+  localparam raddr_5 = 5;
 
-  always @(*) begin
-    myaxi_rdata <= _tmp_2;
-  end
-
-  wire _tmp_3;
-  assign _tmp_3 = 0;
-
-  always @(*) begin
-    myaxi_rlast <= _tmp_3;
+  always @(posedge CLK) begin
+    if(RST) begin
+      raddr <= raddr_init;
+      _d1_raddr <= raddr_init;
+      _arlen <= 0;
+      _raddr_cond_3_0_1 <= 0;
+    end else begin
+      _d1_raddr <= raddr;
+      case(_d1_raddr)
+        raddr_3: begin
+          if(_raddr_cond_3_0_1) begin
+            myaxi_rvalid <= 0;
+            myaxi_rlast <= 0;
+          end 
+        end
+      endcase
+      case(raddr)
+        raddr_init: begin
+          myaxi_arready <= 0;
+          myaxi_rdata <= -1;
+          myaxi_rvalid <= 0;
+          myaxi_rlast <= 0;
+          if(myaxi_arvalid) begin
+            raddr <= raddr_1;
+          end 
+        end
+        raddr_1: begin
+          if(myaxi_arvalid) begin
+            myaxi_arready <= 1;
+          end 
+          raddr <= raddr_2;
+        end
+        raddr_2: begin
+          myaxi_arready <= 0;
+          _arlen <= myaxi_arlen;
+          raddr <= raddr_3;
+        end
+        raddr_3: begin
+          if((myaxi_rready || !myaxi_rvalid) && !myaxi_rlast) begin
+            myaxi_rdata <= myaxi_rdata + 1;
+            myaxi_rvalid <= 1;
+            myaxi_rlast <= 0;
+            _arlen <= _arlen - 1;
+          end 
+          if((myaxi_rready || !myaxi_rvalid) && !myaxi_rlast && (_arlen == 0)) begin
+            myaxi_rlast <= 1;
+          end 
+          _raddr_cond_3_0_1 <= 1;
+          if(myaxi_rvalid && !myaxi_rready) begin
+            myaxi_rvalid <= myaxi_rvalid;
+            myaxi_rlast <= myaxi_rlast;
+          end 
+          if((myaxi_rready || !myaxi_rvalid) && (_arlen == 0)) begin
+            raddr <= raddr_4;
+          end 
+        end
+        raddr_4: begin
+          raddr <= raddr_5;
+        end
+        raddr_5: begin
+          raddr <= raddr_init;
+        end
+      endcase
+    end
   end
 
 
@@ -140,7 +143,7 @@ module test;
 
   initial begin
     $dumpfile("uut.vcd");
-    $dumpvars(0, uut, CLK, RST, myaxi_awaddr, myaxi_awlen, myaxi_awvalid, myaxi_awready, myaxi_wdata, myaxi_wstrb, myaxi_wlast, myaxi_wvalid, myaxi_wready, myaxi_araddr, myaxi_arlen, myaxi_arvalid, myaxi_arready, myaxi_rdata, myaxi_rlast, myaxi_rvalid, myaxi_rready, waddr, wdata, _tmp_0, _tmp_1, _tmp_2, _tmp_3);
+    $dumpvars(0, uut, CLK, RST, myaxi_awaddr, myaxi_awlen, myaxi_awvalid, myaxi_awready, myaxi_wdata, myaxi_wstrb, myaxi_wlast, myaxi_wvalid, myaxi_wready, myaxi_araddr, myaxi_arlen, myaxi_arvalid, myaxi_arready, myaxi_rdata, myaxi_rlast, myaxi_rvalid, myaxi_rready, _tmp_0, _tmp_1, raddr, _arlen, _d1_raddr, _raddr_cond_3_0_1);
   end
 
 
@@ -154,8 +157,10 @@ module test;
 
   initial begin
     RST = 0;
-    waddr = waddr_init;
-    wdata = wdata_init;
+    raddr = raddr_init;
+    _arlen = 0;
+    _d1_raddr = raddr_init;
+    _raddr_cond_3_0_1 = 0;
     #100;
     RST = 1;
     #100;
@@ -192,33 +197,31 @@ module main
   output myaxi_rready
 );
 
-  assign myaxi_rready = 0;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
   reg [8-1:0] _tmp_0;
   reg _myaxi_cond_0_1;
-  reg [32-1:0] wdata;
-  reg _tmp_1;
-  reg _myaxi_cond_1_1;
+  reg [32-1:0] sum;
+  assign myaxi_rready = fsm == 1;
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
 
   always @(posedge CLK) begin
     if(RST) begin
       fsm <= fsm_init;
-      wdata <= 0;
+      sum <= 0;
     end else begin
       case(fsm)
         fsm_init: begin
-          if(myaxi_awready || !myaxi_awvalid) begin
+          if(myaxi_arready || !myaxi_arvalid) begin
             fsm <= fsm_1;
           end 
         end
         fsm_1: begin
-          if(myaxi_wready || !myaxi_wvalid) begin
-            wdata <= wdata + 1;
+          if(myaxi_rready && myaxi_rvalid) begin
+            sum <= sum + myaxi_rdata;
           end 
-          if((myaxi_wready || !myaxi_wvalid) && _tmp_1) begin
+          if(myaxi_rready && myaxi_rvalid && myaxi_rlast) begin
             fsm <= fsm_2;
           end 
         end
@@ -229,58 +232,41 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
-      myaxi_araddr <= 0;
-      myaxi_arlen <= 0;
-      myaxi_arvalid <= 0;
       myaxi_awaddr <= 0;
       myaxi_awlen <= 0;
       myaxi_awvalid <= 0;
-      _tmp_0 <= 0;
-      _myaxi_cond_0_1 <= 0;
       myaxi_wdata <= 0;
+      myaxi_wstrb <= 0;
       myaxi_wvalid <= 0;
       myaxi_wlast <= 0;
-      myaxi_wstrb <= 0;
-      _tmp_1 <= 0;
-      _myaxi_cond_1_1 <= 0;
-    end else begin
-      if(_myaxi_cond_0_1) begin
-        myaxi_awvalid <= 0;
-      end 
-      if(_myaxi_cond_1_1) begin
-        myaxi_wvalid <= 0;
-        myaxi_wlast <= 0;
-        _tmp_1 <= 0;
-      end 
       myaxi_araddr <= 0;
       myaxi_arlen <= 0;
       myaxi_arvalid <= 0;
-      if((fsm == 0) && (myaxi_awready || !myaxi_awvalid)) begin
-        myaxi_awaddr <= 1024;
-        myaxi_awlen <= 63;
-        myaxi_awvalid <= 1;
+      _tmp_0 <= 0;
+      _myaxi_cond_0_1 <= 0;
+    end else begin
+      if(_myaxi_cond_0_1) begin
+        myaxi_arvalid <= 0;
+      end 
+      myaxi_awaddr <= 0;
+      myaxi_awlen <= 0;
+      myaxi_awvalid <= 0;
+      myaxi_wdata <= 0;
+      myaxi_wstrb <= 0;
+      myaxi_wvalid <= 0;
+      myaxi_wlast <= 0;
+      if((fsm == 0) && (myaxi_arready || !myaxi_arvalid)) begin
+        myaxi_araddr <= 1024;
+        myaxi_arlen <= 63;
+        myaxi_arvalid <= 1;
         _tmp_0 <= 63;
       end 
       _myaxi_cond_0_1 <= 1;
-      if(myaxi_awvalid && !myaxi_awready) begin
-        myaxi_awvalid <= myaxi_awvalid;
+      if(myaxi_arvalid && !myaxi_arready) begin
+        myaxi_arvalid <= myaxi_arvalid;
       end 
-      if((fsm == 1) && ((myaxi_wready || !myaxi_wvalid) && !_tmp_1)) begin
-        myaxi_wdata <= wdata;
-        myaxi_wvalid <= 1;
-        myaxi_wlast <= 0;
-        myaxi_wstrb <= { 4{ 1'd1 } };
+      if(myaxi_rready && myaxi_rvalid) begin
         _tmp_0 <= _tmp_0 - 1;
-      end 
-      if((fsm == 1) && ((myaxi_wready || !myaxi_wvalid) && !_tmp_1) && (_tmp_0 == 0)) begin
-        myaxi_wlast <= 1;
-        _tmp_1 <= 1;
-      end 
-      _myaxi_cond_1_1 <= 1;
-      if(myaxi_wvalid && !myaxi_wready) begin
-        myaxi_wvalid <= myaxi_wvalid;
-        myaxi_wlast <= myaxi_wlast;
-        _tmp_1 <= _tmp_1;
       end 
     end
   end
@@ -290,7 +276,7 @@ endmodule
 """
 
 def test():
-    test_module = types_axi_fsm_write.mkTest()
+    test_module = types_axi_read.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
