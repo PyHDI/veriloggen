@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import types_axi_read
+import types_axi_read_dataflow
 
 expected_verilog = """
 module test;
@@ -198,43 +198,32 @@ module main
   output myaxi_rready
 );
 
-  reg [32-1:0] fsm;
-  localparam fsm_init = 0;
-  reg [32-1:0] sum;
+  reg [32-1:0] req_fsm;
+  localparam req_fsm_init = 0;
   reg [8-1:0] _tmp_0;
   reg _myaxi_cond_0_1;
-  assign myaxi_rready = fsm == 1;
-  localparam fsm_1 = 1;
-  localparam fsm_2 = 2;
-  localparam fsm_3 = 3;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      fsm <= fsm_init;
-      sum <= 0;
-    end else begin
-      case(fsm)
-        fsm_init: begin
-          if(myaxi_arready || !myaxi_arvalid) begin
-            fsm <= fsm_1;
-          end 
-        end
-        fsm_1: begin
-          if(myaxi_rready && myaxi_rvalid) begin
-            sum <= sum + myaxi_rdata;
-          end 
-          if(myaxi_rready && myaxi_rvalid && myaxi_rlast) begin
-            fsm <= fsm_2;
-          end 
-        end
-        fsm_2: begin
-          $display("sum=%d expected_sum=%d", sum, 67552);
-          fsm <= fsm_3;
-        end
-      endcase
-    end
-  end
-
+  wire _tmp_1;
+  wire _tmp_2;
+  assign _tmp_1 = 1 && ((_tmp_ready_4 || !_tmp_valid_4) && (myaxi_rvalid && myaxi_rvalid));
+  assign _tmp_2 = 1 && ((_tmp_ready_4 || !_tmp_valid_4) && (myaxi_rvalid && myaxi_rvalid)) && ((_tmp_ready_5 || !_tmp_valid_5) && myaxi_rvalid);
+  assign myaxi_rready = _tmp_1 && _tmp_2;
+  reg [32-1:0] _tmp_data_3;
+  reg [32-1:0] _tmp_data_4;
+  reg _tmp_valid_4;
+  wire _tmp_ready_4;
+  reg [32-1:0] _tmp_data_5;
+  reg _tmp_valid_5;
+  wire _tmp_ready_5;
+  wire [32-1:0] sum_data;
+  wire sum_valid;
+  assign sum_data = _tmp_data_4;
+  assign sum_valid = _tmp_valid_4;
+  assign _tmp_ready_4 = 1;
+  wire [32-1:0] last_data;
+  wire last_valid;
+  assign last_data = _tmp_data_5;
+  assign last_valid = _tmp_valid_5;
+  assign _tmp_ready_5 = 1;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -261,7 +250,7 @@ module main
       myaxi_wstrb <= 0;
       myaxi_wvalid <= 0;
       myaxi_wlast <= 0;
-      if((fsm == 0) && (myaxi_arready || !myaxi_arvalid)) begin
+      if((req_fsm == 0) && (myaxi_arready || !myaxi_arvalid)) begin
         myaxi_araddr <= 1024;
         myaxi_arlen <= 63;
         myaxi_arvalid <= 1;
@@ -277,12 +266,71 @@ module main
     end
   end
 
+  localparam req_fsm_1 = 1;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      req_fsm <= req_fsm_init;
+    end else begin
+      case(req_fsm)
+        req_fsm_init: begin
+          if(myaxi_arready || !myaxi_arvalid) begin
+            req_fsm <= req_fsm_1;
+          end 
+        end
+      endcase
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _tmp_data_3 <= 0;
+      _tmp_data_4 <= 1'd0;
+      _tmp_valid_4 <= 0;
+      _tmp_data_5 <= 0;
+      _tmp_valid_5 <= 0;
+    end else begin
+      if(myaxi_rvalid && _tmp_2) begin
+        _tmp_data_3 <= myaxi_rlast;
+      end 
+      if((_tmp_ready_4 || !_tmp_valid_4) && (_tmp_1 && _tmp_2) && (myaxi_rvalid && myaxi_rvalid)) begin
+        _tmp_data_4 <= _tmp_data_4 + myaxi_rdata;
+      end 
+      if(_tmp_valid_4 && _tmp_ready_4) begin
+        _tmp_valid_4 <= 0;
+      end 
+      if((_tmp_ready_4 || !_tmp_valid_4) && (_tmp_1 && _tmp_2)) begin
+        _tmp_valid_4 <= myaxi_rvalid && myaxi_rvalid;
+      end 
+      if((_tmp_ready_4 || !_tmp_valid_4) && (_tmp_1 && _tmp_2) && (myaxi_rvalid && myaxi_rvalid) && _tmp_data_3) begin
+        _tmp_data_4 <= 1'd0 + myaxi_rdata;
+      end 
+      if((_tmp_ready_5 || !_tmp_valid_5) && _tmp_2 && myaxi_rvalid) begin
+        _tmp_data_5 <= myaxi_rlast;
+      end 
+      if(_tmp_valid_5 && _tmp_ready_5) begin
+        _tmp_valid_5 <= 0;
+      end 
+      if((_tmp_ready_5 || !_tmp_valid_5) && _tmp_2) begin
+        _tmp_valid_5 <= myaxi_rvalid;
+      end 
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(sum_valid && last_valid && (last_data == 1)) begin
+      $display("sum=%d expected_sum=%", sum_data, 67552);
+    end 
+  end
+
 
 endmodule
 """
 
 def test():
-    test_module = types_axi_read.mkTest()
+    test_module = types_axi_read_dataflow.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

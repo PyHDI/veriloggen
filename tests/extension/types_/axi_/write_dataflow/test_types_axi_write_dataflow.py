@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import types_axi_write
+import types_axi_write_dataflow
 
 expected_verilog = """
 module test;
@@ -197,8 +197,21 @@ module main
   localparam fsm_init = 0;
   reg [8-1:0] _tmp_0;
   reg _myaxi_cond_0_1;
-  reg [32-1:0] wdata;
-  reg _tmp_1;
+  reg [32-1:0] _tmp_data_1;
+  reg _tmp_valid_1;
+  wire _tmp_ready_1;
+  assign _tmp_ready_1 = (_tmp_ready_2 || !_tmp_valid_2) && _tmp_valid_1;
+  reg [32-1:0] _tmp_data_2;
+  reg _tmp_valid_2;
+  wire _tmp_ready_2;
+  wire [32-1:0] value_data;
+  wire value_valid;
+  wire value_ready;
+  assign value_data = _tmp_data_2;
+  assign value_valid = _tmp_valid_2;
+  assign _tmp_ready_2 = value_ready;
+  reg _tmp_3;
+  assign value_ready = (fsm == 1) && (myaxi_wready || !myaxi_wvalid);
   reg _myaxi_cond_1_1;
 
   always @(posedge CLK) begin
@@ -215,7 +228,7 @@ module main
       myaxi_wvalid <= 0;
       myaxi_wlast <= 0;
       myaxi_wstrb <= 0;
-      _tmp_1 <= 0;
+      _tmp_3 <= 0;
       _myaxi_cond_1_1 <= 0;
     end else begin
       if(_myaxi_cond_0_1) begin
@@ -224,7 +237,7 @@ module main
       if(_myaxi_cond_1_1) begin
         myaxi_wvalid <= 0;
         myaxi_wlast <= 0;
-        _tmp_1 <= 0;
+        _tmp_3 <= 0;
       end 
       myaxi_araddr <= 0;
       myaxi_arlen <= 0;
@@ -239,22 +252,22 @@ module main
       if(myaxi_awvalid && !myaxi_awready) begin
         myaxi_awvalid <= myaxi_awvalid;
       end 
-      if((fsm == 1) && ((myaxi_wready || !myaxi_wvalid) && !_tmp_1)) begin
-        myaxi_wdata <= wdata;
+      if(value_valid && ((fsm == 1) && (myaxi_wready || !myaxi_wvalid)) && ((myaxi_wready || !myaxi_wvalid) && !_tmp_3)) begin
+        myaxi_wdata <= value_data;
         myaxi_wvalid <= 1;
         myaxi_wlast <= 0;
         myaxi_wstrb <= { 4{ 1'd1 } };
         _tmp_0 <= _tmp_0 - 1;
       end 
-      if((fsm == 1) && ((myaxi_wready || !myaxi_wvalid) && !_tmp_1) && (_tmp_0 == 0)) begin
+      if(value_valid && ((fsm == 1) && (myaxi_wready || !myaxi_wvalid)) && ((myaxi_wready || !myaxi_wvalid) && !_tmp_3) && (_tmp_0 == 0)) begin
         myaxi_wlast <= 1;
-        _tmp_1 <= 1;
+        _tmp_3 <= 1;
       end 
       _myaxi_cond_1_1 <= 1;
       if(myaxi_wvalid && !myaxi_wready) begin
         myaxi_wvalid <= myaxi_wvalid;
         myaxi_wlast <= myaxi_wlast;
-        _tmp_1 <= _tmp_1;
+        _tmp_3 <= _tmp_3;
       end 
     end
   end
@@ -265,7 +278,6 @@ module main
   always @(posedge CLK) begin
     if(RST) begin
       fsm <= fsm_init;
-      wdata <= 0;
     end else begin
       case(fsm)
         fsm_init: begin
@@ -274,14 +286,40 @@ module main
           end 
         end
         fsm_1: begin
-          if(myaxi_wready || !myaxi_wvalid) begin
-            wdata <= wdata + 1;
-          end 
-          if((myaxi_wready || !myaxi_wvalid) && _tmp_1) begin
+          if(_tmp_3) begin
             fsm <= fsm_2;
           end 
         end
       endcase
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _tmp_data_1 <= 1'd0;
+      _tmp_valid_1 <= 0;
+      _tmp_data_2 <= 0;
+      _tmp_valid_2 <= 0;
+    end else begin
+      if((_tmp_ready_1 || !_tmp_valid_1) && 1 && 1) begin
+        _tmp_data_1 <= _tmp_data_1 + 2'd1;
+      end 
+      if(_tmp_valid_1 && _tmp_ready_1) begin
+        _tmp_valid_1 <= 0;
+      end 
+      if((_tmp_ready_1 || !_tmp_valid_1) && 1) begin
+        _tmp_valid_1 <= 1;
+      end 
+      if((_tmp_ready_2 || !_tmp_valid_2) && _tmp_ready_1 && _tmp_valid_1) begin
+        _tmp_data_2 <= _tmp_data_1 - 2'd1;
+      end 
+      if(_tmp_valid_2 && _tmp_ready_2) begin
+        _tmp_valid_2 <= 0;
+      end 
+      if((_tmp_ready_2 || !_tmp_valid_2) && _tmp_ready_1) begin
+        _tmp_valid_2 <= _tmp_valid_1;
+      end 
     end
   end
 
@@ -297,7 +335,7 @@ endmodule
 """
 
 def test():
-    test_module = types_axi_write.mkTest()
+    test_module = types_axi_write_dataflow.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

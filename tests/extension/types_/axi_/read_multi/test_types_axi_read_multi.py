@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import types_axi_read
+import types_axi_read_multi
 
 expected_verilog = """
 module test;
@@ -203,10 +203,30 @@ module main
   reg [32-1:0] sum;
   reg [8-1:0] _tmp_0;
   reg _myaxi_cond_0_1;
-  assign myaxi_rready = fsm == 1;
+  assign myaxi_rready = (fsm == 1) || (fsm == 19);
+  reg [8-1:0] _tmp_1;
+  reg _myaxi_cond_1_1;
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
   localparam fsm_3 = 3;
+  localparam fsm_4 = 4;
+  localparam fsm_5 = 5;
+  localparam fsm_6 = 6;
+  localparam fsm_7 = 7;
+  localparam fsm_8 = 8;
+  localparam fsm_9 = 9;
+  localparam fsm_10 = 10;
+  localparam fsm_11 = 11;
+  localparam fsm_12 = 12;
+  localparam fsm_13 = 13;
+  localparam fsm_14 = 14;
+  localparam fsm_15 = 15;
+  localparam fsm_16 = 16;
+  localparam fsm_17 = 17;
+  localparam fsm_18 = 18;
+  localparam fsm_19 = 19;
+  localparam fsm_20 = 20;
+  localparam fsm_21 = 21;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -228,8 +248,69 @@ module main
           end 
         end
         fsm_2: begin
-          $display("sum=%d expected_sum=%d", sum, 67552);
           fsm <= fsm_3;
+        end
+        fsm_3: begin
+          fsm <= fsm_4;
+        end
+        fsm_4: begin
+          fsm <= fsm_5;
+        end
+        fsm_5: begin
+          fsm <= fsm_6;
+        end
+        fsm_6: begin
+          fsm <= fsm_7;
+        end
+        fsm_7: begin
+          fsm <= fsm_8;
+        end
+        fsm_8: begin
+          fsm <= fsm_9;
+        end
+        fsm_9: begin
+          fsm <= fsm_10;
+        end
+        fsm_10: begin
+          fsm <= fsm_11;
+        end
+        fsm_11: begin
+          fsm <= fsm_12;
+        end
+        fsm_12: begin
+          fsm <= fsm_13;
+        end
+        fsm_13: begin
+          fsm <= fsm_14;
+        end
+        fsm_14: begin
+          fsm <= fsm_15;
+        end
+        fsm_15: begin
+          fsm <= fsm_16;
+        end
+        fsm_16: begin
+          fsm <= fsm_17;
+        end
+        fsm_17: begin
+          fsm <= fsm_18;
+        end
+        fsm_18: begin
+          if(myaxi_arready || !myaxi_arvalid) begin
+            fsm <= fsm_19;
+          end 
+        end
+        fsm_19: begin
+          if(myaxi_rready && myaxi_rvalid) begin
+            sum <= sum + myaxi_rdata;
+          end 
+          if(myaxi_rready && myaxi_rvalid && myaxi_rlast) begin
+            fsm <= fsm_20;
+          end 
+        end
+        fsm_20: begin
+          $display("sum=%d expected_sum=%d", sum, 200640);
+          fsm <= fsm_21;
         end
       endcase
     end
@@ -250,8 +331,13 @@ module main
       myaxi_arvalid <= 0;
       _tmp_0 <= 0;
       _myaxi_cond_0_1 <= 0;
+      _tmp_1 <= 0;
+      _myaxi_cond_1_1 <= 0;
     end else begin
       if(_myaxi_cond_0_1) begin
+        myaxi_arvalid <= 0;
+      end 
+      if(_myaxi_cond_1_1) begin
         myaxi_arvalid <= 0;
       end 
       myaxi_awaddr <= 0;
@@ -274,6 +360,19 @@ module main
       if(myaxi_rready && myaxi_rvalid) begin
         _tmp_0 <= _tmp_0 - 1;
       end 
+      if((fsm == 18) && (myaxi_arready || !myaxi_arvalid)) begin
+        myaxi_araddr <= 2048;
+        myaxi_arlen <= 63;
+        myaxi_arvalid <= 1;
+        _tmp_1 <= 63;
+      end 
+      _myaxi_cond_1_1 <= 1;
+      if(myaxi_arvalid && !myaxi_arready) begin
+        myaxi_arvalid <= myaxi_arvalid;
+      end 
+      if(myaxi_rready && myaxi_rvalid) begin
+        _tmp_1 <= _tmp_1 - 1;
+      end 
     end
   end
 
@@ -282,7 +381,7 @@ endmodule
 """
 
 def test():
-    test_module = types_axi_read.mkTest()
+    test_module = types_axi_read_multi.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

@@ -16,10 +16,10 @@ def mkMain():
     m = Module('main')
     clk = m.Input('CLK')
     rst = m.Input('RST')
-    
+
     myaxi = axi.AxiMaster(m, 'myaxi', clk, rst)
     myaxi.disable_read()
-    
+
     fsm = FSM(m, 'fsm', clk, rst)
 
     # write address
@@ -56,7 +56,10 @@ def mkMain():
     )
     fsm.Then().If(last).goto_next()
 
-    fsm.make_always()
+    seq = Seq(m, 'seq', clk, rst)
+    seq.If(Ands(myaxi.wdata.wvalid, myaxi.wdata.wready))(
+        Systask('display', 'wdata=%d', myaxi.wdata.wdata)
+    )
 
     return m
 
@@ -74,7 +77,6 @@ def mkTest():
     clk = ports['CLK']
     rst = ports['RST']
 
-    
     # awready (no stall)
     #awready = ports['myaxi_awready']
     #_awready = m.TmpWireLike(awready)
@@ -97,7 +99,6 @@ def mkTest():
     waddr_fsm.goto_init()
     waddr_fsm.make_always()
 
-    
     # wready (nostall)
     #wready = ports['myaxi_wready']
     #_wready = m.TmpWireLike(wready)
@@ -120,32 +121,30 @@ def mkTest():
     wdata_fsm.goto_init()
     wdata_fsm.make_always()
 
-
     # arready (no stall)
     arready = ports['myaxi_arready']
     _arready = m.TmpWireLike(arready)
     _arready.assign(0)
-    m.Always()( arready(_arready) )
+    m.Always()(arready(_arready))
 
     # rvalid (no stall)
     rvalid = ports['myaxi_rvalid']
     _rvalid = m.TmpWireLike(rvalid)
     _rvalid.assign(0)
-    m.Always()( rvalid(_rvalid) )
+    m.Always()(rvalid(_rvalid))
 
     # rdata (no stall)
     rdata = ports['myaxi_rdata']
     _rdata = m.TmpWireLike(rdata)
     _rdata.assign(0)
-    m.Always()( rdata(_rdata) )
+    m.Always()(rdata(_rdata))
 
     # rlast (no stall)
     rlast = ports['myaxi_rlast']
     _rlast = m.TmpWireLike(rlast)
     _rlast.assign(0)
-    m.Always()( rlast(_rlast) )
+    m.Always()(rlast(_rlast))
 
-    
     uut = m.Instance(main, 'uut',
                      params=m.connect_params(main),
                      ports=m.connect_ports(main))

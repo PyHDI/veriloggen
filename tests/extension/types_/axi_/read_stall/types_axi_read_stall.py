@@ -32,9 +32,11 @@ def mkMain():
     fsm.If(ack).goto_next()
 
     # read data
-    data, valid, last = myaxi.read_data(counter, cond=fsm)
+    ready = m.Wire('ready')
+    ready.assign(myaxi.rdata.rvalid)
+    data, valid, last = myaxi.read_data(counter, cond=(fsm, ready))
 
-    fsm.If(valid)(
+    fsm.If(Ands(valid, ready))(
         sum(sum + data)
     )
     fsm.Then().If(last).goto_next()

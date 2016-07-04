@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
 
 from veriloggen import *
 import veriloggen.types.axi as axi
+import veriloggen.dataflow as dataflow
 
 
 def mkMain():
@@ -20,44 +21,34 @@ def mkMain():
     myaxi = axi.AxiMaster(m, 'myaxi', clk, rst)
     myaxi.disable_write()
 
-    fsm = FSM(m, 'fsm', clk, rst)
-    
-    sum = m.Reg('sum', 32, initval=0)
-
     # read address
+    req_fsm = FSM(m, 'req_fsm', clk, rst)
+
     araddr = 1024
     arlen = 64
+    expected_sum = ((araddr + araddr + arlen - 1) * arlen) // 2
 
-    ack, counter0 = myaxi.read_request(araddr, arlen, cond=fsm)
-    fsm.If(ack).goto_next()
-
-    # read data
-    data, valid, last = myaxi.read_data(counter0, cond=fsm)
-
-    fsm.If(valid)(
-        sum(sum + data)
-    )
-    fsm.Then().If(last).goto_next()
-
-    for i in range(16):
-        fsm.goto_next()
-
-    # read address
-    araddr = 1024 * 2
-    arlen = 64
-
-    ack, counter1 = myaxi.read_request(araddr, arlen, cond=fsm)
-    fsm.If(ack).goto_next()
+    ack, counter = myaxi.read_request(araddr, arlen, cond=req_fsm)
+    req_fsm.If(ack).goto_next()
 
     # read data
-    data, valid, last = myaxi.read_data(counter1, cond=fsm)
+    data, last = myaxi.read_dataflow()
+    sum = dataflow.Iadd(data, reset=last.prev(1))
 
-    fsm.If(valid)(
-        sum(sum + data)
+    sum.output('sum_data', 'sum_valid')
+    last.output('last_data', 'last_valid')
+
+    df = dataflow.Dataflow(sum, last)
+    df.implement(m, clk, rst)
+    #df.draw_graph()
+
+    sum_data, sum_valid = sum.read()
+    last_data, last_valid = last.read()
+
+    data_seq = Seq(m, 'data_seq', clk, rst)
+    data_seq.If(Ands(sum_valid, last_valid, last_data == 1))(
+        Systask('display', 'sum=%d expected_sum=%', sum_data, expected_sum)
     )
-    fsm.Then().If(last).goto_next()
-
-    fsm.make_always()
 
     return m
 
@@ -117,7 +108,7 @@ def mkTest():
     raddr_fsm.goto_next()
 
     ack = Ors(ports['myaxi_rready'], Not(ports['myaxi_rvalid']))
-    
+
     raddr_fsm.If(Ands(ack, Not(ports['myaxi_rlast'])))(
         ports['myaxi_rdata'].inc(),
         ports['myaxi_rvalid'](1),
@@ -135,7 +126,8 @@ def mkTest():
         ports['myaxi_rvalid'](ports['myaxi_rvalid']),
         ports['myaxi_rlast'](ports['myaxi_rlast']),
     )
-    raddr_fsm.If(Ands(ack, _arlen == 0)).goto_next()
+    raddr_fsm.If(Ands(ports['myaxi_rvalid'], ports[
+                 'myaxi_rready'], ports['myaxi_rlast'])).goto_next()
 
     raddr_fsm.goto_next()
 

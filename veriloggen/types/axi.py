@@ -4,6 +4,7 @@ from __future__ import print_function
 import veriloggen.core.vtypes as vtypes
 import veriloggen.core.module as module
 from veriloggen.seq.seq import Seq
+import veriloggen.dataflow as dataflow
 from . import util
 
 
@@ -81,7 +82,7 @@ class AxiReadData(AxiBase):
         self.rready = util.make_port(
             m, self.otype, name + '_rready', None, initval=0)
 
-        
+
 # master port
 class AxiMasterWriteAddress(AxiWriteAddress):
     pass
@@ -115,7 +116,7 @@ class AxiSlaveReadAddress(AxiReadAddress):
 class AxiSlaveReadData(AxiReadData):
     _I, _O = util.swap_type(AxiReadData)
 
-    
+
 # master interface
 class AxiMaster(object):
     burst_size_width = 8
@@ -134,7 +135,7 @@ class AxiMaster(object):
         self.rdata = AxiMasterReadData(m, name, datawidth, addrwidth)
 
         self.seq = Seq(m, name, clk, rst)
-        #self.m.add_hook(self.seq.make_always)
+        # self.m.add_hook(self.seq.make_always)
 
         self.write_counters = []
         self.read_counters = []
@@ -163,10 +164,10 @@ class AxiMaster(object):
         self.rdata.rready.assign(0)
         self._read_disabled = True
 
-    def write_request(self, addr, length=1, cond=None):
+    def write_request(self, addr, length=1, cond=None, counter=None):
         if self._write_disabled:
             raise TypeError('Write disabled.')
-        
+
         if self.seq.current_delay > 0:
             raise ValueError("Delayed control is not supported.")
 
@@ -176,13 +177,18 @@ class AxiMaster(object):
         if isinstance(length, int) and length < 1:
             raise ValueError("length must be more than 0.")
 
+        if counter is not None and not isinstance(counter, vtypes.Reg):
+            raise TypeError("counter must be Reg or None.")
+
         if cond is not None:
             self.seq.If(cond)
 
         ack = vtypes.Ors(self.waddr.awready,
                          vtypes.Not(self.waddr.awvalid))
 
-        counter = self.m.TmpReg(self.burst_size_width, initval=0)
+        if counter is None:
+            counter = self.m.TmpReg(self.burst_size_width, initval=0)
+
         self.write_counters.append(counter)
 
         self.seq.If(ack)(
@@ -191,7 +197,7 @@ class AxiMaster(object):
             self.waddr.awvalid(1),
             counter(length - 1)
         )
-        
+
         # de-assert
         self.seq.Delay(1)(
             self.waddr.awvalid(0)
@@ -213,7 +219,7 @@ class AxiMaster(object):
 
         if counter is None:
             counter = self.write_counters[-1]
-        
+
         if cond is not None:
             self.seq.If(cond)
 
@@ -225,7 +231,8 @@ class AxiMaster(object):
             self.wdata.wdata(data),
             self.wdata.wvalid(1),
             self.wdata.wlast(0),
-            self.wdata.wstrb(vtypes.Repeat(vtypes.Int(1, 1), (self.wdata.datawidth // 8))),
+            self.wdata.wstrb(vtypes.Repeat(
+                vtypes.Int(1, 1), (self.wdata.datawidth // 8))),
             counter.dec()
         )
         self.seq.Then().If(counter == 0)(
@@ -239,7 +246,7 @@ class AxiMaster(object):
             self.wdata.wlast(0),
             last(0)
         )
-        
+
         # retry
         self.seq.If(vtypes.Ands(self.wdata.wvalid, vtypes.Not(self.wdata.wready)))(
             self.wdata.wvalid(self.wdata.wvalid),
@@ -249,10 +256,63 @@ class AxiMaster(object):
 
         return ack, last
 
-    def read_request(self, addr, length, cond=None):
+    def write_dataflow(self, data, counter, cond=None):
+        if self._write_disabled:
+            raise TypeError('Write disabled.')
+
+        if self.seq.current_delay > 0:
+            raise ValueError("Delayed control is not supported.")
+
+        if counter is None:
+            counter = self.write_counters[-1]
+
+        ack = vtypes.Ors(self.wdata.wready,
+                         vtypes.Not(self.wdata.wvalid))
+        last = self.m.TmpReg(initval=0)
+
+        if cond is None:
+            cond = ack
+        else:
+            cond = (cond, ack)
+
+        raw_data, raw_valid = data.read(cond=cond)
+
+        # write condition
+        self.seq.If(raw_valid)
+
+        self.seq.If(vtypes.Ands(ack, vtypes.Not(last)))(
+            self.wdata.wdata(raw_data),
+            self.wdata.wvalid(1),
+            self.wdata.wlast(0),
+            self.wdata.wstrb(vtypes.Repeat(
+                vtypes.Int(1, 1), (self.wdata.datawidth // 8))),
+            counter.dec()
+        )
+        self.seq.Then().If(counter == 0)(
+            self.wdata.wlast(1),
+            last(1)
+        )
+
+        # de-assert
+        self.seq.Delay(1)(
+            self.wdata.wvalid(0),
+            self.wdata.wlast(0),
+            last(0)
+        )
+
+        # retry
+        self.seq.If(vtypes.Ands(self.wdata.wvalid, vtypes.Not(self.wdata.wready)))(
+            self.wdata.wvalid(self.wdata.wvalid),
+            self.wdata.wlast(self.wdata.wlast),
+            last(last)
+        )
+
+        return ack, last
+
+    def read_request(self, addr, length, cond=None, counter=None):
         if self._read_disabled:
             raise TypeError('Read disabled.')
-        
+
         if self.seq.current_delay > 0:
             raise ValueError("Delayed control is not supported.")
 
@@ -262,13 +322,18 @@ class AxiMaster(object):
         if isinstance(length, int) and length < 1:
             raise ValueError("length must be more than 0.")
 
+        if counter is not None and not isinstance(counter, vtypes.Reg):
+            raise TypeError("counter must be Reg or None.")
+
         if cond is not None:
             self.seq.If(cond)
 
         ack = vtypes.Ors(self.raddr.arready,
                          vtypes.Not(self.raddr.arvalid))
 
-        counter = self.m.TmpReg(self.burst_size_width, initval=0)
+        if counter is None:
+            counter = self.m.TmpReg(self.burst_size_width, initval=0)
+
         self.read_counters.append(counter)
 
         self.seq.If(ack)(
@@ -293,21 +358,22 @@ class AxiMaster(object):
     def read_data(self, counter=None, cond=None):
         if self._read_disabled:
             raise TypeError('Read disabled.')
-        
+
         if self.seq.current_delay > 0:
             raise ValueError("Delayed control is not supported.")
-        
+
         if counter is None:
             counter = self.read_counters[-1]
-        
+
         ready = self.seq._check_cond(cond)
         val = 1 if ready is None else ready
-        
+
         prev_subst = self.rdata.rready._get_subst()
         if not prev_subst:
             self.rdata.rready.assign(val)
         else:
-            self.rdata.rready.subst[0].overwrite_right(vtypes.Ors(prev_subst[0].right, val))
+            self.rdata.rready.subst[0].overwrite_right(
+                vtypes.Ors(prev_subst[0].right, val))
 
         ack = vtypes.Ands(self.rdata.rready, self.rdata.rvalid)
         data = self.rdata.rdata
@@ -317,5 +383,51 @@ class AxiMaster(object):
         self.seq.If(ack)(
             counter.dec()
         )
-        
+
         return data, valid, last
+
+    def read_dataflow(self, counter=None, cond=None):
+        if self._read_disabled:
+            raise TypeError('Read disabled.')
+
+        if self.seq.current_delay > 0:
+            raise ValueError("Delayed control is not supported.")
+
+        if counter is None:
+            counter = self.read_counters[-1]
+
+        data_ready = self.m.TmpWire()
+        last_ready = self.m.TmpWire()
+        data_ready.assign(1)
+        last_ready.assign(1)
+
+        if cond is None:
+            cond = (data_ready, last_ready)
+        elif isinstance(cond, (tuple, list)):
+            cond = tuple(list(cond) + [data_ready, last_ready])
+        else:
+            cond = (cond, data_ready, last_ready)
+
+        ready = self.seq._check_cond(cond)
+        val = 1 if ready is None else ready
+
+        prev_subst = self.rdata.rready._get_subst()
+        if not prev_subst:
+            self.rdata.rready.assign(val)
+        else:
+            self.rdata.rready.subst[0].overwrite_right(
+                vtypes.Ors(prev_subst[0].right, val))
+
+        ack = vtypes.Ands(self.rdata.rready, self.rdata.rvalid)
+        data = self.rdata.rdata
+        valid = self.rdata.rvalid
+        last = self.rdata.rlast
+
+        self.seq.If(ack)(
+            counter.dec()
+        )
+
+        df_data = dataflow.Variable(data, valid, data_ready)
+        df_last = dataflow.Variable(last, valid, last_ready)
+
+        return df_data, df_last

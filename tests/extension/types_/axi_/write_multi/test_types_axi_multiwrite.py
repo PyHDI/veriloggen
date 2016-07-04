@@ -204,6 +204,104 @@ module main
   reg _myaxi_cond_2_1;
   reg _tmp_3;
   reg _myaxi_cond_3_1;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      myaxi_araddr <= 0;
+      myaxi_arlen <= 0;
+      myaxi_arvalid <= 0;
+      myaxi_awaddr <= 0;
+      myaxi_awlen <= 0;
+      myaxi_awvalid <= 0;
+      _tmp_0 <= 0;
+      _myaxi_cond_0_1 <= 0;
+      _tmp_1 <= 0;
+      _myaxi_cond_1_1 <= 0;
+      myaxi_wdata <= 0;
+      myaxi_wvalid <= 0;
+      myaxi_wlast <= 0;
+      myaxi_wstrb <= 0;
+      _tmp_2 <= 0;
+      _myaxi_cond_2_1 <= 0;
+      _tmp_3 <= 0;
+      _myaxi_cond_3_1 <= 0;
+    end else begin
+      if(_myaxi_cond_0_1) begin
+        myaxi_awvalid <= 0;
+      end 
+      if(_myaxi_cond_1_1) begin
+        myaxi_awvalid <= 0;
+      end 
+      if(_myaxi_cond_2_1) begin
+        myaxi_wvalid <= 0;
+        myaxi_wlast <= 0;
+        _tmp_2 <= 0;
+      end 
+      if(_myaxi_cond_3_1) begin
+        myaxi_wvalid <= 0;
+        myaxi_wlast <= 0;
+        _tmp_3 <= 0;
+      end 
+      myaxi_araddr <= 0;
+      myaxi_arlen <= 0;
+      myaxi_arvalid <= 0;
+      if((fsm == 0) && (myaxi_awready || !myaxi_awvalid)) begin
+        myaxi_awaddr <= 1024;
+        myaxi_awlen <= 63;
+        myaxi_awvalid <= 1;
+        _tmp_0 <= 63;
+      end 
+      _myaxi_cond_0_1 <= 1;
+      if(myaxi_awvalid && !myaxi_awready) begin
+        myaxi_awvalid <= myaxi_awvalid;
+      end 
+      if((fsm == 1) && (myaxi_awready || !myaxi_awvalid)) begin
+        myaxi_awaddr <= 2048;
+        myaxi_awlen <= 63;
+        myaxi_awvalid <= 1;
+        _tmp_1 <= 63;
+      end 
+      _myaxi_cond_1_1 <= 1;
+      if(myaxi_awvalid && !myaxi_awready) begin
+        myaxi_awvalid <= myaxi_awvalid;
+      end 
+      if((fsm == 2) && ((myaxi_wready || !myaxi_wvalid) && !_tmp_2)) begin
+        myaxi_wdata <= wdata;
+        myaxi_wvalid <= 1;
+        myaxi_wlast <= 0;
+        myaxi_wstrb <= { 4{ 1'd1 } };
+        _tmp_0 <= _tmp_0 - 1;
+      end 
+      if((fsm == 2) && ((myaxi_wready || !myaxi_wvalid) && !_tmp_2) && (_tmp_0 == 0)) begin
+        myaxi_wlast <= 1;
+        _tmp_2 <= 1;
+      end 
+      _myaxi_cond_2_1 <= 1;
+      if(myaxi_wvalid && !myaxi_wready) begin
+        myaxi_wvalid <= myaxi_wvalid;
+        myaxi_wlast <= myaxi_wlast;
+        _tmp_2 <= _tmp_2;
+      end 
+      if((fsm == 20) && ((myaxi_wready || !myaxi_wvalid) && !_tmp_3)) begin
+        myaxi_wdata <= wdata;
+        myaxi_wvalid <= 1;
+        myaxi_wlast <= 0;
+        myaxi_wstrb <= { 4{ 1'd1 } };
+        _tmp_1 <= _tmp_1 - 1;
+      end 
+      if((fsm == 20) && ((myaxi_wready || !myaxi_wvalid) && !_tmp_3) && (_tmp_1 == 0)) begin
+        myaxi_wlast <= 1;
+        _tmp_3 <= 1;
+      end 
+      _myaxi_cond_3_1 <= 1;
+      if(myaxi_wvalid && !myaxi_wready) begin
+        myaxi_wvalid <= myaxi_wvalid;
+        myaxi_wlast <= myaxi_wlast;
+        _tmp_3 <= _tmp_3;
+      end 
+    end
+  end
+
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
   localparam fsm_3 = 3;
@@ -316,100 +414,9 @@ module main
 
 
   always @(posedge CLK) begin
-    if(RST) begin
-      myaxi_araddr <= 0;
-      myaxi_arlen <= 0;
-      myaxi_arvalid <= 0;
-      myaxi_awaddr <= 0;
-      myaxi_awlen <= 0;
-      myaxi_awvalid <= 0;
-      _tmp_0 <= 0;
-      _myaxi_cond_0_1 <= 0;
-      _tmp_1 <= 0;
-      _myaxi_cond_1_1 <= 0;
-      myaxi_wdata <= 0;
-      myaxi_wvalid <= 0;
-      myaxi_wlast <= 0;
-      myaxi_wstrb <= 0;
-      _tmp_2 <= 0;
-      _myaxi_cond_2_1 <= 0;
-      _tmp_3 <= 0;
-      _myaxi_cond_3_1 <= 0;
-    end else begin
-      if(_myaxi_cond_0_1) begin
-        myaxi_awvalid <= 0;
-      end 
-      if(_myaxi_cond_1_1) begin
-        myaxi_awvalid <= 0;
-      end 
-      if(_myaxi_cond_2_1) begin
-        myaxi_wvalid <= 0;
-        myaxi_wlast <= 0;
-        _tmp_2 <= 0;
-      end 
-      if(_myaxi_cond_3_1) begin
-        myaxi_wvalid <= 0;
-        myaxi_wlast <= 0;
-        _tmp_3 <= 0;
-      end 
-      myaxi_araddr <= 0;
-      myaxi_arlen <= 0;
-      myaxi_arvalid <= 0;
-      if((fsm == 0) && (myaxi_awready || !myaxi_awvalid)) begin
-        myaxi_awaddr <= 1024;
-        myaxi_awlen <= 63;
-        myaxi_awvalid <= 1;
-        _tmp_0 <= 63;
-      end 
-      _myaxi_cond_0_1 <= 1;
-      if(myaxi_awvalid && !myaxi_awready) begin
-        myaxi_awvalid <= myaxi_awvalid;
-      end 
-      if((fsm == 1) && (myaxi_awready || !myaxi_awvalid)) begin
-        myaxi_awaddr <= 2048;
-        myaxi_awlen <= 63;
-        myaxi_awvalid <= 1;
-        _tmp_1 <= 63;
-      end 
-      _myaxi_cond_1_1 <= 1;
-      if(myaxi_awvalid && !myaxi_awready) begin
-        myaxi_awvalid <= myaxi_awvalid;
-      end 
-      if((fsm == 2) && ((myaxi_wready || !myaxi_wvalid) && !_tmp_2)) begin
-        myaxi_wdata <= wdata;
-        myaxi_wvalid <= 1;
-        myaxi_wlast <= 0;
-        myaxi_wstrb <= { 4{ 1'd1 } };
-        _tmp_0 <= _tmp_0 - 1;
-      end 
-      if((fsm == 2) && ((myaxi_wready || !myaxi_wvalid) && !_tmp_2) && (_tmp_0 == 0)) begin
-        myaxi_wlast <= 1;
-        _tmp_2 <= 1;
-      end 
-      _myaxi_cond_2_1 <= 1;
-      if(myaxi_wvalid && !myaxi_wready) begin
-        myaxi_wvalid <= myaxi_wvalid;
-        myaxi_wlast <= myaxi_wlast;
-        _tmp_2 <= _tmp_2;
-      end 
-      if((fsm == 20) && ((myaxi_wready || !myaxi_wvalid) && !_tmp_3)) begin
-        myaxi_wdata <= wdata;
-        myaxi_wvalid <= 1;
-        myaxi_wlast <= 0;
-        myaxi_wstrb <= { 4{ 1'd1 } };
-        _tmp_1 <= _tmp_1 - 1;
-      end 
-      if((fsm == 20) && ((myaxi_wready || !myaxi_wvalid) && !_tmp_3) && (_tmp_1 == 0)) begin
-        myaxi_wlast <= 1;
-        _tmp_3 <= 1;
-      end 
-      _myaxi_cond_3_1 <= 1;
-      if(myaxi_wvalid && !myaxi_wready) begin
-        myaxi_wvalid <= myaxi_wvalid;
-        myaxi_wlast <= myaxi_wlast;
-        _tmp_3 <= _tmp_3;
-      end 
-    end
+    if(myaxi_wvalid && myaxi_wready) begin
+      $display("wdata=%d", myaxi_wdata);
+    end 
   end
 
 

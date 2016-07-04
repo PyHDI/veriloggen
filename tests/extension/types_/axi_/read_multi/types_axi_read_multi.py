@@ -22,20 +22,40 @@ def mkMain():
 
     fsm = FSM(m, 'fsm', clk, rst)
     sum = m.Reg('sum', 32, initval=0)
+    expected_sum = 0
 
     # read address
     araddr = 1024
     arlen = 64
-    expected_sum = (araddr + araddr + arlen - 1) * arlen // 2
+    expected_sum += (araddr + araddr + arlen - 1) * arlen // 2
 
-    ack, counter = myaxi.read_request(araddr, arlen, cond=fsm)
+    ack, counter0 = myaxi.read_request(araddr, arlen, cond=fsm)
     fsm.If(ack).goto_next()
 
     # read data
-    data, valid, last = myaxi.read_data(counter, cond=fsm)
+    data, valid, last = myaxi.read_data(counter0, cond=fsm)
 
     fsm.If(valid)(
-        sum(sum + data)
+        sum(sum + data),
+    )
+    fsm.Then().If(last).goto_next()
+
+    for i in range(16):
+        fsm.goto_next()
+
+    # read address
+    araddr = 1024 * 2
+    arlen = 64
+    expected_sum += (araddr + araddr + arlen - 1) * arlen // 2
+
+    ack, counter1 = myaxi.read_request(araddr, arlen, cond=fsm)
+    fsm.If(ack).goto_next()
+
+    # read data
+    data, valid, last = myaxi.read_data(counter1, cond=fsm)
+
+    fsm.If(valid)(
+        sum(sum + data),
     )
     fsm.Then().If(last).goto_next()
 
