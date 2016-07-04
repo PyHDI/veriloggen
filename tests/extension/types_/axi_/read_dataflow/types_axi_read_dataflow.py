@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 import sys
 import os
-import math
 
 # the next line can be removed after installation
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
@@ -40,7 +39,7 @@ def mkMain():
 
     df = dataflow.Dataflow(sum, last)
     df.implement(m, clk, rst)
-    #df.draw_graph()
+    # df.draw_graph()
 
     sum_data, sum_valid = sum.read()
     last_data, last_valid = last.read()

@@ -26,64 +26,7 @@ module test;
   wire myaxi_rready;
   reg [32-1:0] waddr;
   localparam waddr_init = 0;
-  localparam waddr_1 = 1;
-  localparam waddr_2 = 2;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      waddr <= waddr_init;
-    end else begin
-      case(waddr)
-        waddr_init: begin
-          myaxi_awready <= 0;
-          if(myaxi_awvalid) begin
-            waddr <= waddr_1;
-          end 
-        end
-        waddr_1: begin
-          if(myaxi_awvalid) begin
-            myaxi_awready <= 1;
-          end 
-          waddr <= waddr_2;
-        end
-        waddr_2: begin
-          myaxi_awready <= 0;
-          waddr <= waddr_init;
-        end
-      endcase
-    end
-  end
-
-  reg [32-1:0] wdata;
-  localparam wdata_init = 0;
-  localparam wdata_1 = 1;
-  localparam wdata_2 = 2;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      wdata <= wdata_init;
-    end else begin
-      case(wdata)
-        wdata_init: begin
-          myaxi_wready <= 0;
-          if(myaxi_wvalid) begin
-            wdata <= wdata_1;
-          end 
-        end
-        wdata_1: begin
-          if(myaxi_wvalid) begin
-            myaxi_wready <= 1;
-          end 
-          wdata <= wdata_2;
-        end
-        wdata_2: begin
-          myaxi_wready <= 0;
-          wdata <= wdata_init;
-        end
-      endcase
-    end
-  end
-
+  reg [32-1:0] _awlen;
   wire _tmp_0;
   assign _tmp_0 = 0;
 
@@ -140,7 +83,7 @@ module test;
 
   initial begin
     $dumpfile("uut.vcd");
-    $dumpvars(0, uut, CLK, RST, myaxi_awaddr, myaxi_awlen, myaxi_awvalid, myaxi_awready, myaxi_wdata, myaxi_wstrb, myaxi_wlast, myaxi_wvalid, myaxi_wready, myaxi_araddr, myaxi_arlen, myaxi_arvalid, myaxi_arready, myaxi_rdata, myaxi_rlast, myaxi_rvalid, myaxi_rready, waddr, wdata, _tmp_0, _tmp_1, _tmp_2, _tmp_3);
+    $dumpvars(0, uut, CLK, RST, myaxi_awaddr, myaxi_awlen, myaxi_awvalid, myaxi_awready, myaxi_wdata, myaxi_wstrb, myaxi_wlast, myaxi_wvalid, myaxi_wready, myaxi_araddr, myaxi_arlen, myaxi_arvalid, myaxi_arready, myaxi_rdata, myaxi_rlast, myaxi_rvalid, myaxi_rready, waddr, _awlen, _tmp_0, _tmp_1, _tmp_2, _tmp_3);
   end
 
 
@@ -155,13 +98,68 @@ module test;
   initial begin
     RST = 0;
     waddr = waddr_init;
-    wdata = wdata_init;
+    _awlen = 0;
     #100;
     RST = 1;
     #100;
     RST = 0;
     #100000;
     $finish;
+  end
+
+  localparam waddr_1 = 1;
+  localparam waddr_2 = 2;
+  localparam waddr_3 = 3;
+  localparam waddr_4 = 4;
+  localparam waddr_5 = 5;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      waddr <= waddr_init;
+      _awlen <= 0;
+    end else begin
+      case(waddr)
+        waddr_init: begin
+          myaxi_awready <= 0;
+          myaxi_wready <= 0;
+          _awlen <= 0;
+          if(myaxi_awvalid) begin
+            waddr <= waddr_1;
+          end 
+        end
+        waddr_1: begin
+          if(myaxi_awvalid) begin
+            myaxi_awready <= 1;
+          end 
+          waddr <= waddr_2;
+        end
+        waddr_2: begin
+          myaxi_awready <= 0;
+          _awlen <= myaxi_awlen;
+          waddr <= waddr_3;
+        end
+        waddr_3: begin
+          myaxi_wready <= 0;
+          if(myaxi_wvalid) begin
+            waddr <= waddr_4;
+          end 
+        end
+        waddr_4: begin
+          if(myaxi_wvalid) begin
+            myaxi_wready <= 1;
+          end 
+          waddr <= waddr_5;
+        end
+        waddr_5: begin
+          myaxi_wready <= 0;
+          _awlen <= _awlen - 1;
+          waddr <= waddr_3;
+          if(_awlen == 0) begin
+            waddr <= waddr_init;
+          end 
+        end
+      endcase
+    end
   end
 
 
@@ -204,6 +202,8 @@ module main
   reg _myaxi_cond_2_1;
   reg _tmp_3;
   reg _myaxi_cond_3_1;
+  reg [32-1:0] sum;
+  reg _seq_cond_0_1;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -245,34 +245,40 @@ module main
       myaxi_araddr <= 0;
       myaxi_arlen <= 0;
       myaxi_arvalid <= 0;
-      if((fsm == 0) && (myaxi_awready || !myaxi_awvalid)) begin
+      if((fsm == 0) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_0 == 0))) begin
         myaxi_awaddr <= 1024;
         myaxi_awlen <= 63;
         myaxi_awvalid <= 1;
-        _tmp_0 <= 63;
+        _tmp_0 <= 64;
+      end 
+      if((fsm == 0) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_0 == 0)) && 0) begin
+        myaxi_awvalid <= 0;
       end 
       _myaxi_cond_0_1 <= 1;
       if(myaxi_awvalid && !myaxi_awready) begin
         myaxi_awvalid <= myaxi_awvalid;
       end 
-      if((fsm == 1) && (myaxi_awready || !myaxi_awvalid)) begin
+      if((fsm == 1) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_1 == 0))) begin
         myaxi_awaddr <= 2048;
         myaxi_awlen <= 63;
         myaxi_awvalid <= 1;
-        _tmp_1 <= 63;
+        _tmp_1 <= 64;
+      end 
+      if((fsm == 1) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_1 == 0)) && 0) begin
+        myaxi_awvalid <= 0;
       end 
       _myaxi_cond_1_1 <= 1;
       if(myaxi_awvalid && !myaxi_awready) begin
         myaxi_awvalid <= myaxi_awvalid;
       end 
-      if((fsm == 2) && ((myaxi_wready || !myaxi_wvalid) && !_tmp_2)) begin
+      if((fsm == 2) && ((myaxi_wready || !myaxi_wvalid) && (_tmp_0 > 0))) begin
         myaxi_wdata <= wdata;
         myaxi_wvalid <= 1;
         myaxi_wlast <= 0;
         myaxi_wstrb <= { 4{ 1'd1 } };
         _tmp_0 <= _tmp_0 - 1;
       end 
-      if((fsm == 2) && ((myaxi_wready || !myaxi_wvalid) && !_tmp_2) && (_tmp_0 == 0)) begin
+      if((fsm == 2) && ((myaxi_wready || !myaxi_wvalid) && (_tmp_0 > 0)) && (_tmp_0 == 1)) begin
         myaxi_wlast <= 1;
         _tmp_2 <= 1;
       end 
@@ -282,14 +288,14 @@ module main
         myaxi_wlast <= myaxi_wlast;
         _tmp_2 <= _tmp_2;
       end 
-      if((fsm == 20) && ((myaxi_wready || !myaxi_wvalid) && !_tmp_3)) begin
+      if((fsm == 20) && ((myaxi_wready || !myaxi_wvalid) && (_tmp_1 > 0))) begin
         myaxi_wdata <= wdata;
         myaxi_wvalid <= 1;
         myaxi_wlast <= 0;
         myaxi_wstrb <= { 4{ 1'd1 } };
         _tmp_1 <= _tmp_1 - 1;
       end 
-      if((fsm == 20) && ((myaxi_wready || !myaxi_wvalid) && !_tmp_3) && (_tmp_1 == 0)) begin
+      if((fsm == 20) && ((myaxi_wready || !myaxi_wvalid) && (_tmp_1 > 0)) && (_tmp_1 == 1)) begin
         myaxi_wlast <= 1;
         _tmp_3 <= 1;
       end 
@@ -414,14 +420,31 @@ module main
 
 
   always @(posedge CLK) begin
-    if(myaxi_wvalid && myaxi_wready) begin
-      $display("wdata=%d", myaxi_wdata);
-    end 
+    if(RST) begin
+      sum <= 0;
+      _seq_cond_0_1 <= 0;
+    end else begin
+      if(_seq_cond_0_1) begin
+        if(fsm < 12) begin
+          $display("sum=%d expected_sum=%d", sum, 2016);
+        end else begin
+          $display("sum=%d expected_sum=%d", sum, 66016);
+        end
+      end 
+      if(fsm == 12) begin
+        sum <= 0;
+      end 
+      if(myaxi_wvalid && myaxi_wready) begin
+        sum <= sum + myaxi_wdata;
+      end 
+      _seq_cond_0_1 <= myaxi_wvalid && myaxi_wready && myaxi_wlast;
+    end
   end
 
 
 endmodule
 """
+
 
 def test():
     test_module = types_axi_multiwrite.mkTest()

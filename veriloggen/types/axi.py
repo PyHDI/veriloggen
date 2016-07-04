@@ -191,11 +191,14 @@ class AxiMaster(object):
 
         self.write_counters.append(counter)
 
-        self.seq.If(ack)(
+        self.seq.If(vtypes.Ands(ack, counter == 0))(
             self.waddr.awaddr(addr),
             self.waddr.awlen(length - 1),
             self.waddr.awvalid(1),
-            counter(length - 1)
+            counter(length)
+        )
+        self.seq.Then().If(length == 0)(
+            self.waddr.awvalid(0)
         )
 
         # de-assert
@@ -223,11 +226,12 @@ class AxiMaster(object):
         if cond is not None:
             self.seq.If(cond)
 
-        ack = vtypes.Ors(self.wdata.wready,
-                         vtypes.Not(self.wdata.wvalid))
+        ack = vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid))
+        #ack = vtypes.Ands(counter > 0,
+        #                  vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid)))
         last = self.m.TmpReg(initval=0)
 
-        self.seq.If(vtypes.Ands(ack, vtypes.Not(last)))(
+        self.seq.If(vtypes.Ands(ack, counter > 0))(
             self.wdata.wdata(data),
             self.wdata.wvalid(1),
             self.wdata.wlast(0),
@@ -235,7 +239,7 @@ class AxiMaster(object):
                 vtypes.Int(1, 1), (self.wdata.datawidth // 8))),
             counter.dec()
         )
-        self.seq.Then().If(counter == 0)(
+        self.seq.Then().If(counter == 1)(
             self.wdata.wlast(1),
             last(1)
         )
@@ -266,8 +270,9 @@ class AxiMaster(object):
         if counter is None:
             counter = self.write_counters[-1]
 
-        ack = vtypes.Ors(self.wdata.wready,
-                         vtypes.Not(self.wdata.wvalid))
+        ack = vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid))
+        #ack = vtypes.Ands(counter > 0, 
+        #                  vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid)))
         last = self.m.TmpReg(initval=0)
 
         if cond is None:
@@ -280,7 +285,7 @@ class AxiMaster(object):
         # write condition
         self.seq.If(raw_valid)
 
-        self.seq.If(vtypes.Ands(ack, vtypes.Not(last)))(
+        self.seq.If(vtypes.Ands(ack, counter > 0))(
             self.wdata.wdata(raw_data),
             self.wdata.wvalid(1),
             self.wdata.wlast(0),
@@ -288,7 +293,7 @@ class AxiMaster(object):
                 vtypes.Int(1, 1), (self.wdata.datawidth // 8))),
             counter.dec()
         )
-        self.seq.Then().If(counter == 0)(
+        self.seq.Then().If(counter == 1)(
             self.wdata.wlast(1),
             last(1)
         )
@@ -336,11 +341,11 @@ class AxiMaster(object):
 
         self.read_counters.append(counter)
 
-        self.seq.If(ack)(
+        self.seq.If(vtypes.Ands(ack, counter == 0))(
             self.raddr.araddr(addr),
             self.raddr.arlen(length - 1),
             self.raddr.arvalid(1),
-            counter(length - 1)
+            counter(length)
         )
 
         # de-assert
@@ -380,7 +385,7 @@ class AxiMaster(object):
         valid = ack
         last = self.rdata.rlast
 
-        self.seq.If(ack)(
+        self.seq.If(vtypes.Ands(ack, counter > 0))(
             counter.dec()
         )
 
@@ -423,7 +428,7 @@ class AxiMaster(object):
         valid = self.rdata.rvalid
         last = self.rdata.rlast
 
-        self.seq.If(ack)(
+        self.seq.If(vtypes.Ands(ack, counter > 0))(
             counter.dec()
         )
 

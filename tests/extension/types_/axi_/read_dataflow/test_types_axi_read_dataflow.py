@@ -250,17 +250,17 @@ module main
       myaxi_wstrb <= 0;
       myaxi_wvalid <= 0;
       myaxi_wlast <= 0;
-      if((req_fsm == 0) && (myaxi_arready || !myaxi_arvalid)) begin
+      if((req_fsm == 0) && ((myaxi_arready || !myaxi_arvalid) && (_tmp_0 == 0))) begin
         myaxi_araddr <= 1024;
         myaxi_arlen <= 63;
         myaxi_arvalid <= 1;
-        _tmp_0 <= 63;
+        _tmp_0 <= 64;
       end 
       _myaxi_cond_0_1 <= 1;
       if(myaxi_arvalid && !myaxi_arready) begin
         myaxi_arvalid <= myaxi_arvalid;
       end 
-      if(myaxi_rready && myaxi_rvalid) begin
+      if(myaxi_rready && myaxi_rvalid && (_tmp_0 > 0)) begin
         _tmp_0 <= _tmp_0 - 1;
       end 
     end
@@ -328,6 +328,7 @@ module main
 
 endmodule
 """
+
 
 def test():
     test_module = types_axi_read_dataflow.mkTest()

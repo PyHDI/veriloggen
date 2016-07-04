@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 import sys
 import os
-import math
 
 # the next line can be removed after installation
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
@@ -63,7 +62,7 @@ def mkMain():
         Systask('display', 'sum=%d expected_sum=%d', sum, expected_sum)
     )
     fsm.goto_next()
-    
+
     fsm.make_always()
 
     return m
@@ -124,7 +123,7 @@ def mkTest():
     raddr_fsm.goto_next()
 
     ack = Ors(ports['myaxi_rready'], Not(ports['myaxi_rvalid']))
-    
+
     raddr_fsm.If(Ands(ack, Not(ports['myaxi_rlast'])))(
         ports['myaxi_rdata'].inc(),
         ports['myaxi_rvalid'](1),
@@ -142,7 +141,8 @@ def mkTest():
         ports['myaxi_rvalid'](ports['myaxi_rvalid']),
         ports['myaxi_rlast'](ports['myaxi_rlast']),
     )
-    raddr_fsm.If(Ands(ports['myaxi_rvalid'], ports['myaxi_rready'], ports['myaxi_rlast'])).goto_next()
+    raddr_fsm.If(Ands(ports['myaxi_rvalid'], ports[
+                 'myaxi_rready'], ports['myaxi_rlast'])).goto_next()
 
     raddr_fsm.goto_next()
 

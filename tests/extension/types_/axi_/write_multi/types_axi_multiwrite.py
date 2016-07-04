@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 import sys
 import os
-import math
 
 # the next line can be removed after installation
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
@@ -36,6 +35,8 @@ def mkMain():
     # write data
     wdata = m.Reg('wdata', 32, initval=0)
 
+    first = fsm.current
+
     ack, last = myaxi.write_data(wdata, counter0, cond=fsm)
     fsm.If(ack)(
         wdata.inc()
@@ -47,7 +48,12 @@ def mkMain():
     )
     fsm.goto_next()
 
-    for i in range(16):
+    for i in range(8):
+        fsm.goto_next()
+
+    second = fsm.current
+
+    for i in range(8):
         fsm.goto_next()
 
     ack, last = myaxi.write_data(wdata, counter1, cond=fsm)
@@ -56,9 +62,23 @@ def mkMain():
     )
     fsm.Then().If(last).goto_next()
 
+    sum = m.Reg('sum', 32, initval=0)
+    expected_sum0 = (awlen - 1) * awlen // 2
+    expected_sum1 = (1000 + 1000 + awlen - 1) * awlen // 2
+
     seq = Seq(m, 'seq', clk, rst)
+    seq.If(fsm.state == second)(
+        sum(0)
+    )
     seq.If(Ands(myaxi.wdata.wvalid, myaxi.wdata.wready))(
-        Systask('display', 'wdata=%d', myaxi.wdata.wdata)
+        sum.add(myaxi.wdata.wdata),
+    )
+    seq.Then().If(myaxi.wdata.wlast).Delay(1)(
+        If(fsm.state < second)(
+            Systask('display', "sum=%d expected_sum=%d", sum, expected_sum0)
+        ).Else(
+            Systask('display', "sum=%d expected_sum=%d", sum, expected_sum1)
+        )
     )
 
     return m
@@ -83,43 +103,64 @@ def mkTest():
     #_awready.assign(1)
     #m.Always()( awready(_awready) )
 
-    # awready (with stall)
-    waddr_fsm = FSM(m, 'waddr', clk, rst)
-    waddr_fsm(
-        ports['myaxi_awready'](0)
-    )
-    waddr_fsm.If(ports['myaxi_awvalid']).goto_next()
-    waddr_fsm.If(ports['myaxi_awvalid'])(
-        ports['myaxi_awready'](1)
-    )
-    waddr_fsm.goto_next()
-    waddr_fsm(
-        ports['myaxi_awready'](0)
-    )
-    waddr_fsm.goto_init()
-    waddr_fsm.make_always()
-
     # wready (nostall)
     #wready = ports['myaxi_wready']
     #_wready = m.TmpWireLike(wready)
     #_wready.assign(1)
     #m.Always()( wready(_wready) )
 
+    # awready (with stall)
+    waddr_fsm = FSM(m, 'waddr', clk, rst)
+    _awlen = m.Reg('_awlen', 32, initval=0)
+
+    waddr_fsm(
+        ports['myaxi_awready'](0),
+        ports['myaxi_wready'](0),
+        _awlen(0)
+    )
+    waddr_fsm.If(ports['myaxi_awvalid']).goto_next()
+
+    waddr_fsm.If(ports['myaxi_awvalid'])(
+        ports['myaxi_awready'](1)
+    )
+    waddr_fsm.goto_next()
+
+    waddr_fsm(
+        ports['myaxi_awready'](0),
+        _awlen(ports['myaxi_awlen'])
+    )
+    waddr_fsm.goto_next()
+
     # wready (with stall)
-    wdata_fsm = FSM(m, 'wdata', clk, rst)
-    wdata_fsm(
+    waddr_init = waddr_fsm.current
+    waddr_fsm(
         ports['myaxi_wready'](0)
     )
-    wdata_fsm.If(ports['myaxi_wvalid']).goto_next()
-    wdata_fsm.If(ports['myaxi_wvalid'])(
+    waddr_fsm.If(ports['myaxi_wvalid']).goto_next()
+
+    waddr_fsm.If(ports['myaxi_wvalid'])(
         ports['myaxi_wready'](1)
     )
-    wdata_fsm.goto_next()
-    wdata_fsm(
-        ports['myaxi_wready'](0)
+    waddr_fsm.goto_next()
+
+    waddr_fsm(
+        ports['myaxi_wready'](0),
+        _awlen.dec()
     )
-    wdata_fsm.goto_init()
-    wdata_fsm.make_always()
+    waddr_fsm.goto(waddr_init)
+    waddr_fsm.If(_awlen == 0).goto_init()
+
+    # wready (no stall)
+#    waddr_fsm(
+#        ports['myaxi_wready'](1)
+#    )
+#    waddr_fsm.Delay(1)(
+#        ports['myaxi_wready'](0)
+#    )
+#    waddr_fsm.If(ports['myaxi_wvalid'])(
+#        _awlen.dec()
+#    )
+#    waddr_fsm.Then().If(_awlen == 0).goto_next()
 
     # arready (no stall)
     arready = ports['myaxi_arready']
