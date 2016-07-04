@@ -68,6 +68,7 @@ class AxiReadAddress(AxiBase):
 
 
 class AxiReadData(AxiBase):
+    _O = util.t_Output
 
     def __init__(self, m, name=None, datawidth=32, addrwidth=32, itype=None, otype=None):
         AxiBase.__init__(self, m, name, datawidth, addrwidth, itype, otype)
@@ -157,18 +158,15 @@ class AxiMaster(object):
         self.seq(
             self.raddr.araddr(0),
             self.raddr.arlen(0),
-            self.raddr.arvalid(0),
-            self.rdata.rready(0),
+            self.raddr.arvalid(0)
         )
+        self.rdata.rready.assign(0)
         self._read_disabled = True
 
     def write_request(self, addr, length=1, cond=None):
         if self._write_disabled:
             raise TypeError('Write disabled.')
         
-        if cond is not None:
-            self.seq.If(cond)
-
         if self.seq.current_delay > 0:
             raise ValueError("Delayed control is not supported.")
 
@@ -177,6 +175,9 @@ class AxiMaster(object):
 
         if isinstance(length, int) and length < 1:
             raise ValueError("length must be more than 0.")
+
+        if cond is not None:
+            self.seq.If(cond)
 
         ack = vtypes.Ors(self.waddr.awready,
                          vtypes.Not(self.waddr.awvalid))
@@ -207,14 +208,14 @@ class AxiMaster(object):
         if self._write_disabled:
             raise TypeError('Write disabled.')
 
+        if self.seq.current_delay > 0:
+            raise ValueError("Delayed control is not supported.")
+
         if counter is None:
             counter = self.write_counters[-1]
         
         if cond is not None:
             self.seq.If(cond)
-
-        if self.seq.current_delay > 0:
-            raise ValueError("Delayed control is not supported.")
 
         ack = vtypes.Ors(self.wdata.wready,
                          vtypes.Not(self.wdata.wvalid))
@@ -252,20 +253,69 @@ class AxiMaster(object):
         if self._read_disabled:
             raise TypeError('Read disabled.')
         
+        if self.seq.current_delay > 0:
+            raise ValueError("Delayed control is not supported.")
+
+        if isinstance(length, int) and length > 2 ** self.burst_size_width:
+            raise ValueError("length must be less than 257.")
+
+        if isinstance(length, int) and length < 1:
+            raise ValueError("length must be more than 0.")
+
+        if cond is not None:
+            self.seq.If(cond)
+
+        ack = vtypes.Ors(self.raddr.arready,
+                         vtypes.Not(self.raddr.arvalid))
+
         counter = self.m.TmpReg(self.burst_size_width, initval=0)
         self.read_counters.append(counter)
 
-        ack = 1
+        self.seq.If(ack)(
+            self.raddr.araddr(addr),
+            self.raddr.arlen(length - 1),
+            self.raddr.arvalid(1),
+            counter(length - 1)
+        )
+
+        # de-assert
+        self.seq.Delay(1)(
+            self.raddr.arvalid(0)
+        )
+
+        # retry
+        self.seq.If(vtypes.Ands(self.raddr.arvalid, vtypes.Not(self.raddr.arready)))(
+            self.raddr.arvalid(self.raddr.arvalid)
+        )
+
         return ack, counter
 
     def read_data(self, counter=None, cond=None):
         if self._read_disabled:
             raise TypeError('Read disabled.')
         
+        if self.seq.current_delay > 0:
+            raise ValueError("Delayed control is not supported.")
+        
         if counter is None:
             counter = self.read_counters[-1]
         
-        data = 0
-        valid = 1
-        last = 0
+        ready = self.seq._check_cond(cond)
+        val = 1 if ready is None else ready
+        
+        prev_subst = self.rdata.rready._get_subst()
+        if not prev_subst:
+            self.rdata.rready.assign(val)
+        else:
+            self.rdata.rready.subst[0].overwrite_right(vtypes.Ors(prev_subst[0].right, val))
+
+        ack = vtypes.Ands(self.rdata.rready, self.rdata.rvalid)
+        data = self.rdata.rdata
+        valid = ack
+        last = self.rdata.rlast
+
+        self.seq.If(ack)(
+            counter.dec()
+        )
+        
         return data, valid, last
