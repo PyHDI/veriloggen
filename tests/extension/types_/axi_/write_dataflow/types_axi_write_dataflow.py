@@ -38,7 +38,6 @@ def mkMain():
     df.implement(m, clk, rst)
     # df.draw_graph()
 
-    #ack, last = myaxi.write_dataflow(value, counter, cond=fsm)
     ack, last = myaxi.write_dataflow(value, counter)
 
     fsm.If(last).goto_next()
