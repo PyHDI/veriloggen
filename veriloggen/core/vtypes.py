@@ -310,7 +310,7 @@ class _Numeric(VeriloggenNode):
         return Slice(self, msb, lsb)
 
     def bit_length(self):
-        return None
+        raise TypeError("bit_length() is not supported.")
 
     def get_signed(self):
         return False
@@ -381,6 +381,8 @@ class _Variable(_Numeric):
         return None
 
     def bit_length(self):
+        if self.width is None:
+            return 1
         return self.width
 
     def get_signed(self):
