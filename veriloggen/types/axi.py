@@ -260,7 +260,7 @@ class AxiMaster(object):
 
         return ack, last
 
-    def write_dataflow(self, data, counter, cond=None):
+    def write_dataflow(self, data, counter=None, cond=None):
         if self._write_disabled:
             raise TypeError('Write disabled.')
 
