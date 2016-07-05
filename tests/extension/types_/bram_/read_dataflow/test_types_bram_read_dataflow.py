@@ -311,6 +311,7 @@ module mybram
 endmodule
 """
 
+
 def test():
     test_module = types_bram_read_dataflow.mkTest()
     code = test_module.to_verilog()

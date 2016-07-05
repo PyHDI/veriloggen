@@ -25,7 +25,7 @@ def mkMain(n=128, datawidth=32, numports=2):
 
     fsm = FSM(m, 'fsm', clk, rst)
 
-    # write data
+    # dataflow
     c = dataflow.Counter()
     value = c - 1
     value.output('value_data', 'value_valid', 'value_ready')
@@ -33,36 +33,41 @@ def mkMain(n=128, datawidth=32, numports=2):
     df = dataflow.Dataflow(value)
     df.implement(m, clk, rst)
 
+    # write request
     waddr = 0
     wlen = 64
     ack, counter = mybram.write_request(waddr, wlen, cond=fsm)
     fsm.If(ack).goto_next()
 
+    # write dataflow (Dataflow -> BRAM)
     wport = 0
     ack, last = mybram.write_dataflow(wport, value, counter, cond=fsm)
     fsm.If(last).goto_next()
 
     fsm.goto_next()
 
+    # read request
     raddr = 0
     rlen = 32
     ack, counter = mybram.read_request(raddr, rlen, cond=fsm)
     fsm.If(ack).goto_next()
 
+    # read dataflow (BRAM -> Dataflow)
     rport = 1
     rslt, last = mybram.read_dataflow(rport, counter, cond=fsm)
     rslt.output('rslt_data', 'rslt_valid')
     last.output('last_data', 'last_valid')
-    
+
     df = dataflow.Dataflow(rslt, last)
     df.implement(m, clk, rst)
 
+    # verify
     rslt_data, rslt_valid = rslt.read()
     last_data, last_valid = last.read()
-    
+
     sum = m.Reg('sum', 32, initval=0)
     expected_sum = (raddr + raddr + rlen - 1) * rlen // 2
-    
+
     seq = Seq(m, 'seq', clk, rst)
 
     seq.If(rslt_valid)(

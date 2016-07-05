@@ -22,26 +22,26 @@ def mkMain():
 
     fsm = FSM(m, 'fsm', clk, rst)
 
-    # write address
+    # write request
     awaddr = 1024
     awlen = 64
-
     ack, counter = myaxi.write_request(awaddr, awlen, cond=fsm)
     fsm.If(ack).goto_next()
 
-    # write data
+    # dataflow
     c = dataflow.Counter()
     value = c - 1
     value.output('value_data', 'value_valid', 'value_ready')
 
     df = dataflow.Dataflow(value)
     df.implement(m, clk, rst)
-    # df.draw_graph()
 
+    # write dataflow (Dataflow -> AXI)
     ack, last = myaxi.write_dataflow(value, counter)
 
     fsm.If(last).goto_next()
 
+    # verify
     sum = m.Reg('sum', 32, initval=0)
     expected_sum = (awlen - 1) * awlen // 2
 

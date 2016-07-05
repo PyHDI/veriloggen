@@ -243,6 +243,7 @@ module mybram
 endmodule
 """
 
+
 def test():
     test_module = types_bram_write_dataflow.mkTest()
     code = test_module.to_verilog()
