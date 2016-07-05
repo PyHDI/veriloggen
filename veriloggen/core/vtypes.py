@@ -114,6 +114,15 @@ def get_signed(obj):
         return obj.get_signed()
     return True
 
+def max_width(left, right):
+    if left is None and right is None:
+        return None
+    if left is None:
+        return right
+    if right is None:
+        return left
+    return Mux(left >= right, left, right)
+
 #-------------------------------------------------------------------------------
 class VeriloggenNode(object):
     """ Base class of Veriloggen AST object """
@@ -381,8 +390,6 @@ class _Variable(_Numeric):
         return None
 
     def bit_length(self):
-        if self.width is None:
-            return 1
         return self.width
 
     def get_signed(self):
@@ -691,7 +698,7 @@ class _BinaryOperator(_Operator):
     def bit_length(self):
         left = self.left.bit_length()
         right = self.right.bit_length()
-        return Mux(left >= right, left, right) + 1
+        return max_width(left, right) + 1
 
     def get_signed(self):
         return self.signed
@@ -743,7 +750,7 @@ class Divide(_BinaryOperator):
     def bit_length(self):
         left = self.left.bit_length()
         right = self.right.bit_length()
-        return Mux(left >= right, left, right)
+        return max_width(left, right)
     
 class Mod(_BinaryOperator):
     @staticmethod
@@ -753,7 +760,7 @@ class Mod(_BinaryOperator):
     def bit_length(self):
         left = self.left.bit_length()
         right = self.right.bit_length()
-        return Mux(left >= right, left, right)
+        return max_width(left, right)
     
 class Plus(_BinaryOperator):
     @staticmethod
@@ -918,7 +925,7 @@ class And(_BinaryOperator):
     def bit_length(self):
         left = self.left.bit_length()
         right = self.right.bit_length()
-        return Mux(left >= right, left, right)
+        return max_width(left, right)
     
 class Xor(_BinaryOperator):
     def __init__(self, left, right):
@@ -932,7 +939,7 @@ class Xor(_BinaryOperator):
     def bit_length(self):
         left = self.left.bit_length()
         right = self.right.bit_length()
-        return Mux(left >= right, left, right)
+        return max_width(left, right)
     
 class Xnor(_BinaryOperator):
     def __init__(self, left, right):
@@ -951,7 +958,7 @@ class Xnor(_BinaryOperator):
     def bit_length(self):
         left = self.left.bit_length()
         right = self.right.bit_length()
-        return Mux(left >= right, left, right)
+        return max_width(left, right)
     
 class Or(_BinaryOperator):
     def __init__(self, left, right):
@@ -965,7 +972,7 @@ class Or(_BinaryOperator):
     def bit_length(self):
         left = self.left.bit_length()
         right = self.right.bit_length()
-        return Mux(left >= right, left, right)
+        return max_width(left, right)
     
 class Land(_BinaryOperator):
     def __init__(self, left, right):
@@ -981,7 +988,7 @@ class Land(_BinaryOperator):
     def bit_length(self):
         left = self.left.bit_length()
         right = self.right.bit_length()
-        return Mux(left >= right, left, right)
+        return max_width(left, right)
     
 class Lor(_BinaryOperator):
     def __init__(self, left, right):
@@ -997,7 +1004,7 @@ class Lor(_BinaryOperator):
     def bit_length(self):
         left = self.left.bit_length()
         right = self.right.bit_length()
-        return Mux(left >= right, left, right)
+        return max_width(left, right)
     
 class Uplus(_UnaryOperator):
     @staticmethod
@@ -1352,7 +1359,7 @@ class Cond(_SpecialOperator):
     def bit_length(self):
         t = self.true_value.bit_length()
         f = self.false_value.bit_length()
-        return Mux(t >= f, t, f)
+        return max_width(t, f)
         
     def __str__(self):
         return ''.join(['(', str(self.condition), ')?',
