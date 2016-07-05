@@ -303,9 +303,9 @@ class _Numeric(_Node):
             m.Assign( valid(self.sig_valid) )
             
         if self.output_ready is not None:
-            m.Assign( self.sig_ready(ready) )
+            _connect_ready(m, self.sig_ready, ready)
         elif self.sig_ready is not None:
-            m.Assign( self.sig_ready(1) )
+            _connect_ready(m, self.sig_ready, 1)
 
     #--------------------------------------------------------------------------
     def _has_output(self):
