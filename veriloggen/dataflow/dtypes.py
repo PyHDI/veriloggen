@@ -4,6 +4,7 @@ from __future__ import print_function
 from collections import OrderedDict
 import veriloggen.core.vtypes as vtypes
 import veriloggen.types.fixed as fx
+from veriloggen.seq.seq import make_condition
 from . import mul
 from . import div
 
@@ -219,7 +220,7 @@ class _Numeric(_Node):
         if valid is None:
             valid = 1
 
-        ready = self.seq._check_cond(cond)
+        ready = make_condition(cond)
         val = 1 if ready is None else ready
 
         if self.ready is not None:
