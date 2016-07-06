@@ -151,6 +151,7 @@ class _Numeric(_Node):
     def __init__(self):
         _Node.__init__(self)
         self.m = None
+        self.df = None
         self.seq = None
         
         self.output_data = None
@@ -257,8 +258,9 @@ class _Numeric(_Node):
         raise NotImplementedError('eval() is not implemented')
     
     #--------------------------------------------------------------------------
-    def _set_default_manager(self, m, seq):
+    def _set_default_manager(self, m, df, seq):
         self.m = m
+        self.df = df
         self.seq = seq
     
     def _implement(self, m, seq):
