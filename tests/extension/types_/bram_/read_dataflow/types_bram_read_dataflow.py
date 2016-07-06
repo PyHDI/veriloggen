@@ -33,47 +33,40 @@ def mkMain(n=128, datawidth=32, numports=2):
     df = dataflow.Dataflow(value)
     df.implement(m, clk, rst)
 
-    # write request
-    waddr = 0
-    wlen = 64
-    ack, counter = mybram.write_request(waddr, wlen, cond=fsm)
-    fsm.If(ack).goto_next()
-
     # write dataflow (Dataflow -> BRAM)
     wport = 0
-    ack, last = mybram.write_dataflow(wport, value, counter, cond=fsm)
-    fsm.If(last).goto_next()
+    waddr = 0
+    wlen = 64
+    done = mybram.write_dataflow(wport, waddr, value, wlen, cond=fsm)
+    fsm.If(done).goto_next()
 
     fsm.goto_next()
 
-    # read request
-    raddr = 0
-    rlen = 32
-    ack, counter = mybram.read_request(raddr, rlen, cond=fsm)
-    fsm.If(ack).goto_next()
-
     # read dataflow (BRAM -> Dataflow)
     rport = 1
-    rslt, last = mybram.read_dataflow(rport, counter, cond=fsm)
-    rslt.output('rslt_data', 'rslt_valid')
-    last.output('last_data', 'last_valid')
+    raddr = 0
+    rlen = 32
+    rdata, rlast, done = mybram.read_dataflow(rport, raddr, rlen, cond=fsm)
+    rdata.output('rdata_data', 'rdata_valid')
+    rlast.output('rlast_data', 'rlast_valid')
+    fsm.If(done).goto_next()
 
-    df = dataflow.Dataflow(rslt, last)
+    df = dataflow.Dataflow(rdata, rlast)
     df.implement(m, clk, rst)
 
     # verify
-    rslt_data, rslt_valid = rslt.read()
-    last_data, last_valid = last.read()
+    rdata_data, rdata_valid = rdata.read()
+    rlast_data, rlast_valid = rlast.read()
 
     sum = m.Reg('sum', 32, initval=0)
     expected_sum = (raddr + raddr + rlen - 1) * rlen // 2
 
     seq = Seq(m, 'seq', clk, rst)
 
-    seq.If(rslt_valid)(
-        sum.add(rslt_data)
+    seq.If(rdata_valid)(
+        sum.add(rdata_data)
     )
-    seq.Then().If(last_data == 1).Delay(1)(
+    seq.Then().If(rlast_data == 1).Delay(1)(
         Systask('display', 'sum=%d expected_sum=%d', sum, expected_sum)
     )
 

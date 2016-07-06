@@ -3,7 +3,7 @@ from __future__ import print_function
 
 import veriloggen.core.vtypes as vtypes
 import veriloggen.core.module as module
-from veriloggen.seq.seq import Seq
+from veriloggen.seq.seq import Seq, make_condition
 import veriloggen.dataflow as dataflow
 from . import util
 
@@ -165,11 +165,12 @@ class AxiMaster(object):
         self._read_disabled = True
 
     def write_request(self, addr, length=1, cond=None, counter=None):
+        """ 
+        @return ack, counter
+        """
+        
         if self._write_disabled:
             raise TypeError('Write disabled.')
-
-        if self.seq.current_delay > 0:
-            raise ValueError("Delayed control is not supported.")
 
         if isinstance(length, int) and length > 2 ** self.burst_size_width:
             raise ValueError("length must be less than 257.")
@@ -214,11 +215,12 @@ class AxiMaster(object):
         return ack, counter
 
     def write_data(self, data, counter=None, cond=None):
+        """ 
+        @return ack, last
+        """
+        
         if self._write_disabled:
             raise TypeError('Write disabled.')
-
-        if self.seq.current_delay > 0:
-            raise ValueError("Delayed control is not supported.")
 
         if counter is None:
             counter = self.write_counters[-1]
@@ -227,8 +229,8 @@ class AxiMaster(object):
             self.seq.If(cond)
 
         ack = vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid))
-        #ack = vtypes.Ands(counter > 0,
-        #                  vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid)))
+        # ack = vtypes.Ands(counter > 0,
+        # vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid)))
         last = self.m.TmpReg(initval=0)
 
         self.seq.If(vtypes.Ands(ack, counter > 0))(
@@ -261,18 +263,19 @@ class AxiMaster(object):
         return ack, last
 
     def write_dataflow(self, data, counter=None, cond=None):
+        """ 
+        @return done
+        """
+        
         if self._write_disabled:
             raise TypeError('Write disabled.')
-
-        if self.seq.current_delay > 0:
-            raise ValueError("Delayed control is not supported.")
 
         if counter is None:
             counter = self.write_counters[-1]
 
         ack = vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid))
-        #ack = vtypes.Ands(counter > 0, 
-        #                  vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid)))
+        # ack = vtypes.Ands(counter > 0,
+        # vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid)))
         last = self.m.TmpReg(initval=0)
 
         if cond is None:
@@ -312,14 +315,17 @@ class AxiMaster(object):
             last(last)
         )
 
-        return ack, last
+        done = last
+        
+        return done
 
     def read_request(self, addr, length, cond=None, counter=None):
+        """ 
+        @return ack, counter
+        """
+        
         if self._read_disabled:
             raise TypeError('Read disabled.')
-
-        if self.seq.current_delay > 0:
-            raise ValueError("Delayed control is not supported.")
 
         if isinstance(length, int) and length > 2 ** self.burst_size_width:
             raise ValueError("length must be less than 257.")
@@ -361,16 +367,17 @@ class AxiMaster(object):
         return ack, counter
 
     def read_data(self, counter=None, cond=None):
+        """ 
+        @return data, valid, last
+        """
+        
         if self._read_disabled:
             raise TypeError('Read disabled.')
-
-        if self.seq.current_delay > 0:
-            raise ValueError("Delayed control is not supported.")
 
         if counter is None:
             counter = self.read_counters[-1]
 
-        ready = self.seq._check_cond(cond)
+        ready = make_condition(cond)
         val = 1 if ready is None else ready
 
         prev_subst = self.rdata.rready._get_subst()
@@ -392,11 +399,12 @@ class AxiMaster(object):
         return data, valid, last
 
     def read_dataflow(self, counter=None, cond=None):
+        """ 
+        @return data, last, done
+        """
+        
         if self._read_disabled:
             raise TypeError('Read disabled.')
-
-        if self.seq.current_delay > 0:
-            raise ValueError("Delayed control is not supported.")
 
         if counter is None:
             counter = self.read_counters[-1]
@@ -413,7 +421,7 @@ class AxiMaster(object):
         else:
             cond = (cond, data_ready, last_ready)
 
-        ready = self.seq._check_cond(cond)
+        ready = make_condition(*cond)
         val = 1 if ready is None else ready
 
         prev_subst = self.rdata.rready._get_subst()
@@ -434,5 +442,6 @@ class AxiMaster(object):
 
         df_data = dataflow.Variable(data, valid, data_ready)
         df_last = dataflow.Variable(last, valid, last_ready, width=1)
+        done = last
 
-        return df_data, df_last
+        return df_data, df_last, done

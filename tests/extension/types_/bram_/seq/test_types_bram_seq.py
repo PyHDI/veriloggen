@@ -79,28 +79,27 @@ module main
   reg _mybram_cond_0_1;
   reg [32-1:0] raddr;
   reg [32-1:0] sum;
-  reg [14-1:0] _mybram_1_addr_1_1;
-  reg [14-1:0] _mybram_1_addr_1_2;
-  reg [14-1:0] _mybram_1_addr_1_3;
+  localparam _tmp_0 = 1;
+  wire [_tmp_0-1:0] _tmp_1;
+  assign _tmp_1 = 1;
+  reg [_tmp_0-1:0] __tmp_1_1;
+  reg [_tmp_0-1:0] __tmp_1_2;
+  reg [_tmp_0-1:0] __tmp_1_3;
+  reg [_tmp_0-1:0] __tmp_1_4;
+  reg _tmp_2;
+  reg _mybram_cond_1_1;
   reg _mybram_cond_2_1;
   reg _mybram_cond_2_2;
-  reg _mybram_cond_2_3;
-  reg _tmp_0;
-  reg _mybram_cond_3_1;
-  reg _mybram_cond_3_2;
-  reg _mybram_cond_3_3;
-  reg _mybram_cond_3_4;
-  reg _mybram_cond_4_1;
-  reg _mybram_cond_4_2;
-  reg _mybram_cond_4_3;
-  reg _mybram_cond_4_4;
-  reg _mybram_cond_4_5;
   reg _seq_cond_0_1;
 
   always @(posedge CLK) begin
     if(RST) begin
       waddr <= 0;
       count <= 0;
+      __tmp_1_1 <= 0;
+      __tmp_1_2 <= 0;
+      __tmp_1_3 <= 0;
+      __tmp_1_4 <= 0;
       raddr <= 0;
       sum <= 0;
       _seq_cond_0_1 <= 0;
@@ -112,13 +111,17 @@ module main
         waddr <= waddr + 1;
         count <= count + 1;
       end 
-      if(raddr < 16) begin
+      __tmp_1_1 <= _tmp_1;
+      __tmp_1_2 <= __tmp_1_1;
+      __tmp_1_3 <= __tmp_1_2;
+      __tmp_1_4 <= __tmp_1_3;
+      if(__tmp_1_4 && (raddr < 16)) begin
         raddr <= raddr + 1;
       end 
-      if(_tmp_0) begin
+      if(_tmp_2) begin
         sum <= sum + mybram_1_rdata;
       end 
-      _seq_cond_0_1 <= _tmp_0;
+      _seq_cond_0_1 <= _tmp_2;
     end
   end
 
@@ -131,47 +134,22 @@ module main
       mybram_0_wdata <= 0;
       mybram_0_wenable <= 0;
       _mybram_cond_0_1 <= 0;
-      _mybram_1_addr_1_1 <= 0;
-      _mybram_1_addr_1_2 <= 0;
-      _mybram_1_addr_1_3 <= 0;
+      mybram_1_addr <= 0;
+      _mybram_cond_1_1 <= 0;
+      _tmp_2 <= 0;
       _mybram_cond_2_1 <= 0;
       _mybram_cond_2_2 <= 0;
-      _mybram_cond_2_3 <= 0;
-      mybram_1_addr <= 0;
-      _mybram_cond_3_1 <= 0;
-      _mybram_cond_3_2 <= 0;
-      _mybram_cond_3_3 <= 0;
-      _mybram_cond_3_4 <= 0;
-      _tmp_0 <= 0;
-      _mybram_cond_4_1 <= 0;
-      _mybram_cond_4_2 <= 0;
-      _mybram_cond_4_3 <= 0;
-      _mybram_cond_4_4 <= 0;
-      _mybram_cond_4_5 <= 0;
     end else begin
-      if(_mybram_cond_4_5) begin
-        _tmp_0 <= 0;
+      if(_mybram_cond_2_2) begin
+        _tmp_2 <= 0;
       end 
-      if(_mybram_cond_3_4) begin
-        _tmp_0 <= 1;
-      end 
-      _mybram_cond_4_5 <= _mybram_cond_4_4;
-      if(_mybram_cond_2_3) begin
-        mybram_1_addr <= _mybram_1_addr_1_3;
-      end 
-      _mybram_cond_3_4 <= _mybram_cond_3_3;
-      _mybram_cond_4_4 <= _mybram_cond_4_3;
-      _mybram_1_addr_1_3 <= _mybram_1_addr_1_2;
-      _mybram_cond_2_3 <= _mybram_cond_2_2;
-      _mybram_cond_3_3 <= _mybram_cond_3_2;
-      _mybram_cond_4_3 <= _mybram_cond_4_2;
       if(_mybram_cond_0_1) begin
         mybram_0_wenable <= 0;
       end 
-      _mybram_1_addr_1_2 <= _mybram_1_addr_1_1;
+      if(_mybram_cond_1_1) begin
+        _tmp_2 <= 1;
+      end 
       _mybram_cond_2_2 <= _mybram_cond_2_1;
-      _mybram_cond_3_2 <= _mybram_cond_3_1;
-      _mybram_cond_4_2 <= _mybram_cond_4_1;
       mybram_1_wdata <= 0;
       mybram_1_wenable <= 0;
       if(waddr < 16) begin
@@ -180,10 +158,11 @@ module main
         mybram_0_wenable <= 1;
       end 
       _mybram_cond_0_1 <= waddr < 16;
-      _mybram_1_addr_1_1 <= raddr;
-      _mybram_cond_2_1 <= raddr < 16;
-      _mybram_cond_3_1 <= raddr < 16;
-      _mybram_cond_4_1 <= raddr < 16;
+      if(__tmp_1_4 && (raddr < 16)) begin
+        mybram_1_addr <= raddr;
+      end 
+      _mybram_cond_1_1 <= __tmp_1_4 && (raddr < 16);
+      _mybram_cond_2_1 <= __tmp_1_4 && (raddr < 16);
     end
   end
 
@@ -229,6 +208,7 @@ module mybram
 
 endmodule
 """
+
 
 def test():
     test_module = types_bram_seq.mkTest()

@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import types_bram_dataflow
+import types_bram_rtl_dataflow
 
 expected_verilog = """
 module test;
@@ -183,7 +183,9 @@ module main
           end 
         end
         yfsm_2: begin
-          yaddr <= yaddr + 1;
+          if(yaddr < 16) begin
+            yaddr <= yaddr + 1;
+          end 
           if(_tmp_4) begin
             $display("BRAM1[%d] = %d", _yaddr_2, mybram_1_rdata);
           end 
@@ -331,8 +333,9 @@ module mybram
 endmodule
 """
 
+
 def test():
-    test_module = types_bram_dataflow.mkTest()
+    test_module = types_bram_rtl_dataflow.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

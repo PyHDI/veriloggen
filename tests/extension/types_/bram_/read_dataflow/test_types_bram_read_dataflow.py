@@ -90,30 +90,35 @@ module main
   assign value_valid = _tmp_valid_1;
   assign _tmp_ready_1 = value_ready;
   reg [8-1:0] _tmp_2;
-  reg [8-1:0] _tmp_3;
-  reg _tmp_4;
-  assign value_ready = (fsm == 1) && (_tmp_2 > 0);
+  reg _tmp_3;
+  assign value_ready = (fsm == 0) && !_tmp_3;
   reg _mybram_cond_0_1;
-  reg [7-1:0] _tmp_5;
-  reg [7-1:0] _tmp_6;
+  reg _tmp_4;
+  reg _tmp_5;
+  wire _tmp_6;
   wire _tmp_7;
-  wire _tmp_8;
+  assign _tmp_6 = 1 && 1;
   assign _tmp_7 = 1 && 1;
-  assign _tmp_8 = 1 && 1;
-  reg _tmp_9;
-  reg _tmp_10;
-  reg _mybram_cond_1_1;
-  reg _mybram_cond_2_1;
-  reg _mybram_cond_3_1;
-  reg _mybram_cond_3_2;
-  wire [32-1:0] rslt_data;
-  wire rslt_valid;
-  assign rslt_data = mybram_1_rdata;
-  assign rslt_valid = _tmp_9;
-  wire [32-1:0] last_data;
-  wire last_valid;
-  assign last_data = _tmp_10;
-  assign last_valid = _tmp_9;
+  localparam _tmp_8 = 1;
+  wire [_tmp_8-1:0] _tmp_9;
+  assign _tmp_9 = (_tmp_6 || !_tmp_4) && (_tmp_7 || !_tmp_5);
+  reg [_tmp_8-1:0] __tmp_9_1;
+  wire [32-1:0] _tmp_10;
+  reg [32-1:0] __tmp_10_1;
+  assign _tmp_10 = (__tmp_9_1)? mybram_1_rdata : __tmp_10_1;
+  reg [7-1:0] _tmp_11;
+  reg _tmp_12;
+  reg _tmp_13;
+  reg _tmp_14;
+  reg _tmp_15;
+  wire [32-1:0] rdata_data;
+  wire rdata_valid;
+  assign rdata_data = _tmp_10;
+  assign rdata_valid = _tmp_4;
+  wire [1-1:0] rlast_data;
+  wire rlast_valid;
+  assign rlast_data = _tmp_15;
+  assign rlast_valid = _tmp_5;
   reg [32-1:0] sum;
   reg _seq_cond_0_1;
 
@@ -121,72 +126,74 @@ module main
     if(RST) begin
       mybram_1_wdata <= 0;
       mybram_1_wenable <= 0;
-      _tmp_2 <= 0;
-      _tmp_3 <= 0;
       mybram_0_addr <= 0;
       mybram_0_wdata <= 0;
       mybram_0_wenable <= 0;
-      _tmp_4 <= 0;
+      _tmp_2 <= 0;
+      _tmp_3 <= 0;
       _mybram_cond_0_1 <= 0;
+      __tmp_9_1 <= 0;
+      __tmp_10_1 <= 0;
+      _tmp_15 <= 0;
+      _tmp_4 <= 0;
       _tmp_5 <= 0;
-      _tmp_6 <= 0;
+      _tmp_13 <= 0;
+      _tmp_14 <= 0;
+      _tmp_12 <= 0;
       mybram_1_addr <= 0;
-      _mybram_cond_1_1 <= 0;
-      _tmp_9 <= 0;
-      _tmp_10 <= 0;
-      _mybram_cond_2_1 <= 0;
-      _mybram_cond_3_1 <= 0;
-      _mybram_cond_3_2 <= 0;
+      _tmp_11 <= 0;
     end else begin
-      if(_mybram_cond_3_2) begin
-        _tmp_9 <= 0;
-        _tmp_10 <= 0;
-      end 
       if(_mybram_cond_0_1) begin
         mybram_0_wenable <= 0;
-        _tmp_4 <= 0;
-      end 
-      if(_mybram_cond_1_1) begin
-        _tmp_9 <= 1;
-        _tmp_10 <= 0;
-      end 
-      if(_mybram_cond_2_1) begin
-        _tmp_10 <= 1;
-      end 
-      _mybram_cond_3_2 <= _mybram_cond_3_1;
-      mybram_1_wdata <= 0;
-      mybram_1_wenable <= 0;
-      if((fsm == 0) && (_tmp_2 == 0)) begin
-        _tmp_2 <= 64;
         _tmp_3 <= 0;
       end 
-      if(value_valid && ((fsm == 1) && (_tmp_2 > 0)) && (_tmp_2 > 0)) begin
-        mybram_0_addr <= _tmp_3;
+      mybram_1_wdata <= 0;
+      mybram_1_wenable <= 0;
+      if(value_valid && ((fsm == 0) && !_tmp_3) && (_tmp_2 == 0)) begin
+        mybram_0_addr <= 0;
         mybram_0_wdata <= value_data;
         mybram_0_wenable <= 1;
-        _tmp_3 <= _tmp_3 + 1;
+        _tmp_2 <= 63;
+      end 
+      if(value_valid && ((fsm == 0) && !_tmp_3) && (_tmp_2 > 0)) begin
+        mybram_0_addr <= mybram_0_addr + 1;
+        mybram_0_wdata <= value_data;
+        mybram_0_wenable <= 1;
         _tmp_2 <= _tmp_2 - 1;
       end 
-      if(value_valid && ((fsm == 1) && (_tmp_2 > 0)) && (_tmp_2 > 0) && (_tmp_2 == 1)) begin
-        _tmp_4 <= 1;
+      if(value_valid && ((fsm == 0) && !_tmp_3) && (_tmp_2 == 1)) begin
+        _tmp_3 <= 1;
       end 
       _mybram_cond_0_1 <= 1;
-      if((fsm == 3) && (_tmp_5 == 0)) begin
-        _tmp_5 <= 32;
-        _tmp_6 <= 0;
+      __tmp_9_1 <= _tmp_9;
+      __tmp_10_1 <= _tmp_10;
+      if((_tmp_6 || !_tmp_4) && (_tmp_7 || !_tmp_5) && _tmp_13) begin
+        _tmp_15 <= 0;
+        _tmp_4 <= 0;
+        _tmp_5 <= 0;
+        _tmp_13 <= 0;
       end 
-      if((_tmp_5 > 0) && ((fsm == 4) && _tmp_7 && _tmp_8)) begin
-        mybram_1_addr <= _tmp_6;
-        _tmp_5 <= _tmp_5 - 1;
-        _tmp_6 <= _tmp_6 + 1;
+      if((_tmp_6 || !_tmp_4) && (_tmp_7 || !_tmp_5) && _tmp_12) begin
+        _tmp_4 <= 1;
+        _tmp_5 <= 1;
+        _tmp_15 <= _tmp_14;
+        _tmp_14 <= 0;
+        _tmp_12 <= 0;
+        _tmp_13 <= 1;
       end 
-      _mybram_cond_1_1 <= (_tmp_5 > 0) && ((fsm == 4) && _tmp_7 && _tmp_8);
-      _mybram_cond_2_1 <= (_tmp_5 > 0) && ((fsm == 4) && _tmp_7 && _tmp_8) && (_tmp_5 == 1);
-      _mybram_cond_3_1 <= 1;
-      if((_tmp_5 > 0) && !((fsm == 4) && _tmp_7 && _tmp_8)) begin
-        _tmp_5 <= _tmp_5;
-        _tmp_6 <= _tmp_6;
-        _tmp_9 <= _tmp_9;
+      if((_tmp_6 || !_tmp_4) && (_tmp_7 || !_tmp_5) && (fsm == 2) && (_tmp_11 == 0) && !_tmp_14 && !_tmp_15) begin
+        mybram_1_addr <= 0;
+        _tmp_11 <= 31;
+        _tmp_12 <= 1;
+      end 
+      if((_tmp_6 || !_tmp_4) && (_tmp_7 || !_tmp_5) && (_tmp_11 > 0)) begin
+        mybram_1_addr <= mybram_1_addr + 1;
+        _tmp_11 <= _tmp_11 - 1;
+        _tmp_12 <= 1;
+        _tmp_14 <= 0;
+      end 
+      if((_tmp_6 || !_tmp_4) && (_tmp_7 || !_tmp_5) && (_tmp_11 == 1)) begin
+        _tmp_14 <= 1;
       end 
     end
   end
@@ -194,7 +201,6 @@ module main
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
   localparam fsm_3 = 3;
-  localparam fsm_4 = 4;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -202,21 +208,16 @@ module main
     end else begin
       case(fsm)
         fsm_init: begin
-          if(_tmp_2 == 0) begin
+          if(_tmp_3) begin
             fsm <= fsm_1;
           end 
         end
         fsm_1: begin
-          if(_tmp_4) begin
-            fsm <= fsm_2;
-          end 
+          fsm <= fsm_2;
         end
         fsm_2: begin
-          fsm <= fsm_3;
-        end
-        fsm_3: begin
-          if(_tmp_5 == 0) begin
-            fsm <= fsm_4;
+          if(_tmp_15) begin
+            fsm <= fsm_3;
           end 
         end
       endcase
@@ -261,10 +262,10 @@ module main
       if(_seq_cond_0_1) begin
         $display("sum=%d expected_sum=%d", sum, 496);
       end 
-      if(rslt_valid) begin
-        sum <= sum + rslt_data;
+      if(rdata_valid) begin
+        sum <= sum + rdata_data;
       end 
-      _seq_cond_0_1 <= rslt_valid && (last_data == 1);
+      _seq_cond_0_1 <= rdata_valid && (rlast_data == 1);
     end
   end
 

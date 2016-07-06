@@ -37,9 +37,8 @@ def mkMain():
     df.implement(m, clk, rst)
 
     # write dataflow (Dataflow -> AXI)
-    ack, last = myaxi.write_dataflow(value, counter)
-
-    fsm.If(last).goto_next()
+    done = myaxi.write_dataflow(value, counter)
+    fsm.If(done).goto_next()
 
     # verify
     sum = m.Reg('sum', 32, initval=0)

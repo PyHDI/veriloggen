@@ -40,11 +40,12 @@ def mkMain(n=128, datawidth=32, numports=2):
     raddr = m.Reg('raddr', 32, initval=0)
     sum = m.Reg('sum', 32, initval=0)
 
-    seq.If(raddr < 16)(
+    cond = make_condition(seq.Prev(1, delay=4, initval=0), raddr < 16)
+    seq.If(cond)(
         raddr.inc(),
     )
 
-    read_data, read_valid = mybram.read(1, raddr, cond=seq.then, delay=3)
+    read_data, read_valid = mybram.read(1, raddr, cond=cond)
 
     seq.If(read_valid)(
         sum(sum + read_data)

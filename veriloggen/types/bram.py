@@ -4,7 +4,7 @@ from __future__ import print_function
 import veriloggen.core.vtypes as vtypes
 import veriloggen.core.module as module
 import veriloggen.dataflow as dataflow
-from veriloggen.seq.seq import Seq
+from veriloggen.seq.seq import Seq, make_condition
 from . import util
 
 
@@ -105,9 +105,6 @@ class Bram(object):
         self.seq = Seq(m, name, clk, rst)
         # self.m.add_hook(self.seq.make_always)
 
-        self.counters = []
-        self.next_address = {}
-
         self._write_disabled = [False for i in range(numports)]
 
     def __getitem__(self, index):
@@ -120,62 +117,56 @@ class Bram(object):
         )
         self._write_disabled[port] = True
 
-    def write(self, port, addr, wdata, cond=None, delay=0):
-        """ Write operation """
+    def write(self, port, addr, wdata, cond=None):
+        """ 
+        @return None
+        """
+        
         if self._write_disabled[port]:
             raise TypeError('Write disabled.')
 
         if cond is not None:
             self.seq.If(cond)
 
-        current_delay = self.seq.current_delay
-
-        self.seq.Delay(current_delay + delay).EagerVal()(
+        self.seq(
             self.interfaces[port].addr(addr),
             self.interfaces[port].wdata(wdata),
             self.interfaces[port].wenable(1)
         )
 
-        self.seq.Then().Delay(current_delay + delay + 1)(
+        self.seq.Then().Delay(1)(
             self.interfaces[port].wenable(0)
         )
 
-    def write_request(self, addr, length=1, cond=None, counter=None):
-        return self._request(addr, length, cond, counter)
-
-    def write_dataflow(self, port, data, counter=None, cond=None):
+    def write_dataflow(self, port, addr, data, length=1, cond=None):
+        """ 
+        @return done
+        """
+        
         if self._write_disabled[port]:
             raise TypeError('Write disabled.')
 
-        if self.seq.current_delay > 0:
-            raise ValueError("Delayed control is not supported.")
-
-        if counter is None:
-            counter = self.counters[-1]
-
-        naddr = self.next_address[counter]
-
-        ack = counter > 0
+        counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
         last = self.m.TmpReg(initval=0)
+        
+        data_cond = make_condition(cond, vtypes.Not(last))
+        raw_data, raw_valid = data.read(cond=data_cond)
 
-        if cond is None:
-            cond = ack
-        else:
-            cond = (cond, ack)
-
-        raw_data, raw_valid = data.read(cond=cond)
-
-        # write condition
-        self.seq.If(raw_valid)
-
-        self.seq.If(ack)(
-            self.interfaces[port].addr(naddr),
+        self.seq.If(vtypes.Ands(raw_valid, counter == 0))(
+            self.interfaces[port].addr(addr),
             self.interfaces[port].wdata(raw_data),
             self.interfaces[port].wenable(1),
-            naddr.inc(),
+            counter(length - 1),
+        )
+
+        self.seq.If(vtypes.Ands(raw_valid, counter > 0))(
+            self.interfaces[port].addr.inc(),
+            self.interfaces[port].wdata(raw_data),
+            self.interfaces[port].wenable(1),
             counter.dec()
         )
-        self.seq.Then().If(counter == 1)(
+
+        self.seq.If(vtypes.Ands(raw_valid, counter == 1))(
             last(1)
         )
 
@@ -185,121 +176,98 @@ class Bram(object):
             last(0)
         )
 
-        # no retry, because there is no stall by memory-side
+        done = last
 
-        return ack, last
+        return done
 
-    def read(self, port, addr, cond=None, delay=0):
-        """ Read operation """
+    def read(self, port, addr, cond=None):
+        """ 
+        @return data, valid
+        """
+        
         if cond is not None:
             self.seq.If(cond)
 
-        current_delay = self.seq.current_delay
-
-        self.seq.Delay(current_delay + delay).EagerVal()(
+        self.seq(
             self.interfaces[port].addr(addr)
         )
 
         rdata = self.interfaces[port].rdata
         rvalid = self.m.TmpReg(initval=0)
-        self.seq.Then().Delay(current_delay + delay + 1)(
+        self.seq.Then().Delay(1)(
             rvalid(1)
         )
-        self.seq.Then().Delay(current_delay + delay + 2)(
+        self.seq.Then().Delay(2)(
             rvalid(0)
         )
 
         return rdata, rvalid
 
-    def read_request(self, addr, length=1, cond=None, counter=None):
-        return self._request(addr, length, cond, counter)
-
-    def read_dataflow(self, port, counter=None, cond=None):
-        if self.seq.current_delay > 0:
-            raise ValueError("Delayed control is not supported.")
-
-        if counter is None:
-            counter = self.counters[-1]
-
-        naddr = self.next_address[counter]
-
+    def read_dataflow(self, port, addr, length=1, cond=None):
+        """ 
+        @return data, last, done
+        """
+        
+        data_valid = self.m.TmpReg(initval=0)
+        last_valid = self.m.TmpReg(initval=0)
         data_ready = self.m.TmpWire()
         last_ready = self.m.TmpWire()
         data_ready.assign(1)
         last_ready.assign(1)
 
-        if cond is None:
-            cond = (data_ready, last_ready)
-        elif isinstance(cond, (tuple, list)):
-            cond = tuple(list(cond) + [data_ready, last_ready])
-        else:
-            cond = (cond, data_ready, last_ready)
+        data_ack = vtypes.Ors(data_ready, vtypes.Not(data_valid))
+        last_ack = vtypes.Ors(last_ready, vtypes.Not(last_valid))
 
-        ready = self.seq._check_cond(cond)
-        ack = counter > 0 if ready is None else vtypes.Ands(counter > 0, ready)
-        data = self.interfaces[port].rdata
-        valid = self.m.TmpReg(initval=0)
+        ext_cond = make_condition(cond)
+        data_cond = make_condition(data_ack, last_ack)
+        prev_data_cond = self.seq.Prev(data_cond, 1)
+        all_cond = make_condition(data_cond, ext_cond)
+
+        data = self.m.TmpWireLike(self.interfaces[port].rdata)
+        prev_data = self.seq.Prev(data, 1)
+        data.assign(vtypes.Mux(prev_data_cond,
+                               self.interfaces[port].rdata, prev_data))
+
+        counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
+
+        next_valid_on = self.m.TmpReg(initval=0)
+        next_valid_off = self.m.TmpReg(initval=0)
+
+        next_last = self.m.TmpReg(initval=0)
         last = self.m.TmpReg(initval=0)
 
-        self.seq.If(ack)(
-            self.interfaces[port].addr(naddr),
+        self.seq.If(vtypes.Ands(data_cond, next_valid_off))(
+            last(0),
+            data_valid(0),
+            last_valid(0),
+            next_valid_off(0)
+        )
+        self.seq.If(vtypes.Ands(data_cond, next_valid_on))(
+            data_valid(1),
+            last_valid(1),
+            last(next_last),
+            next_last(0),
+            next_valid_on(0),
+            next_valid_off(1)
+        )
+        self.seq.If(vtypes.Ands(all_cond, counter == 0,
+                                vtypes.Not(next_last), vtypes.Not(last)))(
+            self.interfaces[port].addr(addr),
+            counter(length - 1),
+            next_valid_on(1),
+        )
+        self.seq.If(vtypes.Ands(data_cond, counter > 0))(
+            self.interfaces[port].addr.inc(),
             counter.dec(),
-            naddr.inc(),
+            next_valid_on(1),
+            next_last(0)
         )
-        self.seq.Then().Delay(1)(
-            valid(1),
-            last(0)
-        )
-        self.seq.Then().If(counter == 1).Delay(1)(
-            last(1)
+        self.seq.If(vtypes.Ands(data_cond, counter == 1))(
+            next_last(1)
         )
 
-        # de-assert
-        self.seq.Delay(2)(
-            valid(0),
-            last(0)
-        )
+        df_data = dataflow.Variable(data, data_valid, data_ready)
+        df_last = dataflow.Variable(last, last_valid, last_ready, width=1)
+        done = last
 
-        # retry
-        if ready is not None:
-            self.seq.If(vtypes.Ands(counter > 0, vtypes.Not(ready)))(
-                counter(counter),
-                naddr(naddr),
-                valid(valid)
-            )
-
-        df_data = dataflow.Variable(data, valid, data_ready)
-        df_last = dataflow.Variable(last, valid, last_ready)
-
-        return df_data, df_last
-
-    def _request(self, addr, length=1, cond=None, counter=None):
-        if self.seq.current_delay > 0:
-            raise ValueError("Delayed control is not supported.")
-
-        if isinstance(length, int) and length < 1:
-            raise ValueError("length must be more than 0.")
-
-        if counter is not None and not isinstance(counter, vtypes.Reg):
-            raise TypeError("counter must be Reg or None.")
-
-        if cond is not None:
-            self.seq.If(cond)
-
-        if counter is None:
-            counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
-            naddr = self.m.TmpReg((addr + length).bit_length() + 1, initval=0)
-            self.next_address[counter] = naddr
-        else:
-            naddr = self.next_address[counter]
-
-        self.counters.append(counter)
-
-        ack = counter == 0
-
-        self.seq.If(ack)(
-            counter(length),
-            naddr(addr)
-        )
-
-        return ack, counter
+        return df_data, df_last, done

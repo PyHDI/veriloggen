@@ -33,16 +33,14 @@ def mkMain(n=128, datawidth=32, numports=2):
     df = dataflow.Dataflow(value)
     df.implement(m, clk, rst)
 
-    # write request
-    waddr = 0
-    wlen = 64
-    ack, counter = mybram.write_request(waddr, wlen, cond=fsm)
-    fsm.If(ack).goto_next()
-
     # write dataflow (Dataflow -> BRAM)
     wport = 0
-    ack, last = mybram.write_dataflow(wport, value, counter, cond=fsm)
-    fsm.If(last).goto_next()
+    waddr = 0
+    wlen = 64
+    done = mybram.write_dataflow(wport, waddr, value, wlen, cond=fsm)
+    fsm.If(done).goto_next()
+
+    fsm.goto_next()
 
     # verify
     sum = m.Reg('sum', 32, initval=0)

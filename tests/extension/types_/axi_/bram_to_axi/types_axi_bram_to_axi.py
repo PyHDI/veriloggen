@@ -26,19 +26,12 @@ def mkMain():
     # AXI read request
     araddr = 1024
     arlen = 64
-    ack, axi_counter = myaxi.read_request(araddr, arlen, cond=fsm)
-    fsm.If(ack).goto_next()
-
-    # BRAM write request
-    waddr = 0
-    wlen = arlen
-    ack, bram_counter = mybram.write_request(waddr, wlen, cond=fsm)
+    ack, counter = myaxi.read_request(araddr, arlen, cond=fsm)
     fsm.If(ack).goto_next()
 
     # AXI read dataflow (AXI -> Dataflow)
-    axi_data, axi_last = myaxi.read_dataflow()
+    axi_data, axi_last, done = myaxi.read_dataflow()
     sum = dataflow.Iadd(axi_data, reset=axi_last.prev(1))
-
     sum.output('sum_data', 'sum_valid')
     axi_last.output('axi_last_data', 'axi_last_valid')
 
@@ -46,34 +39,33 @@ def mkMain():
     df.implement(m, clk, rst)
 
     # BRAM write dataflow (Dataflow -> BRAM)
-    bram_ack, bram_last = mybram.write_dataflow(0, sum, bram_counter, cond=fsm)
-
-    fsm.If(bram_last).goto_next()
-
-    # BRAM read request
-    raddr = 0
-    rlen = arlen
-    ack, bram_counter = mybram.read_request(raddr, rlen, cond=fsm)
-    fsm.If(ack).goto_next()
+    wport = 0
+    waddr = 0
+    wlen = arlen
+    done = mybram.write_dataflow(wport, waddr, sum, wlen, cond=fsm)
+    fsm.If(done).goto_next()
 
     # AXI write request
     awaddr = 1024
     awlen = 64
-    ack, axi_counter = myaxi.write_request(awaddr, awlen, cond=fsm)
+    ack, counter = myaxi.write_request(awaddr, awlen, cond=fsm)
     fsm.If(ack).goto_next()
 
-    # read dataflow (BRAM -> Dataflow)
+    # BRAM read dataflow (BRAM -> Dataflow)
     rport = 0
-    bram_rslt, bram_last = mybram.read_dataflow(rport, bram_counter, cond=fsm)
-    bram_rslt.output('bram_rslt_data', 'bram_rslt_valid')
-    bram_last.output('bram_last_data', 'bram_last_valid')
+    raddr = 0
+    rlen = arlen
+    rdata, rlast, done = mybram.read_dataflow(rport, raddr, rlen, cond=fsm)
+    rdata.output('rdata_data', 'rdata_valid', 'rdata_ready')
+    rlast.output('rlast_data', 'rlast_valid')
+    fsm.If(done).goto_next()
 
-    df = dataflow.Dataflow(bram_rslt, bram_last)
+    df = dataflow.Dataflow(rdata, rlast)
     df.implement(m, clk, rst)
 
     # AXI write dataflow
-    axi_ack, axi_last = myaxi.write_dataflow(bram_rslt, axi_counter, cond=fsm)
-    fsm.If(axi_last).goto_next()
+    done = myaxi.write_dataflow(rdata, counter)
+    fsm.If(done).goto_next()
 
     # verify
     sum = m.Reg('sum', 32, initval=0)
@@ -106,16 +98,75 @@ def mkTest():
     rst = ports['RST']
 
     # awready (no stall)
-    awready = ports['myaxi_awready']
-    _awready = m.TmpWireLike(awready)
-    _awready.assign(1)
-    m.Always()(awready(_awready))
+    #awready = ports['myaxi_awready']
+    #_awready = m.TmpWireLike(awready)
+    #_awready.assign(1)
+    # m.Always()(awready(_awready))
 
     # wready (nostall)
-    wready = ports['myaxi_wready']
-    _wready = m.TmpWireLike(wready)
-    _wready.assign(1)
-    m.Always()(wready(_wready))
+    #wready = ports['myaxi_wready']
+    #_wready = m.TmpWireLike(wready)
+    #_wready.assign(1)
+    # m.Always()(wready(_wready))
+
+    # awready (with stall)
+    waddr_fsm = FSM(m, 'waddr', clk, rst)
+    _awlen = m.Reg('_awlen', 32, initval=0)
+
+    waddr_fsm(
+        ports['myaxi_awready'](0),
+        ports['myaxi_wready'](0),
+        _awlen(0)
+    )
+    waddr_fsm.If(ports['myaxi_awvalid']).goto_next()
+
+    waddr_fsm.If(ports['myaxi_awvalid'])(
+        ports['myaxi_awready'](1)
+    )
+    waddr_fsm.goto_next()
+
+    waddr_fsm(
+        ports['myaxi_awready'](0),
+        _awlen(ports['myaxi_awlen'])
+    )
+    waddr_fsm.goto_next()
+
+    # wready (with stall)
+    waddr_init = waddr_fsm.current
+    waddr_fsm(
+        ports['myaxi_wready'](0)
+    )
+    waddr_fsm.If(ports['myaxi_wvalid']).goto_next()
+
+    waddr_fsm.If(ports['myaxi_wvalid'])(
+        ports['myaxi_wready'](1)
+    )
+    waddr_fsm.goto_next()
+
+    waddr_fsm(
+        ports['myaxi_wready'](0)
+    )
+    waddr_fsm.goto_next()
+    waddr_fsm.goto_next()
+    waddr_fsm.goto_next()
+
+    waddr_fsm(
+        _awlen.dec()
+    )
+    waddr_fsm.goto(waddr_init)
+    waddr_fsm.If(_awlen == 0).goto_init()
+
+    # wready (no stall)
+#    waddr_fsm(
+#        ports['myaxi_wready'](1)
+#    )
+#    waddr_fsm.Delay(1)(
+#        ports['myaxi_wready'](0)
+#    )
+#    waddr_fsm.If(ports['myaxi_wvalid'])(
+#        _awlen.dec()
+#    )
+#    waddr_fsm.Then().If(_awlen == 0).goto_next()
 
     # arready (no stall)
     #arready = ports['myaxi_arready']
@@ -148,6 +199,28 @@ def mkTest():
 
     ack = Ors(ports['myaxi_rready'], Not(ports['myaxi_rvalid']))
 
+    # nodelay
+#    raddr_fsm.If(Ands(ack, Not(ports['myaxi_rlast'])))(
+#        ports['myaxi_rdata'].inc(),
+#        ports['myaxi_rvalid'](1),
+#        ports['myaxi_rlast'](0),
+#        _arlen.dec()
+#    )
+#    raddr_fsm.Then().If(_arlen == 0)(
+#        ports['myaxi_rlast'](1),
+#    )
+#    raddr_fsm.Delay(1)(
+#        ports['myaxi_rvalid'](0),
+#        ports['myaxi_rlast'](0)
+#    )
+#    raddr_fsm.If(Ands(ports['myaxi_rvalid'], Not(ports['myaxi_rready'])))(
+#        ports['myaxi_rvalid'](ports['myaxi_rvalid']),
+#        ports['myaxi_rlast'](ports['myaxi_rlast']),
+#    )
+#    raddr_fsm.If(Ands(ports['myaxi_rvalid'], ports[
+#                 'myaxi_rready'], ports['myaxi_rlast'])).goto_next()
+
+    rdata_head = raddr_fsm.current
     raddr_fsm.If(Ands(ack, Not(ports['myaxi_rlast'])))(
         ports['myaxi_rdata'].inc(),
         ports['myaxi_rvalid'](1),
@@ -155,19 +228,24 @@ def mkTest():
         _arlen.dec()
     )
     raddr_fsm.Then().If(_arlen == 0)(
-        ports['myaxi_rlast'](1),
+        ports['myaxi_rlast'](1)
     )
     raddr_fsm.Delay(1)(
         ports['myaxi_rvalid'](0),
         ports['myaxi_rlast'](0)
     )
+    raddr_fsm.goto_next()
     raddr_fsm.If(Ands(ports['myaxi_rvalid'], Not(ports['myaxi_rready'])))(
         ports['myaxi_rvalid'](ports['myaxi_rvalid']),
         ports['myaxi_rlast'](ports['myaxi_rlast']),
     )
-    raddr_fsm.If(Ands(ports['myaxi_rvalid'], ports[
-                 'myaxi_rready'], ports['myaxi_rlast'])).goto_next()
-
+    raddr_fsm.If(Ands(ports['myaxi_rvalid'], ports['myaxi_rready'])).goto_next()
+    raddr_fsm.goto_next()
+    raddr_fsm.goto_next()
+    raddr_fsm.goto_next()
+    raddr_fsm.If((_arlen + 1) & 0xff != 0).goto(rdata_head)
+    raddr_fsm.If((_arlen + 1) & 0xff == 0).goto_next()
+    
     raddr_fsm.goto_next()
 
     raddr_fsm.goto_init()

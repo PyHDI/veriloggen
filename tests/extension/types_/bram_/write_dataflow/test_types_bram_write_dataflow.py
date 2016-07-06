@@ -90,9 +90,8 @@ module main
   assign value_valid = _tmp_valid_1;
   assign _tmp_ready_1 = value_ready;
   reg [8-1:0] _tmp_2;
-  reg [8-1:0] _tmp_3;
-  reg _tmp_4;
-  assign value_ready = (fsm == 1) && (_tmp_2 > 0);
+  reg _tmp_3;
+  assign value_ready = (fsm == 0) && !_tmp_3;
   reg _mybram_cond_0_1;
   reg [32-1:0] sum;
   reg _seq_cond_0_1;
@@ -101,33 +100,33 @@ module main
     if(RST) begin
       mybram_1_wdata <= 0;
       mybram_1_wenable <= 0;
-      _tmp_2 <= 0;
-      _tmp_3 <= 0;
       mybram_0_addr <= 0;
       mybram_0_wdata <= 0;
       mybram_0_wenable <= 0;
-      _tmp_4 <= 0;
+      _tmp_2 <= 0;
+      _tmp_3 <= 0;
       _mybram_cond_0_1 <= 0;
     end else begin
       if(_mybram_cond_0_1) begin
         mybram_0_wenable <= 0;
-        _tmp_4 <= 0;
+        _tmp_3 <= 0;
       end 
       mybram_1_wdata <= 0;
       mybram_1_wenable <= 0;
-      if((fsm == 0) && (_tmp_2 == 0)) begin
-        _tmp_2 <= 64;
-        _tmp_3 <= 0;
-      end 
-      if(value_valid && ((fsm == 1) && (_tmp_2 > 0)) && (_tmp_2 > 0)) begin
-        mybram_0_addr <= _tmp_3;
+      if(value_valid && ((fsm == 0) && !_tmp_3) && (_tmp_2 == 0)) begin
+        mybram_0_addr <= 0;
         mybram_0_wdata <= value_data;
         mybram_0_wenable <= 1;
-        _tmp_3 <= _tmp_3 + 1;
+        _tmp_2 <= 63;
+      end 
+      if(value_valid && ((fsm == 0) && !_tmp_3) && (_tmp_2 > 0)) begin
+        mybram_0_addr <= mybram_0_addr + 1;
+        mybram_0_wdata <= value_data;
+        mybram_0_wenable <= 1;
         _tmp_2 <= _tmp_2 - 1;
       end 
-      if(value_valid && ((fsm == 1) && (_tmp_2 > 0)) && (_tmp_2 > 0) && (_tmp_2 == 1)) begin
-        _tmp_4 <= 1;
+      if(value_valid && ((fsm == 0) && !_tmp_3) && (_tmp_2 == 1)) begin
+        _tmp_3 <= 1;
       end 
       _mybram_cond_0_1 <= 1;
     end
@@ -142,14 +141,12 @@ module main
     end else begin
       case(fsm)
         fsm_init: begin
-          if(_tmp_2 == 0) begin
+          if(_tmp_3) begin
             fsm <= fsm_1;
           end 
         end
         fsm_1: begin
-          if(_tmp_4) begin
-            fsm <= fsm_2;
-          end 
+          fsm <= fsm_2;
         end
       endcase
     end

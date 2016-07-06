@@ -29,7 +29,7 @@ def mkMain():
     req_fsm.If(ack).goto_next()
 
     # read dataflow (AXI -> Dataflow)
-    data, last = myaxi.read_dataflow()
+    data, last, done = myaxi.read_dataflow()
     sum = dataflow.Iadd(data, reset=last.prev(1))
 
     sum.output('sum_data', 'sum_valid')

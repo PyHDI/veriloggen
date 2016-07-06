@@ -207,11 +207,11 @@ module main
   assign _tmp_1 = 1 && ((_tmp_ready_4 || !_tmp_valid_4) && (myaxi_rvalid && myaxi_rvalid));
   assign _tmp_2 = 1 && ((_tmp_ready_4 || !_tmp_valid_4) && (myaxi_rvalid && myaxi_rvalid)) && ((_tmp_ready_5 || !_tmp_valid_5) && myaxi_rvalid);
   assign myaxi_rready = _tmp_1 && _tmp_2;
-  reg [32-1:0] _tmp_data_3;
+  reg [1-1:0] _tmp_data_3;
   reg [32-1:0] _tmp_data_4;
   reg _tmp_valid_4;
   wire _tmp_ready_4;
-  reg [32-1:0] _tmp_data_5;
+  reg [1-1:0] _tmp_data_5;
   reg _tmp_valid_5;
   wire _tmp_ready_5;
   wire [32-1:0] sum_data;
@@ -219,7 +219,7 @@ module main
   assign sum_data = _tmp_data_4;
   assign sum_valid = _tmp_valid_4;
   assign _tmp_ready_4 = 1;
-  wire [32-1:0] last_data;
+  wire [1-1:0] last_data;
   wire last_valid;
   assign last_data = _tmp_data_5;
   assign last_valid = _tmp_valid_5;

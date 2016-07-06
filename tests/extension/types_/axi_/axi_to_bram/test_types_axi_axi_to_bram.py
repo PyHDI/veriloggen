@@ -48,6 +48,11 @@ module test;
   localparam raddr_3 = 3;
   localparam raddr_4 = 4;
   localparam raddr_5 = 5;
+  localparam raddr_6 = 6;
+  localparam raddr_7 = 7;
+  localparam raddr_8 = 8;
+  localparam raddr_9 = 9;
+  localparam raddr_10 = 10;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -98,18 +103,38 @@ module test;
             myaxi_rlast <= 1;
           end 
           _raddr_cond_3_0_1 <= 1;
+          raddr <= raddr_4;
+        end
+        raddr_4: begin
           if(myaxi_rvalid && !myaxi_rready) begin
             myaxi_rvalid <= myaxi_rvalid;
             myaxi_rlast <= myaxi_rlast;
           end 
-          if(myaxi_rvalid && myaxi_rready && myaxi_rlast) begin
-            raddr <= raddr_4;
+          if(myaxi_rvalid && myaxi_rready) begin
+            raddr <= raddr_5;
           end 
         end
-        raddr_4: begin
-          raddr <= raddr_5;
-        end
         raddr_5: begin
+          raddr <= raddr_6;
+        end
+        raddr_6: begin
+          raddr <= raddr_7;
+        end
+        raddr_7: begin
+          raddr <= raddr_8;
+        end
+        raddr_8: begin
+          if((_arlen + 1 & 255) != 0) begin
+            raddr <= raddr_3;
+          end 
+          if((_arlen + 1 & 255) == 0) begin
+            raddr <= raddr_9;
+          end 
+        end
+        raddr_9: begin
+          raddr <= raddr_10;
+        end
+        raddr_10: begin
           raddr <= raddr_init;
         end
       endcase
@@ -217,52 +242,57 @@ module main
   localparam fsm_init = 0;
   reg [8-1:0] _tmp_0;
   reg _myaxi_cond_0_1;
-  reg [8-1:0] _tmp_1;
-  reg [8-1:0] _tmp_2;
-  wire _tmp_3;
-  wire _tmp_4;
-  assign _tmp_3 = 1 && ((_tmp_ready_6 || !_tmp_valid_6) && (myaxi_rvalid && myaxi_rvalid));
-  assign _tmp_4 = 1 && ((_tmp_ready_6 || !_tmp_valid_6) && (myaxi_rvalid && myaxi_rvalid)) && ((_tmp_ready_7 || !_tmp_valid_7) && myaxi_rvalid);
-  assign myaxi_rready = _tmp_3 && _tmp_4;
-  reg [32-1:0] _tmp_data_5;
-  reg [32-1:0] _tmp_data_6;
-  reg _tmp_valid_6;
-  wire _tmp_ready_6;
-  reg [32-1:0] _tmp_data_7;
-  reg _tmp_valid_7;
-  wire _tmp_ready_7;
+  wire _tmp_1;
+  wire _tmp_2;
+  assign _tmp_1 = 1 && ((_tmp_ready_4 || !_tmp_valid_4) && (myaxi_rvalid && myaxi_rvalid));
+  assign _tmp_2 = 1 && ((_tmp_ready_4 || !_tmp_valid_4) && (myaxi_rvalid && myaxi_rvalid)) && ((_tmp_ready_5 || !_tmp_valid_5) && myaxi_rvalid);
+  assign myaxi_rready = _tmp_1 && _tmp_2;
+  reg [1-1:0] _tmp_data_3;
+  reg [32-1:0] _tmp_data_4;
+  reg _tmp_valid_4;
+  wire _tmp_ready_4;
+  reg [1-1:0] _tmp_data_5;
+  reg _tmp_valid_5;
+  wire _tmp_ready_5;
   wire [32-1:0] sum_data;
   wire sum_valid;
-  assign sum_data = _tmp_data_6;
-  assign sum_valid = _tmp_valid_6;
-  assign _tmp_ready_6 = 1;
-  wire [32-1:0] axi_last_data;
+  assign sum_data = _tmp_data_4;
+  assign sum_valid = _tmp_valid_4;
+  assign _tmp_ready_4 = 1;
+  wire [1-1:0] axi_last_data;
   wire axi_last_valid;
-  assign axi_last_data = _tmp_data_7;
-  assign axi_last_valid = _tmp_valid_7;
-  assign _tmp_ready_7 = 1;
-  reg _tmp_8;
+  assign axi_last_data = _tmp_data_5;
+  assign axi_last_valid = _tmp_valid_5;
+  assign _tmp_ready_5 = 1;
+  reg [8-1:0] _tmp_6;
+  reg _tmp_7;
   reg _mybram_cond_0_1;
-  reg [8-1:0] _tmp_9;
-  reg [8-1:0] _tmp_10;
+  reg _tmp_8;
+  reg _tmp_9;
+  wire _tmp_10;
   wire _tmp_11;
-  wire _tmp_12;
+  assign _tmp_10 = 1 && 1;
   assign _tmp_11 = 1 && 1;
-  assign _tmp_12 = 1 && 1;
-  reg _tmp_13;
-  reg _tmp_14;
-  reg _mybram_cond_1_1;
-  reg _mybram_cond_2_1;
-  reg _mybram_cond_3_1;
-  reg _mybram_cond_3_2;
-  wire [32-1:0] rslt_data;
-  wire rslt_valid;
-  assign rslt_data = mybram_0_rdata;
-  assign rslt_valid = _tmp_13;
-  wire [32-1:0] last_data;
-  wire last_valid;
-  assign last_data = _tmp_14;
-  assign last_valid = _tmp_13;
+  localparam _tmp_12 = 1;
+  wire [_tmp_12-1:0] _tmp_13;
+  assign _tmp_13 = (_tmp_10 || !_tmp_8) && (_tmp_11 || !_tmp_9);
+  reg [_tmp_12-1:0] __tmp_13_1;
+  wire [32-1:0] _tmp_14;
+  reg [32-1:0] __tmp_14_1;
+  assign _tmp_14 = (__tmp_13_1)? mybram_0_rdata : __tmp_14_1;
+  reg [8-1:0] _tmp_15;
+  reg _tmp_16;
+  reg _tmp_17;
+  reg _tmp_18;
+  reg _tmp_19;
+  wire [32-1:0] rdata_data;
+  wire rdata_valid;
+  assign rdata_data = _tmp_14;
+  assign rdata_valid = _tmp_8;
+  wire [1-1:0] rlast_data;
+  wire rlast_valid;
+  assign rlast_data = _tmp_19;
+  assign rlast_valid = _tmp_9;
   reg [32-1:0] sum;
   reg _seq_cond_0_1;
 
@@ -310,69 +340,71 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_1 <= 0;
-      _tmp_2 <= 0;
       mybram_0_addr <= 0;
       mybram_0_wdata <= 0;
       mybram_0_wenable <= 0;
-      _tmp_8 <= 0;
+      _tmp_6 <= 0;
+      _tmp_7 <= 0;
       _mybram_cond_0_1 <= 0;
+      __tmp_13_1 <= 0;
+      __tmp_14_1 <= 0;
+      _tmp_19 <= 0;
+      _tmp_8 <= 0;
       _tmp_9 <= 0;
-      _tmp_10 <= 0;
-      _mybram_cond_1_1 <= 0;
-      _tmp_13 <= 0;
-      _tmp_14 <= 0;
-      _mybram_cond_2_1 <= 0;
-      _mybram_cond_3_1 <= 0;
-      _mybram_cond_3_2 <= 0;
+      _tmp_17 <= 0;
+      _tmp_18 <= 0;
+      _tmp_16 <= 0;
+      _tmp_15 <= 0;
     end else begin
-      if(_mybram_cond_3_2) begin
-        _tmp_13 <= 0;
-        _tmp_14 <= 0;
-      end 
       if(_mybram_cond_0_1) begin
         mybram_0_wenable <= 0;
-        _tmp_8 <= 0;
+        _tmp_7 <= 0;
       end 
-      if(_mybram_cond_1_1) begin
-        _tmp_13 <= 1;
-        _tmp_14 <= 0;
-      end 
-      if(_mybram_cond_2_1) begin
-        _tmp_14 <= 1;
-      end 
-      _mybram_cond_3_2 <= _mybram_cond_3_1;
-      if((fsm == 1) && (_tmp_1 == 0)) begin
-        _tmp_1 <= 64;
-        _tmp_2 <= 0;
-      end 
-      if(sum_valid && ((fsm == 2) && (_tmp_1 > 0)) && (_tmp_1 > 0)) begin
-        mybram_0_addr <= _tmp_2;
+      if(sum_valid && ((fsm == 1) && !_tmp_7) && (_tmp_6 == 0)) begin
+        mybram_0_addr <= 0;
         mybram_0_wdata <= sum_data;
         mybram_0_wenable <= 1;
-        _tmp_2 <= _tmp_2 + 1;
-        _tmp_1 <= _tmp_1 - 1;
+        _tmp_6 <= 63;
       end 
-      if(sum_valid && ((fsm == 2) && (_tmp_1 > 0)) && (_tmp_1 > 0) && (_tmp_1 == 1)) begin
-        _tmp_8 <= 1;
+      if(sum_valid && ((fsm == 1) && !_tmp_7) && (_tmp_6 > 0)) begin
+        mybram_0_addr <= mybram_0_addr + 1;
+        mybram_0_wdata <= sum_data;
+        mybram_0_wenable <= 1;
+        _tmp_6 <= _tmp_6 - 1;
+      end 
+      if(sum_valid && ((fsm == 1) && !_tmp_7) && (_tmp_6 == 1)) begin
+        _tmp_7 <= 1;
       end 
       _mybram_cond_0_1 <= 1;
-      if((fsm == 3) && (_tmp_9 == 0)) begin
-        _tmp_9 <= 64;
-        _tmp_10 <= 0;
+      __tmp_13_1 <= _tmp_13;
+      __tmp_14_1 <= _tmp_14;
+      if((_tmp_10 || !_tmp_8) && (_tmp_11 || !_tmp_9) && _tmp_17) begin
+        _tmp_19 <= 0;
+        _tmp_8 <= 0;
+        _tmp_9 <= 0;
+        _tmp_17 <= 0;
       end 
-      if((_tmp_9 > 0) && ((fsm == 4) && _tmp_11 && _tmp_12)) begin
-        mybram_0_addr <= _tmp_10;
-        _tmp_9 <= _tmp_9 - 1;
-        _tmp_10 <= _tmp_10 + 1;
+      if((_tmp_10 || !_tmp_8) && (_tmp_11 || !_tmp_9) && _tmp_16) begin
+        _tmp_8 <= 1;
+        _tmp_9 <= 1;
+        _tmp_19 <= _tmp_18;
+        _tmp_18 <= 0;
+        _tmp_16 <= 0;
+        _tmp_17 <= 1;
       end 
-      _mybram_cond_1_1 <= (_tmp_9 > 0) && ((fsm == 4) && _tmp_11 && _tmp_12);
-      _mybram_cond_2_1 <= (_tmp_9 > 0) && ((fsm == 4) && _tmp_11 && _tmp_12) && (_tmp_9 == 1);
-      _mybram_cond_3_1 <= 1;
-      if((_tmp_9 > 0) && !((fsm == 4) && _tmp_11 && _tmp_12)) begin
-        _tmp_9 <= _tmp_9;
-        _tmp_10 <= _tmp_10;
-        _tmp_13 <= _tmp_13;
+      if((_tmp_10 || !_tmp_8) && (_tmp_11 || !_tmp_9) && (fsm == 2) && (_tmp_15 == 0) && !_tmp_18 && !_tmp_19) begin
+        mybram_0_addr <= 0;
+        _tmp_15 <= 63;
+        _tmp_16 <= 1;
+      end 
+      if((_tmp_10 || !_tmp_8) && (_tmp_11 || !_tmp_9) && (_tmp_15 > 0)) begin
+        mybram_0_addr <= mybram_0_addr + 1;
+        _tmp_15 <= _tmp_15 - 1;
+        _tmp_16 <= 1;
+        _tmp_18 <= 0;
+      end 
+      if((_tmp_10 || !_tmp_8) && (_tmp_11 || !_tmp_9) && (_tmp_15 == 1)) begin
+        _tmp_18 <= 1;
       end 
     end
   end
@@ -380,7 +412,6 @@ module main
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
   localparam fsm_3 = 3;
-  localparam fsm_4 = 4;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -393,18 +424,13 @@ module main
           end 
         end
         fsm_1: begin
-          if(_tmp_1 == 0) begin
+          if(_tmp_7) begin
             fsm <= fsm_2;
           end 
         end
         fsm_2: begin
-          if(_tmp_8) begin
+          if(_tmp_19) begin
             fsm <= fsm_3;
-          end 
-        end
-        fsm_3: begin
-          if(_tmp_9 == 0) begin
-            fsm <= fsm_4;
           end 
         end
       endcase
@@ -414,35 +440,35 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
+      _tmp_data_3 <= 0;
+      _tmp_data_4 <= 1'd0;
+      _tmp_valid_4 <= 0;
       _tmp_data_5 <= 0;
-      _tmp_data_6 <= 1'd0;
-      _tmp_valid_6 <= 0;
-      _tmp_data_7 <= 0;
-      _tmp_valid_7 <= 0;
+      _tmp_valid_5 <= 0;
     end else begin
-      if(myaxi_rvalid && _tmp_4) begin
+      if(myaxi_rvalid && _tmp_2) begin
+        _tmp_data_3 <= myaxi_rlast;
+      end 
+      if((_tmp_ready_4 || !_tmp_valid_4) && (_tmp_1 && _tmp_2) && (myaxi_rvalid && myaxi_rvalid)) begin
+        _tmp_data_4 <= _tmp_data_4 + myaxi_rdata;
+      end 
+      if(_tmp_valid_4 && _tmp_ready_4) begin
+        _tmp_valid_4 <= 0;
+      end 
+      if((_tmp_ready_4 || !_tmp_valid_4) && (_tmp_1 && _tmp_2)) begin
+        _tmp_valid_4 <= myaxi_rvalid && myaxi_rvalid;
+      end 
+      if((_tmp_ready_4 || !_tmp_valid_4) && (_tmp_1 && _tmp_2) && (myaxi_rvalid && myaxi_rvalid) && _tmp_data_3) begin
+        _tmp_data_4 <= 1'd0 + myaxi_rdata;
+      end 
+      if((_tmp_ready_5 || !_tmp_valid_5) && _tmp_2 && myaxi_rvalid) begin
         _tmp_data_5 <= myaxi_rlast;
       end 
-      if((_tmp_ready_6 || !_tmp_valid_6) && (_tmp_3 && _tmp_4) && (myaxi_rvalid && myaxi_rvalid)) begin
-        _tmp_data_6 <= _tmp_data_6 + myaxi_rdata;
+      if(_tmp_valid_5 && _tmp_ready_5) begin
+        _tmp_valid_5 <= 0;
       end 
-      if(_tmp_valid_6 && _tmp_ready_6) begin
-        _tmp_valid_6 <= 0;
-      end 
-      if((_tmp_ready_6 || !_tmp_valid_6) && (_tmp_3 && _tmp_4)) begin
-        _tmp_valid_6 <= myaxi_rvalid && myaxi_rvalid;
-      end 
-      if((_tmp_ready_6 || !_tmp_valid_6) && (_tmp_3 && _tmp_4) && (myaxi_rvalid && myaxi_rvalid) && _tmp_data_5) begin
-        _tmp_data_6 <= 1'd0 + myaxi_rdata;
-      end 
-      if((_tmp_ready_7 || !_tmp_valid_7) && _tmp_4 && myaxi_rvalid) begin
-        _tmp_data_7 <= myaxi_rlast;
-      end 
-      if(_tmp_valid_7 && _tmp_ready_7) begin
-        _tmp_valid_7 <= 0;
-      end 
-      if((_tmp_ready_7 || !_tmp_valid_7) && _tmp_4) begin
-        _tmp_valid_7 <= myaxi_rvalid;
+      if((_tmp_ready_5 || !_tmp_valid_5) && _tmp_2) begin
+        _tmp_valid_5 <= myaxi_rvalid;
       end 
     end
   end
@@ -456,10 +482,10 @@ module main
       if(_seq_cond_0_1) begin
         $display("sum=%d expected_sum=%d", sum, 2173600);
       end 
-      if(rslt_valid) begin
-        sum <= sum + rslt_data;
+      if(rdata_valid) begin
+        sum <= sum + rdata_data;
       end 
-      _seq_cond_0_1 <= rslt_valid && (last_data == 1);
+      _seq_cond_0_1 <= rdata_valid && (rlast_data == 1);
     end
   end
 
