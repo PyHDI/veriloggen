@@ -433,6 +433,6 @@ class AxiMaster(object):
         )
 
         df_data = dataflow.Variable(data, valid, data_ready)
-        df_last = dataflow.Variable(last, valid, last_ready)
+        df_last = dataflow.Variable(last, valid, last_ready, width=1)
 
         return df_data, df_last
