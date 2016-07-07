@@ -106,7 +106,7 @@ class Dataflow(object):
 
         # set default module information
         for var in sorted(all_vars, key=lambda x: x.object_id):
-            var._set_default_manager(m, self, seq)
+            var._set_manager(m, self, seq)
 
         # add output ports
         for output_var in sorted(output_vars, key=lambda x: x.object_id):

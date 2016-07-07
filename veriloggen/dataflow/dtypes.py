@@ -172,7 +172,7 @@ class _Numeric(_Node):
         self.end_stage = None
         self.sink = []
 
-        # set up by set_attributes()
+        # set up by _set_attributes()
         self.width = None
         self.point = None
         self.signed = False
@@ -242,8 +242,8 @@ class _Numeric(_Node):
         return rdata, rvalid
     
     #--------------------------------------------------------------------------
-    def set_attributes(self):
-        raise NotImplementedError('set_attributes() is not implemented')
+    def _set_attributes(self):
+        raise NotImplementedError('_set_attributes() is not implemented')
 
     def get_signed(self):
         return self.signed
@@ -258,7 +258,7 @@ class _Numeric(_Node):
         raise NotImplementedError('eval() is not implemented')
     
     #--------------------------------------------------------------------------
-    def _set_default_manager(self, m, df, seq):
+    def _set_manager(self, m, df, seq):
         self.m = m
         self.df = df
         self.seq = seq
@@ -552,9 +552,9 @@ class _BinaryOperator(_Operator):
         self.left._add_sink(self)
         self.right._add_sink(self)
         self.op = getattr(vtypes, self.__class__.__name__, None)
-        self.set_attributes()
+        self._set_attributes()
 
-    def set_attributes(self):
+    def _set_attributes(self):
         left_fp = self.left.get_point()
         right_fp = self.right.get_point()
         left = self.left.bit_length() - left_fp
@@ -614,9 +614,9 @@ class _UnaryOperator(_Operator):
         self.right = _to_constant(right)
         self.right._add_sink(self)
         self.op = getattr(vtypes, self.__class__.__name__, None)
-        self.set_attributes()
+        self._set_attributes()
         
-    def set_attributes(self):
+    def _set_attributes(self):
         right = self.right.bit_length()
         right_fp = self.right.get_point()
         self.width = right
@@ -675,7 +675,7 @@ class Times(_BinaryOperator):
     def eval(self):
         return self.left.eval() * self.right.eval()
     
-    def set_attributes(self):
+    def _set_attributes(self):
         left_fp = self.left.get_point()
         right_fp = self.right.get_point()
         left = self.left.bit_length()
@@ -1023,7 +1023,7 @@ class Minus(_BinaryOperator):
 
 class Sll(_BinaryOperator):
     max_width = 1024
-    def set_attributes(self):
+    def _set_attributes(self):
         v = self.right.eval()
         if isinstance(v, int):
             return self.left.bit_length() + v
@@ -1045,7 +1045,7 @@ class Sll(_BinaryOperator):
         return self.left.eval() << self.right.eval()
     
 class Srl(_BinaryOperator):
-    def set_attributes(self):
+    def _set_attributes(self):
         self.width = self.left.bit_length()
         self.point = self.left.get_point()
         self.signed = False
@@ -1059,7 +1059,7 @@ class Srl(_BinaryOperator):
         return self.left.eval() >> self.right.eval()
     
 class Sra(_BinaryOperator):
-    def set_attributes(self):
+    def _set_attributes(self):
         self.width = self.left.bit_length()
         self.point = self.left.get_point()
         self.signed = self.left.get_signed()
@@ -1082,7 +1082,7 @@ class Sra(_BinaryOperator):
         return Sra(left, right)
 
 class LessThan(_BinaryOperator):
-    def set_attributes(self):
+    def _set_attributes(self):
         self.width = 1
         self.point = 0
         self.signed = False
@@ -1091,7 +1091,7 @@ class LessThan(_BinaryOperator):
         return self.left.eval() < self.right.eval()
     
 class GreaterThan(_BinaryOperator):
-    def set_attributes(self):
+    def _set_attributes(self):
         self.width = 1
         self.point = 0
         self.signed = False
@@ -1100,7 +1100,7 @@ class GreaterThan(_BinaryOperator):
         return self.left.eval() > self.right.eval()
     
 class LessEq(_BinaryOperator):
-    def set_attributes(self):
+    def _set_attributes(self):
         self.width = 1
         self.point = 0
         self.signed = False
@@ -1109,7 +1109,7 @@ class LessEq(_BinaryOperator):
         return self.left.eval() <= self.right.eval()
 
 class GreaterEq(_BinaryOperator):
-    def set_attributes(self):
+    def _set_attributes(self):
         self.width = 1
         self.point = 0
         self.signed = False
@@ -1118,7 +1118,7 @@ class GreaterEq(_BinaryOperator):
         return self.left.eval() >= self.right.eval()
 
 class Eq(_BinaryOperator):
-    def set_attributes(self):
+    def _set_attributes(self):
         self.width = 1
         self.point = 0
         self.signed = False
@@ -1127,7 +1127,7 @@ class Eq(_BinaryOperator):
         return self.left.eval() == self.right.eval()
     
 class NotEq(_BinaryOperator):
-    def set_attributes(self):
+    def _set_attributes(self):
         self.width = 1
         self.point = 0
         self.signed = False
@@ -1136,7 +1136,7 @@ class NotEq(_BinaryOperator):
         return self.left.eval() != self.right.eval()
 
 class _BinaryLogicalOperator(_BinaryOperator):
-    def set_attributes(self):
+    def _set_attributes(self):
         left = self.left.bit_length() 
         right = self.right.bit_length()
         self.width = max(left, right)
@@ -1232,14 +1232,14 @@ class Uminus(_UnaryOperator):
         return - self.right.eval()
     
 class _UnaryLogicalOperator(_UnaryOperator):
-    def set_attributes(self):
+    def _set_attributes(self):
         right = self.right.bit_length()
         self.width = right
         self.point = 0
         self.signed = False
                 
 class Ulnot(_UnaryLogicalOperator):
-    def set_attributes(self):
+    def _set_attributes(self):
         self.width = 1
         self.point = 0
         
@@ -1254,7 +1254,7 @@ class Unot(_UnaryLogicalOperator):
         return ~ self.right.eval()
     
 class Uand(_UnaryLogicalOperator):
-    def set_attributes(self):
+    def _set_attributes(self):
         self.width = 1
         self.point = 0
         
@@ -1272,7 +1272,7 @@ class Uand(_UnaryLogicalOperator):
         return Uand(right)
     
 class Unand(_UnaryLogicalOperator):
-    def set_attributes(self):
+    def _set_attributes(self):
         self.width = 1
         self.point = 0
         
@@ -1290,7 +1290,7 @@ class Unand(_UnaryLogicalOperator):
         return Unand(right)
     
 class Uor(_UnaryLogicalOperator):
-    def set_attributes(self):
+    def _set_attributes(self):
         self.width = 1
         self.point = 0
         
@@ -1308,7 +1308,7 @@ class Uor(_UnaryLogicalOperator):
         return Uor(right)
     
 class Unor(_UnaryLogicalOperator):
-    def set_attributes(self):
+    def _set_attributes(self):
         self.width = 1
         self.point = 0
         
@@ -1326,7 +1326,7 @@ class Unor(_UnaryLogicalOperator):
         return Unor(right)
     
 class Uxor(_UnaryLogicalOperator):
-    def set_attributes(self):
+    def _set_attributes(self):
         self.width = 1
         self.point = 0
         
@@ -1344,7 +1344,7 @@ class Uxor(_UnaryLogicalOperator):
         return Uxor(right)
     
 class Uxnor(_UnaryLogicalOperator):
-    def set_attributes(self):
+    def _set_attributes(self):
         self.width = 1
         self.point = 0
         
@@ -1398,9 +1398,9 @@ class _SpecialOperator(_Operator):
         for var in self.args:
             var._add_sink(self) 
         self.op = None
-        self.set_attributes()
+        self._set_attributes()
 
-    def set_attributes(self):
+    def _set_attributes(self):
         wargs = [ arg.bit_length() for arg in self.args ]
         self.width = max(*wargs)
         pargs = [ arg.get_point() for arg in self.args ]
@@ -1456,7 +1456,7 @@ class Pointer(_SpecialOperator):
         _SpecialOperator.__init__(self, var, pos)
         self.op = vtypes.Pointer
 
-    def set_attributes(self):
+    def _set_attributes(self):
         self.width = 1
         self.point = 0
         self.signed = False
@@ -1493,7 +1493,7 @@ class Slice(_SpecialOperator):
         _SpecialOperator.__init__(self, var, msb, lsb)
         self.op = vtypes.Slice
 
-    def set_attributes(self):
+    def _set_attributes(self):
         self.width = self.msb - self.lsb + 1
         self.point = 0
         self.signed = False
@@ -1538,7 +1538,7 @@ class Cat(_SpecialOperator):
         _SpecialOperator.__init__(self, *vars)
         self.op = vtypes.Cat
     
-    def set_attributes(self):
+    def _set_attributes(self):
         ret = 0
         for v in self.vars:
              ret += v.bit_length() 
@@ -1572,7 +1572,7 @@ class Repeat(_SpecialOperator):
         _SpecialOperator.__init__(self, var, times)
         self.op = vtypes.Repeat
 
-    def set_attributes(self):
+    def _set_attributes(self):
         self.width = self.var.bit_length() * self.times.eval()
         self.point = 0
         self.signed = False
@@ -1606,7 +1606,7 @@ class Cond(_SpecialOperator):
         _SpecialOperator.__init__(self, condition, true_value, false_value)
         self.op = vtypes.Cond
 
-    def set_attributes(self):
+    def _set_attributes(self):
         true_value_fp = self.true_value.get_point()
         false_value_fp = self.false_value.get_point()
         true_value = self.true_value.bit_length() - true_value_fp
@@ -1764,10 +1764,10 @@ class _Constant(_Numeric):
         _Numeric.__init__(self)
         self.value = value
         self.signed = False
-        self.set_attributes()
+        self._set_attributes()
         self.sig_data = self.value
 
-    def set_attributes(self):
+    def _set_attributes(self):
         self.width = self.value.bit_length() + 1
         self.point = 0
         self.signed = False
@@ -2010,7 +2010,7 @@ class _Accumulator(_UnaryOperator):
         self.signed = signed
         self.label = None
 
-    def set_attributes(self):
+    def _set_attributes(self):
         self.point = self.right.get_point()
         
     def eval(self):
@@ -2132,7 +2132,7 @@ class Int(_Constant):
         _Constant.__init__(self, value)
         self.signed = signed
         
-    def set_attributes(self):
+    def _set_attributes(self):
         self.width = self.value.bit_length() + 1
         self.point = 0
 
@@ -2145,7 +2145,7 @@ class Int(_Constant):
         self.sig_ready = ready
 
 class Float(_Constant):
-    def set_attributes(self):
+    def _set_attributes(self):
         self.width = 32
         self.point = 0
         self.signed = True
@@ -2156,7 +2156,7 @@ class FixedPoint(_Constant):
         self.point = point
         self.signed = signed
 
-    def set_attributes(self):
+    def _set_attributes(self):
         self.width = self.value.bit_length() + 1
         self.point = 0
 
@@ -2169,7 +2169,7 @@ class FixedPoint(_Constant):
         self.sig_ready = ready
 
 class Str(_Constant):
-    def set_attributes(self):
+    def _set_attributes(self):
         self.width = 0
         self.point = 0
         self.signed = False
