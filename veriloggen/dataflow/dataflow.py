@@ -180,7 +180,9 @@ class Dataflow(object):
             v = func(*args, **kwargs)
             if isinstance(v, dtypes._Numeric):
                 self.add(v)
+                v._set_module(self.module)
                 v._set_df(self)
+                v._set_seq(self.seq)
             return v
 
         return wrapper
