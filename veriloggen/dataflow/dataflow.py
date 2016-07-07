@@ -32,11 +32,14 @@ class Dataflow(object):
         self.module = opts['module'] if 'module' in opts else None
         self.clock = opts['clock'] if 'clock' in opts else None
         self.reset = opts['reset'] if 'reset' in opts else None
+        self.seq = None
 
         if (self.module is not None and
-                self.clock is not None and self.reset is not None):
-            self.module.add_hook(self.implement,
-                                 args=(self.module, self.clock, self.reset))
+            self.clock is not None and self.reset is not None):
+            
+            self.module.add_hook(self.implement)
+            seq_name = 'seq' if 'seq_name' not in opts else opts['seq_name']
+            self.seq = Seq(self.module, seq_name, self.clock, self.reset)
 
     #-------------------------------------------------------------------------
     def add(self, *nodes):
@@ -55,12 +58,24 @@ class Dataflow(object):
         return m
 
     #-------------------------------------------------------------------------
-    def implement(self, m, clock, reset, seq_name='seq', aswire=True):
+    def implement(self, m=None, clock=None, reset=None, seq_name='seq', aswire=True):
         """ implemente actual registers and operations in Verilog """
 
         mul.reset()
 
-        seq = Seq(m, seq_name, clock, reset)
+        if m is None:
+            m = self.module
+
+        if clock is None:
+            clock = self.clock
+
+        if reset is None:
+            reset = self.reset
+
+        if self.seq is None:
+            seq = Seq(m, seq_name, clock, reset)
+        else:
+            seq = self.seq
 
         # for mult and div
         m._clock = clock
@@ -165,6 +180,7 @@ class Dataflow(object):
             v = func(*args, **kwargs)
             if isinstance(v, dtypes._Numeric):
                 self.add(v)
+                v._set_df(self)
             return v
 
         return wrapper
