@@ -242,9 +242,6 @@ class _Numeric(_Node):
         return rdata, rvalid
     
     #--------------------------------------------------------------------------
-    def _set_attributes(self):
-        raise NotImplementedError('_set_attributes() is not implemented')
-
     def get_signed(self):
         return self.signed
     
@@ -258,11 +255,19 @@ class _Numeric(_Node):
         raise NotImplementedError('eval() is not implemented')
     
     #--------------------------------------------------------------------------
-    def _set_manager(self, m, df, seq):
+    def _set_attributes(self):
+        raise NotImplementedError('_set_attributes() is not implemented')
+
+    def _set_module(self, m):
         self.m = m
+
+    def _set_df(self, df):
         self.df = df
+
+    def _set_seq(self, seq):
         self.seq = seq
-    
+
+    #--------------------------------------------------------------------------
     def _implement(self, m, seq):
         raise NotImplementedError('_implement() is not implemented.')
     
