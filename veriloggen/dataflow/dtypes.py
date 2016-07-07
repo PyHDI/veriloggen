@@ -58,6 +58,14 @@ def ParameterVariable(data, width=32, point=0, signed=False):
     return _ParameterVariable(data, width, point, signed)
 
 #-------------------------------------------------------------------------------
+def get_info(attr, *vars):
+    for var in vars:
+        ret = getattr(var, attr, None)
+        if ret is not None:
+            return ret
+    return None
+    
+#-------------------------------------------------------------------------------
 def _max(*vars):
     m = None
     for v in vars:
@@ -150,6 +158,8 @@ class _Numeric(_Node):
     
     def __init__(self):
         _Node.__init__(self)
+
+        # set up by _set_managers()
         self.m = None
         self.df = None
         self.seq = None
@@ -257,6 +267,9 @@ class _Numeric(_Node):
     #--------------------------------------------------------------------------
     def _set_attributes(self):
         raise NotImplementedError('_set_attributes() is not implemented')
+
+    def _set_managers(self):
+        raise NotImplementedError('_set_managers() is not implemented')
 
     def _set_module(self, m):
         self.m = m
@@ -558,6 +571,7 @@ class _BinaryOperator(_Operator):
         self.right._add_sink(self)
         self.op = getattr(vtypes, self.__class__.__name__, None)
         self._set_attributes()
+        self._set_managers()
 
     def _set_attributes(self):
         left_fp = self.left.get_point()
@@ -567,6 +581,11 @@ class _BinaryOperator(_Operator):
         self.width = max(left, right) + max(left_fp, right_fp)
         self.point = max(left_fp, right_fp)
         self.signed = self.left.get_signed() and self.right.get_signed()
+
+    def _set_managers(self):
+        self._set_module(get_info('module', self.left, self.right))
+        self._set_df(get_info('df', self.left, self.right))
+        self._set_seq(get_info('seq', self.left, self.right))
                 
     def _implement(self, m, seq):
         if self.latency != 1:
@@ -620,6 +639,7 @@ class _UnaryOperator(_Operator):
         self.right._add_sink(self)
         self.op = getattr(vtypes, self.__class__.__name__, None)
         self._set_attributes()
+        self._set_managers()
         
     def _set_attributes(self):
         right = self.right.bit_length()
@@ -628,6 +648,11 @@ class _UnaryOperator(_Operator):
         self.point = right_fp
         self.signed = self.right.get_signed()
                 
+    def _set_managers(self):
+        self._set_module(get_info('module', self.right))
+        self._set_df(get_info('df', self.right))
+        self._set_seq(get_info('seq', self.right))
+        
     def _implement(self, m, seq):
         if self.latency != 1:
             raise ValueError("Latency mismatch '%d' vs '%s'" % (self.latency, 1))
@@ -1404,6 +1429,7 @@ class _SpecialOperator(_Operator):
             var._add_sink(self) 
         self.op = None
         self._set_attributes()
+        self._set_managers()
 
     def _set_attributes(self):
         wargs = [ arg.bit_length() for arg in self.args ]
@@ -1416,6 +1442,11 @@ class _SpecialOperator(_Operator):
                 self.signed = True
                 break
                 
+    def _set_managers(self):
+        self._set_module(get_info('module', *self.args))
+        self._set_df(get_info('df', *self.args))
+        self._set_seq(get_info('seq', *self.args))
+        
     def _implement(self, m, seq):
         if self.latency != 1:
             raise ValueError("Latency mismatch '%d' vs '%s'" % (self.latency, 1))
@@ -1770,6 +1801,7 @@ class _Constant(_Numeric):
         self.value = value
         self.signed = False
         self._set_attributes()
+        self._set_managers()
         self.sig_data = self.value
 
     def _set_attributes(self):
@@ -1777,6 +1809,11 @@ class _Constant(_Numeric):
         self.point = 0
         self.signed = False
 
+    def _set_managers(self):
+        self._set_module(get_info('module', self.value))
+        self._set_df(get_info('df', self.value))
+        self._set_seq(get_info('seq', self.value))
+        
     def eval(self):
         return self.value
         
@@ -2006,17 +2043,22 @@ class _Accumulator(_UnaryOperator):
     ops = ( vtypes.Plus, )
     
     def __init__(self, right, initval=None, reset=None, width=32, signed=False):
-        _UnaryOperator.__init__(self, right)
         self.initval = _to_constant(initval) if initval is not None else _to_constant(0)
+        self.reset = _to_constant(reset)
         if not isinstance(self.initval, _Constant):
             raise TypeError("initval must be Constant, not '%s'" % str(type(self.initval)))
-        self.reset = _to_constant(reset)
+        _UnaryOperator.__init__(self, right)
         self.width = width
         self.signed = signed
         self.label = None
 
     def _set_attributes(self):
         self.point = self.right.get_point()
+        
+    def _set_managers(self):
+        self._set_module(get_info('module', self.right, self.initval, self.reset))
+        self._set_df(get_info('df', self.right, self.initval, self.reset))
+        self._set_seq(get_info('seq', self.right, self.initval, self.reset))
         
     def eval(self):
         return self
