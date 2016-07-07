@@ -200,6 +200,9 @@ class _Numeric(_Node):
         self.output_valid = valid
         self.output_ready = ready
 
+        if self.df is not None:
+            self.df.add(self)
+
     def prev(self, index):
         if index < 0:
             raise ValueError("index must be greater than 0")
