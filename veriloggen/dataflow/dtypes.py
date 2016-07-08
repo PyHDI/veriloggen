@@ -64,6 +64,27 @@ def get_info(attr, *vars):
         if ret is not None:
             return ret
     return None
+
+def get_df(*vars):
+    ret = None
+    for var in vars:
+        v = getattr(var, 'df', None)
+        if v is None:
+            continue
+        if ret is None:
+            ret = v
+            continue
+        if v.object_id < ret.object_id:
+            if v.module != ret.module:
+                raise ValueError("Different modules")
+            if id(v.clock) != id(ret.clock):
+                raise ValueError("Different clock domains: '%s' and '%s'" %
+                                 (str(v.clock), str(ret.clock)))
+            if id(v.reset) != id(ret.reset):
+                raise ValueError("Different reset domains: '%s' and '%s'" %
+                                 (str(v.reset), str(ret.reset)))
+            ret = v
+    return ret
     
 #-------------------------------------------------------------------------------
 def _max(*vars):
@@ -587,7 +608,7 @@ class _BinaryOperator(_Operator):
 
     def _set_managers(self):
         self._set_module(get_info('module', self.left, self.right))
-        self._set_df(get_info('df', self.left, self.right))
+        self._set_df(get_df(self.left, self.right))
         self._set_seq(get_info('seq', self.left, self.right))
                 
     def _implement(self, m, seq):
@@ -653,7 +674,7 @@ class _UnaryOperator(_Operator):
                 
     def _set_managers(self):
         self._set_module(get_info('module', self.right))
-        self._set_df(get_info('df', self.right))
+        self._set_df(get_df(self.right))
         self._set_seq(get_info('seq', self.right))
         
     def _implement(self, m, seq):
@@ -1447,7 +1468,7 @@ class _SpecialOperator(_Operator):
                 
     def _set_managers(self):
         self._set_module(get_info('module', *self.args))
-        self._set_df(get_info('df', *self.args))
+        self._set_df(get_df(*self.args))
         self._set_seq(get_info('seq', *self.args))
         
     def _implement(self, m, seq):
@@ -1814,7 +1835,7 @@ class _Constant(_Numeric):
 
     def _set_managers(self):
         self._set_module(get_info('module', self.value))
-        self._set_df(get_info('df', self.value))
+        self._set_df(get_df(self.value))
         self._set_seq(get_info('seq', self.value))
         
     def eval(self):
@@ -2060,7 +2081,7 @@ class _Accumulator(_UnaryOperator):
         
     def _set_managers(self):
         self._set_module(get_info('module', self.right, self.initval, self.reset))
-        self._set_df(get_info('df', self.right, self.initval, self.reset))
+        self._set_df(get_df(self.right, self.initval, self.reset))
         self._set_seq(get_info('seq', self.right, self.initval, self.reset))
         
     def eval(self):

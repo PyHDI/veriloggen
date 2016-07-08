@@ -17,6 +17,10 @@ from . import allocator
 from . import graph
 
 
+# ID counter for 'Dataflow'
+global_manager_counter = 0
+
+
 def DataflowManager(module, clock, reset, no_hook=False):
     return Dataflow(module=module, clock=clock, reset=reset,
                     no_hook=no_hook)
@@ -25,6 +29,11 @@ def DataflowManager(module, clock, reset, no_hook=False):
 class Dataflow(object):
 
     def __init__(self, *nodes, **opts):
+        # ID for manager reuse and merge
+        global global_manager_counter
+        self.object_id = global_manager_counter
+        global_manager_counter += 1
+        
         self.nodes = set(nodes)
         self.max_stage = None
         self.last_input = None
@@ -36,12 +45,12 @@ class Dataflow(object):
         self.seq = None
 
         if (self.module is not None and
-            self.clock is not None and self.reset is not None):
-            
+                self.clock is not None and self.reset is not None):
+
             no_hook = opts['no_hook'] if 'no_hook' in opts else False
             if not no_hook:
                 self.module.add_hook(self.implement)
-                
+
             seq_name = 'seq' if 'seq_name' not in opts else opts['seq_name']
             self.seq = Seq(self.module, seq_name, self.clock, self.reset)
 
