@@ -17,8 +17,9 @@ from . import allocator
 from . import graph
 
 
-def DataflowManager(module, clock, reset):
-    return Dataflow(module=module, clock=clock, reset=reset)
+def DataflowManager(module, clock, reset, no_hook=False):
+    return Dataflow(module=module, clock=clock, reset=reset,
+                    no_hook=no_hook)
 
 
 class Dataflow(object):
@@ -37,7 +38,10 @@ class Dataflow(object):
         if (self.module is not None and
             self.clock is not None and self.reset is not None):
             
-            self.module.add_hook(self.implement)
+            no_hook = opts['no_hook'] if 'no_hook' in opts else False
+            if not no_hook:
+                self.module.add_hook(self.implement)
+                
             seq_name = 'seq' if 'seq_name' not in opts else opts['seq_name']
             self.seq = Seq(self.module, seq_name, self.clock, self.reset)
 
