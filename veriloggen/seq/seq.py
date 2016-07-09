@@ -288,6 +288,41 @@ class Seq(vtypes.VeriloggenNode):
         return self.last_condition
 
     #-------------------------------------------------------------------------
+    def update(self, src):
+        
+        if not isinstance(src, Seq):
+            raise TypeError("Seq object is expected, not '%s'" % str(type(src)))
+        
+        if self.done:
+            raise ValueError("Destination Seq is already synthesized.")
+
+        if src.done:
+            raise ValueError("Source Seq is already synthesized.")
+
+        if id(self) == id(src):
+            return
+        
+        if id(self.m) != id(src.m):
+            raise ValueError("Two Seq objects have a different module.")
+        if id(self.clk) != id(src.clk):
+            raise ValueError("Two Seq objects have a different clock.")
+        if id(self.rst) != id(src.rst):
+            raise ValueError("Two Seq objects have a different reset.")
+        
+        if self.name == src.name:
+            raise ValueError("Two Seq objects have a same name.")
+
+        for delay, body in sorted(src.delayed_body.items(), key=lambda x: x[0]):
+            self.delayed_body[delay].extend(body)
+            
+        self.prev_dict.update(src.prev_dict)
+        self.body.extend(src.body)
+        self.dst_var.update(src.dst_var)
+
+        # Invalidated source Seq
+        src.done = True
+        
+    #-------------------------------------------------------------------------
     def make_always(self, reset=(), body=()):
         if self.done:
             #raise ValueError('make_always() has been already called.')
