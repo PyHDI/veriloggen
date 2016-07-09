@@ -291,7 +291,7 @@ class Seq(vtypes.VeriloggenNode):
     def update(self, src):
         
         if not isinstance(src, Seq):
-            raise TypeError("Seq object is expected, not '%s'" % str(type(src)))
+            raise TypeError("src must be Seq object, not '%s'" % str(type(src)))
         
         if self.done:
             raise ValueError("Destination Seq is already synthesized.")

@@ -58,13 +58,6 @@ def ParameterVariable(data, width=32, point=0, signed=False):
     return _ParameterVariable(data, width, point, signed)
 
 #-------------------------------------------------------------------------------
-def get_info(attr, *vars):
-    for var in vars:
-        ret = getattr(var, attr, None)
-        if ret is not None:
-            return ret
-    return None
-
 def get_df(*vars):
     ret = None
     for var in vars:
@@ -607,9 +600,9 @@ class _BinaryOperator(_Operator):
         self.signed = self.left.get_signed() and self.right.get_signed()
 
     def _set_managers(self):
-        self._set_module(get_info('module', self.left, self.right))
         self._set_df(get_df(self.left, self.right))
-        self._set_seq(get_info('seq', self.left, self.right))
+        self._set_module(getattr(self.df, 'module', None))
+        self._set_seq(getattr(self.df, 'seq', None))
                 
     def _implement(self, m, seq):
         if self.latency != 1:
@@ -673,9 +666,9 @@ class _UnaryOperator(_Operator):
         self.signed = self.right.get_signed()
                 
     def _set_managers(self):
-        self._set_module(get_info('module', self.right))
         self._set_df(get_df(self.right))
-        self._set_seq(get_info('seq', self.right))
+        self._set_module(getattr(self.df, 'module', None))
+        self._set_seq(getattr(self.df, 'seq', None))
         
     def _implement(self, m, seq):
         if self.latency != 1:
@@ -1467,9 +1460,9 @@ class _SpecialOperator(_Operator):
                 break
                 
     def _set_managers(self):
-        self._set_module(get_info('module', *self.args))
         self._set_df(get_df(*self.args))
-        self._set_seq(get_info('seq', *self.args))
+        self._set_module(getattr(self.df, 'module', None))
+        self._set_seq(getattr(self.df, 'seq', None))
         
     def _implement(self, m, seq):
         if self.latency != 1:
@@ -1834,9 +1827,9 @@ class _Constant(_Numeric):
         self.signed = False
 
     def _set_managers(self):
-        self._set_module(get_info('module', self.value))
         self._set_df(get_df(self.value))
-        self._set_seq(get_info('seq', self.value))
+        self._set_module(getattr(self.df, 'module', None))
+        self._set_seq(getattr(self.df, 'seq', None))
         
     def eval(self):
         return self.value
@@ -2080,9 +2073,9 @@ class _Accumulator(_UnaryOperator):
         self.point = self.right.get_point()
         
     def _set_managers(self):
-        self._set_module(get_info('module', self.right, self.initval, self.reset))
         self._set_df(get_df(self.right, self.initval, self.reset))
-        self._set_seq(get_info('seq', self.right, self.initval, self.reset))
+        self._set_module(getattr(self.df, 'module', None))
+        self._set_seq(getattr(self.df, 'seq', None))
         
     def eval(self):
         return self
