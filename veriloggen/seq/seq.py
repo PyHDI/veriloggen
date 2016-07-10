@@ -297,7 +297,7 @@ class Seq(vtypes.VeriloggenNode):
             raise ValueError("Destination Seq is already synthesized.")
 
         if src.done:
-            raise ValueError("Source Seq is already synthesized.")
+            return 
 
         if id(self) == id(src):
             return

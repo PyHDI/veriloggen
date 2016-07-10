@@ -51,7 +51,8 @@ class Dataflow(object):
             if not no_hook:
                 self.module.add_hook(self.implement)
 
-            seq_name = 'seq' if 'seq_name' not in opts else opts['seq_name']
+            seq_name = (('_dataflow_seq_%d' % self.object_id) if 'seq_name' not in opts else
+                        opts['seq_name'])
             self.seq = Seq(self.module, seq_name, self.clock, self.reset)
 
     #-------------------------------------------------------------------------
@@ -136,6 +137,10 @@ class Dataflow(object):
         for var in sorted(all_vars, key=lambda x: x.object_id):
             var._set_module(m)
             var._set_df(self)
+            
+            if var.seq is not None:
+                seq.update(var.seq)
+                
             var._set_seq(seq)
 
         # add output ports
