@@ -21,6 +21,11 @@ from . import graph
 global_manager_counter = 0
 
 
+def reset():
+    global global_manager_counter
+    global_manager_counter = 0
+
+
 def DataflowManager(module, clock, reset, no_hook=False):
     return Dataflow(module=module, clock=clock, reset=reset,
                     no_hook=no_hook)
@@ -33,7 +38,7 @@ class Dataflow(object):
         global global_manager_counter
         self.object_id = global_manager_counter
         global_manager_counter += 1
-        
+
         self.nodes = set(nodes)
         self.max_stage = None
         self.last_input = None
@@ -137,10 +142,10 @@ class Dataflow(object):
         for var in sorted(all_vars, key=lambda x: x.object_id):
             var._set_module(m)
             var._set_df(self)
-            
+
             if var.seq is not None:
                 seq.update(var.seq)
-                
+
             var._set_seq(seq)
 
         # add output ports
@@ -160,6 +165,11 @@ class Dataflow(object):
 
         graph.draw_graph(self.last_output, filename=filename, prog=prog,
                          rankdir=rankdir, approx=approx)
+
+    def enable_draw_graph(self, filename='out.png', prog='dot', rankdir='LR', approx=False):
+        self.module.add_hook(self.draw_graph,
+                             kwargs={'filename': filename, 'prog': prog,
+                                     'rankdir': rankdir, 'approx': approx})
 
     #-------------------------------------------------------------------------
     def get_input(self):

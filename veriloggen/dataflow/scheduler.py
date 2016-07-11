@@ -29,11 +29,23 @@ class ASAPScheduler(_Scheduler):
         for node in sorted(nodes, key=lambda x:x.object_id):
             if not node._has_output(): continue
             r = self.fill_gap(node, max_stage)
-            t_data, t_valid, t_ready = node.output_data, node.output_valid, node.output_ready
+            t_data = node.output_data
+            t_valid = node.output_valid
+            t_ready = node.output_ready
+            t_sig_data = node.output_sig_data
+            t_sig_valid = node.output_sig_valid
+            t_sig_ready = node.output_sig_ready
             node._disable_output()
+            node._disable_output_sig()
             node._set_output_node(r)
             r._disable_output()
-            r.output(t_data, t_valid, t_ready)
+            r._disable_output_sig()
+            r.output_data = t_data
+            r.output_valid = t_valid
+            r.output_ready = t_ready
+            r.output_sig_data = t_sig_data
+            r.output_sig_valid = t_sig_valid
+            r.output_sig_ready = t_sig_ready
             ret.append(r)
         return ret
 
