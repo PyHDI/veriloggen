@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import veriloggen
 import types_bram_rtl_dataflow
+import veriloggen
 
 expected_verilog = """
 module test;
@@ -97,7 +99,7 @@ module main
   assign xdata = _tmp_2;
   reg _tmp_3;
   assign xvalid = _tmp_3;
-  reg _seq_cond_0_1;
+  reg __dataflow_seq_0_cond_0_1;
   reg [32-1:0] _xaddr_1;
   reg [32-1:0] _xaddr_2;
   localparam xfsm_1 = 1;
@@ -201,9 +203,9 @@ module main
       _tmp_valid_0 <= 0;
       _tmp_2 <= 0;
       _tmp_3 <= 0;
-      _seq_cond_0_1 <= 0;
+      __dataflow_seq_0_cond_0_1 <= 0;
     end else begin
-      if(_seq_cond_0_1) begin
+      if(__dataflow_seq_0_cond_0_1) begin
         _tmp_3 <= 0;
       end 
       if((_tmp_ready_0 || !_tmp_valid_0) && 1 && xvalid) begin
@@ -221,7 +223,7 @@ module main
       if(_tmp_1) begin
         _tmp_3 <= 1;
       end 
-      _seq_cond_0_1 <= 1;
+      __dataflow_seq_0_cond_0_1 <= 1;
     end
   end
 
@@ -335,6 +337,9 @@ endmodule
 
 
 def test():
+    veriloggen.reset()
+    veriloggen.reset()
+    
     test_module = types_bram_rtl_dataflow.mkTest()
     code = test_module.to_verilog()
 
