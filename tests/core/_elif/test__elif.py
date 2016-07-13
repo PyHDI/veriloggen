@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import veriloggen
 import _elif
 
 expected_verilog = """
@@ -45,6 +46,7 @@ endmodule
 """
 
 def test():
+    veriloggen.reset()
     test_module = _elif.mkLed()
     code = test_module.to_verilog()
 

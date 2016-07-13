@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import veriloggen
 import mux
 
 expected_verilog = """
@@ -31,6 +32,7 @@ endmodule
 """
 
 def test():
+    veriloggen.reset()
     test_module = mux.mkLed()
     code = test_module.to_verilog()
 

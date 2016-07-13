@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import veriloggen
 import instance_connect_same_name
 
 expected_verilog = """

@@ -1,11 +1,13 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import veriloggen
 import multiple_definition_variable
 
 expected_verilog = """
 """
 
 def test():
+    veriloggen.reset()
     try:
         test_module = multiple_definition_variable.mkLed()
     except ValueError as e:
