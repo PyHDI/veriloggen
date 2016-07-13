@@ -4,6 +4,7 @@ from __future__ import print_function
 import veriloggen.core.vtypes as vtypes
 import veriloggen.core.module as module
 from veriloggen.seq.seq import Seq, make_condition
+from veriloggen.fsm.fsm import TmpFSM
 import veriloggen.dataflow as dataflow
 from . import util
 
@@ -448,9 +449,46 @@ class AxiMaster(object):
         )
 
         df = self.df if self.df is not None else dataflow
-        
+
         df_data = df.Variable(data, valid, data_ready)
         df_last = df.Variable(last, valid, last_ready, width=1)
         done = last
 
         return df_data, df_last, done
+
+
+def dma_read(bus, ram, bus_addr, ram_addr, length, cond=None, ram_port=0):
+    fsm = TmpFSM(bus.m, bus.clk, bus.rst)
+
+    if cond is not None:
+        fsm.If(cond).goto_next()
+
+    ack, counter = bus.read_request(bus_addr, length, cond=fsm)
+    fsm.If(ack).goto_next()
+
+    data, last, done = bus.read_dataflow()
+
+    done = ram.write_dataflow(ram_port, ram_addr, data, length, cond=fsm)
+    fsm.If(done).goto_next()
+
+    fsm.goto_init()
+
+    return done
+
+
+def dma_write(bus, ram, bus_addr, ram_addr, length, cond=None, ram_port=0):
+    fsm = TmpFSM(bus.m, bus.clk, bus.rst)
+
+    if cond is not None:
+        fsm.If(cond).goto_next()
+
+    ack, counter = bus.write_request(bus_addr, length, cond=fsm)
+    fsm.If(ack).goto_next()
+
+    data, last, done = ram.read_dataflow(ram_port, ram_addr, length, cond=fsm)
+    done = bus.write_dataflow(data, counter, cond=fsm)
+    fsm.If(done).goto_next()
+
+    fsm.goto_init()
+
+    return done

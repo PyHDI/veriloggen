@@ -13,43 +13,6 @@ import veriloggen.types.bram as bram
 import veriloggen.dataflow as dataflow
 
 
-def dma_read(bus, ram, bus_addr, ram_addr, length, cond=None, ram_port=0):
-    fsm = TmpFSM(bus.m, bus.clk, bus.rst)
-
-    if cond is not None:
-        fsm.If(cond).goto_next()
-
-    ack, counter = bus.read_request(bus_addr, length, cond=fsm)
-    fsm.If(ack).goto_next()
-
-    data, last, done = bus.read_dataflow()
-
-    done = ram.write_dataflow(ram_port, ram_addr, data, length, cond=fsm)
-    fsm.If(done).goto_next()
-
-    fsm.goto_init()
-
-    return done
-
-
-def dma_write(bus, ram, bus_addr, ram_addr, length, cond=None, ram_port=0):
-    fsm = TmpFSM(bus.m, bus.clk, bus.rst)
-
-    if cond is not None:
-        fsm.If(cond).goto_next()
-
-    ack, counter = bus.write_request(bus_addr, length, cond=fsm)
-    fsm.If(ack).goto_next()
-
-    data, last, done = ram.read_dataflow(ram_port, ram_addr, length, cond=fsm)
-    done = bus.write_dataflow(data, counter, cond=fsm)
-    fsm.If(done).goto_next()
-
-    fsm.goto_init()
-
-    return done
-
-
 def mkMain():
     m = Module('main')
     clk = m.Input('CLK')
@@ -66,12 +29,12 @@ def mkMain():
     ram_addr = 0
     length = 64
 
-    dma_done = dma_read(bus, ram_a, bus_addr, ram_addr, length, cond=fsm)
+    dma_done = axi.dma_read(bus, ram_a, bus_addr, ram_addr, length, cond=fsm)
     fsm.If(dma_done).goto_next()
 
     bus_addr = 1024 * 2
 
-    dma_done = dma_read(bus, ram_b, bus_addr, ram_addr, length, cond=fsm)
+    dma_done = axi.dma_read(bus, ram_b, bus_addr, ram_addr, length, cond=fsm)
     fsm.If(dma_done).goto_next()
 
     adata, alast, adone = ram_a.read_dataflow(0, ram_addr, length, cond=fsm)
@@ -85,7 +48,7 @@ def mkMain():
 
     bus_addr = 1024 * 3
 
-    dma_done = dma_write(bus, ram_c, bus_addr, ram_addr, length, cond=fsm)
+    dma_done = axi.dma_write(bus, ram_c, bus_addr, ram_addr, length, cond=fsm)
     fsm.If(dma_done).goto_next()
 
     return m
