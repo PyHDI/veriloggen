@@ -38,10 +38,14 @@ def make_condition(*cond):
     if not cond:
         return None
 
-    ret = _get_manager_cond(cond[0])
-    for c in cond[1:]:
+    ret = None
+    for c in cond:
         c = _get_manager_cond(c)
-        ret = vtypes.Ands(ret, c) if c is not None else ret
+        if ret is None:
+            ret = c
+        else:
+            ret = vtypes.Ands(ret, c) if c is not None else ret
+
     return ret
 
 
