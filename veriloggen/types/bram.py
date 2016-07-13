@@ -87,7 +87,8 @@ def mkBramDefinition(name, datawidth=32, addrwidth=10, numports=2):
 #-------------------------------------------------------------------------
 class Bram(object):
 
-    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=10, numports=1, nodataflow=False):
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=10, numports=1,
+                 nodataflow=False):
 
         self.m = m
         self.name = name
@@ -126,7 +127,7 @@ class Bram(object):
         """ 
         @return None
         """
-        
+
         if self._write_disabled[port]:
             raise TypeError('Write disabled.')
 
@@ -147,13 +148,13 @@ class Bram(object):
         """ 
         @return done
         """
-        
+
         if self._write_disabled[port]:
             raise TypeError('Write disabled.')
 
         counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
         last = self.m.TmpReg(initval=0)
-        
+
         data_cond = make_condition(cond, vtypes.Not(last))
         raw_data, raw_valid = data.read(cond=data_cond)
 
@@ -189,7 +190,7 @@ class Bram(object):
         """ 
         @return data, valid
         """
-        
+
         if cond is not None:
             self.seq.If(cond)
 
@@ -212,7 +213,7 @@ class Bram(object):
         """ 
         @return data, last, done
         """
-        
+
         data_valid = self.m.TmpReg(initval=0)
         last_valid = self.m.TmpReg(initval=0)
         data_ready = self.m.TmpWire()

@@ -121,7 +121,9 @@ class AxiSlaveReadData(AxiReadData):
 class AxiMaster(object):
     burst_size_width = 8
 
-    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32):
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
+                 nodataflow=False):
+
         self.m = m
         self.name = name
         self.clk = clk
@@ -139,6 +141,11 @@ class AxiMaster(object):
 
         self.write_counters = []
         self.read_counters = []
+
+        if nodataflow:
+            self.df = None
+        else:
+            self.df = dataflow.DataflowManager(self.m, self.clk, self.rst)
 
         self._write_disabled = False
         self._read_disabled = False
@@ -168,7 +175,7 @@ class AxiMaster(object):
         """ 
         @return ack, counter
         """
-        
+
         if self._write_disabled:
             raise TypeError('Write disabled.')
 
@@ -218,7 +225,7 @@ class AxiMaster(object):
         """ 
         @return ack, last
         """
-        
+
         if self._write_disabled:
             raise TypeError('Write disabled.')
 
@@ -266,7 +273,7 @@ class AxiMaster(object):
         """ 
         @return done
         """
-        
+
         if self._write_disabled:
             raise TypeError('Write disabled.')
 
@@ -316,14 +323,14 @@ class AxiMaster(object):
         )
 
         done = last
-        
+
         return done
 
     def read_request(self, addr, length, cond=None, counter=None):
         """ 
         @return ack, counter
         """
-        
+
         if self._read_disabled:
             raise TypeError('Read disabled.')
 
@@ -370,7 +377,7 @@ class AxiMaster(object):
         """ 
         @return data, valid, last
         """
-        
+
         if self._read_disabled:
             raise TypeError('Read disabled.')
 
@@ -402,7 +409,7 @@ class AxiMaster(object):
         """ 
         @return data, last, done
         """
-        
+
         if self._read_disabled:
             raise TypeError('Read disabled.')
 
@@ -440,8 +447,10 @@ class AxiMaster(object):
             counter.dec()
         )
 
-        df_data = dataflow.Variable(data, valid, data_ready)
-        df_last = dataflow.Variable(last, valid, last_ready, width=1)
+        df = self.df if self.df is not None else dataflow
+        
+        df_data = df.Variable(data, valid, data_ready)
+        df_last = df.Variable(last, valid, last_ready, width=1)
         done = last
 
         return df_data, df_last, done
