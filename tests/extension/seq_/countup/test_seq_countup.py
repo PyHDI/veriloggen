@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import veriloggen
 import seq_countup
 
 expected_verilog = """
@@ -74,6 +75,7 @@ module blinkled #
 endmodule
 """
 def test():
+    veriloggen.reset()
     test_module = seq_countup.mkTest()
     code = test_module.to_verilog()
 

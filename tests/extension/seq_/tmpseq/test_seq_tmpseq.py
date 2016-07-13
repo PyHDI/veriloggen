@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import veriloggen
 import seq_tmpseq
 
 expected_verilog = """
@@ -81,6 +82,7 @@ endmodule
 """
 
 def test():
+    veriloggen.reset()
     test_module = seq_tmpseq.mkTest()
     code = test_module.to_verilog()
 
