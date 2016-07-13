@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import veriloggen
 import fsm_goto_from
 
 expected_verilog = """
@@ -74,6 +75,7 @@ endmodule
 """
 
 def test():
+    veriloggen.reset()
     test_module = fsm_goto_from.mkLed()
     code = test_module.to_verilog()
 
