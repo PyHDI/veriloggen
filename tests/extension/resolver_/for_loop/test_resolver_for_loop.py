@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import veriloggen
 import resolver_for_loop
 
 expected_verilog = """
@@ -96,6 +97,7 @@ endmodule
 """
 
 def test():
+    veriloggen.reset()
     test_module = resolver_for_loop.mkLed()
     code = test_module.to_verilog()
 

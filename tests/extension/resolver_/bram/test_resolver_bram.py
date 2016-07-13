@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import veriloggen
 import resolver_bram
 
 expected_verilog = """
@@ -126,6 +127,7 @@ endmodule
 """
 
 def test():
+    veriloggen.reset()
     test_module = resolver_bram.mkOrig()
     code = test_module.to_verilog()
 
