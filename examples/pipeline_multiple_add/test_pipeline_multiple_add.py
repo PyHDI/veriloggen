@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import veriloggen
 import pipeline_multiple_add
 from veriloggen import *
 
@@ -1146,6 +1147,7 @@ dz=       360
 """
 
 def test():
+    veriloggen.reset()
     test_module = pipeline_multiple_add.mkTest()
     code = test_module.to_verilog()
 

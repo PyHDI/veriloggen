@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import veriloggen
 import regchain
 
 expected_verilog = """
@@ -650,6 +651,7 @@ endmodule
 """
 
 def test():
+    veriloggen.reset()
     test_module = regchain.mkRegChain(length=120)
     code = test_module.to_verilog()
 

@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import veriloggen
 import simulation_example
 from veriloggen import *
 
@@ -189,6 +190,7 @@ LED:  6 count:         3
 """
 
 def test():
+    veriloggen.reset()
     test_module = simulation_example.mkTest()
     code = test_module.to_verilog()
 

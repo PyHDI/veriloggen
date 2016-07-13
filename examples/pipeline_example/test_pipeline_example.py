@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import veriloggen
 import pipeline_example
 from veriloggen import *
 
@@ -465,6 +466,7 @@ z=       100
 """
 
 def test():
+    veriloggen.reset()
     test_module = pipeline_example.mkTest()
     code = test_module.to_verilog()
 

@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import veriloggen
 import sort
 
 expected_verilog = """
@@ -321,6 +322,7 @@ registers_3:        100
 """
 
 def test():
+    veriloggen.reset()
     sort_module = sort.mkSimSort()
     sort_code = sort_module.to_verilog()
 
