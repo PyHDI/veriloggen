@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import veriloggen
 import read_verilog_pycoram_object
 
 expected_verilog = """
@@ -296,6 +297,7 @@ endmodule
 """
 
 def test():
+    veriloggen.reset()
     modules = read_verilog_pycoram_object.mkUserlogic()
     code = ''.join([ m.to_verilog() for m in modules.values() ])
 

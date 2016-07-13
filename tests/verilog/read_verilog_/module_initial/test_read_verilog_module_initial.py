@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import veriloggen
 import read_verilog_module_initial
 
 expected_verilog = """
@@ -79,6 +80,7 @@ endmodule
 """
 
 def test():
+    veriloggen.reset()
     test_module, test_bench = read_verilog_module_initial.mkLedTest()
     code = ''.join([ test_bench.to_verilog(), test_module.to_verilog() ])
     from pyverilog.vparser.parser import VerilogParser
