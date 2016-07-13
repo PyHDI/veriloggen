@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import veriloggen
 import pipeline_single_passthrough
 
 expected_verilog = """
@@ -355,6 +356,7 @@ endmodule
 """
 
 def test():
+    veriloggen.reset()
     test_module = pipeline_single_passthrough.mkTest()
     code = test_module.to_verilog()
 

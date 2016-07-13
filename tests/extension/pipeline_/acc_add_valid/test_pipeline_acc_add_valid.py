@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import veriloggen
 import pipeline_acc_add_valid
 
 expected_verilog = """
@@ -237,6 +238,7 @@ endmodule
 """
 
 def test():
+    veriloggen.reset()
     test_module = pipeline_acc_add_valid.mkTest()
     code = test_module.to_verilog()
 
