@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import veriloggen
 import types_axi_write_dataflow
 
 expected_verilog = """
@@ -195,20 +196,10 @@ module main
   localparam fsm_init = 0;
   reg [8-1:0] _tmp_0;
   reg _myaxi_cond_0_1;
-  reg [32-1:0] _tmp_data_1;
-  reg _tmp_valid_1;
-  wire _tmp_ready_1;
-  assign _tmp_ready_1 = (_tmp_ready_2 || !_tmp_valid_2) && _tmp_valid_1;
-  reg [32-1:0] _tmp_data_2;
-  reg _tmp_valid_2;
-  wire _tmp_ready_2;
+  reg _tmp_1;
   wire [32-1:0] value_data;
   wire value_valid;
   wire value_ready;
-  assign value_data = _tmp_data_2;
-  assign value_valid = _tmp_valid_2;
-  assign _tmp_ready_2 = value_ready;
-  reg _tmp_3;
   assign value_ready = myaxi_wready || !myaxi_wvalid;
   reg _myaxi_cond_1_1;
   reg [32-1:0] sum;
@@ -228,7 +219,7 @@ module main
       myaxi_wvalid <= 0;
       myaxi_wlast <= 0;
       myaxi_wstrb <= 0;
-      _tmp_3 <= 0;
+      _tmp_1 <= 0;
       _myaxi_cond_1_1 <= 0;
     end else begin
       if(_myaxi_cond_0_1) begin
@@ -237,7 +228,7 @@ module main
       if(_myaxi_cond_1_1) begin
         myaxi_wvalid <= 0;
         myaxi_wlast <= 0;
-        _tmp_3 <= 0;
+        _tmp_1 <= 0;
       end 
       myaxi_araddr <= 0;
       myaxi_arlen <= 0;
@@ -264,13 +255,52 @@ module main
       end 
       if(value_valid && (myaxi_wready || !myaxi_wvalid) && ((myaxi_wready || !myaxi_wvalid) && (_tmp_0 > 0)) && (_tmp_0 == 1)) begin
         myaxi_wlast <= 1;
-        _tmp_3 <= 1;
+        _tmp_1 <= 1;
       end 
       _myaxi_cond_1_1 <= 1;
       if(myaxi_wvalid && !myaxi_wready) begin
         myaxi_wvalid <= myaxi_wvalid;
         myaxi_wlast <= myaxi_wlast;
-        _tmp_3 <= _tmp_3;
+        _tmp_1 <= _tmp_1;
+      end 
+    end
+  end
+
+  reg [32-1:0] _tmp_data_2;
+  reg _tmp_valid_2;
+  wire _tmp_ready_2;
+  assign _tmp_ready_2 = (_tmp_ready_3 || !_tmp_valid_3) && _tmp_valid_2;
+  reg [32-1:0] _tmp_data_3;
+  reg _tmp_valid_3;
+  wire _tmp_ready_3;
+  assign value_data = _tmp_data_3;
+  assign value_valid = _tmp_valid_3;
+  assign _tmp_ready_3 = value_ready;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _tmp_data_2 <= 1'd0;
+      _tmp_valid_2 <= 0;
+      _tmp_data_3 <= 0;
+      _tmp_valid_3 <= 0;
+    end else begin
+      if((_tmp_ready_2 || !_tmp_valid_2) && 1 && 1) begin
+        _tmp_data_2 <= _tmp_data_2 + 2'd1;
+      end 
+      if(_tmp_valid_2 && _tmp_ready_2) begin
+        _tmp_valid_2 <= 0;
+      end 
+      if((_tmp_ready_2 || !_tmp_valid_2) && 1) begin
+        _tmp_valid_2 <= 1;
+      end 
+      if((_tmp_ready_3 || !_tmp_valid_3) && _tmp_ready_2 && _tmp_valid_2) begin
+        _tmp_data_3 <= _tmp_data_2 - 2'd1;
+      end 
+      if(_tmp_valid_3 && _tmp_ready_3) begin
+        _tmp_valid_3 <= 0;
+      end 
+      if((_tmp_ready_3 || !_tmp_valid_3) && _tmp_ready_2) begin
+        _tmp_valid_3 <= _tmp_valid_2;
       end 
     end
   end
@@ -289,40 +319,11 @@ module main
           end 
         end
         fsm_1: begin
-          if(_tmp_3) begin
+          if(_tmp_1) begin
             fsm <= fsm_2;
           end 
         end
       endcase
-    end
-  end
-
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      _tmp_data_1 <= 1'd0;
-      _tmp_valid_1 <= 0;
-      _tmp_data_2 <= 0;
-      _tmp_valid_2 <= 0;
-    end else begin
-      if((_tmp_ready_1 || !_tmp_valid_1) && 1 && 1) begin
-        _tmp_data_1 <= _tmp_data_1 + 2'd1;
-      end 
-      if(_tmp_valid_1 && _tmp_ready_1) begin
-        _tmp_valid_1 <= 0;
-      end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && 1) begin
-        _tmp_valid_1 <= 1;
-      end 
-      if((_tmp_ready_2 || !_tmp_valid_2) && _tmp_ready_1 && _tmp_valid_1) begin
-        _tmp_data_2 <= _tmp_data_1 - 2'd1;
-      end 
-      if(_tmp_valid_2 && _tmp_ready_2) begin
-        _tmp_valid_2 <= 0;
-      end 
-      if((_tmp_ready_2 || !_tmp_valid_2) && _tmp_ready_1) begin
-        _tmp_valid_2 <= _tmp_valid_1;
-      end 
     end
   end
 
@@ -348,6 +349,7 @@ endmodule
 
 
 def test():
+    veriloggen.reset()
     test_module = types_axi_write_dataflow.mkTest()
     code = test_module.to_verilog()
 

@@ -20,6 +20,8 @@ def mkMain():
     myaxi = axi.AxiMaster(m, 'myaxi', clk, rst)
     myaxi.disable_write()
 
+    df = dataflow.DataflowManager(m, clk, rst)
+    
     req_fsm = FSM(m, 'req_fsm', clk, rst)
 
     # read request
@@ -30,14 +32,10 @@ def mkMain():
 
     # read dataflow (AXI -> Dataflow)
     data, last, done = myaxi.read_dataflow()
-    sum = dataflow.Iadd(data, reset=last.prev(1))
+    sum = df.Iadd(data, reset=last.prev(1))
 
     sum.output('sum_data', 'sum_valid')
     last.output('last_data', 'last_valid')
-
-    df = dataflow.Dataflow(sum, last)
-    df.implement(m, clk, rst)
-    # df.draw_graph()
 
     # verify
     sum_data, sum_valid = sum.read()
@@ -46,8 +44,8 @@ def mkMain():
     expected_sum = ((araddr + araddr + arlen - 1) * arlen) // 2
 
     data_seq = Seq(m, 'data_seq', clk, rst)
-    data_seq.If(Ands(sum_valid, last_valid, last_data == 1))(
-        Systask('display', 'sum=%d expected_sum=%', sum_data, expected_sum)
+    data_seq.If(Ands(sum_valid, last_valid, last_data == 1)).Delay(1)(
+        Systask('display', 'sum=%d expected_sum=%d', sum_data, expected_sum)
     )
 
     return m

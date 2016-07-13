@@ -21,6 +21,7 @@ def mkMain():
     myaxi = axi.AxiMaster(m, 'myaxi', clk, rst)
     mybram = bram.Bram(m, 'mybram', clk, rst, numports=1)
 
+    df = dataflow.DataflowManager(m, clk, rst)
     fsm = FSM(m, 'fsm', clk, rst)
 
     # AXI read request
@@ -31,12 +32,9 @@ def mkMain():
 
     # AXI read dataflow (AXI -> Dataflow)
     axi_data, axi_last, done = myaxi.read_dataflow()
-    sum = dataflow.Iadd(axi_data, reset=axi_last.prev(1))
+    sum = df.Iadd(axi_data, reset=axi_last.prev(1))
     sum.output('sum_data', 'sum_valid')
     axi_last.output('axi_last_data', 'axi_last_valid')
-
-    df = dataflow.Dataflow(sum, axi_last)
-    df.implement(m, clk, rst)
 
     # BRAM write dataflow (Dataflow -> BRAM)
     wport = 0
@@ -59,9 +57,6 @@ def mkMain():
     rdata.output('rdata_data', 'rdata_valid', 'rdata_ready')
     rlast.output('rlast_data', 'rlast_valid')
     fsm.If(done).goto_next()
-
-    df = dataflow.Dataflow(rdata, rlast)
-    df.implement(m, clk, rst)
 
     # AXI write dataflow
     done = myaxi.write_dataflow(rdata, counter)

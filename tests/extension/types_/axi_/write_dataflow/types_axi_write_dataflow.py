@@ -20,6 +20,8 @@ def mkMain():
     myaxi = axi.AxiMaster(m, 'myaxi', clk, rst)
     myaxi.disable_read()
 
+    df = dataflow.DataflowManager(m, clk, rst)
+    
     fsm = FSM(m, 'fsm', clk, rst)
 
     # write request
@@ -29,12 +31,9 @@ def mkMain():
     fsm.If(ack).goto_next()
 
     # dataflow
-    c = dataflow.Counter()
+    c = df.Counter()
     value = c - 1
     value.output('value_data', 'value_valid', 'value_ready')
-
-    df = dataflow.Dataflow(value)
-    df.implement(m, clk, rst)
 
     # write dataflow (Dataflow -> AXI)
     done = myaxi.write_dataflow(value, counter)

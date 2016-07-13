@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import veriloggen
 import types_axi_multiwrite
 
 expected_verilog = """
@@ -447,6 +448,7 @@ endmodule
 
 
 def test():
+    veriloggen.reset()
     test_module = types_axi_multiwrite.mkTest()
     code = test_module.to_verilog()
 
