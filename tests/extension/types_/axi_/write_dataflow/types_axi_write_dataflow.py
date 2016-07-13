@@ -33,7 +33,6 @@ def mkMain():
     # dataflow
     c = df.Counter()
     value = c - 1
-    value.output('value_data', 'value_valid', 'value_ready')
 
     # write dataflow (Dataflow -> AXI)
     done = myaxi.write_dataflow(value, counter)

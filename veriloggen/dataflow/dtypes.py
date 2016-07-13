@@ -127,6 +127,13 @@ class _Numeric(_Node):
         if self.df is not None:
             self.df.add(self)
 
+    def output_tmp(self):
+        if self.m is None:
+            raise ValueError("Module information is not set.")
+
+        tmp = self.m.get_tmp()
+        self.output(_tmp_data(tmp), _tmp_valid(tmp), _tmp_ready(tmp))
+
     def prev(self, index):
         if index < 0:
             raise ValueError("index must be greater than 0")
@@ -153,6 +160,11 @@ class _Numeric(_Node):
             return self.output_node.read(cond)
 
         if self.output_sig_data is None:
+
+            # set default name
+            if self.output_data is None:
+                self.output_tmp()
+
             self._implement_output_sig(self.m, self.seq, aswire=True)
 
         data = self.output_sig_data
@@ -163,6 +175,9 @@ class _Numeric(_Node):
 
         ready = make_condition(cond)
         val = 1 if ready is None else ready
+
+        if ready is not None and self.output_sig_ready is None:
+            raise ValueError("Dataflow ready port is required for throttling.")
 
         if self.output_sig_ready is not None:
             prev_subst = self.output_sig_ready._get_subst()
@@ -240,6 +255,9 @@ class _Numeric(_Node):
     def _implement_output_sig(self, m, seq, aswire=False):
         if self.output_sig_data is not None:
             return
+
+        if self.m is None:
+            raise ValueError("Module information is not set.")
 
         width = self.bit_length()
         signed = self.get_signed()
@@ -1947,6 +1965,8 @@ class _Variable(_Numeric):
     #-------------------------------------------------------------------------
     def write(self, wdata, cond=None):
         if self.sig_data is None:
+            if self.m is None:
+                raise ValueError("Module information is not set.")
             self._implement_input(self.m, self.seq, aswire=True)
 
         if isinstance(self.sig_data, vtypes.Input):
@@ -2371,9 +2391,8 @@ def Counter(step=None, maxval=None, initval=0, reset=None, width=32, signed=Fals
                    step, initval=initval, reset=reset, width=width, signed=signed,
                    label='Counter')
 
+
 #-------------------------------------------------------------------------
-
-
 def is_dataflow_object(*objs):
     for obj in objs:
         if isinstance(obj, _Node):

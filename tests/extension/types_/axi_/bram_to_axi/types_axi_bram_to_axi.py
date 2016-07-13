@@ -33,8 +33,6 @@ def mkMain():
     # AXI read dataflow (AXI -> Dataflow)
     axi_data, axi_last, done = myaxi.read_dataflow()
     sum = df.Iadd(axi_data, reset=axi_last.prev(1))
-    sum.output('sum_data', 'sum_valid')
-    axi_last.output('axi_last_data', 'axi_last_valid')
 
     # BRAM write dataflow (Dataflow -> BRAM)
     wport = 0
@@ -54,8 +52,6 @@ def mkMain():
     raddr = 0
     rlen = arlen
     rdata, rlast, done = mybram.read_dataflow(rport, raddr, rlen, cond=fsm)
-    rdata.output('rdata_data', 'rdata_valid', 'rdata_ready')
-    rlast.output('rlast_data', 'rlast_valid')
     fsm.If(done).goto_next()
 
     # AXI write dataflow

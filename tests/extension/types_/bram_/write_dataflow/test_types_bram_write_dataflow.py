@@ -77,22 +77,12 @@ module main
 
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
-  reg [32-1:0] _tmp_data_0;
-  reg _tmp_valid_0;
-  wire _tmp_ready_0;
-  assign _tmp_ready_0 = (_tmp_ready_1 || !_tmp_valid_1) && _tmp_valid_0;
-  reg [32-1:0] _tmp_data_1;
-  reg _tmp_valid_1;
-  wire _tmp_ready_1;
-  wire [32-1:0] value_data;
-  wire value_valid;
-  wire value_ready;
-  assign value_data = _tmp_data_1;
-  assign value_valid = _tmp_valid_1;
-  assign _tmp_ready_1 = value_ready;
-  reg [8-1:0] _tmp_2;
-  reg _tmp_3;
-  assign value_ready = (fsm == 0) && !_tmp_3;
+  reg [8-1:0] _tmp_0;
+  reg _tmp_1;
+  wire [32-1:0] _tmp_data_2;
+  wire _tmp_valid_2;
+  wire _tmp_ready_2;
+  assign _tmp_ready_2 = (fsm == 0) && !_tmp_1;
   reg _mybram_cond_0_1;
   reg [32-1:0] sum;
   reg _seq_cond_0_1;
@@ -104,32 +94,71 @@ module main
       mybram_0_addr <= 0;
       mybram_0_wdata <= 0;
       mybram_0_wenable <= 0;
-      _tmp_2 <= 0;
-      _tmp_3 <= 0;
+      _tmp_0 <= 0;
+      _tmp_1 <= 0;
       _mybram_cond_0_1 <= 0;
     end else begin
       if(_mybram_cond_0_1) begin
         mybram_0_wenable <= 0;
-        _tmp_3 <= 0;
+        _tmp_1 <= 0;
       end 
       mybram_1_wdata <= 0;
       mybram_1_wenable <= 0;
-      if(value_valid && ((fsm == 0) && !_tmp_3) && (_tmp_2 == 0)) begin
+      if(_tmp_valid_2 && ((fsm == 0) && !_tmp_1) && (_tmp_0 == 0)) begin
         mybram_0_addr <= 0;
-        mybram_0_wdata <= value_data;
+        mybram_0_wdata <= _tmp_data_2;
         mybram_0_wenable <= 1;
-        _tmp_2 <= 63;
+        _tmp_0 <= 63;
       end 
-      if(value_valid && ((fsm == 0) && !_tmp_3) && (_tmp_2 > 0)) begin
+      if(_tmp_valid_2 && ((fsm == 0) && !_tmp_1) && (_tmp_0 > 0)) begin
         mybram_0_addr <= mybram_0_addr + 1;
-        mybram_0_wdata <= value_data;
+        mybram_0_wdata <= _tmp_data_2;
         mybram_0_wenable <= 1;
-        _tmp_2 <= _tmp_2 - 1;
+        _tmp_0 <= _tmp_0 - 1;
       end 
-      if(value_valid && ((fsm == 0) && !_tmp_3) && (_tmp_2 == 1)) begin
-        _tmp_3 <= 1;
+      if(_tmp_valid_2 && ((fsm == 0) && !_tmp_1) && (_tmp_0 == 1)) begin
+        _tmp_1 <= 1;
       end 
       _mybram_cond_0_1 <= 1;
+    end
+  end
+
+  reg [32-1:0] _tmp_data_3;
+  reg _tmp_valid_3;
+  wire _tmp_ready_3;
+  assign _tmp_ready_3 = (_tmp_ready_4 || !_tmp_valid_4) && _tmp_valid_3;
+  reg [32-1:0] _tmp_data_4;
+  reg _tmp_valid_4;
+  wire _tmp_ready_4;
+  assign _tmp_data_2 = _tmp_data_4;
+  assign _tmp_valid_2 = _tmp_valid_4;
+  assign _tmp_ready_4 = _tmp_ready_2;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _tmp_data_3 <= 1'd0;
+      _tmp_valid_3 <= 0;
+      _tmp_data_4 <= 0;
+      _tmp_valid_4 <= 0;
+    end else begin
+      if((_tmp_ready_3 || !_tmp_valid_3) && 1 && 1) begin
+        _tmp_data_3 <= _tmp_data_3 + 2'd1;
+      end 
+      if(_tmp_valid_3 && _tmp_ready_3) begin
+        _tmp_valid_3 <= 0;
+      end 
+      if((_tmp_ready_3 || !_tmp_valid_3) && 1) begin
+        _tmp_valid_3 <= 1;
+      end 
+      if((_tmp_ready_4 || !_tmp_valid_4) && _tmp_ready_3 && _tmp_valid_3) begin
+        _tmp_data_4 <= _tmp_data_3 - 2'd1;
+      end 
+      if(_tmp_valid_4 && _tmp_ready_4) begin
+        _tmp_valid_4 <= 0;
+      end 
+      if((_tmp_ready_4 || !_tmp_valid_4) && _tmp_ready_3) begin
+        _tmp_valid_4 <= _tmp_valid_3;
+      end 
     end
   end
 
@@ -142,7 +171,7 @@ module main
     end else begin
       case(fsm)
         fsm_init: begin
-          if(_tmp_3) begin
+          if(_tmp_1) begin
             fsm <= fsm_1;
           end 
         end
@@ -150,35 +179,6 @@ module main
           fsm <= fsm_2;
         end
       endcase
-    end
-  end
-
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      _tmp_data_0 <= 1'd0;
-      _tmp_valid_0 <= 0;
-      _tmp_data_1 <= 0;
-      _tmp_valid_1 <= 0;
-    end else begin
-      if((_tmp_ready_0 || !_tmp_valid_0) && 1 && 1) begin
-        _tmp_data_0 <= _tmp_data_0 + 2'd1;
-      end 
-      if(_tmp_valid_0 && _tmp_ready_0) begin
-        _tmp_valid_0 <= 0;
-      end 
-      if((_tmp_ready_0 || !_tmp_valid_0) && 1) begin
-        _tmp_valid_0 <= 1;
-      end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && _tmp_ready_0 && _tmp_valid_0) begin
-        _tmp_data_1 <= _tmp_data_0 - 2'd1;
-      end 
-      if(_tmp_valid_1 && _tmp_ready_1) begin
-        _tmp_valid_1 <= 0;
-      end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && _tmp_ready_0) begin
-        _tmp_valid_1 <= _tmp_valid_0;
-      end 
     end
   end
 

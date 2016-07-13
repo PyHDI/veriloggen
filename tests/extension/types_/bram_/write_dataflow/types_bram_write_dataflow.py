@@ -23,15 +23,12 @@ def mkMain(n=128, datawidth=32, numports=2):
     mybram = bram.Bram(m, 'mybram', clk, rst, datawidth, addrwidth, 2, nodataflow=True)
     mybram.disable_write(1)
 
+    df = dataflow.DataflowManager(m, clk, rst)
     fsm = FSM(m, 'fsm', clk, rst)
 
     # dataflow
-    c = dataflow.Counter()
+    c = df.Counter()
     value = c - 1
-    value.output('value_data', 'value_valid', 'value_ready')
-
-    df = dataflow.Dataflow(value)
-    df.implement(m, clk, rst)
 
     # write dataflow (Dataflow -> BRAM)
     wport = 0

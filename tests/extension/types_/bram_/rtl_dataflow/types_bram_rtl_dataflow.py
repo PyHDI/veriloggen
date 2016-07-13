@@ -19,19 +19,20 @@ def mkMain(n=128, datawidth=32, numports=2):
     clk = m.Input('CLK')
     rst = m.Input('RST')
 
-    x = dataflow.Variable('xdata', 'xvalid')
-    y = x + 100
-    y.output('ydata', 'yvalid')
-
-    df = dataflow.Dataflow(y)
-    df.implement(m, clk, rst)
-
     addrwidth = int(math.log(n, 2)) * 2
-    mybram = bram.Bram(m, 'mybram', clk, rst, datawidth, addrwidth, 2, nodataflow=True)
+    mybram = bram.Bram(m, 'mybram', clk, rst, datawidth, addrwidth, 2)
 
     xfsm = FSM(m, 'xfsm', clk, rst)
     xaddr = m.Reg('xaddr', 32, initval=0)
     xcount = m.Reg('xcount', 32, initval=0)
+
+    # dataflow variables without manager
+    x = dataflow.Variable('xdata', 'xvalid', 'xready')
+    y = x + 100
+    y.output('ydata', 'yvalid', 'yread')
+
+    df = dataflow.Dataflow(y)
+    df.implement(m, clk, rst)
 
     # Initialization
     xfsm(
@@ -65,10 +66,6 @@ def mkMain(n=128, datawidth=32, numports=2):
     )
     xfsm.If(xfsm.Prev(xaddr, 1) == step).goto_next()
 
-    # create always statement
-    xfsm.make_always()
-
-    
     # write result to BRAM
     yfsm = FSM(m, 'yfsm', clk, rst)
     yaddr = m.Reg('yaddr', 32, initval=0)
@@ -97,9 +94,6 @@ def mkMain(n=128, datawidth=32, numports=2):
     yfsm.If(read_valid)(
         Systask('display', 'BRAM1[%d] = %d', yfsm.Prev(yaddr, 2), read_data)
     )
-
-    # create always statement
-    yfsm.make_always()
 
     return m
 

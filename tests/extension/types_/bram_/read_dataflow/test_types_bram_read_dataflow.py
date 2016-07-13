@@ -77,49 +77,39 @@ module main
 
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
-  reg [32-1:0] _tmp_data_0;
-  reg _tmp_valid_0;
-  wire _tmp_ready_0;
-  assign _tmp_ready_0 = (_tmp_ready_1 || !_tmp_valid_1) && _tmp_valid_0;
-  reg [32-1:0] _tmp_data_1;
-  reg _tmp_valid_1;
-  wire _tmp_ready_1;
-  wire [32-1:0] value_data;
-  wire value_valid;
-  wire value_ready;
-  assign value_data = _tmp_data_1;
-  assign value_valid = _tmp_valid_1;
-  assign _tmp_ready_1 = value_ready;
-  reg [8-1:0] _tmp_2;
-  reg _tmp_3;
-  assign value_ready = (fsm == 0) && !_tmp_3;
+  reg [8-1:0] _tmp_0;
+  reg _tmp_1;
+  wire [32-1:0] _tmp_data_2;
+  wire _tmp_valid_2;
+  wire _tmp_ready_2;
+  assign _tmp_ready_2 = (fsm == 0) && !_tmp_1;
   reg _mybram_cond_0_1;
+  reg _tmp_3;
   reg _tmp_4;
-  reg _tmp_5;
+  wire _tmp_5;
   wire _tmp_6;
-  wire _tmp_7;
-  assign _tmp_6 = 1 && 1;
-  assign _tmp_7 = 1 && 1;
-  localparam _tmp_8 = 1;
-  wire [_tmp_8-1:0] _tmp_9;
-  assign _tmp_9 = (_tmp_6 || !_tmp_4) && (_tmp_7 || !_tmp_5);
-  reg [_tmp_8-1:0] __tmp_9_1;
-  wire [32-1:0] _tmp_10;
-  reg [32-1:0] __tmp_10_1;
-  assign _tmp_10 = (__tmp_9_1)? mybram_1_rdata : __tmp_10_1;
-  reg [7-1:0] _tmp_11;
+  assign _tmp_5 = 1 && _tmp_ready_15;
+  assign _tmp_6 = 1 && _tmp_ready_16;
+  localparam _tmp_7 = 1;
+  wire [_tmp_7-1:0] _tmp_8;
+  assign _tmp_8 = (_tmp_5 || !_tmp_3) && (_tmp_6 || !_tmp_4);
+  reg [_tmp_7-1:0] __tmp_8_1;
+  wire [32-1:0] _tmp_9;
+  reg [32-1:0] __tmp_9_1;
+  assign _tmp_9 = (__tmp_8_1)? mybram_1_rdata : __tmp_9_1;
+  reg [7-1:0] _tmp_10;
+  reg _tmp_11;
   reg _tmp_12;
   reg _tmp_13;
   reg _tmp_14;
-  reg _tmp_15;
-  wire [32-1:0] rdata_data;
-  wire rdata_valid;
-  assign rdata_data = _tmp_10;
-  assign rdata_valid = _tmp_4;
-  wire [1-1:0] rlast_data;
-  wire rlast_valid;
-  assign rlast_data = _tmp_15;
-  assign rlast_valid = _tmp_5;
+  wire [32-1:0] _tmp_data_15;
+  wire _tmp_valid_15;
+  wire _tmp_ready_15;
+  assign _tmp_ready_15 = 1;
+  wire [1-1:0] _tmp_data_16;
+  wire _tmp_valid_16;
+  wire _tmp_ready_16;
+  assign _tmp_ready_16 = 1;
   reg [32-1:0] sum;
   reg _seq_cond_0_1;
 
@@ -130,71 +120,114 @@ module main
       mybram_0_addr <= 0;
       mybram_0_wdata <= 0;
       mybram_0_wenable <= 0;
-      _tmp_2 <= 0;
-      _tmp_3 <= 0;
+      _tmp_0 <= 0;
+      _tmp_1 <= 0;
       _mybram_cond_0_1 <= 0;
+      __tmp_8_1 <= 0;
       __tmp_9_1 <= 0;
-      __tmp_10_1 <= 0;
-      _tmp_15 <= 0;
-      _tmp_4 <= 0;
-      _tmp_5 <= 0;
-      _tmp_13 <= 0;
       _tmp_14 <= 0;
+      _tmp_3 <= 0;
+      _tmp_4 <= 0;
       _tmp_12 <= 0;
-      mybram_1_addr <= 0;
+      _tmp_13 <= 0;
       _tmp_11 <= 0;
+      mybram_1_addr <= 0;
+      _tmp_10 <= 0;
     end else begin
       if(_mybram_cond_0_1) begin
         mybram_0_wenable <= 0;
-        _tmp_3 <= 0;
+        _tmp_1 <= 0;
       end 
       mybram_1_wdata <= 0;
       mybram_1_wenable <= 0;
-      if(value_valid && ((fsm == 0) && !_tmp_3) && (_tmp_2 == 0)) begin
+      if(_tmp_valid_2 && ((fsm == 0) && !_tmp_1) && (_tmp_0 == 0)) begin
         mybram_0_addr <= 0;
-        mybram_0_wdata <= value_data;
+        mybram_0_wdata <= _tmp_data_2;
         mybram_0_wenable <= 1;
-        _tmp_2 <= 63;
+        _tmp_0 <= 63;
       end 
-      if(value_valid && ((fsm == 0) && !_tmp_3) && (_tmp_2 > 0)) begin
+      if(_tmp_valid_2 && ((fsm == 0) && !_tmp_1) && (_tmp_0 > 0)) begin
         mybram_0_addr <= mybram_0_addr + 1;
-        mybram_0_wdata <= value_data;
+        mybram_0_wdata <= _tmp_data_2;
         mybram_0_wenable <= 1;
-        _tmp_2 <= _tmp_2 - 1;
+        _tmp_0 <= _tmp_0 - 1;
       end 
-      if(value_valid && ((fsm == 0) && !_tmp_3) && (_tmp_2 == 1)) begin
-        _tmp_3 <= 1;
+      if(_tmp_valid_2 && ((fsm == 0) && !_tmp_1) && (_tmp_0 == 1)) begin
+        _tmp_1 <= 1;
       end 
       _mybram_cond_0_1 <= 1;
+      __tmp_8_1 <= _tmp_8;
       __tmp_9_1 <= _tmp_9;
-      __tmp_10_1 <= _tmp_10;
-      if((_tmp_6 || !_tmp_4) && (_tmp_7 || !_tmp_5) && _tmp_13) begin
-        _tmp_15 <= 0;
+      if((_tmp_5 || !_tmp_3) && (_tmp_6 || !_tmp_4) && _tmp_12) begin
+        _tmp_14 <= 0;
+        _tmp_3 <= 0;
         _tmp_4 <= 0;
-        _tmp_5 <= 0;
+        _tmp_12 <= 0;
+      end 
+      if((_tmp_5 || !_tmp_3) && (_tmp_6 || !_tmp_4) && _tmp_11) begin
+        _tmp_3 <= 1;
+        _tmp_4 <= 1;
+        _tmp_14 <= _tmp_13;
+        _tmp_13 <= 0;
+        _tmp_11 <= 0;
+        _tmp_12 <= 1;
+      end 
+      if((_tmp_5 || !_tmp_3) && (_tmp_6 || !_tmp_4) && (fsm == 2) && (_tmp_10 == 0) && !_tmp_13 && !_tmp_14) begin
+        mybram_1_addr <= 0;
+        _tmp_10 <= 31;
+        _tmp_11 <= 1;
+      end 
+      if((_tmp_5 || !_tmp_3) && (_tmp_6 || !_tmp_4) && (_tmp_10 > 0)) begin
+        mybram_1_addr <= mybram_1_addr + 1;
+        _tmp_10 <= _tmp_10 - 1;
+        _tmp_11 <= 1;
         _tmp_13 <= 0;
       end 
-      if((_tmp_6 || !_tmp_4) && (_tmp_7 || !_tmp_5) && _tmp_12) begin
-        _tmp_4 <= 1;
-        _tmp_5 <= 1;
-        _tmp_15 <= _tmp_14;
-        _tmp_14 <= 0;
-        _tmp_12 <= 0;
+      if((_tmp_5 || !_tmp_3) && (_tmp_6 || !_tmp_4) && (_tmp_10 == 1)) begin
         _tmp_13 <= 1;
       end 
-      if((_tmp_6 || !_tmp_4) && (_tmp_7 || !_tmp_5) && (fsm == 2) && (_tmp_11 == 0) && !_tmp_14 && !_tmp_15) begin
-        mybram_1_addr <= 0;
-        _tmp_11 <= 31;
-        _tmp_12 <= 1;
+    end
+  end
+
+  assign _tmp_data_15 = _tmp_9;
+  assign _tmp_valid_15 = _tmp_3;
+  assign _tmp_data_16 = _tmp_14;
+  assign _tmp_valid_16 = _tmp_4;
+  reg [32-1:0] _tmp_data_17;
+  reg _tmp_valid_17;
+  wire _tmp_ready_17;
+  assign _tmp_ready_17 = (_tmp_ready_18 || !_tmp_valid_18) && _tmp_valid_17;
+  reg [32-1:0] _tmp_data_18;
+  reg _tmp_valid_18;
+  wire _tmp_ready_18;
+  assign _tmp_data_2 = _tmp_data_18;
+  assign _tmp_valid_2 = _tmp_valid_18;
+  assign _tmp_ready_18 = _tmp_ready_2;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _tmp_data_17 <= 1'd0;
+      _tmp_valid_17 <= 0;
+      _tmp_data_18 <= 0;
+      _tmp_valid_18 <= 0;
+    end else begin
+      if((_tmp_ready_17 || !_tmp_valid_17) && 1 && 1) begin
+        _tmp_data_17 <= _tmp_data_17 + 2'd1;
       end 
-      if((_tmp_6 || !_tmp_4) && (_tmp_7 || !_tmp_5) && (_tmp_11 > 0)) begin
-        mybram_1_addr <= mybram_1_addr + 1;
-        _tmp_11 <= _tmp_11 - 1;
-        _tmp_12 <= 1;
-        _tmp_14 <= 0;
+      if(_tmp_valid_17 && _tmp_ready_17) begin
+        _tmp_valid_17 <= 0;
       end 
-      if((_tmp_6 || !_tmp_4) && (_tmp_7 || !_tmp_5) && (_tmp_11 == 1)) begin
-        _tmp_14 <= 1;
+      if((_tmp_ready_17 || !_tmp_valid_17) && 1) begin
+        _tmp_valid_17 <= 1;
+      end 
+      if((_tmp_ready_18 || !_tmp_valid_18) && _tmp_ready_17 && _tmp_valid_17) begin
+        _tmp_data_18 <= _tmp_data_17 - 2'd1;
+      end 
+      if(_tmp_valid_18 && _tmp_ready_18) begin
+        _tmp_valid_18 <= 0;
+      end 
+      if((_tmp_ready_18 || !_tmp_valid_18) && _tmp_ready_17) begin
+        _tmp_valid_18 <= _tmp_valid_17;
       end 
     end
   end
@@ -209,7 +242,7 @@ module main
     end else begin
       case(fsm)
         fsm_init: begin
-          if(_tmp_3) begin
+          if(_tmp_1) begin
             fsm <= fsm_1;
           end 
         end
@@ -217,40 +250,11 @@ module main
           fsm <= fsm_2;
         end
         fsm_2: begin
-          if(_tmp_15) begin
+          if(_tmp_14) begin
             fsm <= fsm_3;
           end 
         end
       endcase
-    end
-  end
-
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      _tmp_data_0 <= 1'd0;
-      _tmp_valid_0 <= 0;
-      _tmp_data_1 <= 0;
-      _tmp_valid_1 <= 0;
-    end else begin
-      if((_tmp_ready_0 || !_tmp_valid_0) && 1 && 1) begin
-        _tmp_data_0 <= _tmp_data_0 + 2'd1;
-      end 
-      if(_tmp_valid_0 && _tmp_ready_0) begin
-        _tmp_valid_0 <= 0;
-      end 
-      if((_tmp_ready_0 || !_tmp_valid_0) && 1) begin
-        _tmp_valid_0 <= 1;
-      end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && _tmp_ready_0 && _tmp_valid_0) begin
-        _tmp_data_1 <= _tmp_data_0 - 2'd1;
-      end 
-      if(_tmp_valid_1 && _tmp_ready_1) begin
-        _tmp_valid_1 <= 0;
-      end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && _tmp_ready_0) begin
-        _tmp_valid_1 <= _tmp_valid_0;
-      end 
     end
   end
 
@@ -263,10 +267,10 @@ module main
       if(_seq_cond_0_1) begin
         $display("sum=%d expected_sum=%d", sum, 496);
       end 
-      if(rdata_valid) begin
-        sum <= sum + rdata_data;
+      if(_tmp_valid_15) begin
+        sum <= sum + _tmp_data_15;
       end 
-      _seq_cond_0_1 <= rdata_valid && (rlast_data == 1);
+      _seq_cond_0_1 <= _tmp_valid_15 && (_tmp_data_16 == 1);
     end
   end
 

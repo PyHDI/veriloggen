@@ -197,10 +197,10 @@ module main
   reg [8-1:0] _tmp_0;
   reg _myaxi_cond_0_1;
   reg _tmp_1;
-  wire [32-1:0] value_data;
-  wire value_valid;
-  wire value_ready;
-  assign value_ready = myaxi_wready || !myaxi_wvalid;
+  wire [32-1:0] _tmp_data_2;
+  wire _tmp_valid_2;
+  wire _tmp_ready_2;
+  assign _tmp_ready_2 = myaxi_wready || !myaxi_wvalid;
   reg _myaxi_cond_1_1;
   reg [32-1:0] sum;
   reg _seq_cond_0_1;
@@ -246,14 +246,14 @@ module main
       if(myaxi_awvalid && !myaxi_awready) begin
         myaxi_awvalid <= myaxi_awvalid;
       end 
-      if(value_valid && (myaxi_wready || !myaxi_wvalid) && ((myaxi_wready || !myaxi_wvalid) && (_tmp_0 > 0))) begin
-        myaxi_wdata <= value_data;
+      if(_tmp_valid_2 && (myaxi_wready || !myaxi_wvalid) && ((myaxi_wready || !myaxi_wvalid) && (_tmp_0 > 0))) begin
+        myaxi_wdata <= _tmp_data_2;
         myaxi_wvalid <= 1;
         myaxi_wlast <= 0;
         myaxi_wstrb <= { 4{ 1'd1 } };
         _tmp_0 <= _tmp_0 - 1;
       end 
-      if(value_valid && (myaxi_wready || !myaxi_wvalid) && ((myaxi_wready || !myaxi_wvalid) && (_tmp_0 > 0)) && (_tmp_0 == 1)) begin
+      if(_tmp_valid_2 && (myaxi_wready || !myaxi_wvalid) && ((myaxi_wready || !myaxi_wvalid) && (_tmp_0 > 0)) && (_tmp_0 == 1)) begin
         myaxi_wlast <= 1;
         _tmp_1 <= 1;
       end 
@@ -266,41 +266,41 @@ module main
     end
   end
 
-  reg [32-1:0] _tmp_data_2;
-  reg _tmp_valid_2;
-  wire _tmp_ready_2;
-  assign _tmp_ready_2 = (_tmp_ready_3 || !_tmp_valid_3) && _tmp_valid_2;
   reg [32-1:0] _tmp_data_3;
   reg _tmp_valid_3;
   wire _tmp_ready_3;
-  assign value_data = _tmp_data_3;
-  assign value_valid = _tmp_valid_3;
-  assign _tmp_ready_3 = value_ready;
+  assign _tmp_ready_3 = (_tmp_ready_4 || !_tmp_valid_4) && _tmp_valid_3;
+  reg [32-1:0] _tmp_data_4;
+  reg _tmp_valid_4;
+  wire _tmp_ready_4;
+  assign _tmp_data_2 = _tmp_data_4;
+  assign _tmp_valid_2 = _tmp_valid_4;
+  assign _tmp_ready_4 = _tmp_ready_2;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_2 <= 1'd0;
-      _tmp_valid_2 <= 0;
-      _tmp_data_3 <= 0;
+      _tmp_data_3 <= 1'd0;
       _tmp_valid_3 <= 0;
+      _tmp_data_4 <= 0;
+      _tmp_valid_4 <= 0;
     end else begin
-      if((_tmp_ready_2 || !_tmp_valid_2) && 1 && 1) begin
-        _tmp_data_2 <= _tmp_data_2 + 2'd1;
-      end 
-      if(_tmp_valid_2 && _tmp_ready_2) begin
-        _tmp_valid_2 <= 0;
-      end 
-      if((_tmp_ready_2 || !_tmp_valid_2) && 1) begin
-        _tmp_valid_2 <= 1;
-      end 
-      if((_tmp_ready_3 || !_tmp_valid_3) && _tmp_ready_2 && _tmp_valid_2) begin
-        _tmp_data_3 <= _tmp_data_2 - 2'd1;
+      if((_tmp_ready_3 || !_tmp_valid_3) && 1 && 1) begin
+        _tmp_data_3 <= _tmp_data_3 + 2'd1;
       end 
       if(_tmp_valid_3 && _tmp_ready_3) begin
         _tmp_valid_3 <= 0;
       end 
-      if((_tmp_ready_3 || !_tmp_valid_3) && _tmp_ready_2) begin
-        _tmp_valid_3 <= _tmp_valid_2;
+      if((_tmp_ready_3 || !_tmp_valid_3) && 1) begin
+        _tmp_valid_3 <= 1;
+      end 
+      if((_tmp_ready_4 || !_tmp_valid_4) && _tmp_ready_3 && _tmp_valid_3) begin
+        _tmp_data_4 <= _tmp_data_3 - 2'd1;
+      end 
+      if(_tmp_valid_4 && _tmp_ready_4) begin
+        _tmp_valid_4 <= 0;
+      end 
+      if((_tmp_ready_4 || !_tmp_valid_4) && _tmp_ready_3) begin
+        _tmp_valid_4 <= _tmp_valid_3;
       end 
     end
   end

@@ -34,9 +34,6 @@ def mkMain():
     data, last, done = myaxi.read_dataflow()
     sum = df.Iadd(data, reset=last.prev(1))
 
-    sum.output('sum_data', 'sum_valid')
-    last.output('last_data', 'last_valid')
-
     # verify
     sum_data, sum_valid = sum.read()
     last_data, last_valid = last.read()

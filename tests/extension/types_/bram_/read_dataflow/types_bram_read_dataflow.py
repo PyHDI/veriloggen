@@ -20,18 +20,15 @@ def mkMain(n=128, datawidth=32, numports=2):
     rst = m.Input('RST')
 
     addrwidth = int(math.log(n, 2)) * 2
-    mybram = bram.Bram(m, 'mybram', clk, rst, datawidth, addrwidth, 2, nodataflow=True)
+    mybram = bram.Bram(m, 'mybram', clk, rst, datawidth, addrwidth, 2)
     mybram.disable_write(1)
 
+    df = dataflow.DataflowManager(m, clk, rst)
     fsm = FSM(m, 'fsm', clk, rst)
 
     # dataflow
-    c = dataflow.Counter()
+    c = df.Counter()
     value = c - 1
-    value.output('value_data', 'value_valid', 'value_ready')
-
-    df = dataflow.Dataflow(value)
-    df.implement(m, clk, rst)
 
     # write dataflow (Dataflow -> BRAM)
     wport = 0
@@ -47,12 +44,7 @@ def mkMain(n=128, datawidth=32, numports=2):
     raddr = 0
     rlen = 32
     rdata, rlast, done = mybram.read_dataflow(rport, raddr, rlen, cond=fsm)
-    rdata.output('rdata_data', 'rdata_valid')
-    rlast.output('rlast_data', 'rlast_valid')
     fsm.If(done).goto_next()
-
-    df = dataflow.Dataflow(rdata, rlast)
-    df.implement(m, clk, rst)
 
     # verify
     rdata_data, rdata_valid = rdata.read()

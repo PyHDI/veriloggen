@@ -245,36 +245,42 @@ module main
   reg _myaxi_cond_0_1;
   wire _tmp_1;
   wire _tmp_2;
-  assign _tmp_1 = 1 && ((_tmp_ready_18 || !_tmp_valid_18) && (myaxi_rvalid && myaxi_rvalid));
-  assign _tmp_2 = 1 && 1 && ((_tmp_ready_18 || !_tmp_valid_18) && (myaxi_rvalid && myaxi_rvalid));
+  assign _tmp_1 = 1 && ((_tmp_ready_21 || !_tmp_valid_21) && (myaxi_rvalid && myaxi_rvalid));
+  assign _tmp_2 = 1 && ((_tmp_ready_21 || !_tmp_valid_21) && (myaxi_rvalid && myaxi_rvalid));
   assign myaxi_rready = _tmp_1 && _tmp_2;
   reg [8-1:0] _tmp_3;
   reg _tmp_4;
-  wire [32-1:0] sum_data;
-  wire sum_valid;
+  wire [32-1:0] _tmp_data_5;
+  wire _tmp_valid_5;
+  wire _tmp_ready_5;
+  assign _tmp_ready_5 = (fsm == 1) && !_tmp_4;
   reg _mybram_cond_0_1;
-  reg _tmp_5;
   reg _tmp_6;
-  wire _tmp_7;
+  reg _tmp_7;
   wire _tmp_8;
-  assign _tmp_7 = 1 && 1;
-  assign _tmp_8 = 1 && 1;
-  localparam _tmp_9 = 1;
-  wire [_tmp_9-1:0] _tmp_10;
-  assign _tmp_10 = (_tmp_7 || !_tmp_5) && (_tmp_8 || !_tmp_6);
-  reg [_tmp_9-1:0] __tmp_10_1;
-  wire [32-1:0] _tmp_11;
-  reg [32-1:0] __tmp_11_1;
-  assign _tmp_11 = (__tmp_10_1)? mybram_0_rdata : __tmp_11_1;
-  reg [8-1:0] _tmp_12;
-  reg _tmp_13;
+  wire _tmp_9;
+  assign _tmp_8 = 1 && _tmp_ready_18;
+  assign _tmp_9 = 1 && _tmp_ready_19;
+  localparam _tmp_10 = 1;
+  wire [_tmp_10-1:0] _tmp_11;
+  assign _tmp_11 = (_tmp_8 || !_tmp_6) && (_tmp_9 || !_tmp_7);
+  reg [_tmp_10-1:0] __tmp_11_1;
+  wire [32-1:0] _tmp_12;
+  reg [32-1:0] __tmp_12_1;
+  assign _tmp_12 = (__tmp_11_1)? mybram_0_rdata : __tmp_12_1;
+  reg [8-1:0] _tmp_13;
   reg _tmp_14;
   reg _tmp_15;
   reg _tmp_16;
-  wire [32-1:0] rdata_data;
-  wire rdata_valid;
-  wire [1-1:0] rlast_data;
-  wire rlast_valid;
+  reg _tmp_17;
+  wire [32-1:0] _tmp_data_18;
+  wire _tmp_valid_18;
+  wire _tmp_ready_18;
+  assign _tmp_ready_18 = 1;
+  wire [1-1:0] _tmp_data_19;
+  wire _tmp_valid_19;
+  wire _tmp_ready_19;
+  assign _tmp_ready_19 = 1;
   reg [32-1:0] sum;
   reg _seq_cond_0_1;
 
@@ -319,10 +325,6 @@ module main
     end
   end
 
-  wire [1-1:0] axi_last_data;
-  wire axi_last_valid;
-  assign axi_last_data = myaxi_rlast;
-  assign axi_last_valid = myaxi_rvalid;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -332,101 +334,101 @@ module main
       _tmp_3 <= 0;
       _tmp_4 <= 0;
       _mybram_cond_0_1 <= 0;
-      __tmp_10_1 <= 0;
       __tmp_11_1 <= 0;
-      _tmp_16 <= 0;
-      _tmp_5 <= 0;
+      __tmp_12_1 <= 0;
+      _tmp_17 <= 0;
       _tmp_6 <= 0;
-      _tmp_14 <= 0;
+      _tmp_7 <= 0;
       _tmp_15 <= 0;
+      _tmp_16 <= 0;
+      _tmp_14 <= 0;
       _tmp_13 <= 0;
-      _tmp_12 <= 0;
     end else begin
       if(_mybram_cond_0_1) begin
         mybram_0_wenable <= 0;
         _tmp_4 <= 0;
       end 
-      if(sum_valid && ((fsm == 1) && !_tmp_4) && (_tmp_3 == 0)) begin
+      if(_tmp_valid_5 && ((fsm == 1) && !_tmp_4) && (_tmp_3 == 0)) begin
         mybram_0_addr <= 0;
-        mybram_0_wdata <= sum_data;
+        mybram_0_wdata <= _tmp_data_5;
         mybram_0_wenable <= 1;
         _tmp_3 <= 63;
       end 
-      if(sum_valid && ((fsm == 1) && !_tmp_4) && (_tmp_3 > 0)) begin
+      if(_tmp_valid_5 && ((fsm == 1) && !_tmp_4) && (_tmp_3 > 0)) begin
         mybram_0_addr <= mybram_0_addr + 1;
-        mybram_0_wdata <= sum_data;
+        mybram_0_wdata <= _tmp_data_5;
         mybram_0_wenable <= 1;
         _tmp_3 <= _tmp_3 - 1;
       end 
-      if(sum_valid && ((fsm == 1) && !_tmp_4) && (_tmp_3 == 1)) begin
+      if(_tmp_valid_5 && ((fsm == 1) && !_tmp_4) && (_tmp_3 == 1)) begin
         _tmp_4 <= 1;
       end 
       _mybram_cond_0_1 <= 1;
-      __tmp_10_1 <= _tmp_10;
       __tmp_11_1 <= _tmp_11;
-      if((_tmp_7 || !_tmp_5) && (_tmp_8 || !_tmp_6) && _tmp_14) begin
-        _tmp_16 <= 0;
-        _tmp_5 <= 0;
+      __tmp_12_1 <= _tmp_12;
+      if((_tmp_8 || !_tmp_6) && (_tmp_9 || !_tmp_7) && _tmp_15) begin
+        _tmp_17 <= 0;
         _tmp_6 <= 0;
-        _tmp_14 <= 0;
-      end 
-      if((_tmp_7 || !_tmp_5) && (_tmp_8 || !_tmp_6) && _tmp_13) begin
-        _tmp_5 <= 1;
-        _tmp_6 <= 1;
-        _tmp_16 <= _tmp_15;
+        _tmp_7 <= 0;
         _tmp_15 <= 0;
-        _tmp_13 <= 0;
+      end 
+      if((_tmp_8 || !_tmp_6) && (_tmp_9 || !_tmp_7) && _tmp_14) begin
+        _tmp_6 <= 1;
+        _tmp_7 <= 1;
+        _tmp_17 <= _tmp_16;
+        _tmp_16 <= 0;
+        _tmp_14 <= 0;
+        _tmp_15 <= 1;
+      end 
+      if((_tmp_8 || !_tmp_6) && (_tmp_9 || !_tmp_7) && (fsm == 2) && (_tmp_13 == 0) && !_tmp_16 && !_tmp_17) begin
+        mybram_0_addr <= 0;
+        _tmp_13 <= 63;
         _tmp_14 <= 1;
       end 
-      if((_tmp_7 || !_tmp_5) && (_tmp_8 || !_tmp_6) && (fsm == 2) && (_tmp_12 == 0) && !_tmp_15 && !_tmp_16) begin
-        mybram_0_addr <= 0;
-        _tmp_12 <= 63;
-        _tmp_13 <= 1;
-      end 
-      if((_tmp_7 || !_tmp_5) && (_tmp_8 || !_tmp_6) && (_tmp_12 > 0)) begin
+      if((_tmp_8 || !_tmp_6) && (_tmp_9 || !_tmp_7) && (_tmp_13 > 0)) begin
         mybram_0_addr <= mybram_0_addr + 1;
-        _tmp_12 <= _tmp_12 - 1;
-        _tmp_13 <= 1;
-        _tmp_15 <= 0;
+        _tmp_13 <= _tmp_13 - 1;
+        _tmp_14 <= 1;
+        _tmp_16 <= 0;
       end 
-      if((_tmp_7 || !_tmp_5) && (_tmp_8 || !_tmp_6) && (_tmp_12 == 1)) begin
-        _tmp_15 <= 1;
+      if((_tmp_8 || !_tmp_6) && (_tmp_9 || !_tmp_7) && (_tmp_13 == 1)) begin
+        _tmp_16 <= 1;
       end 
     end
   end
 
-  assign rdata_data = _tmp_11;
-  assign rdata_valid = _tmp_5;
-  assign rlast_data = _tmp_16;
-  assign rlast_valid = _tmp_6;
-  reg [1-1:0] _tmp_data_17;
-  reg [32-1:0] _tmp_data_18;
-  reg _tmp_valid_18;
-  wire _tmp_ready_18;
-  assign sum_data = _tmp_data_18;
-  assign sum_valid = _tmp_valid_18;
-  assign _tmp_ready_18 = 1;
+  assign _tmp_data_18 = _tmp_12;
+  assign _tmp_valid_18 = _tmp_6;
+  assign _tmp_data_19 = _tmp_17;
+  assign _tmp_valid_19 = _tmp_7;
+  reg [1-1:0] _tmp_data_20;
+  reg [32-1:0] _tmp_data_21;
+  reg _tmp_valid_21;
+  wire _tmp_ready_21;
+  assign _tmp_data_5 = _tmp_data_21;
+  assign _tmp_valid_5 = _tmp_valid_21;
+  assign _tmp_ready_21 = _tmp_ready_5;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_17 <= 0;
-      _tmp_data_18 <= 1'd0;
-      _tmp_valid_18 <= 0;
+      _tmp_data_20 <= 0;
+      _tmp_data_21 <= 1'd0;
+      _tmp_valid_21 <= 0;
     end else begin
       if(myaxi_rvalid && _tmp_2) begin
-        _tmp_data_17 <= myaxi_rlast;
+        _tmp_data_20 <= myaxi_rlast;
       end 
-      if((_tmp_ready_18 || !_tmp_valid_18) && (_tmp_1 && _tmp_2) && (myaxi_rvalid && myaxi_rvalid)) begin
-        _tmp_data_18 <= _tmp_data_18 + myaxi_rdata;
+      if((_tmp_ready_21 || !_tmp_valid_21) && (_tmp_1 && _tmp_2) && (myaxi_rvalid && myaxi_rvalid)) begin
+        _tmp_data_21 <= _tmp_data_21 + myaxi_rdata;
       end 
-      if(_tmp_valid_18 && _tmp_ready_18) begin
-        _tmp_valid_18 <= 0;
+      if(_tmp_valid_21 && _tmp_ready_21) begin
+        _tmp_valid_21 <= 0;
       end 
-      if((_tmp_ready_18 || !_tmp_valid_18) && (_tmp_1 && _tmp_2)) begin
-        _tmp_valid_18 <= myaxi_rvalid && myaxi_rvalid;
+      if((_tmp_ready_21 || !_tmp_valid_21) && (_tmp_1 && _tmp_2)) begin
+        _tmp_valid_21 <= myaxi_rvalid && myaxi_rvalid;
       end 
-      if((_tmp_ready_18 || !_tmp_valid_18) && (_tmp_1 && _tmp_2) && (myaxi_rvalid && myaxi_rvalid) && _tmp_data_17) begin
-        _tmp_data_18 <= 1'd0 + myaxi_rdata;
+      if((_tmp_ready_21 || !_tmp_valid_21) && (_tmp_1 && _tmp_2) && (myaxi_rvalid && myaxi_rvalid) && _tmp_data_20) begin
+        _tmp_data_21 <= 1'd0 + myaxi_rdata;
       end 
     end
   end
@@ -451,7 +453,7 @@ module main
           end 
         end
         fsm_2: begin
-          if(_tmp_16) begin
+          if(_tmp_17) begin
             fsm <= fsm_3;
           end 
         end
@@ -468,10 +470,10 @@ module main
       if(_seq_cond_0_1) begin
         $display("sum=%d expected_sum=%d", sum, 2173600);
       end 
-      if(rdata_valid) begin
-        sum <= sum + rdata_data;
+      if(_tmp_valid_18) begin
+        sum <= sum + _tmp_data_18;
       end 
-      _seq_cond_0_1 <= rdata_valid && (rlast_data == 1);
+      _seq_cond_0_1 <= _tmp_valid_18 && (_tmp_data_19 == 1);
     end
   end
 
