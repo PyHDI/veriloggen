@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import veriloggen
 import dataflow_alias
 
 expected_verilog = """
@@ -84,7 +85,7 @@ module main
   assign xdata = _tmp_4;
   reg _tmp_5;
   assign xvalid = _tmp_5;
-  reg _seq_cond_0_1;
+  reg __dataflow_seq_0_cond_0_1;
   localparam xfsm_1 = 1;
 
   always @(posedge CLK) begin
@@ -132,9 +133,9 @@ module main
       _tmp_valid_2 <= 0;
       _tmp_4 <= 0;
       _tmp_5 <= 0;
-      _seq_cond_0_1 <= 0;
+      __dataflow_seq_0_cond_0_1 <= 0;
     end else begin
-      if(_seq_cond_0_1) begin
+      if(__dataflow_seq_0_cond_0_1) begin
         _tmp_5 <= 0;
       end 
       if((_tmp_ready_0 || !_tmp_valid_0) && xready && xvalid) begin
@@ -170,7 +171,7 @@ module main
       if((xfsm == 0) && (xready || !_tmp_5)) begin
         _tmp_5 <= 1;
       end 
-      _seq_cond_0_1 <= 1;
+      __dataflow_seq_0_cond_0_1 <= 1;
       if(_tmp_5 && !xready) begin
         _tmp_5 <= _tmp_5;
       end 
@@ -182,6 +183,7 @@ endmodule
 """
 
 def test():
+    veriloggen.reset()
     test_module = dataflow_alias.mkTest()
     code = test_module.to_verilog()
 

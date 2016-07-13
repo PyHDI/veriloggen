@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import veriloggen
 import dataflow__iter
 
 expected_verilog = """
@@ -965,6 +966,7 @@ endmodule
 """
 
 def test():
+    veriloggen.reset()
     test_module = dataflow__iter.mkTest()
     code = test_module.to_verilog()
 

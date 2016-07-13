@@ -18,9 +18,6 @@ def mkMain(n=128, datawidth=32, numports=2):
     clk = m.Input('CLK')
     rst = m.Input('RST')
 
-    # for pytest execution
-    dataflow.reset()
-
     df = dataflow.DataflowManager(m, clk, rst)
     #df.enable_draw_graph()
 

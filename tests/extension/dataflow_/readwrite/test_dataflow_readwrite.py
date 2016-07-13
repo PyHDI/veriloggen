@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import veriloggen
 import dataflow_readwrite
 
 expected_verilog = """
@@ -71,7 +72,7 @@ module main
   reg [32-1:0] xfsm;
   localparam xfsm_init = 0;
   reg [32-1:0] _tmp_1;
-  reg _seq_cond_0_1;
+  reg __dataflow_seq_0_cond_0_1;
   localparam xfsm_1 = 1;
 
   always @(posedge CLK) begin
@@ -99,7 +100,7 @@ module main
   assign ydata = _tmp_3;
   reg _tmp_4;
   assign yvalid = _tmp_4;
-  reg _seq_cond_1_1;
+  reg __dataflow_seq_0_cond_1_1;
   localparam yfsm_1 = 1;
 
   always @(posedge CLK) begin
@@ -135,15 +136,15 @@ module main
       _tmp_valid_0 <= 0;
       xdata <= 0;
       xvalid <= 0;
-      _seq_cond_0_1 <= 0;
+      __dataflow_seq_0_cond_0_1 <= 0;
       _tmp_3 <= 0;
       _tmp_4 <= 0;
-      _seq_cond_1_1 <= 0;
+      __dataflow_seq_0_cond_1_1 <= 0;
     end else begin
-      if(_seq_cond_0_1) begin
+      if(__dataflow_seq_0_cond_0_1) begin
         xvalid <= 0;
       end 
-      if(_seq_cond_1_1) begin
+      if(__dataflow_seq_0_cond_1_1) begin
         _tmp_4 <= 0;
       end 
       if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
@@ -161,7 +162,7 @@ module main
       if((xfsm == 0) && (xready || !xvalid)) begin
         xvalid <= 1;
       end 
-      _seq_cond_0_1 <= 1;
+      __dataflow_seq_0_cond_0_1 <= 1;
       if(xvalid && !xready) begin
         xvalid <= xvalid;
       end 
@@ -171,7 +172,7 @@ module main
       if((yfsm == 0) && (yready || !_tmp_4)) begin
         _tmp_4 <= 1;
       end 
-      _seq_cond_1_1 <= 1;
+      __dataflow_seq_0_cond_1_1 <= 1;
       if(_tmp_4 && !yready) begin
         _tmp_4 <= _tmp_4;
       end 
@@ -183,6 +184,7 @@ endmodule
 """
 
 def test():
+    veriloggen.reset()
     test_module = dataflow_readwrite.mkTest()
     code = test_module.to_verilog()
 

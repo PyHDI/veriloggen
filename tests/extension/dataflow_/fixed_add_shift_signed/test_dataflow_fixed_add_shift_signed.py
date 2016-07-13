@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import veriloggen
 import dataflow_fixed_add_shift_signed
 
 expected_verilog = """
@@ -567,6 +568,7 @@ endmodule
 """
 
 def test():
+    veriloggen.reset()
     test_module = dataflow_fixed_add_shift_signed.mkTest()
     code = test_module.to_verilog()
 

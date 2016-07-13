@@ -15,9 +15,6 @@ def mkMain():
     clk = m.Input('CLK')
     rst = m.Input('RST')
     
-    # for pytest execution
-    dataflow.reset()
-    
     df1 = dataflow.DataflowManager(m, clk, rst)
     df2 = dataflow.DataflowManager(m, clk, rst)
     df3 = dataflow.DataflowManager(m, clk, rst)

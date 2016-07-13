@@ -15,9 +15,6 @@ def mkMain():
     clk = m.Input('CLK')
     rst = m.Input('RST')
 
-    # for pytest execution
-    dataflow.reset()
-    
     df = dataflow.DataflowManager(m, clk, rst)
     
     x = df.Counter()

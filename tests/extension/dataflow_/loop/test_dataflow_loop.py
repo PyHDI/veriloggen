@@ -1,11 +1,13 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import veriloggen
 import dataflow_loop
 
 expected_verilog = """
 """
 
 def test():
+    veriloggen.reset()
     try:
         test_module = dataflow_loop.mkTest()
     except ValueError as e:
