@@ -8,16 +8,9 @@ from veriloggen.seq.seq import make_condition
 from . import mul
 from . import div
 
+
 # Object ID counter for object sorting key
-global_object_counter = 0
-
-
-#-------------------------------------------------------------------------
-def is_dataflow_object(*objs):
-    for obj in objs:
-        if isinstance(obj, _Node):
-            return True
-    return False
+_object_counter = 0
 
 
 #-------------------------------------------------------------------------
@@ -64,119 +57,16 @@ def ParameterVariable(data, width=32, point=0, signed=False):
 
 
 #-------------------------------------------------------------------------
-def get_df(*vars):
-    ret = None
-    for var in vars:
-        v = getattr(var, 'df', None)
-        if v is None:
-            continue
-        if ret is None:
-            ret = v
-            continue
-        if v.object_id < ret.object_id:
-            if v.module != ret.module:
-                raise ValueError("Different modules")
-            if id(v.clock) != id(ret.clock):
-                raise ValueError("Different clock domains: '%s' and '%s'" %
-                                 (str(v.clock), str(ret.clock)))
-            if id(v.reset) != id(ret.reset):
-                raise ValueError("Different reset domains: '%s' and '%s'" %
-                                 (str(v.reset), str(ret.reset)))
-            ret = v
-    return ret
-
-
-#-------------------------------------------------------------------------
-def _max(*vars):
-    m = None
-    for v in vars:
-        if v is None:
-            continue
-        if m is None:
-            m = v
-            continue
-        if m < v:
-            m = v
-    return m
-
-
-def _and_vars(*vars):
-    if not vars:
-        return vtypes.Int(1)
-    ret = None
-    for var in vars:
-        if var is None:
-            continue
-        if ret is None:
-            ret = var
-        else:
-            ret = vtypes.AndList(ret, var)
-    if ret is None:
-        return vtypes.Int(1)
-    return ret
-
-
-def _connect_ready(m, var, ready):
-    if var is None:
-        return
-    prev_subst = var._get_subst()
-    if not prev_subst:
-        m.Assign(var(ready))
-    elif isinstance(prev_subst[0].right, vtypes.Int) and (prev_subst[0].right.value == 1):
-        var.subst[0].overwrite_right(ready)
-    else:
-        var.subst[0].overwrite_right(_and_vars(prev_subst[0].right, ready))
-
-
-#-------------------------------------------------------------------------
-def _from_vtypes_value(value):
-    if isinstance(value, vtypes.Int):
-        if not isinstance(value.value, int):
-            raise TypeError("Unsupported type for Constant '%s'" %
-                            str(type(value)))
-        return Int(value.value)
-
-    if isinstance(value, vtypes.Float):
-        return Float(value.value)
-
-    if isinstance(value, vtypes.Str):
-        return Str(value.value)
-
-    raise TypeError("Unsupported type '%s'" % str(type(value)))
-
-
-#-------------------------------------------------------------------------
-def _to_constant(obj):
-    if isinstance(obj, (int, float, bool, str)):
-        return Constant(obj)
-    if isinstance(obj, vtypes._Numeric):
-        return _from_vtypes_value(obj)
-    return obj
-
-
-#-------------------------------------------------------------------------
-def _tmp_data(val, prefix='_tmp_data_'):
-    return ''.join([prefix, str(val)])
-
-
-def _tmp_valid(val, prefix='_tmp_valid_'):
-    return ''.join([prefix, str(val)])
-
-
-def _tmp_ready(val, prefix='_tmp_ready_'):
-    return ''.join([prefix, str(val)])
-
-
-#-------------------------------------------------------------------------
 class _Node(object):
 
     def __init__(self):
-        global global_object_counter
-        self.object_id = global_object_counter
-        global_object_counter += 1
+        global _object_counter
+        self.object_id = _object_counter
+        _object_counter += 1
 
     def __hash__(self):
-        return hash((id(self), self.object_id))
+        object_id = self.object_id if hasattr(self, 'object_id') else None
+        return hash((id(self), object_id))
 
     def __eq__(self, other):
         return (id(self), self.object_id) == (id(other), other.object_id)
@@ -187,7 +77,8 @@ class _Numeric(_Node):
     latency = 0
 
     def __hash__(self):
-        return hash((id(self), self.object_id))
+        object_id = self.object_id if hasattr(self, 'object_id') else None
+        return hash((id(self), object_id))
 
     def __init__(self):
         _Node.__init__(self)
@@ -649,7 +540,7 @@ class _BinaryOperator(_Operator):
         self.signed = self.left.get_signed() and self.right.get_signed()
 
     def _set_managers(self):
-        self._set_df(get_df(self.left, self.right))
+        self._set_df(_get_df(self.left, self.right))
         self._set_module(getattr(self.df, 'module', None))
         self._set_seq(getattr(self.df, 'seq', None))
 
@@ -719,7 +610,7 @@ class _UnaryOperator(_Operator):
         self.signed = self.right.get_signed()
 
     def _set_managers(self):
-        self._set_df(get_df(self.right))
+        self._set_df(_get_df(self.right))
         self._set_module(getattr(self.df, 'module', None))
         self._set_seq(getattr(self.df, 'seq', None))
 
@@ -1605,7 +1496,7 @@ class _SpecialOperator(_Operator):
                 break
 
     def _set_managers(self):
-        self._set_df(get_df(*self.args))
+        self._set_df(_get_df(*self.args))
         self._set_module(getattr(self.df, 'module', None))
         self._set_seq(getattr(self.df, 'seq', None))
 
@@ -1995,7 +1886,7 @@ class _Constant(_Numeric):
         self.signed = False
 
     def _set_managers(self):
-        self._set_df(get_df(self.value))
+        self._set_df(_get_df(self.value))
         self._set_module(getattr(self.df, 'module', None))
         self._set_seq(getattr(self.df, 'seq', None))
 
@@ -2265,7 +2156,7 @@ class _Accumulator(_UnaryOperator):
         self.point = self.right.get_point()
 
     def _set_managers(self):
-        self._set_df(get_df(self.right, self.initval, self.reset))
+        self._set_df(_get_df(self.right, self.initval, self.reset))
         self._set_module(getattr(self.df, 'module', None))
         self._set_seq(getattr(self.df, 'seq', None))
 
@@ -2479,3 +2370,112 @@ def Counter(step=None, maxval=None, initval=0, reset=None, width=32, signed=Fals
     return Icustom(lambda a, b: vtypes.Mux(a >= raw_maxval - raw_step, raw_initval, a + b),
                    step, initval=initval, reset=reset, width=width, signed=signed,
                    label='Counter')
+
+#-------------------------------------------------------------------------
+
+
+def is_dataflow_object(*objs):
+    for obj in objs:
+        if isinstance(obj, _Node):
+            return True
+    return False
+
+
+#-------------------------------------------------------------------------
+def _to_constant(obj):
+    if isinstance(obj, (int, float, bool, str)):
+        return Constant(obj)
+    if isinstance(obj, vtypes._Numeric):
+        return _from_vtypes_value(obj)
+    return obj
+
+
+def _tmp_data(val, prefix='_tmp_data_'):
+    return ''.join([prefix, str(val)])
+
+
+def _tmp_valid(val, prefix='_tmp_valid_'):
+    return ''.join([prefix, str(val)])
+
+
+def _tmp_ready(val, prefix='_tmp_ready_'):
+    return ''.join([prefix, str(val)])
+
+
+def _get_df(*vars):
+    ret = None
+    for var in vars:
+        v = getattr(var, 'df', None)
+        if v is None:
+            continue
+        if ret is None:
+            ret = v
+            continue
+        if v.object_id < ret.object_id:
+            if v.module != ret.module:
+                raise ValueError("Different modules")
+            if id(v.clock) != id(ret.clock):
+                raise ValueError("Different clock domains: '%s' and '%s'" %
+                                 (str(v.clock), str(ret.clock)))
+            if id(v.reset) != id(ret.reset):
+                raise ValueError("Different reset domains: '%s' and '%s'" %
+                                 (str(v.reset), str(ret.reset)))
+            ret = v
+    return ret
+
+
+def _max(*vars):
+    m = None
+    for v in vars:
+        if v is None:
+            continue
+        if m is None:
+            m = v
+            continue
+        if m < v:
+            m = v
+    return m
+
+
+def _and_vars(*vars):
+    if not vars:
+        return vtypes.Int(1)
+    ret = None
+    for var in vars:
+        if var is None:
+            continue
+        if ret is None:
+            ret = var
+        else:
+            ret = vtypes.AndList(ret, var)
+    if ret is None:
+        return vtypes.Int(1)
+    return ret
+
+
+def _connect_ready(m, var, ready):
+    if var is None:
+        return
+    prev_subst = var._get_subst()
+    if not prev_subst:
+        m.Assign(var(ready))
+    elif isinstance(prev_subst[0].right, vtypes.Int) and (prev_subst[0].right.value == 1):
+        var.subst[0].overwrite_right(ready)
+    else:
+        var.subst[0].overwrite_right(_and_vars(prev_subst[0].right, ready))
+
+
+def _from_vtypes_value(value):
+    if isinstance(value, vtypes.Int):
+        if not isinstance(value.value, int):
+            raise TypeError("Unsupported type for Constant '%s'" %
+                            str(type(value)))
+        return Int(value.value)
+
+    if isinstance(value, vtypes.Float):
+        return Float(value.value)
+
+    if isinstance(value, vtypes.Str):
+        return Str(value.value)
+
+    raise TypeError("Unsupported type '%s'" % str(type(value)))

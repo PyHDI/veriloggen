@@ -9,7 +9,22 @@ from veriloggen.seq.subst_visitor import SubstDstVisitor
 from veriloggen.seq.reset_visitor import ResetVisitor
 
 
-#-------------------------------------------------------------------------
+_tmp_count = 0
+
+
+def reset():
+    global _tmp_count
+    _tmp_count = 0
+
+
+def _tmp_name(prefix='_tmp_seq'):
+    global _tmp_count
+    v = _tmp_count
+    _tmp_count += 1
+    ret = '_'.join([prefix, str(v)])
+    return ret
+
+
 def make_condition(*cond):
     _cond = []
     for c in cond:
@@ -38,24 +53,11 @@ def _get_manager_cond(cond):
     return cond
 
 
-#-------------------------------------------------------------------------
-_tmp_count = 0
-
-
-def _tmp_name(prefix='_tmp_seq'):
-    global _tmp_count
-    v = _tmp_count
-    _tmp_count += 1
-    ret = '_'.join([prefix, str(v)])
-    return ret
-
-
 def TmpSeq(m, clk, rst=None):
     name = _tmp_name()
     return Seq(m, name, clk, rst)
 
 
-#-------------------------------------------------------------------------
 class Seq(vtypes.VeriloggenNode):
     """ Sequential Logic Manager """
 
@@ -289,39 +291,40 @@ class Seq(vtypes.VeriloggenNode):
 
     #-------------------------------------------------------------------------
     def update(self, src):
-        
+
         if not isinstance(src, Seq):
-            raise TypeError("src must be Seq object, not '%s'" % str(type(src)))
-        
+            raise TypeError("src must be Seq object, not '%s'" %
+                            str(type(src)))
+
         if self.done:
             raise ValueError("Destination Seq is already synthesized.")
 
         if src.done:
-            return 
+            return
 
         if id(self) == id(src):
             return
-        
+
         if id(self.m) != id(src.m):
             raise ValueError("Two Seq objects have a different module.")
         if id(self.clk) != id(src.clk):
             raise ValueError("Two Seq objects have a different clock.")
         if id(self.rst) != id(src.rst):
             raise ValueError("Two Seq objects have a different reset.")
-        
+
         if self.name == src.name:
             raise ValueError("Two Seq objects have a same name.")
 
         for delay, body in sorted(src.delayed_body.items(), key=lambda x: x[0]):
             self.delayed_body[delay].extend(body)
-            
+
         self.prev_dict.update(src.prev_dict)
         self.body.extend(src.body)
         self.dst_var.update(src.dst_var)
 
         # Invalidated source Seq
         src.done = True
-        
+
     #-------------------------------------------------------------------------
     def make_always(self, reset=(), body=()):
         if self.done:

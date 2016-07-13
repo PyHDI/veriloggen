@@ -87,7 +87,8 @@ def mkBramDefinition(name, datawidth=32, addrwidth=10, numports=2):
 #-------------------------------------------------------------------------
 class Bram(object):
 
-    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=10, numports=1):
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=10, numports=1, nodataflow=False):
+
         self.m = m
         self.name = name
         self.clk = clk
@@ -103,7 +104,11 @@ class Bram(object):
                                     ports=m.connect_ports(self.definition))
 
         self.seq = Seq(m, name, clk, rst)
-        # self.m.add_hook(self.seq.make_always)
+
+        if nodataflow:
+            self.df = None
+        else:
+            self.df = dataflow.DataflowManager(self.m, self.clk, self.rst)
 
         self._write_disabled = [False for i in range(numports)]
 
@@ -266,8 +271,10 @@ class Bram(object):
             next_last(1)
         )
 
-        df_data = dataflow.Variable(data, data_valid, data_ready)
-        df_last = dataflow.Variable(last, last_valid, last_ready, width=1)
+        df = self.df if self.df is not None else dataflow
+
+        df_data = df.Variable(data, data_valid, data_ready)
+        df_last = df.Variable(last, last_valid, last_ready, width=1)
         done = last
 
         return df_data, df_last, done

@@ -18,12 +18,13 @@ from . import graph
 
 
 # ID counter for 'Dataflow'
-global_manager_counter = 0
+_dataflow_counter = 0
 
 
 def reset():
-    global global_manager_counter
-    global_manager_counter = 0
+    global _dataflow_counter
+    _dataflow_counter = 0
+    dtypes._object_counter = 0
 
 
 def DataflowManager(module, clock, reset, no_hook=False):
@@ -35,9 +36,9 @@ class Dataflow(object):
 
     def __init__(self, *nodes, **opts):
         # ID for manager reuse and merge
-        global global_manager_counter
-        self.object_id = global_manager_counter
-        global_manager_counter += 1
+        global _dataflow_counter
+        self.object_id = _dataflow_counter
+        _dataflow_counter += 1
 
         self.nodes = set(nodes)
         self.max_stage = None
@@ -77,7 +78,7 @@ class Dataflow(object):
         return m
 
     #-------------------------------------------------------------------------
-    def implement(self, m=None, clock=None, reset=None, seq_name='seq', aswire=True):
+    def implement(self, m=None, clock=None, reset=None, seq_name=None, aswire=True):
         """ implemente actual registers and operations in Verilog """
 
         mul.reset()
@@ -92,6 +93,8 @@ class Dataflow(object):
             reset = self.reset
 
         if self.seq is None:
+            if seq_name is None:
+                seq_name = '_dataflow_seq_%d' % self.object_id
             seq = Seq(m, seq_name, clock, reset)
         else:
             seq = self.seq
