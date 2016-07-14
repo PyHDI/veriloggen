@@ -39,6 +39,7 @@ def mkMain():
     waddr = 0
     wlen = arlen
     done = mybram.write_dataflow(wport, waddr, sum, wlen, cond=fsm)
+    fsm.goto_next()
     fsm.If(done).goto_next()
 
     # AXI write request
@@ -52,7 +53,7 @@ def mkMain():
     raddr = 0
     rlen = arlen
     rdata, rlast, done = mybram.read_dataflow(rport, raddr, rlen, cond=fsm)
-    fsm.If(done).goto_next()
+    fsm.goto_next()
 
     # AXI write dataflow
     done = myaxi.write_dataflow(rdata, counter)

@@ -155,14 +155,14 @@ class Bram(object):
         counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
         last = self.m.TmpReg(initval=0)
 
-        data_cond = make_condition(cond, vtypes.Not(last))
+        ext_cond = make_condition(cond)
+        data_cond = make_condition(counter > 0, vtypes.Not(last))
+        all_cond = make_condition(data_cond, ext_cond)
         raw_data, raw_valid = data.read(cond=data_cond)
 
-        self.seq.If(vtypes.Ands(raw_valid, counter == 0))(
-            self.interfaces[port].addr(addr),
-            self.interfaces[port].wdata(raw_data),
-            self.interfaces[port].wenable(1),
-            counter(length - 1),
+        self.seq.If(vtypes.Ands(ext_cond, counter == 0))(
+            self.interfaces[port].addr(addr - 1),
+            counter(length),
         )
 
         self.seq.If(vtypes.Ands(raw_valid, counter > 0))(
@@ -256,7 +256,7 @@ class Bram(object):
             next_valid_on(0),
             next_valid_off(1)
         )
-        self.seq.If(vtypes.Ands(all_cond, counter == 0,
+        self.seq.If(vtypes.Ands(ext_cond, counter == 0,
                                 vtypes.Not(next_last), vtypes.Not(last)))(
             self.interfaces[port].addr(addr),
             counter(length - 1),

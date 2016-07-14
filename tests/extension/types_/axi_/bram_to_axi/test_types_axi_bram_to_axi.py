@@ -311,7 +311,7 @@ module main
   wire [32-1:0] _tmp_data_5;
   wire _tmp_valid_5;
   wire _tmp_ready_5;
-  assign _tmp_ready_5 = (fsm == 1) && !_tmp_4;
+  assign _tmp_ready_5 = (_tmp_3 > 0) && !_tmp_4;
   reg _mybram_cond_0_1;
   reg [8-1:0] _tmp_6;
   reg _myaxi_cond_1_1;
@@ -385,13 +385,13 @@ module main
       if(myaxi_rready && myaxi_rvalid && (_tmp_0 > 0)) begin
         _tmp_0 <= _tmp_0 - 1;
       end 
-      if((fsm == 2) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_6 == 0))) begin
+      if((fsm == 3) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_6 == 0))) begin
         myaxi_awaddr <= 1024;
         myaxi_awlen <= 63;
         myaxi_awvalid <= 1;
         _tmp_6 <= 64;
       end 
-      if((fsm == 2) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_6 == 0)) && 0) begin
+      if((fsm == 3) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_6 == 0)) && 0) begin
         myaxi_awvalid <= 0;
       end 
       _myaxi_cond_1_1 <= 1;
@@ -422,9 +422,9 @@ module main
   always @(posedge CLK) begin
     if(RST) begin
       mybram_0_addr <= 0;
+      _tmp_3 <= 0;
       mybram_0_wdata <= 0;
       mybram_0_wenable <= 0;
-      _tmp_3 <= 0;
       _tmp_4 <= 0;
       _mybram_cond_0_1 <= 0;
       __tmp_12_1 <= 0;
@@ -441,19 +441,17 @@ module main
         mybram_0_wenable <= 0;
         _tmp_4 <= 0;
       end 
-      if(_tmp_valid_5 && ((fsm == 1) && !_tmp_4) && (_tmp_3 == 0)) begin
-        mybram_0_addr <= 0;
-        mybram_0_wdata <= _tmp_data_5;
-        mybram_0_wenable <= 1;
-        _tmp_3 <= 63;
+      if((fsm == 1) && (_tmp_3 == 0)) begin
+        mybram_0_addr <= -1;
+        _tmp_3 <= 64;
       end 
-      if(_tmp_valid_5 && ((fsm == 1) && !_tmp_4) && (_tmp_3 > 0)) begin
+      if(_tmp_valid_5 && ((_tmp_3 > 0) && !_tmp_4) && (_tmp_3 > 0)) begin
         mybram_0_addr <= mybram_0_addr + 1;
         mybram_0_wdata <= _tmp_data_5;
         mybram_0_wenable <= 1;
         _tmp_3 <= _tmp_3 - 1;
       end 
-      if(_tmp_valid_5 && ((fsm == 1) && !_tmp_4) && (_tmp_3 == 1)) begin
+      if(_tmp_valid_5 && ((_tmp_3 > 0) && !_tmp_4) && (_tmp_3 == 1)) begin
         _tmp_4 <= 1;
       end 
       _mybram_cond_0_1 <= 1;
@@ -473,7 +471,7 @@ module main
         _tmp_15 <= 0;
         _tmp_16 <= 1;
       end 
-      if((_tmp_9 || !_tmp_7) && (_tmp_10 || !_tmp_8) && (fsm == 3) && (_tmp_14 == 0) && !_tmp_17 && !_tmp_18) begin
+      if((fsm == 4) && (_tmp_14 == 0) && !_tmp_17 && !_tmp_18) begin
         mybram_0_addr <= 0;
         _tmp_14 <= 63;
         _tmp_15 <= 1;
@@ -529,6 +527,7 @@ module main
   localparam fsm_3 = 3;
   localparam fsm_4 = 4;
   localparam fsm_5 = 5;
+  localparam fsm_6 = 6;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -541,23 +540,24 @@ module main
           end 
         end
         fsm_1: begin
-          if(_tmp_4) begin
-            fsm <= fsm_2;
-          end 
+          fsm <= fsm_2;
         end
         fsm_2: begin
-          if(myaxi_awready || !myaxi_awvalid) begin
+          if(_tmp_4) begin
             fsm <= fsm_3;
           end 
         end
         fsm_3: begin
-          if(_tmp_18) begin
+          if(myaxi_awready || !myaxi_awvalid) begin
             fsm <= fsm_4;
           end 
         end
         fsm_4: begin
+          fsm <= fsm_5;
+        end
+        fsm_5: begin
           if(_tmp_19) begin
-            fsm <= fsm_5;
+            fsm <= fsm_6;
           end 
         end
       endcase

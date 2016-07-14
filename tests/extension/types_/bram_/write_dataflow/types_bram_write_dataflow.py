@@ -26,8 +26,10 @@ def mkMain(n=128, datawidth=32, numports=2):
     df = dataflow.DataflowManager(m, clk, rst)
     fsm = FSM(m, 'fsm', clk, rst)
 
+    fsm.goto_next()
+    
     # dataflow
-    c = df.Counter()
+    c = df.Counter(maxval=64)
     value = c - 1
 
     # write dataflow (Dataflow -> BRAM)
@@ -35,19 +37,18 @@ def mkMain(n=128, datawidth=32, numports=2):
     waddr = 0
     wlen = 64
     done = mybram.write_dataflow(wport, waddr, value, wlen, cond=fsm)
-    fsm.If(done).goto_next()
-
     fsm.goto_next()
+    fsm.If(done).goto_next()
 
     # verify
     sum = m.Reg('sum', 32, initval=0)
-    expected_sum = (waddr + waddr + wlen - 1) * wlen // 2
+    expected_sum = (waddr + waddr + wlen - 1) * wlen // 2 - wlen
 
     seq = Seq(m, 'seq', clk, rst)
     seq.If(mybram[0].wenable)(
         sum.add(mybram[0].wdata)
     )
-    seq.Then().If(mybram[0].addr == wlen - 1).Delay(1)(
+    seq.Then().If(mybram[0].addr == wlen - 1).Delay(2)(
         Systask('display', 'sum=%d expected_sum=%d', sum, expected_sum)
     )
 

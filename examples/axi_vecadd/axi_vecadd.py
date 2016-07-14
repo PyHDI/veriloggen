@@ -18,37 +18,48 @@ def mkMain():
     clk = m.Input('CLK')
     rst = m.Input('RST')
 
-    bus = axi.AxiMaster(m, 'myaxi', clk, rst)
+    slave = axi.AxiSlave(m, 'slave', clk, rst)
+    master = axi.AxiMaster(m, 'master', clk, rst)
+    
     ram_a = bram.Bram(m, 'ram_a', clk, rst, numports=1)
     ram_b = bram.Bram(m, 'ram_b', clk, rst, numports=1)
     ram_c = bram.Bram(m, 'ram_c', clk, rst, numports=1)
 
     fsm = FSM(m, 'fsm', clk, rst)
 
-    bus_addr = 1024
+    # wait for slave request
+    slave_addr, slave_counter, slave_valid = slave.pull_write_request(cond=fsm)
+    fsm.If(slave_valid).goto_next()
+
+    data, mask, valid, last = slave.pull_write_data(slave_counter, cond=fsm)
+    fsm.If(valid).goto_next()
+
+    # computation
+    master_addr = 1024
     ram_addr = 0
     length = 64
 
-    dma_done = bus.dma_read(ram_a, bus_addr, ram_addr, length, cond=fsm)
+    dma_done = master.dma_read(ram_a, master_addr, ram_addr, length, cond=fsm)
     fsm.If(dma_done).goto_next()
 
-    bus_addr = 1024 * 2
+    master_addr = 1024 * 2
 
-    dma_done = bus.dma_read(ram_b, bus_addr, ram_addr, length, cond=fsm)
+    dma_done = master.dma_read(ram_b, master_addr, ram_addr, length, cond=fsm)
     fsm.If(dma_done).goto_next()
 
     adata, alast, adone = ram_a.read_dataflow(0, ram_addr, length, cond=fsm)
     bdata, blast, bdone = ram_b.read_dataflow(0, ram_addr, length, cond=fsm)
-    fsm.If(adone).goto_next()
-
+    
     cdata = adata + bdata
 
-    done = ram_c.write_dataflow(0, ram_addr, cdata, length)
+    done = ram_c.write_dataflow(0, ram_addr, cdata, length, cond=fsm)
+    fsm.goto_next()
+    
     fsm.If(done).goto_next()
 
-    bus_addr = 1024 * 3
+    master_addr = 1024 * 3
 
-    dma_done = bus.dma_write(ram_c, bus_addr, ram_addr, length, cond=fsm)
+    dma_done = master.dma_write(ram_c, master_addr, ram_addr, length, cond=fsm)
     fsm.If(dma_done).goto_next()
 
     # checksum
@@ -57,12 +68,28 @@ def mkMain():
                     ((1024 * 2 + 1024 * 2 + 63) * 64 // 2))
 
     seq = Seq(m, 'seq', clk, rst)
-    seq.If(bus.wdata.wvalid, bus.wdata.wready)(
-        sum(sum + bus.wdata.wdata)
+    seq.If(fsm.state == 0)(
+        sum(0)
     )
-    seq.If(bus.wdata.wvalid, bus.wdata.wready, bus.wdata.wlast).Delay(1)(
+    seq.If(master.wdata.wvalid, master.wdata.wready)(
+        sum(sum + master.wdata.wdata)
+    )
+    seq.If(master.wdata.wvalid, master.wdata.wready, master.wdata.wlast).Delay(1)(
         Systask('display', "sum=%d expected_sum=%d", sum, expected_sum)
     )
+
+    fsm.If(master.wdata.wvalid, master.wdata.wready,
+           master.wdata.wlast).Delay(1).goto_next()
+
+    # return the checksum
+    slave_addr, slave_counter, slave_valid = slave.pull_read_request(cond=fsm)
+    fsm.If(slave_valid).goto_next()
+
+    ack, last = slave.push_read_data(sum, slave_counter, cond=fsm)
+    fsm.If(last).goto_next()
+
+    # repeat
+    fsm.goto_init()
 
     return m
 
@@ -80,14 +107,17 @@ def mkTest():
     clk = ports['CLK']
     rst = ports['RST']
 
+    #--------------------------------------------------------------------------
+    # Master
+
     # awready (no stall)
-    #awready = ports['myaxi_awready']
+    #awready = ports['master_awready']
     #_awready = m.TmpWireLike(awready)
     #_awready.assign(1)
     # m.Always()(awready(_awready))
 
     # wready (nostall)
-    #wready = ports['myaxi_wready']
+    #wready = ports['master_wready']
     #_wready = m.TmpWireLike(wready)
     #_wready.assign(1)
     # m.Always()(wready(_wready))
@@ -97,37 +127,37 @@ def mkTest():
     _awlen = m.Reg('_awlen', 32, initval=0)
 
     waddr_fsm(
-        ports['myaxi_awready'](0),
-        ports['myaxi_wready'](0),
+        ports['master_awready'](0),
+        ports['master_wready'](0),
         _awlen(0)
     )
-    waddr_fsm.If(ports['myaxi_awvalid']).goto_next()
+    waddr_fsm.If(ports['master_awvalid']).goto_next()
 
-    waddr_fsm.If(ports['myaxi_awvalid'])(
-        ports['myaxi_awready'](1)
+    waddr_fsm.If(ports['master_awvalid'])(
+        ports['master_awready'](1)
     )
     waddr_fsm.goto_next()
 
     waddr_fsm(
-        ports['myaxi_awready'](0),
-        _awlen(ports['myaxi_awlen'])
+        ports['master_awready'](0),
+        _awlen(ports['master_awlen'])
     )
     waddr_fsm.goto_next()
 
     # wready (with stall)
     waddr_init = waddr_fsm.current
     waddr_fsm(
-        ports['myaxi_wready'](0)
+        ports['master_wready'](0)
     )
-    waddr_fsm.If(ports['myaxi_wvalid']).goto_next()
+    waddr_fsm.If(ports['master_wvalid']).goto_next()
 
-    waddr_fsm.If(ports['myaxi_wvalid'])(
-        ports['myaxi_wready'](1)
+    waddr_fsm.If(ports['master_wvalid'])(
+        ports['master_wready'](1)
     )
     waddr_fsm.goto_next()
 
     waddr_fsm(
-        ports['myaxi_wready'](0)
+        ports['master_wready'](0)
     )
     waddr_fsm.goto_next()
     waddr_fsm.goto_next()
@@ -141,18 +171,18 @@ def mkTest():
 
     # wready (no stall)
 #    waddr_fsm(
-#        ports['myaxi_wready'](1)
+#        ports['master_wready'](1)
 #    )
 #    waddr_fsm.Delay(1)(
-#        ports['myaxi_wready'](0)
+#        ports['master_wready'](0)
 #    )
-#    waddr_fsm.If(ports['myaxi_wvalid'])(
+#    waddr_fsm.If(ports['master_wvalid'])(
 #        _awlen.dec()
 #    )
 #    waddr_fsm.Then().If(_awlen == 0).goto_next()
 
     # arready (no stall)
-    #arready = ports['myaxi_arready']
+    #arready = ports['master_arready']
     #_arready = m.TmpWireLike(arready)
     #_arready.assign(0)
     #m.Always()( arready(_arready) )
@@ -161,69 +191,69 @@ def mkTest():
     raddr_fsm = FSM(m, 'raddr', clk, rst)
     _arlen = m.Reg('_arlen', 32, initval=0)
     raddr_fsm(
-        ports['myaxi_arready'](0),
-        ports['myaxi_rdata'](-1),
-        ports['myaxi_rvalid'](0),
-        ports['myaxi_rlast'](0)
+        ports['master_arready'](0),
+        ports['master_rdata'](-1),
+        ports['master_rvalid'](0),
+        ports['master_rlast'](0)
     )
-    raddr_fsm.If(ports['myaxi_arvalid']).goto_next()
+    raddr_fsm.If(ports['master_arvalid']).goto_next()
 
-    raddr_fsm.If(ports['myaxi_arvalid'])(
-        ports['myaxi_arready'](1),
-        ports['myaxi_rdata'](ports['myaxi_araddr'] - 1)
+    raddr_fsm.If(ports['master_arvalid'])(
+        ports['master_arready'](1),
+        ports['master_rdata'](ports['master_araddr'] - 1)
     )
     raddr_fsm.goto_next()
 
     raddr_fsm(
-        ports['myaxi_arready'](0),
-        _arlen(ports['myaxi_arlen'])
+        ports['master_arready'](0),
+        _arlen(ports['master_arlen'])
     )
     raddr_fsm.goto_next()
 
-    ack = Ors(ports['myaxi_rready'], Not(ports['myaxi_rvalid']))
+    ack = Ors(ports['master_rready'], Not(ports['master_rvalid']))
 
     # nodelay
-#    raddr_fsm.If(Ands(ack, Not(ports['myaxi_rlast'])))(
-#        ports['myaxi_rdata'].inc(),
-#        ports['myaxi_rvalid'](1),
-#        ports['myaxi_rlast'](0),
+#    raddr_fsm.If(Ands(ack, Not(ports['master_rlast'])))(
+#        ports['master_rdata'].inc(),
+#        ports['master_rvalid'](1),
+#        ports['master_rlast'](0),
 #        _arlen.dec()
 #    )
 #    raddr_fsm.Then().If(_arlen == 0)(
-#        ports['myaxi_rlast'](1),
+#        ports['master_rlast'](1),
 #    )
 #    raddr_fsm.Delay(1)(
-#        ports['myaxi_rvalid'](0),
-#        ports['myaxi_rlast'](0)
+#        ports['master_rvalid'](0),
+#        ports['master_rlast'](0)
 #    )
-#    raddr_fsm.If(Ands(ports['myaxi_rvalid'], Not(ports['myaxi_rready'])))(
-#        ports['myaxi_rvalid'](ports['myaxi_rvalid']),
-#        ports['myaxi_rlast'](ports['myaxi_rlast']),
+#    raddr_fsm.If(Ands(ports['master_rvalid'], Not(ports['master_rready'])))(
+#        ports['master_rvalid'](ports['master_rvalid']),
+#        ports['master_rlast'](ports['master_rlast']),
 #    )
-#    raddr_fsm.If(Ands(ports['myaxi_rvalid'], ports[
-#                 'myaxi_rready'], ports['myaxi_rlast'])).goto_next()
+#    raddr_fsm.If(Ands(ports['master_rvalid'], ports[
+#                 'master_rready'], ports['master_rlast'])).goto_next()
 
     rdata_head = raddr_fsm.current
-    raddr_fsm.If(Ands(ack, Not(ports['myaxi_rlast'])))(
-        ports['myaxi_rdata'].inc(),
-        ports['myaxi_rvalid'](1),
-        ports['myaxi_rlast'](0),
+    raddr_fsm.If(Ands(ack, Not(ports['master_rlast'])))(
+        ports['master_rdata'].inc(),
+        ports['master_rvalid'](1),
+        ports['master_rlast'](0),
         _arlen.dec()
     )
     raddr_fsm.Then().If(_arlen == 0)(
-        ports['myaxi_rlast'](1)
+        ports['master_rlast'](1)
     )
     raddr_fsm.Delay(1)(
-        ports['myaxi_rvalid'](0),
-        ports['myaxi_rlast'](0)
+        ports['master_rvalid'](0),
+        ports['master_rlast'](0)
     )
     raddr_fsm.goto_next()
-    raddr_fsm.If(Ands(ports['myaxi_rvalid'], Not(ports['myaxi_rready'])))(
-        ports['myaxi_rvalid'](ports['myaxi_rvalid']),
-        ports['myaxi_rlast'](ports['myaxi_rlast']),
+    raddr_fsm.If(Ands(ports['master_rvalid'], Not(ports['master_rready'])))(
+        ports['master_rvalid'](ports['master_rvalid']),
+        ports['master_rlast'](ports['master_rlast']),
     )
-    raddr_fsm.If(Ands(ports['myaxi_rvalid'], ports[
-                 'myaxi_rready'])).goto_next()
+    raddr_fsm.If(Ands(ports['master_rvalid'], ports[
+                 'master_rready'])).goto_next()
     raddr_fsm.goto_next()
     raddr_fsm.goto_next()
     raddr_fsm.goto_next()
@@ -234,7 +264,63 @@ def mkTest():
 
     raddr_fsm.goto_init()
 
-    raddr_fsm.make_always()
+
+    #--------------------------------------------------------------------------
+    # Slave
+    awvalid = ports['slave_awvalid']
+    _awvalid = m.TmpWireLike(awvalid)
+    _awvalid.assign(1)  # on
+    m.Always()(awvalid(_awvalid))
+
+    awaddr = ports['slave_awaddr']
+    _awaddr = m.TmpWireLike(awaddr)
+    _awaddr.assign(0x100)  # on
+    m.Always()(awaddr(_awaddr))
+
+    awlen = ports['slave_awlen']
+    _awlen = m.TmpWireLike(awlen)
+    _awlen.assign(0)  # on
+    m.Always()(awlen(_awlen))
+
+    arvalid = ports['slave_arvalid']
+    _arvalid = m.TmpWireLike(arvalid)
+    _arvalid.assign(1)  # on
+    m.Always()(arvalid(_arvalid))
+
+    araddr = ports['slave_araddr']
+    _araddr = m.TmpWireLike(araddr)
+    _araddr.assign(0x100)  # on
+    m.Always()(araddr(_araddr))
+
+    arlen = ports['slave_arlen']
+    _arlen = m.TmpWireLike(arlen)
+    _arlen.assign(0)  # on
+    m.Always()(arlen(_arlen))
+
+    wvalid = ports['slave_wvalid']
+    _wvalid = m.TmpWireLike(wvalid)
+    _wvalid.assign(1)  # on
+    m.Always()(wvalid(_wvalid))
+
+    wdata = ports['slave_wdata']
+    _wdata = m.TmpWireLike(wdata)
+    _wdata.assign(0x200)  # on
+    m.Always()(wdata(_wdata))
+
+    wstrb = ports['slave_wstrb']
+    _wstrb = m.TmpWireLike(wstrb)
+    _wstrb.assign(Repeat(Int(1, 1), 32 // 8))  # on
+    m.Always()(wstrb(_wstrb))
+
+    wlast = ports['slave_wlast']
+    _wlast = m.TmpWireLike(wlast)
+    _wlast.assign(1)  # on
+    m.Always()(wlast(_wlast))
+
+    rready = ports['slave_rready']
+    _rready = m.TmpWireLike(rready)
+    _rready.assign(1)  # on
+    m.Always()(rready(_rready))
 
     uut = m.Instance(main, 'uut',
                      params=m.connect_params(main),

@@ -35,6 +35,7 @@ def mkMain(n=128, datawidth=32, numports=2):
     waddr = 0
     wlen = 64
     done = mybram.write_dataflow(wport, waddr, value, wlen, cond=fsm)
+    fsm.goto_next()
     fsm.If(done).goto_next()
 
     fsm.goto_next()
@@ -44,6 +45,7 @@ def mkMain(n=128, datawidth=32, numports=2):
     raddr = 0
     rlen = 32
     rdata, rlast, done = mybram.read_dataflow(rport, raddr, rlen, cond=fsm)
+    fsm.goto_next()
     fsm.If(done).goto_next()
 
     # verify

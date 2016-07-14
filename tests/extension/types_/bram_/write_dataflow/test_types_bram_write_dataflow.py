@@ -82,19 +82,20 @@ module main
   wire [32-1:0] _tmp_data_2;
   wire _tmp_valid_2;
   wire _tmp_ready_2;
-  assign _tmp_ready_2 = (fsm == 0) && !_tmp_1;
+  assign _tmp_ready_2 = (_tmp_0 > 0) && !_tmp_1;
   reg _mybram_cond_0_1;
   reg [32-1:0] sum;
   reg _seq_cond_0_1;
+  reg _seq_cond_0_2;
 
   always @(posedge CLK) begin
     if(RST) begin
       mybram_1_wdata <= 0;
       mybram_1_wenable <= 0;
       mybram_0_addr <= 0;
+      _tmp_0 <= 0;
       mybram_0_wdata <= 0;
       mybram_0_wenable <= 0;
-      _tmp_0 <= 0;
       _tmp_1 <= 0;
       _mybram_cond_0_1 <= 0;
     end else begin
@@ -104,19 +105,17 @@ module main
       end 
       mybram_1_wdata <= 0;
       mybram_1_wenable <= 0;
-      if(_tmp_valid_2 && ((fsm == 0) && !_tmp_1) && (_tmp_0 == 0)) begin
-        mybram_0_addr <= 0;
-        mybram_0_wdata <= _tmp_data_2;
-        mybram_0_wenable <= 1;
-        _tmp_0 <= 63;
+      if((fsm == 1) && (_tmp_0 == 0)) begin
+        mybram_0_addr <= -1;
+        _tmp_0 <= 64;
       end 
-      if(_tmp_valid_2 && ((fsm == 0) && !_tmp_1) && (_tmp_0 > 0)) begin
+      if(_tmp_valid_2 && ((_tmp_0 > 0) && !_tmp_1) && (_tmp_0 > 0)) begin
         mybram_0_addr <= mybram_0_addr + 1;
         mybram_0_wdata <= _tmp_data_2;
         mybram_0_wenable <= 1;
         _tmp_0 <= _tmp_0 - 1;
       end 
-      if(_tmp_valid_2 && ((fsm == 0) && !_tmp_1) && (_tmp_0 == 1)) begin
+      if(_tmp_valid_2 && ((_tmp_0 > 0) && !_tmp_1) && (_tmp_0 == 1)) begin
         _tmp_1 <= 1;
       end 
       _mybram_cond_0_1 <= 1;
@@ -142,7 +141,7 @@ module main
       _tmp_valid_4 <= 0;
     end else begin
       if((_tmp_ready_3 || !_tmp_valid_3) && 1 && 1) begin
-        _tmp_data_3 <= _tmp_data_3 + 2'd1;
+        _tmp_data_3 <= (_tmp_data_3 >= 63)? 0 : _tmp_data_3 + 2'd1;
       end 
       if(_tmp_valid_3 && _tmp_ready_3) begin
         _tmp_valid_3 <= 0;
@@ -164,6 +163,7 @@ module main
 
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
+  localparam fsm_3 = 3;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -171,12 +171,15 @@ module main
     end else begin
       case(fsm)
         fsm_init: begin
-          if(_tmp_1) begin
-            fsm <= fsm_1;
-          end 
+          fsm <= fsm_1;
         end
         fsm_1: begin
           fsm <= fsm_2;
+        end
+        fsm_2: begin
+          if(_tmp_1) begin
+            fsm <= fsm_3;
+          end 
         end
       endcase
     end
@@ -187,10 +190,12 @@ module main
     if(RST) begin
       sum <= 0;
       _seq_cond_0_1 <= 0;
+      _seq_cond_0_2 <= 0;
     end else begin
-      if(_seq_cond_0_1) begin
-        $display("sum=%d expected_sum=%d", sum, 2016);
+      if(_seq_cond_0_2) begin
+        $display("sum=%d expected_sum=%d", sum, 1952);
       end 
+      _seq_cond_0_2 <= _seq_cond_0_1;
       if(mybram_0_wenable) begin
         sum <= sum + mybram_0_wdata;
       end 

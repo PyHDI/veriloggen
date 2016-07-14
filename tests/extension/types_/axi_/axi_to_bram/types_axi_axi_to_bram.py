@@ -41,6 +41,7 @@ def mkMain():
     waddr = 0
     wlen = arlen
     done = mybram.write_dataflow(wport, waddr, sum, wlen, cond=fsm)
+    fsm.goto_next()
     fsm.If(done).goto_next()
 
     # verify
@@ -49,6 +50,7 @@ def mkMain():
     raddr = 0
     rlen = arlen
     rdata, rlast, done = mybram.read_dataflow(rport, raddr, rlen, cond=fsm)
+    fsm.goto_next()
     fsm.If(done).goto_next()
 
     rdata_data, rdata_valid = rdata.read()
