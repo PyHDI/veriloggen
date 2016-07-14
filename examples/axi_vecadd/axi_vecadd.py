@@ -29,12 +29,12 @@ def mkMain():
     ram_addr = 0
     length = 64
 
-    dma_done = axi.dma_read(bus, ram_a, bus_addr, ram_addr, length, cond=fsm)
+    dma_done = bus.dma_read(ram_a, bus_addr, ram_addr, length, cond=fsm)
     fsm.If(dma_done).goto_next()
 
     bus_addr = 1024 * 2
 
-    dma_done = axi.dma_read(bus, ram_b, bus_addr, ram_addr, length, cond=fsm)
+    dma_done = bus.dma_read(ram_b, bus_addr, ram_addr, length, cond=fsm)
     fsm.If(dma_done).goto_next()
 
     adata, alast, adone = ram_a.read_dataflow(0, ram_addr, length, cond=fsm)
@@ -48,7 +48,7 @@ def mkMain():
 
     bus_addr = 1024 * 3
 
-    dma_done = axi.dma_write(bus, ram_c, bus_addr, ram_addr, length, cond=fsm)
+    dma_done = bus.dma_write(ram_c, bus_addr, ram_addr, length, cond=fsm)
     fsm.If(dma_done).goto_next()
 
     return m

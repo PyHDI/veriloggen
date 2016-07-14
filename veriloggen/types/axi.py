@@ -103,19 +103,23 @@ class AxiMasterReadData(AxiReadData):
 
 # slave port
 class AxiSlaveWriteAddress(AxiWriteAddress):
-    _I, _O = util.swap_type(AxiWriteAddress)
+    _I = util.t_Output
+    _O = util.t_Input
 
 
 class AxiSlaveWriteData(AxiWriteData):
-    _I, _O = util.swap_type(AxiWriteData)
+    _I = util.t_Output
+    _O = util.t_Input
 
 
 class AxiSlaveReadAddress(AxiReadAddress):
-    _I, _O = util.swap_type(AxiReadAddress)
+    _I = util.t_Output
+    _O = util.t_Input
 
 
 class AxiSlaveReadData(AxiReadData):
-    _I, _O = util.swap_type(AxiReadData)
+    _I = util.t_OutputReg
+    _O = util.t_Input
 
 
 # master interface
@@ -138,7 +142,6 @@ class AxiMaster(object):
         self.rdata = AxiMasterReadData(m, name, datawidth, addrwidth)
 
         self.seq = Seq(m, name, clk, rst)
-        # self.m.add_hook(self.seq.make_always)
 
         self.write_counters = []
         self.read_counters = []
@@ -230,6 +233,9 @@ class AxiMaster(object):
         if self._write_disabled:
             raise TypeError('Write disabled.')
 
+        if counter is not None and not isinstance(counter, vtypes.Reg):
+            raise TypeError("counter must be Reg or None.")
+
         if counter is None:
             counter = self.write_counters[-1]
 
@@ -277,6 +283,9 @@ class AxiMaster(object):
 
         if self._write_disabled:
             raise TypeError('Write disabled.')
+
+        if counter is not None and not isinstance(counter, vtypes.Reg):
+            raise TypeError("counter must be Reg or None.")
 
         if counter is None:
             counter = self.write_counters[-1]
@@ -382,6 +391,9 @@ class AxiMaster(object):
         if self._read_disabled:
             raise TypeError('Read disabled.')
 
+        if counter is not None and not isinstance(counter, vtypes.Reg):
+            raise TypeError("counter must be Reg or None.")
+
         if counter is None:
             counter = self.read_counters[-1]
 
@@ -413,6 +425,9 @@ class AxiMaster(object):
 
         if self._read_disabled:
             raise TypeError('Read disabled.')
+
+        if counter is not None and not isinstance(counter, vtypes.Reg):
+            raise TypeError("counter must be Reg or None.")
 
         if counter is None:
             counter = self.read_counters[-1]
@@ -456,39 +471,370 @@ class AxiMaster(object):
 
         return df_data, df_last, done
 
+    def dma_read(self, ram, bus_addr, ram_addr, length, cond=None, ram_port=0):
+        fsm = TmpFSM(self.m, self.clk, self.rst)
 
-def dma_read(bus, ram, bus_addr, ram_addr, length, cond=None, ram_port=0):
-    fsm = TmpFSM(bus.m, bus.clk, bus.rst)
+        if cond is not None:
+            fsm.If(cond).goto_next()
 
-    if cond is not None:
-        fsm.If(cond).goto_next()
+        ack, counter = self.read_request(bus_addr, length, cond=fsm)
+        fsm.If(ack).goto_next()
 
-    ack, counter = bus.read_request(bus_addr, length, cond=fsm)
-    fsm.If(ack).goto_next()
+        data, last, done = self.read_dataflow()
 
-    data, last, done = bus.read_dataflow()
+        done = ram.write_dataflow(ram_port, ram_addr, data, length, cond=fsm)
+        fsm.If(done).goto_next()
 
-    done = ram.write_dataflow(ram_port, ram_addr, data, length, cond=fsm)
-    fsm.If(done).goto_next()
+        fsm.goto_init()
 
-    fsm.goto_init()
+        return done
 
-    return done
+    def dma_write(self, ram, bus_addr, ram_addr, length, cond=None, ram_port=0):
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        if cond is not None:
+            fsm.If(cond).goto_next()
+
+        ack, counter = self.write_request(bus_addr, length, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        data, last, done = ram.read_dataflow(
+            ram_port, ram_addr, length, cond=fsm)
+        done = self.write_dataflow(data, counter, cond=fsm)
+        fsm.If(done).goto_next()
+
+        fsm.goto_init()
+
+        return done
 
 
-def dma_write(bus, ram, bus_addr, ram_addr, length, cond=None, ram_port=0):
-    fsm = TmpFSM(bus.m, bus.clk, bus.rst)
+class AxiSlave(object):
+    burst_size_width = 8
 
-    if cond is not None:
-        fsm.If(cond).goto_next()
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
+                 nodataflow=False):
 
-    ack, counter = bus.write_request(bus_addr, length, cond=fsm)
-    fsm.If(ack).goto_next()
+        self.m = m
+        self.name = name
+        self.clk = clk
+        self.rst = rst
+        self.datawidth = datawidth
+        self.addrwidth = addrwidth
 
-    data, last, done = ram.read_dataflow(ram_port, ram_addr, length, cond=fsm)
-    done = bus.write_dataflow(data, counter, cond=fsm)
-    fsm.If(done).goto_next()
+        self.waddr = AxiSlaveWriteAddress(m, name, datawidth, addrwidth)
+        self.wdata = AxiSlaveWriteData(m, name, datawidth, addrwidth)
+        self.raddr = AxiSlaveReadAddress(m, name, datawidth, addrwidth)
+        self.rdata = AxiSlaveReadData(m, name, datawidth, addrwidth)
 
-    fsm.goto_init()
+        self.seq = Seq(m, name, clk, rst)
 
-    return done
+        self.write_counters = []
+        self.read_counters = []
+
+        if nodataflow:
+            self.df = None
+        else:
+            self.df = dataflow.DataflowManager(self.m, self.clk, self.rst)
+
+        self._write_disabled = False
+        self._read_disabled = False
+
+    def disable_write(self):
+        self.waddr.awready.assign(0)
+        self.wdata.wready.assign(0)
+        self._write_disabled = True
+
+    def disable_read(self):
+        self.raddr.arready.assign(0)
+        self.seq(
+            self.rdata.rvalid(0),
+            self.rdata.rlast(0)
+        )
+        self._read_disabled = True
+
+    def pull_write_request(self, counter=None, cond=None):
+        """
+        @return addr, counter, valid
+        """
+
+        if self._write_disabled:
+            raise TypeError('Write disabled.')
+
+        if counter is not None and not isinstance(counter, vtypes.Reg):
+            raise TypeError("counter must be Reg or None.")
+
+        if counter is None:
+            counter = self.m.TmpReg(self.burst_size_width, initval=0)
+
+        self.write_counters.append(counter)
+
+        ready = make_condition(cond)
+
+        ack = vtypes.Ands(self.waddr.awready, self.waddr.awvalid)
+        addr = self.m.TmpReg(self.addrwidth, initval=0)
+        valid = self.m.TmpReg(initval=0)
+
+        val = (vtypes.Not(valid) if ready is None else
+               vtypes.Ands(ready, vtypes.Not(valid)))
+
+        prev_subst = self.waddr.awready._get_subst()
+        if not prev_subst:
+            self.waddr.awready.assign(val)
+        else:
+            self.waddr.awready.subst[0].overwrite_right(
+                vtypes.Ors(prev_subst[0].right, val))
+
+        self.seq.If(ack)(
+            addr(self.waddr.awaddr),
+            counter(self.waddr.awlen + 1)
+        )
+
+        self.seq(
+            valid(ack)
+        )
+
+        return addr, counter, valid
+
+    def pull_write_data(self, counter=None, cond=None):
+        """
+        @return data, mask, valid, last
+        """
+
+        if self._write_disabled:
+            raise TypeError('Write disabled.')
+
+        if counter is not None and not isinstance(counter, vtypes.Reg):
+            raise TypeError("counter must be Reg or None.")
+
+        if counter is None:
+            counter = self.write_counters[-1]
+
+        ready = make_condition(cond)
+        val = 1 if ready is None else ready
+
+        prev_subst = self.wdata.wready._get_subst()
+        if not prev_subst:
+            self.wdata.wready.assign(val)
+        else:
+            self.wdata.wready.subst[0].overwrite_right(
+                vtypes.Ors(prev_subst[0].right, val))
+
+        ack = vtypes.Ands(self.wdata.wready, self.wdata.wvalid)
+        data = self.wdata.wdata
+        mask = self.wdata.wstrb
+        valid = ack
+        last = self.wdata.wlast
+
+        self.seq.If(vtypes.Ands(ack, counter > 0))(
+            counter.dec()
+        )
+
+        return data, mask, valid, last
+
+    def pull_write_dataflow(self, counter=None, cond=None):
+        """
+        @return data, mask, last, done
+        """
+
+        if self._write_disabled:
+            raise TypeError('Write disabled.')
+
+        if counter is not None and not isinstance(counter, vtypes.Reg):
+            raise TypeError("counter must be Reg or None.")
+
+        if counter is None:
+            counter = self.write_counters[-1]
+
+        data_ready = self.m.TmpWire()
+        mask_ready = self.m.TmpWire()
+        last_ready = self.m.TmpWire()
+        data_ready.assign(1)
+        mask_ready.assign(1)
+        last_ready.assign(1)
+
+        if cond is None:
+            cond = (data_ready, last_ready)
+        elif isinstance(cond, (tuple, list)):
+            cond = tuple(list(cond) + [data_ready, last_ready])
+        else:
+            cond = (cond, data_ready, last_ready)
+
+        ready = make_condition(*cond)
+        val = 1 if ready is None else ready
+
+        prev_subst = self.wdata.wready._get_subst()
+        if not prev_subst:
+            self.wdata.wready.assign(val)
+        else:
+            self.wdata.wready.subst[0].overwrite_right(
+                vtypes.Ors(prev_subst[0].right, val))
+
+        ack = vtypes.Ands(self.wdata.wready, self.wdata.wvalid)
+        data = self.wdata.wdata
+        mask = self.wdata.wstrb
+        valid = self.wdata.wvalid
+        last = self.wdata.wlast
+
+        self.seq.If(vtypes.Ands(ack, counter > 0))(
+            counter.dec()
+        )
+
+        df = self.df if self.df is not None else dataflow
+
+        df_data = df.Variable(data, valid, data_ready)
+        df_mask = df.Variable(mask, valid, mask_ready,
+                              width=self.datawidth // 4)
+        df_last = df.Variable(last, valid, last_ready, width=1)
+        done = last
+
+        return df_data, df_mask, df_last, done
+
+    def pull_read_request(self, counter=None, cond=None):
+        """
+        @return addr, counter, valid
+        """
+
+        if self._read_disabled:
+            raise TypeError('Read disabled.')
+
+        if counter is not None and not isinstance(counter, vtypes.Reg):
+            raise TypeError("counter must be Reg or None.")
+
+        if counter is None:
+            counter = self.m.TmpReg(self.burst_size_width, initval=0)
+
+        self.read_counters.append(counter)
+
+        ready = make_condition(cond)
+
+        ack = vtypes.Ands(self.raddr.arready, self.raddr.arvalid)
+        addr = self.m.TmpReg(self.addrwidth, initval=0)
+        valid = self.m.TmpReg(initval=0)
+
+        val = (vtypes.Not(valid) if ready is None else
+               vtypes.Ands(ready, vtypes.Not(valid)))
+
+        prev_subst = self.raddr.arready._get_subst()
+        if not prev_subst:
+            self.raddr.arready.assign(val)
+        else:
+            self.raddr.arready.subst[0].overwrite_right(
+                vtypes.Ors(prev_subst[0].right, val))
+
+        self.seq.If(ack)(
+            addr(self.raddr.araddr),
+            counter(self.raddr.arlen + 1)
+        )
+
+        self.seq(
+            valid(ack)
+        )
+
+        return addr, counter, valid
+
+    def push_read_data(self, data, counter=None, cond=None):
+        """
+        @return ack, last
+        """
+
+        if self._read_disabled:
+            raise TypeError('Read disabled.')
+
+        if counter is not None and not isinstance(counter, vtypes.Reg):
+            raise TypeError("counter must be Reg or None.")
+
+        if counter is None:
+            counter = self.read_counters[-1]
+
+        if cond is not None:
+            self.seq.If(cond)
+
+        ack = vtypes.Ors(self.rdata.rready, vtypes.Not(self.rdata.rvalid))
+        # ack = vtypes.Ands(counter > 0,
+        # vtypes.Ors(self.rdata.rready, vtypes.Not(self.rdata.rvalid)))
+        last = self.m.TmpReg(initval=0)
+
+        self.seq.If(vtypes.Ands(ack, counter > 0))(
+            self.rdata.rdata(data),
+            self.rdata.rvalid(1),
+            self.rdata.rlast(0),
+            counter.dec()
+        )
+        self.seq.Then().If(counter == 1)(
+            self.rdata.rlast(1),
+            last(1)
+        )
+
+        # de-assert
+        self.seq.Delay(1)(
+            self.rdata.rvalid(0),
+            self.rdata.rlast(0),
+            last(0)
+        )
+
+        # retry
+        self.seq.If(vtypes.Ands(self.rdata.rvalid, vtypes.Not(self.rdata.rready)))(
+            self.rdata.rvalid(self.rdata.rvalid),
+            self.rdata.rlast(self.rdata.rlast),
+            last(last)
+        )
+
+        return ack, last
+
+    def push_read_dataflow(self, data, counter=None, cond=None):
+        """ 
+        @return done
+        """
+
+        if self._read_disabled:
+            raise TypeError('Read disabled.')
+
+        if counter is not None and not isinstance(counter, vtypes.Reg):
+            raise TypeError("counter must be Reg or None.")
+
+        if counter is None:
+            counter = self.read_counters[-1]
+
+        ack = vtypes.Ors(self.rdata.rready, vtypes.Not(self.rdata.rvalid))
+        # ack = vtypes.Ands(counter > 0,
+        # vtypes.Ors(self.rdata.rready, vtypes.Not(self.rdata.rvalid)))
+        last = self.m.TmpReg(initval=0)
+
+        if cond is None:
+            cond = ack
+        else:
+            cond = (cond, ack)
+
+        raw_data, raw_valid = data.read(cond=cond)
+
+        # write condition
+        self.seq.If(raw_valid)
+
+        self.seq.If(vtypes.Ands(ack, counter > 0))(
+            self.rdata.rdata(raw_data),
+            self.rdata.rvalid(1),
+            self.rdata.rlast(0),
+            counter.dec()
+        )
+        self.seq.Then().If(counter == 1)(
+            self.rdata.rlast(1),
+            last(1)
+        )
+
+        # de-assert
+        self.seq.Delay(1)(
+            self.rdata.rvalid(0),
+            self.rdata.rlast(0),
+            last(0)
+        )
+
+        # retry
+        self.seq.If(vtypes.Ands(self.rdata.rvalid, vtypes.Not(self.rdata.rready)))(
+            self.rdata.rvalid(self.rdata.rvalid),
+            self.rdata.rlast(self.rdata.rlast),
+            last(last)
+        )
+
+        done = last
+
+        return done
