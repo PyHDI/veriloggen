@@ -429,8 +429,10 @@ module main
   wire [32-1:0] _tmp_data_53;
   wire _tmp_valid_53;
   wire _tmp_ready_53;
-  assign _tmp_ready_53 = (_tmp_fsm_2 == 2) && (myaxi_wready || !myaxi_wvalid);
+  assign _tmp_ready_53 = (_tmp_fsm_2 == 2) && ((_tmp_39 > 0) && (myaxi_wready || !myaxi_wvalid));
   reg _myaxi_cond_3_1;
+  reg [32-1:0] sum;
+  reg _seq_cond_0_1;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -506,14 +508,14 @@ module main
       if(myaxi_awvalid && !myaxi_awready) begin
         myaxi_awvalid <= myaxi_awvalid;
       end 
-      if(_tmp_valid_53 && ((_tmp_fsm_2 == 2) && (myaxi_wready || !myaxi_wvalid)) && ((myaxi_wready || !myaxi_wvalid) && (_tmp_39 > 0))) begin
+      if(_tmp_valid_53 && ((_tmp_fsm_2 == 2) && ((_tmp_39 > 0) && (myaxi_wready || !myaxi_wvalid))) && ((_tmp_39 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_39 > 0))) begin
         myaxi_wdata <= _tmp_data_53;
         myaxi_wvalid <= 1;
         myaxi_wlast <= 0;
         myaxi_wstrb <= { 4{ 1'd1 } };
         _tmp_39 <= _tmp_39 - 1;
       end 
-      if(_tmp_valid_53 && ((_tmp_fsm_2 == 2) && (myaxi_wready || !myaxi_wvalid)) && ((myaxi_wready || !myaxi_wvalid) && (_tmp_39 > 0)) && (_tmp_39 == 1)) begin
+      if(_tmp_valid_53 && ((_tmp_fsm_2 == 2) && ((_tmp_39 > 0) && (myaxi_wready || !myaxi_wvalid))) && ((_tmp_39 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_39 > 0)) && (_tmp_39 == 1)) begin
         myaxi_wlast <= 1;
         _tmp_52 <= 1;
       end 
@@ -902,6 +904,22 @@ module main
           _tmp_fsm_2 <= _tmp_fsm_2_init;
         end
       endcase
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      sum <= 0;
+      _seq_cond_0_1 <= 0;
+    end else begin
+      if(_seq_cond_0_1) begin
+        $display("sum=%d expected_sum=%d", sum, 200640);
+      end 
+      if(myaxi_wvalid && myaxi_wready) begin
+        sum <= sum + myaxi_wdata;
+      end 
+      _seq_cond_0_1 <= myaxi_wvalid && myaxi_wready && myaxi_wlast;
     end
   end
 

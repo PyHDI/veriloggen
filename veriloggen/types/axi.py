@@ -195,8 +195,7 @@ class AxiMaster(object):
         if cond is not None:
             self.seq.If(cond)
 
-        ack = vtypes.Ors(self.waddr.awready,
-                         vtypes.Not(self.waddr.awvalid))
+        ack = vtypes.Ors(self.waddr.awready, vtypes.Not(self.waddr.awvalid))
 
         if counter is None:
             counter = self.m.TmpReg(self.burst_size_width, initval=0)
@@ -242,9 +241,8 @@ class AxiMaster(object):
         if cond is not None:
             self.seq.If(cond)
 
-        ack = vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid))
-        # ack = vtypes.Ands(counter > 0,
-        # vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid)))
+        ack = vtypes.Ands(counter > 0,
+                          vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid)))
         last = self.m.TmpReg(initval=0)
 
         self.seq.If(vtypes.Ands(ack, counter > 0))(
@@ -290,9 +288,8 @@ class AxiMaster(object):
         if counter is None:
             counter = self.write_counters[-1]
 
-        ack = vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid))
-        # ack = vtypes.Ands(counter > 0,
-        # vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid)))
+        ack = vtypes.Ands(counter > 0,
+                          vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid)))
         last = self.m.TmpReg(initval=0)
 
         if cond is None:
@@ -356,8 +353,7 @@ class AxiMaster(object):
         if cond is not None:
             self.seq.If(cond)
 
-        ack = vtypes.Ors(self.raddr.arready,
-                         vtypes.Not(self.raddr.arvalid))
+        ack = vtypes.Ors(self.raddr.arready, vtypes.Not(self.raddr.arvalid))
 
         if counter is None:
             counter = self.m.TmpReg(self.burst_size_width, initval=0)
@@ -749,9 +745,8 @@ class AxiSlave(object):
         if cond is not None:
             self.seq.If(cond)
 
-        ack = vtypes.Ors(self.rdata.rready, vtypes.Not(self.rdata.rvalid))
-        # ack = vtypes.Ands(counter > 0,
-        # vtypes.Ors(self.rdata.rready, vtypes.Not(self.rdata.rvalid)))
+        ack = vtypes.Ands(counter > 0,
+                          vtypes.Ors(self.rdata.rready, vtypes.Not(self.rdata.rvalid)))
         last = self.m.TmpReg(initval=0)
 
         self.seq.If(vtypes.Ands(ack, counter > 0))(
@@ -795,9 +790,8 @@ class AxiSlave(object):
         if counter is None:
             counter = self.read_counters[-1]
 
-        ack = vtypes.Ors(self.rdata.rready, vtypes.Not(self.rdata.rvalid))
-        # ack = vtypes.Ands(counter > 0,
-        # vtypes.Ors(self.rdata.rready, vtypes.Not(self.rdata.rvalid)))
+        ack = vtypes.Ands(counter > 0,
+                          vtypes.Ors(self.rdata.rready, vtypes.Not(self.rdata.rvalid)))
         last = self.m.TmpReg(initval=0)
 
         if cond is None:

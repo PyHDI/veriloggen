@@ -41,7 +41,7 @@ def mkMain():
     fsm.If(ack)(
         wdata.inc()
     )
-    fsm.Then().If(last).goto_next()
+    fsm.If(last).goto_next()
 
     fsm(
         wdata(1000)
@@ -60,7 +60,7 @@ def mkMain():
     fsm.If(ack)(
         wdata.inc()
     )
-    fsm.Then().If(last).goto_next()
+    fsm.If(last).goto_next()
 
     sum = m.Reg('sum', 32, initval=0)
     expected_sum0 = (awlen - 1) * awlen // 2

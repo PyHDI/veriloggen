@@ -51,6 +51,19 @@ def mkMain():
     dma_done = bus.dma_write(ram_c, bus_addr, ram_addr, length, cond=fsm)
     fsm.If(dma_done).goto_next()
 
+    # checksum
+    sum = m.Reg('sum', 32, initval=0)
+    expected_sum = (((1024 + 1024 + 63) * 64 // 2) +
+                    ((1024 * 2 + 1024 * 2 + 63) * 64 // 2))
+
+    seq = Seq(m, 'seq', clk, rst)
+    seq.If(bus.wdata.wvalid, bus.wdata.wready)(
+        sum(sum + bus.wdata.wdata)
+    )
+    seq.If(bus.wdata.wvalid, bus.wdata.wready, bus.wdata.wlast).Delay(1)(
+        Systask('display', "sum=%d expected_sum=%d", sum, expected_sum)
+    )
+
     return m
 
 

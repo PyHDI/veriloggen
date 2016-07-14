@@ -243,14 +243,14 @@ module main
       if(myaxi_awvalid && !myaxi_awready) begin
         myaxi_awvalid <= myaxi_awvalid;
       end 
-      if((fsm == 1) && ((myaxi_wready || !myaxi_wvalid) && (_tmp_0 > 0))) begin
+      if((fsm == 1) && ((_tmp_0 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_0 > 0))) begin
         myaxi_wdata <= wdata;
         myaxi_wvalid <= 1;
         myaxi_wlast <= 0;
         myaxi_wstrb <= { 4{ 1'd1 } };
         _tmp_0 <= _tmp_0 - 1;
       end 
-      if((fsm == 1) && ((myaxi_wready || !myaxi_wvalid) && (_tmp_0 > 0)) && (_tmp_0 == 1)) begin
+      if((fsm == 1) && ((_tmp_0 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_0 > 0)) && (_tmp_0 == 1)) begin
         myaxi_wlast <= 1;
         _tmp_1 <= 1;
       end 
@@ -278,10 +278,10 @@ module main
           end 
         end
         fsm_1: begin
-          if(myaxi_wready || !myaxi_wvalid) begin
+          if((_tmp_0 > 0) && (myaxi_wready || !myaxi_wvalid)) begin
             wdata <= wdata + 1;
           end 
-          if((myaxi_wready || !myaxi_wvalid) && _tmp_1) begin
+          if(_tmp_1) begin
             fsm <= fsm_2;
           end 
         end

@@ -272,14 +272,14 @@ module main
       if(myaxi_awvalid && !myaxi_awready) begin
         myaxi_awvalid <= myaxi_awvalid;
       end 
-      if((fsm == 2) && ((myaxi_wready || !myaxi_wvalid) && (_tmp_0 > 0))) begin
+      if((fsm == 2) && ((_tmp_0 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_0 > 0))) begin
         myaxi_wdata <= wdata;
         myaxi_wvalid <= 1;
         myaxi_wlast <= 0;
         myaxi_wstrb <= { 4{ 1'd1 } };
         _tmp_0 <= _tmp_0 - 1;
       end 
-      if((fsm == 2) && ((myaxi_wready || !myaxi_wvalid) && (_tmp_0 > 0)) && (_tmp_0 == 1)) begin
+      if((fsm == 2) && ((_tmp_0 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_0 > 0)) && (_tmp_0 == 1)) begin
         myaxi_wlast <= 1;
         _tmp_2 <= 1;
       end 
@@ -289,14 +289,14 @@ module main
         myaxi_wlast <= myaxi_wlast;
         _tmp_2 <= _tmp_2;
       end 
-      if((fsm == 20) && ((myaxi_wready || !myaxi_wvalid) && (_tmp_1 > 0))) begin
+      if((fsm == 20) && ((_tmp_1 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_1 > 0))) begin
         myaxi_wdata <= wdata;
         myaxi_wvalid <= 1;
         myaxi_wlast <= 0;
         myaxi_wstrb <= { 4{ 1'd1 } };
         _tmp_1 <= _tmp_1 - 1;
       end 
-      if((fsm == 20) && ((myaxi_wready || !myaxi_wvalid) && (_tmp_1 > 0)) && (_tmp_1 == 1)) begin
+      if((fsm == 20) && ((_tmp_1 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_1 > 0)) && (_tmp_1 == 1)) begin
         myaxi_wlast <= 1;
         _tmp_3 <= 1;
       end 
@@ -348,10 +348,10 @@ module main
           end 
         end
         fsm_2: begin
-          if(myaxi_wready || !myaxi_wvalid) begin
+          if((_tmp_0 > 0) && (myaxi_wready || !myaxi_wvalid)) begin
             wdata <= wdata + 1;
           end 
-          if((myaxi_wready || !myaxi_wvalid) && _tmp_2) begin
+          if(_tmp_2) begin
             fsm <= fsm_3;
           end 
         end
@@ -408,10 +408,10 @@ module main
           fsm <= fsm_20;
         end
         fsm_20: begin
-          if(myaxi_wready || !myaxi_wvalid) begin
+          if((_tmp_1 > 0) && (myaxi_wready || !myaxi_wvalid)) begin
             wdata <= wdata + 1;
           end 
-          if((myaxi_wready || !myaxi_wvalid) && _tmp_3) begin
+          if(_tmp_3) begin
             fsm <= fsm_21;
           end 
         end

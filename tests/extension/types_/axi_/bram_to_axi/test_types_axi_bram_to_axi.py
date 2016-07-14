@@ -337,7 +337,7 @@ module main
   wire [32-1:0] _tmp_data_20;
   wire _tmp_valid_20;
   wire _tmp_ready_20;
-  assign _tmp_ready_20 = myaxi_wready || !myaxi_wvalid;
+  assign _tmp_ready_20 = (_tmp_6 > 0) && (myaxi_wready || !myaxi_wvalid);
   reg _myaxi_cond_2_1;
   reg [32-1:0] sum;
   reg _seq_cond_0_1;
@@ -398,14 +398,14 @@ module main
       if(myaxi_awvalid && !myaxi_awready) begin
         myaxi_awvalid <= myaxi_awvalid;
       end 
-      if(_tmp_valid_20 && (myaxi_wready || !myaxi_wvalid) && ((myaxi_wready || !myaxi_wvalid) && (_tmp_6 > 0))) begin
+      if(_tmp_valid_20 && ((_tmp_6 > 0) && (myaxi_wready || !myaxi_wvalid)) && ((_tmp_6 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_6 > 0))) begin
         myaxi_wdata <= _tmp_data_20;
         myaxi_wvalid <= 1;
         myaxi_wlast <= 0;
         myaxi_wstrb <= { 4{ 1'd1 } };
         _tmp_6 <= _tmp_6 - 1;
       end 
-      if(_tmp_valid_20 && (myaxi_wready || !myaxi_wvalid) && ((myaxi_wready || !myaxi_wvalid) && (_tmp_6 > 0)) && (_tmp_6 == 1)) begin
+      if(_tmp_valid_20 && ((_tmp_6 > 0) && (myaxi_wready || !myaxi_wvalid)) && ((_tmp_6 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_6 > 0)) && (_tmp_6 == 1)) begin
         myaxi_wlast <= 1;
         _tmp_19 <= 1;
       end 

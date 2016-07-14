@@ -36,7 +36,7 @@ def mkMain():
     fsm.If(ack)(
         wdata.inc()
     )
-    fsm.Then().If(last).goto_next()
+    fsm.If(last).goto_next()
 
     sum = m.Reg('sum', 32, initval=0)
     expected_sum = (awlen - 1) * awlen // 2
@@ -65,17 +65,17 @@ def mkTest():
     clk = ports['CLK']
     rst = ports['RST']
 
-    # awready (no stall)
-    #awready = ports['myaxi_awready']
-    #_awready = m.TmpWireLike(awready)
-    #_awready.assign(1)
-    #m.Always()( awready(_awready) )
-
-    # wready (nostall)
-    #wready = ports['myaxi_wready']
-    #_wready = m.TmpWireLike(wready)
-    #_wready.assign(1)
-    #m.Always()( wready(_wready) )
+#    # awready (no stall)
+#    awready = ports['myaxi_awready']
+#    _awready = m.TmpWireLike(awready)
+#    _awready.assign(1)
+#    m.Always()( awready(_awready) )
+#
+#    # wready (nostall)
+#    wready = ports['myaxi_wready']
+#    _wready = m.TmpWireLike(wready)
+#    _wready.assign(1)
+#    m.Always()( wready(_wready) )
 
     # awready (with stall)
     waddr_fsm = FSM(m, 'waddr', clk, rst)
