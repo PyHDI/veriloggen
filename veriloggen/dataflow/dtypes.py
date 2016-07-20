@@ -4,7 +4,7 @@ from __future__ import print_function
 from collections import OrderedDict
 import veriloggen.core.vtypes as vtypes
 import veriloggen.types.fixed as fx
-from veriloggen.seq.seq import make_condition
+from veriloggen.seq.seq import make_condition as _make_condition
 from . import mul
 from . import div
 
@@ -2390,6 +2390,22 @@ def Counter(step=None, maxval=None, initval=0, reset=None, width=32, signed=Fals
     return Icustom(lambda a, b: vtypes.Mux(a >= raw_maxval - raw_step, raw_initval, a + b),
                    step, initval=initval, reset=reset, width=width, signed=signed,
                    label='Counter')
+
+
+#-------------------------------------------------------------------------
+def make_condition(*cond):
+    new_cond = []
+    for c in cond:
+        if c is None:
+            continue
+        if isinstance(c, _Numeric):
+            d, v = c.read()
+            new_cond.append(d)
+            new_cond.append(v)
+        else:
+            new_cond.append(c)
+
+    return _make_condition(*new_cond)
 
 
 #-------------------------------------------------------------------------

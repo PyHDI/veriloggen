@@ -3,8 +3,9 @@ from __future__ import print_function
 
 import veriloggen.core.vtypes as vtypes
 import veriloggen.core.module as module
-import veriloggen.dataflow as dataflow
-from veriloggen.seq.seq import Seq, make_condition
+import veriloggen.dataflow.dataflow as dataflow
+import veriloggen.dataflow.dtypes as dtypes
+from veriloggen.seq.seq import Seq
 from . import util
 
 
@@ -144,7 +145,7 @@ class Bram(object):
             self.interfaces[port].wenable(0)
         )
 
-    def write_dataflow(self, port, addr, data, length=1, cond=None):
+    def write_dataflow(self, port, addr, data, length=1, cond=None, when=None):
         """ 
         @return done
         """
@@ -155,24 +156,28 @@ class Bram(object):
         counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
         last = self.m.TmpReg(initval=0)
 
-        ext_cond = make_condition(cond)
-        data_cond = make_condition(counter > 0, vtypes.Not(last))
-        all_cond = make_condition(data_cond, ext_cond)
+        ext_cond = dtypes.make_condition(cond)
+        data_cond = dtypes.make_condition(counter > 0, vtypes.Not(last))
+        all_cond = dtypes.make_condition(data_cond, ext_cond)
         raw_data, raw_valid = data.read(cond=data_cond)
 
-        self.seq.If(vtypes.Ands(ext_cond, counter == 0))(
+        when_cond = dtypes.make_condition(when)
+        if when_cond is not None:
+            raw_valid = vtypes.Ands(when_cond, raw_valid)
+
+        self.seq.If(dtypes.make_condition(ext_cond, counter == 0))(
             self.interfaces[port].addr(addr - 1),
             counter(length),
         )
 
-        self.seq.If(vtypes.Ands(raw_valid, counter > 0))(
+        self.seq.If(dtypes.make_condition(raw_valid, counter > 0))(
             self.interfaces[port].addr.inc(),
             self.interfaces[port].wdata(raw_data),
             self.interfaces[port].wenable(1),
             counter.dec()
         )
 
-        self.seq.If(vtypes.Ands(raw_valid, counter == 1))(
+        self.seq.If(dtypes.make_condition(raw_valid, counter == 1))(
             last(1)
         )
 
@@ -224,10 +229,10 @@ class Bram(object):
         data_ack = vtypes.Ors(data_ready, vtypes.Not(data_valid))
         last_ack = vtypes.Ors(last_ready, vtypes.Not(last_valid))
 
-        ext_cond = make_condition(cond)
-        data_cond = make_condition(data_ack, last_ack)
+        ext_cond = dtypes.make_condition(cond)
+        data_cond = dtypes.make_condition(data_ack, last_ack)
         prev_data_cond = self.seq.Prev(data_cond, 1)
-        all_cond = make_condition(data_cond, ext_cond)
+        all_cond = dtypes.make_condition(data_cond, ext_cond)
 
         data = self.m.TmpWireLike(self.interfaces[port].rdata)
         prev_data = self.seq.Prev(data, 1)
@@ -242,13 +247,13 @@ class Bram(object):
         next_last = self.m.TmpReg(initval=0)
         last = self.m.TmpReg(initval=0)
 
-        self.seq.If(vtypes.Ands(data_cond, next_valid_off))(
+        self.seq.If(dtypes.make_condition(data_cond, next_valid_off))(
             last(0),
             data_valid(0),
             last_valid(0),
             next_valid_off(0)
         )
-        self.seq.If(vtypes.Ands(data_cond, next_valid_on))(
+        self.seq.If(dtypes.make_condition(data_cond, next_valid_on))(
             data_valid(1),
             last_valid(1),
             last(next_last),
@@ -256,19 +261,19 @@ class Bram(object):
             next_valid_on(0),
             next_valid_off(1)
         )
-        self.seq.If(vtypes.Ands(ext_cond, counter == 0,
-                                vtypes.Not(next_last), vtypes.Not(last)))(
+        self.seq.If(dtypes.make_condition(ext_cond, counter == 0,
+                                          vtypes.Not(next_last), vtypes.Not(last)))(
             self.interfaces[port].addr(addr),
             counter(length - 1),
             next_valid_on(1),
         )
-        self.seq.If(vtypes.Ands(data_cond, counter > 0))(
+        self.seq.If(dtypes.make_condition(data_cond, counter > 0))(
             self.interfaces[port].addr.inc(),
             counter.dec(),
             next_valid_on(1),
             next_last(0)
         )
-        self.seq.If(vtypes.Ands(data_cond, counter == 1))(
+        self.seq.If(dtypes.make_condition(data_cond, counter == 1))(
             next_last(1)
         )
 
