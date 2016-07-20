@@ -551,7 +551,7 @@ class AxiSlave(object):
         )
         self._read_disabled = True
 
-    def pull_write_request(self, counter=None, cond=None):
+    def pull_write_request(self, cond=None, counter=None):
         """
         @return addr, counter, valid
         """
@@ -688,7 +688,7 @@ class AxiSlave(object):
 
         return df_data, df_mask, df_last, done
 
-    def pull_read_request(self, counter=None, cond=None):
+    def pull_read_request(self, cond=None, counter=None):
         """
         @return addr, counter, valid
         """

@@ -480,7 +480,7 @@ module main
   wire _tmp_valid_8;
   wire _tmp_ready_8;
   assign _tmp_ready_8 = (_tmp_6 > 0) && !_tmp_7;
-  reg _ram_a_cond_0_1;
+  reg _ram_b_cond_0_1;
   reg [32-1:0] _tmp_fsm_1;
   localparam _tmp_fsm_1_init = 0;
   reg [8-1:0] _tmp_9;
@@ -495,7 +495,7 @@ module main
   wire _tmp_valid_14;
   wire _tmp_ready_14;
   assign _tmp_ready_14 = (_tmp_12 > 0) && !_tmp_13;
-  reg _ram_b_cond_0_1;
+  reg _ram_a_cond_0_1;
   reg _tmp_15;
   reg _tmp_16;
   wire _tmp_17;
@@ -626,7 +626,7 @@ module main
         _tmp_56 <= 0;
       end 
       if((_tmp_fsm_0 == 1) && ((master_arready || !master_arvalid) && (_tmp_3 == 0))) begin
-        master_araddr <= 1024;
+        master_araddr <= 2048;
         master_arlen <= 15;
         master_arvalid <= 1;
         _tmp_3 <= 16;
@@ -639,7 +639,7 @@ module main
         _tmp_3 <= _tmp_3 - 1;
       end 
       if((_tmp_fsm_1 == 1) && ((master_arready || !master_arvalid) && (_tmp_9 == 0))) begin
-        master_araddr <= 2048;
+        master_araddr <= 1024;
         master_arlen <= 15;
         master_arvalid <= 1;
         _tmp_9 <= 16;
@@ -692,10 +692,10 @@ module main
   always @(posedge CLK) begin
     if(RST) begin
       ram_a_0_addr <= 0;
-      _tmp_6 <= 0;
+      _tmp_12 <= 0;
       ram_a_0_wdata <= 0;
       ram_a_0_wenable <= 0;
-      _tmp_7 <= 0;
+      _tmp_13 <= 0;
       _ram_a_cond_0_1 <= 0;
       __tmp_20_1 <= 0;
       __tmp_21_1 <= 0;
@@ -709,20 +709,20 @@ module main
     end else begin
       if(_ram_a_cond_0_1) begin
         ram_a_0_wenable <= 0;
-        _tmp_7 <= 0;
+        _tmp_13 <= 0;
       end 
-      if((_tmp_fsm_0 == 2) && (_tmp_6 == 0)) begin
+      if((_tmp_fsm_1 == 2) && (_tmp_12 == 0)) begin
         ram_a_0_addr <= -1;
-        _tmp_6 <= 16;
+        _tmp_12 <= 16;
       end 
-      if(_tmp_valid_8 && ((_tmp_6 > 0) && !_tmp_7) && (_tmp_6 > 0)) begin
+      if(_tmp_valid_14 && ((_tmp_12 > 0) && !_tmp_13) && (_tmp_12 > 0)) begin
         ram_a_0_addr <= ram_a_0_addr + 1;
-        ram_a_0_wdata <= _tmp_data_8;
+        ram_a_0_wdata <= _tmp_data_14;
         ram_a_0_wenable <= 1;
-        _tmp_6 <= _tmp_6 - 1;
+        _tmp_12 <= _tmp_12 - 1;
       end 
-      if(_tmp_valid_8 && ((_tmp_6 > 0) && !_tmp_7) && (_tmp_6 == 1)) begin
-        _tmp_7 <= 1;
+      if(_tmp_valid_14 && ((_tmp_12 > 0) && !_tmp_13) && (_tmp_12 == 1)) begin
+        _tmp_13 <= 1;
       end 
       _ram_a_cond_0_1 <= 1;
       __tmp_20_1 <= _tmp_20;
@@ -762,10 +762,10 @@ module main
   always @(posedge CLK) begin
     if(RST) begin
       ram_b_0_addr <= 0;
-      _tmp_12 <= 0;
+      _tmp_6 <= 0;
       ram_b_0_wdata <= 0;
       ram_b_0_wenable <= 0;
-      _tmp_13 <= 0;
+      _tmp_7 <= 0;
       _ram_b_cond_0_1 <= 0;
       __tmp_32_1 <= 0;
       __tmp_33_1 <= 0;
@@ -779,20 +779,20 @@ module main
     end else begin
       if(_ram_b_cond_0_1) begin
         ram_b_0_wenable <= 0;
-        _tmp_13 <= 0;
+        _tmp_7 <= 0;
       end 
-      if((_tmp_fsm_1 == 2) && (_tmp_12 == 0)) begin
+      if((_tmp_fsm_0 == 2) && (_tmp_6 == 0)) begin
         ram_b_0_addr <= -1;
-        _tmp_12 <= 16;
+        _tmp_6 <= 16;
       end 
-      if(_tmp_valid_14 && ((_tmp_12 > 0) && !_tmp_13) && (_tmp_12 > 0)) begin
+      if(_tmp_valid_8 && ((_tmp_6 > 0) && !_tmp_7) && (_tmp_6 > 0)) begin
         ram_b_0_addr <= ram_b_0_addr + 1;
-        ram_b_0_wdata <= _tmp_data_14;
+        ram_b_0_wdata <= _tmp_data_8;
         ram_b_0_wenable <= 1;
-        _tmp_12 <= _tmp_12 - 1;
+        _tmp_6 <= _tmp_6 - 1;
       end 
-      if(_tmp_valid_14 && ((_tmp_12 > 0) && !_tmp_13) && (_tmp_12 == 1)) begin
-        _tmp_13 <= 1;
+      if(_tmp_valid_8 && ((_tmp_6 > 0) && !_tmp_7) && (_tmp_6 == 1)) begin
+        _tmp_7 <= 1;
       end 
       _ram_b_cond_0_1 <= 1;
       __tmp_32_1 <= _tmp_32;
@@ -944,7 +944,7 @@ module main
         read_fsm_6: begin
           row_count <= row_count + 1;
           if(row_count < 15) begin
-            read_fsm <= read_fsm_3;
+            read_fsm <= read_fsm_4;
           end 
           if(row_count == 15) begin
             read_fsm <= read_fsm_7;

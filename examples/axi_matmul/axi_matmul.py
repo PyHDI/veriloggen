@@ -51,21 +51,21 @@ def mkMain():
 
     write_fsm.If(read_fsm).goto_next()
 
+    # computation
+    master_addr = 1024 * 2
+    ram_addr = 0
+    length = 16
+    dma_done = master.dma_read(
+        ram_b, master_addr, ram_addr, length, cond=read_fsm)
+    read_fsm.If(dma_done).goto_next()
+
     comp_start = read_fsm.current
 
-    # computation
     master_addr = 1024
     ram_addr = 0
     length = 16
-
     dma_done = master.dma_read(
         ram_a, master_addr, ram_addr, length, cond=read_fsm)
-    read_fsm.If(dma_done).goto_next()
-
-    master_addr = 1024 * 2
-
-    dma_done = master.dma_read(
-        ram_b, master_addr, ram_addr, length, cond=read_fsm)
     read_fsm.If(dma_done).goto_next()
 
     adata, alast, adone = ram_a.read_dataflow(
