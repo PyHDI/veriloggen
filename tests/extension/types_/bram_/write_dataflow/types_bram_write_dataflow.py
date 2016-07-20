@@ -20,7 +20,7 @@ def mkMain(n=128, datawidth=32, numports=2):
     rst = m.Input('RST')
 
     addrwidth = int(math.log(n, 2)) * 2
-    mybram = bram.Bram(m, 'mybram', clk, rst, datawidth, addrwidth, 2, nodataflow=True)
+    mybram = bram.Bram(m, 'mybram', clk, rst, datawidth, addrwidth, 2)
     mybram.disable_write(1)
 
     df = dataflow.DataflowManager(m, clk, rst)

@@ -20,7 +20,7 @@ def mkMain(n=128, datawidth=32, numports=2):
     rst = m.Input('RST')
 
     addrwidth = int(math.log(n, 2)) * 2
-    mybram = bram.Bram(m, 'mybram', clk, rst, datawidth, addrwidth, 2)
+    mybram = bram.Bram(m, 'mybram', clk, rst, datawidth, addrwidth, 2, nodataflow=True)
 
     xfsm = FSM(m, 'xfsm', clk, rst)
     xaddr = m.Reg('xaddr', 32, initval=0)

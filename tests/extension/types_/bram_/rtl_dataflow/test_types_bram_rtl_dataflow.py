@@ -102,7 +102,7 @@ module main
   assign xdata = _tmp_2;
   reg _tmp_3;
   assign xvalid = _tmp_3;
-  reg __dataflow_seq_1_cond_0_1;
+  reg __dataflow_seq_0_cond_0_1;
   reg [32-1:0] _xaddr_1;
   reg [32-1:0] _xaddr_2;
   reg [32-1:0] yfsm;
@@ -232,9 +232,9 @@ module main
       _tmp_valid_0 <= 0;
       _tmp_2 <= 0;
       _tmp_3 <= 0;
-      __dataflow_seq_1_cond_0_1 <= 0;
+      __dataflow_seq_0_cond_0_1 <= 0;
     end else begin
-      if(__dataflow_seq_1_cond_0_1) begin
+      if(__dataflow_seq_0_cond_0_1) begin
         _tmp_3 <= 0;
       end 
       if((_tmp_ready_0 || !_tmp_valid_0) && xready && xvalid) begin
@@ -252,7 +252,7 @@ module main
       if(_tmp_1 && (xready || !_tmp_3)) begin
         _tmp_3 <= 1;
       end 
-      __dataflow_seq_1_cond_0_1 <= 1;
+      __dataflow_seq_0_cond_0_1 <= 1;
       if(_tmp_3 && !xready) begin
         _tmp_3 <= _tmp_3;
       end 
