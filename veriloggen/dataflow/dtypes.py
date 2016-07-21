@@ -2393,13 +2393,24 @@ def Counter(step=None, maxval=None, initval=0, reset=None, width=32, signed=Fals
 
 
 #-------------------------------------------------------------------------
-def make_condition(*cond):
+def make_condition(*cond, **kwargs):
+    ready = kwargs['ready'] if 'ready' in kwargs else None
+
+    _cond = []
+    for c in cond:
+        if isinstance(c, (tuple, list)):
+            _cond.extend(c)
+        else:
+            _cond.append(c)
+
+    cond = _cond
+
     new_cond = []
     for c in cond:
         if c is None:
             continue
         if isinstance(c, _Numeric):
-            d, v = c.read()
+            d, v = c.read(cond=ready)
             new_cond.append(d)
             new_cond.append(v)
         else:

@@ -541,7 +541,7 @@ module main
   wire [1-1:0] _tmp_data_42;
   wire _tmp_valid_42;
   wire _tmp_ready_42;
-  assign _tmp_ready_42 = 1;
+  assign _tmp_ready_42 = (_tmp_39 > 0) && !_tmp_40;
   reg _ram_c_cond_0_1;
   reg [32-1:0] _tmp_fsm_2;
   localparam _tmp_fsm_2_init = 0;
@@ -855,13 +855,13 @@ module main
         ram_c_0_addr <= -1;
         _tmp_39 <= 16;
       end 
-      if(_tmp_data_42 && _tmp_valid_42 && (_tmp_valid_41 && ((_tmp_39 > 0) && !_tmp_40)) && (_tmp_39 > 0)) begin
+      if(_tmp_data_42 && (_tmp_valid_42 && ((_tmp_39 > 0) && !_tmp_40)) && (_tmp_valid_41 && ((_tmp_39 > 0) && !_tmp_40)) && (_tmp_39 > 0)) begin
         ram_c_0_addr <= ram_c_0_addr + 1;
         ram_c_0_wdata <= _tmp_data_41;
         ram_c_0_wenable <= 1;
         _tmp_39 <= _tmp_39 - 1;
       end 
-      if(_tmp_data_42 && _tmp_valid_42 && (_tmp_valid_41 && ((_tmp_39 > 0) && !_tmp_40)) && (_tmp_39 == 1)) begin
+      if(_tmp_data_42 && (_tmp_valid_42 && ((_tmp_39 > 0) && !_tmp_40)) && (_tmp_valid_41 && ((_tmp_39 > 0) && !_tmp_40)) && (_tmp_39 == 1)) begin
         _tmp_40 <= 1;
       end 
       _ram_c_cond_0_1 <= 1;

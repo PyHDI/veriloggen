@@ -78,7 +78,7 @@ module main
   wire [1-1:0] _tmp_data_3;
   wire _tmp_valid_3;
   wire _tmp_ready_3;
-  assign _tmp_ready_3 = 1;
+  assign _tmp_ready_3 = (_tmp_0 > 0) && !_tmp_1;
   reg _mybram_cond_0_1;
 
   always @(posedge CLK) begin
@@ -98,13 +98,13 @@ module main
         mybram_0_addr <= -1;
         _tmp_0 <= 32;
       end 
-      if(_tmp_data_3 && _tmp_valid_3 && (_tmp_valid_2 && ((_tmp_0 > 0) && !_tmp_1)) && (_tmp_0 > 0)) begin
+      if(_tmp_data_3 && (_tmp_valid_3 && ((_tmp_0 > 0) && !_tmp_1)) && (_tmp_valid_2 && ((_tmp_0 > 0) && !_tmp_1)) && (_tmp_0 > 0)) begin
         mybram_0_addr <= mybram_0_addr + 1;
         mybram_0_wdata <= _tmp_data_2;
         mybram_0_wenable <= 1;
         _tmp_0 <= _tmp_0 - 1;
       end 
-      if(_tmp_data_3 && _tmp_valid_3 && (_tmp_valid_2 && ((_tmp_0 > 0) && !_tmp_1)) && (_tmp_0 == 1)) begin
+      if(_tmp_data_3 && (_tmp_valid_3 && ((_tmp_0 > 0) && !_tmp_1)) && (_tmp_valid_2 && ((_tmp_0 > 0) && !_tmp_1)) && (_tmp_0 == 1)) begin
         _tmp_1 <= 1;
       end 
       _mybram_cond_0_1 <= 1;

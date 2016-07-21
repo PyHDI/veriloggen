@@ -2,10 +2,10 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import veriloggen.core.vtypes as vtypes
-import veriloggen.core.module as module
-from veriloggen.seq.seq import Seq, make_condition
+from veriloggen.seq.seq import Seq
 from veriloggen.fsm.fsm import TmpFSM
-import veriloggen.dataflow as dataflow
+from veriloggen.dataflow.dataflow import DataflowManager
+from veriloggen.dataflow.dtypes import make_condition
 from . import util
 
 
@@ -149,7 +149,7 @@ class AxiMaster(object):
         if nodataflow:
             self.df = None
         else:
-            self.df = dataflow.DataflowManager(self.m, self.clk, self.rst)
+            self.df = DataflowManager(self.m, self.clk, self.rst)
 
         self._write_disabled = False
         self._read_disabled = False
@@ -274,7 +274,7 @@ class AxiMaster(object):
 
         return ack, last
 
-    def write_dataflow(self, data, counter=None, cond=None):
+    def write_dataflow(self, data, counter=None, cond=None, when=None):
         """ 
         @return done
         """
@@ -298,6 +298,10 @@ class AxiMaster(object):
             cond = (cond, ack)
 
         raw_data, raw_valid = data.read(cond=cond)
+
+        when_cond = make_condition(when, ready=cond)
+        if when_cond is not None:
+            raw_valid = vtypes.Ands(when_cond, raw_valid)
 
         # write condition
         self.seq.If(raw_valid)
@@ -533,7 +537,7 @@ class AxiSlave(object):
         if nodataflow:
             self.df = None
         else:
-            self.df = dataflow.DataflowManager(self.m, self.clk, self.rst)
+            self.df = DataflowManager(self.m, self.clk, self.rst)
 
         self._write_disabled = False
         self._read_disabled = False
