@@ -25,6 +25,7 @@ def reset():
     global _dataflow_counter
     _dataflow_counter = 0
     dtypes._object_counter = 0
+    mul.reset()
 
 
 def DataflowManager(module, clock, reset, no_hook=False):
@@ -80,8 +81,6 @@ class Dataflow(object):
     #-------------------------------------------------------------------------
     def implement(self, m=None, clock=None, reset=None, seq_name=None, aswire=True):
         """ implemente actual registers and operations in Verilog """
-
-        mul.reset()
 
         if m is None:
             m = self.module
