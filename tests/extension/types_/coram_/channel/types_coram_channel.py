@@ -20,6 +20,10 @@ def mkMain(n=128, datawidth=32, numports=2):
 
     addrwidth = int(math.log(n, 2)) * 2
 
+    coram_channel = coram.CoramChannel(m, clk, rst,
+                                       thread_name='cthread', thread_id=0, id=0, sub_id=None,
+                                       datawidth=datawidth)
+
     coram_memory = coram.CoramMemory(m, clk, rst,
                                      thread_name='cthread', thread_id=0, id=0, sub_id=None,
                                      datawidth=datawidth, addrwidth=addrwidth)
@@ -38,6 +42,9 @@ def mkMain(n=128, datawidth=32, numports=2):
     )
 
     fsm.goto_next()
+
+    data, valid = coram_channel.deq(cond=(fsm, Not(coram_channel.empty)))
+    fsm.If(Not(coram_channel.empty)).goto_next()
 
     step = 16
 
@@ -84,6 +91,22 @@ def mkMain(n=128, datawidth=32, numports=2):
     fsm.Then().Delay(1)(
         Systask('display', "sum=%d", sum)
     )
+
+    fsm.goto_next()
+
+    fsm.If(read_valid)(
+        sum(sum + read_data)
+    )
+
+    fsm.Then().Delay(1)(
+        Systask('display', "sum=%d", sum)
+    )
+
+    fsm.goto_next()
+
+    ack, ready = coram_channel.enq(sum, cond=fsm)
+
+    fsm.If(ready).goto_next()
 
     fsm.make_always()
 

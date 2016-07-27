@@ -39,6 +39,7 @@ def mkCoramMemoryDefinition(numports):
     m = module.Module(name)
 
     coram_thread_name = m.Parameter('CORAM_THREAD_NAME', 'none')
+    coram_thread_id = m.Parameter('CORAM_THREAD_ID', 0)
     coram_id = m.Parameter('CORAM_ID', 0)
     coram_sub_id = m.Parameter('CORAM_SUB_ID', 0)
     coram_addr_len = m.Parameter('CORAM_ADDR_LEN', 10)
@@ -70,8 +71,9 @@ def mkCoramMemoryDefinition(numports):
     return m
 
 
-#-------------------------------------------------------------------------
 coram_memroy_definitions = {}
+
+
 def get_coram_memory_definition(numports):
     if numports in coram_memroy_definitions:
         return coram_memroy_definitions[numports]
@@ -79,16 +81,17 @@ def get_coram_memory_definition(numports):
     return coram_memroy_definitions[numports]
 
 
-#-------------------------------------------------------------------------
 class CoramMemory(bram.Bram):
 
     def __init__(self, m, clk, rst,
-                 thread_name, id, sub_id=None, datawidth=32, addrwidth=10, numports=1):
+                 thread_name, thread_id, id, sub_id=None,
+                 datawidth=32, addrwidth=10, numports=1):
 
         self.m = m
         self.clk = clk
         self.rst = rst
         self.thread_name = thread_name
+        self.thread_id = thread_id
         self.id = id
         self.sub_id = sub_id
         self.name = '_'.join([thread_name, 'memory', str(id)])
@@ -106,6 +109,7 @@ class CoramMemory(bram.Bram):
 
         params = []
         params.append(('CORAM_THREAD_NAME', self.thread_name))
+        params.append(('CORAM_THREAD_ID', self.thread_id))
         params.append(('CORAM_ID', self.id))
         if self.sub_id is not None:
             params.append(('CORAM_SUB_ID', self.sub_id))
@@ -120,6 +124,5 @@ class CoramMemory(bram.Bram):
             self.definition, 'inst_' + self.name, params, ports)
 
         self.seq = Seq(m, self.name, clk, rst)
-        #self.m.add_hook(self.seq.make_always)
 
         self._write_disabled = [False for i in range(numports)]

@@ -60,6 +60,7 @@ module main
   CoramMemory1P
   #(
     .CORAM_THREAD_NAME("cthread"),
+    .CORAM_THREAD_ID(0),
     .CORAM_ID(0),
     .CORAM_ADDR_LEN(14),
     .CORAM_DATA_WIDTH(32)
@@ -200,6 +201,7 @@ endmodule
 module CoramMemory1P #
 (
   parameter CORAM_THREAD_NAME = "none",
+  parameter CORAM_THREAD_ID = 0,
   parameter CORAM_ID = 0,
   parameter CORAM_SUB_ID = 0,
   parameter CORAM_ADDR_LEN = 10,
@@ -227,6 +229,7 @@ module CoramMemory1P #
 
 endmodule
 """
+
 
 def test():
     veriloggen.reset()
