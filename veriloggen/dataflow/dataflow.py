@@ -4,6 +4,7 @@ import os
 import sys
 import copy
 import collections
+import functools
 
 import veriloggen.core.vtypes as vtypes
 from veriloggen.core.module import Module
@@ -204,14 +205,22 @@ class Dataflow(object):
 
     #-------------------------------------------------------------------------
     def __getattr__(self, attr):
-        func = getattr(dtypes, attr)
+        try:
+            return object.__getattr__(self, attr)
 
-        def wrapper(*args, **kwargs):
-            v = func(*args, **kwargs)
-            if isinstance(v, dtypes._Numeric):
-                v._set_module(self.module)
-                v._set_df(self)
-                v._set_seq(self.seq)
-            return v
+        except AttributeError as e:
+            if attr.startswith('__') or attr not in dir(dtypes):
+                raise e
 
-        return wrapper
+            func = getattr(dtypes, attr)
+
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                v = func(*args, **kwargs)
+                if isinstance(v, dtypes._Numeric):
+                    v._set_module(self.module)
+                    v._set_df(self)
+                    v._set_seq(self.seq)
+                return v
+
+            return wrapper

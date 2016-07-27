@@ -392,7 +392,28 @@ class Module(vtypes.VeriloggenNode):
     
     def get_vars(self):
         return self.variable
-    
+
+    def __getitem__(self, r):
+        if isinstance(r, slice):
+            raise TypeError("Index must be str.")
+        if not isinstance(r, str):
+            raise TypeError("Index must be str.")
+
+        v = self.find_identifier(r)
+        if v is None:
+            raise NameError("No such variable '%s'" % r)
+        return v
+
+    def __getattr__(self, attr):
+        try:
+            return vtypes.VeriloggenNode.__getattr__(self, attr)
+        except AttributeError as e:
+            if 'io_variable' in dir(self):
+                v = self.find_identifier(attr)
+                if v is not None:
+                    return v
+            raise e
+
     #---------------------------------------------------------------------------
     def copy_params(self, src, prefix=None, postfix=None, exclude=None):
         if prefix is None: prefix = ''
