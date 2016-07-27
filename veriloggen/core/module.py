@@ -404,15 +404,15 @@ class Module(vtypes.VeriloggenNode):
             raise NameError("No such variable '%s'" % r)
         return v
 
-    def __getattr__(self, attr):
-        try:
-            return vtypes.VeriloggenNode.__getattr__(self, attr)
-        except AttributeError as e:
-            if 'io_variable' in dir(self):
-                v = self.find_identifier(attr)
-                if v is not None:
-                    return v
-            raise e
+    #def __getattr__(self, attr):
+    #    try:
+    #        return vtypes.VeriloggenNode.__getattr__(self, attr)
+    #    except AttributeError as e:
+    #        if 'io_variable' in dir(self):
+    #            v = self.find_identifier(attr)
+    #            if v is not None:
+    #                return v
+    #        raise e
 
     #---------------------------------------------------------------------------
     def copy_params(self, src, prefix=None, postfix=None, exclude=None):
