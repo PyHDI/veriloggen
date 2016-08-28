@@ -183,6 +183,8 @@ class VerilogReadVisitor(object):
         ret = self.m.find_identifier(node.name)
         if ret is None:
             return vtypes.AnyType(name=node.name)
+        if ret.name in self.m.variable:
+            return self.m.variable[ret.name]
         return ret
         
     def visit_IntConst(self, node):
