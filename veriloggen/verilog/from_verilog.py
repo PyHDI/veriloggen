@@ -112,6 +112,8 @@ class VerilogReadVisitor(object):
     def add_object(self, obj):
         if isinstance(self.m, module.Module):
             self.m.add_object(obj)
+            if isinstance(obj, vtypes._Variable):
+                obj.module = self.m
         
     def generic_visit(self, node):
         for c in node.children():
