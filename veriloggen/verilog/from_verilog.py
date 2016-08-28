@@ -13,14 +13,20 @@ import veriloggen.core.task as task
 import pyverilog.vparser.ast as vast
 from pyverilog.vparser.parser import VerilogCodeParser
 from pyverilog.dataflow.modulevisitor import ModuleVisitor
+from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
 
 #-------------------------------------------------------------------------------
 # User interfaces to read Verilog source code
 #-------------------------------------------------------------------------------
 def read_verilog_stubmodule(*filelist, **opt):
     module_dict = to_module_dict(*filelist, **opt)
-    stubs = collections.OrderedDict([ (name, module.StubModule(name)) 
-                                      for name in module_dict.keys() ])
+    codegen = ASTCodeGenerator()
+    stubs = collections.OrderedDict()
+    for name, m in module_dict.items():
+        description = vast.Description( (m,) )
+        source = vast.Source('', description)
+        code = codegen.visit(source)
+        stubs[name] = module.StubModule(name, code=code)
     return stubs
     
 def read_verilog_module(*filelist, **opt):
