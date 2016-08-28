@@ -31,9 +31,10 @@ def read_verilog_stubmodule(*filelist, **opt):
     
 def read_verilog_module(*filelist, **opt):
     module_dict = to_module_dict(*filelist, **opt)
-    visitor = VerilogReadVisitor()
-    modules = collections.OrderedDict([ (name, visitor.visit(m) )
-                                        for name, m in module_dict.items() ])
+    visitor = VerilogReadVisitor(module_dict)
+    for name, m in module_dict.items():
+        visitor.visit(m)
+    modules = visitor.converted_modules
     return modules
 
 def read_verilog_module_str(code, encode='utf-8'):
@@ -101,9 +102,24 @@ class ReadOnlyModule(object):
 
 #-------------------------------------------------------------------------------
 class VerilogReadVisitor(object):
-    def __init__(self):
+    def __init__(self, ast_module_dict, converted_modules=None):
+        self.ast_module_dict = ast_module_dict
+        self.converted_modules = (collections.OrderedDict()
+                                  if converted_modules is None
+                                  else converted_modules)
         self.m = None
         self.module_stack = []
+
+    def get_module(self, name):
+        if name in self.converted_modules:
+            return self.converted_modules[name]
+        if name not in self.ast_module_dict:
+            return StubModule(name)
+        visitor = VerilogReadVisitor(self.ast_module_dict, self.converted_modules)
+        mod = visitor.visit(self.ast_module_dict[name])
+        self.converted_modules[name] = mod
+        self.converted_modules.update(visitor.converted_modules)
+        return mod
 
     def push_module(self, m):
         self.module_stack.append(self.m)
@@ -132,11 +148,17 @@ class VerilogReadVisitor(object):
         return visitor(node)
 
     def visit_ModuleDef(self, node):
+        # check module cache
+        if node.name in self.converted_modules:
+            return self.converted_modules[node.name]
+
         # create new Verilog module
         m = module.Module(node.name)
         self.push_module(m)
         self.generic_visit(node)
         self.pop_module()
+
+        self.converted_modules[node.name] = m
         return m
 
     def visit_Paramlist(self, node):
@@ -684,7 +706,7 @@ class VerilogReadVisitor(object):
         return [ self.visit(instance) for instance in node.instances ]
         
     def visit_Instance(self, node):
-        m = module.StubModule(node.module)
+        m = self.get_module(node.module)
         instname = node.name
         params = [ self.visit(param) for param in node.parameterlist ]
         ports = [ self.visit(port) for port in node.portlist ]

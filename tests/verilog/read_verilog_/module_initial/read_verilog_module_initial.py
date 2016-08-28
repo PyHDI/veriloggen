@@ -12,11 +12,10 @@ from veriloggen import *
 def mkLedTest():
     filename = os.path.dirname(os.path.abspath(__file__)) + '/led.v'
     modules = from_verilog.read_verilog_module(filename)
-    led = modules['blinkled']
     test = modules['test']
-    return led, test
+    return test
 
 if __name__ == '__main__':
-    led, test = mkLedTest()
-    verilog = ''.join([ test.to_verilog(), led.to_verilog() ])
+    test = mkLedTest()
+    verilog = test.to_verilog()
     print(verilog)

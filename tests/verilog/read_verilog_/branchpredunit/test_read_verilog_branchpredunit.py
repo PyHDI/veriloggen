@@ -537,7 +537,7 @@ endmodule
 def test():
     veriloggen.reset()
     test_modules = read_verilog_branchpredunit.mkMips()
-    code = ''.join([ m.to_verilog() for m in test_modules.values() ])
+    code = ''.join([ m.to_verilog() for m in test_modules.values() if not m.used ])
 
     from pyverilog.vparser.parser import parse
     from pyverilog.ast_code_generator.codegen import ASTCodeGenerator

@@ -4,27 +4,6 @@ import veriloggen
 import read_verilog_pycoram_object
 
 expected_verilog = """
-module CoramMemory1P #
-(
-  parameter CORAM_THREAD_NAME = "undefined",
-  parameter CORAM_THREAD_ID = 0,
-  parameter CORAM_ID = 0,
-  parameter CORAM_SUB_ID = 0,
-  parameter CORAM_ADDR_LEN = 10,
-  parameter CORAM_DATA_WIDTH = 32
-)
-(
-  input CLK,
-  input [CORAM_ADDR_LEN - 1:0] ADDR,
-  input [CORAM_DATA_WIDTH - 1:0] D,
-  input WE,
-  output [CORAM_DATA_WIDTH - 1:0] Q
-);
-
-  localparam CORAM_MEM_SIZE = (2 ** CORAM_ADDR_LEN);
-
-endmodule
-
 module CoramMemoryBE1P #
 (
   parameter CORAM_THREAD_NAME = "undefined",
@@ -139,32 +118,6 @@ module CoramOutStream #
   input ENQ,
   output FULL,
   output ALM_FULL
-);
-
-  localparam CORAM_MEM_SIZE = (2 ** CORAM_ADDR_LEN);
-
-endmodule
-
-module CoramChannel #
-(
-  parameter CORAM_THREAD_NAME = "undefined",
-  parameter CORAM_THREAD_ID = 0,
-  parameter CORAM_ID = 0,
-  parameter CORAM_SUB_ID = 0,
-  parameter CORAM_ADDR_LEN = 4,
-  parameter CORAM_DATA_WIDTH = 32
-)
-(
-  input CLK,
-  input RST,
-  input [CORAM_DATA_WIDTH - 1:0] D,
-  input ENQ,
-  output FULL,
-  output ALM_FULL,
-  output [CORAM_DATA_WIDTH - 1:0] Q,
-  input DEQ,
-  output EMPTY,
-  output ALM_EMPTY
 );
 
   localparam CORAM_MEM_SIZE = (2 ** CORAM_ADDR_LEN);
@@ -294,12 +247,59 @@ module userlogic #
   );
 
 endmodule
+
+module CoramMemory1P #
+(
+  parameter CORAM_THREAD_NAME = "undefined",
+  parameter CORAM_THREAD_ID = 0,
+  parameter CORAM_ID = 0,
+  parameter CORAM_SUB_ID = 0,
+  parameter CORAM_ADDR_LEN = 10,
+  parameter CORAM_DATA_WIDTH = 32
+)
+(
+  input CLK,
+  input [CORAM_ADDR_LEN - 1:0] ADDR,
+  input [CORAM_DATA_WIDTH - 1:0] D,
+  input WE,
+  output [CORAM_DATA_WIDTH - 1:0] Q
+);
+
+  localparam CORAM_MEM_SIZE = (2 ** CORAM_ADDR_LEN);
+
+endmodule
+
+module CoramChannel #
+(
+  parameter CORAM_THREAD_NAME = "undefined",
+  parameter CORAM_THREAD_ID = 0,
+  parameter CORAM_ID = 0,
+  parameter CORAM_SUB_ID = 0,
+  parameter CORAM_ADDR_LEN = 4,
+  parameter CORAM_DATA_WIDTH = 32
+)
+(
+  input CLK,
+  input RST,
+  input [CORAM_DATA_WIDTH - 1:0] D,
+  input ENQ,
+  output FULL,
+  output ALM_FULL,
+  output [CORAM_DATA_WIDTH - 1:0] Q,
+  input DEQ,
+  output EMPTY,
+  output ALM_EMPTY
+);
+
+  localparam CORAM_MEM_SIZE = (2 ** CORAM_ADDR_LEN);
+
+endmodule
 """
 
 def test():
     veriloggen.reset()
     modules = read_verilog_pycoram_object.mkUserlogic()
-    code = ''.join([ m.to_verilog() for m in modules.values() ])
+    code = ''.join([ m.to_verilog() for m in modules.values() if not m.used ])
 
     from pyverilog.vparser.parser import VerilogParser
     from pyverilog.ast_code_generator.codegen import ASTCodeGenerator

@@ -81,8 +81,8 @@ endmodule
 
 def test():
     veriloggen.reset()
-    test_module, test_bench = read_verilog_module_initial.mkLedTest()
-    code = ''.join([ test_bench.to_verilog(), test_module.to_verilog() ])
+    test_module = read_verilog_module_initial.mkLedTest()
+    code = test_module.to_verilog()
     from pyverilog.vparser.parser import VerilogParser
     from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
     parser = VerilogParser()

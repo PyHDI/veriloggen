@@ -16,5 +16,5 @@ def mkMips():
 
 if __name__ == '__main__':
     mips_modules = mkMips()
-    verilog = ''.join([ m.to_verilog() for m in mips_modules.values() ])
+    verilog = ''.join([ m.to_verilog() for m in mips_modules.values() if not m.used ])
     print(verilog)

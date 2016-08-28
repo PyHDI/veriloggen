@@ -33,6 +33,7 @@ class Module(vtypes.VeriloggenNode):
         self.tmp_prefix = tmp_prefix
         self.tmp_count = 0
         self.hook = []
+        self.used = False
         
     #---------------------------------------------------------------------------
     # User interface for variables
@@ -798,6 +799,7 @@ class StubModule(vtypes.VeriloggenNode):
         vtypes.VeriloggenNode.__init__(self)
         self.name = name if name is not None else self.__class__.__name__
         self.code = code
+        self.used = False
 
     def set_code(self, code):
         self.code = code
@@ -833,6 +835,8 @@ class Instance(vtypes.VeriloggenNode):
         self._type_check_ports(ports)
         self.module = module
         self.instname = instname
+        if hasattr(self.module, 'used'):
+            self.module.used = True
         
         if not params:
             self.params = ()

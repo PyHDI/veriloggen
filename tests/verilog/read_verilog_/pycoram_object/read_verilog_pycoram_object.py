@@ -17,5 +17,5 @@ def mkUserlogic():
 
 if __name__ == '__main__':
     modules = mkUserlogic()
-    verilog = ''.join([ m.to_verilog() for m in modules.values() ])
+    verilog = ''.join([ m.to_verilog() for m in modules.values() if not m.used ])
     print(verilog)
