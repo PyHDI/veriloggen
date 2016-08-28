@@ -86,6 +86,14 @@ def to_tuple(s):
     return s
 
 #-------------------------------------------------------------------------------
+class ReadOnlyModule(object):
+    def __init__(self, m):
+        self.m = m
+
+    def __getattr__(self, attr):
+        return getattr(self.m, attr)
+
+#-------------------------------------------------------------------------------
 class VerilogReadVisitor(object):
     def __init__(self):
         self.m = None
@@ -94,6 +102,9 @@ class VerilogReadVisitor(object):
     def push_module(self, m):
         self.module_stack.append(self.m)
         self.m = m
+
+    def push_read_only_module(self):
+        self.push_module(ReadOnlyModule(self.m))
 
     def pop_module(self):
         self.m = self.module_stack.pop()
@@ -165,7 +176,7 @@ class VerilogReadVisitor(object):
             labels = self.visit(node.scope)
             labels.append(node.name)
             return vtypes.Scope(*labels)
-        if not isinstance(self.m, module.Module):
+        if not isinstance(self.m, (module.Module, ReadOnlyModule)):
             return vtypes.AnyType(name=node.name)
         ret = self.m.find_identifier(node.name)
         if ret is None:
@@ -528,7 +539,7 @@ class VerilogReadVisitor(object):
         
     def visit_Always(self, node):
         # to avoid to call self.add_object() for the current Module
-        self.push_module(None)
+        self.push_read_only_module()
         
         sensitivity = self.visit(node.sens_list)
         statement = to_tuple(self.visit(node.statement))
@@ -685,7 +696,7 @@ class VerilogReadVisitor(object):
     
     def visit_Function(self, node):
         # to avoid to call self.add_object() for the current Module
-        self.push_module(None)
+        self.push_read_only_module()
         
         name = node.name
         width = self.visit(node.retwidth) if node.retwidth is not None else None
@@ -731,7 +742,7 @@ class VerilogReadVisitor(object):
         
     def visit_Task(self, node):
         # to avoid to call self.add_object() for the current Module
-        self.push_module(None)
+        self.push_read_only_module()
         
         name = node.name
         _task = task.Task(name)
@@ -762,7 +773,7 @@ class VerilogReadVisitor(object):
         
         # to restore the current Module
         self.pop_module()
-        
+
         self.add_object(_task)
         return _task
         
