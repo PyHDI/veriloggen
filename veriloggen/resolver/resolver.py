@@ -579,6 +579,9 @@ class ModuleReplaceVisitor(_CachedVisitor):
         for ins in node.instance.values():
             self.visit(ins)
 
+        for gen in node.generate.values():
+            self.visit(gen)
+
         return node
 
     def visit__Variable(self, node):
