@@ -1630,6 +1630,9 @@ class Scope(_Numeric):
         if not args:
             raise ValueError("Scope requires at least one argument.")
 
+    def bit_length(self):
+        return self.args[-1].bit_length()
+
 #-------------------------------------------------------------------------------
 class SystemTask(_Numeric):
     def __init__(self, cmd, *args):
