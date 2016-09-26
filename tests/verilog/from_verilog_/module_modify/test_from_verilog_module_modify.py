@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import read_verilog_stub_module
+import from_verilog_module_modify
 
 expected_verilog = """
 module top #
@@ -11,34 +11,40 @@ module top #
   (
    input CLK, 
    input RST, 
-   output [WIDTH-1:0] LED
+   output [32-1:0] LED,
+   input enable,
+   output busy
   );
-  blinkled #
+  modified_led #
   (
-   WIDTH
+   .WIDTH(WIDTH)
   )
   inst_blinkled
   (
-   CLK,
-   RST,
-   LED
+   .CLK(CLK),
+   .RST(RST),
+   .LED(LED),
+   .enable(enable),
+   .busy(busy)
   );
 endmodule
 
-module blinkled #
+module modified_led #
   (
    parameter WIDTH = 8
   )
   (
    input CLK, 
    input RST, 
-   output reg [WIDTH-1:0] LED
+   output reg [32-1:0] LED,
+   input enable,
+   output busy
   );
   reg [32-1:0] count;
   always @(posedge CLK) begin
     if(RST) begin        
       count <= 0;
-    end else begin
+    end else if(enable) begin
       if(count == 1023) begin
         count <= 0;
       end else begin
@@ -55,12 +61,13 @@ module blinkled #
       end  
     end 
   end 
+  assign busy = count < 1023;
 endmodule
 """
 
 def test():
     veriloggen.reset()
-    test_module = read_verilog_stub_module.mkTop()
+    test_module = from_verilog_module_modify.mkTop()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

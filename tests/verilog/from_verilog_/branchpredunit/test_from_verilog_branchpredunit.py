@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import read_verilog_branchpredunit
+import from_verilog_branchpredunit
 
 expected_verilog = """
 `default_nettype none
@@ -536,7 +536,7 @@ endmodule
 
 def test():
     veriloggen.reset()
-    test_modules = read_verilog_branchpredunit.mkMips()
+    test_modules = from_verilog_branchpredunit.mkMips()
     code = ''.join([ m.to_verilog() for m in test_modules.values() if not m.used ])
 
     from pyverilog.vparser.parser import parse

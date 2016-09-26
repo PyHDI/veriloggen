@@ -1,29 +1,50 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import read_verilog_module
+import from_verilog_module_initial
 
 expected_verilog = """
-module top #
-  (
+module test #
+  ( 
    parameter WIDTH = 8
   )
   (
-   input CLK, 
-   input RST, 
-   output [WIDTH-1:0] LED
   );
+
+  reg CLK;
+  reg RST;
+  wire [(WIDTH-1):0] LED;
+
   blinkled #
-  (
-   .WIDTH(WIDTH)
-  )
-  inst_blinkled
-  (
-   .CLK(CLK),
-   .RST(RST),
-   .LED(LED)
-  );
+   (
+    .WIDTH(WIDTH)
+   )
+  uut
+   (
+    .CLK(CLK),
+    .RST(RST),
+    .LED(LED)
+   );
+
+  initial begin
+    CLK = 0;
+    forever begin
+      #5 CLK = !CLK;
+    end
+  end
+
+  initial begin
+    RST = 0;
+    #100;
+    RST = 1;
+    #100;
+    RST = 0;
+    #1000;
+    $finish;
+  end
+
 endmodule
+
 
 module blinkled #
   (
@@ -60,9 +81,8 @@ endmodule
 
 def test():
     veriloggen.reset()
-    test_module = read_verilog_module.mkTop()
+    test_module = from_verilog_module_initial.mkLedTest()
     code = test_module.to_verilog()
-
     from pyverilog.vparser.parser import VerilogParser
     from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
     parser = VerilogParser()

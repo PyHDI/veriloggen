@@ -1,34 +1,42 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import read_verilog_module_oldstylecode
+import from_verilog_sensitiveall
 
 expected_verilog = """
-module top
+module top #
+  (
+   parameter WIDTH = 8
+  )
   (
    input CLK, 
    input RST, 
-   output [8-1:0] LED
+   output [WIDTH-1:0] LED
   );
-
-  blinkled inst_blinkled
+  blinkled #
+  (
+   .WIDTH(WIDTH)
+  )
+  inst_blinkled
   (
    .CLK(CLK),
    .RST(RST),
    .LED(LED)
   );
-
 endmodule
 
-module blinkled
+module blinkled #
+  (
+   parameter WIDTH = 8
+  )
   (
    input CLK, 
    input RST, 
-   output [7:0] LED
+   output reg [WIDTH-1:0] LED
   );
 
-  reg [31:0] count;
-  reg [7:0] led_count;
+  reg [32-1:0] count;
+  reg [WIDTH-1:0] led_count;
 
   always @(posedge CLK) begin
     if(RST) begin        
@@ -41,6 +49,7 @@ module blinkled
       end
     end 
   end 
+
   always @(posedge CLK) begin
     if(RST) begin        
       led_count <= 0;
@@ -50,13 +59,17 @@ module blinkled
       end  
     end 
   end 
-  assign LED = led_count;
+
+  always @* begin
+    LED = led_count;
+  end
+
 endmodule
 """
 
 def test():
     veriloggen.reset()
-    test_module = read_verilog_module_oldstylecode.mkTop()
+    test_module = from_verilog_sensitiveall.mkTop()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

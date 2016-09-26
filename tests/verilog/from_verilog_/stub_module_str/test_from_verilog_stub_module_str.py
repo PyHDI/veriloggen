@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import read_verilog_module_str
+import from_verilog_stub_module_str
 
 expected_verilog = """
 module top #
@@ -15,13 +15,13 @@ module top #
   );
   blinkled #
   (
-   .WIDTH(WIDTH)
+   WIDTH
   )
   inst_blinkled
   (
-   .CLK(CLK),
-   .RST(RST),
-   .LED(LED)
+   CLK,
+   RST,
+   LED
   );
 endmodule
 
@@ -60,7 +60,7 @@ endmodule
 
 def test():
     veriloggen.reset()
-    test_module = read_verilog_module_str.mkTop()
+    test_module = from_verilog_stub_module_str.mkTop()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

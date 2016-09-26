@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import read_verilog_pycoram_ctrl_thread
+import from_verilog_pycoram_ctrl_thread
 
 expected_verilog = """
 module ctrl_thread
@@ -246,7 +246,7 @@ endmodule
 
 def test():
     veriloggen.reset()
-    modules = read_verilog_pycoram_ctrl_thread.mkThread()
+    modules = from_verilog_pycoram_ctrl_thread.mkThread()
     code = ''.join([ m.to_verilog() for m in modules.values() ])
 
     from pyverilog.vparser.parser import VerilogParser
