@@ -15,7 +15,7 @@ from .core.task import Task, TaskCall
 
 # Verilog 
 from .verilog import from_verilog
-from .simulation_ import simulation
+from .simulation import simulation
 
 # Extension
 from .seq.seq import Seq, TmpSeq, make_condition
