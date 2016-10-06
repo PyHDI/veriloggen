@@ -498,9 +498,9 @@ class Genvar(_Variable):
 class AnyType(_Variable): pass
 
 #-------------------------------------------------------------------------------
-class _ParameterVairable(_Variable):
+class _ParameterVariable(_Variable):
     def __init__(self, value, width=None, signed=False, name=None, module=None):
-        if isinstance(value, _ParameterVairable):
+        if isinstance(value, _ParameterVariable):
             value = value.value
         _Variable.__init__(self, width=width, signed=signed, value=value, name=name,
                            module=module)
@@ -510,9 +510,9 @@ class _ParameterVairable(_Variable):
             return 32
         return self.width
         
-class Parameter(_ParameterVairable): pass
-class Localparam(_ParameterVairable): pass
-class Supply(_ParameterVairable): pass
+class Parameter(_ParameterVariable): pass
+class Localparam(_ParameterVariable): pass
+class Supply(_ParameterVariable): pass
 
 #-------------------------------------------------------------------------------
 class _Constant(_Numeric):
