@@ -13,11 +13,13 @@ from .core.module import Module, StubModule, Instance, GenerateFor, GenerateIf, 
 from .core.function import Function, FunctionCall
 from .core.task import Task, TaskCall
 
-# Verilog 
+# Code Generator
 from .verilog import from_verilog
+
+# Verilog Simulator
 from .simulation import simulation
 
-# Extension
+# Abstract Extension
 from .seq.seq import Seq, TmpSeq, make_condition
 from .fsm.fsm import FSM, TmpFSM
 from .pipeline.pipeline import Pipeline
