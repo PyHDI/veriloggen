@@ -1,1 +1,1 @@
-VERSION = "0.7.0-candidate"
+VERSION = "0.7.0"
