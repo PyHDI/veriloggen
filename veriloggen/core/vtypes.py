@@ -1617,6 +1617,44 @@ class When(VeriloggenNode) :
         raise ValueError("Statement body is already assigned.")
 
 #-------------------------------------------------------------------------------
+def PatternIf(*patterns):
+    root = None
+    prev = None
+    length = len(patterns)
+
+    for i, (cond, stmt) in enumerate(patterns):
+        if not isinstance(stmt, (tuple, list)):
+            stmt = tuple([stmt])
+
+        body = If(cond)(stmt) if cond is not None else stmt
+
+        if root is None:
+            root = body
+        else:
+            prev.Else(body)
+
+        prev = body
+
+        if cond is None:
+            if i < length - 1:
+                raise ValueError("Too many patterns after None condition.")
+            break
+
+    return root
+
+def PatternMux(*patterns):
+    prev = None
+
+    for i, (cond, stmt) in enumerate(reversed(patterns)):
+        if prev is None and cond is not None:
+            raise ValueError('Last pattern requires a None condition.')
+        if prev is not None and cond is None:
+            raise ValueError('Non-last pattern requires a condition.')
+        prev = Mux(cond, stmt, prev) if cond is not None else stmt
+
+    return prev
+
+#-------------------------------------------------------------------------------
 class ScopeIndex(VeriloggenNode):
     def __init__(self, name, index):
         VeriloggenNode.__init__(self)
