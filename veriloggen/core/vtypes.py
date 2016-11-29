@@ -1622,6 +1622,9 @@ def PatternIf(*patterns):
     prev = None
     length = len(patterns)
 
+    if len(patterns) == 1 and isinstance(patterns, (tuple, list)):
+        patterns = patterns[0]
+
     for i, (cond, stmt) in enumerate(patterns):
         if not isinstance(stmt, (tuple, list)):
             stmt = tuple([stmt])
@@ -1644,6 +1647,9 @@ def PatternIf(*patterns):
 
 def PatternMux(*patterns):
     prev = None
+
+    if len(patterns) == 1 and isinstance(patterns, (tuple, list)):
+        patterns = patterns[0]
 
     for i, (cond, stmt) in enumerate(reversed(patterns)):
         if prev is None and cond is not None:
