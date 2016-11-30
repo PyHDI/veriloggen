@@ -10,19 +10,19 @@ from veriloggen.dataflow.dtypes import make_condition
 from . import util
 
 
-def mkLUTDefinition(name, values, size, datawidth, sync=False):
+def mkROMDefinition(name, values, size, datawidth, sync=False):
     m = Module(name)
 
     clk = m.Input('CLK') if sync else None
     sel = m.Input('sel', size)
-    val = m.OutputReg('val', datawidth) if sync else m.Output('val', datawidth)
+    val = m.OutputReg('val', datawidth)
 
     if clk is not None:
-        alw = m.Always(clk)
+        alw = m.Always(vtypes.Posedge(clk))
     else:
         alw = m.Always()
 
-    patterns = [vtypes.When(i)(val(v)) for i, v in enumerate(values)]
+    patterns = [vtypes.When(i)(val(v, blk=not sync)) for i, v in enumerate(values)]
 
     alw(
         vtypes.Case(sel)(*patterns)
@@ -31,7 +31,7 @@ def mkLUTDefinition(name, values, size, datawidth, sync=False):
     return m
 
 
-class _LUT(object):
+class _ROM(object):
 
     def __init__(self, m, name, clk, sel, values, datawidth=None):
 
@@ -52,7 +52,7 @@ class _LUT(object):
 
         self.val = self.m.Wire(name + '_val', datawidth)
         sync = True if clk is not None else False
-        lut_def = mkLUTDefinition(name, values, size, datawidth, sync)
+        rom_def = mkROMDefinition(name, values, size, datawidth, sync)
 
         ports = []
         if clk is not None:
@@ -61,16 +61,16 @@ class _LUT(object):
         ports.append(self.sel)
         ports.append(self.val)
 
-        self.m.Instance(lut_def, name, params=(), ports=ports)
+        self.m.Instance(rom_def, name, params=(), ports=ports)
 
 
-class SyncLUT(_LUT):
+class SyncROM(_ROM):
 
     def __init__(self, m, name, clk, sel, values, datawidth=None):
-        _LUT.__init__(self, m, name, clk, sel, values, datawidth=datawidth)
+        _ROM.__init__(self, m, name, clk, sel, values, datawidth=datawidth)
 
 
-class AsyncLUT(_LUT):
+class AsyncROM(_ROM):
 
     def __init__(self, m, name, sel, values, datawidth=None):
-        _LUT.__init__(self, m, name, None, sel, values, datawidth=datawidth)
+        _ROM.__init__(self, m, name, None, sel, values, datawidth=datawidth)

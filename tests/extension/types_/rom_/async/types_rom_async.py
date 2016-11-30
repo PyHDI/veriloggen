@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))))
 
 from veriloggen import *
-import veriloggen.types.lut as lut
+import veriloggen.types.rom as rom
 
 
 def mkMain(n=128, datawidth=32, numports=2):
@@ -22,13 +22,13 @@ def mkMain(n=128, datawidth=32, numports=2):
     sel = m.Reg('sel', width, initval=0)
     values = [ i * i for i in range(2 ** width) ]
 
-    mylut = lut.SyncLUT(m, 'mylut', clk, sel, values, datawidth=8)
+    myrom = rom.AsyncROM(m, 'myrom', sel, values, datawidth=8)
 
     seq = Seq(m, 'seq', clk, rst)
 
     seq(
         sel.inc(),
-        Display('sel=%d val=%d', sel, mylut.val)
+        Display('sel=%d val=%d', sel, myrom.val)
     )
 
     return m
