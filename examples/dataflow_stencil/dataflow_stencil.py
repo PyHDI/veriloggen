@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 from veriloggen import *
 import veriloggen.dataflow as dataflow
-import veriloggen.types.bram as bram
+import veriloggen.types.ram as ram
 import veriloggen.types.fixed as fixed
 
 def stencil(coe, data):
@@ -66,28 +66,28 @@ def mkStencil(n=16, size=3, datawidth=32, point=16, coe_test=False):
     
     done = m.TmpReg(initval=0)
 
-    # external BRAM I/F
-    ext_src_brams = [ bram.BramSlaveInterface(m, 'ext_src_bram%d' % i,
+    # external RAM I/F
+    ext_src_rams = [ ram.RAMSlaveInterface(m, 'ext_src_ram%d' % i,
                                               datawidth=datawidth, addrwidth=addrwidth)
                       for i in range(size) ]
-    ext_dst_bram = bram.BramSlaveInterface(m, 'ext_dst_bram',
+    ext_dst_ram = ram.RAMSlaveInterface(m, 'ext_dst_ram',
                                            datawidth=datawidth, addrwidth=addrwidth)
     
-    # BRAM
+    # RAM
     addrwidth = int(math.log(n, 2)) * 2
     
-    src_brams = [ bram.Bram(m, 'src_bram%d' % i, clk, rst,
-                            datawidth=datawidth, addrwidth=addrwidth, numports=2)
+    src_rams = [ ram.SyncRAMManager(m, 'src_ram%d' % i, clk, rst,
+                                    datawidth=datawidth, addrwidth=addrwidth, numports=2)
                   for i in range(size) ]
                             
-    dst_bram = bram.Bram(m, 'dst_bram', clk, rst,
-                         datawidth=datawidth, addrwidth=addrwidth, numports=2)
+    dst_ram = ram.SyncRAMManager(m, 'dst_ram', clk, rst,
+                                 datawidth=datawidth, addrwidth=addrwidth, numports=2)
 
-    # connect BRAM I/Fs
-    for src_bram, ext_src_bram in zip(src_brams, ext_src_brams):
-        src_bram[1].connect(ext_src_bram)
+    # connect RAM I/Fs
+    for src_ram, ext_src_ram in zip(src_rams, ext_src_rams):
+        src_ram[1].connect(ext_src_ram)
 
-    dst_bram[1].connect(ext_dst_bram)
+    dst_ram[1].connect(ext_dst_ram)
 
     # read FSM
     read_fsm = FSM(m, 'read_fsm', clk, rst)
@@ -114,9 +114,9 @@ def mkStencil(n=16, size=3, datawidth=32, point=16, coe_test=False):
         
     idata = []
     ivalid = []
-    for i, src_bram in enumerate(src_brams):
-        src_bram.disable_write(0)
-        rdata, rvalid = src_bram.read(0, read_addr, read_fsm)
+    for i, src_ram in enumerate(src_rams):
+        src_ram.disable_write(0)
+        rdata, rvalid = src_ram.read(0, read_addr, read_fsm)
         idata.append(rdata)
         ivalid.append(rvalid)
 
@@ -175,7 +175,7 @@ def mkStencil(n=16, size=3, datawidth=32, point=16, coe_test=False):
         write_addr.inc()
     )
     
-    dst_bram.write(0, write_addr, odata, write_fsm.then)
+    dst_ram.write(0, write_addr, odata, write_fsm.then)
     
     write_fsm.If(ovalid)(
         write_count.inc(),
@@ -221,21 +221,21 @@ def mkTest(n=16, size=3, datawidth=32, point=16, coe_test=False):
     reset_stmt.append( start(0) )
 
     
-    # src BRAM
+    # src RAM
     for i in range(3):
-        addr = ports['ext_src_bram%d_addr' % i]
-        rdata = ports['ext_src_bram%d_rdata' % i]
-        wdata = ports['ext_src_bram%d_wdata' % i]
-        wenable = ports['ext_src_bram%d_wenable' % i]
+        addr = ports['ext_src_ram%d_addr' % i]
+        rdata = ports['ext_src_ram%d_rdata' % i]
+        wdata = ports['ext_src_ram%d_wdata' % i]
+        wenable = ports['ext_src_ram%d_wenable' % i]
         reset_stmt.append(addr(0))
         reset_stmt.append(wdata(0))
         reset_stmt.append(wenable(0))
 
-    # dst BRAM
-    addr = ports['ext_dst_bram_addr']
-    rdata = ports['ext_dst_bram_rdata']
-    wdata = ports['ext_dst_bram_wdata']
-    wenable = ports['ext_dst_bram_wenable']
+    # dst RAM
+    addr = ports['ext_dst_ram_addr']
+    rdata = ports['ext_dst_ram_rdata']
+    wdata = ports['ext_dst_ram_wdata']
+    wenable = ports['ext_dst_ram_wenable']
     reset_stmt.append(addr(2))
     reset_stmt.append(wdata(0))
     reset_stmt.append(wenable(0))
@@ -260,23 +260,23 @@ def mkTest(n=16, size=3, datawidth=32, point=16, coe_test=False):
     fsm.goto_next(cond=reset_done)
 
     for i in range(3):
-        addr = ports['ext_src_bram%d_addr' % i]
+        addr = ports['ext_src_ram%d_addr' % i]
         fsm.add( addr(-1) )
 
     fsm.goto_next()
 
     for i in range(3):
-        addr = ports['ext_src_bram%d_addr' % i]
-        rdata = ports['ext_src_bram%d_rdata' % i]
-        wdata = ports['ext_src_bram%d_wdata' % i]
-        wenable = ports['ext_src_bram%d_wenable' % i]
+        addr = ports['ext_src_ram%d_addr' % i]
+        rdata = ports['ext_src_ram%d_rdata' % i]
+        wdata = ports['ext_src_ram%d_wdata' % i]
+        wenable = ports['ext_src_ram%d_wenable' % i]
         next_addr = (addr+1) % (n*n)
         fsm.add( addr.inc() )
         fsm.add( wdata(fixed.FixedConst(90, point).raw) )
         fsm.add( wenable(1) )
         fsm.add( wenable(0), cond=AndList(wenable, addr==2**addrwidth-1) )
 
-    fsm.goto_next(cond=AndList(wenable, ports['ext_src_bram0_addr']==2**addrwidth-1))
+    fsm.goto_next(cond=AndList(wenable, ports['ext_src_ram0_addr']==2**addrwidth-1))
     
     fsm.goto_next(cond=Not(busy))
     
@@ -305,8 +305,3 @@ if __name__ == '__main__':
     sim = simulation.Simulator(test)
     rslt = sim.run()
     print(rslt)
-
-    # only target RTL
-    #main = mkMatmulBram(n)
-    #verilog = main.to_verilog('tmp.v')
-    #print(verilog)

@@ -14,7 +14,7 @@ def mkROMDefinition(name, values, size, datawidth, sync=False):
     m = Module(name)
 
     clk = m.Input('CLK') if sync else None
-    sel = m.Input('sel', size)
+    addr = m.Input('addr', size)
     val = m.OutputReg('val', datawidth)
 
     if clk is not None:
@@ -22,10 +22,11 @@ def mkROMDefinition(name, values, size, datawidth, sync=False):
     else:
         alw = m.Always()
 
-    patterns = [vtypes.When(i)(val(v, blk=not sync)) for i, v in enumerate(values)]
+    patterns = [vtypes.When(i)(val(v, blk=not sync))
+                for i, v in enumerate(values)]
 
     alw(
-        vtypes.Case(sel)(*patterns)
+        vtypes.Case(addr)(*patterns)
     )
 
     return m
@@ -33,15 +34,15 @@ def mkROMDefinition(name, values, size, datawidth, sync=False):
 
 class _ROM(object):
 
-    def __init__(self, m, name, clk, sel, values, datawidth=None):
+    def __init__(self, m, name, clk, addr, values, datawidth=None):
 
         self.m = m
         self.name = name
         self.clk = clk
 
         size = int(math.ceil(math.log(len(values), 2)))
-        self.sel = self.m.Wire(name + '_sel', size)
-        self.m.Assign(self.sel(sel))
+        self.addr = self.m.Wire(name + '_addr', size)
+        self.m.Assign(self.addr(addr))
 
         if datawidth is None:
             datawidth = 1
@@ -50,7 +51,7 @@ class _ROM(object):
                 if w is not None and w > datawidth:
                     datawidth = w
 
-        self.val = self.m.Wire(name + '_val', datawidth)
+        self.rdata = self.m.Wire(name + '_val', datawidth)
         sync = True if clk is not None else False
         rom_def = mkROMDefinition(name, values, size, datawidth, sync)
 
@@ -58,19 +59,19 @@ class _ROM(object):
         if clk is not None:
             ports.append(self.clk)
 
-        ports.append(self.sel)
-        ports.append(self.val)
+        ports.append(self.addr)
+        ports.append(self.rdata)
 
         self.m.Instance(rom_def, name, params=(), ports=ports)
 
 
 class SyncROM(_ROM):
 
-    def __init__(self, m, name, clk, sel, values, datawidth=None):
-        _ROM.__init__(self, m, name, clk, sel, values, datawidth=datawidth)
+    def __init__(self, m, name, clk, addr, values, datawidth=None):
+        _ROM.__init__(self, m, name, clk, addr, values, datawidth=datawidth)
 
 
 class AsyncROM(_ROM):
 
-    def __init__(self, m, name, sel, values, datawidth=None):
-        _ROM.__init__(self, m, name, None, sel, values, datawidth=datawidth)
+    def __init__(self, m, name, addr, values, datawidth=None):
+        _ROM.__init__(self, m, name, None, addr, values, datawidth=datawidth)

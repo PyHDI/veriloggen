@@ -10,22 +10,22 @@ module test;
   reg RST;
   reg start;
   wire busy;
-  reg [4-1:0] ext_src_bram0_addr;
-  wire [32-1:0] ext_src_bram0_rdata;
-  reg [32-1:0] ext_src_bram0_wdata;
-  reg ext_src_bram0_wenable;
-  reg [4-1:0] ext_src_bram1_addr;
-  wire [32-1:0] ext_src_bram1_rdata;
-  reg [32-1:0] ext_src_bram1_wdata;
-  reg ext_src_bram1_wenable;
-  reg [4-1:0] ext_src_bram2_addr;
-  wire [32-1:0] ext_src_bram2_rdata;
-  reg [32-1:0] ext_src_bram2_wdata;
-  reg ext_src_bram2_wenable;
-  reg [4-1:0] ext_dst_bram_addr;
-  wire [32-1:0] ext_dst_bram_rdata;
-  reg [32-1:0] ext_dst_bram_wdata;
-  reg ext_dst_bram_wenable;
+  reg [4-1:0] ext_src_ram0_addr;
+  wire [32-1:0] ext_src_ram0_rdata;
+  reg [32-1:0] ext_src_ram0_wdata;
+  reg ext_src_ram0_wenable;
+  reg [4-1:0] ext_src_ram1_addr;
+  wire [32-1:0] ext_src_ram1_rdata;
+  reg [32-1:0] ext_src_ram1_wdata;
+  reg ext_src_ram1_wenable;
+  reg [4-1:0] ext_src_ram2_addr;
+  wire [32-1:0] ext_src_ram2_rdata;
+  reg [32-1:0] ext_src_ram2_wdata;
+  reg ext_src_ram2_wenable;
+  reg [4-1:0] ext_dst_ram_addr;
+  wire [32-1:0] ext_dst_ram_rdata;
+  reg [32-1:0] ext_dst_ram_wdata;
+  reg ext_dst_ram_wenable;
 
   stencil
   uut
@@ -34,22 +34,22 @@ module test;
     .RST(RST),
     .start(start),
     .busy(busy),
-    .ext_src_bram0_addr(ext_src_bram0_addr),
-    .ext_src_bram0_rdata(ext_src_bram0_rdata),
-    .ext_src_bram0_wdata(ext_src_bram0_wdata),
-    .ext_src_bram0_wenable(ext_src_bram0_wenable),
-    .ext_src_bram1_addr(ext_src_bram1_addr),
-    .ext_src_bram1_rdata(ext_src_bram1_rdata),
-    .ext_src_bram1_wdata(ext_src_bram1_wdata),
-    .ext_src_bram1_wenable(ext_src_bram1_wenable),
-    .ext_src_bram2_addr(ext_src_bram2_addr),
-    .ext_src_bram2_rdata(ext_src_bram2_rdata),
-    .ext_src_bram2_wdata(ext_src_bram2_wdata),
-    .ext_src_bram2_wenable(ext_src_bram2_wenable),
-    .ext_dst_bram_addr(ext_dst_bram_addr),
-    .ext_dst_bram_rdata(ext_dst_bram_rdata),
-    .ext_dst_bram_wdata(ext_dst_bram_wdata),
-    .ext_dst_bram_wenable(ext_dst_bram_wenable)
+    .ext_src_ram0_addr(ext_src_ram0_addr),
+    .ext_src_ram0_rdata(ext_src_ram0_rdata),
+    .ext_src_ram0_wdata(ext_src_ram0_wdata),
+    .ext_src_ram0_wenable(ext_src_ram0_wenable),
+    .ext_src_ram1_addr(ext_src_ram1_addr),
+    .ext_src_ram1_rdata(ext_src_ram1_rdata),
+    .ext_src_ram1_wdata(ext_src_ram1_wdata),
+    .ext_src_ram1_wenable(ext_src_ram1_wenable),
+    .ext_src_ram2_addr(ext_src_ram2_addr),
+    .ext_src_ram2_rdata(ext_src_ram2_rdata),
+    .ext_src_ram2_wdata(ext_src_ram2_wdata),
+    .ext_src_ram2_wenable(ext_src_ram2_wenable),
+    .ext_dst_ram_addr(ext_dst_ram_addr),
+    .ext_dst_ram_rdata(ext_dst_ram_rdata),
+    .ext_dst_ram_wdata(ext_dst_ram_wdata),
+    .ext_dst_ram_wenable(ext_dst_ram_wenable)
   );
 
   reg reset_done;
@@ -72,18 +72,18 @@ module test;
     RST = 0;
     reset_done = 0;
     start = 0;
-    ext_src_bram0_addr = 0;
-    ext_src_bram0_wdata = 0;
-    ext_src_bram0_wenable = 0;
-    ext_src_bram1_addr = 0;
-    ext_src_bram1_wdata = 0;
-    ext_src_bram1_wenable = 0;
-    ext_src_bram2_addr = 0;
-    ext_src_bram2_wdata = 0;
-    ext_src_bram2_wenable = 0;
-    ext_dst_bram_addr = 2;
-    ext_dst_bram_wdata = 0;
-    ext_dst_bram_wenable = 0;
+    ext_src_ram0_addr = 0;
+    ext_src_ram0_wdata = 0;
+    ext_src_ram0_wenable = 0;
+    ext_src_ram1_addr = 0;
+    ext_src_ram1_wdata = 0;
+    ext_src_ram1_wenable = 0;
+    ext_src_ram2_addr = 0;
+    ext_src_ram2_wdata = 0;
+    ext_src_ram2_wenable = 0;
+    ext_dst_ram_addr = 2;
+    ext_dst_ram_wdata = 0;
+    ext_dst_ram_wenable = 0;
     #100;
     RST = 1;
     #100;
@@ -129,31 +129,31 @@ module test;
           end 
         end
         fsm_1: begin
-          ext_src_bram0_addr <= -1;
-          ext_src_bram1_addr <= -1;
-          ext_src_bram2_addr <= -1;
+          ext_src_ram0_addr <= -1;
+          ext_src_ram1_addr <= -1;
+          ext_src_ram2_addr <= -1;
           fsm <= fsm_2;
         end
         fsm_2: begin
-          ext_src_bram0_addr <= ext_src_bram0_addr + 1;
-          ext_src_bram0_wdata <= 5898240;
-          ext_src_bram0_wenable <= 1;
-          if(ext_src_bram0_wenable && (ext_src_bram0_addr == 15)) begin
-            ext_src_bram0_wenable <= 0;
+          ext_src_ram0_addr <= ext_src_ram0_addr + 1;
+          ext_src_ram0_wdata <= 5898240;
+          ext_src_ram0_wenable <= 1;
+          if(ext_src_ram0_wenable && (ext_src_ram0_addr == 15)) begin
+            ext_src_ram0_wenable <= 0;
           end 
-          ext_src_bram1_addr <= ext_src_bram1_addr + 1;
-          ext_src_bram1_wdata <= 5898240;
-          ext_src_bram1_wenable <= 1;
-          if(ext_src_bram1_wenable && (ext_src_bram1_addr == 15)) begin
-            ext_src_bram1_wenable <= 0;
+          ext_src_ram1_addr <= ext_src_ram1_addr + 1;
+          ext_src_ram1_wdata <= 5898240;
+          ext_src_ram1_wenable <= 1;
+          if(ext_src_ram1_wenable && (ext_src_ram1_addr == 15)) begin
+            ext_src_ram1_wenable <= 0;
           end 
-          ext_src_bram2_addr <= ext_src_bram2_addr + 1;
-          ext_src_bram2_wdata <= 5898240;
-          ext_src_bram2_wenable <= 1;
-          if(ext_src_bram2_wenable && (ext_src_bram2_addr == 15)) begin
-            ext_src_bram2_wenable <= 0;
+          ext_src_ram2_addr <= ext_src_ram2_addr + 1;
+          ext_src_ram2_wdata <= 5898240;
+          ext_src_ram2_wenable <= 1;
+          if(ext_src_ram2_wenable && (ext_src_ram2_addr == 15)) begin
+            ext_src_ram2_wenable <= 0;
           end 
-          if(ext_src_bram2_wenable && (ext_src_bram0_addr == 15)) begin
+          if(ext_src_ram2_wenable && (ext_src_ram0_addr == 15)) begin
             fsm <= fsm_3;
           end 
         end
@@ -195,203 +195,203 @@ module stencil
   input RST,
   input start,
   output reg busy,
-  input [4-1:0] ext_src_bram0_addr,
-  output [32-1:0] ext_src_bram0_rdata,
-  input [32-1:0] ext_src_bram0_wdata,
-  input ext_src_bram0_wenable,
-  input [4-1:0] ext_src_bram1_addr,
-  output [32-1:0] ext_src_bram1_rdata,
-  input [32-1:0] ext_src_bram1_wdata,
-  input ext_src_bram1_wenable,
-  input [4-1:0] ext_src_bram2_addr,
-  output [32-1:0] ext_src_bram2_rdata,
-  input [32-1:0] ext_src_bram2_wdata,
-  input ext_src_bram2_wenable,
-  input [4-1:0] ext_dst_bram_addr,
-  output [32-1:0] ext_dst_bram_rdata,
-  input [32-1:0] ext_dst_bram_wdata,
-  input ext_dst_bram_wenable
+  input [4-1:0] ext_src_ram0_addr,
+  output [32-1:0] ext_src_ram0_rdata,
+  input [32-1:0] ext_src_ram0_wdata,
+  input ext_src_ram0_wenable,
+  input [4-1:0] ext_src_ram1_addr,
+  output [32-1:0] ext_src_ram1_rdata,
+  input [32-1:0] ext_src_ram1_wdata,
+  input ext_src_ram1_wenable,
+  input [4-1:0] ext_src_ram2_addr,
+  output [32-1:0] ext_src_ram2_rdata,
+  input [32-1:0] ext_src_ram2_wdata,
+  input ext_src_ram2_wenable,
+  input [4-1:0] ext_dst_ram_addr,
+  output [32-1:0] ext_dst_ram_rdata,
+  input [32-1:0] ext_dst_ram_wdata,
+  input ext_dst_ram_wenable
 );
 
   reg _tmp_0;
-  reg [8-1:0] src_bram0_0_addr;
-  wire [32-1:0] src_bram0_0_rdata;
-  reg [32-1:0] src_bram0_0_wdata;
-  reg src_bram0_0_wenable;
-  reg [8-1:0] src_bram0_1_addr;
-  wire [32-1:0] src_bram0_1_rdata;
-  reg [32-1:0] src_bram0_1_wdata;
-  reg src_bram0_1_wenable;
+  reg [8-1:0] src_ram0_0_addr;
+  wire [32-1:0] src_ram0_0_rdata;
+  reg [32-1:0] src_ram0_0_wdata;
+  reg src_ram0_0_wenable;
+  reg [8-1:0] src_ram0_1_addr;
+  wire [32-1:0] src_ram0_1_rdata;
+  reg [32-1:0] src_ram0_1_wdata;
+  reg src_ram0_1_wenable;
 
-  src_bram0
-  inst_src_bram0
+  src_ram0
+  inst_src_ram0
   (
     .CLK(CLK),
-    .src_bram0_0_addr(src_bram0_0_addr),
-    .src_bram0_0_rdata(src_bram0_0_rdata),
-    .src_bram0_0_wdata(src_bram0_0_wdata),
-    .src_bram0_0_wenable(src_bram0_0_wenable),
-    .src_bram0_1_addr(src_bram0_1_addr),
-    .src_bram0_1_rdata(src_bram0_1_rdata),
-    .src_bram0_1_wdata(src_bram0_1_wdata),
-    .src_bram0_1_wenable(src_bram0_1_wenable)
+    .src_ram0_0_addr(src_ram0_0_addr),
+    .src_ram0_0_rdata(src_ram0_0_rdata),
+    .src_ram0_0_wdata(src_ram0_0_wdata),
+    .src_ram0_0_wenable(src_ram0_0_wenable),
+    .src_ram0_1_addr(src_ram0_1_addr),
+    .src_ram0_1_rdata(src_ram0_1_rdata),
+    .src_ram0_1_wdata(src_ram0_1_wdata),
+    .src_ram0_1_wenable(src_ram0_1_wenable)
   );
 
-  reg [8-1:0] src_bram1_0_addr;
-  wire [32-1:0] src_bram1_0_rdata;
-  reg [32-1:0] src_bram1_0_wdata;
-  reg src_bram1_0_wenable;
-  reg [8-1:0] src_bram1_1_addr;
-  wire [32-1:0] src_bram1_1_rdata;
-  reg [32-1:0] src_bram1_1_wdata;
-  reg src_bram1_1_wenable;
+  reg [8-1:0] src_ram1_0_addr;
+  wire [32-1:0] src_ram1_0_rdata;
+  reg [32-1:0] src_ram1_0_wdata;
+  reg src_ram1_0_wenable;
+  reg [8-1:0] src_ram1_1_addr;
+  wire [32-1:0] src_ram1_1_rdata;
+  reg [32-1:0] src_ram1_1_wdata;
+  reg src_ram1_1_wenable;
 
-  src_bram1
-  inst_src_bram1
+  src_ram1
+  inst_src_ram1
   (
     .CLK(CLK),
-    .src_bram1_0_addr(src_bram1_0_addr),
-    .src_bram1_0_rdata(src_bram1_0_rdata),
-    .src_bram1_0_wdata(src_bram1_0_wdata),
-    .src_bram1_0_wenable(src_bram1_0_wenable),
-    .src_bram1_1_addr(src_bram1_1_addr),
-    .src_bram1_1_rdata(src_bram1_1_rdata),
-    .src_bram1_1_wdata(src_bram1_1_wdata),
-    .src_bram1_1_wenable(src_bram1_1_wenable)
+    .src_ram1_0_addr(src_ram1_0_addr),
+    .src_ram1_0_rdata(src_ram1_0_rdata),
+    .src_ram1_0_wdata(src_ram1_0_wdata),
+    .src_ram1_0_wenable(src_ram1_0_wenable),
+    .src_ram1_1_addr(src_ram1_1_addr),
+    .src_ram1_1_rdata(src_ram1_1_rdata),
+    .src_ram1_1_wdata(src_ram1_1_wdata),
+    .src_ram1_1_wenable(src_ram1_1_wenable)
   );
 
-  reg [8-1:0] src_bram2_0_addr;
-  wire [32-1:0] src_bram2_0_rdata;
-  reg [32-1:0] src_bram2_0_wdata;
-  reg src_bram2_0_wenable;
-  reg [8-1:0] src_bram2_1_addr;
-  wire [32-1:0] src_bram2_1_rdata;
-  reg [32-1:0] src_bram2_1_wdata;
-  reg src_bram2_1_wenable;
+  reg [8-1:0] src_ram2_0_addr;
+  wire [32-1:0] src_ram2_0_rdata;
+  reg [32-1:0] src_ram2_0_wdata;
+  reg src_ram2_0_wenable;
+  reg [8-1:0] src_ram2_1_addr;
+  wire [32-1:0] src_ram2_1_rdata;
+  reg [32-1:0] src_ram2_1_wdata;
+  reg src_ram2_1_wenable;
 
-  src_bram2
-  inst_src_bram2
+  src_ram2
+  inst_src_ram2
   (
     .CLK(CLK),
-    .src_bram2_0_addr(src_bram2_0_addr),
-    .src_bram2_0_rdata(src_bram2_0_rdata),
-    .src_bram2_0_wdata(src_bram2_0_wdata),
-    .src_bram2_0_wenable(src_bram2_0_wenable),
-    .src_bram2_1_addr(src_bram2_1_addr),
-    .src_bram2_1_rdata(src_bram2_1_rdata),
-    .src_bram2_1_wdata(src_bram2_1_wdata),
-    .src_bram2_1_wenable(src_bram2_1_wenable)
+    .src_ram2_0_addr(src_ram2_0_addr),
+    .src_ram2_0_rdata(src_ram2_0_rdata),
+    .src_ram2_0_wdata(src_ram2_0_wdata),
+    .src_ram2_0_wenable(src_ram2_0_wenable),
+    .src_ram2_1_addr(src_ram2_1_addr),
+    .src_ram2_1_rdata(src_ram2_1_rdata),
+    .src_ram2_1_wdata(src_ram2_1_wdata),
+    .src_ram2_1_wenable(src_ram2_1_wenable)
   );
 
-  reg [8-1:0] dst_bram_0_addr;
-  wire [32-1:0] dst_bram_0_rdata;
-  reg [32-1:0] dst_bram_0_wdata;
-  reg dst_bram_0_wenable;
-  reg [8-1:0] dst_bram_1_addr;
-  wire [32-1:0] dst_bram_1_rdata;
-  reg [32-1:0] dst_bram_1_wdata;
-  reg dst_bram_1_wenable;
+  reg [8-1:0] dst_ram_0_addr;
+  wire [32-1:0] dst_ram_0_rdata;
+  reg [32-1:0] dst_ram_0_wdata;
+  reg dst_ram_0_wenable;
+  reg [8-1:0] dst_ram_1_addr;
+  wire [32-1:0] dst_ram_1_rdata;
+  reg [32-1:0] dst_ram_1_wdata;
+  reg dst_ram_1_wenable;
 
-  dst_bram
-  inst_dst_bram
+  dst_ram
+  inst_dst_ram
   (
     .CLK(CLK),
-    .dst_bram_0_addr(dst_bram_0_addr),
-    .dst_bram_0_rdata(dst_bram_0_rdata),
-    .dst_bram_0_wdata(dst_bram_0_wdata),
-    .dst_bram_0_wenable(dst_bram_0_wenable),
-    .dst_bram_1_addr(dst_bram_1_addr),
-    .dst_bram_1_rdata(dst_bram_1_rdata),
-    .dst_bram_1_wdata(dst_bram_1_wdata),
-    .dst_bram_1_wenable(dst_bram_1_wenable)
+    .dst_ram_0_addr(dst_ram_0_addr),
+    .dst_ram_0_rdata(dst_ram_0_rdata),
+    .dst_ram_0_wdata(dst_ram_0_wdata),
+    .dst_ram_0_wenable(dst_ram_0_wenable),
+    .dst_ram_1_addr(dst_ram_1_addr),
+    .dst_ram_1_rdata(dst_ram_1_rdata),
+    .dst_ram_1_wdata(dst_ram_1_wdata),
+    .dst_ram_1_wenable(dst_ram_1_wenable)
   );
 
   wire [8-1:0] _tmp_1;
-  assign _tmp_1 = ext_src_bram0_addr;
+  assign _tmp_1 = ext_src_ram0_addr;
 
   always @(*) begin
-    src_bram0_1_addr = _tmp_1;
+    src_ram0_1_addr = _tmp_1;
   end
 
-  assign ext_src_bram0_rdata = src_bram0_1_rdata;
+  assign ext_src_ram0_rdata = src_ram0_1_rdata;
   wire [32-1:0] _tmp_2;
-  assign _tmp_2 = ext_src_bram0_wdata;
+  assign _tmp_2 = ext_src_ram0_wdata;
 
   always @(*) begin
-    src_bram0_1_wdata = _tmp_2;
+    src_ram0_1_wdata = _tmp_2;
   end
 
   wire _tmp_3;
-  assign _tmp_3 = ext_src_bram0_wenable;
+  assign _tmp_3 = ext_src_ram0_wenable;
 
   always @(*) begin
-    src_bram0_1_wenable = _tmp_3;
+    src_ram0_1_wenable = _tmp_3;
   end
 
   wire [8-1:0] _tmp_4;
-  assign _tmp_4 = ext_src_bram1_addr;
+  assign _tmp_4 = ext_src_ram1_addr;
 
   always @(*) begin
-    src_bram1_1_addr = _tmp_4;
+    src_ram1_1_addr = _tmp_4;
   end
 
-  assign ext_src_bram1_rdata = src_bram1_1_rdata;
+  assign ext_src_ram1_rdata = src_ram1_1_rdata;
   wire [32-1:0] _tmp_5;
-  assign _tmp_5 = ext_src_bram1_wdata;
+  assign _tmp_5 = ext_src_ram1_wdata;
 
   always @(*) begin
-    src_bram1_1_wdata = _tmp_5;
+    src_ram1_1_wdata = _tmp_5;
   end
 
   wire _tmp_6;
-  assign _tmp_6 = ext_src_bram1_wenable;
+  assign _tmp_6 = ext_src_ram1_wenable;
 
   always @(*) begin
-    src_bram1_1_wenable = _tmp_6;
+    src_ram1_1_wenable = _tmp_6;
   end
 
   wire [8-1:0] _tmp_7;
-  assign _tmp_7 = ext_src_bram2_addr;
+  assign _tmp_7 = ext_src_ram2_addr;
 
   always @(*) begin
-    src_bram2_1_addr = _tmp_7;
+    src_ram2_1_addr = _tmp_7;
   end
 
-  assign ext_src_bram2_rdata = src_bram2_1_rdata;
+  assign ext_src_ram2_rdata = src_ram2_1_rdata;
   wire [32-1:0] _tmp_8;
-  assign _tmp_8 = ext_src_bram2_wdata;
+  assign _tmp_8 = ext_src_ram2_wdata;
 
   always @(*) begin
-    src_bram2_1_wdata = _tmp_8;
+    src_ram2_1_wdata = _tmp_8;
   end
 
   wire _tmp_9;
-  assign _tmp_9 = ext_src_bram2_wenable;
+  assign _tmp_9 = ext_src_ram2_wenable;
 
   always @(*) begin
-    src_bram2_1_wenable = _tmp_9;
+    src_ram2_1_wenable = _tmp_9;
   end
 
   wire [8-1:0] _tmp_10;
-  assign _tmp_10 = ext_dst_bram_addr;
+  assign _tmp_10 = ext_dst_ram_addr;
 
   always @(*) begin
-    dst_bram_1_addr = _tmp_10;
+    dst_ram_1_addr = _tmp_10;
   end
 
-  assign ext_dst_bram_rdata = dst_bram_1_rdata;
+  assign ext_dst_ram_rdata = dst_ram_1_rdata;
   wire [32-1:0] _tmp_11;
-  assign _tmp_11 = ext_dst_bram_wdata;
+  assign _tmp_11 = ext_dst_ram_wdata;
 
   always @(*) begin
-    dst_bram_1_wdata = _tmp_11;
+    dst_ram_1_wdata = _tmp_11;
   end
 
   wire _tmp_12;
-  assign _tmp_12 = ext_dst_bram_wenable;
+  assign _tmp_12 = ext_dst_ram_wenable;
 
   always @(*) begin
-    dst_bram_1_wenable = _tmp_12;
+    dst_ram_1_wenable = _tmp_12;
   end
 
   reg [32-1:0] read_fsm;
@@ -399,17 +399,17 @@ module stencil
   reg [32-1:0] read_count;
   reg [32-1:0] read_addr;
   reg _tmp_13;
-  reg _src_bram0_cond_0_1;
-  reg _src_bram0_cond_1_1;
-  reg _src_bram0_cond_1_2;
+  reg _src_ram0_cond_0_1;
+  reg _src_ram0_cond_1_1;
+  reg _src_ram0_cond_1_2;
   reg _tmp_14;
-  reg _src_bram1_cond_0_1;
-  reg _src_bram1_cond_1_1;
-  reg _src_bram1_cond_1_2;
+  reg _src_ram1_cond_0_1;
+  reg _src_ram1_cond_1_1;
+  reg _src_ram1_cond_1_2;
   reg _tmp_15;
-  reg _src_bram2_cond_0_1;
-  reg _src_bram2_cond_1_1;
-  reg _src_bram2_cond_1_2;
+  reg _src_ram2_cond_0_1;
+  reg _src_ram2_cond_1_1;
+  reg _src_ram2_cond_1_2;
   localparam read_fsm_1 = 1;
   localparam read_fsm_2 = 2;
 
@@ -463,11 +463,11 @@ module stencil
   (
     .CLK(CLK),
     .RST(RST),
-    .idata0(src_bram0_0_rdata),
+    .idata0(src_ram0_0_rdata),
     .ivalid0(_tmp_13),
-    .idata1(src_bram1_0_rdata),
+    .idata1(src_ram1_0_rdata),
     .ivalid1(_tmp_14),
-    .idata2(src_bram2_0_rdata),
+    .idata2(src_ram2_0_rdata),
     .ivalid2(_tmp_15),
     .odata(odata),
     .ovalid(ovalid)
@@ -477,7 +477,7 @@ module stencil
   localparam write_fsm_init = 0;
   reg [32-1:0] write_count;
   reg [32-1:0] write_addr;
-  reg _dst_bram_cond_0_1;
+  reg _dst_ram_cond_0_1;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -511,104 +511,104 @@ module stencil
 
   always @(posedge CLK) begin
     if(RST) begin
-      src_bram0_0_wdata <= 0;
-      src_bram0_0_wenable <= 0;
-      src_bram0_0_addr <= 0;
-      _src_bram0_cond_0_1 <= 0;
+      src_ram0_0_wdata <= 0;
+      src_ram0_0_wenable <= 0;
+      src_ram0_0_addr <= 0;
+      _src_ram0_cond_0_1 <= 0;
       _tmp_13 <= 0;
-      _src_bram0_cond_1_1 <= 0;
-      _src_bram0_cond_1_2 <= 0;
+      _src_ram0_cond_1_1 <= 0;
+      _src_ram0_cond_1_2 <= 0;
     end else begin
-      if(_src_bram0_cond_1_2) begin
+      if(_src_ram0_cond_1_2) begin
         _tmp_13 <= 0;
       end 
-      if(_src_bram0_cond_0_1) begin
+      if(_src_ram0_cond_0_1) begin
         _tmp_13 <= 1;
       end 
-      _src_bram0_cond_1_2 <= _src_bram0_cond_1_1;
-      src_bram0_0_wdata <= 0;
-      src_bram0_0_wenable <= 0;
+      _src_ram0_cond_1_2 <= _src_ram0_cond_1_1;
+      src_ram0_0_wdata <= 0;
+      src_ram0_0_wenable <= 0;
       if(read_fsm == 1) begin
-        src_bram0_0_addr <= read_addr;
+        src_ram0_0_addr <= read_addr;
       end 
-      _src_bram0_cond_0_1 <= read_fsm == 1;
-      _src_bram0_cond_1_1 <= read_fsm == 1;
+      _src_ram0_cond_0_1 <= read_fsm == 1;
+      _src_ram0_cond_1_1 <= read_fsm == 1;
     end
   end
 
 
   always @(posedge CLK) begin
     if(RST) begin
-      src_bram1_0_wdata <= 0;
-      src_bram1_0_wenable <= 0;
-      src_bram1_0_addr <= 0;
-      _src_bram1_cond_0_1 <= 0;
+      src_ram1_0_wdata <= 0;
+      src_ram1_0_wenable <= 0;
+      src_ram1_0_addr <= 0;
+      _src_ram1_cond_0_1 <= 0;
       _tmp_14 <= 0;
-      _src_bram1_cond_1_1 <= 0;
-      _src_bram1_cond_1_2 <= 0;
+      _src_ram1_cond_1_1 <= 0;
+      _src_ram1_cond_1_2 <= 0;
     end else begin
-      if(_src_bram1_cond_1_2) begin
+      if(_src_ram1_cond_1_2) begin
         _tmp_14 <= 0;
       end 
-      if(_src_bram1_cond_0_1) begin
+      if(_src_ram1_cond_0_1) begin
         _tmp_14 <= 1;
       end 
-      _src_bram1_cond_1_2 <= _src_bram1_cond_1_1;
-      src_bram1_0_wdata <= 0;
-      src_bram1_0_wenable <= 0;
+      _src_ram1_cond_1_2 <= _src_ram1_cond_1_1;
+      src_ram1_0_wdata <= 0;
+      src_ram1_0_wenable <= 0;
       if(read_fsm == 1) begin
-        src_bram1_0_addr <= read_addr;
+        src_ram1_0_addr <= read_addr;
       end 
-      _src_bram1_cond_0_1 <= read_fsm == 1;
-      _src_bram1_cond_1_1 <= read_fsm == 1;
+      _src_ram1_cond_0_1 <= read_fsm == 1;
+      _src_ram1_cond_1_1 <= read_fsm == 1;
     end
   end
 
 
   always @(posedge CLK) begin
     if(RST) begin
-      src_bram2_0_wdata <= 0;
-      src_bram2_0_wenable <= 0;
-      src_bram2_0_addr <= 0;
-      _src_bram2_cond_0_1 <= 0;
+      src_ram2_0_wdata <= 0;
+      src_ram2_0_wenable <= 0;
+      src_ram2_0_addr <= 0;
+      _src_ram2_cond_0_1 <= 0;
       _tmp_15 <= 0;
-      _src_bram2_cond_1_1 <= 0;
-      _src_bram2_cond_1_2 <= 0;
+      _src_ram2_cond_1_1 <= 0;
+      _src_ram2_cond_1_2 <= 0;
     end else begin
-      if(_src_bram2_cond_1_2) begin
+      if(_src_ram2_cond_1_2) begin
         _tmp_15 <= 0;
       end 
-      if(_src_bram2_cond_0_1) begin
+      if(_src_ram2_cond_0_1) begin
         _tmp_15 <= 1;
       end 
-      _src_bram2_cond_1_2 <= _src_bram2_cond_1_1;
-      src_bram2_0_wdata <= 0;
-      src_bram2_0_wenable <= 0;
+      _src_ram2_cond_1_2 <= _src_ram2_cond_1_1;
+      src_ram2_0_wdata <= 0;
+      src_ram2_0_wenable <= 0;
       if(read_fsm == 1) begin
-        src_bram2_0_addr <= read_addr;
+        src_ram2_0_addr <= read_addr;
       end 
-      _src_bram2_cond_0_1 <= read_fsm == 1;
-      _src_bram2_cond_1_1 <= read_fsm == 1;
+      _src_ram2_cond_0_1 <= read_fsm == 1;
+      _src_ram2_cond_1_1 <= read_fsm == 1;
     end
   end
 
 
   always @(posedge CLK) begin
     if(RST) begin
-      dst_bram_0_addr <= 0;
-      dst_bram_0_wdata <= 0;
-      dst_bram_0_wenable <= 0;
-      _dst_bram_cond_0_1 <= 0;
+      dst_ram_0_addr <= 0;
+      dst_ram_0_wdata <= 0;
+      dst_ram_0_wenable <= 0;
+      _dst_ram_cond_0_1 <= 0;
     end else begin
-      if(_dst_bram_cond_0_1) begin
-        dst_bram_0_wenable <= 0;
+      if(_dst_ram_cond_0_1) begin
+        dst_ram_0_wenable <= 0;
       end 
       if((write_fsm == 0) && (ovalid && (write_count > 1))) begin
-        dst_bram_0_addr <= write_addr;
-        dst_bram_0_wdata <= odata;
-        dst_bram_0_wenable <= 1;
+        dst_ram_0_addr <= write_addr;
+        dst_ram_0_wdata <= odata;
+        dst_ram_0_wenable <= 1;
       end 
-      _dst_bram_cond_0_1 <= (write_fsm == 0) && (ovalid && (write_count > 1));
+      _dst_ram_cond_0_1 <= (write_fsm == 0) && (ovalid && (write_count > 1));
     end
   end
 
@@ -617,157 +617,157 @@ endmodule
 
 
 
-module src_bram0
+module src_ram0
 (
   input CLK,
-  input [8-1:0] src_bram0_0_addr,
-  output [32-1:0] src_bram0_0_rdata,
-  input [32-1:0] src_bram0_0_wdata,
-  input src_bram0_0_wenable,
-  input [8-1:0] src_bram0_1_addr,
-  output [32-1:0] src_bram0_1_rdata,
-  input [32-1:0] src_bram0_1_wdata,
-  input src_bram0_1_wenable
+  input [8-1:0] src_ram0_0_addr,
+  output [32-1:0] src_ram0_0_rdata,
+  input [32-1:0] src_ram0_0_wdata,
+  input src_ram0_0_wenable,
+  input [8-1:0] src_ram0_1_addr,
+  output [32-1:0] src_ram0_1_rdata,
+  input [32-1:0] src_ram0_1_wdata,
+  input src_ram0_1_wenable
 );
 
-  reg [8-1:0] src_bram0_0_daddr;
-  reg [8-1:0] src_bram0_1_daddr;
+  reg [8-1:0] src_ram0_0_daddr;
+  reg [8-1:0] src_ram0_1_daddr;
   reg [32-1:0] mem [0:256-1];
 
   always @(posedge CLK) begin
-    if(src_bram0_0_wenable) begin
-      mem[src_bram0_0_addr] <= src_bram0_0_wdata;
+    if(src_ram0_0_wenable) begin
+      mem[src_ram0_0_addr] <= src_ram0_0_wdata;
     end 
-    src_bram0_0_daddr <= src_bram0_0_addr;
+    src_ram0_0_daddr <= src_ram0_0_addr;
   end
 
-  assign src_bram0_0_rdata = mem[src_bram0_0_daddr];
+  assign src_ram0_0_rdata = mem[src_ram0_0_daddr];
 
   always @(posedge CLK) begin
-    if(src_bram0_1_wenable) begin
-      mem[src_bram0_1_addr] <= src_bram0_1_wdata;
+    if(src_ram0_1_wenable) begin
+      mem[src_ram0_1_addr] <= src_ram0_1_wdata;
     end 
-    src_bram0_1_daddr <= src_bram0_1_addr;
+    src_ram0_1_daddr <= src_ram0_1_addr;
   end
 
-  assign src_bram0_1_rdata = mem[src_bram0_1_daddr];
+  assign src_ram0_1_rdata = mem[src_ram0_1_daddr];
 
 endmodule
 
 
 
-module src_bram1
+module src_ram1
 (
   input CLK,
-  input [8-1:0] src_bram1_0_addr,
-  output [32-1:0] src_bram1_0_rdata,
-  input [32-1:0] src_bram1_0_wdata,
-  input src_bram1_0_wenable,
-  input [8-1:0] src_bram1_1_addr,
-  output [32-1:0] src_bram1_1_rdata,
-  input [32-1:0] src_bram1_1_wdata,
-  input src_bram1_1_wenable
+  input [8-1:0] src_ram1_0_addr,
+  output [32-1:0] src_ram1_0_rdata,
+  input [32-1:0] src_ram1_0_wdata,
+  input src_ram1_0_wenable,
+  input [8-1:0] src_ram1_1_addr,
+  output [32-1:0] src_ram1_1_rdata,
+  input [32-1:0] src_ram1_1_wdata,
+  input src_ram1_1_wenable
 );
 
-  reg [8-1:0] src_bram1_0_daddr;
-  reg [8-1:0] src_bram1_1_daddr;
+  reg [8-1:0] src_ram1_0_daddr;
+  reg [8-1:0] src_ram1_1_daddr;
   reg [32-1:0] mem [0:256-1];
 
   always @(posedge CLK) begin
-    if(src_bram1_0_wenable) begin
-      mem[src_bram1_0_addr] <= src_bram1_0_wdata;
+    if(src_ram1_0_wenable) begin
+      mem[src_ram1_0_addr] <= src_ram1_0_wdata;
     end 
-    src_bram1_0_daddr <= src_bram1_0_addr;
+    src_ram1_0_daddr <= src_ram1_0_addr;
   end
 
-  assign src_bram1_0_rdata = mem[src_bram1_0_daddr];
+  assign src_ram1_0_rdata = mem[src_ram1_0_daddr];
 
   always @(posedge CLK) begin
-    if(src_bram1_1_wenable) begin
-      mem[src_bram1_1_addr] <= src_bram1_1_wdata;
+    if(src_ram1_1_wenable) begin
+      mem[src_ram1_1_addr] <= src_ram1_1_wdata;
     end 
-    src_bram1_1_daddr <= src_bram1_1_addr;
+    src_ram1_1_daddr <= src_ram1_1_addr;
   end
 
-  assign src_bram1_1_rdata = mem[src_bram1_1_daddr];
+  assign src_ram1_1_rdata = mem[src_ram1_1_daddr];
 
 endmodule
 
 
 
-module src_bram2
+module src_ram2
 (
   input CLK,
-  input [8-1:0] src_bram2_0_addr,
-  output [32-1:0] src_bram2_0_rdata,
-  input [32-1:0] src_bram2_0_wdata,
-  input src_bram2_0_wenable,
-  input [8-1:0] src_bram2_1_addr,
-  output [32-1:0] src_bram2_1_rdata,
-  input [32-1:0] src_bram2_1_wdata,
-  input src_bram2_1_wenable
+  input [8-1:0] src_ram2_0_addr,
+  output [32-1:0] src_ram2_0_rdata,
+  input [32-1:0] src_ram2_0_wdata,
+  input src_ram2_0_wenable,
+  input [8-1:0] src_ram2_1_addr,
+  output [32-1:0] src_ram2_1_rdata,
+  input [32-1:0] src_ram2_1_wdata,
+  input src_ram2_1_wenable
 );
 
-  reg [8-1:0] src_bram2_0_daddr;
-  reg [8-1:0] src_bram2_1_daddr;
+  reg [8-1:0] src_ram2_0_daddr;
+  reg [8-1:0] src_ram2_1_daddr;
   reg [32-1:0] mem [0:256-1];
 
   always @(posedge CLK) begin
-    if(src_bram2_0_wenable) begin
-      mem[src_bram2_0_addr] <= src_bram2_0_wdata;
+    if(src_ram2_0_wenable) begin
+      mem[src_ram2_0_addr] <= src_ram2_0_wdata;
     end 
-    src_bram2_0_daddr <= src_bram2_0_addr;
+    src_ram2_0_daddr <= src_ram2_0_addr;
   end
 
-  assign src_bram2_0_rdata = mem[src_bram2_0_daddr];
+  assign src_ram2_0_rdata = mem[src_ram2_0_daddr];
 
   always @(posedge CLK) begin
-    if(src_bram2_1_wenable) begin
-      mem[src_bram2_1_addr] <= src_bram2_1_wdata;
+    if(src_ram2_1_wenable) begin
+      mem[src_ram2_1_addr] <= src_ram2_1_wdata;
     end 
-    src_bram2_1_daddr <= src_bram2_1_addr;
+    src_ram2_1_daddr <= src_ram2_1_addr;
   end
 
-  assign src_bram2_1_rdata = mem[src_bram2_1_daddr];
+  assign src_ram2_1_rdata = mem[src_ram2_1_daddr];
 
 endmodule
 
 
 
-module dst_bram
+module dst_ram
 (
   input CLK,
-  input [8-1:0] dst_bram_0_addr,
-  output [32-1:0] dst_bram_0_rdata,
-  input [32-1:0] dst_bram_0_wdata,
-  input dst_bram_0_wenable,
-  input [8-1:0] dst_bram_1_addr,
-  output [32-1:0] dst_bram_1_rdata,
-  input [32-1:0] dst_bram_1_wdata,
-  input dst_bram_1_wenable
+  input [8-1:0] dst_ram_0_addr,
+  output [32-1:0] dst_ram_0_rdata,
+  input [32-1:0] dst_ram_0_wdata,
+  input dst_ram_0_wenable,
+  input [8-1:0] dst_ram_1_addr,
+  output [32-1:0] dst_ram_1_rdata,
+  input [32-1:0] dst_ram_1_wdata,
+  input dst_ram_1_wenable
 );
 
-  reg [8-1:0] dst_bram_0_daddr;
-  reg [8-1:0] dst_bram_1_daddr;
+  reg [8-1:0] dst_ram_0_daddr;
+  reg [8-1:0] dst_ram_1_daddr;
   reg [32-1:0] mem [0:256-1];
 
   always @(posedge CLK) begin
-    if(dst_bram_0_wenable) begin
-      mem[dst_bram_0_addr] <= dst_bram_0_wdata;
+    if(dst_ram_0_wenable) begin
+      mem[dst_ram_0_addr] <= dst_ram_0_wdata;
     end 
-    dst_bram_0_daddr <= dst_bram_0_addr;
+    dst_ram_0_daddr <= dst_ram_0_addr;
   end
 
-  assign dst_bram_0_rdata = mem[dst_bram_0_daddr];
+  assign dst_ram_0_rdata = mem[dst_ram_0_daddr];
 
   always @(posedge CLK) begin
-    if(dst_bram_1_wenable) begin
-      mem[dst_bram_1_addr] <= dst_bram_1_wdata;
+    if(dst_ram_1_wenable) begin
+      mem[dst_ram_1_addr] <= dst_ram_1_wdata;
     end 
-    dst_bram_1_daddr <= dst_bram_1_addr;
+    dst_ram_1_daddr <= dst_ram_1_addr;
   end
 
-  assign dst_bram_1_rdata = mem[dst_bram_1_daddr];
+  assign dst_ram_1_rdata = mem[dst_ram_1_daddr];
 
 endmodule
 

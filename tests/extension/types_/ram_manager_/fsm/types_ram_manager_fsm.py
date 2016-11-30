@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))))
 
 from veriloggen import *
-import veriloggen.types.rom as rom
+import veriloggen.types.ram as ram
 
 
 def mkMain(n=128, datawidth=32, numports=2):
@@ -18,18 +18,72 @@ def mkMain(n=128, datawidth=32, numports=2):
     clk = m.Input('CLK')
     rst = m.Input('RST')
 
-    width = 4
-    addr = m.Reg('addr', width, initval=0)
-    values = [ i * i for i in range(2 ** width) ]
+    addrwidth = int(math.log(n, 2)) * 2
 
-    myrom = rom.SyncROM(m, 'myrom', clk, addr, values, datawidth=8)
+    myram = ram.SyncRAMManager(m, 'myram', clk, rst, datawidth, addrwidth, 1)
 
-    seq = Seq(m, 'seq', clk, rst)
+    # example how to access RAM
+    count = m.Reg('count', 32, initval=0)
+    sum = m.Reg('sum', 32, initval=0)
+    addr = m.Reg('addr', 32, initval=0)
 
-    seq(
-        addr.inc(),
-        Display('addr=%d rdata=%d', addr, myrom.rdata)
+    fsm = FSM(m, 'fsm', clk, rst)
+
+    fsm(
+        addr(0),
+        count(0),
+        sum(0)
     )
+
+    fsm.goto_next()
+
+    step = 16
+
+    myram.write(0, addr, count, cond=fsm)
+
+    fsm(
+        addr.inc(),
+        count.inc()
+    )
+
+    fsm.If(count == step - 1)(
+        addr(0),
+        count(0)
+    )
+
+    fsm.Then().goto_next()
+
+    read_data, read_valid = myram.read(0, addr, cond=fsm)
+
+    fsm(
+        addr.inc(),
+        count.inc()
+    )
+
+    fsm.If(read_valid)(
+        sum(sum + read_data)
+    )
+
+    fsm.Then().Delay(1)(
+        Systask('display', "sum=%d", sum)
+    )
+
+    fsm.If(count == step - 1)(
+        addr(0),
+        count(0)
+    )
+
+    fsm.Then().goto_next()
+
+    fsm.If(read_valid)(
+        sum(sum + read_data)
+    )
+
+    fsm.Then().Delay(1)(
+        Systask('display', "sum=%d", sum)
+    )
+
+    fsm.make_always()
 
     return m
 

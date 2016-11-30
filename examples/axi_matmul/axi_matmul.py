@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(
 
 from veriloggen import *
 import veriloggen.types.axi as axi
-import veriloggen.types.bram as bram
+import veriloggen.types.ram as ram
 import veriloggen.dataflow as dataflow
 
 
@@ -24,9 +24,9 @@ def mkMain():
     master = axi.AxiMaster(m, 'master', clk, rst)
 
     # a, b: source, c: result
-    ram_a = bram.Bram(m, 'ram_a', clk, rst, numports=1)
-    ram_b = bram.Bram(m, 'ram_b', clk, rst, numports=1)
-    ram_c = bram.Bram(m, 'ram_c', clk, rst, numports=1)
+    ram_a = ram.SyncRAMManager(m, 'ram_a', clk, rst, numports=1)
+    ram_b = ram.SyncRAMManager(m, 'ram_b', clk, rst, numports=1)
+    ram_c = ram.SyncRAMManager(m, 'ram_c', clk, rst, numports=1)
 
     read_fsm = FSM(m, 'read_fsm', clk, rst)
     write_fsm = FSM(m, 'write_fsm', clk, rst)

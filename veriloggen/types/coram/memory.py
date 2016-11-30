@@ -3,7 +3,7 @@ from __future__ import print_function
 
 import veriloggen.core.vtypes as vtypes
 import veriloggen.core.module as module
-import veriloggen.types.bram as bram
+import veriloggen.types.ram as ram
 from veriloggen.seq.seq import Seq
 
 
@@ -11,7 +11,7 @@ def CoramMemoryInterface(m, name=None, datawidth=32, addrwidth=10,
                          p_addr='ADDR', p_rdata='Q', p_wdata='D', p_wenable='WE',
                          index=None):
 
-    return bram.BramInterface(
+    return ram.RAMInterface(
         m, name=name, datawidth=datawidth, addrwidth=addrwidth,
         p_addr=p_addr, p_rdata=p_rdata, p_wdata=p_wdata, p_wenable=p_wenable, index=index)
 
@@ -20,7 +20,7 @@ def CoramMemorySlaveInterface(m, name=None, datawidth=32, addrwidth=10,
                               p_addr='ADDR', p_rdata='Q', p_wdata='D', p_wenable='WE',
                               index=None):
 
-    return bram.BramSlaveInterface(
+    return ram.RAMSlaveInterface(
         m, name=name, datawidth=datawidth, addrwidth=addrwidth,
         p_addr=p_addr, p_rdata=p_rdata, p_wdata=p_wdata, p_wenable=p_wenable, index=index)
 
@@ -29,7 +29,7 @@ def CoramMemoryMasterInterface(m, name=None, datawidth=32, addrwidth=10,
                                p_addr='ADDR', p_rdata='Q', p_wdata='D', p_wenable='WE',
                                index=None):
 
-    return bram.BramMasterInterface(
+    return ram.RAMMasterInterface(
         m, name=name, datawidth=datawidth, addrwidth=addrwidth,
         p_addr=p_addr, p_rdata=p_rdata, p_wdata=p_wdata, p_wenable=p_wenable, index=index)
 
@@ -81,7 +81,7 @@ def get_coram_memory_definition(numports):
     return coram_memroy_definitions[numports]
 
 
-class CoramMemory(bram.Bram):
+class CoramMemory(ram.SyncRAMManager):
 
     def __init__(self, m, clk, rst,
                  thread_name, thread_id, id, sub_id=None,

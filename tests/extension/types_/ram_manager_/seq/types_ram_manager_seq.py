@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))))
 
 from veriloggen import *
-import veriloggen.types.rom as rom
+import veriloggen.types.ram as ram
 
 
 def mkMain(n=128, datawidth=32, numports=2):
@@ -18,18 +18,44 @@ def mkMain(n=128, datawidth=32, numports=2):
     clk = m.Input('CLK')
     rst = m.Input('RST')
 
-    width = 4
-    addr = m.Reg('addr', width, initval=0)
-    values = [ i * i for i in range(2 ** width) ]
+    addrwidth = int(math.log(n, 2)) * 2
 
-    myrom = rom.SyncROM(m, 'myrom', clk, addr, values, datawidth=8)
+    myram = ram.SyncRAMManager(m, 'myram', clk, rst, datawidth, addrwidth, 2)
+    myram.disable_write(1)
 
     seq = Seq(m, 'seq', clk, rst)
 
-    seq(
-        addr.inc(),
-        Display('addr=%d rdata=%d', addr, myrom.rdata)
+    # write
+    waddr = m.Reg('waddr', 32, initval=0)
+    count = m.Reg('count', 32, initval=0)
+
+    seq.If(waddr < 16)(
+        waddr.inc(),
+        count.inc()
     )
+
+    myram.write(0, waddr, count, cond=seq.then)
+
+    # read
+    raddr = m.Reg('raddr', 32, initval=0)
+    sum = m.Reg('sum', 32, initval=0)
+
+    cond = make_condition(seq.Prev(1, delay=4, initval=0), raddr < 16)
+    seq.If(cond)(
+        raddr.inc(),
+    )
+
+    read_data, read_valid = myram.read(1, raddr, cond=cond)
+
+    seq.If(read_valid)(
+        sum(sum + read_data)
+    )
+
+    seq.Then().Delay(1)(
+        Systask('display', "sum=%d", sum)
+    )
+
+    seq.make_always()
 
     return m
 

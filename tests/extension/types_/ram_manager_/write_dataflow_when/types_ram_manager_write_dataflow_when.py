@@ -9,7 +9,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))))
 
 from veriloggen import *
-import veriloggen.types.rom as rom
+import veriloggen.types.ram as ram
+import veriloggen.dataflow as dataflow
 
 
 def mkMain(n=128, datawidth=32, numports=2):
@@ -18,17 +19,31 @@ def mkMain(n=128, datawidth=32, numports=2):
     clk = m.Input('CLK')
     rst = m.Input('RST')
 
-    width = 4
-    addr = m.Reg('addr', width, initval=0)
-    values = [ i * i for i in range(2 ** width) ]
+    addrwidth = int(math.log(n, 2)) * 2
+    myram = ram.SyncRAMManager(m, 'myram', clk, rst, datawidth, addrwidth)
 
-    myrom = rom.SyncROM(m, 'myrom', clk, addr, values, datawidth=8)
+    df = dataflow.DataflowManager(m, clk, rst)
+    # df.enable_draw_graph()
+
+    fsm = FSM(m, 'fsm', clk, rst)
+
+    length = 8
+    a = df.Counter()
+    b = df.Counter(maxval=length)
+    c = b == 0
+
+    wport = 0
+    waddr = 0
+    wlen = 32
+    done = myram.write_dataflow(wport, waddr, a, wlen, cond=fsm, when=c)
+
+    fsm.goto_next()
+    fsm.If(done).goto_next()
 
     seq = Seq(m, 'seq', clk, rst)
 
-    seq(
-        addr.inc(),
-        Display('addr=%d rdata=%d', addr, myrom.rdata)
+    seq.If(myram[0].wenable)(
+        Systask('display', '[%d] <- %d', myram[0].addr, myram[0].wdata)
     )
 
     return m

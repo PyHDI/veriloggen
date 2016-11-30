@@ -4,10 +4,7 @@ import veriloggen
 import types_rom_async
 
 expected_verilog = """
-module test
-(
-
-);
+module test;
 
   reg CLK;
   reg RST;
@@ -55,25 +52,25 @@ module main
   input RST
 );
 
-  reg [4-1:0] sel;
-  wire [4-1:0] myrom_sel;
-  assign myrom_sel = sel;
+  reg [4-1:0] addr;
+  wire [4-1:0] myrom_addr;
+  assign myrom_addr = addr;
   wire [8-1:0] myrom_val;
 
   myrom
   myrom
   (
-    .sel(myrom_sel),
+    .addr(myrom_addr),
     .val(myrom_val)
   );
 
 
   always @(posedge CLK) begin
     if(RST) begin
-      sel <= 0;
+      addr <= 0;
     end else begin
-      sel <= sel + 1;
-      $display("sel=%d val=%d", sel, myrom_val);
+      addr <= addr + 1;
+      $display("addr=%d rdata=%d", addr, myrom_val);
     end
   end
 
@@ -84,13 +81,13 @@ endmodule
 
 module myrom
 (
-  input [4-1:0] sel,
+  input [4-1:0] addr,
   output reg [8-1:0] val
 );
 
 
   always @(*) begin
-    case(sel)
+    case(addr)
       0: begin
         val = 0;
       end

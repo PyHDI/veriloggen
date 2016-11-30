@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))))
 
 from veriloggen import *
-import veriloggen.types.rom as rom
+import veriloggen.types.ram as ram
 
 
 def mkMain(n=128, datawidth=32, numports=2):
@@ -18,18 +18,49 @@ def mkMain(n=128, datawidth=32, numports=2):
     clk = m.Input('CLK')
     rst = m.Input('RST')
 
-    width = 4
-    addr = m.Reg('addr', width, initval=0)
-    values = [ i * i for i in range(2 ** width) ]
+    addrwidth = int(math.log(n, 2)) * 2
 
-    myrom = rom.SyncROM(m, 'myrom', clk, addr, values, datawidth=8)
+    myram = ram.AsyncRAM(m, 'myram', clk, datawidth, addrwidth, 2)
 
     seq = Seq(m, 'seq', clk, rst)
 
-    seq(
-        addr.inc(),
-        Display('addr=%d rdata=%d', addr, myrom.rdata)
+    # write
+    waddr = m.Reg('waddr', 32, initval=0)
+    wdata = m.Reg('wdata', 32, initval=0)
+    wenable = waddr < 16
+
+    myram.connect(0, waddr, wdata, wenable)
+    
+    seq.If(wenable)(
+        waddr.inc(),
+        wdata.inc()
     )
+    
+
+    # read
+    raddr = m.Reg('raddr', 32, initval=0)
+    renable = make_condition(seq.Prev(1, delay=4, initval=0), raddr < 16)
+   
+    myram.connect(1, raddr, 0, 0)
+    
+    seq.If(renable)(
+        raddr.inc(),
+    )
+
+    rdata = myram.rdata(1)
+    rvalid = renable
+
+    sum = m.Reg('sum', 32, initval=0)
+
+    seq.If(rvalid)(
+        sum(sum + rdata)
+    )
+
+    seq.Then().Delay(1)(
+        Systask('display', "sum=%d", sum)
+    )
+
+    seq.make_always()
 
     return m
 

@@ -19,16 +19,16 @@ def mkMain(n=128, datawidth=32, numports=2):
     rst = m.Input('RST')
 
     width = 4
-    sel = m.Reg('sel', width, initval=0)
+    addr = m.Reg('addr', width, initval=0)
     values = [ i * i for i in range(2 ** width) ]
 
-    myrom = rom.AsyncROM(m, 'myrom', sel, values, datawidth=8)
+    myrom = rom.AsyncROM(m, 'myrom', addr, values, datawidth=8)
 
     seq = Seq(m, 'seq', clk, rst)
 
     seq(
-        sel.inc(),
-        Display('sel=%d val=%d', sel, myrom.val)
+        addr.inc(),
+        Display('addr=%d rdata=%d', addr, myrom.rdata)
     )
 
     return m
