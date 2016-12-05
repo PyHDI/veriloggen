@@ -7,7 +7,7 @@ A library for constructing a Verilog HDL source code in Python
 
 Copyright (C) 2015, Shinya Takamaeda-Yamazaki
 
-E-mail: shinya\_at\_is.naist.jp
+E-mail: takamaeda\_at\_ist.hokudai.ac.jp
 
 License
 =======
