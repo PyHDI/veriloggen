@@ -7,6 +7,10 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+# expand the recursive call limit for python 3.6 and later
+import sys
+sys.setrecursionlimit(1000 * 10)
+
 # Verilog HDL Core
 from .core.vtypes import *
 from .core.module import Module, StubModule, Instance, GenerateFor, GenerateIf, connect_same_name
