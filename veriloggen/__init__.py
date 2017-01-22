@@ -27,13 +27,16 @@ from .simulation import simulation
 from .seq.seq import Seq, TmpSeq, make_condition
 from .fsm.fsm import FSM, TmpFSM
 from .pipeline.pipeline import Pipeline
+from .thread.thread import ThreadGenerator
 
 # Extension reset
 from .seq.seq import reset as seq_reset
 from .fsm.fsm import reset as fsm_reset
 from .dataflow.dataflow import reset as dataflow_reset
+from .thread.thread import reset as thread_reset
 
 def reset():
     seq_reset()
     fsm_reset()
     dataflow_reset()
+    thread_reset()
