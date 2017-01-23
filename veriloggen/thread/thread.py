@@ -448,8 +448,8 @@ class CompileVisitor(ast.NodeVisitor):
         for pos, arg in enumerate(node.args):
             baseobj = tree.args.args[pos]
             argname = (baseobj.id
-                       if isinstance(baseobj, ast.Name)
-                       else baseobj.arg)
+                       if isinstance(baseobj, ast.Name) # python 2
+                       else baseobj.arg) # python 3
             left = self.getVariable(argname, store=True)
             right = args[pos]
             self.setBind(left, right)
@@ -464,7 +464,8 @@ class CompileVisitor(ast.NodeVisitor):
         kwargs_size = len(tree.args.defaults)
         if kwargs_size > 0:
             for arg, val in zip(tree.args.args[-kwargs_size:], tree.args.defaults):
-                argname = arg.arg
+                argname = (arg.id if isinstance(arg, ast.Name) # python 2
+                           else arg.arg) # python 3
                 var = self.scope.searchVariable(argname, store=True)
                 # not defined yet
                 if var is None:
