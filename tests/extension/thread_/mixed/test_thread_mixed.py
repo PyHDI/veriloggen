@@ -56,10 +56,10 @@ module blinkled
 );
 
   reg [8-1:0] count;
-  reg [32-1:0] _thread_fsm_times_0;
-  reg [32-1:0] _thread_fsm_i_1;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
+  reg [32-1:0] _thread_fsm_times_0;
+  reg [32-1:0] _thread_fsm_i_1;
 
   always @(posedge CLK) begin
     if(RST) begin

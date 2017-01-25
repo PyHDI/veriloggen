@@ -11,7 +11,6 @@ import veriloggen.core.vtypes as vtypes
 from veriloggen.fsm.fsm import FSM
 
 from .scope import ScopeName, ScopeFrameList, ScopeFrame
-from .tfsm import Tfsm
 from .operator import getVeriloggenOp
 from .optimizer import optimize
 
@@ -78,7 +77,7 @@ class ThreadGenerator(vtypes.VeriloggenNode):
         functionvisitor.visit(_ast)
         functions = functionvisitor.getFunctions()
 
-        compilevisitor = CompileVisitor(self.m, name,
+        compilevisitor = CompileVisitor(self.m, name, self.clk, self.rst,
                                         functions, local_objects, global_objects,
                                         self.datawidth)
 
@@ -103,25 +102,7 @@ class ThreadGenerator(vtypes.VeriloggenNode):
         _call_ast = ast.parse(call_code)
         compilevisitor.visit(_call_ast)
 
-        tfsm = compilevisitor.tfsm
-        fsm = FSM(self.m, name, self.clk, self.rst)
-        self._tfsm_to_fsm(tfsm, fsm)
-
-        return fsm
-
-    def _tfsm_to_fsm(self, tfsm, fsm):
-        tfsm_states = tfsm.dict
-        tfsm_bind = tfsm.bind
-
-        for src, statelist in tfsm_states.items():
-            for state in statelist:
-                fsm.goto_from(state.src, state.dst, state.cond, state.elsedst)
-
-        for state, binds in tfsm_bind.items():
-            for bind in binds:
-                subst = (vtypes.SingleStatement(bind.value)
-                         if bind.dst is None else bind.dst(bind.value))
-                fsm._add_statement([subst], state, cond=bind.cond)
+        return compilevisitor.fsm
 
 
 class FunctionVisitor(ast.NodeVisitor):
@@ -138,10 +119,13 @@ class FunctionVisitor(ast.NodeVisitor):
 
 class CompileVisitor(ast.NodeVisitor):
 
-    def __init__(self, m, name, functions, local_objects, global_objects, datawidth=32):
+    def __init__(self, m, name, clk, rst,
+                 functions, local_objects, global_objects, datawidth=32):
 
         self.m = m
         self.name = name
+        self.clk = clk
+        self.rst = rst
 
         self.functions = functions
         self.local_objects = local_objects
@@ -149,8 +133,8 @@ class CompileVisitor(ast.NodeVisitor):
         self.datawidth = datawidth
 
         self.scope = ScopeFrameList()
-        self.objects = {}
-        self.tfsm = Tfsm()
+        self.fsm = FSM(self.m, self.name, self.clk, self.rst)
+        self.loop_info = OrderedDict()
 
         for func in functions.values():
             self.scope.addFunction(func)
@@ -448,8 +432,8 @@ class CompileVisitor(ast.NodeVisitor):
         for pos, arg in enumerate(node.args):
             baseobj = tree.args.args[pos]
             argname = (baseobj.id
-                       if isinstance(baseobj, ast.Name) # python 2
-                       else baseobj.arg) # python 3
+                       if isinstance(baseobj, ast.Name)  # python 2
+                       else baseobj.arg)  # python 3
             left = self.getVariable(argname, store=True)
             right = args[pos]
             self.setBind(left, right)
@@ -464,8 +448,8 @@ class CompileVisitor(ast.NodeVisitor):
         kwargs_size = len(tree.args.defaults)
         if kwargs_size > 0:
             for arg, val in zip(tree.args.args[-kwargs_size:], tree.args.defaults):
-                argname = (arg.id if isinstance(arg, ast.Name) # python 2
-                           else arg.arg) # python 3
+                argname = (arg.id if isinstance(arg, ast.Name)  # python 2
+                           else arg.arg)  # python 3
                 var = self.scope.searchVariable(argname, store=True)
                 # not defined yet
                 if var is None:
@@ -737,7 +721,10 @@ class CompileVisitor(ast.NodeVisitor):
         opt_cond = (self.optimize(cond)
                     if cond is not None and var is not None
                     else None)
-        self.tfsm.setBind(var, opt_value, cond=opt_cond)
+        subst = (vtypes.SingleStatement(opt_value)
+                 if var is None else var(opt_value))
+        self.fsm._add_statement([subst], cond=opt_cond)
+
         state = self.getFsmCount()
         vname = var.name if var is not None else None
         self.scope.addBind(state, vname, value, cond)
@@ -747,24 +734,30 @@ class CompileVisitor(ast.NodeVisitor):
         return optimize(node)
 
     #-------------------------------------------------------------------------
-    def setFsm(self, src=None, dst=None, cond=None, elsedst=None):
-        self.tfsm.set(src, dst, cond, elsedst)
+    def setFsm(self, src=None, dst=None, cond=None, else_dst=None):
+        if src is None:
+            src = self.fsm.current
+        if dst is None:
+            dst = src + 1
+        self.fsm.goto_from(src, dst, cond, else_dst)
 
     def incFsmCount(self):
-        self.tfsm.incCount()
+        self.fsm.inc()
 
     def getFsmCount(self):
-        return self.tfsm.getCount()
+        return self.fsm.current
 
     #-------------------------------------------------------------------------
     def setFsmLoop(self, begin, end, iter_node=None, step_node=None):
-        self.tfsm.setLoop(begin, end, iter_node, step_node)
+        self.loop_info[(begin, end)] = (iter_node, step_node)
 
     def getFsmLoops(self):
-        return self.tfsm.getLoops()
+        return self.loop_info
 
     def getFsmCandidateLoops(self, pos):
-        return self.tfsm.getCandidateLoops(pos)
+        candidates = [(b, e) for (b, e), (inode, unode)
+                      in self.loop_info.items() if b <= pos and pos <= e]
+        return candidates
 
     #-------------------------------------------------------------------------
     def getCurrentScope(self):

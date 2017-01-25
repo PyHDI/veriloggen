@@ -49,12 +49,12 @@ module blinkled
   output reg [8-1:0] LED
 );
 
+  reg [32-1:0] fsm;
+  localparam fsm_init = 0;
   reg [32-1:0] _thread_fsm_times_0;
   reg [32-1:0] _thread_fsm_inc_1;
   reg [32-1:0] _thread_fsm_dump_2;
   reg [32-1:0] _thread_fsm_i_3;
-  reg [32-1:0] fsm;
-  localparam fsm_init = 0;
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
   localparam fsm_3 = 3;
