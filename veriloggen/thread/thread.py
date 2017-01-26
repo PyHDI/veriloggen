@@ -57,6 +57,23 @@ class ThreadGenerator(vtypes.VeriloggenNode):
         self.embedded_func_lib[name] = func
         return func
 
+    def extend_fsm(self, fsm, targ, *args, **kwargs):
+        frame = inspect.currentframe()
+        _locals = frame.f_back.f_locals
+        _globals = frame.f_back.f_globals
+        local_objects = OrderedDict()
+        global_objects = OrderedDict()
+
+        for key, value in _locals.items():
+            if isinstance(value, vtypes.VeriloggenNode):
+                local_objects[key] = value
+
+        for key, value in _globals.items():
+            if isinstance(value, vtypes.VeriloggenNode):
+                global_objects[key] = value
+
+        return self._synth_fsm(local_objects, global_objects, fsm, None, targ, args, kwargs)
+
     def generate_fsm(self, name, targ, *args, **kwargs):
         frame = inspect.currentframe()
         _locals = frame.f_back.f_locals
@@ -71,6 +88,13 @@ class ThreadGenerator(vtypes.VeriloggenNode):
         for key, value in _globals.items():
             if isinstance(value, vtypes.VeriloggenNode):
                 global_objects[key] = value
+
+        return self._synth_fsm(local_objects, global_objects, None, name, targ, args, kwargs)
+
+    def _synth_fsm(self, local_objects, global_objects, fsm, name, targ, args, kwargs):
+
+        if name is None:
+            name = fsm.name
 
         codes = []
 
@@ -90,7 +114,7 @@ class ThreadGenerator(vtypes.VeriloggenNode):
         compilevisitor = CompileVisitor(self.m, name, self.clk, self.rst,
                                         functions, self.embedded_func_lib,
                                         local_objects, global_objects,
-                                        self.datawidth)
+                                        datawidth=self.datawidth, fsm=fsm)
 
         # function argument
         args_code = []
@@ -132,7 +156,7 @@ class CompileVisitor(ast.NodeVisitor):
 
     def __init__(self, m, name, clk, rst,
                  functions, embedded_functions,
-                 local_objects, global_objects, datawidth=32):
+                 local_objects, global_objects, datawidth=32, fsm=None):
 
         self.m = m
         self.name = name
@@ -146,7 +170,9 @@ class CompileVisitor(ast.NodeVisitor):
         self.datawidth = datawidth
 
         self.scope = ScopeFrameList()
-        self.fsm = FSM(self.m, self.name, self.clk, self.rst)
+
+        self.fsm = FSM(self.m, self.name, self.clk,
+                       self.rst) if fsm is None else fsm
         self.loop_info = OrderedDict()
 
         for func in functions.values():
