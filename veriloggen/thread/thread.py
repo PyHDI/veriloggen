@@ -462,16 +462,10 @@ class CompileVisitor(ast.NodeVisitor):
             argname = (baseobj.id
                        if isinstance(baseobj, ast.Name)  # python 2
                        else baseobj.arg)  # python 3
-            #left = self.getVariable(argname, store=True)
-            #right = args[pos]
-            #self.setBind(left, right)
             self.setSubst(argname, args[pos])
 
         # kwargs
         for pos, key in enumerate(node.keywords):
-            #left = self.getVariable(key.arg, store=True)
-            #right = keywords[pos]
-            #self.setBind(left, right)
             self.setSubst(key.arg, keywords[pos])
 
         # default values of kwargs
@@ -483,9 +477,6 @@ class CompileVisitor(ast.NodeVisitor):
                 var = self.scope.searchVariable(argname, store=True)
                 # not defined yet
                 if var is None:
-                    #left = self.getVariable(argname, store=True)
-                    #right = self.visit(val)
-                    #self.setBind(left, right)
                     right = self.visit(val)
                     self.setSubst(argname, right)
 
@@ -553,9 +544,6 @@ class CompileVisitor(ast.NodeVisitor):
 
         resolved_args = inspect.getcallargs(obj, *args, **kwargs)
         for arg, value in sorted(resolved_args.items(), key=lambda x: x[0]):
-            #left = self.getVariable(arg, store=True)
-            #right = value
-            #self.setBind(left, right)
             self.setSubst(arg, value)
 
         self.setFsm()
