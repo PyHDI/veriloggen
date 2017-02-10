@@ -41,7 +41,7 @@ class ThreadGenerator(vtypes.VeriloggenNode):
         self.func_lib = OrderedDict()
         self.embedded_func_lib = OrderedDict()
 
-    def add_func(self, func):
+    def add_function(self, func):
         name = func.__name__
         if name in self.func_lib:
             raise ValueError(
@@ -49,7 +49,7 @@ class ThreadGenerator(vtypes.VeriloggenNode):
         self.func_lib[name] = func
         return func
 
-    def add_embedded_func(self, func):
+    def add_embedded_function(self, func):
         name = func.__name__
         if name in self.embedded_func_lib:
             raise ValueError(
@@ -814,9 +814,18 @@ class CompileVisitor(ast.NodeVisitor):
 
     def getFunction(self, name):
         func = self.scope.searchFunction(name)
-        if func is None:
-            raise NameError("function '%s' is not defined" % name)
-        return func
+        if func is not None:
+            return func
+
+        # implicit function definitions
+        if name in self.local_objects:
+            func = self.local_objects[name]
+            if inspect.isfunction(func):
+                text = textwrap.dedent(inspect.getsource(func))
+                tree = ast.parse(text).body[0]
+                return tree
+
+        raise NameError("function '%s' is not defined" % name)
 
     def setBind(self, var, value, cond=None):
         opt_value = self.optimize(value) if var is not None else value

@@ -14,31 +14,19 @@ def mkLed():
     m = Module('blinkled')
     clk = m.Input('CLK')
     rst = m.Input('RST')
-
-    data = m.Reg('data', 8, initval=0)
-    enable = m.Reg('enable', initval=0)
-    ready = m.Wire('ready')
-    ready.assign(1) # dummy definition
+    led = m.OutputReg('LED', 8, initval=0)
 
     thgen = ThreadGenerator(m, clk, rst)
 
-    @thgen.add_embedded_func
-    def send(fsm, value):
-        fsm(
-            data(value),
-            enable(1)
-        )
-        fsm.goto_next()
-        fsm(
-            enable(0)
-        )
-        fsm.goto_next()
-        fsm.If(ready).goto_next()
-        return 0
+    def plus(a, b):
+        return a + b
 
-    def blink(times):
+    def blink(times, inc=1, dump=True):
+        led.value = 0
         for i in range(times):
-            send(i)
+            led.value = plus(led, inc)
+            if dump:
+                print("led = ", led)
 
     fsm = thgen.generate_fsm('fsm', blink, 10)
 
