@@ -60,38 +60,24 @@ class ThreadGenerator(vtypes.VeriloggenNode):
     def extend_fsm(self, fsm, targ, *args, **kwargs):
         frame = inspect.currentframe()
         _locals = frame.f_back.f_locals
-        _globals = frame.f_back.f_globals
         local_objects = OrderedDict()
-        global_objects = OrderedDict()
 
         for key, value in _locals.items():
-            if isinstance(value, vtypes.VeriloggenNode):
-                local_objects[key] = value
+            local_objects[key] = value
 
-        for key, value in _globals.items():
-            if isinstance(value, vtypes.VeriloggenNode):
-                global_objects[key] = value
-
-        return self._synth_fsm(local_objects, global_objects, fsm, None, targ, args, kwargs)
+        return self._synthesize_fsm(local_objects, fsm, None, targ, args, kwargs)
 
     def generate_fsm(self, name, targ, *args, **kwargs):
         frame = inspect.currentframe()
         _locals = frame.f_back.f_locals
-        _globals = frame.f_back.f_globals
         local_objects = OrderedDict()
-        global_objects = OrderedDict()
 
         for key, value in _locals.items():
-            if isinstance(value, vtypes.VeriloggenNode):
-                local_objects[key] = value
+            local_objects[key] = value
 
-        for key, value in _globals.items():
-            if isinstance(value, vtypes.VeriloggenNode):
-                global_objects[key] = value
+        return self._synthesize_fsm(local_objects, None, name, targ, args, kwargs)
 
-        return self._synth_fsm(local_objects, global_objects, None, name, targ, args, kwargs)
-
-    def _synth_fsm(self, local_objects, global_objects, fsm, name, targ, args, kwargs):
+    def _synthesize_fsm(self, local_objects, fsm, name, targ, args, kwargs):
 
         if name is None:
             name = fsm.name
@@ -113,7 +99,7 @@ class ThreadGenerator(vtypes.VeriloggenNode):
 
         compilevisitor = CompileVisitor(self.m, name, self.clk, self.rst,
                                         functions, self.embedded_func_lib,
-                                        local_objects, global_objects,
+                                        local_objects,
                                         datawidth=self.datawidth, fsm=fsm)
 
         # function argument
@@ -156,7 +142,7 @@ class CompileVisitor(ast.NodeVisitor):
 
     def __init__(self, m, name, clk, rst,
                  functions, embedded_functions,
-                 local_objects, global_objects, datawidth=32, fsm=None):
+                 local_objects, datawidth=32, fsm=None):
 
         self.m = m
         self.name = name
@@ -166,7 +152,6 @@ class CompileVisitor(ast.NodeVisitor):
         self.functions = functions
         self.embedded_functions = embedded_functions
         self.local_objects = local_objects
-        self.global_objects = global_objects
         self.datawidth = datawidth
 
         self.scope = ScopeFrameList()
@@ -477,15 +462,17 @@ class CompileVisitor(ast.NodeVisitor):
             argname = (baseobj.id
                        if isinstance(baseobj, ast.Name)  # python 2
                        else baseobj.arg)  # python 3
-            left = self.getVariable(argname, store=True)
-            right = args[pos]
-            self.setBind(left, right)
+            #left = self.getVariable(argname, store=True)
+            #right = args[pos]
+            #self.setBind(left, right)
+            self.setSubst(argname, args[pos])
 
         # kwargs
         for pos, key in enumerate(node.keywords):
-            left = self.getVariable(key.arg, store=True)
-            right = keywords[pos]
-            self.setBind(left, right)
+            #left = self.getVariable(key.arg, store=True)
+            #right = keywords[pos]
+            #self.setBind(left, right)
+            self.setSubst(key.arg, keywords[pos])
 
         # default values of kwargs
         kwargs_size = len(tree.args.defaults)
@@ -496,9 +483,11 @@ class CompileVisitor(ast.NodeVisitor):
                 var = self.scope.searchVariable(argname, store=True)
                 # not defined yet
                 if var is None:
-                    left = self.getVariable(argname, store=True)
+                    #left = self.getVariable(argname, store=True)
+                    #right = self.visit(val)
+                    #self.setBind(left, right)
                     right = self.visit(val)
-                    self.setBind(left, right)
+                    self.setSubst(argname, right)
 
         self.setFsm()
         self.incFsmCount()
@@ -545,8 +534,55 @@ class CompileVisitor(ast.NodeVisitor):
         return func(*args, **kwargs)
 
     def _call_Attribute(self, node):
-        attr_value = self.visit(node.func.value)
-        raise NotImplementedError('%s' % str(ast.dump(node.func)))
+        value = self.visit(node.func.value)
+        obj = getattr(value, node.func.attr)
+
+        if not inspect.ismethod(obj):
+            raise TypeError("'%s' object is not callable" % str(type(obj)))
+
+        # prepare the argument values
+        args = []
+        kwargs = OrderedDict()
+        for arg in node.args:
+            args.append(self.visit(arg))
+        for key in node.keywords:
+            kwargs[key.arg] = self.visit(key.value)
+
+        # stack a new scope frame
+        self.pushScope(ftype='call')
+
+        resolved_args = inspect.getcallargs(obj, *args, **kwargs)
+        for arg, value in sorted(resolved_args.items(), key=lambda x: x[0]):
+            #left = self.getVariable(arg, store=True)
+            #right = value
+            #self.setBind(left, right)
+            self.setSubst(arg, value)
+
+        self.setFsm()
+        self.incFsmCount()
+
+        text = textwrap.dedent(inspect.getsource(obj))
+        tree = ast.parse(text).body[0]
+
+        # visit the function definition
+        ret = self.__visit_FunctionDef(tree)
+
+        # fsm jump by return statement
+        end_count = self.getFsmCount()
+        unresolved_return = self.getUnresolvedReturn()
+        for ret_count, value in unresolved_return:
+            self.setFsm(ret_count, end_count)
+
+        # clean-up jump conditions
+        self.clearBreak()
+        self.clearContinue()
+        self.clearReturn()
+        self.clearReturnVariable()
+
+        # return to the previous scope frame
+        self.popScope()
+
+        return ret
 
     #--------------------------------------------------------------------------
     def visit_Nonlocal(self, node):
@@ -729,12 +765,32 @@ class CompileVisitor(ast.NodeVisitor):
         attr = node.attr
         if isinstance(value, vtypes._Variable) and attr == 'value':
             return value
-        raise TypeError('attribute access is not supported')
+        obj = getattr(value, attr)
+        return obj
 
     #-------------------------------------------------------------------------
+    def getGlobalObject(self, name):
+        frame = inspect.currentframe()
+        global_objects = OrderedDict()
+        if name in global_objects:
+            return global_objects[name]
+        return None
+
     def skip(self):
         val = self.hasBreak() or self.hasContinue() or self.hasReturn()
         return val
+
+    def setSubst(self, name, value):
+        try:
+            value = self.optimize(value)
+        except:
+            state = self.getFsmCount()
+            self.scope.addVariable(name, value)
+            return
+
+        left = self.getVariable(name, store=True)
+        right = value
+        self.setBind(left, right)
 
     def makeVariable(self, name, width=None):
         signame = _tmp_name('_'.join(['_thread', self.name, name]))
@@ -748,8 +804,9 @@ class CompileVisitor(ast.NodeVisitor):
             if not store:
                 if name in self.local_objects:
                     return self.local_objects[name]
-                if name in self.global_objects:
-                    return self.global_objects[name]
+                glb = self.getGlobalObject(name)
+                if glb is not None:
+                    return glb
                 raise NameError("name '%s' is not defined" % name)
             var = self.makeVariable(name)
             self.scope.addVariable(name, var)
@@ -758,7 +815,7 @@ class CompileVisitor(ast.NodeVisitor):
 
     def getTmpVariable(self):
         name = _tmp_name('tmp')
-        var = self.getVariable(name)
+        var = self.getVariable(name, store=True)
         return var
 
     def addNonlocal(self, name):
