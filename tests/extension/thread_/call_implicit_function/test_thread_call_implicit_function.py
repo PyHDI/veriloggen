@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import thread_function
+import thread_call_implicit_function
 
 expected_verilog = """
 module test;
@@ -141,7 +141,7 @@ endmodule
 
 def test():
     veriloggen.reset()
-    test_module = thread_function.mkTest()
+    test_module = thread_call_implicit_function.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
