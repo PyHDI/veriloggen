@@ -43,7 +43,7 @@ def mkLed():
             led.value = my_counter.count
             print("led = ", led)
 
-    fsm = thgen.generate_fsm('fsm', blink, 10)
+    fsm = thgen.create('fsm', blink, 10)
 
     return m
 

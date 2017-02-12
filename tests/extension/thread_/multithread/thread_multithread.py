@@ -15,27 +15,22 @@ def mkLed():
     clk = m.Input('CLK')
     rst = m.Input('RST')
     led = m.OutputReg('LED', 8, initval=0)
+    count = m.Reg('count', 8, initval=0)
 
     thgen = ThreadGenerator(m, clk, rst)
-    
-    fsm = FSM(m, 'fsm', clk, rst)
-    fsm(
-        led(100)
-    )
-    fsm.goto_next()
-    fsm(
-        led(200)
-    )
-    fsm.goto_next()
 
-    def blink(times, inc=1, dump=True):
+    def countup(times, inc=1):
+        count.value = 0
+        for i in range(times):
+            count.value += inc
+
+    def blink(times, inc=1):
         led.value = 0
         for i in range(times):
             led.value += inc
-            if dump:
-                print("led = ", led)
 
-    fsm = thgen.extend_fsm(fsm, blink, 10)
+    fsm_blink = thgen.create('fsm_blink', blink, 10)
+    fsm_countup = thgen.create('fsm_countup', countup, 10)
 
     return m
 
@@ -57,7 +52,7 @@ def mkTest():
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    #simulation.setup_waveform(m, uut)
+    simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

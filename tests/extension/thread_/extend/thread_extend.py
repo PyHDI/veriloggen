@@ -9,27 +9,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
 
 from veriloggen import *
 
-import math
-
-
-class MyCounter(object):
-
-    def __init__(self, m, clk, rst, maxval=256):
-        self.m = m
-        self.clk = clk
-        self.rst = rst
-        self.width = int(math.ceil(math.log(maxval, 2)))
-        self.count = self.m.TmpReg(self.width, initval=0)
-
-        self.seq = TmpSeq(m, clk, rst)
-        self.seq(
-            self.count.inc()
-        )
-
-    @property
-    def plus_100_value(self):
-        return self.count + 100
-
 
 def mkLed():
     m = Module('blinkled')
@@ -37,17 +16,26 @@ def mkLed():
     rst = m.Input('RST')
     led = m.OutputReg('LED', 8, initval=0)
 
-    my_counter = MyCounter(m, clk, rst)
-
     thgen = ThreadGenerator(m, clk, rst)
+    
+    fsm = FSM(m, 'fsm', clk, rst)
+    fsm(
+        led(100)
+    )
+    fsm.goto_next()
+    fsm(
+        led(200)
+    )
+    fsm.goto_next()
 
-    def blink(times):
+    def blink(times, inc=1, dump=True):
         led.value = 0
         for i in range(times):
-            led.value = my_counter.plus_100_value
-            print("led = ", led)
+            led.value += inc
+            if dump:
+                print("led = ", led)
 
-    fsm = thgen.create('fsm', blink, 10)
+    fsm = thgen.extend(fsm, blink, 10)
 
     return m
 
@@ -69,7 +57,7 @@ def mkTest():
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    simulation.setup_waveform(m, uut)
+    #simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

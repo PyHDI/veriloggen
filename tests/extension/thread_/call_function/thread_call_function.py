@@ -29,7 +29,7 @@ def mkLed():
             if dump:
                 print("led = ", led)
 
-    fsm = thgen.generate_fsm('fsm', blink, 10)
+    fsm = thgen.create('fsm', blink, 10)
 
     return m
 

@@ -40,7 +40,7 @@ def mkLed():
         for i in range(times):
             send(i) # intrinsic function
 
-    fsm = thgen.generate_fsm('fsm', blink, 10)
+    fsm = thgen.create('fsm', blink, 10)
 
     return m
 

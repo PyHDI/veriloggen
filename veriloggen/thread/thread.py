@@ -60,6 +60,32 @@ class ThreadGenerator(vtypes.VeriloggenNode):
             return self._add_intrinsic_method(func)
         raise TypeError("'%s' object is not supported" % str(type(func)))
 
+    def create(self, name, targ, *args, **kwargs):
+        """ create a thread FSM """
+        frame = inspect.currentframe()
+        _locals = frame.f_back.f_locals
+        local_objects = OrderedDict()
+
+        for key, value in _locals.items():
+            local_objects[key] = value
+
+        fsm = FSM(self.m, name, self.clk, self.rst)
+
+        return self._synthesize_fsm(local_objects, fsm, name, targ, args, kwargs)
+
+    def extend(self, fsm, targ, *args, **kwargs):
+        """ extend a given thread FSM """
+        frame = inspect.currentframe()
+        _locals = frame.f_back.f_locals
+        local_objects = OrderedDict()
+
+        for key, value in _locals.items():
+            local_objects[key] = value
+
+        name = fsm.name
+
+        return self._synthesize_fsm(local_objects, fsm, name, targ, args, kwargs)
+
     def _add_intrinsic_function(self, func):
         name = func.__name__
         if name in self.intrinsic_functions:
@@ -75,30 +101,6 @@ class ThreadGenerator(vtypes.VeriloggenNode):
                 'Intrinsic method {} is already defined in ThreadGenerator.'.format(name))
         self.intrinsic_methods[name] = func
         return func
-
-    def extend_fsm(self, fsm, targ, *args, **kwargs):
-        frame = inspect.currentframe()
-        _locals = frame.f_back.f_locals
-        local_objects = OrderedDict()
-
-        for key, value in _locals.items():
-            local_objects[key] = value
-
-        name = fsm.name
-
-        return self._synthesize_fsm(local_objects, fsm, name, targ, args, kwargs)
-
-    def generate_fsm(self, name, targ, *args, **kwargs):
-        frame = inspect.currentframe()
-        _locals = frame.f_back.f_locals
-        local_objects = OrderedDict()
-
-        for key, value in _locals.items():
-            local_objects[key] = value
-
-        fsm = FSM(self.m, name, self.clk, self.rst)
-
-        return self._synthesize_fsm(local_objects, fsm, name, targ, args, kwargs)
 
     def _synthesize_fsm(self, local_objects, fsm, name, targ, args, kwargs):
 
@@ -117,7 +119,7 @@ class ThreadGenerator(vtypes.VeriloggenNode):
         functionvisitor.visit(_ast)
         functions = functionvisitor.getFunctions()
 
-        compilevisitor = CompileVisitor(self.m, name, self.clk, self.rst, fsm,
+        compilevisitor = CompileVisitor(self, self.m, name, self.clk, self.rst, fsm,
                                         functions, self.intrinsic_functions,
                                         self.intrinsic_methods, local_objects,
                                         datawidth=self.datawidth)
@@ -160,11 +162,12 @@ class FunctionVisitor(ast.NodeVisitor):
 
 class CompileVisitor(ast.NodeVisitor):
 
-    def __init__(self, m, name, clk, rst, fsm,
+    def __init__(self, thgen, m, name, clk, rst, fsm,
                  functions, intrinsic_functions,
                  intrinsic_methods, local_objects,
                  datawidth=32):
 
+        self.thgen = thgen
         self.m = m
         self.name = name
         self.clk = clk
