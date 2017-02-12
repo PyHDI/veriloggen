@@ -1,19 +1,21 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import thread_call_intrinsic_function
+import thread_method
 
 expected_verilog = """
 module test;
 
   reg CLK;
   reg RST;
+  wire [8-1:0] LED;
 
   blinkled
   uut
   (
     .CLK(CLK),
-    .RST(RST)
+    .RST(RST),
+    .LED(LED)
   );
 
 
@@ -49,17 +51,26 @@ endmodule
 module blinkled
 (
   input CLK,
-  input RST
+  input RST,
+  output reg [8-1:0] LED
 );
 
-  reg [8-1:0] data;
-  reg enable;
-  wire ready;
-  assign ready = 1;
+  reg [8-1:0] _tmp_0;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
   reg [32-1:0] _thread_fsm_times_0;
   reg [32-1:0] _thread_fsm_i_1;
+  reg [32-1:0] _thread_fsm_offset_2;
+  reg [32-1:0] _thread_fsm_tmp_3_4;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _tmp_0 <= 0;
+    end else begin
+      _tmp_0 <= _tmp_0 + 1;
+    end
+  end
+
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
   localparam fsm_3 = 3;
@@ -67,12 +78,13 @@ module blinkled
   localparam fsm_5 = 5;
   localparam fsm_6 = 6;
   localparam fsm_7 = 7;
+  localparam fsm_8 = 8;
+  localparam fsm_9 = 9;
 
   always @(posedge CLK) begin
     if(RST) begin
       fsm <= fsm_init;
-      data <= 0;
-      enable <= 0;
+      LED <= 0;
     end else begin
       case(fsm)
         fsm_init: begin
@@ -80,33 +92,39 @@ module blinkled
           fsm <= fsm_1;
         end
         fsm_1: begin
-          _thread_fsm_i_1 <= 0;
+          LED <= 0;
           fsm <= fsm_2;
         end
         fsm_2: begin
-          if(_thread_fsm_i_1 < _thread_fsm_times_0) begin
-            fsm <= fsm_3;
-          end else begin
-            fsm <= fsm_7;
-          end
+          _thread_fsm_i_1 <= 0;
+          fsm <= fsm_3;
         end
         fsm_3: begin
-          data <= _thread_fsm_i_1;
-          enable <= 1;
-          fsm <= fsm_4;
+          if(_thread_fsm_i_1 < _thread_fsm_times_0) begin
+            fsm <= fsm_4;
+          end else begin
+            fsm <= fsm_9;
+          end
         end
         fsm_4: begin
-          enable <= 0;
+          _thread_fsm_offset_2 <= 10;
           fsm <= fsm_5;
         end
         fsm_5: begin
-          if(ready) begin
-            fsm <= fsm_6;
-          end 
+          _thread_fsm_tmp_3_4 <= _tmp_0 + _thread_fsm_offset_2;
+          fsm <= fsm_6;
         end
         fsm_6: begin
+          LED <= _thread_fsm_tmp_3_4;
+          fsm <= fsm_7;
+        end
+        fsm_7: begin
+          $display("led =  %d", LED);
+          fsm <= fsm_8;
+        end
+        fsm_8: begin
           _thread_fsm_i_1 <= _thread_fsm_i_1 + 1;
-          fsm <= fsm_2;
+          fsm <= fsm_3;
         end
       endcase
     end
@@ -119,7 +137,7 @@ endmodule
 
 def test():
     veriloggen.reset()
-    test_module = thread_call_intrinsic_function.mkTest()
+    test_module = thread_method.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
