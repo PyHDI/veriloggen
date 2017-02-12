@@ -22,7 +22,7 @@ def mkLed():
 
     thgen = ThreadGenerator(m, clk, rst)
 
-    @thgen.add_embedded_function
+    @thgen.add_intrinsic_function
     def send(fsm, value):
         fsm(
             data(value),

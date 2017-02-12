@@ -39,7 +39,7 @@ class ThreadGenerator(vtypes.VeriloggenNode):
         self.rst = rst
         self.datawidth = datawidth
         self.func_lib = OrderedDict()
-        self.embedded_func_lib = OrderedDict()
+        self.intrinsic_func_lib = OrderedDict()
 
     def add_function(self, func):
         name = func.__name__
@@ -49,12 +49,12 @@ class ThreadGenerator(vtypes.VeriloggenNode):
         self.func_lib[name] = func
         return func
 
-    def add_embedded_function(self, func):
+    def add_intrinsic_function(self, func):
         name = func.__name__
-        if name in self.embedded_func_lib:
+        if name in self.intrinsic_func_lib:
             raise ValueError(
-                'Embedded function {} is already defined in ThreadGenerator.'.format(name))
-        self.embedded_func_lib[name] = func
+                'Intrinsic function {} is already defined in ThreadGenerator.'.format(name))
+        self.intrinsic_func_lib[name] = func
         return func
 
     def extend_fsm(self, fsm, targ, *args, **kwargs):
@@ -98,7 +98,7 @@ class ThreadGenerator(vtypes.VeriloggenNode):
         functions = functionvisitor.getFunctions()
 
         compilevisitor = CompileVisitor(self.m, name, self.clk, self.rst,
-                                        functions, self.embedded_func_lib,
+                                        functions, self.intrinsic_func_lib,
                                         local_objects,
                                         datawidth=self.datawidth, fsm=fsm)
 
@@ -141,7 +141,7 @@ class FunctionVisitor(ast.NodeVisitor):
 class CompileVisitor(ast.NodeVisitor):
 
     def __init__(self, m, name, clk, rst,
-                 functions, embedded_functions,
+                 functions, intrinsic_functions,
                  local_objects, datawidth=32, fsm=None):
 
         self.m = m
@@ -150,7 +150,7 @@ class CompileVisitor(ast.NodeVisitor):
         self.rst = rst
 
         self.functions = functions
-        self.embedded_functions = embedded_functions
+        self.intrinsic_functions = intrinsic_functions
         self.local_objects = local_objects
         self.datawidth = datawidth
 
@@ -369,9 +369,9 @@ class CompileVisitor(ast.NodeVisitor):
         if name == 'int':
             return self._call_Name_int(node)
 
-        # embedded function call
-        if name in self.embedded_functions:
-            return self._call_Name_embedded_function(node, name)
+        # intrinsic function call
+        if name in self.intrinsic_functions:
+            return self._call_Name_intrinsic_function(node, name)
 
         # function call
         return self._call_Name_function(node, name)
@@ -510,7 +510,7 @@ class CompileVisitor(ast.NodeVisitor):
             return retvar
         return vtypes.Int(0)
 
-    def _call_Name_embedded_function(self, node, name):
+    def _call_Name_intrinsic_function(self, node, name):
         args = []
         args.append(self.fsm)
         for arg in node.args:
@@ -520,7 +520,7 @@ class CompileVisitor(ast.NodeVisitor):
         for key in node.keywords:
             kwargs[key.arg] = self.visit(key.value)
 
-        func = self.embedded_functions[name]
+        func = self.intrinsic_functions[name]
 
         return func(*args, **kwargs)
 
