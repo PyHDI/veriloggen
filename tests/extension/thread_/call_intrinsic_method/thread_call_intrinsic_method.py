@@ -10,35 +10,45 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
 from veriloggen import *
 
 
+class MySender(object):
+
+    def __init__(self, m, clk, rst):
+        self.m = m
+        self.clk = clk
+        self.rst = rst
+
+        self.data = self.m.TmpReg(8, initval=0)
+        self.enable = self.m.TmpReg(initval=0)
+        self.ready = self.m.TmpWire()
+        self.ready.assign(1)
+
+    def send(self, fsm, value):
+        fsm(
+            self.data(value),
+            self.enable(1)
+        )
+        fsm.goto_next()
+        fsm(
+            self.enable(0)
+        )
+        fsm.goto_next()
+        fsm.If(self.ready).goto_next()
+        return 0
+
+
 def mkLed():
     m = Module('blinkled')
     clk = m.Input('CLK')
     rst = m.Input('RST')
 
-    data = m.Reg('data', 8, initval=0)
-    enable = m.Reg('enable', initval=0)
-    ready = m.Wire('ready')
-    ready.assign(1)
+    my_sender = MySender(m, clk, rst)
 
     thgen = ThreadGenerator(m, clk, rst)
-
-    @thgen.intrinsic
-    def send(fsm, value):
-        fsm(
-            data(value),
-            enable(1)
-        )
-        fsm.goto_next()
-        fsm(
-            enable(0)
-        )
-        fsm.goto_next()
-        fsm.If(ready).goto_next()
-        return 0
+    thgen.add_intrinsic(my_sender.send)
 
     def blink(times):
         for i in range(times):
-            send(i) # intrinsic function
+            my_sender.send(i)  # call intrinsic method
 
     fsm = thgen.generate_fsm('fsm', blink, 10)
 

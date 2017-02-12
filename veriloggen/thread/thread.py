@@ -38,23 +38,42 @@ class ThreadGenerator(vtypes.VeriloggenNode):
         self.clk = clk
         self.rst = rst
         self.datawidth = datawidth
-        self.func_lib = OrderedDict()
-        self.intrinsic_func_lib = OrderedDict()
+        self.function_lib = OrderedDict()
+        self.intrinsic_functions = OrderedDict()
+        self.intrinsic_methods = OrderedDict()
 
     def add_function(self, func):
         name = func.__name__
-        if name in self.func_lib:
+        if name in self.function_lib:
             raise ValueError(
                 'Function {} is already defined in ThreadGenerator.'.format(name))
-        self.func_lib[name] = func
+        self.function_lib[name] = func
         return func
 
-    def add_intrinsic_function(self, func):
+    def intrinsic(self, func):
+        return self.add_intrinsic(func)
+
+    def add_intrinsic(self, func):
+        if inspect.isfunction(func):
+            return self._add_intrinsic_function(func)
+        if inspect.ismethod(func):
+            return self._add_intrinsic_method(func)
+        raise TypeError("'%s' object is not supported" % str(type(func)))
+
+    def _add_intrinsic_function(self, func):
         name = func.__name__
-        if name in self.intrinsic_func_lib:
+        if name in self.intrinsic_functions:
             raise ValueError(
                 'Intrinsic function {} is already defined in ThreadGenerator.'.format(name))
-        self.intrinsic_func_lib[name] = func
+        self.intrinsic_functions[name] = func
+        return func
+
+    def _add_intrinsic_method(self, func):
+        name = str(func)
+        if name in self.intrinsic_methods:
+            raise ValueError(
+                'Intrinsic method {} is already defined in ThreadGenerator.'.format(name))
+        self.intrinsic_methods[name] = func
         return func
 
     def extend_fsm(self, fsm, targ, *args, **kwargs):
@@ -84,10 +103,10 @@ class ThreadGenerator(vtypes.VeriloggenNode):
 
         codes = []
 
-        for func_name, func in self.func_lib.items():
+        for func_name, func in self.function_lib.items():
             codes.append(textwrap.dedent(inspect.getsource(func)))
 
-        if targ.__name__ not in self.func_lib:
+        if targ.__name__ not in self.function_lib:
             codes.append(textwrap.dedent(inspect.getsource(targ)))
 
         text = '\n'.join(codes)
@@ -98,7 +117,9 @@ class ThreadGenerator(vtypes.VeriloggenNode):
         functions = functionvisitor.getFunctions()
 
         compilevisitor = CompileVisitor(self.m, name, self.clk, self.rst,
-                                        functions, self.intrinsic_func_lib,
+                                        functions,
+                                        self.intrinsic_functions,
+                                        self.intrinsic_methods,
                                         local_objects,
                                         datawidth=self.datawidth, fsm=fsm)
 
@@ -141,7 +162,9 @@ class FunctionVisitor(ast.NodeVisitor):
 class CompileVisitor(ast.NodeVisitor):
 
     def __init__(self, m, name, clk, rst,
-                 functions, intrinsic_functions,
+                 functions,
+                 intrinsic_functions,
+                 intrinsic_methods,
                  local_objects, datawidth=32, fsm=None):
 
         self.m = m
@@ -151,6 +174,7 @@ class CompileVisitor(ast.NodeVisitor):
 
         self.functions = functions
         self.intrinsic_functions = intrinsic_functions
+        self.intrinsic_methods = intrinsic_methods
         self.local_objects = local_objects
         self.datawidth = datawidth
 
@@ -538,6 +562,12 @@ class CompileVisitor(ast.NodeVisitor):
             args.append(self.visit(arg))
         for key in node.keywords:
             kwargs[key.arg] = self.visit(key.value)
+
+        # check intrinsic method
+        name = str(obj)
+        if name in self.intrinsic_methods:
+            args.insert(0, self.fsm)
+            return obj(*args, **kwargs)
 
         # stack a new scope frame
         self.pushScope(ftype='call')
