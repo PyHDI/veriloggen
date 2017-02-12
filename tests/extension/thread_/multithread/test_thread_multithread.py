@@ -76,7 +76,10 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       fsm_blink <= fsm_blink_init;
+      _thread_fsm_blink_times_0 <= 0;
+      _thread_fsm_blink_inc_1 <= 0;
       LED <= 0;
+      _thread_fsm_blink_i_2 <= 0;
     end else begin
       case(fsm_blink)
         fsm_blink_init: begin
@@ -121,7 +124,10 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       fsm_countup <= fsm_countup_init;
+      _thread_fsm_countup_times_3 <= 0;
+      _thread_fsm_countup_inc_4 <= 0;
       count <= 0;
+      _thread_fsm_countup_i_5 <= 0;
     end else begin
       case(fsm_countup)
         fsm_countup_init: begin

@@ -78,7 +78,14 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       fsm <= fsm_init;
+      _thread_fsm_times_0 <= 0;
+      _thread_fsm_inc_1 <= 0;
+      _thread_fsm_dump_2 <= 0;
       LED <= 0;
+      _thread_fsm_i_3 <= 0;
+      _thread_fsm_a_4 <= 0;
+      _thread_fsm_b_5 <= 0;
+      _thread_fsm_tmp_6_7 <= 0;
     end else begin
       case(fsm)
         fsm_init: begin

@@ -31,7 +31,23 @@ def _tmp_name(prefix='_tmp_thread'):
     return ret
 
 
+class ThreadInfo(vtypes.VeriloggenNode):
+    intrinsics = ('wait', 'busy')
+
+    def __init__(self, thread_fsm):
+        self.thread_fsm = thread_fsm
+        self.end_state = self.thread_fsm.current
+
+    def wait(self, fsm):
+        fsm.If(self.thread_fsm.state == self.end_state).goto_next()
+        return 0
+
+    def busy(self, fsm):
+        return self.thread_fsm.state != self.end_state
+
+
 class ThreadGenerator(vtypes.VeriloggenNode):
+    intrinsics = ('run', 'sleep')
 
     def __init__(self, m, clk, rst, datawidth=32):
         self.m = m
@@ -41,6 +57,10 @@ class ThreadGenerator(vtypes.VeriloggenNode):
         self.function_lib = OrderedDict()
         self.intrinsic_functions = OrderedDict()
         self.intrinsic_methods = OrderedDict()
+
+        self.local_objects = {}
+
+        self.add_intrinsics(*[getattr(self, attr) for attr in self.intrinsics])
 
     def add_function(self, func):
         name = func.__name__
@@ -75,9 +95,14 @@ class ThreadGenerator(vtypes.VeriloggenNode):
         for key, value in _locals.items():
             local_objects[key] = value
 
+        # store the current local objects for child threads
+        self.local_objects = local_objects
+
         fsm = FSM(self.m, name, self.clk, self.rst)
 
-        return self._synthesize_fsm(local_objects, fsm, name, targ, args, kwargs)
+        self._synthesize_fsm(local_objects, fsm, name, targ, args, kwargs)
+
+        return fsm
 
     def extend(self, fsm, targ, *args, **kwargs):
         """ extend a given thread FSM """
@@ -88,9 +113,42 @@ class ThreadGenerator(vtypes.VeriloggenNode):
         for key, value in _locals.items():
             local_objects[key] = value
 
+        # store the current local objects for child threads
+        self.local_objects = local_objects
+
         name = fsm.name
 
-        return self._synthesize_fsm(local_objects, fsm, name, targ, args, kwargs)
+        self._synthesize_fsm(local_objects, fsm, name, targ, args, kwargs)
+
+        return fsm
+
+    def run(self, fsm, targ, *args, **kwargs):
+        """ create a child thread within a thread. note that this method is 'intrinsic'. """
+        name = _tmp_name('_'.join([fsm.name, 'child', targ.__name__]))
+
+        # use the same local objects as the parent thread
+        local_objects = self.local_objects
+
+        child_fsm = FSM(self.m, name, self.clk, self.rst)
+
+        # start child FSM
+        child_fsm.If(fsm.state == fsm.current).goto_next()
+
+        self._synthesize_fsm(self.local_objects, child_fsm,
+                             name, targ, args, kwargs)
+
+        th = ThreadInfo(child_fsm)
+        self.add_intrinsics(*[getattr(th, attr) for attr in th.intrinsics])
+
+        return th
+
+    def sleep(self, fsm, cycles):
+        width = cycles.bit_length() + 1
+        count = fsm.m.TmpReg(width, initval=0)
+        fsm(
+            count.inc()
+        )
+        fsm.If(count == cycles).goto_next()
 
     def _add_intrinsic_function(self, func):
         name = func.__name__
@@ -151,8 +209,6 @@ class ThreadGenerator(vtypes.VeriloggenNode):
         _call_ast = ast.parse(call_code)
         compilevisitor.visit(_call_ast)
 
-        return fsm
-
 
 class FunctionVisitor(ast.NodeVisitor):
 
@@ -164,6 +220,18 @@ class FunctionVisitor(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node):
         self.functions[node.name] = node
+
+
+class TargetVisitor(ast.NodeVisitor):
+
+    def visit_List(self, node):
+        return [self.visit(elt) for elt in node.elts]
+
+    def visit_Tuple(self, node):
+        return [self.visit(elt) for elt in node.elts]
+
+    def visit_Name(self, node):
+        return node.id
 
 
 class CompileVisitor(ast.NodeVisitor):
@@ -185,6 +253,8 @@ class CompileVisitor(ast.NodeVisitor):
         self.intrinsic_methods = intrinsic_methods
         self.local_objects = local_objects
         self.datawidth = datawidth
+
+        self.targetvisitor = TargetVisitor()
 
         self.scope = ScopeFrameList()
         self.loop_info = OrderedDict()
@@ -209,11 +279,43 @@ class CompileVisitor(ast.NodeVisitor):
     def visit_Assign(self, node):
         if self.skip():
             return
+
         right = self.visit(node.value)
-        left = self.visit(node.targets[0])
-        self.setBind(left, right)
+        lefts = [self.visit(target) for target in node.targets]
+        raw_lefts = [self.targetvisitor.visit(
+            target) for target in node.targets]
+
+        for raw_left, left in zip(raw_lefts, lefts):
+            self._assign(raw_left, left, right)
+
         self.setFsm()
         self.incFsmCount()
+
+    def _assign(self, raw_left, left, right):
+        raw_dsts = raw_left if isinstance(
+            raw_left, (tuple, list)) else (raw_left,)
+        dsts = left if isinstance(left, (tuple, list)) else (left,)
+
+        if not isinstance(right, (tuple, list)):
+            if len(dsts) > 1:
+                raise ValueError(
+                    "too many values to unpack (expected %d)" % len(right))
+            self.setAssignBind(raw_dsts[0], dsts[0], right)
+
+        elif len(dsts) == 1:
+            self.setAssignBind(raw_dsts[0], dsts[0], right)
+
+        elif len(dsts) < len(right):
+            raise ValueError(
+                "too many values to unpack (expected %d)" % len(right))
+
+        elif len(dsts) > len(right):
+            raise ValueError("not enough values to unpack (expected %d, got %d)" %
+                             (len(dsts), len(right)))
+
+        else:
+            for raw_l, l, r in zip(raw_dsts, dsts, right):
+                self._assign(raw_l, l, r)
 
     def visit_AugAssign(self, node):
         if self.skip():
@@ -491,11 +593,11 @@ class CompileVisitor(ast.NodeVisitor):
             argname = (baseobj.id
                        if isinstance(baseobj, ast.Name)  # python 2
                        else baseobj.arg)  # python 3
-            self.setSubst(argname, args[pos])
+            self.setArgBind(argname, args[pos])
 
         # kwargs
         for pos, key in enumerate(node.keywords):
-            self.setSubst(key.arg, keywords[pos])
+            self.setArgBind(key.arg, keywords[pos])
 
         # default values of kwargs
         kwargs_size = len(tree.args.defaults)
@@ -507,7 +609,7 @@ class CompileVisitor(ast.NodeVisitor):
                 # not defined yet
                 if var is None:
                     right = self.visit(val)
-                    self.setSubst(argname, right)
+                    self.setArgBind(argname, right)
 
         self.setFsm()
         self.incFsmCount()
@@ -579,7 +681,7 @@ class CompileVisitor(ast.NodeVisitor):
 
         resolved_args = inspect.getcallargs(obj, *args, **kwargs)
         for arg, value in sorted(resolved_args.items(), key=lambda x: x[0]):
-            self.setSubst(arg, value)
+            self.setArgBind(arg, value)
 
         self.setFsm()
         self.incFsmCount()
@@ -791,6 +893,13 @@ class CompileVisitor(ast.NodeVisitor):
         obj = getattr(value, attr)
         return obj
 
+    def visit_Tuple(self, node):
+        return tuple([self.visit(elt) for elt in node.elts])
+
+    def visit_List(self, node):
+        """ List is not fully implemented yet. """
+        return tuple([self.visit(elt) for elt in node.elts])
+
     #-------------------------------------------------------------------------
     def getGlobalObject(self, name):
         frame = inspect.currentframe()
@@ -803,23 +912,11 @@ class CompileVisitor(ast.NodeVisitor):
         val = self.hasBreak() or self.hasContinue() or self.hasReturn()
         return val
 
-    def setSubst(self, name, value):
-        try:
-            value = self.optimize(value)
-        except:
-            state = self.getFsmCount()
-            self.scope.addVariable(name, value)
-            return
-
-        left = self.getVariable(name, store=True)
-        right = value
-        self.setBind(left, right)
-
-    def makeVariable(self, name, width=None):
+    def makeVariable(self, name, width=None, initval=0):
         signame = _tmp_name('_'.join(['_thread', self.name, name]))
         if width is None:
             width = self.datawidth
-        return self.m.Reg(signame, width)
+        return self.m.Reg(signame, width, initval=initval)
 
     def getVariable(self, name, store=False):
         var = self.scope.searchVariable(name, store)
@@ -862,13 +959,34 @@ class CompileVisitor(ast.NodeVisitor):
 
         raise NameError("function '%s' is not defined" % name)
 
+    def setArgBind(self, name, value):
+        if not isinstance(value, vtypes.numerical_types):
+            self.scope.addVariable(name, value)
+            return
+
+        value = self.optimize(value)
+        left = self.getVariable(name, store=True)
+        right = value
+        self.setBind(left, right)
+
+    def setAssignBind(self, dst, var, value):
+        if not isinstance(value, vtypes.numerical_types):
+            name = dst if var is not None else None
+            if name is None:
+                raise TypeError(
+                    "object binding without destination is not supported")
+            self.scope.addVariable(name, value)
+            return
+
+        self.setBind(var, value)
+
     def setBind(self, var, value, cond=None):
         opt_value = self.optimize(value) if var is not None else value
         opt_cond = (self.optimize(cond)
                     if cond is not None and var is not None
                     else None)
-        subst = (vtypes.SingleStatement(opt_value)
-                 if var is None else var(opt_value))
+        subst = (vtypes.SingleStatement(opt_value) if var is None else
+                 vtypes.Subst(var, opt_value))
         self.fsm._add_statement([subst], cond=opt_cond)
 
         state = self.getFsmCount()
@@ -877,7 +995,12 @@ class CompileVisitor(ast.NodeVisitor):
 
     #-------------------------------------------------------------------------
     def optimize(self, node):
-        return optimize(node)
+        # if isinstance(node, tuple):
+        #    return tuple([self.optimize(n) for n in node])
+        # if isinstance(node, list):
+        #    return [self.optimize(n) for n in node]
+        # return optimize(node)
+        return node
 
     #-------------------------------------------------------------------------
     def setFsm(self, src=None, dst=None, cond=None, else_dst=None):
