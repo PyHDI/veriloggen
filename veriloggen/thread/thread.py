@@ -51,14 +51,20 @@ class ThreadGenerator(vtypes.VeriloggenNode):
         return func
 
     def intrinsic(self, func):
-        return self.add_intrinsic(func)
-
-    def add_intrinsic(self, func):
         if inspect.isfunction(func):
             return self._add_intrinsic_function(func)
         if inspect.ismethod(func):
             return self._add_intrinsic_method(func)
         raise TypeError("'%s' object is not supported" % str(type(func)))
+
+    def add_intrinsics(self, *funcs):
+        for func in funcs:
+            self.intrinsic(func)
+
+    def add_intrinsic_method_prefix(self, obj, prefix):
+        funcs = [method for name, method in inspect.getmembers(obj, inspect.ismethod)
+                 if name.startswith(prefix)]
+        self.add_intrinsics(*funcs)
 
     def create(self, name, targ, *args, **kwargs):
         """ create a thread FSM """

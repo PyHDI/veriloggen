@@ -22,7 +22,7 @@ class MySender(object):
         self.ready = self.m.TmpWire()
         self.ready.assign(1)
 
-    def send(self, fsm, value):
+    def intrinsic_send(self, fsm, value):
         fsm(
             self.data(value),
             self.enable(1)
@@ -34,7 +34,7 @@ class MySender(object):
         fsm.goto_next()
         return 0
 
-    def wait(self, fsm):
+    def intrinsic_wait(self, fsm):
         fsm.If(self.ready).goto_next()
         return 0
 
@@ -47,12 +47,12 @@ def mkLed():
     my_sender = MySender(m, clk, rst)
 
     thgen = ThreadGenerator(m, clk, rst)
-    thgen.add_intrinsics(my_sender.send, my_sender.wait)
+    thgen.add_intrinsic_method_prefix(my_sender, 'intrinsic_')
 
     def blink(times):
         for i in range(times):
-            my_sender.send(i)
-            my_sender.wait()
+            my_sender.intrinsic_send(i)
+            my_sender.intrinsic_wait()
 
     fsm = thgen.create('fsm', blink, 10)
 
