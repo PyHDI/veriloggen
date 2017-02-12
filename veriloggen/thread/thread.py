@@ -84,7 +84,9 @@ class ThreadGenerator(vtypes.VeriloggenNode):
         for key, value in _locals.items():
             local_objects[key] = value
 
-        return self._synthesize_fsm(local_objects, fsm, None, targ, args, kwargs)
+        name = fsm.name
+
+        return self._synthesize_fsm(local_objects, fsm, name, targ, args, kwargs)
 
     def generate_fsm(self, name, targ, *args, **kwargs):
         frame = inspect.currentframe()
@@ -94,12 +96,11 @@ class ThreadGenerator(vtypes.VeriloggenNode):
         for key, value in _locals.items():
             local_objects[key] = value
 
-        return self._synthesize_fsm(local_objects, None, name, targ, args, kwargs)
+        fsm = FSM(self.m, name, self.clk, self.rst)
+
+        return self._synthesize_fsm(local_objects, fsm, name, targ, args, kwargs)
 
     def _synthesize_fsm(self, local_objects, fsm, name, targ, args, kwargs):
-
-        if name is None:
-            name = fsm.name
 
         codes = []
 
@@ -116,12 +117,10 @@ class ThreadGenerator(vtypes.VeriloggenNode):
         functionvisitor.visit(_ast)
         functions = functionvisitor.getFunctions()
 
-        compilevisitor = CompileVisitor(self.m, name, self.clk, self.rst,
-                                        functions,
-                                        self.intrinsic_functions,
-                                        self.intrinsic_methods,
-                                        local_objects,
-                                        datawidth=self.datawidth, fsm=fsm)
+        compilevisitor = CompileVisitor(self.m, name, self.clk, self.rst, fsm,
+                                        functions, self.intrinsic_functions,
+                                        self.intrinsic_methods, local_objects,
+                                        datawidth=self.datawidth)
 
         # function argument
         args_code = []
@@ -144,7 +143,7 @@ class ThreadGenerator(vtypes.VeriloggenNode):
         _call_ast = ast.parse(call_code)
         compilevisitor.visit(_call_ast)
 
-        return compilevisitor.fsm
+        return fsm
 
 
 class FunctionVisitor(ast.NodeVisitor):
@@ -161,16 +160,16 @@ class FunctionVisitor(ast.NodeVisitor):
 
 class CompileVisitor(ast.NodeVisitor):
 
-    def __init__(self, m, name, clk, rst,
-                 functions,
-                 intrinsic_functions,
-                 intrinsic_methods,
-                 local_objects, datawidth=32, fsm=None):
+    def __init__(self, m, name, clk, rst, fsm,
+                 functions, intrinsic_functions,
+                 intrinsic_methods, local_objects,
+                 datawidth=32):
 
         self.m = m
         self.name = name
         self.clk = clk
         self.rst = rst
+        self.fsm = fsm
 
         self.functions = functions
         self.intrinsic_functions = intrinsic_functions
@@ -179,9 +178,6 @@ class CompileVisitor(ast.NodeVisitor):
         self.datawidth = datawidth
 
         self.scope = ScopeFrameList()
-
-        self.fsm = FSM(self.m, self.name, self.clk,
-                       self.rst) if fsm is None else fsm
         self.loop_info = OrderedDict()
 
         for func in functions.values():
