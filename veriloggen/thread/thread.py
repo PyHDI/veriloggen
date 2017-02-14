@@ -13,7 +13,6 @@ from veriloggen.fsm.fsm import FSM
 
 from .scope import ScopeName, ScopeFrameList, ScopeFrame
 from .operator import getVeriloggenOp
-from .optimizer import optimize
 
 _tmp_count = 0
 
@@ -615,7 +614,7 @@ class CompileVisitor(ast.NodeVisitor):
         self.incFsmCount()
 
         # visit the function definition
-        ret = self.__visit_FunctionDef(tree)
+        ret = self._visit_next_function(tree)
 
         # fsm jump by return statement
         end_count = self.getFsmCount()
@@ -634,7 +633,7 @@ class CompileVisitor(ast.NodeVisitor):
 
         return ret
 
-    def __visit_FunctionDef(self, node):
+    def _visit_next_function(self, node):
         self.generic_visit(node)
         retvar = self.getReturnVariable()
         if retvar is not None:
@@ -690,7 +689,7 @@ class CompileVisitor(ast.NodeVisitor):
         tree = ast.parse(text).body[0]
 
         # visit the function definition
-        ret = self.__visit_FunctionDef(tree)
+        ret = self._visit_next_function(tree)
 
         # fsm jump by return statement
         end_count = self.getFsmCount()
@@ -765,7 +764,7 @@ class CompileVisitor(ast.NodeVisitor):
         op = getVeriloggenOp(node.op)
         value = self.visit(node.operand)
         rslt = op(value)
-        return self.optimize(rslt)
+        return rslt
 
     def visit_BoolOp(self, node):
         op = getVeriloggenOp(node.op)
@@ -774,7 +773,7 @@ class CompileVisitor(ast.NodeVisitor):
         rslt = self.visit(node.values[0])
         for v in node.values[1:]:
             rslt = op(rslt, self.visit(v))
-        return self.optimize(rslt)
+        return rslt
 
     def visit_BinOp(self, node):
         left = self.visit(node.left)
@@ -787,7 +786,7 @@ class CompileVisitor(ast.NodeVisitor):
                 return self._string_operation_plus(left, right)
             raise TypeError("Can not generate a corresponding node")
         rslt = op(left, right)
-        return self.optimize(rslt)
+        return rslt
 
     def _string_operation_plus(self, left, right):
         if not isinstance(left, vtypes.Str) or not isinstance(right, vtypes.Str):
@@ -844,7 +843,9 @@ class CompileVisitor(ast.NodeVisitor):
         argvalues = []
         formatstring_list = []
         for arg in node.values:
-            if isinstance(arg, ast.BinOp) and isinstance(arg.op, ast.Mod) and isinstance(arg.left, ast.Str):
+            if (isinstance(arg, ast.BinOp) and
+                isinstance(arg.op, ast.Mod) and
+                    isinstance(arg.left, ast.Str)):
                 # format string in print statement
                 values, form = self._print_binop_mod(arg)
                 argvalues.extend(values)
@@ -901,13 +902,6 @@ class CompileVisitor(ast.NodeVisitor):
         return tuple([self.visit(elt) for elt in node.elts])
 
     #-------------------------------------------------------------------------
-    def getGlobalObject(self, name):
-        frame = inspect.currentframe()
-        global_objects = OrderedDict()
-        if name in global_objects:
-            return global_objects[name]
-        return None
-
     def skip(self):
         val = self.hasBreak() or self.hasContinue() or self.hasReturn()
         return val
@@ -938,6 +932,13 @@ class CompileVisitor(ast.NodeVisitor):
         var = self.getVariable(name, store=True)
         return var
 
+    def getGlobalObject(self, name):
+        frame = inspect.currentframe()
+        global_objects = OrderedDict()
+        if name in global_objects:
+            return global_objects[name]
+        return None
+
     def addNonlocal(self, name):
         self.scope.addNonlocal(name)
 
@@ -964,7 +965,6 @@ class CompileVisitor(ast.NodeVisitor):
             self.scope.addVariable(name, value)
             return
 
-        value = self.optimize(value)
         left = self.getVariable(name, store=True)
         right = value
         self.setBind(left, right)
@@ -981,26 +981,16 @@ class CompileVisitor(ast.NodeVisitor):
         self.setBind(var, value)
 
     def setBind(self, var, value, cond=None):
-        opt_value = self.optimize(value) if var is not None else value
-        opt_cond = (self.optimize(cond)
-                    if cond is not None and var is not None
-                    else None)
-        subst = (vtypes.SingleStatement(opt_value) if var is None else
-                 vtypes.Subst(var, opt_value))
-        self.fsm._add_statement([subst], cond=opt_cond)
+        if var is None:
+            cond = None
+
+        subst = (vtypes.SingleStatement(value) if var is None else
+                 vtypes.Subst(var, value))
+        self.fsm._add_statement([subst], cond=cond)
 
         state = self.getFsmCount()
         vname = var.name if var is not None else None
         self.scope.addBind(state, vname, value, cond)
-
-    #-------------------------------------------------------------------------
-    def optimize(self, node):
-        # if isinstance(node, tuple):
-        #    return tuple([self.optimize(n) for n in node])
-        # if isinstance(node, list):
-        #    return [self.optimize(n) for n in node]
-        # return optimize(node)
-        return node
 
     #-------------------------------------------------------------------------
     def setFsm(self, src=None, dst=None, cond=None, else_dst=None):
