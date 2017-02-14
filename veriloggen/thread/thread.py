@@ -31,7 +31,7 @@ def _tmp_name(prefix='_tmp_thread'):
 
 
 class ThreadInfo(vtypes.VeriloggenNode):
-    intrinsics = ('wait', 'busy')
+    __intrinsics__ = ('wait', 'busy')
 
     def __init__(self, thread_fsm):
         self.thread_fsm = thread_fsm
@@ -46,7 +46,7 @@ class ThreadInfo(vtypes.VeriloggenNode):
 
 
 class ThreadGenerator(vtypes.VeriloggenNode):
-    intrinsics = ('run', 'sleep')
+    __intrinsics__ = ('run', 'sleep')
 
     def __init__(self, m, clk, rst, datawidth=32):
         self.m = m
@@ -58,8 +58,6 @@ class ThreadGenerator(vtypes.VeriloggenNode):
         self.intrinsic_methods = OrderedDict()
 
         self.local_objects = {}
-
-        self.add_intrinsics(*[getattr(self, attr) for attr in self.intrinsics])
 
     def add_function(self, func):
         name = func.__name__
@@ -137,7 +135,6 @@ class ThreadGenerator(vtypes.VeriloggenNode):
                              name, targ, args, kwargs)
 
         th = ThreadInfo(child_fsm)
-        self.add_intrinsics(*[getattr(th, attr) for attr in th.intrinsics])
 
         return th
 
@@ -656,10 +653,10 @@ class CompileVisitor(ast.NodeVisitor):
 
     def _call_Attribute(self, node):
         value = self.visit(node.func.value)
-        obj = getattr(value, node.func.attr)
+        method = getattr(value, node.func.attr)
 
-        if not inspect.ismethod(obj):
-            raise TypeError("'%s' object is not callable" % str(type(obj)))
+        if not inspect.ismethod(method):
+            raise TypeError("'%s' object is not callable" % str(type(method)))
 
         # prepare the argument values
         args = []
@@ -670,22 +667,22 @@ class CompileVisitor(ast.NodeVisitor):
             kwargs[key.arg] = self.visit(key.value)
 
         # check intrinsic method
-        name = str(obj)
-        if name in self.intrinsic_methods:
+        name = str(method)
+        if self._is_intrinsic_method(value, method) or name in self.intrinsic_methods:
             args.insert(0, self.fsm)
-            return obj(*args, **kwargs)
+            return method(*args, **kwargs)
 
         # stack a new scope frame
         self.pushScope(ftype='call')
 
-        resolved_args = inspect.getcallargs(obj, *args, **kwargs)
+        resolved_args = inspect.getcallargs(method, *args, **kwargs)
         for arg, value in sorted(resolved_args.items(), key=lambda x: x[0]):
             self.setArgBind(arg, value)
 
         self.setFsm()
         self.incFsmCount()
 
-        text = textwrap.dedent(inspect.getsource(obj))
+        text = textwrap.dedent(inspect.getsource(method))
         tree = ast.parse(text).body[0]
 
         # visit the function definition
@@ -708,7 +705,11 @@ class CompileVisitor(ast.NodeVisitor):
 
         return ret
 
-    #--------------------------------------------------------------------------
+    def _is_intrinsic_method(self, value, method):
+        intrinsics = getattr(value, '__intrinsics__', ())
+        return (method.__name__ in intrinsics)
+
+    #------------------------------------------------------------------
     def visit_Nonlocal(self, node):
         for name in node.names:
             self.addNonlocal(name)
