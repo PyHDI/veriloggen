@@ -26,7 +26,6 @@ def mkLed():
             print("count = %d" % count)
 
     def blink(times, inc=1):
-        # child thread
         th = thgen.run(countup, times * 2, 10)
         print('# child thread start')
 
