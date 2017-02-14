@@ -53,7 +53,15 @@ class ScopeFrameList(object):
         self.current = self.previousframes[self.current]
 
     def addVariable(self, name, var):
-        self.current.addVariable(name, var)
+        if self.current is None:
+            return None
+        targ = self.current
+        while targ is not None:
+            if targ.ftype == 'call':
+                targ.addVariable(name, var)
+                break
+            targ = self.previousframes[targ]
+        return None
 
     def addNonlocal(self, name):
         if self.current is None:
