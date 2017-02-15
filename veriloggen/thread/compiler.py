@@ -751,6 +751,9 @@ class CompileVisitor(ast.NodeVisitor):
                  if node.slice.upper is not None else None)
         step = (self.visit(node.slice.step)
                 if node.slice.step is not None else None)
+        lower = vtypes.raw_value(optimize(lower))
+        upper = vtypes.raw_value(optimize(upper))
+        step = vtypes.raw_value(optimize(step))
         return value[lower:upper:step]
 
     def _extslice(self, node):
@@ -762,12 +765,16 @@ class CompileVisitor(ast.NodeVisitor):
                      if dim.upper is not None else None)
             step = (self.visit(dim.step)
                     if dim.step is not None else None)
+            lower = vtypes.raw_value(optimize(lower))
+            upper = vtypes.raw_value(optimize(upper))
+            step = vtypes.raw_value(optimize(step))
             value = value[lower:upper:step]
         return value
 
     def _index(self, node):
         value = self.visit(node.value)
         index = self.visit(node.slice.value)
+        index = vtypes.raw_value(optimize(index))
         return value[index]
 
     #-------------------------------------------------------------------------

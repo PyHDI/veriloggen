@@ -123,6 +123,15 @@ def max_width(left, right):
         return left
     return Mux(left >= right, left, right)
 
+def raw_value(v):
+    if isinstance(v, Int):
+        return v.value
+    if isinstance(v, Float):
+        return v.value
+    if isinstance(v, Str):
+        return v.value
+    return v
+
 #-------------------------------------------------------------------------------
 class VeriloggenNode(object):
     """ Base class of Veriloggen AST object """
