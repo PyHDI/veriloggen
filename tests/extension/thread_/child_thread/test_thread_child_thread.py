@@ -112,7 +112,7 @@ module blinkled
           th_countup <= th_countup_6;
         end
         th_countup_6: begin
-          if(count == (_th_countup_times_0 >> 1)) begin
+          if(count == (_th_countup_times_0 >>> 1)) begin
             th_countup <= th_countup_7;
           end else begin
             th_countup <= th_countup_8;

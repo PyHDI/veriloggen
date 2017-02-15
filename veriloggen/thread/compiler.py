@@ -9,8 +9,10 @@ import textwrap
 
 import veriloggen.core.vtypes as vtypes
 
+from . import optimizer
 from .scope import ScopeName, ScopeFrameList, ScopeFrame
 from .operator import getVeriloggenOp
+
 
 _tmp_count = 0
 
@@ -21,6 +23,14 @@ def _tmp_name(prefix='_tmp_thread'):
     _tmp_count += 1
     ret = '_'.join([prefix, str(v)])
     return ret
+
+
+def optimize(node):
+    try:
+        return optimizer.optimize(node)
+    except:
+        return node
+    return node
 
 
 class FunctionVisitor(ast.NodeVisitor):
@@ -587,7 +597,7 @@ class CompileVisitor(ast.NodeVisitor):
         op = getVeriloggenOp(node.op)
         value = self.visit(node.operand)
         rslt = op(value)
-        return rslt
+        return optimize(rslt)
 
     def visit_BoolOp(self, node):
         op = getVeriloggenOp(node.op)
@@ -596,7 +606,7 @@ class CompileVisitor(ast.NodeVisitor):
         rslt = self.visit(node.values[0])
         for v in node.values[1:]:
             rslt = op(rslt, self.visit(v))
-        return rslt
+        return optimize(rslt)
 
     def visit_BinOp(self, node):
         left = self.visit(node.left)
@@ -609,7 +619,7 @@ class CompileVisitor(ast.NodeVisitor):
                 return self._string_operation_plus(left, right)
             raise TypeError("Can not generate a corresponding node")
         rslt = op(left, right)
-        return rslt
+        return optimize(rslt)
 
     def _string_operation_plus(self, left, right):
         if not isinstance(left, vtypes.Str) or not isinstance(right, vtypes.Str):
@@ -825,7 +835,7 @@ class CompileVisitor(ast.NodeVisitor):
             return
 
         left = self.getVariable(name, store=True)
-        right = value
+        right = optimize(value)
         self.setBind(left, right)
 
     def setAssignBind(self, dst, var, value):
@@ -840,6 +850,8 @@ class CompileVisitor(ast.NodeVisitor):
         if var is None:
             cond = None
 
+        value = optimize(value)
+        cond = optimize(cond) if cond is not None else None
         subst = (vtypes.SingleStatement(value) if var is None else
                  vtypes.Subst(var, value))
         self.fsm._add_statement([subst], cond=cond)

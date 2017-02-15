@@ -30,7 +30,7 @@ def mkLed():
             count.value += 1
             print("count = %d" % count)
 
-            if count == times >> 1:
+            if count == times / 2:
                 th_blink.run(times)
                 print("child thread start")
 
