@@ -8,9 +8,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
 
 from veriloggen import *
+import veriloggen.thread as vthread
 
 
 class MySender(object):
+    __intrinsics__ = ('send', 'wait')
 
     def __init__(self, m, clk, rst):
         self.m = m
@@ -25,7 +27,8 @@ class MySender(object):
     def send(self, fsm, value):
         fsm(
             self.data(value),
-            self.enable(1)
+            self.enable(1),
+            Display("data = %d", value)
         )
         fsm.goto_next()
         fsm(
@@ -46,15 +49,14 @@ def mkLed():
 
     my_sender = MySender(m, clk, rst)
 
-    thgen = ThreadGenerator(m, clk, rst)
-    thgen.add_intrinsics(my_sender.send, my_sender.wait)
-
     def blink(times):
         for i in range(times):
-            my_sender.send(i)
+            data = i + 100
+            my_sender.send(data)
             my_sender.wait()
 
-    fsm = thgen.create('fsm', blink, 10)
+    th = vthread.Thread(m, clk, rst, 'th_blink', blink)
+    fsm = th.start(10)
 
     return m
 

@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
 
 from veriloggen import *
+import veriloggen.thread as vthread
 
 
 class MySender(object):
@@ -25,7 +26,8 @@ class MySender(object):
     def intrinsic_send(self, fsm, value):
         fsm(
             self.data(value),
-            self.enable(1)
+            self.enable(1),
+            Display("data = %d", value)
         )
         fsm.goto_next()
         fsm(
@@ -46,15 +48,15 @@ def mkLed():
 
     my_sender = MySender(m, clk, rst)
 
-    thgen = ThreadGenerator(m, clk, rst)
-    thgen.add_intrinsic_method_prefix(my_sender, 'intrinsic_')
-
     def blink(times):
         for i in range(times):
-            my_sender.intrinsic_send(i)
+            data = i + 100
+            my_sender.intrinsic_send(data)
             my_sender.intrinsic_wait()
 
-    fsm = thgen.create('fsm', blink, 10)
+    th = vthread.Thread(m, clk, rst, 'th_blink', blink)
+    th.add_intrinsic_method_prefix(my_sender, 'intrinsic_')
+    fsm = th.start(10)
 
     return m
 

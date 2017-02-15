@@ -49,70 +49,59 @@ module blinkled
   output reg [8-1:0] LED
 );
 
-  reg [32-1:0] fsm;
-  localparam fsm_init = 0;
-  reg [32-1:0] _thread_fsm_times_0;
-  reg [32-1:0] _thread_fsm_inc_1;
-  reg [32-1:0] _thread_fsm_dump_2;
-  reg [32-1:0] _thread_fsm_i_3;
-  localparam fsm_1 = 1;
-  localparam fsm_2 = 2;
-  localparam fsm_3 = 3;
-  localparam fsm_4 = 4;
-  localparam fsm_5 = 5;
-  localparam fsm_6 = 6;
-  localparam fsm_7 = 7;
-  localparam fsm_8 = 8;
+  reg [32-1:0] th_blink;
+  localparam th_blink_init = 0;
+  reg [32-1:0] _th_blink_times_0;
+  reg [32-1:0] _th_blink_inc_1;
+  reg [32-1:0] _th_blink_i_2;
+  localparam th_blink_1 = 1;
+  localparam th_blink_2 = 2;
+  localparam th_blink_3 = 3;
+  localparam th_blink_4 = 4;
+  localparam th_blink_5 = 5;
+  localparam th_blink_6 = 6;
+  localparam th_blink_7 = 7;
 
   always @(posedge CLK) begin
     if(RST) begin
-      fsm <= fsm_init;
-      _thread_fsm_times_0 <= 0;
-      _thread_fsm_inc_1 <= 0;
-      _thread_fsm_dump_2 <= 0;
+      th_blink <= th_blink_init;
+      _th_blink_times_0 <= 0;
+      _th_blink_inc_1 <= 0;
       LED <= 0;
-      _thread_fsm_i_3 <= 0;
+      _th_blink_i_2 <= 0;
     end else begin
-      case(fsm)
-        fsm_init: begin
-          _thread_fsm_times_0 <= 10;
-          _thread_fsm_inc_1 <= 1;
-          _thread_fsm_dump_2 <= 1;
-          fsm <= fsm_1;
+      case(th_blink)
+        th_blink_init: begin
+          _th_blink_times_0 <= 10;
+          _th_blink_inc_1 <= 10;
+          th_blink <= th_blink_1;
         end
-        fsm_1: begin
+        th_blink_1: begin
           LED <= 0;
-          fsm <= fsm_2;
+          th_blink <= th_blink_2;
         end
-        fsm_2: begin
-          _thread_fsm_i_3 <= 0;
-          fsm <= fsm_3;
+        th_blink_2: begin
+          _th_blink_i_2 <= 0;
+          th_blink <= th_blink_3;
         end
-        fsm_3: begin
-          if(_thread_fsm_i_3 < _thread_fsm_times_0) begin
-            fsm <= fsm_4;
+        th_blink_3: begin
+          if(_th_blink_i_2 < _th_blink_times_0) begin
+            th_blink <= th_blink_4;
           end else begin
-            fsm <= fsm_8;
+            th_blink <= th_blink_7;
           end
         end
-        fsm_4: begin
-          LED <= LED + _thread_fsm_inc_1;
-          fsm <= fsm_5;
+        th_blink_4: begin
+          LED <= LED + _th_blink_inc_1;
+          th_blink <= th_blink_5;
         end
-        fsm_5: begin
-          if(_thread_fsm_dump_2) begin
-            fsm <= fsm_6;
-          end else begin
-            fsm <= fsm_7;
-          end
-        end
-        fsm_6: begin
+        th_blink_5: begin
           $display("led =  %d", LED);
-          fsm <= fsm_7;
+          th_blink <= th_blink_6;
         end
-        fsm_7: begin
-          _thread_fsm_i_3 <= _thread_fsm_i_3 + 1;
-          fsm <= fsm_3;
+        th_blink_6: begin
+          _th_blink_i_2 <= _th_blink_i_2 + 1;
+          th_blink <= th_blink_3;
         end
       endcase
     end

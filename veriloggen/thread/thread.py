@@ -30,40 +30,116 @@ def _tmp_name(prefix='_tmp_thread'):
     return ret
 
 
-class ThreadInfo(vtypes.VeriloggenNode):
-    __intrinsics__ = ('wait', 'busy')
+class Thread(vtypes.VeriloggenNode):
+    __intrinsics__ = ('run', 'join', 'busy')
 
-    def __init__(self, thread_fsm):
-        self.thread_fsm = thread_fsm
-        self.end_state = self.thread_fsm.current
+    def __init__(self, m, clk, rst, name, targ, datawidth=32):
 
-    def wait(self, fsm):
-        fsm.If(self.thread_fsm.state == self.end_state).goto_next()
-        return 0
-
-    def busy(self, fsm):
-        return self.thread_fsm.state != self.end_state
-
-
-class ThreadGenerator(vtypes.VeriloggenNode):
-    __intrinsics__ = ('run', 'sleep')
-
-    def __init__(self, m, clk, rst, datawidth=32):
         self.m = m
         self.clk = clk
         self.rst = rst
+        self.name = name
+        self.targ = targ
         self.datawidth = datawidth
+
         self.function_lib = OrderedDict()
         self.intrinsic_functions = OrderedDict()
         self.intrinsic_methods = OrderedDict()
 
+        self.fsm = None
+        self.is_child = False
+        self.start_state = None
+        self.end_state = None
+
         self.local_objects = {}
+
+    def start(self, *args, **kwargs):
+        """ build up a new FSM based on the arguments """
+
+        if self.is_child:
+            raise ValueError('already started as a child thread.')
+
+        if self.end_state is not None:
+            raise ValueError('already started.')
+
+        frame = inspect.currentframe()
+        _locals = frame.f_back.f_locals
+
+        self.local_objects = OrderedDict()
+        for key, value in _locals.items():
+            self.local_objects[key] = value
+
+        self.fsm = FSM(self.m, self.name, self.clk, self.rst)
+
+        self.start_state = self.fsm.current
+        self._synthesize_fsm(self.fsm, args, kwargs)
+        self.end_state = self.fsm.current
+
+        return self.fsm
+
+    def extend(self, fsm, *args, **kwargs):
+        """ extend a given thread FSM """
+
+        frame = inspect.currentframe()
+        _locals = frame.f_back.f_locals
+
+        self.local_objects = OrderedDict()
+        for key, value in _locals.items():
+            self.local_objects[key] = value
+
+        self._synthesize_fsm(fsm, args, kwargs)
+
+        return fsm
+
+    def run(self, fsm, *args, **kwargs):
+        """ start as a child thread """
+
+        if not self.is_child and self.end_state is not None:
+            raise ValueError('already started.')
+
+        self.fsm = FSM(self.m, self.name, self.clk, self.rst)
+        self.is_child = True
+
+        if self.start_state is None:
+            self.start_state = self.fsm.current
+
+        start_flag = (fsm.state == fsm.current)
+        self.fsm.goto_from(self.start_state, self.start_state + 1, start_flag)
+
+        self.fsm._set_index(self.start_state + 1)
+
+        if self.end_state is not None:
+            return 0
+
+        self._synthesize_fsm(self.fsm, args, kwargs)
+
+        if self.end_state is None:
+            self.end_state = self.fsm.current
+
+        return 0
+
+    def join(self, fsm):
+        if self.end_state is None:
+            raise ValueError('not started')
+
+        end_flag = (self.fsm.state == self.end_state)
+        fsm.If(end_flag).goto_next()
+
+        return 0
+
+    def busy(self, fsm):
+        if self.end_state is None:
+            raise ValueError('not started')
+
+        end_flag = (self.fsm.state == self.end_state)
+
+        return end_flag
 
     def add_function(self, func):
         name = func.__name__
         if name in self.function_lib:
             raise ValueError(
-                'Function {} is already defined in ThreadGenerator.'.format(name))
+                'Function {} is already defined'.format(name))
         self.function_lib[name] = func
         return func
 
@@ -83,74 +159,11 @@ class ThreadGenerator(vtypes.VeriloggenNode):
             return self._add_intrinsic_method(func)
         raise TypeError("'%s' object is not supported" % str(type(func)))
 
-    def create(self, name, targ, *args, **kwargs):
-        """ create a thread FSM """
-        frame = inspect.currentframe()
-        _locals = frame.f_back.f_locals
-        local_objects = OrderedDict()
-
-        for key, value in _locals.items():
-            local_objects[key] = value
-
-        # store the current local objects for child threads
-        self.local_objects = local_objects
-
-        fsm = FSM(self.m, name, self.clk, self.rst)
-
-        self._synthesize_fsm(local_objects, fsm, name, targ, args, kwargs)
-
-        return fsm
-
-    def extend(self, fsm, targ, *args, **kwargs):
-        """ extend a given thread FSM """
-        frame = inspect.currentframe()
-        _locals = frame.f_back.f_locals
-        local_objects = OrderedDict()
-
-        for key, value in _locals.items():
-            local_objects[key] = value
-
-        # store the current local objects for child threads
-        self.local_objects = local_objects
-
-        name = fsm.name
-
-        self._synthesize_fsm(local_objects, fsm, name, targ, args, kwargs)
-
-        return fsm
-
-    def run(self, fsm, targ, *args, **kwargs):
-        """ create a child thread within a thread. note that this method is 'intrinsic'. """
-        name = _tmp_name('_'.join([fsm.name, 'child', targ.__name__]))
-
-        # use the same local objects as the parent thread
-        local_objects = self.local_objects
-
-        child_fsm = FSM(self.m, name, self.clk, self.rst)
-
-        # start child FSM
-        child_fsm.If(fsm.state == fsm.current).goto_next()
-
-        self._synthesize_fsm(self.local_objects, child_fsm,
-                             name, targ, args, kwargs)
-
-        th = ThreadInfo(child_fsm)
-
-        return th
-
-    def sleep(self, fsm, cycles):
-        width = cycles.bit_length() + 1
-        count = fsm.m.TmpReg(width, initval=0)
-        fsm(
-            count.inc()
-        )
-        fsm.If(count == cycles).goto_next()
-
     def _add_intrinsic_function(self, func):
         name = func.__name__
         if name in self.intrinsic_functions:
             raise ValueError(
-                'Intrinsic function {} is already defined in ThreadGenerator.'.format(name))
+                'Intrinsic function {} is already defined'.format(name))
         self.intrinsic_functions[name] = func
         return func
 
@@ -158,19 +171,19 @@ class ThreadGenerator(vtypes.VeriloggenNode):
         name = str(func)
         if name in self.intrinsic_methods:
             raise ValueError(
-                'Intrinsic method {} is already defined in ThreadGenerator.'.format(name))
+                'Intrinsic method {} is already defined'.format(name))
         self.intrinsic_methods[name] = func
         return func
 
-    def _synthesize_fsm(self, local_objects, fsm, name, targ, args, kwargs):
+    def _synthesize_fsm(self, fsm, args, kwargs):
 
         codes = []
 
         for func_name, func in self.function_lib.items():
             codes.append(textwrap.dedent(inspect.getsource(func)))
 
-        if targ.__name__ not in self.function_lib:
-            codes.append(textwrap.dedent(inspect.getsource(targ)))
+        if self.targ.__name__ not in self.function_lib:
+            codes.append(textwrap.dedent(inspect.getsource(self.targ)))
 
         text = '\n'.join(codes)
         _ast = ast.parse(text)
@@ -179,7 +192,11 @@ class ThreadGenerator(vtypes.VeriloggenNode):
         functionvisitor.visit(_ast)
         functions = functionvisitor.getFunctions()
 
-        compilevisitor = CompileVisitor(self, self.m, name, self.clk, self.rst, fsm,
+        local_objects = {}
+        for key, value in self.local_objects.items():
+            local_objects[key] = value
+
+        compilevisitor = CompileVisitor(self.m, self.name, self.clk, self.rst, fsm,
                                         functions, self.intrinsic_functions,
                                         self.intrinsic_methods, local_objects,
                                         datawidth=self.datawidth)
@@ -200,7 +217,7 @@ class ThreadGenerator(vtypes.VeriloggenNode):
             i += 1
 
         args_text = ', '.join(args_code + kwargs_code)
-        call_code = ''.join([targ.__name__, '(', args_text, ')'])
+        call_code = ''.join([self.targ.__name__, '(', args_text, ')'])
 
         _call_ast = ast.parse(call_code)
         compilevisitor.visit(_call_ast)
@@ -232,12 +249,11 @@ class TargetVisitor(ast.NodeVisitor):
 
 class CompileVisitor(ast.NodeVisitor):
 
-    def __init__(self, thgen, m, name, clk, rst, fsm,
+    def __init__(self, m, name, clk, rst, fsm,
                  functions, intrinsic_functions,
                  intrinsic_methods, local_objects,
                  datawidth=32):
 
-        self.thgen = thgen
         self.m = m
         self.name = name
         self.clk = clk
@@ -670,6 +686,9 @@ class CompileVisitor(ast.NodeVisitor):
         name = str(method)
         if self._is_intrinsic_method(value, method) or name in self.intrinsic_methods:
             args.insert(0, self.fsm)
+            # pass the current local scope
+            if isinstance(value, Thread):
+                value.local_objects = self.local_objects
             return method(*args, **kwargs)
 
         # stack a new scope frame
@@ -908,7 +927,7 @@ class CompileVisitor(ast.NodeVisitor):
         return val
 
     def makeVariable(self, name, width=None, initval=0):
-        signame = _tmp_name('_'.join(['_thread', self.name, name]))
+        signame = _tmp_name('_'.join(['', self.name, name]))
         if width is None:
             width = self.datawidth
         return self.m.Reg(signame, width, initval=initval)
@@ -972,12 +991,9 @@ class CompileVisitor(ast.NodeVisitor):
 
     def setAssignBind(self, dst, var, value):
         if not isinstance(value, vtypes.numerical_types):
-            name = dst if var is not None else None
-            if name is None:
-                raise TypeError(
-                    "object binding without destination is not supported")
-            self.scope.addVariable(name, value)
-            return
+            #self.scope.addVariable(dst, value)
+            # return
+            raise TypeError("dynamic object substitution is not supported")
 
         self.setBind(var, value)
 

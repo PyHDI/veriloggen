@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
 
 from veriloggen import *
+import veriloggen.thread as vthread
 
 
 def mkLed():
@@ -17,27 +18,29 @@ def mkLed():
     led = m.OutputReg('LED', 8, initval=0)
     count = m.Reg('count', 8, initval=0)
 
-    thgen = ThreadGenerator(m, clk, rst)
-
-    def countup(times, inc=1):
-        count.value = 0
-        for i in range(times):
-            count.value += inc
-            print("count = %d" % count)
-
-    def blink(times, inc=1):
-        th = thgen.run(countup, times * 2, 10)
-        print('# child thread start')
-
+    def blink(times):
         led.value = 0
         for i in range(times):
-            led.value += inc
+            led.value += 1
             print("  led = %d" % led)
 
-        th.wait()
-        print('# child thread done')
+    def countup(times):
+        count.value = 0
+        for i in range(times):
+            count.value += 1
+            print("count = %d" % count)
 
-    fsm = thgen.create('fsm', blink, 10)
+            if count == times >> 1:
+                th_blink.run(times)
+                print("child thread start")
+
+        th_blink.join()
+        print("child thread finish")
+
+    th_countup = vthread.Thread(m, clk, rst, 'th_countup', countup)
+    th_blink = vthread.Thread(m, clk, rst, 'th_blink', blink)
+
+    fsm = th_countup.start(20)
 
     return m
 

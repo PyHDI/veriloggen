@@ -56,144 +56,141 @@ module blinkled
 );
 
   reg [8-1:0] count;
-  reg [32-1:0] fsm;
-  localparam fsm_init = 0;
-  reg [32-1:0] _thread_fsm_times_0;
-  reg [32-1:0] _thread_fsm_inc_1;
-  reg [32-1:0] fsm_child_countup_2;
-  localparam fsm_child_countup_2_init = 0;
-  reg [32-1:0] _thread_fsm_child_countup_2_times_3;
-  reg [32-1:0] _thread_fsm_child_countup_2_inc_4;
-  reg [32-1:0] _thread_fsm_child_countup_2_i_5;
-  reg [32-1:0] _thread_fsm_th_6;
-  reg [32-1:0] _thread_fsm_i_7;
-  localparam fsm_1 = 1;
-  localparam fsm_2 = 2;
-  localparam fsm_3 = 3;
-  localparam fsm_4 = 4;
-  localparam fsm_5 = 5;
-  localparam fsm_6 = 6;
-  localparam fsm_7 = 7;
-  localparam fsm_8 = 8;
-  localparam fsm_9 = 9;
-  localparam fsm_10 = 10;
-  localparam fsm_11 = 11;
+  reg [32-1:0] th_countup;
+  localparam th_countup_init = 0;
+  reg [32-1:0] _th_countup_times_0;
+  reg [32-1:0] _th_countup_i_1;
+  reg [32-1:0] th_blink;
+  localparam th_blink_init = 0;
+  reg [32-1:0] _th_blink_times_2;
+  reg [32-1:0] _th_blink_i_3;
+  localparam th_countup_1 = 1;
+  localparam th_countup_2 = 2;
+  localparam th_countup_3 = 3;
+  localparam th_countup_4 = 4;
+  localparam th_countup_5 = 5;
+  localparam th_countup_6 = 6;
+  localparam th_countup_7 = 7;
+  localparam th_countup_8 = 8;
+  localparam th_countup_9 = 9;
+  localparam th_countup_10 = 10;
+  localparam th_countup_11 = 11;
 
   always @(posedge CLK) begin
     if(RST) begin
-      fsm <= fsm_init;
-      _thread_fsm_times_0 <= 0;
-      _thread_fsm_inc_1 <= 0;
-      LED <= 0;
-      _thread_fsm_i_7 <= 0;
+      th_countup <= th_countup_init;
+      _th_countup_times_0 <= 0;
+      count <= 0;
+      _th_countup_i_1 <= 0;
     end else begin
-      case(fsm)
-        fsm_init: begin
-          _thread_fsm_times_0 <= 10;
-          _thread_fsm_inc_1 <= 1;
-          fsm <= fsm_1;
+      case(th_countup)
+        th_countup_init: begin
+          _th_countup_times_0 <= 20;
+          th_countup <= th_countup_1;
         end
-        fsm_1: begin
-          fsm <= fsm_2;
+        th_countup_1: begin
+          count <= 0;
+          th_countup <= th_countup_2;
         end
-        fsm_2: begin
-          $display("# child thread start");
-          fsm <= fsm_3;
+        th_countup_2: begin
+          _th_countup_i_1 <= 0;
+          th_countup <= th_countup_3;
         end
-        fsm_3: begin
-          LED <= 0;
-          fsm <= fsm_4;
-        end
-        fsm_4: begin
-          _thread_fsm_i_7 <= 0;
-          fsm <= fsm_5;
-        end
-        fsm_5: begin
-          if(_thread_fsm_i_7 < _thread_fsm_times_0) begin
-            fsm <= fsm_6;
+        th_countup_3: begin
+          if(_th_countup_i_1 < _th_countup_times_0) begin
+            th_countup <= th_countup_4;
           end else begin
-            fsm <= fsm_9;
+            th_countup <= th_countup_9;
           end
         end
-        fsm_6: begin
-          LED <= LED + _thread_fsm_inc_1;
-          fsm <= fsm_7;
+        th_countup_4: begin
+          count <= count + 1;
+          th_countup <= th_countup_5;
         end
-        fsm_7: begin
-          $display("  led = %d", LED);
-          fsm <= fsm_8;
+        th_countup_5: begin
+          $display("count = %d", count);
+          th_countup <= th_countup_6;
         end
-        fsm_8: begin
-          _thread_fsm_i_7 <= _thread_fsm_i_7 + 1;
-          fsm <= fsm_5;
+        th_countup_6: begin
+          if(count == (_th_countup_times_0 >> 1)) begin
+            th_countup <= th_countup_7;
+          end else begin
+            th_countup <= th_countup_8;
+          end
         end
-        fsm_9: begin
-          if(fsm_child_countup_2 == 8) begin
-            fsm <= fsm_10;
+        th_countup_7: begin
+          $display("child thread start");
+          th_countup <= th_countup_8;
+        end
+        th_countup_8: begin
+          _th_countup_i_1 <= _th_countup_i_1 + 1;
+          th_countup <= th_countup_3;
+        end
+        th_countup_9: begin
+          if(th_blink == 8) begin
+            th_countup <= th_countup_10;
           end 
         end
-        fsm_10: begin
-          $display("# child thread done");
-          fsm <= fsm_11;
+        th_countup_10: begin
+          $display("child thread finish");
+          th_countup <= th_countup_11;
         end
       endcase
     end
   end
 
-  localparam fsm_child_countup_2_1 = 1;
-  localparam fsm_child_countup_2_2 = 2;
-  localparam fsm_child_countup_2_3 = 3;
-  localparam fsm_child_countup_2_4 = 4;
-  localparam fsm_child_countup_2_5 = 5;
-  localparam fsm_child_countup_2_6 = 6;
-  localparam fsm_child_countup_2_7 = 7;
-  localparam fsm_child_countup_2_8 = 8;
+  localparam th_blink_1 = 1;
+  localparam th_blink_2 = 2;
+  localparam th_blink_3 = 3;
+  localparam th_blink_4 = 4;
+  localparam th_blink_5 = 5;
+  localparam th_blink_6 = 6;
+  localparam th_blink_7 = 7;
+  localparam th_blink_8 = 8;
 
   always @(posedge CLK) begin
     if(RST) begin
-      fsm_child_countup_2 <= fsm_child_countup_2_init;
-      _thread_fsm_child_countup_2_times_3 <= 0;
-      _thread_fsm_child_countup_2_inc_4 <= 0;
-      count <= 0;
-      _thread_fsm_child_countup_2_i_5 <= 0;
+      th_blink <= th_blink_init;
+      _th_blink_times_2 <= 0;
+      LED <= 0;
+      _th_blink_i_3 <= 0;
     end else begin
-      case(fsm_child_countup_2)
-        fsm_child_countup_2_init: begin
-          if(fsm == 1) begin
-            fsm_child_countup_2 <= fsm_child_countup_2_1;
+      case(th_blink)
+        th_blink_init: begin
+          if(th_countup == 7) begin
+            th_blink <= th_blink_1;
           end 
         end
-        fsm_child_countup_2_1: begin
-          _thread_fsm_child_countup_2_times_3 <= _thread_fsm_times_0 * 2;
-          _thread_fsm_child_countup_2_inc_4 <= 10;
-          fsm_child_countup_2 <= fsm_child_countup_2_2;
+        th_blink_1: begin
+          _th_blink_times_2 <= _th_countup_times_0;
+          th_blink <= th_blink_2;
         end
-        fsm_child_countup_2_2: begin
-          count <= 0;
-          fsm_child_countup_2 <= fsm_child_countup_2_3;
+        th_blink_2: begin
+          LED <= 0;
+          th_blink <= th_blink_3;
         end
-        fsm_child_countup_2_3: begin
-          _thread_fsm_child_countup_2_i_5 <= 0;
-          fsm_child_countup_2 <= fsm_child_countup_2_4;
+        th_blink_3: begin
+          _th_blink_i_3 <= 0;
+          th_blink <= th_blink_4;
         end
-        fsm_child_countup_2_4: begin
-          if(_thread_fsm_child_countup_2_i_5 < _thread_fsm_child_countup_2_times_3) begin
-            fsm_child_countup_2 <= fsm_child_countup_2_5;
+        th_blink_4: begin
+          if(_th_blink_i_3 < _th_blink_times_2) begin
+            th_blink <= th_blink_5;
           end else begin
-            fsm_child_countup_2 <= fsm_child_countup_2_8;
+            th_blink <= th_blink_8;
           end
         end
-        fsm_child_countup_2_5: begin
-          count <= count + _thread_fsm_child_countup_2_inc_4;
-          fsm_child_countup_2 <= fsm_child_countup_2_6;
+        th_blink_5: begin
+          LED <= LED + 1;
+          th_blink <= th_blink_6;
         end
-        fsm_child_countup_2_6: begin
-          $display("count = %d", count);
-          fsm_child_countup_2 <= fsm_child_countup_2_7;
+        th_blink_6: begin
+          $display("  led = %d", LED);
+          th_blink <= th_blink_7;
         end
-        fsm_child_countup_2_7: begin
-          _thread_fsm_child_countup_2_i_5 <= _thread_fsm_child_countup_2_i_5 + 1;
-          fsm_child_countup_2 <= fsm_child_countup_2_4;
+        th_blink_7: begin
+          _th_blink_i_3 <= _th_blink_i_3 + 1;
+          th_blink <= th_blink_4;
         end
       endcase
     end

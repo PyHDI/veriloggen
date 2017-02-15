@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
 
 from veriloggen import *
+import veriloggen.thread as vthread
 
 import math
 
@@ -35,15 +36,14 @@ def mkLed():
 
     my_counter = MyCounter(m, clk, rst)
 
-    thgen = ThreadGenerator(m, clk, rst)
-
     def blink(times):
         led.value = 0
         for i in range(times):
             led.value = my_counter.count
             print("led = ", led)
 
-    fsm = thgen.create('fsm', blink, 10)
+    th = vthread.Thread(m, clk, rst, 'th_blink', blink)
+    fsm = th.start(10)
 
     return m
 
