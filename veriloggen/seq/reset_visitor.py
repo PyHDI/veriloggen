@@ -6,15 +6,18 @@ import sys
 
 import veriloggen.core.vtypes as vtypes
 
+
 class ResetVisitor(object):
+
     def generic_visit(self, node):
         raise TypeError("Type %s is not supported." % str(type(node)))
-    
+
     def visit(self, node):
         if isinstance(node, vtypes._Variable):
             return self.visit__Variable(node)
-        
-        visitor = getattr(self, 'visit_' + node.__class__.__name__, self.generic_visit)
+
+        visitor = getattr(
+            self, 'visit_' + node.__class__.__name__, self.generic_visit)
         return visitor(node)
 
     def visit__Variable(self, node):
@@ -26,8 +29,18 @@ class ResetVisitor(object):
         val = self.visit(node.var)
         if val is None:
             return None
-        return vtypes.Subst(vtypes.Pointer(val.left, node.pos), 
-                            vtypes.Pointer(val.right, node.pos))
+        left = vtypes.Pointer(val.left, node.pos)
+        if not isinstance(val.right, (vtypes._Variable, vtypes.Scope)):
+            if isinstance(val.right, (int, bool)):
+                val_right = vtypes.Int(val.right)
+            elif isinstance(val.right, float):
+                val_right = vtypes.Float(val.right)
+            else:
+                raise TypeError("unsupported value type: %s" % str(val.right))
+            right = (val_right >> node.pos) & 0x1
+        else:
+            right = vtypes.Pointer(val.right, node.pos)
+        return vtypes.Subst(left, right)
 
     def visit_Slice(self, node):
         val = self.visit(node.var)

@@ -94,8 +94,8 @@ class CompileVisitor(ast.NodeVisitor):
 
         right = self.visit(node.value)
         lefts = [self.visit(target) for target in node.targets]
-        raw_lefts = [self.targetvisitor.visit(
-            target) for target in node.targets]
+        raw_lefts = [self.targetvisitor.visit(target)
+                     for target in node.targets]
 
         for raw_left, left in zip(raw_lefts, lefts):
             self._assign(raw_left, left, right)
@@ -724,6 +724,42 @@ class CompileVisitor(ast.NodeVisitor):
         """ List is not fully implemented yet. """
         return tuple([self.visit(elt) for elt in node.elts])
 
+    def visit_Subscript(self, node):
+        if isinstance(node.slice, ast.Slice):
+            return self._slice(node)
+        if isinstance(node.slice, ast.ExtSlice):
+            return self._extslice(node)
+        if isinstance(node.slice, ast.Index):
+            return self._index(node)
+        raise TypeError("Unsupported slice type: %s" % str(node.slice))
+
+    def _slice(self, node):
+        value = self.visit(node.value)
+        lower = (self.visit(node.slice.lower)
+                 if node.slice.lower is not None else None)
+        upper = (self.visit(node.slice.upper)
+                 if node.slice.upper is not None else None)
+        step = (self.visit(node.slice.step)
+                if node.slice.step is not None else None)
+        return value[lower:upper:step]
+
+    def _extslice(self, node):
+        value = self.visit(node.value)
+        for dim in node.slice.dims:
+            lower = (self.visit(dim.lower)
+                     if dim.lower is not None else None)
+            upper = (self.visit(dim.upper)
+                     if dim.upper is not None else None)
+            step = (self.visit(dim.step)
+                    if dim.step is not None else None)
+            value = value[lower:upper:step]
+        return value
+
+    def _index(self, node):
+        value = self.visit(node.value)
+        index = self.visit(node.slice.value)
+        return value[index]
+
     #-------------------------------------------------------------------------
     def skip(self):
         val = self.hasBreak() or self.hasContinue() or self.hasReturn()
@@ -809,8 +845,7 @@ class CompileVisitor(ast.NodeVisitor):
         self.fsm._add_statement([subst], cond=cond)
 
         state = self.getFsmCount()
-        vname = var.name if var is not None else None
-        self.scope.addBind(state, vname, value, cond)
+        self.scope.addBind(state, var, value, cond)
 
     #-------------------------------------------------------------------------
     def setFsm(self, src=None, dst=None, cond=None, else_dst=None):

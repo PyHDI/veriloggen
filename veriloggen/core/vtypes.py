@@ -273,12 +273,21 @@ class _Numeric(VeriloggenNode):
             size = self._len()
 
             right = r.start
+            left = r.stop
+            step = r.step
+
+            if isinstance(left, Int):
+                left = left.value
+            if isinstance(right, Int):
+                right = right.value
+            if isinstance(step, Int):
+                step = step.value
+
             if right is None:
                 right = 0
             elif isinstance(right, int) and right < 0:
                 right = size - abs(right)
                 
-            left = r.stop
             if left is None:
                 left = size
             elif isinstance(left, int) and left < 0:
@@ -288,7 +297,6 @@ class _Numeric(VeriloggenNode):
             if isinstance(left, int) and left < 0:
                 raise ValueError("Illegal slice index: left = %d" % left)
             
-            step = r.step
             if step is None:
                 return Slice(self, left, right)
             else:
