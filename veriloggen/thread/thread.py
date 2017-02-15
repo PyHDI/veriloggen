@@ -163,25 +163,17 @@ class Thread(vtypes.VeriloggenNode):
         return func
 
     def _synthesize_fsm(self, fsm, args, kwargs):
-
-        codes = []
-
-        for func_name, func in self.function_lib.items():
-            codes.append(textwrap.dedent(inspect.getsource(func)))
-
-        if self.targ.__name__ not in self.function_lib:
-            codes.append(textwrap.dedent(inspect.getsource(self.targ)))
-
-        text = '\n'.join(codes)
-        _ast = ast.parse(text)
-
-        functionvisitor = compiler.FunctionVisitor()
-        functionvisitor.visit(_ast)
-        functions = functionvisitor.getFunctions()
+        
+        functions = self._get_functions()
 
         local_objects = {}
         for key, value in self.local_objects.items():
             local_objects[key] = value
+
+        compilevisitor = compiler.CompileVisitor(self.m, self.name, self.clk, self.rst, fsm,
+                                                 functions, self.intrinsic_functions,
+                                                 self.intrinsic_methods, local_objects,
+                                                 datawidth=self.datawidth)
 
         # function argument
         args_code = []
@@ -203,8 +195,23 @@ class Thread(vtypes.VeriloggenNode):
 
         _call_ast = ast.parse(call_code)
 
-        compilevisitor = compiler.CompileVisitor(self.m, self.name, self.clk, self.rst, fsm,
-                                                 functions, self.intrinsic_functions,
-                                                 self.intrinsic_methods, local_objects,
-                                                 datawidth=self.datawidth)
         compilevisitor.visit(_call_ast)
+
+
+    def _get_functions(self):
+        codes = []
+
+        for func_name, func in self.function_lib.items():
+            codes.append(textwrap.dedent(inspect.getsource(func)))
+
+        if self.targ.__name__ not in self.function_lib:
+            codes.append(textwrap.dedent(inspect.getsource(self.targ)))
+
+        text = '\n'.join(codes)
+        _ast = ast.parse(text)
+
+        functionvisitor = compiler.FunctionVisitor()
+        functionvisitor.visit(_ast)
+        functions = functionvisitor.getFunctions()
+
+        return functions
