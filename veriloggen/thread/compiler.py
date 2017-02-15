@@ -395,8 +395,6 @@ class CompileVisitor(ast.NodeVisitor):
 
     def _call_Name_function(self, node, name):
         tree = self.getFunction(name)
-        if tree is None:
-            raise NameError("function '%s' is not defined" % name)
 
         # prepare the argument values
         args = []
