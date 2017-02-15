@@ -11,7 +11,6 @@ import veriloggen.core.vtypes as vtypes
 
 from .scope import ScopeName, ScopeFrameList, ScopeFrame
 from .operator import getVeriloggenOp
-from . import thread
 
 _tmp_count = 0
 
@@ -487,9 +486,12 @@ class CompileVisitor(ast.NodeVisitor):
         name = str(method)
         if self._is_intrinsic_method(value, method) or name in self.intrinsic_methods:
             args.insert(0, self.fsm)
+
             # pass the current local scope
-            if isinstance(value, thread.Thread):
+            from .thread import Thread
+            if isinstance(value, Thread):
                 value.local_objects = self.local_objects
+
             return method(*args, **kwargs)
 
         # stack a new scope frame
