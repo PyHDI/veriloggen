@@ -408,12 +408,12 @@ class CompileVisitor(ast.NodeVisitor):
         self.pushScope(ftype='call')
 
         # node.args -> variable and binding
-        for pos, arg in enumerate(node.args):
+        for pos, arg in enumerate(args):
             baseobj = tree.args.args[pos]
             argname = (baseobj.id
                        if isinstance(baseobj, ast.Name)  # python 2
                        else baseobj.arg)  # python 3
-            self.setArgBind(argname, args[pos])
+            self.setArgBind(argname, arg)
 
         # kwargs
         for pos, key in enumerate(node.keywords):
