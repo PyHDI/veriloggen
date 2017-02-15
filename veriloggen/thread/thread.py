@@ -163,40 +163,56 @@ class Thread(vtypes.VeriloggenNode):
         return func
 
     def _synthesize_fsm(self, fsm, args, kwargs):
-        
+
         functions = self._get_functions()
 
         local_objects = {}
         for key, value in self.local_objects.items():
             local_objects[key] = value
 
-        compilevisitor = compiler.CompileVisitor(self.m, self.name, self.clk, self.rst, fsm,
-                                                 functions, self.intrinsic_functions,
-                                                 self.intrinsic_methods, local_objects,
-                                                 datawidth=self.datawidth)
+        cvisitor = compiler.CompileVisitor(self.m, self.name, self.clk, self.rst, fsm,
+                                           functions, self.intrinsic_functions,
+                                           self.intrinsic_methods, local_objects,
+                                           datawidth=self.datawidth)
 
-        # function argument
+        text = textwrap.dedent(inspect.getsource(self.targ))
+        tree = ast.parse(text).body[0]
+
+        # stack a new scope frame
+        cvisitor.pushScope(ftype='call')
+
+        # args -> scope variable
         args_code = []
-        for i, arg in enumerate(args):
-            argkey = '__arg_%d' % i
-            local_objects[argkey] = arg
-            args_code.append(argkey)
+        for pos, arg in enumerate(args):
+            baseobj = tree.args.args[pos]
+            argname = (baseobj.id
+                       if isinstance(baseobj, ast.Name)  # python 2
+                       else baseobj.arg)  # python 3
+            cvisitor.scope.addVariable(argname, arg)
+            args_code.append(argname)
 
+        # kwargs -> scope variable
         kwargs_code = []
-        i = 0
-        for k, v in sorted(kwargs.items(), key=lambda x: x[0]):
-            argkey = '__kwarg_%d' % i
-            local_objects[argkey] = v
-            kwargs_code.append('{}={}'.format(k, argkey))
-            i += 1
+        for key, val in sorted(kwargs.items(), key=lambda x: x[0]):
+            cvisitor.scope.addVariable(key, val)
+            kwargs_code.append('{}={}'.format(key, key))
 
+        # call AST
         args_text = ', '.join(args_code + kwargs_code)
         call_code = ''.join([self.targ.__name__, '(', args_text, ')'])
-
         _call_ast = ast.parse(call_code)
 
-        compilevisitor.visit(_call_ast)
+        # start visit
+        cvisitor.visit(_call_ast)
 
+        # clean-up jump conditions
+        cvisitor.clearBreak()
+        cvisitor.clearContinue()
+        cvisitor.clearReturn()
+        cvisitor.clearReturnVariable()
+
+        # return to the previous scope frame
+        cvisitor.popScope()
 
     def _get_functions(self):
         codes = []
