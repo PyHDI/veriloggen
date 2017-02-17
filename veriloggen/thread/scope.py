@@ -111,7 +111,7 @@ class ScopeFrameList(object):
             return ret
         return None
 
-    def searchFunction(self, name, store=False):
+    def searchFunction(self, name):
         if self.current is None:
             return None
         targ = self.current
