@@ -18,9 +18,9 @@ def reset():
 
 
 class Thread(vtypes.VeriloggenNode):
-    __intrinsics__ = ('run', 'join', 'busy', 'reset', 'ret')
+    __intrinsics__ = ('run', 'join', 'done', 'reset', 'ret')
 
-    def __init__(self, m, clk, rst, name, targ, datawidth=32):
+    def __init__(self, m, clk, rst, name, targ, datawidth=32, tid=None):
 
         self.m = m
         self.clk = clk
@@ -28,6 +28,7 @@ class Thread(vtypes.VeriloggenNode):
         self.name = name
         self.targ = targ
         self.datawidth = datawidth
+        self.tid = tid
 
         self.function_lib = OrderedDict()
         self.intrinsic_functions = OrderedDict()
@@ -48,10 +49,10 @@ class Thread(vtypes.VeriloggenNode):
         """ build up a new FSM based on the arguments """
 
         if self.is_child:
-            raise ValueError('already started as a child thread.')
+            raise ValueError('already started as a child thread')
 
         if self.end_state is not None:
-            raise ValueError('already started.')
+            raise ValueError('already started')
 
         frame = inspect.currentframe()
         _locals = frame.f_back.f_locals
@@ -86,7 +87,7 @@ class Thread(vtypes.VeriloggenNode):
         """ start as a child thread """
 
         if not self.is_child and self.end_state is not None:
-            raise ValueError('already started.')
+            raise ValueError('already started')
 
         if self.fsm is None:
             self.fsm = FSM(self.m, self.name, self.clk, self.rst)
@@ -118,7 +119,7 @@ class Thread(vtypes.VeriloggenNode):
 
         return 0
 
-    def busy(self, fsm):
+    def done(self, fsm):
         """ check whethe the thread is running """
 
         if self.end_state is None:
@@ -150,6 +151,7 @@ class Thread(vtypes.VeriloggenNode):
 
     def ret(self, fsm):
         """ return value """
+        
         return self.return_value
 
     #--------------------------------------------------------------------------
@@ -250,12 +252,15 @@ class Thread(vtypes.VeriloggenNode):
 
         return self.return_value
 
-    def _synthesize_run_fsm(self, parent_fsm, args, kwargs):
+    def _synthesize_run_fsm(self, parent_fsm, args, kwargs, cond=None):
         start_flag = (parent_fsm.state == parent_fsm.current)
 
         if self.called is None:
             self.called = self.m.Reg(
                 '_'.join(['', self.name, 'called']), initval=0)
+
+        if cond is not None:
+            self.fsm.If(cond)
 
         self.fsm.If(start_flag)(
             self.called(1)
@@ -306,6 +311,9 @@ class Thread(vtypes.VeriloggenNode):
                         v = self.args_dict[argname]
 
                     # binding
+                    if cond is not None:
+                        self.fsm.If(cond)
+
                     self.fsm.If(start_flag)(
                         v(arg)
                     )
@@ -349,6 +357,8 @@ class Thread(vtypes.VeriloggenNode):
             #        raise TypeError('variable length argument support no non-numeric values')
             #    v = self.vararg_regs[i]
             #    # binding
+            #    if cond is not None:
+            #        self.fsm.If(cond)
             #    self.fsm.If(start_flag)(
             #        v(arg)
             #    )
@@ -371,6 +381,9 @@ class Thread(vtypes.VeriloggenNode):
                     v = self.args_dict[argname]
 
                 # binding
+                if cond is not None:
+                    self.fsm.If(cond)
+
                 self.fsm.If(start_flag)(
                     v(arg)
                 )
@@ -387,7 +400,11 @@ class Thread(vtypes.VeriloggenNode):
 
             kwargs_code.append('{}={}'.format(key, key))
 
-        self.fsm.goto_from(self.start_state, self.start_state + 1, start_flag)
+        c = start_flag
+        if cond is not None:
+            c = vtypes.Land(c, cond)
+
+        self.fsm.goto_from(self.start_state, self.start_state + 1, c)
         self.fsm._set_index(self.start_state + 1)
 
         parent_fsm.goto_next()
