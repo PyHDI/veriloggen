@@ -151,7 +151,7 @@ class Thread(vtypes.VeriloggenNode):
 
     def ret(self, fsm):
         """ return value """
-        
+
         return self.return_value
 
     #--------------------------------------------------------------------------
@@ -283,9 +283,7 @@ class Thread(vtypes.VeriloggenNode):
         # stack a new scope frame
         cvisitor.pushScope(ftype='call')
 
-        args_name_list = [arg.id if isinstance(arg, ast.Name) else arg.arg
-                          for arg in tree.args.args]
-        args_used_list = []
+        used_args = []
 
         # args
         args_code = []
@@ -293,12 +291,14 @@ class Thread(vtypes.VeriloggenNode):
             argname = (arginfo.id
                        if isinstance(arginfo, ast.Name)  # python 2
                        else arginfo.arg)  # python 3
+
+            # actual values can be assigned later in default value section
             args_code.append(argname)
 
             # regular args
             if pos < len(args):
                 arg = args[pos]
-                args_used_list.append(argname)
+                used_args.append(argname)
 
                 if isinstance(arg, vtypes.numerical_types):  # pass by value
                     if argname not in self.args_dict:
@@ -343,8 +343,10 @@ class Thread(vtypes.VeriloggenNode):
         varargname = argname
 
         if len(args) > len(tree.args.args):
+            used_args.append(varargname)
             raise ValueError(
                 'variable length argument is not supported in dynamic thread execution')
+
             #num_vararg_vars = len(args) - len(tree.args.args)
             # if num_vararg_vars > len(self.vararg_regs):
             #    for i in range(num_vararg_vars - len(self.vararg_regs)):
@@ -366,9 +368,11 @@ class Thread(vtypes.VeriloggenNode):
         # kwargs
         kwargs_code = []
         for argname, arg in sorted(kwargs.items(), key=lambda x: x[0]):
-            if argname in self.args_dict:
+            if argname in used_args:
                 raise TypeError(
                     "got multiple values for argument '%s'" % argname)
+
+            used_args.append(argname)
 
             if isinstance(arg, vtypes.numerical_types):  # pass by value
                 if argname not in self.args_dict:
@@ -399,6 +403,33 @@ class Thread(vtypes.VeriloggenNode):
                         'same object must be passed for non-numeric argument')
 
             kwargs_code.append('{}={}'.format(key, key))
+
+        # defaults
+        defaults_size = len(tree.args.defaults)
+        if defaults_size > 0:
+            for arg, val in zip(tree.args.args[-defaults_size:], tree.args.defaults):
+                argname = (arg.id if isinstance(arg, ast.Name)  # python 2
+                           else arg.arg)  # python 3
+
+                if argname not in self.args_dict:
+                    name = compiler._tmp_name(
+                        '_'.join(['', self.name, argname]))
+                    v = self.m.Reg(name, self.datawidth, initval=0)
+                    cvisitor.scope.addVariable(argname, v)
+                    self.args_dict[argname] = v
+                else:
+                    v = self.args_dict[argname]
+
+                if argname not in used_args:
+                    right = cvisitor.visit(val)
+
+                    # binding
+                    if cond is not None:
+                        self.fsm.If(cond)
+
+                    self.fsm.If(start_flag)(
+                        v(right)
+                    )
 
         c = start_flag
         if cond is not None:

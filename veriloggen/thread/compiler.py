@@ -540,7 +540,7 @@ class CompileVisitor(ast.NodeVisitor):
             for arg, val in zip(tree.args.args[-kwargs_size:], tree.args.defaults):
                 argname = (arg.id if isinstance(arg, ast.Name)  # python 2
                            else arg.arg)  # python 3
-                if not argname in args_used_list:
+                if argname not in args_used_list:
                     right = self.visit(val)
                     self.setArgBind(argname, right)
 
