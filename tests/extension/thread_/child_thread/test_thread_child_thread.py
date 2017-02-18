@@ -64,6 +64,7 @@ module blinkled
   reg [32-1:0] _th_blink_c_3;
   reg [32-1:0] th_subth;
   localparam th_subth_init = 0;
+  reg _th_subth_called;
   reg [32-1:0] _th_subth_a_4;
   reg [32-1:0] _th_subth_b_5;
   reg [32-1:0] _th_subth_c_6;
@@ -87,6 +88,7 @@ module blinkled
   localparam th_blink_10 = 10;
   localparam th_blink_11 = 11;
   localparam th_blink_12 = 12;
+  localparam th_blink_13 = 13;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -111,48 +113,51 @@ module blinkled
           th_blink <= th_blink_2;
         end
         th_blink_2: begin
-          $display("# subth run");
           th_blink <= th_blink_3;
         end
         th_blink_3: begin
-          LED <= 0;
+          $display("# subth run");
           th_blink <= th_blink_4;
         end
         th_blink_4: begin
-          _th_blink_i_14 <= 0;
+          LED <= 0;
           th_blink <= th_blink_5;
         end
         th_blink_5: begin
-          if(_th_blink_i_14 < _th_blink_times_0) begin
-            th_blink <= th_blink_6;
-          end else begin
-            th_blink <= th_blink_9;
-          end
+          _th_blink_i_14 <= 0;
+          th_blink <= th_blink_6;
         end
         th_blink_6: begin
-          LED <= LED + 1;
-          th_blink <= th_blink_7;
+          if(_th_blink_i_14 < _th_blink_times_0) begin
+            th_blink <= th_blink_7;
+          end else begin
+            th_blink <= th_blink_10;
+          end
         end
         th_blink_7: begin
-          $display("led =  %d", LED);
+          LED <= LED + 1;
           th_blink <= th_blink_8;
         end
         th_blink_8: begin
-          _th_blink_i_14 <= _th_blink_i_14 + 1;
-          th_blink <= th_blink_5;
+          $display("led =  %d", LED);
+          th_blink <= th_blink_9;
         end
         th_blink_9: begin
-          if(th_subth == 10) begin
-            th_blink <= th_blink_10;
-          end 
+          _th_blink_i_14 <= _th_blink_i_14 + 1;
+          th_blink <= th_blink_6;
         end
         th_blink_10: begin
-          _th_blink_rslt_15 <= _th_subth_tmp_12_13;
-          th_blink <= th_blink_11;
+          if(th_subth == 10) begin
+            th_blink <= th_blink_11;
+          end 
         end
         th_blink_11: begin
-          $display("# subth join: rslt=%d", _th_blink_rslt_15);
+          _th_blink_rslt_15 <= _th_subth_tmp_12_13;
           th_blink <= th_blink_12;
+        end
+        th_blink_12: begin
+          $display("# subth join: rslt=%d", _th_blink_rslt_15);
+          th_blink <= th_blink_13;
         end
       endcase
     end
@@ -172,6 +177,7 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       th_subth <= th_subth_init;
+      _th_subth_called <= 0;
       _th_subth_a_4 <= 0;
       _th_subth_b_5 <= 0;
       _th_subth_c_6 <= 0;
@@ -184,6 +190,9 @@ module blinkled
     end else begin
       case(th_subth)
         th_subth_init: begin
+          if(th_blink == 2) begin
+            _th_subth_called <= 1;
+          end 
           if(th_blink == 2) begin
             _th_subth_a_4 <= _th_blink_a_1;
           end 

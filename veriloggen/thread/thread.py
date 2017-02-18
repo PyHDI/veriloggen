@@ -18,7 +18,7 @@ def reset():
 
 
 class Thread(vtypes.VeriloggenNode):
-    __intrinsics__ = ('run', 'join', 'busy', 'reset')
+    __intrinsics__ = ('run', 'join', 'busy', 'reset', 'ret')
 
     def __init__(self, m, clk, rst, name, targ, datawidth=32):
 
@@ -42,6 +42,7 @@ class Thread(vtypes.VeriloggenNode):
         self.args_dict = OrderedDict()
         self.vararg_regs = []
         self.vararg_set = False
+        self.called = None
 
     def start(self, *args, **kwargs):
         """ build up a new FSM based on the arguments """
@@ -130,10 +131,26 @@ class Thread(vtypes.VeriloggenNode):
     def reset(self, fsm):
         """ reset the FSM counter to the initial state """
 
+        if self.end_state is None:
+            raise ValueError('not started')
+
         reset_flag = (fsm.state == fsm.current)
+        self.fsm._set_index(self.end_state)
+
+        if self.called is not None:
+
+            self.fsm.If(reset_flag)(
+                self.called(0)
+            )
+
         self.fsm.goto_from(self.end_state, self.start_state, reset_flag)
+        self.fsm._set_index(self.start_state)
 
         return 0
+
+    def ret(self, fsm):
+        """ return value """
+        return self.return_value
 
     #--------------------------------------------------------------------------
     def add_function(self, func):
@@ -235,6 +252,14 @@ class Thread(vtypes.VeriloggenNode):
 
     def _synthesize_run_fsm(self, parent_fsm, args, kwargs):
         start_flag = (parent_fsm.state == parent_fsm.current)
+
+        if self.called is None:
+            self.called = self.m.Reg(
+                '_'.join(['', self.name, 'called']), initval=0)
+
+        self.fsm.If(start_flag)(
+            self.called(1)
+        )
 
         functions = self._get_functions()
 
@@ -365,8 +390,11 @@ class Thread(vtypes.VeriloggenNode):
         self.fsm.goto_from(self.start_state, self.start_state + 1, start_flag)
         self.fsm._set_index(self.start_state + 1)
 
+        parent_fsm.goto_next()
+
+        # if already synthesized
         if self.end_state is not None:
-            return
+            return self.return_value
 
         # call AST
         args_text = ', '.join(args_code + kwargs_code)

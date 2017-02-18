@@ -19,29 +19,33 @@ def mkLed():
     count = m.Reg('count', 8, initval=0)
 
     def blink(times):
-        a, b, c = 100, 200, 300
-        th_subth.run(a, b, c)
-        print('# subth run')
-        
-        led.value = 0
         for i in range(times):
-            led.value += 1
-            print("led = ", led)
-            
-        th_subth.join()
-        rslt = th_subth.ret()
-        print('# subth join: rslt=%d' % rslt)
+            if i & 0x1 == 0:
+                th_func_a.run(i)
+            else:
+                th_func_b.run(i)
 
-    def subth(a, b, c):
-        print('# subth start: %d, %d, %d' % (a, b, c))
-        for i in range(10):
-            print('# subth wait: %d' % i)
-        ret = a + b + c
-        print('# subth end: %d' % ret)
-        return ret
+            if th_func_a.called:
+                th_func_a.join()
+                th_func_a.reset()
+                v = th_func_a.ret()
+                print("func_a: %d" % v)
+
+            if th_func_b.called:
+                th_func_b.join()
+                th_func_b.reset()
+                v = th_func_b.ret()
+                print("func_b: %d" % v)
+
+    def func_a(v):
+        return v + 100
+
+    def func_b(v):
+        return v + 200
 
     th_blink = vthread.Thread(m, clk, rst, 'th_blink', blink)
-    th_subth = vthread.Thread(m, clk, rst, 'th_subth', subth)
+    th_func_a = vthread.Thread(m, clk, rst, 'th_func_a', func_a)
+    th_func_b = vthread.Thread(m, clk, rst, 'th_func_b', func_b)
     fsm = th_blink.start(20)
 
     return m
