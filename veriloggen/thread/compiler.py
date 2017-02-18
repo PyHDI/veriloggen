@@ -236,69 +236,121 @@ class CompileVisitor(ast.NodeVisitor):
     def visit_For(self, node):
         if self.skip():
             return
+
         if (isinstance(node.iter, ast.Call) and
             isinstance(node.iter.func, ast.Name) and
                 node.iter.func.id == 'range'):
-            # typical for-loop
+            return self._for_range(node)
 
-            if len(node.iter.args) == 0:
-                raise TypeError()
-            begin_node = (vtypes.Int(0)
-                          if len(node.iter.args) == 1
-                          else self.visit(node.iter.args[0]))
+        if isinstance(node.iter, (ast.Name, ast.Tuple, ast.List)):
+            return self._for_list(node)
 
-            end_node = (self.visit(node.iter.args[0])
-                        if len(node.iter.args) == 1
-                        else self.visit(node.iter.args[1]))
+        raise TypeError('unsupported for-statement style')
 
-            step_node = (vtypes.Int(1)
-                         if len(node.iter.args) < 3
-                         else self.visit(node.iter.args[2]))
+    def _for_range(self, node):
+        if len(node.iter.args) == 0:
+            raise ValueError('not enough arguments')
 
-            iter_node = self.visit(node.target)
-            cond_node = vtypes.LessThan(iter_node, end_node)
-            update_node = vtypes.Plus(iter_node, step_node)
+        begin_node = (vtypes.Int(0)
+                      if len(node.iter.args) == 1
+                      else self.visit(node.iter.args[0]))
 
-            self.pushScope()
+        end_node = (self.visit(node.iter.args[0])
+                    if len(node.iter.args) == 1
+                    else self.visit(node.iter.args[1]))
 
-            # initialize
-            self.setBind(iter_node, begin_node)
+        step_node = (vtypes.Int(1)
+                     if len(node.iter.args) < 3
+                     else self.visit(node.iter.args[2]))
+
+        iter_node = self.visit(node.target)
+        cond_node = vtypes.LessThan(iter_node, end_node)
+        update_node = vtypes.Plus(iter_node, step_node)
+
+        node_body = node.body
+
+        return self._for_range_fsm(begin_node, end_node, step_node,
+                                   iter_node, cond_node, update_node, node_body)
+
+    def _for_range_fsm(self, begin_node, end_node, step_node,
+                       iter_node, cond_node, update_node, node_body,
+                       target_update=None):
+
+        self.pushScope()
+
+        # initialize
+        self.setBind(iter_node, begin_node)
+        self.setFsm()
+        self.incFsmCount()
+
+        # condition check
+        check_count = self.getFsmCount()
+        self.incFsmCount()
+        body_begin_count = self.getFsmCount()
+
+        # used for list/tuple access
+        if target_update is not None:
+            left = target_update[0]
+            right = target_update[1]
+            self.setBind(left, right)
             self.setFsm()
             self.incFsmCount()
 
-            # condition check
-            check_count = self.getFsmCount()
-            self.incFsmCount()
-            body_begin_count = self.getFsmCount()
+        for b in node_body:
+            self.visit(b)
 
-            for b in node.body:
-                self.visit(b)
+        self.popScope()
 
-            self.popScope()
+        body_end_count = self.getFsmCount()
 
-            body_end_count = self.getFsmCount()
+        # update
+        self.setBind(iter_node, update_node)
+        self.incFsmCount()
+        loop_exit_count = self.getFsmCount()
 
-            # update
-            self.setBind(iter_node, update_node)
-            self.incFsmCount()
-            loop_exit_count = self.getFsmCount()
+        self.setFsm(body_end_count, check_count)
+        self.setFsm(check_count, body_begin_count,
+                    cond_node, loop_exit_count)
 
-            self.setFsm(body_end_count, check_count)
-            self.setFsm(check_count, body_begin_count,
-                        cond_node, loop_exit_count)
+        unresolved_break = self.getUnresolvedBreak()
+        for b in unresolved_break:
+            self.setFsm(b, loop_exit_count)
 
-            unresolved_break = self.getUnresolvedBreak()
-            for b in unresolved_break:
-                self.setFsm(b, loop_exit_count)
+        unresolved_continue = self.getUnresolvedContinue()
+        for c in unresolved_continue:
+            self.setFsm(c, body_end_count)
 
-            unresolved_continue = self.getUnresolvedContinue()
-            for c in unresolved_continue:
-                self.setFsm(c, body_end_count)
+        self.clearBreak()
+        self.clearContinue()
 
-            self.clearBreak()
-            self.clearContinue()
+        self.setFsmLoop(check_count, body_end_count, iter_node, step_node)
 
-            self.setFsmLoop(check_count, body_end_count, iter_node, step_node)
+    def _for_list(self, node):
+        target = self.visit(node.target)
+        iterobj = self.visit(node.iter)
+
+        begin_node = vtypes.Int(0)
+        end_node = vtypes.Int(len(iterobj))
+        step_node = vtypes.Int(1)
+
+        iter_node = self.getTmpVariable()
+        cond_node = vtypes.LessThan(iter_node, end_node)
+        update_node = vtypes.Plus(iter_node, step_node)
+
+        node_body = node.body
+
+        patterns = []
+        for i, obj in enumerate(iterobj):
+            if not isinstance(obj, vtypes.numerical_types):
+                raise TypeError("unsupported type for for-statement")
+            patterns.append((iter_node == i, obj))
+        patterns.append((None, vtypes.IntX()))
+
+        target_update = (target, vtypes.PatternMux(*patterns))
+
+        return self._for_range_fsm(begin_node, end_node, step_node,
+                                   iter_node, cond_node, update_node, node_body,
+                                   target_update)
 
     #--------------------------------------------------------------------------
     def visit_Call(self, node):
@@ -321,6 +373,8 @@ class CompileVisitor(ast.NodeVisitor):
             return self._call_Name_print(node)
         if name == 'int':
             return self._call_Name_int(node)
+        if name == 'len':
+            return self._call_Name_len(node)
 
         # intrinsic function call
         if name in self.intrinsic_functions:
@@ -334,7 +388,8 @@ class CompileVisitor(ast.NodeVisitor):
         argvalues = []
         formatstring_list = []
         for arg in node.args:
-            if isinstance(arg, ast.BinOp) and isinstance(arg.op, ast.Mod) and isinstance(arg.left, ast.Str):
+            if (isinstance(arg, ast.BinOp) and
+                    isinstance(arg.op, ast.Mod) and isinstance(arg.left, ast.Str)):
                 # format string in print statement
                 values, form = self._print_binop_mod(arg)
                 argvalues.extend(values)
@@ -387,11 +442,26 @@ class CompileVisitor(ast.NodeVisitor):
 
     def _call_Name_int(self, node):
         if len(node.args) > 1:
-            raise TypeError("Too much arguments for 'int()'")
+            raise TypeError(
+                'takes %d positional arguments but %d were given' % (1, len(node.args)))
         argvalues = []
         for arg in node.args:
             argvalues.append(self.visit(arg))
         return argvalues[0]
+
+    def _call_Name_len(self, node):
+        if len(node.args) > 1:
+            raise TypeError(
+                'takes %d positional arguments but %d were given' % (1, len(node.args)))
+        value = self.visit(node.args[0])
+        if not isinstance(value, vtypes.numerical_types):
+            return len(value)
+
+        length = getattr(value, 'length', None)
+        if length is not None:
+            return length
+
+        return value.bit_length()
 
     def _call_Name_function(self, node, name):
         tree = self.getFunction(name)
@@ -407,17 +477,62 @@ class CompileVisitor(ast.NodeVisitor):
         # stack a new scope frame
         self.pushScope(ftype='call')
 
-        # node.args -> variable and binding
+#        def get_resolved_args(tree, name, *args, **kwargs):
+#            tree = ast.Module([tree])
+#
+#            code = compile(tree, 'tmp.py', 'exec')
+#            exec(code)
+#            targ = locals()[name]
+#            resolved_args = inspect.getcallargs(targ, *args, **kwargs)
+#            return resolved_args
+#
+#        # kwargs
+#        kwargs = OrderedDict()
+#        for pos, key in enumerate(node.keywords):
+#            kwargs[key.arg] = keywords[pos]
+#
+#        resolved_args = get_resolved_args(tree, name, *args, **kwargs)
+#        for arg, value in sorted(resolved_args.items(), key=lambda x: x[0]):
+#            self.setArgBind(arg, value)
+
+        args_name_list = [arg.id if isinstance(arg, ast.Name) else arg.arg
+                          for arg in tree.args.args]
+        args_used_list = []
+
+        # regular args
+        rest_args = []
         for pos, arg in enumerate(args):
-            baseobj = tree.args.args[pos]
+            if pos < len(tree.args.args):
+                baseobj = tree.args.args[pos]
+                argname = (baseobj.id
+                           if isinstance(baseobj, ast.Name)  # python 2
+                           else baseobj.arg)  # python 3
+                self.setArgBind(argname, arg)
+                args_used_list.append(argname)
+            elif tree.args.vararg is not None:
+                rest_args.append(arg)
+            else:
+                raise TypeError('takes %d positional arguments but %d were given' %
+                                (len(tree.args.args), len(args)))
+
+        # variable length args
+        if rest_args:
+            baseobj = tree.args.vararg
             argname = (baseobj.id
                        if isinstance(baseobj, ast.Name)  # python 2
                        else baseobj.arg)  # python 3
-            self.setArgBind(argname, arg)
+            self.setVarargBind(argname, rest_args)
 
         # kwargs
         for pos, key in enumerate(node.keywords):
-            self.setArgBind(key.arg, keywords[pos])
+            if key.arg in args_used_list:
+                raise TypeError(
+                    "got multiple values for argument '%s'" % key.arg)
+            if key.arg in args_name_list:
+                self.setArgBind(key.arg, keywords[pos])
+                args_used_list.append(key.arg)
+            else:
+                raise TypeError('keyword-only argument is not supported')
 
         # default values of kwargs
         kwargs_size = len(tree.args.defaults)
@@ -425,9 +540,7 @@ class CompileVisitor(ast.NodeVisitor):
             for arg, val in zip(tree.args.args[-kwargs_size:], tree.args.defaults):
                 argname = (arg.id if isinstance(arg, ast.Name)  # python 2
                            else arg.arg)  # python 3
-                var = self.scope.searchVariable(argname, store=True)
-                # not defined yet
-                if var is None:
+                if not argname in args_used_list:
                     right = self.visit(val)
                     self.setArgBind(argname, right)
 
@@ -842,6 +955,18 @@ class CompileVisitor(ast.NodeVisitor):
         left = self.getVariable(name, store=True)
         right = optimize(value)
         self.setBind(left, right)
+
+    def setVarargBind(self, name, values):
+        lefts = []
+        for value in values:
+            if isinstance(value, vtypes.numerical_types):
+                left = self.getTmpVariable()
+                right = optimize(value)
+                self.setBind(left, right)
+                lefts.append(left)
+            else:
+                lefts.append(value)
+        self.scope.addVariable(name, lefts)
 
     def setAssignBind(self, dst, var, value):
         if not isinstance(value, vtypes.numerical_types):

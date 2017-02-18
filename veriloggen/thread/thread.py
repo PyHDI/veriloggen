@@ -18,7 +18,7 @@ def reset():
 
 
 class Thread(vtypes.VeriloggenNode):
-    __intrinsics__ = ('run', 'join', 'busy')
+    __intrinsics__ = ('run', 'join', 'busy', 'reset')
 
     def __init__(self, m, clk, rst, name, targ, datawidth=32):
 
@@ -37,8 +37,11 @@ class Thread(vtypes.VeriloggenNode):
         self.is_child = False
         self.start_state = None
         self.end_state = None
-
-        self.local_objects = {}
+        self.return_value = None
+        self.local_objects = OrderedDict()
+        self.args_dict = OrderedDict()
+        self.vararg_regs = []
+        self.vararg_set = False
 
     def start(self, *args, **kwargs):
         """ build up a new FSM based on the arguments """
@@ -59,7 +62,7 @@ class Thread(vtypes.VeriloggenNode):
         self.fsm = FSM(self.m, self.name, self.clk, self.rst)
 
         self.start_state = self.fsm.current
-        self._synthesize_fsm(self.fsm, args, kwargs)
+        self._synthesize_start_fsm(args, kwargs)
         self.end_state = self.fsm.current
 
         return self.fsm
@@ -74,7 +77,7 @@ class Thread(vtypes.VeriloggenNode):
         for key, value in _locals.items():
             self.local_objects[key] = value
 
-        self._synthesize_fsm(fsm, args, kwargs)
+        self._synthesize_start_fsm(args, kwargs, fsm)
 
         return fsm
 
@@ -84,28 +87,28 @@ class Thread(vtypes.VeriloggenNode):
         if not self.is_child and self.end_state is not None:
             raise ValueError('already started.')
 
-        self.fsm = FSM(self.m, self.name, self.clk, self.rst)
+        if self.fsm is None:
+            self.fsm = FSM(self.m, self.name, self.clk, self.rst)
+
         self.is_child = True
 
-        if self.start_state is None:
+        if self.start_state is not None:
+            self.fsm._set_index(self.start_state)
+        else:
             self.start_state = self.fsm.current
 
-        start_flag = (fsm.state == fsm.current)
-        self.fsm.goto_from(self.start_state, self.start_state + 1, start_flag)
-
-        self.fsm._set_index(self.start_state + 1)
-
-        if self.end_state is not None:
-            return 0
-
-        self._synthesize_fsm(self.fsm, args, kwargs)
+        self._synthesize_run_fsm(fsm, args, kwargs)
 
         if self.end_state is None:
             self.end_state = self.fsm.current
 
-        return 0
+        start_flag = (self.fsm.state == self.start_state)
+
+        return start_flag
 
     def join(self, fsm):
+        """ wait for the completion """
+
         if self.end_state is None:
             raise ValueError('not started')
 
@@ -115,6 +118,8 @@ class Thread(vtypes.VeriloggenNode):
         return 0
 
     def busy(self, fsm):
+        """ check whethe the thread is running """
+
         if self.end_state is None:
             raise ValueError('not started')
 
@@ -122,6 +127,15 @@ class Thread(vtypes.VeriloggenNode):
 
         return end_flag
 
+    def reset(self, fsm):
+        """ reset the FSM counter to the initial state """
+
+        reset_flag = (fsm.state == fsm.current)
+        self.fsm.goto_from(self.end_state, self.start_state, reset_flag)
+
+        return 0
+
+    #--------------------------------------------------------------------------
     def add_function(self, func):
         name = func.__name__
         if name in self.function_lib:
@@ -162,7 +176,9 @@ class Thread(vtypes.VeriloggenNode):
         self.intrinsic_methods[name] = func
         return func
 
-    def _synthesize_fsm(self, fsm, args, kwargs):
+    def _synthesize_start_fsm(self, args, kwargs, fsm=None):
+        if fsm is None:
+            fsm = self.fsm
 
         functions = self._get_functions()
 
@@ -181,8 +197,9 @@ class Thread(vtypes.VeriloggenNode):
         # stack a new scope frame
         cvisitor.pushScope(ftype='call')
 
-        # args -> scope variable
+        # args -> scope variable (pass by reference)
         args_code = []
+        rest_args = []
         for pos, arg in enumerate(args):
             baseobj = tree.args.args[pos]
             argname = (baseobj.id
@@ -191,7 +208,7 @@ class Thread(vtypes.VeriloggenNode):
             cvisitor.scope.addVariable(argname, arg)
             args_code.append(argname)
 
-        # kwargs -> scope variable
+        # kwargs -> scope variable (pass by reference)
         kwargs_code = []
         for key, val in sorted(kwargs.items(), key=lambda x: x[0]):
             cvisitor.scope.addVariable(key, val)
@@ -203,7 +220,7 @@ class Thread(vtypes.VeriloggenNode):
         _call_ast = ast.parse(call_code)
 
         # start visit
-        cvisitor.visit(_call_ast)
+        self.return_value = cvisitor.visit(_call_ast.body[0].value)
 
         # clean-up jump conditions
         cvisitor.clearBreak()
@@ -213,6 +230,162 @@ class Thread(vtypes.VeriloggenNode):
 
         # return to the previous scope frame
         cvisitor.popScope()
+
+        return self.return_value
+
+    def _synthesize_run_fsm(self, parent_fsm, args, kwargs):
+        start_flag = (parent_fsm.state == parent_fsm.current)
+
+        functions = self._get_functions()
+
+        local_objects = {}
+        for key, value in self.local_objects.items():
+            local_objects[key] = value
+
+        cvisitor = compiler.CompileVisitor(self.m, self.name, self.clk, self.rst, self.fsm,
+                                           functions, self.intrinsic_functions,
+                                           self.intrinsic_methods, local_objects,
+                                           datawidth=self.datawidth)
+
+        text = textwrap.dedent(inspect.getsource(self.targ))
+        tree = ast.parse(text).body[0]
+
+        # stack a new scope frame
+        cvisitor.pushScope(ftype='call')
+
+        args_name_list = [arg.id if isinstance(arg, ast.Name) else arg.arg
+                          for arg in tree.args.args]
+        args_used_list = []
+
+        # args
+        args_code = []
+        for pos, arginfo in enumerate(tree.args.args):
+            argname = (arginfo.id
+                       if isinstance(arginfo, ast.Name)  # python 2
+                       else arginfo.arg)  # python 3
+            args_code.append(argname)
+
+            # regular args
+            if pos < len(args):
+                arg = args[pos]
+                args_used_list.append(argname)
+
+                if isinstance(arg, vtypes.numerical_types):  # pass by value
+                    if argname not in self.args_dict:
+                        name = compiler._tmp_name(
+                            '_'.join(['', self.name, argname]))
+                        v = self.m.Reg(name, self.datawidth, initval=0)
+                        cvisitor.scope.addVariable(argname, v)
+                        self.args_dict[argname] = v
+                    else:
+                        v = self.args_dict[argname]
+
+                    # binding
+                    self.fsm.If(start_flag)(
+                        v(arg)
+                    )
+
+                else:  # pass by reference
+                    if argname not in self.args_dict:
+                        cvisitor.scope.addVariable(argname, arg)
+                        self.args_dict[argname] = arg
+                    elif id(self.args_dict[argname]) == id(arg):
+                        pass
+                    else:
+                        raise ValueError(
+                            'same object must be passed for non-numeric argument')
+
+        # variable length args
+        if tree.args.vararg is None and len(args) > len(tree.args.args):
+            raise TypeError('takes %d positional arguments but %d were given' %
+                            (len(tree.args.args), len(args)))
+
+        if tree.args.vararg is not None and not self.vararg_set:
+            baseobj = tree.args.vararg
+            argname = (baseobj.id
+                       if isinstance(baseobj, ast.Name)  # python 2
+                       else baseobj.arg)  # python 3
+            cvisitor.scope.addVariable(argname, self.vararg_regs)
+
+        varargname = argname
+
+        if len(args) > len(tree.args.args):
+            raise ValueError(
+                'variable length argument is not supported in dynamic thread execution')
+            #num_vararg_vars = len(args) - len(tree.args.args)
+            # if num_vararg_vars > len(self.vararg_regs):
+            #    for i in range(num_vararg_vars - len(self.vararg_regs)):
+            #        name = compiler._tmp_name('_'.join(['', self.name, varargname]))
+            #        v = self.m.Reg(name, self.datawidth, initval=0)
+            #        self.vararg_regs.append(v)
+            #        args_code.append(argname)
+            # for i, arg in enumerate(args[-num_vararg_vars:]):
+            #    if not isinstance(arg, vtypes.numerical_types):
+            #        raise TypeError('variable length argument support no non-numeric values')
+            #    v = self.vararg_regs[i]
+            #    # binding
+            #    self.fsm.If(start_flag)(
+            #        v(arg)
+            #    )
+
+        # kwargs
+        kwargs_code = []
+        for argname, arg in sorted(kwargs.items(), key=lambda x: x[0]):
+            if argname in self.args_dict:
+                raise TypeError(
+                    "got multiple values for argument '%s'" % argname)
+
+            if isinstance(arg, vtypes.numerical_types):  # pass by value
+                if argname not in self.args_dict:
+                    name = compiler._tmp_name(
+                        '_'.join(['', self.name, argname]))
+                    v = self.m.Reg(name, self.datawidth, initval=0)
+                    cvisitor.scope.addVariable(argname, v)
+                    self.args_dict[argname] = v
+                else:
+                    v = self.args_dict[argname]
+
+                # binding
+                self.fsm.If(start_flag)(
+                    v(arg)
+                )
+
+            else:  # pass by reference
+                if argname not in self.args_dict:
+                    cvisitor.scope.addVariable(argname, arg)
+                    self.args_dict[argname] = arg
+                elif id(self.args_dict[argname]) == id(arg):
+                    pass
+                else:
+                    raise ValueError(
+                        'same object must be passed for non-numeric argument')
+
+            kwargs_code.append('{}={}'.format(key, key))
+
+        self.fsm.goto_from(self.start_state, self.start_state + 1, start_flag)
+        self.fsm._set_index(self.start_state + 1)
+
+        if self.end_state is not None:
+            return
+
+        # call AST
+        args_text = ', '.join(args_code + kwargs_code)
+        call_code = ''.join([self.targ.__name__, '(', args_text, ')'])
+        _call_ast = ast.parse(call_code)
+
+        # start visit
+        self.return_value = cvisitor.visit(_call_ast.body[0].value)
+
+        # clean-up jump conditions
+        cvisitor.clearBreak()
+        cvisitor.clearContinue()
+        cvisitor.clearReturn()
+        cvisitor.clearReturnVariable()
+
+        # return to the previous scope frame
+        cvisitor.popScope()
+
+        return self.return_value
 
     def _get_functions(self):
         codes = []

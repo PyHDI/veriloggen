@@ -56,89 +56,25 @@ module blinkled
 );
 
   reg [8-1:0] count;
-  reg [32-1:0] th_countup;
-  localparam th_countup_init = 0;
-  reg [32-1:0] _th_countup_times_0;
-  reg [32-1:0] _th_countup_i_1;
   reg [32-1:0] th_blink;
   localparam th_blink_init = 0;
-  reg [32-1:0] _th_blink_times_2;
-  reg [32-1:0] _th_blink_i_3;
-  localparam th_countup_1 = 1;
-  localparam th_countup_2 = 2;
-  localparam th_countup_3 = 3;
-  localparam th_countup_4 = 4;
-  localparam th_countup_5 = 5;
-  localparam th_countup_6 = 6;
-  localparam th_countup_7 = 7;
-  localparam th_countup_8 = 8;
-  localparam th_countup_9 = 9;
-  localparam th_countup_10 = 10;
-  localparam th_countup_11 = 11;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      th_countup <= th_countup_init;
-      _th_countup_times_0 <= 0;
-      count <= 0;
-      _th_countup_i_1 <= 0;
-    end else begin
-      case(th_countup)
-        th_countup_init: begin
-          _th_countup_times_0 <= 20;
-          th_countup <= th_countup_1;
-        end
-        th_countup_1: begin
-          count <= 0;
-          th_countup <= th_countup_2;
-        end
-        th_countup_2: begin
-          _th_countup_i_1 <= 0;
-          th_countup <= th_countup_3;
-        end
-        th_countup_3: begin
-          if(_th_countup_i_1 < _th_countup_times_0) begin
-            th_countup <= th_countup_4;
-          end else begin
-            th_countup <= th_countup_9;
-          end
-        end
-        th_countup_4: begin
-          count <= count + 1;
-          th_countup <= th_countup_5;
-        end
-        th_countup_5: begin
-          $display("count = %d", count);
-          th_countup <= th_countup_6;
-        end
-        th_countup_6: begin
-          if(count == (_th_countup_times_0 >>> 1)) begin
-            th_countup <= th_countup_7;
-          end else begin
-            th_countup <= th_countup_8;
-          end
-        end
-        th_countup_7: begin
-          $display("child thread start");
-          th_countup <= th_countup_8;
-        end
-        th_countup_8: begin
-          _th_countup_i_1 <= _th_countup_i_1 + 1;
-          th_countup <= th_countup_3;
-        end
-        th_countup_9: begin
-          if(th_blink == 8) begin
-            th_countup <= th_countup_10;
-          end 
-        end
-        th_countup_10: begin
-          $display("child thread finish");
-          th_countup <= th_countup_11;
-        end
-      endcase
-    end
-  end
-
+  reg [32-1:0] _th_blink_times_0;
+  reg [32-1:0] _th_blink_a_1;
+  reg [32-1:0] _th_blink_b_2;
+  reg [32-1:0] _th_blink_c_3;
+  reg [32-1:0] th_subth;
+  localparam th_subth_init = 0;
+  reg [32-1:0] _th_subth_a_4;
+  reg [32-1:0] _th_subth_b_5;
+  reg [32-1:0] _th_subth_c_6;
+  reg [32-1:0] _th_subth_a_7;
+  reg [32-1:0] _th_subth_b_8;
+  reg [32-1:0] _th_subth_c_9;
+  reg [32-1:0] _th_subth_i_10;
+  reg [32-1:0] _th_subth_ret_11;
+  reg [32-1:0] _th_subth_tmp_12_13;
+  reg [32-1:0] _th_blink_i_14;
+  reg [32-1:0] _th_blink_rslt_15;
   localparam th_blink_1 = 1;
   localparam th_blink_2 = 2;
   localparam th_blink_3 = 3;
@@ -147,50 +83,160 @@ module blinkled
   localparam th_blink_6 = 6;
   localparam th_blink_7 = 7;
   localparam th_blink_8 = 8;
+  localparam th_blink_9 = 9;
+  localparam th_blink_10 = 10;
+  localparam th_blink_11 = 11;
+  localparam th_blink_12 = 12;
 
   always @(posedge CLK) begin
     if(RST) begin
       th_blink <= th_blink_init;
-      _th_blink_times_2 <= 0;
+      _th_blink_times_0 <= 0;
+      _th_blink_a_1 <= 0;
+      _th_blink_b_2 <= 0;
+      _th_blink_c_3 <= 0;
       LED <= 0;
-      _th_blink_i_3 <= 0;
+      _th_blink_i_14 <= 0;
+      _th_blink_rslt_15 <= 0;
     end else begin
       case(th_blink)
         th_blink_init: begin
-          if(th_countup == 7) begin
-            th_blink <= th_blink_1;
-          end 
+          _th_blink_times_0 <= 20;
+          th_blink <= th_blink_1;
         end
         th_blink_1: begin
-          _th_blink_times_2 <= _th_countup_times_0;
+          _th_blink_a_1 <= 100;
+          _th_blink_b_2 <= 200;
+          _th_blink_c_3 <= 300;
           th_blink <= th_blink_2;
         end
         th_blink_2: begin
-          LED <= 0;
+          $display("# subth run");
           th_blink <= th_blink_3;
         end
         th_blink_3: begin
-          _th_blink_i_3 <= 0;
+          LED <= 0;
           th_blink <= th_blink_4;
         end
         th_blink_4: begin
-          if(_th_blink_i_3 < _th_blink_times_2) begin
-            th_blink <= th_blink_5;
-          end else begin
-            th_blink <= th_blink_8;
-          end
+          _th_blink_i_14 <= 0;
+          th_blink <= th_blink_5;
         end
         th_blink_5: begin
-          LED <= LED + 1;
-          th_blink <= th_blink_6;
+          if(_th_blink_i_14 < _th_blink_times_0) begin
+            th_blink <= th_blink_6;
+          end else begin
+            th_blink <= th_blink_9;
+          end
         end
         th_blink_6: begin
-          $display("  led = %d", LED);
+          LED <= LED + 1;
           th_blink <= th_blink_7;
         end
         th_blink_7: begin
-          _th_blink_i_3 <= _th_blink_i_3 + 1;
-          th_blink <= th_blink_4;
+          $display("led =  %d", LED);
+          th_blink <= th_blink_8;
+        end
+        th_blink_8: begin
+          _th_blink_i_14 <= _th_blink_i_14 + 1;
+          th_blink <= th_blink_5;
+        end
+        th_blink_9: begin
+          if(th_subth == 10) begin
+            th_blink <= th_blink_10;
+          end 
+        end
+        th_blink_10: begin
+          _th_blink_rslt_15 <= _th_subth_tmp_12_13;
+          th_blink <= th_blink_11;
+        end
+        th_blink_11: begin
+          $display("# subth join: rslt=%d", _th_blink_rslt_15);
+          th_blink <= th_blink_12;
+        end
+      endcase
+    end
+  end
+
+  localparam th_subth_1 = 1;
+  localparam th_subth_2 = 2;
+  localparam th_subth_3 = 3;
+  localparam th_subth_4 = 4;
+  localparam th_subth_5 = 5;
+  localparam th_subth_6 = 6;
+  localparam th_subth_7 = 7;
+  localparam th_subth_8 = 8;
+  localparam th_subth_9 = 9;
+  localparam th_subth_10 = 10;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      th_subth <= th_subth_init;
+      _th_subth_a_4 <= 0;
+      _th_subth_b_5 <= 0;
+      _th_subth_c_6 <= 0;
+      _th_subth_a_7 <= 0;
+      _th_subth_b_8 <= 0;
+      _th_subth_c_9 <= 0;
+      _th_subth_i_10 <= 0;
+      _th_subth_ret_11 <= 0;
+      _th_subth_tmp_12_13 <= 0;
+    end else begin
+      case(th_subth)
+        th_subth_init: begin
+          if(th_blink == 2) begin
+            _th_subth_a_4 <= _th_blink_a_1;
+          end 
+          if(th_blink == 2) begin
+            _th_subth_b_5 <= _th_blink_b_2;
+          end 
+          if(th_blink == 2) begin
+            _th_subth_c_6 <= _th_blink_c_3;
+          end 
+          if(th_blink == 2) begin
+            th_subth <= th_subth_1;
+          end 
+        end
+        th_subth_1: begin
+          _th_subth_a_7 <= _th_subth_a_4;
+          _th_subth_b_8 <= _th_subth_b_5;
+          _th_subth_c_9 <= _th_subth_c_6;
+          th_subth <= th_subth_2;
+        end
+        th_subth_2: begin
+          $display("# subth start: %d, %d, %d", _th_subth_a_7, _th_subth_b_8, _th_subth_c_9);
+          th_subth <= th_subth_3;
+        end
+        th_subth_3: begin
+          _th_subth_i_10 <= 0;
+          th_subth <= th_subth_4;
+        end
+        th_subth_4: begin
+          if(_th_subth_i_10 < 10) begin
+            th_subth <= th_subth_5;
+          end else begin
+            th_subth <= th_subth_7;
+          end
+        end
+        th_subth_5: begin
+          $display("# subth wait: %d", _th_subth_i_10);
+          th_subth <= th_subth_6;
+        end
+        th_subth_6: begin
+          _th_subth_i_10 <= _th_subth_i_10 + 1;
+          th_subth <= th_subth_4;
+        end
+        th_subth_7: begin
+          _th_subth_ret_11 <= _th_subth_a_7 + _th_subth_b_8 + _th_subth_c_9;
+          th_subth <= th_subth_8;
+        end
+        th_subth_8: begin
+          $display("# subth end: %d", _th_subth_ret_11);
+          th_subth <= th_subth_9;
+        end
+        th_subth_9: begin
+          _th_subth_tmp_12_13 <= _th_subth_ret_11;
+          th_subth <= th_subth_10;
         end
       endcase
     end

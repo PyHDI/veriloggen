@@ -19,28 +19,30 @@ def mkLed():
     count = m.Reg('count', 8, initval=0)
 
     def blink(times):
+        a, b, c = 100, 200, 300
+        th_subth.run(a, b, c)
+        print('# subth run')
+        
         led.value = 0
         for i in range(times):
             led.value += 1
-            print("  led = %d" % led)
+            print("led = ", led)
+            
+        th_subth.join()
+        rslt = th_subth.return_value
+        print('# subth join: rslt=%d' % rslt)
 
-    def countup(times):
-        count.value = 0
-        for i in range(times):
-            count.value += 1
-            print("count = %d" % count)
+    def subth(a, b, c):
+        print('# subth start: %d, %d, %d' % (a, b, c))
+        for i in range(10):
+            print('# subth wait: %d' % i)
+        ret = a + b + c
+        print('# subth end: %d' % ret)
+        return ret
 
-            if count == times / 2:
-                th_blink.run(times)
-                print("child thread start")
-
-        th_blink.join()
-        print("child thread finish")
-
-    th_countup = vthread.Thread(m, clk, rst, 'th_countup', countup)
     th_blink = vthread.Thread(m, clk, rst, 'th_blink', blink)
-
-    fsm = th_countup.start(20)
+    th_subth = vthread.Thread(m, clk, rst, 'th_subth', subth)
+    fsm = th_blink.start(20)
 
     return m
 
