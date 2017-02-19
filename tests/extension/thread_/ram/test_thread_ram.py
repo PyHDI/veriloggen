@@ -132,8 +132,6 @@ module blinkled
   localparam th_blink_14 = 14;
   localparam th_blink_15 = 15;
   localparam th_blink_16 = 16;
-  localparam th_blink_17 = 17;
-  localparam th_blink_18 = 18;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -188,38 +186,36 @@ module blinkled
           if(_th_blink_i_1 < _th_blink_times_0) begin
             th_blink <= th_blink_10;
           end else begin
-            th_blink <= th_blink_17;
+            th_blink <= th_blink_15;
           end
         end
         th_blink_10: begin
-          th_blink <= th_blink_11;
+          if(_tmp_0) begin
+            _tmp_1 <= myram_0_rdata;
+          end 
+          if(_tmp_0) begin
+            th_blink <= th_blink_11;
+          end 
         end
         th_blink_11: begin
+          _th_blink_rdata_4 <= _tmp_1;
           th_blink <= th_blink_12;
         end
         th_blink_12: begin
-          _tmp_1 <= myram_0_rdata;
+          _th_blink_sum_3 <= _th_blink_sum_3 + _th_blink_rdata_4;
           th_blink <= th_blink_13;
         end
         th_blink_13: begin
-          _th_blink_rdata_4 <= _tmp_1;
+          $display("rdata = %d", _th_blink_rdata_4);
           th_blink <= th_blink_14;
         end
         th_blink_14: begin
-          _th_blink_sum_3 <= _th_blink_sum_3 + _th_blink_rdata_4;
-          th_blink <= th_blink_15;
-        end
-        th_blink_15: begin
-          $display("rdata = %d", _th_blink_rdata_4);
-          th_blink <= th_blink_16;
-        end
-        th_blink_16: begin
           _th_blink_i_1 <= _th_blink_i_1 + 1;
           th_blink <= th_blink_9;
         end
-        th_blink_17: begin
+        th_blink_15: begin
           $display("sum = %d", _th_blink_sum_3);
-          th_blink <= th_blink_18;
+          th_blink <= th_blink_16;
         end
       endcase
     end
