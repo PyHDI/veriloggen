@@ -7,6 +7,7 @@ import tempfile
 
 import veriloggen.core.vtypes as vtypes
 import veriloggen.core.module as module
+from veriloggen.core.module import StubModule
 import veriloggen.core.function as function
 import veriloggen.core.task as task
 
@@ -412,7 +413,7 @@ class VerilogReadVisitor(object):
         return vtypes.Uplus(self.visit(node.right))
         
     def visit_Uminus(self, node):
-        return vtype.Uminus(self.visit(node.right))
+        return vtypes.Uminus(self.visit(node.right))
         
     def visit_Ulnot(self, node):
         return vtypes.Ulnot(self.visit(node.right))
@@ -645,7 +646,7 @@ class VerilogReadVisitor(object):
     def visit_WhileStatement(self, node):
         condition = self.visit(node.cond)
         statement = to_tuple(self.visit(node.statement))
-        _while = vtypes.While(pre, condition, post)
+        _while = vtypes.While(condition)
         _while = _while(*statement)
         return _while
         
