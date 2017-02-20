@@ -298,7 +298,7 @@ class _Numeric(VeriloggenNode):
                 left = size
             elif isinstance(left, int) and left < 0:
                 left = size - abs(left)
-                left -= 1
+            left -= 1
 
             if isinstance(left, int) and left < 0:
                 raise ValueError("Illegal slice index: left = %d" % left)
