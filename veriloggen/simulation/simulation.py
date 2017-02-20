@@ -10,13 +10,23 @@ import veriloggen.core.module as module
 
 def setup_waveform(m, *uuts):
     new_uuts = []
-    for u in uuts:
-        if isinstance(u, (tuple, list)):
-            new_uuts.extend(u)
-        elif isinstance(u, dict):
-            new_uuts.extend(list(u.values()))
+    for uut in uuts:
+        if isinstance(uut, (tuple, list)):
+            for u in uut:
+                if isinstance(u, vtypes._Variable) and u.length is not None:
+                    continue
+                new_uuts.append(u)
+        elif isinstance(uut, dict):
+            _uut = list(uut.values())
+            for u in _uut:
+                if isinstance(u, vtypes._Variable) and u.length is not None:
+                    continue
+                new_uuts.append(u)
         else:
-            new_uuts.append(u)
+            if isinstance(uut, vtypes._Variable) and uut.length is not None:
+                continue
+            new_uuts.append(uut)
+
     uuts = new_uuts
     ret = m.Initial(
         vtypes.Systask('dumpfile', 'uut.vcd'),

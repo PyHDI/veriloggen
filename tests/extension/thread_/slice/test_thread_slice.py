@@ -98,7 +98,7 @@ module blinkled
       count <= 0;
       _th_blink_i_1 <= 0;
       _th_blink_x_2 <= 0;
-      LED[_th_blink_x_2] <= (0 >> _th_blink_x_2) & 1;
+      LED[_th_blink_x_2] <= (0 >> _th_blink_x_2) & 1'd1;
     end else begin
       case(th_blink)
         th_blink_init: begin

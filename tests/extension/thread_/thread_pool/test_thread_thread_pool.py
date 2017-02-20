@@ -106,7 +106,7 @@ module blinkled
       th_blink <= th_blink_init;
       _th_blink_times_0 <= 0;
       _th_blink_tid_1 <= 0;
-      _th_myfunc_start[_th_blink_tid_1] <= (0 >> _th_blink_tid_1) & 1;
+      _th_myfunc_start[_th_blink_tid_1] <= (0 >> _th_blink_tid_1) & 1'd1;
       _th_blink_sum_22 <= 0;
     end else begin
       case(th_blink)
