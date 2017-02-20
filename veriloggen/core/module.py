@@ -316,8 +316,8 @@ class Module(vtypes.VeriloggenNode):
         self.items.append(t)
         return t
         
-    def Task(self, name, width=1):
-        t = task.Task(name, width)
+    def Task(self, name):
+        t = task.Task(name)
         self.check_existing_identifier(name)        
         self.task[name] = t
         self.items.append(t)
@@ -915,7 +915,7 @@ class Generate(Module):
     def Output(self, name, width=None, length=None, signed=False, value=None):
         raise TypeError("Output port is not allowed in generate statement")
     
-    def OutputReg(self, name, width=None, length=None, signed=False, value=None):
+    def OutputReg(self, name, width=None, length=None, signed=False, value=None, initval=None):
         raise TypeError("OutputReg port is not allowed in generate statement")
     
     def Inout(self, name, width=None, length=None, signed=False, value=None):

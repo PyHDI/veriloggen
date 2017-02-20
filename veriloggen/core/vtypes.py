@@ -206,6 +206,9 @@ class VeriloggenNode(object):
     def __pos__(self):
         raise TypeError('Not allowed operation.')
     
+    def __invert__(self):
+        raise TypeError('Not allowed operation.')
+
     def __getitem__(self, r):
         raise TypeError('Not allowed operation.')
 
@@ -276,6 +279,9 @@ class _Numeric(VeriloggenNode):
     
     def __pos__(self):
         return Uplus(self)
+
+    def __invert__(self):
+        return Unot(self)
 
     def __getitem__(self, r):
         if isinstance(r, slice):
@@ -664,7 +670,7 @@ class Float(_Constant):
             raise TypeError('value of Float must be float, not %s.' % str(type(value)))
 
     def __str__(self):
-        return str(node.value)
+        return str(self.value)
 
     def get_signed(self):
         return True
@@ -679,10 +685,14 @@ class Str(_Constant):
             raise TypeError('value of Str must be str, not %s.' % str(type(value)))
 
     def __str__(self):
-        return str(node.value)
+        return str(self.value)
 
 #-------------------------------------------------------------------------------
 class _Operator(_Numeric):
+    def __init__(self):
+        _Numeric.__init__(self)
+        self.signed = False
+    
     def get_signed(self):
         return self.signed
     
@@ -965,7 +975,7 @@ class Xnor(_BinaryOperator):
         
     @staticmethod
     def op(left, right, lwidth, rwidth):
-        width = max(lwdith, rwidth)
+        width = max(lwidth, rwidth)
         value = ~(left ^ right)
         mask = 0
         for i in range(width):
@@ -1212,7 +1222,7 @@ class Pointer(_SpecialOperator):
         return module.Assign( self.write(value) )
 
     def _type_check_var(self, var):
-        if not isinstance(var, (_Variable, Scope)):
+        if not isinstance(var, (_Variable, Scope, Pointer)):
             raise TypeError('var of Pointer must be Variable, not %s' % str(type(var)))
     
     def _add_subst(self, s):
@@ -1322,7 +1332,7 @@ class Cat(_SpecialOperator):
     def _get_module(self):
         for var in self.vars:
             if hasattr(var, '_get_module'):
-                return self.var._get_module()
+                return var._get_module()
         return None
     
     def __str__(self):
@@ -1341,7 +1351,7 @@ class Cat(_SpecialOperator):
     @staticmethod
     def op(vars, widths):
         ret = 0
-        for var, width in zip(vars, width):
+        for var, width in zip(vars, widths):
             ret = (ret << width) | var
         return ret
     

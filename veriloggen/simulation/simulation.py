@@ -47,7 +47,7 @@ def next_clock(clk):
     return ( vtypes.Event(vtypes.Posedge(clk)), vtypes.Delay(1) )
 
 def finish():
-    return Systask('finish')
+    return vtypes.Systask('finish')
 
 #-------------------------------------------------------------------------------
 class Simulator(object):

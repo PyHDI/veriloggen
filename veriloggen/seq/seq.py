@@ -194,7 +194,7 @@ class Seq(vtypes.VeriloggenNode):
 
         # if there is additional attribute, Else statement is separated.
         has_args = not (len(self.next_kwargs) == 0 or  # has no args
-                        (len(self.next_kwargs) == 1 and 'cond' in kwargs))  # has only 'cond'
+                        (len(self.next_kwargs) == 1 and 'cond' in self.next_kwargs))  # has only 'cond'
         if has_args:
             prev_cond = self.last_cond
             ret = self.Then()(*statement)

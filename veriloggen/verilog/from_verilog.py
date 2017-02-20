@@ -114,7 +114,7 @@ class VerilogReadVisitor(object):
         if name in self.converted_modules:
             return self.converted_modules[name]
         if name not in self.ast_module_dict:
-            return StubModule(name)
+            return module.StubModule(name)
         visitor = VerilogReadVisitor(self.ast_module_dict, self.converted_modules)
         mod = visitor.visit(self.ast_module_dict[name])
         self.converted_modules[name] = mod
@@ -412,7 +412,7 @@ class VerilogReadVisitor(object):
         return vtypes.Uplus(self.visit(node.right))
         
     def visit_Uminus(self, node):
-        return vtype.Uminus(self.visit(node.right))
+        return vtypes.Uminus(self.visit(node.right))
         
     def visit_Ulnot(self, node):
         return vtypes.Ulnot(self.visit(node.right))
@@ -645,7 +645,7 @@ class VerilogReadVisitor(object):
     def visit_WhileStatement(self, node):
         condition = self.visit(node.cond)
         statement = to_tuple(self.visit(node.statement))
-        _while = vtypes.While(pre, condition, post)
+        _while = vtypes.While(condition)
         _while = _while(*statement)
         return _while
         
