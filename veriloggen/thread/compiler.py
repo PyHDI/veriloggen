@@ -610,8 +610,12 @@ class CompileVisitor(ast.NodeVisitor):
 
             # pass the current local scope
             from .thread import Thread
+            from .pool import ThreadPool
             if isinstance(value, Thread):
                 value.local_objects = self.local_objects
+            if isinstance(value, ThreadPool):
+                for thread in value.threads:
+                    thread.local_objects = self.local_objects
 
             return method(*args, **kwargs)
 

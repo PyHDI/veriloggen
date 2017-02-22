@@ -1,8 +1,99 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import veriloggen.core.vtypes as vtypes
 import veriloggen.types.ram as ram
 import veriloggen.types.axi as axi
+
+
+class Mutex(object):
+    __intrinsics__ = ('lock', 'try_lock', 'unlock')
+
+    def __init__(self, m, name, clk, rst, width=32):
+
+        self.m = m
+        self.name = name
+        self.clk = clk
+        self.rst = rst
+        self.width = width
+
+        self.lock_reg = self.m.Reg(
+            '_'.join(['', self.name, 'lock_reg']), initval=0)
+        self.lock_id = self.m.Reg(
+            '_'.join(['', self.name, 'lock_id']), self.width, initval=0)
+
+        self.id_map = {}
+        self.id_map_count = 0
+
+    def lock(self, fsm):
+        name = fsm.name
+        new_lock_id = self._get_id(name)
+
+        if new_lock_id > 2 ** self.width - 1:
+            raise ValueError('too many lock IDs')
+
+        # try
+        try_state = fsm.current
+        cond = vtypes.Ors(vtypes.Not(self.lock_reg),
+                          self.lock_id == new_lock_id)
+        fsm.If(cond)(
+            self.lock_reg(1),
+            self.lock_id(new_lock_id)
+        )
+        fsm.Then().goto_next()
+
+        # verify
+        cond = vtypes.Ands(self.lock_reg, self.lock_id == new_lock_id)
+        fsm.If(vtypes.Not(cond)).goto(try_state)  # try again
+        fsm.If(cond).goto_next()  # OK
+
+        return 1
+
+    def try_lock(self, fsm):
+        name = fsm.name
+        new_lock_id = self._get_id(name)
+
+        if new_lock_id > 2 ** self.width - 1:
+            raise ValueError('too many lock IDs')
+
+        # try
+        try_state = fsm.current
+        cond = vtypes.Or(vtypes.Not(self.lock_reg),
+                         self.lock_id == new_lock_id)
+        fsm.If(cond)(
+            self.lock_reg(1),
+            self.lock_id(new_lock_id)
+        )
+        fsm.goto_next()
+
+        # verify
+        cond = vtypes.And(self.lock_reg, self.lock_id == new_lock_id)
+        result = self.m.TmpReg(initval=0)
+        fsm(
+            result(cond)
+        )
+        fsm.goto_next()
+
+        return result
+
+    def unlock(self, fsm):
+        name = fsm.name
+        new_lock_id = self._get_id(name)
+
+        if new_lock_id > 2 ** self.width - 1:
+            raise ValueError('too many lock IDs')
+
+        fsm.If(self.lock_id == new_lock_id)(
+            self.lock_reg(0)
+        )
+        fsm.goto_next()
+
+    def _get_id(self, name):
+        if name not in self.id_map:
+            self.id_map[name] = self.id_map_count
+            self.id_map_count += 1
+
+        return self.id_map[name]
 
 
 class RAM(ram.SyncRAMManager):
