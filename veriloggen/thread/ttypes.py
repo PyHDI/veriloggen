@@ -4,6 +4,50 @@ from __future__ import print_function
 import veriloggen.core.vtypes as vtypes
 import veriloggen.types.ram as ram
 import veriloggen.types.axi as axi
+from veriloggen.seq.seq import Seq
+
+
+class Shared(object):
+    __intrinsics__ = ('read', 'write')
+
+    def __init__(self, value):
+        self._value = value
+        self.seq = None
+
+    @property
+    def value(self):
+        return self._value
+
+    def read(self, fsm):
+        return self._value
+
+    def write(self, fsm, value, *part):
+        if self.seq is None:
+            self.seq = Seq(fsm.m, '_'.join(
+                ['seq', self._value.name]), fsm.clk, fsm.rst)
+
+        cond = fsm.state == fsm.current
+
+        def getval(v, p):
+            if isinstance(p, (tuple, list)):
+                return v[p[0], p[1]]
+            return v[p]
+
+        if len(part) == 0:
+            targ = self._value
+        elif len(part) == 1:
+            targ = getval(self._value, part[0])
+        elif len(part) == 2:
+            targ = getval(getval(self._value, part[0]), part[1])
+        else:
+            raise TypeError('unsupported type')
+
+        self.seq.If(cond)(
+            targ(value)
+        )
+
+        fsm.goto_next()
+        return 0
 
 
 class Mutex(object):

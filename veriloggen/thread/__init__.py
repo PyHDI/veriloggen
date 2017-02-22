@@ -3,4 +3,4 @@ from __future__ import print_function
 
 from .thread import Thread, reset
 from .pool import ThreadPool
-from .ttypes import Mutex, RAM, AXIM, AXIS
+from .ttypes import Shared, Mutex, RAM, AXIM, AXIS
