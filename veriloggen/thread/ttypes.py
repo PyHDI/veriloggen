@@ -61,6 +61,8 @@ class Mutex(object):
         self.rst = rst
         self.width = width
 
+        self.seq = Seq(self.m, self.name, self.clk, self.rst)
+
         self.lock_reg = self.m.Reg(
             '_'.join(['', self.name, 'lock_reg']), initval=0)
         self.lock_id = self.m.Reg(
@@ -80,11 +82,14 @@ class Mutex(object):
         try_state = fsm.current
         cond = vtypes.Ors(vtypes.Not(self.lock_reg),
                           self.lock_id == new_lock_id)
-        fsm.If(cond)(
+        state_cond = fsm.state == fsm.current
+
+        self.seq.If(state_cond, cond)(
             self.lock_reg(1),
             self.lock_id(new_lock_id)
         )
-        fsm.Then().goto_next()
+
+        fsm.If(cond).goto_next()
 
         # verify
         cond = vtypes.Ands(self.lock_reg, self.lock_id == new_lock_id)
@@ -104,10 +109,13 @@ class Mutex(object):
         try_state = fsm.current
         cond = vtypes.Or(vtypes.Not(self.lock_reg),
                          self.lock_id == new_lock_id)
-        fsm.If(cond)(
+        state_cond = fsm.state == fsm.current
+
+        self.seq.If(state_cond, cond)(
             self.lock_reg(1),
             self.lock_id(new_lock_id)
         )
+
         fsm.goto_next()
 
         # verify
@@ -127,9 +135,12 @@ class Mutex(object):
         if new_lock_id > 2 ** self.width - 1:
             raise ValueError('too many lock IDs')
 
-        fsm.If(self.lock_id == new_lock_id)(
+        state_cond = fsm.state == fsm.current
+
+        self.seq.If(state_cond, self.lock_id == new_lock_id)(
             self.lock_reg(0)
         )
+
         fsm.goto_next()
 
     def _get_id(self, name):

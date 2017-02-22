@@ -8,12 +8,14 @@ module test;
 
   reg CLK;
   reg RST;
+  wire [8-1:0] LED;
 
   blinkled
   uut
   (
     .CLK(CLK),
-    .RST(RST)
+    .RST(RST),
+    .LED(LED)
   );
 
 
@@ -49,10 +51,12 @@ endmodule
 module blinkled
 (
   input CLK,
-  input RST
+  input RST,
+  output [8-1:0] LED
 );
 
   reg [32-1:0] count;
+  assign LED = count;
   reg _mymutex_lock_reg;
   reg [32-1:0] _mymutex_lock_id;
   reg [8-1:0] _th_myfunc_start;
@@ -107,6 +111,71 @@ module blinkled
   reg [32-1:0] _th_myfunc_7_tid_22;
   reg [32-1:0] _th_myfunc_7_tid_23;
   reg [32-1:0] _th_myfunc_7_i_24;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _mymutex_lock_reg <= 0;
+      _mymutex_lock_id <= 0;
+    end else begin
+      if((th_myfunc_0 == 2) && (!_mymutex_lock_reg || (_mymutex_lock_id == 0))) begin
+        _mymutex_lock_reg <= 1;
+        _mymutex_lock_id <= 0;
+      end 
+      if((th_myfunc_0 == 10) && (_mymutex_lock_id == 0)) begin
+        _mymutex_lock_reg <= 0;
+      end 
+      if((th_myfunc_1 == 2) && (!_mymutex_lock_reg || (_mymutex_lock_id == 1))) begin
+        _mymutex_lock_reg <= 1;
+        _mymutex_lock_id <= 1;
+      end 
+      if((th_myfunc_1 == 10) && (_mymutex_lock_id == 1)) begin
+        _mymutex_lock_reg <= 0;
+      end 
+      if((th_myfunc_2 == 2) && (!_mymutex_lock_reg || (_mymutex_lock_id == 2))) begin
+        _mymutex_lock_reg <= 1;
+        _mymutex_lock_id <= 2;
+      end 
+      if((th_myfunc_2 == 10) && (_mymutex_lock_id == 2)) begin
+        _mymutex_lock_reg <= 0;
+      end 
+      if((th_myfunc_3 == 2) && (!_mymutex_lock_reg || (_mymutex_lock_id == 3))) begin
+        _mymutex_lock_reg <= 1;
+        _mymutex_lock_id <= 3;
+      end 
+      if((th_myfunc_3 == 10) && (_mymutex_lock_id == 3)) begin
+        _mymutex_lock_reg <= 0;
+      end 
+      if((th_myfunc_4 == 2) && (!_mymutex_lock_reg || (_mymutex_lock_id == 4))) begin
+        _mymutex_lock_reg <= 1;
+        _mymutex_lock_id <= 4;
+      end 
+      if((th_myfunc_4 == 10) && (_mymutex_lock_id == 4)) begin
+        _mymutex_lock_reg <= 0;
+      end 
+      if((th_myfunc_5 == 2) && (!_mymutex_lock_reg || (_mymutex_lock_id == 5))) begin
+        _mymutex_lock_reg <= 1;
+        _mymutex_lock_id <= 5;
+      end 
+      if((th_myfunc_5 == 10) && (_mymutex_lock_id == 5)) begin
+        _mymutex_lock_reg <= 0;
+      end 
+      if((th_myfunc_6 == 2) && (!_mymutex_lock_reg || (_mymutex_lock_id == 6))) begin
+        _mymutex_lock_reg <= 1;
+        _mymutex_lock_id <= 6;
+      end 
+      if((th_myfunc_6 == 10) && (_mymutex_lock_id == 6)) begin
+        _mymutex_lock_reg <= 0;
+      end 
+      if((th_myfunc_7 == 2) && (!_mymutex_lock_reg || (_mymutex_lock_id == 7))) begin
+        _mymutex_lock_reg <= 1;
+        _mymutex_lock_id <= 7;
+      end 
+      if((th_myfunc_7 == 10) && (_mymutex_lock_id == 7)) begin
+        _mymutex_lock_reg <= 0;
+      end 
+    end
+  end
+
   localparam th_blink_1 = 1;
   localparam th_blink_2 = 2;
   localparam th_blink_3 = 3;
@@ -223,8 +292,6 @@ module blinkled
       _th_myfunc_0_called <= 0;
       _th_myfunc_0_tid_1 <= 0;
       _th_myfunc_0_tid_2 <= 0;
-      _mymutex_lock_reg <= 0;
-      _mymutex_lock_id <= 0;
       _th_myfunc_0_i_3 <= 0;
       count <= 0;
     end else begin
@@ -245,10 +312,6 @@ module blinkled
           th_myfunc_0 <= th_myfunc_0_2;
         end
         th_myfunc_0_2: begin
-          if(!_mymutex_lock_reg || (_mymutex_lock_id == 0)) begin
-            _mymutex_lock_reg <= 1;
-            _mymutex_lock_id <= 0;
-          end 
           if(!_mymutex_lock_reg || (_mymutex_lock_id == 0)) begin
             th_myfunc_0 <= th_myfunc_0_3;
           end 
@@ -289,9 +352,6 @@ module blinkled
           th_myfunc_0 <= th_myfunc_0_10;
         end
         th_myfunc_0_10: begin
-          if(_mymutex_lock_id == 0) begin
-            _mymutex_lock_reg <= 0;
-          end 
           th_myfunc_0 <= th_myfunc_0_11;
         end
         th_myfunc_0_11: begin
@@ -321,8 +381,6 @@ module blinkled
       _th_myfunc_1_called <= 0;
       _th_myfunc_1_tid_4 <= 0;
       _th_myfunc_1_tid_5 <= 0;
-      _mymutex_lock_reg <= 0;
-      _mymutex_lock_id <= 0;
       _th_myfunc_1_i_6 <= 0;
       count <= 0;
     end else begin
@@ -343,10 +401,6 @@ module blinkled
           th_myfunc_1 <= th_myfunc_1_2;
         end
         th_myfunc_1_2: begin
-          if(!_mymutex_lock_reg || (_mymutex_lock_id == 1)) begin
-            _mymutex_lock_reg <= 1;
-            _mymutex_lock_id <= 1;
-          end 
           if(!_mymutex_lock_reg || (_mymutex_lock_id == 1)) begin
             th_myfunc_1 <= th_myfunc_1_3;
           end 
@@ -387,9 +441,6 @@ module blinkled
           th_myfunc_1 <= th_myfunc_1_10;
         end
         th_myfunc_1_10: begin
-          if(_mymutex_lock_id == 1) begin
-            _mymutex_lock_reg <= 0;
-          end 
           th_myfunc_1 <= th_myfunc_1_11;
         end
         th_myfunc_1_11: begin
@@ -419,8 +470,6 @@ module blinkled
       _th_myfunc_2_called <= 0;
       _th_myfunc_2_tid_7 <= 0;
       _th_myfunc_2_tid_8 <= 0;
-      _mymutex_lock_reg <= 0;
-      _mymutex_lock_id <= 0;
       _th_myfunc_2_i_9 <= 0;
       count <= 0;
     end else begin
@@ -441,10 +490,6 @@ module blinkled
           th_myfunc_2 <= th_myfunc_2_2;
         end
         th_myfunc_2_2: begin
-          if(!_mymutex_lock_reg || (_mymutex_lock_id == 2)) begin
-            _mymutex_lock_reg <= 1;
-            _mymutex_lock_id <= 2;
-          end 
           if(!_mymutex_lock_reg || (_mymutex_lock_id == 2)) begin
             th_myfunc_2 <= th_myfunc_2_3;
           end 
@@ -485,9 +530,6 @@ module blinkled
           th_myfunc_2 <= th_myfunc_2_10;
         end
         th_myfunc_2_10: begin
-          if(_mymutex_lock_id == 2) begin
-            _mymutex_lock_reg <= 0;
-          end 
           th_myfunc_2 <= th_myfunc_2_11;
         end
         th_myfunc_2_11: begin
@@ -517,8 +559,6 @@ module blinkled
       _th_myfunc_3_called <= 0;
       _th_myfunc_3_tid_10 <= 0;
       _th_myfunc_3_tid_11 <= 0;
-      _mymutex_lock_reg <= 0;
-      _mymutex_lock_id <= 0;
       _th_myfunc_3_i_12 <= 0;
       count <= 0;
     end else begin
@@ -539,10 +579,6 @@ module blinkled
           th_myfunc_3 <= th_myfunc_3_2;
         end
         th_myfunc_3_2: begin
-          if(!_mymutex_lock_reg || (_mymutex_lock_id == 3)) begin
-            _mymutex_lock_reg <= 1;
-            _mymutex_lock_id <= 3;
-          end 
           if(!_mymutex_lock_reg || (_mymutex_lock_id == 3)) begin
             th_myfunc_3 <= th_myfunc_3_3;
           end 
@@ -583,9 +619,6 @@ module blinkled
           th_myfunc_3 <= th_myfunc_3_10;
         end
         th_myfunc_3_10: begin
-          if(_mymutex_lock_id == 3) begin
-            _mymutex_lock_reg <= 0;
-          end 
           th_myfunc_3 <= th_myfunc_3_11;
         end
         th_myfunc_3_11: begin
@@ -615,8 +648,6 @@ module blinkled
       _th_myfunc_4_called <= 0;
       _th_myfunc_4_tid_13 <= 0;
       _th_myfunc_4_tid_14 <= 0;
-      _mymutex_lock_reg <= 0;
-      _mymutex_lock_id <= 0;
       _th_myfunc_4_i_15 <= 0;
       count <= 0;
     end else begin
@@ -637,10 +668,6 @@ module blinkled
           th_myfunc_4 <= th_myfunc_4_2;
         end
         th_myfunc_4_2: begin
-          if(!_mymutex_lock_reg || (_mymutex_lock_id == 4)) begin
-            _mymutex_lock_reg <= 1;
-            _mymutex_lock_id <= 4;
-          end 
           if(!_mymutex_lock_reg || (_mymutex_lock_id == 4)) begin
             th_myfunc_4 <= th_myfunc_4_3;
           end 
@@ -681,9 +708,6 @@ module blinkled
           th_myfunc_4 <= th_myfunc_4_10;
         end
         th_myfunc_4_10: begin
-          if(_mymutex_lock_id == 4) begin
-            _mymutex_lock_reg <= 0;
-          end 
           th_myfunc_4 <= th_myfunc_4_11;
         end
         th_myfunc_4_11: begin
@@ -713,8 +737,6 @@ module blinkled
       _th_myfunc_5_called <= 0;
       _th_myfunc_5_tid_16 <= 0;
       _th_myfunc_5_tid_17 <= 0;
-      _mymutex_lock_reg <= 0;
-      _mymutex_lock_id <= 0;
       _th_myfunc_5_i_18 <= 0;
       count <= 0;
     end else begin
@@ -735,10 +757,6 @@ module blinkled
           th_myfunc_5 <= th_myfunc_5_2;
         end
         th_myfunc_5_2: begin
-          if(!_mymutex_lock_reg || (_mymutex_lock_id == 5)) begin
-            _mymutex_lock_reg <= 1;
-            _mymutex_lock_id <= 5;
-          end 
           if(!_mymutex_lock_reg || (_mymutex_lock_id == 5)) begin
             th_myfunc_5 <= th_myfunc_5_3;
           end 
@@ -779,9 +797,6 @@ module blinkled
           th_myfunc_5 <= th_myfunc_5_10;
         end
         th_myfunc_5_10: begin
-          if(_mymutex_lock_id == 5) begin
-            _mymutex_lock_reg <= 0;
-          end 
           th_myfunc_5 <= th_myfunc_5_11;
         end
         th_myfunc_5_11: begin
@@ -811,8 +826,6 @@ module blinkled
       _th_myfunc_6_called <= 0;
       _th_myfunc_6_tid_19 <= 0;
       _th_myfunc_6_tid_20 <= 0;
-      _mymutex_lock_reg <= 0;
-      _mymutex_lock_id <= 0;
       _th_myfunc_6_i_21 <= 0;
       count <= 0;
     end else begin
@@ -833,10 +846,6 @@ module blinkled
           th_myfunc_6 <= th_myfunc_6_2;
         end
         th_myfunc_6_2: begin
-          if(!_mymutex_lock_reg || (_mymutex_lock_id == 6)) begin
-            _mymutex_lock_reg <= 1;
-            _mymutex_lock_id <= 6;
-          end 
           if(!_mymutex_lock_reg || (_mymutex_lock_id == 6)) begin
             th_myfunc_6 <= th_myfunc_6_3;
           end 
@@ -877,9 +886,6 @@ module blinkled
           th_myfunc_6 <= th_myfunc_6_10;
         end
         th_myfunc_6_10: begin
-          if(_mymutex_lock_id == 6) begin
-            _mymutex_lock_reg <= 0;
-          end 
           th_myfunc_6 <= th_myfunc_6_11;
         end
         th_myfunc_6_11: begin
@@ -909,8 +915,6 @@ module blinkled
       _th_myfunc_7_called <= 0;
       _th_myfunc_7_tid_22 <= 0;
       _th_myfunc_7_tid_23 <= 0;
-      _mymutex_lock_reg <= 0;
-      _mymutex_lock_id <= 0;
       _th_myfunc_7_i_24 <= 0;
       count <= 0;
     end else begin
@@ -931,10 +935,6 @@ module blinkled
           th_myfunc_7 <= th_myfunc_7_2;
         end
         th_myfunc_7_2: begin
-          if(!_mymutex_lock_reg || (_mymutex_lock_id == 7)) begin
-            _mymutex_lock_reg <= 1;
-            _mymutex_lock_id <= 7;
-          end 
           if(!_mymutex_lock_reg || (_mymutex_lock_id == 7)) begin
             th_myfunc_7 <= th_myfunc_7_3;
           end 
@@ -975,9 +975,6 @@ module blinkled
           th_myfunc_7 <= th_myfunc_7_10;
         end
         th_myfunc_7_10: begin
-          if(_mymutex_lock_id == 7) begin
-            _mymutex_lock_reg <= 0;
-          end 
           th_myfunc_7 <= th_myfunc_7_11;
         end
         th_myfunc_7_11: begin

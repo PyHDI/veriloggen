@@ -15,8 +15,11 @@ def mkLed(numthreads=8):
     m = Module('blinkled')
     clk = m.Input('CLK')
     rst = m.Input('RST')
+    led = m.Output('LED', 8)
 
     count = vthread.Shared(m.Reg('count', 32, initval=0))
+    led.assign(count.value)
+
     mymutex = vthread.Mutex(m, 'mymutex', clk, rst)
 
     def myfunc(tid):
