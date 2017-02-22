@@ -1074,7 +1074,7 @@ module main
         _tmp_abs_rdata_0 <= (_tmp_rdata_0[31] == 0)? _tmp_rdata_0 : ~_tmp_rdata_0 + 1;
       end 
       if(_tmp_ready_0 || !_tmp_valid_0) begin
-        _tmp_odata_0 <= (_tmp_osign_0)? _tmp_abs_odata_0 : ~_tmp_abs_odata_0 + 1;
+        _tmp_odata_0 <= (_tmp_osign_0 == 0)? _tmp_abs_odata_0 : ~_tmp_abs_odata_0 + 1;
       end 
       if(_tmp_ready_0 || !_tmp_valid_0) begin
         _tmp_valid_reg0_0 <= _tmp_ovalid_0;
@@ -1086,7 +1086,7 @@ module main
         _tmp_valid_reg2_0 <= _tmp_valid_reg1_0;
       end 
       if(_tmp_ready_0 || !_tmp_valid_0) begin
-        _tmp_sign0_0 <= (_tmp_ldata_0[31] == 0) && (_tmp_rdata_0[31] == 0) || (_tmp_ldata_0[31] == 1) && (_tmp_rdata_0[31] == 1);
+        _tmp_sign0_0 <= !((_tmp_ldata_0[31] == 0) && (_tmp_rdata_0[31] == 0) || (_tmp_ldata_0[31] == 1) && (_tmp_rdata_0[31] == 1));
       end 
       if(_tmp_ready_0 || !_tmp_valid_0) begin
         _tmp_sign1_0 <= _tmp_sign0_0;

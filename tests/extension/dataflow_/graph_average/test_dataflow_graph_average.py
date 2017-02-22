@@ -958,7 +958,7 @@ module main
         _tmp_valid_reg2_6 <= _tmp_valid_reg1_6;
       end 
       if(_tmp_ready_6 || !_tmp_valid_6) begin
-        _tmp_sign0_6 <= (_tmp_ldata_6[31] == 0) && (_tmp_rdata_6[31] == 0) || (_tmp_ldata_6[31] == 1) && (_tmp_rdata_6[31] == 1);
+        _tmp_sign0_6 <= !((_tmp_ldata_6[31] == 0) && (_tmp_rdata_6[31] == 0) || (_tmp_ldata_6[31] == 1) && (_tmp_rdata_6[31] == 1));
       end 
       if(_tmp_ready_6 || !_tmp_valid_6) begin
         _tmp_sign1_6 <= _tmp_sign0_6;

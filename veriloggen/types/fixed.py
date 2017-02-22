@@ -136,6 +136,9 @@ def shift_right(value, size, signed=True):
 def _max_mux(a, b):
     return vtypes.Mux(a > b, a, b)
 
+def _min_mux(a, b):
+    return vtypes.Mux(a < b, a, b)
+
 #-------------------------------------------------------------------------------
 def FixedInput(m, name, width=32, point=0, signed=False):
     var = m.Input(name, width, signed=signed)
@@ -260,6 +263,73 @@ class Fixed(vtypes.VeriloggenNode):
 
         return Fixed(data, point, signed)
 
+    def _binary_op_mul(self, op, r):
+        lvalue = self.value
+        lpoint = self.point
+        lsigned = self.signed
+        
+        if not isinstance(r, Fixed):
+            rvalue = r
+            rsigned = vtypes.get_signed(r)
+            rpoint = 0
+        else:
+            rvalue = r.value
+            rsigned = r.signed
+            rpoint = r.point
+
+        point = _max_mux(lpoint, rpoint)
+        signed = lsigned and rsigned
+        ldata = vtypes.SystemTask('signed', lvalue)
+        rdata = vtypes.SystemTask('signed', rvalue)
+        shift_size = _min_mux(lpoint, rpoint)
+
+        data = op(ldata, rdata)
+        data = shift_right(data, shift_size, signed=signed)
+
+        return Fixed(data, point, signed)
+
+    def _binary_op_div(self, op, r):
+        lvalue = self.value
+        lpoint = self.point
+        lsigned = self.signed
+        
+        if not isinstance(r, Fixed):
+            rvalue = r
+            rsigned = vtypes.get_signed(r)
+            rpoint = 0
+        else:
+            rvalue = r.value
+            rsigned = r.signed
+            rpoint = r.point
+
+        point = _max_mux(lpoint, rpoint)
+        signed = lsigned and rsigned
+        lwidth = lvalue.bit_length()
+        rwidth = rvalue.bit_length()
+        ldata, rdata = adjust(lvalue, rvalue, lpoint, rpoint, signed)
+
+        try:
+            lmsb = ldata[lwidth-1]
+        except:
+            lmsb = (ldata >> (lwidth - 1) & 0x1)
+            
+        try:
+            rmsb = rdata[lwidth-1]
+        except:
+            rmsb = (rdata >> (rwidth - 1) & 0x1)
+            
+        abs_ldata = (ldata if not lsigned else
+                     vtypes.Mux(lmsb == 0, ldata, vtypes.Unot(ldata) + 1))
+        abs_rdata = (rdata if not rsigned else
+                     vtypes.Mux(rmsb == 0, rdata, vtypes.Unot(rdata) + 1))
+        abs_data = op(abs_ldata, abs_rdata)
+        data = (abs_data if not signed else
+                vtypes.Mux(vtypes.Ors(vtypes.Ands(lmsb, rmsb),
+                                      vtypes.Ands(vtypes.Not(lmsb), vtypes.Not(rmsb))),
+                           abs_data, vtypes.Unot(abs_data) + 1))
+
+        return Fixed(data, point, signed)
+
     def _binary_logical_op(self, op, r):
         lvalue = self.value
         
@@ -275,6 +345,16 @@ class Fixed(vtypes.VeriloggenNode):
 
     def __sub__(self, r):
         return self._binary_op(vtypes.Minus, r)
+
+    def __mul__(self, r):
+        return self._binary_op_mul(vtypes.Times, r)
+
+    def __div__(self, r):
+        return self._binary_op_div(vtypes.Divide, r)
+
+    def __truediv__(self, r):
+        return self._binary_op_div(vtypes.Divide, r)
+
 
 def FixedConst(value, point, raw=False):
     return Fixed(value, point, raw=raw)

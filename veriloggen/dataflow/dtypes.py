@@ -830,8 +830,8 @@ class Divide(_BinaryOperator):
         seq(ldata(lval), cond=accept)
         seq(rdata(rval), cond=accept)
 
-        sign = vtypes.OrList(vtypes.AndList(ldata[width - 1] == 0, rdata[width - 1] == 0),  # + , +
-                             vtypes.AndList(ldata[width - 1] == 1, rdata[width - 1] == 1))  # - , -
+        sign = vtypes.Not(vtypes.OrList(vtypes.AndList(ldata[width - 1] == 0, rdata[width - 1] == 0),  # + , +
+                                        vtypes.AndList(ldata[width - 1] == 1, rdata[width - 1] == 1)))  # - , -
 
         abs_ldata = m.Reg(
             _tmp_data(tmp, prefix='_tmp_abs_ldata_'), width, initval=0)
@@ -860,7 +860,7 @@ class Divide(_BinaryOperator):
         if not signed:
             seq(odata(abs_odata), cond=accept)
         else:
-            seq(odata(vtypes.Mux(osign, abs_odata, vtypes.Unot(abs_odata) + 1)),
+            seq(odata(vtypes.Mux(osign == 0, abs_odata, vtypes.Unot(abs_odata) + 1)),
                 cond=accept)
 
         m.Assign(data(odata))
@@ -961,8 +961,8 @@ class Mod(_BinaryOperator):
         seq(ldata(lval), cond=accept)
         seq(rdata(rval), cond=accept)
 
-        sign = vtypes.OrList(vtypes.AndList(ldata[width - 1] == 0, rdata[width - 1] == 0),  # + , +
-                             vtypes.AndList(ldata[width - 1] == 1, rdata[width - 1] == 1))  # - , -
+        sign = vtypes.Not(vtypes.OrList(vtypes.AndList(ldata[width - 1] == 0, rdata[width - 1] == 0),  # + , +
+                                        vtypes.AndList(ldata[width - 1] == 1, rdata[width - 1] == 1)))  # - , -
 
         abs_ldata = m.Reg(
             _tmp_data(tmp, prefix='_tmp_abs_ldata_'), width, initval=0)
@@ -991,7 +991,7 @@ class Mod(_BinaryOperator):
         if not signed:
             seq(odata(abs_odata), cond=accept)
         else:
-            seq(odata(vtypes.Mux(osign, abs_odata, vtypes.Unot(abs_odata) + 1)),
+            seq(odata(vtypes.Mux(osign == 0, abs_odata, vtypes.Unot(abs_odata) + 1)),
                 cond=accept)
 
         m.Assign(data(odata))

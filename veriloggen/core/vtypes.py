@@ -1711,6 +1711,11 @@ class SystemTask(_Numeric):
         self.cmd = cmd
         self.args = tuple(args)
         
+    def bit_length(self):
+        if self.cmd == 'signed':
+            return self.args[0].bit_length()
+        raise TypeError("bit_length() is not supported.")
+
 def Systask(cmd, *args):
     return SingleStatement(SystemTask(cmd, *args))
 
