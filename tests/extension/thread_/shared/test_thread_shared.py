@@ -186,7 +186,7 @@ module blinkled
           (_th_blink_tid_0 == 4)? th_myfunc_4 == 12 : 
           (_th_blink_tid_0 == 5)? th_myfunc_5 == 12 : 
           (_th_blink_tid_0 == 6)? th_myfunc_6 == 12 : 
-          (_th_blink_tid_0 == 7)? th_myfunc_7 == 12 : 'hx) begin
+          (_th_blink_tid_0 == 7)? th_myfunc_7 == 12 : 0) begin
             th_blink <= th_blink_11;
           end 
         end

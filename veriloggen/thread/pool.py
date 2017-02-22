@@ -86,7 +86,7 @@ class ThreadPool(vtypes.VeriloggenNode):
             end_flag = (thread.fsm.state == thread.end_state)
             patterns.append(((tid == thread.tid), end_flag))
 
-        patterns.append((None, vtypes.IntX()))
+        patterns.append((None, 0))
         cond = vtypes.PatternMux(*patterns)
         fsm.If(cond).goto_next()
 
@@ -102,7 +102,7 @@ class ThreadPool(vtypes.VeriloggenNode):
             end_flag = (thread.fsm.state == thread.end_state)
             patterns.append(((tid == thread.tid), end_flag))
 
-        patterns.append((None, vtypes.IntX()))
+        patterns.append((None, 0))
         cond = vtypes.PatternMux(*patterns)
 
         return cond

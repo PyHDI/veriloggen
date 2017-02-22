@@ -162,7 +162,7 @@ module blinkled
           if((_th_blink_tid_1 == 0)? th_myfunc_0 == 7 : 
           (_th_blink_tid_1 == 1)? th_myfunc_1 == 7 : 
           (_th_blink_tid_1 == 2)? th_myfunc_2 == 7 : 
-          (_th_blink_tid_1 == 3)? th_myfunc_3 == 7 : 'hx) begin
+          (_th_blink_tid_1 == 3)? th_myfunc_3 == 7 : 0) begin
             th_blink <= th_blink_11;
           end 
         end
