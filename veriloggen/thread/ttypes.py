@@ -242,35 +242,37 @@ class RAM(ram.SyncRAMManager):
 
         return 0
 
-#    def dma_read(self, fsm, local_addr, global_addr, size, port=0, nonblocking=False):
-#        if self.axi is None or not isinstance(self.axi, AXIM):
-#            raise TypeError('AXIM interface is required')
-#
-#        cond = fsm.state == fsm.current
-#
-#        done = self.axi.dma_read(self, global_addr, local_addr, size, port)
-#
-#        if nonblocking:
-#            fsm.goto_next()
-#            return done
-#
-#        fsm.If(done).goto_next()
-#        return 0
-#
-#    def dma_write(self, fsm, local_addr, global_addr, size, port=0, nonblocking=False):
-#        if self.axi is None or not isinstance(self.axi, AXIM):
-#            raise TypeError('AXIM interface is required')
-#
-#        cond = fsm.state == fsm.current
-#
-#        done = self.axi.dma_write(self, global_addr, local_addr, size, cond, port)
-#
-#        if nonblocking:
-#            fsm.goto_next()
-#            return done
-#
-#        fsm.If(done).goto_next()
-#        return 0
+    def dma_read(self, fsm, local_addr, global_addr, size, port=0, nonblocking=False):
+        if self.axi is None or not isinstance(self.axi, AXIM):
+            raise TypeError('AXIM interface is required')
+
+        cond = fsm.state == fsm.current
+
+        done = self.axi.dma_read(self, global_addr, local_addr, size,
+                                 cond=cond, ram_port=port)
+
+        if nonblocking:
+            fsm.goto_next()
+            return done
+
+        fsm.If(done).goto_next()
+        return 0
+
+    def dma_write(self, fsm, local_addr, global_addr, size, port=0, nonblocking=False):
+        if self.axi is None or not isinstance(self.axi, AXIM):
+            raise TypeError('AXIM interface is required')
+
+        cond = fsm.state == fsm.current
+
+        done = self.axi.dma_write(self, global_addr, local_addr, size,
+                                  cond=cond, ram_port=port)
+
+        if nonblocking:
+            fsm.goto_next()
+            return done
+
+        fsm.If(done).goto_next()
+        return 0
 
     def lock(self, fsm):
         if self.mutex is None:
@@ -299,7 +301,7 @@ class AXIM(axi.AxiMaster):
                       'read_request', 'read_data',
                       'lock', 'try_lock', 'unlock')
 
-    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=10):
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32):
         axi.AxiMaster.__init__(self, m, name, clk, rst, datawidth, addrwidth)
         self.mutex = None
 
@@ -326,8 +328,9 @@ class AXIM(axi.AxiMaster):
 
 
 class AXIS(axi.AxiSlave):
+    __intrinsics__ = ('lock', 'try_lock', 'unlock')
 
-    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=10):
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32):
         axi.AxiSlave.__init__(self, m, name, clk, rst, datawidth, addrwidth)
         self.mutex = None
 
