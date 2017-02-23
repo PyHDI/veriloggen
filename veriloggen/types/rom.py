@@ -10,6 +10,9 @@ from . import util
 
 
 def mkROMDefinition(name, values, size, datawidth, sync=False, with_enable=False):
+    if not sync and with_enable:
+        raise ValueError('Async ROM cannot have enable signals')
+    
     m = Module(name)
 
     clk = m.Input('CLK') if sync else None

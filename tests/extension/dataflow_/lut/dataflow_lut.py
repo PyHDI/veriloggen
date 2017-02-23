@@ -18,7 +18,7 @@ def mkMain():
     y = dataflow.Variable('ydata', valid='yvalid', ready='yready')
 
     # dataflow definition
-    patterns = tuple([ i + 100 for i in range(256) ])
+    patterns = tuple([ i * i for i in range(256) ])
     lut = dataflow.LUT(x, patterns)
     z = lut + y
 

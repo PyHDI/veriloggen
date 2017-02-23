@@ -601,772 +601,772 @@ module _LUT_0
     if(enable) begin
       case(addr)
         0: begin
-          val <= 100;
+          val <= 0;
         end
         1: begin
-          val <= 101;
+          val <= 1;
         end
         2: begin
-          val <= 102;
+          val <= 4;
         end
         3: begin
-          val <= 103;
+          val <= 9;
         end
         4: begin
-          val <= 104;
+          val <= 16;
         end
         5: begin
-          val <= 105;
+          val <= 25;
         end
         6: begin
-          val <= 106;
+          val <= 36;
         end
         7: begin
-          val <= 107;
+          val <= 49;
         end
         8: begin
-          val <= 108;
+          val <= 64;
         end
         9: begin
-          val <= 109;
+          val <= 81;
         end
         10: begin
-          val <= 110;
+          val <= 100;
         end
         11: begin
-          val <= 111;
-        end
-        12: begin
-          val <= 112;
-        end
-        13: begin
-          val <= 113;
-        end
-        14: begin
-          val <= 114;
-        end
-        15: begin
-          val <= 115;
-        end
-        16: begin
-          val <= 116;
-        end
-        17: begin
-          val <= 117;
-        end
-        18: begin
-          val <= 118;
-        end
-        19: begin
-          val <= 119;
-        end
-        20: begin
-          val <= 120;
-        end
-        21: begin
           val <= 121;
         end
-        22: begin
-          val <= 122;
-        end
-        23: begin
-          val <= 123;
-        end
-        24: begin
-          val <= 124;
-        end
-        25: begin
-          val <= 125;
-        end
-        26: begin
-          val <= 126;
-        end
-        27: begin
-          val <= 127;
-        end
-        28: begin
-          val <= 128;
-        end
-        29: begin
-          val <= 129;
-        end
-        30: begin
-          val <= 130;
-        end
-        31: begin
-          val <= 131;
-        end
-        32: begin
-          val <= 132;
-        end
-        33: begin
-          val <= 133;
-        end
-        34: begin
-          val <= 134;
-        end
-        35: begin
-          val <= 135;
-        end
-        36: begin
-          val <= 136;
-        end
-        37: begin
-          val <= 137;
-        end
-        38: begin
-          val <= 138;
-        end
-        39: begin
-          val <= 139;
-        end
-        40: begin
-          val <= 140;
-        end
-        41: begin
-          val <= 141;
-        end
-        42: begin
-          val <= 142;
-        end
-        43: begin
-          val <= 143;
-        end
-        44: begin
+        12: begin
           val <= 144;
         end
-        45: begin
-          val <= 145;
-        end
-        46: begin
-          val <= 146;
-        end
-        47: begin
-          val <= 147;
-        end
-        48: begin
-          val <= 148;
-        end
-        49: begin
-          val <= 149;
-        end
-        50: begin
-          val <= 150;
-        end
-        51: begin
-          val <= 151;
-        end
-        52: begin
-          val <= 152;
-        end
-        53: begin
-          val <= 153;
-        end
-        54: begin
-          val <= 154;
-        end
-        55: begin
-          val <= 155;
-        end
-        56: begin
-          val <= 156;
-        end
-        57: begin
-          val <= 157;
-        end
-        58: begin
-          val <= 158;
-        end
-        59: begin
-          val <= 159;
-        end
-        60: begin
-          val <= 160;
-        end
-        61: begin
-          val <= 161;
-        end
-        62: begin
-          val <= 162;
-        end
-        63: begin
-          val <= 163;
-        end
-        64: begin
-          val <= 164;
-        end
-        65: begin
-          val <= 165;
-        end
-        66: begin
-          val <= 166;
-        end
-        67: begin
-          val <= 167;
-        end
-        68: begin
-          val <= 168;
-        end
-        69: begin
+        13: begin
           val <= 169;
         end
-        70: begin
-          val <= 170;
-        end
-        71: begin
-          val <= 171;
-        end
-        72: begin
-          val <= 172;
-        end
-        73: begin
-          val <= 173;
-        end
-        74: begin
-          val <= 174;
-        end
-        75: begin
-          val <= 175;
-        end
-        76: begin
-          val <= 176;
-        end
-        77: begin
-          val <= 177;
-        end
-        78: begin
-          val <= 178;
-        end
-        79: begin
-          val <= 179;
-        end
-        80: begin
-          val <= 180;
-        end
-        81: begin
-          val <= 181;
-        end
-        82: begin
-          val <= 182;
-        end
-        83: begin
-          val <= 183;
-        end
-        84: begin
-          val <= 184;
-        end
-        85: begin
-          val <= 185;
-        end
-        86: begin
-          val <= 186;
-        end
-        87: begin
-          val <= 187;
-        end
-        88: begin
-          val <= 188;
-        end
-        89: begin
-          val <= 189;
-        end
-        90: begin
-          val <= 190;
-        end
-        91: begin
-          val <= 191;
-        end
-        92: begin
-          val <= 192;
-        end
-        93: begin
-          val <= 193;
-        end
-        94: begin
-          val <= 194;
-        end
-        95: begin
-          val <= 195;
-        end
-        96: begin
+        14: begin
           val <= 196;
         end
-        97: begin
-          val <= 197;
-        end
-        98: begin
-          val <= 198;
-        end
-        99: begin
-          val <= 199;
-        end
-        100: begin
-          val <= 200;
-        end
-        101: begin
-          val <= 201;
-        end
-        102: begin
-          val <= 202;
-        end
-        103: begin
-          val <= 203;
-        end
-        104: begin
-          val <= 204;
-        end
-        105: begin
-          val <= 205;
-        end
-        106: begin
-          val <= 206;
-        end
-        107: begin
-          val <= 207;
-        end
-        108: begin
-          val <= 208;
-        end
-        109: begin
-          val <= 209;
-        end
-        110: begin
-          val <= 210;
-        end
-        111: begin
-          val <= 211;
-        end
-        112: begin
-          val <= 212;
-        end
-        113: begin
-          val <= 213;
-        end
-        114: begin
-          val <= 214;
-        end
-        115: begin
-          val <= 215;
-        end
-        116: begin
-          val <= 216;
-        end
-        117: begin
-          val <= 217;
-        end
-        118: begin
-          val <= 218;
-        end
-        119: begin
-          val <= 219;
-        end
-        120: begin
-          val <= 220;
-        end
-        121: begin
-          val <= 221;
-        end
-        122: begin
-          val <= 222;
-        end
-        123: begin
-          val <= 223;
-        end
-        124: begin
-          val <= 224;
-        end
-        125: begin
+        15: begin
           val <= 225;
         end
-        126: begin
-          val <= 226;
-        end
-        127: begin
-          val <= 227;
-        end
-        128: begin
-          val <= 228;
-        end
-        129: begin
-          val <= 229;
-        end
-        130: begin
-          val <= 230;
-        end
-        131: begin
-          val <= 231;
-        end
-        132: begin
-          val <= 232;
-        end
-        133: begin
-          val <= 233;
-        end
-        134: begin
-          val <= 234;
-        end
-        135: begin
-          val <= 235;
-        end
-        136: begin
-          val <= 236;
-        end
-        137: begin
-          val <= 237;
-        end
-        138: begin
-          val <= 238;
-        end
-        139: begin
-          val <= 239;
-        end
-        140: begin
-          val <= 240;
-        end
-        141: begin
-          val <= 241;
-        end
-        142: begin
-          val <= 242;
-        end
-        143: begin
-          val <= 243;
-        end
-        144: begin
-          val <= 244;
-        end
-        145: begin
-          val <= 245;
-        end
-        146: begin
-          val <= 246;
-        end
-        147: begin
-          val <= 247;
-        end
-        148: begin
-          val <= 248;
-        end
-        149: begin
-          val <= 249;
-        end
-        150: begin
-          val <= 250;
-        end
-        151: begin
-          val <= 251;
-        end
-        152: begin
-          val <= 252;
-        end
-        153: begin
-          val <= 253;
-        end
-        154: begin
-          val <= 254;
-        end
-        155: begin
-          val <= 255;
-        end
-        156: begin
+        16: begin
           val <= 256;
         end
-        157: begin
-          val <= 257;
-        end
-        158: begin
-          val <= 258;
-        end
-        159: begin
-          val <= 259;
-        end
-        160: begin
-          val <= 260;
-        end
-        161: begin
-          val <= 261;
-        end
-        162: begin
-          val <= 262;
-        end
-        163: begin
-          val <= 263;
-        end
-        164: begin
-          val <= 264;
-        end
-        165: begin
-          val <= 265;
-        end
-        166: begin
-          val <= 266;
-        end
-        167: begin
-          val <= 267;
-        end
-        168: begin
-          val <= 268;
-        end
-        169: begin
-          val <= 269;
-        end
-        170: begin
-          val <= 270;
-        end
-        171: begin
-          val <= 271;
-        end
-        172: begin
-          val <= 272;
-        end
-        173: begin
-          val <= 273;
-        end
-        174: begin
-          val <= 274;
-        end
-        175: begin
-          val <= 275;
-        end
-        176: begin
-          val <= 276;
-        end
-        177: begin
-          val <= 277;
-        end
-        178: begin
-          val <= 278;
-        end
-        179: begin
-          val <= 279;
-        end
-        180: begin
-          val <= 280;
-        end
-        181: begin
-          val <= 281;
-        end
-        182: begin
-          val <= 282;
-        end
-        183: begin
-          val <= 283;
-        end
-        184: begin
-          val <= 284;
-        end
-        185: begin
-          val <= 285;
-        end
-        186: begin
-          val <= 286;
-        end
-        187: begin
-          val <= 287;
-        end
-        188: begin
-          val <= 288;
-        end
-        189: begin
+        17: begin
           val <= 289;
         end
-        190: begin
-          val <= 290;
-        end
-        191: begin
-          val <= 291;
-        end
-        192: begin
-          val <= 292;
-        end
-        193: begin
-          val <= 293;
-        end
-        194: begin
-          val <= 294;
-        end
-        195: begin
-          val <= 295;
-        end
-        196: begin
-          val <= 296;
-        end
-        197: begin
-          val <= 297;
-        end
-        198: begin
-          val <= 298;
-        end
-        199: begin
-          val <= 299;
-        end
-        200: begin
-          val <= 300;
-        end
-        201: begin
-          val <= 301;
-        end
-        202: begin
-          val <= 302;
-        end
-        203: begin
-          val <= 303;
-        end
-        204: begin
-          val <= 304;
-        end
-        205: begin
-          val <= 305;
-        end
-        206: begin
-          val <= 306;
-        end
-        207: begin
-          val <= 307;
-        end
-        208: begin
-          val <= 308;
-        end
-        209: begin
-          val <= 309;
-        end
-        210: begin
-          val <= 310;
-        end
-        211: begin
-          val <= 311;
-        end
-        212: begin
-          val <= 312;
-        end
-        213: begin
-          val <= 313;
-        end
-        214: begin
-          val <= 314;
-        end
-        215: begin
-          val <= 315;
-        end
-        216: begin
-          val <= 316;
-        end
-        217: begin
-          val <= 317;
-        end
-        218: begin
-          val <= 318;
-        end
-        219: begin
-          val <= 319;
-        end
-        220: begin
-          val <= 320;
-        end
-        221: begin
-          val <= 321;
-        end
-        222: begin
-          val <= 322;
-        end
-        223: begin
-          val <= 323;
-        end
-        224: begin
+        18: begin
           val <= 324;
         end
+        19: begin
+          val <= 361;
+        end
+        20: begin
+          val <= 400;
+        end
+        21: begin
+          val <= 441;
+        end
+        22: begin
+          val <= 484;
+        end
+        23: begin
+          val <= 529;
+        end
+        24: begin
+          val <= 576;
+        end
+        25: begin
+          val <= 625;
+        end
+        26: begin
+          val <= 676;
+        end
+        27: begin
+          val <= 729;
+        end
+        28: begin
+          val <= 784;
+        end
+        29: begin
+          val <= 841;
+        end
+        30: begin
+          val <= 900;
+        end
+        31: begin
+          val <= 961;
+        end
+        32: begin
+          val <= 1024;
+        end
+        33: begin
+          val <= 1089;
+        end
+        34: begin
+          val <= 1156;
+        end
+        35: begin
+          val <= 1225;
+        end
+        36: begin
+          val <= 1296;
+        end
+        37: begin
+          val <= 1369;
+        end
+        38: begin
+          val <= 1444;
+        end
+        39: begin
+          val <= 1521;
+        end
+        40: begin
+          val <= 1600;
+        end
+        41: begin
+          val <= 1681;
+        end
+        42: begin
+          val <= 1764;
+        end
+        43: begin
+          val <= 1849;
+        end
+        44: begin
+          val <= 1936;
+        end
+        45: begin
+          val <= 2025;
+        end
+        46: begin
+          val <= 2116;
+        end
+        47: begin
+          val <= 2209;
+        end
+        48: begin
+          val <= 2304;
+        end
+        49: begin
+          val <= 2401;
+        end
+        50: begin
+          val <= 2500;
+        end
+        51: begin
+          val <= 2601;
+        end
+        52: begin
+          val <= 2704;
+        end
+        53: begin
+          val <= 2809;
+        end
+        54: begin
+          val <= 2916;
+        end
+        55: begin
+          val <= 3025;
+        end
+        56: begin
+          val <= 3136;
+        end
+        57: begin
+          val <= 3249;
+        end
+        58: begin
+          val <= 3364;
+        end
+        59: begin
+          val <= 3481;
+        end
+        60: begin
+          val <= 3600;
+        end
+        61: begin
+          val <= 3721;
+        end
+        62: begin
+          val <= 3844;
+        end
+        63: begin
+          val <= 3969;
+        end
+        64: begin
+          val <= 4096;
+        end
+        65: begin
+          val <= 4225;
+        end
+        66: begin
+          val <= 4356;
+        end
+        67: begin
+          val <= 4489;
+        end
+        68: begin
+          val <= 4624;
+        end
+        69: begin
+          val <= 4761;
+        end
+        70: begin
+          val <= 4900;
+        end
+        71: begin
+          val <= 5041;
+        end
+        72: begin
+          val <= 5184;
+        end
+        73: begin
+          val <= 5329;
+        end
+        74: begin
+          val <= 5476;
+        end
+        75: begin
+          val <= 5625;
+        end
+        76: begin
+          val <= 5776;
+        end
+        77: begin
+          val <= 5929;
+        end
+        78: begin
+          val <= 6084;
+        end
+        79: begin
+          val <= 6241;
+        end
+        80: begin
+          val <= 6400;
+        end
+        81: begin
+          val <= 6561;
+        end
+        82: begin
+          val <= 6724;
+        end
+        83: begin
+          val <= 6889;
+        end
+        84: begin
+          val <= 7056;
+        end
+        85: begin
+          val <= 7225;
+        end
+        86: begin
+          val <= 7396;
+        end
+        87: begin
+          val <= 7569;
+        end
+        88: begin
+          val <= 7744;
+        end
+        89: begin
+          val <= 7921;
+        end
+        90: begin
+          val <= 8100;
+        end
+        91: begin
+          val <= 8281;
+        end
+        92: begin
+          val <= 8464;
+        end
+        93: begin
+          val <= 8649;
+        end
+        94: begin
+          val <= 8836;
+        end
+        95: begin
+          val <= 9025;
+        end
+        96: begin
+          val <= 9216;
+        end
+        97: begin
+          val <= 9409;
+        end
+        98: begin
+          val <= 9604;
+        end
+        99: begin
+          val <= 9801;
+        end
+        100: begin
+          val <= 10000;
+        end
+        101: begin
+          val <= 10201;
+        end
+        102: begin
+          val <= 10404;
+        end
+        103: begin
+          val <= 10609;
+        end
+        104: begin
+          val <= 10816;
+        end
+        105: begin
+          val <= 11025;
+        end
+        106: begin
+          val <= 11236;
+        end
+        107: begin
+          val <= 11449;
+        end
+        108: begin
+          val <= 11664;
+        end
+        109: begin
+          val <= 11881;
+        end
+        110: begin
+          val <= 12100;
+        end
+        111: begin
+          val <= 12321;
+        end
+        112: begin
+          val <= 12544;
+        end
+        113: begin
+          val <= 12769;
+        end
+        114: begin
+          val <= 12996;
+        end
+        115: begin
+          val <= 13225;
+        end
+        116: begin
+          val <= 13456;
+        end
+        117: begin
+          val <= 13689;
+        end
+        118: begin
+          val <= 13924;
+        end
+        119: begin
+          val <= 14161;
+        end
+        120: begin
+          val <= 14400;
+        end
+        121: begin
+          val <= 14641;
+        end
+        122: begin
+          val <= 14884;
+        end
+        123: begin
+          val <= 15129;
+        end
+        124: begin
+          val <= 15376;
+        end
+        125: begin
+          val <= 15625;
+        end
+        126: begin
+          val <= 15876;
+        end
+        127: begin
+          val <= 16129;
+        end
+        128: begin
+          val <= 16384;
+        end
+        129: begin
+          val <= 16641;
+        end
+        130: begin
+          val <= 16900;
+        end
+        131: begin
+          val <= 17161;
+        end
+        132: begin
+          val <= 17424;
+        end
+        133: begin
+          val <= 17689;
+        end
+        134: begin
+          val <= 17956;
+        end
+        135: begin
+          val <= 18225;
+        end
+        136: begin
+          val <= 18496;
+        end
+        137: begin
+          val <= 18769;
+        end
+        138: begin
+          val <= 19044;
+        end
+        139: begin
+          val <= 19321;
+        end
+        140: begin
+          val <= 19600;
+        end
+        141: begin
+          val <= 19881;
+        end
+        142: begin
+          val <= 20164;
+        end
+        143: begin
+          val <= 20449;
+        end
+        144: begin
+          val <= 20736;
+        end
+        145: begin
+          val <= 21025;
+        end
+        146: begin
+          val <= 21316;
+        end
+        147: begin
+          val <= 21609;
+        end
+        148: begin
+          val <= 21904;
+        end
+        149: begin
+          val <= 22201;
+        end
+        150: begin
+          val <= 22500;
+        end
+        151: begin
+          val <= 22801;
+        end
+        152: begin
+          val <= 23104;
+        end
+        153: begin
+          val <= 23409;
+        end
+        154: begin
+          val <= 23716;
+        end
+        155: begin
+          val <= 24025;
+        end
+        156: begin
+          val <= 24336;
+        end
+        157: begin
+          val <= 24649;
+        end
+        158: begin
+          val <= 24964;
+        end
+        159: begin
+          val <= 25281;
+        end
+        160: begin
+          val <= 25600;
+        end
+        161: begin
+          val <= 25921;
+        end
+        162: begin
+          val <= 26244;
+        end
+        163: begin
+          val <= 26569;
+        end
+        164: begin
+          val <= 26896;
+        end
+        165: begin
+          val <= 27225;
+        end
+        166: begin
+          val <= 27556;
+        end
+        167: begin
+          val <= 27889;
+        end
+        168: begin
+          val <= 28224;
+        end
+        169: begin
+          val <= 28561;
+        end
+        170: begin
+          val <= 28900;
+        end
+        171: begin
+          val <= 29241;
+        end
+        172: begin
+          val <= 29584;
+        end
+        173: begin
+          val <= 29929;
+        end
+        174: begin
+          val <= 30276;
+        end
+        175: begin
+          val <= 30625;
+        end
+        176: begin
+          val <= 30976;
+        end
+        177: begin
+          val <= 31329;
+        end
+        178: begin
+          val <= 31684;
+        end
+        179: begin
+          val <= 32041;
+        end
+        180: begin
+          val <= 32400;
+        end
+        181: begin
+          val <= 32761;
+        end
+        182: begin
+          val <= 33124;
+        end
+        183: begin
+          val <= 33489;
+        end
+        184: begin
+          val <= 33856;
+        end
+        185: begin
+          val <= 34225;
+        end
+        186: begin
+          val <= 34596;
+        end
+        187: begin
+          val <= 34969;
+        end
+        188: begin
+          val <= 35344;
+        end
+        189: begin
+          val <= 35721;
+        end
+        190: begin
+          val <= 36100;
+        end
+        191: begin
+          val <= 36481;
+        end
+        192: begin
+          val <= 36864;
+        end
+        193: begin
+          val <= 37249;
+        end
+        194: begin
+          val <= 37636;
+        end
+        195: begin
+          val <= 38025;
+        end
+        196: begin
+          val <= 38416;
+        end
+        197: begin
+          val <= 38809;
+        end
+        198: begin
+          val <= 39204;
+        end
+        199: begin
+          val <= 39601;
+        end
+        200: begin
+          val <= 40000;
+        end
+        201: begin
+          val <= 40401;
+        end
+        202: begin
+          val <= 40804;
+        end
+        203: begin
+          val <= 41209;
+        end
+        204: begin
+          val <= 41616;
+        end
+        205: begin
+          val <= 42025;
+        end
+        206: begin
+          val <= 42436;
+        end
+        207: begin
+          val <= 42849;
+        end
+        208: begin
+          val <= 43264;
+        end
+        209: begin
+          val <= 43681;
+        end
+        210: begin
+          val <= 44100;
+        end
+        211: begin
+          val <= 44521;
+        end
+        212: begin
+          val <= 44944;
+        end
+        213: begin
+          val <= 45369;
+        end
+        214: begin
+          val <= 45796;
+        end
+        215: begin
+          val <= 46225;
+        end
+        216: begin
+          val <= 46656;
+        end
+        217: begin
+          val <= 47089;
+        end
+        218: begin
+          val <= 47524;
+        end
+        219: begin
+          val <= 47961;
+        end
+        220: begin
+          val <= 48400;
+        end
+        221: begin
+          val <= 48841;
+        end
+        222: begin
+          val <= 49284;
+        end
+        223: begin
+          val <= 49729;
+        end
+        224: begin
+          val <= 50176;
+        end
         225: begin
-          val <= 325;
+          val <= 50625;
         end
         226: begin
-          val <= 326;
+          val <= 51076;
         end
         227: begin
-          val <= 327;
+          val <= 51529;
         end
         228: begin
-          val <= 328;
+          val <= 51984;
         end
         229: begin
-          val <= 329;
+          val <= 52441;
         end
         230: begin
-          val <= 330;
+          val <= 52900;
         end
         231: begin
-          val <= 331;
+          val <= 53361;
         end
         232: begin
-          val <= 332;
+          val <= 53824;
         end
         233: begin
-          val <= 333;
+          val <= 54289;
         end
         234: begin
-          val <= 334;
+          val <= 54756;
         end
         235: begin
-          val <= 335;
+          val <= 55225;
         end
         236: begin
-          val <= 336;
+          val <= 55696;
         end
         237: begin
-          val <= 337;
+          val <= 56169;
         end
         238: begin
-          val <= 338;
+          val <= 56644;
         end
         239: begin
-          val <= 339;
+          val <= 57121;
         end
         240: begin
-          val <= 340;
+          val <= 57600;
         end
         241: begin
-          val <= 341;
+          val <= 58081;
         end
         242: begin
-          val <= 342;
+          val <= 58564;
         end
         243: begin
-          val <= 343;
+          val <= 59049;
         end
         244: begin
-          val <= 344;
+          val <= 59536;
         end
         245: begin
-          val <= 345;
+          val <= 60025;
         end
         246: begin
-          val <= 346;
+          val <= 60516;
         end
         247: begin
-          val <= 347;
+          val <= 61009;
         end
         248: begin
-          val <= 348;
+          val <= 61504;
         end
         249: begin
-          val <= 349;
+          val <= 62001;
         end
         250: begin
-          val <= 350;
+          val <= 62500;
         end
         251: begin
-          val <= 351;
+          val <= 63001;
         end
         252: begin
-          val <= 352;
+          val <= 63504;
         end
         253: begin
-          val <= 353;
+          val <= 64009;
         end
         254: begin
-          val <= 354;
+          val <= 64516;
         end
         255: begin
-          val <= 355;
+          val <= 65025;
         end
       endcase
     end 
