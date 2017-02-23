@@ -15,10 +15,6 @@ def mkLed(numthreads=8):
     m = Module('blinkled')
     clk = m.Input('CLK')
     rst = m.Input('RST')
-    led = m.Output('LED', 8)
-
-    count = m.Reg('count', 32, initval=0)
-    led.assign(count)
 
     mymutex = vthread.Mutex(m, 'mymutex', clk, rst)
 
@@ -29,21 +25,17 @@ def mkLed(numthreads=8):
         for i in range(20):
             pass  # sleep
 
-        count.value += 1
-        print("Thread %d count = %d" % (tid, count))
+        print("Thread %d Hello" % tid)
 
         mymutex.unlock()
         print("Thread %d Unlock" % tid)
 
     def blink():
-        count.value = 0
         for tid in range(numthreads):
             pool.run(tid, tid)
 
         for tid in range(numthreads):
             pool.join(tid)
-
-        print("result count = %d" % count)
 
     th = vthread.Thread(m, clk, rst, 'th_blink', blink)
     pool = vthread.ThreadPool(m, clk, rst, 'th_myfunc', myfunc, numthreads)

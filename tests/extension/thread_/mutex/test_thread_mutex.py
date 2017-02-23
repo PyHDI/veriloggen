@@ -8,14 +8,12 @@ module test;
 
   reg CLK;
   reg RST;
-  wire [8-1:0] LED;
 
   blinkled
   uut
   (
     .CLK(CLK),
-    .RST(RST),
-    .LED(LED)
+    .RST(RST)
   );
 
 
@@ -51,12 +49,9 @@ endmodule
 module blinkled
 (
   input CLK,
-  input RST,
-  output [8-1:0] LED
+  input RST
 );
 
-  reg [32-1:0] count;
-  assign LED = count;
   reg _mymutex_lock_reg;
   reg [32-1:0] _mymutex_lock_id;
   reg [8-1:0] _th_myfunc_start;
@@ -121,56 +116,56 @@ module blinkled
         _mymutex_lock_reg <= 1;
         _mymutex_lock_id <= 0;
       end 
-      if((th_myfunc_0 == 10) && (_mymutex_lock_id == 0)) begin
+      if((th_myfunc_0 == 9) && (_mymutex_lock_id == 0)) begin
         _mymutex_lock_reg <= 0;
       end 
       if((th_myfunc_1 == 2) && (!_mymutex_lock_reg || (_mymutex_lock_id == 1))) begin
         _mymutex_lock_reg <= 1;
         _mymutex_lock_id <= 1;
       end 
-      if((th_myfunc_1 == 10) && (_mymutex_lock_id == 1)) begin
+      if((th_myfunc_1 == 9) && (_mymutex_lock_id == 1)) begin
         _mymutex_lock_reg <= 0;
       end 
       if((th_myfunc_2 == 2) && (!_mymutex_lock_reg || (_mymutex_lock_id == 2))) begin
         _mymutex_lock_reg <= 1;
         _mymutex_lock_id <= 2;
       end 
-      if((th_myfunc_2 == 10) && (_mymutex_lock_id == 2)) begin
+      if((th_myfunc_2 == 9) && (_mymutex_lock_id == 2)) begin
         _mymutex_lock_reg <= 0;
       end 
       if((th_myfunc_3 == 2) && (!_mymutex_lock_reg || (_mymutex_lock_id == 3))) begin
         _mymutex_lock_reg <= 1;
         _mymutex_lock_id <= 3;
       end 
-      if((th_myfunc_3 == 10) && (_mymutex_lock_id == 3)) begin
+      if((th_myfunc_3 == 9) && (_mymutex_lock_id == 3)) begin
         _mymutex_lock_reg <= 0;
       end 
       if((th_myfunc_4 == 2) && (!_mymutex_lock_reg || (_mymutex_lock_id == 4))) begin
         _mymutex_lock_reg <= 1;
         _mymutex_lock_id <= 4;
       end 
-      if((th_myfunc_4 == 10) && (_mymutex_lock_id == 4)) begin
+      if((th_myfunc_4 == 9) && (_mymutex_lock_id == 4)) begin
         _mymutex_lock_reg <= 0;
       end 
       if((th_myfunc_5 == 2) && (!_mymutex_lock_reg || (_mymutex_lock_id == 5))) begin
         _mymutex_lock_reg <= 1;
         _mymutex_lock_id <= 5;
       end 
-      if((th_myfunc_5 == 10) && (_mymutex_lock_id == 5)) begin
+      if((th_myfunc_5 == 9) && (_mymutex_lock_id == 5)) begin
         _mymutex_lock_reg <= 0;
       end 
       if((th_myfunc_6 == 2) && (!_mymutex_lock_reg || (_mymutex_lock_id == 6))) begin
         _mymutex_lock_reg <= 1;
         _mymutex_lock_id <= 6;
       end 
-      if((th_myfunc_6 == 10) && (_mymutex_lock_id == 6)) begin
+      if((th_myfunc_6 == 9) && (_mymutex_lock_id == 6)) begin
         _mymutex_lock_reg <= 0;
       end 
       if((th_myfunc_7 == 2) && (!_mymutex_lock_reg || (_mymutex_lock_id == 7))) begin
         _mymutex_lock_reg <= 1;
         _mymutex_lock_id <= 7;
       end 
-      if((th_myfunc_7 == 10) && (_mymutex_lock_id == 7)) begin
+      if((th_myfunc_7 == 9) && (_mymutex_lock_id == 7)) begin
         _mymutex_lock_reg <= 0;
       end 
     end
@@ -187,13 +182,10 @@ module blinkled
   localparam th_blink_9 = 9;
   localparam th_blink_10 = 10;
   localparam th_blink_11 = 11;
-  localparam th_blink_12 = 12;
-  localparam th_blink_13 = 13;
 
   always @(posedge CLK) begin
     if(RST) begin
       th_blink <= th_blink_init;
-      count <= 0;
       _th_blink_tid_0 <= 0;
       _th_myfunc_start[_th_blink_tid_0] <= (0 >> _th_blink_tid_0) & 1'd1;
     end else begin
@@ -202,72 +194,64 @@ module blinkled
           th_blink <= th_blink_1;
         end
         th_blink_1: begin
-          count <= 0;
+          _th_blink_tid_0 <= 0;
           th_blink <= th_blink_2;
         end
         th_blink_2: begin
-          _th_blink_tid_0 <= 0;
-          th_blink <= th_blink_3;
-        end
-        th_blink_3: begin
           if(_th_blink_tid_0 < 8) begin
-            th_blink <= th_blink_4;
+            th_blink <= th_blink_3;
           end else begin
-            th_blink <= th_blink_8;
+            th_blink <= th_blink_7;
           end
         end
-        th_blink_4: begin
+        th_blink_3: begin
           _th_myfunc_start[_th_blink_tid_0] <= 1;
+          th_blink <= th_blink_4;
+        end
+        th_blink_4: begin
+          th_blink <= th_blink_5;
+          th_blink <= th_blink_5;
+          th_blink <= th_blink_5;
+          th_blink <= th_blink_5;
+          th_blink <= th_blink_5;
+          th_blink <= th_blink_5;
+          th_blink <= th_blink_5;
           th_blink <= th_blink_5;
         end
         th_blink_5: begin
-          th_blink <= th_blink_6;
-          th_blink <= th_blink_6;
-          th_blink <= th_blink_6;
-          th_blink <= th_blink_6;
-          th_blink <= th_blink_6;
-          th_blink <= th_blink_6;
-          th_blink <= th_blink_6;
+          _th_myfunc_start[_th_blink_tid_0] <= 0;
           th_blink <= th_blink_6;
         end
         th_blink_6: begin
-          _th_myfunc_start[_th_blink_tid_0] <= 0;
-          th_blink <= th_blink_7;
+          _th_blink_tid_0 <= _th_blink_tid_0 + 1;
+          th_blink <= th_blink_2;
         end
         th_blink_7: begin
-          _th_blink_tid_0 <= _th_blink_tid_0 + 1;
-          th_blink <= th_blink_3;
+          _th_blink_tid_0 <= 0;
+          th_blink <= th_blink_8;
         end
         th_blink_8: begin
-          _th_blink_tid_0 <= 0;
-          th_blink <= th_blink_9;
-        end
-        th_blink_9: begin
           if(_th_blink_tid_0 < 8) begin
-            th_blink <= th_blink_10;
+            th_blink <= th_blink_9;
           end else begin
-            th_blink <= th_blink_12;
+            th_blink <= th_blink_11;
           end
         end
-        th_blink_10: begin
-          if((_th_blink_tid_0 == 0)? th_myfunc_0 == 12 : 
-          (_th_blink_tid_0 == 1)? th_myfunc_1 == 12 : 
-          (_th_blink_tid_0 == 2)? th_myfunc_2 == 12 : 
-          (_th_blink_tid_0 == 3)? th_myfunc_3 == 12 : 
-          (_th_blink_tid_0 == 4)? th_myfunc_4 == 12 : 
-          (_th_blink_tid_0 == 5)? th_myfunc_5 == 12 : 
-          (_th_blink_tid_0 == 6)? th_myfunc_6 == 12 : 
-          (_th_blink_tid_0 == 7)? th_myfunc_7 == 12 : 0) begin
-            th_blink <= th_blink_11;
+        th_blink_9: begin
+          if((_th_blink_tid_0 == 0)? th_myfunc_0 == 11 : 
+          (_th_blink_tid_0 == 1)? th_myfunc_1 == 11 : 
+          (_th_blink_tid_0 == 2)? th_myfunc_2 == 11 : 
+          (_th_blink_tid_0 == 3)? th_myfunc_3 == 11 : 
+          (_th_blink_tid_0 == 4)? th_myfunc_4 == 11 : 
+          (_th_blink_tid_0 == 5)? th_myfunc_5 == 11 : 
+          (_th_blink_tid_0 == 6)? th_myfunc_6 == 11 : 
+          (_th_blink_tid_0 == 7)? th_myfunc_7 == 11 : 0) begin
+            th_blink <= th_blink_10;
           end 
         end
-        th_blink_11: begin
+        th_blink_10: begin
           _th_blink_tid_0 <= _th_blink_tid_0 + 1;
-          th_blink <= th_blink_9;
-        end
-        th_blink_12: begin
-          $display("result count = %d", count);
-          th_blink <= th_blink_13;
+          th_blink <= th_blink_8;
         end
       endcase
     end
@@ -284,7 +268,6 @@ module blinkled
   localparam th_myfunc_0_9 = 9;
   localparam th_myfunc_0_10 = 10;
   localparam th_myfunc_0_11 = 11;
-  localparam th_myfunc_0_12 = 12;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -293,17 +276,16 @@ module blinkled
       _th_myfunc_0_tid_1 <= 0;
       _th_myfunc_0_tid_2 <= 0;
       _th_myfunc_0_i_3 <= 0;
-      count <= 0;
     end else begin
       case(th_myfunc_0)
         th_myfunc_0_init: begin
-          if(_th_myfunc_start[0] && (th_blink == 5)) begin
+          if(_th_myfunc_start[0] && (th_blink == 4)) begin
             _th_myfunc_0_called <= 1;
           end 
-          if(_th_myfunc_start[0] && (th_blink == 5)) begin
+          if(_th_myfunc_start[0] && (th_blink == 4)) begin
             _th_myfunc_0_tid_1 <= _th_blink_tid_0;
           end 
-          if((th_blink == 5) && _th_myfunc_start[0]) begin
+          if((th_blink == 4) && _th_myfunc_start[0]) begin
             th_myfunc_0 <= th_myfunc_0_1;
           end 
         end
@@ -344,19 +326,15 @@ module blinkled
           th_myfunc_0 <= th_myfunc_0_6;
         end
         th_myfunc_0_8: begin
-          count <= count + 1;
+          $display("Thread %d Hello", _th_myfunc_0_tid_2);
           th_myfunc_0 <= th_myfunc_0_9;
         end
         th_myfunc_0_9: begin
-          $display("Thread %d count = %d", _th_myfunc_0_tid_2, count);
           th_myfunc_0 <= th_myfunc_0_10;
         end
         th_myfunc_0_10: begin
-          th_myfunc_0 <= th_myfunc_0_11;
-        end
-        th_myfunc_0_11: begin
           $display("Thread %d Unlock", _th_myfunc_0_tid_2);
-          th_myfunc_0 <= th_myfunc_0_12;
+          th_myfunc_0 <= th_myfunc_0_11;
         end
       endcase
     end
@@ -373,7 +351,6 @@ module blinkled
   localparam th_myfunc_1_9 = 9;
   localparam th_myfunc_1_10 = 10;
   localparam th_myfunc_1_11 = 11;
-  localparam th_myfunc_1_12 = 12;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -382,17 +359,16 @@ module blinkled
       _th_myfunc_1_tid_4 <= 0;
       _th_myfunc_1_tid_5 <= 0;
       _th_myfunc_1_i_6 <= 0;
-      count <= 0;
     end else begin
       case(th_myfunc_1)
         th_myfunc_1_init: begin
-          if(_th_myfunc_start[1] && (th_blink == 5)) begin
+          if(_th_myfunc_start[1] && (th_blink == 4)) begin
             _th_myfunc_1_called <= 1;
           end 
-          if(_th_myfunc_start[1] && (th_blink == 5)) begin
+          if(_th_myfunc_start[1] && (th_blink == 4)) begin
             _th_myfunc_1_tid_4 <= _th_blink_tid_0;
           end 
-          if((th_blink == 5) && _th_myfunc_start[1]) begin
+          if((th_blink == 4) && _th_myfunc_start[1]) begin
             th_myfunc_1 <= th_myfunc_1_1;
           end 
         end
@@ -433,19 +409,15 @@ module blinkled
           th_myfunc_1 <= th_myfunc_1_6;
         end
         th_myfunc_1_8: begin
-          count <= count + 1;
+          $display("Thread %d Hello", _th_myfunc_1_tid_5);
           th_myfunc_1 <= th_myfunc_1_9;
         end
         th_myfunc_1_9: begin
-          $display("Thread %d count = %d", _th_myfunc_1_tid_5, count);
           th_myfunc_1 <= th_myfunc_1_10;
         end
         th_myfunc_1_10: begin
-          th_myfunc_1 <= th_myfunc_1_11;
-        end
-        th_myfunc_1_11: begin
           $display("Thread %d Unlock", _th_myfunc_1_tid_5);
-          th_myfunc_1 <= th_myfunc_1_12;
+          th_myfunc_1 <= th_myfunc_1_11;
         end
       endcase
     end
@@ -462,7 +434,6 @@ module blinkled
   localparam th_myfunc_2_9 = 9;
   localparam th_myfunc_2_10 = 10;
   localparam th_myfunc_2_11 = 11;
-  localparam th_myfunc_2_12 = 12;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -471,17 +442,16 @@ module blinkled
       _th_myfunc_2_tid_7 <= 0;
       _th_myfunc_2_tid_8 <= 0;
       _th_myfunc_2_i_9 <= 0;
-      count <= 0;
     end else begin
       case(th_myfunc_2)
         th_myfunc_2_init: begin
-          if(_th_myfunc_start[2] && (th_blink == 5)) begin
+          if(_th_myfunc_start[2] && (th_blink == 4)) begin
             _th_myfunc_2_called <= 1;
           end 
-          if(_th_myfunc_start[2] && (th_blink == 5)) begin
+          if(_th_myfunc_start[2] && (th_blink == 4)) begin
             _th_myfunc_2_tid_7 <= _th_blink_tid_0;
           end 
-          if((th_blink == 5) && _th_myfunc_start[2]) begin
+          if((th_blink == 4) && _th_myfunc_start[2]) begin
             th_myfunc_2 <= th_myfunc_2_1;
           end 
         end
@@ -522,19 +492,15 @@ module blinkled
           th_myfunc_2 <= th_myfunc_2_6;
         end
         th_myfunc_2_8: begin
-          count <= count + 1;
+          $display("Thread %d Hello", _th_myfunc_2_tid_8);
           th_myfunc_2 <= th_myfunc_2_9;
         end
         th_myfunc_2_9: begin
-          $display("Thread %d count = %d", _th_myfunc_2_tid_8, count);
           th_myfunc_2 <= th_myfunc_2_10;
         end
         th_myfunc_2_10: begin
-          th_myfunc_2 <= th_myfunc_2_11;
-        end
-        th_myfunc_2_11: begin
           $display("Thread %d Unlock", _th_myfunc_2_tid_8);
-          th_myfunc_2 <= th_myfunc_2_12;
+          th_myfunc_2 <= th_myfunc_2_11;
         end
       endcase
     end
@@ -551,7 +517,6 @@ module blinkled
   localparam th_myfunc_3_9 = 9;
   localparam th_myfunc_3_10 = 10;
   localparam th_myfunc_3_11 = 11;
-  localparam th_myfunc_3_12 = 12;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -560,17 +525,16 @@ module blinkled
       _th_myfunc_3_tid_10 <= 0;
       _th_myfunc_3_tid_11 <= 0;
       _th_myfunc_3_i_12 <= 0;
-      count <= 0;
     end else begin
       case(th_myfunc_3)
         th_myfunc_3_init: begin
-          if(_th_myfunc_start[3] && (th_blink == 5)) begin
+          if(_th_myfunc_start[3] && (th_blink == 4)) begin
             _th_myfunc_3_called <= 1;
           end 
-          if(_th_myfunc_start[3] && (th_blink == 5)) begin
+          if(_th_myfunc_start[3] && (th_blink == 4)) begin
             _th_myfunc_3_tid_10 <= _th_blink_tid_0;
           end 
-          if((th_blink == 5) && _th_myfunc_start[3]) begin
+          if((th_blink == 4) && _th_myfunc_start[3]) begin
             th_myfunc_3 <= th_myfunc_3_1;
           end 
         end
@@ -611,19 +575,15 @@ module blinkled
           th_myfunc_3 <= th_myfunc_3_6;
         end
         th_myfunc_3_8: begin
-          count <= count + 1;
+          $display("Thread %d Hello", _th_myfunc_3_tid_11);
           th_myfunc_3 <= th_myfunc_3_9;
         end
         th_myfunc_3_9: begin
-          $display("Thread %d count = %d", _th_myfunc_3_tid_11, count);
           th_myfunc_3 <= th_myfunc_3_10;
         end
         th_myfunc_3_10: begin
-          th_myfunc_3 <= th_myfunc_3_11;
-        end
-        th_myfunc_3_11: begin
           $display("Thread %d Unlock", _th_myfunc_3_tid_11);
-          th_myfunc_3 <= th_myfunc_3_12;
+          th_myfunc_3 <= th_myfunc_3_11;
         end
       endcase
     end
@@ -640,7 +600,6 @@ module blinkled
   localparam th_myfunc_4_9 = 9;
   localparam th_myfunc_4_10 = 10;
   localparam th_myfunc_4_11 = 11;
-  localparam th_myfunc_4_12 = 12;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -649,17 +608,16 @@ module blinkled
       _th_myfunc_4_tid_13 <= 0;
       _th_myfunc_4_tid_14 <= 0;
       _th_myfunc_4_i_15 <= 0;
-      count <= 0;
     end else begin
       case(th_myfunc_4)
         th_myfunc_4_init: begin
-          if(_th_myfunc_start[4] && (th_blink == 5)) begin
+          if(_th_myfunc_start[4] && (th_blink == 4)) begin
             _th_myfunc_4_called <= 1;
           end 
-          if(_th_myfunc_start[4] && (th_blink == 5)) begin
+          if(_th_myfunc_start[4] && (th_blink == 4)) begin
             _th_myfunc_4_tid_13 <= _th_blink_tid_0;
           end 
-          if((th_blink == 5) && _th_myfunc_start[4]) begin
+          if((th_blink == 4) && _th_myfunc_start[4]) begin
             th_myfunc_4 <= th_myfunc_4_1;
           end 
         end
@@ -700,19 +658,15 @@ module blinkled
           th_myfunc_4 <= th_myfunc_4_6;
         end
         th_myfunc_4_8: begin
-          count <= count + 1;
+          $display("Thread %d Hello", _th_myfunc_4_tid_14);
           th_myfunc_4 <= th_myfunc_4_9;
         end
         th_myfunc_4_9: begin
-          $display("Thread %d count = %d", _th_myfunc_4_tid_14, count);
           th_myfunc_4 <= th_myfunc_4_10;
         end
         th_myfunc_4_10: begin
-          th_myfunc_4 <= th_myfunc_4_11;
-        end
-        th_myfunc_4_11: begin
           $display("Thread %d Unlock", _th_myfunc_4_tid_14);
-          th_myfunc_4 <= th_myfunc_4_12;
+          th_myfunc_4 <= th_myfunc_4_11;
         end
       endcase
     end
@@ -729,7 +683,6 @@ module blinkled
   localparam th_myfunc_5_9 = 9;
   localparam th_myfunc_5_10 = 10;
   localparam th_myfunc_5_11 = 11;
-  localparam th_myfunc_5_12 = 12;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -738,17 +691,16 @@ module blinkled
       _th_myfunc_5_tid_16 <= 0;
       _th_myfunc_5_tid_17 <= 0;
       _th_myfunc_5_i_18 <= 0;
-      count <= 0;
     end else begin
       case(th_myfunc_5)
         th_myfunc_5_init: begin
-          if(_th_myfunc_start[5] && (th_blink == 5)) begin
+          if(_th_myfunc_start[5] && (th_blink == 4)) begin
             _th_myfunc_5_called <= 1;
           end 
-          if(_th_myfunc_start[5] && (th_blink == 5)) begin
+          if(_th_myfunc_start[5] && (th_blink == 4)) begin
             _th_myfunc_5_tid_16 <= _th_blink_tid_0;
           end 
-          if((th_blink == 5) && _th_myfunc_start[5]) begin
+          if((th_blink == 4) && _th_myfunc_start[5]) begin
             th_myfunc_5 <= th_myfunc_5_1;
           end 
         end
@@ -789,19 +741,15 @@ module blinkled
           th_myfunc_5 <= th_myfunc_5_6;
         end
         th_myfunc_5_8: begin
-          count <= count + 1;
+          $display("Thread %d Hello", _th_myfunc_5_tid_17);
           th_myfunc_5 <= th_myfunc_5_9;
         end
         th_myfunc_5_9: begin
-          $display("Thread %d count = %d", _th_myfunc_5_tid_17, count);
           th_myfunc_5 <= th_myfunc_5_10;
         end
         th_myfunc_5_10: begin
-          th_myfunc_5 <= th_myfunc_5_11;
-        end
-        th_myfunc_5_11: begin
           $display("Thread %d Unlock", _th_myfunc_5_tid_17);
-          th_myfunc_5 <= th_myfunc_5_12;
+          th_myfunc_5 <= th_myfunc_5_11;
         end
       endcase
     end
@@ -818,7 +766,6 @@ module blinkled
   localparam th_myfunc_6_9 = 9;
   localparam th_myfunc_6_10 = 10;
   localparam th_myfunc_6_11 = 11;
-  localparam th_myfunc_6_12 = 12;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -827,17 +774,16 @@ module blinkled
       _th_myfunc_6_tid_19 <= 0;
       _th_myfunc_6_tid_20 <= 0;
       _th_myfunc_6_i_21 <= 0;
-      count <= 0;
     end else begin
       case(th_myfunc_6)
         th_myfunc_6_init: begin
-          if(_th_myfunc_start[6] && (th_blink == 5)) begin
+          if(_th_myfunc_start[6] && (th_blink == 4)) begin
             _th_myfunc_6_called <= 1;
           end 
-          if(_th_myfunc_start[6] && (th_blink == 5)) begin
+          if(_th_myfunc_start[6] && (th_blink == 4)) begin
             _th_myfunc_6_tid_19 <= _th_blink_tid_0;
           end 
-          if((th_blink == 5) && _th_myfunc_start[6]) begin
+          if((th_blink == 4) && _th_myfunc_start[6]) begin
             th_myfunc_6 <= th_myfunc_6_1;
           end 
         end
@@ -878,19 +824,15 @@ module blinkled
           th_myfunc_6 <= th_myfunc_6_6;
         end
         th_myfunc_6_8: begin
-          count <= count + 1;
+          $display("Thread %d Hello", _th_myfunc_6_tid_20);
           th_myfunc_6 <= th_myfunc_6_9;
         end
         th_myfunc_6_9: begin
-          $display("Thread %d count = %d", _th_myfunc_6_tid_20, count);
           th_myfunc_6 <= th_myfunc_6_10;
         end
         th_myfunc_6_10: begin
-          th_myfunc_6 <= th_myfunc_6_11;
-        end
-        th_myfunc_6_11: begin
           $display("Thread %d Unlock", _th_myfunc_6_tid_20);
-          th_myfunc_6 <= th_myfunc_6_12;
+          th_myfunc_6 <= th_myfunc_6_11;
         end
       endcase
     end
@@ -907,7 +849,6 @@ module blinkled
   localparam th_myfunc_7_9 = 9;
   localparam th_myfunc_7_10 = 10;
   localparam th_myfunc_7_11 = 11;
-  localparam th_myfunc_7_12 = 12;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -916,17 +857,16 @@ module blinkled
       _th_myfunc_7_tid_22 <= 0;
       _th_myfunc_7_tid_23 <= 0;
       _th_myfunc_7_i_24 <= 0;
-      count <= 0;
     end else begin
       case(th_myfunc_7)
         th_myfunc_7_init: begin
-          if(_th_myfunc_start[7] && (th_blink == 5)) begin
+          if(_th_myfunc_start[7] && (th_blink == 4)) begin
             _th_myfunc_7_called <= 1;
           end 
-          if(_th_myfunc_start[7] && (th_blink == 5)) begin
+          if(_th_myfunc_start[7] && (th_blink == 4)) begin
             _th_myfunc_7_tid_22 <= _th_blink_tid_0;
           end 
-          if((th_blink == 5) && _th_myfunc_start[7]) begin
+          if((th_blink == 4) && _th_myfunc_start[7]) begin
             th_myfunc_7 <= th_myfunc_7_1;
           end 
         end
@@ -967,19 +907,15 @@ module blinkled
           th_myfunc_7 <= th_myfunc_7_6;
         end
         th_myfunc_7_8: begin
-          count <= count + 1;
+          $display("Thread %d Hello", _th_myfunc_7_tid_23);
           th_myfunc_7 <= th_myfunc_7_9;
         end
         th_myfunc_7_9: begin
-          $display("Thread %d count = %d", _th_myfunc_7_tid_23, count);
           th_myfunc_7 <= th_myfunc_7_10;
         end
         th_myfunc_7_10: begin
-          th_myfunc_7 <= th_myfunc_7_11;
-        end
-        th_myfunc_7_11: begin
           $display("Thread %d Unlock", _th_myfunc_7_tid_23);
-          th_myfunc_7 <= th_myfunc_7_12;
+          th_myfunc_7 <= th_myfunc_7_11;
         end
       endcase
     end

@@ -988,6 +988,15 @@ class CompileVisitor(ast.NodeVisitor):
         cond = optimize(cond) if cond is not None else None
         subst = (vtypes.SingleStatement(value) if var is None else
                  vtypes.Subst(var, value))
+
+        if var is not None:
+            if hasattr(var, '_fsm') and id(var._fsm) != id(self.fsm):
+                raise ValueError(
+                    "variable '%s' has multiple drivers" % str(var))
+
+            if not hasattr(var, '_fsm'):
+                var._fsm = self.fsm
+
         self.fsm._add_statement([subst], cond=cond)
 
         state = self.getFsmCount()
