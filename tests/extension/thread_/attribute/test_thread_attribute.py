@@ -58,8 +58,8 @@ module blinkled
   reg [8-1:0] _tmp_0;
   reg [32-1:0] th_blink;
   localparam th_blink_init = 0;
-  reg [32-1:0] _th_blink_times_0;
-  reg [32-1:0] _th_blink_i_1;
+  reg signed [32-1:0] _th_blink_times_0;
+  reg signed [32-1:0] _th_blink_i_1;
 
   always @(posedge CLK) begin
     if(RST) begin

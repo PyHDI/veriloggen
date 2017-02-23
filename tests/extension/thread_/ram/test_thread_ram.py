@@ -69,17 +69,17 @@ module blinkled
 
   reg [32-1:0] th_blink;
   localparam th_blink_init = 0;
-  reg [32-1:0] _th_blink_times_0;
-  reg [32-1:0] _th_blink_i_1;
-  reg [32-1:0] _th_blink_wdata_2;
+  reg signed [32-1:0] _th_blink_times_0;
+  reg signed [32-1:0] _th_blink_i_1;
+  reg signed [32-1:0] _th_blink_wdata_2;
   reg _myram_cond_0_1;
-  reg [32-1:0] _th_blink_sum_3;
+  reg signed [32-1:0] _th_blink_sum_3;
   reg _tmp_0;
   reg _myram_cond_1_1;
   reg _myram_cond_2_1;
   reg _myram_cond_2_2;
-  reg [32-1:0] _tmp_1;
-  reg [32-1:0] _th_blink_rdata_4;
+  reg signed [32-1:0] _tmp_1;
+  reg signed [32-1:0] _th_blink_rdata_4;
 
   always @(posedge CLK) begin
     if(RST) begin

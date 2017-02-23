@@ -186,7 +186,7 @@ class RAM(ram.SyncRAMManager):
         cond = fsm.state == fsm.current
 
         rdata, rvalid = ram.SyncRAMManager.read(self, port, addr, cond)
-        rdata_reg = self.m.TmpReg(self.datawidth, initval=0)
+        rdata_reg = self.m.TmpReg(self.datawidth, initval=0, signed=True)
 
         fsm.If(rvalid)(
             rdata_reg(rdata)
@@ -215,7 +215,7 @@ class RAM(ram.SyncRAMManager):
         for _ in range(2):
             fsm.goto_next()
 
-        rdata = self.m.TmpReg(self.datawidth, initval=0)
+        rdata = self.m.TmpReg(self.datawidth, initval=0, signed=True)
 
         fsm(
             rdata(self.interfaces[port].rdata)

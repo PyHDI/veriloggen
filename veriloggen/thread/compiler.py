@@ -901,7 +901,7 @@ class CompileVisitor(ast.NodeVisitor):
         signame = _tmp_name('_'.join(['', self.name, name]))
         if width is None:
             width = self.datawidth
-        return self.m.Reg(signame, width, initval=initval)
+        return self.m.Reg(signame, width, initval=initval, signed=True)
 
     def getVariable(self, name, store=False):
         var = self.scope.searchVariable(name, store)

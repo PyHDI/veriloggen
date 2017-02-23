@@ -51,9 +51,9 @@ module blinkled
 
   reg [32-1:0] th_blink;
   localparam th_blink_init = 0;
-  reg [32-1:0] _th_blink_times_0;
-  reg [32-1:0] _th_blink_inc_1;
-  reg [32-1:0] _th_blink_i_2;
+  reg signed [32-1:0] _th_blink_times_0;
+  reg signed [32-1:0] _th_blink_inc_1;
+  reg signed [32-1:0] _th_blink_i_2;
   localparam th_blink_1 = 1;
   localparam th_blink_2 = 2;
   localparam th_blink_3 = 3;

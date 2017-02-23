@@ -51,8 +51,8 @@ module blinkled
 
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
-  reg [32-1:0] _th_blink_times_0;
-  reg [32-1:0] _th_blink_i_1;
+  reg signed [32-1:0] _th_blink_times_0;
+  reg signed [32-1:0] _th_blink_i_1;
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
   localparam fsm_3 = 3;

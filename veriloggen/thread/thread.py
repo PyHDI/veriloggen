@@ -304,7 +304,7 @@ class Thread(vtypes.VeriloggenNode):
                     if argname not in self.args_dict:
                         name = compiler._tmp_name(
                             '_'.join(['', self.name, argname]))
-                        v = self.m.Reg(name, self.datawidth, initval=0)
+                        v = self.m.Reg(name, self.datawidth, initval=0, signed=True)
                         cvisitor.scope.addVariable(argname, v)
                         self.args_dict[argname] = v
                     else:
@@ -351,7 +351,7 @@ class Thread(vtypes.VeriloggenNode):
             # if num_vararg_vars > len(self.vararg_regs):
             #    for i in range(num_vararg_vars - len(self.vararg_regs)):
             #        name = compiler._tmp_name('_'.join(['', self.name, varargname]))
-            #        v = self.m.Reg(name, self.datawidth, initval=0)
+            #        v = self.m.Reg(name, self.datawidth, initval=0, signed=True)
             #        self.vararg_regs.append(v)
             #        args_code.append(argname)
             # for i, arg in enumerate(args[-num_vararg_vars:]):
@@ -378,7 +378,7 @@ class Thread(vtypes.VeriloggenNode):
                 if argname not in self.args_dict:
                     name = compiler._tmp_name(
                         '_'.join(['', self.name, argname]))
-                    v = self.m.Reg(name, self.datawidth, initval=0)
+                    v = self.m.Reg(name, self.datawidth, initval=0, signed=True)
                     cvisitor.scope.addVariable(argname, v)
                     self.args_dict[argname] = v
                 else:
@@ -414,7 +414,7 @@ class Thread(vtypes.VeriloggenNode):
                 if argname not in self.args_dict:
                     name = compiler._tmp_name(
                         '_'.join(['', self.name, argname]))
-                    v = self.m.Reg(name, self.datawidth, initval=0)
+                    v = self.m.Reg(name, self.datawidth, initval=0, signed=True)
                     cvisitor.scope.addVariable(argname, v)
                     self.args_dict[argname] = v
                 else:
