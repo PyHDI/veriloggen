@@ -6,15 +6,16 @@ import math
 import veriloggen.core.vtypes as vtypes
 from veriloggen.core.module import Module
 from veriloggen.seq.seq import Seq
-from veriloggen.dataflow.dtypes import make_condition
 from . import util
 
 
-def mkROMDefinition(name, values, size, datawidth, sync=False):
+def mkROMDefinition(name, values, size, datawidth, sync=False, with_enable=False):
     m = Module(name)
 
     clk = m.Input('CLK') if sync else None
     addr = m.Input('addr', size)
+    if with_enable:
+        enable = m.Input('enable')
     val = m.OutputReg('val', datawidth)
 
     if clk is not None:
@@ -25,8 +26,13 @@ def mkROMDefinition(name, values, size, datawidth, sync=False):
     patterns = [vtypes.When(i)(val(v, blk=not sync))
                 for i, v in enumerate(values)]
 
+    body = vtypes.Case(addr)(*patterns)
+
+    if with_enable:
+        body = vtypes.If(enable)(body)
+    
     alw(
-        vtypes.Case(addr)(*patterns)
+       body
     )
 
     return m
@@ -34,7 +40,7 @@ def mkROMDefinition(name, values, size, datawidth, sync=False):
 
 class _ROM(object):
 
-    def __init__(self, m, name, clk, addr, values, datawidth=None):
+    def __init__(self, m, name, clk, addr, values, enable=None, datawidth=None):
 
         self.m = m
         self.name = name
@@ -51,15 +57,24 @@ class _ROM(object):
                 if w is not None and w > datawidth:
                     datawidth = w
 
+        with_enable = enable is not None
+        if enable is not None:
+            self.enable = self.m.Wire(name + '_enable')
+            self.m.Assign(self.enable(enable))
+
         self.rdata = self.m.Wire(name + '_val', datawidth)
         sync = True if clk is not None else False
-        rom_def = mkROMDefinition(name, values, size, datawidth, sync)
+        rom_def = mkROMDefinition(name, values, size, datawidth, sync, with_enable)
 
         ports = []
         if clk is not None:
             ports.append(self.clk)
 
         ports.append(self.addr)
+
+        if enable is not None:
+            ports.append(self.enable)
+        
         ports.append(self.rdata)
 
         self.m.Instance(rom_def, name, params=(), ports=ports)
@@ -67,11 +82,11 @@ class _ROM(object):
 
 class SyncROM(_ROM):
 
-    def __init__(self, m, name, clk, addr, values, datawidth=None):
-        _ROM.__init__(self, m, name, clk, addr, values, datawidth=datawidth)
+    def __init__(self, m, name, clk, addr, values, enable=None, datawidth=None):
+        _ROM.__init__(self, m, name, clk, addr, values, enable=enable, datawidth=datawidth)
 
 
 class AsyncROM(_ROM):
 
-    def __init__(self, m, name, addr, values, datawidth=None):
-        _ROM.__init__(self, m, name, None, addr, values, datawidth=datawidth)
+    def __init__(self, m, name, addr, values, enable=None, datawidth=None):
+        _ROM.__init__(self, m, name, None, addr, values, enable=enable, datawidth=datawidth)
