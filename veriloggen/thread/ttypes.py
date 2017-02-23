@@ -152,7 +152,8 @@ class Mutex(object):
 
 
 class RAM(ram.SyncRAMManager):
-    __intrinsics__ = ('read', 'write', 'dma_read', 'dma_write')
+    __intrinsics__ = ('read', 'write', 'dma_read', 'dma_write',
+                      'lock', 'try_lock', 'unlock')
 
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=10, numports=1, axi=None):
@@ -161,6 +162,7 @@ class RAM(ram.SyncRAMManager):
             self, m, name, clk, rst, datawidth, addrwidth, numports)
 
         self.axi = axi
+        self.mutex = None
 
     def read(self, fsm, addr, port=0, unified=False):
         """ intrinsic read operation """
@@ -270,16 +272,82 @@ class RAM(ram.SyncRAMManager):
 #        fsm.If(done).goto_next()
 #        return 0
 
+    def lock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.lock(fsm)
+
+    def try_lock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.try_lock(fsm)
+
+    def unlock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.unlock(fsm)
+
 
 class AXIM(axi.AxiMaster):
     __intrinsics__ = ('write_request', 'write_data',
-                      'read_request', 'read_data')
+                      'read_request', 'read_data',
+                      'lock', 'try_lock', 'unlock')
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=10):
         axi.AxiMaster.__init__(self, m, name, clk, rst, datawidth, addrwidth)
+        self.mutex = None
+
+    def lock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.lock(fsm)
+
+    def try_lock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.try_lock(fsm)
+
+    def unlock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.unlock(fsm)
 
 
 class AXIS(axi.AxiSlave):
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=10):
         axi.AxiSlave.__init__(self, m, name, clk, rst, datawidth, addrwidth)
+        self.mutex = None
+
+    def lock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.lock(fsm)
+
+    def try_lock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.try_lock(fsm)
+
+    def unlock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.unlock(fsm)
