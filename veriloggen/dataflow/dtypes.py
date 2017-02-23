@@ -1731,7 +1731,8 @@ class Cond(_SpecialOperator):
         false_value_fp = self.false_value.get_point()
         true_value = self.true_value.bit_length() - true_value_fp
         false_value = self.false_value.bit_length() - false_value_fp
-        self.width = max(true_value, false_value) + max(true_value_fp, false_value_fp)
+        self.width = max(true_value, false_value) + \
+            max(true_value_fp, false_value_fp)
         self.point = max(true_value_fp, false_value_fp)
         self.signed = self.true_value.get_signed() or self.false_value.get_signed()
 
@@ -1803,7 +1804,7 @@ class LUT(_SpecialOperator):
 
     def _set_attributes(self):
         pass
-        
+
     @property
     def address(self):
         return self.args[0]
@@ -1829,11 +1830,11 @@ class LUT(_SpecialOperator):
         self.sig_ready = ready
 
         arg_data = self.address.sig_data
-        
+
         arg_valid = self.address.sig_valid
-        
+
         arg_ready = self.address.sig_ready
-        
+
         all_valid = _and_vars(arg_valid)
         all_ready = _and_vars(arg_ready)
 
@@ -1848,22 +1849,17 @@ class LUT(_SpecialOperator):
 
         inst = rom.mkROMDefinition('_'.join(['', 'LUT', str(tmp)]), self.patterns,
                                    size, width, sync=True, with_enable=True)
-        
+
         address = m.Wire(_tmp_data(tmp, prefix='_tmp_address_'), width=size)
         address.assign(arg_data)
-        
+
         clk = m._clock
 
-        ports = [('CLK', clk), ('addr', address), ('enable', data_cond), ('val', data)]
+        ports = [('CLK', clk), ('addr', address),
+                 ('enable', data_cond), ('val', data)]
 
         m.Instance(inst, '_'.join(['LUT', str(tmp)]), ports=ports)
-        
-        #dvalid = m.Reg(_tmp_data(tmp, prefix='_tmp_dvalid_'), initval=0)
-        #seq(dvalid(0), cond=valid_reset_cond)
-        #seq(dvalid(all_valid), cond=valid_cond)
-        #seq(valid(0), cond=valid_reset_cond)
-        #seq(valid(dvalid), cond=valid_cond)
-        
+
         seq(valid(0), cond=valid_reset_cond)
         seq(valid(all_valid), cond=valid_cond)
 
