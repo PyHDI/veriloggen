@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import thread_shared_mutex
+import thread_mutex_shared
 
 expected_verilog = """
 module test;
@@ -1009,7 +1009,7 @@ endmodule
 
 def test():
     veriloggen.reset()
-    test_module = thread_shared_mutex.mkTest()
+    test_module = thread_mutex_shared.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
