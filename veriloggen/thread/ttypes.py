@@ -8,49 +8,6 @@ import veriloggen.types.axi as axi
 from veriloggen.seq.seq import Seq
 
 
-class Shared(object):
-    __intrinsics__ = ('read', 'write')
-
-    def __init__(self, value):
-        self._value = value
-        self.seq = None
-
-    @property
-    def value(self):
-        return self._value
-
-    def read(self, fsm):
-        return self._value
-
-    def write(self, fsm, value, *part):
-        if self.seq is None:
-            self.seq = Seq(fsm.m, '_'.join(
-                ['seq', self._value.name]), fsm.clk, fsm.rst)
-
-        cond = fsm.state == fsm.current
-
-        def getval(v, p):
-            if isinstance(p, (tuple, list)):
-                return v[p[0], p[1]]
-            return v[p]
-
-        if len(part) == 0:
-            targ = self._value
-        elif len(part) == 1:
-            targ = getval(self._value, part[0])
-        elif len(part) == 2:
-            targ = getval(getval(self._value, part[0]), part[1])
-        else:
-            raise TypeError('unsupported type')
-
-        self.seq.If(cond)(
-            targ(value)
-        )
-
-        fsm.goto_next()
-        return 0
-
-
 class Mutex(object):
     __intrinsics__ = ('lock', 'try_lock', 'unlock')
 
@@ -150,6 +107,72 @@ class Mutex(object):
             self.id_map_count += 1
 
         return self.id_map[name]
+
+
+class Shared(object):
+    __intrinsics__ = ('read', 'write',
+                      'lock', 'try_lock', 'unlock')
+
+    def __init__(self, value):
+        self._value = value
+        self.seq = None
+        self.mutex = None
+
+    @property
+    def value(self):
+        return self._value
+
+    def read(self, fsm):
+        return self._value
+
+    def write(self, fsm, value, *part):
+        if self.seq is None:
+            self.seq = Seq(fsm.m, '_'.join(
+                ['seq', self._value.name]), fsm.clk, fsm.rst)
+
+        cond = fsm.state == fsm.current
+
+        def getval(v, p):
+            if isinstance(p, (tuple, list)):
+                return v[p[0], p[1]]
+            return v[p]
+
+        if len(part) == 0:
+            targ = self._value
+        elif len(part) == 1:
+            targ = getval(self._value, part[0])
+        elif len(part) == 2:
+            targ = getval(getval(self._value, part[0]), part[1])
+        else:
+            raise TypeError('unsupported type')
+
+        self.seq.If(cond)(
+            targ(value)
+        )
+
+        fsm.goto_next()
+        return 0
+
+    def lock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.lock(fsm)
+
+    def try_lock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.try_lock(fsm)
+
+    def unlock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.unlock(fsm)
 
 
 class RAM(ram.SyncRAMManager):
@@ -274,6 +297,110 @@ class RAM(ram.SyncRAMManager):
 
         fsm.If(done).goto_next()
         return 0
+
+    def lock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.lock(fsm)
+
+    def try_lock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.try_lock(fsm)
+
+    def unlock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.unlock(fsm)
+
+
+class FIFO(fifo.Fifo):
+    __intrinsics__ = ('enq', 'deq', 'try_enq', 'try_deq',
+                      'is_empty', 'is_almost_empty',
+                      'is_full', 'is_almost_full',
+                      'lock', 'try_lock', 'unlock')
+
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=4):
+        fifo.Fifo.__init__(self, m, name, clk, rst, datawidth, addrwidth)
+        self.mutex = None
+
+    def enq(self, fsm, wdata):
+        cond = fsm.state == fsm.current
+
+        ack, ready = fifo.Fifo.enq(self, wdata, cond=cond)
+        fsm.If(ready).goto_next()
+
+        return 0
+
+    def deq(self, fsm):
+        cond = fsm.state == fsm.current
+
+        rdata, rvalid = fifo.Fifo.deq(self, cond=cond)
+        fsm.If(vtypes.Not(self.empty)).goto_next()
+        fsm.goto_next()
+
+        rdata_reg = self.m.TmpReg(self.datawidth, initval=0, signed=True)
+
+        fsm.If(rvalid)(
+            rdata_reg(rdata)
+        )
+        fsm.If(rvalid).goto_next()
+
+        return rdata_reg
+
+    def try_enq(self, fsm, wdata):
+        cond = fsm.state == fsm.current
+
+        ack, ready = fifo.Fifo.enq(self, wdata, cond=cond)
+        fsm.goto_next()
+
+        ack_reg = self.m.TmpReg(initval=0)
+        fsm(
+            ack_reg(ack)
+        )
+        fsm.goto_next()
+
+        return ack_reg
+
+    def try_deq(self, fsm):
+        cond = fsm.state == fsm.current
+
+        rdata, rvalid = fifo.Fifo.deq(self, cond=cond)
+        fsm.goto_next()
+        fsm.goto_next()
+
+        rdata_reg = self.m.TmpReg(self.datawidth, initval=0, signed=True)
+        rvalid_reg = self.m.TmpReg(initval=0)
+
+        fsm(
+            rdata_reg(rdata),
+            rvalid_reg(rvalid)
+        )
+        fsm.goto_next()
+
+        return rdata_reg, rvalid_reg
+
+    def is_almost_empty(self, fsm):
+        fsm.goto_next()
+        return self.almost_empty
+
+    def is_empty(self, fsm):
+        fsm.goto_next()
+        return self.empty
+
+    def is_almost_full(self, fsm):
+        fsm.goto_next()
+        return self.almost_full
+
+    def is_full(self, fsm):
+        fsm.goto_next()
+        return self.full
 
     def lock(self, fsm):
         if self.mutex is None:
