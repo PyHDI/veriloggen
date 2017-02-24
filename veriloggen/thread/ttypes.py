@@ -297,13 +297,38 @@ class RAM(ram.SyncRAMManager):
 
 
 class AXIM(axi.AxiMaster):
-    __intrinsics__ = ('write_request', 'write_data',
-                      'read_request', 'read_data',
+    __intrinsics__ = ('dma_read', 'dma_write',
                       'lock', 'try_lock', 'unlock')
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32):
         axi.AxiMaster.__init__(self, m, name, clk, rst, datawidth, addrwidth)
         self.mutex = None
+
+    def dma_read(self, fsm, ram, local_addr, global_addr, size, port=0, nonblocking=False):
+        cond = fsm.state == fsm.current
+
+        done = axi.AxiMaster.dma_read(self, ram, global_addr, local_addr, size,
+                                      cond=cond, ram_port=port)
+
+        if nonblocking:
+            fsm.goto_next()
+            return done
+
+        fsm.If(done).goto_next()
+        return 0
+
+    def dma_write(self, fsm, ram, local_addr, global_addr, size, port=0, nonblocking=False):
+        cond = fsm.state == fsm.current
+
+        done = axi.AxiMaster.dma_write(self, ram, global_addr, local_addr, size,
+                                       cond=cond, ram_port=port)
+
+        if nonblocking:
+            fsm.goto_next()
+            return done
+
+        fsm.If(done).goto_next()
+        return 0
 
     def lock(self, fsm):
         if self.mutex is None:
