@@ -3,6 +3,7 @@ from __future__ import print_function
 
 import veriloggen.core.vtypes as vtypes
 import veriloggen.types.ram as ram
+import veriloggen.types.fifo as fifo
 import veriloggen.types.axi as axi
 from veriloggen.seq.seq import Seq
 
@@ -248,8 +249,8 @@ class RAM(ram.SyncRAMManager):
 
         cond = fsm.state == fsm.current
 
-        done = self.axi.dma_read(self, global_addr, local_addr, size,
-                                 cond=cond, ram_port=port)
+        done = axi.AxiMaster.dma_read(self.axi, self, global_addr, local_addr, size,
+                                      cond=cond, ram_port=port)
 
         if nonblocking:
             fsm.goto_next()
@@ -264,8 +265,8 @@ class RAM(ram.SyncRAMManager):
 
         cond = fsm.state == fsm.current
 
-        done = self.axi.dma_write(self, global_addr, local_addr, size,
-                                  cond=cond, ram_port=port)
+        done = axi.AxiMaster.dma_write(self.axi, self, global_addr, local_addr, size,
+                                       cond=cond, ram_port=port)
 
         if nonblocking:
             fsm.goto_next()
