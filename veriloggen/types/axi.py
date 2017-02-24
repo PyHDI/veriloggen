@@ -484,9 +484,7 @@ class AxiMaster(object):
 
         done = ram.write_dataflow(ram_port, ram_addr, data, length, cond=fsm)
         fsm.goto_next()
-        fsm.If(done).goto_next()
-
-        fsm.goto_init()
+        fsm.If(done).goto_init()
 
         return done
 
@@ -504,9 +502,7 @@ class AxiMaster(object):
         fsm.goto_next()
 
         done = self.write_dataflow(data, counter, cond=fsm)
-        fsm.If(done).goto_next()
-
-        fsm.goto_init()
+        fsm.If(done).goto_init()
 
         return done
 

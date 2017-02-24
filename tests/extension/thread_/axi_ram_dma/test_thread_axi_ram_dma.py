@@ -162,7 +162,7 @@ module test;
     RST = 1;
     #100;
     RST = 0;
-    #10000;
+    #100000;
     $finish;
   end
 
@@ -449,10 +449,14 @@ module blinkled
   localparam th_blink_init = 0;
   reg signed [32-1:0] _th_blink_size_0;
   reg signed [32-1:0] _th_blink_i_1;
-  reg signed [32-1:0] _th_blink_wdata_2;
+  reg signed [32-1:0] _th_blink_offset_2;
+  reg signed [32-1:0] _th_blink_size_3;
+  reg signed [32-1:0] _th_blink_offset_4;
+  reg signed [32-1:0] _th_blink_i_5;
+  reg signed [32-1:0] _th_blink_wdata_6;
   reg _myram_cond_0_1;
-  reg signed [32-1:0] _th_blink_laddr_3;
-  reg signed [32-1:0] _th_blink_gaddr_4;
+  reg signed [32-1:0] _th_blink_laddr_7;
+  reg signed [32-1:0] _th_blink_gaddr_8;
   reg [32-1:0] _tmp_fsm_0;
   localparam _tmp_fsm_0_init = 0;
   reg [8-1:0] _tmp_0;
@@ -531,7 +535,7 @@ module blinkled
   reg _myram_cond_4_1;
   reg _myram_cond_4_2;
   reg signed [32-1:0] _tmp_37;
-  reg signed [32-1:0] _th_blink_rdata_5;
+  reg signed [32-1:0] _th_blink_rdata_9;
   reg [32-1:0] _tmp_fsm_3;
   localparam _tmp_fsm_3_init = 0;
   reg [8-1:0] _tmp_38;
@@ -601,12 +605,12 @@ module blinkled
         myaxi_arvalid <= 0;
       end 
       if((_tmp_fsm_0 == 1) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_0 == 0))) begin
-        myaxi_awaddr <= _th_blink_gaddr_4;
-        myaxi_awlen <= _th_blink_size_0 - 1;
+        myaxi_awaddr <= _th_blink_gaddr_8;
+        myaxi_awlen <= _th_blink_size_3 - 1;
         myaxi_awvalid <= 1;
-        _tmp_0 <= _th_blink_size_0;
+        _tmp_0 <= _th_blink_size_3;
       end 
-      if((_tmp_fsm_0 == 1) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_0 == 0)) && (_th_blink_size_0 == 0)) begin
+      if((_tmp_fsm_0 == 1) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_0 == 0)) && (_th_blink_size_3 == 0)) begin
         myaxi_awvalid <= 0;
       end 
       _myaxi_cond_0_1 <= 1;
@@ -631,12 +635,12 @@ module blinkled
         _tmp_13 <= _tmp_13;
       end 
       if((_tmp_fsm_1 == 1) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_15 == 0))) begin
-        myaxi_awaddr <= _th_blink_gaddr_4;
-        myaxi_awlen <= _th_blink_size_0 - 1;
+        myaxi_awaddr <= _th_blink_gaddr_8;
+        myaxi_awlen <= _th_blink_size_3 - 1;
         myaxi_awvalid <= 1;
-        _tmp_15 <= _th_blink_size_0;
+        _tmp_15 <= _th_blink_size_3;
       end 
-      if((_tmp_fsm_1 == 1) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_15 == 0)) && (_th_blink_size_0 == 0)) begin
+      if((_tmp_fsm_1 == 1) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_15 == 0)) && (_th_blink_size_3 == 0)) begin
         myaxi_awvalid <= 0;
       end 
       _myaxi_cond_2_1 <= 1;
@@ -661,10 +665,10 @@ module blinkled
         _tmp_28 <= _tmp_28;
       end 
       if((_tmp_fsm_2 == 1) && ((myaxi_arready || !myaxi_arvalid) && (_tmp_30 == 0))) begin
-        myaxi_araddr <= _th_blink_gaddr_4;
-        myaxi_arlen <= _th_blink_size_0 - 1;
+        myaxi_araddr <= _th_blink_gaddr_8;
+        myaxi_arlen <= _th_blink_size_3 - 1;
         myaxi_arvalid <= 1;
-        _tmp_30 <= _th_blink_size_0;
+        _tmp_30 <= _th_blink_size_3;
       end 
       _myaxi_cond_4_1 <= 1;
       if(myaxi_arvalid && !myaxi_arready) begin
@@ -674,10 +678,10 @@ module blinkled
         _tmp_30 <= _tmp_30 - 1;
       end 
       if((_tmp_fsm_3 == 1) && ((myaxi_arready || !myaxi_arvalid) && (_tmp_38 == 0))) begin
-        myaxi_araddr <= _th_blink_gaddr_4;
-        myaxi_arlen <= _th_blink_size_0 - 1;
+        myaxi_araddr <= _th_blink_gaddr_8;
+        myaxi_arlen <= _th_blink_size_3 - 1;
         myaxi_arvalid <= 1;
-        _tmp_38 <= _th_blink_size_0;
+        _tmp_38 <= _th_blink_size_3;
       end 
       _myaxi_cond_5_1 <= 1;
       if(myaxi_arvalid && !myaxi_arready) begin
@@ -762,12 +766,12 @@ module blinkled
         _tmp_44 <= 1;
       end 
       _myram_cond_7_2 <= _myram_cond_7_1;
-      if(th_blink == 4) begin
-        myram_0_addr <= _th_blink_i_1;
-        myram_0_wdata <= _th_blink_wdata_2;
+      if(th_blink == 9) begin
+        myram_0_addr <= _th_blink_i_5;
+        myram_0_wdata <= _th_blink_wdata_6;
         myram_0_wenable <= 1;
       end 
-      _myram_cond_0_1 <= th_blink == 4;
+      _myram_cond_0_1 <= th_blink == 9;
       __tmp_6_1 <= _tmp_6;
       __tmp_7_1 <= _tmp_7;
       if((_tmp_3 || !_tmp_1) && (_tmp_4 || !_tmp_2) && _tmp_10) begin
@@ -785,8 +789,8 @@ module blinkled
         _tmp_10 <= 1;
       end 
       if((_tmp_fsm_0 == 2) && (_tmp_8 == 0) && !_tmp_11 && !_tmp_12) begin
-        myram_0_addr <= _th_blink_laddr_3;
-        _tmp_8 <= _th_blink_size_0 - 1;
+        myram_0_addr <= _th_blink_laddr_7;
+        _tmp_8 <= _th_blink_size_3 - 1;
         _tmp_9 <= 1;
       end 
       if((_tmp_3 || !_tmp_1) && (_tmp_4 || !_tmp_2) && (_tmp_8 > 0)) begin
@@ -798,12 +802,12 @@ module blinkled
       if((_tmp_3 || !_tmp_1) && (_tmp_4 || !_tmp_2) && (_tmp_8 == 1)) begin
         _tmp_11 <= 1;
       end 
-      if(th_blink == 14) begin
-        myram_0_addr <= _th_blink_i_1;
-        myram_0_wdata <= _th_blink_wdata_2;
+      if(th_blink == 19) begin
+        myram_0_addr <= _th_blink_i_5;
+        myram_0_wdata <= _th_blink_wdata_6;
         myram_0_wenable <= 1;
       end 
-      _myram_cond_1_1 <= th_blink == 14;
+      _myram_cond_1_1 <= th_blink == 19;
       __tmp_21_1 <= _tmp_21;
       __tmp_22_1 <= _tmp_22;
       if((_tmp_18 || !_tmp_16) && (_tmp_19 || !_tmp_17) && _tmp_25) begin
@@ -821,8 +825,8 @@ module blinkled
         _tmp_25 <= 1;
       end 
       if((_tmp_fsm_1 == 2) && (_tmp_23 == 0) && !_tmp_26 && !_tmp_27) begin
-        myram_0_addr <= _th_blink_laddr_3;
-        _tmp_23 <= _th_blink_size_0 - 1;
+        myram_0_addr <= _th_blink_laddr_7;
+        _tmp_23 <= _th_blink_size_3 - 1;
         _tmp_24 <= 1;
       end 
       if((_tmp_18 || !_tmp_16) && (_tmp_19 || !_tmp_17) && (_tmp_23 > 0)) begin
@@ -835,8 +839,8 @@ module blinkled
         _tmp_26 <= 1;
       end 
       if((_tmp_fsm_2 == 2) && (_tmp_33 == 0)) begin
-        myram_0_addr <= _th_blink_laddr_3 - 1;
-        _tmp_33 <= _th_blink_size_0;
+        myram_0_addr <= _th_blink_laddr_7 - 1;
+        _tmp_33 <= _th_blink_size_3;
       end 
       if(_tmp_valid_35 && ((_tmp_33 > 0) && !_tmp_34) && (_tmp_33 > 0)) begin
         myram_0_addr <= myram_0_addr + 1;
@@ -848,14 +852,14 @@ module blinkled
         _tmp_34 <= 1;
       end 
       _myram_cond_2_1 <= 1;
-      if(th_blink == 27) begin
-        myram_0_addr <= _th_blink_i_1;
+      if(th_blink == 32) begin
+        myram_0_addr <= _th_blink_i_5;
       end 
-      _myram_cond_3_1 <= th_blink == 27;
-      _myram_cond_4_1 <= th_blink == 27;
+      _myram_cond_3_1 <= th_blink == 32;
+      _myram_cond_4_1 <= th_blink == 32;
       if((_tmp_fsm_3 == 2) && (_tmp_41 == 0)) begin
-        myram_0_addr <= _th_blink_laddr_3 - 1;
-        _tmp_41 <= _th_blink_size_0;
+        myram_0_addr <= _th_blink_laddr_7 - 1;
+        _tmp_41 <= _th_blink_size_3;
       end 
       if(_tmp_valid_43 && ((_tmp_41 > 0) && !_tmp_42) && (_tmp_41 > 0)) begin
         myram_0_addr <= myram_0_addr + 1;
@@ -867,11 +871,11 @@ module blinkled
         _tmp_42 <= 1;
       end 
       _myram_cond_5_1 <= 1;
-      if(th_blink == 37) begin
-        myram_0_addr <= _th_blink_i_1;
+      if(th_blink == 42) begin
+        myram_0_addr <= _th_blink_i_5;
       end 
-      _myram_cond_6_1 <= th_blink == 37;
-      _myram_cond_7_1 <= th_blink == 37;
+      _myram_cond_6_1 <= th_blink == 42;
+      _myram_cond_7_1 <= th_blink == 42;
     end
   end
 
@@ -920,17 +924,29 @@ module blinkled
   localparam th_blink_39 = 39;
   localparam th_blink_40 = 40;
   localparam th_blink_41 = 41;
+  localparam th_blink_42 = 42;
+  localparam th_blink_43 = 43;
+  localparam th_blink_44 = 44;
+  localparam th_blink_45 = 45;
+  localparam th_blink_46 = 46;
+  localparam th_blink_47 = 47;
+  localparam th_blink_48 = 48;
+  localparam th_blink_49 = 49;
 
   always @(posedge CLK) begin
     if(RST) begin
       th_blink <= th_blink_init;
       _th_blink_size_0 <= 0;
       _th_blink_i_1 <= 0;
-      _th_blink_wdata_2 <= 0;
-      _th_blink_laddr_3 <= 0;
-      _th_blink_gaddr_4 <= 0;
+      _th_blink_offset_2 <= 0;
+      _th_blink_size_3 <= 0;
+      _th_blink_offset_4 <= 0;
+      _th_blink_i_5 <= 0;
+      _th_blink_wdata_6 <= 0;
+      _th_blink_laddr_7 <= 0;
+      _th_blink_gaddr_8 <= 0;
       _tmp_37 <= 0;
-      _th_blink_rdata_5 <= 0;
+      _th_blink_rdata_9 <= 0;
       _tmp_45 <= 0;
     end else begin
       case(th_blink)
@@ -943,182 +959,218 @@ module blinkled
           th_blink <= th_blink_2;
         end
         th_blink_2: begin
-          if(_th_blink_i_1 < _th_blink_size_0) begin
+          if(_th_blink_i_1 < 4) begin
             th_blink <= th_blink_3;
           end else begin
-            th_blink <= th_blink_7;
+            th_blink <= th_blink_48;
           end
         end
         th_blink_3: begin
-          _th_blink_wdata_2 <= _th_blink_i_1 + 100;
+          $display("# iter %d start", _th_blink_i_1);
           th_blink <= th_blink_4;
         end
         th_blink_4: begin
+          _th_blink_offset_2 <= (_th_blink_i_1 << 10) << 4;
           th_blink <= th_blink_5;
         end
         th_blink_5: begin
-          $display("wdata = %d", _th_blink_wdata_2);
+          _th_blink_size_3 <= _th_blink_size_0;
+          _th_blink_offset_4 <= _th_blink_offset_2;
           th_blink <= th_blink_6;
         end
         th_blink_6: begin
-          _th_blink_i_1 <= _th_blink_i_1 + 1;
-          th_blink <= th_blink_2;
+          _th_blink_i_5 <= 0;
+          th_blink <= th_blink_7;
         end
         th_blink_7: begin
-          _th_blink_laddr_3 <= 0;
-          th_blink <= th_blink_8;
+          if(_th_blink_i_5 < _th_blink_size_3) begin
+            th_blink <= th_blink_8;
+          end else begin
+            th_blink <= th_blink_12;
+          end
         end
         th_blink_8: begin
-          _th_blink_gaddr_4 <= 0;
+          _th_blink_wdata_6 <= _th_blink_i_5 + 100;
           th_blink <= th_blink_9;
         end
         th_blink_9: begin
-          if(_tmp_13) begin
-            th_blink <= th_blink_10;
-          end 
+          th_blink <= th_blink_10;
         end
         th_blink_10: begin
-          $display("dma_write: [%d] -> [%d]", _th_blink_laddr_3, _th_blink_gaddr_4);
+          $display("wdata = %d", _th_blink_wdata_6);
           th_blink <= th_blink_11;
         end
         th_blink_11: begin
-          _th_blink_i_1 <= 0;
-          th_blink <= th_blink_12;
+          _th_blink_i_5 <= _th_blink_i_5 + 1;
+          th_blink <= th_blink_7;
         end
         th_blink_12: begin
-          if(_th_blink_i_1 < _th_blink_size_0) begin
-            th_blink <= th_blink_13;
-          end else begin
-            th_blink <= th_blink_17;
-          end
+          _th_blink_laddr_7 <= 0;
+          th_blink <= th_blink_13;
         end
         th_blink_13: begin
-          _th_blink_wdata_2 <= 1000 + _th_blink_i_1;
+          _th_blink_gaddr_8 <= _th_blink_offset_4;
           th_blink <= th_blink_14;
         end
         th_blink_14: begin
-          th_blink <= th_blink_15;
+          if(_tmp_13) begin
+            th_blink <= th_blink_15;
+          end 
         end
         th_blink_15: begin
-          $display("wdata = %d", _th_blink_wdata_2);
+          $display("dma_write: [%d] -> [%d]", _th_blink_laddr_7, _th_blink_gaddr_8);
           th_blink <= th_blink_16;
         end
         th_blink_16: begin
-          _th_blink_i_1 <= _th_blink_i_1 + 1;
-          th_blink <= th_blink_12;
+          _th_blink_i_5 <= 0;
+          th_blink <= th_blink_17;
         end
         th_blink_17: begin
-          _th_blink_laddr_3 <= 0;
-          th_blink <= th_blink_18;
+          if(_th_blink_i_5 < _th_blink_size_3) begin
+            th_blink <= th_blink_18;
+          end else begin
+            th_blink <= th_blink_22;
+          end
         end
         th_blink_18: begin
-          _th_blink_gaddr_4 <= _th_blink_size_0 + _th_blink_size_0 << 2;
+          _th_blink_wdata_6 <= 1000 + _th_blink_i_5;
           th_blink <= th_blink_19;
         end
         th_blink_19: begin
-          if(_tmp_28) begin
-            th_blink <= th_blink_20;
-          end 
+          th_blink <= th_blink_20;
         end
         th_blink_20: begin
-          $display("dma_write: [%d] -> [%d]", _th_blink_laddr_3, _th_blink_gaddr_4);
+          $display("wdata = %d", _th_blink_wdata_6);
           th_blink <= th_blink_21;
         end
         th_blink_21: begin
-          _th_blink_laddr_3 <= 0;
-          th_blink <= th_blink_22;
+          _th_blink_i_5 <= _th_blink_i_5 + 1;
+          th_blink <= th_blink_17;
         end
         th_blink_22: begin
-          _th_blink_gaddr_4 <= 0;
+          _th_blink_laddr_7 <= 0;
           th_blink <= th_blink_23;
         end
         th_blink_23: begin
-          if(_tmp_34) begin
-            th_blink <= th_blink_24;
-          end 
+          _th_blink_gaddr_8 <= (_th_blink_size_3 + _th_blink_size_3 << 2) + _th_blink_offset_4;
+          th_blink <= th_blink_24;
         end
         th_blink_24: begin
-          $display("dma_read:  [%d] <- [%d]", _th_blink_laddr_3, _th_blink_gaddr_4);
-          th_blink <= th_blink_25;
+          if(_tmp_28) begin
+            th_blink <= th_blink_25;
+          end 
         end
         th_blink_25: begin
-          _th_blink_i_1 <= 0;
+          $display("dma_write: [%d] -> [%d]", _th_blink_laddr_7, _th_blink_gaddr_8);
           th_blink <= th_blink_26;
         end
         th_blink_26: begin
-          if(_th_blink_i_1 < _th_blink_size_0) begin
-            th_blink <= th_blink_27;
-          end else begin
-            th_blink <= th_blink_31;
-          end
+          _th_blink_laddr_7 <= 0;
+          th_blink <= th_blink_27;
         end
         th_blink_27: begin
+          _th_blink_gaddr_8 <= _th_blink_offset_4;
+          th_blink <= th_blink_28;
+        end
+        th_blink_28: begin
+          if(_tmp_34) begin
+            th_blink <= th_blink_29;
+          end 
+        end
+        th_blink_29: begin
+          $display("dma_read:  [%d] <- [%d]", _th_blink_laddr_7, _th_blink_gaddr_8);
+          th_blink <= th_blink_30;
+        end
+        th_blink_30: begin
+          _th_blink_i_5 <= 0;
+          th_blink <= th_blink_31;
+        end
+        th_blink_31: begin
+          if(_th_blink_i_5 < _th_blink_size_3) begin
+            th_blink <= th_blink_32;
+          end else begin
+            th_blink <= th_blink_36;
+          end
+        end
+        th_blink_32: begin
           if(_tmp_36) begin
             _tmp_37 <= myram_0_rdata;
           end 
           if(_tmp_36) begin
-            th_blink <= th_blink_28;
+            th_blink <= th_blink_33;
           end 
-        end
-        th_blink_28: begin
-          _th_blink_rdata_5 <= _tmp_37;
-          th_blink <= th_blink_29;
-        end
-        th_blink_29: begin
-          $display("rdata = %d", _th_blink_rdata_5);
-          th_blink <= th_blink_30;
-        end
-        th_blink_30: begin
-          _th_blink_i_1 <= _th_blink_i_1 + 1;
-          th_blink <= th_blink_26;
-        end
-        th_blink_31: begin
-          _th_blink_laddr_3 <= 0;
-          th_blink <= th_blink_32;
-        end
-        th_blink_32: begin
-          _th_blink_gaddr_4 <= _th_blink_size_0 + _th_blink_size_0 << 2;
-          th_blink <= th_blink_33;
         end
         th_blink_33: begin
-          if(_tmp_42) begin
-            th_blink <= th_blink_34;
-          end 
+          _th_blink_rdata_9 <= _tmp_37;
+          th_blink <= th_blink_34;
         end
         th_blink_34: begin
-          $display("dma_read:  [%d] <- [%d]", _th_blink_laddr_3, _th_blink_gaddr_4);
+          $display("rdata = %d", _th_blink_rdata_9);
           th_blink <= th_blink_35;
         end
         th_blink_35: begin
-          _th_blink_i_1 <= 0;
-          th_blink <= th_blink_36;
+          _th_blink_i_5 <= _th_blink_i_5 + 1;
+          th_blink <= th_blink_31;
         end
         th_blink_36: begin
-          if(_th_blink_i_1 < _th_blink_size_0) begin
-            th_blink <= th_blink_37;
-          end else begin
-            th_blink <= th_blink_41;
-          end
+          _th_blink_laddr_7 <= 0;
+          th_blink <= th_blink_37;
         end
         th_blink_37: begin
+          _th_blink_gaddr_8 <= (_th_blink_size_3 + _th_blink_size_3 << 2) + _th_blink_offset_4;
+          th_blink <= th_blink_38;
+        end
+        th_blink_38: begin
+          if(_tmp_42) begin
+            th_blink <= th_blink_39;
+          end 
+        end
+        th_blink_39: begin
+          $display("dma_read:  [%d] <- [%d]", _th_blink_laddr_7, _th_blink_gaddr_8);
+          th_blink <= th_blink_40;
+        end
+        th_blink_40: begin
+          _th_blink_i_5 <= 0;
+          th_blink <= th_blink_41;
+        end
+        th_blink_41: begin
+          if(_th_blink_i_5 < _th_blink_size_3) begin
+            th_blink <= th_blink_42;
+          end else begin
+            th_blink <= th_blink_46;
+          end
+        end
+        th_blink_42: begin
           if(_tmp_44) begin
             _tmp_45 <= myram_0_rdata;
           end 
           if(_tmp_44) begin
-            th_blink <= th_blink_38;
+            th_blink <= th_blink_43;
           end 
         end
-        th_blink_38: begin
-          _th_blink_rdata_5 <= _tmp_45;
-          th_blink <= th_blink_39;
+        th_blink_43: begin
+          _th_blink_rdata_9 <= _tmp_45;
+          th_blink <= th_blink_44;
         end
-        th_blink_39: begin
-          $display("rdata = %d", _th_blink_rdata_5);
-          th_blink <= th_blink_40;
+        th_blink_44: begin
+          $display("rdata = %d", _th_blink_rdata_9);
+          th_blink <= th_blink_45;
         end
-        th_blink_40: begin
+        th_blink_45: begin
+          _th_blink_i_5 <= _th_blink_i_5 + 1;
+          th_blink <= th_blink_41;
+        end
+        th_blink_46: begin
+          $display("# iter %d end", _th_blink_i_1);
+          th_blink <= th_blink_47;
+        end
+        th_blink_47: begin
           _th_blink_i_1 <= _th_blink_i_1 + 1;
-          th_blink <= th_blink_36;
+          th_blink <= th_blink_2;
+        end
+        th_blink_48: begin
+          $display("# finish");
+          th_blink <= th_blink_49;
         end
       endcase
     end
@@ -1127,7 +1179,6 @@ module blinkled
   localparam _tmp_fsm_0_1 = 1;
   localparam _tmp_fsm_0_2 = 2;
   localparam _tmp_fsm_0_3 = 3;
-  localparam _tmp_fsm_0_4 = 4;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -1135,7 +1186,7 @@ module blinkled
     end else begin
       case(_tmp_fsm_0)
         _tmp_fsm_0_init: begin
-          if(th_blink == 9) begin
+          if(th_blink == 14) begin
             _tmp_fsm_0 <= _tmp_fsm_0_1;
           end 
         end
@@ -1149,11 +1200,8 @@ module blinkled
         end
         _tmp_fsm_0_3: begin
           if(_tmp_13) begin
-            _tmp_fsm_0 <= _tmp_fsm_0_4;
+            _tmp_fsm_0 <= _tmp_fsm_0_init;
           end 
-        end
-        _tmp_fsm_0_4: begin
-          _tmp_fsm_0 <= _tmp_fsm_0_init;
         end
       endcase
     end
@@ -1162,7 +1210,6 @@ module blinkled
   localparam _tmp_fsm_1_1 = 1;
   localparam _tmp_fsm_1_2 = 2;
   localparam _tmp_fsm_1_3 = 3;
-  localparam _tmp_fsm_1_4 = 4;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -1170,7 +1217,7 @@ module blinkled
     end else begin
       case(_tmp_fsm_1)
         _tmp_fsm_1_init: begin
-          if(th_blink == 19) begin
+          if(th_blink == 24) begin
             _tmp_fsm_1 <= _tmp_fsm_1_1;
           end 
         end
@@ -1184,11 +1231,8 @@ module blinkled
         end
         _tmp_fsm_1_3: begin
           if(_tmp_28) begin
-            _tmp_fsm_1 <= _tmp_fsm_1_4;
+            _tmp_fsm_1 <= _tmp_fsm_1_init;
           end 
-        end
-        _tmp_fsm_1_4: begin
-          _tmp_fsm_1 <= _tmp_fsm_1_init;
         end
       endcase
     end
@@ -1197,7 +1241,6 @@ module blinkled
   localparam _tmp_fsm_2_1 = 1;
   localparam _tmp_fsm_2_2 = 2;
   localparam _tmp_fsm_2_3 = 3;
-  localparam _tmp_fsm_2_4 = 4;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -1205,7 +1248,7 @@ module blinkled
     end else begin
       case(_tmp_fsm_2)
         _tmp_fsm_2_init: begin
-          if(th_blink == 23) begin
+          if(th_blink == 28) begin
             _tmp_fsm_2 <= _tmp_fsm_2_1;
           end 
         end
@@ -1219,11 +1262,8 @@ module blinkled
         end
         _tmp_fsm_2_3: begin
           if(_tmp_34) begin
-            _tmp_fsm_2 <= _tmp_fsm_2_4;
+            _tmp_fsm_2 <= _tmp_fsm_2_init;
           end 
-        end
-        _tmp_fsm_2_4: begin
-          _tmp_fsm_2 <= _tmp_fsm_2_init;
         end
       endcase
     end
@@ -1232,7 +1272,6 @@ module blinkled
   localparam _tmp_fsm_3_1 = 1;
   localparam _tmp_fsm_3_2 = 2;
   localparam _tmp_fsm_3_3 = 3;
-  localparam _tmp_fsm_3_4 = 4;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -1240,7 +1279,7 @@ module blinkled
     end else begin
       case(_tmp_fsm_3)
         _tmp_fsm_3_init: begin
-          if(th_blink == 33) begin
+          if(th_blink == 38) begin
             _tmp_fsm_3 <= _tmp_fsm_3_1;
           end 
         end
@@ -1254,11 +1293,8 @@ module blinkled
         end
         _tmp_fsm_3_3: begin
           if(_tmp_42) begin
-            _tmp_fsm_3 <= _tmp_fsm_3_4;
+            _tmp_fsm_3 <= _tmp_fsm_3_init;
           end 
-        end
-        _tmp_fsm_3_4: begin
-          _tmp_fsm_3 <= _tmp_fsm_3_init;
         end
       endcase
     end

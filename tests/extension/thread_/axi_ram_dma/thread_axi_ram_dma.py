@@ -23,6 +23,14 @@ def mkLed():
     myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth, axi=myaxi)
 
     def blink(size):
+        for i in range(4):
+            print('# iter %d start' % i)
+            offset = i * 1024 * 16
+            body(size, offset)
+            print('# iter %d end' % i)
+        print('# finish')
+
+    def body(size, offset):
         # write
         for i in range(size):
             wdata = i + 100
@@ -30,7 +38,7 @@ def mkLed():
             print('wdata = %d' % wdata)
 
         laddr = 0
-        gaddr = 0
+        gaddr = offset
         myram.dma_write(laddr, gaddr, size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
@@ -41,13 +49,13 @@ def mkLed():
             print('wdata = %d' % wdata)
 
         laddr = 0
-        gaddr = (size + size) * 4
+        gaddr = (size + size) * 4 + offset
         myram.dma_write(laddr, gaddr, size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # read
         laddr = 0
-        gaddr = 0
+        gaddr = offset
         myram.dma_read(laddr, gaddr, size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
@@ -57,7 +65,7 @@ def mkLed():
 
         # read
         laddr = 0
-        gaddr = (size + size) * 4
+        gaddr = (size + size) * 4 + offset
         myram.dma_read(laddr, gaddr, size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
@@ -96,7 +104,7 @@ def mkTest():
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
     init.add(
-        Delay(10000),
+        Delay(100000),
         Systask('finish'),
     )
 
