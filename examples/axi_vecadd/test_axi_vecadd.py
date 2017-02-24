@@ -1033,7 +1033,6 @@ module main
   localparam _tmp_fsm_0_1 = 1;
   localparam _tmp_fsm_0_2 = 2;
   localparam _tmp_fsm_0_3 = 3;
-  localparam _tmp_fsm_0_4 = 4;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -1055,11 +1054,8 @@ module main
         end
         _tmp_fsm_0_3: begin
           if(_tmp_7) begin
-            _tmp_fsm_0 <= _tmp_fsm_0_4;
+            _tmp_fsm_0 <= _tmp_fsm_0_init;
           end 
-        end
-        _tmp_fsm_0_4: begin
-          _tmp_fsm_0 <= _tmp_fsm_0_init;
         end
       endcase
     end
@@ -1068,7 +1064,6 @@ module main
   localparam _tmp_fsm_1_1 = 1;
   localparam _tmp_fsm_1_2 = 2;
   localparam _tmp_fsm_1_3 = 3;
-  localparam _tmp_fsm_1_4 = 4;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -1090,11 +1085,8 @@ module main
         end
         _tmp_fsm_1_3: begin
           if(_tmp_13) begin
-            _tmp_fsm_1 <= _tmp_fsm_1_4;
+            _tmp_fsm_1 <= _tmp_fsm_1_init;
           end 
-        end
-        _tmp_fsm_1_4: begin
-          _tmp_fsm_1 <= _tmp_fsm_1_init;
         end
       endcase
     end
@@ -1103,7 +1095,6 @@ module main
   localparam _tmp_fsm_2_1 = 1;
   localparam _tmp_fsm_2_2 = 2;
   localparam _tmp_fsm_2_3 = 3;
-  localparam _tmp_fsm_2_4 = 4;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -1125,11 +1116,8 @@ module main
         end
         _tmp_fsm_2_3: begin
           if(_tmp_55) begin
-            _tmp_fsm_2 <= _tmp_fsm_2_4;
+            _tmp_fsm_2 <= _tmp_fsm_2_init;
           end 
-        end
-        _tmp_fsm_2_4: begin
-          _tmp_fsm_2 <= _tmp_fsm_2_init;
         end
       endcase
     end
