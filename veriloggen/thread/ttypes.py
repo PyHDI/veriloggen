@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import math
+
 import veriloggen.core.vtypes as vtypes
 import veriloggen.types.ram as ram
 import veriloggen.types.fifo as fifo
@@ -180,12 +182,11 @@ class RAM(ram.SyncRAMManager):
                       'lock', 'try_lock', 'unlock')
 
     def __init__(self, m, name, clk, rst,
-                 datawidth=32, addrwidth=10, numports=1, axi=None):
+                 datawidth=32, addrwidth=10, numports=1):
 
         ram.SyncRAMManager.__init__(
             self, m, name, clk, rst, datawidth, addrwidth, numports)
 
-        self.axi = axi
         self.mutex = None
 
     def read(self, fsm, addr, port=0, unified=False):
@@ -266,37 +267,17 @@ class RAM(ram.SyncRAMManager):
 
         return 0
 
-    def dma_read(self, fsm, local_addr, global_addr, size, port=0, nonblocking=False):
-        if self.axi is None or not isinstance(self.axi, AXIM):
+    def dma_read(self, fsm, bus, local_addr, global_addr, size, port=0):
+        if not isinstance(bus, AXIM):
             raise TypeError('AXIM interface is required')
 
-        cond = fsm.state == fsm.current
+        return bus.dma_read(fsm, self, local_addr, global_addr, size, port)
 
-        done = axi.AxiMaster.dma_read(self.axi, self, global_addr, local_addr, size,
-                                      cond=cond, ram_port=port)
-
-        if nonblocking:
-            fsm.goto_next()
-            return done
-
-        fsm.If(done).goto_next()
-        return 0
-
-    def dma_write(self, fsm, local_addr, global_addr, size, port=0, nonblocking=False):
-        if self.axi is None or not isinstance(self.axi, AXIM):
+    def dma_write(self, fsm, bus, local_addr, global_addr, size, port=0):
+        if not isinstance(bus, AXIM):
             raise TypeError('AXIM interface is required')
 
-        cond = fsm.state == fsm.current
-
-        done = axi.AxiMaster.dma_write(self.axi, self, global_addr, local_addr, size,
-                                       cond=cond, ram_port=port)
-
-        if nonblocking:
-            fsm.goto_next()
-            return done
-
-        fsm.If(done).goto_next()
-        return 0
+        return bus.dma_write(fsm, self, local_addr, global_addr, size, port)
 
     def lock(self, fsm):
         if self.mutex is None:
@@ -428,34 +409,90 @@ class AXIM(axi.AxiMaster):
     __intrinsics__ = ('dma_read', 'dma_write',
                       'lock', 'try_lock', 'unlock')
 
+    burstlen = 256
+
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32):
         axi.AxiMaster.__init__(self, m, name, clk, rst, datawidth, addrwidth)
         self.mutex = None
 
-    def dma_read(self, fsm, ram, local_addr, global_addr, size, port=0, nonblocking=False):
+    def dma_read(self, fsm, ram, local_addr, global_addr, size, port=0):
+        if not isinstance(ram, RAM):
+            raise TypeError('RAM is required')
+
+        req_local_addr = self.m.TmpReg(ram.addrwidth, initval=0)
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
+        req_size = self.m.TmpReg(self.addrwidth, initval=0)
+        rest_size = self.m.TmpReg(self.addrwidth, initval=0)
+
+        fsm(
+            req_local_addr(local_addr),
+            req_global_addr(global_addr),
+            rest_size(size)
+        )
+        fsm.goto_next()
+
+        check_state = fsm.current
+        fsm.If(rest_size <= self.burstlen)(
+            req_size(rest_size),
+            rest_size(0)
+        ).Else(
+            req_size(self.burstlen),
+            rest_size(rest_size - self.burstlen)
+        )
+        fsm.goto_next()
+
         cond = fsm.state == fsm.current
 
-        done = axi.AxiMaster.dma_read(self, ram, global_addr, local_addr, size,
+        done = axi.AxiMaster.dma_read(self, ram, req_global_addr, req_local_addr, req_size,
                                       cond=cond, ram_port=port)
 
-        if nonblocking:
-            fsm.goto_next()
-            return done
+        fsm.If(done)(
+            req_local_addr.add(req_size),
+            req_global_addr.add(req_size * (self.datawidth // 8))
+        )
+        fsm.If(done, rest_size > 0).goto(check_state)
+        fsm.If(done, rest_size == 0).goto_next()
 
-        fsm.If(done).goto_next()
         return 0
 
-    def dma_write(self, fsm, ram, local_addr, global_addr, size, port=0, nonblocking=False):
+    def dma_write(self, fsm, ram, local_addr, global_addr, size, port=0):
+        if not isinstance(ram, RAM):
+            raise TypeError('RAM is required')
+
+        req_local_addr = self.m.TmpReg(ram.addrwidth, initval=0)
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
+        req_size = self.m.TmpReg(self.addrwidth, initval=0)
+        rest_size = self.m.TmpReg(self.addrwidth, initval=0)
+
+        fsm(
+            req_local_addr(local_addr),
+            req_global_addr(global_addr),
+            rest_size(size)
+        )
+        fsm.goto_next()
+
+        check_state = fsm.current
+        fsm.If(rest_size <= self.burstlen)(
+            req_size(rest_size),
+            rest_size(0)
+        ).Else(
+            req_size(self.burstlen),
+            rest_size(rest_size - self.burstlen)
+        )
+        fsm.goto_next()
+
         cond = fsm.state == fsm.current
 
-        done = axi.AxiMaster.dma_write(self, ram, global_addr, local_addr, size,
+        done = axi.AxiMaster.dma_write(self, ram, req_global_addr, req_local_addr, req_size,
                                        cond=cond, ram_port=port)
 
-        if nonblocking:
-            fsm.goto_next()
-            return done
+        fsm.If(done)(
+            req_local_addr.add(req_size),
+            req_global_addr.add(req_size * (self.datawidth // 8))
+        )
+        fsm.If(done, rest_size > 0).goto(check_state)
+        fsm.If(done, rest_size == 0).goto_next()
 
-        fsm.If(done).goto_next()
         return 0
 
     def lock(self, fsm):

@@ -20,61 +20,63 @@ def mkLed():
     datawidth = 32
     addrwidth = 10
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
-    myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth, axi=myaxi)
+    myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth)
 
-    def blink(size):
-        for i in range(4):
-            print('# iter %d start' % i)
-            offset = i * 1024 * 16
-            body(size, offset)
-            print('# iter %d end' % i)
-        print('# finish')
+    def blink():
+        size = 256 * 2
+        offset = 1024 * 4
 
-    def body(size, offset):
         # write
         for i in range(size):
-            wdata = i + 100
+            wdata = i
             myram.write(i, wdata)
-            print('wdata = %d' % wdata)
 
         laddr = 0
         gaddr = offset
-        myram.dma_write(laddr, gaddr, size)
+        myram.dma_write(myaxi, laddr, gaddr, size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
-        # write
+        # overwrite
         for i in range(size):
-            wdata = 1000 + i
+            wdata = 128
             myram.write(i, wdata)
-            print('wdata = %d' % wdata)
 
         laddr = 0
-        gaddr = (size + size) * 4 + offset
-        myram.dma_write(laddr, gaddr, size)
+        gaddr = offset + size * 4
+        myram.dma_write(myaxi, laddr, gaddr, size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # read
+        all_ok = True
+
         laddr = 0
         gaddr = offset
-        myram.dma_read(laddr, gaddr, size)
+        myram.dma_read(myaxi, laddr, gaddr, size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
             rdata = myram.read(i)
-            print('rdata = %d' % rdata)
+            if rdata != i:
+                print('rdata[%d] = %d' % (i, rdata))
+                all_ok = False
 
         # read
         laddr = 0
-        gaddr = (size + size) * 4 + offset
-        myram.dma_read(laddr, gaddr, size)
+        gaddr = offset + size * 4
+        myram.dma_read(myaxi, laddr, gaddr, size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
             rdata = myram.read(i)
-            print('rdata = %d' % rdata)
+            if rdata != 128:
+                print('rdata[%d] = %d' % (i, rdata))
+                all_ok = False
+
+        if all_ok:
+            print('ALL OK')
 
     th = vthread.Thread(m, clk, rst, 'th_blink', blink)
-    fsm = th.start(16)
+    fsm = th.start()
 
     return m
 
@@ -104,7 +106,7 @@ def mkTest():
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
     init.add(
-        Delay(100000),
+        Delay(200000),
         Systask('finish'),
     )
 

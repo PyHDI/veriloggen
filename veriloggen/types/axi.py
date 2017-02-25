@@ -198,7 +198,7 @@ class AxiMaster(object):
         ack = vtypes.Ors(self.waddr.awready, vtypes.Not(self.waddr.awvalid))
 
         if counter is None:
-            counter = self.m.TmpReg(self.burst_size_width, initval=0)
+            counter = self.m.TmpReg(self.burst_size_width + 1, initval=0)
 
         self.write_counters.append(counter)
 
@@ -360,7 +360,7 @@ class AxiMaster(object):
         ack = vtypes.Ors(self.raddr.arready, vtypes.Not(self.raddr.arvalid))
 
         if counter is None:
-            counter = self.m.TmpReg(self.burst_size_width, initval=0)
+            counter = self.m.TmpReg(self.burst_size_width + 1, initval=0)
 
         self.read_counters.append(counter)
 
@@ -563,7 +563,7 @@ class AxiSlave(object):
             raise TypeError("counter must be Reg or None.")
 
         if counter is None:
-            counter = self.m.TmpReg(self.burst_size_width, initval=0)
+            counter = self.m.TmpReg(self.burst_size_width + 1, initval=0)
 
         self.write_counters.append(counter)
 
@@ -700,7 +700,7 @@ class AxiSlave(object):
             raise TypeError("counter must be Reg or None.")
 
         if counter is None:
-            counter = self.m.TmpReg(self.burst_size_width, initval=0)
+            counter = self.m.TmpReg(self.burst_size_width + 1, initval=0)
 
         self.read_counters.append(counter)
 

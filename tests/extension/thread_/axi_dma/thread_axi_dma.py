@@ -22,20 +22,25 @@ def mkLed():
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
     myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth)
 
+    all_ok = m.TmpReg(initval=0)
+
     def blink(size):
+        all_ok.value = True
+
         for i in range(4):
             print('# iter %d start' % i)
             offset = i * 1024 * 16
             body(size, offset)
             print('# iter %d end' % i)
-        print('# finish')
+
+        if all_ok:
+            print('ALL OK')
 
     def body(size, offset):
         # write
         for i in range(size):
             wdata = i + 100
             myram.write(i, wdata)
-            print('wdata = %d' % wdata)
 
         laddr = 0
         gaddr = offset
@@ -44,9 +49,8 @@ def mkLed():
 
         # write
         for i in range(size):
-            wdata = 1000 + i
+            wdata = i + 1000
             myram.write(i, wdata)
-            print('wdata = %d' % wdata)
 
         laddr = 0
         gaddr = (size + size) * 4 + offset
@@ -61,7 +65,9 @@ def mkLed():
 
         for i in range(size):
             rdata = myram.read(i)
-            print('rdata = %d' % rdata)
+            if rdata != i + 100:
+                print('rdata[%d] = %d' % (i, rdata))
+                all_ok.value = False
 
         # read
         laddr = 0
@@ -71,7 +77,9 @@ def mkLed():
 
         for i in range(size):
             rdata = myram.read(i)
-            print('rdata = %d' % rdata)
+            if rdata != i + 1000:
+                print('rdata[%d] = %d' % (i, rdata))
+                all_ok.value = False
 
     th = vthread.Thread(m, clk, rst, 'th_blink', blink)
     fsm = th.start(16)
