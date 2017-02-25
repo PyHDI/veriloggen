@@ -59,7 +59,7 @@ def mkMain():
         sum.add(myaxi.wdata.wdata)
     )
     seq.Then().If(myaxi.wdata.wlast).Delay(1)(
-        Systask('display', "sum=%d expected_sum=%d", sum, expected_sum)
+        Systask('display', "current_sum=%d expected_sum=%d", sum, expected_sum)
     )
 
     return m

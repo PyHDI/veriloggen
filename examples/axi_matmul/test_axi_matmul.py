@@ -460,14 +460,14 @@ module main
   reg [32-1:0] write_fsm;
   localparam write_fsm_init = 0;
   reg [32-1:0] row_count;
-  reg [8-1:0] _tmp_0;
+  reg [9-1:0] _tmp_0;
   reg [32-1:0] _tmp_1;
   reg _tmp_2;
   assign slave_awready = (read_fsm == 1) && !_tmp_2;
   assign slave_wready = read_fsm == 2;
   reg [32-1:0] _tmp_fsm_0;
   localparam _tmp_fsm_0_init = 0;
-  reg [8-1:0] _tmp_3;
+  reg [9-1:0] _tmp_3;
   reg _master_cond_0_1;
   wire _tmp_4;
   wire _tmp_5;
@@ -483,7 +483,7 @@ module main
   reg _ram_b_cond_0_1;
   reg [32-1:0] _tmp_fsm_1;
   localparam _tmp_fsm_1_init = 0;
-  reg [8-1:0] _tmp_9;
+  reg [9-1:0] _tmp_9;
   reg _master_cond_1_1;
   wire _tmp_10;
   wire _tmp_11;
@@ -545,7 +545,7 @@ module main
   reg _ram_c_cond_0_1;
   reg [32-1:0] _tmp_fsm_2;
   localparam _tmp_fsm_2_init = 0;
-  reg [8-1:0] _tmp_43;
+  reg [9-1:0] _tmp_43;
   reg _master_cond_2_1;
   reg _tmp_44;
   reg _tmp_45;

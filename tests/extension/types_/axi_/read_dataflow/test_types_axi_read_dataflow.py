@@ -201,7 +201,7 @@ module main
 
   reg [32-1:0] req_fsm;
   localparam req_fsm_init = 0;
-  reg [8-1:0] _tmp_0;
+  reg [9-1:0] _tmp_0;
   reg _myaxi_cond_0_1;
   wire _tmp_1;
   wire _tmp_2;

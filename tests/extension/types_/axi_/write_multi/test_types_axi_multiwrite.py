@@ -194,9 +194,9 @@ module main
   assign myaxi_rready = 0;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
-  reg [8-1:0] _tmp_0;
+  reg [9-1:0] _tmp_0;
   reg _myaxi_cond_0_1;
-  reg [8-1:0] _tmp_1;
+  reg [9-1:0] _tmp_1;
   reg _myaxi_cond_1_1;
   reg [32-1:0] wdata;
   reg _tmp_2;

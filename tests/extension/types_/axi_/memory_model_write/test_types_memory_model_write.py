@@ -433,12 +433,12 @@ module main
   assign myaxi_rready = 0;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
-  reg [8-1:0] _tmp_0;
+  reg [9-1:0] _tmp_0;
   reg _myaxi_cond_0_1;
   reg [32-1:0] wdata;
   reg _tmp_1;
   reg _myaxi_cond_1_1;
-  reg [8-1:0] _tmp_2;
+  reg [9-1:0] _tmp_2;
   reg _myaxi_cond_2_1;
   reg _tmp_3;
   reg _myaxi_cond_3_1;
@@ -596,7 +596,7 @@ module main
       _seq_cond_0_1 <= 0;
     end else begin
       if(_seq_cond_0_1) begin
-        $display("sum=%d expected_sum=%d", sum, 8128);
+        $display("current_sum=%d expected_sum=%d", sum, 8128);
       end 
       if(myaxi_wvalid && myaxi_wready) begin
         sum <= sum + myaxi_wdata;

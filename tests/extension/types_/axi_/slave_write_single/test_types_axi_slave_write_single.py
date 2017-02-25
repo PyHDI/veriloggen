@@ -183,7 +183,7 @@ module main
   assign myaxi_arready = 0;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
-  reg [8-1:0] _tmp_0;
+  reg [9-1:0] _tmp_0;
   reg [32-1:0] _tmp_1;
   reg _tmp_2;
   assign myaxi_awready = (fsm == 0) && !_tmp_2;
