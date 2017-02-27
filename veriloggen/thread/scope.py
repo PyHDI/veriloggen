@@ -95,7 +95,7 @@ class ScopeFrameList(object):
         is_global = False
         while targ is not None:
             ret = targ.searchVariable(name)
-            if ret:
+            if ret is not None:
                 return ret
             if targ.ftype == 'call':
                 ret = targ.searchNonlocal(name)
