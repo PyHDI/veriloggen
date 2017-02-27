@@ -10,8 +10,14 @@ import veriloggen.types.axi as axi
 from veriloggen.seq.seq import Seq
 
 
+def Lock(m, name, clk, rst, width=32):
+    """ alias of Mutex class """
+    return Mutex(m, name, clk, rst, width)
+
+
 class Mutex(object):
-    __intrinsics__ = ('lock', 'try_lock', 'unlock')
+    __intrinsics__ = ('lock', 'try_lock', 'unlock',
+                      'acquire', 'release')
 
     def __init__(self, m, name, clk, rst, width=32):
 
@@ -104,12 +110,77 @@ class Mutex(object):
 
         fsm.goto_next()
 
+        return 0
+
     def _get_id(self, name):
         if name not in self.id_map:
             self.id_map[name] = self.id_map_count
             self.id_map_count += 1
 
         return self.id_map[name]
+
+    def acquire(self, fsm, blocking=True):
+        """ alias of lock() """
+
+        if not isinstance(blocking, (bool, int)):
+            raise TypeError('blocking argument must be bool')
+
+        if blocking:
+            return self.lock(fsm)
+
+        return self.try_lock(fsm)
+
+    def release(self, fsm):
+        """ alias of unlock() """
+
+        return self.unlock(fsm)
+
+
+class Barrier(object):
+    __intrinsics__ = ('wait', )
+
+    def __init__(self, m, name, clk, rst, numparties):
+
+        self.m = m
+        self.name = name
+        self.clk = clk
+        self.rst = rst
+        self.numparties = numparties
+        self.width = int(math.ceil(math.log(self.numparties, 2))) + 1
+
+        self.seq = Seq(self.m, self.name, self.clk, self.rst)
+
+        self.count = self.m.Reg(
+            '_'.join(['', self.name, 'barrier_count']), self.width, initval=0)
+        self.done = self.m.Reg(
+            '_'.join(['', self.name, 'barrier_done']), initval=0)
+        self.mutex = Mutex(self.m, '_'.join(
+            ['', self.name, 'barrier_mutex']), self.clk, self.rst)
+
+        # reset condition
+        self.seq(
+            self.done(0)
+        )
+        self.seq.If(self.count == self.numparties)(
+            self.count(0),
+            self.done(1)
+        )
+
+    def wait(self, fsm):
+
+        self.mutex.lock(fsm)
+
+        state_cond = fsm.state == fsm.current
+        self.seq.If(state_cond)(
+            self.count.inc()
+        )
+        fsm.goto_next()
+
+        self.mutex.unlock(fsm)
+
+        fsm.If(self.done).goto_next()
+
+        return 0
 
 
 class Shared(object):
