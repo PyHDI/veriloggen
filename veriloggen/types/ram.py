@@ -15,7 +15,7 @@ class RAMInterface(object):
 
     def __init__(self, m, name=None, datawidth=32, addrwidth=10, itype=None, otype=None,
                  p_addr='addr', p_rdata='rdata', p_wdata='wdata', p_wenable='wenable',
-                 index=None):
+                 p_enable='enable', index=None, with_enable=False):
 
         if itype is None:
             itype = self._I
@@ -27,25 +27,40 @@ class RAMInterface(object):
         name_addr = p_addr if name is None else '_'.join([name, p_addr])
         name_rdata = p_rdata if name is None else '_'.join([name, p_rdata])
         name_wdata = p_wdata if name is None else '_'.join([name, p_wdata])
-        name_wenable = p_wenable if name is None else '_'.join(
-            [name, p_wenable])
+        name_wenable = (
+            p_wenable if name is None else '_'.join([name, p_wenable]))
+        if with_enable:
+            name_enable = (
+                p_enable if name is None else '_'.join([name, p_enable]))
 
         if index is not None:
             name_addr = name_addr + str(index)
             name_rdata = name_rdata + str(index)
             name_wdata = name_wdata + str(index)
             name_wenable = name_wenable + str(index)
+            if with_enable:
+                name_enable = name_enable + str(index)
 
         self.addr = util.make_port(m, itype, name_addr, addrwidth, initval=0)
         self.rdata = util.make_port(m, otype, name_rdata, datawidth, initval=0)
         self.wdata = util.make_port(m, itype, name_wdata, datawidth, initval=0)
         self.wenable = util.make_port(m, itype, name_wenable, initval=0)
+        if with_enable:
+            self.enable = util.make_port(m, itype, name_enable, initval=0)
 
     def connect(self, targ):
         util.connect_port(self.addr, targ.addr)
         util.connect_port(targ.rdata, self.rdata)
         util.connect_port(self.wdata, targ.wdata)
         util.connect_port(self.wenable, targ.wenable)
+        if hasattr(self, 'enable'):
+            if hasattr(targ, 'enable'):
+                util.connect_port(self.enable, targ.enable)
+            else:
+                util.connect_port(self.enable, 1)
+        else:
+            if hasattr(targ, 'enable'):
+                raise ValueError('no enable port')
 
 
 class RAMSlaveInterface(RAMInterface):
@@ -58,7 +73,7 @@ class RAMMasterInterface(RAMInterface):
     _O = 'Input'
 
 
-def mkRAMDefinition(name, datawidth=32, addrwidth=10, numports=2, sync=True):
+def mkRAMDefinition(name, datawidth=32, addrwidth=10, numports=2, sync=True, with_enable=False):
     m = Module(name)
     clk = m.Input('CLK')
 
@@ -66,18 +81,22 @@ def mkRAMDefinition(name, datawidth=32, addrwidth=10, numports=2, sync=True):
 
     for i in range(numports):
         interface = RAMSlaveInterface(
-            m, name + '_%d' % i, datawidth, addrwidth)
+            m, name + '_%d' % i, datawidth, addrwidth, with_enable=with_enable)
         interface.delay_addr = m.Reg(name + '_%d_daddr' % i, addrwidth)
         interfaces.append(interface)
 
     mem = m.Reg('mem', datawidth, length=2**addrwidth)
 
     for interface in interfaces:
-        m.Always(vtypes.Posedge(clk))(
+        body = [
             vtypes.If(interface.wenable)(
                 mem[interface.addr](interface.wdata)
             ),
-            interface.delay_addr(interface.addr)
+            interface.delay_addr(interface.addr)]
+        if with_enable:
+            body = vtypes.If(interface.enable)(*body)
+        m.Always(vtypes.Posedge(clk))(
+            body
         )
         if sync:
             m.Assign(interface.rdata(mem[interface.delay_addr]))
@@ -90,17 +109,17 @@ def mkRAMDefinition(name, datawidth=32, addrwidth=10, numports=2, sync=True):
 class _RAM(object):
 
     def __init__(self, m, name, clk,
-                 datawidth=32, addrwidth=10, numports=1, sync=True):
+                 datawidth=32, addrwidth=10, numports=1, sync=True, with_enable=False):
 
         self.m = m
         self.name = name
         self.clk = clk
 
         self.interfaces = [RAMInterface(m, name + '_%d' % i, datawidth, addrwidth,
-                                        itype='Wire', otype='Wire')
+                                        itype='Wire', otype='Wire', with_enable=with_enable)
                            for i in range(numports)]
 
-        ram_def = mkRAMDefinition(name, datawidth, addrwidth, numports, sync)
+        ram_def = mkRAMDefinition(name, datawidth, addrwidth, numports, sync, with_enable)
 
         self.m.Instance(ram_def, name,
                         params=(), ports=m.connect_ports(ram_def))
@@ -117,15 +136,15 @@ class _RAM(object):
 class SyncRAM(_RAM):
 
     def __init__(self, m, name, clk,
-                 datawidth=32, addrwidth=10, numports=1):
+                 datawidth=32, addrwidth=10, numports=1, with_enable=False):
         _RAM.__init__(self, m, name, clk,
-                      datawidth, addrwidth, numports, sync=True)
+                      datawidth, addrwidth, numports, sync=True, with_enable=with_enable)
 
 
 class AsyncRAM(_RAM):
 
     def __init__(self, m, name, clk,
-                 datawidth=32, addrwidth=10, numports=1):
+                 datawidth=32, addrwidth=10, numports=1, with_enable=False):
         _RAM.__init__(self, m, name, clk,
                       datawidth, addrwidth, numports, sync=False)
 
