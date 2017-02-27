@@ -13,9 +13,12 @@ class RAMInterface(object):
     _I = 'Reg'
     _O = 'Wire'
 
-    def __init__(self, m, name=None, datawidth=32, addrwidth=10, itype=None, otype=None,
-                 p_addr='addr', p_rdata='rdata', p_wdata='wdata', p_wenable='wenable',
-                 p_enable='enable', index=None, with_enable=False):
+    def __init__(self, m, name=None, datawidth=32, addrwidth=10,
+                 itype=None, otype=None,
+                 p_addr='addr', p_rdata='rdata',
+                 p_wdata='wdata', p_wenable='wenable',
+                 p_enable='enable',
+                 with_enable=False, index=None):
 
         if itype is None:
             itype = self._I
@@ -83,6 +86,7 @@ def mkRAMDefinition(name, datawidth=32, addrwidth=10, numports=2, sync=True, wit
         interface = RAMSlaveInterface(
             m, name + '_%d' % i, datawidth, addrwidth, with_enable=with_enable)
         interface.delay_addr = m.Reg(name + '_%d_daddr' % i, addrwidth)
+
         interfaces.append(interface)
 
     mem = m.Reg('mem', datawidth, length=2**addrwidth)
@@ -93,11 +97,14 @@ def mkRAMDefinition(name, datawidth=32, addrwidth=10, numports=2, sync=True, wit
                 mem[interface.addr](interface.wdata)
             ),
             interface.delay_addr(interface.addr)]
+
         if with_enable:
             body = vtypes.If(interface.enable)(*body)
+
         m.Always(vtypes.Posedge(clk))(
             body
         )
+
         if sync:
             m.Assign(interface.rdata(mem[interface.delay_addr]))
         else:
@@ -114,6 +121,7 @@ class _RAM(object):
         self.m = m
         self.name = name
         self.clk = clk
+        self.with_enable = with_enable
 
         self.interfaces = [RAMInterface(m, name + '_%d' % i, datawidth, addrwidth,
                                         itype='Wire', otype='Wire', with_enable=with_enable)
@@ -125,10 +133,12 @@ class _RAM(object):
         self.m.Instance(ram_def, name,
                         params=(), ports=m.connect_ports(ram_def))
 
-    def connect(self, port, addr, wdata, wenable):
+    def connect(self, port, addr, wdata, wenable, enable=None):
         self.m.Assign(self.interfaces[port].addr(addr))
         self.m.Assign(self.interfaces[port].wdata(wdata))
         self.m.Assign(self.interfaces[port].wenable(wenable))
+        if self.with_enable:
+            self.m.Assign(self.interfaces[port].enable(enable))
 
     def rdata(self, port):
         return self.interfaces[port].rdata
@@ -153,8 +163,9 @@ class AsyncRAM(_RAM):
 #-------------------------------------------------------------------------
 class SyncRAMManager (object):
 
-    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=10, numports=1,
-                 with_enable=False, nodataflow=False):
+    def __init__(self, m, name, clk, rst,
+                 datawidth=32, addrwidth=10, numports=1,
+                 nodataflow=False):
 
         self.m = m
         self.name = name
@@ -162,13 +173,12 @@ class SyncRAMManager (object):
         self.rst = rst
         self.datawidth = datawidth
         self.addrwidth = addrwidth
-        self.with_enable = with_enable
-        self.interfaces = [RAMInterface(m, name + '_%d' % i, datawidth, addrwidth,
-                                        with_enable=with_enable)
+
+        self.interfaces = [RAMInterface(m, name + '_%d' % i, datawidth, addrwidth)
                            for i in range(numports)]
 
-        self.definition = mkRAMDefinition(
-            name, datawidth, addrwidth, numports, with_enable=with_enable)
+        self.definition = mkRAMDefinition(name, datawidth, addrwidth, numports)
+
         self.inst = self.m.Instance(self.definition, 'inst_' + name,
                                     ports=m.connect_ports(self.definition))
 
@@ -202,24 +212,14 @@ class SyncRAMManager (object):
         if cond is not None:
             self.seq.If(cond)
 
-        body = [self.interfaces[port].addr(addr),
-                self.interfaces[port].wdata(wdata),
-                self.interfaces[port].wenable(1)]
-
-        if self.with_enable:
-            body.append(self.interfaces[port].enable(1))
-
         self.seq(
-            *body
+            self.interfaces[port].addr(addr),
+            self.interfaces[port].wdata(wdata),
+            self.interfaces[port].wenable(1)
         )
 
-        body = [self.interfaces[port].wenable(0)]
-
-        if self.with_enable:
-            body.append(self.interfaces[port].enable(0))
-
         self.seq.Then().Delay(1)(
-            *body
+            self.interfaces[port].wenable(0)
         )
 
     def write_dataflow(self, port, addr, data, length=1, cond=None, when=None):
@@ -247,17 +247,11 @@ class SyncRAMManager (object):
             counter(length),
         )
 
-        body = [self.interfaces[port].addr.inc(),
-                self.interfaces[port].wdata(raw_data),
-                self.interfaces[port].wenable(1)]
-
-        if self.with_enable:
-            body.append(self.interfaces[port].enable(1))
-
-        body.append(counter.dec())
-
         self.seq.If(make_condition(raw_valid, counter > 0))(
-            *body
+            self.interfaces[port].addr.inc(),
+            self.interfaces[port].wdata(raw_data),
+            self.interfaces[port].wenable(1),
+            counter.dec()
         )
 
         self.seq.If(make_condition(raw_valid, counter == 1))(
@@ -265,15 +259,9 @@ class SyncRAMManager (object):
         )
 
         # de-assert
-        body = [self.interfaces[port].wenable(0)]
-
-        if self.with_enable:
-            body.append(self.interfaces[port].enable(0))
-
-        body.append(last(0))
-
         self.seq.Delay(1)(
-            *body
+            self.interfaces[port].wenable(0),
+            last(0)
         )
 
         done = last
@@ -288,25 +276,16 @@ class SyncRAMManager (object):
         if cond is not None:
             self.seq.If(cond)
 
-        body = [self.interfaces[port].addr(addr)]
-
-        if self.with_enable:
-            body.append(self.interfaces[port].enable(1))
-
         self.seq(
-            *body
+            self.interfaces[port].addr(addr)
         )
 
         rdata = self.interfaces[port].rdata
         rvalid = self.m.TmpReg(initval=0)
+
         self.seq.Then().Delay(1)(
             rvalid(1)
         )
-
-        if self.with_enable:
-            self.seq.Then().Delay(1)(
-                self.interfaces[port].enable(0)
-            )
 
         self.seq.Then().Delay(2)(
             rvalid(0)
@@ -331,18 +310,14 @@ class SyncRAMManager (object):
 
         ext_cond = make_condition(cond)
         data_cond = make_condition(data_ack, last_ack)
-        if not self.with_enable:
-            prev_data_cond = self.seq.Prev(data_cond, 1)
+        prev_data_cond = self.seq.Prev(data_cond, 1)
         all_cond = make_condition(data_cond, ext_cond)
 
         data = self.m.TmpWireLike(self.interfaces[port].rdata)
-        if not self.with_enable:
-            prev_data = self.seq.Prev(data, 1)
-            data.assign(vtypes.Mux(prev_data_cond,
-                                   self.interfaces[port].rdata, prev_data))
-        else:
-            self.interfaces[port].rdata.assign(data_cond)
-            data.assign(self.interfaces[port].rdata)
+
+        prev_data = self.seq.Prev(data, 1)
+        data.assign(vtypes.Mux(prev_data_cond,
+                               self.interfaces[port].rdata, prev_data))
 
         counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
 
@@ -358,6 +333,7 @@ class SyncRAMManager (object):
             last_valid(0),
             next_valid_off(0)
         )
+
         self.seq.If(make_condition(data_cond, next_valid_on))(
             data_valid(1),
             last_valid(1),
@@ -366,18 +342,21 @@ class SyncRAMManager (object):
             next_valid_on(0),
             next_valid_off(1)
         )
+
         self.seq.If(make_condition(ext_cond, counter == 0,
                                    vtypes.Not(next_last), vtypes.Not(last)))(
             self.interfaces[port].addr(addr),
             counter(length - 1),
             next_valid_on(1),
         )
+
         self.seq.If(make_condition(data_cond, counter > 0))(
             self.interfaces[port].addr.inc(),
             counter.dec(),
             next_valid_on(1),
             next_last(0)
         )
+
         self.seq.If(make_condition(data_cond, counter == 1))(
             next_last(1)
         )
