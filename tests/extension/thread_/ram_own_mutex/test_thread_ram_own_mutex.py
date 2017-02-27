@@ -1542,56 +1542,56 @@ module blinkled
       __myram_mutex_lock_reg <= 0;
       __myram_mutex_lock_id <= 0;
     end else begin
-      if((th_myfunc_0 == 2) && (!__myram_mutex_lock_reg || (__myram_mutex_lock_id == 0))) begin
+      if((th_myfunc_0 == 2) && !__myram_mutex_lock_reg) begin
         __myram_mutex_lock_reg <= 1;
         __myram_mutex_lock_id <= 0;
       end 
       if((th_myfunc_0 == 13) && (__myram_mutex_lock_id == 0)) begin
         __myram_mutex_lock_reg <= 0;
       end 
-      if((th_myfunc_1 == 2) && (!__myram_mutex_lock_reg || (__myram_mutex_lock_id == 1))) begin
+      if((th_myfunc_1 == 2) && !__myram_mutex_lock_reg) begin
         __myram_mutex_lock_reg <= 1;
         __myram_mutex_lock_id <= 1;
       end 
       if((th_myfunc_1 == 13) && (__myram_mutex_lock_id == 1)) begin
         __myram_mutex_lock_reg <= 0;
       end 
-      if((th_myfunc_2 == 2) && (!__myram_mutex_lock_reg || (__myram_mutex_lock_id == 2))) begin
+      if((th_myfunc_2 == 2) && !__myram_mutex_lock_reg) begin
         __myram_mutex_lock_reg <= 1;
         __myram_mutex_lock_id <= 2;
       end 
       if((th_myfunc_2 == 13) && (__myram_mutex_lock_id == 2)) begin
         __myram_mutex_lock_reg <= 0;
       end 
-      if((th_myfunc_3 == 2) && (!__myram_mutex_lock_reg || (__myram_mutex_lock_id == 3))) begin
+      if((th_myfunc_3 == 2) && !__myram_mutex_lock_reg) begin
         __myram_mutex_lock_reg <= 1;
         __myram_mutex_lock_id <= 3;
       end 
       if((th_myfunc_3 == 13) && (__myram_mutex_lock_id == 3)) begin
         __myram_mutex_lock_reg <= 0;
       end 
-      if((th_myfunc_4 == 2) && (!__myram_mutex_lock_reg || (__myram_mutex_lock_id == 4))) begin
+      if((th_myfunc_4 == 2) && !__myram_mutex_lock_reg) begin
         __myram_mutex_lock_reg <= 1;
         __myram_mutex_lock_id <= 4;
       end 
       if((th_myfunc_4 == 13) && (__myram_mutex_lock_id == 4)) begin
         __myram_mutex_lock_reg <= 0;
       end 
-      if((th_myfunc_5 == 2) && (!__myram_mutex_lock_reg || (__myram_mutex_lock_id == 5))) begin
+      if((th_myfunc_5 == 2) && !__myram_mutex_lock_reg) begin
         __myram_mutex_lock_reg <= 1;
         __myram_mutex_lock_id <= 5;
       end 
       if((th_myfunc_5 == 13) && (__myram_mutex_lock_id == 5)) begin
         __myram_mutex_lock_reg <= 0;
       end 
-      if((th_myfunc_6 == 2) && (!__myram_mutex_lock_reg || (__myram_mutex_lock_id == 6))) begin
+      if((th_myfunc_6 == 2) && !__myram_mutex_lock_reg) begin
         __myram_mutex_lock_reg <= 1;
         __myram_mutex_lock_id <= 6;
       end 
       if((th_myfunc_6 == 13) && (__myram_mutex_lock_id == 6)) begin
         __myram_mutex_lock_reg <= 0;
       end 
-      if((th_myfunc_7 == 2) && (!__myram_mutex_lock_reg || (__myram_mutex_lock_id == 7))) begin
+      if((th_myfunc_7 == 2) && !__myram_mutex_lock_reg) begin
         __myram_mutex_lock_reg <= 1;
         __myram_mutex_lock_id <= 7;
       end 

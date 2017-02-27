@@ -2262,56 +2262,56 @@ module blinkled
       __myfifo_mutex_lock_reg <= 0;
       __myfifo_mutex_lock_id <= 0;
     end else begin
-      if((th_myfunc_0 == 2) && (!__myfifo_mutex_lock_reg || (__myfifo_mutex_lock_id == 0))) begin
+      if((th_myfunc_0 == 2) && !__myfifo_mutex_lock_reg) begin
         __myfifo_mutex_lock_reg <= 1;
         __myfifo_mutex_lock_id <= 0;
       end 
       if((th_myfunc_0 == 21) && (__myfifo_mutex_lock_id == 0)) begin
         __myfifo_mutex_lock_reg <= 0;
       end 
-      if((th_myfunc_1 == 2) && (!__myfifo_mutex_lock_reg || (__myfifo_mutex_lock_id == 1))) begin
+      if((th_myfunc_1 == 2) && !__myfifo_mutex_lock_reg) begin
         __myfifo_mutex_lock_reg <= 1;
         __myfifo_mutex_lock_id <= 1;
       end 
       if((th_myfunc_1 == 21) && (__myfifo_mutex_lock_id == 1)) begin
         __myfifo_mutex_lock_reg <= 0;
       end 
-      if((th_myfunc_2 == 2) && (!__myfifo_mutex_lock_reg || (__myfifo_mutex_lock_id == 2))) begin
+      if((th_myfunc_2 == 2) && !__myfifo_mutex_lock_reg) begin
         __myfifo_mutex_lock_reg <= 1;
         __myfifo_mutex_lock_id <= 2;
       end 
       if((th_myfunc_2 == 21) && (__myfifo_mutex_lock_id == 2)) begin
         __myfifo_mutex_lock_reg <= 0;
       end 
-      if((th_myfunc_3 == 2) && (!__myfifo_mutex_lock_reg || (__myfifo_mutex_lock_id == 3))) begin
+      if((th_myfunc_3 == 2) && !__myfifo_mutex_lock_reg) begin
         __myfifo_mutex_lock_reg <= 1;
         __myfifo_mutex_lock_id <= 3;
       end 
       if((th_myfunc_3 == 21) && (__myfifo_mutex_lock_id == 3)) begin
         __myfifo_mutex_lock_reg <= 0;
       end 
-      if((th_myfunc_4 == 2) && (!__myfifo_mutex_lock_reg || (__myfifo_mutex_lock_id == 4))) begin
+      if((th_myfunc_4 == 2) && !__myfifo_mutex_lock_reg) begin
         __myfifo_mutex_lock_reg <= 1;
         __myfifo_mutex_lock_id <= 4;
       end 
       if((th_myfunc_4 == 21) && (__myfifo_mutex_lock_id == 4)) begin
         __myfifo_mutex_lock_reg <= 0;
       end 
-      if((th_myfunc_5 == 2) && (!__myfifo_mutex_lock_reg || (__myfifo_mutex_lock_id == 5))) begin
+      if((th_myfunc_5 == 2) && !__myfifo_mutex_lock_reg) begin
         __myfifo_mutex_lock_reg <= 1;
         __myfifo_mutex_lock_id <= 5;
       end 
       if((th_myfunc_5 == 21) && (__myfifo_mutex_lock_id == 5)) begin
         __myfifo_mutex_lock_reg <= 0;
       end 
-      if((th_myfunc_6 == 2) && (!__myfifo_mutex_lock_reg || (__myfifo_mutex_lock_id == 6))) begin
+      if((th_myfunc_6 == 2) && !__myfifo_mutex_lock_reg) begin
         __myfifo_mutex_lock_reg <= 1;
         __myfifo_mutex_lock_id <= 6;
       end 
       if((th_myfunc_6 == 21) && (__myfifo_mutex_lock_id == 6)) begin
         __myfifo_mutex_lock_reg <= 0;
       end 
-      if((th_myfunc_7 == 2) && (!__myfifo_mutex_lock_reg || (__myfifo_mutex_lock_id == 7))) begin
+      if((th_myfunc_7 == 2) && !__myfifo_mutex_lock_reg) begin
         __myfifo_mutex_lock_reg <= 1;
         __myfifo_mutex_lock_id <= 7;
       end 

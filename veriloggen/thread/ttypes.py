@@ -40,16 +40,17 @@ class Mutex(object):
 
         # try
         try_state = fsm.current
-        cond = vtypes.Ors(vtypes.Not(self.lock_reg),
-                          self.lock_id == new_lock_id)
-        state_cond = fsm.state == fsm.current
 
-        self.seq.If(state_cond, cond)(
+        state_cond = fsm.state == fsm.current
+        try_cond = vtypes.Not(self.lock_reg)
+        fsm_cond = vtypes.Ors(try_cond, self.lock_id == new_lock_id)
+
+        self.seq.If(state_cond, try_cond)(
             self.lock_reg(1),
             self.lock_id(new_lock_id)
         )
 
-        fsm.If(cond).goto_next()
+        fsm.If(fsm_cond).goto_next()
 
         # verify
         cond = vtypes.Ands(self.lock_reg, self.lock_id == new_lock_id)
@@ -67,11 +68,11 @@ class Mutex(object):
 
         # try
         try_state = fsm.current
-        cond = vtypes.Or(vtypes.Not(self.lock_reg),
-                         self.lock_id == new_lock_id)
-        state_cond = fsm.state == fsm.current
 
-        self.seq.If(state_cond, cond)(
+        state_cond = fsm.state == fsm.current
+        try_cond = vtypes.Not(self.lock_reg)
+
+        self.seq.If(state_cond, try_cond)(
             self.lock_reg(1),
             self.lock_id(new_lock_id)
         )
