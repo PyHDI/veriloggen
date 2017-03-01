@@ -2467,7 +2467,7 @@ class Str(_Constant):
 
 
 #-------------------------------------------------------------------------
-def Counter(step=None, maxval=None, initval=0, reset=None, width=32, signed=False):
+def Counter(step=None, maxval=None, initval=0, enable=None, reset=None, width=32, signed=False):
     if step is None:
         step = 1
 
@@ -2483,7 +2483,8 @@ def Counter(step=None, maxval=None, initval=0, reset=None, width=32, signed=Fals
 
     if maxval is None:
         return Icustom(lambda a, b: a + b,
-                       step, initval=initval, reset=reset, width=width, signed=signed,
+                       step, initval=initval, enable=enable, reset=reset,
+                       width=width, signed=signed,
                        label='Counter')
 
     maxval = _to_constant(maxval)
@@ -2492,7 +2493,8 @@ def Counter(step=None, maxval=None, initval=0, reset=None, width=32, signed=Fals
     raw_maxval = maxval.value
 
     return Icustom(lambda a, b: vtypes.Mux(a >= raw_maxval - raw_step, raw_initval, a + b),
-                   step, initval=initval, reset=reset, width=width, signed=signed,
+                   step, initval=initval, enable=enable, reset=reset,
+                   width=width, signed=signed,
                    label='Counter')
 
 
