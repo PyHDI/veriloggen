@@ -61,6 +61,8 @@ module test;
     reset_done = 0;
     xdata = 0;
     xvalid = 0;
+    enabledata = 0;
+    enablevalid = 0;
     resetdata = 0;
     resetvalid = 0;
     zready = 0;

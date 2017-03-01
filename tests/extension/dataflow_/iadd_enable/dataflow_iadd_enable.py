@@ -64,6 +64,8 @@ def mkTest(numports=8):
     reset_stmt.append( reset_done(0) )
     reset_stmt.append( xdata(0) )
     reset_stmt.append( xvalid(0) )
+    reset_stmt.append( enabledata(0) )
+    reset_stmt.append( enablevalid(0) )
     reset_stmt.append( resetdata(0) )
     reset_stmt.append( resetvalid(0) )
     reset_stmt.append( zready(0) )
