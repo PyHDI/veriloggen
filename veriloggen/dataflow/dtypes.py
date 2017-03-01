@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+from functools import partial
 from collections import OrderedDict
 from math import log
 import veriloggen.core.vtypes as vtypes
@@ -2245,7 +2246,11 @@ class _Accumulator(_UnaryOperator):
         self.initval = _to_constant(
             initval) if initval is not None else _to_constant(0)
         self.enable = _to_constant(enable)
+        if self.enable is not None:
+            self.enable._add_sink(self)
         self.reset = _to_constant(reset)
+        if self.reset is not None:
+            self.reset._add_sink(self)
         if not isinstance(self.initval, _Constant):
             raise TypeError("initval must be Constant, not '%s'" %
                             str(type(self.initval)))
@@ -2258,7 +2263,8 @@ class _Accumulator(_UnaryOperator):
         self.point = self.right.get_point()
 
     def _set_managers(self):
-        self._set_df(_get_df(self.right, self.initval, self.enable, self.reset))
+        self._set_df(_get_df(self.right, self.initval,
+                             self.enable, self.reset))
         self._set_module(getattr(self.df, 'module', None))
         self._set_seq(getattr(self.df, 'seq', None))
 
@@ -2324,7 +2330,7 @@ class _Accumulator(_UnaryOperator):
         # for Ireg
         if not self.ops:
             value = rdata
-            
+
         if self.reset is not None:
             reset_value = initval_data
             for op in self.ops:
@@ -2363,7 +2369,8 @@ class Ireg(_Accumulator):
     ops = ()
 
     def __init__(self, right, initval=0, enable=None, reset=None, width=32, signed=False):
-        _Accumulator.__init__(self, right, initval, enable, reset, width, signed)
+        _Accumulator.__init__(self, right, initval,
+                              enable, reset, width, signed)
         self.label = 'reg'
 
 
@@ -2371,14 +2378,16 @@ class Iadd(_Accumulator):
     ops = (vtypes.Plus, )
 
     def __init__(self, right, initval=0, enable=None, reset=None, width=32, signed=False):
-        _Accumulator.__init__(self, right, initval, enable, reset, width, signed)
+        _Accumulator.__init__(self, right, initval,
+                              enable, reset, width, signed)
 
 
 class Isub(_Accumulator):
     ops = (vtypes.Minus, )
 
     def __init__(self, right, initval=0, enable=None, reset=None, width=32, signed=False):
-        _Accumulator.__init__(self, right, initval, enable, reset, width, signed)
+        _Accumulator.__init__(self, right, initval,
+                              enable, reset, width, signed)
 
 
 class Imul(_Accumulator):
@@ -2387,7 +2396,8 @@ class Imul(_Accumulator):
     ops = (vtypes.Times, )
 
     def __init__(self, right, initval=1, enable=None, reset=None, width=32, signed=False):
-        _Accumulator.__init__(self, right, initval, enable, reset, width, signed)
+        _Accumulator.__init__(self, right, initval,
+                              enable, reset, width, signed)
 
 
 class Idiv(_Accumulator):
@@ -2396,14 +2406,16 @@ class Idiv(_Accumulator):
 
     def __init__(self, right, initval=1, enable=None, reset=None, width=32, signed=False):
         raise NotImplementedError()
-        _Accumulator.__init__(self, right, initval, enable, reset, width, signed)
+        _Accumulator.__init__(self, right, initval,
+                              enable, reset, width, signed)
 
 
 class Icustom(_Accumulator):
 
     def __init__(self, ops, right, initval=0, enable=None, reset=None,
                  width=32, signed=False, label=None):
-        _Accumulator.__init__(self, right, initval, enable, reset, width, signed)
+        _Accumulator.__init__(self, right, initval,
+                              enable, reset, width, signed)
         if not isinstance(ops, (tuple, list)):
             ops = tuple([ops])
         self.ops = ops
@@ -2467,6 +2479,50 @@ class Str(_Constant):
 
 
 #-------------------------------------------------------------------------
+def _AccValid(op, right, size, initval=0, enable=None, reset=None, width=32, signed=False):
+    counter = Counter(1, maxval=size, initval=0, enable=enable, reset=reset)
+    valid = (counter == size - 1).prev(1)
+
+    if reset is None:
+        reset = valid.prev(1)
+    else:
+        reset = Lor(reset, valid.prev(1))
+
+    # ToDo
+    # reset with enable
+
+    comp = op(right, initval=initval, enable=enable,
+              reset=reset, width=width, signed=signed)
+
+    return comp, valid
+
+
+def AccReg(right, size, initval=0, enable=None, reset=None, width=32, signed=False):
+    return _AccValid(Ireg, right, size, initval, enable, reset, width, signed)
+
+
+def AccAdd(right, size, initval=0, enable=None, reset=None, width=32, signed=False):
+    return _AccValid(Iadd, right, size, initval, enable, reset, width, signed)
+
+
+def AccSub(right, size, initval=0, enable=None, reset=None, width=32, signed=False):
+    return _AccValid(Isub, right, size, initval, enable, reset, width, signed)
+
+
+def AccMul(right, size, initval=0, enable=None, reset=None, width=32, signed=False):
+    return _AccValid(Imul, right, size, initval, enable, reset, width, signed)
+
+
+def AccDiv(right, size, initval=0, enable=None, reset=None, width=32, signed=False):
+    return _AccValid(Idiv, right, size, initval, enable, reset, width, signed)
+
+
+def AccCustom(ops, right, size, initval=0, enable=None, reset=None, width=32, signed=False):
+    op = partial(Icustom, ops)
+    return _AccValid(op, right, size, initval, enable, reset, width, signed)
+
+
+#-------------------------------------------------------------------------
 def Counter(step=None, maxval=None, initval=0, enable=None, reset=None, width=32, signed=False):
     if step is None:
         step = 1
@@ -2487,12 +2543,16 @@ def Counter(step=None, maxval=None, initval=0, enable=None, reset=None, width=32
                        width=width, signed=signed,
                        label='Counter')
 
-    maxval = _to_constant(maxval)
-    if not isinstance(maxval, _Constant):
-        raise TypeError("'maxval' must be constant")
-    raw_maxval = maxval.value
+    #maxval = _to_constant(maxval)
+    # if not isinstance(maxval, _Constant):
+    #    raise TypeError("'maxval' must be constant")
+    #raw_maxval = maxval.value
 
-    return Icustom(lambda a, b: vtypes.Mux(a >= raw_maxval - raw_step, raw_initval, a + b),
+    # return Icustom(lambda a, b: vtypes.Mux(a >= raw_maxval - raw_step, raw_initval, a + b),
+    #               step, initval=initval, enable=enable, reset=reset,
+    #               width=width, signed=signed,
+    #               label='Counter')
+    return Icustom(lambda a, b: vtypes.Mux(a >= maxval - raw_step, raw_initval, a + b),
                    step, initval=initval, enable=enable, reset=reset,
                    width=width, signed=signed,
                    label='Counter')
