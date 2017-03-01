@@ -158,10 +158,14 @@ class GraphGenerator(_Visitor):
         
         right = self.visit(node.right)
         initval = self.visit(node.initval)
+        if node.enable is not None:
+            enable = self.visit(node.enable)
         if node.reset is not None:
             reset = self.visit(node.reset)
         self.graph.add_edge(right, node, label='R')
         self.graph.add_edge(initval, node, label='initval')
+        if node.enable is not None:
+            self.graph.add_edge(enable, node, label='enable')
         if node.reset is not None:
             self.graph.add_edge(reset, node, label='reset')
         

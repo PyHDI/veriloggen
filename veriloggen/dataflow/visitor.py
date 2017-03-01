@@ -92,8 +92,9 @@ class InputVisitor(_Visitor):
     def visit__Accumulator(self, node):
         right = self.visit(node.right)
         initval = self.visit(node.initval) if node.initval is not None else set()
+        enable = self.visit(node.enable) if node.enable is not None else set()
         reset = self.visit(node.reset) if node.reset is not None else set()
-        return right | initval | reset
+        return right | initval | enable | reset
 
     def visit__ParameterVariable(self, node):
         return set([node])
@@ -170,9 +171,10 @@ class OperatorVisitor(_Visitor):
     def visit__Accumulator(self, node):
         right = self.visit(node.right)
         initval = self.visit(node.initval) if node.initval is not None else set()
+        enable = self.visit(node.enable) if node.enable is not None else set()
         reset = self.visit(node.reset) if node.reset is not None else set()
         mine = set([node])
-        return right | initval | reset | mine
+        return right | initval | enable | reset | mine
             
     def visit__ParameterVariable(self, node):
         return set()

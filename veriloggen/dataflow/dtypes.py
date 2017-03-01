@@ -2241,9 +2241,10 @@ class _Accumulator(_UnaryOperator):
     latency = 1
     ops = (vtypes.Plus, )
 
-    def __init__(self, right, initval=None, reset=None, width=32, signed=False):
+    def __init__(self, right, initval=None, enable=None, reset=None, width=32, signed=False):
         self.initval = _to_constant(
             initval) if initval is not None else _to_constant(0)
+        self.enable = _to_constant(enable)
         self.reset = _to_constant(reset)
         if not isinstance(self.initval, _Constant):
             raise TypeError("initval must be Constant, not '%s'" %
@@ -2257,7 +2258,7 @@ class _Accumulator(_UnaryOperator):
         self.point = self.right.get_point()
 
     def _set_managers(self):
-        self._set_df(_get_df(self.right, self.initval, self.reset))
+        self._set_df(_get_df(self.right, self.initval, self.enable, self.reset))
         self._set_module(getattr(self.df, 'module', None))
         self._set_seq(getattr(self.df, 'seq', None))
 
@@ -2286,16 +2287,19 @@ class _Accumulator(_UnaryOperator):
         self.sig_ready = ready
 
         rdata = self.right.sig_data
+        enabledata = self.enable.sig_data if self.enable is not None else None
         resetdata = self.reset.sig_data if self.reset is not None else None
 
         rvalid = self.right.sig_valid
+        enablevalid = self.enable.sig_valid if self.enable is not None else None
         resetvalid = self.reset.sig_valid if self.reset is not None else None
 
         rready = self.right.sig_ready
+        enableready = self.enable.sig_ready if self.enable is not None else None
         resetready = self.reset.sig_ready if self.reset is not None else None
 
-        all_valid = _and_vars(rvalid, resetvalid)
-        all_ready = _and_vars(rready, resetready)
+        all_valid = _and_vars(rvalid, enablevalid, resetvalid)
+        all_ready = _and_vars(rready, enableready, resetready)
 
         accept = vtypes.OrList(ready, vtypes.Not(valid))
 
@@ -2317,6 +2321,10 @@ class _Accumulator(_UnaryOperator):
                 raise TypeError("Operator '%s' returns unsupported object type '%s'."
                                 % (str(op), str(type(value))))
 
+        # for Ireg
+        if not self.ops:
+            value = rdata
+            
         if self.reset is not None:
             reset_value = initval_data
             for op in self.ops:
@@ -2331,7 +2339,13 @@ class _Accumulator(_UnaryOperator):
                     raise TypeError("Operator '%s' returns unsupported object type '%s'."
                                     % (str(op), str(type(reset_value))))
 
-        seq(data(value), cond=data_cond)
+        if self.enable is not None:
+            enable_data_cond = _and_vars(data_cond, enabledata)
+            seq(data(value), cond=enable_data_cond)
+            _connect_ready(m, enableready, ready_cond)
+        else:
+            seq(data(value), cond=data_cond)
+
         seq(valid(0), cond=valid_reset_cond)
         seq(valid(all_valid), cond=valid_cond)
         _connect_ready(m, rready, ready_cond)
@@ -2345,18 +2359,26 @@ class _Accumulator(_UnaryOperator):
             _connect_ready(m, ready, vtypes.Int(1))
 
 
+class Ireg(_Accumulator):
+    ops = ()
+
+    def __init__(self, right, initval=0, enable=None, reset=None, width=32, signed=False):
+        _Accumulator.__init__(self, right, initval, enable, reset, width, signed)
+        self.label = 'reg'
+
+
 class Iadd(_Accumulator):
     ops = (vtypes.Plus, )
 
-    def __init__(self, right, initval=0, reset=None, width=32, signed=False):
-        _Accumulator.__init__(self, right, initval, reset, width, signed)
+    def __init__(self, right, initval=0, enable=None, reset=None, width=32, signed=False):
+        _Accumulator.__init__(self, right, initval, enable, reset, width, signed)
 
 
 class Isub(_Accumulator):
     ops = (vtypes.Minus, )
 
-    def __init__(self, right, initval=0, reset=None, width=32, signed=False):
-        _Accumulator.__init__(self, right, initval, reset, width, signed)
+    def __init__(self, right, initval=0, enable=None, reset=None, width=32, signed=False):
+        _Accumulator.__init__(self, right, initval, enable, reset, width, signed)
 
 
 class Imul(_Accumulator):
@@ -2364,23 +2386,24 @@ class Imul(_Accumulator):
     latency = 1
     ops = (vtypes.Times, )
 
-    def __init__(self, right, initval=1, reset=None, width=32, signed=False):
-        _Accumulator.__init__(self, right, initval, reset, width, signed)
+    def __init__(self, right, initval=1, enable=None, reset=None, width=32, signed=False):
+        _Accumulator.__init__(self, right, initval, enable, reset, width, signed)
 
 
 class Idiv(_Accumulator):
     latency = 32
     op = ()
 
-    def __init__(self, right, initval=1, reset=None, width=32, signed=False):
+    def __init__(self, right, initval=1, enable=None, reset=None, width=32, signed=False):
         raise NotImplementedError()
-        _Accumulator.__init__(self, right, initval, reset, width, signed)
+        _Accumulator.__init__(self, right, initval, enable, reset, width, signed)
 
 
 class Icustom(_Accumulator):
 
-    def __init__(self, ops, right, initval=0, reset=None, width=32, signed=False, label=None):
-        _Accumulator.__init__(self, right, initval, reset, width, signed)
+    def __init__(self, ops, right, initval=0, enable=None, reset=None,
+                 width=32, signed=False, label=None):
+        _Accumulator.__init__(self, right, initval, enable, reset, width, signed)
         if not isinstance(ops, (tuple, list)):
             ops = tuple([ops])
         self.ops = ops
