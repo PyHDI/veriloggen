@@ -2357,8 +2357,15 @@ class _Accumulator(_UnaryOperator):
         _connect_ready(m, rready, ready_cond)
 
         if self.reset is not None:
-            reset_data_cond = _and_vars(data_cond, resetdata)
-            seq(data(reset_value), cond=reset_data_cond)
+            if self.enable is None:
+                reset_data_cond = _and_vars(data_cond, resetdata)
+                seq(data(reset_value), cond=reset_data_cond)
+            else:
+                reset_data_cond = _and_vars(data_cond, resetdata)
+                seq(data(initval_data), cond=reset_data_cond)
+                reset_enable_data_cond = _and_vars(
+                    data_cond, enabledata, resetdata)
+                seq(data(reset_value), cond=reset_enable_data_cond)
             _connect_ready(m, resetready, ready_cond)
 
         if not self._has_output():
@@ -2479,47 +2486,63 @@ class Str(_Constant):
 
 
 #-------------------------------------------------------------------------
-def _AccValid(op, right, size, initval=0, enable=None, reset=None, width=32, signed=False):
+def _RegionAcc(op, right, size, initval=0, enable=None, reset=None,
+               width=32, signed=False, filter=False, filter_value=0):
+
     counter = Counter(1, maxval=size, initval=0, enable=enable, reset=reset)
     valid = (counter == size - 1).prev(1)
+
+    if enable is not None:
+        valid = Land(valid, enable)
 
     if reset is None:
         reset = valid.prev(1)
     else:
         reset = Lor(reset, valid.prev(1))
 
-    # ToDo
-    # reset with enable
-
     comp = op(right, initval=initval, enable=enable,
               reset=reset, width=width, signed=signed)
+    if filter:
+        comp = Mux(valid, comp, filter_value)
 
     return comp, valid
 
 
-def AccReg(right, size, initval=0, enable=None, reset=None, width=32, signed=False):
-    return _AccValid(Ireg, right, size, initval, enable, reset, width, signed)
+def RegionReg(right, size, initval=0, enable=None, reset=None,
+              width=32, signed=False, filter=False, filter_value=0):
+    return _RegionAcc(Ireg, right, size, initval, enable, reset,
+                      width, signed, filter, filter_value)
 
 
-def AccAdd(right, size, initval=0, enable=None, reset=None, width=32, signed=False):
-    return _AccValid(Iadd, right, size, initval, enable, reset, width, signed)
+def RegionAdd(right, size, initval=0, enable=None, reset=None,
+              width=32, signed=False, filter=False, filter_value=0):
+    return _RegionAcc(Iadd, right, size, initval, enable, reset,
+                      width, signed, filter, filter_value)
 
 
-def AccSub(right, size, initval=0, enable=None, reset=None, width=32, signed=False):
-    return _AccValid(Isub, right, size, initval, enable, reset, width, signed)
+def RegionSub(right, size, initval=0, enable=None, reset=None,
+              width=32, signed=False, filter=False, filter_value=0):
+    return _RegionAcc(Isub, right, size, initval, enable, reset,
+                      width, signed, filter, filter_value)
 
 
-def AccMul(right, size, initval=0, enable=None, reset=None, width=32, signed=False):
-    return _AccValid(Imul, right, size, initval, enable, reset, width, signed)
+def RegionMul(right, size, initval=0, enable=None, reset=None,
+              width=32, signed=False, filter=False, filter_value=0):
+    return _RegionAcc(Imul, right, size, initval, enable, reset,
+                      width, signed, filter, filter_value)
 
 
-def AccDiv(right, size, initval=0, enable=None, reset=None, width=32, signed=False):
-    return _AccValid(Idiv, right, size, initval, enable, reset, width, signed)
+def RegionDiv(right, size, initval=0, enable=None, reset=None,
+              width=32, signed=False, filter=False, filter_value=0):
+    return _RegionAcc(Idiv, right, size, initval, enable, reset,
+                      width, signed, filter, filter_value)
 
 
-def AccCustom(ops, right, size, initval=0, enable=None, reset=None, width=32, signed=False):
+def RegionCustom(ops, right, size, initval=0, enable=None, reset=None,
+                 width=32, signed=False, filter=False, filter_value=0):
     op = partial(Icustom, ops)
-    return _AccValid(op, right, size, initval, enable, reset, width, signed)
+    return _RegionAcc(op, right, size, initval, enable, reset,
+                      width, signed, filter, filter_value)
 
 
 #-------------------------------------------------------------------------

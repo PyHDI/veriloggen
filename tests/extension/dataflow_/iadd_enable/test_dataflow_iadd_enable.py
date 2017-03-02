@@ -419,6 +419,9 @@ module main
         _tmp_valid_0 <= xvalid && enablevalid && resetvalid;
       end 
       if((_tmp_ready_0 || !_tmp_valid_0) && (xready && enableready && resetready) && (xvalid && enablevalid && resetvalid) && resetdata) begin
+        _tmp_data_0 <= 1'd0;
+      end 
+      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && enableready && resetready) && (xvalid && enablevalid && resetvalid) && enabledata && resetdata) begin
         _tmp_data_0 <= 1'd0 + xdata;
       end 
     end

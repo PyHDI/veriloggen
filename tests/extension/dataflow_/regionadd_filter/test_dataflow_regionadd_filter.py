@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import dataflow_ireg
+import dataflow_regionadd_filter
 
 expected_verilog = """
 module test;
@@ -11,15 +11,12 @@ module test;
   reg [32-1:0] xdata;
   reg xvalid;
   wire xready;
-  reg [1-1:0] resetdata;
-  reg resetvalid;
-  wire resetready;
-  reg [1-1:0] enabledata;
-  reg enablevalid;
-  wire enableready;
-  wire [32-1:0] zdata;
+  wire signed [32-1:0] zdata;
   wire zvalid;
   reg zready;
+  wire [1-1:0] vdata;
+  wire vvalid;
+  reg vready;
 
   main
   uut
@@ -29,15 +26,12 @@ module test;
     .xdata(xdata),
     .xvalid(xvalid),
     .xready(xready),
-    .resetdata(resetdata),
-    .resetvalid(resetvalid),
-    .resetready(resetready),
-    .enabledata(enabledata),
-    .enablevalid(enablevalid),
-    .enableready(enableready),
     .zdata(zdata),
     .zvalid(zvalid),
-    .zready(zready)
+    .zready(zready),
+    .vdata(vdata),
+    .vvalid(vvalid),
+    .vready(vready)
   );
 
   reg reset_done;
@@ -61,8 +55,6 @@ module test;
     reset_done = 0;
     xdata = 0;
     xvalid = 0;
-    resetdata = 0;
-    resetvalid = 0;
     zready = 0;
     #100;
     RST = 1;
@@ -202,10 +194,10 @@ module test;
           if(xready) begin
             _tmp_0 <= _tmp_0 + 1;
           end 
-          if((_tmp_0 == 20) && xready) begin
+          if((_tmp_0 == 100) && xready) begin
             xvalid <= 0;
           end 
-          if((_tmp_0 == 20) && xready) begin
+          if((_tmp_0 == 100) && xready) begin
             xfsm <= xfsm_24;
           end 
         end
@@ -273,85 +265,61 @@ module test;
     end
   end
 
-  reg [32-1:0] enable;
-  localparam enable_init = 0;
-  reg [32-1:0] enable_count;
-  localparam enable_1 = 1;
-  localparam enable_2 = 2;
+  reg [32-1:0] vfsm;
+  localparam vfsm_init = 0;
+  localparam vfsm_1 = 1;
+  localparam vfsm_2 = 2;
+  localparam vfsm_3 = 3;
+  localparam vfsm_4 = 4;
+  localparam vfsm_5 = 5;
+  localparam vfsm_6 = 6;
+  localparam vfsm_7 = 7;
+  localparam vfsm_8 = 8;
 
   always @(posedge CLK) begin
     if(RST) begin
-      enable <= enable_init;
-      enable_count <= 0;
+      vfsm <= vfsm_init;
     end else begin
-      case(enable)
-        enable_init: begin
+      case(vfsm)
+        vfsm_init: begin
+          vready <= 0;
           if(reset_done) begin
-            enable <= enable_1;
+            vfsm <= vfsm_1;
           end 
         end
-        enable_1: begin
-          enablevalid <= 1;
-          if(enablevalid && enableready) begin
-            enable_count <= enable_count + 1;
+        vfsm_1: begin
+          vfsm <= vfsm_2;
+        end
+        vfsm_2: begin
+          if(vvalid) begin
+            vready <= 1;
           end 
-          if(enablevalid && enableready && (enable_count == 2)) begin
-            enabledata <= 1;
-          end 
-          if(enablevalid && enableready && (enable_count == 2)) begin
-            enable <= enable_2;
+          if(vvalid) begin
+            vfsm <= vfsm_3;
           end 
         end
-        enable_2: begin
-          if(enablevalid && enableready) begin
-            enabledata <= 0;
-          end 
-          enable_count <= 0;
-          if(enablevalid && enableready) begin
-            enable <= enable_1;
-          end 
+        vfsm_3: begin
+          vready <= 0;
+          vfsm <= vfsm_4;
         end
-      endcase
-    end
-  end
-
-  reg [32-1:0] reset;
-  localparam reset_init = 0;
-  reg [32-1:0] reset_count;
-  localparam reset_1 = 1;
-  localparam reset_2 = 2;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      reset <= reset_init;
-      reset_count <= 0;
-    end else begin
-      case(reset)
-        reset_init: begin
-          if(reset_done) begin
-            reset <= reset_1;
-          end 
+        vfsm_4: begin
+          vready <= 0;
+          vfsm <= vfsm_5;
         end
-        reset_1: begin
-          resetvalid <= 1;
-          if(resetvalid && resetready) begin
-            reset_count <= reset_count + 1;
-          end 
-          if(resetvalid && resetready && (reset_count == 2)) begin
-            resetdata <= 0;
-          end 
-          if(resetvalid && resetready && (reset_count == 2)) begin
-            reset <= reset_2;
-          end 
+        vfsm_5: begin
+          vready <= 0;
+          vfsm <= vfsm_6;
         end
-        reset_2: begin
-          if(resetvalid && resetready) begin
-            resetdata <= 0;
-          end 
-          reset_count <= 0;
-          if(resetvalid && resetready) begin
-            reset <= reset_1;
-          end 
+        vfsm_6: begin
+          vready <= 0;
+          vfsm <= vfsm_7;
+        end
+        vfsm_7: begin
+          vready <= 0;
+          vfsm <= vfsm_8;
+        end
+        vfsm_8: begin
+          vfsm <= vfsm_2;
         end
       endcase
     end
@@ -365,6 +333,9 @@ module test;
       end 
       if(zvalid && zready) begin
         $display("zdata=%d", zdata);
+      end 
+      if(vvalid && vready) begin
+        $display("vdata=%d", vdata);
       end 
     end 
   end
@@ -381,46 +352,140 @@ module main
   input [32-1:0] xdata,
   input xvalid,
   output xready,
-  input [1-1:0] resetdata,
-  input resetvalid,
-  output resetready,
-  input [1-1:0] enabledata,
-  input enablevalid,
-  output enableready,
-  output [32-1:0] zdata,
+  output signed [32-1:0] zdata,
   output zvalid,
-  input zready
+  input zready,
+  output [1-1:0] vdata,
+  output vvalid,
+  input vready
 );
 
   reg [32-1:0] _tmp_data_0;
   reg _tmp_valid_0;
   wire _tmp_ready_0;
-  assign enableready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && enablevalid && resetvalid);
-  assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && enablevalid && resetvalid);
-  assign resetready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && enablevalid && resetvalid);
-  assign zdata = _tmp_data_0;
-  assign zvalid = _tmp_valid_0;
-  assign _tmp_ready_0 = zready;
+  assign _tmp_ready_0 = (_tmp_ready_1 || !_tmp_valid_1) && _tmp_valid_0;
+  reg [1-1:0] _tmp_data_1;
+  reg _tmp_valid_1;
+  wire _tmp_ready_1;
+  assign _tmp_ready_1 = (_tmp_ready_5 || !_tmp_valid_5) && (_tmp_valid_2 && _tmp_valid_1) && ((_tmp_ready_6 || !_tmp_valid_6) && _tmp_valid_1);
+  reg [32-1:0] _tmp_data_2;
+  reg _tmp_valid_2;
+  wire _tmp_ready_2;
+  assign xready = (_tmp_ready_2 || !_tmp_valid_2) && xvalid;
+  assign _tmp_ready_2 = (_tmp_ready_5 || !_tmp_valid_5) && (_tmp_valid_2 && _tmp_valid_1);
+  reg [1-1:0] _tmp_data_3;
+  reg [1-1:0] _tmp_data_4;
+  reg [32-1:0] _tmp_data_5;
+  reg _tmp_valid_5;
+  wire _tmp_ready_5;
+  assign _tmp_ready_5 = (_tmp_ready_7 || !_tmp_valid_7) && (_tmp_valid_6 && _tmp_valid_5);
+  reg [1-1:0] _tmp_data_6;
+  reg _tmp_valid_6;
+  wire _tmp_ready_6;
+  assign _tmp_ready_6 = (_tmp_ready_7 || !_tmp_valid_7) && (_tmp_valid_6 && _tmp_valid_5) && ((_tmp_ready_8 || !_tmp_valid_8) && _tmp_valid_6);
+  reg signed [32-1:0] _tmp_data_7;
+  reg _tmp_valid_7;
+  wire _tmp_ready_7;
+  reg [1-1:0] _tmp_data_8;
+  reg _tmp_valid_8;
+  wire _tmp_ready_8;
+  assign zdata = _tmp_data_7;
+  assign zvalid = _tmp_valid_7;
+  assign _tmp_ready_7 = zready;
+  assign vdata = _tmp_data_8;
+  assign vvalid = _tmp_valid_8;
+  assign _tmp_ready_8 = vready;
 
   always @(posedge CLK) begin
     if(RST) begin
       _tmp_data_0 <= 1'd0;
       _tmp_valid_0 <= 0;
+      _tmp_data_1 <= 0;
+      _tmp_valid_1 <= 0;
+      _tmp_data_2 <= 0;
+      _tmp_valid_2 <= 0;
+      _tmp_data_3 <= 0;
+      _tmp_data_4 <= 0;
+      _tmp_data_5 <= 1'd0;
+      _tmp_valid_5 <= 0;
+      _tmp_data_6 <= 0;
+      _tmp_valid_6 <= 0;
+      _tmp_data_7 <= 0;
+      _tmp_valid_7 <= 0;
+      _tmp_data_8 <= 0;
+      _tmp_valid_8 <= 0;
     end else begin
-      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && enableready && resetready) && (xvalid && enablevalid && resetvalid) && enabledata) begin
-        _tmp_data_0 <= xdata;
+      if((_tmp_ready_0 || !_tmp_valid_0) && 1 && 1) begin
+        _tmp_data_0 <= (_tmp_data_0 >= 3)? 0 : _tmp_data_0 + 2'd1;
       end 
       if(_tmp_valid_0 && _tmp_ready_0) begin
         _tmp_valid_0 <= 0;
       end 
-      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && enableready && resetready)) begin
-        _tmp_valid_0 <= xvalid && enablevalid && resetvalid;
+      if((_tmp_ready_0 || !_tmp_valid_0) && 1) begin
+        _tmp_valid_0 <= 1;
       end 
-      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && enableready && resetready) && (xvalid && enablevalid && resetvalid) && resetdata) begin
-        _tmp_data_0 <= 1'd0;
+      if((_tmp_ready_1 || !_tmp_valid_1) && _tmp_ready_0 && _tmp_valid_0) begin
+        _tmp_data_1 <= _tmp_data_0 == 3'd3;
       end 
-      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && enableready && resetready) && (xvalid && enablevalid && resetvalid) && enabledata && resetdata) begin
-        _tmp_data_0 <= 1'd0;
+      if(_tmp_valid_1 && _tmp_ready_1) begin
+        _tmp_valid_1 <= 0;
+      end 
+      if((_tmp_ready_1 || !_tmp_valid_1) && _tmp_ready_0) begin
+        _tmp_valid_1 <= _tmp_valid_0;
+      end 
+      if((_tmp_ready_2 || !_tmp_valid_2) && xready && xvalid) begin
+        _tmp_data_2 <= xdata;
+      end 
+      if(_tmp_valid_2 && _tmp_ready_2) begin
+        _tmp_valid_2 <= 0;
+      end 
+      if((_tmp_ready_2 || !_tmp_valid_2) && xready) begin
+        _tmp_valid_2 <= xvalid;
+      end 
+      if(_tmp_valid_1 && _tmp_ready_1) begin
+        _tmp_data_3 <= _tmp_data_1;
+      end 
+      if(_tmp_valid_1 && _tmp_ready_1) begin
+        _tmp_data_4 <= _tmp_data_3;
+      end 
+      if((_tmp_ready_5 || !_tmp_valid_5) && (_tmp_ready_2 && _tmp_ready_1) && (_tmp_valid_2 && _tmp_valid_1)) begin
+        _tmp_data_5 <= _tmp_data_5 + _tmp_data_2;
+      end 
+      if(_tmp_valid_5 && _tmp_ready_5) begin
+        _tmp_valid_5 <= 0;
+      end 
+      if((_tmp_ready_5 || !_tmp_valid_5) && (_tmp_ready_2 && _tmp_ready_1)) begin
+        _tmp_valid_5 <= _tmp_valid_2 && _tmp_valid_1;
+      end 
+      if((_tmp_ready_5 || !_tmp_valid_5) && (_tmp_ready_2 && _tmp_ready_1) && (_tmp_valid_2 && _tmp_valid_1) && _tmp_data_4) begin
+        _tmp_data_5 <= 1'd0 + _tmp_data_2;
+      end 
+      if((_tmp_ready_6 || !_tmp_valid_6) && _tmp_ready_1 && _tmp_valid_1) begin
+        _tmp_data_6 <= _tmp_data_3;
+      end 
+      if(_tmp_valid_6 && _tmp_ready_6) begin
+        _tmp_valid_6 <= 0;
+      end 
+      if((_tmp_ready_6 || !_tmp_valid_6) && _tmp_ready_1) begin
+        _tmp_valid_6 <= _tmp_valid_1;
+      end 
+      if((_tmp_ready_7 || !_tmp_valid_7) && (_tmp_ready_6 && _tmp_ready_5) && (_tmp_valid_6 && _tmp_valid_5)) begin
+        _tmp_data_7 <= (_tmp_data_6)? _tmp_data_5 : 1'd0;
+      end 
+      if(_tmp_valid_7 && _tmp_ready_7) begin
+        _tmp_valid_7 <= 0;
+      end 
+      if((_tmp_ready_7 || !_tmp_valid_7) && (_tmp_ready_6 && _tmp_ready_5)) begin
+        _tmp_valid_7 <= _tmp_valid_6 && _tmp_valid_5;
+      end 
+      if((_tmp_ready_8 || !_tmp_valid_8) && _tmp_ready_6 && _tmp_valid_6) begin
+        _tmp_data_8 <= _tmp_data_6;
+      end 
+      if(_tmp_valid_8 && _tmp_ready_8) begin
+        _tmp_valid_8 <= 0;
+      end 
+      if((_tmp_ready_8 || !_tmp_valid_8) && _tmp_ready_6) begin
+        _tmp_valid_8 <= _tmp_valid_6;
       end 
     end
   end
@@ -431,7 +496,7 @@ endmodule
 
 def test():
     veriloggen.reset()
-    test_module = dataflow_ireg.mkTest()
+    test_module = dataflow_regionadd_filter.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

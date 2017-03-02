@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import dataflow_accadd
+import dataflow_regionadd
 
 expected_verilog = """
 module test;
@@ -466,7 +466,7 @@ endmodule
 
 def test():
     veriloggen.reset()
-    test_module = dataflow_accadd.mkTest()
+    test_module = dataflow_regionadd.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

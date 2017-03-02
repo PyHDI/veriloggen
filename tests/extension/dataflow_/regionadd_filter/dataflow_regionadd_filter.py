@@ -16,8 +16,8 @@ def mkMain():
     #enable = dataflow.Variable('enabledata', valid='enablevalid', ready='enableready', width=1)
 
     # dataflow definition
-    #z, v = dataflow.AccAdd(x, 4, initval=0, enable=enable, reset=reset)
-    z, v = dataflow.AccAdd(x, 4, initval=0)
+    #z, v = dataflow.RegionAdd(x, 4, initval=0, enable=enable, reset=reset)
+    z, v = dataflow.RegionAdd(x, 4, initval=0, filter=True)
 
     # set output attribute
     z.output('zdata', valid='zvalid', ready='zready')

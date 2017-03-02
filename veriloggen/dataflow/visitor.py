@@ -130,8 +130,11 @@ class OutputVisitor(_Visitor):
     
     def visit__Accumulator(self, node):
         right = self.visit(node.right)
+        initval = self.visit(node.initval) if node.initval is not None else set()
+        enable = self.visit(node.enable) if node.enable is not None else set()
+        reset = self.visit(node.reset) if node.reset is not None else set()
         mine = set([node]) if node._has_output() else set()
-        return right | mine
+        return right | initval | enable | reset | mine
         
     def visit__ParameterVariable(self, node):
         mine = set([node]) if node._has_output() else set()
