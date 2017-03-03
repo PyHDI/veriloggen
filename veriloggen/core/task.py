@@ -6,8 +6,9 @@ import collections
 
 import veriloggen.core.vtypes as vtypes
 
-#-------------------------------------------------------------------------------
+
 class Task(vtypes.VeriloggenNode):
+
     def __init__(self, name):
         vtypes.VeriloggenNode.__init__(self)
         self.name = name
@@ -15,22 +16,21 @@ class Task(vtypes.VeriloggenNode):
         self.variable = collections.OrderedDict()
         self.statement = None
 
-    #---------------------------------------------------------------------------
     def Input(self, name, width=None, length=None, signed=False, value=None):
         t = vtypes.Input(width, length, signed, value, name=name)
         self.io_variable[name] = t
         return t
-    
+
     def Reg(self, name, width=None, length=None, signed=False, value=None):
         t = vtypes.Reg(width, length, signed, value, name=name)
         self.variable[name] = t
         return t
-    
+
     def Integer(self, name, width=None, length=None, signed=False, value=None):
         t = vtypes.Integer(width, length, signed, value, name=name)
         self.variable[name] = t
         return t
-    
+
     def Body(self, *statement):
         if self.statement is not None:
             raise ValueError("Statement is already assigned.")
@@ -40,7 +40,9 @@ class Task(vtypes.VeriloggenNode):
     def call(self, *args):
         return TaskCall(self.name, *args)
 
+
 class TaskCall(vtypes._Numeric):
+
     def __init__(self, name, *args):
         vtypes._Numeric.__init__(self)
         self.name = name

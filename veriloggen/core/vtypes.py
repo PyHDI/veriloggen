@@ -6,50 +6,58 @@ import re
 global_object_counter = 0
 
 operator_dict = {
-    'Uminus':'-', 'Ulnot':'!', 'Unot':'~', 'Uand':'&', 'Unand':'~&',
-    'Uor':'|', 'Unor':'~|', 'Uxor':'^', 'Uxnor':'~^',
-    'Power':'**', 'Times':'*', 'Divide':'/', 'Mod':'%', 
-    'Plus':'+', 'Minus':'-',
-    'Sll':'<<', 'Srl':'>>', 'Sra':'>>>',
-    'LessThan':'<', 'GreaterThan':'>', 'LessEq':'<=', 'GreaterEq':'>=',
-    'Eq':'==', 'NotEq':'!=', 'Eql':'===', 'NotEql':'!==',
-    'And':'&', 'Xor':'^', 'Xnor':'~^',
-    'Or':'|', 'Land':'&&', 'Lor':'||'
-    }
+    'Uminus': '-', 'Ulnot': '!', 'Unot': '~', 'Uand': '&', 'Unand': '~&',
+    'Uor': '|', 'Unor': '~|', 'Uxor': '^', 'Uxnor': '~^',
+    'Power': '**', 'Times': '*', 'Divide': '/', 'Mod': '%',
+    'Plus': '+', 'Minus': '-',
+    'Sll': '<<', 'Srl': '>>', 'Sra': '>>>',
+    'LessThan': '<', 'GreaterThan': '>', 'LessEq': '<=', 'GreaterEq': '>=',
+    'Eq': '==', 'NotEq': '!=', 'Eql': '===', 'NotEql': '!==',
+    'And': '&', 'Xor': '^', 'Xnor': '~^',
+    'Or': '|', 'Land': '&&', 'Lor': '||'
+}
+
 
 def op2mark(op):
     return operator_dict[op]
 
+
 def str_to_signed(s):
-    targ = s.replace('_','')
+    targ = s.replace('_', '')
     match = re.search(r's(.+)', targ)
     if match is not None:
         return True
     return False
 
+
 def check_int_hex(v):
     if not re.search(r'^[0-9a-fA-FxzXZ]+$', v):
         raise ValueError("Illegal value format '%s' for hex" % v)
+
 
 def check_int_dec(v):
     if not re.search(r'^[0-9xzXZ]+$', v):
         raise ValueError("Illegal value format '%s' for dec" % v)
 
+
 def check_int_dec_pure(v):
     if not re.search(r'^[0-9]+$', v):
         raise ValueError("Illegal value format '%s' for dec" % v)
+
 
 def check_int_oct(v):
     if not re.search(r'^[0-7xzXZ]+$', v):
         raise ValueError("Illegal value format '%s' for oct" % v)
 
+
 def check_int_bin(v):
     if not re.search(r'^[01xzXZ]+$', v):
         raise ValueError("Illegal value format '%s' for bin" % v)
-    
+
+
 def str_to_value(s):
-    targ = s.replace('_','')
-    
+    targ = s.replace('_', '')
+
     match = re.search(r'h(.+)', targ)
     if match is not None:
         try:
@@ -58,7 +66,7 @@ def str_to_value(s):
             v = match.group(1)
             check_int_hex(v)
         return v, 16
-    
+
     match = re.search(r'd(.+)', targ)
     if match is not None:
         try:
@@ -67,7 +75,7 @@ def str_to_value(s):
             v = match.group(1)
             check_int_dec(v)
         return v, 10
-    
+
     match = re.search(r'o(.+)', targ)
     if match is not None:
         try:
@@ -76,7 +84,7 @@ def str_to_value(s):
             v = match.group(1)
             check_int_oct(v)
         return v, 8
-    
+
     match = re.search(r'b(.+)', targ)
     if match is not None:
         try:
@@ -85,16 +93,17 @@ def str_to_value(s):
             v = match.group(1)
             check_int_bin(v)
         return v, 2
-    
+
     try:
         v = int(targ, 10)
     except:
         v = targ
         check_int_dec_pure(v)
     return v, None
-        
+
+
 def str_to_width(s):
-    targ = s.replace('_','')
+    targ = s.replace('_', '')
     match = re.search(r'(.+)\'h.+', targ)
     if match is not None:
         return int(match.group(1), 10)
@@ -109,10 +118,12 @@ def str_to_width(s):
         return int(match.group(1), 10)
     return None
 
+
 def get_signed(obj):
     if hasattr(obj, 'get_signed'):
         return obj.get_signed()
     return True
+
 
 def max_width(left, right):
     if left is None and right is None:
@@ -123,6 +134,7 @@ def max_width(left, right):
         return left
     return Mux(left >= right, left, right)
 
+
 def raw_value(v):
     if isinstance(v, Int):
         return v.value
@@ -132,68 +144,69 @@ def raw_value(v):
         return v.value
     return v
 
-#-------------------------------------------------------------------------------
+
 class VeriloggenNode(object):
     """ Base class of Veriloggen AST object """
+
     def __init__(self):
         global global_object_counter
         self.object_id = global_object_counter
         global_object_counter += 1
-    
+
     def __hash__(self):
         return hash((id(self), self.object_id))
 
     def __eq__(self, other):
         return (id(self), self.object_id) == (id(other), other.object_id)
-    
+
     def __lt__(self, r):
         raise TypeError('Not allowed operation.')
-    
+
     def __le__(self, r):
         raise TypeError('Not allowed operation.')
-    
-    #def __eq__(self, r):
+
+    # def __eq__(self, r):
     #    raise TypeError('Not allowed operation.')
-    
-    #def __ne__(self, r):
+
+    # def __ne__(self, r):
     #    raise TypeError('Not allowed operation.')
 
     def __ge__(self, r):
         raise TypeError('Not allowed operation.')
-    
+
     def __gt__(self, r):
         raise TypeError('Not allowed operation.')
 
     def __add__(self, r):
         raise TypeError('Not allowed operation.')
-    
+
     def __sub__(self, r):
         raise TypeError('Not allowed operation.')
-    
+
     def __pow__(self, r):
         raise TypeError('Not allowed operation.')
-    
+
     def __mul__(self, r):
         raise TypeError('Not allowed operation.')
-    
+
     def __div__(self, r):
         raise TypeError('Not allowed operation.')
-    
+
     def __truediv__(self, r):
         raise TypeError('Not allowed operation.')
-    
+
     def __mod__(self, r):
         raise TypeError('Not allowed operation.')
-    
+
     def __and__(self, r):
         raise TypeError('Not allowed operation.')
 
     def __or__(self, r):
         raise TypeError('Not allowed operation.')
-    
+
     def __xor__(self, r):
         raise TypeError('Not allowed operation.')
-    
+
     def __lshift__(self, r):
         raise TypeError('Not allowed operation.')
 
@@ -202,18 +215,19 @@ class VeriloggenNode(object):
 
     def __neg__(self):
         raise TypeError('Not allowed operation.')
-    
+
     def __pos__(self):
         raise TypeError('Not allowed operation.')
-    
+
     def __invert__(self):
         raise TypeError('Not allowed operation.')
 
     def __getitem__(self, r):
         raise TypeError('Not allowed operation.')
 
-#-------------------------------------------------------------------------------
+
 class _Numeric(VeriloggenNode):
+
     def __init__(self):
         VeriloggenNode.__init__(self)
 
@@ -222,52 +236,52 @@ class _Numeric(VeriloggenNode):
 
     def __lt__(self, r):
         return LessThan(self, r)
-    
+
     def __le__(self, r):
         return LessEq(self, r)
-    
+
     def __eq__(self, r):
         return Eq(self, r)
-    
+
     def __ne__(self, r):
         return NotEq(self, r)
 
     def __ge__(self, r):
         return GreaterEq(self, r)
-    
+
     def __gt__(self, r):
         return GreaterThan(self, r)
 
     def __add__(self, r):
         return Plus(self, r)
-    
+
     def __sub__(self, r):
         return Minus(self, r)
-    
+
     def __pow__(self, r):
         return Power(self, r)
-    
+
     def __mul__(self, r):
         return Times(self, r)
-    
+
     def __div__(self, r):
         return Divide(self, r)
-    
+
     def __truediv__(self, r):
         return Divide(self, r)
-    
+
     def __mod__(self, r):
         return Mod(self, r)
-    
+
     def __and__(self, r):
         return And(self, r)
 
     def __or__(self, r):
         return Or(self, r)
-    
+
     def __xor__(self, r):
         return Xor(self, r)
-    
+
     def __lshift__(self, r):
         return Sll(self, r)
 
@@ -276,7 +290,7 @@ class _Numeric(VeriloggenNode):
 
     def __neg__(self):
         return Uminus(self)
-    
+
     def __pos__(self):
         return Uplus(self)
 
@@ -302,7 +316,7 @@ class _Numeric(VeriloggenNode):
                 right = 0
             elif isinstance(right, int) and right < 0:
                 right = size - abs(right)
-                
+
             if left is None:
                 left = size
             elif isinstance(left, int) and left < 0:
@@ -311,30 +325,32 @@ class _Numeric(VeriloggenNode):
 
             if isinstance(left, int) and left < 0:
                 raise ValueError("Illegal slice index: left = %d" % left)
-            
+
             if step is None:
                 return Slice(self, left, right)
             else:
-                if not (isinstance(left, int) and 
+                if not (isinstance(left, int) and
                         isinstance(right, int) and
                         isinstance(step, int)):
-                    raise ValueError("Slice with step is not supported in Verilog Slice.")
+                    raise ValueError(
+                        "Slice with step is not supported in Verilog Slice.")
 
                 if step == 0:
                     raise ValueError("Illegal slice step: step = %d" % step)
-                
-                values = [ Pointer(self, i) for i in range(right, left+1, step) ]
+
+                values = [Pointer(self, i)
+                          for i in range(right, left + 1, step)]
                 values.reverse()
                 return Cat(*values)
 
         if isinstance(r, int) and r < 0:
             r = self.bit_length() - abs(r)
-            
+
         return Pointer(self, r)
 
-    def sra(self, r): # shift right arithmetically
+    def sra(self, r):  # shift right arithmetically
         return Sra(self, r)
-    
+
     def repeat(self, times):
         return Repeat(self, times)
 
@@ -355,7 +371,7 @@ class _Numeric(VeriloggenNode):
     def __next__(self):
         if self.iter_count >= self.iter_size:
             raise StopIteration()
-        
+
         ret = Pointer(self, self.iter_count)
         self.iter_count += 1
         return ret
@@ -370,15 +386,16 @@ class _Numeric(VeriloggenNode):
         else:
             ret = self.bit_length()
         return ret
-    
+
     def __len__(self):
         ret = self._len()
         if not isinstance(ret, int):
             raise TypeError("Non int length.")
         return ret
 
-#-------------------------------------------------------------------------------
+
 class _Variable(_Numeric):
+
     def __init__(self, width=1, length=None, signed=False, value=None, initval=None, name=None,
                  module=None):
         _Numeric.__init__(self)
@@ -394,7 +411,7 @@ class _Variable(_Numeric):
         self.initval = initval
         self.module = module
         self.subst = []
-    
+
     def write(self, value, blk=False, ldelay=None, rdelay=None):
         return Subst(self, value, blk=blk, ldelay=ldelay, rdelay=rdelay)
 
@@ -403,8 +420,9 @@ class _Variable(_Numeric):
 
     def assign(self, value):
         if self.module is None:
-            raise ValueError("Variable '%s' has no parent module information" % self.name)
-        return self.module.Assign( self.write(value) )
+            raise ValueError(
+                "Variable '%s' has no parent module information" % self.name)
+        return self.module.Assign(self.write(value))
 
     def comb(self, value):
         return self.assign(value)
@@ -417,24 +435,24 @@ class _Variable(_Numeric):
 
     def get_signed(self):
         return self.signed
-    
+
     def _add_subst(self, s):
         self.subst.append(s)
 
     def _get_subst(self):
         return self.subst
-    
+
     def _set_raw_width(self, msb, lsb):
         self.width_msb = msb
         self.width_lsb = lsb
-    
+
     def _set_raw_length(self, msb, lsb):
         self.length_msb = msb
         self.length_lsb = lsb
 
     def _get_module(self):
         return self.module
-    
+
     def __setattr__(self, attr, value):
         # when width or length is overwritten, msb and lsb values are reset.
         if attr == 'width':
@@ -444,84 +462,124 @@ class _Variable(_Numeric):
             object.__setattr__(self, 'length_msb', None)
             object.__setattr__(self, 'length_lsb', None)
         object.__setattr__(self, attr, value)
-            
+
     def __str__(self):
         return self.name
 
     def __call__(self, value, blk=False, ldelay=None, rdelay=None):
         return self.write(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
 
-#-------------------------------------------------------------------------------
-class Input(_Variable): pass
-class Output(_Variable): pass
-class Inout(_Variable): pass
-class Tri(_Variable): pass
+
+class Input(_Variable):
+    pass
+
+
+class Output(_Variable):
+    pass
+
+
+class Inout(_Variable):
+    pass
+
+
+class Tri(_Variable):
+    pass
+
 
 class Reg(_Variable):
+
     def assign(self, value):
         raise TypeError("Reg object accept no combinational assignment.")
+
     def reset(self):
         if self.initval is None:
             return None
         return self.write(self.initval)
+
     def add(self, r):
         return Subst(self, self + r)
+
     def sub(self, r):
         return Subst(self, self - r)
+
     def inc(self):
         return self.add(1)
+
     def dec(self):
         return self.sub(1)
-    
+
+
 class Wire(_Variable):
+
     def _add_subst(self, s):
         if len(self.subst) > 0:
             raise ValueError('Wire %s is already assigned.' % self.name)
         self.subst.append(s)
-    
+
+
 class Integer(_Variable):
+
     def reset(self):
         if self.initval is None:
             return None
         return self.write(self.initval)
+
     def add(self, r):
         return Subst(self, self + r)
+
     def sub(self, r):
         return Subst(self, self - r)
+
     def inc(self):
         return self.add(1)
+
     def dec(self):
         return self.sub(1)
-    
+
+
 class Real(_Variable):
+
     def reset(self):
         if self.initval is None:
             return None
         return self.write(self.initval)
+
     def add(self, r):
         return Subst(self, self + r)
+
     def sub(self, r):
         return Subst(self, self - r)
+
     def inc(self):
         return self.add(1)
+
     def dec(self):
         return self.sub(1)
-    
+
+
 class Genvar(_Variable):
+
     def add(self, r):
         return Subst(self, self + r)
+
     def sub(self, r):
         return Subst(self, self - r)
+
     def inc(self):
         return self.add(1)
+
     def dec(self):
         return self.sub(1)
 
 # for undetermined identifier
-class AnyType(_Variable): pass
 
-#-------------------------------------------------------------------------------
+
+class AnyType(_Variable):
+    pass
+
+
 class _ParameterVariable(_Variable):
+
     def __init__(self, value, width=None, signed=False, name=None, module=None):
         if isinstance(value, _ParameterVariable):
             value = value.value
@@ -532,13 +590,22 @@ class _ParameterVariable(_Variable):
         if self.width is None:
             return 32
         return self.width
-        
-class Parameter(_ParameterVariable): pass
-class Localparam(_ParameterVariable): pass
-class Supply(_ParameterVariable): pass
 
-#-------------------------------------------------------------------------------
+
+class Parameter(_ParameterVariable):
+    pass
+
+
+class Localparam(_ParameterVariable):
+    pass
+
+
+class Supply(_ParameterVariable):
+    pass
+
+
 class _Constant(_Numeric):
+
     def __init__(self, value, width=None, base=None):
         _Numeric.__init__(self)
         self.value = value
@@ -547,8 +614,11 @@ class _Constant(_Numeric):
         self._type_check_value(value)
         self._type_check_width(width)
         self._type_check_base(base)
+
     def _type_check_value(self, value): pass
+
     def _type_check_width(self, width): pass
+
     def _type_check_base(self, base): pass
 
     def __str__(self):
@@ -558,8 +628,10 @@ class _Constant(_Numeric):
         if self.width is None:
             return 32
         return self.width
-        
+
+
 class Int(_Constant):
+
     def __init__(self, value, width=None, base=None, signed=False):
         _Constant.__init__(self, value, width, base)
         if isinstance(value, int):
@@ -572,34 +644,46 @@ class Int(_Constant):
             if base is not None:
                 self.base = base
             if not isinstance(self.value, int):
-                if   self.base is None: check_int_dec_pure(self.value)
-                elif self.base == 16: check_int_hex(self.value)
-                elif self.base == 10: check_int_dec(self.value)
-                elif self.base ==  8: check_int_oct(self.value)
-                elif self.base ==  2: check_int_bin(self.value)
-                else: raise ValueError("Illegal base number %d for Int." % self.base)
+                if self.base is None:
+                    check_int_dec_pure(self.value)
+                elif self.base == 16:
+                    check_int_hex(self.value)
+                elif self.base == 10:
+                    check_int_dec(self.value)
+                elif self.base == 8:
+                    check_int_oct(self.value)
+                elif self.base == 2:
+                    check_int_bin(self.value)
+                else:
+                    raise ValueError(
+                        "Illegal base number %d for Int." % self.base)
             self.width = str_to_width(value) if width is None else width
             self.signed = str_to_signed(value) if signed == False else signed
 
     def _type_check_value(self, value):
         if not isinstance(value, (int, str)):
-            raise TypeError('value of Int must be int or str, not %s.' % str(type(value)))
+            raise TypeError(
+                'value of Int must be int or str, not %s.' % str(type(value)))
 
     def _type_check_width(self, width):
-        if width is None: return
+        if width is None:
+            return
         if not isinstance(width, int):
-            raise TypeError('width of Int must be int, not %s.' % str(type(width)))
+            raise TypeError('width of Int must be int, not %s.' %
+                            str(type(width)))
 
     def _type_check_base(self, base):
-        if base is None: return 
+        if base is None:
+            return
         if not isinstance(base, int):
-            raise TypeError('base of Int must be int, not %s.' % str(type(base)))
-        
+            raise TypeError('base of Int must be int, not %s.' %
+                            str(type(base)))
+
     def __str__(self):
         value_list = []
         if self.width:
             value_list.append(str(self.width))
-            
+
         if self.base is None:
             if self.signed:
                 value_list.append("'sd")
@@ -652,14 +736,18 @@ class Int(_Constant):
 
     def get_signed(self):
         return self.signed
-        
+
+
 def IntX(width=None, base=None, signed=False):
     return Int("'hx", width, base, signed)
+
 
 def IntZ(width=None, base=None, signed=False):
     return Int("'hz", width, base, signed)
 
+
 class Float(_Constant):
+
     def __init__(self, value):
         _Constant.__init__(self, value, None, None)
         self.value = value
@@ -667,37 +755,43 @@ class Float(_Constant):
 
     def _type_check_value(self, value):
         if not isinstance(value, (float, int)):
-            raise TypeError('value of Float must be float, not %s.' % str(type(value)))
+            raise TypeError(
+                'value of Float must be float, not %s.' % str(type(value)))
 
     def __str__(self):
         return str(self.value)
 
     def get_signed(self):
         return True
-        
+
+
 class Str(_Constant):
+
     def __init__(self, value):
         _Constant.__init__(self, value, None, None)
         self.value = value
 
     def _type_check_value(self, value):
         if not isinstance(value, str):
-            raise TypeError('value of Str must be str, not %s.' % str(type(value)))
+            raise TypeError('value of Str must be str, not %s.' %
+                            str(type(value)))
 
     def __str__(self):
         return str(self.value)
 
-#-------------------------------------------------------------------------------
+
 class _Operator(_Numeric):
+
     def __init__(self):
         _Numeric.__init__(self)
         self.signed = False
-    
+
     def get_signed(self):
         return self.signed
-    
-#-------------------------------------------------------------------------------
+
+
 class _BinaryOperator(_Operator):
+
     def __init__(self, left, right):
         _Operator.__init__(self)
         self._type_check(left, right)
@@ -707,9 +801,11 @@ class _BinaryOperator(_Operator):
 
     def _type_check(self, left, right):
         if not isinstance(left, (_Numeric, bool, int, float, str)):
-            raise TypeError('BinaryOperator does not support Type %s' % str(type(left)))
+            raise TypeError(
+                'BinaryOperator does not support Type %s' % str(type(left)))
         if not isinstance(right, (_Numeric, bool, int, float, str)):
-            raise TypeError('BinaryOperator does not support Type %s' % str(type(right)))
+            raise TypeError(
+                'BinaryOperator does not support Type %s' % str(type(right)))
 
     def _get_module(self):
         if hasattr(self.left, '_get_module'):
@@ -717,10 +813,10 @@ class _BinaryOperator(_Operator):
         if hasattr(self.right, '_get_module'):
             return self.right._get_module()
         return None
-    
+
     def __str__(self):
         return ''.join(['(', str(self.left), ' ', op2mark(self.__class__.__name__), ' ',
-                         str(self.right), ')'])
+                        str(self.right), ')'])
 
     def bit_length(self):
         left = self.left.bit_length()
@@ -729,37 +825,43 @@ class _BinaryOperator(_Operator):
 
     def get_signed(self):
         return self.signed
-        
+
+
 class _UnaryOperator(_Operator):
+
     def __init__(self, right):
         _Operator.__init__(self)
         self._type_check(right)
         self.right = right
         self.signed = get_signed(self.right)
-        
+
     def _type_check(self, right):
         if not isinstance(right, (_Numeric, bool, int, float, str)):
-            raise TypeError('BinaryOperator does not support Type %s' % str(type(right)))
+            raise TypeError(
+                'BinaryOperator does not support Type %s' % str(type(right)))
 
     def _get_module(self):
         if hasattr(self.right, '_get_module'):
             return self.right._get_module()
         return None
-    
+
     def __str__(self):
         return ''.join(['(', op2mark(self.__class__.__name__), str(self.right), ')'])
 
     def bit_length(self):
         return self.right.bit_length()
 
-#-------------------------------------------------------------------------------
+
 # class names must be same the ones in pyverilog.vparser.ast
 class Power(_BinaryOperator):
+
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left ** right
-    
+
+
 class Times(_BinaryOperator):
+
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left * right
@@ -768,18 +870,22 @@ class Times(_BinaryOperator):
         left = self.left.bit_length()
         right = self.right.bit_length()
         return left + right
-    
+
+
 class Divide(_BinaryOperator):
+
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left // right
-    
+
     def bit_length(self):
         left = self.left.bit_length()
         right = self.right.bit_length()
         return max_width(left, right)
-    
+
+
 class Mod(_BinaryOperator):
+
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left % right
@@ -788,22 +894,28 @@ class Mod(_BinaryOperator):
         left = self.left.bit_length()
         right = self.right.bit_length()
         return max_width(left, right)
-    
+
+
 class Plus(_BinaryOperator):
+
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left + right
-    
+
+
 class Minus(_BinaryOperator):
+
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left - right
 
+
 class Sll(_BinaryOperator):
+
     def __init__(self, left, right):
         _BinaryOperator.__init__(self, left, right)
         self.signed = False
-        
+
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left << right
@@ -812,25 +924,29 @@ class Sll(_BinaryOperator):
         left = self.left.bit_length()
         right = self.right.bit_length()
         return Int(2) ** right + left
-    
+
+
 class Srl(_BinaryOperator):
+
     def __init__(self, left, right):
         _BinaryOperator.__init__(self, left, right)
         self.signed = False
-        
+
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left >> right
-    
+
     def bit_length(self):
         left = self.left.bit_length()
         return left
-    
+
+
 class Sra(_BinaryOperator):
+
     def __init__(self, left, right):
         _BinaryOperator.__init__(self, left, right)
         self.signed = get_signed(self.left)
-        
+
     @staticmethod
     def op(left, right, lwidth, rwidth):
         sign = left >= 0
@@ -843,108 +959,126 @@ class Sra(_BinaryOperator):
     def bit_length(self):
         left = self.left.bit_length()
         return left
-    
+
+
 class LessThan(_BinaryOperator):
+
     def __init__(self, left, right):
         _BinaryOperator.__init__(self, left, right)
         self.signed = False
-        
+
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left < right
-    
+
     def bit_length(self):
         return 1
-    
+
+
 class GreaterThan(_BinaryOperator):
+
     def __init__(self, left, right):
         _BinaryOperator.__init__(self, left, right)
         self.signed = False
-        
+
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left > right
-    
+
     def bit_length(self):
         return 1
-    
+
+
 class LessEq(_BinaryOperator):
+
     def __init__(self, left, right):
         _BinaryOperator.__init__(self, left, right)
         self.signed = False
-        
+
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left <= right
-    
+
     def bit_length(self):
         return 1
-    
+
+
 class GreaterEq(_BinaryOperator):
+
     def __init__(self, left, right):
         _BinaryOperator.__init__(self, left, right)
         self.signed = False
-        
+
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left >= right
 
     def bit_length(self):
         return 1
-    
+
+
 class Eq(_BinaryOperator):
+
     def __init__(self, left, right):
         _BinaryOperator.__init__(self, left, right)
         self.signed = False
-        
+
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left == right
 
     def bit_length(self):
         return 1
-    
+
+
 class NotEq(_BinaryOperator):
+
     def __init__(self, left, right):
         _BinaryOperator.__init__(self, left, right)
         self.signed = False
-        
+
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left != right
 
     def bit_length(self):
         return 1
-    
-class Eql(_BinaryOperator): # ===
+
+
+class Eql(_BinaryOperator):  # ===
+
     def __init__(self, left, right):
         _BinaryOperator.__init__(self, left, right)
         self.signed = False
-        
+
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left == right
-    
+
     def bit_length(self):
         return 1
-    
-class NotEql(_BinaryOperator): # !==
+
+
+class NotEql(_BinaryOperator):  # !==
+
     def __init__(self, left, right):
         _BinaryOperator.__init__(self, left, right)
         self.signed = False
-        
+
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left != right
 
     def bit_length(self):
         return 1
-    
+
+
 class And(_BinaryOperator):
+
     def __init__(self, left, right):
         _BinaryOperator.__init__(self, left, right)
         self.signed = False
-        
+
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left & right
@@ -953,26 +1087,30 @@ class And(_BinaryOperator):
         left = self.left.bit_length()
         right = self.right.bit_length()
         return max_width(left, right)
-    
+
+
 class Xor(_BinaryOperator):
+
     def __init__(self, left, right):
         _BinaryOperator.__init__(self, left, right)
         self.signed = False
-        
+
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left ^ right
-    
+
     def bit_length(self):
         left = self.left.bit_length()
         right = self.right.bit_length()
         return max_width(left, right)
-    
+
+
 class Xnor(_BinaryOperator):
+
     def __init__(self, left, right):
         _BinaryOperator.__init__(self, left, right)
         self.signed = False
-        
+
     @staticmethod
     def op(left, right, lwidth, rwidth):
         width = max(lwidth, rwidth)
@@ -981,154 +1119,182 @@ class Xnor(_BinaryOperator):
         for i in range(width):
             mask = (0x1 << i) | mask
         return mask & value
-        
+
     def bit_length(self):
         left = self.left.bit_length()
         right = self.right.bit_length()
         return max_width(left, right)
-    
+
+
 class Or(_BinaryOperator):
+
     def __init__(self, left, right):
         _BinaryOperator.__init__(self, left, right)
         self.signed = False
-        
+
     @staticmethod
     def op(left, right, lwidth, rwidth):
         return left | right
-    
+
     def bit_length(self):
         left = self.left.bit_length()
         right = self.right.bit_length()
         return max_width(left, right)
-    
+
+
 class Land(_BinaryOperator):
+
     def __init__(self, left, right):
         _BinaryOperator.__init__(self, left, right)
         self.signed = False
-        
+
     @staticmethod
     def op(left, right, lwidth, rwidth):
         if left and right:
             return True
         return False
-    
+
     def bit_length(self):
         left = self.left.bit_length()
         right = self.right.bit_length()
         return max_width(left, right)
-    
+
+
 class Lor(_BinaryOperator):
+
     def __init__(self, left, right):
         _BinaryOperator.__init__(self, left, right)
         self.signed = False
-        
+
     @staticmethod
     def op(left, right, lwidth, rwidth):
         if left or right:
             return True
         return False
-    
+
     def bit_length(self):
         left = self.left.bit_length()
         right = self.right.bit_length()
         return max_width(left, right)
-    
+
+
 class Uplus(_UnaryOperator):
+
     @staticmethod
     def op(right, rwidth):
         return right
-    
+
+
 class Uminus(_UnaryOperator):
+
     @staticmethod
     def op(right, rwidth):
         return -right
-    
+
+
 class Ulnot(_UnaryOperator):
+
     def __init__(self, right):
         _UnaryOperator.__init__(self, right)
         self.signed = False
-        
+
     @staticmethod
     def op(right, rwidth):
         return not right
-    
+
     def bit_length(self):
         return 1
-    
+
+
 class Unot(_UnaryOperator):
+
     def __init__(self, right):
         _UnaryOperator.__init__(self, right)
         self.signed = False
-        
+
     @staticmethod
     def op(right, rwidth):
         return ~right
-    
+
+
 class Uand(_UnaryOperator):
+
     def __init__(self, right):
         _UnaryOperator.__init__(self, right)
         self.signed = False
-        
+
     @staticmethod
     def op(right, rwidth):
         for i in range(rwidth):
             v = (right >> i) & 0x1
-            if not v: return False
+            if not v:
+                return False
         return True
-    
+
     def bit_length(self):
         return 1
-    
+
+
 class Unand(_UnaryOperator):
+
     def __init__(self, right):
         _UnaryOperator.__init__(self, right)
         self.signed = False
-        
+
     @staticmethod
     def op(right, rwidth):
         for i in range(rwidth):
             v = (right >> i) & 0x1
-            if not v: return True
+            if not v:
+                return True
         return False
-    
+
     def bit_length(self):
         return 1
-    
+
+
 class Uor(_UnaryOperator):
+
     def __init__(self, right):
         _UnaryOperator.__init__(self, right)
         self.signed = False
-        
+
     @staticmethod
     def op(right, rwidth):
         for i in range(rwidth):
             v = (right >> i) & 0x1
-            if v: return True
+            if v:
+                return True
         return False
-    
+
     def bit_length(self):
         return 1
-    
+
+
 class Unor(_UnaryOperator):
+
     def __init__(self, right):
         _UnaryOperator.__init__(self, right)
         self.signed = False
-        
+
     @staticmethod
     def op(right, rwidth):
         for i in range(rwidth):
             v = (right >> i) & 0x1
-            if v: return False
+            if v:
+                return False
         return True
-    
+
     def bit_length(self):
         return 1
-    
+
+
 class Uxor(_UnaryOperator):
+
     def __init__(self, right):
         _UnaryOperator.__init__(self, right)
         self.signed = False
-        
+
     @staticmethod
     def op(right, rwidth):
         ret = False
@@ -1136,15 +1302,17 @@ class Uxor(_UnaryOperator):
             v = (right >> i) & 0x1
             ret = ret ^ v
         return ret
-    
+
     def bit_length(self):
         return 1
-    
+
+
 class Uxnor(_UnaryOperator):
+
     def __init__(self, right):
         _UnaryOperator.__init__(self, right)
         self.signed = False
-        
+
     @staticmethod
     def op(right, rwidth):
         ret = True
@@ -1155,11 +1323,12 @@ class Uxnor(_UnaryOperator):
 
     def bit_length(self):
         return 1
-    
-#-------------------------------------------------------------------------------
+
+
 # alias
 def Not(*args):
     return Ulnot(*args)
+
 
 def AndList(*args):
     if len(args) == 0:
@@ -1170,6 +1339,7 @@ def AndList(*args):
     for right in args[1:]:
         left = Land(left, right)
     return left
+
 
 def OrList(*args):
     if len(args) == 0:
@@ -1184,8 +1354,9 @@ def OrList(*args):
 Ands = AndList
 Ors = OrList
 
-#-------------------------------------------------------------------------------
+
 class _SpecialOperator(_Operator):
+
     def __init__(self, *args, **kwargs):
         _Operator.__init__(self)
         self.args = args
@@ -1194,22 +1365,23 @@ class _SpecialOperator(_Operator):
 
     def _get_module(self):
         return None
-    
-#-------------------------------------------------------------------------------
+
+
 class Pointer(_SpecialOperator):
+
     def __init__(self, var, pos):
         _SpecialOperator.__init__(self)
         self.var = var
         self.pos = pos
         self.subst = []
         self._type_check_var(var)
-        
+
     def write(self, value, blk=False, ldelay=None, rdelay=None):
         return Subst(self, value, blk=blk, ldelay=ldelay, rdelay=rdelay)
 
     def read(self):
         return self
-    
+
     def bit_length(self):
         if isinstance(self.var, _Variable) and self.var.length is not None:
             return self.var.bit_length()
@@ -1219,15 +1391,16 @@ class Pointer(_SpecialOperator):
         module = self._get_module()
         if module is None:
             raise ValueError("This Pointer has no parent module information")
-        return module.Assign( self.write(value) )
+        return module.Assign(self.write(value))
 
     def _type_check_var(self, var):
         if not isinstance(var, (_Variable, Scope, Pointer)):
-            raise TypeError('var of Pointer must be Variable, not %s' % str(type(var)))
-    
+            raise TypeError(
+                'var of Pointer must be Variable, not %s' % str(type(var)))
+
     def _add_subst(self, s):
         self.subst.append(s)
-    
+
     def _get_subst(self):
         return self.subst
 
@@ -1235,7 +1408,7 @@ class Pointer(_SpecialOperator):
         if not hasattr(self.var, '_get_module'):
             return None
         return self.var._get_module()
-    
+
     def __str__(self):
         return ''.join([str(self.var), '[', str(self.pos), ']'])
 
@@ -1246,7 +1419,9 @@ class Pointer(_SpecialOperator):
     def op(var, pos):
         return (var >> pos) & 0x1
 
+
 class Slice(_SpecialOperator):
+
     def __init__(self, var, msb, lsb):
         _SpecialOperator.__init__(self)
         self.var = var
@@ -1257,34 +1432,35 @@ class Slice(_SpecialOperator):
 
     def write(self, value, blk=False, ldelay=None, rdelay=None):
         return Subst(self, value, blk=blk, ldelay=ldelay, rdelay=rdelay)
-    
+
     def read(self):
         return self
-    
+
     def bit_length(self):
         return self.msb - self.lsb + 1
-    
+
     def assign(self, value):
         module = self._get_module()
         if module is None:
             raise ValueError("This Slice has no parent module information")
-        return module.Assign( self.write(value) )
-    
+        return module.Assign(self.write(value))
+
     def _type_check_var(self, var):
         if not isinstance(var, (_Variable, Scope)):
-            raise TypeError('var of Slice must be Variable, not %s' % str(type(var)))
-    
+            raise TypeError(
+                'var of Slice must be Variable, not %s' % str(type(var)))
+
     def _add_subst(self, s):
         self.subst.append(s)
-    
+
     def _get_subst(self):
         return self.subst
-    
+
     def _get_module(self):
         if not hasattr(self.var, '_get_module'):
             return None
         return self.var._get_module()
-    
+
     def __str__(self):
         return ''.join([str(self.var), '[', str(self.msb), ':', str(self.lsb), ']'])
 
@@ -1298,43 +1474,45 @@ class Slice(_SpecialOperator):
             mask = (mask << 1) | 0x1
         return (var >> lsb) & mask
 
+
 class Cat(_SpecialOperator):
+
     def __init__(self, *vars):
         _SpecialOperator.__init__(self)
         self.vars = tuple(vars)
         self.subst = []
-    
+
     def write(self, value, blk=False, ldelay=None, rdelay=None):
         return Subst(self, value, blk=blk, ldelay=ldelay, rdelay=rdelay)
 
     def read(self):
         return self
-    
+
     def bit_length(self):
-        values = [ v.bit_length() for v in self.vars ]
+        values = [v.bit_length() for v in self.vars]
         ret = values[0]
         for v in values[1:]:
             ret = ret + v
         return ret
-    
+
     def assign(self, value):
         module = self._get_module()
         if module is None:
             raise ValueError("This Cat has no parent module information")
-        return module.Assign( self.write(value) )
-    
+        return module.Assign(self.write(value))
+
     def _add_subst(self, s):
         self.subst.append(s)
-    
+
     def _get_subst(self):
         return self.subst
-    
+
     def _get_module(self):
         for var in self.vars:
             if hasattr(var, '_get_module'):
                 return var._get_module()
         return None
-    
+
     def __str__(self):
         ret = []
         ret.append('{')
@@ -1344,7 +1522,7 @@ class Cat(_SpecialOperator):
         ret.pop()
         ret.append('}')
         return ''.join(ret)
-       
+
     def __call__(self, value, blk=False, ldelay=None, rdelay=None):
         return self.write(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
 
@@ -1354,8 +1532,10 @@ class Cat(_SpecialOperator):
         for var, width in zip(vars, widths):
             ret = (ret << width) | var
         return ret
-    
+
+
 class Repeat(_SpecialOperator):
+
     def __init__(self, var, times):
         _SpecialOperator.__init__(self)
         self.var = var
@@ -1363,31 +1543,33 @@ class Repeat(_SpecialOperator):
 
     def bit_length(self):
         return self.var.bit_length() * self.times
-        
+
     def __str__(self):
         return ''.join(['{', str(self.times), '{', str(self.var), '}}'])
-       
+
     @staticmethod
     def op(var, width, times):
         ret = 0
         for i in times:
             ret = (ret << width) | var
         return ret
-        
-#-------------------------------------------------------------------------------
+
+
 class Cond(_SpecialOperator):
+
     def __init__(self, condition, true_value, false_value):
         _SpecialOperator.__init__(self)
         self.condition = condition
         self.true_value = true_value
         self.false_value = false_value
-        self.signed = get_signed(self.true_value) or get_signed(self.false_value)
-        
+        self.signed = get_signed(
+            self.true_value) or get_signed(self.false_value)
+
     def bit_length(self):
         t = self.true_value.bit_length()
         f = self.false_value.bit_length()
         return max_width(t, f)
-        
+
     def __str__(self):
         return ''.join(['(', str(self.condition), ')?',
                         str(self.true_value), ' : ', str(self.false_value)])
@@ -1399,29 +1581,37 @@ class Cond(_SpecialOperator):
         else:
             return false_value
 
+
 def Mux(condition, true_value, false_value):
     # return the result immediately if the condition can be resolved now
     if isinstance(condition, (bool, int, float, str, list, tuple)):
         return true_value if condition else false_value
     return Cond(condition, true_value, false_value)
-       
-#-------------------------------------------------------------------------------
+
+
 class Sensitive(VeriloggenNode):
+
     def __init__(self, name):
         VeriloggenNode.__init__(self)
         self.name = name
 
-#-------------------------------------------------------------------------------
-class Posedge(Sensitive): pass
-class Negedge(Sensitive): pass
 
-#-------------------------------------------------------------------------------
+class Posedge(Sensitive):
+    pass
+
+
+class Negedge(Sensitive):
+    pass
+
+
 class SensitiveAll(Sensitive):
+
     def __init__(self):
         Sensitive.__init__(self, 'all')
 
-#-------------------------------------------------------------------------------
+
 class Subst(VeriloggenNode):
+
     def __init__(self, left, right, blk=False, ldelay=None, rdelay=None):
         VeriloggenNode.__init__(self)
         self._type_check_left(left)
@@ -1435,20 +1625,23 @@ class Subst(VeriloggenNode):
 
     def _type_check_left(self, left):
         if not isinstance(left, VeriloggenNode):
-            raise TypeError("left must be VeriloggenNode, not '%s'" % str(type(left)))
-        
+            raise TypeError(
+                "left must be VeriloggenNode, not '%s'" % str(type(left)))
+
     def _type_check_right(self, right):
         if not isinstance(right, (VeriloggenNode, int, float, bool, str)):
-            raise TypeError("right must be VeriloggenNode, not '%s'" % str(type(right)))
-        
+            raise TypeError(
+                "right must be VeriloggenNode, not '%s'" % str(type(right)))
+
     def overwrite_right(self, right):
         self.right = right
-        
+
     def __str__(self):
         return ''.join([str(self.left), ' <- ', str(self.right)])
 
-#-------------------------------------------------------------------------------
+
 class Always(VeriloggenNode):
+
     def __init__(self, *sensitivity):
         VeriloggenNode.__init__(self)
         self.sensitivity = tuple(sensitivity)
@@ -1459,18 +1652,20 @@ class Always(VeriloggenNode):
             raise ValueError("Statement is already assigned.")
         self.statement = tuple(statement)
         return self
-    
+
     def __call__(self, *statement):
         return self.set_statement(*statement)
 
-#-------------------------------------------------------------------------------
+
 class Assign(VeriloggenNode):
+
     def __init__(self, statement):
         VeriloggenNode.__init__(self)
         self.statement = statement
 
-#-------------------------------------------------------------------------------
+
 class Initial(VeriloggenNode):
+
     def __init__(self, *statement):
         VeriloggenNode.__init__(self)
         self.statement = tuple(statement)
@@ -1481,25 +1676,26 @@ class Initial(VeriloggenNode):
         self.statement = tuple(self.statement + statement)
         return self
 
-#-------------------------------------------------------------------------------
+
 class If(VeriloggenNode):
+
     def __init__(self, condition):
         VeriloggenNode.__init__(self)
         self.condition = condition
         self.true_statement = None
         self.false_statement = None
-        
+
         self.root = self
         self.next_call = None
 
     def set_true_statement(self, *statement):
         self.true_statement = tuple(statement)
         return self.root
-    
+
     def set_false_statement(self, *statement):
         self.false_statement = tuple(statement)
         return self.root
-    
+
     def Else(self, *statement):
         if self.next_call is not None:
             return self.next_call.Else(*statement)
@@ -1513,7 +1709,7 @@ class If(VeriloggenNode):
         self.Else(next_If)
         self.next_call = next_If
         return self
-        
+
     def __call__(self, *args):
         if self.next_call is not None:
             return self.next_call(*args)
@@ -1521,10 +1717,12 @@ class If(VeriloggenNode):
             return self.set_true_statement(*args)
         if self.false_statement is None:
             return self.set_false_statement(*args)
-        raise ValueError("True statement and False statement are already assigned.")
+        raise ValueError(
+            "True statement and False statement are already assigned.")
 
-#-------------------------------------------------------------------------------
+
 class For(VeriloggenNode):
+
     def __init__(self, pre, condition, post):
         VeriloggenNode.__init__(self)
         self.pre = pre
@@ -1547,8 +1745,9 @@ class For(VeriloggenNode):
             return self.set_statement(*args)
         raise ValueError("Statement body is already assigned.")
 
-#-------------------------------------------------------------------------------
+
 class While(VeriloggenNode):
+
     def __init__(self, condition):
         VeriloggenNode.__init__(self)
         self.condition = condition
@@ -1557,35 +1756,37 @@ class While(VeriloggenNode):
     def set_statement(self, *statement):
         self.statement = tuple(statement)
         return self
-    
+
     def add(self, *statement):
         if self.statement is None:
             return self.set_statement(*statement)
         self.statement = tuple(self.statement + statement)
         return self
-    
+
     def __call__(self, *args):
         if self.statement is None:
             return self.set_statement(*args)
         raise ValueError("Statement body is already assigned.")
 
-#-------------------------------------------------------------------------------
+
 class Case(VeriloggenNode):
+
     def __init__(self, comp):
         VeriloggenNode.__init__(self)
         self.comp = comp
         self.statement = None
         self.last = False
-        
+
     def _type_check_statement(self, *statement):
         for s in statement:
             if not isinstance(s, When):
-                raise TypeError("Case statement requires When() object as statement list.")
+                raise TypeError(
+                    "Case statement requires When() object as statement list.")
             if self.last:
                 raise ValueError("When() with None condition must be last.")
             if s.condition is None:
                 self.last = True
-    
+
     def set_statement(self, *statement):
         self._type_check_statement(*statement)
         self.statement = tuple(statement)
@@ -1603,13 +1804,18 @@ class Case(VeriloggenNode):
             return self.set_statement(*args)
         raise ValueError("Case statement list is already assigned.")
 
-class Casex(Case): pass
-    
-class When(VeriloggenNode) :
+
+class Casex(Case):
+    pass
+
+
+class When(VeriloggenNode):
+
     def __init__(self, *condition):
         VeriloggenNode.__init__(self)
         self._type_check_condition(*condition)
-        self.condition = None if len(condition) == 0 or condition[0] is None else tuple(condition)
+        self.condition = None if len(condition) == 0 or condition[
+            0] is None else tuple(condition)
         self.statement = None
 
     def _type_check_condition(self, *args):
@@ -1617,33 +1823,36 @@ class When(VeriloggenNode) :
             return
         if len(args) == 1 and args[0] is None:
             return
-        for i, a in enumerate(args):        
+        for i, a in enumerate(args):
             if a is None:
-                raise ValueError("None condition must not mixed in When() statement.")
-            if isinstance(a, (_Numeric, bool, int, float, str)): continue
-            raise TypeError("Condition must be _Numeric object, not '%s'" % str(type(a)))
-    
+                raise ValueError(
+                    "None condition must not mixed in When() statement.")
+            if isinstance(a, (_Numeric, bool, int, float, str)):
+                continue
+            raise TypeError(
+                "Condition must be _Numeric object, not '%s'" % str(type(a)))
+
     def _type_check_statement(self, *args):
         pass
-    
+
     def set_statement(self, *statement):
         self._type_check_statement(*statement)
         self.statement = tuple(statement)
         return self
-    
+
     def add(self, *statement):
         if self.statement is None:
             return self.set_statement(*statement)
         self._type_check_statement(*statement)
         self.statement = tuple(self.statement + statement)
         return self
-    
+
     def __call__(self, *args):
         if self.statement is None:
             return self.set_statement(*args)
         raise ValueError("Statement body is already assigned.")
 
-#-------------------------------------------------------------------------------
+
 def PatternIf(*patterns):
     root = None
     prev = None
@@ -1672,6 +1881,7 @@ def PatternIf(*patterns):
 
     return root
 
+
 def PatternMux(*patterns):
     prev = None
 
@@ -1687,14 +1897,17 @@ def PatternMux(*patterns):
 
     return prev
 
-#-------------------------------------------------------------------------------
+
 class ScopeIndex(VeriloggenNode):
+
     def __init__(self, name, index):
         VeriloggenNode.__init__(self)
         self.name = name
         self.index = index
-        
+
+
 class Scope(_Numeric):
+
     def __init__(self, *args):
         _Numeric.__init__(self)
         self.args = tuple(args)
@@ -1704,38 +1917,47 @@ class Scope(_Numeric):
     def bit_length(self):
         return self.args[-1].bit_length()
 
-#-------------------------------------------------------------------------------
+
 class SystemTask(_Numeric):
+
     def __init__(self, cmd, *args):
         _Numeric.__init__(self)
         self.cmd = cmd
         self.args = tuple(args)
-        
+
     def bit_length(self):
         if self.cmd == 'signed':
             return self.args[0].bit_length()
         raise TypeError("bit_length() is not supported.")
 
+
 def Systask(cmd, *args):
     return SingleStatement(SystemTask(cmd, *args))
 
 # frequently-used system task
+
+
 def Display(*args):
     return Systask('display', *args)
+
 
 def Write(*args):
     return Systask('write', *args)
 
+
 def Finish():
     return Systask('finish')
 
-#-------------------------------------------------------------------------------
+
 class Event(VeriloggenNode):
+
     def __init__(self, *sensitivity):
         VeriloggenNode.__init__(self)
         self.sensitivity = sensitivity
 
+
 class Wait(VeriloggenNode):
+
     def __init__(self, condition):
         VeriloggenNode.__init__(self)
         self.condition = condition
@@ -1746,25 +1968,29 @@ class Wait(VeriloggenNode):
             raise ValueError("Statement is already assigned.")
         self.statement = tuple(statement)
         return self
-        
+
     def __call__(self, *statement):
         return self.set_statement(*statement)
 
+
 class Forever(VeriloggenNode):
+
     def __init__(self, *statement):
         VeriloggenNode.__init__(self)
         self.statement = tuple(statement)
 
+
 class Delay(VeriloggenNode):
+
     def __init__(self, value):
         VeriloggenNode.__init__(self)
         self.value = value
 
-#-------------------------------------------------------------------------------
+
 class SingleStatement(VeriloggenNode):
+
     def __init__(self, statement):
         VeriloggenNode.__init__(self)
         self.statement = statement
-        
-#-------------------------------------------------------------------------------
-numerical_types = ( _Numeric, int, bool, float, str )
+
+numerical_types = (_Numeric, int, bool, float, str)
