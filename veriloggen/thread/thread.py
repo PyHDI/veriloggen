@@ -20,12 +20,12 @@ def reset():
 class Thread(vtypes.VeriloggenNode):
     __intrinsics__ = ('run', 'join', 'done', 'reset', 'ret')
 
-    def __init__(self, m, clk, rst, name, targ, datawidth=32, tid=None):
+    def __init__(self, m, name, clk, rst, targ, datawidth=32, tid=None):
 
         self.m = m
+        self.name = name
         self.clk = clk
         self.rst = rst
-        self.name = name
         self.targ = targ
         self.datawidth = datawidth
         self.tid = tid

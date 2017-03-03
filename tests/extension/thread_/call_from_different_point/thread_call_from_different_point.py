@@ -36,8 +36,8 @@ def mkLed():
             pass
         return a + b
 
-    th_blink = vthread.Thread(m, clk, rst, 'th_blink', blink)
-    th_func_a = vthread.Thread(m, clk, rst, 'th_func_a', func_a)
+    th_blink = vthread.Thread(m, 'th_blink', clk, rst, blink)
+    th_func_a = vthread.Thread(m, 'th_func_a', clk, rst, func_a)
     fsm = th_blink.start(20)
 
     return m

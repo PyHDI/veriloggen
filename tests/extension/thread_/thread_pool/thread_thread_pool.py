@@ -33,8 +33,8 @@ def mkLed(numthreads=4):
             pass
         return tid + 100
 
-    pool = vthread.ThreadPool(m, clk, rst, 'th_myfunc', myfunc, numthreads)
-    th = vthread.Thread(m, clk, rst, 'th_blink', blink)
+    pool = vthread.ThreadPool(m, 'th_myfunc', clk, rst, myfunc, numthreads)
+    th = vthread.Thread(m, 'th_blink', clk, rst, blink)
     fsm = th.start(20)
 
     return m

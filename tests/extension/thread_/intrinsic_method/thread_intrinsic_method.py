@@ -55,7 +55,7 @@ def mkLed():
             my_sender.send(data)
             my_sender.wait()
 
-    th = vthread.Thread(m, clk, rst, 'th_blink', blink)
+    th = vthread.Thread(m, 'th_blink', clk, rst, blink)
     fsm = th.start(10)
 
     return m

@@ -12,15 +12,15 @@ from .thread import Thread
 class ThreadPool(vtypes.VeriloggenNode):
     __intrinsics__ = ('run', 'join', 'done', 'reset', 'ret')
 
-    def __init__(self, m, clk, rst, name, targ, numthreads, datawidth=32):
+    def __init__(self, m, name, clk, rst, targ, numthreads, datawidth=32):
         self.m = m
+        self.name = name
         self.clk = clk
         self.rst = rst
-        self.name = name
         self.targ = targ
         self.numthreads = numthreads
         self.datawidth = datawidth
-        self.threads = [Thread(m, clk, rst, '_'.join([name, str(i)]), targ,
+        self.threads = [Thread(m, '_'.join([name, str(i)]), clk, rst, targ,
                                datawidth=datawidth, tid=i)
                         for i in range(numthreads)]
 

@@ -44,7 +44,7 @@ def mkLed():
             send(data)
             wait()
 
-    th = vthread.Thread(m, clk, rst, 'th_blink', blink)
+    th = vthread.Thread(m, 'th_blink', clk, rst, blink)
 
     # add intrinsics
     th.add_intrinsics(send, wait)

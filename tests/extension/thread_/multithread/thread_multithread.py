@@ -30,8 +30,8 @@ def mkLed():
             led.value += inc
             print("  led = %d" % led)
 
-    th_countup = vthread.Thread(m, clk, rst, 'th_countup', countup)
-    th_blink = vthread.Thread(m, clk, rst, 'th_blink', blink)
+    th_countup = vthread.Thread(m, 'th_countup', clk, rst, countup)
+    th_blink = vthread.Thread(m, 'th_blink', clk, rst, blink)
 
     fsm_countup = th_countup.start(20)
     fsm_blink = th_blink.start(10)

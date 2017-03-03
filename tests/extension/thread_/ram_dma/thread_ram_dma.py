@@ -81,7 +81,7 @@ def mkLed():
                 print('rdata[%d] = %d' % (i, rdata))
                 all_ok.value = False
 
-    th = vthread.Thread(m, clk, rst, 'th_blink', blink)
+    th = vthread.Thread(m, 'th_blink', clk, rst, blink)
     fsm = th.start(16)
 
     return m

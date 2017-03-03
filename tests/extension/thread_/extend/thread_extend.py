@@ -33,7 +33,7 @@ def mkLed():
             led.value += 1
             print("led = ", led)
 
-    th = vthread.Thread(m, clk, rst, 'th_blink', blink)
+    th = vthread.Thread(m, 'th_blink', clk, rst, blink)
     fsm = th.extend(fsm, 10)
 
     return m

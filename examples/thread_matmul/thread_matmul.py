@@ -69,7 +69,7 @@ def mkLed():
         else:
             print("NG")
 
-    th = vthread.Thread(m, clk, rst, 'th_matmul', matmul)
+    th = vthread.Thread(m, 'th_matmul', clk, rst, matmul)
     fsm = th.start(16, 0, 1024, 2048)
 
     return m

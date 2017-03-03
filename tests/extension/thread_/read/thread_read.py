@@ -30,7 +30,7 @@ def mkLed():
             led.value = count
             print("led = ", led)
 
-    th = vthread.Thread(m, clk, rst, 'th_blink', blink)
+    th = vthread.Thread(m, 'th_blink', clk, rst, blink)
     fsm = th.start(10)
 
     return m

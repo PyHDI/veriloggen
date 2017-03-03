@@ -41,7 +41,7 @@ def mkLed():
 
         print('sum = %d' % sum)
 
-    th = vthread.Thread(m, clk, rst, 'th_blink', blink)
+    th = vthread.Thread(m, 'th_blink', clk, rst, blink)
     fsm = th.start(10)
 
     return m

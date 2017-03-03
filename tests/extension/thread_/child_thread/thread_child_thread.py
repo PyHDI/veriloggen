@@ -40,8 +40,8 @@ def mkLed():
         print('# subth end: %d' % ret)
         return ret
 
-    th_blink = vthread.Thread(m, clk, rst, 'th_blink', blink)
-    th_subth = vthread.Thread(m, clk, rst, 'th_subth', subth)
+    th_blink = vthread.Thread(m, 'th_blink', clk, rst, blink)
+    th_subth = vthread.Thread(m, 'th_subth', clk, rst, subth)
     fsm = th_blink.start(20)
 
     return m

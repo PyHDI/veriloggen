@@ -50,8 +50,8 @@ def mkLed(numthreads=8):
             led.value = read_data
             print("result ram[%d] = %d" % (i, read_data))
 
-    th = vthread.Thread(m, clk, rst, 'th_blink', blink)
-    pool = vthread.ThreadPool(m, clk, rst, 'th_myfunc', myfunc, numthreads)
+    th = vthread.Thread(m, 'th_blink', clk, rst, blink)
+    pool = vthread.ThreadPool(m, 'th_myfunc', clk, rst, myfunc, numthreads)
     fsm = th.start()
 
     return m

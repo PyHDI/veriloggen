@@ -54,7 +54,7 @@ def mkLed():
             my_sender.intrinsic_send(data)
             my_sender.intrinsic_wait()
 
-    th = vthread.Thread(m, clk, rst, 'th_blink', blink)
+    th = vthread.Thread(m, 'th_blink', clk, rst, blink)
     th.add_intrinsic_method_prefix(my_sender, 'intrinsic_')
     fsm = th.start(10)
 
