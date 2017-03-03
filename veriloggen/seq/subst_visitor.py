@@ -6,30 +6,33 @@ import sys
 
 import veriloggen.core.vtypes as vtypes
 
+
 class SubstDstVisitor(object):
+
     def generic_visit(self, node):
         raise TypeError("Type %s is not supported." % str(type(node)))
-    
+
     def visit(self, node):
         if isinstance(node, vtypes._Variable):
             return self.visit__Variable(node)
-        
-        visitor = getattr(self, 'visit_' + node.__class__.__name__, self.generic_visit)
+
+        visitor = getattr(
+            self, 'visit_' + node.__class__.__name__, self.generic_visit)
         return visitor(node)
 
     def visit__Variable(self, node):
-        return [ node ]
+        return [node]
 
     def visit_list(self, node):
         ret = []
         for n in node:
-            ret.extend( self.visit(n) )
+            ret.extend(self.visit(n))
         return ret
 
     def visit_tuple(self, node):
         ret = []
         for n in node:
-            ret.extend( self.visit(n) )
+            ret.extend(self.visit(n))
         return ret
 
     def visit_If(self, node):
@@ -47,13 +50,13 @@ class SubstDstVisitor(object):
         return statement
 
     def visit_Pointer(self, node):
-        return [ node ]
+        return [node]
 
     def visit_Slice(self, node):
-        return [ node ]
+        return [node]
 
     def visit_Cat(self, node):
-        return [ node ]
+        return [node]
 
     def visit_Subst(self, node):
         return self.visit(node.left)

@@ -9,73 +9,77 @@ from veriloggen.core.vtypes import _Numeric
 from veriloggen.core.vtypes import _Variable
 from veriloggen.core.vtypes import _Constant
 
+
 def to_fixed(value, point, signed=False):
     if point < 0:
         raise ValueError('point must be more than 0')
-    
+
     if point == 0:
         return value
-    
+
     if isinstance(value, (int, bool, float)) and isinstance(point, int):
         mag = 2 ** point
         return int(value * mag)
-    
+
     if isinstance(value, (int, bool)):
         mag = vtypes.Int(2) ** point
         return vtypes.Int(value) * mag
-    
+
     if isinstance(value, float):
         mag = vtypes.Int(2) ** point
         return vtypes.Float(value) * mag
-    
+
     if hasattr(value, 'signed') and value.signed:
         signed = True
-        
+
     return shift_left(value, point, signed)
+
 
 def fixed_to_int(value, point, signed=False):
     if point < 0:
         raise ValueError('point must be more than 0')
-    
+
     if point == 0:
         return value
-    
+
     if isinstance(value, (int, bool, float)) and isinstance(point, int):
         mag = 2 ** point
         return int(value / mag)
-    
+
     if isinstance(value, (int, bool, float)):
         mag = vtypes.Int(2) ** point
         return vtypes.Int(value) / mag
-    
+
     if hasattr(value, 'signed') and value.signed:
         signed = True
-        
+
     return shift_right(value, point, signed)
+
 
 def fixed_to_int_low(value, point):
     if point < 0:
         raise ValueError('point must be more than 0')
-    
+
     if point == 0:
         return 0
-    
+
     if isinstance(value, (int, bool, float)) and isinstance(point, int):
         mag = 2 ** point
         return int(value % mag)
-    
+
     return vtypes.And(value, vtypes.Repeat(vtypes.Int(1, 1), point))
+
 
 def fixed_to_real(value, point, signed=False):
     if point < 0:
         raise ValueError('point must be more than 0')
-    
+
     if point == 0:
         return vtypes.SystemTask('itor', value)
 
     if isinstance(value, float):
         raise TypeError("value is already float.")
-    
+
     if isinstance(value, (int, bool)) and isinstance(point, int):
         mag = 2 ** point
         return float(value) / mag
@@ -86,88 +90,104 @@ def fixed_to_real(value, point, signed=False):
     width = value.bit_length()
     msb = (value[width - 1] if isinstance(value, vtypes._Variable) else
            (value >> (width - 1)) & 0x1)
-    
+
     v0 = (vtypes.SystemTask('itor', fixed_to_int(value, point)) +
           vtypes.SystemTask('itor', fixed_to_int_low(value, point)) /
           vtypes.SystemTask('itor', vtypes.Int(2) ** point))
-    
+
     nv = vtypes.Unot(value) + 1
     v1 = ((vtypes.SystemTask('itor', fixed_to_int(nv, point)) +
            vtypes.SystemTask('itor', fixed_to_int_low(nv, point)) /
            vtypes.SystemTask('itor', vtypes.Int(2) ** point))) * vtypes.SystemTask('itor', -1)
-    
+
     return vtypes.Mux(signed and msb == 0, v0, v1)
 
-#-------------------------------------------------------------------------------
+
 def adjust(left, right, lpoint, rpoint, signed=True):
     diff_lpoint = vtypes.Mux(rpoint < lpoint, 0, rpoint - lpoint)
     diff_rpoint = vtypes.Mux(lpoint < rpoint, 0, lpoint - rpoint)
-    ldata = vtypes.Mux(diff_lpoint == 0, left, shift_left(left, diff_lpoint, signed))
-    rdata = vtypes.Mux(diff_rpoint == 0, right, shift_left(right, diff_rpoint, signed))
+    ldata = vtypes.Mux(diff_lpoint == 0, left,
+                       shift_left(left, diff_lpoint, signed))
+    rdata = vtypes.Mux(diff_rpoint == 0, right,
+                       shift_left(right, diff_rpoint, signed))
     _ldata = vtypes.Mux(signed, vtypes.SystemTask('signed', ldata), ldata)
     _rdata = vtypes.Mux(signed, vtypes.SystemTask('signed', rdata), rdata)
     return _ldata, _rdata
-    
+
+
 def shift_left(value, size, signed=True):
     if isinstance(value, vtypes.Int):
         value = value.value
-        
+
     if isinstance(value, int) and isinstance(size, int):
         return value << size
-    
+
     if isinstance(value, bool) and isinstance(size, int):
         return value << size
-    
+
     return vtypes.Sll(value, size)
+
 
 def shift_right(value, size, signed=True):
     if isinstance(value, vtypes.Int):
         value = value.value
-        
+
     if isinstance(value, int) and isinstance(size, int):
         return value >> size
-    
+
     if isinstance(value, bool) and isinstance(size, int):
         return value >> size
-    
+
     return vtypes.Mux(signed, vtypes.Sra(value, size), vtypes.Srl(value, size))
 
-#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+
+
 def _max_mux(a, b):
     return vtypes.Mux(a > b, a, b)
+
 
 def _min_mux(a, b):
     return vtypes.Mux(a < b, a, b)
 
-#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+
+
 def FixedInput(m, name, width=32, point=0, signed=False):
     var = m.Input(name, width, signed=signed)
     return Fixed(var, point, signed)
+
 
 def FixedOutput(m, name, width=32, point=0, signed=False):
     var = m.Output(name, width, signed=signed)
     return Fixed(var, point, signed)
 
+
 def FixedOutputReg(m, name, width=32, point=0, signed=False):
     var = m.OutputReg(name, width, signed=signed)
     return Fixed(var, point, signed)
+
 
 def FixedReg(m, name, width=32, point=0, signed=False):
     var = m.Reg(name, width, signed=signed)
     return Fixed(var, point, signed)
 
+
 def FixedWire(m, name, width=32, point=0, signed=False):
     var = m.Wire(name, width, signed=signed)
     return Fixed(var, point, signed)
 
-#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+
+
 class Fixed(vtypes.VeriloggenNode):
+
     def __init__(self, value, point, signed=None, raw=True):
         vtypes.VeriloggenNode.__init__(self)
         self.value = value if raw else to_fixed(value, point)
         self.point = point
         self.signed = vtypes.get_signed(value) if signed is None else signed
-    
+
     def __hash__(self):
         return hash((id(self), self.object_id))
 
@@ -184,11 +204,11 @@ class Fixed(vtypes.VeriloggenNode):
 
         ldiff = vtypes.Mux(lpoint <= rpoint, 0, lpoint - rpoint)
         rdiff = vtypes.Mux(lpoint >= rpoint, 0, rpoint - lpoint)
-        v = vtypes.Mux(lpoint>rpoint, shift_left(rvalue, ldiff, rsigned),
-            vtypes.Mux(lpoint<rpoint, shift_right(rvalue, rdiff, rsigned), rvalue))
+        v = vtypes.Mux(lpoint > rpoint, shift_left(rvalue, ldiff, rsigned),
+                       vtypes.Mux(lpoint < rpoint, shift_right(rvalue, rdiff, rsigned), rvalue))
 
         return v
-    
+
     def write(self, value, blk=False, ldelay=None, rdelay=None):
         v = self._adjust(value)
         return self.value.write(v, blk=blk, ldelay=ldelay, rdelay=rdelay)
@@ -227,7 +247,7 @@ class Fixed(vtypes.VeriloggenNode):
     def __call__(self, value, blk=False, ldelay=None, rdelay=None):
         return self.write(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
 
-    #-------------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
     @property
     def raw(self):
         return self.value
@@ -238,14 +258,15 @@ class Fixed(vtypes.VeriloggenNode):
 
     @property
     def dec_part(self):
-        mask = vtypes.Mux(self.point==0, 0, vtypes.Repeat(vtypes.Int(1, width=1), self.point))
+        mask = vtypes.Mux(self.point == 0, 0, vtypes.Repeat(
+            vtypes.Int(1, width=1), self.point))
         return self.value & mask
 
     def _binary_op(self, op, r):
         lvalue = self.value
         lpoint = self.point
         lsigned = self.signed
-        
+
         if not isinstance(r, Fixed):
             rvalue = r
             rsigned = vtypes.get_signed(r)
@@ -267,7 +288,7 @@ class Fixed(vtypes.VeriloggenNode):
         lvalue = self.value
         lpoint = self.point
         lsigned = self.signed
-        
+
         if not isinstance(r, Fixed):
             rvalue = r
             rsigned = vtypes.get_signed(r)
@@ -292,7 +313,7 @@ class Fixed(vtypes.VeriloggenNode):
         lvalue = self.value
         lpoint = self.point
         lsigned = self.signed
-        
+
         if not isinstance(r, Fixed):
             rvalue = r
             rsigned = vtypes.get_signed(r)
@@ -309,15 +330,15 @@ class Fixed(vtypes.VeriloggenNode):
         ldata, rdata = adjust(lvalue, rvalue, lpoint, rpoint, signed)
 
         try:
-            lmsb = ldata[lwidth-1]
+            lmsb = ldata[lwidth - 1]
         except:
             lmsb = (ldata >> (lwidth - 1) & 0x1)
-            
+
         try:
-            rmsb = rdata[lwidth-1]
+            rmsb = rdata[lwidth - 1]
         except:
             rmsb = (rdata >> (rwidth - 1) & 0x1)
-            
+
         abs_ldata = (ldata if not lsigned else
                      vtypes.Mux(lmsb == 0, ldata, vtypes.Unot(ldata) + 1))
         abs_rdata = (rdata if not rsigned else
@@ -332,7 +353,7 @@ class Fixed(vtypes.VeriloggenNode):
 
     def _binary_logical_op(self, op, r):
         lvalue = self.value
-        
+
         if not isinstance(r, Fixed):
             rvalue = r
         else:

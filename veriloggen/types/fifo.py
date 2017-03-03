@@ -161,7 +161,7 @@ class Fifo(object):
                                     ports=m.connect_ports(self.definition))
 
         self.seq = Seq(m, name, clk, rst)
-        #self.m.add_hook(self.seq.make_always)
+        # self.m.add_hook(self.seq.make_always)
 
         # entry counter
         self._max_size = (2 ** self.addrwidth - 1 if isinstance(self.addrwidth, int) else
@@ -199,7 +199,7 @@ class Fifo(object):
         """ Enque operation """
         if self._enq_disabled:
             raise TypeError('Enq disabled.')
-        
+
         if cond is not None:
             self.seq.If(cond)
 
@@ -230,7 +230,7 @@ class Fifo(object):
         """ Deque operation """
         if self._deq_disabled:
             raise TypeError('Deq disabled.')
-        
+
         if cond is not None:
             self.seq.If(cond)
 
@@ -244,11 +244,11 @@ class Fifo(object):
 
         rdata = self.rif.rdata
         rvalid = self.m.TmpReg(initval=0)
-        
+
         self.seq.Then().Delay(current_delay + delay + 1)(
             rvalid(vtypes.Ands(not_empty, self.rif.deq))
         )
-        
+
         # de-assert
         self.seq.Delay(current_delay + delay + 1)(
             self.rif.deq(0)

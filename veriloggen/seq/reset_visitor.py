@@ -37,7 +37,8 @@ class ResetVisitor(object):
                 val_right = vtypes.Float(val.right)
             else:
                 raise TypeError("unsupported value type: %s" % str(val.right))
-            right = vtypes.And(vtypes.Srl(val_right, node.pos), vtypes.Int(1, width=1))
+            right = vtypes.And(vtypes.Srl(
+                val_right, node.pos), vtypes.Int(1, width=1))
         else:
             right = vtypes.Pointer(val.right, node.pos)
         return vtypes.Subst(left, right)
@@ -50,7 +51,7 @@ class ResetVisitor(object):
             right = vtypes.Slice(val.right, node.msb, node.lsb)
         else:
             right = vtypes.And(vtypes.Srl(val.right, node.lsb),
-                               vtypes.Repeat(vtypes.Int(1, width=1), node.msb-node.lsb+1))
+                               vtypes.Repeat(vtypes.Int(1, width=1), node.msb - node.lsb + 1))
         return vtypes.Subst(vtypes.Slice(val.left, node.msb, node.lsb), right)
 
     def visit_Cat(self, node):

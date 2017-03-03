@@ -12,7 +12,7 @@ from . import util
 def mkROMDefinition(name, values, size, datawidth, sync=False, with_enable=False):
     if not sync and with_enable:
         raise ValueError('Async ROM cannot have enable signals')
-    
+
     m = Module(name)
 
     clk = m.Input('CLK') if sync else None
@@ -33,9 +33,9 @@ def mkROMDefinition(name, values, size, datawidth, sync=False, with_enable=False
 
     if with_enable:
         body = vtypes.If(enable)(body)
-    
+
     alw(
-       body
+        body
     )
 
     return m
@@ -67,7 +67,8 @@ class _ROM(object):
 
         self.rdata = self.m.Wire(name + '_val', datawidth)
         sync = True if clk is not None else False
-        rom_def = mkROMDefinition(name, values, size, datawidth, sync, with_enable)
+        rom_def = mkROMDefinition(
+            name, values, size, datawidth, sync, with_enable)
 
         ports = []
         if clk is not None:
@@ -77,7 +78,7 @@ class _ROM(object):
 
         if enable is not None:
             ports.append(self.enable)
-        
+
         ports.append(self.rdata)
 
         self.m.Instance(rom_def, name, params=(), ports=ports)
@@ -86,10 +87,12 @@ class _ROM(object):
 class SyncROM(_ROM):
 
     def __init__(self, m, name, clk, addr, values, enable=None, datawidth=None):
-        _ROM.__init__(self, m, name, clk, addr, values, enable=enable, datawidth=datawidth)
+        _ROM.__init__(self, m, name, clk, addr, values,
+                      enable=enable, datawidth=datawidth)
 
 
 class AsyncROM(_ROM):
 
     def __init__(self, m, name, addr, values, enable=None, datawidth=None):
-        _ROM.__init__(self, m, name, None, addr, values, enable=enable, datawidth=datawidth)
+        _ROM.__init__(self, m, name, None, addr, values,
+                      enable=enable, datawidth=datawidth)
