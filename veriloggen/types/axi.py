@@ -418,7 +418,7 @@ class AxiMaster(object):
 
         return data, valid, last
 
-    def read_dataflow(self, counter=None, cond=None):
+    def read_dataflow(self, counter=None, cond=None, point=0, signed=False):
         """ 
         @return data, last, done
         """
@@ -465,7 +465,8 @@ class AxiMaster(object):
 
         df = self.df if self.df is not None else dataflow
 
-        df_data = df.Variable(data, valid, data_ready)
+        df_data = df.Variable(data, valid, data_ready,
+                              point=point, signed=signed)
         df_last = df.Variable(last, valid, last_ready, width=1)
         done = last
 

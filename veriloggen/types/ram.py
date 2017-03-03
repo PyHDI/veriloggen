@@ -293,7 +293,7 @@ class SyncRAMManager (object):
 
         return rdata, rvalid
 
-    def read_dataflow(self, port, addr, length=1, cond=None):
+    def read_dataflow(self, port, addr, length=1, cond=None, point=0, signed=False):
         """ 
         @return data, last, done
         """
@@ -363,7 +363,8 @@ class SyncRAMManager (object):
 
         df = self.df if self.df is not None else dataflow
 
-        df_data = df.Variable(data, data_valid, data_ready)
+        df_data = df.Variable(data, data_valid, data_ready,
+                              point=point, signed=signed)
         df_last = df.Variable(last, last_valid, last_ready, width=1)
         done = last
 
