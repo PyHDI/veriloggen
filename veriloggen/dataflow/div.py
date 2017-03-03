@@ -153,6 +153,8 @@ endmodule
 
 # global multiplier definition
 div = None
+
+
 def get_div():
     global div
     if div is None:

@@ -4,30 +4,33 @@ from __future__ import print_function
 from . import dtypes
 from .visitor import _Visitor
 
-#-------------------------------------------------------------------------------
+
 class _Scheduler(_Visitor):
+
     def max_stage(self, *vars):
         return dtypes._max(*vars)
-    
+
     def next_stage(self, node, stage):
-        if stage is None: return 0
+        if stage is None:
+            return 0
         return stage + node.latency
 
     def schedule(self, nodes):
         raise NotImplementedError()
 
-#-------------------------------------------------------------------------------
+
 class ASAPScheduler(_Scheduler):
     """ Determine the scheduled cycle and insert delay variables to fill the gap """
 
     def schedule(self, nodes):
-        for node in sorted(nodes, key=lambda x:x.object_id):
+        for node in sorted(nodes, key=lambda x: x.object_id):
             self.visit(node)
 
     def balance_output(self, nodes, max_stage):
         ret = []
-        for node in sorted(nodes, key=lambda x:x.object_id):
-            if not node._has_output(): continue
+        for node in sorted(nodes, key=lambda x: x.object_id):
+            if not node._has_output():
+                continue
             r = self.fill_gap(node, max_stage)
             t_data = node.output_data
             t_valid = node.output_valid
@@ -50,19 +53,22 @@ class ASAPScheduler(_Scheduler):
         return ret
 
     def fill_gap(self, node, end_stage):
-        if end_stage is None: return node
-        if node.end_stage is None: return node
-        if node.end_stage == end_stage: return node
+        if end_stage is None:
+            return node
+        if node.end_stage is None:
+            return node
+        if node.end_stage == end_stage:
+            return node
         if node.end_stage > end_stage:
             raise ValueError("Illegal stage number: node.end_stage (%d) > end_stage (%d)" %
                              node.end_stage, end_stage)
 
         if isinstance(node, dtypes._Delay) and node._get_parent_value() is not None:
             node = node._get_parent_value()
-        
+
         prev = node
         cur_end_stage = prev.end_stage
-        
+
         for i in range(cur_end_stage, end_stage):
             r = node._get_delayed_value(i + 1)
             if r is not None:
@@ -78,9 +84,10 @@ class ASAPScheduler(_Scheduler):
             cur_end_stage += 1
 
         return prev
-            
+
     def visit__BinaryOperator(self, node):
-        if node._has_start_stage(): return node._get_end_stage()
+        if node._has_start_stage():
+            return node._get_end_stage()
         left = self.visit(node.left)
         right = self.visit(node.right)
         mine = self.max_stage(left, right)
@@ -94,7 +101,8 @@ class ASAPScheduler(_Scheduler):
         return end
 
     def visit__UnaryOperator(self, node):
-        if node._has_start_stage(): return node._get_end_stage()
+        if node._has_start_stage():
+            return node._get_end_stage()
         right = self.visit(node.right)
         mine = self.max_stage(right)
         node.right = self.fill_gap(node.right, mine)
@@ -102,22 +110,24 @@ class ASAPScheduler(_Scheduler):
         end = self.next_stage(node, mine)
         node._set_end_stage(end)
         return end
-    
+
     def visit__SpecialOperator(self, node):
-        if node._has_start_stage(): return node._get_end_stage()
+        if node._has_start_stage():
+            return node._get_end_stage()
         ret = []
         for var in node.args:
             var = self.visit(var)
             ret.append(var)
         mine = self.max_stage(*ret)
-        node.args = [ self.fill_gap(var, mine) for var in node.args ]
+        node.args = [self.fill_gap(var, mine) for var in node.args]
         node._set_start_stage(mine)
         end = self.next_stage(node, mine)
         node._set_end_stage(end)
         return end
-    
+
     def visit__Accumulator(self, node):
-        if node._has_start_stage(): return node._get_end_stage()
+        if node._has_start_stage():
+            return node._get_end_stage()
         right = self.visit(node.right)
         initval = self.visit(node.initval)
         enable = self.visit(node.enable) if node.enable is not None else None
@@ -133,12 +143,13 @@ class ASAPScheduler(_Scheduler):
         end = self.next_stage(node, mine)
         node._set_end_stage(end)
         return end
-    
+
     def visit__ParameterVariable(self, node):
         return None
-        
+
     def visit__Variable(self, node):
-        if node._has_start_stage(): return node._get_end_stage()
+        if node._has_start_stage():
+            return node._get_end_stage()
         if isinstance(node.input_data, dtypes._Numeric):
             data = self.visit(node.input_data)
             node._set_start_stage(data)
@@ -148,6 +159,6 @@ class ASAPScheduler(_Scheduler):
         end = mine
         node._set_end_stage(end)
         return end
-        
+
     def visit__Constant(self, node):
         return None
