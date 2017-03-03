@@ -8,6 +8,7 @@ import tempfile
 import veriloggen.core.vtypes as vtypes
 import veriloggen.core.module as module
 
+
 def setup_waveform(m, *uuts):
     new_uuts = []
     for uut in uuts:
@@ -34,12 +35,14 @@ def setup_waveform(m, *uuts):
     )
     return ret
 
+
 def setup_clock(m, clk, hperiod=5):
     ret = m.Initial(
         clk(0),
         vtypes.Forever(clk(vtypes.Not(clk), ldelay=hperiod))
     )
     return ret
+
 
 def setup_reset(m, reset, *statement, **kwargs):
     period = kwargs['period'] if 'period' in kwargs else 100
@@ -53,14 +56,17 @@ def setup_reset(m, reset, *statement, **kwargs):
     )
     return ret
 
+
 def next_clock(clk):
-    return ( vtypes.Event(vtypes.Posedge(clk)), vtypes.Delay(1) )
+    return (vtypes.Event(vtypes.Posedge(clk)), vtypes.Delay(1))
+
 
 def finish():
     return vtypes.Systask('finish')
 
-#-------------------------------------------------------------------------------
+
 class Simulator(object):
+
     def __init__(self, *objs, **options):
         sim = 'iverilog' if 'sim' not in options else options['sim']
         wave = 'gtkwave' if 'wave' not in options else options['wave']
@@ -82,12 +88,12 @@ class Simulator(object):
         if sim == 'vcs':
             raise NotImplementedError("Not implemented: '%s'" % sim)
         raise ValueError("Not supported simulator: '%s'" % sim)
-        
+
     def _type_check_wave(self, wave):
         if wave == 'gtkwave':
-            return 
+            return
         raise ValueError("Not supported waveform viewer: '%s'" % wave)
-        
+
     def run(self, display=False, outputfile='a.out', include=None, define=None):
         if self.sim == 'iverilog' or self.sim == 'icarus':
             return self._run_iverilog(display, outputfile, include, define)
@@ -109,22 +115,22 @@ class Simulator(object):
                     if d[1] is None:
                         cmd.append(d[0])
                     else:
-                        cmd.append(''.join([ d[0], '=', str(d[1])]))
+                        cmd.append(''.join([d[0], '=', str(d[1])]))
                 else:
                     cmd.append(d)
-                    
+
         cmd.append('-o')
         cmd.append(outputfile)
 
         # encoding: 'utf-8' ?
         encode = sys.getdefaultencoding()
-        
+
         code = self._to_code()
         tmp = tempfile.NamedTemporaryFile()
         tmp.write(code.encode(encode))
         tmp.read()
         filename = tmp.name
-        
+
         cmd.append(filename)
 
         # synthesis
@@ -133,27 +139,32 @@ class Simulator(object):
         while True:
             stdout_data = p.stdout.readline()
             syn_rslt.append(stdout_data.decode(encode))
-            if display: print(stdout_data, end='')
-            if not stdout_data: break
+            if display:
+                print(stdout_data, end='')
+            if not stdout_data:
+                break
         p.wait()
         p.stdout.close()
         syn_rslt = ''.join(syn_rslt)
 
         # simulation
-        p = subprocess.Popen('./' + outputfile, shell=True, stdout=subprocess.PIPE)
+        p = subprocess.Popen('./' + outputfile, shell=True,
+                             stdout=subprocess.PIPE)
         sim_rslt = []
         while True:
             stdout_data = p.stdout.readline()
             sim_rslt.append(stdout_data.decode(encode))
-            if display: print(stdout_data, end='')
-            if not stdout_data: break
+            if display:
+                print(stdout_data, end='')
+            if not stdout_data:
+                break
         p.wait()
         p.stdout.close()
         sim_rslt = ''.join(sim_rslt)
 
         # close temporal source code file
         tmp.close()
-        
+
         return ''.join([syn_rslt, sim_rslt])
 
     def _run_modelsim(self, display=False, top="test", include=None, define=None):
@@ -170,19 +181,19 @@ class Simulator(object):
                     if d[1] is None:
                         cmd.append(d[0])
                     else:
-                        cmd.append(''.join([ d[0], '=', str(d[1])]))
+                        cmd.append(''.join([d[0], '=', str(d[1])]))
                 else:
                     cmd.append(d)
-                    
+
         # encoding: 'utf-8' ?
         encode = sys.getdefaultencoding()
-        
+
         code = self._to_code()
         tmp = tempfile.NamedTemporaryFile()
         tmp.write(code.encode(encode))
         tmp.read()
         filename = tmp.name
-        
+
         cmd.append(filename)
 
         # synthesis
@@ -191,27 +202,32 @@ class Simulator(object):
         while True:
             stdout_data = p.stdout.readline()
             syn_rslt.append(stdout_data.decode(encode))
-            if display: print(stdout_data, end='')
-            if not stdout_data: break
+            if display:
+                print(stdout_data, end='')
+            if not stdout_data:
+                break
         p.wait()
         p.stdout.close()
         syn_rslt = ''.join(syn_rslt)
 
         # simulation
-        p = subprocess.Popen('vsim -c ' + top + ' -do \"run -all\"', shell=True, stdout=subprocess.PIPE)
+        p = subprocess.Popen(
+            'vsim -c ' + top + ' -do \"run -all\"', shell=True, stdout=subprocess.PIPE)
         sim_rslt = []
         while True:
             stdout_data = p.stdout.readline()
             sim_rslt.append(stdout_data.decode(encode))
-            if display: print(stdout_data, end='')
-            if not stdout_data: break
+            if display:
+                print(stdout_data, end='')
+            if not stdout_data:
+                break
         p.wait()
         p.stdout.close()
         sim_rslt = ''.join(sim_rslt)
 
         # close temporal source code file
         tmp.close()
-        
+
         return ''.join([syn_rslt, sim_rslt])
 
     def _to_code(self):
@@ -224,7 +240,7 @@ class Simulator(object):
                 code.append(obj)
                 code.append('\n')
         return ''.join(code)
-    
+
     def view_waveform(self, filename='uut.vcd', background=False):
         return self._view_waveform_gtkwave(filename, background)
 
