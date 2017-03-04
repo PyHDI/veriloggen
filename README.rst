@@ -351,10 +351,31 @@ If you installed GTKwave and enable 'sim.view\_waveform()' in
 
    waveform.png
 
+Veriloggen Extension Libraries
+==============================
+
+-  veriloggen.verilog: Verilog HDL source code synthesis and import APIs
+-  veriloggen.simulation: Simulation APIs via Verilog simulators
+-  veriloggen.seq: Synchronous circuit builder (Seq)
+-  veriloggen.fsm: Finite state machine builder (FSM)
+-  veriloggen.types: Library of frequently-used structure, such as
+   memory, fixed-point, AXI bus, etc.
+-  veriloggen.pipeline: Explicit pipeline builder
+-  veriloggen.dataflow: Dataflow-based stream processing hardware
+   builder
+-  veriloggen.thread: Tightly-coupled high-level synthesis compiler
+   emedded within Veriloggen HDL
+
 Publication
 ===========
 
-Not yet.
+If you use Veriloggen for your research, please cite our paper.
+
+-  Minoru Watanabe, Kentaro Sano, Shinya Takamaeda, Takefumi Miyoshi,
+   and Hironori Nakajo: Japanese High-level Synthesis Tools for FPGA
+   Hardware Acceleration, IEICE Transactions on Communications, Vol.
+   J100-B, No. 1, pp.1-10, January 2017.
+   `Paper <https://search.ieice.org/bin/summary.php?id=j100-b_1_1>`__
 
 Related Project
 ===============
