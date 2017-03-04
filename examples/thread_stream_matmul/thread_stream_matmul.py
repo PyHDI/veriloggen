@@ -38,6 +38,12 @@ def mkLed(matrix_size=16):
         print("Time (cycles): %d" % time)
         check(matrix_size, a_offset, b_offset, c_offset)
 
+    def strm_madd(strm, size, waddr):
+        a = strm.read_sequential(ram_a, 0, size)
+        b = strm.read_sequential(ram_b, 0, size)
+        sum, valid = strm.RegionAdd(a * b, size)
+        strm.write_sequential(ram_c, waddr, 1, sum, when=valid)
+
     def comp(matrix_size, a_offset, b_offset, c_offset):
         a_addr, c_addr = a_offset, c_offset
 
@@ -48,12 +54,8 @@ def mkLed(matrix_size=16):
             for j in range(matrix_size):
                 ram_b.dma_read(myaxi, 0, b_addr, matrix_size)
 
-                sum = 0
-                for k in range(matrix_size):
-                    x = ram_a.read(k)
-                    y = ram_b.read(k)
-                    sum += x * y
-                ram_c.write(j, sum)
+                stream.run(matrix_size, j)
+                stream.join()
 
                 b_addr += matrix_size * (datawidth // 8)
 
@@ -81,6 +83,7 @@ def mkLed(matrix_size=16):
         else:
             print("NG")
 
+    stream = vthread.Stream(m, 'strm_madd', clk, rst, strm_madd)
     th = vthread.Thread(m, 'th_matmul', clk, rst, matmul)
     fsm = th.start(matrix_size, 0, 1024, 2048)
 

@@ -1045,7 +1045,7 @@ module blinkled
         th_blink_12: begin
           if(_tmp_17) begin
             _tmp_0 <= _tmp_0 + _tmp_2;
-            _tmp_1 <= _tmp_1 + _tmp_2 * 4;
+            _tmp_1 <= _tmp_1 + (_tmp_2 << 2);
           end 
           if(_tmp_17 && (_tmp_3 > 0)) begin
             th_blink <= th_blink_11;
@@ -1107,7 +1107,7 @@ module blinkled
         th_blink_23: begin
           if(_tmp_36) begin
             _tmp_19 <= _tmp_19 + _tmp_21;
-            _tmp_20 <= _tmp_20 + _tmp_21 * 4;
+            _tmp_20 <= _tmp_20 + (_tmp_21 << 2);
           end 
           if(_tmp_36 && (_tmp_22 > 0)) begin
             th_blink <= th_blink_22;
@@ -1151,7 +1151,7 @@ module blinkled
         th_blink_30: begin
           if(_tmp_46) begin
             _tmp_38 <= _tmp_38 + _tmp_40;
-            _tmp_39 <= _tmp_39 + _tmp_40 * 4;
+            _tmp_39 <= _tmp_39 + (_tmp_40 << 2);
           end 
           if(_tmp_46 && (_tmp_41 > 0)) begin
             th_blink <= th_blink_29;
@@ -1233,7 +1233,7 @@ module blinkled
         th_blink_44: begin
           if(_tmp_58) begin
             _tmp_50 <= _tmp_50 + _tmp_52;
-            _tmp_51 <= _tmp_51 + _tmp_52 * 4;
+            _tmp_51 <= _tmp_51 + (_tmp_52 << 2);
           end 
           if(_tmp_58 && (_tmp_53 > 0)) begin
             th_blink <= th_blink_43;

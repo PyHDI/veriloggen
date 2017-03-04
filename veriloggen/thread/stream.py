@@ -5,9 +5,11 @@ import functools
 
 from veriloggen.dataflow import *
 from veriloggen.seq.seq import make_condition
-from veriloggen.fsm.fsm import TmpFSM
+from veriloggen.fsm.fsm import FSM
 from veriloggen.seq.seq import Seq
 import veriloggen.dataflow.dtypes as dtypes
+
+from . import compiler
 
 
 class Stream(vtypes.VeriloggenNode):
@@ -52,15 +54,17 @@ class Stream(vtypes.VeriloggenNode):
 
     def read_sequential(self, obj, start_addr, size, point=0, signed=False,
                         port=0, with_last=False):
-        flag = self.m.TmpReg(initval=0)
+        flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'flag'])),
+                          initval=0)
         self.done_flags.append(flag)
 
-        fsm = TmpFSM(self.m, self.clk, self.rst)
-        fsm.If(self.start_cond).goto_next()
-
-        fsm(
+        fsm = FSM(self.m, compiler._tmp_name('_'.join(['', self.name, 'fsm'])),
+                  self.clk, self.rst)
+        fsm.If(self.start_cond)(
             flag(0)
         )
+        fsm.If(self.start_cond).goto_next()
+
 
         rdata, rlast, done = obj.read_dataflow(
             port, start_addr, size, cond=fsm, point=point, signed=signed)
@@ -78,15 +82,16 @@ class Stream(vtypes.VeriloggenNode):
         return rdata
 
     def write_sequential(self, obj, start_addr, size, value, when=None, port=0):
-        flag = self.m.TmpReg(initval=0)
+        flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'flag'])),
+                          initval=0)
         self.done_flags.append(flag)
 
-        fsm = TmpFSM(self.m, self.clk, self.rst)
-        fsm.If(self.start_cond).goto_next()
-
-        fsm(
+        fsm = FSM(self.m, compiler._tmp_name('_'.join(['', self.name, 'fsm'])),
+                  self.clk, self.rst)
+        fsm.If(self.start_cond)(
             flag(0)
         )
+        fsm.If(self.start_cond).goto_next()
 
         done = obj.write_dataflow(
             port, start_addr, value, size, cond=fsm, when=when)

@@ -9,6 +9,7 @@ import veriloggen.types.fifo as fifo
 import veriloggen.types.axi as axi
 from veriloggen.seq.seq import Seq
 
+from . import compiler
 
 def Lock(m, name, clk, rst, width=32):
     """ alias of Mutex class """
@@ -520,7 +521,7 @@ class AXIM(axi.AxiMaster):
 
         fsm.If(done)(
             req_local_addr.add(req_size),
-            req_global_addr.add(req_size * (self.datawidth // 8))
+            req_global_addr.add(compiler.optimize(req_size * (self.datawidth // 8)))
         )
         fsm.If(done, rest_size > 0).goto(check_state)
         fsm.If(done, rest_size == 0).goto_next()
@@ -560,7 +561,7 @@ class AXIM(axi.AxiMaster):
 
         fsm.If(done)(
             req_local_addr.add(req_size),
-            req_global_addr.add(req_size * (self.datawidth // 8))
+            req_global_addr.add(compiler.optimize(req_size * (self.datawidth // 8)))
         )
         fsm.If(done, rest_size > 0).goto(check_state)
         fsm.If(done, rest_size == 0).goto_next()
