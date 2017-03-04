@@ -1,9 +1,13 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import functools
+
 from veriloggen.dataflow import *
 from veriloggen.seq.seq import make_condition
 from veriloggen.fsm.fsm import TmpFSM
+from veriloggen.seq.seq import Seq
+import veriloggen.dataflow.dtypes as dtypes
 
 
 class Stream(vtypes.VeriloggenNode):
@@ -16,6 +20,8 @@ class Stream(vtypes.VeriloggenNode):
         self.rst = rst
         self.func = func
 
+        self.df = DataflowManager(self.m, self.clk, self.rst)
+        self.seq = Seq(self.m, 'name', self.clk, self.rst)
         self.start_cond = None
         self.done_flags = []
 
@@ -93,3 +99,31 @@ class Stream(vtypes.VeriloggenNode):
         fsm.If(done).goto_init()
 
         return 0
+
+    def __getattr__(self, attr):
+        try:
+            return object.__getattr__(self, attr)
+
+        except AttributeError as e:
+            if attr.startswith('__') or attr not in dir(dtypes):
+                raise e
+
+            func = getattr(dtypes, attr)
+
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                v = func(*args, **kwargs)
+                if isinstance(v, (tuple, list)):
+                    for item in v:
+                        self._set_info(item)
+                else:
+                    self._set_info(v)
+                return v
+
+            return wrapper
+
+    def _set_info(self, v):
+        if isinstance(v, dtypes._Numeric):
+            v._set_module(self.m)
+            v._set_df(self.df)
+            v._set_seq(self.seq)

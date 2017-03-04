@@ -2490,6 +2490,7 @@ def _RegionAcc(op, right, size, initval=0, enable=None, reset=None,
                width=32, signed=False, filter=False, filter_value=0):
 
     counter = Counter(1, maxval=size, initval=0, enable=enable, reset=reset)
+
     valid = (counter == size - 1).prev(1)
 
     if enable is not None:
@@ -2712,5 +2713,8 @@ def _from_vtypes_value(value):
 
     if isinstance(value, vtypes.Str):
         return Str(value.value)
+
+    if isinstance(value, vtypes._Numeric):
+        return Variable(value)
 
     raise TypeError("Unsupported type '%s'" % str(type(value)))

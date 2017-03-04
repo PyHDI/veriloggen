@@ -217,10 +217,17 @@ class Dataflow(object):
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
                 v = func(*args, **kwargs)
-                if isinstance(v, dtypes._Numeric):
-                    v._set_module(self.module)
-                    v._set_df(self)
-                    v._set_seq(self.seq)
+                if isinstance(v, (tuple, list)):
+                    for item in v:
+                        self._set_info(item)
+                else:
+                    self._set_info(v)
                 return v
 
             return wrapper
+
+    def _set_info(self, v):
+        if isinstance(v, dtypes._Numeric):
+            v._set_module(self.module)
+            v._set_df(self)
+            v._set_seq(self.seq)
