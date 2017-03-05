@@ -73,7 +73,8 @@ def mkLed(numthreads=64):
 
     def sleep(time):
         for i in range(time):
-            pass  # sleep
+            for _ in range(1024):
+                pass  # sleep
 
     def myfunc(tid):
         mymutex.lock()
@@ -87,7 +88,7 @@ def mkLed(numthreads=64):
         mymutex.unlock()
         print("Thread %d Unlock" % tid)
 
-    def wait_start(polarity=False):
+    def wait_start(polarity=True):
         while btnc != polarity:
             pass
 
@@ -149,13 +150,13 @@ def mkTest():
 
     def test():
         sw.value = 0
-        btnc.value = 1
         btnc.value = 0
+        btnc.value = 1
 
         for i in range(4):
-            sw.value = i << 3
-            btnc.value = 1
+            sw.value = i
             btnc.value = 0
+            btnc.value = 1
 
             while not done:
                 pass
