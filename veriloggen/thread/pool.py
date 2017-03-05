@@ -127,7 +127,7 @@ class ThreadPool(vtypes.VeriloggenNode):
 
             thread.fsm.goto_from(
                 thread.end_state, thread.start_state, reset_flag)
-            thread._set_index(thread.start_state)
+            thread.fsm._set_index(thread.start_state)
 
         return 0
 
