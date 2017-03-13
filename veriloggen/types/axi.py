@@ -136,6 +136,11 @@ class AxiMaster(object):
         self.datawidth = datawidth
         self.addrwidth = addrwidth
 
+        if not hasattr(self.m, 'masterbus'):
+            self.m.masterbus = []
+
+        self.m.masterbus.append(self)
+
         self.waddr = AxiMasterWriteAddress(m, name, datawidth, addrwidth)
         self.wdata = AxiMasterWriteData(m, name, datawidth, addrwidth)
         self.raddr = AxiMasterReadAddress(m, name, datawidth, addrwidth)
@@ -520,6 +525,11 @@ class AxiSlave(object):
         self.rst = rst
         self.datawidth = datawidth
         self.addrwidth = addrwidth
+
+        if not hasattr(self.m, 'slavebus'):
+            self.m.slavebus = []
+
+        self.m.slavebus.append(self)
 
         self.waddr = AxiSlaveWriteAddress(m, name, datawidth, addrwidth)
         self.wdata = AxiSlaveWriteData(m, name, datawidth, addrwidth)

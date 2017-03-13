@@ -84,6 +84,14 @@ Install from pip (or download and install from GitHub):
 
     pip install pyverilog
 
+-  IPgen: 0.2.0 or later
+
+Install from pip (or download and install from GitHub):
+
+::
+
+    pip install ipgen
+
 Options
 -------
 
