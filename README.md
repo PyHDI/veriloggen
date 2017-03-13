@@ -345,11 +345,20 @@ Veriloggen Extension Libraries
 Publication
 ==============================
 
-If you use Veriloggen for your research, please cite our paper.
+If you use Veriloggen for your research, please cite our paper:
 
 - Minoru Watanabe, Kentaro Sano, Shinya Takamaeda, Takefumi Miyoshi, and Hironori Nakajo: Japanese High-level Synthesis Tools for FPGA Hardware Acceleration, IEICE Transactions on Communications, Vol. J100-B, No. 1, pp.1-10, January 2017.
 [Paper](https://search.ieice.org/bin/summary.php?id=j100-b_1_1)
 
+Or, please cite the project URL:
+
+```
+@misc{veriloggen:github,
+author = {Shinya Takamaeda-Yamazaki},
+title = {Veriloggen: A library for constructing a Verilog HDL source code in Python},
+howpublished = {\url{https://github.com/PyHDI/veriloggen}},
+}
+```
 
 
 Related Project
