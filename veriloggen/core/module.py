@@ -515,11 +515,15 @@ class Module(vtypes.VeriloggenNode):
 #            raise e
 
     #-------------------------------------------------------------------------
-    def copy_params(self, src, prefix=None, postfix=None, exclude=None):
+    def copy_params(self, src, prefix=None, postfix=None, include=None, exclude=None):
         if prefix is None:
             prefix = ''
         if postfix is None:
             postfix = ''
+        if include is None:
+            include = ()
+        if isinstance(include, str):
+            include = [include]
         if exclude is None:
             exclude = ()
         if isinstance(exclude, str):
@@ -527,7 +531,13 @@ class Module(vtypes.VeriloggenNode):
         visitor = rename_visitor.RenameVisitor(prefix, postfix)
         ret = collections.OrderedDict()
         for key, obj in src.global_constant.items():
-            skip = False
+            if not include:
+                skip = False
+            else:
+                skip = True
+            for inc in include:
+                if re.match(inc, key):
+                    skip = False
             for ex in exclude:
                 if re.match(ex, key):
                     skip = True
@@ -541,11 +551,15 @@ class Module(vtypes.VeriloggenNode):
             ret[copy_obj.name] = copy_obj
         return ret
 
-    def copy_localparams(self, src, prefix=None, postfix=None, exclude=None):
+    def copy_localparams(self, src, prefix=None, postfix=None, include=None, exclude=None):
         if prefix is None:
             prefix = ''
         if postfix is None:
             postfix = ''
+        if include is None:
+            include = ()
+        if isinstance(include, str):
+            include = [include]
         if exclude is None:
             exclude = ()
         if isinstance(exclude, str):
@@ -553,7 +567,13 @@ class Module(vtypes.VeriloggenNode):
         visitor = rename_visitor.RenameVisitor(prefix, postfix)
         ret = collections.OrderedDict()
         for key, obj in src.constant.items():
-            skip = False
+            if not include:
+                skip = False
+            else:
+                skip = True
+            for inc in include:
+                if re.match(inc, key):
+                    skip = False
             for ex in exclude:
                 if re.match(ex, key):
                     skip = True
@@ -567,11 +587,15 @@ class Module(vtypes.VeriloggenNode):
             ret[copy_obj.name] = copy_obj
         return ret
 
-    def copy_ports(self, src, prefix=None, postfix=None, exclude=None):
+    def copy_ports(self, src, prefix=None, postfix=None, include=None, exclude=None):
         if prefix is None:
             prefix = ''
         if postfix is None:
             postfix = ''
+        if include is None:
+            include = ()
+        if isinstance(include, str):
+            include = [include]
         if exclude is None:
             exclude = ()
         if isinstance(exclude, str):
@@ -579,7 +603,13 @@ class Module(vtypes.VeriloggenNode):
         visitor = rename_visitor.RenameVisitor(prefix, postfix)
         ret = collections.OrderedDict()
         for key, obj in src.io_variable.items():
-            skip = False
+            if not include:
+                skip = False
+            else:
+                skip = True
+            for inc in include:
+                if re.match(inc, key):
+                    skip = False
             for ex in exclude:
                 if re.match(ex, key):
                     skip = True
@@ -593,11 +623,15 @@ class Module(vtypes.VeriloggenNode):
             ret[copy_obj.name] = copy_obj
         return ret
 
-    def copy_vars(self, src, prefix=None, postfix=None, exclude=None):
+    def copy_vars(self, src, prefix=None, postfix=None, include=None, exclude=None):
         if prefix is None:
             prefix = ''
         if postfix is None:
             postfix = ''
+        if include is None:
+            include = ()
+        if isinstance(include, str):
+            include = [include]
         if exclude is None:
             exclude = ()
         if isinstance(exclude, str):
@@ -605,7 +639,13 @@ class Module(vtypes.VeriloggenNode):
         visitor = rename_visitor.RenameVisitor(prefix, postfix)
         ret = collections.OrderedDict()
         for key, obj in src.variable.items():
-            skip = False
+            if not include:
+                skip = False
+            else:
+                skip = True
+            for inc in include:
+                if re.match(inc, key):
+                    skip = False
             for ex in exclude:
                 if re.match(ex, key):
                     skip = True
@@ -619,11 +659,16 @@ class Module(vtypes.VeriloggenNode):
             ret[copy_obj.name] = copy_obj
         return ret
 
-    def copy_sim_ports(self, src, prefix=None, postfix=None, exclude=None):
+    def copy_sim_ports(self, src, prefix=None, postfix=None, include=None, exclude=None,
+                       use_wire=False):
         if prefix is None:
             prefix = ''
         if postfix is None:
             postfix = ''
+        if include is None:
+            include = ()
+        if isinstance(include, str):
+            include = [include]
         if exclude is None:
             exclude = ()
         if isinstance(exclude, str):
@@ -631,13 +676,19 @@ class Module(vtypes.VeriloggenNode):
         visitor = rename_visitor.RenameVisitor(prefix, postfix)
         ret = collections.OrderedDict()
         for key, obj in src.io_variable.items():
-            skip = False
+            if not include:
+                skip = False
+            else:
+                skip = True
+            for inc in include:
+                if re.match(inc, key):
+                    skip = False
             for ex in exclude:
                 if re.match(ex, key):
                     skip = True
             if skip:
                 continue
-            copy_obj = self.get_opposite_variable(obj)(
+            copy_obj = self.get_opposite_variable(obj, use_wire)(
                 name=key, width=copy.deepcopy(obj.width))
             copy_obj.name = ''.join([prefix, copy_obj.name, postfix])
             copy_obj.width = visitor.visit(copy_obj.width)
@@ -647,18 +698,28 @@ class Module(vtypes.VeriloggenNode):
         return ret
 
     #-------------------------------------------------------------------------
-    def connect_params(self, targ, prefix=None, postfix=None, exclude=None, strict=False):
+    def connect_params(self, targ, prefix=None, postfix=None, include=None, exclude=None, strict=False):
         if prefix is None:
             prefix = ''
         if postfix is None:
             postfix = ''
+        if include is None:
+            include = ()
+        if isinstance(include, str):
+            include = [include]
         if exclude is None:
             exclude = ()
         if isinstance(exclude, str):
             exclude = [exclude]
         ret = []
         for key, obj in targ.global_constant.items():
-            skip = False
+            if not include:
+                skip = False
+            else:
+                skip = True
+            for inc in include:
+                if re.match(inc, key):
+                    skip = False
             for ex in exclude:
                 if re.match(ex, key):
                     skip = True
@@ -674,18 +735,28 @@ class Module(vtypes.VeriloggenNode):
                 ret.append((key, self.local_constant[my_key]))
         return ret
 
-    def connect_ports(self, targ, prefix=None, postfix=None, exclude=None, strict=False):
+    def connect_ports(self, targ, prefix=None, postfix=None, include=None, exclude=None, strict=False):
         if prefix is None:
             prefix = ''
         if postfix is None:
             postfix = ''
+        if include is None:
+            include = ()
+        if isinstance(include, str):
+            include = [include]
         if exclude is None:
             exclude = ()
         if isinstance(exclude, str):
             exclude = [exclude]
         ret = []
         for key, obj in targ.io_variable.items():
-            skip = False
+            if not include:
+                skip = False
+            else:
+                skip = True
+            for inc in include:
+                if re.match(inc, key):
+                    skip = False
             for ex in exclude:
                 if re.match(ex, key):
                     skip = True
