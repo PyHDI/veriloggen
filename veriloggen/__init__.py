@@ -1,9 +1,9 @@
-#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
 # Veriloggen: A library for constructing a Verilog HDL source code in Python
-# 
+#
 # Copyright (C) 2015, Shinya Takamaeda-Yamazaki
 # License: Apache 2.0
-#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
 from __future__ import absolute_import
 from __future__ import print_function
 
@@ -32,10 +32,13 @@ from .pipeline.pipeline import Pipeline
 from .seq.seq import reset as seq_reset
 from .fsm.fsm import reset as fsm_reset
 from .dataflow.dataflow import reset as dataflow_reset
+from .stream.stream import reset as stream_reset
 from .thread.thread import reset as thread_reset
+
 
 def reset():
     seq_reset()
     fsm_reset()
     dataflow_reset()
+    stream_reset()
     thread_reset()
