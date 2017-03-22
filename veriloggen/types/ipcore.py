@@ -114,7 +114,7 @@ def generate_top(m, name=None, clkname='CLK', rstname='RST'):
         addr_width = port_list[master.name + '_awaddr'].width
         data_width = port_list[master.name + '_wdata'].width
 
-        mod = ipgen_master_memory()
+        mod = ipgen_master_lite_memory() if master.lite else ipgen_master_memory()
         inst_params = (('NAME', name), ('ID', _id),
                        ('ADDR_WIDTH', addr_width), ('DATA_WIDTH', data_width))
         inst_ports = [('CLK', clk), ('RST', rst)]
@@ -130,7 +130,7 @@ def generate_top(m, name=None, clkname='CLK', rstname='RST'):
         addr_width = port_list[slave.name + '_awaddr'].width
         data_width = port_list[slave.name + '_wdata'].width
 
-        mod = ipgen_slave_memory()
+        mod = ipgen_slave_lite_memory() if slave.lite else ipgen_slave_memory()
         inst_params = (('NAME', name), ('ID', _id),
                        ('ADDR_WIDTH', addr_width), ('DATA_WIDTH', data_width))
         inst_ports = [('CLK', clk), ('RST', rst)]
