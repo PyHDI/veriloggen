@@ -56,7 +56,7 @@ Requirements
 
 Python3 is recommended.
 
-- Icarus Verilog: 0.9.7 or later
+- Icarus Verilog: 0.9.7 or later (but 10.0 is not recommended)
 
 Install on your platform. For exmple, on Ubuntu:
 
