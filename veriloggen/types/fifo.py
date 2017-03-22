@@ -34,10 +34,10 @@ class FifoWriteInterface(object):
             m, otype, name_almost_full, initval=0)
 
     def connect(self, targ):
-        util.connect_port(self.enq, targ.enq)
-        util.connect_port(self.wdata, targ.wdata)
-        util.connect_port(targ.full, self.full)
-        util.connect_port(targ.almost_full, self.almost_full)
+        self.enq.connect(targ.enq)
+        self.wdata.connect(targ.wdata)
+        targ.full.connect(self.full)
+        targ.almost_full.connect(self.almost_full)
 
 
 class FifoReadInterface(object):
@@ -67,10 +67,10 @@ class FifoReadInterface(object):
             m, otype, name_almost_empty, initval=0)
 
     def connect(self, targ):
-        util.connect_port(self.deq, targ.deq)
-        util.connect_port(targ.rdata, self.rdata)
-        util.connect_port(targ.empty, self.empty)
-        util.connect_port(targ.almost_empty, self.almost_empty)
+        self.deq.connect(targ.deq)
+        targ.rdata.connect(self.rdata)
+        targ.empty.connect(self.empty)
+        targ.almost_empty.connect(self.almost_empty)
 
 
 class FifoWriteSlaveInterface(FifoWriteInterface):

@@ -432,7 +432,7 @@ class _Variable(_Numeric):
             wire_self = self.module.TmpWireLike(self)
             wire_self.assign(value)
             self.module.Always()(self(wire_self, blk=True))
-        elif isinstance(self, Wire):
+        elif isinstance(self, (Wire, Output)):
             self.assign(value)
         else:
             raise TypeError('connect() is not supported')
