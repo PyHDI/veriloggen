@@ -62,26 +62,32 @@ module test;
   assign memory_awaddr = myaxi_awaddr;
   assign memory_awlen = myaxi_awlen;
   assign memory_awvalid = myaxi_awvalid;
+  wire _tmp_0;
+  assign _tmp_0 = memory_awready;
 
   always @(*) begin
-    myaxi_awready <= memory_awready;
+    myaxi_awready = _tmp_0;
   end
 
   assign memory_wdata = myaxi_wdata;
   assign memory_wstrb = myaxi_wstrb;
   assign memory_wlast = myaxi_wlast;
   assign memory_wvalid = myaxi_wvalid;
+  wire _tmp_1;
+  assign _tmp_1 = memory_wready;
 
   always @(*) begin
-    myaxi_wready <= memory_wready;
+    myaxi_wready = _tmp_1;
   end
 
   assign memory_araddr = myaxi_araddr;
   assign memory_arlen = myaxi_arlen;
   assign memory_arvalid = myaxi_arvalid;
+  wire _tmp_2;
+  assign _tmp_2 = memory_arready;
 
   always @(*) begin
-    myaxi_arready <= memory_arready;
+    myaxi_arready = _tmp_2;
   end
 
 
@@ -89,14 +95,18 @@ module test;
     myaxi_rdata <= memory_rdata;
   end
 
+  wire _tmp_3;
+  assign _tmp_3 = memory_rlast;
 
   always @(*) begin
-    myaxi_rlast <= memory_rlast;
+    myaxi_rlast = _tmp_3;
   end
 
+  wire _tmp_4;
+  assign _tmp_4 = memory_rvalid;
 
   always @(*) begin
-    myaxi_rvalid <= memory_rvalid;
+    myaxi_rvalid = _tmp_4;
   end
 
   assign memory_rready = myaxi_rready;
@@ -128,7 +138,7 @@ module test;
 
   initial begin
     $dumpfile("uut.vcd");
-    $dumpvars(0, uut, CLK, RST, myaxi_awaddr, myaxi_awlen, myaxi_awvalid, myaxi_awready, myaxi_wdata, myaxi_wstrb, myaxi_wlast, myaxi_wvalid, myaxi_wready, myaxi_araddr, myaxi_arlen, myaxi_arvalid, myaxi_arready, myaxi_rdata, myaxi_rlast, myaxi_rvalid, myaxi_rready, memory_awaddr, memory_awlen, memory_awvalid, memory_awready, memory_wdata, memory_wstrb, memory_wlast, memory_wvalid, memory_wready, memory_araddr, memory_arlen, memory_arvalid, memory_arready, memory_rdata, memory_rlast, memory_rvalid, memory_rready, _memory_fsm, _write_count, _write_addr, _read_count, _read_addr, _sleep_count, _d1__memory_fsm, __memory_fsm_cond_100_0_1, __memory_fsm_cond_200_1_1, __memory_fsm_cond_211_2_1);
+    $dumpvars(0, uut, CLK, RST, myaxi_awaddr, myaxi_awlen, myaxi_awvalid, myaxi_awready, myaxi_wdata, myaxi_wstrb, myaxi_wlast, myaxi_wvalid, myaxi_wready, myaxi_araddr, myaxi_arlen, myaxi_arvalid, myaxi_arready, myaxi_rdata, myaxi_rlast, myaxi_rvalid, myaxi_rready, memory_awaddr, memory_awlen, memory_awvalid, memory_awready, memory_wdata, memory_wstrb, memory_wlast, memory_wvalid, memory_wready, memory_araddr, memory_arlen, memory_arvalid, memory_arready, memory_rdata, memory_rlast, memory_rvalid, memory_rready, _memory_fsm, _write_count, _write_addr, _read_count, _read_addr, _sleep_count, _d1__memory_fsm, __memory_fsm_cond_100_0_1, __memory_fsm_cond_200_1_1, __memory_fsm_cond_211_2_1, _tmp_0, _tmp_1, _tmp_2, _tmp_3, _tmp_4);
   end
 
 

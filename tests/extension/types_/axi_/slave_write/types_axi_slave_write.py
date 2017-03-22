@@ -15,6 +15,7 @@ def mkMain():
     m = Module('main')
     clk = m.Input('CLK')
     rst = m.Input('RST')
+    sum = m.OutputReg('sum', 32, initval=0)
 
     myaxi = axi.AxiSlave(m, 'myaxi', clk, rst)
     myaxi.disable_read()
@@ -26,7 +27,6 @@ def mkMain():
     fsm.If(valid).goto_next()
 
     # write data
-    sum = m.Reg('sum', 32, initval=0)
     data, mask, valid, last = myaxi.pull_write_data(counter, cond=fsm)
 
     fsm.If(valid)(
@@ -34,14 +34,7 @@ def mkMain():
     )
     fsm.Then().If(last).goto_next()
 
-    fsm.If(sum < 4096).goto_init()
-    fsm.If(sum >= 4096).goto_next()
-
-    expected_sum = 4096
-    fsm(
-        Systask('display', "sum=%d expected_sum=%d", sum, expected_sum)
-    )
-    fsm.goto_next()
+    fsm.goto_init()
 
     return m
 
@@ -58,61 +51,53 @@ def mkTest():
 
     clk = ports['CLK']
     rst = ports['RST']
+    sum = ports['sum']
 
-    awvalid = ports['myaxi_awvalid']
-    _awvalid = m.TmpWireLike(awvalid)
-    _awvalid.assign(1)  # on
-    m.Always()(awvalid(_awvalid))
+    _axi = axi.AxiMaster(m, '_axi', clk, rst, noio=True)
+    _axi.disable_read()
 
-    awaddr = ports['myaxi_awaddr']
-    _awaddr = m.TmpWireLike(awaddr)
-    _awaddr.assign(0x100)  # on
-    m.Always()(awaddr(_awaddr))
+    _axi.connect(ports, 'myaxi')
 
-    awlen = ports['myaxi_awlen']
-    _awlen = m.TmpWireLike(awlen)
-    _awlen.assign(0)  # on
-    m.Always()(awlen(_awlen))
+    fsm = FSM(m, 'fsm', clk, rst)
 
-    arvalid = ports['myaxi_arvalid']
-    _arvalid = m.TmpWireLike(arvalid)
-    _arvalid.assign(0)
-    m.Always()(arvalid(_arvalid))
+    # write address (1)
+    awaddr = 1024
+    awlen = 64
+    expected_sum = ((0 + (awlen - 1)) * awlen) // 2
 
-    araddr = ports['myaxi_araddr']
-    _araddr = m.TmpWireLike(araddr)
-    _araddr.assign(0)
-    m.Always()(araddr(_araddr))
+    ack, counter = _axi.write_request(awaddr, awlen, cond=fsm)
+    fsm.If(ack).goto_next()
 
-    arlen = ports['myaxi_arlen']
-    _arlen = m.TmpWireLike(arlen)
-    _arlen.assign(0)
-    m.Always()(arlen(_arlen))
+    # write data (1)
+    wdata = m.Reg('wdata', 32, initval=0)
 
-    wvalid = ports['myaxi_wvalid']
-    _wvalid = m.TmpWireLike(wvalid)
-    _wvalid.assign(1)  # on
-    m.Always()(wvalid(_wvalid))
+    ack, last = _axi.write_data(wdata, counter, cond=fsm)
 
-    wdata = ports['myaxi_wdata']
-    _wdata = m.TmpWireLike(wdata)
-    _wdata.assign(0x200)  # on
-    m.Always()(wdata(_wdata))
+    fsm.If(ack)(
+        wdata.inc()
+    )
+    fsm.If(last).goto_next()
 
-    wstrb = ports['myaxi_wstrb']
-    _wstrb = m.TmpWireLike(wstrb)
-    _wstrb.assign(Repeat(Int(1, 1), 32 // 8))  # on
-    m.Always()(wstrb(_wstrb))
+    # write address (2)
+    prev_awlen = awlen
+    awlen = 128
+    expected_sum += ((prev_awlen + (prev_awlen + awlen - 1)) * awlen) // 2
 
-    wlast = ports['myaxi_wlast']
-    _wlast = m.TmpWireLike(wlast)
-    _wlast.assign(1)  # on
-    m.Always()(wlast(_wlast))
+    ack, counter = _axi.write_request(awaddr, awlen, cond=fsm)
+    fsm.If(ack).goto_next()
 
-    rready = ports['myaxi_rready']
-    _rready = m.TmpWireLike(rready)
-    _rready.assign(0)
-    m.Always()(rready(_rready))
+    # write data (2)
+    ack, last = _axi.write_data(wdata, counter, cond=fsm)
+
+    fsm.If(ack)(
+        wdata.inc()
+    )
+    fsm.If(last).goto_next()
+
+    fsm(
+        Systask('display', 'sum=%d expected_sum=%d', sum, expected_sum)
+    )
+    fsm.goto_next()
 
     uut = m.Instance(main, 'uut',
                      params=m.connect_params(main),

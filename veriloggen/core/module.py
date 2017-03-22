@@ -58,7 +58,8 @@ class Module(vtypes.VeriloggenNode):
         self.check_existing_identifier(name)
         self.io_variable[name] = t
         self.items.append(t)
-        t = vtypes.Reg(width, length, signed, value, initval, name=name)
+        t = vtypes.Reg(width, length, signed, value,
+                       initval, name=name, module=self)
         self.variable[name] = t
         self.items.append(t)
         return t
@@ -689,9 +690,11 @@ class Module(vtypes.VeriloggenNode):
             if skip:
                 continue
             copy_obj = self.get_opposite_variable(obj, use_wire)(
-                name=key, width=copy.deepcopy(obj.width))
+                name=key, width=copy.deepcopy(obj.width),
+                initval=obj.initval, signed=obj.signed, module=self)
             copy_obj.name = ''.join([prefix, copy_obj.name, postfix])
             copy_obj.width = visitor.visit(copy_obj.width)
+            copy_obj.initval = visitor.visit(copy_obj.initval)
             copy_obj.signed = obj.signed
             self.add_object(copy_obj)
             ret[copy_obj.name] = copy_obj

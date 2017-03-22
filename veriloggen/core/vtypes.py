@@ -424,6 +424,19 @@ class _Variable(_Numeric):
                 "Variable '%s' has no parent module information" % self.name)
         return self.module.Assign(self.write(value))
 
+    def connect(self, value):
+        if self.module is None:
+            raise ValueError(
+                "Variable '%s' has no parent module information" % self.name)
+        if isinstance(self, Reg):
+            wire_self = self.module.TmpWireLike(self)
+            wire_self.assign(value)
+            self.module.Always()(self(wire_self, blk=True))
+        elif isinstance(self, Wire):
+            self.assign(value)
+        else:
+            raise TypeError('connect() is not supported')
+
     def comb(self, value):
         return self.assign(value)
 

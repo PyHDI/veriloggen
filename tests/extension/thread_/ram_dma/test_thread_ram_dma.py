@@ -62,26 +62,32 @@ module test;
   assign memory_awaddr = myaxi_awaddr;
   assign memory_awlen = myaxi_awlen;
   assign memory_awvalid = myaxi_awvalid;
+  wire _tmp_0;
+  assign _tmp_0 = memory_awready;
 
   always @(*) begin
-    myaxi_awready <= memory_awready;
+    myaxi_awready = _tmp_0;
   end
 
   assign memory_wdata = myaxi_wdata;
   assign memory_wstrb = myaxi_wstrb;
   assign memory_wlast = myaxi_wlast;
   assign memory_wvalid = myaxi_wvalid;
+  wire _tmp_1;
+  assign _tmp_1 = memory_wready;
 
   always @(*) begin
-    myaxi_wready <= memory_wready;
+    myaxi_wready = _tmp_1;
   end
 
   assign memory_araddr = myaxi_araddr;
   assign memory_arlen = myaxi_arlen;
   assign memory_arvalid = myaxi_arvalid;
+  wire _tmp_2;
+  assign _tmp_2 = memory_arready;
 
   always @(*) begin
-    myaxi_arready <= memory_arready;
+    myaxi_arready = _tmp_2;
   end
 
 
@@ -89,14 +95,18 @@ module test;
     myaxi_rdata <= memory_rdata;
   end
 
+  wire _tmp_3;
+  assign _tmp_3 = memory_rlast;
 
   always @(*) begin
-    myaxi_rlast <= memory_rlast;
+    myaxi_rlast = _tmp_3;
   end
 
+  wire _tmp_4;
+  assign _tmp_4 = memory_rvalid;
 
   always @(*) begin
-    myaxi_rvalid <= memory_rvalid;
+    myaxi_rvalid = _tmp_4;
   end
 
   assign memory_rready = myaxi_rready;
