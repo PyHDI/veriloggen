@@ -217,7 +217,7 @@ class AxiMaster(object):
 
     def write_request(self, addr, length=1, cond=None, counter=None):
         """
-        @return ack, counter
+        @return ack, (counter)
         """
         if self._write_disabled:
             raise TypeError('Write disabled.')
@@ -297,7 +297,7 @@ class AxiMaster(object):
 
     def write_data(self, data, counter=None, cond=None):
         """
-        @return ack, last
+        @return ack, (last)
         """
         if self._write_disabled:
             raise TypeError('Write disabled.')
@@ -379,7 +379,6 @@ class AxiMaster(object):
         """
         @return done
         """
-
         if self.lite:
             raise TypeError('lite interface support no dataflow operation.')
 
@@ -443,7 +442,7 @@ class AxiMaster(object):
 
     def read_request(self, addr, length=1, cond=None, counter=None):
         """
-        @return ack, counter
+        @return ack, (counter)
         """
         if self._read_disabled:
             raise TypeError('Read disabled.')
@@ -521,9 +520,8 @@ class AxiMaster(object):
 
     def read_data(self, counter=None, cond=None):
         """
-        @return data, valid, last
+        @return data, valid, (last)
         """
-
         if self._read_disabled:
             raise TypeError('Read disabled.')
 
@@ -581,7 +579,6 @@ class AxiMaster(object):
         """
         @return data, last, done
         """
-
         if self.lite:
             raise TypeError('lite interface support no dataflow operation.')
 
@@ -804,9 +801,136 @@ class AxiSlave(object):
         )
         self._read_disabled = True
 
+    def pull_request(self, cond, counter=None):
+        """
+        @return addr, (counter), readvalid, writevalid
+        """
+        if self.lite:
+            return self._pull_request_lite(cond)
+
+        return self._pull_request_full(cond, counter)
+
+    def _pull_request_lite(self, cond=None):
+        ready = make_condition(cond)
+
+        write_ack = vtypes.Ands(self.waddr.awready, self.waddr.awvalid)
+        read_ack = vtypes.Ands(self.raddr.arready, self.raddr.arvalid)
+        addr = self.m.TmpReg(self.addrwidth, initval=0)
+        writevalid = self.m.TmpReg(initval=0)
+        readvalid = self.m.TmpReg(initval=0)
+
+        prev_awvalid = self.m.TmpReg(initval=0)
+        self.seq(
+            prev_awvalid(self.waddr.awvalid)
+        )
+        prev_arvalid = self.m.TmpReg(initval=0)
+        self.seq(
+            prev_arvalid(self.raddr.arvalid)
+        )
+
+        writeval = (vtypes.Ands(vtypes.Not(writevalid), vtypes.Not(readvalid),
+                                prev_awvalid) if ready is None else
+                    vtypes.Ands(ready, vtypes.Not(writevalid), vtypes.Not(readvalid),
+                                prev_awvalid))
+        readval = (vtypes.Ands(vtypes.Not(readvalid), vtypes.Not(writevalid),
+                               prev_arvalid) if ready is None else
+                   vtypes.Ands(ready, vtypes.Not(readvalid), vtypes.Not(writevalid),
+                               prev_arvalid))
+
+        write_prev_subst = self.waddr.awready._get_subst()
+        if not write_prev_subst:
+            self.waddr.awready.assign(writeval)
+        else:
+            self.waddr.awready.subst[0].overwrite_right(
+                vtypes.Ors(write_prev_subst[0].right, writeval))
+
+        read_prev_subst = self.raddr.arready._get_subst()
+        if not read_prev_subst:
+            self.raddr.arready.assign(readval)
+        else:
+            self.raddr.arready.subst[0].overread_right(
+                vtypes.Ors(read_prev_subst[0].right, readval))
+
+        self.seq(
+            writevalid(0),
+            readvalid(0)
+        )
+        self.seq.If(write_ack)(
+            addr(self.waddr.awaddr),
+            writevalid(1)
+        ).Elif(read_ack)(
+            addr(self.raddr.araddr),
+            readvalid(1)
+        )
+
+        return addr, readvalid, writevalid
+
+    def _pull_request_full(self, cond=None, counter=None):
+        if counter is not None and not isinstance(counter, vtypes.Reg):
+            raise TypeError("counter must be Reg or None.")
+
+        if counter is None:
+            counter = self.m.TmpReg(self.burst_size_width + 1, initval=0)
+
+        ready = make_condition(cond)
+
+        write_ack = vtypes.Ands(self.waddr.awready, self.waddr.awvalid)
+        read_ack = vtypes.Ands(self.raddr.arready, self.raddr.arvalid)
+        addr = self.m.TmpReg(self.addrwidth, initval=0)
+        writevalid = self.m.TmpReg(initval=0)
+        readvalid = self.m.TmpReg(initval=0)
+
+        prev_awvalid = self.m.TmpReg(initval=0)
+        self.seq(
+            prev_awvalid(self.waddr.awvalid)
+        )
+        prev_arvalid = self.m.TmpReg(initval=0)
+        self.seq(
+            prev_arvalid(self.raddr.arvalid)
+        )
+
+        writeval = (vtypes.Ands(vtypes.Not(writevalid), vtypes.Not(readvalid),
+                                prev_awvalid) if ready is None else
+                    vtypes.Ands(ready, vtypes.Not(writevalid), vtypes.Not(readvalid),
+                                prev_awvalid))
+        readval = (vtypes.Ands(vtypes.Not(readvalid), vtypes.Not(writevalid),
+                               prev_arvalid) if ready is None else
+                   vtypes.Ands(ready, vtypes.Not(readvalid), vtypes.Not(writevalid),
+                               prev_arvalid))
+
+        write_prev_subst = self.waddr.awready._get_subst()
+        if not write_prev_subst:
+            self.waddr.awready.assign(writeval)
+        else:
+            self.waddr.awready.subst[0].overwrite_right(
+                vtypes.Ors(write_prev_subst[0].right, writeval))
+
+        read_prev_subst = self.raddr.arready._get_subst()
+        if not read_prev_subst:
+            self.raddr.arready.assign(readval)
+        else:
+            self.raddr.arready.subst[0].overread_right(
+                vtypes.Ors(read_prev_subst[0].right, readval))
+
+        self.seq(
+            writevalid(0),
+            readvalid(0)
+        )
+        self.seq.If(write_ack)(
+            addr(self.waddr.awaddr),
+            counter(self.waddr.awlen + 1),
+            writevalid(1)
+        ).Elif(read_ack)(
+            addr(self.raddr.araddr),
+            counter(self.raddr.arlen + 1),
+            readvalid(1)
+        )
+
+        return addr, counter, readvalid, writevalid
+
     def pull_write_request(self, cond=None, counter=None):
         """
-        @return addr, counter, valid
+        @return addr, (counter), valid
         """
         if self._write_disabled:
             raise TypeError('Write disabled.')
@@ -823,8 +947,13 @@ class AxiSlave(object):
         addr = self.m.TmpReg(self.addrwidth, initval=0)
         valid = self.m.TmpReg(initval=0)
 
-        val = (vtypes.Not(valid) if ready is None else
-               vtypes.Ands(ready, vtypes.Not(valid)))
+        prev_awvalid = self.m.TmpReg(initval=0)
+        self.seq(
+            prev_awvalid(self.waddr.awvalid)
+        )
+
+        val = (vtypes.Ands(vtypes.Not(valid), prev_awvalid) if ready is None else
+               vtypes.Ands(ready, vtypes.Not(valid), prev_awvalid))
 
         prev_subst = self.waddr.awready._get_subst()
         if not prev_subst:
@@ -858,8 +987,13 @@ class AxiSlave(object):
         addr = self.m.TmpReg(self.addrwidth, initval=0)
         valid = self.m.TmpReg(initval=0)
 
-        val = (vtypes.Not(valid) if ready is None else
-               vtypes.Ands(ready, vtypes.Not(valid)))
+        prev_awvalid = self.m.TmpReg(initval=0)
+        self.seq(
+            prev_awvalid(self.waddr.awvalid)
+        )
+
+        val = (vtypes.Ands(vtypes.Not(valid), prev_awvalid) if ready is None else
+               vtypes.Ands(ready, vtypes.Not(valid), prev_awvalid))
 
         prev_subst = self.waddr.awready._get_subst()
         if not prev_subst:
@@ -881,7 +1015,7 @@ class AxiSlave(object):
 
     def pull_write_data(self, counter=None, cond=None):
         """
-        @return data, mask, valid, last
+        @return data, mask, valid, (last)
         """
         if self._write_disabled:
             raise TypeError('Write disabled.')
@@ -943,7 +1077,6 @@ class AxiSlave(object):
         """
         @return data, mask, last, done
         """
-
         if self.lite:
             raise TypeError('lite interface support no dataflow operation.')
 
@@ -1002,7 +1135,7 @@ class AxiSlave(object):
 
     def pull_read_request(self, cond=None, counter=None):
         """
-        @return addr, counter, valid
+        @return addr, (counter), valid
         """
         if self._read_disabled:
             raise TypeError('Read disabled.')
@@ -1019,8 +1152,13 @@ class AxiSlave(object):
         addr = self.m.TmpReg(self.addrwidth, initval=0)
         valid = self.m.TmpReg(initval=0)
 
-        val = (vtypes.Not(valid) if ready is None else
-               vtypes.Ands(ready, vtypes.Not(valid)))
+        prev_arvalid = self.m.TmpReg(initval=0)
+        self.seq(
+            prev_arvalid(self.raddr.arvalid)
+        )
+
+        val = (vtypes.Ands(vtypes.Not(valid), prev_arvalid) if ready is None else
+               vtypes.Ands(ready, vtypes.Not(valid), prev_arvalid))
 
         prev_subst = self.raddr.arready._get_subst()
         if not prev_subst:
@@ -1054,8 +1192,13 @@ class AxiSlave(object):
         addr = self.m.TmpReg(self.addrwidth, initval=0)
         valid = self.m.TmpReg(initval=0)
 
-        val = (vtypes.Not(valid) if ready is None else
-               vtypes.Ands(ready, vtypes.Not(valid)))
+        prev_arvalid = self.m.TmpReg(initval=0)
+        self.seq(
+            prev_arvalid(self.raddr.arvalid)
+        )
+
+        val = (vtypes.Ands(vtypes.Not(valid), prev_arvalid) if ready is None else
+               vtypes.Ands(ready, vtypes.Not(valid), prev_arvalid))
 
         prev_subst = self.raddr.arready._get_subst()
         if not prev_subst:
@@ -1077,7 +1220,7 @@ class AxiSlave(object):
 
     def push_read_data(self, data, counter=None, cond=None):
         """
-        @return ack, last
+        @return ack, (last)
         """
         if self._read_disabled:
             raise TypeError('Read disabled.')
@@ -1155,7 +1298,6 @@ class AxiSlave(object):
         """ 
         @return done
         """
-
         if self.lite:
             raise TypeError('lite interface support no dataflow operation.')
 

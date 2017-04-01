@@ -409,6 +409,10 @@ class FSM(vtypes.VeriloggenNode):
         return list(ret.values())
 
     #-------------------------------------------------------------------------
+    def set_index(self, index):
+        return self._set_index(index)
+
+    #-------------------------------------------------------------------------
     def _go(self, src, dst, cond=None, else_dst=None):
         self._add_jump(src, dst, cond, else_dst)
         return self

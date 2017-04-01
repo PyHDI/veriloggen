@@ -7,9 +7,12 @@ import veriloggen.core.vtypes as vtypes
 import veriloggen.types.ram as ram
 import veriloggen.types.fifo as fifo
 import veriloggen.types.axi as axi
+import veriloggen.types.util as util
 from veriloggen.seq.seq import Seq
+from veriloggen.fsm.fsm import FSM
 
 from . import compiler
+
 
 def Lock(m, name, clk, rst, width=32):
     """ alias of Mutex class """
@@ -484,11 +487,16 @@ class AXIM(axi.AxiMaster):
 
     burstlen = 256
 
-    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32):
-        axi.AxiMaster.__init__(self, m, name, clk, rst, datawidth, addrwidth)
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
+                 lite=False, noio=False):
+        axi.AxiMaster.__init__(self, m, name, clk, rst, datawidth, addrwidth,
+                               lite=lite, noio=noio)
         self.mutex = None
 
     def dma_read(self, fsm, ram, local_addr, global_addr, size, port=0):
+        if self.lite:
+            raise TypeError('Lite-interface does not support DMA')
+
         if not isinstance(ram, RAM):
             raise TypeError('RAM is required')
 
@@ -521,7 +529,8 @@ class AXIM(axi.AxiMaster):
 
         fsm.If(done)(
             req_local_addr.add(req_size),
-            req_global_addr.add(compiler.optimize(req_size * (self.datawidth // 8)))
+            req_global_addr.add(compiler.optimize(
+                req_size * (self.datawidth // 8)))
         )
         fsm.If(done, rest_size > 0).goto(check_state)
         fsm.If(done, rest_size == 0).goto_next()
@@ -529,6 +538,9 @@ class AXIM(axi.AxiMaster):
         return 0
 
     def dma_write(self, fsm, ram, local_addr, global_addr, size, port=0):
+        if self.lite:
+            raise TypeError('Lite-interface does not support DMA')
+
         if not isinstance(ram, RAM):
             raise TypeError('RAM is required')
 
@@ -561,7 +573,8 @@ class AXIM(axi.AxiMaster):
 
         fsm.If(done)(
             req_local_addr.add(req_size),
-            req_global_addr.add(compiler.optimize(req_size * (self.datawidth // 8)))
+            req_global_addr.add(compiler.optimize(
+                req_size * (self.datawidth // 8)))
         )
         fsm.If(done, rest_size > 0).goto(check_state)
         fsm.If(done, rest_size == 0).goto_next()
@@ -591,11 +604,165 @@ class AXIM(axi.AxiMaster):
 
 
 class AXIS(axi.AxiSlave):
-    __intrinsics__ = ('lock', 'try_lock', 'unlock')
+    __intrinsics__ = ('read_register', 'write_register', 'wait_register',
+                      'lock', 'try_lock', 'unlock')
 
-    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32):
-        axi.AxiSlave.__init__(self, m, name, clk, rst, datawidth, addrwidth)
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
+                 lite=False, noio=False):
+        axi.AxiSlave.__init__(self, m, name, clk, rst, datawidth, addrwidth,
+                              lite=lite, noio=noio)
         self.mutex = None
+        self.register = None
+        self.fifo = None
+
+    def make_register(self, length=4):
+        if self.register is not None:
+            raise ValueError('Memory-mapped register is already created')
+        if self.fifo is not None:
+            raise ValueError('Memory-mapped FIFO is already created')
+        if not isinstance(length, int):
+            raise TypeError("length must be 'int', not '%s'" %
+                            str(type(length)))
+
+        self.register = [self.m.Reg('_'.join(['', self.name, 'register', '%d' % i]),
+                                    width=self.datawidth, initval=0)
+                         for i in range(length)]
+        self.length = length
+        self.maskwidth = self.m.Localparam('_'.join(['', self.name, 'maskwidth']),
+                                           int(math.ceil(math.log(length, 2))))
+        self.mask = self.m.Localparam('_'.join(['', self.name, 'mask']),
+                                      vtypes.Repeat(vtypes.Int(1, 1), self.maskwidth))
+        self.shift = self.m.Localparam('_'.join(['', self.name, 'shift']),
+                                       util.log2(self.datawidth // 8))
+
+        if self.lite:
+            self._setup_register_lite_fsm()
+        else:
+            self._setup_register_full_fsm()
+
+    def _setup_register_lite_fsm(self):
+        fsm = FSM(self.m, '_'.join(
+            ['', self.name, 'register_fsm']), self.clk, self.rst)
+
+        # request
+        addr, readvalid, writevalid = self.pull_request(cond=fsm)
+
+        maskaddr = self.m.TmpReg(self.maskwidth)
+        fsm.If(vtypes.Ors(readvalid, writevalid))(
+            maskaddr((addr >> self.shift) & self.mask),
+        )
+
+        init_state = fsm.current
+
+        # read
+        read_state = fsm.current + 1
+        fsm.If(readvalid).goto_from(init_state, read_state)
+        fsm.set_index(read_state)
+
+        rdata = self.m.TmpWire(self.datawidth)
+        pat = [(maskaddr == i, r) for i, r in enumerate(self.register)]
+        pat.append((None, vtypes.IntX()))
+        rval = vtypes.PatternMux(pat)
+        rdata.assign(rval)
+
+        ack = self.push_read_data(rdata, cond=fsm)
+        fsm.If(ack).goto_init()
+
+        # write
+        write_state = fsm.current + 1
+        fsm.If(writevalid).goto_from(init_state, write_state)
+        fsm.set_index(write_state)
+
+        data, mask, valid = self.pull_write_data(cond=fsm)
+
+        state_cond = fsm.state == fsm.current
+        for i, r in enumerate(self.register):
+            self.seq.If(state_cond, valid, maskaddr == i)(
+                self.register[i](data)
+            )
+        fsm.goto_init()
+
+    def _setup_register_full_fsm(self):
+        fsm = FSM(self.m, '_'.join(
+            ['', self.name, 'register_fsm']), self.clk, self.rst)
+
+        # request
+        addr, counter, readvalid, writevalid = self.pull_request(cond=fsm)
+
+        maskaddr = self.m.TmpReg(self.maskwidth)
+        fsm.If(vtypes.Ors(readvalid, writevalid))(
+            maskaddr((addr >> self.shift) & self.mask),
+        )
+
+        init_state = fsm.current
+
+        # read
+        read_state = fsm.current + 1
+        fsm.If(readvalid).goto_from(init_state, read_state)
+        fsm.set_index(read_state)
+
+        rdata = self.m.TmpWire(self.datawidth)
+        pat = [(maskaddr == i, r) for i, r in enumerate(self.register)]
+        pat.append((None, vtypes.IntX()))
+        rval = vtypes.PatternMux(pat)
+        rdata.assign(rval)
+
+        ack, last = self.push_read_data(rdata, counter, cond=fsm)
+
+        fsm.If(ack)(
+            maskaddr.inc()
+        )
+        fsm.If(ack, last).goto_init()
+
+        # write
+        write_state = fsm.current + 1
+        fsm.If(writevalid).goto_from(init_state, write_state)
+        fsm.set_index(write_state)
+
+        data, mask, valid, last = self.pull_write_data(counter, cond=fsm)
+
+        state_cond = fsm.state == fsm.current
+        for i, r in enumerate(self.register):
+            self.seq.If(state_cond, valid, maskaddr == i)(
+                self.register[i](data)
+            )
+        fsm.If(valid)(
+            maskaddr.inc()
+        )
+        fsm.goto_init()
+
+    def read_register(self, fsm, addr):
+        if isinstance(addr, int):
+            rval = self.register[addr]
+        elif isinstance(addr, vtypes.Int):
+            rval = self.register[addr.value]
+        else:
+            pat = [(addr == i, r) for i, r in enumerate(self.register)]
+            pat.append((None, vtypes.IntX()))
+            rval = vtypes.PatternMux(pat)
+        return rval
+
+    def write_register(self, fsm, addr, value):
+        state_cond = fsm.state == fsm.current
+        for i, r in enumerate(self.register):
+            self.seq.If(state_cond, addr == i)(
+                self.register[i](value)
+            )
+        fsm.goto_next()
+
+    def wait_register(self, fsm, addr, value, cond=True):
+        if isinstance(addr, int):
+            rval = self.register[addr]
+        elif isinstance(addr, vtypes.Int):
+            rval = self.register[addr.value]
+        else:
+            pat = [(addr == i, r) for i, r in enumerate(self.register)]
+            pat.append((None, vtypes.IntX()))
+            rval = vtypes.PatternMux(pat)
+        if cond:
+            fsm.If(rval == value).goto_next()
+        else:
+            fsm.If(rval != value).goto_next()
 
     def lock(self, fsm):
         if self.mutex is None:
@@ -617,3 +784,17 @@ class AXIS(axi.AxiSlave):
                 ['', self.name, 'mutex']), self.clk, self.rst)
 
         return self.mutex.unlock(fsm)
+
+
+def AXIMLite(m, name, clk, rst, datawidth=32, addrwidth=32,
+             noio=False):
+
+    return AXIM(m, name, clk, rst, datawidth=datawidth, addrwidth=addrwidth,
+                lite=True, noio=noio)
+
+
+def AXISLite(m, name, clk, rst, datawidth=32, addrwidth=32,
+             noio=False):
+
+    return AXIS(m, name, clk, rst, datawidth=datawidth, addrwidth=addrwidth,
+                lite=True, noio=noio)

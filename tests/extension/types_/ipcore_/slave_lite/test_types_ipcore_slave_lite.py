@@ -280,12 +280,14 @@ module main
   localparam fsm_init = 0;
   reg [32-1:0] _tmp_0;
   reg _tmp_1;
-  assign myaxi_arready = (fsm == 0) && !_tmp_1;
+  reg _tmp_2;
+  assign myaxi_arready = (fsm == 0) && !_tmp_1 && _tmp_2;
   reg [32-1:0] rdata;
   reg _myaxi_cond_0_1;
 
   always @(posedge CLK) begin
     if(RST) begin
+      _tmp_2 <= 0;
       _tmp_0 <= 0;
       _tmp_1 <= 0;
       myaxi_rdata <= 0;
@@ -295,6 +297,7 @@ module main
       if(_myaxi_cond_0_1) begin
         myaxi_rvalid <= 0;
       end 
+      _tmp_2 <= myaxi_arvalid;
       if(myaxi_arready && myaxi_arvalid) begin
         _tmp_0 <= myaxi_araddr;
       end 

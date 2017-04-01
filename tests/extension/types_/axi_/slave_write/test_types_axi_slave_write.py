@@ -394,19 +394,22 @@ module main
   reg [9-1:0] _tmp_0;
   reg [32-1:0] _tmp_1;
   reg _tmp_2;
-  assign myaxi_awready = (fsm == 0) && !_tmp_2;
+  reg _tmp_3;
+  assign myaxi_awready = (fsm == 0) && !_tmp_2 && _tmp_3;
   assign myaxi_wready = fsm == 1;
 
   always @(posedge CLK) begin
     if(RST) begin
       myaxi_rvalid <= 0;
       myaxi_rlast <= 0;
+      _tmp_3 <= 0;
       _tmp_1 <= 0;
       _tmp_0 <= 0;
       _tmp_2 <= 0;
     end else begin
       myaxi_rvalid <= 0;
       myaxi_rlast <= 0;
+      _tmp_3 <= myaxi_awvalid;
       if(myaxi_awready && myaxi_awvalid) begin
         _tmp_1 <= myaxi_awaddr;
         _tmp_0 <= myaxi_awlen + 1;
