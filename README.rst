@@ -401,5 +401,8 @@ Related Project
 `Pyverilog <https://github.com/PyHDI/Pyverilog>`__ - Python-based
 Hardware Design Processing Toolkit for Verilog HDL
 
+`IPgen <https://github.com/PyHDI/ipgen>`__ - IP-core package generator
+for AXI4/Avalon
+
 .. |Build Status| image:: https://travis-ci.org/PyHDI/veriloggen.svg
    :target: https://travis-ci.org/PyHDI/veriloggen
