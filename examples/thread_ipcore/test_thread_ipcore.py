@@ -8,8 +8,7 @@ module test;
 
   reg CLK;
   reg RST;
-  reg [16-1:0] sw;
-  wire [16-1:0] led;
+  wire [8-1:0] led;
   reg [32-1:0] saxi_awaddr;
   reg saxi_awvalid;
   wire saxi_awready;
@@ -126,7 +125,6 @@ module test;
   (
     .CLK(CLK),
     .RST(RST),
-    .sw(sw),
     .led(led),
     .saxi_awaddr(saxi_awaddr),
     .saxi_awvalid(saxi_awvalid),
@@ -528,8 +526,7 @@ module blinkled
 (
   input CLK,
   input RST,
-  input [16-1:0] sw,
-  output reg [16-1:0] led,
+  output reg [8-1:0] led,
   input [32-1:0] saxi_awaddr,
   input saxi_awvalid,
   output saxi_awready,
@@ -679,22 +676,38 @@ module blinkled
       if((_saxi_register_0 == 1) && (th_blink == 2) && (0 == 3)) begin
         _saxi_register_3 <= 0;
       end 
-      if((th_blink == 10) && (3 == 0)) begin
+      if((th_blink == 3) && (3 == 0)) begin
+        _saxi_register_0 <= 0;
+        _saxi_flag_0 <= 0;
+      end 
+      if((th_blink == 3) && (3 == 1)) begin
+        _saxi_register_1 <= 0;
+        _saxi_flag_1 <= 0;
+      end 
+      if((th_blink == 3) && (3 == 2)) begin
+        _saxi_register_2 <= 0;
+        _saxi_flag_2 <= 0;
+      end 
+      if((th_blink == 3) && (3 == 3)) begin
+        _saxi_register_3 <= 0;
+        _saxi_flag_3 <= 0;
+      end 
+      if((th_blink == 11) && (3 == 0)) begin
         _saxi_register_0 <= 1;
         _saxi_flag_0 <= 1;
         _saxi_resetval_0 <= 0;
       end 
-      if((th_blink == 10) && (3 == 1)) begin
+      if((th_blink == 11) && (3 == 1)) begin
         _saxi_register_1 <= 1;
         _saxi_flag_1 <= 1;
         _saxi_resetval_1 <= 0;
       end 
-      if((th_blink == 10) && (3 == 2)) begin
+      if((th_blink == 11) && (3 == 2)) begin
         _saxi_register_2 <= 1;
         _saxi_flag_2 <= 1;
         _saxi_resetval_2 <= 0;
       end 
-      if((th_blink == 10) && (3 == 3)) begin
+      if((th_blink == 11) && (3 == 3)) begin
         _saxi_register_3 <= 1;
         _saxi_flag_3 <= 1;
         _saxi_resetval_3 <= 0;
@@ -745,6 +758,7 @@ module blinkled
   localparam th_blink_10 = 10;
   localparam th_blink_11 = 11;
   localparam th_blink_12 = 12;
+  localparam th_blink_13 = 13;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -764,7 +778,7 @@ module blinkled
           if(1) begin
             th_blink <= th_blink_2;
           end else begin
-            th_blink <= th_blink_12;
+            th_blink <= th_blink_13;
           end
         end
         th_blink_2: begin
@@ -773,25 +787,28 @@ module blinkled
           end 
         end
         th_blink_3: begin
-          _th_blink_sleep_1 <= _saxi_register_1;
           th_blink <= th_blink_4;
         end
         th_blink_4: begin
-          _th_blink_size_0 <= _saxi_register_2;
+          _th_blink_sleep_1 <= _saxi_register_1;
           th_blink <= th_blink_5;
         end
         th_blink_5: begin
-          _th_blink_i_2 <= 0;
+          _th_blink_size_0 <= _saxi_register_2;
           th_blink <= th_blink_6;
         end
         th_blink_6: begin
-          if(_th_blink_i_2 < _th_blink_size_0) begin
-            th_blink <= th_blink_7;
-          end else begin
-            th_blink <= th_blink_10;
-          end
+          _th_blink_i_2 <= 0;
+          th_blink <= th_blink_7;
         end
         th_blink_7: begin
+          if(_th_blink_i_2 < _th_blink_size_0) begin
+            th_blink <= th_blink_8;
+          end else begin
+            th_blink <= th_blink_11;
+          end
+        end
+        th_blink_8: begin
           if(_tmp_9 < _th_blink_sleep_1) begin
             _tmp_9 <= _tmp_9 + 1;
           end 
@@ -799,21 +816,21 @@ module blinkled
             _tmp_9 <= 0;
           end 
           if(_tmp_9 >= _th_blink_sleep_1) begin
-            th_blink <= th_blink_8;
+            th_blink <= th_blink_9;
           end 
         end
-        th_blink_8: begin
-          led <= led + 1;
-          th_blink <= th_blink_9;
-        end
         th_blink_9: begin
-          _th_blink_i_2 <= _th_blink_i_2 + 1;
-          th_blink <= th_blink_6;
+          led <= led + 1;
+          th_blink <= th_blink_10;
         end
         th_blink_10: begin
-          th_blink <= th_blink_11;
+          _th_blink_i_2 <= _th_blink_i_2 + 1;
+          th_blink <= th_blink_7;
         end
         th_blink_11: begin
+          th_blink <= th_blink_12;
+        end
+        th_blink_12: begin
           th_blink <= th_blink_1;
         end
       endcase

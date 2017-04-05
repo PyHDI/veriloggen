@@ -17,8 +17,7 @@ def mkLed():
     m = Module('blinkled')
     clk = m.Input('CLK')
     rst = m.Input('RST')
-    sw = m.Input('sw', 16)
-    led = m.OutputReg('led', 16, initval=0)
+    led = m.OutputReg('led', 8, initval=0)
 
     datawidth = 32
     addrwidth = 10
@@ -39,6 +38,8 @@ def mkLed():
         while True:
             # wait start
             saxi.wait_flag(0, value=1, resetvalue=0)
+            # reset done
+            saxi.write(3, 0)
 
             sleep = saxi.read(1)
             size = saxi.read(2)

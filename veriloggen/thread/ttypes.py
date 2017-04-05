@@ -851,7 +851,8 @@ class AXISRegister(AXIS):
         state_cond = fsm.state == fsm.current
         for i, r in enumerate(self.register):
             self.seq.If(state_cond, addr == i)(
-                self.register[i](value)
+                self.register[i](value),
+                self.flag[i](0)
             )
         fsm.goto_next()
 

@@ -31,6 +31,8 @@ def mkLed():
     def blink(size):
         # wait start
         saxi.wait_flag(0, value=1, resetvalue=0)
+        # reset done
+        saxi.write(1, 0)
 
         all_ok.value = True
 
