@@ -24,18 +24,14 @@ def mkLed():
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
     myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth)
 
-    saxi = vthread.AXISLite(m, 'saxi', clk, rst, datawidth)
-    saxi.make_register()
+    saxi = vthread.AXISLiteRegister(m, 'saxi', clk, rst, datawidth)
 
     all_ok = m.TmpReg(initval=0)
 
     def blink(size):
-        # done
-        saxi.write_register(1, 0)
-        # result
-        saxi.write_register(2, 0)
-        # start
-        saxi.wait_register(0, value=1)
+        # wait start
+        saxi.wait_flag(0, value=1, resetvalue=0)
+
         all_ok.value = True
 
         for i in range(4):
@@ -50,9 +46,10 @@ def mkLed():
             print('NOT ALL OK')
 
         # result
-        saxi.write_register(2, all_ok)
+        saxi.write(2, all_ok)
+
         # done
-        saxi.write_register(1, 1)
+        saxi.write_flag(1, 1, resetvalue=0)
 
     def body(size, offset):
         # write
@@ -121,58 +118,31 @@ def mkTest():
     memory = axi.AxiMemoryModel(m, 'memory', clk, rst)
     memory.connect(ports, 'myaxi')
 
-    # slave controller
-    _saxi = axi.AxiLiteMaster(m, '_saxi', clk, rst, noio=True)
+    # AXI-Slave controller
+    _saxi = vthread.AXIMLite(m, '_saxi', clk, rst, noio=True)
     _saxi.connect(ports, 'saxi')
-    fsm = FSM(m, 'saxi_fsm', clk, rst)
 
-    wdata = m.Reg('wdata', 32, initval=0)
+    def ctrl():
+        for i in range(100):
+            pass
 
-    for _ in range(8):
         awaddr = 0
-        ack = _saxi.write_request(awaddr, cond=fsm)
-        fsm(
-            wdata(0)  # not start
-        )
-        fsm.If(ack).goto_next()
+        _saxi.write(awaddr, 1)
 
-        ack = _saxi.write_data(wdata, cond=fsm)
-        fsm.If(ack).goto_next()
+        araddr = 4
+        v = _saxi.read(araddr)
+        while v == 0:
+            v = _saxi.read(araddr)
 
-    awaddr = 0
-    ack = _saxi.write_request(awaddr, cond=fsm)
-    fsm(
-        wdata(1)  # start
-    )
-    fsm.If(ack).goto_next()
+        araddr = 8
+        v = _saxi.read(araddr)
+        if v:
+            print('SLAVE: ALL OK')
+        else:
+            print('SLAVE: NOT ALL OK')
 
-    ack = _saxi.write_data(wdata, cond=fsm)
-    fsm.If(ack).goto_next()
-
-    # wait done
-    wait_state = fsm.current
-
-    araddr = 4 * 1
-    ack = _saxi.read_request(araddr, cond=fsm)
-    fsm.If(ack).goto_next()
-
-    rdata, rvalid = _saxi.read_data(cond=fsm)
-    fsm.If(rvalid, rdata == 0).goto(wait_state)
-    fsm.If(rvalid, rdata != 0).goto_next()
-
-    # check
-    araddr = 4 * 2
-    ack = _saxi.read_request(araddr, cond=fsm)
-    fsm.If(ack).goto_next()
-
-    rdata, rvalid = _saxi.read_data(cond=fsm)
-    fsm.If(rvalid, rdata)(
-        Display('SLAVE: ALL OK')
-    )
-    fsm.If(rvalid, Not(rdata))(
-        Display('SLAVE: NOT ALL OK')
-    )
-    fsm.If(rvalid).goto_next()
+    th = vthread.Thread(m, 'th_ctrl', clk, rst, ctrl)
+    fsm = th.start()
 
     uut = m.Instance(led, 'uut',
                      params=m.connect_params(led),

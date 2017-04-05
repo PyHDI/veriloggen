@@ -482,7 +482,7 @@ class FIFO(fifo.Fifo):
 
 
 class AXIM(axi.AxiMaster):
-    __intrinsics__ = ('dma_read', 'dma_write',
+    __intrinsics__ = ('read', 'write', 'dma_read', 'dma_write',
                       'lock', 'try_lock', 'unlock')
 
     burstlen = 256
@@ -492,6 +492,42 @@ class AXIM(axi.AxiMaster):
         axi.AxiMaster.__init__(self, m, name, clk, rst, datawidth, addrwidth,
                                lite=lite, noio=noio)
         self.mutex = None
+
+    def read(self, fsm, global_addr):
+        ret = self.read_request(global_addr, length=1, cond=fsm)
+        if isinstance(ret, (tuple)):
+            ack, counter = ret
+        else:
+            ack = ret
+        fsm.If(ack).goto_next()
+
+        ret = self.read_data(cond=fsm)
+        if len(ret) == 3:
+            data, valid, last = ret
+        else:
+            data, valid = ret
+
+        rdata = self.m.TmpReg(self.datawidth, initval=0)
+        fsm.If(valid)(rdata(data))
+        fsm.Then().goto_next()
+
+        return rdata
+
+    def write(self, fsm, global_addr, value):
+        ret = self.write_request(global_addr, length=1, cond=fsm)
+        if isinstance(ret, (tuple)):
+            ack, counter = ret
+        else:
+            ack = ret
+        fsm.If(ack).goto_next()
+
+        ret = self.write_data(value, cond=fsm)
+        if isinstance(ret, (tuple)):
+            ack, last = ret
+        else:
+            ack, last = ret, None
+
+        fsm.If(ack).goto_next()
 
     def dma_read(self, fsm, ram, local_addr, global_addr, size, port=0):
         if self.lite:
@@ -604,27 +640,55 @@ class AXIM(axi.AxiMaster):
 
 
 class AXIS(axi.AxiSlave):
-    __intrinsics__ = ('read_register', 'write_register', 'wait_register',
-                      'lock', 'try_lock', 'unlock')
+    __intrinsics__ = ('lock', 'try_lock', 'unlock')
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
                  lite=False, noio=False):
         axi.AxiSlave.__init__(self, m, name, clk, rst, datawidth, addrwidth,
                               lite=lite, noio=noio)
         self.mutex = None
-        self.register = None
-        self.fifo = None
 
-    def make_register(self, length=4):
-        if self.register is not None:
-            raise ValueError('Memory-mapped register is already created')
-        if self.fifo is not None:
-            raise ValueError('Memory-mapped FIFO is already created')
+    def lock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.lock(fsm)
+
+    def try_lock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.try_lock(fsm)
+
+    def unlock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.unlock(fsm)
+
+
+class AXISRegister(AXIS):
+    __intrinsics__ = ('read', 'write', 'write_flag', 'wait', 'wait_flag',
+                      'lock', 'try_lock', 'unlock')
+
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
+                 lite=False, noio=False, length=4):
+        AXIS.__init__(self, m, name, clk, rst, datawidth=datawidth, addrwidth=addrwidth,
+                      lite=lite, noio=noio)
+
         if not isinstance(length, int):
             raise TypeError("length must be 'int', not '%s'" %
                             str(type(length)))
 
         self.register = [self.m.Reg('_'.join(['', self.name, 'register', '%d' % i]),
+                                    width=self.datawidth, initval=0)
+                         for i in range(length)]
+        self.flag = [self.m.Reg('_'.join(['', self.name, 'flag', '%d' % i]), initval=0)
+                     for i in range(length)]
+        self.resetval = [self.m.Reg('_'.join(['', self.name, 'resetval', '%d' % i]),
                                     width=self.datawidth, initval=0)
                          for i in range(length)]
         self.length = length
@@ -665,7 +729,28 @@ class AXIS(axi.AxiSlave):
         rval = vtypes.PatternMux(pat)
         rdata.assign(rval)
 
+        flag = self.m.TmpWire()
+        pat = [(maskaddr == i, r) for i, r in enumerate(self.flag)]
+        pat.append((None, vtypes.IntX()))
+        rval = vtypes.PatternMux(pat)
+        flag.assign(rval)
+
+        resetval = self.m.TmpWire(self.datawidth)
+        pat = [(maskaddr == i, r) for i, r in enumerate(self.resetval)]
+        pat.append((None, vtypes.IntX()))
+        rval = vtypes.PatternMux(pat)
+        resetval.assign(rval)
+
         ack = self.push_read_data(rdata, cond=fsm)
+
+        # flag reset
+        state_cond = fsm.state == fsm.current
+        for i, r in enumerate(self.register):
+            self.seq.If(state_cond, ack, flag, maskaddr == i)(
+                self.register[i](resetval),
+                self.flag[i](0)
+            )
+
         fsm.If(ack).goto_init()
 
         # write
@@ -707,7 +792,27 @@ class AXIS(axi.AxiSlave):
         rval = vtypes.PatternMux(pat)
         rdata.assign(rval)
 
+        flag = self.m.TmpWire()
+        pat = [(maskaddr == i, r) for i, r in enumerate(self.flag)]
+        pat.append((None, vtypes.IntX()))
+        rval = vtypes.PatternMux(pat)
+        flag.assign(rval)
+
+        resetval = self.m.TmpWire(self.datawidth)
+        pat = [(maskaddr == i, r) for i, r in enumerate(self.resetval)]
+        pat.append((None, vtypes.IntX()))
+        rval = vtypes.PatternMux(pat)
+        resetval.assign(rval)
+
         ack, last = self.push_read_data(rdata, counter, cond=fsm)
+
+        # flag reset
+        state_cond = fsm.state == fsm.current
+        for i, r in enumerate(self.register):
+            self.seq.If(state_cond, ack, flag, maskaddr == i)(
+                self.register[i](resetval),
+                self.flag[i](0)
+            )
 
         fsm.If(ack)(
             maskaddr.inc()
@@ -731,7 +836,7 @@ class AXIS(axi.AxiSlave):
         )
         fsm.goto_init()
 
-    def read_register(self, fsm, addr):
+    def read(self, fsm, addr):
         if isinstance(addr, int):
             rval = self.register[addr]
         elif isinstance(addr, vtypes.Int):
@@ -742,7 +847,7 @@ class AXIS(axi.AxiSlave):
             rval = vtypes.PatternMux(pat)
         return rval
 
-    def write_register(self, fsm, addr, value):
+    def write(self, fsm, addr, value):
         state_cond = fsm.state == fsm.current
         for i, r in enumerate(self.register):
             self.seq.If(state_cond, addr == i)(
@@ -750,7 +855,17 @@ class AXIS(axi.AxiSlave):
             )
         fsm.goto_next()
 
-    def wait_register(self, fsm, addr, value, cond=True):
+    def write_flag(self, fsm, addr, value, resetvalue=0):
+        state_cond = fsm.state == fsm.current
+        for i, r in enumerate(self.register):
+            self.seq.If(state_cond, addr == i)(
+                self.register[i](value),
+                self.flag[i](1),
+                self.resetval[i](resetvalue)
+            )
+        fsm.goto_next()
+
+    def wait(self, fsm, addr, value, polarity=True):
         if isinstance(addr, int):
             rval = self.register[addr]
         elif isinstance(addr, vtypes.Int):
@@ -759,31 +874,38 @@ class AXIS(axi.AxiSlave):
             pat = [(addr == i, r) for i, r in enumerate(self.register)]
             pat.append((None, vtypes.IntX()))
             rval = vtypes.PatternMux(pat)
-        if cond:
-            fsm.If(rval == value).goto_next()
+
+        if polarity:
+            wait_cond = (rval == value)
         else:
-            fsm.If(rval != value).goto_next()
+            wait_cond = (rval != value)
 
-    def lock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
+        fsm.If(wait_cond).goto_next()
 
-        return self.mutex.lock(fsm)
+    def wait_flag(self, fsm, addr, value, resetvalue=0, polarity=True):
+        if isinstance(addr, int):
+            rval = self.register[addr]
+        elif isinstance(addr, vtypes.Int):
+            rval = self.register[addr.value]
+        else:
+            pat = [(addr == i, r) for i, r in enumerate(self.register)]
+            pat.append((None, vtypes.IntX()))
+            rval = vtypes.PatternMux(pat)
 
-    def try_lock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
+        if polarity:
+            wait_cond = (rval == value)
+        else:
+            wait_cond = (rval != value)
 
-        return self.mutex.try_lock(fsm)
+        state_cond = fsm.state == fsm.current
 
-    def unlock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
+        # flag reset
+        for i, r in enumerate(self.register):
+            self.seq.If(wait_cond, state_cond, addr == i)(
+                self.register[i](resetvalue)
+            )
 
-        return self.mutex.unlock(fsm)
+        fsm.If(wait_cond).goto_next()
 
 
 def AXIMLite(m, name, clk, rst, datawidth=32, addrwidth=32,
@@ -798,3 +920,10 @@ def AXISLite(m, name, clk, rst, datawidth=32, addrwidth=32,
 
     return AXIS(m, name, clk, rst, datawidth=datawidth, addrwidth=addrwidth,
                 lite=True, noio=noio)
+
+
+def AXISLiteRegister(m, name, clk, rst, datawidth=32, addrwidth=32,
+                     noio=False, length=4):
+
+    return AXISRegister(m, name, clk, rst, datawidth=datawidth, addrwidth=addrwidth,
+                        lite=True, noio=noio, length=length)
