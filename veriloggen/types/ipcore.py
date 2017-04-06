@@ -12,19 +12,24 @@ from . import axi
 
 
 def to_ipcore(m, name=None, clkname='CLK', rstname='RST',
-              simaddrwidth=20, simcode=None, iftype='axi'):
+              simaddrwidth=20, simcode=None, simmemimg=None, iftype='axi'):
     top = generate_top(m, name, clkname, rstname)
     verilog = top.to_verilog()
-    run_ipgen(top.name, verilog, simaddrwidth, simcode, iftype)
+    run_ipgen(top.name, verilog, simaddrwidth, simcode, simmemimg, iftype)
 
 
-def run_ipgen(topname, verilog, simaddrwidth=20, simcode=None, iftype='axi'):
+def run_ipgen(topname, verilog, simaddrwidth=20, simcode=None, simmemimg=None, iftype='axi'):
     # memory image
-    size = 2 ** simaddrwidth
-    wordsize = 4
-    file_memimg = NamedTemporaryFile('w+')
-    axi.AxiMemoryModel._make_img(file_memimg.name, size, wordsize)
-    file_memimg.read()
+    if simmemimg is None:
+        size = 2 ** simaddrwidth
+        wordsize = 4
+        file_memimg = NamedTemporaryFile('w+')
+        axi.AxiMemoryModel._make_img(file_memimg.name, size, wordsize)
+        file_memimg.read()
+        file_memimg_name = file_memimg.name
+    else:
+        file_memimg = None
+        file_memimg_name = simmemimg
 
     # source code
     file_source = NamedTemporaryFile('w+')
@@ -44,7 +49,7 @@ def run_ipgen(topname, verilog, simaddrwidth=20, simcode=None, iftype='axi'):
     include = []
     define = []
     usertest = file_simcode.name if file_simcode is not None else None
-    memimg = file_memimg.name
+    memimg = file_memimg_name
     skip_not_found = False
     ignore_protocol_error = False
 
@@ -71,7 +76,8 @@ def run_ipgen(topname, verilog, simaddrwidth=20, simcode=None, iftype='axi'):
                   skip_not_found=skip_not_found,
                   ignore_protocol_error=ignore_protocol_error)
 
-    file_memimg.close()
+    if file_memimg is not None:
+        file_memimg.close()
     file_source.close()
     if file_simcode:
         file_simcode.close()
