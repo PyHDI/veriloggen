@@ -4,9 +4,11 @@ import sys
 import os
 
 # the next line can be removed after installation
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
 
 from veriloggen import *
+
 
 def mkLed():
     m = Module('blinkled')
@@ -26,7 +28,7 @@ def mkLed():
                 count(count + 1)
             )
         ))
-    
+
     m.Always(Posedge(clk))(
         If(rst)(
             led(0)
@@ -36,8 +38,9 @@ def mkLed():
                 led(led + 1)
             )
         ))
-    
+
     return m
+
 
 def mkTest():
     m = Module('test')
@@ -67,11 +70,11 @@ if __name__ == '__main__':
     print(verilog)
 
     # run simulator (Icarus Verilog)
-    sim = simulation.Simulator(test)
-    rslt = sim.run() # display=False
+    sim = simulation.Simulator(test, sim='iverilog')
+    rslt = sim.run()  # display=False
     #rslt = sim.run(display=True)
     print(rslt)
 
     # launch waveform viewer (GTKwave)
-    #sim.view_waveform() # background=False
-    #sim.view_waveform(background=True)
+    # sim.view_waveform() # background=False
+    # sim.view_waveform(background=True)

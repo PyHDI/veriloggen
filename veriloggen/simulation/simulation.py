@@ -86,7 +86,7 @@ class Simulator(object):
         if sim == 'modelsim' or sim == 'vsim':
             return
         if sim == 'vcs':
-            raise NotImplementedError("Not implemented: '%s'" % sim)
+            return
         raise ValueError("Not supported simulator: '%s'" % sim)
 
     def _type_check_wave(self, wave):
@@ -94,14 +94,18 @@ class Simulator(object):
             return
         raise ValueError("Not supported waveform viewer: '%s'" % wave)
 
-    def run(self, display=False, outputfile='a.out', include=None, define=None):
+    def run(self, display=False, outputfile='a.out', include=None, define=None,
+            full64=False, notimingcheck=True):
         if self.sim == 'iverilog' or self.sim == 'icarus':
-            return self._run_iverilog(display, outputfile, include, define)
+            return self.run_iverilog(display, outputfile, include, define)
+        if self.sim == 'vcs':
+            return self.run_vcs(display, outputfile, include, define,
+                                full64=full64, notimingcheck=notimingcheck)
         if self.sim == 'modelsim' or self.sim == 'vsim':
-            return self._run_modelsim(display, self.top, include, define)
+            return self.run_modelsim(display, self.top, include, define)
         raise NotImplementedError("Not implemented: '%s'" % self.sim)
 
-    def _run_iverilog(self, display=False, outputfile='a.out', include=None, define=None):
+    def run_iverilog(self, display=False, outputfile='a.out', include=None, define=None):
         cmd = []
         cmd.append('iverilog')
         if include:
@@ -167,7 +171,82 @@ class Simulator(object):
 
         return ''.join([syn_rslt, sim_rslt])
 
-    def _run_modelsim(self, display=False, top="test", include=None, define=None):
+    def run_vcs(self, display=False, outputfile='simv', include=None, define=None,
+                full64=False, notimingcheck=True):
+        cmd = []
+        cmd.append('vcs')
+        cmd.append('-v2005')
+
+        if full64:
+            cmd.append('-full64')
+
+        if notimingcheck:
+            cmd.append('+notimingcheck')
+
+        if include:
+            for inc in include:
+                cmd.append('+incdir+')
+                cmd.append(inc)
+        if define:
+            for d in define:
+                cmd.append('+define+')
+                if isinstance(d, (tuple, list)):
+                    if d[1] is None:
+                        cmd.append(d[0])
+                    else:
+                        cmd.append(''.join([d[0], '=', str(d[1])]))
+                else:
+                    cmd.append(d)
+
+        cmd.append('-o')
+        cmd.append(outputfile)
+
+        # encoding: 'utf-8' ?
+        encode = sys.getdefaultencoding()
+
+        code = self._to_code()
+        tmp = tempfile.NamedTemporaryFile()
+        tmp.write(code.encode(encode))
+        tmp.read()
+        filename = tmp.name
+
+        cmd.append(filename)
+
+        # synthesis
+        p = subprocess.Popen(' '.join(cmd), shell=True, stdout=subprocess.PIPE)
+        syn_rslt = []
+        while True:
+            stdout_data = p.stdout.readline()
+            syn_rslt.append(stdout_data.decode(encode))
+            if display:
+                print(stdout_data, end='')
+            if not stdout_data:
+                break
+        p.wait()
+        p.stdout.close()
+        syn_rslt = ''.join(syn_rslt)
+
+        # simulation
+        p = subprocess.Popen('./' + outputfile, shell=True,
+                             stdout=subprocess.PIPE)
+        sim_rslt = []
+        while True:
+            stdout_data = p.stdout.readline()
+            sim_rslt.append(stdout_data.decode(encode))
+            if display:
+                print(stdout_data, end='')
+            if not stdout_data:
+                break
+        p.wait()
+        p.stdout.close()
+        sim_rslt = ''.join(sim_rslt)
+
+        # close temporal source code file
+        tmp.close()
+
+        return ''.join([syn_rslt, sim_rslt])
+
+    def run_modelsim(self, display=False, top="test", include=None, define=None):
         cmd = []
         cmd.append('vlib work ; vmap work ; vlog')
         if include:
