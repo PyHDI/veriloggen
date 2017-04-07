@@ -68,13 +68,13 @@ Install on your python environment by using pip:
 
     pip install jinja2
 
-- Pyverilog: 1.0.6 or later
+- Pyverilog: 1.0.7 or later
 
 Install from pip (or download and install from GitHub):
 
     pip install pyverilog
 
-- IPgen: 0.2.0 or later
+- IPgen: 0.2.1 or later
 
 Install from pip (or download and install from GitHub):
 
