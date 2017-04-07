@@ -221,6 +221,14 @@ def test():
     if which('vcs'):
         sim = simulation.Simulator(test_module, sim='vcs')
         rslt = sim.run()
+
+        new_rslt = []
+        for line in rslt.split('\n'):
+            if line.count('LED:') > 0:
+                new_rslt.append(line)
+        new_rslt.append('')
+        rslt = '\n'.join(new_rslt)
+
         assert(expected_rslt == rslt)
 
     else:
