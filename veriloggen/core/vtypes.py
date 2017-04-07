@@ -411,6 +411,7 @@ class _Variable(_Numeric):
         self.initval = initval
         self.module = module
         self.subst = []
+        self.assign_value = None
 
     def write(self, value, blk=False, ldelay=None, rdelay=None):
         return Subst(self, value, blk=blk, ldelay=ldelay, rdelay=rdelay)
@@ -448,6 +449,14 @@ class _Variable(_Numeric):
 
     def get_signed(self):
         return self.signed
+
+    def _add_assign(self, s):
+        if self.assign_value is not None:
+            raise ValueError('already assigned')
+        self.assign_value = s
+
+    def _get_assign(self):
+        return self.assign_value
 
     def _add_subst(self, s):
         self.subst.append(s)
@@ -1387,6 +1396,7 @@ class Pointer(_SpecialOperator):
         self.var = var
         self.pos = pos
         self.subst = []
+        self.assign_value = None
         self._type_check_var(var)
 
     def write(self, value, blk=False, ldelay=None, rdelay=None):
@@ -1410,6 +1420,14 @@ class Pointer(_SpecialOperator):
         if not isinstance(var, (_Variable, Scope, Pointer)):
             raise TypeError(
                 'var of Pointer must be Variable, not %s' % str(type(var)))
+
+    def _add_assign(self, s):
+        if self.assign_value is not None:
+            raise ValueError('already assigned')
+        self.assign_value = s
+
+    def _get_assign(self):
+        return self.assign_value
 
     def _add_subst(self, s):
         self.subst.append(s)
@@ -1441,6 +1459,7 @@ class Slice(_SpecialOperator):
         self.msb = msb
         self.lsb = lsb
         self.subst = []
+        self.assign_value = None
         self._type_check_var(var)
 
     def write(self, value, blk=False, ldelay=None, rdelay=None):
@@ -1462,6 +1481,14 @@ class Slice(_SpecialOperator):
         if not isinstance(var, (_Variable, Scope)):
             raise TypeError(
                 'var of Slice must be Variable, not %s' % str(type(var)))
+
+    def _add_assign(self, s):
+        if self.assign_value is not None:
+            raise ValueError('already assigned')
+        self.assign_value = s
+
+    def _get_assign(self):
+        return self.assign_value
 
     def _add_subst(self, s):
         self.subst.append(s)
@@ -1493,6 +1520,7 @@ class Cat(_SpecialOperator):
     def __init__(self, *vars):
         _SpecialOperator.__init__(self)
         self.vars = tuple(vars)
+        self.assign_value = None
         self.subst = []
 
     def write(self, value, blk=False, ldelay=None, rdelay=None):
@@ -1513,6 +1541,14 @@ class Cat(_SpecialOperator):
         if module is None:
             raise ValueError("This Cat has no parent module information")
         return module.Assign(self.write(value))
+
+    def _add_assign(self, s):
+        if self.assign_value is not None:
+            raise ValueError('already assigned')
+        self.assign_value = s
+
+    def _get_assign(self):
+        return self.assign_value
 
     def _add_subst(self, s):
         self.subst.append(s)
@@ -1675,6 +1711,10 @@ class Assign(VeriloggenNode):
     def __init__(self, statement):
         VeriloggenNode.__init__(self)
         self.statement = statement
+        statement.left._add_assign(self)
+
+    def overwrite_right(self, v):
+        self.statement.overwrite_right(v)
 
 
 class Initial(VeriloggenNode):

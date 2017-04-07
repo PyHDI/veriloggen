@@ -749,21 +749,20 @@ module main
   wire _tmp_ready_0;
   assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
   assign yready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
-  assign _tmp_ready_0 = (_tmp_ready_2 || !_tmp_valid_2) && (_tmp_valid_0 && _tmp_valid_0) && ((_tmp_ready_2 || !_tmp_valid_2) && (_tmp_valid_0 && _tmp_valid_0)) && ((_tmp_ready_4 || !_tmp_valid_4) && _tmp_valid_0);
   reg [32-1:0] _tmp_data_1;
   reg [32-1:0] _tmp_data_2;
   reg _tmp_valid_2;
   wire _tmp_ready_2;
-  assign _tmp_ready_2 = (_tmp_ready_5 || !_tmp_valid_5) && (_tmp_valid_2 && _tmp_valid_4);
   reg [32-1:0] _tmp_data_3;
   reg [32-1:0] _tmp_data_4;
   reg _tmp_valid_4;
   wire _tmp_ready_4;
-  assign _tmp_ready_4 = (_tmp_ready_5 || !_tmp_valid_5) && (_tmp_valid_2 && _tmp_valid_4);
+  assign _tmp_ready_0 = (_tmp_ready_2 || !_tmp_valid_2) && (_tmp_valid_0 && _tmp_valid_0) && ((_tmp_ready_2 || !_tmp_valid_2) && (_tmp_valid_0 && _tmp_valid_0)) && ((_tmp_ready_4 || !_tmp_valid_4) && _tmp_valid_0);
   reg [32-1:0] _tmp_data_5;
   reg _tmp_valid_5;
   wire _tmp_ready_5;
-  assign _tmp_ready_5 = (_tmp_ready_6 || !_tmp_valid_6) && _tmp_valid_5;
+  assign _tmp_ready_2 = (_tmp_ready_5 || !_tmp_valid_5) && (_tmp_valid_2 && _tmp_valid_4);
+  assign _tmp_ready_4 = (_tmp_ready_5 || !_tmp_valid_5) && (_tmp_valid_2 && _tmp_valid_4);
   wire [32-1:0] _tmp_data_6;
   wire _tmp_valid_6;
   wire _tmp_ready_6;
@@ -834,6 +833,7 @@ module main
     .rslt(_tmp_abs_odata_6)
   );
 
+  assign _tmp_ready_5 = (_tmp_ready_6 || !_tmp_valid_6) && _tmp_valid_5;
   assign zdata = _tmp_data_6;
   assign zvalid = _tmp_valid_6;
   assign _tmp_ready_6 = zready;

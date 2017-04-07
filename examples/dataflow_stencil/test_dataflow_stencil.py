@@ -820,7 +820,6 @@ module stencil_pipeline_2d
     .c(_tmp_odata_6)
   );
 
-  assign _tmp_ready_6 = (_tmp_ready_15 || !_tmp_valid_15) && (_tmp_valid_6 && _tmp_valid_7);
   wire signed [32-1:0] _tmp_data_7;
   wire _tmp_valid_7;
   wire _tmp_ready_7;
@@ -848,7 +847,6 @@ module stencil_pipeline_2d
     .c(_tmp_odata_7)
   );
 
-  assign _tmp_ready_7 = (_tmp_ready_15 || !_tmp_valid_15) && (_tmp_valid_6 && _tmp_valid_7);
   wire signed [32-1:0] _tmp_data_8;
   wire _tmp_valid_8;
   wire _tmp_ready_8;
@@ -876,7 +874,6 @@ module stencil_pipeline_2d
     .c(_tmp_odata_8)
   );
 
-  assign _tmp_ready_8 = (_tmp_ready_16 || !_tmp_valid_16) && _tmp_valid_8;
   wire signed [32-1:0] _tmp_data_9;
   wire _tmp_valid_9;
   wire _tmp_ready_9;
@@ -904,7 +901,6 @@ module stencil_pipeline_2d
     .c(_tmp_odata_9)
   );
 
-  assign _tmp_ready_9 = (_tmp_ready_17 || !_tmp_valid_17) && _tmp_valid_9;
   wire signed [32-1:0] _tmp_data_10;
   wire _tmp_valid_10;
   wire _tmp_ready_10;
@@ -932,7 +928,6 @@ module stencil_pipeline_2d
     .c(_tmp_odata_10)
   );
 
-  assign _tmp_ready_10 = (_tmp_ready_18 || !_tmp_valid_18) && _tmp_valid_10;
   wire signed [32-1:0] _tmp_data_11;
   wire _tmp_valid_11;
   wire _tmp_ready_11;
@@ -960,7 +955,6 @@ module stencil_pipeline_2d
     .c(_tmp_odata_11)
   );
 
-  assign _tmp_ready_11 = (_tmp_ready_19 || !_tmp_valid_19) && _tmp_valid_11;
   wire signed [32-1:0] _tmp_data_12;
   wire _tmp_valid_12;
   wire _tmp_ready_12;
@@ -988,7 +982,6 @@ module stencil_pipeline_2d
     .c(_tmp_odata_12)
   );
 
-  assign _tmp_ready_12 = (_tmp_ready_20 || !_tmp_valid_20) && _tmp_valid_12;
   wire signed [32-1:0] _tmp_data_13;
   wire _tmp_valid_13;
   wire _tmp_ready_13;
@@ -1016,7 +1009,6 @@ module stencil_pipeline_2d
     .c(_tmp_odata_13)
   );
 
-  assign _tmp_ready_13 = (_tmp_ready_21 || !_tmp_valid_21) && _tmp_valid_13;
   wire signed [32-1:0] _tmp_data_14;
   wire _tmp_valid_14;
   wire _tmp_ready_14;
@@ -1044,150 +1036,158 @@ module stencil_pipeline_2d
     .c(_tmp_odata_14)
   );
 
-  assign _tmp_ready_14 = (_tmp_ready_22 || !_tmp_valid_22) && _tmp_valid_14;
   reg signed [32-1:0] _tmp_data_15;
   reg _tmp_valid_15;
   wire _tmp_ready_15;
-  assign _tmp_ready_15 = (_tmp_ready_23 || !_tmp_valid_23) && (_tmp_valid_15 && _tmp_valid_16);
+  assign _tmp_ready_6 = (_tmp_ready_15 || !_tmp_valid_15) && (_tmp_valid_6 && _tmp_valid_7);
+  assign _tmp_ready_7 = (_tmp_ready_15 || !_tmp_valid_15) && (_tmp_valid_6 && _tmp_valid_7);
   reg signed [32-1:0] _tmp_data_16;
   reg _tmp_valid_16;
   wire _tmp_ready_16;
-  assign _tmp_ready_16 = (_tmp_ready_23 || !_tmp_valid_23) && (_tmp_valid_15 && _tmp_valid_16);
+  assign _tmp_ready_8 = (_tmp_ready_16 || !_tmp_valid_16) && _tmp_valid_8;
   reg signed [32-1:0] _tmp_data_17;
   reg _tmp_valid_17;
   wire _tmp_ready_17;
-  assign _tmp_ready_17 = (_tmp_ready_24 || !_tmp_valid_24) && _tmp_valid_17;
+  assign _tmp_ready_9 = (_tmp_ready_17 || !_tmp_valid_17) && _tmp_valid_9;
   reg signed [32-1:0] _tmp_data_18;
   reg _tmp_valid_18;
   wire _tmp_ready_18;
-  assign _tmp_ready_18 = (_tmp_ready_25 || !_tmp_valid_25) && _tmp_valid_18;
+  assign _tmp_ready_10 = (_tmp_ready_18 || !_tmp_valid_18) && _tmp_valid_10;
   reg signed [32-1:0] _tmp_data_19;
   reg _tmp_valid_19;
   wire _tmp_ready_19;
-  assign _tmp_ready_19 = (_tmp_ready_26 || !_tmp_valid_26) && _tmp_valid_19;
+  assign _tmp_ready_11 = (_tmp_ready_19 || !_tmp_valid_19) && _tmp_valid_11;
   reg signed [32-1:0] _tmp_data_20;
   reg _tmp_valid_20;
   wire _tmp_ready_20;
-  assign _tmp_ready_20 = (_tmp_ready_27 || !_tmp_valid_27) && _tmp_valid_20;
+  assign _tmp_ready_12 = (_tmp_ready_20 || !_tmp_valid_20) && _tmp_valid_12;
   reg signed [32-1:0] _tmp_data_21;
   reg _tmp_valid_21;
   wire _tmp_ready_21;
-  assign _tmp_ready_21 = (_tmp_ready_28 || !_tmp_valid_28) && _tmp_valid_21;
+  assign _tmp_ready_13 = (_tmp_ready_21 || !_tmp_valid_21) && _tmp_valid_13;
   reg signed [32-1:0] _tmp_data_22;
   reg _tmp_valid_22;
   wire _tmp_ready_22;
-  assign _tmp_ready_22 = (_tmp_ready_29 || !_tmp_valid_29) && _tmp_valid_22;
+  assign _tmp_ready_14 = (_tmp_ready_22 || !_tmp_valid_22) && _tmp_valid_14;
   reg signed [32-1:0] _tmp_data_23;
   reg _tmp_valid_23;
   wire _tmp_ready_23;
-  assign _tmp_ready_23 = (_tmp_ready_30 || !_tmp_valid_30) && (_tmp_valid_23 && _tmp_valid_24);
+  assign _tmp_ready_15 = (_tmp_ready_23 || !_tmp_valid_23) && (_tmp_valid_15 && _tmp_valid_16);
+  assign _tmp_ready_16 = (_tmp_ready_23 || !_tmp_valid_23) && (_tmp_valid_15 && _tmp_valid_16);
   reg signed [32-1:0] _tmp_data_24;
   reg _tmp_valid_24;
   wire _tmp_ready_24;
-  assign _tmp_ready_24 = (_tmp_ready_30 || !_tmp_valid_30) && (_tmp_valid_23 && _tmp_valid_24);
+  assign _tmp_ready_17 = (_tmp_ready_24 || !_tmp_valid_24) && _tmp_valid_17;
   reg signed [32-1:0] _tmp_data_25;
   reg _tmp_valid_25;
   wire _tmp_ready_25;
-  assign _tmp_ready_25 = (_tmp_ready_31 || !_tmp_valid_31) && _tmp_valid_25;
+  assign _tmp_ready_18 = (_tmp_ready_25 || !_tmp_valid_25) && _tmp_valid_18;
   reg signed [32-1:0] _tmp_data_26;
   reg _tmp_valid_26;
   wire _tmp_ready_26;
-  assign _tmp_ready_26 = (_tmp_ready_32 || !_tmp_valid_32) && _tmp_valid_26;
+  assign _tmp_ready_19 = (_tmp_ready_26 || !_tmp_valid_26) && _tmp_valid_19;
   reg signed [32-1:0] _tmp_data_27;
   reg _tmp_valid_27;
   wire _tmp_ready_27;
-  assign _tmp_ready_27 = (_tmp_ready_33 || !_tmp_valid_33) && _tmp_valid_27;
+  assign _tmp_ready_20 = (_tmp_ready_27 || !_tmp_valid_27) && _tmp_valid_20;
   reg signed [32-1:0] _tmp_data_28;
   reg _tmp_valid_28;
   wire _tmp_ready_28;
-  assign _tmp_ready_28 = (_tmp_ready_34 || !_tmp_valid_34) && _tmp_valid_28;
+  assign _tmp_ready_21 = (_tmp_ready_28 || !_tmp_valid_28) && _tmp_valid_21;
   reg signed [32-1:0] _tmp_data_29;
   reg _tmp_valid_29;
   wire _tmp_ready_29;
-  assign _tmp_ready_29 = (_tmp_ready_35 || !_tmp_valid_35) && _tmp_valid_29;
+  assign _tmp_ready_22 = (_tmp_ready_29 || !_tmp_valid_29) && _tmp_valid_22;
   reg signed [32-1:0] _tmp_data_30;
   reg _tmp_valid_30;
   wire _tmp_ready_30;
-  assign _tmp_ready_30 = (_tmp_ready_36 || !_tmp_valid_36) && (_tmp_valid_30 && _tmp_valid_31);
+  assign _tmp_ready_23 = (_tmp_ready_30 || !_tmp_valid_30) && (_tmp_valid_23 && _tmp_valid_24);
+  assign _tmp_ready_24 = (_tmp_ready_30 || !_tmp_valid_30) && (_tmp_valid_23 && _tmp_valid_24);
   reg signed [32-1:0] _tmp_data_31;
   reg _tmp_valid_31;
   wire _tmp_ready_31;
-  assign _tmp_ready_31 = (_tmp_ready_36 || !_tmp_valid_36) && (_tmp_valid_30 && _tmp_valid_31);
+  assign _tmp_ready_25 = (_tmp_ready_31 || !_tmp_valid_31) && _tmp_valid_25;
   reg signed [32-1:0] _tmp_data_32;
   reg _tmp_valid_32;
   wire _tmp_ready_32;
-  assign _tmp_ready_32 = (_tmp_ready_37 || !_tmp_valid_37) && _tmp_valid_32;
+  assign _tmp_ready_26 = (_tmp_ready_32 || !_tmp_valid_32) && _tmp_valid_26;
   reg signed [32-1:0] _tmp_data_33;
   reg _tmp_valid_33;
   wire _tmp_ready_33;
-  assign _tmp_ready_33 = (_tmp_ready_38 || !_tmp_valid_38) && _tmp_valid_33;
+  assign _tmp_ready_27 = (_tmp_ready_33 || !_tmp_valid_33) && _tmp_valid_27;
   reg signed [32-1:0] _tmp_data_34;
   reg _tmp_valid_34;
   wire _tmp_ready_34;
-  assign _tmp_ready_34 = (_tmp_ready_39 || !_tmp_valid_39) && _tmp_valid_34;
+  assign _tmp_ready_28 = (_tmp_ready_34 || !_tmp_valid_34) && _tmp_valid_28;
   reg signed [32-1:0] _tmp_data_35;
   reg _tmp_valid_35;
   wire _tmp_ready_35;
-  assign _tmp_ready_35 = (_tmp_ready_40 || !_tmp_valid_40) && _tmp_valid_35;
+  assign _tmp_ready_29 = (_tmp_ready_35 || !_tmp_valid_35) && _tmp_valid_29;
   reg signed [32-1:0] _tmp_data_36;
   reg _tmp_valid_36;
   wire _tmp_ready_36;
-  assign _tmp_ready_36 = (_tmp_ready_41 || !_tmp_valid_41) && (_tmp_valid_36 && _tmp_valid_37);
+  assign _tmp_ready_30 = (_tmp_ready_36 || !_tmp_valid_36) && (_tmp_valid_30 && _tmp_valid_31);
+  assign _tmp_ready_31 = (_tmp_ready_36 || !_tmp_valid_36) && (_tmp_valid_30 && _tmp_valid_31);
   reg signed [32-1:0] _tmp_data_37;
   reg _tmp_valid_37;
   wire _tmp_ready_37;
-  assign _tmp_ready_37 = (_tmp_ready_41 || !_tmp_valid_41) && (_tmp_valid_36 && _tmp_valid_37);
+  assign _tmp_ready_32 = (_tmp_ready_37 || !_tmp_valid_37) && _tmp_valid_32;
   reg signed [32-1:0] _tmp_data_38;
   reg _tmp_valid_38;
   wire _tmp_ready_38;
-  assign _tmp_ready_38 = (_tmp_ready_42 || !_tmp_valid_42) && _tmp_valid_38;
+  assign _tmp_ready_33 = (_tmp_ready_38 || !_tmp_valid_38) && _tmp_valid_33;
   reg signed [32-1:0] _tmp_data_39;
   reg _tmp_valid_39;
   wire _tmp_ready_39;
-  assign _tmp_ready_39 = (_tmp_ready_43 || !_tmp_valid_43) && _tmp_valid_39;
+  assign _tmp_ready_34 = (_tmp_ready_39 || !_tmp_valid_39) && _tmp_valid_34;
   reg signed [32-1:0] _tmp_data_40;
   reg _tmp_valid_40;
   wire _tmp_ready_40;
-  assign _tmp_ready_40 = (_tmp_ready_44 || !_tmp_valid_44) && _tmp_valid_40;
+  assign _tmp_ready_35 = (_tmp_ready_40 || !_tmp_valid_40) && _tmp_valid_35;
   reg signed [32-1:0] _tmp_data_41;
   reg _tmp_valid_41;
   wire _tmp_ready_41;
-  assign _tmp_ready_41 = (_tmp_ready_45 || !_tmp_valid_45) && (_tmp_valid_41 && _tmp_valid_42);
+  assign _tmp_ready_36 = (_tmp_ready_41 || !_tmp_valid_41) && (_tmp_valid_36 && _tmp_valid_37);
+  assign _tmp_ready_37 = (_tmp_ready_41 || !_tmp_valid_41) && (_tmp_valid_36 && _tmp_valid_37);
   reg signed [32-1:0] _tmp_data_42;
   reg _tmp_valid_42;
   wire _tmp_ready_42;
-  assign _tmp_ready_42 = (_tmp_ready_45 || !_tmp_valid_45) && (_tmp_valid_41 && _tmp_valid_42);
+  assign _tmp_ready_38 = (_tmp_ready_42 || !_tmp_valid_42) && _tmp_valid_38;
   reg signed [32-1:0] _tmp_data_43;
   reg _tmp_valid_43;
   wire _tmp_ready_43;
-  assign _tmp_ready_43 = (_tmp_ready_46 || !_tmp_valid_46) && _tmp_valid_43;
+  assign _tmp_ready_39 = (_tmp_ready_43 || !_tmp_valid_43) && _tmp_valid_39;
   reg signed [32-1:0] _tmp_data_44;
   reg _tmp_valid_44;
   wire _tmp_ready_44;
-  assign _tmp_ready_44 = (_tmp_ready_47 || !_tmp_valid_47) && _tmp_valid_44;
+  assign _tmp_ready_40 = (_tmp_ready_44 || !_tmp_valid_44) && _tmp_valid_40;
   reg signed [32-1:0] _tmp_data_45;
   reg _tmp_valid_45;
   wire _tmp_ready_45;
-  assign _tmp_ready_45 = (_tmp_ready_48 || !_tmp_valid_48) && (_tmp_valid_45 && _tmp_valid_46);
+  assign _tmp_ready_41 = (_tmp_ready_45 || !_tmp_valid_45) && (_tmp_valid_41 && _tmp_valid_42);
+  assign _tmp_ready_42 = (_tmp_ready_45 || !_tmp_valid_45) && (_tmp_valid_41 && _tmp_valid_42);
   reg signed [32-1:0] _tmp_data_46;
   reg _tmp_valid_46;
   wire _tmp_ready_46;
-  assign _tmp_ready_46 = (_tmp_ready_48 || !_tmp_valid_48) && (_tmp_valid_45 && _tmp_valid_46);
+  assign _tmp_ready_43 = (_tmp_ready_46 || !_tmp_valid_46) && _tmp_valid_43;
   reg signed [32-1:0] _tmp_data_47;
   reg _tmp_valid_47;
   wire _tmp_ready_47;
-  assign _tmp_ready_47 = (_tmp_ready_49 || !_tmp_valid_49) && _tmp_valid_47;
+  assign _tmp_ready_44 = (_tmp_ready_47 || !_tmp_valid_47) && _tmp_valid_44;
   reg signed [32-1:0] _tmp_data_48;
   reg _tmp_valid_48;
   wire _tmp_ready_48;
-  assign _tmp_ready_48 = (_tmp_ready_50 || !_tmp_valid_50) && (_tmp_valid_48 && _tmp_valid_49);
+  assign _tmp_ready_45 = (_tmp_ready_48 || !_tmp_valid_48) && (_tmp_valid_45 && _tmp_valid_46);
+  assign _tmp_ready_46 = (_tmp_ready_48 || !_tmp_valid_48) && (_tmp_valid_45 && _tmp_valid_46);
   reg signed [32-1:0] _tmp_data_49;
   reg _tmp_valid_49;
   wire _tmp_ready_49;
-  assign _tmp_ready_49 = (_tmp_ready_50 || !_tmp_valid_50) && (_tmp_valid_48 && _tmp_valid_49);
+  assign _tmp_ready_47 = (_tmp_ready_49 || !_tmp_valid_49) && _tmp_valid_47;
   reg signed [32-1:0] _tmp_data_50;
   reg _tmp_valid_50;
   wire _tmp_ready_50;
+  assign _tmp_ready_48 = (_tmp_ready_50 || !_tmp_valid_50) && (_tmp_valid_48 && _tmp_valid_49);
+  assign _tmp_ready_49 = (_tmp_ready_50 || !_tmp_valid_50) && (_tmp_valid_48 && _tmp_valid_49);
   assign odata = _tmp_data_50;
   assign ovalid = _tmp_valid_50;
   assign _tmp_ready_50 = 1;

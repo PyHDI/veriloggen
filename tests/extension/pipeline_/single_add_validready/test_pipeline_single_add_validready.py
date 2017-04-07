@@ -311,25 +311,23 @@ module blinkled
   input ry
 );
 
-  assign rx = (_df_ready_2 || !_df_valid_2) && (vx && vx) && ((_df_ready_2 || !_df_valid_2) && (vx && vx)) && ((_df_ready_3 || !_df_valid_3) && vx);
   reg [32-1:0] _df_data_0;
-  assign rx = 1;
   reg [32-1:0] _df_data_1;
-  assign rx = 1;
   reg [32-1:0] _df_data_2;
   reg _df_valid_2;
   wire _df_ready_2;
-  assign _df_ready_2 = (_df_ready_4 || !_df_valid_4) && (_df_valid_2 && _df_valid_3);
   reg [32-1:0] _df_data_3;
   reg _df_valid_3;
   wire _df_ready_3;
-  assign _df_ready_3 = (_df_ready_4 || !_df_valid_4) && (_df_valid_2 && _df_valid_3);
+  assign rx = (_df_ready_2 || !_df_valid_2) && (vx && vx) && ((_df_ready_2 || !_df_valid_2) && (vx && vx)) && ((_df_ready_3 || !_df_valid_3) && vx);
   reg [32-1:0] _df_data_4;
   reg _df_valid_4;
   wire _df_ready_4;
-  assign _df_ready_4 = ry;
+  assign _df_ready_2 = (_df_ready_4 || !_df_valid_4) && (_df_valid_2 && _df_valid_3);
+  assign _df_ready_3 = (_df_ready_4 || !_df_valid_4) && (_df_valid_2 && _df_valid_3);
   assign y = _df_data_4;
   assign vy = _df_valid_4;
+  assign _df_ready_4 = ry;
 
   always @(posedge CLK) begin
     if(RST) begin

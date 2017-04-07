@@ -499,9 +499,7 @@ module blinkled
   reg _myaxi_cond_0_1;
   wire _tmp_5;
   wire _tmp_6;
-  assign _tmp_5 = 1 && _tmp_ready_9;
   assign _tmp_6 = 1;
-  assign myaxi_rready = _tmp_5 && _tmp_6 || _tmp_15 && _tmp_16 || _tmp_71 && _tmp_72 || _tmp_81 && _tmp_82;
   reg [33-1:0] _tmp_7;
   reg _tmp_8;
   wire [32-1:0] _tmp_data_9;
@@ -519,7 +517,6 @@ module blinkled
   reg _myaxi_cond_1_1;
   wire _tmp_15;
   wire _tmp_16;
-  assign _tmp_15 = 1 && _tmp_ready_19;
   assign _tmp_16 = 1;
   reg [33-1:0] _tmp_17;
   reg _tmp_18;
@@ -535,7 +532,6 @@ module blinkled
   reg _tmp_21;
   wire _tmp_22;
   wire _tmp_23;
-  assign _tmp_22 = 1 && ((_tmp_ready_113 || !_tmp_valid_113) && (_tmp_20 && _tmp_32));
   assign _tmp_23 = 1;
   localparam _tmp_24 = 1;
   wire [_tmp_24-1:0] _tmp_25;
@@ -556,7 +552,6 @@ module blinkled
   reg _tmp_33;
   wire _tmp_34;
   wire _tmp_35;
-  assign _tmp_34 = 1 && ((_tmp_ready_113 || !_tmp_valid_113) && (_tmp_20 && _tmp_32));
   assign _tmp_35 = 1;
   localparam _tmp_36 = 1;
   wire [_tmp_36-1:0] _tmp_37;
@@ -592,7 +587,6 @@ module blinkled
   reg _tmp_53;
   wire _tmp_54;
   wire _tmp_55;
-  assign _tmp_54 = 1 && _tmp_ready_65;
   assign _tmp_55 = 1;
   localparam _tmp_56 = 1;
   wire [_tmp_56-1:0] _tmp_57;
@@ -622,7 +616,6 @@ module blinkled
   reg _myaxi_cond_4_1;
   wire _tmp_71;
   wire _tmp_72;
-  assign _tmp_71 = 1 && _tmp_ready_75;
   assign _tmp_72 = 1;
   reg [33-1:0] _tmp_73;
   reg _tmp_74;
@@ -641,8 +634,8 @@ module blinkled
   reg _myaxi_cond_5_1;
   wire _tmp_81;
   wire _tmp_82;
-  assign _tmp_81 = 1 && _tmp_ready_85;
   assign _tmp_82 = 1;
+  assign myaxi_rready = _tmp_5 && _tmp_6 || _tmp_15 && _tmp_16 || _tmp_71 && _tmp_72 || _tmp_81 && _tmp_82;
   reg [33-1:0] _tmp_83;
   reg _tmp_84;
   wire [32-1:0] _tmp_data_85;
@@ -684,7 +677,6 @@ module blinkled
   reg _tmp_96;
   wire _tmp_97;
   wire _tmp_98;
-  assign _tmp_97 = 1 && _tmp_ready_108;
   assign _tmp_98 = 1;
   localparam _tmp_99 = 1;
   wire [_tmp_99-1:0] _tmp_100;
@@ -896,12 +888,16 @@ module blinkled
 
   assign _tmp_data_9 = myaxi_rdata;
   assign _tmp_valid_9 = myaxi_rvalid;
+  assign _tmp_5 = 1 && _tmp_ready_9;
   assign _tmp_data_19 = myaxi_rdata;
   assign _tmp_valid_19 = myaxi_rvalid;
+  assign _tmp_15 = 1 && _tmp_ready_19;
   assign _tmp_data_75 = myaxi_rdata;
   assign _tmp_valid_75 = myaxi_rvalid;
+  assign _tmp_71 = 1 && _tmp_ready_75;
   assign _tmp_data_85 = myaxi_rdata;
   assign _tmp_valid_85 = myaxi_rvalid;
+  assign _tmp_81 = 1 && _tmp_ready_85;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -1012,6 +1008,8 @@ module blinkled
   reg [32-1:0] _tmp_data_113;
   reg _tmp_valid_113;
   wire _tmp_ready_113;
+  assign _tmp_22 = 1 && ((_tmp_ready_113 || !_tmp_valid_113) && (_tmp_20 && _tmp_32));
+  assign _tmp_34 = 1 && ((_tmp_ready_113 || !_tmp_valid_113) && (_tmp_20 && _tmp_32));
   assign _tmp_data_46 = _tmp_data_113;
   assign _tmp_valid_46 = _tmp_valid_113;
   assign _tmp_ready_113 = _tmp_ready_46;
@@ -1293,8 +1291,10 @@ module blinkled
 
   assign _tmp_data_65 = _tmp_58;
   assign _tmp_valid_65 = _tmp_52;
+  assign _tmp_54 = 1 && _tmp_ready_65;
   assign _tmp_data_108 = _tmp_101;
   assign _tmp_valid_108 = _tmp_95;
+  assign _tmp_97 = 1 && _tmp_ready_108;
   localparam th_comp_1 = 1;
   localparam th_comp_2 = 2;
   localparam th_comp_3 = 3;

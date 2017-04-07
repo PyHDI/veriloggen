@@ -469,9 +469,7 @@ module main
   reg _master_cond_0_1;
   wire _tmp_5;
   wire _tmp_6;
-  assign _tmp_5 = 1 && _tmp_ready_9;
   assign _tmp_6 = 1;
-  assign master_rready = _tmp_5 && _tmp_6 || _tmp_11 && _tmp_12;
   reg [8-1:0] _tmp_7;
   reg _tmp_8;
   wire [32-1:0] _tmp_data_9;
@@ -485,8 +483,8 @@ module main
   reg _master_cond_1_1;
   wire _tmp_11;
   wire _tmp_12;
-  assign _tmp_11 = 1 && _tmp_ready_15;
   assign _tmp_12 = 1;
+  assign master_rready = _tmp_5 && _tmp_6 || _tmp_11 && _tmp_12;
   reg [8-1:0] _tmp_13;
   reg _tmp_14;
   wire [32-1:0] _tmp_data_15;
@@ -498,7 +496,6 @@ module main
   reg _tmp_17;
   wire _tmp_18;
   wire _tmp_19;
-  assign _tmp_18 = 1 && ((_tmp_ready_63 || !_tmp_valid_63) && (_tmp_16 && _tmp_28));
   assign _tmp_19 = 1;
   localparam _tmp_20 = 1;
   wire [_tmp_20-1:0] _tmp_21;
@@ -516,7 +513,6 @@ module main
   reg _tmp_29;
   wire _tmp_30;
   wire _tmp_31;
-  assign _tmp_30 = 1 && ((_tmp_ready_63 || !_tmp_valid_63) && (_tmp_16 && _tmp_28));
   assign _tmp_31 = 1;
   localparam _tmp_32 = 1;
   wire [_tmp_32-1:0] _tmp_33;
@@ -545,7 +541,6 @@ module main
   reg _tmp_45;
   wire _tmp_46;
   wire _tmp_47;
-  assign _tmp_46 = 1 && _tmp_ready_57;
   assign _tmp_47 = 1;
   localparam _tmp_48 = 1;
   wire [_tmp_48-1:0] _tmp_49;
@@ -727,8 +722,10 @@ module main
 
   assign _tmp_data_9 = master_rdata;
   assign _tmp_valid_9 = master_rvalid;
+  assign _tmp_5 = 1 && _tmp_ready_9;
   assign _tmp_data_15 = master_rdata;
   assign _tmp_valid_15 = master_rvalid;
+  assign _tmp_11 = 1 && _tmp_ready_15;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -802,6 +799,8 @@ module main
   reg [32-1:0] _tmp_data_63;
   reg _tmp_valid_63;
   wire _tmp_ready_63;
+  assign _tmp_18 = 1 && ((_tmp_ready_63 || !_tmp_valid_63) && (_tmp_16 && _tmp_28));
+  assign _tmp_30 = 1 && ((_tmp_ready_63 || !_tmp_valid_63) && (_tmp_16 && _tmp_28));
   assign _tmp_data_42 = _tmp_data_63;
   assign _tmp_valid_42 = _tmp_valid_63;
   assign _tmp_ready_63 = _tmp_ready_42;
@@ -965,6 +964,7 @@ module main
 
   assign _tmp_data_57 = _tmp_50;
   assign _tmp_valid_57 = _tmp_44;
+  assign _tmp_46 = 1 && _tmp_ready_57;
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
   localparam fsm_3 = 3;

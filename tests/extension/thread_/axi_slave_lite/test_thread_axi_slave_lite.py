@@ -205,12 +205,12 @@ module test;
   reg __saxi_cond_1_1;
   reg signed [32-1:0] _th_ctrl_araddr_12;
   reg __saxi_cond_2_1;
-  assign _saxi_rready = (th_ctrl == 9) || (th_ctrl == 13) || (th_ctrl == 18);
   reg [32-1:0] _tmp_13;
   reg signed [32-1:0] _th_ctrl_v_13;
   reg __saxi_cond_3_1;
   reg [32-1:0] _tmp_14;
   reg __saxi_cond_4_1;
+  assign _saxi_rready = (th_ctrl == 9) || (th_ctrl == 13) || (th_ctrl == 18);
   reg [32-1:0] _tmp_15;
 
   blinkled
@@ -905,7 +905,6 @@ module blinkled
   reg _tmp_16;
   wire _tmp_17;
   wire _tmp_18;
-  assign _tmp_17 = 1 && _tmp_ready_28;
   assign _tmp_18 = 1;
   localparam _tmp_19 = 1;
   wire [_tmp_19-1:0] _tmp_20;
@@ -938,7 +937,6 @@ module blinkled
   reg _tmp_35;
   wire _tmp_36;
   wire _tmp_37;
-  assign _tmp_36 = 1 && _tmp_ready_47;
   assign _tmp_37 = 1;
   localparam _tmp_38 = 1;
   wire [_tmp_38-1:0] _tmp_39;
@@ -968,9 +966,7 @@ module blinkled
   reg _myaxi_cond_4_1;
   wire _tmp_53;
   wire _tmp_54;
-  assign _tmp_53 = 1 && _tmp_ready_57;
   assign _tmp_54 = 1;
-  assign myaxi_rready = _tmp_53 && _tmp_54 || _tmp_65 && _tmp_66;
   reg [33-1:0] _tmp_55;
   reg _tmp_56;
   wire [32-1:0] _tmp_data_57;
@@ -994,8 +990,8 @@ module blinkled
   reg _myaxi_cond_5_1;
   wire _tmp_65;
   wire _tmp_66;
-  assign _tmp_65 = 1 && _tmp_ready_69;
   assign _tmp_66 = 1;
+  assign myaxi_rready = _tmp_53 && _tmp_54 || _tmp_65 && _tmp_66;
   reg [33-1:0] _tmp_67;
   reg _tmp_68;
   wire [32-1:0] _tmp_data_69;
@@ -1147,8 +1143,10 @@ module blinkled
 
   assign _tmp_data_57 = myaxi_rdata;
   assign _tmp_valid_57 = myaxi_rvalid;
+  assign _tmp_53 = 1 && _tmp_ready_57;
   assign _tmp_data_69 = myaxi_rdata;
   assign _tmp_valid_69 = myaxi_rvalid;
+  assign _tmp_65 = 1 && _tmp_ready_69;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -1333,8 +1331,10 @@ module blinkled
 
   assign _tmp_data_28 = _tmp_21;
   assign _tmp_valid_28 = _tmp_15;
+  assign _tmp_17 = 1 && _tmp_ready_28;
   assign _tmp_data_47 = _tmp_40;
   assign _tmp_valid_47 = _tmp_34;
+  assign _tmp_36 = 1 && _tmp_ready_47;
 
   always @(posedge CLK) begin
     if(RST) begin

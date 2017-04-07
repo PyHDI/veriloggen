@@ -311,13 +311,13 @@ module blinkled
   input ry
 );
 
-  assign rx = (_df_ready_0 || !_df_valid_0) && vx;
   reg [32-1:0] _df_data_0;
   reg _df_valid_0;
   wire _df_ready_0;
-  assign _df_ready_0 = ry;
+  assign rx = (_df_ready_0 || !_df_valid_0) && vx;
   assign y = _df_data_0;
   assign vy = _df_valid_0;
+  assign _df_ready_0 = ry;
 
   always @(posedge CLK) begin
     if(RST) begin

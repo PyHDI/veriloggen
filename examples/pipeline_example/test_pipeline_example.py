@@ -368,22 +368,22 @@ module multadd
   input rz
 );
 
-  assign rx = (_df_ready_0 || !_df_valid_0) && vx;
-  assign ry = (_df_ready_1 || !_df_valid_1) && vy;
   reg [32-1:0] _df_data_0;
   reg _df_valid_0;
   wire _df_ready_0;
-  assign _df_ready_0 = (_df_ready_2 || !_df_valid_2) && (_df_valid_0 && _df_valid_1);
+  assign rx = (_df_ready_0 || !_df_valid_0) && vx;
   reg [32-1:0] _df_data_1;
   reg _df_valid_1;
   wire _df_ready_1;
-  assign _df_ready_1 = (_df_ready_2 || !_df_valid_2) && (_df_valid_0 && _df_valid_1);
+  assign ry = (_df_ready_1 || !_df_valid_1) && vy;
   reg [32-1:0] _df_data_2;
   reg _df_valid_2;
   wire _df_ready_2;
-  assign _df_ready_2 = rz;
+  assign _df_ready_0 = (_df_ready_2 || !_df_valid_2) && (_df_valid_0 && _df_valid_1);
+  assign _df_ready_1 = (_df_ready_2 || !_df_valid_2) && (_df_valid_0 && _df_valid_1);
   assign z = _df_data_2;
   assign vz = _df_valid_2;
+  assign _df_ready_2 = rz;
 
   always @(posedge CLK) begin
     if(RST) begin

@@ -8,6 +8,41 @@ from functools import reduce
 import veriloggen.core.vtypes as vtypes
 from veriloggen.seq.seq import Seq
 
+def _and_vars(*vars):
+    if not vars:
+        return vtypes.Int(1)
+    ret = None
+    for var in vars:
+        if var is None:
+            continue
+        if ret is None:
+            ret = var
+        else:
+            ret = vtypes.AndList(ret, var)
+    if ret is None:
+        return vtypes.Int(1)
+    return ret
+
+
+def _connect_ready(m, var, ready):
+    if var is None:
+        return
+
+    prev_assign = var._get_assign()
+    if not prev_assign:
+        m.Assign(var(ready))
+    elif (isinstance(prev_assign.statement.right, vtypes.Int) and
+          prev_assign.statement.right.value == 1):
+        prev_assign.overwrite_right(ready)
+        m.remove(prev_assign)
+        m.append(prev_assign)
+    else:
+        prev_assign.overwrite_right(
+            _and_vars(prev_assign.statement.right, ready))
+        m.remove(prev_assign)
+        m.append(prev_assign)
+
+
 class Pipeline(vtypes.VeriloggenNode):
     """ Pipeline Generator """
     def __init__(self, m, name, clk, rst, width=32):
@@ -247,13 +282,14 @@ class Pipeline(vtypes.VeriloggenNode):
         if tmp_ready is not None:
             ordy = vtypes.AndList(vtypes.OrList(tmp_ready, vtypes.Not(tmp_valid)), valid)
             for r in ready:
-                if r is None: continue
-                if len(r.subst) == 0:
-                    self.m.Assign( r(ordy) )
-                elif isinstance(r.subst[0].right, vtypes.Int) and (r.subst[0].right.value==1):
-                    r.subst[0].overwrite_right( ordy )
-                else:
-                    r.subst[0].overwrite_right( vtypes.AndList(r.subst[0].right, ordy ) )
+                #if r is None: continue
+                #if len(r.subst) == 0:
+                #    self.m.Assign( r(ordy) )
+                #elif isinstance(r.subst[0].right, vtypes.Int) and (r.subst[0].right.value==1):
+                #    r.subst[0].overwrite_right( ordy )
+                #else:
+                #    r.subst[0].overwrite_right( vtypes.AndList(r.subst[0].right, ordy ) )
+                _connect_ready(self.m, r, ordy)
         
         return tmp_data, tmp_valid, tmp_ready
    
@@ -317,7 +353,8 @@ class _PipelineVariable(_PipelineNumeric):
 
         if self.ready is not None:
             ready = vtypes.Int(1)
-            self.df.m.Assign( self.ready(ready) )
+            #self.df.m.Assign( self.ready(ready) )
+            _connect_ready(self.df.m, self.ready, ready)
 
     def prev(self, index, initval=0):
         if index == 0:
@@ -372,15 +409,16 @@ class _PipelineVariable(_PipelineNumeric):
         if ready is None:
             ready = vtypes.Int(1)
 
-        if ovar.ready is not None:
-            prev_subst = ovar.ready._get_subst()
-            if len(prev_subst) == 0:
-                ovar.df.m.Assign( ovar.ready(ready) )
-            elif isinstance(prev_subst[0].right, vtypes.Int) and (prev_subst[0].right.value==1):
-                ovar.ready.subst[0].overwrite_right( ready )
-            else:
-                ovar.ready.subst[0].overwrite_right( vtypes.AndList(prev_subst[0].right, ready) )
-
+        #if ovar.ready is not None:
+        #    prev_subst = ovar.ready._get_subst()
+        #    if len(prev_subst) == 0:
+        #        ovar.df.m.Assign( ovar.ready(ready) )
+        #    elif isinstance(prev_subst[0].right, vtypes.Int) and (prev_subst[0].right.value==1):
+        #        ovar.ready.subst[0].overwrite_right( ready )
+        #    else:
+        #        ovar.ready.subst[0].overwrite_right( vtypes.AndList(prev_subst[0].right, ready) )
+        _connect_ready(ovar.df.m, ovar.ready, ready)
+        
         ovar.dst_data = _PipelineInterface(data, valid, ready, output=True)
                 
     def reset(self, cond, initval=0):

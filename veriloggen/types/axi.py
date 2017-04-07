@@ -9,6 +9,18 @@ from veriloggen.dataflow.dtypes import make_condition
 from . import util
 
 
+def _connect_ready(m, var, val):
+    prev_assign = var._get_assign()
+    
+    if not prev_assign:
+        var.assign(val)
+    else:
+        prev_assign.overwrite_right(
+            vtypes.Ors(prev_assign.statement.right, val))
+        m.remove(prev_assign)
+        m.append(prev_assign)
+
+
 class AxiBase(object):
     _I = util.t_Input
     _O = util.t_OutputReg
@@ -534,12 +546,23 @@ class AxiMaster(object):
         ready = make_condition(cond)
         val = 1 if ready is None else ready
 
-        prev_subst = self.rdata.rready._get_subst()
-        if not prev_subst:
-            self.rdata.rready.assign(val)
-        else:
-            self.rdata.rready.subst[0].overwrite_right(
-                vtypes.Ors(prev_subst[0].right, val))
+        #prev_subst = self.rdata.rready._get_subst()
+        #if not prev_subst:
+        #    self.rdata.rready.assign(val)
+        #else:
+        #    self.rdata.rready.subst[0].overwrite_right(
+        #        vtypes.Ors(prev_subst[0].right, val))
+
+        #prev_assign = self.rdata.rready._get_assign()
+        #if not prev_assign:
+        #    self.rdata.rready.assign(val)
+        #else:
+        #    prev_assign.overwrite_right(
+        #        vtypes.Ors(prev_assign.statement.right, val))
+        #    m = self.rdata.rready._get_module()
+        #    m.remove(prev_assign)
+        #    m.append(prev_assign)
+        _connect_ready(self.rdata.rready._get_module(), self.rdata.rready, val)
 
         ack = vtypes.Ands(self.rdata.rready, self.rdata.rvalid)
         data = self.rdata.rdata
@@ -557,12 +580,23 @@ class AxiMaster(object):
         ready = make_condition(cond)
         val = 1 if ready is None else ready
 
-        prev_subst = self.rdata.rready._get_subst()
-        if not prev_subst:
-            self.rdata.rready.assign(val)
-        else:
-            self.rdata.rready.subst[0].overwrite_right(
-                vtypes.Ors(prev_subst[0].right, val))
+        #prev_subst = self.rdata.rready._get_subst()
+        #if not prev_subst:
+        #    self.rdata.rready.assign(val)
+        #else:
+        #    self.rdata.rready.subst[0].overwrite_right(
+        #        vtypes.Ors(prev_subst[0].right, val))
+
+        #prev_assign = self.rdata.rready._get_assign()
+        #if not prev_assign:
+        #    self.rdata.rready.assign(val)
+        #else:
+        #    prev_assign.overwrite_right(
+        #        vtypes.Ors(prev_assign.statement.right, val))
+        #    m = self.rdata.rready._get_module()
+        #    m.remove(prev_assign)
+        #    m.append(prev_assign)
+        _connect_ready(self.rdata.rready._get_module(), self.rdata.rready, val)
 
         ack = vtypes.Ands(self.rdata.rready, self.rdata.rvalid)
         data = self.rdata.rdata
@@ -606,12 +640,23 @@ class AxiMaster(object):
         ready = make_condition(*cond)
         val = 1 if ready is None else ready
 
-        prev_subst = self.rdata.rready._get_subst()
-        if not prev_subst:
-            self.rdata.rready.assign(val)
-        else:
-            self.rdata.rready.subst[0].overwrite_right(
-                vtypes.Ors(prev_subst[0].right, val))
+        #prev_subst = self.rdata.rready._get_subst()
+        #if not prev_subst:
+        #    self.rdata.rready.assign(val)
+        #else:
+        #    self.rdata.rready.subst[0].overwrite_right(
+        #        vtypes.Ors(prev_subst[0].right, val))
+
+        #prev_assign = self.rdata.rready._get_assign()
+        #if not prev_assign:
+        #    self.rdata.rready.assign(val)
+        #else:
+        #    prev_assign.overwrite_right(
+        #        vtypes.Ors(prev_assign.statement.right, val))
+        #    m = self.rdata.rready._get_module()
+        #    m.remove(prev_assign)
+        #    m.append(prev_assign)
+        _connect_ready(self.rdata.rready._get_module(), self.rdata.rready, val)
 
         ack = vtypes.Ands(self.rdata.rready, self.rdata.rvalid)
         data = self.rdata.rdata
@@ -837,20 +882,42 @@ class AxiSlave(object):
                    vtypes.Ands(ready, vtypes.Not(readvalid), vtypes.Not(writevalid),
                                prev_arvalid))
 
-        write_prev_subst = self.waddr.awready._get_subst()
-        if not write_prev_subst:
-            self.waddr.awready.assign(writeval)
-        else:
-            self.waddr.awready.subst[0].overwrite_right(
-                vtypes.Ors(write_prev_subst[0].right, writeval))
+        #write_prev_subst = self.waddr.awready._get_subst()
+        #if not write_prev_subst:
+        #    self.waddr.awready.assign(writeval)
+        #else:
+        #    self.waddr.awready.subst[0].overwrite_right(
+        #        vtypes.Ors(write_prev_subst[0].right, writeval))
 
-        read_prev_subst = self.raddr.arready._get_subst()
-        if not read_prev_subst:
-            self.raddr.arready.assign(readval)
-        else:
-            self.raddr.arready.subst[0].overread_right(
-                vtypes.Ors(read_prev_subst[0].right, readval))
+        #write_prev_assign = self.waddr.awready._get_assign()
+        #if not write_prev_assign:
+        #    self.waddr.awready.assign(writeval)
+        #else:
+        #    write_prev_assign.overwrite_right(
+        #        vtypes.Ors(write_prev_assign.statement.right, writeval))
+        #    m = self.waddr.awready._get_module()
+        #    m.remove(write_prev_assign)
+        #    m.append(write_prev_assign)
+        _connect_ready(self.waddr.awready._get_module(), self.waddr.awready, writeval)
+   
+        #read_prev_subst = self.raddr.arready._get_subst()
+        #if not read_prev_subst:
+        #    self.raddr.arready.assign(readval)
+        #else:
+        #    self.raddr.arready.subst[0].overread_right(
+        #        vtypes.Ors(read_prev_subst[0].right, readval))
 
+        #read_prev_assign = self.raddr.arready._get_assign()
+        #if not read_prev_assign:
+        #    self.raddr.arready.assign(readval)
+        #else:
+        #    read_prev_assign.overread_right(
+        #        vtypes.Ors(read_prev_assign.statement.right, readval))
+        #    m = self.raddr.arready._get_module()
+        #    m.remove(read_prev_assign)
+        #    m.append(read_prev_assign)
+        _connect_ready(self.raddr.arready._get_module(), self.raddr.arready, readval)
+            
         self.seq(
             writevalid(0),
             readvalid(0)
@@ -898,20 +965,42 @@ class AxiSlave(object):
                    vtypes.Ands(ready, vtypes.Not(readvalid), vtypes.Not(writevalid),
                                prev_arvalid))
 
-        write_prev_subst = self.waddr.awready._get_subst()
-        if not write_prev_subst:
-            self.waddr.awready.assign(writeval)
-        else:
-            self.waddr.awready.subst[0].overwrite_right(
-                vtypes.Ors(write_prev_subst[0].right, writeval))
+        #write_prev_subst = self.waddr.awready._get_subst()
+        #if not write_prev_subst:
+        #    self.waddr.awready.assign(writeval)
+        #else:
+        #    self.waddr.awready.subst[0].overwrite_right(
+        #        vtypes.Ors(write_prev_subst[0].right, writeval))
 
-        read_prev_subst = self.raddr.arready._get_subst()
-        if not read_prev_subst:
-            self.raddr.arready.assign(readval)
-        else:
-            self.raddr.arready.subst[0].overread_right(
-                vtypes.Ors(read_prev_subst[0].right, readval))
+        #write_prev_assign = self.waddr.awready._get_assign()
+        #if not write_prev_assign:
+        #    self.waddr.awready.assign(writeval)
+        #else:
+        #    write_prev_assign.overwrite_right(
+        #        vtypes.Ors(write_prev_assign.statement.right, writeval))
+        #    m = self.waddr.awready._get_module()
+        #    m.remove(write_prev_assign)
+        #    m.append(write_prev_assign)
+        _connect_ready(self.waddr.awready._get_module(), self.waddr.awready, writeval)
+            
+        #read_prev_subst = self.raddr.arready._get_subst()
+        #if not read_prev_subst:
+        #    self.raddr.arready.assign(readval)
+        #else:
+        #    self.raddr.arready.subst[0].overread_right(
+        #        vtypes.Ors(read_prev_subst[0].right, readval))
 
+        #read_prev_assign = self.raddr.arready._get_assign()
+        #if not read_prev_assign:
+        #    self.raddr.arready.assign(readval)
+        #else:
+        #    read_prev_assign.overread_right(
+        #        vtypes.Ors(read_prev_assign.statement.right, readval))
+        #    m = self.raddr.arready._get_module()
+        #    m.remove(read_prev_assign)
+        #    m.append(read_prev_assign)
+        _connect_ready(self.raddr.arready._get_module(), self.raddr.arready, readval)
+            
         self.seq(
             writevalid(0),
             readvalid(0)
@@ -955,12 +1044,23 @@ class AxiSlave(object):
         val = (vtypes.Ands(vtypes.Not(valid), prev_awvalid) if ready is None else
                vtypes.Ands(ready, vtypes.Not(valid), prev_awvalid))
 
-        prev_subst = self.waddr.awready._get_subst()
-        if not prev_subst:
-            self.waddr.awready.assign(val)
-        else:
-            self.waddr.awready.subst[0].overwrite_right(
-                vtypes.Ors(prev_subst[0].right, val))
+        #prev_subst = self.waddr.awready._get_subst()
+        #if not prev_subst:
+        #    self.waddr.awready.assign(val)
+        #else:
+        #    self.waddr.awready.subst[0].overwrite_right(
+        #        vtypes.Ors(prev_subst[0].right, val))
+
+        #prev_assign = self.waddr.awready._get_assign()
+        #if not prev_assign:
+        #    self.waddr.awready.assign(val)
+        #else:
+        #    prev_assign.overwrite_right(
+        #        vtypes.Ors(prev_assign.statement.right, val))
+        #    m = self.waddr.awready._get_module()
+        #    m.remove(prev_assign)
+        #    m.append(prev_assign)
+        _connect_ready(self.waddr.awready._get_module(), self.waddr.awready, val)
 
         self.seq.If(ack)(
             addr(self.waddr.awaddr),
@@ -995,12 +1095,23 @@ class AxiSlave(object):
         val = (vtypes.Ands(vtypes.Not(valid), prev_awvalid) if ready is None else
                vtypes.Ands(ready, vtypes.Not(valid), prev_awvalid))
 
-        prev_subst = self.waddr.awready._get_subst()
-        if not prev_subst:
-            self.waddr.awready.assign(val)
-        else:
-            self.waddr.awready.subst[0].overwrite_right(
-                vtypes.Ors(prev_subst[0].right, val))
+        #prev_subst = self.waddr.awready._get_subst()
+        #if not prev_subst:
+        #    self.waddr.awready.assign(val)
+        #else:
+        #    self.waddr.awready.subst[0].overwrite_right(
+        #        vtypes.Ors(prev_subst[0].right, val))
+
+        #prev_assign = self.waddr.awready._get_assign()
+        #if not prev_assign:
+        #    self.waddr.awready.assign(val)
+        #else:
+        #    prev_assign.overwrite_right(
+        #        vtypes.Ors(prev_assign.statement.right, val))
+        #    m = self.waddr.awready._get_module()
+        #    m.remove(prev_assign)
+        #    m.append(prev_assign)
+        _connect_ready(self.waddr.awready._get_module(), self.waddr.awready, val)
 
         self.seq.If(ack)(
             addr(self.waddr.awaddr),
@@ -1029,12 +1140,23 @@ class AxiSlave(object):
         ready = make_condition(cond)
         val = 1 if ready is None else ready
 
-        prev_subst = self.wdata.wready._get_subst()
-        if not prev_subst:
-            self.wdata.wready.assign(val)
-        else:
-            self.wdata.wready.subst[0].overwrite_right(
-                vtypes.Ors(prev_subst[0].right, val))
+        #prev_subst = self.wdata.wready._get_subst()
+        #if not prev_subst:
+        #    self.wdata.wready.assign(val)
+        #else:
+        #    self.wdata.wready.subst[0].overwrite_right(
+        #        vtypes.Ors(prev_subst[0].right, val))
+
+        #prev_assign = self.wdata.wready._get_assign()
+        #if not prev_assign:
+        #    self.wdata.wready.assign(val)
+        #else:
+        #    prev_assign.overwrite_right(
+        #        vtypes.Ors(prev_assign.statement.right, val))
+        #    m = self.wdata.wready._get_module()
+        #    m.remove(prev_assign)
+        #    m.append(prev_assign)
+        _connect_ready(self.wdata.wready._get_module(), self.wdata.wready, val)
 
         ack = vtypes.Ands(self.wdata.wready, self.wdata.wvalid)
         data = self.wdata.wdata
@@ -1054,12 +1176,23 @@ class AxiSlave(object):
         ready = make_condition(cond)
         val = 1 if ready is None else ready
 
-        prev_subst = self.wdata.wready._get_subst()
-        if not prev_subst:
-            self.wdata.wready.assign(val)
-        else:
-            self.wdata.wready.subst[0].overwrite_right(
-                vtypes.Ors(prev_subst[0].right, val))
+        #prev_subst = self.wdata.wready._get_subst()
+        #if not prev_subst:
+        #    self.wdata.wready.assign(val)
+        #else:
+        #    self.wdata.wready.subst[0].overwrite_right(
+        #        vtypes.Ors(prev_subst[0].right, val))
+
+        #prev_assign = self.wdata.wready._get_assign()
+        #if not prev_assign:
+        #    self.wdata.wready.assign(val)
+        #else:
+        #    prev_assign.overwrite_right(
+        #        vtypes.Ors(prev_assign.statement.right, val))
+        #    m = self.wdata.wready._get_module()
+        #    m.remove(prev_assign)
+        #    m.append(prev_assign)
+        _connect_ready(self.wdata.wready._get_module(), self.wdata.wready, val)
 
         ack = vtypes.Ands(self.wdata.wready, self.wdata.wvalid)
         data = self.wdata.wdata
@@ -1106,12 +1239,23 @@ class AxiSlave(object):
         ready = make_condition(*cond)
         val = 1 if ready is None else ready
 
-        prev_subst = self.wdata.wready._get_subst()
-        if not prev_subst:
-            self.wdata.wready.assign(val)
-        else:
-            self.wdata.wready.subst[0].overwrite_right(
-                vtypes.Ors(prev_subst[0].right, val))
+        #prev_subst = self.wdata.wready._get_subst()
+        #if not prev_subst:
+        #    self.wdata.wready.assign(val)
+        #else:
+        #    self.wdata.wready.subst[0].overwrite_right(
+        #        vtypes.Ors(prev_subst[0].right, val))
+
+        #prev_assign = self.wdata.wready._get_assign()
+        #if not prev_assign:
+        #    self.wdata.wready.assign(val)
+        #else:
+        #    prev_assign.overwrite_right(
+        #        vtypes.Ors(prev_assign.statement.right, val))
+        #    m = self.wdata.wready._get_module()
+        #    m.remove(prev_assign)
+        #    m.append(prev_assign)
+        _connect_ready(self.wdata.wready._get_module(), self.wdata.wready, val)
 
         ack = vtypes.Ands(self.wdata.wready, self.wdata.wvalid)
         data = self.wdata.wdata
@@ -1160,12 +1304,23 @@ class AxiSlave(object):
         val = (vtypes.Ands(vtypes.Not(valid), prev_arvalid) if ready is None else
                vtypes.Ands(ready, vtypes.Not(valid), prev_arvalid))
 
-        prev_subst = self.raddr.arready._get_subst()
-        if not prev_subst:
-            self.raddr.arready.assign(val)
-        else:
-            self.raddr.arready.subst[0].overwrite_right(
-                vtypes.Ors(prev_subst[0].right, val))
+        #prev_subst = self.raddr.arready._get_subst()
+        #if not prev_subst:
+        #    self.raddr.arready.assign(val)
+        #else:
+        #    self.raddr.arready.subst[0].overwrite_right(
+        #        vtypes.Ors(prev_subst[0].right, val))
+
+        #prev_assign = self.raddr.arready._get_assign()
+        #if not prev_assign:
+        #    self.raddr.arready.assign(val)
+        #else:
+        #    prev_assign.overwrite_right(
+        #        vtypes.Ors(prev_assign.statement.right, val))
+        #    m = self.raddr.arready._get_module()
+        #    m.remove(prev_assign)
+        #    m.append(prev_assign)
+        _connect_ready(self.raddr.arready._get_module(), self.raddr.arready, val)
 
         self.seq.If(ack)(
             addr(self.raddr.araddr)
@@ -1200,12 +1355,23 @@ class AxiSlave(object):
         val = (vtypes.Ands(vtypes.Not(valid), prev_arvalid) if ready is None else
                vtypes.Ands(ready, vtypes.Not(valid), prev_arvalid))
 
-        prev_subst = self.raddr.arready._get_subst()
-        if not prev_subst:
-            self.raddr.arready.assign(val)
-        else:
-            self.raddr.arready.subst[0].overwrite_right(
-                vtypes.Ors(prev_subst[0].right, val))
+        #prev_subst = self.raddr.arready._get_subst()
+        #if not prev_subst:
+        #    self.raddr.arready.assign(val)
+        #else:
+        #    self.raddr.arready.subst[0].overwrite_right(
+        #        vtypes.Ors(prev_subst[0].right, val))
+
+        #prev_assign = self.raddr.arready._get_assign()
+        #if not prev_assign:
+        #    self.raddr.arready.assign(val)
+        #else:
+        #    prev_assign.overwrite_right(
+        #        vtypes.Ors(prev_assign.statement.right, val))
+        #    m = self.raddr.arready._get_module()
+        #    m.remove(prev_assign)
+        #    m.append(prev_assign)
+        _connect_ready(self.raddr.arready._get_module(), self.raddr.arready, val)
 
         self.seq.If(ack)(
             addr(self.raddr.araddr),

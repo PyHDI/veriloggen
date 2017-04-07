@@ -130,9 +130,9 @@ module test;
   reg [32-1:0] sum;
   reg [9-1:0] _tmp_11;
   reg __axi_cond_0_1;
-  assign _axi_rready = (fsm == 1) || (fsm == 3);
   reg [9-1:0] _tmp_12;
   reg __axi_cond_1_1;
+  assign _axi_rready = (fsm == 1) || (fsm == 3);
 
   main
   uut

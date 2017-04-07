@@ -88,8 +88,6 @@ module main
   reg _tmp_4;
   wire _tmp_5;
   wire _tmp_6;
-  assign _tmp_5 = 1 && _tmp_ready_15;
-  assign _tmp_6 = 1 && _tmp_ready_16;
   localparam _tmp_7 = 1;
   wire [_tmp_7-1:0] _tmp_8;
   assign _tmp_8 = (_tmp_5 || !_tmp_3) && (_tmp_6 || !_tmp_4);
@@ -189,15 +187,17 @@ module main
 
   assign _tmp_data_15 = _tmp_9;
   assign _tmp_valid_15 = _tmp_3;
+  assign _tmp_5 = 1 && _tmp_ready_15;
   assign _tmp_data_16 = _tmp_14;
   assign _tmp_valid_16 = _tmp_4;
+  assign _tmp_6 = 1 && _tmp_ready_16;
   reg [32-1:0] _tmp_data_17;
   reg _tmp_valid_17;
   wire _tmp_ready_17;
-  assign _tmp_ready_17 = (_tmp_ready_18 || !_tmp_valid_18) && _tmp_valid_17;
   reg [32-1:0] _tmp_data_18;
   reg _tmp_valid_18;
   wire _tmp_ready_18;
+  assign _tmp_ready_17 = (_tmp_ready_18 || !_tmp_valid_18) && _tmp_valid_17;
   assign _tmp_data_2 = _tmp_data_18;
   assign _tmp_valid_2 = _tmp_valid_18;
   assign _tmp_ready_18 = _tmp_ready_2;

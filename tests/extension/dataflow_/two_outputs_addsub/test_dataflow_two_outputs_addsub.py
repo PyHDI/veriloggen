@@ -620,11 +620,11 @@ module main
   reg [32-1:0] _tmp_data_0;
   reg _tmp_valid_0;
   wire _tmp_ready_0;
-  assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid) && ((_tmp_ready_1 || !_tmp_valid_1) && (yvalid && xvalid));
-  assign yready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid) && ((_tmp_ready_1 || !_tmp_valid_1) && (yvalid && xvalid));
   reg [32-1:0] _tmp_data_1;
   reg _tmp_valid_1;
   wire _tmp_ready_1;
+  assign yready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid) && ((_tmp_ready_1 || !_tmp_valid_1) && (yvalid && xvalid));
+  assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid) && ((_tmp_ready_1 || !_tmp_valid_1) && (yvalid && xvalid));
   assign z1data = _tmp_data_0;
   assign z1valid = _tmp_valid_0;
   assign _tmp_ready_0 = z1ready;

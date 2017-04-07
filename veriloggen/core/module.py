@@ -888,6 +888,17 @@ class Module(vtypes.VeriloggenNode):
         return t
 
     #-------------------------------------------------------------------------
+    def remove(self, v):
+        vid = id(v)
+        for i, item in enumerate(self.items):
+            if vid == id(item):
+                del self.items[i]
+                return
+
+    def append(self, v):
+        self.items.append(v)
+
+    #-------------------------------------------------------------------------
     def find_identifier(self, name):
         if name in self.io_variable:
             return self.io_variable[name]

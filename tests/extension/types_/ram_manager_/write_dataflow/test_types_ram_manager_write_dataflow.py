@@ -125,10 +125,10 @@ module main
   reg [32-1:0] _tmp_data_3;
   reg _tmp_valid_3;
   wire _tmp_ready_3;
-  assign _tmp_ready_3 = (_tmp_ready_4 || !_tmp_valid_4) && _tmp_valid_3;
   reg [32-1:0] _tmp_data_4;
   reg _tmp_valid_4;
   wire _tmp_ready_4;
+  assign _tmp_ready_3 = (_tmp_ready_4 || !_tmp_valid_4) && _tmp_valid_3;
   assign _tmp_data_2 = _tmp_data_4;
   assign _tmp_valid_2 = _tmp_valid_4;
   assign _tmp_ready_4 = _tmp_ready_2;

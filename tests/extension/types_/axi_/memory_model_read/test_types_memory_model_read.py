@@ -445,9 +445,9 @@ module main
   reg [32-1:0] sum;
   reg [9-1:0] _tmp_0;
   reg _myaxi_cond_0_1;
-  assign myaxi_rready = (fsm == 1) || (fsm == 3);
   reg [9-1:0] _tmp_1;
   reg _myaxi_cond_1_1;
+  assign myaxi_rready = (fsm == 1) || (fsm == 3);
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
   localparam fsm_3 = 3;

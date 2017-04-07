@@ -220,10 +220,10 @@ module test;
   reg __saxi_cond_9_1;
   reg signed [32-1:0] _th_ctrl_araddr_24;
   reg __saxi_cond_10_1;
-  assign _saxi_rready = (th_ctrl == 31) || (th_ctrl == 35);
   reg [32-1:0] _tmp_13;
   reg signed [32-1:0] _th_ctrl_v_25;
   reg __saxi_cond_11_1;
+  assign _saxi_rready = (th_ctrl == 31) || (th_ctrl == 35);
   reg [32-1:0] _tmp_14;
   reg signed [32-1:0] _th_ctrl_end_time_26;
   reg signed [32-1:0] _th_ctrl_time_27;
@@ -1182,9 +1182,7 @@ module blinkled
   reg _maxi_cond_0_1;
   wire _tmp_14;
   wire _tmp_15;
-  assign _tmp_14 = 1 && _tmp_ready_18;
   assign _tmp_15 = 1;
-  assign maxi_rready = _tmp_14 && _tmp_15 || _tmp_24 && _tmp_25;
   reg [33-1:0] _tmp_16;
   reg _tmp_17;
   wire [32-1:0] _tmp_data_18;
@@ -1204,8 +1202,8 @@ module blinkled
   reg _maxi_cond_1_1;
   wire _tmp_24;
   wire _tmp_25;
-  assign _tmp_24 = 1 && _tmp_ready_28;
   assign _tmp_25 = 1;
+  assign maxi_rready = _tmp_14 && _tmp_15 || _tmp_24 && _tmp_25;
   reg [33-1:0] _tmp_26;
   reg _tmp_27;
   wire [32-1:0] _tmp_data_28;
@@ -1240,7 +1238,6 @@ module blinkled
   reg _tmp_39;
   wire _tmp_40;
   wire _tmp_41;
-  assign _tmp_40 = 1 && _tmp_ready_51;
   assign _tmp_41 = 1;
   localparam _tmp_42 = 1;
   wire [_tmp_42-1:0] _tmp_43;
@@ -1415,6 +1412,7 @@ module blinkled
 
   assign _tmp_data_51 = _tmp_44;
   assign _tmp_valid_51 = _tmp_38;
+  assign _tmp_40 = 1 && _tmp_ready_51;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -1512,8 +1510,10 @@ module blinkled
 
   assign _tmp_data_18 = maxi_rdata;
   assign _tmp_valid_18 = maxi_rvalid;
+  assign _tmp_14 = 1 && _tmp_ready_18;
   assign _tmp_data_28 = maxi_rdata;
   assign _tmp_valid_28 = maxi_rvalid;
+  assign _tmp_24 = 1 && _tmp_ready_28;
 
   always @(posedge CLK) begin
     if(RST) begin

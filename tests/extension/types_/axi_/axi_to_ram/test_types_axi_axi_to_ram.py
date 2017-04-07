@@ -245,8 +245,6 @@ module main
   reg _myaxi_cond_0_1;
   wire _tmp_1;
   wire _tmp_2;
-  assign _tmp_1 = 1 && ((_tmp_ready_21 || !_tmp_valid_21) && (myaxi_rvalid && myaxi_rvalid));
-  assign _tmp_2 = 1 && ((_tmp_ready_21 || !_tmp_valid_21) && (myaxi_rvalid && myaxi_rvalid));
   assign myaxi_rready = _tmp_1 && _tmp_2;
   reg [8-1:0] _tmp_3;
   reg _tmp_4;
@@ -259,8 +257,6 @@ module main
   reg _tmp_7;
   wire _tmp_8;
   wire _tmp_9;
-  assign _tmp_8 = 1 && _tmp_ready_18;
-  assign _tmp_9 = 1 && _tmp_ready_19;
   localparam _tmp_10 = 1;
   wire [_tmp_10-1:0] _tmp_11;
   assign _tmp_11 = (_tmp_8 || !_tmp_6) && (_tmp_9 || !_tmp_7);
@@ -397,12 +393,16 @@ module main
 
   assign _tmp_data_18 = _tmp_12;
   assign _tmp_valid_18 = _tmp_6;
+  assign _tmp_8 = 1 && _tmp_ready_18;
   assign _tmp_data_19 = _tmp_17;
   assign _tmp_valid_19 = _tmp_7;
+  assign _tmp_9 = 1 && _tmp_ready_19;
   reg [1-1:0] _tmp_data_20;
   reg [32-1:0] _tmp_data_21;
   reg _tmp_valid_21;
   wire _tmp_ready_21;
+  assign _tmp_1 = 1 && ((_tmp_ready_21 || !_tmp_valid_21) && (myaxi_rvalid && myaxi_rvalid));
+  assign _tmp_2 = 1 && ((_tmp_ready_21 || !_tmp_valid_21) && (myaxi_rvalid && myaxi_rvalid));
   assign _tmp_data_5 = _tmp_data_21;
   assign _tmp_valid_5 = _tmp_valid_21;
   assign _tmp_ready_21 = _tmp_ready_5;

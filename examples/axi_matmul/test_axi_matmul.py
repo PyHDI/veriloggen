@@ -472,9 +472,7 @@ module main
   reg _master_cond_0_1;
   wire _tmp_5;
   wire _tmp_6;
-  assign _tmp_5 = 1 && _tmp_ready_9;
   assign _tmp_6 = 1;
-  assign master_rready = _tmp_5 && _tmp_6 || _tmp_11 && _tmp_12;
   reg [6-1:0] _tmp_7;
   reg _tmp_8;
   wire [32-1:0] _tmp_data_9;
@@ -488,8 +486,8 @@ module main
   reg _master_cond_1_1;
   wire _tmp_11;
   wire _tmp_12;
-  assign _tmp_11 = 1 && _tmp_ready_15;
   assign _tmp_12 = 1;
+  assign master_rready = _tmp_5 && _tmp_6 || _tmp_11 && _tmp_12;
   reg [6-1:0] _tmp_13;
   reg _tmp_14;
   wire [32-1:0] _tmp_data_15;
@@ -501,7 +499,6 @@ module main
   reg _tmp_17;
   wire _tmp_18;
   wire _tmp_19;
-  assign _tmp_18 = 1 && ((_tmp_ready_60 || !_tmp_valid_60) && (_tmp_16 && _tmp_28));
   assign _tmp_19 = 1;
   localparam _tmp_20 = 1;
   wire [_tmp_20-1:0] _tmp_21;
@@ -519,7 +516,6 @@ module main
   reg _tmp_29;
   wire _tmp_30;
   wire _tmp_31;
-  assign _tmp_30 = 1 && ((_tmp_ready_60 || !_tmp_valid_60) && (_tmp_16 && _tmp_28));
   assign _tmp_31 = 1;
   localparam _tmp_32 = 1;
   wire [_tmp_32-1:0] _tmp_33;
@@ -552,7 +548,6 @@ module main
   reg _tmp_46;
   wire _tmp_47;
   wire _tmp_48;
-  assign _tmp_47 = 1 && _tmp_ready_58;
   assign _tmp_48 = 1;
   localparam _tmp_49 = 1;
   wire [_tmp_49-1:0] _tmp_50;
@@ -689,8 +684,10 @@ module main
 
   assign _tmp_data_9 = master_rdata;
   assign _tmp_valid_9 = master_rvalid;
+  assign _tmp_5 = 1 && _tmp_ready_9;
   assign _tmp_data_15 = master_rdata;
   assign _tmp_valid_15 = master_rvalid;
+  assign _tmp_11 = 1 && _tmp_ready_15;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -903,6 +900,7 @@ module main
 
   assign _tmp_data_58 = _tmp_51;
   assign _tmp_valid_58 = _tmp_45;
+  assign _tmp_47 = 1 && _tmp_ready_58;
   localparam read_fsm_1 = 1;
   localparam read_fsm_2 = 2;
   localparam read_fsm_3 = 3;
@@ -1000,7 +998,6 @@ module main
   reg [32-1:0] _tmp_data_59;
   reg _tmp_valid_59;
   wire _tmp_ready_59;
-  assign _tmp_ready_59 = (_tmp_ready_61 || !_tmp_valid_61) && _tmp_valid_59;
   wire [32-1:0] _tmp_data_60;
   wire _tmp_valid_60;
   wire _tmp_ready_60;
@@ -1028,66 +1025,69 @@ module main
     .c(_tmp_odata_60)
   );
 
-  assign _tmp_ready_60 = (_tmp_ready_75 || !_tmp_valid_75) && (_tmp_valid_60 && _tmp_valid_73);
+  assign _tmp_18 = 1 && ((_tmp_ready_60 || !_tmp_valid_60) && (_tmp_16 && _tmp_28));
+  assign _tmp_30 = 1 && ((_tmp_ready_60 || !_tmp_valid_60) && (_tmp_16 && _tmp_28));
   reg [1-1:0] _tmp_data_61;
   reg _tmp_valid_61;
   wire _tmp_ready_61;
-  assign _tmp_ready_61 = (_tmp_ready_63 || !_tmp_valid_63) && _tmp_valid_61 && ((_tmp_ready_64 || !_tmp_valid_64) && _tmp_valid_61);
+  assign _tmp_ready_59 = (_tmp_ready_61 || !_tmp_valid_61) && _tmp_valid_59;
   reg [1-1:0] _tmp_data_62;
   reg [1-1:0] _tmp_data_63;
   reg _tmp_valid_63;
   wire _tmp_ready_63;
-  assign _tmp_ready_63 = (_tmp_ready_65 || !_tmp_valid_65) && _tmp_valid_63;
   reg [1-1:0] _tmp_data_64;
   reg _tmp_valid_64;
   wire _tmp_ready_64;
-  assign _tmp_ready_64 = (_tmp_ready_66 || !_tmp_valid_66) && _tmp_valid_64;
+  assign _tmp_ready_61 = (_tmp_ready_63 || !_tmp_valid_63) && _tmp_valid_61 && ((_tmp_ready_64 || !_tmp_valid_64) && _tmp_valid_61);
   reg [1-1:0] _tmp_data_65;
   reg _tmp_valid_65;
   wire _tmp_ready_65;
-  assign _tmp_ready_65 = (_tmp_ready_67 || !_tmp_valid_67) && _tmp_valid_65;
+  assign _tmp_ready_63 = (_tmp_ready_65 || !_tmp_valid_65) && _tmp_valid_63;
   reg [1-1:0] _tmp_data_66;
   reg _tmp_valid_66;
   wire _tmp_ready_66;
-  assign _tmp_ready_66 = (_tmp_ready_68 || !_tmp_valid_68) && _tmp_valid_66;
+  assign _tmp_ready_64 = (_tmp_ready_66 || !_tmp_valid_66) && _tmp_valid_64;
   reg [1-1:0] _tmp_data_67;
   reg _tmp_valid_67;
   wire _tmp_ready_67;
-  assign _tmp_ready_67 = (_tmp_ready_69 || !_tmp_valid_69) && _tmp_valid_67;
+  assign _tmp_ready_65 = (_tmp_ready_67 || !_tmp_valid_67) && _tmp_valid_65;
   reg [1-1:0] _tmp_data_68;
   reg _tmp_valid_68;
   wire _tmp_ready_68;
-  assign _tmp_ready_68 = (_tmp_ready_70 || !_tmp_valid_70) && _tmp_valid_68;
+  assign _tmp_ready_66 = (_tmp_ready_68 || !_tmp_valid_68) && _tmp_valid_66;
   reg [1-1:0] _tmp_data_69;
   reg _tmp_valid_69;
   wire _tmp_ready_69;
-  assign _tmp_ready_69 = (_tmp_ready_71 || !_tmp_valid_71) && _tmp_valid_69;
+  assign _tmp_ready_67 = (_tmp_ready_69 || !_tmp_valid_69) && _tmp_valid_67;
   reg [1-1:0] _tmp_data_70;
   reg _tmp_valid_70;
   wire _tmp_ready_70;
-  assign _tmp_ready_70 = (_tmp_ready_72 || !_tmp_valid_72) && _tmp_valid_70;
+  assign _tmp_ready_68 = (_tmp_ready_70 || !_tmp_valid_70) && _tmp_valid_68;
   reg [1-1:0] _tmp_data_71;
   reg _tmp_valid_71;
   wire _tmp_ready_71;
-  assign _tmp_ready_71 = (_tmp_ready_73 || !_tmp_valid_73) && _tmp_valid_71;
+  assign _tmp_ready_69 = (_tmp_ready_71 || !_tmp_valid_71) && _tmp_valid_69;
   reg [1-1:0] _tmp_data_72;
   reg _tmp_valid_72;
   wire _tmp_ready_72;
-  assign _tmp_ready_72 = (_tmp_ready_74 || !_tmp_valid_74) && _tmp_valid_72;
+  assign _tmp_ready_70 = (_tmp_ready_72 || !_tmp_valid_72) && _tmp_valid_70;
   reg [1-1:0] _tmp_data_73;
   reg _tmp_valid_73;
   wire _tmp_ready_73;
-  assign _tmp_ready_73 = (_tmp_ready_75 || !_tmp_valid_75) && (_tmp_valid_60 && _tmp_valid_73);
+  assign _tmp_ready_71 = (_tmp_ready_73 || !_tmp_valid_73) && _tmp_valid_71;
   reg [1-1:0] _tmp_data_74;
   reg _tmp_valid_74;
   wire _tmp_ready_74;
-  assign _tmp_ready_74 = (_tmp_ready_76 || !_tmp_valid_76) && _tmp_valid_74;
+  assign _tmp_ready_72 = (_tmp_ready_74 || !_tmp_valid_74) && _tmp_valid_72;
   reg [32-1:0] _tmp_data_75;
   reg _tmp_valid_75;
   wire _tmp_ready_75;
+  assign _tmp_ready_60 = (_tmp_ready_75 || !_tmp_valid_75) && (_tmp_valid_60 && _tmp_valid_73);
+  assign _tmp_ready_73 = (_tmp_ready_75 || !_tmp_valid_75) && (_tmp_valid_60 && _tmp_valid_73);
   reg [1-1:0] _tmp_data_76;
   reg _tmp_valid_76;
   wire _tmp_ready_76;
+  assign _tmp_ready_74 = (_tmp_ready_76 || !_tmp_valid_76) && _tmp_valid_74;
   assign _tmp_data_42 = _tmp_data_75;
   assign _tmp_valid_42 = _tmp_valid_75;
   assign _tmp_ready_75 = _tmp_ready_42;
