@@ -68,8 +68,8 @@ def finish():
 class Simulator(object):
 
     def __init__(self, *objs, **options):
-        sim = 'iverilog' if 'sim' not in options else options['sim']
-        wave = 'gtkwave' if 'wave' not in options else options['wave']
+        sim = 'iverilog' if 'sim' not in options else options['sim'].lower()
+        wave = 'gtkwave' if 'wave' not in options else options['wave'].lower()
         files = None if 'files' not in options else options['files']
         top = 'test' if 'top' not in options else options['top']
         self._type_check_sim(sim)
