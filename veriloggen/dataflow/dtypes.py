@@ -183,13 +183,6 @@ class _Numeric(_Node):
             raise ValueError("Dataflow ready port is required for throttling.")
 
         if self.output_sig_ready is not None:
-            #prev_subst = self.output_sig_ready._get_subst()
-            # if not prev_subst:
-            #    self.output_sig_ready.assign(val)
-            # else:
-            #    self.output_sig_ready.subst[0].overwrite_right(
-            #        vtypes.OrList(prev_subst[0].right, val))
-
             prev_assign = self.output_sig_ready._get_assign()
             if not prev_assign:
                 self.output_sig_ready.assign(val)
@@ -2702,13 +2695,6 @@ def _and_vars(*vars):
 def _connect_ready(m, var, ready):
     if var is None:
         return
-    #prev_subst = var._get_subst()
-    # if not prev_subst:
-    #    m.Assign(var(ready))
-    # elif isinstance(prev_subst[0].right, vtypes.Int) and (prev_subst[0].right.value == 1):
-    #    var.subst[0].overwrite_right(ready)
-    # else:
-    #    var.subst[0].overwrite_right(_and_vars(prev_subst[0].right, ready))
 
     prev_assign = var._get_assign()
     if not prev_assign:
