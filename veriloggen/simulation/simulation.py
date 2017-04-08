@@ -7,6 +7,7 @@ import tempfile
 
 import veriloggen.core.vtypes as vtypes
 import veriloggen.core.module as module
+import veriloggen.core.submodule as submodule
 
 
 def setup_waveform(m, *uuts):
@@ -23,6 +24,8 @@ def setup_waveform(m, *uuts):
                 if isinstance(u, vtypes._Variable) and u.length is not None:
                     continue
                 new_uuts.append(u)
+        elif isinstance(uut, submodule.Submodule):
+            new_uuts.append(uut.inst)
         else:
             if isinstance(uut, vtypes._Variable) and uut.length is not None:
                 continue
