@@ -13,12 +13,15 @@ class Submodule(vtypes.VeriloggenNode):
                  arg_params=None, arg_ports=None,
                  as_io=None, as_wire=None):
 
+        self.parent = parent
+        self.child = child
+
         if name is None:
             name = '_'.join(('inst', child.name))
         self.name = name
 
         if prefix is None:
-            prefix = '_'.join((self.name, ''))
+            prefix = ''
         self.prefix = prefix
 
         child_params = child.get_params()
@@ -72,14 +75,17 @@ class Submodule(vtypes.VeriloggenNode):
         new_params.update(parent.copy_params(
             child, self.prefix, exclude=param_exclude, rename_exclude=param_exclude))
 
-        self.my_params = collections.OrderedDict()
+        self.all_params = collections.OrderedDict()
+        self.all_raw_params = collections.OrderedDict()
 
         for key in child_params.keys():
             new_key = ''.join((self.prefix, key))
             if key in arg_params:
-                self.my_params[key] = arg_params[key]
+                self.all_params[key] = arg_params[key]
+                self.all_raw_params[new_key] = arg_params[key]
             elif new_key in new_params:
-                self.my_params[key] = new_params[new_key]
+                self.all_params[key] = new_params[new_key]
+                self.all_raw_params[new_key] = new_params[new_key]
 
         # ports
         new_ports = collections.OrderedDict()
@@ -102,26 +108,39 @@ class Submodule(vtypes.VeriloggenNode):
                 child, self.prefix, include=as_wire,
                 rename_exclude=param_exclude, use_wire=True))
 
-        self.my_ports = collections.OrderedDict()
+        self.all_ports = collections.OrderedDict()
+        self.all_raw_ports = collections.OrderedDict()
 
         for key in child_ports.keys():
             new_key = ''.join((self.prefix, key))
             if key in arg_ports:
-                self.my_ports[key] = arg_ports[key]
+                self.all_ports[key] = arg_ports[key]
+                self.all_raw_ports[new_key] = arg_ports[key]
             elif new_key in new_ports:
-                self.my_ports[key] = new_ports[new_key]
+                self.all_ports[key] = new_ports[new_key]
+                self.all_raw_ports[new_key] = new_ports[new_key]
 
         # instance
-        inst_params = collections.OrderedDict()
-        inst_ports = collections.OrderedDict()
         self.inst = parent.Instance(
-            child, self.name, self.my_params, self.my_ports)
+            child, self.name, self.all_params, self.all_ports)
+
+    def get_raw_inst_params(self):
+        return self.all_raw_params
+
+    def get_raw_inst_ports(self):
+        return self.all_raw_ports
+
+    def get_inst_params(self):
+        return self.all_params
+
+    def get_inst_ports(self):
+        return self.all_ports
 
     def __getitem__(self, key):
-        if key in self.my_params:
-            return self.my_params[key]
+        if key in self.all_params:
+            return self.all_params[key]
 
-        if key in self.my_ports:
-            return self.my_ports[key]
+        if key in self.all_ports:
+            return self.all_ports[key]
 
         raise KeyError("'%s' submodule has no item '%s'" % (self.name, key))

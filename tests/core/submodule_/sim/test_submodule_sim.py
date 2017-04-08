@@ -6,52 +6,52 @@ import submodule_sim
 expected_verilog = """
 module test #
 (
-  parameter inst_top_WIDTH = 8
+  parameter WIDTH = 8
 )
 (
 
 );
 
-  reg inst_top_CLK;
-  reg inst_top_RST;
-  wire [inst_top_WIDTH-1:0] inst_top_LED;
-  wire [inst_top_WIDTH-1:0] inst_top_inst_blinkled_dummy_out0;
-  reg [inst_top_WIDTH-1:0] inst_top_inst_blinkled_dummy_in0;
+  reg CLK;
+  reg RST;
+  wire [WIDTH-1:0] LED;
+  wire [WIDTH-1:0] dummy_out0;
+  reg [WIDTH-1:0] dummy_in0;
 
   top
   #(
-    .WIDTH(inst_top_WIDTH)
+    .WIDTH(WIDTH)
   )
   inst_top
   (
-    .CLK(inst_top_CLK),
-    .RST(inst_top_RST),
-    .LED(inst_top_LED),
-    .inst_blinkled_dummy_out0(inst_top_inst_blinkled_dummy_out0),
-    .inst_blinkled_dummy_in0(inst_top_inst_blinkled_dummy_in0)
+    .CLK(CLK),
+    .RST(RST),
+    .LED(LED),
+    .dummy_out0(dummy_out0),
+    .dummy_in0(dummy_in0)
   );
 
 
   initial begin
     $dumpfile("uut.vcd");
-    $dumpvars(0, inst_top, inst_top_CLK, inst_top_RST, inst_top_LED, inst_top_inst_blinkled_dummy_out0, inst_top_inst_blinkled_dummy_in0);
+    $dumpvars(0, inst_top, CLK, RST, LED, dummy_out0, dummy_in0);
   end
 
 
   initial begin
-    inst_top_CLK = 0;
+    CLK = 0;
     forever begin
-      #5 inst_top_CLK = !inst_top_CLK;
+      #5 CLK = !CLK;
     end
   end
 
 
   initial begin
-    inst_top_RST = 0;
+    RST = 0;
     #100;
-    inst_top_RST = 1;
+    RST = 1;
     #100;
-    inst_top_RST = 0;
+    RST = 0;
     #100000;
     $finish;
   end
@@ -69,14 +69,14 @@ module top #
   input CLK,
   input RST,
   output [WIDTH-1:0] LED,
-  output [WIDTH-1:0] inst_blinkled_dummy_out0,
-  input [WIDTH-1:0] inst_blinkled_dummy_in0
+  output [WIDTH-1:0] dummy_out0,
+  input [WIDTH-1:0] dummy_in0
 );
 
-  wire [WIDTH-1:0] inst_blinkled_dummy_out2;
-  reg [WIDTH-1:0] inst_blinkled_dummy_in2;
-  wire [WIDTH-1:0] inst_blinkled_dummy_out1;
-  wire [WIDTH-1:0] inst_blinkled_dummy_in1;
+  wire [WIDTH-1:0] dummy_out2;
+  reg [WIDTH-1:0] dummy_in2;
+  wire [WIDTH-1:0] dummy_out1;
+  wire [WIDTH-1:0] dummy_in1;
 
   blinkled
   #(
@@ -87,12 +87,12 @@ module top #
     .CLK(CLK),
     .RST(RST),
     .LED(LED),
-    .dummy_out0(inst_blinkled_dummy_out0),
-    .dummy_out1(inst_blinkled_dummy_out1),
-    .dummy_out2(inst_blinkled_dummy_out2),
-    .dummy_in0(inst_blinkled_dummy_in0),
-    .dummy_in1(inst_blinkled_dummy_in1),
-    .dummy_in2(inst_blinkled_dummy_in2)
+    .dummy_out0(dummy_out0),
+    .dummy_out1(dummy_out1),
+    .dummy_out2(dummy_out2),
+    .dummy_in0(dummy_in0),
+    .dummy_in1(dummy_in1),
+    .dummy_in2(dummy_in2)
   );
 
 

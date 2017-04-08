@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import submodule_nonamed_args
+import submodule_prefix
 
 expected_verilog = """
 module top #
@@ -12,14 +12,14 @@ module top #
   input CLK,
   input RST,
   output [WIDTH-1:0] LED,
-  output [WIDTH-1:0] dummy_out0,
-  input [WIDTH-1:0] dummy_in0
+  output [WIDTH-1:0] sub_dummy_out0,
+  input [WIDTH-1:0] sub_dummy_in0
 );
 
-  wire [WIDTH-1:0] dummy_out2;
-  reg [WIDTH-1:0] dummy_in2;
-  wire [WIDTH-1:0] dummy_out1;
-  wire [WIDTH-1:0] dummy_in1;
+  wire [WIDTH-1:0] sub_dummy_out2;
+  reg [WIDTH-1:0] sub_dummy_in2;
+  wire [WIDTH-1:0] sub_dummy_out1;
+  wire [WIDTH-1:0] sub_dummy_in1;
 
   blinkled
   #(
@@ -30,12 +30,12 @@ module top #
     .CLK(CLK),
     .RST(RST),
     .LED(LED),
-    .dummy_out0(dummy_out0),
-    .dummy_out1(dummy_out1),
-    .dummy_out2(dummy_out2),
-    .dummy_in0(dummy_in0),
-    .dummy_in1(dummy_in1),
-    .dummy_in2(dummy_in2)
+    .dummy_out0(sub_dummy_out0),
+    .dummy_out1(sub_dummy_out1),
+    .dummy_out2(sub_dummy_out2),
+    .dummy_in0(sub_dummy_in0),
+    .dummy_in1(sub_dummy_in1),
+    .dummy_in2(sub_dummy_in2)
   );
 
 
@@ -89,7 +89,7 @@ endmodule
 """
 
 def test():
-    test_module = submodule_nonamed_args.mkTop()
+    test_module = submodule_prefix.mkTop()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

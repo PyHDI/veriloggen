@@ -12,14 +12,14 @@ module top #
   input CLK,
   input RST,
   output [WIDTH-1:0] LED,
-  output [WIDTH-1:0] inst_blinkled_dummy_out0,
-  input [WIDTH-1:0] inst_blinkled_dummy_in0
+  output [WIDTH-1:0] dummy_out0,
+  input [WIDTH-1:0] dummy_in0
 );
 
-  wire [WIDTH-1:0] inst_blinkled_dummy_out2;
-  reg [WIDTH-1:0] inst_blinkled_dummy_in2;
-  wire [WIDTH-1:0] inst_blinkled_dummy_out1;
-  wire [WIDTH-1:0] inst_blinkled_dummy_in1;
+  wire [WIDTH-1:0] dummy_out2;
+  reg [WIDTH-1:0] dummy_in2;
+  wire [WIDTH-1:0] dummy_out1;
+  wire [WIDTH-1:0] dummy_in1;
 
   blinkled
   #(
@@ -30,12 +30,12 @@ module top #
     .CLK(CLK),
     .RST(RST),
     .LED(LED),
-    .dummy_out0(inst_blinkled_dummy_out0),
-    .dummy_out1(inst_blinkled_dummy_out1),
-    .dummy_out2(inst_blinkled_dummy_out2),
-    .dummy_in0(inst_blinkled_dummy_in0),
-    .dummy_in1(inst_blinkled_dummy_in1),
-    .dummy_in2(inst_blinkled_dummy_in2)
+    .dummy_out0(dummy_out0),
+    .dummy_out1(dummy_out1),
+    .dummy_out2(dummy_out2),
+    .dummy_in0(dummy_in0),
+    .dummy_in1(dummy_in1),
+    .dummy_in2(dummy_in2)
   );
 
 
