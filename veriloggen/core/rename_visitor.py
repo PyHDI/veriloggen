@@ -10,9 +10,11 @@ import veriloggen.core.vtypes as vtypes
 
 class RenameVisitor(object):
 
-    def __init__(self, prefix=None, postfix=None):
+    def __init__(self, prefix=None, postfix=None,
+                 rename_exclude=None):
         self.prefix = prefix if prefix is not None else ''
         self.postfix = postfix if postfix is not None else ''
+        self.rename_exclude = rename_exclude if rename_exclude is not None else ()
 
     def generic_visit(self, node):
         raise TypeError("Type %s is not supported." % str(type(node)))
@@ -54,6 +56,8 @@ class RenameVisitor(object):
 
     def visit__Variable(self, node):
         ret = copy.deepcopy(node)
+        if ret.name in self.rename_exclude:
+            return ret
         ret.name = ''.join([self.prefix, ret.name, self.postfix])
         return ret
 

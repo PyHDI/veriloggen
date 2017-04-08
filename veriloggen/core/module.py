@@ -501,22 +501,9 @@ class Module(vtypes.VeriloggenNode):
             raise NameError("No such variable '%s'" % r)
         return v
 
-#    def __getattr__(self, attr):
-#        try:
-#            return vtypes.VeriloggenNode.__getattr__(self, attr)
-#        except AttributeError as e:
-#            if attr.startswith('__'):
-#                raise e
-#
-#            if 'object_id' in dir(self):
-#                v = self.find_identifier(attr)
-#                if v is not None:
-#                    return v
-#
-#            raise e
-
     #-------------------------------------------------------------------------
-    def copy_params(self, src, prefix=None, postfix=None, include=None, exclude=None):
+    def copy_params(self, src, prefix=None, postfix=None, include=None, exclude=None,
+                    rename_exclude=None):
         if prefix is None:
             prefix = ''
         if postfix is None:
@@ -529,7 +516,11 @@ class Module(vtypes.VeriloggenNode):
             exclude = ()
         if isinstance(exclude, str):
             exclude = [exclude]
-        visitor = rename_visitor.RenameVisitor(prefix, postfix)
+        if rename_exclude is None:
+            rename_exclude = ()
+        if isinstance(rename_exclude, str):
+            rename_exclude = [rename_exclude]
+        visitor = rename_visitor.RenameVisitor(prefix, postfix, rename_exclude)
         ret = collections.OrderedDict()
         for key, obj in src.global_constant.items():
             if not include:
@@ -552,7 +543,8 @@ class Module(vtypes.VeriloggenNode):
             ret[copy_obj.name] = copy_obj
         return ret
 
-    def copy_localparams(self, src, prefix=None, postfix=None, include=None, exclude=None):
+    def copy_localparams(self, src, prefix=None, postfix=None, include=None, exclude=None,
+                         rename_exclude=None):
         if prefix is None:
             prefix = ''
         if postfix is None:
@@ -565,7 +557,11 @@ class Module(vtypes.VeriloggenNode):
             exclude = ()
         if isinstance(exclude, str):
             exclude = [exclude]
-        visitor = rename_visitor.RenameVisitor(prefix, postfix)
+        if rename_exclude is None:
+            rename_exclude = ()
+        if isinstance(rename_exclude, str):
+            rename_exclude = [rename_exclude]
+        visitor = rename_visitor.RenameVisitor(prefix, postfix, rename_exclude)
         ret = collections.OrderedDict()
         for key, obj in src.constant.items():
             if not include:
@@ -588,7 +584,8 @@ class Module(vtypes.VeriloggenNode):
             ret[copy_obj.name] = copy_obj
         return ret
 
-    def copy_ports(self, src, prefix=None, postfix=None, include=None, exclude=None):
+    def copy_ports(self, src, prefix=None, postfix=None, include=None, exclude=None,
+                   rename_exclude=None):
         if prefix is None:
             prefix = ''
         if postfix is None:
@@ -601,7 +598,11 @@ class Module(vtypes.VeriloggenNode):
             exclude = ()
         if isinstance(exclude, str):
             exclude = [exclude]
-        visitor = rename_visitor.RenameVisitor(prefix, postfix)
+        if rename_exclude is None:
+            rename_exclude = ()
+        if isinstance(rename_exclude, str):
+            rename_exclude = [rename_exclude]
+        visitor = rename_visitor.RenameVisitor(prefix, postfix, rename_exclude)
         ret = collections.OrderedDict()
         for key, obj in src.io_variable.items():
             if not include:
@@ -624,7 +625,8 @@ class Module(vtypes.VeriloggenNode):
             ret[copy_obj.name] = copy_obj
         return ret
 
-    def copy_vars(self, src, prefix=None, postfix=None, include=None, exclude=None):
+    def copy_ports_as_vars(self, src, prefix=None, postfix=None, include=None, exclude=None,
+                           rename_exclude=None, use_wire=False):
         if prefix is None:
             prefix = ''
         if postfix is None:
@@ -637,44 +639,11 @@ class Module(vtypes.VeriloggenNode):
             exclude = ()
         if isinstance(exclude, str):
             exclude = [exclude]
-        visitor = rename_visitor.RenameVisitor(prefix, postfix)
-        ret = collections.OrderedDict()
-        for key, obj in src.variable.items():
-            if not include:
-                skip = False
-            else:
-                skip = True
-            for inc in include:
-                if re.match(inc, key):
-                    skip = False
-            for ex in exclude:
-                if re.match(ex, key):
-                    skip = True
-            if skip:
-                continue
-            copy_obj = copy.deepcopy(obj)
-            copy_obj.name = ''.join([prefix, copy_obj.name, postfix])
-            copy_obj.width = visitor.visit(copy_obj.width)
-            copy_obj.signed = obj.signed
-            self.add_object(copy_obj)
-            ret[copy_obj.name] = copy_obj
-        return ret
-
-    def copy_sim_ports(self, src, prefix=None, postfix=None, include=None, exclude=None,
-                       use_wire=False):
-        if prefix is None:
-            prefix = ''
-        if postfix is None:
-            postfix = ''
-        if include is None:
-            include = ()
-        if isinstance(include, str):
-            include = [include]
-        if exclude is None:
-            exclude = ()
-        if isinstance(exclude, str):
-            exclude = [exclude]
-        visitor = rename_visitor.RenameVisitor(prefix, postfix)
+        if rename_exclude is None:
+            rename_exclude = ()
+        if isinstance(rename_exclude, str):
+            rename_exclude = [rename_exclude]
+        visitor = rename_visitor.RenameVisitor(prefix, postfix, rename_exclude)
         ret = collections.OrderedDict()
         for key, obj in src.io_variable.items():
             if not include:
@@ -699,6 +668,52 @@ class Module(vtypes.VeriloggenNode):
             self.add_object(copy_obj)
             ret[copy_obj.name] = copy_obj
         return ret
+
+    def copy_vars(self, src, prefix=None, postfix=None, include=None, exclude=None,
+                  rename_exclude=None):
+        if prefix is None:
+            prefix = ''
+        if postfix is None:
+            postfix = ''
+        if include is None:
+            include = ()
+        if isinstance(include, str):
+            include = [include]
+        if exclude is None:
+            exclude = ()
+        if isinstance(exclude, str):
+            exclude = [exclude]
+        if rename_exclude is None:
+            rename_exclude = ()
+        if isinstance(rename_exclude, str):
+            rename_exclude = [rename_exclude]
+        visitor = rename_visitor.RenameVisitor(prefix, postfix, rename_exclude)
+        ret = collections.OrderedDict()
+        for key, obj in src.variable.items():
+            if not include:
+                skip = False
+            else:
+                skip = True
+            for inc in include:
+                if re.match(inc, key):
+                    skip = False
+            for ex in exclude:
+                if re.match(ex, key):
+                    skip = True
+            if skip:
+                continue
+            copy_obj = copy.deepcopy(obj)
+            copy_obj.name = ''.join([prefix, copy_obj.name, postfix])
+            copy_obj.width = visitor.visit(copy_obj.width)
+            copy_obj.signed = obj.signed
+            self.add_object(copy_obj)
+            ret[copy_obj.name] = copy_obj
+        return ret
+
+    def copy_sim_ports(self, src, prefix=None, postfix=None, include=None, exclude=None,
+                       rename_exclude=None, use_wire=False):
+        return self.copy_ports_as_vars(src, prefix, postfix, include, exclude,
+                                       rename_exclude, use_wire)
 
     #-------------------------------------------------------------------------
     def connect_params(self, targ, prefix=None, postfix=None, include=None, exclude=None, strict=False):

@@ -16,6 +16,7 @@ from .core.vtypes import *
 from .core.module import Module, StubModule, Instance, GenerateFor, GenerateIf, connect_same_name
 from .core.function import Function, FunctionCall
 from .core.task import Task, TaskCall
+from .core.submodule import Submodule
 
 # Code Generator
 from .verilog import from_verilog
