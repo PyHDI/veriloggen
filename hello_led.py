@@ -4,6 +4,7 @@ import sys
 import os
 from veriloggen import *
 
+
 def mkLed():
     m = Module('blinkled')
     width = m.Parameter('WIDTH', 8)
@@ -22,7 +23,7 @@ def mkLed():
                 count(count + 1)
             )
         ))
-    
+
     m.Always(Posedge(clk))(
         If(rst)(
             led(0)
@@ -31,43 +32,37 @@ def mkLed():
                 led(led + 1)
             )
         ))
-    
+
     m.Always(Posedge(clk))(
         If(rst)(
         ).Else(
             Systask('display', "LED:%d count:%d", led, count)
         ))
-    
+
     return m
+
 
 def mkTest():
     m = Module('test')
-    
+
     # target instance
     led = mkLed()
-    
-    # copy paras and ports
-    params = m.copy_params(led)
-    ports = m.copy_sim_ports(led)
-    
-    clk = ports['CLK']
-    rst = ports['RST']
-    
-    uut = m.Instance(led, 'uut',
-                     params=m.connect_params(led),
-                     ports=m.connect_ports(led))
-    
+
+    uut = Submodule(m, led, name='uut')
+    clk = uut['CLK']
+    rst = uut['RST']
+
     simulation.setup_waveform(m, uut, m.get_vars())
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
-    
+
     init.add(
         Delay(1000 * 100),
         Systask('finish'),
     )
 
     return m
-    
+
 if __name__ == '__main__':
     test = mkTest()
     verilog = test.to_verilog(filename='tmp.v')
@@ -78,4 +73,4 @@ if __name__ == '__main__':
     rslt = sim.run()
     print(rslt)
 
-    #sim.view_waveform()
+    # sim.view_waveform()
