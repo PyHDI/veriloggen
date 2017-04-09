@@ -3,6 +3,7 @@ from __future__ import print_function
 import collections
 import veriloggen.core.module as module
 import veriloggen.core.vtypes as vtypes
+import veriloggen.verilog.from_verilog as from_verilog
 
 
 class Submodule(vtypes.VeriloggenNode):
@@ -11,9 +12,18 @@ class Submodule(vtypes.VeriloggenNode):
     def __init__(self, parent, child,
                  name=None, prefix=None,
                  arg_params=None, arg_ports=None,
-                 as_io=None, as_wire=None):
+                 as_io=None, as_wire=None, topmodule=None):
 
         self.parent = parent
+
+        # child module definition as Verilog HDL source code text
+        if isinstance(child, str):
+            modules = from_verilog.read_verilog_module_str(child)
+            if topmodule is None:
+                child = list(modules.values())[0]
+            else:
+                child = modules[topmodule]
+
         self.child = child
 
         if name is None:
