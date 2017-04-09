@@ -4,8 +4,8 @@ module top
 (
   input clk,
   input btnCpuReset,
-  output RsRx,
-  input RsTx,
+  input RsRx,
+  output RsTx,
   output RsCts,
   input RsRts,
   input [16-1:0] sw,
@@ -33,8 +33,8 @@ module top
     .RST(RST),
     .sw(sw),
     .led(led),
-    .utx(RsRx),
-    .urx(RsTx)
+    .utx(RsTx),
+    .urx(RsRx)
   );
 
 

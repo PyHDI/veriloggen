@@ -16,8 +16,8 @@ def mkTop(clk_name='clk', rst_name='btnCpuReset'):
     m = Module('top')
     clk = m.Input(clk_name)
     rst = m.Input(rst_name)
-    RsRx = m.Output('RsRx')
-    RsTx = m.Input('RsTx')
+    RsRx = m.Input('RsRx')
+    RsTx = m.Output('RsTx')
     RsCts = m.Output('RsCts')
     RsRts = m.Input('RsRts')
     RsCts.assign(0)
@@ -37,8 +37,8 @@ def mkTop(clk_name='clk', rst_name='btnCpuReset'):
     ports = []
     ports.append(('CLK', new_clk))
     ports.append(('RST', new_rst))
-    ports.append(('utx', RsRx))
-    ports.append(('urx', RsTx))
+    ports.append(('utx', RsTx))
+    ports.append(('urx', RsRx))
     sub = Submodule(m, blinkled, name='inst_' + blinkled.name,
                     arg_ports=ports,
                     as_io=('sw', 'led'), as_wire=('utx', 'urx'))
