@@ -10,34 +10,24 @@ def mkLed():
     width = m.Parameter('WIDTH', 8)
     clk = m.Input('CLK')
     rst = m.Input('RST')
-    led = m.OutputReg('LED', width)
-    count = m.Reg('count', 32)
+    led = m.OutputReg('LED', width, initval=0)
+    count = m.Reg('count', 32, initval=0)
 
-    m.Always(Posedge(clk))(
-        If(rst)(
-            count(0)
-        ).Else(
-            If(count == 1023)(
-                count(0)
-            ).Else(
-                count(count + 1)
-            )
-        ))
+    seq = Seq(m, 'seq', clk, rst)
 
-    m.Always(Posedge(clk))(
-        If(rst)(
-            led(0)
-        ).Else(
-            If(count == 1024 - 1)(
-                led(led + 1)
-            )
-        ))
+    seq.If(count == 1024 - 1)(
+        count(0)
+    ).Else(
+        count.inc()
+    )
 
-    m.Always(Posedge(clk))(
-        If(rst)(
-        ).Else(
-            Systask('display', "LED:%d count:%d", led, count)
-        ))
+    seq.If(count == 1024 - 1)(
+        led.inc()
+    )
+
+    seq(
+        Systask('display', "LED:%d count:%d", led, count)
+    )
 
     return m
 
