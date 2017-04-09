@@ -454,14 +454,18 @@ class Module(vtypes.VeriloggenNode):
         t = Instance(module, instname, params, ports)
         self.instance[instname] = t
         self.items.append(t)
-        # if isinstance(module, StubModule):
-        #    return None
-        if self.find_module(module.name) is not None:
-            if self.submodule[module.name] != module:
-                raise ValueError(
-                    "Module '%s' is already defined." % module.name)
-        else:
+
+        mod = self.find_module(module.name)
+        if mod is None:
             self.submodule[module.name] = module
+
+        while mod is not None:
+            if mod == module:
+                break
+            module.name = module.name + '_'
+            self.submodule[module.name] = module
+            mod = self.find_module(module.name)
+
         return t
 
     #-------------------------------------------------------------------------

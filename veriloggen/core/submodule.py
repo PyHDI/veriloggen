@@ -59,8 +59,15 @@ class Submodule(vtypes.VeriloggenNode):
 
         if as_io is None:
             as_io = ()
+
+        if not isinstance(as_io, (tuple, list)):
+            as_io = (as_io,)
+
         if as_wire is None:
             as_wire = ()
+
+        if not isinstance(as_wire, (tuple, list)):
+            as_wire = (as_wire,)
 
         as_io = [v.name if not isinstance(v, str) else
                  v for v in as_io]
