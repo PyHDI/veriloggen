@@ -20,31 +20,6 @@ def Lock(m, name, clk, rst, width=32):
     return Mutex(m, name, clk, rst, width)
 
 
-class _MutexFunction(object):
-    __intrinsics__ = ('lock', 'try_lock', 'unlock')
-
-    def lock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
-
-        return self.mutex.lock(fsm)
-
-    def try_lock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
-
-        return self.mutex.try_lock(fsm)
-
-    def unlock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
-
-        return self.mutex.unlock(fsm)
-
-
 class Mutex(object):
     __intrinsics__ = ('lock', 'try_lock', 'unlock',
                       'acquire', 'release')
@@ -166,6 +141,27 @@ class Mutex(object):
         return self.unlock(fsm)
 
 
+class _MutexFunction(object):
+    __intrinsics__ = ('lock', 'try_lock', 'unlock')
+
+    def _check_mutex(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+    def lock(self, fsm):
+        self._check_mutex(fsm)
+        return self.mutex.lock(fsm)
+
+    def try_lock(self, fsm):
+        self._check_mutex(fsm)
+        return self.mutex.try_lock(fsm)
+
+    def unlock(self, fsm):
+        self._check_mutex(fsm)
+        return self.mutex.unlock(fsm)
+
+
 class Barrier(object):
     __intrinsics__ = ('wait', )
 
@@ -216,12 +212,8 @@ class Barrier(object):
 class Shared(_MutexFunction):
     __intrinsics__ = ('read', 'write') + _MutexFunction.__intrinsics__
 
-    def __init__(self, value, m=None, clk=None, rst=None):
+    def __init__(self, value):
         self._value = value
-        self.m = m
-        self.clk = clk
-        self.rst = rst
-        self.name = self._value.name
         self.seq = None
         self.mutex = None
 
@@ -234,9 +226,11 @@ class Shared(_MutexFunction):
 
     def write(self, fsm, value, *part):
         if self.seq is None:
-            clk = fsm.clk if self.clk is None else self.clk
-            rst = fsm.rst if self.rst is None else self.rst
-            self.seq = Seq(fsm.m, '_'.join(['seq', self.name]), clk, rst)
+            m = fsm.m
+            clk = fsm.clk
+            rst = fsm.rst
+            name = self._value.name
+            self.seq = Seq(m, '_'.join(['seq', name]), clk, rst)
 
         cond = fsm.state == fsm.current
 
@@ -260,6 +254,14 @@ class Shared(_MutexFunction):
 
         fsm.goto_next()
         return 0
+
+    def _check_mutex(self, fsm):
+        if self.mutex is None:
+            m = fsm.m
+            clk = fsm.clk
+            rst = fsm.rst
+            name = self._value.name
+            self.mutex = Mutex(m, '_'.join(['', name, 'mutex']), clk, rst)
 
 
 class RAM(ram.SyncRAMManager, _MutexFunction):
