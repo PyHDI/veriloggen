@@ -76,7 +76,7 @@ Install on your python environment by using pip:
 
     pip install jinja2
 
--  Pyverilog: 1.0.7 or later
+-  Pyverilog: 1.0.8 or later
 
 Install from pip (or download and install from GitHub):
 
