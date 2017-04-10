@@ -20,6 +20,31 @@ def Lock(m, name, clk, rst, width=32):
     return Mutex(m, name, clk, rst, width)
 
 
+class _MutexFunction(object):
+    __intrinsics__ = ('lock', 'try_lock', 'unlock')
+
+    def lock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.lock(fsm)
+
+    def try_lock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.try_lock(fsm)
+
+    def unlock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.unlock(fsm)
+
+
 class Mutex(object):
     __intrinsics__ = ('lock', 'try_lock', 'unlock',
                       'acquire', 'release')
@@ -188,12 +213,15 @@ class Barrier(object):
         return 0
 
 
-class Shared(object):
-    __intrinsics__ = ('read', 'write',
-                      'lock', 'try_lock', 'unlock')
+class Shared(_MutexFunction):
+    __intrinsics__ = ('read', 'write') + _MutexFunction.__intrinsics__
 
-    def __init__(self, value):
+    def __init__(self, value, m=None, clk=None, rst=None):
         self._value = value
+        self.m = m
+        self.clk = clk
+        self.rst = rst
+        self.name = self._value.name
         self.seq = None
         self.mutex = None
 
@@ -206,8 +234,9 @@ class Shared(object):
 
     def write(self, fsm, value, *part):
         if self.seq is None:
-            self.seq = Seq(fsm.m, '_'.join(
-                ['seq', self._value.name]), fsm.clk, fsm.rst)
+            clk = fsm.clk if self.clk is None else self.clk
+            rst = fsm.rst if self.rst is None else self.rst
+            self.seq = Seq(fsm.m, '_'.join(['seq', self.name]), clk, rst)
 
         cond = fsm.state == fsm.current
 
@@ -232,31 +261,10 @@ class Shared(object):
         fsm.goto_next()
         return 0
 
-    def lock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
 
-        return self.mutex.lock(fsm)
-
-    def try_lock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
-
-        return self.mutex.try_lock(fsm)
-
-    def unlock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
-
-        return self.mutex.unlock(fsm)
-
-
-class RAM(ram.SyncRAMManager):
-    __intrinsics__ = ('read', 'write', 'dma_read', 'dma_write',
-                      'lock', 'try_lock', 'unlock')
+class RAM(ram.SyncRAMManager, _MutexFunction):
+    __intrinsics__ = ('read', 'write', 'dma_read',
+                      'dma_write') + _MutexFunction.__intrinsics__
 
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=10, numports=1):
@@ -356,33 +364,11 @@ class RAM(ram.SyncRAMManager):
 
         return bus.dma_write(fsm, self, local_addr, global_addr, size, port)
 
-    def lock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
 
-        return self.mutex.lock(fsm)
-
-    def try_lock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
-
-        return self.mutex.try_lock(fsm)
-
-    def unlock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
-
-        return self.mutex.unlock(fsm)
-
-
-class FIFO(fifo.Fifo):
+class FIFO(fifo.Fifo, _MutexFunction):
     __intrinsics__ = ('enq', 'deq', 'try_enq', 'try_deq',
                       'is_empty', 'is_almost_empty',
-                      'is_full', 'is_almost_full',
-                      'lock', 'try_lock', 'unlock')
+                      'is_full', 'is_almost_full') + _MutexFunction.__intrinsics__
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=4):
         fifo.Fifo.__init__(self, m, name, clk, rst, datawidth, addrwidth)
@@ -460,31 +446,10 @@ class FIFO(fifo.Fifo):
         fsm.goto_next()
         return self.full
 
-    def lock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
 
-        return self.mutex.lock(fsm)
-
-    def try_lock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
-
-        return self.mutex.try_lock(fsm)
-
-    def unlock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
-
-        return self.mutex.unlock(fsm)
-
-
-class AXIM(axi.AxiMaster):
-    __intrinsics__ = ('read', 'write', 'dma_read', 'dma_write',
-                      'lock', 'try_lock', 'unlock')
+class AXIM(axi.AxiMaster, _MutexFunction):
+    __intrinsics__ = ('read', 'write', 'dma_read',
+                      'dma_write') + _MutexFunction.__intrinsics__
 
     burstlen = 256
 
@@ -618,30 +583,9 @@ class AXIM(axi.AxiMaster):
 
         return 0
 
-    def lock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
 
-        return self.mutex.lock(fsm)
-
-    def try_lock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
-
-        return self.mutex.try_lock(fsm)
-
-    def unlock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
-
-        return self.mutex.unlock(fsm)
-
-
-class AXIS(axi.AxiSlave):
-    __intrinsics__ = ('lock', 'try_lock', 'unlock')
+class AXIS(axi.AxiSlave, _MutexFunction):
+    __intrinsics__ = _MutexFunction.__intrinsics__
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
                  lite=False, noio=False):
@@ -649,31 +593,10 @@ class AXIS(axi.AxiSlave):
                               lite=lite, noio=noio)
         self.mutex = None
 
-    def lock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
 
-        return self.mutex.lock(fsm)
-
-    def try_lock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
-
-        return self.mutex.try_lock(fsm)
-
-    def unlock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
-
-        return self.mutex.unlock(fsm)
-
-
-class AXISRegister(AXIS):
-    __intrinsics__ = ('read', 'write', 'write_flag', 'wait', 'wait_flag',
-                      'lock', 'try_lock', 'unlock')
+class AXISRegister(AXIS, _MutexFunction):
+    __intrinsics__ = ('read', 'write', 'write_flag', 'wait',
+                      'wait_flag') + _MutexFunction.__intrinsics__
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
                  lite=False, noio=False, length=4):
@@ -931,9 +854,8 @@ def AXISLiteRegister(m, name, clk, rst, datawidth=32, addrwidth=32,
                         lite=True, noio=noio, length=length)
 
 
-class UartTx(uart.UartTx):
-    __intrinsics__ = ('send',
-                      'lock', 'try_lock', 'unlock')
+class UartTx(uart.UartTx, _MutexFunction):
+    __intrinsics__ = ('send',) + _MutexFunction.__intrinsics__
 
     def __init__(self, m, name, prefix, clk, rst, txd=None,
                  arg_params=None, arg_ports=None,
@@ -947,31 +869,9 @@ class UartTx(uart.UartTx):
 
         self.mutex = None
 
-    def lock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
 
-        return self.mutex.lock(fsm)
-
-    def try_lock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
-
-        return self.mutex.try_lock(fsm)
-
-    def unlock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
-
-        return self.mutex.unlock(fsm)
-
-
-class UartRx(uart.UartRx):
-    __intrinsics__ = ('recv',
-                      'lock', 'try_lock', 'unlock')
+class UartRx(uart.UartRx, _MutexFunction):
+    __intrinsics__ = ('recv',) + _MutexFunction.__intrinsics__
 
     def __init__(self, m, name, prefix, clk, rst, rxd=None,
                  arg_params=None, arg_ports=None,
@@ -984,24 +884,3 @@ class UartRx(uart.UartRx):
                              baudrate=baudrate, clockfreq=clockfreq)
 
         self.mutex = None
-
-    def lock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
-
-        return self.mutex.lock(fsm)
-
-    def try_lock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
-
-        return self.mutex.try_lock(fsm)
-
-    def unlock(self, fsm):
-        if self.mutex is None:
-            self.mutex = Mutex(self.m, '_'.join(
-                ['', self.name, 'mutex']), self.clk, self.rst)
-
-        return self.mutex.unlock(fsm)
