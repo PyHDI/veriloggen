@@ -12,95 +12,45 @@ from veriloggen import *
 import veriloggen.thread as vthread
 
 
-def mkTop(clk_name='clk', rst_name='btnCpuReset'):
-    m = Module('top')
-    clk = m.Input(clk_name)
-    rst = m.Input(rst_name)
-    RsRx = m.Input('RsRx')
-    RsTx = m.Output('RsTx')
-    RsCts = m.Output('RsCts')
-    RsRts = m.Input('RsRts')
-    RsCts.assign(0)
+class UartTx(Submodule):
+    __intrinsics__ = ('send', )
 
-    new_clk = m.Wire('new_CLK')
-    new_clk.assign(clk)
+    def __init__(self, m, name, prefix, clk, rst, txd=None,
+                 arg_params=None, arg_ports=None,
+                 as_io=None, as_wire=None,
+                 baudrate=19200, clockfreq=100 * 1000 * 1000):
 
-    rstbuf = m.Reg('RST_X')
-    new_rst = m.Reg('RST')
-    m.Always(Posedge(clk))(
-        rstbuf(rst),
-        new_rst(Not(rstbuf))
-    )
+        if arg_ports is None:
+            arg_ports = []
 
-    blinkled = mkLed()
+        arg_ports.insert(0, ('CLK', clk))
+        arg_ports.insert(1, ('RST', rst))
 
-    ports = []
-    ports.append(('CLK', new_clk))
-    ports.append(('RST', new_rst))
-    ports.append(('utx', RsTx))
-    ports.append(('urx', RsRx))
-    sub = Submodule(m, blinkled, name='inst_' + blinkled.name,
-                    arg_ports=ports,
-                    as_io=('sw', 'led'), as_wire=('utx', 'urx'))
+        if txd is not None:
+            arg_ports.insert(2, ('txd', txd))
 
-    return m
+        moddef = mkUartTx(baudrate, clockfreq)
 
+        Submodule.__init__(self, m, moddef, name, prefix,
+                           arg_params=arg_params, arg_ports=arg_ports,
+                           as_io=as_io, as_wire=as_wire)
 
-def mkLed(baudrate=19200, clockfreq=100 * 1000 * 1000):
-    m = Module('blinkled')
-    clk = m.Input('CLK')
-    rst = m.Input('RST')
-    sw = m.Input('sw', 16)
-    led = m.OutputReg('led', 16, initval=0)
+        self.tx_din = self['din']
+        self.tx_enable = self['enable']
+        self.tx_enable.initval = 0
+        self.tx_ready = self['ready']
 
-    tx = m.Output('utx')
-    rx = m.Input('urx')
-
-    uart_tx = Submodule(m, mkUartTx(baudrate, clockfreq), 'inst_tx', 'tx_',
-                        arg_ports=(('CLK', clk), ('RST', rst), ('txd', tx)))
-    uart_rx = Submodule(m, mkUartRx(baudrate, clockfreq), 'inst_rx', 'rx_',
-                        arg_ports=(('CLK', clk), ('RST', rst), ('rxd', rx)))
-
-    tx_din = uart_tx['din']
-    tx_enable = uart_tx['enable']
-    tx_enable.initval = 0
-    tx_ready = uart_tx['ready']
-
-    rx_dout = uart_rx['dout']
-    rx_valid = uart_rx['valid']
-
-    def send(fsm, value):
+    def send(self, fsm, value):
         fsm(
-            tx_din(value),
-            tx_enable(1)
+            self.tx_din(value),
+            self.tx_enable(1)
         )
         fsm.goto_next()
         fsm(
-            tx_enable(0)
+            self.tx_enable(0)
         )
         fsm.goto_next()
-        fsm.If(tx_ready).goto_next()
-
-    def recv(fsm):
-        ret = fsm.m.TmpReg(rx_dout.width)
-        fsm.If(rx_valid)(
-            ret(rx_dout)
-        )
-        fsm.Then().goto_next()
-        return ret
-
-    def blink():
-        while True:
-            c = recv()
-            data = c + sw
-            led.value = data
-            send(data)
-
-    th = vthread.Thread(m, 'th_blink', clk, rst, blink)
-    th.add_intrinsics(send, recv)
-    fsm = th.start()
-
-    return m
+        fsm.If(self.tx_ready).goto_next()
 
 
 def mkUartTx(baudrate=19200, clockfreq=100 * 1000 * 1000):
@@ -153,6 +103,40 @@ def mkUartTx(baudrate=19200, clockfreq=100 * 1000 * 1000):
     return m
 
 
+class UartRx(Submodule):
+    __intrinsics__ = ('recv', )
+
+    def __init__(self, m, name, prefix, clk, rst, rxd=None,
+                 arg_params=None, arg_ports=None,
+                 as_io=None, as_wire=None,
+                 baudrate=19200, clockfreq=100 * 1000 * 1000):
+
+        if arg_ports is None:
+            arg_ports = []
+
+        arg_ports.insert(0, ('CLK', clk))
+        arg_ports.insert(1, ('RST', rst))
+
+        if rxd is not None:
+            arg_ports.insert(2, ('rxd', rxd))
+
+        moddef = mkUartRx(baudrate, clockfreq)
+        Submodule.__init__(self, m, moddef, name, prefix,
+                           arg_params=arg_params, arg_ports=arg_ports,
+                           as_io=as_io, as_wire=as_wire)
+
+        self.rx_dout = self['dout']
+        self.rx_valid = self['valid']
+
+    def recv(self, fsm):
+        ret = fsm.m.TmpReg(self.rx_dout.width)
+        fsm.If(self.rx_valid)(
+            ret(self.rx_dout)
+        )
+        fsm.Then().goto_next()
+        return ret
+
+
 def mkUartRx(baudrate=19200, clockfreq=100 * 1000 * 1000):
     m = Module("UartRx")
     waitnum = int(clockfreq / baudrate)
@@ -201,6 +185,66 @@ def mkUartRx(baudrate=19200, clockfreq=100 * 1000 * 1000):
     return m
 
 
+def mkTop(clk_name='clk', rst_name='btnCpuReset'):
+    m = Module('top')
+    clk = m.Input(clk_name)
+    rst = m.Input(rst_name)
+    RsRx = m.Input('RsRx')
+    RsTx = m.Output('RsTx')
+    RsCts = m.Output('RsCts')
+    RsRts = m.Input('RsRts')
+    RsCts.assign(0)
+
+    new_clk = m.Wire('new_CLK')
+    new_clk.assign(clk)
+
+    rstbuf = m.Reg('RST_X')
+    new_rst = m.Reg('RST')
+    m.Always(Posedge(clk))(
+        rstbuf(rst),
+        new_rst(Not(rstbuf))
+    )
+
+    blinkled = mkLed()
+
+    ports = []
+    ports.append(('CLK', new_clk))
+    ports.append(('RST', new_rst))
+    ports.append(('utx', RsTx))
+    ports.append(('urx', RsRx))
+    sub = Submodule(m, blinkled, name='inst_' + blinkled.name,
+                    arg_ports=ports,
+                    as_io=('sw', 'led'), as_wire=('utx', 'urx'))
+
+    return m
+
+
+def mkLed(baudrate=19200, clockfreq=100 * 1000 * 1000):
+    m = Module('blinkled')
+    clk = m.Input('CLK')
+    rst = m.Input('RST')
+    sw = m.Input('sw', 16)
+    led = m.OutputReg('led', 16, initval=0)
+    tx = m.Output('utx')
+    rx = m.Input('urx')
+    uart_tx = UartTx(m, 'inst_tx', 'tx_', clk, rst, tx,
+                     baudrate=baudrate, clockfreq=clockfreq)
+    uart_rx = UartRx(m, 'inst_rx', 'rx_', clk, rst, rx,
+                     baudrate=baudrate, clockfreq=clockfreq)
+
+    def blink():
+        while True:
+            c = uart_rx.recv()
+            data = c + sw
+            led.value = data
+            uart_tx.send(data)
+
+    th = vthread.Thread(m, 'th_blink', clk, rst, blink)
+    fsm = th.start()
+
+    return m
+
+
 def mkTest(baudrate=19200, clockfreq=19200 * 10):
     m = Module('test')
 
@@ -214,22 +258,15 @@ def mkTest(baudrate=19200, clockfreq=19200 * 10):
     rx = uut['urx']
     sw = uut['sw']
 
-    uart_tx = Submodule(m, mkUartTx(baudrate, clockfreq), 'inst_tx', 'tx_',
-                        arg_ports=(('CLK', clk), ('RST', rst)), as_wire='txd')
-    uart_rx = Submodule(m, mkUartRx(baudrate, clockfreq), 'inst_rx', 'rx_',
-                        arg_ports=(('CLK', clk), ('RST', rst)), as_wire='rxd')
+    uart_tx = UartTx(m, 'inst_tx', 'tx_', clk, rst, as_wire='txd',
+                     baudrate=baudrate, clockfreq=clockfreq)
+    uart_rx = UartRx(m, 'inst_rx', 'rx_', clk, rst, as_wire='rxd',
+                     baudrate=baudrate, clockfreq=clockfreq)
+
     txd = uart_tx['txd']
     rxd = uart_rx['rxd']
     rx.assign(txd)
     rxd.assign(tx)
-
-    tx_din = uart_tx['din']
-    tx_enable = uart_tx['enable']
-    tx_enable.initval = 0
-    tx_ready = uart_tx['ready']
-
-    rx_dout = uart_rx['dout']
-    rx_valid = uart_rx['valid']
 
     simulation.setup_waveform(m, uut, uart_tx, uart_rx)
     simulation.setup_clock(m, clk, hperiod=5)
@@ -241,38 +278,17 @@ def mkTest(baudrate=19200, clockfreq=19200 * 10):
         Systask('finish')
     )
 
-    def send(fsm, value):
-        fsm(
-            tx_din(value),
-            tx_enable(1)
-        )
-        fsm.goto_next()
-        fsm(
-            tx_enable(0)
-        )
-        fsm.goto_next()
-        fsm.If(tx_ready).goto_next()
-
-    def recv(fsm):
-        ret = fsm.m.TmpReg(rx_dout.width)
-        fsm.If(rx_valid)(
-            ret(rx_dout)
-        )
-        fsm.Then().goto_next()
-        return ret
-
     def test():
         for i in range(10):
             s = 100 + i
-            send(s)
-            r = recv()
+            uart_tx.send(s)
+            r = uart_rx.recv()
             if r == s + sw:
                 print('OK: %d + %d == %d' % (s, sw, r))
             else:
                 print('NG: %d + %d != %d' % (s, sw, r))
 
     th = vthread.Thread(m, 'test', clk, rst, test)
-    th.add_intrinsics(send, recv)
     th.start()
 
     return m
