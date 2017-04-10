@@ -7,6 +7,7 @@ import veriloggen.core.vtypes as vtypes
 import veriloggen.types.ram as ram
 import veriloggen.types.fifo as fifo
 import veriloggen.types.axi as axi
+import veriloggen.types.uart as uart
 import veriloggen.types.util as util
 from veriloggen.seq.seq import Seq
 from veriloggen.fsm.fsm import FSM
@@ -928,3 +929,79 @@ def AXISLiteRegister(m, name, clk, rst, datawidth=32, addrwidth=32,
 
     return AXISRegister(m, name, clk, rst, datawidth=datawidth, addrwidth=addrwidth,
                         lite=True, noio=noio, length=length)
+
+
+class UartTx(uart.UartTx):
+    __intrinsics__ = ('send',
+                      'lock', 'try_lock', 'unlock')
+
+    def __init__(self, m, name, prefix, clk, rst, txd=None,
+                 arg_params=None, arg_ports=None,
+                 as_io=None, as_wire=None,
+                 baudrate=19200, clockfreq=100 * 1000 * 1000):
+
+        uart.UartTx.__init__(self, m, name, prefix, clk, rst, txd=txd,
+                             arg_params=arg_params, arg_ports=arg_ports,
+                             as_io=as_io, as_wire=as_wire,
+                             baudrate=baudrate, clockfreq=clockfreq)
+
+        self.mutex = None
+
+    def lock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.lock(fsm)
+
+    def try_lock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.try_lock(fsm)
+
+    def unlock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.unlock(fsm)
+
+
+class UartRx(uart.UartRx):
+    __intrinsics__ = ('recv',
+                      'lock', 'try_lock', 'unlock')
+
+    def __init__(self, m, name, prefix, clk, rst, rxd=None,
+                 arg_params=None, arg_ports=None,
+                 as_io=None, as_wire=None,
+                 baudrate=19200, clockfreq=100 * 1000 * 1000):
+
+        uart.UartRx.__init__(self, m, name, prefix, clk, rst, rxd=rxd,
+                             arg_params=arg_params, arg_ports=arg_ports,
+                             as_io=as_io, as_wire=as_wire,
+                             baudrate=baudrate, clockfreq=clockfreq)
+
+        self.mutex = None
+
+    def lock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.lock(fsm)
+
+    def try_lock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.try_lock(fsm)
+
+    def unlock(self, fsm):
+        if self.mutex is None:
+            self.mutex = Mutex(self.m, '_'.join(
+                ['', self.name, 'mutex']), self.clk, self.rst)
+
+        return self.mutex.unlock(fsm)

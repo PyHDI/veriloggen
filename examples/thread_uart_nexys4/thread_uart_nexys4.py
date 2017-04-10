@@ -12,179 +12,6 @@ from veriloggen import *
 import veriloggen.thread as vthread
 
 
-class UartTx(Submodule):
-    __intrinsics__ = ('send', )
-
-    def __init__(self, m, name, prefix, clk, rst, txd=None,
-                 arg_params=None, arg_ports=None,
-                 as_io=None, as_wire=None,
-                 baudrate=19200, clockfreq=100 * 1000 * 1000):
-
-        if arg_ports is None:
-            arg_ports = []
-
-        arg_ports.insert(0, ('CLK', clk))
-        arg_ports.insert(1, ('RST', rst))
-
-        if txd is not None:
-            arg_ports.insert(2, ('txd', txd))
-
-        moddef = mkUartTx(baudrate, clockfreq)
-
-        Submodule.__init__(self, m, moddef, name, prefix,
-                           arg_params=arg_params, arg_ports=arg_ports,
-                           as_io=as_io, as_wire=as_wire)
-
-        self.tx_din = self['din']
-        self.tx_enable = self['enable']
-        self.tx_enable.initval = 0
-        self.tx_ready = self['ready']
-
-    def send(self, fsm, value):
-        fsm(
-            self.tx_din(value),
-            self.tx_enable(1)
-        )
-        fsm.goto_next()
-        fsm(
-            self.tx_enable(0)
-        )
-        fsm.goto_next()
-        fsm.If(self.tx_ready).goto_next()
-
-
-def mkUartTx(baudrate=19200, clockfreq=100 * 1000 * 1000):
-    m = Module("UartTx")
-    waitnum = int(clockfreq / baudrate)
-
-    clk = m.Input('CLK')
-    rst = m.Input('RST')
-
-    din = m.Input('din', 8)
-    enable = m.Input('enable')
-    ready = m.OutputReg('ready', initval=1)
-    txd = m.OutputReg('txd', initval=1)
-
-    fsm = FSM(m, 'fsm', clk, rst)
-
-    mem = m.TmpReg(9, initval=0)
-    waitcount = m.TmpReg(int(math.log(waitnum, 2)) + 1, initval=0)
-
-    fsm(
-        waitcount(waitnum - 1),
-        txd(1),
-        mem(Cat(din, Int(0, 1)))
-    )
-
-    fsm.If(enable)(
-        ready(0)
-    )
-
-    fsm.Then().goto_next()
-
-    for i in range(10):
-        fsm.If(waitcount > 0)(
-            waitcount.dec()
-        ).Else(
-            txd(mem[0]),
-            mem(Cat(Int(1, 1), mem[1:9])),
-            waitcount(waitnum - 1)
-        )
-        fsm.Then().goto_next()
-
-    fsm(
-        ready(1)
-    )
-
-    fsm.goto_init()
-
-    fsm.make_always()
-
-    return m
-
-
-class UartRx(Submodule):
-    __intrinsics__ = ('recv', )
-
-    def __init__(self, m, name, prefix, clk, rst, rxd=None,
-                 arg_params=None, arg_ports=None,
-                 as_io=None, as_wire=None,
-                 baudrate=19200, clockfreq=100 * 1000 * 1000):
-
-        if arg_ports is None:
-            arg_ports = []
-
-        arg_ports.insert(0, ('CLK', clk))
-        arg_ports.insert(1, ('RST', rst))
-
-        if rxd is not None:
-            arg_ports.insert(2, ('rxd', rxd))
-
-        moddef = mkUartRx(baudrate, clockfreq)
-        Submodule.__init__(self, m, moddef, name, prefix,
-                           arg_params=arg_params, arg_ports=arg_ports,
-                           as_io=as_io, as_wire=as_wire)
-
-        self.rx_dout = self['dout']
-        self.rx_valid = self['valid']
-
-    def recv(self, fsm):
-        ret = fsm.m.TmpReg(self.rx_dout.width)
-        fsm.If(self.rx_valid)(
-            ret(self.rx_dout)
-        )
-        fsm.Then().goto_next()
-        return ret
-
-
-def mkUartRx(baudrate=19200, clockfreq=100 * 1000 * 1000):
-    m = Module("UartRx")
-    waitnum = int(clockfreq / baudrate)
-
-    clk = m.Input('CLK')
-    rst = m.Input('RST')
-
-    rxd = m.Input('rxd')
-    dout = m.OutputReg('dout', 8, initval=0)
-    valid = m.OutputReg('valid', initval=0)
-
-    fsm = FSM(m, 'fsm', clk, rst)
-
-    mem = m.TmpReg(9, initval=0)
-    waitcount = m.TmpReg(int(math.log(waitnum, 2)) + 1, initval=0)
-
-    fsm(
-        valid(0),
-        waitcount(int(waitnum / 2) - 1),
-        mem(Cat(rxd, mem[1:9]))
-    )
-
-    fsm.If(rxd == 0).goto_next()
-
-    for i in range(10):
-        if i == 0:  # check the start bit again
-            fsm.If(Ands(waitcount == 1, rxd != 0)).goto_init()
-
-        fsm.If(waitcount > 0)(
-            waitcount.dec()
-        ).Else(
-            mem(Cat(rxd, mem[1:9])),
-            waitcount(waitnum - 1)
-        )
-        fsm.Then().goto_next()
-
-    fsm(
-        valid(1),
-        dout(mem[0:9])
-    )
-
-    fsm.goto_init()
-
-    fsm.make_always()
-
-    return m
-
-
 def mkTop(clk_name='clk', rst_name='btnCpuReset'):
     m = Module('top')
     clk = m.Input(clk_name)
@@ -227,10 +54,10 @@ def mkLed(baudrate=19200, clockfreq=100 * 1000 * 1000):
     led = m.OutputReg('led', 16, initval=0)
     tx = m.Output('utx')
     rx = m.Input('urx')
-    uart_tx = UartTx(m, 'inst_tx', 'tx_', clk, rst, tx,
-                     baudrate=baudrate, clockfreq=clockfreq)
-    uart_rx = UartRx(m, 'inst_rx', 'rx_', clk, rst, rx,
-                     baudrate=baudrate, clockfreq=clockfreq)
+    uart_tx = vthread.UartTx(m, 'inst_tx', 'tx_', clk, rst, tx,
+                             baudrate=baudrate, clockfreq=clockfreq)
+    uart_rx = vthread.UartRx(m, 'inst_rx', 'rx_', clk, rst, rx,
+                             baudrate=baudrate, clockfreq=clockfreq)
 
     def blink():
         while True:
@@ -258,10 +85,10 @@ def mkTest(baudrate=19200, clockfreq=19200 * 10):
     rx = uut['urx']
     sw = uut['sw']
 
-    uart_tx = UartTx(m, 'inst_tx', 'tx_', clk, rst, as_wire='txd',
-                     baudrate=baudrate, clockfreq=clockfreq)
-    uart_rx = UartRx(m, 'inst_rx', 'rx_', clk, rst, as_wire='rxd',
-                     baudrate=baudrate, clockfreq=clockfreq)
+    uart_tx = vthread.UartTx(m, 'inst_tx', 'tx_', clk, rst, as_wire='txd',
+                             baudrate=baudrate, clockfreq=clockfreq)
+    uart_rx = vthread.UartRx(m, 'inst_rx', 'rx_', clk, rst, as_wire='rxd',
+                             baudrate=baudrate, clockfreq=clockfreq)
 
     txd = uart_tx['txd']
     rxd = uart_rx['rxd']
