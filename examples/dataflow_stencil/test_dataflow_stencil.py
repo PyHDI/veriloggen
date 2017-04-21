@@ -136,19 +136,19 @@ module test;
         end
         fsm_2: begin
           ext_src_ram0_addr <= ext_src_ram0_addr + 1;
-          ext_src_ram0_wdata <= 5898240;
+          ext_src_ram0_wdata <= 'sd5898240;
           ext_src_ram0_wenable <= 1;
           if(ext_src_ram0_wenable && (ext_src_ram0_addr == 15)) begin
             ext_src_ram0_wenable <= 0;
           end 
           ext_src_ram1_addr <= ext_src_ram1_addr + 1;
-          ext_src_ram1_wdata <= 5898240;
+          ext_src_ram1_wdata <= 'sd5898240;
           ext_src_ram1_wenable <= 1;
           if(ext_src_ram1_wenable && (ext_src_ram1_addr == 15)) begin
             ext_src_ram1_wenable <= 0;
           end 
           ext_src_ram2_addr <= ext_src_ram2_addr + 1;
-          ext_src_ram2_wdata <= 5898240;
+          ext_src_ram2_wdata <= 'sd5898240;
           ext_src_ram2_wenable <= 1;
           if(ext_src_ram2_wenable && (ext_src_ram2_addr == 15)) begin
             ext_src_ram2_wenable <= 0;
@@ -1364,7 +1364,7 @@ module stencil_pipeline_2d
         _tmp_valid_reg_14 <= _tmp_ovalid_14;
       end 
       if((_tmp_ready_15 || !_tmp_valid_15) && (_tmp_ready_6 && _tmp_ready_7) && (_tmp_valid_6 && _tmp_valid_7)) begin
-        _tmp_data_15 <= $signed(_tmp_data_6) + $signed(_tmp_data_7);
+        _tmp_data_15 <= _tmp_data_6 + _tmp_data_7;
       end 
       if(_tmp_valid_15 && _tmp_ready_15) begin
         _tmp_valid_15 <= 0;
@@ -1436,7 +1436,7 @@ module stencil_pipeline_2d
         _tmp_valid_22 <= _tmp_valid_14;
       end 
       if((_tmp_ready_23 || !_tmp_valid_23) && (_tmp_ready_15 && _tmp_ready_16) && (_tmp_valid_15 && _tmp_valid_16)) begin
-        _tmp_data_23 <= $signed(_tmp_data_15) + $signed(_tmp_data_16);
+        _tmp_data_23 <= _tmp_data_15 + _tmp_data_16;
       end 
       if(_tmp_valid_23 && _tmp_ready_23) begin
         _tmp_valid_23 <= 0;
@@ -1499,7 +1499,7 @@ module stencil_pipeline_2d
         _tmp_valid_29 <= _tmp_valid_22;
       end 
       if((_tmp_ready_30 || !_tmp_valid_30) && (_tmp_ready_23 && _tmp_ready_24) && (_tmp_valid_23 && _tmp_valid_24)) begin
-        _tmp_data_30 <= $signed(_tmp_data_23) + $signed(_tmp_data_24);
+        _tmp_data_30 <= _tmp_data_23 + _tmp_data_24;
       end 
       if(_tmp_valid_30 && _tmp_ready_30) begin
         _tmp_valid_30 <= 0;
@@ -1553,7 +1553,7 @@ module stencil_pipeline_2d
         _tmp_valid_35 <= _tmp_valid_29;
       end 
       if((_tmp_ready_36 || !_tmp_valid_36) && (_tmp_ready_30 && _tmp_ready_31) && (_tmp_valid_30 && _tmp_valid_31)) begin
-        _tmp_data_36 <= $signed(_tmp_data_30) + $signed(_tmp_data_31);
+        _tmp_data_36 <= _tmp_data_30 + _tmp_data_31;
       end 
       if(_tmp_valid_36 && _tmp_ready_36) begin
         _tmp_valid_36 <= 0;
@@ -1598,7 +1598,7 @@ module stencil_pipeline_2d
         _tmp_valid_40 <= _tmp_valid_35;
       end 
       if((_tmp_ready_41 || !_tmp_valid_41) && (_tmp_ready_36 && _tmp_ready_37) && (_tmp_valid_36 && _tmp_valid_37)) begin
-        _tmp_data_41 <= $signed(_tmp_data_36) + $signed(_tmp_data_37);
+        _tmp_data_41 <= _tmp_data_36 + _tmp_data_37;
       end 
       if(_tmp_valid_41 && _tmp_ready_41) begin
         _tmp_valid_41 <= 0;
@@ -1634,7 +1634,7 @@ module stencil_pipeline_2d
         _tmp_valid_44 <= _tmp_valid_40;
       end 
       if((_tmp_ready_45 || !_tmp_valid_45) && (_tmp_ready_41 && _tmp_ready_42) && (_tmp_valid_41 && _tmp_valid_42)) begin
-        _tmp_data_45 <= $signed(_tmp_data_41) + $signed(_tmp_data_42);
+        _tmp_data_45 <= _tmp_data_41 + _tmp_data_42;
       end 
       if(_tmp_valid_45 && _tmp_ready_45) begin
         _tmp_valid_45 <= 0;
@@ -1661,7 +1661,7 @@ module stencil_pipeline_2d
         _tmp_valid_47 <= _tmp_valid_44;
       end 
       if((_tmp_ready_48 || !_tmp_valid_48) && (_tmp_ready_45 && _tmp_ready_46) && (_tmp_valid_45 && _tmp_valid_46)) begin
-        _tmp_data_48 <= $signed(_tmp_data_45) + $signed(_tmp_data_46);
+        _tmp_data_48 <= _tmp_data_45 + _tmp_data_46;
       end 
       if(_tmp_valid_48 && _tmp_ready_48) begin
         _tmp_valid_48 <= 0;
@@ -1679,7 +1679,7 @@ module stencil_pipeline_2d
         _tmp_valid_49 <= _tmp_valid_47;
       end 
       if((_tmp_ready_50 || !_tmp_valid_50) && (_tmp_ready_48 && _tmp_ready_49) && (_tmp_valid_48 && _tmp_valid_49)) begin
-        _tmp_data_50 <= $signed(_tmp_data_48) + $signed(_tmp_data_49);
+        _tmp_data_50 <= _tmp_data_48 + _tmp_data_49;
       end 
       if(_tmp_valid_50 && _tmp_ready_50) begin
         _tmp_valid_50 <= 0;

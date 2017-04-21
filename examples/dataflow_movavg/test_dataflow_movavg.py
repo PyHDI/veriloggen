@@ -377,7 +377,7 @@ module movavg
         _tmp_data_6 <= _tmp_data_5;
       end 
       if((_tmp_ready_7 || !_tmp_valid_7) && (xready && xready) && (xvalid && xvalid)) begin
-        _tmp_data_7 <= $signed(xdata) + $signed(_tmp_data_0);
+        _tmp_data_7 <= xdata + _tmp_data_0;
       end 
       if(_tmp_valid_7 && _tmp_ready_7) begin
         _tmp_valid_7 <= 0;
@@ -386,7 +386,7 @@ module movavg
         _tmp_valid_7 <= xvalid && xvalid;
       end 
       if((_tmp_ready_8 || !_tmp_valid_8) && (xready && xready) && (xvalid && xvalid)) begin
-        _tmp_data_8 <= $signed(_tmp_data_1) + $signed(_tmp_data_2);
+        _tmp_data_8 <= _tmp_data_1 + _tmp_data_2;
       end 
       if(_tmp_valid_8 && _tmp_ready_8) begin
         _tmp_valid_8 <= 0;
@@ -395,7 +395,7 @@ module movavg
         _tmp_valid_8 <= xvalid && xvalid;
       end 
       if((_tmp_ready_9 || !_tmp_valid_9) && (xready && xready) && (xvalid && xvalid)) begin
-        _tmp_data_9 <= $signed(_tmp_data_3) + $signed(_tmp_data_4);
+        _tmp_data_9 <= _tmp_data_3 + _tmp_data_4;
       end 
       if(_tmp_valid_9 && _tmp_ready_9) begin
         _tmp_valid_9 <= 0;
@@ -404,7 +404,7 @@ module movavg
         _tmp_valid_9 <= xvalid && xvalid;
       end 
       if((_tmp_ready_10 || !_tmp_valid_10) && (xready && xready) && (xvalid && xvalid)) begin
-        _tmp_data_10 <= $signed(_tmp_data_5) + $signed(_tmp_data_6);
+        _tmp_data_10 <= _tmp_data_5 + _tmp_data_6;
       end 
       if(_tmp_valid_10 && _tmp_ready_10) begin
         _tmp_valid_10 <= 0;
@@ -413,7 +413,7 @@ module movavg
         _tmp_valid_10 <= xvalid && xvalid;
       end 
       if((_tmp_ready_11 || !_tmp_valid_11) && (_tmp_ready_7 && _tmp_ready_8) && (_tmp_valid_7 && _tmp_valid_8)) begin
-        _tmp_data_11 <= $signed(_tmp_data_7) + $signed(_tmp_data_8);
+        _tmp_data_11 <= _tmp_data_7 + _tmp_data_8;
       end 
       if(_tmp_valid_11 && _tmp_ready_11) begin
         _tmp_valid_11 <= 0;
@@ -422,7 +422,7 @@ module movavg
         _tmp_valid_11 <= _tmp_valid_7 && _tmp_valid_8;
       end 
       if((_tmp_ready_12 || !_tmp_valid_12) && (_tmp_ready_9 && _tmp_ready_10) && (_tmp_valid_9 && _tmp_valid_10)) begin
-        _tmp_data_12 <= $signed(_tmp_data_9) + $signed(_tmp_data_10);
+        _tmp_data_12 <= _tmp_data_9 + _tmp_data_10;
       end 
       if(_tmp_valid_12 && _tmp_ready_12) begin
         _tmp_valid_12 <= 0;
@@ -431,7 +431,7 @@ module movavg
         _tmp_valid_12 <= _tmp_valid_9 && _tmp_valid_10;
       end 
       if((_tmp_ready_13 || !_tmp_valid_13) && (_tmp_ready_11 && _tmp_ready_12) && (_tmp_valid_11 && _tmp_valid_12)) begin
-        _tmp_data_13 <= $signed(_tmp_data_11) + $signed(_tmp_data_12);
+        _tmp_data_13 <= _tmp_data_11 + _tmp_data_12;
       end 
       if(_tmp_valid_13 && _tmp_ready_13) begin
         _tmp_valid_13 <= 0;

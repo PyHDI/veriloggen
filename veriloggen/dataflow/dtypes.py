@@ -828,8 +828,16 @@ class Divide(_BinaryOperator):
         rdata = m.Reg(_tmp_data(tmp, prefix='_tmp_rdata_'),
                       width, signed=rsigned, initval=0)
 
-        lval, rval = fx.adjust(
-            self.left.sig_data, self.right.sig_data, lpoint, rpoint, signed)
+        point = max(lpoint, rpoint)
+
+        if lpoint <= rpoint:
+            lval, rval = fx.adjust(
+                self.left.sig_data, self.right.sig_data, lpoint, rpoint, signed)
+            shift_size = point
+        else:
+            lval = self.left.sig_data
+            rval = self.right.sig_data
+            shift_size = point - (lpoint - rpoint)
 
         accept = vtypes.OrList(ready, vtypes.Not(valid))
 
@@ -860,13 +868,18 @@ class Divide(_BinaryOperator):
         abs_odata = m.Wire(
             _tmp_data(tmp, prefix='_tmp_abs_odata_'), width, signed=signed)
 
+        if shift_size > 0:
+            shifted_abs_odata = vtypes.Sll(abs_odata, shift_size)
+        else:
+            shifted_abs_odata = abs_odata
+
         odata = m.Reg(_tmp_data(tmp, prefix='_tmp_odata_'),
                       width, signed=signed, initval=0)
 
         if not signed:
-            seq(odata(abs_odata), cond=accept)
+            seq(odata(shifted_abs_odata), cond=accept)
         else:
-            seq(odata(vtypes.Mux(osign == 0, abs_odata, vtypes.Unot(abs_odata) + 1)),
+            seq(odata(vtypes.Mux(osign == 0, shifted_abs_odata, vtypes.Unot(shifted_abs_odata) + 1)),
                 cond=accept)
 
         m.Assign(data(odata))
@@ -959,8 +972,16 @@ class Mod(_BinaryOperator):
         rdata = m.Reg(_tmp_data(tmp, prefix='_tmp_rdata_'),
                       width, signed=rsigned, initval=0)
 
-        lval, rval = fx.adjust(
-            self.left.sig_data, self.right.sig_data, lpoint, rpoint, signed)
+        point = max(lpoint, rpoint)
+
+        if lpoint <= rpoint:
+            lval, rval = fx.adjust(
+                self.left.sig_data, self.right.sig_data, lpoint, rpoint, signed)
+            shift_size = point
+        else:
+            lval = self.left.sig_data
+            rval = self.right.sig_data
+            shift_size = point - (lpoint - rpoint)
 
         accept = vtypes.OrList(ready, vtypes.Not(valid))
 
@@ -991,13 +1012,18 @@ class Mod(_BinaryOperator):
         abs_odata = m.Wire(
             _tmp_data(tmp, prefix='_tmp_abs_odata_'), width, signed=signed)
 
+        if shift_size > 0:
+            shifted_abs_odata = vtypes.Sll(abs_odata, shift_size)
+        else:
+            shifted_abs_odata = abs_odata
+
         odata = m.Reg(_tmp_data(tmp, prefix='_tmp_odata_'),
                       width, signed=signed, initval=0)
 
         if not signed:
-            seq(odata(abs_odata), cond=accept)
+            seq(odata(shifted_abs_odata), cond=accept)
         else:
-            seq(odata(vtypes.Mux(osign == 0, abs_odata, vtypes.Unot(abs_odata) + 1)),
+            seq(odata(vtypes.Mux(osign == 0, shifted_abs_odata, vtypes.Unot(shifted_abs_odata) + 1)),
                 cond=accept)
 
         m.Assign(data(odata))

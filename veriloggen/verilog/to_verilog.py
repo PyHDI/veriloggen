@@ -3,6 +3,7 @@ from __future__ import print_function
 import sys
 import os
 import collections
+import re
 
 import veriloggen.core.vtypes as vtypes
 import veriloggen.core.module as module
@@ -42,8 +43,10 @@ class VerilogCommonVisitor(object):
         raise TypeError("Type %s is not supported." % str(type(node)))
 
     def visit(self, node):
-        visitor = getattr(
-            self, 'visit_' + node.__class__.__name__, self.generic_visit)
+        name = node.__class__.__name__
+        if hasattr(node, 'ast_name') and node.ast_name is not None:
+            name = node.ast_name
+        visitor = getattr(self, 'visit_' + name, self.generic_visit)
         return visitor(node)
 
     #-------------------------------------------------------------------------
@@ -197,6 +200,10 @@ class VerilogCommonVisitor(object):
     def visit_AnyType(self, node):
         name = node.name
         return vast.Identifier(name)
+
+    #-------------------------------------------------------------------------
+    def visit__SkipUnaryOperator(self, node):
+        return self.visit(node.right)
 
     #-------------------------------------------------------------------------
     def visit_Power(self, node):
@@ -549,8 +556,10 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
     def visit(self, node):
         if isinstance(node, module.Module) and not isinstance(node, module.Generate):
             return self.visit_Module(node)
-        visitor = getattr(
-            self, 'visit_' + node.__class__.__name__, self.generic_visit)
+        name = node.__class__.__name__
+        if hasattr(node, 'ast_name') and node.ast_name is not None:
+            name = node.ast_name
+        visitor = getattr(self, 'visit_' + name, self.generic_visit)
         return visitor(node)
 
     #-------------------------------------------------------------------------

@@ -1612,7 +1612,7 @@ module fft4
       _tmp_valid_103 <= 0;
     end else begin
       if((_tmp_ready_0 || !_tmp_valid_0) && 1 && 1) begin
-        _tmp_data_0 <= $signed(din0re) + $signed(din2re);
+        _tmp_data_0 <= din0re + din2re;
       end 
       if(_tmp_valid_0 && _tmp_ready_0) begin
         _tmp_valid_0 <= 0;
@@ -1621,7 +1621,7 @@ module fft4
         _tmp_valid_0 <= 1;
       end 
       if((_tmp_ready_1 || !_tmp_valid_1) && 1 && 1) begin
-        _tmp_data_1 <= $signed(din0im) + $signed(din2im);
+        _tmp_data_1 <= din0im + din2im;
       end 
       if(_tmp_valid_1 && _tmp_ready_1) begin
         _tmp_valid_1 <= 0;
@@ -1630,7 +1630,7 @@ module fft4
         _tmp_valid_1 <= 1;
       end 
       if((_tmp_ready_2 || !_tmp_valid_2) && 1 && 1) begin
-        _tmp_data_2 <= $signed(din0re) - $signed(din2re);
+        _tmp_data_2 <= din0re - din2re;
       end 
       if(_tmp_valid_2 && _tmp_ready_2) begin
         _tmp_valid_2 <= 0;
@@ -1639,7 +1639,7 @@ module fft4
         _tmp_valid_2 <= 1;
       end 
       if((_tmp_ready_3 || !_tmp_valid_3) && 1 && 1) begin
-        _tmp_data_3 <= $signed(din0im) - $signed(din2im);
+        _tmp_data_3 <= din0im - din2im;
       end 
       if(_tmp_valid_3 && _tmp_ready_3) begin
         _tmp_valid_3 <= 0;
@@ -1648,7 +1648,7 @@ module fft4
         _tmp_valid_3 <= 1;
       end 
       if((_tmp_ready_4 || !_tmp_valid_4) && 1 && 1) begin
-        _tmp_data_4 <= $signed(din1re) + $signed(din3re);
+        _tmp_data_4 <= din1re + din3re;
       end 
       if(_tmp_valid_4 && _tmp_ready_4) begin
         _tmp_valid_4 <= 0;
@@ -1657,7 +1657,7 @@ module fft4
         _tmp_valid_4 <= 1;
       end 
       if((_tmp_ready_5 || !_tmp_valid_5) && 1 && 1) begin
-        _tmp_data_5 <= $signed(din1im) + $signed(din3im);
+        _tmp_data_5 <= din1im + din3im;
       end 
       if(_tmp_valid_5 && _tmp_ready_5) begin
         _tmp_valid_5 <= 0;
@@ -1666,7 +1666,7 @@ module fft4
         _tmp_valid_5 <= 1;
       end 
       if((_tmp_ready_6 || !_tmp_valid_6) && 1 && 1) begin
-        _tmp_data_6 <= $signed(din1re) - $signed(din3re);
+        _tmp_data_6 <= din1re - din3re;
       end 
       if(_tmp_valid_6 && _tmp_ready_6) begin
         _tmp_valid_6 <= 0;
@@ -1675,7 +1675,7 @@ module fft4
         _tmp_valid_6 <= 1;
       end 
       if((_tmp_ready_7 || !_tmp_valid_7) && 1 && 1) begin
-        _tmp_data_7 <= $signed(din1im) - $signed(din3im);
+        _tmp_data_7 <= din1im - din3im;
       end 
       if(_tmp_valid_7 && _tmp_ready_7) begin
         _tmp_valid_7 <= 0;
@@ -1732,7 +1732,7 @@ module fft4
         _tmp_valid_reg_15 <= _tmp_ovalid_15;
       end 
       if((_tmp_ready_16 || !_tmp_valid_16) && (_tmp_ready_0 && _tmp_ready_4) && (_tmp_valid_0 && _tmp_valid_4)) begin
-        _tmp_data_16 <= $signed(_tmp_data_0) + $signed(_tmp_data_4);
+        _tmp_data_16 <= _tmp_data_0 + _tmp_data_4;
       end 
       if(_tmp_valid_16 && _tmp_ready_16) begin
         _tmp_valid_16 <= 0;
@@ -1741,7 +1741,7 @@ module fft4
         _tmp_valid_16 <= _tmp_valid_0 && _tmp_valid_4;
       end 
       if((_tmp_ready_17 || !_tmp_valid_17) && (_tmp_ready_1 && _tmp_ready_5) && (_tmp_valid_1 && _tmp_valid_5)) begin
-        _tmp_data_17 <= $signed(_tmp_data_1) + $signed(_tmp_data_5);
+        _tmp_data_17 <= _tmp_data_1 + _tmp_data_5;
       end 
       if(_tmp_valid_17 && _tmp_ready_17) begin
         _tmp_valid_17 <= 0;
@@ -1750,7 +1750,7 @@ module fft4
         _tmp_valid_17 <= _tmp_valid_1 && _tmp_valid_5;
       end 
       if((_tmp_ready_18 || !_tmp_valid_18) && (_tmp_ready_0 && _tmp_ready_4) && (_tmp_valid_0 && _tmp_valid_4)) begin
-        _tmp_data_18 <= $signed(_tmp_data_0) - $signed(_tmp_data_4);
+        _tmp_data_18 <= _tmp_data_0 - _tmp_data_4;
       end 
       if(_tmp_valid_18 && _tmp_ready_18) begin
         _tmp_valid_18 <= 0;
@@ -1759,7 +1759,7 @@ module fft4
         _tmp_valid_18 <= _tmp_valid_0 && _tmp_valid_4;
       end 
       if((_tmp_ready_19 || !_tmp_valid_19) && (_tmp_ready_1 && _tmp_ready_5) && (_tmp_valid_1 && _tmp_valid_5)) begin
-        _tmp_data_19 <= $signed(_tmp_data_1) - $signed(_tmp_data_5);
+        _tmp_data_19 <= _tmp_data_1 - _tmp_data_5;
       end 
       if(_tmp_valid_19 && _tmp_ready_19) begin
         _tmp_valid_19 <= 0;
@@ -1900,7 +1900,7 @@ module fft4
         _tmp_valid_35 <= _tmp_valid_33;
       end 
       if((_tmp_ready_36 || !_tmp_valid_36) && (_tmp_ready_8 && _tmp_ready_9) && (_tmp_valid_8 && _tmp_valid_9)) begin
-        _tmp_data_36 <= $signed(_tmp_data_8) - $signed(_tmp_data_9);
+        _tmp_data_36 <= _tmp_data_8 - _tmp_data_9;
       end 
       if(_tmp_valid_36 && _tmp_ready_36) begin
         _tmp_valid_36 <= 0;
@@ -1909,7 +1909,7 @@ module fft4
         _tmp_valid_36 <= _tmp_valid_8 && _tmp_valid_9;
       end 
       if((_tmp_ready_37 || !_tmp_valid_37) && (_tmp_ready_10 && _tmp_ready_11) && (_tmp_valid_10 && _tmp_valid_11)) begin
-        _tmp_data_37 <= $signed(_tmp_data_10) + $signed(_tmp_data_11);
+        _tmp_data_37 <= _tmp_data_10 + _tmp_data_11;
       end 
       if(_tmp_valid_37 && _tmp_ready_37) begin
         _tmp_valid_37 <= 0;
@@ -1918,7 +1918,7 @@ module fft4
         _tmp_valid_37 <= _tmp_valid_10 && _tmp_valid_11;
       end 
       if((_tmp_ready_38 || !_tmp_valid_38) && (_tmp_ready_12 && _tmp_ready_13) && (_tmp_valid_12 && _tmp_valid_13)) begin
-        _tmp_data_38 <= $signed(_tmp_data_12) - $signed(_tmp_data_13);
+        _tmp_data_38 <= _tmp_data_12 - _tmp_data_13;
       end 
       if(_tmp_valid_38 && _tmp_ready_38) begin
         _tmp_valid_38 <= 0;
@@ -1927,7 +1927,7 @@ module fft4
         _tmp_valid_38 <= _tmp_valid_12 && _tmp_valid_13;
       end 
       if((_tmp_ready_39 || !_tmp_valid_39) && (_tmp_ready_14 && _tmp_ready_15) && (_tmp_valid_14 && _tmp_valid_15)) begin
-        _tmp_data_39 <= $signed(_tmp_data_14) + $signed(_tmp_data_15);
+        _tmp_data_39 <= _tmp_data_14 + _tmp_data_15;
       end 
       if(_tmp_valid_39 && _tmp_ready_39) begin
         _tmp_valid_39 <= 0;
@@ -1954,7 +1954,7 @@ module fft4
         _tmp_valid_41 <= _tmp_valid_35;
       end 
       if((_tmp_ready_42 || !_tmp_valid_42) && (_tmp_ready_20 && _tmp_ready_21) && (_tmp_valid_20 && _tmp_valid_21)) begin
-        _tmp_data_42 <= $signed(_tmp_data_20) - $signed(_tmp_data_21);
+        _tmp_data_42 <= _tmp_data_20 - _tmp_data_21;
       end 
       if(_tmp_valid_42 && _tmp_ready_42) begin
         _tmp_valid_42 <= 0;
@@ -1963,7 +1963,7 @@ module fft4
         _tmp_valid_42 <= _tmp_valid_20 && _tmp_valid_21;
       end 
       if((_tmp_ready_43 || !_tmp_valid_43) && (_tmp_ready_22 && _tmp_ready_23) && (_tmp_valid_22 && _tmp_valid_23)) begin
-        _tmp_data_43 <= $signed(_tmp_data_22) + $signed(_tmp_data_23);
+        _tmp_data_43 <= _tmp_data_22 + _tmp_data_23;
       end 
       if(_tmp_valid_43 && _tmp_ready_43) begin
         _tmp_valid_43 <= 0;
@@ -1972,7 +1972,7 @@ module fft4
         _tmp_valid_43 <= _tmp_valid_22 && _tmp_valid_23;
       end 
       if((_tmp_ready_44 || !_tmp_valid_44) && (_tmp_ready_36 && _tmp_ready_38) && (_tmp_valid_36 && _tmp_valid_38)) begin
-        _tmp_data_44 <= $signed(_tmp_data_36) + $signed(_tmp_data_38);
+        _tmp_data_44 <= _tmp_data_36 + _tmp_data_38;
       end 
       if(_tmp_valid_44 && _tmp_ready_44) begin
         _tmp_valid_44 <= 0;
@@ -1981,7 +1981,7 @@ module fft4
         _tmp_valid_44 <= _tmp_valid_36 && _tmp_valid_38;
       end 
       if((_tmp_ready_45 || !_tmp_valid_45) && (_tmp_ready_37 && _tmp_ready_39) && (_tmp_valid_37 && _tmp_valid_39)) begin
-        _tmp_data_45 <= $signed(_tmp_data_37) + $signed(_tmp_data_39);
+        _tmp_data_45 <= _tmp_data_37 + _tmp_data_39;
       end 
       if(_tmp_valid_45 && _tmp_ready_45) begin
         _tmp_valid_45 <= 0;
@@ -1990,7 +1990,7 @@ module fft4
         _tmp_valid_45 <= _tmp_valid_37 && _tmp_valid_39;
       end 
       if((_tmp_ready_46 || !_tmp_valid_46) && (_tmp_ready_36 && _tmp_ready_38) && (_tmp_valid_36 && _tmp_valid_38)) begin
-        _tmp_data_46 <= $signed(_tmp_data_36) - $signed(_tmp_data_38);
+        _tmp_data_46 <= _tmp_data_36 - _tmp_data_38;
       end 
       if(_tmp_valid_46 && _tmp_ready_46) begin
         _tmp_valid_46 <= 0;
@@ -1999,7 +1999,7 @@ module fft4
         _tmp_valid_46 <= _tmp_valid_36 && _tmp_valid_38;
       end 
       if((_tmp_ready_47 || !_tmp_valid_47) && (_tmp_ready_37 && _tmp_ready_39) && (_tmp_valid_37 && _tmp_valid_39)) begin
-        _tmp_data_47 <= $signed(_tmp_data_37) - $signed(_tmp_data_39);
+        _tmp_data_47 <= _tmp_data_37 - _tmp_data_39;
       end 
       if(_tmp_valid_47 && _tmp_ready_47) begin
         _tmp_valid_47 <= 0;
@@ -2428,7 +2428,7 @@ module fft4
         _tmp_valid_95 <= _tmp_valid_89;
       end 
       if((_tmp_ready_96 || !_tmp_valid_96) && (_tmp_ready_50 && _tmp_ready_51) && (_tmp_valid_50 && _tmp_valid_51)) begin
-        _tmp_data_96 <= $signed(_tmp_data_50) - $signed(_tmp_data_51);
+        _tmp_data_96 <= _tmp_data_50 - _tmp_data_51;
       end 
       if(_tmp_valid_96 && _tmp_ready_96) begin
         _tmp_valid_96 <= 0;
@@ -2437,7 +2437,7 @@ module fft4
         _tmp_valid_96 <= _tmp_valid_50 && _tmp_valid_51;
       end 
       if((_tmp_ready_97 || !_tmp_valid_97) && (_tmp_ready_52 && _tmp_ready_53) && (_tmp_valid_52 && _tmp_valid_53)) begin
-        _tmp_data_97 <= $signed(_tmp_data_52) + $signed(_tmp_data_53);
+        _tmp_data_97 <= _tmp_data_52 + _tmp_data_53;
       end 
       if(_tmp_valid_97 && _tmp_ready_97) begin
         _tmp_valid_97 <= 0;

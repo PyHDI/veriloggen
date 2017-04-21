@@ -4,40 +4,65 @@ import veriloggen
 import types_fixed_div
 
 expected_verilog = """
+module test #
+(
+  parameter WIDTH = 8
+)
+(
+
+);
+
+  reg CLK;
+  reg RST;
+
+  blinkled
+  #(
+    .WIDTH(WIDTH)
+  )
+  uut
+  (
+    .CLK(CLK),
+    .RST(RST)
+  );
+
+
+  initial begin
+    $dumpfile("uut.vcd");
+    $dumpvars(0, uut, CLK, RST);
+  end
+
+
+  initial begin
+    CLK = 0;
+    forever begin
+      #5 CLK = !CLK;
+    end
+  end
+
+
+  initial begin
+    RST = 0;
+    #100;
+    RST = 1;
+    #100;
+    RST = 0;
+    #100000;
+    $finish;
+  end
+
+
+endmodule
+
+
+
 module blinkled #
 (
   parameter WIDTH = 8
 )
 (
   input CLK,
-  input RST,
-  output reg [WIDTH-1:0] LED
+  input RST
 );
-
-  reg [32-1:0] count;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      count <= 0;
-    end else begin
-      if(count == 1023) begin
-        count <= 0;
-      end else begin
-        count <= count + 1;
-      end
-    end
-  end
-
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      LED <= 0;
-    end else begin
-      if(count == 1023) begin
-        LED <= LED + 1;
-      end 
-    end
-  end
 
   reg [32-1:0] a;
   reg [32-1:0] b;
@@ -50,23 +75,23 @@ module blinkled #
 
   always @(posedge CLK) begin
     if(RST) begin
-      a <= 16;
-      b <= 512;
-      c <= 131072;
-      d <= 128;
-      sa <= 16;
-      sb <= 512;
-      sc <= 131072;
-      sd <= 128;
+      a <= 131072;
+      b <= 4096;
+      c <= 65536;
+      d <= 65536;
+      sa <= 131072;
+      sb <= -4096;
+      sc <= -65536;
+      sd <= -65536;
     end else begin
-      a <= (a << 4) / b >> 4;
-      b <= (a << 4) / b;
-      c <= (a << 4) / b << 8;
-      d <= b / (a << 4) >> 2;
-      sa <= ((($signed((sa << 4)) >> 31) & 1 && ($signed(sb) >> 31) & 1 || !(($signed((sa << 4)) >> 31) & 1) && !(($signed(sb) >> 31) & 1))? (((($signed((sa << 4)) >> 31) & 1) == 0)? $signed((sa << 4)) : ~$signed((sa << 4)) + 1) / (((($signed(sb) >> 31) & 1) == 0)? $signed(sb) : ~$signed(sb) + 1) : ~((((($signed((sa << 4)) >> 31) & 1) == 0)? $signed((sa << 4)) : ~$signed((sa << 4)) + 1) / (((($signed(sb) >> 31) & 1) == 0)? $signed(sb) : ~$signed(sb) + 1)) + 1) >>> 4;
-      sb <= (($signed((sa << 4)) >> 31) & 1 && ($signed(sb) >> 31) & 1 || !(($signed((sa << 4)) >> 31) & 1) && !(($signed(sb) >> 31) & 1))? (((($signed((sa << 4)) >> 31) & 1) == 0)? $signed((sa << 4)) : ~$signed((sa << 4)) + 1) / (((($signed(sb) >> 31) & 1) == 0)? $signed(sb) : ~$signed(sb) + 1) : ~((((($signed((sa << 4)) >> 31) & 1) == 0)? $signed((sa << 4)) : ~$signed((sa << 4)) + 1) / (((($signed(sb) >> 31) & 1) == 0)? $signed(sb) : ~$signed(sb) + 1)) + 1;
-      sc <= ((($signed((sa << 4)) >> 31) & 1 && ($signed(sb) >> 31) & 1 || !(($signed((sa << 4)) >> 31) & 1) && !(($signed(sb) >> 31) & 1))? (((($signed((sa << 4)) >> 31) & 1) == 0)? $signed((sa << 4)) : ~$signed((sa << 4)) + 1) / (((($signed(sb) >> 31) & 1) == 0)? $signed(sb) : ~$signed(sb) + 1) : ~((((($signed((sa << 4)) >> 31) & 1) == 0)? $signed((sa << 4)) : ~$signed((sa << 4)) + 1) / (((($signed(sb) >> 31) & 1) == 0)? $signed(sb) : ~$signed(sb) + 1)) + 1) << 8;
-      sd <= ((($signed(sb) >> 31) & 1 && ($signed((sa << 4)) >> 31) & 1 || !(($signed(sb) >> 31) & 1) && !(($signed((sa << 4)) >> 31) & 1))? (((($signed(sb) >> 31) & 1) == 0)? $signed(sb) : ~$signed(sb) + 1) / (((($signed((sa << 4)) >> 31) & 1) == 0)? $signed((sa << 4)) : ~$signed((sa << 4)) + 1) : ~((((($signed(sb) >> 31) & 1) == 0)? $signed(sb) : ~$signed(sb) + 1) / (((($signed((sa << 4)) >> 31) & 1) == 0)? $signed((sa << 4)) : ~$signed((sa << 4)) + 1)) + 1) >>> 2;
+      a <= a;
+      b <= b;
+      c <= (b << 8) / a << 16;
+      d <= a / b << 8;
+      sa <= sa;
+      sb <= sb;
+      sc <= (((($signed((sb << 8)) >> 31) & 1'b1) == sa[31])? ((!(($signed((sb << 8)) >> 31) & 1'b1))? $signed((sb << 8)) : ~$signed((sb << 8)) + 1) / ((!sa[31])? sa : ~sa + 1) : ~(((!(($signed((sb << 8)) >> 31) & 1'b1))? $signed((sb << 8)) : ~$signed((sb << 8)) + 1) / ((!sa[31])? sa : ~sa + 1)) + 1) << 16;
+      sd <= ((sa[31] == sb[31])? ((!sa[31])? sa : ~sa + 1) / ((!sb[31])? sb : ~sb + 1) : ~(((!sa[31])? sa : ~sa + 1) / ((!sb[31])? sb : ~sb + 1)) + 1) << 8;
     end
   end
 
@@ -74,9 +99,10 @@ module blinkled #
 endmodule
 """
 
+
 def test():
     veriloggen.reset()
-    test_module = types_fixed_div.mkLed()
+    test_module = types_fixed_div.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

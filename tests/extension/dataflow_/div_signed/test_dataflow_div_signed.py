@@ -1062,10 +1062,10 @@ module main
       _tmp_valid_33 <= 0;
     end else begin
       if(_tmp_ready_0 || !_tmp_valid_0) begin
-        _tmp_ldata_0 <= $signed(xdata);
+        _tmp_ldata_0 <= xdata;
       end 
       if(_tmp_ready_0 || !_tmp_valid_0) begin
-        _tmp_rdata_0 <= $signed(3'd2);
+        _tmp_rdata_0 <= 3'd2;
       end 
       if(_tmp_ready_0 || !_tmp_valid_0) begin
         _tmp_abs_ldata_0 <= (_tmp_ldata_0[31] == 0)? _tmp_ldata_0 : ~_tmp_ldata_0 + 1;
@@ -1470,7 +1470,7 @@ module main
         _tmp_valid_32 <= _tmp_valid_31;
       end 
       if((_tmp_ready_33 || !_tmp_valid_33) && (_tmp_ready_0 && _tmp_ready_32) && (_tmp_valid_0 && _tmp_valid_32)) begin
-        _tmp_data_33 <= $signed(_tmp_data_0) + $signed(_tmp_data_32);
+        _tmp_data_33 <= _tmp_data_0 + _tmp_data_32;
       end 
       if(_tmp_valid_33 && _tmp_ready_33) begin
         _tmp_valid_33 <= 0;

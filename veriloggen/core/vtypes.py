@@ -19,7 +19,9 @@ operator_dict = {
 
 
 def op2mark(op):
-    return operator_dict[op]
+    if op in operator_dict:
+        return operator_dict[op]
+    return op
 
 
 def str_to_signed(s):
@@ -122,7 +124,9 @@ def str_to_width(s):
 def get_signed(obj):
     if hasattr(obj, 'get_signed'):
         return obj.get_signed()
-    return True
+    if isinstance(obj, (int, float)):
+        return True
+    return False
 
 
 def max_width(left, right):
@@ -361,6 +365,8 @@ class _Numeric(VeriloggenNode):
         raise TypeError("bit_length() is not supported.")
 
     def get_signed(self):
+        if hasattr(self, 'signed') and getattr(self, 'signed'):
+            return True
         return False
 
     def __iter__(self):
@@ -519,10 +525,10 @@ class Reg(_Variable):
         return self.write(self.initval)
 
     def add(self, r):
-        return Subst(self, self + r)
+        return self.write(self + r)
 
     def sub(self, r):
-        return Subst(self, self - r)
+        return self.write(self - r)
 
     def inc(self):
         return self.add(1)
@@ -547,10 +553,10 @@ class Integer(_Variable):
         return self.write(self.initval)
 
     def add(self, r):
-        return Subst(self, self + r)
+        return self.write(self + r)
 
     def sub(self, r):
-        return Subst(self, self - r)
+        return self.write(self - r)
 
     def inc(self):
         return self.add(1)
@@ -567,10 +573,10 @@ class Real(_Variable):
         return self.write(self.initval)
 
     def add(self, r):
-        return Subst(self, self + r)
+        return self.write(self + r)
 
     def sub(self, r):
-        return Subst(self, self - r)
+        return self.write(self - r)
 
     def inc(self):
         return self.add(1)
@@ -582,10 +588,10 @@ class Real(_Variable):
 class Genvar(_Variable):
 
     def add(self, r):
-        return Subst(self, self + r)
+        return self.write(self + r)
 
     def sub(self, r):
-        return Subst(self, self - r)
+        return self.write(self - r)
 
     def inc(self):
         return self.add(1)
@@ -593,9 +599,8 @@ class Genvar(_Variable):
     def dec(self):
         return self.sub(1)
 
+
 # for undetermined identifier
-
-
 class AnyType(_Variable):
     pass
 
@@ -872,6 +877,11 @@ class _UnaryOperator(_Operator):
 
     def bit_length(self):
         return self.right.bit_length()
+
+
+# for FixedPoint
+class _SkipUnaryOperator(_UnaryOperator):
+    pass
 
 
 # class names must be same the ones in pyverilog.vparser.ast

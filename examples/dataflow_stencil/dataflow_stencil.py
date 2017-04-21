@@ -272,7 +272,7 @@ def mkTest(n=16, size=3, datawidth=32, point=16, coe_test=False):
         wenable = ports['ext_src_ram%d_wenable' % i]
         next_addr = (addr+1) % (n*n)
         fsm.add( addr.inc() )
-        fsm.add( wdata(fixed.FixedConst(90, point).raw) )
+        fsm.add( wdata(fixed.FixedConst(90, point)) )
         fsm.add( wenable(1) )
         fsm.add( wenable(0), cond=AndList(wenable, addr==2**addrwidth-1) )
 
