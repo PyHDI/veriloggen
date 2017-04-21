@@ -8,11 +8,14 @@ import inspect
 import textwrap
 
 import veriloggen.core.vtypes as vtypes
-
+import veriloggen.types.fixed as fixed
 from . import optimizer
 from .scope import ScopeName, ScopeFrameList, ScopeFrame
-from .operator import getVeriloggenOp
+from .operator import getVeriloggenOp, getMethodName
+from . import fixed_intrinsics as fi
 
+
+numerical_types = vtypes.numerical_types
 
 _tmp_count = 0
 
@@ -45,18 +48,6 @@ class FunctionVisitor(ast.NodeVisitor):
         self.functions[node.name] = node
 
 
-class TargetVisitor(ast.NodeVisitor):
-
-    def visit_List(self, node):
-        return [self.visit(elt) for elt in node.elts]
-
-    def visit_Tuple(self, node):
-        return [self.visit(elt) for elt in node.elts]
-
-    def visit_Name(self, node):
-        return node.id
-
-
 class CompileVisitor(ast.NodeVisitor):
 
     def __init__(self, m, name, clk, rst, fsm,
@@ -76,7 +67,19 @@ class CompileVisitor(ast.NodeVisitor):
         self.local_objects = local_objects
         self.datawidth = datawidth
 
-        self.targetvisitor = TargetVisitor()
+        # fixed intrinsics
+        fixed_intrinsics = {
+            'FixedInput': fi._intrinsic_FixedInput,
+            'FixedOutput': fi._intrinsic_FixedOutput,
+            'FixedOutputReg': fi._intrinsic_FixedOutputReg,
+            'FixedReg': fi._intrinsic_FixedReg,
+            'FixedWire': fi._intrinsic_FixedWire,
+            'to_fixed': fi._intrinsic_to_fixed,
+            'fixed_to_int': fi._intrinsic_fixed_to_int,
+            'fixed_to_int_low': fi._intrinsic_fixed_to_int_low,
+            'fixed_to_real': fi._intrinsic_fixed_to_real,
+        }
+        self.intrinsic_functions.update(fixed_intrinsics)
 
         self.scope = ScopeFrameList()
         self.loop_info = OrderedDict()
@@ -104,28 +107,39 @@ class CompileVisitor(ast.NodeVisitor):
 
         right = self.visit(node.value)
         lefts = [self.visit(target) for target in node.targets]
-        raw_lefts = [self.targetvisitor.visit(target)
-                     for target in node.targets]
 
-        for raw_left, left in zip(raw_lefts, lefts):
-            self._assign(raw_left, left, right)
+        for left in lefts:
+            self._assign(left, right)
 
         self.setFsm()
         self.incFsmCount()
 
-    def _assign(self, raw_left, left, right):
-        raw_dsts = raw_left if isinstance(
-            raw_left, (tuple, list)) else (raw_left,)
+    def _variable_type(self, right):
+        if isinstance(right, vtypes._Numeric):
+            return None
+        if isinstance(right, fixed._FixedBase):
+            ret = {'type': 'fixed',
+                   'width': right.bit_length(),
+                   'point': right.point,
+                   'signed': right.signed}
+            return ret
+        raise TypeError('unsupported type')
+
+    def _assign(self, left, right):
         dsts = left if isinstance(left, (tuple, list)) else (left,)
 
         if not isinstance(right, (tuple, list)):
             if len(dsts) > 1:
                 raise ValueError(
-                    "too many values to unpack (expected %d)" % len(right))
-            self.setAssignBind(raw_dsts[0], dsts[0], right)
+                    "too many values to unpack (expected %d)" % 1)
+            _type = self._variable_type(right)
+            var = self.getVariable(dsts[0], store=True, _type=_type)
+            self.setAssignBind(var, right)
 
         elif len(dsts) == 1:
-            self.setAssignBind(raw_dsts[0], dsts[0], right)
+            _type = self._variable_type(right)
+            var = self.getVariable(dsts[0], store=True, _type=_type)
+            self.setAssignBind(var, right)
 
         elif len(dsts) < len(right):
             raise ValueError(
@@ -136,14 +150,15 @@ class CompileVisitor(ast.NodeVisitor):
                              (len(dsts), len(right)))
 
         else:
-            for raw_l, l, r in zip(raw_dsts, dsts, right):
-                self._assign(raw_l, l, r)
+            for d, r in zip(dsts, right):
+                self._assign(d, r)
 
     def visit_AugAssign(self, node):
         if self.skip():
             return
         right = self.visit(node.value)
-        left = self.visit(node.target)
+        left_name = self.visit(node.target)
+        left = self.getVariable(left_name, store=True)
         op = getVeriloggenOp(node.op)
         if op is None:
             raise TypeError("Unsupported BinOp: %s" % str(node.op))
@@ -263,7 +278,8 @@ class CompileVisitor(ast.NodeVisitor):
                      if len(node.iter.args) < 3
                      else self.visit(node.iter.args[2]))
 
-        iter_node = self.visit(node.target)
+        iter_name = self.visit(node.target)
+        iter_node = self.getVariable(iter_name, store=True)
         cond_node = vtypes.LessThan(iter_node, end_node)
         update_node = vtypes.Plus(iter_node, step_node)
 
@@ -326,7 +342,8 @@ class CompileVisitor(ast.NodeVisitor):
         self.setFsmLoop(check_count, body_end_count, iter_node, step_node)
 
     def _for_list(self, node):
-        target = self.visit(node.target)
+        target_name = self.visit(node.target)
+        target = self.getVariable(target_name, store=True)
         iterobj = self.visit(node.iter)
 
         begin_node = vtypes.Int(0)
@@ -341,7 +358,7 @@ class CompileVisitor(ast.NodeVisitor):
 
         patterns = []
         for i, obj in enumerate(iterobj):
-            if not isinstance(obj, vtypes.numerical_types):
+            if not isinstance(obj, numerical_types):
                 raise TypeError("unsupported type for for-statement")
             patterns.append((iter_node == i, obj))
         patterns.append((None, vtypes.IntX()))
@@ -454,7 +471,7 @@ class CompileVisitor(ast.NodeVisitor):
             raise TypeError(
                 'takes %d positional arguments but %d were given' % (1, len(node.args)))
         value = self.visit(node.args[0])
-        if not isinstance(value, vtypes.numerical_types):
+        if not isinstance(value, numerical_types):
             return len(value)
 
         length = getattr(value, 'length', None)
@@ -782,7 +799,10 @@ class CompileVisitor(ast.NodeVisitor):
             return vtypes.Int(0)
 
         store = isinstance(node.ctx, ast.Store)
-        name = self.getVariable(node.id, store)
+        if store:
+            return node.id
+
+        name = self.getVariable(node.id)
         return name
 
     def visit_Print(self, node):
@@ -837,7 +857,7 @@ class CompileVisitor(ast.NodeVisitor):
     def visit_Attribute(self, node):
         value = self.visit(node.value)
         attr = node.attr
-        if isinstance(value, vtypes._Variable) and attr == 'value':
+        if isinstance(value, numerical_types) and attr == 'value':
             return value
         obj = getattr(value, attr)
         return obj
@@ -897,13 +917,34 @@ class CompileVisitor(ast.NodeVisitor):
         val = self.hasBreak() or self.hasContinue() or self.hasReturn()
         return val
 
-    def makeVariable(self, name, width=None, initval=0):
+    def makeVariable(self, name, _type=None):
+        if _type is None:
+            return self.makeVariableReg(name)
+
+        if _type['type'] == 'fixed':
+            width = _type['width']
+            point = _type['point']
+            signed = _type['signed']
+            return self.makeVariableFixed(name, width, point, signed)
+
+        raise TypeError("not supported variable type")
+
+    def makeVariableReg(self, name, width=None, initval=0):
         signame = _tmp_name('_'.join(['', self.name, name]))
         if width is None:
             width = self.datawidth
         return self.m.Reg(signame, width, initval=initval, signed=True)
 
-    def getVariable(self, name, store=False):
+    def makeVariableFixed(self, name, width=None, point=0, signed=True):
+        signame = _tmp_name('_'.join(['', self.name, name]))
+        if width is None:
+            width = self.datawidth
+        return fixed.FixedReg(self.m, signame, width=width, point=point, signed=signed)
+
+    def getVariable(self, name, store=False, _type=None):
+        if isinstance(name, vtypes._Numeric):
+            return name
+
         var = self.scope.searchVariable(name, store)
         if var is None:
             if not store:
@@ -913,14 +954,14 @@ class CompileVisitor(ast.NodeVisitor):
                 if glb is not None:
                     return glb
                 raise NameError("name '%s' is not defined" % name)
-            var = self.makeVariable(name)
+            var = self.makeVariable(name, _type=_type)
             self.scope.addVariable(name, var)
             var = self.scope.searchVariable(name)
         return var
 
-    def getTmpVariable(self):
+    def getTmpVariable(self, _type=None):
         name = _tmp_name('tmp')
-        var = self.getVariable(name, store=True)
+        var = self.getVariable(name, store=True, _type=_type)
         return var
 
     def getGlobalObject(self, name):
@@ -952,42 +993,47 @@ class CompileVisitor(ast.NodeVisitor):
         raise NameError("function '%s' is not defined" % name)
 
     def setArgBind(self, name, value):
-        if not isinstance(value, vtypes.numerical_types):
+        if not isinstance(value, numerical_types):
             self.scope.addVariable(name, value)
             return
 
-        left = self.getVariable(name, store=True)
         right = optimize(value)
+        left = self.getVariable(name, store=True)
+
         self.setBind(left, right)
 
     def setVarargBind(self, name, values):
         lefts = []
         for value in values:
-            if isinstance(value, vtypes.numerical_types):
-                left = self.getTmpVariable()
+            if isinstance(value, numerical_types):
                 right = optimize(value)
+                left = self.getTmpVariable()
+
                 self.setBind(left, right)
                 lefts.append(left)
             else:
                 lefts.append(value)
         self.scope.addVariable(name, lefts)
 
-    def setAssignBind(self, dst, var, value):
-        if not isinstance(value, vtypes.numerical_types):
-            #self.scope.addVariable(dst, value)
-            # return
+    def setAssignBind(self, dst, value):
+        if not isinstance(value, numerical_types):
             raise TypeError("dynamic object substitution is not supported")
 
-        self.setBind(var, value)
+        self.setBind(dst, value)
 
     def setBind(self, var, value, cond=None):
         if var is None:
             cond = None
 
+        if isinstance(var, fixed._FixedVariable) and isinstance(value, fixed._FixedBase):
+            if var.point != value.point:
+                raise ValueError("Fixed point not match: %d <- %d" %
+                                 var.point, value.point)
+
         value = optimize(value)
         cond = optimize(cond) if cond is not None else None
         subst = (vtypes.SingleStatement(value) if var is None else
-                 vtypes.Subst(var, value))
+                 var.write(value))
 
         if var is not None:
             if hasattr(var, '_fsm') and id(var._fsm) != id(self.fsm):

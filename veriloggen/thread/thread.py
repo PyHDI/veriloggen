@@ -304,7 +304,8 @@ class Thread(vtypes.VeriloggenNode):
                     if argname not in self.args_dict:
                         name = compiler._tmp_name(
                             '_'.join(['', self.name, argname]))
-                        v = self.m.Reg(name, self.datawidth, initval=0, signed=True)
+                        v = self.m.Reg(name, self.datawidth,
+                                       initval=0, signed=True)
                         cvisitor.scope.addVariable(argname, v)
                         self.args_dict[argname] = v
                     else:
@@ -378,7 +379,8 @@ class Thread(vtypes.VeriloggenNode):
                 if argname not in self.args_dict:
                     name = compiler._tmp_name(
                         '_'.join(['', self.name, argname]))
-                    v = self.m.Reg(name, self.datawidth, initval=0, signed=True)
+                    v = self.m.Reg(name, self.datawidth,
+                                   initval=0, signed=True)
                     cvisitor.scope.addVariable(argname, v)
                     self.args_dict[argname] = v
                 else:
@@ -414,7 +416,8 @@ class Thread(vtypes.VeriloggenNode):
                 if argname not in self.args_dict:
                     name = compiler._tmp_name(
                         '_'.join(['', self.name, argname]))
-                    v = self.m.Reg(name, self.datawidth, initval=0, signed=True)
+                    v = self.m.Reg(name, self.datawidth,
+                                   initval=0, signed=True)
                     cvisitor.scope.addVariable(argname, v)
                     self.args_dict[argname] = v
                 else:

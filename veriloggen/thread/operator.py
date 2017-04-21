@@ -6,7 +6,6 @@ import ast
 
 import veriloggen.core.vtypes as vtypes
 
-
 operators = {
     ast.Add: vtypes.Plus,
     ast.Sub: vtypes.Minus,
@@ -42,3 +41,16 @@ operators = {
 def getVeriloggenOp(op):
     t = type(op)
     return operators[t]
+
+
+methods = {
+    ast.Add: '__add__',
+    ast.Sub: '__sub__',
+    ast.Mult: '__mul__',
+    ast.Div: '__div__'
+}
+
+
+def getMethodName(op):
+    t = type(op)
+    return methods[t]
