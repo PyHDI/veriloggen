@@ -20,6 +20,17 @@ def FixedOutput(m, name, width=32, point=0,
     return obj
 
 
+def FixedOutputReg(m, name, width=32, point=0,
+                   length=None, signed=True, initval=None):
+    obj = _FixedOutput(width=width, length=length, signed=signed,
+                       name=name, module=m, point=point)
+    m.add_object(obj)
+    obj = _FixedReg(width=width, length=length, signed=signed, initval=initval,
+                    name=name, module=m, point=point)
+    m.add_object(obj)
+    return obj
+
+
 def FixedInout(m, name, width=32, point=0,
                length=None, signed=True):
     obj = _FixedInout(width=width, length=length, signed=signed,
@@ -210,6 +221,9 @@ class _FixedBase(object):
             vtypes.Int(1, width=1), self.point))
         return self & mask
 
+    def to_int(self):
+        return self.int_part
+
     def _adjust(self, value):
         lpoint = self.point
         rvalue = value
@@ -273,6 +287,8 @@ class _FixedBase(object):
 
 class _FixedVariable(_FixedBase, vtypes._Variable):
     ast_name = None
+    __hash__ = vtypes._Variable.__hash__
+    no_write_check = True
 
     def __init__(self, width=1, length=None, signed=True, value=None, initval=None, name=None,
                  module=None, point=0):
@@ -330,6 +346,7 @@ class _FixedWire(_FixedVariable, vtypes.Wire):
 class _FixedBinaryOperator(_FixedBase, vtypes._BinaryOperator):
     ast_name = None
     overwrite_signed = False
+    __hash__ = vtypes._BinaryOperator.__hash__
 
     def init(self, left, right):
         lpoint = left.point if isinstance(left, _FixedBase) else 0
@@ -345,6 +362,7 @@ class _FixedBinaryOperator(_FixedBase, vtypes._BinaryOperator):
 
 class _FixedUnaryOperator(_FixedBase, vtypes._UnaryOperator):
     ast_name = None
+    __hash__ = vtypes._UnaryOperator.__hash__
 
     def __init__(self, right):
         vtypes._UnaryOperator.__init__(self, right)
@@ -510,6 +528,7 @@ class _FixedConstant(_FixedBase):
 
 class _FixedInt(_FixedConstant, vtypes.Int):
     ast_name = 'Int'
+    __hash__ = vtypes.Int.__hash__
 
     def __init__(self, value, width=None, base=None, point=0, signed=True, raw=False):
         value = value if raw else to_fixed(value, point)
