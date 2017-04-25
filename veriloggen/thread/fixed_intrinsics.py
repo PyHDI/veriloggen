@@ -12,8 +12,8 @@ def _intrinsic_FixedOutput(fsm, m, name, width=32, point=0, signed=True):
     return fixed.FixedOutput(m, name, width=width, point=point, signed=signed)
 
 
-def _intrinsic_FixedOutputReg(fsm, m, name, width=32, point=0, signed=True):
-    return fixed.FixedOutputReg(m, name, width=width, point=point, signed=signed)
+def _intrinsic_FixedOutputReg(fsm, m, name, width=32, point=0, signed=True, initval=0):
+    return fixed.FixedOutputReg(m, name, width=width, point=point, signed=signed, initval=0)
 
 
 def _intrinsic_FixedReg(fsm, m, name, width=32, point=0, signed=True):
