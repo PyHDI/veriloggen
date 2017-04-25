@@ -149,6 +149,13 @@ def raw_value(v):
     return v
 
 
+def _write_subst(obj, value, blk=False, ldelay=None, rdelay=None):
+    if ((not hasattr(obj, 'no_write_check') or not obj.no_write_check) and
+            hasattr(value, 'to_int')):
+        value = value.to_int()
+    return Subst(obj, value, blk=blk, ldelay=ldelay, rdelay=rdelay)
+
+
 class VeriloggenNode(object):
     """ Base class of Veriloggen AST object """
 
@@ -420,7 +427,7 @@ class _Variable(_Numeric):
         self.assign_value = None
 
     def write(self, value, blk=False, ldelay=None, rdelay=None):
-        return Subst(self, value, blk=blk, ldelay=ldelay, rdelay=rdelay)
+        return _write_subst(self, value, blk, ldelay, rdelay)
 
     def read(self):
         return self
@@ -1410,7 +1417,7 @@ class Pointer(_SpecialOperator):
         self._type_check_var(var)
 
     def write(self, value, blk=False, ldelay=None, rdelay=None):
-        return Subst(self, value, blk=blk, ldelay=ldelay, rdelay=rdelay)
+        return _write_subst(self, value, blk, ldelay, rdelay)
 
     def read(self):
         return self
@@ -1473,7 +1480,7 @@ class Slice(_SpecialOperator):
         self._type_check_var(var)
 
     def write(self, value, blk=False, ldelay=None, rdelay=None):
-        return Subst(self, value, blk=blk, ldelay=ldelay, rdelay=rdelay)
+        return _write_subst(self, value, blk, ldelay, rdelay)
 
     def read(self):
         return self
@@ -1534,7 +1541,7 @@ class Cat(_SpecialOperator):
         self.subst = []
 
     def write(self, value, blk=False, ldelay=None, rdelay=None):
-        return Subst(self, value, blk=blk, ldelay=ldelay, rdelay=rdelay)
+        return _write_subst(self, value, blk, ldelay, rdelay)
 
     def read(self):
         return self
