@@ -47,10 +47,47 @@ methods = {
     ast.Add: '__add__',
     ast.Sub: '__sub__',
     ast.Mult: '__mul__',
-    ast.Div: '__div__'
+    ast.Div: '__div__',
+    ast.Mod: '__mod__',
+    ast.Pow: '__pow__',
+    ast.LShift: '__lshift__',
+    ast.RShift: '__rshift__',
+    ast.BitOr: '__or__',
+    ast.BitXor: '__xor__',
+    ast.BitAnd: '__and__',
+    ast.FloorDiv: '__truediv__',
+    ast.And: None,
+    ast.Or: None,
+    ast.Invert: '__invert__',
+    ast.Not: None,
+    ast.UAdd: '__pos__',
+    ast.USub: '__neg__',
+    ast.Eq: '__eq__',
+    ast.NotEq: '__ne__',
+    ast.Lt: '__lt__',
+    ast.LtE: ('__lt__', '__eq__'),
+    ast.Gt: '__gt__',
+    ast.GtE: ('__gt__', '__eq__'),
+    ast.Is: None,
+    ast.IsNot: None,
+    ast.In: None,
+    ast.NotIn: None
 }
 
 
 def getMethodName(op):
     t = type(op)
     return methods[t]
+
+
+def applyMethod(var, method, *args):
+    if isinstance(method, (tuple, list)):
+        ret = None
+        for mt in method:
+            if ret is None:
+                ret = getattr(var, mt)(*args)
+            else:
+                ret = vtypes.Lor(ret, getattr(var, mt)(*args))
+        return ret
+
+    return getattr(var, method)(*args)

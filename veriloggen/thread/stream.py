@@ -65,7 +65,6 @@ class Stream(vtypes.VeriloggenNode):
         )
         fsm.If(self.start_cond).goto_next()
 
-
         rdata, rlast, done = obj.read_dataflow(
             port, start_addr, size, cond=fsm, point=point, signed=signed)
         fsm.goto_next()

@@ -11,8 +11,8 @@ import veriloggen.core.vtypes as vtypes
 import veriloggen.types.fixed as fixed
 from . import optimizer
 from .scope import ScopeName, ScopeFrameList, ScopeFrame
-from .operator import getVeriloggenOp, getMethodName
-from . import fixed_intrinsics as fi
+from .operator import getVeriloggenOp, getMethodName, applyMethod
+from . import fixed_intrinsics as fxi
 
 
 numerical_types = vtypes.numerical_types
@@ -67,17 +67,16 @@ class CompileVisitor(ast.NodeVisitor):
         self.local_objects = local_objects
         self.datawidth = datawidth
 
-        # fixed intrinsics
         fixed_intrinsics = {
-            'FixedInput': fi._intrinsic_FixedInput,
-            'FixedOutput': fi._intrinsic_FixedOutput,
-            'FixedOutputReg': fi._intrinsic_FixedOutputReg,
-            'FixedReg': fi._intrinsic_FixedReg,
-            'FixedWire': fi._intrinsic_FixedWire,
-            'to_fixed': fi._intrinsic_to_fixed,
-            'fixed_to_int': fi._intrinsic_fixed_to_int,
-            'fixed_to_int_low': fi._intrinsic_fixed_to_int_low,
-            'fixed_to_real': fi._intrinsic_fixed_to_real,
+            #'FixedInput': fxi._intrinsic_FixedInput,
+            #'FixedOutput': fxi._intrinsic_FixedOutput,
+            #'FixedOutputReg': fxi._intrinsic_FixedOutputReg,
+            'FixedReg': fxi._intrinsic_FixedReg,
+            #'FixedWire': fxi._intrinsic_FixedWire,
+            'to_fixed': fxi._intrinsic_to_fixed,
+            'fixed_to_int': fxi._intrinsic_fixed_to_int,
+            'fixed_to_int_low': fxi._intrinsic_fixed_to_int_low,
+            'fixed_to_real': fxi._intrinsic_fixed_to_real,
         }
         self.intrinsic_functions.update(fixed_intrinsics)
 
@@ -115,14 +114,14 @@ class CompileVisitor(ast.NodeVisitor):
         self.incFsmCount()
 
     def _variable_type(self, right):
-        if isinstance(right, vtypes._Numeric):
-            return None
         if isinstance(right, fixed._FixedBase):
             ret = {'type': 'fixed',
                    'width': right.bit_length(),
                    'point': right.point,
                    'signed': right.signed}
             return ret
+        if isinstance(right, vtypes._Numeric):
+            return None
         raise TypeError('unsupported type')
 
     def _assign(self, left, right):
@@ -159,10 +158,18 @@ class CompileVisitor(ast.NodeVisitor):
         right = self.visit(node.value)
         left_name = self.visit(node.target)
         left = self.getVariable(left_name, store=True)
-        op = getVeriloggenOp(node.op)
-        if op is None:
-            raise TypeError("Unsupported BinOp: %s" % str(node.op))
-        rslt = op(left, right)
+
+        method = getMethodName(node.op)
+        if method is not None:
+            rslt = applyMethod(left, method, right)
+            rslt = optimize(rslt)
+        else:
+            op = getVeriloggenOp(node.op)
+            if op is None:
+                raise TypeError("Unsupported BinOp: %s" % str(node.op))
+            rslt = op(left, right)
+            rslt = optimize(rslt)
+
         self.setBind(left, rslt)
         self.setFsm()
         self.incFsmCount()
@@ -726,31 +733,55 @@ class CompileVisitor(ast.NodeVisitor):
         return vtypes.Str(node.s)
 
     def visit_UnaryOp(self, node):
-        op = getVeriloggenOp(node.op)
         value = self.visit(node.operand)
+
+        method = getMethodName(node.op)
+        if method is not None:
+            rslt = applyMethod(value, method)
+            return optimize(rslt)
+
+        op = getVeriloggenOp(node.op)
         rslt = op(value)
         return optimize(rslt)
 
     def visit_BoolOp(self, node):
+        values = [self.visit(v) for v in node.values]
+
+        method = getMethodName(node.op)
+        if method is not None:
+            rslt = value[0]
+            for v in values[1:]:
+                rslt = applyMethod(rslt, method, v)
+            return optimize(rslt)
+
         op = getVeriloggenOp(node.op)
         if op is None:
             raise TypeError("Unsupported BinOp: %s" % str(node.op))
-        rslt = self.visit(node.values[0])
-        for v in node.values[1:]:
-            rslt = op(rslt, self.visit(v))
+
+        rslt = value[0]
+        for v in values[1:]:
+            rslt = op(rslt, v)
         return optimize(rslt)
 
     def visit_BinOp(self, node):
         left = self.visit(node.left)
         right = self.visit(node.right)
+
+        if isinstance(left, vtypes.Str) or isinstance(right, vtypes.Str):
+            if isinstance(node.op, ast.Add):
+                raise TypeError("Can not generate a corresponding node")
+            return self._string_operation_plus(left, right)
+
+        method = getMethodName(node.op)
+        if method is not None:
+            rslt = applyMethod(left, method, right)
+            return optimize(rslt)
+
         op = getVeriloggenOp(node.op)
         if op is None:
             raise TypeError("Unsupported BinOp: %s" % str(node.op))
-        if isinstance(left, vtypes.Str) or isinstance(right, vtypes.Str):
-            if op == vtypes.Plus:
-                return self._string_operation_plus(left, right)
-            raise TypeError("Can not generate a corresponding node")
         rslt = op(left, right)
+
         return optimize(rslt)
 
     def _string_operation_plus(self, left, right):
@@ -760,16 +791,27 @@ class CompileVisitor(ast.NodeVisitor):
 
     def visit_Compare(self, node):
         left = self.visit(node.left)
+        methods = [getMethodName(op) for op in node.ops]
         ops = [getVeriloggenOp(op) for op in node.ops]
         comparators = [self.visit(comp) for comp in node.comparators]
+
         rslts = []
-        for i, op in enumerate(ops):
+        for i, (method, op) in enumerate(zip(methods, ops)):
             if i == 0:
-                rslts.append(op(left, comparators[i]))
+                if method is not None:
+                    rslts.append(applyMethod(left, method, comparators[i]))
+                else:
+                    rslts.append(op(left, comparators[i]))
             else:
-                rslts.append(op(comparators[i - 1], comparators[i]))
+                if method is not None:
+                    rslts.append(
+                        applyMethod(comparators[i - 1], method, comparators[i]))
+                else:
+                    rslts.append(op(comparators[i - 1], comparators[i]))
+
         if len(rslts) == 1:
             return rslts[0]
+
         ret = None
         for r in rslts:
             if ret:
