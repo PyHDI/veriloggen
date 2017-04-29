@@ -81,13 +81,32 @@ def getMethodName(op):
 
 
 def applyMethod(var, method, *args):
+    if method is None:
+        raise NotImplementedError()
+
     if isinstance(method, (tuple, list)):
         ret = None
         for mt in method:
+            func = getattr(var, mt, None)
+            if func is None:
+                raise NotImplementedError()
+
+            v = func(*args)
+            if isinstance(v, type(NotImplemented)):
+                raise NotImplementedError()
+
             if ret is None:
-                ret = getattr(var, mt)(*args)
+                ret = v
             else:
-                ret = vtypes.Lor(ret, getattr(var, mt)(*args))
+                ret = vtypes.Lor(ret, v)
         return ret
 
-    return getattr(var, method)(*args)
+    func = getattr(var, method, None)
+    if func is None:
+        raise NotImplementedError()
+
+    v = func(*args)
+    if isinstance(v, type(NotImplemented)):
+        raise NotImplementedError()
+
+    return v

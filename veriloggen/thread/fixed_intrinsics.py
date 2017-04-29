@@ -1,27 +1,13 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import veriloggen.core.vtypes as vtypes
 import veriloggen.types.fixed as fixed
 
 
-def _intrinsic_FixedInput(fsm, m, name, width=32, point=0, signed=True):
-    return fixed.FixedInput(m, name, width=width, point=point, signed=signed)
-
-
-def _intrinsic_FixedOutput(fsm, m, name, width=32, point=0, signed=True):
-    return fixed.FixedOutput(m, name, width=width, point=point, signed=signed)
-
-
-def _intrinsic_FixedOutputReg(fsm, m, name, width=32, point=0, signed=True, initval=0):
-    return fixed.FixedOutputReg(m, name, width=width, point=point, signed=signed, initval=0)
-
-
-def _intrinsic_FixedReg(fsm, m, name, width=32, point=0, signed=True):
-    return fixed.FixedReg(m, name, width=width, point=point, signed=signed)
-
-
-def _intrinsic_FixedWire(fsm, m, name, width=32, point=0, signed=True):
-    return fixed.FixedWire(m, name, width=width, point=point, signed=signed)
+def _intrinsic_FixedConst(fsm, value, point=0, signed=True, raw=False):
+    point = vtypes.raw_value(point)
+    return fixed.FixedConst(value, point, signed, raw)
 
 
 def _intrinsic_to_fixed(fsm, value, point, signed=False):

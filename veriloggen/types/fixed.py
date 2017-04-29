@@ -534,3 +534,7 @@ class _FixedInt(_FixedConstant, vtypes.Int):
         value = value if raw else to_fixed(value, point)
         vtypes.Int.__init__(self, value, width, base, signed)
         self.point = point
+
+    @property
+    def raw(self):
+        return vtypes.Int(self.value, self.width, self.base, self.signed)
