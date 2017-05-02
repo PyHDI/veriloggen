@@ -469,6 +469,12 @@ class Module(vtypes.VeriloggenNode):
         return t
 
     #-------------------------------------------------------------------------
+    def EmbeddedCode(self, code):
+        t = vtypes.EmbeddedCode(code)
+        self.items.append(t)
+        return t
+
+    #-------------------------------------------------------------------------
     # User intarface for reset assignments
     #-------------------------------------------------------------------------
     def make_reset(self):

@@ -2063,4 +2063,12 @@ class SingleStatement(VeriloggenNode):
         VeriloggenNode.__init__(self)
         self.statement = statement
 
+
+class EmbeddedCode(VeriloggenNode):
+
+    def __init__(self, code):
+        VeriloggenNode.__init__(self)
+        self.code = code
+
+
 numerical_types = (_Numeric, int, bool, float, str)

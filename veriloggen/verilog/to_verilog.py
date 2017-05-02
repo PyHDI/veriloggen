@@ -520,6 +520,10 @@ class VerilogCommonVisitor(object):
     def visit_Instance(self, node):
         return vast.Identifier(node.instname)
 
+    #-------------------------------------------------------------------------
+    def visit_EmbeddedCode(self, node):
+        return vast.EmbeddedCode(node.code)
+
 
 #-------------------------------------------------------------------------
 class VerilogModuleVisitor(VerilogCommonVisitor):
