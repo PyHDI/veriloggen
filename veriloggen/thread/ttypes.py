@@ -276,6 +276,29 @@ class RAM(ram.SyncRAMManager, _MutexFunction):
 
         self.mutex = None
 
+    def connect_rtl(self, port, addr, wdata=None, wenable=None, rdata=None):
+        """ connect native signals to the internal RAM interface """
+
+        self.interfaces[port].addr.connect(addr)
+        if wdata is not None:
+            self.interfaces[port].wdata.connect(wdata)
+        if wenable is not None:
+            self.interfaces[port].wenable.connect(wenable)
+        if rdata is not None:
+            rdata.connect(self.interfaces[port].rdata)
+
+    def read_rtl(self, addr, port=0, cond=None):
+        """
+        @return data, valid
+        """
+        return ram.SyncRAMManager.read(self, port, addr, cond)
+
+    def write_rtl(self, addr, data, port=0, cond=None):
+        """
+        @return None
+        """
+        return ram.SyncRAMManager.write(self, port, addr, data, cond)
+
     def read(self, fsm, addr, port=0, unified=False):
         """ intrinsic read operation """
 
