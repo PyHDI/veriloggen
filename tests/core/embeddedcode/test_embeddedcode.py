@@ -13,21 +13,21 @@ module blinkled
 );
 
 
-    // Embedded code
-    reg [31:0] count;
-    always @(posedge CLK) begin
-      if(RST) begin
+  // Embedded code
+  reg [31:0] count;
+  always @(posedge CLK) begin
+    if(RST) begin
+      count <= 0;
+      LED <= 0;
+    end else begin
+      if(count == 1024 - 1) begin
         count <= 0;
-        LED <= 0;        
+        LED <= LED + 1;
       end else begin
-        if(count == 1024 - 1) begin
-          count <= 0;
-          LED <= LED + 1;
-        end else begin
-          count <= count + 1;
-        end 
-      end
+        count <= count + 1;
+      end 
     end
+  end
 
 
 endmodule
