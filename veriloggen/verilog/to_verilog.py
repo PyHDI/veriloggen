@@ -524,6 +524,9 @@ class VerilogCommonVisitor(object):
     def visit_EmbeddedCode(self, node):
         return vast.EmbeddedCode(node.code)
 
+    def visit_EmbeddedNumeric(self, node):
+        return vast.EmbeddedCode(node.code)
+
 
 #-------------------------------------------------------------------------
 class VerilogModuleVisitor(VerilogCommonVisitor):

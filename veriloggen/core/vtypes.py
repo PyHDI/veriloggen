@@ -2071,4 +2071,10 @@ class EmbeddedCode(VeriloggenNode):
         self.code = code
 
 
+class EmbeddedNumeric(EmbeddedCode, _Numeric):
+
+    def __init__(self, code):
+        EmbeddedCode.__init__(self, code)
+
+
 numerical_types = (_Numeric, int, bool, float, str)

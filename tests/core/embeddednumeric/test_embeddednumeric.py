@@ -1,30 +1,41 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import embeddedcode
+import embeddednumeric
 
 expected_verilog = """
 
-module blinkled
+module blinkled #
+(
+  parameter WIDTH = 8
+)
 (
   input CLK,
   input RST,
-  output reg [8-1:0] LED
+  output reg [WIDTH-1:0] LED
 );
 
+  reg [32-1:0] count;
 
-  // Embedded code
-  reg [31:0] count;
   always @(posedge CLK) begin
     if(RST) begin
       count <= 0;
-      LED <= 0;
     end else begin
-      if(count == 1024 - 1) begin
+      if(count == 1023) begin
         count <= 0;
-        LED <= LED + 1;
       end else begin
         count <= count + 1;
+      end
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      LED <= 0;
+    end else begin
+      if(count == 1023) begin
+        LED <= LED + 1;
       end 
     end
   end
@@ -37,7 +48,7 @@ endmodule
 
 def test():
     veriloggen.reset()
-    test_module = embeddedcode.mkLed()
+    test_module = embeddednumeric.mkLed()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
