@@ -52,7 +52,8 @@ class CompileVisitor(ast.NodeVisitor):
 
     def __init__(self, m, name, clk, rst, fsm,
                  functions, intrinsic_functions,
-                 intrinsic_methods, local_objects,
+                 intrinsic_methods,
+                 start_frame,
                  datawidth=32):
 
         self.m = m
@@ -64,7 +65,8 @@ class CompileVisitor(ast.NodeVisitor):
         self.functions = functions
         self.intrinsic_functions = intrinsic_functions
         self.intrinsic_methods = intrinsic_methods
-        self.local_objects = local_objects
+
+        self.start_frame = start_frame
         self.datawidth = datawidth
 
         fixed_intrinsics = {
@@ -116,7 +118,7 @@ class CompileVisitor(ast.NodeVisitor):
                    'point': right.point,
                    'signed': right.signed}
             return ret
-        if isinstance(right, vtypes._Numeric):
+        if isinstance(right, numerical_types):
             return None
         raise TypeError('unsupported type')
 
@@ -633,10 +635,10 @@ class CompileVisitor(ast.NodeVisitor):
             from .thread import Thread
             from .pool import ThreadPool
             if isinstance(value, Thread):
-                value.local_objects = self.local_objects
+                value.start_frame = self.start_frame
             if isinstance(value, ThreadPool):
                 for thread in value.threads:
-                    thread.local_objects = self.local_objects
+                    thread.start_frame = self.start_frame
 
             return method(*args, **kwargs)
 
@@ -988,8 +990,9 @@ class CompileVisitor(ast.NodeVisitor):
         var = self.scope.searchVariable(name, store)
         if var is None:
             if not store:
-                if name in self.local_objects:
-                    return self.local_objects[name]
+                local_objects = self.start_frame.f_locals
+                if name in local_objects:
+                    return local_objects[name]
                 glb = self.getGlobalObject(name)
                 if glb is not None:
                     return glb
@@ -1005,8 +1008,7 @@ class CompileVisitor(ast.NodeVisitor):
         return var
 
     def getGlobalObject(self, name):
-        frame = inspect.currentframe()
-        global_objects = OrderedDict()
+        global_objects = self.start_frame.f_globals
         if name in global_objects:
             return global_objects[name]
         return None
@@ -1023,8 +1025,9 @@ class CompileVisitor(ast.NodeVisitor):
             return func
 
         # implicit function definitions
-        if name in self.local_objects:
-            func = self.local_objects[name]
+        local_objects = self.start_frame.f_locals
+        if name in local_objects:
+            func = local_objects[name]
             if inspect.isfunction(func):
                 text = textwrap.dedent(inspect.getsource(func))
                 tree = ast.parse(text).body[0]

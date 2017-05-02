@@ -39,7 +39,7 @@ class Thread(vtypes.VeriloggenNode):
         self.start_state = None
         self.end_state = None
         self.return_value = None
-        self.local_objects = OrderedDict()
+        self.start_frame = None
         self.args_dict = OrderedDict()
         self.vararg_regs = []
         self.vararg_set = False
@@ -55,11 +55,7 @@ class Thread(vtypes.VeriloggenNode):
             raise ValueError('already started')
 
         frame = inspect.currentframe()
-        _locals = frame.f_back.f_locals
-
-        self.local_objects = OrderedDict()
-        for key, value in _locals.items():
-            self.local_objects[key] = value
+        self.start_frame = frame.f_back
 
         self.fsm = FSM(self.m, self.name, self.clk, self.rst)
 
@@ -73,11 +69,7 @@ class Thread(vtypes.VeriloggenNode):
         """ extend a given thread FSM """
 
         frame = inspect.currentframe()
-        _locals = frame.f_back.f_locals
-
-        self.local_objects = OrderedDict()
-        for key, value in _locals.items():
-            self.local_objects[key] = value
+        self.start_frame = frame.f_back
 
         self._synthesize_start_fsm(args, kwargs, fsm)
 
@@ -201,13 +193,10 @@ class Thread(vtypes.VeriloggenNode):
 
         functions = self._get_functions()
 
-        local_objects = {}
-        for key, value in self.local_objects.items():
-            local_objects[key] = value
-
         cvisitor = compiler.CompileVisitor(self.m, self.name, self.clk, self.rst, fsm,
                                            functions, self.intrinsic_functions,
-                                           self.intrinsic_methods, local_objects,
+                                           self.intrinsic_methods,
+                                           self.start_frame,
                                            datawidth=self.datawidth)
 
         text = textwrap.dedent(inspect.getsource(self.targ))
@@ -268,13 +257,10 @@ class Thread(vtypes.VeriloggenNode):
 
         functions = self._get_functions()
 
-        local_objects = {}
-        for key, value in self.local_objects.items():
-            local_objects[key] = value
-
         cvisitor = compiler.CompileVisitor(self.m, self.name, self.clk, self.rst, self.fsm,
                                            functions, self.intrinsic_functions,
-                                           self.intrinsic_methods, local_objects,
+                                           self.intrinsic_methods,
+                                           self.start_frame,
                                            datawidth=self.datawidth)
 
         text = textwrap.dedent(inspect.getsource(self.targ))
