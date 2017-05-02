@@ -5,3 +5,4 @@ from .thread import reset, Thread
 from .pool import ThreadPool
 from .stream import Stream
 from .ttypes import *
+from . import fixed

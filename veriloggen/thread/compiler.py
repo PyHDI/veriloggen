@@ -12,7 +12,6 @@ import veriloggen.types.fixed as fixed
 from . import optimizer
 from .scope import ScopeName, ScopeFrameList, ScopeFrame
 from .operator import getVeriloggenOp, getMethodName, applyMethod
-from . import fixed_intrinsics as fxi
 
 
 numerical_types = vtypes.numerical_types
@@ -68,15 +67,6 @@ class CompileVisitor(ast.NodeVisitor):
 
         self.start_frame = start_frame
         self.datawidth = datawidth
-
-        fixed_intrinsics = {
-            'FixedConst': fxi._intrinsic_FixedConst,
-            'to_fixed': fxi._intrinsic_to_fixed,
-            'fixed_to_int': fxi._intrinsic_fixed_to_int,
-            'fixed_to_int_low': fxi._intrinsic_fixed_to_int_low,
-            'fixed_to_real': fxi._intrinsic_fixed_to_real,
-        }
-        self.intrinsic_functions.update(fixed_intrinsics)
 
         self.scope = ScopeFrameList()
         self.loop_info = OrderedDict()
@@ -615,7 +605,7 @@ class CompileVisitor(ast.NodeVisitor):
         value = self.visit(node.func.value)
         method = getattr(value, node.func.attr)
 
-        if not inspect.ismethod(method):
+        if not inspect.ismethod(method) and not inspect.isfunction(method):
             raise TypeError("'%s' object is not callable" % str(type(method)))
 
         # prepare the argument values

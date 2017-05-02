@@ -27,7 +27,7 @@ def mkLed():
 
     def blink(times):
         led.value = 0
-        next_val = FixedConst(0, 8)
+        next_val = vthread.fixed.FixedConst(0, 8)
         for i in range(times):
             next_val = next_val + 1
             led.value = next_val
