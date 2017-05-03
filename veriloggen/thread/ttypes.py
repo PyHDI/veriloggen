@@ -9,6 +9,7 @@ import veriloggen.types.fifo as fifo
 import veriloggen.types.axi as axi
 import veriloggen.types.uart as uart
 import veriloggen.types.util as util
+import veriloggen.types.fixed as fxd
 from veriloggen.seq.seq import Seq
 from veriloggen.fsm.fsm import FSM
 
@@ -388,6 +389,31 @@ class RAM(ram.SyncRAMManager, _MutexFunction):
             raise TypeError('AXIM interface is required')
 
         return bus.dma_write(fsm, self, local_addr, global_addr, size, port)
+
+
+class FixedRAM(RAM):
+
+    def __init__(self, m, name, clk, rst,
+                 datawidth=32, addrwidth=10, numports=1, point=0):
+
+        RAM.__init__(self, m, name, clk, rst,
+                     datawidth, addrwidth, numports)
+
+        self.point = point
+
+    def read(self, fsm, addr, port=0, unified=False, raw=False):
+        raw_value = RAM.read(self, fsm, addr, port, unified)
+        if raw:
+            return raw_value
+        return fxd.as_fixed(raw_value, self.point)
+
+    def write(self, fsm, addr, wdata, port=0, unified=False, raw=False):
+        if raw:
+            fixed_wdata = wdata
+        else:
+            fixed_wdata = fxd.write_adjust(wdata, self.point)
+
+        return RAM.write(self, fsm, addr, fixed_wdata, port, unified)
 
 
 class FIFO(fifo.Fifo, _MutexFunction):

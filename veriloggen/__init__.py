@@ -30,11 +30,12 @@ from .fsm.fsm import FSM, TmpFSM
 from .pipeline.pipeline import Pipeline
 
 # Extension reset
-from .seq.seq import reset as seq_reset
-from .fsm.fsm import reset as fsm_reset
-from .dataflow.dataflow import reset as dataflow_reset
-from .stream.stream import reset as stream_reset
-from .thread.thread import reset as thread_reset
+from .seq import reset as seq_reset
+from .fsm import reset as fsm_reset
+from .dataflow import reset as dataflow_reset
+from .stream import reset as stream_reset
+from .thread import reset as thread_reset
+from .types import reset as types_reset
 
 
 def reset():
@@ -43,3 +44,4 @@ def reset():
     dataflow_reset()
     stream_reset()
     thread_reset()
+    types_reset()

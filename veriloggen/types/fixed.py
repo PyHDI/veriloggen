@@ -4,6 +4,22 @@ from __future__ import print_function
 import veriloggen.core.vtypes as vtypes
 
 
+_tmp_count = 0
+
+
+def reset():
+    global _tmp_count
+    _tmp_count = 0
+
+
+def _tmp_name(prefix='_tmp_fixed'):
+    global _tmp_count
+    v = _tmp_count
+    _tmp_count += 1
+    ret = '_'.join([prefix, str(v)])
+    return ret
+
+
 def FixedInput(m, name, width=32, point=0,
                length=None, signed=True):
     obj = _FixedInput(width=width, length=length, signed=signed,
@@ -55,9 +71,27 @@ def FixedWire(m, name, width=32, point=0,
     return obj
 
 
+def FixedTmpReg(m, width=32, point=0, length=None, signed=True, initval=None):
+    name = _tmp_name()
+    return FixedReg(m, name, width, point, length, signed, initval)
+
+
+def FixedTmpWire(m, width=32, point=0, length=None, signed=True):
+    name = _tmp_name()
+    return FixedWire(m, name, width, point, length, signed)
+
+
 def FixedConst(value, point=0, signed=True, raw=False):
     obj = _FixedInt(value, point=point, raw=raw, signed=signed)
     return obj
+
+
+def as_fixed(value, point, signed=True):
+    m = value._get_module()
+    width = value.bit_length()
+    v = FixedTmpWire(m, width=width, point=point, signed=signed)
+    v.assign_raw(value)
+    return v
 
 
 def to_fixed(value, point):
@@ -171,6 +205,22 @@ def adjust(left, right, lpoint, rpoint, signed=True):
     return _ldata, _rdata
 
 
+def write_adjust(value, point):
+    lpoint = point
+    rvalue = value
+    rsigned = vtypes.get_signed(value)
+    if not isinstance(value, _FixedBase):
+        rpoint = 0
+    else:
+        rpoint = value.point
+
+    ldiff = vtypes.Mux(lpoint <= rpoint, 0, lpoint - rpoint)
+    rdiff = vtypes.Mux(lpoint >= rpoint, 0, rpoint - lpoint)
+    v = vtypes.Mux(lpoint > rpoint, shift_left(rvalue, ldiff, rsigned),
+                   vtypes.Mux(lpoint < rpoint, shift_right(rvalue, rdiff, rsigned), rvalue))
+    return v
+
+
 def shift_left(value, size, signed=True):
     if isinstance(value, vtypes.Int):
         value = value.value
@@ -225,20 +275,7 @@ class _FixedBase(object):
         return self.int_part
 
     def _adjust(self, value):
-        lpoint = self.point
-        rvalue = value
-        rsigned = vtypes.get_signed(value)
-        if not isinstance(value, _FixedBase):
-            rpoint = 0
-        else:
-            rpoint = value.point
-
-        ldiff = vtypes.Mux(lpoint <= rpoint, 0, lpoint - rpoint)
-        rdiff = vtypes.Mux(lpoint >= rpoint, 0, rpoint - lpoint)
-        v = vtypes.Mux(lpoint > rpoint, shift_left(rvalue, ldiff, rsigned),
-                       vtypes.Mux(lpoint < rpoint, shift_right(rvalue, rdiff, rsigned), rvalue))
-
-        return v
+        return write_adjust(value, self.point)
 
     @property
     def raw(self):
@@ -307,11 +344,17 @@ class _FixedVariable(_FixedBase, vtypes._Variable):
 
     def assign(self, value):
         v = self._adjust(value)
-        return vtypes._Variable.assign(v)
+        return vtypes._Variable.assign(self, v)
+
+    def assign_raw(self, value):
+        if self.module is None:
+            raise ValueError(
+                "Variable '%s' has no parent module information" % self.name)
+        return self.module.Assign(self.write_raw(value))
 
     def connect(self, value):
         v = self._adjust(value)
-        return vtypes._Variable.connect(v)
+        return vtypes._Variable.connect(self, v)
 
 
 class _FixedInput(_FixedVariable, vtypes.Input):
@@ -329,18 +372,9 @@ class _FixedInout(_FixedVariable, vtypes.Inout):
 class _FixedReg(_FixedVariable, vtypes.Reg):
     ast_name = 'Reg'
 
-    def assign(self, value):
-        return vtypes.Reg.assign(self, value)
-
-    def reset(self):
-        return vtypes.Reg.reset(self, value)
-
 
 class _FixedWire(_FixedVariable, vtypes.Wire):
     ast_name = 'Wire'
-
-    def _add_subst(self, s):
-        return vtypes.Wire._add_subst(self, s)
 
 
 class _FixedBinaryOperator(_FixedBase, vtypes._BinaryOperator):
