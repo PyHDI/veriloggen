@@ -498,6 +498,46 @@ class FIFO(fifo.Fifo, _MutexFunction):
         return self.full
 
 
+class FixedFIFO(FIFO):
+
+    def __init__(self, m, name, clk, rst,
+                 datawidth=32, addrwidth=4, point=0):
+
+        FIFO.__init__(self, m, name, clk, rst,
+                      datawidth, addrwidth)
+
+        self.point = point
+
+    def enq(self, fsm, wdata, raw=False):
+        if raw:
+            fixed_wdata = wdata
+        else:
+            fixed_wdata = fxd.write_adjust(wdata, self.point)
+
+        return FIFO.enq(self, fsm, fixed_wdata)
+
+    def deq(self, fsm, raw=False):
+        raw_value = FIFO.deq(self, fsm)
+        if raw:
+            return raw_value
+
+        return fxd.as_fixed(raw_value, self.point)
+
+    def try_enq(self, fsm, wdata, raw=False):
+        if raw:
+            fixed_wdata = wdata
+        else:
+            fixed_wdata = fxd.write_adjust(wdata, self.point)
+
+        return FIFO.try_enq(self, fsm, fixed_wdata)
+
+    def try_deq(self, fsm, raw=False):
+        raw_data, raw_valid = FIFO.try_deq(self, fsm)
+        if raw:
+            return raw_data, raw_valid
+        return fxd.as_fixed(raw_data, self.point), raw_valid
+
+
 class AXIM(axi.AxiMaster, _MutexFunction):
     __intrinsics__ = ('read', 'write', 'dma_read',
                       'dma_write') + _MutexFunction.__intrinsics__
