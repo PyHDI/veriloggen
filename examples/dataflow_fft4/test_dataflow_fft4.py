@@ -775,7 +775,7 @@ module fft4
     .enable(_tmp_enable_13),
     .valid(_tmp_ovalid_13),
     .a(_tmp_data_7),
-    .b(-2'd1),
+    .b(-2'sd1),
     .c(_tmp_odata_13)
   );
 
@@ -802,7 +802,7 @@ module fft4
     .enable(_tmp_enable_14),
     .valid(_tmp_ovalid_14),
     .a(_tmp_data_6),
-    .b(-2'd1),
+    .b(-2'sd1),
     .c(_tmp_odata_14)
   );
 

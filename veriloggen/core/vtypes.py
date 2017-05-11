@@ -672,7 +672,7 @@ class Int(_Constant):
             self.value = value
             self.width = width
             self.base = base
-            self.signed = signed
+            self.signed = signed if value >= 0 else value < 0
         else:
             self.value, self.base = str_to_value(value)
             if base is not None:
@@ -2017,6 +2017,10 @@ def Write(*args):
 
 def Finish():
     return Systask('finish')
+
+
+def Signed(value):
+    return Systask('signed', value)
 
 
 class Event(VeriloggenNode):
