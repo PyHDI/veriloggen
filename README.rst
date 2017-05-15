@@ -108,7 +108,8 @@ examples:
 -  Graphviz: 2.38.0 or later
 -  Pygraphviz: 1.3.1 or later
 
-These softwares are required for graph visualization by lib.dataflow:
+These softwares are required for graph visualization by
+veriloggen.dataflow:
 
 ::
 

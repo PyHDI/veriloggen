@@ -93,7 +93,7 @@ These softwares are required for running the tests in tests and examples:
 - Graphviz: 2.38.0 or later
 - Pygraphviz: 1.3.1 or later
 
-These softwares are required for graph visualization by lib.dataflow:
+These softwares are required for graph visualization by veriloggen.dataflow:
 
     sudo apt-get install graphviz
     pip install pygraphviz
