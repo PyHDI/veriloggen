@@ -417,6 +417,9 @@ class _Numeric(_Node):
     def __pos__(self):
         return Uplus(self)
 
+    def __invert__(self):
+        return Unot(self)
+
     def __getitem__(self, r):
         if isinstance(r, slice):
             size = self.bit_length()
