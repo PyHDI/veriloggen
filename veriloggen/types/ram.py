@@ -205,6 +205,12 @@ class SyncRAMManager (object):
         """ 
         @return None
         """
+        return self.write_data(port, addr, wdata, cond)
+
+    def write_data(self, port, addr, wdata, cond=None):
+        """ 
+        @return None
+        """
 
         if self._write_disabled[port]:
             raise TypeError('Write disabled.')
@@ -269,6 +275,12 @@ class SyncRAMManager (object):
         return done
 
     def read(self, port, addr, cond=None):
+        """ 
+        @return data, valid
+        """
+        return self.read_data(port, addr, cond)
+
+    def read_data(self, port, addr, cond=None):
         """ 
         @return data, valid
         """
