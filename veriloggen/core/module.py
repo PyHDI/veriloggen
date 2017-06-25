@@ -80,8 +80,10 @@ class Module(vtypes.VeriloggenNode):
         self.items.append(t)
         return t
 
-    def TmpWire(self, width=None, length=None, signed=False, value=None):
-        name = '_'.join([self.tmp_prefix, str(self.get_tmp())])
+    def TmpWire(self, width=None, length=None, signed=False, value=None, prefix=None):
+        if prefix is None:
+            prefix = self.tmp_prefix
+        name = '_'.join([prefix, str(self.get_tmp())])
         return self.Wire(name, width, length, signed, value)
 
     def Reg(self, name, width=None, length=None, signed=False, value=None, initval=None):
@@ -92,8 +94,10 @@ class Module(vtypes.VeriloggenNode):
         self.items.append(t)
         return t
 
-    def TmpReg(self, width=None, length=None, signed=False, value=None, initval=None):
-        name = '_'.join([self.tmp_prefix, str(self.get_tmp())])
+    def TmpReg(self, width=None, length=None, signed=False, value=None, initval=None, prefix=None):
+        if prefix is None:
+            prefix = self.tmp_prefix
+        name = '_'.join([prefix, str(self.get_tmp())])
         return self.Reg(name, width, length, signed, value, initval)
 
     def Integer(self, name, width=None, length=None, signed=False, value=None, initval=None):
@@ -104,8 +108,10 @@ class Module(vtypes.VeriloggenNode):
         self.items.append(t)
         return t
 
-    def TmpInteger(self, width=None, length=None, signed=False, value=None, initval=None):
-        name = '_'.join([self.tmp_prefix, str(self.get_tmp())])
+    def TmpInteger(self, width=None, length=None, signed=False, value=None, initval=None, prefix=None):
+        if prefix is None:
+            prefix = self.tmp_prefix
+        name = '_'.join([prefix, str(self.get_tmp())])
         return self.Integer(name, width, length, signed, value, initval)
 
     def Real(self, name, width=None, length=None, signed=False, value=None, initval=None):
@@ -116,8 +122,10 @@ class Module(vtypes.VeriloggenNode):
         self.items.append(t)
         return t
 
-    def TmpReal(self, width=None, length=None, signed=False, value=None, initval=None):
-        name = '_'.join([self.tmp_prefix, str(self.get_tmp())])
+    def TmpReal(self, width=None, length=None, signed=False, value=None, initval=None, prefix=None):
+        if prefix is None:
+            prefix = self.tmp_prefix
+        name = '_'.join([prefix, str(self.get_tmp())])
         return self.Real(name, width, length, signed, value, initval)
 
     def Genvar(self, name, width=None, length=None, signed=False, value=None):
@@ -127,8 +135,10 @@ class Module(vtypes.VeriloggenNode):
         self.items.append(t)
         return t
 
-    def TmpGenvar(self, width=None, length=None, signed=False, value=None):
-        name = '_'.join([self.tmp_prefix, str(self.get_tmp())])
+    def TmpGenvar(self, width=None, length=None, signed=False, value=None, prefix=None):
+        if prefix is None:
+            prefix = self.tmp_prefix
+        name = '_'.join([prefix, str(self.get_tmp())])
         return self.Genvar(name, width, length, signed, value)
 
     def Parameter(self, name, value, width=None, signed=False, length=None):
@@ -145,8 +155,10 @@ class Module(vtypes.VeriloggenNode):
         self.items.append(t)
         return t
 
-    def TmpLocalparam(self, value, width=None, signed=False, length=None):
-        name = '_'.join([self.tmp_prefix, str(self.get_tmp())])
+    def TmpLocalparam(self, value, width=None, signed=False, length=None, prefix=None):
+        if prefix is None:
+            prefix = self.tmp_prefix
+        name = '_'.join([prefix, str(self.get_tmp())])
         return self.Localparam(name, value, width, signed, length)
 
     #-------------------------------------------------------------------------
@@ -221,7 +233,7 @@ class Module(vtypes.VeriloggenNode):
             value = src.value
         return self.Wire(name, width, length, signed, value)
 
-    def TmpWireLike(self, src, width=None, length=None, signed=None, value=None):
+    def TmpWireLike(self, src, width=None, length=None, signed=None, value=None, prefix=None):
         if width is None:
             width = src.width
         if length is None:
@@ -230,7 +242,7 @@ class Module(vtypes.VeriloggenNode):
             signed = src.signed
         if value is None:
             value = src.value
-        return self.TmpWire(width, length, signed, value)
+        return self.TmpWire(width, length, signed, value, prefix)
 
     def RegLike(self, src, name=None, width=None, length=None, signed=None, value=None, initval=None):
         if name is None:
@@ -247,7 +259,7 @@ class Module(vtypes.VeriloggenNode):
             initval = src.initval
         return self.Reg(name, width, length, signed, value, initval)
 
-    def TmpRegLike(self, src, width=None, length=None, signed=None, value=None, initval=None):
+    def TmpRegLike(self, src, width=None, length=None, signed=None, value=None, initval=None, prefix=None):
         if width is None:
             width = src.width
         if length is None:
@@ -258,7 +270,7 @@ class Module(vtypes.VeriloggenNode):
             value = src.value
         if initval is None:
             initval = src.initval
-        return self.TmpReg(width, length, signed, value, initval)
+        return self.TmpReg(width, length, signed, value, initval, prefix)
 
     def IntegerLike(self, src, name=None, width=None, length=None, signed=None, value=None, initval=None):
         if name is None:
@@ -275,7 +287,7 @@ class Module(vtypes.VeriloggenNode):
             initval = src.initval
         return self.Integer(name, width, length, signed, value, initval)
 
-    def TmpIntegerLike(self, src, width=None, length=None, signed=None, value=None, initval=None):
+    def TmpIntegerLike(self, src, width=None, length=None, signed=None, value=None, initval=None, prefix=None):
         if width is None:
             width = src.width
         if length is None:
@@ -286,7 +298,7 @@ class Module(vtypes.VeriloggenNode):
             value = src.value
         if initval is None:
             initval = src.initval
-        return self.TmpInteger(width, length, signed, value, initval)
+        return self.TmpInteger(width, length, signed, value, initval, prefix)
 
     def RealLike(self, src, name=None, width=None, length=None, signed=None, value=None, initval=None):
         if name is None:
@@ -303,7 +315,7 @@ class Module(vtypes.VeriloggenNode):
             initval = src.initval
         return self.Real(name, width, length, signed, value, initval)
 
-    def TmpRealLike(self, src, width=None, length=None, signed=None, value=None, initval=None):
+    def TmpRealLike(self, src, width=None, length=None, signed=None, value=None, initval=None, prefix=None):
         if width is None:
             width = src.width
         if length is None:
@@ -314,7 +326,7 @@ class Module(vtypes.VeriloggenNode):
             value = src.value
         if initval is None:
             initval = src.initval
-        return self.TmpReal(width, length, signed, value, initval)
+        return self.TmpReal(width, length, signed, value, initval, prefix)
 
     def GenvarLike(self, src, name=None, width=None, length=None, signed=None, value=None):
         if name is None:
@@ -330,7 +342,7 @@ class Module(vtypes.VeriloggenNode):
             value = src.value
         return self.Genvar(name, width, length, signed, value)
 
-    def TmpGenvarLike(self, src, width=None, length=None, signed=None, value=None):
+    def TmpGenvarLike(self, src, width=None, length=None, signed=None, value=None, prefix=None):
         if width is None:
             width = src.width
         #if length is None: length = src.length
@@ -340,7 +352,7 @@ class Module(vtypes.VeriloggenNode):
             signed = src.signed
         if value is None:
             value = src.value
-        return self.TmpGenvar(width, length, signed, value)
+        return self.TmpGenvar(width, length, signed, value, prefix)
 
     def ParameterLike(self, src, name=None, value=None, width=None, signed=False, length=None):
         if name is None:
@@ -368,7 +380,7 @@ class Module(vtypes.VeriloggenNode):
             length = src.length
         return self.Localparam(name, value, width, signed, length)
 
-    def TmpLocalparamLike(self, src, value=None, width=None, signed=False, length=None):
+    def TmpLocalparamLike(self, src, value=None, width=None, signed=False, length=None, prefix=None):
         if value is None:
             value = src.value
         if width is None:
@@ -377,7 +389,7 @@ class Module(vtypes.VeriloggenNode):
             signed = src.signed
         if length is None:
             length = src.length
-        return self.TmpLocalparam(value, width, signed, length)
+        return self.TmpLocalparam(value, width, signed, length, prefix)
 
     #-------------------------------------------------------------------------
     # User interface for control statements

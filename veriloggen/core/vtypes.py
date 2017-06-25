@@ -149,6 +149,29 @@ def raw_value(v):
     return v
 
 
+def equals(a, b):
+    if type(a) != type(b):
+        return False
+
+    if isinstance(a, (tuple, list)) and isinstance(b, (tuple, list)):
+        for aa, bb in zip(a, b):
+            v = equals(aa, bb)
+            if not v:
+                return False
+        return True
+
+    if not isinstance(a, _Numeric) and not isinstance(b, _Numeric):
+        return a == b
+
+    if hasattr(a, 'equals'):
+        return a.equals(b)
+
+    if hasattr(b, 'equals'):
+        return b.equals(a)
+
+    raise False
+
+
 def _write_subst(obj, value, blk=False, ldelay=None, rdelay=None):
     if ((not hasattr(obj, 'no_write_check') or not obj.no_write_check) and
             hasattr(value, 'to_int')):
@@ -158,11 +181,23 @@ def _write_subst(obj, value, blk=False, ldelay=None, rdelay=None):
 
 class VeriloggenNode(object):
     """ Base class of Veriloggen AST object """
+    attr_names = ('object_id',)
 
     def __init__(self):
         global global_object_counter
         self.object_id = global_object_counter
         global_object_counter += 1
+
+    def equals(self, other):
+        if type(self) != type(other):
+            return False
+
+        for attr in self.attr_names:
+            v = equals(getattr(self, attr), getattr(other, attr))
+            if not v:
+                return False
+
+        return True
 
     def __hash__(self):
         return hash((id(self), self.object_id))
@@ -639,6 +674,7 @@ class Supply(_ParameterVariable):
 
 
 class _Constant(_Numeric):
+    attr_names = ('value',)
 
     def __init__(self, value, width=None, base=None):
         _Numeric.__init__(self)
@@ -825,6 +861,7 @@ class _Operator(_Numeric):
 
 
 class _BinaryOperator(_Operator):
+    attr_names = ('left', 'right')
 
     def __init__(self, left, right):
         _Operator.__init__(self)
@@ -862,6 +899,7 @@ class _BinaryOperator(_Operator):
 
 
 class _UnaryOperator(_Operator):
+    attr_names = ('right',)
 
     def __init__(self, right):
         _Operator.__init__(self)
@@ -1395,6 +1433,7 @@ Ors = OrList
 
 
 class _SpecialOperator(_Operator):
+    attr_names = ('args', 'kwargs')
 
     def __init__(self, *args, **kwargs):
         _Operator.__init__(self)
@@ -1407,6 +1446,7 @@ class _SpecialOperator(_Operator):
 
 
 class Pointer(_SpecialOperator):
+    attr_names = ('var', 'pos')
 
     def __init__(self, var, pos):
         _SpecialOperator.__init__(self)
@@ -1469,6 +1509,7 @@ class Pointer(_SpecialOperator):
 
 
 class Slice(_SpecialOperator):
+    attr_names = ('var', 'msb', 'lsb')
 
     def __init__(self, var, msb, lsb):
         _SpecialOperator.__init__(self)
@@ -1533,6 +1574,7 @@ class Slice(_SpecialOperator):
 
 
 class Cat(_SpecialOperator):
+    attr_names = ('vars',)
 
     def __init__(self, *vars):
         _SpecialOperator.__init__(self)
@@ -1601,6 +1643,7 @@ class Cat(_SpecialOperator):
 
 
 class Repeat(_SpecialOperator):
+    attr_names = ('var', 'times')
 
     def __init__(self, var, times):
         _SpecialOperator.__init__(self)
