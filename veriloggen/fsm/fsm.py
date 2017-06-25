@@ -144,8 +144,8 @@ class FSM(vtypes.VeriloggenNode):
         return self._add_statement(statement, **kwargs)
 
     #-------------------------------------------------------------------------
-    def Prev(self, var, delay, initval=0):
-        return self.seq.Prev(var, delay, initval)
+    def Prev(self, var, delay, initval=0, cond=None, prefix=None):
+        return self.seq.Prev(var, delay, initval, cond, prefix)
 
     #-------------------------------------------------------------------------
     def If(self, *cond):

@@ -115,13 +115,16 @@ class Seq(vtypes.VeriloggenNode):
         return self._add_statement(statement, **kwargs)
 
     #-------------------------------------------------------------------------
-    def Prev(self, var, delay, initval=0, cond=None):
+    def Prev(self, var, delay, initval=0, cond=None, prefix=None):
         """ returns a value with the specified delay """
         if not isinstance(delay, int):
             raise TypeError('delay must be int, not %s' % str(type(delay)))
 
         if delay <= 0:
             return var
+
+        if prefix is None:
+            prefix = '_'
 
         width = var.bit_length()
 
@@ -131,7 +134,7 @@ class Seq(vtypes.VeriloggenNode):
             w.assign(var)
             var = w
 
-        name_prefix = '_' + var.name
+        name_prefix = prefix + var.name
         key = '_'.join([name_prefix, str(delay)])
         if key in self.prev_dict:
             return self.prev_dict[key]
