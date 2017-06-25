@@ -300,23 +300,7 @@ class RAM(ram.SyncRAMManager, _MutexFunction):
         """
         return ram.SyncRAMManager.write(self, port, addr, data, cond)
 
-    def read(self, fsm, addr, port=0, unified=False):
-        """ intrinsic read operation """
-
-        if unified:
-            return self._unified_read(fsm, addr, port)
-
-        return self._shared_read(fsm, addr, port)
-
-    def write(self, fsm, addr, wdata, port=0, unified=False):
-        """ intrinsic write operation """
-
-        if unified:
-            return self._unified_write(fsm, addr, wdata, port)
-
-        return self._shared_write(fsm, addr, wdata, port)
-
-    def _shared_read(self, fsm, addr, port=0):
+    def read(self, fsm, addr, port=0):
         """ intrinsic read operation using a shared Seq object """
 
         cond = fsm.state == fsm.current
@@ -331,49 +315,15 @@ class RAM(ram.SyncRAMManager, _MutexFunction):
 
         return rdata_reg
 
-    def _shared_write(self, fsm, addr, wdata, port=0):
+    def write(self, fsm, addr, wdata, port=0, cond=None):
         """ intrinsic write operation using a shared Seq object """
 
-        cond = fsm.state == fsm.current
+        if cond is None:
+            cond = fsm.state == fsm.current
+        else:
+            cond = vtypes.Ands(cond, fsm.state == fsm.current)
 
         ram.SyncRAMManager.write(self, port, addr, wdata, cond)
-        fsm.goto_next()
-
-        return 0
-
-    def _unified_read(self, fsm, addr, port=0):
-        """ intrinsic read operation using the given FSM object """
-
-        fsm(
-            self.interfaces[port].addr(addr)
-        )
-
-        for _ in range(2):
-            fsm.goto_next()
-
-        rdata = self.m.TmpReg(self.datawidth, initval=0, signed=True)
-
-        fsm(
-            rdata(self.interfaces[port].rdata)
-        )
-        fsm.goto_next()
-
-        return rdata
-
-    def _unified_write(self, fsm, addr, wdata, port=0):
-        """ intrinsic write operation using the given FSM object """
-
-        if self._write_disabled[port]:
-            raise TypeError('Write disabled.')
-
-        fsm(
-            self.interfaces[port].addr(addr),
-            self.interfaces[port].wdata(wdata),
-            self.interfaces[port].wenable(1)
-        )
-        fsm.Delay(1)(
-            self.interfaces[port].wenable(0)
-        )
         fsm.goto_next()
 
         return 0
@@ -401,19 +351,19 @@ class FixedRAM(RAM):
 
         self.point = point
 
-    def read(self, fsm, addr, port=0, unified=False, raw=False):
-        raw_value = RAM.read(self, fsm, addr, port, unified)
+    def read(self, fsm, addr, port=0, raw=False):
+        raw_value = RAM.read(self, fsm, addr, port)
         if raw:
             return raw_value
         return fxd.as_fixed(raw_value, self.point)
 
-    def write(self, fsm, addr, wdata, port=0, unified=False, raw=False):
+    def write(self, fsm, addr, wdata, port=0, cond=None, raw=False):
         if raw:
             fixed_wdata = wdata
         else:
             fixed_wdata = fxd.write_adjust(wdata, self.point)
 
-        return RAM.write(self, fsm, addr, fixed_wdata, port, unified)
+        return RAM.write(self, fsm, addr, fixed_wdata, port, cond)
 
 
 class FIFO(fifo.Fifo, _MutexFunction):
