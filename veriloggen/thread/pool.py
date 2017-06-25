@@ -16,48 +16,43 @@ def to_thread_pool(*threads):
     if len(threads) == 1 and isinstance(threads[0], (tuple, list)):
         threads = threads[0]
 
-    m = threads[0].m
-    clk = threads[0].clk
-    rst = threads[0].rst
-    name = threads[0].name
-    return ThreadPool(m, name, clk, rst, threads=threads)
+    return ThreadPool(threads=threads)
 
 
 class ThreadPool(vtypes.VeriloggenNode):
     __intrinsics__ = ('run', 'join', 'done', 'reset', 'ret')
 
-    def __init__(self, m, name, clk, rst,
+    def __init__(self, m=None, name=None, clk=None, rst=None,
                  targ=None, numthreads=None, datawidth=32,
                  threads=None):
 
-        self.m = m
-        self.name = name
-        self.clk = clk
-        self.rst = rst
-        self.datawidth = datawidth
+        if threads is not None:
+            if not isinstance(threads, (tuple, list)):
+                threads = [threads]
 
-        if targ is not None and numthreads is not None and threads is not None:
-            raise ValueError(
-                'only targ and numthreads, or threads must be specified.')
-
-        if targ is not None and numthreads is not None:
-            self.targ = targ
-            self.numthreads = numthreads
-            self.threads = [Thread(m, '_'.join([name, str(i)]), clk, rst, targ,
-                                   datawidth=datawidth, tid=i)
-                            for i in range(numthreads)]
-        elif threads is not None:
-            self.targ = None
+            clk = threads[0].clk
+            rst = threads[0].rst
+            name = threads[0].name
+            self.m = threads[0].m
             self.numthreads = len(threads)
             self.threads = list(threads)
             for i, thread in enumerate(self.threads):
                 thread.tid = i
+
+        elif (m is not None and name is not None and
+              clk is not None and rst is not None and
+              targ is not None and numthreads is not None):
+
+            self.m = m
+            self.numthreads = numthreads
+            self.threads = [Thread(m, '_'.join([name, str(i)]), clk, rst, targ,
+                                   datawidth=datawidth, tid=i)
+                            for i in range(numthreads)]
         else:
-            raise ValueError(
-                'targ and numthreads, or threads must be specified.')
+            raise ValueError('threads or other options must be specified.')
 
         self.start = self.m.Reg(
-            '_'.join(['', self.name, 'start']), self.numthreads, initval=0)
+            '_'.join(['', name, 'start']), self.numthreads, initval=0)
 
     def start(self, tid, *args, **kwargs):
         return self.threads[tid].start(*args, **kwargs)
