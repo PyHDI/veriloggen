@@ -4,14 +4,14 @@ from __future__ import print_function
 import math
 
 import veriloggen.core.vtypes as vtypes
-import veriloggen.types.ram as ram
-import veriloggen.types.fifo as fifo
-import veriloggen.types.axi as axi
+from veriloggen.types.ram import SyncRAMManager
+from veriloggen.types.fifo import Fifo
+from veriloggen.types.axi import AxiMaster, AxiSlave
 import veriloggen.types.uart as uart
 import veriloggen.types.util as util
 import veriloggen.types.fixed as fxd
 from veriloggen.seq.seq import Seq
-from veriloggen.fsm.fsm import FSM
+from veriloggen.fsm.fsm import FSM, TmpFSM
 
 from . import compiler
 
@@ -265,16 +265,15 @@ class Shared(_MutexFunction):
             self.mutex = Mutex(m, '_'.join(['', name, 'mutex']), clk, rst)
 
 
-class RAM(ram.SyncRAMManager, _MutexFunction):
+class RAM(SyncRAMManager, _MutexFunction):
     __intrinsics__ = ('read', 'write', 'dma_read',
                       'dma_write') + _MutexFunction.__intrinsics__
 
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=10, numports=1):
 
-        ram.SyncRAMManager.__init__(
-            self, m, name, clk, rst, datawidth, addrwidth, numports)
-
+        SyncRAMManager.__init__(self, m, name, clk, rst,
+                                datawidth, addrwidth, numports)
         self.mutex = None
 
     def connect_rtl(self, port, addr, wdata=None, wenable=None, rdata=None):
@@ -292,20 +291,20 @@ class RAM(ram.SyncRAMManager, _MutexFunction):
         """
         @return data, valid
         """
-        return ram.SyncRAMManager.read(self, port, addr, cond)
+        return SyncRAMManager.read(self, port, addr, cond)
 
     def write_rtl(self, addr, data, port=0, cond=None):
         """
         @return None
         """
-        return ram.SyncRAMManager.write(self, port, addr, data, cond)
+        return SyncRAMManager.write(self, port, addr, data, cond)
 
     def read(self, fsm, addr, port=0):
         """ intrinsic read operation using a shared Seq object """
 
         cond = fsm.state == fsm.current
 
-        rdata, rvalid = ram.SyncRAMManager.read(self, port, addr, cond)
+        rdata, rvalid = SyncRAMManager.read(self, port, addr, cond)
         rdata_reg = self.m.TmpReg(self.datawidth, initval=0, signed=True)
 
         fsm.If(rvalid)(
@@ -323,7 +322,7 @@ class RAM(ram.SyncRAMManager, _MutexFunction):
         else:
             cond = vtypes.Ands(cond, fsm.state == fsm.current)
 
-        ram.SyncRAMManager.write(self, port, addr, wdata, cond)
+        SyncRAMManager.write(self, port, addr, wdata, cond)
         fsm.goto_next()
 
         return 0
@@ -366,19 +365,142 @@ class FixedRAM(RAM):
         return RAM.write(self, fsm, addr, fixed_wdata, port, cond)
 
 
-class FIFO(fifo.Fifo, _MutexFunction):
+class MultibankRAM(object):
+    __intrinsics__ = ('read', 'write', 'dma_read',
+                      'dma_write') + _MutexFunction.__intrinsics__
+
+    def __init__(self, m=None, name=None, clk=None, rst=None,
+                 datawidth=32, addrwidth=10, numports=1,
+                 numbanks=2, rams=None):
+
+        if rams is not None:
+            if not isinstance(rams, (tuple, list)):
+                rams = [rams]
+
+            self.m = rams[0].m
+            self.name = rams[0].name
+            self.clk = rams[0].clk
+            self.rst = rams[0].rst
+            self.datawidth = rams[0].datawidth
+            self.addrwidth = rams[0].addrwidth
+            self.numports = rams[0].numports
+            self.numbanks = len(rams)
+            self.rams = rams
+
+        elif (m is not None and name is not None and
+              clk is not None and rst is not None):
+
+            self.m = m
+            self.name = name
+            self.clk = clk
+            self.rst = rst
+            self.datawidth = datawidth
+            self.addrwidth = addrwidth
+            self.numports = numports
+            self.numbanks = numbanks
+            self.rams = [RAM(m, '_'.join([name, '%d' % i]),
+                             clk, rst, datawidth, addrwidth, numports)
+                         for i in range(numbanks)]
+
+        for i, ram in enumerate(self.rams):
+            ram.bid = i
+
+        self.mutex = None
+
+    def __getitem__(self, index):
+        return self.rams[index]
+
+    def read(self, fsm, bank, addr, port=0):
+        """ intrinsic read operation for multiple RAMs """
+
+        cond = fsm.state == fsm.current
+
+        rdata_list = []
+        rvalid_list = []
+        for ram in self.rams:
+            rdata, rvalid = SyncRAMManager.read(ram, port, addr, cond)
+            rdata_list.append(rdata)
+            rvalid_list.append(rvalid)
+
+        rdata_reg = self.m.TmpReg(self.datawidth, initval=0, signed=True)
+
+        for i, ram in enumerate(self.rams):
+            fsm.If(rvalid_list[i], bank == i)(
+                rdata_reg(rdata_list[i])
+            )
+
+        fsm.If(rvalid_list[0]).goto_next()
+
+        return rdata_reg
+
+    def write(self, fsm, bank, addr, wdata, port=0, cond=None):
+        if cond is None:
+            cond = fsm.state == fsm.current
+        else:
+            cond = vtypes.Ands(cond, fsm.state == fsm.current)
+
+        for i, ram in enumerate(self.rams):
+            bank_cond = vtypes.Ands(cond, bank == i)
+            SyncRAMManager.write(ram, port, addr, wdata, bank_cond)
+
+        fsm.goto_next()
+
+        return 0
+
+    def dma_read(self, fsm, bank, bus, local_addr, global_addr, size, port=0):
+        check = fsm.current
+        fsm.set_index(check + 1)
+
+        starts = []
+        ends = []
+        for i, ram in enumerate(self.rams):
+            starts.append(fsm.current)
+            ram.dma_read(fsm, bus, local_addr, global_addr, size, port)
+            ends.append(fsm.current)
+            fsm.set_index(fsm.current + 1)
+
+        fin = fsm.current
+
+        for i, (s, e) in enumerate(zip(starts, ends)):
+            fsm.goto_from(check, s, cond=bank == i)
+            fsm.goto_from(e, fin)
+
+        return 0
+
+    def dma_write(self, fsm, bank, bus, local_addr, global_addr, size, port=0):
+        check = fsm.current
+        fsm.set_index(check + 1)
+
+        starts = []
+        ends = []
+        for i, ram in enumerate(self.rams):
+            starts.append(fsm.current)
+            ram.dma_write(fsm, bus, local_addr, global_addr, size, port)
+            ends.append(fsm.current)
+            fsm.set_index(fsm.current + 1)
+
+        fin = fsm.current
+
+        for i, (s, e) in enumerate(zip(starts, ends)):
+            fsm.goto_from(check, s, cond=bank == i)
+            fsm.goto_from(e, fin)
+
+        return 0
+
+
+class FIFO(Fifo, _MutexFunction):
     __intrinsics__ = ('enq', 'deq', 'try_enq', 'try_deq',
                       'is_empty', 'is_almost_empty',
                       'is_full', 'is_almost_full') + _MutexFunction.__intrinsics__
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=4):
-        fifo.Fifo.__init__(self, m, name, clk, rst, datawidth, addrwidth)
+        Fifo.__init__(self, m, name, clk, rst, datawidth, addrwidth)
         self.mutex = None
 
     def enq(self, fsm, wdata):
         cond = fsm.state == fsm.current
 
-        ack, ready = fifo.Fifo.enq(self, wdata, cond=cond)
+        ack, ready = Fifo.enq(self, wdata, cond=cond)
         fsm.If(ready).goto_next()
 
         return 0
@@ -386,7 +508,7 @@ class FIFO(fifo.Fifo, _MutexFunction):
     def deq(self, fsm):
         cond = fsm.state == fsm.current
 
-        rdata, rvalid = fifo.Fifo.deq(self, cond=cond)
+        rdata, rvalid = Fifo.deq(self, cond=cond)
         fsm.If(vtypes.Not(self.empty)).goto_next()
         fsm.goto_next()
 
@@ -402,7 +524,7 @@ class FIFO(fifo.Fifo, _MutexFunction):
     def try_enq(self, fsm, wdata):
         cond = fsm.state == fsm.current
 
-        ack, ready = fifo.Fifo.enq(self, wdata, cond=cond)
+        ack, ready = Fifo.enq(self, wdata, cond=cond)
         fsm.goto_next()
 
         ack_reg = self.m.TmpReg(initval=0)
@@ -416,7 +538,7 @@ class FIFO(fifo.Fifo, _MutexFunction):
     def try_deq(self, fsm):
         cond = fsm.state == fsm.current
 
-        rdata, rvalid = fifo.Fifo.deq(self, cond=cond)
+        rdata, rvalid = Fifo.deq(self, cond=cond)
         fsm.goto_next()
         fsm.goto_next()
 
@@ -488,7 +610,7 @@ class FixedFIFO(FIFO):
         return fxd.as_fixed(raw_data, self.point), raw_valid
 
 
-class AXIM(axi.AxiMaster, _MutexFunction):
+class AXIM(AxiMaster, _MutexFunction):
     __intrinsics__ = ('read', 'write', 'dma_read',
                       'dma_write') + _MutexFunction.__intrinsics__
 
@@ -496,8 +618,8 @@ class AXIM(axi.AxiMaster, _MutexFunction):
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
                  lite=False, noio=False):
-        axi.AxiMaster.__init__(self, m, name, clk, rst, datawidth, addrwidth,
-                               lite=lite, noio=noio)
+        AxiMaster.__init__(self, m, name, clk, rst, datawidth, addrwidth,
+                           lite=lite, noio=noio)
         self.mutex = None
 
     def read(self, fsm, global_addr):
@@ -567,8 +689,8 @@ class AXIM(axi.AxiMaster, _MutexFunction):
 
         cond = fsm.state == fsm.current
 
-        done = axi.AxiMaster.dma_read(self, ram, req_global_addr, req_local_addr, req_size,
-                                      cond=cond, ram_port=port)
+        done = AxiMaster.dma_read(self, ram, req_global_addr, req_local_addr, req_size,
+                                  cond=cond, ram_port=port)
 
         fsm.If(done)(
             req_local_addr.add(req_size),
@@ -611,8 +733,8 @@ class AXIM(axi.AxiMaster, _MutexFunction):
 
         cond = fsm.state == fsm.current
 
-        done = axi.AxiMaster.dma_write(self, ram, req_global_addr, req_local_addr, req_size,
-                                       cond=cond, ram_port=port)
+        done = AxiMaster.dma_write(self, ram, req_global_addr, req_local_addr, req_size,
+                                   cond=cond, ram_port=port)
 
         fsm.If(done)(
             req_local_addr.add(req_size),
@@ -625,13 +747,13 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         return 0
 
 
-class AXIS(axi.AxiSlave, _MutexFunction):
+class AXIS(AxiSlave, _MutexFunction):
     __intrinsics__ = _MutexFunction.__intrinsics__
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
                  lite=False, noio=False):
-        axi.AxiSlave.__init__(self, m, name, clk, rst, datawidth, addrwidth,
-                              lite=lite, noio=noio)
+        AxiSlave.__init__(self, m, name, clk, rst, datawidth, addrwidth,
+                          lite=lite, noio=noio)
         self.mutex = None
 
 
