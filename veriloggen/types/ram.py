@@ -161,7 +161,7 @@ class AsyncRAM(_RAM):
 
 
 #-------------------------------------------------------------------------
-class SyncRAMManager (object):
+class SyncRAMManager(object):
 
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=10, numports=1,
@@ -241,7 +241,6 @@ class SyncRAMManager (object):
 
         ext_cond = make_condition(cond)
         data_cond = make_condition(counter > 0, vtypes.Not(last))
-        all_cond = make_condition(data_cond, ext_cond)
         raw_data, raw_valid = data.read(cond=data_cond)
 
         when_cond = make_condition(when, ready=data_cond)
@@ -323,7 +322,6 @@ class SyncRAMManager (object):
         ext_cond = make_condition(cond)
         data_cond = make_condition(data_ack, last_ack)
         prev_data_cond = self.seq.Prev(data_cond, 1)
-        all_cond = make_condition(data_cond, ext_cond)
 
         data = self.m.TmpWireLike(self.interfaces[port].rdata)
 
@@ -376,7 +374,7 @@ class SyncRAMManager (object):
         df = self.df if self.df is not None else dataflow
 
         df_data = df.Variable(data, data_valid, data_ready,
-                              point=point, signed=signed)
+                              width=self.datawidth, point=point, signed=signed)
         df_last = df.Variable(last, last_valid, last_ready, width=1)
         done = last
 

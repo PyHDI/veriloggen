@@ -566,6 +566,7 @@ module test;
           end 
           __memory_fsm_cond_211_2_1 <= 1;
           if(memory_rvalid && !memory_rready) begin
+            memory_rvalid <= memory_rvalid;
             memory_rdata <= memory_rdata;
             memory_rlast <= memory_rlast;
           end 
