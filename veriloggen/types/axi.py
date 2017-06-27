@@ -652,10 +652,24 @@ class AxiMaster(object):
         ack, counter = self.read_request(bus_addr, length, cond=fsm)
         fsm.If(ack).goto_next()
 
-        data, last, done = self.read_dataflow()
+        wdata = self.m.TmpReg(ram.datawidth, initval=0)
+        wvalid = self.m.TmpReg(initval=0)
+        df_data = self.df.Variable(wdata, wvalid, width=ram.datawidth)
 
-        done = ram.write_dataflow(ram_port, ram_addr, data, length, cond=fsm)
+        done = ram.write_dataflow(
+            ram_port, ram_addr, df_data, length, cond=fsm)
         fsm.goto_next()
+
+        data, valid, last = self.read_data()
+
+        fsm(
+            wvalid(0)
+        )
+        fsm.If(valid)(
+            wdata(data),
+            wvalid(1),
+        )
+
         fsm.If(done).goto_init()
 
         return done
@@ -692,16 +706,15 @@ class AxiMaster(object):
         pack_count = self.m.TmpReg(pack_size, initval=0)
         data, valid, last = self.read_data()
 
-        seq = TmpSeq(self.m, self.clk, self.rst)
-        seq(
+        fsm(
             wvalid(0)
         )
-        seq.If(valid)(
+        fsm.If(valid)(
             wdata(vtypes.Cat(data, wdata[self.datawidth:ram.datawidth])),
             wvalid(0),
             pack_count.inc()
         )
-        seq.If(valid, pack_count == pack_size - 1)(
+        fsm.If(valid, pack_count == pack_size - 1)(
             wdata(vtypes.Cat(data, wdata[self.datawidth:ram.datawidth])),
             wvalid(1),
             pack_count(0)

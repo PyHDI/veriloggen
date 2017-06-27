@@ -46,7 +46,7 @@ def Variable(data=None, valid=None, ready=None, width=32, point=0, signed=False)
 def Parameter(name, value, width=32, point=0, signed=False):
     """ parameter with an immediate value """
     if not isinstance(name, str):
-        raise TypeError("'name' must be str, not '%s'" % str(tyep(name)))
+        raise TypeError("'name' must be str, not '%s'" % str(type(name)))
     return _ParameterVariable(name, width, point, signed, value=value)
 
 
@@ -1641,7 +1641,7 @@ class Slice(_SpecialOperator):
         self.op = vtypes.Slice
 
     def _set_attributes(self):
-        self.width = self.msb - self.lsb + 1
+        self.width = self.msb.eval() - self.lsb.eval() + 1
         self.point = 0
         self.signed = False
 

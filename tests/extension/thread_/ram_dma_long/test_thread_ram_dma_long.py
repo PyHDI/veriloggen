@@ -537,9 +537,8 @@ module blinkled
   localparam _tmp_fsm_2_init = 0;
   reg [9-1:0] _tmp_42;
   reg _myaxi_cond_4_1;
-  wire _tmp_43;
-  wire _tmp_44;
-  assign _tmp_44 = 1;
+  reg [32-1:0] _tmp_43;
+  reg _tmp_44;
   reg [33-1:0] _tmp_45;
   reg _tmp_46;
   wire [32-1:0] _tmp_data_47;
@@ -561,10 +560,8 @@ module blinkled
   localparam _tmp_fsm_3_init = 0;
   reg [9-1:0] _tmp_54;
   reg _myaxi_cond_5_1;
-  wire _tmp_55;
-  wire _tmp_56;
-  assign _tmp_56 = 1;
-  assign myaxi_rready = _tmp_43 && _tmp_44 || _tmp_55 && _tmp_56;
+  reg [32-1:0] _tmp_55;
+  reg _tmp_56;
   reg [33-1:0] _tmp_57;
   reg _tmp_58;
   wire [32-1:0] _tmp_data_59;
@@ -572,6 +569,7 @@ module blinkled
   wire _tmp_ready_59;
   assign _tmp_ready_59 = (_tmp_57 > 0) && !_tmp_58;
   reg _myram_cond_5_1;
+  assign myaxi_rready = 1 || 1;
   reg _tmp_60;
   reg _myram_cond_6_1;
   reg _myram_cond_7_1;
@@ -714,12 +712,10 @@ module blinkled
     end
   end
 
-  assign _tmp_data_47 = myaxi_rdata;
-  assign _tmp_valid_47 = myaxi_rvalid;
-  assign _tmp_43 = 1 && _tmp_ready_47;
-  assign _tmp_data_59 = myaxi_rdata;
-  assign _tmp_valid_59 = myaxi_rvalid;
-  assign _tmp_55 = 1 && _tmp_ready_59;
+  assign _tmp_data_47 = _tmp_43;
+  assign _tmp_valid_47 = _tmp_44;
+  assign _tmp_data_59 = _tmp_55;
+  assign _tmp_valid_59 = _tmp_56;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -1383,6 +1379,8 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       _tmp_fsm_2 <= _tmp_fsm_2_init;
+      _tmp_44 <= 0;
+      _tmp_43 <= 0;
     end else begin
       case(_tmp_fsm_2)
         _tmp_fsm_2_init: begin
@@ -1399,6 +1397,11 @@ module blinkled
           _tmp_fsm_2 <= _tmp_fsm_2_3;
         end
         _tmp_fsm_2_3: begin
+          _tmp_44 <= 0;
+          if(myaxi_rready && myaxi_rvalid) begin
+            _tmp_43 <= myaxi_rdata;
+            _tmp_44 <= 1;
+          end 
           if(_tmp_46) begin
             _tmp_fsm_2 <= _tmp_fsm_2_init;
           end 
@@ -1414,6 +1417,8 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       _tmp_fsm_3 <= _tmp_fsm_3_init;
+      _tmp_56 <= 0;
+      _tmp_55 <= 0;
     end else begin
       case(_tmp_fsm_3)
         _tmp_fsm_3_init: begin
@@ -1430,6 +1435,11 @@ module blinkled
           _tmp_fsm_3 <= _tmp_fsm_3_3;
         end
         _tmp_fsm_3_3: begin
+          _tmp_56 <= 0;
+          if(myaxi_rready && myaxi_rvalid) begin
+            _tmp_55 <= myaxi_rdata;
+            _tmp_56 <= 1;
+          end 
           if(_tmp_58) begin
             _tmp_fsm_3 <= _tmp_fsm_3_init;
           end 

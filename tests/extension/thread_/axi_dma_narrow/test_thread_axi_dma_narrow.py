@@ -1096,12 +1096,12 @@ module blinkled
           th_blink <= th_blink_15;
         end
         th_blink_15: begin
-          if(_tmp_4 <= 256) begin
+          if(_tmp_4 <= 128) begin
             _tmp_3 <= _tmp_4;
             _tmp_4 <= 0;
           end else begin
-            _tmp_3 <= 256;
-            _tmp_4 <= _tmp_4 - 256;
+            _tmp_3 <= 128;
+            _tmp_4 <= _tmp_4 - 128;
           end
           th_blink <= th_blink_16;
         end
@@ -1158,12 +1158,12 @@ module blinkled
           th_blink <= th_blink_26;
         end
         th_blink_26: begin
-          if(_tmp_28 <= 256) begin
+          if(_tmp_28 <= 128) begin
             _tmp_27 <= _tmp_28;
             _tmp_28 <= 0;
           end else begin
-            _tmp_27 <= 256;
-            _tmp_28 <= _tmp_28 - 256;
+            _tmp_27 <= 128;
+            _tmp_28 <= _tmp_28 - 128;
           end
           th_blink <= th_blink_27;
         end
@@ -1198,12 +1198,12 @@ module blinkled
           th_blink <= th_blink_32;
         end
         th_blink_32: begin
-          if(_tmp_52 <= 256) begin
+          if(_tmp_52 <= 128) begin
             _tmp_51 <= _tmp_52;
             _tmp_52 <= 0;
           end else begin
-            _tmp_51 <= 256;
-            _tmp_52 <= _tmp_52 - 256;
+            _tmp_51 <= 128;
+            _tmp_52 <= _tmp_52 - 128;
           end
           th_blink <= th_blink_33;
         end
@@ -1280,12 +1280,12 @@ module blinkled
           th_blink <= th_blink_46;
         end
         th_blink_46: begin
-          if(_tmp_65 <= 256) begin
+          if(_tmp_65 <= 128) begin
             _tmp_64 <= _tmp_65;
             _tmp_65 <= 0;
           end else begin
-            _tmp_64 <= 256;
-            _tmp_65 <= _tmp_65 - 256;
+            _tmp_64 <= 128;
+            _tmp_65 <= _tmp_65 - 128;
           end
           th_blink <= th_blink_47;
         end
@@ -1495,6 +1495,9 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       _tmp_fsm_2 <= _tmp_fsm_2_init;
+      _tmp_55 <= 0;
+      _tmp_54 <= 0;
+      _tmp_59 <= 0;
     end else begin
       case(_tmp_fsm_2)
         _tmp_fsm_2_init: begin
@@ -1511,32 +1514,22 @@ module blinkled
           _tmp_fsm_2 <= _tmp_fsm_2_3;
         end
         _tmp_fsm_2_3: begin
+          _tmp_55 <= 0;
+          if(myaxi_rready && myaxi_rvalid) begin
+            _tmp_54 <= { myaxi_rdata, _tmp_54[63:32] };
+            _tmp_55 <= 0;
+            _tmp_59 <= _tmp_59 + 1;
+          end 
+          if(myaxi_rready && myaxi_rvalid && (_tmp_59 == 1)) begin
+            _tmp_54 <= { myaxi_rdata, _tmp_54[63:32] };
+            _tmp_55 <= 1;
+            _tmp_59 <= 0;
+          end 
           if(_tmp_57) begin
             _tmp_fsm_2 <= _tmp_fsm_2_init;
           end 
         end
       endcase
-    end
-  end
-
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      _tmp_55 <= 0;
-      _tmp_54 <= 0;
-      _tmp_59 <= 0;
-    end else begin
-      _tmp_55 <= 0;
-      if(myaxi_rready && myaxi_rvalid) begin
-        _tmp_54 <= { myaxi_rdata, _tmp_54[63:32] };
-        _tmp_55 <= 0;
-        _tmp_59 <= _tmp_59 + 1;
-      end 
-      if(myaxi_rready && myaxi_rvalid && (_tmp_59 == 1)) begin
-        _tmp_54 <= { myaxi_rdata, _tmp_54[63:32] };
-        _tmp_55 <= 1;
-        _tmp_59 <= 0;
-      end 
     end
   end
 
@@ -1547,6 +1540,9 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       _tmp_fsm_3 <= _tmp_fsm_3_init;
+      _tmp_68 <= 0;
+      _tmp_67 <= 0;
+      _tmp_72 <= 0;
     end else begin
       case(_tmp_fsm_3)
         _tmp_fsm_3_init: begin
@@ -1563,32 +1559,22 @@ module blinkled
           _tmp_fsm_3 <= _tmp_fsm_3_3;
         end
         _tmp_fsm_3_3: begin
+          _tmp_68 <= 0;
+          if(myaxi_rready && myaxi_rvalid) begin
+            _tmp_67 <= { myaxi_rdata, _tmp_67[63:32] };
+            _tmp_68 <= 0;
+            _tmp_72 <= _tmp_72 + 1;
+          end 
+          if(myaxi_rready && myaxi_rvalid && (_tmp_72 == 1)) begin
+            _tmp_67 <= { myaxi_rdata, _tmp_67[63:32] };
+            _tmp_68 <= 1;
+            _tmp_72 <= 0;
+          end 
           if(_tmp_70) begin
             _tmp_fsm_3 <= _tmp_fsm_3_init;
           end 
         end
       endcase
-    end
-  end
-
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      _tmp_68 <= 0;
-      _tmp_67 <= 0;
-      _tmp_72 <= 0;
-    end else begin
-      _tmp_68 <= 0;
-      if(myaxi_rready && myaxi_rvalid) begin
-        _tmp_67 <= { myaxi_rdata, _tmp_67[63:32] };
-        _tmp_68 <= 0;
-        _tmp_72 <= _tmp_72 + 1;
-      end 
-      if(myaxi_rready && myaxi_rvalid && (_tmp_72 == 1)) begin
-        _tmp_67 <= { myaxi_rdata, _tmp_67[63:32] };
-        _tmp_68 <= 1;
-        _tmp_72 <= 0;
-      end 
     end
   end
 

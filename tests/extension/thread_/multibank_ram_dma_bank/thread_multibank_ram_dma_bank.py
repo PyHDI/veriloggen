@@ -12,7 +12,7 @@ import veriloggen.thread as vthread
 import veriloggen.types.axi as axi
 
 
-def mkLed(memory_datawidth=128):
+def mkLed():
     m = Module('blinkled')
     clk = m.Input('CLK')
     rst = m.Input('RST')
@@ -20,14 +20,11 @@ def mkLed(memory_datawidth=128):
     datawidth = 32
     addrwidth = 10
     numbanks = 4
-    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, memory_datawidth)
+    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
     myram = vthread.MultibankRAM(m, 'myram', clk, rst, datawidth, addrwidth,
                                  numbanks=numbanks)
 
     all_ok = m.TmpReg(initval=0)
-
-    array_len = 16
-    array_size = (array_len + array_len) * 4 * numbanks
 
     def blink(size):
         all_ok.value = True
@@ -35,72 +32,69 @@ def mkLed(memory_datawidth=128):
         for i in range(4):
             print('# iter %d start' % i)
             offset = i * 1024 * 16
-            body(size, offset)
+            for bank in range(numbanks):
+                body(bank, size, offset)
             print('# iter %d end' % i)
 
         if all_ok:
             print('ALL OK')
 
-    def body(size, offset):
+    def body(bank, size, offset):
         # write
-        for bank in range(numbanks):
-            for i in range(size):
-                wdata = i + 100 + bank
-                myram.write(bank, i, wdata)
+        for i in range(size):
+            wdata = i + 100
+            myram.write(bank, i, wdata)
 
         laddr = 0
         gaddr = offset
-        myram.dma_write(myaxi, laddr, gaddr, size)
+        myram.dma_write_bank(bank, myaxi, laddr, gaddr, size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # write
-        for bank in range(numbanks):
-            for i in range(size):
-                wdata = i + 1000 + bank
-                myram.write(bank, i, wdata)
+        for i in range(size):
+            wdata = i + 1000
+            myram.write(bank, i, wdata)
 
         laddr = 0
-        gaddr = array_size + offset
-        myram.dma_write(myaxi, laddr, gaddr, size)
+        gaddr = (size + size) * 4 + offset
+        myram.dma_write_bank(bank, myaxi, laddr, gaddr, size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # read
         laddr = 0
         gaddr = offset
-        myram.dma_read(myaxi, laddr, gaddr, size)
+        myram.dma_read_bank(bank, myaxi, laddr, gaddr, size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
-        for bank in range(numbanks):
-            for i in range(size):
-                rdata = myram.read(bank, i)
-                if rdata != i + 100 + bank:
-                    print('rdata[%d] = %d' % (i, rdata))
-                    all_ok.value = False
+        for i in range(size):
+            rdata = myram.read(bank, i)
+            if rdata != i + 100:
+                print('rdata[%d] = %d' % (i, rdata))
+                all_ok.value = False
 
         # read
         laddr = 0
-        gaddr = array_size + offset
-        myram.dma_read(myaxi, laddr, gaddr, size)
+        gaddr = (size + size) * 4 + offset
+        myram.dma_read_bank(bank, myaxi, laddr, gaddr, size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
-        for bank in range(numbanks):
-            for i in range(size):
-                rdata = myram.read(bank, i)
-                if rdata != i + 1000 + bank:
-                    print('rdata[%d] = %d' % (i, rdata))
-                    all_ok.value = False
+        for i in range(size):
+            rdata = myram.read(bank, i)
+            if rdata != i + 1000:
+                print('rdata[%d] = %d' % (i, rdata))
+                all_ok.value = False
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
-    fsm = th.start(array_len)
+    fsm = th.start(16)
 
     return m
 
 
-def mkTest(memory_datawidth=128):
+def mkTest():
     m = Module('test')
 
     # target instance
-    led = mkLed(memory_datawidth)
+    led = mkLed()
 
     # copy paras and ports
     params = m.copy_params(led)
@@ -109,7 +103,7 @@ def mkTest(memory_datawidth=128):
     clk = ports['CLK']
     rst = ports['RST']
 
-    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memory_datawidth)
+    memory = axi.AxiMemoryModel(m, 'memory', clk, rst)
     memory.connect(ports, 'myaxi')
 
     uut = m.Instance(led, 'uut',

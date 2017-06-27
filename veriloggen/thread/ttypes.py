@@ -12,6 +12,7 @@ import veriloggen.types.util as util
 import veriloggen.types.fixed as fxd
 from veriloggen.seq.seq import Seq
 from veriloggen.fsm.fsm import FSM, TmpFSM
+import veriloggen.dataflow.dtypes as dtypes
 
 from . import compiler
 
@@ -366,8 +367,8 @@ class FixedRAM(RAM):
 
 
 class MultibankRAM(object):
-    __intrinsics__ = ('read', 'write', 'dma_read',
-                      'dma_write') + _MutexFunction.__intrinsics__
+    __intrinsics__ = ('read', 'write', 'dma_read_bank', 'dma_write_bank',
+                      'dma_read', 'dma_write') + _MutexFunction.__intrinsics__
 
     def __init__(self, m=None, name=None, clk=None, rst=None,
                  datawidth=32, addrwidth=10, numports=1,
@@ -381,7 +382,8 @@ class MultibankRAM(object):
             self.name = rams[0].name
             self.clk = rams[0].clk
             self.rst = rams[0].rst
-            self.datawidth = rams[0].datawidth
+            self.orig_datawidth = rams[0].datawidth
+            self.datawidth = rams[0].datawidth * len(rams)
             self.addrwidth = rams[0].addrwidth
             self.numports = rams[0].numports
             self.numbanks = len(rams)
@@ -394,7 +396,8 @@ class MultibankRAM(object):
             self.name = name
             self.clk = clk
             self.rst = rst
-            self.datawidth = datawidth
+            self.orig_datawidth = datawidth
+            self.datawidth = datawidth * numbanks
             self.addrwidth = addrwidth
             self.numports = numports
             self.numbanks = numbanks
@@ -422,7 +425,7 @@ class MultibankRAM(object):
             rdata_list.append(rdata)
             rvalid_list.append(rvalid)
 
-        rdata_reg = self.m.TmpReg(self.datawidth, initval=0, signed=True)
+        rdata_reg = self.m.TmpReg(self.orig_datawidth, initval=0, signed=True)
 
         for i, ram in enumerate(self.rams):
             fsm.If(rvalid_list[i], bank == i)(
@@ -447,7 +450,7 @@ class MultibankRAM(object):
 
         return 0
 
-    def dma_read(self, fsm, bank, bus, local_addr, global_addr, size, port=0):
+    def dma_read_bank(self, fsm, bank, bus, local_addr, global_addr, size, port=0):
         check = fsm.current
         fsm.set_index(check + 1)
 
@@ -467,7 +470,7 @@ class MultibankRAM(object):
 
         return 0
 
-    def dma_write(self, fsm, bank, bus, local_addr, global_addr, size, port=0):
+    def dma_write_bank(self, fsm, bank, bus, local_addr, global_addr, size, port=0):
         check = fsm.current
         fsm.set_index(check + 1)
 
@@ -486,6 +489,58 @@ class MultibankRAM(object):
             fsm.goto_from(e, fin)
 
         return 0
+
+    def dma_read(self, fsm, bus, local_addr, global_addr, size, port=0):
+        if not isinstance(bus, AXIM):
+            raise TypeError('AXIM interface is required')
+
+        return bus.dma_read(fsm, self, local_addr, global_addr, size, port)
+
+    def dma_write(self, fsm, bus, local_addr, global_addr, size, port=0):
+        if not isinstance(bus, AXIM):
+            raise TypeError('AXIM interface is required')
+
+        return bus.dma_write(fsm, self, local_addr, global_addr, size, port)
+
+    def read_dataflow(self, port, addr, length=1, cond=None, point=0, signed=False):
+        """ 
+        @return data, last, done
+        """
+
+        data_list = []
+        last_list = []
+        done_list = []
+        for ram in self.rams:
+            data, last, done = ram.read_dataflow(
+                port, addr, length, cond, point, signed)
+            data_list.insert(0, data)
+            last_list.insert(0, last)
+            done_list.insert(0, done)
+
+        merged_data = dtypes.Cat(*data_list)
+        merged_last = last_list[-1]
+        merged_done = done_list[-1]
+
+        return merged_data, merged_last, merged_done
+
+    def write_dataflow(self, port, addr, data, length=1, cond=None, when=None):
+        """ 
+        @return done
+        """
+
+        done_list = []
+        lsb = 0
+        msb = 0
+        for ram in self.rams:
+            msb = msb + ram.datawidth
+            bank_data = dtypes.Slice(data, msb, lsb)
+            done = ram.write_dataflow(
+                port, addr, bank_data, length, cond, when)
+            done_list.insert(0, done)
+            lsb = msb
+
+        merged_done = done_list[-1]
+        return merged_done
 
 
 class FIFO(Fifo, _MutexFunction):
@@ -658,17 +713,33 @@ class AXIM(AxiMaster, _MutexFunction):
 
         fsm.If(ack).goto_next()
 
+    def get_max_burstlen(self, ram):
+        if vtypes.equals(self.datawidth, ram.datawidth):
+            return self.burstlen
+
+        comp = self.datawidth < ram.datawidth
+        if not isinstance(comp, bool):
+            raise ValueError('datawidth must be int, not (%s, %s)' %
+                             (type(self.datawidth, ram.datawidth)))
+
+        if comp:
+            return int(self.burstlen // int(ram.datawidth // self.datawidth))
+
+        return self.burstlen
+
     def dma_read(self, fsm, ram, local_addr, global_addr, size, port=0):
         if self.lite:
             raise TypeError('Lite-interface does not support DMA')
 
-        if not isinstance(ram, RAM):
+        if not isinstance(ram, (RAM, MultibankRAM)):
             raise TypeError('RAM is required')
 
         req_local_addr = self.m.TmpReg(ram.addrwidth, initval=0)
         req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
         req_size = self.m.TmpReg(self.addrwidth, initval=0)
         rest_size = self.m.TmpReg(self.addrwidth, initval=0)
+
+        max_burstlen = self.get_max_burstlen(ram)
 
         fsm(
             req_local_addr(local_addr),
@@ -678,12 +749,12 @@ class AXIM(AxiMaster, _MutexFunction):
         fsm.goto_next()
 
         check_state = fsm.current
-        fsm.If(rest_size <= self.burstlen)(
+        fsm.If(rest_size <= max_burstlen)(
             req_size(rest_size),
             rest_size(0)
         ).Else(
-            req_size(self.burstlen),
-            rest_size(rest_size - self.burstlen)
+            req_size(max_burstlen),
+            rest_size(rest_size - max_burstlen)
         )
         fsm.goto_next()
 
@@ -706,13 +777,15 @@ class AXIM(AxiMaster, _MutexFunction):
         if self.lite:
             raise TypeError('Lite-interface does not support DMA')
 
-        if not isinstance(ram, RAM):
+        if not isinstance(ram, (RAM, MultibankRAM)):
             raise TypeError('RAM is required')
 
         req_local_addr = self.m.TmpReg(ram.addrwidth, initval=0)
         req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
         req_size = self.m.TmpReg(self.addrwidth, initval=0)
         rest_size = self.m.TmpReg(self.addrwidth, initval=0)
+
+        max_burstlen = self.get_max_burstlen(ram)
 
         fsm(
             req_local_addr(local_addr),
@@ -722,12 +795,12 @@ class AXIM(AxiMaster, _MutexFunction):
         fsm.goto_next()
 
         check_state = fsm.current
-        fsm.If(rest_size <= self.burstlen)(
+        fsm.If(rest_size <= max_burstlen)(
             req_size(rest_size),
             rest_size(0)
         ).Else(
-            req_size(self.burstlen),
-            rest_size(rest_size - self.burstlen)
+            req_size(max_burstlen),
+            rest_size(rest_size - max_burstlen)
         )
         fsm.goto_next()
 

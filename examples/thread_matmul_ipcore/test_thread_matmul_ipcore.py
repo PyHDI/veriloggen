@@ -1181,9 +1181,8 @@ module blinkled
   localparam _tmp_fsm_0_init = 0;
   reg [9-1:0] _tmp_13;
   reg _maxi_cond_0_1;
-  wire _tmp_14;
-  wire _tmp_15;
-  assign _tmp_15 = 1;
+  reg [32-1:0] _tmp_14;
+  reg _tmp_15;
   reg [33-1:0] _tmp_16;
   reg _tmp_17;
   wire [32-1:0] _tmp_data_18;
@@ -1201,10 +1200,8 @@ module blinkled
   localparam _tmp_fsm_1_init = 0;
   reg [9-1:0] _tmp_23;
   reg _maxi_cond_1_1;
-  wire _tmp_24;
-  wire _tmp_25;
-  assign _tmp_25 = 1;
-  assign maxi_rready = _tmp_14 && _tmp_15 || _tmp_24 && _tmp_25;
+  reg [32-1:0] _tmp_24;
+  reg _tmp_25;
   reg [33-1:0] _tmp_26;
   reg _tmp_27;
   wire [32-1:0] _tmp_data_28;
@@ -1212,6 +1209,7 @@ module blinkled
   wire _tmp_ready_28;
   assign _tmp_ready_28 = (_tmp_26 > 0) && !_tmp_27;
   reg _ram_b_cond_0_1;
+  assign maxi_rready = 1 || 1;
   reg signed [32-1:0] _th_matmul_sum_13;
   reg signed [32-1:0] _th_matmul_k_14;
   reg _tmp_29;
@@ -1509,12 +1507,10 @@ module blinkled
     end
   end
 
-  assign _tmp_data_18 = maxi_rdata;
-  assign _tmp_valid_18 = maxi_rvalid;
-  assign _tmp_14 = 1 && _tmp_ready_18;
-  assign _tmp_data_28 = maxi_rdata;
-  assign _tmp_valid_28 = maxi_rvalid;
-  assign _tmp_24 = 1 && _tmp_ready_28;
+  assign _tmp_data_18 = _tmp_14;
+  assign _tmp_valid_18 = _tmp_15;
+  assign _tmp_data_28 = _tmp_24;
+  assign _tmp_valid_28 = _tmp_25;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -2044,6 +2040,8 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       _tmp_fsm_0 <= _tmp_fsm_0_init;
+      _tmp_15 <= 0;
+      _tmp_14 <= 0;
     end else begin
       case(_tmp_fsm_0)
         _tmp_fsm_0_init: begin
@@ -2060,6 +2058,11 @@ module blinkled
           _tmp_fsm_0 <= _tmp_fsm_0_3;
         end
         _tmp_fsm_0_3: begin
+          _tmp_15 <= 0;
+          if(maxi_rready && maxi_rvalid) begin
+            _tmp_14 <= maxi_rdata;
+            _tmp_15 <= 1;
+          end 
           if(_tmp_17) begin
             _tmp_fsm_0 <= _tmp_fsm_0_init;
           end 
@@ -2075,6 +2078,8 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       _tmp_fsm_1 <= _tmp_fsm_1_init;
+      _tmp_25 <= 0;
+      _tmp_24 <= 0;
     end else begin
       case(_tmp_fsm_1)
         _tmp_fsm_1_init: begin
@@ -2091,6 +2096,11 @@ module blinkled
           _tmp_fsm_1 <= _tmp_fsm_1_3;
         end
         _tmp_fsm_1_3: begin
+          _tmp_25 <= 0;
+          if(maxi_rready && maxi_rvalid) begin
+            _tmp_24 <= maxi_rdata;
+            _tmp_25 <= 1;
+          end 
           if(_tmp_27) begin
             _tmp_fsm_1 <= _tmp_fsm_1_init;
           end 

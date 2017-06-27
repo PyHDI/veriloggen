@@ -467,9 +467,8 @@ module main
   localparam _tmp_fsm_0_init = 0;
   reg [9-1:0] _tmp_4;
   reg _master_cond_0_1;
-  wire _tmp_5;
-  wire _tmp_6;
-  assign _tmp_6 = 1;
+  reg [32-1:0] _tmp_5;
+  reg _tmp_6;
   reg [8-1:0] _tmp_7;
   reg _tmp_8;
   wire [32-1:0] _tmp_data_9;
@@ -481,10 +480,8 @@ module main
   localparam _tmp_fsm_1_init = 0;
   reg [9-1:0] _tmp_10;
   reg _master_cond_1_1;
-  wire _tmp_11;
-  wire _tmp_12;
-  assign _tmp_12 = 1;
-  assign master_rready = _tmp_5 && _tmp_6 || _tmp_11 && _tmp_12;
+  reg [32-1:0] _tmp_11;
+  reg _tmp_12;
   reg [8-1:0] _tmp_13;
   reg _tmp_14;
   wire [32-1:0] _tmp_data_15;
@@ -492,6 +489,7 @@ module main
   wire _tmp_ready_15;
   assign _tmp_ready_15 = (_tmp_13 > 0) && !_tmp_14;
   reg _ram_b_cond_0_1;
+  assign master_rready = 1 || 1;
   reg _tmp_16;
   reg _tmp_17;
   wire _tmp_18;
@@ -720,12 +718,10 @@ module main
     end
   end
 
-  assign _tmp_data_9 = master_rdata;
-  assign _tmp_valid_9 = master_rvalid;
-  assign _tmp_5 = 1 && _tmp_ready_9;
-  assign _tmp_data_15 = master_rdata;
-  assign _tmp_valid_15 = master_rvalid;
-  assign _tmp_11 = 1 && _tmp_ready_15;
+  assign _tmp_data_9 = _tmp_5;
+  assign _tmp_valid_9 = _tmp_6;
+  assign _tmp_data_15 = _tmp_11;
+  assign _tmp_valid_15 = _tmp_12;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -1043,6 +1039,8 @@ module main
   always @(posedge CLK) begin
     if(RST) begin
       _tmp_fsm_0 <= _tmp_fsm_0_init;
+      _tmp_6 <= 0;
+      _tmp_5 <= 0;
     end else begin
       case(_tmp_fsm_0)
         _tmp_fsm_0_init: begin
@@ -1059,6 +1057,11 @@ module main
           _tmp_fsm_0 <= _tmp_fsm_0_3;
         end
         _tmp_fsm_0_3: begin
+          _tmp_6 <= 0;
+          if(master_rready && master_rvalid) begin
+            _tmp_5 <= master_rdata;
+            _tmp_6 <= 1;
+          end 
           if(_tmp_8) begin
             _tmp_fsm_0 <= _tmp_fsm_0_init;
           end 
@@ -1074,6 +1077,8 @@ module main
   always @(posedge CLK) begin
     if(RST) begin
       _tmp_fsm_1 <= _tmp_fsm_1_init;
+      _tmp_12 <= 0;
+      _tmp_11 <= 0;
     end else begin
       case(_tmp_fsm_1)
         _tmp_fsm_1_init: begin
@@ -1090,6 +1095,11 @@ module main
           _tmp_fsm_1 <= _tmp_fsm_1_3;
         end
         _tmp_fsm_1_3: begin
+          _tmp_12 <= 0;
+          if(master_rready && master_rvalid) begin
+            _tmp_11 <= master_rdata;
+            _tmp_12 <= 1;
+          end 
           if(_tmp_14) begin
             _tmp_fsm_1 <= _tmp_fsm_1_init;
           end 
