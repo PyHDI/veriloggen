@@ -173,6 +173,7 @@ class SyncRAMManager(object):
         self.rst = rst
         self.datawidth = datawidth
         self.addrwidth = addrwidth
+        self.numports = numports
 
         self.interfaces = [RAMInterface(m, name + '_%d' % i, datawidth, addrwidth)
                            for i in range(numports)]
