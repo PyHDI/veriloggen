@@ -731,6 +731,9 @@ class AXIM(AxiMaster, _MutexFunction):
         if self.lite:
             raise TypeError('Lite-interface does not support DMA')
 
+        if isinstance(ram, (tuple, list)):
+            ram = MultibankRAM(rams=ram)
+
         if not isinstance(ram, (RAM, MultibankRAM)):
             raise TypeError('RAM is required')
 
@@ -776,6 +779,9 @@ class AXIM(AxiMaster, _MutexFunction):
     def dma_write(self, fsm, ram, local_addr, global_addr, size, port=0):
         if self.lite:
             raise TypeError('Lite-interface does not support DMA')
+
+        if isinstance(ram, (tuple, list)):
+            ram = MultibankRAM(rams=ram)
 
         if not isinstance(ram, (RAM, MultibankRAM)):
             raise TypeError('RAM is required')
