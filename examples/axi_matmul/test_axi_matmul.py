@@ -492,7 +492,7 @@ module main
   wire _tmp_ready_15;
   assign _tmp_ready_15 = (_tmp_13 > 0) && !_tmp_14;
   reg _ram_a_cond_0_1;
-  assign master_rready = 1 || 1;
+  assign master_rready = (_tmp_fsm_0 == 3) || (_tmp_fsm_1 == 3);
   reg _tmp_16;
   reg _tmp_17;
   wire _tmp_18;

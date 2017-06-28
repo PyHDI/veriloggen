@@ -925,7 +925,7 @@ module blinkled
   wire _tmp_ready_237;
   assign _tmp_ready_237 = (_tmp_235 > 0) && !_tmp_236;
   reg _myram_3_cond_5_1;
-  assign myaxi_rready = 1 || 1 || 1 || 1 || 1 || 1 || 1 || 1;
+  assign myaxi_rready = (_tmp_fsm_8 == 3) || (_tmp_fsm_9 == 3) || (_tmp_fsm_10 == 3) || (_tmp_fsm_11 == 3) || (_tmp_fsm_12 == 3) || (_tmp_fsm_13 == 3) || (_tmp_fsm_14 == 3) || (_tmp_fsm_15 == 3);
   reg _tmp_238;
   reg _myram_0_cond_6_1;
   reg _myram_0_cond_7_1;

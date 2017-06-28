@@ -29,13 +29,13 @@ def mkLed(memory_datawidth=128):
 
     all_ok = m.TmpReg(initval=0)
 
-    array_len = 16
+    array_len = 256 + 128
     array_size = (array_len + array_len) * 4 * 4
 
     def blink(size):
         all_ok.value = True
 
-        for i in range(4):
+        for i in range(2):
             print('# iter %d start' % i)
             offset = i * 1024 * 16
             body(size, offset)
@@ -45,6 +45,16 @@ def mkLed(memory_datawidth=128):
             print('ALL OK')
 
     def body(size, offset):
+        # narrow dma test
+        myaxi.dma_read(myram0, 0, 0, size)
+        myaxi.dma_read(myram1, 0, 0, size)
+        myaxi.dma_read(myram2, 0, 0, size)
+        myaxi.dma_read(myram3, 0, 0, size)
+        myaxi.dma_write(myram0, 0, 0, size)
+        myaxi.dma_write(myram1, 0, 0, size)
+        myaxi.dma_write(myram2, 0, 0, size)
+        myaxi.dma_write(myram3, 0, 0, size)
+
         # write
         for i in range(size):
             wdata = i + 100
@@ -184,7 +194,7 @@ def mkTest(memory_datawidth=128):
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
     init.add(
-        Delay(100000),
+        Delay(100000 * 10),
         Systask('finish'),
     )
 

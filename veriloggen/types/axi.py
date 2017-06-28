@@ -6,6 +6,7 @@ import veriloggen.core.vtypes as vtypes
 from veriloggen.seq.seq import Seq, TmpSeq
 from veriloggen.fsm.fsm import FSM, TmpFSM
 from veriloggen.dataflow.dataflow import DataflowManager
+import veriloggen.dataflow as _df
 from veriloggen.dataflow.dtypes import make_condition
 from . import util
 
@@ -620,7 +621,7 @@ class AxiMaster(object):
             counter.dec()
         )
 
-        df = self.df if self.df is not None else dataflow
+        df = self.df if self.df is not None else _df
 
         df_data = df.Variable(data, valid, data_ready,
                               point=point, signed=signed)
@@ -660,7 +661,8 @@ class AxiMaster(object):
             ram_port, ram_addr, df_data, length, cond=fsm)
         fsm.goto_next()
 
-        data, valid, last = self.read_data()
+        data, valid, last = self.read_data(cond=fsm)
+        #data, valid, last = self.read_data()
 
         fsm(
             wvalid(0)
@@ -704,7 +706,8 @@ class AxiMaster(object):
         fsm.goto_next()
 
         pack_count = self.m.TmpReg(pack_size, initval=0)
-        data, valid, last = self.read_data()
+        data, valid, last = self.read_data(cond=fsm)
+        #data, valid, last = self.read_data()
 
         fsm(
             wvalid(0)

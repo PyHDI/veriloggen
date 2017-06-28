@@ -1209,7 +1209,7 @@ module blinkled
   wire _tmp_ready_28;
   assign _tmp_ready_28 = (_tmp_26 > 0) && !_tmp_27;
   reg _ram_b_cond_0_1;
-  assign maxi_rready = 1 || 1;
+  assign maxi_rready = (_tmp_fsm_0 == 3) || (_tmp_fsm_1 == 3);
   reg signed [32-1:0] _th_matmul_sum_13;
   reg signed [32-1:0] _th_matmul_k_14;
   reg _tmp_29;

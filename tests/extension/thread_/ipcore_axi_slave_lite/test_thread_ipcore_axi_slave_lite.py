@@ -997,7 +997,7 @@ module blinkled
   wire _tmp_ready_69;
   assign _tmp_ready_69 = (_tmp_67 > 0) && !_tmp_68;
   reg _myram_cond_5_1;
-  assign myaxi_rready = 1 || 1;
+  assign myaxi_rready = (_tmp_fsm_2 == 3) || (_tmp_fsm_3 == 3);
   reg _tmp_70;
   reg _myram_cond_6_1;
   reg _myram_cond_7_1;

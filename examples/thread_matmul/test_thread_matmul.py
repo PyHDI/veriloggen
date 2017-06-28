@@ -609,7 +609,7 @@ module blinkled
   wire _tmp_ready_52;
   assign _tmp_ready_52 = (_tmp_50 > 0) && !_tmp_51;
   reg _ram_c_cond_1_1;
-  assign myaxi_rready = 1 || 1 || 1;
+  assign myaxi_rready = (_tmp_fsm_0 == 3) || (_tmp_fsm_1 == 3) || (_tmp_fsm_3 == 3);
   reg signed [32-1:0] _th_matmul_j_27;
   reg _tmp_53;
   reg _ram_c_cond_2_1;

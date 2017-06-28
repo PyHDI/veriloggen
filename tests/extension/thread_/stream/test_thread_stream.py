@@ -639,7 +639,7 @@ module blinkled
   wire _tmp_ready_85;
   assign _tmp_ready_85 = (_tmp_83 > 0) && !_tmp_84;
   reg _ram_b_cond_1_1;
-  assign myaxi_rready = 1 || 1 || 1 || 1;
+  assign myaxi_rready = (_tmp_fsm_0 == 3) || (_tmp_fsm_1 == 3) || (_tmp_fsm_3 == 3) || (_tmp_fsm_4 == 3);
   reg [32-1:0] th_sequential;
   localparam th_sequential_init = 0;
   reg _th_sequential_called;

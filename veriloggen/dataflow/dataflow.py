@@ -92,7 +92,7 @@ class Dataflow(object):
         if reset is None:
             reset = self.reset
 
-        if self.seq is None:
+        if self.seq is None or self.seq.done:
             if seq_name is None:
                 seq_name = '_dataflow_seq_%d' % self.object_id
             seq = Seq(m, seq_name, clock, reset)
