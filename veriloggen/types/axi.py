@@ -1346,7 +1346,7 @@ class AxiSlave(object):
             counter.dec()
         )
 
-        df = self.df if self.df is not None else dataflow
+        df = self.df if self.df is not None else _df
 
         df_data = df.Variable(data, valid, data_ready)
         df_mask = df.Variable(mask, valid, mask_ready,
