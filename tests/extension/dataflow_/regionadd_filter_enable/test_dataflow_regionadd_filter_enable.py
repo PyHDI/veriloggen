@@ -558,7 +558,7 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_0 <= 1'd0;
+      _tmp_data_0 <= 1'sd0;
       _tmp_valid_0 <= 0;
       _tmp_data_1 <= 0;
       _tmp_valid_1 <= 0;
@@ -592,7 +592,7 @@ module main
       _tmp_valid_16 <= 0;
       _tmp_data_17 <= 0;
       _tmp_valid_17 <= 0;
-      _tmp_data_18 <= 1'd0;
+      _tmp_data_18 <= 1'sd0;
       _tmp_valid_18 <= 0;
       _tmp_data_19 <= 0;
       _tmp_valid_19 <= 0;
@@ -602,7 +602,7 @@ module main
       _tmp_valid_21 <= 0;
     end else begin
       if((_tmp_ready_0 || !_tmp_valid_0) && (enableready && resetready) && (enablevalid && resetvalid) && enabledata) begin
-        _tmp_data_0 <= (_tmp_data_0 >= 3)? 0 : _tmp_data_0 + 2'd1;
+        _tmp_data_0 <= (_tmp_data_0 >= 3)? 0 : _tmp_data_0 + 2'sd1;
       end 
       if(_tmp_valid_0 && _tmp_ready_0) begin
         _tmp_valid_0 <= 0;
@@ -611,10 +611,10 @@ module main
         _tmp_valid_0 <= enablevalid && resetvalid;
       end 
       if((_tmp_ready_0 || !_tmp_valid_0) && (enableready && resetready) && (enablevalid && resetvalid) && resetdata) begin
-        _tmp_data_0 <= 1'd0;
+        _tmp_data_0 <= 1'sd0;
       end 
       if((_tmp_ready_0 || !_tmp_valid_0) && (enableready && resetready) && (enablevalid && resetvalid) && enabledata && resetdata) begin
-        _tmp_data_0 <= (1'd0 >= 3)? 0 : 1'd0 + 2'd1;
+        _tmp_data_0 <= (1'sd0 >= 3)? 0 : 1'sd0 + 2'sd1;
       end 
       if((_tmp_ready_1 || !_tmp_valid_1) && enableready && enablevalid) begin
         _tmp_data_1 <= enabledata;
@@ -644,7 +644,7 @@ module main
         _tmp_valid_3 <= xvalid;
       end 
       if((_tmp_ready_4 || !_tmp_valid_4) && _tmp_ready_0 && _tmp_valid_0) begin
-        _tmp_data_4 <= _tmp_data_0 == 3'd3;
+        _tmp_data_4 <= _tmp_data_0 == 3'sd3;
       end 
       if(_tmp_valid_4 && _tmp_ready_4) begin
         _tmp_valid_4 <= 0;
@@ -767,10 +767,10 @@ module main
         _tmp_valid_18 <= _tmp_valid_15 && _tmp_valid_16 && _tmp_valid_14;
       end 
       if((_tmp_ready_18 || !_tmp_valid_18) && (_tmp_ready_15 && _tmp_ready_16 && _tmp_ready_14) && (_tmp_valid_15 && _tmp_valid_16 && _tmp_valid_14) && _tmp_data_14) begin
-        _tmp_data_18 <= 1'd0;
+        _tmp_data_18 <= 1'sd0;
       end 
       if((_tmp_ready_18 || !_tmp_valid_18) && (_tmp_ready_15 && _tmp_ready_16 && _tmp_ready_14) && (_tmp_valid_15 && _tmp_valid_16 && _tmp_valid_14) && _tmp_data_16 && _tmp_data_14) begin
-        _tmp_data_18 <= 1'd0 + _tmp_data_15;
+        _tmp_data_18 <= 1'sd0 + _tmp_data_15;
       end 
       if((_tmp_ready_19 || !_tmp_valid_19) && _tmp_ready_17 && _tmp_valid_17) begin
         _tmp_data_19 <= _tmp_data_17;
@@ -782,7 +782,7 @@ module main
         _tmp_valid_19 <= _tmp_valid_17;
       end 
       if((_tmp_ready_20 || !_tmp_valid_20) && (_tmp_ready_19 && _tmp_ready_18) && (_tmp_valid_19 && _tmp_valid_18)) begin
-        _tmp_data_20 <= (_tmp_data_19)? _tmp_data_18 : 1'd0;
+        _tmp_data_20 <= (_tmp_data_19)? _tmp_data_18 : 1'sd0;
       end 
       if(_tmp_valid_20 && _tmp_ready_20) begin
         _tmp_valid_20 <= 0;

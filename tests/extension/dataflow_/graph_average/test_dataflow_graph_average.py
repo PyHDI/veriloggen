@@ -937,7 +937,7 @@ module main
         _tmp_ldata_6 <= _tmp_data_5;
       end 
       if(_tmp_ready_6 || !_tmp_valid_6) begin
-        _tmp_rdata_6 <= 3'd3;
+        _tmp_rdata_6 <= 3'sd3;
       end 
       if(_tmp_ready_6 || !_tmp_valid_6) begin
         _tmp_abs_ldata_6 <= _tmp_ldata_6;

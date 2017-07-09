@@ -1065,7 +1065,7 @@ module main
         _tmp_ldata_0 <= xdata;
       end 
       if(_tmp_ready_0 || !_tmp_valid_0) begin
-        _tmp_rdata_0 <= 4'd4;
+        _tmp_rdata_0 <= 4'sd4;
       end 
       if(_tmp_ready_0 || !_tmp_valid_0) begin
         _tmp_abs_ldata_0 <= _tmp_ldata_0;

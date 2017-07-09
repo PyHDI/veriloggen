@@ -260,7 +260,7 @@ module main #
         _tmp_valid_7 <= _tmp_valid_5;
       end 
       if((_tmp_ready_8 || !_tmp_valid_8) && _tmp_ready_6 && _tmp_valid_6) begin
-        _tmp_data_8 <= _tmp_data_6 + 2'd1;
+        _tmp_data_8 <= _tmp_data_6 + 2'sd1;
       end 
       if(_tmp_valid_8 && _tmp_ready_8) begin
         _tmp_valid_8 <= 0;

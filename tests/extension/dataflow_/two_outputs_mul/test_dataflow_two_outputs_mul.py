@@ -712,7 +712,7 @@ module main
         _tmp_valid_reg_1 <= _tmp_ovalid_1;
       end 
       if((_tmp_ready_2 || !_tmp_valid_2) && _tmp_ready_1 && _tmp_valid_1) begin
-        _tmp_data_2 <= _tmp_data_1 + 2'd1;
+        _tmp_data_2 <= _tmp_data_1 + 2'sd1;
       end 
       if(_tmp_valid_2 && _tmp_ready_2) begin
         _tmp_valid_2 <= 0;

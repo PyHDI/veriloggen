@@ -214,7 +214,7 @@ module main
         _tmp_valid_6 <= yvalid;
       end 
       if((_tmp_ready_7 || !_tmp_valid_7) && _tmp_ready_4 && _tmp_valid_4) begin
-        _tmp_data_7 <= _tmp_data_4 + 2'd1;
+        _tmp_data_7 <= _tmp_data_4 + 2'sd1;
       end 
       if(_tmp_valid_7 && _tmp_ready_7) begin
         _tmp_valid_7 <= 0;

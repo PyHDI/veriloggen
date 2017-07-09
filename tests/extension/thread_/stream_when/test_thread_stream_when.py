@@ -1368,7 +1368,7 @@ module blinkled
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_114 <= 1'd0;
+      _tmp_data_114 <= 1'sd0;
       _tmp_valid_114 <= 0;
       _tmp_data_reg_115 <= 0;
       _tmp_valid_reg_115 <= 0;
@@ -1400,13 +1400,13 @@ module blinkled
       _tmp_valid_129 <= 0;
       _tmp_data_130 <= 0;
       _tmp_valid_130 <= 0;
-      _tmp_data_131 <= 1'd0;
+      _tmp_data_131 <= 1'sd0;
       _tmp_valid_131 <= 0;
       _tmp_data_132 <= 0;
       _tmp_valid_132 <= 0;
     end else begin
       if((_tmp_ready_114 || !_tmp_valid_114) && 1 && 1) begin
-        _tmp_data_114 <= (_tmp_data_114 >= _th_comp_size_0 - 1)? 0 : _tmp_data_114 + 2'd1;
+        _tmp_data_114 <= (_tmp_data_114 >= _th_comp_size_0 - 1)? 0 : _tmp_data_114 + 2'sd1;
       end 
       if(_tmp_valid_114 && _tmp_ready_114) begin
         _tmp_valid_114 <= 0;
@@ -1553,7 +1553,7 @@ module blinkled
         _tmp_valid_131 <= _tmp_valid_115 && _tmp_valid_129;
       end 
       if((_tmp_ready_131 || !_tmp_valid_131) && (_tmp_ready_115 && _tmp_ready_129) && (_tmp_valid_115 && _tmp_valid_129) && _tmp_data_129) begin
-        _tmp_data_131 <= 1'd0 + _tmp_data_115;
+        _tmp_data_131 <= 1'sd0 + _tmp_data_115;
       end 
       if((_tmp_ready_132 || !_tmp_valid_132) && _tmp_ready_130 && _tmp_valid_130) begin
         _tmp_data_132 <= _tmp_data_130;

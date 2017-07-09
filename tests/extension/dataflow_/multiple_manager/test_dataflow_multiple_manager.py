@@ -121,11 +121,11 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_0 <= 1'd0;
+      _tmp_data_0 <= 1'sd0;
       _tmp_valid_0 <= 0;
-      _tmp_data_1 <= 1'd0;
+      _tmp_data_1 <= 1'sd0;
       _tmp_valid_1 <= 0;
-      _tmp_data_2 <= 1'd0;
+      _tmp_data_2 <= 1'sd0;
       _tmp_valid_2 <= 0;
       _tmp_data_3 <= 0;
       _tmp_valid_3 <= 0;
@@ -147,7 +147,7 @@ module main
       _tmp_valid_11 <= 0;
     end else begin
       if((_tmp_ready_0 || !_tmp_valid_0) && 1 && 1) begin
-        _tmp_data_0 <= _tmp_data_0 + 2'd1;
+        _tmp_data_0 <= _tmp_data_0 + 2'sd1;
       end 
       if(_tmp_valid_0 && _tmp_ready_0) begin
         _tmp_valid_0 <= 0;
@@ -156,7 +156,7 @@ module main
         _tmp_valid_0 <= 1;
       end 
       if((_tmp_ready_1 || !_tmp_valid_1) && 1 && 1) begin
-        _tmp_data_1 <= _tmp_data_1 + 2'd1;
+        _tmp_data_1 <= _tmp_data_1 + 2'sd1;
       end 
       if(_tmp_valid_1 && _tmp_ready_1) begin
         _tmp_valid_1 <= 0;
@@ -165,7 +165,7 @@ module main
         _tmp_valid_1 <= 1;
       end 
       if((_tmp_ready_2 || !_tmp_valid_2) && 1 && 1) begin
-        _tmp_data_2 <= _tmp_data_2 + 2'd1;
+        _tmp_data_2 <= _tmp_data_2 + 2'sd1;
       end 
       if(_tmp_valid_2 && _tmp_ready_2) begin
         _tmp_valid_2 <= 0;

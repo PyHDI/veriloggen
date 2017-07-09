@@ -1,20 +1,20 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import dataflow__slice
+import dataflow_sign
 
 expected_verilog = """
 module test;
 
   reg CLK;
   reg RST;
-  reg [32-1:0] xdata;
+  reg signed [32-1:0] xdata;
   reg xvalid;
   wire xready;
-  reg [32-1:0] ydata;
+  reg signed [32-1:0] ydata;
   reg yvalid;
   wire yready;
-  wire [16-1:0] zdata;
+  wire [1-1:0] zdata;
   wire zvalid;
   reg zready;
 
@@ -508,29 +508,33 @@ module main
 (
   input CLK,
   input RST,
-  input [32-1:0] xdata,
+  input signed [32-1:0] xdata,
   input xvalid,
   output xready,
-  input [32-1:0] ydata,
+  input signed [32-1:0] ydata,
   input yvalid,
   output yready,
-  output [16-1:0] zdata,
+  output [1-1:0] zdata,
   output zvalid,
   input zready
 );
 
-  reg [32-1:0] _tmp_data_0;
+  reg signed [32-1:0] _tmp_data_0;
   reg _tmp_valid_0;
   wire _tmp_ready_0;
   assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
   assign yready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
-  reg [16-1:0] _tmp_data_1;
+  reg signed [32-1:0] _tmp_data_1;
   reg _tmp_valid_1;
   wire _tmp_ready_1;
   assign _tmp_ready_0 = (_tmp_ready_1 || !_tmp_valid_1) && _tmp_valid_0;
-  assign zdata = _tmp_data_1;
-  assign zvalid = _tmp_valid_1;
-  assign _tmp_ready_1 = zready;
+  reg [1-1:0] _tmp_data_2;
+  reg _tmp_valid_2;
+  wire _tmp_ready_2;
+  assign _tmp_ready_1 = (_tmp_ready_2 || !_tmp_valid_2) && _tmp_valid_1;
+  assign zdata = _tmp_data_2;
+  assign zvalid = _tmp_valid_2;
+  assign _tmp_ready_2 = zready;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -538,9 +542,11 @@ module main
       _tmp_valid_0 <= 0;
       _tmp_data_1 <= 0;
       _tmp_valid_1 <= 0;
+      _tmp_data_2 <= 0;
+      _tmp_valid_2 <= 0;
     end else begin
       if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
-        _tmp_data_0 <= xdata + ydata;
+        _tmp_data_0 <= xdata - ydata;
       end 
       if(_tmp_valid_0 && _tmp_ready_0) begin
         _tmp_valid_0 <= 0;
@@ -549,13 +555,22 @@ module main
         _tmp_valid_0 <= xvalid && yvalid;
       end 
       if((_tmp_ready_1 || !_tmp_valid_1) && _tmp_ready_0 && _tmp_valid_0) begin
-        _tmp_data_1 <= _tmp_data_0[5'sd15:1'sd0];
+        _tmp_data_1 <= _tmp_data_0 + 4'sd5;
       end 
       if(_tmp_valid_1 && _tmp_ready_1) begin
         _tmp_valid_1 <= 0;
       end 
       if((_tmp_ready_1 || !_tmp_valid_1) && _tmp_ready_0) begin
         _tmp_valid_1 <= _tmp_valid_0;
+      end 
+      if((_tmp_ready_2 || !_tmp_valid_2) && _tmp_ready_1 && _tmp_valid_1) begin
+        _tmp_data_2 <= _tmp_data_1 >= 1'sd0;
+      end 
+      if(_tmp_valid_2 && _tmp_ready_2) begin
+        _tmp_valid_2 <= 0;
+      end 
+      if((_tmp_ready_2 || !_tmp_valid_2) && _tmp_ready_1) begin
+        _tmp_valid_2 <= _tmp_valid_1;
       end 
     end
   end
@@ -566,7 +581,7 @@ endmodule
 
 def test():
     veriloggen.reset()
-    test_module = dataflow__slice.mkTest()
+    test_module = dataflow_sign.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

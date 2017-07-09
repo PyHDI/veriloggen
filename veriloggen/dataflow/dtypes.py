@@ -1812,6 +1812,28 @@ def Mux(condition, true_value, false_value):
     return Cond(condition, true_value, false_value)
 
 
+def Abs(value):
+    if isinstance(value, (bool, int, float, str, list, tuple)):
+        return abs(value)
+
+    signed = value.get_signed()
+    if not signed:
+        return value
+
+    return Mux(value < Constant(0), Uminus(value), value)
+
+
+def Sign(value):
+    if isinstance(value, (bool, int, float, str, list, tuple)):
+        return value >= 0
+
+    signed = value.get_signed()
+    if not signed:
+        return 1
+
+    return value >= Constant(0)
+
+
 #-------------------------------------------------------------------------
 class CustomOp(_SpecialOperator):
 
@@ -2473,7 +2495,7 @@ class Int(_Constant):
         self.point = 0
 
     def _implement(self, m, seq):
-        data = vtypes.Int(self.value, width=self.width)
+        data = vtypes.Int(self.value, width=self.width, signed=self.signed)
         valid = None
         ready = None
         self.sig_data = data
@@ -2501,7 +2523,7 @@ class FixedPoint(_Constant):
         self.point = 0
 
     def _implement(self, m, seq):
-        data = vtypes.Int(self.value, width=self.width)
+        data = vtypes.Int(self.value, width=self.width, signed=self.signed)
         valid = None
         ready = None
         self.sig_data = data

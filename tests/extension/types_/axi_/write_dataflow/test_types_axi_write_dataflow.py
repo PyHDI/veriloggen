@@ -279,13 +279,13 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_3 <= 1'd0;
+      _tmp_data_3 <= 1'sd0;
       _tmp_valid_3 <= 0;
       _tmp_data_4 <= 0;
       _tmp_valid_4 <= 0;
     end else begin
       if((_tmp_ready_3 || !_tmp_valid_3) && 1 && 1) begin
-        _tmp_data_3 <= _tmp_data_3 + 2'd1;
+        _tmp_data_3 <= _tmp_data_3 + 2'sd1;
       end 
       if(_tmp_valid_3 && _tmp_ready_3) begin
         _tmp_valid_3 <= 0;
@@ -294,7 +294,7 @@ module main
         _tmp_valid_3 <= 1;
       end 
       if((_tmp_ready_4 || !_tmp_valid_4) && _tmp_ready_3 && _tmp_valid_3) begin
-        _tmp_data_4 <= _tmp_data_3 - 2'd1;
+        _tmp_data_4 <= _tmp_data_3 - 2'sd1;
       end 
       if(_tmp_valid_4 && _tmp_ready_4) begin
         _tmp_valid_4 <= 0;

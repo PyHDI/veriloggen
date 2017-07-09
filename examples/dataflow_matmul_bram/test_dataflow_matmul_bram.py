@@ -561,7 +561,7 @@ module madd
       _tmp_valid_6 <= 0;
       _tmp_data_7 <= 0;
       _tmp_valid_7 <= 0;
-      _tmp_data_8 <= 1'd0;
+      _tmp_data_8 <= 1'sd0;
       _tmp_valid_8 <= 0;
     end else begin
       if(_tmp_ready_0 || !_tmp_valid_0) begin
@@ -643,7 +643,7 @@ module madd
         _tmp_valid_8 <= _tmp_valid_0 && _tmp_valid_7;
       end 
       if((_tmp_ready_8 || !_tmp_valid_8) && (_tmp_ready_0 && _tmp_ready_7) && (_tmp_valid_0 && _tmp_valid_7) && _tmp_data_7) begin
-        _tmp_data_8 <= 1'd0 + _tmp_data_0;
+        _tmp_data_8 <= 1'sd0 + _tmp_data_0;
       end 
     end
   end

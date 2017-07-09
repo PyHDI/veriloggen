@@ -302,7 +302,7 @@ module main
       _tmp_valid_0 <= 0;
     end else begin
       if((_tmp_ready_0 || !_tmp_valid_0) && xready && xvalid) begin
-        _tmp_data_0 <= xdata + 2'd1;
+        _tmp_data_0 <= xdata + 2'sd1;
       end 
       if(_tmp_valid_0 && _tmp_ready_0) begin
         _tmp_valid_0 <= 0;

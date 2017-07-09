@@ -518,7 +518,7 @@ module main
       _tmp_valid_48 <= 0;
     end else begin
       if((_tmp_ready_0 || !_tmp_valid_0) && 1 && 1) begin
-        _tmp_data_0 <= xdata[1'd0];
+        _tmp_data_0 <= xdata[1'sd0];
       end 
       if(_tmp_valid_0 && _tmp_ready_0) begin
         _tmp_valid_0 <= 0;
@@ -527,7 +527,7 @@ module main
         _tmp_valid_0 <= 1;
       end 
       if((_tmp_ready_1 || !_tmp_valid_1) && 1 && 1) begin
-        _tmp_data_1 <= ydata[1'd0];
+        _tmp_data_1 <= ydata[1'sd0];
       end 
       if(_tmp_valid_1 && _tmp_ready_1) begin
         _tmp_valid_1 <= 0;
@@ -536,7 +536,7 @@ module main
         _tmp_valid_1 <= 1;
       end 
       if((_tmp_ready_2 || !_tmp_valid_2) && 1 && 1) begin
-        _tmp_data_2 <= xdata[2'd1];
+        _tmp_data_2 <= xdata[2'sd1];
       end 
       if(_tmp_valid_2 && _tmp_ready_2) begin
         _tmp_valid_2 <= 0;
@@ -545,7 +545,7 @@ module main
         _tmp_valid_2 <= 1;
       end 
       if((_tmp_ready_3 || !_tmp_valid_3) && 1 && 1) begin
-        _tmp_data_3 <= ydata[2'd1];
+        _tmp_data_3 <= ydata[2'sd1];
       end 
       if(_tmp_valid_3 && _tmp_ready_3) begin
         _tmp_valid_3 <= 0;
@@ -554,7 +554,7 @@ module main
         _tmp_valid_3 <= 1;
       end 
       if((_tmp_ready_4 || !_tmp_valid_4) && 1 && 1) begin
-        _tmp_data_4 <= xdata[3'd2];
+        _tmp_data_4 <= xdata[3'sd2];
       end 
       if(_tmp_valid_4 && _tmp_ready_4) begin
         _tmp_valid_4 <= 0;
@@ -563,7 +563,7 @@ module main
         _tmp_valid_4 <= 1;
       end 
       if((_tmp_ready_5 || !_tmp_valid_5) && 1 && 1) begin
-        _tmp_data_5 <= ydata[3'd2];
+        _tmp_data_5 <= ydata[3'sd2];
       end 
       if(_tmp_valid_5 && _tmp_ready_5) begin
         _tmp_valid_5 <= 0;
@@ -572,7 +572,7 @@ module main
         _tmp_valid_5 <= 1;
       end 
       if((_tmp_ready_6 || !_tmp_valid_6) && 1 && 1) begin
-        _tmp_data_6 <= xdata[3'd3];
+        _tmp_data_6 <= xdata[3'sd3];
       end 
       if(_tmp_valid_6 && _tmp_ready_6) begin
         _tmp_valid_6 <= 0;
@@ -581,7 +581,7 @@ module main
         _tmp_valid_6 <= 1;
       end 
       if((_tmp_ready_7 || !_tmp_valid_7) && 1 && 1) begin
-        _tmp_data_7 <= ydata[3'd3];
+        _tmp_data_7 <= ydata[3'sd3];
       end 
       if(_tmp_valid_7 && _tmp_ready_7) begin
         _tmp_valid_7 <= 0;

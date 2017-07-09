@@ -1093,7 +1093,7 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_59 <= 1'd0;
+      _tmp_data_59 <= 1'sd0;
       _tmp_valid_59 <= 0;
       _tmp_data_reg_60 <= 0;
       _tmp_valid_reg_60 <= 0;
@@ -1124,13 +1124,13 @@ module main
       _tmp_valid_73 <= 0;
       _tmp_data_74 <= 0;
       _tmp_valid_74 <= 0;
-      _tmp_data_75 <= 1'd0;
+      _tmp_data_75 <= 1'sd0;
       _tmp_valid_75 <= 0;
       _tmp_data_76 <= 0;
       _tmp_valid_76 <= 0;
     end else begin
       if((_tmp_ready_59 || !_tmp_valid_59) && 1 && 1) begin
-        _tmp_data_59 <= (_tmp_data_59 >= 15)? 0 : _tmp_data_59 + 2'd1;
+        _tmp_data_59 <= (_tmp_data_59 >= 15)? 0 : _tmp_data_59 + 2'sd1;
       end 
       if(_tmp_valid_59 && _tmp_ready_59) begin
         _tmp_valid_59 <= 0;
@@ -1145,7 +1145,7 @@ module main
         _tmp_valid_reg_60 <= _tmp_ovalid_60;
       end 
       if((_tmp_ready_61 || !_tmp_valid_61) && _tmp_ready_59 && _tmp_valid_59) begin
-        _tmp_data_61 <= _tmp_data_59 == 1'd0;
+        _tmp_data_61 <= _tmp_data_59 == 1'sd0;
       end 
       if(_tmp_valid_61 && _tmp_ready_61) begin
         _tmp_valid_61 <= 0;
@@ -1274,7 +1274,7 @@ module main
         _tmp_valid_75 <= _tmp_valid_60 && _tmp_valid_73;
       end 
       if((_tmp_ready_75 || !_tmp_valid_75) && (_tmp_ready_60 && _tmp_ready_73) && (_tmp_valid_60 && _tmp_valid_73) && _tmp_data_73) begin
-        _tmp_data_75 <= 1'd0 + _tmp_data_60;
+        _tmp_data_75 <= 1'sd0 + _tmp_data_60;
       end 
       if((_tmp_ready_76 || !_tmp_valid_76) && _tmp_ready_74 && _tmp_valid_74) begin
         _tmp_data_76 <= _tmp_data_74;

@@ -404,7 +404,7 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_0 <= 1'd0;
+      _tmp_data_0 <= 1'sd0;
       _tmp_valid_0 <= 0;
     end else begin
       if((_tmp_ready_0 || !_tmp_valid_0) && (xready && enableready && resetready) && (xvalid && enablevalid && resetvalid) && enabledata) begin
@@ -417,10 +417,10 @@ module main
         _tmp_valid_0 <= xvalid && enablevalid && resetvalid;
       end 
       if((_tmp_ready_0 || !_tmp_valid_0) && (xready && enableready && resetready) && (xvalid && enablevalid && resetvalid) && resetdata) begin
-        _tmp_data_0 <= 1'd0;
+        _tmp_data_0 <= 1'sd0;
       end 
       if((_tmp_ready_0 || !_tmp_valid_0) && (xready && enableready && resetready) && (xvalid && enablevalid && resetvalid) && enabledata && resetdata) begin
-        _tmp_data_0 <= 1'd0;
+        _tmp_data_0 <= 1'sd0;
       end 
     end
   end

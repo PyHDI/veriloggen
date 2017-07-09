@@ -501,7 +501,7 @@ module main
   always @(posedge CLK) begin
     if(RST) begin
       _tmp_data_21 <= 0;
-      _tmp_data_22 <= 1'd0;
+      _tmp_data_22 <= 1'sd0;
       _tmp_valid_22 <= 0;
     end else begin
       if(myaxi_rvalid && _tmp_2) begin
@@ -517,7 +517,7 @@ module main
         _tmp_valid_22 <= myaxi_rvalid && myaxi_rvalid;
       end 
       if((_tmp_ready_22 || !_tmp_valid_22) && (_tmp_1 && _tmp_2) && (myaxi_rvalid && myaxi_rvalid) && _tmp_data_21) begin
-        _tmp_data_22 <= 1'd0 + myaxi_rdata;
+        _tmp_data_22 <= 1'sd0 + myaxi_rdata;
       end 
     end
   end

@@ -26,7 +26,7 @@ def mkMain(n=128, datawidth=32, numports=2):
     y = dataflow.ParameterVariable(yparam)
 
     zparam = 30
-    z = dataflow.ParameterVariable(zparam)
+    z = dataflow.ParameterVariable(zparam, signed=True)
 
     v = dataflow.Variable('vdata')
     w = dataflow.Variable('wdata')

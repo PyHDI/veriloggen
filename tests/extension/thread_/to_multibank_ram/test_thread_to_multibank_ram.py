@@ -1088,7 +1088,7 @@ module blinkled
       _tmp_valid_166 <= 0;
     end else begin
       if((_tmp_ready_159 || !_tmp_valid_159) && 1 && _tmp_117) begin
-        _tmp_data_159 <= _tmp_116[7'd32:1'd0];
+        _tmp_data_159 <= _tmp_116[7'sd32:1'sd0];
       end 
       if(_tmp_valid_159 && _tmp_ready_159) begin
         _tmp_valid_159 <= 0;
@@ -1097,7 +1097,7 @@ module blinkled
         _tmp_valid_159 <= _tmp_117;
       end 
       if((_tmp_ready_160 || !_tmp_valid_160) && 1 && _tmp_117) begin
-        _tmp_data_160 <= _tmp_116[8'd64:7'd32];
+        _tmp_data_160 <= _tmp_116[8'sd64:7'sd32];
       end 
       if(_tmp_valid_160 && _tmp_ready_160) begin
         _tmp_valid_160 <= 0;
@@ -1106,7 +1106,7 @@ module blinkled
         _tmp_valid_160 <= _tmp_117;
       end 
       if((_tmp_ready_161 || !_tmp_valid_161) && 1 && _tmp_117) begin
-        _tmp_data_161 <= _tmp_116[8'd96:8'd64];
+        _tmp_data_161 <= _tmp_116[8'sd96:8'sd64];
       end 
       if(_tmp_valid_161 && _tmp_ready_161) begin
         _tmp_valid_161 <= 0;
@@ -1115,7 +1115,7 @@ module blinkled
         _tmp_valid_161 <= _tmp_117;
       end 
       if((_tmp_ready_162 || !_tmp_valid_162) && 1 && _tmp_117) begin
-        _tmp_data_162 <= _tmp_116[9'd128:8'd96];
+        _tmp_data_162 <= _tmp_116[9'sd128:8'sd96];
       end 
       if(_tmp_valid_162 && _tmp_ready_162) begin
         _tmp_valid_162 <= 0;
@@ -1124,7 +1124,7 @@ module blinkled
         _tmp_valid_162 <= _tmp_117;
       end 
       if((_tmp_ready_163 || !_tmp_valid_163) && 1 && _tmp_141) begin
-        _tmp_data_163 <= _tmp_140[7'd32:1'd0];
+        _tmp_data_163 <= _tmp_140[7'sd32:1'sd0];
       end 
       if(_tmp_valid_163 && _tmp_ready_163) begin
         _tmp_valid_163 <= 0;
@@ -1133,7 +1133,7 @@ module blinkled
         _tmp_valid_163 <= _tmp_141;
       end 
       if((_tmp_ready_164 || !_tmp_valid_164) && 1 && _tmp_141) begin
-        _tmp_data_164 <= _tmp_140[8'd64:7'd32];
+        _tmp_data_164 <= _tmp_140[8'sd64:7'sd32];
       end 
       if(_tmp_valid_164 && _tmp_ready_164) begin
         _tmp_valid_164 <= 0;
@@ -1142,7 +1142,7 @@ module blinkled
         _tmp_valid_164 <= _tmp_141;
       end 
       if((_tmp_ready_165 || !_tmp_valid_165) && 1 && _tmp_141) begin
-        _tmp_data_165 <= _tmp_140[8'd96:8'd64];
+        _tmp_data_165 <= _tmp_140[8'sd96:8'sd64];
       end 
       if(_tmp_valid_165 && _tmp_ready_165) begin
         _tmp_valid_165 <= 0;
@@ -1151,7 +1151,7 @@ module blinkled
         _tmp_valid_165 <= _tmp_141;
       end 
       if((_tmp_ready_166 || !_tmp_valid_166) && 1 && _tmp_141) begin
-        _tmp_data_166 <= _tmp_140[9'd128:8'd96];
+        _tmp_data_166 <= _tmp_140[9'sd128:8'sd96];
       end 
       if(_tmp_valid_166 && _tmp_ready_166) begin
         _tmp_valid_166 <= 0;

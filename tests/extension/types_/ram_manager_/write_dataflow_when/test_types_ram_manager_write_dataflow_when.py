@@ -134,9 +134,9 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_4 <= 1'd0;
+      _tmp_data_4 <= 1'sd0;
       _tmp_valid_4 <= 0;
-      _tmp_data_5 <= 1'd0;
+      _tmp_data_5 <= 1'sd0;
       _tmp_valid_5 <= 0;
       _tmp_data_6 <= 0;
       _tmp_valid_6 <= 0;
@@ -144,7 +144,7 @@ module main
       _tmp_valid_7 <= 0;
     end else begin
       if((_tmp_ready_4 || !_tmp_valid_4) && 1 && 1) begin
-        _tmp_data_4 <= _tmp_data_4 + 2'd1;
+        _tmp_data_4 <= _tmp_data_4 + 2'sd1;
       end 
       if(_tmp_valid_4 && _tmp_ready_4) begin
         _tmp_valid_4 <= 0;
@@ -153,7 +153,7 @@ module main
         _tmp_valid_4 <= 1;
       end 
       if((_tmp_ready_5 || !_tmp_valid_5) && 1 && 1) begin
-        _tmp_data_5 <= (_tmp_data_5 >= 7)? 0 : _tmp_data_5 + 2'd1;
+        _tmp_data_5 <= (_tmp_data_5 >= 7)? 0 : _tmp_data_5 + 2'sd1;
       end 
       if(_tmp_valid_5 && _tmp_ready_5) begin
         _tmp_valid_5 <= 0;
@@ -162,7 +162,7 @@ module main
         _tmp_valid_5 <= 1;
       end 
       if((_tmp_ready_6 || !_tmp_valid_6) && _tmp_ready_5 && _tmp_valid_5) begin
-        _tmp_data_6 <= _tmp_data_5 == 1'd0;
+        _tmp_data_6 <= _tmp_data_5 == 1'sd0;
       end 
       if(_tmp_valid_6 && _tmp_ready_6) begin
         _tmp_valid_6 <= 0;

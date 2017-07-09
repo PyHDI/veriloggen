@@ -1065,7 +1065,7 @@ module main
         _tmp_ldata_0 <= xdata;
       end 
       if(_tmp_ready_0 || !_tmp_valid_0) begin
-        _tmp_rdata_0 <= 3'd2;
+        _tmp_rdata_0 <= 3'sd2;
       end 
       if(_tmp_ready_0 || !_tmp_valid_0) begin
         _tmp_abs_ldata_0 <= (_tmp_ldata_0[31] == 0)? _tmp_ldata_0 : ~_tmp_ldata_0 + 1;

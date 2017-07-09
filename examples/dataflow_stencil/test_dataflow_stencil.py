@@ -816,7 +816,7 @@ module stencil_pipeline_2d
     .enable(_tmp_enable_6),
     .valid(_tmp_ovalid_6),
     .a(idata0),
-    .b(14'd7281),
+    .b(14'sd7281),
     .c(_tmp_odata_6)
   );
 
@@ -843,7 +843,7 @@ module stencil_pipeline_2d
     .enable(_tmp_enable_7),
     .valid(_tmp_ovalid_7),
     .a(_tmp_data_0),
-    .b(14'd7281),
+    .b(14'sd7281),
     .c(_tmp_odata_7)
   );
 
@@ -870,7 +870,7 @@ module stencil_pipeline_2d
     .enable(_tmp_enable_8),
     .valid(_tmp_ovalid_8),
     .a(_tmp_data_1),
-    .b(14'd7281),
+    .b(14'sd7281),
     .c(_tmp_odata_8)
   );
 
@@ -897,7 +897,7 @@ module stencil_pipeline_2d
     .enable(_tmp_enable_9),
     .valid(_tmp_ovalid_9),
     .a(idata1),
-    .b(14'd7281),
+    .b(14'sd7281),
     .c(_tmp_odata_9)
   );
 
@@ -924,7 +924,7 @@ module stencil_pipeline_2d
     .enable(_tmp_enable_10),
     .valid(_tmp_ovalid_10),
     .a(_tmp_data_2),
-    .b(14'd7281),
+    .b(14'sd7281),
     .c(_tmp_odata_10)
   );
 
@@ -951,7 +951,7 @@ module stencil_pipeline_2d
     .enable(_tmp_enable_11),
     .valid(_tmp_ovalid_11),
     .a(_tmp_data_3),
-    .b(14'd7281),
+    .b(14'sd7281),
     .c(_tmp_odata_11)
   );
 
@@ -978,7 +978,7 @@ module stencil_pipeline_2d
     .enable(_tmp_enable_12),
     .valid(_tmp_ovalid_12),
     .a(idata2),
-    .b(14'd7281),
+    .b(14'sd7281),
     .c(_tmp_odata_12)
   );
 
@@ -1005,7 +1005,7 @@ module stencil_pipeline_2d
     .enable(_tmp_enable_13),
     .valid(_tmp_ovalid_13),
     .a(_tmp_data_4),
-    .b(14'd7281),
+    .b(14'sd7281),
     .c(_tmp_odata_13)
   );
 
@@ -1032,7 +1032,7 @@ module stencil_pipeline_2d
     .enable(_tmp_enable_14),
     .valid(_tmp_ovalid_14),
     .a(_tmp_data_5),
-    .b(14'd7281),
+    .b(14'sd7281),
     .c(_tmp_odata_14)
   );
 

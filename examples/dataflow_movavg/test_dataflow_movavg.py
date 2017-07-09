@@ -440,7 +440,7 @@ module movavg
         _tmp_valid_13 <= _tmp_valid_11 && _tmp_valid_12;
       end 
       if((_tmp_ready_14 || !_tmp_valid_14) && _tmp_ready_13 && _tmp_valid_13) begin
-        _tmp_data_14 <= _tmp_data_13 >> 3'd3;
+        _tmp_data_14 <= _tmp_data_13 >> 3'sd3;
       end 
       if(_tmp_valid_14 && _tmp_ready_14) begin
         _tmp_valid_14 <= 0;

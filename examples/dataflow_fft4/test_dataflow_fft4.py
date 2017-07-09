@@ -638,7 +638,7 @@ module fft4
     .enable(_tmp_enable_8),
     .valid(_tmp_ovalid_8),
     .a(_tmp_data_2),
-    .b(2'd1),
+    .b(2'sd1),
     .c(_tmp_odata_8)
   );
 
@@ -665,7 +665,7 @@ module fft4
     .enable(_tmp_enable_9),
     .valid(_tmp_ovalid_9),
     .a(_tmp_data_3),
-    .b(1'd0),
+    .b(1'sd0),
     .c(_tmp_odata_9)
   );
 
@@ -692,7 +692,7 @@ module fft4
     .enable(_tmp_enable_10),
     .valid(_tmp_ovalid_10),
     .a(_tmp_data_2),
-    .b(1'd0),
+    .b(1'sd0),
     .c(_tmp_odata_10)
   );
 
@@ -720,7 +720,7 @@ module fft4
     .enable(_tmp_enable_11),
     .valid(_tmp_ovalid_11),
     .a(_tmp_data_3),
-    .b(2'd1),
+    .b(2'sd1),
     .c(_tmp_odata_11)
   );
 
@@ -748,7 +748,7 @@ module fft4
     .enable(_tmp_enable_12),
     .valid(_tmp_ovalid_12),
     .a(_tmp_data_6),
-    .b(1'd0),
+    .b(1'sd0),
     .c(_tmp_odata_12)
   );
 
@@ -830,7 +830,7 @@ module fft4
     .enable(_tmp_enable_15),
     .valid(_tmp_ovalid_15),
     .a(_tmp_data_7),
-    .b(1'd0),
+    .b(1'sd0),
     .c(_tmp_odata_15)
   );
 
@@ -874,7 +874,7 @@ module fft4
     .enable(_tmp_enable_20),
     .valid(_tmp_ovalid_20),
     .a(_tmp_data_18),
-    .b(2'd1),
+    .b(2'sd1),
     .c(_tmp_odata_20)
   );
 
@@ -901,7 +901,7 @@ module fft4
     .enable(_tmp_enable_21),
     .valid(_tmp_ovalid_21),
     .a(_tmp_data_19),
-    .b(1'd0),
+    .b(1'sd0),
     .c(_tmp_odata_21)
   );
 
@@ -928,7 +928,7 @@ module fft4
     .enable(_tmp_enable_22),
     .valid(_tmp_ovalid_22),
     .a(_tmp_data_18),
-    .b(1'd0),
+    .b(1'sd0),
     .c(_tmp_odata_22)
   );
 
@@ -956,7 +956,7 @@ module fft4
     .enable(_tmp_enable_23),
     .valid(_tmp_ovalid_23),
     .a(_tmp_data_19),
-    .b(2'd1),
+    .b(2'sd1),
     .c(_tmp_odata_23)
   );
 
@@ -1094,7 +1094,7 @@ module fft4
     .enable(_tmp_enable_50),
     .valid(_tmp_ovalid_50),
     .a(_tmp_data_46),
-    .b(2'd1),
+    .b(2'sd1),
     .c(_tmp_odata_50)
   );
 
@@ -1121,7 +1121,7 @@ module fft4
     .enable(_tmp_enable_51),
     .valid(_tmp_ovalid_51),
     .a(_tmp_data_47),
-    .b(1'd0),
+    .b(1'sd0),
     .c(_tmp_odata_51)
   );
 
@@ -1148,7 +1148,7 @@ module fft4
     .enable(_tmp_enable_52),
     .valid(_tmp_ovalid_52),
     .a(_tmp_data_46),
-    .b(1'd0),
+    .b(1'sd0),
     .c(_tmp_odata_52)
   );
 
@@ -1176,7 +1176,7 @@ module fft4
     .enable(_tmp_enable_53),
     .valid(_tmp_ovalid_53),
     .a(_tmp_data_47),
-    .b(2'd1),
+    .b(2'sd1),
     .c(_tmp_odata_53)
   );
 

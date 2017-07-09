@@ -1137,7 +1137,7 @@ module blinkled
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_79 <= 1'd0;
+      _tmp_data_79 <= 1'sd0;
       _tmp_valid_79 <= 0;
       _tmp_data_reg_80 <= 0;
       _tmp_valid_reg_80 <= 0;
@@ -1169,13 +1169,13 @@ module blinkled
       _tmp_valid_94 <= 0;
       _tmp_data_95 <= 0;
       _tmp_valid_95 <= 0;
-      _tmp_data_96 <= 1'd0;
+      _tmp_data_96 <= 1'sd0;
       _tmp_valid_96 <= 0;
       _tmp_data_97 <= 0;
       _tmp_valid_97 <= 0;
     end else begin
       if((_tmp_ready_79 || !_tmp_valid_79) && 1 && 1) begin
-        _tmp_data_79 <= (_tmp_data_79 >= _th_matmul_matrix_size_5 - 1)? 0 : _tmp_data_79 + 2'd1;
+        _tmp_data_79 <= (_tmp_data_79 >= _th_matmul_matrix_size_5 - 1)? 0 : _tmp_data_79 + 2'sd1;
       end 
       if(_tmp_valid_79 && _tmp_ready_79) begin
         _tmp_valid_79 <= 0;
@@ -1322,7 +1322,7 @@ module blinkled
         _tmp_valid_96 <= _tmp_valid_80 && _tmp_valid_94;
       end 
       if((_tmp_ready_96 || !_tmp_valid_96) && (_tmp_ready_80 && _tmp_ready_94) && (_tmp_valid_80 && _tmp_valid_94) && _tmp_data_94) begin
-        _tmp_data_96 <= 1'd0 + _tmp_data_80;
+        _tmp_data_96 <= 1'sd0 + _tmp_data_80;
       end 
       if((_tmp_ready_97 || !_tmp_valid_97) && _tmp_ready_95 && _tmp_valid_95) begin
         _tmp_data_97 <= _tmp_data_95;
