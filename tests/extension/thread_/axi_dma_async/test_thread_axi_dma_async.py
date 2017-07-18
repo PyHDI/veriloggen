@@ -441,6 +441,8 @@ module blinkled
   output myaxi_rready
 );
 
+  reg [32-1:0] _myaxi_dma_async_fsm;
+  localparam _myaxi_dma_async_fsm_init = 0;
   reg [10-1:0] myram_0_addr;
   wire [32-1:0] myram_0_rdata;
   reg [32-1:0] myram_0_wdata;
@@ -477,8 +479,6 @@ module blinkled
   reg _myram_cond_0_1;
   reg signed [32-1:0] _th_blink_laddr_7;
   reg signed [32-1:0] _th_blink_gaddr_8;
-  reg [32-1:0] _myaxi_dma_fsm;
-  localparam _myaxi_dma_fsm_init = 0;
   reg [10-1:0] _tmp_1;
   reg [32-1:0] _tmp_2;
   reg [32-1:0] _tmp_3;
@@ -730,6 +730,102 @@ module blinkled
   assign _tmp_valid_48 = _tmp_45;
   assign _tmp_data_60 = _tmp_56;
   assign _tmp_valid_60 = _tmp_57;
+  localparam _myaxi_dma_async_fsm_1 = 1;
+  localparam _myaxi_dma_async_fsm_2 = 2;
+  localparam _myaxi_dma_async_fsm_3 = 3;
+  localparam _myaxi_dma_async_fsm_4 = 4;
+  localparam _myaxi_dma_async_fsm_5 = 5;
+  localparam _myaxi_dma_async_fsm_6 = 6;
+  localparam _myaxi_dma_async_fsm_7 = 7;
+  localparam _myaxi_dma_async_fsm_8 = 8;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _myaxi_dma_async_fsm <= _myaxi_dma_async_fsm_init;
+      _tmp_1 <= 0;
+      _tmp_2 <= 0;
+      _tmp_4 <= 0;
+      _tmp_3 <= 0;
+      _tmp_39 <= 0;
+      _tmp_40 <= 0;
+      _tmp_42 <= 0;
+      _tmp_41 <= 0;
+    end else begin
+      case(_myaxi_dma_async_fsm)
+        _myaxi_dma_async_fsm_init: begin
+          if(th_blink == 14) begin
+            _myaxi_dma_async_fsm <= _myaxi_dma_async_fsm_1;
+          end 
+          if(th_blink == 32) begin
+            _myaxi_dma_async_fsm <= _myaxi_dma_async_fsm_5;
+          end 
+        end
+        _myaxi_dma_async_fsm_1: begin
+          _tmp_1 <= _th_blink_laddr_7;
+          _tmp_2 <= _th_blink_gaddr_8;
+          _tmp_4 <= _th_blink_size_3;
+          _myaxi_dma_async_fsm <= _myaxi_dma_async_fsm_2;
+        end
+        _myaxi_dma_async_fsm_2: begin
+          if(_tmp_4 <= 256) begin
+            _tmp_3 <= _tmp_4;
+            _tmp_4 <= 0;
+          end else begin
+            _tmp_3 <= 256;
+            _tmp_4 <= _tmp_4 - 256;
+          end
+          _myaxi_dma_async_fsm <= _myaxi_dma_async_fsm_3;
+        end
+        _myaxi_dma_async_fsm_3: begin
+          if(_tmp_18) begin
+            _tmp_1 <= _tmp_1 + _tmp_3;
+            _tmp_2 <= _tmp_2 + (_tmp_3 << 2);
+          end 
+          if(_tmp_18 && (_tmp_4 > 0)) begin
+            _myaxi_dma_async_fsm <= _myaxi_dma_async_fsm_2;
+          end 
+          if(_tmp_18 && (_tmp_4 == 0)) begin
+            _myaxi_dma_async_fsm <= _myaxi_dma_async_fsm_4;
+          end 
+        end
+        _myaxi_dma_async_fsm_4: begin
+          _myaxi_dma_async_fsm <= _myaxi_dma_async_fsm_init;
+        end
+        _myaxi_dma_async_fsm_5: begin
+          _tmp_39 <= _th_blink_laddr_7;
+          _tmp_40 <= _th_blink_gaddr_8;
+          _tmp_42 <= _th_blink_size_3;
+          _myaxi_dma_async_fsm <= _myaxi_dma_async_fsm_6;
+        end
+        _myaxi_dma_async_fsm_6: begin
+          if(_tmp_42 <= 256) begin
+            _tmp_41 <= _tmp_42;
+            _tmp_42 <= 0;
+          end else begin
+            _tmp_41 <= 256;
+            _tmp_42 <= _tmp_42 - 256;
+          end
+          _myaxi_dma_async_fsm <= _myaxi_dma_async_fsm_7;
+        end
+        _myaxi_dma_async_fsm_7: begin
+          if(_tmp_47) begin
+            _tmp_39 <= _tmp_39 + _tmp_41;
+            _tmp_40 <= _tmp_40 + (_tmp_41 << 2);
+          end 
+          if(_tmp_47 && (_tmp_42 > 0)) begin
+            _myaxi_dma_async_fsm <= _myaxi_dma_async_fsm_6;
+          end 
+          if(_tmp_47 && (_tmp_42 == 0)) begin
+            _myaxi_dma_async_fsm <= _myaxi_dma_async_fsm_8;
+          end 
+        end
+        _myaxi_dma_async_fsm_8: begin
+          _myaxi_dma_async_fsm <= _myaxi_dma_async_fsm_init;
+        end
+      endcase
+    end
+  end
+
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -1081,7 +1177,7 @@ module blinkled
           th_blink <= th_blink_14;
         end
         th_blink_14: begin
-          if(_myaxi_dma_fsm == 0) begin
+          if(_myaxi_dma_async_fsm == 0) begin
             th_blink <= th_blink_15;
           end 
         end
@@ -1112,7 +1208,7 @@ module blinkled
           th_blink <= th_blink_17;
         end
         th_blink_21: begin
-          if(_myaxi_dma_fsm == 0) begin
+          if(_myaxi_dma_async_fsm == 0) begin
             th_blink <= th_blink_22;
           end 
         end
@@ -1129,7 +1225,7 @@ module blinkled
           th_blink <= th_blink_25;
         end
         th_blink_25: begin
-          if(_myaxi_dma_fsm == 0) begin
+          if(_myaxi_dma_async_fsm == 0) begin
             th_blink <= th_blink_26;
           end 
         end
@@ -1174,7 +1270,7 @@ module blinkled
           th_blink <= th_blink_32;
         end
         th_blink_32: begin
-          if(_myaxi_dma_fsm == 0) begin
+          if(_myaxi_dma_async_fsm == 0) begin
             th_blink <= th_blink_33;
           end 
         end
@@ -1198,7 +1294,7 @@ module blinkled
           th_blink <= th_blink_35;
         end
         th_blink_37: begin
-          if(_myaxi_dma_fsm == 0) begin
+          if(_myaxi_dma_async_fsm == 0) begin
             th_blink <= th_blink_38;
           end 
         end
@@ -1257,7 +1353,7 @@ module blinkled
           th_blink <= th_blink_49;
         end
         th_blink_49: begin
-          if(_myaxi_dma_fsm == 0) begin
+          if(_myaxi_dma_async_fsm == 0) begin
             th_blink <= th_blink_50;
           end 
         end
@@ -1373,102 +1469,6 @@ module blinkled
     end
   end
 
-  localparam _myaxi_dma_fsm_1 = 1;
-  localparam _myaxi_dma_fsm_2 = 2;
-  localparam _myaxi_dma_fsm_3 = 3;
-  localparam _myaxi_dma_fsm_4 = 4;
-  localparam _myaxi_dma_fsm_5 = 5;
-  localparam _myaxi_dma_fsm_6 = 6;
-  localparam _myaxi_dma_fsm_7 = 7;
-  localparam _myaxi_dma_fsm_8 = 8;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      _myaxi_dma_fsm <= _myaxi_dma_fsm_init;
-      _tmp_1 <= 0;
-      _tmp_2 <= 0;
-      _tmp_4 <= 0;
-      _tmp_3 <= 0;
-      _tmp_39 <= 0;
-      _tmp_40 <= 0;
-      _tmp_42 <= 0;
-      _tmp_41 <= 0;
-    end else begin
-      case(_myaxi_dma_fsm)
-        _myaxi_dma_fsm_init: begin
-          if(th_blink == 14) begin
-            _myaxi_dma_fsm <= _myaxi_dma_fsm_1;
-          end 
-          if(th_blink == 32) begin
-            _myaxi_dma_fsm <= _myaxi_dma_fsm_5;
-          end 
-        end
-        _myaxi_dma_fsm_1: begin
-          _tmp_1 <= _th_blink_laddr_7;
-          _tmp_2 <= _th_blink_gaddr_8;
-          _tmp_4 <= _th_blink_size_3;
-          _myaxi_dma_fsm <= _myaxi_dma_fsm_2;
-        end
-        _myaxi_dma_fsm_2: begin
-          if(_tmp_4 <= 256) begin
-            _tmp_3 <= _tmp_4;
-            _tmp_4 <= 0;
-          end else begin
-            _tmp_3 <= 256;
-            _tmp_4 <= _tmp_4 - 256;
-          end
-          _myaxi_dma_fsm <= _myaxi_dma_fsm_3;
-        end
-        _myaxi_dma_fsm_3: begin
-          if(_tmp_18) begin
-            _tmp_1 <= _tmp_1 + _tmp_3;
-            _tmp_2 <= _tmp_2 + (_tmp_3 << 2);
-          end 
-          if(_tmp_18 && (_tmp_4 > 0)) begin
-            _myaxi_dma_fsm <= _myaxi_dma_fsm_2;
-          end 
-          if(_tmp_18 && (_tmp_4 == 0)) begin
-            _myaxi_dma_fsm <= _myaxi_dma_fsm_4;
-          end 
-        end
-        _myaxi_dma_fsm_4: begin
-          _myaxi_dma_fsm <= _myaxi_dma_fsm_init;
-        end
-        _myaxi_dma_fsm_5: begin
-          _tmp_39 <= _th_blink_laddr_7;
-          _tmp_40 <= _th_blink_gaddr_8;
-          _tmp_42 <= _th_blink_size_3;
-          _myaxi_dma_fsm <= _myaxi_dma_fsm_6;
-        end
-        _myaxi_dma_fsm_6: begin
-          if(_tmp_42 <= 256) begin
-            _tmp_41 <= _tmp_42;
-            _tmp_42 <= 0;
-          end else begin
-            _tmp_41 <= 256;
-            _tmp_42 <= _tmp_42 - 256;
-          end
-          _myaxi_dma_fsm <= _myaxi_dma_fsm_7;
-        end
-        _myaxi_dma_fsm_7: begin
-          if(_tmp_47) begin
-            _tmp_39 <= _tmp_39 + _tmp_41;
-            _tmp_40 <= _tmp_40 + (_tmp_41 << 2);
-          end 
-          if(_tmp_47 && (_tmp_42 > 0)) begin
-            _myaxi_dma_fsm <= _myaxi_dma_fsm_6;
-          end 
-          if(_tmp_47 && (_tmp_42 == 0)) begin
-            _myaxi_dma_fsm <= _myaxi_dma_fsm_8;
-          end 
-        end
-        _myaxi_dma_fsm_8: begin
-          _myaxi_dma_fsm <= _myaxi_dma_fsm_init;
-        end
-      endcase
-    end
-  end
-
   localparam _tmp_fsm_0_1 = 1;
   localparam _tmp_fsm_0_2 = 2;
   localparam _tmp_fsm_0_3 = 3;
@@ -1479,7 +1479,7 @@ module blinkled
     end else begin
       case(_tmp_fsm_0)
         _tmp_fsm_0_init: begin
-          if(_myaxi_dma_fsm == 3) begin
+          if(_myaxi_dma_async_fsm == 3) begin
             _tmp_fsm_0 <= _tmp_fsm_0_1;
           end 
         end
@@ -1543,7 +1543,7 @@ module blinkled
     end else begin
       case(_tmp_fsm_2)
         _tmp_fsm_2_init: begin
-          if(_myaxi_dma_fsm == 7) begin
+          if(_myaxi_dma_async_fsm == 7) begin
             _tmp_fsm_2 <= _tmp_fsm_2_1;
           end 
         end

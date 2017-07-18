@@ -19,7 +19,9 @@ def mkLed():
 
     datawidth = 32
     addrwidth = 10
-    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
+
+    # With async DMA, set enable_async = True
+    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth, enable_async=True)
     # If RAM is simultaneously accesseed with DMA, numports must be 2 or more.
     myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth, numports=2)
 
@@ -45,7 +47,8 @@ def mkLed():
 
         laddr = 0
         gaddr = offset
-        # If RAM is simultaneously accesseed with DMA, different port must be used.
+        # If RAM is simultaneously accesseed with DMA, different port must be
+        # used.
         myaxi.dma_write_async(myram, laddr, gaddr, size, port=1)
         print('dma_write: [%d] -> [%d] async' % (laddr, gaddr))
 

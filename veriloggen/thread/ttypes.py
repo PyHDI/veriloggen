@@ -677,12 +677,15 @@ class AXIM(AxiMaster, _MutexFunction):
     burstlen = 256
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
-                 lite=False, noio=False):
+                 lite=False, noio=False, enable_async=False):
         AxiMaster.__init__(self, m, name, clk, rst, datawidth, addrwidth,
                            lite=lite, noio=noio)
         self.mutex = None
-        self.dma_fsm = None
-        self.dma_fsm_max_state = 0
+        self.enable_async = enable_async
+        if self.enable_async:
+            self.dma_fsm = FSM(self.m, '_'.join(['', self.name, 'dma_async_fsm']),
+                               self.clk, self.rst)
+            self.dma_fsm_max_state = 0
 
     def read(self, fsm, global_addr):
         ret = self.read_request(global_addr, length=1, cond=fsm)
@@ -735,7 +738,7 @@ class AXIM(AxiMaster, _MutexFunction):
         return self.burstlen
 
     def dma_read(self, fsm, ram, local_addr, global_addr, size, port=0):
-        if self.dma_fsm is not None:
+        if self.enable_async:
             self.dma_wait(fsm)
 
         return self._dma_read(fsm, ram, local_addr, global_addr, size, port)
@@ -791,7 +794,7 @@ class AXIM(AxiMaster, _MutexFunction):
         return 0
 
     def dma_write(self, fsm, ram, local_addr, global_addr, size, port=0):
-        if self.dma_fsm is not None:
+        if self.enable_async:
             self.dma_wait(fsm)
 
         return self._dma_write(fsm, ram, local_addr, global_addr, size, port)
@@ -847,9 +850,8 @@ class AXIM(AxiMaster, _MutexFunction):
         return 0
 
     def dma_read_async(self, fsm, ram, local_addr, global_addr, size, port=0):
-        if self.dma_fsm is None:
-            self.dma_fsm = FSM(self.m, '_'.join(['', self.name, 'dma_fsm']),
-                               self.clk, self.rst)
+        if not self.enable_async:
+            raise ValueError('async DMA is disabled.')
 
         # init state
         start_state = 0
@@ -876,9 +878,8 @@ class AXIM(AxiMaster, _MutexFunction):
         return 0
 
     def dma_write_async(self, fsm, ram, local_addr, global_addr, size, port=0):
-        if self.dma_fsm is None:
-            self.dma_fsm = FSM(self.m, '_'.join(['', self.name, 'dma_fsm']),
-                               self.clk, self.rst)
+        if not self.enable_async:
+            raise ValueError('async DMA is disabled.')
 
         # init state
         start_state = 0
@@ -905,11 +906,17 @@ class AXIM(AxiMaster, _MutexFunction):
         return 0
 
     def dma_wait(self, fsm):
+        if not self.enable_async:
+            raise ValueError('async DMA is disabled.')
+
         start_state = 0
         fsm.If(self.dma_fsm.state == start_state).goto_next()
         return 0
 
     def dma_idle(self, fsm):
+        if not self.enable_async:
+            raise ValueError('async DMA is disabled.')
+
         start_state = 0
         flag = self.dma_fsm.state == start_state
         return flag
