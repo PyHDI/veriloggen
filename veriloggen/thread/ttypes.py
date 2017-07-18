@@ -303,6 +303,7 @@ class RAM(SyncRAMManager, _MutexFunction):
     def read(self, fsm, addr, port=0):
         """ intrinsic read operation using a shared Seq object """
 
+        port = vtypes.to_int(port)
         cond = fsm.state == fsm.current
 
         rdata, rvalid = SyncRAMManager.read(self, port, addr, cond)
@@ -317,6 +318,8 @@ class RAM(SyncRAMManager, _MutexFunction):
 
     def write(self, fsm, addr, wdata, port=0, cond=None):
         """ intrinsic write operation using a shared Seq object """
+
+        port = vtypes.to_int(port)
 
         if cond is None:
             cond = fsm.state == fsm.current
@@ -416,6 +419,7 @@ class MultibankRAM(object):
     def read(self, fsm, bank, addr, port=0):
         """ intrinsic read operation for multiple RAMs """
 
+        port = vtypes.to_int(port)
         cond = fsm.state == fsm.current
 
         rdata_list = []
@@ -666,8 +670,9 @@ class FixedFIFO(FIFO):
 
 
 class AXIM(AxiMaster, _MutexFunction):
-    __intrinsics__ = ('read', 'write', 'dma_read',
-                      'dma_write') + _MutexFunction.__intrinsics__
+    __intrinsics__ = ('read', 'write', 'dma_read', 'dma_write',
+                      'dma_read_async', 'dma_write_async',
+                      'dma_wait', 'dma_idle') + _MutexFunction.__intrinsics__
 
     burstlen = 256
 
@@ -676,6 +681,8 @@ class AXIM(AxiMaster, _MutexFunction):
         AxiMaster.__init__(self, m, name, clk, rst, datawidth, addrwidth,
                            lite=lite, noio=noio)
         self.mutex = None
+        self.dma_fsm = None
+        self.dma_fsm_max_state = 0
 
     def read(self, fsm, global_addr):
         ret = self.read_request(global_addr, length=1, cond=fsm)
@@ -728,6 +735,12 @@ class AXIM(AxiMaster, _MutexFunction):
         return self.burstlen
 
     def dma_read(self, fsm, ram, local_addr, global_addr, size, port=0):
+        if self.dma_fsm is not None:
+            self.dma_wait(fsm)
+
+        return self._dma_read(fsm, ram, local_addr, global_addr, size, port)
+
+    def _dma_read(self, fsm, ram, local_addr, global_addr, size, port=0):
         if self.lite:
             raise TypeError('Lite-interface does not support DMA')
 
@@ -737,6 +750,7 @@ class AXIM(AxiMaster, _MutexFunction):
         if not isinstance(ram, (RAM, MultibankRAM)):
             raise TypeError('RAM is required')
 
+        port = vtypes.to_int(port)
         req_local_addr = self.m.TmpReg(ram.addrwidth, initval=0)
         req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
         req_size = self.m.TmpReg(self.addrwidth, initval=0)
@@ -777,6 +791,12 @@ class AXIM(AxiMaster, _MutexFunction):
         return 0
 
     def dma_write(self, fsm, ram, local_addr, global_addr, size, port=0):
+        if self.dma_fsm is not None:
+            self.dma_wait(fsm)
+
+        return self._dma_write(fsm, ram, local_addr, global_addr, size, port)
+
+    def _dma_write(self, fsm, ram, local_addr, global_addr, size, port=0):
         if self.lite:
             raise TypeError('Lite-interface does not support DMA')
 
@@ -786,6 +806,7 @@ class AXIM(AxiMaster, _MutexFunction):
         if not isinstance(ram, (RAM, MultibankRAM)):
             raise TypeError('RAM is required')
 
+        port = vtypes.to_int(port)
         req_local_addr = self.m.TmpReg(ram.addrwidth, initval=0)
         req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
         req_size = self.m.TmpReg(self.addrwidth, initval=0)
@@ -824,6 +845,74 @@ class AXIM(AxiMaster, _MutexFunction):
         fsm.If(done, rest_size == 0).goto_next()
 
         return 0
+
+    def dma_read_async(self, fsm, ram, local_addr, global_addr, size, port=0):
+        if self.dma_fsm is None:
+            self.dma_fsm = FSM(self.m, '_'.join(['', self.name, 'dma_fsm']),
+                               self.clk, self.rst)
+
+        # init state
+        start_state = 0
+        self.dma_fsm.set_index(start_state)
+
+        # start
+        next_state = self.dma_fsm_max_state + 1
+        self.dma_fsm.If(fsm.state == fsm.current).goto(next_state)
+        self.dma_fsm.set_index(next_state)
+
+        # call dma
+        self._dma_read(self.dma_fsm, ram, local_addr,
+                       global_addr, size, port)
+
+        # remember maximum state
+        self.dma_fsm_max_state = self.dma_fsm.current
+
+        # reset
+        self.dma_fsm.goto_init()
+
+        # wait idle state by master fsm
+        self.dma_wait(fsm)
+
+        return 0
+
+    def dma_write_async(self, fsm, ram, local_addr, global_addr, size, port=0):
+        if self.dma_fsm is None:
+            self.dma_fsm = FSM(self.m, '_'.join(['', self.name, 'dma_fsm']),
+                               self.clk, self.rst)
+
+        # init state
+        start_state = 0
+        self.dma_fsm.set_index(start_state)
+
+        # start
+        next_state = self.dma_fsm_max_state + 1
+        self.dma_fsm.If(fsm.state == fsm.current).goto(next_state)
+        self.dma_fsm.set_index(next_state)
+
+        # call dma
+        self._dma_write(self.dma_fsm, ram, local_addr,
+                        global_addr, size, port)
+
+        # remember maximum state
+        self.dma_fsm_max_state = self.dma_fsm.current
+
+        # reset
+        self.dma_fsm.goto_init()
+
+        # wait idle state by master fsm
+        self.dma_wait(fsm)
+
+        return 0
+
+    def dma_wait(self, fsm):
+        start_state = 0
+        fsm.If(self.dma_fsm.state == start_state).goto_next()
+        return 0
+
+    def dma_idle(self, fsm):
+        start_state = 0
+        flag = self.dma_fsm.state == start_state
+        return flag
 
 
 class AXIS(AxiSlave, _MutexFunction):

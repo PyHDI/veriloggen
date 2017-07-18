@@ -149,6 +149,18 @@ def raw_value(v):
     return v
 
 
+def to_int(v):
+    if isinstance(v, int):
+        return v
+    if isinstance(v, (bool, float)):
+        return int(v)
+    if isinstance(v, Int):
+        v = v.value
+        if isinstance(v, int):
+            return v
+    raise TypeError('can not convert to int')
+
+
 def equals(a, b):
     if type(a) != type(b):
         return False
