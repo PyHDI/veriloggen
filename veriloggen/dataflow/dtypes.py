@@ -2637,6 +2637,15 @@ def Counter(step=None, maxval=None, initval=0, enable=None, reset=None, width=32
 
 
 #-------------------------------------------------------------------------
+class Bundle(_Node):
+
+    def __init__(self, **objs):
+        self.objs = objs
+        for name, obj in objs.items():
+            setattr(self, name, obj)
+
+
+#-------------------------------------------------------------------------
 def make_condition(*cond, **kwargs):
     ready = kwargs['ready'] if 'ready' in kwargs else None
 
