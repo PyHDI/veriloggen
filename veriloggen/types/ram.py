@@ -229,7 +229,8 @@ class SyncRAMManager(object):
             self.interfaces[port].wenable(0)
         )
 
-    def write_dataflow(self, port, addr, data, length=1, cond=None, when=None):
+    def write_dataflow(self, port, addr, data, length=1,
+                       stride=1, cond=None, when=None):
         """ 
         @return done
         """
@@ -249,12 +250,12 @@ class SyncRAMManager(object):
             raw_valid = vtypes.Ands(when_cond, raw_valid)
 
         self.seq.If(make_condition(ext_cond, counter == 0))(
-            self.interfaces[port].addr(addr - 1),
+            self.interfaces[port].addr(addr - stride),
             counter(length),
         )
 
         self.seq.If(make_condition(raw_valid, counter > 0))(
-            self.interfaces[port].addr.inc(),
+            self.interfaces[port].addr(self.interfaces[port].addr + stride),
             self.interfaces[port].wdata(raw_data),
             self.interfaces[port].wenable(1),
             counter.dec()
@@ -305,7 +306,8 @@ class SyncRAMManager(object):
 
         return rdata, rvalid
 
-    def read_dataflow(self, port, addr, length=1, cond=None, point=0, signed=False):
+    def read_dataflow(self, port, addr, length=1,
+                      stride=1, cond=None, point=0, signed=False):
         """ 
         @return data, last, done
         """
@@ -362,7 +364,7 @@ class SyncRAMManager(object):
         )
 
         self.seq.If(make_condition(data_cond, counter > 0))(
-            self.interfaces[port].addr.inc(),
+            self.interfaces[port].addr(self.interfaces[port].addr + stride),
             counter.dec(),
             next_valid_on(1),
             next_last(0)

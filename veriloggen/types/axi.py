@@ -630,9 +630,11 @@ class AxiMaster(object):
 
         return df_data, df_last, done
 
-    def dma_read(self, ram, bus_addr, ram_addr, length, cond=None, ram_port=0):
+    def dma_read(self, ram, bus_addr, ram_addr, length,
+                 stride=1, cond=None, ram_port=0):
         if vtypes.equals(self.datawidth, ram.datawidth):
-            return self._dma_read_same(ram, bus_addr, ram_addr, length, cond, ram_port)
+            return self._dma_read_same(ram, bus_addr, ram_addr, length,
+                                       stride, cond, ram_port)
 
         comp = self.datawidth < ram.datawidth
         if not isinstance(comp, bool):
@@ -640,11 +642,14 @@ class AxiMaster(object):
                              (type(self.datawidth, ram.datawidth)))
 
         if comp:
-            return self._dma_read_narrow(ram, bus_addr, ram_addr, length, cond, ram_port)
+            return self._dma_read_narrow(ram, bus_addr, ram_addr, length,
+                                         stride, cond, ram_port)
 
-        return self._dma_read_wide(ram, bus_addr, ram_addr, length, cond, ram_port)
+        return self._dma_read_wide(ram, bus_addr, ram_addr, length,
+                                   stride, cond, ram_port)
 
-    def _dma_read_same(self, ram, bus_addr, ram_addr, length, cond=None, ram_port=0):
+    def _dma_read_same(self, ram, bus_addr, ram_addr, length,
+                       stride=1, cond=None, ram_port=0):
         fsm = TmpFSM(self.m, self.clk, self.rst)
 
         if cond is not None:
@@ -658,7 +663,8 @@ class AxiMaster(object):
         df_data = self.df.Variable(wdata, wvalid, width=ram.datawidth)
 
         done = ram.write_dataflow(
-            ram_port, ram_addr, df_data, length, cond=fsm)
+            ram_port, ram_addr, df_data, length,
+            stride=stride, cond=fsm)
         fsm.goto_next()
 
         data, valid, last = self.read_data(cond=fsm)
@@ -676,7 +682,8 @@ class AxiMaster(object):
 
         return done
 
-    def _dma_read_narrow(self, ram, bus_addr, ram_addr, length, cond=None, ram_port=0):
+    def _dma_read_narrow(self, ram, bus_addr, ram_addr, length,
+                         stride=1, cond=None, ram_port=0):
         """ axi.datawidth < ram.datawidth """
 
         if ram.datawidth % self.datawidth != 0:
@@ -702,7 +709,8 @@ class AxiMaster(object):
         df_data = self.df.Variable(wdata, wvalid, width=ram.datawidth)
 
         done = ram.write_dataflow(
-            ram_port, ram_addr, df_data, length, cond=fsm)
+            ram_port, ram_addr, df_data, length,
+            stride=stride, cond=fsm)
         fsm.goto_next()
 
         pack_count = self.m.TmpReg(pack_size, initval=0)
@@ -727,7 +735,8 @@ class AxiMaster(object):
 
         return done
 
-    def _dma_read_wide(self, ram, bus_addr, ram_addr, length, cond=None, ram_port=0):
+    def _dma_read_wide(self, ram, bus_addr, ram_addr, length,
+                       stride=1, cond=None, ram_port=0):
         """ axi.datawidth > ram.datawidth """
 
         if self.datawidth % ram.datawidth != 0:
@@ -754,7 +763,8 @@ class AxiMaster(object):
         df_data = self.df.Variable(wdata_ram, wvalid, width=ram.datawidth)
 
         done = ram.write_dataflow(
-            ram_port, ram_addr, df_data, length, cond=fsm)
+            ram_port, ram_addr, df_data, length,
+            stride=stride, cond=fsm)
         fsm.goto_next()
 
         pack_count = self.m.TmpReg(pack_size, initval=0)
@@ -782,9 +792,11 @@ class AxiMaster(object):
 
         return done
 
-    def dma_write(self, ram, bus_addr, ram_addr, length, cond=None, ram_port=0):
+    def dma_write(self, ram, bus_addr, ram_addr, length,
+                  stride=1, cond=None, ram_port=0):
         if vtypes.equals(self.datawidth, ram.datawidth):
-            return self._dma_write_same(ram, bus_addr, ram_addr, length, cond, ram_port)
+            return self._dma_write_same(ram, bus_addr, ram_addr, length,
+                                        stride, cond, ram_port)
 
         comp = self.datawidth < ram.datawidth
         if not isinstance(comp, bool):
@@ -792,11 +804,14 @@ class AxiMaster(object):
                              (type(self.datawidth, ram.datawidth)))
 
         if comp:
-            return self._dma_write_narrow(ram, bus_addr, ram_addr, length, cond, ram_port)
+            return self._dma_write_narrow(ram, bus_addr, ram_addr, length,
+                                          stride, cond, ram_port)
 
-        return self._dma_write_wide(ram, bus_addr, ram_addr, length, cond, ram_port)
+        return self._dma_write_wide(ram, bus_addr, ram_addr, length,
+                                    stride, cond, ram_port)
 
-    def _dma_write_same(self, ram, bus_addr, ram_addr, length, cond=None, ram_port=0):
+    def _dma_write_same(self, ram, bus_addr, ram_addr, length,
+                        stride=1, cond=None, ram_port=0):
         fsm = TmpFSM(self.m, self.clk, self.rst)
 
         if cond is not None:
@@ -806,7 +821,7 @@ class AxiMaster(object):
         fsm.If(ack).goto_next()
 
         data, last, done = ram.read_dataflow(
-            ram_port, ram_addr, length, cond=fsm)
+            ram_port, ram_addr, length, stride=stride, cond=fsm)
         fsm.goto_next()
 
         done = self.write_dataflow(data, counter, cond=fsm)
@@ -814,7 +829,8 @@ class AxiMaster(object):
 
         return done
 
-    def _dma_write_narrow(self, ram, bus_addr, ram_addr, length, cond=None, ram_port=0):
+    def _dma_write_narrow(self, ram, bus_addr, ram_addr, length,
+                          stride=1, cond=None, ram_port=0):
         """ axi.datawidth < ram.datawidth """
 
         if ram.datawidth % self.datawidth != 0:
@@ -836,7 +852,7 @@ class AxiMaster(object):
         fsm.If(ack).goto_next()
 
         data, last, done = ram.read_dataflow(
-            ram_port, ram_addr, length, cond=fsm)
+            ram_port, ram_addr, length, stride=stride, cond=fsm)
         fsm.goto_next()
 
         wdata = self.m.TmpReg(ram.datawidth, initval=0)
@@ -875,7 +891,8 @@ class AxiMaster(object):
 
         return done
 
-    def _dma_write_wide(self, ram, bus_addr, ram_addr, length, cond=None, ram_port=0):
+    def _dma_write_wide(self, ram, bus_addr, ram_addr, length,
+                        stride=1, cond=None, ram_port=0):
         """ axi.datawidth > ram.datawidth """
 
         if self.datawidth % ram.datawidth != 0:
@@ -896,7 +913,7 @@ class AxiMaster(object):
         fsm.If(ack).goto_next()
 
         data, last, done = ram.read_dataflow(
-            ram_port, ram_addr, length, cond=fsm)
+            ram_port, ram_addr, length, stride=stride, cond=fsm)
         fsm.goto_next()
 
         wdata = self.m.TmpReg(self.datawidth, initval=0)
