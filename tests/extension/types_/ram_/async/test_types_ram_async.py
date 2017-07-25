@@ -145,15 +145,12 @@ module myram
   input myram_1_wenable
 );
 
-  reg [14-1:0] myram_0_daddr;
-  reg [14-1:0] myram_1_daddr;
   reg [32-1:0] mem [0:16384-1];
 
   always @(posedge CLK) begin
     if(myram_0_wenable) begin
       mem[myram_0_addr] <= myram_0_wdata;
     end 
-    myram_0_daddr <= myram_0_addr;
   end
 
   assign myram_0_rdata = mem[myram_0_addr];
@@ -162,7 +159,6 @@ module myram
     if(myram_1_wenable) begin
       mem[myram_1_addr] <= myram_1_wdata;
     end 
-    myram_1_daddr <= myram_1_addr;
   end
 
   assign myram_1_rdata = mem[myram_1_addr];
