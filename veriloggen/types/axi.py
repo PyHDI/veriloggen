@@ -7,7 +7,8 @@ from veriloggen.seq.seq import Seq, TmpSeq
 from veriloggen.fsm.fsm import FSM, TmpFSM
 from veriloggen.dataflow.dataflow import DataflowManager
 import veriloggen.dataflow as _df
-from veriloggen.dataflow.dtypes import make_condition
+from veriloggen.dataflow.dtypes import make_condition, read_multi
+from veriloggen.dataflow.dtypes import _Numeric as df_numeric
 from . import util
 
 
@@ -392,6 +393,7 @@ class AxiMaster(object):
     def write_dataflow(self, data, counter=None, cond=None, when=None):
         """
         @return done
+        'data' and 'when' must be dataflow variables
         """
         if self.lite:
             raise TypeError('lite interface support no dataflow operation.')
@@ -414,7 +416,12 @@ class AxiMaster(object):
         else:
             cond = (cond, ack)
 
-        raw_data, raw_valid = data.read(cond=cond)
+        if when is None or not isinstance(when, df_numeric):
+            raw_data, raw_valid = data.read(cond=cond)
+        else:
+            data_list, raw_valid = read_multi(self.m, data, when, cond=cond)
+            raw_data = data_list[0]
+            when = data_list[1]
 
         when_cond = make_condition(when, ready=cond)
         if when_cond is not None:

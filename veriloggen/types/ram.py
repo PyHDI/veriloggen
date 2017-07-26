@@ -5,7 +5,8 @@ import veriloggen.core.vtypes as vtypes
 from veriloggen.core.module import Module
 from veriloggen.seq.seq import Seq
 from veriloggen.dataflow.dataflow import DataflowManager
-from veriloggen.dataflow.dtypes import make_condition
+from veriloggen.dataflow.dtypes import make_condition, read_multi
+from veriloggen.dataflow.dtypes import _Numeric as df_numeric
 from . import util
 
 
@@ -236,6 +237,7 @@ class SyncRAMManager(object):
                        stride=1, cond=None, when=None):
         """ 
         @return done
+        'data' and 'when' must be dataflow variables
         """
 
         if self._write_disabled[port]:
@@ -246,7 +248,14 @@ class SyncRAMManager(object):
 
         ext_cond = make_condition(cond)
         data_cond = make_condition(counter > 0, vtypes.Not(last))
-        raw_data, raw_valid = data.read(cond=data_cond)
+
+        if when is None or not isinstance(when, df_numeric):
+            raw_data, raw_valid = data.read(cond=data_cond)
+        else:
+            data_list, raw_valid = read_multi(
+                self.m, data, when, cond=data_cond)
+            raw_data = data_list[0]
+            when = data_list[1]
 
         when_cond = make_condition(when, ready=data_cond)
         if when_cond is not None:

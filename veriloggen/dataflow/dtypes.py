@@ -2637,15 +2637,6 @@ def Counter(step=None, maxval=None, initval=0, enable=None, reset=None, width=32
 
 
 #-------------------------------------------------------------------------
-class Bundle(_Node):
-
-    def __init__(self, **objs):
-        self.objs = objs
-        for name, obj in objs.items():
-            setattr(self, name, obj)
-
-
-#-------------------------------------------------------------------------
 def make_condition(*cond, **kwargs):
     ready = kwargs['ready'] if 'ready' in kwargs else None
 
@@ -2788,3 +2779,73 @@ def _from_vtypes_value(value):
         return Variable(value)
 
     raise TypeError("Unsupported type '%s'" % str(type(value)))
+
+
+def read_multi(m, *vars, **opts):
+    """ read multiple variables """
+
+    cond = opts['cond'] if 'cond' in opts else None
+
+    if not vars:
+        raise ValueError('No variables.')
+
+    tmp = m.get_tmp()
+    all_valid = m.Wire(_tmp_valid(tmp, prefix='_tmp_all_valid_'))
+    all_valid_list = []
+    rdata_list = []
+    rvalid_list = []
+
+    for var in vars:
+        if not isinstance(var, _Numeric):
+            raise TypeError("var '%s' is not dataflow variable." % str(var))
+
+        if var.output_node is not None and id(var) != id(var.output_node):
+            var = var.output_node
+
+        elif var.output_sig_data is None:
+
+            # set default name
+            if var.output_data is None:
+                var.output_tmp()
+
+            var._implement_output_sig(var.m, var.seq, aswire=True)
+
+        data = var.output_sig_data
+        valid = var.output_sig_valid
+
+        if valid is None:
+            valid = 1
+
+        all_valid_list.append(valid)
+
+        ready = make_condition(cond, all_valid)
+        val = 1 if ready is None else ready
+
+        if ready is not None and var.output_sig_ready is None:
+            raise ValueError("Dataflow ready port is required for throttling.")
+
+        if var.output_sig_ready is not None:
+            prev_assign = var.output_sig_ready._get_assign()
+            if not prev_assign:
+                var.output_sig_ready.assign(val)
+            else:
+                prev_assign.overwrite_right(
+                    vtypes.OrList(prev_assign.statement.right, val))
+                m = var.output_sig_ready._get_module()
+                m.remove(prev_assign)
+                m.append(prev_assign)
+
+        if ready is not None:
+            ack = vtypes.AndList(valid, ready)
+        else:
+            ack = valid
+
+        rdata = data
+        rvalid = ack
+
+        rdata_list.append(rdata)
+        rvalid_list.append(rvalid)
+
+    all_valid.assign(vtypes.Ands(*all_valid_list))
+
+    return rdata_list, rvalid_list[0]
