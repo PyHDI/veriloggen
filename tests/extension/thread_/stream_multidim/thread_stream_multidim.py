@@ -25,25 +25,13 @@ def mkLed():
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
     ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
 
-    dims = [16, 4, 8]
-    size = functools.reduce(lambda x, y: x * y, dims, 1)
+    shape = [16, 4, 8]
+    size = functools.reduce(lambda x, y: x * y, shape, 1)
     order = [2, 1, 0]
 
-    def to_shape(dims, order):
-        shape = []
-        for p in order:
-            size = dims[p]
-            stride = functools.reduce(lambda x, y: x * y,
-                                      dims[:p], 1) if p > 0 else 1
-            shape.append((size, stride))
-        return shape
-
-    shape_a = to_shape(dims, order)
-    shape_b = to_shape(dims, order)
-
     def comp_stream(strm, offset):
-        a = strm.read_multidim(ram_a, offset, shape_a)
-        b = strm.read_multidim(ram_b, offset, shape_b)
+        a = strm.read_multidim(ram_a, offset, shape, order)
+        b = strm.read_multidim(ram_b, offset, shape, order)
         sum, valid = strm.RegionAdd(a * b, size)
         strm.write(ram_c, offset, 1, sum, when=valid)
 
