@@ -1,9 +1,12 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import functools
+
 import veriloggen.core.vtypes as vtypes
 from veriloggen.core.module import Module
 from veriloggen.seq.seq import Seq
+from veriloggen.fsm.fsm import TmpFSM
 from veriloggen.dataflow.dataflow import DataflowManager
 from veriloggen.dataflow.dtypes import make_condition, read_multi
 from veriloggen.dataflow.dtypes import _Numeric as df_numeric
@@ -206,87 +209,6 @@ class SyncRAMManager(object):
         )
         self._write_disabled[port] = True
 
-    def write(self, port, addr, wdata, cond=None):
-        """ 
-        @return None
-        """
-        return self.write_data(port, addr, wdata, cond)
-
-    def write_data(self, port, addr, wdata, cond=None):
-        """ 
-        @return None
-        """
-
-        if self._write_disabled[port]:
-            raise TypeError('Write disabled.')
-
-        if cond is not None:
-            self.seq.If(cond)
-
-        self.seq(
-            self.interfaces[port].addr(addr),
-            self.interfaces[port].wdata(wdata),
-            self.interfaces[port].wenable(1)
-        )
-
-        self.seq.Then().Delay(1)(
-            self.interfaces[port].wenable(0)
-        )
-
-    def write_dataflow(self, port, addr, data, length=1,
-                       stride=1, cond=None, when=None):
-        """ 
-        @return done
-        'data' and 'when' must be dataflow variables
-        """
-
-        if self._write_disabled[port]:
-            raise TypeError('Write disabled.')
-
-        counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
-        last = self.m.TmpReg(initval=0)
-
-        ext_cond = make_condition(cond)
-        data_cond = make_condition(counter > 0, vtypes.Not(last))
-
-        if when is None or not isinstance(when, df_numeric):
-            raw_data, raw_valid = data.read(cond=data_cond)
-        else:
-            data_list, raw_valid = read_multi(
-                self.m, data, when, cond=data_cond)
-            raw_data = data_list[0]
-            when = data_list[1]
-
-        when_cond = make_condition(when, ready=data_cond)
-        if when_cond is not None:
-            raw_valid = vtypes.Ands(when_cond, raw_valid)
-
-        self.seq.If(make_condition(ext_cond, counter == 0))(
-            self.interfaces[port].addr(addr - stride),
-            counter(length),
-        )
-
-        self.seq.If(make_condition(raw_valid, counter > 0))(
-            self.interfaces[port].addr(self.interfaces[port].addr + stride),
-            self.interfaces[port].wdata(raw_data),
-            self.interfaces[port].wenable(1),
-            counter.dec()
-        )
-
-        self.seq.If(make_condition(raw_valid, counter == 1))(
-            last(1)
-        )
-
-        # de-assert
-        self.seq.Delay(1)(
-            self.interfaces[port].wenable(0),
-            last(0)
-        )
-
-        done = last
-
-        return done
-
     def read(self, port, addr, cond=None):
         """ 
         @return data, valid
@@ -394,3 +316,325 @@ class SyncRAMManager(object):
         done = last
 
         return df_data, df_last, done
+
+    def read_dataflow_pattern(self, port, addr, pattern,
+                              cond=None, point=0, signed=False):
+        """ 
+        @return data, last, done
+        """
+
+        if not isinstance(pattern, (tuple, list)):
+            raise TypeError('pattern must be list or tuple.')
+
+        if not pattern:
+            raise ValueError(
+                'pattern must have one (size, stride) pair at least.')
+
+        if not isinstance(pattern[0], (tuple, list)):
+            pattern = (pattern,)
+
+        last = self.m.TmpReg(initval=0)
+        req_addr = self.m.TmpWire(self.addrwidth)
+        addr_offset = [self.m.TmpReg(self.addrwidth, initval=0)
+                       for i, (out_size, out_stride) in enumerate(pattern[1:])]
+
+        ext_cond = make_condition(cond)
+
+        req_addr_value = addr
+        for offset in addr_offset:
+            req_addr_value = offset + req_addr_value
+        req_addr.assign(req_addr_value)
+
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        fsm.If(ext_cond)(
+            [offset(0) for offset in addr_offset]
+        )
+        fsm.If(ext_cond).goto_next()
+
+        # send state
+        size, stride = pattern[0]
+        if stride is None:
+            stride = 1
+
+        count_list = [self.m.TmpReg(out_size.bit_length() + 1, initval=0)
+                      for i, (out_size, out_stride) in enumerate(pattern[1:])]
+
+        repeat_state = fsm.current
+
+        rdata, rlast, done = self.read_dataflow(port, req_addr, size, stride=stride,
+                                                cond=fsm, point=point, signed=signed)
+
+        fsm.goto_next()
+
+        # wait state
+        cond_list = []
+        prev_cond = None
+
+        for offset, count, (out_size, out_stride) in zip(addr_offset, count_list, pattern[1:]):
+            if prev_cond is None:
+                fsm.If(done)(
+                    count.inc(),
+                    offset(offset + out_stride)
+                )
+                fsm.If(done, count == out_size - 1)(
+                    count(0),
+                    offset(0)
+                )
+            else:
+                fsm.If(done, prev_cond)(
+                    count.inc(),
+                    offset(offset + out_stride)
+                )
+                fsm.If(done, prev_cond, count == out_size - 1)(
+                    count(0),
+                    offset(0)
+                )
+
+            cond_list.append(count == out_size - 1)
+            prev_cond = vtypes.Ands(*cond_list)
+
+        fin_cond = vtypes.Ands(*cond_list) if cond_list else None
+
+        if fin_cond is not None:
+            # repeat condition (default)
+            fsm.If(done).goto(repeat_state)
+            # finish condition
+            fsm.If(done, fin_cond)(
+                last(1)
+            )
+            fsm.If(done, fin_cond).goto_init()
+
+        else:
+            # finish condition
+            fsm.If(done)(
+                last(1)
+            )
+            fsm.Delay(1)(
+                last(0)
+            )
+            fsm.If(done).goto_init()
+
+        done = last
+
+        return rdata, rlast, done
+
+    def read_dataflow_multidim(self, port, addr, shape, order=None,
+                               cond=None, point=0, signed=False):
+        """ 
+        @return data, last, done
+        """
+
+        if order is None:
+            order = list(range(len(shape)))
+
+        pattern = self._to_pattern(shape, order)
+        return self.read_dataflow_pattern(port, addr, pattern,
+                                          cond=cond, point=point, signed=signed)
+
+    def write(self, port, addr, wdata, cond=None):
+        """ 
+        @return None
+        """
+        return self.write_data(port, addr, wdata, cond)
+
+    def write_data(self, port, addr, wdata, cond=None):
+        """ 
+        @return None
+        """
+
+        if self._write_disabled[port]:
+            raise TypeError('Write disabled.')
+
+        if cond is not None:
+            self.seq.If(cond)
+
+        self.seq(
+            self.interfaces[port].addr(addr),
+            self.interfaces[port].wdata(wdata),
+            self.interfaces[port].wenable(1)
+        )
+
+        self.seq.Then().Delay(1)(
+            self.interfaces[port].wenable(0)
+        )
+
+    def write_dataflow(self, port, addr, data, length=1,
+                       stride=1, cond=None, when=None):
+        """ 
+        @return done
+        'data' and 'when' must be dataflow variables
+        """
+
+        if self._write_disabled[port]:
+            raise TypeError('Write disabled.')
+
+        counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
+        last = self.m.TmpReg(initval=0)
+
+        ext_cond = make_condition(cond)
+        data_cond = make_condition(counter > 0, vtypes.Not(last))
+
+        if when is None or not isinstance(when, df_numeric):
+            raw_data, raw_valid = data.read(cond=data_cond)
+        else:
+            data_list, raw_valid = read_multi(
+                self.m, data, when, cond=data_cond)
+            raw_data = data_list[0]
+            when = data_list[1]
+
+        when_cond = make_condition(when, ready=data_cond)
+        if when_cond is not None:
+            raw_valid = vtypes.Ands(when_cond, raw_valid)
+
+        self.seq.If(make_condition(ext_cond, counter == 0))(
+            self.interfaces[port].addr(addr - stride),
+            counter(length),
+        )
+
+        self.seq.If(make_condition(raw_valid, counter > 0))(
+            self.interfaces[port].addr(self.interfaces[port].addr + stride),
+            self.interfaces[port].wdata(raw_data),
+            self.interfaces[port].wenable(1),
+            counter.dec()
+        )
+
+        self.seq.If(make_condition(raw_valid, counter == 1))(
+            last(1)
+        )
+
+        # de-assert
+        self.seq.Delay(1)(
+            self.interfaces[port].wenable(0),
+            last(0)
+        )
+
+        done = last
+
+        return done
+
+    def write_dataflow_pattern(self, port, addr, data, pattern,
+                               cond=None, when=None):
+        """ 
+        @return done
+        'data' and 'when' must be dataflow variables
+        """
+
+        if not isinstance(pattern, (tuple, list)):
+            raise TypeError('pattern must be list or tuple.')
+
+        if not pattern:
+            raise ValueError(
+                'pattern must have one (size, stride) pair at least.')
+
+        if not isinstance(pattern[0], (tuple, list)):
+            pattern = (pattern,)
+
+        last = self.m.TmpReg(initval=0)
+        req_addr = self.m.TmpWire(self.addrwidth)
+        addr_offset = [self.m.TmpReg(self.addrwidth, initval=0)
+                       for i, (out_size, out_stride) in enumerate(pattern[1:])]
+
+        ext_cond = make_condition(cond)
+
+        req_addr_value = addr
+        for offset in addr_offset:
+            req_addr_value = offset + req_addr_value
+        req_addr.assign(req_addr_value)
+
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        fsm.If(ext_cond)(
+            [offset(0) for offset in addr_offset]
+        )
+        fsm.If(ext_cond).goto_next()
+
+        # send state
+        size, stride = pattern[0]
+        if stride is None:
+            stride = 1
+
+        count_list = [self.m.TmpReg(out_size.bit_length() + 1, initval=0)
+                      for i, (out_size, out_stride) in enumerate(pattern[1:])]
+
+        repeat_state = fsm.current
+
+        done = self.write_dataflow(port, req_addr, data, size, stride=stride,
+                                   cond=fsm, when=when)
+
+        fsm.goto_next()
+
+        # wait state
+        cond_list = []
+        prev_cond = None
+
+        for offset, count, (out_size, out_stride) in zip(addr_offset, count_list, pattern[1:]):
+            if prev_cond is None:
+                fsm.If(done)(
+                    count.inc(),
+                    offset(offset + out_stride)
+                )
+                fsm.If(done, count == out_size - 1)(
+                    count(0),
+                    offset(0)
+                )
+            else:
+                fsm.If(done, prev_cond)(
+                    count.inc(),
+                    offset(offset + out_stride)
+                )
+                fsm.If(done, prev_cond, count == out_size - 1)(
+                    count(0),
+                    offset(0)
+                )
+
+            cond_list.append(count == out_size - 1)
+            prev_cond = vtypes.Ands(*cond_list)
+
+        fin_cond = vtypes.Ands(*cond_list) if cond_list else None
+
+        if fin_cond is not None:
+            # repeat condition (default)
+            fsm.If(done).goto(repeat_state)
+            # finish condition
+            fsm.If(done, fin_cond)(
+                last(1)
+            )
+            fsm.If(done, fin_cond).goto_init()
+
+        else:
+            # finish condition
+            fsm.If(done)(
+                last(1)
+            )
+            fsm.Delay(1)(
+                last(0)
+            )
+            fsm.If(done).goto_init()
+
+        done = last
+
+        return done
+
+    def write_dataflow_multidim(self, port, addr, data, shape, order=None,
+                                cond=None, when=None):
+        """ 
+        @return done
+        'data' and 'when' must be dataflow variables
+        """
+
+        if order is None:
+            order = list(range(len(shape)))
+
+        pattern = self._to_pattern(shape, order)
+        return self.write_dataflow_pattern(port, addr, data, pattern,
+                                           cond=cond, when=when)
+
+    def _to_pattern(self, shape, order):
+        pattern = []
+        for p in order:
+            size = shape[p]
+            stride = functools.reduce(lambda x, y: x * y,
+                                      shape[:p], 1) if p > 0 else 1
+            pattern.append((size, stride))
+        return pattern

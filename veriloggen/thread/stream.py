@@ -82,8 +82,15 @@ class Stream(vtypes.VeriloggenNode):
 
         return rdata
 
-    def write(self, obj, addr, size, value,
-              stride=1, when=None, port=0):
+    def read_sequential(self, obj, addr, size,
+                        point=0, signed=False, port=0, with_last=False):
+
+        return self.read(obj, addr, size,
+                         stride=1, point=point, signed=signed, port=port,
+                         with_last=with_last)
+
+    def read_pattern(self, obj, addr, pattern,
+                     point=0, signed=False, port=0, with_last=False):
 
         flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'flag'])),
                           initval=0)
@@ -96,8 +103,8 @@ class Stream(vtypes.VeriloggenNode):
         )
         fsm.If(self.start_cond).goto_next()
 
-        done = obj.write_dataflow(port, addr, value, size,
-                                  stride=stride, cond=fsm, when=when)
+        rdata, rlast, done = obj.read_dataflow_pattern(port, addr, pattern,
+                                                       cond=fsm, point=point, signed=signed)
 
         fsm.goto_next()
 
@@ -107,23 +114,13 @@ class Stream(vtypes.VeriloggenNode):
 
         fsm.If(done).goto_init()
 
-        return 0
+        if with_last:
+            return rdata, rlast
 
-    def read_sequential(self, obj, addr, size,
-                        point=0, signed=False, port=0, with_last=False):
+        return rdata
 
-        return self.read(obj, addr, size,
-                         stride=1, point=point, signed=signed, port=port,
-                         with_last=with_last)
-
-    def write_sequential(self, obj, addr, size, value,
-                         when=None, port=0):
-
-        return self.write(obj, addr, size, value,
-                          when=when, port=port)
-
-    def read_pattern(self, obj, addr, pattern,
-                     point=0, signed=False, port=0, with_last=False):
+    def _read_pattern(self, obj, addr, pattern,
+                      point=0, signed=False, port=0, with_last=False):
 
         if not isinstance(pattern, (tuple, list)):
             raise TypeError('pattern must be list or tuple.')
@@ -226,8 +223,108 @@ class Stream(vtypes.VeriloggenNode):
 
         return rdata
 
-    def write_pattern(self, obj, addr, pattern, value,
+    def read_multidim(self, obj, addr, shape, order=None,
+                      point=0, signed=False, port=0, with_last=False):
+
+        flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'flag'])),
+                          initval=0)
+        self.done_flags.append(flag)
+
+        fsm = FSM(self.m, compiler._tmp_name('_'.join(['', self.name, 'fsm'])),
+                  self.clk, self.rst)
+        fsm.If(self.start_cond)(
+            flag(0)
+        )
+        fsm.If(self.start_cond).goto_next()
+
+        rdata, rlast, done = obj.read_dataflow_multidim(port, addr, shape, order=order,
+                                                        cond=fsm, point=point, signed=signed)
+
+        fsm.goto_next()
+
+        fsm.If(done)(
+            flag(1)
+        )
+
+        fsm.If(done).goto_init()
+
+        if with_last:
+            return rdata, rlast
+
+        return rdata
+
+    def _read_multidim(self, obj, addr, shape, order=None,
+                       point=0, signed=False, port=0, with_last=False):
+
+        if order is None:
+            order = list(range(len(shape)))
+
+        pattern = self._to_pattern(shape, order)
+        return self.read_pattern(obj, addr, pattern,
+                                 point=point, signed=signed, port=port, with_last=with_last)
+
+    def write(self, obj, addr, size, value,
+              stride=1, when=None, port=0):
+
+        flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'flag'])),
+                          initval=0)
+        self.done_flags.append(flag)
+
+        fsm = FSM(self.m, compiler._tmp_name('_'.join(['', self.name, 'fsm'])),
+                  self.clk, self.rst)
+        fsm.If(self.start_cond)(
+            flag(0)
+        )
+        fsm.If(self.start_cond).goto_next()
+
+        done = obj.write_dataflow(port, addr, value, size,
+                                  stride=stride, cond=fsm, when=when)
+
+        fsm.goto_next()
+
+        fsm.If(done)(
+            flag(1)
+        )
+
+        fsm.If(done).goto_init()
+
+        return 0
+
+    def write_sequential(self, obj, addr, size, value,
+                         when=None, port=0):
+
+        return self.write(obj, addr, size, value,
+                          when=when, port=port)
+
+    def write_pattern(self, obj, addr, value, pattern,
                       when=None, port=0):
+
+        flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'flag'])),
+                          initval=0)
+        self.done_flags.append(flag)
+
+        fsm = FSM(self.m, compiler._tmp_name('_'.join(['', self.name, 'fsm'])),
+                  self.clk, self.rst)
+        fsm.If(self.start_cond)(
+            flag(0)
+        )
+        fsm.If(self.start_cond).goto_next()
+
+        done = obj.write_dataflow_pattern(port, addr, value, pattern,
+                                          cond=fsm, when=when)
+
+        fsm.goto_next()
+
+        fsm.If(done)(
+            flag(1)
+        )
+
+        fsm.If(done).goto_init()
+
+        return 0
+
+    def _write_pattern(self, obj, addr, value, pattern,
+                       when=None, port=0):
 
         if not isinstance(pattern, (tuple, list)):
             raise TypeError('pattern must be list or tuple.')
@@ -327,17 +424,41 @@ class Stream(vtypes.VeriloggenNode):
 
         return 0
 
-    def read_multidim(self, obj, addr, shape, order,
-                      point=0, signed=False, port=0, with_last=False):
-
-        pattern = self._to_pattern(shape, order)
-        return self.read_pattern(obj, addr, pattern,
-                                 point=point, signed=signed, port=port, with_last=with_last)
-
-    def write_multidim(self, obj, addr, shape, order, value,
+    def write_multidim(self, obj, addr, value, shape, order=None,
                        when=None, port=0):
+
+        flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'flag'])),
+                          initval=0)
+        self.done_flags.append(flag)
+
+        fsm = FSM(self.m, compiler._tmp_name('_'.join(['', self.name, 'fsm'])),
+                  self.clk, self.rst)
+        fsm.If(self.start_cond)(
+            flag(0)
+        )
+        fsm.If(self.start_cond).goto_next()
+
+        done = obj.write_dataflow_multidim(port, addr, value, shape, order=order,
+                                           cond=fsm, when=when)
+
+        fsm.goto_next()
+
+        fsm.If(done)(
+            flag(1)
+        )
+
+        fsm.If(done).goto_init()
+
+        return 0
+
+    def _write_multidim(self, obj, addr, value, shape, order=None,
+                        when=None, port=0):
+
+        if order is None:
+            order = list(range(len(shape)))
+
         pattern = self._to_pattern(shape, order)
-        return self.write_pattern(obj, addr, pattern, value,
+        return self.write_pattern(obj, addr, value, pattern,
                                   when=when, port=port)
 
     def _to_pattern(self, shape, order):

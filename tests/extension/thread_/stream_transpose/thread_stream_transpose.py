@@ -32,7 +32,7 @@ def mkLed():
 
     def comp_stream(strm, offset):
         a = strm.read_multidim(ram_a, offset, shape, read_order)
-        strm.write_multidim(ram_c, offset, shape, write_order, a)
+        strm.write_multidim(ram_c, offset, a, shape, write_order)
 
     def comp_sequential(offset):
         zpos = 0
