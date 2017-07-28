@@ -119,110 +119,6 @@ class Stream(vtypes.VeriloggenNode):
 
         return rdata
 
-    def _read_pattern(self, obj, addr, pattern,
-                      point=0, signed=False, port=0, with_last=False):
-
-        if not isinstance(pattern, (tuple, list)):
-            raise TypeError('pattern must be list or tuple.')
-
-        if not pattern:
-            raise ValueError(
-                'pattern must have one (size, stride) pair at least.')
-
-        if not isinstance(pattern[0], (tuple, list)):
-            pattern = (pattern,)
-
-        flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'flag'])),
-                          initval=0)
-        self.done_flags.append(flag)
-
-        req_addr = self.m.Wire(
-            compiler._tmp_name('_'.join(['', self.name, 'req_addr'])), obj.addrwidth)
-
-        addr_offset = [
-            self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'offset_%d' % i])),
-                       obj.addrwidth, initval=0)
-            for i, (out_size, out_stride) in enumerate(pattern[1:])]
-
-        req_addr_value = addr
-        for offset in addr_offset:
-            req_addr_value = offset + req_addr_value
-        req_addr.assign(req_addr_value)
-
-        fsm = FSM(self.m, compiler._tmp_name('_'.join(['', self.name, 'fsm'])),
-                  self.clk, self.rst)
-        fsm.If(self.start_cond)(
-            flag(0),
-            [offset(0) for offset in addr_offset]
-        )
-        fsm.If(self.start_cond).goto_next()
-
-        # send state
-        size, stride = pattern[0]
-        if stride is None:
-            stride = 1
-
-        count_list = [self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'count_%d' % i])),
-                                 out_size.bit_length() + 1, initval=0)
-                      for i, (out_size, out_stride) in enumerate(pattern[1:])]
-
-        repeat_state = fsm.current
-
-        rdata, rlast, done = obj.read_dataflow(port, req_addr, size, stride=stride,
-                                               cond=fsm, point=point, signed=signed)
-
-        fsm.goto_next()
-
-        # wait state
-        cond_list = []
-        prev_cond = None
-
-        for offset, count, (out_size, out_stride) in zip(addr_offset, count_list, pattern[1:]):
-            if prev_cond is None:
-                fsm.If(done)(
-                    count.inc(),
-                    offset(offset + out_stride)
-                )
-                fsm.If(done, count == out_size - 1)(
-                    count(0),
-                    offset(0)
-                )
-            else:
-                fsm.If(done, prev_cond)(
-                    count.inc(),
-                    offset(offset + out_stride)
-                )
-                fsm.If(done, prev_cond, count == out_size - 1)(
-                    count(0),
-                    offset(0)
-                )
-
-            cond_list.append(count == out_size - 1)
-            prev_cond = vtypes.Ands(*cond_list)
-
-        fin_cond = vtypes.Ands(*cond_list) if cond_list else None
-
-        if fin_cond is not None:
-            # repeat condition (default)
-            fsm.If(done).goto(repeat_state)
-            # finish condition
-            fsm.If(done, fin_cond)(
-                flag(1)
-            )
-            fsm.If(done, fin_cond).goto_init()
-
-        else:
-            # finish condition
-            fsm.If(done)(
-                flag(1)
-            )
-            fsm.If(done).goto_init()
-
-        if with_last:
-            return rdata, rlast
-
-        return rdata
-
     def read_multidim(self, obj, addr, shape, order=None,
                       point=0, signed=False, port=0, with_last=False):
 
@@ -252,16 +148,6 @@ class Stream(vtypes.VeriloggenNode):
             return rdata, rlast
 
         return rdata
-
-    def _read_multidim(self, obj, addr, shape, order=None,
-                       point=0, signed=False, port=0, with_last=False):
-
-        if order is None:
-            order = list(range(len(shape)))
-
-        pattern = self._to_pattern(shape, order)
-        return self.read_pattern(obj, addr, pattern,
-                                 point=point, signed=signed, port=port, with_last=with_last)
 
     def write(self, obj, addr, size, value,
               stride=1, when=None, port=0):
@@ -323,107 +209,6 @@ class Stream(vtypes.VeriloggenNode):
 
         return 0
 
-    def _write_pattern(self, obj, addr, value, pattern,
-                       when=None, port=0):
-
-        if not isinstance(pattern, (tuple, list)):
-            raise TypeError('pattern must be list or tuple.')
-
-        if not pattern:
-            raise ValueError(
-                'pattern must have one (size, stride) pair at least.')
-
-        if not isinstance(pattern[0], (tuple, list)):
-            pattern = (pattern,)
-
-        flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'flag'])),
-                          initval=0)
-        self.done_flags.append(flag)
-
-        req_addr = self.m.Wire(
-            compiler._tmp_name('_'.join(['', self.name, 'req_addr'])), obj.addrwidth)
-
-        addr_offset = [
-            self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'offset_%d' % i])),
-                       obj.addrwidth, initval=0)
-            for i, (out_size, out_stride) in enumerate(pattern[1:])]
-
-        req_addr_value = addr
-        for offset in addr_offset:
-            req_addr_value = offset + req_addr_value
-        req_addr.assign(req_addr_value)
-
-        fsm = FSM(self.m, compiler._tmp_name('_'.join(['', self.name, 'fsm'])),
-                  self.clk, self.rst)
-        fsm.If(self.start_cond)(
-            flag(0),
-            [offset(0) for offset in addr_offset]
-        )
-        fsm.If(self.start_cond).goto_next()
-
-        # send state
-        size, stride = pattern[0]
-        if stride is None:
-            stride = 1
-
-        count_list = [self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'count_%d' % i])),
-                                 out_size.bit_length() + 1, initval=0)
-                      for i, (out_size, out_stride) in enumerate(pattern[1:])]
-
-        repeat_state = fsm.current
-
-        done = obj.write_dataflow(port, req_addr, value, size, stride=stride,
-                                  cond=fsm, when=when)
-
-        fsm.goto_next()
-
-        # wait state
-        cond_list = []
-        prev_cond = None
-
-        for offset, count, (out_size, out_stride) in zip(addr_offset, count_list, pattern[1:]):
-            if prev_cond is None:
-                fsm.If(done)(
-                    count.inc(),
-                    offset(offset + out_stride)
-                )
-                fsm.If(done, count == out_size - 1)(
-                    count(0),
-                    offset(0)
-                )
-            else:
-                fsm.If(done, prev_cond)(
-                    count.inc(),
-                    offset(offset + out_stride)
-                )
-                fsm.If(done, prev_cond, count == out_size - 1)(
-                    count(0),
-                    offset(0)
-                )
-
-            cond_list.append(count == out_size - 1)
-            prev_cond = vtypes.Ands(*cond_list)
-
-        fin_cond = vtypes.Ands(*cond_list) if cond_list else None
-
-        if fin_cond is not None:
-            # repeat condition (default)
-            fsm.If(done).goto(repeat_state)
-            # finish condition
-            fsm.If(done, fin_cond)(
-                flag(1)
-            )
-            fsm.If(done, fin_cond).goto_init()
-
-        else:
-            # finish condition
-            fsm.If(done)(
-                flag(1)
-            )
-            fsm.If(done).goto_init()
-
-        return 0
-
     def write_multidim(self, obj, addr, value, shape, order=None,
                        when=None, port=0):
 
@@ -450,25 +235,6 @@ class Stream(vtypes.VeriloggenNode):
         fsm.If(done).goto_init()
 
         return 0
-
-    def _write_multidim(self, obj, addr, value, shape, order=None,
-                        when=None, port=0):
-
-        if order is None:
-            order = list(range(len(shape)))
-
-        pattern = self._to_pattern(shape, order)
-        return self.write_pattern(obj, addr, value, pattern,
-                                  when=when, port=port)
-
-    def _to_pattern(self, shape, order):
-        pattern = []
-        for p in order:
-            size = shape[p]
-            stride = functools.reduce(lambda x, y: x * y,
-                                      shape[:p], 1) if p > 0 else 1
-            pattern.append((size, stride))
-        return pattern
 
     def __getattr__(self, attr):
         try:
