@@ -323,6 +323,159 @@ class SyncRAMManager(object):
         @return data, last, done
         """
 
+        # ---
+        if not isinstance(pattern, (tuple, list)):
+            raise TypeError('pattern must be list or tuple.')
+
+        if not pattern:
+            raise ValueError(
+                'pattern must have one (size, stride) pair at least.')
+
+        if not isinstance(pattern[0], (tuple, list)):
+            pattern = (pattern,)
+
+        sizes = [p[0] for p in pattern]
+        length = functools.reduce(lambda x, y: x * y, sizes, 1)
+        ###
+
+        data_valid = self.m.TmpReg(initval=0)
+        last_valid = self.m.TmpReg(initval=0)
+        data_ready = self.m.TmpWire()
+        last_ready = self.m.TmpWire()
+        data_ready.assign(1)
+        last_ready.assign(1)
+
+        data_ack = vtypes.Ors(data_ready, vtypes.Not(data_valid))
+        last_ack = vtypes.Ors(last_ready, vtypes.Not(last_valid))
+
+        ext_cond = make_condition(cond)
+        data_cond = make_condition(data_ack, last_ack)
+        prev_data_cond = self.seq.Prev(data_cond, 1)
+
+        data = self.m.TmpWireLike(self.interfaces[port].rdata)
+
+        prev_data = self.seq.Prev(data, 1)
+        data.assign(vtypes.Mux(prev_data_cond,
+                               self.interfaces[port].rdata, prev_data))
+
+        counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
+
+        next_valid_on = self.m.TmpReg(initval=0)
+        next_valid_off = self.m.TmpReg(initval=0)
+
+        next_last = self.m.TmpReg(initval=0)
+        last = self.m.TmpReg(initval=0)
+
+        # ---
+        req_addr = self.m.TmpWire(self.addrwidth)
+        addr_offset = [self.m.TmpReg(self.addrwidth, initval=0)
+                       for i, (out_size, out_stride) in enumerate(pattern[1:])]
+
+        req_addr_value = addr
+        for offset in addr_offset:
+            req_addr_value = offset + req_addr_value
+        req_addr.assign(req_addr_value)
+
+        size, stride = pattern[0]
+        if stride is None:
+            stride = 1
+
+        count_list = [self.m.TmpReg(out_size.bit_length() + 1, initval=0)
+                      for i, (out_size, out_stride) in enumerate(pattern)]
+        ###
+
+        self.seq.If(make_condition(data_cond, next_valid_off))(
+            last(0),
+            data_valid(0),
+            last_valid(0),
+            next_valid_off(0)
+        )
+
+        self.seq.If(make_condition(data_cond, next_valid_on))(
+            data_valid(1),
+            last_valid(1),
+            last(next_last),
+            next_last(0),
+            next_valid_on(0),
+            next_valid_off(1)
+        )
+
+        self.seq.If(make_condition(ext_cond, counter == 0,
+                                   vtypes.Not(next_last), vtypes.Not(last)))(
+            self.interfaces[port].addr(addr),
+            counter(length - 1),
+            next_valid_on(1)
+        )
+
+        self.seq.If(make_condition(data_cond, counter > 0))(
+            self.interfaces[port].addr(self.interfaces[port].addr + stride),
+            counter.dec(),
+            next_valid_on(1),
+            next_last(0)
+        )
+
+        # ---
+        self.seq.If(make_condition(ext_cond, counter == 0,
+                                   vtypes.Not(next_last), vtypes.Not(last)))(
+            count_list[0](0)
+        )
+        self.seq.If(make_condition(data_cond, counter > 0))(
+            count_list[0].inc()
+        )
+        self.seq.If(make_condition(data_cond, counter > 0,
+                                   count_list[0] == pattern[0][0] - 1))(
+            count_list[0](0),
+            self.interfaces[port].addr(req_addr),
+        )
+
+        cond_list = []
+        cond_list.append(count_list[0] == pattern[0][0] - 1)
+        prev_cond = vtypes.Ands(*cond_list)
+        next_update = True
+
+        # next offset
+        for offset, count, (out_size, out_stride) in zip(addr_offset,
+                                                         count_list[1:], pattern[1:]):
+            self.seq.If(make_condition(ext_cond, counter == 0,
+                                       vtypes.Not(next_last), vtypes.Not(last)))(
+                count(1) if next_update and out_size != 1 else count(0),
+                offset(out_stride) if next_update and out_size != 1 else offset(0)
+            )
+            self.seq.If(make_condition(data_cond, counter > 0, prev_cond))(
+                count.inc(),
+                offset(offset + out_stride)
+            )
+            self.seq.If(make_condition(data_cond, counter > 0, prev_cond,
+                                       count == out_size - 1))(
+                count(0),
+                offset(0)
+            )
+
+            cond_list.append(count == out_size - 1)
+            prev_cond = vtypes.Ands(*cond_list)
+            if next_update and out_size != 1:
+                next_update = False
+        ###
+
+        self.seq.If(make_condition(data_cond, counter == 1))(
+            next_last(1)
+        )
+
+        df = self.df if self.df is not None else dataflow
+
+        df_data = df.Variable(data, data_valid, data_ready,
+                              width=self.datawidth, point=point, signed=signed)
+        df_last = df.Variable(last, last_valid, last_ready, width=1)
+        done = last
+
+        return df_data, df_last, done
+
+    def _read_dataflow_pattern(self, port, addr, pattern,
+                               cond=None, point=0, signed=False):
+        """ 
+        @return data, last, done
+        """
+
         if not isinstance(pattern, (tuple, list)):
             raise TypeError('pattern must be list or tuple.')
 
@@ -515,6 +668,134 @@ class SyncRAMManager(object):
 
     def write_dataflow_pattern(self, port, addr, data, pattern,
                                cond=None, when=None):
+        """ 
+        @return done
+        'data' and 'when' must be dataflow variables
+        """
+
+        if self._write_disabled[port]:
+            raise TypeError('Write disabled.')
+
+        # ---
+        if not isinstance(pattern, (tuple, list)):
+            raise TypeError('pattern must be list or tuple.')
+
+        if not pattern:
+            raise ValueError(
+                'pattern must have one (size, stride) pair at least.')
+
+        if not isinstance(pattern[0], (tuple, list)):
+            pattern = (pattern,)
+
+        sizes = [p[0] for p in pattern]
+        length = functools.reduce(lambda x, y: x * y, sizes, 1)
+        ###
+
+        counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
+        last = self.m.TmpReg(initval=0)
+
+        ext_cond = make_condition(cond)
+        data_cond = make_condition(counter > 0, vtypes.Not(last))
+
+        if when is None or not isinstance(when, df_numeric):
+            raw_data, raw_valid = data.read(cond=data_cond)
+        else:
+            data_list, raw_valid = read_multi(
+                self.m, data, when, cond=data_cond)
+            raw_data = data_list[0]
+            when = data_list[1]
+
+        when_cond = make_condition(when, ready=data_cond)
+        if when_cond is not None:
+            raw_valid = vtypes.Ands(when_cond, raw_valid)
+
+        # ---
+        req_addr = self.m.TmpWire(self.addrwidth)
+        addr_offset = [self.m.TmpReg(self.addrwidth, initval=0)
+                       for i, (out_size, out_stride) in enumerate(pattern[1:])]
+
+        req_addr_value = addr
+        for offset in addr_offset:
+            req_addr_value = offset + req_addr_value
+        req_addr.assign(req_addr_value)
+
+        size, stride = pattern[0]
+        if stride is None:
+            stride = 1
+
+        count_list = [self.m.TmpReg(out_size.bit_length() + 1, initval=0)
+                      for i, (out_size, out_stride) in enumerate(pattern)]
+        ###
+
+        self.seq.If(make_condition(ext_cond, counter == 0))(
+            self.interfaces[port].addr(addr - stride),
+            counter(length),
+        )
+
+        self.seq.If(make_condition(raw_valid, counter > 0))(
+            self.interfaces[port].addr(self.interfaces[port].addr + stride),
+            self.interfaces[port].wdata(raw_data),
+            self.interfaces[port].wenable(1),
+            counter.dec()
+        )
+
+        # ---
+        self.seq.If(make_condition(ext_cond, counter == 0))(
+            count_list[0](-1)
+        )
+        self.seq.If(make_condition(raw_valid, counter > 0))(
+            count_list[0].inc()
+        )
+        self.seq.If(make_condition(raw_valid, counter > 0,
+                                   count_list[0] == pattern[0][0] - 1))(
+            count_list[0](0),
+            self.interfaces[port].addr(req_addr),
+        )
+
+        cond_list = []
+        cond_list.append(count_list[0] == pattern[0][0] - 1)
+        prev_cond = vtypes.Ands(*cond_list)
+        next_update = True
+
+        # next offset
+        for offset, count, (out_size, out_stride) in zip(addr_offset,
+                                                         count_list[1:], pattern[1:]):
+            self.seq.If(make_condition(ext_cond, counter == 0))(
+                count(1) if next_update and out_size != 1 else count(0),
+                offset(out_stride) if next_update and out_size != 1 else offset(0)
+            )
+            self.seq.If(make_condition(raw_valid, counter > 0, prev_cond))(
+                count.inc(),
+                offset(offset + out_stride)
+            )
+            self.seq.If(make_condition(raw_valid, counter > 0, prev_cond,
+                                       count == out_size - 1))(
+                count(0),
+                offset(0)
+            )
+
+            cond_list.append(count == out_size - 1)
+            prev_cond = vtypes.Ands(*cond_list)
+            if next_update and out_size != 1:
+                next_update = False
+        ###
+
+        self.seq.If(make_condition(raw_valid, counter == 1))(
+            last(1)
+        )
+
+        # de-assert
+        self.seq.Delay(1)(
+            self.interfaces[port].wenable(0),
+            last(0)
+        )
+
+        done = last
+
+        return done
+
+    def _write_dataflow_pattern(self, port, addr, data, pattern,
+                                cond=None, when=None):
         """ 
         @return done
         'data' and 'when' must be dataflow variables
