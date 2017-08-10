@@ -685,6 +685,7 @@ class FixedFIFO(FIFO):
 
 class AXIM(AxiMaster, _MutexFunction):
     __intrinsics__ = ('read', 'write', 'dma_read', 'dma_write',
+                      'dma_read_long', 'dma_write_long',
                       'dma_read_async', 'dma_write_async',
                       'dma_wait', 'dma_idle') + _MutexFunction.__intrinsics__
 
@@ -818,6 +819,55 @@ class AXIM(AxiMaster, _MutexFunction):
 
         return 0
 
+    def dma_read_long(self, fsm, ram, local_addr, global_addr, size,
+                      local_stride=1, port=0):
+        if self.enable_async:
+            self.dma_wait(fsm)
+
+        return self._dma_read_long(fsm, ram, local_addr, global_addr, size,
+                                   local_stride, port)
+
+    def _dma_read_long(self, fsm, ram, local_addr, global_addr, size,
+                       local_stride=1, port=0):
+        if self.lite:
+            raise TypeError('Lite-interface does not support DMA')
+
+        if isinstance(ram, (tuple, list)):
+            ram = MultibankRAM(rams=ram)
+
+        if not isinstance(ram, (RAM, MultibankRAM)):
+            raise TypeError('RAM is required')
+
+        port = vtypes.to_int(port)
+        req_local_addr = self.m.TmpReg(ram.addrwidth, initval=0)
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
+        req_size = self.m.TmpReg(self.addrwidth, initval=0)
+        if isinstance(local_stride, (int, vtypes.Int)):
+            req_local_stride = local_stride
+        else:
+            req_local_stride = self.m.TmpReg(ram.addrwidth, initval=1)
+
+        fsm(
+            req_local_addr(local_addr),
+            req_global_addr(global_addr),
+            req_size(size),
+        )
+        if not isinstance(local_stride, (int, vtypes.Int)):
+            fsm(
+                req_local_stride(local_stride)
+            )
+        fsm.goto_next()
+
+        cond = fsm.state == fsm.current
+
+        done = AxiMaster.dma_read_long(self, ram, req_global_addr, req_local_addr, req_size,
+                                       stride=req_local_stride,
+                                       cond=cond, ram_port=port)
+
+        fsm.If(done).goto_next()
+
+        return 0
+
     def dma_write(self, fsm, ram, local_addr, global_addr, size,
                   local_stride=1, port=0):
         if self.enable_async:
@@ -882,6 +932,55 @@ class AXIM(AxiMaster, _MutexFunction):
         )
         fsm.If(done, rest_size > 0).goto(check_state)
         fsm.If(done, rest_size == 0).goto_next()
+
+        return 0
+
+    def dma_write_long(self, fsm, ram, local_addr, global_addr, size,
+                       local_stride=1, port=0):
+        if self.enable_async:
+            self.dma_wait(fsm)
+
+        return self._dma_write_long(fsm, ram, local_addr, global_addr, size,
+                                    local_stride, port)
+
+    def _dma_write_long(self, fsm, ram, local_addr, global_addr, size,
+                        local_stride=1, port=0):
+        if self.lite:
+            raise TypeError('Lite-interface does not support DMA')
+
+        if isinstance(ram, (tuple, list)):
+            ram = MultibankRAM(rams=ram)
+
+        if not isinstance(ram, (RAM, MultibankRAM)):
+            raise TypeError('RAM is required')
+
+        port = vtypes.to_int(port)
+        req_local_addr = self.m.TmpReg(ram.addrwidth, initval=0)
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
+        req_size = self.m.TmpReg(self.addrwidth, initval=0)
+        if isinstance(local_stride, (int, vtypes.Int)):
+            req_local_stride = local_stride
+        else:
+            req_local_stride = self.m.TmpReg(ram.addrwidth, initval=1)
+
+        fsm(
+            req_local_addr(local_addr),
+            req_global_addr(global_addr),
+            req_size(size)
+        )
+        if not isinstance(local_stride, (int, vtypes.Int)):
+            fsm(
+                req_local_stride(local_stride)
+            )
+        fsm.goto_next()
+
+        cond = fsm.state == fsm.current
+
+        done = AxiMaster.dma_write_long(self, ram, req_global_addr, req_local_addr, req_size,
+                                        stride=req_local_stride,
+                                        cond=cond, ram_port=port)
+
+        fsm.If(done).goto_next()
 
         return 0
 
