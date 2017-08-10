@@ -9,6 +9,14 @@ import pyverilog.dataflow.optimizer as voptimizer
 from pyverilog.dataflow.dataflow import *
 
 
+def try_optimize(node, width=32):
+    try:
+        return optimize(node, width)
+    except:
+        return node
+    return node
+
+
 def optimize(node, width=32):
     df_tree = makeDFTree(node)
     opt = voptimizer.VerilogOptimizer({}, default_width=width)

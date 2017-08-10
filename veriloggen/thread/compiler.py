@@ -9,7 +9,7 @@ import textwrap
 
 import veriloggen.core.vtypes as vtypes
 import veriloggen.types.fixed as fixed
-from . import optimizer
+from veriloggen.optimizer import try_optimize as optimize
 from .scope import ScopeName, ScopeFrameList, ScopeFrame
 from .operator import getVeriloggenOp, getMethodName, applyMethod
 
@@ -25,14 +25,6 @@ def _tmp_name(prefix='_tmp_thread'):
     _tmp_count += 1
     ret = '_'.join([prefix, str(v)])
     return ret
-
-
-def optimize(node):
-    try:
-        return optimizer.optimize(node)
-    except:
-        return node
-    return node
 
 
 class FunctionVisitor(ast.NodeVisitor):

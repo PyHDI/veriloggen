@@ -4,17 +4,17 @@ from __future__ import print_function
 import math
 
 import veriloggen.core.vtypes as vtypes
-from veriloggen.types.ram import SyncRAMManager
-from veriloggen.types.fifo import Fifo
-from veriloggen.types.axi import AxiMaster, AxiSlave
+import veriloggen.dataflow.dtypes as dtypes
+from veriloggen.seq.seq import Seq
+from veriloggen.fsm.fsm import FSM, TmpFSM
+from veriloggen.optimizer import try_optimize as optimize
+
 import veriloggen.types.uart as uart
 import veriloggen.types.util as util
 import veriloggen.types.fixed as fxd
-from veriloggen.seq.seq import Seq
-from veriloggen.fsm.fsm import FSM, TmpFSM
-import veriloggen.dataflow.dtypes as dtypes
-
-from . import compiler
+from veriloggen.types.ram import SyncRAMManager
+from veriloggen.types.fifo import Fifo
+from veriloggen.types.axi import AxiMaster, AxiSlave
 
 
 def Lock(m, name, clk, rst, width=32):
@@ -811,8 +811,7 @@ class AXIM(AxiMaster, _MutexFunction):
 
         fsm.If(done)(
             req_local_addr.add(req_size),
-            req_global_addr.add(compiler.optimize(
-                req_size * (self.datawidth // 8)))
+            req_global_addr.add(optimize(req_size * (self.datawidth // 8)))
         )
         fsm.If(done, rest_size > 0).goto(check_state)
         fsm.If(done, rest_size == 0).goto_next()
@@ -879,8 +878,7 @@ class AXIM(AxiMaster, _MutexFunction):
 
         fsm.If(done)(
             req_local_addr.add(req_size),
-            req_global_addr.add(compiler.optimize(
-                req_size * (self.datawidth // 8)))
+            req_global_addr.add(optimize(req_size * (self.datawidth // 8)))
         )
         fsm.If(done, rest_size > 0).goto(check_state)
         fsm.If(done, rest_size == 0).goto_next()
