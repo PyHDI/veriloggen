@@ -573,11 +573,11 @@ module blinkled
   wire [32-1:0] _tmp_12;
   reg [32-1:0] __tmp_12_1;
   assign _tmp_12 = (__tmp_11_1)? myram_0_rdata : __tmp_12_1;
-  reg [33-1:0] _tmp_13;
+  reg _tmp_13;
   reg _tmp_14;
   reg _tmp_15;
   reg _tmp_16;
-  reg _tmp_17;
+  reg [33-1:0] _tmp_17;
   reg [128-1:0] _tmp_18;
   reg _tmp_19;
   wire _tmp_20;
@@ -613,11 +613,11 @@ module blinkled
   wire [32-1:0] _tmp_36;
   reg [32-1:0] __tmp_36_1;
   assign _tmp_36 = (__tmp_35_1)? myram_0_rdata : __tmp_36_1;
-  reg [33-1:0] _tmp_37;
+  reg _tmp_37;
   reg _tmp_38;
   reg _tmp_39;
   reg _tmp_40;
-  reg _tmp_41;
+  reg [33-1:0] _tmp_41;
   reg [128-1:0] _tmp_42;
   reg _tmp_43;
   wire _tmp_44;
@@ -840,23 +840,23 @@ module blinkled
       _myram_cond_0_1 <= 0;
       __tmp_11_1 <= 0;
       __tmp_12_1 <= 0;
-      _tmp_17 <= 0;
+      _tmp_16 <= 0;
       _tmp_6 <= 0;
       _tmp_7 <= 0;
-      _tmp_15 <= 0;
-      _tmp_16 <= 0;
       _tmp_14 <= 0;
+      _tmp_15 <= 0;
       _tmp_13 <= 0;
+      _tmp_17 <= 0;
       _myram_cond_1_1 <= 0;
       __tmp_35_1 <= 0;
       __tmp_36_1 <= 0;
-      _tmp_41 <= 0;
+      _tmp_40 <= 0;
       _tmp_30 <= 0;
       _tmp_31 <= 0;
-      _tmp_39 <= 0;
-      _tmp_40 <= 0;
       _tmp_38 <= 0;
+      _tmp_39 <= 0;
       _tmp_37 <= 0;
+      _tmp_41 <= 0;
       _tmp_57 <= 0;
       _tmp_58 <= 0;
       _myram_cond_2_1 <= 0;
@@ -908,33 +908,33 @@ module blinkled
       _myram_cond_0_1 <= th_blink == 10;
       __tmp_11_1 <= _tmp_11;
       __tmp_12_1 <= _tmp_12;
-      if((_tmp_8 || !_tmp_6) && (_tmp_9 || !_tmp_7) && _tmp_15) begin
-        _tmp_17 <= 0;
+      if((_tmp_8 || !_tmp_6) && (_tmp_9 || !_tmp_7) && _tmp_14) begin
+        _tmp_16 <= 0;
         _tmp_6 <= 0;
         _tmp_7 <= 0;
-        _tmp_15 <= 0;
+        _tmp_14 <= 0;
       end 
-      if((_tmp_8 || !_tmp_6) && (_tmp_9 || !_tmp_7) && _tmp_14) begin
+      if((_tmp_8 || !_tmp_6) && (_tmp_9 || !_tmp_7) && _tmp_13) begin
         _tmp_6 <= 1;
         _tmp_7 <= 1;
-        _tmp_17 <= _tmp_16;
-        _tmp_16 <= 0;
-        _tmp_14 <= 0;
-        _tmp_15 <= 1;
+        _tmp_16 <= _tmp_15;
+        _tmp_15 <= 0;
+        _tmp_13 <= 0;
+        _tmp_14 <= 1;
       end 
-      if((_tmp_fsm_0 == 2) && (_tmp_13 == 0) && !_tmp_16 && !_tmp_17) begin
+      if((_tmp_fsm_0 == 2) && (_tmp_17 == 0) && !_tmp_15 && !_tmp_16) begin
         myram_0_addr <= _tmp_1;
-        _tmp_13 <= _tmp_3 - 1;
-        _tmp_14 <= 1;
+        _tmp_17 <= _tmp_3 - 1;
+        _tmp_13 <= 1;
       end 
-      if((_tmp_8 || !_tmp_6) && (_tmp_9 || !_tmp_7) && (_tmp_13 > 0)) begin
+      if((_tmp_8 || !_tmp_6) && (_tmp_9 || !_tmp_7) && (_tmp_17 > 0)) begin
         myram_0_addr <= myram_0_addr + 1;
-        _tmp_13 <= _tmp_13 - 1;
-        _tmp_14 <= 1;
-        _tmp_16 <= 0;
+        _tmp_17 <= _tmp_17 - 1;
+        _tmp_13 <= 1;
+        _tmp_15 <= 0;
       end 
-      if((_tmp_8 || !_tmp_6) && (_tmp_9 || !_tmp_7) && (_tmp_13 == 1)) begin
-        _tmp_16 <= 1;
+      if((_tmp_8 || !_tmp_6) && (_tmp_9 || !_tmp_7) && (_tmp_17 == 1)) begin
+        _tmp_15 <= 1;
       end 
       if(th_blink == 21) begin
         myram_0_addr <= _th_blink_i_5;
@@ -944,33 +944,33 @@ module blinkled
       _myram_cond_1_1 <= th_blink == 21;
       __tmp_35_1 <= _tmp_35;
       __tmp_36_1 <= _tmp_36;
-      if((_tmp_32 || !_tmp_30) && (_tmp_33 || !_tmp_31) && _tmp_39) begin
-        _tmp_41 <= 0;
+      if((_tmp_32 || !_tmp_30) && (_tmp_33 || !_tmp_31) && _tmp_38) begin
+        _tmp_40 <= 0;
         _tmp_30 <= 0;
         _tmp_31 <= 0;
-        _tmp_39 <= 0;
+        _tmp_38 <= 0;
       end 
-      if((_tmp_32 || !_tmp_30) && (_tmp_33 || !_tmp_31) && _tmp_38) begin
+      if((_tmp_32 || !_tmp_30) && (_tmp_33 || !_tmp_31) && _tmp_37) begin
         _tmp_30 <= 1;
         _tmp_31 <= 1;
-        _tmp_41 <= _tmp_40;
-        _tmp_40 <= 0;
-        _tmp_38 <= 0;
-        _tmp_39 <= 1;
+        _tmp_40 <= _tmp_39;
+        _tmp_39 <= 0;
+        _tmp_37 <= 0;
+        _tmp_38 <= 1;
       end 
-      if((_tmp_fsm_1 == 2) && (_tmp_37 == 0) && !_tmp_40 && !_tmp_41) begin
+      if((_tmp_fsm_1 == 2) && (_tmp_41 == 0) && !_tmp_39 && !_tmp_40) begin
         myram_0_addr <= _tmp_25;
-        _tmp_37 <= _tmp_27 - 1;
-        _tmp_38 <= 1;
+        _tmp_41 <= _tmp_27 - 1;
+        _tmp_37 <= 1;
       end 
-      if((_tmp_32 || !_tmp_30) && (_tmp_33 || !_tmp_31) && (_tmp_37 > 0)) begin
+      if((_tmp_32 || !_tmp_30) && (_tmp_33 || !_tmp_31) && (_tmp_41 > 0)) begin
         myram_0_addr <= myram_0_addr + 1;
-        _tmp_37 <= _tmp_37 - 1;
-        _tmp_38 <= 1;
-        _tmp_40 <= 0;
+        _tmp_41 <= _tmp_41 - 1;
+        _tmp_37 <= 1;
+        _tmp_39 <= 0;
       end 
-      if((_tmp_32 || !_tmp_30) && (_tmp_33 || !_tmp_31) && (_tmp_37 == 1)) begin
-        _tmp_40 <= 1;
+      if((_tmp_32 || !_tmp_30) && (_tmp_33 || !_tmp_31) && (_tmp_41 == 1)) begin
+        _tmp_39 <= 1;
       end 
       if((_tmp_fsm_2 == 2) && (_tmp_57 == 0)) begin
         myram_0_addr <= _tmp_49 - 1;
@@ -1335,7 +1335,7 @@ module blinkled
           th_blink <= th_blink_39;
         end
         th_blink_39: begin
-          if(_th_blink_rdata_9 != _th_blink_i_5 + 100) begin
+          if(_th_blink_rdata_9 !== _th_blink_i_5 + 100) begin
             th_blink <= th_blink_40;
           end else begin
             th_blink <= th_blink_42;
@@ -1417,7 +1417,7 @@ module blinkled
           th_blink <= th_blink_53;
         end
         th_blink_53: begin
-          if(_th_blink_rdata_9 != _th_blink_i_5 + 1000) begin
+          if(_th_blink_rdata_9 !== _th_blink_i_5 + 1000) begin
             th_blink <= th_blink_54;
           end else begin
             th_blink <= th_blink_56;

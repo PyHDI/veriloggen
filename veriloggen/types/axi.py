@@ -701,7 +701,6 @@ class AxiMaster(object):
                 'ram.datawidth must be multiple number of axi.datawidth')
 
         pack_size = int(ram.datawidth // self.datawidth)
-
         dma_length = (length << int(math.log(pack_size, 2))
                       if math.log(pack_size, 2) % 1.0 == 0.0 else
                       length * pack_size)
@@ -896,7 +895,6 @@ class AxiMaster(object):
                 'ram.datawidth must be multiple number of axi.datawidth')
 
         pack_size = int(ram.datawidth // self.datawidth)
-
         dma_length = (length << int(math.log(pack_size, 2))
                       if math.log(pack_size, 2) % 1.0 == 0.0 else
                       length * pack_size)
@@ -1097,16 +1095,30 @@ class AxiMaster(object):
     def _dma_read_pattern_same(self, ram, bus_addr, ram_addr, pattern,
                                cond=None, ram_port=0):
 
-        sizes = [p[0] for p in pattern]
-        length = functools.reduce(lambda x, y: x * y, sizes, 1)
+        length = pattern[0][0]
 
         fsm = TmpFSM(self.m, self.clk, self.rst)
 
         if cond is not None:
             fsm.If(cond).goto_next()
 
-        ack, counter = self.read_request(bus_addr, length, cond=fsm)
-        fsm.If(ack).goto_next()
+        req_bus_addr = self.m.TmpReg(self.addrwidth, initval=0)
+        req_size = self.m.TmpReg(length.bit_length() + 1, initval=0)
+        rest_size = self.m.TmpReg(length.bit_length() + 1, initval=0)
+        max_burstlen = 2 ** self.burst_size_width
+
+        fsm(
+            req_bus_addr(bus_addr),
+            rest_size(length)
+        )
+
+        count_list = [self.m.TmpReg(size.bit_length() + 1, initval=0)
+                      for size, stride in pattern[1:]]
+
+        for count, (size, stride) in zip(count_list, pattern[1:]):
+            fsm(
+                count(size - 1)
+            )
 
         wdata = self.m.TmpReg(ram.datawidth, initval=0)
         wvalid = self.m.TmpReg(initval=0)
@@ -1114,12 +1126,25 @@ class AxiMaster(object):
 
         done = ram.write_dataflow_pattern(ram_port, ram_addr, df_data, pattern,
                                           cond=fsm)
-
         fsm.goto_next()
+
+        check_state = fsm.current
+
+        fsm.If(rest_size <= max_burstlen)(
+            req_size(rest_size),
+            rest_size(0)
+        ).Else(
+            req_size(max_burstlen),
+            rest_size(rest_size - max_burstlen)
+        )
+        fsm.goto_next()
+
+        ack, counter = self.read_request(req_bus_addr, req_size, cond=fsm)
+        fsm.If(ack).goto_next()
 
         data, valid, last = self.read_data(cond=fsm)
 
-        fsm(
+        fsm.Delay(1)(
             wvalid(0)
         )
         fsm.If(valid)(
@@ -1127,7 +1152,37 @@ class AxiMaster(object):
             wvalid(1),
         )
 
-        fsm.If(done).goto_init()
+        fsm.If(valid, last)(
+            req_bus_addr.add(optimize(req_size * (self.datawidth // 8)))
+        )
+
+        update_count = rest_size == 0
+        for count, (size, stride) in zip(count_list, pattern[1:]):
+            fsm.If(valid, last, update_count)(
+                count.dec()
+            )
+            fsm.If(valid, last, update_count, count == 0)(
+                count(size - 1)
+            )
+            update_count = vtypes.Ands(update_count, count == 0)
+
+        fsm.If(valid, last, rest_size == 0, vtypes.Not(update_count))(
+            rest_size(length)
+        )
+        fsm.If(valid, last, rest_size > 0).goto(check_state)
+        fsm.If(valid, last, rest_size == 0, vtypes.Not(
+            update_count)).goto(check_state)
+        fsm.If(valid, last, update_count).goto_next()
+
+        done = self.m.TmpReg(initval=0)
+        fsm(
+            done(1)
+        )
+        fsm.Delay(1)(
+            done(0)
+        )
+        fsm.goto_next()
+        fsm.goto_init()
 
         return done
 
@@ -1139,11 +1194,8 @@ class AxiMaster(object):
             raise ValueError(
                 'ram.datawidth must be multiple number of axi.datawidth')
 
-        sizes = [p[0] for p in pattern]
-        length = functools.reduce(lambda x, y: x * y, sizes, 1)
-
+        length = pattern[0][0]
         pack_size = int(ram.datawidth // self.datawidth)
-
         dma_length = (length << int(math.log(pack_size, 2))
                       if math.log(pack_size, 2) % 1.0 == 0.0 else
                       length * pack_size)
@@ -1153,8 +1205,23 @@ class AxiMaster(object):
         if cond is not None:
             fsm.If(cond).goto_next()
 
-        ack, counter = self.read_request(bus_addr, dma_length, cond=fsm)
-        fsm.If(ack).goto_next()
+        req_bus_addr = self.m.TmpReg(self.addrwidth, initval=0)
+        req_size = self.m.TmpReg(dma_length.bit_length() + 1, initval=0)
+        rest_size = self.m.TmpReg(dma_length.bit_length() + 1, initval=0)
+        max_burstlen = 2 ** self.burst_size_width
+
+        fsm(
+            req_bus_addr(bus_addr),
+            rest_size(dma_length)
+        )
+
+        count_list = [self.m.TmpReg(size.bit_length() + 1, initval=0)
+                      for size, stride in pattern[1:]]
+
+        for count, (size, stride) in zip(count_list, pattern[1:]):
+            fsm(
+                count(size - 1)
+            )
 
         wdata = self.m.TmpReg(ram.datawidth, initval=0)
         wvalid = self.m.TmpReg(initval=0)
@@ -1164,10 +1231,24 @@ class AxiMaster(object):
                                           cond=fsm)
         fsm.goto_next()
 
+        check_state = fsm.current
+
+        fsm.If(rest_size <= max_burstlen)(
+            req_size(rest_size),
+            rest_size(0)
+        ).Else(
+            req_size(max_burstlen),
+            rest_size(rest_size - max_burstlen)
+        )
+        fsm.goto_next()
+
+        ack, counter = self.read_request(req_bus_addr, req_size, cond=fsm)
+        fsm.If(ack).goto_next()
+
         pack_count = self.m.TmpReg(pack_size, initval=0)
         data, valid, last = self.read_data(cond=fsm)
 
-        fsm(
+        fsm.Delay(1)(
             wvalid(0)
         )
         fsm.If(valid)(
@@ -1181,7 +1262,37 @@ class AxiMaster(object):
             pack_count(0)
         )
 
-        fsm.If(done).goto_init()
+        fsm.If(valid, last)(
+            req_bus_addr.add(optimize(req_size * (self.datawidth // 8)))
+        )
+
+        update_count = rest_size == 0
+        for count, (size, stride) in zip(count_list, pattern[1:]):
+            fsm.If(valid, last, update_count)(
+                count.dec()
+            )
+            fsm.If(valid, last, update_count, count == 0)(
+                count(size - 1)
+            )
+            update_count = vtypes.Ands(update_count, count == 0)
+
+        fsm.If(valid, last, rest_size == 0, vtypes.Not(update_count))(
+            rest_size(dma_length)
+        )
+        fsm.If(valid, last, rest_size > 0).goto(check_state)
+        fsm.If(valid, last, rest_size == 0, vtypes.Not(
+            update_count)).goto(check_state)
+        fsm.If(valid, last, update_count).goto_next()
+
+        done = self.m.TmpReg(initval=0)
+        fsm(
+            done(1)
+        )
+        fsm.Delay(1)(
+            done(0)
+        )
+        fsm.goto_next()
+        fsm.goto_init()
 
         return done
 
@@ -1193,9 +1304,7 @@ class AxiMaster(object):
             raise ValueError(
                 'axi.datawidth must be multiple number of ram.datawidth')
 
-        sizes = [p[0] for p in pattern]
-        length = functools.reduce(lambda x, y: x * y, sizes, 1)
-
+        length = pattern[0][0]
         pack_size = int(self.datawidth // ram.datawidth)
         dma_length = (length >> int(math.log(pack_size, 2))
                       if math.log(pack_size, 2) % 1.0 == 0.0 else
@@ -1206,8 +1315,23 @@ class AxiMaster(object):
         if cond is not None:
             fsm.If(cond).goto_next()
 
-        ack, counter = self.read_request(bus_addr, dma_length, cond=fsm)
-        fsm.If(ack).goto_next()
+        req_bus_addr = self.m.TmpReg(self.addrwidth, initval=0)
+        req_size = self.m.TmpReg(dma_length.bit_length() + 1, initval=0)
+        rest_size = self.m.TmpReg(dma_length.bit_length() + 1, initval=0)
+        max_burstlen = 2 ** self.burst_size_width
+
+        fsm(
+            req_bus_addr(bus_addr),
+            rest_size(dma_length)
+        )
+
+        count_list = [self.m.TmpReg(size.bit_length() + 1, initval=0)
+                      for size, stride in pattern[1:]]
+
+        for count, (size, stride) in zip(count_list, pattern[1:]):
+            fsm(
+                count(size - 1)
+            )
 
         wdata = self.m.TmpReg(self.datawidth, initval=0)
         wdata_ram = self.m.TmpWire(ram.datawidth)
@@ -1219,12 +1343,34 @@ class AxiMaster(object):
                                           cond=fsm)
         fsm.goto_next()
 
+        check_state = fsm.current
+
+        last_done = self.m.TmpReg(initval=0)
+        fsm(
+            last_done(0)
+        )
+
+        fsm.If(rest_size <= max_burstlen)(
+            req_size(rest_size),
+            rest_size(0)
+        ).Else(
+            req_size(max_burstlen),
+            rest_size(rest_size - max_burstlen)
+        )
+        fsm.goto_next()
+
+        ack, counter = self.read_request(req_bus_addr, req_size, cond=fsm)
+        fsm.If(ack).goto_next()
+
         pack_count = self.m.TmpReg(pack_size, initval=0)
         rcond = make_condition(fsm, pack_count == 0)
         data, valid, last = self.read_data(cond=rcond)
 
-        fsm(
+        fsm.Delay(1)(
             wvalid(0)
+        )
+        fsm.If(pack_count == 0, valid, last)(
+            last_done(1)
         )
         fsm.If(pack_count == 0, valid)(
             wdata(data),
@@ -1240,7 +1386,40 @@ class AxiMaster(object):
             pack_count(0)
         )
 
-        fsm.If(done).goto_init()
+        fsm.If(last_done, pack_count == pack_size - 1)(
+            req_bus_addr.add(optimize(req_size * (self.datawidth // 8)))
+        )
+
+        update_count = rest_size == 0
+        for count, (size, stride) in zip(count_list, pattern[1:]):
+            fsm.If(last_done, pack_count == pack_size - 1, update_count)(
+                count.dec()
+            )
+            fsm.If(last_done, pack_count == pack_size - 1, update_count, count == 0)(
+                count(size - 1)
+            )
+            update_count = vtypes.Ands(update_count, count == 0)
+
+        fsm.If(last_done, pack_count == pack_size - 1, rest_size == 0,
+               vtypes.Not(update_count))(
+            rest_size(dma_length)
+        )
+        fsm.If(last_done, pack_count == pack_size -
+               1, rest_size > 0).goto(check_state)
+        fsm.If(last_done, pack_count == pack_size - 1, rest_size == 0,
+               vtypes.Not(update_count)).goto(check_state)
+        fsm.If(last_done, pack_count == pack_size - 1,
+               update_count).goto_next()
+
+        done = self.m.TmpReg(initval=0)
+        fsm(
+            done(1)
+        )
+        fsm.Delay(1)(
+            done(0)
+        )
+        fsm.goto_next()
+        fsm.goto_init()
 
         return done
 
@@ -1300,7 +1479,6 @@ class AxiMaster(object):
                 'ram.datawidth must be multiple number of axi.datawidth')
 
         pack_size = int(ram.datawidth // self.datawidth)
-
         dma_length = (length << int(math.log(pack_size, 2))
                       if math.log(pack_size, 2) % 1.0 == 0.0 else
                       length * pack_size)
@@ -1491,7 +1669,6 @@ class AxiMaster(object):
                 'ram.datawidth must be multiple number of axi.datawidth')
 
         pack_size = int(ram.datawidth // self.datawidth)
-
         dma_length = (length << int(math.log(pack_size, 2))
                       if math.log(pack_size, 2) % 1.0 == 0.0 else
                       length * pack_size)
@@ -1589,7 +1766,6 @@ class AxiMaster(object):
                 'axi.datawidth must be multiple number of ram.datawidth')
 
         pack_size = int(self.datawidth // ram.datawidth)
-
         dma_length = (length >> int(math.log(pack_size, 2))
                       if math.log(pack_size, 2) % 1.0 == 0.0 else
                       int(length // pack_size))
@@ -1624,7 +1800,7 @@ class AxiMaster(object):
         )
         fsm.goto_next()
 
-        ack, counter = self.write_request(bus_addr, dma_length, cond=fsm)
+        ack, counter = self.write_request(req_bus_addr, req_size, cond=fsm)
         fsm.If(ack).goto_next()
 
         wdata = self.m.TmpReg(self.datawidth, initval=0)
@@ -1694,23 +1870,82 @@ class AxiMaster(object):
     def _dma_write_pattern_same(self, ram, bus_addr, ram_addr, pattern,
                                 cond=None, ram_port=0):
 
-        sizes = [p[0] for p in pattern]
-        length = functools.reduce(lambda x, y: x * y, sizes, 1)
+        length = pattern[0][0]
 
         fsm = TmpFSM(self.m, self.clk, self.rst)
 
         if cond is not None:
             fsm.If(cond).goto_next()
 
-        ack, counter = self.write_request(bus_addr, length, cond=fsm)
-        fsm.If(ack).goto_next()
+        req_bus_addr = self.m.TmpReg(self.addrwidth, initval=0)
+        req_size = self.m.TmpReg(length.bit_length() + 1, initval=0)
+        rest_size = self.m.TmpReg(length.bit_length() + 1, initval=0)
+        max_burstlen = 2 ** self.burst_size_width
+
+        fsm(
+            req_bus_addr(bus_addr),
+            rest_size(length)
+        )
+
+        count_list = [self.m.TmpReg(size.bit_length() + 1, initval=0)
+                      for size, stride in pattern[1:]]
+
+        for count, (size, stride) in zip(count_list, pattern[1:]):
+            fsm(
+                count(size - 1)
+            )
 
         data, last, done = ram.read_dataflow_pattern(ram_port, ram_addr, pattern,
                                                      cond=fsm)
         fsm.goto_next()
 
+        check_state = fsm.current
+
+        fsm.If(rest_size <= max_burstlen)(
+            req_size(rest_size),
+            rest_size(0)
+        ).Else(
+            req_size(max_burstlen),
+            rest_size(rest_size - max_burstlen)
+        )
+        fsm.goto_next()
+
+        ack, counter = self.write_request(req_bus_addr, req_size, cond=fsm)
+        fsm.If(ack).goto_next()
+
         done = self.write_dataflow(data, counter, cond=fsm)
-        fsm.If(done).goto_init()
+
+        fsm.If(done)(
+            req_bus_addr.add(optimize(req_size * (self.datawidth // 8)))
+        )
+
+        update_count = rest_size == 0
+        for count, (size, stride) in zip(count_list, pattern[1:]):
+            fsm.If(done, update_count)(
+                count.dec()
+            )
+            fsm.If(done, update_count, count == 0)(
+                count(size - 1)
+            )
+            update_count = vtypes.Ands(update_count, count == 0)
+
+        fsm.If(done, rest_size == 0, vtypes.Not(update_count))(
+            rest_size(length)
+        )
+        fsm.If(done, rest_size > 0).goto(check_state)
+        fsm.If(done, rest_size == 0, vtypes.Not(
+            update_count)).goto(check_state)
+        fsm.If(done, update_count).goto_next()
+
+        done = self.m.TmpReg(initval=0)
+        fsm(
+            done(1)
+        )
+        fsm.Delay(1)(
+            done(0)
+        )
+        fsm.goto_next()
+        fsm.goto_init()
 
         return done
 
@@ -1722,11 +1957,8 @@ class AxiMaster(object):
             raise ValueError(
                 'ram.datawidth must be multiple number of axi.datawidth')
 
-        sizes = [p[0] for p in pattern]
-        length = functools.reduce(lambda x, y: x * y, sizes, 1)
-
+        length = pattern[0][0]
         pack_size = int(ram.datawidth // self.datawidth)
-
         dma_length = (length << int(math.log(pack_size, 2))
                       if math.log(pack_size, 2) % 1.0 == 0.0 else
                       length * pack_size)
@@ -1736,12 +1968,41 @@ class AxiMaster(object):
         if cond is not None:
             fsm.If(cond).goto_next()
 
-        ack, counter = self.write_request(bus_addr, dma_length, cond=fsm)
-        fsm.If(ack).goto_next()
+        req_bus_addr = self.m.TmpReg(self.addrwidth, initval=0)
+        req_size = self.m.TmpReg(dma_length.bit_length() + 1, initval=0)
+        rest_size = self.m.TmpReg(dma_length.bit_length() + 1, initval=0)
+        max_burstlen = 2 ** self.burst_size_width
+
+        fsm(
+            req_bus_addr(bus_addr),
+            rest_size(dma_length)
+        )
+
+        count_list = [self.m.TmpReg(size.bit_length() + 1, initval=0)
+                      for size, stride in pattern[1:]]
+
+        for count, (size, stride) in zip(count_list, pattern[1:]):
+            fsm(
+                count(size - 1)
+            )
 
         data, last, done = ram.read_dataflow_pattern(ram_port, ram_addr, pattern,
                                                      cond=fsm)
         fsm.goto_next()
+
+        check_state = fsm.current
+
+        fsm.If(rest_size <= max_burstlen)(
+            req_size(rest_size),
+            rest_size(0)
+        ).Else(
+            req_size(max_burstlen),
+            rest_size(rest_size - max_burstlen)
+        )
+        fsm.goto_next()
+
+        ack, counter = self.write_request(req_bus_addr, req_size, cond=fsm)
+        fsm.If(ack).goto_next()
 
         wdata = self.m.TmpReg(ram.datawidth, initval=0)
         wvalid = self.m.TmpReg(initval=0)
@@ -1775,7 +2036,38 @@ class AxiMaster(object):
         df_data = self.df.Variable(wdata, wvalid, wready, width=self.datawidth)
 
         done = self.write_dataflow(df_data, counter, cond=fsm)
-        fsm.If(done).goto_init()
+
+        fsm.If(done)(
+            req_bus_addr.add(optimize(req_size * (self.datawidth // 8)))
+        )
+
+        update_count = rest_size == 0
+        for count, (size, stride) in zip(count_list, pattern[1:]):
+            fsm.If(done, update_count)(
+                count.dec()
+            )
+            fsm.If(done, update_count, count == 0)(
+                count(size - 1)
+            )
+            update_count = vtypes.Ands(update_count, count == 0)
+
+        fsm.If(done, rest_size == 0, vtypes.Not(update_count))(
+            rest_size(dma_length)
+        )
+        fsm.If(done, rest_size > 0).goto(check_state)
+        fsm.If(done, rest_size == 0, vtypes.Not(
+            update_count)).goto(check_state)
+        fsm.If(done, update_count).goto_next()
+
+        done = self.m.TmpReg(initval=0)
+        fsm(
+            done(1)
+        )
+        fsm.Delay(1)(
+            done(0)
+        )
+        fsm.goto_next()
+        fsm.goto_init()
 
         return done
 
@@ -1787,9 +2079,7 @@ class AxiMaster(object):
             raise ValueError(
                 'axi.datawidth must be multiple number of ram.datawidth')
 
-        sizes = [p[0] for p in pattern]
-        length = functools.reduce(lambda x, y: x * y, sizes, 1)
-
+        length = pattern[0][0]
         pack_size = int(self.datawidth // ram.datawidth)
         dma_length = (length >> int(math.log(pack_size, 2))
                       if math.log(pack_size, 2) % 1.0 == 0.0 else
@@ -1800,12 +2090,41 @@ class AxiMaster(object):
         if cond is not None:
             fsm.If(cond).goto_next()
 
-        ack, counter = self.write_request(bus_addr, dma_length, cond=fsm)
-        fsm.If(ack).goto_next()
+        req_bus_addr = self.m.TmpReg(self.addrwidth, initval=0)
+        req_size = self.m.TmpReg(dma_length.bit_length() + 1, initval=0)
+        rest_size = self.m.TmpReg(dma_length.bit_length() + 1, initval=0)
+        max_burstlen = 2 ** self.burst_size_width
+
+        fsm(
+            req_bus_addr(bus_addr),
+            rest_size(dma_length)
+        )
+
+        count_list = [self.m.TmpReg(size.bit_length() + 1, initval=0)
+                      for size, stride in pattern[1:]]
+
+        for count, (size, stride) in zip(count_list, pattern[1:]):
+            fsm(
+                count(size - 1)
+            )
 
         data, last, done = ram.read_dataflow_pattern(ram_port, ram_addr, pattern,
                                                      cond=fsm)
         fsm.goto_next()
+
+        check_state = fsm.current
+
+        fsm.If(rest_size <= max_burstlen)(
+            req_size(rest_size),
+            rest_size(0)
+        ).Else(
+            req_size(max_burstlen),
+            rest_size(rest_size - max_burstlen)
+        )
+        fsm.goto_next()
+
+        ack, counter = self.write_request(req_bus_addr, req_size, cond=fsm)
+        fsm.If(ack).goto_next()
 
         wdata = self.m.TmpReg(self.datawidth, initval=0)
         wvalid = self.m.TmpReg(initval=0)
@@ -1834,7 +2153,38 @@ class AxiMaster(object):
         df_data = self.df.Variable(wdata, wvalid, wready, width=self.datawidth)
 
         done = self.write_dataflow(df_data, counter, cond=fsm)
-        fsm.If(done).goto_init()
+
+        fsm.If(done)(
+            req_bus_addr.add(optimize(req_size * (self.datawidth // 8)))
+        )
+
+        update_count = rest_size == 0
+        for count, (size, stride) in zip(count_list, pattern[1:]):
+            fsm.If(done, update_count)(
+                count.dec()
+            )
+            fsm.If(done, update_count, count == 0)(
+                count(size - 1)
+            )
+            update_count = vtypes.Ands(update_count, count == 0)
+
+        fsm.If(done, rest_size == 0, vtypes.Not(update_count))(
+            rest_size(dma_length)
+        )
+        fsm.If(done, rest_size > 0).goto(check_state)
+        fsm.If(done, rest_size == 0, vtypes.Not(
+            update_count)).goto(check_state)
+        fsm.If(done, update_count).goto_next()
+
+        done = self.m.TmpReg(initval=0)
+        fsm(
+            done(1)
+        )
+        fsm.Delay(1)(
+            done(0)
+        )
+        fsm.goto_next()
+        fsm.goto_init()
 
         return done
 
@@ -1851,9 +2201,13 @@ class AxiMaster(object):
     def _to_pattern(self, shape, order):
         pattern = []
         for p in order:
+            if not isinstance(p, int):
+                raise TypeError(
+                    "Values of 'order' must be 'int', not %s" % str(type(p)))
             size = shape[p]
+            basevalue = 1 if isinstance(size, int) else vtypes.Int(1)
             stride = functools.reduce(lambda x, y: x * y,
-                                      shape[:p], 1) if p > 0 else 1
+                                      shape[:p], basevalue) if p > 0 else basevalue
             pattern.append((size, stride))
         return pattern
 

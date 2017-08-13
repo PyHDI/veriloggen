@@ -59,7 +59,7 @@ def mkLed():
         all_ok = True
         st = ram_c.read(offset_stream)
         sq = ram_c.read(offset_seq)
-        if st != sq:
+        if vthread.verilog.NotEql(st, sq):
             all_ok = False
 
         if all_ok:

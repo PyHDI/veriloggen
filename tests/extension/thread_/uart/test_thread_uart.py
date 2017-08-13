@@ -157,21 +157,21 @@ module test;
           test <= test_9;
         end
         test_9: begin
-          if(_test_r_4 == _test_s_3 + sw) begin
+          if(_test_r_4 === _test_s_3 + sw) begin
             test <= test_10;
           end else begin
             test <= test_12;
           end
         end
         test_10: begin
-          $display("OK: %d + %d == %d", _test_s_3, sw, _test_r_4);
+          $display("OK: %d + %d === %d", _test_s_3, sw, _test_r_4);
           test <= test_11;
         end
         test_11: begin
           test <= test_13;
         end
         test_12: begin
-          $display("NG: %d + %d != %d", _test_s_3, sw, _test_r_4);
+          $display("NG: %d + %d !== %d", _test_s_3, sw, _test_r_4);
           test <= test_13;
         end
         test_13: begin

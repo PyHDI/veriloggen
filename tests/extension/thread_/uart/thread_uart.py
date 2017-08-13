@@ -77,10 +77,10 @@ def mkTest(baudrate=19200, clockfreq=19200 * 10):
             s = 100 + i
             uart_tx.send(s)
             r = uart_rx.recv()
-            if r == s + sw:
-                print('OK: %d + %d == %d' % (s, sw, r))
+            if vthread.verilog.Eql(r, s + sw):
+                print('OK: %d + %d === %d' % (s, sw, r))
             else:
-                print('NG: %d + %d != %d' % (s, sw, r))
+                print('NG: %d + %d !== %d' % (s, sw, r))
 
     th = vthread.Thread(m, 'test', clk, rst, test)
     th.start()

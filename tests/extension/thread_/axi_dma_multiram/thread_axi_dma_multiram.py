@@ -110,25 +110,25 @@ def mkLed(memory_datawidth=128):
 
         for i in range(size):
             rdata = myram0.read(i)
-            if rdata != i + 100:
+            if vthread.verilog.NotEql(rdata, i + 100):
                 print('rdata[%d] = %d' % (i, rdata))
                 all_ok.value = False
 
         for i in range(size):
             rdata = myram1.read(i)
-            if rdata != i + 100 + 1:
+            if vthread.verilog.NotEql(rdata, i + 100 + 1):
                 print('rdata[%d] = %d' % (i, rdata))
                 all_ok.value = False
 
         for i in range(size):
             rdata = myram2.read(i)
-            if rdata != i + 100 + 2:
+            if vthread.verilog.NotEql(rdata, i + 100 + 2):
                 print('rdata[%d] = %d' % (i, rdata))
                 all_ok.value = False
 
         for i in range(size):
             rdata = myram3.read(i)
-            if rdata != i + 100 + 3:
+            if vthread.verilog.NotEql(rdata, i + 100 + 3):
                 print('rdata[%d] = %d' % (i, rdata))
                 all_ok.value = False
 
@@ -141,25 +141,25 @@ def mkLed(memory_datawidth=128):
 
         for i in range(size):
             rdata = myram0.read(i)
-            if rdata != i + 1000:
+            if vthread.verilog.NotEql(rdata, i + 1000):
                 print('rdata[%d] = %d' % (i, rdata))
                 all_ok.value = False
 
         for i in range(size):
             rdata = myram1.read(i)
-            if rdata != i + 1000 + 1:
+            if vthread.verilog.NotEql(rdata, i + 1000 + 1):
                 print('rdata[%d] = %d' % (i, rdata))
                 all_ok.value = False
 
         for i in range(size):
             rdata = myram2.read(i)
-            if rdata != i + 1000 + 2:
+            if vthread.verilog.NotEql(rdata, i + 1000 + 2):
                 print('rdata[%d] = %d' % (i, rdata))
                 all_ok.value = False
 
         for i in range(size):
             rdata = myram3.read(i)
-            if rdata != i + 1000 + 3:
+            if vthread.verilog.NotEql(rdata, i + 1000 + 3):
                 print('rdata[%d] = %d' % (i, rdata))
                 all_ok.value = False
 

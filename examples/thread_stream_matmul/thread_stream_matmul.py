@@ -70,10 +70,10 @@ def mkLed(matrix_size=16):
             ram_c.dma_read(myaxi, 0, c_addr, matrix_size)
             for j in range(matrix_size):
                 v = ram_c.read(j)
-                if i == j and v != (i + 1) * 2:
+                if i == j and vthread.verilog.NotEql(v, (i + 1) * 2):
                     all_ok = False
                     print("NG [%d,%d] = %d" % (i, j, v))
-                if i != j and v != 0:
+                if i != j and vthread.verilog.NotEql(v, 0):
                     all_ok = False
                     print("NG [%d,%d] = %d" % (i, j, v))
             c_addr += matrix_size * (datawidth // 8)

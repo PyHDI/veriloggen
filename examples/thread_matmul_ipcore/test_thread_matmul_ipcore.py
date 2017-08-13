@@ -1245,11 +1245,11 @@ module blinkled
   wire [32-1:0] _tmp_44;
   reg [32-1:0] __tmp_44_1;
   assign _tmp_44 = (__tmp_43_1)? ram_c_0_rdata : __tmp_44_1;
-  reg [33-1:0] _tmp_45;
+  reg _tmp_45;
   reg _tmp_46;
   reg _tmp_47;
   reg _tmp_48;
-  reg _tmp_49;
+  reg [33-1:0] _tmp_49;
   reg _tmp_50;
   wire [32-1:0] _tmp_data_51;
   wire _tmp_valid_51;
@@ -1359,13 +1359,13 @@ module blinkled
       _ram_c_cond_0_1 <= 0;
       __tmp_43_1 <= 0;
       __tmp_44_1 <= 0;
-      _tmp_49 <= 0;
+      _tmp_48 <= 0;
       _tmp_38 <= 0;
       _tmp_39 <= 0;
-      _tmp_47 <= 0;
-      _tmp_48 <= 0;
       _tmp_46 <= 0;
+      _tmp_47 <= 0;
       _tmp_45 <= 0;
+      _tmp_49 <= 0;
     end else begin
       if(_ram_c_cond_0_1) begin
         ram_c_0_wenable <= 0;
@@ -1378,33 +1378,33 @@ module blinkled
       _ram_c_cond_0_1 <= th_matmul == 29;
       __tmp_43_1 <= _tmp_43;
       __tmp_44_1 <= _tmp_44;
-      if((_tmp_40 || !_tmp_38) && (_tmp_41 || !_tmp_39) && _tmp_47) begin
-        _tmp_49 <= 0;
+      if((_tmp_40 || !_tmp_38) && (_tmp_41 || !_tmp_39) && _tmp_46) begin
+        _tmp_48 <= 0;
         _tmp_38 <= 0;
         _tmp_39 <= 0;
-        _tmp_47 <= 0;
+        _tmp_46 <= 0;
       end 
-      if((_tmp_40 || !_tmp_38) && (_tmp_41 || !_tmp_39) && _tmp_46) begin
+      if((_tmp_40 || !_tmp_38) && (_tmp_41 || !_tmp_39) && _tmp_45) begin
         _tmp_38 <= 1;
         _tmp_39 <= 1;
-        _tmp_49 <= _tmp_48;
-        _tmp_48 <= 0;
-        _tmp_46 <= 0;
-        _tmp_47 <= 1;
+        _tmp_48 <= _tmp_47;
+        _tmp_47 <= 0;
+        _tmp_45 <= 0;
+        _tmp_46 <= 1;
       end 
-      if((_tmp_fsm_2 == 2) && (_tmp_45 == 0) && !_tmp_48 && !_tmp_49) begin
+      if((_tmp_fsm_2 == 2) && (_tmp_49 == 0) && !_tmp_47 && !_tmp_48) begin
         ram_c_0_addr <= _tmp_33;
-        _tmp_45 <= _tmp_35 - 1;
-        _tmp_46 <= 1;
+        _tmp_49 <= _tmp_35 - 1;
+        _tmp_45 <= 1;
       end 
-      if((_tmp_40 || !_tmp_38) && (_tmp_41 || !_tmp_39) && (_tmp_45 > 0)) begin
+      if((_tmp_40 || !_tmp_38) && (_tmp_41 || !_tmp_39) && (_tmp_49 > 0)) begin
         ram_c_0_addr <= ram_c_0_addr + 1;
-        _tmp_45 <= _tmp_45 - 1;
-        _tmp_46 <= 1;
-        _tmp_48 <= 0;
+        _tmp_49 <= _tmp_49 - 1;
+        _tmp_45 <= 1;
+        _tmp_47 <= 0;
       end 
-      if((_tmp_40 || !_tmp_38) && (_tmp_41 || !_tmp_39) && (_tmp_45 == 1)) begin
-        _tmp_48 <= 1;
+      if((_tmp_40 || !_tmp_38) && (_tmp_41 || !_tmp_39) && (_tmp_49 == 1)) begin
+        _tmp_47 <= 1;
       end 
     end
   end

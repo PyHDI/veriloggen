@@ -19,37 +19,21 @@ def mkLed():
 
     datawidth = 32
     addrwidth = 10
+    mat_pattern = ((16, 32), (32, 1))
+    mat_size = 16 * 32
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
-    myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth)
+    myram = vthread.RAM(m, 'myram', clk, rst, datawidth * 2, addrwidth)
 
-    saxi = vthread.AXISLiteRegister(m, 'saxi', clk, rst, datawidth)
-
-    all_ok = m.TmpReg(initval=0)
+    all_ok = m.Reg('all_ok', initval=0)
 
     def blink(size):
-        # wait start
-        saxi.wait_flag(0, value=1, resetvalue=0)
-        # reset done
-        saxi.write(1, 0)
-
         all_ok.value = True
 
-        for i in range(4):
-            print('# iter %d start' % i)
-            offset = i * 1024 * 16
-            body(size, offset)
-            print('# iter %d end' % i)
+        offset = 0
+        body(size, offset)
 
         if all_ok:
             print('ALL OK')
-        else:
-            print('NOT ALL OK')
-
-        # result
-        saxi.write(2, all_ok)
-
-        # done
-        saxi.write_flag(1, 1, resetvalue=0)
 
     def body(size, offset):
         # write
@@ -59,7 +43,7 @@ def mkLed():
 
         laddr = 0
         gaddr = offset
-        myaxi.dma_write(myram, laddr, gaddr, size)
+        myaxi.dma_write_pattern(myram, laddr, gaddr, mat_pattern)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # write
@@ -69,13 +53,13 @@ def mkLed():
 
         laddr = 0
         gaddr = (size + size) * 4 + offset
-        myaxi.dma_write(myram, laddr, gaddr, size)
+        myaxi.dma_write_pattern(myram, laddr, gaddr, mat_pattern)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # read
         laddr = 0
         gaddr = offset
-        myaxi.dma_read(myram, laddr, gaddr, size)
+        myaxi.dma_read_pattern(myram, laddr, gaddr, mat_pattern)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
@@ -87,7 +71,7 @@ def mkLed():
         # read
         laddr = 0
         gaddr = (size + size) * 4 + offset
-        myaxi.dma_read(myram, laddr, gaddr, size)
+        myaxi.dma_read_pattern(myram, laddr, gaddr, mat_pattern)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
@@ -97,7 +81,7 @@ def mkLed():
                 all_ok.value = False
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
-    fsm = th.start(16)
+    fsm = th.start(mat_size)
 
     return m
 
@@ -118,32 +102,6 @@ def mkTest():
     memory = axi.AxiMemoryModel(m, 'memory', clk, rst)
     memory.connect(ports, 'myaxi')
 
-    # AXI-Slave controller
-    _saxi = vthread.AXIMLite(m, '_saxi', clk, rst, noio=True)
-    _saxi.connect(ports, 'saxi')
-
-    def ctrl():
-        for i in range(100):
-            pass
-
-        awaddr = 0
-        _saxi.write(awaddr, 1)
-
-        araddr = 4
-        v = _saxi.read(araddr)
-        while v == 0:
-            v = _saxi.read(araddr)
-
-        araddr = 8
-        v = _saxi.read(araddr)
-        if v:
-            print('SLAVE: ALL OK')
-        else:
-            print('SLAVE: NOT ALL OK')
-
-    th = vthread.Thread(m, 'th_ctrl', clk, rst, ctrl)
-    fsm = th.start()
-
     uut = m.Instance(led, 'uut',
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
@@ -153,7 +111,7 @@ def mkTest():
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
     init.add(
-        Delay(100000),
+        Delay(1000000),
         Systask('finish'),
     )
 

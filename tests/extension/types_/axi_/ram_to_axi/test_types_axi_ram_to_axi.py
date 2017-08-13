@@ -325,11 +325,11 @@ module main
   wire [32-1:0] _tmp_13;
   reg [32-1:0] __tmp_13_1;
   assign _tmp_13 = (__tmp_12_1)? myram_0_rdata : __tmp_13_1;
-  reg [8-1:0] _tmp_14;
+  reg _tmp_14;
   reg _tmp_15;
   reg _tmp_16;
   reg _tmp_17;
-  reg _tmp_18;
+  reg [8-1:0] _tmp_18;
   reg _tmp_19;
   wire [32-1:0] _tmp_data_20;
   wire _tmp_valid_20;
@@ -426,13 +426,13 @@ module main
       _myram_cond_0_1 <= 0;
       __tmp_12_1 <= 0;
       __tmp_13_1 <= 0;
-      _tmp_18 <= 0;
+      _tmp_17 <= 0;
       _tmp_7 <= 0;
       _tmp_8 <= 0;
-      _tmp_16 <= 0;
-      _tmp_17 <= 0;
       _tmp_15 <= 0;
+      _tmp_16 <= 0;
       _tmp_14 <= 0;
+      _tmp_18 <= 0;
     end else begin
       if(_myram_cond_0_1) begin
         myram_0_wenable <= 0;
@@ -454,33 +454,33 @@ module main
       _myram_cond_0_1 <= 1;
       __tmp_12_1 <= _tmp_12;
       __tmp_13_1 <= _tmp_13;
-      if((_tmp_9 || !_tmp_7) && (_tmp_10 || !_tmp_8) && _tmp_16) begin
-        _tmp_18 <= 0;
+      if((_tmp_9 || !_tmp_7) && (_tmp_10 || !_tmp_8) && _tmp_15) begin
+        _tmp_17 <= 0;
         _tmp_7 <= 0;
         _tmp_8 <= 0;
-        _tmp_16 <= 0;
+        _tmp_15 <= 0;
       end 
-      if((_tmp_9 || !_tmp_7) && (_tmp_10 || !_tmp_8) && _tmp_15) begin
+      if((_tmp_9 || !_tmp_7) && (_tmp_10 || !_tmp_8) && _tmp_14) begin
         _tmp_7 <= 1;
         _tmp_8 <= 1;
-        _tmp_18 <= _tmp_17;
-        _tmp_17 <= 0;
-        _tmp_15 <= 0;
-        _tmp_16 <= 1;
+        _tmp_17 <= _tmp_16;
+        _tmp_16 <= 0;
+        _tmp_14 <= 0;
+        _tmp_15 <= 1;
       end 
-      if((fsm == 4) && (_tmp_14 == 0) && !_tmp_17 && !_tmp_18) begin
+      if((fsm == 4) && (_tmp_18 == 0) && !_tmp_16 && !_tmp_17) begin
         myram_0_addr <= 0;
-        _tmp_14 <= 63;
-        _tmp_15 <= 1;
+        _tmp_18 <= 63;
+        _tmp_14 <= 1;
       end 
-      if((_tmp_9 || !_tmp_7) && (_tmp_10 || !_tmp_8) && (_tmp_14 > 0)) begin
+      if((_tmp_9 || !_tmp_7) && (_tmp_10 || !_tmp_8) && (_tmp_18 > 0)) begin
         myram_0_addr <= myram_0_addr + 1;
-        _tmp_14 <= _tmp_14 - 1;
-        _tmp_15 <= 1;
-        _tmp_17 <= 0;
+        _tmp_18 <= _tmp_18 - 1;
+        _tmp_14 <= 1;
+        _tmp_16 <= 0;
       end 
-      if((_tmp_9 || !_tmp_7) && (_tmp_10 || !_tmp_8) && (_tmp_14 == 1)) begin
-        _tmp_17 <= 1;
+      if((_tmp_9 || !_tmp_7) && (_tmp_10 || !_tmp_8) && (_tmp_18 == 1)) begin
+        _tmp_16 <= 1;
       end 
     end
   end

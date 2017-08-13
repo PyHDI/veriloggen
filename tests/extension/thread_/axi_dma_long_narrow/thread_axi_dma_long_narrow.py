@@ -62,7 +62,7 @@ def mkLed():
 
         for i in range(size):
             rdata = myram.read(i)
-            if rdata != i + 100:
+            if vthread.verilog.NotEql(rdata, i + 100):
                 print('rdata[%d] = %d' % (i, rdata))
                 all_ok.value = False
 
@@ -74,7 +74,7 @@ def mkLed():
 
         for i in range(size):
             rdata = myram.read(i)
-            if rdata != i + 1000:
+            if vthread.verilog.NotEql(rdata, i + 1000):
                 print('rdata[%d] = %d' % (i, rdata))
                 all_ok.value = False
 

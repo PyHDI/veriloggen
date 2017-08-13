@@ -266,22 +266,22 @@ class SyncRAMManager(object):
         data.assign(vtypes.Mux(prev_data_cond,
                                self.interfaces[port].rdata, prev_data))
 
-        counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
-
         next_valid_on = self.m.TmpReg(initval=0)
         next_valid_off = self.m.TmpReg(initval=0)
 
         next_last = self.m.TmpReg(initval=0)
         last = self.m.TmpReg(initval=0)
 
-        self.seq.If(make_condition(data_cond, next_valid_off))(
+        counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
+
+        self.seq.If(data_cond, next_valid_off)(
             last(0),
             data_valid(0),
             last_valid(0),
             next_valid_off(0)
         )
 
-        self.seq.If(make_condition(data_cond, next_valid_on))(
+        self.seq.If(data_cond, next_valid_on)(
             data_valid(1),
             last_valid(1),
             last(next_last),
@@ -290,21 +290,21 @@ class SyncRAMManager(object):
             next_valid_off(1)
         )
 
-        self.seq.If(make_condition(ext_cond, counter == 0,
-                                   vtypes.Not(next_last), vtypes.Not(last)))(
+        self.seq.If(ext_cond, counter == 0,
+                    vtypes.Not(next_last), vtypes.Not(last))(
             self.interfaces[port].addr(addr),
             counter(length - 1),
             next_valid_on(1),
         )
 
-        self.seq.If(make_condition(data_cond, counter > 0))(
+        self.seq.If(data_cond, counter > 0)(
             self.interfaces[port].addr(self.interfaces[port].addr + stride),
             counter.dec(),
             next_valid_on(1),
             next_last(0)
         )
 
-        self.seq.If(make_condition(data_cond, counter == 1))(
+        self.seq.If(data_cond, counter == 1)(
             next_last(1)
         )
 
@@ -323,7 +323,6 @@ class SyncRAMManager(object):
         @return data, last, done
         """
 
-        # for pattern
         if not isinstance(pattern, (tuple, list)):
             raise TypeError('pattern must be list or tuple.')
 
@@ -333,10 +332,6 @@ class SyncRAMManager(object):
 
         if not isinstance(pattern[0], (tuple, list)):
             pattern = (pattern,)
-
-        sizes = [p[0] for p in pattern]
-        length = functools.reduce(lambda x, y: x * y, sizes, 1)
-        ###
 
         data_valid = self.m.TmpReg(initval=0)
         last_valid = self.m.TmpReg(initval=0)
@@ -358,40 +353,37 @@ class SyncRAMManager(object):
         data.assign(vtypes.Mux(prev_data_cond,
                                self.interfaces[port].rdata, prev_data))
 
-        counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
-
         next_valid_on = self.m.TmpReg(initval=0)
         next_valid_off = self.m.TmpReg(initval=0)
 
         next_last = self.m.TmpReg(initval=0)
         last = self.m.TmpReg(initval=0)
 
-        # for pattern
-        req_addr = self.m.TmpWire(self.addrwidth)
-        addr_offset = [self.m.TmpReg(self.addrwidth, initval=0)
-                       for i, (out_size, out_stride) in enumerate(pattern[1:])]
+        running = self.m.TmpReg(initval=0)
 
-        req_addr_value = addr
-        for offset in addr_offset:
-            req_addr_value = offset + req_addr_value
-        req_addr.assign(req_addr_value)
+        next_addr = self.m.TmpWire(self.addrwidth)
+        offset_addr = self.m.TmpWire(self.addrwidth)
+        offsets = [self.m.TmpReg(self.addrwidth, initval=0)
+                   for _ in pattern[1:]]
 
-        size, stride = pattern[0]
-        if stride is None:
-            stride = 1
+        offset_addr_value = addr
+        for offset in offsets:
+            offset_addr_value = offset + offset_addr_value
+        offset_addr.assign(offset_addr_value)
+
+        offsets.insert(0, None)
 
         count_list = [self.m.TmpReg(out_size.bit_length() + 1, initval=0)
-                      for i, (out_size, out_stride) in enumerate(pattern)]
-        ###
+                      for (out_size, out_stride) in pattern]
 
-        self.seq.If(make_condition(data_cond, next_valid_off))(
+        self.seq.If(data_cond, next_valid_off)(
             last(0),
             data_valid(0),
             last_valid(0),
             next_valid_off(0)
         )
 
-        self.seq.If(make_condition(data_cond, next_valid_on))(
+        self.seq.If(data_cond, next_valid_on)(
             data_valid(1),
             last_valid(1),
             last(next_last),
@@ -400,64 +392,85 @@ class SyncRAMManager(object):
             next_valid_off(1)
         )
 
-        self.seq.If(make_condition(ext_cond, counter == 0,
-                                   vtypes.Not(next_last), vtypes.Not(last)))(
+        self.seq.If(ext_cond, vtypes.Not(running),
+                    vtypes.Not(next_last), vtypes.Not(last))(
             self.interfaces[port].addr(addr),
-            counter(length - 1),
+            running(1),
             next_valid_on(1)
         )
 
-        self.seq.If(make_condition(data_cond, counter > 0))(
-            self.interfaces[port].addr(self.interfaces[port].addr + stride),
-            counter.dec(),
+        self.seq.If(data_cond, running)(
+            self.interfaces[port].addr(next_addr),
             next_valid_on(1),
             next_last(0)
         )
 
-        # for pattern
-        self.seq.If(make_condition(ext_cond, counter == 0,
-                                   vtypes.Not(next_last), vtypes.Not(last)))(
-            count_list[0](0)
-        )
-        self.seq.If(make_condition(data_cond, counter > 0))(
-            count_list[0].inc()
-        )
-        self.seq.If(make_condition(data_cond, counter > 0,
-                                   count_list[0] == pattern[0][0] - 1))(
-            count_list[0](0),
-            self.interfaces[port].addr(req_addr),
-        )
+        update_count = None
+        update_offset = None
+        update_addr = None
+        last_one = None
+        stride_value = None
+        carry = None
 
-        cond_list = []
-        cond_list.append(count_list[0] == pattern[0][0] - 1)
-        prev_cond = vtypes.Ands(*cond_list)
-        next_update = True
-
-        # next offset
-        for offset, count, (out_size, out_stride) in zip(addr_offset,
-                                                         count_list[1:], pattern[1:]):
-            self.seq.If(make_condition(ext_cond, counter == 0,
-                                       vtypes.Not(next_last), vtypes.Not(last)))(
-                count(1) if next_update and out_size != 1 else count(0),
-                offset(out_stride) if next_update and out_size != 1 else offset(0)
+        for offset, count, (out_size, out_stride) in zip(offsets, count_list, pattern):
+            self.seq.If(ext_cond, vtypes.Not(running),
+                        vtypes.Not(next_last), vtypes.Not(last))(
+                count(out_size - 1)
             )
-            self.seq.If(make_condition(data_cond, counter > 0, prev_cond))(
-                count.inc(),
-                offset(offset + out_stride)
+            self.seq.If(data_cond, running, update_count)(
+                count.dec()
             )
-            self.seq.If(make_condition(data_cond, counter > 0, prev_cond,
-                                       count == out_size - 1))(
-                count(0),
-                offset(0)
+            self.seq.If(data_cond, running, update_count, count == 0)(
+                count(out_size - 1)
             )
 
-            cond_list.append(count == out_size - 1)
-            prev_cond = vtypes.Ands(*cond_list)
-            if next_update and out_size != 1:
-                next_update = False
-        ###
+            if offset is not None:
+                self.seq.If(ext_cond, vtypes.Not(running),
+                            vtypes.Not(next_last), vtypes.Not(last))(
+                    offset(0)
+                )
+                self.seq.If(data_cond, running, update_offset, vtypes.Not(carry))(
+                    offset(offset + out_stride)
+                )
+                self.seq.If(data_cond, running, update_offset, count == 0)(
+                    offset(0)
+                )
 
-        self.seq.If(make_condition(data_cond, counter == 1))(
+            if update_count is None:
+                update_count = count == 0
+            else:
+                update_count = vtypes.Ands(update_count, count == 0)
+
+            if update_offset is None:
+                update_offset = vtypes.Mux(out_size == 1, 1, count == 1)
+            else:
+                update_offset = vtypes.Ands(update_offset, count == carry)
+
+            if update_addr is None:
+                update_addr = count == 0
+            else:
+                update_addr = vtypes.Mux(carry, count == 0, update_addr)
+
+            if last_one is None:
+                last_one = count == 0
+            else:
+                last_one = vtypes.Ands(last_one, count == 0)
+
+            if stride_value is None:
+                stride_value = out_stride
+            else:
+                stride_value = vtypes.Mux(carry, out_stride, stride_value)
+
+            if carry is None:
+                carry = out_size == 1
+            else:
+                carry = vtypes.Ands(carry, out_size == 1)
+
+        next_addr.assign(vtypes.Mux(update_addr, offset_addr,
+                                    self.interfaces[port].addr + stride_value))
+
+        self.seq.If(data_cond, running, last_one)(
+            running(0),
             next_last(1)
         )
 
@@ -538,19 +551,19 @@ class SyncRAMManager(object):
         if when_cond is not None:
             raw_valid = vtypes.Ands(when_cond, raw_valid)
 
-        self.seq.If(make_condition(ext_cond, counter == 0))(
+        self.seq.If(ext_cond, counter == 0)(
             self.interfaces[port].addr(addr - stride),
             counter(length),
         )
 
-        self.seq.If(make_condition(raw_valid, counter > 0))(
+        self.seq.If(raw_valid, counter > 0)(
             self.interfaces[port].addr(self.interfaces[port].addr + stride),
             self.interfaces[port].wdata(raw_data),
             self.interfaces[port].wenable(1),
             counter.dec()
         )
 
-        self.seq.If(make_condition(raw_valid, counter == 1))(
+        self.seq.If(raw_valid, counter == 1)(
             last(1)
         )
 
@@ -574,7 +587,6 @@ class SyncRAMManager(object):
         if self._write_disabled[port]:
             raise TypeError('Write disabled.')
 
-        # for pattern
         if not isinstance(pattern, (tuple, list)):
             raise TypeError('pattern must be list or tuple.')
 
@@ -585,15 +597,12 @@ class SyncRAMManager(object):
         if not isinstance(pattern[0], (tuple, list)):
             pattern = (pattern,)
 
-        sizes = [p[0] for p in pattern]
-        length = functools.reduce(lambda x, y: x * y, sizes, 1)
-        ###
-
-        counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
         last = self.m.TmpReg(initval=0)
 
+        running = self.m.TmpReg(initval=0)
+
         ext_cond = make_condition(cond)
-        data_cond = make_condition(counter > 0, vtypes.Not(last))
+        data_cond = make_condition(running, vtypes.Not(last))
 
         if when is None or not isinstance(when, df_numeric):
             raw_data, raw_valid = data.read(cond=data_cond)
@@ -607,78 +616,56 @@ class SyncRAMManager(object):
         if when_cond is not None:
             raw_valid = vtypes.Ands(when_cond, raw_valid)
 
-        # for pattern
-        req_addr = self.m.TmpWire(self.addrwidth)
-        addr_offset = [self.m.TmpReg(self.addrwidth, initval=0)
-                       for i, (out_size, out_stride) in enumerate(pattern[1:])]
+        offset_addr = self.m.TmpWire(self.addrwidth)
+        offsets = [self.m.TmpReg(self.addrwidth, initval=0) for _ in pattern]
 
-        req_addr_value = addr
-        for offset in addr_offset:
-            req_addr_value = offset + req_addr_value
-        req_addr.assign(req_addr_value)
-
-        size, stride = pattern[0]
-        if stride is None:
-            stride = 1
+        offset_addr_value = addr
+        for offset in offsets:
+            offset_addr_value = offset + offset_addr_value
+        offset_addr.assign(offset_addr_value)
 
         count_list = [self.m.TmpReg(out_size.bit_length() + 1, initval=0)
-                      for i, (out_size, out_stride) in enumerate(pattern)]
-        ###
+                      for (out_size, out_stride) in pattern]
 
-        self.seq.If(make_condition(ext_cond, counter == 0))(
-            self.interfaces[port].addr(addr - stride),
-            counter(length),
+        self.seq.If(ext_cond, vtypes.Not(running))(
+            running(1)
         )
 
-        self.seq.If(make_condition(raw_valid, counter > 0))(
-            self.interfaces[port].addr(self.interfaces[port].addr + stride),
+        self.seq.If(raw_valid, running)(
+            self.interfaces[port].addr(offset_addr),
             self.interfaces[port].wdata(raw_data),
-            self.interfaces[port].wenable(1),
-            counter.dec()
+            self.interfaces[port].wenable(1)
         )
 
-        # for pattern
-        self.seq.If(make_condition(ext_cond, counter == 0))(
-            count_list[0](-1)
-        )
-        self.seq.If(make_condition(raw_valid, counter > 0))(
-            count_list[0].inc()
-        )
-        self.seq.If(make_condition(raw_valid, counter > 0,
-                                   count_list[0] == pattern[0][0] - 1))(
-            count_list[0](0),
-            self.interfaces[port].addr(req_addr),
-        )
+        update_count = None
+        last_one = None
 
-        cond_list = []
-        cond_list.append(count_list[0] == pattern[0][0] - 1)
-        prev_cond = vtypes.Ands(*cond_list)
-        next_update = True
-
-        # next offset
-        for offset, count, (out_size, out_stride) in zip(addr_offset,
-                                                         count_list[1:], pattern[1:]):
-            self.seq.If(make_condition(ext_cond, counter == 0))(
-                count(1) if next_update and out_size != 1 else count(0),
-                offset(out_stride) if next_update and out_size != 1 else offset(0)
+        for offset, count, (out_size, out_stride) in zip(offsets, count_list, pattern):
+            self.seq.If(ext_cond, vtypes.Not(running))(
+                count(out_size - 1),
+                offset(0)
             )
-            self.seq.If(make_condition(raw_valid, counter > 0, prev_cond))(
-                count.inc(),
+            self.seq.If(raw_valid, running, update_count)(
+                count.dec(),
                 offset(offset + out_stride)
             )
-            self.seq.If(make_condition(raw_valid, counter > 0, prev_cond,
-                                       count == out_size - 1))(
-                count(0),
+            self.seq.If(raw_valid, running, update_count, count == 0)(
+                count(out_size - 1),
                 offset(0)
             )
 
-            cond_list.append(count == out_size - 1)
-            prev_cond = vtypes.Ands(*cond_list)
-            if next_update and out_size != 1:
-                next_update = False
-        ###
+            if update_count is None:
+                update_count = count == 0
+            else:
+                update_count = vtypes.Ands(update_count, count == 0)
 
-        self.seq.If(make_condition(raw_valid, counter == 1))(
+            if last_one is None:
+                last_one = count == 0
+            else:
+                last_one = vtypes.Ands(last_one, count == 0)
+
+        self.seq.If(raw_valid, last_one)(
+            running(0),
             last(1)
         )
 
@@ -709,8 +696,12 @@ class SyncRAMManager(object):
     def _to_pattern(self, shape, order):
         pattern = []
         for p in order:
+            if not isinstance(p, int):
+                raise TypeError(
+                    "Values of 'order' must be 'int', not %s" % str(type(p)))
             size = shape[p]
+            basevalue = 1 if isinstance(size, int) else vtypes.Int(1)
             stride = functools.reduce(lambda x, y: x * y,
-                                      shape[:p], 1) if p > 0 else 1
+                                      shape[:p], basevalue) if p > 0 else basevalue
             pattern.append((size, stride))
         return pattern

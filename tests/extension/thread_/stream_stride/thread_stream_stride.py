@@ -32,7 +32,7 @@ def mkLed():
 
     def comp_sequential(size, offset, stride):
         sum = 0
-        for i in range(size, step=stride):
+        for i in range(0, size * 2, stride):
             a = ram_a.read(i + offset)
             b = ram_b.read(i + offset)
             sum += a * b
@@ -42,7 +42,7 @@ def mkLed():
         all_ok = True
         st = ram_c.read(offset_stream)
         sq = ram_c.read(offset_seq)
-        if st != sq:
+        if vthread.verilog.NotEql(st, sq):
             all_ok = False
 
         if all_ok:
@@ -107,6 +107,7 @@ def mkTest():
     )
 
     return m
+
 
 if __name__ == '__main__':
     test = mkTest()

@@ -1,7 +1,9 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import functools
 import math
+import inspect
 
 import veriloggen.core.vtypes as vtypes
 import veriloggen.dataflow.dtypes as dtypes
@@ -15,6 +17,33 @@ import veriloggen.types.fixed as fxd
 from veriloggen.types.ram import SyncRAMManager
 from veriloggen.types.fifo import Fifo
 from veriloggen.types.axi import AxiMaster, AxiSlave
+
+
+class _verilog_meta(type):
+    """ metaclass for verilog operator intrinsics """
+
+    __verilog_classes__ = dict(inspect.getmembers(vtypes))
+    __intrinsics__ = tuple(__verilog_classes__.keys())
+
+    def __getattr__(self, key):
+        if key in self.__verilog_classes__:
+            cls = self.__verilog_classes__[key]
+
+            @functools.wraps(cls)
+            def wrapper(fsm, *args, **kwargs):
+                return cls(*args, **kwargs)
+            return wrapper
+
+        raise NameError("name '%s' is not defined" % key)
+
+
+_verilog = _verilog_meta('verilog', (object,),
+                         {'__doc__': _verilog_meta.__doc__})
+
+
+class verilog(_verilog):
+    """ verilog operator intrinsics """
+    pass
 
 
 def Lock(m, name, clk, rst, width=32):
@@ -684,9 +713,12 @@ class FixedFIFO(FIFO):
 
 
 class AXIM(AxiMaster, _MutexFunction):
-    __intrinsics__ = ('read', 'write', 'dma_read', 'dma_write',
-                      'dma_read_long', 'dma_write_long',
+    __intrinsics__ = ('read', 'write',
+                      'dma_read', 'dma_write',
                       'dma_read_async', 'dma_write_async',
+                      'dma_read_long', 'dma_write_long',
+                      'dma_read_pattern', 'dma_write_pattern',
+                      'dma_read_multidim', 'dma_write_multidim',
                       'dma_wait', 'dma_idle') + _MutexFunction.__intrinsics__
 
     burstlen = 256
@@ -868,6 +900,75 @@ class AXIM(AxiMaster, _MutexFunction):
 
         return 0
 
+    def dma_read_pattern(self, fsm, ram, local_addr, global_addr, pattern,
+                         port=0):
+        if self.enable_async:
+            self.dma_wait(fsm)
+
+        return self._dma_read_pattern(fsm, ram, local_addr, global_addr, pattern,
+                                      port)
+
+    def _dma_read_pattern(self, fsm, ram, local_addr, global_addr, pattern,
+                          port=0):
+        if self.lite:
+            raise TypeError('Lite-interface does not support DMA')
+
+        if isinstance(ram, (tuple, list)):
+            ram = MultibankRAM(rams=ram)
+
+        if not isinstance(ram, (RAM, MultibankRAM)):
+            raise TypeError('RAM is required')
+
+        # for pattern
+        if not isinstance(pattern, (tuple, list)):
+            raise TypeError('pattern must be list or tuple.')
+
+        if not pattern:
+            raise ValueError(
+                'pattern must have one (size, stride) pair at least.')
+
+        if not isinstance(pattern[0], (tuple, list)):
+            pattern = (pattern,)
+
+        port = vtypes.to_int(port)
+        req_local_addr = self.m.TmpReg(ram.addrwidth, initval=0)
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
+
+        req_pattern = []
+        for size, stride in pattern:
+            req_pattern.append((self.m.TmpReg(size.bit_length() + 1, initval=0),
+                                self.m.TmpReg(stride.bit_length() + 1, initval=0)))
+
+        fsm(
+            req_local_addr(local_addr),
+            req_global_addr(global_addr)
+        )
+        for (req_size, req_stride), (size, stride) in zip(req_pattern, pattern):
+            fsm(
+                req_size(size),
+                req_stride(stride)
+            )
+        fsm.goto_next()
+
+        cond = fsm.state == fsm.current
+
+        done = AxiMaster.dma_read_pattern(self, ram, req_global_addr, req_local_addr,
+                                          req_pattern,
+                                          cond=cond, ram_port=port)
+
+        fsm.If(done).goto_next()
+
+        return 0
+
+    def dma_read_multidim(self, fsm, ram, local_addr, global_addr, shape, order=None,
+                          port=0):
+        if order is None:
+            order = list(range(len(shape)))
+
+        pattern = self._to_pattern(shape, order)
+        return self.dma_read_pattern(fsm, ram, local_addr, global_addr, pattern,
+                                     port)
+
     def dma_write(self, fsm, ram, local_addr, global_addr, size,
                   local_stride=1, port=0):
         if self.enable_async:
@@ -984,6 +1085,75 @@ class AXIM(AxiMaster, _MutexFunction):
 
         return 0
 
+    def dma_write_pattern(self, fsm, ram, local_addr, global_addr, pattern,
+                          port=0):
+        if self.enable_async:
+            self.dma_wait(fsm)
+
+        return self._dma_write_pattern(fsm, ram, local_addr, global_addr, pattern,
+                                       port)
+
+    def _dma_write_pattern(self, fsm, ram, local_addr, global_addr, pattern,
+                           port=0):
+        if self.lite:
+            raise TypeError('Lite-interface does not support DMA')
+
+        if isinstance(ram, (tuple, list)):
+            ram = MultibankRAM(rams=ram)
+
+        if not isinstance(ram, (RAM, MultibankRAM)):
+            raise TypeError('RAM is required')
+
+        # for pattern
+        if not isinstance(pattern, (tuple, list)):
+            raise TypeError('pattern must be list or tuple.')
+
+        if not pattern:
+            raise ValueError(
+                'pattern must have one (size, stride) pair at least.')
+
+        if not isinstance(pattern[0], (tuple, list)):
+            pattern = (pattern,)
+
+        port = vtypes.to_int(port)
+        req_local_addr = self.m.TmpReg(ram.addrwidth, initval=0)
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
+
+        req_pattern = []
+        for size, stride in pattern:
+            req_pattern.append((self.m.TmpReg(size.bit_length() + 1, initval=0),
+                                self.m.TmpReg(stride.bit_length() + 1, initval=0)))
+
+        fsm(
+            req_local_addr(local_addr),
+            req_global_addr(global_addr)
+        )
+        for (req_size, req_stride), (size, stride) in zip(req_pattern, pattern):
+            fsm(
+                req_size(size),
+                req_stride(stride)
+            )
+        fsm.goto_next()
+
+        cond = fsm.state == fsm.current
+
+        done = AxiMaster.dma_write_pattern(self, ram, req_global_addr, req_local_addr,
+                                           req_pattern,
+                                           cond=cond, ram_port=port)
+
+        fsm.If(done).goto_next()
+
+        return 0
+
+    def dma_write_multidim(self, fsm, ram, local_addr, global_addr, shape, order=None,
+                           port=0):
+        if order is None:
+            order = list(range(len(shape)))
+
+        pattern = self._to_pattern(shape, order)
+        return self.dma_write_pattern(fsm, ram, local_addr, global_addr, pattern,
+                                      port)
+
     def dma_read_async(self, fsm, ram, local_addr, global_addr, size,
                        local_stride=1, port=0):
         if not self.enable_async:
@@ -1057,6 +1227,15 @@ class AXIM(AxiMaster, _MutexFunction):
         start_state = 0
         flag = self.dma_fsm.state == start_state
         return flag
+
+    def _to_pattern(self, shape, order):
+        pattern = []
+        for p in order:
+            size = shape[p]
+            stride = functools.reduce(lambda x, y: x * y,
+                                      shape[:p], 1) if p > 0 else 1
+            pattern.append((size, stride))
+        return pattern
 
 
 class AXIS(AxiSlave, _MutexFunction):

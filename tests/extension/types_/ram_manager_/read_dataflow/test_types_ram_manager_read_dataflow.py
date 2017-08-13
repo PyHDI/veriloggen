@@ -95,11 +95,11 @@ module main
   wire [32-1:0] _tmp_9;
   reg [32-1:0] __tmp_9_1;
   assign _tmp_9 = (__tmp_8_1)? myram_1_rdata : __tmp_9_1;
-  reg [7-1:0] _tmp_10;
+  reg _tmp_10;
   reg _tmp_11;
   reg _tmp_12;
   reg _tmp_13;
-  reg _tmp_14;
+  reg [7-1:0] _tmp_14;
   wire [32-1:0] _tmp_data_15;
   wire _tmp_valid_15;
   wire _tmp_ready_15;
@@ -123,14 +123,14 @@ module main
       _myram_cond_0_1 <= 0;
       __tmp_8_1 <= 0;
       __tmp_9_1 <= 0;
-      _tmp_14 <= 0;
+      _tmp_13 <= 0;
       _tmp_3 <= 0;
       _tmp_4 <= 0;
-      _tmp_12 <= 0;
-      _tmp_13 <= 0;
       _tmp_11 <= 0;
-      myram_1_addr <= 0;
+      _tmp_12 <= 0;
       _tmp_10 <= 0;
+      myram_1_addr <= 0;
+      _tmp_14 <= 0;
     end else begin
       if(_myram_cond_0_1) begin
         myram_0_wenable <= 0;
@@ -154,33 +154,33 @@ module main
       _myram_cond_0_1 <= 1;
       __tmp_8_1 <= _tmp_8;
       __tmp_9_1 <= _tmp_9;
-      if((_tmp_5 || !_tmp_3) && (_tmp_6 || !_tmp_4) && _tmp_12) begin
-        _tmp_14 <= 0;
+      if((_tmp_5 || !_tmp_3) && (_tmp_6 || !_tmp_4) && _tmp_11) begin
+        _tmp_13 <= 0;
         _tmp_3 <= 0;
         _tmp_4 <= 0;
-        _tmp_12 <= 0;
+        _tmp_11 <= 0;
       end 
-      if((_tmp_5 || !_tmp_3) && (_tmp_6 || !_tmp_4) && _tmp_11) begin
+      if((_tmp_5 || !_tmp_3) && (_tmp_6 || !_tmp_4) && _tmp_10) begin
         _tmp_3 <= 1;
         _tmp_4 <= 1;
-        _tmp_14 <= _tmp_13;
-        _tmp_13 <= 0;
-        _tmp_11 <= 0;
-        _tmp_12 <= 1;
+        _tmp_13 <= _tmp_12;
+        _tmp_12 <= 0;
+        _tmp_10 <= 0;
+        _tmp_11 <= 1;
       end 
-      if((fsm == 3) && (_tmp_10 == 0) && !_tmp_13 && !_tmp_14) begin
+      if((fsm == 3) && (_tmp_14 == 0) && !_tmp_12 && !_tmp_13) begin
         myram_1_addr <= 0;
-        _tmp_10 <= 31;
-        _tmp_11 <= 1;
+        _tmp_14 <= 31;
+        _tmp_10 <= 1;
       end 
-      if((_tmp_5 || !_tmp_3) && (_tmp_6 || !_tmp_4) && (_tmp_10 > 0)) begin
+      if((_tmp_5 || !_tmp_3) && (_tmp_6 || !_tmp_4) && (_tmp_14 > 0)) begin
         myram_1_addr <= myram_1_addr + 1;
-        _tmp_10 <= _tmp_10 - 1;
-        _tmp_11 <= 1;
-        _tmp_13 <= 0;
+        _tmp_14 <= _tmp_14 - 1;
+        _tmp_10 <= 1;
+        _tmp_12 <= 0;
       end 
-      if((_tmp_5 || !_tmp_3) && (_tmp_6 || !_tmp_4) && (_tmp_10 == 1)) begin
-        _tmp_13 <= 1;
+      if((_tmp_5 || !_tmp_3) && (_tmp_6 || !_tmp_4) && (_tmp_14 == 1)) begin
+        _tmp_12 <= 1;
       end 
     end
   end
@@ -188,7 +188,7 @@ module main
   assign _tmp_data_15 = _tmp_9;
   assign _tmp_valid_15 = _tmp_3;
   assign _tmp_5 = 1 && _tmp_ready_15;
-  assign _tmp_data_16 = _tmp_14;
+  assign _tmp_data_16 = _tmp_13;
   assign _tmp_valid_16 = _tmp_4;
   assign _tmp_6 = 1 && _tmp_ready_16;
   reg [32-1:0] _tmp_data_17;
@@ -256,7 +256,7 @@ module main
           fsm <= fsm_4;
         end
         fsm_4: begin
-          if(_tmp_14) begin
+          if(_tmp_13) begin
             fsm <= fsm_5;
           end 
         end
