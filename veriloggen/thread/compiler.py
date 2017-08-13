@@ -254,6 +254,9 @@ class CompileVisitor(ast.NodeVisitor):
         if len(node.iter.args) == 0:
             raise ValueError('not enough arguments')
 
+        if node.iter.keywords:
+            raise TypeError("range() does not take keyword arguments")
+
         begin_node = (vtypes.Int(0)
                       if len(node.iter.args) == 1
                       else self.visit(node.iter.args[0]))
