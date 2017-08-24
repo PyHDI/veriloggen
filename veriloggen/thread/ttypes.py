@@ -445,6 +445,7 @@ class MultibankRAM(object):
             self.addrwidth = max_addrwidth
             self.numports = max_numports
             self.numbanks = len(rams)
+            self.shift = int(math.log(self.numbanks, 2))
             self.rams = rams
 
         elif (m is not None and name is not None and
@@ -465,6 +466,7 @@ class MultibankRAM(object):
             self.addrwidth = addrwidth
             self.numports = numports
             self.numbanks = numbanks
+            self.shift = int(math.log(self.numbanks, 2))
             self.rams = [RAM(m, '_'.join([name, '%d' % i]),
                              clk, rst, datawidth, addrwidth, numports)
                          for i in range(numbanks)]
@@ -496,10 +498,9 @@ class MultibankRAM(object):
         rdata_list = []
         rvalid_list = []
 
-        shift = int(math.log(self.numbanks, 2))
-        bank = self.m.TmpWire(shift)
+        bank = self.m.TmpWire(self.shift)
         bank.assign(addr)
-        addr = addr >> shift
+        addr = addr >> self.shift
 
         for ram in self.rams:
             rdata, rvalid = SyncRAMManager.read(ram, port, addr, cond)
@@ -523,10 +524,9 @@ class MultibankRAM(object):
         else:
             cond = vtypes.Ands(cond, fsm.state == fsm.current)
 
-        shift = int(math.log(self.numbanks, 2))
-        bank = self.m.TmpWire(shift)
+        bank = self.m.TmpWire(self.shift)
         bank.assign(addr)
-        addr = addr >> shift
+        addr = addr >> self.shift
 
         for i, ram in enumerate(self.rams):
             bank_cond = vtypes.Ands(cond, bank == i)
