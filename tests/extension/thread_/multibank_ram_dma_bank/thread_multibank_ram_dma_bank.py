@@ -43,7 +43,7 @@ def mkLed():
         # write
         for i in range(size):
             wdata = i + 100
-            myram.write(bank, i, wdata)
+            myram.write_bank(bank, i, wdata)
 
         laddr = 0
         gaddr = offset
@@ -53,7 +53,7 @@ def mkLed():
         # write
         for i in range(size):
             wdata = i + 1000
-            myram.write(bank, i, wdata)
+            myram.write_bank(bank, i, wdata)
 
         laddr = 0
         gaddr = (size + size) * 4 + offset
@@ -67,7 +67,7 @@ def mkLed():
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
-            rdata = myram.read(bank, i)
+            rdata = myram.read_bank(bank, i)
             if vthread.verilog.NotEql(rdata, i + 100):
                 print('rdata[%d] = %d' % (i, rdata))
                 all_ok.value = False
@@ -79,7 +79,7 @@ def mkLed():
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
-            rdata = myram.read(bank, i)
+            rdata = myram.read_bank(bank, i)
             if vthread.verilog.NotEql(rdata, i + 1000):
                 print('rdata[%d] = %d' % (i, rdata))
                 all_ok.value = False

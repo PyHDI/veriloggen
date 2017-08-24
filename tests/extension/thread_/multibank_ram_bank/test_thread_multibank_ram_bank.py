@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import thread_multibank_ram
+import thread_multibank_ram_bank
 
 expected_verilog = """
 module test;
@@ -37,7 +37,7 @@ module test;
     RST = 1;
     #100;
     RST = 0;
-    #20000;
+    #10000;
     $finish;
   end
 
@@ -115,35 +115,32 @@ module blinkled
   reg [32-1:0] th_blink;
   localparam th_blink_init = 0;
   reg signed [32-1:0] _th_blink_times_0;
-  reg signed [32-1:0] _th_blink_i_1;
-  reg signed [32-1:0] _th_blink_wdata_2;
-  wire [2-1:0] _tmp_0;
-  assign _tmp_0 = _th_blink_i_1;
+  reg signed [32-1:0] _th_blink_wdata_1;
+  reg signed [32-1:0] _th_blink_i_2;
+  reg signed [32-1:0] _th_blink_b_3;
   reg _myram_0_cond_0_1;
   reg _myram_1_cond_0_1;
   reg _myram_2_cond_0_1;
   reg _myram_3_cond_0_1;
-  reg signed [32-1:0] _th_blink_sum_3;
-  wire [2-1:0] _tmp_1;
-  assign _tmp_1 = _th_blink_i_1;
-  reg _tmp_2;
+  reg signed [32-1:0] _th_blink_sum_4;
+  reg _tmp_0;
   reg _myram_0_cond_1_1;
   reg _myram_0_cond_2_1;
   reg _myram_0_cond_2_2;
-  reg _tmp_3;
+  reg _tmp_1;
   reg _myram_1_cond_1_1;
   reg _myram_1_cond_2_1;
   reg _myram_1_cond_2_2;
-  reg _tmp_4;
+  reg _tmp_2;
   reg _myram_2_cond_1_1;
   reg _myram_2_cond_2_1;
   reg _myram_2_cond_2_2;
-  reg _tmp_5;
+  reg _tmp_3;
   reg _myram_3_cond_1_1;
   reg _myram_3_cond_2_1;
   reg _myram_3_cond_2_2;
-  reg signed [32-1:0] _tmp_6;
-  reg signed [32-1:0] _th_blink_rdata_4;
+  reg signed [32-1:0] _tmp_4;
+  reg signed [32-1:0] _th_blink_rdata_5;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -152,31 +149,31 @@ module blinkled
       myram_0_0_wenable <= 0;
       _myram_0_cond_0_1 <= 0;
       _myram_0_cond_1_1 <= 0;
-      _tmp_2 <= 0;
+      _tmp_0 <= 0;
       _myram_0_cond_2_1 <= 0;
       _myram_0_cond_2_2 <= 0;
     end else begin
       if(_myram_0_cond_2_2) begin
-        _tmp_2 <= 0;
+        _tmp_0 <= 0;
       end 
       if(_myram_0_cond_0_1) begin
         myram_0_0_wenable <= 0;
       end 
       if(_myram_0_cond_1_1) begin
-        _tmp_2 <= 1;
+        _tmp_0 <= 1;
       end 
       _myram_0_cond_2_2 <= _myram_0_cond_2_1;
-      if((th_blink == 4) && (_tmp_0 == 0)) begin
-        myram_0_0_addr <= _th_blink_i_1 >> 2;
-        myram_0_0_wdata <= _th_blink_wdata_2;
+      if((th_blink == 6) && (_th_blink_b_3 == 0)) begin
+        myram_0_0_addr <= _th_blink_i_2;
+        myram_0_0_wdata <= _th_blink_wdata_1;
         myram_0_0_wenable <= 1;
       end 
-      _myram_0_cond_0_1 <= (th_blink == 4) && (_tmp_0 == 0);
-      if(th_blink == 10) begin
-        myram_0_0_addr <= _th_blink_i_1 >> 2;
+      _myram_0_cond_0_1 <= (th_blink == 6) && (_th_blink_b_3 == 0);
+      if(th_blink == 16) begin
+        myram_0_0_addr <= _th_blink_i_2;
       end 
-      _myram_0_cond_1_1 <= th_blink == 10;
-      _myram_0_cond_2_1 <= th_blink == 10;
+      _myram_0_cond_1_1 <= th_blink == 16;
+      _myram_0_cond_2_1 <= th_blink == 16;
     end
   end
 
@@ -188,31 +185,31 @@ module blinkled
       myram_1_0_wenable <= 0;
       _myram_1_cond_0_1 <= 0;
       _myram_1_cond_1_1 <= 0;
-      _tmp_3 <= 0;
+      _tmp_1 <= 0;
       _myram_1_cond_2_1 <= 0;
       _myram_1_cond_2_2 <= 0;
     end else begin
       if(_myram_1_cond_2_2) begin
-        _tmp_3 <= 0;
+        _tmp_1 <= 0;
       end 
       if(_myram_1_cond_0_1) begin
         myram_1_0_wenable <= 0;
       end 
       if(_myram_1_cond_1_1) begin
-        _tmp_3 <= 1;
+        _tmp_1 <= 1;
       end 
       _myram_1_cond_2_2 <= _myram_1_cond_2_1;
-      if((th_blink == 4) && (_tmp_0 == 1)) begin
-        myram_1_0_addr <= _th_blink_i_1 >> 2;
-        myram_1_0_wdata <= _th_blink_wdata_2;
+      if((th_blink == 6) && (_th_blink_b_3 == 1)) begin
+        myram_1_0_addr <= _th_blink_i_2;
+        myram_1_0_wdata <= _th_blink_wdata_1;
         myram_1_0_wenable <= 1;
       end 
-      _myram_1_cond_0_1 <= (th_blink == 4) && (_tmp_0 == 1);
-      if(th_blink == 10) begin
-        myram_1_0_addr <= _th_blink_i_1 >> 2;
+      _myram_1_cond_0_1 <= (th_blink == 6) && (_th_blink_b_3 == 1);
+      if(th_blink == 16) begin
+        myram_1_0_addr <= _th_blink_i_2;
       end 
-      _myram_1_cond_1_1 <= th_blink == 10;
-      _myram_1_cond_2_1 <= th_blink == 10;
+      _myram_1_cond_1_1 <= th_blink == 16;
+      _myram_1_cond_2_1 <= th_blink == 16;
     end
   end
 
@@ -224,31 +221,31 @@ module blinkled
       myram_2_0_wenable <= 0;
       _myram_2_cond_0_1 <= 0;
       _myram_2_cond_1_1 <= 0;
-      _tmp_4 <= 0;
+      _tmp_2 <= 0;
       _myram_2_cond_2_1 <= 0;
       _myram_2_cond_2_2 <= 0;
     end else begin
       if(_myram_2_cond_2_2) begin
-        _tmp_4 <= 0;
+        _tmp_2 <= 0;
       end 
       if(_myram_2_cond_0_1) begin
         myram_2_0_wenable <= 0;
       end 
       if(_myram_2_cond_1_1) begin
-        _tmp_4 <= 1;
+        _tmp_2 <= 1;
       end 
       _myram_2_cond_2_2 <= _myram_2_cond_2_1;
-      if((th_blink == 4) && (_tmp_0 == 2)) begin
-        myram_2_0_addr <= _th_blink_i_1 >> 2;
-        myram_2_0_wdata <= _th_blink_wdata_2;
+      if((th_blink == 6) && (_th_blink_b_3 == 2)) begin
+        myram_2_0_addr <= _th_blink_i_2;
+        myram_2_0_wdata <= _th_blink_wdata_1;
         myram_2_0_wenable <= 1;
       end 
-      _myram_2_cond_0_1 <= (th_blink == 4) && (_tmp_0 == 2);
-      if(th_blink == 10) begin
-        myram_2_0_addr <= _th_blink_i_1 >> 2;
+      _myram_2_cond_0_1 <= (th_blink == 6) && (_th_blink_b_3 == 2);
+      if(th_blink == 16) begin
+        myram_2_0_addr <= _th_blink_i_2;
       end 
-      _myram_2_cond_1_1 <= th_blink == 10;
-      _myram_2_cond_2_1 <= th_blink == 10;
+      _myram_2_cond_1_1 <= th_blink == 16;
+      _myram_2_cond_2_1 <= th_blink == 16;
     end
   end
 
@@ -260,31 +257,31 @@ module blinkled
       myram_3_0_wenable <= 0;
       _myram_3_cond_0_1 <= 0;
       _myram_3_cond_1_1 <= 0;
-      _tmp_5 <= 0;
+      _tmp_3 <= 0;
       _myram_3_cond_2_1 <= 0;
       _myram_3_cond_2_2 <= 0;
     end else begin
       if(_myram_3_cond_2_2) begin
-        _tmp_5 <= 0;
+        _tmp_3 <= 0;
       end 
       if(_myram_3_cond_0_1) begin
         myram_3_0_wenable <= 0;
       end 
       if(_myram_3_cond_1_1) begin
-        _tmp_5 <= 1;
+        _tmp_3 <= 1;
       end 
       _myram_3_cond_2_2 <= _myram_3_cond_2_1;
-      if((th_blink == 4) && (_tmp_0 == 3)) begin
-        myram_3_0_addr <= _th_blink_i_1 >> 2;
-        myram_3_0_wdata <= _th_blink_wdata_2;
+      if((th_blink == 6) && (_th_blink_b_3 == 3)) begin
+        myram_3_0_addr <= _th_blink_i_2;
+        myram_3_0_wdata <= _th_blink_wdata_1;
         myram_3_0_wenable <= 1;
       end 
-      _myram_3_cond_0_1 <= (th_blink == 4) && (_tmp_0 == 3);
-      if(th_blink == 10) begin
-        myram_3_0_addr <= _th_blink_i_1 >> 2;
+      _myram_3_cond_0_1 <= (th_blink == 6) && (_th_blink_b_3 == 3);
+      if(th_blink == 16) begin
+        myram_3_0_addr <= _th_blink_i_2;
       end 
-      _myram_3_cond_1_1 <= th_blink == 10;
-      _myram_3_cond_2_1 <= th_blink == 10;
+      _myram_3_cond_1_1 <= th_blink == 16;
+      _myram_3_cond_2_1 <= th_blink == 16;
     end
   end
 
@@ -304,16 +301,24 @@ module blinkled
   localparam th_blink_14 = 14;
   localparam th_blink_15 = 15;
   localparam th_blink_16 = 16;
+  localparam th_blink_17 = 17;
+  localparam th_blink_18 = 18;
+  localparam th_blink_19 = 19;
+  localparam th_blink_20 = 20;
+  localparam th_blink_21 = 21;
+  localparam th_blink_22 = 22;
+  localparam th_blink_23 = 23;
 
   always @(posedge CLK) begin
     if(RST) begin
       th_blink <= th_blink_init;
       _th_blink_times_0 <= 0;
-      _th_blink_i_1 <= 0;
-      _th_blink_wdata_2 <= 0;
-      _th_blink_sum_3 <= 0;
-      _tmp_6 <= 0;
-      _th_blink_rdata_4 <= 0;
+      _th_blink_wdata_1 <= 0;
+      _th_blink_i_2 <= 0;
+      _th_blink_b_3 <= 0;
+      _th_blink_sum_4 <= 0;
+      _tmp_4 <= 0;
+      _th_blink_rdata_5 <= 0;
     end else begin
       case(th_blink)
         th_blink_init: begin
@@ -321,82 +326,116 @@ module blinkled
           th_blink <= th_blink_1;
         end
         th_blink_1: begin
-          _th_blink_i_1 <= 0;
+          _th_blink_wdata_1 <= 0;
           th_blink <= th_blink_2;
         end
         th_blink_2: begin
-          if(_th_blink_i_1 < (_th_blink_times_0 << 2)) begin
-            th_blink <= th_blink_3;
-          end else begin
-            th_blink <= th_blink_7;
-          end
+          _th_blink_i_2 <= 0;
+          th_blink <= th_blink_3;
         end
         th_blink_3: begin
-          _th_blink_wdata_2 <= _th_blink_i_1;
-          th_blink <= th_blink_4;
+          if(_th_blink_i_2 < _th_blink_times_0) begin
+            th_blink <= th_blink_4;
+          end else begin
+            th_blink <= th_blink_11;
+          end
         end
         th_blink_4: begin
+          _th_blink_b_3 <= 0;
           th_blink <= th_blink_5;
         end
         th_blink_5: begin
-          $display("wdata = %d", _th_blink_wdata_2);
-          th_blink <= th_blink_6;
+          if(_th_blink_b_3 < 4) begin
+            th_blink <= th_blink_6;
+          end else begin
+            th_blink <= th_blink_10;
+          end
         end
         th_blink_6: begin
-          _th_blink_i_1 <= _th_blink_i_1 + 1;
-          th_blink <= th_blink_2;
+          th_blink <= th_blink_7;
         end
         th_blink_7: begin
-          _th_blink_sum_3 <= 0;
+          $display("bank:%d wdata = %d", _th_blink_b_3, _th_blink_wdata_1);
           th_blink <= th_blink_8;
         end
         th_blink_8: begin
-          _th_blink_i_1 <= 0;
+          _th_blink_wdata_1 <= _th_blink_wdata_1 + 1;
           th_blink <= th_blink_9;
         end
         th_blink_9: begin
-          if(_th_blink_i_1 < (_th_blink_times_0 << 2)) begin
-            th_blink <= th_blink_10;
-          end else begin
-            th_blink <= th_blink_15;
-          end
+          _th_blink_b_3 <= _th_blink_b_3 + 1;
+          th_blink <= th_blink_5;
         end
         th_blink_10: begin
-          if(_tmp_2 && (_tmp_1 == 0)) begin
-            _tmp_6 <= myram_0_0_rdata;
-          end 
-          if(_tmp_3 && (_tmp_1 == 1)) begin
-            _tmp_6 <= myram_1_0_rdata;
-          end 
-          if(_tmp_4 && (_tmp_1 == 2)) begin
-            _tmp_6 <= myram_2_0_rdata;
-          end 
-          if(_tmp_5 && (_tmp_1 == 3)) begin
-            _tmp_6 <= myram_3_0_rdata;
-          end 
-          if(_tmp_2) begin
-            th_blink <= th_blink_11;
-          end 
+          _th_blink_i_2 <= _th_blink_i_2 + 1;
+          th_blink <= th_blink_3;
         end
         th_blink_11: begin
-          _th_blink_rdata_4 <= _tmp_6;
+          _th_blink_sum_4 <= 0;
           th_blink <= th_blink_12;
         end
         th_blink_12: begin
-          _th_blink_sum_3 <= _th_blink_sum_3 + _th_blink_rdata_4;
+          _th_blink_i_2 <= 0;
           th_blink <= th_blink_13;
         end
         th_blink_13: begin
-          $display("rdata = %d", _th_blink_rdata_4);
-          th_blink <= th_blink_14;
+          if(_th_blink_i_2 < _th_blink_times_0) begin
+            th_blink <= th_blink_14;
+          end else begin
+            th_blink <= th_blink_22;
+          end
         end
         th_blink_14: begin
-          _th_blink_i_1 <= _th_blink_i_1 + 1;
-          th_blink <= th_blink_9;
+          _th_blink_b_3 <= 0;
+          th_blink <= th_blink_15;
         end
         th_blink_15: begin
-          $display("sum = %d", _th_blink_sum_3);
-          th_blink <= th_blink_16;
+          if(_th_blink_b_3 < 4) begin
+            th_blink <= th_blink_16;
+          end else begin
+            th_blink <= th_blink_21;
+          end
+        end
+        th_blink_16: begin
+          if(_tmp_0 && (_th_blink_b_3 == 0)) begin
+            _tmp_4 <= myram_0_0_rdata;
+          end 
+          if(_tmp_1 && (_th_blink_b_3 == 1)) begin
+            _tmp_4 <= myram_1_0_rdata;
+          end 
+          if(_tmp_2 && (_th_blink_b_3 == 2)) begin
+            _tmp_4 <= myram_2_0_rdata;
+          end 
+          if(_tmp_3 && (_th_blink_b_3 == 3)) begin
+            _tmp_4 <= myram_3_0_rdata;
+          end 
+          if(_tmp_0) begin
+            th_blink <= th_blink_17;
+          end 
+        end
+        th_blink_17: begin
+          _th_blink_rdata_5 <= _tmp_4;
+          th_blink <= th_blink_18;
+        end
+        th_blink_18: begin
+          _th_blink_sum_4 <= _th_blink_sum_4 + _th_blink_rdata_5;
+          th_blink <= th_blink_19;
+        end
+        th_blink_19: begin
+          $display("bank:%d rdata = %d", _th_blink_b_3, _th_blink_rdata_5);
+          th_blink <= th_blink_20;
+        end
+        th_blink_20: begin
+          _th_blink_b_3 <= _th_blink_b_3 + 1;
+          th_blink <= th_blink_15;
+        end
+        th_blink_21: begin
+          _th_blink_i_2 <= _th_blink_i_2 + 1;
+          th_blink <= th_blink_13;
+        end
+        th_blink_22: begin
+          $display("sum = %d", _th_blink_sum_4);
+          th_blink <= th_blink_23;
         end
       endcase
     end
@@ -509,7 +548,7 @@ endmodule
 
 def test():
     veriloggen.reset()
-    test_module = thread_multibank_ram.mkTest()
+    test_module = thread_multibank_ram_bank.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

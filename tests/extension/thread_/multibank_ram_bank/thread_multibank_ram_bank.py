@@ -23,16 +23,19 @@ def mkLed():
                                  numbanks=numbanks)
 
     def blink(times):
-        for i in range(times * numbanks):
-            wdata = i
-            myram.write(i, wdata)
-            print('wdata = %d' % wdata)
+        wdata = 0
+        for i in range(times):
+            for b in range(numbanks):
+                myram.write_bank(b, i, wdata)
+                print('bank:%d wdata = %d' % (b, wdata))
+                wdata += 1
 
         sum = 0
-        for i in range(times * numbanks):
-            rdata = myram.read(i)
-            sum += rdata
-            print('rdata = %d' % rdata)
+        for i in range(times):
+            for b in range(numbanks):
+                rdata = myram.read_bank(b, i)
+                sum += rdata
+                print('bank:%d rdata = %d' % (b, rdata))
 
         print('sum = %d' % sum)
 
@@ -64,7 +67,7 @@ def mkTest():
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
     init.add(
-        Delay(20000),
+        Delay(10000),
         Systask('finish'),
     )
 

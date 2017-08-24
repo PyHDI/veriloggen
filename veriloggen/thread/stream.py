@@ -66,8 +66,12 @@ class Stream(vtypes.VeriloggenNode):
         )
         fsm.If(self.start_cond).goto_next()
 
-        rdata, rlast, done = obj.read_dataflow(port, addr, size, stride=stride,
-                                               cond=fsm, point=point, signed=signed)
+        if hasattr(obj, 'read_dataflow_interleave'):
+            rdata, rlast, done = obj.read_dataflow_interleave(port, addr, size, stride=stride,
+                                                              cond=fsm, point=point, signed=signed)
+        else:
+            rdata, rlast, done = obj.read_dataflow(port, addr, size, stride=stride,
+                                                   cond=fsm, point=point, signed=signed)
 
         fsm.goto_next()
 
@@ -103,8 +107,12 @@ class Stream(vtypes.VeriloggenNode):
         )
         fsm.If(self.start_cond).goto_next()
 
-        rdata, rlast, done = obj.read_dataflow_pattern(port, addr, pattern,
-                                                       cond=fsm, point=point, signed=signed)
+        if hasattr(obj, 'read_dataflow_pattern_interleave'):
+            rdata, rlast, done = obj.read_dataflow_pattern_interleave(port, addr, pattern,
+                                                                      cond=fsm, point=point, signed=signed)
+        else:
+            rdata, rlast, done = obj.read_dataflow_pattern(port, addr, pattern,
+                                                           cond=fsm, point=point, signed=signed)
 
         fsm.goto_next()
 
@@ -133,8 +141,12 @@ class Stream(vtypes.VeriloggenNode):
         )
         fsm.If(self.start_cond).goto_next()
 
-        rdata, rlast, done = obj.read_dataflow_multidim(port, addr, shape, order=order,
-                                                        cond=fsm, point=point, signed=signed)
+        if hasattr(obj, 'read_dataflow_multidim_interleave'):
+            rdata, rlast, done = obj.read_dataflow_multidim_interleave(port, addr, shape, order=order,
+                                                                       cond=fsm, point=point, signed=signed)
+        else:
+            rdata, rlast, done = obj.read_dataflow_multidim(port, addr, shape, order=order,
+                                                            cond=fsm, point=point, signed=signed)
 
         fsm.goto_next()
 
@@ -163,8 +175,12 @@ class Stream(vtypes.VeriloggenNode):
         )
         fsm.If(self.start_cond).goto_next()
 
-        done = obj.write_dataflow(port, addr, value, size,
-                                  stride=stride, cond=fsm, when=when)
+        if hasattr(obj, 'write_dataflow_interleave'):
+            done = obj.write_dataflow_interleave(port, addr, value, size,
+                                                 stride=stride, cond=fsm, when=when)
+        else:
+            done = obj.write_dataflow(port, addr, value, size,
+                                      stride=stride, cond=fsm, when=when)
 
         fsm.goto_next()
 
@@ -196,8 +212,12 @@ class Stream(vtypes.VeriloggenNode):
         )
         fsm.If(self.start_cond).goto_next()
 
-        done = obj.write_dataflow_pattern(port, addr, value, pattern,
-                                          cond=fsm, when=when)
+        if hasattr(obj, 'write_dataflow_pattern_interleave'):
+            done = obj.write_dataflow_pattern_interleave(port, addr, value, pattern,
+                                                         cond=fsm, when=when)
+        else:
+            done = obj.write_dataflow_pattern(port, addr, value, pattern,
+                                              cond=fsm, when=when)
 
         fsm.goto_next()
 
@@ -223,8 +243,12 @@ class Stream(vtypes.VeriloggenNode):
         )
         fsm.If(self.start_cond).goto_next()
 
-        done = obj.write_dataflow_multidim(port, addr, value, shape, order=order,
-                                           cond=fsm, when=when)
+        if hasattr(obj, 'write_dataflow_multidim_interleave'):
+            done = obj.write_dataflow_multidim_interleave(port, addr, value, shape, order=order,
+                                                          cond=fsm, when=when)
+        else:
+            done = obj.write_dataflow_multidim(port, addr, value, shape, order=order,
+                                               cond=fsm, when=when)
 
         fsm.goto_next()
 
