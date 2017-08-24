@@ -205,7 +205,7 @@ class Barrier(object):
         self.clk = clk
         self.rst = rst
         self.numparties = numparties
-        self.width = int(math.ceil(math.log(self.numparties, 2))) + 1
+        self.width = util.log2(self.numparties) + 1
 
         self.seq = Seq(self.m, self.name, self.clk, self.rst)
 
@@ -445,7 +445,7 @@ class MultibankRAM(object):
             self.addrwidth = max_addrwidth
             self.numports = max_numports
             self.numbanks = len(rams)
-            self.shift = int(math.log(self.numbanks, 2))
+            self.shift = util.log2(self.numbanks)
             self.rams = rams
 
         elif (m is not None and name is not None and
@@ -466,7 +466,7 @@ class MultibankRAM(object):
             self.addrwidth = addrwidth
             self.numports = numports
             self.numbanks = numbanks
-            self.shift = int(math.log(self.numbanks, 2))
+            self.shift = util.log2(self.numbanks)
             self.rams = [RAM(m, '_'.join([name, '%d' % i]),
                              clk, rst, datawidth, addrwidth, numports)
                          for i in range(numbanks)]
@@ -687,7 +687,7 @@ class MultibankRAM(object):
             data.assign(vtypes.Mux(prev_data_cond,
                                    ram.interfaces[port].rdata, prev_data))
 
-        log_numbanks = int(math.log(self.numbanks, 2))
+        log_numbanks = util.log2(self.numbanks)
         reg_addr = self.m.TmpReg(self.addrwidth + log_numbanks, initval=0)
         next_addr = self.m.TmpWire(self.addrwidth + log_numbanks)
         next_addr.assign(reg_addr + stride)
@@ -817,7 +817,7 @@ class MultibankRAM(object):
             data.assign(vtypes.Mux(prev_data_cond,
                                    ram.interfaces[port].rdata, prev_data))
 
-        log_numbanks = int(math.log(self.numbanks, 2))
+        log_numbanks = util.log2(self.numbanks)
         reg_addr = self.m.TmpReg(self.addrwidth + log_numbanks, initval=0)
 
         bank_sel = self.m.TmpWire(log_numbanks)
@@ -1048,7 +1048,7 @@ class MultibankRAM(object):
         if when_cond is not None:
             raw_valid = vtypes.Ands(when_cond, raw_valid)
 
-        log_numbanks = int(math.log(self.numbanks, 2))
+        log_numbanks = util.log2(self.numbanks)
         reg_addr = self.m.TmpReg(self.addrwidth + log_numbanks, initval=0)
         next_addr = self.m.TmpWire(self.addrwidth + log_numbanks)
         next_addr.assign(reg_addr + stride)
@@ -1145,7 +1145,7 @@ class MultibankRAM(object):
             offset_addr_value = offset + offset_addr_value
         offset_addr.assign(offset_addr_value)
 
-        log_numbanks = int(math.log(self.numbanks, 2))
+        log_numbanks = util.log2(self.numbanks)
         ram_addr_list = [self.m.TmpWire(ram.addrwidth) for ram in self.rams]
         for ram_addr in ram_addr_list:
             ram_addr.assign(offset_addr >> log_numbanks)
@@ -1417,7 +1417,7 @@ class AXIM(AxiMaster, _MutexFunction):
                              (type(self.datawidth, ram.datawidth)))
 
         if comp:
-            return int(self.burstlen // int(ram.datawidth // self.datawidth))
+            return self.burstlen // (ram.datawidth // self.datawidth)
 
         return self.burstlen
 
@@ -1472,6 +1472,23 @@ class AXIM(AxiMaster, _MutexFunction):
             rest_size(rest_size - max_burstlen)
         )
         fsm.goto_next()
+
+#        # 4KB check
+#        fsm.If(rest_size <= max_burstlen,
+#               (req_global_addr & 0xfff) +
+#               (rest_size << util.log2(self.datawidth // 8) >= 0x1000))(
+#            req_size((vtypes.Int(0x1000) - (req_global_addr & 0xfff)) >>
+#                     util.log2(self.datawidth // 8)),
+#            rest_size(rest_size - (vtypes.Int(0x1000) - (req_global_addr & 0xfff)) >>
+#                      util.log2(self.datawidth // 8))
+#        ).Elif(rest_size <= max_burstlen)(
+#            req_size(rest_size),
+#            rest_size(0)
+#        ).Else(
+#            req_size(max_burstlen),
+#            rest_size(rest_size - max_burstlen)
+#        )
+#        fsm.goto_next()
 
         cond = fsm.state == fsm.current
 
@@ -1658,6 +1675,23 @@ class AXIM(AxiMaster, _MutexFunction):
         )
         fsm.goto_next()
 
+        # 4KB check
+#        fsm.If(rest_size <= max_burstlen,
+#               (req_global_addr & 0xfff) +
+#               (rest_size << util.log2(self.datawidth // 8) >= 0x1000))(
+#            req_size((vtypes.Int(0x1000) - (req_global_addr & 0xfff)) >>
+#                     util.log2(self.datawidth // 8)),
+#            rest_size(rest_size - (vtypes.Int(0x1000) - (req_global_addr & 0xfff)) >>
+#                      util.log2(self.datawidth // 8))
+#        ).Elif(rest_size <= max_burstlen)(
+#            req_size(rest_size),
+#            rest_size(0)
+#        ).Else(
+#            req_size(max_burstlen),
+#            rest_size(rest_size - max_burstlen)
+#        )
+#        fsm.goto_next()
+        
         cond = fsm.state == fsm.current
 
         done = AxiMaster.dma_write(self, ram, req_global_addr, req_local_addr, req_size,
@@ -1908,7 +1942,7 @@ class AXISRegister(AXIS, _MutexFunction):
                          for i in range(length)]
         self.length = length
         self.maskwidth = self.m.Localparam('_'.join(['', self.name, 'maskwidth']),
-                                           int(math.ceil(math.log(length, 2))))
+                                           util.log2(length))
         self.mask = self.m.Localparam('_'.join(['', self.name, 'mask']),
                                       vtypes.Repeat(vtypes.Int(1, 1), self.maskwidth))
         self.shift = self.m.Localparam('_'.join(['', self.name, 'shift']),
