@@ -662,10 +662,8 @@ class MultibankRAM(object):
         @return data, last, done
         """
 
-        # -- begin
         if not hasattr(self, 'seq'):
             self.seq = Seq(self.m, self.name, self.clk, self.rst)
-        # -- end
 
         data_valid = self.m.TmpReg(initval=0)
         last_valid = self.m.TmpReg(initval=0)
@@ -681,13 +679,6 @@ class MultibankRAM(object):
         data_cond = dtypes.make_condition(data_ack, last_ack)
         prev_data_cond = self.seq.Prev(data_cond, 1)
 
-#        data = self.m.TmpWireLike(self.interfaces[port].rdata)
-#
-#        prev_data = self.seq.Prev(data, 1)
-#        data.assign(vtypes.Mux(prev_data_cond,
-#                               self.interfaces[port].rdata, prev_data))
-
-        # -- begin
         data_list = [self.m.TmpWireLike(ram.interfaces[port].rdata)
                      for ram in self.rams]
 
@@ -722,7 +713,6 @@ class MultibankRAM(object):
         data.assign(vtypes.Mux(prev_data_cond,
                                vtypes.PatternMux(*patterns),
                                vtypes.PatternMux(*prev_patterns)))
-        # -- end
 
         next_valid_on = self.m.TmpReg(initval=0)
         next_valid_off = self.m.TmpReg(initval=0)
@@ -755,13 +745,11 @@ class MultibankRAM(object):
             next_valid_on(1),
         )
 
-        # -- begin
         for ram in self.rams:
             ram.seq.If(ext_cond, counter == 0,
                        vtypes.Not(next_last), vtypes.Not(last))(
                 ram.interfaces[port].addr(addr >> log_numbanks)
             )
-        # -- end
 
         self.seq.If(data_cond, counter > 0)(
             reg_addr(reg_addr + stride),
@@ -770,12 +758,10 @@ class MultibankRAM(object):
             next_last(0)
         )
 
-        # -- begin
         for ram, ram_addr in zip(self.rams, ram_addr_list):
             ram.seq.If(data_cond, counter > 0)(
                 ram.interfaces[port].addr(ram_addr)
             )
-        # -- end
 
         self.seq.If(data_cond, counter == 1)(
             next_last(1)
@@ -796,10 +782,8 @@ class MultibankRAM(object):
         @return data, last, done
         """
 
-        # -- begin
         if not hasattr(self, 'seq'):
             self.seq = Seq(self.m, self.name, self.clk, self.rst)
-        # -- end
 
         if not isinstance(pattern, (tuple, list)):
             raise TypeError('pattern must be list or tuple.')
@@ -825,13 +809,6 @@ class MultibankRAM(object):
         data_cond = dtypes.make_condition(data_ack, last_ack)
         prev_data_cond = self.seq.Prev(data_cond, 1)
 
-#        data = self.m.TmpWireLike(self.interfaces[port].rdata)
-#
-#        prev_data = self.seq.Prev(data, 1)
-#        data.assign(vtypes.Mux(prev_data_cond,
-#                               self.interfaces[port].rdata, prev_data))
-
-        # -- begin
         data_list = [self.m.TmpWireLike(ram.interfaces[port].rdata)
                      for ram in self.rams]
 
@@ -861,7 +838,6 @@ class MultibankRAM(object):
         data.assign(vtypes.Mux(prev_data_cond,
                                vtypes.PatternMux(*patterns),
                                vtypes.PatternMux(*prev_patterns)))
-        # -- end
 
         next_valid_on = self.m.TmpReg(initval=0)
         next_valid_off = self.m.TmpReg(initval=0)
@@ -871,12 +847,6 @@ class MultibankRAM(object):
 
         running = self.m.TmpReg(initval=0)
 
-#        next_addr = self.m.TmpWire(self.addrwidth)
-#        offset_addr = self.m.TmpWire(self.addrwidth)
-#        offsets = [self.m.TmpReg(self.addrwidth, initval=0)
-#                   for _ in pattern[1:]]
-
-        # -- begin
         next_addr = self.m.TmpWire(self.addrwidth + log_numbanks)
         offset_addr = self.m.TmpWire(self.addrwidth + log_numbanks)
         offsets = [self.m.TmpReg(self.addrwidth + log_numbanks, initval=0)
@@ -885,7 +855,6 @@ class MultibankRAM(object):
         ram_addr_list = [self.m.TmpWire(ram.addrwidth) for ram in self.rams]
         for ram_addr in ram_addr_list:
             ram_addr.assign(next_addr >> log_numbanks)
-        # -- end
 
         offset_addr_value = addr
         for offset in offsets:
@@ -920,13 +889,11 @@ class MultibankRAM(object):
             next_valid_on(1)
         )
 
-        # -- begin
         for ram in self.rams:
             ram.seq.If(ext_cond, vtypes.Not(running),
                        vtypes.Not(next_last), vtypes.Not(last))(
                 ram.interfaces[port].addr(addr >> log_numbanks)
             )
-        # -- end
 
         self.seq.If(data_cond, running)(
             reg_addr(next_addr),
@@ -934,12 +901,10 @@ class MultibankRAM(object):
             next_last(0)
         )
 
-        # -- begin
         for ram in self.rams:
             ram.seq.If(data_cond, running)(
                 ram.interfaces[port].addr(ram_addr)
             )
-        # -- end
 
         update_count = None
         update_offset = None
@@ -1002,8 +967,6 @@ class MultibankRAM(object):
             else:
                 carry = vtypes.Ands(carry, out_size == 1)
 
-#        next_addr.assign(vtypes.Mux(update_addr, offset_addr,
-#                                    self.interfaces[port].addr + stride_value))
         next_addr.assign(vtypes.Mux(update_addr, offset_addr,
                                     reg_addr + stride_value))
 
@@ -1085,7 +1048,6 @@ class MultibankRAM(object):
         if when_cond is not None:
             raw_valid = vtypes.Ands(when_cond, raw_valid)
 
-        # -- begin
         log_numbanks = int(math.log(self.numbanks, 2))
         reg_addr = self.m.TmpReg(self.addrwidth + log_numbanks, initval=0)
         next_addr = self.m.TmpWire(self.addrwidth + log_numbanks)
@@ -1096,7 +1058,6 @@ class MultibankRAM(object):
 
         bank_sel = self.m.TmpWire(log_numbanks)
         bank_sel.assign(next_addr)
-        # -- end
 
         self.seq.If(ext_cond, counter == 0)(
             reg_addr(addr - stride),
@@ -1108,14 +1069,12 @@ class MultibankRAM(object):
             counter.dec()
         )
 
-        # -- begin
         for i, (ram, ram_addr) in enumerate(zip(self.rams, ram_addr_list)):
             ram.seq.If(raw_valid, counter > 0)(
                 ram.interfaces[port].addr(ram_addr),
                 ram.interfaces[port].wdata(raw_data),
                 ram.interfaces[port].wenable(bank_sel == i)
             )
-        # -- end
 
         self.seq.If(raw_valid, counter == 1)(
             last(1)
@@ -1126,12 +1085,10 @@ class MultibankRAM(object):
             last(0)
         )
 
-        # -- begin
         for ram in self.rams:
             ram.seq.Delay(1)(
                 ram.interfaces[port].wenable(0)
             )
-        # -- end
 
         done = last
 
@@ -1188,7 +1145,6 @@ class MultibankRAM(object):
             offset_addr_value = offset + offset_addr_value
         offset_addr.assign(offset_addr_value)
 
-        # -- begin
         log_numbanks = int(math.log(self.numbanks, 2))
         ram_addr_list = [self.m.TmpWire(ram.addrwidth) for ram in self.rams]
         for ram_addr in ram_addr_list:
@@ -1196,7 +1152,6 @@ class MultibankRAM(object):
 
         bank_sel = self.m.TmpWire(log_numbanks)
         bank_sel.assign(offset_addr)
-        # -- end
 
         count_list = [self.m.TmpReg(out_size.bit_length() + 1, initval=0)
                       for (out_size, out_stride) in pattern]
@@ -1205,14 +1160,12 @@ class MultibankRAM(object):
             running(1)
         )
 
-        # -- begin
         for i, (ram, ram_addr) in enumerate(zip(self.rams, ram_addr_list)):
             ram.seq.If(raw_valid, running)(
                 ram.interfaces[port].addr(ram_addr),
                 ram.interfaces[port].wdata(raw_data),
                 ram.interfaces[port].wenable(bank_sel == i)
             )
-        # -- end
 
         update_count = None
         last_one = None
@@ -1251,12 +1204,10 @@ class MultibankRAM(object):
             last(0)
         )
 
-        # -- begin
         for ram in self.rams:
             ram.seq.Delay(1)(
                 ram.interfaces[port].wenable(0)
             )
-        # -- end
 
         done = last
 
