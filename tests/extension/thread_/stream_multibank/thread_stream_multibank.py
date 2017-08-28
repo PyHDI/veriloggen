@@ -60,19 +60,19 @@ def mkLed(memory_datawidth=128):
 
         dma_offset = 0
         comp_offset = 0
-        ram_a.dma_read(myaxi, dma_offset, 0, dma_size)
-        ram_b.dma_read(myaxi, dma_offset, 0, dma_size)
+        myaxi.dma_read(ram_a, dma_offset, 0, dma_size)
+        myaxi.dma_read(ram_b, dma_offset, 0, dma_size)
         stream.run(comp_size, comp_offset)
         stream.join()
-        ram_c.dma_write(myaxi, dma_offset, 1024, dma_size)
+        myaxi.dma_write(ram_c, dma_offset, 1024, dma_size)
 
         dma_offset = size
         comp_offset = comp_size
-        ram_a.dma_read(myaxi, dma_offset, 0, dma_size)
-        ram_b.dma_read(myaxi, dma_offset, 0, dma_size)
+        myaxi.dma_read(ram_a, dma_offset, 0, dma_size)
+        myaxi.dma_read(ram_b, dma_offset, 0, dma_size)
         sequential.run(comp_size, comp_offset)
         sequential.join()
-        ram_c.dma_write(myaxi, dma_offset, 1024 * 2, dma_size)
+        myaxi.dma_write(ram_c, dma_offset, 1024 * 2, dma_size)
 
         check(comp_size, 0, comp_offset)
 

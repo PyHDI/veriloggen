@@ -57,18 +57,18 @@ def mkLed():
 
     def comp():
         offset = 0
-        ram_a.dma_read(myaxi, offset, 0, size)
-        ram_b.dma_read(myaxi, offset, 0, size)
+        myaxi.dma_read(ram_a, offset, 0, size)
+        myaxi.dma_read(ram_b, offset, 0, size)
         stream.run(offset)
         stream.join()
-        ram_c.dma_write(myaxi, offset, 1024 * 4, 1)
+        myaxi.dma_write(ram_c, offset, 1024 * 4, 1)
 
         offset = size
-        ram_a.dma_read(myaxi, offset, 0, size)
-        ram_b.dma_read(myaxi, offset, 0, size)
+        myaxi.dma_read(ram_a, offset, 0, size)
+        myaxi.dma_read(ram_b, offset, 0, size)
         sequential.run(offset)
         sequential.join()
-        ram_c.dma_write(myaxi, offset, 1024 * 8, 1)
+        myaxi.dma_write(ram_c, offset, 1024 * 8, 1)
 
         check(0, offset)
 
@@ -111,6 +111,7 @@ def mkTest():
     )
 
     return m
+
 
 if __name__ == '__main__':
     test = mkTest()

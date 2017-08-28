@@ -19,20 +19,22 @@ def mkLed():
 
     datawidth = 32
     addrwidth = 10
-    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
-    myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth)
+    mat_pattern = ((16, 32), (32, 1))
+    mat_size = 16 * 32
 
-    all_ok = m.TmpReg(initval=0)
+    # With async DMA, set enable_async = True
+    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth, enable_async=True)
+    # If RAM is simultaneously accesseed with DMA, numports must be 2 or more.
+    myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth, numports=2)
+
+    all_ok = m.Reg('all_ok', initval=0)
 
     def blink(size):
         all_ok.value = True
 
-        for i in range(4):
-            print('# iter %d start' % i)
-            # Test for 4KB boundary check
-            offset = i * 1024 * 16 + (myaxi.boundary_size - 4)
-            body(size, offset)
-            print('# iter %d end' % i)
+        # Test for 4KB boundary check
+        offset = myaxi.boundary_size - 4
+        body(size, offset)
 
         if all_ok:
             print('ALL OK')
@@ -45,24 +47,33 @@ def mkLed():
 
         laddr = 0
         gaddr = offset
-        myram.dma_write(myaxi, laddr, gaddr, size)
+        myaxi.dma_write_pattern_async(myram, laddr, gaddr, mat_pattern, port=1)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # write
         for i in range(size):
             wdata = i + 1000
-            myram.write(i, wdata)
+            myram.write(i + size, wdata)
 
-        laddr = 0
+        myaxi.dma_wait()
+        print('dma_wait:  [%d] -> [%d]' % (laddr, gaddr))
+
+        laddr = size
         gaddr = (size + size) * 4 + offset
-        myram.dma_write(myaxi, laddr, gaddr, size)
+        myaxi.dma_write_pattern(myram, laddr, gaddr, mat_pattern, port=1)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # read
         laddr = 0
         gaddr = offset
-        myram.dma_read(myaxi, laddr, gaddr, size)
+        myaxi.dma_read_pattern_async(myram, laddr, gaddr, mat_pattern, port=1)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
+
+        for sleep in range(size):
+            pass
+
+        myaxi.dma_wait()
+        print('dma_wait:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
             rdata = myram.read(i)
@@ -73,8 +84,11 @@ def mkLed():
         # read
         laddr = 0
         gaddr = (size + size) * 4 + offset
-        myram.dma_read(myaxi, laddr, gaddr, size)
+        myaxi.dma_read_pattern(myram, laddr, gaddr, mat_pattern, port=1)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
+
+        for sleep in range(size):
+            pass
 
         for i in range(size):
             rdata = myram.read(i)
@@ -83,7 +97,7 @@ def mkLed():
                 all_ok.value = False
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
-    fsm = th.start(16)
+    fsm = th.start(mat_size)
 
     return m
 
@@ -113,7 +127,7 @@ def mkTest():
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
     init.add(
-        Delay(100000),
+        Delay(1000000),
         Systask('finish'),
     )
 

@@ -53,18 +53,18 @@ def mkLed():
     def comp(size):
         offset = 0
         stride = 2
-        ram_a.dma_read(myaxi, offset, 0, size, local_stride=stride)
-        ram_b.dma_read(myaxi, offset, 0, size, local_stride=stride)
+        myaxi.dma_read(ram_a, offset, 0, size, local_stride=stride)
+        myaxi.dma_read(ram_b, offset, 0, size, local_stride=stride)
         stream.run(size, offset, stride)
         stream.join()
-        ram_c.dma_write(myaxi, offset, 1024, 1)
+        myaxi.dma_write(ram_c, offset, 1024, 1)
 
         offset = size
-        ram_a.dma_read(myaxi, offset, 0, size, local_stride=stride)
-        ram_b.dma_read(myaxi, offset, 0, size, local_stride=stride)
+        myaxi.dma_read(ram_a, offset, 0, size, local_stride=stride)
+        myaxi.dma_read(ram_b, offset, 0, size, local_stride=stride)
         sequential.run(size, offset, stride)
         sequential.join()
-        ram_c.dma_write(myaxi, offset, 1024 * 2, 1)
+        myaxi.dma_write(ram_c, offset, 1024 * 2, 1)
 
         check(size, 0, offset)
 

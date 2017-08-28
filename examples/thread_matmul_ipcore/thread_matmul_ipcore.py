@@ -44,11 +44,11 @@ def mkLed():
         a_addr, c_addr = a_offset, c_offset
 
         for i in range(matrix_size):
-            ram_a.dma_read(maxi, 0, a_addr, matrix_size)
+            maxi.dma_read(ram_a, 0, a_addr, matrix_size)
 
             b_addr = b_offset
             for j in range(matrix_size):
-                ram_b.dma_read(maxi, 0, b_addr, matrix_size)
+                maxi.dma_read(ram_b, 0, b_addr, matrix_size)
 
                 sum = 0
                 for k in range(matrix_size):
@@ -59,7 +59,7 @@ def mkLed():
 
                 b_addr += matrix_size * (datawidth // 8)
 
-            ram_c.dma_write(maxi, 0, c_addr, matrix_size)
+            maxi.dma_write(ram_c, 0, c_addr, matrix_size)
             a_addr += matrix_size * (datawidth // 8)
             c_addr += matrix_size * (datawidth // 8)
 
@@ -67,7 +67,7 @@ def mkLed():
         all_ok = True
         c_addr = c_offset
         for i in range(matrix_size):
-            ram_c.dma_read(maxi, 0, c_addr, matrix_size)
+            myaxi.dma_read(ram_c, 0, c_addr, matrix_size)
             for j in range(matrix_size):
                 v = ram_c.read(j)
                 if i == j and vthread.verilog.NotEql(v, (i + 1) * 2):
@@ -228,6 +228,7 @@ def mkTest(memname='mymem.out'):
     )
 
     return m
+
 
 if __name__ == '__main__':
     memname = 'mymem.out'

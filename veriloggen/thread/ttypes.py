@@ -298,8 +298,7 @@ class Shared(_MutexFunction):
 
 
 class RAM(SyncRAMManager, _MutexFunction):
-    __intrinsics__ = ('read', 'write', 'dma_read',
-                      'dma_write') + _MutexFunction.__intrinsics__
+    __intrinsics__ = ('read', 'write') + _MutexFunction.__intrinsics__
 
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=10, numports=1):
@@ -362,22 +361,6 @@ class RAM(SyncRAMManager, _MutexFunction):
 
         return 0
 
-    def dma_read(self, fsm, bus, local_addr, global_addr, size,
-                 local_stride=1, port=0):
-        if not isinstance(bus, AXIM):
-            raise TypeError('AXIM interface is required')
-
-        return bus.dma_read(fsm, self, local_addr, global_addr, size,
-                            local_stride, port)
-
-    def dma_write(self, fsm, bus, local_addr, global_addr, size,
-                  local_stride=1, port=0):
-        if not isinstance(bus, AXIM):
-            raise TypeError('AXIM interface is required')
-
-        return bus.dma_write(fsm, self, local_addr, global_addr, size,
-                             local_stride, port)
-
 
 class FixedRAM(RAM):
 
@@ -405,8 +388,8 @@ class FixedRAM(RAM):
 
 
 class MultibankRAM(object):
-    __intrinsics__ = ('read', 'write', 'read_bank', 'write_bank',
-                      'dma_read', 'dma_write',
+    __intrinsics__ = ('read', 'write',
+                      'read_bank', 'write_bank',
                       'dma_read_bank', 'dma_write_bank') + _MutexFunction.__intrinsics__
 
     def __init__(self, m=None, name=None, clk=None, rst=None,
@@ -583,7 +566,7 @@ class MultibankRAM(object):
         ends = []
         for i, ram in enumerate(self.rams):
             starts.append(fsm.current)
-            ram.dma_read(fsm, bus, local_addr, global_addr, size,
+            bus.dma_read(fsm, ram, local_addr, global_addr, size,
                          local_stride, port)
             ends.append(fsm.current)
             fsm.set_index(fsm.current + 1)
@@ -605,7 +588,7 @@ class MultibankRAM(object):
         ends = []
         for i, ram in enumerate(self.rams):
             starts.append(fsm.current)
-            ram.dma_write(fsm, bus, local_addr, global_addr, size,
+            bus.dma_write(fsm, ram, local_addr, global_addr, size,
                           local_stride, port)
             ends.append(fsm.current)
             fsm.set_index(fsm.current + 1)
@@ -617,22 +600,6 @@ class MultibankRAM(object):
             fsm.goto_from(e, fin)
 
         return 0
-
-    def dma_read(self, fsm, bus, local_addr, global_addr, size,
-                 local_stride=1, port=0):
-        if not isinstance(bus, AXIM):
-            raise TypeError('AXIM interface is required')
-
-        return bus.dma_read(fsm, self, local_addr, global_addr, size,
-                            local_stride, port)
-
-    def dma_write(self, fsm, bus, local_addr, global_addr, size,
-                  local_stride=1, port=0):
-        if not isinstance(bus, AXIM):
-            raise TypeError('AXIM interface is required')
-
-        return bus.dma_write(fsm, self, local_addr, global_addr, size,
-                             local_stride, port)
 
     def read_dataflow(self, port, addr, length=1,
                       stride=1, cond=None, point=0, signed=False):
@@ -1354,7 +1321,9 @@ class AXIM(AxiMaster, _MutexFunction):
                       'dma_read', 'dma_write',
                       'dma_read_async', 'dma_write_async',
                       'dma_read_pattern', 'dma_write_pattern',
+                      'dma_read_pattern_async', 'dma_write_pattern_async',
                       'dma_read_multidim', 'dma_write_multidim',
+                      'dma_read_multidim_async', 'dma_write_multidim_async',
                       'dma_wait', 'dma_idle') + _MutexFunction.__intrinsics__
 
     burstlen = 256
@@ -1671,6 +1640,44 @@ class AXIM(AxiMaster, _MutexFunction):
 
         return 0
 
+    def dma_read_pattern_async(self, fsm, ram, local_addr, global_addr, pattern,
+                               port=0):
+        if not self.enable_async:
+            raise ValueError('async DMA is disabled.')
+
+        # init state
+        start_state = 0
+        self.dma_fsm.set_index(start_state)
+
+        # start
+        next_state = self.dma_fsm_max_state + 1
+        self.dma_fsm.If(fsm.state == fsm.current).goto(next_state)
+        self.dma_fsm.set_index(next_state)
+
+        # call dma
+        self._dma_read_pattern(self.dma_fsm, ram, local_addr, global_addr,
+                               pattern, port)
+
+        # remember maximum state
+        self.dma_fsm_max_state = self.dma_fsm.current
+
+        # reset
+        self.dma_fsm.goto_init()
+
+        # wait idle state by master fsm
+        self.dma_wait(fsm)
+
+        return 0
+
+    def dma_read_multidim_async(self, fsm, ram, local_addr, global_addr, shape,
+                                order=None, port=0):
+        if order is None:
+            order = list(range(len(shape)))
+
+        pattern = self._to_pattern(shape, order)
+        return self.dma_read_pattern_async(fsm, ram, local_addr, global_addr,
+                                           pattern, port)
+
     def dma_write_async(self, fsm, ram, local_addr, global_addr, size,
                         local_stride=1, port=0):
         if not self.enable_async:
@@ -1699,6 +1706,44 @@ class AXIM(AxiMaster, _MutexFunction):
         self.dma_wait(fsm)
 
         return 0
+
+    def dma_write_pattern_async(self, fsm, ram, local_addr, global_addr, pattern,
+                                port=0):
+        if not self.enable_async:
+            raise ValueError('async DMA is disabled.')
+
+        # init state
+        start_state = 0
+        self.dma_fsm.set_index(start_state)
+
+        # start
+        next_state = self.dma_fsm_max_state + 1
+        self.dma_fsm.If(fsm.state == fsm.current).goto(next_state)
+        self.dma_fsm.set_index(next_state)
+
+        # call dma
+        self._dma_write_pattern(self.dma_fsm, ram, local_addr, global_addr,
+                                pattern, port)
+
+        # remember maximum state
+        self.dma_fsm_max_state = self.dma_fsm.current
+
+        # reset
+        self.dma_fsm.goto_init()
+
+        # wait idle state by master fsm
+        self.dma_wait(fsm)
+
+        return 0
+
+    def dma_write_multidim_async(self, fsm, ram, local_addr, global_addr, shape,
+                                 order=None, port=0):
+        if order is None:
+            order = list(range(len(shape)))
+
+        pattern = self._to_pattern(shape, order)
+        return self.dma_write_pattern_async(fsm, ram, local_addr, global_addr,
+                                            pattern, port)
 
     def dma_wait(self, fsm):
         if not self.enable_async:
