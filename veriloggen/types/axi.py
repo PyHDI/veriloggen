@@ -158,6 +158,7 @@ class AxiSlaveReadData(AxiReadData):
 # master interface
 class AxiMaster(object):
     burst_size_width = 8
+    boundary_size = 4096
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
                  lite=False, noio=False, nodataflow=False):
@@ -233,6 +234,26 @@ class AxiMaster(object):
         )
         self.rdata.rready.assign(0)
         self._read_disabled = True
+
+    def mask_addr(self, addr):
+        s = util.log2(self.datawidth // 8)
+        return (addr >> s) << s
+
+    def check_boundary(self, addr, length, datawidth=None, boundary_size=None):
+        if datawidth is None:
+            datawidth = self.datawidth
+        if boundary_size is None:
+            boundary_size = self.boundary_size
+        mask = boundary_size - 1
+        return ((addr & mask) + (length << util.log2(datawidth // 8))) >= boundary_size
+
+    def rest_boundary(self, addr, datawidth=None, boundary_size=None):
+        if datawidth is None:
+            datawidth = self.datawidth
+        if boundary_size is None:
+            boundary_size = self.boundary_size
+        mask = boundary_size - 1
+        return (vtypes.Int(boundary_size) - (addr & mask)) >> util.log2(datawidth // 8)
 
     def write_request(self, addr, length=1, cond=None, counter=None):
         """
@@ -461,7 +482,7 @@ class AxiMaster(object):
             last(last)
         )
 
-        done = last
+        done = vtypes.Ands(last, self.wdata.wvalid, self.wdata.wready)
 
         return done
 
@@ -637,12 +658,14 @@ class AxiMaster(object):
         df_data = df.Variable(data, valid, data_ready,
                               point=point, signed=signed)
         df_last = df.Variable(last, valid, last_ready, width=1)
-        done = last
+        done = vtypes.Ands(last, self.rdata.rvalid, self.rdata.rready)
 
         return df_data, df_last, done
 
     def dma_read(self, ram, bus_addr, ram_addr, length,
                  stride=1, cond=None, ram_port=0):
+        """ Safe API with length and 4KB boundary check """
+
         if vtypes.equals(self.datawidth, ram.datawidth):
             return self._dma_read_same(ram, bus_addr, ram_addr, length,
                                        stride, cond, ram_port)
@@ -666,172 +689,13 @@ class AxiMaster(object):
         if cond is not None:
             fsm.If(cond).goto_next()
 
-        ack, counter = self.read_request(bus_addr, length, cond=fsm)
-        fsm.If(ack).goto_next()
-
-        wdata = self.m.TmpReg(ram.datawidth, initval=0)
-        wvalid = self.m.TmpReg(initval=0)
-        df_data = self.df.Variable(wdata, wvalid, width=ram.datawidth)
-
-        done = ram.write_dataflow(
-            ram_port, ram_addr, df_data, length,
-            stride=stride, cond=fsm)
-        fsm.goto_next()
-
-        data, valid, last = self.read_data(cond=fsm)
-
-        fsm(
-            wvalid(0)
-        )
-        fsm.If(valid)(
-            wdata(data),
-            wvalid(1),
-        )
-
-        fsm.If(done).goto_init()
-
-        return done
-
-    def _dma_read_narrow(self, ram, bus_addr, ram_addr, length,
-                         stride=1, cond=None, ram_port=0):
-        """ axi.datawidth < ram.datawidth """
-
-        if ram.datawidth % self.datawidth != 0:
-            raise ValueError(
-                'ram.datawidth must be multiple number of axi.datawidth')
-
-        pack_size = int(ram.datawidth // self.datawidth)
-        dma_length = (length << int(math.log(pack_size, 2))
-                      if math.log(pack_size, 2) % 1.0 == 0.0 else
-                      length * pack_size)
-
-        fsm = TmpFSM(self.m, self.clk, self.rst)
-
-        if cond is not None:
-            fsm.If(cond).goto_next()
-
-        ack, counter = self.read_request(bus_addr, dma_length, cond=fsm)
-        fsm.If(ack).goto_next()
-
-        wdata = self.m.TmpReg(ram.datawidth, initval=0)
-        wvalid = self.m.TmpReg(initval=0)
-        df_data = self.df.Variable(wdata, wvalid, width=ram.datawidth)
-
-        done = ram.write_dataflow(
-            ram_port, ram_addr, df_data, length,
-            stride=stride, cond=fsm)
-        fsm.goto_next()
-
-        pack_count = self.m.TmpReg(pack_size, initval=0)
-        data, valid, last = self.read_data(cond=fsm)
-
-        fsm(
-            wvalid(0)
-        )
-        fsm.If(valid)(
-            wdata(vtypes.Cat(data, wdata[self.datawidth:ram.datawidth])),
-            wvalid(0),
-            pack_count.inc()
-        )
-        fsm.If(valid, pack_count == pack_size - 1)(
-            wdata(vtypes.Cat(data, wdata[self.datawidth:ram.datawidth])),
-            wvalid(1),
-            pack_count(0)
-        )
-
-        fsm.If(done).goto_init()
-
-        return done
-
-    def _dma_read_wide(self, ram, bus_addr, ram_addr, length,
-                       stride=1, cond=None, ram_port=0):
-        """ axi.datawidth > ram.datawidth """
-
-        if self.datawidth % ram.datawidth != 0:
-            raise ValueError(
-                'axi.datawidth must be multiple number of ram.datawidth')
-
-        pack_size = int(self.datawidth // ram.datawidth)
-        dma_length = (length >> int(math.log(pack_size, 2))
-                      if math.log(pack_size, 2) % 1.0 == 0.0 else
-                      int(length // pack_size))
-
-        fsm = TmpFSM(self.m, self.clk, self.rst)
-
-        if cond is not None:
-            fsm.If(cond).goto_next()
-
-        ack, counter = self.read_request(bus_addr, dma_length, cond=fsm)
-        fsm.If(ack).goto_next()
-
-        wdata = self.m.TmpReg(self.datawidth, initval=0)
-        wdata_ram = self.m.TmpWire(ram.datawidth)
-        wdata_ram.assign(wdata)
-        wvalid = self.m.TmpReg(initval=0)
-        df_data = self.df.Variable(wdata_ram, wvalid, width=ram.datawidth)
-
-        done = ram.write_dataflow(
-            ram_port, ram_addr, df_data, length,
-            stride=stride, cond=fsm)
-        fsm.goto_next()
-
-        pack_count = self.m.TmpReg(pack_size, initval=0)
-        rcond = make_condition(fsm, pack_count == 0)
-        data, valid, last = self.read_data(cond=rcond)
-
-        fsm(
-            wvalid(0)
-        )
-        fsm.If(pack_count == 0, valid)(
-            wdata(data),
-            wvalid(1),
-            pack_count.inc()
-        )
-        fsm.If(pack_count > 0)(
-            wdata(wdata >> ram.datawidth),
-            wvalid(1),
-            pack_count.inc()
-        )
-        fsm.If(pack_count == pack_size - 1)(
-            pack_count(0)
-        )
-
-        fsm.If(done).goto_init()
-
-        return done
-
-    def dma_read_long(self, ram, bus_addr, ram_addr, length,
-                      stride=1, cond=None, ram_port=0):
-        if vtypes.equals(self.datawidth, ram.datawidth):
-            return self._dma_read_long_same(ram, bus_addr, ram_addr, length,
-                                            stride, cond, ram_port)
-
-        comp = self.datawidth < ram.datawidth
-        if not isinstance(comp, bool):
-            raise ValueError('datawidth must be int, not (%s, %s)' %
-                             (type(self.datawidth, ram.datawidth)))
-
-        if comp:
-            return self._dma_read_long_narrow(ram, bus_addr, ram_addr, length,
-                                              stride, cond, ram_port)
-
-        return self._dma_read_long_wide(ram, bus_addr, ram_addr, length,
-                                        stride, cond, ram_port)
-
-    def _dma_read_long_same(self, ram, bus_addr, ram_addr, length,
-                            stride=1, cond=None, ram_port=0):
-        fsm = TmpFSM(self.m, self.clk, self.rst)
-
-        if cond is not None:
-            fsm.If(cond).goto_next()
-
         req_bus_addr = self.m.TmpReg(self.addrwidth, initval=0)
         req_size = self.m.TmpReg(length.bit_length() + 1, initval=0)
         rest_size = self.m.TmpReg(length.bit_length() + 1, initval=0)
         max_burstlen = 2 ** self.burst_size_width
 
         fsm(
-            req_bus_addr(bus_addr),
+            req_bus_addr(self.mask_addr(bus_addr)),
             rest_size(length)
         )
 
@@ -846,9 +710,19 @@ class AxiMaster(object):
 
         check_state = fsm.current
 
-        fsm.If(rest_size <= max_burstlen)(
+        # 4KB boundary check
+        fsm.If(rest_size <= max_burstlen,
+               self.check_boundary(req_bus_addr, rest_size))(
+            req_size(self.rest_boundary(req_bus_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_bus_addr))
+        ).Elif(rest_size <= max_burstlen)(
             req_size(rest_size),
             rest_size(0)
+        ).Elif(self.check_boundary(req_bus_addr, max_burstlen))(
+            req_size(self.rest_boundary(req_bus_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_bus_addr))
         ).Else(
             req_size(max_burstlen),
             rest_size(rest_size - max_burstlen)
@@ -886,15 +760,15 @@ class AxiMaster(object):
 
         return done
 
-    def _dma_read_long_narrow(self, ram, bus_addr, ram_addr, length,
-                              stride=1, cond=None, ram_port=0):
+    def _dma_read_narrow(self, ram, bus_addr, ram_addr, length,
+                         stride=1, cond=None, ram_port=0):
         """ axi.datawidth < ram.datawidth """
 
         if ram.datawidth % self.datawidth != 0:
             raise ValueError(
                 'ram.datawidth must be multiple number of axi.datawidth')
 
-        pack_size = int(ram.datawidth // self.datawidth)
+        pack_size = ram.datawidth // self.datawidth
         dma_length = (length << int(math.log(pack_size, 2))
                       if math.log(pack_size, 2) % 1.0 == 0.0 else
                       length * pack_size)
@@ -910,7 +784,7 @@ class AxiMaster(object):
         max_burstlen = 2 ** self.burst_size_width
 
         fsm(
-            req_bus_addr(bus_addr),
+            req_bus_addr(self.mask_addr(bus_addr)),
             rest_size(dma_length)
         )
 
@@ -925,9 +799,19 @@ class AxiMaster(object):
 
         check_state = fsm.current
 
-        fsm.If(rest_size <= max_burstlen)(
+        # 4KB boundary check
+        fsm.If(rest_size <= max_burstlen,
+               self.check_boundary(req_bus_addr, rest_size))(
+            req_size(self.rest_boundary(req_bus_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_bus_addr))
+        ).Elif(rest_size <= max_burstlen)(
             req_size(rest_size),
             rest_size(0)
+        ).Elif(self.check_boundary(req_bus_addr, max_burstlen))(
+            req_size(self.rest_boundary(req_bus_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_bus_addr))
         ).Else(
             req_size(max_burstlen),
             rest_size(rest_size - max_burstlen)
@@ -972,15 +856,15 @@ class AxiMaster(object):
 
         return done
 
-    def _dma_read_long_wide(self, ram, bus_addr, ram_addr, length,
-                            stride=1, cond=None, ram_port=0):
+    def _dma_read_wide(self, ram, bus_addr, ram_addr, length,
+                       stride=1, cond=None, ram_port=0):
         """ axi.datawidth > ram.datawidth """
 
         if self.datawidth % ram.datawidth != 0:
             raise ValueError(
                 'axi.datawidth must be multiple number of ram.datawidth')
 
-        pack_size = int(self.datawidth // ram.datawidth)
+        pack_size = self.datawidth // ram.datawidth
         dma_length = (length >> int(math.log(pack_size, 2))
                       if math.log(pack_size, 2) % 1.0 == 0.0 else
                       int(length // pack_size))
@@ -996,7 +880,7 @@ class AxiMaster(object):
         max_burstlen = 2 ** self.burst_size_width
 
         fsm(
-            req_bus_addr(bus_addr),
+            req_bus_addr(self.mask_addr(bus_addr)),
             rest_size(dma_length)
         )
 
@@ -1018,9 +902,19 @@ class AxiMaster(object):
             last_done(0)
         )
 
-        fsm.If(rest_size <= max_burstlen)(
+        # 4KB boundary check
+        fsm.If(rest_size <= max_burstlen,
+               self.check_boundary(req_bus_addr, rest_size))(
+            req_size(self.rest_boundary(req_bus_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_bus_addr))
+        ).Elif(rest_size <= max_burstlen)(
             req_size(rest_size),
             rest_size(0)
+        ).Elif(self.check_boundary(req_bus_addr, max_burstlen))(
+            req_size(self.rest_boundary(req_bus_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_bus_addr))
         ).Else(
             req_size(max_burstlen),
             rest_size(rest_size - max_burstlen)
@@ -1108,7 +1002,7 @@ class AxiMaster(object):
         max_burstlen = 2 ** self.burst_size_width
 
         fsm(
-            req_bus_addr(bus_addr),
+            req_bus_addr(self.mask_addr(bus_addr)),
             rest_size(length)
         )
 
@@ -1130,9 +1024,19 @@ class AxiMaster(object):
 
         check_state = fsm.current
 
-        fsm.If(rest_size <= max_burstlen)(
+        # 4KB boundary check
+        fsm.If(rest_size <= max_burstlen,
+               self.check_boundary(req_bus_addr, rest_size))(
+            req_size(self.rest_boundary(req_bus_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_bus_addr))
+        ).Elif(rest_size <= max_burstlen)(
             req_size(rest_size),
             rest_size(0)
+        ).Elif(self.check_boundary(req_bus_addr, max_burstlen))(
+            req_size(self.rest_boundary(req_bus_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_bus_addr))
         ).Else(
             req_size(max_burstlen),
             rest_size(rest_size - max_burstlen)
@@ -1195,7 +1099,7 @@ class AxiMaster(object):
                 'ram.datawidth must be multiple number of axi.datawidth')
 
         length = pattern[0][0]
-        pack_size = int(ram.datawidth // self.datawidth)
+        pack_size = ram.datawidth // self.datawidth
         dma_length = (length << int(math.log(pack_size, 2))
                       if math.log(pack_size, 2) % 1.0 == 0.0 else
                       length * pack_size)
@@ -1211,7 +1115,7 @@ class AxiMaster(object):
         max_burstlen = 2 ** self.burst_size_width
 
         fsm(
-            req_bus_addr(bus_addr),
+            req_bus_addr(self.mask_addr(bus_addr)),
             rest_size(dma_length)
         )
 
@@ -1233,9 +1137,19 @@ class AxiMaster(object):
 
         check_state = fsm.current
 
-        fsm.If(rest_size <= max_burstlen)(
+        # 4KB boundary check
+        fsm.If(rest_size <= max_burstlen,
+               self.check_boundary(req_bus_addr, rest_size))(
+            req_size(self.rest_boundary(req_bus_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_bus_addr))
+        ).Elif(rest_size <= max_burstlen)(
             req_size(rest_size),
             rest_size(0)
+        ).Elif(self.check_boundary(req_bus_addr, max_burstlen))(
+            req_size(self.rest_boundary(req_bus_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_bus_addr))
         ).Else(
             req_size(max_burstlen),
             rest_size(rest_size - max_burstlen)
@@ -1305,7 +1219,7 @@ class AxiMaster(object):
                 'axi.datawidth must be multiple number of ram.datawidth')
 
         length = pattern[0][0]
-        pack_size = int(self.datawidth // ram.datawidth)
+        pack_size = self.datawidth // ram.datawidth
         dma_length = (length >> int(math.log(pack_size, 2))
                       if math.log(pack_size, 2) % 1.0 == 0.0 else
                       int(length // pack_size))
@@ -1321,7 +1235,7 @@ class AxiMaster(object):
         max_burstlen = 2 ** self.burst_size_width
 
         fsm(
-            req_bus_addr(bus_addr),
+            req_bus_addr(self.mask_addr(bus_addr)),
             rest_size(dma_length)
         )
 
@@ -1350,9 +1264,19 @@ class AxiMaster(object):
             last_done(0)
         )
 
-        fsm.If(rest_size <= max_burstlen)(
+        # 4KB boundary check
+        fsm.If(rest_size <= max_burstlen,
+               self.check_boundary(req_bus_addr, rest_size))(
+            req_size(self.rest_boundary(req_bus_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_bus_addr))
+        ).Elif(rest_size <= max_burstlen)(
             req_size(rest_size),
             rest_size(0)
+        ).Elif(self.check_boundary(req_bus_addr, max_burstlen))(
+            req_size(self.rest_boundary(req_bus_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_bus_addr))
         ).Else(
             req_size(max_burstlen),
             rest_size(rest_size - max_burstlen)
@@ -1433,8 +1357,184 @@ class AxiMaster(object):
         return self.dma_read_pattern(ram, bus_addr, ram_addr, pattern,
                                      cond, ram_port)
 
+    def _to_pattern(self, shape, order):
+        pattern = []
+        for p in order:
+            if not isinstance(p, int):
+                raise TypeError(
+                    "Values of 'order' must be 'int', not %s" % str(type(p)))
+            size = shape[p]
+            basevalue = 1 if isinstance(size, int) else vtypes.Int(1)
+            stride = functools.reduce(lambda x, y: x * y,
+                                      shape[:p], basevalue) if p > 0 else basevalue
+            pattern.append((size, stride))
+        return pattern
+
+    def dma_read_unsafe(self, ram, bus_addr, ram_addr, length,
+                        stride=1, cond=None, ram_port=0):
+        """ Unsafe API with no length and 4KB region check """
+
+        if vtypes.equals(self.datawidth, ram.datawidth):
+            return self._dma_read_unsafe_same(ram, bus_addr, ram_addr, length,
+                                              stride, cond, ram_port)
+
+        comp = self.datawidth < ram.datawidth
+        if not isinstance(comp, bool):
+            raise ValueError('datawidth must be int, not (%s, %s)' %
+                             (type(self.datawidth, ram.datawidth)))
+
+        if comp:
+            return self._dma_read_unsafe_narrow(ram, bus_addr, ram_addr, length,
+                                                stride, cond, ram_port)
+
+        return self._dma_read_unsafe_wide(ram, bus_addr, ram_addr, length,
+                                          stride, cond, ram_port)
+
+    def _dma_read_unsafe_same(self, ram, bus_addr, ram_addr, length,
+                              stride=1, cond=None, ram_port=0):
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        if cond is not None:
+            fsm.If(cond).goto_next()
+
+        ack, counter = self.read_request(bus_addr, length, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        wdata = self.m.TmpReg(ram.datawidth, initval=0)
+        wvalid = self.m.TmpReg(initval=0)
+        df_data = self.df.Variable(wdata, wvalid, width=ram.datawidth)
+
+        done = ram.write_dataflow(
+            ram_port, ram_addr, df_data, length,
+            stride=stride, cond=fsm)
+        fsm.goto_next()
+
+        data, valid, last = self.read_data(cond=fsm)
+
+        fsm(
+            wvalid(0)
+        )
+        fsm.If(valid)(
+            wdata(data),
+            wvalid(1),
+        )
+
+        fsm.If(done).goto_init()
+
+        return done
+
+    def _dma_read_unsafe_narrow(self, ram, bus_addr, ram_addr, length,
+                                stride=1, cond=None, ram_port=0):
+        """ axi.datawidth < ram.datawidth """
+
+        if ram.datawidth % self.datawidth != 0:
+            raise ValueError(
+                'ram.datawidth must be multiple number of axi.datawidth')
+
+        pack_size = ram.datawidth // self.datawidth
+        dma_length = (length << int(math.log(pack_size, 2))
+                      if math.log(pack_size, 2) % 1.0 == 0.0 else
+                      length * pack_size)
+
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        if cond is not None:
+            fsm.If(cond).goto_next()
+
+        ack, counter = self.read_request(bus_addr, dma_length, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        wdata = self.m.TmpReg(ram.datawidth, initval=0)
+        wvalid = self.m.TmpReg(initval=0)
+        df_data = self.df.Variable(wdata, wvalid, width=ram.datawidth)
+
+        done = ram.write_dataflow(
+            ram_port, ram_addr, df_data, length,
+            stride=stride, cond=fsm)
+        fsm.goto_next()
+
+        pack_count = self.m.TmpReg(pack_size, initval=0)
+        data, valid, last = self.read_data(cond=fsm)
+
+        fsm(
+            wvalid(0)
+        )
+        fsm.If(valid)(
+            wdata(vtypes.Cat(data, wdata[self.datawidth:ram.datawidth])),
+            wvalid(0),
+            pack_count.inc()
+        )
+        fsm.If(valid, pack_count == pack_size - 1)(
+            wdata(vtypes.Cat(data, wdata[self.datawidth:ram.datawidth])),
+            wvalid(1),
+            pack_count(0)
+        )
+
+        fsm.If(done).goto_init()
+
+        return done
+
+    def _dma_read_unsafe_wide(self, ram, bus_addr, ram_addr, length,
+                              stride=1, cond=None, ram_port=0):
+        """ axi.datawidth > ram.datawidth """
+
+        if self.datawidth % ram.datawidth != 0:
+            raise ValueError(
+                'axi.datawidth must be multiple number of ram.datawidth')
+
+        pack_size = self.datawidth // ram.datawidth
+        dma_length = (length >> int(math.log(pack_size, 2))
+                      if math.log(pack_size, 2) % 1.0 == 0.0 else
+                      int(length // pack_size))
+
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        if cond is not None:
+            fsm.If(cond).goto_next()
+
+        ack, counter = self.read_request(bus_addr, dma_length, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        wdata = self.m.TmpReg(self.datawidth, initval=0)
+        wdata_ram = self.m.TmpWire(ram.datawidth)
+        wdata_ram.assign(wdata)
+        wvalid = self.m.TmpReg(initval=0)
+        df_data = self.df.Variable(wdata_ram, wvalid, width=ram.datawidth)
+
+        done = ram.write_dataflow(
+            ram_port, ram_addr, df_data, length,
+            stride=stride, cond=fsm)
+        fsm.goto_next()
+
+        pack_count = self.m.TmpReg(pack_size, initval=0)
+        rcond = make_condition(fsm, pack_count == 0)
+        data, valid, last = self.read_data(cond=rcond)
+
+        fsm(
+            wvalid(0)
+        )
+        fsm.If(pack_count == 0, valid)(
+            wdata(data),
+            wvalid(1),
+            pack_count.inc()
+        )
+        fsm.If(pack_count > 0)(
+            wdata(wdata >> ram.datawidth),
+            wvalid(1),
+            pack_count.inc()
+        )
+        fsm.If(pack_count == pack_size - 1)(
+            pack_count(0)
+        )
+
+        fsm.If(done).goto_init()
+
+        return done
+
     def dma_write(self, ram, bus_addr, ram_addr, length,
                   stride=1, cond=None, ram_port=0):
+        """ Safe API with length and 4KB boundary check """
+
         if vtypes.equals(self.datawidth, ram.datawidth):
             return self._dma_write_same(ram, bus_addr, ram_addr, length,
                                         stride, cond, ram_port)
@@ -1458,15 +1558,61 @@ class AxiMaster(object):
         if cond is not None:
             fsm.If(cond).goto_next()
 
-        ack, counter = self.write_request(bus_addr, length, cond=fsm)
-        fsm.If(ack).goto_next()
+        req_bus_addr = self.m.TmpReg(self.addrwidth, initval=0)
+        req_size = self.m.TmpReg(length.bit_length() + 1, initval=0)
+        rest_size = self.m.TmpReg(length.bit_length() + 1, initval=0)
+        max_burstlen = 2 ** self.burst_size_width
+
+        fsm(
+            req_bus_addr(self.mask_addr(bus_addr)),
+            rest_size(length)
+        )
 
         data, last, done = ram.read_dataflow(
             ram_port, ram_addr, length, stride=stride, cond=fsm)
         fsm.goto_next()
 
+        check_state = fsm.current
+
+        # 4KB boundary check
+        fsm.If(rest_size <= max_burstlen,
+               self.check_boundary(req_bus_addr, rest_size))(
+            req_size(self.rest_boundary(req_bus_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_bus_addr))
+        ).Elif(rest_size <= max_burstlen)(
+            req_size(rest_size),
+            rest_size(0)
+        ).Elif(self.check_boundary(req_bus_addr, max_burstlen))(
+            req_size(self.rest_boundary(req_bus_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_bus_addr))
+        ).Else(
+            req_size(max_burstlen),
+            rest_size(rest_size - max_burstlen)
+        )
+        fsm.goto_next()
+
+        ack, counter = self.write_request(req_bus_addr, req_size, cond=fsm)
+        fsm.If(ack).goto_next()
+
         done = self.write_dataflow(data, counter, cond=fsm)
-        fsm.If(done).goto_init()
+
+        fsm.If(done)(
+            req_bus_addr.add(optimize(req_size * (self.datawidth // 8)))
+        )
+        fsm.If(done, rest_size > 0).goto(check_state)
+        fsm.If(done, rest_size == 0).goto_next()
+
+        done = self.m.TmpReg(initval=0)
+        fsm(
+            done(1)
+        )
+        fsm.Delay(1)(
+            done(0)
+        )
+        fsm.goto_next()
+        fsm.goto_init()
 
         return done
 
@@ -1478,7 +1624,7 @@ class AxiMaster(object):
             raise ValueError(
                 'ram.datawidth must be multiple number of axi.datawidth')
 
-        pack_size = int(ram.datawidth // self.datawidth)
+        pack_size = ram.datawidth // self.datawidth
         dma_length = (length << int(math.log(pack_size, 2))
                       if math.log(pack_size, 2) % 1.0 == 0.0 else
                       length * pack_size)
@@ -1488,12 +1634,43 @@ class AxiMaster(object):
         if cond is not None:
             fsm.If(cond).goto_next()
 
-        ack, counter = self.write_request(bus_addr, dma_length, cond=fsm)
-        fsm.If(ack).goto_next()
+        req_bus_addr = self.m.TmpReg(self.addrwidth, initval=0)
+        req_size = self.m.TmpReg(dma_length.bit_length() + 1, initval=0)
+        rest_size = self.m.TmpReg(dma_length.bit_length() + 1, initval=0)
+        max_burstlen = 2 ** self.burst_size_width
+
+        fsm(
+            req_bus_addr(self.mask_addr(bus_addr)),
+            rest_size(dma_length)
+        )
 
         data, last, done = ram.read_dataflow(
             ram_port, ram_addr, length, stride=stride, cond=fsm)
         fsm.goto_next()
+
+        check_state = fsm.current
+
+        # 4KB boundary check
+        fsm.If(rest_size <= max_burstlen,
+               self.check_boundary(req_bus_addr, rest_size))(
+            req_size(self.rest_boundary(req_bus_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_bus_addr))
+        ).Elif(rest_size <= max_burstlen)(
+            req_size(rest_size),
+            rest_size(0)
+        ).Elif(self.check_boundary(req_bus_addr, max_burstlen))(
+            req_size(self.rest_boundary(req_bus_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_bus_addr))
+        ).Else(
+            req_size(max_burstlen),
+            rest_size(rest_size - max_burstlen)
+        )
+        fsm.goto_next()
+
+        ack, counter = self.write_request(req_bus_addr, req_size, cond=fsm)
+        fsm.If(ack).goto_next()
 
         wdata = self.m.TmpReg(ram.datawidth, initval=0)
         wvalid = self.m.TmpReg(initval=0)
@@ -1527,7 +1704,22 @@ class AxiMaster(object):
         df_data = self.df.Variable(wdata, wvalid, wready, width=self.datawidth)
 
         done = self.write_dataflow(df_data, counter, cond=fsm)
-        fsm.If(done).goto_init()
+
+        fsm.If(done)(
+            req_bus_addr.add(optimize(req_size * (self.datawidth // 8)))
+        )
+        fsm.If(done, rest_size > 0).goto(check_state)
+        fsm.If(done, rest_size == 0).goto_next()
+
+        done = self.m.TmpReg(initval=0)
+        fsm(
+            done(1)
+        )
+        fsm.Delay(1)(
+            done(0)
+        )
+        fsm.goto_next()
+        fsm.goto_init()
 
         return done
 
@@ -1539,233 +1731,7 @@ class AxiMaster(object):
             raise ValueError(
                 'axi.datawidth must be multiple number of ram.datawidth')
 
-        pack_size = int(self.datawidth // ram.datawidth)
-        dma_length = (length >> int(math.log(pack_size, 2))
-                      if math.log(pack_size, 2) % 1.0 == 0.0 else
-                      int(length // pack_size))
-
-        fsm = TmpFSM(self.m, self.clk, self.rst)
-
-        if cond is not None:
-            fsm.If(cond).goto_next()
-
-        ack, counter = self.write_request(bus_addr, dma_length, cond=fsm)
-        fsm.If(ack).goto_next()
-
-        data, last, done = ram.read_dataflow(
-            ram_port, ram_addr, length, stride=stride, cond=fsm)
-        fsm.goto_next()
-
-        wdata = self.m.TmpReg(self.datawidth, initval=0)
-        wvalid = self.m.TmpReg(initval=0)
-        wready = self.m.TmpWire()
-        ack = vtypes.Ors(wready, vtypes.Not(wvalid))
-
-        pack_count = self.m.TmpReg(pack_size, initval=0)
-        rcond = make_condition(fsm, ack)
-        rdata, rvalid = data.read(cond=rcond)
-
-        seq = TmpSeq(self.m, self.clk, self.rst)
-        seq.If(ack)(
-            wvalid(0)
-        )
-        seq.If(rvalid)(
-            wdata(vtypes.Cat(rdata, wdata[ram.datawidth:self.datawidth])),
-            wvalid(0),
-            pack_count.inc()
-        )
-        seq.If(rvalid, pack_count == pack_size - 1)(
-            wdata(vtypes.Cat(rdata, wdata[ram.datawidth:self.datawidth])),
-            wvalid(1),
-            pack_count(0)
-        )
-
-        df_data = self.df.Variable(wdata, wvalid, wready, width=self.datawidth)
-
-        done = self.write_dataflow(df_data, counter, cond=fsm)
-        fsm.If(done).goto_init()
-
-        return done
-
-    def dma_write_long(self, ram, bus_addr, ram_addr, length,
-                       stride=1, cond=None, ram_port=0):
-        if vtypes.equals(self.datawidth, ram.datawidth):
-            return self._dma_write_long_same(ram, bus_addr, ram_addr, length,
-                                             stride, cond, ram_port)
-
-        comp = self.datawidth < ram.datawidth
-        if not isinstance(comp, bool):
-            raise ValueError('datawidth must be int, not (%s, %s)' %
-                             (type(self.datawidth, ram.datawidth)))
-
-        if comp:
-            return self._dma_write_long_narrow(ram, bus_addr, ram_addr, length,
-                                               stride, cond, ram_port)
-
-        return self._dma_write_long_wide(ram, bus_addr, ram_addr, length,
-                                         stride, cond, ram_port)
-
-    def _dma_write_long_same(self, ram, bus_addr, ram_addr, length,
-                             stride=1, cond=None, ram_port=0):
-        fsm = TmpFSM(self.m, self.clk, self.rst)
-
-        if cond is not None:
-            fsm.If(cond).goto_next()
-
-        req_bus_addr = self.m.TmpReg(self.addrwidth, initval=0)
-        req_size = self.m.TmpReg(length.bit_length() + 1, initval=0)
-        rest_size = self.m.TmpReg(length.bit_length() + 1, initval=0)
-        max_burstlen = 2 ** self.burst_size_width
-
-        fsm(
-            req_bus_addr(bus_addr),
-            rest_size(length)
-        )
-
-        data, last, done = ram.read_dataflow(
-            ram_port, ram_addr, length, stride=stride, cond=fsm)
-        fsm.goto_next()
-
-        check_state = fsm.current
-
-        fsm.If(rest_size <= max_burstlen)(
-            req_size(rest_size),
-            rest_size(0)
-        ).Else(
-            req_size(max_burstlen),
-            rest_size(rest_size - max_burstlen)
-        )
-        fsm.goto_next()
-
-        ack, counter = self.write_request(req_bus_addr, req_size, cond=fsm)
-        fsm.If(ack).goto_next()
-
-        done = self.write_dataflow(data, counter, cond=fsm)
-
-        fsm.If(done)(
-            req_bus_addr.add(optimize(req_size * (self.datawidth // 8)))
-        )
-        fsm.If(done, rest_size > 0).goto(check_state)
-        fsm.If(done, rest_size == 0).goto_next()
-
-        done = self.m.TmpReg(initval=0)
-        fsm(
-            done(1)
-        )
-        fsm.Delay(1)(
-            done(0)
-        )
-        fsm.goto_next()
-        fsm.goto_init()
-
-        return done
-
-    def _dma_write_long_narrow(self, ram, bus_addr, ram_addr, length,
-                               stride=1, cond=None, ram_port=0):
-        """ axi.datawidth < ram.datawidth """
-
-        if ram.datawidth % self.datawidth != 0:
-            raise ValueError(
-                'ram.datawidth must be multiple number of axi.datawidth')
-
-        pack_size = int(ram.datawidth // self.datawidth)
-        dma_length = (length << int(math.log(pack_size, 2))
-                      if math.log(pack_size, 2) % 1.0 == 0.0 else
-                      length * pack_size)
-
-        fsm = TmpFSM(self.m, self.clk, self.rst)
-
-        if cond is not None:
-            fsm.If(cond).goto_next()
-
-        req_bus_addr = self.m.TmpReg(self.addrwidth, initval=0)
-        req_size = self.m.TmpReg(dma_length.bit_length() + 1, initval=0)
-        rest_size = self.m.TmpReg(dma_length.bit_length() + 1, initval=0)
-        max_burstlen = 2 ** self.burst_size_width
-
-        fsm(
-            req_bus_addr(bus_addr),
-            rest_size(dma_length)
-        )
-
-        data, last, done = ram.read_dataflow(
-            ram_port, ram_addr, length, stride=stride, cond=fsm)
-        fsm.goto_next()
-
-        check_state = fsm.current
-
-        fsm.If(rest_size <= max_burstlen)(
-            req_size(rest_size),
-            rest_size(0)
-        ).Else(
-            req_size(max_burstlen),
-            rest_size(rest_size - max_burstlen)
-        )
-        fsm.goto_next()
-
-        ack, counter = self.write_request(req_bus_addr, req_size, cond=fsm)
-        fsm.If(ack).goto_next()
-
-        wdata = self.m.TmpReg(ram.datawidth, initval=0)
-        wvalid = self.m.TmpReg(initval=0)
-        wready = self.m.TmpWire()
-        ack = vtypes.Ors(wready, vtypes.Not(wvalid))
-
-        pack_count = self.m.TmpReg(pack_size, initval=0)
-        rcond = make_condition(fsm, ack, pack_count == 0)
-        rdata, rvalid = data.read(cond=rcond)
-
-        seq = TmpSeq(self.m, self.clk, self.rst)
-        seq.If(ack)(
-            wvalid(0)
-        )
-        seq.If(rvalid)(
-            wdata(rdata),
-            wvalid(1),
-            pack_count.inc()
-        )
-        seq.If(ack, pack_count > 0)(
-            wdata(wdata >> self.datawidth),
-            wvalid(1),
-            pack_count.inc()
-        )
-        seq.If(ack, pack_count == pack_size - 1)(
-            wdata(wdata >> self.datawidth),
-            wvalid(1),
-            pack_count(0)
-        )
-
-        df_data = self.df.Variable(wdata, wvalid, wready, width=self.datawidth)
-
-        done = self.write_dataflow(df_data, counter, cond=fsm)
-
-        fsm.If(done)(
-            req_bus_addr.add(optimize(req_size * (self.datawidth // 8)))
-        )
-        fsm.If(done, rest_size > 0).goto(check_state)
-        fsm.If(done, rest_size == 0).goto_next()
-
-        done = self.m.TmpReg(initval=0)
-        fsm(
-            done(1)
-        )
-        fsm.Delay(1)(
-            done(0)
-        )
-        fsm.goto_next()
-        fsm.goto_init()
-
-        return done
-
-    def _dma_write_long_wide(self, ram, bus_addr, ram_addr, length,
-                             stride=1, cond=None, ram_port=0):
-        """ axi.datawidth > ram.datawidth """
-
-        if self.datawidth % ram.datawidth != 0:
-            raise ValueError(
-                'axi.datawidth must be multiple number of ram.datawidth')
-
-        pack_size = int(self.datawidth // ram.datawidth)
+        pack_size = self.datawidth // ram.datawidth
         dma_length = (length >> int(math.log(pack_size, 2))
                       if math.log(pack_size, 2) % 1.0 == 0.0 else
                       int(length // pack_size))
@@ -1781,7 +1747,7 @@ class AxiMaster(object):
         max_burstlen = 2 ** self.burst_size_width
 
         fsm(
-            req_bus_addr(bus_addr),
+            req_bus_addr(self.mask_addr(bus_addr)),
             rest_size(dma_length)
         )
 
@@ -1791,9 +1757,19 @@ class AxiMaster(object):
 
         check_state = fsm.current
 
-        fsm.If(rest_size <= max_burstlen)(
+        # 4KB boundary check
+        fsm.If(rest_size <= max_burstlen,
+               self.check_boundary(req_bus_addr, rest_size))(
+            req_size(self.rest_boundary(req_bus_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_bus_addr))
+        ).Elif(rest_size <= max_burstlen)(
             req_size(rest_size),
             rest_size(0)
+        ).Elif(self.check_boundary(req_bus_addr, max_burstlen))(
+            req_size(self.rest_boundary(req_bus_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_bus_addr))
         ).Else(
             req_size(max_burstlen),
             rest_size(rest_size - max_burstlen)
@@ -1883,7 +1859,7 @@ class AxiMaster(object):
         max_burstlen = 2 ** self.burst_size_width
 
         fsm(
-            req_bus_addr(bus_addr),
+            req_bus_addr(self.mask_addr(bus_addr)),
             rest_size(length)
         )
 
@@ -1901,9 +1877,19 @@ class AxiMaster(object):
 
         check_state = fsm.current
 
-        fsm.If(rest_size <= max_burstlen)(
+        # 4KB boundary check
+        fsm.If(rest_size <= max_burstlen,
+               self.check_boundary(req_bus_addr, rest_size))(
+            req_size(self.rest_boundary(req_bus_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_bus_addr))
+        ).Elif(rest_size <= max_burstlen)(
             req_size(rest_size),
             rest_size(0)
+        ).Elif(self.check_boundary(req_bus_addr, max_burstlen))(
+            req_size(self.rest_boundary(req_bus_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_bus_addr))
         ).Else(
             req_size(max_burstlen),
             rest_size(rest_size - max_burstlen)
@@ -1958,7 +1944,7 @@ class AxiMaster(object):
                 'ram.datawidth must be multiple number of axi.datawidth')
 
         length = pattern[0][0]
-        pack_size = int(ram.datawidth // self.datawidth)
+        pack_size = ram.datawidth // self.datawidth
         dma_length = (length << int(math.log(pack_size, 2))
                       if math.log(pack_size, 2) % 1.0 == 0.0 else
                       length * pack_size)
@@ -1974,7 +1960,7 @@ class AxiMaster(object):
         max_burstlen = 2 ** self.burst_size_width
 
         fsm(
-            req_bus_addr(bus_addr),
+            req_bus_addr(self.mask_addr(bus_addr)),
             rest_size(dma_length)
         )
 
@@ -1992,9 +1978,19 @@ class AxiMaster(object):
 
         check_state = fsm.current
 
-        fsm.If(rest_size <= max_burstlen)(
+        # 4KB boundary check
+        fsm.If(rest_size <= max_burstlen,
+               self.check_boundary(req_bus_addr, rest_size))(
+            req_size(self.rest_boundary(req_bus_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_bus_addr))
+        ).Elif(rest_size <= max_burstlen)(
             req_size(rest_size),
             rest_size(0)
+        ).Elif(self.check_boundary(req_bus_addr, max_burstlen))(
+            req_size(self.rest_boundary(req_bus_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_bus_addr))
         ).Else(
             req_size(max_burstlen),
             rest_size(rest_size - max_burstlen)
@@ -2080,7 +2076,7 @@ class AxiMaster(object):
                 'axi.datawidth must be multiple number of ram.datawidth')
 
         length = pattern[0][0]
-        pack_size = int(self.datawidth // ram.datawidth)
+        pack_size = self.datawidth // ram.datawidth
         dma_length = (length >> int(math.log(pack_size, 2))
                       if math.log(pack_size, 2) % 1.0 == 0.0 else
                       int(length // pack_size))
@@ -2096,7 +2092,7 @@ class AxiMaster(object):
         max_burstlen = 2 ** self.burst_size_width
 
         fsm(
-            req_bus_addr(bus_addr),
+            req_bus_addr(self.mask_addr(bus_addr)),
             rest_size(dma_length)
         )
 
@@ -2114,9 +2110,19 @@ class AxiMaster(object):
 
         check_state = fsm.current
 
-        fsm.If(rest_size <= max_burstlen)(
+        # 4KB boundary check
+        fsm.If(rest_size <= max_burstlen,
+               self.check_boundary(req_bus_addr, rest_size))(
+            req_size(self.rest_boundary(req_bus_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_bus_addr))
+        ).Elif(rest_size <= max_burstlen)(
             req_size(rest_size),
             rest_size(0)
+        ).Elif(self.check_boundary(req_bus_addr, max_burstlen))(
+            req_size(self.rest_boundary(req_bus_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_bus_addr))
         ).Else(
             req_size(max_burstlen),
             rest_size(rest_size - max_burstlen)
@@ -2198,18 +2204,161 @@ class AxiMaster(object):
         return self.dma_write_pattern(ram, bus_addr, ram_addr, pattern,
                                       cond, ram_port)
 
-    def _to_pattern(self, shape, order):
-        pattern = []
-        for p in order:
-            if not isinstance(p, int):
-                raise TypeError(
-                    "Values of 'order' must be 'int', not %s" % str(type(p)))
-            size = shape[p]
-            basevalue = 1 if isinstance(size, int) else vtypes.Int(1)
-            stride = functools.reduce(lambda x, y: x * y,
-                                      shape[:p], basevalue) if p > 0 else basevalue
-            pattern.append((size, stride))
-        return pattern
+    def dma_write_unsafe(self, ram, bus_addr, ram_addr, length,
+                         stride=1, cond=None, ram_port=0):
+        """ Unsafe API with no length and 4KB region check """
+
+        if vtypes.equals(self.datawidth, ram.datawidth):
+            return self._dma_write_unsafe_same(ram, bus_addr, ram_addr, length,
+                                               stride, cond, ram_port)
+
+        comp = self.datawidth < ram.datawidth
+        if not isinstance(comp, bool):
+            raise ValueError('datawidth must be int, not (%s, %s)' %
+                             (type(self.datawidth, ram.datawidth)))
+
+        if comp:
+            return self._dma_write_unsafe_narrow(ram, bus_addr, ram_addr, length,
+                                                 stride, cond, ram_port)
+
+        return self._dma_write_unsafe_wide(ram, bus_addr, ram_addr, length,
+                                           stride, cond, ram_port)
+
+    def _dma_write_unsafe_same(self, ram, bus_addr, ram_addr, length,
+                               stride=1, cond=None, ram_port=0):
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        if cond is not None:
+            fsm.If(cond).goto_next()
+
+        ack, counter = self.write_request(bus_addr, length, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        data, last, done = ram.read_dataflow(
+            ram_port, ram_addr, length, stride=stride, cond=fsm)
+        fsm.goto_next()
+
+        done = self.write_dataflow(data, counter, cond=fsm)
+        fsm.If(done).goto_init()
+
+        return done
+
+    def _dma_write_unsafe_narrow(self, ram, bus_addr, ram_addr, length,
+                                 stride=1, cond=None, ram_port=0):
+        """ axi.datawidth < ram.datawidth """
+
+        if ram.datawidth % self.datawidth != 0:
+            raise ValueError(
+                'ram.datawidth must be multiple number of axi.datawidth')
+
+        pack_size = ram.datawidth // self.datawidth
+        dma_length = (length << int(math.log(pack_size, 2))
+                      if math.log(pack_size, 2) % 1.0 == 0.0 else
+                      length * pack_size)
+
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        if cond is not None:
+            fsm.If(cond).goto_next()
+
+        ack, counter = self.write_request(bus_addr, dma_length, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        data, last, done = ram.read_dataflow(
+            ram_port, ram_addr, length, stride=stride, cond=fsm)
+        fsm.goto_next()
+
+        wdata = self.m.TmpReg(ram.datawidth, initval=0)
+        wvalid = self.m.TmpReg(initval=0)
+        wready = self.m.TmpWire()
+        ack = vtypes.Ors(wready, vtypes.Not(wvalid))
+
+        pack_count = self.m.TmpReg(pack_size, initval=0)
+        rcond = make_condition(fsm, ack, pack_count == 0)
+        rdata, rvalid = data.read(cond=rcond)
+
+        seq = TmpSeq(self.m, self.clk, self.rst)
+        seq.If(ack)(
+            wvalid(0)
+        )
+        seq.If(rvalid)(
+            wdata(rdata),
+            wvalid(1),
+            pack_count.inc()
+        )
+        seq.If(ack, pack_count > 0)(
+            wdata(wdata >> self.datawidth),
+            wvalid(1),
+            pack_count.inc()
+        )
+        seq.If(ack, pack_count == pack_size - 1)(
+            wdata(wdata >> self.datawidth),
+            wvalid(1),
+            pack_count(0)
+        )
+
+        df_data = self.df.Variable(wdata, wvalid, wready, width=self.datawidth)
+
+        done = self.write_dataflow(df_data, counter, cond=fsm)
+        fsm.If(done).goto_init()
+
+        return done
+
+    def _dma_write_unsafe_wide(self, ram, bus_addr, ram_addr, length,
+                               stride=1, cond=None, ram_port=0):
+        """ axi.datawidth > ram.datawidth """
+
+        if self.datawidth % ram.datawidth != 0:
+            raise ValueError(
+                'axi.datawidth must be multiple number of ram.datawidth')
+
+        pack_size = self.datawidth // ram.datawidth
+        dma_length = (length >> int(math.log(pack_size, 2))
+                      if math.log(pack_size, 2) % 1.0 == 0.0 else
+                      int(length // pack_size))
+
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        if cond is not None:
+            fsm.If(cond).goto_next()
+
+        ack, counter = self.write_request(bus_addr, dma_length, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        data, last, done = ram.read_dataflow(
+            ram_port, ram_addr, length, stride=stride, cond=fsm)
+        fsm.goto_next()
+
+        wdata = self.m.TmpReg(self.datawidth, initval=0)
+        wvalid = self.m.TmpReg(initval=0)
+        wready = self.m.TmpWire()
+        ack = vtypes.Ors(wready, vtypes.Not(wvalid))
+
+        pack_count = self.m.TmpReg(pack_size, initval=0)
+        rcond = make_condition(fsm, ack)
+        rdata, rvalid = data.read(cond=rcond)
+
+        seq = TmpSeq(self.m, self.clk, self.rst)
+        seq.If(ack)(
+            wvalid(0)
+        )
+        seq.If(rvalid)(
+            wdata(vtypes.Cat(rdata, wdata[ram.datawidth:self.datawidth])),
+            wvalid(0),
+            pack_count.inc()
+        )
+        seq.If(rvalid, pack_count == pack_size - 1)(
+            wdata(vtypes.Cat(rdata, wdata[ram.datawidth:self.datawidth])),
+            wvalid(1),
+            pack_count(0)
+        )
+
+        df_data = self.df.Variable(wdata, wvalid, wready, width=self.datawidth)
+
+        done = self.write_dataflow(df_data, counter, cond=fsm)
+        fsm.If(done).goto_init()
+
+        return done
 
     def connect(self, ports, name):
         if not self.noio:
@@ -2633,7 +2782,7 @@ class AxiSlave(object):
         df_mask = df.Variable(mask, valid, mask_ready,
                               width=self.datawidth // 4)
         df_last = df.Variable(last, valid, last_ready, width=1)
-        done = last
+        done = vtypes.Ands(last, self.wdata.wvalid, self.wdata.wready)
 
         return df_data, df_mask, df_last, done
 
@@ -2845,7 +2994,7 @@ class AxiSlave(object):
             last(last)
         )
 
-        done = last
+        done = vtypes.Ands(last, self.rdata.rvalid, self.rdata.rready)
 
         return done
 

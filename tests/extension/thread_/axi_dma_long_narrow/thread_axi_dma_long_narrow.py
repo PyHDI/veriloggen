@@ -27,7 +27,8 @@ def mkLed():
     def blink(size):
         all_ok.value = True
 
-        offset = 0
+        # Test for 4KB boundary check
+        offset = myaxi.boundary_size - 4
         body(size, offset)
 
         if all_ok:
@@ -41,7 +42,7 @@ def mkLed():
 
         laddr = 0
         gaddr = offset
-        myaxi.dma_write_long(myram, laddr, gaddr, size)
+        myaxi.dma_write(myram, laddr, gaddr, size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # write
@@ -51,13 +52,13 @@ def mkLed():
 
         laddr = 0
         gaddr = (size + size) * 4 + offset
-        myaxi.dma_write_long(myram, laddr, gaddr, size)
+        myaxi.dma_write(myram, laddr, gaddr, size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # read
         laddr = 0
         gaddr = offset
-        myaxi.dma_read_long(myram, laddr, gaddr, size)
+        myaxi.dma_read(myram, laddr, gaddr, size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
@@ -69,7 +70,7 @@ def mkLed():
         # read
         laddr = 0
         gaddr = (size + size) * 4 + offset
-        myaxi.dma_read_long(myram, laddr, gaddr, size)
+        myaxi.dma_read(myram, laddr, gaddr, size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
@@ -114,6 +115,7 @@ def mkTest():
     )
 
     return m
+
 
 if __name__ == '__main__':
     test = mkTest()

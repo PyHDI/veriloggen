@@ -1353,7 +1353,6 @@ class AXIM(AxiMaster, _MutexFunction):
     __intrinsics__ = ('read', 'write',
                       'dma_read', 'dma_write',
                       'dma_read_async', 'dma_write_async',
-                      'dma_read_long', 'dma_write_long',
                       'dma_read_pattern', 'dma_write_pattern',
                       'dma_read_multidim', 'dma_write_multidim',
                       'dma_wait', 'dma_idle') + _MutexFunction.__intrinsics__
@@ -1407,19 +1406,97 @@ class AXIM(AxiMaster, _MutexFunction):
 
         fsm.If(ack).goto_next()
 
-    def get_max_burstlen(self, ram):
-        if vtypes.equals(self.datawidth, ram.datawidth):
-            return self.burstlen
+#    def get_max_burstlen(self, ram):
+#        if vtypes.equals(self.datawidth, ram.datawidth):
+#            return self.burstlen
+#
+#        comp = self.datawidth < ram.datawidth
+#        if not isinstance(comp, bool):
+#            raise ValueError('datawidth must be int, not (%s, %s)' %
+#                             (type(self.datawidth, ram.datawidth)))
+#
+#        if comp:
+#            return self.burstlen // (ram.datawidth // self.datawidth)
+#
+#        return self.burstlen
 
-        comp = self.datawidth < ram.datawidth
-        if not isinstance(comp, bool):
-            raise ValueError('datawidth must be int, not (%s, %s)' %
-                             (type(self.datawidth, ram.datawidth)))
+#    def dma_read(self, fsm, ram, local_addr, global_addr, size,
+#                 local_stride=1, port=0):
+#        if self.enable_async:
+#            self.dma_wait(fsm)
+#
+#        return self._dma_read(fsm, ram, local_addr, global_addr, size,
+#                              local_stride, port)
 
-        if comp:
-            return self.burstlen // (ram.datawidth // self.datawidth)
-
-        return self.burstlen
+#    def _dma_read(self, fsm, ram, local_addr, global_addr, size,
+#                  local_stride=1, port=0):
+#        if self.lite:
+#            raise TypeError('Lite-interface does not support DMA')
+#
+#        if isinstance(ram, (tuple, list)):
+#            ram = MultibankRAM(rams=ram)
+#
+#        if not isinstance(ram, (RAM, MultibankRAM)):
+#            raise TypeError('RAM is required')
+#
+#        port = vtypes.to_int(port)
+#        req_local_addr = self.m.TmpReg(ram.addrwidth, initval=0)
+#        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
+#        req_size = self.m.TmpReg(self.addrwidth, initval=0)
+#        rest_size = self.m.TmpReg(self.addrwidth, initval=0)
+#        if isinstance(local_stride, (int, vtypes.Int)):
+#            req_local_stride = local_stride
+#        else:
+#            req_local_stride = self.m.TmpReg(ram.addrwidth, initval=1)
+#
+#        max_burstlen = self.get_max_burstlen(ram)
+#
+#        fsm(
+#            req_local_addr(local_addr),
+#            req_global_addr(self.mask_addr(global_addr)),
+#            rest_size(size)
+#        )
+#        if not isinstance(local_stride, (int, vtypes.Int)):
+#            fsm(
+#                req_local_stride(local_stride)
+#            )
+#        fsm.goto_next()
+#
+#        check_state = fsm.current
+#
+#        # 4KB boundary check
+#        fsm.If(rest_size <= max_burstlen,
+#               self.check_boundary(req_global_addr, rest_size, ram.datawidth))(
+#            req_size(self.rest_boundary(req_global_addr, ram.datawidth)),
+#            rest_size(
+#                rest_size - self.rest_boundary(req_global_addr, ram.datawidth))
+#        ).Elif(rest_size <= max_burstlen)(
+#            req_size(rest_size),
+#            rest_size(0)
+#        ).Elif(self.check_boundary(req_global_addr, max_burstlen, ram.datawidth))(
+#            req_size(self.rest_boundary(req_global_addr, ram.datawidth)),
+#            rest_size(
+#                rest_size - self.rest_boundary(req_global_addr, ram.datawidth))
+#        ).Else(
+#            req_size(max_burstlen),
+#            rest_size(rest_size - max_burstlen)
+#        )
+#        fsm.goto_next()
+#
+#        cond = fsm.state == fsm.current
+#
+#        done = AxiMaster.dma_read(self, ram, req_global_addr, req_local_addr, req_size,
+#                                  stride=req_local_stride,
+#                                  cond=cond, ram_port=port)
+#
+#        fsm.If(done)(
+#            req_local_addr.add(req_size),
+#            req_global_addr.add(optimize(req_size * (self.datawidth // 8)))
+#        )
+#        fsm.If(done, rest_size > 0).goto(check_state)
+#        fsm.If(done, rest_size == 0).goto_next()
+#
+#        return 0
 
     def dma_read(self, fsm, ram, local_addr, global_addr, size,
                  local_stride=1, port=0):
@@ -1431,90 +1508,6 @@ class AXIM(AxiMaster, _MutexFunction):
 
     def _dma_read(self, fsm, ram, local_addr, global_addr, size,
                   local_stride=1, port=0):
-        if self.lite:
-            raise TypeError('Lite-interface does not support DMA')
-
-        if isinstance(ram, (tuple, list)):
-            ram = MultibankRAM(rams=ram)
-
-        if not isinstance(ram, (RAM, MultibankRAM)):
-            raise TypeError('RAM is required')
-
-        port = vtypes.to_int(port)
-        req_local_addr = self.m.TmpReg(ram.addrwidth, initval=0)
-        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
-        req_size = self.m.TmpReg(self.addrwidth, initval=0)
-        rest_size = self.m.TmpReg(self.addrwidth, initval=0)
-        if isinstance(local_stride, (int, vtypes.Int)):
-            req_local_stride = local_stride
-        else:
-            req_local_stride = self.m.TmpReg(ram.addrwidth, initval=1)
-
-        max_burstlen = self.get_max_burstlen(ram)
-
-        fsm(
-            req_local_addr(local_addr),
-            req_global_addr(global_addr),
-            rest_size(size)
-        )
-        if not isinstance(local_stride, (int, vtypes.Int)):
-            fsm(
-                req_local_stride(local_stride)
-            )
-        fsm.goto_next()
-
-        check_state = fsm.current
-        fsm.If(rest_size <= max_burstlen)(
-            req_size(rest_size),
-            rest_size(0)
-        ).Else(
-            req_size(max_burstlen),
-            rest_size(rest_size - max_burstlen)
-        )
-        fsm.goto_next()
-
-#        # 4KB check
-#        fsm.If(rest_size <= max_burstlen,
-#               (req_global_addr & 0xfff) +
-#               (rest_size << util.log2(self.datawidth // 8) >= 0x1000))(
-#            req_size((vtypes.Int(0x1000) - (req_global_addr & 0xfff)) >>
-#                     util.log2(self.datawidth // 8)),
-#            rest_size(rest_size - (vtypes.Int(0x1000) - (req_global_addr & 0xfff)) >>
-#                      util.log2(self.datawidth // 8))
-#        ).Elif(rest_size <= max_burstlen)(
-#            req_size(rest_size),
-#            rest_size(0)
-#        ).Else(
-#            req_size(max_burstlen),
-#            rest_size(rest_size - max_burstlen)
-#        )
-#        fsm.goto_next()
-
-        cond = fsm.state == fsm.current
-
-        done = AxiMaster.dma_read(self, ram, req_global_addr, req_local_addr, req_size,
-                                  stride=req_local_stride,
-                                  cond=cond, ram_port=port)
-
-        fsm.If(done)(
-            req_local_addr.add(req_size),
-            req_global_addr.add(optimize(req_size * (self.datawidth // 8)))
-        )
-        fsm.If(done, rest_size > 0).goto(check_state)
-        fsm.If(done, rest_size == 0).goto_next()
-
-        return 0
-
-    def dma_read_long(self, fsm, ram, local_addr, global_addr, size,
-                      local_stride=1, port=0):
-        if self.enable_async:
-            self.dma_wait(fsm)
-
-        return self._dma_read_long(fsm, ram, local_addr, global_addr, size,
-                                   local_stride, port)
-
-    def _dma_read_long(self, fsm, ram, local_addr, global_addr, size,
-                       local_stride=1, port=0):
         if self.lite:
             raise TypeError('Lite-interface does not support DMA')
 
@@ -1546,9 +1539,9 @@ class AXIM(AxiMaster, _MutexFunction):
 
         cond = fsm.state == fsm.current
 
-        done = AxiMaster.dma_read_long(self, ram, req_global_addr, req_local_addr, req_size,
-                                       stride=req_local_stride,
-                                       cond=cond, ram_port=port)
+        done = AxiMaster.dma_read(self, ram, req_global_addr, req_local_addr, req_size,
+                                  stride=req_local_stride,
+                                  cond=cond, ram_port=port)
 
         fsm.If(done).goto_next()
 
@@ -1623,6 +1616,84 @@ class AXIM(AxiMaster, _MutexFunction):
         return self.dma_read_pattern(fsm, ram, local_addr, global_addr, pattern,
                                      port)
 
+#    def dma_write(self, fsm, ram, local_addr, global_addr, size,
+#                  local_stride=1, port=0):
+#        if self.enable_async:
+#            self.dma_wait(fsm)
+#
+#        return self._dma_write(fsm, ram, local_addr, global_addr, size,
+#                               local_stride, port)
+
+#    def _dma_write(self, fsm, ram, local_addr, global_addr, size,
+#                   local_stride=1, port=0):
+#        if self.lite:
+#            raise TypeError('Lite-interface does not support DMA')
+#
+#        if isinstance(ram, (tuple, list)):
+#            ram = MultibankRAM(rams=ram)
+#
+#        if not isinstance(ram, (RAM, MultibankRAM)):
+#            raise TypeError('RAM is required')
+#
+#        port = vtypes.to_int(port)
+#        req_local_addr = self.m.TmpReg(ram.addrwidth, initval=0)
+#        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
+#        req_size = self.m.TmpReg(self.addrwidth, initval=0)
+#        rest_size = self.m.TmpReg(self.addrwidth, initval=0)
+#        if isinstance(local_stride, (int, vtypes.Int)):
+#            req_local_stride = local_stride
+#        else:
+#            req_local_stride = self.m.TmpReg(ram.addrwidth, initval=1)
+#
+#        max_burstlen = self.get_max_burstlen(ram)
+#
+#        fsm(
+#            req_local_addr(local_addr),
+#            req_global_addr(self.mask_addr(global_addr)),
+#            rest_size(size)
+#        )
+#        if not isinstance(local_stride, (int, vtypes.Int)):
+#            fsm(
+#                req_local_stride(local_stride)
+#            )
+#        fsm.goto_next()
+#
+#        check_state = fsm.current
+#
+#        # 4KB boundary check
+#        fsm.If(rest_size <= max_burstlen,
+#               self.check_boundary(req_global_addr, rest_size, ram.datawidth))(
+#            req_size(self.rest_boundary(req_global_addr, ram.datawidth)),
+#            rest_size(
+#                rest_size - self.rest_boundary(req_global_addr, ram.datawidth))
+#        ).Elif(rest_size <= max_burstlen)(
+#            req_size(rest_size),
+#            rest_size(0)
+#        ).Elif(self.check_boundary(req_global_addr, max_burstlen, ram.datawidth))(
+#            req_size(self.rest_boundary(req_global_addr, ram.datawidth)),
+#            rest_size(
+#                rest_size - self.rest_boundary(req_global_addr, ram.datawidth))
+#        ).Else(
+#            req_size(max_burstlen),
+#            rest_size(rest_size - max_burstlen)
+#        )
+#        fsm.goto_next()
+#
+#        cond = fsm.state == fsm.current
+#
+#        done = AxiMaster.dma_write(self, ram, req_global_addr, req_local_addr, req_size,
+#                                   stride=req_local_stride,
+#                                   cond=cond, ram_port=port)
+#
+#        fsm.If(done)(
+#            req_local_addr.add(req_size),
+#            req_global_addr.add(optimize(req_size * (self.datawidth // 8)))
+#        )
+#        fsm.If(done, rest_size > 0).goto(check_state)
+#        fsm.If(done, rest_size == 0).goto_next()
+#
+#        return 0
+
     def dma_write(self, fsm, ram, local_addr, global_addr, size,
                   local_stride=1, port=0):
         if self.enable_async:
@@ -1633,90 +1704,6 @@ class AXIM(AxiMaster, _MutexFunction):
 
     def _dma_write(self, fsm, ram, local_addr, global_addr, size,
                    local_stride=1, port=0):
-        if self.lite:
-            raise TypeError('Lite-interface does not support DMA')
-
-        if isinstance(ram, (tuple, list)):
-            ram = MultibankRAM(rams=ram)
-
-        if not isinstance(ram, (RAM, MultibankRAM)):
-            raise TypeError('RAM is required')
-
-        port = vtypes.to_int(port)
-        req_local_addr = self.m.TmpReg(ram.addrwidth, initval=0)
-        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
-        req_size = self.m.TmpReg(self.addrwidth, initval=0)
-        rest_size = self.m.TmpReg(self.addrwidth, initval=0)
-        if isinstance(local_stride, (int, vtypes.Int)):
-            req_local_stride = local_stride
-        else:
-            req_local_stride = self.m.TmpReg(ram.addrwidth, initval=1)
-
-        max_burstlen = self.get_max_burstlen(ram)
-
-        fsm(
-            req_local_addr(local_addr),
-            req_global_addr(global_addr),
-            rest_size(size)
-        )
-        if not isinstance(local_stride, (int, vtypes.Int)):
-            fsm(
-                req_local_stride(local_stride)
-            )
-        fsm.goto_next()
-
-        check_state = fsm.current
-        fsm.If(rest_size <= max_burstlen)(
-            req_size(rest_size),
-            rest_size(0)
-        ).Else(
-            req_size(max_burstlen),
-            rest_size(rest_size - max_burstlen)
-        )
-        fsm.goto_next()
-
-        # 4KB check
-#        fsm.If(rest_size <= max_burstlen,
-#               (req_global_addr & 0xfff) +
-#               (rest_size << util.log2(self.datawidth // 8) >= 0x1000))(
-#            req_size((vtypes.Int(0x1000) - (req_global_addr & 0xfff)) >>
-#                     util.log2(self.datawidth // 8)),
-#            rest_size(rest_size - (vtypes.Int(0x1000) - (req_global_addr & 0xfff)) >>
-#                      util.log2(self.datawidth // 8))
-#        ).Elif(rest_size <= max_burstlen)(
-#            req_size(rest_size),
-#            rest_size(0)
-#        ).Else(
-#            req_size(max_burstlen),
-#            rest_size(rest_size - max_burstlen)
-#        )
-#        fsm.goto_next()
-        
-        cond = fsm.state == fsm.current
-
-        done = AxiMaster.dma_write(self, ram, req_global_addr, req_local_addr, req_size,
-                                   stride=req_local_stride,
-                                   cond=cond, ram_port=port)
-
-        fsm.If(done)(
-            req_local_addr.add(req_size),
-            req_global_addr.add(optimize(req_size * (self.datawidth // 8)))
-        )
-        fsm.If(done, rest_size > 0).goto(check_state)
-        fsm.If(done, rest_size == 0).goto_next()
-
-        return 0
-
-    def dma_write_long(self, fsm, ram, local_addr, global_addr, size,
-                       local_stride=1, port=0):
-        if self.enable_async:
-            self.dma_wait(fsm)
-
-        return self._dma_write_long(fsm, ram, local_addr, global_addr, size,
-                                    local_stride, port)
-
-    def _dma_write_long(self, fsm, ram, local_addr, global_addr, size,
-                        local_stride=1, port=0):
         if self.lite:
             raise TypeError('Lite-interface does not support DMA')
 
@@ -1748,9 +1735,9 @@ class AXIM(AxiMaster, _MutexFunction):
 
         cond = fsm.state == fsm.current
 
-        done = AxiMaster.dma_write_long(self, ram, req_global_addr, req_local_addr, req_size,
-                                        stride=req_local_stride,
-                                        cond=cond, ram_port=port)
+        done = AxiMaster.dma_write(self, ram, req_global_addr, req_local_addr, req_size,
+                                   stride=req_local_stride,
+                                   cond=cond, ram_port=port)
 
         fsm.If(done).goto_next()
 

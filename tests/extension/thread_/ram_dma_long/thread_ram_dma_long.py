@@ -24,7 +24,8 @@ def mkLed():
 
     def blink():
         size = 256 * 2
-        offset = 1024 * 4
+        # Test for 4KB boundary check
+        offset = 1024 * 4 + (myaxi.boundary_size - 4)
 
         # write
         for i in range(size):
@@ -111,6 +112,7 @@ def mkTest():
     )
 
     return m
+
 
 if __name__ == '__main__':
     test = mkTest()

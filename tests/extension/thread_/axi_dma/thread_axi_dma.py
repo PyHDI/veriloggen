@@ -29,7 +29,8 @@ def mkLed():
 
         for i in range(4):
             print('# iter %d start' % i)
-            offset = i * 1024 * 16
+            # Test for 4KB boundary check
+            offset = i * 1024 * 16 + (myaxi.boundary_size - 4)
             body(size, offset)
             print('# iter %d end' % i)
 
@@ -117,6 +118,7 @@ def mkTest():
     )
 
     return m
+
 
 if __name__ == '__main__':
     test = mkTest()

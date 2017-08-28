@@ -23,7 +23,7 @@ def mkLed():
     mat_shape = [8, 4, 16]
     mat_order = [2, 1, 0]
     mat_size = functools.reduce(lambda x, y: x * y, mat_shape, 1)
-    
+
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
     myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth)
 
@@ -32,7 +32,8 @@ def mkLed():
     def blink(size):
         all_ok.value = True
 
-        offset = 0
+        # Test for 4KB boundary check
+        offset = myaxi.boundary_size - 4
         body(size, offset)
 
         if all_ok:
@@ -119,6 +120,7 @@ def mkTest():
     )
 
     return m
+
 
 if __name__ == '__main__':
     test = mkTest()

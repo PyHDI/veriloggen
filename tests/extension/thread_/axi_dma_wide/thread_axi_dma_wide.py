@@ -12,7 +12,7 @@ import veriloggen.thread as vthread
 import veriloggen.types.axi as axi
 
 
-def mkLed(memory_datawidth=64):
+def mkLed(memory_datawidth=128):
     m = Module('blinkled')
     clk = m.Input('CLK')
     rst = m.Input('RST')
@@ -29,7 +29,8 @@ def mkLed(memory_datawidth=64):
 
         for i in range(4):
             print('# iter %d start' % i)
-            offset = i * 1024 * 16
+            # Test for 4KB boundary check
+            offset = i * 1024 * 16 + (myaxi.boundary_size - 16)
             body(size, offset)
             print('# iter %d end' % i)
 

@@ -1187,7 +1187,7 @@ module blinkled
           th_blink <= th_blink_2;
         end
         th_blink_2: begin
-          _th_blink_offset_1 <= 0;
+          _th_blink_offset_1 <= 4092;
           th_blink <= th_blink_3;
         end
         th_blink_3: begin
@@ -1475,15 +1475,21 @@ module blinkled
           end 
         end
         _tmp_fsm_0_1: begin
-          _tmp_6 <= _tmp_1;
+          _tmp_6 <= (_tmp_1 >> 2) << 2;
           _tmp_8 <= _tmp_2;
           _tmp_9 <= _tmp_4 - 1;
           _tmp_fsm_0 <= _tmp_fsm_0_2;
         end
         _tmp_fsm_0_2: begin
-          if(_tmp_8 <= 256) begin
+          if((_tmp_8 <= 256) && ((_tmp_6 & 4095) + (_tmp_8 << 2) >= 4096)) begin
+            _tmp_7 <= 4096 - (_tmp_6 & 4095) >> 2;
+            _tmp_8 <= _tmp_8 - (4096 - (_tmp_6 & 4095) >> 2);
+          end else if(_tmp_8 <= 256) begin
             _tmp_7 <= _tmp_8;
             _tmp_8 <= 0;
+          end else if((_tmp_6 & 4095) + 1024 >= 4096) begin
+            _tmp_7 <= 4096 - (_tmp_6 & 4095) >> 2;
+            _tmp_8 <= _tmp_8 - (4096 - (_tmp_6 & 4095) >> 2);
           end else begin
             _tmp_7 <= 256;
             _tmp_8 <= _tmp_8 - 256;
@@ -1496,25 +1502,25 @@ module blinkled
           end 
         end
         _tmp_fsm_0_4: begin
-          if(_tmp_28) begin
+          if(_tmp_28 && myaxi_wvalid && myaxi_wready) begin
             _tmp_6 <= _tmp_6 + (_tmp_7 << 2);
           end 
-          if(_tmp_28 && (_tmp_8 == 0)) begin
+          if(_tmp_28 && myaxi_wvalid && myaxi_wready && (_tmp_8 == 0)) begin
             _tmp_9 <= _tmp_9 - 1;
           end 
-          if(_tmp_28 && (_tmp_8 == 0) && (_tmp_9 == 0)) begin
+          if(_tmp_28 && myaxi_wvalid && myaxi_wready && (_tmp_8 == 0) && (_tmp_9 == 0)) begin
             _tmp_9 <= _tmp_4 - 1;
           end 
-          if(_tmp_28 && (_tmp_8 == 0) && !((_tmp_8 == 0) && (_tmp_9 == 0))) begin
+          if(_tmp_28 && myaxi_wvalid && myaxi_wready && (_tmp_8 == 0) && !((_tmp_8 == 0) && (_tmp_9 == 0))) begin
             _tmp_8 <= _tmp_2;
           end 
-          if(_tmp_28 && (_tmp_8 > 0)) begin
+          if(_tmp_28 && myaxi_wvalid && myaxi_wready && (_tmp_8 > 0)) begin
             _tmp_fsm_0 <= _tmp_fsm_0_2;
           end 
-          if(_tmp_28 && (_tmp_8 == 0) && !((_tmp_8 == 0) && (_tmp_9 == 0))) begin
+          if(_tmp_28 && myaxi_wvalid && myaxi_wready && (_tmp_8 == 0) && !((_tmp_8 == 0) && (_tmp_9 == 0))) begin
             _tmp_fsm_0 <= _tmp_fsm_0_2;
           end 
-          if(_tmp_28 && ((_tmp_8 == 0) && (_tmp_9 == 0))) begin
+          if(_tmp_28 && myaxi_wvalid && myaxi_wready && ((_tmp_8 == 0) && (_tmp_9 == 0))) begin
             _tmp_fsm_0 <= _tmp_fsm_0_5;
           end 
         end
@@ -1563,15 +1569,21 @@ module blinkled
           end 
         end
         _tmp_fsm_1_1: begin
-          _tmp_37 <= _tmp_32;
+          _tmp_37 <= (_tmp_32 >> 2) << 2;
           _tmp_39 <= _tmp_33;
           _tmp_40 <= _tmp_35 - 1;
           _tmp_fsm_1 <= _tmp_fsm_1_2;
         end
         _tmp_fsm_1_2: begin
-          if(_tmp_39 <= 256) begin
+          if((_tmp_39 <= 256) && ((_tmp_37 & 4095) + (_tmp_39 << 2) >= 4096)) begin
+            _tmp_38 <= 4096 - (_tmp_37 & 4095) >> 2;
+            _tmp_39 <= _tmp_39 - (4096 - (_tmp_37 & 4095) >> 2);
+          end else if(_tmp_39 <= 256) begin
             _tmp_38 <= _tmp_39;
             _tmp_39 <= 0;
+          end else if((_tmp_37 & 4095) + 1024 >= 4096) begin
+            _tmp_38 <= 4096 - (_tmp_37 & 4095) >> 2;
+            _tmp_39 <= _tmp_39 - (4096 - (_tmp_37 & 4095) >> 2);
           end else begin
             _tmp_38 <= 256;
             _tmp_39 <= _tmp_39 - 256;
@@ -1584,25 +1596,25 @@ module blinkled
           end 
         end
         _tmp_fsm_1_4: begin
-          if(_tmp_59) begin
+          if(_tmp_59 && myaxi_wvalid && myaxi_wready) begin
             _tmp_37 <= _tmp_37 + (_tmp_38 << 2);
           end 
-          if(_tmp_59 && (_tmp_39 == 0)) begin
+          if(_tmp_59 && myaxi_wvalid && myaxi_wready && (_tmp_39 == 0)) begin
             _tmp_40 <= _tmp_40 - 1;
           end 
-          if(_tmp_59 && (_tmp_39 == 0) && (_tmp_40 == 0)) begin
+          if(_tmp_59 && myaxi_wvalid && myaxi_wready && (_tmp_39 == 0) && (_tmp_40 == 0)) begin
             _tmp_40 <= _tmp_35 - 1;
           end 
-          if(_tmp_59 && (_tmp_39 == 0) && !((_tmp_39 == 0) && (_tmp_40 == 0))) begin
+          if(_tmp_59 && myaxi_wvalid && myaxi_wready && (_tmp_39 == 0) && !((_tmp_39 == 0) && (_tmp_40 == 0))) begin
             _tmp_39 <= _tmp_33;
           end 
-          if(_tmp_59 && (_tmp_39 > 0)) begin
+          if(_tmp_59 && myaxi_wvalid && myaxi_wready && (_tmp_39 > 0)) begin
             _tmp_fsm_1 <= _tmp_fsm_1_2;
           end 
-          if(_tmp_59 && (_tmp_39 == 0) && !((_tmp_39 == 0) && (_tmp_40 == 0))) begin
+          if(_tmp_59 && myaxi_wvalid && myaxi_wready && (_tmp_39 == 0) && !((_tmp_39 == 0) && (_tmp_40 == 0))) begin
             _tmp_fsm_1 <= _tmp_fsm_1_2;
           end 
-          if(_tmp_59 && ((_tmp_39 == 0) && (_tmp_40 == 0))) begin
+          if(_tmp_59 && myaxi_wvalid && myaxi_wready && ((_tmp_39 == 0) && (_tmp_40 == 0))) begin
             _tmp_fsm_1 <= _tmp_fsm_1_5;
           end 
         end
@@ -1659,15 +1671,21 @@ module blinkled
           end 
         end
         _tmp_fsm_2_1: begin
-          _tmp_68 <= _tmp_63;
+          _tmp_68 <= (_tmp_63 >> 2) << 2;
           _tmp_70 <= _tmp_64;
           _tmp_71 <= _tmp_66 - 1;
           _tmp_fsm_2 <= _tmp_fsm_2_2;
         end
         _tmp_fsm_2_2: begin
-          if(_tmp_70 <= 256) begin
+          if((_tmp_70 <= 256) && ((_tmp_68 & 4095) + (_tmp_70 << 2) >= 4096)) begin
+            _tmp_69 <= 4096 - (_tmp_68 & 4095) >> 2;
+            _tmp_70 <= _tmp_70 - (4096 - (_tmp_68 & 4095) >> 2);
+          end else if(_tmp_70 <= 256) begin
             _tmp_69 <= _tmp_70;
             _tmp_70 <= 0;
+          end else if((_tmp_68 & 4095) + 1024 >= 4096) begin
+            _tmp_69 <= 4096 - (_tmp_68 & 4095) >> 2;
+            _tmp_70 <= _tmp_70 - (4096 - (_tmp_68 & 4095) >> 2);
           end else begin
             _tmp_69 <= 256;
             _tmp_70 <= _tmp_70 - 256;
@@ -1760,15 +1778,21 @@ module blinkled
           end 
         end
         _tmp_fsm_3_1: begin
-          _tmp_92 <= _tmp_87;
+          _tmp_92 <= (_tmp_87 >> 2) << 2;
           _tmp_94 <= _tmp_88;
           _tmp_95 <= _tmp_90 - 1;
           _tmp_fsm_3 <= _tmp_fsm_3_2;
         end
         _tmp_fsm_3_2: begin
-          if(_tmp_94 <= 256) begin
+          if((_tmp_94 <= 256) && ((_tmp_92 & 4095) + (_tmp_94 << 2) >= 4096)) begin
+            _tmp_93 <= 4096 - (_tmp_92 & 4095) >> 2;
+            _tmp_94 <= _tmp_94 - (4096 - (_tmp_92 & 4095) >> 2);
+          end else if(_tmp_94 <= 256) begin
             _tmp_93 <= _tmp_94;
             _tmp_94 <= 0;
+          end else if((_tmp_92 & 4095) + 1024 >= 4096) begin
+            _tmp_93 <= 4096 - (_tmp_92 & 4095) >> 2;
+            _tmp_94 <= _tmp_94 - (4096 - (_tmp_92 & 4095) >> 2);
           end else begin
             _tmp_93 <= 256;
             _tmp_94 <= _tmp_94 - 256;

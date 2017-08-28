@@ -556,7 +556,7 @@ module main
           fsm <= fsm_5;
         end
         fsm_5: begin
-          if(_tmp_19) begin
+          if(_tmp_19 && myaxi_wvalid && myaxi_wready) begin
             fsm <= fsm_6;
           end 
         end

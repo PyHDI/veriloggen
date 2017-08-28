@@ -362,7 +362,7 @@ module main
           end 
         end
         fsm_1: begin
-          if(_tmp_1) begin
+          if(_tmp_1 && myaxi_wvalid && myaxi_wready) begin
             fsm <= fsm_2;
           end 
         end

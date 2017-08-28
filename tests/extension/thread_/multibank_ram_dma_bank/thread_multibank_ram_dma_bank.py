@@ -31,9 +31,11 @@ def mkLed():
 
         for i in range(4):
             print('# iter %d start' % i)
-            offset = i * 1024 * 16
+            # Test for 4KB boundary check
+            offset = i * 1024 * 16 + (myaxi.boundary_size - 4)
             for bank in range(numbanks):
-                body(bank, size, offset)
+                bank_offset = offset + bank * 1024
+                body(bank, size, bank_offset)
             print('# iter %d end' % i)
 
         if all_ok:
@@ -120,6 +122,7 @@ def mkTest():
     )
 
     return m
+
 
 if __name__ == '__main__':
     test = mkTest()
