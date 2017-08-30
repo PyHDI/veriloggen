@@ -198,6 +198,7 @@ class SyncRAMManager(object):
             self.df = DataflowManager(self.m, self.clk, self.rst)
 
         self._write_disabled = [False for i in range(numports)]
+        self._port_disabled = [False for i in range(numports)]
 
     def __getitem__(self, index):
         return self.interfaces[index]
@@ -208,6 +209,12 @@ class SyncRAMManager(object):
             self.interfaces[port].wenable(0)
         )
         self._write_disabled[port] = True
+
+    def disable_port(self, port):
+        self.seq(
+            self.interfaces[port].addr(0),
+        )
+        self._port_disabled[port] = True
 
     def read(self, port, addr, cond=None):
         """ 
