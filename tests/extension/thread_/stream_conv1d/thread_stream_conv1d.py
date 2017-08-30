@@ -29,11 +29,13 @@ def mkLed():
     kernel = 3
     stride = 1
     read_pattern = ((kernel, 1), (int(size // stride) - kernel + 1, stride))
+    weight_pattern = ((kernel, 1), (int(size // stride) - kernel + 1, 0))
     write_size = int(size // stride) - kernel + 1
 
     def comp_stream(strm, roffset, woffset):
         a = strm.read_pattern(ram_a, roffset, read_pattern)
-        sum, valid = strm.RegionAdd(a, kernel)
+        b = strm.read_pattern(ram_b, 0, weight_pattern)
+        sum, valid = strm.RegionAdd(a * b, kernel)
         strm.write(ram_c, woffset, write_size, sum, when=valid)
 
     def comp_sequential(roffset, woffset):
@@ -41,7 +43,8 @@ def mkLed():
             sum = 0
             for k in range(kernel):
                 a = ram_a.read(i + k + roffset)
-                sum += a
+                b = ram_b.read(k)
+                sum += a * b
             ram_c.write(i + woffset, sum)
 
     def check(offset_stream, offset_seq):
@@ -60,6 +63,10 @@ def mkLed():
             print('NG')
 
     def comp():
+        # weight setup
+        for k in range(kernel):
+            ram_b.write(k, k + 1)
+
         roffset = 0
         woffset = 0
         myaxi.dma_read(ram_a, roffset, 0, size)
