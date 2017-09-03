@@ -607,7 +607,7 @@ module blinkled
   reg _mystream_flag_6;
   reg [32-1:0] _mystream_fsm_7;
   localparam _mystream_fsm_7_init = 0;
-  reg [37-1:0] _tmp_58;
+  reg [36-1:0] _tmp_58;
   reg _tmp_59;
   wire [32-1:0] _tmp_data_60;
   wire _tmp_valid_60;
@@ -1356,7 +1356,7 @@ module blinkled
       _ram_c_cond_5_2 <= _ram_c_cond_5_1;
       if((_mystream_fsm_7 == 1) && (_tmp_58 == 0)) begin
         ram_c_0_addr <= _th_comp_offset_1 - 1;
-        _tmp_58 <= _th_comp_size_0 * 8 / 2;
+        _tmp_58 <= _th_comp_size_0 * 4;
       end 
       if(_tmp_valid_60 && ((_tmp_58 > 0) && !_tmp_59) && (_tmp_58 > 0)) begin
         ram_c_0_addr <= ram_c_0_addr + 1;

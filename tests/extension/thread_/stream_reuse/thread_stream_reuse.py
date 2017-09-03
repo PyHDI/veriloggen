@@ -31,7 +31,7 @@ def mkLed():
         b0, b1 = strm.read_reuse(
             ram_b, offset, size, reuse_size=reuse_size, num_outputs=2)
         sum = a0 + a1 + b0 + b1
-        strm.write(ram_c, offset, size * reuse_size // 2, sum)
+        strm.write(ram_c, offset, size * (reuse_size // 2), sum)
 
     def comp_sequential(size, offset):
         sum = 0
