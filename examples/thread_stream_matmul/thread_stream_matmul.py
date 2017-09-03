@@ -39,10 +39,10 @@ def mkLed(matrix_size=16):
         check(matrix_size, a_offset, b_offset, c_offset)
 
     def strm_madd(strm, size, waddr):
-        a = strm.read_sequential(ram_a, 0, size)
-        b = strm.read_sequential(ram_b, 0, size)
+        a = strm.read(ram_a, 0, size)
+        b = strm.read(ram_b, 0, size)
         sum, valid = strm.RegionAdd(a * b, size)
-        strm.write_sequential(ram_c, waddr, 1, sum, when=valid)
+        strm.write(ram_c, waddr, 1, sum, when=valid)
 
     def comp(matrix_size, a_offset, b_offset, c_offset):
         a_addr, c_addr = a_offset, c_offset
