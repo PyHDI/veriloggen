@@ -86,13 +86,6 @@ class Stream(vtypes.VeriloggenNode):
 
         return rdata
 
-    def read_sequential(self, obj, addr, size,
-                        point=0, signed=False, port=0, with_last=False):
-
-        return self.read(obj, addr, size,
-                         stride=1, point=point, signed=signed, port=port,
-                         with_last=with_last)
-
     def read_pattern(self, obj, addr, pattern,
                      point=0, signed=False, port=0, with_last=False):
 
@@ -161,6 +154,48 @@ class Stream(vtypes.VeriloggenNode):
 
         return rdata
 
+    def read_reuse(self, obj, addr, size, reuse_size=1, num_outputs=1,
+                   stride=1, point=0, signed=False, port=0, with_last=False):
+
+        flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'flag'])),
+                          initval=0)
+        self.done_flags.append(flag)
+
+        fsm = FSM(self.m, compiler._tmp_name('_'.join(['', self.name, 'fsm'])),
+                  self.clk, self.rst)
+        fsm.If(self.start_cond)(
+            flag(0)
+        )
+        fsm.If(self.start_cond).goto_next()
+
+        if hasattr(obj, 'read_dataflow_reuse_interleave'):
+            ret = obj.read_dataflow_reuse_interleave(port, addr, size, stride=stride,
+                                                     reuse_size=reuse_size,
+                                                     num_outputs=num_outputs,
+                                                     cond=fsm, point=point, signed=signed)
+        else:
+            ret = obj.read_dataflow_reuse(port, addr, size, stride=stride,
+                                          reuse_size=reuse_size,
+                                          num_outputs=num_outputs,
+                                          cond=fsm, point=point, signed=signed)
+
+        rdata = ret[:-2]
+        done = ret[-1]
+        rlast = ret[-2]
+
+        fsm.goto_next()
+
+        fsm.If(done)(
+            flag(1)
+        )
+
+        fsm.If(done).goto_init()
+
+        if with_last:
+            return tuple(rdata + [rlast])
+
+        return tuple(rdata)
+
     def write(self, obj, addr, size, value,
               stride=1, when=None, port=0):
 
@@ -191,12 +226,6 @@ class Stream(vtypes.VeriloggenNode):
         fsm.If(done).goto_init()
 
         return 0
-
-    def write_sequential(self, obj, addr, size, value,
-                         when=None, port=0):
-
-        return self.write(obj, addr, size, value,
-                          when=when, port=port)
 
     def write_pattern(self, obj, addr, value, pattern,
                       when=None, port=0):

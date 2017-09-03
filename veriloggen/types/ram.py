@@ -505,7 +505,7 @@ class SyncRAMManager(object):
 
     def read_dataflow_reuse(self, port, addr, length=1,
                             stride=1,
-                            num_outputs=1, reuse_size=1,
+                            reuse_size=1, num_outputs=1,
                             cond=None, point=0, signed=False):
         """ 
         @return data, last, done

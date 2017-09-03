@@ -253,6 +253,9 @@ class VeriloggenNode(object):
     def __truediv__(self, r):
         raise TypeError('Not allowed operation.')
 
+    def __floordiv__(self, r):
+        raise TypeError('Not allowed operation.')
+
     def __mod__(self, r):
         raise TypeError('Not allowed operation.')
 
@@ -326,6 +329,9 @@ class _Numeric(VeriloggenNode):
         return Divide(self, r)
 
     def __truediv__(self, r):
+        return Divide(self, r)
+
+    def __floordiv__(self, r):
         return Divide(self, r)
 
     def __mod__(self, r):

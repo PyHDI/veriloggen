@@ -25,10 +25,10 @@ def mkLed():
     ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
 
     def comp_stream(strm, size, offset):
-        a = strm.read_sequential(ram_a, offset, size)
-        b = strm.read_sequential(ram_b, offset, size)
+        a = strm.read(ram_a, offset, size)
+        b = strm.read(ram_b, offset, size)
         sum, valid = strm.RegionAdd(a * b, size)
-        strm.write_sequential(ram_c, offset, 1, sum, when=valid)
+        strm.write(ram_c, offset, 1, sum, when=valid)
 
     def comp_sequential(size, offset):
         sum = 0

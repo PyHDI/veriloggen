@@ -12,35 +12,39 @@ import veriloggen.thread as vthread
 import veriloggen.types.axi as axi
 
 
-def mkLed(memory_datawidth=128):
+def mkLed():
     m = Module('blinkled')
     clk = m.Input('CLK')
     rst = m.Input('RST')
 
     datawidth = 32
     addrwidth = 10
-    numbanks = 2
-    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, memory_datawidth)
-    ram_a = vthread.MultibankRAM(m, 'ram_a', clk, rst, datawidth, addrwidth,
-                                 numbanks=numbanks)
-    ram_b = vthread.MultibankRAM(m, 'ram_b', clk, rst, datawidth, addrwidth,
-                                 numbanks=numbanks)
-    ram_c = vthread.MultibankRAM(m, 'ram_c', clk, rst, datawidth, addrwidth,
-                                 numbanks=numbanks)
+    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
+    ram_a = vthread.RAM(m, 'ram_a', clk, rst, datawidth, addrwidth)
+    ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
+    ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
+    reuse_size = 8
 
     def comp_stream(strm, size, offset):
-        a = strm.read(ram_a, offset, size)
-        b = strm.read(ram_b, offset, size)
-        sum = a + b
-        strm.write(ram_c, offset, size, sum)
+        a0, a1 = strm.read_reuse(
+            ram_a, offset, size, reuse_size=reuse_size, num_outputs=2)
+        b0, b1 = strm.read_reuse(
+            ram_b, offset, size, reuse_size=reuse_size, num_outputs=2)
+        sum = a0 + a1 + b0 + b1
+        strm.write(ram_c, offset, size * reuse_size // 2, sum)
 
     def comp_sequential(size, offset):
         sum = 0
-        for i in range(size):
-            a = ram_a.read(i + offset)
-            b = ram_b.read(i + offset)
-            sum = a + b
-            ram_c.write(i + offset, sum)
+        w = 0
+        for i in range(0, size, 2):
+            for r in range(reuse_size):
+                a0 = ram_a.read(i + 0 + offset)
+                a1 = ram_a.read(i + 1 + offset)
+                b0 = ram_b.read(i + 0 + offset)
+                b1 = ram_b.read(i + 1 + offset)
+                sum = a0 + a1 + b0 + b1
+                ram_c.write(w + offset, sum)
+                w += 1
 
     def check(size, offset_stream, offset_seq):
         all_ok = True
@@ -55,26 +59,21 @@ def mkLed(memory_datawidth=128):
             print('NG')
 
     def comp(size):
-        dma_size = size
-        comp_size = size * numbanks
-
-        dma_offset = 0
-        comp_offset = 0
-        myaxi.dma_read(ram_a, dma_offset, 0, dma_size)
-        myaxi.dma_read(ram_b, dma_offset, 0, dma_size)
-        stream.run(comp_size, comp_offset)
+        offset = 0
+        myaxi.dma_read(ram_a, offset, 0, size)
+        myaxi.dma_read(ram_b, offset, 0, size)
+        stream.run(size, offset)
         stream.join()
-        myaxi.dma_write(ram_c, dma_offset, 1024, dma_size)
+        myaxi.dma_write(ram_c, offset, 1024, size)
 
-        dma_offset = size
-        comp_offset = comp_size
-        myaxi.dma_read(ram_a, dma_offset, 0, dma_size)
-        myaxi.dma_read(ram_b, dma_offset, 0, dma_size)
-        sequential.run(comp_size, comp_offset)
+        offset = size
+        myaxi.dma_read(ram_a, offset, 0, size)
+        myaxi.dma_read(ram_b, offset, 0, size)
+        sequential.run(size, offset)
         sequential.join()
-        myaxi.dma_write(ram_c, dma_offset, 1024 * 2, dma_size)
+        myaxi.dma_write(ram_c, offset, 1024 * 2, size)
 
-        check(comp_size, 0, comp_offset)
+        check(size, 0, offset)
 
     stream = vthread.Stream(m, 'mystream', clk, rst, comp_stream)
     sequential = vthread.Thread(m, 'th_sequential', clk, rst, comp_sequential)
@@ -85,11 +84,11 @@ def mkLed(memory_datawidth=128):
     return m
 
 
-def mkTest(memory_datawidth=128):
+def mkTest():
     m = Module('test')
 
     # target instance
-    led = mkLed(memory_datawidth)
+    led = mkLed()
 
     # copy paras and ports
     params = m.copy_params(led)
@@ -98,7 +97,7 @@ def mkTest(memory_datawidth=128):
     clk = ports['CLK']
     rst = ports['RST']
 
-    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memory_datawidth)
+    memory = axi.AxiMemoryModel(m, 'memory', clk, rst)
     memory.connect(ports, 'myaxi')
 
     uut = m.Instance(led, 'uut',

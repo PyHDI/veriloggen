@@ -40,20 +40,21 @@ def mkLed():
 
     pattern_a = to_pattern(shape, order)
     pattern_b = to_pattern(shape, order)
+    pattern_c = to_pattern(shape, order)
 
     def comp_stream(strm, offset):
         a = strm.read_pattern(ram_a, offset, pattern_a)
         b = strm.read_pattern(ram_b, offset, pattern_b)
-        sum, valid = strm.RegionAdd(a * b, size)
-        strm.write(ram_c, offset, 1, sum, when=valid)
+        sum = a + b
+        strm.write_pattern(ram_c, offset, sum, pattern_c)
 
     def comp_sequential(offset):
         sum = 0
         for i in range(size):
             a = ram_a.read(i + offset)
             b = ram_b.read(i + offset)
-            sum += a * b
-        ram_c.write(offset, sum)
+            sum = a + b
+            ram_c.write(i + offset, sum)
 
     def check(offset_stream, offset_seq):
         all_ok = True
