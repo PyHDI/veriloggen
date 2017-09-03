@@ -503,6 +503,160 @@ class SyncRAMManager(object):
         return self.read_dataflow_pattern(port, addr, pattern,
                                           cond=cond, point=point, signed=signed)
 
+    def read_dataflow_reuse(self, port, addr, length=1,
+                            stride=1,
+                            num_outputs=1, reuse_size=1,
+                            cond=None, point=0, signed=False):
+        """ 
+        @return data, last, done
+        """
+
+        data_valid = [self.m.TmpReg(initval=0) for _ in range(num_outputs)]
+        last_valid = self.m.TmpReg(initval=0)
+        data_ready = [self.m.TmpWire() for _ in range(num_outputs)]
+        last_ready = self.m.TmpWire()
+
+        for r in data_ready:
+            r.assign(1)
+        last_ready.assign(1)
+
+        data_ack = vtypes.Ands(*[vtypes.Ors(r, vtypes.Not(v))
+                                 for v, r in zip(data_valid, data_ready)])
+        last_ack = vtypes.Ors(last_ready, vtypes.Not(last_valid))
+
+        ext_cond = make_condition(cond)
+        data_cond = make_condition(data_ack, last_ack)
+
+        last = self.m.TmpReg(initval=0)
+
+        running = self.m.TmpReg(initval=0)
+        counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
+
+        if not isinstance(num_outputs, int):
+            raise TypeError('num_outputs must be int')
+
+        reuse_data = [self.m.TmpReg(self.datawidth, initval=0)
+                      for _ in range(num_outputs)]
+        next_reuse_data = [self.m.TmpReg(self.datawidth, initval=0)
+                           for _ in range(num_outputs)]
+        reuse_count = self.m.TmpReg(reuse_size.bit_length() + 1, initval=0)
+        fill_reuse_count = self.m.TmpReg(initval=0)
+        fetch_done = self.m.TmpReg(initval=0)
+
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        # initial state
+        fsm.If(ext_cond)(
+            self.interfaces[port].addr(addr - stride),
+            fetch_done(0),
+            counter(length)
+        )
+        fsm.If(ext_cond, length > 0).goto_next()
+
+        # initial prefetch state
+        for n in next_reuse_data:
+            fsm(
+                self.interfaces[port].addr(
+                    self.interfaces[port].addr + stride),
+                counter(vtypes.Mux(counter > 0, counter - 1, counter))
+            )
+            fsm.Delay(2)(
+                n(self.interfaces[port].rdata)
+            )
+            fsm.goto_next()
+
+        fsm.goto_next()
+        fsm.goto_next()
+
+        # initial update state
+        for n, r in zip(next_reuse_data, reuse_data):
+            fsm(
+                r(n)
+            )
+
+        fsm(
+            fill_reuse_count(1),
+            fetch_done(counter == 0)
+        )
+        fsm.Delay(1)(
+            fill_reuse_count(0)
+        )
+
+        fsm.goto_next()
+
+        # prefetch state
+        read_start_state = fsm.current
+
+        for n in next_reuse_data:
+            fsm(
+                self.interfaces[port].addr(
+                    self.interfaces[port].addr + stride),
+                counter(vtypes.Mux(counter > 0, counter - 1, counter))
+            )
+            fsm.Delay(2)(
+                n(self.interfaces[port].rdata)
+            )
+            fsm.goto_next()
+
+        fsm.goto_next()
+        fsm.goto_next()
+
+        # update state
+        for n, r in zip(next_reuse_data, reuse_data):
+            fsm.If(data_cond, reuse_count == 0)(
+                r(n)
+            )
+
+        fsm.If(data_cond, reuse_count == 0)(
+            fill_reuse_count(1),
+            fetch_done(counter == 0)
+        )
+        fsm.Delay(1)(
+            fill_reuse_count(0)
+        )
+
+        # next -> prefetch state or initial state
+        fsm.If(data_cond, reuse_count == 0, counter == 0).goto_init()
+        fsm.If(data_cond, reuse_count == 0, counter > 0).goto(read_start_state)
+
+        # output signal control
+        self.seq.If(data_cond, last_valid)(
+            last(0),
+            [d(0) for d in data_valid],
+            last_valid(0)
+        )
+
+        self.seq.If(fill_reuse_count, vtypes.Not(running), vtypes.Not(last))(
+            running(1)
+        )
+
+        self.seq.If(fill_reuse_count)(
+            reuse_count(reuse_size)
+        )
+
+        self.seq.If(data_cond, reuse_count > 0)(
+            reuse_count.dec(),
+            [d(1) for d in data_valid],
+            last_valid(1),
+            last(0)
+        )
+
+        self.seq.If(data_cond, reuse_count == 1, fetch_done)(
+            running(0),
+            last(1)
+        )
+
+        df = self.df if self.df is not None else dataflow
+
+        df_last = df.Variable(last, last_valid, last_ready, width=1)
+        done = last
+
+        df_reuse_data = [df.Variable(d, v, r,
+                                     width=self.datawidth, point=point, signed=signed)
+                         for d, v, r in zip(reuse_data, data_valid, data_ready)]
+
+        return tuple(df_reuse_data + [df_last, done])
+
     def write(self, port, addr, wdata, cond=None):
         """ 
         @return None
