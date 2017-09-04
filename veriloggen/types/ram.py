@@ -511,6 +511,9 @@ class SyncRAMManager(object):
         @return data, last, done
         """
 
+        if not isinstance(num_outputs, int):
+            raise TypeError('num_outputs must be int')
+
         data_valid = [self.m.TmpReg(initval=0) for _ in range(num_outputs)]
         last_valid = self.m.TmpReg(initval=0)
         data_ready = [self.m.TmpWire() for _ in range(num_outputs)]
@@ -527,18 +530,14 @@ class SyncRAMManager(object):
         ext_cond = make_condition(cond)
         data_cond = make_condition(data_ack, last_ack)
 
-        last = self.m.TmpReg(initval=0)
-
-        running = self.m.TmpReg(initval=0)
         counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
 
-        if not isinstance(num_outputs, int):
-            raise TypeError('num_outputs must be int')
-
+        last = self.m.TmpReg(initval=0)
         reuse_data = [self.m.TmpReg(self.datawidth, initval=0)
                       for _ in range(num_outputs)]
         next_reuse_data = [self.m.TmpReg(self.datawidth, initval=0)
                            for _ in range(num_outputs)]
+
         reuse_count = self.m.TmpReg(reuse_size.bit_length() + 1, initval=0)
         fill_reuse_count = self.m.TmpReg(initval=0)
         fetch_done = self.m.TmpReg(initval=0)
@@ -608,7 +607,7 @@ class SyncRAMManager(object):
             )
 
         fsm.If(data_cond, reuse_count == 0)(
-            fill_reuse_count(1),
+            fill_reuse_count(vtypes.Not(fetch_done)),
             fetch_done(counter == 0)
         )
         fsm.Delay(1)(
@@ -626,8 +625,299 @@ class SyncRAMManager(object):
             last_valid(0)
         )
 
-        self.seq.If(fill_reuse_count, vtypes.Not(running), vtypes.Not(last))(
-            running(1)
+        self.seq.If(fill_reuse_count)(
+            reuse_count(reuse_size)
+        )
+
+        self.seq.If(data_cond, reuse_count > 0)(
+            reuse_count.dec(),
+            [d(1) for d in data_valid],
+            last_valid(1),
+            last(0)
+        )
+
+        self.seq.If(data_cond, reuse_count == 1, fetch_done)(
+            last(1)
+        )
+
+        df = self.df if self.df is not None else dataflow
+
+        df_last = df.Variable(last, last_valid, last_ready, width=1)
+        done = last
+
+        df_reuse_data = [df.Variable(d, v, r,
+                                     width=self.datawidth, point=point, signed=signed)
+                         for d, v, r in zip(reuse_data, data_valid, data_ready)]
+
+        return tuple(df_reuse_data + [df_last, done])
+
+    def read_dataflow_reuse_pattern(self, port, addr, pattern,
+                                    reuse_size=1, num_outputs=1,
+                                    cond=None, point=0, signed=False):
+        """ 
+        @return data, last, done
+        """
+
+        if not isinstance(pattern, (tuple, list)):
+            raise TypeError('pattern must be list or tuple.')
+
+        if not pattern:
+            raise ValueError(
+                'pattern must have one (size, stride) pair at least.')
+
+        if not isinstance(pattern[0], (tuple, list)):
+            pattern = (pattern,)
+
+        if not isinstance(num_outputs, int):
+            raise TypeError('num_outputs must be int')
+
+        data_valid = [self.m.TmpReg(initval=0) for _ in range(num_outputs)]
+        last_valid = self.m.TmpReg(initval=0)
+        data_ready = [self.m.TmpWire() for _ in range(num_outputs)]
+        last_ready = self.m.TmpWire()
+
+        for r in data_ready:
+            r.assign(1)
+        last_ready.assign(1)
+
+        data_ack = vtypes.Ands(*[vtypes.Ors(r, vtypes.Not(v))
+                                 for v, r in zip(data_valid, data_ready)])
+        last_ack = vtypes.Ors(last_ready, vtypes.Not(last_valid))
+
+        ext_cond = make_condition(cond)
+        data_cond = make_condition(data_ack, last_ack)
+
+        next_addr = self.m.TmpWire(self.addrwidth)
+        offset_addr = self.m.TmpWire(self.addrwidth)
+        offsets = [self.m.TmpReg(self.addrwidth, initval=0)
+                   for _ in pattern[1:]]
+
+        offset_addr_value = addr
+        for offset in offsets:
+            offset_addr_value = offset + offset_addr_value
+        offset_addr.assign(offset_addr_value)
+
+        offsets.insert(0, None)
+
+        count_list = [self.m.TmpReg(out_size.bit_length() + 1, initval=0)
+                      for (out_size, out_stride) in pattern]
+
+        last = self.m.TmpReg(initval=0)
+        reuse_data = [self.m.TmpReg(self.datawidth, initval=0)
+                      for _ in range(num_outputs)]
+        next_reuse_data = [self.m.TmpReg(self.datawidth, initval=0)
+                           for _ in range(num_outputs)]
+
+        reuse_count = self.m.TmpReg(reuse_size.bit_length() + 1, initval=0)
+        fill_reuse_count = self.m.TmpReg(initval=0)
+
+        prefetch_done = self.m.TmpReg(initval=0)
+        fetch_done = self.m.TmpReg(initval=0)
+
+        update_addr = None
+        stride_value = None
+        carry = None
+
+        for offset, count, (out_size, out_stride) in zip(offsets, count_list, pattern):
+            if update_addr is None:
+                update_addr = count == 0
+            else:
+                update_addr = vtypes.Mux(carry, count == 0, update_addr)
+
+            if stride_value is None:
+                stride_value = out_stride
+            else:
+                stride_value = vtypes.Mux(carry, out_stride, stride_value)
+
+            if carry is None:
+                carry = out_size == 1
+            else:
+                carry = vtypes.Ands(carry, out_size == 1)
+
+        next_addr.assign(vtypes.Mux(update_addr, offset_addr,
+                                    self.interfaces[port].addr + stride_value))
+
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        # initial state
+        fsm.If(ext_cond)(
+            self.interfaces[port].addr(addr - stride_value),
+            prefetch_done(0),
+            fetch_done(0)
+        )
+
+        first = True
+        for offset, count, (out_size, out_stride) in zip(offsets, count_list, pattern):
+            fsm.If(ext_cond)(
+                count(out_size) if first else count(out_size - 1),
+            )
+            if offset is not None:
+                fsm.If(ext_cond)(
+                    offset(0)
+                )
+            first = False
+
+        fsm.If(ext_cond).goto_next()
+
+        # initial prefetch state
+        for n in next_reuse_data:
+            update_count = None
+            update_offset = None
+            last_one = None
+            carry = None
+
+            for offset, count, (out_size, out_stride) in zip(offsets, count_list, pattern):
+                fsm.If(update_count)(
+                    count.dec()
+                )
+                fsm.If(update_count, count == 0)(
+                    count(out_size - 1)
+                )
+                fsm(
+                    self.interfaces[port].addr(next_addr)
+                )
+                fsm.Delay(2)(
+                    n(self.interfaces[port].rdata)
+                )
+
+                if offset is not None:
+                    fsm.If(update_offset, vtypes.Not(carry))(
+                        offset(offset + out_stride)
+                    )
+                    fsm.If(update_offset, count == 0)(
+                        offset(0)
+                    )
+
+                if update_count is None:
+                    update_count = count == 0
+                else:
+                    update_count = vtypes.Ands(update_count, count == 0)
+
+                if update_offset is None:
+                    update_offset = vtypes.Mux(out_size == 1, 1, count == 1)
+                else:
+                    update_offset = vtypes.Ands(update_offset, count == carry)
+
+                if last_one is None:
+                    last_one = count == 0
+                else:
+                    last_one = vtypes.Ands(last_one, count == 0)
+
+                if carry is None:
+                    carry = out_size == 1
+                else:
+                    carry = vtypes.Ands(carry, out_size == 1)
+
+            fsm.goto_next()
+
+            fsm.If(last_one)(
+                prefetch_done(1)
+            )
+
+        fsm.goto_next()
+        fsm.goto_next()
+
+        # initial update state
+        for r, n in zip(reuse_data, next_reuse_data):
+            fsm(
+                r(n)
+            )
+
+        fsm(
+            fetch_done(prefetch_done),
+            fill_reuse_count(vtypes.Not(fetch_done))
+        )
+        fsm.Delay(1)(
+            fill_reuse_count(0)
+        )
+
+        fsm.goto_next()
+
+        # prefetch state
+        read_start_state = fsm.current
+
+        for n in next_reuse_data:
+            update_count = None
+            update_offset = None
+            last_one = None
+            carry = None
+
+            for offset, count, (out_size, out_stride) in zip(offsets, count_list, pattern):
+                fsm.If(update_count)(
+                    count.dec()
+                )
+                fsm.If(update_count, count == 0)(
+                    count(out_size - 1)
+                )
+                fsm(
+                    self.interfaces[port].addr(next_addr)
+                )
+                fsm.Delay(2)(
+                    n(self.interfaces[port].rdata)
+                )
+
+                if offset is not None:
+                    fsm.If(update_offset, vtypes.Not(carry))(
+                        offset(offset + out_stride)
+                    )
+                    fsm.If(update_offset, count == 0)(
+                        offset(0)
+                    )
+
+                if update_count is None:
+                    update_count = count == 0
+                else:
+                    update_count = vtypes.Ands(update_count, count == 0)
+
+                if update_offset is None:
+                    update_offset = vtypes.Mux(out_size == 1, 1, count == 1)
+                else:
+                    update_offset = vtypes.Ands(update_offset, count == carry)
+
+                if last_one is None:
+                    last_one = count == 0
+                else:
+                    last_one = vtypes.Ands(last_one, count == 0)
+
+                if carry is None:
+                    carry = out_size == 1
+                else:
+                    carry = vtypes.Ands(carry, out_size == 1)
+
+            fsm.goto_next()
+
+            fsm.If(last_one)(
+                prefetch_done(1)
+            )
+
+        fsm.goto_next()
+        fsm.goto_next()
+
+        # update state
+        for r, n in zip(reuse_data, next_reuse_data):
+            fsm.If(data_cond, reuse_count == 0)(
+                r(n)
+            )
+
+        fsm.If(data_cond, reuse_count == 0)(
+            fetch_done(prefetch_done),
+            fill_reuse_count(vtypes.Not(fetch_done))
+        )
+        fsm.Delay(1)(
+            fill_reuse_count(0)
+        )
+
+        # next -> prefetch state or initial state
+        fsm.If(data_cond, reuse_count == 0,
+               fetch_done).goto_init()
+        fsm.If(data_cond, reuse_count == 0,
+               vtypes.Not(fetch_done)).goto(read_start_state)
+
+        # output signal control
+        self.seq.If(data_cond, last_valid)(
+            last(0),
+            [d(0) for d in data_valid],
+            last_valid(0)
         )
 
         self.seq.If(fill_reuse_count)(
@@ -642,7 +932,6 @@ class SyncRAMManager(object):
         )
 
         self.seq.If(data_cond, reuse_count == 1, fetch_done)(
-            running(0),
             last(1)
         )
 
@@ -656,6 +945,21 @@ class SyncRAMManager(object):
                          for d, v, r in zip(reuse_data, data_valid, data_ready)]
 
         return tuple(df_reuse_data + [df_last, done])
+
+    def read_dataflow_reuse_multidim(self, port, addr, shape, order=None,
+                                     reuse_size=1, num_outputs=1,
+                                     cond=None, point=0, signed=False):
+        """ 
+        @return data, last, done
+        """
+
+        if order is None:
+            order = list(range(len(shape)))
+
+        pattern = self._to_pattern(shape, order)
+        return self.read_dataflow_pattern(port, addr, pattern,
+                                          reuse_size, num_outputs,
+                                          cond=cond, point=point, signed=signed)
 
     def write(self, port, addr, wdata, cond=None):
         """ 
