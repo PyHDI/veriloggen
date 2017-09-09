@@ -203,6 +203,12 @@ class SyncRAMManager(object):
     def __getitem__(self, index):
         return self.interfaces[index]
 
+    @property
+    def length(self):
+        if isinstance(self.addrwidth, int):
+            return 2 ** self.addrwidth
+        return vtypes.Int(2) ** self.addrwidth
+
     def disable_write(self, port):
         self.seq(
             self.interfaces[port].wdata(0),
