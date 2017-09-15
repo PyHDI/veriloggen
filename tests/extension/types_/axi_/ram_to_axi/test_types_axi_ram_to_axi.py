@@ -472,6 +472,7 @@ module main
         myram_0_addr <= 0;
         _tmp_18 <= 63;
         _tmp_14 <= 1;
+        _tmp_16 <= 0;
       end 
       if((_tmp_9 || !_tmp_7) && (_tmp_10 || !_tmp_8) && (_tmp_18 > 0)) begin
         myram_0_addr <= myram_0_addr + 1;

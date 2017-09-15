@@ -949,6 +949,7 @@ module blinkled
         myram_0_addr <= _tmp_1;
         _tmp_18 <= _tmp_3 - 1;
         _tmp_14 <= 1;
+        _tmp_16 <= _tmp_3 == 1;
       end 
       if((_tmp_9 || !_tmp_7) && (_tmp_10 || !_tmp_8) && (_tmp_18 > 0)) begin
         myram_0_addr <= myram_0_addr + 1;
@@ -985,6 +986,7 @@ module blinkled
         myram_0_addr <= _tmp_28;
         _tmp_45 <= _tmp_30 - 1;
         _tmp_41 <= 1;
+        _tmp_43 <= _tmp_30 == 1;
       end 
       if((_tmp_36 || !_tmp_34) && (_tmp_37 || !_tmp_35) && (_tmp_45 > 0)) begin
         myram_0_addr <= myram_0_addr + 1;

@@ -1012,6 +1012,7 @@ module blinkled
         ram_a_0_addr <= _th_comp_offset_1;
         _tmp_39 <= _th_comp_size_0 - 1;
         _tmp_35 <= 1;
+        _tmp_37 <= _th_comp_size_0 == 1;
       end 
       if((_tmp_30 || !_tmp_28) && (_tmp_31 || !_tmp_29) && (_tmp_39 > 0)) begin
         ram_a_0_addr <= ram_a_0_addr + _th_comp_stride_2;
@@ -1119,6 +1120,7 @@ module blinkled
         ram_b_0_addr <= _th_comp_offset_1;
         _tmp_51 <= _th_comp_size_0 - 1;
         _tmp_47 <= 1;
+        _tmp_49 <= _th_comp_size_0 == 1;
       end 
       if((_tmp_42 || !_tmp_40) && (_tmp_43 || !_tmp_41) && (_tmp_51 > 0)) begin
         ram_b_0_addr <= ram_b_0_addr + _th_comp_stride_2;
@@ -1243,6 +1245,7 @@ module blinkled
         ram_c_0_addr <= _tmp_57;
         _tmp_74 <= _tmp_59 - 1;
         _tmp_70 <= 1;
+        _tmp_72 <= _tmp_59 == 1;
       end 
       if((_tmp_65 || !_tmp_63) && (_tmp_66 || !_tmp_64) && (_tmp_74 > 0)) begin
         ram_c_0_addr <= ram_c_0_addr + 1;
@@ -1279,6 +1282,7 @@ module blinkled
         ram_c_0_addr <= _tmp_111;
         _tmp_128 <= _tmp_113 - 1;
         _tmp_124 <= 1;
+        _tmp_126 <= _tmp_113 == 1;
       end 
       if((_tmp_119 || !_tmp_117) && (_tmp_120 || !_tmp_118) && (_tmp_128 > 0)) begin
         ram_c_0_addr <= ram_c_0_addr + 1;

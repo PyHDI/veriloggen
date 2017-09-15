@@ -799,6 +799,7 @@ module main
         ram_a_0_addr <= 0;
         _tmp_35 <= 63;
         _tmp_31 <= 1;
+        _tmp_33 <= 0;
       end 
       if((_tmp_26 || !_tmp_24) && (_tmp_27 || !_tmp_25) && (_tmp_35 > 0)) begin
         ram_a_0_addr <= ram_a_0_addr + 1;
@@ -895,6 +896,7 @@ module main
         ram_b_0_addr <= 0;
         _tmp_47 <= 63;
         _tmp_43 <= 1;
+        _tmp_45 <= 0;
       end 
       if((_tmp_38 || !_tmp_36) && (_tmp_39 || !_tmp_37) && (_tmp_47 > 0)) begin
         ram_b_0_addr <= ram_b_0_addr + 1;
@@ -965,6 +967,7 @@ module main
         ram_c_0_addr <= 0;
         _tmp_65 <= 63;
         _tmp_61 <= 1;
+        _tmp_63 <= 0;
       end 
       if((_tmp_56 || !_tmp_54) && (_tmp_57 || !_tmp_55) && (_tmp_65 > 0)) begin
         ram_c_0_addr <= ram_c_0_addr + 1;

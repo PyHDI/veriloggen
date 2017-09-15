@@ -747,6 +747,7 @@ module blinkled
         ram_a_0_addr <= 0;
         _tmp_37 <= _th_matmul_matrix_size_5 - 1;
         _tmp_33 <= 1;
+        _tmp_35 <= _th_matmul_matrix_size_5 == 1;
       end 
       if((_tmp_28 || !_tmp_26) && (_tmp_29 || !_tmp_27) && (_tmp_37 > 0)) begin
         ram_a_0_addr <= ram_a_0_addr + 1;
@@ -817,6 +818,7 @@ module blinkled
         ram_b_0_addr <= 0;
         _tmp_49 <= _th_matmul_matrix_size_5 - 1;
         _tmp_45 <= 1;
+        _tmp_47 <= _th_matmul_matrix_size_5 == 1;
       end 
       if((_tmp_40 || !_tmp_38) && (_tmp_41 || !_tmp_39) && (_tmp_49 > 0)) begin
         ram_b_0_addr <= ram_b_0_addr + 1;
@@ -905,6 +907,7 @@ module blinkled
         ram_c_0_addr <= _tmp_55;
         _tmp_72 <= _tmp_57 - 1;
         _tmp_68 <= 1;
+        _tmp_70 <= _tmp_57 == 1;
       end 
       if((_tmp_63 || !_tmp_61) && (_tmp_64 || !_tmp_62) && (_tmp_72 > 0)) begin
         ram_c_0_addr <= ram_c_0_addr + 1;

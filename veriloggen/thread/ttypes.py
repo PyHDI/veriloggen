@@ -710,6 +710,7 @@ class MultibankRAM(object):
             reg_addr(addr),
             counter(length - 1),
             next_valid_on(1),
+            next_last(length == 1)
         )
 
         for ram in self.rams:

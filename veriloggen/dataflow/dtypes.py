@@ -2776,7 +2776,8 @@ def _from_vtypes_value(value):
         return Str(value.value)
 
     if isinstance(value, vtypes._Numeric):
-        return Variable(value)
+        #return Variable(value)
+        return ParameterVariable(value)
 
     raise TypeError("Unsupported type '%s'" % str(type(value)))
 

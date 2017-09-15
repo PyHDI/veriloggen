@@ -1972,6 +1972,7 @@ module blinkled
         myram_0_0_addr <= _tmp_65;
         _tmp_82 <= _tmp_67 - 1;
         _tmp_78 <= 1;
+        _tmp_80 <= _tmp_67 == 1;
       end 
       if((_tmp_73 || !_tmp_71) && (_tmp_74 || !_tmp_72) && (_tmp_82 > 0)) begin
         myram_0_0_addr <= myram_0_0_addr + 1;
@@ -2008,6 +2009,7 @@ module blinkled
         myram_0_0_addr <= _tmp_173;
         _tmp_190 <= _tmp_175 - 1;
         _tmp_186 <= 1;
+        _tmp_188 <= _tmp_175 == 1;
       end 
       if((_tmp_181 || !_tmp_179) && (_tmp_182 || !_tmp_180) && (_tmp_190 > 0)) begin
         myram_0_0_addr <= myram_0_0_addr + 1;
@@ -2044,6 +2046,7 @@ module blinkled
         myram_0_0_addr <= _tmp_231;
         _tmp_248 <= _tmp_233 - 1;
         _tmp_244 <= 1;
+        _tmp_246 <= _tmp_233 == 1;
       end 
       if((_tmp_239 || !_tmp_237) && (_tmp_240 || !_tmp_238) && (_tmp_248 > 0)) begin
         myram_0_0_addr <= myram_0_0_addr + 1;
@@ -2281,6 +2284,7 @@ module blinkled
         myram_1_0_addr <= _tmp_92;
         _tmp_109 <= _tmp_94 - 1;
         _tmp_105 <= 1;
+        _tmp_107 <= _tmp_94 == 1;
       end 
       if((_tmp_100 || !_tmp_98) && (_tmp_101 || !_tmp_99) && (_tmp_109 > 0)) begin
         myram_1_0_addr <= myram_1_0_addr + 1;
@@ -2317,6 +2321,7 @@ module blinkled
         myram_1_0_addr <= _tmp_173;
         _tmp_202 <= _tmp_175 - 1;
         _tmp_198 <= 1;
+        _tmp_200 <= _tmp_175 == 1;
       end 
       if((_tmp_193 || !_tmp_191) && (_tmp_194 || !_tmp_192) && (_tmp_202 > 0)) begin
         myram_1_0_addr <= myram_1_0_addr + 1;
@@ -2353,6 +2358,7 @@ module blinkled
         myram_1_0_addr <= _tmp_231;
         _tmp_260 <= _tmp_233 - 1;
         _tmp_256 <= 1;
+        _tmp_258 <= _tmp_233 == 1;
       end 
       if((_tmp_251 || !_tmp_249) && (_tmp_252 || !_tmp_250) && (_tmp_260 > 0)) begin
         myram_1_0_addr <= myram_1_0_addr + 1;
@@ -2526,6 +2532,7 @@ module blinkled
         myram_2_0_addr <= _tmp_119;
         _tmp_136 <= _tmp_121 - 1;
         _tmp_132 <= 1;
+        _tmp_134 <= _tmp_121 == 1;
       end 
       if((_tmp_127 || !_tmp_125) && (_tmp_128 || !_tmp_126) && (_tmp_136 > 0)) begin
         myram_2_0_addr <= myram_2_0_addr + 1;
@@ -2562,6 +2569,7 @@ module blinkled
         myram_2_0_addr <= _tmp_173;
         _tmp_214 <= _tmp_175 - 1;
         _tmp_210 <= 1;
+        _tmp_212 <= _tmp_175 == 1;
       end 
       if((_tmp_205 || !_tmp_203) && (_tmp_206 || !_tmp_204) && (_tmp_214 > 0)) begin
         myram_2_0_addr <= myram_2_0_addr + 1;
@@ -2598,6 +2606,7 @@ module blinkled
         myram_2_0_addr <= _tmp_231;
         _tmp_272 <= _tmp_233 - 1;
         _tmp_268 <= 1;
+        _tmp_270 <= _tmp_233 == 1;
       end 
       if((_tmp_263 || !_tmp_261) && (_tmp_264 || !_tmp_262) && (_tmp_272 > 0)) begin
         myram_2_0_addr <= myram_2_0_addr + 1;
@@ -2771,6 +2780,7 @@ module blinkled
         myram_3_0_addr <= _tmp_146;
         _tmp_163 <= _tmp_148 - 1;
         _tmp_159 <= 1;
+        _tmp_161 <= _tmp_148 == 1;
       end 
       if((_tmp_154 || !_tmp_152) && (_tmp_155 || !_tmp_153) && (_tmp_163 > 0)) begin
         myram_3_0_addr <= myram_3_0_addr + 1;
@@ -2807,6 +2817,7 @@ module blinkled
         myram_3_0_addr <= _tmp_173;
         _tmp_226 <= _tmp_175 - 1;
         _tmp_222 <= 1;
+        _tmp_224 <= _tmp_175 == 1;
       end 
       if((_tmp_217 || !_tmp_215) && (_tmp_218 || !_tmp_216) && (_tmp_226 > 0)) begin
         myram_3_0_addr <= myram_3_0_addr + 1;
@@ -2843,6 +2854,7 @@ module blinkled
         myram_3_0_addr <= _tmp_231;
         _tmp_284 <= _tmp_233 - 1;
         _tmp_280 <= 1;
+        _tmp_282 <= _tmp_233 == 1;
       end 
       if((_tmp_275 || !_tmp_273) && (_tmp_276 || !_tmp_274) && (_tmp_284 > 0)) begin
         myram_3_0_addr <= myram_3_0_addr + 1;

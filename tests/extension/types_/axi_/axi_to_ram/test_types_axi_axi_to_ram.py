@@ -378,6 +378,7 @@ module main
         myram_0_addr <= 0;
         _tmp_17 <= 63;
         _tmp_13 <= 1;
+        _tmp_15 <= 0;
       end 
       if((_tmp_8 || !_tmp_6) && (_tmp_9 || !_tmp_7) && (_tmp_17 > 0)) begin
         myram_0_addr <= myram_0_addr + 1;

@@ -1115,6 +1115,7 @@ module blinkled
         myram_0_addr <= _tmp_1;
         _tmp_18 <= _tmp_3 - 1;
         _tmp_14 <= 1;
+        _tmp_16 <= _tmp_3 == 1;
       end 
       if((_tmp_9 || !_tmp_7) && (_tmp_10 || !_tmp_8) && (_tmp_18 > 0)) begin
         myram_0_addr <= myram_0_addr + 2;
@@ -1145,6 +1146,7 @@ module blinkled
         myram_0_addr <= _tmp_23;
         _tmp_41 <= _tmp_25 - 1;
         _tmp_37 <= 1;
+        _tmp_39 <= _tmp_25 == 1;
       end 
       if((_tmp_32 || !_tmp_30) && (_tmp_33 || !_tmp_31) && (_tmp_41 > 0)) begin
         myram_0_addr <= myram_0_addr + _tmp_26;
@@ -1181,6 +1183,7 @@ module blinkled
         myram_0_addr <= _tmp_46;
         _tmp_63 <= _tmp_48 - 1;
         _tmp_59 <= 1;
+        _tmp_61 <= _tmp_48 == 1;
       end 
       if((_tmp_54 || !_tmp_52) && (_tmp_55 || !_tmp_53) && (_tmp_63 > 0)) begin
         myram_0_addr <= myram_0_addr + 2;
@@ -1211,6 +1214,7 @@ module blinkled
         myram_0_addr <= _tmp_68;
         _tmp_86 <= _tmp_70 - 1;
         _tmp_82 <= 1;
+        _tmp_84 <= _tmp_70 == 1;
       end 
       if((_tmp_77 || !_tmp_75) && (_tmp_78 || !_tmp_76) && (_tmp_86 > 0)) begin
         myram_0_addr <= myram_0_addr + _tmp_71;

@@ -308,6 +308,7 @@ class SyncRAMManager(object):
             self.interfaces[port].addr(addr),
             counter(length - 1),
             next_valid_on(1),
+            next_last(length == 1)
         )
 
         self.seq.If(data_cond, counter > 0)(

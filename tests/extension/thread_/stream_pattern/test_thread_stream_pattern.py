@@ -1419,6 +1419,7 @@ module blinkled
         ram_c_0_addr <= _tmp_74;
         _tmp_91 <= _tmp_76 - 1;
         _tmp_87 <= 1;
+        _tmp_89 <= _tmp_76 == 1;
       end 
       if((_tmp_82 || !_tmp_80) && (_tmp_83 || !_tmp_81) && (_tmp_91 > 0)) begin
         ram_c_0_addr <= ram_c_0_addr + 1;
@@ -1455,6 +1456,7 @@ module blinkled
         ram_c_0_addr <= _tmp_126;
         _tmp_143 <= _tmp_128 - 1;
         _tmp_139 <= 1;
+        _tmp_141 <= _tmp_128 == 1;
       end 
       if((_tmp_134 || !_tmp_132) && (_tmp_135 || !_tmp_133) && (_tmp_143 > 0)) begin
         ram_c_0_addr <= ram_c_0_addr + 1;

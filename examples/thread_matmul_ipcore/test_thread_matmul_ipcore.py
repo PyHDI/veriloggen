@@ -1413,6 +1413,7 @@ module blinkled
         ram_c_0_addr <= _tmp_39;
         _tmp_56 <= _tmp_41 - 1;
         _tmp_52 <= 1;
+        _tmp_54 <= _tmp_41 == 1;
       end 
       if((_tmp_47 || !_tmp_45) && (_tmp_48 || !_tmp_46) && (_tmp_56 > 0)) begin
         ram_c_0_addr <= ram_c_0_addr + 1;

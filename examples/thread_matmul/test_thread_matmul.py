@@ -807,6 +807,7 @@ module blinkled
         ram_c_0_addr <= _tmp_30;
         _tmp_47 <= _tmp_32 - 1;
         _tmp_43 <= 1;
+        _tmp_45 <= _tmp_32 == 1;
       end 
       if((_tmp_38 || !_tmp_36) && (_tmp_39 || !_tmp_37) && (_tmp_47 > 0)) begin
         ram_c_0_addr <= ram_c_0_addr + 1;
