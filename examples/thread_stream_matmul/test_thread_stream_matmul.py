@@ -549,9 +549,15 @@ module blinkled
   reg __tmp_fsm_1_cond_4_0_1;
   reg _tmp_25;
   reg __tmp_fsm_1_cond_5_1_1;
-  reg _strm_madd_flag_14;
-  reg [32-1:0] _strm_madd_fsm_15;
-  localparam _strm_madd_fsm_15_init = 0;
+  reg [32-1:0] strm_madd;
+  localparam strm_madd_init = 0;
+  reg _strm_madd_start_cond;
+  reg _strm_madd_called;
+  reg signed [32-1:0] _strm_madd_size_14;
+  reg signed [32-1:0] _strm_madd_waddr_15;
+  reg _strm_madd_flag_16;
+  reg [32-1:0] _strm_madd_fsm_17;
+  localparam _strm_madd_fsm_17_init = 0;
   reg _tmp_26;
   reg _tmp_27;
   wire _tmp_28;
@@ -569,9 +575,9 @@ module blinkled
   reg _tmp_35;
   reg _tmp_36;
   reg [33-1:0] _tmp_37;
-  reg _strm_madd_flag_16;
-  reg [32-1:0] _strm_madd_fsm_17;
-  localparam _strm_madd_fsm_17_init = 0;
+  reg _strm_madd_flag_18;
+  reg [32-1:0] _strm_madd_fsm_19;
+  localparam _strm_madd_fsm_19_init = 0;
   reg _tmp_38;
   reg _tmp_39;
   wire _tmp_40;
@@ -589,9 +595,9 @@ module blinkled
   reg _tmp_47;
   reg _tmp_48;
   reg [33-1:0] _tmp_49;
-  reg _strm_madd_flag_18;
-  reg [32-1:0] _strm_madd_fsm_19;
-  localparam _strm_madd_fsm_19_init = 0;
+  reg _strm_madd_flag_20;
+  reg [32-1:0] _strm_madd_fsm_21;
+  localparam _strm_madd_fsm_21_init = 0;
   reg [2-1:0] _tmp_50;
   reg _tmp_51;
   wire _tmp_all_valid_52;
@@ -641,15 +647,15 @@ module blinkled
   reg _tmp_76;
   reg [32-1:0] _d1__tmp_fsm_2;
   reg __tmp_fsm_2_cond_5_0_1;
-  reg signed [32-1:0] _th_matmul_end_time_20;
-  reg signed [32-1:0] _th_matmul_time_21;
-  reg signed [32-1:0] _th_matmul_matrix_size_22;
-  reg signed [32-1:0] _th_matmul_a_offset_23;
-  reg signed [32-1:0] _th_matmul_b_offset_24;
-  reg signed [32-1:0] _th_matmul_c_offset_25;
-  reg signed [32-1:0] _th_matmul_all_ok_26;
-  reg signed [32-1:0] _th_matmul_c_addr_27;
-  reg signed [32-1:0] _th_matmul_i_28;
+  reg signed [32-1:0] _th_matmul_end_time_22;
+  reg signed [32-1:0] _th_matmul_time_23;
+  reg signed [32-1:0] _th_matmul_matrix_size_24;
+  reg signed [32-1:0] _th_matmul_a_offset_25;
+  reg signed [32-1:0] _th_matmul_b_offset_26;
+  reg signed [32-1:0] _th_matmul_c_offset_27;
+  reg signed [32-1:0] _th_matmul_all_ok_28;
+  reg signed [32-1:0] _th_matmul_c_addr_29;
+  reg signed [32-1:0] _th_matmul_i_30;
   reg [10-1:0] _tmp_77;
   reg [32-1:0] _tmp_78;
   reg [32-1:0] _tmp_79;
@@ -674,13 +680,13 @@ module blinkled
   reg __tmp_fsm_3_cond_4_0_1;
   reg _tmp_89;
   reg __tmp_fsm_3_cond_5_1_1;
-  reg signed [32-1:0] _th_matmul_j_29;
+  reg signed [32-1:0] _th_matmul_j_31;
   reg _tmp_90;
   reg _ram_c_cond_2_1;
   reg _ram_c_cond_3_1;
   reg _ram_c_cond_3_2;
   reg signed [32-1:0] _tmp_91;
-  reg signed [32-1:0] _th_matmul_v_30;
+  reg signed [32-1:0] _th_matmul_v_32;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -743,11 +749,11 @@ module blinkled
         _tmp_33 <= 0;
         _tmp_34 <= 1;
       end 
-      if((_strm_madd_fsm_15 == 1) && (_tmp_37 == 0) && !_tmp_35 && !_tmp_36) begin
+      if((_strm_madd_fsm_17 == 1) && (_tmp_37 == 0) && !_tmp_35 && !_tmp_36) begin
         ram_a_0_addr <= 0;
-        _tmp_37 <= _th_matmul_matrix_size_5 - 1;
+        _tmp_37 <= _strm_madd_size_14 - 1;
         _tmp_33 <= 1;
-        _tmp_35 <= _th_matmul_matrix_size_5 == 1;
+        _tmp_35 <= _strm_madd_size_14 == 1;
       end 
       if((_tmp_28 || !_tmp_26) && (_tmp_29 || !_tmp_27) && (_tmp_37 > 0)) begin
         ram_a_0_addr <= ram_a_0_addr + 1;
@@ -814,11 +820,11 @@ module blinkled
         _tmp_45 <= 0;
         _tmp_46 <= 1;
       end 
-      if((_strm_madd_fsm_17 == 1) && (_tmp_49 == 0) && !_tmp_47 && !_tmp_48) begin
+      if((_strm_madd_fsm_19 == 1) && (_tmp_49 == 0) && !_tmp_47 && !_tmp_48) begin
         ram_b_0_addr <= 0;
-        _tmp_49 <= _th_matmul_matrix_size_5 - 1;
+        _tmp_49 <= _strm_madd_size_14 - 1;
         _tmp_45 <= 1;
-        _tmp_47 <= _th_matmul_matrix_size_5 == 1;
+        _tmp_47 <= _strm_madd_size_14 == 1;
       end 
       if((_tmp_40 || !_tmp_38) && (_tmp_41 || !_tmp_39) && (_tmp_49 > 0)) begin
         ram_b_0_addr <= ram_b_0_addr + 1;
@@ -873,8 +879,8 @@ module blinkled
         _tmp_90 <= 1;
       end 
       _ram_c_cond_3_2 <= _ram_c_cond_3_1;
-      if((_strm_madd_fsm_19 == 1) && (_tmp_50 == 0)) begin
-        ram_c_0_addr <= _th_matmul_j_13 - 1;
+      if((_strm_madd_fsm_21 == 1) && (_tmp_50 == 0)) begin
+        ram_c_0_addr <= _strm_madd_waddr_15 - 1;
         _tmp_50 <= 1;
       end 
       if(_tmp_data_54 && (_tmp_valid_53 && ((_tmp_50 > 0) && !_tmp_51 && _tmp_all_valid_52)) && (_tmp_50 > 0)) begin
@@ -932,11 +938,11 @@ module blinkled
         _tmp_86 <= 1;
       end 
       _ram_c_cond_1_1 <= 1;
-      if(th_matmul == 34) begin
-        ram_c_0_addr <= _th_matmul_j_29;
+      if(th_matmul == 35) begin
+        ram_c_0_addr <= _th_matmul_j_31;
       end 
-      _ram_c_cond_2_1 <= th_matmul == 34;
-      _ram_c_cond_3_1 <= th_matmul == 34;
+      _ram_c_cond_2_1 <= th_matmul == 35;
+      _ram_c_cond_3_1 <= th_matmul == 35;
     end
   end
 
@@ -1203,7 +1209,7 @@ module blinkled
       _tmp_valid_110 <= 0;
     end else begin
       if((_tmp_ready_92 || !_tmp_valid_92) && 1 && 1) begin
-        _tmp_data_92 <= (_tmp_data_92 >= _th_matmul_matrix_size_5 - 1)? 0 : _tmp_data_92 + 2'sd1;
+        _tmp_data_92 <= (_tmp_data_92 >= _strm_madd_size_14 - 1)? 0 : _tmp_data_92 + 2'sd1;
       end 
       if(_tmp_valid_92 && _tmp_ready_92) begin
         _tmp_valid_92 <= 0;
@@ -1218,7 +1224,7 @@ module blinkled
         _tmp_valid_reg_93 <= _tmp_ovalid_93;
       end 
       if((_tmp_ready_94 || !_tmp_valid_94) && _tmp_ready_92 && _tmp_valid_92) begin
-        _tmp_data_94 <= _tmp_data_92 == _th_matmul_matrix_size_5 - 1;
+        _tmp_data_94 <= _tmp_data_92 == _strm_madd_size_14 - 1;
       end 
       if(_tmp_valid_94 && _tmp_ready_94) begin
         _tmp_valid_94 <= 0;
@@ -1413,6 +1419,7 @@ module blinkled
   localparam th_matmul_47 = 47;
   localparam th_matmul_48 = 48;
   localparam th_matmul_49 = 49;
+  localparam th_matmul_50 = 50;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -1440,21 +1447,21 @@ module blinkled
       _tmp_55 <= 0;
       _tmp_56 <= 0;
       _tmp_57 <= 0;
-      _th_matmul_end_time_20 <= 0;
-      _th_matmul_time_21 <= 0;
-      _th_matmul_matrix_size_22 <= 0;
-      _th_matmul_a_offset_23 <= 0;
-      _th_matmul_b_offset_24 <= 0;
-      _th_matmul_c_offset_25 <= 0;
-      _th_matmul_all_ok_26 <= 0;
-      _th_matmul_c_addr_27 <= 0;
-      _th_matmul_i_28 <= 0;
+      _th_matmul_end_time_22 <= 0;
+      _th_matmul_time_23 <= 0;
+      _th_matmul_matrix_size_24 <= 0;
+      _th_matmul_a_offset_25 <= 0;
+      _th_matmul_b_offset_26 <= 0;
+      _th_matmul_c_offset_27 <= 0;
+      _th_matmul_all_ok_28 <= 0;
+      _th_matmul_c_addr_29 <= 0;
+      _th_matmul_i_30 <= 0;
       _tmp_77 <= 0;
       _tmp_78 <= 0;
       _tmp_79 <= 0;
-      _th_matmul_j_29 <= 0;
+      _th_matmul_j_31 <= 0;
       _tmp_91 <= 0;
-      _th_matmul_v_30 <= 0;
+      _th_matmul_v_32 <= 0;
     end else begin
       case(th_matmul)
         th_matmul_init: begin
@@ -1488,7 +1495,7 @@ module blinkled
           if(_th_matmul_i_11 < _th_matmul_matrix_size_5) begin
             th_matmul <= th_matmul_6;
           end else begin
-            th_matmul <= th_matmul_22;
+            th_matmul <= th_matmul_23;
           end
         end
         th_matmul_6: begin
@@ -1514,7 +1521,7 @@ module blinkled
           if(_th_matmul_j_13 < _th_matmul_matrix_size_5) begin
             th_matmul <= th_matmul_11;
           end else begin
-            th_matmul <= th_matmul_17;
+            th_matmul <= th_matmul_18;
           end
         end
         th_matmul_11: begin
@@ -1532,172 +1539,175 @@ module blinkled
           th_matmul <= th_matmul_14;
         end
         th_matmul_14: begin
-          if(_strm_madd_flag_14 && _strm_madd_flag_16 && _strm_madd_flag_18) begin
-            th_matmul <= th_matmul_15;
-          end 
+          th_matmul <= th_matmul_15;
         end
         th_matmul_15: begin
-          _th_matmul_b_addr_12 <= _th_matmul_b_addr_12 + (_th_matmul_matrix_size_5 << 2);
-          th_matmul <= th_matmul_16;
+          if(_strm_madd_flag_16 && _strm_madd_flag_18 && _strm_madd_flag_20) begin
+            th_matmul <= th_matmul_16;
+          end 
         end
         th_matmul_16: begin
+          _th_matmul_b_addr_12 <= _th_matmul_b_addr_12 + (_th_matmul_matrix_size_5 << 2);
+          th_matmul <= th_matmul_17;
+        end
+        th_matmul_17: begin
           _th_matmul_j_13 <= _th_matmul_j_13 + 1;
           th_matmul <= th_matmul_10;
         end
-        th_matmul_17: begin
+        th_matmul_18: begin
           _tmp_55 <= 0;
           _tmp_56 <= _th_matmul_c_addr_10;
           _tmp_57 <= _th_matmul_matrix_size_5;
-          th_matmul <= th_matmul_18;
-        end
-        th_matmul_18: begin
-          if(_tmp_76) begin
-            th_matmul <= th_matmul_19;
-          end 
+          th_matmul <= th_matmul_19;
         end
         th_matmul_19: begin
-          _th_matmul_a_addr_9 <= _th_matmul_a_addr_9 + (_th_matmul_matrix_size_5 << 2);
-          th_matmul <= th_matmul_20;
+          if(_tmp_76) begin
+            th_matmul <= th_matmul_20;
+          end 
         end
         th_matmul_20: begin
-          _th_matmul_c_addr_10 <= _th_matmul_c_addr_10 + (_th_matmul_matrix_size_5 << 2);
+          _th_matmul_a_addr_9 <= _th_matmul_a_addr_9 + (_th_matmul_matrix_size_5 << 2);
           th_matmul <= th_matmul_21;
         end
         th_matmul_21: begin
+          _th_matmul_c_addr_10 <= _th_matmul_c_addr_10 + (_th_matmul_matrix_size_5 << 2);
+          th_matmul <= th_matmul_22;
+        end
+        th_matmul_22: begin
           _th_matmul_i_11 <= _th_matmul_i_11 + 1;
           th_matmul <= th_matmul_5;
         end
-        th_matmul_22: begin
-          _th_matmul_end_time_20 <= timer;
-          th_matmul <= th_matmul_23;
-        end
         th_matmul_23: begin
-          _th_matmul_time_21 <= _th_matmul_end_time_20 - _th_matmul_start_time_4;
+          _th_matmul_end_time_22 <= timer;
           th_matmul <= th_matmul_24;
         end
         th_matmul_24: begin
-          $display("Time (cycles): %d", _th_matmul_time_21);
+          _th_matmul_time_23 <= _th_matmul_end_time_22 - _th_matmul_start_time_4;
           th_matmul <= th_matmul_25;
         end
         th_matmul_25: begin
-          _th_matmul_matrix_size_22 <= _th_matmul_matrix_size_0;
-          _th_matmul_a_offset_23 <= _th_matmul_a_offset_1;
-          _th_matmul_b_offset_24 <= _th_matmul_b_offset_2;
-          _th_matmul_c_offset_25 <= _th_matmul_c_offset_3;
+          $display("Time (cycles): %d", _th_matmul_time_23);
           th_matmul <= th_matmul_26;
         end
         th_matmul_26: begin
-          _th_matmul_all_ok_26 <= 1;
+          _th_matmul_matrix_size_24 <= _th_matmul_matrix_size_0;
+          _th_matmul_a_offset_25 <= _th_matmul_a_offset_1;
+          _th_matmul_b_offset_26 <= _th_matmul_b_offset_2;
+          _th_matmul_c_offset_27 <= _th_matmul_c_offset_3;
           th_matmul <= th_matmul_27;
         end
         th_matmul_27: begin
-          _th_matmul_c_addr_27 <= _th_matmul_c_offset_25;
+          _th_matmul_all_ok_28 <= 1;
           th_matmul <= th_matmul_28;
         end
         th_matmul_28: begin
-          _th_matmul_i_28 <= 0;
+          _th_matmul_c_addr_29 <= _th_matmul_c_offset_27;
           th_matmul <= th_matmul_29;
         end
         th_matmul_29: begin
-          if(_th_matmul_i_28 < _th_matmul_matrix_size_22) begin
-            th_matmul <= th_matmul_30;
-          end else begin
-            th_matmul <= th_matmul_45;
-          end
+          _th_matmul_i_30 <= 0;
+          th_matmul <= th_matmul_30;
         end
         th_matmul_30: begin
-          _tmp_77 <= 0;
-          _tmp_78 <= _th_matmul_c_addr_27;
-          _tmp_79 <= _th_matmul_matrix_size_22;
-          th_matmul <= th_matmul_31;
-        end
-        th_matmul_31: begin
-          if(_tmp_89) begin
-            th_matmul <= th_matmul_32;
-          end 
-        end
-        th_matmul_32: begin
-          _th_matmul_j_29 <= 0;
-          th_matmul <= th_matmul_33;
-        end
-        th_matmul_33: begin
-          if(_th_matmul_j_29 < _th_matmul_matrix_size_22) begin
-            th_matmul <= th_matmul_34;
+          if(_th_matmul_i_30 < _th_matmul_matrix_size_24) begin
+            th_matmul <= th_matmul_31;
           end else begin
-            th_matmul <= th_matmul_43;
+            th_matmul <= th_matmul_46;
           end
         end
+        th_matmul_31: begin
+          _tmp_77 <= 0;
+          _tmp_78 <= _th_matmul_c_addr_29;
+          _tmp_79 <= _th_matmul_matrix_size_24;
+          th_matmul <= th_matmul_32;
+        end
+        th_matmul_32: begin
+          if(_tmp_89) begin
+            th_matmul <= th_matmul_33;
+          end 
+        end
+        th_matmul_33: begin
+          _th_matmul_j_31 <= 0;
+          th_matmul <= th_matmul_34;
+        end
         th_matmul_34: begin
+          if(_th_matmul_j_31 < _th_matmul_matrix_size_24) begin
+            th_matmul <= th_matmul_35;
+          end else begin
+            th_matmul <= th_matmul_44;
+          end
+        end
+        th_matmul_35: begin
           if(_tmp_90) begin
             _tmp_91 <= ram_c_0_rdata;
           end 
           if(_tmp_90) begin
-            th_matmul <= th_matmul_35;
+            th_matmul <= th_matmul_36;
           end 
         end
-        th_matmul_35: begin
-          _th_matmul_v_30 <= _tmp_91;
-          th_matmul <= th_matmul_36;
-        end
         th_matmul_36: begin
-          if((_th_matmul_i_28 == _th_matmul_j_29) && (_th_matmul_v_30 !== (_th_matmul_i_28 + 1 << 1))) begin
-            th_matmul <= th_matmul_37;
-          end else begin
-            th_matmul <= th_matmul_39;
-          end
+          _th_matmul_v_32 <= _tmp_91;
+          th_matmul <= th_matmul_37;
         end
         th_matmul_37: begin
-          _th_matmul_all_ok_26 <= 0;
-          th_matmul <= th_matmul_38;
+          if((_th_matmul_i_30 == _th_matmul_j_31) && (_th_matmul_v_32 !== (_th_matmul_i_30 + 1 << 1))) begin
+            th_matmul <= th_matmul_38;
+          end else begin
+            th_matmul <= th_matmul_40;
+          end
         end
         th_matmul_38: begin
-          $display("NG [%d,%d] = %d", _th_matmul_i_28, _th_matmul_j_29, _th_matmul_v_30);
+          _th_matmul_all_ok_28 <= 0;
           th_matmul <= th_matmul_39;
         end
         th_matmul_39: begin
-          if((_th_matmul_i_28 != _th_matmul_j_29) && (_th_matmul_v_30 !== 0)) begin
-            th_matmul <= th_matmul_40;
-          end else begin
-            th_matmul <= th_matmul_42;
-          end
+          $display("NG [%d,%d] = %d", _th_matmul_i_30, _th_matmul_j_31, _th_matmul_v_32);
+          th_matmul <= th_matmul_40;
         end
         th_matmul_40: begin
-          _th_matmul_all_ok_26 <= 0;
-          th_matmul <= th_matmul_41;
+          if((_th_matmul_i_30 != _th_matmul_j_31) && (_th_matmul_v_32 !== 0)) begin
+            th_matmul <= th_matmul_41;
+          end else begin
+            th_matmul <= th_matmul_43;
+          end
         end
         th_matmul_41: begin
-          $display("NG [%d,%d] = %d", _th_matmul_i_28, _th_matmul_j_29, _th_matmul_v_30);
+          _th_matmul_all_ok_28 <= 0;
           th_matmul <= th_matmul_42;
         end
         th_matmul_42: begin
-          _th_matmul_j_29 <= _th_matmul_j_29 + 1;
-          th_matmul <= th_matmul_33;
+          $display("NG [%d,%d] = %d", _th_matmul_i_30, _th_matmul_j_31, _th_matmul_v_32);
+          th_matmul <= th_matmul_43;
         end
         th_matmul_43: begin
-          _th_matmul_c_addr_27 <= _th_matmul_c_addr_27 + (_th_matmul_matrix_size_22 << 2);
-          th_matmul <= th_matmul_44;
+          _th_matmul_j_31 <= _th_matmul_j_31 + 1;
+          th_matmul <= th_matmul_34;
         end
         th_matmul_44: begin
-          _th_matmul_i_28 <= _th_matmul_i_28 + 1;
-          th_matmul <= th_matmul_29;
+          _th_matmul_c_addr_29 <= _th_matmul_c_addr_29 + (_th_matmul_matrix_size_24 << 2);
+          th_matmul <= th_matmul_45;
         end
         th_matmul_45: begin
-          if(_th_matmul_all_ok_26) begin
-            th_matmul <= th_matmul_46;
-          end else begin
-            th_matmul <= th_matmul_48;
-          end
+          _th_matmul_i_30 <= _th_matmul_i_30 + 1;
+          th_matmul <= th_matmul_30;
         end
         th_matmul_46: begin
-          $display("OK");
-          th_matmul <= th_matmul_47;
+          if(_th_matmul_all_ok_28) begin
+            th_matmul <= th_matmul_47;
+          end else begin
+            th_matmul <= th_matmul_49;
+          end
         end
         th_matmul_47: begin
-          th_matmul <= th_matmul_49;
+          $display("OK");
+          th_matmul <= th_matmul_48;
         end
         th_matmul_48: begin
+          th_matmul <= th_matmul_50;
+        end
+        th_matmul_49: begin
           $display("NG");
-          th_matmul <= th_matmul_49;
+          th_matmul <= th_matmul_50;
         end
       endcase
     end
@@ -1889,33 +1899,37 @@ module blinkled
     end
   end
 
-  localparam _strm_madd_fsm_15_1 = 1;
-  localparam _strm_madd_fsm_15_2 = 2;
+  localparam strm_madd_1 = 1;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _strm_madd_fsm_15 <= _strm_madd_fsm_15_init;
-      _strm_madd_flag_14 <= 0;
+      strm_madd <= strm_madd_init;
+      _strm_madd_start_cond <= 0;
+      _strm_madd_called <= 0;
+      _strm_madd_size_14 <= 0;
+      _strm_madd_waddr_15 <= 0;
     end else begin
-      case(_strm_madd_fsm_15)
-        _strm_madd_fsm_15_init: begin
+      case(strm_madd)
+        strm_madd_init: begin
           if(th_matmul == 13) begin
-            _strm_madd_flag_14 <= 0;
+            _strm_madd_start_cond <= 1;
           end 
           if(th_matmul == 13) begin
-            _strm_madd_fsm_15 <= _strm_madd_fsm_15_1;
+            _strm_madd_called <= 1;
+          end 
+          if(th_matmul == 13) begin
+            _strm_madd_size_14 <= _th_matmul_matrix_size_5;
+          end 
+          if(th_matmul == 13) begin
+            _strm_madd_waddr_15 <= _th_matmul_j_13;
+          end 
+          if(th_matmul == 13) begin
+            strm_madd <= strm_madd_1;
           end 
         end
-        _strm_madd_fsm_15_1: begin
-          _strm_madd_fsm_15 <= _strm_madd_fsm_15_2;
-        end
-        _strm_madd_fsm_15_2: begin
-          if(_tmp_36) begin
-            _strm_madd_flag_14 <= 1;
-          end 
-          if(_tmp_36) begin
-            _strm_madd_fsm_15 <= _strm_madd_fsm_15_init;
-          end 
+        strm_madd_1: begin
+          _strm_madd_start_cond <= 0;
+          strm_madd <= strm_madd_init;
         end
       endcase
     end
@@ -1931,10 +1945,10 @@ module blinkled
     end else begin
       case(_strm_madd_fsm_17)
         _strm_madd_fsm_17_init: begin
-          if(th_matmul == 13) begin
+          if(_strm_madd_start_cond) begin
             _strm_madd_flag_16 <= 0;
           end 
-          if(th_matmul == 13) begin
+          if(_strm_madd_start_cond) begin
             _strm_madd_fsm_17 <= _strm_madd_fsm_17_1;
           end 
         end
@@ -1942,10 +1956,10 @@ module blinkled
           _strm_madd_fsm_17 <= _strm_madd_fsm_17_2;
         end
         _strm_madd_fsm_17_2: begin
-          if(_tmp_48) begin
+          if(_tmp_36) begin
             _strm_madd_flag_16 <= 1;
           end 
-          if(_tmp_48) begin
+          if(_tmp_36) begin
             _strm_madd_fsm_17 <= _strm_madd_fsm_17_init;
           end 
         end
@@ -1963,10 +1977,10 @@ module blinkled
     end else begin
       case(_strm_madd_fsm_19)
         _strm_madd_fsm_19_init: begin
-          if(th_matmul == 13) begin
+          if(_strm_madd_start_cond) begin
             _strm_madd_flag_18 <= 0;
           end 
-          if(th_matmul == 13) begin
+          if(_strm_madd_start_cond) begin
             _strm_madd_fsm_19 <= _strm_madd_fsm_19_1;
           end 
         end
@@ -1974,11 +1988,43 @@ module blinkled
           _strm_madd_fsm_19 <= _strm_madd_fsm_19_2;
         end
         _strm_madd_fsm_19_2: begin
-          if(_tmp_51) begin
+          if(_tmp_48) begin
             _strm_madd_flag_18 <= 1;
           end 
-          if(_tmp_51) begin
+          if(_tmp_48) begin
             _strm_madd_fsm_19 <= _strm_madd_fsm_19_init;
+          end 
+        end
+      endcase
+    end
+  end
+
+  localparam _strm_madd_fsm_21_1 = 1;
+  localparam _strm_madd_fsm_21_2 = 2;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _strm_madd_fsm_21 <= _strm_madd_fsm_21_init;
+      _strm_madd_flag_20 <= 0;
+    end else begin
+      case(_strm_madd_fsm_21)
+        _strm_madd_fsm_21_init: begin
+          if(_strm_madd_start_cond) begin
+            _strm_madd_flag_20 <= 0;
+          end 
+          if(_strm_madd_start_cond) begin
+            _strm_madd_fsm_21 <= _strm_madd_fsm_21_1;
+          end 
+        end
+        _strm_madd_fsm_21_1: begin
+          _strm_madd_fsm_21 <= _strm_madd_fsm_21_2;
+        end
+        _strm_madd_fsm_21_2: begin
+          if(_tmp_51) begin
+            _strm_madd_flag_20 <= 1;
+          end 
+          if(_tmp_51) begin
+            _strm_madd_fsm_21 <= _strm_madd_fsm_21_init;
           end 
         end
       endcase
@@ -2012,7 +2058,7 @@ module blinkled
       endcase
       case(_tmp_fsm_2)
         _tmp_fsm_2_init: begin
-          if(th_matmul == 18) begin
+          if(th_matmul == 19) begin
             _tmp_fsm_2 <= _tmp_fsm_2_1;
           end 
         end
@@ -2100,7 +2146,7 @@ module blinkled
       endcase
       case(_tmp_fsm_3)
         _tmp_fsm_3_init: begin
-          if(th_matmul == 31) begin
+          if(th_matmul == 32) begin
             _tmp_fsm_3 <= _tmp_fsm_3_1;
           end 
         end

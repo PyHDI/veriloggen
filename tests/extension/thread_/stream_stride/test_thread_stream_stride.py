@@ -539,9 +539,16 @@ module blinkled
   reg __tmp_fsm_1_cond_4_0_1;
   reg _tmp_27;
   reg __tmp_fsm_1_cond_5_1_1;
-  reg _mystream_flag_3;
-  reg [32-1:0] _mystream_fsm_4;
-  localparam _mystream_fsm_4_init = 0;
+  reg [32-1:0] mystream;
+  localparam mystream_init = 0;
+  reg _mystream_start_cond;
+  reg _mystream_called;
+  reg signed [32-1:0] _mystream_size_3;
+  reg signed [32-1:0] _mystream_offset_4;
+  reg signed [32-1:0] _mystream_stride_5;
+  reg _mystream_flag_6;
+  reg [32-1:0] _mystream_fsm_7;
+  localparam _mystream_fsm_7_init = 0;
   reg _tmp_28;
   reg _tmp_29;
   wire _tmp_30;
@@ -559,9 +566,9 @@ module blinkled
   reg _tmp_37;
   reg _tmp_38;
   reg [33-1:0] _tmp_39;
-  reg _mystream_flag_5;
-  reg [32-1:0] _mystream_fsm_6;
-  localparam _mystream_fsm_6_init = 0;
+  reg _mystream_flag_8;
+  reg [32-1:0] _mystream_fsm_9;
+  localparam _mystream_fsm_9_init = 0;
   reg _tmp_40;
   reg _tmp_41;
   wire _tmp_42;
@@ -579,9 +586,9 @@ module blinkled
   reg _tmp_49;
   reg _tmp_50;
   reg [33-1:0] _tmp_51;
-  reg _mystream_flag_7;
-  reg [32-1:0] _mystream_fsm_8;
-  localparam _mystream_fsm_8_init = 0;
+  reg _mystream_flag_10;
+  reg [32-1:0] _mystream_fsm_11;
+  localparam _mystream_fsm_11_init = 0;
   reg [2-1:0] _tmp_52;
   reg _tmp_53;
   wire _tmp_all_valid_54;
@@ -683,26 +690,26 @@ module blinkled
   reg [32-1:0] th_sequential;
   localparam th_sequential_init = 0;
   reg _th_sequential_called;
-  reg signed [32-1:0] _th_sequential_size_9;
-  reg signed [32-1:0] _th_sequential_offset_10;
-  reg signed [32-1:0] _th_sequential_stride_11;
   reg signed [32-1:0] _th_sequential_size_12;
   reg signed [32-1:0] _th_sequential_offset_13;
   reg signed [32-1:0] _th_sequential_stride_14;
-  reg signed [32-1:0] _th_sequential_sum_15;
-  reg signed [32-1:0] _th_sequential_i_16;
+  reg signed [32-1:0] _th_sequential_size_15;
+  reg signed [32-1:0] _th_sequential_offset_16;
+  reg signed [32-1:0] _th_sequential_stride_17;
+  reg signed [32-1:0] _th_sequential_sum_18;
+  reg signed [32-1:0] _th_sequential_i_19;
   reg _tmp_107;
   reg _ram_a_cond_2_1;
   reg _ram_a_cond_3_1;
   reg _ram_a_cond_3_2;
   reg signed [32-1:0] _tmp_108;
-  reg signed [32-1:0] _th_sequential_a_17;
+  reg signed [32-1:0] _th_sequential_a_20;
   reg _tmp_109;
   reg _ram_b_cond_2_1;
   reg _ram_b_cond_3_1;
   reg _ram_b_cond_3_2;
   reg signed [32-1:0] _tmp_110;
-  reg signed [32-1:0] _th_sequential_b_18;
+  reg signed [32-1:0] _th_sequential_b_21;
   reg _ram_c_cond_1_1;
   reg [10-1:0] _tmp_111;
   reg [32-1:0] _tmp_112;
@@ -740,22 +747,22 @@ module blinkled
   reg _tmp_132;
   reg [32-1:0] _d1__tmp_fsm_5;
   reg __tmp_fsm_5_cond_5_0_1;
-  reg signed [32-1:0] _th_comp_size_19;
-  reg signed [32-1:0] _th_comp_offset_stream_20;
-  reg signed [32-1:0] _th_comp_offset_seq_21;
-  reg signed [32-1:0] _th_comp_all_ok_22;
+  reg signed [32-1:0] _th_comp_size_22;
+  reg signed [32-1:0] _th_comp_offset_stream_23;
+  reg signed [32-1:0] _th_comp_offset_seq_24;
+  reg signed [32-1:0] _th_comp_all_ok_25;
   reg _tmp_133;
   reg _ram_c_cond_2_1;
   reg _ram_c_cond_3_1;
   reg _ram_c_cond_3_2;
   reg signed [32-1:0] _tmp_134;
-  reg signed [32-1:0] _th_comp_st_23;
+  reg signed [32-1:0] _th_comp_st_26;
   reg _tmp_135;
   reg _ram_c_cond_4_1;
   reg _ram_c_cond_5_1;
   reg _ram_c_cond_5_2;
   reg signed [32-1:0] _tmp_136;
-  reg signed [32-1:0] _th_comp_sq_24;
+  reg signed [32-1:0] _th_comp_sq_27;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -1008,14 +1015,14 @@ module blinkled
         _tmp_35 <= 0;
         _tmp_36 <= 1;
       end 
-      if((_mystream_fsm_4 == 1) && (_tmp_39 == 0) && !_tmp_37 && !_tmp_38) begin
-        ram_a_0_addr <= _th_comp_offset_1;
-        _tmp_39 <= _th_comp_size_0 - 1;
+      if((_mystream_fsm_7 == 1) && (_tmp_39 == 0) && !_tmp_37 && !_tmp_38) begin
+        ram_a_0_addr <= _mystream_offset_4;
+        _tmp_39 <= _mystream_size_3 - 1;
         _tmp_35 <= 1;
-        _tmp_37 <= _th_comp_size_0 == 1;
+        _tmp_37 <= _mystream_size_3 == 1;
       end 
       if((_tmp_30 || !_tmp_28) && (_tmp_31 || !_tmp_29) && (_tmp_39 > 0)) begin
-        ram_a_0_addr <= ram_a_0_addr + _th_comp_stride_2;
+        ram_a_0_addr <= ram_a_0_addr + _mystream_stride_5;
         _tmp_39 <= _tmp_39 - 1;
         _tmp_35 <= 1;
         _tmp_37 <= 0;
@@ -1038,7 +1045,7 @@ module blinkled
       end 
       _ram_a_cond_1_1 <= 1;
       if(th_sequential == 5) begin
-        ram_a_0_addr <= _th_sequential_i_16 + _th_sequential_offset_13;
+        ram_a_0_addr <= _th_sequential_i_19 + _th_sequential_offset_16;
       end 
       _ram_a_cond_2_1 <= th_sequential == 5;
       _ram_a_cond_3_1 <= th_sequential == 5;
@@ -1116,14 +1123,14 @@ module blinkled
         _tmp_47 <= 0;
         _tmp_48 <= 1;
       end 
-      if((_mystream_fsm_6 == 1) && (_tmp_51 == 0) && !_tmp_49 && !_tmp_50) begin
-        ram_b_0_addr <= _th_comp_offset_1;
-        _tmp_51 <= _th_comp_size_0 - 1;
+      if((_mystream_fsm_9 == 1) && (_tmp_51 == 0) && !_tmp_49 && !_tmp_50) begin
+        ram_b_0_addr <= _mystream_offset_4;
+        _tmp_51 <= _mystream_size_3 - 1;
         _tmp_47 <= 1;
-        _tmp_49 <= _th_comp_size_0 == 1;
+        _tmp_49 <= _mystream_size_3 == 1;
       end 
       if((_tmp_42 || !_tmp_40) && (_tmp_43 || !_tmp_41) && (_tmp_51 > 0)) begin
-        ram_b_0_addr <= ram_b_0_addr + _th_comp_stride_2;
+        ram_b_0_addr <= ram_b_0_addr + _mystream_stride_5;
         _tmp_51 <= _tmp_51 - 1;
         _tmp_47 <= 1;
         _tmp_49 <= 0;
@@ -1146,7 +1153,7 @@ module blinkled
       end 
       _ram_b_cond_1_1 <= 1;
       if(th_sequential == 7) begin
-        ram_b_0_addr <= _th_sequential_i_16 + _th_sequential_offset_13;
+        ram_b_0_addr <= _th_sequential_i_19 + _th_sequential_offset_16;
       end 
       _ram_b_cond_2_1 <= th_sequential == 7;
       _ram_b_cond_3_1 <= th_sequential == 7;
@@ -1211,8 +1218,8 @@ module blinkled
         _tmp_135 <= 1;
       end 
       _ram_c_cond_5_2 <= _ram_c_cond_5_1;
-      if((_mystream_fsm_8 == 1) && (_tmp_52 == 0)) begin
-        ram_c_0_addr <= _th_comp_offset_1 - 1;
+      if((_mystream_fsm_11 == 1) && (_tmp_52 == 0)) begin
+        ram_c_0_addr <= _mystream_offset_4 - 1;
         _tmp_52 <= 1;
       end 
       if(_tmp_data_56 && (_tmp_valid_55 && ((_tmp_52 > 0) && !_tmp_53 && _tmp_all_valid_54)) && (_tmp_52 > 0)) begin
@@ -1257,8 +1264,8 @@ module blinkled
         _tmp_72 <= 1;
       end 
       if(th_sequential == 11) begin
-        ram_c_0_addr <= _th_sequential_offset_13;
-        ram_c_0_wdata <= _th_sequential_sum_15;
+        ram_c_0_addr <= _th_sequential_offset_16;
+        ram_c_0_wdata <= _th_sequential_sum_18;
         ram_c_0_wenable <= 1;
       end 
       _ram_c_cond_1_1 <= th_sequential == 11;
@@ -1293,16 +1300,16 @@ module blinkled
       if((_tmp_119 || !_tmp_117) && (_tmp_120 || !_tmp_118) && (_tmp_128 == 1)) begin
         _tmp_126 <= 1;
       end 
-      if(th_comp == 22) begin
-        ram_c_0_addr <= _th_comp_offset_stream_20;
+      if(th_comp == 23) begin
+        ram_c_0_addr <= _th_comp_offset_stream_23;
       end 
-      _ram_c_cond_2_1 <= th_comp == 22;
-      _ram_c_cond_3_1 <= th_comp == 22;
-      if(th_comp == 24) begin
-        ram_c_0_addr <= _th_comp_offset_seq_21;
+      _ram_c_cond_2_1 <= th_comp == 23;
+      _ram_c_cond_3_1 <= th_comp == 23;
+      if(th_comp == 25) begin
+        ram_c_0_addr <= _th_comp_offset_seq_24;
       end 
-      _ram_c_cond_4_1 <= th_comp == 24;
-      _ram_c_cond_5_1 <= th_comp == 24;
+      _ram_c_cond_4_1 <= th_comp == 25;
+      _ram_c_cond_5_1 <= th_comp == 25;
     end
   end
 
@@ -1453,7 +1460,7 @@ module blinkled
       _tmp_valid_155 <= 0;
     end else begin
       if((_tmp_ready_137 || !_tmp_valid_137) && 1 && 1) begin
-        _tmp_data_137 <= (_tmp_data_137 >= _th_comp_size_0 - 1)? 0 : _tmp_data_137 + 2'sd1;
+        _tmp_data_137 <= (_tmp_data_137 >= _mystream_size_3 - 1)? 0 : _tmp_data_137 + 2'sd1;
       end 
       if(_tmp_valid_137 && _tmp_ready_137) begin
         _tmp_valid_137 <= 0;
@@ -1468,7 +1475,7 @@ module blinkled
         _tmp_valid_reg_138 <= _tmp_ovalid_138;
       end 
       if((_tmp_ready_139 || !_tmp_valid_139) && _tmp_ready_137 && _tmp_valid_137) begin
-        _tmp_data_139 <= _tmp_data_137 == _th_comp_size_0 - 1;
+        _tmp_data_139 <= _tmp_data_137 == _mystream_size_3 - 1;
       end 
       if(_tmp_valid_139 && _tmp_ready_139) begin
         _tmp_valid_139 <= 0;
@@ -1646,6 +1653,7 @@ module blinkled
   localparam th_comp_30 = 30;
   localparam th_comp_31 = 31;
   localparam th_comp_32 = 32;
+  localparam th_comp_33 = 33;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -1675,14 +1683,14 @@ module blinkled
       _tmp_111 <= 0;
       _tmp_112 <= 0;
       _tmp_113 <= 0;
-      _th_comp_size_19 <= 0;
-      _th_comp_offset_stream_20 <= 0;
-      _th_comp_offset_seq_21 <= 0;
-      _th_comp_all_ok_22 <= 0;
+      _th_comp_size_22 <= 0;
+      _th_comp_offset_stream_23 <= 0;
+      _th_comp_offset_seq_24 <= 0;
+      _th_comp_all_ok_25 <= 0;
       _tmp_134 <= 0;
-      _th_comp_st_23 <= 0;
+      _th_comp_st_26 <= 0;
       _tmp_136 <= 0;
-      _th_comp_sq_24 <= 0;
+      _th_comp_sq_27 <= 0;
     end else begin
       case(th_comp)
         th_comp_init: begin
@@ -1725,130 +1733,133 @@ module blinkled
           th_comp <= th_comp_8;
         end
         th_comp_8: begin
-          if(_mystream_flag_3 && _mystream_flag_5 && _mystream_flag_7) begin
-            th_comp <= th_comp_9;
-          end 
+          th_comp <= th_comp_9;
         end
         th_comp_9: begin
+          if(_mystream_flag_6 && _mystream_flag_8 && _mystream_flag_10) begin
+            th_comp <= th_comp_10;
+          end 
+        end
+        th_comp_10: begin
           _tmp_57 <= _th_comp_offset_1;
           _tmp_58 <= 1024;
           _tmp_59 <= 1;
-          th_comp <= th_comp_10;
-        end
-        th_comp_10: begin
-          if(_tmp_78) begin
-            th_comp <= th_comp_11;
-          end 
+          th_comp <= th_comp_11;
         end
         th_comp_11: begin
-          _th_comp_offset_1 <= _th_comp_size_0;
-          th_comp <= th_comp_12;
+          if(_tmp_78) begin
+            th_comp <= th_comp_12;
+          end 
         end
         th_comp_12: begin
+          _th_comp_offset_1 <= _th_comp_size_0;
+          th_comp <= th_comp_13;
+        end
+        th_comp_13: begin
           _tmp_79 <= _th_comp_offset_1;
           _tmp_80 <= 0;
           _tmp_81 <= _th_comp_size_0;
           _tmp_82 <= _th_comp_stride_2;
-          th_comp <= th_comp_13;
-        end
-        th_comp_13: begin
-          if(_tmp_92) begin
-            th_comp <= th_comp_14;
-          end 
+          th_comp <= th_comp_14;
         end
         th_comp_14: begin
+          if(_tmp_92) begin
+            th_comp <= th_comp_15;
+          end 
+        end
+        th_comp_15: begin
           _tmp_93 <= _th_comp_offset_1;
           _tmp_94 <= 0;
           _tmp_95 <= _th_comp_size_0;
           _tmp_96 <= _th_comp_stride_2;
-          th_comp <= th_comp_15;
-        end
-        th_comp_15: begin
-          if(_tmp_106) begin
-            th_comp <= th_comp_16;
-          end 
+          th_comp <= th_comp_16;
         end
         th_comp_16: begin
-          th_comp <= th_comp_17;
-        end
-        th_comp_17: begin
-          if(th_sequential == 12) begin
-            th_comp <= th_comp_18;
+          if(_tmp_106) begin
+            th_comp <= th_comp_17;
           end 
         end
+        th_comp_17: begin
+          th_comp <= th_comp_18;
+        end
         th_comp_18: begin
+          if(th_sequential == 12) begin
+            th_comp <= th_comp_19;
+          end 
+        end
+        th_comp_19: begin
           _tmp_111 <= _th_comp_offset_1;
           _tmp_112 <= 2048;
           _tmp_113 <= 1;
-          th_comp <= th_comp_19;
-        end
-        th_comp_19: begin
-          if(_tmp_132) begin
-            th_comp <= th_comp_20;
-          end 
+          th_comp <= th_comp_20;
         end
         th_comp_20: begin
-          _th_comp_size_19 <= _th_comp_size_0;
-          _th_comp_offset_stream_20 <= 0;
-          _th_comp_offset_seq_21 <= _th_comp_offset_1;
-          th_comp <= th_comp_21;
+          if(_tmp_132) begin
+            th_comp <= th_comp_21;
+          end 
         end
         th_comp_21: begin
-          _th_comp_all_ok_22 <= 1;
+          _th_comp_size_22 <= _th_comp_size_0;
+          _th_comp_offset_stream_23 <= 0;
+          _th_comp_offset_seq_24 <= _th_comp_offset_1;
           th_comp <= th_comp_22;
         end
         th_comp_22: begin
+          _th_comp_all_ok_25 <= 1;
+          th_comp <= th_comp_23;
+        end
+        th_comp_23: begin
           if(_tmp_133) begin
             _tmp_134 <= ram_c_0_rdata;
           end 
           if(_tmp_133) begin
-            th_comp <= th_comp_23;
+            th_comp <= th_comp_24;
           end 
         end
-        th_comp_23: begin
-          _th_comp_st_23 <= _tmp_134;
-          th_comp <= th_comp_24;
-        end
         th_comp_24: begin
+          _th_comp_st_26 <= _tmp_134;
+          th_comp <= th_comp_25;
+        end
+        th_comp_25: begin
           if(_tmp_135) begin
             _tmp_136 <= ram_c_0_rdata;
           end 
           if(_tmp_135) begin
-            th_comp <= th_comp_25;
+            th_comp <= th_comp_26;
           end 
         end
-        th_comp_25: begin
-          _th_comp_sq_24 <= _tmp_136;
-          th_comp <= th_comp_26;
-        end
         th_comp_26: begin
-          if(_th_comp_st_23 !== _th_comp_sq_24) begin
-            th_comp <= th_comp_27;
-          end else begin
-            th_comp <= th_comp_28;
-          end
+          _th_comp_sq_27 <= _tmp_136;
+          th_comp <= th_comp_27;
         end
         th_comp_27: begin
-          _th_comp_all_ok_22 <= 0;
-          th_comp <= th_comp_28;
-        end
-        th_comp_28: begin
-          if(_th_comp_all_ok_22) begin
-            th_comp <= th_comp_29;
+          if(_th_comp_st_26 !== _th_comp_sq_27) begin
+            th_comp <= th_comp_28;
           end else begin
-            th_comp <= th_comp_31;
+            th_comp <= th_comp_29;
           end
         end
+        th_comp_28: begin
+          _th_comp_all_ok_25 <= 0;
+          th_comp <= th_comp_29;
+        end
         th_comp_29: begin
-          $display("OK");
-          th_comp <= th_comp_30;
+          if(_th_comp_all_ok_25) begin
+            th_comp <= th_comp_30;
+          end else begin
+            th_comp <= th_comp_32;
+          end
         end
         th_comp_30: begin
-          th_comp <= th_comp_32;
+          $display("OK");
+          th_comp <= th_comp_31;
         end
         th_comp_31: begin
+          th_comp <= th_comp_33;
+        end
+        th_comp_32: begin
           $display("NG");
-          th_comp <= th_comp_32;
+          th_comp <= th_comp_33;
         end
       endcase
     end
@@ -2040,96 +2051,136 @@ module blinkled
     end
   end
 
-  localparam _mystream_fsm_4_1 = 1;
-  localparam _mystream_fsm_4_2 = 2;
+  localparam mystream_1 = 1;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _mystream_fsm_4 <= _mystream_fsm_4_init;
-      _mystream_flag_3 <= 0;
+      mystream <= mystream_init;
+      _mystream_start_cond <= 0;
+      _mystream_called <= 0;
+      _mystream_size_3 <= 0;
+      _mystream_offset_4 <= 0;
+      _mystream_stride_5 <= 0;
     end else begin
-      case(_mystream_fsm_4)
-        _mystream_fsm_4_init: begin
+      case(mystream)
+        mystream_init: begin
           if(th_comp == 7) begin
-            _mystream_flag_3 <= 0;
+            _mystream_start_cond <= 1;
           end 
           if(th_comp == 7) begin
-            _mystream_fsm_4 <= _mystream_fsm_4_1;
+            _mystream_called <= 1;
+          end 
+          if(th_comp == 7) begin
+            _mystream_size_3 <= _th_comp_size_0;
+          end 
+          if(th_comp == 7) begin
+            _mystream_offset_4 <= _th_comp_offset_1;
+          end 
+          if(th_comp == 7) begin
+            _mystream_stride_5 <= _th_comp_stride_2;
+          end 
+          if(th_comp == 7) begin
+            mystream <= mystream_1;
           end 
         end
-        _mystream_fsm_4_1: begin
-          _mystream_fsm_4 <= _mystream_fsm_4_2;
+        mystream_1: begin
+          _mystream_start_cond <= 0;
+          mystream <= mystream_init;
         end
-        _mystream_fsm_4_2: begin
+      endcase
+    end
+  end
+
+  localparam _mystream_fsm_7_1 = 1;
+  localparam _mystream_fsm_7_2 = 2;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _mystream_fsm_7 <= _mystream_fsm_7_init;
+      _mystream_flag_6 <= 0;
+    end else begin
+      case(_mystream_fsm_7)
+        _mystream_fsm_7_init: begin
+          if(_mystream_start_cond) begin
+            _mystream_flag_6 <= 0;
+          end 
+          if(_mystream_start_cond) begin
+            _mystream_fsm_7 <= _mystream_fsm_7_1;
+          end 
+        end
+        _mystream_fsm_7_1: begin
+          _mystream_fsm_7 <= _mystream_fsm_7_2;
+        end
+        _mystream_fsm_7_2: begin
           if(_tmp_38) begin
-            _mystream_flag_3 <= 1;
+            _mystream_flag_6 <= 1;
           end 
           if(_tmp_38) begin
-            _mystream_fsm_4 <= _mystream_fsm_4_init;
+            _mystream_fsm_7 <= _mystream_fsm_7_init;
           end 
         end
       endcase
     end
   end
 
-  localparam _mystream_fsm_6_1 = 1;
-  localparam _mystream_fsm_6_2 = 2;
+  localparam _mystream_fsm_9_1 = 1;
+  localparam _mystream_fsm_9_2 = 2;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _mystream_fsm_6 <= _mystream_fsm_6_init;
-      _mystream_flag_5 <= 0;
+      _mystream_fsm_9 <= _mystream_fsm_9_init;
+      _mystream_flag_8 <= 0;
     end else begin
-      case(_mystream_fsm_6)
-        _mystream_fsm_6_init: begin
-          if(th_comp == 7) begin
-            _mystream_flag_5 <= 0;
+      case(_mystream_fsm_9)
+        _mystream_fsm_9_init: begin
+          if(_mystream_start_cond) begin
+            _mystream_flag_8 <= 0;
           end 
-          if(th_comp == 7) begin
-            _mystream_fsm_6 <= _mystream_fsm_6_1;
+          if(_mystream_start_cond) begin
+            _mystream_fsm_9 <= _mystream_fsm_9_1;
           end 
         end
-        _mystream_fsm_6_1: begin
-          _mystream_fsm_6 <= _mystream_fsm_6_2;
+        _mystream_fsm_9_1: begin
+          _mystream_fsm_9 <= _mystream_fsm_9_2;
         end
-        _mystream_fsm_6_2: begin
+        _mystream_fsm_9_2: begin
           if(_tmp_50) begin
-            _mystream_flag_5 <= 1;
+            _mystream_flag_8 <= 1;
           end 
           if(_tmp_50) begin
-            _mystream_fsm_6 <= _mystream_fsm_6_init;
+            _mystream_fsm_9 <= _mystream_fsm_9_init;
           end 
         end
       endcase
     end
   end
 
-  localparam _mystream_fsm_8_1 = 1;
-  localparam _mystream_fsm_8_2 = 2;
+  localparam _mystream_fsm_11_1 = 1;
+  localparam _mystream_fsm_11_2 = 2;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _mystream_fsm_8 <= _mystream_fsm_8_init;
-      _mystream_flag_7 <= 0;
+      _mystream_fsm_11 <= _mystream_fsm_11_init;
+      _mystream_flag_10 <= 0;
     end else begin
-      case(_mystream_fsm_8)
-        _mystream_fsm_8_init: begin
-          if(th_comp == 7) begin
-            _mystream_flag_7 <= 0;
+      case(_mystream_fsm_11)
+        _mystream_fsm_11_init: begin
+          if(_mystream_start_cond) begin
+            _mystream_flag_10 <= 0;
           end 
-          if(th_comp == 7) begin
-            _mystream_fsm_8 <= _mystream_fsm_8_1;
+          if(_mystream_start_cond) begin
+            _mystream_fsm_11 <= _mystream_fsm_11_1;
           end 
         end
-        _mystream_fsm_8_1: begin
-          _mystream_fsm_8 <= _mystream_fsm_8_2;
+        _mystream_fsm_11_1: begin
+          _mystream_fsm_11 <= _mystream_fsm_11_2;
         end
-        _mystream_fsm_8_2: begin
+        _mystream_fsm_11_2: begin
           if(_tmp_53) begin
-            _mystream_flag_7 <= 1;
+            _mystream_flag_10 <= 1;
           end 
           if(_tmp_53) begin
-            _mystream_fsm_8 <= _mystream_fsm_8_init;
+            _mystream_fsm_11 <= _mystream_fsm_11_init;
           end 
         end
       endcase
@@ -2163,7 +2214,7 @@ module blinkled
       endcase
       case(_tmp_fsm_2)
         _tmp_fsm_2_init: begin
-          if(th_comp == 10) begin
+          if(th_comp == 11) begin
             _tmp_fsm_2 <= _tmp_fsm_2_1;
           end 
         end
@@ -2251,7 +2302,7 @@ module blinkled
       endcase
       case(_tmp_fsm_3)
         _tmp_fsm_3_init: begin
-          if(th_comp == 13) begin
+          if(th_comp == 14) begin
             _tmp_fsm_3 <= _tmp_fsm_3_1;
           end 
         end
@@ -2344,7 +2395,7 @@ module blinkled
       endcase
       case(_tmp_fsm_4)
         _tmp_fsm_4_init: begin
-          if(th_comp == 15) begin
+          if(th_comp == 16) begin
             _tmp_fsm_4 <= _tmp_fsm_4_1;
           end 
         end
@@ -2419,53 +2470,53 @@ module blinkled
     if(RST) begin
       th_sequential <= th_sequential_init;
       _th_sequential_called <= 0;
-      _th_sequential_size_9 <= 0;
-      _th_sequential_offset_10 <= 0;
-      _th_sequential_stride_11 <= 0;
       _th_sequential_size_12 <= 0;
       _th_sequential_offset_13 <= 0;
       _th_sequential_stride_14 <= 0;
-      _th_sequential_sum_15 <= 0;
-      _th_sequential_i_16 <= 0;
+      _th_sequential_size_15 <= 0;
+      _th_sequential_offset_16 <= 0;
+      _th_sequential_stride_17 <= 0;
+      _th_sequential_sum_18 <= 0;
+      _th_sequential_i_19 <= 0;
       _tmp_108 <= 0;
-      _th_sequential_a_17 <= 0;
+      _th_sequential_a_20 <= 0;
       _tmp_110 <= 0;
-      _th_sequential_b_18 <= 0;
+      _th_sequential_b_21 <= 0;
     end else begin
       case(th_sequential)
         th_sequential_init: begin
-          if(th_comp == 16) begin
+          if(th_comp == 17) begin
             _th_sequential_called <= 1;
           end 
-          if(th_comp == 16) begin
-            _th_sequential_size_9 <= _th_comp_size_0;
+          if(th_comp == 17) begin
+            _th_sequential_size_12 <= _th_comp_size_0;
           end 
-          if(th_comp == 16) begin
-            _th_sequential_offset_10 <= _th_comp_offset_1;
+          if(th_comp == 17) begin
+            _th_sequential_offset_13 <= _th_comp_offset_1;
           end 
-          if(th_comp == 16) begin
-            _th_sequential_stride_11 <= _th_comp_stride_2;
+          if(th_comp == 17) begin
+            _th_sequential_stride_14 <= _th_comp_stride_2;
           end 
-          if(th_comp == 16) begin
+          if(th_comp == 17) begin
             th_sequential <= th_sequential_1;
           end 
         end
         th_sequential_1: begin
-          _th_sequential_size_12 <= _th_sequential_size_9;
-          _th_sequential_offset_13 <= _th_sequential_offset_10;
-          _th_sequential_stride_14 <= _th_sequential_stride_11;
+          _th_sequential_size_15 <= _th_sequential_size_12;
+          _th_sequential_offset_16 <= _th_sequential_offset_13;
+          _th_sequential_stride_17 <= _th_sequential_stride_14;
           th_sequential <= th_sequential_2;
         end
         th_sequential_2: begin
-          _th_sequential_sum_15 <= 0;
+          _th_sequential_sum_18 <= 0;
           th_sequential <= th_sequential_3;
         end
         th_sequential_3: begin
-          _th_sequential_i_16 <= 0;
+          _th_sequential_i_19 <= 0;
           th_sequential <= th_sequential_4;
         end
         th_sequential_4: begin
-          if(_th_sequential_i_16 < (_th_sequential_size_12 << 1)) begin
+          if(_th_sequential_i_19 < (_th_sequential_size_15 << 1)) begin
             th_sequential <= th_sequential_5;
           end else begin
             th_sequential <= th_sequential_11;
@@ -2480,7 +2531,7 @@ module blinkled
           end 
         end
         th_sequential_6: begin
-          _th_sequential_a_17 <= _tmp_108;
+          _th_sequential_a_20 <= _tmp_108;
           th_sequential <= th_sequential_7;
         end
         th_sequential_7: begin
@@ -2492,15 +2543,15 @@ module blinkled
           end 
         end
         th_sequential_8: begin
-          _th_sequential_b_18 <= _tmp_110;
+          _th_sequential_b_21 <= _tmp_110;
           th_sequential <= th_sequential_9;
         end
         th_sequential_9: begin
-          _th_sequential_sum_15 <= _th_sequential_sum_15 + _th_sequential_a_17 * _th_sequential_b_18;
+          _th_sequential_sum_18 <= _th_sequential_sum_18 + _th_sequential_a_20 * _th_sequential_b_21;
           th_sequential <= th_sequential_10;
         end
         th_sequential_10: begin
-          _th_sequential_i_16 <= _th_sequential_i_16 + _th_sequential_stride_14;
+          _th_sequential_i_19 <= _th_sequential_i_19 + _th_sequential_stride_17;
           th_sequential <= th_sequential_4;
         end
         th_sequential_11: begin
@@ -2537,7 +2588,7 @@ module blinkled
       endcase
       case(_tmp_fsm_5)
         _tmp_fsm_5_init: begin
-          if(th_comp == 19) begin
+          if(th_comp == 20) begin
             _tmp_fsm_5 <= _tmp_fsm_5_1;
           end 
         end
