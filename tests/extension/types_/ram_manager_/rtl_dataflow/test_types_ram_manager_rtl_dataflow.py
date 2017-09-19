@@ -82,16 +82,16 @@ module main
   wire [32-1:0] xdata;
   wire xvalid;
   wire xready;
-  reg [32-1:0] _tmp_data_0;
-  reg _tmp_valid_0;
-  wire _tmp_ready_0;
-  assign xready = (_tmp_ready_0 || !_tmp_valid_0) && xvalid;
+  reg [32-1:0] _plus_data_0;
+  reg _plus_valid_0;
+  wire _plus_ready_0;
+  assign xready = (_plus_ready_0 || !_plus_valid_0) && xvalid;
   wire [32-1:0] ydata;
   wire yvalid;
   wire yread;
-  assign ydata = _tmp_data_0;
-  assign yvalid = _tmp_valid_0;
-  assign _tmp_ready_0 = yread;
+  assign ydata = _plus_data_0;
+  assign yvalid = _plus_valid_0;
+  assign _plus_ready_0 = yread;
   reg _myram_cond_0_1;
   reg _tmp_1;
   reg _myram_cond_1_1;
@@ -227,8 +227,8 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_0 <= 0;
-      _tmp_valid_0 <= 0;
+      _plus_data_0 <= 0;
+      _plus_valid_0 <= 0;
       _tmp_2 <= 0;
       _tmp_3 <= 0;
       __dataflow_seq_0_cond_0_1 <= 0;
@@ -236,14 +236,14 @@ module main
       if(__dataflow_seq_0_cond_0_1) begin
         _tmp_3 <= 0;
       end 
-      if((_tmp_ready_0 || !_tmp_valid_0) && xready && xvalid) begin
-        _tmp_data_0 <= xdata + 8'sd100;
+      if((_plus_ready_0 || !_plus_valid_0) && xready && xvalid) begin
+        _plus_data_0 <= xdata + 8'sd100;
       end 
-      if(_tmp_valid_0 && _tmp_ready_0) begin
-        _tmp_valid_0 <= 0;
+      if(_plus_valid_0 && _plus_ready_0) begin
+        _plus_valid_0 <= 0;
       end 
-      if((_tmp_ready_0 || !_tmp_valid_0) && xready) begin
-        _tmp_valid_0 <= xvalid;
+      if((_plus_ready_0 || !_plus_valid_0) && xready) begin
+        _plus_valid_0 <= xvalid;
       end 
       if(_tmp_1 && (xready || !_tmp_3)) begin
         _tmp_2 <= myram_0_rdata;

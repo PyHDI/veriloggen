@@ -21,7 +21,7 @@ def mkMain():
     myaxi.disable_write()
 
     df = dataflow.DataflowManager(m, clk, rst)
-    
+
     req_fsm = FSM(m, 'req_fsm', clk, rst)
 
     # read request
@@ -32,7 +32,7 @@ def mkMain():
 
     # read dataflow (AXI -> Dataflow)
     data, last, done = myaxi.read_dataflow()
-    sum = df.Iadd(data, reset=last.prev(1))
+    sum = df.ReduceAdd(data, reset=last.prev(1))
 
     # verify
     sum_data, sum_valid = sum.read()
@@ -144,6 +144,7 @@ def mkTest():
     )
 
     return m
+
 
 if __name__ == '__main__':
     test = mkTest()

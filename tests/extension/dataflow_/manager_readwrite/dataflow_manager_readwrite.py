@@ -19,7 +19,7 @@ def mkMain(n=128, datawidth=32, numports=2):
     rst = m.Input('RST')
 
     df = dataflow.DataflowManager(m, clk, rst)
-    #df.enable_draw_graph()
+    # df.enable_draw_graph()
 
     # input with register
     xdata = m.Reg('xdata', 32, initval=0)

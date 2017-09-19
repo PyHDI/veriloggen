@@ -296,6 +296,7 @@ def mkTest(n=16, size=3, datawidth=32, point=16, coe_test=False):
 
     return m
 
+
 if __name__ == '__main__':
     n = 16
     #test = mkTest(n, coe_test=True)

@@ -617,45 +617,45 @@ module main
   input z2ready
 );
 
-  reg [32-1:0] _tmp_data_0;
-  reg _tmp_valid_0;
-  wire _tmp_ready_0;
-  reg [32-1:0] _tmp_data_1;
-  reg _tmp_valid_1;
-  wire _tmp_ready_1;
-  assign yready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid) && ((_tmp_ready_1 || !_tmp_valid_1) && (yvalid && xvalid));
-  assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid) && ((_tmp_ready_1 || !_tmp_valid_1) && (yvalid && xvalid));
-  assign z1data = _tmp_data_0;
-  assign z1valid = _tmp_valid_0;
-  assign _tmp_ready_0 = z1ready;
-  assign z2data = _tmp_data_1;
-  assign z2valid = _tmp_valid_1;
-  assign _tmp_ready_1 = z2ready;
+  reg [32-1:0] _plus_data_0;
+  reg _plus_valid_0;
+  wire _plus_ready_0;
+  reg [32-1:0] _minus_data_1;
+  reg _minus_valid_1;
+  wire _minus_ready_1;
+  assign yready = (_plus_ready_0 || !_plus_valid_0) && (xvalid && yvalid) && ((_minus_ready_1 || !_minus_valid_1) && (yvalid && xvalid));
+  assign xready = (_plus_ready_0 || !_plus_valid_0) && (xvalid && yvalid) && ((_minus_ready_1 || !_minus_valid_1) && (yvalid && xvalid));
+  assign z1data = _plus_data_0;
+  assign z1valid = _plus_valid_0;
+  assign _plus_ready_0 = z1ready;
+  assign z2data = _minus_data_1;
+  assign z2valid = _minus_valid_1;
+  assign _minus_ready_1 = z2ready;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_0 <= 0;
-      _tmp_valid_0 <= 0;
-      _tmp_data_1 <= 0;
-      _tmp_valid_1 <= 0;
+      _plus_data_0 <= 0;
+      _plus_valid_0 <= 0;
+      _minus_data_1 <= 0;
+      _minus_valid_1 <= 0;
     end else begin
-      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
-        _tmp_data_0 <= xdata + ydata;
+      if((_plus_ready_0 || !_plus_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
+        _plus_data_0 <= xdata + ydata;
       end 
-      if(_tmp_valid_0 && _tmp_ready_0) begin
-        _tmp_valid_0 <= 0;
+      if(_plus_valid_0 && _plus_ready_0) begin
+        _plus_valid_0 <= 0;
       end 
-      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready)) begin
-        _tmp_valid_0 <= xvalid && yvalid;
+      if((_plus_ready_0 || !_plus_valid_0) && (xready && yready)) begin
+        _plus_valid_0 <= xvalid && yvalid;
       end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && (yready && xready) && (yvalid && xvalid)) begin
-        _tmp_data_1 <= ydata - xdata;
+      if((_minus_ready_1 || !_minus_valid_1) && (yready && xready) && (yvalid && xvalid)) begin
+        _minus_data_1 <= ydata - xdata;
       end 
-      if(_tmp_valid_1 && _tmp_ready_1) begin
-        _tmp_valid_1 <= 0;
+      if(_minus_valid_1 && _minus_ready_1) begin
+        _minus_valid_1 <= 0;
       end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && (yready && xready)) begin
-        _tmp_valid_1 <= yvalid && xvalid;
+      if((_minus_ready_1 || !_minus_valid_1) && (yready && xready)) begin
+        _minus_valid_1 <= yvalid && xvalid;
       end 
     end
   end

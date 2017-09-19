@@ -519,58 +519,58 @@ module main
   input zready
 );
 
-  reg signed [32-1:0] _tmp_data_0;
-  reg _tmp_valid_0;
-  wire _tmp_ready_0;
-  assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
-  assign yready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
-  reg signed [32-1:0] _tmp_data_1;
-  reg _tmp_valid_1;
-  wire _tmp_ready_1;
-  assign _tmp_ready_0 = (_tmp_ready_1 || !_tmp_valid_1) && _tmp_valid_0;
-  reg [1-1:0] _tmp_data_2;
-  reg _tmp_valid_2;
-  wire _tmp_ready_2;
-  assign _tmp_ready_1 = (_tmp_ready_2 || !_tmp_valid_2) && _tmp_valid_1;
-  assign zdata = _tmp_data_2;
-  assign zvalid = _tmp_valid_2;
-  assign _tmp_ready_2 = zready;
+  reg signed [32-1:0] _minus_data_0;
+  reg _minus_valid_0;
+  wire _minus_ready_0;
+  assign xready = (_minus_ready_0 || !_minus_valid_0) && (xvalid && yvalid);
+  assign yready = (_minus_ready_0 || !_minus_valid_0) && (xvalid && yvalid);
+  reg signed [32-1:0] _plus_data_1;
+  reg _plus_valid_1;
+  wire _plus_ready_1;
+  assign _minus_ready_0 = (_plus_ready_1 || !_plus_valid_1) && _minus_valid_0;
+  reg [1-1:0] _greatereq_data_2;
+  reg _greatereq_valid_2;
+  wire _greatereq_ready_2;
+  assign _plus_ready_1 = (_greatereq_ready_2 || !_greatereq_valid_2) && _plus_valid_1;
+  assign zdata = _greatereq_data_2;
+  assign zvalid = _greatereq_valid_2;
+  assign _greatereq_ready_2 = zready;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_0 <= 0;
-      _tmp_valid_0 <= 0;
-      _tmp_data_1 <= 0;
-      _tmp_valid_1 <= 0;
-      _tmp_data_2 <= 0;
-      _tmp_valid_2 <= 0;
+      _minus_data_0 <= 0;
+      _minus_valid_0 <= 0;
+      _plus_data_1 <= 0;
+      _plus_valid_1 <= 0;
+      _greatereq_data_2 <= 0;
+      _greatereq_valid_2 <= 0;
     end else begin
-      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
-        _tmp_data_0 <= xdata - ydata;
+      if((_minus_ready_0 || !_minus_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
+        _minus_data_0 <= xdata - ydata;
       end 
-      if(_tmp_valid_0 && _tmp_ready_0) begin
-        _tmp_valid_0 <= 0;
+      if(_minus_valid_0 && _minus_ready_0) begin
+        _minus_valid_0 <= 0;
       end 
-      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready)) begin
-        _tmp_valid_0 <= xvalid && yvalid;
+      if((_minus_ready_0 || !_minus_valid_0) && (xready && yready)) begin
+        _minus_valid_0 <= xvalid && yvalid;
       end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && _tmp_ready_0 && _tmp_valid_0) begin
-        _tmp_data_1 <= _tmp_data_0 + 4'sd5;
+      if((_plus_ready_1 || !_plus_valid_1) && _minus_ready_0 && _minus_valid_0) begin
+        _plus_data_1 <= _minus_data_0 + 4'sd5;
       end 
-      if(_tmp_valid_1 && _tmp_ready_1) begin
-        _tmp_valid_1 <= 0;
+      if(_plus_valid_1 && _plus_ready_1) begin
+        _plus_valid_1 <= 0;
       end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && _tmp_ready_0) begin
-        _tmp_valid_1 <= _tmp_valid_0;
+      if((_plus_ready_1 || !_plus_valid_1) && _minus_ready_0) begin
+        _plus_valid_1 <= _minus_valid_0;
       end 
-      if((_tmp_ready_2 || !_tmp_valid_2) && _tmp_ready_1 && _tmp_valid_1) begin
-        _tmp_data_2 <= _tmp_data_1 >= 1'sd0;
+      if((_greatereq_ready_2 || !_greatereq_valid_2) && _plus_ready_1 && _plus_valid_1) begin
+        _greatereq_data_2 <= _plus_data_1 >= 1'sd0;
       end 
-      if(_tmp_valid_2 && _tmp_ready_2) begin
-        _tmp_valid_2 <= 0;
+      if(_greatereq_valid_2 && _greatereq_ready_2) begin
+        _greatereq_valid_2 <= 0;
       end 
-      if((_tmp_ready_2 || !_tmp_valid_2) && _tmp_ready_1) begin
-        _tmp_valid_2 <= _tmp_valid_1;
+      if((_greatereq_ready_2 || !_greatereq_valid_2) && _plus_ready_1) begin
+        _greatereq_valid_2 <= _plus_valid_1;
       end 
     end
   end
@@ -578,6 +578,7 @@ module main
 
 endmodule
 """
+
 
 def test():
     veriloggen.reset()

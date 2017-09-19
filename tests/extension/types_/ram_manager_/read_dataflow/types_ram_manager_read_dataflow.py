@@ -27,8 +27,7 @@ def mkMain(n=128, datawidth=32, numports=2):
     fsm = FSM(m, 'fsm', clk, rst)
 
     # dataflow
-    c = df.Counter()
-    value = c - 1
+    value = df.Counter()
 
     # write dataflow (Dataflow -> RAM)
     wport = 0
@@ -94,6 +93,7 @@ def mkTest():
     )
 
     return m
+
 
 if __name__ == '__main__':
     test = mkTest()

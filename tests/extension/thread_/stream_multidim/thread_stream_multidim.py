@@ -32,7 +32,7 @@ def mkLed():
     def comp_stream(strm, offset):
         a = strm.read_multidim(ram_a, offset, shape, order)
         b = strm.read_multidim(ram_b, offset, shape, order)
-        sum, valid = strm.RegionAdd(a * b, size)
+        sum, valid = strm.ReduceAddValid(a * b, size)
         strm.write(ram_c, offset, 1, sum, when=valid)
 
     def comp_sequential(offset):

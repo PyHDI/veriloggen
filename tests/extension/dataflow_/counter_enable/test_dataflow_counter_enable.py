@@ -52,6 +52,10 @@ module main
   input RST
 );
 
+  wire [32-1:0] adata;
+  wire avalid;
+  wire aready;
+  assign aready = 1;
   wire [32-1:0] bdata;
   wire bvalid;
   wire bready;
@@ -60,133 +64,188 @@ module main
   wire cvalid;
   wire cready;
   assign cready = 1;
-  reg [32-1:0] _tmp_data_0;
-  reg _tmp_valid_0;
-  wire _tmp_ready_0;
-  reg [1-1:0] _tmp_data_1;
-  reg _tmp_valid_1;
-  wire _tmp_ready_1;
-  reg [1-1:0] _tmp_data_2;
-  reg _tmp_valid_2;
-  wire _tmp_ready_2;
-  reg [1-1:0] _tmp_data_3;
-  reg _tmp_valid_3;
-  wire _tmp_ready_3;
-  assign _tmp_ready_0 = (_tmp_ready_1 || !_tmp_valid_1) && _tmp_valid_0 && ((_tmp_ready_2 || !_tmp_valid_2) && _tmp_valid_0) && ((_tmp_ready_3 || !_tmp_valid_3) && _tmp_valid_0);
-  reg [32-1:0] _tmp_data_4;
-  reg _tmp_valid_4;
-  wire _tmp_ready_4;
-  assign _tmp_ready_1 = (_tmp_ready_4 || !_tmp_valid_4) && _tmp_valid_1;
-  reg [1-1:0] _tmp_data_5;
-  reg _tmp_valid_5;
-  wire _tmp_ready_5;
-  assign _tmp_ready_2 = (_tmp_ready_5 || !_tmp_valid_5) && (_tmp_valid_2 && _tmp_valid_3);
-  assign _tmp_ready_3 = (_tmp_ready_5 || !_tmp_valid_5) && (_tmp_valid_2 && _tmp_valid_3);
-  reg [32-1:0] _tmp_data_6;
-  reg _tmp_valid_6;
-  wire _tmp_ready_6;
-  assign _tmp_ready_5 = (_tmp_ready_6 || !_tmp_valid_6) && _tmp_valid_5;
-  reg [32-1:0] _tmp_data_7;
-  reg _tmp_valid_7;
-  wire _tmp_ready_7;
-  assign _tmp_ready_4 = (_tmp_ready_7 || !_tmp_valid_7) && _tmp_valid_4;
-  assign cdata = _tmp_data_6;
-  assign cvalid = _tmp_valid_6;
-  assign _tmp_ready_6 = cready;
-  assign bdata = _tmp_data_7;
-  assign bvalid = _tmp_valid_7;
-  assign _tmp_ready_7 = bready;
+  reg [32-1:0] _counter_data_0;
+  reg _counter_valid_0;
+  wire _counter_ready_0;
+  reg [6-1:0] _counter_count_0;
+  reg [1-1:0] _eq_data_1;
+  reg _eq_valid_1;
+  wire _eq_ready_1;
+  reg [1-1:0] _eq_data_2;
+  reg _eq_valid_2;
+  wire _eq_ready_2;
+  reg [1-1:0] _eq_data_3;
+  reg _eq_valid_3;
+  wire _eq_ready_3;
+  reg [32-1:0] __delay_data_4;
+  reg __delay_valid_4;
+  wire __delay_ready_4;
+  assign _counter_ready_0 = (_eq_ready_1 || !_eq_valid_1) && _counter_valid_0 && ((_eq_ready_2 || !_eq_valid_2) && _counter_valid_0) && ((_eq_ready_3 || !_eq_valid_3) && _counter_valid_0) && ((__delay_ready_4 || !__delay_valid_4) && _counter_valid_0);
+  reg [32-1:0] _counter_data_5;
+  reg _counter_valid_5;
+  wire _counter_ready_5;
+  assign _eq_ready_1 = (_counter_ready_5 || !_counter_valid_5) && _eq_valid_1;
+  reg [1-1:0] _or_data_6;
+  reg _or_valid_6;
+  wire _or_ready_6;
+  assign _eq_ready_2 = (_or_ready_6 || !_or_valid_6) && (_eq_valid_2 && _eq_valid_3);
+  assign _eq_ready_3 = (_or_ready_6 || !_or_valid_6) && (_eq_valid_2 && _eq_valid_3);
+  reg [32-1:0] __delay_data_7;
+  reg __delay_valid_7;
+  wire __delay_ready_7;
+  assign __delay_ready_4 = (__delay_ready_7 || !__delay_valid_7) && __delay_valid_4;
+  reg [32-1:0] _counter_data_8;
+  reg _counter_valid_8;
+  wire _counter_ready_8;
+  assign _or_ready_6 = (_counter_ready_8 || !_counter_valid_8) && _or_valid_6;
+  reg [32-1:0] __delay_data_9;
+  reg __delay_valid_9;
+  wire __delay_ready_9;
+  assign __delay_ready_7 = (__delay_ready_9 || !__delay_valid_9) && __delay_valid_7;
+  reg [32-1:0] __delay_data_10;
+  reg __delay_valid_10;
+  wire __delay_ready_10;
+  assign _counter_ready_5 = (__delay_ready_10 || !__delay_valid_10) && _counter_valid_5;
+  assign cdata = _counter_data_8;
+  assign cvalid = _counter_valid_8;
+  assign _counter_ready_8 = cready;
+  assign adata = __delay_data_9;
+  assign avalid = __delay_valid_9;
+  assign __delay_ready_9 = aready;
+  assign bdata = __delay_data_10;
+  assign bvalid = __delay_valid_10;
+  assign __delay_ready_10 = bready;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_0 <= 1'sd0;
-      _tmp_valid_0 <= 0;
-      _tmp_data_1 <= 0;
-      _tmp_valid_1 <= 0;
-      _tmp_data_2 <= 0;
-      _tmp_valid_2 <= 0;
-      _tmp_data_3 <= 0;
-      _tmp_valid_3 <= 0;
-      _tmp_data_4 <= 1'sd0;
-      _tmp_valid_4 <= 0;
-      _tmp_data_5 <= 0;
-      _tmp_valid_5 <= 0;
-      _tmp_data_6 <= 1'sd0;
-      _tmp_valid_6 <= 0;
-      _tmp_data_7 <= 0;
-      _tmp_valid_7 <= 0;
+      _counter_data_0 <= -2'sd1;
+      _counter_count_0 <= 0;
+      _counter_valid_0 <= 0;
+      _eq_data_1 <= 0;
+      _eq_valid_1 <= 0;
+      _eq_data_2 <= 0;
+      _eq_valid_2 <= 0;
+      _eq_data_3 <= 0;
+      _eq_valid_3 <= 0;
+      __delay_data_4 <= 0;
+      __delay_valid_4 <= 0;
+      _counter_data_5 <= -2'sd1;
+      _counter_valid_5 <= 0;
+      _or_data_6 <= 0;
+      _or_valid_6 <= 0;
+      __delay_data_7 <= 0;
+      __delay_valid_7 <= 0;
+      _counter_data_8 <= -2'sd1;
+      _counter_valid_8 <= 0;
+      __delay_data_9 <= 0;
+      __delay_valid_9 <= 0;
+      __delay_data_10 <= 0;
+      __delay_valid_10 <= 0;
     end else begin
-      if((_tmp_ready_0 || !_tmp_valid_0) && 1 && 1) begin
-        _tmp_data_0 <= (_tmp_data_0 >= 7)? 0 : _tmp_data_0 + 2'sd1;
+      if((_counter_ready_0 || !_counter_valid_0) && 1 && 1) begin
+        _counter_data_0 <= _counter_data_0 + 1;
       end 
-      if(_tmp_valid_0 && _tmp_ready_0) begin
-        _tmp_valid_0 <= 0;
+      if((_counter_ready_0 || !_counter_valid_0) && 1 && 1) begin
+        _counter_count_0 <= (_counter_count_0 == 5'sd8 - 1)? 0 : _counter_count_0 + 1;
       end 
-      if((_tmp_ready_0 || !_tmp_valid_0) && 1) begin
-        _tmp_valid_0 <= 1;
+      if(_counter_valid_0 && _counter_ready_0) begin
+        _counter_valid_0 <= 0;
       end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && _tmp_ready_0 && _tmp_valid_0) begin
-        _tmp_data_1 <= _tmp_data_0 == 1'sd0;
+      if((_counter_ready_0 || !_counter_valid_0) && 1) begin
+        _counter_valid_0 <= 1;
       end 
-      if(_tmp_valid_1 && _tmp_ready_1) begin
-        _tmp_valid_1 <= 0;
+      if((_counter_ready_0 || !_counter_valid_0) && 1 && 1 && (_counter_count_0 == 0)) begin
+        _counter_data_0 <= -2'sd1 + 1;
       end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && _tmp_ready_0) begin
-        _tmp_valid_1 <= _tmp_valid_0;
+      if((_eq_ready_1 || !_eq_valid_1) && _counter_ready_0 && _counter_valid_0) begin
+        _eq_data_1 <= _counter_data_0 == 1'sd0;
       end 
-      if((_tmp_ready_2 || !_tmp_valid_2) && _tmp_ready_0 && _tmp_valid_0) begin
-        _tmp_data_2 <= _tmp_data_0 == 1'sd0;
+      if(_eq_valid_1 && _eq_ready_1) begin
+        _eq_valid_1 <= 0;
       end 
-      if(_tmp_valid_2 && _tmp_ready_2) begin
-        _tmp_valid_2 <= 0;
+      if((_eq_ready_1 || !_eq_valid_1) && _counter_ready_0) begin
+        _eq_valid_1 <= _counter_valid_0;
       end 
-      if((_tmp_ready_2 || !_tmp_valid_2) && _tmp_ready_0) begin
-        _tmp_valid_2 <= _tmp_valid_0;
+      if((_eq_ready_2 || !_eq_valid_2) && _counter_ready_0 && _counter_valid_0) begin
+        _eq_data_2 <= _counter_data_0 == 1'sd0;
       end 
-      if((_tmp_ready_3 || !_tmp_valid_3) && _tmp_ready_0 && _tmp_valid_0) begin
-        _tmp_data_3 <= _tmp_data_0 == 4'sd4;
+      if(_eq_valid_2 && _eq_ready_2) begin
+        _eq_valid_2 <= 0;
       end 
-      if(_tmp_valid_3 && _tmp_ready_3) begin
-        _tmp_valid_3 <= 0;
+      if((_eq_ready_2 || !_eq_valid_2) && _counter_ready_0) begin
+        _eq_valid_2 <= _counter_valid_0;
       end 
-      if((_tmp_ready_3 || !_tmp_valid_3) && _tmp_ready_0) begin
-        _tmp_valid_3 <= _tmp_valid_0;
+      if((_eq_ready_3 || !_eq_valid_3) && _counter_ready_0 && _counter_valid_0) begin
+        _eq_data_3 <= _counter_data_0 == 4'sd4;
       end 
-      if((_tmp_ready_4 || !_tmp_valid_4) && _tmp_ready_1 && _tmp_valid_1 && _tmp_data_1) begin
-        _tmp_data_4 <= _tmp_data_4 + 2'sd1;
+      if(_eq_valid_3 && _eq_ready_3) begin
+        _eq_valid_3 <= 0;
       end 
-      if(_tmp_valid_4 && _tmp_ready_4) begin
-        _tmp_valid_4 <= 0;
+      if((_eq_ready_3 || !_eq_valid_3) && _counter_ready_0) begin
+        _eq_valid_3 <= _counter_valid_0;
       end 
-      if((_tmp_ready_4 || !_tmp_valid_4) && _tmp_ready_1) begin
-        _tmp_valid_4 <= _tmp_valid_1;
+      if((__delay_ready_4 || !__delay_valid_4) && _counter_ready_0 && _counter_valid_0) begin
+        __delay_data_4 <= _counter_data_0;
       end 
-      if((_tmp_ready_5 || !_tmp_valid_5) && (_tmp_ready_2 && _tmp_ready_3) && (_tmp_valid_2 && _tmp_valid_3)) begin
-        _tmp_data_5 <= _tmp_data_2 | _tmp_data_3;
+      if(__delay_valid_4 && __delay_ready_4) begin
+        __delay_valid_4 <= 0;
       end 
-      if(_tmp_valid_5 && _tmp_ready_5) begin
-        _tmp_valid_5 <= 0;
+      if((__delay_ready_4 || !__delay_valid_4) && _counter_ready_0) begin
+        __delay_valid_4 <= _counter_valid_0;
       end 
-      if((_tmp_ready_5 || !_tmp_valid_5) && (_tmp_ready_2 && _tmp_ready_3)) begin
-        _tmp_valid_5 <= _tmp_valid_2 && _tmp_valid_3;
+      if((_counter_ready_5 || !_counter_valid_5) && _eq_ready_1 && _eq_valid_1 && _eq_data_1) begin
+        _counter_data_5 <= _counter_data_5 + 1;
       end 
-      if((_tmp_ready_6 || !_tmp_valid_6) && _tmp_ready_5 && _tmp_valid_5 && _tmp_data_5) begin
-        _tmp_data_6 <= _tmp_data_6 + 2'sd1;
+      if(_counter_valid_5 && _counter_ready_5) begin
+        _counter_valid_5 <= 0;
       end 
-      if(_tmp_valid_6 && _tmp_ready_6) begin
-        _tmp_valid_6 <= 0;
+      if((_counter_ready_5 || !_counter_valid_5) && _eq_ready_1) begin
+        _counter_valid_5 <= _eq_valid_1;
       end 
-      if((_tmp_ready_6 || !_tmp_valid_6) && _tmp_ready_5) begin
-        _tmp_valid_6 <= _tmp_valid_5;
+      if((_or_ready_6 || !_or_valid_6) && (_eq_ready_2 && _eq_ready_3) && (_eq_valid_2 && _eq_valid_3)) begin
+        _or_data_6 <= _eq_data_2 | _eq_data_3;
       end 
-      if((_tmp_ready_7 || !_tmp_valid_7) && _tmp_ready_4 && _tmp_valid_4) begin
-        _tmp_data_7 <= _tmp_data_4;
+      if(_or_valid_6 && _or_ready_6) begin
+        _or_valid_6 <= 0;
       end 
-      if(_tmp_valid_7 && _tmp_ready_7) begin
-        _tmp_valid_7 <= 0;
+      if((_or_ready_6 || !_or_valid_6) && (_eq_ready_2 && _eq_ready_3)) begin
+        _or_valid_6 <= _eq_valid_2 && _eq_valid_3;
       end 
-      if((_tmp_ready_7 || !_tmp_valid_7) && _tmp_ready_4) begin
-        _tmp_valid_7 <= _tmp_valid_4;
+      if((__delay_ready_7 || !__delay_valid_7) && __delay_ready_4 && __delay_valid_4) begin
+        __delay_data_7 <= __delay_data_4;
+      end 
+      if(__delay_valid_7 && __delay_ready_7) begin
+        __delay_valid_7 <= 0;
+      end 
+      if((__delay_ready_7 || !__delay_valid_7) && __delay_ready_4) begin
+        __delay_valid_7 <= __delay_valid_4;
+      end 
+      if((_counter_ready_8 || !_counter_valid_8) && _or_ready_6 && _or_valid_6 && _or_data_6) begin
+        _counter_data_8 <= _counter_data_8 + 1;
+      end 
+      if(_counter_valid_8 && _counter_ready_8) begin
+        _counter_valid_8 <= 0;
+      end 
+      if((_counter_ready_8 || !_counter_valid_8) && _or_ready_6) begin
+        _counter_valid_8 <= _or_valid_6;
+      end 
+      if((__delay_ready_9 || !__delay_valid_9) && __delay_ready_7 && __delay_valid_7) begin
+        __delay_data_9 <= __delay_data_7;
+      end 
+      if(__delay_valid_9 && __delay_ready_9) begin
+        __delay_valid_9 <= 0;
+      end 
+      if((__delay_ready_9 || !__delay_valid_9) && __delay_ready_7) begin
+        __delay_valid_9 <= __delay_valid_7;
+      end 
+      if((__delay_ready_10 || !__delay_valid_10) && _counter_ready_5 && _counter_valid_5) begin
+        __delay_data_10 <= _counter_data_5;
+      end 
+      if(__delay_valid_10 && __delay_ready_10) begin
+        __delay_valid_10 <= 0;
+      end 
+      if((__delay_ready_10 || !__delay_valid_10) && _counter_ready_5) begin
+        __delay_valid_10 <= _counter_valid_5;
       end 
     end
   end
@@ -204,6 +263,7 @@ module main
 
 endmodule
 """
+
 
 def test():
     veriloggen.reset()

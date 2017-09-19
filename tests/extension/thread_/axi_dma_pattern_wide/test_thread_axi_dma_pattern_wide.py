@@ -594,15 +594,15 @@ module blinkled
   reg _tmp_29;
   wire _tmp_30;
   reg [4-1:0] _tmp_31;
-  wire [32-1:0] _tmp_data_32;
-  wire _tmp_valid_32;
-  wire _tmp_ready_32;
-  assign _tmp_ready_32 = (_tmp_fsm_0 == 4) && (_tmp_30 || !_tmp_29);
+  wire [32-1:0] __variable_data_32;
+  wire __variable_valid_32;
+  wire __variable_ready_32;
+  assign __variable_ready_32 = (_tmp_fsm_0 == 4) && (_tmp_30 || !_tmp_29);
   reg _tmp_33;
-  wire [128-1:0] _tmp_data_34;
-  wire _tmp_valid_34;
-  wire _tmp_ready_34;
-  assign _tmp_ready_34 = (_tmp_fsm_0 == 4) && ((_tmp_27 > 0) && (myaxi_wready || !myaxi_wvalid));
+  wire [128-1:0] __variable_data_34;
+  wire __variable_valid_34;
+  wire __variable_ready_34;
+  assign __variable_ready_34 = (_tmp_fsm_0 == 4) && ((_tmp_27 > 0) && (myaxi_wready || !myaxi_wvalid));
   reg _myaxi_cond_1_1;
   reg _tmp_35;
   reg [32-1:0] _d1__tmp_fsm_0;
@@ -650,15 +650,15 @@ module blinkled
   reg _tmp_65;
   wire _tmp_66;
   reg [4-1:0] _tmp_67;
-  wire [32-1:0] _tmp_data_68;
-  wire _tmp_valid_68;
-  wire _tmp_ready_68;
-  assign _tmp_ready_68 = (_tmp_fsm_1 == 4) && (_tmp_66 || !_tmp_65);
+  wire [32-1:0] __variable_data_68;
+  wire __variable_valid_68;
+  wire __variable_ready_68;
+  assign __variable_ready_68 = (_tmp_fsm_1 == 4) && (_tmp_66 || !_tmp_65);
   reg _tmp_69;
-  wire [128-1:0] _tmp_data_70;
-  wire _tmp_valid_70;
-  wire _tmp_ready_70;
-  assign _tmp_ready_70 = (_tmp_fsm_1 == 4) && ((_tmp_63 > 0) && (myaxi_wready || !myaxi_wvalid));
+  wire [128-1:0] __variable_data_70;
+  wire __variable_valid_70;
+  wire __variable_ready_70;
+  assign __variable_ready_70 = (_tmp_fsm_1 == 4) && ((_tmp_63 > 0) && (myaxi_wready || !myaxi_wvalid));
   reg _myaxi_cond_3_1;
   reg _tmp_71;
   reg [32-1:0] _d1__tmp_fsm_1;
@@ -681,10 +681,10 @@ module blinkled
   reg _tmp_84;
   reg _tmp_85;
   reg _tmp_86;
-  wire [32-1:0] _tmp_data_87;
-  wire _tmp_valid_87;
-  wire _tmp_ready_87;
-  assign _tmp_ready_87 = _tmp_86 && !_tmp_85;
+  wire [32-1:0] __variable_data_87;
+  wire __variable_valid_87;
+  wire __variable_ready_87;
+  assign __variable_ready_87 = _tmp_86 && !_tmp_85;
   wire [10-1:0] _tmp_88;
   reg [10-1:0] _tmp_89;
   reg [10-1:0] _tmp_90;
@@ -724,10 +724,10 @@ module blinkled
   reg _tmp_111;
   reg _tmp_112;
   reg _tmp_113;
-  wire [32-1:0] _tmp_data_114;
-  wire _tmp_valid_114;
-  wire _tmp_ready_114;
-  assign _tmp_ready_114 = _tmp_113 && !_tmp_112;
+  wire [32-1:0] __variable_data_114;
+  wire __variable_valid_114;
+  wire __variable_ready_114;
+  assign __variable_ready_114 = _tmp_113 && !_tmp_112;
   wire [10-1:0] _tmp_115;
   reg [10-1:0] _tmp_116;
   reg [10-1:0] _tmp_117;
@@ -810,14 +810,14 @@ module blinkled
       if(myaxi_awvalid && !myaxi_awready) begin
         myaxi_awvalid <= myaxi_awvalid;
       end 
-      if(_tmp_valid_34 && ((_tmp_fsm_0 == 4) && ((_tmp_27 > 0) && (myaxi_wready || !myaxi_wvalid))) && ((_tmp_27 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_27 > 0))) begin
-        myaxi_wdata <= _tmp_data_34;
+      if(__variable_valid_34 && ((_tmp_fsm_0 == 4) && ((_tmp_27 > 0) && (myaxi_wready || !myaxi_wvalid))) && ((_tmp_27 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_27 > 0))) begin
+        myaxi_wdata <= __variable_data_34;
         myaxi_wvalid <= 1;
         myaxi_wlast <= 0;
         myaxi_wstrb <= { 16{ 1'd1 } };
         _tmp_27 <= _tmp_27 - 1;
       end 
-      if(_tmp_valid_34 && ((_tmp_fsm_0 == 4) && ((_tmp_27 > 0) && (myaxi_wready || !myaxi_wvalid))) && ((_tmp_27 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_27 > 0)) && (_tmp_27 == 1)) begin
+      if(__variable_valid_34 && ((_tmp_fsm_0 == 4) && ((_tmp_27 > 0) && (myaxi_wready || !myaxi_wvalid))) && ((_tmp_27 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_27 > 0)) && (_tmp_27 == 1)) begin
         myaxi_wlast <= 1;
         _tmp_33 <= 1;
       end 
@@ -840,14 +840,14 @@ module blinkled
       if(myaxi_awvalid && !myaxi_awready) begin
         myaxi_awvalid <= myaxi_awvalid;
       end 
-      if(_tmp_valid_70 && ((_tmp_fsm_1 == 4) && ((_tmp_63 > 0) && (myaxi_wready || !myaxi_wvalid))) && ((_tmp_63 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_63 > 0))) begin
-        myaxi_wdata <= _tmp_data_70;
+      if(__variable_valid_70 && ((_tmp_fsm_1 == 4) && ((_tmp_63 > 0) && (myaxi_wready || !myaxi_wvalid))) && ((_tmp_63 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_63 > 0))) begin
+        myaxi_wdata <= __variable_data_70;
         myaxi_wvalid <= 1;
         myaxi_wlast <= 0;
         myaxi_wstrb <= { 16{ 1'd1 } };
         _tmp_63 <= _tmp_63 - 1;
       end 
-      if(_tmp_valid_70 && ((_tmp_fsm_1 == 4) && ((_tmp_63 > 0) && (myaxi_wready || !myaxi_wvalid))) && ((_tmp_63 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_63 > 0)) && (_tmp_63 == 1)) begin
+      if(__variable_valid_70 && ((_tmp_fsm_1 == 4) && ((_tmp_63 > 0) && (myaxi_wready || !myaxi_wvalid))) && ((_tmp_63 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_63 > 0)) && (_tmp_63 == 1)) begin
         myaxi_wlast <= 1;
         _tmp_69 <= 1;
       end 
@@ -886,16 +886,16 @@ module blinkled
     end
   end
 
-  assign _tmp_data_34 = _tmp_28;
-  assign _tmp_valid_34 = _tmp_29;
-  assign _tmp_30 = _tmp_ready_34;
-  assign _tmp_data_70 = _tmp_64;
-  assign _tmp_valid_70 = _tmp_65;
-  assign _tmp_66 = _tmp_ready_70;
-  assign _tmp_data_87 = _tmp_83;
-  assign _tmp_valid_87 = _tmp_84;
-  assign _tmp_data_114 = _tmp_110;
-  assign _tmp_valid_114 = _tmp_111;
+  assign __variable_data_34 = _tmp_28;
+  assign __variable_valid_34 = _tmp_29;
+  assign _tmp_30 = __variable_ready_34;
+  assign __variable_data_70 = _tmp_64;
+  assign __variable_valid_70 = _tmp_65;
+  assign _tmp_66 = __variable_ready_70;
+  assign __variable_data_87 = _tmp_83;
+  assign __variable_valid_87 = _tmp_84;
+  assign __variable_data_114 = _tmp_110;
+  assign __variable_valid_114 = _tmp_111;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -1108,20 +1108,20 @@ module blinkled
       if((_tmp_fsm_2 == 1) && !_tmp_86) begin
         _tmp_86 <= 1;
       end 
-      if(_tmp_valid_87 && (_tmp_86 && !_tmp_85) && _tmp_86) begin
+      if(__variable_valid_87 && (_tmp_86 && !_tmp_85) && _tmp_86) begin
         myram_0_addr <= _tmp_88;
-        myram_0_wdata <= _tmp_data_87;
+        myram_0_wdata <= __variable_data_87;
         myram_0_wenable <= 1;
       end 
       if((_tmp_fsm_2 == 1) && !_tmp_86) begin
         _tmp_91 <= _tmp_74 - 1;
         _tmp_89 <= 0;
       end 
-      if(_tmp_valid_87 && (_tmp_86 && !_tmp_85) && _tmp_86) begin
+      if(__variable_valid_87 && (_tmp_86 && !_tmp_85) && _tmp_86) begin
         _tmp_91 <= _tmp_91 - 1;
         _tmp_89 <= _tmp_89 + _tmp_75;
       end 
-      if(_tmp_valid_87 && (_tmp_86 && !_tmp_85) && _tmp_86 && (_tmp_91 == 0)) begin
+      if(__variable_valid_87 && (_tmp_86 && !_tmp_85) && _tmp_86 && (_tmp_91 == 0)) begin
         _tmp_91 <= _tmp_74 - 1;
         _tmp_89 <= 0;
       end 
@@ -1129,15 +1129,15 @@ module blinkled
         _tmp_92 <= _tmp_76 - 1;
         _tmp_90 <= 0;
       end 
-      if(_tmp_valid_87 && (_tmp_86 && !_tmp_85) && _tmp_86 && (_tmp_91 == 0)) begin
+      if(__variable_valid_87 && (_tmp_86 && !_tmp_85) && _tmp_86 && (_tmp_91 == 0)) begin
         _tmp_92 <= _tmp_92 - 1;
         _tmp_90 <= _tmp_90 + _tmp_77;
       end 
-      if(_tmp_valid_87 && (_tmp_86 && !_tmp_85) && _tmp_86 && (_tmp_91 == 0) && (_tmp_92 == 0)) begin
+      if(__variable_valid_87 && (_tmp_86 && !_tmp_85) && _tmp_86 && (_tmp_91 == 0) && (_tmp_92 == 0)) begin
         _tmp_92 <= _tmp_76 - 1;
         _tmp_90 <= 0;
       end 
-      if(_tmp_valid_87 && (_tmp_86 && !_tmp_85) && ((_tmp_91 == 0) && (_tmp_92 == 0))) begin
+      if(__variable_valid_87 && (_tmp_86 && !_tmp_85) && ((_tmp_91 == 0) && (_tmp_92 == 0))) begin
         _tmp_86 <= 0;
         _tmp_85 <= 1;
       end 
@@ -1150,20 +1150,20 @@ module blinkled
       if((_tmp_fsm_3 == 1) && !_tmp_113) begin
         _tmp_113 <= 1;
       end 
-      if(_tmp_valid_114 && (_tmp_113 && !_tmp_112) && _tmp_113) begin
+      if(__variable_valid_114 && (_tmp_113 && !_tmp_112) && _tmp_113) begin
         myram_0_addr <= _tmp_115;
-        myram_0_wdata <= _tmp_data_114;
+        myram_0_wdata <= __variable_data_114;
         myram_0_wenable <= 1;
       end 
       if((_tmp_fsm_3 == 1) && !_tmp_113) begin
         _tmp_118 <= _tmp_101 - 1;
         _tmp_116 <= 0;
       end 
-      if(_tmp_valid_114 && (_tmp_113 && !_tmp_112) && _tmp_113) begin
+      if(__variable_valid_114 && (_tmp_113 && !_tmp_112) && _tmp_113) begin
         _tmp_118 <= _tmp_118 - 1;
         _tmp_116 <= _tmp_116 + _tmp_102;
       end 
-      if(_tmp_valid_114 && (_tmp_113 && !_tmp_112) && _tmp_113 && (_tmp_118 == 0)) begin
+      if(__variable_valid_114 && (_tmp_113 && !_tmp_112) && _tmp_113 && (_tmp_118 == 0)) begin
         _tmp_118 <= _tmp_101 - 1;
         _tmp_116 <= 0;
       end 
@@ -1171,15 +1171,15 @@ module blinkled
         _tmp_119 <= _tmp_103 - 1;
         _tmp_117 <= 0;
       end 
-      if(_tmp_valid_114 && (_tmp_113 && !_tmp_112) && _tmp_113 && (_tmp_118 == 0)) begin
+      if(__variable_valid_114 && (_tmp_113 && !_tmp_112) && _tmp_113 && (_tmp_118 == 0)) begin
         _tmp_119 <= _tmp_119 - 1;
         _tmp_117 <= _tmp_117 + _tmp_104;
       end 
-      if(_tmp_valid_114 && (_tmp_113 && !_tmp_112) && _tmp_113 && (_tmp_118 == 0) && (_tmp_119 == 0)) begin
+      if(__variable_valid_114 && (_tmp_113 && !_tmp_112) && _tmp_113 && (_tmp_118 == 0) && (_tmp_119 == 0)) begin
         _tmp_119 <= _tmp_103 - 1;
         _tmp_117 <= 0;
       end 
-      if(_tmp_valid_114 && (_tmp_113 && !_tmp_112) && ((_tmp_118 == 0) && (_tmp_119 == 0))) begin
+      if(__variable_valid_114 && (_tmp_113 && !_tmp_112) && ((_tmp_118 == 0) && (_tmp_119 == 0))) begin
         _tmp_113 <= 0;
         _tmp_112 <= 1;
       end 
@@ -1192,12 +1192,12 @@ module blinkled
     end
   end
 
-  assign _tmp_data_32 = _tmp_16;
-  assign _tmp_valid_32 = _tmp_10;
-  assign _tmp_12 = 1 && _tmp_ready_32;
-  assign _tmp_data_68 = _tmp_52;
-  assign _tmp_valid_68 = _tmp_46;
-  assign _tmp_48 = 1 && _tmp_ready_68;
+  assign __variable_data_32 = _tmp_16;
+  assign __variable_valid_32 = _tmp_10;
+  assign _tmp_12 = 1 && __variable_ready_32;
+  assign __variable_data_68 = _tmp_52;
+  assign __variable_valid_68 = _tmp_46;
+  assign _tmp_48 = 1 && __variable_ready_68;
   localparam th_blink_1 = 1;
   localparam th_blink_2 = 2;
   localparam th_blink_3 = 3;
@@ -1660,13 +1660,13 @@ module blinkled
       if(_tmp_30 || !_tmp_29) begin
         _tmp_29 <= 0;
       end 
-      if(_tmp_valid_32 && ((_tmp_fsm_0 == 4) && (_tmp_30 || !_tmp_29))) begin
-        _tmp_28 <= { _tmp_data_32, _tmp_28[127:32] };
+      if(__variable_valid_32 && ((_tmp_fsm_0 == 4) && (_tmp_30 || !_tmp_29))) begin
+        _tmp_28 <= { __variable_data_32, _tmp_28[127:32] };
         _tmp_29 <= 0;
         _tmp_31 <= _tmp_31 + 1;
       end 
-      if(_tmp_valid_32 && ((_tmp_fsm_0 == 4) && (_tmp_30 || !_tmp_29)) && (_tmp_31 == 3)) begin
-        _tmp_28 <= { _tmp_data_32, _tmp_28[127:32] };
+      if(__variable_valid_32 && ((_tmp_fsm_0 == 4) && (_tmp_30 || !_tmp_29)) && (_tmp_31 == 3)) begin
+        _tmp_28 <= { __variable_data_32, _tmp_28[127:32] };
         _tmp_29 <= 1;
         _tmp_31 <= 0;
       end 
@@ -1777,13 +1777,13 @@ module blinkled
       if(_tmp_66 || !_tmp_65) begin
         _tmp_65 <= 0;
       end 
-      if(_tmp_valid_68 && ((_tmp_fsm_1 == 4) && (_tmp_66 || !_tmp_65))) begin
-        _tmp_64 <= { _tmp_data_68, _tmp_64[127:32] };
+      if(__variable_valid_68 && ((_tmp_fsm_1 == 4) && (_tmp_66 || !_tmp_65))) begin
+        _tmp_64 <= { __variable_data_68, _tmp_64[127:32] };
         _tmp_65 <= 0;
         _tmp_67 <= _tmp_67 + 1;
       end 
-      if(_tmp_valid_68 && ((_tmp_fsm_1 == 4) && (_tmp_66 || !_tmp_65)) && (_tmp_67 == 3)) begin
-        _tmp_64 <= { _tmp_data_68, _tmp_64[127:32] };
+      if(__variable_valid_68 && ((_tmp_fsm_1 == 4) && (_tmp_66 || !_tmp_65)) && (_tmp_67 == 3)) begin
+        _tmp_64 <= { __variable_data_68, _tmp_64[127:32] };
         _tmp_65 <= 1;
         _tmp_67 <= 0;
       end 

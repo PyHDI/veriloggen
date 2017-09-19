@@ -519,43 +519,43 @@ module main
   input zready
 );
 
-  reg [32-1:0] _tmp_data_0;
-  reg _tmp_valid_0;
-  wire _tmp_ready_0;
-  assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
-  assign yready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
-  reg [16-1:0] _tmp_data_1;
-  reg _tmp_valid_1;
-  wire _tmp_ready_1;
-  assign _tmp_ready_0 = (_tmp_ready_1 || !_tmp_valid_1) && _tmp_valid_0;
-  assign zdata = _tmp_data_1;
-  assign zvalid = _tmp_valid_1;
-  assign _tmp_ready_1 = zready;
+  reg [32-1:0] _plus_data_0;
+  reg _plus_valid_0;
+  wire _plus_ready_0;
+  assign xready = (_plus_ready_0 || !_plus_valid_0) && (xvalid && yvalid);
+  assign yready = (_plus_ready_0 || !_plus_valid_0) && (xvalid && yvalid);
+  reg [16-1:0] _slice_data_1;
+  reg _slice_valid_1;
+  wire _slice_ready_1;
+  assign _plus_ready_0 = (_slice_ready_1 || !_slice_valid_1) && _plus_valid_0;
+  assign zdata = _slice_data_1;
+  assign zvalid = _slice_valid_1;
+  assign _slice_ready_1 = zready;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_0 <= 0;
-      _tmp_valid_0 <= 0;
-      _tmp_data_1 <= 0;
-      _tmp_valid_1 <= 0;
+      _plus_data_0 <= 0;
+      _plus_valid_0 <= 0;
+      _slice_data_1 <= 0;
+      _slice_valid_1 <= 0;
     end else begin
-      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
-        _tmp_data_0 <= xdata + ydata;
+      if((_plus_ready_0 || !_plus_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
+        _plus_data_0 <= xdata + ydata;
       end 
-      if(_tmp_valid_0 && _tmp_ready_0) begin
-        _tmp_valid_0 <= 0;
+      if(_plus_valid_0 && _plus_ready_0) begin
+        _plus_valid_0 <= 0;
       end 
-      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready)) begin
-        _tmp_valid_0 <= xvalid && yvalid;
+      if((_plus_ready_0 || !_plus_valid_0) && (xready && yready)) begin
+        _plus_valid_0 <= xvalid && yvalid;
       end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && _tmp_ready_0 && _tmp_valid_0) begin
-        _tmp_data_1 <= _tmp_data_0[5'sd15:1'sd0];
+      if((_slice_ready_1 || !_slice_valid_1) && _plus_ready_0 && _plus_valid_0) begin
+        _slice_data_1 <= _plus_data_0[5'sd15:1'sd0];
       end 
-      if(_tmp_valid_1 && _tmp_ready_1) begin
-        _tmp_valid_1 <= 0;
+      if(_slice_valid_1 && _slice_ready_1) begin
+        _slice_valid_1 <= 0;
       end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && _tmp_ready_0) begin
-        _tmp_valid_1 <= _tmp_valid_0;
+      if((_slice_ready_1 || !_slice_valid_1) && _plus_ready_0) begin
+        _slice_valid_1 <= _plus_valid_0;
       end 
     end
   end
@@ -563,6 +563,7 @@ module main
 
 endmodule
 """
+
 
 def test():
     veriloggen.reset()

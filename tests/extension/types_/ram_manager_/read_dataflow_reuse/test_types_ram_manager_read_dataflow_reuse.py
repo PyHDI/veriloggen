@@ -79,10 +79,10 @@ module main
   localparam fsm_init = 0;
   reg [8-1:0] _tmp_0;
   reg _tmp_1;
-  wire [32-1:0] _tmp_data_2;
-  wire _tmp_valid_2;
-  wire _tmp_ready_2;
-  assign _tmp_ready_2 = (_tmp_0 > 0) && !_tmp_1;
+  wire [32-1:0] _counter_data_2;
+  wire _counter_valid_2;
+  wire _counter_ready_2;
+  assign _counter_ready_2 = (_tmp_0 > 0) && !_tmp_1;
   reg _myram_cond_0_1;
   reg _tmp_3;
   reg _tmp_4;
@@ -113,18 +113,18 @@ module main
   reg __tmp_fsm_0_cond_7_4_1;
   reg __tmp_fsm_0_cond_7_4_2;
   reg __tmp_fsm_0_cond_10_5_1;
-  wire [32-1:0] _tmp_data_18;
-  wire _tmp_valid_18;
-  wire _tmp_ready_18;
-  assign _tmp_ready_18 = 1;
-  wire [32-1:0] _tmp_data_19;
-  wire _tmp_valid_19;
-  wire _tmp_ready_19;
-  assign _tmp_ready_19 = 1;
-  wire [1-1:0] _tmp_data_20;
-  wire _tmp_valid_20;
-  wire _tmp_ready_20;
-  assign _tmp_ready_20 = 1;
+  wire [32-1:0] __variable_data_18;
+  wire __variable_valid_18;
+  wire __variable_ready_18;
+  assign __variable_ready_18 = 1;
+  wire [32-1:0] __variable_data_19;
+  wire __variable_valid_19;
+  wire __variable_ready_19;
+  assign __variable_ready_19 = 1;
+  wire [1-1:0] __variable_data_20;
+  wire __variable_valid_20;
+  wire __variable_ready_20;
+  assign __variable_ready_20 = 1;
   reg [32-1:0] sum0;
   reg [32-1:0] sum1;
   reg _seq_cond_0_1;
@@ -155,13 +155,13 @@ module main
         myram_0_addr <= -1;
         _tmp_0 <= 64;
       end 
-      if(_tmp_valid_2 && ((_tmp_0 > 0) && !_tmp_1) && (_tmp_0 > 0)) begin
+      if(_counter_valid_2 && ((_tmp_0 > 0) && !_tmp_1) && (_tmp_0 > 0)) begin
         myram_0_addr <= myram_0_addr + 1;
-        myram_0_wdata <= _tmp_data_2;
+        myram_0_wdata <= _counter_data_2;
         myram_0_wenable <= 1;
         _tmp_0 <= _tmp_0 - 1;
       end 
-      if(_tmp_valid_2 && ((_tmp_0 > 0) && !_tmp_1) && (_tmp_0 == 1)) begin
+      if(_counter_valid_2 && ((_tmp_0 > 0) && !_tmp_1) && (_tmp_0 == 1)) begin
         _tmp_1 <= 1;
       end 
       _myram_cond_0_1 <= 1;
@@ -187,50 +187,35 @@ module main
     end
   end
 
-  assign _tmp_data_20 = _tmp_10;
-  assign _tmp_valid_20 = _tmp_5;
-  assign _tmp_8 = 1 && _tmp_ready_20;
-  assign _tmp_data_18 = _tmp_11;
-  assign _tmp_valid_18 = _tmp_3;
-  assign _tmp_6 = 1 && _tmp_ready_18;
-  assign _tmp_data_19 = _tmp_12;
-  assign _tmp_valid_19 = _tmp_4;
-  assign _tmp_7 = 1 && _tmp_ready_19;
-  reg [32-1:0] _tmp_data_21;
-  reg _tmp_valid_21;
-  wire _tmp_ready_21;
-  reg [32-1:0] _tmp_data_22;
-  reg _tmp_valid_22;
-  wire _tmp_ready_22;
-  assign _tmp_ready_21 = (_tmp_ready_22 || !_tmp_valid_22) && _tmp_valid_21;
-  assign _tmp_data_2 = _tmp_data_22;
-  assign _tmp_valid_2 = _tmp_valid_22;
-  assign _tmp_ready_22 = _tmp_ready_2;
+  assign __variable_data_20 = _tmp_10;
+  assign __variable_valid_20 = _tmp_5;
+  assign _tmp_8 = 1 && __variable_ready_20;
+  assign __variable_data_18 = _tmp_11;
+  assign __variable_valid_18 = _tmp_3;
+  assign _tmp_6 = 1 && __variable_ready_18;
+  assign __variable_data_19 = _tmp_12;
+  assign __variable_valid_19 = _tmp_4;
+  assign _tmp_7 = 1 && __variable_ready_19;
+  reg [32-1:0] _counter_data_21;
+  reg _counter_valid_21;
+  wire _counter_ready_21;
+  assign _counter_data_2 = _counter_data_21;
+  assign _counter_valid_2 = _counter_valid_21;
+  assign _counter_ready_21 = _counter_ready_2;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_21 <= 1'sd0;
-      _tmp_valid_21 <= 0;
-      _tmp_data_22 <= 0;
-      _tmp_valid_22 <= 0;
+      _counter_data_21 <= -2'sd1;
+      _counter_valid_21 <= 0;
     end else begin
-      if((_tmp_ready_21 || !_tmp_valid_21) && 1 && 1) begin
-        _tmp_data_21 <= _tmp_data_21 + 2'sd1;
+      if((_counter_ready_21 || !_counter_valid_21) && 1 && 1) begin
+        _counter_data_21 <= _counter_data_21 + 1;
       end 
-      if(_tmp_valid_21 && _tmp_ready_21) begin
-        _tmp_valid_21 <= 0;
+      if(_counter_valid_21 && _counter_ready_21) begin
+        _counter_valid_21 <= 0;
       end 
-      if((_tmp_ready_21 || !_tmp_valid_21) && 1) begin
-        _tmp_valid_21 <= 1;
-      end 
-      if((_tmp_ready_22 || !_tmp_valid_22) && _tmp_ready_21 && _tmp_valid_21) begin
-        _tmp_data_22 <= _tmp_data_21 - 2'sd1;
-      end 
-      if(_tmp_valid_22 && _tmp_ready_22) begin
-        _tmp_valid_22 <= 0;
-      end 
-      if((_tmp_ready_22 || !_tmp_valid_22) && _tmp_ready_21) begin
-        _tmp_valid_22 <= _tmp_valid_21;
+      if((_counter_ready_21 || !_counter_valid_21) && 1) begin
+        _counter_valid_21 <= 1;
       end 
     end
   end
@@ -440,15 +425,15 @@ module main
       if(_seq_cond_0_1) begin
         $display("sum=%d expected_sum=%d", (sum0 + sum1), 1984);
       end 
-      if(_tmp_valid_18) begin
-        sum0 <= sum0 + _tmp_data_18;
-        $display("rdata0_data=%d", _tmp_data_18);
+      if(__variable_valid_18) begin
+        sum0 <= sum0 + __variable_data_18;
+        $display("rdata0_data=%d", __variable_data_18);
       end 
-      if(_tmp_valid_19) begin
-        sum1 <= sum1 + _tmp_data_19;
-        $display("rdata1_data=%d", _tmp_data_19);
+      if(__variable_valid_19) begin
+        sum1 <= sum1 + __variable_data_19;
+        $display("rdata1_data=%d", __variable_data_19);
       end 
-      _seq_cond_0_1 <= _tmp_valid_19 && (_tmp_data_20 == 1);
+      _seq_cond_0_1 <= __variable_valid_19 && (__variable_data_20 == 1);
     end
   end
 

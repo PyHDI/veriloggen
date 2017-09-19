@@ -27,7 +27,7 @@ def mkLed():
     def comp_stream(strm, size, offset, stride):
         a = strm.read(ram_a, offset, size, stride=stride)
         b = strm.read(ram_b, offset, size, stride=stride)
-        sum, valid = strm.RegionAdd(a * b, size)
+        sum, valid = strm.ReduceAddValid(a * b, size)
         strm.write(ram_c, offset, 1, sum, when=valid)
 
     def comp_sequential(size, offset, stride):

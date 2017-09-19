@@ -12,13 +12,19 @@ from . import axi
 
 
 def to_ipcore(m, name=None, clkname='CLK', rstname='RST',
-              simaddrwidth=20, simcode=None, simmemimg=None, iftype='axi'):
+              simaddrwidth=20, simcode=None, simmemimg=None,
+              iftype='axi', silent=False):
+
     top = generate_top(m, name, clkname, rstname)
     verilog = top.to_verilog()
-    run_ipgen(top.name, verilog, simaddrwidth, simcode, simmemimg, iftype)
+    run_ipgen(top.name, verilog, simaddrwidth,
+              simcode, simmemimg, iftype, silent)
 
 
-def run_ipgen(topname, verilog, simaddrwidth=20, simcode=None, simmemimg=None, iftype='axi'):
+def run_ipgen(topname, verilog,
+              simaddrwidth=20, simcode=None, simmemimg=None,
+              iftype='axi', silent=False):
+
     # memory image
     if simmemimg is None:
         size = 2 ** simaddrwidth
@@ -74,11 +80,14 @@ def run_ipgen(topname, verilog, simaddrwidth=20, simcode=None, simmemimg=None, i
                   usertest=usertest,
                   memimg=memimg,
                   skip_not_found=skip_not_found,
-                  ignore_protocol_error=ignore_protocol_error)
+                  ignore_protocol_error=ignore_protocol_error,
+                  silent=silent)
 
     if file_memimg is not None:
         file_memimg.close()
+
     file_source.close()
+
     if file_simcode:
         file_simcode.close()
 

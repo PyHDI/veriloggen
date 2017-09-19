@@ -5,7 +5,7 @@ import dataflow_unbalanced_outputs
 
 expected_verilog = """
 module test;
-
+  
   reg CLK;
   reg RST;
   reg [32-1:0] xdata;
@@ -617,75 +617,75 @@ module main
   input z1ready
 );
 
-  reg [32-1:0] _tmp_data_0;
-  reg _tmp_valid_0;
-  wire _tmp_ready_0;
-  assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
-  reg [32-1:0] _tmp_data_1;
-  reg _tmp_valid_1;
-  wire _tmp_ready_1;
-  assign yready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid) && ((_tmp_ready_1 || !_tmp_valid_1) && yvalid);
-  reg [32-1:0] _tmp_data_2;
-  reg _tmp_valid_2;
-  wire _tmp_ready_2;
-  assign _tmp_ready_1 = (_tmp_ready_2 || !_tmp_valid_2) && (_tmp_valid_0 && _tmp_valid_1);
-  reg [32-1:0] _tmp_data_3;
-  reg _tmp_valid_3;
-  wire _tmp_ready_3;
-  assign _tmp_ready_0 = (_tmp_ready_2 || !_tmp_valid_2) && (_tmp_valid_0 && _tmp_valid_1) && ((_tmp_ready_3 || !_tmp_valid_3) && _tmp_valid_0);
-  assign z2data = _tmp_data_2;
-  assign z2valid = _tmp_valid_2;
-  assign _tmp_ready_2 = z2ready;
-  assign z1data = _tmp_data_3;
-  assign z1valid = _tmp_valid_3;
-  assign _tmp_ready_3 = z1ready;
+  reg [32-1:0] _plus_data_0;
+  reg _plus_valid_0;
+  wire _plus_ready_0;
+  assign xready = (_plus_ready_0 || !_plus_valid_0) && (xvalid && yvalid);
+  reg [32-1:0] __delay_data_1;
+  reg __delay_valid_1;
+  wire __delay_ready_1;
+  assign yready = (_plus_ready_0 || !_plus_valid_0) && (xvalid && yvalid) && ((__delay_ready_1 || !__delay_valid_1) && yvalid);
+  reg [32-1:0] _minus_data_2;
+  reg _minus_valid_2;
+  wire _minus_ready_2;
+  assign __delay_ready_1 = (_minus_ready_2 || !_minus_valid_2) && (_plus_valid_0 && __delay_valid_1);
+  reg [32-1:0] __delay_data_3;
+  reg __delay_valid_3;
+  wire __delay_ready_3;
+  assign _plus_ready_0 = (_minus_ready_2 || !_minus_valid_2) && (_plus_valid_0 && __delay_valid_1) && ((__delay_ready_3 || !__delay_valid_3) && _plus_valid_0);
+  assign z2data = _minus_data_2;
+  assign z2valid = _minus_valid_2;
+  assign _minus_ready_2 = z2ready;
+  assign z1data = __delay_data_3;
+  assign z1valid = __delay_valid_3;
+  assign __delay_ready_3 = z1ready;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_0 <= 0;
-      _tmp_valid_0 <= 0;
-      _tmp_data_1 <= 0;
-      _tmp_valid_1 <= 0;
-      _tmp_data_2 <= 0;
-      _tmp_valid_2 <= 0;
-      _tmp_data_3 <= 0;
-      _tmp_valid_3 <= 0;
+      _plus_data_0 <= 0;
+      _plus_valid_0 <= 0;
+      __delay_data_1 <= 0;
+      __delay_valid_1 <= 0;
+      _minus_data_2 <= 0;
+      _minus_valid_2 <= 0;
+      __delay_data_3 <= 0;
+      __delay_valid_3 <= 0;
     end else begin
-      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
-        _tmp_data_0 <= xdata + ydata;
+      if((_plus_ready_0 || !_plus_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
+        _plus_data_0 <= xdata + ydata;
       end 
-      if(_tmp_valid_0 && _tmp_ready_0) begin
-        _tmp_valid_0 <= 0;
+      if(_plus_valid_0 && _plus_ready_0) begin
+        _plus_valid_0 <= 0;
       end 
-      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready)) begin
-        _tmp_valid_0 <= xvalid && yvalid;
+      if((_plus_ready_0 || !_plus_valid_0) && (xready && yready)) begin
+        _plus_valid_0 <= xvalid && yvalid;
       end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && yready && yvalid) begin
-        _tmp_data_1 <= ydata;
+      if((__delay_ready_1 || !__delay_valid_1) && yready && yvalid) begin
+        __delay_data_1 <= ydata;
       end 
-      if(_tmp_valid_1 && _tmp_ready_1) begin
-        _tmp_valid_1 <= 0;
+      if(__delay_valid_1 && __delay_ready_1) begin
+        __delay_valid_1 <= 0;
       end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && yready) begin
-        _tmp_valid_1 <= yvalid;
+      if((__delay_ready_1 || !__delay_valid_1) && yready) begin
+        __delay_valid_1 <= yvalid;
       end 
-      if((_tmp_ready_2 || !_tmp_valid_2) && (_tmp_ready_0 && _tmp_ready_1) && (_tmp_valid_0 && _tmp_valid_1)) begin
-        _tmp_data_2 <= _tmp_data_0 - _tmp_data_1;
+      if((_minus_ready_2 || !_minus_valid_2) && (_plus_ready_0 && __delay_ready_1) && (_plus_valid_0 && __delay_valid_1)) begin
+        _minus_data_2 <= _plus_data_0 - __delay_data_1;
       end 
-      if(_tmp_valid_2 && _tmp_ready_2) begin
-        _tmp_valid_2 <= 0;
+      if(_minus_valid_2 && _minus_ready_2) begin
+        _minus_valid_2 <= 0;
       end 
-      if((_tmp_ready_2 || !_tmp_valid_2) && (_tmp_ready_0 && _tmp_ready_1)) begin
-        _tmp_valid_2 <= _tmp_valid_0 && _tmp_valid_1;
+      if((_minus_ready_2 || !_minus_valid_2) && (_plus_ready_0 && __delay_ready_1)) begin
+        _minus_valid_2 <= _plus_valid_0 && __delay_valid_1;
       end 
-      if((_tmp_ready_3 || !_tmp_valid_3) && _tmp_ready_0 && _tmp_valid_0) begin
-        _tmp_data_3 <= _tmp_data_0;
+      if((__delay_ready_3 || !__delay_valid_3) && _plus_ready_0 && _plus_valid_0) begin
+        __delay_data_3 <= _plus_data_0;
       end 
-      if(_tmp_valid_3 && _tmp_ready_3) begin
-        _tmp_valid_3 <= 0;
+      if(__delay_valid_3 && __delay_ready_3) begin
+        __delay_valid_3 <= 0;
       end 
-      if((_tmp_ready_3 || !_tmp_valid_3) && _tmp_ready_0) begin
-        _tmp_valid_3 <= _tmp_valid_0;
+      if((__delay_ready_3 || !__delay_valid_3) && _plus_ready_0) begin
+        __delay_valid_3 <= _plus_valid_0;
       end 
     end
   end
@@ -693,6 +693,7 @@ module main
 
 endmodule
 """
+
 
 def test():
     veriloggen.reset()

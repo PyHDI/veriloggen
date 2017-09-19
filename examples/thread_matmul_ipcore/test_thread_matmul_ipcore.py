@@ -1185,10 +1185,10 @@ module blinkled
   reg _tmp_16;
   reg [33-1:0] _tmp_17;
   reg _tmp_18;
-  wire [32-1:0] _tmp_data_19;
-  wire _tmp_valid_19;
-  wire _tmp_ready_19;
-  assign _tmp_ready_19 = (_tmp_17 > 0) && !_tmp_18;
+  wire [32-1:0] __variable_data_19;
+  wire __variable_valid_19;
+  wire __variable_ready_19;
+  assign __variable_ready_19 = (_tmp_17 > 0) && !_tmp_18;
   reg _ram_a_cond_0_1;
   reg [9-1:0] _tmp_20;
   reg _maxi_cond_0_1;
@@ -1210,10 +1210,10 @@ module blinkled
   reg _tmp_29;
   reg [33-1:0] _tmp_30;
   reg _tmp_31;
-  wire [32-1:0] _tmp_data_32;
-  wire _tmp_valid_32;
-  wire _tmp_ready_32;
-  assign _tmp_ready_32 = (_tmp_30 > 0) && !_tmp_31;
+  wire [32-1:0] __variable_data_32;
+  wire __variable_valid_32;
+  wire __variable_ready_32;
+  assign __variable_ready_32 = (_tmp_30 > 0) && !_tmp_31;
   reg _ram_b_cond_0_1;
   reg [9-1:0] _tmp_33;
   reg _maxi_cond_1_1;
@@ -1265,10 +1265,10 @@ module blinkled
   reg [9-1:0] _tmp_57;
   reg _maxi_cond_2_1;
   reg _tmp_58;
-  wire [32-1:0] _tmp_data_59;
-  wire _tmp_valid_59;
-  wire _tmp_ready_59;
-  assign _tmp_ready_59 = (_tmp_fsm_2 == 4) && ((_tmp_57 > 0) && (maxi_wready || !maxi_wvalid));
+  wire [32-1:0] __variable_data_59;
+  wire __variable_valid_59;
+  wire __variable_ready_59;
+  assign __variable_ready_59 = (_tmp_fsm_2 == 4) && ((_tmp_57 > 0) && (maxi_wready || !maxi_wvalid));
   reg _maxi_cond_3_1;
   reg _tmp_60;
   reg [32-1:0] _d1__tmp_fsm_2;
@@ -1302,13 +1302,13 @@ module blinkled
         ram_a_0_addr <= _tmp_9 - 1;
         _tmp_17 <= _tmp_11;
       end 
-      if(_tmp_valid_19 && ((_tmp_17 > 0) && !_tmp_18) && (_tmp_17 > 0)) begin
+      if(__variable_valid_19 && ((_tmp_17 > 0) && !_tmp_18) && (_tmp_17 > 0)) begin
         ram_a_0_addr <= ram_a_0_addr + 1;
-        ram_a_0_wdata <= _tmp_data_19;
+        ram_a_0_wdata <= __variable_data_19;
         ram_a_0_wenable <= 1;
         _tmp_17 <= _tmp_17 - 1;
       end 
-      if(_tmp_valid_19 && ((_tmp_17 > 0) && !_tmp_18) && (_tmp_17 == 1)) begin
+      if(__variable_valid_19 && ((_tmp_17 > 0) && !_tmp_18) && (_tmp_17 == 1)) begin
         _tmp_18 <= 1;
       end 
       _ram_a_cond_0_1 <= 1;
@@ -1349,13 +1349,13 @@ module blinkled
         ram_b_0_addr <= _tmp_22 - 1;
         _tmp_30 <= _tmp_24;
       end 
-      if(_tmp_valid_32 && ((_tmp_30 > 0) && !_tmp_31) && (_tmp_30 > 0)) begin
+      if(__variable_valid_32 && ((_tmp_30 > 0) && !_tmp_31) && (_tmp_30 > 0)) begin
         ram_b_0_addr <= ram_b_0_addr + 1;
-        ram_b_0_wdata <= _tmp_data_32;
+        ram_b_0_wdata <= __variable_data_32;
         ram_b_0_wenable <= 1;
         _tmp_30 <= _tmp_30 - 1;
       end 
-      if(_tmp_valid_32 && ((_tmp_30 > 0) && !_tmp_31) && (_tmp_30 == 1)) begin
+      if(__variable_valid_32 && ((_tmp_30 > 0) && !_tmp_31) && (_tmp_30 == 1)) begin
         _tmp_31 <= 1;
       end 
       _ram_b_cond_0_1 <= 1;
@@ -1427,9 +1427,9 @@ module blinkled
     end
   end
 
-  assign _tmp_data_59 = _tmp_51;
-  assign _tmp_valid_59 = _tmp_45;
-  assign _tmp_47 = 1 && _tmp_ready_59;
+  assign __variable_data_59 = _tmp_51;
+  assign __variable_valid_59 = _tmp_45;
+  assign _tmp_47 = 1 && __variable_ready_59;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -1505,14 +1505,14 @@ module blinkled
       if(maxi_awvalid && !maxi_awready) begin
         maxi_awvalid <= maxi_awvalid;
       end 
-      if(_tmp_valid_59 && ((_tmp_fsm_2 == 4) && ((_tmp_57 > 0) && (maxi_wready || !maxi_wvalid))) && ((_tmp_57 > 0) && (maxi_wready || !maxi_wvalid) && (_tmp_57 > 0))) begin
-        maxi_wdata <= _tmp_data_59;
+      if(__variable_valid_59 && ((_tmp_fsm_2 == 4) && ((_tmp_57 > 0) && (maxi_wready || !maxi_wvalid))) && ((_tmp_57 > 0) && (maxi_wready || !maxi_wvalid) && (_tmp_57 > 0))) begin
+        maxi_wdata <= __variable_data_59;
         maxi_wvalid <= 1;
         maxi_wlast <= 0;
         maxi_wstrb <= { 4{ 1'd1 } };
         _tmp_57 <= _tmp_57 - 1;
       end 
-      if(_tmp_valid_59 && ((_tmp_fsm_2 == 4) && ((_tmp_57 > 0) && (maxi_wready || !maxi_wvalid))) && ((_tmp_57 > 0) && (maxi_wready || !maxi_wvalid) && (_tmp_57 > 0)) && (_tmp_57 == 1)) begin
+      if(__variable_valid_59 && ((_tmp_fsm_2 == 4) && ((_tmp_57 > 0) && (maxi_wready || !maxi_wvalid))) && ((_tmp_57 > 0) && (maxi_wready || !maxi_wvalid) && (_tmp_57 > 0)) && (_tmp_57 == 1)) begin
         maxi_wlast <= 1;
         _tmp_58 <= 1;
       end 
@@ -1525,10 +1525,10 @@ module blinkled
     end
   end
 
-  assign _tmp_data_19 = _tmp_15;
-  assign _tmp_valid_19 = _tmp_16;
-  assign _tmp_data_32 = _tmp_28;
-  assign _tmp_valid_32 = _tmp_29;
+  assign __variable_data_19 = _tmp_15;
+  assign __variable_valid_19 = _tmp_16;
+  assign __variable_data_32 = _tmp_28;
+  assign __variable_valid_32 = _tmp_29;
 
   always @(posedge CLK) begin
     if(RST) begin

@@ -27,6 +27,8 @@ class Stream(thread.Thread):
         self.seq = Seq(self.m, self.name, self.clk, self.rst)
 
         self.start_cond = None
+        self.running_reg = None
+        self.running = None
         self.done_flags = []
 
     def start(self, *args, **kwargs):
@@ -35,22 +37,15 @@ class Stream(thread.Thread):
     def extend(self, fsm, *args, **kwargs):
         raise TypeError('Stream does not support extend() method.')
 
+    def reset(self, fsm):
+        raise TypeError('Stream does not support reset() method.')
+
     def join(self, fsm):
-        done = None
-
-        for flag in self.done_flags:
-            done = make_condition(done, flag)
-
-        fsm.If(done).goto_next()
+        fsm.If(vtypes.Not(self.running)).goto_next()
         return 0
 
     def done(self, fsm):
-        done = None
-
-        for flag in self.done_flags:
-            done = make_condition(done, flag)
-
-        return done
+        return vtypes.Not(self.running)
 
     def _synthesize_run_fsm(self, parent_fsm, args, kwargs, cond=None):
 
@@ -65,9 +60,13 @@ class Stream(thread.Thread):
             self.start_cond = self.m.Reg(
                 '_'.join(['', self.name, 'start_cond']), initval=0)
 
-        if self.called is None:
-            self.called = self.m.Reg(
-                '_'.join(['', self.name, 'called']), initval=0)
+        if self.running_reg is None:
+            self.running_reg = self.m.Reg(
+                '_'.join(['', self.name, 'running_reg']), initval=0)
+
+        if self.running is None:
+            self.running = self.m.Wire(
+                '_'.join(['', self.name, 'running']))
 
         if cond is not None:
             self.fsm.If(cond)
@@ -77,7 +76,7 @@ class Stream(thread.Thread):
         )
 
         self.fsm.If(start_flag)(
-            self.called(1)
+            self.running_reg(1)
         )
 
         functions = self._get_functions()
@@ -234,11 +233,7 @@ class Stream(thread.Thread):
 
         self.fsm.If(c).goto_next()
         parent_fsm.goto_next()
-
-        self.fsm(
-            self.start_cond(0)
-        )
-        self.fsm.goto_init()
+        parent_fsm.goto_next()
         parent_fsm.goto_next()
 
         # if already synthesized
@@ -262,6 +257,24 @@ class Stream(thread.Thread):
 
         self.return_value = self.targ(*call_args, **call_kwargs)
 
+        # FSM management
+        self.fsm(
+            self.start_cond(0)
+        )
+        self.fsm.goto_next()
+        self.fsm.goto_next()
+
+        done = None
+        for done_flag in self.done_flags:
+            done = make_condition(done, done_flag)
+
+        self.fsm.If(done)(
+            self.running_reg(0)
+        )
+        self.fsm.If(done).goto_init()
+
+        self.running.assign(vtypes.Ands(self.running_reg, vtypes.Not(done)))
+
         # clean-up jump conditions
         cvisitor.clearBreak()
         cvisitor.clearContinue()
@@ -277,15 +290,12 @@ class Stream(thread.Thread):
     def read(self, obj, addr, size,
              stride=1, point=0, signed=False, port=0, with_last=False):
 
-        flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'flag'])),
-                          initval=0)
-        self.done_flags.append(flag)
+        done_flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'done_flag'])),
+                               initval=0)
+        self.done_flags.append(done_flag)
 
         fsm = FSM(self.m, compiler._tmp_name('_'.join(['', self.name, 'fsm'])),
                   self.clk, self.rst)
-        fsm.If(self.start_cond)(
-            flag(0)
-        )
         fsm.If(self.start_cond).goto_next()
 
         if hasattr(obj, 'read_dataflow_interleave'):
@@ -302,10 +312,14 @@ class Stream(thread.Thread):
         fsm.goto_next()
 
         fsm.If(done)(
-            flag(1)
+            done_flag(1)
         )
+        fsm.If(done).goto_next()
 
-        fsm.If(done).goto_init()
+        fsm.If(vtypes.Not(self.running))(
+            done_flag(0)
+        )
+        fsm.If(vtypes.Not(self.running)).goto_init()
 
         if with_last:
             return rdata, rlast
@@ -315,15 +329,12 @@ class Stream(thread.Thread):
     def read_pattern(self, obj, addr, pattern,
                      point=0, signed=False, port=0, with_last=False):
 
-        flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'flag'])),
-                          initval=0)
-        self.done_flags.append(flag)
+        done_flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'done_flag'])),
+                               initval=0)
+        self.done_flags.append(done_flag)
 
         fsm = FSM(self.m, compiler._tmp_name('_'.join(['', self.name, 'fsm'])),
                   self.clk, self.rst)
-        fsm.If(self.start_cond)(
-            flag(0)
-        )
         fsm.If(self.start_cond).goto_next()
 
         if hasattr(obj, 'read_dataflow_pattern_interleave'):
@@ -338,10 +349,14 @@ class Stream(thread.Thread):
         fsm.goto_next()
 
         fsm.If(done)(
-            flag(1)
+            done_flag(1)
         )
+        fsm.If(done).goto_next()
 
-        fsm.If(done).goto_init()
+        fsm.If(vtypes.Not(self.running))(
+            done_flag(0)
+        )
+        fsm.If(vtypes.Not(self.running)).goto_init()
 
         if with_last:
             return rdata, rlast
@@ -351,15 +366,12 @@ class Stream(thread.Thread):
     def read_multidim(self, obj, addr, shape, order=None,
                       point=0, signed=False, port=0, with_last=False):
 
-        flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'flag'])),
-                          initval=0)
-        self.done_flags.append(flag)
+        done_flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'done_flag'])),
+                               initval=0)
+        self.done_flags.append(done_flag)
 
         fsm = FSM(self.m, compiler._tmp_name('_'.join(['', self.name, 'fsm'])),
                   self.clk, self.rst)
-        fsm.If(self.start_cond)(
-            flag(0)
-        )
         fsm.If(self.start_cond).goto_next()
 
         if hasattr(obj, 'read_dataflow_multidim_interleave'):
@@ -376,10 +388,14 @@ class Stream(thread.Thread):
         fsm.goto_next()
 
         fsm.If(done)(
-            flag(1)
+            done_flag(1)
         )
+        fsm.If(done).goto_next()
 
-        fsm.If(done).goto_init()
+        fsm.If(vtypes.Not(self.running))(
+            done_flag(0)
+        )
+        fsm.If(vtypes.Not(self.running)).goto_init()
 
         if with_last:
             return rdata, rlast
@@ -390,15 +406,12 @@ class Stream(thread.Thread):
                    reuse_size=1, num_outputs=1,
                    stride=1, point=0, signed=False, port=0, with_last=False):
 
-        flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'flag'])),
-                          initval=0)
-        self.done_flags.append(flag)
+        done_flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'done_flag'])),
+                               initval=0)
+        self.done_flags.append(done_flag)
 
         fsm = FSM(self.m, compiler._tmp_name('_'.join(['', self.name, 'fsm'])),
                   self.clk, self.rst)
-        fsm.If(self.start_cond)(
-            flag(0)
-        )
         fsm.If(self.start_cond).goto_next()
 
         if hasattr(obj, 'read_dataflow_reuse_interleave'):
@@ -419,10 +432,14 @@ class Stream(thread.Thread):
         fsm.goto_next()
 
         fsm.If(done)(
-            flag(1)
+            done_flag(1)
         )
+        fsm.If(done).goto_next()
 
-        fsm.If(done).goto_init()
+        fsm.If(vtypes.Not(self.running))(
+            done_flag(0)
+        )
+        fsm.If(vtypes.Not(self.running)).goto_init()
 
         if with_last:
             return tuple(rdata + [rlast])
@@ -438,15 +455,12 @@ class Stream(thread.Thread):
                            reuse_size=1, num_outputs=1,
                            point=0, signed=False, port=0, with_last=False):
 
-        flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'flag'])),
-                          initval=0)
-        self.done_flags.append(flag)
+        done_flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'done_flag'])),
+                               initval=0)
+        self.done_flags.append(done_flag)
 
         fsm = FSM(self.m, compiler._tmp_name('_'.join(['', self.name, 'fsm'])),
                   self.clk, self.rst)
-        fsm.If(self.start_cond)(
-            flag(0)
-        )
         fsm.If(self.start_cond).goto_next()
 
         if hasattr(obj, 'read_dataflow_reuse_pattern_interleave'):
@@ -467,10 +481,14 @@ class Stream(thread.Thread):
         fsm.goto_next()
 
         fsm.If(done)(
-            flag(1)
+            done_flag(1)
         )
+        fsm.If(done).goto_next()
 
-        fsm.If(done).goto_init()
+        fsm.If(vtypes.Not(self.running))(
+            done_flag(0)
+        )
+        fsm.If(vtypes.Not(self.running)).goto_init()
 
         if with_last:
             return tuple(rdata + [rlast])
@@ -486,15 +504,12 @@ class Stream(thread.Thread):
                             reuse_size=1, num_outputs=1,
                             point=0, signed=False, port=0, with_last=False):
 
-        flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'flag'])),
-                          initval=0)
-        self.done_flags.append(flag)
+        done_flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'done_flag'])),
+                               initval=0)
+        self.done_flags.append(done_flag)
 
         fsm = FSM(self.m, compiler._tmp_name('_'.join(['', self.name, 'fsm'])),
                   self.clk, self.rst)
-        fsm.If(self.start_cond)(
-            flag(0)
-        )
         fsm.If(self.start_cond).goto_next()
 
         if hasattr(obj, 'read_dataflow_reuse_multidim_interleave'):
@@ -519,10 +534,14 @@ class Stream(thread.Thread):
         fsm.goto_next()
 
         fsm.If(done)(
-            flag(1)
+            done_flag(1)
         )
+        fsm.If(done).goto_next()
 
-        fsm.If(done).goto_init()
+        fsm.If(vtypes.Not(self.running))(
+            done_flag(0)
+        )
+        fsm.If(vtypes.Not(self.running)).goto_init()
 
         if with_last:
             return tuple(rdata + [rlast])
@@ -537,15 +556,12 @@ class Stream(thread.Thread):
     def write(self, obj, addr, size, value,
               stride=1, when=None, port=0):
 
-        flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'flag'])),
-                          initval=0)
-        self.done_flags.append(flag)
+        done_flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'done_flag'])),
+                               initval=0)
+        self.done_flags.append(done_flag)
 
         fsm = FSM(self.m, compiler._tmp_name('_'.join(['', self.name, 'fsm'])),
                   self.clk, self.rst)
-        fsm.If(self.start_cond)(
-            flag(0)
-        )
         fsm.If(self.start_cond).goto_next()
 
         if hasattr(obj, 'write_dataflow_interleave'):
@@ -558,25 +574,26 @@ class Stream(thread.Thread):
         fsm.goto_next()
 
         fsm.If(done)(
-            flag(1)
+            done_flag(1)
         )
+        fsm.If(done).goto_next()
 
-        fsm.If(done).goto_init()
+        fsm.If(vtypes.Not(self.running))(
+            done_flag(0)
+        )
+        fsm.If(vtypes.Not(self.running)).goto_init()
 
         return 0
 
     def write_pattern(self, obj, addr, value, pattern,
                       when=None, port=0):
 
-        flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'flag'])),
-                          initval=0)
-        self.done_flags.append(flag)
+        done_flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'done_flag'])),
+                               initval=0)
+        self.done_flags.append(done_flag)
 
         fsm = FSM(self.m, compiler._tmp_name('_'.join(['', self.name, 'fsm'])),
                   self.clk, self.rst)
-        fsm.If(self.start_cond)(
-            flag(0)
-        )
         fsm.If(self.start_cond).goto_next()
 
         if hasattr(obj, 'write_dataflow_pattern_interleave'):
@@ -589,25 +606,26 @@ class Stream(thread.Thread):
         fsm.goto_next()
 
         fsm.If(done)(
-            flag(1)
+            done_flag(1)
         )
+        fsm.If(done).goto_next()
 
-        fsm.If(done).goto_init()
+        fsm.If(vtypes.Not(self.running))(
+            done_flag(0)
+        )
+        fsm.If(vtypes.Not(self.running)).goto_init()
 
         return 0
 
     def write_multidim(self, obj, addr, value, shape, order=None,
                        when=None, port=0):
 
-        flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'flag'])),
-                          initval=0)
-        self.done_flags.append(flag)
+        done_flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'done_flag'])),
+                               initval=0)
+        self.done_flags.append(done_flag)
 
         fsm = FSM(self.m, compiler._tmp_name('_'.join(['', self.name, 'fsm'])),
                   self.clk, self.rst)
-        fsm.If(self.start_cond)(
-            flag(0)
-        )
         fsm.If(self.start_cond).goto_next()
 
         if hasattr(obj, 'write_dataflow_multidim_interleave'):
@@ -620,10 +638,14 @@ class Stream(thread.Thread):
         fsm.goto_next()
 
         fsm.If(done)(
-            flag(1)
+            done_flag(1)
         )
+        fsm.If(done).goto_next()
 
-        fsm.If(done).goto_init()
+        fsm.If(vtypes.Not(self.running))(
+            done_flag(0)
+        )
+        fsm.If(vtypes.Not(self.running)).goto_init()
 
         return 0
 

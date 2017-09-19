@@ -519,28 +519,28 @@ module main
   input zready
 );
 
-  reg [32-1:0] _tmp_data_0;
-  reg _tmp_valid_0;
-  wire _tmp_ready_0;
-  assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
-  assign yready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
-  assign zdata = _tmp_data_0;
-  assign zvalid = _tmp_valid_0;
-  assign _tmp_ready_0 = zready;
+  reg [32-1:0] _customop_data_0;
+  reg _customop_valid_0;
+  wire _customop_ready_0;
+  assign xready = (_customop_ready_0 || !_customop_valid_0) && (xvalid && yvalid);
+  assign yready = (_customop_ready_0 || !_customop_valid_0) && (xvalid && yvalid);
+  assign zdata = _customop_data_0;
+  assign zvalid = _customop_valid_0;
+  assign _customop_ready_0 = zready;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_0 <= 0;
-      _tmp_valid_0 <= 0;
+      _customop_data_0 <= 0;
+      _customop_valid_0 <= 0;
     end else begin
-      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
-        _tmp_data_0 <= xdata + ydata;
+      if((_customop_ready_0 || !_customop_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
+        _customop_data_0 <= xdata + ydata + 100;
       end 
-      if(_tmp_valid_0 && _tmp_ready_0) begin
-        _tmp_valid_0 <= 0;
+      if(_customop_valid_0 && _customop_ready_0) begin
+        _customop_valid_0 <= 0;
       end 
-      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready)) begin
-        _tmp_valid_0 <= xvalid && yvalid;
+      if((_customop_ready_0 || !_customop_valid_0) && (xready && yready)) begin
+        _customop_valid_0 <= xvalid && yvalid;
       end 
     end
   end
@@ -548,6 +548,7 @@ module main
 
 endmodule
 """
+
 
 def test():
     veriloggen.reset()

@@ -617,117 +617,117 @@ module main
   input z1ready
 );
 
-  wire [32-1:0] _tmp_data_0;
-  wire _tmp_valid_0;
-  wire _tmp_ready_0;
-  wire [64-1:0] _tmp_odata_0;
-  reg [64-1:0] _tmp_data_reg_0;
-  assign _tmp_data_0 = _tmp_data_reg_0;
-  wire _tmp_ovalid_0;
-  reg _tmp_valid_reg_0;
-  assign _tmp_valid_0 = _tmp_valid_reg_0;
-  wire _tmp_enable_0;
-  wire _tmp_update_0;
-  assign _tmp_enable_0 = (_tmp_ready_0 || !_tmp_valid_0) && (xready && yready) && (xvalid && yvalid);
-  assign _tmp_update_0 = _tmp_ready_0 || !_tmp_valid_0;
+  wire [32-1:0] _times_data_0;
+  wire _times_valid_0;
+  wire _times_ready_0;
+  wire [64-1:0] _times_odata_0;
+  reg [64-1:0] _times_data_reg_0;
+  assign _times_data_0 = _times_data_reg_0;
+  wire _times_ovalid_0;
+  reg _times_valid_reg_0;
+  assign _times_valid_0 = _times_valid_reg_0;
+  wire _times_enable_0;
+  wire _times_update_0;
+  assign _times_enable_0 = (_times_ready_0 || !_times_valid_0) && (xready && yready) && (xvalid && yvalid);
+  assign _times_update_0 = _times_ready_0 || !_times_valid_0;
 
   multiplier_0
   mul0
   (
     .CLK(CLK),
     .RST(RST),
-    .update(_tmp_update_0),
-    .enable(_tmp_enable_0),
-    .valid(_tmp_ovalid_0),
+    .update(_times_update_0),
+    .enable(_times_enable_0),
+    .valid(_times_ovalid_0),
     .a(xdata),
     .b(ydata),
-    .c(_tmp_odata_0)
+    .c(_times_odata_0)
   );
 
-  wire [32-1:0] _tmp_data_1;
-  wire _tmp_valid_1;
-  wire _tmp_ready_1;
-  wire [64-1:0] _tmp_odata_1;
-  reg [64-1:0] _tmp_data_reg_1;
-  assign _tmp_data_1 = _tmp_data_reg_1;
-  wire _tmp_ovalid_1;
-  reg _tmp_valid_reg_1;
-  assign _tmp_valid_1 = _tmp_valid_reg_1;
-  wire _tmp_enable_1;
-  wire _tmp_update_1;
-  assign _tmp_enable_1 = (_tmp_ready_1 || !_tmp_valid_1) && (xready && yready) && (xvalid && yvalid);
-  assign _tmp_update_1 = _tmp_ready_1 || !_tmp_valid_1;
+  wire [32-1:0] _times_data_1;
+  wire _times_valid_1;
+  wire _times_ready_1;
+  wire [64-1:0] _times_odata_1;
+  reg [64-1:0] _times_data_reg_1;
+  assign _times_data_1 = _times_data_reg_1;
+  wire _times_ovalid_1;
+  reg _times_valid_reg_1;
+  assign _times_valid_1 = _times_valid_reg_1;
+  wire _times_enable_1;
+  wire _times_update_1;
+  assign _times_enable_1 = (_times_ready_1 || !_times_valid_1) && (xready && yready) && (xvalid && yvalid);
+  assign _times_update_1 = _times_ready_1 || !_times_valid_1;
 
   multiplier_1
   mul1
   (
     .CLK(CLK),
     .RST(RST),
-    .update(_tmp_update_1),
-    .enable(_tmp_enable_1),
-    .valid(_tmp_ovalid_1),
+    .update(_times_update_1),
+    .enable(_times_enable_1),
+    .valid(_times_ovalid_1),
     .a(xdata),
     .b(ydata),
-    .c(_tmp_odata_1)
+    .c(_times_odata_1)
   );
 
-  assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid) && ((_tmp_ready_1 || !_tmp_valid_1) && (xvalid && yvalid));
-  assign yready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid) && ((_tmp_ready_1 || !_tmp_valid_1) && (xvalid && yvalid));
-  reg [32-1:0] _tmp_data_2;
-  reg _tmp_valid_2;
-  wire _tmp_ready_2;
-  assign _tmp_ready_1 = (_tmp_ready_2 || !_tmp_valid_2) && _tmp_valid_1;
-  reg [32-1:0] _tmp_data_3;
-  reg _tmp_valid_3;
-  wire _tmp_ready_3;
-  assign _tmp_ready_0 = (_tmp_ready_3 || !_tmp_valid_3) && _tmp_valid_0;
-  assign z2data = _tmp_data_2;
-  assign z2valid = _tmp_valid_2;
-  assign _tmp_ready_2 = z2ready;
-  assign z1data = _tmp_data_3;
-  assign z1valid = _tmp_valid_3;
-  assign _tmp_ready_3 = z1ready;
+  assign xready = (_times_ready_0 || !_times_valid_0) && (xvalid && yvalid) && ((_times_ready_1 || !_times_valid_1) && (xvalid && yvalid));
+  assign yready = (_times_ready_0 || !_times_valid_0) && (xvalid && yvalid) && ((_times_ready_1 || !_times_valid_1) && (xvalid && yvalid));
+  reg [32-1:0] _plus_data_2;
+  reg _plus_valid_2;
+  wire _plus_ready_2;
+  assign _times_ready_1 = (_plus_ready_2 || !_plus_valid_2) && _times_valid_1;
+  reg [32-1:0] __delay_data_3;
+  reg __delay_valid_3;
+  wire __delay_ready_3;
+  assign _times_ready_0 = (__delay_ready_3 || !__delay_valid_3) && _times_valid_0;
+  assign z2data = _plus_data_2;
+  assign z2valid = _plus_valid_2;
+  assign _plus_ready_2 = z2ready;
+  assign z1data = __delay_data_3;
+  assign z1valid = __delay_valid_3;
+  assign __delay_ready_3 = z1ready;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_reg_0 <= 0;
-      _tmp_valid_reg_0 <= 0;
-      _tmp_data_reg_1 <= 0;
-      _tmp_valid_reg_1 <= 0;
-      _tmp_data_2 <= 0;
-      _tmp_valid_2 <= 0;
-      _tmp_data_3 <= 0;
-      _tmp_valid_3 <= 0;
+      _times_data_reg_0 <= 0;
+      _times_valid_reg_0 <= 0;
+      _times_data_reg_1 <= 0;
+      _times_valid_reg_1 <= 0;
+      _plus_data_2 <= 0;
+      _plus_valid_2 <= 0;
+      __delay_data_3 <= 0;
+      __delay_valid_3 <= 0;
     end else begin
-      if(_tmp_ready_0 || !_tmp_valid_0) begin
-        _tmp_data_reg_0 <= _tmp_odata_0;
+      if(_times_ready_0 || !_times_valid_0) begin
+        _times_data_reg_0 <= _times_odata_0;
       end 
-      if(_tmp_ready_0 || !_tmp_valid_0) begin
-        _tmp_valid_reg_0 <= _tmp_ovalid_0;
+      if(_times_ready_0 || !_times_valid_0) begin
+        _times_valid_reg_0 <= _times_ovalid_0;
       end 
-      if(_tmp_ready_1 || !_tmp_valid_1) begin
-        _tmp_data_reg_1 <= _tmp_odata_1;
+      if(_times_ready_1 || !_times_valid_1) begin
+        _times_data_reg_1 <= _times_odata_1;
       end 
-      if(_tmp_ready_1 || !_tmp_valid_1) begin
-        _tmp_valid_reg_1 <= _tmp_ovalid_1;
+      if(_times_ready_1 || !_times_valid_1) begin
+        _times_valid_reg_1 <= _times_ovalid_1;
       end 
-      if((_tmp_ready_2 || !_tmp_valid_2) && _tmp_ready_1 && _tmp_valid_1) begin
-        _tmp_data_2 <= _tmp_data_1 + 2'sd1;
+      if((_plus_ready_2 || !_plus_valid_2) && _times_ready_1 && _times_valid_1) begin
+        _plus_data_2 <= _times_data_1 + 2'sd1;
       end 
-      if(_tmp_valid_2 && _tmp_ready_2) begin
-        _tmp_valid_2 <= 0;
+      if(_plus_valid_2 && _plus_ready_2) begin
+        _plus_valid_2 <= 0;
       end 
-      if((_tmp_ready_2 || !_tmp_valid_2) && _tmp_ready_1) begin
-        _tmp_valid_2 <= _tmp_valid_1;
+      if((_plus_ready_2 || !_plus_valid_2) && _times_ready_1) begin
+        _plus_valid_2 <= _times_valid_1;
       end 
-      if((_tmp_ready_3 || !_tmp_valid_3) && _tmp_ready_0 && _tmp_valid_0) begin
-        _tmp_data_3 <= _tmp_data_0;
+      if((__delay_ready_3 || !__delay_valid_3) && _times_ready_0 && _times_valid_0) begin
+        __delay_data_3 <= _times_data_0;
       end 
-      if(_tmp_valid_3 && _tmp_ready_3) begin
-        _tmp_valid_3 <= 0;
+      if(__delay_valid_3 && __delay_ready_3) begin
+        __delay_valid_3 <= 0;
       end 
-      if((_tmp_ready_3 || !_tmp_valid_3) && _tmp_ready_0) begin
-        _tmp_valid_3 <= _tmp_valid_0;
+      if((__delay_ready_3 || !__delay_valid_3) && _times_ready_0) begin
+        __delay_valid_3 <= _times_valid_0;
       end 
     end
   end
@@ -921,6 +921,7 @@ module multiplier_core_1
 
 endmodule
 """
+
 
 def test():
     veriloggen.reset()

@@ -165,12 +165,17 @@ class GraphGenerator(_Visitor):
         self.graph.add_node(node, label=mark, shape='box', style='rounded')
 
         right = self.visit(node.right)
+        if node.size is not None:
+            size = self.visit(node.size)
         initval = self.visit(node.initval)
         if node.enable is not None:
             enable = self.visit(node.enable)
         if node.reset is not None:
             reset = self.visit(node.reset)
+            
         self.graph.add_edge(right, node, label='R')
+        if node.size is not None:
+            self.graph.add_edge(size, node, label='size')
         self.graph.add_edge(initval, node, label='initval')
         if node.enable is not None:
             self.graph.add_edge(enable, node, label='enable')

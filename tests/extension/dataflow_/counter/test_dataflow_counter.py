@@ -58,37 +58,39 @@ module main
   output cvalid
 );
 
-  reg [8-1:0] _tmp_data_0;
-  reg _tmp_valid_0;
-  wire _tmp_ready_0;
-  reg [8-1:0] _tmp_data_1;
-  reg _tmp_valid_1;
-  wire _tmp_ready_1;
-  reg [8-1:0] _tmp_data_2;
-  reg _tmp_valid_2;
-  wire _tmp_ready_2;
-  assign _tmp_ready_0 = (_tmp_ready_2 || !_tmp_valid_2) && (_tmp_valid_0 && _tmp_valid_1);
-  assign _tmp_ready_1 = (_tmp_ready_2 || !_tmp_valid_2) && (_tmp_valid_0 && _tmp_valid_1);
-  assign cdata = _tmp_data_2;
-  assign cvalid = _tmp_valid_2;
-  assign _tmp_ready_2 = 1;
+  reg [8-1:0] _counter_data_0;
+  reg _counter_valid_0;
+  wire _counter_ready_0;
+  reg [6-1:0] _counter_count_0;
+  reg [8-1:0] _counter_data_1;
+  reg _counter_valid_1;
+  wire _counter_ready_1;
+  reg [7-1:0] _counter_count_1;
+  reg [8-1:0] _plus_data_2;
+  reg _plus_valid_2;
+  wire _plus_ready_2;
+  assign _counter_ready_0 = (_plus_ready_2 || !_plus_valid_2) && (_counter_valid_0 && _counter_valid_1);
+  assign _counter_ready_1 = (_plus_ready_2 || !_plus_valid_2) && (_counter_valid_0 && _counter_valid_1);
+  assign cdata = _plus_data_2;
+  assign cvalid = _plus_valid_2;
+  assign _plus_ready_2 = 1;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
-  reg [32-1:0] _tmp_3;
+  reg [32-1:0] count;
   localparam fsm_1 = 1;
 
   always @(posedge CLK) begin
     if(RST) begin
       fsm <= fsm_init;
-      _tmp_3 <= 0;
+      count <= 0;
     end else begin
       case(fsm)
         fsm_init: begin
           if(cvalid) begin
-            _tmp_3 <= _tmp_3 + 1;
+            count <= count + 1;
             $display("c=%d", cdata);
           end 
-          if(_tmp_3 == 32) begin
+          if(count == 32) begin
             fsm <= fsm_1;
           end 
         end
@@ -99,39 +101,53 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_0 <= 1'sd0;
-      _tmp_valid_0 <= 0;
-      _tmp_data_1 <= 1'sd0;
-      _tmp_valid_1 <= 0;
-      _tmp_data_2 <= 0;
-      _tmp_valid_2 <= 0;
+      _counter_data_0 <= -2'sd1;
+      _counter_count_0 <= 0;
+      _counter_valid_0 <= 0;
+      _counter_data_1 <= -3'sd2;
+      _counter_count_1 <= 0;
+      _counter_valid_1 <= 0;
+      _plus_data_2 <= 0;
+      _plus_valid_2 <= 0;
     end else begin
-      if((_tmp_ready_0 || !_tmp_valid_0) && 1 && 1) begin
-        _tmp_data_0 <= (_tmp_data_0 >= 7)? 0 : _tmp_data_0 + 2'sd1;
+      if((_counter_ready_0 || !_counter_valid_0) && 1 && 1) begin
+        _counter_data_0 <= _counter_data_0 + 1;
       end 
-      if(_tmp_valid_0 && _tmp_ready_0) begin
-        _tmp_valid_0 <= 0;
+      if((_counter_ready_0 || !_counter_valid_0) && 1 && 1) begin
+        _counter_count_0 <= (_counter_count_0 == 5'sd8 - 1)? 0 : _counter_count_0 + 1;
       end 
-      if((_tmp_ready_0 || !_tmp_valid_0) && 1) begin
-        _tmp_valid_0 <= 1;
+      if(_counter_valid_0 && _counter_ready_0) begin
+        _counter_valid_0 <= 0;
       end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && 1 && 1) begin
-        _tmp_data_1 <= (_tmp_data_1 >= 14)? 0 : _tmp_data_1 + 3'sd2;
+      if((_counter_ready_0 || !_counter_valid_0) && 1) begin
+        _counter_valid_0 <= 1;
       end 
-      if(_tmp_valid_1 && _tmp_ready_1) begin
-        _tmp_valid_1 <= 0;
+      if((_counter_ready_0 || !_counter_valid_0) && 1 && 1 && (_counter_count_0 == 0)) begin
+        _counter_data_0 <= -2'sd1 + 1;
       end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && 1) begin
-        _tmp_valid_1 <= 1;
+      if((_counter_ready_1 || !_counter_valid_1) && 1 && 1) begin
+        _counter_data_1 <= _counter_data_1 + 2;
       end 
-      if((_tmp_ready_2 || !_tmp_valid_2) && (_tmp_ready_0 && _tmp_ready_1) && (_tmp_valid_0 && _tmp_valid_1)) begin
-        _tmp_data_2 <= _tmp_data_0 + _tmp_data_1;
+      if((_counter_ready_1 || !_counter_valid_1) && 1 && 1) begin
+        _counter_count_1 <= (_counter_count_1 == 6'sd16 - 1)? 0 : _counter_count_1 + 1;
       end 
-      if(_tmp_valid_2 && _tmp_ready_2) begin
-        _tmp_valid_2 <= 0;
+      if(_counter_valid_1 && _counter_ready_1) begin
+        _counter_valid_1 <= 0;
       end 
-      if((_tmp_ready_2 || !_tmp_valid_2) && (_tmp_ready_0 && _tmp_ready_1)) begin
-        _tmp_valid_2 <= _tmp_valid_0 && _tmp_valid_1;
+      if((_counter_ready_1 || !_counter_valid_1) && 1) begin
+        _counter_valid_1 <= 1;
+      end 
+      if((_counter_ready_1 || !_counter_valid_1) && 1 && 1 && (_counter_count_1 == 0)) begin
+        _counter_data_1 <= -3'sd2 + 2;
+      end 
+      if((_plus_ready_2 || !_plus_valid_2) && (_counter_ready_0 && _counter_ready_1) && (_counter_valid_0 && _counter_valid_1)) begin
+        _plus_data_2 <= _counter_data_0 + _counter_data_1;
+      end 
+      if(_plus_valid_2 && _plus_ready_2) begin
+        _plus_valid_2 <= 0;
+      end 
+      if((_plus_ready_2 || !_plus_valid_2) && (_counter_ready_0 && _counter_ready_1)) begin
+        _plus_valid_2 <= _counter_valid_0 && _counter_valid_1;
       end 
     end
   end

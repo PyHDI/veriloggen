@@ -55,29 +55,29 @@ module main
   wire [32-1:0] xdata;
   wire xvalid;
   wire xready;
-  reg [32-1:0] _tmp_data_0;
-  reg _tmp_valid_0;
-  wire _tmp_ready_0;
-  assign xready = (_tmp_ready_0 || !_tmp_valid_0) && xvalid;
-  reg [32-1:0] _tmp_data_1;
-  reg _tmp_valid_1;
-  wire _tmp_ready_1;
-  reg [32-1:0] _tmp_data_2;
-  reg _tmp_valid_2;
-  wire _tmp_ready_2;
-  assign _tmp_ready_0 = (_tmp_ready_1 || !_tmp_valid_1) && _tmp_valid_0 && ((_tmp_ready_2 || !_tmp_valid_2) && _tmp_valid_0);
+  reg [32-1:0] _plus_data_0;
+  reg _plus_valid_0;
+  wire _plus_ready_0;
+  assign xready = (_plus_ready_0 || !_plus_valid_0) && xvalid;
+  reg [32-1:0] _plus_data_1;
+  reg _plus_valid_1;
+  wire _plus_ready_1;
+  reg [32-1:0] __delay_data_2;
+  reg __delay_valid_2;
+  wire __delay_ready_2;
+  assign _plus_ready_0 = (_plus_ready_1 || !_plus_valid_1) && _plus_valid_0 && ((__delay_ready_2 || !__delay_valid_2) && _plus_valid_0);
   wire [32-1:0] zdata;
   wire zvalid;
   wire zready;
-  assign zdata = _tmp_data_1;
-  assign zvalid = _tmp_valid_1;
-  assign _tmp_ready_1 = zready;
+  assign zdata = _plus_data_1;
+  assign zvalid = _plus_valid_1;
+  assign _plus_ready_1 = zready;
   wire [32-1:0] ydata;
   wire yvalid;
   wire yready;
-  assign ydata = _tmp_data_2;
-  assign yvalid = _tmp_valid_2;
-  assign _tmp_ready_2 = yready;
+  assign ydata = __delay_data_2;
+  assign yvalid = __delay_valid_2;
+  assign __delay_ready_2 = yready;
   reg [32-1:0] xfsm;
   localparam xfsm_init = 0;
   reg [32-1:0] _tmp_3;
@@ -125,12 +125,12 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_0 <= 0;
-      _tmp_valid_0 <= 0;
-      _tmp_data_1 <= 0;
-      _tmp_valid_1 <= 0;
-      _tmp_data_2 <= 0;
-      _tmp_valid_2 <= 0;
+      _plus_data_0 <= 0;
+      _plus_valid_0 <= 0;
+      _plus_data_1 <= 0;
+      _plus_valid_1 <= 0;
+      __delay_data_2 <= 0;
+      __delay_valid_2 <= 0;
       _tmp_4 <= 0;
       _tmp_5 <= 0;
       __dataflow_seq_0_cond_0_1 <= 0;
@@ -138,32 +138,32 @@ module main
       if(__dataflow_seq_0_cond_0_1) begin
         _tmp_5 <= 0;
       end 
-      if((_tmp_ready_0 || !_tmp_valid_0) && xready && xvalid) begin
-        _tmp_data_0 <= xdata + 2'sd1;
+      if((_plus_ready_0 || !_plus_valid_0) && xready && xvalid) begin
+        _plus_data_0 <= xdata + 2'sd1;
       end 
-      if(_tmp_valid_0 && _tmp_ready_0) begin
-        _tmp_valid_0 <= 0;
+      if(_plus_valid_0 && _plus_ready_0) begin
+        _plus_valid_0 <= 0;
       end 
-      if((_tmp_ready_0 || !_tmp_valid_0) && xready) begin
-        _tmp_valid_0 <= xvalid;
+      if((_plus_ready_0 || !_plus_valid_0) && xready) begin
+        _plus_valid_0 <= xvalid;
       end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && _tmp_ready_0 && _tmp_valid_0) begin
-        _tmp_data_1 <= _tmp_data_0 + 2'sd1;
+      if((_plus_ready_1 || !_plus_valid_1) && _plus_ready_0 && _plus_valid_0) begin
+        _plus_data_1 <= _plus_data_0 + 2'sd1;
       end 
-      if(_tmp_valid_1 && _tmp_ready_1) begin
-        _tmp_valid_1 <= 0;
+      if(_plus_valid_1 && _plus_ready_1) begin
+        _plus_valid_1 <= 0;
       end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && _tmp_ready_0) begin
-        _tmp_valid_1 <= _tmp_valid_0;
+      if((_plus_ready_1 || !_plus_valid_1) && _plus_ready_0) begin
+        _plus_valid_1 <= _plus_valid_0;
       end 
-      if((_tmp_ready_2 || !_tmp_valid_2) && _tmp_ready_0 && _tmp_valid_0) begin
-        _tmp_data_2 <= _tmp_data_0;
+      if((__delay_ready_2 || !__delay_valid_2) && _plus_ready_0 && _plus_valid_0) begin
+        __delay_data_2 <= _plus_data_0;
       end 
-      if(_tmp_valid_2 && _tmp_ready_2) begin
-        _tmp_valid_2 <= 0;
+      if(__delay_valid_2 && __delay_ready_2) begin
+        __delay_valid_2 <= 0;
       end 
-      if((_tmp_ready_2 || !_tmp_valid_2) && _tmp_ready_0) begin
-        _tmp_valid_2 <= _tmp_valid_0;
+      if((__delay_ready_2 || !__delay_valid_2) && _plus_ready_0) begin
+        __delay_valid_2 <= _plus_valid_0;
       end 
       if((xfsm == 0) && (xready || !_tmp_5)) begin
         _tmp_4 <= _tmp_3;
@@ -181,6 +181,7 @@ module main
 
 endmodule
 """
+
 
 def test():
     veriloggen.reset()

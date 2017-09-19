@@ -6,6 +6,7 @@ import dataflow_loop
 expected_verilog = """
 """
 
+
 def test():
     veriloggen.reset()
     try:
@@ -15,7 +16,7 @@ def test():
         return
 
     assert(False)
-        
+
     #code = test_module.to_verilog()
 
     #from pyverilog.vparser.parser import VerilogParser

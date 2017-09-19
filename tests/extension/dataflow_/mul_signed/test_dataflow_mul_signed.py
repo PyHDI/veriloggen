@@ -744,49 +744,49 @@ module main
   input zready
 );
 
-  wire signed [32-1:0] _tmp_data_0;
-  wire _tmp_valid_0;
-  wire _tmp_ready_0;
-  wire signed [64-1:0] _tmp_odata_0;
-  reg signed [64-1:0] _tmp_data_reg_0;
-  assign _tmp_data_0 = _tmp_data_reg_0;
-  wire _tmp_ovalid_0;
-  reg _tmp_valid_reg_0;
-  assign _tmp_valid_0 = _tmp_valid_reg_0;
-  wire _tmp_enable_0;
-  wire _tmp_update_0;
-  assign _tmp_enable_0 = (_tmp_ready_0 || !_tmp_valid_0) && (xready && yready) && (xvalid && yvalid);
-  assign _tmp_update_0 = _tmp_ready_0 || !_tmp_valid_0;
+  wire signed [32-1:0] _times_data_0;
+  wire _times_valid_0;
+  wire _times_ready_0;
+  wire signed [64-1:0] _times_odata_0;
+  reg signed [64-1:0] _times_data_reg_0;
+  assign _times_data_0 = _times_data_reg_0;
+  wire _times_ovalid_0;
+  reg _times_valid_reg_0;
+  assign _times_valid_0 = _times_valid_reg_0;
+  wire _times_enable_0;
+  wire _times_update_0;
+  assign _times_enable_0 = (_times_ready_0 || !_times_valid_0) && (xready && yready) && (xvalid && yvalid);
+  assign _times_update_0 = _times_ready_0 || !_times_valid_0;
 
   multiplier_0
   mul0
   (
     .CLK(CLK),
     .RST(RST),
-    .update(_tmp_update_0),
-    .enable(_tmp_enable_0),
-    .valid(_tmp_ovalid_0),
+    .update(_times_update_0),
+    .enable(_times_enable_0),
+    .valid(_times_ovalid_0),
     .a(xdata),
     .b(ydata),
-    .c(_tmp_odata_0)
+    .c(_times_odata_0)
   );
 
-  assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
-  assign yready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
-  assign zdata = _tmp_data_0;
-  assign zvalid = _tmp_valid_0;
-  assign _tmp_ready_0 = zready;
+  assign xready = (_times_ready_0 || !_times_valid_0) && (xvalid && yvalid);
+  assign yready = (_times_ready_0 || !_times_valid_0) && (xvalid && yvalid);
+  assign zdata = _times_data_0;
+  assign zvalid = _times_valid_0;
+  assign _times_ready_0 = zready;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_reg_0 <= 0;
-      _tmp_valid_reg_0 <= 0;
+      _times_data_reg_0 <= 0;
+      _times_valid_reg_0 <= 0;
     end else begin
-      if(_tmp_ready_0 || !_tmp_valid_0) begin
-        _tmp_data_reg_0 <= _tmp_odata_0;
+      if(_times_ready_0 || !_times_valid_0) begin
+        _times_data_reg_0 <= _times_odata_0;
       end 
-      if(_tmp_ready_0 || !_tmp_valid_0) begin
-        _tmp_valid_reg_0 <= _tmp_ovalid_0;
+      if(_times_ready_0 || !_times_valid_0) begin
+        _times_valid_reg_0 <= _times_ovalid_0;
       end 
     end
   end
@@ -887,6 +887,7 @@ module multiplier_core_0
 
 endmodule
 """
+
 
 def test():
     veriloggen.reset()

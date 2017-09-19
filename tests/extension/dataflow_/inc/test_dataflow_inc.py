@@ -288,27 +288,27 @@ module main
   input zready
 );
 
-  reg [32-1:0] _tmp_data_0;
-  reg _tmp_valid_0;
-  wire _tmp_ready_0;
-  assign xready = (_tmp_ready_0 || !_tmp_valid_0) && xvalid;
-  assign zdata = _tmp_data_0;
-  assign zvalid = _tmp_valid_0;
-  assign _tmp_ready_0 = zready;
+  reg [32-1:0] _plus_data_0;
+  reg _plus_valid_0;
+  wire _plus_ready_0;
+  assign xready = (_plus_ready_0 || !_plus_valid_0) && xvalid;
+  assign zdata = _plus_data_0;
+  assign zvalid = _plus_valid_0;
+  assign _plus_ready_0 = zready;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_0 <= 0;
-      _tmp_valid_0 <= 0;
+      _plus_data_0 <= 0;
+      _plus_valid_0 <= 0;
     end else begin
-      if((_tmp_ready_0 || !_tmp_valid_0) && xready && xvalid) begin
-        _tmp_data_0 <= xdata + 2'sd1;
+      if((_plus_ready_0 || !_plus_valid_0) && xready && xvalid) begin
+        _plus_data_0 <= xdata + 2'sd1;
       end 
-      if(_tmp_valid_0 && _tmp_ready_0) begin
-        _tmp_valid_0 <= 0;
+      if(_plus_valid_0 && _plus_ready_0) begin
+        _plus_valid_0 <= 0;
       end 
-      if((_tmp_ready_0 || !_tmp_valid_0) && xready) begin
-        _tmp_valid_0 <= xvalid;
+      if((_plus_ready_0 || !_plus_valid_0) && xready) begin
+        _plus_valid_0 <= xvalid;
       end 
     end
   end
@@ -316,6 +316,7 @@ module main
 
 endmodule
 """
+
 
 def test():
     veriloggen.reset()

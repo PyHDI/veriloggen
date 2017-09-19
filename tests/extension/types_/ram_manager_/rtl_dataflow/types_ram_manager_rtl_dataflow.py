@@ -20,7 +20,8 @@ def mkMain(n=128, datawidth=32, numports=2):
     rst = m.Input('RST')
 
     addrwidth = int(math.log(n, 2)) * 2
-    myram = ram.SyncRAMManager(m, 'myram', clk, rst, datawidth, addrwidth, 2, nodataflow=True)
+    myram = ram.SyncRAMManager(
+        m, 'myram', clk, rst, datawidth, addrwidth, 2, nodataflow=True)
 
     xfsm = FSM(m, 'xfsm', clk, rst)
     xaddr = m.Reg('xaddr', 32, initval=0)
@@ -125,6 +126,7 @@ def mkTest():
     )
 
     return m
+
 
 if __name__ == '__main__':
     test = mkTest()

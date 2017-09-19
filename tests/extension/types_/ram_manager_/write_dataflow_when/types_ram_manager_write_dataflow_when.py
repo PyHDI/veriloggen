@@ -29,7 +29,7 @@ def mkMain(n=128, datawidth=32, numports=2):
 
     length = 8
     a = df.Counter()
-    b = df.Counter(maxval=length)
+    b = df.Counter(size=length)
     c = b == 0
 
     wport = 0
@@ -76,6 +76,7 @@ def mkTest():
     )
 
     return m
+
 
 if __name__ == '__main__':
     test = mkTest()

@@ -58,17 +58,17 @@ module main
   wire [32-1:0] ydata;
   wire yvalid;
   wire yready;
-  reg [32-1:0] _tmp_data_0;
-  reg _tmp_valid_0;
-  wire _tmp_ready_0;
-  assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
-  assign yready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
+  reg [32-1:0] _plus_data_0;
+  reg _plus_valid_0;
+  wire _plus_ready_0;
+  assign xready = (_plus_ready_0 || !_plus_valid_0) && (xvalid && yvalid);
+  assign yready = (_plus_ready_0 || !_plus_valid_0) && (xvalid && yvalid);
   wire [32-1:0] zdata;
   wire zvalid;
   wire zready;
-  assign zdata = _tmp_data_0;
-  assign zvalid = _tmp_valid_0;
-  assign _tmp_ready_0 = zready;
+  assign zdata = _plus_data_0;
+  assign zvalid = _plus_valid_0;
+  assign _plus_ready_0 = zready;
   reg [32-1:0] xfsm;
   localparam xfsm_init = 0;
   reg [32-1:0] _tmp_1;
@@ -251,8 +251,8 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_0 <= 0;
-      _tmp_valid_0 <= 0;
+      _plus_data_0 <= 0;
+      _plus_valid_0 <= 0;
       _tmp_2 <= 0;
       _tmp_3 <= 0;
       __dataflow_seq_0_cond_0_1 <= 0;
@@ -274,14 +274,14 @@ module main
       if(__dataflow_seq_0_cond_3_1) begin
         _tmp_6 <= 0;
       end 
-      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
-        _tmp_data_0 <= xdata + ydata;
+      if((_plus_ready_0 || !_plus_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
+        _plus_data_0 <= xdata + ydata;
       end 
-      if(_tmp_valid_0 && _tmp_ready_0) begin
-        _tmp_valid_0 <= 0;
+      if(_plus_valid_0 && _plus_ready_0) begin
+        _plus_valid_0 <= 0;
       end 
-      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready)) begin
-        _tmp_valid_0 <= xvalid && yvalid;
+      if((_plus_ready_0 || !_plus_valid_0) && (xready && yready)) begin
+        _plus_valid_0 <= xvalid && yvalid;
       end 
       if((xfsm == 0) && (xready || !_tmp_3)) begin
         _tmp_2 <= _tmp_1;
@@ -329,6 +329,7 @@ module main
 
 endmodule
 """
+
 
 def test():
     veriloggen.reset()

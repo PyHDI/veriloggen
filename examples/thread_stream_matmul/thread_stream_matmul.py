@@ -41,7 +41,7 @@ def mkLed(matrix_size=16):
     def strm_madd(strm, size, waddr):
         a = strm.read(ram_a, 0, size)
         b = strm.read(ram_b, 0, size)
-        sum, valid = strm.RegionAdd(a * b, size)
+        sum, valid = strm.ReduceAddValid(a * b, size)
         strm.write(ram_c, waddr, 1, sum, when=valid)
 
     def comp(matrix_size, a_offset, b_offset, c_offset):

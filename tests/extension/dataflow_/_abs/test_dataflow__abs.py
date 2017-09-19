@@ -519,88 +519,88 @@ module main
   input zready
 );
 
-  reg signed [32-1:0] _tmp_data_0;
-  reg _tmp_valid_0;
-  wire _tmp_ready_0;
-  assign xready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
-  assign yready = (_tmp_ready_0 || !_tmp_valid_0) && (xvalid && yvalid);
-  reg [1-1:0] _tmp_data_1;
-  reg _tmp_valid_1;
-  wire _tmp_ready_1;
-  reg signed [32-1:0] _tmp_data_2;
-  reg _tmp_valid_2;
-  wire _tmp_ready_2;
-  reg signed [32-1:0] _tmp_data_3;
-  reg _tmp_valid_3;
-  wire _tmp_ready_3;
-  assign _tmp_ready_0 = (_tmp_ready_1 || !_tmp_valid_1) && _tmp_valid_0 && ((_tmp_ready_2 || !_tmp_valid_2) && _tmp_valid_0) && ((_tmp_ready_3 || !_tmp_valid_3) && _tmp_valid_0);
-  reg signed [32-1:0] _tmp_data_4;
-  reg _tmp_valid_4;
-  wire _tmp_ready_4;
-  assign _tmp_ready_1 = (_tmp_ready_4 || !_tmp_valid_4) && (_tmp_valid_1 && _tmp_valid_2 && _tmp_valid_3);
-  assign _tmp_ready_2 = (_tmp_ready_4 || !_tmp_valid_4) && (_tmp_valid_1 && _tmp_valid_2 && _tmp_valid_3);
-  assign _tmp_ready_3 = (_tmp_ready_4 || !_tmp_valid_4) && (_tmp_valid_1 && _tmp_valid_2 && _tmp_valid_3);
-  assign zdata = _tmp_data_4;
-  assign zvalid = _tmp_valid_4;
-  assign _tmp_ready_4 = zready;
+  reg signed [32-1:0] _minus_data_0;
+  reg _minus_valid_0;
+  wire _minus_ready_0;
+  assign xready = (_minus_ready_0 || !_minus_valid_0) && (xvalid && yvalid);
+  assign yready = (_minus_ready_0 || !_minus_valid_0) && (xvalid && yvalid);
+  reg [1-1:0] _lessthan_data_1;
+  reg _lessthan_valid_1;
+  wire _lessthan_ready_1;
+  reg signed [32-1:0] _uminus_data_2;
+  reg _uminus_valid_2;
+  wire _uminus_ready_2;
+  reg signed [32-1:0] __delay_data_3;
+  reg __delay_valid_3;
+  wire __delay_ready_3;
+  assign _minus_ready_0 = (_lessthan_ready_1 || !_lessthan_valid_1) && _minus_valid_0 && ((_uminus_ready_2 || !_uminus_valid_2) && _minus_valid_0) && ((__delay_ready_3 || !__delay_valid_3) && _minus_valid_0);
+  reg signed [32-1:0] _cond_data_4;
+  reg _cond_valid_4;
+  wire _cond_ready_4;
+  assign _lessthan_ready_1 = (_cond_ready_4 || !_cond_valid_4) && (_lessthan_valid_1 && _uminus_valid_2 && __delay_valid_3);
+  assign _uminus_ready_2 = (_cond_ready_4 || !_cond_valid_4) && (_lessthan_valid_1 && _uminus_valid_2 && __delay_valid_3);
+  assign __delay_ready_3 = (_cond_ready_4 || !_cond_valid_4) && (_lessthan_valid_1 && _uminus_valid_2 && __delay_valid_3);
+  assign zdata = _cond_data_4;
+  assign zvalid = _cond_valid_4;
+  assign _cond_ready_4 = zready;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_0 <= 0;
-      _tmp_valid_0 <= 0;
-      _tmp_data_1 <= 0;
-      _tmp_valid_1 <= 0;
-      _tmp_data_2 <= 0;
-      _tmp_valid_2 <= 0;
-      _tmp_data_3 <= 0;
-      _tmp_valid_3 <= 0;
-      _tmp_data_4 <= 0;
-      _tmp_valid_4 <= 0;
+      _minus_data_0 <= 0;
+      _minus_valid_0 <= 0;
+      _lessthan_data_1 <= 0;
+      _lessthan_valid_1 <= 0;
+      _uminus_data_2 <= 0;
+      _uminus_valid_2 <= 0;
+      __delay_data_3 <= 0;
+      __delay_valid_3 <= 0;
+      _cond_data_4 <= 0;
+      _cond_valid_4 <= 0;
     end else begin
-      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
-        _tmp_data_0 <= xdata - ydata;
+      if((_minus_ready_0 || !_minus_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
+        _minus_data_0 <= xdata - ydata;
       end 
-      if(_tmp_valid_0 && _tmp_ready_0) begin
-        _tmp_valid_0 <= 0;
+      if(_minus_valid_0 && _minus_ready_0) begin
+        _minus_valid_0 <= 0;
       end 
-      if((_tmp_ready_0 || !_tmp_valid_0) && (xready && yready)) begin
-        _tmp_valid_0 <= xvalid && yvalid;
+      if((_minus_ready_0 || !_minus_valid_0) && (xready && yready)) begin
+        _minus_valid_0 <= xvalid && yvalid;
       end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && _tmp_ready_0 && _tmp_valid_0) begin
-        _tmp_data_1 <= _tmp_data_0 < 1'sd0;
+      if((_lessthan_ready_1 || !_lessthan_valid_1) && _minus_ready_0 && _minus_valid_0) begin
+        _lessthan_data_1 <= _minus_data_0 < 1'sd0;
       end 
-      if(_tmp_valid_1 && _tmp_ready_1) begin
-        _tmp_valid_1 <= 0;
+      if(_lessthan_valid_1 && _lessthan_ready_1) begin
+        _lessthan_valid_1 <= 0;
       end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && _tmp_ready_0) begin
-        _tmp_valid_1 <= _tmp_valid_0;
+      if((_lessthan_ready_1 || !_lessthan_valid_1) && _minus_ready_0) begin
+        _lessthan_valid_1 <= _minus_valid_0;
       end 
-      if((_tmp_ready_2 || !_tmp_valid_2) && _tmp_ready_0 && _tmp_valid_0) begin
-        _tmp_data_2 <= -_tmp_data_0;
+      if((_uminus_ready_2 || !_uminus_valid_2) && _minus_ready_0 && _minus_valid_0) begin
+        _uminus_data_2 <= -_minus_data_0;
       end 
-      if(_tmp_valid_2 && _tmp_ready_2) begin
-        _tmp_valid_2 <= 0;
+      if(_uminus_valid_2 && _uminus_ready_2) begin
+        _uminus_valid_2 <= 0;
       end 
-      if((_tmp_ready_2 || !_tmp_valid_2) && _tmp_ready_0) begin
-        _tmp_valid_2 <= _tmp_valid_0;
+      if((_uminus_ready_2 || !_uminus_valid_2) && _minus_ready_0) begin
+        _uminus_valid_2 <= _minus_valid_0;
       end 
-      if((_tmp_ready_3 || !_tmp_valid_3) && _tmp_ready_0 && _tmp_valid_0) begin
-        _tmp_data_3 <= _tmp_data_0;
+      if((__delay_ready_3 || !__delay_valid_3) && _minus_ready_0 && _minus_valid_0) begin
+        __delay_data_3 <= _minus_data_0;
       end 
-      if(_tmp_valid_3 && _tmp_ready_3) begin
-        _tmp_valid_3 <= 0;
+      if(__delay_valid_3 && __delay_ready_3) begin
+        __delay_valid_3 <= 0;
       end 
-      if((_tmp_ready_3 || !_tmp_valid_3) && _tmp_ready_0) begin
-        _tmp_valid_3 <= _tmp_valid_0;
+      if((__delay_ready_3 || !__delay_valid_3) && _minus_ready_0) begin
+        __delay_valid_3 <= _minus_valid_0;
       end 
-      if((_tmp_ready_4 || !_tmp_valid_4) && (_tmp_ready_1 && _tmp_ready_2 && _tmp_ready_3) && (_tmp_valid_1 && _tmp_valid_2 && _tmp_valid_3)) begin
-        _tmp_data_4 <= (_tmp_data_1)? _tmp_data_2 : _tmp_data_3;
+      if((_cond_ready_4 || !_cond_valid_4) && (_lessthan_ready_1 && _uminus_ready_2 && __delay_ready_3) && (_lessthan_valid_1 && _uminus_valid_2 && __delay_valid_3)) begin
+        _cond_data_4 <= (_lessthan_data_1)? _uminus_data_2 : __delay_data_3;
       end 
-      if(_tmp_valid_4 && _tmp_ready_4) begin
-        _tmp_valid_4 <= 0;
+      if(_cond_valid_4 && _cond_ready_4) begin
+        _cond_valid_4 <= 0;
       end 
-      if((_tmp_ready_4 || !_tmp_valid_4) && (_tmp_ready_1 && _tmp_ready_2 && _tmp_ready_3)) begin
-        _tmp_valid_4 <= _tmp_valid_1 && _tmp_valid_2 && _tmp_valid_3;
+      if((_cond_ready_4 || !_cond_valid_4) && (_lessthan_ready_1 && _uminus_ready_2 && __delay_ready_3)) begin
+        _cond_valid_4 <= _lessthan_valid_1 && _uminus_valid_2 && __delay_valid_3;
       end 
     end
   end

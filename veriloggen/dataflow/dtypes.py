@@ -4,10 +4,12 @@ from __future__ import print_function
 from functools import partial
 from collections import OrderedDict
 from math import log
+
 import veriloggen.core.vtypes as vtypes
 import veriloggen.types.fixed as fx
 import veriloggen.types.rom as rom
 from veriloggen.seq.seq import make_condition as _make_condition
+
 from . import mul
 from . import div
 
@@ -16,7 +18,6 @@ from . import div
 _object_counter = 0
 
 
-#-------------------------------------------------------------------------
 def Constant(value, fixed=True, point=0):
     if isinstance(value, int):
         return Int(value)
@@ -37,12 +38,10 @@ def Constant(value, fixed=True, point=0):
     raise TypeError("Unsupported type for Constant '%s'" % str(type(value)))
 
 
-#-------------------------------------------------------------------------
 def Variable(data=None, valid=None, ready=None, width=32, point=0, signed=False):
     return _Variable(data, valid, ready, width, point, signed)
 
 
-#-------------------------------------------------------------------------
 def Parameter(name, value, width=32, point=0, signed=False):
     """ parameter with an immediate value """
     if not isinstance(name, str):
@@ -59,7 +58,6 @@ def ParameterVariable(data, width=32, point=0, signed=False):
     return _ParameterVariable(data, width, point, signed)
 
 
-#-------------------------------------------------------------------------
 class _Node(object):
 
     def __init__(self):
@@ -75,9 +73,20 @@ class _Node(object):
         return (id(self), self.object_id) == (id(other), other.object_id)
 
 
-#-------------------------------------------------------------------------
 class _Numeric(_Node):
     latency = 0
+
+    def _tmp_data(self, val, prefix='data'):
+        clsname = self.__class__.__name__.lower()
+        return '_'.join(['', clsname, prefix, str(val)])
+
+    def _tmp_valid(self, val, prefix='valid'):
+        clsname = self.__class__.__name__.lower()
+        return '_'.join(['', clsname, prefix, str(val)])
+
+    def _tmp_ready(self, val, prefix='ready'):
+        clsname = self.__class__.__name__.lower()
+        return '_'.join(['', clsname, prefix, str(val)])
 
     def __hash__(self):
         object_id = self.object_id if hasattr(self, 'object_id') else None
@@ -135,7 +144,8 @@ class _Numeric(_Node):
             raise ValueError("Module information is not set.")
 
         tmp = self.m.get_tmp()
-        self.output(_tmp_data(tmp), _tmp_valid(tmp), _tmp_ready(tmp))
+        self.output(self._tmp_data(tmp), self._tmp_valid(
+            tmp), self._tmp_ready(tmp))
 
     def prev(self, index):
         if index < 0:
@@ -154,7 +164,6 @@ class _Numeric(_Node):
 
         return prev
 
-    #-------------------------------------------------------------------------
     def write(self, wdata, cond=None):
         raise TypeError("Unsupported method.")
 
@@ -203,7 +212,6 @@ class _Numeric(_Node):
 
         return rdata, rvalid
 
-    #--------------------------------------------------------------------------
     def get_signed(self):
         return self.signed
 
@@ -216,7 +224,6 @@ class _Numeric(_Node):
     def eval(self):
         raise NotImplementedError('eval() is not implemented')
 
-    #--------------------------------------------------------------------------
     def _set_attributes(self):
         raise NotImplementedError('_set_attributes() is not implemented')
 
@@ -232,7 +239,6 @@ class _Numeric(_Node):
     def _set_seq(self, seq):
         self.seq = seq
 
-    #--------------------------------------------------------------------------
     def _implement(self, m, seq):
         raise NotImplementedError('_implement() is not implemented.')
 
@@ -292,7 +298,6 @@ class _Numeric(_Node):
             ready = type_i(self.output_ready)
             self.output_sig_ready = ready
 
-    #--------------------------------------------------------------------------
     def _has_output(self):
         if self.output_data is not None:
             return True
@@ -356,7 +361,6 @@ class _Numeric(_Node):
             return None
         return self.previous_value[delay]
 
-    #--------------------------------------------------------------------------
     def __lt__(self, r):
         return LessThan(self, r)
 
@@ -391,6 +395,9 @@ class _Numeric(_Node):
         return Divide(self, r)
 
     def __truediv__(self, r):
+        return Divide(self, r)
+
+    def __floordiv__(self, r):
         return Divide(self, r)
 
     def __mod__(self, r):
@@ -537,7 +544,6 @@ class _Numeric(_Node):
         return self.raw_ready
 
 
-#-------------------------------------------------------------------------
 class _Operator(_Numeric):
     latency = 1
 
@@ -580,9 +586,9 @@ class _BinaryOperator(_Operator):
         signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Reg(_tmp_data(tmp), width, initval=0, signed=signed)
-        valid = m.Reg(_tmp_valid(tmp), initval=0)
-        ready = m.Wire(_tmp_ready(tmp))
+        data = m.Reg(self._tmp_data(tmp), width, initval=0, signed=signed)
+        valid = m.Reg(self._tmp_valid(tmp), initval=0)
+        ready = m.Wire(self._tmp_ready(tmp))
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
@@ -650,9 +656,9 @@ class _UnaryOperator(_Operator):
         signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Reg(_tmp_data(tmp), width, initval=0, signed=signed)
-        valid = m.Reg(_tmp_valid(tmp), initval=0)
-        ready = m.Wire(_tmp_ready(tmp))
+        data = m.Reg(self._tmp_data(tmp), width, initval=0, signed=signed)
+        valid = m.Reg(self._tmp_valid(tmp), initval=0)
+        ready = m.Wire(self._tmp_ready(tmp))
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
@@ -715,9 +721,9 @@ class Times(_BinaryOperator):
         signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Wire(_tmp_data(tmp), width, signed=signed)
-        valid = m.Wire(_tmp_valid(tmp))
-        ready = m.Wire(_tmp_ready(tmp))
+        data = m.Wire(self._tmp_data(tmp), width, signed=signed)
+        valid = m.Wire(self._tmp_valid(tmp))
+        ready = m.Wire(self._tmp_ready(tmp))
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
@@ -736,9 +742,9 @@ class Times(_BinaryOperator):
 
         accept = vtypes.OrList(ready, vtypes.Not(valid))
 
-        odata = m.Wire(_tmp_data(tmp, prefix='_tmp_odata_'),
+        odata = m.Wire(self._tmp_data(tmp, prefix='odata'),
                        lwidth + rwidth, signed=signed)
-        data_reg = m.Reg(_tmp_data(tmp, prefix='_tmp_data_reg_'), lwidth + rwidth,
+        data_reg = m.Reg(self._tmp_data(tmp, prefix='data_reg'), lwidth + rwidth,
                          signed=signed, initval=0)
 
         shift_size = min(lpoint, rpoint)
@@ -749,8 +755,8 @@ class Times(_BinaryOperator):
 
         m.Assign(data(data_reg))
 
-        ovalid = m.Wire(_tmp_valid(tmp, prefix='_tmp_ovalid_'))
-        valid_reg = m.Reg(_tmp_valid(tmp, prefix='_tmp_valid_reg_'), initval=0)
+        ovalid = m.Wire(self._tmp_valid(tmp, prefix='ovalid'))
+        valid_reg = m.Reg(self._tmp_valid(tmp, prefix='valid_reg'), initval=0)
 
         seq(valid_reg(ovalid), cond=accept)
         m.Assign(valid(valid_reg))
@@ -775,8 +781,8 @@ class Times(_BinaryOperator):
         clk = m._clock
         rst = m._reset
 
-        enable = m.Wire(_tmp_data(tmp, prefix='_tmp_enable_'))
-        update = m.Wire(_tmp_data(tmp, prefix='_tmp_update_'))
+        enable = m.Wire(self._tmp_data(tmp, prefix='enable'))
+        update = m.Wire(self._tmp_data(tmp, prefix='update'))
 
         m.Assign(enable(data_cond))
         m.Assign(update(accept))  # NOT valid_cond
@@ -813,9 +819,9 @@ class Divide(_BinaryOperator):
         signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Wire(_tmp_data(tmp), width, signed=signed)
-        valid = m.Wire(_tmp_valid(tmp))
-        ready = m.Wire(_tmp_ready(tmp))
+        data = m.Wire(self._tmp_data(tmp), width, signed=signed)
+        valid = m.Wire(self._tmp_valid(tmp))
+        ready = m.Wire(self._tmp_ready(tmp))
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
@@ -826,9 +832,9 @@ class Divide(_BinaryOperator):
         lsigned = self.left.get_signed()
         rsigned = self.right.get_signed()
 
-        ldata = m.Reg(_tmp_data(tmp, prefix='_tmp_ldata_'),
+        ldata = m.Reg(self._tmp_data(tmp, prefix='ldata'),
                       width, signed=lsigned, initval=0)
-        rdata = m.Reg(_tmp_data(tmp, prefix='_tmp_rdata_'),
+        rdata = m.Reg(self._tmp_data(tmp, prefix='rdata'),
                       width, signed=rsigned, initval=0)
 
         point = max(lpoint, rpoint)
@@ -851,9 +857,9 @@ class Divide(_BinaryOperator):
                                         vtypes.AndList(ldata[width - 1] == 1, rdata[width - 1] == 1)))  # - , -
 
         abs_ldata = m.Reg(
-            _tmp_data(tmp, prefix='_tmp_abs_ldata_'), width, initval=0)
+            self._tmp_data(tmp, prefix='abs_ldata'), width, initval=0)
         abs_rdata = m.Reg(
-            _tmp_data(tmp, prefix='_tmp_abs_rdata_'), width, initval=0)
+            self._tmp_data(tmp, prefix='abs_rdata'), width, initval=0)
 
         if not lsigned:
             seq(abs_ldata(ldata), cond=accept)
@@ -867,16 +873,16 @@ class Divide(_BinaryOperator):
             seq(abs_rdata(vtypes.Mux(rdata[width - 1] == 0, rdata, vtypes.Unot(rdata) + 1)),
                 cond=accept)
 
-        osign = m.Wire(_tmp_data(tmp, prefix='_tmp_osign_'))
+        osign = m.Wire(self._tmp_data(tmp, prefix='osign'))
         abs_odata = m.Wire(
-            _tmp_data(tmp, prefix='_tmp_abs_odata_'), width, signed=signed)
+            self._tmp_data(tmp, prefix='abs_odata'), width, signed=signed)
 
         if shift_size > 0:
             shifted_abs_odata = vtypes.Sll(abs_odata, shift_size)
         else:
             shifted_abs_odata = abs_odata
 
-        odata = m.Reg(_tmp_data(tmp, prefix='_tmp_odata_'),
+        odata = m.Reg(self._tmp_data(tmp, prefix='odata'),
                       width, signed=signed, initval=0)
 
         if not signed:
@@ -887,20 +893,20 @@ class Divide(_BinaryOperator):
 
         m.Assign(data(odata))
 
-        ovalid = m.Wire(_tmp_valid(tmp, prefix='_tmp_ovalid_'))
+        ovalid = m.Wire(self._tmp_valid(tmp, prefix='ovalid'))
 
         v = ovalid
         for i in range(3):
-            nv = m.Reg(_tmp_valid(
-                tmp, prefix='_tmp_valid_reg' + str(i) + '_'), initval=0)
+            nv = m.Reg(self._tmp_valid(
+                tmp, prefix='valid_reg_' + str(i)), initval=0)
             seq(nv(v), cond=accept)
             v = nv
         m.Assign(valid(v))
 
         s = sign
         for i in range(self.latency):
-            ns = m.Reg(_tmp_data(tmp, prefix='_tmp_sign' +
-                                 str(i) + '_'), initval=0)
+            ns = m.Reg(self._tmp_data(tmp, prefix='sign' +
+                                      str(i) + '_'), initval=0)
             seq(ns(s), cond=accept)
             s = ns
         m.Assign(osign(s))
@@ -923,8 +929,8 @@ class Divide(_BinaryOperator):
         clk = m._clock
         rst = m._reset
 
-        enable = m.Wire(_tmp_data(tmp, prefix='_tmp_enable_'))
-        update = m.Wire(_tmp_data(tmp, prefix='_tmp_update_'))
+        enable = m.Wire(self._tmp_data(tmp, prefix='enable'))
+        update = m.Wire(self._tmp_data(tmp, prefix='update'))
         m.Assign(enable(data_cond))
         m.Assign(update(accept))  # NOT valid_cond
 
@@ -957,9 +963,9 @@ class Mod(_BinaryOperator):
         signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Wire(_tmp_data(tmp), width, signed=signed)
-        valid = m.Wire(_tmp_valid(tmp))
-        ready = m.Wire(_tmp_ready(tmp))
+        data = m.Wire(self._tmp_data(tmp), width, signed=signed)
+        valid = m.Wire(self._tmp_valid(tmp))
+        ready = m.Wire(self._tmp_ready(tmp))
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
@@ -970,9 +976,9 @@ class Mod(_BinaryOperator):
         lsigned = self.left.get_signed()
         rsigned = self.right.get_signed()
 
-        ldata = m.Reg(_tmp_data(tmp, prefix='_tmp_ldata_'),
+        ldata = m.Reg(self._tmp_data(tmp, prefix='ldata'),
                       width, signed=lsigned, initval=0)
-        rdata = m.Reg(_tmp_data(tmp, prefix='_tmp_rdata_'),
+        rdata = m.Reg(self._tmp_data(tmp, prefix='rdata'),
                       width, signed=rsigned, initval=0)
 
         point = max(lpoint, rpoint)
@@ -995,9 +1001,9 @@ class Mod(_BinaryOperator):
                                         vtypes.AndList(ldata[width - 1] == 1, rdata[width - 1] == 1)))  # - , -
 
         abs_ldata = m.Reg(
-            _tmp_data(tmp, prefix='_tmp_abs_ldata_'), width, initval=0)
+            self._tmp_data(tmp, prefix='abs_ldata'), width, initval=0)
         abs_rdata = m.Reg(
-            _tmp_data(tmp, prefix='_tmp_abs_rdata_'), width, initval=0)
+            self._tmp_data(tmp, prefix='abs_rdata'), width, initval=0)
 
         if not lsigned:
             seq(abs_ldata(ldata), cond=accept)
@@ -1011,16 +1017,16 @@ class Mod(_BinaryOperator):
             seq(abs_rdata(vtypes.Mux(rdata[width - 1] == 0, rdata, vtypes.Unot(rdata) + 1)),
                 cond=accept)
 
-        osign = m.Wire(_tmp_data(tmp, prefix='_tmp_osign_'))
+        osign = m.Wire(self._tmp_data(tmp, prefix='osign'))
         abs_odata = m.Wire(
-            _tmp_data(tmp, prefix='_tmp_abs_odata_'), width, signed=signed)
+            self._tmp_data(tmp, prefix='abs_odata'), width, signed=signed)
 
         if shift_size > 0:
             shifted_abs_odata = vtypes.Sll(abs_odata, shift_size)
         else:
             shifted_abs_odata = abs_odata
 
-        odata = m.Reg(_tmp_data(tmp, prefix='_tmp_odata_'),
+        odata = m.Reg(self._tmp_data(tmp, prefix='odata'),
                       width, signed=signed, initval=0)
 
         if not signed:
@@ -1031,20 +1037,20 @@ class Mod(_BinaryOperator):
 
         m.Assign(data(odata))
 
-        ovalid = m.Wire(_tmp_valid(tmp, prefix='_tmp_ovalid_'))
+        ovalid = m.Wire(self._tmp_valid(tmp, prefix='ovalid'))
 
         v = ovalid
         for i in range(3):
-            nv = m.Reg(_tmp_valid(
-                tmp, prefix='_tmp_valid_reg' + str(i) + '_'), initval=0)
+            nv = m.Reg(self._tmp_valid(
+                tmp, prefix='valid_reg_' + str(i)), initval=0)
             seq(nv(v), cond=accept)
             v = nv
         m.Assign(valid(v))
 
         s = sign
         for i in range(self.latency):
-            ns = m.Reg(_tmp_data(tmp, prefix='_tmp_sign' +
-                                 str(i) + '_'), initval=0)
+            ns = m.Reg(self._tmp_data(tmp, prefix='sign' +
+                                      str(i) + '_'), initval=0)
             seq(ns(s), cond=accept)
             s = ns
         m.Assign(osign(s))
@@ -1067,8 +1073,8 @@ class Mod(_BinaryOperator):
         clk = m._clock
         rst = m._reset
 
-        enable = m.Wire(_tmp_data(tmp, prefix='_tmp_enable_'))
-        update = m.Wire(_tmp_data(tmp, prefix='_tmp_update_'))
+        enable = m.Wire(self._tmp_data(tmp, prefix='enable'))
+        update = m.Wire(self._tmp_data(tmp, prefix='update'))
         m.Assign(enable(data_cond))
         m.Assign(update(accept))  # NOT valid_cond
 
@@ -1248,9 +1254,9 @@ class _BinaryLogicalOperator(_BinaryOperator):
         signed = False
 
         tmp = m.get_tmp()
-        data = m.Reg(_tmp_data(tmp), width, initval=0, signed=signed)
-        valid = m.Reg(_tmp_valid(tmp), initval=0)
-        ready = m.Wire(_tmp_ready(tmp))
+        data = m.Reg(self._tmp_data(tmp), width, initval=0, signed=signed)
+        valid = m.Reg(self._tmp_valid(tmp), initval=0)
+        ready = m.Wire(self._tmp_ready(tmp))
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
@@ -1493,7 +1499,6 @@ class Uxnor(_UnaryLogicalOperator):
         return Uxnor(right)
 
 
-#-------------------------------------------------------------------------
 # alias
 def Not(*args):
     return Ulnot(*args)
@@ -1524,7 +1529,6 @@ Ands = AndList
 Ors = OrList
 
 
-#-------------------------------------------------------------------------
 class _SpecialOperator(_Operator):
     latency = 1
 
@@ -1562,9 +1566,9 @@ class _SpecialOperator(_Operator):
         signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Reg(_tmp_data(tmp), width, initval=0, signed=signed)
-        valid = m.Reg(_tmp_valid(tmp), initval=0)
-        ready = m.Wire(_tmp_ready(tmp))
+        data = m.Reg(self._tmp_data(tmp), width, initval=0, signed=signed)
+        valid = m.Reg(self._tmp_valid(tmp), initval=0)
+        ready = m.Wire(self._tmp_ready(tmp))
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
@@ -1594,7 +1598,6 @@ class _SpecialOperator(_Operator):
             _connect_ready(m, ready, vtypes.Int(1))
 
 
-#-------------------------------------------------------------------------
 class Pointer(_SpecialOperator):
 
     def __init__(self, var, pos):
@@ -1834,7 +1837,6 @@ def Sign(value):
     return value >= Constant(0)
 
 
-#-------------------------------------------------------------------------
 class CustomOp(_SpecialOperator):
 
     def __init__(self, op, *vars):
@@ -1845,7 +1847,6 @@ class CustomOp(_SpecialOperator):
         return self
 
 
-#-------------------------------------------------------------------------
 class LUT(_SpecialOperator):
     latency = 1
 
@@ -1877,9 +1878,9 @@ class LUT(_SpecialOperator):
         signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Wire(_tmp_data(tmp), width, signed=signed)
-        valid = m.Reg(_tmp_valid(tmp), initval=0)
-        ready = m.Wire(_tmp_ready(tmp))
+        data = m.Wire(self._tmp_data(tmp), width, signed=signed)
+        valid = m.Reg(self._tmp_valid(tmp), initval=0)
+        ready = m.Wire(self._tmp_ready(tmp))
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
@@ -1905,7 +1906,7 @@ class LUT(_SpecialOperator):
         inst = rom.mkROMDefinition('_'.join(['', 'LUT', str(tmp)]), self.patterns,
                                    size, width, sync=True, with_enable=True)
 
-        address = m.Wire(_tmp_data(tmp, prefix='_tmp_address_'), width=size)
+        address = m.Wire(self._tmp_data(tmp, prefix='address'), width=size)
         address.assign(arg_data)
 
         clk = m._clock
@@ -1924,7 +1925,6 @@ class LUT(_SpecialOperator):
             _connect_ready(m, ready, vtypes.Int(1))
 
 
-#-------------------------------------------------------------------------
 class _Delay(_UnaryOperator):
 
     def __init__(self, right):
@@ -1950,9 +1950,9 @@ class _Delay(_UnaryOperator):
         signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Reg(_tmp_data(tmp), width, initval=0, signed=signed)
-        valid = m.Reg(_tmp_valid(tmp), initval=0)
-        ready = m.Wire(_tmp_ready(tmp))
+        data = m.Reg(self._tmp_data(tmp), width, initval=0, signed=signed)
+        valid = m.Reg(self._tmp_valid(tmp), initval=0)
+        ready = m.Wire(self._tmp_ready(tmp))
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
@@ -1982,7 +1982,6 @@ class _Delay(_UnaryOperator):
             _connect_ready(m, ready, vtypes.Int(1))
 
 
-#-------------------------------------------------------------------------
 class _Prev(_UnaryOperator):
     latency = 0
 
@@ -2009,7 +2008,7 @@ class _Prev(_UnaryOperator):
         signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Reg(_tmp_data(tmp), width, initval=0, signed=signed)
+        data = m.Reg(self._tmp_data(tmp), width, initval=0, signed=signed)
         valid = self.parent_value.sig_valid
         ready = self.parent_value.sig_ready
         self.sig_data = data
@@ -2023,7 +2022,6 @@ class _Prev(_UnaryOperator):
         seq(data(rdata), cond=data_cond)
 
 
-#-------------------------------------------------------------------------
 class _Constant(_Numeric):
 
     def __init__(self, value):
@@ -2056,7 +2054,6 @@ class _Constant(_Numeric):
         self.sig_ready = ready
 
 
-#-------------------------------------------------------------------------
 class _Variable(_Numeric):
 
     def __init__(self, data=None, valid=None, ready=None, width=32, point=0, signed=False):
@@ -2098,7 +2095,6 @@ class _Variable(_Numeric):
         if isinstance(self.input_data, _Numeric):
             self.input_data._add_sink(self)
 
-    #-------------------------------------------------------------------------
     def write(self, wdata, cond=None):
         if self.sig_data is None:
             if self.m is None:
@@ -2161,7 +2157,6 @@ class _Variable(_Numeric):
 
         return ack
 
-    #--------------------------------------------------------------------------
     def _implement(self, m, seq):
         if self.input_data is None:
             raise TypeError("'input_data' must not be None.")
@@ -2224,7 +2219,6 @@ class _Variable(_Numeric):
             return
         _Numeric._implement_output(self, m, seq, aswire)
 
-    #-------------------------------------------------------------------------
     # __getattribute__() method is always called,
     # whenever fields of the node is accessed.
     def __getattribute__(self, attr):
@@ -2249,7 +2243,6 @@ class _Variable(_Numeric):
         return _Numeric.__getattribute__(self, attr)
 
 
-#-------------------------------------------------------------------------
 class _ParameterVariable(_Variable):
 
     def __init__(self, data, width=32, point=0, signed=False, value=None):
@@ -2291,23 +2284,36 @@ class _ParameterVariable(_Variable):
         return _Numeric.__getattribute__(self, attr)
 
 
-#-------------------------------------------------------------------------
 class _Accumulator(_UnaryOperator):
     latency = 1
     ops = (vtypes.Plus, )
 
-    def __init__(self, right, initval=None, enable=None, reset=None, width=32, signed=False):
-        self.initval = _to_constant(
-            initval) if initval is not None else _to_constant(0)
-        self.enable = _to_constant(enable)
-        if self.enable is not None:
-            self.enable._add_sink(self)
-        self.reset = _to_constant(reset)
-        if self.reset is not None:
-            self.reset._add_sink(self)
+    def __init__(self, right, size=None, initval=None,
+                 enable=None, reset=None, width=32, signed=False):
+
+        self.size = _to_constant(size) if size is not None else None
+
+        if (self.size is not None and
+            not isinstance(self.size, _Constant) and
+                not isinstance(self.size, _ParameterVariable)):
+            raise TypeError("size must be _Constant or _ParameterVariable, not '%s'" %
+                            str(type(self.size)))
+
+        self.initval = (_to_constant(initval)
+                        if initval is not None else _to_constant(0))
+
         if not isinstance(self.initval, _Constant):
             raise TypeError("initval must be Constant, not '%s'" %
                             str(type(self.initval)))
+
+        self.enable = _to_constant(enable)
+        if self.enable is not None:
+            self.enable._add_sink(self)
+
+        self.reset = _to_constant(reset)
+        if self.reset is not None:
+            self.reset._add_sink(self)
+
         _UnaryOperator.__init__(self, right)
         self.width = width
         self.signed = signed
@@ -2330,6 +2336,10 @@ class _Accumulator(_UnaryOperator):
             raise ValueError("Latency mismatch '%d' vs '%s'" %
                              (self.latency, 1))
 
+        size_data = self.size.sig_data if self.size is not None else None
+        #size_valid = self.size.sig_valid if self.size is not None else None
+        #size_ready = self.size.sig_ready if self.size is not None else None
+
         initval_data = self.initval.sig_data
         #initval_valid = self.initval.sig_valid
         #initval_ready = self.initval.sig_ready
@@ -2337,11 +2347,23 @@ class _Accumulator(_UnaryOperator):
         width = self.bit_length()
         signed = self.get_signed()
 
+        # for Pulse
+        if not self.ops and self.size is not None:
+            width = 1
+
         tmp = m.get_tmp()
-        data = m.Reg(_tmp_data(tmp), width,
+        data = m.Reg(self._tmp_data(tmp), width,
                      initval=initval_data, signed=signed)
-        valid = m.Reg(_tmp_valid(tmp), initval=0)
-        ready = m.Wire(_tmp_ready(tmp))
+        valid = m.Reg(self._tmp_valid(tmp), initval=0)
+        ready = m.Wire(self._tmp_ready(tmp))
+
+        if self.size is not None:
+            count = m.Reg(self._tmp_data(tmp, prefix='count'),
+                          size_data.bit_length() + 1, initval=0)
+            next_count_value = vtypes.Mux(count == size_data - 1,
+                                          0, count + 1)
+            count_zero = (count == 0)
+
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
@@ -2381,11 +2403,11 @@ class _Accumulator(_UnaryOperator):
                 raise TypeError("Operator '%s' returns unsupported object type '%s'."
                                 % (str(op), str(type(value))))
 
-        # for Ireg
-        if not self.ops:
-            value = rdata
+        # for Pulse
+        if not self.ops and self.size is not None:
+            value = (count == (size_data - 1))
 
-        if self.reset is not None:
+        if self.reset is not None or self.size is not None:
             reset_value = initval_data
             for op in self.ops:
                 if not isinstance(op, type):
@@ -2399,83 +2421,112 @@ class _Accumulator(_UnaryOperator):
                     raise TypeError("Operator '%s' returns unsupported object type '%s'."
                                     % (str(op), str(type(reset_value))))
 
+            if not self.ops and self.size is not None:
+                reset_value = (count == (size_data - 1))
+
         if self.enable is not None:
             enable_data_cond = _and_vars(data_cond, enabledata)
             seq(data(value), cond=enable_data_cond)
+
+            if self.size is not None:
+                seq(count(next_count_value), cond=enable_data_cond)
+
             _connect_ready(m, enableready, ready_cond)
+
         else:
             seq(data(value), cond=data_cond)
 
+            if self.size is not None:
+                seq(count(next_count_value), cond=data_cond)
+
         seq(valid(0), cond=valid_reset_cond)
         seq(valid(all_valid), cond=valid_cond)
+
         _connect_ready(m, rready, ready_cond)
 
         if self.reset is not None:
             if self.enable is None:
                 reset_data_cond = _and_vars(data_cond, resetdata)
                 seq(data(reset_value), cond=reset_data_cond)
+
+                if self.size is not None:
+                    seq(count(0), cond=reset_data_cond)
+                    reset_data_cond = _and_vars(data_cond, count_zero)
+                    seq(data(reset_value), cond=reset_data_cond)
+
             else:
                 reset_data_cond = _and_vars(data_cond, resetdata)
                 seq(data(initval_data), cond=reset_data_cond)
-                reset_enable_data_cond = _and_vars(
-                    data_cond, enabledata, resetdata)
+
+                reset_enable_data_cond = _and_vars(data_cond,
+                                                   enabledata, resetdata)
                 seq(data(reset_value), cond=reset_enable_data_cond)
+
+                if self.size is not None:
+                    seq(count(0), cond=reset_enable_data_cond)
+                    reset_enable_data_cond = _and_vars(
+                        data_cond, enabledata, count_zero)
+                    seq(data(reset_value), cond=reset_enable_data_cond)
+
             _connect_ready(m, resetready, ready_cond)
+
+        elif self.size is not None:
+            if self.enable is not None:
+                reset_enable_data_cond = _and_vars(
+                    data_cond, enabledata, count_zero)
+                seq(data(reset_value), cond=reset_enable_data_cond)
+            else:
+                reset_data_cond = _and_vars(data_cond, count_zero)
+                seq(data(reset_value), cond=reset_data_cond)
 
         if not self._has_output():
             _connect_ready(m, ready, vtypes.Int(1))
 
 
-class Ireg(_Accumulator):
-    ops = ()
-
-    def __init__(self, right, initval=0, enable=None, reset=None, width=32, signed=False):
-        _Accumulator.__init__(self, right, initval,
-                              enable, reset, width, signed)
-        self.label = 'reg'
-
-
-class Iadd(_Accumulator):
+class ReduceAdd(_Accumulator):
     ops = (vtypes.Plus, )
 
-    def __init__(self, right, initval=0, enable=None, reset=None, width=32, signed=False):
-        _Accumulator.__init__(self, right, initval,
+    def __init__(self, right, size=None, initval=0,
+                 enable=None, reset=None, width=32, signed=False):
+        _Accumulator.__init__(self, right, size, initval,
                               enable, reset, width, signed)
 
 
-class Isub(_Accumulator):
+class ReduceSub(_Accumulator):
     ops = (vtypes.Minus, )
 
-    def __init__(self, right, initval=0, enable=None, reset=None, width=32, signed=False):
-        _Accumulator.__init__(self, right, initval,
+    def __init__(self, right, size=None, initval=0,
+                 enable=None, reset=None, width=32, signed=False):
+        _Accumulator.__init__(self, right, size, initval,
                               enable, reset, width, signed)
 
 
-class Imul(_Accumulator):
-    #latency = 6
+class ReduceMul(_Accumulator):
     latency = 1
     ops = (vtypes.Times, )
 
-    def __init__(self, right, initval=1, enable=None, reset=None, width=32, signed=False):
-        _Accumulator.__init__(self, right, initval,
+    def __init__(self, right, size=None, initval=0,
+                 enable=None, reset=None, width=32, signed=False):
+        _Accumulator.__init__(self, right, size, initval,
                               enable, reset, width, signed)
 
 
-class Idiv(_Accumulator):
+class ReduceDiv(_Accumulator):
     latency = 32
-    op = ()
+    ops = ()
 
-    def __init__(self, right, initval=1, enable=None, reset=None, width=32, signed=False):
+    def __init__(self, right, size=None, initval=0,
+                 enable=None, reset=None, width=32, signed=False):
         raise NotImplementedError()
-        _Accumulator.__init__(self, right, initval,
+        _Accumulator.__init__(self, right, size, initval,
                               enable, reset, width, signed)
 
 
-class Icustom(_Accumulator):
+class ReduceCustom(_Accumulator):
 
-    def __init__(self, ops, right, initval=0, enable=None, reset=None,
-                 width=32, signed=False, label=None):
-        _Accumulator.__init__(self, right, initval,
+    def __init__(self, ops, right, size=None, initval=0,
+                 enable=None, reset=None, width=32, signed=False, label=None):
+        _Accumulator.__init__(self, right, size, initval,
                               enable, reset, width, signed)
         if not isinstance(ops, (tuple, list)):
             ops = tuple([ops])
@@ -2483,7 +2534,93 @@ class Icustom(_Accumulator):
         self.label = label
 
 
-#-------------------------------------------------------------------------
+class Counter(_Accumulator):
+
+    def __init__(self, step=1, size=None, initval=0,
+                 control=None, enable=None, reset=None, width=32, signed=False):
+
+        self.ops = (lambda x, y: x + step, )
+
+        if control is None:
+            control = 0
+
+        initval -= step
+
+        _Accumulator.__init__(self, control, size, initval,
+                              enable, reset, width, signed)
+        self.label = 'Counter'
+
+
+class Pulse(_Accumulator):
+    ops = ()
+
+    def __init__(self, size, control=None, enable=None, reset=None):
+
+        if control is None:
+            control = 0
+
+        step = 1
+        initval = 0
+        width = 1
+        signed = False
+
+        _Accumulator.__init__(self, control, size, initval,
+                              enable, reset, width, signed)
+        self.label = 'Pulse'
+
+
+def _ReduceValid(cls, right, size, initval=0,
+                 enable=None, reset=None, width=32, signed=False):
+
+    data = cls(right, size, initval,
+               enable, reset, width, signed)
+    valid = Pulse(size, right, enable, reset)
+
+    return data, valid
+
+
+def ReduceAddValid(right, size, initval=0,
+                   enable=None, reset=None, width=32, signed=False):
+
+    cls = ReduceAdd
+    return _ReduceValid(cls, right, size, initval,
+                        enable, reset, width, signed)
+
+
+def ReduceSubValid(right, size, initval=0,
+                   enable=None, reset=None, width=32, signed=False):
+
+    cls = ReduceSub
+    return _ReduceValid(cls, right, size, initval,
+                        enable, reset, width, signed)
+
+
+def ReduceMulValid(right, size, initval=0,
+                   enable=None, reset=None, width=32, signed=False):
+
+    cls = ReduceMul
+    return _ReduceValid(cls, right, size, initval,
+                        enable, reset, width, signed)
+
+
+def ReduceDivValid(right, size, initval=0,
+                   enable=None, reset=None, width=32, signed=False):
+
+    cls = ReduceDiv
+    return _ReduceValid(cls, right, size, initval,
+                        enable, reset, width, signed)
+
+
+def ReduceCustomValid(ops, right, size, initval=0,
+                      enable=None, reset=None, width=32, signed=False):
+
+    data = ReduceCustom(ops, right, size, initval,
+                        enable, reset, width, signed)
+    valid = Pulse(size, right, enable, reset)
+
+    return data, valid
+
+
 class Int(_Constant):
 
     def __init__(self, value, signed=True):
@@ -2539,104 +2676,6 @@ class Str(_Constant):
         self.signed = False
 
 
-#-------------------------------------------------------------------------
-def _RegionAcc(op, right, size, initval=0, enable=None, reset=None,
-               width=32, signed=False, filter=False, filter_value=0):
-
-    counter = Counter(1, maxval=size, initval=0, enable=enable, reset=reset)
-
-    valid = (counter == size - 1).prev(1)
-
-    if enable is not None:
-        valid = Land(valid, enable)
-
-    if reset is None:
-        reset = valid.prev(1)
-    else:
-        reset = Lor(reset, valid.prev(1))
-
-    comp = op(right, initval=initval, enable=enable,
-              reset=reset, width=width, signed=signed)
-    if filter:
-        comp = Mux(valid, comp, filter_value)
-
-    return comp, valid
-
-
-def RegionReg(right, size, initval=0, enable=None, reset=None,
-              width=32, signed=False, filter=False, filter_value=0):
-    return _RegionAcc(Ireg, right, size, initval, enable, reset,
-                      width, signed, filter, filter_value)
-
-
-def RegionAdd(right, size, initval=0, enable=None, reset=None,
-              width=32, signed=False, filter=False, filter_value=0):
-    return _RegionAcc(Iadd, right, size, initval, enable, reset,
-                      width, signed, filter, filter_value)
-
-
-def RegionSub(right, size, initval=0, enable=None, reset=None,
-              width=32, signed=False, filter=False, filter_value=0):
-    return _RegionAcc(Isub, right, size, initval, enable, reset,
-                      width, signed, filter, filter_value)
-
-
-def RegionMul(right, size, initval=0, enable=None, reset=None,
-              width=32, signed=False, filter=False, filter_value=0):
-    return _RegionAcc(Imul, right, size, initval, enable, reset,
-                      width, signed, filter, filter_value)
-
-
-def RegionDiv(right, size, initval=0, enable=None, reset=None,
-              width=32, signed=False, filter=False, filter_value=0):
-    return _RegionAcc(Idiv, right, size, initval, enable, reset,
-                      width, signed, filter, filter_value)
-
-
-def RegionCustom(ops, right, size, initval=0, enable=None, reset=None,
-                 width=32, signed=False, filter=False, filter_value=0):
-    op = partial(Icustom, ops)
-    return _RegionAcc(op, right, size, initval, enable, reset,
-                      width, signed, filter, filter_value)
-
-
-#-------------------------------------------------------------------------
-def Counter(step=None, maxval=None, initval=0, enable=None, reset=None, width=32, signed=False):
-    if step is None:
-        step = 1
-
-    step = _to_constant(step)
-    if not isinstance(step, _Constant):
-        raise TypeError("'step' must be constant")
-    raw_step = step.value
-
-    initval = _to_constant(initval)
-    if not isinstance(initval, _Constant):
-        raise TypeError("'initval' must be constant")
-    raw_initval = initval.value
-
-    if maxval is None:
-        return Icustom(lambda a, b: a + b,
-                       step, initval=initval, enable=enable, reset=reset,
-                       width=width, signed=signed,
-                       label='Counter')
-
-    #maxval = _to_constant(maxval)
-    # if not isinstance(maxval, _Constant):
-    #    raise TypeError("'maxval' must be constant")
-    #raw_maxval = maxval.value
-
-    # return Icustom(lambda a, b: vtypes.Mux(a >= raw_maxval - raw_step, raw_initval, a + b),
-    #               step, initval=initval, enable=enable, reset=reset,
-    #               width=width, signed=signed,
-    #               label='Counter')
-    return Icustom(lambda a, b: vtypes.Mux(a >= maxval - raw_step, raw_initval, a + b),
-                   step, initval=initval, enable=enable, reset=reset,
-                   width=width, signed=signed,
-                   label='Counter')
-
-
-#-------------------------------------------------------------------------
 def make_condition(*cond, **kwargs):
     ready = kwargs['ready'] if 'ready' in kwargs else None
 
@@ -2663,7 +2702,6 @@ def make_condition(*cond, **kwargs):
     return _make_condition(*new_cond)
 
 
-#-------------------------------------------------------------------------
 def is_dataflow_object(*objs):
     for obj in objs:
         if isinstance(obj, _Node):
@@ -2671,7 +2709,6 @@ def is_dataflow_object(*objs):
     return False
 
 
-#-------------------------------------------------------------------------
 def _to_constant(obj):
     if isinstance(obj, (int, float, bool, str)):
         return Constant(obj)
@@ -2776,7 +2813,6 @@ def _from_vtypes_value(value):
         return Str(value.value)
 
     if isinstance(value, vtypes._Numeric):
-        #return Variable(value)
         return ParameterVariable(value)
 
     raise TypeError("Unsupported type '%s'" % str(type(value)))

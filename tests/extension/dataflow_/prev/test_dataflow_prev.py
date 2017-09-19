@@ -288,67 +288,67 @@ module main
   input zready
 );
 
-  reg [32-1:0] _tmp_data_0;
-  reg [32-1:0] _tmp_data_1;
-  reg _tmp_valid_1;
-  wire _tmp_ready_1;
-  reg [32-1:0] _tmp_data_2;
-  reg [32-1:0] _tmp_data_3;
-  reg _tmp_valid_3;
-  wire _tmp_ready_3;
-  assign xready = (_tmp_ready_1 || !_tmp_valid_1) && (xvalid && xvalid) && ((_tmp_ready_1 || !_tmp_valid_1) && (xvalid && xvalid)) && ((_tmp_ready_3 || !_tmp_valid_3) && xvalid);
-  reg [32-1:0] _tmp_data_4;
-  reg _tmp_valid_4;
-  wire _tmp_ready_4;
-  assign _tmp_ready_1 = (_tmp_ready_4 || !_tmp_valid_4) && (_tmp_valid_1 && _tmp_valid_3);
-  assign _tmp_ready_3 = (_tmp_ready_4 || !_tmp_valid_4) && (_tmp_valid_1 && _tmp_valid_3);
-  assign zdata = _tmp_data_4;
-  assign zvalid = _tmp_valid_4;
-  assign _tmp_ready_4 = zready;
+  reg [32-1:0] __prev_data_0;
+  reg [32-1:0] _plus_data_1;
+  reg _plus_valid_1;
+  wire _plus_ready_1;
+  reg [32-1:0] __prev_data_2;
+  reg [32-1:0] __delay_data_3;
+  reg __delay_valid_3;
+  wire __delay_ready_3;
+  assign xready = (_plus_ready_1 || !_plus_valid_1) && (xvalid && xvalid) && ((_plus_ready_1 || !_plus_valid_1) && (xvalid && xvalid)) && ((__delay_ready_3 || !__delay_valid_3) && xvalid);
+  reg [32-1:0] _plus_data_4;
+  reg _plus_valid_4;
+  wire _plus_ready_4;
+  assign _plus_ready_1 = (_plus_ready_4 || !_plus_valid_4) && (_plus_valid_1 && __delay_valid_3);
+  assign __delay_ready_3 = (_plus_ready_4 || !_plus_valid_4) && (_plus_valid_1 && __delay_valid_3);
+  assign zdata = _plus_data_4;
+  assign zvalid = _plus_valid_4;
+  assign _plus_ready_4 = zready;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_0 <= 0;
-      _tmp_data_1 <= 0;
-      _tmp_valid_1 <= 0;
-      _tmp_data_2 <= 0;
-      _tmp_data_3 <= 0;
-      _tmp_valid_3 <= 0;
-      _tmp_data_4 <= 0;
-      _tmp_valid_4 <= 0;
+      __prev_data_0 <= 0;
+      _plus_data_1 <= 0;
+      _plus_valid_1 <= 0;
+      __prev_data_2 <= 0;
+      __delay_data_3 <= 0;
+      __delay_valid_3 <= 0;
+      _plus_data_4 <= 0;
+      _plus_valid_4 <= 0;
     end else begin
       if(xvalid && xready) begin
-        _tmp_data_0 <= xdata;
+        __prev_data_0 <= xdata;
       end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && (xready && xready) && (xvalid && xvalid)) begin
-        _tmp_data_1 <= xdata + _tmp_data_0;
+      if((_plus_ready_1 || !_plus_valid_1) && (xready && xready) && (xvalid && xvalid)) begin
+        _plus_data_1 <= xdata + __prev_data_0;
       end 
-      if(_tmp_valid_1 && _tmp_ready_1) begin
-        _tmp_valid_1 <= 0;
+      if(_plus_valid_1 && _plus_ready_1) begin
+        _plus_valid_1 <= 0;
       end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && (xready && xready)) begin
-        _tmp_valid_1 <= xvalid && xvalid;
+      if((_plus_ready_1 || !_plus_valid_1) && (xready && xready)) begin
+        _plus_valid_1 <= xvalid && xvalid;
       end 
       if(xvalid && xready) begin
-        _tmp_data_2 <= _tmp_data_0;
+        __prev_data_2 <= __prev_data_0;
       end 
-      if((_tmp_ready_3 || !_tmp_valid_3) && xready && xvalid) begin
-        _tmp_data_3 <= _tmp_data_2;
+      if((__delay_ready_3 || !__delay_valid_3) && xready && xvalid) begin
+        __delay_data_3 <= __prev_data_2;
       end 
-      if(_tmp_valid_3 && _tmp_ready_3) begin
-        _tmp_valid_3 <= 0;
+      if(__delay_valid_3 && __delay_ready_3) begin
+        __delay_valid_3 <= 0;
       end 
-      if((_tmp_ready_3 || !_tmp_valid_3) && xready) begin
-        _tmp_valid_3 <= xvalid;
+      if((__delay_ready_3 || !__delay_valid_3) && xready) begin
+        __delay_valid_3 <= xvalid;
       end 
-      if((_tmp_ready_4 || !_tmp_valid_4) && (_tmp_ready_1 && _tmp_ready_3) && (_tmp_valid_1 && _tmp_valid_3)) begin
-        _tmp_data_4 <= _tmp_data_1 + _tmp_data_3;
+      if((_plus_ready_4 || !_plus_valid_4) && (_plus_ready_1 && __delay_ready_3) && (_plus_valid_1 && __delay_valid_3)) begin
+        _plus_data_4 <= _plus_data_1 + __delay_data_3;
       end 
-      if(_tmp_valid_4 && _tmp_ready_4) begin
-        _tmp_valid_4 <= 0;
+      if(_plus_valid_4 && _plus_ready_4) begin
+        _plus_valid_4 <= 0;
       end 
-      if((_tmp_ready_4 || !_tmp_valid_4) && (_tmp_ready_1 && _tmp_ready_3)) begin
-        _tmp_valid_4 <= _tmp_valid_1 && _tmp_valid_3;
+      if((_plus_ready_4 || !_plus_valid_4) && (_plus_ready_1 && __delay_ready_3)) begin
+        _plus_valid_4 <= _plus_valid_1 && __delay_valid_3;
       end 
     end
   end
@@ -356,6 +356,7 @@ module main
 
 endmodule
 """
+
 
 def test():
     veriloggen.reset()

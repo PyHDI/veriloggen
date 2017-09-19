@@ -753,7 +753,7 @@ class CompileVisitor(ast.NodeVisitor):
         right = self.visit(node.right)
 
         if isinstance(left, vtypes.Str) or isinstance(right, vtypes.Str):
-            if isinstance(node.op, ast.Add):
+            if not isinstance(node.op, ast.Add):
                 raise TypeError("Can not generate a corresponding node")
             return self._string_operation_plus(left, right)
 

@@ -35,7 +35,7 @@ def mkLed():
     def comp_stream(strm, roffset, woffset):
         a = strm.read_pattern(ram_a, roffset, read_pattern)
         b = strm.read_pattern(ram_b, 0, weight_pattern)
-        sum, valid = strm.RegionAdd(a * b, kernel)
+        sum, valid = strm.ReduceAddValid(a * b, kernel)
         strm.write(ram_c, woffset, write_size, sum, when=valid)
 
     def comp_sequential(roffset, woffset):

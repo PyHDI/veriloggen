@@ -197,10 +197,10 @@ module main
   reg [9-1:0] _tmp_0;
   reg _myaxi_cond_0_1;
   reg _tmp_1;
-  wire [32-1:0] _tmp_data_2;
-  wire _tmp_valid_2;
-  wire _tmp_ready_2;
-  assign _tmp_ready_2 = (_tmp_0 > 0) && (myaxi_wready || !myaxi_wvalid);
+  wire [32-1:0] _counter_data_2;
+  wire _counter_valid_2;
+  wire _counter_ready_2;
+  assign _counter_ready_2 = (_tmp_0 > 0) && (myaxi_wready || !myaxi_wvalid);
   reg _myaxi_cond_1_1;
   reg [32-1:0] sum;
   reg _seq_cond_0_1;
@@ -246,14 +246,14 @@ module main
       if(myaxi_awvalid && !myaxi_awready) begin
         myaxi_awvalid <= myaxi_awvalid;
       end 
-      if(_tmp_valid_2 && ((_tmp_0 > 0) && (myaxi_wready || !myaxi_wvalid)) && ((_tmp_0 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_0 > 0))) begin
-        myaxi_wdata <= _tmp_data_2;
+      if(_counter_valid_2 && ((_tmp_0 > 0) && (myaxi_wready || !myaxi_wvalid)) && ((_tmp_0 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_0 > 0))) begin
+        myaxi_wdata <= _counter_data_2;
         myaxi_wvalid <= 1;
         myaxi_wlast <= 0;
         myaxi_wstrb <= { 4{ 1'd1 } };
         _tmp_0 <= _tmp_0 - 1;
       end 
-      if(_tmp_valid_2 && ((_tmp_0 > 0) && (myaxi_wready || !myaxi_wvalid)) && ((_tmp_0 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_0 > 0)) && (_tmp_0 == 1)) begin
+      if(_counter_valid_2 && ((_tmp_0 > 0) && (myaxi_wready || !myaxi_wvalid)) && ((_tmp_0 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_0 > 0)) && (_tmp_0 == 1)) begin
         myaxi_wlast <= 1;
         _tmp_1 <= 1;
       end 
@@ -266,41 +266,26 @@ module main
     end
   end
 
-  reg [32-1:0] _tmp_data_3;
-  reg _tmp_valid_3;
-  wire _tmp_ready_3;
-  reg [32-1:0] _tmp_data_4;
-  reg _tmp_valid_4;
-  wire _tmp_ready_4;
-  assign _tmp_ready_3 = (_tmp_ready_4 || !_tmp_valid_4) && _tmp_valid_3;
-  assign _tmp_data_2 = _tmp_data_4;
-  assign _tmp_valid_2 = _tmp_valid_4;
-  assign _tmp_ready_4 = _tmp_ready_2;
+  reg [32-1:0] _counter_data_3;
+  reg _counter_valid_3;
+  wire _counter_ready_3;
+  assign _counter_data_2 = _counter_data_3;
+  assign _counter_valid_2 = _counter_valid_3;
+  assign _counter_ready_3 = _counter_ready_2;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_3 <= 1'sd0;
-      _tmp_valid_3 <= 0;
-      _tmp_data_4 <= 0;
-      _tmp_valid_4 <= 0;
+      _counter_data_3 <= -2'sd1;
+      _counter_valid_3 <= 0;
     end else begin
-      if((_tmp_ready_3 || !_tmp_valid_3) && 1 && 1) begin
-        _tmp_data_3 <= _tmp_data_3 + 2'sd1;
+      if((_counter_ready_3 || !_counter_valid_3) && 1 && 1) begin
+        _counter_data_3 <= _counter_data_3 + 1;
       end 
-      if(_tmp_valid_3 && _tmp_ready_3) begin
-        _tmp_valid_3 <= 0;
+      if(_counter_valid_3 && _counter_ready_3) begin
+        _counter_valid_3 <= 0;
       end 
-      if((_tmp_ready_3 || !_tmp_valid_3) && 1) begin
-        _tmp_valid_3 <= 1;
-      end 
-      if((_tmp_ready_4 || !_tmp_valid_4) && _tmp_ready_3 && _tmp_valid_3) begin
-        _tmp_data_4 <= _tmp_data_3 - 2'sd1;
-      end 
-      if(_tmp_valid_4 && _tmp_ready_4) begin
-        _tmp_valid_4 <= 0;
-      end 
-      if((_tmp_ready_4 || !_tmp_valid_4) && _tmp_ready_3) begin
-        _tmp_valid_4 <= _tmp_valid_3;
+      if((_counter_ready_3 || !_counter_valid_3) && 1) begin
+        _counter_valid_3 <= 1;
       end 
     end
   end

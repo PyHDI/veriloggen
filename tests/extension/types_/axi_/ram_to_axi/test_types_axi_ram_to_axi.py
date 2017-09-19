@@ -306,10 +306,10 @@ module main
   assign myaxi_rready = _tmp_1 && _tmp_2;
   reg [8-1:0] _tmp_3;
   reg _tmp_4;
-  wire [32-1:0] _tmp_data_5;
-  wire _tmp_valid_5;
-  wire _tmp_ready_5;
-  assign _tmp_ready_5 = (_tmp_3 > 0) && !_tmp_4;
+  wire [32-1:0] _reduceadd_data_5;
+  wire _reduceadd_valid_5;
+  wire _reduceadd_ready_5;
+  assign _reduceadd_ready_5 = (_tmp_3 > 0) && !_tmp_4;
   reg _myram_cond_0_1;
   reg [9-1:0] _tmp_6;
   reg _myaxi_cond_1_1;
@@ -331,10 +331,10 @@ module main
   reg _tmp_17;
   reg [8-1:0] _tmp_18;
   reg _tmp_19;
-  wire [32-1:0] _tmp_data_20;
-  wire _tmp_valid_20;
-  wire _tmp_ready_20;
-  assign _tmp_ready_20 = (_tmp_6 > 0) && (myaxi_wready || !myaxi_wvalid);
+  wire [32-1:0] __variable_data_20;
+  wire __variable_valid_20;
+  wire __variable_ready_20;
+  assign __variable_ready_20 = (_tmp_6 > 0) && (myaxi_wready || !myaxi_wvalid);
   reg _myaxi_cond_2_1;
   reg [32-1:0] sum;
   reg _seq_cond_0_1;
@@ -395,14 +395,14 @@ module main
       if(myaxi_awvalid && !myaxi_awready) begin
         myaxi_awvalid <= myaxi_awvalid;
       end 
-      if(_tmp_valid_20 && ((_tmp_6 > 0) && (myaxi_wready || !myaxi_wvalid)) && ((_tmp_6 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_6 > 0))) begin
-        myaxi_wdata <= _tmp_data_20;
+      if(__variable_valid_20 && ((_tmp_6 > 0) && (myaxi_wready || !myaxi_wvalid)) && ((_tmp_6 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_6 > 0))) begin
+        myaxi_wdata <= __variable_data_20;
         myaxi_wvalid <= 1;
         myaxi_wlast <= 0;
         myaxi_wstrb <= { 4{ 1'd1 } };
         _tmp_6 <= _tmp_6 - 1;
       end 
-      if(_tmp_valid_20 && ((_tmp_6 > 0) && (myaxi_wready || !myaxi_wvalid)) && ((_tmp_6 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_6 > 0)) && (_tmp_6 == 1)) begin
+      if(__variable_valid_20 && ((_tmp_6 > 0) && (myaxi_wready || !myaxi_wvalid)) && ((_tmp_6 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_6 > 0)) && (_tmp_6 == 1)) begin
         myaxi_wlast <= 1;
         _tmp_19 <= 1;
       end 
@@ -442,13 +442,13 @@ module main
         myram_0_addr <= -1;
         _tmp_3 <= 64;
       end 
-      if(_tmp_valid_5 && ((_tmp_3 > 0) && !_tmp_4) && (_tmp_3 > 0)) begin
+      if(_reduceadd_valid_5 && ((_tmp_3 > 0) && !_tmp_4) && (_tmp_3 > 0)) begin
         myram_0_addr <= myram_0_addr + 1;
-        myram_0_wdata <= _tmp_data_5;
+        myram_0_wdata <= _reduceadd_data_5;
         myram_0_wenable <= 1;
         _tmp_3 <= _tmp_3 - 1;
       end 
-      if(_tmp_valid_5 && ((_tmp_3 > 0) && !_tmp_4) && (_tmp_3 == 1)) begin
+      if(_reduceadd_valid_5 && ((_tmp_3 > 0) && !_tmp_4) && (_tmp_3 == 1)) begin
         _tmp_4 <= 1;
       end 
       _myram_cond_0_1 <= 1;
@@ -486,39 +486,39 @@ module main
     end
   end
 
-  assign _tmp_data_20 = _tmp_13;
-  assign _tmp_valid_20 = _tmp_7;
-  assign _tmp_9 = 1 && _tmp_ready_20;
-  reg [1-1:0] _tmp_data_21;
-  reg [32-1:0] _tmp_data_22;
-  reg _tmp_valid_22;
-  wire _tmp_ready_22;
-  assign _tmp_1 = 1 && ((_tmp_ready_22 || !_tmp_valid_22) && (myaxi_rvalid && myaxi_rvalid));
-  assign _tmp_2 = 1 && ((_tmp_ready_22 || !_tmp_valid_22) && (myaxi_rvalid && myaxi_rvalid));
-  assign _tmp_data_5 = _tmp_data_22;
-  assign _tmp_valid_5 = _tmp_valid_22;
-  assign _tmp_ready_22 = _tmp_ready_5;
+  assign __variable_data_20 = _tmp_13;
+  assign __variable_valid_20 = _tmp_7;
+  assign _tmp_9 = 1 && __variable_ready_20;
+  reg [1-1:0] __prev_data_21;
+  reg [32-1:0] _reduceadd_data_22;
+  reg _reduceadd_valid_22;
+  wire _reduceadd_ready_22;
+  assign _tmp_1 = 1 && ((_reduceadd_ready_22 || !_reduceadd_valid_22) && (myaxi_rvalid && myaxi_rvalid));
+  assign _tmp_2 = 1 && ((_reduceadd_ready_22 || !_reduceadd_valid_22) && (myaxi_rvalid && myaxi_rvalid));
+  assign _reduceadd_data_5 = _reduceadd_data_22;
+  assign _reduceadd_valid_5 = _reduceadd_valid_22;
+  assign _reduceadd_ready_22 = _reduceadd_ready_5;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_21 <= 0;
-      _tmp_data_22 <= 1'sd0;
-      _tmp_valid_22 <= 0;
+      __prev_data_21 <= 0;
+      _reduceadd_data_22 <= 1'sd0;
+      _reduceadd_valid_22 <= 0;
     end else begin
       if(myaxi_rvalid && _tmp_2) begin
-        _tmp_data_21 <= myaxi_rlast;
+        __prev_data_21 <= myaxi_rlast;
       end 
-      if((_tmp_ready_22 || !_tmp_valid_22) && (_tmp_1 && _tmp_2) && (myaxi_rvalid && myaxi_rvalid)) begin
-        _tmp_data_22 <= _tmp_data_22 + myaxi_rdata;
+      if((_reduceadd_ready_22 || !_reduceadd_valid_22) && (_tmp_1 && _tmp_2) && (myaxi_rvalid && myaxi_rvalid)) begin
+        _reduceadd_data_22 <= _reduceadd_data_22 + myaxi_rdata;
       end 
-      if(_tmp_valid_22 && _tmp_ready_22) begin
-        _tmp_valid_22 <= 0;
+      if(_reduceadd_valid_22 && _reduceadd_ready_22) begin
+        _reduceadd_valid_22 <= 0;
       end 
-      if((_tmp_ready_22 || !_tmp_valid_22) && (_tmp_1 && _tmp_2)) begin
-        _tmp_valid_22 <= myaxi_rvalid && myaxi_rvalid;
+      if((_reduceadd_ready_22 || !_reduceadd_valid_22) && (_tmp_1 && _tmp_2)) begin
+        _reduceadd_valid_22 <= myaxi_rvalid && myaxi_rvalid;
       end 
-      if((_tmp_ready_22 || !_tmp_valid_22) && (_tmp_1 && _tmp_2) && (myaxi_rvalid && myaxi_rvalid) && _tmp_data_21) begin
-        _tmp_data_22 <= 1'sd0 + myaxi_rdata;
+      if((_reduceadd_ready_22 || !_reduceadd_valid_22) && (_tmp_1 && _tmp_2) && (myaxi_rvalid && myaxi_rvalid) && __prev_data_21) begin
+        _reduceadd_data_22 <= 1'sd0 + myaxi_rdata;
       end 
     end
   end

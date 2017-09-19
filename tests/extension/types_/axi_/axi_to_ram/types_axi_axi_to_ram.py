@@ -34,7 +34,7 @@ def mkMain():
 
     # AXI read dataflow (AXI -> Dataflow)
     axi_data, axi_last, done = myaxi.read_dataflow()
-    sum = df.Iadd(axi_data, reset=axi_last.prev(1))
+    sum = df.ReduceAdd(axi_data, reset=axi_last.prev(1))
 
     # RAM write dataflow (Dataflow -> RAM)
     wport = 0
@@ -169,7 +169,8 @@ def mkTest():
         ports['myaxi_rvalid'](ports['myaxi_rvalid']),
         ports['myaxi_rlast'](ports['myaxi_rlast']),
     )
-    raddr_fsm.If(Ands(ports['myaxi_rvalid'], ports['myaxi_rready'])).goto_next()
+    raddr_fsm.If(Ands(ports['myaxi_rvalid'],
+                      ports['myaxi_rready'])).goto_next()
     raddr_fsm.goto_next()
     raddr_fsm.goto_next()
     raddr_fsm.goto_next()
@@ -196,6 +197,7 @@ def mkTest():
     )
 
     return m
+
 
 if __name__ == '__main__':
     test = mkTest()

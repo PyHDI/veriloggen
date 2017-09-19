@@ -5,7 +5,7 @@ import types_ram_manager_read_dataflow
 
 expected_verilog = """
 module test;
-
+  
   reg CLK;
   reg RST;
 
@@ -79,10 +79,10 @@ module main
   localparam fsm_init = 0;
   reg [8-1:0] _tmp_0;
   reg _tmp_1;
-  wire [32-1:0] _tmp_data_2;
-  wire _tmp_valid_2;
-  wire _tmp_ready_2;
-  assign _tmp_ready_2 = (_tmp_0 > 0) && !_tmp_1;
+  wire [32-1:0] _counter_data_2;
+  wire _counter_valid_2;
+  wire _counter_ready_2;
+  assign _counter_ready_2 = (_tmp_0 > 0) && !_tmp_1;
   reg _myram_cond_0_1;
   reg _tmp_3;
   reg _tmp_4;
@@ -100,14 +100,14 @@ module main
   reg _tmp_12;
   reg _tmp_13;
   reg [7-1:0] _tmp_14;
-  wire [32-1:0] _tmp_data_15;
-  wire _tmp_valid_15;
-  wire _tmp_ready_15;
-  assign _tmp_ready_15 = 1;
-  wire [1-1:0] _tmp_data_16;
-  wire _tmp_valid_16;
-  wire _tmp_ready_16;
-  assign _tmp_ready_16 = 1;
+  wire [32-1:0] __variable_data_15;
+  wire __variable_valid_15;
+  wire __variable_ready_15;
+  assign __variable_ready_15 = 1;
+  wire [1-1:0] __variable_data_16;
+  wire __variable_valid_16;
+  wire __variable_ready_16;
+  assign __variable_ready_16 = 1;
   reg [32-1:0] sum;
   reg _seq_cond_0_1;
 
@@ -142,13 +142,13 @@ module main
         myram_0_addr <= -1;
         _tmp_0 <= 64;
       end 
-      if(_tmp_valid_2 && ((_tmp_0 > 0) && !_tmp_1) && (_tmp_0 > 0)) begin
+      if(_counter_valid_2 && ((_tmp_0 > 0) && !_tmp_1) && (_tmp_0 > 0)) begin
         myram_0_addr <= myram_0_addr + 1;
-        myram_0_wdata <= _tmp_data_2;
+        myram_0_wdata <= _counter_data_2;
         myram_0_wenable <= 1;
         _tmp_0 <= _tmp_0 - 1;
       end 
-      if(_tmp_valid_2 && ((_tmp_0 > 0) && !_tmp_1) && (_tmp_0 == 1)) begin
+      if(_counter_valid_2 && ((_tmp_0 > 0) && !_tmp_1) && (_tmp_0 == 1)) begin
         _tmp_1 <= 1;
       end 
       _myram_cond_0_1 <= 1;
@@ -186,47 +186,32 @@ module main
     end
   end
 
-  assign _tmp_data_15 = _tmp_9;
-  assign _tmp_valid_15 = _tmp_3;
-  assign _tmp_5 = 1 && _tmp_ready_15;
-  assign _tmp_data_16 = _tmp_13;
-  assign _tmp_valid_16 = _tmp_4;
-  assign _tmp_6 = 1 && _tmp_ready_16;
-  reg [32-1:0] _tmp_data_17;
-  reg _tmp_valid_17;
-  wire _tmp_ready_17;
-  reg [32-1:0] _tmp_data_18;
-  reg _tmp_valid_18;
-  wire _tmp_ready_18;
-  assign _tmp_ready_17 = (_tmp_ready_18 || !_tmp_valid_18) && _tmp_valid_17;
-  assign _tmp_data_2 = _tmp_data_18;
-  assign _tmp_valid_2 = _tmp_valid_18;
-  assign _tmp_ready_18 = _tmp_ready_2;
+  assign __variable_data_15 = _tmp_9;
+  assign __variable_valid_15 = _tmp_3;
+  assign _tmp_5 = 1 && __variable_ready_15;
+  assign __variable_data_16 = _tmp_13;
+  assign __variable_valid_16 = _tmp_4;
+  assign _tmp_6 = 1 && __variable_ready_16;
+  reg [32-1:0] _counter_data_17;
+  reg _counter_valid_17;
+  wire _counter_ready_17;
+  assign _counter_data_2 = _counter_data_17;
+  assign _counter_valid_2 = _counter_valid_17;
+  assign _counter_ready_17 = _counter_ready_2;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_17 <= 1'sd0;
-      _tmp_valid_17 <= 0;
-      _tmp_data_18 <= 0;
-      _tmp_valid_18 <= 0;
+      _counter_data_17 <= -2'sd1;
+      _counter_valid_17 <= 0;
     end else begin
-      if((_tmp_ready_17 || !_tmp_valid_17) && 1 && 1) begin
-        _tmp_data_17 <= _tmp_data_17 + 2'sd1;
+      if((_counter_ready_17 || !_counter_valid_17) && 1 && 1) begin
+        _counter_data_17 <= _counter_data_17 + 1;
       end 
-      if(_tmp_valid_17 && _tmp_ready_17) begin
-        _tmp_valid_17 <= 0;
+      if(_counter_valid_17 && _counter_ready_17) begin
+        _counter_valid_17 <= 0;
       end 
-      if((_tmp_ready_17 || !_tmp_valid_17) && 1) begin
-        _tmp_valid_17 <= 1;
-      end 
-      if((_tmp_ready_18 || !_tmp_valid_18) && _tmp_ready_17 && _tmp_valid_17) begin
-        _tmp_data_18 <= _tmp_data_17 - 2'sd1;
-      end 
-      if(_tmp_valid_18 && _tmp_ready_18) begin
-        _tmp_valid_18 <= 0;
-      end 
-      if((_tmp_ready_18 || !_tmp_valid_18) && _tmp_ready_17) begin
-        _tmp_valid_18 <= _tmp_valid_17;
+      if((_counter_ready_17 || !_counter_valid_17) && 1) begin
+        _counter_valid_17 <= 1;
       end 
     end
   end
@@ -274,10 +259,10 @@ module main
       if(_seq_cond_0_1) begin
         $display("sum=%d expected_sum=%d", sum, 496);
       end 
-      if(_tmp_valid_15) begin
-        sum <= sum + _tmp_data_15;
+      if(__variable_valid_15) begin
+        sum <= sum + __variable_data_15;
       end 
-      _seq_cond_0_1 <= _tmp_valid_15 && (_tmp_data_16 == 1);
+      _seq_cond_0_1 <= __variable_valid_15 && (__variable_data_16 == 1);
     end
   end
 

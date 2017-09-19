@@ -155,517 +155,517 @@ module radix2
   output [32-1:0] dout0im
 );
 
-  reg [32-1:0] _tmp_data_0;
-  reg _tmp_valid_0;
-  wire _tmp_ready_0;
-  reg [32-1:0] _tmp_data_1;
-  reg _tmp_valid_1;
-  wire _tmp_ready_1;
-  reg [32-1:0] _tmp_data_2;
-  reg _tmp_valid_2;
-  wire _tmp_ready_2;
-  reg [32-1:0] _tmp_data_3;
-  reg _tmp_valid_3;
-  wire _tmp_ready_3;
-  reg [32-1:0] _tmp_data_4;
-  reg _tmp_valid_4;
-  wire _tmp_ready_4;
-  reg [32-1:0] _tmp_data_5;
-  reg _tmp_valid_5;
-  wire _tmp_ready_5;
-  wire [32-1:0] _tmp_data_6;
-  wire _tmp_valid_6;
-  wire _tmp_ready_6;
-  wire [64-1:0] _tmp_odata_6;
-  reg [64-1:0] _tmp_data_reg_6;
-  assign _tmp_data_6 = _tmp_data_reg_6;
-  wire _tmp_ovalid_6;
-  reg _tmp_valid_reg_6;
-  assign _tmp_valid_6 = _tmp_valid_reg_6;
-  wire _tmp_enable_6;
-  wire _tmp_update_6;
-  assign _tmp_enable_6 = (_tmp_ready_6 || !_tmp_valid_6) && (_tmp_ready_2 && _tmp_ready_4) && (_tmp_valid_2 && _tmp_valid_4);
-  assign _tmp_update_6 = _tmp_ready_6 || !_tmp_valid_6;
+  reg [32-1:0] _plus_data_0;
+  reg _plus_valid_0;
+  wire _plus_ready_0;
+  reg [32-1:0] _plus_data_1;
+  reg _plus_valid_1;
+  wire _plus_ready_1;
+  reg [32-1:0] _minus_data_2;
+  reg _minus_valid_2;
+  wire _minus_ready_2;
+  reg [32-1:0] _minus_data_3;
+  reg _minus_valid_3;
+  wire _minus_ready_3;
+  reg [32-1:0] __delay_data_4;
+  reg __delay_valid_4;
+  wire __delay_ready_4;
+  reg [32-1:0] __delay_data_5;
+  reg __delay_valid_5;
+  wire __delay_ready_5;
+  wire [32-1:0] _times_data_6;
+  wire _times_valid_6;
+  wire _times_ready_6;
+  wire [64-1:0] _times_odata_6;
+  reg [64-1:0] _times_data_reg_6;
+  assign _times_data_6 = _times_data_reg_6;
+  wire _times_ovalid_6;
+  reg _times_valid_reg_6;
+  assign _times_valid_6 = _times_valid_reg_6;
+  wire _times_enable_6;
+  wire _times_update_6;
+  assign _times_enable_6 = (_times_ready_6 || !_times_valid_6) && (_minus_ready_2 && __delay_ready_4) && (_minus_valid_2 && __delay_valid_4);
+  assign _times_update_6 = _times_ready_6 || !_times_valid_6;
 
   multiplier_0
   mul6
   (
     .CLK(CLK),
     .RST(RST),
-    .update(_tmp_update_6),
-    .enable(_tmp_enable_6),
-    .valid(_tmp_ovalid_6),
-    .a(_tmp_data_2),
-    .b(_tmp_data_4),
-    .c(_tmp_odata_6)
+    .update(_times_update_6),
+    .enable(_times_enable_6),
+    .valid(_times_ovalid_6),
+    .a(_minus_data_2),
+    .b(__delay_data_4),
+    .c(_times_odata_6)
   );
 
-  wire [32-1:0] _tmp_data_7;
-  wire _tmp_valid_7;
-  wire _tmp_ready_7;
-  wire [64-1:0] _tmp_odata_7;
-  reg [64-1:0] _tmp_data_reg_7;
-  assign _tmp_data_7 = _tmp_data_reg_7;
-  wire _tmp_ovalid_7;
-  reg _tmp_valid_reg_7;
-  assign _tmp_valid_7 = _tmp_valid_reg_7;
-  wire _tmp_enable_7;
-  wire _tmp_update_7;
-  assign _tmp_enable_7 = (_tmp_ready_7 || !_tmp_valid_7) && (_tmp_ready_3 && _tmp_ready_5) && (_tmp_valid_3 && _tmp_valid_5);
-  assign _tmp_update_7 = _tmp_ready_7 || !_tmp_valid_7;
+  wire [32-1:0] _times_data_7;
+  wire _times_valid_7;
+  wire _times_ready_7;
+  wire [64-1:0] _times_odata_7;
+  reg [64-1:0] _times_data_reg_7;
+  assign _times_data_7 = _times_data_reg_7;
+  wire _times_ovalid_7;
+  reg _times_valid_reg_7;
+  assign _times_valid_7 = _times_valid_reg_7;
+  wire _times_enable_7;
+  wire _times_update_7;
+  assign _times_enable_7 = (_times_ready_7 || !_times_valid_7) && (_minus_ready_3 && __delay_ready_5) && (_minus_valid_3 && __delay_valid_5);
+  assign _times_update_7 = _times_ready_7 || !_times_valid_7;
 
   multiplier_1
   mul7
   (
     .CLK(CLK),
     .RST(RST),
-    .update(_tmp_update_7),
-    .enable(_tmp_enable_7),
-    .valid(_tmp_ovalid_7),
-    .a(_tmp_data_3),
-    .b(_tmp_data_5),
-    .c(_tmp_odata_7)
+    .update(_times_update_7),
+    .enable(_times_enable_7),
+    .valid(_times_ovalid_7),
+    .a(_minus_data_3),
+    .b(__delay_data_5),
+    .c(_times_odata_7)
   );
 
-  wire [32-1:0] _tmp_data_8;
-  wire _tmp_valid_8;
-  wire _tmp_ready_8;
-  wire [64-1:0] _tmp_odata_8;
-  reg [64-1:0] _tmp_data_reg_8;
-  assign _tmp_data_8 = _tmp_data_reg_8;
-  wire _tmp_ovalid_8;
-  reg _tmp_valid_reg_8;
-  assign _tmp_valid_8 = _tmp_valid_reg_8;
-  wire _tmp_enable_8;
-  wire _tmp_update_8;
-  assign _tmp_enable_8 = (_tmp_ready_8 || !_tmp_valid_8) && (_tmp_ready_2 && _tmp_ready_5) && (_tmp_valid_2 && _tmp_valid_5);
-  assign _tmp_update_8 = _tmp_ready_8 || !_tmp_valid_8;
+  wire [32-1:0] _times_data_8;
+  wire _times_valid_8;
+  wire _times_ready_8;
+  wire [64-1:0] _times_odata_8;
+  reg [64-1:0] _times_data_reg_8;
+  assign _times_data_8 = _times_data_reg_8;
+  wire _times_ovalid_8;
+  reg _times_valid_reg_8;
+  assign _times_valid_8 = _times_valid_reg_8;
+  wire _times_enable_8;
+  wire _times_update_8;
+  assign _times_enable_8 = (_times_ready_8 || !_times_valid_8) && (_minus_ready_2 && __delay_ready_5) && (_minus_valid_2 && __delay_valid_5);
+  assign _times_update_8 = _times_ready_8 || !_times_valid_8;
 
   multiplier_2
   mul8
   (
     .CLK(CLK),
     .RST(RST),
-    .update(_tmp_update_8),
-    .enable(_tmp_enable_8),
-    .valid(_tmp_ovalid_8),
-    .a(_tmp_data_2),
-    .b(_tmp_data_5),
-    .c(_tmp_odata_8)
+    .update(_times_update_8),
+    .enable(_times_enable_8),
+    .valid(_times_ovalid_8),
+    .a(_minus_data_2),
+    .b(__delay_data_5),
+    .c(_times_odata_8)
   );
 
-  assign _tmp_ready_2 = (_tmp_ready_6 || !_tmp_valid_6) && (_tmp_valid_2 && _tmp_valid_4) && ((_tmp_ready_8 || !_tmp_valid_8) && (_tmp_valid_2 && _tmp_valid_5));
-  assign _tmp_ready_5 = (_tmp_ready_7 || !_tmp_valid_7) && (_tmp_valid_3 && _tmp_valid_5) && ((_tmp_ready_8 || !_tmp_valid_8) && (_tmp_valid_2 && _tmp_valid_5));
-  wire [32-1:0] _tmp_data_9;
-  wire _tmp_valid_9;
-  wire _tmp_ready_9;
-  wire [64-1:0] _tmp_odata_9;
-  reg [64-1:0] _tmp_data_reg_9;
-  assign _tmp_data_9 = _tmp_data_reg_9;
-  wire _tmp_ovalid_9;
-  reg _tmp_valid_reg_9;
-  assign _tmp_valid_9 = _tmp_valid_reg_9;
-  wire _tmp_enable_9;
-  wire _tmp_update_9;
-  assign _tmp_enable_9 = (_tmp_ready_9 || !_tmp_valid_9) && (_tmp_ready_3 && _tmp_ready_4) && (_tmp_valid_3 && _tmp_valid_4);
-  assign _tmp_update_9 = _tmp_ready_9 || !_tmp_valid_9;
+  assign _minus_ready_2 = (_times_ready_6 || !_times_valid_6) && (_minus_valid_2 && __delay_valid_4) && ((_times_ready_8 || !_times_valid_8) && (_minus_valid_2 && __delay_valid_5));
+  assign __delay_ready_5 = (_times_ready_7 || !_times_valid_7) && (_minus_valid_3 && __delay_valid_5) && ((_times_ready_8 || !_times_valid_8) && (_minus_valid_2 && __delay_valid_5));
+  wire [32-1:0] _times_data_9;
+  wire _times_valid_9;
+  wire _times_ready_9;
+  wire [64-1:0] _times_odata_9;
+  reg [64-1:0] _times_data_reg_9;
+  assign _times_data_9 = _times_data_reg_9;
+  wire _times_ovalid_9;
+  reg _times_valid_reg_9;
+  assign _times_valid_9 = _times_valid_reg_9;
+  wire _times_enable_9;
+  wire _times_update_9;
+  assign _times_enable_9 = (_times_ready_9 || !_times_valid_9) && (_minus_ready_3 && __delay_ready_4) && (_minus_valid_3 && __delay_valid_4);
+  assign _times_update_9 = _times_ready_9 || !_times_valid_9;
 
   multiplier_3
   mul9
   (
     .CLK(CLK),
     .RST(RST),
-    .update(_tmp_update_9),
-    .enable(_tmp_enable_9),
-    .valid(_tmp_ovalid_9),
-    .a(_tmp_data_3),
-    .b(_tmp_data_4),
-    .c(_tmp_odata_9)
+    .update(_times_update_9),
+    .enable(_times_enable_9),
+    .valid(_times_ovalid_9),
+    .a(_minus_data_3),
+    .b(__delay_data_4),
+    .c(_times_odata_9)
   );
 
-  assign _tmp_ready_3 = (_tmp_ready_7 || !_tmp_valid_7) && (_tmp_valid_3 && _tmp_valid_5) && ((_tmp_ready_9 || !_tmp_valid_9) && (_tmp_valid_3 && _tmp_valid_4));
-  assign _tmp_ready_4 = (_tmp_ready_6 || !_tmp_valid_6) && (_tmp_valid_2 && _tmp_valid_4) && ((_tmp_ready_9 || !_tmp_valid_9) && (_tmp_valid_3 && _tmp_valid_4));
-  reg [32-1:0] _tmp_data_10;
-  reg _tmp_valid_10;
-  wire _tmp_ready_10;
-  assign _tmp_ready_0 = (_tmp_ready_10 || !_tmp_valid_10) && _tmp_valid_0;
-  reg [32-1:0] _tmp_data_11;
-  reg _tmp_valid_11;
-  wire _tmp_ready_11;
-  assign _tmp_ready_1 = (_tmp_ready_11 || !_tmp_valid_11) && _tmp_valid_1;
-  reg [32-1:0] _tmp_data_12;
-  reg _tmp_valid_12;
-  wire _tmp_ready_12;
-  assign _tmp_ready_10 = (_tmp_ready_12 || !_tmp_valid_12) && _tmp_valid_10;
-  reg [32-1:0] _tmp_data_13;
-  reg _tmp_valid_13;
-  wire _tmp_ready_13;
-  assign _tmp_ready_11 = (_tmp_ready_13 || !_tmp_valid_13) && _tmp_valid_11;
-  reg [32-1:0] _tmp_data_14;
-  reg _tmp_valid_14;
-  wire _tmp_ready_14;
-  assign _tmp_ready_12 = (_tmp_ready_14 || !_tmp_valid_14) && _tmp_valid_12;
-  reg [32-1:0] _tmp_data_15;
-  reg _tmp_valid_15;
-  wire _tmp_ready_15;
-  assign _tmp_ready_13 = (_tmp_ready_15 || !_tmp_valid_15) && _tmp_valid_13;
-  reg [32-1:0] _tmp_data_16;
-  reg _tmp_valid_16;
-  wire _tmp_ready_16;
-  assign _tmp_ready_14 = (_tmp_ready_16 || !_tmp_valid_16) && _tmp_valid_14;
-  reg [32-1:0] _tmp_data_17;
-  reg _tmp_valid_17;
-  wire _tmp_ready_17;
-  assign _tmp_ready_15 = (_tmp_ready_17 || !_tmp_valid_17) && _tmp_valid_15;
-  reg [32-1:0] _tmp_data_18;
-  reg _tmp_valid_18;
-  wire _tmp_ready_18;
-  assign _tmp_ready_16 = (_tmp_ready_18 || !_tmp_valid_18) && _tmp_valid_16;
-  reg [32-1:0] _tmp_data_19;
-  reg _tmp_valid_19;
-  wire _tmp_ready_19;
-  assign _tmp_ready_17 = (_tmp_ready_19 || !_tmp_valid_19) && _tmp_valid_17;
-  reg [32-1:0] _tmp_data_20;
-  reg _tmp_valid_20;
-  wire _tmp_ready_20;
-  assign _tmp_ready_18 = (_tmp_ready_20 || !_tmp_valid_20) && _tmp_valid_18;
-  reg [32-1:0] _tmp_data_21;
-  reg _tmp_valid_21;
-  wire _tmp_ready_21;
-  assign _tmp_ready_19 = (_tmp_ready_21 || !_tmp_valid_21) && _tmp_valid_19;
-  reg [32-1:0] _tmp_data_22;
-  reg _tmp_valid_22;
-  wire _tmp_ready_22;
-  assign _tmp_ready_20 = (_tmp_ready_22 || !_tmp_valid_22) && _tmp_valid_20;
-  reg [32-1:0] _tmp_data_23;
-  reg _tmp_valid_23;
-  wire _tmp_ready_23;
-  assign _tmp_ready_21 = (_tmp_ready_23 || !_tmp_valid_23) && _tmp_valid_21;
-  reg [32-1:0] _tmp_data_24;
-  reg _tmp_valid_24;
-  wire _tmp_ready_24;
-  assign _tmp_ready_6 = (_tmp_ready_24 || !_tmp_valid_24) && (_tmp_valid_6 && _tmp_valid_7);
-  assign _tmp_ready_7 = (_tmp_ready_24 || !_tmp_valid_24) && (_tmp_valid_6 && _tmp_valid_7);
-  reg [32-1:0] _tmp_data_25;
-  reg _tmp_valid_25;
-  wire _tmp_ready_25;
-  assign _tmp_ready_8 = (_tmp_ready_25 || !_tmp_valid_25) && (_tmp_valid_8 && _tmp_valid_9);
-  assign _tmp_ready_9 = (_tmp_ready_25 || !_tmp_valid_25) && (_tmp_valid_8 && _tmp_valid_9);
-  reg [32-1:0] _tmp_data_26;
-  reg _tmp_valid_26;
-  wire _tmp_ready_26;
-  assign _tmp_ready_22 = (_tmp_ready_26 || !_tmp_valid_26) && _tmp_valid_22;
-  reg [32-1:0] _tmp_data_27;
-  reg _tmp_valid_27;
-  wire _tmp_ready_27;
-  assign _tmp_ready_23 = (_tmp_ready_27 || !_tmp_valid_27) && _tmp_valid_23;
-  assign dout1re = _tmp_data_24;
-  assign _tmp_ready_24 = 1;
-  assign dout1im = _tmp_data_25;
-  assign _tmp_ready_25 = 1;
-  assign dout0re = _tmp_data_26;
-  assign _tmp_ready_26 = 1;
-  assign dout0im = _tmp_data_27;
-  assign _tmp_ready_27 = 1;
+  assign _minus_ready_3 = (_times_ready_7 || !_times_valid_7) && (_minus_valid_3 && __delay_valid_5) && ((_times_ready_9 || !_times_valid_9) && (_minus_valid_3 && __delay_valid_4));
+  assign __delay_ready_4 = (_times_ready_6 || !_times_valid_6) && (_minus_valid_2 && __delay_valid_4) && ((_times_ready_9 || !_times_valid_9) && (_minus_valid_3 && __delay_valid_4));
+  reg [32-1:0] __delay_data_10;
+  reg __delay_valid_10;
+  wire __delay_ready_10;
+  assign _plus_ready_0 = (__delay_ready_10 || !__delay_valid_10) && _plus_valid_0;
+  reg [32-1:0] __delay_data_11;
+  reg __delay_valid_11;
+  wire __delay_ready_11;
+  assign _plus_ready_1 = (__delay_ready_11 || !__delay_valid_11) && _plus_valid_1;
+  reg [32-1:0] __delay_data_12;
+  reg __delay_valid_12;
+  wire __delay_ready_12;
+  assign __delay_ready_10 = (__delay_ready_12 || !__delay_valid_12) && __delay_valid_10;
+  reg [32-1:0] __delay_data_13;
+  reg __delay_valid_13;
+  wire __delay_ready_13;
+  assign __delay_ready_11 = (__delay_ready_13 || !__delay_valid_13) && __delay_valid_11;
+  reg [32-1:0] __delay_data_14;
+  reg __delay_valid_14;
+  wire __delay_ready_14;
+  assign __delay_ready_12 = (__delay_ready_14 || !__delay_valid_14) && __delay_valid_12;
+  reg [32-1:0] __delay_data_15;
+  reg __delay_valid_15;
+  wire __delay_ready_15;
+  assign __delay_ready_13 = (__delay_ready_15 || !__delay_valid_15) && __delay_valid_13;
+  reg [32-1:0] __delay_data_16;
+  reg __delay_valid_16;
+  wire __delay_ready_16;
+  assign __delay_ready_14 = (__delay_ready_16 || !__delay_valid_16) && __delay_valid_14;
+  reg [32-1:0] __delay_data_17;
+  reg __delay_valid_17;
+  wire __delay_ready_17;
+  assign __delay_ready_15 = (__delay_ready_17 || !__delay_valid_17) && __delay_valid_15;
+  reg [32-1:0] __delay_data_18;
+  reg __delay_valid_18;
+  wire __delay_ready_18;
+  assign __delay_ready_16 = (__delay_ready_18 || !__delay_valid_18) && __delay_valid_16;
+  reg [32-1:0] __delay_data_19;
+  reg __delay_valid_19;
+  wire __delay_ready_19;
+  assign __delay_ready_17 = (__delay_ready_19 || !__delay_valid_19) && __delay_valid_17;
+  reg [32-1:0] __delay_data_20;
+  reg __delay_valid_20;
+  wire __delay_ready_20;
+  assign __delay_ready_18 = (__delay_ready_20 || !__delay_valid_20) && __delay_valid_18;
+  reg [32-1:0] __delay_data_21;
+  reg __delay_valid_21;
+  wire __delay_ready_21;
+  assign __delay_ready_19 = (__delay_ready_21 || !__delay_valid_21) && __delay_valid_19;
+  reg [32-1:0] __delay_data_22;
+  reg __delay_valid_22;
+  wire __delay_ready_22;
+  assign __delay_ready_20 = (__delay_ready_22 || !__delay_valid_22) && __delay_valid_20;
+  reg [32-1:0] __delay_data_23;
+  reg __delay_valid_23;
+  wire __delay_ready_23;
+  assign __delay_ready_21 = (__delay_ready_23 || !__delay_valid_23) && __delay_valid_21;
+  reg [32-1:0] _minus_data_24;
+  reg _minus_valid_24;
+  wire _minus_ready_24;
+  assign _times_ready_6 = (_minus_ready_24 || !_minus_valid_24) && (_times_valid_6 && _times_valid_7);
+  assign _times_ready_7 = (_minus_ready_24 || !_minus_valid_24) && (_times_valid_6 && _times_valid_7);
+  reg [32-1:0] _plus_data_25;
+  reg _plus_valid_25;
+  wire _plus_ready_25;
+  assign _times_ready_8 = (_plus_ready_25 || !_plus_valid_25) && (_times_valid_8 && _times_valid_9);
+  assign _times_ready_9 = (_plus_ready_25 || !_plus_valid_25) && (_times_valid_8 && _times_valid_9);
+  reg [32-1:0] __delay_data_26;
+  reg __delay_valid_26;
+  wire __delay_ready_26;
+  assign __delay_ready_22 = (__delay_ready_26 || !__delay_valid_26) && __delay_valid_22;
+  reg [32-1:0] __delay_data_27;
+  reg __delay_valid_27;
+  wire __delay_ready_27;
+  assign __delay_ready_23 = (__delay_ready_27 || !__delay_valid_27) && __delay_valid_23;
+  assign dout1re = _minus_data_24;
+  assign _minus_ready_24 = 1;
+  assign dout1im = _plus_data_25;
+  assign _plus_ready_25 = 1;
+  assign dout0re = __delay_data_26;
+  assign __delay_ready_26 = 1;
+  assign dout0im = __delay_data_27;
+  assign __delay_ready_27 = 1;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_data_0 <= 0;
-      _tmp_valid_0 <= 0;
-      _tmp_data_1 <= 0;
-      _tmp_valid_1 <= 0;
-      _tmp_data_2 <= 0;
-      _tmp_valid_2 <= 0;
-      _tmp_data_3 <= 0;
-      _tmp_valid_3 <= 0;
-      _tmp_data_4 <= 0;
-      _tmp_valid_4 <= 0;
-      _tmp_data_5 <= 0;
-      _tmp_valid_5 <= 0;
-      _tmp_data_reg_6 <= 0;
-      _tmp_valid_reg_6 <= 0;
-      _tmp_data_reg_7 <= 0;
-      _tmp_valid_reg_7 <= 0;
-      _tmp_data_reg_8 <= 0;
-      _tmp_valid_reg_8 <= 0;
-      _tmp_data_reg_9 <= 0;
-      _tmp_valid_reg_9 <= 0;
-      _tmp_data_10 <= 0;
-      _tmp_valid_10 <= 0;
-      _tmp_data_11 <= 0;
-      _tmp_valid_11 <= 0;
-      _tmp_data_12 <= 0;
-      _tmp_valid_12 <= 0;
-      _tmp_data_13 <= 0;
-      _tmp_valid_13 <= 0;
-      _tmp_data_14 <= 0;
-      _tmp_valid_14 <= 0;
-      _tmp_data_15 <= 0;
-      _tmp_valid_15 <= 0;
-      _tmp_data_16 <= 0;
-      _tmp_valid_16 <= 0;
-      _tmp_data_17 <= 0;
-      _tmp_valid_17 <= 0;
-      _tmp_data_18 <= 0;
-      _tmp_valid_18 <= 0;
-      _tmp_data_19 <= 0;
-      _tmp_valid_19 <= 0;
-      _tmp_data_20 <= 0;
-      _tmp_valid_20 <= 0;
-      _tmp_data_21 <= 0;
-      _tmp_valid_21 <= 0;
-      _tmp_data_22 <= 0;
-      _tmp_valid_22 <= 0;
-      _tmp_data_23 <= 0;
-      _tmp_valid_23 <= 0;
-      _tmp_data_24 <= 0;
-      _tmp_valid_24 <= 0;
-      _tmp_data_25 <= 0;
-      _tmp_valid_25 <= 0;
-      _tmp_data_26 <= 0;
-      _tmp_valid_26 <= 0;
-      _tmp_data_27 <= 0;
-      _tmp_valid_27 <= 0;
+      _plus_data_0 <= 0;
+      _plus_valid_0 <= 0;
+      _plus_data_1 <= 0;
+      _plus_valid_1 <= 0;
+      _minus_data_2 <= 0;
+      _minus_valid_2 <= 0;
+      _minus_data_3 <= 0;
+      _minus_valid_3 <= 0;
+      __delay_data_4 <= 0;
+      __delay_valid_4 <= 0;
+      __delay_data_5 <= 0;
+      __delay_valid_5 <= 0;
+      _times_data_reg_6 <= 0;
+      _times_valid_reg_6 <= 0;
+      _times_data_reg_7 <= 0;
+      _times_valid_reg_7 <= 0;
+      _times_data_reg_8 <= 0;
+      _times_valid_reg_8 <= 0;
+      _times_data_reg_9 <= 0;
+      _times_valid_reg_9 <= 0;
+      __delay_data_10 <= 0;
+      __delay_valid_10 <= 0;
+      __delay_data_11 <= 0;
+      __delay_valid_11 <= 0;
+      __delay_data_12 <= 0;
+      __delay_valid_12 <= 0;
+      __delay_data_13 <= 0;
+      __delay_valid_13 <= 0;
+      __delay_data_14 <= 0;
+      __delay_valid_14 <= 0;
+      __delay_data_15 <= 0;
+      __delay_valid_15 <= 0;
+      __delay_data_16 <= 0;
+      __delay_valid_16 <= 0;
+      __delay_data_17 <= 0;
+      __delay_valid_17 <= 0;
+      __delay_data_18 <= 0;
+      __delay_valid_18 <= 0;
+      __delay_data_19 <= 0;
+      __delay_valid_19 <= 0;
+      __delay_data_20 <= 0;
+      __delay_valid_20 <= 0;
+      __delay_data_21 <= 0;
+      __delay_valid_21 <= 0;
+      __delay_data_22 <= 0;
+      __delay_valid_22 <= 0;
+      __delay_data_23 <= 0;
+      __delay_valid_23 <= 0;
+      _minus_data_24 <= 0;
+      _minus_valid_24 <= 0;
+      _plus_data_25 <= 0;
+      _plus_valid_25 <= 0;
+      __delay_data_26 <= 0;
+      __delay_valid_26 <= 0;
+      __delay_data_27 <= 0;
+      __delay_valid_27 <= 0;
     end else begin
-      if((_tmp_ready_0 || !_tmp_valid_0) && 1 && 1) begin
-        _tmp_data_0 <= din0re + din1re;
+      if((_plus_ready_0 || !_plus_valid_0) && 1 && 1) begin
+        _plus_data_0 <= din0re + din1re;
       end 
-      if(_tmp_valid_0 && _tmp_ready_0) begin
-        _tmp_valid_0 <= 0;
+      if(_plus_valid_0 && _plus_ready_0) begin
+        _plus_valid_0 <= 0;
       end 
-      if((_tmp_ready_0 || !_tmp_valid_0) && 1) begin
-        _tmp_valid_0 <= 1;
+      if((_plus_ready_0 || !_plus_valid_0) && 1) begin
+        _plus_valid_0 <= 1;
       end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && 1 && 1) begin
-        _tmp_data_1 <= din0im + din1im;
+      if((_plus_ready_1 || !_plus_valid_1) && 1 && 1) begin
+        _plus_data_1 <= din0im + din1im;
       end 
-      if(_tmp_valid_1 && _tmp_ready_1) begin
-        _tmp_valid_1 <= 0;
+      if(_plus_valid_1 && _plus_ready_1) begin
+        _plus_valid_1 <= 0;
       end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && 1) begin
-        _tmp_valid_1 <= 1;
+      if((_plus_ready_1 || !_plus_valid_1) && 1) begin
+        _plus_valid_1 <= 1;
       end 
-      if((_tmp_ready_2 || !_tmp_valid_2) && 1 && 1) begin
-        _tmp_data_2 <= din0re - din1re;
+      if((_minus_ready_2 || !_minus_valid_2) && 1 && 1) begin
+        _minus_data_2 <= din0re - din1re;
       end 
-      if(_tmp_valid_2 && _tmp_ready_2) begin
-        _tmp_valid_2 <= 0;
+      if(_minus_valid_2 && _minus_ready_2) begin
+        _minus_valid_2 <= 0;
       end 
-      if((_tmp_ready_2 || !_tmp_valid_2) && 1) begin
-        _tmp_valid_2 <= 1;
+      if((_minus_ready_2 || !_minus_valid_2) && 1) begin
+        _minus_valid_2 <= 1;
       end 
-      if((_tmp_ready_3 || !_tmp_valid_3) && 1 && 1) begin
-        _tmp_data_3 <= din0im - din1im;
+      if((_minus_ready_3 || !_minus_valid_3) && 1 && 1) begin
+        _minus_data_3 <= din0im - din1im;
       end 
-      if(_tmp_valid_3 && _tmp_ready_3) begin
-        _tmp_valid_3 <= 0;
+      if(_minus_valid_3 && _minus_ready_3) begin
+        _minus_valid_3 <= 0;
       end 
-      if((_tmp_ready_3 || !_tmp_valid_3) && 1) begin
-        _tmp_valid_3 <= 1;
+      if((_minus_ready_3 || !_minus_valid_3) && 1) begin
+        _minus_valid_3 <= 1;
       end 
-      if((_tmp_ready_4 || !_tmp_valid_4) && 1 && 1) begin
-        _tmp_data_4 <= cnstre;
+      if((__delay_ready_4 || !__delay_valid_4) && 1 && 1) begin
+        __delay_data_4 <= cnstre;
       end 
-      if(_tmp_valid_4 && _tmp_ready_4) begin
-        _tmp_valid_4 <= 0;
+      if(__delay_valid_4 && __delay_ready_4) begin
+        __delay_valid_4 <= 0;
       end 
-      if((_tmp_ready_4 || !_tmp_valid_4) && 1) begin
-        _tmp_valid_4 <= 1;
+      if((__delay_ready_4 || !__delay_valid_4) && 1) begin
+        __delay_valid_4 <= 1;
       end 
-      if((_tmp_ready_5 || !_tmp_valid_5) && 1 && 1) begin
-        _tmp_data_5 <= cnstim;
+      if((__delay_ready_5 || !__delay_valid_5) && 1 && 1) begin
+        __delay_data_5 <= cnstim;
       end 
-      if(_tmp_valid_5 && _tmp_ready_5) begin
-        _tmp_valid_5 <= 0;
+      if(__delay_valid_5 && __delay_ready_5) begin
+        __delay_valid_5 <= 0;
       end 
-      if((_tmp_ready_5 || !_tmp_valid_5) && 1) begin
-        _tmp_valid_5 <= 1;
+      if((__delay_ready_5 || !__delay_valid_5) && 1) begin
+        __delay_valid_5 <= 1;
       end 
-      if(_tmp_ready_6 || !_tmp_valid_6) begin
-        _tmp_data_reg_6 <= _tmp_odata_6;
+      if(_times_ready_6 || !_times_valid_6) begin
+        _times_data_reg_6 <= _times_odata_6;
       end 
-      if(_tmp_ready_6 || !_tmp_valid_6) begin
-        _tmp_valid_reg_6 <= _tmp_ovalid_6;
+      if(_times_ready_6 || !_times_valid_6) begin
+        _times_valid_reg_6 <= _times_ovalid_6;
       end 
-      if(_tmp_ready_7 || !_tmp_valid_7) begin
-        _tmp_data_reg_7 <= _tmp_odata_7;
+      if(_times_ready_7 || !_times_valid_7) begin
+        _times_data_reg_7 <= _times_odata_7;
       end 
-      if(_tmp_ready_7 || !_tmp_valid_7) begin
-        _tmp_valid_reg_7 <= _tmp_ovalid_7;
+      if(_times_ready_7 || !_times_valid_7) begin
+        _times_valid_reg_7 <= _times_ovalid_7;
       end 
-      if(_tmp_ready_8 || !_tmp_valid_8) begin
-        _tmp_data_reg_8 <= _tmp_odata_8;
+      if(_times_ready_8 || !_times_valid_8) begin
+        _times_data_reg_8 <= _times_odata_8;
       end 
-      if(_tmp_ready_8 || !_tmp_valid_8) begin
-        _tmp_valid_reg_8 <= _tmp_ovalid_8;
+      if(_times_ready_8 || !_times_valid_8) begin
+        _times_valid_reg_8 <= _times_ovalid_8;
       end 
-      if(_tmp_ready_9 || !_tmp_valid_9) begin
-        _tmp_data_reg_9 <= _tmp_odata_9;
+      if(_times_ready_9 || !_times_valid_9) begin
+        _times_data_reg_9 <= _times_odata_9;
       end 
-      if(_tmp_ready_9 || !_tmp_valid_9) begin
-        _tmp_valid_reg_9 <= _tmp_ovalid_9;
+      if(_times_ready_9 || !_times_valid_9) begin
+        _times_valid_reg_9 <= _times_ovalid_9;
       end 
-      if((_tmp_ready_10 || !_tmp_valid_10) && _tmp_ready_0 && _tmp_valid_0) begin
-        _tmp_data_10 <= _tmp_data_0;
+      if((__delay_ready_10 || !__delay_valid_10) && _plus_ready_0 && _plus_valid_0) begin
+        __delay_data_10 <= _plus_data_0;
       end 
-      if(_tmp_valid_10 && _tmp_ready_10) begin
-        _tmp_valid_10 <= 0;
+      if(__delay_valid_10 && __delay_ready_10) begin
+        __delay_valid_10 <= 0;
       end 
-      if((_tmp_ready_10 || !_tmp_valid_10) && _tmp_ready_0) begin
-        _tmp_valid_10 <= _tmp_valid_0;
+      if((__delay_ready_10 || !__delay_valid_10) && _plus_ready_0) begin
+        __delay_valid_10 <= _plus_valid_0;
       end 
-      if((_tmp_ready_11 || !_tmp_valid_11) && _tmp_ready_1 && _tmp_valid_1) begin
-        _tmp_data_11 <= _tmp_data_1;
+      if((__delay_ready_11 || !__delay_valid_11) && _plus_ready_1 && _plus_valid_1) begin
+        __delay_data_11 <= _plus_data_1;
       end 
-      if(_tmp_valid_11 && _tmp_ready_11) begin
-        _tmp_valid_11 <= 0;
+      if(__delay_valid_11 && __delay_ready_11) begin
+        __delay_valid_11 <= 0;
       end 
-      if((_tmp_ready_11 || !_tmp_valid_11) && _tmp_ready_1) begin
-        _tmp_valid_11 <= _tmp_valid_1;
+      if((__delay_ready_11 || !__delay_valid_11) && _plus_ready_1) begin
+        __delay_valid_11 <= _plus_valid_1;
       end 
-      if((_tmp_ready_12 || !_tmp_valid_12) && _tmp_ready_10 && _tmp_valid_10) begin
-        _tmp_data_12 <= _tmp_data_10;
+      if((__delay_ready_12 || !__delay_valid_12) && __delay_ready_10 && __delay_valid_10) begin
+        __delay_data_12 <= __delay_data_10;
       end 
-      if(_tmp_valid_12 && _tmp_ready_12) begin
-        _tmp_valid_12 <= 0;
+      if(__delay_valid_12 && __delay_ready_12) begin
+        __delay_valid_12 <= 0;
       end 
-      if((_tmp_ready_12 || !_tmp_valid_12) && _tmp_ready_10) begin
-        _tmp_valid_12 <= _tmp_valid_10;
+      if((__delay_ready_12 || !__delay_valid_12) && __delay_ready_10) begin
+        __delay_valid_12 <= __delay_valid_10;
       end 
-      if((_tmp_ready_13 || !_tmp_valid_13) && _tmp_ready_11 && _tmp_valid_11) begin
-        _tmp_data_13 <= _tmp_data_11;
+      if((__delay_ready_13 || !__delay_valid_13) && __delay_ready_11 && __delay_valid_11) begin
+        __delay_data_13 <= __delay_data_11;
       end 
-      if(_tmp_valid_13 && _tmp_ready_13) begin
-        _tmp_valid_13 <= 0;
+      if(__delay_valid_13 && __delay_ready_13) begin
+        __delay_valid_13 <= 0;
       end 
-      if((_tmp_ready_13 || !_tmp_valid_13) && _tmp_ready_11) begin
-        _tmp_valid_13 <= _tmp_valid_11;
+      if((__delay_ready_13 || !__delay_valid_13) && __delay_ready_11) begin
+        __delay_valid_13 <= __delay_valid_11;
       end 
-      if((_tmp_ready_14 || !_tmp_valid_14) && _tmp_ready_12 && _tmp_valid_12) begin
-        _tmp_data_14 <= _tmp_data_12;
+      if((__delay_ready_14 || !__delay_valid_14) && __delay_ready_12 && __delay_valid_12) begin
+        __delay_data_14 <= __delay_data_12;
       end 
-      if(_tmp_valid_14 && _tmp_ready_14) begin
-        _tmp_valid_14 <= 0;
+      if(__delay_valid_14 && __delay_ready_14) begin
+        __delay_valid_14 <= 0;
       end 
-      if((_tmp_ready_14 || !_tmp_valid_14) && _tmp_ready_12) begin
-        _tmp_valid_14 <= _tmp_valid_12;
+      if((__delay_ready_14 || !__delay_valid_14) && __delay_ready_12) begin
+        __delay_valid_14 <= __delay_valid_12;
       end 
-      if((_tmp_ready_15 || !_tmp_valid_15) && _tmp_ready_13 && _tmp_valid_13) begin
-        _tmp_data_15 <= _tmp_data_13;
+      if((__delay_ready_15 || !__delay_valid_15) && __delay_ready_13 && __delay_valid_13) begin
+        __delay_data_15 <= __delay_data_13;
       end 
-      if(_tmp_valid_15 && _tmp_ready_15) begin
-        _tmp_valid_15 <= 0;
+      if(__delay_valid_15 && __delay_ready_15) begin
+        __delay_valid_15 <= 0;
       end 
-      if((_tmp_ready_15 || !_tmp_valid_15) && _tmp_ready_13) begin
-        _tmp_valid_15 <= _tmp_valid_13;
+      if((__delay_ready_15 || !__delay_valid_15) && __delay_ready_13) begin
+        __delay_valid_15 <= __delay_valid_13;
       end 
-      if((_tmp_ready_16 || !_tmp_valid_16) && _tmp_ready_14 && _tmp_valid_14) begin
-        _tmp_data_16 <= _tmp_data_14;
+      if((__delay_ready_16 || !__delay_valid_16) && __delay_ready_14 && __delay_valid_14) begin
+        __delay_data_16 <= __delay_data_14;
       end 
-      if(_tmp_valid_16 && _tmp_ready_16) begin
-        _tmp_valid_16 <= 0;
+      if(__delay_valid_16 && __delay_ready_16) begin
+        __delay_valid_16 <= 0;
       end 
-      if((_tmp_ready_16 || !_tmp_valid_16) && _tmp_ready_14) begin
-        _tmp_valid_16 <= _tmp_valid_14;
+      if((__delay_ready_16 || !__delay_valid_16) && __delay_ready_14) begin
+        __delay_valid_16 <= __delay_valid_14;
       end 
-      if((_tmp_ready_17 || !_tmp_valid_17) && _tmp_ready_15 && _tmp_valid_15) begin
-        _tmp_data_17 <= _tmp_data_15;
+      if((__delay_ready_17 || !__delay_valid_17) && __delay_ready_15 && __delay_valid_15) begin
+        __delay_data_17 <= __delay_data_15;
       end 
-      if(_tmp_valid_17 && _tmp_ready_17) begin
-        _tmp_valid_17 <= 0;
+      if(__delay_valid_17 && __delay_ready_17) begin
+        __delay_valid_17 <= 0;
       end 
-      if((_tmp_ready_17 || !_tmp_valid_17) && _tmp_ready_15) begin
-        _tmp_valid_17 <= _tmp_valid_15;
+      if((__delay_ready_17 || !__delay_valid_17) && __delay_ready_15) begin
+        __delay_valid_17 <= __delay_valid_15;
       end 
-      if((_tmp_ready_18 || !_tmp_valid_18) && _tmp_ready_16 && _tmp_valid_16) begin
-        _tmp_data_18 <= _tmp_data_16;
+      if((__delay_ready_18 || !__delay_valid_18) && __delay_ready_16 && __delay_valid_16) begin
+        __delay_data_18 <= __delay_data_16;
       end 
-      if(_tmp_valid_18 && _tmp_ready_18) begin
-        _tmp_valid_18 <= 0;
+      if(__delay_valid_18 && __delay_ready_18) begin
+        __delay_valid_18 <= 0;
       end 
-      if((_tmp_ready_18 || !_tmp_valid_18) && _tmp_ready_16) begin
-        _tmp_valid_18 <= _tmp_valid_16;
+      if((__delay_ready_18 || !__delay_valid_18) && __delay_ready_16) begin
+        __delay_valid_18 <= __delay_valid_16;
       end 
-      if((_tmp_ready_19 || !_tmp_valid_19) && _tmp_ready_17 && _tmp_valid_17) begin
-        _tmp_data_19 <= _tmp_data_17;
+      if((__delay_ready_19 || !__delay_valid_19) && __delay_ready_17 && __delay_valid_17) begin
+        __delay_data_19 <= __delay_data_17;
       end 
-      if(_tmp_valid_19 && _tmp_ready_19) begin
-        _tmp_valid_19 <= 0;
+      if(__delay_valid_19 && __delay_ready_19) begin
+        __delay_valid_19 <= 0;
       end 
-      if((_tmp_ready_19 || !_tmp_valid_19) && _tmp_ready_17) begin
-        _tmp_valid_19 <= _tmp_valid_17;
+      if((__delay_ready_19 || !__delay_valid_19) && __delay_ready_17) begin
+        __delay_valid_19 <= __delay_valid_17;
       end 
-      if((_tmp_ready_20 || !_tmp_valid_20) && _tmp_ready_18 && _tmp_valid_18) begin
-        _tmp_data_20 <= _tmp_data_18;
+      if((__delay_ready_20 || !__delay_valid_20) && __delay_ready_18 && __delay_valid_18) begin
+        __delay_data_20 <= __delay_data_18;
       end 
-      if(_tmp_valid_20 && _tmp_ready_20) begin
-        _tmp_valid_20 <= 0;
+      if(__delay_valid_20 && __delay_ready_20) begin
+        __delay_valid_20 <= 0;
       end 
-      if((_tmp_ready_20 || !_tmp_valid_20) && _tmp_ready_18) begin
-        _tmp_valid_20 <= _tmp_valid_18;
+      if((__delay_ready_20 || !__delay_valid_20) && __delay_ready_18) begin
+        __delay_valid_20 <= __delay_valid_18;
       end 
-      if((_tmp_ready_21 || !_tmp_valid_21) && _tmp_ready_19 && _tmp_valid_19) begin
-        _tmp_data_21 <= _tmp_data_19;
+      if((__delay_ready_21 || !__delay_valid_21) && __delay_ready_19 && __delay_valid_19) begin
+        __delay_data_21 <= __delay_data_19;
       end 
-      if(_tmp_valid_21 && _tmp_ready_21) begin
-        _tmp_valid_21 <= 0;
+      if(__delay_valid_21 && __delay_ready_21) begin
+        __delay_valid_21 <= 0;
       end 
-      if((_tmp_ready_21 || !_tmp_valid_21) && _tmp_ready_19) begin
-        _tmp_valid_21 <= _tmp_valid_19;
+      if((__delay_ready_21 || !__delay_valid_21) && __delay_ready_19) begin
+        __delay_valid_21 <= __delay_valid_19;
       end 
-      if((_tmp_ready_22 || !_tmp_valid_22) && _tmp_ready_20 && _tmp_valid_20) begin
-        _tmp_data_22 <= _tmp_data_20;
+      if((__delay_ready_22 || !__delay_valid_22) && __delay_ready_20 && __delay_valid_20) begin
+        __delay_data_22 <= __delay_data_20;
       end 
-      if(_tmp_valid_22 && _tmp_ready_22) begin
-        _tmp_valid_22 <= 0;
+      if(__delay_valid_22 && __delay_ready_22) begin
+        __delay_valid_22 <= 0;
       end 
-      if((_tmp_ready_22 || !_tmp_valid_22) && _tmp_ready_20) begin
-        _tmp_valid_22 <= _tmp_valid_20;
+      if((__delay_ready_22 || !__delay_valid_22) && __delay_ready_20) begin
+        __delay_valid_22 <= __delay_valid_20;
       end 
-      if((_tmp_ready_23 || !_tmp_valid_23) && _tmp_ready_21 && _tmp_valid_21) begin
-        _tmp_data_23 <= _tmp_data_21;
+      if((__delay_ready_23 || !__delay_valid_23) && __delay_ready_21 && __delay_valid_21) begin
+        __delay_data_23 <= __delay_data_21;
       end 
-      if(_tmp_valid_23 && _tmp_ready_23) begin
-        _tmp_valid_23 <= 0;
+      if(__delay_valid_23 && __delay_ready_23) begin
+        __delay_valid_23 <= 0;
       end 
-      if((_tmp_ready_23 || !_tmp_valid_23) && _tmp_ready_21) begin
-        _tmp_valid_23 <= _tmp_valid_21;
+      if((__delay_ready_23 || !__delay_valid_23) && __delay_ready_21) begin
+        __delay_valid_23 <= __delay_valid_21;
       end 
-      if((_tmp_ready_24 || !_tmp_valid_24) && (_tmp_ready_6 && _tmp_ready_7) && (_tmp_valid_6 && _tmp_valid_7)) begin
-        _tmp_data_24 <= _tmp_data_6 - _tmp_data_7;
+      if((_minus_ready_24 || !_minus_valid_24) && (_times_ready_6 && _times_ready_7) && (_times_valid_6 && _times_valid_7)) begin
+        _minus_data_24 <= _times_data_6 - _times_data_7;
       end 
-      if(_tmp_valid_24 && _tmp_ready_24) begin
-        _tmp_valid_24 <= 0;
+      if(_minus_valid_24 && _minus_ready_24) begin
+        _minus_valid_24 <= 0;
       end 
-      if((_tmp_ready_24 || !_tmp_valid_24) && (_tmp_ready_6 && _tmp_ready_7)) begin
-        _tmp_valid_24 <= _tmp_valid_6 && _tmp_valid_7;
+      if((_minus_ready_24 || !_minus_valid_24) && (_times_ready_6 && _times_ready_7)) begin
+        _minus_valid_24 <= _times_valid_6 && _times_valid_7;
       end 
-      if((_tmp_ready_25 || !_tmp_valid_25) && (_tmp_ready_8 && _tmp_ready_9) && (_tmp_valid_8 && _tmp_valid_9)) begin
-        _tmp_data_25 <= _tmp_data_8 + _tmp_data_9;
+      if((_plus_ready_25 || !_plus_valid_25) && (_times_ready_8 && _times_ready_9) && (_times_valid_8 && _times_valid_9)) begin
+        _plus_data_25 <= _times_data_8 + _times_data_9;
       end 
-      if(_tmp_valid_25 && _tmp_ready_25) begin
-        _tmp_valid_25 <= 0;
+      if(_plus_valid_25 && _plus_ready_25) begin
+        _plus_valid_25 <= 0;
       end 
-      if((_tmp_ready_25 || !_tmp_valid_25) && (_tmp_ready_8 && _tmp_ready_9)) begin
-        _tmp_valid_25 <= _tmp_valid_8 && _tmp_valid_9;
+      if((_plus_ready_25 || !_plus_valid_25) && (_times_ready_8 && _times_ready_9)) begin
+        _plus_valid_25 <= _times_valid_8 && _times_valid_9;
       end 
-      if((_tmp_ready_26 || !_tmp_valid_26) && _tmp_ready_22 && _tmp_valid_22) begin
-        _tmp_data_26 <= _tmp_data_22;
+      if((__delay_ready_26 || !__delay_valid_26) && __delay_ready_22 && __delay_valid_22) begin
+        __delay_data_26 <= __delay_data_22;
       end 
-      if(_tmp_valid_26 && _tmp_ready_26) begin
-        _tmp_valid_26 <= 0;
+      if(__delay_valid_26 && __delay_ready_26) begin
+        __delay_valid_26 <= 0;
       end 
-      if((_tmp_ready_26 || !_tmp_valid_26) && _tmp_ready_22) begin
-        _tmp_valid_26 <= _tmp_valid_22;
+      if((__delay_ready_26 || !__delay_valid_26) && __delay_ready_22) begin
+        __delay_valid_26 <= __delay_valid_22;
       end 
-      if((_tmp_ready_27 || !_tmp_valid_27) && _tmp_ready_23 && _tmp_valid_23) begin
-        _tmp_data_27 <= _tmp_data_23;
+      if((__delay_ready_27 || !__delay_valid_27) && __delay_ready_23 && __delay_valid_23) begin
+        __delay_data_27 <= __delay_data_23;
       end 
-      if(_tmp_valid_27 && _tmp_ready_27) begin
-        _tmp_valid_27 <= 0;
+      if(__delay_valid_27 && __delay_ready_27) begin
+        __delay_valid_27 <= 0;
       end 
-      if((_tmp_ready_27 || !_tmp_valid_27) && _tmp_ready_23) begin
-        _tmp_valid_27 <= _tmp_valid_23;
+      if((__delay_ready_27 || !__delay_valid_27) && __delay_ready_23) begin
+        __delay_valid_27 <= __delay_valid_23;
       end 
     end
   end
@@ -1045,6 +1045,7 @@ module multiplier_core_3
 
 endmodule
 """
+
 
 def test():
     veriloggen.reset()

@@ -5,10 +5,12 @@ import os
 import math
 
 # the next line can be removed after installation
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
 
 from veriloggen import *
 import veriloggen.dataflow as dataflow
+
 
 def mkMain(n=128, datawidth=32, numports=2):
     m = Module('main')
@@ -31,13 +33,12 @@ def mkMain(n=128, datawidth=32, numports=2):
     # synthesize dataflow
     df = dataflow.Dataflow(z)
     df.implement(m, clk, rst, aswire=True)
-    #df.draw_graph()
+    # df.draw_graph()
 
-    
     # write
     xfsm = FSM(m, 'xfsm', clk, rst)
     xcount = m.TmpReg(32, initval=0)
-    
+
     xack = x.write(xcount, cond=xfsm)
     xfsm.If(xack)(
         xcount.inc()
@@ -46,10 +47,9 @@ def mkMain(n=128, datawidth=32, numports=2):
 
     xfsm.make_always()
 
-    
     # read
     yseq = Seq(m, 'yseq', clk, rst)
-    
+
     ydata, yvalid = y.read(cond=yseq)
     yseq.If(yvalid)(
         Systask('display', "ydata=%d", ydata)
@@ -57,9 +57,8 @@ def mkMain(n=128, datawidth=32, numports=2):
 
     yseq.make_always()
 
-
     zseq = Seq(m, 'zseq', clk, rst)
-    
+
     zdata, zvalid = z.read(cond=zseq)
     zseq.If(zvalid)(
         Systask('display', "zdata=%d", zdata)
@@ -67,37 +66,37 @@ def mkMain(n=128, datawidth=32, numports=2):
 
     zseq.make_always()
 
-    
     return m
-    
+
+
 def mkTest():
     m = Module('test')
-    
+
     # target instance
     main = mkMain()
-    
+
     # copy paras and ports
     params = m.copy_params(main)
     ports = m.copy_sim_ports(main)
-    
+
     clk = ports['CLK']
     rst = ports['RST']
-    
+
     uut = m.Instance(main, 'uut',
                      params=m.connect_params(main),
                      ports=m.connect_ports(main))
-    
+
     simulation.setup_waveform(m, uut, m.get_vars())
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
-    
+
     init.add(
         Delay(1000 * 100),
         Systask('finish'),
     )
 
     return m
-    
+
 if __name__ == '__main__':
     test = mkTest()
     verilog = test.to_verilog('tmp.v')
@@ -107,4 +106,4 @@ if __name__ == '__main__':
     rslt = sim.run()
     print(rslt)
 
-    #sim.view_waveform()
+    # sim.view_waveform()

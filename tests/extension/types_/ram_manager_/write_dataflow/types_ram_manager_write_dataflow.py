@@ -29,8 +29,8 @@ def mkMain(n=128, datawidth=32, numports=2):
     fsm.goto_next()
     
     # dataflow
-    c = df.Counter(maxval=64)
-    value = c - 1
+    value = df.Counter(size=64)
+    value = value - 1
 
     # write dataflow (Dataflow -> RAM)
     wport = 0

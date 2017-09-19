@@ -21,7 +21,7 @@ def mkMain():
     myaxi.disable_read()
 
     df = dataflow.DataflowManager(m, clk, rst)
-    
+
     fsm = FSM(m, 'fsm', clk, rst)
 
     # write request
@@ -31,8 +31,7 @@ def mkMain():
     fsm.If(ack).goto_next()
 
     # dataflow
-    c = df.Counter()
-    value = c - 1
+    value = df.Counter()
 
     # write dataflow (Dataflow -> AXI)
     done = myaxi.write_dataflow(value, counter)
@@ -169,6 +168,7 @@ def mkTest():
     )
 
     return m
+
 
 if __name__ == '__main__':
     test = mkTest()

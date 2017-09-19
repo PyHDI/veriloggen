@@ -519,66 +519,66 @@ module main
   input zready
 );
 
-  wire [32-1:0] _tmp_data_0;
-  reg _tmp_valid_0;
-  wire _tmp_ready_0;
-  wire [8-1:0] _tmp_address_0;
-  assign _tmp_address_0 = xdata;
+  wire [32-1:0] _lut_data_0;
+  reg _lut_valid_0;
+  wire _lut_ready_0;
+  wire [8-1:0] _lut_address_0;
+  assign _lut_address_0 = xdata;
 
   _LUT_0
   LUT_0
   (
     .CLK(CLK),
-    .addr(_tmp_address_0),
-    .enable((_tmp_ready_0 || !_tmp_valid_0) && xready && xvalid),
-    .val(_tmp_data_0)
+    .addr(_lut_address_0),
+    .enable((_lut_ready_0 || !_lut_valid_0) && xready && xvalid),
+    .val(_lut_data_0)
   );
 
-  assign xready = (_tmp_ready_0 || !_tmp_valid_0) && xvalid;
-  reg [32-1:0] _tmp_data_1;
-  reg _tmp_valid_1;
-  wire _tmp_ready_1;
-  assign yready = (_tmp_ready_1 || !_tmp_valid_1) && yvalid;
-  reg [32-1:0] _tmp_data_2;
-  reg _tmp_valid_2;
-  wire _tmp_ready_2;
-  assign _tmp_ready_0 = (_tmp_ready_2 || !_tmp_valid_2) && (_tmp_valid_0 && _tmp_valid_1);
-  assign _tmp_ready_1 = (_tmp_ready_2 || !_tmp_valid_2) && (_tmp_valid_0 && _tmp_valid_1);
-  assign zdata = _tmp_data_2;
-  assign zvalid = _tmp_valid_2;
-  assign _tmp_ready_2 = zready;
+  assign xready = (_lut_ready_0 || !_lut_valid_0) && xvalid;
+  reg [32-1:0] __delay_data_1;
+  reg __delay_valid_1;
+  wire __delay_ready_1;
+  assign yready = (__delay_ready_1 || !__delay_valid_1) && yvalid;
+  reg [32-1:0] _plus_data_2;
+  reg _plus_valid_2;
+  wire _plus_ready_2;
+  assign _lut_ready_0 = (_plus_ready_2 || !_plus_valid_2) && (_lut_valid_0 && __delay_valid_1);
+  assign __delay_ready_1 = (_plus_ready_2 || !_plus_valid_2) && (_lut_valid_0 && __delay_valid_1);
+  assign zdata = _plus_data_2;
+  assign zvalid = _plus_valid_2;
+  assign _plus_ready_2 = zready;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_valid_0 <= 0;
-      _tmp_data_1 <= 0;
-      _tmp_valid_1 <= 0;
-      _tmp_data_2 <= 0;
-      _tmp_valid_2 <= 0;
+      _lut_valid_0 <= 0;
+      __delay_data_1 <= 0;
+      __delay_valid_1 <= 0;
+      _plus_data_2 <= 0;
+      _plus_valid_2 <= 0;
     end else begin
-      if(_tmp_valid_0 && _tmp_ready_0) begin
-        _tmp_valid_0 <= 0;
+      if(_lut_valid_0 && _lut_ready_0) begin
+        _lut_valid_0 <= 0;
       end 
-      if((_tmp_ready_0 || !_tmp_valid_0) && xready) begin
-        _tmp_valid_0 <= xvalid;
+      if((_lut_ready_0 || !_lut_valid_0) && xready) begin
+        _lut_valid_0 <= xvalid;
       end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && yready && yvalid) begin
-        _tmp_data_1 <= ydata;
+      if((__delay_ready_1 || !__delay_valid_1) && yready && yvalid) begin
+        __delay_data_1 <= ydata;
       end 
-      if(_tmp_valid_1 && _tmp_ready_1) begin
-        _tmp_valid_1 <= 0;
+      if(__delay_valid_1 && __delay_ready_1) begin
+        __delay_valid_1 <= 0;
       end 
-      if((_tmp_ready_1 || !_tmp_valid_1) && yready) begin
-        _tmp_valid_1 <= yvalid;
+      if((__delay_ready_1 || !__delay_valid_1) && yready) begin
+        __delay_valid_1 <= yvalid;
       end 
-      if((_tmp_ready_2 || !_tmp_valid_2) && (_tmp_ready_0 && _tmp_ready_1) && (_tmp_valid_0 && _tmp_valid_1)) begin
-        _tmp_data_2 <= _tmp_data_0 + _tmp_data_1;
+      if((_plus_ready_2 || !_plus_valid_2) && (_lut_ready_0 && __delay_ready_1) && (_lut_valid_0 && __delay_valid_1)) begin
+        _plus_data_2 <= _lut_data_0 + __delay_data_1;
       end 
-      if(_tmp_valid_2 && _tmp_ready_2) begin
-        _tmp_valid_2 <= 0;
+      if(_plus_valid_2 && _plus_ready_2) begin
+        _plus_valid_2 <= 0;
       end 
-      if((_tmp_ready_2 || !_tmp_valid_2) && (_tmp_ready_0 && _tmp_ready_1)) begin
-        _tmp_valid_2 <= _tmp_valid_0 && _tmp_valid_1;
+      if((_plus_ready_2 || !_plus_valid_2) && (_lut_ready_0 && __delay_ready_1)) begin
+        _plus_valid_2 <= _lut_valid_0 && __delay_valid_1;
       end 
     end
   end
@@ -1375,6 +1375,7 @@ module _LUT_0
 
 endmodule
 """
+
 
 def test():
     veriloggen.reset()

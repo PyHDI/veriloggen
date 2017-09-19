@@ -20,15 +20,16 @@ def mkMain(n=128, datawidth=32, numports=2):
 
     df = dataflow.DataflowManager(m, clk, rst)
 
-    a = df.Constant(2)
-    b = df.Counter(1, initval=0, maxval=8)
-    b = b.prev(1)
-    c = df.Iadd(a, reset=(b == 0))
+    a = df.Counter(step=1, size=8, initval=0)
+    b = df.Counter(step=1, initval=0, reset=(a == 0))
+    c = df.Counter(step=1, initval=0, reset=df.Or(a == 0, a == 4))
 
+    a.output('adata', 'avalid', 'aready')
     b.output('bdata', 'bvalid', 'bready')
     c.output('cdata', 'cvalid', 'cready')
 
     ready = 1
+    adata, avalid = a.read(ready)
     bdata, bvalid = b.read(ready)
     cdata, cvalid = c.read(ready)
 
