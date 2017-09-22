@@ -25,10 +25,10 @@ def mkLed():
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
     ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
 
-    shape = [4, 2, 8]
+    shape = [8, 2, 4]
     size = functools.reduce(lambda x, y: x * y, shape, 1)
-    read_order = [2, 1, 0]
-    write_order = [0, 1, 2]
+    read_order = [0, 1, 2]
+    write_order = [2, 1, 0]
 
     def comp_stream(strm, offset):
         a = strm.read_multidim(ram_a, offset, shape, read_order)
@@ -38,19 +38,19 @@ def mkLed():
         zpos = 0
         ypos = 0
         xpos = 0
-        for x in range(shape[0]):
+        for x in range(shape[2]):
             for y in range(shape[1]):
-                for z in range(shape[2]):
-                    a = ram_a.read(z * shape[0] * shape[1] +
-                                   y * shape[0] + x + offset)
+                for z in range(shape[0]):
+                    a = ram_a.read(z * shape[2] * shape[1] +
+                                   y * shape[2] + x + offset)
                     ram_c.write(zpos + ypos + xpos + offset, a)
                     xpos += 1
-                    if xpos == shape[0]:
+                    if xpos == shape[2]:
                         xpos = 0
-                        ypos += shape[0]
-                        if ypos == shape[1] * shape[0]:
+                        ypos += shape[2]
+                        if ypos == shape[1] * shape[2]:
                             ypos = 0
-                            zpos += shape[1] * shape[0]
+                            zpos += shape[1] * shape[2]
 
     def check(offset_stream, offset_seq):
         all_ok = True

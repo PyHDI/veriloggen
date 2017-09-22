@@ -27,7 +27,7 @@ def mkLed():
 
     shape = [16, 4, 8]
     size = functools.reduce(lambda x, y: x * y, shape, 1)
-    order = [2, 1, 0]
+    order = [1, 2, 0]
 
     def comp_stream(strm, offset):
         a = strm.read_multidim(ram_a, offset, shape, order)

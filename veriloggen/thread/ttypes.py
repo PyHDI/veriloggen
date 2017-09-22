@@ -958,7 +958,7 @@ class MultibankRAM(object):
         @return data, last, done
         """
         if order is None:
-            order = list(range(len(shape)))
+            order = list(reversed(range(len(shape))))
 
         pattern = self._to_pattern(shape, order)
         return self.read_dataflow_pattern_interleave(port, addr, pattern,
@@ -1188,7 +1188,7 @@ class MultibankRAM(object):
         'data' and 'when' must be dataflow variables
         """
         if order is None:
-            order = list(range(len(shape)))
+            order = list(reversed(range(len(shape))))
 
         pattern = self._to_pattern(shape, order)
         return self.write_dataflow_pattern_interleave(port, addr, data, pattern,
@@ -1488,7 +1488,7 @@ class AXIM(AxiMaster, _MutexFunction):
     def dma_read_multidim(self, fsm, ram, local_addr, global_addr, shape, order=None,
                           port=0):
         if order is None:
-            order = list(range(len(shape)))
+            order = list(reversed(range(len(shape))))
 
         pattern = self._to_pattern(shape, order)
         return self.dma_read_pattern(fsm, ram, local_addr, global_addr, pattern,
@@ -1606,7 +1606,7 @@ class AXIM(AxiMaster, _MutexFunction):
     def dma_write_multidim(self, fsm, ram, local_addr, global_addr, shape, order=None,
                            port=0):
         if order is None:
-            order = list(range(len(shape)))
+            order = list(reversed(range(len(shape))))
 
         pattern = self._to_pattern(shape, order)
         return self.dma_write_pattern(fsm, ram, local_addr, global_addr, pattern,
@@ -1673,7 +1673,7 @@ class AXIM(AxiMaster, _MutexFunction):
     def dma_read_multidim_async(self, fsm, ram, local_addr, global_addr, shape,
                                 order=None, port=0):
         if order is None:
-            order = list(range(len(shape)))
+            order = list(reversed(range(len(shape))))
 
         pattern = self._to_pattern(shape, order)
         return self.dma_read_pattern_async(fsm, ram, local_addr, global_addr,
@@ -1740,7 +1740,7 @@ class AXIM(AxiMaster, _MutexFunction):
     def dma_write_multidim_async(self, fsm, ram, local_addr, global_addr, shape,
                                  order=None, port=0):
         if order is None:
-            order = list(range(len(shape)))
+            order = list(reversed(range(len(shape))))
 
         pattern = self._to_pattern(shape, order)
         return self.dma_write_pattern_async(fsm, ram, local_addr, global_addr,
@@ -1767,7 +1767,7 @@ class AXIM(AxiMaster, _MutexFunction):
         for p in order:
             size = shape[p]
             stride = functools.reduce(lambda x, y: x * y,
-                                      shape[:p], 1) if p > 0 else 1
+                                      shape[p + 1:], 1)
             pattern.append((size, stride))
         return pattern
 

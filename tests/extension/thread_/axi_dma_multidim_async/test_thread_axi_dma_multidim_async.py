@@ -480,18 +480,18 @@ module blinkled
   reg signed [32-1:0] _th_blink_gaddr_7;
   reg [10-1:0] _tmp_0;
   reg [32-1:0] _tmp_1;
-  reg [6-1:0] _tmp_2;
-  reg [7-1:0] _tmp_3;
-  reg [4-1:0] _tmp_4;
-  reg [5-1:0] _tmp_5;
+  reg [4-1:0] _tmp_2;
+  reg [6-1:0] _tmp_3;
+  reg [6-1:0] _tmp_4;
+  reg [2-1:0] _tmp_5;
   reg [5-1:0] _tmp_6;
-  reg [2-1:0] _tmp_7;
+  reg [8-1:0] _tmp_7;
   reg [32-1:0] _tmp_fsm_0;
   localparam _tmp_fsm_0_init = 0;
   reg [32-1:0] _tmp_8;
-  reg [7-1:0] _tmp_9;
-  reg [7-1:0] _tmp_10;
-  reg [5-1:0] _tmp_11;
+  reg [5-1:0] _tmp_9;
+  reg [5-1:0] _tmp_10;
+  reg [7-1:0] _tmp_11;
   reg [6-1:0] _tmp_12;
   reg _tmp_13;
   reg _tmp_14;
@@ -515,8 +515,8 @@ module blinkled
   reg [10-1:0] _tmp_27;
   reg [10-1:0] _tmp_28;
   assign _tmp_26 = _tmp_28 + (_tmp_27 + _tmp_0);
-  reg [7-1:0] _tmp_29;
-  reg [5-1:0] _tmp_30;
+  reg [5-1:0] _tmp_29;
+  reg [7-1:0] _tmp_30;
   reg [6-1:0] _tmp_31;
   assign _tmp_25 = (((_tmp_2 == 1) && (_tmp_4 == 1))? _tmp_31 == 0 : 
                    (_tmp_2 == 1)? _tmp_30 == 0 : _tmp_29 == 0)? _tmp_26 : myram_1_addr + (((_tmp_2 == 1) && (_tmp_4 == 1))? _tmp_7 : 
@@ -535,18 +535,18 @@ module blinkled
   reg _myram_cond_1_1;
   reg [10-1:0] _tmp_36;
   reg [32-1:0] _tmp_37;
-  reg [6-1:0] _tmp_38;
-  reg [7-1:0] _tmp_39;
-  reg [4-1:0] _tmp_40;
-  reg [5-1:0] _tmp_41;
+  reg [4-1:0] _tmp_38;
+  reg [6-1:0] _tmp_39;
+  reg [6-1:0] _tmp_40;
+  reg [2-1:0] _tmp_41;
   reg [5-1:0] _tmp_42;
-  reg [2-1:0] _tmp_43;
+  reg [8-1:0] _tmp_43;
   reg [32-1:0] _tmp_fsm_1;
   localparam _tmp_fsm_1_init = 0;
   reg [32-1:0] _tmp_44;
-  reg [7-1:0] _tmp_45;
-  reg [7-1:0] _tmp_46;
-  reg [5-1:0] _tmp_47;
+  reg [5-1:0] _tmp_45;
+  reg [5-1:0] _tmp_46;
+  reg [7-1:0] _tmp_47;
   reg [6-1:0] _tmp_48;
   reg _tmp_49;
   reg _tmp_50;
@@ -570,8 +570,8 @@ module blinkled
   reg [10-1:0] _tmp_63;
   reg [10-1:0] _tmp_64;
   assign _tmp_62 = _tmp_64 + (_tmp_63 + _tmp_36);
-  reg [7-1:0] _tmp_65;
-  reg [5-1:0] _tmp_66;
+  reg [5-1:0] _tmp_65;
+  reg [7-1:0] _tmp_66;
   reg [6-1:0] _tmp_67;
   assign _tmp_61 = (((_tmp_38 == 1) && (_tmp_40 == 1))? _tmp_67 == 0 : 
                    (_tmp_38 == 1)? _tmp_66 == 0 : _tmp_65 == 0)? _tmp_62 : myram_1_addr + (((_tmp_38 == 1) && (_tmp_40 == 1))? _tmp_43 : 
@@ -589,18 +589,18 @@ module blinkled
   reg __tmp_fsm_1_cond_5_0_1;
   reg [10-1:0] _tmp_72;
   reg [32-1:0] _tmp_73;
-  reg [6-1:0] _tmp_74;
-  reg [7-1:0] _tmp_75;
-  reg [4-1:0] _tmp_76;
-  reg [5-1:0] _tmp_77;
+  reg [4-1:0] _tmp_74;
+  reg [6-1:0] _tmp_75;
+  reg [6-1:0] _tmp_76;
+  reg [2-1:0] _tmp_77;
   reg [5-1:0] _tmp_78;
-  reg [2-1:0] _tmp_79;
+  reg [8-1:0] _tmp_79;
   reg [32-1:0] _tmp_fsm_2;
   localparam _tmp_fsm_2_init = 0;
   reg [32-1:0] _tmp_80;
-  reg [7-1:0] _tmp_81;
-  reg [7-1:0] _tmp_82;
-  reg [5-1:0] _tmp_83;
+  reg [5-1:0] _tmp_81;
+  reg [5-1:0] _tmp_82;
+  reg [7-1:0] _tmp_83;
   reg [6-1:0] _tmp_84;
   reg [32-1:0] _tmp_85;
   reg _tmp_86;
@@ -615,8 +615,8 @@ module blinkled
   reg [10-1:0] _tmp_92;
   reg [10-1:0] _tmp_93;
   assign _tmp_90 = _tmp_93 + (_tmp_92 + (_tmp_91 + _tmp_72));
-  reg [7-1:0] _tmp_94;
-  reg [5-1:0] _tmp_95;
+  reg [5-1:0] _tmp_94;
+  reg [7-1:0] _tmp_95;
   reg [6-1:0] _tmp_96;
   reg _myram_cond_2_1;
   reg [9-1:0] _tmp_97;
@@ -634,18 +634,18 @@ module blinkled
   reg signed [32-1:0] _th_blink_rdata_9;
   reg [10-1:0] _tmp_101;
   reg [32-1:0] _tmp_102;
-  reg [6-1:0] _tmp_103;
-  reg [7-1:0] _tmp_104;
-  reg [4-1:0] _tmp_105;
-  reg [5-1:0] _tmp_106;
+  reg [4-1:0] _tmp_103;
+  reg [6-1:0] _tmp_104;
+  reg [6-1:0] _tmp_105;
+  reg [2-1:0] _tmp_106;
   reg [5-1:0] _tmp_107;
-  reg [2-1:0] _tmp_108;
+  reg [8-1:0] _tmp_108;
   reg [32-1:0] _tmp_fsm_3;
   localparam _tmp_fsm_3_init = 0;
   reg [32-1:0] _tmp_109;
-  reg [7-1:0] _tmp_110;
-  reg [7-1:0] _tmp_111;
-  reg [5-1:0] _tmp_112;
+  reg [5-1:0] _tmp_110;
+  reg [5-1:0] _tmp_111;
+  reg [7-1:0] _tmp_112;
   reg [6-1:0] _tmp_113;
   reg [32-1:0] _tmp_114;
   reg _tmp_115;
@@ -660,8 +660,8 @@ module blinkled
   reg [10-1:0] _tmp_121;
   reg [10-1:0] _tmp_122;
   assign _tmp_119 = _tmp_122 + (_tmp_121 + (_tmp_120 + _tmp_101));
-  reg [7-1:0] _tmp_123;
-  reg [5-1:0] _tmp_124;
+  reg [5-1:0] _tmp_123;
+  reg [7-1:0] _tmp_124;
   reg [6-1:0] _tmp_125;
   reg _myram_cond_5_1;
   reg [9-1:0] _tmp_126;
@@ -856,12 +856,12 @@ module blinkled
         _myaxi_dma_async_fsm_1: begin
           _tmp_0 <= _th_blink_laddr_6;
           _tmp_1 <= _th_blink_gaddr_7;
-          _tmp_2 <= 16;
-          _tmp_3 <= 32;
-          _tmp_4 <= 4;
-          _tmp_5 <= 8;
+          _tmp_2 <= 4;
+          _tmp_3 <= 16;
+          _tmp_4 <= 16;
+          _tmp_5 <= 1;
           _tmp_6 <= 8;
-          _tmp_7 <= 1;
+          _tmp_7 <= 64;
           _myaxi_dma_async_fsm <= _myaxi_dma_async_fsm_2;
         end
         _myaxi_dma_async_fsm_2: begin
@@ -875,12 +875,12 @@ module blinkled
         _myaxi_dma_async_fsm_4: begin
           _tmp_72 <= _th_blink_laddr_6;
           _tmp_73 <= _th_blink_gaddr_7;
-          _tmp_74 <= 16;
-          _tmp_75 <= 32;
-          _tmp_76 <= 4;
-          _tmp_77 <= 8;
+          _tmp_74 <= 4;
+          _tmp_75 <= 16;
+          _tmp_76 <= 16;
+          _tmp_77 <= 1;
           _tmp_78 <= 8;
-          _tmp_79 <= 1;
+          _tmp_79 <= 64;
           _myaxi_dma_async_fsm <= _myaxi_dma_async_fsm_5;
         end
         _myaxi_dma_async_fsm_5: begin
@@ -1468,12 +1468,12 @@ module blinkled
         th_blink_23: begin
           _tmp_36 <= _th_blink_laddr_6;
           _tmp_37 <= _th_blink_gaddr_7;
-          _tmp_38 <= 16;
-          _tmp_39 <= 32;
-          _tmp_40 <= 4;
-          _tmp_41 <= 8;
+          _tmp_38 <= 4;
+          _tmp_39 <= 16;
+          _tmp_40 <= 16;
+          _tmp_41 <= 1;
           _tmp_42 <= 8;
-          _tmp_43 <= 1;
+          _tmp_43 <= 64;
           th_blink <= th_blink_24;
         end
         th_blink_24: begin
@@ -1584,12 +1584,12 @@ module blinkled
         th_blink_46: begin
           _tmp_101 <= _th_blink_laddr_6;
           _tmp_102 <= _th_blink_gaddr_7;
-          _tmp_103 <= 16;
-          _tmp_104 <= 32;
-          _tmp_105 <= 4;
-          _tmp_106 <= 8;
+          _tmp_103 <= 4;
+          _tmp_104 <= 16;
+          _tmp_105 <= 16;
+          _tmp_106 <= 1;
           _tmp_107 <= 8;
-          _tmp_108 <= 1;
+          _tmp_108 <= 64;
           th_blink <= th_blink_47;
         end
         th_blink_47: begin

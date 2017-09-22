@@ -504,7 +504,7 @@ class SyncRAMManager(object):
         """
 
         if order is None:
-            order = list(range(len(shape)))
+            order = list(reversed(range(len(shape))))
 
         pattern = self._to_pattern(shape, order)
         return self.read_dataflow_pattern(port, addr, pattern,
@@ -961,7 +961,7 @@ class SyncRAMManager(object):
         """
 
         if order is None:
-            order = list(range(len(shape)))
+            order = list(reversed(range(len(shape))))
 
         pattern = self._to_pattern(shape, order)
         return self.read_dataflow_pattern(port, addr, pattern,
@@ -1159,7 +1159,7 @@ class SyncRAMManager(object):
         """
 
         if order is None:
-            order = list(range(len(shape)))
+            order = list(reversed(range(len(shape))))
 
         pattern = self._to_pattern(shape, order)
         return self.write_dataflow_pattern(port, addr, data, pattern,
@@ -1174,6 +1174,6 @@ class SyncRAMManager(object):
             size = shape[p]
             basevalue = 1 if isinstance(size, int) else vtypes.Int(1)
             stride = functools.reduce(lambda x, y: x * y,
-                                      shape[:p], basevalue) if p > 0 else basevalue
+                                      shape[p + 1:], basevalue)
             pattern.append((size, stride))
         return pattern

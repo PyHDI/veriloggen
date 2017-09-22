@@ -1351,7 +1351,7 @@ class AxiMaster(object):
                           cond=None, ram_port=0):
 
         if order is None:
-            order = list(range(len(shape)))
+            order = list(reversed(range(len(shape))))
 
         pattern = self._to_pattern(shape, order)
         return self.dma_read_pattern(ram, bus_addr, ram_addr, pattern,
@@ -1366,7 +1366,7 @@ class AxiMaster(object):
             size = shape[p]
             basevalue = 1 if isinstance(size, int) else vtypes.Int(1)
             stride = functools.reduce(lambda x, y: x * y,
-                                      shape[:p], basevalue) if p > 0 else basevalue
+                                      shape[p + 1:], basevalue)
             pattern.append((size, stride))
         return pattern
 
@@ -2198,7 +2198,7 @@ class AxiMaster(object):
                            cond=None, ram_port=0):
 
         if order is None:
-            order = list(range(len(shape)))
+            order = list(reversed(range(len(shape))))
 
         pattern = self._to_pattern(shape, order)
         return self.dma_write_pattern(ram, bus_addr, ram_addr, pattern,

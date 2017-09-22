@@ -21,7 +21,7 @@ def mkLed():
     datawidth = 32
     addrwidth = 10
     mat_shape = [8, 4, 16]
-    mat_order = [2, 1, 0]
+    mat_order = [1, 2, 0]
     mat_size = functools.reduce(lambda x, y: x * y, mat_shape, 1)
 
     # With async DMA, set enable_async = True

@@ -566,10 +566,10 @@ module blinkled
   reg [10-1:0] _tmp_40;
   reg [10-1:0] _tmp_41;
   assign _tmp_39 = _tmp_41 + (_tmp_40 + _mystream_offset_1);
-  reg [5-1:0] _tmp_42;
-  reg [4-1:0] _tmp_43;
+  reg [4-1:0] _tmp_42;
+  reg [5-1:0] _tmp_43;
   reg [6-1:0] _tmp_44;
-  assign _tmp_38 = ((0 && 0)? _tmp_44 == 0 : _tmp_42 == 0)? _tmp_39 : ram_a_0_addr + ((0 && 0)? 1 : 64);
+  assign _tmp_38 = ((0 && 0)? _tmp_44 == 0 : _tmp_42 == 0)? _tmp_39 : ram_a_0_addr + ((0 && 0)? 32 : 8);
   reg _mystream_done_flag_4;
   reg [32-1:0] _mystream_fsm_5;
   localparam _mystream_fsm_5_init = 0;
@@ -595,10 +595,10 @@ module blinkled
   reg [10-1:0] _tmp_59;
   reg [10-1:0] _tmp_60;
   assign _tmp_58 = _tmp_60 + (_tmp_59 + _mystream_offset_1);
-  reg [5-1:0] _tmp_61;
-  reg [4-1:0] _tmp_62;
+  reg [4-1:0] _tmp_61;
+  reg [5-1:0] _tmp_62;
   reg [6-1:0] _tmp_63;
-  assign _tmp_57 = ((0 && 0)? _tmp_63 == 0 : _tmp_61 == 0)? _tmp_58 : ram_b_0_addr + ((0 && 0)? 1 : 64);
+  assign _tmp_57 = ((0 && 0)? _tmp_63 == 0 : _tmp_61 == 0)? _tmp_58 : ram_b_0_addr + ((0 && 0)? 32 : 8);
   reg _mystream_done_flag_6;
   reg [32-1:0] _mystream_fsm_7;
   localparam _mystream_fsm_7_init = 0;
@@ -613,8 +613,8 @@ module blinkled
   reg [10-1:0] _tmp_69;
   reg [10-1:0] _tmp_70;
   assign _tmp_67 = _tmp_70 + (_tmp_69 + (_tmp_68 + _mystream_offset_1));
-  reg [5-1:0] _tmp_71;
-  reg [4-1:0] _tmp_72;
+  reg [4-1:0] _tmp_71;
+  reg [5-1:0] _tmp_72;
   reg [6-1:0] _tmp_73;
   reg _ram_c_cond_0_1;
   assign _mystream_running = _mystream_running_reg && !(_mystream_done_flag_2 && _mystream_done_flag_4 && _mystream_done_flag_6);
@@ -1040,28 +1040,28 @@ module blinkled
         _tmp_35 <= 0;
       end 
       if((_mystream_fsm_3 == 1) && !_tmp_37 && !_tmp_35 && !_tmp_36) begin
-        _tmp_42 <= 7;
+        _tmp_42 <= 3;
       end 
       if((_tmp_28 || !_tmp_26) && (_tmp_29 || !_tmp_27) && _tmp_37) begin
         _tmp_42 <= _tmp_42 - 1;
       end 
       if((_tmp_28 || !_tmp_26) && (_tmp_29 || !_tmp_27) && _tmp_37 && (_tmp_42 == 0)) begin
-        _tmp_42 <= 7;
+        _tmp_42 <= 3;
       end 
       if((_mystream_fsm_3 == 1) && !_tmp_37 && !_tmp_35 && !_tmp_36) begin
-        _tmp_43 <= 3;
+        _tmp_43 <= 7;
       end 
       if((_tmp_28 || !_tmp_26) && (_tmp_29 || !_tmp_27) && _tmp_37 && (_tmp_42 == 0)) begin
         _tmp_43 <= _tmp_43 - 1;
       end 
       if((_tmp_28 || !_tmp_26) && (_tmp_29 || !_tmp_27) && _tmp_37 && (_tmp_42 == 0) && (_tmp_43 == 0)) begin
-        _tmp_43 <= 3;
+        _tmp_43 <= 7;
       end 
       if((_mystream_fsm_3 == 1) && !_tmp_37 && !_tmp_35 && !_tmp_36) begin
         _tmp_40 <= 0;
       end 
       if((_tmp_28 || !_tmp_26) && (_tmp_29 || !_tmp_27) && _tmp_37 && (_tmp_42 == 1) && !0) begin
-        _tmp_40 <= _tmp_40 + 16;
+        _tmp_40 <= _tmp_40 + 1;
       end 
       if((_tmp_28 || !_tmp_26) && (_tmp_29 || !_tmp_27) && _tmp_37 && (_tmp_42 == 1) && (_tmp_43 == 0)) begin
         _tmp_40 <= 0;
@@ -1079,7 +1079,7 @@ module blinkled
         _tmp_41 <= 0;
       end 
       if((_tmp_28 || !_tmp_26) && (_tmp_29 || !_tmp_27) && _tmp_37 && ((_tmp_42 == 1) && (_tmp_43 == 0)) && !(0 && 0)) begin
-        _tmp_41 <= _tmp_41 + 1;
+        _tmp_41 <= _tmp_41 + 32;
       end 
       if((_tmp_28 || !_tmp_26) && (_tmp_29 || !_tmp_27) && _tmp_37 && ((_tmp_42 == 1) && (_tmp_43 == 0)) && (_tmp_44 == 0)) begin
         _tmp_41 <= 0;
@@ -1223,28 +1223,28 @@ module blinkled
         _tmp_54 <= 0;
       end 
       if((_mystream_fsm_5 == 1) && !_tmp_56 && !_tmp_54 && !_tmp_55) begin
-        _tmp_61 <= 7;
+        _tmp_61 <= 3;
       end 
       if((_tmp_47 || !_tmp_45) && (_tmp_48 || !_tmp_46) && _tmp_56) begin
         _tmp_61 <= _tmp_61 - 1;
       end 
       if((_tmp_47 || !_tmp_45) && (_tmp_48 || !_tmp_46) && _tmp_56 && (_tmp_61 == 0)) begin
-        _tmp_61 <= 7;
+        _tmp_61 <= 3;
       end 
       if((_mystream_fsm_5 == 1) && !_tmp_56 && !_tmp_54 && !_tmp_55) begin
-        _tmp_62 <= 3;
+        _tmp_62 <= 7;
       end 
       if((_tmp_47 || !_tmp_45) && (_tmp_48 || !_tmp_46) && _tmp_56 && (_tmp_61 == 0)) begin
         _tmp_62 <= _tmp_62 - 1;
       end 
       if((_tmp_47 || !_tmp_45) && (_tmp_48 || !_tmp_46) && _tmp_56 && (_tmp_61 == 0) && (_tmp_62 == 0)) begin
-        _tmp_62 <= 3;
+        _tmp_62 <= 7;
       end 
       if((_mystream_fsm_5 == 1) && !_tmp_56 && !_tmp_54 && !_tmp_55) begin
         _tmp_59 <= 0;
       end 
       if((_tmp_47 || !_tmp_45) && (_tmp_48 || !_tmp_46) && _tmp_56 && (_tmp_61 == 1) && !0) begin
-        _tmp_59 <= _tmp_59 + 16;
+        _tmp_59 <= _tmp_59 + 1;
       end 
       if((_tmp_47 || !_tmp_45) && (_tmp_48 || !_tmp_46) && _tmp_56 && (_tmp_61 == 1) && (_tmp_62 == 0)) begin
         _tmp_59 <= 0;
@@ -1262,7 +1262,7 @@ module blinkled
         _tmp_60 <= 0;
       end 
       if((_tmp_47 || !_tmp_45) && (_tmp_48 || !_tmp_46) && _tmp_56 && ((_tmp_61 == 1) && (_tmp_62 == 0)) && !(0 && 0)) begin
-        _tmp_60 <= _tmp_60 + 1;
+        _tmp_60 <= _tmp_60 + 32;
       end 
       if((_tmp_47 || !_tmp_45) && (_tmp_48 || !_tmp_46) && _tmp_56 && ((_tmp_61 == 1) && (_tmp_62 == 0)) && (_tmp_63 == 0)) begin
         _tmp_60 <= 0;
@@ -1366,27 +1366,27 @@ module blinkled
         ram_c_0_wenable <= 1;
       end 
       if((_mystream_fsm_7 == 1) && !_tmp_65) begin
-        _tmp_71 <= 7;
+        _tmp_71 <= 3;
         _tmp_68 <= 0;
       end 
       if(_plus_valid_66 && (_tmp_65 && !_tmp_64) && _tmp_65) begin
         _tmp_71 <= _tmp_71 - 1;
-        _tmp_68 <= _tmp_68 + 64;
+        _tmp_68 <= _tmp_68 + 8;
       end 
       if(_plus_valid_66 && (_tmp_65 && !_tmp_64) && _tmp_65 && (_tmp_71 == 0)) begin
-        _tmp_71 <= 7;
+        _tmp_71 <= 3;
         _tmp_68 <= 0;
       end 
       if((_mystream_fsm_7 == 1) && !_tmp_65) begin
-        _tmp_72 <= 3;
+        _tmp_72 <= 7;
         _tmp_69 <= 0;
       end 
       if(_plus_valid_66 && (_tmp_65 && !_tmp_64) && _tmp_65 && (_tmp_71 == 0)) begin
         _tmp_72 <= _tmp_72 - 1;
-        _tmp_69 <= _tmp_69 + 16;
+        _tmp_69 <= _tmp_69 + 1;
       end 
       if(_plus_valid_66 && (_tmp_65 && !_tmp_64) && _tmp_65 && (_tmp_71 == 0) && (_tmp_72 == 0)) begin
-        _tmp_72 <= 3;
+        _tmp_72 <= 7;
         _tmp_69 <= 0;
       end 
       if((_mystream_fsm_7 == 1) && !_tmp_65) begin
@@ -1395,7 +1395,7 @@ module blinkled
       end 
       if(_plus_valid_66 && (_tmp_65 && !_tmp_64) && _tmp_65 && ((_tmp_71 == 0) && (_tmp_72 == 0))) begin
         _tmp_73 <= _tmp_73 - 1;
-        _tmp_70 <= _tmp_70 + 1;
+        _tmp_70 <= _tmp_70 + 32;
       end 
       if(_plus_valid_66 && (_tmp_65 && !_tmp_64) && _tmp_65 && ((_tmp_71 == 0) && (_tmp_72 == 0)) && (_tmp_73 == 0)) begin
         _tmp_73 <= 15;

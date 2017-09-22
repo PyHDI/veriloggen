@@ -27,14 +27,14 @@ def mkLed():
 
     shape = [1, 1, 1]
     size = functools.reduce(lambda x, y: x * y, shape, 1)
-    order = [2, 1, 0]
+    order = [1, 2, 0]
 
     def to_pattern(shape, order):
         pattern = []
         for p in order:
             size = shape[p]
             stride = functools.reduce(lambda x, y: x * y,
-                                      shape[:p], 1) if p > 0 else 1
+                                      shape[p + 1:], 1)
             pattern.append((size, stride))
         return pattern
 

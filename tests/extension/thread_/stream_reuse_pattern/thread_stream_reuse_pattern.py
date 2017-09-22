@@ -27,19 +27,19 @@ def mkLed():
 
     shape = [4, 4, 4]
     size = functools.reduce(lambda x, y: x * y, shape, 1)
-    order = [2, 1, 0]
+    order = [1, 2, 0]
 
     reuse_size = 4
     wshape = [4 * reuse_size, 4, 4]
     wsize = functools.reduce(lambda x, y: x * y, shape, 1)
-    worder = [2, 1, 0]
+    worder = [1, 2, 0]
 
     def to_pattern(shape, order):
         pattern = []
         for p in order:
             size = shape[p]
             stride = functools.reduce(lambda x, y: x * y,
-                                      shape[:p], 1) if p > 0 else 1
+                                      shape[p + 1:], 1)
             pattern.append((size, stride))
         return pattern
 
@@ -59,10 +59,10 @@ def mkLed():
         sum = 0
         w = 0
         for i in range(shape[0]):
-            for j in range(shape[1]):
-                for k in range(shape[2]):
+            for k in range(shape[2]):
+                for j in range(shape[1]):
                     for r in range(reuse_size):
-                        addr = i + j * shape[0] + k * (shape[0] * shape[1])
+                        addr = k + j * shape[2] + i * (shape[1] * shape[2])
                         a = ram_a.read(addr + roffset)
                         b = ram_b.read(addr + roffset)
                         sum = a + b
