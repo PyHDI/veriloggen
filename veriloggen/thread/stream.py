@@ -268,12 +268,17 @@ class Stream(thread.Thread):
         for done_flag in self.done_flags:
             done = make_condition(done, done_flag)
 
-        self.fsm.If(done)(
-            self.running_reg(0)
-        )
-        self.fsm.If(done).goto_init()
+        if done is not None:
+            self.fsm.If(done)(
+                self.running_reg(0)
+            )
+            self.fsm.If(done).goto_init()
 
-        self.running.assign(vtypes.Ands(self.running_reg, vtypes.Not(done)))
+            self.running.assign(vtypes.Ands(
+                self.running_reg, vtypes.Not(done)))
+
+        else:
+            self.running.assign(0)
 
         # clean-up jump conditions
         cvisitor.clearBreak()
