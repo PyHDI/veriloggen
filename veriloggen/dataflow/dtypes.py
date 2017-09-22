@@ -254,9 +254,10 @@ class _Numeric(_Node):
         valid = self.output_sig_valid
         ready = self.output_sig_ready
 
-        m.Assign(data(self.sig_data))
+        if len(data.subst) == 0:
+            m.Assign(data(self.sig_data))
 
-        if self.output_valid is not None:
+        if self.output_valid is not None and len(valid.subst) == 0:
             m.Assign(valid(self.sig_valid))
 
         if self.output_ready is not None:
@@ -1524,6 +1525,7 @@ def OrList(*args):
     for right in args[1:]:
         left = Lor(left, right)
     return left
+
 
 Ands = AndList
 Ors = OrList
