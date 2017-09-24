@@ -461,6 +461,12 @@ class MultibankRAM(object):
 
         self.mutex = None
 
+    @property
+    def length(self):
+        if isinstance(self.addrwidth, int):
+            return (2 ** self.addrwidth) * self.numbanks
+        return (vtypes.Int(2) ** self.addrwidth) * self.numbanks
+
     def __getitem__(self, index):
         return self.rams[index]
 
