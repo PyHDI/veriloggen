@@ -17,22 +17,29 @@ Apache License 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
 Publication
 ===========
 
-If you use Veriloggen for your research, please cite our paper:
+If you use Veriloggen in your research, please cite my paper about
+Pyverilog. (Veriloggen is constructed on Pyverilog.)
 
--  Minoru Watanabe, Kentaro Sano, Shinya Takamaeda, Takefumi Miyoshi,
-   and Hironori Nakajo: Japanese High-level Synthesis Tools for FPGA
-   Hardware Acceleration, IEICE Transactions on Communications, Vol.
-   J100-B, No. 1, pp.1-10, January 2017.
-   `Paper <https://search.ieice.org/bin/summary.php?id=j100-b_1_1>`__
-
-Or, please cite the project URL:
+-  Shinya Takamaeda-Yamazaki: Pyverilog: A Python-based Hardware Design
+   Processing Toolkit for Verilog HDL, 11th International Symposium on
+   Applied Reconfigurable Computing (ARC 2015) (Poster), Lecture Notes
+   in Computer Science, Vol.9040/2015, pp.451-460, April 2015.
+   `Paper <http://link.springer.com/chapter/10.1007/978-3-319-16214-0_42>`__
 
 ::
 
-    @misc{veriloggen:github,
-    author = {Shinya Takamaeda-Yamazaki},
-    title = {Veriloggen: A library for constructing a Verilog HDL source code in Python},
-    howpublished = {\url{https://github.com/PyHDI/veriloggen}},
+    @inproceedings{Takamaeda:2015:ARC:Pyverilog,
+    title={Pyverilog: A Python-Based Hardware Design Processing Toolkit for Verilog HDL},
+    author={Takamaeda-Yamazaki, Shinya},
+    booktitle={Applied Reconfigurable Computing},
+    month={Apr},
+    year={2015},
+    pages={451-460},
+    volume={9040},
+    series={Lecture Notes in Computer Science},
+    publisher={Springer International Publishing},
+    doi={10.1007/978-3-319-16214-0_42},
+    url={http://dx.doi.org/10.1007/978-3-319-16214-0_42},
     }
 
 What's Veriloggen?
@@ -76,7 +83,7 @@ Install on your python environment by using pip:
 
     pip install jinja2
 
--  Pyverilog: 1.0.9 or later
+-  Pyverilog: 1.1.0 or later
 
 Install from pip (or download and install from GitHub):
 
@@ -84,7 +91,7 @@ Install from pip (or download and install from GitHub):
 
     pip install pyverilog
 
--  IPgen: 0.2.1 or later
+-  IPgen: 0.3.0 or later
 
 Install from pip (or download and install from GitHub):
 
@@ -361,7 +368,6 @@ Veriloggen Extension Libraries
 -  veriloggen.fsm: Finite state machine builder (FSM)
 -  veriloggen.types: Library of frequently-used structure, such as
    memory, fixed-point, AXI bus, etc.
--  veriloggen.pipeline: Explicit pipeline builder
 -  veriloggen.dataflow: Dataflow-based stream processing hardware
    builder
 -  veriloggen.thread: Tightly-coupled high-level synthesis compiler
