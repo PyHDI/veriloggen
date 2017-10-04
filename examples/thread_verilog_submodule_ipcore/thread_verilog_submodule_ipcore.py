@@ -124,8 +124,7 @@ def mkMemcpy():
                                 ('DATA_WIDTH', datawidth)),
                     arg_ports=(('CLK', clk), ('RST', rst),
                                ('start', start), ('busy', busy), ('size', size)),
-                    as_wire=('start', 'busy', 'size',
-                             'addr', 'rdata', 'wdata', 'wenable'))
+                    as_wire=('addr', 'rdata', 'wdata', 'wenable'))
 
     # connect ports to RAM
     ram_a.connect_rtl(1, sub['addr'], sub['wdata'],

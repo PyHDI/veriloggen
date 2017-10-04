@@ -1089,9 +1089,6 @@ module blinkled #
   reg start;
   wire busy;
   reg [ADDR_WIDTH-1:0] size;
-  wire pe_start;
-  wire pe_busy;
-  wire [ADDR_WIDTH-1+1-1:0] pe_size;
   wire [ADDR_WIDTH-1+1-1:0] pe_addr;
   wire [DATA_WIDTH-1+1-1:0] pe_rdata;
   wire [DATA_WIDTH-1+1-1:0] pe_wdata;
