@@ -19,7 +19,7 @@ def mkMain(n=128, datawidth=32, numports=2):
     rst = m.Input('RST')
 
     # original variable
-    xorig = dataflow.Variable('xdata', 'xvalid', 'xready')
+    xorig = dataflow.Variable('xdata', 'xvalid', 'xready', signed=False)
     # connect an exising variable
     xorig = dataflow.Variable(xorig)
     x = dataflow.Variable(xorig)

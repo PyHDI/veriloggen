@@ -531,7 +531,7 @@ module blinkled
   reg [2-1:0] _tmp_25;
   reg _tmp_26;
   wire _tmp_all_valid_27;
-  wire [32-1:0] _reduceadd_data_28;
+  wire signed [32-1:0] _reduceadd_data_28;
   wire _reduceadd_valid_28;
   wire _reduceadd_ready_28;
   assign _reduceadd_ready_28 = (_tmp_25 > 0) && !_tmp_26 && _tmp_all_valid_27;
@@ -1079,7 +1079,7 @@ module blinkled
   assign __variable_data_87 = _tmp_79;
   assign __variable_valid_87 = _tmp_73;
   assign _tmp_75 = 1 && __variable_ready_87;
-  reg [32-1:0] _reduceadd_data_93;
+  reg signed [32-1:0] _reduceadd_data_93;
   reg _reduceadd_valid_93;
   wire _reduceadd_ready_93;
   reg [33-1:0] _reduceadd_count_93;

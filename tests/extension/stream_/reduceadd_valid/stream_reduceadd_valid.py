@@ -15,17 +15,17 @@ def mkMain():
     # input variiable
     x = stream.Variable('xdata')
     y = stream.Variable('ydata')
-    e = stream.Variable('edata')
 
     # stream definition
     z = x + y
-    z, v = stream.RegionAdd(z, 8, enable=e)
+    z, v = stream.ReduceAddValid(z, 8)
 
     # set output attribute
     z.output('zdata')
     v.output('vdata')
 
-    st = stream.Stream(z, v)
+    st = stream.Stream(z, v,
+                       ivalid='ivalid', ovalid='ovalid')
     m = st.to_module('main')
 
     return m
@@ -46,8 +46,10 @@ def mkTest(numports=8):
     xdata = ports['xdata']
     ydata = ports['ydata']
     zdata = ports['zdata']
-    edata = ports['edata']
     vdata = ports['vdata']
+
+    ivalid = ports['ivalid']
+    ovalid = ports['ovalid']
 
     uut = m.Instance(main, 'uut',
                      params=m.connect_params(main),
@@ -58,7 +60,7 @@ def mkTest(numports=8):
     reset_stmt.append(reset_done(0))
     reset_stmt.append(xdata(0))
     reset_stmt.append(ydata(0))
-    reset_stmt.append(edata(0))
+    reset_stmt.append(ivalid(0))
 
     simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
@@ -79,38 +81,50 @@ def mkTest(numports=8):
     send_fsm.If(reset_done).goto_next()
 
     send_fsm(
+        ivalid(0),
+        send_count.inc()
+    )
+
+    send_fsm.If(send_count == 10)(
+        send_count(0)
+    )
+    send_fsm.If(send_count == 10).goto_next()
+
+    send_fsm(
         xdata(0),
         ydata(0),
-        edata(1),
-        Display('xdata=%d', xdata),
-        Display('ydata=%d', ydata),
+        ivalid(1),
         send_count.inc()
+    )
+    send_fsm.Delay(1)(
+        Display('xdata=%d', xdata),
+        Display('ydata=%d', ydata)
     )
     send_fsm.goto_next()
 
     send_fsm(
         xdata(xdata + 1),
         ydata(ydata + 2),
-        edata(1),
-        Display('xdata=%d', xdata),
-        Display('ydata=%d', ydata),
+        ivalid(1),
         send_count.inc()
     )
-    send_fsm.If(send_count == 64).goto_next()
-
-    send_fsm(
-        edata(0)
+    send_fsm.Delay(1)(
+        Display('xdata=%d', xdata),
+        Display('ydata=%d', ydata)
     )
+    send_fsm.If(send_count == 65)(
+        ivalid(0)
+    )
+    send_fsm.If(send_count == 65).goto_next()
 
     recv_fsm = FSM(m, 'recv_fsm', clk, rst)
     recv_count = m.Reg('recv_count', 32, initval=0)
     recv_fsm.If(reset_done).goto_next()
 
-    recv_fsm.If(vdata)(
+    recv_fsm.If(ovalid, vdata)(
         Display('zdata=%d', zdata),
         recv_count.inc()
     )
-    recv_fsm.If(recv_count == 8).goto_next()
 
     return m
 

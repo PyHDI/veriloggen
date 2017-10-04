@@ -13,7 +13,7 @@ import veriloggen.dataflow as dataflow
 
 def mkMain():
     # input variiable
-    x = dataflow.Variable('xdata', valid='xvalid', ready='xready')
+    x = dataflow.Variable('xdata', valid='xvalid', ready='xready', signed=False)
 
     # dataflow definition
     z = x + x.prev(1) + x.prev(2)

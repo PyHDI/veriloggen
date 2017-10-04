@@ -248,7 +248,7 @@ module main
   assign myaxi_rready = _tmp_1 && _tmp_2;
   reg [8-1:0] _tmp_3;
   reg _tmp_4;
-  wire [32-1:0] _reduceadd_data_5;
+  wire signed [32-1:0] _reduceadd_data_5;
   wire _reduceadd_valid_5;
   wire _reduceadd_ready_5;
   assign _reduceadd_ready_5 = (_tmp_3 > 0) && !_tmp_4;
@@ -269,7 +269,7 @@ module main
   reg _tmp_15;
   reg _tmp_16;
   reg [8-1:0] _tmp_17;
-  wire [32-1:0] __variable_data_18;
+  wire signed [32-1:0] __variable_data_18;
   wire __variable_valid_18;
   wire __variable_ready_18;
   assign __variable_ready_18 = 1;
@@ -399,7 +399,7 @@ module main
   assign __variable_valid_19 = _tmp_7;
   assign _tmp_9 = 1 && __variable_ready_19;
   reg [1-1:0] __prev_data_20;
-  reg [32-1:0] _reduceadd_data_21;
+  reg signed [32-1:0] _reduceadd_data_21;
   reg _reduceadd_valid_21;
   wire _reduceadd_ready_21;
   assign _tmp_1 = 1 && ((_reduceadd_ready_21 || !_reduceadd_valid_21) && (myaxi_rvalid && myaxi_rvalid));

@@ -608,7 +608,7 @@ class MultibankRAM(object):
         return 0
 
     def read_dataflow(self, port, addr, length=1,
-                      stride=1, cond=None, point=0, signed=False):
+                      stride=1, cond=None, point=0, signed=True):
         """ 
         @return data, last, done
         """
@@ -630,7 +630,7 @@ class MultibankRAM(object):
         return merged_data, merged_last, merged_done
 
     def read_dataflow_interleave(self, port, addr, length=1,
-                                 stride=1, cond=None, point=0, signed=False):
+                                 stride=1, cond=None, point=0, signed=True):
         """ 
         @return data, last, done
         """
@@ -751,7 +751,7 @@ class MultibankRAM(object):
         return df_data, df_last, done
 
     def read_dataflow_pattern_interleave(self, port, addr, pattern,
-                                         cond=None, point=0, signed=False):
+                                         cond=None, point=0, signed=True):
         """ 
         @return data, last, done
         """
@@ -959,7 +959,7 @@ class MultibankRAM(object):
         return df_data, df_last, done
 
     def read_dataflow_multidim_interleave(self, port, addr, shape, order=None,
-                                          cond=None, point=0, signed=False):
+                                          cond=None, point=0, signed=True):
         """ 
         @return data, last, done
         """

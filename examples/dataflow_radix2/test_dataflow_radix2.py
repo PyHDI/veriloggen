@@ -8,16 +8,16 @@ module test;
 
   reg CLK;
   reg RST;
-  reg [32-1:0] din0re;
-  reg [32-1:0] din0im;
-  reg [32-1:0] din1re;
-  reg [32-1:0] din1im;
-  reg [32-1:0] cnstre;
-  reg [32-1:0] cnstim;
-  wire [32-1:0] dout1re;
-  wire [32-1:0] dout1im;
-  wire [32-1:0] dout0re;
-  wire [32-1:0] dout0im;
+  reg signed [32-1:0] din0re;
+  reg signed [32-1:0] din0im;
+  reg signed [32-1:0] din1re;
+  reg signed [32-1:0] din1im;
+  reg signed [32-1:0] cnstre;
+  reg signed [32-1:0] cnstim;
+  wire signed [32-1:0] dout1re;
+  wire signed [32-1:0] dout1im;
+  wire signed [32-1:0] dout0re;
+  wire signed [32-1:0] dout0im;
 
   radix2
   uut
@@ -143,41 +143,41 @@ module radix2
 (
   input CLK,
   input RST,
-  input [32-1:0] din0re,
-  input [32-1:0] din0im,
-  input [32-1:0] din1re,
-  input [32-1:0] din1im,
-  input [32-1:0] cnstre,
-  input [32-1:0] cnstim,
-  output [32-1:0] dout1re,
-  output [32-1:0] dout1im,
-  output [32-1:0] dout0re,
-  output [32-1:0] dout0im
+  input signed [32-1:0] din0re,
+  input signed [32-1:0] din0im,
+  input signed [32-1:0] din1re,
+  input signed [32-1:0] din1im,
+  input signed [32-1:0] cnstre,
+  input signed [32-1:0] cnstim,
+  output signed [32-1:0] dout1re,
+  output signed [32-1:0] dout1im,
+  output signed [32-1:0] dout0re,
+  output signed [32-1:0] dout0im
 );
 
-  reg [32-1:0] _plus_data_0;
+  reg signed [32-1:0] _plus_data_0;
   reg _plus_valid_0;
   wire _plus_ready_0;
-  reg [32-1:0] _plus_data_1;
+  reg signed [32-1:0] _plus_data_1;
   reg _plus_valid_1;
   wire _plus_ready_1;
-  reg [32-1:0] _minus_data_2;
+  reg signed [32-1:0] _minus_data_2;
   reg _minus_valid_2;
   wire _minus_ready_2;
-  reg [32-1:0] _minus_data_3;
+  reg signed [32-1:0] _minus_data_3;
   reg _minus_valid_3;
   wire _minus_ready_3;
-  reg [32-1:0] __delay_data_4;
+  reg signed [32-1:0] __delay_data_4;
   reg __delay_valid_4;
   wire __delay_ready_4;
-  reg [32-1:0] __delay_data_5;
+  reg signed [32-1:0] __delay_data_5;
   reg __delay_valid_5;
   wire __delay_ready_5;
-  wire [32-1:0] _times_data_6;
+  wire signed [32-1:0] _times_data_6;
   wire _times_valid_6;
   wire _times_ready_6;
-  wire [64-1:0] _times_odata_6;
-  reg [64-1:0] _times_data_reg_6;
+  wire signed [64-1:0] _times_odata_6;
+  reg signed [64-1:0] _times_data_reg_6;
   assign _times_data_6 = _times_data_reg_6;
   wire _times_ovalid_6;
   reg _times_valid_reg_6;
@@ -200,11 +200,11 @@ module radix2
     .c(_times_odata_6)
   );
 
-  wire [32-1:0] _times_data_7;
+  wire signed [32-1:0] _times_data_7;
   wire _times_valid_7;
   wire _times_ready_7;
-  wire [64-1:0] _times_odata_7;
-  reg [64-1:0] _times_data_reg_7;
+  wire signed [64-1:0] _times_odata_7;
+  reg signed [64-1:0] _times_data_reg_7;
   assign _times_data_7 = _times_data_reg_7;
   wire _times_ovalid_7;
   reg _times_valid_reg_7;
@@ -227,11 +227,11 @@ module radix2
     .c(_times_odata_7)
   );
 
-  wire [32-1:0] _times_data_8;
+  wire signed [32-1:0] _times_data_8;
   wire _times_valid_8;
   wire _times_ready_8;
-  wire [64-1:0] _times_odata_8;
-  reg [64-1:0] _times_data_reg_8;
+  wire signed [64-1:0] _times_odata_8;
+  reg signed [64-1:0] _times_data_reg_8;
   assign _times_data_8 = _times_data_reg_8;
   wire _times_ovalid_8;
   reg _times_valid_reg_8;
@@ -256,11 +256,11 @@ module radix2
 
   assign _minus_ready_2 = (_times_ready_6 || !_times_valid_6) && (_minus_valid_2 && __delay_valid_4) && ((_times_ready_8 || !_times_valid_8) && (_minus_valid_2 && __delay_valid_5));
   assign __delay_ready_5 = (_times_ready_7 || !_times_valid_7) && (_minus_valid_3 && __delay_valid_5) && ((_times_ready_8 || !_times_valid_8) && (_minus_valid_2 && __delay_valid_5));
-  wire [32-1:0] _times_data_9;
+  wire signed [32-1:0] _times_data_9;
   wire _times_valid_9;
   wire _times_ready_9;
-  wire [64-1:0] _times_odata_9;
-  reg [64-1:0] _times_data_reg_9;
+  wire signed [64-1:0] _times_odata_9;
+  reg signed [64-1:0] _times_data_reg_9;
   assign _times_data_9 = _times_data_reg_9;
   wire _times_ovalid_9;
   reg _times_valid_reg_9;
@@ -285,77 +285,77 @@ module radix2
 
   assign _minus_ready_3 = (_times_ready_7 || !_times_valid_7) && (_minus_valid_3 && __delay_valid_5) && ((_times_ready_9 || !_times_valid_9) && (_minus_valid_3 && __delay_valid_4));
   assign __delay_ready_4 = (_times_ready_6 || !_times_valid_6) && (_minus_valid_2 && __delay_valid_4) && ((_times_ready_9 || !_times_valid_9) && (_minus_valid_3 && __delay_valid_4));
-  reg [32-1:0] __delay_data_10;
+  reg signed [32-1:0] __delay_data_10;
   reg __delay_valid_10;
   wire __delay_ready_10;
   assign _plus_ready_0 = (__delay_ready_10 || !__delay_valid_10) && _plus_valid_0;
-  reg [32-1:0] __delay_data_11;
+  reg signed [32-1:0] __delay_data_11;
   reg __delay_valid_11;
   wire __delay_ready_11;
   assign _plus_ready_1 = (__delay_ready_11 || !__delay_valid_11) && _plus_valid_1;
-  reg [32-1:0] __delay_data_12;
+  reg signed [32-1:0] __delay_data_12;
   reg __delay_valid_12;
   wire __delay_ready_12;
   assign __delay_ready_10 = (__delay_ready_12 || !__delay_valid_12) && __delay_valid_10;
-  reg [32-1:0] __delay_data_13;
+  reg signed [32-1:0] __delay_data_13;
   reg __delay_valid_13;
   wire __delay_ready_13;
   assign __delay_ready_11 = (__delay_ready_13 || !__delay_valid_13) && __delay_valid_11;
-  reg [32-1:0] __delay_data_14;
+  reg signed [32-1:0] __delay_data_14;
   reg __delay_valid_14;
   wire __delay_ready_14;
   assign __delay_ready_12 = (__delay_ready_14 || !__delay_valid_14) && __delay_valid_12;
-  reg [32-1:0] __delay_data_15;
+  reg signed [32-1:0] __delay_data_15;
   reg __delay_valid_15;
   wire __delay_ready_15;
   assign __delay_ready_13 = (__delay_ready_15 || !__delay_valid_15) && __delay_valid_13;
-  reg [32-1:0] __delay_data_16;
+  reg signed [32-1:0] __delay_data_16;
   reg __delay_valid_16;
   wire __delay_ready_16;
   assign __delay_ready_14 = (__delay_ready_16 || !__delay_valid_16) && __delay_valid_14;
-  reg [32-1:0] __delay_data_17;
+  reg signed [32-1:0] __delay_data_17;
   reg __delay_valid_17;
   wire __delay_ready_17;
   assign __delay_ready_15 = (__delay_ready_17 || !__delay_valid_17) && __delay_valid_15;
-  reg [32-1:0] __delay_data_18;
+  reg signed [32-1:0] __delay_data_18;
   reg __delay_valid_18;
   wire __delay_ready_18;
   assign __delay_ready_16 = (__delay_ready_18 || !__delay_valid_18) && __delay_valid_16;
-  reg [32-1:0] __delay_data_19;
+  reg signed [32-1:0] __delay_data_19;
   reg __delay_valid_19;
   wire __delay_ready_19;
   assign __delay_ready_17 = (__delay_ready_19 || !__delay_valid_19) && __delay_valid_17;
-  reg [32-1:0] __delay_data_20;
+  reg signed [32-1:0] __delay_data_20;
   reg __delay_valid_20;
   wire __delay_ready_20;
   assign __delay_ready_18 = (__delay_ready_20 || !__delay_valid_20) && __delay_valid_18;
-  reg [32-1:0] __delay_data_21;
+  reg signed [32-1:0] __delay_data_21;
   reg __delay_valid_21;
   wire __delay_ready_21;
   assign __delay_ready_19 = (__delay_ready_21 || !__delay_valid_21) && __delay_valid_19;
-  reg [32-1:0] __delay_data_22;
+  reg signed [32-1:0] __delay_data_22;
   reg __delay_valid_22;
   wire __delay_ready_22;
   assign __delay_ready_20 = (__delay_ready_22 || !__delay_valid_22) && __delay_valid_20;
-  reg [32-1:0] __delay_data_23;
+  reg signed [32-1:0] __delay_data_23;
   reg __delay_valid_23;
   wire __delay_ready_23;
   assign __delay_ready_21 = (__delay_ready_23 || !__delay_valid_23) && __delay_valid_21;
-  reg [32-1:0] _minus_data_24;
+  reg signed [32-1:0] _minus_data_24;
   reg _minus_valid_24;
   wire _minus_ready_24;
   assign _times_ready_6 = (_minus_ready_24 || !_minus_valid_24) && (_times_valid_6 && _times_valid_7);
   assign _times_ready_7 = (_minus_ready_24 || !_minus_valid_24) && (_times_valid_6 && _times_valid_7);
-  reg [32-1:0] _plus_data_25;
+  reg signed [32-1:0] _plus_data_25;
   reg _plus_valid_25;
   wire _plus_ready_25;
   assign _times_ready_8 = (_plus_ready_25 || !_plus_valid_25) && (_times_valid_8 && _times_valid_9);
   assign _times_ready_9 = (_plus_ready_25 || !_plus_valid_25) && (_times_valid_8 && _times_valid_9);
-  reg [32-1:0] __delay_data_26;
+  reg signed [32-1:0] __delay_data_26;
   reg __delay_valid_26;
   wire __delay_ready_26;
   assign __delay_ready_22 = (__delay_ready_26 || !__delay_valid_26) && __delay_valid_22;
-  reg [32-1:0] __delay_data_27;
+  reg signed [32-1:0] __delay_data_27;
   reg __delay_valid_27;
   wire __delay_ready_27;
   assign __delay_ready_23 = (__delay_ready_27 || !__delay_valid_27) && __delay_valid_23;
@@ -740,15 +740,15 @@ module multiplier_core_0
   output [64-1:0] c
 );
 
-  reg [32-1:0] _a;
-  reg [32-1:0] _b;
+  reg signed [32-1:0] _a;
+  reg signed [32-1:0] _b;
   reg signed [64-1:0] _tmpval0;
   reg signed [64-1:0] _tmpval1;
   reg signed [64-1:0] _tmpval2;
   reg signed [64-1:0] _tmpval3;
   reg signed [64-1:0] _tmpval4;
   wire signed [64-1:0] rslt;
-  assign rslt = $signed({ 1'd0, _a }) * $signed({ 1'd0, _b });
+  assign rslt = _a * _b;
   assign c = _tmpval4;
 
   always @(posedge CLK) begin
@@ -833,15 +833,15 @@ module multiplier_core_1
   output [64-1:0] c
 );
 
-  reg [32-1:0] _a;
-  reg [32-1:0] _b;
+  reg signed [32-1:0] _a;
+  reg signed [32-1:0] _b;
   reg signed [64-1:0] _tmpval0;
   reg signed [64-1:0] _tmpval1;
   reg signed [64-1:0] _tmpval2;
   reg signed [64-1:0] _tmpval3;
   reg signed [64-1:0] _tmpval4;
   wire signed [64-1:0] rslt;
-  assign rslt = $signed({ 1'd0, _a }) * $signed({ 1'd0, _b });
+  assign rslt = _a * _b;
   assign c = _tmpval4;
 
   always @(posedge CLK) begin
@@ -926,15 +926,15 @@ module multiplier_core_2
   output [64-1:0] c
 );
 
-  reg [32-1:0] _a;
-  reg [32-1:0] _b;
+  reg signed [32-1:0] _a;
+  reg signed [32-1:0] _b;
   reg signed [64-1:0] _tmpval0;
   reg signed [64-1:0] _tmpval1;
   reg signed [64-1:0] _tmpval2;
   reg signed [64-1:0] _tmpval3;
   reg signed [64-1:0] _tmpval4;
   wire signed [64-1:0] rslt;
-  assign rslt = $signed({ 1'd0, _a }) * $signed({ 1'd0, _b });
+  assign rslt = _a * _b;
   assign c = _tmpval4;
 
   always @(posedge CLK) begin
@@ -1019,15 +1019,15 @@ module multiplier_core_3
   output [64-1:0] c
 );
 
-  reg [32-1:0] _a;
-  reg [32-1:0] _b;
+  reg signed [32-1:0] _a;
+  reg signed [32-1:0] _b;
   reg signed [64-1:0] _tmpval0;
   reg signed [64-1:0] _tmpval1;
   reg signed [64-1:0] _tmpval2;
   reg signed [64-1:0] _tmpval3;
   reg signed [64-1:0] _tmpval4;
   wire signed [64-1:0] rslt;
-  assign rslt = $signed({ 1'd0, _a }) * $signed({ 1'd0, _b });
+  assign rslt = _a * _b;
   assign c = _tmpval4;
 
   always @(posedge CLK) begin

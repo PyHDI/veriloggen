@@ -19,8 +19,8 @@ def mkMain(n=128, datawidth=32, numports=2):
     rst = m.Input('RST')
 
     # variables
-    x = dataflow.Variable('xdata', 'xvalid', 'xready')
-    y = dataflow.Variable('ydata', 'yvalid', 'yready')
+    x = dataflow.Variable('xdata', 'xvalid', 'xready', signed=False)
+    y = dataflow.Variable('ydata', 'yvalid', 'yready', signed=False)
     z = x + y
     z.output('zdata', 'zvalid', 'zready')
 

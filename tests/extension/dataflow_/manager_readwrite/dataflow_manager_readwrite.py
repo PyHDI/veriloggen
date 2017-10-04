@@ -25,10 +25,10 @@ def mkMain(n=128, datawidth=32, numports=2):
     xdata = m.Reg('xdata', 32, initval=0)
     xvalid = m.Reg('xvalid', initval=0)
     xready = m.Wire('xready')
-    x = df.Variable(xdata, xvalid, xready)
+    x = df.Variable(xdata, xvalid, xready, signed=False)
 
     # input with name
-    y = df.Variable('ydata', 'yvalid', 'yready')
+    y = df.Variable('ydata', 'yvalid', 'yready', signed=False)
 
     # output
     a = x + y + 1

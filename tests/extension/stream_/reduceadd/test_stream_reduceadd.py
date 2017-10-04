@@ -1,18 +1,18 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import stream_iadd_valid
+import stream_reduceadd
 
 expected_verilog = """
 module test;
 
   reg CLK;
   reg RST;
-  reg [32-1:0] xdata;
-  reg [32-1:0] ydata;
-  reg ivalid;
-  wire ovalid;
-  wire [32-1:0] zdata;
+  reg signed [32-1:0] xdata;
+  reg signed [32-1:0] ydata;
+  reg signed [32-1:0] edata;
+  wire signed [32-1:0] zdata;
+  wire [1-1:0] vdata;
 
   main
   uut
@@ -21,9 +21,9 @@ module test;
     .RST(RST),
     .xdata(xdata),
     .ydata(ydata),
-    .ivalid(ivalid),
-    .ovalid(ovalid),
-    .zdata(zdata)
+    .edata(edata),
+    .zdata(zdata),
+    .vdata(vdata)
   );
 
   reg reset_done;
@@ -47,7 +47,7 @@ module test;
     reset_done = 0;
     xdata = 0;
     ydata = 0;
-    ivalid = 0;
+    edata = 0;
     #100;
     RST = 1;
     #100;
@@ -63,6 +63,9 @@ module test;
   reg [32-1:0] send_fsm;
   localparam send_fsm_init = 0;
   reg [32-1:0] send_count;
+  reg [32-1:0] _d1_send_fsm;
+  reg _send_fsm_cond_1_0_1;
+  reg _send_fsm_cond_2_1_1;
   reg [32-1:0] recv_fsm;
   localparam recv_fsm_init = 0;
   reg [32-1:0] recv_count;
@@ -73,8 +76,26 @@ module test;
   always @(posedge CLK) begin
     if(RST) begin
       send_fsm <= send_fsm_init;
+      _d1_send_fsm <= send_fsm_init;
       send_count <= 0;
+      _send_fsm_cond_1_0_1 <= 0;
+      _send_fsm_cond_2_1_1 <= 0;
     end else begin
+      _d1_send_fsm <= send_fsm;
+      case(_d1_send_fsm)
+        send_fsm_1: begin
+          if(_send_fsm_cond_1_0_1) begin
+            $display("xdata=%d", xdata);
+            $display("ydata=%d", ydata);
+          end 
+        end
+        send_fsm_2: begin
+          if(_send_fsm_cond_2_1_1) begin
+            $display("xdata=%d", xdata);
+            $display("ydata=%d", ydata);
+          end 
+        end
+      endcase
       case(send_fsm)
         send_fsm_init: begin
           if(reset_done) begin
@@ -82,35 +103,32 @@ module test;
           end 
         end
         send_fsm_1: begin
-          ivalid <= 0;
+          xdata <= 0;
+          ydata <= 0;
+          edata <= 1;
           send_count <= send_count + 1;
-          if(send_count == 20) begin
-            ivalid <= 1;
-            send_count <= 0;
-          end 
-          if(send_count == 20) begin
-            send_fsm <= send_fsm_2;
-          end 
+          _send_fsm_cond_1_0_1 <= 1;
+          send_fsm <= send_fsm_2;
         end
         send_fsm_2: begin
-          ivalid <= 1;
           xdata <= xdata + 1;
           ydata <= ydata + 2;
-          $display("xdata=%d", xdata);
-          $display("ydata=%d", ydata);
+          edata <= 1;
           send_count <= send_count + 1;
-          if(send_count == 20) begin
+          _send_fsm_cond_2_1_1 <= 1;
+          if(send_count == 64) begin
             send_fsm <= send_fsm_3;
           end 
         end
         send_fsm_3: begin
-          ivalid <= 0;
+          edata <= 0;
         end
       endcase
     end
   end
 
   localparam recv_fsm_1 = 1;
+  localparam recv_fsm_2 = 2;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -124,9 +142,12 @@ module test;
           end 
         end
         recv_fsm_1: begin
-          if(ovalid) begin
+          if(vdata) begin
             $display("zdata=%d", zdata);
             recv_count <= recv_count + 1;
+          end 
+          if(recv_count == 8) begin
+            recv_fsm <= recv_fsm_2;
           end 
         end
       endcase
@@ -142,32 +163,50 @@ module main
 (
   input CLK,
   input RST,
-  input [32-1:0] xdata,
-  input [32-1:0] ydata,
-  input ivalid,
-  output ovalid,
-  output [32-1:0] zdata
+  input signed [32-1:0] xdata,
+  input signed [32-1:0] ydata,
+  input signed [32-1:0] edata,
+  output signed [32-1:0] zdata,
+  output [1-1:0] vdata
 );
 
-  reg _ivalid_0;
-  reg _ivalid_1;
-  assign ovalid = _ivalid_1;
-  reg [32-1:0] _data_2;
-  reg [32-1:0] _data_4;
-  assign zdata = _data_4;
+  reg signed [32-1:0] _data_3;
+  reg signed [32-1:0] _data_10;
+  reg signed [32-1:0] _data_6;
+  reg [5-1:0] _count_6;
+  reg [1-1:0] _data_9;
+  reg [5-1:0] _count_9;
+  assign zdata = _data_6;
+  assign vdata = _data_9;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _ivalid_0 <= 0;
-      _ivalid_1 <= 0;
-      _data_2 <= 0;
-      _data_4 <= 1'd0;
+      _data_3 <= 0;
+      _data_10 <= 0;
+      _data_6 <= 1'd0;
+      _count_6 <= 0;
+      _data_9 <= 1'd0;
+      _count_9 <= 0;
     end else begin
-      _ivalid_0 <= ivalid;
-      _ivalid_1 <= _ivalid_0;
-      _data_2 <= xdata + ydata;
-      if(_ivalid_0) begin
-        _data_4 <= _data_4 + _data_2;
+      _data_3 <= xdata + ydata;
+      _data_10 <= edata;
+      if(_data_10) begin
+        _data_6 <= _data_6 + _data_3;
+      end 
+      if(_data_10) begin
+        _count_6 <= (_count_6 == 7)? 0 : _count_6 + 1;
+      end 
+      if(_data_10 && (_count_6 == 0)) begin
+        _data_6 <= 1'd0 + _data_3;
+      end 
+      if(_data_10) begin
+        _data_9 <= _count_9 == 7;
+      end 
+      if(_data_10) begin
+        _count_9 <= (_count_9 == 7)? 0 : _count_9 + 1;
+      end 
+      if(_data_10 && (_count_9 == 0)) begin
+        _data_9 <= _count_9 == 7;
       end 
     end
   end
@@ -179,7 +218,7 @@ endmodule
 
 def test():
     veriloggen.reset()
-    test_module = stream_iadd_valid.mkTest()
+    test_module = stream_reduceadd.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

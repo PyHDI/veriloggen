@@ -8,13 +8,13 @@ module test;
 
   reg CLK;
   reg RST;
-  reg [32-1:0] xdata;
+  reg signed [32-1:0] xdata;
   reg xvalid;
   wire xready;
-  reg [32-1:0] ydata;
+  reg signed [32-1:0] ydata;
   reg yvalid;
   wire yready;
-  wire [32-1:0] zdata;
+  wire signed [32-1:0] zdata;
   wire zvalid;
   reg zready;
 
@@ -504,18 +504,18 @@ module main
 (
   input CLK,
   input RST,
-  input [32-1:0] xdata,
+  input signed [32-1:0] xdata,
   input xvalid,
   output xready,
-  input [32-1:0] ydata,
+  input signed [32-1:0] ydata,
   input yvalid,
   output yready,
-  output [32-1:0] zdata,
+  output signed [32-1:0] zdata,
   output zvalid,
   input zready
 );
 
-  reg [32-1:0] _plus_data_0;
+  reg signed [32-1:0] _plus_data_0;
   reg _plus_valid_0;
   wire _plus_ready_0;
   assign xready = (_plus_ready_0 || !_plus_valid_0) && (xvalid && yvalid);

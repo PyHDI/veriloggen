@@ -17,12 +17,12 @@ def add(left, right):
 
 def mkMain():
     # input variiable
-    x = dataflow.Variable('xdata', valid='xvalid', ready='xready')
-    y = dataflow.Variable('ydata', valid='yvalid', ready='yready')
+    x = dataflow.Variable('xdata', valid='xvalid', ready='xready', signed=False)
+    y = dataflow.Variable('ydata', valid='yvalid', ready='yready', signed=False)
 
     # dataflow definition
     patterns = tuple([i * i for i in range(256)])
-    lut = dataflow.LUT(x, patterns)
+    lut = dataflow.LUT(x, patterns, signed=False)
     z = lut + y
 
     # set output attribute

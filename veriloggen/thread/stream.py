@@ -293,7 +293,7 @@ class Stream(thread.Thread):
 
     # stream control methods
     def read(self, obj, addr, size,
-             stride=1, point=0, signed=False, port=0, with_last=False):
+             stride=1, point=0, signed=True, port=0, with_last=False):
 
         done_flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'done_flag'])),
                                initval=0)
@@ -332,7 +332,7 @@ class Stream(thread.Thread):
         return rdata
 
     def read_pattern(self, obj, addr, pattern,
-                     point=0, signed=False, port=0, with_last=False):
+                     point=0, signed=True, port=0, with_last=False):
 
         done_flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'done_flag'])),
                                initval=0)
@@ -369,7 +369,7 @@ class Stream(thread.Thread):
         return rdata
 
     def read_multidim(self, obj, addr, shape, order=None,
-                      point=0, signed=False, port=0, with_last=False):
+                      point=0, signed=True, port=0, with_last=False):
 
         done_flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'done_flag'])),
                                initval=0)
@@ -409,7 +409,7 @@ class Stream(thread.Thread):
 
     def read_reuse(self, obj, addr, size,
                    reuse_size=1, num_outputs=1,
-                   stride=1, point=0, signed=False, port=0, with_last=False):
+                   stride=1, point=0, signed=True, port=0, with_last=False):
 
         done_flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'done_flag'])),
                                initval=0)
@@ -458,7 +458,7 @@ class Stream(thread.Thread):
 
     def read_reuse_pattern(self, obj, addr, pattern,
                            reuse_size=1, num_outputs=1,
-                           point=0, signed=False, port=0, with_last=False):
+                           point=0, signed=True, port=0, with_last=False):
 
         done_flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'done_flag'])),
                                initval=0)
@@ -507,7 +507,7 @@ class Stream(thread.Thread):
 
     def read_reuse_multidim(self, obj, addr, shape, order=None,
                             reuse_size=1, num_outputs=1,
-                            point=0, signed=False, port=0, with_last=False):
+                            point=0, signed=True, port=0, with_last=False):
 
         done_flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'done_flag'])),
                                initval=0)

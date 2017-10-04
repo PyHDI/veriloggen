@@ -589,7 +589,7 @@ module blinkled
   localparam _mystream_fsm_10_init = 0;
   reg [33-1:0] _tmp_50;
   reg _tmp_51;
-  wire [32-1:0] _times_data_52;
+  wire signed [32-1:0] _times_data_52;
   wire _times_valid_52;
   wire _times_ready_52;
   assign _times_ready_52 = (_tmp_50 > 0) && !_tmp_51;
@@ -1412,11 +1412,11 @@ module blinkled
     end
   end
 
-  wire [32-1:0] _times_data_227;
+  wire signed [32-1:0] _times_data_227;
   wire _times_valid_227;
   wire _times_ready_227;
-  wire [64-1:0] _times_odata_227;
-  reg [64-1:0] _times_data_reg_227;
+  wire signed [64-1:0] _times_odata_227;
+  reg signed [64-1:0] _times_data_reg_227;
   assign _times_data_227 = _times_data_reg_227;
   wire _times_ovalid_227;
   reg _times_valid_reg_227;
@@ -3769,15 +3769,15 @@ module multiplier_core_0
   output [64-1:0] c
 );
 
-  reg [32-1:0] _a;
-  reg [32-1:0] _b;
+  reg signed [32-1:0] _a;
+  reg signed [32-1:0] _b;
   reg signed [64-1:0] _tmpval0;
   reg signed [64-1:0] _tmpval1;
   reg signed [64-1:0] _tmpval2;
   reg signed [64-1:0] _tmpval3;
   reg signed [64-1:0] _tmpval4;
   wire signed [64-1:0] rslt;
-  assign rslt = $signed({ 1'd0, _a }) * $signed({ 1'd0, _b });
+  assign rslt = _a * _b;
   assign c = _tmpval4;
 
   always @(posedge CLK) begin

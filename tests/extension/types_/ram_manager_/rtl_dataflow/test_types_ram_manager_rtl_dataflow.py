@@ -79,14 +79,14 @@ module main
   localparam xfsm_init = 0;
   reg [32-1:0] xaddr;
   reg [32-1:0] xcount;
-  wire [32-1:0] xdata;
+  wire signed [32-1:0] xdata;
   wire xvalid;
   wire xready;
-  reg [32-1:0] _plus_data_0;
+  reg signed [32-1:0] _plus_data_0;
   reg _plus_valid_0;
   wire _plus_ready_0;
   assign xready = (_plus_ready_0 || !_plus_valid_0) && xvalid;
-  wire [32-1:0] ydata;
+  wire signed [32-1:0] ydata;
   wire yvalid;
   wire yread;
   assign ydata = _plus_data_0;

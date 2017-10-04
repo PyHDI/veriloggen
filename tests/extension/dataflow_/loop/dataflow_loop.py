@@ -18,8 +18,8 @@ def mkMain(n=128, datawidth=32, numports=2):
     clk = m.Input('CLK')
     rst = m.Input('RST')
 
-    x = dataflow.Variable('xdata')
-    y = dataflow.Variable()
+    x = dataflow.Variable('xdata', signed=False)
+    y = dataflow.Variable(signed=False)
 
     z = x + y
     y.connect(z)  # y <- z <- y loop

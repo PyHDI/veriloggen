@@ -616,7 +616,7 @@ module blinkled
   localparam _mystream_fsm_11_init = 0;
   reg [36-1:0] _tmp_56;
   reg _tmp_57;
-  wire [32-1:0] _plus_data_58;
+  wire signed [32-1:0] _plus_data_58;
   wire _plus_valid_58;
   wire _plus_ready_58;
   assign _plus_ready_58 = (_tmp_56 > 0) && !_tmp_57;
@@ -1085,29 +1085,29 @@ module blinkled
     end
   end
 
-  reg [32-1:0] _plus_data_141;
+  reg signed [32-1:0] _plus_data_141;
   reg _plus_valid_141;
   wire _plus_ready_141;
   assign _tmp_29 = 1 && ((_plus_ready_141 || !_plus_valid_141) && (_tmp_26 && _tmp_27));
   assign _tmp_30 = 1 && ((_plus_ready_141 || !_plus_valid_141) && (_tmp_26 && _tmp_27));
-  reg [32-1:0] __delay_data_142;
+  reg signed [32-1:0] __delay_data_142;
   reg __delay_valid_142;
   wire __delay_ready_142;
   assign _tmp_44 = 1 && ((__delay_ready_142 || !__delay_valid_142) && _tmp_41);
-  reg [32-1:0] __delay_data_143;
+  reg signed [32-1:0] __delay_data_143;
   reg __delay_valid_143;
   wire __delay_ready_143;
   assign _tmp_45 = 1 && ((__delay_ready_143 || !__delay_valid_143) && _tmp_42);
-  reg [32-1:0] _plus_data_144;
+  reg signed [32-1:0] _plus_data_144;
   reg _plus_valid_144;
   wire _plus_ready_144;
   assign _plus_ready_141 = (_plus_ready_144 || !_plus_valid_144) && (_plus_valid_141 && __delay_valid_142);
   assign __delay_ready_142 = (_plus_ready_144 || !_plus_valid_144) && (_plus_valid_141 && __delay_valid_142);
-  reg [32-1:0] __delay_data_145;
+  reg signed [32-1:0] __delay_data_145;
   reg __delay_valid_145;
   wire __delay_ready_145;
   assign __delay_ready_143 = (__delay_ready_145 || !__delay_valid_145) && __delay_valid_143;
-  reg [32-1:0] _plus_data_146;
+  reg signed [32-1:0] _plus_data_146;
   reg _plus_valid_146;
   wire _plus_ready_146;
   assign _plus_ready_144 = (_plus_ready_146 || !_plus_valid_146) && (_plus_valid_144 && __delay_valid_145);

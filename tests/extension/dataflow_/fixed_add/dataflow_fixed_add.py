@@ -14,8 +14,8 @@ import veriloggen.types.fixed as fixed
 
 def mkMain(point=8):
     # input variiable
-    x = dataflow.Variable('xdata', valid='xvalid', ready='xready', point=point)
-    y = dataflow.Variable('ydata', valid='yvalid', ready='yready', point=point)
+    x = dataflow.Variable('xdata', valid='xvalid', ready='xready', point=point, signed=False)
+    y = dataflow.Variable('ydata', valid='yvalid', ready='yready', point=point, signed=False)
 
     # dataflow definition
     z = x + y

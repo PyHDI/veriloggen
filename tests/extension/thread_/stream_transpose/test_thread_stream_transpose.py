@@ -552,7 +552,7 @@ module blinkled
   localparam _mystream_fsm_5_init = 0;
   reg _tmp_32;
   reg _tmp_33;
-  wire [32-1:0] __variable_data_34;
+  wire signed [32-1:0] __variable_data_34;
   wire __variable_valid_34;
   wire __variable_ready_34;
   assign __variable_ready_34 = _tmp_33 && !_tmp_32;

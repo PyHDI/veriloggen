@@ -13,8 +13,8 @@ import veriloggen.dataflow as dataflow
 
 def mkMain():
     # input variiable
-    x = dataflow.Variable('xdata', valid='xvalid', ready='xready')
-    y = dataflow.Variable('ydata', valid='yvalid', ready='yready')
+    x = dataflow.Variable('xdata', valid='xvalid', ready='xready', signed=False)
+    y = dataflow.Variable('ydata', valid='yvalid', ready='yready', signed=False)
 
     # Mux with constant condition: only true_value is selected
     z = dataflow.Mux(1, x + y, x - y)

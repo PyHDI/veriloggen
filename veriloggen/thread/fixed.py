@@ -18,11 +18,11 @@ def as_fixed(fsm, value, point, signed=True):
     return fixed.as_fixed(value, point, signed)
 
 
-def to_fixed(fsm, value, point, signed=False):
+def to_fixed(fsm, value, point, signed=True):
     return fixed.to_fixed(value, point, signed)
 
 
-def fixed_to_int(fsm, value, point, signed=False):
+def fixed_to_int(fsm, value, point, signed=True):
     return fixed.fixed_to_int(value, point, signed)
 
 
@@ -30,5 +30,5 @@ def fixed_to_int_low(fsm, value, point):
     return fixed.fixed_to_int_low(value, point)
 
 
-def fixed_to_real(fsm, value, point, signed=False):
+def fixed_to_real(fsm, value, point, signed=True):
     return fixed.fixed_to_real(value, point, signed)

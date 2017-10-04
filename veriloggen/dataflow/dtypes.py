@@ -38,18 +38,18 @@ def Constant(value, fixed=True, point=0):
     raise TypeError("Unsupported type for Constant '%s'" % str(type(value)))
 
 
-def Variable(data=None, valid=None, ready=None, width=32, point=0, signed=False):
+def Variable(data=None, valid=None, ready=None, width=32, point=0, signed=True):
     return _Variable(data, valid, ready, width, point, signed)
 
 
-def Parameter(name, value, width=32, point=0, signed=False):
+def Parameter(name, value, width=32, point=0, signed=True):
     """ parameter with an immediate value """
     if not isinstance(name, str):
         raise TypeError("'name' must be str, not '%s'" % str(type(name)))
     return _ParameterVariable(name, width, point, signed, value=value)
 
 
-def ParameterVariable(data, width=32, point=0, signed=False):
+def ParameterVariable(data, width=32, point=0, signed=True):
     """ parameter with an existing object """
     if isinstance(data, float):
         return Constant(data, point=point)
@@ -1852,7 +1852,7 @@ class CustomOp(_SpecialOperator):
 class LUT(_SpecialOperator):
     latency = 1
 
-    def __init__(self, address, patterns, width=32, point=0, signed=False):
+    def __init__(self, address, patterns, width=32, point=0, signed=True):
         _SpecialOperator.__init__(self, address)
         self.op = None
         self.width = width
@@ -2058,7 +2058,7 @@ class _Constant(_Numeric):
 
 class _Variable(_Numeric):
 
-    def __init__(self, data=None, valid=None, ready=None, width=32, point=0, signed=False):
+    def __init__(self, data=None, valid=None, ready=None, width=32, point=0, signed=True):
         _Numeric.__init__(self)
         self.input_data = data
         self.input_valid = valid
@@ -2247,7 +2247,7 @@ class _Variable(_Numeric):
 
 class _ParameterVariable(_Variable):
 
-    def __init__(self, data, width=32, point=0, signed=False, value=None):
+    def __init__(self, data, width=32, point=0, signed=True, value=None):
         if isinstance(data, _Numeric):
             raise TypeError(
                 "_ParameterVariable cannot receive type '%s'" % str(type(data)))
@@ -2291,7 +2291,7 @@ class _Accumulator(_UnaryOperator):
     ops = (vtypes.Plus, )
 
     def __init__(self, right, size=None, initval=None,
-                 enable=None, reset=None, width=32, signed=False):
+                 enable=None, reset=None, width=32, signed=True):
 
         self.size = _to_constant(size) if size is not None else None
 
@@ -2489,7 +2489,7 @@ class ReduceAdd(_Accumulator):
     ops = (vtypes.Plus, )
 
     def __init__(self, right, size=None, initval=0,
-                 enable=None, reset=None, width=32, signed=False):
+                 enable=None, reset=None, width=32, signed=True):
         _Accumulator.__init__(self, right, size, initval,
                               enable, reset, width, signed)
 
@@ -2498,7 +2498,7 @@ class ReduceSub(_Accumulator):
     ops = (vtypes.Minus, )
 
     def __init__(self, right, size=None, initval=0,
-                 enable=None, reset=None, width=32, signed=False):
+                 enable=None, reset=None, width=32, signed=True):
         _Accumulator.__init__(self, right, size, initval,
                               enable, reset, width, signed)
 
@@ -2508,7 +2508,7 @@ class ReduceMul(_Accumulator):
     ops = (vtypes.Times, )
 
     def __init__(self, right, size=None, initval=0,
-                 enable=None, reset=None, width=32, signed=False):
+                 enable=None, reset=None, width=32, signed=True):
         _Accumulator.__init__(self, right, size, initval,
                               enable, reset, width, signed)
 
@@ -2518,7 +2518,7 @@ class ReduceDiv(_Accumulator):
     ops = ()
 
     def __init__(self, right, size=None, initval=0,
-                 enable=None, reset=None, width=32, signed=False):
+                 enable=None, reset=None, width=32, signed=True):
         raise NotImplementedError()
         _Accumulator.__init__(self, right, size, initval,
                               enable, reset, width, signed)
@@ -2527,7 +2527,7 @@ class ReduceDiv(_Accumulator):
 class ReduceCustom(_Accumulator):
 
     def __init__(self, ops, right, size=None, initval=0,
-                 enable=None, reset=None, width=32, signed=False, label=None):
+                 enable=None, reset=None, width=32, signed=True, label=None):
         _Accumulator.__init__(self, right, size, initval,
                               enable, reset, width, signed)
         if not isinstance(ops, (tuple, list)):
@@ -2572,7 +2572,7 @@ class Pulse(_Accumulator):
 
 
 def _ReduceValid(cls, right, size, initval=0,
-                 enable=None, reset=None, width=32, signed=False):
+                 enable=None, reset=None, width=32, signed=True):
 
     data = cls(right, size, initval,
                enable, reset, width, signed)
@@ -2582,7 +2582,7 @@ def _ReduceValid(cls, right, size, initval=0,
 
 
 def ReduceAddValid(right, size, initval=0,
-                   enable=None, reset=None, width=32, signed=False):
+                   enable=None, reset=None, width=32, signed=True):
 
     cls = ReduceAdd
     return _ReduceValid(cls, right, size, initval,
@@ -2590,7 +2590,7 @@ def ReduceAddValid(right, size, initval=0,
 
 
 def ReduceSubValid(right, size, initval=0,
-                   enable=None, reset=None, width=32, signed=False):
+                   enable=None, reset=None, width=32, signed=True):
 
     cls = ReduceSub
     return _ReduceValid(cls, right, size, initval,
@@ -2598,7 +2598,7 @@ def ReduceSubValid(right, size, initval=0,
 
 
 def ReduceMulValid(right, size, initval=0,
-                   enable=None, reset=None, width=32, signed=False):
+                   enable=None, reset=None, width=32, signed=True):
 
     cls = ReduceMul
     return _ReduceValid(cls, right, size, initval,
@@ -2606,7 +2606,7 @@ def ReduceMulValid(right, size, initval=0,
 
 
 def ReduceDivValid(right, size, initval=0,
-                   enable=None, reset=None, width=32, signed=False):
+                   enable=None, reset=None, width=32, signed=True):
 
     cls = ReduceDiv
     return _ReduceValid(cls, right, size, initval,
@@ -2614,7 +2614,7 @@ def ReduceDivValid(right, size, initval=0,
 
 
 def ReduceCustomValid(ops, right, size, initval=0,
-                      enable=None, reset=None, width=32, signed=False):
+                      enable=None, reset=None, width=32, signed=True):
 
     data = ReduceCustom(ops, right, size, initval,
                         enable, reset, width, signed)

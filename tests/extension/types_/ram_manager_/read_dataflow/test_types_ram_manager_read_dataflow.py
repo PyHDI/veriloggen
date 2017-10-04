@@ -5,7 +5,7 @@ import types_ram_manager_read_dataflow
 
 expected_verilog = """
 module test;
-  
+
   reg CLK;
   reg RST;
 
@@ -100,7 +100,7 @@ module main
   reg _tmp_12;
   reg _tmp_13;
   reg [7-1:0] _tmp_14;
-  wire [32-1:0] __variable_data_15;
+  wire signed [32-1:0] __variable_data_15;
   wire __variable_valid_15;
   wire __variable_ready_15;
   assign __variable_ready_15 = 1;

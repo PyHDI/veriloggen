@@ -254,7 +254,7 @@ class SyncRAMManager(object):
         return rdata, rvalid
 
     def read_dataflow(self, port, addr, length=1,
-                      stride=1, cond=None, point=0, signed=False):
+                      stride=1, cond=None, point=0, signed=True):
         """ 
         @return data, last, done
         """
@@ -326,13 +326,13 @@ class SyncRAMManager(object):
 
         df_data = df.Variable(data, data_valid, data_ready,
                               width=self.datawidth, point=point, signed=signed)
-        df_last = df.Variable(last, last_valid, last_ready, width=1)
+        df_last = df.Variable(last, last_valid, last_ready, width=1, signed=False)
         done = last
 
         return df_data, df_last, done
 
     def read_dataflow_pattern(self, port, addr, pattern,
-                              cond=None, point=0, signed=False):
+                              cond=None, point=0, signed=True):
         """ 
         @return data, last, done
         """
@@ -492,13 +492,13 @@ class SyncRAMManager(object):
 
         df_data = df.Variable(data, data_valid, data_ready,
                               width=self.datawidth, point=point, signed=signed)
-        df_last = df.Variable(last, last_valid, last_ready, width=1)
+        df_last = df.Variable(last, last_valid, last_ready, width=1, signed=False)
         done = last
 
         return df_data, df_last, done
 
     def read_dataflow_multidim(self, port, addr, shape, order=None,
-                               cond=None, point=0, signed=False):
+                               cond=None, point=0, signed=True):
         """ 
         @return data, last, done
         """
@@ -513,7 +513,7 @@ class SyncRAMManager(object):
     def read_dataflow_reuse(self, port, addr, length=1,
                             stride=1,
                             reuse_size=1, num_outputs=1,
-                            cond=None, point=0, signed=False):
+                            cond=None, point=0, signed=True):
         """ 
         @return data, last, done
         """
@@ -649,7 +649,7 @@ class SyncRAMManager(object):
 
         df = self.df if self.df is not None else dataflow
 
-        df_last = df.Variable(last, last_valid, last_ready, width=1)
+        df_last = df.Variable(last, last_valid, last_ready, width=1, signed=False)
         done = last
 
         df_reuse_data = [df.Variable(d, v, r,
@@ -660,7 +660,7 @@ class SyncRAMManager(object):
 
     def read_dataflow_reuse_pattern(self, port, addr, pattern,
                                     reuse_size=1, num_outputs=1,
-                                    cond=None, point=0, signed=False):
+                                    cond=None, point=0, signed=True):
         """ 
         @return data, last, done
         """
@@ -944,7 +944,7 @@ class SyncRAMManager(object):
 
         df = self.df if self.df is not None else dataflow
 
-        df_last = df.Variable(last, last_valid, last_ready, width=1)
+        df_last = df.Variable(last, last_valid, last_ready, width=1, signed=False)
         done = last
 
         df_reuse_data = [df.Variable(d, v, r,
@@ -955,7 +955,7 @@ class SyncRAMManager(object):
 
     def read_dataflow_reuse_multidim(self, port, addr, shape, order=None,
                                      reuse_size=1, num_outputs=1,
-                                     cond=None, point=0, signed=False):
+                                     cond=None, point=0, signed=True):
         """ 
         @return data, last, done
         """

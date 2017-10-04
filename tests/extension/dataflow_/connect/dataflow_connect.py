@@ -18,7 +18,7 @@ def mkMain(n=128, datawidth=32, numports=2):
     clk = m.Input('CLK')
     rst = m.Input('RST')
 
-    x = dataflow.Variable()
+    x = dataflow.Variable(signed=False)
     y = x + 1
     z = y + 1
 
@@ -26,7 +26,7 @@ def mkMain(n=128, datawidth=32, numports=2):
     z.output('zdata', 'zvalid', 'zready')
 
     # source variable
-    xsrc = dataflow.Variable('xdata', 'xvalid', 'xready')
+    xsrc = dataflow.Variable('xdata', 'xvalid', 'xready', signed=False)
     # connect a variable to the variable that has no input_data
     x.connect(xsrc)
 

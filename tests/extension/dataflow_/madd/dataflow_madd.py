@@ -15,8 +15,7 @@ def mkMain():
     # input variiable
     x = dataflow.Variable('xdata', valid='xvalid', ready='xready')
     y = dataflow.Variable('ydata', valid='yvalid', ready='yready')
-    reset = dataflow.Variable(
-        'resetdata', valid='resetvalid', ready='resetready')
+    reset = dataflow.Variable('resetdata', valid='resetvalid', ready='resetready')
 
     # dataflow definition
     v = x * y

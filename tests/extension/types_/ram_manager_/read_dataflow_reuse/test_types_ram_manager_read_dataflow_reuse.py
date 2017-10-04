@@ -113,11 +113,11 @@ module main
   reg __tmp_fsm_0_cond_7_4_1;
   reg __tmp_fsm_0_cond_7_4_2;
   reg __tmp_fsm_0_cond_10_5_1;
-  wire [32-1:0] __variable_data_18;
+  wire signed [32-1:0] __variable_data_18;
   wire __variable_valid_18;
   wire __variable_ready_18;
   assign __variable_ready_18 = 1;
-  wire [32-1:0] __variable_data_19;
+  wire signed [32-1:0] __variable_data_19;
   wire __variable_valid_19;
   wire __variable_ready_19;
   assign __variable_ready_19 = 1;

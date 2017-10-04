@@ -780,7 +780,7 @@ module blinkled
   localparam _mystream_fsm_12_init = 0;
   reg [33-1:0] _tmp_78;
   reg _tmp_79;
-  wire [32-1:0] _plus_data_80;
+  wire signed [32-1:0] _plus_data_80;
   wire _plus_valid_80;
   wire _plus_ready_80;
   assign _plus_ready_80 = (_tmp_78 > 0) && !_tmp_79;
@@ -1554,7 +1554,7 @@ module blinkled
     end
   end
 
-  reg [32-1:0] _plus_data_229;
+  reg signed [32-1:0] _plus_data_229;
   reg _plus_valid_229;
   wire _plus_ready_229;
   assign _tmp_40 = 1 && ((_plus_ready_229 || !_plus_valid_229) && (_tmp_38 && _tmp_58));

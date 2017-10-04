@@ -4,10 +4,12 @@ from __future__ import print_function
 from functools import partial
 from collections import OrderedDict
 from math import log
+
 import veriloggen.core.vtypes as vtypes
 import veriloggen.types.fixed as fx
 import veriloggen.types.rom as rom
 from veriloggen.seq.seq import make_condition as _make_condition
+
 from . import mul
 from . import div
 
@@ -36,18 +38,18 @@ def Constant(value, fixed=True, point=0):
     raise TypeError("Unsupported type for Constant '%s'" % str(type(value)))
 
 
-def Variable(data=None, width=32, point=0, signed=False):
+def Variable(data=None, width=32, point=0, signed=True):
     return _Variable(data, width, point, signed)
 
 
-def Parameter(name, value, width=32, point=0, signed=False):
+def Parameter(name, value, width=32, point=0, signed=True):
     """ parameter with an immediate value """
     if not isinstance(name, str):
         raise TypeError("'name' must be str, not '%s'" % str(tyep(name)))
     return _ParameterVariable(name, width, point, signed, value=value)
 
 
-def ParameterVariable(data, width=32, point=0, signed=False):
+def ParameterVariable(data, width=32, point=0, signed=True):
     """ parameter with an existing object """
     if isinstance(data, float):
         return Constant(data, point=point)
@@ -1184,6 +1186,7 @@ def OrList(*args):
         left = Lor(left, right)
     return left
 
+
 Ands = AndList
 Ors = OrList
 
@@ -1462,7 +1465,7 @@ class CustomOp(_SpecialOperator):
 class LUT(_SpecialOperator):
     latency = 1
 
-    def __init__(self, address, patterns, width=32, point=0, signed=False):
+    def __init__(self, address, patterns, width=32, point=0, signed=True):
         _SpecialOperator.__init__(self, address)
         self.op = None
         self.width = width
@@ -1601,7 +1604,7 @@ class _Constant(_Numeric):
 
 class _Variable(_Numeric):
 
-    def __init__(self, data=None, width=32, point=0, signed=False):
+    def __init__(self, data=None, width=32, point=0, signed=True):
         _Numeric.__init__(self)
         self.input_data = data
         if isinstance(self.input_data, _Numeric):
@@ -1727,7 +1730,7 @@ class _Variable(_Numeric):
 
 class _ParameterVariable(_Variable):
 
-    def __init__(self, data, width=32, point=0, signed=False, value=None):
+    def __init__(self, data, width=32, point=0, signed=True, value=None):
         if isinstance(data, _Numeric):
             raise TypeError(
                 "_ParameterVariable cannot receive type '%s'" % str(type(data)))
@@ -1767,18 +1770,32 @@ class _Accumulator(_UnaryOperator):
     latency = 1
     ops = (vtypes.Plus, )
 
-    def __init__(self, right, initval=None, enable=None, reset=None, width=32, signed=False):
-        self.initval = _to_constant(
-            initval) if initval is not None else _to_constant(0)
-        self.enable = _to_constant(enable)
-        if self.enable is not None:
-            self.enable._add_sink(self)
-        self.reset = _to_constant(reset)
-        if self.reset is not None:
-            self.reset._add_sink(self)
+    def __init__(self, right, size=None, initval=None,
+                 enable=None, reset=None, width=32, signed=True):
+
+        self.size = _to_constant(size) if size is not None else None
+
+        if (self.size is not None and
+            not isinstance(self.size, _Constant) and
+                not isinstance(self.size, _ParameterVariable)):
+            raise TypeError("size must be _Constant or _ParameterVariable, not '%s'" %
+                            str(type(self.size)))
+
+        self.initval = (_to_constant(initval)
+                        if initval is not None else _to_constant(0))
+
         if not isinstance(self.initval, _Constant):
             raise TypeError("initval must be Constant, not '%s'" %
                             str(type(self.initval)))
+
+        self.enable = _to_constant(enable)
+        if self.enable is not None:
+            self.enable._add_sink(self)
+
+        self.reset = _to_constant(reset)
+        if self.reset is not None:
+            self.reset._add_sink(self)
+
         _UnaryOperator.__init__(self, right)
         self.width = width
         self.signed = signed
@@ -1801,18 +1818,31 @@ class _Accumulator(_UnaryOperator):
             raise ValueError("Latency mismatch '%d' vs '%s'" %
                              (self.latency, 1))
 
+        size_data = self.size.sig_data if self.size is not None else None
         initval_data = self.initval.sig_data
 
         width = self.bit_length()
         signed = self.get_signed()
 
-        rdata = self.right.sig_data
-        enabledata = self.enable.sig_data if self.enable is not None else None
-        resetdata = self.reset.sig_data if self.reset is not None else None
+        # for Pulse
+        if not self.ops and self.size is not None:
+            width = 1
 
         data = m.Reg(self.name('data'), width,
                      initval=initval_data, signed=signed)
+
+        if self.size is not None:
+            count = m.Reg(self.name('count'),
+                          size_data.bit_length() + 1, initval=0)
+            next_count_value = vtypes.Mux(count == size_data - 1,
+                                          0, count + 1)
+            count_zero = (count == 0)
+
         self.sig_data = data
+
+        rdata = self.right.sig_data
+        enabledata = self.enable.sig_data if self.enable is not None else None
+        resetdata = self.reset.sig_data if self.reset is not None else None
 
         value = data
         for op in self.ops:
@@ -1827,11 +1857,11 @@ class _Accumulator(_UnaryOperator):
                 raise TypeError("Operator '%s' returns unsupported object type '%s'."
                                 % (str(op), str(type(value))))
 
-        # for Ireg
-        if not self.ops:
-            value = rdata
+        # for Pulse
+        if not self.ops and self.size is not None:
+            value = (count == (size_data - 1))
 
-        if self.reset is not None:
+        if self.reset is not None or self.size is not None:
             reset_value = initval_data
             for op in self.ops:
                 if not isinstance(op, type):
@@ -1845,80 +1875,193 @@ class _Accumulator(_UnaryOperator):
                     raise TypeError("Operator '%s' returns unsupported object type '%s'."
                                     % (str(op), str(type(reset_value))))
 
+            if not self.ops and self.size is not None:
+                reset_value = (count == (size_data - 1))
+
         if self.enable is not None:
             enable_cond = _and_vars(svalid, senable, enabledata)
             seq(data(value), cond=enable_cond)
+
+            if self.size is not None:
+                seq(count(next_count_value), cond=enable_cond)
+
         else:
             enable_cond = _and_vars(svalid, senable)
             seq(data(value), cond=enable_cond)
+
+            if self.size is not None:
+                seq(count(next_count_value), cond=enable_cond)
 
         if self.reset is not None:
             if self.enable is None:
                 reset_cond = _and_vars(svalid, senable, resetdata)
                 seq(data(reset_value), cond=reset_cond)
+
+                if self.size is not None:
+                    seq(count(0), cond=reset_cond)
+                    reset_cond = _and_vars(svalid, senable, count_zero)
+                    seq(data(reset_value), cond=reset_cond)
+
             else:
                 reset_cond = _and_vars(svalid, senable, resetdata)
                 seq(data(initval_data), cond=reset_cond)
+
                 reset_enable_cond = _and_vars(
                     svalid, senable, enabledata, resetdata)
                 seq(data(reset_value), cond=reset_enable_cond)
 
+                if self.size is not None:
+                    seq(count(0), cond=reset_enable_cond)
+                    reset_enable_cond = _and_vars(
+                        svalid, senable, enabledata, count_zero)
+                    seq(data(reset_value), cond=reset_enable_cond)
 
-class Ireg(_Accumulator):
-    ops = ()
+        elif self.size is not None:
+            if self.enable is not None:
+                reset_enable_cond = _and_vars(
+                    svalid, senable, enabledata, count_zero)
+                seq(data(reset_value), cond=reset_enable_cond)
+            else:
+                reset_cond = _and_vars(svalid, senable, count_zero)
+                seq(data(reset_value), cond=reset_cond)
 
-    def __init__(self, right, initval=0, enable=None, reset=None, width=32, signed=False):
-        _Accumulator.__init__(self, right, initval,
-                              enable, reset, width, signed)
-        self.label = 'reg'
 
-
-class Iadd(_Accumulator):
+class ReduceAdd(_Accumulator):
     ops = (vtypes.Plus, )
 
-    def __init__(self, right, initval=0, enable=None, reset=None, width=32, signed=False):
-        _Accumulator.__init__(self, right, initval,
+    def __init__(self, right, size=None, initval=0,
+                 enable=None, reset=None, width=32, signed=True):
+        _Accumulator.__init__(self, right, size, initval,
                               enable, reset, width, signed)
 
 
-class Isub(_Accumulator):
+class ReduceSub(_Accumulator):
     ops = (vtypes.Minus, )
 
-    def __init__(self, right, initval=0, enable=None, reset=None, width=32, signed=False):
-        _Accumulator.__init__(self, right, initval,
+    def __init__(self, right, size=None, initval=0,
+                 enable=None, reset=None, width=32, signed=True):
+        _Accumulator.__init__(self, right, size, initval,
                               enable, reset, width, signed)
 
 
-class Imul(_Accumulator):
-    #latency = 6
+class ReduceMul(_Accumulator):
     latency = 1
     ops = (vtypes.Times, )
 
-    def __init__(self, right, initval=1, enable=None, reset=None, width=32, signed=False):
-        _Accumulator.__init__(self, right, initval,
+    def __init__(self, right, size=None, initval=0,
+                 enable=None, reset=None, width=32, signed=True):
+        _Accumulator.__init__(self, right, size, initval,
                               enable, reset, width, signed)
 
 
-class Idiv(_Accumulator):
+class ReduceDiv(_Accumulator):
     latency = 32
-    op = ()
+    ops = ()
 
-    def __init__(self, right, initval=1, enable=None, reset=None, width=32, signed=False):
+    def __init__(self, right, size=None, initval=0,
+                 enable=None, reset=None, width=32, signed=True):
         raise NotImplementedError()
-        _Accumulator.__init__(self, right, initval,
+        _Accumulator.__init__(self, right, size, initval,
                               enable, reset, width, signed)
 
 
-class Icustom(_Accumulator):
+class ReduceCustom(_Accumulator):
 
-    def __init__(self, ops, right, initval=0, enable=None, reset=None,
-                 width=32, signed=False, label=None):
-        _Accumulator.__init__(self, right, initval,
+    def __init__(self, ops, right, size=None, initval=0,
+                 enable=None, reset=None, width=32, signed=True, label=None):
+        _Accumulator.__init__(self, right, size, initval,
                               enable, reset, width, signed)
         if not isinstance(ops, (tuple, list)):
             ops = tuple([ops])
         self.ops = ops
         self.label = label
+
+
+class Counter(_Accumulator):
+
+    def __init__(self, step=1, size=None, initval=0,
+                 control=None, enable=None, reset=None, width=32, signed=False):
+
+        self.ops = (lambda x, y: x + step, )
+
+        if control is None:
+            control = 0
+
+        initval -= step
+
+        _Accumulator.__init__(self, control, size, initval,
+                              enable, reset, width, signed)
+        self.label = 'Counter'
+
+
+class Pulse(_Accumulator):
+    ops = ()
+
+    def __init__(self, size, control=None, enable=None, reset=None):
+
+        if control is None:
+            control = 0
+
+        step = 1
+        initval = 0
+        width = 1
+        signed = False
+
+        _Accumulator.__init__(self, control, size, initval,
+                              enable, reset, width, signed)
+        self.label = 'Pulse'
+
+
+def _ReduceValid(cls, right, size, initval=0,
+                 enable=None, reset=None, width=32, signed=True):
+
+    data = cls(right, size, initval,
+               enable, reset, width, signed)
+    valid = Pulse(size, right, enable, reset)
+
+    return data, valid
+
+
+def ReduceAddValid(right, size, initval=0,
+                   enable=None, reset=None, width=32, signed=True):
+
+    cls = ReduceAdd
+    return _ReduceValid(cls, right, size, initval,
+                        enable, reset, width, signed)
+
+
+def ReduceSubValid(right, size, initval=0,
+                   enable=None, reset=None, width=32, signed=True):
+
+    cls = ReduceSub
+    return _ReduceValid(cls, right, size, initval,
+                        enable, reset, width, signed)
+
+
+def ReduceMulValid(right, size, initval=0,
+                   enable=None, reset=None, width=32, signed=True):
+
+    cls = ReduceMul
+    return _ReduceValid(cls, right, size, initval,
+                        enable, reset, width, signed)
+
+
+def ReduceDivValid(right, size, initval=0,
+                   enable=None, reset=None, width=32, signed=True):
+
+    cls = ReduceDiv
+    return _ReduceValid(cls, right, size, initval,
+                        enable, reset, width, signed)
+
+
+def ReduceCustomValid(ops, right, size, initval=0,
+                      enable=None, reset=None, width=32, signed=True):
+
+    data = ReduceCustom(ops, right, size, initval,
+                        enable, reset, width, signed)
+    valid = Pulse(size, right, enable, reset)
+
+    return data, valid
 
 
 class Int(_Constant):
@@ -1966,101 +2109,6 @@ class Str(_Constant):
         self.width = 0
         self.point = 0
         self.signed = False
-
-
-def _RegionAcc(op, right, size, initval=0, enable=None, reset=None,
-               width=32, signed=False, filter=False, filter_value=0):
-
-    counter = Counter(1, maxval=size, initval=0, enable=enable, reset=reset)
-
-    valid = (counter == size - 1).prev(1)
-
-    if enable is not None:
-        valid = Land(valid, enable)
-
-    if reset is None:
-        reset = valid.prev(1)
-    else:
-        reset = Lor(reset, valid.prev(1))
-
-    comp = op(right, initval=initval, enable=enable,
-              reset=reset, width=width, signed=signed)
-    if filter:
-        comp = Mux(valid, comp, filter_value)
-
-    return comp, valid
-
-
-def RegionReg(right, size, initval=0, enable=None, reset=None,
-              width=32, signed=False, filter=False, filter_value=0):
-    return _RegionAcc(Ireg, right, size, initval, enable, reset,
-                      width, signed, filter, filter_value)
-
-
-def RegionAdd(right, size, initval=0, enable=None, reset=None,
-              width=32, signed=False, filter=False, filter_value=0):
-    return _RegionAcc(Iadd, right, size, initval, enable, reset,
-                      width, signed, filter, filter_value)
-
-
-def RegionSub(right, size, initval=0, enable=None, reset=None,
-              width=32, signed=False, filter=False, filter_value=0):
-    return _RegionAcc(Isub, right, size, initval, enable, reset,
-                      width, signed, filter, filter_value)
-
-
-def RegionMul(right, size, initval=0, enable=None, reset=None,
-              width=32, signed=False, filter=False, filter_value=0):
-    return _RegionAcc(Imul, right, size, initval, enable, reset,
-                      width, signed, filter, filter_value)
-
-
-def RegionDiv(right, size, initval=0, enable=None, reset=None,
-              width=32, signed=False, filter=False, filter_value=0):
-    return _RegionAcc(Idiv, right, size, initval, enable, reset,
-                      width, signed, filter, filter_value)
-
-
-def RegionCustom(ops, right, size, initval=0, enable=None, reset=None,
-                 width=32, signed=False, filter=False, filter_value=0):
-    op = partial(Icustom, ops)
-    return _RegionAcc(op, right, size, initval, enable, reset,
-                      width, signed, filter, filter_value)
-
-
-def Counter(step=None, maxval=None, initval=0, enable=None, reset=None, width=32, signed=False):
-    if step is None:
-        step = 1
-
-    step = _to_constant(step)
-    if not isinstance(step, _Constant):
-        raise TypeError("'step' must be constant")
-    raw_step = step.value
-
-    initval = _to_constant(initval)
-    if not isinstance(initval, _Constant):
-        raise TypeError("'initval' must be constant")
-    raw_initval = initval.value
-
-    if maxval is None:
-        return Icustom(lambda a, b: a + b,
-                       step, initval=initval, enable=enable, reset=reset,
-                       width=width, signed=signed,
-                       label='Counter')
-
-    #maxval = _to_constant(maxval)
-    # if not isinstance(maxval, _Constant):
-    #    raise TypeError("'maxval' must be constant")
-    #raw_maxval = maxval.value
-
-    # return Icustom(lambda a, b: vtypes.Mux(a >= raw_maxval - raw_step, raw_initval, a + b),
-    #               step, initval=initval, enable=enable, reset=reset,
-    #               width=width, signed=signed,
-    #               label='Counter')
-    return Icustom(lambda a, b: vtypes.Mux(a >= maxval - raw_step, raw_initval, a + b),
-                   step, initval=initval, enable=enable, reset=reset,
-                   width=width, signed=signed,
-                   label='Counter')
 
 
 def make_condition(*cond, **kwargs):
@@ -2165,6 +2213,6 @@ def _from_vtypes_value(value):
         return Str(value.value)
 
     if isinstance(value, vtypes._Numeric):
-        return Variable(value)
+        return ParameterVariable(value)
 
     raise TypeError("Unsupported type '%s'" % str(type(value)))

@@ -8,16 +8,16 @@ module test;
 
   reg CLK;
   reg RST;
-  reg [32-1:0] xdata;
+  reg signed [32-1:0] xdata;
   reg xvalid;
   wire xready;
-  reg [32-1:0] ydata;
+  reg signed [32-1:0] ydata;
   reg yvalid;
   wire yready;
-  reg [32-1:0] resetdata;
+  reg signed [32-1:0] resetdata;
   reg resetvalid;
   wire resetready;
-  wire [32-1:0] zdata;
+  wire signed [32-1:0] zdata;
   wire zvalid;
   reg zready;
 
@@ -781,25 +781,25 @@ module main
 (
   input CLK,
   input RST,
-  input [32-1:0] xdata,
+  input signed [32-1:0] xdata,
   input xvalid,
   output xready,
-  input [32-1:0] ydata,
+  input signed [32-1:0] ydata,
   input yvalid,
   output yready,
-  input [32-1:0] resetdata,
+  input signed [32-1:0] resetdata,
   input resetvalid,
   output resetready,
-  output [32-1:0] zdata,
+  output signed [32-1:0] zdata,
   output zvalid,
   input zready
 );
 
-  wire [32-1:0] _times_data_0;
+  wire signed [32-1:0] _times_data_0;
   wire _times_valid_0;
   wire _times_ready_0;
-  wire [64-1:0] _times_odata_0;
-  reg [64-1:0] _times_data_reg_0;
+  wire signed [64-1:0] _times_odata_0;
+  reg signed [64-1:0] _times_data_reg_0;
   assign _times_data_0 = _times_data_reg_0;
   wire _times_ovalid_0;
   reg _times_valid_reg_0;
@@ -824,35 +824,35 @@ module main
 
   assign xready = (_times_ready_0 || !_times_valid_0) && (xvalid && yvalid);
   assign yready = (_times_ready_0 || !_times_valid_0) && (xvalid && yvalid);
-  reg [32-1:0] __delay_data_1;
+  reg signed [32-1:0] __delay_data_1;
   reg __delay_valid_1;
   wire __delay_ready_1;
   assign resetready = (__delay_ready_1 || !__delay_valid_1) && resetvalid;
-  reg [32-1:0] __delay_data_2;
+  reg signed [32-1:0] __delay_data_2;
   reg __delay_valid_2;
   wire __delay_ready_2;
   assign __delay_ready_1 = (__delay_ready_2 || !__delay_valid_2) && __delay_valid_1;
-  reg [32-1:0] __delay_data_3;
+  reg signed [32-1:0] __delay_data_3;
   reg __delay_valid_3;
   wire __delay_ready_3;
   assign __delay_ready_2 = (__delay_ready_3 || !__delay_valid_3) && __delay_valid_2;
-  reg [32-1:0] __delay_data_4;
+  reg signed [32-1:0] __delay_data_4;
   reg __delay_valid_4;
   wire __delay_ready_4;
   assign __delay_ready_3 = (__delay_ready_4 || !__delay_valid_4) && __delay_valid_3;
-  reg [32-1:0] __delay_data_5;
+  reg signed [32-1:0] __delay_data_5;
   reg __delay_valid_5;
   wire __delay_ready_5;
   assign __delay_ready_4 = (__delay_ready_5 || !__delay_valid_5) && __delay_valid_4;
-  reg [32-1:0] __delay_data_6;
+  reg signed [32-1:0] __delay_data_6;
   reg __delay_valid_6;
   wire __delay_ready_6;
   assign __delay_ready_5 = (__delay_ready_6 || !__delay_valid_6) && __delay_valid_5;
-  reg [32-1:0] __delay_data_7;
+  reg signed [32-1:0] __delay_data_7;
   reg __delay_valid_7;
   wire __delay_ready_7;
   assign __delay_ready_6 = (__delay_ready_7 || !__delay_valid_7) && __delay_valid_6;
-  reg [32-1:0] _reduceadd_data_8;
+  reg signed [32-1:0] _reduceadd_data_8;
   reg _reduceadd_valid_8;
   wire _reduceadd_ready_8;
   assign _times_ready_0 = (_reduceadd_ready_8 || !_reduceadd_valid_8) && (_times_valid_0 && __delay_valid_7);
@@ -1036,15 +1036,15 @@ module multiplier_core_0
   output [64-1:0] c
 );
 
-  reg [32-1:0] _a;
-  reg [32-1:0] _b;
+  reg signed [32-1:0] _a;
+  reg signed [32-1:0] _b;
   reg signed [64-1:0] _tmpval0;
   reg signed [64-1:0] _tmpval1;
   reg signed [64-1:0] _tmpval2;
   reg signed [64-1:0] _tmpval3;
   reg signed [64-1:0] _tmpval4;
   wire signed [64-1:0] rslt;
-  assign rslt = $signed({ 1'd0, _a }) * $signed({ 1'd0, _b });
+  assign rslt = _a * _b;
   assign c = _tmpval4;
 
   always @(posedge CLK) begin

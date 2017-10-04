@@ -588,7 +588,7 @@ module blinkled
   localparam _mystream_fsm_9_init = 0;
   reg [33-1:0] _tmp_50;
   reg _tmp_51;
-  wire [32-1:0] _times_data_52;
+  wire signed [32-1:0] _times_data_52;
   wire _times_valid_52;
   wire _times_ready_52;
   assign _times_ready_52 = (_tmp_50 > 0) && !_tmp_51;
@@ -1596,19 +1596,19 @@ module blinkled
     end
   end
 
-  reg [32-1:0] _plus_data_275;
+  reg signed [32-1:0] _plus_data_275;
   reg _plus_valid_275;
   wire _plus_ready_275;
   assign _tmp_28 = 1 && ((_plus_ready_275 || !_plus_valid_275) && _tmp_26);
-  reg [32-1:0] _plus_data_276;
+  reg signed [32-1:0] _plus_data_276;
   reg _plus_valid_276;
   wire _plus_ready_276;
   assign _tmp_40 = 1 && ((_plus_ready_276 || !_plus_valid_276) && _tmp_38);
-  wire [32-1:0] _times_data_277;
+  wire signed [32-1:0] _times_data_277;
   wire _times_valid_277;
   wire _times_ready_277;
-  wire [64-1:0] _times_odata_277;
-  reg [64-1:0] _times_data_reg_277;
+  wire signed [64-1:0] _times_odata_277;
+  reg signed [64-1:0] _times_data_reg_277;
   assign _times_data_277 = _times_data_reg_277;
   wire _times_ovalid_277;
   reg _times_valid_reg_277;
@@ -4393,15 +4393,15 @@ module multiplier_core_0
   output [64-1:0] c
 );
 
-  reg [32-1:0] _a;
-  reg [32-1:0] _b;
+  reg signed [32-1:0] _a;
+  reg signed [32-1:0] _b;
   reg signed [64-1:0] _tmpval0;
   reg signed [64-1:0] _tmpval1;
   reg signed [64-1:0] _tmpval2;
   reg signed [64-1:0] _tmpval3;
   reg signed [64-1:0] _tmpval4;
   wire signed [64-1:0] rslt;
-  assign rslt = $signed({ 1'd0, _a }) * $signed({ 1'd0, _b });
+  assign rslt = _a * _b;
   assign c = _tmpval4;
 
   always @(posedge CLK) begin

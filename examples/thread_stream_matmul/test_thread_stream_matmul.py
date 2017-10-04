@@ -602,7 +602,7 @@ module blinkled
   reg [2-1:0] _tmp_50;
   reg _tmp_51;
   wire _tmp_all_valid_52;
-  wire [32-1:0] _reduceadd_data_53;
+  wire signed [32-1:0] _reduceadd_data_53;
   wire _reduceadd_valid_53;
   wire _reduceadd_ready_53;
   assign _reduceadd_ready_53 = (_tmp_50 > 0) && !_tmp_51 && _tmp_all_valid_52;
@@ -1070,11 +1070,11 @@ module blinkled
   assign __variable_valid_23 = _tmp_20;
   assign __variable_data_87 = _tmp_83;
   assign __variable_valid_87 = _tmp_84;
-  wire [32-1:0] _times_data_92;
+  wire signed [32-1:0] _times_data_92;
   wire _times_valid_92;
   wire _times_ready_92;
-  wire [64-1:0] _times_odata_92;
-  reg [64-1:0] _times_data_reg_92;
+  wire signed [64-1:0] _times_odata_92;
+  reg signed [64-1:0] _times_data_reg_92;
   assign _times_data_92 = _times_data_reg_92;
   wire _times_ovalid_92;
   reg _times_valid_reg_92;
@@ -1099,7 +1099,7 @@ module blinkled
 
   assign _tmp_28 = 1 && ((_times_ready_92 || !_times_valid_92) && (_tmp_26 && _tmp_38));
   assign _tmp_40 = 1 && ((_times_ready_92 || !_times_valid_92) && (_tmp_26 && _tmp_38));
-  reg [32-1:0] _reduceadd_data_93;
+  reg signed [32-1:0] _reduceadd_data_93;
   reg _reduceadd_valid_93;
   wire _reduceadd_ready_93;
   reg [33-1:0] _reduceadd_count_93;
@@ -2179,15 +2179,15 @@ module multiplier_core_0
   output [64-1:0] c
 );
 
-  reg [32-1:0] _a;
-  reg [32-1:0] _b;
+  reg signed [32-1:0] _a;
+  reg signed [32-1:0] _b;
   reg signed [64-1:0] _tmpval0;
   reg signed [64-1:0] _tmpval1;
   reg signed [64-1:0] _tmpval2;
   reg signed [64-1:0] _tmpval3;
   reg signed [64-1:0] _tmpval4;
   wire signed [64-1:0] rslt;
-  assign rslt = $signed({ 1'd0, _a }) * $signed({ 1'd0, _b });
+  assign rslt = _a * _b;
   assign c = _tmpval4;
 
   always @(posedge CLK) begin

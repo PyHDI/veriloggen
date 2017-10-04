@@ -7,8 +7,11 @@ expected_verilog = """
 module test #
 (
   parameter xparam = 100,
-  parameter [32-1:0] aparam = 10
- );
+  parameter signed [32-1:0] aparam = 10
+)
+(
+
+);
 
   reg CLK;
   reg RST;
@@ -57,7 +60,7 @@ endmodule
 module main #
 (
   parameter xparam = 100,
-  parameter [32-1:0] aparam = 10
+  parameter signed [32-1:0] aparam = 10
 )
 (
   input CLK,
@@ -65,61 +68,61 @@ module main #
 );
 
   reg [32-1:0] yparam;
-  wire [32-1:0] bparam;
-  wire [32-1:0] vdata;
-  wire [32-1:0] wdata;
-  reg [32-1:0] _plus_data_0;
+  wire signed [32-1:0] bparam;
+  wire signed [32-1:0] vdata;
+  wire signed [32-1:0] wdata;
+  reg signed [32-1:0] _plus_data_0;
   reg _plus_valid_0;
   wire _plus_ready_0;
-  reg [32-1:0] __delay_data_1;
+  reg signed [32-1:0] __delay_data_1;
   reg __delay_valid_1;
   wire __delay_ready_1;
-  reg [32-1:0] _plus_data_2;
+  reg signed [32-1:0] _plus_data_2;
   reg _plus_valid_2;
   wire _plus_ready_2;
   assign _plus_ready_0 = (_plus_ready_2 || !_plus_valid_2) && _plus_valid_0;
-  reg [32-1:0] __delay_data_3;
+  reg signed [32-1:0] __delay_data_3;
   reg __delay_valid_3;
   wire __delay_ready_3;
   assign __delay_ready_1 = (__delay_ready_3 || !__delay_valid_3) && __delay_valid_1;
-  reg [32-1:0] _plus_data_4;
+  reg signed [32-1:0] _plus_data_4;
   reg _plus_valid_4;
   wire _plus_ready_4;
   assign _plus_ready_2 = (_plus_ready_4 || !_plus_valid_4) && _plus_valid_2;
-  reg [32-1:0] __delay_data_5;
+  reg signed [32-1:0] __delay_data_5;
   reg __delay_valid_5;
   wire __delay_ready_5;
   assign __delay_ready_3 = (__delay_ready_5 || !__delay_valid_5) && __delay_valid_3;
-  reg [32-1:0] _plus_data_6;
+  reg signed [32-1:0] _plus_data_6;
   reg _plus_valid_6;
   wire _plus_ready_6;
   assign _plus_ready_4 = (_plus_ready_6 || !_plus_valid_6) && _plus_valid_4;
-  reg [32-1:0] __delay_data_7;
+  reg signed [32-1:0] __delay_data_7;
   reg __delay_valid_7;
   wire __delay_ready_7;
   assign __delay_ready_5 = (__delay_ready_7 || !__delay_valid_7) && __delay_valid_5;
-  reg [32-1:0] _plus_data_8;
+  reg signed [32-1:0] _plus_data_8;
   reg _plus_valid_8;
   wire _plus_ready_8;
   assign _plus_ready_6 = (_plus_ready_8 || !_plus_valid_8) && _plus_valid_6;
-  reg [32-1:0] __delay_data_9;
+  reg signed [32-1:0] __delay_data_9;
   reg __delay_valid_9;
   wire __delay_ready_9;
   assign __delay_ready_7 = (__delay_ready_9 || !__delay_valid_9) && __delay_valid_7;
-  reg [32-1:0] _plus_data_10;
+  reg signed [32-1:0] _plus_data_10;
   reg _plus_valid_10;
   wire _plus_ready_10;
   assign _plus_ready_8 = (_plus_ready_10 || !_plus_valid_10) && _plus_valid_8;
-  reg [32-1:0] __delay_data_11;
+  reg signed [32-1:0] __delay_data_11;
   reg __delay_valid_11;
   wire __delay_ready_11;
   assign __delay_ready_9 = (__delay_ready_11 || !__delay_valid_11) && __delay_valid_9;
-  reg [32-1:0] _plus_data_12;
+  reg signed [32-1:0] _plus_data_12;
   reg _plus_valid_12;
   wire _plus_ready_12;
   assign _plus_ready_10 = (_plus_ready_12 || !_plus_valid_12) && (_plus_valid_10 && __delay_valid_11);
   assign __delay_ready_11 = (_plus_ready_12 || !_plus_valid_12) && (_plus_valid_10 && __delay_valid_11);
-  wire [32-1:0] cdata;
+  wire signed [32-1:0] cdata;
   wire cvalid;
   assign cdata = _plus_data_12;
   assign cvalid = _plus_valid_12;

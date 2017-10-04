@@ -13,10 +13,10 @@ import veriloggen.dataflow as dataflow
 
 def mkMain():
     # input variiable
-    x = dataflow.Variable('xdata', valid='xvalid', ready='xready')
+    x = dataflow.Variable('xdata', valid='xvalid', ready='xready', signed=False)
 
     # dataflow definition
-    z = dataflow.ReduceAdd(x, initval=0)
+    z = dataflow.ReduceAdd(x, initval=0, signed=False)
 
     # set output attribute
     z.output('zdata', valid='zvalid', ready='zready')

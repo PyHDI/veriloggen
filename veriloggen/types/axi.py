@@ -611,7 +611,7 @@ class AxiMaster(object):
 
         return data, valid, last
 
-    def read_dataflow(self, counter=None, cond=None, point=0, signed=False):
+    def read_dataflow(self, counter=None, cond=None, point=0, signed=True):
         """
         @return data, last, done
         """
@@ -657,7 +657,7 @@ class AxiMaster(object):
 
         df_data = df.Variable(data, valid, data_ready,
                               point=point, signed=signed)
-        df_last = df.Variable(last, valid, last_ready, width=1)
+        df_last = df.Variable(last, valid, last_ready, width=1, signed=False)
         done = vtypes.Ands(last, self.rdata.rvalid, self.rdata.rready)
 
         return df_data, df_last, done
@@ -701,7 +701,8 @@ class AxiMaster(object):
 
         wdata = self.m.TmpReg(ram.datawidth, initval=0)
         wvalid = self.m.TmpReg(initval=0)
-        df_data = self.df.Variable(wdata, wvalid, width=ram.datawidth)
+        df_data = self.df.Variable(
+            wdata, wvalid, width=ram.datawidth, signed=False)
 
         done = ram.write_dataflow(
             ram_port, ram_addr, df_data, length,
@@ -790,7 +791,8 @@ class AxiMaster(object):
 
         wdata = self.m.TmpReg(ram.datawidth, initval=0)
         wvalid = self.m.TmpReg(initval=0)
-        df_data = self.df.Variable(wdata, wvalid, width=ram.datawidth)
+        df_data = self.df.Variable(
+            wdata, wvalid, width=ram.datawidth, signed=False)
 
         done = ram.write_dataflow(
             ram_port, ram_addr, df_data, length,
@@ -888,7 +890,8 @@ class AxiMaster(object):
         wdata_ram = self.m.TmpWire(ram.datawidth)
         wdata_ram.assign(wdata)
         wvalid = self.m.TmpReg(initval=0)
-        df_data = self.df.Variable(wdata_ram, wvalid, width=ram.datawidth)
+        df_data = self.df.Variable(
+            wdata_ram, wvalid, width=ram.datawidth, signed=False)
 
         done = ram.write_dataflow(
             ram_port, ram_addr, df_data, length,
@@ -1016,7 +1019,8 @@ class AxiMaster(object):
 
         wdata = self.m.TmpReg(ram.datawidth, initval=0)
         wvalid = self.m.TmpReg(initval=0)
-        df_data = self.df.Variable(wdata, wvalid, width=ram.datawidth)
+        df_data = self.df.Variable(
+            wdata, wvalid, width=ram.datawidth, signed=False)
 
         done = ram.write_dataflow_pattern(ram_port, ram_addr, df_data, pattern,
                                           cond=fsm)
@@ -1129,7 +1133,8 @@ class AxiMaster(object):
 
         wdata = self.m.TmpReg(ram.datawidth, initval=0)
         wvalid = self.m.TmpReg(initval=0)
-        df_data = self.df.Variable(wdata, wvalid, width=ram.datawidth)
+        df_data = self.df.Variable(
+            wdata, wvalid, width=ram.datawidth, signed=False)
 
         done = ram.write_dataflow_pattern(ram_port, ram_addr, df_data, pattern,
                                           cond=fsm)
@@ -1251,7 +1256,8 @@ class AxiMaster(object):
         wdata_ram = self.m.TmpWire(ram.datawidth)
         wdata_ram.assign(wdata)
         wvalid = self.m.TmpReg(initval=0)
-        df_data = self.df.Variable(wdata_ram, wvalid, width=ram.datawidth)
+        df_data = self.df.Variable(
+            wdata_ram, wvalid, width=ram.datawidth, signed=False)
 
         done = ram.write_dataflow_pattern(ram_port, ram_addr, df_data, pattern,
                                           cond=fsm)
@@ -1402,7 +1408,8 @@ class AxiMaster(object):
 
         wdata = self.m.TmpReg(ram.datawidth, initval=0)
         wvalid = self.m.TmpReg(initval=0)
-        df_data = self.df.Variable(wdata, wvalid, width=ram.datawidth)
+        df_data = self.df.Variable(
+            wdata, wvalid, width=ram.datawidth, signed=False)
 
         done = ram.write_dataflow(
             ram_port, ram_addr, df_data, length,
@@ -1446,7 +1453,8 @@ class AxiMaster(object):
 
         wdata = self.m.TmpReg(ram.datawidth, initval=0)
         wvalid = self.m.TmpReg(initval=0)
-        df_data = self.df.Variable(wdata, wvalid, width=ram.datawidth)
+        df_data = self.df.Variable(
+            wdata, wvalid, width=ram.datawidth, signed=False)
 
         done = ram.write_dataflow(
             ram_port, ram_addr, df_data, length,
@@ -1499,7 +1507,8 @@ class AxiMaster(object):
         wdata_ram = self.m.TmpWire(ram.datawidth)
         wdata_ram.assign(wdata)
         wvalid = self.m.TmpReg(initval=0)
-        df_data = self.df.Variable(wdata_ram, wvalid, width=ram.datawidth)
+        df_data = self.df.Variable(
+            wdata_ram, wvalid, width=ram.datawidth, signed=False)
 
         done = ram.write_dataflow(
             ram_port, ram_addr, df_data, length,
@@ -1569,7 +1578,7 @@ class AxiMaster(object):
         )
 
         data, last, done = ram.read_dataflow(
-            ram_port, ram_addr, length, stride=stride, cond=fsm)
+            ram_port, ram_addr, length, stride=stride, cond=fsm, signed=False)
         fsm.goto_next()
 
         check_state = fsm.current
@@ -1645,7 +1654,7 @@ class AxiMaster(object):
         )
 
         data, last, done = ram.read_dataflow(
-            ram_port, ram_addr, length, stride=stride, cond=fsm)
+            ram_port, ram_addr, length, stride=stride, cond=fsm, signed=False)
         fsm.goto_next()
 
         check_state = fsm.current
@@ -1701,7 +1710,8 @@ class AxiMaster(object):
             pack_count(0)
         )
 
-        df_data = self.df.Variable(wdata, wvalid, wready, width=self.datawidth)
+        df_data = self.df.Variable(
+            wdata, wvalid, wready, width=self.datawidth, signed=False)
 
         done = self.write_dataflow(df_data, counter, cond=fsm)
 
@@ -1752,7 +1762,7 @@ class AxiMaster(object):
         )
 
         data, last, done = ram.read_dataflow(
-            ram_port, ram_addr, length, stride=stride, cond=fsm)
+            ram_port, ram_addr, length, stride=stride, cond=fsm, signed=False)
         fsm.goto_next()
 
         check_state = fsm.current
@@ -1803,7 +1813,8 @@ class AxiMaster(object):
             pack_count(0)
         )
 
-        df_data = self.df.Variable(wdata, wvalid, wready, width=self.datawidth)
+        df_data = self.df.Variable(
+            wdata, wvalid, wready, width=self.datawidth, signed=False)
 
         done = self.write_dataflow(df_data, counter, cond=fsm)
 
@@ -1871,8 +1882,8 @@ class AxiMaster(object):
                 count(size - 1)
             )
 
-        data, last, done = ram.read_dataflow_pattern(ram_port, ram_addr, pattern,
-                                                     cond=fsm)
+        data, last, done = ram.read_dataflow_pattern(
+            ram_port, ram_addr, pattern, cond=fsm, signed=False)
         fsm.goto_next()
 
         check_state = fsm.current
@@ -1972,8 +1983,8 @@ class AxiMaster(object):
                 count(size - 1)
             )
 
-        data, last, done = ram.read_dataflow_pattern(ram_port, ram_addr, pattern,
-                                                     cond=fsm)
+        data, last, done = ram.read_dataflow_pattern(
+            ram_port, ram_addr, pattern, cond=fsm, signed=False)
         fsm.goto_next()
 
         check_state = fsm.current
@@ -2029,7 +2040,8 @@ class AxiMaster(object):
             pack_count(0)
         )
 
-        df_data = self.df.Variable(wdata, wvalid, wready, width=self.datawidth)
+        df_data = self.df.Variable(
+            wdata, wvalid, wready, width=self.datawidth, signed=False)
 
         done = self.write_dataflow(df_data, counter, cond=fsm)
 
@@ -2104,8 +2116,8 @@ class AxiMaster(object):
                 count(size - 1)
             )
 
-        data, last, done = ram.read_dataflow_pattern(ram_port, ram_addr, pattern,
-                                                     cond=fsm)
+        data, last, done = ram.read_dataflow_pattern(
+            ram_port, ram_addr, pattern, cond=fsm, signed=False)
         fsm.goto_next()
 
         check_state = fsm.current
@@ -2156,7 +2168,8 @@ class AxiMaster(object):
             pack_count(0)
         )
 
-        df_data = self.df.Variable(wdata, wvalid, wready, width=self.datawidth)
+        df_data = self.df.Variable(
+            wdata, wvalid, wready, width=self.datawidth, signed=False)
 
         done = self.write_dataflow(df_data, counter, cond=fsm)
 
@@ -2235,7 +2248,7 @@ class AxiMaster(object):
         fsm.If(ack).goto_next()
 
         data, last, done = ram.read_dataflow(
-            ram_port, ram_addr, length, stride=stride, cond=fsm)
+            ram_port, ram_addr, length, stride=stride, cond=fsm, signed=False)
         fsm.goto_next()
 
         done = self.write_dataflow(data, counter, cond=fsm)
@@ -2265,7 +2278,7 @@ class AxiMaster(object):
         fsm.If(ack).goto_next()
 
         data, last, done = ram.read_dataflow(
-            ram_port, ram_addr, length, stride=stride, cond=fsm)
+            ram_port, ram_addr, length, stride=stride, cond=fsm, signed=False)
         fsm.goto_next()
 
         wdata = self.m.TmpReg(ram.datawidth, initval=0)
@@ -2297,7 +2310,8 @@ class AxiMaster(object):
             pack_count(0)
         )
 
-        df_data = self.df.Variable(wdata, wvalid, wready, width=self.datawidth)
+        df_data = self.df.Variable(
+            wdata, wvalid, wready, width=self.datawidth, signed=False)
 
         done = self.write_dataflow(df_data, counter, cond=fsm)
         fsm.If(done).goto_init()
@@ -2326,7 +2340,7 @@ class AxiMaster(object):
         fsm.If(ack).goto_next()
 
         data, last, done = ram.read_dataflow(
-            ram_port, ram_addr, length, stride=stride, cond=fsm)
+            ram_port, ram_addr, length, stride=stride, cond=fsm, signed=False)
         fsm.goto_next()
 
         wdata = self.m.TmpReg(self.datawidth, initval=0)
@@ -2353,7 +2367,8 @@ class AxiMaster(object):
             pack_count(0)
         )
 
-        df_data = self.df.Variable(wdata, wvalid, wready, width=self.datawidth)
+        df_data = self.df.Variable(
+            wdata, wvalid, wready, width=self.datawidth, signed=False)
 
         done = self.write_dataflow(df_data, counter, cond=fsm)
         fsm.If(done).goto_init()
@@ -2778,10 +2793,10 @@ class AxiSlave(object):
 
         df = self.df if self.df is not None else _df
 
-        df_data = df.Variable(data, valid, data_ready)
+        df_data = df.Variable(data, valid, data_ready, signed=False)
         df_mask = df.Variable(mask, valid, mask_ready,
-                              width=self.datawidth // 4)
-        df_last = df.Variable(last, valid, last_ready, width=1)
+                              width=self.datawidth // 4, signed=False)
+        df_last = df.Variable(last, valid, last_ready, width=1, signed=False)
         done = vtypes.Ands(last, self.wdata.wvalid, self.wdata.wready)
 
         return df_data, df_mask, df_last, done

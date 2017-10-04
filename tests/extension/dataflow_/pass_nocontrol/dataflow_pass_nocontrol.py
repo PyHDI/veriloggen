@@ -11,7 +11,7 @@ import veriloggen.dataflow as dataflow
 
 def mkMain():
     # input variiable
-    x = dataflow.Variable('xdata')
+    x = dataflow.Variable('xdata', signed=False)
 
     # dataflow definition
     z = x

@@ -13,9 +13,9 @@ import veriloggen.dataflow as dataflow
 
 def mkMain():
     # input variiable
-    x = dataflow.Variable('xdata', valid='xvalid', ready='xready')
-    y = dataflow.Variable('ydata', valid='yvalid', ready='yready')
-    c = dataflow.Variable('cdata', valid='cvalid', ready='cready')
+    x = dataflow.Variable('xdata', valid='xvalid', ready='xready', signed=False)
+    y = dataflow.Variable('ydata', valid='yvalid', ready='yready', signed=False)
+    c = dataflow.Variable('cdata', valid='cvalid', ready='cready', signed=False)
 
     # dataflow definition
     z = x * y + c

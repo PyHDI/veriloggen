@@ -8,9 +8,9 @@ module test;
 
   reg CLK;
   reg RST;
-  reg [32-1:0] xdata;
-  reg [32-1:0] ydata;
-  wire [32-1:0] zdata;
+  reg signed [32-1:0] xdata;
+  reg signed [32-1:0] ydata;
+  wire signed [32-1:0] zdata;
 
   main
   uut
@@ -123,12 +123,12 @@ module main
 (
   input CLK,
   input RST,
-  input [32-1:0] xdata,
-  input [32-1:0] ydata,
-  output [32-1:0] zdata
+  input signed [32-1:0] xdata,
+  input signed [32-1:0] ydata,
+  output signed [32-1:0] zdata
 );
 
-  reg [32-1:0] _data_2;
+  reg signed [32-1:0] _data_2;
   assign zdata = _data_2;
 
   always @(posedge CLK) begin

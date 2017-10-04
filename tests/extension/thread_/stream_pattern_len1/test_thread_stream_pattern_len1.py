@@ -604,7 +604,7 @@ module blinkled
   localparam _mystream_fsm_7_init = 0;
   reg _tmp_64;
   reg _tmp_65;
-  wire [32-1:0] _plus_data_66;
+  wire signed [32-1:0] _plus_data_66;
   wire _plus_valid_66;
   wire _plus_ready_66;
   assign _plus_ready_66 = _tmp_65 && !_tmp_64;
@@ -1110,7 +1110,7 @@ module blinkled
     end
   end
 
-  reg [32-1:0] _plus_data_152;
+  reg signed [32-1:0] _plus_data_152;
   reg _plus_valid_152;
   wire _plus_ready_152;
   assign _tmp_28 = 1 && ((_plus_ready_152 || !_plus_valid_152) && (_tmp_26 && _tmp_45));

@@ -30,8 +30,8 @@ def mkMain():
     zvalid = m.Output('zvalid')
     zready = m.Input('zready')
 
-    x = dataflow.Variable(xdata, valid=xvalid, ready=xready)
-    y = dataflow.Variable(ydata, valid=yvalid, ready=yready)
+    x = dataflow.Variable(xdata, valid=xvalid, ready=xready, signed=False)
+    y = dataflow.Variable(ydata, valid=yvalid, ready=yready, signed=False)
 
     # dataflow definition
     z = x + y

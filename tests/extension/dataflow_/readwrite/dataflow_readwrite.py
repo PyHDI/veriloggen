@@ -22,10 +22,10 @@ def mkMain(n=128, datawidth=32, numports=2):
     xdata = m.Reg('xdata', 32, initval=0)
     xvalid = m.Reg('xvalid', initval=0)
     xready = m.Wire('xready')
-    x = dataflow.Variable(xdata, xvalid, xready)
+    x = dataflow.Variable(xdata, xvalid, xready, signed=False)
 
     # default type
-    y = dataflow.Variable('ydata', 'yvalid', 'yready')
+    y = dataflow.Variable('ydata', 'yvalid', 'yready', signed=False)
 
     z = x + y
     z.output('zdata', 'zvalid', 'zready')
