@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import thread_myverilog_ipcore
+import thread_verilog_submodule_ipcore
 
 expected_verilog = """
 module test #
@@ -2084,7 +2084,7 @@ endmodule
 
 def test():
     veriloggen.reset()
-    test_module = thread_myverilog_ipcore.mkTest()
+    test_module = thread_verilog_submodule_ipcore.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
