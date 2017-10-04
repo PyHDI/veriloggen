@@ -113,27 +113,23 @@ def mkMemcpy():
 
     datawidth = m.Parameter('DATA_WIDTH', datawidth)
     addrwidth = m.Parameter('ADDR_WIDTH', addrwidth)
-    
-    # import verilog submodule 
+
+    # import verilog submodule
+    start = m.Reg('start', initval=0)
+    busy = m.Wire('busy')
+    size = m.Reg('size', addrwidth, initval=0)
+
     sub = Submodule(m, pe_verilog_code, 'inst_pe', prefix='pe_',
                     arg_params=(('ADDR_WIDTH', addrwidth),
                                 ('DATA_WIDTH', datawidth)),
-                    arg_ports=(('CLK', clk), ('RST', rst)),
+                    arg_ports=(('CLK', clk), ('RST', rst),
+                               ('start', start), ('busy', busy), ('size', size)),
                     as_wire=('start', 'busy', 'size',
                              'addr', 'rdata', 'wdata', 'wenable'))
 
     # connect ports to RAM
     ram_a.connect_rtl(1, sub['addr'], sub['wdata'],
                       sub['wenable'], sub['rdata'])
-
-    # control ports of submodule
-    start = m.Reg('start', initval=0)
-    busy = m.Wire('busy')
-    size = m.Reg('size', addrwidth, initval=0)
-
-    sub['start'].assign(start)
-    sub['size'].assign(size)
-    busy.assign(sub['busy'])
 
     def control_processing_unit(v):
         size.value = v

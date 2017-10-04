@@ -1086,6 +1086,9 @@ module blinkled #
                   (_tmp_5 == 7)? _saxi_resetval_7 : 'hx;
   reg _saxi_cond_0_1;
   assign saxi_wready = _saxi_register_fsm == 2;
+  reg start;
+  wire busy;
+  reg [ADDR_WIDTH-1:0] size;
   wire pe_start;
   wire pe_busy;
   wire [ADDR_WIDTH-1+1-1:0] pe_size;
@@ -1103,9 +1106,9 @@ module blinkled #
   (
     .CLK(CLK),
     .RST(RST),
-    .start(pe_start),
-    .busy(pe_busy),
-    .size(pe_size),
+    .start(start),
+    .busy(busy),
+    .size(size),
     .addr(pe_addr),
     .rdata(pe_rdata),
     .wdata(pe_wdata),
@@ -1134,12 +1137,6 @@ module blinkled #
   end
 
   assign pe_rdata = ram_a_1_rdata;
-  reg start;
-  wire busy;
-  reg [ADDR_WIDTH-1:0] size;
-  assign pe_start = start;
-  assign pe_size = size;
-  assign busy = pe_busy;
   reg [32-1:0] th_memcpy;
   localparam th_memcpy_init = 0;
   reg signed [32-1:0] _th_memcpy_copy_bytes_0;
