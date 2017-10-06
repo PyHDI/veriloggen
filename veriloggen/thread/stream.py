@@ -654,6 +654,57 @@ class Stream(thread.Thread):
 
         return 0
 
+    def read_parameter(self, obj, size, point=0, signed=True):
+
+        done_flag = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'done_flag'])),
+                               initval=0)
+        self.done_flags.append(done_flag)
+
+        fsm = FSM(self.m, compiler._tmp_name('_'.join(['', self.name, 'fsm'])),
+                  self.clk, self.rst)
+        fsm.If(self.start_cond).goto_next()
+
+        counter = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'param_counter'])),
+                             size.bit_length(), initval=0)
+        data = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'param_data'])),
+                          obj.bit_length(), initval=0, signed=signed)
+        valid = self.m.Reg(compiler._tmp_name('_'.join(['', self.name, 'param_valid'])),
+                           initval=0)
+        ready = self.m.Wire(compiler._tmp_name(
+            '_'.join(['', self.name, 'param_ready'])))
+
+        rdata = self.df.Variable(data, valid, ready,
+                                 width=data.bit_length(), point=point, signed=signed)
+
+        fsm(
+            data(obj),
+            counter(size)
+        )
+        fsm.goto_next()
+
+        fsm(
+            valid(0)
+        )
+        fsm.If(vtypes.Ors(vtypes.Not(valid), ready))(
+            valid(1)
+        )
+        fsm.If(valid, ready)(
+            counter.dec()
+        )
+        fsm.If(valid, ready, counter <= 1)(
+            counter(0),
+            valid(0),
+            done_flag(1)
+        )
+        fsm.If(valid, ready, counter <= 1).goto_next()
+
+        fsm.If(vtypes.Not(self.running))(
+            done_flag(0)
+        )
+        fsm.If(vtypes.Not(self.running)).goto_init()
+
+        return rdata
+
     def __getattr__(self, attr):
         try:
             return object.__getattr__(self, attr)

@@ -25,10 +25,11 @@ def mkLed():
     ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
 
     def comp_stream(strm, size, offset, bias):
-        bias = strm.ParameterVariable(bias)
+        bias = strm.read_parameter(bias, size)
         a = strm.read(ram_a, offset, size)
         b = strm.read(ram_b, offset, size)
-        sum = a + b + bias
+        x = bias + 1
+        sum = a + b + x
         strm.write(ram_c, offset, size, sum)
 
     def comp_sequential(size, offset, bias):
@@ -36,7 +37,8 @@ def mkLed():
         for i in range(size):
             a = ram_a.read(i + offset)
             b = ram_b.read(i + offset)
-            sum = a + b + bias
+            x = bias + 1
+            sum = a + b + x
             ram_c.write(i + offset, sum)
 
     def check(size, offset_stream, offset_seq):
@@ -52,6 +54,14 @@ def mkLed():
             print('NG')
 
     def comp(size):
+        offset = 0
+        myaxi.dma_read(ram_a, offset, 0, size)
+        myaxi.dma_read(ram_b, offset, 0, size)
+        bias = 1000
+        stream.run(size, offset, bias)
+        stream.join()
+        myaxi.dma_write(ram_c, offset, 1024, size)
+
         offset = 0
         myaxi.dma_read(ram_a, offset, 0, size)
         myaxi.dma_read(ram_b, offset, 0, size)
