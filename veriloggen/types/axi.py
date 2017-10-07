@@ -3085,7 +3085,7 @@ class AxiMemoryModel(object):
 
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=32,
-                 mem_datawidth=31, mem_addrwidth=20,
+                 mem_datawidth=32, mem_addrwidth=20,
                  memimg=None, write_delay=10, read_delay=10, sleep=4):
 
         if mem_datawidth % 8 != 0:
