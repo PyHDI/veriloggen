@@ -11,19 +11,28 @@ import veriloggen.core.module as module
 from . import axi
 
 
-def to_ipcore(m, name=None, clkname='CLK', rstname='RST',
+def to_ipcore(m, ipname=None, topname=None,
+              clkname='CLK', rstname='RST', iftype='axi',
               simaddrwidth=20, simcode=None, simmemimg=None,
-              iftype='axi', silent=False):
+              silent=False):
 
-    top = generate_top(m, name, clkname, rstname)
+    if topname is None:
+        topname = '_'.join(['top', m.name])
+
+    if ipname is None:
+        ipname = '_'.join([m.name, 'ip'])
+
+    top = generate_top(m, topname, clkname, rstname)
     verilog = top.to_verilog()
-    run_ipgen(top.name, verilog, simaddrwidth,
-              simcode, simmemimg, iftype, silent)
+
+    run_ipgen(topname, ipname, verilog,
+              iftype, simaddrwidth, simcode, simmemimg,
+              silent)
 
 
-def run_ipgen(topname, verilog,
-              simaddrwidth=20, simcode=None, simmemimg=None,
-              iftype='axi', silent=False):
+def run_ipgen(topname, ipname, verilog,
+              iftype='axi', simaddrwidth=20, simcode=None, simmemimg=None,
+              silent=False):
 
     # memory image
     if simmemimg is None:
@@ -74,11 +83,14 @@ def run_ipgen(topname, verilog,
     builder = ipgen.ipgen.SystemBuilder()
     builder.build(configs,
                   topmodule,
+                  ipname,
                   userlogic_filelist,
+
                   include=include,
                   define=define,
                   usertest=usertest,
                   memimg=memimg,
+
                   skip_not_found=skip_not_found,
                   ignore_protocol_error=ignore_protocol_error,
                   silent=silent)
@@ -92,12 +104,10 @@ def run_ipgen(topname, verilog,
         file_simcode.close()
 
 
-def generate_top(m, name=None, clkname='CLK', rstname='RST'):
+def generate_top(m, name, clkname='CLK', rstname='RST'):
+
     if not isinstance(m, module.Module):
         raise TypeError("'m' must be Module, not %s" % str(type(m)))
-
-    if name is None:
-        name = '_'.join(['top', m.name])
 
     masterbus = m.masterbus if hasattr(m, 'masterbus') else ()
     slavebus = m.slavebus if hasattr(m, 'slavebus') else ()
@@ -285,6 +295,7 @@ def mk_ipgen_slave_lite_memory():
     rready = m.Output('rready')
 
     return m
+
 
 _master_memory = None
 _slave_memory = None

@@ -13,7 +13,7 @@ all: test
 .PHONY: run
 run:
 	$(PYTHON) $(OPT) $(TARGET) $(ARGS)
-	make compile run -C ipgen_*_v1_00_a/test/
+	make compile run -C *_v1_00_a/test/
 
 .PHONY: test
 test:
@@ -28,4 +28,4 @@ check:
 .PHONY: clean
 clean:
 	rm -rf *.pyc __pycache__ parsetab.py .cache *.out *.png *.dot tmp.v uut.vcd 
-	rm -rf ipgen_*_v1_00_a
+	rm -rf *_v1_00_a

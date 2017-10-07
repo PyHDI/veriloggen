@@ -301,5 +301,4 @@ end
 """
 
     m = mkLed()
-    ipcore.to_ipcore(m, 'myipcore', simcode=simcode,
-                     simmemimg=memname, iftype='axi')
+    ipcore.to_ipcore(m, simcode=simcode, simmemimg=memname, iftype='axi')
