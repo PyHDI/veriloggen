@@ -9,6 +9,7 @@ import collections
 import veriloggen.core.vtypes as vtypes
 import veriloggen.dataflow.dtypes as dtypes
 from veriloggen.dataflow.dataflow import DataflowManager
+
 from veriloggen.seq.seq import Seq
 from veriloggen.fsm.fsm import FSM, TmpFSM
 from veriloggen.optimizer import try_optimize as optimize
@@ -1010,7 +1011,7 @@ class MultibankRAM(object):
         ext_cond = dtypes.make_condition(cond)
         data_cond = dtypes.make_condition(counter > 0, vtypes.Not(last))
 
-        if when is None or not isinstance(when, df_numeric):
+        if when is None or not isinstance(when, dtypes._Numeric):
             raw_data, raw_valid = data.read(cond=data_cond)
         else:
             data_list, raw_valid = dtypes.read_multi(
@@ -1099,7 +1100,7 @@ class MultibankRAM(object):
         ext_cond = dtypes.make_condition(cond)
         data_cond = dtypes.make_condition(running, vtypes.Not(last))
 
-        if when is None or not isinstance(when, df_numeric):
+        if when is None or not isinstance(when, dtypes._Numeric):
             raw_data, raw_valid = data.read(cond=data_cond)
         else:
             data_list, raw_valid = dtypes.read_multi(

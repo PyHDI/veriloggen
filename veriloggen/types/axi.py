@@ -3084,8 +3084,12 @@ class AxiMemoryModel(object):
     burst_size_width = 8
 
     def __init__(self, m, name, clk, rst,
-                 datawidth=32, addrwidth=32, mem_addrwidth=20,
+                 datawidth=32, addrwidth=32,
+                 mem_datawidth=31, mem_addrwidth=20,
                  memimg=None, write_delay=10, read_delay=10, sleep=4):
+
+        if mem_datawidth % 8 != 0:
+            raise ValueError('mem_datawidth must be a multiple of 8')
 
         self.m = m
         self.name = name
@@ -3093,6 +3097,7 @@ class AxiMemoryModel(object):
         self.rst = rst
         self.datawidth = datawidth
         self.addrwidth = addrwidth
+        self.mem_datawidth = mem_datawidth
         self.mem_addrwidth = mem_addrwidth
 
         itype = util.t_Reg
@@ -3113,8 +3118,9 @@ class AxiMemoryModel(object):
         if memimg is None:
             filename = '_'.join(['', self.name, 'memimg', '.out'])
             size = 2 ** self.mem_addrwidth
-            wordsize = 4
+            wordsize = self.mem_datawidth // 8
             self._make_img(filename, size, wordsize)
+
         else:
             filename = memimg
 
@@ -3130,11 +3136,9 @@ class AxiMemoryModel(object):
     def _make_img(filename, size, wordsize):
         with open(filename, 'w') as f:
             for i in range(int(size // wordsize)):
-                s = '%08x' % i
-                f.write('%s\n' % s[6:8])
-                f.write('%s\n' % s[4:6])
-                f.write('%s\n' % s[2:4])
-                f.write('%s\n' % s[0:2])
+                s = (''.join(['%0', '%d' % (wordsize * 2), 'x'])) % i
+                for w in range(wordsize * 2, 0, -2):
+                    f.write('%s\n' % s[w - 2:w])
 
     def _make_fsm(self, write_delay=10, read_delay=10, sleep=4):
         write_mode = 100
