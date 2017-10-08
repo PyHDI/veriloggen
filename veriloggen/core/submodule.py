@@ -96,20 +96,27 @@ class Submodule(vtypes.VeriloggenNode):
         # params
         new_params = collections.OrderedDict()
 
-        param_exclude = []
-        param_exclude.extend(arg_params.keys())
-        new_params.update(parent.copy_params(child, self.prefix))
+        if arg_params:
+            new_params.update(
+                parent.copy_params_as_localparams(child, self.prefix,
+                                                  include=arg_params.keys()))
+
+        # localparams
+        # used ones only
+        new_localparams = collections.OrderedDict()
+        if used_params:
+            new_localparams.update(
+                parent.copy_params_as_localparams(child, self.prefix,
+                                                  include=used_params,
+                                                  exclude=arg_params.keys()))
+            new_localparams.update(
+                parent.copy_localparams(child, self.prefix, include=used_params))
 
         # overwrite the parameter value by parameter arg
         for key, param in arg_params.items():
             new_key = ''.join([self.prefix, key])
             new_param = new_params[new_key]
             new_param.value = param
-
-        # localparams (used ones only)
-        new_localparams = collections.OrderedDict()
-        new_localparams.update(
-            parent.copy_localparams(child, self.prefix, include=used_params))
 
         # ports
         new_ports = collections.OrderedDict()
@@ -129,13 +136,15 @@ class Submodule(vtypes.VeriloggenNode):
             new_ports.update(parent.copy_ports_as_vars(
                 child, self.prefix, include=as_wire, use_wire=True))
 
+        # for instance args
         self.all_params = collections.OrderedDict()
         self.all_raw_params = collections.OrderedDict()
 
         for key in child_params.keys():
             new_key = ''.join((self.prefix, key))
-            self.all_params[key] = new_params[new_key]
-            self.all_raw_params[new_key] = new_params[new_key]
+            if new_key in new_params:
+                self.all_params[key] = new_params[new_key]
+                self.all_raw_params[new_key] = new_params[new_key]
 
         self.all_ports = collections.OrderedDict()
         self.all_raw_ports = collections.OrderedDict()

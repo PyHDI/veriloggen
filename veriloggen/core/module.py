@@ -679,7 +679,7 @@ class Module(vtypes.VeriloggenNode):
             name = ''.join([prefix, obj.name, postfix])
             value = visitor.visit(obj.value)
             width = visitor.visit(obj.width)
-            signed = obj.sined
+            signed = obj.signed
             copy_obj = vtypes.Localparam(value, width, signed, name)
             self.add_object(copy_obj)
             ret[copy_obj.name] = copy_obj
