@@ -16,21 +16,29 @@ class Module(vtypes.VeriloggenNode):
     """ Verilog Module class """
 
     def __init__(self, name=None, tmp_prefix='_tmp'):
+
         vtypes.VeriloggenNode.__init__(self)
+
         self.name = name if name is not None else self.__class__.__name__
+
         self.io_variable = collections.OrderedDict()
         self.variable = collections.OrderedDict()
         self.global_constant = collections.OrderedDict()
         self.local_constant = collections.OrderedDict()
+
         self.function = collections.OrderedDict()
         self.task = collections.OrderedDict()
+
         self.assign = []
         self.always = []
         self.initial = []
+
         self.instance = collections.OrderedDict()
         self.submodule = collections.OrderedDict()
         self.generate = collections.OrderedDict()
+
         self.items = []
+
         self.tmp_prefix = tmp_prefix
         self.tmp_count = 0
         self.hook = []
@@ -40,6 +48,7 @@ class Module(vtypes.VeriloggenNode):
     # User interface for variables
     #-------------------------------------------------------------------------
     def Input(self, name, width=None, length=None, signed=False, value=None):
+
         t = vtypes.Input(width, length, signed, value, name=name, module=self)
         self.check_existing_identifier(name, vtypes.Wire)
         self.io_variable[name] = t
@@ -47,13 +56,16 @@ class Module(vtypes.VeriloggenNode):
         return t
 
     def Output(self, name, width=None, length=None, signed=False, value=None):
+
         t = vtypes.Output(width, length, signed, value, name=name, module=self)
         self.check_existing_identifier(name, vtypes.Wire, vtypes.Reg)
         self.io_variable[name] = t
         self.items.append(t)
         return t
 
-    def OutputReg(self, name, width=None, length=None, signed=False, value=None, initval=None):
+    def OutputReg(self, name, width=None, length=None, signed=False, value=None,
+                  initval=None):
+
         t = vtypes.Output(width, length, signed, value, name=name, module=self)
         self.check_existing_identifier(name)
         self.io_variable[name] = t
@@ -65,6 +77,7 @@ class Module(vtypes.VeriloggenNode):
         return t
 
     def Inout(self, name, width=None, length=None, signed=False, value=None):
+
         t = vtypes.Inout(width, length, signed, value, name=name, module=self)
         self.check_existing_identifier(name, vtypes.Wire)
         self.io_variable[name] = t
@@ -72,6 +85,7 @@ class Module(vtypes.VeriloggenNode):
         return t
 
     def Wire(self, name, width=None, length=None, signed=False, value=None):
+
         t = vtypes.Wire(width, length, signed, value, name=name, module=self)
         self.check_existing_identifier(name, vtypes.Input, vtypes.Output)
         if self.is_reg(name):
@@ -80,13 +94,17 @@ class Module(vtypes.VeriloggenNode):
         self.items.append(t)
         return t
 
-    def TmpWire(self, width=None, length=None, signed=False, value=None, prefix=None):
+    def TmpWire(self, width=None, length=None, signed=False, value=None,
+                prefix=None):
+
         if prefix is None:
             prefix = self.tmp_prefix
         name = '_'.join([prefix, str(self.get_tmp())])
         return self.Wire(name, width, length, signed, value)
 
-    def Reg(self, name, width=None, length=None, signed=False, value=None, initval=None):
+    def Reg(self, name, width=None, length=None, signed=False, value=None,
+            initval=None):
+
         t = vtypes.Reg(width, length, signed, value,
                        initval, name=name, module=self)
         self.check_existing_identifier(name, vtypes.Output)
@@ -94,13 +112,17 @@ class Module(vtypes.VeriloggenNode):
         self.items.append(t)
         return t
 
-    def TmpReg(self, width=None, length=None, signed=False, value=None, initval=None, prefix=None):
+    def TmpReg(self, width=None, length=None, signed=False, value=None,
+               initval=None, prefix=None):
+
         if prefix is None:
             prefix = self.tmp_prefix
         name = '_'.join([prefix, str(self.get_tmp())])
         return self.Reg(name, width, length, signed, value, initval)
 
-    def Integer(self, name, width=None, length=None, signed=False, value=None, initval=None):
+    def Integer(self, name, width=None, length=None, signed=False, value=None,
+                initval=None):
+
         t = vtypes.Integer(width, length, signed, value,
                            initval, name=name, module=self)
         self.check_existing_identifier(name)
@@ -108,13 +130,17 @@ class Module(vtypes.VeriloggenNode):
         self.items.append(t)
         return t
 
-    def TmpInteger(self, width=None, length=None, signed=False, value=None, initval=None, prefix=None):
+    def TmpInteger(self, width=None, length=None, signed=False, value=None,
+                   initval=None, prefix=None):
+
         if prefix is None:
             prefix = self.tmp_prefix
         name = '_'.join([prefix, str(self.get_tmp())])
         return self.Integer(name, width, length, signed, value, initval)
 
-    def Real(self, name, width=None, length=None, signed=False, value=None, initval=None):
+    def Real(self, name, width=None, length=None, signed=False, value=None,
+             initval=None):
+
         t = vtypes.Real(width, length, signed, value,
                         initval, name=name, module=self)
         self.check_existing_identifier(name)
@@ -122,26 +148,32 @@ class Module(vtypes.VeriloggenNode):
         self.items.append(t)
         return t
 
-    def TmpReal(self, width=None, length=None, signed=False, value=None, initval=None, prefix=None):
+    def TmpReal(self, width=None, length=None, signed=False, value=None,
+                initval=None, prefix=None):
+
         if prefix is None:
             prefix = self.tmp_prefix
         name = '_'.join([prefix, str(self.get_tmp())])
         return self.Real(name, width, length, signed, value, initval)
 
     def Genvar(self, name, width=None, length=None, signed=False, value=None):
+
         t = vtypes.Genvar(width, length, signed, value, name=name, module=self)
         self.check_existing_identifier(name)
         self.variable[name] = t
         self.items.append(t)
         return t
 
-    def TmpGenvar(self, width=None, length=None, signed=False, value=None, prefix=None):
+    def TmpGenvar(self, width=None, length=None, signed=False, value=None,
+                  prefix=None):
+
         if prefix is None:
             prefix = self.tmp_prefix
         name = '_'.join([prefix, str(self.get_tmp())])
         return self.Genvar(name, width, length, signed, value)
 
     def Parameter(self, name, value, width=None, signed=False, length=None):
+
         t = vtypes.Parameter(value, width, signed, name=name, module=self)
         self.check_existing_identifier(name)
         self.global_constant[name] = t
@@ -149,20 +181,25 @@ class Module(vtypes.VeriloggenNode):
         return t
 
     def Localparam(self, name, value, width=None, signed=False, length=None):
+
         t = vtypes.Localparam(value, width, signed, name=name, module=self)
         self.check_existing_identifier(name)
         self.local_constant[name] = t
         self.items.append(t)
         return t
 
-    def TmpLocalparam(self, value, width=None, signed=False, length=None, prefix=None):
+    def TmpLocalparam(self, value, width=None, signed=False, length=None,
+                      prefix=None):
+
         if prefix is None:
             prefix = self.tmp_prefix
         name = '_'.join([prefix, str(self.get_tmp())])
         return self.Localparam(name, value, width, signed, length)
 
     #-------------------------------------------------------------------------
-    def InputLike(self, src, name=None, width=None, length=None, signed=None, value=None):
+    def InputLike(self, src, name=None, width=None, length=None,
+                  signed=None, value=None):
+
         if name is None:
             name = src.name
         if width is None:
@@ -176,7 +213,9 @@ class Module(vtypes.VeriloggenNode):
             value = src.value
         return self.Input(name, width, length, signed, value)
 
-    def OutputLike(self, src, name=None, width=None, length=None, signed=None, value=None):
+    def OutputLike(self, src, name=None, width=None, length=None,
+                   signed=None, value=None):
+
         if name is None:
             name = src.name
         if width is None:
@@ -190,7 +229,9 @@ class Module(vtypes.VeriloggenNode):
             value = src.value
         return self.Output(name, width, length, signed, value)
 
-    def OutputRegLike(self, src, name=None, width=None, length=None, signed=None, value=None, initval=None):
+    def OutputRegLike(self, src, name=None, width=None, length=None,
+                      signed=None, value=None, initval=None):
+
         if name is None:
             name = src.name
         if width is None:
@@ -206,7 +247,9 @@ class Module(vtypes.VeriloggenNode):
             initval = src.initval
         return self.OutputReg(name, width, length, signed, value, initval)
 
-    def InoutLike(self, src, name=None, width=None, length=None, signed=None, value=None):
+    def InoutLike(self, src, name=None, width=None, length=None,
+                  signed=None, value=None):
+
         if name is None:
             name = src.name
         if width is None:
@@ -220,7 +263,9 @@ class Module(vtypes.VeriloggenNode):
             value = src.value
         return self.Inout(name, width, length, signed, value)
 
-    def WireLike(self, src, name=None, width=None, length=None, signed=None, value=None):
+    def WireLike(self, src, name=None, width=None, length=None,
+                 signed=None, value=None):
+
         if name is None:
             name = src.name
         if width is None:
@@ -233,7 +278,9 @@ class Module(vtypes.VeriloggenNode):
             value = src.value
         return self.Wire(name, width, length, signed, value)
 
-    def TmpWireLike(self, src, width=None, length=None, signed=None, value=None, prefix=None):
+    def TmpWireLike(self, src, width=None, length=None,
+                    signed=None, value=None, prefix=None):
+
         if width is None:
             width = src.width
         if length is None:
@@ -244,7 +291,9 @@ class Module(vtypes.VeriloggenNode):
             value = src.value
         return self.TmpWire(width, length, signed, value, prefix)
 
-    def RegLike(self, src, name=None, width=None, length=None, signed=None, value=None, initval=None):
+    def RegLike(self, src, name=None, width=None, length=None,
+                signed=None, value=None, initval=None):
+
         if name is None:
             name = src.name
         if width is None:
@@ -259,7 +308,9 @@ class Module(vtypes.VeriloggenNode):
             initval = src.initval
         return self.Reg(name, width, length, signed, value, initval)
 
-    def TmpRegLike(self, src, width=None, length=None, signed=None, value=None, initval=None, prefix=None):
+    def TmpRegLike(self, src, width=None, length=None,
+                   signed=None, value=None, initval=None, prefix=None):
+
         if width is None:
             width = src.width
         if length is None:
@@ -272,7 +323,9 @@ class Module(vtypes.VeriloggenNode):
             initval = src.initval
         return self.TmpReg(width, length, signed, value, initval, prefix)
 
-    def IntegerLike(self, src, name=None, width=None, length=None, signed=None, value=None, initval=None):
+    def IntegerLike(self, src, name=None, width=None, length=None,
+                    signed=None, value=None, initval=None):
+
         if name is None:
             name = src.name
         if width is None:
@@ -287,7 +340,9 @@ class Module(vtypes.VeriloggenNode):
             initval = src.initval
         return self.Integer(name, width, length, signed, value, initval)
 
-    def TmpIntegerLike(self, src, width=None, length=None, signed=None, value=None, initval=None, prefix=None):
+    def TmpIntegerLike(self, src, width=None, length=None,
+                       signed=None, value=None, initval=None, prefix=None):
+
         if width is None:
             width = src.width
         if length is None:
@@ -300,7 +355,9 @@ class Module(vtypes.VeriloggenNode):
             initval = src.initval
         return self.TmpInteger(width, length, signed, value, initval, prefix)
 
-    def RealLike(self, src, name=None, width=None, length=None, signed=None, value=None, initval=None):
+    def RealLike(self, src, name=None, width=None, length=None,
+                 signed=None, value=None, initval=None):
+
         if name is None:
             name = src.name
         if width is None:
@@ -315,7 +372,9 @@ class Module(vtypes.VeriloggenNode):
             initval = src.initval
         return self.Real(name, width, length, signed, value, initval)
 
-    def TmpRealLike(self, src, width=None, length=None, signed=None, value=None, initval=None, prefix=None):
+    def TmpRealLike(self, src, width=None, length=None,
+                    signed=None, value=None, initval=None, prefix=None):
+
         if width is None:
             width = src.width
         if length is None:
@@ -328,7 +387,9 @@ class Module(vtypes.VeriloggenNode):
             initval = src.initval
         return self.TmpReal(width, length, signed, value, initval, prefix)
 
-    def GenvarLike(self, src, name=None, width=None, length=None, signed=None, value=None):
+    def GenvarLike(self, src, name=None, width=None, length=None,
+                   signed=None, value=None):
+
         if name is None:
             name = src.name
         if width is None:
@@ -342,7 +403,9 @@ class Module(vtypes.VeriloggenNode):
             value = src.value
         return self.Genvar(name, width, length, signed, value)
 
-    def TmpGenvarLike(self, src, width=None, length=None, signed=None, value=None, prefix=None):
+    def TmpGenvarLike(self, src, width=None, length=None,
+                      signed=None, value=None, prefix=None):
+
         if width is None:
             width = src.width
         #if length is None: length = src.length
@@ -354,7 +417,9 @@ class Module(vtypes.VeriloggenNode):
             value = src.value
         return self.TmpGenvar(width, length, signed, value, prefix)
 
-    def ParameterLike(self, src, name=None, value=None, width=None, signed=False, length=None):
+    def ParameterLike(self, src, name=None, value=None, width=None,
+                      signed=False, length=None):
+
         if name is None:
             name = src.name
         if value is None:
@@ -367,7 +432,9 @@ class Module(vtypes.VeriloggenNode):
             length = src.length
         return self.Parameter(name, value, width, signed, length)
 
-    def LocalparamLike(self, src, name=None, value=None, width=None, signed=False, length=None):
+    def LocalparamLike(self, src, name=None, value=None, width=None,
+                       signed=False, length=None):
+
         if name is None:
             name = src.name
         if value is None:
@@ -380,7 +447,9 @@ class Module(vtypes.VeriloggenNode):
             length = src.length
         return self.Localparam(name, value, width, signed, length)
 
-    def TmpLocalparamLike(self, src, value=None, width=None, signed=False, length=None, prefix=None):
+    def TmpLocalparamLike(self, src, value=None, width=None,
+                          signed=False, length=None, prefix=None):
+
         if value is None:
             value = src.value
         if width is None:
@@ -395,24 +464,28 @@ class Module(vtypes.VeriloggenNode):
     # User interface for control statements
     #-------------------------------------------------------------------------
     def Always(self, *sensitivity):
+
         t = vtypes.Always(*sensitivity)
         self.always.append(t)
         self.items.append(t)
         return t
 
     def Assign(self, statement):
+
         t = vtypes.Assign(statement)
         self.assign.append(t)
         self.items.append(t)
         return t
 
     def Initial(self, *statement):
+
         t = vtypes.Initial(*statement)
         self.initial.append(t)
         self.items.append(t)
         return t
 
     def Function(self, name, width=1):
+
         t = function.Function(name, width)
         self.check_existing_identifier(name)
         self.function[name] = t
@@ -420,6 +493,7 @@ class Module(vtypes.VeriloggenNode):
         return t
 
     def Task(self, name):
+
         t = task.Task(name)
         self.check_existing_identifier(name)
         self.task[name] = t
@@ -428,6 +502,7 @@ class Module(vtypes.VeriloggenNode):
 
     #-------------------------------------------------------------------------
     def GenerateFor(self, pre, cond, post, scope=None):
+
         t = GenerateFor(self, pre, cond, post, scope)
         if scope is None:
             if None not in self.generate:
@@ -442,6 +517,7 @@ class Module(vtypes.VeriloggenNode):
         return t
 
     def GenerateIf(self, cond, scope=None):
+
         t = GenerateIf(self, cond, scope)
         if scope is None:
             if None not in self.generate:
@@ -457,11 +533,12 @@ class Module(vtypes.VeriloggenNode):
 
     #-------------------------------------------------------------------------
     def Instance(self, module, instname, params=None, ports=None):
+
         if isinstance(module, str):
             module = StubModule(module)
         if not isinstance(module, (Module, StubModule, str)):
-            raise TypeError('"module" of Instance must be Module, StubModule, or str, not %s'
-                            % type(module))
+            raise TypeError('"module" of Instance must be Module,'
+                            ' StubModule, or str, not %s' % type(module))
         self.check_existing_identifier(instname)
         t = Instance(module, instname, params, ports)
         self.instance[instname] = t
@@ -482,6 +559,7 @@ class Module(vtypes.VeriloggenNode):
 
     #-------------------------------------------------------------------------
     def EmbeddedCode(self, code):
+
         t = vtypes.EmbeddedCode(code)
         self.items.append(t)
         return t
@@ -524,8 +602,8 @@ class Module(vtypes.VeriloggenNode):
         return v
 
     #-------------------------------------------------------------------------
-    def copy_params(self, src, prefix=None, postfix=None, include=None, exclude=None,
-                    rename_exclude=None):
+    def copy_params(self, src, prefix=None, postfix=None,
+                    include=None, exclude=None, rename_exclude=None):
         if prefix is None:
             prefix = ''
         if postfix is None:
@@ -559,14 +637,14 @@ class Module(vtypes.VeriloggenNode):
                 continue
             copy_obj = copy.deepcopy(obj)
             copy_obj.name = ''.join([prefix, copy_obj.name, postfix])
+            copy_obj.value = visitor.visit(copy_obj.value)
             copy_obj.width = visitor.visit(copy_obj.width)
-            copy_obj.signed = obj.signed
             self.add_object(copy_obj)
             ret[copy_obj.name] = copy_obj
         return ret
 
-    def copy_localparams(self, src, prefix=None, postfix=None, include=None, exclude=None,
-                         rename_exclude=None):
+    def copy_params_as_localparams(self, src, prefix=None, postfix=None,
+                                   include=None, exclude=None, rename_exclude=None):
         if prefix is None:
             prefix = ''
         if postfix is None:
@@ -585,7 +663,49 @@ class Module(vtypes.VeriloggenNode):
             rename_exclude = [rename_exclude]
         visitor = rename_visitor.RenameVisitor(prefix, postfix, rename_exclude)
         ret = collections.OrderedDict()
-        for key, obj in src.constant.items():
+        for key, obj in src.global_constant.items():
+            if not include:
+                skip = False
+            else:
+                skip = True
+            for inc in include:
+                if re.match(inc, key):
+                    skip = False
+            for ex in exclude:
+                if re.match(ex, key):
+                    skip = True
+            if skip:
+                continue
+            name = ''.join([prefix, obj.name, postfix])
+            value = visitor.visit(obj.value)
+            width = visitor.visit(obj.width)
+            signed = obj.sined
+            copy_obj = vtypes.Localparam(value, width, signed, name)
+            self.add_object(copy_obj)
+            ret[copy_obj.name] = copy_obj
+        return ret
+
+    def copy_localparams(self, src, prefix=None, postfix=None,
+                         include=None, exclude=None, rename_exclude=None):
+        if prefix is None:
+            prefix = ''
+        if postfix is None:
+            postfix = ''
+        if include is None:
+            include = ()
+        if isinstance(include, str):
+            include = [include]
+        if exclude is None:
+            exclude = ()
+        if isinstance(exclude, str):
+            exclude = [exclude]
+        if rename_exclude is None:
+            rename_exclude = ()
+        if isinstance(rename_exclude, str):
+            rename_exclude = [rename_exclude]
+        visitor = rename_visitor.RenameVisitor(prefix, postfix, rename_exclude)
+        ret = collections.OrderedDict()
+        for key, obj in src.local_constant.items():
             if not include:
                 skip = False
             else:
@@ -600,14 +720,14 @@ class Module(vtypes.VeriloggenNode):
                 continue
             copy_obj = copy.deepcopy(obj)
             copy_obj.name = ''.join([prefix, copy_obj.name, postfix])
+            copy_obj.value = visitor.visit(copy_obj.value)
             copy_obj.width = visitor.visit(copy_obj.width)
-            copy_obj.signed = obj.signed
             self.add_object(copy_obj)
             ret[copy_obj.name] = copy_obj
         return ret
 
-    def copy_ports(self, src, prefix=None, postfix=None, include=None, exclude=None,
-                   rename_exclude=None):
+    def copy_ports(self, src, prefix=None, postfix=None,
+                   include=None, exclude=None, rename_exclude=None):
         if prefix is None:
             prefix = ''
         if postfix is None:
@@ -647,8 +767,8 @@ class Module(vtypes.VeriloggenNode):
             ret[copy_obj.name] = copy_obj
         return ret
 
-    def copy_ports_as_vars(self, src, prefix=None, postfix=None, include=None, exclude=None,
-                           rename_exclude=None, use_wire=False):
+    def copy_ports_as_vars(self, src, prefix=None, postfix=None,
+                           include=None, exclude=None, rename_exclude=None, use_wire=False):
         if prefix is None:
             prefix = ''
         if postfix is None:
@@ -691,8 +811,8 @@ class Module(vtypes.VeriloggenNode):
             ret[copy_obj.name] = copy_obj
         return ret
 
-    def copy_vars(self, src, prefix=None, postfix=None, include=None, exclude=None,
-                  rename_exclude=None):
+    def copy_vars(self, src, prefix=None, postfix=None,
+                  include=None, exclude=None, rename_exclude=None):
         if prefix is None:
             prefix = ''
         if postfix is None:
@@ -732,13 +852,14 @@ class Module(vtypes.VeriloggenNode):
             ret[copy_obj.name] = copy_obj
         return ret
 
-    def copy_sim_ports(self, src, prefix=None, postfix=None, include=None, exclude=None,
-                       rename_exclude=None, use_wire=False):
+    def copy_sim_ports(self, src, prefix=None, postfix=None,
+                       include=None, exclude=None, rename_exclude=None, use_wire=False):
         return self.copy_ports_as_vars(src, prefix, postfix, include, exclude,
                                        rename_exclude, use_wire)
 
     #-------------------------------------------------------------------------
-    def connect_params(self, targ, prefix=None, postfix=None, include=None, exclude=None, strict=False):
+    def connect_params(self, targ, prefix=None, postfix=None,
+                       include=None, exclude=None, strict=False):
         if prefix is None:
             prefix = ''
         if postfix is None:
@@ -766,7 +887,8 @@ class Module(vtypes.VeriloggenNode):
             if skip:
                 continue
             my_key = ''.join([prefix, key, postfix])
-            if strict and (my_key not in self.global_constant) and (my_key not in self.local_constant):
+            if (strict and (my_key not in self.global_constant) and
+                    (my_key not in self.local_constant)):
                 raise IndexError(
                     "No such constant '%s' in module '%s'" % (key, self.name))
             if my_key in self.global_constant:
@@ -775,7 +897,8 @@ class Module(vtypes.VeriloggenNode):
                 ret.append((key, self.local_constant[my_key]))
         return ret
 
-    def connect_ports(self, targ, prefix=None, postfix=None, include=None, exclude=None, strict=False):
+    def connect_ports(self, targ, prefix=None, postfix=None,
+                      include=None, exclude=None, strict=False):
         if prefix is None:
             prefix = ''
         if postfix is None:
@@ -803,7 +926,8 @@ class Module(vtypes.VeriloggenNode):
             if skip:
                 continue
             my_key = ''.join([prefix, key, postfix])
-            if strict and (my_key not in self.io_variable) and (my_key not in self.variable):
+            if (strict and (my_key not in self.io_variable) and
+                    (my_key not in self.variable)):
                 raise IndexError("No such IO '%s' in module '%s'" %
                                  (key, self.name))
             if my_key in self.io_variable:
@@ -1219,7 +1343,8 @@ class Generate(Module):
     def Output(self, name, width=None, length=None, signed=False, value=None):
         raise TypeError("Output port is not allowed in generate statement")
 
-    def OutputReg(self, name, width=None, length=None, signed=False, value=None, initval=None):
+    def OutputReg(self, name, width=None, length=None, signed=False, value=None,
+                  initval=None):
         raise TypeError("OutputReg port is not allowed in generate statement")
 
     def Inout(self, name, width=None, length=None, signed=False, value=None):

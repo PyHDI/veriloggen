@@ -4,6 +4,7 @@ import collections
 import veriloggen.core.module as module
 import veriloggen.core.vtypes as vtypes
 import veriloggen.verilog.from_verilog as from_verilog
+from veriloggen.core.collect_visitor import CollectVisitor
 
 
 class Submodule(vtypes.VeriloggenNode):
@@ -84,32 +85,37 @@ class Submodule(vtypes.VeriloggenNode):
         as_wire = [v.name if not isinstance(v, str) else
                    v for v in as_wire]
 
+        # collect used parameters and localparameters
+        collect_visitor = CollectVisitor()
+
+        for port in child_ports.values():
+            collect_visitor.visit(port)
+
+        used_params = collect_visitor.names
+
         # params
         new_params = collections.OrderedDict()
 
         param_exclude = []
         param_exclude.extend(arg_params.keys())
-        new_params.update(parent.copy_params(
-            child, self.prefix, exclude=param_exclude, rename_exclude=param_exclude))
+        new_params.update(parent.copy_params(child, self.prefix))
 
-        self.all_params = collections.OrderedDict()
-        self.all_raw_params = collections.OrderedDict()
+        # overwrite the parameter value by parameter arg
+        for key, param in arg_params.items():
+            new_key = ''.join([self.prefix, key])
+            new_param = new_params[new_key]
+            new_param.value = param
 
-        for key in child_params.keys():
-            new_key = ''.join((self.prefix, key))
-            if key in arg_params:
-                self.all_params[key] = arg_params[key]
-                self.all_raw_params[new_key] = arg_params[key]
-            elif new_key in new_params:
-                self.all_params[key] = new_params[new_key]
-                self.all_raw_params[new_key] = new_params[new_key]
+        # localparams (used ones only)
+        new_localparams = collections.OrderedDict()
+        new_localparams.update(
+            parent.copy_localparams(child, self.prefix, include=used_params))
 
         # ports
         new_ports = collections.OrderedDict()
         if as_io:
             new_ports.update(parent.copy_ports(
-                child, self.prefix, include=as_io,
-                rename_exclude=param_exclude))
+                child, self.prefix, include=as_io))
 
         exclude = []
         exclude.extend(arg_ports.keys())
@@ -117,13 +123,19 @@ class Submodule(vtypes.VeriloggenNode):
         exclude.extend(as_wire)
 
         new_ports.update(parent.copy_ports_as_vars(
-            child, self.prefix, exclude=exclude,
-            rename_exclude=param_exclude))
+            child, self.prefix, exclude=exclude))
 
         if as_wire:
             new_ports.update(parent.copy_ports_as_vars(
-                child, self.prefix, include=as_wire,
-                rename_exclude=param_exclude, use_wire=True))
+                child, self.prefix, include=as_wire, use_wire=True))
+
+        self.all_params = collections.OrderedDict()
+        self.all_raw_params = collections.OrderedDict()
+
+        for key in child_params.keys():
+            new_key = ''.join((self.prefix, key))
+            self.all_params[key] = new_params[new_key]
+            self.all_raw_params[new_key] = new_params[new_key]
 
         self.all_ports = collections.OrderedDict()
         self.all_raw_ports = collections.OrderedDict()
@@ -138,8 +150,8 @@ class Submodule(vtypes.VeriloggenNode):
                 self.all_raw_ports[new_key] = new_ports[new_key]
 
         # instance
-        self.inst = parent.Instance(
-            child, self.name, self.all_params, self.all_ports)
+        self.inst = parent.Instance(child, self.name,
+                                    self.all_params, self.all_ports)
 
     def get_raw_inst_params(self):
         return self.all_raw_params
