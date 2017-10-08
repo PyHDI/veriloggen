@@ -3081,6 +3081,8 @@ def AxiLiteSlave(m, name, clk, rst, datawidth=32, addrwidth=32,
 
 
 class AxiMemoryModel(object):
+    __intrinsics__ = ('read', 'write')
+
     burst_size_width = 8
 
     def __init__(self, m, name, clk, rst,
@@ -3335,3 +3337,36 @@ class AxiMemoryModel(object):
             rlast.connect(self.rdata.rlast)
         rvalid.connect(self.rdata.rvalid)
         self.rdata.rready.connect(rready)
+
+    def read(self, fsm, addr):
+        """ intrinsic for thread """
+
+        cond = fsm.state == fsm.current
+        rdata = self.m.TmpReg(self.mem_datawidth, initval=0, signed=True)
+        num_bytes = self.mem_datawidth // 8
+
+        fsm.If(cond)(
+            rdata(vtypes.Cat(*reversed([self.mem[addr + i]
+                                        for i in range(num_bytes)])))
+        )
+        fsm.goto_next()
+
+        return rdata
+
+    def write(self, fsm, addr, wdata):
+        """ intrinsic for thread """
+
+        cond = fsm.state == fsm.current
+        num_bytes = self.mem_datawidth // 8
+
+        wdata_wire = self.m.TmpWire(self.mem_datawidth)
+        wdata_wire.assign(wdata)
+
+        for i in range(num_bytes):
+            self.fsm.seq.If(cond)(
+                self.mem[addr + i](wdata_wire[i * 8:i * 8 + 8])
+            )
+
+        fsm.goto_next()
+
+        return 0

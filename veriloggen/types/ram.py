@@ -273,7 +273,7 @@ class SyncRAMManager(object):
         data_cond = make_condition(data_ack, last_ack)
         prev_data_cond = self.seq.Prev(data_cond, 1)
 
-        data = self.m.TmpWireLike(self.interfaces[port].rdata)
+        data = self.m.TmpWireLike(self.interfaces[port].rdata, signed=True)
 
         prev_data = self.seq.Prev(data, 1)
         data.assign(vtypes.Mux(prev_data_cond,
@@ -361,7 +361,7 @@ class SyncRAMManager(object):
         data_cond = make_condition(data_ack, last_ack)
         prev_data_cond = self.seq.Prev(data_cond, 1)
 
-        data = self.m.TmpWireLike(self.interfaces[port].rdata)
+        data = self.m.TmpWireLike(self.interfaces[port].rdata, signed=True)
 
         prev_data = self.seq.Prev(data, 1)
         data.assign(vtypes.Mux(prev_data_cond,
@@ -540,9 +540,9 @@ class SyncRAMManager(object):
         counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
 
         last = self.m.TmpReg(initval=0)
-        reuse_data = [self.m.TmpReg(self.datawidth, initval=0)
+        reuse_data = [self.m.TmpReg(self.datawidth, initval=0, signed=True)
                       for _ in range(num_outputs)]
-        next_reuse_data = [self.m.TmpReg(self.datawidth, initval=0)
+        next_reuse_data = [self.m.TmpReg(self.datawidth, initval=0, signed=True)
                            for _ in range(num_outputs)]
 
         reuse_count = self.m.TmpReg(reuse_size.bit_length() + 1, initval=0)
@@ -710,9 +710,9 @@ class SyncRAMManager(object):
                       for (out_size, out_stride) in pattern]
 
         last = self.m.TmpReg(initval=0)
-        reuse_data = [self.m.TmpReg(self.datawidth, initval=0)
+        reuse_data = [self.m.TmpReg(self.datawidth, initval=0, signed=True)
                       for _ in range(num_outputs)]
-        next_reuse_data = [self.m.TmpReg(self.datawidth, initval=0)
+        next_reuse_data = [self.m.TmpReg(self.datawidth, initval=0, singed=True)
                            for _ in range(num_outputs)]
 
         reuse_count = self.m.TmpReg(reuse_size.bit_length() + 1, initval=0)

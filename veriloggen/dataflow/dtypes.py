@@ -144,8 +144,8 @@ class _Numeric(_Node):
             raise ValueError("Module information is not set.")
 
         tmp = self.m.get_tmp()
-        self.output(self._tmp_data(tmp), self._tmp_valid(
-            tmp), self._tmp_ready(tmp))
+        self.output(self._tmp_data(tmp),
+                    self._tmp_valid(tmp), self._tmp_ready(tmp))
 
     def prev(self, index):
         if index < 0:
@@ -2110,7 +2110,8 @@ class _Variable(_Numeric):
             if hasattr(self, 'sig_data_write'):
                 data = self.sig_data_write
             else:
-                data = self.m.TmpReg(self.bit_length(), initval=0)
+                data = self.m.TmpReg(self.bit_length(), initval=0,
+                                     signed=self.get_signed())
                 self.sig_data_write = data
                 self.sig_data.assign(data)
         else:

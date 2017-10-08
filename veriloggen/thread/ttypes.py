@@ -653,7 +653,7 @@ class MultibankRAM(object):
         data_cond = dtypes.make_condition(data_ack, last_ack)
         prev_data_cond = self.seq.Prev(data_cond, 1)
 
-        data_list = [self.m.TmpWireLike(ram.interfaces[port].rdata)
+        data_list = [self.m.TmpWireLike(ram.interfaces[port].rdata, signed=True)
                      for ram in self.rams]
 
         prev_data_list = [self.seq.Prev(data, 1) for data in data_list]
@@ -683,7 +683,7 @@ class MultibankRAM(object):
         prev_patterns = [(prev_reg_bank_sel == i, data)
                          for i, data in enumerate(prev_data_list)]
         prev_patterns.append((None, 0))
-        data = self.m.TmpWire(self.orig_datawidth)
+        data = self.m.TmpWire(self.orig_datawidth, signed=True)
         data.assign(vtypes.Mux(prev_data_cond,
                                vtypes.PatternMux(*patterns),
                                vtypes.PatternMux(*prev_patterns)))
@@ -784,7 +784,7 @@ class MultibankRAM(object):
         data_cond = dtypes.make_condition(data_ack, last_ack)
         prev_data_cond = self.seq.Prev(data_cond, 1)
 
-        data_list = [self.m.TmpWireLike(ram.interfaces[port].rdata)
+        data_list = [self.m.TmpWireLike(ram.interfaces[port].rdata, signed=True)
                      for ram in self.rams]
 
         prev_data_list = [self.seq.Prev(data, 1) for data in data_list]
@@ -809,7 +809,7 @@ class MultibankRAM(object):
         prev_patterns = [(prev_reg_bank_sel == i, data)
                          for i, data in enumerate(prev_data_list)]
         prev_patterns.append((None, 0))
-        data = self.m.TmpWire(self.orig_datawidth)
+        data = self.m.TmpWire(self.orig_datawidth, signed=True)
         data.assign(vtypes.Mux(prev_data_cond,
                                vtypes.PatternMux(*patterns),
                                vtypes.PatternMux(*prev_patterns)))
@@ -1361,7 +1361,7 @@ class AXIM(AxiMaster, _MutexFunction):
         else:
             data, valid = ret
 
-        rdata = self.m.TmpReg(self.datawidth, initval=0)
+        rdata = self.m.TmpReg(self.datawidth, initval=0, signed=True)
         fsm.If(valid)(rdata(data))
         fsm.Then().goto_next()
 
@@ -1803,12 +1803,12 @@ class AXISRegister(AXIS, _MutexFunction):
                             str(type(length)))
 
         self.register = [self.m.Reg('_'.join(['', self.name, 'register', '%d' % i]),
-                                    width=self.datawidth, initval=0)
+                                    width=self.datawidth, initval=0, signed=True)
                          for i in range(length)]
         self.flag = [self.m.Reg('_'.join(['', self.name, 'flag', '%d' % i]), initval=0)
                      for i in range(length)]
         self.resetval = [self.m.Reg('_'.join(['', self.name, 'resetval', '%d' % i]),
-                                    width=self.datawidth, initval=0)
+                                    width=self.datawidth, initval=0, signed=True)
                          for i in range(length)]
         self.length = length
         self.maskwidth = self.m.Localparam('_'.join(['', self.name, 'maskwidth']),
@@ -1842,7 +1842,7 @@ class AXISRegister(AXIS, _MutexFunction):
         fsm.If(readvalid).goto_from(init_state, read_state)
         fsm.set_index(read_state)
 
-        rdata = self.m.TmpWire(self.datawidth)
+        rdata = self.m.TmpWire(self.datawidth, signed=True)
         pat = [(maskaddr == i, r) for i, r in enumerate(self.register)]
         pat.append((None, vtypes.IntX()))
         rval = vtypes.PatternMux(pat)
@@ -1854,7 +1854,7 @@ class AXISRegister(AXIS, _MutexFunction):
         rval = vtypes.PatternMux(pat)
         flag.assign(rval)
 
-        resetval = self.m.TmpWire(self.datawidth)
+        resetval = self.m.TmpWire(self.datawidth, signed=True)
         pat = [(maskaddr == i, r) for i, r in enumerate(self.resetval)]
         pat.append((None, vtypes.IntX()))
         rval = vtypes.PatternMux(pat)
@@ -1905,7 +1905,7 @@ class AXISRegister(AXIS, _MutexFunction):
         fsm.If(readvalid).goto_from(init_state, read_state)
         fsm.set_index(read_state)
 
-        rdata = self.m.TmpWire(self.datawidth)
+        rdata = self.m.TmpWire(self.datawidth, signed=True)
         pat = [(maskaddr == i, r) for i, r in enumerate(self.register)]
         pat.append((None, vtypes.IntX()))
         rval = vtypes.PatternMux(pat)
@@ -1917,7 +1917,7 @@ class AXISRegister(AXIS, _MutexFunction):
         rval = vtypes.PatternMux(pat)
         flag.assign(rval)
 
-        resetval = self.m.TmpWire(self.datawidth)
+        resetval = self.m.TmpWire(self.datawidth, signed=True)
         pat = [(maskaddr == i, r) for i, r in enumerate(self.resetval)]
         pat.append((None, vtypes.IntX()))
         rval = vtypes.PatternMux(pat)

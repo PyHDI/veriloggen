@@ -127,10 +127,11 @@ class Seq(vtypes.VeriloggenNode):
             prefix = '_'
 
         width = var.bit_length()
+        signed = vtypes.get_signed(var)
 
         if not isinstance(var, vtypes._Variable):
             width = self.m.TmpLocalparam(width)
-            w = self.m.TmpWire(width)
+            w = self.m.TmpWire(width, signed=signed)
             w.assign(var)
             var = w
 
@@ -143,7 +144,7 @@ class Seq(vtypes.VeriloggenNode):
         for i in range(delay):
             cond = make_condition(cond)
             if cond is not None:
-                tmp = self.m.TmpReg(width, initval=initval)
+                tmp = self.m.TmpReg(var, width=width, initval=initval, signed=signed)
                 self._add_statement([tmp(p)], cond=cond)
                 p = tmp
 
@@ -152,7 +153,7 @@ class Seq(vtypes.VeriloggenNode):
                 if tmp_name in self.prev_dict:
                     p = self.prev_dict[tmp_name]
                     continue
-                tmp = self.m.Reg(tmp_name, width, initval=initval)
+                tmp = self.m.Reg(tmp_name, width, initval=initval, signed=signed)
                 self.prev_dict[tmp_name] = tmp
                 self._add_statement([tmp(p)])
                 p = tmp
@@ -458,6 +459,7 @@ class Seq(vtypes.VeriloggenNode):
                               vtypes._Constant, vtypes._ParameterVariable)):
             return subst
         width = left.bit_length()
+        signed = vtypes.get_signed(left)
         prev = right
 
         name_prefix = ('_'.join(['', left.name, str(self.tmp_count)])
@@ -467,7 +469,7 @@ class Seq(vtypes.VeriloggenNode):
 
         for i in range(delay):
             tmp_name = '_'.join([name_prefix, str(i + 1)])
-            tmp = self.m.Reg(tmp_name, width, initval=0)
+            tmp = self.m.Reg(tmp_name, width, initval=0, signed=signed)
             self._add_statement([tmp(prev)], delay=i, no_delay_cond=True)
             prev = tmp
         return left(prev)

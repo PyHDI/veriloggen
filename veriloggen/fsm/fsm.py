@@ -505,6 +505,7 @@ class FSM(vtypes.VeriloggenNode):
                               vtypes._Constant, vtypes._ParameterVariable)):
             return subst
         width = left.bit_length()
+        signed = vtypes.get_signed(left)
         prev = right
 
         name_prefix = ('_'.join(['', left.name, str(index), str(self.tmp_count)])
@@ -514,7 +515,7 @@ class FSM(vtypes.VeriloggenNode):
 
         for i in range(delay):
             tmp_name = '_'.join([name_prefix, str(i + 1)])
-            tmp = self.m.Reg(tmp_name, width, initval=0)
+            tmp = self.m.Reg(tmp_name, width, initval=0, signed=signed)
             self._add_statement([tmp(prev)], delay=i, no_delay_cond=True)
             prev = tmp
         return left(prev)
