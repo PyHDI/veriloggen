@@ -6,39 +6,39 @@ import types_saturate_add
 expected_verilog = """
 module test;
 
-  reg CLK;
-  reg RST;
-  wire [8-1:0] LED;
+  reg uut_CLK;
+  reg uut_RST;
+  wire [8-1:0] uut_LED;
 
   blinkled
   uut
   (
-    .CLK(CLK),
-    .RST(RST),
-    .LED(LED)
+    .CLK(uut_CLK),
+    .RST(uut_RST),
+    .LED(uut_LED)
   );
 
 
   initial begin
     $dumpfile("uut.vcd");
-    $dumpvars(0, uut, CLK, RST, LED);
+    $dumpvars(0, uut, uut_CLK, uut_RST, uut_LED);
   end
 
 
   initial begin
-    CLK = 0;
+    uut_CLK = 0;
     forever begin
-      #5 CLK = !CLK;
+      #5 uut_CLK = !uut_CLK;
     end
   end
 
 
   initial begin
-    RST = 0;
+    uut_RST = 0;
     #100;
-    RST = 1;
+    uut_RST = 1;
     #100;
-    RST = 0;
+    uut_RST = 0;
     #100000;
     $finish;
   end

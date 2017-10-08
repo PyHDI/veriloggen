@@ -6,76 +6,76 @@ import thread_embedded_verilog_ipcore
 expected_verilog = """
 module test;
 
-  reg CLK;
-  reg RST;
-  wire [8-1:0] led;
-  wire [32-1:0] maxi_awaddr;
-  wire [8-1:0] maxi_awlen;
-  wire maxi_awvalid;
-  reg maxi_awready;
-  wire [32-1:0] maxi_wdata;
-  wire [4-1:0] maxi_wstrb;
-  wire maxi_wlast;
-  wire maxi_wvalid;
-  reg maxi_wready;
-  wire [32-1:0] maxi_araddr;
-  wire [8-1:0] maxi_arlen;
-  wire maxi_arvalid;
-  reg maxi_arready;
-  reg [32-1:0] maxi_rdata;
-  reg maxi_rlast;
-  reg maxi_rvalid;
-  wire maxi_rready;
-  reg [32-1:0] saxi_awaddr;
-  reg saxi_awvalid;
-  wire saxi_awready;
-  reg [32-1:0] saxi_wdata;
-  reg [4-1:0] saxi_wstrb;
-  reg saxi_wvalid;
-  wire saxi_wready;
-  reg [32-1:0] saxi_araddr;
-  reg saxi_arvalid;
-  wire saxi_arready;
-  wire [32-1:0] saxi_rdata;
-  wire saxi_rvalid;
-  reg saxi_rready;
+  reg uut_CLK;
+  reg uut_RST;
+  wire [8-1:0] uut_led;
+  wire [32-1:0] uut_maxi_awaddr;
+  wire [8-1:0] uut_maxi_awlen;
+  wire uut_maxi_awvalid;
+  reg uut_maxi_awready;
+  wire [32-1:0] uut_maxi_wdata;
+  wire [4-1:0] uut_maxi_wstrb;
+  wire uut_maxi_wlast;
+  wire uut_maxi_wvalid;
+  reg uut_maxi_wready;
+  wire [32-1:0] uut_maxi_araddr;
+  wire [8-1:0] uut_maxi_arlen;
+  wire uut_maxi_arvalid;
+  reg uut_maxi_arready;
+  reg [32-1:0] uut_maxi_rdata;
+  reg uut_maxi_rlast;
+  reg uut_maxi_rvalid;
+  wire uut_maxi_rready;
+  reg [32-1:0] uut_saxi_awaddr;
+  reg uut_saxi_awvalid;
+  wire uut_saxi_awready;
+  reg [32-1:0] uut_saxi_wdata;
+  reg [4-1:0] uut_saxi_wstrb;
+  reg uut_saxi_wvalid;
+  wire uut_saxi_wready;
+  reg [32-1:0] uut_saxi_araddr;
+  reg uut_saxi_arvalid;
+  wire uut_saxi_arready;
+  wire [32-1:0] uut_saxi_rdata;
+  wire uut_saxi_rvalid;
+  reg uut_saxi_rready;
 
   blinkled
   uut
   (
-    .CLK(CLK),
-    .RST(RST),
-    .led(led),
-    .maxi_awaddr(maxi_awaddr),
-    .maxi_awlen(maxi_awlen),
-    .maxi_awvalid(maxi_awvalid),
-    .maxi_awready(maxi_awready),
-    .maxi_wdata(maxi_wdata),
-    .maxi_wstrb(maxi_wstrb),
-    .maxi_wlast(maxi_wlast),
-    .maxi_wvalid(maxi_wvalid),
-    .maxi_wready(maxi_wready),
-    .maxi_araddr(maxi_araddr),
-    .maxi_arlen(maxi_arlen),
-    .maxi_arvalid(maxi_arvalid),
-    .maxi_arready(maxi_arready),
-    .maxi_rdata(maxi_rdata),
-    .maxi_rlast(maxi_rlast),
-    .maxi_rvalid(maxi_rvalid),
-    .maxi_rready(maxi_rready),
-    .saxi_awaddr(saxi_awaddr),
-    .saxi_awvalid(saxi_awvalid),
-    .saxi_awready(saxi_awready),
-    .saxi_wdata(saxi_wdata),
-    .saxi_wstrb(saxi_wstrb),
-    .saxi_wvalid(saxi_wvalid),
-    .saxi_wready(saxi_wready),
-    .saxi_araddr(saxi_araddr),
-    .saxi_arvalid(saxi_arvalid),
-    .saxi_arready(saxi_arready),
-    .saxi_rdata(saxi_rdata),
-    .saxi_rvalid(saxi_rvalid),
-    .saxi_rready(saxi_rready)
+    .CLK(uut_CLK),
+    .RST(uut_RST),
+    .led(uut_led),
+    .maxi_awaddr(uut_maxi_awaddr),
+    .maxi_awlen(uut_maxi_awlen),
+    .maxi_awvalid(uut_maxi_awvalid),
+    .maxi_awready(uut_maxi_awready),
+    .maxi_wdata(uut_maxi_wdata),
+    .maxi_wstrb(uut_maxi_wstrb),
+    .maxi_wlast(uut_maxi_wlast),
+    .maxi_wvalid(uut_maxi_wvalid),
+    .maxi_wready(uut_maxi_wready),
+    .maxi_araddr(uut_maxi_araddr),
+    .maxi_arlen(uut_maxi_arlen),
+    .maxi_arvalid(uut_maxi_arvalid),
+    .maxi_arready(uut_maxi_arready),
+    .maxi_rdata(uut_maxi_rdata),
+    .maxi_rlast(uut_maxi_rlast),
+    .maxi_rvalid(uut_maxi_rvalid),
+    .maxi_rready(uut_maxi_rready),
+    .saxi_awaddr(uut_saxi_awaddr),
+    .saxi_awvalid(uut_saxi_awvalid),
+    .saxi_awready(uut_saxi_awready),
+    .saxi_wdata(uut_saxi_wdata),
+    .saxi_wstrb(uut_saxi_wstrb),
+    .saxi_wvalid(uut_saxi_wvalid),
+    .saxi_wready(uut_saxi_wready),
+    .saxi_araddr(uut_saxi_araddr),
+    .saxi_arvalid(uut_saxi_arvalid),
+    .saxi_arready(uut_saxi_arready),
+    .saxi_rdata(uut_saxi_rdata),
+    .saxi_rvalid(uut_saxi_rvalid),
+    .saxi_rready(uut_saxi_rready)
   );
 
   wire [32-1:0] memory_awaddr;
@@ -112,57 +112,57 @@ module test;
   reg __memory_fsm_cond_100_0_1;
   reg __memory_fsm_cond_200_1_1;
   reg __memory_fsm_cond_211_2_1;
-  assign memory_awaddr = maxi_awaddr;
-  assign memory_awlen = maxi_awlen;
-  assign memory_awvalid = maxi_awvalid;
+  assign memory_awaddr = uut_maxi_awaddr;
+  assign memory_awlen = uut_maxi_awlen;
+  assign memory_awvalid = uut_maxi_awvalid;
   wire _tmp_0;
   assign _tmp_0 = memory_awready;
 
   always @(*) begin
-    maxi_awready = _tmp_0;
+    uut_maxi_awready = _tmp_0;
   end
 
-  assign memory_wdata = maxi_wdata;
-  assign memory_wstrb = maxi_wstrb;
-  assign memory_wlast = maxi_wlast;
-  assign memory_wvalid = maxi_wvalid;
+  assign memory_wdata = uut_maxi_wdata;
+  assign memory_wstrb = uut_maxi_wstrb;
+  assign memory_wlast = uut_maxi_wlast;
+  assign memory_wvalid = uut_maxi_wvalid;
   wire _tmp_1;
   assign _tmp_1 = memory_wready;
 
   always @(*) begin
-    maxi_wready = _tmp_1;
+    uut_maxi_wready = _tmp_1;
   end
 
-  assign memory_araddr = maxi_araddr;
-  assign memory_arlen = maxi_arlen;
-  assign memory_arvalid = maxi_arvalid;
+  assign memory_araddr = uut_maxi_araddr;
+  assign memory_arlen = uut_maxi_arlen;
+  assign memory_arvalid = uut_maxi_arvalid;
   wire _tmp_2;
   assign _tmp_2 = memory_arready;
 
   always @(*) begin
-    maxi_arready = _tmp_2;
+    uut_maxi_arready = _tmp_2;
   end
 
 
   always @(*) begin
-    maxi_rdata <= memory_rdata;
+    uut_maxi_rdata <= memory_rdata;
   end
 
   wire _tmp_3;
   assign _tmp_3 = memory_rlast;
 
   always @(*) begin
-    maxi_rlast = _tmp_3;
+    uut_maxi_rlast = _tmp_3;
   end
 
   wire _tmp_4;
   assign _tmp_4 = memory_rvalid;
 
   always @(*) begin
-    maxi_rvalid = _tmp_4;
+    uut_maxi_rvalid = _tmp_4;
   end
 
-  assign memory_rready = maxi_rready;
+  assign memory_rready = uut_maxi_rready;
   reg [32-1:0] _saxi_awaddr;
   reg _saxi_awvalid;
   wire _saxi_awready;
@@ -180,61 +180,61 @@ module test;
   assign _tmp_5 = _saxi_awaddr;
 
   always @(*) begin
-    saxi_awaddr = _tmp_5;
+    uut_saxi_awaddr = _tmp_5;
   end
 
   wire _tmp_6;
   assign _tmp_6 = _saxi_awvalid;
 
   always @(*) begin
-    saxi_awvalid = _tmp_6;
+    uut_saxi_awvalid = _tmp_6;
   end
 
-  assign _saxi_awready = saxi_awready;
+  assign _saxi_awready = uut_saxi_awready;
   wire [32-1:0] _tmp_7;
   assign _tmp_7 = _saxi_wdata;
 
   always @(*) begin
-    saxi_wdata = _tmp_7;
+    uut_saxi_wdata = _tmp_7;
   end
 
   wire [4-1:0] _tmp_8;
   assign _tmp_8 = _saxi_wstrb;
 
   always @(*) begin
-    saxi_wstrb = _tmp_8;
+    uut_saxi_wstrb = _tmp_8;
   end
 
   wire _tmp_9;
   assign _tmp_9 = _saxi_wvalid;
 
   always @(*) begin
-    saxi_wvalid = _tmp_9;
+    uut_saxi_wvalid = _tmp_9;
   end
 
-  assign _saxi_wready = saxi_wready;
+  assign _saxi_wready = uut_saxi_wready;
   wire [32-1:0] _tmp_10;
   assign _tmp_10 = _saxi_araddr;
 
   always @(*) begin
-    saxi_araddr = _tmp_10;
+    uut_saxi_araddr = _tmp_10;
   end
 
   wire _tmp_11;
   assign _tmp_11 = _saxi_arvalid;
 
   always @(*) begin
-    saxi_arvalid = _tmp_11;
+    uut_saxi_arvalid = _tmp_11;
   end
 
-  assign _saxi_arready = saxi_arready;
-  assign _saxi_rdata = saxi_rdata;
-  assign _saxi_rvalid = saxi_rvalid;
+  assign _saxi_arready = uut_saxi_arready;
+  assign _saxi_rdata = uut_saxi_rdata;
+  assign _saxi_rvalid = uut_saxi_rvalid;
   wire _tmp_12;
   assign _tmp_12 = _saxi_rready;
 
   always @(*) begin
-    saxi_rready = _tmp_12;
+    uut_saxi_rready = _tmp_12;
   end
 
   reg [32-1:0] counter;
@@ -255,11 +255,11 @@ module test;
   reg __saxi_cond_7_1;
   reg signed [32-1:0] _th_ctrl_araddr_16;
   reg __saxi_cond_8_1;
-  reg [32-1:0] _tmp_13;
+  reg signed [32-1:0] _tmp_13;
   reg signed [32-1:0] _th_ctrl_v_17;
   reg __saxi_cond_9_1;
   assign _saxi_rready = (th_ctrl == 25) || (th_ctrl == 29);
-  reg [32-1:0] _tmp_14;
+  reg signed [32-1:0] _tmp_14;
   reg signed [32-1:0] _th_ctrl_end_time_18;
   reg signed [32-1:0] _th_ctrl_time_19;
 
@@ -270,15 +270,15 @@ module test;
 
 
   initial begin
-    CLK = 0;
+    uut_CLK = 0;
     forever begin
-      #5 CLK = !CLK;
+      #5 uut_CLK = !uut_CLK;
     end
   end
 
 
   initial begin
-    RST = 0;
+    uut_RST = 0;
     memory_awready = 0;
     memory_wready = 0;
     memory_arready = 0;
@@ -326,9 +326,9 @@ module test;
     _th_ctrl_end_time_18 = 0;
     _th_ctrl_time_19 = 0;
     #100;
-    RST = 1;
+    uut_RST = 1;
     #100;
-    RST = 0;
+    uut_RST = 0;
     #1000000;
     $finish;
   end
@@ -359,8 +359,8 @@ module test;
   localparam _memory_fsm_111 = 111;
   localparam _memory_fsm_112 = 112;
 
-  always @(posedge CLK) begin
-    if(RST) begin
+  always @(posedge uut_CLK) begin
+    if(uut_RST) begin
       _memory_fsm <= _memory_fsm_init;
       _d1__memory_fsm <= _memory_fsm_init;
       memory_awready <= 0;
@@ -571,8 +571,8 @@ module test;
   end
 
 
-  always @(posedge CLK) begin
-    if(RST) begin
+  always @(posedge uut_CLK) begin
+    if(uut_RST) begin
       _saxi_awaddr <= 0;
       _saxi_awvalid <= 0;
       __saxi_cond_0_1 <= 0;
@@ -709,8 +709,8 @@ module test;
   end
 
 
-  always @(posedge CLK) begin
-    if(RST) begin
+  always @(posedge uut_CLK) begin
+    if(uut_RST) begin
       counter <= 0;
     end else begin
       counter <= counter + 1;
@@ -754,8 +754,8 @@ module test;
   localparam th_ctrl_35 = 35;
   localparam th_ctrl_36 = 36;
 
-  always @(posedge CLK) begin
-    if(RST) begin
+  always @(posedge uut_CLK) begin
+    if(uut_RST) begin
       th_ctrl <= th_ctrl_init;
       _th_ctrl_i_11 <= 0;
       _th_ctrl_awaddr_12 <= 0;
@@ -997,14 +997,14 @@ module blinkled
     .ram_a_0_wenable(ram_a_0_wenable)
   );
 
-  reg [32-1:0] _saxi_register_0;
-  reg [32-1:0] _saxi_register_1;
-  reg [32-1:0] _saxi_register_2;
-  reg [32-1:0] _saxi_register_3;
-  reg [32-1:0] _saxi_register_4;
-  reg [32-1:0] _saxi_register_5;
-  reg [32-1:0] _saxi_register_6;
-  reg [32-1:0] _saxi_register_7;
+  reg signed [32-1:0] _saxi_register_0;
+  reg signed [32-1:0] _saxi_register_1;
+  reg signed [32-1:0] _saxi_register_2;
+  reg signed [32-1:0] _saxi_register_3;
+  reg signed [32-1:0] _saxi_register_4;
+  reg signed [32-1:0] _saxi_register_5;
+  reg signed [32-1:0] _saxi_register_6;
+  reg signed [32-1:0] _saxi_register_7;
   reg _saxi_flag_0;
   reg _saxi_flag_1;
   reg _saxi_flag_2;
@@ -1013,14 +1013,14 @@ module blinkled
   reg _saxi_flag_5;
   reg _saxi_flag_6;
   reg _saxi_flag_7;
-  reg [32-1:0] _saxi_resetval_0;
-  reg [32-1:0] _saxi_resetval_1;
-  reg [32-1:0] _saxi_resetval_2;
-  reg [32-1:0] _saxi_resetval_3;
-  reg [32-1:0] _saxi_resetval_4;
-  reg [32-1:0] _saxi_resetval_5;
-  reg [32-1:0] _saxi_resetval_6;
-  reg [32-1:0] _saxi_resetval_7;
+  reg signed [32-1:0] _saxi_resetval_0;
+  reg signed [32-1:0] _saxi_resetval_1;
+  reg signed [32-1:0] _saxi_resetval_2;
+  reg signed [32-1:0] _saxi_resetval_3;
+  reg signed [32-1:0] _saxi_resetval_4;
+  reg signed [32-1:0] _saxi_resetval_5;
+  reg signed [32-1:0] _saxi_resetval_6;
+  reg signed [32-1:0] _saxi_resetval_7;
   localparam _saxi_maskwidth = 3;
   localparam _saxi_mask = { _saxi_maskwidth{ 1'd1 } };
   localparam _saxi_shift = 2;
@@ -1034,7 +1034,7 @@ module blinkled
   assign saxi_awready = (_saxi_register_fsm == 0) && !_tmp_1 && !_tmp_2 && _tmp_3;
   assign saxi_arready = (_saxi_register_fsm == 0) && !_tmp_2 && !_tmp_1 && _tmp_4;
   reg [_saxi_maskwidth-1:0] _tmp_5;
-  wire [32-1:0] _tmp_6;
+  wire signed [32-1:0] _tmp_6;
   assign _tmp_6 = (_tmp_5 == 0)? _saxi_register_0 : 
                   (_tmp_5 == 1)? _saxi_register_1 : 
                   (_tmp_5 == 2)? _saxi_register_2 : 
@@ -1052,7 +1052,7 @@ module blinkled
                   (_tmp_5 == 5)? _saxi_flag_5 : 
                   (_tmp_5 == 6)? _saxi_flag_6 : 
                   (_tmp_5 == 7)? _saxi_flag_7 : 'hx;
-  wire [32-1:0] _tmp_8;
+  wire signed [32-1:0] _tmp_8;
   assign _tmp_8 = (_tmp_5 == 0)? _saxi_resetval_0 : 
                   (_tmp_5 == 1)? _saxi_resetval_1 : 
                   (_tmp_5 == 2)? _saxi_resetval_2 : 
@@ -1131,8 +1131,8 @@ module blinkled
   wire [_tmp_32-1:0] _tmp_33;
   assign _tmp_33 = (_tmp_30 || !_tmp_28) && (_tmp_31 || !_tmp_29);
   reg [_tmp_32-1:0] __tmp_33_1;
-  wire [32-1:0] _tmp_34;
-  reg [32-1:0] __tmp_34_1;
+  wire signed [32-1:0] _tmp_34;
+  reg signed [32-1:0] __tmp_34_1;
   assign _tmp_34 = (__tmp_33_1)? ram_a_0_rdata : __tmp_34_1;
   reg _tmp_35;
   reg _tmp_36;

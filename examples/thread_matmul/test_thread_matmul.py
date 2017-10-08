@@ -581,8 +581,8 @@ module blinkled
   wire [_tmp_40-1:0] _tmp_41;
   assign _tmp_41 = (_tmp_38 || !_tmp_36) && (_tmp_39 || !_tmp_37);
   reg [_tmp_40-1:0] __tmp_41_1;
-  wire [32-1:0] _tmp_42;
-  reg [32-1:0] __tmp_42_1;
+  wire signed [32-1:0] _tmp_42;
+  reg signed [32-1:0] __tmp_42_1;
   assign _tmp_42 = (__tmp_41_1)? ram_c_0_rdata : __tmp_42_1;
   reg _tmp_43;
   reg _tmp_44;

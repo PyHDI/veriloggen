@@ -220,11 +220,11 @@ module test;
   reg __saxi_cond_9_1;
   reg signed [32-1:0] _th_ctrl_araddr_24;
   reg __saxi_cond_10_1;
-  reg [32-1:0] _tmp_13;
+  reg signed [32-1:0] _tmp_13;
   reg signed [32-1:0] _th_ctrl_v_25;
   reg __saxi_cond_11_1;
   assign _saxi_rready = (th_ctrl == 31) || (th_ctrl == 35);
-  reg [32-1:0] _tmp_14;
+  reg signed [32-1:0] _tmp_14;
   reg signed [32-1:0] _th_ctrl_end_time_26;
   reg signed [32-1:0] _th_ctrl_time_27;
 
@@ -1094,14 +1094,14 @@ module blinkled
     .ram_c_0_wenable(ram_c_0_wenable)
   );
 
-  reg [32-1:0] _saxi_register_0;
-  reg [32-1:0] _saxi_register_1;
-  reg [32-1:0] _saxi_register_2;
-  reg [32-1:0] _saxi_register_3;
-  reg [32-1:0] _saxi_register_4;
-  reg [32-1:0] _saxi_register_5;
-  reg [32-1:0] _saxi_register_6;
-  reg [32-1:0] _saxi_register_7;
+  reg signed [32-1:0] _saxi_register_0;
+  reg signed [32-1:0] _saxi_register_1;
+  reg signed [32-1:0] _saxi_register_2;
+  reg signed [32-1:0] _saxi_register_3;
+  reg signed [32-1:0] _saxi_register_4;
+  reg signed [32-1:0] _saxi_register_5;
+  reg signed [32-1:0] _saxi_register_6;
+  reg signed [32-1:0] _saxi_register_7;
   reg _saxi_flag_0;
   reg _saxi_flag_1;
   reg _saxi_flag_2;
@@ -1110,14 +1110,14 @@ module blinkled
   reg _saxi_flag_5;
   reg _saxi_flag_6;
   reg _saxi_flag_7;
-  reg [32-1:0] _saxi_resetval_0;
-  reg [32-1:0] _saxi_resetval_1;
-  reg [32-1:0] _saxi_resetval_2;
-  reg [32-1:0] _saxi_resetval_3;
-  reg [32-1:0] _saxi_resetval_4;
-  reg [32-1:0] _saxi_resetval_5;
-  reg [32-1:0] _saxi_resetval_6;
-  reg [32-1:0] _saxi_resetval_7;
+  reg signed [32-1:0] _saxi_resetval_0;
+  reg signed [32-1:0] _saxi_resetval_1;
+  reg signed [32-1:0] _saxi_resetval_2;
+  reg signed [32-1:0] _saxi_resetval_3;
+  reg signed [32-1:0] _saxi_resetval_4;
+  reg signed [32-1:0] _saxi_resetval_5;
+  reg signed [32-1:0] _saxi_resetval_6;
+  reg signed [32-1:0] _saxi_resetval_7;
   localparam _saxi_maskwidth = 3;
   localparam _saxi_mask = { _saxi_maskwidth{ 1'd1 } };
   localparam _saxi_shift = 2;
@@ -1131,7 +1131,7 @@ module blinkled
   assign saxi_awready = (_saxi_register_fsm == 0) && !_tmp_1 && !_tmp_2 && _tmp_3;
   assign saxi_arready = (_saxi_register_fsm == 0) && !_tmp_2 && !_tmp_1 && _tmp_4;
   reg [_saxi_maskwidth-1:0] _tmp_5;
-  wire [32-1:0] _tmp_6;
+  wire signed [32-1:0] _tmp_6;
   assign _tmp_6 = (_tmp_5 == 0)? _saxi_register_0 : 
                   (_tmp_5 == 1)? _saxi_register_1 : 
                   (_tmp_5 == 2)? _saxi_register_2 : 
@@ -1149,7 +1149,7 @@ module blinkled
                   (_tmp_5 == 5)? _saxi_flag_5 : 
                   (_tmp_5 == 6)? _saxi_flag_6 : 
                   (_tmp_5 == 7)? _saxi_flag_7 : 'hx;
-  wire [32-1:0] _tmp_8;
+  wire signed [32-1:0] _tmp_8;
   assign _tmp_8 = (_tmp_5 == 0)? _saxi_resetval_0 : 
                   (_tmp_5 == 1)? _saxi_resetval_1 : 
                   (_tmp_5 == 2)? _saxi_resetval_2 : 
@@ -1254,8 +1254,8 @@ module blinkled
   wire [_tmp_49-1:0] _tmp_50;
   assign _tmp_50 = (_tmp_47 || !_tmp_45) && (_tmp_48 || !_tmp_46);
   reg [_tmp_49-1:0] __tmp_50_1;
-  wire [32-1:0] _tmp_51;
-  reg [32-1:0] __tmp_51_1;
+  wire signed [32-1:0] _tmp_51;
+  reg signed [32-1:0] __tmp_51_1;
   assign _tmp_51 = (__tmp_50_1)? ram_c_0_rdata : __tmp_51_1;
   reg _tmp_52;
   reg _tmp_53;

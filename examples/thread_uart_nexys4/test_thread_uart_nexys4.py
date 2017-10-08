@@ -6,22 +6,22 @@ import thread_uart_nexys4
 expected_verilog = """
 module test;
 
-  reg CLK;
-  reg RST;
-  reg [16-1:0] sw;
-  wire [16-1:0] led;
-  wire utx;
-  wire urx;
+  reg uut_CLK;
+  reg uut_RST;
+  reg [16-1:0] uut_sw;
+  wire [16-1:0] uut_led;
+  wire uut_utx;
+  wire uut_urx;
 
   blinkled
   uut
   (
-    .CLK(CLK),
-    .RST(RST),
-    .sw(sw),
-    .led(led),
-    .utx(utx),
-    .urx(urx)
+    .CLK(uut_CLK),
+    .RST(uut_RST),
+    .sw(uut_sw),
+    .led(uut_led),
+    .utx(uut_utx),
+    .urx(uut_urx)
   );
 
   reg [8-1:0] tx_din;
@@ -32,8 +32,8 @@ module test;
   UartTx_
   inst_tx
   (
-    .CLK(CLK),
-    .RST(RST),
+    .CLK(uut_CLK),
+    .RST(uut_RST),
     .din(tx_din),
     .enable(tx_enable),
     .ready(tx_ready),
@@ -47,37 +47,38 @@ module test;
   UartRx_
   inst_rx
   (
-    .CLK(CLK),
-    .RST(RST),
+    .CLK(uut_CLK),
+    .RST(uut_RST),
     .rxd(rx_rxd),
     .dout(rx_dout),
     .valid(rx_valid)
   );
 
-  assign urx = tx_txd;
-  assign rx_rxd = utx;
+  assign uut_urx = tx_txd;
+  assign rx_rxd = uut_utx;
 
   initial begin
     $dumpfile("uut.vcd");
     $dumpvars(0, uut, inst_tx, inst_rx);
   end
 
+
   initial begin
-    CLK = 0;
+    uut_CLK = 0;
     forever begin
-      #5 CLK = !CLK;
+      #5 uut_CLK = !uut_CLK;
     end
   end
 
 
   initial begin
-    RST = 0;
+    uut_RST = 0;
     tx_enable = 0;
     #100;
-    RST = 1;
+    uut_RST = 1;
     #100;
-    RST = 0;
-    sw = 10;
+    uut_RST = 0;
+    uut_sw = 10;
     #100000;
     $finish;
   end
@@ -103,8 +104,8 @@ module test;
   localparam test_13 = 13;
   localparam test_14 = 14;
 
-  always @(posedge CLK) begin
-    if(RST) begin
+  always @(posedge uut_CLK) begin
+    if(uut_RST) begin
       test <= test_init;
       _test_i_2 <= 0;
       _test_s_3 <= 0;
@@ -157,21 +158,21 @@ module test;
           test <= test_9;
         end
         test_9: begin
-          if(_test_r_4 == _test_s_3 + sw) begin
+          if(_test_r_4 == _test_s_3 + uut_sw) begin
             test <= test_10;
           end else begin
             test <= test_12;
           end
         end
         test_10: begin
-          $display("OK: %d + %d == %d", _test_s_3, sw, _test_r_4);
+          $display("OK: %d + %d == %d", _test_s_3, uut_sw, _test_r_4);
           test <= test_11;
         end
         test_11: begin
           test <= test_13;
         end
         test_12: begin
-          $display("NG: %d + %d != %d", _test_s_3, sw, _test_r_4);
+          $display("NG: %d + %d != %d", _test_s_3, uut_sw, _test_r_4);
           test <= test_13;
         end
         test_13: begin

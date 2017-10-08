@@ -81,12 +81,12 @@ module main
   reg [32-1:0] raddr;
   reg [32-1:0] sum;
   localparam _tmp_0 = 1;
-  wire [_tmp_0-1:0] _tmp_1;
+  wire signed [_tmp_0-1:0] _tmp_1;
   assign _tmp_1 = 1;
-  reg [_tmp_0-1:0] __tmp_1_1;
-  reg [_tmp_0-1:0] __tmp_1_2;
-  reg [_tmp_0-1:0] __tmp_1_3;
-  reg [_tmp_0-1:0] __tmp_1_4;
+  reg signed [_tmp_0-1:0] __tmp_1_1;
+  reg signed [_tmp_0-1:0] __tmp_1_2;
+  reg signed [_tmp_0-1:0] __tmp_1_3;
+  reg signed [_tmp_0-1:0] __tmp_1_4;
   reg _tmp_2;
   reg _myram_cond_1_1;
   reg _myram_cond_2_1;

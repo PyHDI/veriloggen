@@ -97,7 +97,7 @@ module main
   reg _myram_cond_1_1;
   reg _myram_cond_2_1;
   reg _myram_cond_2_2;
-  reg [32-1:0] _tmp_2;
+  reg signed [32-1:0] _tmp_2;
   assign xdata = _tmp_2;
   reg _tmp_3;
   assign xvalid = _tmp_3;

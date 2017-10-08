@@ -12,18 +12,19 @@ module top #
   input CLK,
   input RST,
   output [WIDTH-1:0] LED,
-  output [WIDTH-1:0] sub_dummy_out0,
-  input [WIDTH-1:0] sub_dummy_in0
+  output [sub_WIDTH-1:0] sub_dummy_out0,
+  input [sub_WIDTH-1:0] sub_dummy_in0
 );
 
-  wire [WIDTH-1:0] sub_dummy_out2;
-  reg [WIDTH-1:0] sub_dummy_in2;
-  wire [WIDTH-1:0] sub_dummy_out1;
-  wire [WIDTH-1:0] sub_dummy_in1;
+  localparam sub_WIDTH = WIDTH;
+  wire [sub_WIDTH-1:0] sub_dummy_out2;
+  reg [sub_WIDTH-1:0] sub_dummy_in2;
+  wire [sub_WIDTH-1:0] sub_dummy_out1;
+  wire [sub_WIDTH-1:0] sub_dummy_in1;
 
   blinkled
   #(
-    .WIDTH(WIDTH)
+    .WIDTH(sub_WIDTH)
   )
   inst_blinkled
   (

@@ -486,8 +486,8 @@ module blinkled
   wire [_tmp_11-1:0] _tmp_12;
   assign _tmp_12 = (_tmp_9 || !_tmp_7) && (_tmp_10 || !_tmp_8);
   reg [_tmp_11-1:0] __tmp_12_1;
-  wire [32-1:0] _tmp_13;
-  reg [32-1:0] __tmp_13_1;
+  wire signed [32-1:0] _tmp_13;
+  reg signed [32-1:0] __tmp_13_1;
   assign _tmp_13 = (__tmp_12_1)? myram_0_rdata : __tmp_13_1;
   reg _tmp_14;
   reg _tmp_15;
@@ -524,8 +524,8 @@ module blinkled
   wire [_tmp_34-1:0] _tmp_35;
   assign _tmp_35 = (_tmp_32 || !_tmp_30) && (_tmp_33 || !_tmp_31);
   reg [_tmp_34-1:0] __tmp_35_1;
-  wire [32-1:0] _tmp_36;
-  reg [32-1:0] __tmp_36_1;
+  wire signed [32-1:0] _tmp_36;
+  reg signed [32-1:0] __tmp_36_1;
   assign _tmp_36 = (__tmp_35_1)? myram_0_rdata : __tmp_36_1;
   reg _tmp_37;
   reg _tmp_38;
@@ -561,8 +561,8 @@ module blinkled
   wire [_tmp_56-1:0] _tmp_57;
   assign _tmp_57 = (_tmp_54 || !_tmp_52) && (_tmp_55 || !_tmp_53);
   reg [_tmp_56-1:0] __tmp_57_1;
-  wire [32-1:0] _tmp_58;
-  reg [32-1:0] __tmp_58_1;
+  wire signed [32-1:0] _tmp_58;
+  reg signed [32-1:0] __tmp_58_1;
   assign _tmp_58 = (__tmp_57_1)? myram_0_rdata : __tmp_58_1;
   reg _tmp_59;
   reg _tmp_60;
@@ -598,8 +598,8 @@ module blinkled
   wire [_tmp_79-1:0] _tmp_80;
   assign _tmp_80 = (_tmp_77 || !_tmp_75) && (_tmp_78 || !_tmp_76);
   reg [_tmp_79-1:0] __tmp_80_1;
-  wire [32-1:0] _tmp_81;
-  reg [32-1:0] __tmp_81_1;
+  wire signed [32-1:0] _tmp_81;
+  reg signed [32-1:0] __tmp_81_1;
   assign _tmp_81 = (__tmp_80_1)? myram_0_rdata : __tmp_81_1;
   reg _tmp_82;
   reg _tmp_83;

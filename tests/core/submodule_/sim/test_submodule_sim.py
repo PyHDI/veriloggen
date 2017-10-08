@@ -4,54 +4,47 @@ import veriloggen
 import submodule_sim
 
 expected_verilog = """
-module test #
-(
-  parameter WIDTH = 8
-)
-(
+module test;
 
-);
-
-  reg CLK;
-  reg RST;
-  wire [WIDTH-1:0] LED;
-  wire [WIDTH-1:0] dummy_out0;
-  reg [WIDTH-1:0] dummy_in0;
+  localparam top_WIDTH = 8;
+  localparam top_inst_blinkled_WIDTH = top_WIDTH;
+  reg top_CLK;
+  reg top_RST;
+  wire [top_WIDTH-1:0] top_LED;
+  wire [top_inst_blinkled_WIDTH-1:0] top_inst_blinkled_dummy_out0;
+  reg [top_inst_blinkled_WIDTH-1:0] top_inst_blinkled_dummy_in0;
 
   top
-  #(
-    .WIDTH(WIDTH)
-  )
-  inst_top
+  top
   (
-    .CLK(CLK),
-    .RST(RST),
-    .LED(LED),
-    .dummy_out0(dummy_out0),
-    .dummy_in0(dummy_in0)
+    .CLK(top_CLK),
+    .RST(top_RST),
+    .LED(top_LED),
+    .inst_blinkled_dummy_out0(top_inst_blinkled_dummy_out0),
+    .inst_blinkled_dummy_in0(top_inst_blinkled_dummy_in0)
   );
 
 
   initial begin
     $dumpfile("uut.vcd");
-    $dumpvars(0, inst_top, CLK, RST, LED, dummy_out0, dummy_in0);
+    $dumpvars(0, top, top_CLK, top_RST, top_LED, top_inst_blinkled_dummy_out0, top_inst_blinkled_dummy_in0);
   end
 
 
   initial begin
-    CLK = 0;
+    top_CLK = 0;
     forever begin
-      #5 CLK = !CLK;
+      #5 top_CLK = !top_CLK;
     end
   end
 
 
   initial begin
-    RST = 0;
+    top_RST = 0;
     #100;
-    RST = 1;
+    top_RST = 1;
     #100;
-    RST = 0;
+    top_RST = 0;
     #100000;
     $finish;
   end
@@ -69,30 +62,31 @@ module top #
   input CLK,
   input RST,
   output [WIDTH-1:0] LED,
-  output [WIDTH-1:0] dummy_out0,
-  input [WIDTH-1:0] dummy_in0
+  output [inst_blinkled_WIDTH-1:0] inst_blinkled_dummy_out0,
+  input [inst_blinkled_WIDTH-1:0] inst_blinkled_dummy_in0
 );
 
-  wire [WIDTH-1:0] dummy_out2;
-  reg [WIDTH-1:0] dummy_in2;
-  wire [WIDTH-1:0] dummy_out1;
-  wire [WIDTH-1:0] dummy_in1;
+  localparam inst_blinkled_WIDTH = WIDTH;
+  wire [inst_blinkled_WIDTH-1:0] inst_blinkled_dummy_out2;
+  reg [inst_blinkled_WIDTH-1:0] inst_blinkled_dummy_in2;
+  wire [inst_blinkled_WIDTH-1:0] inst_blinkled_dummy_out1;
+  wire [inst_blinkled_WIDTH-1:0] inst_blinkled_dummy_in1;
 
   blinkled
   #(
-    .WIDTH(WIDTH)
+    .WIDTH(inst_blinkled_WIDTH)
   )
   inst_blinkled
   (
     .CLK(CLK),
     .RST(RST),
     .LED(LED),
-    .dummy_out0(dummy_out0),
-    .dummy_out1(dummy_out1),
-    .dummy_out2(dummy_out2),
-    .dummy_in0(dummy_in0),
-    .dummy_in1(dummy_in1),
-    .dummy_in2(dummy_in2)
+    .dummy_out0(inst_blinkled_dummy_out0),
+    .dummy_out1(inst_blinkled_dummy_out1),
+    .dummy_out2(inst_blinkled_dummy_out2),
+    .dummy_in0(inst_blinkled_dummy_in0),
+    .dummy_in1(inst_blinkled_dummy_in1),
+    .dummy_in2(inst_blinkled_dummy_in2)
   );
 
 

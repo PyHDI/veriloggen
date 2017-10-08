@@ -82,12 +82,12 @@ module main
   assign myram_0_wenable = waddr < 16;
   reg [32-1:0] raddr;
   localparam _tmp_0 = 1;
-  wire [_tmp_0-1:0] _tmp_1;
+  wire signed [_tmp_0-1:0] _tmp_1;
   assign _tmp_1 = 1;
-  reg [_tmp_0-1:0] __tmp_1_1;
-  reg [_tmp_0-1:0] __tmp_1_2;
-  reg [_tmp_0-1:0] __tmp_1_3;
-  reg [_tmp_0-1:0] __tmp_1_4;
+  reg signed [_tmp_0-1:0] __tmp_1_1;
+  reg signed [_tmp_0-1:0] __tmp_1_2;
+  reg signed [_tmp_0-1:0] __tmp_1_3;
+  reg signed [_tmp_0-1:0] __tmp_1_4;
   assign myram_1_addr = raddr;
   assign myram_1_wdata = 0;
   assign myram_1_wenable = 0;

@@ -261,8 +261,8 @@ module main
   wire [_tmp_10-1:0] _tmp_11;
   assign _tmp_11 = (_tmp_8 || !_tmp_6) && (_tmp_9 || !_tmp_7);
   reg [_tmp_10-1:0] __tmp_11_1;
-  wire [32-1:0] _tmp_12;
-  reg [32-1:0] __tmp_12_1;
+  wire signed [32-1:0] _tmp_12;
+  reg signed [32-1:0] __tmp_12_1;
   assign _tmp_12 = (__tmp_11_1)? myram_0_rdata : __tmp_12_1;
   reg _tmp_13;
   reg _tmp_14;

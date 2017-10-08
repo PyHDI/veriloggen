@@ -92,10 +92,10 @@ module main
   wire _tmp_8;
   reg [7-1:0] _tmp_9;
   reg _tmp_10;
-  reg [32-1:0] _tmp_11;
-  reg [32-1:0] _tmp_12;
-  reg [32-1:0] _tmp_13;
-  reg [32-1:0] _tmp_14;
+  reg signed [32-1:0] _tmp_11;
+  reg signed [32-1:0] _tmp_12;
+  reg signed [32-1:0] _tmp_13;
+  reg signed [32-1:0] _tmp_14;
   reg [4-1:0] _tmp_15;
   reg _tmp_16;
   reg _tmp_17;

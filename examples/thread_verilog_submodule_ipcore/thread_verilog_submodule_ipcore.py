@@ -30,6 +30,8 @@ module processing_unit #
   output reg wenable
 );
 
+  localparam INCR = 100;
+
   reg [ADDR_WIDTH-1:0] count;
   reg [DATA_WIDTH-1:0] rdata_buf;
   reg [32-1:0] fsm;
@@ -69,7 +71,7 @@ module processing_unit #
           fsm <= fsm_3;
         end
         fsm_3: begin
-          wdata <= rdata_buf + 100;
+          wdata <= rdata_buf + INCR;
           wenable <= 1;
           fsm <= fsm_4;
         end
@@ -110,9 +112,6 @@ def mkMemcpy():
     ram_a = vthread.RAM(m, 'ram_a', clk, rst, datawidth, addrwidth, numports=2)
     maxi = vthread.AXIM(m, 'maxi', clk, rst, datawidth)
     saxi = vthread.AXISLiteRegister(m, 'saxi', clk, rst, datawidth, length=8)
-
-    datawidth = m.Parameter('DATA_WIDTH', datawidth)
-    addrwidth = m.Parameter('ADDR_WIDTH', addrwidth)
 
     # import verilog submodule
     start = m.Reg('start', initval=0)

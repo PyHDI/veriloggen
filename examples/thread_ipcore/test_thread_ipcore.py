@@ -112,11 +112,11 @@ module test;
   reg __saxi_cond_5_1;
   reg signed [32-1:0] _th_ctrl_araddr_8;
   reg __saxi_cond_6_1;
-  reg [32-1:0] _tmp_8;
+  reg signed [32-1:0] _tmp_8;
   reg signed [32-1:0] _th_ctrl_v_9;
   reg __saxi_cond_7_1;
   assign _saxi_rready = (th_ctrl == 21) || (th_ctrl == 25);
-  reg [32-1:0] _tmp_9;
+  reg signed [32-1:0] _tmp_9;
   reg signed [32-1:0] _th_ctrl_end_time_10;
   reg signed [32-1:0] _th_ctrl_time_11;
 
@@ -542,18 +542,18 @@ module blinkled
   input saxi_rready
 );
 
-  reg [32-1:0] _saxi_register_0;
-  reg [32-1:0] _saxi_register_1;
-  reg [32-1:0] _saxi_register_2;
-  reg [32-1:0] _saxi_register_3;
+  reg signed [32-1:0] _saxi_register_0;
+  reg signed [32-1:0] _saxi_register_1;
+  reg signed [32-1:0] _saxi_register_2;
+  reg signed [32-1:0] _saxi_register_3;
   reg _saxi_flag_0;
   reg _saxi_flag_1;
   reg _saxi_flag_2;
   reg _saxi_flag_3;
-  reg [32-1:0] _saxi_resetval_0;
-  reg [32-1:0] _saxi_resetval_1;
-  reg [32-1:0] _saxi_resetval_2;
-  reg [32-1:0] _saxi_resetval_3;
+  reg signed [32-1:0] _saxi_resetval_0;
+  reg signed [32-1:0] _saxi_resetval_1;
+  reg signed [32-1:0] _saxi_resetval_2;
+  reg signed [32-1:0] _saxi_resetval_3;
   localparam _saxi_maskwidth = 2;
   localparam _saxi_mask = { _saxi_maskwidth{ 1'd1 } };
   localparam _saxi_shift = 2;
@@ -567,7 +567,7 @@ module blinkled
   assign saxi_awready = (_saxi_register_fsm == 0) && !_tmp_1 && !_tmp_2 && _tmp_3;
   assign saxi_arready = (_saxi_register_fsm == 0) && !_tmp_2 && !_tmp_1 && _tmp_4;
   reg [_saxi_maskwidth-1:0] _tmp_5;
-  wire [32-1:0] _tmp_6;
+  wire signed [32-1:0] _tmp_6;
   assign _tmp_6 = (_tmp_5 == 0)? _saxi_register_0 : 
                   (_tmp_5 == 1)? _saxi_register_1 : 
                   (_tmp_5 == 2)? _saxi_register_2 : 
@@ -577,7 +577,7 @@ module blinkled
                   (_tmp_5 == 1)? _saxi_flag_1 : 
                   (_tmp_5 == 2)? _saxi_flag_2 : 
                   (_tmp_5 == 3)? _saxi_flag_3 : 'hx;
-  wire [32-1:0] _tmp_8;
+  wire signed [32-1:0] _tmp_8;
   assign _tmp_8 = (_tmp_5 == 0)? _saxi_resetval_0 : 
                   (_tmp_5 == 1)? _saxi_resetval_1 : 
                   (_tmp_5 == 2)? _saxi_resetval_2 : 

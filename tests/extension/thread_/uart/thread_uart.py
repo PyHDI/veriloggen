@@ -45,7 +45,7 @@ def mkTest(baudrate=19200, clockfreq=19200 * 10):
     # target instance
     led = mkLed(baudrate, clockfreq)
 
-    uut = Submodule(m, led, name='uut', as_wire=('utx', 'urx'))
+    uut = Submodule(m, led, name='uut', prefix='', as_wire=('utx', 'urx'))
     clk = uut['CLK']
     rst = uut['RST']
     tx = uut['utx']

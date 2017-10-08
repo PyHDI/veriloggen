@@ -8,8 +8,8 @@ module top
   output RsTx,
   output RsCts,
   input RsRts,
-  input [16-1:0] sw,
-  output [16-1:0] led
+  input [16-1:0] inst_blinkled_sw,
+  output [16-1:0] inst_blinkled_led
 );
 
   assign RsCts = 0;
@@ -23,16 +23,16 @@ module top
     RST <= !RST_X;
   end
 
-  wire utx;
-  wire urx;
+  wire inst_blinkled_utx;
+  wire inst_blinkled_urx;
 
   blinkled
   inst_blinkled
   (
     .CLK(new_CLK),
     .RST(RST),
-    .sw(sw),
-    .led(led),
+    .sw(inst_blinkled_sw),
+    .led(inst_blinkled_led),
     .utx(RsTx),
     .urx(RsRx)
   );

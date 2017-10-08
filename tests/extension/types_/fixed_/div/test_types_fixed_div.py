@@ -4,48 +4,39 @@ import veriloggen
 import types_fixed_div
 
 expected_verilog = """
-module test #
-(
-  parameter WIDTH = 8
-)
-(
+module test;
 
-);
-
-  reg CLK;
-  reg RST;
+  reg uut_CLK;
+  reg uut_RST;
 
   blinkled
-  #(
-    .WIDTH(WIDTH)
-  )
   uut
   (
-    .CLK(CLK),
-    .RST(RST)
+    .CLK(uut_CLK),
+    .RST(uut_RST)
   );
 
 
   initial begin
     $dumpfile("uut.vcd");
-    $dumpvars(0, uut, CLK, RST);
+    $dumpvars(0, uut, uut_CLK, uut_RST);
   end
 
 
   initial begin
-    CLK = 0;
+    uut_CLK = 0;
     forever begin
-      #5 CLK = !CLK;
+      #5 uut_CLK = !uut_CLK;
     end
   end
 
 
   initial begin
-    RST = 0;
+    uut_RST = 0;
     #100;
-    RST = 1;
+    uut_RST = 1;
     #100;
-    RST = 0;
+    uut_RST = 0;
     #100000;
     $finish;
   end

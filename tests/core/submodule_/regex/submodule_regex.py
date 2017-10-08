@@ -66,5 +66,5 @@ def mkTop():
 
 if __name__ == '__main__':
     top = mkTop()
-    verilog = top.to_verilog()
+    verilog = top.to_verilog('tmp.v')
     print(verilog)
