@@ -28,11 +28,13 @@ class Submodule(vtypes.VeriloggenNode):
         self.child = child
 
         if name is None:
-            name = '_'.join(('inst', child.name))
+            name = child.name
+
         self.name = name
 
         if prefix is None:
-            prefix = ''
+            prefix = '_'.join((name, ''))
+
         self.prefix = prefix
 
         child_params = child.get_params()
@@ -99,7 +101,8 @@ class Submodule(vtypes.VeriloggenNode):
         if arg_params:
             new_params.update(
                 parent.copy_params_as_localparams(child, self.prefix,
-                                                  include=arg_params.keys()))
+                                                  include=arg_params.keys(),
+                                                  use_fullmatch=True))
 
         # localparams
         # used ones only
@@ -108,9 +111,11 @@ class Submodule(vtypes.VeriloggenNode):
             new_localparams.update(
                 parent.copy_params_as_localparams(child, self.prefix,
                                                   include=used_params,
-                                                  exclude=arg_params.keys()))
+                                                  exclude=arg_params.keys(),
+                                                  use_fullmatch=True))
             new_localparams.update(
-                parent.copy_localparams(child, self.prefix, include=used_params))
+                parent.copy_localparams(child, self.prefix, include=used_params,
+                                        use_fullmatch=True))
 
         # overwrite the parameter value by parameter arg
         for key, param in arg_params.items():
@@ -121,20 +126,23 @@ class Submodule(vtypes.VeriloggenNode):
         # ports
         new_ports = collections.OrderedDict()
         if as_io:
-            new_ports.update(parent.copy_ports(
-                child, self.prefix, include=as_io))
+            new_ports.update(
+                parent.copy_ports(child, self.prefix, include=as_io,
+                                  use_fullmatch=True))
 
         exclude = []
         exclude.extend(arg_ports.keys())
         exclude.extend(as_io)
         exclude.extend(as_wire)
 
-        new_ports.update(parent.copy_ports_as_vars(
-            child, self.prefix, exclude=exclude))
+        new_ports.update(
+            parent.copy_ports_as_vars(child, self.prefix, exclude=exclude,
+                                      use_fullmatch=True))
 
         if as_wire:
-            new_ports.update(parent.copy_ports_as_vars(
-                child, self.prefix, include=as_wire, use_wire=True))
+            new_ports.update(
+                parent.copy_ports_as_vars(child, self.prefix, include=as_wire,
+                                          use_wire=True, use_fullmatch=True))
 
         # for instance args
         self.all_params = collections.OrderedDict()

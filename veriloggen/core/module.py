@@ -603,7 +603,9 @@ class Module(vtypes.VeriloggenNode):
 
     #-------------------------------------------------------------------------
     def copy_params(self, src, prefix=None, postfix=None,
-                    include=None, exclude=None, rename_exclude=None):
+                    include=None, exclude=None, rename_exclude=None,
+                    use_fullmatch=False):
+
         if prefix is None:
             prefix = ''
         if postfix is None:
@@ -628,9 +630,13 @@ class Module(vtypes.VeriloggenNode):
             else:
                 skip = True
             for inc in include:
+                if use_fullmatch:
+                    inc = ''.join(('^', inc, '$'))
                 if re.match(inc, key):
                     skip = False
             for ex in exclude:
+                if use_fullmatch:
+                    ex = ''.join(('^', ex, '$'))
                 if re.match(ex, key):
                     skip = True
             if skip:
@@ -644,7 +650,9 @@ class Module(vtypes.VeriloggenNode):
         return ret
 
     def copy_params_as_localparams(self, src, prefix=None, postfix=None,
-                                   include=None, exclude=None, rename_exclude=None):
+                                   include=None, exclude=None, rename_exclude=None,
+                                   use_fullmatch=False):
+
         if prefix is None:
             prefix = ''
         if postfix is None:
@@ -669,9 +677,13 @@ class Module(vtypes.VeriloggenNode):
             else:
                 skip = True
             for inc in include:
+                if use_fullmatch:
+                    inc = ''.join(('^', inc, '$'))
                 if re.match(inc, key):
                     skip = False
             for ex in exclude:
+                if use_fullmatch:
+                    ex = ''.join(('^', ex, '$'))
                 if re.match(ex, key):
                     skip = True
             if skip:
@@ -686,7 +698,9 @@ class Module(vtypes.VeriloggenNode):
         return ret
 
     def copy_localparams(self, src, prefix=None, postfix=None,
-                         include=None, exclude=None, rename_exclude=None):
+                         include=None, exclude=None, rename_exclude=None,
+                         use_fullmatch=False):
+
         if prefix is None:
             prefix = ''
         if postfix is None:
@@ -711,9 +725,13 @@ class Module(vtypes.VeriloggenNode):
             else:
                 skip = True
             for inc in include:
+                if use_fullmatch:
+                    inc = ''.join(('^', inc, '$'))
                 if re.match(inc, key):
                     skip = False
             for ex in exclude:
+                if use_fullmatch:
+                    ex = ''.join(('^', ex, '$'))
                 if re.match(ex, key):
                     skip = True
             if skip:
@@ -727,7 +745,9 @@ class Module(vtypes.VeriloggenNode):
         return ret
 
     def copy_ports(self, src, prefix=None, postfix=None,
-                   include=None, exclude=None, rename_exclude=None):
+                   include=None, exclude=None, rename_exclude=None,
+                   use_fullmatch=False):
+
         if prefix is None:
             prefix = ''
         if postfix is None:
@@ -752,9 +772,13 @@ class Module(vtypes.VeriloggenNode):
             else:
                 skip = True
             for inc in include:
+                if use_fullmatch:
+                    inc = ''.join(('^', inc, '$'))
                 if re.match(inc, key):
                     skip = False
             for ex in exclude:
+                if use_fullmatch:
+                    ex = ''.join(('^', ex, '$'))
                 if re.match(ex, key):
                     skip = True
             if skip:
@@ -768,7 +792,9 @@ class Module(vtypes.VeriloggenNode):
         return ret
 
     def copy_ports_as_vars(self, src, prefix=None, postfix=None,
-                           include=None, exclude=None, rename_exclude=None, use_wire=False):
+                           include=None, exclude=None, rename_exclude=None,
+                           use_fullmatch=False, use_wire=False):
+
         if prefix is None:
             prefix = ''
         if postfix is None:
@@ -793,9 +819,13 @@ class Module(vtypes.VeriloggenNode):
             else:
                 skip = True
             for inc in include:
+                if use_fullmatch:
+                    inc = ''.join(('^', inc, '$'))
                 if re.match(inc, key):
                     skip = False
             for ex in exclude:
+                if use_fullmatch:
+                    ex = ''.join(('^', ex, '$'))
                 if re.match(ex, key):
                     skip = True
             if skip:
@@ -812,7 +842,9 @@ class Module(vtypes.VeriloggenNode):
         return ret
 
     def copy_vars(self, src, prefix=None, postfix=None,
-                  include=None, exclude=None, rename_exclude=None):
+                  include=None, exclude=None, rename_exclude=None,
+                  use_fullmatch=False):
+
         if prefix is None:
             prefix = ''
         if postfix is None:
@@ -837,9 +869,13 @@ class Module(vtypes.VeriloggenNode):
             else:
                 skip = True
             for inc in include:
+                if use_fullmatch:
+                    inc = ''.join(('^', inc, '$'))
                 if re.match(inc, key):
                     skip = False
             for ex in exclude:
+                if use_fullmatch:
+                    ex = ''.join(('^', ex, '$'))
                 if re.match(ex, key):
                     skip = True
             if skip:
@@ -853,9 +889,12 @@ class Module(vtypes.VeriloggenNode):
         return ret
 
     def copy_sim_ports(self, src, prefix=None, postfix=None,
-                       include=None, exclude=None, rename_exclude=None, use_wire=False):
-        return self.copy_ports_as_vars(src, prefix, postfix, include, exclude,
-                                       rename_exclude, use_wire)
+                       include=None, exclude=None, rename_exclude=None,
+                       use_fullmatch=False, use_wire=False):
+
+        return self.copy_ports_as_vars(src, prefix, postfix,
+                                       include, exclude, rename_exclude,
+                                       use_fullmatch, use_wire)
 
     #-------------------------------------------------------------------------
     def connect_params(self, targ, prefix=None, postfix=None,
@@ -879,9 +918,13 @@ class Module(vtypes.VeriloggenNode):
             else:
                 skip = True
             for inc in include:
+                if use_fullmatch:
+                    inc = ''.join(('^', inc, '$'))
                 if re.match(inc, key):
                     skip = False
             for ex in exclude:
+                if use_fullmatch:
+                    ex = ''.join(('^', ex, '$'))
                 if re.match(ex, key):
                     skip = True
             if skip:
@@ -918,9 +961,13 @@ class Module(vtypes.VeriloggenNode):
             else:
                 skip = True
             for inc in include:
+                if use_fullmatch:
+                    inc = ''.join(('^', inc, '$'))
                 if re.match(inc, key):
                     skip = False
             for ex in exclude:
+                if use_fullmatch:
+                    ex = ''.join(('^', ex, '$'))
                 if re.match(ex, key):
                     skip = True
             if skip:

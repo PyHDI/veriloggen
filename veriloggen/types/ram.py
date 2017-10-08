@@ -326,7 +326,8 @@ class SyncRAMManager(object):
 
         df_data = df.Variable(data, data_valid, data_ready,
                               width=self.datawidth, point=point, signed=signed)
-        df_last = df.Variable(last, last_valid, last_ready, width=1, signed=False)
+        df_last = df.Variable(
+            last, last_valid, last_ready, width=1, signed=False)
         done = last
 
         return df_data, df_last, done
@@ -492,7 +493,8 @@ class SyncRAMManager(object):
 
         df_data = df.Variable(data, data_valid, data_ready,
                               width=self.datawidth, point=point, signed=signed)
-        df_last = df.Variable(last, last_valid, last_ready, width=1, signed=False)
+        df_last = df.Variable(
+            last, last_valid, last_ready, width=1, signed=False)
         done = last
 
         return df_data, df_last, done
@@ -649,7 +651,8 @@ class SyncRAMManager(object):
 
         df = self.df if self.df is not None else dataflow
 
-        df_last = df.Variable(last, last_valid, last_ready, width=1, signed=False)
+        df_last = df.Variable(
+            last, last_valid, last_ready, width=1, signed=False)
         done = last
 
         df_reuse_data = [df.Variable(d, v, r,
@@ -712,7 +715,7 @@ class SyncRAMManager(object):
         last = self.m.TmpReg(initval=0)
         reuse_data = [self.m.TmpReg(self.datawidth, initval=0, signed=True)
                       for _ in range(num_outputs)]
-        next_reuse_data = [self.m.TmpReg(self.datawidth, initval=0, singed=True)
+        next_reuse_data = [self.m.TmpReg(self.datawidth, initval=0, signed=True)
                            for _ in range(num_outputs)]
 
         reuse_count = self.m.TmpReg(reuse_size.bit_length() + 1, initval=0)
@@ -944,7 +947,8 @@ class SyncRAMManager(object):
 
         df = self.df if self.df is not None else dataflow
 
-        df_last = df.Variable(last, last_valid, last_ready, width=1, signed=False)
+        df_last = df.Variable(
+            last, last_valid, last_ready, width=1, signed=False)
         done = last
 
         df_reuse_data = [df.Variable(d, v, r,
