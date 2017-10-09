@@ -91,7 +91,7 @@ Install from pip (or download and install from GitHub):
 
     pip install pyverilog
 
--  IPgen: 0.3.0 or later
+-  IPgen: 0.3.1 or later
 
 Install from pip (or download and install from GitHub):
 

@@ -1,4 +1,4 @@
-FROM ubuntu:14.04
+FROM ubuntu:16.04
 RUN apt-get update && apt-get upgrade -y
 RUN apt-get install build-essential -y
 RUN apt-get install git -y
@@ -9,6 +9,8 @@ RUN pip install jinja2
 RUN pip3 install jinja2
 RUN pip install pyverilog
 RUN pip3 install pyverilog
+RUN pip install ipgen
+RUN pip3 install ipgen
 RUN mkdir /home/veriloggen/
 WORKDIR "/home/veriloggen"
 RUN git clone https://github.com/PyHDI/veriloggen.git
