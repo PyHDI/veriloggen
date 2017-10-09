@@ -11,6 +11,7 @@ test:
 .PHONY: clean
 clean:
 	make clean -C ./veriloggen
+	make clean -C ./utils
 	make clean -C ./examples
 	make clean -C ./tests
 	rm -rf *.egg-info build dist *.pyc __pycache__ parsetab.py .cache *.out *.png *.dot tmp.v uut.vcd
