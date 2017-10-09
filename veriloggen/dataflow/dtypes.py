@@ -1105,6 +1105,23 @@ class Minus(_BinaryOperator):
         return self.left.eval() - self.right.eval()
 
 
+# general name alias
+def Add(left, right):
+    return Plus(left, right)
+
+
+def Sub(left, right):
+    return Minus(left, right)
+
+
+def Mul(left, right):
+    return Times(left, right)
+
+
+def Div(left, right):
+    return Divide(left, right)
+
+
 class Sll(_BinaryOperator):
     max_width = 1024
 

@@ -1005,6 +1005,23 @@ class Minus(_BinaryOperator):
         return left - right
 
 
+# general name alias
+def Add(left, right):
+    return Plus(left, right)
+
+
+def Sub(left, right):
+    return Minus(left, right)
+
+
+def Mul(left, right):
+    return Times(left, right)
+
+
+def Div(left, right):
+    return Divide(left, right)
+
+
 class Sll(_BinaryOperator):
 
     def __init__(self, left, right):
