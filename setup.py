@@ -8,7 +8,8 @@ def read(filename):
     return open(os.path.join(os.path.dirname(__file__), filename)).read()
 
 
-m = re.search(r'(\d+\.\d+\.\d+(-.+)?)', read('veriloggen/utils/VERSION'))
+m = re.search(r'(\d+\.\d+\.\d+(-.+)?)',
+              read('veriloggen/utils/VERSION').splitlines()[0])
 version = m.group(1) if m is not None else '0.0.0'
 
 setup(name='veriloggen',

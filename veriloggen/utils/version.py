@@ -8,4 +8,4 @@ def read(filename):
     return open(os.path.join(os.path.dirname(__file__), filename)).read()
 
 
-VERSION = read("VERSION")
+VERSION = read("VERSION").splitlines()[0]
