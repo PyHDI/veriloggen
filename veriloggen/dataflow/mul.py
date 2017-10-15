@@ -5,7 +5,7 @@ import veriloggen.core.vtypes as vtypes
 import veriloggen.core.module as module
 
 
-def mkMultiplierCore(index, lwidth=32, rwidth=32, lsigned=True, rsigned=True, depth=6):
+def mkMultiplierCore(index, lwidth=32, rwidth=32, lsigned=True, rsigned=True, depth=2):
     retwidth = lwidth + rwidth
 
     m = module.Module('multiplier_core_%d' % index)
@@ -46,7 +46,7 @@ def mkMultiplierCore(index, lwidth=32, rwidth=32, lsigned=True, rsigned=True, de
     return m
 
 
-def mkMultiplier(index, lwidth=32, rwidth=32, lsigned=True, rsigned=True, depth=6):
+def mkMultiplier(index, lwidth=32, rwidth=32, lsigned=True, rsigned=True, depth=2):
     if lwidth < 0:
         raise ValueError("data width must be greater than 0.")
     if rwidth < 0:
