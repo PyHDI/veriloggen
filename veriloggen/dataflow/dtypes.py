@@ -700,7 +700,7 @@ class Power(_BinaryOperator):
 
 
 class Times(_BinaryOperator):
-    latency = 2 + 1
+    latency = 6 + 1
 
     def eval(self):
         return self.left.eval() * self.right.eval()
@@ -813,10 +813,6 @@ class Divide(_BinaryOperator):
         return Divide(left, right)
 
     def _implement(self, m, seq):
-        if self.latency < 32 + 3:
-            raise ValueError(
-                "Latency of '/' operator must be greater than (32 + 3 - 1)")
-
         width = self.bit_length()
         signed = self.get_signed()
 
@@ -958,10 +954,6 @@ class Mod(_BinaryOperator):
         return self.left.eval() % self.right.eval()
 
     def _implement(self, m, seq):
-        if self.latency < 32 + 3:
-            raise ValueError(
-                "Latency of '%' operator must be greater than (32 + 3 - 1)")
-
         width = self.bit_length()
         signed = self.get_signed()
 
