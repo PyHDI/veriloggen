@@ -2574,24 +2574,24 @@ module multiplier_core_0
 
   reg signed [16-1:0] _a;
   reg signed [2-1:0] _b;
-  reg signed [18-1:0] _tmpval0;
-  reg signed [18-1:0] _tmpval1;
-  reg signed [18-1:0] _tmpval2;
-  reg signed [18-1:0] _tmpval3;
-  reg signed [18-1:0] _tmpval4;
-  wire signed [18-1:0] rslt;
-  assign rslt = _a * _b;
-  assign c = _tmpval4;
+  wire signed [18-1:0] _mul;
+  reg signed [18-1:0] _pipe_mul0;
+  reg signed [18-1:0] _pipe_mul1;
+  reg signed [18-1:0] _pipe_mul2;
+  reg signed [18-1:0] _pipe_mul3;
+  reg signed [18-1:0] _pipe_mul4;
+  assign _mul = _a * _b;
+  assign c = _pipe_mul4;
 
   always @(posedge CLK) begin
     if(update) begin
       _a <= a;
       _b <= b;
-      _tmpval0 <= rslt;
-      _tmpval1 <= _tmpval0;
-      _tmpval2 <= _tmpval1;
-      _tmpval3 <= _tmpval2;
-      _tmpval4 <= _tmpval3;
+      _pipe_mul0 <= _mul;
+      _pipe_mul1 <= _pipe_mul0;
+      _pipe_mul2 <= _pipe_mul1;
+      _pipe_mul3 <= _pipe_mul2;
+      _pipe_mul4 <= _pipe_mul3;
     end 
   end
 
@@ -2667,24 +2667,24 @@ module multiplier_core_1
 
   reg signed [16-1:0] _a;
   reg signed [1-1:0] _b;
-  reg signed [17-1:0] _tmpval0;
-  reg signed [17-1:0] _tmpval1;
-  reg signed [17-1:0] _tmpval2;
-  reg signed [17-1:0] _tmpval3;
-  reg signed [17-1:0] _tmpval4;
-  wire signed [17-1:0] rslt;
-  assign rslt = _a * _b;
-  assign c = _tmpval4;
+  wire signed [17-1:0] _mul;
+  reg signed [17-1:0] _pipe_mul0;
+  reg signed [17-1:0] _pipe_mul1;
+  reg signed [17-1:0] _pipe_mul2;
+  reg signed [17-1:0] _pipe_mul3;
+  reg signed [17-1:0] _pipe_mul4;
+  assign _mul = _a * _b;
+  assign c = _pipe_mul4;
 
   always @(posedge CLK) begin
     if(update) begin
       _a <= a;
       _b <= b;
-      _tmpval0 <= rslt;
-      _tmpval1 <= _tmpval0;
-      _tmpval2 <= _tmpval1;
-      _tmpval3 <= _tmpval2;
-      _tmpval4 <= _tmpval3;
+      _pipe_mul0 <= _mul;
+      _pipe_mul1 <= _pipe_mul0;
+      _pipe_mul2 <= _pipe_mul1;
+      _pipe_mul3 <= _pipe_mul2;
+      _pipe_mul4 <= _pipe_mul3;
     end 
   end
 
@@ -2760,24 +2760,24 @@ module multiplier_core_2
 
   reg signed [16-1:0] _a;
   reg signed [1-1:0] _b;
-  reg signed [17-1:0] _tmpval0;
-  reg signed [17-1:0] _tmpval1;
-  reg signed [17-1:0] _tmpval2;
-  reg signed [17-1:0] _tmpval3;
-  reg signed [17-1:0] _tmpval4;
-  wire signed [17-1:0] rslt;
-  assign rslt = _a * _b;
-  assign c = _tmpval4;
+  wire signed [17-1:0] _mul;
+  reg signed [17-1:0] _pipe_mul0;
+  reg signed [17-1:0] _pipe_mul1;
+  reg signed [17-1:0] _pipe_mul2;
+  reg signed [17-1:0] _pipe_mul3;
+  reg signed [17-1:0] _pipe_mul4;
+  assign _mul = _a * _b;
+  assign c = _pipe_mul4;
 
   always @(posedge CLK) begin
     if(update) begin
       _a <= a;
       _b <= b;
-      _tmpval0 <= rslt;
-      _tmpval1 <= _tmpval0;
-      _tmpval2 <= _tmpval1;
-      _tmpval3 <= _tmpval2;
-      _tmpval4 <= _tmpval3;
+      _pipe_mul0 <= _mul;
+      _pipe_mul1 <= _pipe_mul0;
+      _pipe_mul2 <= _pipe_mul1;
+      _pipe_mul3 <= _pipe_mul2;
+      _pipe_mul4 <= _pipe_mul3;
     end 
   end
 
@@ -2853,24 +2853,24 @@ module multiplier_core_3
 
   reg signed [16-1:0] _a;
   reg signed [2-1:0] _b;
-  reg signed [18-1:0] _tmpval0;
-  reg signed [18-1:0] _tmpval1;
-  reg signed [18-1:0] _tmpval2;
-  reg signed [18-1:0] _tmpval3;
-  reg signed [18-1:0] _tmpval4;
-  wire signed [18-1:0] rslt;
-  assign rslt = _a * _b;
-  assign c = _tmpval4;
+  wire signed [18-1:0] _mul;
+  reg signed [18-1:0] _pipe_mul0;
+  reg signed [18-1:0] _pipe_mul1;
+  reg signed [18-1:0] _pipe_mul2;
+  reg signed [18-1:0] _pipe_mul3;
+  reg signed [18-1:0] _pipe_mul4;
+  assign _mul = _a * _b;
+  assign c = _pipe_mul4;
 
   always @(posedge CLK) begin
     if(update) begin
       _a <= a;
       _b <= b;
-      _tmpval0 <= rslt;
-      _tmpval1 <= _tmpval0;
-      _tmpval2 <= _tmpval1;
-      _tmpval3 <= _tmpval2;
-      _tmpval4 <= _tmpval3;
+      _pipe_mul0 <= _mul;
+      _pipe_mul1 <= _pipe_mul0;
+      _pipe_mul2 <= _pipe_mul1;
+      _pipe_mul3 <= _pipe_mul2;
+      _pipe_mul4 <= _pipe_mul3;
     end 
   end
 
@@ -2946,24 +2946,24 @@ module multiplier_core_4
 
   reg signed [16-1:0] _a;
   reg signed [1-1:0] _b;
-  reg signed [17-1:0] _tmpval0;
-  reg signed [17-1:0] _tmpval1;
-  reg signed [17-1:0] _tmpval2;
-  reg signed [17-1:0] _tmpval3;
-  reg signed [17-1:0] _tmpval4;
-  wire signed [17-1:0] rslt;
-  assign rslt = _a * _b;
-  assign c = _tmpval4;
+  wire signed [17-1:0] _mul;
+  reg signed [17-1:0] _pipe_mul0;
+  reg signed [17-1:0] _pipe_mul1;
+  reg signed [17-1:0] _pipe_mul2;
+  reg signed [17-1:0] _pipe_mul3;
+  reg signed [17-1:0] _pipe_mul4;
+  assign _mul = _a * _b;
+  assign c = _pipe_mul4;
 
   always @(posedge CLK) begin
     if(update) begin
       _a <= a;
       _b <= b;
-      _tmpval0 <= rslt;
-      _tmpval1 <= _tmpval0;
-      _tmpval2 <= _tmpval1;
-      _tmpval3 <= _tmpval2;
-      _tmpval4 <= _tmpval3;
+      _pipe_mul0 <= _mul;
+      _pipe_mul1 <= _pipe_mul0;
+      _pipe_mul2 <= _pipe_mul1;
+      _pipe_mul3 <= _pipe_mul2;
+      _pipe_mul4 <= _pipe_mul3;
     end 
   end
 
@@ -3039,24 +3039,24 @@ module multiplier_core_5
 
   reg signed [16-1:0] _a;
   reg signed [2-1:0] _b;
-  reg signed [18-1:0] _tmpval0;
-  reg signed [18-1:0] _tmpval1;
-  reg signed [18-1:0] _tmpval2;
-  reg signed [18-1:0] _tmpval3;
-  reg signed [18-1:0] _tmpval4;
-  wire signed [18-1:0] rslt;
-  assign rslt = _a * _b;
-  assign c = _tmpval4;
+  wire signed [18-1:0] _mul;
+  reg signed [18-1:0] _pipe_mul0;
+  reg signed [18-1:0] _pipe_mul1;
+  reg signed [18-1:0] _pipe_mul2;
+  reg signed [18-1:0] _pipe_mul3;
+  reg signed [18-1:0] _pipe_mul4;
+  assign _mul = _a * _b;
+  assign c = _pipe_mul4;
 
   always @(posedge CLK) begin
     if(update) begin
       _a <= a;
       _b <= b;
-      _tmpval0 <= rslt;
-      _tmpval1 <= _tmpval0;
-      _tmpval2 <= _tmpval1;
-      _tmpval3 <= _tmpval2;
-      _tmpval4 <= _tmpval3;
+      _pipe_mul0 <= _mul;
+      _pipe_mul1 <= _pipe_mul0;
+      _pipe_mul2 <= _pipe_mul1;
+      _pipe_mul3 <= _pipe_mul2;
+      _pipe_mul4 <= _pipe_mul3;
     end 
   end
 
@@ -3132,24 +3132,24 @@ module multiplier_core_6
 
   reg signed [16-1:0] _a;
   reg signed [2-1:0] _b;
-  reg signed [18-1:0] _tmpval0;
-  reg signed [18-1:0] _tmpval1;
-  reg signed [18-1:0] _tmpval2;
-  reg signed [18-1:0] _tmpval3;
-  reg signed [18-1:0] _tmpval4;
-  wire signed [18-1:0] rslt;
-  assign rslt = _a * _b;
-  assign c = _tmpval4;
+  wire signed [18-1:0] _mul;
+  reg signed [18-1:0] _pipe_mul0;
+  reg signed [18-1:0] _pipe_mul1;
+  reg signed [18-1:0] _pipe_mul2;
+  reg signed [18-1:0] _pipe_mul3;
+  reg signed [18-1:0] _pipe_mul4;
+  assign _mul = _a * _b;
+  assign c = _pipe_mul4;
 
   always @(posedge CLK) begin
     if(update) begin
       _a <= a;
       _b <= b;
-      _tmpval0 <= rslt;
-      _tmpval1 <= _tmpval0;
-      _tmpval2 <= _tmpval1;
-      _tmpval3 <= _tmpval2;
-      _tmpval4 <= _tmpval3;
+      _pipe_mul0 <= _mul;
+      _pipe_mul1 <= _pipe_mul0;
+      _pipe_mul2 <= _pipe_mul1;
+      _pipe_mul3 <= _pipe_mul2;
+      _pipe_mul4 <= _pipe_mul3;
     end 
   end
 
@@ -3225,24 +3225,24 @@ module multiplier_core_7
 
   reg signed [16-1:0] _a;
   reg signed [1-1:0] _b;
-  reg signed [17-1:0] _tmpval0;
-  reg signed [17-1:0] _tmpval1;
-  reg signed [17-1:0] _tmpval2;
-  reg signed [17-1:0] _tmpval3;
-  reg signed [17-1:0] _tmpval4;
-  wire signed [17-1:0] rslt;
-  assign rslt = _a * _b;
-  assign c = _tmpval4;
+  wire signed [17-1:0] _mul;
+  reg signed [17-1:0] _pipe_mul0;
+  reg signed [17-1:0] _pipe_mul1;
+  reg signed [17-1:0] _pipe_mul2;
+  reg signed [17-1:0] _pipe_mul3;
+  reg signed [17-1:0] _pipe_mul4;
+  assign _mul = _a * _b;
+  assign c = _pipe_mul4;
 
   always @(posedge CLK) begin
     if(update) begin
       _a <= a;
       _b <= b;
-      _tmpval0 <= rslt;
-      _tmpval1 <= _tmpval0;
-      _tmpval2 <= _tmpval1;
-      _tmpval3 <= _tmpval2;
-      _tmpval4 <= _tmpval3;
+      _pipe_mul0 <= _mul;
+      _pipe_mul1 <= _pipe_mul0;
+      _pipe_mul2 <= _pipe_mul1;
+      _pipe_mul3 <= _pipe_mul2;
+      _pipe_mul4 <= _pipe_mul3;
     end 
   end
 
@@ -3318,24 +3318,24 @@ module multiplier_core_8
 
   reg signed [16-1:0] _a;
   reg signed [2-1:0] _b;
-  reg signed [18-1:0] _tmpval0;
-  reg signed [18-1:0] _tmpval1;
-  reg signed [18-1:0] _tmpval2;
-  reg signed [18-1:0] _tmpval3;
-  reg signed [18-1:0] _tmpval4;
-  wire signed [18-1:0] rslt;
-  assign rslt = _a * _b;
-  assign c = _tmpval4;
+  wire signed [18-1:0] _mul;
+  reg signed [18-1:0] _pipe_mul0;
+  reg signed [18-1:0] _pipe_mul1;
+  reg signed [18-1:0] _pipe_mul2;
+  reg signed [18-1:0] _pipe_mul3;
+  reg signed [18-1:0] _pipe_mul4;
+  assign _mul = _a * _b;
+  assign c = _pipe_mul4;
 
   always @(posedge CLK) begin
     if(update) begin
       _a <= a;
       _b <= b;
-      _tmpval0 <= rslt;
-      _tmpval1 <= _tmpval0;
-      _tmpval2 <= _tmpval1;
-      _tmpval3 <= _tmpval2;
-      _tmpval4 <= _tmpval3;
+      _pipe_mul0 <= _mul;
+      _pipe_mul1 <= _pipe_mul0;
+      _pipe_mul2 <= _pipe_mul1;
+      _pipe_mul3 <= _pipe_mul2;
+      _pipe_mul4 <= _pipe_mul3;
     end 
   end
 
@@ -3411,24 +3411,24 @@ module multiplier_core_9
 
   reg signed [16-1:0] _a;
   reg signed [1-1:0] _b;
-  reg signed [17-1:0] _tmpval0;
-  reg signed [17-1:0] _tmpval1;
-  reg signed [17-1:0] _tmpval2;
-  reg signed [17-1:0] _tmpval3;
-  reg signed [17-1:0] _tmpval4;
-  wire signed [17-1:0] rslt;
-  assign rslt = _a * _b;
-  assign c = _tmpval4;
+  wire signed [17-1:0] _mul;
+  reg signed [17-1:0] _pipe_mul0;
+  reg signed [17-1:0] _pipe_mul1;
+  reg signed [17-1:0] _pipe_mul2;
+  reg signed [17-1:0] _pipe_mul3;
+  reg signed [17-1:0] _pipe_mul4;
+  assign _mul = _a * _b;
+  assign c = _pipe_mul4;
 
   always @(posedge CLK) begin
     if(update) begin
       _a <= a;
       _b <= b;
-      _tmpval0 <= rslt;
-      _tmpval1 <= _tmpval0;
-      _tmpval2 <= _tmpval1;
-      _tmpval3 <= _tmpval2;
-      _tmpval4 <= _tmpval3;
+      _pipe_mul0 <= _mul;
+      _pipe_mul1 <= _pipe_mul0;
+      _pipe_mul2 <= _pipe_mul1;
+      _pipe_mul3 <= _pipe_mul2;
+      _pipe_mul4 <= _pipe_mul3;
     end 
   end
 
@@ -3504,24 +3504,24 @@ module multiplier_core_10
 
   reg signed [16-1:0] _a;
   reg signed [1-1:0] _b;
-  reg signed [17-1:0] _tmpval0;
-  reg signed [17-1:0] _tmpval1;
-  reg signed [17-1:0] _tmpval2;
-  reg signed [17-1:0] _tmpval3;
-  reg signed [17-1:0] _tmpval4;
-  wire signed [17-1:0] rslt;
-  assign rslt = _a * _b;
-  assign c = _tmpval4;
+  wire signed [17-1:0] _mul;
+  reg signed [17-1:0] _pipe_mul0;
+  reg signed [17-1:0] _pipe_mul1;
+  reg signed [17-1:0] _pipe_mul2;
+  reg signed [17-1:0] _pipe_mul3;
+  reg signed [17-1:0] _pipe_mul4;
+  assign _mul = _a * _b;
+  assign c = _pipe_mul4;
 
   always @(posedge CLK) begin
     if(update) begin
       _a <= a;
       _b <= b;
-      _tmpval0 <= rslt;
-      _tmpval1 <= _tmpval0;
-      _tmpval2 <= _tmpval1;
-      _tmpval3 <= _tmpval2;
-      _tmpval4 <= _tmpval3;
+      _pipe_mul0 <= _mul;
+      _pipe_mul1 <= _pipe_mul0;
+      _pipe_mul2 <= _pipe_mul1;
+      _pipe_mul3 <= _pipe_mul2;
+      _pipe_mul4 <= _pipe_mul3;
     end 
   end
 
@@ -3597,24 +3597,24 @@ module multiplier_core_11
 
   reg signed [16-1:0] _a;
   reg signed [2-1:0] _b;
-  reg signed [18-1:0] _tmpval0;
-  reg signed [18-1:0] _tmpval1;
-  reg signed [18-1:0] _tmpval2;
-  reg signed [18-1:0] _tmpval3;
-  reg signed [18-1:0] _tmpval4;
-  wire signed [18-1:0] rslt;
-  assign rslt = _a * _b;
-  assign c = _tmpval4;
+  wire signed [18-1:0] _mul;
+  reg signed [18-1:0] _pipe_mul0;
+  reg signed [18-1:0] _pipe_mul1;
+  reg signed [18-1:0] _pipe_mul2;
+  reg signed [18-1:0] _pipe_mul3;
+  reg signed [18-1:0] _pipe_mul4;
+  assign _mul = _a * _b;
+  assign c = _pipe_mul4;
 
   always @(posedge CLK) begin
     if(update) begin
       _a <= a;
       _b <= b;
-      _tmpval0 <= rslt;
-      _tmpval1 <= _tmpval0;
-      _tmpval2 <= _tmpval1;
-      _tmpval3 <= _tmpval2;
-      _tmpval4 <= _tmpval3;
+      _pipe_mul0 <= _mul;
+      _pipe_mul1 <= _pipe_mul0;
+      _pipe_mul2 <= _pipe_mul1;
+      _pipe_mul3 <= _pipe_mul2;
+      _pipe_mul4 <= _pipe_mul3;
     end 
   end
 
@@ -3690,24 +3690,24 @@ module multiplier_core_12
 
   reg signed [16-1:0] _a;
   reg signed [2-1:0] _b;
-  reg signed [18-1:0] _tmpval0;
-  reg signed [18-1:0] _tmpval1;
-  reg signed [18-1:0] _tmpval2;
-  reg signed [18-1:0] _tmpval3;
-  reg signed [18-1:0] _tmpval4;
-  wire signed [18-1:0] rslt;
-  assign rslt = _a * _b;
-  assign c = _tmpval4;
+  wire signed [18-1:0] _mul;
+  reg signed [18-1:0] _pipe_mul0;
+  reg signed [18-1:0] _pipe_mul1;
+  reg signed [18-1:0] _pipe_mul2;
+  reg signed [18-1:0] _pipe_mul3;
+  reg signed [18-1:0] _pipe_mul4;
+  assign _mul = _a * _b;
+  assign c = _pipe_mul4;
 
   always @(posedge CLK) begin
     if(update) begin
       _a <= a;
       _b <= b;
-      _tmpval0 <= rslt;
-      _tmpval1 <= _tmpval0;
-      _tmpval2 <= _tmpval1;
-      _tmpval3 <= _tmpval2;
-      _tmpval4 <= _tmpval3;
+      _pipe_mul0 <= _mul;
+      _pipe_mul1 <= _pipe_mul0;
+      _pipe_mul2 <= _pipe_mul1;
+      _pipe_mul3 <= _pipe_mul2;
+      _pipe_mul4 <= _pipe_mul3;
     end 
   end
 
@@ -3783,24 +3783,24 @@ module multiplier_core_13
 
   reg signed [16-1:0] _a;
   reg signed [1-1:0] _b;
-  reg signed [17-1:0] _tmpval0;
-  reg signed [17-1:0] _tmpval1;
-  reg signed [17-1:0] _tmpval2;
-  reg signed [17-1:0] _tmpval3;
-  reg signed [17-1:0] _tmpval4;
-  wire signed [17-1:0] rslt;
-  assign rslt = _a * _b;
-  assign c = _tmpval4;
+  wire signed [17-1:0] _mul;
+  reg signed [17-1:0] _pipe_mul0;
+  reg signed [17-1:0] _pipe_mul1;
+  reg signed [17-1:0] _pipe_mul2;
+  reg signed [17-1:0] _pipe_mul3;
+  reg signed [17-1:0] _pipe_mul4;
+  assign _mul = _a * _b;
+  assign c = _pipe_mul4;
 
   always @(posedge CLK) begin
     if(update) begin
       _a <= a;
       _b <= b;
-      _tmpval0 <= rslt;
-      _tmpval1 <= _tmpval0;
-      _tmpval2 <= _tmpval1;
-      _tmpval3 <= _tmpval2;
-      _tmpval4 <= _tmpval3;
+      _pipe_mul0 <= _mul;
+      _pipe_mul1 <= _pipe_mul0;
+      _pipe_mul2 <= _pipe_mul1;
+      _pipe_mul3 <= _pipe_mul2;
+      _pipe_mul4 <= _pipe_mul3;
     end 
   end
 
@@ -3876,24 +3876,24 @@ module multiplier_core_14
 
   reg signed [16-1:0] _a;
   reg signed [1-1:0] _b;
-  reg signed [17-1:0] _tmpval0;
-  reg signed [17-1:0] _tmpval1;
-  reg signed [17-1:0] _tmpval2;
-  reg signed [17-1:0] _tmpval3;
-  reg signed [17-1:0] _tmpval4;
-  wire signed [17-1:0] rslt;
-  assign rslt = _a * _b;
-  assign c = _tmpval4;
+  wire signed [17-1:0] _mul;
+  reg signed [17-1:0] _pipe_mul0;
+  reg signed [17-1:0] _pipe_mul1;
+  reg signed [17-1:0] _pipe_mul2;
+  reg signed [17-1:0] _pipe_mul3;
+  reg signed [17-1:0] _pipe_mul4;
+  assign _mul = _a * _b;
+  assign c = _pipe_mul4;
 
   always @(posedge CLK) begin
     if(update) begin
       _a <= a;
       _b <= b;
-      _tmpval0 <= rslt;
-      _tmpval1 <= _tmpval0;
-      _tmpval2 <= _tmpval1;
-      _tmpval3 <= _tmpval2;
-      _tmpval4 <= _tmpval3;
+      _pipe_mul0 <= _mul;
+      _pipe_mul1 <= _pipe_mul0;
+      _pipe_mul2 <= _pipe_mul1;
+      _pipe_mul3 <= _pipe_mul2;
+      _pipe_mul4 <= _pipe_mul3;
     end 
   end
 
@@ -3969,24 +3969,24 @@ module multiplier_core_15
 
   reg signed [16-1:0] _a;
   reg signed [2-1:0] _b;
-  reg signed [18-1:0] _tmpval0;
-  reg signed [18-1:0] _tmpval1;
-  reg signed [18-1:0] _tmpval2;
-  reg signed [18-1:0] _tmpval3;
-  reg signed [18-1:0] _tmpval4;
-  wire signed [18-1:0] rslt;
-  assign rslt = _a * _b;
-  assign c = _tmpval4;
+  wire signed [18-1:0] _mul;
+  reg signed [18-1:0] _pipe_mul0;
+  reg signed [18-1:0] _pipe_mul1;
+  reg signed [18-1:0] _pipe_mul2;
+  reg signed [18-1:0] _pipe_mul3;
+  reg signed [18-1:0] _pipe_mul4;
+  assign _mul = _a * _b;
+  assign c = _pipe_mul4;
 
   always @(posedge CLK) begin
     if(update) begin
       _a <= a;
       _b <= b;
-      _tmpval0 <= rslt;
-      _tmpval1 <= _tmpval0;
-      _tmpval2 <= _tmpval1;
-      _tmpval3 <= _tmpval2;
-      _tmpval4 <= _tmpval3;
+      _pipe_mul0 <= _mul;
+      _pipe_mul1 <= _pipe_mul0;
+      _pipe_mul2 <= _pipe_mul1;
+      _pipe_mul3 <= _pipe_mul2;
+      _pipe_mul4 <= _pipe_mul3;
     end 
   end
 

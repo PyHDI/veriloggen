@@ -170,23 +170,23 @@ module mymul_core #
 
   reg signed [lwidth-1:0] _a;
   reg signed [rwidth-1:0] _b;
-  reg signed [lwidth+rwidth-1:0] _tmpval0;
-  reg signed [lwidth+rwidth-1:0] _tmpval1;
-  reg signed [lwidth+rwidth-1:0] _tmpval2;
-  reg signed [lwidth+rwidth-1:0] _tmpval3;
-  reg signed [lwidth+rwidth-1:0] _tmpval4;
-  wire signed [lwidth+rwidth-1:0] rslt;
-  assign rslt = _a * _b;
-  assign c = _tmpval4;
+  wire signed [lwidth+rwidth-1:0] _mul;
+  reg signed [lwidth+rwidth-1:0] _pipe_mul0;
+  reg signed [lwidth+rwidth-1:0] _pipe_mul1;
+  reg signed [lwidth+rwidth-1:0] _pipe_mul2;
+  reg signed [lwidth+rwidth-1:0] _pipe_mul3;
+  reg signed [lwidth+rwidth-1:0] _pipe_mul4;
+  assign _mul = _a * _b;
+  assign c = _pipe_mul4;
 
   always @(posedge CLK) begin
     _a <= a;
     _b <= b;
-    _tmpval0 <= rslt;
-    _tmpval1 <= _tmpval0;
-    _tmpval2 <= _tmpval1;
-    _tmpval3 <= _tmpval2;
-    _tmpval4 <= _tmpval3;
+    _pipe_mul0 <= _mul;
+    _pipe_mul1 <= _pipe_mul0;
+    _pipe_mul2 <= _pipe_mul1;
+    _pipe_mul3 <= _pipe_mul2;
+    _pipe_mul4 <= _pipe_mul3;
   end
 
 

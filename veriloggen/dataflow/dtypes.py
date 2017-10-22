@@ -715,7 +715,7 @@ class Times(_BinaryOperator):
         self.signed = self.left.get_signed() and self.right.get_signed()
 
     def _implement(self, m, seq):
-        if self.latency <= 2:
+        if self.latency < 3:
             raise ValueError("Latency of '*' operator must be greater than 2")
 
         width = self.bit_length()
@@ -2303,7 +2303,7 @@ class _Accumulator(_UnaryOperator):
     ops = (vtypes.Plus, )
 
     def __init__(self, right, size=None, initval=None,
-                 enable=None, reset=None, width=32, signed=True):
+                 enable=None, reset=None, width=None, signed=None, label=None):
 
         self.size = _to_constant(size) if size is not None else None
 
@@ -2329,12 +2329,14 @@ class _Accumulator(_UnaryOperator):
             self.reset._add_sink(self)
 
         _UnaryOperator.__init__(self, right)
-        self.width = width
-        self.signed = signed
-        self.label = None
 
-    def _set_attributes(self):
-        self.point = self.right.get_point()
+        if width is not None:
+            self.width = width
+
+        if signed is not None:
+            self.signed = signed
+
+        self.label = label
 
     def _set_managers(self):
         self._set_df(_get_df(self.right, self.initval,
@@ -2501,7 +2503,7 @@ class ReduceAdd(_Accumulator):
     ops = (vtypes.Plus, )
 
     def __init__(self, right, size=None, initval=0,
-                 enable=None, reset=None, width=32, signed=True):
+                 enable=None, reset=None, width=None, signed=None):
         _Accumulator.__init__(self, right, size, initval,
                               enable, reset, width, signed)
 
@@ -2510,7 +2512,7 @@ class ReduceSub(_Accumulator):
     ops = (vtypes.Minus, )
 
     def __init__(self, right, size=None, initval=0,
-                 enable=None, reset=None, width=32, signed=True):
+                 enable=None, reset=None, width=None, signed=None):
         _Accumulator.__init__(self, right, size, initval,
                               enable, reset, width, signed)
 
@@ -2520,7 +2522,7 @@ class ReduceMul(_Accumulator):
     ops = (vtypes.Times, )
 
     def __init__(self, right, size=None, initval=0,
-                 enable=None, reset=None, width=32, signed=True):
+                 enable=None, reset=None, width=None, signed=None):
         _Accumulator.__init__(self, right, size, initval,
                               enable, reset, width, signed)
 
@@ -2530,7 +2532,7 @@ class ReduceDiv(_Accumulator):
     ops = ()
 
     def __init__(self, right, size=None, initval=0,
-                 enable=None, reset=None, width=32, signed=True):
+                 enable=None, reset=None, width=None, signed=None):
         raise NotImplementedError()
         _Accumulator.__init__(self, right, size, initval,
                               enable, reset, width, signed)
@@ -2539,13 +2541,14 @@ class ReduceDiv(_Accumulator):
 class ReduceCustom(_Accumulator):
 
     def __init__(self, ops, right, size=None, initval=0,
-                 enable=None, reset=None, width=32, signed=True, label=None):
+                 enable=None, reset=None, width=None, signed=None, label=None):
         _Accumulator.__init__(self, right, size, initval,
-                              enable, reset, width, signed)
+                              enable, reset, width, signed, label)
+
         if not isinstance(ops, (tuple, list)):
             ops = tuple([ops])
+
         self.ops = ops
-        self.label = label
 
 
 class Counter(_Accumulator):
@@ -2561,8 +2564,7 @@ class Counter(_Accumulator):
         initval -= step
 
         _Accumulator.__init__(self, control, size, initval,
-                              enable, reset, width, signed)
-        self.label = 'Counter'
+                              enable, reset, width, signed, 'Counter')
 
 
 class Pulse(_Accumulator):
@@ -2579,12 +2581,11 @@ class Pulse(_Accumulator):
         signed = False
 
         _Accumulator.__init__(self, control, size, initval,
-                              enable, reset, width, signed)
-        self.label = 'Pulse'
+                              enable, reset, width, signed, 'Pulse')
 
 
 def _ReduceValid(cls, right, size, initval=0,
-                 enable=None, reset=None, width=32, signed=True):
+                 enable=None, reset=None, width=None, signed=None):
 
     data = cls(right, size, initval,
                enable, reset, width, signed)
@@ -2594,7 +2595,7 @@ def _ReduceValid(cls, right, size, initval=0,
 
 
 def ReduceAddValid(right, size, initval=0,
-                   enable=None, reset=None, width=32, signed=True):
+                   enable=None, reset=None, width=None, signed=None):
 
     cls = ReduceAdd
     return _ReduceValid(cls, right, size, initval,
@@ -2602,7 +2603,7 @@ def ReduceAddValid(right, size, initval=0,
 
 
 def ReduceSubValid(right, size, initval=0,
-                   enable=None, reset=None, width=32, signed=True):
+                   enable=None, reset=None, width=None, signed=None):
 
     cls = ReduceSub
     return _ReduceValid(cls, right, size, initval,
@@ -2610,7 +2611,7 @@ def ReduceSubValid(right, size, initval=0,
 
 
 def ReduceMulValid(right, size, initval=0,
-                   enable=None, reset=None, width=32, signed=True):
+                   enable=None, reset=None, width=None, signed=None):
 
     cls = ReduceMul
     return _ReduceValid(cls, right, size, initval,
@@ -2618,7 +2619,7 @@ def ReduceMulValid(right, size, initval=0,
 
 
 def ReduceDivValid(right, size, initval=0,
-                   enable=None, reset=None, width=32, signed=True):
+                   enable=None, reset=None, width=None, signed=None):
 
     cls = ReduceDiv
     return _ReduceValid(cls, right, size, initval,
@@ -2626,7 +2627,7 @@ def ReduceDivValid(right, size, initval=0,
 
 
 def ReduceCustomValid(ops, right, size, initval=0,
-                      enable=None, reset=None, width=32, signed=True):
+                      enable=None, reset=None, width=None, signed=None):
 
     data = ReduceCustom(ops, right, size, initval,
                         enable, reset, width, signed)

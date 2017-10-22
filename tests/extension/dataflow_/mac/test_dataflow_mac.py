@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import dataflow_macc
+import dataflow_mac
 
 expected_verilog = """
 module test;
@@ -1038,24 +1038,24 @@ module multiplier_core_0
 
   reg signed [32-1:0] _a;
   reg signed [32-1:0] _b;
-  reg signed [64-1:0] _tmpval0;
-  reg signed [64-1:0] _tmpval1;
-  reg signed [64-1:0] _tmpval2;
-  reg signed [64-1:0] _tmpval3;
-  reg signed [64-1:0] _tmpval4;
-  wire signed [64-1:0] rslt;
-  assign rslt = _a * _b;
-  assign c = _tmpval4;
+  wire signed [64-1:0] _mul;
+  reg signed [64-1:0] _pipe_mul0;
+  reg signed [64-1:0] _pipe_mul1;
+  reg signed [64-1:0] _pipe_mul2;
+  reg signed [64-1:0] _pipe_mul3;
+  reg signed [64-1:0] _pipe_mul4;
+  assign _mul = _a * _b;
+  assign c = _pipe_mul4;
 
   always @(posedge CLK) begin
     if(update) begin
       _a <= a;
       _b <= b;
-      _tmpval0 <= rslt;
-      _tmpval1 <= _tmpval0;
-      _tmpval2 <= _tmpval1;
-      _tmpval3 <= _tmpval2;
-      _tmpval4 <= _tmpval3;
+      _pipe_mul0 <= _mul;
+      _pipe_mul1 <= _pipe_mul0;
+      _pipe_mul2 <= _pipe_mul1;
+      _pipe_mul3 <= _pipe_mul2;
+      _pipe_mul4 <= _pipe_mul3;
     end 
   end
 
@@ -1066,7 +1066,7 @@ endmodule
 
 def test():
     veriloggen.reset()
-    test_module = dataflow_macc.mkTest()
+    test_module = dataflow_mac.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

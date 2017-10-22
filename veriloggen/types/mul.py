@@ -5,8 +5,7 @@ import veriloggen.core.vtypes as vtypes
 import veriloggen.core.module as module
 
 
-def mkMultiplierCore(name, lsigned=True, rsigned=True, depth=6,
-                     with_update=True):
+def mkMultiplierCore(name, lsigned=True, rsigned=True, depth=6, with_update=True):
 
     m = module.Module(name + '_core')
 
@@ -25,9 +24,9 @@ def mkMultiplierCore(name, lsigned=True, rsigned=True, depth=6,
 
     _a = m.Reg('_a', lwidth, signed=lsigned)
     _b = m.Reg('_b', rwidth, signed=rsigned)
-    tmpval = [m.Reg('_tmpval%d' % i, retwidth, signed=True)
-              for i in range(depth - 1)]
-    rslt = m.Wire('rslt', retwidth, signed=True)
+    _mul = m.Wire('_mul', retwidth, signed=True)
+    _pipe_mul = [m.Reg('_pipe_mul%d' % i, retwidth, signed=True)
+                 for i in range(depth - 1)]
 
     __a = _a
     __b = _b
@@ -38,13 +37,13 @@ def mkMultiplierCore(name, lsigned=True, rsigned=True, depth=6,
         __b = vtypes.SystemTask(
             'signed', vtypes.Cat(vtypes.Int(0, width=1), _b))
 
-    m.Assign(rslt(__a * __b))
-    m.Assign(c(tmpval[depth - 2]))
+    m.Assign(_mul(__a * __b))
+    m.Assign(c(_pipe_mul[depth - 2]))
 
     body = (_a(a),
             _b(b),
-            tmpval[0](rslt),
-            [tmpval[i](tmpval[i - 1]) for i in range(1, depth - 1)])
+            _pipe_mul[0](_mul),
+            [_pipe_mul[i](_pipe_mul[i - 1]) for i in range(1, depth - 1)])
 
     if with_update:
         body = vtypes.If(update)(body)
@@ -106,6 +105,7 @@ def mkMultiplier(name, lsigned=True, rsigned=True, depth=6,
     ports = [('CLK', clk)]
     if with_update:
         ports.append(('update', update))
+
     ports.extend([('a', a), ('b', b), ('c', c)])
 
     m.Instance(mult, 'mult', params=params, ports=ports)
