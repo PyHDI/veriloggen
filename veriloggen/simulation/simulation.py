@@ -97,24 +97,40 @@ class Simulator(object):
             return
         raise ValueError("Not supported waveform viewer: '%s'" % wave)
 
-    def run(self, display=False, outputfile='a.out', include=None, define=None,
+    def run(self, display=False, outputfile='a.out',
+            include=None, define=None, libdir=None,
             full64=False, notimingcheck=True):
+
+        if include is not None and not isinstance(include, (tuple, list)):
+            include = (include,)
+
+        if define is not None and not isinstance(define, (tuple, list)):
+            define = (define,)
+
+        if libdir is not None and not isinstance(libdir, (tuple, list)):
+            libdir = (libdir,)
+
         if self.sim == 'iverilog' or self.sim == 'icarus':
-            return self.run_iverilog(display, outputfile, include, define)
+            return self.run_iverilog(display, outputfile, include, define, libdir)
+
         if self.sim == 'vcs':
-            return self.run_vcs(display, outputfile, include, define,
+            return self.run_vcs(display, outputfile, include, define, libdir,
                                 full64=full64, notimingcheck=notimingcheck)
+
         if self.sim == 'modelsim' or self.sim == 'vsim':
-            return self.run_modelsim(display, self.top, include, define)
+            return self.run_modelsim(display, self.top, include, define, libdir)
+
         raise NotImplementedError("Not implemented: '%s'" % self.sim)
 
-    def run_iverilog(self, display=False, outputfile='a.out', include=None, define=None):
+    def run_iverilog(self, display=False, outputfile='a.out',
+                     include=None, define=None, libdir=None):
         cmd = []
         cmd.append('iverilog')
         if include:
             for inc in include:
                 cmd.append('-I')
                 cmd.append(inc)
+
         if define:
             for d in define:
                 cmd.append('-D')
@@ -125,6 +141,10 @@ class Simulator(object):
                         cmd.append(''.join([d[0], '=', str(d[1])]))
                 else:
                     cmd.append(d)
+        if libdir:
+            for l in libdir:
+                cmd.append('-y')
+                cmd.append(l)
 
         cmd.append('-o')
         cmd.append(outputfile)
@@ -174,7 +194,8 @@ class Simulator(object):
 
         return ''.join([syn_rslt, sim_rslt])
 
-    def run_vcs(self, display=False, outputfile='simv', include=None, define=None,
+    def run_vcs(self, display=False, outputfile='simv',
+                include=None, define=None, libdir=None,
                 full64=False, notimingcheck=True):
         cmd = []
         cmd.append('vcs')
@@ -190,6 +211,7 @@ class Simulator(object):
             for inc in include:
                 cmd.append('+incdir+')
                 cmd.append(inc)
+
         if define:
             for d in define:
                 cmd.append('+define+')
@@ -200,6 +222,11 @@ class Simulator(object):
                         cmd.append(''.join([d[0], '=', str(d[1])]))
                 else:
                     cmd.append(d)
+
+        if libdir:
+            for l in libdir:
+                cmd.append('-y')
+                cmd.append(l)
 
         cmd.append('-o')
         cmd.append(outputfile)
@@ -249,13 +276,16 @@ class Simulator(object):
 
         return ''.join([syn_rslt, sim_rslt])
 
-    def run_modelsim(self, display=False, top="test", include=None, define=None):
+    def run_modelsim(self, display=False, top="test",
+                     include=None, define=None, libdir=None):
         cmd = []
         cmd.append('vlib work ; vmap work ; vlog')
+
         if include:
             for inc in include:
                 cmd.append('-I')
                 cmd.append(inc)
+
         if define:
             for d in define:
                 cmd.append('-D')
@@ -266,6 +296,11 @@ class Simulator(object):
                         cmd.append(''.join([d[0], '=', str(d[1])]))
                 else:
                     cmd.append(d)
+
+        if libdir:
+            for l in libdir:
+                cmd.append('-y')
+                cmd.append(l)
 
         # encoding: 'utf-8' ?
         encode = sys.getdefaultencoding()
