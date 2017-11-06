@@ -985,10 +985,10 @@ class MultibankRAM(object):
             bank_data = dtypes.Slice(data, msb, lsb)
             done = ram.write_dataflow(
                 port, addr, bank_data, length, stride, cond, when)
-            done_list.insert(0, done)
+            done_list.append(done)
             lsb = msb
 
-        merged_done = done_list[-1]
+        merged_done = done_list[0]
         return merged_done
 
     def write_dataflow_interleave(self, port, addr, data, length=1,
@@ -1201,6 +1201,50 @@ class MultibankRAM(object):
         return self.write_dataflow_pattern_interleave(port, addr, data, pattern,
                                                       cond=cond, when=when)
 
+    def write_dataflow_bcast(self, port, addr, data, length=1,
+                             stride=1, cond=None, when=None):
+        """ 
+        @return done
+        """
+
+        done_list = []
+        for ram in self.rams:
+            done = ram.write_dataflow(
+                port, addr, data, length, stride, cond, when)
+            done_list.append(done)
+
+        merged_done = done_list[0]
+        return merged_done
+
+    def write_dataflow_pattern_bcast(self, port, addr, data, pattern,
+                                     cond=None, when=None):
+        """ 
+        @return done
+        'data' and 'when' must be dataflow variables
+        """
+
+        done_list = []
+        for ram in self.rams:
+            done = ram.write_dataflow_pattern(
+                port, addr, data, pattern, cond, when)
+            done_list.append(done)
+
+        merged_done = done_list[0]
+        return merged_done
+
+    def write_dataflow_multidim_bcast(self, port, addr, data, shape, order=None,
+                                      cond=None, when=None):
+        """ 
+        @return done
+        'data' and 'when' must be dataflow variables
+        """
+        if order is None:
+            order = list(reversed(range(len(shape))))
+
+        pattern = self._to_pattern(shape, order)
+        return self.write_dataflow_pattern_bcast(port, addr, data, pattern,
+                                                 cond=cond, when=when)
+
 
 class FIFO(Fifo, _MutexFunction):
     __intrinsics__ = ('enq', 'deq', 'try_enq', 'try_deq',
@@ -1392,7 +1436,7 @@ class AXIM(AxiMaster, _MutexFunction):
                               local_stride, port)
 
     def _dma_read(self, fsm, ram, local_addr, global_addr, size,
-                  local_stride=1, port=0):
+                  local_stride=1, port=0, ram_method=None):
         if self.lite:
             raise TypeError('Lite-interface does not support DMA')
 
@@ -1426,7 +1470,7 @@ class AXIM(AxiMaster, _MutexFunction):
 
         done = AxiMaster.dma_read(self, ram, req_global_addr, req_local_addr, req_size,
                                   stride=req_local_stride,
-                                  cond=cond, ram_port=port)
+                                  cond=cond, ram_port=port, ram_method=ram_method)
 
         fsm.If(done).goto_next()
 
@@ -1441,7 +1485,7 @@ class AXIM(AxiMaster, _MutexFunction):
                                       port)
 
     def _dma_read_pattern(self, fsm, ram, local_addr, global_addr, pattern,
-                          port=0):
+                          port=0, ram_method=None):
         if self.lite:
             raise TypeError('Lite-interface does not support DMA')
 
@@ -1486,7 +1530,7 @@ class AXIM(AxiMaster, _MutexFunction):
 
         done = AxiMaster.dma_read_pattern(self, ram, req_global_addr, req_local_addr,
                                           req_pattern,
-                                          cond=cond, ram_port=port)
+                                          cond=cond, ram_port=port, ram_method=ram_method)
 
         fsm.If(done).goto_next()
 
@@ -1510,7 +1554,7 @@ class AXIM(AxiMaster, _MutexFunction):
                                local_stride, port)
 
     def _dma_write(self, fsm, ram, local_addr, global_addr, size,
-                   local_stride=1, port=0):
+                   local_stride=1, port=0, ram_method=None):
         if self.lite:
             raise TypeError('Lite-interface does not support DMA')
 
@@ -1544,7 +1588,7 @@ class AXIM(AxiMaster, _MutexFunction):
 
         done = AxiMaster.dma_write(self, ram, req_global_addr, req_local_addr, req_size,
                                    stride=req_local_stride,
-                                   cond=cond, ram_port=port)
+                                   cond=cond, ram_port=port, ram_method=ram_method)
 
         fsm.If(done).goto_next()
 
@@ -1559,7 +1603,7 @@ class AXIM(AxiMaster, _MutexFunction):
                                        port)
 
     def _dma_write_pattern(self, fsm, ram, local_addr, global_addr, pattern,
-                           port=0):
+                           port=0, ram_method=None):
         if self.lite:
             raise TypeError('Lite-interface does not support DMA')
 
@@ -1604,7 +1648,7 @@ class AXIM(AxiMaster, _MutexFunction):
 
         done = AxiMaster.dma_write_pattern(self, ram, req_global_addr, req_local_addr,
                                            req_pattern,
-                                           cond=cond, ram_port=port)
+                                           cond=cond, ram_port=port, ram_method=ram_method)
 
         fsm.If(done).goto_next()
 

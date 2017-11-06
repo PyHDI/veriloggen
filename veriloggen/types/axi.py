@@ -663,12 +663,12 @@ class AxiMaster(object):
         return df_data, df_last, done
 
     def dma_read(self, ram, bus_addr, ram_addr, length,
-                 stride=1, cond=None, ram_port=0):
+                 stride=1, cond=None, ram_port=0, ram_method=None):
         """ Safe API with length and 4KB boundary check """
 
         if vtypes.equals(self.datawidth, ram.datawidth):
             return self._dma_read_same(ram, bus_addr, ram_addr, length,
-                                       stride, cond, ram_port)
+                                       stride, cond, ram_port, ram_method)
 
         comp = self.datawidth < ram.datawidth
         if not isinstance(comp, bool):
@@ -677,13 +677,13 @@ class AxiMaster(object):
 
         if comp:
             return self._dma_read_narrow(ram, bus_addr, ram_addr, length,
-                                         stride, cond, ram_port)
+                                         stride, cond, ram_port, ram_method)
 
         return self._dma_read_wide(ram, bus_addr, ram_addr, length,
-                                   stride, cond, ram_port)
+                                   stride, cond, ram_port, ram_method)
 
     def _dma_read_same(self, ram, bus_addr, ram_addr, length,
-                       stride=1, cond=None, ram_port=0):
+                       stride=1, cond=None, ram_port=0, ram_method=None):
         fsm = TmpFSM(self.m, self.clk, self.rst)
 
         if cond is not None:
@@ -704,9 +704,13 @@ class AxiMaster(object):
         df_data = self.df.Variable(
             wdata, wvalid, width=ram.datawidth, signed=False)
 
-        done = ram.write_dataflow(
-            ram_port, ram_addr, df_data, length,
-            stride=stride, cond=fsm)
+        if ram_method is None:
+            ram_method = getattr(ram, 'write_dataflow')
+        else:
+            ram_method = getattr(ram, ram_method)
+
+        done = ram_method(ram_port, ram_addr, df_data, length,
+                          stride=stride, cond=fsm)
         fsm.goto_next()
 
         check_state = fsm.current
@@ -762,7 +766,7 @@ class AxiMaster(object):
         return done
 
     def _dma_read_narrow(self, ram, bus_addr, ram_addr, length,
-                         stride=1, cond=None, ram_port=0):
+                         stride=1, cond=None, ram_port=0, ram_method=None):
         """ axi.datawidth < ram.datawidth """
 
         if ram.datawidth % self.datawidth != 0:
@@ -794,9 +798,13 @@ class AxiMaster(object):
         df_data = self.df.Variable(
             wdata, wvalid, width=ram.datawidth, signed=False)
 
-        done = ram.write_dataflow(
-            ram_port, ram_addr, df_data, length,
-            stride=stride, cond=fsm)
+        if ram_method is None:
+            ram_method = getattr(ram, 'write_dataflow')
+        else:
+            ram_method = getattr(ram, ram_method)
+
+        done = ram_method(ram_port, ram_addr, df_data, length,
+                          stride=stride, cond=fsm)
         fsm.goto_next()
 
         check_state = fsm.current
@@ -859,7 +867,7 @@ class AxiMaster(object):
         return done
 
     def _dma_read_wide(self, ram, bus_addr, ram_addr, length,
-                       stride=1, cond=None, ram_port=0):
+                       stride=1, cond=None, ram_port=0, ram_method=None):
         """ axi.datawidth > ram.datawidth """
 
         if self.datawidth % ram.datawidth != 0:
@@ -893,9 +901,13 @@ class AxiMaster(object):
         df_data = self.df.Variable(
             wdata_ram, wvalid, width=ram.datawidth, signed=False)
 
-        done = ram.write_dataflow(
-            ram_port, ram_addr, df_data, length,
-            stride=stride, cond=fsm)
+        if ram_method is None:
+            ram_method = getattr(ram, 'write_dataflow')
+        else:
+            ram_method = getattr(ram, ram_method)
+
+        done = ram_method(ram_port, ram_addr, df_data, length,
+                          stride=stride, cond=fsm)
         fsm.goto_next()
 
         check_state = fsm.current
@@ -972,10 +984,10 @@ class AxiMaster(object):
         return done
 
     def dma_read_pattern(self, ram, bus_addr, ram_addr, pattern,
-                         cond=None, ram_port=0):
+                         cond=None, ram_port=0, ram_method=None):
         if vtypes.equals(self.datawidth, ram.datawidth):
             return self._dma_read_pattern_same(ram, bus_addr, ram_addr, pattern,
-                                               cond, ram_port)
+                                               cond, ram_port, ram_method)
 
         comp = self.datawidth < ram.datawidth
         if not isinstance(comp, bool):
@@ -984,13 +996,13 @@ class AxiMaster(object):
 
         if comp:
             return self._dma_read_pattern_narrow(ram, bus_addr, ram_addr, pattern,
-                                                 cond, ram_port)
+                                                 cond, ram_port, ram_method)
 
         return self._dma_read_pattern_wide(ram, bus_addr, ram_addr, pattern,
-                                           cond, ram_port)
+                                           cond, ram_port, ram_method)
 
     def _dma_read_pattern_same(self, ram, bus_addr, ram_addr, pattern,
-                               cond=None, ram_port=0):
+                               cond=None, ram_port=0, ram_method=None):
 
         length = pattern[0][0]
 
@@ -1022,8 +1034,13 @@ class AxiMaster(object):
         df_data = self.df.Variable(
             wdata, wvalid, width=ram.datawidth, signed=False)
 
-        done = ram.write_dataflow_pattern(ram_port, ram_addr, df_data, pattern,
-                                          cond=fsm)
+        if ram_method is None:
+            ram_method = getattr(ram, 'write_dataflow_pattern')
+        else:
+            ram_method = getattr(ram, ram_method)
+
+        done = ram_method(ram_port, ram_addr, df_data, pattern, cond=fsm)
+
         fsm.goto_next()
 
         check_state = fsm.current
@@ -1095,7 +1112,7 @@ class AxiMaster(object):
         return done
 
     def _dma_read_pattern_narrow(self, ram, bus_addr, ram_addr, pattern,
-                                 cond=None, ram_port=0):
+                                 cond=None, ram_port=0, ram_method=None):
         """ axi.datawidth < ram.datawidth """
 
         if ram.datawidth % self.datawidth != 0:
@@ -1136,8 +1153,12 @@ class AxiMaster(object):
         df_data = self.df.Variable(
             wdata, wvalid, width=ram.datawidth, signed=False)
 
-        done = ram.write_dataflow_pattern(ram_port, ram_addr, df_data, pattern,
-                                          cond=fsm)
+        if ram_method is None:
+            ram_method = getattr(ram, 'write_dataflow_pattern')
+        else:
+            ram_method = getattr(ram, ram_method)
+
+        done = ram_method(ram_port, ram_addr, df_data, pattern, cond=fsm)
         fsm.goto_next()
 
         check_state = fsm.current
@@ -1216,7 +1237,7 @@ class AxiMaster(object):
         return done
 
     def _dma_read_pattern_wide(self, ram, bus_addr, ram_addr, pattern,
-                               cond=None, ram_port=0):
+                               cond=None, ram_port=0, ram_method=None):
         """ axi.datawidth > ram.datawidth """
 
         if self.datawidth % ram.datawidth != 0:
@@ -1259,8 +1280,12 @@ class AxiMaster(object):
         df_data = self.df.Variable(
             wdata_ram, wvalid, width=ram.datawidth, signed=False)
 
-        done = ram.write_dataflow_pattern(ram_port, ram_addr, df_data, pattern,
-                                          cond=fsm)
+        if ram_method is None:
+            ram_method = getattr(ram, 'write_dataflow_pattern')
+        else:
+            ram_method = getattr(ram, ram_method)
+
+        done = ram_method(ram_port, ram_addr, df_data, pattern, cond=fsm)
         fsm.goto_next()
 
         check_state = fsm.current
@@ -1354,14 +1379,14 @@ class AxiMaster(object):
         return done
 
     def dma_read_multidim(self, ram, bus_addr, ram_addr, shape, order=None,
-                          cond=None, ram_port=0):
+                          cond=None, ram_port=0, ram_method=None):
 
         if order is None:
             order = list(reversed(range(len(shape))))
 
         pattern = self._to_pattern(shape, order)
         return self.dma_read_pattern(ram, bus_addr, ram_addr, pattern,
-                                     cond, ram_port)
+                                     cond, ram_port, ram_method)
 
     def _to_pattern(self, shape, order):
         pattern = []
@@ -1377,12 +1402,12 @@ class AxiMaster(object):
         return pattern
 
     def dma_read_unsafe(self, ram, bus_addr, ram_addr, length,
-                        stride=1, cond=None, ram_port=0):
+                        stride=1, cond=None, ram_port=0, ram_method=None):
         """ Unsafe API with no length and 4KB region check """
 
         if vtypes.equals(self.datawidth, ram.datawidth):
             return self._dma_read_unsafe_same(ram, bus_addr, ram_addr, length,
-                                              stride, cond, ram_port)
+                                              stride, cond, ram_port, ram_method)
 
         comp = self.datawidth < ram.datawidth
         if not isinstance(comp, bool):
@@ -1391,13 +1416,13 @@ class AxiMaster(object):
 
         if comp:
             return self._dma_read_unsafe_narrow(ram, bus_addr, ram_addr, length,
-                                                stride, cond, ram_port)
+                                                stride, cond, ram_port, ram_method)
 
         return self._dma_read_unsafe_wide(ram, bus_addr, ram_addr, length,
-                                          stride, cond, ram_port)
+                                          stride, cond, ram_port, ram_method)
 
     def _dma_read_unsafe_same(self, ram, bus_addr, ram_addr, length,
-                              stride=1, cond=None, ram_port=0):
+                              stride=1, cond=None, ram_port=0, ram_method=None):
         fsm = TmpFSM(self.m, self.clk, self.rst)
 
         if cond is not None:
@@ -1411,9 +1436,13 @@ class AxiMaster(object):
         df_data = self.df.Variable(
             wdata, wvalid, width=ram.datawidth, signed=False)
 
-        done = ram.write_dataflow(
-            ram_port, ram_addr, df_data, length,
-            stride=stride, cond=fsm)
+        if ram_method is None:
+            ram_method = getattr(ram, 'write_dataflow')
+        else:
+            ram_method = getattr(ram, ram_method)
+
+        done = ram_method(ram_port, ram_addr, df_data, length,
+                          stride=stride, cond=fsm)
         fsm.goto_next()
 
         data, valid, last = self.read_data(cond=fsm)
@@ -1431,7 +1460,7 @@ class AxiMaster(object):
         return done
 
     def _dma_read_unsafe_narrow(self, ram, bus_addr, ram_addr, length,
-                                stride=1, cond=None, ram_port=0):
+                                stride=1, cond=None, ram_port=0, ram_method=None):
         """ axi.datawidth < ram.datawidth """
 
         if ram.datawidth % self.datawidth != 0:
@@ -1456,9 +1485,13 @@ class AxiMaster(object):
         df_data = self.df.Variable(
             wdata, wvalid, width=ram.datawidth, signed=False)
 
-        done = ram.write_dataflow(
-            ram_port, ram_addr, df_data, length,
-            stride=stride, cond=fsm)
+        if ram_method is None:
+            ram_method = getattr(ram, 'write_dataflow')
+        else:
+            ram_method = getattr(ram, ram_method)
+
+        done = ram_method(ram_port, ram_addr, df_data, length,
+                          stride=stride, cond=fsm)
         fsm.goto_next()
 
         pack_count = self.m.TmpReg(pack_size, initval=0)
@@ -1483,7 +1516,7 @@ class AxiMaster(object):
         return done
 
     def _dma_read_unsafe_wide(self, ram, bus_addr, ram_addr, length,
-                              stride=1, cond=None, ram_port=0):
+                              stride=1, cond=None, ram_port=0, ram_method=None):
         """ axi.datawidth > ram.datawidth """
 
         if self.datawidth % ram.datawidth != 0:
@@ -1510,9 +1543,13 @@ class AxiMaster(object):
         df_data = self.df.Variable(
             wdata_ram, wvalid, width=ram.datawidth, signed=False)
 
-        done = ram.write_dataflow(
-            ram_port, ram_addr, df_data, length,
-            stride=stride, cond=fsm)
+        if ram_method is None:
+            ram_method = getattr(ram, 'write_dataflow')
+        else:
+            ram_method = getattr(ram, ram_method)
+
+        done = ram_method(ram_port, ram_addr, df_data, length,
+                          stride=stride, cond=fsm)
         fsm.goto_next()
 
         pack_count = self.m.TmpReg(pack_size, initval=0)
@@ -1541,12 +1578,12 @@ class AxiMaster(object):
         return done
 
     def dma_write(self, ram, bus_addr, ram_addr, length,
-                  stride=1, cond=None, ram_port=0):
+                  stride=1, cond=None, ram_port=0, ram_method=None):
         """ Safe API with length and 4KB boundary check """
 
         if vtypes.equals(self.datawidth, ram.datawidth):
             return self._dma_write_same(ram, bus_addr, ram_addr, length,
-                                        stride, cond, ram_port)
+                                        stride, cond, ram_port, ram_method)
 
         comp = self.datawidth < ram.datawidth
         if not isinstance(comp, bool):
@@ -1555,13 +1592,14 @@ class AxiMaster(object):
 
         if comp:
             return self._dma_write_narrow(ram, bus_addr, ram_addr, length,
-                                          stride, cond, ram_port)
+                                          stride, cond, ram_port, ram_method)
 
         return self._dma_write_wide(ram, bus_addr, ram_addr, length,
-                                    stride, cond, ram_port)
+                                    stride, cond, ram_port, ram_method)
 
     def _dma_write_same(self, ram, bus_addr, ram_addr, length,
-                        stride=1, cond=None, ram_port=0):
+                        stride=1, cond=None, ram_port=0, ram_method=None):
+
         fsm = TmpFSM(self.m, self.clk, self.rst)
 
         if cond is not None:
@@ -1577,8 +1615,13 @@ class AxiMaster(object):
             rest_size(length)
         )
 
-        data, last, done = ram.read_dataflow(
-            ram_port, ram_addr, length, stride=stride, cond=fsm, signed=False)
+        if ram_method is None:
+            ram_method = getattr(ram, 'read_dataflow')
+        else:
+            ram_method = getattr(ram, ram_method)
+
+        data, last, done = ram_method(ram_port, ram_addr, length,
+                                      stride=stride, cond=fsm, signed=False)
         fsm.goto_next()
 
         check_state = fsm.current
@@ -1626,7 +1669,7 @@ class AxiMaster(object):
         return done
 
     def _dma_write_narrow(self, ram, bus_addr, ram_addr, length,
-                          stride=1, cond=None, ram_port=0):
+                          stride=1, cond=None, ram_port=0, ram_method=None):
         """ axi.datawidth < ram.datawidth """
 
         if ram.datawidth % self.datawidth != 0:
@@ -1653,8 +1696,13 @@ class AxiMaster(object):
             rest_size(dma_length)
         )
 
-        data, last, done = ram.read_dataflow(
-            ram_port, ram_addr, length, stride=stride, cond=fsm, signed=False)
+        if ram_method is None:
+            ram_method = getattr(ram, 'read_dataflow')
+        else:
+            ram_method = getattr(ram, ram_method)
+
+        data, last, done = ram_method(ram_port, ram_addr, length,
+                                      stride=stride, cond=fsm, signed=False)
         fsm.goto_next()
 
         check_state = fsm.current
@@ -1734,7 +1782,7 @@ class AxiMaster(object):
         return done
 
     def _dma_write_wide(self, ram, bus_addr, ram_addr, length,
-                        stride=1, cond=None, ram_port=0):
+                        stride=1, cond=None, ram_port=0, ram_method=None):
         """ axi.datawidth > ram.datawidth """
 
         if self.datawidth % ram.datawidth != 0:
@@ -1761,8 +1809,13 @@ class AxiMaster(object):
             rest_size(dma_length)
         )
 
-        data, last, done = ram.read_dataflow(
-            ram_port, ram_addr, length, stride=stride, cond=fsm, signed=False)
+        if ram_method is None:
+            ram_method = getattr(ram, 'read_dataflow')
+        else:
+            ram_method = getattr(ram, ram_method)
+
+        data, last, done = ram_method(ram_port, ram_addr, length,
+                                      stride=stride, cond=fsm, signed=False)
         fsm.goto_next()
 
         check_state = fsm.current
@@ -1837,7 +1890,8 @@ class AxiMaster(object):
         return done
 
     def dma_write_pattern(self, ram, bus_addr, ram_addr, pattern,
-                          cond=None, ram_port=0):
+                          cond=None, ram_port=0, ram_method=None):
+
         if vtypes.equals(self.datawidth, ram.datawidth):
             return self._dma_write_pattern_same(ram, bus_addr, ram_addr, pattern,
                                                 cond, ram_port)
@@ -1855,7 +1909,7 @@ class AxiMaster(object):
                                             cond, ram_port)
 
     def _dma_write_pattern_same(self, ram, bus_addr, ram_addr, pattern,
-                                cond=None, ram_port=0):
+                                cond=None, ram_port=0, ram_method=None):
 
         length = pattern[0][0]
 
@@ -1882,8 +1936,13 @@ class AxiMaster(object):
                 count(size - 1)
             )
 
-        data, last, done = ram.read_dataflow_pattern(
-            ram_port, ram_addr, pattern, cond=fsm, signed=False)
+        if ram_method is None:
+            ram_method = getattr(ram, 'read_dataflow_pattern')
+        else:
+            ram_method = getattr(ram, ram_method)
+
+        data, last, done = ram_method(ram_port, ram_addr, pattern,
+                                      cond=fsm, signed=False)
         fsm.goto_next()
 
         check_state = fsm.current
@@ -1947,7 +2006,7 @@ class AxiMaster(object):
         return done
 
     def _dma_write_pattern_narrow(self, ram, bus_addr, ram_addr, pattern,
-                                  cond=None, ram_port=0):
+                                  cond=None, ram_port=0, ram_method=None):
         """ axi.datawidth < ram.datawidth """
 
         if ram.datawidth % self.datawidth != 0:
@@ -1983,8 +2042,13 @@ class AxiMaster(object):
                 count(size - 1)
             )
 
-        data, last, done = ram.read_dataflow_pattern(
-            ram_port, ram_addr, pattern, cond=fsm, signed=False)
+        if ram_method is None:
+            ram_method = getattr(ram, 'read_dataflow_pattern')
+        else:
+            ram_method = getattr(ram, ram_method)
+
+        data, last, done = ram_method(ram_port, ram_addr, pattern,
+                                      cond=fsm, signed=False)
         fsm.goto_next()
 
         check_state = fsm.current
@@ -2080,7 +2144,7 @@ class AxiMaster(object):
         return done
 
     def _dma_write_pattern_wide(self, ram, bus_addr, ram_addr, pattern,
-                                cond=None, ram_port=0):
+                                cond=None, ram_port=0, ram_method=None):
         """ axi.datawidth > ram.datawidth """
 
         if self.datawidth % ram.datawidth != 0:
@@ -2116,8 +2180,13 @@ class AxiMaster(object):
                 count(size - 1)
             )
 
-        data, last, done = ram.read_dataflow_pattern(
-            ram_port, ram_addr, pattern, cond=fsm, signed=False)
+        if ram_method is None:
+            ram_method = getattr(ram, 'read_dataflow_pattern')
+        else:
+            ram_method = getattr(ram, ram_method)
+
+        data, last, done = ram_method(ram_port, ram_addr, pattern,
+                                      cond=fsm, signed=False)
         fsm.goto_next()
 
         check_state = fsm.current
@@ -2208,22 +2277,22 @@ class AxiMaster(object):
         return done
 
     def dma_write_multidim(self, ram, bus_addr, ram_addr, shape, order=None,
-                           cond=None, ram_port=0):
+                           cond=None, ram_port=0, ram_method=None):
 
         if order is None:
             order = list(reversed(range(len(shape))))
 
         pattern = self._to_pattern(shape, order)
         return self.dma_write_pattern(ram, bus_addr, ram_addr, pattern,
-                                      cond, ram_port)
+                                      cond, ram_port, ram_method)
 
     def dma_write_unsafe(self, ram, bus_addr, ram_addr, length,
-                         stride=1, cond=None, ram_port=0):
+                         stride=1, cond=None, ram_port=0, ram_method=None):
         """ Unsafe API with no length and 4KB region check """
 
         if vtypes.equals(self.datawidth, ram.datawidth):
             return self._dma_write_unsafe_same(ram, bus_addr, ram_addr, length,
-                                               stride, cond, ram_port)
+                                               stride, cond, ram_port, ram_method)
 
         comp = self.datawidth < ram.datawidth
         if not isinstance(comp, bool):
@@ -2232,13 +2301,13 @@ class AxiMaster(object):
 
         if comp:
             return self._dma_write_unsafe_narrow(ram, bus_addr, ram_addr, length,
-                                                 stride, cond, ram_port)
+                                                 stride, cond, ram_port, ram_method)
 
         return self._dma_write_unsafe_wide(ram, bus_addr, ram_addr, length,
-                                           stride, cond, ram_port)
+                                           stride, cond, ram_port, ram_method)
 
     def _dma_write_unsafe_same(self, ram, bus_addr, ram_addr, length,
-                               stride=1, cond=None, ram_port=0):
+                               stride=1, cond=None, ram_port=0, ram_method=None):
         fsm = TmpFSM(self.m, self.clk, self.rst)
 
         if cond is not None:
@@ -2247,8 +2316,13 @@ class AxiMaster(object):
         ack, counter = self.write_request(bus_addr, length, cond=fsm)
         fsm.If(ack).goto_next()
 
-        data, last, done = ram.read_dataflow(
-            ram_port, ram_addr, length, stride=stride, cond=fsm, signed=False)
+        if ram_method is None:
+            ram_method = getattr(ram, 'read_dataflow')
+        else:
+            ram_method = getattr(ram, ram_method)
+
+        data, last, done = ram_method(ram_port, ram_addr, length,
+                                      stride=stride, cond=fsm, signed=False)
         fsm.goto_next()
 
         done = self.write_dataflow(data, counter, cond=fsm)
@@ -2257,7 +2331,7 @@ class AxiMaster(object):
         return done
 
     def _dma_write_unsafe_narrow(self, ram, bus_addr, ram_addr, length,
-                                 stride=1, cond=None, ram_port=0):
+                                 stride=1, cond=None, ram_port=0, ram_method=None):
         """ axi.datawidth < ram.datawidth """
 
         if ram.datawidth % self.datawidth != 0:
@@ -2277,8 +2351,13 @@ class AxiMaster(object):
         ack, counter = self.write_request(bus_addr, dma_length, cond=fsm)
         fsm.If(ack).goto_next()
 
-        data, last, done = ram.read_dataflow(
-            ram_port, ram_addr, length, stride=stride, cond=fsm, signed=False)
+        if ram_method is None:
+            ram_method = getattr(ram, 'read_dataflow')
+        else:
+            ram_method = getattr(ram, ram_method)
+
+        data, last, done = ram_method(ram_port, ram_addr, length,
+                                      stride=stride, cond=fsm, signed=False)
         fsm.goto_next()
 
         wdata = self.m.TmpReg(ram.datawidth, initval=0)
@@ -2319,7 +2398,7 @@ class AxiMaster(object):
         return done
 
     def _dma_write_unsafe_wide(self, ram, bus_addr, ram_addr, length,
-                               stride=1, cond=None, ram_port=0):
+                               stride=1, cond=None, ram_port=0, ram_method=None):
         """ axi.datawidth > ram.datawidth """
 
         if self.datawidth % ram.datawidth != 0:
@@ -2339,8 +2418,13 @@ class AxiMaster(object):
         ack, counter = self.write_request(bus_addr, dma_length, cond=fsm)
         fsm.If(ack).goto_next()
 
-        data, last, done = ram.read_dataflow(
-            ram_port, ram_addr, length, stride=stride, cond=fsm, signed=False)
+        if ram_method is None:
+            ram_method = getattr(ram, 'read_dataflow')
+        else:
+            ram_method = getattr(ram, ram_method)
+
+        data, last, done = ram_method(ram_port, ram_addr, length,
+                                      stride=stride, cond=fsm, signed=False)
         fsm.goto_next()
 
         wdata = self.m.TmpReg(self.datawidth, initval=0)
