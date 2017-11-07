@@ -666,14 +666,18 @@ class AxiMaster(object):
                  stride=1, cond=None, ram_port=0, ram_method=None):
         """ Safe API with length and 4KB boundary check """
 
-        if vtypes.equals(self.datawidth, ram.datawidth):
+        ram_datawidth = (ram.datawidth
+                         if ram_method is None or 'bcast' not in ram_method
+                         else ram.orig_datawidth)
+
+        if vtypes.equals(self.datawidth, ram_datawidth):
             return self._dma_read_same(ram, bus_addr, ram_addr, length,
                                        stride, cond, ram_port, ram_method)
 
-        comp = self.datawidth < ram.datawidth
+        comp = self.datawidth < ram_datawidth
         if not isinstance(comp, bool):
             raise ValueError('datawidth must be int, not (%s, %s)' %
-                             (type(self.datawidth, ram.datawidth)))
+                             (type(self.datawidth, ram_datawidth)))
 
         if comp:
             return self._dma_read_narrow(ram, bus_addr, ram_addr, length,
@@ -985,14 +989,19 @@ class AxiMaster(object):
 
     def dma_read_pattern(self, ram, bus_addr, ram_addr, pattern,
                          cond=None, ram_port=0, ram_method=None):
-        if vtypes.equals(self.datawidth, ram.datawidth):
+
+        ram_datawidth = (ram.datawidth
+                         if ram_method is None or 'bcast' not in ram_method
+                         else ram.orig_datawidth)
+
+        if vtypes.equals(self.datawidth, ram_datawidth):
             return self._dma_read_pattern_same(ram, bus_addr, ram_addr, pattern,
                                                cond, ram_port, ram_method)
 
-        comp = self.datawidth < ram.datawidth
+        comp = self.datawidth < ram_datawidth
         if not isinstance(comp, bool):
             raise ValueError('datawidth must be int, not (%s, %s)' %
-                             (type(self.datawidth, ram.datawidth)))
+                             (type(self.datawidth, ram_datawidth)))
 
         if comp:
             return self._dma_read_pattern_narrow(ram, bus_addr, ram_addr, pattern,
@@ -1405,14 +1414,18 @@ class AxiMaster(object):
                         stride=1, cond=None, ram_port=0, ram_method=None):
         """ Unsafe API with no length and 4KB region check """
 
-        if vtypes.equals(self.datawidth, ram.datawidth):
+        ram_datawidth = (ram.datawidth
+                         if ram_method is None or 'bcast' not in ram_method
+                         else ram.orig_datawidth)
+
+        if vtypes.equals(self.datawidth, ram_datawidth):
             return self._dma_read_unsafe_same(ram, bus_addr, ram_addr, length,
                                               stride, cond, ram_port, ram_method)
 
-        comp = self.datawidth < ram.datawidth
+        comp = self.datawidth < ram_datawidth
         if not isinstance(comp, bool):
             raise ValueError('datawidth must be int, not (%s, %s)' %
-                             (type(self.datawidth, ram.datawidth)))
+                             (type(self.datawidth, ram_datawidth)))
 
         if comp:
             return self._dma_read_unsafe_narrow(ram, bus_addr, ram_addr, length,
