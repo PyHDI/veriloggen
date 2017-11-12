@@ -388,6 +388,18 @@ class FixedRAM(RAM):
         return RAM.write(self, fsm, addr, fixed_wdata, port, cond)
 
 
+def extract_rams(rams):
+    ret = []
+
+    for ram in rams:
+        if isinstance(ram, MultibankRAM):
+            ret.extend(extract_rams(ram.rams))
+        else:
+            ret.append(ram)
+
+    return ret
+
+
 class MultibankRAM(object):
     __intrinsics__ = ('read', 'write',
                       'read_bank', 'write_bank',
@@ -400,6 +412,8 @@ class MultibankRAM(object):
         if rams is not None:
             if not isinstance(rams, (tuple, list)):
                 rams = [rams]
+
+            rams = extract_rams(rams)
 
             if math.log(len(rams), 2) % 1.0 != 0.0:
                 raise ValueError('numbanks must be power-of-2')
@@ -421,7 +435,7 @@ class MultibankRAM(object):
                     raise ValueError('numports must be same')
 
             self.m = rams[0].m
-            self.name = rams[0].name
+            self.name = '_'.join([ram.name for ram in rams]) if name is None else name
             self.clk = rams[0].clk
             self.rst = rams[0].rst
             self.orig_datawidth = max_datawidth
@@ -455,8 +469,8 @@ class MultibankRAM(object):
                              clk, rst, datawidth, addrwidth, numports)
                          for i in range(numbanks)]
 
-        for i, ram in enumerate(self.rams):
-            ram.bid = i
+        else:
+            raise ValueError('RAMs or module information must be specified.')
 
         self.df = DataflowManager(self.m, self.clk, self.rst)
 
@@ -480,8 +494,6 @@ class MultibankRAM(object):
             ram._write_disabled[port] = True
 
     def read(self, fsm, addr, port=0):
-        """ intrinsic read operation for multiple RAMs """
-
         port = vtypes.to_int(port)
         cond = fsm.state == fsm.current
 
@@ -527,8 +539,6 @@ class MultibankRAM(object):
         return 0
 
     def read_bank(self, fsm, bank, addr, port=0):
-        """ intrinsic read operation for multiple RAMs """
-
         port = vtypes.to_int(port)
         cond = fsm.state == fsm.current
 

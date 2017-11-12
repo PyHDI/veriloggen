@@ -1353,26 +1353,24 @@ module blinkled
     end
   end
 
-  reg [129-1:0] _slice_data_313;
+  reg [33-1:0] _slice_data_313;
   reg _slice_valid_313;
   wire _slice_ready_313;
-  reg [129-1:0] _slice_data_314;
+  reg [33-1:0] _slice_data_314;
   reg _slice_valid_314;
   wire _slice_ready_314;
-  reg [129-1:0] _slice_data_315;
+  reg [33-1:0] _slice_data_315;
   reg _slice_valid_315;
   wire _slice_ready_315;
-  reg [129-1:0] _slice_data_316;
+  reg [33-1:0] _slice_data_316;
   reg _slice_valid_316;
   wire _slice_ready_316;
-  reg [128-1:0] __delay_data_317;
-  reg __delay_valid_317;
-  wire __delay_ready_317;
-  assign _tmp_106 = (__delay_ready_317 || !__delay_valid_317) && _tmp_105;
-  reg [128-1:0] __delay_data_318;
-  reg __delay_valid_318;
-  wire __delay_ready_318;
-  assign _tmp_217 = (__delay_ready_318 || !__delay_valid_318) && _tmp_216;
+  reg [33-1:0] _slice_data_317;
+  reg _slice_valid_317;
+  wire _slice_ready_317;
+  reg [33-1:0] _slice_data_318;
+  reg _slice_valid_318;
+  wire _slice_ready_318;
   reg [33-1:0] _slice_data_319;
   reg _slice_valid_319;
   wire _slice_ready_319;
@@ -1385,7 +1383,6 @@ module blinkled
   reg [33-1:0] _slice_data_322;
   reg _slice_valid_322;
   wire _slice_ready_322;
-  assign _slice_ready_313 = (_slice_ready_319 || !_slice_valid_319) && _slice_valid_313 && ((_slice_ready_320 || !_slice_valid_320) && _slice_valid_313) && ((_slice_ready_321 || !_slice_valid_321) && _slice_valid_313) && ((_slice_ready_322 || !_slice_valid_322) && _slice_valid_313);
   reg [33-1:0] _slice_data_323;
   reg _slice_valid_323;
   wire _slice_ready_323;
@@ -1398,95 +1395,74 @@ module blinkled
   reg [33-1:0] _slice_data_326;
   reg _slice_valid_326;
   wire _slice_ready_326;
-  assign _slice_ready_314 = (_slice_ready_323 || !_slice_valid_323) && _slice_valid_314 && ((_slice_ready_324 || !_slice_valid_324) && _slice_valid_314) && ((_slice_ready_325 || !_slice_valid_325) && _slice_valid_314) && ((_slice_ready_326 || !_slice_valid_326) && _slice_valid_314);
   reg [33-1:0] _slice_data_327;
   reg _slice_valid_327;
   wire _slice_ready_327;
   reg [33-1:0] _slice_data_328;
   reg _slice_valid_328;
   wire _slice_ready_328;
-  reg [33-1:0] _slice_data_329;
-  reg _slice_valid_329;
-  wire _slice_ready_329;
-  reg [33-1:0] _slice_data_330;
-  reg _slice_valid_330;
-  wire _slice_ready_330;
-  assign _slice_ready_315 = (_slice_ready_327 || !_slice_valid_327) && _slice_valid_315 && ((_slice_ready_328 || !_slice_valid_328) && _slice_valid_315) && ((_slice_ready_329 || !_slice_valid_329) && _slice_valid_315) && ((_slice_ready_330 || !_slice_valid_330) && _slice_valid_315);
-  reg [33-1:0] _slice_data_331;
-  reg _slice_valid_331;
-  wire _slice_ready_331;
-  reg [33-1:0] _slice_data_332;
-  reg _slice_valid_332;
-  wire _slice_ready_332;
-  reg [33-1:0] _slice_data_333;
-  reg _slice_valid_333;
-  wire _slice_ready_333;
-  reg [33-1:0] _slice_data_334;
-  reg _slice_valid_334;
-  wire _slice_ready_334;
-  assign _slice_ready_316 = (_slice_ready_331 || !_slice_valid_331) && _slice_valid_316 && ((_slice_ready_332 || !_slice_valid_332) && _slice_valid_316) && ((_slice_ready_333 || !_slice_valid_333) && _slice_valid_316) && ((_slice_ready_334 || !_slice_valid_334) && _slice_valid_316);
-  reg [128-1:0] __delay_data_335;
-  reg __delay_valid_335;
-  wire __delay_ready_335;
-  assign __delay_ready_317 = (__delay_ready_335 || !__delay_valid_335) && __delay_valid_317;
-  reg [128-1:0] __delay_data_336;
-  reg __delay_valid_336;
-  wire __delay_ready_336;
-  assign __delay_ready_318 = (__delay_ready_336 || !__delay_valid_336) && __delay_valid_318;
-  assign _slice_data_233 = _slice_data_319;
-  assign _slice_valid_233 = _slice_valid_319;
-  assign _slice_ready_319 = _slice_ready_233;
-  assign _slice_data_236 = _slice_data_320;
-  assign _slice_valid_236 = _slice_valid_320;
-  assign _slice_ready_320 = _slice_ready_236;
-  assign _slice_data_239 = _slice_data_321;
-  assign _slice_valid_239 = _slice_valid_321;
-  assign _slice_ready_321 = _slice_ready_239;
-  assign _slice_data_242 = _slice_data_322;
-  assign _slice_valid_242 = _slice_valid_322;
-  assign _slice_ready_322 = _slice_ready_242;
-  assign _slice_data_245 = _slice_data_323;
-  assign _slice_valid_245 = _slice_valid_323;
-  assign _slice_ready_323 = _slice_ready_245;
-  assign _slice_data_248 = _slice_data_324;
-  assign _slice_valid_248 = _slice_valid_324;
-  assign _slice_ready_324 = _slice_ready_248;
-  assign _slice_data_251 = _slice_data_325;
-  assign _slice_valid_251 = _slice_valid_325;
-  assign _slice_ready_325 = _slice_ready_251;
-  assign _slice_data_254 = _slice_data_326;
-  assign _slice_valid_254 = _slice_valid_326;
-  assign _slice_ready_326 = _slice_ready_254;
-  assign _slice_data_278 = _slice_data_327;
-  assign _slice_valid_278 = _slice_valid_327;
-  assign _slice_ready_327 = _slice_ready_278;
-  assign _slice_data_281 = _slice_data_328;
-  assign _slice_valid_281 = _slice_valid_328;
-  assign _slice_ready_328 = _slice_ready_281;
-  assign _slice_data_284 = _slice_data_329;
-  assign _slice_valid_284 = _slice_valid_329;
-  assign _slice_ready_329 = _slice_ready_284;
-  assign _slice_data_287 = _slice_data_330;
-  assign _slice_valid_287 = _slice_valid_330;
-  assign _slice_ready_330 = _slice_ready_287;
-  assign _slice_data_290 = _slice_data_331;
-  assign _slice_valid_290 = _slice_valid_331;
-  assign _slice_ready_331 = _slice_ready_290;
-  assign _slice_data_293 = _slice_data_332;
-  assign _slice_valid_293 = _slice_valid_332;
-  assign _slice_ready_332 = _slice_ready_293;
-  assign _slice_data_296 = _slice_data_333;
-  assign _slice_valid_296 = _slice_valid_333;
-  assign _slice_ready_333 = _slice_ready_296;
-  assign _slice_data_299 = _slice_data_334;
-  assign _slice_valid_299 = _slice_valid_334;
-  assign _slice_ready_334 = _slice_ready_299;
-  assign __variable_data_110 = __delay_data_335;
-  assign __variable_valid_110 = __delay_valid_335;
-  assign __delay_ready_335 = __variable_ready_110;
-  assign __variable_data_221 = __delay_data_336;
-  assign __variable_valid_221 = __delay_valid_336;
-  assign __delay_ready_336 = __variable_ready_221;
+  reg [128-1:0] __delay_data_329;
+  reg __delay_valid_329;
+  wire __delay_ready_329;
+  assign _tmp_106 = (__delay_ready_329 || !__delay_valid_329) && _tmp_105;
+  reg [128-1:0] __delay_data_330;
+  reg __delay_valid_330;
+  wire __delay_ready_330;
+  assign _tmp_217 = (__delay_ready_330 || !__delay_valid_330) && _tmp_216;
+  assign _slice_data_233 = _slice_data_313;
+  assign _slice_valid_233 = _slice_valid_313;
+  assign _slice_ready_313 = _slice_ready_233;
+  assign _slice_data_236 = _slice_data_314;
+  assign _slice_valid_236 = _slice_valid_314;
+  assign _slice_ready_314 = _slice_ready_236;
+  assign _slice_data_239 = _slice_data_315;
+  assign _slice_valid_239 = _slice_valid_315;
+  assign _slice_ready_315 = _slice_ready_239;
+  assign _slice_data_242 = _slice_data_316;
+  assign _slice_valid_242 = _slice_valid_316;
+  assign _slice_ready_316 = _slice_ready_242;
+  assign _slice_data_245 = _slice_data_317;
+  assign _slice_valid_245 = _slice_valid_317;
+  assign _slice_ready_317 = _slice_ready_245;
+  assign _slice_data_248 = _slice_data_318;
+  assign _slice_valid_248 = _slice_valid_318;
+  assign _slice_ready_318 = _slice_ready_248;
+  assign _slice_data_251 = _slice_data_319;
+  assign _slice_valid_251 = _slice_valid_319;
+  assign _slice_ready_319 = _slice_ready_251;
+  assign _slice_data_254 = _slice_data_320;
+  assign _slice_valid_254 = _slice_valid_320;
+  assign _slice_ready_320 = _slice_ready_254;
+  assign _slice_data_278 = _slice_data_321;
+  assign _slice_valid_278 = _slice_valid_321;
+  assign _slice_ready_321 = _slice_ready_278;
+  assign _slice_data_281 = _slice_data_322;
+  assign _slice_valid_281 = _slice_valid_322;
+  assign _slice_ready_322 = _slice_ready_281;
+  assign _slice_data_284 = _slice_data_323;
+  assign _slice_valid_284 = _slice_valid_323;
+  assign _slice_ready_323 = _slice_ready_284;
+  assign _slice_data_287 = _slice_data_324;
+  assign _slice_valid_287 = _slice_valid_324;
+  assign _slice_ready_324 = _slice_ready_287;
+  assign _slice_data_290 = _slice_data_325;
+  assign _slice_valid_290 = _slice_valid_325;
+  assign _slice_ready_325 = _slice_ready_290;
+  assign _slice_data_293 = _slice_data_326;
+  assign _slice_valid_293 = _slice_valid_326;
+  assign _slice_ready_326 = _slice_ready_293;
+  assign _slice_data_296 = _slice_data_327;
+  assign _slice_valid_296 = _slice_valid_327;
+  assign _slice_ready_327 = _slice_ready_296;
+  assign _slice_data_299 = _slice_data_328;
+  assign _slice_valid_299 = _slice_valid_328;
+  assign _slice_ready_328 = _slice_ready_299;
+  assign __variable_data_110 = __delay_data_329;
+  assign __variable_valid_110 = __delay_valid_329;
+  assign __delay_ready_329 = __variable_ready_110;
+  assign __variable_data_221 = __delay_data_330;
+  assign __variable_valid_221 = __delay_valid_330;
+  assign __delay_ready_330 = __variable_ready_221;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -1498,10 +1474,10 @@ module blinkled
       _slice_valid_315 <= 0;
       _slice_data_316 <= 0;
       _slice_valid_316 <= 0;
-      __delay_data_317 <= 0;
-      __delay_valid_317 <= 0;
-      __delay_data_318 <= 0;
-      __delay_valid_318 <= 0;
+      _slice_data_317 <= 0;
+      _slice_valid_317 <= 0;
+      _slice_data_318 <= 0;
+      _slice_valid_318 <= 0;
       _slice_data_319 <= 0;
       _slice_valid_319 <= 0;
       _slice_data_320 <= 0;
@@ -1522,25 +1498,13 @@ module blinkled
       _slice_valid_327 <= 0;
       _slice_data_328 <= 0;
       _slice_valid_328 <= 0;
-      _slice_data_329 <= 0;
-      _slice_valid_329 <= 0;
-      _slice_data_330 <= 0;
-      _slice_valid_330 <= 0;
-      _slice_data_331 <= 0;
-      _slice_valid_331 <= 0;
-      _slice_data_332 <= 0;
-      _slice_valid_332 <= 0;
-      _slice_data_333 <= 0;
-      _slice_valid_333 <= 0;
-      _slice_data_334 <= 0;
-      _slice_valid_334 <= 0;
-      __delay_data_335 <= 0;
-      __delay_valid_335 <= 0;
-      __delay_data_336 <= 0;
-      __delay_valid_336 <= 0;
+      __delay_data_329 <= 0;
+      __delay_valid_329 <= 0;
+      __delay_data_330 <= 0;
+      __delay_valid_330 <= 0;
     end else begin
       if((_slice_ready_313 || !_slice_valid_313) && 1 && _tmp_230) begin
-        _slice_data_313 <= _tmp_229[9'sd128:1'sd0];
+        _slice_data_313 <= _tmp_229[7'sd32:1'sd0];
       end 
       if(_slice_valid_313 && _slice_ready_313) begin
         _slice_valid_313 <= 0;
@@ -1549,7 +1513,7 @@ module blinkled
         _slice_valid_313 <= _tmp_230;
       end 
       if((_slice_ready_314 || !_slice_valid_314) && 1 && _tmp_230) begin
-        _slice_data_314 <= _tmp_229[10'sd256:9'sd128];
+        _slice_data_314 <= _tmp_229[8'sd64:7'sd32];
       end 
       if(_slice_valid_314 && _slice_ready_314) begin
         _slice_valid_314 <= 0;
@@ -1557,203 +1521,149 @@ module blinkled
       if((_slice_ready_314 || !_slice_valid_314) && 1) begin
         _slice_valid_314 <= _tmp_230;
       end 
-      if((_slice_ready_315 || !_slice_valid_315) && 1 && _tmp_275) begin
-        _slice_data_315 <= _tmp_274[9'sd128:1'sd0];
+      if((_slice_ready_315 || !_slice_valid_315) && 1 && _tmp_230) begin
+        _slice_data_315 <= _tmp_229[8'sd96:8'sd64];
       end 
       if(_slice_valid_315 && _slice_ready_315) begin
         _slice_valid_315 <= 0;
       end 
       if((_slice_ready_315 || !_slice_valid_315) && 1) begin
-        _slice_valid_315 <= _tmp_275;
+        _slice_valid_315 <= _tmp_230;
       end 
-      if((_slice_ready_316 || !_slice_valid_316) && 1 && _tmp_275) begin
-        _slice_data_316 <= _tmp_274[10'sd256:9'sd128];
+      if((_slice_ready_316 || !_slice_valid_316) && 1 && _tmp_230) begin
+        _slice_data_316 <= _tmp_229[9'sd128:8'sd96];
       end 
       if(_slice_valid_316 && _slice_ready_316) begin
         _slice_valid_316 <= 0;
       end 
       if((_slice_ready_316 || !_slice_valid_316) && 1) begin
-        _slice_valid_316 <= _tmp_275;
+        _slice_valid_316 <= _tmp_230;
       end 
-      if((__delay_ready_317 || !__delay_valid_317) && _tmp_106 && _tmp_105) begin
-        __delay_data_317 <= _tmp_104;
+      if((_slice_ready_317 || !_slice_valid_317) && 1 && _tmp_230) begin
+        _slice_data_317 <= _tmp_229[9'sd160:9'sd128];
       end 
-      if(__delay_valid_317 && __delay_ready_317) begin
-        __delay_valid_317 <= 0;
+      if(_slice_valid_317 && _slice_ready_317) begin
+        _slice_valid_317 <= 0;
       end 
-      if((__delay_ready_317 || !__delay_valid_317) && _tmp_106) begin
-        __delay_valid_317 <= _tmp_105;
+      if((_slice_ready_317 || !_slice_valid_317) && 1) begin
+        _slice_valid_317 <= _tmp_230;
       end 
-      if((__delay_ready_318 || !__delay_valid_318) && _tmp_217 && _tmp_216) begin
-        __delay_data_318 <= _tmp_215;
+      if((_slice_ready_318 || !_slice_valid_318) && 1 && _tmp_230) begin
+        _slice_data_318 <= _tmp_229[9'sd192:9'sd160];
       end 
-      if(__delay_valid_318 && __delay_ready_318) begin
-        __delay_valid_318 <= 0;
+      if(_slice_valid_318 && _slice_ready_318) begin
+        _slice_valid_318 <= 0;
       end 
-      if((__delay_ready_318 || !__delay_valid_318) && _tmp_217) begin
-        __delay_valid_318 <= _tmp_216;
+      if((_slice_ready_318 || !_slice_valid_318) && 1) begin
+        _slice_valid_318 <= _tmp_230;
       end 
-      if((_slice_ready_319 || !_slice_valid_319) && _slice_ready_313 && _slice_valid_313) begin
-        _slice_data_319 <= _slice_data_313[7'sd32:1'sd0];
+      if((_slice_ready_319 || !_slice_valid_319) && 1 && _tmp_230) begin
+        _slice_data_319 <= _tmp_229[9'sd224:9'sd192];
       end 
       if(_slice_valid_319 && _slice_ready_319) begin
         _slice_valid_319 <= 0;
       end 
-      if((_slice_ready_319 || !_slice_valid_319) && _slice_ready_313) begin
-        _slice_valid_319 <= _slice_valid_313;
+      if((_slice_ready_319 || !_slice_valid_319) && 1) begin
+        _slice_valid_319 <= _tmp_230;
       end 
-      if((_slice_ready_320 || !_slice_valid_320) && _slice_ready_313 && _slice_valid_313) begin
-        _slice_data_320 <= _slice_data_313[8'sd64:7'sd32];
+      if((_slice_ready_320 || !_slice_valid_320) && 1 && _tmp_230) begin
+        _slice_data_320 <= _tmp_229[10'sd256:9'sd224];
       end 
       if(_slice_valid_320 && _slice_ready_320) begin
         _slice_valid_320 <= 0;
       end 
-      if((_slice_ready_320 || !_slice_valid_320) && _slice_ready_313) begin
-        _slice_valid_320 <= _slice_valid_313;
+      if((_slice_ready_320 || !_slice_valid_320) && 1) begin
+        _slice_valid_320 <= _tmp_230;
       end 
-      if((_slice_ready_321 || !_slice_valid_321) && _slice_ready_313 && _slice_valid_313) begin
-        _slice_data_321 <= _slice_data_313[8'sd96:8'sd64];
+      if((_slice_ready_321 || !_slice_valid_321) && 1 && _tmp_275) begin
+        _slice_data_321 <= _tmp_274[7'sd32:1'sd0];
       end 
       if(_slice_valid_321 && _slice_ready_321) begin
         _slice_valid_321 <= 0;
       end 
-      if((_slice_ready_321 || !_slice_valid_321) && _slice_ready_313) begin
-        _slice_valid_321 <= _slice_valid_313;
+      if((_slice_ready_321 || !_slice_valid_321) && 1) begin
+        _slice_valid_321 <= _tmp_275;
       end 
-      if((_slice_ready_322 || !_slice_valid_322) && _slice_ready_313 && _slice_valid_313) begin
-        _slice_data_322 <= _slice_data_313[9'sd128:8'sd96];
+      if((_slice_ready_322 || !_slice_valid_322) && 1 && _tmp_275) begin
+        _slice_data_322 <= _tmp_274[8'sd64:7'sd32];
       end 
       if(_slice_valid_322 && _slice_ready_322) begin
         _slice_valid_322 <= 0;
       end 
-      if((_slice_ready_322 || !_slice_valid_322) && _slice_ready_313) begin
-        _slice_valid_322 <= _slice_valid_313;
+      if((_slice_ready_322 || !_slice_valid_322) && 1) begin
+        _slice_valid_322 <= _tmp_275;
       end 
-      if((_slice_ready_323 || !_slice_valid_323) && _slice_ready_314 && _slice_valid_314) begin
-        _slice_data_323 <= _slice_data_314[7'sd32:1'sd0];
+      if((_slice_ready_323 || !_slice_valid_323) && 1 && _tmp_275) begin
+        _slice_data_323 <= _tmp_274[8'sd96:8'sd64];
       end 
       if(_slice_valid_323 && _slice_ready_323) begin
         _slice_valid_323 <= 0;
       end 
-      if((_slice_ready_323 || !_slice_valid_323) && _slice_ready_314) begin
-        _slice_valid_323 <= _slice_valid_314;
+      if((_slice_ready_323 || !_slice_valid_323) && 1) begin
+        _slice_valid_323 <= _tmp_275;
       end 
-      if((_slice_ready_324 || !_slice_valid_324) && _slice_ready_314 && _slice_valid_314) begin
-        _slice_data_324 <= _slice_data_314[8'sd64:7'sd32];
+      if((_slice_ready_324 || !_slice_valid_324) && 1 && _tmp_275) begin
+        _slice_data_324 <= _tmp_274[9'sd128:8'sd96];
       end 
       if(_slice_valid_324 && _slice_ready_324) begin
         _slice_valid_324 <= 0;
       end 
-      if((_slice_ready_324 || !_slice_valid_324) && _slice_ready_314) begin
-        _slice_valid_324 <= _slice_valid_314;
+      if((_slice_ready_324 || !_slice_valid_324) && 1) begin
+        _slice_valid_324 <= _tmp_275;
       end 
-      if((_slice_ready_325 || !_slice_valid_325) && _slice_ready_314 && _slice_valid_314) begin
-        _slice_data_325 <= _slice_data_314[8'sd96:8'sd64];
+      if((_slice_ready_325 || !_slice_valid_325) && 1 && _tmp_275) begin
+        _slice_data_325 <= _tmp_274[9'sd160:9'sd128];
       end 
       if(_slice_valid_325 && _slice_ready_325) begin
         _slice_valid_325 <= 0;
       end 
-      if((_slice_ready_325 || !_slice_valid_325) && _slice_ready_314) begin
-        _slice_valid_325 <= _slice_valid_314;
+      if((_slice_ready_325 || !_slice_valid_325) && 1) begin
+        _slice_valid_325 <= _tmp_275;
       end 
-      if((_slice_ready_326 || !_slice_valid_326) && _slice_ready_314 && _slice_valid_314) begin
-        _slice_data_326 <= _slice_data_314[9'sd128:8'sd96];
+      if((_slice_ready_326 || !_slice_valid_326) && 1 && _tmp_275) begin
+        _slice_data_326 <= _tmp_274[9'sd192:9'sd160];
       end 
       if(_slice_valid_326 && _slice_ready_326) begin
         _slice_valid_326 <= 0;
       end 
-      if((_slice_ready_326 || !_slice_valid_326) && _slice_ready_314) begin
-        _slice_valid_326 <= _slice_valid_314;
+      if((_slice_ready_326 || !_slice_valid_326) && 1) begin
+        _slice_valid_326 <= _tmp_275;
       end 
-      if((_slice_ready_327 || !_slice_valid_327) && _slice_ready_315 && _slice_valid_315) begin
-        _slice_data_327 <= _slice_data_315[7'sd32:1'sd0];
+      if((_slice_ready_327 || !_slice_valid_327) && 1 && _tmp_275) begin
+        _slice_data_327 <= _tmp_274[9'sd224:9'sd192];
       end 
       if(_slice_valid_327 && _slice_ready_327) begin
         _slice_valid_327 <= 0;
       end 
-      if((_slice_ready_327 || !_slice_valid_327) && _slice_ready_315) begin
-        _slice_valid_327 <= _slice_valid_315;
+      if((_slice_ready_327 || !_slice_valid_327) && 1) begin
+        _slice_valid_327 <= _tmp_275;
       end 
-      if((_slice_ready_328 || !_slice_valid_328) && _slice_ready_315 && _slice_valid_315) begin
-        _slice_data_328 <= _slice_data_315[8'sd64:7'sd32];
+      if((_slice_ready_328 || !_slice_valid_328) && 1 && _tmp_275) begin
+        _slice_data_328 <= _tmp_274[10'sd256:9'sd224];
       end 
       if(_slice_valid_328 && _slice_ready_328) begin
         _slice_valid_328 <= 0;
       end 
-      if((_slice_ready_328 || !_slice_valid_328) && _slice_ready_315) begin
-        _slice_valid_328 <= _slice_valid_315;
+      if((_slice_ready_328 || !_slice_valid_328) && 1) begin
+        _slice_valid_328 <= _tmp_275;
       end 
-      if((_slice_ready_329 || !_slice_valid_329) && _slice_ready_315 && _slice_valid_315) begin
-        _slice_data_329 <= _slice_data_315[8'sd96:8'sd64];
+      if((__delay_ready_329 || !__delay_valid_329) && _tmp_106 && _tmp_105) begin
+        __delay_data_329 <= _tmp_104;
       end 
-      if(_slice_valid_329 && _slice_ready_329) begin
-        _slice_valid_329 <= 0;
+      if(__delay_valid_329 && __delay_ready_329) begin
+        __delay_valid_329 <= 0;
       end 
-      if((_slice_ready_329 || !_slice_valid_329) && _slice_ready_315) begin
-        _slice_valid_329 <= _slice_valid_315;
+      if((__delay_ready_329 || !__delay_valid_329) && _tmp_106) begin
+        __delay_valid_329 <= _tmp_105;
       end 
-      if((_slice_ready_330 || !_slice_valid_330) && _slice_ready_315 && _slice_valid_315) begin
-        _slice_data_330 <= _slice_data_315[9'sd128:8'sd96];
+      if((__delay_ready_330 || !__delay_valid_330) && _tmp_217 && _tmp_216) begin
+        __delay_data_330 <= _tmp_215;
       end 
-      if(_slice_valid_330 && _slice_ready_330) begin
-        _slice_valid_330 <= 0;
+      if(__delay_valid_330 && __delay_ready_330) begin
+        __delay_valid_330 <= 0;
       end 
-      if((_slice_ready_330 || !_slice_valid_330) && _slice_ready_315) begin
-        _slice_valid_330 <= _slice_valid_315;
-      end 
-      if((_slice_ready_331 || !_slice_valid_331) && _slice_ready_316 && _slice_valid_316) begin
-        _slice_data_331 <= _slice_data_316[7'sd32:1'sd0];
-      end 
-      if(_slice_valid_331 && _slice_ready_331) begin
-        _slice_valid_331 <= 0;
-      end 
-      if((_slice_ready_331 || !_slice_valid_331) && _slice_ready_316) begin
-        _slice_valid_331 <= _slice_valid_316;
-      end 
-      if((_slice_ready_332 || !_slice_valid_332) && _slice_ready_316 && _slice_valid_316) begin
-        _slice_data_332 <= _slice_data_316[8'sd64:7'sd32];
-      end 
-      if(_slice_valid_332 && _slice_ready_332) begin
-        _slice_valid_332 <= 0;
-      end 
-      if((_slice_ready_332 || !_slice_valid_332) && _slice_ready_316) begin
-        _slice_valid_332 <= _slice_valid_316;
-      end 
-      if((_slice_ready_333 || !_slice_valid_333) && _slice_ready_316 && _slice_valid_316) begin
-        _slice_data_333 <= _slice_data_316[8'sd96:8'sd64];
-      end 
-      if(_slice_valid_333 && _slice_ready_333) begin
-        _slice_valid_333 <= 0;
-      end 
-      if((_slice_ready_333 || !_slice_valid_333) && _slice_ready_316) begin
-        _slice_valid_333 <= _slice_valid_316;
-      end 
-      if((_slice_ready_334 || !_slice_valid_334) && _slice_ready_316 && _slice_valid_316) begin
-        _slice_data_334 <= _slice_data_316[9'sd128:8'sd96];
-      end 
-      if(_slice_valid_334 && _slice_ready_334) begin
-        _slice_valid_334 <= 0;
-      end 
-      if((_slice_ready_334 || !_slice_valid_334) && _slice_ready_316) begin
-        _slice_valid_334 <= _slice_valid_316;
-      end 
-      if((__delay_ready_335 || !__delay_valid_335) && __delay_ready_317 && __delay_valid_317) begin
-        __delay_data_335 <= __delay_data_317;
-      end 
-      if(__delay_valid_335 && __delay_ready_335) begin
-        __delay_valid_335 <= 0;
-      end 
-      if((__delay_ready_335 || !__delay_valid_335) && __delay_ready_317) begin
-        __delay_valid_335 <= __delay_valid_317;
-      end 
-      if((__delay_ready_336 || !__delay_valid_336) && __delay_ready_318 && __delay_valid_318) begin
-        __delay_data_336 <= __delay_data_318;
-      end 
-      if(__delay_valid_336 && __delay_ready_336) begin
-        __delay_valid_336 <= 0;
-      end 
-      if((__delay_ready_336 || !__delay_valid_336) && __delay_ready_318) begin
-        __delay_valid_336 <= __delay_valid_318;
+      if((__delay_ready_330 || !__delay_valid_330) && _tmp_217) begin
+        __delay_valid_330 <= _tmp_216;
       end 
     end
   end
@@ -1942,119 +1852,59 @@ module blinkled
     end
   end
 
-  reg [128-1:0] _cat_data_337;
-  reg _cat_valid_337;
-  wire _cat_ready_337;
-  assign _tmp_45 = 1 && ((_cat_ready_337 || !_cat_valid_337) && (_tmp_43 && _tmp_31 && _tmp_19 && _tmp_7));
-  assign _tmp_33 = 1 && ((_cat_ready_337 || !_cat_valid_337) && (_tmp_43 && _tmp_31 && _tmp_19 && _tmp_7));
-  assign _tmp_21 = 1 && ((_cat_ready_337 || !_cat_valid_337) && (_tmp_43 && _tmp_31 && _tmp_19 && _tmp_7));
-  assign _tmp_9 = 1 && ((_cat_ready_337 || !_cat_valid_337) && (_tmp_43 && _tmp_31 && _tmp_19 && _tmp_7));
-  reg [128-1:0] _cat_data_338;
-  reg _cat_valid_338;
-  wire _cat_ready_338;
-  assign _tmp_93 = 1 && ((_cat_ready_338 || !_cat_valid_338) && (_tmp_91 && _tmp_79 && _tmp_67 && _tmp_55));
-  assign _tmp_81 = 1 && ((_cat_ready_338 || !_cat_valid_338) && (_tmp_91 && _tmp_79 && _tmp_67 && _tmp_55));
-  assign _tmp_69 = 1 && ((_cat_ready_338 || !_cat_valid_338) && (_tmp_91 && _tmp_79 && _tmp_67 && _tmp_55));
-  assign _tmp_57 = 1 && ((_cat_ready_338 || !_cat_valid_338) && (_tmp_91 && _tmp_79 && _tmp_67 && _tmp_55));
-  reg [128-1:0] _cat_data_339;
-  reg _cat_valid_339;
-  wire _cat_ready_339;
-  assign _tmp_156 = 1 && ((_cat_ready_339 || !_cat_valid_339) && (_tmp_154 && _tmp_142 && _tmp_130 && _tmp_118));
-  assign _tmp_144 = 1 && ((_cat_ready_339 || !_cat_valid_339) && (_tmp_154 && _tmp_142 && _tmp_130 && _tmp_118));
-  assign _tmp_132 = 1 && ((_cat_ready_339 || !_cat_valid_339) && (_tmp_154 && _tmp_142 && _tmp_130 && _tmp_118));
-  assign _tmp_120 = 1 && ((_cat_ready_339 || !_cat_valid_339) && (_tmp_154 && _tmp_142 && _tmp_130 && _tmp_118));
-  reg [128-1:0] _cat_data_340;
-  reg _cat_valid_340;
-  wire _cat_ready_340;
-  assign _tmp_204 = 1 && ((_cat_ready_340 || !_cat_valid_340) && (_tmp_202 && _tmp_190 && _tmp_178 && _tmp_166));
-  assign _tmp_192 = 1 && ((_cat_ready_340 || !_cat_valid_340) && (_tmp_202 && _tmp_190 && _tmp_178 && _tmp_166));
-  assign _tmp_180 = 1 && ((_cat_ready_340 || !_cat_valid_340) && (_tmp_202 && _tmp_190 && _tmp_178 && _tmp_166));
-  assign _tmp_168 = 1 && ((_cat_ready_340 || !_cat_valid_340) && (_tmp_202 && _tmp_190 && _tmp_178 && _tmp_166));
-  reg [256-1:0] _cat_data_341;
-  reg _cat_valid_341;
-  wire _cat_ready_341;
-  assign _cat_ready_338 = (_cat_ready_341 || !_cat_valid_341) && (_cat_valid_338 && _cat_valid_337);
-  assign _cat_ready_337 = (_cat_ready_341 || !_cat_valid_341) && (_cat_valid_338 && _cat_valid_337);
-  reg [256-1:0] _cat_data_342;
-  reg _cat_valid_342;
-  wire _cat_ready_342;
-  assign _cat_ready_340 = (_cat_ready_342 || !_cat_valid_342) && (_cat_valid_340 && _cat_valid_339);
-  assign _cat_ready_339 = (_cat_ready_342 || !_cat_valid_342) && (_cat_valid_340 && _cat_valid_339);
-  assign _cat_data_108 = _cat_data_341;
-  assign _cat_valid_108 = _cat_valid_341;
-  assign _cat_ready_341 = _cat_ready_108;
-  assign _cat_data_219 = _cat_data_342;
-  assign _cat_valid_219 = _cat_valid_342;
-  assign _cat_ready_342 = _cat_ready_219;
+  reg [256-1:0] _cat_data_331;
+  reg _cat_valid_331;
+  wire _cat_ready_331;
+  assign _tmp_93 = 1 && ((_cat_ready_331 || !_cat_valid_331) && (_tmp_91 && _tmp_79 && _tmp_67 && _tmp_55 && _tmp_43 && _tmp_31 && _tmp_19 && _tmp_7));
+  assign _tmp_81 = 1 && ((_cat_ready_331 || !_cat_valid_331) && (_tmp_91 && _tmp_79 && _tmp_67 && _tmp_55 && _tmp_43 && _tmp_31 && _tmp_19 && _tmp_7));
+  assign _tmp_69 = 1 && ((_cat_ready_331 || !_cat_valid_331) && (_tmp_91 && _tmp_79 && _tmp_67 && _tmp_55 && _tmp_43 && _tmp_31 && _tmp_19 && _tmp_7));
+  assign _tmp_57 = 1 && ((_cat_ready_331 || !_cat_valid_331) && (_tmp_91 && _tmp_79 && _tmp_67 && _tmp_55 && _tmp_43 && _tmp_31 && _tmp_19 && _tmp_7));
+  assign _tmp_45 = 1 && ((_cat_ready_331 || !_cat_valid_331) && (_tmp_91 && _tmp_79 && _tmp_67 && _tmp_55 && _tmp_43 && _tmp_31 && _tmp_19 && _tmp_7));
+  assign _tmp_33 = 1 && ((_cat_ready_331 || !_cat_valid_331) && (_tmp_91 && _tmp_79 && _tmp_67 && _tmp_55 && _tmp_43 && _tmp_31 && _tmp_19 && _tmp_7));
+  assign _tmp_21 = 1 && ((_cat_ready_331 || !_cat_valid_331) && (_tmp_91 && _tmp_79 && _tmp_67 && _tmp_55 && _tmp_43 && _tmp_31 && _tmp_19 && _tmp_7));
+  assign _tmp_9 = 1 && ((_cat_ready_331 || !_cat_valid_331) && (_tmp_91 && _tmp_79 && _tmp_67 && _tmp_55 && _tmp_43 && _tmp_31 && _tmp_19 && _tmp_7));
+  reg [256-1:0] _cat_data_332;
+  reg _cat_valid_332;
+  wire _cat_ready_332;
+  assign _tmp_204 = 1 && ((_cat_ready_332 || !_cat_valid_332) && (_tmp_202 && _tmp_190 && _tmp_178 && _tmp_166 && _tmp_154 && _tmp_142 && _tmp_130 && _tmp_118));
+  assign _tmp_192 = 1 && ((_cat_ready_332 || !_cat_valid_332) && (_tmp_202 && _tmp_190 && _tmp_178 && _tmp_166 && _tmp_154 && _tmp_142 && _tmp_130 && _tmp_118));
+  assign _tmp_180 = 1 && ((_cat_ready_332 || !_cat_valid_332) && (_tmp_202 && _tmp_190 && _tmp_178 && _tmp_166 && _tmp_154 && _tmp_142 && _tmp_130 && _tmp_118));
+  assign _tmp_168 = 1 && ((_cat_ready_332 || !_cat_valid_332) && (_tmp_202 && _tmp_190 && _tmp_178 && _tmp_166 && _tmp_154 && _tmp_142 && _tmp_130 && _tmp_118));
+  assign _tmp_156 = 1 && ((_cat_ready_332 || !_cat_valid_332) && (_tmp_202 && _tmp_190 && _tmp_178 && _tmp_166 && _tmp_154 && _tmp_142 && _tmp_130 && _tmp_118));
+  assign _tmp_144 = 1 && ((_cat_ready_332 || !_cat_valid_332) && (_tmp_202 && _tmp_190 && _tmp_178 && _tmp_166 && _tmp_154 && _tmp_142 && _tmp_130 && _tmp_118));
+  assign _tmp_132 = 1 && ((_cat_ready_332 || !_cat_valid_332) && (_tmp_202 && _tmp_190 && _tmp_178 && _tmp_166 && _tmp_154 && _tmp_142 && _tmp_130 && _tmp_118));
+  assign _tmp_120 = 1 && ((_cat_ready_332 || !_cat_valid_332) && (_tmp_202 && _tmp_190 && _tmp_178 && _tmp_166 && _tmp_154 && _tmp_142 && _tmp_130 && _tmp_118));
+  assign _cat_data_108 = _cat_data_331;
+  assign _cat_valid_108 = _cat_valid_331;
+  assign _cat_ready_331 = _cat_ready_108;
+  assign _cat_data_219 = _cat_data_332;
+  assign _cat_valid_219 = _cat_valid_332;
+  assign _cat_ready_332 = _cat_ready_219;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _cat_data_337 <= 0;
-      _cat_valid_337 <= 0;
-      _cat_data_338 <= 0;
-      _cat_valid_338 <= 0;
-      _cat_data_339 <= 0;
-      _cat_valid_339 <= 0;
-      _cat_data_340 <= 0;
-      _cat_valid_340 <= 0;
-      _cat_data_341 <= 0;
-      _cat_valid_341 <= 0;
-      _cat_data_342 <= 0;
-      _cat_valid_342 <= 0;
+      _cat_data_331 <= 0;
+      _cat_valid_331 <= 0;
+      _cat_data_332 <= 0;
+      _cat_valid_332 <= 0;
     end else begin
-      if((_cat_ready_337 || !_cat_valid_337) && (_tmp_45 && _tmp_33 && _tmp_21 && _tmp_9) && (_tmp_43 && _tmp_31 && _tmp_19 && _tmp_7)) begin
-        _cat_data_337 <= { _tmp_49, _tmp_37, _tmp_25, _tmp_13 };
+      if((_cat_ready_331 || !_cat_valid_331) && (_tmp_93 && _tmp_81 && _tmp_69 && _tmp_57 && _tmp_45 && _tmp_33 && _tmp_21 && _tmp_9) && (_tmp_91 && _tmp_79 && _tmp_67 && _tmp_55 && _tmp_43 && _tmp_31 && _tmp_19 && _tmp_7)) begin
+        _cat_data_331 <= { _tmp_97, _tmp_85, _tmp_73, _tmp_61, _tmp_49, _tmp_37, _tmp_25, _tmp_13 };
       end 
-      if(_cat_valid_337 && _cat_ready_337) begin
-        _cat_valid_337 <= 0;
+      if(_cat_valid_331 && _cat_ready_331) begin
+        _cat_valid_331 <= 0;
       end 
-      if((_cat_ready_337 || !_cat_valid_337) && (_tmp_45 && _tmp_33 && _tmp_21 && _tmp_9)) begin
-        _cat_valid_337 <= _tmp_43 && _tmp_31 && _tmp_19 && _tmp_7;
+      if((_cat_ready_331 || !_cat_valid_331) && (_tmp_93 && _tmp_81 && _tmp_69 && _tmp_57 && _tmp_45 && _tmp_33 && _tmp_21 && _tmp_9)) begin
+        _cat_valid_331 <= _tmp_91 && _tmp_79 && _tmp_67 && _tmp_55 && _tmp_43 && _tmp_31 && _tmp_19 && _tmp_7;
       end 
-      if((_cat_ready_338 || !_cat_valid_338) && (_tmp_93 && _tmp_81 && _tmp_69 && _tmp_57) && (_tmp_91 && _tmp_79 && _tmp_67 && _tmp_55)) begin
-        _cat_data_338 <= { _tmp_97, _tmp_85, _tmp_73, _tmp_61 };
+      if((_cat_ready_332 || !_cat_valid_332) && (_tmp_204 && _tmp_192 && _tmp_180 && _tmp_168 && _tmp_156 && _tmp_144 && _tmp_132 && _tmp_120) && (_tmp_202 && _tmp_190 && _tmp_178 && _tmp_166 && _tmp_154 && _tmp_142 && _tmp_130 && _tmp_118)) begin
+        _cat_data_332 <= { _tmp_208, _tmp_196, _tmp_184, _tmp_172, _tmp_160, _tmp_148, _tmp_136, _tmp_124 };
       end 
-      if(_cat_valid_338 && _cat_ready_338) begin
-        _cat_valid_338 <= 0;
+      if(_cat_valid_332 && _cat_ready_332) begin
+        _cat_valid_332 <= 0;
       end 
-      if((_cat_ready_338 || !_cat_valid_338) && (_tmp_93 && _tmp_81 && _tmp_69 && _tmp_57)) begin
-        _cat_valid_338 <= _tmp_91 && _tmp_79 && _tmp_67 && _tmp_55;
-      end 
-      if((_cat_ready_339 || !_cat_valid_339) && (_tmp_156 && _tmp_144 && _tmp_132 && _tmp_120) && (_tmp_154 && _tmp_142 && _tmp_130 && _tmp_118)) begin
-        _cat_data_339 <= { _tmp_160, _tmp_148, _tmp_136, _tmp_124 };
-      end 
-      if(_cat_valid_339 && _cat_ready_339) begin
-        _cat_valid_339 <= 0;
-      end 
-      if((_cat_ready_339 || !_cat_valid_339) && (_tmp_156 && _tmp_144 && _tmp_132 && _tmp_120)) begin
-        _cat_valid_339 <= _tmp_154 && _tmp_142 && _tmp_130 && _tmp_118;
-      end 
-      if((_cat_ready_340 || !_cat_valid_340) && (_tmp_204 && _tmp_192 && _tmp_180 && _tmp_168) && (_tmp_202 && _tmp_190 && _tmp_178 && _tmp_166)) begin
-        _cat_data_340 <= { _tmp_208, _tmp_196, _tmp_184, _tmp_172 };
-      end 
-      if(_cat_valid_340 && _cat_ready_340) begin
-        _cat_valid_340 <= 0;
-      end 
-      if((_cat_ready_340 || !_cat_valid_340) && (_tmp_204 && _tmp_192 && _tmp_180 && _tmp_168)) begin
-        _cat_valid_340 <= _tmp_202 && _tmp_190 && _tmp_178 && _tmp_166;
-      end 
-      if((_cat_ready_341 || !_cat_valid_341) && (_cat_ready_338 && _cat_ready_337) && (_cat_valid_338 && _cat_valid_337)) begin
-        _cat_data_341 <= { _cat_data_338, _cat_data_337 };
-      end 
-      if(_cat_valid_341 && _cat_ready_341) begin
-        _cat_valid_341 <= 0;
-      end 
-      if((_cat_ready_341 || !_cat_valid_341) && (_cat_ready_338 && _cat_ready_337)) begin
-        _cat_valid_341 <= _cat_valid_338 && _cat_valid_337;
-      end 
-      if((_cat_ready_342 || !_cat_valid_342) && (_cat_ready_340 && _cat_ready_339) && (_cat_valid_340 && _cat_valid_339)) begin
-        _cat_data_342 <= { _cat_data_340, _cat_data_339 };
-      end 
-      if(_cat_valid_342 && _cat_ready_342) begin
-        _cat_valid_342 <= 0;
-      end 
-      if((_cat_ready_342 || !_cat_valid_342) && (_cat_ready_340 && _cat_ready_339)) begin
-        _cat_valid_342 <= _cat_valid_340 && _cat_valid_339;
+      if((_cat_ready_332 || !_cat_valid_332) && (_tmp_204 && _tmp_192 && _tmp_180 && _tmp_168 && _tmp_156 && _tmp_144 && _tmp_132 && _tmp_120)) begin
+        _cat_valid_332 <= _tmp_202 && _tmp_190 && _tmp_178 && _tmp_166 && _tmp_154 && _tmp_142 && _tmp_130 && _tmp_118;
       end 
     end
   end
