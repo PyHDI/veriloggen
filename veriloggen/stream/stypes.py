@@ -73,9 +73,10 @@ class _Node(object):
         return (id(self), self.object_id) == (id(other), other.object_id)
 
     def name(self, prefix=None):
+        clsname = self.__class__.__name__.lower()
         if prefix is None:
             prefix = 'tmp'
-        return '_'.join(['', prefix, str(self.object_id)])
+        return '_'.join(['', clsname, prefix, str(self.object_id)])
 
 
 class _Numeric(_Node):
@@ -90,7 +91,7 @@ class _Numeric(_Node):
 
         # set up by _set_managers()
         self.m = None
-        self.df = None
+        self.strm = None
         self.seq = None
 
         self.output_data = None
@@ -120,8 +121,8 @@ class _Numeric(_Node):
             raise ValueError('output_data is already assigned.')
         self.output_data = data
 
-        if self.df is not None:
-            self.df.add(self)
+        if self.strm is not None:
+            self.strm.add(self)
 
     def output_tmp(self):
         if self.m is None:
@@ -185,8 +186,8 @@ class _Numeric(_Node):
     def _set_module(self, m):
         self.m = m
 
-    def _set_df(self, df):
-        self.df = df
+    def _set_strm(self, strm):
+        self.strm = strm
 
     def _set_seq(self, seq):
         self.seq = seq
@@ -463,9 +464,9 @@ class _BinaryOperator(_Operator):
         self.signed = self.left.get_signed() and self.right.get_signed()
 
     def _set_managers(self):
-        self._set_df(_get_df(self.left, self.right))
-        self._set_module(getattr(self.df, 'module', None))
-        self._set_seq(getattr(self.df, 'seq', None))
+        self._set_strm(_get_strm(self.left, self.right))
+        self._set_module(getattr(self.strm, 'module', None))
+        self._set_seq(getattr(self.strm, 'seq', None))
 
     def _implement(self, m, seq, svalid=None, senable=None):
         if self.latency != 1:
@@ -504,9 +505,9 @@ class _UnaryOperator(_Operator):
         self.signed = self.right.get_signed()
 
     def _set_managers(self):
-        self._set_df(_get_df(self.right))
-        self._set_module(getattr(self.df, 'module', None))
-        self._set_seq(getattr(self.df, 'seq', None))
+        self._set_strm(_get_strm(self.right))
+        self._set_module(getattr(self.strm, 'module', None))
+        self._set_seq(getattr(self.strm, 'seq', None))
 
     def _implement(self, m, seq, svalid=None, senable=None):
         if self.latency != 1:
@@ -1232,9 +1233,9 @@ class _SpecialOperator(_Operator):
                 break
 
     def _set_managers(self):
-        self._set_df(_get_df(*self.args))
-        self._set_module(getattr(self.df, 'module', None))
-        self._set_seq(getattr(self.df, 'seq', None))
+        self._set_strm(_get_strm(*self.args))
+        self._set_module(getattr(self.strm, 'module', None))
+        self._set_seq(getattr(self.strm, 'seq', None))
 
     def _implement(self, m, seq, svalid=None, senable=None):
         if self.latency != 1:
@@ -1607,9 +1608,9 @@ class _Constant(_Numeric):
         self.signed = False
 
     def _set_managers(self):
-        self._set_df(_get_df(self.value))
-        self._set_module(getattr(self.df, 'module', None))
-        self._set_seq(getattr(self.df, 'seq', None))
+        self._set_strm(_get_strm(self.value))
+        self._set_module(getattr(self.strm, 'module', None))
+        self._set_seq(getattr(self.strm, 'seq', None))
 
     def eval(self):
         return self.value
@@ -1822,10 +1823,10 @@ class _Accumulator(_UnaryOperator):
         self.point = self.right.get_point()
 
     def _set_managers(self):
-        self._set_df(_get_df(self.right, self.initval,
-                             self.enable, self.reset))
-        self._set_module(getattr(self.df, 'module', None))
-        self._set_seq(getattr(self.df, 'seq', None))
+        self._set_strm(_get_strm(self.right, self.initval,
+                                 self.enable, self.reset))
+        self._set_module(getattr(self.strm, 'module', None))
+        self._set_seq(getattr(self.strm, 'seq', None))
 
     def eval(self):
         return self
@@ -2169,10 +2170,10 @@ def _to_constant(obj):
     return obj
 
 
-def _get_df(*vars):
+def _get_strm(*vars):
     ret = None
     for var in vars:
-        v = getattr(var, 'df', None)
+        v = getattr(var, 'strm', None)
         if v is None:
             continue
         if ret is None:

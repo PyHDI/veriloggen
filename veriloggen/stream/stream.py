@@ -169,7 +169,7 @@ class Stream(object):
         # set default module information
         for var in sorted(all_vars, key=lambda x: x.object_id):
             var._set_module(m)
-            var._set_df(self)
+            var._set_strm(self)
 
             if var.seq is not None:
                 seq.update(var.seq)
@@ -214,7 +214,7 @@ class Stream(object):
 
     def implement_control(self, seq):
         self.valid_list = None
-        
+
         if self.ivalid is None and self.oready is None:
             if self.ovalid is not None:
                 self.ovalid.assign(1)
@@ -324,5 +324,5 @@ class Stream(object):
     def _set_info(self, v):
         if isinstance(v, stypes._Numeric):
             v._set_module(self.module)
-            v._set_df(self)
+            v._set_strm(self)
             v._set_seq(self.seq)
