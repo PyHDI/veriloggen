@@ -170,43 +170,43 @@ module main
   output [1-1:0] vdata
 );
 
-  reg signed [32-1:0] _data_3;
-  reg signed [32-1:0] _data_10;
-  reg signed [32-1:0] _data_6;
-  reg [5-1:0] _count_6;
-  reg [1-1:0] _data_9;
-  reg [5-1:0] _count_9;
-  assign zdata = _data_6;
-  assign vdata = _data_9;
+  reg signed [32-1:0] _plus_data_3;
+  reg signed [32-1:0] __delay_data_10;
+  reg signed [32-1:0] _reduceadd_data_6;
+  reg [5-1:0] _reduceadd_count_6;
+  reg [1-1:0] _pulse_data_9;
+  reg [5-1:0] _pulse_count_9;
+  assign zdata = _reduceadd_data_6;
+  assign vdata = _pulse_data_9;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _data_3 <= 0;
-      _data_10 <= 0;
-      _data_6 <= 1'd0;
-      _count_6 <= 0;
-      _data_9 <= 1'd0;
-      _count_9 <= 0;
+      _plus_data_3 <= 0;
+      __delay_data_10 <= 0;
+      _reduceadd_data_6 <= 1'd0;
+      _reduceadd_count_6 <= 0;
+      _pulse_data_9 <= 1'd0;
+      _pulse_count_9 <= 0;
     end else begin
-      _data_3 <= xdata + ydata;
-      _data_10 <= edata;
-      if(_data_10) begin
-        _data_6 <= _data_6 + _data_3;
+      _plus_data_3 <= xdata + ydata;
+      __delay_data_10 <= edata;
+      if(__delay_data_10) begin
+        _reduceadd_data_6 <= _reduceadd_data_6 + _plus_data_3;
       end 
-      if(_data_10) begin
-        _count_6 <= (_count_6 == 7)? 0 : _count_6 + 1;
+      if(__delay_data_10) begin
+        _reduceadd_count_6 <= (_reduceadd_count_6 == 7)? 0 : _reduceadd_count_6 + 1;
       end 
-      if(_data_10 && (_count_6 == 0)) begin
-        _data_6 <= 1'd0 + _data_3;
+      if(__delay_data_10 && (_reduceadd_count_6 == 0)) begin
+        _reduceadd_data_6 <= 1'd0 + _plus_data_3;
       end 
-      if(_data_10) begin
-        _data_9 <= _count_9 == 7;
+      if(__delay_data_10) begin
+        _pulse_data_9 <= _pulse_count_9 == 7;
       end 
-      if(_data_10) begin
-        _count_9 <= (_count_9 == 7)? 0 : _count_9 + 1;
+      if(__delay_data_10) begin
+        _pulse_count_9 <= (_pulse_count_9 == 7)? 0 : _pulse_count_9 + 1;
       end 
-      if(_data_10 && (_count_9 == 0)) begin
-        _data_9 <= _count_9 == 7;
+      if(__delay_data_10 && (_pulse_count_9 == 0)) begin
+        _pulse_data_9 <= _pulse_count_9 == 7;
       end 
     end
   end

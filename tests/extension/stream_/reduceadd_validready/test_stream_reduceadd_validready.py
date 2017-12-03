@@ -8,12 +8,12 @@ module test;
 
   reg CLK;
   reg RST;
-  reg signed [32-1:0] xdata;
-  reg signed [32-1:0] ydata;
   reg ivalid;
   wire iready;
   wire ovalid;
   reg oready;
+  reg signed [32-1:0] xdata;
+  reg signed [32-1:0] ydata;
   wire signed [32-1:0] zdata;
   wire [1-1:0] vdata;
 
@@ -22,12 +22,12 @@ module test;
   (
     .CLK(CLK),
     .RST(RST),
-    .xdata(xdata),
-    .ydata(ydata),
     .ivalid(ivalid),
     .iready(iready),
     .ovalid(ovalid),
     .oready(oready),
+    .xdata(xdata),
+    .ydata(ydata),
     .zdata(zdata),
     .vdata(vdata)
   );
@@ -190,12 +190,12 @@ module main
 (
   input CLK,
   input RST,
-  input signed [32-1:0] xdata,
-  input signed [32-1:0] ydata,
   input ivalid,
   output iready,
   output ovalid,
   input oready,
+  input signed [32-1:0] xdata,
+  input signed [32-1:0] ydata,
   output signed [32-1:0] zdata,
   output [1-1:0] vdata
 );
@@ -206,23 +206,23 @@ module main
   reg _ivalid_1;
   assign ovalid = _ivalid_1;
   assign iready = _tmp_0;
-  reg signed [32-1:0] _data_2;
-  reg signed [32-1:0] _data_5;
-  reg [5-1:0] _count_5;
-  reg [1-1:0] _data_8;
-  reg [5-1:0] _count_8;
-  assign zdata = _data_5;
-  assign vdata = _data_8;
+  reg signed [32-1:0] _plus_data_2;
+  reg signed [32-1:0] _reduceadd_data_5;
+  reg [5-1:0] _reduceadd_count_5;
+  reg [1-1:0] _pulse_data_8;
+  reg [5-1:0] _pulse_count_8;
+  assign zdata = _reduceadd_data_5;
+  assign vdata = _pulse_data_8;
 
   always @(posedge CLK) begin
     if(RST) begin
       _ivalid_0 <= 0;
       _ivalid_1 <= 0;
-      _data_2 <= 0;
-      _data_5 <= 1'd0;
-      _count_5 <= 0;
-      _data_8 <= 1'd0;
-      _count_8 <= 0;
+      _plus_data_2 <= 0;
+      _reduceadd_data_5 <= 1'd0;
+      _reduceadd_count_5 <= 0;
+      _pulse_data_8 <= 1'd0;
+      _pulse_count_8 <= 0;
     end else begin
       if(_tmp_0) begin
         _ivalid_0 <= ivalid;
@@ -231,25 +231,25 @@ module main
         _ivalid_1 <= _ivalid_0;
       end 
       if(_tmp_0) begin
-        _data_2 <= xdata + ydata;
+        _plus_data_2 <= xdata + ydata;
       end 
       if(_ivalid_0 && _tmp_0) begin
-        _data_5 <= _data_5 + _data_2;
+        _reduceadd_data_5 <= _reduceadd_data_5 + _plus_data_2;
       end 
       if(_ivalid_0 && _tmp_0) begin
-        _count_5 <= (_count_5 == 7)? 0 : _count_5 + 1;
+        _reduceadd_count_5 <= (_reduceadd_count_5 == 7)? 0 : _reduceadd_count_5 + 1;
       end 
-      if(_ivalid_0 && _tmp_0 && (_count_5 == 0)) begin
-        _data_5 <= 1'd0 + _data_2;
-      end 
-      if(_ivalid_0 && _tmp_0) begin
-        _data_8 <= _count_8 == 7;
+      if(_ivalid_0 && _tmp_0 && (_reduceadd_count_5 == 0)) begin
+        _reduceadd_data_5 <= 1'd0 + _plus_data_2;
       end 
       if(_ivalid_0 && _tmp_0) begin
-        _count_8 <= (_count_8 == 7)? 0 : _count_8 + 1;
+        _pulse_data_8 <= _pulse_count_8 == 7;
       end 
-      if(_ivalid_0 && _tmp_0 && (_count_8 == 0)) begin
-        _data_8 <= _count_8 == 7;
+      if(_ivalid_0 && _tmp_0) begin
+        _pulse_count_8 <= (_pulse_count_8 == 7)? 0 : _pulse_count_8 + 1;
+      end 
+      if(_ivalid_0 && _tmp_0 && (_pulse_count_8 == 0)) begin
+        _pulse_data_8 <= _pulse_count_8 == 7;
       end 
     end
   end

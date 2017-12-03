@@ -32,11 +32,11 @@ def reset():
 def StreamManager(module, clock, reset,
                   ivalid=None, iready=None,
                   ovalid=None, oready=None,
-                  no_hook=False):
+                  aswire=True, no_hook=False):
     return Stream(module=module, clock=clock, reset=reset,
                   ivalid=ivalid, iready=iready,
                   ovalid=ovalid, oready=oready,
-                  no_hook=no_hook)
+                  aswire=aswire, no_hook=no_hook)
 
 
 class Stream(object):
@@ -48,7 +48,7 @@ class Stream(object):
         _stream_counter += 1
 
         self.nodes = set(nodes)
-        self.max_stage = None
+        self.max_stage = 0
         self.last_input = None
         self.last_output = None
 
@@ -61,8 +61,9 @@ class Stream(object):
         self.ovalid = opts['ovalid'] if 'ovalid' in opts else None
         self.oready = opts['oready'] if 'oready' in opts else None
 
-        self.seq = None
+        self.aswire = opts['aswire'] if 'aswire' in opts else True
 
+        self.seq = None
         self.has_control = False
 
         if (self.module is not None and
@@ -72,31 +73,28 @@ class Stream(object):
             if not no_hook:
                 self.module.add_hook(self.implement)
 
-            seq_name = (('_stream_seq_%d' % self.object_id) if 'seq_name' not in opts else
-                        opts['seq_name'])
+            seq_name = (opts['seq_name'] if 'seq_name' in opts else
+                        '_stream_seq_%d' % self.object_id)
             self.seq = Seq(self.module, seq_name, self.clock, self.reset)
-
-            self.add_control(aswire=True)
-            self.has_control = True
 
     #-------------------------------------------------------------------------
     def add(self, *nodes):
         self.nodes.update(set(nodes))
 
     #-------------------------------------------------------------------------
-    def to_module(self, name, clock='CLK', reset='RST'):
+    def to_module(self, name, clock='CLK', reset='RST', aswire=False, seq_name=None):
         """ generate a Module definion """
 
         m = Module(name)
         clk = m.Input(clock)
         rst = m.Input(reset)
 
-        m = self.implement(m, clk, rst, aswire=False)
+        m = self.implement(m, clk, rst, aswire=aswire, seq_name=seq_name)
 
         return m
 
     #-------------------------------------------------------------------------
-    def implement(self, m=None, clock=None, reset=None, seq_name=None, aswire=True):
+    def implement(self, m=None, clock=None, reset=None, aswire=None, seq_name=None):
         """ implemente actual registers and operations in Verilog """
 
         if m is None:
@@ -117,6 +115,12 @@ class Stream(object):
             seq = Seq(m, seq_name, clock, reset)
         else:
             seq = self.seq
+
+        if aswire is None:
+            aswire = self.aswire
+
+        self.add_control(aswire=aswire)
+        self.has_control = True
 
         # for mult and div
         m._clock = clock
@@ -143,7 +147,7 @@ class Stream(object):
         sched.schedule(output_vars)
 
         # balance output stage depth
-        max_stage = None
+        max_stage = 0
         for output_var in sorted(output_vars, key=lambda x: x.object_id):
             max_stage = stypes._max(max_stage, output_var.end_stage)
         self.max_stage = max_stage

@@ -128,14 +128,14 @@ module main
   output signed [32-1:0] zdata
 );
 
-  reg signed [32-1:0] _data_2;
-  assign zdata = _data_2;
+  reg signed [32-1:0] _plus_data_2;
+  assign zdata = _plus_data_2;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _data_2 <= 0;
+      _plus_data_2 <= 0;
     end else begin
-      _data_2 <= xdata + ydata;
+      _plus_data_2 <= xdata + ydata;
     end
   end
 

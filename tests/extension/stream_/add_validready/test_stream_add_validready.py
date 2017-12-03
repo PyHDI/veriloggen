@@ -8,12 +8,12 @@ module test;
 
   reg CLK;
   reg RST;
-  reg signed [32-1:0] xdata;
-  reg signed [32-1:0] ydata;
   reg ivalid;
   wire iready;
   wire ovalid;
   reg oready;
+  reg signed [32-1:0] xdata;
+  reg signed [32-1:0] ydata;
   wire signed [32-1:0] zdata;
 
   main
@@ -21,12 +21,12 @@ module test;
   (
     .CLK(CLK),
     .RST(RST),
-    .xdata(xdata),
-    .ydata(ydata),
     .ivalid(ivalid),
     .iready(iready),
     .ovalid(ovalid),
     .oready(oready),
+    .xdata(xdata),
+    .ydata(ydata),
     .zdata(zdata)
   );
 
@@ -167,12 +167,12 @@ module main
 (
   input CLK,
   input RST,
-  input signed [32-1:0] xdata,
-  input signed [32-1:0] ydata,
   input ivalid,
   output iready,
   output ovalid,
   input oready,
+  input signed [32-1:0] xdata,
+  input signed [32-1:0] ydata,
   output signed [32-1:0] zdata
 );
 
@@ -181,19 +181,19 @@ module main
   reg _ivalid_0;
   assign ovalid = _ivalid_0;
   assign iready = _tmp_0;
-  reg signed [32-1:0] _data_2;
-  assign zdata = _data_2;
+  reg signed [32-1:0] _plus_data_2;
+  assign zdata = _plus_data_2;
 
   always @(posedge CLK) begin
     if(RST) begin
       _ivalid_0 <= 0;
-      _data_2 <= 0;
+      _plus_data_2 <= 0;
     end else begin
       if(_tmp_0) begin
         _ivalid_0 <= ivalid;
       end 
       if(_tmp_0) begin
-        _data_2 <= xdata + ydata;
+        _plus_data_2 <= xdata + ydata;
       end 
     end
   end
