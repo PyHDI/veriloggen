@@ -2888,12 +2888,11 @@ class AxiSlave(object):
             counter.dec()
         )
 
-        df = self.df if self.df is not None else _df
-
-        df_data = df.Variable(data, valid, data_ready, signed=False)
-        df_mask = df.Variable(mask, valid, mask_ready,
-                              width=self.datawidth // 4, signed=False)
-        df_last = df.Variable(last, valid, last_ready, width=1, signed=False)
+        df_data = self.df.Variable(data, valid, data_ready, signed=False)
+        df_mask = self.df.Variable(mask, valid, mask_ready,
+                                   width=self.datawidth // 4, signed=False)
+        df_last = self.df.Variable(
+            last, valid, last_ready, width=1, signed=False)
         done = vtypes.Ands(last, self.wdata.wvalid, self.wdata.wready)
 
         return df_data, df_mask, df_last, done

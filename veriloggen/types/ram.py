@@ -322,11 +322,9 @@ class SyncRAMManager(object):
             next_last(1)
         )
 
-        df = self.df if self.df is not None else dataflow
-
-        df_data = df.Variable(data, data_valid, data_ready,
-                              width=self.datawidth, point=point, signed=signed)
-        df_last = df.Variable(
+        df_data = self.df.Variable(data, data_valid, data_ready,
+                                   width=self.datawidth, point=point, signed=signed)
+        df_last = self.df.Variable(
             last, last_valid, last_ready, width=1, signed=False)
         done = last
 
@@ -489,11 +487,9 @@ class SyncRAMManager(object):
             next_last(1)
         )
 
-        df = self.df if self.df is not None else dataflow
-
-        df_data = df.Variable(data, data_valid, data_ready,
-                              width=self.datawidth, point=point, signed=signed)
-        df_last = df.Variable(
+        df_data = self.df.Variable(data, data_valid, data_ready,
+                                   width=self.datawidth, point=point, signed=signed)
+        df_last = self.df.Variable(
             last, last_valid, last_ready, width=1, signed=False)
         done = last
 
@@ -649,14 +645,12 @@ class SyncRAMManager(object):
             last(1)
         )
 
-        df = self.df if self.df is not None else dataflow
-
-        df_last = df.Variable(
+        df_last = self.df.Variable(
             last, last_valid, last_ready, width=1, signed=False)
         done = last
 
-        df_reuse_data = [df.Variable(d, v, r,
-                                     width=self.datawidth, point=point, signed=signed)
+        df_reuse_data = [self.df.Variable(d, v, r,
+                                          width=self.datawidth, point=point, signed=signed)
                          for d, v, r in zip(reuse_data, data_valid, data_ready)]
 
         return tuple(df_reuse_data + [df_last, done])
@@ -945,14 +939,12 @@ class SyncRAMManager(object):
             last(1)
         )
 
-        df = self.df if self.df is not None else dataflow
-
-        df_last = df.Variable(
+        df_last = self.df.Variable(
             last, last_valid, last_ready, width=1, signed=False)
         done = last
 
-        df_reuse_data = [df.Variable(d, v, r,
-                                     width=self.datawidth, point=point, signed=signed)
+        df_reuse_data = [self.df.Variable(d, v, r,
+                                          width=self.datawidth, point=point, signed=signed)
                          for d, v, r in zip(reuse_data, data_valid, data_ready)]
 
         return tuple(df_reuse_data + [df_last, done])
