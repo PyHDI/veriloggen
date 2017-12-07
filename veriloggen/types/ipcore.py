@@ -12,7 +12,7 @@ from . import axi
 
 
 def to_ipcore(m, ipname=None, topname=None,
-              clkname='CLK', rstname='RST', iftype='axi',
+              clkname='CLK', rstname='RST', iftype='axi', use_acp=False,
               simaddrwidth=20, simcode=None, simmemimg=None,
               silent=False):
 
@@ -26,12 +26,14 @@ def to_ipcore(m, ipname=None, topname=None,
     verilog = top.to_verilog()
 
     run_ipgen(topname, ipname, verilog,
-              iftype, simaddrwidth, simcode, simmemimg,
+              iftype, use_acp,
+              simaddrwidth, simcode, simmemimg,
               silent)
 
 
 def run_ipgen(topname, ipname, verilog,
-              iftype='axi', simaddrwidth=20, simcode=None, simmemimg=None,
+              iftype='axi', use_acp=False,
+              simaddrwidth=20, simcode=None, simmemimg=None,
               silent=False):
 
     # memory image
@@ -74,6 +76,7 @@ def run_ipgen(topname, ipname, verilog,
         'ext_datawidth': 256,
         'single_clock': True,
         'if_type': iftype,
+        'use_acp': use_acp,
         'output': 'tmp.v',
         'sim_addrwidth': simaddrwidth,
         'hperiod_ulogic': 5,
@@ -91,8 +94,8 @@ def run_ipgen(topname, ipname, verilog,
                   usertest=usertest,
                   memimg=memimg,
 
-                  skip_not_found=skip_not_found,
                   ignore_protocol_error=ignore_protocol_error,
+                  skip_not_found=skip_not_found,
                   silent=silent)
 
     if file_memimg is not None:
