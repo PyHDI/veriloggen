@@ -435,7 +435,8 @@ class MultibankRAM(object):
                     raise ValueError('numports must be same')
 
             self.m = rams[0].m
-            self.name = '_'.join([ram.name for ram in rams]) if name is None else name
+            self.name = ('_'.join([ram.name for ram in rams])
+                         if name is None else name)
             self.clk = rams[0].clk
             self.rst = rams[0].rst
             self.orig_datawidth = max_datawidth
@@ -492,6 +493,47 @@ class MultibankRAM(object):
                 ram.interfaces[port].wenable(0)
             )
             ram._write_disabled[port] = True
+
+    def read_rtl(self, addr, port=0, cond=None):
+        if not hasattr(self, 'seq'):
+            self.seq = Seq(self.m, self.name, self.clk, self.rst)
+
+        rdata_list = []
+        rvalid_list = []
+
+        bank = self.m.TmpWire(self.shift)
+        bank.assign(addr)
+        addr = addr >> self.shift
+
+        bank_reg = self.seq.Prev(bank, 2, initval=0)
+
+        for ram in self.rams:
+            rdata, rvalid = SyncRAMManager.read(ram, port, addr, cond)
+            rdata_list.append(rdata)
+            rvalid_list.append(rvalid)
+
+        rdata_wire = self.m.TmpWire(self.orig_datawidth, signed=True)
+        rvalid_wire = self.m.TmpWire()
+
+        pat = [(bank_reg == i, rdata_list[i])
+               for i, ram in enumerate(self.rams)]
+        pat.append((None, 0))
+
+        rdata_wire.assign(vtypes.PatternMux(pat))
+        rvalid_wire.assign(rvalid_list[0])
+
+        return rdata_wire, rvalid_wire
+
+    def write_rtl(self, addr, data, port=0, cond=None):
+        bank = self.m.TmpWire(self.shift)
+        bank.assign(addr)
+        addr = addr >> self.shift
+
+        for i, ram in enumerate(self.rams):
+            bank_cond = vtypes.Ands(cond, bank == i)
+            SyncRAMManager.write(ram, port, addr, data, bank_cond)
+
+        return 0
 
     def read(self, fsm, addr, port=0):
         port = vtypes.to_int(port)

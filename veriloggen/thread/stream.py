@@ -221,7 +221,7 @@ class Stream(BaseStream):
         renable = self.module.Reg('_%s_renable_%d' % (prefix, fsm_id),
                                   initval=0)
 
-        rdata, rvalid = SyncRAMManager.read(ram, port, raddr, renable)
+        rdata, rvalid = ram.read_rtl(raddr, port=port, cond=renable)
 
         wdata = rdata
         wenable = rvalid
@@ -320,10 +320,10 @@ class Stream(BaseStream):
         wenable = self.module.Reg('_%s_wenable_%d' % (prefix, fsm_id),
                                   initval=0)
         wdata = self.module.Reg('_%s_wdata_%d' % (prefix, fsm_id),
-                                ram.datawidth, initval=0)
+                                ram.datawidth, initval=0, signed=True)
         rdata = var.read()
 
-        SyncRAMManager.write(ram, port, waddr, wdata, wenable)
+        ram.write_rtl(waddr, wdata, port=port, cond=wenable)
 
         if name in self.sink_when_map:
             when = self.sink_when_map[name]
