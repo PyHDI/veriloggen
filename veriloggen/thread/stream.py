@@ -19,7 +19,10 @@ from . import thread
 
 
 class Stream(BaseStream):
-    __intrinsics__ = ('set_source', 'set_sink', 'set_constant',
+    __intrinsics__ = ('set_source', 'set_sink',
+                      'set_source_pattern', 'set_sink_pattern',
+                      'set_sink_empty',
+                      'set_constant',
                       'run', 'join', 'done')
 
     def __init__(self, m, name, clk, rst, datawidth=32, fsm_sel_width=16):
@@ -204,7 +207,9 @@ class Stream(BaseStream):
             source_offset(offset),
             source_size(size),
             source_stride(stride),
-            source_count(size),
+            source_count(size)
+        )
+        self.seq.If(set_cond)(
             fsm_sel(fsm_id)
         )
 
@@ -235,6 +240,10 @@ class Stream(BaseStream):
         source_fsm.Delay(1)(
             renable(0)
         )
+        self.seq.If(source_fsm.state == source_fsm.current,
+                    source_count == 1)(
+            source_idle(1)
+        )
         source_fsm.If(source_count == 1).goto_init()
         source_fsm.If(source_count > 1).goto_next()
 
@@ -252,6 +261,154 @@ class Stream(BaseStream):
                     source_count == 1)(
             source_idle(1)
         )
+
+        source_fsm._set_index(0)
+
+        fsm.goto_next()
+
+    def set_source_pattern(self, fsm, name, ram, offset, pattern, port=0):
+        """ intrinsic method to assign RAM property to a source stream """
+
+        if not self.stream_synthesized:
+            self._implement_stream()
+
+        if isinstance(name, str):
+            var = self.var_name_map[name]
+        elif isinstance(name, vtypes.Str):
+            name = name.value
+            var = self.var_name_map[name]
+        elif isinstance(name, int):
+            var = self.var_id_map[name]
+        elif isinstance(name, vtypes.Int):
+            name = name.value
+            var = self.var_id_map[name]
+        else:
+            raise TypeError('Unsupported index name')
+
+        if name not in self.sources:
+            raise NameError("No such stream '%s'" % name)
+
+        if not isinstance(pattern, (tuple, list)):
+            raise TypeError('pattern must be list or tuple.')
+
+        if not pattern:
+            raise ValueError(
+                'pattern must have one (size, stride) pair at least.')
+
+        if not isinstance(pattern[0], (tuple, list)):
+            pattern = (pattern,)
+
+        prefix = '%s_%s' % (self.name, name)
+
+        fsm_id = self.fsm_id_count
+        fsm_name = '_%s_fsm_%d' % (prefix, fsm_id)
+        source_fsm = FSM(self.module, fsm_name, self.clock, self.reset)
+        self.fsm_id_map[fsm_id] = source_fsm
+        self.fsm_id_count += 1
+
+        source_idle = self.source_idle_map[name]
+        source_offset = self.module.Reg('_%s_offset_%d' % (prefix, fsm_id),
+                                        ram.addrwidth, initval=0)
+        source_pat_offsets = [self.module.Reg('_%s_pat_offset_%d_%d' % (prefix, fsm_id, i),
+                                              ram.addrwidth, initval=0)
+                              for i, _ in enumerate(pattern)]
+        source_pat_sizes = [self.module.Reg('_%s_pat_size_%d_%d' % (prefix, fsm_id, i),
+                                            ram.addrwidth + 1, initval=0)
+                            for i, _ in enumerate(pattern)]
+        source_pat_strides = [self.module.Reg('_%s_pat_stride_%d_%d' % (prefix, fsm_id, i),
+                                              ram.addrwidth, initval=0)
+                              for i, _ in enumerate(pattern)]
+        source_pat_counts = [self.module.Reg('_%s_pat_count_%d_%d' % (prefix, fsm_id, i),
+                                             ram.addrwidth + 1, initval=0)
+                             for i, _ in enumerate(pattern)]
+
+        var_id = self.var_name_id_map[name]
+        fsm_sel = self.var_id_fsm_sel_map[var_id]
+
+        set_cond = fsm.state == fsm.current
+        source_fsm.If(set_cond)(
+            source_offset(offset)
+        )
+        self.seq.If(set_cond)(
+            fsm_sel(fsm_id)
+        )
+
+        for source_pat_offset in source_pat_offsets:
+            source_fsm.If(set_cond)(
+                source_pat_offset(0)
+            )
+
+        for (source_pat_size, source_pat_stride, source_pat_count,
+             (size, stride)) in zip(
+                 source_pat_sizes, source_pat_strides, source_pat_counts, pattern):
+            source_fsm.If(set_cond)(
+                source_pat_size(size),
+                source_pat_stride(stride),
+                source_pat_count(size - 1)
+            )
+
+        self.seq.If(self.start)(
+            source_idle(0)
+        )
+
+        source_start = vtypes.Ands(self.start, fsm_sel == fsm_id)
+        for source_pat_size in source_pat_sizes:
+            source_start = vtypes.Ands(source_start, source_pat_size > 0)
+
+        source_fsm.If(source_start).goto_next()
+
+        source_all_offset = self.module.Wire('_%s_all_offset_%d' % (prefix, fsm_id),
+                                             ram.addrwidth)
+        source_all_offset_val = source_offset
+        for source_pat_offset in source_pat_offsets:
+            source_all_offset_val += source_pat_offset
+        source_all_offset.assign(source_all_offset_val)
+
+        raddr = self.module.Reg('_%s_raddr_%d' % (prefix, fsm_id),
+                                ram.addrwidth, initval=0)
+        renable = self.module.Reg('_%s_renable_%d' % (prefix, fsm_id),
+                                  initval=0)
+
+        rdata, rvalid = ram.read_rtl(raddr, port=port, cond=renable)
+
+        wdata = rdata
+        wenable = rvalid
+        var.write(wdata, wenable)
+
+        source_fsm(
+            raddr(source_all_offset),
+            renable(1)
+        )
+        source_fsm.Delay(1)(
+            renable(0)
+        )
+
+        upcond = None
+
+        for (source_pat_offset, source_pat_size,
+             source_pat_stride, source_pat_count) in zip(
+                 source_pat_offsets, source_pat_sizes,
+                 source_pat_strides, source_pat_counts):
+            source_fsm.If(upcond)(
+                source_pat_offset.add(source_pat_stride),
+                source_pat_count.dec()
+            )
+            reset_cond = source_pat_count == 0
+            source_fsm.If(upcond, reset_cond)(
+                source_pat_offset(0),
+                source_pat_count(source_pat_size - 1)
+            )
+            upcond = make_condition(upcond, reset_cond)
+
+        fin_cond = upcond
+
+        source_fsm.If(fin_cond).goto_init()
+
+        self.seq.If(source_fsm.state == source_fsm.current, fin_cond)(
+            source_idle(1)
+        )
+
+        source_fsm._set_index(0)
 
         fsm.goto_next()
 
@@ -302,7 +459,9 @@ class Stream(BaseStream):
             sink_offset(offset),
             sink_size(size),
             sink_stride(stride),
-            sink_count(size),
+            sink_count(size)
+        )
+        self.seq.If(set_cond)(
             fsm_sel(fsm_id)
         )
 
@@ -353,6 +512,196 @@ class Stream(BaseStream):
             wenable(0)
         )
         sink_fsm.If(wcond, sink_count == 1).goto_init()
+
+        sink_fsm._set_index(0)
+
+        fsm.goto_next()
+
+    def set_sink_pattern(self, fsm, name, ram, offset, pattern, port=0):
+        """ intrinsic method to assign RAM property to a sink stream """
+
+        if not self.stream_synthesized:
+            self._implement_stream()
+
+        if isinstance(name, str):
+            var = self.var_name_map[name]
+        elif isinstance(name, vtypes.Str):
+            name = name.value
+            var = self.var_name_map[name]
+        elif isinstance(name, int):
+            var = self.var_id_map[name]
+        elif isinstance(name, vtypes.Int):
+            name = name.value
+            var = self.var_id_map[name]
+        else:
+            raise TypeError('Unsupported index name')
+
+        if name not in self.sinks:
+            raise NameError("No such stream '%s'" % name)
+
+        if not isinstance(pattern, (tuple, list)):
+            raise TypeError('pattern must be list or tuple.')
+
+        if not pattern:
+            raise ValueError(
+                'pattern must have one (size, stride) pair at least.')
+
+        if not isinstance(pattern[0], (tuple, list)):
+            pattern = (pattern,)
+
+        prefix = '%s_%s' % (self.name, name)
+
+        fsm_id = self.fsm_id_count
+        fsm_name = '_%s_fsm_%d' % (prefix, fsm_id)
+        sink_fsm = FSM(self.module, fsm_name, self.clock, self.reset)
+        self.fsm_id_map[fsm_id] = sink_fsm
+        self.fsm_id_count += 1
+
+        sink_offset = self.module.Reg('_%s_offset_%d' % (prefix, fsm_id),
+                                      ram.addrwidth, initval=0)
+        sink_pat_offsets = [self.module.Reg('_%s_pat_offset_%d_%d' % (prefix, fsm_id, i),
+                                            ram.addrwidth, initval=0)
+                            for i, _ in enumerate(pattern)]
+        sink_pat_sizes = [self.module.Reg('_%s_pat_size_%d_%d' % (prefix, fsm_id, i),
+                                          ram.addrwidth + 1, initval=0)
+                          for i, _ in enumerate(pattern)]
+        sink_pat_strides = [self.module.Reg('_%s_pat_stride_%d_%d' % (prefix, fsm_id, i),
+                                            ram.addrwidth, initval=0)
+                            for i, _ in enumerate(pattern)]
+        sink_pat_counts = [self.module.Reg('_%s_pat_count_%d_%d' % (prefix, fsm_id, i),
+                                           ram.addrwidth + 1, initval=0)
+                           for i, _ in enumerate(pattern)]
+
+        var_id = self.var_name_id_map[name]
+        fsm_sel = self.var_id_fsm_sel_map[var_id]
+
+        set_cond = fsm.state == fsm.current
+        sink_fsm.If(set_cond)(
+            sink_offset(offset)
+        )
+        self.seq.If(set_cond)(
+            fsm_sel(fsm_id)
+        )
+
+        for sink_pat_offset in sink_pat_offsets:
+            sink_fsm.If(set_cond)(
+                sink_pat_offset(0)
+            )
+
+        for (sink_pat_size, sink_pat_stride, sink_pat_count,
+             (size, stride)) in zip(
+                 sink_pat_sizes, sink_pat_strides, sink_pat_counts, pattern):
+            sink_fsm.If(set_cond)(
+                sink_pat_size(size),
+                sink_pat_stride(stride),
+                sink_pat_count(size - 1)
+            )
+
+        sink_start = vtypes.Ands(self.start, fsm_sel == fsm_id)
+        for sink_pat_size in sink_pat_sizes:
+            sink_start = vtypes.Ands(sink_start, sink_pat_size > 0)
+
+        sink_fsm.If(sink_start).goto_next()
+
+        num_wdelay = self._write_delay()
+
+        for i in range(num_wdelay):
+            sink_fsm.goto_next()
+
+        sink_all_offset = self.module.Wire('_%s_all_offset_%d' % (prefix, fsm_id),
+                                           ram.addrwidth)
+        sink_all_offset_val = sink_offset
+        for sink_pat_offset in sink_pat_offsets:
+            sink_all_offset_val += sink_pat_offset
+        sink_all_offset.assign(sink_all_offset_val)
+
+        waddr = self.module.Reg('_%s_waddr_%d' % (prefix, fsm_id),
+                                ram.addrwidth, initval=0)
+        wenable = self.module.Reg('_%s_wenable_%d' % (prefix, fsm_id),
+                                  initval=0)
+        wdata = self.module.Reg('_%s_wdata_%d' % (prefix, fsm_id),
+                                ram.datawidth, initval=0, signed=True)
+        rdata = var.read()
+
+        ram.write_rtl(waddr, wdata, port=port, cond=wenable)
+
+        if name in self.sink_when_map:
+            when = self.sink_when_map[name]
+            wcond = when.read()
+        else:
+            wcond = None
+
+        sink_fsm.If(wcond)(
+            waddr(sink_all_offset),
+            wdata(rdata),
+            wenable(1)
+        )
+        sink_fsm.Delay(1)(
+            wenable(0)
+        )
+
+        upcond = None
+
+        for (sink_pat_offset, sink_pat_size,
+             sink_pat_stride, sink_pat_count) in zip(
+                 sink_pat_offsets, sink_pat_sizes,
+                 sink_pat_strides, sink_pat_counts):
+            sink_fsm.If(upcond)(
+                sink_pat_offset.add(sink_pat_stride),
+                sink_pat_count.dec()
+            )
+            reset_cond = sink_pat_count == 0
+            sink_fsm.If(upcond, reset_cond)(
+                sink_pat_offset(0),
+                sink_pat_count(sink_pat_size - 1)
+            )
+            upcond = make_condition(upcond, reset_cond)
+
+        fin_cond = upcond
+
+        sink_fsm.If(fin_cond).goto_init()
+
+        sink_fsm._set_index(0)
+
+        fsm.goto_next()
+
+    def set_sink_empty(self, fsm, name):
+        """ intrinsic method to assign RAM property to a sink stream """
+
+        if not self.stream_synthesized:
+            self._implement_stream()
+
+        if isinstance(name, str):
+            var = self.var_name_map[name]
+        elif isinstance(name, vtypes.Str):
+            name = name.value
+            var = self.var_name_map[name]
+        elif isinstance(name, int):
+            var = self.var_id_map[name]
+        elif isinstance(name, vtypes.Int):
+            name = name.value
+            var = self.var_id_map[name]
+        else:
+            raise TypeError('Unsupported index name')
+
+        if name not in self.sinks:
+            raise NameError("No such stream '%s'" % name)
+
+        prefix = '%s_%s' % (self.name, name)
+
+        fsm_id = self.fsm_id_count
+        fsm_name = '_%s_fsm_%d' % (prefix, fsm_id)
+        sink_fsm = None
+        self.fsm_id_map[fsm_id] = sink_fsm
+        self.fsm_id_count += 1
+
+        var_id = self.var_name_id_map[name]
+        fsm_sel = self.var_id_fsm_sel_map[var_id]
+
+        set_cond = fsm.state == fsm.current
+        self.seq.If(set_cond)(
+            fsm_sel(fsm_id)
+        )
 
         fsm.goto_next()
 
