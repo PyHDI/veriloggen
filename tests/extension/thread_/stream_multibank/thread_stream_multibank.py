@@ -19,7 +19,7 @@ def mkLed(memory_datawidth=128):
 
     datawidth = 32
     addrwidth = 10
-    numbanks = 2
+    numbanks = 4
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, memory_datawidth)
     ram_a = vthread.MultibankRAM(m, 'ram_a', clk, rst, datawidth, addrwidth,
                                  numbanks=numbanks)
@@ -28,11 +28,18 @@ def mkLed(memory_datawidth=128):
     ram_c = vthread.MultibankRAM(m, 'ram_c', clk, rst, datawidth, addrwidth,
                                  numbanks=numbanks)
 
-    def comp_stream(strm, size, offset):
-        a = strm.read(ram_a, offset, size)
-        b = strm.read(ram_b, offset, size)
-        sum = a + b
-        strm.write(ram_c, offset, size, sum)
+    strm = vthread.Stream(m, 'mystream', clk, rst)
+    a = strm.source('a')
+    b = strm.source('b')
+    c = a + b
+    strm.sink(c, 'c')
+
+    def comp_stream(size, offset):
+        strm.set_source('a', ram_a, offset, size)
+        strm.set_source('b', ram_b, offset, size)
+        strm.set_sink('c', ram_c, offset, size)
+        strm.run()
+        strm.join()
 
     def comp_sequential(size, offset):
         sum = 0
@@ -49,6 +56,7 @@ def mkLed(memory_datawidth=128):
             sq = ram_c.read(i + offset_seq)
             if vthread.verilog.NotEql(st, sq):
                 all_ok = False
+                print(i, st, sq)
         if all_ok:
             print('OK')
         else:
@@ -62,22 +70,17 @@ def mkLed(memory_datawidth=128):
         comp_offset = 0
         myaxi.dma_read(ram_a, dma_offset, 0, dma_size)
         myaxi.dma_read(ram_b, dma_offset, 0, dma_size)
-        stream.run(comp_size, comp_offset)
-        stream.join()
+        comp_stream(size, comp_offset)
         myaxi.dma_write(ram_c, dma_offset, 1024, dma_size)
 
         dma_offset = size
         comp_offset = comp_size
         myaxi.dma_read(ram_a, dma_offset, 0, dma_size)
         myaxi.dma_read(ram_b, dma_offset, 0, dma_size)
-        sequential.run(comp_size, comp_offset)
-        sequential.join()
+        comp_sequential(size, comp_offset)
         myaxi.dma_write(ram_c, dma_offset, 1024 * 2, dma_size)
 
         check(comp_size, 0, comp_offset)
-
-    stream = vthread.Stream(m, 'mystream', clk, rst, comp_stream)
-    sequential = vthread.Thread(m, 'th_sequential', clk, rst, comp_sequential)
 
     th = vthread.Thread(m, 'th_comp', clk, rst, comp)
     fsm = th.start(32)

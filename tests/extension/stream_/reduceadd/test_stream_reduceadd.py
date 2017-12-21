@@ -173,9 +173,9 @@ module main
   reg signed [32-1:0] _plus_data_3;
   reg signed [32-1:0] __delay_data_10;
   reg signed [32-1:0] _reduceadd_data_6;
-  reg [5-1:0] _reduceadd_count_6;
+  reg [6-1:0] _reduceadd_count_6;
   reg [1-1:0] _pulse_data_9;
-  reg [5-1:0] _pulse_count_9;
+  reg [6-1:0] _pulse_count_9;
   assign zdata = _reduceadd_data_6;
   assign vdata = _pulse_data_9;
 
@@ -194,19 +194,19 @@ module main
         _reduceadd_data_6 <= _reduceadd_data_6 + _plus_data_3;
       end 
       if(__delay_data_10) begin
-        _reduceadd_count_6 <= (_reduceadd_count_6 == 7)? 0 : _reduceadd_count_6 + 1;
+        _reduceadd_count_6 <= (_reduceadd_count_6 == 5'd8 - 1)? 0 : _reduceadd_count_6 + 1;
       end 
       if(__delay_data_10 && (_reduceadd_count_6 == 0)) begin
         _reduceadd_data_6 <= 1'd0 + _plus_data_3;
       end 
       if(__delay_data_10) begin
-        _pulse_data_9 <= _pulse_count_9 == 7;
+        _pulse_data_9 <= _pulse_count_9 == 5'd8 - 1;
       end 
       if(__delay_data_10) begin
-        _pulse_count_9 <= (_pulse_count_9 == 7)? 0 : _pulse_count_9 + 1;
+        _pulse_count_9 <= (_pulse_count_9 == 5'd8 - 1)? 0 : _pulse_count_9 + 1;
       end 
       if(__delay_data_10 && (_pulse_count_9 == 0)) begin
-        _pulse_data_9 <= _pulse_count_9 == 7;
+        _pulse_data_9 <= _pulse_count_9 == 5'd8 - 1;
       end 
     end
   end

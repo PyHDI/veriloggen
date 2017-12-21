@@ -24,11 +24,18 @@ def mkLed():
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
     ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
 
-    def comp_stream(strm, size, offset):
-        a = strm.read(ram_a, offset, size)
-        b = strm.read(ram_b, offset, size)
-        sum = a + b
-        strm.write(ram_c, offset, size, sum)
+    strm = vthread.Stream(m, 'mystream', clk, rst)
+    a = strm.source('a')
+    b = strm.source('b')
+    c = a + b
+    strm.sink(c, 'c')
+
+    def comp_stream(size, offset):
+        strm.set_source('a', ram_a, offset, size)
+        strm.set_source('b', ram_b, offset, size)
+        strm.set_sink('c', ram_c, offset, size)
+        strm.run()
+        strm.join()
 
     def comp_sequential(size, offset):
         sum = 0
@@ -51,24 +58,22 @@ def mkLed():
             print('NG')
 
     def comp(size):
+        # stream
         offset = 0
         myaxi.dma_read(ram_a, offset, 0, size)
-        myaxi.dma_read(ram_b, offset, 0, size)
-        stream.run(size, offset)
-        stream.join()
+        myaxi.dma_read(ram_b, offset, 512, size)
+        comp_stream(size, offset)
         myaxi.dma_write(ram_c, offset, 1024, size)
 
+        # sequential
         offset = size
         myaxi.dma_read(ram_a, offset, 0, size)
-        myaxi.dma_read(ram_b, offset, 0, size)
-        sequential.run(size, offset)
-        sequential.join()
+        myaxi.dma_read(ram_b, offset, 512, size)
+        comp_sequential(size, offset)
         myaxi.dma_write(ram_c, offset, 1024 * 2, size)
 
+        # verification
         check(size, 0, offset)
-
-    stream = vthread.Stream(m, 'mystream', clk, rst, comp_stream)
-    sequential = vthread.Thread(m, 'th_sequential', clk, rst, comp_sequential)
 
     th = vthread.Thread(m, 'th_comp', clk, rst, comp)
     fsm = th.start(32)

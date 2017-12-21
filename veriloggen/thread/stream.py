@@ -19,10 +19,9 @@ from . import thread
 
 
 class Stream(BaseStream):
-    __intrinsics__ = ('set_source', 'set_sink',
-                      'set_source_pattern', 'set_sink_pattern',
-                      'set_sink_empty',
-                      'set_constant',
+    __intrinsics__ = ('set_source', 'set_source_pattern', 'set_source_multidim',
+                      'set_sink', 'set_sink_pattern', 'set_sink_multidim',
+                      'set_sink_empty', 'set_constant',
                       'run', 'join', 'done')
 
     def __init__(self, m, name, clk, rst, datawidth=32, fsm_sel_width=16):
@@ -412,6 +411,15 @@ class Stream(BaseStream):
 
         fsm.goto_next()
 
+    def set_source_multidim(self, fsm, name, ram, offset, shape, order=None, port=0):
+        """ intrinsic method to assign RAM property to a source stream """
+
+        if order is None:
+            order = list(reversed(range(len(shape))))
+
+        pattern = self._to_pattern(shape, order)
+        return self.set_source_pattern(fsm, name, ram, offset, pattern, port)
+
     def set_sink(self, fsm, name, ram, offset, size, stride=1, port=0):
         """ intrinsic method to assign RAM property to a sink stream """
 
@@ -665,6 +673,15 @@ class Stream(BaseStream):
 
         fsm.goto_next()
 
+    def set_sink_multidim(self, fsm, name, ram, offset, shape, order=None, port=0):
+        """ intrinsic method to assign RAM property to a sink stream """
+
+        if order is None:
+            order = list(reversed(range(len(shape))))
+
+        pattern = self._to_pattern(shape, order)
+        return self.set_sink_pattern(fsm, name, ram, offset, pattern, port)
+
     def set_sink_empty(self, fsm, name):
         """ intrinsic method to assign RAM property to a sink stream """
 
@@ -810,6 +827,19 @@ class Stream(BaseStream):
     def _write_delay(self):
         depth = self.pipeline_depth()
         return depth + self.ram_delay
+
+    def _to_pattern(self, shape, order):
+        pattern = []
+        for p in order:
+            if not isinstance(p, int):
+                raise TypeError(
+                    "Values of 'order' must be 'int', not %s" % str(type(p)))
+            size = shape[p]
+            basevalue = 1 if isinstance(size, int) else vtypes.Int(1)
+            stride = functools.reduce(lambda x, y: x * y,
+                                      shape[p + 1:], basevalue)
+            pattern.append((size, stride))
+        return pattern
 
     def __getattr__(self, attr):
         f = BaseStream.__getattr__(self, attr)

@@ -208,9 +208,9 @@ module main
   assign iready = _tmp_0;
   reg signed [32-1:0] _plus_data_2;
   reg signed [32-1:0] _reduceadd_data_5;
-  reg [5-1:0] _reduceadd_count_5;
+  reg [6-1:0] _reduceadd_count_5;
   reg [1-1:0] _pulse_data_8;
-  reg [5-1:0] _pulse_count_8;
+  reg [6-1:0] _pulse_count_8;
   assign zdata = _reduceadd_data_5;
   assign vdata = _pulse_data_8;
 
@@ -237,19 +237,19 @@ module main
         _reduceadd_data_5 <= _reduceadd_data_5 + _plus_data_2;
       end 
       if(_ivalid_0 && _tmp_0) begin
-        _reduceadd_count_5 <= (_reduceadd_count_5 == 7)? 0 : _reduceadd_count_5 + 1;
+        _reduceadd_count_5 <= (_reduceadd_count_5 == 5'd8 - 1)? 0 : _reduceadd_count_5 + 1;
       end 
       if(_ivalid_0 && _tmp_0 && (_reduceadd_count_5 == 0)) begin
         _reduceadd_data_5 <= 1'd0 + _plus_data_2;
       end 
       if(_ivalid_0 && _tmp_0) begin
-        _pulse_data_8 <= _pulse_count_8 == 7;
+        _pulse_data_8 <= _pulse_count_8 == 5'd8 - 1;
       end 
       if(_ivalid_0 && _tmp_0) begin
-        _pulse_count_8 <= (_pulse_count_8 == 7)? 0 : _pulse_count_8 + 1;
+        _pulse_count_8 <= (_pulse_count_8 == 5'd8 - 1)? 0 : _pulse_count_8 + 1;
       end 
       if(_ivalid_0 && _tmp_0 && (_pulse_count_8 == 0)) begin
-        _pulse_data_8 <= _pulse_count_8 == 7;
+        _pulse_data_8 <= _pulse_count_8 == 5'd8 - 1;
       end 
     end
   end

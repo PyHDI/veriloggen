@@ -32,11 +32,18 @@ def mkLed():
     weight_pattern = ((kernel, 1), (int(size // stride) - kernel + 1, 0))
     write_size = int(size // stride) - kernel + 1
 
-    def comp_stream(strm, roffset, woffset):
-        a = strm.read_pattern(ram_a, roffset, read_pattern)
-        b = strm.read_pattern(ram_b, 0, weight_pattern)
-        sum, valid = strm.ReduceAddValid(a * b, kernel)
-        strm.write(ram_c, woffset, write_size, sum, when=valid)
+    strm = vthread.Stream(m, 'mystream', clk, rst)
+    a = strm.source('a')
+    b = strm.source('b')
+    sum, sum_valid = strm.ReduceAddValid(a * b, kernel)
+    strm.sink(sum, 'sum', when=sum_valid, when_name='sum_valid')
+
+    def comp_stream(roffset, woffset):
+        strm.set_source_pattern('a', ram_a, roffset, read_pattern)
+        strm.set_source_pattern('b', ram_b, 0, weight_pattern)
+        strm.set_sink('sum', ram_c, woffset, write_size)
+        strm.run()
+        strm.join()
 
     def comp_sequential(roffset, woffset):
         for i in range(0, size - kernel + 1, stride):
@@ -70,21 +77,16 @@ def mkLed():
         roffset = 0
         woffset = 0
         myaxi.dma_read(ram_a, roffset, 0, size)
-        stream.run(roffset, woffset)
-        stream.join()
+        comp_stream(roffset, woffset)
         myaxi.dma_write(ram_c, woffset, 1024 * 4, write_size)
 
         roffset = size
         woffset = write_size
         myaxi.dma_read(ram_a, roffset, 0, size)
-        sequential.run(roffset, woffset)
-        sequential.join()
+        comp_sequential(roffset, woffset)
         myaxi.dma_write(ram_c, woffset, 1024 * 8, write_size)
 
         check(0, woffset)
-
-    stream = vthread.Stream(m, 'mystream', clk, rst, comp_stream)
-    sequential = vthread.Thread(m, 'th_sequential', clk, rst, comp_sequential)
 
     th = vthread.Thread(m, 'th_comp', clk, rst, comp)
     fsm = th.start()

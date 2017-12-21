@@ -24,11 +24,20 @@ def mkLed():
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
     ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
 
-    def comp_stream(strm, size, offset, stride):
-        a = strm.read(ram_a, offset, size, stride=stride)
-        b = strm.read(ram_b, offset, size, stride=stride)
-        sum, valid = strm.ReduceAddValid(a * b, size)
-        strm.write(ram_c, offset, 1, sum, when=valid)
+    strm = vthread.Stream(m, 'mystream', clk, rst)
+    a = strm.source('a')
+    b = strm.source('b')
+    size = strm.constant('size')
+    sum, sum_valid = strm.ReduceAddValid(a * b, size)
+    strm.sink(sum, 'sum', when=sum_valid, when_name='sum_valid')
+
+    def comp_stream(size, offset, stride):
+        strm.set_source('a', ram_a, offset, size, stride)
+        strm.set_source('b', ram_b, offset, size, stride)
+        strm.set_constant('size', size)
+        strm.set_sink('sum', ram_c, offset, 1)
+        strm.run()
+        strm.join()
 
     def comp_sequential(size, offset, stride):
         sum = 0
@@ -44,7 +53,6 @@ def mkLed():
         sq = ram_c.read(offset_seq)
         if vthread.verilog.NotEql(st, sq):
             all_ok = False
-
         if all_ok:
             print('OK')
         else:
@@ -55,21 +63,16 @@ def mkLed():
         stride = 2
         myaxi.dma_read(ram_a, offset, 0, size, local_stride=stride)
         myaxi.dma_read(ram_b, offset, 0, size, local_stride=stride)
-        stream.run(size, offset, stride)
-        stream.join()
+        comp_stream(size, offset, stride)
         myaxi.dma_write(ram_c, offset, 1024, 1)
 
         offset = size
         myaxi.dma_read(ram_a, offset, 0, size, local_stride=stride)
         myaxi.dma_read(ram_b, offset, 0, size, local_stride=stride)
-        sequential.run(size, offset, stride)
-        sequential.join()
+        comp_sequential(size, offset, stride)
         myaxi.dma_write(ram_c, offset, 1024 * 2, 1)
 
         check(size, 0, offset)
-
-    stream = vthread.Stream(m, 'mystream', clk, rst, comp_stream)
-    sequential = vthread.Thread(m, 'th_sequential', clk, rst, comp_sequential)
 
     th = vthread.Thread(m, 'th_comp', clk, rst, comp)
     fsm = th.start(32)

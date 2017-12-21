@@ -42,11 +42,18 @@ def mkLed():
     pattern_b = to_pattern(shape, order)
     pattern_c = to_pattern(shape, order)
 
-    def comp_stream(strm, offset):
-        a = strm.read_pattern(ram_a, offset, pattern_a)
-        b = strm.read_pattern(ram_b, offset, pattern_b)
-        sum = a + b
-        strm.write_pattern(ram_c, offset, sum, pattern_c)
+    strm = vthread.Stream(m, 'mystream', clk, rst)
+    a = strm.source('a')
+    b = strm.source('b')
+    c = a + b
+    strm.sink(c, 'c')
+
+    def comp_stream(offset):
+        strm.set_source_pattern('a', ram_a, offset, pattern_a)
+        strm.set_source_pattern('b', ram_b, offset, pattern_b)
+        strm.set_sink_pattern('c', ram_c, offset, pattern_c)
+        strm.run()
+        strm.join()
 
     def comp_sequential(offset):
         sum = 0
@@ -72,21 +79,16 @@ def mkLed():
         offset = 0
         myaxi.dma_read(ram_a, offset, 0, size)
         myaxi.dma_read(ram_b, offset, 0, size)
-        stream.run(offset)
-        stream.join()
+        comp_stream(offset)
         myaxi.dma_write(ram_c, offset, 1024 * 4, 1)
 
         offset = size
         myaxi.dma_read(ram_a, offset, 0, size)
         myaxi.dma_read(ram_b, offset, 0, size)
-        sequential.run(offset)
-        sequential.join()
+        comp_sequential(offset)
         myaxi.dma_write(ram_c, offset, 1024 * 8, 1)
 
         check(0, offset)
-
-    stream = vthread.Stream(m, 'mystream', clk, rst, comp_stream)
-    sequential = vthread.Thread(m, 'th_sequential', clk, rst, comp_sequential)
 
     th = vthread.Thread(m, 'th_comp', clk, rst, comp)
     fsm = th.start()

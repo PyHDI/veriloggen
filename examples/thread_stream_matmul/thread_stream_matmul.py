@@ -30,6 +30,21 @@ def mkLed(matrix_size=16):
     ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
 
+    strm = vthread.Stream(m, 'strm_madd', clk, rst)
+    a = strm.source('a')
+    b = strm.source('b')
+    size = strm.constant('size')
+    sum, sum_valid = strm.ReduceAddValid(a * b, size)
+    strm.sink(sum, 'sum', when=sum_valid, when_name='sum_valid')
+
+    def strm_madd(size, waddr):
+        strm.set_source('a', ram_a, 0, size)
+        strm.set_source('b', ram_b, 0, size)
+        strm.set_constant('size', size)
+        strm.set_sink('sum', ram_c, waddr, 1)
+        strm.run()
+        strm.join()
+
     def matmul(matrix_size, a_offset, b_offset, c_offset):
         start_time = timer
         comp(matrix_size, a_offset, b_offset, c_offset)
@@ -37,12 +52,6 @@ def mkLed(matrix_size=16):
         time = end_time - start_time
         print("Time (cycles): %d" % time)
         check(matrix_size, a_offset, b_offset, c_offset)
-
-    def strm_madd(strm, size, waddr):
-        a = strm.read(ram_a, 0, size)
-        b = strm.read(ram_b, 0, size)
-        sum, valid = strm.ReduceAddValid(a * b, size)
-        strm.write(ram_c, waddr, 1, sum, when=valid)
 
     def comp(matrix_size, a_offset, b_offset, c_offset):
         a_addr, c_addr = a_offset, c_offset
@@ -54,8 +63,7 @@ def mkLed(matrix_size=16):
             for j in range(matrix_size):
                 myaxi.dma_read(ram_b, 0, b_addr, matrix_size)
 
-                stream.run(matrix_size, j)
-                stream.join()
+                strm_madd(matrix_size, j)
 
                 b_addr += matrix_size * (datawidth // 8)
 
@@ -83,7 +91,6 @@ def mkLed(matrix_size=16):
         else:
             print("NG")
 
-    stream = vthread.Stream(m, 'strm_madd', clk, rst, strm_madd)
     th = vthread.Thread(m, 'th_matmul', clk, rst, matmul)
     fsm = th.start(matrix_size, 0, 1024, 2048)
 

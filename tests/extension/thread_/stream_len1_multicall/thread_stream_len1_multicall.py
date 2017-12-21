@@ -24,13 +24,20 @@ def mkLed():
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
     ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
 
-    def comp_stream(strm, size, offset):
-        a = strm.read(ram_a, offset, size)
-        b = strm.read(ram_b, offset, size)
-        a = a + 10
-        b = b + 10
-        sum = a * b
-        strm.write(ram_c, offset, size, sum)
+    strm = vthread.Stream(m, 'mystream', clk, rst)
+    a = strm.source('a')
+    b = strm.source('b')
+    a = a + 10
+    b = b + 10
+    c = a * b
+    strm.sink(c, 'c')
+
+    def comp_stream(size, offset):
+        strm.set_source('a', ram_a, offset, size)
+        strm.set_source('b', ram_b, offset, size)
+        strm.set_sink('c', ram_c, offset, size)
+        strm.run()
+        strm.join()
 
     def comp_sequential(size, offset):
         sum = 0
@@ -49,6 +56,7 @@ def mkLed():
             sq = ram_c.read(i + offset_seq)
             if vthread.verilog.NotEql(st, sq):
                 all_ok = False
+                print(i, st, sq)
         if all_ok:
             print('OK')
         else:
@@ -58,42 +66,34 @@ def mkLed():
         offset = size + size
         myaxi.dma_read(ram_a, offset, 0, size)
         myaxi.dma_read(ram_b, offset, 0, size)
-        stream.run(size, offset)
-        stream.join()
+        comp_stream(size, offset)
         myaxi.dma_write(ram_c, offset, 1024, size)
 
         offset = size + size
         myaxi.dma_read(ram_a, offset, 0, size)
         myaxi.dma_read(ram_b, offset, 0, size)
-        stream.run(size, offset)
-        stream.join()
+        comp_stream(size, offset)
         myaxi.dma_write(ram_c, offset, 1024, size)
 
         offset = 0
         myaxi.dma_read(ram_a, offset, 0, size)
         myaxi.dma_read(ram_b, offset, 0, size)
-        stream.run(size, offset)
-        stream.join()
+        comp_stream(size, offset)
         myaxi.dma_write(ram_c, offset, 1024, size)
 
         offset = 0
         myaxi.dma_read(ram_a, offset, 0, size)
         myaxi.dma_read(ram_b, offset, 0, size)
-        stream.run(size, offset)
-        stream.join()
+        comp_stream(size, offset)
         myaxi.dma_write(ram_c, offset, 1024, size)
 
         offset = size
         myaxi.dma_read(ram_a, offset, 0, size)
         myaxi.dma_read(ram_b, offset, 0, size)
-        sequential.run(size, offset)
-        sequential.join()
+        comp_sequential(size, offset)
         myaxi.dma_write(ram_c, offset, 1024 * 2, size)
 
         check(size, 0, offset)
-
-    stream = vthread.Stream(m, 'mystream', clk, rst, comp_stream)
-    sequential = vthread.Thread(m, 'th_sequential', clk, rst, comp_sequential)
 
     th = vthread.Thread(m, 'th_comp', clk, rst, comp)
     fsm = th.start(1)

@@ -29,19 +29,26 @@ def mkLed():
     size = functools.reduce(lambda x, y: x * y, shape, 1)
     order = [1, 2, 0]
 
-    def comp_stream(strm, offset):
-        a = strm.read_multidim(ram_a, offset, shape, order)
-        b = strm.read_multidim(ram_b, offset, shape, order)
-        sum, valid = strm.ReduceAddValid(a * b, size)
-        strm.write(ram_c, offset, 1, sum, when=valid)
+    strm = vthread.Stream(m, 'mystream', clk, rst)
+    a = strm.source('a')
+    b = strm.source('b')
+    c = a + b
+    strm.sink(c, 'c')
+
+    def comp_stream(offset):
+        strm.set_source_multidim('a', ram_a, offset, shape, order=order)
+        strm.set_source_multidim('b', ram_b, offset, shape, order=order)
+        strm.set_sink_multidim('c', ram_c, offset, shape, order=order)
+        strm.run()
+        strm.join()
 
     def comp_sequential(offset):
         sum = 0
         for i in range(size):
             a = ram_a.read(i + offset)
             b = ram_b.read(i + offset)
-            sum += a * b
-        ram_c.write(offset, sum)
+            sum = a + b
+            ram_c.write(i + offset, sum)
 
     def check(offset_stream, offset_seq):
         all_ok = True
@@ -59,21 +66,16 @@ def mkLed():
         offset = 0
         myaxi.dma_read(ram_a, offset, 0, size)
         myaxi.dma_read(ram_b, offset, 0, size)
-        stream.run(offset)
-        stream.join()
+        comp_stream(offset)
         myaxi.dma_write(ram_c, offset, 1024 * 4, 1)
 
         offset = size
         myaxi.dma_read(ram_a, offset, 0, size)
         myaxi.dma_read(ram_b, offset, 0, size)
-        sequential.run(offset)
-        sequential.join()
+        comp_sequential(offset)
         myaxi.dma_write(ram_c, offset, 1024 * 8, 1)
 
         check(0, offset)
-
-    stream = vthread.Stream(m, 'mystream', clk, rst, comp_stream)
-    sequential = vthread.Thread(m, 'th_sequential', clk, rst, comp_sequential)
 
     th = vthread.Thread(m, 'th_comp', clk, rst, comp)
     fsm = th.start()
