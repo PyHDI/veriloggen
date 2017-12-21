@@ -495,6 +495,9 @@ class MultibankRAM(object):
             ram._write_disabled[port] = True
 
     def read_rtl(self, addr, port=0, cond=None):
+        """
+        @return data, valid
+        """
         if not hasattr(self, 'seq'):
             self.seq = Seq(self.m, self.name, self.clk, self.rst)
 
@@ -525,6 +528,9 @@ class MultibankRAM(object):
         return rdata_wire, rvalid_wire
 
     def write_rtl(self, addr, data, port=0, cond=None):
+        """
+        @return None
+        """
         bank = self.m.TmpWire(self.shift)
         bank.assign(addr)
         addr = addr >> self.shift
