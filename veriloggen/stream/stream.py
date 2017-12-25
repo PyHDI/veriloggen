@@ -66,6 +66,8 @@ class Stream(object):
         self.seq = None
         self.has_control = False
 
+        self.implemented = False
+
         if (self.module is not None and
                 self.clock is not None and self.reset is not None):
 
@@ -96,6 +98,13 @@ class Stream(object):
     #-------------------------------------------------------------------------
     def implement(self, m=None, clock=None, reset=None, aswire=None, seq_name=None):
         """ implemente actual registers and operations in Verilog """
+
+        if self.implemented:
+            if m is None:
+                return self.module
+            raise ValueError('already implemented.')
+
+        self.implemented = True
 
         if m is None:
             m = self.module
