@@ -47,7 +47,11 @@ class Stream(object):
         self.object_id = _stream_counter
         _stream_counter += 1
 
-        self.nodes = set(nodes)
+        self.nodes = set()
+        self.named_numerics = {}
+
+        self.add(*nodes)
+
         self.max_stage = 0
         self.last_input = None
         self.last_output = None
@@ -82,6 +86,23 @@ class Stream(object):
     #-------------------------------------------------------------------------
     def add(self, *nodes):
         self.nodes.update(set(nodes))
+
+        for node in nodes:
+            if hasattr(node, 'input_data'):
+                if isinstance(node.input_data, str):
+                    name = node.input_data
+                else:
+                    name = node.input_data.name
+                self.named_numerics[name] = node
+
+            elif hasattr(node, 'output_data'):
+                if node.output_data is None:
+                    continue
+                if isinstance(node.output_data, str):
+                    name = node.output_data
+                else:
+                    name = node.output_data.name
+                self.named_numerics[name] = node
 
     #-------------------------------------------------------------------------
     def to_module(self, name, clock='CLK', reset='RST', aswire=False, seq_name=None):
@@ -339,3 +360,11 @@ class Stream(object):
             v._set_module(self.module)
             v._set_strm(self)
             v._set_seq(self.seq)
+
+            self.add(v)
+
+    def get_named_numeric(self, name):
+        if name not in self.named_numerics:
+            raise NameError("Numeric '%s' is not defined." % name)
+
+        return self.named_numerics[name]

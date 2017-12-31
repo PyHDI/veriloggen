@@ -13,6 +13,7 @@ from veriloggen.fsm.fsm import FSM
 from veriloggen.seq.seq import Seq
 from veriloggen.types.ram import SyncRAMManager
 from veriloggen.stream.stream import Stream as BaseStream
+from veriloggen.stream.stypes import Substream as BaseSubstream
 
 from . import compiler
 from . import thread
@@ -47,6 +48,7 @@ class Stream(BaseStream):
         self.sources = {}
         self.sinks = {}
         self.constants = {}
+        self.substreams = []
 
         self.var_name_map = {}
         self.var_id_map = {}
@@ -75,13 +77,14 @@ class Stream(BaseStream):
             raise ValueError("'%s' is already defined in stream '%s'" %
                              (name, self.name))
 
-        prefix = '%s_%s' % (self.name, name)
+        prefix = self._prefix(name)
+
         self.var_id_count += 1
 
         if datawidth is None:
             datawidth = self.datawidth
 
-        var = self.Variable('%s_data' % prefix, datawidth, point, signed)
+        var = self.Variable(self._dataname(name), datawidth, point, signed)
 
         self.sources[name] = var
         self.var_id_map[_id] = var
@@ -104,13 +107,13 @@ class Stream(BaseStream):
         if name is None:
             name = 'source_%d' % _id
 
-        prefix = '%s_%s' % (self.name, name)
+        prefix = self._prefix(name)
 
         if name in self.var_name_map:
             raise ValueError("'%s' is already defined in stream '%s'" %
                              (name, self.name))
         else:
-            data.output('%s_data' % prefix)
+            data.output(self._dataname(name))
 
         self.var_id_count += 1
 
@@ -139,13 +142,14 @@ class Stream(BaseStream):
             raise ValueError("'%s' is already defined in stream '%s'" %
                              (name, self.name))
 
-        prefix = '%s_%s' % (self.name, name)
+        prefix = self._prefix(name)
+
         self.var_id_count += 1
 
         if datawidth is None:
             datawidth = self.datawidth
 
-        var = self.ParameterVariable('%s_data' % prefix, datawidth,
+        var = self.ParameterVariable(self._dataname(name), datawidth,
                                      point, signed)
 
         self.constants[name] = var
@@ -157,6 +161,11 @@ class Stream(BaseStream):
                                                        self.fsm_sel_width, initval=0)
 
         return var
+
+    def substream(self, substrm):
+        sub = Substream(self.module, self.clock, self.reset, substrm)
+        self.substreams.append(sub)
+        return sub
 
     def set_source(self, fsm, name, ram, offset, size, stride=1, port=0):
         """ intrinsic method to assign RAM property to a source stream """
@@ -180,7 +189,7 @@ class Stream(BaseStream):
         if name not in self.sources:
             raise NameError("No such stream '%s'" % name)
 
-        prefix = '%s_%s' % (self.name, name)
+        prefix = self._prefix(name)
 
         fsm_id = self.fsm_id_count
         fsm_name = '_%s_fsm_%d' % (prefix, fsm_id)
@@ -201,12 +210,12 @@ class Stream(BaseStream):
         var_id = self.var_name_id_map[name]
         fsm_sel = self.var_id_fsm_sel_map[var_id]
 
-        set_cond = fsm.state == fsm.current
+        set_cond = (fsm.state == fsm.current)
+
         source_fsm.If(set_cond)(
             source_offset(offset),
             source_size(size),
-            source_stride(stride),
-            source_count(size)
+            source_stride(stride)
         )
         self.seq.If(set_cond)(
             fsm_sel(fsm_id)
@@ -218,6 +227,10 @@ class Stream(BaseStream):
 
         source_start = vtypes.Ands(
             self.start, fsm_sel == fsm_id, source_size > 0)
+
+        source_fsm.If(source_start)(
+            source_count(source_size)
+        )
         source_fsm.If(source_start).goto_next()
 
         raddr = self.module.Reg('_%s_raddr_%d' % (prefix, fsm_id),
@@ -297,7 +310,7 @@ class Stream(BaseStream):
         if not isinstance(pattern[0], (tuple, list)):
             pattern = (pattern,)
 
-        prefix = '%s_%s' % (self.name, name)
+        prefix = self._prefix(name)
 
         fsm_id = self.fsm_id_count
         fsm_name = '_%s_fsm_%d' % (prefix, fsm_id)
@@ -324,7 +337,8 @@ class Stream(BaseStream):
         var_id = self.var_name_id_map[name]
         fsm_sel = self.var_id_fsm_sel_map[var_id]
 
-        set_cond = fsm.state == fsm.current
+        set_cond = (fsm.state == fsm.current)
+
         source_fsm.If(set_cond)(
             source_offset(offset)
         )
@@ -337,13 +351,11 @@ class Stream(BaseStream):
                 source_pat_offset(0)
             )
 
-        for (source_pat_size, source_pat_stride, source_pat_count,
-             (size, stride)) in zip(
-                 source_pat_sizes, source_pat_strides, source_pat_counts, pattern):
+        for (source_pat_size, source_pat_stride, (size, stride)) in zip(
+                source_pat_sizes, source_pat_strides, pattern):
             source_fsm.If(set_cond)(
                 source_pat_size(size),
-                source_pat_stride(stride),
-                source_pat_count(size - 1)
+                source_pat_stride(stride)
             )
 
         self.seq.If(self.start)(
@@ -353,6 +365,12 @@ class Stream(BaseStream):
         source_start = vtypes.Ands(self.start, fsm_sel == fsm_id)
         for source_pat_size in source_pat_sizes:
             source_start = vtypes.Ands(source_start, source_pat_size > 0)
+
+        for (source_pat_size, source_pat_count) in zip(
+                source_pat_sizes, source_pat_counts):
+            source_fsm.If(source_start)(
+                source_pat_count(source_pat_size - 1)
+            )
 
         source_fsm.If(source_start).goto_next()
 
@@ -403,7 +421,8 @@ class Stream(BaseStream):
 
         source_fsm.If(fin_cond).goto_init()
 
-        self.seq.If(source_fsm.state == source_fsm.current, fin_cond)(
+        self.seq.If(source_fsm.state == source_fsm.current,
+                    fin_cond)(
             source_idle(1)
         )
 
@@ -442,7 +461,7 @@ class Stream(BaseStream):
         if name not in self.sinks:
             raise NameError("No such stream '%s'" % name)
 
-        prefix = '%s_%s' % (self.name, name)
+        prefix = self._prefix(name)
 
         fsm_id = self.fsm_id_count
         fsm_name = '_%s_fsm_%d' % (prefix, fsm_id)
@@ -462,12 +481,12 @@ class Stream(BaseStream):
         var_id = self.var_name_id_map[name]
         fsm_sel = self.var_id_fsm_sel_map[var_id]
 
-        set_cond = fsm.state == fsm.current
+        set_cond = (fsm.state == fsm.current)
+
         sink_fsm.If(set_cond)(
             sink_offset(offset),
             sink_size(size),
-            sink_stride(stride),
-            sink_count(size)
+            sink_stride(stride)
         )
         self.seq.If(set_cond)(
             fsm_sel(fsm_id)
@@ -475,6 +494,10 @@ class Stream(BaseStream):
 
         sink_start = vtypes.Ands(
             self.start, fsm_sel == fsm_id, sink_size > 0)
+
+        sink_fsm.If(sink_start)(
+            sink_count(sink_size)
+        )
         sink_fsm.If(sink_start).goto_next()
 
         num_wdelay = self._write_delay()
@@ -557,7 +580,7 @@ class Stream(BaseStream):
         if not isinstance(pattern[0], (tuple, list)):
             pattern = (pattern,)
 
-        prefix = '%s_%s' % (self.name, name)
+        prefix = self._prefix(name)
 
         fsm_id = self.fsm_id_count
         fsm_name = '_%s_fsm_%d' % (prefix, fsm_id)
@@ -583,7 +606,8 @@ class Stream(BaseStream):
         var_id = self.var_name_id_map[name]
         fsm_sel = self.var_id_fsm_sel_map[var_id]
 
-        set_cond = fsm.state == fsm.current
+        set_cond = (fsm.state == fsm.current)
+
         sink_fsm.If(set_cond)(
             sink_offset(offset)
         )
@@ -596,18 +620,22 @@ class Stream(BaseStream):
                 sink_pat_offset(0)
             )
 
-        for (sink_pat_size, sink_pat_stride, sink_pat_count,
-             (size, stride)) in zip(
-                 sink_pat_sizes, sink_pat_strides, sink_pat_counts, pattern):
+        for (sink_pat_size, sink_pat_stride, (size, stride)) in zip(
+                sink_pat_sizes, sink_pat_strides, pattern):
             sink_fsm.If(set_cond)(
                 sink_pat_size(size),
-                sink_pat_stride(stride),
-                sink_pat_count(size - 1)
+                sink_pat_stride(stride)
             )
 
         sink_start = vtypes.Ands(self.start, fsm_sel == fsm_id)
         for sink_pat_size in sink_pat_sizes:
             sink_start = vtypes.Ands(sink_start, sink_pat_size > 0)
+
+        for (sink_pat_size, sink_pat_count) in zip(
+                sink_pat_sizes, sink_pat_counts):
+            sink_fsm.If(sink_start)(
+                sink_pat_count(sink_pat_size - 1)
+            )
 
         sink_fsm.If(sink_start).goto_next()
 
@@ -704,7 +732,7 @@ class Stream(BaseStream):
         if name not in self.sinks:
             raise NameError("No such stream '%s'" % name)
 
-        prefix = '%s_%s' % (self.name, name)
+        prefix = self._prefix(name)
 
         fsm_id = self.fsm_id_count
         fsm_name = '_%s_fsm_%d' % (prefix, fsm_id)
@@ -715,7 +743,8 @@ class Stream(BaseStream):
         var_id = self.var_name_id_map[name]
         fsm_sel = self.var_id_fsm_sel_map[var_id]
 
-        set_cond = fsm.state == fsm.current
+        set_cond = (fsm.state == fsm.current)
+
         self.seq.If(set_cond)(
             fsm_sel(fsm_id)
         )
@@ -744,7 +773,7 @@ class Stream(BaseStream):
         if name not in self.constants:
             raise NameError("No such stream '%s'" % name)
 
-        set_cond = fsm.state == fsm.current
+        set_cond = (fsm.state == fsm.current)
 
         wdata = value
         wenable = set_cond
@@ -765,14 +794,31 @@ class Stream(BaseStream):
         self.fsm.If(start_flag).Delay(1)(
             self.start(0)
         )
+
         if self.reduce_reset is not None:
             self.fsm.If(start_flag).Delay(self.ram_delay + 1)(
                 self.reduce_reset(0)
             )
+
+        substreams = self._collect_substreams()
+
+        for sub in substreams:
+            reset_delay = self.ram_delay + 1 + sub.start_stage
+            if sub.substrm.reduce_reset is not None:
+                self.fsm.If(start_flag).Delay(reset_delay)(
+                    sub.substrm.reduce_reset(0)
+                )
+
+            for cond in sub.conds.values():
+                self.fsm.If(start_flag)(
+                    cond(1)
+                )
+
         self.fsm.If(start_flag).goto_next()
 
         # after started
         if self.fsm_synthesized:
+            fsm.goto_next()
             return
 
         self.fsm_synthesized = True
@@ -789,6 +835,7 @@ class Stream(BaseStream):
         self.fsm.If(done).goto_next()
 
         depth = self.pipeline_depth()
+        num_wdelay = self._write_delay()
 
         # pipeline delay
         for i in range(depth):
@@ -796,16 +843,31 @@ class Stream(BaseStream):
 
         self.fsm.goto_next()
 
-        # finish
-        self.fsm(
-            self.busy(0)
-        )
-
         # reset accumulate pipelines
         if self.reduce_reset is not None:
             self.fsm(
                 self.reduce_reset(1)
             )
+
+        for sub in substreams:
+            reset_delay = sub.start_stage
+            if sub.substrm.reduce_reset is not None:
+                self.fsm(
+                    sub.substrm.reduce_reset(1)
+                )
+
+            for cond in sub.conds.values():
+                self.fsm(
+                    cond(0)
+                )
+
+        for i in range(num_wdelay - depth - 1):
+            self.fsm.goto_next()
+
+        # finish
+        self.fsm(
+            self.busy(0)
+        )
 
         self.fsm.goto_init()
 
@@ -841,6 +903,20 @@ class Stream(BaseStream):
             pattern.append((size, stride))
         return pattern
 
+    def _prefix(self, name):
+        return '%s_%s' % (self.name, name)
+
+    def _dataname(self, name):
+        return '%s_data' % self._prefix(name)
+
+    def _collect_substreams(self):
+        ret = []
+
+        for sub in self.substreams:
+            ret.extend(sub._collect_substreams())
+
+        return ret
+
     def __getattr__(self, attr):
         f = BaseStream.__getattr__(self, attr)
 
@@ -854,3 +930,28 @@ class Stream(BaseStream):
             return functools.partial(f, reset=self.reduce_reset_var)
 
         return f
+
+
+class Substream(BaseSubstream):
+
+    def __init__(self, module, clock, reset, substrm):
+        self.module = module
+        self.clock = clock
+        self.reset = reset
+        BaseSubstream.__init__(self, substrm)
+
+    def to_source(self, name, data):
+        source_name = self.substrm._dataname(name)
+        cond = self.module.Reg(compiler._tmp_name(self.name('%s_cond' % source_name)),
+                               initval=0)
+        BaseSubstream.write(self, source_name, data, cond)
+
+    def from_sink(self, name):
+        sink_name = self.substrm._dataname(name)
+        return BaseSubstream.read(self, sink_name)
+
+    def _collect_substreams(self):
+        ret = []
+        ret.append(self)
+        ret.extend(self.substrm._collect_substreams())
+        return ret

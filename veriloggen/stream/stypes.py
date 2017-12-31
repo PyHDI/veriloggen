@@ -128,7 +128,7 @@ class _Numeric(_Node):
         if self.m is None:
             raise ValueError("Module information is not set.")
 
-        self.output(self.name('data'))
+        self.output(self.name('odata'))
 
     def prev(self, index):
         if index < 0:
@@ -1222,10 +1222,18 @@ class _SpecialOperator(_Operator):
         self._set_managers()
 
     def _set_attributes(self):
-        wargs = [arg.bit_length() for arg in self.args]
-        self.width = max(*wargs)
-        pargs = [arg.get_point() for arg in self.args]
-        self.point = max(*pargs)
+        if len(self.args) > 1:
+            wargs = [arg.bit_length() for arg in self.args]
+            self.width = max(*wargs)
+            pargs = [arg.get_point() for arg in self.args]
+            self.point = max(*pargs)
+        elif self.args:
+            self.width = self.args[0].bit_length()
+            self.point = self.args[0].get_point()
+        else:
+            self.width = 1
+            self.point = 0
+
         self.signed = False
         for arg in self.args:
             if arg.get_signed():
@@ -1665,7 +1673,8 @@ class _Variable(_Numeric):
             if hasattr(self, 'sig_data_write'):
                 data = self.sig_data_write
             else:
-                data = self.m.TmpReg(self.bit_length(), initval=0)
+                data = self.m.Reg(self.name('wdata'),
+                                  self.bit_length(), initval=0)
                 self.sig_data_write = data
                 self.sig_data.assign(data)
         else:
@@ -2127,6 +2136,76 @@ class Str(_Constant):
         self.width = 0
         self.point = 0
         self.signed = False
+
+
+class Substream(_SpecialOperator):
+    def __init__(self, substrm):
+        _SpecialOperator.__init__(self)
+
+        self.width = 1
+        self.point = 0
+        self.signed = True
+
+        if not substrm.aswire:
+            raise ValueError('aswire must be True.')
+        if substrm.module is None:
+            raise ValueError('module must not be None.')
+        if substrm.clock is None:
+            raise ValueError('clock must not be None.')
+        if substrm.reset is None:
+            raise ValueError('reset must not be None.')
+        if (substrm.ivalid is not None or
+                substrm.iready is not None):
+            raise ValueError('ivalid and iready signals must be empty.')
+        if (substrm.ovalid is not None or
+                substrm.oready is not None):
+            raise ValueError('ovalid and oready signals must be empty.')
+
+        if not substrm.implemented:
+            substrm.implement()
+
+        self.substrm = substrm
+        self.latency = substrm.pipeline_depth() + 1
+        self.conds = OrderedDict()
+
+    def write(self, name, data, cond=None):
+        wdata = _to_constant(data)
+        self.args.append(wdata)
+        self.conds[name] = cond
+
+    def read(self, name):
+        var = self.substrm.get_named_numeric(name)
+        return _SubstreamOutput(self, var)
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        arg_data = [arg.sig_data for arg in self.args]
+
+        for data, (name, cond) in zip(arg_data, self.conds.items()):
+            var = self.substrm.get_named_numeric(name)
+            var.write(data, cond)
+
+        self.sig_data = vtypes.Int(0)
+
+
+class _SubstreamOutput(_UnaryOperator):
+
+    def __init__(self, substrm, output_var):
+        _UnaryOperator.__init__(self, substrm)
+        self.output_var = output_var
+
+        self.width = output_var.bit_length()
+        self.point = output_var.get_point()
+        self.signed = output_var.get_signed()
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        width = self.bit_length()
+        signed = self.get_signed()
+        rdata = self.output_var.sig_data
+
+        data = m.Reg(self.name('data'), width, initval=0, signed=signed)
+        self.sig_data = data
+
+        seq(data(rdata), cond=senable)
 
 
 def make_condition(*cond, **kwargs):

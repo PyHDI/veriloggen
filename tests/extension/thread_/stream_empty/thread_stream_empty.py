@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 import sys
 import os
-import functools
 
 # the next line can be removed after installation
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
@@ -25,24 +24,27 @@ def mkLed():
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
     ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
 
-    shape = [16, 4, 8]
-    size = functools.reduce(lambda x, y: x * y, shape, 1)
-    order = [1, 2, 0]
-
     strm = vthread.Stream(m, 'mystream', clk, rst)
     a = strm.source('a')
     b = strm.source('b')
     c = a + b
+    d = a - b
     strm.sink(c, 'c')
+    strm.sink(d, 'd')
 
-    def comp_stream(offset):
-        strm.set_source_multidim('a', ram_a, offset, shape, order=order)
-        strm.set_source_multidim('b', ram_b, offset, shape, order=order)
-        strm.set_sink_multidim('c', ram_c, offset, shape, order=order)
+    def comp_stream(size, offset):
+        strm.set_source('a', ram_a, offset, size)
+        strm.set_source('b', ram_b, offset, size)
+        strm.set_sink_empty('c')
+        strm.set_sink('d', ram_c, offset, size)
+        strm.run()
+        strm.join()
+        strm.set_sink('c', ram_c, offset, size)
+        strm.set_sink_empty('d')
         strm.run()
         strm.join()
 
-    def comp_sequential(offset):
+    def comp_sequential(size, offset):
         sum = 0
         for i in range(size):
             a = ram_a.read(i + offset)
@@ -50,35 +52,39 @@ def mkLed():
             sum = a + b
             ram_c.write(i + offset, sum)
 
-    def check(offset_stream, offset_seq):
+    def check(size, offset_stream, offset_seq):
         all_ok = True
-        st = ram_c.read(offset_stream)
-        sq = ram_c.read(offset_seq)
-        if vthread.verilog.NotEql(st, sq):
-            all_ok = False
-
+        for i in range(size):
+            st = ram_c.read(i + offset_stream)
+            sq = ram_c.read(i + offset_seq)
+            if vthread.verilog.NotEql(st, sq):
+                all_ok = False
+                print(i, st, sq)
         if all_ok:
             print('OK')
         else:
             print('NG')
 
-    def comp():
+    def comp(size):
+        # stream
         offset = 0
         myaxi.dma_read(ram_a, offset, 0, size)
-        myaxi.dma_read(ram_b, offset, 0, size)
-        comp_stream(offset)
-        myaxi.dma_write(ram_c, offset, 1024 * 4, size)
+        myaxi.dma_read(ram_b, offset, 512, size)
+        comp_stream(size, offset)
+        myaxi.dma_write(ram_c, offset, 1024, size)
 
+        # sequential
         offset = size
         myaxi.dma_read(ram_a, offset, 0, size)
-        myaxi.dma_read(ram_b, offset, 0, size)
-        comp_sequential(offset)
-        myaxi.dma_write(ram_c, offset, 1024 * 8, size)
+        myaxi.dma_read(ram_b, offset, 512, size)
+        comp_sequential(size, offset)
+        myaxi.dma_write(ram_c, offset, 1024 * 2, size)
 
-        check(0, offset)
+        # verification
+        check(size, 0, offset)
 
     th = vthread.Thread(m, 'th_comp', clk, rst, comp)
-    fsm = th.start()
+    fsm = th.start(32)
 
     return m
 
@@ -108,7 +114,7 @@ def mkTest():
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
     init.add(
-        Delay(200000),
+        Delay(100000),
         Systask('finish'),
     )
 
