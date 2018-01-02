@@ -105,7 +105,7 @@ class Stream(BaseStream):
 
         _id = self.var_id_count
         if name is None:
-            name = 'source_%d' % _id
+            name = 'sink_%d' % _id
 
         prefix = self._prefix(name)
 
