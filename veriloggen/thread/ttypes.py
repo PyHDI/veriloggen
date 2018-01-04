@@ -403,20 +403,21 @@ def extract_rams(rams):
 class MultibankRAM(object):
     __intrinsics__ = ('read', 'write',
                       'read_bank', 'write_bank',
-                      'dma_read_bank', 'dma_write_bank') + _MutexFunction.__intrinsics__
+                      'dma_read_bank', 'dma_write_bank',
+                      'dma_read_block', 'dma_write_block') + _MutexFunction.__intrinsics__
 
     def __init__(self, m=None, name=None, clk=None, rst=None,
                  datawidth=32, addrwidth=10, numports=1,
-                 numbanks=2, rams=None):
+                 numbanks=2, rams=None, keep_hierarchy=False):
 
         if rams is not None:
             if not isinstance(rams, (tuple, list)):
                 rams = [rams]
 
-            rams = extract_rams(rams)
-
-            if math.log(len(rams), 2) % 1.0 != 0.0:
-                raise ValueError('numbanks must be power-of-2')
+            if not keep_hierarchy:
+                rams = extract_rams(rams)
+            else:
+                raise NotImplementedError()
 
             if len(rams) < 2:
                 raise ValueError('numbanks must be 2 or more')
@@ -449,9 +450,6 @@ class MultibankRAM(object):
 
         elif (m is not None and name is not None and
               clk is not None and rst is not None):
-
-            if math.log(numbanks, 2) % 1.0 != 0.0:
-                raise ValueError('numbanks must be power-of-2')
 
             if numbanks < 2:
                 raise ValueError('numbanks must be 2 or more')
@@ -498,6 +496,9 @@ class MultibankRAM(object):
         """
         @return data, valid
         """
+        if math.log(self.numbanks, 2) % 1.0 != 0.0:
+            raise ValueError('numbanks must be power-of-2')
+
         if not hasattr(self, 'seq'):
             self.seq = Seq(self.m, self.name, self.clk, self.rst)
 
@@ -531,6 +532,9 @@ class MultibankRAM(object):
         """
         @return None
         """
+        if math.log(self.numbanks, 2) % 1.0 != 0.0:
+            raise ValueError('numbanks must be power-of-2')
+
         bank = self.m.TmpWire(self.shift)
         bank.assign(addr)
         addr = addr >> self.shift
@@ -542,6 +546,9 @@ class MultibankRAM(object):
         return 0
 
     def read(self, fsm, addr, port=0):
+        if math.log(self.numbanks, 2) % 1.0 != 0.0:
+            raise ValueError('numbanks must be power-of-2')
+
         port = vtypes.to_int(port)
         cond = fsm.state == fsm.current
 
@@ -569,6 +576,9 @@ class MultibankRAM(object):
         return rdata_reg
 
     def write(self, fsm, addr, wdata, port=0, cond=None):
+        if math.log(self.numbanks, 2) % 1.0 != 0.0:
+            raise ValueError('numbanks must be power-of-2')
+
         if cond is None:
             cond = fsm.state == fsm.current
         else:
@@ -665,6 +675,54 @@ class MultibankRAM(object):
             fsm.goto_from(e, fin)
 
         return 0
+
+    def dma_read_block(self, fsm, bus, local_addr, global_addr, size,
+                       block_size=1, local_stride=1, port=0):
+
+        if bus.enable_async:
+            bus.dma_wait(fsm)
+
+        return self._dma_read_block(fsm, bus, local_addr, global_addr, size,
+                                    block_size, local_stride, port)
+
+    def _dma_read_block(self, fsm, bus, local_addr, global_addr, size,
+                        block_size=1, local_stride=1, port=0):
+
+        req_block_size = self.m.TmpReg(self.addrwidth, initval=0)
+
+        fsm(
+            req_block_size(block_size),
+        )
+
+        ram_method = functools.partial(self.write_dataflow_block,
+                                       block_size=req_block_size)
+
+        return bus._dma_read(fsm, self, local_addr, global_addr, size,
+                             local_stride, port, ram_method)
+
+    def dma_write_block(self, fsm, bus, local_addr, global_addr, size,
+                        block_size=1, local_stride=1, port=0):
+
+        if bus.enable_async:
+            bus.dma_wait(fsm)
+
+        return self._dma_write_block(fsm, bus, local_addr, global_addr, size,
+                                     block_size, local_stride, port)
+
+    def _dma_write_block(self, fsm, bus, local_addr, global_addr, size,
+                         block_size=1, local_stride=1, port=0):
+
+        req_block_size = self.m.TmpReg(self.addrwidth, initval=0)
+
+        fsm(
+            req_block_size(block_size),
+        )
+
+        ram_method = functools.partial(self.read_dataflow_block,
+                                       block_size=req_block_size)
+
+        return bus._dma_write(fsm, self, local_addr, global_addr, size,
+                              local_stride, port, ram_method)
 
     def read_dataflow(self, port, addr, length=1,
                       stride=1, cond=None, point=0, signed=True):
@@ -1029,6 +1087,156 @@ class MultibankRAM(object):
         return self.read_dataflow_pattern_interleave(port, addr, pattern,
                                                      cond=cond, point=point, signed=signed)
 
+    def read_dataflow_block(self, port, addr, length=1, block_size=1,
+                            stride=1, cond=None, point=0, signed=True):
+        """ 
+        @return data, last, done
+        """
+
+        if not hasattr(self, 'seq'):
+            self.seq = Seq(self.m, self.name, self.clk, self.rst)
+
+        data_valid = self.m.TmpReg(initval=0)
+        last_valid = self.m.TmpReg(initval=0)
+        data_ready = self.m.TmpWire()
+        last_ready = self.m.TmpWire()
+        data_ready.assign(1)
+        last_ready.assign(1)
+
+        data_ack = vtypes.Ors(data_ready, vtypes.Not(data_valid))
+        last_ack = vtypes.Ors(last_ready, vtypes.Not(last_valid))
+
+        ext_cond = dtypes.make_condition(cond)
+        data_cond = dtypes.make_condition(data_ack, last_ack)
+        prev_data_cond = self.seq.Prev(data_cond, 1)
+
+        data_list = [self.m.TmpWireLike(ram.interfaces[port].rdata, signed=True)
+                     for ram in self.rams]
+
+        prev_data_list = [self.seq.Prev(data, 1) for data in data_list]
+        for data, prev_data, ram in zip(data_list, prev_data_list, self.rams):
+            data.assign(vtypes.Mux(prev_data_cond,
+                                   ram.interfaces[port].rdata, prev_data))
+
+        log_numbanks = util.log2(self.numbanks)
+
+        reg_addr_list = [self.m.TmpReg(self.addrwidth, initval=0, prefix='reg_addr')
+                         for ram in self.rams]
+
+        next_addr_list = [self.m.TmpWire(self.addrwidth, prefix='next_addr')
+                          for ram in self.rams]
+        for next_addr, reg_addr in zip(next_addr_list, reg_addr_list):
+            next_addr.assign(reg_addr + stride)
+
+        ram_addr_list = [self.m.TmpWire(ram.addrwidth)
+                         for ram in self.rams]
+        for ram_addr, next_addr in zip(ram_addr_list, next_addr_list):
+            ram_addr.assign(next_addr)
+
+        bank_sel = self.m.TmpReg(log_numbanks, initval=0)
+        reg_bank_sel = self.m.TmpReg(log_numbanks, initval=0)
+        prev_reg_bank_sel = self.seq.Prev(reg_bank_sel, 1)
+        self.seq(
+            reg_bank_sel(bank_sel)
+        )
+
+        patterns = [(reg_bank_sel == i, data)
+                    for i, data in enumerate(data_list)]
+        patterns.append((None, 0))
+        prev_patterns = [(prev_reg_bank_sel == i, data)
+                         for i, data in enumerate(prev_data_list)]
+        prev_patterns.append((None, 0))
+        data = self.m.TmpWire(self.orig_datawidth, signed=True)
+        data.assign(vtypes.Mux(prev_data_cond,
+                               vtypes.PatternMux(*patterns),
+                               vtypes.PatternMux(*prev_patterns)))
+
+        next_valid_on = self.m.TmpReg(initval=0)
+        next_valid_off = self.m.TmpReg(initval=0)
+
+        next_last = self.m.TmpReg(initval=0)
+        last = self.m.TmpReg(initval=0)
+
+        block_counter = self.m.TmpReg(block_size.bit_length() + 1, initval=0)
+        counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
+
+        self.seq.If(data_cond, next_valid_off)(
+            last(0),
+            data_valid(0),
+            last_valid(0),
+            next_valid_off(0)
+        )
+
+        self.seq.If(data_cond, next_valid_on)(
+            data_valid(1),
+            last_valid(1),
+            last(next_last),
+            next_last(0),
+            next_valid_on(0),
+            next_valid_off(1)
+        )
+
+        self.seq.If(ext_cond, counter == 0,
+                    vtypes.Not(next_last), vtypes.Not(last))(
+            bank_sel(0),
+            block_counter(block_size - 1),
+            counter(length - 1),
+            next_valid_on(1),
+            next_last(length == 1)
+        )
+
+        for reg_addr in reg_addr_list:
+            self.seq.If(ext_cond, counter == 0,
+                        vtypes.Not(next_last), vtypes.Not(last))(
+                reg_addr(addr)
+            )
+
+        for ram in self.rams:
+            ram.seq.If(ext_cond, counter == 0,
+                       vtypes.Not(next_last), vtypes.Not(last))(
+                ram.interfaces[port].addr(addr)
+            )
+
+        self.seq.If(data_cond, counter > 0)(
+            block_counter.dec(),
+            counter.dec(),
+            next_valid_on(1),
+            next_last(0)
+        )
+
+        self.seq.If(data_cond, counter > 0, block_counter == 0)(
+            block_counter(block_size - 1),
+            bank_sel.inc()
+        )
+
+        self.seq.If(data_cond, counter > 0, block_counter == 0,
+                    bank_sel == self.numbanks - 1)(
+            bank_sel(0)
+        )
+
+        for i, (reg_addr, next_addr) in enumerate(zip(reg_addr_list, next_addr_list)):
+            self.seq.If(data_cond, counter > 0, bank_sel == i)(
+                reg_addr(next_addr)
+            )
+
+        for i, (ram, ram_addr) in enumerate(zip(self.rams, ram_addr_list)):
+            ram.seq.If(data_cond, counter > 0, bank_sel == i)(
+                ram.interfaces[port].addr(ram_addr)
+            )
+
+        self.seq.If(data_cond, counter == 1)(
+            next_last(1)
+        )
+
+        df = self.df if self.df is not None else dataflow
+
+        df_data = df.Variable(data, data_valid, data_ready,
+                              width=self.orig_datawidth, point=point, signed=signed)
+        df_last = df.Variable(last, last_valid, last_ready, width=1)
+        done = last
+
+        return df_data, df_last, done
+
     def write_dataflow(self, port, addr, data, length=1,
                        stride=1, cond=None, when=None):
         """ 
@@ -1302,6 +1510,113 @@ class MultibankRAM(object):
         pattern = self._to_pattern(shape, order)
         return self.write_dataflow_pattern_bcast(port, addr, data, pattern,
                                                  cond=cond, when=when)
+
+    def write_dataflow_block(self, port, addr, data, length=1, block_size=1,
+                             stride=1, cond=None, when=None):
+        """ 
+        @return done
+        'data' and 'when' must be dataflow variables
+        """
+
+        if not hasattr(self, 'seq'):
+            self.seq = Seq(self.m, self.name, self.clk, self.rst)
+
+        for ram in self.rams:
+            if ram._write_disabled[port]:
+                raise TypeError('Write disabled.')
+
+        block_counter = self.m.TmpReg(
+            block_size.bit_length() + 1, initval=0, prefix='block_counter')
+        counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
+        last = self.m.TmpReg(initval=0)
+
+        ext_cond = dtypes.make_condition(cond)
+        data_cond = dtypes.make_condition(counter > 0, vtypes.Not(last))
+
+        if when is None or not isinstance(when, dtypes._Numeric):
+            raw_data, raw_valid = data.read(cond=data_cond)
+        else:
+            data_list, raw_valid = dtypes.read_multi(
+                self.m, data, when, cond=data_cond)
+            raw_data = data_list[0]
+            when = data_list[1]
+
+        when_cond = dtypes.make_condition(when, ready=data_cond)
+        if when_cond is not None:
+            raw_valid = vtypes.Ands(when_cond, raw_valid)
+
+        log_numbanks = util.log2(self.numbanks)
+
+        reg_addr_list = [self.m.TmpReg(self.addrwidth, initval=0, prefix='reg_addr')
+                         for ram in self.rams]
+
+        next_addr_list = [self.m.TmpWire(self.addrwidth, prefix='next_addr')
+                          for ram in self.rams]
+        for next_addr, reg_addr in zip(next_addr_list, reg_addr_list):
+            next_addr.assign(reg_addr + stride)
+
+        ram_addr_list = [self.m.TmpWire(ram.addrwidth, prefix='ram_addr')
+                         for ram in self.rams]
+        for ram_addr, next_addr in zip(ram_addr_list, next_addr_list):
+            ram_addr.assign(next_addr)
+
+        bank_sel = self.m.TmpReg(log_numbanks, initval=0, prefix='bank_sel')
+
+        self.seq.If(ext_cond, counter == 0)(
+            bank_sel(0),
+            block_counter(block_size - 1),
+            counter(length),
+        )
+
+        for reg_addr in reg_addr_list:
+            self.seq.If(ext_cond, counter == 0)(
+                reg_addr(addr - stride)
+            )
+
+        self.seq.If(raw_valid, counter > 0)(
+            block_counter.dec(),
+            counter.dec()
+        )
+
+        self.seq.If(raw_valid, counter > 0, block_counter == 0)(
+            block_counter(block_size - 1),
+            bank_sel.inc()
+        )
+
+        self.seq.If(raw_valid, counter > 0, block_counter == 0,
+                    bank_sel == self.numbanks - 1)(
+            bank_sel(0)
+        )
+
+        for i, (reg_addr, next_addr) in enumerate(zip(reg_addr_list, next_addr_list)):
+            self.seq.If(raw_valid, counter > 0, bank_sel == i)(
+                reg_addr(next_addr)
+            )
+
+        for i, (ram, ram_addr) in enumerate(zip(self.rams, ram_addr_list)):
+            ram.seq.If(raw_valid, counter > 0)(
+                ram.interfaces[port].addr(ram_addr),
+                ram.interfaces[port].wdata(raw_data),
+                ram.interfaces[port].wenable(bank_sel == i)
+            )
+
+        self.seq.If(raw_valid, counter == 1)(
+            last(1)
+        )
+
+        # de-assert
+        self.seq.Delay(1)(
+            last(0)
+        )
+
+        for ram in self.rams:
+            ram.seq.Delay(1)(
+                ram.interfaces[port].wenable(0)
+            )
+
+        done = last
+
+        return done
 
 
 class FIFO(Fifo, _MutexFunction):
