@@ -1737,6 +1737,8 @@ module blinkled
       ram_a0_0_0_wenable <= 0;
       _tmp_9 <= 0;
       _ram_a0_0_cond_0_1 <= 0;
+      __tmp_44_1 <= 0;
+      __tmp_44_2 <= 0;
       _ram_a0_0_cond_1_1 <= 0;
       _tmp_45 <= 0;
       _ram_a0_0_cond_2_1 <= 0;
@@ -1785,6 +1787,8 @@ module blinkled
         _tmp_9 <= 1;
       end 
       _ram_a0_0_cond_0_1 <= 1;
+      __tmp_44_1 <= _tmp_44;
+      __tmp_44_2 <= __tmp_44_1;
       if(_mystream_a_renable_1) begin
         ram_a0_0_0_addr <= _mystream_a_raddr_1 >> 2;
       end 
@@ -2073,6 +2077,8 @@ module blinkled
       ram_b0_0_0_wenable <= 0;
       _tmp_31 <= 0;
       _ram_b0_0_cond_0_1 <= 0;
+      __tmp_51_1 <= 0;
+      __tmp_51_2 <= 0;
       _ram_b0_0_cond_1_1 <= 0;
       _tmp_52 <= 0;
       _ram_b0_0_cond_2_1 <= 0;
@@ -2121,6 +2127,8 @@ module blinkled
         _tmp_31 <= 1;
       end 
       _ram_b0_0_cond_0_1 <= 1;
+      __tmp_51_1 <= _tmp_51;
+      __tmp_51_2 <= __tmp_51_1;
       if(_mystream_b_renable_2) begin
         ram_b0_0_0_addr <= _mystream_b_raddr_2 >> 2;
       end 
@@ -3775,17 +3783,6 @@ module blinkled
     end
   end
 
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      __tmp_44_1 <= 0;
-      __tmp_44_2 <= 0;
-    end else begin
-      __tmp_44_1 <= _tmp_44;
-      __tmp_44_2 <= __tmp_44_1;
-    end
-  end
-
   localparam _mystream_b_fsm_2_1 = 1;
   localparam _mystream_b_fsm_2_2 = 2;
 
@@ -3851,17 +3848,6 @@ module blinkled
           end 
         end
       endcase
-    end
-  end
-
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      __tmp_51_1 <= 0;
-      __tmp_51_2 <= 0;
-    end else begin
-      __tmp_51_1 <= _tmp_51;
-      __tmp_51_2 <= __tmp_51_1;
     end
   end
 

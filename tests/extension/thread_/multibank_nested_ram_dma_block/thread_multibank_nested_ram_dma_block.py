@@ -12,22 +12,27 @@ import veriloggen.thread as vthread
 import veriloggen.types.axi as axi
 
 
-def mkLed(memory_datawidth=32):
+def mkLed(memory_datawidth=128):
     m = Module('blinkled')
     clk = m.Input('CLK')
     rst = m.Input('RST')
 
     datawidth = 32
     addrwidth = 10
-    numbanks = 4
+    numbanks = 2
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, memory_datawidth)
-    myram = vthread.MultibankRAM(m, 'myram', clk, rst, datawidth, addrwidth,
-                                 numbanks=numbanks)
+
+    pack_size = memory_datawidth // datawidth
+
+    rams = [vthread.MultibankRAM(m, 'myram%d' % i, clk, rst, datawidth, addrwidth,
+                                 numbanks=pack_size)
+            for i in range(numbanks)]
+    myram = vthread.MultibankRAM(rams=rams, keep_hierarchy=True)
 
     all_ok = m.TmpReg(initval=0)
 
-    block_size = 3
-    array_len = 32
+    block_size = 8
+    array_len = 128
     array_size = (array_len + array_len) * 4 * numbanks
 
     def blink(size):
@@ -35,8 +40,7 @@ def mkLed(memory_datawidth=32):
 
         print('# start')
         # Test for 4KB boundary check
-        #offset = 1024 * 16 + (myaxi.boundary_size - 4)
-        offset = 1024 * 16
+        offset = 1024 * 16 + (myaxi.boundary_size - 4)
         body(size, offset)
         print('# end')
 
@@ -65,7 +69,9 @@ def mkLed(memory_datawidth=32):
 
         laddr = 0
         gaddr = offset
-        myram.dma_write_block(myaxi, laddr, gaddr, size, block_size)
+        myram.dma_write_block(myaxi, laddr, gaddr,
+                              size // pack_size,
+                              block_size // pack_size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # write
@@ -89,13 +95,17 @@ def mkLed(memory_datawidth=32):
 
         laddr = 0
         gaddr = array_size + offset
-        myram.dma_write_block(myaxi, laddr, gaddr, size, block_size)
+        myram.dma_write_block(myaxi, laddr, gaddr,
+                              size // pack_size,
+                              block_size // pack_size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # read
         laddr = 0
         gaddr = offset
-        myram.dma_read_block(myaxi, laddr, gaddr, size, block_size)
+        myram.dma_read_block(myaxi, laddr, gaddr,
+                             size // pack_size,
+                             block_size // pack_size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         count = 0
@@ -122,7 +132,8 @@ def mkLed(memory_datawidth=32):
         # read
         laddr = 0
         gaddr = array_size + offset
-        myram.dma_read_block(myaxi, laddr, gaddr, size, block_size)
+        myram.dma_read_block(myaxi, laddr, gaddr, size //
+                             pack_size, block_size // pack_size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         count = 0
@@ -152,7 +163,7 @@ def mkLed(memory_datawidth=32):
     return m
 
 
-def mkTest(memory_datawidth=32):
+def mkTest(memory_datawidth=128):
     m = Module('test')
 
     # target instance

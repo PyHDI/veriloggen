@@ -416,8 +416,6 @@ class MultibankRAM(object):
 
             if not keep_hierarchy:
                 rams = extract_rams(rams)
-            else:
-                raise NotImplementedError()
 
             if len(rams) < 2:
                 raise ValueError('numbanks must be 2 or more')
@@ -447,6 +445,13 @@ class MultibankRAM(object):
             self.numbanks = len(rams)
             self.shift = util.log2(self.numbanks)
             self.rams = rams
+            self.keep_hierarchy = keep_hierarchy
+            self.seq = None
+
+            for ram in self.rams:
+                if ram.seq is not None:
+                    self.seq = ram.seq
+                    break
 
         elif (m is not None and name is not None and
               clk is not None and rst is not None):
@@ -467,6 +472,8 @@ class MultibankRAM(object):
             self.rams = [RAM(m, '_'.join([name, '%d' % i]),
                              clk, rst, datawidth, addrwidth, numports)
                          for i in range(numbanks)]
+            self.keep_hierarchy = keep_hierarchy
+            self.seq = None
 
         else:
             raise ValueError('RAMs or module information must be specified.')
@@ -499,7 +506,7 @@ class MultibankRAM(object):
         if math.log(self.numbanks, 2) % 1.0 != 0.0:
             raise ValueError('numbanks must be power-of-2')
 
-        if not hasattr(self, 'seq'):
+        if self.seq is None:
             self.seq = Seq(self.m, self.name, self.clk, self.rst)
 
         rdata_list = []
@@ -545,6 +552,34 @@ class MultibankRAM(object):
 
         return 0
 
+    def _read_recursive(self, ram, port, addr, cond):
+        if isinstance(ram, MultibankRAM):
+            if math.log(ram.numbanks, 2) % 1.0 != 0.0:
+                raise ValueError('numbanks must be power-of-2')
+
+            rdata_list = []
+            rvalid_list = []
+            bank = self.m.TmpWire(ram.shift)
+            bank.assign(addr)
+            addr = addr >> ram.shift
+
+            for sub in ram.rams:
+                rdata, rvalid = self._read_recursive(sub, port, addr, cond)
+                rdata_list.append(rdata)
+                rvalid_list.append(rvalid)
+
+            rdata_wire = self.m.TmpWire(ram.orig_datawidth, signed=True)
+
+            patterns = [(bank == i, rdata)
+                        for i, rdata in enumerate(rdata_list)]
+            patterns.append((None, 0))
+            rdata_wire.assign(vtypes.PatternMux(*patterns))
+
+            return rdata_wire, rvalid_list[0]
+
+        rdata, rvalid = SyncRAMManager.read(ram, port, addr, cond)
+        return rdata, rvalid
+
     def read(self, fsm, addr, port=0):
         if math.log(self.numbanks, 2) % 1.0 != 0.0:
             raise ValueError('numbanks must be power-of-2')
@@ -560,7 +595,7 @@ class MultibankRAM(object):
         addr = addr >> self.shift
 
         for ram in self.rams:
-            rdata, rvalid = SyncRAMManager.read(ram, port, addr, cond)
+            rdata, rvalid = self._read_recursive(ram, port, addr, cond)
             rdata_list.append(rdata)
             rvalid_list.append(rvalid)
 
@@ -574,6 +609,23 @@ class MultibankRAM(object):
         fsm.If(rvalid_list[0]).goto_next()
 
         return rdata_reg
+
+    def _write_recursive(self, ram, port, addr, wdata, cond=None):
+        if isinstance(ram, MultibankRAM):
+            if math.log(ram.numbanks, 2) % 1.0 != 0.0:
+                raise ValueError('numbanks must be power-of-2')
+
+            bank = self.m.TmpWire(ram.shift)
+            bank.assign(addr)
+            addr = addr >> ram.shift
+
+            for i, sub in enumerate(ram.rams):
+                bank_cond = vtypes.Ands(cond, bank == i)
+                self._write_recursive(sub, port, addr, wdata, bank_cond)
+
+            return
+
+        SyncRAMManager.write(ram, port, addr, wdata, cond)
 
     def write(self, fsm, addr, wdata, port=0, cond=None):
         if math.log(self.numbanks, 2) % 1.0 != 0.0:
@@ -590,7 +642,7 @@ class MultibankRAM(object):
 
         for i, ram in enumerate(self.rams):
             bank_cond = vtypes.Ands(cond, bank == i)
-            SyncRAMManager.write(ram, port, addr, wdata, bank_cond)
+            self._write_recursive(ram, port, addr, wdata, bank_cond)
 
         fsm.goto_next()
 
@@ -603,7 +655,7 @@ class MultibankRAM(object):
         rdata_list = []
         rvalid_list = []
         for ram in self.rams:
-            rdata, rvalid = SyncRAMManager.read(ram, port, addr, cond)
+            rdata, rvalid = self._read_recursive(ram, port, addr, cond)
             rdata_list.append(rdata)
             rvalid_list.append(rvalid)
 
@@ -626,7 +678,7 @@ class MultibankRAM(object):
 
         for i, ram in enumerate(self.rams):
             bank_cond = vtypes.Ands(cond, bank == i)
-            SyncRAMManager.write(ram, port, addr, wdata, bank_cond)
+            self._write_recursive(ram, port, addr, wdata, bank_cond)
 
         fsm.goto_next()
 
@@ -752,7 +804,7 @@ class MultibankRAM(object):
         @return data, last, done
         """
 
-        if not hasattr(self, 'seq'):
+        if self.seq is None:
             self.seq = Seq(self.m, self.name, self.clk, self.rst)
 
         data_valid = self.m.TmpReg(initval=0)
@@ -789,7 +841,7 @@ class MultibankRAM(object):
         bank_sel.assign(reg_addr[0:log_numbanks])
         reg_bank_sel = self.m.TmpReg(log_numbanks, initval=0)
         prev_reg_bank_sel = self.seq.Prev(reg_bank_sel, 1)
-        self.seq(
+        self.seq.If(data_cond)(
             reg_bank_sel(bank_sel)
         )
 
@@ -873,7 +925,7 @@ class MultibankRAM(object):
         @return data, last, done
         """
 
-        if not hasattr(self, 'seq'):
+        if self.seq is None:
             self.seq = Seq(self.m, self.name, self.clk, self.rst)
 
         if not isinstance(pattern, (tuple, list)):
@@ -915,7 +967,7 @@ class MultibankRAM(object):
         bank_sel.assign(reg_addr[0:log_numbanks])
         reg_bank_sel = self.m.TmpReg(log_numbanks, initval=0)
         prev_reg_bank_sel = self.seq.Prev(reg_bank_sel, 1)
-        self.seq(
+        self.seq.If(data_cond)(
             reg_bank_sel(bank_sel)
         )
 
@@ -1093,7 +1145,11 @@ class MultibankRAM(object):
         @return data, last, done
         """
 
-        if not hasattr(self, 'seq'):
+        if self.keep_hierarchy and isinstance(self.rams[0], MultibankRAM):
+            return self._read_dataflow_block_nested(port, addr, length, block_size,
+                                                    stride, cond, point, signed)
+
+        if self.seq is None:
             self.seq = Seq(self.m, self.name, self.clk, self.rst)
 
         data_valid = self.m.TmpReg(initval=0)
@@ -1120,10 +1176,10 @@ class MultibankRAM(object):
 
         log_numbanks = util.log2(self.numbanks)
 
-        reg_addr_list = [self.m.TmpReg(self.addrwidth, initval=0, prefix='reg_addr')
+        reg_addr_list = [self.m.TmpReg(self.addrwidth, initval=0)
                          for ram in self.rams]
 
-        next_addr_list = [self.m.TmpWire(self.addrwidth, prefix='next_addr')
+        next_addr_list = [self.m.TmpWire(self.addrwidth)
                           for ram in self.rams]
         for next_addr, reg_addr in zip(next_addr_list, reg_addr_list):
             next_addr.assign(reg_addr + stride)
@@ -1136,7 +1192,7 @@ class MultibankRAM(object):
         bank_sel = self.m.TmpReg(log_numbanks, initval=0)
         reg_bank_sel = self.m.TmpReg(log_numbanks, initval=0)
         prev_reg_bank_sel = self.seq.Prev(reg_bank_sel, 1)
-        self.seq(
+        self.seq.If(data_cond)(
             reg_bank_sel(bank_sel)
         )
 
@@ -1179,6 +1235,7 @@ class MultibankRAM(object):
         self.seq.If(ext_cond, counter == 0,
                     vtypes.Not(next_last), vtypes.Not(last))(
             bank_sel(0),
+            reg_bank_sel(0),
             block_counter(block_size - 1),
             counter(length - 1),
             next_valid_on(1),
@@ -1237,6 +1294,47 @@ class MultibankRAM(object):
 
         return df_data, df_last, done
 
+    def _read_dataflow_block_nested(self, port, addr, length=1, block_size=1,
+                                    stride=1, cond=None, point=0, signed=True):
+        """ 
+        @return data, last, done
+        """
+
+        len_rams = 0
+        for ram in self.rams:
+            if not isinstance(ram, MultibankRAM):
+                raise TypeError('All sub-bank RAMs must be MultibankRAM.')
+            if len_rams == 0:
+                len_rams = len(ram.rams)
+            elif len_rams != len(ram.rams):
+                raise ValueError(
+                    'All sub-bank RAMs must have the same number of RAMs.')
+
+        rams = [[] for i in range(len_rams)]
+
+        for ram in self.rams:
+            for i, sub in enumerate(ram.rams):
+                rams[i].append(sub)
+
+        rams = [MultibankRAM(rams=ram_list, keep_hierarchy=True)
+                for ram_list in rams]
+
+        data_list = []
+        last_list = []
+        done_list = []
+        for ram in rams:
+            data, last, done = ram.read_dataflow_block(
+                port, addr, length, block_size, stride, cond, point, signed)
+            data_list.insert(0, data)
+            last_list.insert(0, last)
+            done_list.insert(0, done)
+
+        merged_data = dtypes.Cat(*data_list)
+        merged_last = last_list[-1]
+        merged_done = done_list[-1]
+
+        return merged_data, merged_last, merged_done
+
     def write_dataflow(self, port, addr, data, length=1,
                        stride=1, cond=None, when=None):
         """ 
@@ -1264,7 +1362,7 @@ class MultibankRAM(object):
         'data' and 'when' must be dataflow variables
         """
 
-        if not hasattr(self, 'seq'):
+        if self.seq is None:
             self.seq = Seq(self.m, self.name, self.clk, self.rst)
 
         for ram in self.rams:
@@ -1342,7 +1440,7 @@ class MultibankRAM(object):
         'data' and 'when' must be dataflow variables
         """
 
-        if not hasattr(self, 'seq'):
+        if self.seq is None:
             self.seq = Seq(self.m, self.name, self.clk, self.rst)
 
         for ram in self.rams:
@@ -1518,15 +1616,18 @@ class MultibankRAM(object):
         'data' and 'when' must be dataflow variables
         """
 
-        if not hasattr(self, 'seq'):
+        if self.keep_hierarchy and isinstance(self.rams[0], MultibankRAM):
+            return self._write_dataflow_block_nested(port, addr, data, length, block_size,
+                                                     stride, cond, when)
+
+        if self.seq is None:
             self.seq = Seq(self.m, self.name, self.clk, self.rst)
 
         for ram in self.rams:
             if ram._write_disabled[port]:
                 raise TypeError('Write disabled.')
 
-        block_counter = self.m.TmpReg(
-            block_size.bit_length() + 1, initval=0, prefix='block_counter')
+        block_counter = self.m.TmpReg(block_size.bit_length() + 1, initval=0)
         counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
         last = self.m.TmpReg(initval=0)
 
@@ -1547,20 +1648,20 @@ class MultibankRAM(object):
 
         log_numbanks = util.log2(self.numbanks)
 
-        reg_addr_list = [self.m.TmpReg(self.addrwidth, initval=0, prefix='reg_addr')
+        reg_addr_list = [self.m.TmpReg(self.addrwidth, initval=0)
                          for ram in self.rams]
 
-        next_addr_list = [self.m.TmpWire(self.addrwidth, prefix='next_addr')
+        next_addr_list = [self.m.TmpWire(self.addrwidth)
                           for ram in self.rams]
         for next_addr, reg_addr in zip(next_addr_list, reg_addr_list):
             next_addr.assign(reg_addr + stride)
 
-        ram_addr_list = [self.m.TmpWire(ram.addrwidth, prefix='ram_addr')
+        ram_addr_list = [self.m.TmpWire(ram.addrwidth)
                          for ram in self.rams]
         for ram_addr, next_addr in zip(ram_addr_list, next_addr_list):
             ram_addr.assign(next_addr)
 
-        bank_sel = self.m.TmpReg(log_numbanks, initval=0, prefix='bank_sel')
+        bank_sel = self.m.TmpReg(log_numbanks, initval=0)
 
         self.seq.If(ext_cond, counter == 0)(
             bank_sel(0),
@@ -1617,6 +1718,46 @@ class MultibankRAM(object):
         done = last
 
         return done
+
+    def _write_dataflow_block_nested(self, port, addr, data, length=1, block_size=1,
+                                     stride=1, cond=None, when=None):
+        """ 
+        @return done
+        'data' and 'when' must be dataflow variables
+        """
+
+        len_rams = 0
+        for ram in self.rams:
+            if not isinstance(ram, MultibankRAM):
+                raise TypeError('All sub-bank RAMs must be MultibankRAM.')
+            if len_rams == 0:
+                len_rams = len(ram.rams)
+            elif len_rams != len(ram.rams):
+                raise ValueError(
+                    'All sub-bank RAMs must have the same number of RAMs.')
+
+        rams = [[] for i in range(len_rams)]
+
+        for ram in self.rams:
+            for i, sub in enumerate(ram.rams):
+                rams[i].append(sub)
+
+        rams = [MultibankRAM(rams=ram_list, keep_hierarchy=True)
+                for ram_list in rams]
+
+        done_list = []
+        lsb = 0
+        msb = 0
+        for ram in rams:
+            msb = msb + ram.orig_datawidth
+            bank_data = dtypes.Slice(data, msb, lsb)
+            done = ram.write_dataflow_block(
+                port, addr, bank_data, length, block_size, stride, cond, when)
+            done_list.append(done)
+            lsb = msb
+
+        merged_done = done_list[0]
+        return merged_done
 
 
 class FIFO(Fifo, _MutexFunction):
