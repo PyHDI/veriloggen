@@ -45,22 +45,22 @@ class Stream(BaseStream):
         self.reduce_reset = None
         self.reduce_reset_var = None
 
-        self.sources = {}
-        self.sinks = {}
-        self.constants = {}
+        self.sources = OrderedDict()
+        self.sinks = OrderedDict()
+        self.constants = OrderedDict()
         self.substreams = []
 
-        self.var_name_map = {}
-        self.var_id_map = {}
-        self.var_id_name_map = {}
-        self.var_name_id_map = {}
+        self.var_name_map = OrderedDict()
+        self.var_id_map = OrderedDict()
+        self.var_id_name_map = OrderedDict()
+        self.var_name_id_map = OrderedDict()
         self.var_id_count = 0
-        self.source_idle_map = {}
-        self.sink_when_map = {}
+        self.source_idle_map = OrderedDict()
+        self.sink_when_map = OrderedDict()
 
-        self.fsm_id_map = {}
+        self.fsm_id_map = OrderedDict()
         self.fsm_id_count = 1  # '0' is reserved for idle
-        self.var_id_fsm_sel_map = {}  # key: var_id, value: fsm_id reg
+        self.var_id_fsm_sel_map = OrderedDict()  # key: var_id, value: fsm_id reg
 
         self.ram_delay = 4
 

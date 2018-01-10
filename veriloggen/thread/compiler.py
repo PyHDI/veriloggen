@@ -1,11 +1,12 @@
 from __future__ import absolute_import
 from __future__ import print_function
-from collections import OrderedDict
+
 import os
 import sys
 import ast
 import inspect
 import textwrap
+from collections import OrderedDict
 
 import veriloggen.core.vtypes as vtypes
 import veriloggen.types.fixed as fixed
@@ -30,7 +31,7 @@ def _tmp_name(prefix='_tmp_thread'):
 class FunctionVisitor(ast.NodeVisitor):
 
     def __init__(self):
-        self.functions = {}
+        self.functions = OrderedDict()
 
     def getFunctions(self):
         return self.functions

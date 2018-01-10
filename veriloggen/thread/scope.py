@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+
 import copy
 import os
 import sys
@@ -22,12 +23,12 @@ class ScopeFrameList(object):
         self.scopeframes.append(ScopeFrame(ScopeName(('_',))))
         self.current = self.scopeframes[0]
         self.globalframe = self.scopeframes[0]
-        self.previousframes = {}
+        self.previousframes = OrderedDict()
         self.previousframes[self.current] = None
-        self.nextframes = {}
+        self.nextframes = OrderedDict()
         self.label_prefix = 's'
         self.label_count = 0
-        self.binds = {}
+        self.binds = OrderedDict()
 
     def getNamePrefix(self):
         return self.current.getNamePrefix()

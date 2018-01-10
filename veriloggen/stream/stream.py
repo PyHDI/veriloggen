@@ -1,10 +1,11 @@
 from __future__ import absolute_import
 from __future__ import print_function
+
 import os
 import sys
 import copy
-import collections
 import functools
+from collections import OrderedDict
 
 import veriloggen.core.vtypes as vtypes
 from veriloggen.core.module import Module
@@ -48,7 +49,7 @@ class Stream(object):
         _stream_counter += 1
 
         self.nodes = set()
-        self.named_numerics = {}
+        self.named_numerics = OrderedDict()
 
         self.add(*nodes)
 
@@ -306,9 +307,9 @@ class Stream(object):
     #-------------------------------------------------------------------------
     def get_input(self):
         if self.last_input is None:
-            return collections.OrderedDict()
+            return OrderedDict()
 
-        ret = collections.OrderedDict()
+        ret = OrderedDict()
         for input_var in sorted(self.last_input, key=lambda x: x.object_id):
             key = str(input_var.input_data)
             value = input_var
@@ -318,9 +319,9 @@ class Stream(object):
 
     def get_output(self):
         if self.last_output is None:
-            return collections.OrderedDict()
+            return OrderedDict()
 
-        ret = collections.OrderedDict()
+        ret = OrderedDict()
         for output_var in sorted(self.last_output, key=lambda x: x.object_id):
             key = str(output_var.output_data)
             value = output_var

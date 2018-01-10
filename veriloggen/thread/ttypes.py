@@ -4,7 +4,7 @@ from __future__ import print_function
 import functools
 import math
 import inspect
-import collections
+from collections import OrderedDict
 
 import veriloggen.core.vtypes as vtypes
 import veriloggen.dataflow.dtypes as dtypes
@@ -73,7 +73,7 @@ class Mutex(object):
         self.lock_id = self.m.Reg(
             '_'.join(['', self.name, 'lock_id']), self.width, initval=0)
 
-        self.id_map = {}
+        self.id_map = OrderedDict()
         self.id_map_count = 0
 
     def lock(self, fsm):
