@@ -1600,6 +1600,48 @@ class _Prev(_UnaryOperator):
         seq(data(rdata), cond=senable)
 
 
+def op_tree(op, initval=0, *args):
+    if len(args) == 1:
+        return args[0]
+    if len(args) == 0:
+        return initval
+    half_len = len(args) // 2
+    return op(op_tree(op, initval, *args[:half_len]),
+              op_tree(op, initval, *args[half_len:]))
+
+
+def AddTree(*args):
+    return op_tree(Plus, 0, *args)
+
+
+def Max(*args):
+    if len(args) == 1:
+        return args[0]
+    initval = args[0]
+    return op_tree(lambda x, y: Mux(x > y, x, y), initval, args[1:])
+
+
+def Min(*args):
+    if len(args) == 1:
+        return args[0]
+    initval = args[0]
+    return op_tree(lambda x, y: Mux(x < y, x, y), initval, args[1:])
+
+
+def Average(*args):
+    sum = AddTree(*args)
+    length = len(args)
+    if length & (length - 1) == 0:
+        return Sra(sum, int(log(length, 2)))
+    return Div(sum, Int(length, signed=True))
+
+
+def SraRound(left, right):
+    shifted = Sra(left, right)
+    last_bit = Sra(left, right - 1)[0]
+    return Mux(right == Int(0), left, shifted + last_bit)
+
+
 class _Constant(_Numeric):
 
     def __init__(self, value):
