@@ -2296,8 +2296,8 @@ module blinkled
       __variable_wdata_1 <= 0;
       _mystream_c_fsm_sel <= 0;
     end else begin
-      _plus_data_2 <= mystream_a_data + 5'd10;
-      _plus_data_4 <= mystream_b_data + 5'd10;
+      _plus_data_2 <= mystream_a_data + 5'sd10;
+      _plus_data_4 <= mystream_b_data + 5'sd10;
       _times_mul_odata_reg_6 <= _times_mul_odata_6;
       if(th_comp == 7) begin
         _mystream_a_fsm_sel <= 1;

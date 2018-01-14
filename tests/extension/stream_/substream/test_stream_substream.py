@@ -245,15 +245,15 @@ module main
       __delay_data_28 <= 0;
       __substreamoutput_data_11 <= 0;
       __delay_data_29 <= 0;
-      _reduceadd_data_14 <= 1'd0;
+      _reduceadd_data_14 <= 1'sd0;
       _reduceadd_count_14 <= 0;
-      _pulse_data_17 <= 1'd0;
+      _pulse_data_17 <= 1'sd0;
       _pulse_count_17 <= 0;
       _plus_data_18 <= 0;
       __delay_data_30 <= 0;
     end else begin
-      _plus_data_6 <= xdata + 2'd1;
-      _plus_data_8 <= ydata + 3'd2;
+      _plus_data_6 <= xdata + 2'sd1;
+      _plus_data_8 <= ydata + 3'sd2;
       __delay_data_20 <= edata;
       __delay_data_21 <= __delay_data_20;
       __delay_data_22 <= __delay_data_21;
@@ -269,21 +269,21 @@ module main
         _reduceadd_data_14 <= _reduceadd_data_14 + __substreamoutput_data_11;
       end 
       if(__delay_data_29) begin
-        _reduceadd_count_14 <= (_reduceadd_count_14 == 5'd8 - 1)? 0 : _reduceadd_count_14 + 1;
+        _reduceadd_count_14 <= (_reduceadd_count_14 == 5'sd8 - 1)? 0 : _reduceadd_count_14 + 1;
       end 
       if(__delay_data_29 && (_reduceadd_count_14 == 0)) begin
-        _reduceadd_data_14 <= 1'd0 + __substreamoutput_data_11;
+        _reduceadd_data_14 <= 1'sd0 + __substreamoutput_data_11;
       end 
       if(__delay_data_29) begin
-        _pulse_data_17 <= _pulse_count_17 == 5'd8 - 1;
+        _pulse_data_17 <= _pulse_count_17 == 5'sd8 - 1;
       end 
       if(__delay_data_29) begin
-        _pulse_count_17 <= (_pulse_count_17 == 5'd8 - 1)? 0 : _pulse_count_17 + 1;
+        _pulse_count_17 <= (_pulse_count_17 == 5'sd8 - 1)? 0 : _pulse_count_17 + 1;
       end 
       if(__delay_data_29 && (_pulse_count_17 == 0)) begin
-        _pulse_data_17 <= _pulse_count_17 == 5'd8 - 1;
+        _pulse_data_17 <= _pulse_count_17 == 5'sd8 - 1;
       end 
-      _plus_data_18 <= _reduceadd_data_14 + 11'd1000;
+      _plus_data_18 <= _reduceadd_data_14 + 11'sd1000;
       __delay_data_30 <= _pulse_data_17;
     end
   end

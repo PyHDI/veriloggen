@@ -1314,9 +1314,9 @@ module blinkled
       __delay_data_13 <= 0;
       __delay_data_14 <= 0;
       __delay_data_15 <= 0;
-      _reduceadd_data_6 <= 1'd0;
+      _reduceadd_data_6 <= 1'sd0;
       _reduceadd_count_6 <= 0;
-      _pulse_data_8 <= 1'd0;
+      _pulse_data_8 <= 1'sd0;
       _pulse_count_8 <= 0;
       _mystream_a_fsm_sel <= 0;
       _mystream_a_idle <= 1;
@@ -1338,13 +1338,13 @@ module blinkled
       _reduceadd_data_6 <= _reduceadd_data_6 + _times_data_4;
       _reduceadd_count_6 <= (_reduceadd_count_6 == mystream_size_data - 1)? 0 : _reduceadd_count_6 + 1;
       if(__delay_data_15) begin
-        _reduceadd_data_6 <= 1'd0 + _times_data_4;
+        _reduceadd_data_6 <= 1'sd0 + _times_data_4;
       end 
       if(__delay_data_15) begin
         _reduceadd_count_6 <= 0;
       end 
       if(_reduceadd_count_6 == 0) begin
-        _reduceadd_data_6 <= 1'd0 + _times_data_4;
+        _reduceadd_data_6 <= 1'sd0 + _times_data_4;
       end 
       _pulse_data_8 <= _pulse_count_8 == mystream_size_data - 1;
       _pulse_count_8 <= (_pulse_count_8 == mystream_size_data - 1)? 0 : _pulse_count_8 + 1;

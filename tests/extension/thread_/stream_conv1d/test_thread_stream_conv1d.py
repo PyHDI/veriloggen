@@ -1200,9 +1200,9 @@ module blinkled
       __delay_data_14 <= 0;
       __delay_data_15 <= 0;
       __delay_data_16 <= 0;
-      _reduceadd_data_6 <= 1'd0;
+      _reduceadd_data_6 <= 1'sd0;
       _reduceadd_count_6 <= 0;
-      _pulse_data_9 <= 1'd0;
+      _pulse_data_9 <= 1'sd0;
       _pulse_count_9 <= 0;
       _mystream_a_fsm_sel <= 0;
       _mystream_a_idle <= 1;
@@ -1221,26 +1221,26 @@ module blinkled
       __delay_data_15 <= __delay_data_14;
       __delay_data_16 <= __delay_data_15;
       _reduceadd_data_6 <= _reduceadd_data_6 + _times_data_3;
-      _reduceadd_count_6 <= (_reduceadd_count_6 == 3'd3 - 1)? 0 : _reduceadd_count_6 + 1;
+      _reduceadd_count_6 <= (_reduceadd_count_6 == 3'sd3 - 1)? 0 : _reduceadd_count_6 + 1;
       if(__delay_data_16) begin
-        _reduceadd_data_6 <= 1'd0 + _times_data_3;
+        _reduceadd_data_6 <= 1'sd0 + _times_data_3;
       end 
       if(__delay_data_16) begin
         _reduceadd_count_6 <= 0;
       end 
       if(_reduceadd_count_6 == 0) begin
-        _reduceadd_data_6 <= 1'd0 + _times_data_3;
+        _reduceadd_data_6 <= 1'sd0 + _times_data_3;
       end 
-      _pulse_data_9 <= _pulse_count_9 == 3'd3 - 1;
-      _pulse_count_9 <= (_pulse_count_9 == 3'd3 - 1)? 0 : _pulse_count_9 + 1;
+      _pulse_data_9 <= _pulse_count_9 == 3'sd3 - 1;
+      _pulse_count_9 <= (_pulse_count_9 == 3'sd3 - 1)? 0 : _pulse_count_9 + 1;
       if(__delay_data_16) begin
-        _pulse_data_9 <= _pulse_count_9 == 3'd3 - 1;
+        _pulse_data_9 <= _pulse_count_9 == 3'sd3 - 1;
       end 
       if(__delay_data_16) begin
         _pulse_count_9 <= 0;
       end 
       if(_pulse_count_9 == 0) begin
-        _pulse_data_9 <= _pulse_count_9 == 3'd3 - 1;
+        _pulse_data_9 <= _pulse_count_9 == 3'sd3 - 1;
       end 
       if(th_comp == 10) begin
         _mystream_a_fsm_sel <= 1;

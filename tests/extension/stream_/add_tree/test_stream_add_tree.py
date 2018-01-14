@@ -191,16 +191,16 @@ module main
       __delay_data_40 <= 0;
       _plus_data_31 <= 0;
     end else begin
-      _plus_data_2 <= xdata + 1'd0;
-      _plus_data_4 <= xdata + 2'd1;
-      _plus_data_6 <= xdata + 3'd2;
-      _plus_data_8 <= xdata + 3'd3;
-      _plus_data_10 <= xdata + 4'd4;
-      _plus_data_12 <= xdata + 4'd5;
-      _plus_data_14 <= xdata + 4'd6;
-      _plus_data_16 <= xdata + 4'd7;
-      _plus_data_18 <= xdata + 5'd8;
-      _plus_data_20 <= xdata + 5'd9;
+      _plus_data_2 <= xdata + 1'sd0;
+      _plus_data_4 <= xdata + 2'sd1;
+      _plus_data_6 <= xdata + 3'sd2;
+      _plus_data_8 <= xdata + 3'sd3;
+      _plus_data_10 <= xdata + 4'sd4;
+      _plus_data_12 <= xdata + 4'sd5;
+      _plus_data_14 <= xdata + 4'sd6;
+      _plus_data_16 <= xdata + 4'sd7;
+      _plus_data_18 <= xdata + 5'sd8;
+      _plus_data_20 <= xdata + 5'sd9;
       __delay_data_36 <= ydata;
       _plus_data_22 <= _plus_data_2 + _plus_data_4;
       _plus_data_23 <= _plus_data_8 + _plus_data_10;

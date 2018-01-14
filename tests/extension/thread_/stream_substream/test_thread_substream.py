@@ -2945,9 +2945,9 @@ module blinkled
       __delay_data_47 <= 0;
       __substreamoutput_data_10 <= 0;
       __delay_data_48 <= 0;
-      _reduceadd_data_14 <= 1'd0;
+      _reduceadd_data_14 <= 1'sd0;
       _reduceadd_count_14 <= 0;
-      _pulse_data_16 <= 1'd0;
+      _pulse_data_16 <= 1'sd0;
       _pulse_count_16 <= 0;
       _mac_stream_a_fsm_sel <= 0;
       _mac_stream_a_idle <= 1;
@@ -2958,8 +2958,8 @@ module blinkled
       __parametervariable_wdata_11 <= 0;
       _mac_stream_sum_fsm_sel <= 0;
     end else begin
-      _plus_data_5 <= mac_stream_a_data + 2'd1;
-      _plus_data_7 <= mac_stream_b_data + 2'd1;
+      _plus_data_5 <= mac_stream_a_data + 2'sd1;
+      _plus_data_7 <= mac_stream_b_data + 2'sd1;
       __delay_data_39 <= _mac_stream_reduce_reset;
       __delay_data_40 <= __delay_data_39;
       __delay_data_41 <= __delay_data_40;
@@ -2974,13 +2974,13 @@ module blinkled
       _reduceadd_data_14 <= _reduceadd_data_14 + __substreamoutput_data_10;
       _reduceadd_count_14 <= (_reduceadd_count_14 == mac_stream_size_data - 1)? 0 : _reduceadd_count_14 + 1;
       if(__delay_data_48) begin
-        _reduceadd_data_14 <= 1'd0 + __substreamoutput_data_10;
+        _reduceadd_data_14 <= 1'sd0 + __substreamoutput_data_10;
       end 
       if(__delay_data_48) begin
         _reduceadd_count_14 <= 0;
       end 
       if(_reduceadd_count_14 == 0) begin
-        _reduceadd_data_14 <= 1'd0 + __substreamoutput_data_10;
+        _reduceadd_data_14 <= 1'sd0 + __substreamoutput_data_10;
       end 
       _pulse_data_16 <= _pulse_count_16 == mac_stream_size_data - 1;
       _pulse_count_16 <= (_pulse_count_16 == mac_stream_size_data - 1)? 0 : _pulse_count_16 + 1;
@@ -3207,9 +3207,9 @@ module blinkled
       __delay_data_58 <= 0;
       __substreamoutput_data_28 <= 0;
       __delay_data_59 <= 0;
-      _reduceadd_data_32 <= 1'd0;
+      _reduceadd_data_32 <= 1'sd0;
       _reduceadd_count_32 <= 0;
-      _pulse_data_34 <= 1'd0;
+      _pulse_data_34 <= 1'sd0;
       _pulse_count_34 <= 0;
       _greaterthan_data_35 <= 0;
       __delay_data_60 <= 0;
@@ -3225,11 +3225,11 @@ module blinkled
       __parametervariable_wdata_29 <= 0;
       _act_stream_sum_fsm_sel <= 0;
     end else begin
-      _plus_data_19 <= act_stream_a_data + 2'd1;
-      _plus_data_21 <= act_stream_b_data + 2'd1;
+      _plus_data_19 <= act_stream_a_data + 2'sd1;
+      _plus_data_21 <= act_stream_b_data + 2'sd1;
       __delay_data_49 <= _act_stream_reduce_reset;
-      _plus_data_23 <= _plus_data_19 + 2'd1;
-      _plus_data_25 <= _plus_data_21 + 2'd1;
+      _plus_data_23 <= _plus_data_19 + 2'sd1;
+      _plus_data_25 <= _plus_data_21 + 2'sd1;
       __delay_data_50 <= __delay_data_49;
       __delay_data_51 <= __delay_data_50;
       __delay_data_52 <= __delay_data_51;
@@ -3244,13 +3244,13 @@ module blinkled
       _reduceadd_data_32 <= _reduceadd_data_32 + __substreamoutput_data_28;
       _reduceadd_count_32 <= (_reduceadd_count_32 == act_stream_size_data - 1)? 0 : _reduceadd_count_32 + 1;
       if(__delay_data_59) begin
-        _reduceadd_data_32 <= 1'd0 + __substreamoutput_data_28;
+        _reduceadd_data_32 <= 1'sd0 + __substreamoutput_data_28;
       end 
       if(__delay_data_59) begin
         _reduceadd_count_32 <= 0;
       end 
       if(_reduceadd_count_32 == 0) begin
-        _reduceadd_data_32 <= 1'd0 + __substreamoutput_data_28;
+        _reduceadd_data_32 <= 1'sd0 + __substreamoutput_data_28;
       end 
       _pulse_data_34 <= _pulse_count_34 == act_stream_size_data - 1;
       _pulse_count_34 <= (_pulse_count_34 == act_stream_size_data - 1)? 0 : _pulse_count_34 + 1;
@@ -3263,10 +3263,10 @@ module blinkled
       if(_pulse_count_34 == 0) begin
         _pulse_data_34 <= _pulse_count_34 == act_stream_size_data - 1;
       end 
-      _greaterthan_data_35 <= _reduceadd_data_32 > 1'd0;
+      _greaterthan_data_35 <= _reduceadd_data_32 > 1'sd0;
       __delay_data_60 <= _reduceadd_data_32;
       __delay_data_61 <= _pulse_data_34;
-      _cond_data_37 <= (_greaterthan_data_35)? __delay_data_60 : 1'd0;
+      _cond_data_37 <= (_greaterthan_data_35)? __delay_data_60 : 1'sd0;
       __delay_data_62 <= __delay_data_61;
       if(th_comp == 102) begin
         _act_stream_a_fsm_sel <= 1;

@@ -166,14 +166,14 @@ module main
       _cond_data_11 <= 0;
     end else begin
       _sra_data_2 <= xdata >>> ydata;
-      _minus_data_3 <= ydata - 2'd1;
-      _eq_data_9 <= ydata == 1'd0;
+      _minus_data_3 <= ydata - 2'sd1;
+      _eq_data_9 <= ydata == 1'sd0;
       __delay_data_12 <= xdata;
       _sra_data_5 <= __delay_data_12 >>> _minus_data_3;
       __delay_data_13 <= _sra_data_2;
       __delay_data_15 <= _eq_data_9;
       __delay_data_18 <= __delay_data_12;
-      _pointer_data_6 <= _sra_data_5[1'd0];
+      _pointer_data_6 <= _sra_data_5[1'sd0];
       __delay_data_14 <= __delay_data_13;
       __delay_data_16 <= __delay_data_15;
       __delay_data_19 <= __delay_data_18;

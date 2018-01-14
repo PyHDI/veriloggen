@@ -1065,9 +1065,9 @@ module blinkled
 
   always @(posedge CLK) begin
     if(RST) begin
-      _reduceadd_data_4 <= 1'd0;
+      _reduceadd_data_4 <= 1'sd0;
       _reduceadd_count_4 <= 0;
-      _pulse_data_6 <= 1'd0;
+      _pulse_data_6 <= 1'sd0;
       _pulse_count_6 <= 0;
       _mystream_a_fsm_sel <= 0;
       _mystream_a_idle <= 1;
@@ -1078,13 +1078,13 @@ module blinkled
       _reduceadd_data_4 <= _reduceadd_data_4 + mystream_a_data;
       _reduceadd_count_4 <= (_reduceadd_count_4 == mystream_size_data - 1)? 0 : _reduceadd_count_4 + 1;
       if(_mystream_reduce_reset) begin
-        _reduceadd_data_4 <= 1'd0 + mystream_a_data;
+        _reduceadd_data_4 <= 1'sd0 + mystream_a_data;
       end 
       if(_mystream_reduce_reset) begin
         _reduceadd_count_4 <= 0;
       end 
       if(_reduceadd_count_4 == 0) begin
-        _reduceadd_data_4 <= 1'd0 + mystream_a_data;
+        _reduceadd_data_4 <= 1'sd0 + mystream_a_data;
       end 
       _pulse_data_6 <= _pulse_count_6 == mystream_size_data - 1;
       _pulse_count_6 <= (_pulse_count_6 == mystream_size_data - 1)? 0 : _pulse_count_6 + 1;

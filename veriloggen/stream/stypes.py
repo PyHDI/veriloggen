@@ -2144,7 +2144,7 @@ class Int(_Constant):
         self.point = 0
 
     def _implement(self, m, seq, svalid=None, senable=None):
-        data = vtypes.Int(self.value, width=self.width)
+        data = vtypes.Int(self.value, width=self.width, signed=self.signed)
         self.sig_data = data
 
 
