@@ -1618,14 +1618,14 @@ def Max(*args):
     if len(args) == 1:
         return args[0]
     initval = args[0]
-    return op_tree(lambda x, y: Mux(x > y, x, y), initval, *args[1:])
+    return op_tree(lambda x, y: Mux(x > y, x, y), initval, *args)
 
 
 def Min(*args):
     if len(args) == 1:
         return args[0]
     initval = args[0]
-    return op_tree(lambda x, y: Mux(x < y, x, y), initval, *args[1:])
+    return op_tree(lambda x, y: Mux(x < y, x, y), initval, *args)
 
 
 def Average(*args):
