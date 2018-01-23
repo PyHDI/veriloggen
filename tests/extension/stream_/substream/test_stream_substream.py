@@ -194,9 +194,9 @@ module main
   reg signed [32-1:0] _plus_data_6;
   reg signed [32-1:0] _plus_data_8;
   reg signed [32-1:0] __delay_data_20;
-  reg [32-1:0] __variable_wdata_0;
+  reg signed [32-1:0] __variable_wdata_0;
   assign adata = __variable_wdata_0;
-  reg [32-1:0] __variable_wdata_1;
+  reg signed [32-1:0] __variable_wdata_1;
   assign bdata = __variable_wdata_1;
   reg signed [32-1:0] __delay_data_21;
   reg signed [32-1:0] __delay_data_22;
