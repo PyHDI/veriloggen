@@ -1712,11 +1712,13 @@ class _Variable(_Numeric):
             raise TypeError("Variable with Input type is not supported.")
 
         if isinstance(self.sig_data, vtypes.Wire):
+            width = self.bit_length()
+            signed = self.get_signed()
             if hasattr(self, 'sig_data_write'):
                 data = self.sig_data_write
             else:
                 data = self.m.Reg(self.name('wdata'),
-                                  self.bit_length(), initval=0)
+                                  width, initval=0, signed=signed)
                 self.sig_data_write = data
                 self.sig_data.assign(data)
         else:
@@ -2181,8 +2183,10 @@ class Str(_Constant):
 
 
 class Substream(_SpecialOperator):
-    def __init__(self, substrm):
+    def __init__(self, substrm, strm=None):
         _SpecialOperator.__init__(self)
+        self.strm = strm
+        self._set_managers()
 
         self.width = 1
         self.point = 0
@@ -2210,14 +2214,22 @@ class Substream(_SpecialOperator):
         self.latency = substrm.pipeline_depth() + 1
         self.conds = OrderedDict()
 
+    def _set_managers(self):
+        self._set_module(getattr(self.strm, 'module', None))
+        self._set_seq(getattr(self.strm, 'seq', None))
+
     def write(self, name, data, cond=None):
         wdata = _to_constant(data)
         self.args.append(wdata)
+        if name in self.conds:
+            raise ValueError('already assigned')
         self.conds[name] = cond
 
     def read(self, name):
         var = self.substrm.get_named_numeric(name)
-        return _SubstreamOutput(self, var)
+        if self.strm is None:
+            return _SubstreamOutput(self, var)
+        return self.strm._SubstreamOutput(self, var)
 
     def _implement(self, m, seq, svalid=None, senable=None):
         arg_data = [arg.sig_data for arg in self.args]

@@ -564,7 +564,7 @@ module blinkled
   reg _ram_a_cond_1_1;
   reg _ram_a_cond_2_1;
   reg _ram_a_cond_2_2;
-  reg [32-1:0] __variable_wdata_0;
+  reg signed [32-1:0] __variable_wdata_0;
   assign mystream_a_data = __variable_wdata_0;
   reg [32-1:0] _d1__mystream_a_fsm_1;
   reg __mystream_a_fsm_1_cond_1_0_1;
@@ -581,7 +581,7 @@ module blinkled
   reg _ram_b_cond_1_1;
   reg _ram_b_cond_2_1;
   reg _ram_b_cond_2_2;
-  reg [32-1:0] __variable_wdata_1;
+  reg signed [32-1:0] __variable_wdata_1;
   assign mystream_b_data = __variable_wdata_1;
   reg [32-1:0] _d1__mystream_b_fsm_2;
   reg __mystream_b_fsm_2_cond_1_0_1;

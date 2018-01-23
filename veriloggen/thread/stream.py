@@ -163,7 +163,7 @@ class Stream(BaseStream):
         return var
 
     def substream(self, substrm):
-        sub = Substream(self.module, self.clock, self.reset, substrm)
+        sub = Substream(self.module, self.clock, self.reset, substrm, self)
         self.substreams.append(sub)
         return sub
 
@@ -934,17 +934,23 @@ class Stream(BaseStream):
 
 class Substream(BaseSubstream):
 
-    def __init__(self, module, clock, reset, substrm):
+    def __init__(self, module, clock, reset, substrm, strm=None):
         self.module = module
         self.clock = clock
         self.reset = reset
-        BaseSubstream.__init__(self, substrm)
+        BaseSubstream.__init__(self, substrm, strm)
 
     def to_source(self, name, data):
         source_name = self.substrm._dataname(name)
         cond = self.module.Reg(compiler._tmp_name(self.name('%s_cond' % source_name)),
                                initval=0)
         BaseSubstream.write(self, source_name, data, cond)
+
+    def to_constant(self, name, data):
+        constant_name = self.substrm._dataname(name)
+        cond = self.module.Reg(compiler._tmp_name(self.name('%s_cond' % constant_name)),
+                               initval=0)
+        BaseSubstream.write(self, constant_name, data, cond)
 
     def from_sink(self, name):
         sink_name = self.substrm._dataname(name)

@@ -851,7 +851,7 @@ module blinkled
                    (__tmp_44_2 == 2)? ram_a_2_0_rdata : 
                    (__tmp_44_2 == 3)? ram_a_3_0_rdata : 0;
   assign _tmp_50 = _tmp_45;
-  reg [32-1:0] __variable_wdata_0;
+  reg signed [32-1:0] __variable_wdata_0;
   assign mystream_a_data = __variable_wdata_0;
   reg [32-1:0] _d1__mystream_a_fsm_1;
   reg __mystream_a_fsm_1_cond_1_0_1;
@@ -891,7 +891,7 @@ module blinkled
                    (__tmp_51_2 == 2)? ram_b_2_0_rdata : 
                    (__tmp_51_2 == 3)? ram_b_3_0_rdata : 0;
   assign _tmp_57 = _tmp_52;
-  reg [32-1:0] __variable_wdata_1;
+  reg signed [32-1:0] __variable_wdata_1;
   assign mystream_b_data = __variable_wdata_1;
   reg [32-1:0] _d1__mystream_b_fsm_2;
   reg __mystream_b_fsm_2_cond_1_0_1;

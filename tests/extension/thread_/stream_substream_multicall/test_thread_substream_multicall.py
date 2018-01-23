@@ -608,7 +608,7 @@ module blinkled
   reg _ram_a_cond_1_1;
   reg _ram_a_cond_2_1;
   reg _ram_a_cond_2_2;
-  reg [32-1:0] __variable_wdata_0;
+  reg signed [32-1:0] __variable_wdata_0;
   assign mul_stream_x_data = __variable_wdata_0;
   reg [32-1:0] _d1__mul_stream_x_fsm_1;
   reg __mul_stream_x_fsm_1_cond_1_0_1;
@@ -625,7 +625,7 @@ module blinkled
   reg _ram_b_cond_1_1;
   reg _ram_b_cond_2_1;
   reg _ram_b_cond_2_2;
-  reg [32-1:0] __variable_wdata_1;
+  reg signed [32-1:0] __variable_wdata_1;
   assign mul_stream_y_data = __variable_wdata_1;
   reg [32-1:0] _d1__mul_stream_y_fsm_2;
   reg __mul_stream_y_fsm_2_cond_1_0_1;
@@ -883,7 +883,7 @@ module blinkled
   reg _ram_a_cond_7_1;
   reg _ram_a_cond_8_1;
   reg _ram_a_cond_8_2;
-  reg [32-1:0] __variable_wdata_3;
+  reg signed [32-1:0] __variable_wdata_3;
   assign mac_stream_a_data = __variable_wdata_3;
   reg [32-1:0] _d1__mac_stream_a_fsm_1;
   reg __mac_stream_a_fsm_1_cond_1_0_1;
@@ -900,12 +900,12 @@ module blinkled
   reg _ram_b_cond_7_1;
   reg _ram_b_cond_8_1;
   reg _ram_b_cond_8_2;
-  reg [32-1:0] __variable_wdata_4;
+  reg signed [32-1:0] __variable_wdata_4;
   assign mac_stream_b_data = __variable_wdata_4;
   reg [32-1:0] _d1__mac_stream_b_fsm_2;
   reg __mac_stream_b_fsm_2_cond_1_0_1;
   reg __mac_stream_b_fsm_2_cond_2_1_1;
-  reg [32-1:0] __parametervariable_wdata_11;
+  reg signed [32-1:0] __parametervariable_wdata_11;
   assign mac_stream_size_data = __parametervariable_wdata_11;
   reg [32-1:0] _mac_stream_sum_fsm_3;
   localparam _mac_stream_sum_fsm_3_init = 0;
@@ -1177,7 +1177,7 @@ module blinkled
   reg _ram_a_cond_13_1;
   reg _ram_a_cond_14_1;
   reg _ram_a_cond_14_2;
-  reg [32-1:0] __variable_wdata_17;
+  reg signed [32-1:0] __variable_wdata_17;
   assign act_stream_a_data = __variable_wdata_17;
   reg [32-1:0] _d1__act_stream_a_fsm_1;
   reg __act_stream_a_fsm_1_cond_1_0_1;
@@ -1194,12 +1194,12 @@ module blinkled
   reg _ram_b_cond_13_1;
   reg _ram_b_cond_14_1;
   reg _ram_b_cond_14_2;
-  reg [32-1:0] __variable_wdata_18;
+  reg signed [32-1:0] __variable_wdata_18;
   assign act_stream_b_data = __variable_wdata_18;
   reg [32-1:0] _d1__act_stream_b_fsm_2;
   reg __act_stream_b_fsm_2_cond_1_0_1;
   reg __act_stream_b_fsm_2_cond_2_1_1;
-  reg [32-1:0] __parametervariable_wdata_29;
+  reg signed [32-1:0] __parametervariable_wdata_29;
   assign act_stream_size_data = __parametervariable_wdata_29;
   reg [32-1:0] _act_stream_sum_fsm_3;
   localparam _act_stream_sum_fsm_3_init = 0;
