@@ -341,7 +341,9 @@ class FSM(vtypes.VeriloggenNode):
         body = tuple([self._get_when_statement(index)
                       for index in sorted(indexes, key=lambda x:x)])
         case = vtypes.Case(self.state)(*body)
-        ret.append(case)
+
+        if len(case.statement) > 0:
+            ret.append(case)
 
         return ret
 
