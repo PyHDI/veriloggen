@@ -803,14 +803,16 @@ class Stream(BaseStream):
         substreams = self._collect_substreams()
 
         for sub in substreams:
-            reset_delay = self.ram_delay + 1 + sub.start_stage
+            reset_delay = self.ram_delay + 1 + sub.start_stage + sub.reset_delay
+            sub_fsm = sub.substrm.fsm
+            sub_fsm._set_index(0)
             if sub.substrm.reduce_reset is not None:
-                self.fsm.If(start_flag).Delay(reset_delay)(
+                sub_fsm.If(start_flag).Delay(reset_delay)(
                     sub.substrm.reduce_reset(0)
                 )
 
             for cond in sub.conds.values():
-                self.fsm.If(start_flag)(
+                sub_fsm.If(start_flag)(
                     cond(1)
                 )
 
@@ -849,15 +851,18 @@ class Stream(BaseStream):
                 self.reduce_reset(1)
             )
 
+        end_flag = self.fsm.state == self.fsm.current
+
         for sub in substreams:
-            reset_delay = sub.start_stage
+            sub_fsm = sub.substrm.fsm
+            sub_fsm._set_index(0)
             if sub.substrm.reduce_reset is not None:
-                self.fsm(
+                sub_fsm.If(end_flag)(
                     sub.substrm.reduce_reset(1)
                 )
 
             for cond in sub.conds.values():
-                self.fsm(
+                sub_fsm.If(end_flag)(
                     cond(0)
                 )
 
@@ -938,6 +943,7 @@ class Substream(BaseSubstream):
         self.module = module
         self.clock = clock
         self.reset = reset
+        self.reset_delay = 0
         BaseSubstream.__init__(self, substrm, strm)
 
     def to_source(self, name, data):
@@ -958,6 +964,9 @@ class Substream(BaseSubstream):
 
     def _collect_substreams(self):
         ret = []
+        self.reset_delay = 0
         ret.append(self)
         ret.extend(self.substrm._collect_substreams())
+        for s in ret:
+            s.reset_delay += 1
         return ret

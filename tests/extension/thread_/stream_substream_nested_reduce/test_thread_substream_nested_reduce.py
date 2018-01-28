@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import thread_stream_substream_constant
+import thread_stream_substream_nested_reduce
 
 expected_verilog = """
 module test;
@@ -486,16 +486,82 @@ module blinkled
     .ram_c_0_wenable(ram_c_0_wenable)
   );
 
-  reg [32-1:0] _inc_stream_fsm;
-  localparam _inc_stream_fsm_init = 0;
-  reg _inc_stream_start;
-  reg _inc_stream_busy;
-  reg [16-1:0] _inc_stream_a_fsm_sel;
-  reg _inc_stream_a_idle;
-  reg [16-1:0] _inc_stream_b_fsm_sel;
-  reg _inc_stream_b_idle;
-  reg [16-1:0] _inc_stream_const_fsm_sel;
-  reg [16-1:0] _inc_stream_c_fsm_sel;
+  reg [10-1:0] ram_d_0_addr;
+  wire [32-1:0] ram_d_0_rdata;
+  reg [32-1:0] ram_d_0_wdata;
+  reg ram_d_0_wenable;
+
+  ram_d
+  inst_ram_d
+  (
+    .CLK(CLK),
+    .ram_d_0_addr(ram_d_0_addr),
+    .ram_d_0_rdata(ram_d_0_rdata),
+    .ram_d_0_wdata(ram_d_0_wdata),
+    .ram_d_0_wenable(ram_d_0_wenable)
+  );
+
+  reg [32-1:0] _macstream_fsm;
+  localparam _macstream_fsm_init = 0;
+  reg _macstream_start;
+  reg _macstream_busy;
+  reg [16-1:0] _macstream_a_fsm_sel;
+  reg _macstream_a_idle;
+  reg [16-1:0] _macstream_b_fsm_sel;
+  reg _macstream_b_idle;
+  reg [16-1:0] _macstream_const_fsm_sel;
+  reg _macstream_reduce_reset;
+  reg [16-1:0] _macstream_c_fsm_sel;
+  reg [16-1:0] _macstream_v_fsm_sel;
+  reg [32-1:0] _neststream_fsm;
+  localparam _neststream_fsm_init = 0;
+  reg _neststream_start;
+  reg _neststream_busy;
+  reg [16-1:0] _neststream_a_fsm_sel;
+  reg _neststream_a_idle;
+  reg [16-1:0] _neststream_b_fsm_sel;
+  reg _neststream_b_idle;
+  reg [16-1:0] _neststream_const_fsm_sel;
+  wire signed [32-1:0] macstream_a_data;
+  wire signed [32-1:0] macstream_b_data;
+  wire signed [32-1:0] macstream_const_data;
+  wire signed [64-1:0] _times_mul_odata_3;
+  reg signed [64-1:0] _times_mul_odata_reg_3;
+  wire signed [32-1:0] _times_data_3;
+  assign _times_data_3 = _times_mul_odata_reg_3;
+  wire _times_mul_update_3;
+  assign _times_mul_update_3 = 1;
+
+  multiplier_0
+  _times_mul_3
+  (
+    .CLK(CLK),
+    .update(_times_mul_update_3),
+    .a(macstream_a_data),
+    .b(macstream_b_data),
+    .c(_times_mul_odata_3)
+  );
+
+  reg signed [1-1:0] __delay_data_19;
+  reg signed [1-1:0] __delay_data_20;
+  reg signed [1-1:0] __delay_data_21;
+  reg signed [1-1:0] __delay_data_22;
+  reg signed [1-1:0] __delay_data_23;
+  reg signed [1-1:0] __delay_data_24;
+  reg signed [1-1:0] __delay_data_25;
+  reg signed [32-1:0] _reduceadd_data_6;
+  reg [33-1:0] _reduceadd_count_6;
+  reg [1-1:0] _pulse_data_8;
+  reg [33-1:0] _pulse_count_8;
+  wire signed [32-1:0] macstream_c_data;
+  assign macstream_c_data = _reduceadd_data_6;
+  wire [1-1:0] macstream_v_data;
+  assign macstream_v_data = _pulse_data_8;
+  reg _substream_macstream_a_data_cond_18_0;
+  reg _substream_macstream_b_data_cond_18_1;
+  reg _substream_macstream_const_data_cond_18_2;
+  reg [16-1:0] _neststream_c_fsm_sel;
+  reg [16-1:0] _neststream_v_fsm_sel;
   reg [32-1:0] _mystream_fsm;
   localparam _mystream_fsm_init = 0;
   reg _mystream_start;
@@ -505,21 +571,48 @@ module blinkled
   reg [16-1:0] _mystream_y_fsm_sel;
   reg _mystream_y_idle;
   reg [16-1:0] _mystream_const_fsm_sel;
-  wire signed [32-1:0] inc_stream_a_data;
-  wire signed [32-1:0] inc_stream_b_data;
-  wire signed [32-1:0] inc_stream_const_data;
-  reg signed [32-1:0] _plus_data_3;
-  reg signed [32-1:0] _plus_data_4;
-  wire signed [32-1:0] inc_stream_c_data;
-  assign inc_stream_c_data = _plus_data_4;
-  reg _substream_inc_stream_a_data_cond_8_0;
-  reg _substream_inc_stream_b_data_cond_8_1;
-  reg _substream_inc_stream_const_data_cond_8_2;
+  wire signed [32-1:0] neststream_a_data;
+  wire signed [32-1:0] neststream_b_data;
+  wire signed [32-1:0] neststream_const_data;
+  reg signed [32-1:0] _plus_data_12;
+  reg signed [32-1:0] _plus_data_16;
+  reg signed [32-1:0] _plus_data_14;
+  reg signed [32-1:0] __delay_data_35;
+  reg signed [32-1:0] __variable_wdata_0;
+  assign macstream_a_data = __variable_wdata_0;
+  reg signed [32-1:0] __variable_wdata_1;
+  assign macstream_b_data = __variable_wdata_1;
+  reg signed [32-1:0] __parametervariable_wdata_2;
+  assign macstream_const_data = __parametervariable_wdata_2;
+  reg signed [32-1:0] __delay_data_36;
+  reg signed [32-1:0] __delay_data_37;
+  reg signed [32-1:0] __delay_data_38;
+  reg signed [32-1:0] __delay_data_39;
+  reg signed [32-1:0] __delay_data_40;
+  reg signed [32-1:0] __delay_data_41;
+  reg signed [32-1:0] __delay_data_42;
+  reg signed [32-1:0] __delay_data_43;
+  reg signed [32-1:0] __delay_data_44;
+  reg signed [32-1:0] __substreamoutput_data_26;
+  reg [1-1:0] __substreamoutput_data_30;
+  reg signed [32-1:0] __delay_data_45;
+  reg signed [32-1:0] _plus_data_27;
+  reg [1-1:0] __delay_data_46;
+  reg signed [32-1:0] _plus_data_28;
+  reg [1-1:0] __delay_data_47;
+  wire signed [32-1:0] neststream_c_data;
+  assign neststream_c_data = _plus_data_28;
+  wire [1-1:0] neststream_v_data;
+  assign neststream_v_data = __delay_data_47;
+  reg _substream_neststream_a_data_cond_34_3;
+  reg _substream_neststream_b_data_cond_34_4;
+  reg _substream_neststream_const_data_cond_34_5;
   reg [16-1:0] _mystream_z_fsm_sel;
+  reg [16-1:0] _mystream_v_fsm_sel;
   reg [32-1:0] th_comp;
   localparam th_comp_init = 0;
-  reg signed [32-1:0] _th_comp_size_3;
-  reg signed [32-1:0] _th_comp_offset_4;
+  reg signed [32-1:0] _th_comp_size_6;
+  reg signed [32-1:0] _th_comp_offset_7;
   reg [10-1:0] _tmp_0;
   reg [32-1:0] _tmp_1;
   reg [32-1:0] _tmp_2;
@@ -566,61 +659,77 @@ module blinkled
   reg __tmp_fsm_1_cond_4_0_1;
   reg _tmp_25;
   reg __tmp_fsm_1_cond_5_1_1;
-  reg signed [32-1:0] _th_comp_size_5;
-  reg signed [32-1:0] _th_comp_offset_6;
-  reg [32-1:0] _inc_stream_a_fsm_1;
-  localparam _inc_stream_a_fsm_1_init = 0;
-  reg [10-1:0] _inc_stream_a_offset_1;
-  reg [11-1:0] _inc_stream_a_size_1;
-  reg [10-1:0] _inc_stream_a_stride_1;
-  reg [11-1:0] _inc_stream_a_count_1;
-  reg [10-1:0] _inc_stream_a_raddr_1;
-  reg _inc_stream_a_renable_1;
+  reg signed [32-1:0] _th_comp_size_8;
+  reg signed [32-1:0] _th_comp_offset_9;
+  reg [32-1:0] _macstream_a_fsm_1;
+  localparam _macstream_a_fsm_1_init = 0;
+  reg [10-1:0] _macstream_a_offset_1;
+  reg [11-1:0] _macstream_a_size_1;
+  reg [10-1:0] _macstream_a_stride_1;
+  reg [11-1:0] _macstream_a_count_1;
+  reg [10-1:0] _macstream_a_raddr_1;
+  reg _macstream_a_renable_1;
   reg _tmp_26;
   reg _ram_a_cond_1_1;
   reg _ram_a_cond_2_1;
   reg _ram_a_cond_2_2;
-  reg signed [32-1:0] __variable_wdata_0;
-  assign inc_stream_a_data = __variable_wdata_0;
-  reg [32-1:0] _d1__inc_stream_a_fsm_1;
-  reg __inc_stream_a_fsm_1_cond_1_0_1;
-  reg __inc_stream_a_fsm_1_cond_2_1_1;
-  reg [32-1:0] _inc_stream_b_fsm_2;
-  localparam _inc_stream_b_fsm_2_init = 0;
-  reg [10-1:0] _inc_stream_b_offset_2;
-  reg [11-1:0] _inc_stream_b_size_2;
-  reg [10-1:0] _inc_stream_b_stride_2;
-  reg [11-1:0] _inc_stream_b_count_2;
-  reg [10-1:0] _inc_stream_b_raddr_2;
-  reg _inc_stream_b_renable_2;
+  reg [32-1:0] _d1__macstream_a_fsm_1;
+  reg __macstream_a_fsm_1_cond_1_0_1;
+  reg __macstream_a_fsm_1_cond_2_1_1;
+  reg [32-1:0] _macstream_b_fsm_2;
+  localparam _macstream_b_fsm_2_init = 0;
+  reg [10-1:0] _macstream_b_offset_2;
+  reg [11-1:0] _macstream_b_size_2;
+  reg [10-1:0] _macstream_b_stride_2;
+  reg [11-1:0] _macstream_b_count_2;
+  reg [10-1:0] _macstream_b_raddr_2;
+  reg _macstream_b_renable_2;
   reg _tmp_27;
   reg _ram_b_cond_1_1;
   reg _ram_b_cond_2_1;
   reg _ram_b_cond_2_2;
-  reg signed [32-1:0] __variable_wdata_1;
-  assign inc_stream_b_data = __variable_wdata_1;
-  reg [32-1:0] _d1__inc_stream_b_fsm_2;
-  reg __inc_stream_b_fsm_2_cond_1_0_1;
-  reg __inc_stream_b_fsm_2_cond_2_1_1;
-  reg signed [32-1:0] __parametervariable_wdata_2;
-  assign inc_stream_const_data = __parametervariable_wdata_2;
-  reg [32-1:0] _inc_stream_c_fsm_3;
-  localparam _inc_stream_c_fsm_3_init = 0;
-  reg [10-1:0] _inc_stream_c_offset_3;
-  reg [11-1:0] _inc_stream_c_size_3;
-  reg [10-1:0] _inc_stream_c_stride_3;
-  reg [11-1:0] _inc_stream_c_count_3;
-  reg [10-1:0] _inc_stream_c_waddr_3;
-  reg _inc_stream_c_wenable_3;
-  reg signed [32-1:0] _inc_stream_c_wdata_3;
+  reg [32-1:0] _d1__macstream_b_fsm_2;
+  reg __macstream_b_fsm_2_cond_1_0_1;
+  reg __macstream_b_fsm_2_cond_2_1_1;
+  reg [32-1:0] _macstream_c_fsm_3;
+  localparam _macstream_c_fsm_3_init = 0;
+  reg [10-1:0] _macstream_c_offset_3;
+  reg [11-1:0] _macstream_c_size_3;
+  reg [10-1:0] _macstream_c_stride_3;
+  reg [11-1:0] _macstream_c_count_3;
+  reg [10-1:0] _macstream_c_waddr_3;
+  reg _macstream_c_wenable_3;
+  reg signed [32-1:0] _macstream_c_wdata_3;
   reg _ram_c_cond_0_1;
-  reg [32-1:0] _d1__inc_stream_c_fsm_3;
-  reg __inc_stream_c_fsm_3_cond_7_0_1;
-  reg __inc_stream_c_fsm_3_cond_8_1_1;
-  reg [32-1:0] _d1__inc_stream_fsm;
-  reg __inc_stream_fsm_cond_0_0_1;
-  wire _inc_stream_done;
-  assign _inc_stream_done = _inc_stream_a_idle && _inc_stream_b_idle;
+  reg [32-1:0] _d1__macstream_c_fsm_3;
+  reg __macstream_c_fsm_3_cond_13_0_1;
+  reg __macstream_c_fsm_3_cond_14_1_1;
+  reg [32-1:0] _macstream_v_fsm_4;
+  localparam _macstream_v_fsm_4_init = 0;
+  reg [10-1:0] _macstream_v_offset_4;
+  reg [11-1:0] _macstream_v_size_4;
+  reg [10-1:0] _macstream_v_stride_4;
+  reg [11-1:0] _macstream_v_count_4;
+  reg [10-1:0] _macstream_v_waddr_4;
+  reg _macstream_v_wenable_4;
+  reg signed [32-1:0] _macstream_v_wdata_4;
+  reg _ram_d_cond_0_1;
+  reg [32-1:0] _d1__macstream_v_fsm_4;
+  reg __macstream_v_fsm_4_cond_13_0_1;
+  reg __macstream_v_fsm_4_cond_14_1_1;
+  reg [32-1:0] _d1__macstream_fsm;
+  reg __macstream_fsm_cond_0_0_1;
+  reg [32-1:0] _d2__macstream_fsm;
+  reg [32-1:0] _d3__macstream_fsm;
+  reg [32-1:0] _d4__macstream_fsm;
+  reg [32-1:0] _d5__macstream_fsm;
+  reg __macstream_fsm_cond_0_1_1;
+  reg __macstream_fsm_cond_0_1_2;
+  reg __macstream_fsm_cond_0_1_3;
+  reg __macstream_fsm_cond_0_1_4;
+  reg __macstream_fsm_cond_0_1_5;
+  wire _macstream_done;
+  assign _macstream_done = _macstream_a_idle && _macstream_b_idle;
   reg [10-1:0] _tmp_28;
   reg [32-1:0] _tmp_29;
   reg [32-1:0] _tmp_30;
@@ -703,24 +812,25 @@ module blinkled
   reg __tmp_fsm_4_cond_4_0_1;
   reg _tmp_75;
   reg __tmp_fsm_4_cond_5_1_1;
-  reg signed [32-1:0] _th_comp_size_7;
-  reg signed [32-1:0] _th_comp_offset_8;
-  reg signed [32-1:0] _th_comp_i_9;
+  reg signed [32-1:0] _th_comp_size_10;
+  reg signed [32-1:0] _th_comp_offset_11;
+  reg signed [32-1:0] _th_comp_sum_12;
+  reg signed [32-1:0] _th_comp_count_13;
+  reg signed [32-1:0] _th_comp_i_14;
   reg _tmp_76;
   reg _ram_a_cond_4_1;
   reg _ram_a_cond_5_1;
   reg _ram_a_cond_5_2;
   reg signed [32-1:0] _tmp_77;
-  reg signed [32-1:0] _th_comp_a_10;
+  reg signed [32-1:0] _th_comp_a_15;
   reg _tmp_78;
   reg _ram_b_cond_4_1;
   reg _ram_b_cond_5_1;
   reg _ram_b_cond_5_2;
   reg signed [32-1:0] _tmp_79;
-  reg signed [32-1:0] _th_comp_b_11;
-  reg signed [32-1:0] _th_comp_const_12;
-  reg signed [32-1:0] _th_comp_sum_13;
+  reg signed [32-1:0] _th_comp_b_16;
   reg _ram_c_cond_1_1;
+  reg _ram_d_cond_1_1;
   reg [10-1:0] _tmp_80;
   reg [32-1:0] _tmp_81;
   reg [32-1:0] _tmp_82;
@@ -757,23 +867,23 @@ module blinkled
   reg _tmp_101;
   reg [32-1:0] _d1__tmp_fsm_5;
   reg __tmp_fsm_5_cond_5_0_1;
-  reg signed [32-1:0] _th_comp_size_14;
-  reg signed [32-1:0] _th_comp_offset_stream_15;
-  reg signed [32-1:0] _th_comp_offset_seq_16;
-  reg signed [32-1:0] _th_comp_all_ok_17;
-  reg signed [32-1:0] _th_comp_i_18;
+  reg signed [32-1:0] _th_comp_size_17;
+  reg signed [32-1:0] _th_comp_offset_stream_18;
+  reg signed [32-1:0] _th_comp_offset_seq_19;
+  reg signed [32-1:0] _th_comp_all_ok_20;
+  reg signed [32-1:0] _th_comp_i_21;
   reg _tmp_102;
   reg _ram_c_cond_2_1;
   reg _ram_c_cond_3_1;
   reg _ram_c_cond_3_2;
   reg signed [32-1:0] _tmp_103;
-  reg signed [32-1:0] _th_comp_st_19;
+  reg signed [32-1:0] _th_comp_st_22;
   reg _tmp_104;
   reg _ram_c_cond_4_1;
   reg _ram_c_cond_5_1;
   reg _ram_c_cond_5_2;
   reg signed [32-1:0] _tmp_105;
-  reg signed [32-1:0] _th_comp_sq_20;
+  reg signed [32-1:0] _th_comp_sq_23;
   reg [10-1:0] _tmp_106;
   reg [32-1:0] _tmp_107;
   reg [32-1:0] _tmp_108;
@@ -820,14 +930,41 @@ module blinkled
   reg __tmp_fsm_7_cond_4_0_1;
   reg _tmp_131;
   reg __tmp_fsm_7_cond_5_1_1;
-  reg signed [32-1:0] _th_comp_size_21;
-  reg signed [32-1:0] _th_comp_offset_22;
+  reg signed [32-1:0] _th_comp_size_24;
+  reg signed [32-1:0] _th_comp_offset_25;
   wire signed [32-1:0] mystream_x_data;
   wire signed [32-1:0] mystream_y_data;
   wire signed [32-1:0] mystream_const_data;
-  reg signed [32-1:0] __substreamoutput_data_9;
+  reg signed [32-1:0] __variable_wdata_9;
+  assign neststream_a_data = __variable_wdata_9;
+  reg signed [32-1:0] __variable_wdata_10;
+  assign neststream_b_data = __variable_wdata_10;
+  reg signed [32-1:0] __parametervariable_wdata_11;
+  assign neststream_const_data = __parametervariable_wdata_11;
+  reg signed [32-1:0] __delay_data_51;
+  reg signed [32-1:0] __delay_data_52;
+  reg signed [32-1:0] __delay_data_53;
+  reg signed [32-1:0] __delay_data_54;
+  reg signed [32-1:0] __delay_data_55;
+  reg signed [32-1:0] __delay_data_56;
+  reg signed [32-1:0] __delay_data_57;
+  reg signed [32-1:0] __delay_data_58;
+  reg signed [32-1:0] __delay_data_59;
+  reg signed [32-1:0] __delay_data_60;
+  reg signed [32-1:0] __delay_data_61;
+  reg signed [32-1:0] __delay_data_62;
+  reg signed [32-1:0] __delay_data_63;
+  reg signed [32-1:0] __delay_data_64;
+  reg signed [32-1:0] __delay_data_65;
+  reg signed [32-1:0] __substreamoutput_data_48;
+  reg [1-1:0] __substreamoutput_data_49;
+  reg signed [32-1:0] __delay_data_66;
+  reg signed [32-1:0] _plus_data_50;
+  reg [1-1:0] __delay_data_67;
   wire signed [32-1:0] mystream_z_data;
-  assign mystream_z_data = __substreamoutput_data_9;
+  assign mystream_z_data = _plus_data_50;
+  wire [1-1:0] mystream_v_data;
+  assign mystream_v_data = __delay_data_67;
   reg [32-1:0] _mystream_x_fsm_1;
   localparam _mystream_x_fsm_1_init = 0;
   reg [10-1:0] _mystream_x_offset_1;
@@ -840,8 +977,8 @@ module blinkled
   reg _ram_a_cond_7_1;
   reg _ram_a_cond_8_1;
   reg _ram_a_cond_8_2;
-  reg signed [32-1:0] __variable_wdata_5;
-  assign mystream_x_data = __variable_wdata_5;
+  reg signed [32-1:0] __variable_wdata_31;
+  assign mystream_x_data = __variable_wdata_31;
   reg [32-1:0] _d1__mystream_x_fsm_1;
   reg __mystream_x_fsm_1_cond_1_0_1;
   reg __mystream_x_fsm_1_cond_2_1_1;
@@ -857,13 +994,13 @@ module blinkled
   reg _ram_b_cond_7_1;
   reg _ram_b_cond_8_1;
   reg _ram_b_cond_8_2;
-  reg signed [32-1:0] __variable_wdata_6;
-  assign mystream_y_data = __variable_wdata_6;
+  reg signed [32-1:0] __variable_wdata_32;
+  assign mystream_y_data = __variable_wdata_32;
   reg [32-1:0] _d1__mystream_y_fsm_2;
   reg __mystream_y_fsm_2_cond_1_0_1;
   reg __mystream_y_fsm_2_cond_2_1_1;
-  reg signed [32-1:0] __parametervariable_wdata_7;
-  assign mystream_const_data = __parametervariable_wdata_7;
+  reg signed [32-1:0] __parametervariable_wdata_33;
+  assign mystream_const_data = __parametervariable_wdata_33;
   reg [32-1:0] _mystream_z_fsm_3;
   localparam _mystream_z_fsm_3_init = 0;
   reg [10-1:0] _mystream_z_offset_3;
@@ -875,10 +1012,23 @@ module blinkled
   reg signed [32-1:0] _mystream_z_wdata_3;
   reg _ram_c_cond_6_1;
   reg [32-1:0] _d1__mystream_z_fsm_3;
-  reg __mystream_z_fsm_3_cond_9_0_1;
-  reg __mystream_z_fsm_3_cond_10_1_1;
+  reg __mystream_z_fsm_3_cond_22_0_1;
+  reg __mystream_z_fsm_3_cond_23_1_1;
   reg [32-1:0] _d1__mystream_fsm;
   reg __mystream_fsm_cond_0_0_1;
+  reg [32-1:0] _d6__macstream_fsm;
+  reg [32-1:0] _d7__macstream_fsm;
+  reg [32-1:0] _d8__macstream_fsm;
+  reg [32-1:0] _d9__macstream_fsm;
+  reg __macstream_fsm_cond_0_2_1;
+  reg __macstream_fsm_cond_0_2_2;
+  reg __macstream_fsm_cond_0_2_3;
+  reg __macstream_fsm_cond_0_2_4;
+  reg __macstream_fsm_cond_0_2_5;
+  reg __macstream_fsm_cond_0_2_6;
+  reg __macstream_fsm_cond_0_2_7;
+  reg __macstream_fsm_cond_0_2_8;
+  reg __macstream_fsm_cond_0_2_9;
   wire _mystream_done;
   assign _mystream_done = _mystream_x_idle && _mystream_y_idle;
   reg [10-1:0] _tmp_134;
@@ -964,23 +1114,25 @@ module blinkled
   reg __tmp_fsm_10_cond_4_0_1;
   reg _tmp_181;
   reg __tmp_fsm_10_cond_5_1_1;
-  reg signed [32-1:0] _th_comp_size_23;
-  reg signed [32-1:0] _th_comp_offset_24;
-  reg signed [32-1:0] _th_comp_i_25;
+  reg signed [32-1:0] _th_comp_size_26;
+  reg signed [32-1:0] _th_comp_offset_27;
+  reg signed [32-1:0] _th_comp_sum_28;
+  reg signed [32-1:0] _th_comp_count_29;
+  reg signed [32-1:0] _th_comp_write_offset_30;
+  reg signed [32-1:0] _th_comp_i_31;
   reg _tmp_182;
   reg _ram_a_cond_10_1;
   reg _ram_a_cond_11_1;
   reg _ram_a_cond_11_2;
   reg signed [32-1:0] _tmp_183;
-  reg signed [32-1:0] _th_comp_x_26;
+  reg signed [32-1:0] _th_comp_x_32;
   reg _tmp_184;
   reg _ram_b_cond_10_1;
   reg _ram_b_cond_11_1;
   reg _ram_b_cond_11_2;
   reg signed [32-1:0] _tmp_185;
-  reg signed [32-1:0] _th_comp_y_27;
-  reg signed [32-1:0] _th_comp_const_28;
-  reg signed [32-1:0] _th_comp_sum_29;
+  reg signed [32-1:0] _th_comp_y_33;
+  reg signed [32-1:0] _th_comp_val_34;
   reg _ram_c_cond_7_1;
   reg [10-1:0] _tmp_186;
   reg [32-1:0] _tmp_187;
@@ -1018,23 +1170,23 @@ module blinkled
   reg _tmp_207;
   reg [32-1:0] _d1__tmp_fsm_11;
   reg __tmp_fsm_11_cond_5_0_1;
-  reg signed [32-1:0] _th_comp_size_30;
-  reg signed [32-1:0] _th_comp_offset_stream_31;
-  reg signed [32-1:0] _th_comp_offset_seq_32;
-  reg signed [32-1:0] _th_comp_all_ok_33;
-  reg signed [32-1:0] _th_comp_i_34;
+  reg signed [32-1:0] _th_comp_size_35;
+  reg signed [32-1:0] _th_comp_offset_stream_36;
+  reg signed [32-1:0] _th_comp_offset_seq_37;
+  reg signed [32-1:0] _th_comp_all_ok_38;
+  reg signed [32-1:0] _th_comp_i_39;
   reg _tmp_208;
   reg _ram_c_cond_8_1;
   reg _ram_c_cond_9_1;
   reg _ram_c_cond_9_2;
   reg signed [32-1:0] _tmp_209;
-  reg signed [32-1:0] _th_comp_st_35;
+  reg signed [32-1:0] _th_comp_st_40;
   reg _tmp_210;
   reg _ram_c_cond_10_1;
   reg _ram_c_cond_11_1;
   reg _ram_c_cond_11_2;
   reg signed [32-1:0] _tmp_211;
-  reg signed [32-1:0] _th_comp_sq_36;
+  reg signed [32-1:0] _th_comp_sq_41;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -1473,11 +1625,11 @@ module blinkled
         _tmp_9 <= 1;
       end 
       _ram_a_cond_0_1 <= 1;
-      if(_inc_stream_a_renable_1) begin
-        ram_a_0_addr <= _inc_stream_a_raddr_1;
+      if(_macstream_a_renable_1) begin
+        ram_a_0_addr <= _macstream_a_raddr_1;
       end 
-      _ram_a_cond_1_1 <= _inc_stream_a_renable_1;
-      _ram_a_cond_2_1 <= _inc_stream_a_renable_1;
+      _ram_a_cond_1_1 <= _macstream_a_renable_1;
+      _ram_a_cond_2_1 <= _macstream_a_renable_1;
       if((_tmp_fsm_3 == 1) && (_tmp_58 == 0)) begin
         ram_a_0_addr <= _tmp_50 - 1;
         _tmp_58 <= _tmp_52;
@@ -1492,11 +1644,11 @@ module blinkled
         _tmp_59 <= 1;
       end 
       _ram_a_cond_3_1 <= 1;
-      if(th_comp == 23) begin
-        ram_a_0_addr <= _th_comp_i_9 + _th_comp_offset_8;
+      if(th_comp == 26) begin
+        ram_a_0_addr <= _th_comp_i_14 + _th_comp_offset_11;
       end 
-      _ram_a_cond_4_1 <= th_comp == 23;
-      _ram_a_cond_5_1 <= th_comp == 23;
+      _ram_a_cond_4_1 <= th_comp == 26;
+      _ram_a_cond_5_1 <= th_comp == 26;
       if((_tmp_fsm_6 == 1) && (_tmp_114 == 0)) begin
         ram_a_0_addr <= _tmp_106 - 1;
         _tmp_114 <= _tmp_108;
@@ -1530,11 +1682,11 @@ module blinkled
         _tmp_165 <= 1;
       end 
       _ram_a_cond_9_1 <= 1;
-      if(th_comp == 72) begin
-        ram_a_0_addr <= _th_comp_i_25 + _th_comp_offset_24;
+      if(th_comp == 82) begin
+        ram_a_0_addr <= _th_comp_i_31 + _th_comp_offset_27;
       end 
-      _ram_a_cond_10_1 <= th_comp == 72;
-      _ram_a_cond_11_1 <= th_comp == 72;
+      _ram_a_cond_10_1 <= th_comp == 82;
+      _ram_a_cond_11_1 <= th_comp == 82;
     end
   end
 
@@ -1631,11 +1783,11 @@ module blinkled
         _tmp_22 <= 1;
       end 
       _ram_b_cond_0_1 <= 1;
-      if(_inc_stream_b_renable_2) begin
-        ram_b_0_addr <= _inc_stream_b_raddr_2;
+      if(_macstream_b_renable_2) begin
+        ram_b_0_addr <= _macstream_b_raddr_2;
       end 
-      _ram_b_cond_1_1 <= _inc_stream_b_renable_2;
-      _ram_b_cond_2_1 <= _inc_stream_b_renable_2;
+      _ram_b_cond_1_1 <= _macstream_b_renable_2;
+      _ram_b_cond_2_1 <= _macstream_b_renable_2;
       if((_tmp_fsm_4 == 1) && (_tmp_71 == 0)) begin
         ram_b_0_addr <= _tmp_63 - 1;
         _tmp_71 <= _tmp_65;
@@ -1650,11 +1802,11 @@ module blinkled
         _tmp_72 <= 1;
       end 
       _ram_b_cond_3_1 <= 1;
-      if(th_comp == 25) begin
-        ram_b_0_addr <= _th_comp_i_9 + _th_comp_offset_8;
+      if(th_comp == 28) begin
+        ram_b_0_addr <= _th_comp_i_14 + _th_comp_offset_11;
       end 
-      _ram_b_cond_4_1 <= th_comp == 25;
-      _ram_b_cond_5_1 <= th_comp == 25;
+      _ram_b_cond_4_1 <= th_comp == 28;
+      _ram_b_cond_5_1 <= th_comp == 28;
       if((_tmp_fsm_7 == 1) && (_tmp_127 == 0)) begin
         ram_b_0_addr <= _tmp_119 - 1;
         _tmp_127 <= _tmp_121;
@@ -1688,11 +1840,11 @@ module blinkled
         _tmp_178 <= 1;
       end 
       _ram_b_cond_9_1 <= 1;
-      if(th_comp == 74) begin
-        ram_b_0_addr <= _th_comp_i_25 + _th_comp_offset_24;
+      if(th_comp == 84) begin
+        ram_b_0_addr <= _th_comp_i_31 + _th_comp_offset_27;
       end 
-      _ram_b_cond_10_1 <= th_comp == 74;
-      _ram_b_cond_11_1 <= th_comp == 74;
+      _ram_b_cond_10_1 <= th_comp == 84;
+      _ram_b_cond_11_1 <= th_comp == 84;
     end
   end
 
@@ -1799,12 +1951,12 @@ module blinkled
         _tmp_210 <= 1;
       end 
       _ram_c_cond_11_2 <= _ram_c_cond_11_1;
-      if(_inc_stream_c_wenable_3) begin
-        ram_c_0_addr <= _inc_stream_c_waddr_3;
-        ram_c_0_wdata <= _inc_stream_c_wdata_3;
+      if(_macstream_c_wenable_3) begin
+        ram_c_0_addr <= _macstream_c_waddr_3;
+        ram_c_0_wdata <= _macstream_c_wdata_3;
         ram_c_0_wenable <= 1;
       end 
-      _ram_c_cond_0_1 <= _inc_stream_c_wenable_3;
+      _ram_c_cond_0_1 <= _macstream_c_wenable_3;
       __tmp_39_1 <= _tmp_39;
       __tmp_40_1 <= _tmp_40;
       if((_tmp_36 || !_tmp_34) && (_tmp_37 || !_tmp_35) && _tmp_42) begin
@@ -1836,12 +1988,12 @@ module blinkled
       if((_tmp_36 || !_tmp_34) && (_tmp_37 || !_tmp_35) && (_tmp_45 == 1)) begin
         _tmp_43 <= 1;
       end 
-      if(th_comp == 29) begin
-        ram_c_0_addr <= _th_comp_i_9 + _th_comp_offset_8;
-        ram_c_0_wdata <= _th_comp_sum_13;
+      if(th_comp == 32) begin
+        ram_c_0_addr <= _th_comp_i_14 + _th_comp_offset_11;
+        ram_c_0_wdata <= _th_comp_sum_12;
         ram_c_0_wenable <= 1;
       end 
-      _ram_c_cond_1_1 <= th_comp == 29;
+      _ram_c_cond_1_1 <= th_comp == 32;
       __tmp_91_1 <= _tmp_91;
       __tmp_92_1 <= _tmp_92;
       if((_tmp_88 || !_tmp_86) && (_tmp_89 || !_tmp_87) && _tmp_94) begin
@@ -1873,16 +2025,16 @@ module blinkled
       if((_tmp_88 || !_tmp_86) && (_tmp_89 || !_tmp_87) && (_tmp_97 == 1)) begin
         _tmp_95 <= 1;
       end 
-      if(th_comp == 38) begin
-        ram_c_0_addr <= _th_comp_i_18 + _th_comp_offset_stream_15;
+      if(th_comp == 45) begin
+        ram_c_0_addr <= _th_comp_i_21 + _th_comp_offset_stream_18;
       end 
-      _ram_c_cond_2_1 <= th_comp == 38;
-      _ram_c_cond_3_1 <= th_comp == 38;
-      if(th_comp == 40) begin
-        ram_c_0_addr <= _th_comp_i_18 + _th_comp_offset_seq_16;
+      _ram_c_cond_2_1 <= th_comp == 45;
+      _ram_c_cond_3_1 <= th_comp == 45;
+      if(th_comp == 47) begin
+        ram_c_0_addr <= _th_comp_i_21 + _th_comp_offset_seq_19;
       end 
-      _ram_c_cond_4_1 <= th_comp == 40;
-      _ram_c_cond_5_1 <= th_comp == 40;
+      _ram_c_cond_4_1 <= th_comp == 47;
+      _ram_c_cond_5_1 <= th_comp == 47;
       if(_mystream_z_wenable_3) begin
         ram_c_0_addr <= _mystream_z_waddr_3;
         ram_c_0_wdata <= _mystream_z_wdata_3;
@@ -1920,12 +2072,12 @@ module blinkled
       if((_tmp_142 || !_tmp_140) && (_tmp_143 || !_tmp_141) && (_tmp_151 == 1)) begin
         _tmp_149 <= 1;
       end 
-      if(th_comp == 78) begin
-        ram_c_0_addr <= _th_comp_i_25 + _th_comp_offset_24;
-        ram_c_0_wdata <= _th_comp_sum_29;
+      if(th_comp == 90) begin
+        ram_c_0_addr <= _th_comp_write_offset_30;
+        ram_c_0_wdata <= _th_comp_val_34;
         ram_c_0_wenable <= 1;
       end 
-      _ram_c_cond_7_1 <= th_comp == 78;
+      _ram_c_cond_7_1 <= th_comp == 90;
       __tmp_197_1 <= _tmp_197;
       __tmp_198_1 <= _tmp_198;
       if((_tmp_194 || !_tmp_192) && (_tmp_195 || !_tmp_193) && _tmp_200) begin
@@ -1957,16 +2109,16 @@ module blinkled
       if((_tmp_194 || !_tmp_192) && (_tmp_195 || !_tmp_193) && (_tmp_203 == 1)) begin
         _tmp_201 <= 1;
       end 
-      if(th_comp == 87) begin
-        ram_c_0_addr <= _th_comp_i_34 + _th_comp_offset_stream_31;
+      if(th_comp == 102) begin
+        ram_c_0_addr <= _th_comp_i_39 + _th_comp_offset_stream_36;
       end 
-      _ram_c_cond_8_1 <= th_comp == 87;
-      _ram_c_cond_9_1 <= th_comp == 87;
-      if(th_comp == 89) begin
-        ram_c_0_addr <= _th_comp_i_34 + _th_comp_offset_seq_32;
+      _ram_c_cond_8_1 <= th_comp == 102;
+      _ram_c_cond_9_1 <= th_comp == 102;
+      if(th_comp == 104) begin
+        ram_c_0_addr <= _th_comp_i_39 + _th_comp_offset_seq_37;
       end 
-      _ram_c_cond_10_1 <= th_comp == 89;
-      _ram_c_cond_11_1 <= th_comp == 89;
+      _ram_c_cond_10_1 <= th_comp == 104;
+      _ram_c_cond_11_1 <= th_comp == 104;
     end
   end
 
@@ -1985,133 +2137,337 @@ module blinkled
 
   always @(posedge CLK) begin
     if(RST) begin
-      _plus_data_3 <= 0;
-      _plus_data_4 <= 0;
-      _inc_stream_a_fsm_sel <= 0;
-      _inc_stream_a_idle <= 1;
+      ram_d_0_addr <= 0;
+      ram_d_0_wdata <= 0;
+      ram_d_0_wenable <= 0;
+      _ram_d_cond_0_1 <= 0;
+      _ram_d_cond_1_1 <= 0;
+    end else begin
+      if(_ram_d_cond_0_1) begin
+        ram_d_0_wenable <= 0;
+      end 
+      if(_ram_d_cond_1_1) begin
+        ram_d_0_wenable <= 0;
+      end 
+      if(_macstream_v_wenable_4) begin
+        ram_d_0_addr <= _macstream_v_waddr_4;
+        ram_d_0_wdata <= _macstream_v_wdata_4;
+        ram_d_0_wenable <= 1;
+      end 
+      _ram_d_cond_0_1 <= _macstream_v_wenable_4;
+      if(th_comp == 33) begin
+        ram_d_0_addr <= _th_comp_i_14 + _th_comp_offset_11;
+        ram_d_0_wdata <= _th_comp_count_13 == 3;
+        ram_d_0_wenable <= 1;
+      end 
+      _ram_d_cond_1_1 <= th_comp == 33;
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _times_mul_odata_reg_3 <= 0;
+      __delay_data_19 <= 0;
+      __delay_data_20 <= 0;
+      __delay_data_21 <= 0;
+      __delay_data_22 <= 0;
+      __delay_data_23 <= 0;
+      __delay_data_24 <= 0;
+      __delay_data_25 <= 0;
+      _reduceadd_data_6 <= 1'sd0;
+      _reduceadd_count_6 <= 0;
+      _pulse_data_8 <= 1'sd0;
+      _pulse_count_8 <= 0;
       __variable_wdata_0 <= 0;
-      _inc_stream_b_fsm_sel <= 0;
-      _inc_stream_b_idle <= 1;
       __variable_wdata_1 <= 0;
       __parametervariable_wdata_2 <= 0;
-      _inc_stream_c_fsm_sel <= 0;
+      _macstream_a_fsm_sel <= 0;
+      _macstream_a_idle <= 1;
+      _macstream_b_fsm_sel <= 0;
+      _macstream_b_idle <= 1;
+      _macstream_c_fsm_sel <= 0;
+      _macstream_v_fsm_sel <= 0;
     end else begin
-      _plus_data_3 <= inc_stream_a_data + inc_stream_b_data;
-      _plus_data_4 <= _plus_data_3 + inc_stream_const_data;
-      if(th_comp == 7) begin
-        _inc_stream_a_fsm_sel <= 1;
+      _times_mul_odata_reg_3 <= _times_mul_odata_3;
+      __delay_data_19 <= _macstream_reduce_reset;
+      __delay_data_20 <= __delay_data_19;
+      __delay_data_21 <= __delay_data_20;
+      __delay_data_22 <= __delay_data_21;
+      __delay_data_23 <= __delay_data_22;
+      __delay_data_24 <= __delay_data_23;
+      __delay_data_25 <= __delay_data_24;
+      _reduceadd_data_6 <= _reduceadd_data_6 + _times_data_3;
+      _reduceadd_count_6 <= (_reduceadd_count_6 == macstream_const_data - 1)? 0 : _reduceadd_count_6 + 1;
+      if(__delay_data_25) begin
+        _reduceadd_data_6 <= 1'sd0 + _times_data_3;
       end 
-      if(_inc_stream_start) begin
-        _inc_stream_a_idle <= 0;
+      if(__delay_data_25) begin
+        _reduceadd_count_6 <= 0;
+      end 
+      if(_reduceadd_count_6 == 0) begin
+        _reduceadd_data_6 <= 1'sd0 + _times_data_3;
+      end 
+      _pulse_data_8 <= _pulse_count_8 == macstream_const_data - 1;
+      _pulse_count_8 <= (_pulse_count_8 == macstream_const_data - 1)? 0 : _pulse_count_8 + 1;
+      if(__delay_data_25) begin
+        _pulse_data_8 <= _pulse_count_8 == macstream_const_data - 1;
+      end 
+      if(__delay_data_25) begin
+        _pulse_count_8 <= 0;
+      end 
+      if(_pulse_count_8 == 0) begin
+        _pulse_data_8 <= _pulse_count_8 == macstream_const_data - 1;
+      end 
+      if(_substream_macstream_a_data_cond_18_0) begin
+        __variable_wdata_0 <= _plus_data_14;
+      end 
+      if(_substream_macstream_b_data_cond_18_1) begin
+        __variable_wdata_1 <= __delay_data_35;
+      end 
+      if(_substream_macstream_const_data_cond_18_2) begin
+        __parametervariable_wdata_2 <= neststream_const_data;
+      end 
+      if(th_comp == 7) begin
+        _macstream_a_fsm_sel <= 1;
+      end 
+      if(_macstream_start) begin
+        _macstream_a_idle <= 0;
       end 
       if(_tmp_26) begin
         __variable_wdata_0 <= ram_a_0_rdata;
       end 
-      if((_inc_stream_a_fsm_1 == 1) && (_inc_stream_a_count_1 == 1)) begin
-        _inc_stream_a_idle <= 1;
+      if((_macstream_a_fsm_1 == 1) && (_macstream_a_count_1 == 1)) begin
+        _macstream_a_idle <= 1;
       end 
-      if((_inc_stream_a_fsm_1 == 2) && (_inc_stream_a_count_1 == 1)) begin
-        _inc_stream_a_idle <= 1;
+      if((_macstream_a_fsm_1 == 2) && (_macstream_a_count_1 == 1)) begin
+        _macstream_a_idle <= 1;
       end 
       if(th_comp == 8) begin
-        _inc_stream_b_fsm_sel <= 2;
+        _macstream_b_fsm_sel <= 2;
       end 
-      if(_inc_stream_start) begin
-        _inc_stream_b_idle <= 0;
+      if(_macstream_start) begin
+        _macstream_b_idle <= 0;
       end 
       if(_tmp_27) begin
         __variable_wdata_1 <= ram_b_0_rdata;
       end 
-      if((_inc_stream_b_fsm_2 == 1) && (_inc_stream_b_count_2 == 1)) begin
-        _inc_stream_b_idle <= 1;
+      if((_macstream_b_fsm_2 == 1) && (_macstream_b_count_2 == 1)) begin
+        _macstream_b_idle <= 1;
       end 
-      if((_inc_stream_b_fsm_2 == 2) && (_inc_stream_b_count_2 == 1)) begin
-        _inc_stream_b_idle <= 1;
+      if((_macstream_b_fsm_2 == 2) && (_macstream_b_count_2 == 1)) begin
+        _macstream_b_idle <= 1;
       end 
       if(th_comp == 9) begin
-        __parametervariable_wdata_2 <= 10;
+        __parametervariable_wdata_2 <= 4;
       end 
       if(th_comp == 10) begin
-        _inc_stream_c_fsm_sel <= 3;
+        _macstream_c_fsm_sel <= 3;
       end 
-      if(_substream_inc_stream_a_data_cond_8_0) begin
-        __variable_wdata_0 <= mystream_x_data;
-      end 
-      if(_substream_inc_stream_b_data_cond_8_1) begin
-        __variable_wdata_1 <= mystream_y_data;
-      end 
-      if(_substream_inc_stream_const_data_cond_8_2) begin
-        __parametervariable_wdata_2 <= mystream_const_data;
+      if(th_comp == 11) begin
+        _macstream_v_fsm_sel <= 4;
       end 
     end
   end
 
-  localparam _inc_stream_fsm_1 = 1;
-  localparam _inc_stream_fsm_2 = 2;
-  localparam _inc_stream_fsm_3 = 3;
-  localparam _inc_stream_fsm_4 = 4;
-  localparam _inc_stream_fsm_5 = 5;
-  localparam _inc_stream_fsm_6 = 6;
-  localparam _inc_stream_fsm_7 = 7;
-  localparam _inc_stream_fsm_8 = 8;
-  localparam _inc_stream_fsm_9 = 9;
+  localparam _macstream_fsm_1 = 1;
+  localparam _macstream_fsm_2 = 2;
+  localparam _macstream_fsm_3 = 3;
+  localparam _macstream_fsm_4 = 4;
+  localparam _macstream_fsm_5 = 5;
+  localparam _macstream_fsm_6 = 6;
+  localparam _macstream_fsm_7 = 7;
+  localparam _macstream_fsm_8 = 8;
+  localparam _macstream_fsm_9 = 9;
+  localparam _macstream_fsm_10 = 10;
+  localparam _macstream_fsm_11 = 11;
+  localparam _macstream_fsm_12 = 12;
+  localparam _macstream_fsm_13 = 13;
+  localparam _macstream_fsm_14 = 14;
+  localparam _macstream_fsm_15 = 15;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _inc_stream_fsm <= _inc_stream_fsm_init;
-      _d1__inc_stream_fsm <= _inc_stream_fsm_init;
-      _inc_stream_start <= 0;
-      _inc_stream_busy <= 0;
-      __inc_stream_fsm_cond_0_0_1 <= 0;
+      _macstream_fsm <= _macstream_fsm_init;
+      _d1__macstream_fsm <= _macstream_fsm_init;
+      _d2__macstream_fsm <= _macstream_fsm_init;
+      _d3__macstream_fsm <= _macstream_fsm_init;
+      _d4__macstream_fsm <= _macstream_fsm_init;
+      _d5__macstream_fsm <= _macstream_fsm_init;
+      _d6__macstream_fsm <= _macstream_fsm_init;
+      _d7__macstream_fsm <= _macstream_fsm_init;
+      _d8__macstream_fsm <= _macstream_fsm_init;
+      _d9__macstream_fsm <= _macstream_fsm_init;
+      _macstream_start <= 0;
+      _macstream_busy <= 0;
+      __macstream_fsm_cond_0_0_1 <= 0;
+      __macstream_fsm_cond_0_1_1 <= 0;
+      __macstream_fsm_cond_0_1_2 <= 0;
+      __macstream_fsm_cond_0_1_3 <= 0;
+      __macstream_fsm_cond_0_1_4 <= 0;
+      __macstream_fsm_cond_0_1_5 <= 0;
+      _macstream_reduce_reset <= 1;
+      __macstream_fsm_cond_0_2_1 <= 0;
+      __macstream_fsm_cond_0_2_2 <= 0;
+      __macstream_fsm_cond_0_2_3 <= 0;
+      __macstream_fsm_cond_0_2_4 <= 0;
+      __macstream_fsm_cond_0_2_5 <= 0;
+      __macstream_fsm_cond_0_2_6 <= 0;
+      __macstream_fsm_cond_0_2_7 <= 0;
+      __macstream_fsm_cond_0_2_8 <= 0;
+      __macstream_fsm_cond_0_2_9 <= 0;
+      _substream_macstream_a_data_cond_18_0 <= 0;
+      _substream_macstream_b_data_cond_18_1 <= 0;
+      _substream_macstream_const_data_cond_18_2 <= 0;
     end else begin
-      _d1__inc_stream_fsm <= _inc_stream_fsm;
-      case(_d1__inc_stream_fsm)
-        _inc_stream_fsm_init: begin
-          if(__inc_stream_fsm_cond_0_0_1) begin
-            _inc_stream_start <= 0;
+      _d1__macstream_fsm <= _macstream_fsm;
+      _d2__macstream_fsm <= _d1__macstream_fsm;
+      _d3__macstream_fsm <= _d2__macstream_fsm;
+      _d4__macstream_fsm <= _d3__macstream_fsm;
+      _d5__macstream_fsm <= _d4__macstream_fsm;
+      _d6__macstream_fsm <= _d5__macstream_fsm;
+      _d7__macstream_fsm <= _d6__macstream_fsm;
+      _d8__macstream_fsm <= _d7__macstream_fsm;
+      _d9__macstream_fsm <= _d8__macstream_fsm;
+      case(_d9__macstream_fsm)
+        _macstream_fsm_init: begin
+          if(__macstream_fsm_cond_0_2_9) begin
+            _macstream_reduce_reset <= 0;
           end 
         end
       endcase
-      case(_inc_stream_fsm)
-        _inc_stream_fsm_init: begin
-          if(th_comp == 11) begin
-            _inc_stream_start <= 1;
-            _inc_stream_busy <= 1;
+      case(_d8__macstream_fsm)
+        _macstream_fsm_init: begin
+          __macstream_fsm_cond_0_2_9 <= __macstream_fsm_cond_0_2_8;
+        end
+      endcase
+      case(_d7__macstream_fsm)
+        _macstream_fsm_init: begin
+          __macstream_fsm_cond_0_2_8 <= __macstream_fsm_cond_0_2_7;
+        end
+      endcase
+      case(_d6__macstream_fsm)
+        _macstream_fsm_init: begin
+          __macstream_fsm_cond_0_2_7 <= __macstream_fsm_cond_0_2_6;
+        end
+      endcase
+      case(_d5__macstream_fsm)
+        _macstream_fsm_init: begin
+          if(__macstream_fsm_cond_0_1_5) begin
+            _macstream_reduce_reset <= 0;
           end 
-          __inc_stream_fsm_cond_0_0_1 <= th_comp == 11;
-          if(th_comp == 11) begin
-            _inc_stream_fsm <= _inc_stream_fsm_1;
+          __macstream_fsm_cond_0_2_6 <= __macstream_fsm_cond_0_2_5;
+        end
+      endcase
+      case(_d4__macstream_fsm)
+        _macstream_fsm_init: begin
+          __macstream_fsm_cond_0_1_5 <= __macstream_fsm_cond_0_1_4;
+          __macstream_fsm_cond_0_2_5 <= __macstream_fsm_cond_0_2_4;
+        end
+      endcase
+      case(_d3__macstream_fsm)
+        _macstream_fsm_init: begin
+          __macstream_fsm_cond_0_1_4 <= __macstream_fsm_cond_0_1_3;
+          __macstream_fsm_cond_0_2_4 <= __macstream_fsm_cond_0_2_3;
+        end
+      endcase
+      case(_d2__macstream_fsm)
+        _macstream_fsm_init: begin
+          __macstream_fsm_cond_0_1_3 <= __macstream_fsm_cond_0_1_2;
+          __macstream_fsm_cond_0_2_3 <= __macstream_fsm_cond_0_2_2;
+        end
+      endcase
+      case(_d1__macstream_fsm)
+        _macstream_fsm_init: begin
+          if(__macstream_fsm_cond_0_0_1) begin
+            _macstream_start <= 0;
+          end 
+          __macstream_fsm_cond_0_1_2 <= __macstream_fsm_cond_0_1_1;
+          __macstream_fsm_cond_0_2_2 <= __macstream_fsm_cond_0_2_1;
+        end
+      endcase
+      case(_macstream_fsm)
+        _macstream_fsm_init: begin
+          if(th_comp == 12) begin
+            _macstream_start <= 1;
+            _macstream_busy <= 1;
+          end 
+          __macstream_fsm_cond_0_0_1 <= th_comp == 12;
+          __macstream_fsm_cond_0_1_1 <= th_comp == 12;
+          __macstream_fsm_cond_0_2_1 <= th_comp == 67;
+          if(th_comp == 67) begin
+            _substream_macstream_a_data_cond_18_0 <= 1;
+          end 
+          if(th_comp == 67) begin
+            _substream_macstream_b_data_cond_18_1 <= 1;
+          end 
+          if(th_comp == 67) begin
+            _substream_macstream_const_data_cond_18_2 <= 1;
+          end 
+          if(_mystream_fsm == 21) begin
+            _macstream_reduce_reset <= 1;
+          end 
+          if(_mystream_fsm == 21) begin
+            _substream_macstream_a_data_cond_18_0 <= 0;
+          end 
+          if(_mystream_fsm == 21) begin
+            _substream_macstream_b_data_cond_18_1 <= 0;
+          end 
+          if(_mystream_fsm == 21) begin
+            _substream_macstream_const_data_cond_18_2 <= 0;
+          end 
+          if(th_comp == 12) begin
+            _macstream_fsm <= _macstream_fsm_1;
           end 
         end
-        _inc_stream_fsm_1: begin
-          _inc_stream_fsm <= _inc_stream_fsm_2;
+        _macstream_fsm_1: begin
+          _macstream_fsm <= _macstream_fsm_2;
         end
-        _inc_stream_fsm_2: begin
-          if(_inc_stream_done) begin
-            _inc_stream_fsm <= _inc_stream_fsm_3;
+        _macstream_fsm_2: begin
+          if(_macstream_done) begin
+            _macstream_fsm <= _macstream_fsm_3;
           end 
         end
-        _inc_stream_fsm_3: begin
-          _inc_stream_fsm <= _inc_stream_fsm_4;
+        _macstream_fsm_3: begin
+          _macstream_fsm <= _macstream_fsm_4;
         end
-        _inc_stream_fsm_4: begin
-          _inc_stream_fsm <= _inc_stream_fsm_5;
+        _macstream_fsm_4: begin
+          _macstream_fsm <= _macstream_fsm_5;
         end
-        _inc_stream_fsm_5: begin
-          _inc_stream_fsm <= _inc_stream_fsm_6;
+        _macstream_fsm_5: begin
+          _macstream_fsm <= _macstream_fsm_6;
         end
-        _inc_stream_fsm_6: begin
-          _inc_stream_fsm <= _inc_stream_fsm_7;
+        _macstream_fsm_6: begin
+          _macstream_fsm <= _macstream_fsm_7;
         end
-        _inc_stream_fsm_7: begin
-          _inc_stream_fsm <= _inc_stream_fsm_8;
+        _macstream_fsm_7: begin
+          _macstream_fsm <= _macstream_fsm_8;
         end
-        _inc_stream_fsm_8: begin
-          _inc_stream_fsm <= _inc_stream_fsm_9;
+        _macstream_fsm_8: begin
+          _macstream_fsm <= _macstream_fsm_9;
         end
-        _inc_stream_fsm_9: begin
-          _inc_stream_busy <= 0;
-          _inc_stream_fsm <= _inc_stream_fsm_init;
+        _macstream_fsm_9: begin
+          _macstream_fsm <= _macstream_fsm_10;
+        end
+        _macstream_fsm_10: begin
+          _macstream_fsm <= _macstream_fsm_11;
+        end
+        _macstream_fsm_11: begin
+          _macstream_fsm <= _macstream_fsm_12;
+        end
+        _macstream_fsm_12: begin
+          _macstream_reduce_reset <= 1;
+          _macstream_fsm <= _macstream_fsm_13;
+        end
+        _macstream_fsm_13: begin
+          _macstream_fsm <= _macstream_fsm_14;
+        end
+        _macstream_fsm_14: begin
+          _macstream_fsm <= _macstream_fsm_15;
+        end
+        _macstream_fsm_15: begin
+          _macstream_busy <= 0;
+          _macstream_fsm <= _macstream_fsm_init;
         end
       endcase
     end
@@ -2120,25 +2476,155 @@ module blinkled
 
   always @(posedge CLK) begin
     if(RST) begin
-      __substreamoutput_data_9 <= 0;
+      _plus_data_12 <= 0;
+      _plus_data_16 <= 0;
+      _plus_data_14 <= 0;
+      __delay_data_35 <= 0;
+      __delay_data_36 <= 0;
+      __delay_data_37 <= 0;
+      __delay_data_38 <= 0;
+      __delay_data_39 <= 0;
+      __delay_data_40 <= 0;
+      __delay_data_41 <= 0;
+      __delay_data_42 <= 0;
+      __delay_data_43 <= 0;
+      __delay_data_44 <= 0;
+      __substreamoutput_data_26 <= 0;
+      __substreamoutput_data_30 <= 0;
+      __delay_data_45 <= 0;
+      _plus_data_27 <= 0;
+      __delay_data_46 <= 0;
+      _plus_data_28 <= 0;
+      __delay_data_47 <= 0;
+      __variable_wdata_9 <= 0;
+      __variable_wdata_10 <= 0;
+      __parametervariable_wdata_11 <= 0;
+    end else begin
+      _plus_data_12 <= neststream_a_data + 2'sd1;
+      _plus_data_16 <= neststream_b_data + 2'sd1;
+      _plus_data_14 <= _plus_data_12 + 1'sd0;
+      __delay_data_35 <= _plus_data_16;
+      __delay_data_36 <= _plus_data_14;
+      __delay_data_37 <= __delay_data_36;
+      __delay_data_38 <= __delay_data_37;
+      __delay_data_39 <= __delay_data_38;
+      __delay_data_40 <= __delay_data_39;
+      __delay_data_41 <= __delay_data_40;
+      __delay_data_42 <= __delay_data_41;
+      __delay_data_43 <= __delay_data_42;
+      __delay_data_44 <= __delay_data_43;
+      __substreamoutput_data_26 <= macstream_c_data;
+      __substreamoutput_data_30 <= macstream_v_data;
+      __delay_data_45 <= __delay_data_44;
+      _plus_data_27 <= __substreamoutput_data_26 + __delay_data_45;
+      __delay_data_46 <= __substreamoutput_data_30;
+      _plus_data_28 <= _plus_data_27 + 1'sd0;
+      __delay_data_47 <= __delay_data_46;
+      if(_substream_neststream_a_data_cond_34_3) begin
+        __variable_wdata_9 <= mystream_x_data;
+      end 
+      if(_substream_neststream_b_data_cond_34_4) begin
+        __variable_wdata_10 <= mystream_y_data;
+      end 
+      if(_substream_neststream_const_data_cond_34_5) begin
+        __parametervariable_wdata_11 <= mystream_const_data;
+      end 
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _neststream_fsm <= _neststream_fsm_init;
+      _substream_neststream_a_data_cond_34_3 <= 0;
+      _substream_neststream_b_data_cond_34_4 <= 0;
+      _substream_neststream_const_data_cond_34_5 <= 0;
+    end else begin
+      case(_neststream_fsm)
+        _neststream_fsm_init: begin
+          if(th_comp == 67) begin
+            _substream_neststream_a_data_cond_34_3 <= 1;
+          end 
+          if(th_comp == 67) begin
+            _substream_neststream_b_data_cond_34_4 <= 1;
+          end 
+          if(th_comp == 67) begin
+            _substream_neststream_const_data_cond_34_5 <= 1;
+          end 
+          if(_mystream_fsm == 21) begin
+            _substream_neststream_a_data_cond_34_3 <= 0;
+          end 
+          if(_mystream_fsm == 21) begin
+            _substream_neststream_b_data_cond_34_4 <= 0;
+          end 
+          if(_mystream_fsm == 21) begin
+            _substream_neststream_const_data_cond_34_5 <= 0;
+          end 
+        end
+      endcase
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      __delay_data_51 <= 0;
+      __delay_data_52 <= 0;
+      __delay_data_53 <= 0;
+      __delay_data_54 <= 0;
+      __delay_data_55 <= 0;
+      __delay_data_56 <= 0;
+      __delay_data_57 <= 0;
+      __delay_data_58 <= 0;
+      __delay_data_59 <= 0;
+      __delay_data_60 <= 0;
+      __delay_data_61 <= 0;
+      __delay_data_62 <= 0;
+      __delay_data_63 <= 0;
+      __delay_data_64 <= 0;
+      __delay_data_65 <= 0;
+      __substreamoutput_data_48 <= 0;
+      __substreamoutput_data_49 <= 0;
+      __delay_data_66 <= 0;
+      _plus_data_50 <= 0;
+      __delay_data_67 <= 0;
       _mystream_x_fsm_sel <= 0;
       _mystream_x_idle <= 1;
-      __variable_wdata_5 <= 0;
+      __variable_wdata_31 <= 0;
       _mystream_y_fsm_sel <= 0;
       _mystream_y_idle <= 1;
-      __variable_wdata_6 <= 0;
-      __parametervariable_wdata_7 <= 0;
+      __variable_wdata_32 <= 0;
+      __parametervariable_wdata_33 <= 0;
       _mystream_z_fsm_sel <= 0;
     end else begin
-      __substreamoutput_data_9 <= _plus_data_4;
-      if(th_comp == 56) begin
+      __delay_data_51 <= mystream_y_data;
+      __delay_data_52 <= __delay_data_51;
+      __delay_data_53 <= __delay_data_52;
+      __delay_data_54 <= __delay_data_53;
+      __delay_data_55 <= __delay_data_54;
+      __delay_data_56 <= __delay_data_55;
+      __delay_data_57 <= __delay_data_56;
+      __delay_data_58 <= __delay_data_57;
+      __delay_data_59 <= __delay_data_58;
+      __delay_data_60 <= __delay_data_59;
+      __delay_data_61 <= __delay_data_60;
+      __delay_data_62 <= __delay_data_61;
+      __delay_data_63 <= __delay_data_62;
+      __delay_data_64 <= __delay_data_63;
+      __delay_data_65 <= __delay_data_64;
+      __substreamoutput_data_48 <= neststream_c_data;
+      __substreamoutput_data_49 <= neststream_v_data;
+      __delay_data_66 <= __delay_data_65;
+      _plus_data_50 <= __substreamoutput_data_48 + __delay_data_66;
+      __delay_data_67 <= __substreamoutput_data_49;
+      if(th_comp == 63) begin
         _mystream_x_fsm_sel <= 1;
       end 
       if(_mystream_start) begin
         _mystream_x_idle <= 0;
       end 
       if(_tmp_132) begin
-        __variable_wdata_5 <= ram_a_0_rdata;
+        __variable_wdata_31 <= ram_a_0_rdata;
       end 
       if((_mystream_x_fsm_1 == 1) && (_mystream_x_count_1 == 1)) begin
         _mystream_x_idle <= 1;
@@ -2146,14 +2632,14 @@ module blinkled
       if((_mystream_x_fsm_1 == 2) && (_mystream_x_count_1 == 1)) begin
         _mystream_x_idle <= 1;
       end 
-      if(th_comp == 57) begin
+      if(th_comp == 64) begin
         _mystream_y_fsm_sel <= 2;
       end 
       if(_mystream_start) begin
         _mystream_y_idle <= 0;
       end 
       if(_tmp_133) begin
-        __variable_wdata_6 <= ram_b_0_rdata;
+        __variable_wdata_32 <= ram_b_0_rdata;
       end 
       if((_mystream_y_fsm_2 == 1) && (_mystream_y_count_2 == 1)) begin
         _mystream_y_idle <= 1;
@@ -2161,10 +2647,10 @@ module blinkled
       if((_mystream_y_fsm_2 == 2) && (_mystream_y_count_2 == 1)) begin
         _mystream_y_idle <= 1;
       end 
-      if(th_comp == 58) begin
-        __parametervariable_wdata_7 <= 100;
+      if(th_comp == 65) begin
+        __parametervariable_wdata_33 <= 4;
       end 
-      if(th_comp == 59) begin
+      if(th_comp == 66) begin
         _mystream_z_fsm_sel <= 3;
       end 
     end
@@ -2181,6 +2667,19 @@ module blinkled
   localparam _mystream_fsm_9 = 9;
   localparam _mystream_fsm_10 = 10;
   localparam _mystream_fsm_11 = 11;
+  localparam _mystream_fsm_12 = 12;
+  localparam _mystream_fsm_13 = 13;
+  localparam _mystream_fsm_14 = 14;
+  localparam _mystream_fsm_15 = 15;
+  localparam _mystream_fsm_16 = 16;
+  localparam _mystream_fsm_17 = 17;
+  localparam _mystream_fsm_18 = 18;
+  localparam _mystream_fsm_19 = 19;
+  localparam _mystream_fsm_20 = 20;
+  localparam _mystream_fsm_21 = 21;
+  localparam _mystream_fsm_22 = 22;
+  localparam _mystream_fsm_23 = 23;
+  localparam _mystream_fsm_24 = 24;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -2189,9 +2688,6 @@ module blinkled
       _mystream_start <= 0;
       _mystream_busy <= 0;
       __mystream_fsm_cond_0_0_1 <= 0;
-      _substream_inc_stream_a_data_cond_8_0 <= 0;
-      _substream_inc_stream_b_data_cond_8_1 <= 0;
-      _substream_inc_stream_const_data_cond_8_2 <= 0;
     end else begin
       _d1__mystream_fsm <= _mystream_fsm;
       case(_d1__mystream_fsm)
@@ -2203,21 +2699,12 @@ module blinkled
       endcase
       case(_mystream_fsm)
         _mystream_fsm_init: begin
-          if(th_comp == 60) begin
+          if(th_comp == 67) begin
             _mystream_start <= 1;
             _mystream_busy <= 1;
           end 
-          __mystream_fsm_cond_0_0_1 <= th_comp == 60;
-          if(th_comp == 60) begin
-            _substream_inc_stream_a_data_cond_8_0 <= 1;
-          end 
-          if(th_comp == 60) begin
-            _substream_inc_stream_b_data_cond_8_1 <= 1;
-          end 
-          if(th_comp == 60) begin
-            _substream_inc_stream_const_data_cond_8_2 <= 1;
-          end 
-          if(th_comp == 60) begin
+          __mystream_fsm_cond_0_0_1 <= th_comp == 67;
+          if(th_comp == 67) begin
             _mystream_fsm <= _mystream_fsm_1;
           end 
         end
@@ -2245,9 +2732,6 @@ module blinkled
           _mystream_fsm <= _mystream_fsm_8;
         end
         _mystream_fsm_8: begin
-          _substream_inc_stream_a_data_cond_8_0 <= 0;
-          _substream_inc_stream_b_data_cond_8_1 <= 0;
-          _substream_inc_stream_const_data_cond_8_2 <= 0;
           _mystream_fsm <= _mystream_fsm_9;
         end
         _mystream_fsm_9: begin
@@ -2257,6 +2741,45 @@ module blinkled
           _mystream_fsm <= _mystream_fsm_11;
         end
         _mystream_fsm_11: begin
+          _mystream_fsm <= _mystream_fsm_12;
+        end
+        _mystream_fsm_12: begin
+          _mystream_fsm <= _mystream_fsm_13;
+        end
+        _mystream_fsm_13: begin
+          _mystream_fsm <= _mystream_fsm_14;
+        end
+        _mystream_fsm_14: begin
+          _mystream_fsm <= _mystream_fsm_15;
+        end
+        _mystream_fsm_15: begin
+          _mystream_fsm <= _mystream_fsm_16;
+        end
+        _mystream_fsm_16: begin
+          _mystream_fsm <= _mystream_fsm_17;
+        end
+        _mystream_fsm_17: begin
+          _mystream_fsm <= _mystream_fsm_18;
+        end
+        _mystream_fsm_18: begin
+          _mystream_fsm <= _mystream_fsm_19;
+        end
+        _mystream_fsm_19: begin
+          _mystream_fsm <= _mystream_fsm_20;
+        end
+        _mystream_fsm_20: begin
+          _mystream_fsm <= _mystream_fsm_21;
+        end
+        _mystream_fsm_21: begin
+          _mystream_fsm <= _mystream_fsm_22;
+        end
+        _mystream_fsm_22: begin
+          _mystream_fsm <= _mystream_fsm_23;
+        end
+        _mystream_fsm_23: begin
+          _mystream_fsm <= _mystream_fsm_24;
+        end
+        _mystream_fsm_24: begin
           _mystream_busy <= 0;
           _mystream_fsm <= _mystream_fsm_init;
         end
@@ -2363,20 +2886,35 @@ module blinkled
   localparam th_comp_97 = 97;
   localparam th_comp_98 = 98;
   localparam th_comp_99 = 99;
+  localparam th_comp_100 = 100;
+  localparam th_comp_101 = 101;
+  localparam th_comp_102 = 102;
+  localparam th_comp_103 = 103;
+  localparam th_comp_104 = 104;
+  localparam th_comp_105 = 105;
+  localparam th_comp_106 = 106;
+  localparam th_comp_107 = 107;
+  localparam th_comp_108 = 108;
+  localparam th_comp_109 = 109;
+  localparam th_comp_110 = 110;
+  localparam th_comp_111 = 111;
+  localparam th_comp_112 = 112;
+  localparam th_comp_113 = 113;
+  localparam th_comp_114 = 114;
 
   always @(posedge CLK) begin
     if(RST) begin
       th_comp <= th_comp_init;
-      _th_comp_size_3 <= 0;
-      _th_comp_offset_4 <= 0;
+      _th_comp_size_6 <= 0;
+      _th_comp_offset_7 <= 0;
       _tmp_0 <= 0;
       _tmp_1 <= 0;
       _tmp_2 <= 0;
       _tmp_13 <= 0;
       _tmp_14 <= 0;
       _tmp_15 <= 0;
-      _th_comp_size_5 <= 0;
-      _th_comp_offset_6 <= 0;
+      _th_comp_size_8 <= 0;
+      _th_comp_offset_9 <= 0;
       _tmp_28 <= 0;
       _tmp_29 <= 0;
       _tmp_30 <= 0;
@@ -2386,35 +2924,35 @@ module blinkled
       _tmp_63 <= 0;
       _tmp_64 <= 0;
       _tmp_65 <= 0;
-      _th_comp_size_7 <= 0;
-      _th_comp_offset_8 <= 0;
-      _th_comp_i_9 <= 0;
+      _th_comp_size_10 <= 0;
+      _th_comp_offset_11 <= 0;
+      _th_comp_sum_12 <= 0;
+      _th_comp_count_13 <= 0;
+      _th_comp_i_14 <= 0;
       _tmp_77 <= 0;
-      _th_comp_a_10 <= 0;
+      _th_comp_a_15 <= 0;
       _tmp_79 <= 0;
-      _th_comp_b_11 <= 0;
-      _th_comp_const_12 <= 0;
-      _th_comp_sum_13 <= 0;
+      _th_comp_b_16 <= 0;
       _tmp_80 <= 0;
       _tmp_81 <= 0;
       _tmp_82 <= 0;
-      _th_comp_size_14 <= 0;
-      _th_comp_offset_stream_15 <= 0;
-      _th_comp_offset_seq_16 <= 0;
-      _th_comp_all_ok_17 <= 0;
-      _th_comp_i_18 <= 0;
+      _th_comp_size_17 <= 0;
+      _th_comp_offset_stream_18 <= 0;
+      _th_comp_offset_seq_19 <= 0;
+      _th_comp_all_ok_20 <= 0;
+      _th_comp_i_21 <= 0;
       _tmp_103 <= 0;
-      _th_comp_st_19 <= 0;
+      _th_comp_st_22 <= 0;
       _tmp_105 <= 0;
-      _th_comp_sq_20 <= 0;
+      _th_comp_sq_23 <= 0;
       _tmp_106 <= 0;
       _tmp_107 <= 0;
       _tmp_108 <= 0;
       _tmp_119 <= 0;
       _tmp_120 <= 0;
       _tmp_121 <= 0;
-      _th_comp_size_21 <= 0;
-      _th_comp_offset_22 <= 0;
+      _th_comp_size_24 <= 0;
+      _th_comp_offset_25 <= 0;
       _tmp_134 <= 0;
       _tmp_135 <= 0;
       _tmp_136 <= 0;
@@ -2424,41 +2962,43 @@ module blinkled
       _tmp_169 <= 0;
       _tmp_170 <= 0;
       _tmp_171 <= 0;
-      _th_comp_size_23 <= 0;
-      _th_comp_offset_24 <= 0;
-      _th_comp_i_25 <= 0;
+      _th_comp_size_26 <= 0;
+      _th_comp_offset_27 <= 0;
+      _th_comp_sum_28 <= 0;
+      _th_comp_count_29 <= 0;
+      _th_comp_write_offset_30 <= 0;
+      _th_comp_i_31 <= 0;
       _tmp_183 <= 0;
-      _th_comp_x_26 <= 0;
+      _th_comp_x_32 <= 0;
       _tmp_185 <= 0;
-      _th_comp_y_27 <= 0;
-      _th_comp_const_28 <= 0;
-      _th_comp_sum_29 <= 0;
+      _th_comp_y_33 <= 0;
+      _th_comp_val_34 <= 0;
       _tmp_186 <= 0;
       _tmp_187 <= 0;
       _tmp_188 <= 0;
-      _th_comp_size_30 <= 0;
-      _th_comp_offset_stream_31 <= 0;
-      _th_comp_offset_seq_32 <= 0;
-      _th_comp_all_ok_33 <= 0;
-      _th_comp_i_34 <= 0;
+      _th_comp_size_35 <= 0;
+      _th_comp_offset_stream_36 <= 0;
+      _th_comp_offset_seq_37 <= 0;
+      _th_comp_all_ok_38 <= 0;
+      _th_comp_i_39 <= 0;
       _tmp_209 <= 0;
-      _th_comp_st_35 <= 0;
+      _th_comp_st_40 <= 0;
       _tmp_211 <= 0;
-      _th_comp_sq_36 <= 0;
+      _th_comp_sq_41 <= 0;
     end else begin
       case(th_comp)
         th_comp_init: begin
-          _th_comp_size_3 <= 32;
+          _th_comp_size_6 <= 16;
           th_comp <= th_comp_1;
         end
         th_comp_1: begin
-          _th_comp_offset_4 <= 0;
+          _th_comp_offset_7 <= 0;
           th_comp <= th_comp_2;
         end
         th_comp_2: begin
-          _tmp_0 <= _th_comp_offset_4;
+          _tmp_0 <= _th_comp_offset_7;
           _tmp_1 <= 0;
-          _tmp_2 <= _th_comp_size_3;
+          _tmp_2 <= _th_comp_size_6;
           th_comp <= th_comp_3;
         end
         th_comp_3: begin
@@ -2467,9 +3007,9 @@ module blinkled
           end 
         end
         th_comp_4: begin
-          _tmp_13 <= _th_comp_offset_4;
-          _tmp_14 <= 512;
-          _tmp_15 <= _th_comp_size_3;
+          _tmp_13 <= _th_comp_offset_7;
+          _tmp_14 <= 0;
+          _tmp_15 <= _th_comp_size_6;
           th_comp <= th_comp_5;
         end
         th_comp_5: begin
@@ -2478,8 +3018,8 @@ module blinkled
           end 
         end
         th_comp_6: begin
-          _th_comp_size_5 <= _th_comp_size_3;
-          _th_comp_offset_6 <= _th_comp_offset_4;
+          _th_comp_size_8 <= _th_comp_size_6;
+          _th_comp_offset_9 <= _th_comp_offset_7;
           th_comp <= th_comp_7;
         end
         th_comp_7: begin
@@ -2498,438 +3038,502 @@ module blinkled
           th_comp <= th_comp_12;
         end
         th_comp_12: begin
-          if(!_inc_stream_busy) begin
-            th_comp <= th_comp_13;
-          end 
+          th_comp <= th_comp_13;
         end
         th_comp_13: begin
-          _tmp_28 <= _th_comp_offset_4;
-          _tmp_29 <= 1024;
-          _tmp_30 <= _th_comp_size_3;
-          th_comp <= th_comp_14;
-        end
-        th_comp_14: begin
-          if(_tmp_49) begin
-            th_comp <= th_comp_15;
+          if(!_macstream_busy) begin
+            th_comp <= th_comp_14;
           end 
         end
+        th_comp_14: begin
+          _tmp_28 <= _th_comp_offset_7;
+          _tmp_29 <= 1024;
+          _tmp_30 <= _th_comp_size_6;
+          th_comp <= th_comp_15;
+        end
         th_comp_15: begin
-          _th_comp_offset_4 <= _th_comp_size_3;
-          th_comp <= th_comp_16;
+          if(_tmp_49) begin
+            th_comp <= th_comp_16;
+          end 
         end
         th_comp_16: begin
-          _tmp_50 <= _th_comp_offset_4;
-          _tmp_51 <= 0;
-          _tmp_52 <= _th_comp_size_3;
+          _th_comp_offset_7 <= _th_comp_size_6;
           th_comp <= th_comp_17;
         end
         th_comp_17: begin
-          if(_tmp_62) begin
-            th_comp <= th_comp_18;
-          end 
+          _tmp_50 <= _th_comp_offset_7;
+          _tmp_51 <= 0;
+          _tmp_52 <= _th_comp_size_6;
+          th_comp <= th_comp_18;
         end
         th_comp_18: begin
-          _tmp_63 <= _th_comp_offset_4;
-          _tmp_64 <= 512;
-          _tmp_65 <= _th_comp_size_3;
-          th_comp <= th_comp_19;
-        end
-        th_comp_19: begin
-          if(_tmp_75) begin
-            th_comp <= th_comp_20;
+          if(_tmp_62) begin
+            th_comp <= th_comp_19;
           end 
         end
+        th_comp_19: begin
+          _tmp_63 <= _th_comp_offset_7;
+          _tmp_64 <= 0;
+          _tmp_65 <= _th_comp_size_6;
+          th_comp <= th_comp_20;
+        end
         th_comp_20: begin
-          _th_comp_size_7 <= _th_comp_size_3;
-          _th_comp_offset_8 <= _th_comp_offset_4;
-          th_comp <= th_comp_21;
+          if(_tmp_75) begin
+            th_comp <= th_comp_21;
+          end 
         end
         th_comp_21: begin
-          _th_comp_i_9 <= 0;
+          _th_comp_size_10 <= _th_comp_size_6;
+          _th_comp_offset_11 <= _th_comp_offset_7;
           th_comp <= th_comp_22;
         end
         th_comp_22: begin
-          if(_th_comp_i_9 < _th_comp_size_7) begin
-            th_comp <= th_comp_23;
-          end else begin
-            th_comp <= th_comp_31;
-          end
+          _th_comp_sum_12 <= 0;
+          th_comp <= th_comp_23;
         end
         th_comp_23: begin
+          _th_comp_count_13 <= 0;
+          th_comp <= th_comp_24;
+        end
+        th_comp_24: begin
+          _th_comp_i_14 <= 0;
+          th_comp <= th_comp_25;
+        end
+        th_comp_25: begin
+          if(_th_comp_i_14 < _th_comp_size_10) begin
+            th_comp <= th_comp_26;
+          end else begin
+            th_comp <= th_comp_38;
+          end
+        end
+        th_comp_26: begin
           if(_tmp_76) begin
             _tmp_77 <= ram_a_0_rdata;
           end 
           if(_tmp_76) begin
-            th_comp <= th_comp_24;
+            th_comp <= th_comp_27;
           end 
         end
-        th_comp_24: begin
-          _th_comp_a_10 <= _tmp_77;
-          th_comp <= th_comp_25;
+        th_comp_27: begin
+          _th_comp_a_15 <= _tmp_77;
+          th_comp <= th_comp_28;
         end
-        th_comp_25: begin
+        th_comp_28: begin
           if(_tmp_78) begin
             _tmp_79 <= ram_b_0_rdata;
           end 
           if(_tmp_78) begin
-            th_comp <= th_comp_26;
+            th_comp <= th_comp_29;
           end 
         end
-        th_comp_26: begin
-          _th_comp_b_11 <= _tmp_79;
-          th_comp <= th_comp_27;
-        end
-        th_comp_27: begin
-          _th_comp_const_12 <= 10;
-          th_comp <= th_comp_28;
-        end
-        th_comp_28: begin
-          _th_comp_sum_13 <= _th_comp_a_10 + _th_comp_b_11 + _th_comp_const_12;
-          th_comp <= th_comp_29;
-        end
         th_comp_29: begin
+          _th_comp_b_16 <= _tmp_79;
           th_comp <= th_comp_30;
         end
         th_comp_30: begin
-          _th_comp_i_9 <= _th_comp_i_9 + 1;
-          th_comp <= th_comp_22;
+          _th_comp_sum_12 <= _th_comp_sum_12 + _th_comp_a_15 * _th_comp_b_16;
+          th_comp <= th_comp_31;
         end
         th_comp_31: begin
-          _tmp_80 <= _th_comp_offset_4;
-          _tmp_81 <= 2048;
-          _tmp_82 <= _th_comp_size_3;
+          _th_comp_count_13 <= _th_comp_count_13 + 1;
           th_comp <= th_comp_32;
         end
         th_comp_32: begin
-          if(_tmp_101) begin
-            th_comp <= th_comp_33;
-          end 
+          th_comp <= th_comp_33;
         end
         th_comp_33: begin
-          $display("# INC");
           th_comp <= th_comp_34;
         end
         th_comp_34: begin
-          _th_comp_size_14 <= _th_comp_size_3;
-          _th_comp_offset_stream_15 <= 0;
-          _th_comp_offset_seq_16 <= _th_comp_offset_4;
-          th_comp <= th_comp_35;
+          if(_th_comp_count_13 == 4) begin
+            th_comp <= th_comp_35;
+          end else begin
+            th_comp <= th_comp_37;
+          end
         end
         th_comp_35: begin
-          _th_comp_all_ok_17 <= 1;
+          _th_comp_sum_12 <= 0;
           th_comp <= th_comp_36;
         end
         th_comp_36: begin
-          _th_comp_i_18 <= 0;
+          _th_comp_count_13 <= 0;
           th_comp <= th_comp_37;
         end
         th_comp_37: begin
-          if(_th_comp_i_18 < _th_comp_size_14) begin
-            th_comp <= th_comp_38;
-          end else begin
-            th_comp <= th_comp_46;
-          end
+          _th_comp_i_14 <= _th_comp_i_14 + 1;
+          th_comp <= th_comp_25;
         end
         th_comp_38: begin
+          _tmp_80 <= _th_comp_offset_7;
+          _tmp_81 <= 2048;
+          _tmp_82 <= _th_comp_size_6;
+          th_comp <= th_comp_39;
+        end
+        th_comp_39: begin
+          if(_tmp_101) begin
+            th_comp <= th_comp_40;
+          end 
+        end
+        th_comp_40: begin
+          $display("# macstream");
+          th_comp <= th_comp_41;
+        end
+        th_comp_41: begin
+          _th_comp_size_17 <= _th_comp_size_6;
+          _th_comp_offset_stream_18 <= 0;
+          _th_comp_offset_seq_19 <= _th_comp_offset_7;
+          th_comp <= th_comp_42;
+        end
+        th_comp_42: begin
+          _th_comp_all_ok_20 <= 1;
+          th_comp <= th_comp_43;
+        end
+        th_comp_43: begin
+          _th_comp_i_21 <= 0;
+          th_comp <= th_comp_44;
+        end
+        th_comp_44: begin
+          if(_th_comp_i_21 < _th_comp_size_17) begin
+            th_comp <= th_comp_45;
+          end else begin
+            th_comp <= th_comp_53;
+          end
+        end
+        th_comp_45: begin
           if(_tmp_102) begin
             _tmp_103 <= ram_c_0_rdata;
           end 
           if(_tmp_102) begin
-            th_comp <= th_comp_39;
+            th_comp <= th_comp_46;
           end 
         end
-        th_comp_39: begin
-          _th_comp_st_19 <= _tmp_103;
-          th_comp <= th_comp_40;
+        th_comp_46: begin
+          _th_comp_st_22 <= _tmp_103;
+          th_comp <= th_comp_47;
         end
-        th_comp_40: begin
+        th_comp_47: begin
           if(_tmp_104) begin
             _tmp_105 <= ram_c_0_rdata;
           end 
           if(_tmp_104) begin
-            th_comp <= th_comp_41;
+            th_comp <= th_comp_48;
           end 
         end
-        th_comp_41: begin
-          _th_comp_sq_20 <= _tmp_105;
-          th_comp <= th_comp_42;
-        end
-        th_comp_42: begin
-          if(_th_comp_st_19 !== _th_comp_sq_20) begin
-            th_comp <= th_comp_43;
-          end else begin
-            th_comp <= th_comp_45;
-          end
-        end
-        th_comp_43: begin
-          _th_comp_all_ok_17 <= 0;
-          th_comp <= th_comp_44;
-        end
-        th_comp_44: begin
-          $display("%d %d %d", _th_comp_i_18, _th_comp_st_19, _th_comp_sq_20);
-          th_comp <= th_comp_45;
-        end
-        th_comp_45: begin
-          _th_comp_i_18 <= _th_comp_i_18 + 1;
-          th_comp <= th_comp_37;
-        end
-        th_comp_46: begin
-          if(_th_comp_all_ok_17) begin
-            th_comp <= th_comp_47;
-          end else begin
-            th_comp <= th_comp_49;
-          end
-        end
-        th_comp_47: begin
-          $display("OK");
-          th_comp <= th_comp_48;
-        end
         th_comp_48: begin
-          th_comp <= th_comp_50;
+          _th_comp_sq_23 <= _tmp_105;
+          th_comp <= th_comp_49;
         end
         th_comp_49: begin
-          $display("NG");
-          th_comp <= th_comp_50;
+          if(_th_comp_st_22 !== _th_comp_sq_23) begin
+            th_comp <= th_comp_50;
+          end else begin
+            th_comp <= th_comp_52;
+          end
         end
         th_comp_50: begin
-          _th_comp_offset_4 <= 0;
+          _th_comp_all_ok_20 <= 0;
           th_comp <= th_comp_51;
         end
         th_comp_51: begin
-          _tmp_106 <= _th_comp_offset_4;
-          _tmp_107 <= 0;
-          _tmp_108 <= _th_comp_size_3;
+          $display("%d %d %d", _th_comp_i_21, _th_comp_st_22, _th_comp_sq_23);
           th_comp <= th_comp_52;
         end
         th_comp_52: begin
-          if(_tmp_118) begin
-            th_comp <= th_comp_53;
-          end 
+          _th_comp_i_21 <= _th_comp_i_21 + 1;
+          th_comp <= th_comp_44;
         end
         th_comp_53: begin
-          _tmp_119 <= _th_comp_offset_4;
-          _tmp_120 <= 512;
-          _tmp_121 <= _th_comp_size_3;
-          th_comp <= th_comp_54;
+          if(_th_comp_all_ok_20) begin
+            th_comp <= th_comp_54;
+          end else begin
+            th_comp <= th_comp_56;
+          end
         end
         th_comp_54: begin
-          if(_tmp_131) begin
-            th_comp <= th_comp_55;
-          end 
+          $display("OK");
+          th_comp <= th_comp_55;
         end
         th_comp_55: begin
-          _th_comp_size_21 <= _th_comp_size_3;
-          _th_comp_offset_22 <= _th_comp_offset_4;
-          th_comp <= th_comp_56;
+          th_comp <= th_comp_57;
         end
         th_comp_56: begin
+          $display("NG");
           th_comp <= th_comp_57;
         end
         th_comp_57: begin
+          _th_comp_offset_7 <= 0;
           th_comp <= th_comp_58;
         end
         th_comp_58: begin
+          _tmp_106 <= _th_comp_offset_7;
+          _tmp_107 <= 0;
+          _tmp_108 <= _th_comp_size_6;
           th_comp <= th_comp_59;
         end
         th_comp_59: begin
-          th_comp <= th_comp_60;
+          if(_tmp_118) begin
+            th_comp <= th_comp_60;
+          end 
         end
         th_comp_60: begin
+          _tmp_119 <= _th_comp_offset_7;
+          _tmp_120 <= 0;
+          _tmp_121 <= _th_comp_size_6;
           th_comp <= th_comp_61;
         end
         th_comp_61: begin
-          if(!_mystream_busy) begin
+          if(_tmp_131) begin
             th_comp <= th_comp_62;
           end 
         end
         th_comp_62: begin
-          _tmp_134 <= _th_comp_offset_4;
-          _tmp_135 <= 1024;
-          _tmp_136 <= _th_comp_size_3;
+          _th_comp_size_24 <= _th_comp_size_6;
+          _th_comp_offset_25 <= _th_comp_offset_7;
           th_comp <= th_comp_63;
         end
         th_comp_63: begin
-          if(_tmp_155) begin
-            th_comp <= th_comp_64;
-          end 
+          th_comp <= th_comp_64;
         end
         th_comp_64: begin
-          _th_comp_offset_4 <= _th_comp_size_3;
           th_comp <= th_comp_65;
         end
         th_comp_65: begin
-          _tmp_156 <= _th_comp_offset_4;
-          _tmp_157 <= 0;
-          _tmp_158 <= _th_comp_size_3;
           th_comp <= th_comp_66;
         end
         th_comp_66: begin
-          if(_tmp_168) begin
-            th_comp <= th_comp_67;
-          end 
+          th_comp <= th_comp_67;
         end
         th_comp_67: begin
-          _tmp_169 <= _th_comp_offset_4;
-          _tmp_170 <= 512;
-          _tmp_171 <= _th_comp_size_3;
           th_comp <= th_comp_68;
         end
         th_comp_68: begin
-          if(_tmp_181) begin
+          if(!_mystream_busy) begin
             th_comp <= th_comp_69;
           end 
         end
         th_comp_69: begin
-          _th_comp_size_23 <= _th_comp_size_3;
-          _th_comp_offset_24 <= _th_comp_offset_4;
+          _tmp_134 <= _th_comp_offset_7;
+          _tmp_135 <= 1024;
+          _tmp_136 <= _th_comp_size_6 >>> 2;
           th_comp <= th_comp_70;
         end
         th_comp_70: begin
-          _th_comp_i_25 <= 0;
-          th_comp <= th_comp_71;
+          if(_tmp_155) begin
+            th_comp <= th_comp_71;
+          end 
         end
         th_comp_71: begin
-          if(_th_comp_i_25 < _th_comp_size_23) begin
-            th_comp <= th_comp_72;
-          end else begin
-            th_comp <= th_comp_80;
-          end
+          _th_comp_offset_7 <= _th_comp_size_6;
+          th_comp <= th_comp_72;
         end
         th_comp_72: begin
-          if(_tmp_182) begin
-            _tmp_183 <= ram_a_0_rdata;
-          end 
-          if(_tmp_182) begin
-            th_comp <= th_comp_73;
-          end 
+          _tmp_156 <= _th_comp_offset_7;
+          _tmp_157 <= 0;
+          _tmp_158 <= _th_comp_size_6;
+          th_comp <= th_comp_73;
         end
         th_comp_73: begin
-          _th_comp_x_26 <= _tmp_183;
-          th_comp <= th_comp_74;
+          if(_tmp_168) begin
+            th_comp <= th_comp_74;
+          end 
         end
         th_comp_74: begin
-          if(_tmp_184) begin
-            _tmp_185 <= ram_b_0_rdata;
-          end 
-          if(_tmp_184) begin
-            th_comp <= th_comp_75;
-          end 
+          _tmp_169 <= _th_comp_offset_7;
+          _tmp_170 <= 0;
+          _tmp_171 <= _th_comp_size_6;
+          th_comp <= th_comp_75;
         end
         th_comp_75: begin
-          _th_comp_y_27 <= _tmp_185;
-          th_comp <= th_comp_76;
+          if(_tmp_181) begin
+            th_comp <= th_comp_76;
+          end 
         end
         th_comp_76: begin
-          _th_comp_const_28 <= 100;
+          _th_comp_size_26 <= _th_comp_size_6;
+          _th_comp_offset_27 <= _th_comp_offset_7;
           th_comp <= th_comp_77;
         end
         th_comp_77: begin
-          _th_comp_sum_29 <= _th_comp_x_26 + _th_comp_y_27 + _th_comp_const_28;
+          _th_comp_sum_28 <= 0;
           th_comp <= th_comp_78;
         end
         th_comp_78: begin
+          _th_comp_count_29 <= 0;
           th_comp <= th_comp_79;
         end
         th_comp_79: begin
-          _th_comp_i_25 <= _th_comp_i_25 + 1;
-          th_comp <= th_comp_71;
+          _th_comp_write_offset_30 <= _th_comp_offset_27;
+          th_comp <= th_comp_80;
         end
         th_comp_80: begin
-          _tmp_186 <= _th_comp_offset_4;
-          _tmp_187 <= 2048;
-          _tmp_188 <= _th_comp_size_3;
+          _th_comp_i_31 <= 0;
           th_comp <= th_comp_81;
         end
         th_comp_81: begin
-          if(_tmp_207) begin
+          if(_th_comp_i_31 < _th_comp_size_26) begin
             th_comp <= th_comp_82;
-          end 
-        end
-        th_comp_82: begin
-          $display("# MAIN");
-          th_comp <= th_comp_83;
-        end
-        th_comp_83: begin
-          _th_comp_size_30 <= _th_comp_size_3;
-          _th_comp_offset_stream_31 <= 0;
-          _th_comp_offset_seq_32 <= _th_comp_offset_4;
-          th_comp <= th_comp_84;
-        end
-        th_comp_84: begin
-          _th_comp_all_ok_33 <= 1;
-          th_comp <= th_comp_85;
-        end
-        th_comp_85: begin
-          _th_comp_i_34 <= 0;
-          th_comp <= th_comp_86;
-        end
-        th_comp_86: begin
-          if(_th_comp_i_34 < _th_comp_size_30) begin
-            th_comp <= th_comp_87;
           end else begin
             th_comp <= th_comp_95;
           end
         end
-        th_comp_87: begin
-          if(_tmp_208) begin
-            _tmp_209 <= ram_c_0_rdata;
+        th_comp_82: begin
+          if(_tmp_182) begin
+            _tmp_183 <= ram_a_0_rdata;
           end 
-          if(_tmp_208) begin
-            th_comp <= th_comp_88;
+          if(_tmp_182) begin
+            th_comp <= th_comp_83;
           end 
         end
+        th_comp_83: begin
+          _th_comp_x_32 <= _tmp_183;
+          th_comp <= th_comp_84;
+        end
+        th_comp_84: begin
+          if(_tmp_184) begin
+            _tmp_185 <= ram_b_0_rdata;
+          end 
+          if(_tmp_184) begin
+            th_comp <= th_comp_85;
+          end 
+        end
+        th_comp_85: begin
+          _th_comp_y_33 <= _tmp_185;
+          th_comp <= th_comp_86;
+        end
+        th_comp_86: begin
+          _th_comp_sum_28 <= _th_comp_sum_28 + (_th_comp_x_32 + 1) * (_th_comp_y_33 + 1);
+          th_comp <= th_comp_87;
+        end
+        th_comp_87: begin
+          _th_comp_val_34 <= _th_comp_sum_28 + (_th_comp_x_32 + 1) + _th_comp_y_33;
+          th_comp <= th_comp_88;
+        end
         th_comp_88: begin
-          _th_comp_st_35 <= _tmp_209;
+          _th_comp_count_29 <= _th_comp_count_29 + 1;
           th_comp <= th_comp_89;
         end
         th_comp_89: begin
-          if(_tmp_210) begin
-            _tmp_211 <= ram_c_0_rdata;
-          end 
-          if(_tmp_210) begin
+          if(_th_comp_count_29 == 4) begin
             th_comp <= th_comp_90;
-          end 
-        end
-        th_comp_90: begin
-          _th_comp_sq_36 <= _tmp_211;
-          th_comp <= th_comp_91;
-        end
-        th_comp_91: begin
-          if(_th_comp_st_35 !== _th_comp_sq_36) begin
-            th_comp <= th_comp_92;
           end else begin
             th_comp <= th_comp_94;
           end
         end
+        th_comp_90: begin
+          th_comp <= th_comp_91;
+        end
+        th_comp_91: begin
+          _th_comp_write_offset_30 <= _th_comp_write_offset_30 + 1;
+          th_comp <= th_comp_92;
+        end
         th_comp_92: begin
-          _th_comp_all_ok_33 <= 0;
+          _th_comp_sum_28 <= 0;
           th_comp <= th_comp_93;
         end
         th_comp_93: begin
-          $display("%d %d %d", _th_comp_i_34, _th_comp_st_35, _th_comp_sq_36);
+          _th_comp_count_29 <= 0;
           th_comp <= th_comp_94;
         end
         th_comp_94: begin
-          _th_comp_i_34 <= _th_comp_i_34 + 1;
-          th_comp <= th_comp_86;
+          _th_comp_i_31 <= _th_comp_i_31 + 1;
+          th_comp <= th_comp_81;
         end
         th_comp_95: begin
-          if(_th_comp_all_ok_33) begin
-            th_comp <= th_comp_96;
-          end else begin
-            th_comp <= th_comp_98;
-          end
+          _tmp_186 <= _th_comp_offset_7;
+          _tmp_187 <= 2048;
+          _tmp_188 <= _th_comp_size_6 >>> 2;
+          th_comp <= th_comp_96;
         end
         th_comp_96: begin
-          $display("OK");
-          th_comp <= th_comp_97;
+          if(_tmp_207) begin
+            th_comp <= th_comp_97;
+          end 
         end
         th_comp_97: begin
-          th_comp <= th_comp_99;
+          $display("# mystream");
+          th_comp <= th_comp_98;
         end
         th_comp_98: begin
-          $display("NG");
+          _th_comp_size_35 <= _th_comp_size_6 >>> 2;
+          _th_comp_offset_stream_36 <= 0;
+          _th_comp_offset_seq_37 <= _th_comp_offset_7;
           th_comp <= th_comp_99;
+        end
+        th_comp_99: begin
+          _th_comp_all_ok_38 <= 1;
+          th_comp <= th_comp_100;
+        end
+        th_comp_100: begin
+          _th_comp_i_39 <= 0;
+          th_comp <= th_comp_101;
+        end
+        th_comp_101: begin
+          if(_th_comp_i_39 < _th_comp_size_35) begin
+            th_comp <= th_comp_102;
+          end else begin
+            th_comp <= th_comp_110;
+          end
+        end
+        th_comp_102: begin
+          if(_tmp_208) begin
+            _tmp_209 <= ram_c_0_rdata;
+          end 
+          if(_tmp_208) begin
+            th_comp <= th_comp_103;
+          end 
+        end
+        th_comp_103: begin
+          _th_comp_st_40 <= _tmp_209;
+          th_comp <= th_comp_104;
+        end
+        th_comp_104: begin
+          if(_tmp_210) begin
+            _tmp_211 <= ram_c_0_rdata;
+          end 
+          if(_tmp_210) begin
+            th_comp <= th_comp_105;
+          end 
+        end
+        th_comp_105: begin
+          _th_comp_sq_41 <= _tmp_211;
+          th_comp <= th_comp_106;
+        end
+        th_comp_106: begin
+          if(_th_comp_st_40 !== _th_comp_sq_41) begin
+            th_comp <= th_comp_107;
+          end else begin
+            th_comp <= th_comp_109;
+          end
+        end
+        th_comp_107: begin
+          _th_comp_all_ok_38 <= 0;
+          th_comp <= th_comp_108;
+        end
+        th_comp_108: begin
+          $display("%d %d %d", _th_comp_i_39, _th_comp_st_40, _th_comp_sq_41);
+          th_comp <= th_comp_109;
+        end
+        th_comp_109: begin
+          _th_comp_i_39 <= _th_comp_i_39 + 1;
+          th_comp <= th_comp_101;
+        end
+        th_comp_110: begin
+          if(_th_comp_all_ok_38) begin
+            th_comp <= th_comp_111;
+          end else begin
+            th_comp <= th_comp_113;
+          end
+        end
+        th_comp_111: begin
+          $display("OK");
+          th_comp <= th_comp_112;
+        end
+        th_comp_112: begin
+          th_comp <= th_comp_114;
+        end
+        th_comp_113: begin
+          $display("NG");
+          th_comp <= th_comp_114;
         end
       endcase
     end
@@ -3121,231 +3725,374 @@ module blinkled
     end
   end
 
-  localparam _inc_stream_a_fsm_1_1 = 1;
-  localparam _inc_stream_a_fsm_1_2 = 2;
+  localparam _macstream_a_fsm_1_1 = 1;
+  localparam _macstream_a_fsm_1_2 = 2;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _inc_stream_a_fsm_1 <= _inc_stream_a_fsm_1_init;
-      _d1__inc_stream_a_fsm_1 <= _inc_stream_a_fsm_1_init;
-      _inc_stream_a_offset_1 <= 0;
-      _inc_stream_a_size_1 <= 0;
-      _inc_stream_a_stride_1 <= 0;
-      _inc_stream_a_count_1 <= 0;
-      _inc_stream_a_raddr_1 <= 0;
-      _inc_stream_a_renable_1 <= 0;
-      __inc_stream_a_fsm_1_cond_1_0_1 <= 0;
-      __inc_stream_a_fsm_1_cond_2_1_1 <= 0;
+      _macstream_a_fsm_1 <= _macstream_a_fsm_1_init;
+      _d1__macstream_a_fsm_1 <= _macstream_a_fsm_1_init;
+      _macstream_a_offset_1 <= 0;
+      _macstream_a_size_1 <= 0;
+      _macstream_a_stride_1 <= 0;
+      _macstream_a_count_1 <= 0;
+      _macstream_a_raddr_1 <= 0;
+      _macstream_a_renable_1 <= 0;
+      __macstream_a_fsm_1_cond_1_0_1 <= 0;
+      __macstream_a_fsm_1_cond_2_1_1 <= 0;
     end else begin
-      _d1__inc_stream_a_fsm_1 <= _inc_stream_a_fsm_1;
-      case(_d1__inc_stream_a_fsm_1)
-        _inc_stream_a_fsm_1_1: begin
-          if(__inc_stream_a_fsm_1_cond_1_0_1) begin
-            _inc_stream_a_renable_1 <= 0;
+      _d1__macstream_a_fsm_1 <= _macstream_a_fsm_1;
+      case(_d1__macstream_a_fsm_1)
+        _macstream_a_fsm_1_1: begin
+          if(__macstream_a_fsm_1_cond_1_0_1) begin
+            _macstream_a_renable_1 <= 0;
           end 
         end
-        _inc_stream_a_fsm_1_2: begin
-          if(__inc_stream_a_fsm_1_cond_2_1_1) begin
-            _inc_stream_a_renable_1 <= 0;
+        _macstream_a_fsm_1_2: begin
+          if(__macstream_a_fsm_1_cond_2_1_1) begin
+            _macstream_a_renable_1 <= 0;
           end 
         end
       endcase
-      case(_inc_stream_a_fsm_1)
-        _inc_stream_a_fsm_1_init: begin
+      case(_macstream_a_fsm_1)
+        _macstream_a_fsm_1_init: begin
           if(th_comp == 7) begin
-            _inc_stream_a_offset_1 <= _th_comp_offset_6;
-            _inc_stream_a_size_1 <= _th_comp_size_5;
-            _inc_stream_a_stride_1 <= 1;
+            _macstream_a_offset_1 <= _th_comp_offset_9;
+            _macstream_a_size_1 <= _th_comp_size_8;
+            _macstream_a_stride_1 <= 1;
           end 
-          if(_inc_stream_start && (_inc_stream_a_fsm_sel == 1) && (_inc_stream_a_size_1 > 0)) begin
-            _inc_stream_a_count_1 <= _inc_stream_a_size_1;
+          if(_macstream_start && (_macstream_a_fsm_sel == 1) && (_macstream_a_size_1 > 0)) begin
+            _macstream_a_count_1 <= _macstream_a_size_1;
           end 
-          if(_inc_stream_start && (_inc_stream_a_fsm_sel == 1) && (_inc_stream_a_size_1 > 0)) begin
-            _inc_stream_a_fsm_1 <= _inc_stream_a_fsm_1_1;
-          end 
-        end
-        _inc_stream_a_fsm_1_1: begin
-          _inc_stream_a_raddr_1 <= _inc_stream_a_offset_1;
-          _inc_stream_a_renable_1 <= 1;
-          _inc_stream_a_count_1 <= _inc_stream_a_count_1 - 1;
-          __inc_stream_a_fsm_1_cond_1_0_1 <= 1;
-          if(_inc_stream_a_count_1 == 1) begin
-            _inc_stream_a_fsm_1 <= _inc_stream_a_fsm_1_init;
-          end 
-          if(_inc_stream_a_count_1 > 1) begin
-            _inc_stream_a_fsm_1 <= _inc_stream_a_fsm_1_2;
+          if(_macstream_start && (_macstream_a_fsm_sel == 1) && (_macstream_a_size_1 > 0)) begin
+            _macstream_a_fsm_1 <= _macstream_a_fsm_1_1;
           end 
         end
-        _inc_stream_a_fsm_1_2: begin
-          _inc_stream_a_raddr_1 <= _inc_stream_a_raddr_1 + _inc_stream_a_stride_1;
-          _inc_stream_a_renable_1 <= 1;
-          _inc_stream_a_count_1 <= _inc_stream_a_count_1 - 1;
-          __inc_stream_a_fsm_1_cond_2_1_1 <= 1;
-          if(_inc_stream_a_count_1 == 1) begin
-            _inc_stream_a_fsm_1 <= _inc_stream_a_fsm_1_init;
+        _macstream_a_fsm_1_1: begin
+          _macstream_a_raddr_1 <= _macstream_a_offset_1;
+          _macstream_a_renable_1 <= 1;
+          _macstream_a_count_1 <= _macstream_a_count_1 - 1;
+          __macstream_a_fsm_1_cond_1_0_1 <= 1;
+          if(_macstream_a_count_1 == 1) begin
+            _macstream_a_fsm_1 <= _macstream_a_fsm_1_init;
+          end 
+          if(_macstream_a_count_1 > 1) begin
+            _macstream_a_fsm_1 <= _macstream_a_fsm_1_2;
+          end 
+        end
+        _macstream_a_fsm_1_2: begin
+          _macstream_a_raddr_1 <= _macstream_a_raddr_1 + _macstream_a_stride_1;
+          _macstream_a_renable_1 <= 1;
+          _macstream_a_count_1 <= _macstream_a_count_1 - 1;
+          __macstream_a_fsm_1_cond_2_1_1 <= 1;
+          if(_macstream_a_count_1 == 1) begin
+            _macstream_a_fsm_1 <= _macstream_a_fsm_1_init;
           end 
         end
       endcase
     end
   end
 
-  localparam _inc_stream_b_fsm_2_1 = 1;
-  localparam _inc_stream_b_fsm_2_2 = 2;
+  localparam _macstream_b_fsm_2_1 = 1;
+  localparam _macstream_b_fsm_2_2 = 2;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _inc_stream_b_fsm_2 <= _inc_stream_b_fsm_2_init;
-      _d1__inc_stream_b_fsm_2 <= _inc_stream_b_fsm_2_init;
-      _inc_stream_b_offset_2 <= 0;
-      _inc_stream_b_size_2 <= 0;
-      _inc_stream_b_stride_2 <= 0;
-      _inc_stream_b_count_2 <= 0;
-      _inc_stream_b_raddr_2 <= 0;
-      _inc_stream_b_renable_2 <= 0;
-      __inc_stream_b_fsm_2_cond_1_0_1 <= 0;
-      __inc_stream_b_fsm_2_cond_2_1_1 <= 0;
+      _macstream_b_fsm_2 <= _macstream_b_fsm_2_init;
+      _d1__macstream_b_fsm_2 <= _macstream_b_fsm_2_init;
+      _macstream_b_offset_2 <= 0;
+      _macstream_b_size_2 <= 0;
+      _macstream_b_stride_2 <= 0;
+      _macstream_b_count_2 <= 0;
+      _macstream_b_raddr_2 <= 0;
+      _macstream_b_renable_2 <= 0;
+      __macstream_b_fsm_2_cond_1_0_1 <= 0;
+      __macstream_b_fsm_2_cond_2_1_1 <= 0;
     end else begin
-      _d1__inc_stream_b_fsm_2 <= _inc_stream_b_fsm_2;
-      case(_d1__inc_stream_b_fsm_2)
-        _inc_stream_b_fsm_2_1: begin
-          if(__inc_stream_b_fsm_2_cond_1_0_1) begin
-            _inc_stream_b_renable_2 <= 0;
+      _d1__macstream_b_fsm_2 <= _macstream_b_fsm_2;
+      case(_d1__macstream_b_fsm_2)
+        _macstream_b_fsm_2_1: begin
+          if(__macstream_b_fsm_2_cond_1_0_1) begin
+            _macstream_b_renable_2 <= 0;
           end 
         end
-        _inc_stream_b_fsm_2_2: begin
-          if(__inc_stream_b_fsm_2_cond_2_1_1) begin
-            _inc_stream_b_renable_2 <= 0;
+        _macstream_b_fsm_2_2: begin
+          if(__macstream_b_fsm_2_cond_2_1_1) begin
+            _macstream_b_renable_2 <= 0;
           end 
         end
       endcase
-      case(_inc_stream_b_fsm_2)
-        _inc_stream_b_fsm_2_init: begin
+      case(_macstream_b_fsm_2)
+        _macstream_b_fsm_2_init: begin
           if(th_comp == 8) begin
-            _inc_stream_b_offset_2 <= _th_comp_offset_6;
-            _inc_stream_b_size_2 <= _th_comp_size_5;
-            _inc_stream_b_stride_2 <= 1;
+            _macstream_b_offset_2 <= _th_comp_offset_9;
+            _macstream_b_size_2 <= _th_comp_size_8;
+            _macstream_b_stride_2 <= 1;
           end 
-          if(_inc_stream_start && (_inc_stream_b_fsm_sel == 2) && (_inc_stream_b_size_2 > 0)) begin
-            _inc_stream_b_count_2 <= _inc_stream_b_size_2;
+          if(_macstream_start && (_macstream_b_fsm_sel == 2) && (_macstream_b_size_2 > 0)) begin
+            _macstream_b_count_2 <= _macstream_b_size_2;
           end 
-          if(_inc_stream_start && (_inc_stream_b_fsm_sel == 2) && (_inc_stream_b_size_2 > 0)) begin
-            _inc_stream_b_fsm_2 <= _inc_stream_b_fsm_2_1;
-          end 
-        end
-        _inc_stream_b_fsm_2_1: begin
-          _inc_stream_b_raddr_2 <= _inc_stream_b_offset_2;
-          _inc_stream_b_renable_2 <= 1;
-          _inc_stream_b_count_2 <= _inc_stream_b_count_2 - 1;
-          __inc_stream_b_fsm_2_cond_1_0_1 <= 1;
-          if(_inc_stream_b_count_2 == 1) begin
-            _inc_stream_b_fsm_2 <= _inc_stream_b_fsm_2_init;
-          end 
-          if(_inc_stream_b_count_2 > 1) begin
-            _inc_stream_b_fsm_2 <= _inc_stream_b_fsm_2_2;
+          if(_macstream_start && (_macstream_b_fsm_sel == 2) && (_macstream_b_size_2 > 0)) begin
+            _macstream_b_fsm_2 <= _macstream_b_fsm_2_1;
           end 
         end
-        _inc_stream_b_fsm_2_2: begin
-          _inc_stream_b_raddr_2 <= _inc_stream_b_raddr_2 + _inc_stream_b_stride_2;
-          _inc_stream_b_renable_2 <= 1;
-          _inc_stream_b_count_2 <= _inc_stream_b_count_2 - 1;
-          __inc_stream_b_fsm_2_cond_2_1_1 <= 1;
-          if(_inc_stream_b_count_2 == 1) begin
-            _inc_stream_b_fsm_2 <= _inc_stream_b_fsm_2_init;
+        _macstream_b_fsm_2_1: begin
+          _macstream_b_raddr_2 <= _macstream_b_offset_2;
+          _macstream_b_renable_2 <= 1;
+          _macstream_b_count_2 <= _macstream_b_count_2 - 1;
+          __macstream_b_fsm_2_cond_1_0_1 <= 1;
+          if(_macstream_b_count_2 == 1) begin
+            _macstream_b_fsm_2 <= _macstream_b_fsm_2_init;
+          end 
+          if(_macstream_b_count_2 > 1) begin
+            _macstream_b_fsm_2 <= _macstream_b_fsm_2_2;
+          end 
+        end
+        _macstream_b_fsm_2_2: begin
+          _macstream_b_raddr_2 <= _macstream_b_raddr_2 + _macstream_b_stride_2;
+          _macstream_b_renable_2 <= 1;
+          _macstream_b_count_2 <= _macstream_b_count_2 - 1;
+          __macstream_b_fsm_2_cond_2_1_1 <= 1;
+          if(_macstream_b_count_2 == 1) begin
+            _macstream_b_fsm_2 <= _macstream_b_fsm_2_init;
           end 
         end
       endcase
     end
   end
 
-  localparam _inc_stream_c_fsm_3_1 = 1;
-  localparam _inc_stream_c_fsm_3_2 = 2;
-  localparam _inc_stream_c_fsm_3_3 = 3;
-  localparam _inc_stream_c_fsm_3_4 = 4;
-  localparam _inc_stream_c_fsm_3_5 = 5;
-  localparam _inc_stream_c_fsm_3_6 = 6;
-  localparam _inc_stream_c_fsm_3_7 = 7;
-  localparam _inc_stream_c_fsm_3_8 = 8;
+  localparam _macstream_c_fsm_3_1 = 1;
+  localparam _macstream_c_fsm_3_2 = 2;
+  localparam _macstream_c_fsm_3_3 = 3;
+  localparam _macstream_c_fsm_3_4 = 4;
+  localparam _macstream_c_fsm_3_5 = 5;
+  localparam _macstream_c_fsm_3_6 = 6;
+  localparam _macstream_c_fsm_3_7 = 7;
+  localparam _macstream_c_fsm_3_8 = 8;
+  localparam _macstream_c_fsm_3_9 = 9;
+  localparam _macstream_c_fsm_3_10 = 10;
+  localparam _macstream_c_fsm_3_11 = 11;
+  localparam _macstream_c_fsm_3_12 = 12;
+  localparam _macstream_c_fsm_3_13 = 13;
+  localparam _macstream_c_fsm_3_14 = 14;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _inc_stream_c_fsm_3 <= _inc_stream_c_fsm_3_init;
-      _d1__inc_stream_c_fsm_3 <= _inc_stream_c_fsm_3_init;
-      _inc_stream_c_offset_3 <= 0;
-      _inc_stream_c_size_3 <= 0;
-      _inc_stream_c_stride_3 <= 0;
-      _inc_stream_c_count_3 <= 0;
-      _inc_stream_c_waddr_3 <= 0;
-      _inc_stream_c_wdata_3 <= 0;
-      _inc_stream_c_wenable_3 <= 0;
-      __inc_stream_c_fsm_3_cond_7_0_1 <= 0;
-      __inc_stream_c_fsm_3_cond_8_1_1 <= 0;
+      _macstream_c_fsm_3 <= _macstream_c_fsm_3_init;
+      _d1__macstream_c_fsm_3 <= _macstream_c_fsm_3_init;
+      _macstream_c_offset_3 <= 0;
+      _macstream_c_size_3 <= 0;
+      _macstream_c_stride_3 <= 0;
+      _macstream_c_count_3 <= 0;
+      _macstream_c_waddr_3 <= 0;
+      _macstream_c_wdata_3 <= 0;
+      _macstream_c_wenable_3 <= 0;
+      __macstream_c_fsm_3_cond_13_0_1 <= 0;
+      __macstream_c_fsm_3_cond_14_1_1 <= 0;
     end else begin
-      _d1__inc_stream_c_fsm_3 <= _inc_stream_c_fsm_3;
-      case(_d1__inc_stream_c_fsm_3)
-        _inc_stream_c_fsm_3_7: begin
-          if(__inc_stream_c_fsm_3_cond_7_0_1) begin
-            _inc_stream_c_wenable_3 <= 0;
+      _d1__macstream_c_fsm_3 <= _macstream_c_fsm_3;
+      case(_d1__macstream_c_fsm_3)
+        _macstream_c_fsm_3_13: begin
+          if(__macstream_c_fsm_3_cond_13_0_1) begin
+            _macstream_c_wenable_3 <= 0;
           end 
         end
-        _inc_stream_c_fsm_3_8: begin
-          if(__inc_stream_c_fsm_3_cond_8_1_1) begin
-            _inc_stream_c_wenable_3 <= 0;
+        _macstream_c_fsm_3_14: begin
+          if(__macstream_c_fsm_3_cond_14_1_1) begin
+            _macstream_c_wenable_3 <= 0;
           end 
         end
       endcase
-      case(_inc_stream_c_fsm_3)
-        _inc_stream_c_fsm_3_init: begin
+      case(_macstream_c_fsm_3)
+        _macstream_c_fsm_3_init: begin
           if(th_comp == 10) begin
-            _inc_stream_c_offset_3 <= _th_comp_offset_6;
-            _inc_stream_c_size_3 <= _th_comp_size_5;
-            _inc_stream_c_stride_3 <= 1;
+            _macstream_c_offset_3 <= _th_comp_offset_9;
+            _macstream_c_size_3 <= _th_comp_size_8;
+            _macstream_c_stride_3 <= 1;
           end 
-          if(_inc_stream_start && (_inc_stream_c_fsm_sel == 3) && (_inc_stream_c_size_3 > 0)) begin
-            _inc_stream_c_count_3 <= _inc_stream_c_size_3;
+          if(_macstream_start && (_macstream_c_fsm_sel == 3) && (_macstream_c_size_3 > 0)) begin
+            _macstream_c_count_3 <= _macstream_c_size_3;
           end 
-          if(_inc_stream_start && (_inc_stream_c_fsm_sel == 3) && (_inc_stream_c_size_3 > 0)) begin
-            _inc_stream_c_fsm_3 <= _inc_stream_c_fsm_3_1;
-          end 
-        end
-        _inc_stream_c_fsm_3_1: begin
-          _inc_stream_c_fsm_3 <= _inc_stream_c_fsm_3_2;
-        end
-        _inc_stream_c_fsm_3_2: begin
-          _inc_stream_c_fsm_3 <= _inc_stream_c_fsm_3_3;
-        end
-        _inc_stream_c_fsm_3_3: begin
-          _inc_stream_c_fsm_3 <= _inc_stream_c_fsm_3_4;
-        end
-        _inc_stream_c_fsm_3_4: begin
-          _inc_stream_c_fsm_3 <= _inc_stream_c_fsm_3_5;
-        end
-        _inc_stream_c_fsm_3_5: begin
-          _inc_stream_c_fsm_3 <= _inc_stream_c_fsm_3_6;
-        end
-        _inc_stream_c_fsm_3_6: begin
-          _inc_stream_c_fsm_3 <= _inc_stream_c_fsm_3_7;
-        end
-        _inc_stream_c_fsm_3_7: begin
-          _inc_stream_c_waddr_3 <= _inc_stream_c_offset_3;
-          _inc_stream_c_wdata_3 <= inc_stream_c_data;
-          _inc_stream_c_wenable_3 <= 1;
-          _inc_stream_c_count_3 <= _inc_stream_c_count_3 - 1;
-          __inc_stream_c_fsm_3_cond_7_0_1 <= 1;
-          if(_inc_stream_c_count_3 == 1) begin
-            _inc_stream_c_fsm_3 <= _inc_stream_c_fsm_3_init;
-          end 
-          if(_inc_stream_c_count_3 > 1) begin
-            _inc_stream_c_fsm_3 <= _inc_stream_c_fsm_3_8;
+          if(_macstream_start && (_macstream_c_fsm_sel == 3) && (_macstream_c_size_3 > 0)) begin
+            _macstream_c_fsm_3 <= _macstream_c_fsm_3_1;
           end 
         end
-        _inc_stream_c_fsm_3_8: begin
-          _inc_stream_c_waddr_3 <= _inc_stream_c_waddr_3 + _inc_stream_c_stride_3;
-          _inc_stream_c_wdata_3 <= inc_stream_c_data;
-          _inc_stream_c_wenable_3 <= 1;
-          _inc_stream_c_count_3 <= _inc_stream_c_count_3 - 1;
-          __inc_stream_c_fsm_3_cond_8_1_1 <= 1;
-          if(_inc_stream_c_count_3 == 1) begin
-            _inc_stream_c_fsm_3 <= _inc_stream_c_fsm_3_init;
+        _macstream_c_fsm_3_1: begin
+          _macstream_c_fsm_3 <= _macstream_c_fsm_3_2;
+        end
+        _macstream_c_fsm_3_2: begin
+          _macstream_c_fsm_3 <= _macstream_c_fsm_3_3;
+        end
+        _macstream_c_fsm_3_3: begin
+          _macstream_c_fsm_3 <= _macstream_c_fsm_3_4;
+        end
+        _macstream_c_fsm_3_4: begin
+          _macstream_c_fsm_3 <= _macstream_c_fsm_3_5;
+        end
+        _macstream_c_fsm_3_5: begin
+          _macstream_c_fsm_3 <= _macstream_c_fsm_3_6;
+        end
+        _macstream_c_fsm_3_6: begin
+          _macstream_c_fsm_3 <= _macstream_c_fsm_3_7;
+        end
+        _macstream_c_fsm_3_7: begin
+          _macstream_c_fsm_3 <= _macstream_c_fsm_3_8;
+        end
+        _macstream_c_fsm_3_8: begin
+          _macstream_c_fsm_3 <= _macstream_c_fsm_3_9;
+        end
+        _macstream_c_fsm_3_9: begin
+          _macstream_c_fsm_3 <= _macstream_c_fsm_3_10;
+        end
+        _macstream_c_fsm_3_10: begin
+          _macstream_c_fsm_3 <= _macstream_c_fsm_3_11;
+        end
+        _macstream_c_fsm_3_11: begin
+          _macstream_c_fsm_3 <= _macstream_c_fsm_3_12;
+        end
+        _macstream_c_fsm_3_12: begin
+          _macstream_c_fsm_3 <= _macstream_c_fsm_3_13;
+        end
+        _macstream_c_fsm_3_13: begin
+          _macstream_c_waddr_3 <= _macstream_c_offset_3;
+          _macstream_c_wdata_3 <= macstream_c_data;
+          _macstream_c_wenable_3 <= 1;
+          _macstream_c_count_3 <= _macstream_c_count_3 - 1;
+          __macstream_c_fsm_3_cond_13_0_1 <= 1;
+          if(_macstream_c_count_3 == 1) begin
+            _macstream_c_fsm_3 <= _macstream_c_fsm_3_init;
+          end 
+          if(_macstream_c_count_3 > 1) begin
+            _macstream_c_fsm_3 <= _macstream_c_fsm_3_14;
+          end 
+        end
+        _macstream_c_fsm_3_14: begin
+          _macstream_c_waddr_3 <= _macstream_c_waddr_3 + _macstream_c_stride_3;
+          _macstream_c_wdata_3 <= macstream_c_data;
+          _macstream_c_wenable_3 <= 1;
+          _macstream_c_count_3 <= _macstream_c_count_3 - 1;
+          __macstream_c_fsm_3_cond_14_1_1 <= 1;
+          if(_macstream_c_count_3 == 1) begin
+            _macstream_c_fsm_3 <= _macstream_c_fsm_3_init;
+          end 
+        end
+      endcase
+    end
+  end
+
+  localparam _macstream_v_fsm_4_1 = 1;
+  localparam _macstream_v_fsm_4_2 = 2;
+  localparam _macstream_v_fsm_4_3 = 3;
+  localparam _macstream_v_fsm_4_4 = 4;
+  localparam _macstream_v_fsm_4_5 = 5;
+  localparam _macstream_v_fsm_4_6 = 6;
+  localparam _macstream_v_fsm_4_7 = 7;
+  localparam _macstream_v_fsm_4_8 = 8;
+  localparam _macstream_v_fsm_4_9 = 9;
+  localparam _macstream_v_fsm_4_10 = 10;
+  localparam _macstream_v_fsm_4_11 = 11;
+  localparam _macstream_v_fsm_4_12 = 12;
+  localparam _macstream_v_fsm_4_13 = 13;
+  localparam _macstream_v_fsm_4_14 = 14;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _macstream_v_fsm_4 <= _macstream_v_fsm_4_init;
+      _d1__macstream_v_fsm_4 <= _macstream_v_fsm_4_init;
+      _macstream_v_offset_4 <= 0;
+      _macstream_v_size_4 <= 0;
+      _macstream_v_stride_4 <= 0;
+      _macstream_v_count_4 <= 0;
+      _macstream_v_waddr_4 <= 0;
+      _macstream_v_wdata_4 <= 0;
+      _macstream_v_wenable_4 <= 0;
+      __macstream_v_fsm_4_cond_13_0_1 <= 0;
+      __macstream_v_fsm_4_cond_14_1_1 <= 0;
+    end else begin
+      _d1__macstream_v_fsm_4 <= _macstream_v_fsm_4;
+      case(_d1__macstream_v_fsm_4)
+        _macstream_v_fsm_4_13: begin
+          if(__macstream_v_fsm_4_cond_13_0_1) begin
+            _macstream_v_wenable_4 <= 0;
+          end 
+        end
+        _macstream_v_fsm_4_14: begin
+          if(__macstream_v_fsm_4_cond_14_1_1) begin
+            _macstream_v_wenable_4 <= 0;
+          end 
+        end
+      endcase
+      case(_macstream_v_fsm_4)
+        _macstream_v_fsm_4_init: begin
+          if(th_comp == 11) begin
+            _macstream_v_offset_4 <= _th_comp_offset_9;
+            _macstream_v_size_4 <= _th_comp_size_8;
+            _macstream_v_stride_4 <= 1;
+          end 
+          if(_macstream_start && (_macstream_v_fsm_sel == 4) && (_macstream_v_size_4 > 0)) begin
+            _macstream_v_count_4 <= _macstream_v_size_4;
+          end 
+          if(_macstream_start && (_macstream_v_fsm_sel == 4) && (_macstream_v_size_4 > 0)) begin
+            _macstream_v_fsm_4 <= _macstream_v_fsm_4_1;
+          end 
+        end
+        _macstream_v_fsm_4_1: begin
+          _macstream_v_fsm_4 <= _macstream_v_fsm_4_2;
+        end
+        _macstream_v_fsm_4_2: begin
+          _macstream_v_fsm_4 <= _macstream_v_fsm_4_3;
+        end
+        _macstream_v_fsm_4_3: begin
+          _macstream_v_fsm_4 <= _macstream_v_fsm_4_4;
+        end
+        _macstream_v_fsm_4_4: begin
+          _macstream_v_fsm_4 <= _macstream_v_fsm_4_5;
+        end
+        _macstream_v_fsm_4_5: begin
+          _macstream_v_fsm_4 <= _macstream_v_fsm_4_6;
+        end
+        _macstream_v_fsm_4_6: begin
+          _macstream_v_fsm_4 <= _macstream_v_fsm_4_7;
+        end
+        _macstream_v_fsm_4_7: begin
+          _macstream_v_fsm_4 <= _macstream_v_fsm_4_8;
+        end
+        _macstream_v_fsm_4_8: begin
+          _macstream_v_fsm_4 <= _macstream_v_fsm_4_9;
+        end
+        _macstream_v_fsm_4_9: begin
+          _macstream_v_fsm_4 <= _macstream_v_fsm_4_10;
+        end
+        _macstream_v_fsm_4_10: begin
+          _macstream_v_fsm_4 <= _macstream_v_fsm_4_11;
+        end
+        _macstream_v_fsm_4_11: begin
+          _macstream_v_fsm_4 <= _macstream_v_fsm_4_12;
+        end
+        _macstream_v_fsm_4_12: begin
+          _macstream_v_fsm_4 <= _macstream_v_fsm_4_13;
+        end
+        _macstream_v_fsm_4_13: begin
+          _macstream_v_waddr_4 <= _macstream_v_offset_4;
+          _macstream_v_wdata_4 <= macstream_v_data;
+          _macstream_v_wenable_4 <= 1;
+          _macstream_v_count_4 <= _macstream_v_count_4 - 1;
+          __macstream_v_fsm_4_cond_13_0_1 <= 1;
+          if(_macstream_v_count_4 == 1) begin
+            _macstream_v_fsm_4 <= _macstream_v_fsm_4_init;
+          end 
+          if(_macstream_v_count_4 > 1) begin
+            _macstream_v_fsm_4 <= _macstream_v_fsm_4_14;
+          end 
+        end
+        _macstream_v_fsm_4_14: begin
+          _macstream_v_waddr_4 <= _macstream_v_waddr_4 + _macstream_v_stride_4;
+          _macstream_v_wdata_4 <= macstream_v_data;
+          _macstream_v_wenable_4 <= 1;
+          _macstream_v_count_4 <= _macstream_v_count_4 - 1;
+          __macstream_v_fsm_4_cond_14_1_1 <= 1;
+          if(_macstream_v_count_4 == 1) begin
+            _macstream_v_fsm_4 <= _macstream_v_fsm_4_init;
           end 
         end
       endcase
@@ -3379,7 +4126,7 @@ module blinkled
       endcase
       case(_tmp_fsm_2)
         _tmp_fsm_2_init: begin
-          if(th_comp == 14) begin
+          if(th_comp == 15) begin
             _tmp_fsm_2 <= _tmp_fsm_2_1;
           end 
         end
@@ -3467,7 +4214,7 @@ module blinkled
       endcase
       case(_tmp_fsm_3)
         _tmp_fsm_3_init: begin
-          if(th_comp == 17) begin
+          if(th_comp == 18) begin
             _tmp_fsm_3 <= _tmp_fsm_3_1;
           end 
         end
@@ -3560,7 +4307,7 @@ module blinkled
       endcase
       case(_tmp_fsm_4)
         _tmp_fsm_4_init: begin
-          if(th_comp == 19) begin
+          if(th_comp == 20) begin
             _tmp_fsm_4 <= _tmp_fsm_4_1;
           end 
         end
@@ -3645,7 +4392,7 @@ module blinkled
       endcase
       case(_tmp_fsm_5)
         _tmp_fsm_5_init: begin
-          if(th_comp == 32) begin
+          if(th_comp == 39) begin
             _tmp_fsm_5 <= _tmp_fsm_5_1;
           end 
         end
@@ -3733,7 +4480,7 @@ module blinkled
       endcase
       case(_tmp_fsm_6)
         _tmp_fsm_6_init: begin
-          if(th_comp == 52) begin
+          if(th_comp == 59) begin
             _tmp_fsm_6 <= _tmp_fsm_6_1;
           end 
         end
@@ -3826,7 +4573,7 @@ module blinkled
       endcase
       case(_tmp_fsm_7)
         _tmp_fsm_7_init: begin
-          if(th_comp == 54) begin
+          if(th_comp == 61) begin
             _tmp_fsm_7 <= _tmp_fsm_7_1;
           end 
         end
@@ -3915,9 +4662,9 @@ module blinkled
       endcase
       case(_mystream_x_fsm_1)
         _mystream_x_fsm_1_init: begin
-          if(th_comp == 56) begin
-            _mystream_x_offset_1 <= _th_comp_offset_22;
-            _mystream_x_size_1 <= _th_comp_size_21;
+          if(th_comp == 63) begin
+            _mystream_x_offset_1 <= _th_comp_offset_25;
+            _mystream_x_size_1 <= _th_comp_size_24;
             _mystream_x_stride_1 <= 1;
           end 
           if(_mystream_start && (_mystream_x_fsm_sel == 1) && (_mystream_x_size_1 > 0)) begin
@@ -3983,9 +4730,9 @@ module blinkled
       endcase
       case(_mystream_y_fsm_2)
         _mystream_y_fsm_2_init: begin
-          if(th_comp == 57) begin
-            _mystream_y_offset_2 <= _th_comp_offset_22;
-            _mystream_y_size_2 <= _th_comp_size_21;
+          if(th_comp == 64) begin
+            _mystream_y_offset_2 <= _th_comp_offset_25;
+            _mystream_y_size_2 <= _th_comp_size_24;
             _mystream_y_stride_2 <= 1;
           end 
           if(_mystream_start && (_mystream_y_fsm_sel == 2) && (_mystream_y_size_2 > 0)) begin
@@ -4030,6 +4777,19 @@ module blinkled
   localparam _mystream_z_fsm_3_8 = 8;
   localparam _mystream_z_fsm_3_9 = 9;
   localparam _mystream_z_fsm_3_10 = 10;
+  localparam _mystream_z_fsm_3_11 = 11;
+  localparam _mystream_z_fsm_3_12 = 12;
+  localparam _mystream_z_fsm_3_13 = 13;
+  localparam _mystream_z_fsm_3_14 = 14;
+  localparam _mystream_z_fsm_3_15 = 15;
+  localparam _mystream_z_fsm_3_16 = 16;
+  localparam _mystream_z_fsm_3_17 = 17;
+  localparam _mystream_z_fsm_3_18 = 18;
+  localparam _mystream_z_fsm_3_19 = 19;
+  localparam _mystream_z_fsm_3_20 = 20;
+  localparam _mystream_z_fsm_3_21 = 21;
+  localparam _mystream_z_fsm_3_22 = 22;
+  localparam _mystream_z_fsm_3_23 = 23;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -4042,27 +4802,27 @@ module blinkled
       _mystream_z_waddr_3 <= 0;
       _mystream_z_wdata_3 <= 0;
       _mystream_z_wenable_3 <= 0;
-      __mystream_z_fsm_3_cond_9_0_1 <= 0;
-      __mystream_z_fsm_3_cond_10_1_1 <= 0;
+      __mystream_z_fsm_3_cond_22_0_1 <= 0;
+      __mystream_z_fsm_3_cond_23_1_1 <= 0;
     end else begin
       _d1__mystream_z_fsm_3 <= _mystream_z_fsm_3;
       case(_d1__mystream_z_fsm_3)
-        _mystream_z_fsm_3_9: begin
-          if(__mystream_z_fsm_3_cond_9_0_1) begin
+        _mystream_z_fsm_3_22: begin
+          if(__mystream_z_fsm_3_cond_22_0_1) begin
             _mystream_z_wenable_3 <= 0;
           end 
         end
-        _mystream_z_fsm_3_10: begin
-          if(__mystream_z_fsm_3_cond_10_1_1) begin
+        _mystream_z_fsm_3_23: begin
+          if(__mystream_z_fsm_3_cond_23_1_1) begin
             _mystream_z_wenable_3 <= 0;
           end 
         end
       endcase
       case(_mystream_z_fsm_3)
         _mystream_z_fsm_3_init: begin
-          if(th_comp == 59) begin
-            _mystream_z_offset_3 <= _th_comp_offset_22;
-            _mystream_z_size_3 <= _th_comp_size_21;
+          if(th_comp == 66) begin
+            _mystream_z_offset_3 <= _th_comp_offset_25;
+            _mystream_z_size_3 <= _th_comp_size_24 >>> 2;
             _mystream_z_stride_3 <= 1;
           end 
           if(_mystream_start && (_mystream_z_fsm_sel == 3) && (_mystream_z_size_3 > 0)) begin
@@ -4097,25 +4857,68 @@ module blinkled
           _mystream_z_fsm_3 <= _mystream_z_fsm_3_9;
         end
         _mystream_z_fsm_3_9: begin
-          _mystream_z_waddr_3 <= _mystream_z_offset_3;
-          _mystream_z_wdata_3 <= mystream_z_data;
-          _mystream_z_wenable_3 <= 1;
-          _mystream_z_count_3 <= _mystream_z_count_3 - 1;
-          __mystream_z_fsm_3_cond_9_0_1 <= 1;
-          if(_mystream_z_count_3 == 1) begin
-            _mystream_z_fsm_3 <= _mystream_z_fsm_3_init;
-          end 
-          if(_mystream_z_count_3 > 1) begin
-            _mystream_z_fsm_3 <= _mystream_z_fsm_3_10;
-          end 
+          _mystream_z_fsm_3 <= _mystream_z_fsm_3_10;
         end
         _mystream_z_fsm_3_10: begin
-          _mystream_z_waddr_3 <= _mystream_z_waddr_3 + _mystream_z_stride_3;
-          _mystream_z_wdata_3 <= mystream_z_data;
-          _mystream_z_wenable_3 <= 1;
-          _mystream_z_count_3 <= _mystream_z_count_3 - 1;
-          __mystream_z_fsm_3_cond_10_1_1 <= 1;
-          if(_mystream_z_count_3 == 1) begin
+          _mystream_z_fsm_3 <= _mystream_z_fsm_3_11;
+        end
+        _mystream_z_fsm_3_11: begin
+          _mystream_z_fsm_3 <= _mystream_z_fsm_3_12;
+        end
+        _mystream_z_fsm_3_12: begin
+          _mystream_z_fsm_3 <= _mystream_z_fsm_3_13;
+        end
+        _mystream_z_fsm_3_13: begin
+          _mystream_z_fsm_3 <= _mystream_z_fsm_3_14;
+        end
+        _mystream_z_fsm_3_14: begin
+          _mystream_z_fsm_3 <= _mystream_z_fsm_3_15;
+        end
+        _mystream_z_fsm_3_15: begin
+          _mystream_z_fsm_3 <= _mystream_z_fsm_3_16;
+        end
+        _mystream_z_fsm_3_16: begin
+          _mystream_z_fsm_3 <= _mystream_z_fsm_3_17;
+        end
+        _mystream_z_fsm_3_17: begin
+          _mystream_z_fsm_3 <= _mystream_z_fsm_3_18;
+        end
+        _mystream_z_fsm_3_18: begin
+          _mystream_z_fsm_3 <= _mystream_z_fsm_3_19;
+        end
+        _mystream_z_fsm_3_19: begin
+          _mystream_z_fsm_3 <= _mystream_z_fsm_3_20;
+        end
+        _mystream_z_fsm_3_20: begin
+          _mystream_z_fsm_3 <= _mystream_z_fsm_3_21;
+        end
+        _mystream_z_fsm_3_21: begin
+          _mystream_z_fsm_3 <= _mystream_z_fsm_3_22;
+        end
+        _mystream_z_fsm_3_22: begin
+          if(mystream_v_data) begin
+            _mystream_z_waddr_3 <= _mystream_z_offset_3;
+            _mystream_z_wdata_3 <= mystream_z_data;
+            _mystream_z_wenable_3 <= 1;
+            _mystream_z_count_3 <= _mystream_z_count_3 - 1;
+          end 
+          __mystream_z_fsm_3_cond_22_0_1 <= 1;
+          if(mystream_v_data && (_mystream_z_count_3 == 1)) begin
+            _mystream_z_fsm_3 <= _mystream_z_fsm_3_init;
+          end 
+          if(mystream_v_data && (_mystream_z_count_3 > 1)) begin
+            _mystream_z_fsm_3 <= _mystream_z_fsm_3_23;
+          end 
+        end
+        _mystream_z_fsm_3_23: begin
+          if(mystream_v_data) begin
+            _mystream_z_waddr_3 <= _mystream_z_waddr_3 + _mystream_z_stride_3;
+            _mystream_z_wdata_3 <= mystream_z_data;
+            _mystream_z_wenable_3 <= 1;
+            _mystream_z_count_3 <= _mystream_z_count_3 - 1;
+          end 
+          __mystream_z_fsm_3_cond_23_1_1 <= 1;
+          if(mystream_v_data && (_mystream_z_count_3 == 1)) begin
             _mystream_z_fsm_3 <= _mystream_z_fsm_3_init;
           end 
         end
@@ -4150,7 +4953,7 @@ module blinkled
       endcase
       case(_tmp_fsm_8)
         _tmp_fsm_8_init: begin
-          if(th_comp == 63) begin
+          if(th_comp == 70) begin
             _tmp_fsm_8 <= _tmp_fsm_8_1;
           end 
         end
@@ -4238,7 +5041,7 @@ module blinkled
       endcase
       case(_tmp_fsm_9)
         _tmp_fsm_9_init: begin
-          if(th_comp == 66) begin
+          if(th_comp == 73) begin
             _tmp_fsm_9 <= _tmp_fsm_9_1;
           end 
         end
@@ -4331,7 +5134,7 @@ module blinkled
       endcase
       case(_tmp_fsm_10)
         _tmp_fsm_10_init: begin
-          if(th_comp == 68) begin
+          if(th_comp == 75) begin
             _tmp_fsm_10 <= _tmp_fsm_10_1;
           end 
         end
@@ -4416,7 +5219,7 @@ module blinkled
       endcase
       case(_tmp_fsm_11)
         _tmp_fsm_11_init: begin
-          if(th_comp == 81) begin
+          if(th_comp == 96) begin
             _tmp_fsm_11 <= _tmp_fsm_11_1;
           end 
         end
@@ -4546,12 +5349,99 @@ module ram_c
   assign ram_c_0_rdata = mem[ram_c_0_daddr];
 
 endmodule
+
+
+
+module ram_d
+(
+  input CLK,
+  input [10-1:0] ram_d_0_addr,
+  output [32-1:0] ram_d_0_rdata,
+  input [32-1:0] ram_d_0_wdata,
+  input ram_d_0_wenable
+);
+
+  reg [10-1:0] ram_d_0_daddr;
+  reg [32-1:0] mem [0:1024-1];
+
+  always @(posedge CLK) begin
+    if(ram_d_0_wenable) begin
+      mem[ram_d_0_addr] <= ram_d_0_wdata;
+    end 
+    ram_d_0_daddr <= ram_d_0_addr;
+  end
+
+  assign ram_d_0_rdata = mem[ram_d_0_daddr];
+
+endmodule
+
+
+
+module multiplier_0
+(
+  input CLK,
+  input update,
+  input [32-1:0] a,
+  input [32-1:0] b,
+  output [64-1:0] c
+);
+
+
+  multiplier_core_0
+  mult
+  (
+    .CLK(CLK),
+    .update(update),
+    .a(a),
+    .b(b),
+    .c(c)
+  );
+
+
+endmodule
+
+
+
+module multiplier_core_0
+(
+  input CLK,
+  input update,
+  input [32-1:0] a,
+  input [32-1:0] b,
+  output [64-1:0] c
+);
+
+  reg signed [32-1:0] _a;
+  reg signed [32-1:0] _b;
+  wire signed [64-1:0] _mul;
+  reg signed [64-1:0] _pipe_mul0;
+  reg signed [64-1:0] _pipe_mul1;
+  reg signed [64-1:0] _pipe_mul2;
+  reg signed [64-1:0] _pipe_mul3;
+  reg signed [64-1:0] _pipe_mul4;
+  assign _mul = _a * _b;
+  assign c = _pipe_mul4;
+
+  always @(posedge CLK) begin
+    if(update) begin
+      _a <= a;
+      _b <= b;
+      _pipe_mul0 <= _mul;
+      _pipe_mul1 <= _pipe_mul0;
+      _pipe_mul2 <= _pipe_mul1;
+      _pipe_mul3 <= _pipe_mul2;
+      _pipe_mul4 <= _pipe_mul3;
+    end 
+  end
+
+
+endmodule
 """
 
 
 def test():
     veriloggen.reset()
-    test_module = thread_stream_substream_constant.mkTest()
+    test_module = thread_stream_substream_nested_reduce.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

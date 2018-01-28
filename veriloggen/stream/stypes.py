@@ -2254,7 +2254,7 @@ class _SubstreamOutput(_UnaryOperator):
     def _implement(self, m, seq, svalid=None, senable=None):
         width = self.bit_length()
         signed = self.get_signed()
-        rdata = self.output_var.sig_data
+        rdata = self.output_var.read()
 
         data = m.Reg(self.name('data'), width, initval=0, signed=signed)
         self.sig_data = data

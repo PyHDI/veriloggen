@@ -263,7 +263,7 @@ module main
       __delay_data_26 <= __delay_data_25;
       __delay_data_27 <= __delay_data_26;
       __delay_data_28 <= __delay_data_27;
-      __substreamoutput_data_11 <= _times_data_2;
+      __substreamoutput_data_11 <= cdata;
       __delay_data_29 <= __delay_data_28;
       if(__delay_data_29) begin
         _reduceadd_data_14 <= _reduceadd_data_14 + __substreamoutput_data_11;

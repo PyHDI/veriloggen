@@ -2860,6 +2860,10 @@ module blinkled
       _mul_stream_start <= 0;
       _mul_stream_busy <= 0;
       __mul_stream_fsm_cond_0_0_1 <= 0;
+      _substream_mul_stream_x_data_cond_9_0 <= 0;
+      _substream_mul_stream_y_data_cond_9_1 <= 0;
+      _substream_mul_stream_x_data_cond_27_2 <= 0;
+      _substream_mul_stream_y_data_cond_27_3 <= 0;
     end else begin
       _d1__mul_stream_fsm <= _mul_stream_fsm;
       case(_d1__mul_stream_fsm)
@@ -2876,6 +2880,30 @@ module blinkled
             _mul_stream_busy <= 1;
           end 
           __mul_stream_fsm_cond_0_0_1 <= th_comp == 10;
+          if(th_comp == 58) begin
+            _substream_mul_stream_x_data_cond_9_0 <= 1;
+          end 
+          if(th_comp == 58) begin
+            _substream_mul_stream_y_data_cond_9_1 <= 1;
+          end 
+          if(_mac_stream_fsm == 15) begin
+            _substream_mul_stream_x_data_cond_9_0 <= 0;
+          end 
+          if(_mac_stream_fsm == 15) begin
+            _substream_mul_stream_y_data_cond_9_1 <= 0;
+          end 
+          if(th_comp == 106) begin
+            _substream_mul_stream_x_data_cond_27_2 <= 1;
+          end 
+          if(th_comp == 106) begin
+            _substream_mul_stream_y_data_cond_27_3 <= 1;
+          end 
+          if(_act_stream_fsm == 18) begin
+            _substream_mul_stream_x_data_cond_27_2 <= 0;
+          end 
+          if(_act_stream_fsm == 18) begin
+            _substream_mul_stream_y_data_cond_27_3 <= 0;
+          end 
           if(th_comp == 10) begin
             _mul_stream_fsm <= _mul_stream_fsm_1;
           end 
@@ -2969,7 +2997,7 @@ module blinkled
       __delay_data_45 <= __delay_data_44;
       __delay_data_46 <= __delay_data_45;
       __delay_data_47 <= __delay_data_46;
-      __substreamoutput_data_10 <= _times_data_2;
+      __substreamoutput_data_10 <= mul_stream_z_data;
       __delay_data_48 <= __delay_data_47;
       _reduceadd_data_14 <= _reduceadd_data_14 + __substreamoutput_data_10;
       _reduceadd_count_14 <= (_reduceadd_count_14 == mac_stream_size_data - 1)? 0 : _reduceadd_count_14 + 1;
@@ -3068,8 +3096,6 @@ module blinkled
       __mac_stream_fsm_cond_0_1_4 <= 0;
       __mac_stream_fsm_cond_0_1_5 <= 0;
       _mac_stream_reduce_reset <= 1;
-      _substream_mul_stream_x_data_cond_9_0 <= 0;
-      _substream_mul_stream_y_data_cond_9_1 <= 0;
     end else begin
       _d1__mac_stream_fsm <= _mac_stream_fsm;
       _d2__mac_stream_fsm <= _d1__mac_stream_fsm;
@@ -3114,12 +3140,6 @@ module blinkled
           end 
           __mac_stream_fsm_cond_0_0_1 <= th_comp == 58;
           __mac_stream_fsm_cond_0_1_1 <= th_comp == 58;
-          if(th_comp == 58) begin
-            _substream_mul_stream_x_data_cond_9_0 <= 1;
-          end 
-          if(th_comp == 58) begin
-            _substream_mul_stream_y_data_cond_9_1 <= 1;
-          end 
           if(th_comp == 58) begin
             _mac_stream_fsm <= _mac_stream_fsm_1;
           end 
@@ -3170,8 +3190,6 @@ module blinkled
         end
         _mac_stream_fsm_15: begin
           _mac_stream_reduce_reset <= 1;
-          _substream_mul_stream_x_data_cond_9_0 <= 0;
-          _substream_mul_stream_y_data_cond_9_1 <= 0;
           _mac_stream_fsm <= _mac_stream_fsm_16;
         end
         _mac_stream_fsm_16: begin
@@ -3239,7 +3257,7 @@ module blinkled
       __delay_data_56 <= __delay_data_55;
       __delay_data_57 <= __delay_data_56;
       __delay_data_58 <= __delay_data_57;
-      __substreamoutput_data_28 <= _times_data_2;
+      __substreamoutput_data_28 <= mul_stream_z_data;
       __delay_data_59 <= __delay_data_58;
       _reduceadd_data_32 <= _reduceadd_data_32 + __substreamoutput_data_28;
       _reduceadd_count_32 <= (_reduceadd_count_32 == act_stream_size_data - 1)? 0 : _reduceadd_count_32 + 1;
@@ -3346,8 +3364,6 @@ module blinkled
       __act_stream_fsm_cond_0_1_4 <= 0;
       __act_stream_fsm_cond_0_1_5 <= 0;
       _act_stream_reduce_reset <= 1;
-      _substream_mul_stream_x_data_cond_27_2 <= 0;
-      _substream_mul_stream_y_data_cond_27_3 <= 0;
     end else begin
       _d1__act_stream_fsm <= _act_stream_fsm;
       _d2__act_stream_fsm <= _d1__act_stream_fsm;
@@ -3392,12 +3408,6 @@ module blinkled
           end 
           __act_stream_fsm_cond_0_0_1 <= th_comp == 106;
           __act_stream_fsm_cond_0_1_1 <= th_comp == 106;
-          if(th_comp == 106) begin
-            _substream_mul_stream_x_data_cond_27_2 <= 1;
-          end 
-          if(th_comp == 106) begin
-            _substream_mul_stream_y_data_cond_27_3 <= 1;
-          end 
           if(th_comp == 106) begin
             _act_stream_fsm <= _act_stream_fsm_1;
           end 
@@ -3457,8 +3467,6 @@ module blinkled
         end
         _act_stream_fsm_18: begin
           _act_stream_reduce_reset <= 1;
-          _substream_mul_stream_x_data_cond_27_2 <= 0;
-          _substream_mul_stream_y_data_cond_27_3 <= 0;
           _act_stream_fsm <= _act_stream_fsm_19;
         end
         _act_stream_fsm_19: begin
