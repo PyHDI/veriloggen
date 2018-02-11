@@ -321,12 +321,10 @@ class Thread(vtypes.VeriloggenNode):
 
         if tree.args.vararg is not None and not self.vararg_set:
             baseobj = tree.args.vararg
-            argname = (baseobj.id
-                       if isinstance(baseobj, ast.Name)  # python 2
-                       else baseobj.arg)  # python 3
-            cvisitor.scope.addVariable(argname, self.vararg_regs)
-
-        varargname = argname
+            varargname = (baseobj.id
+                          if isinstance(baseobj, ast.Name)  # python 2
+                          else baseobj.arg)  # python 3
+            cvisitor.scope.addVariable(varargname, self.vararg_regs)
 
         if len(args) > len(tree.args.args):
             used_args.append(varargname)
@@ -339,7 +337,7 @@ class Thread(vtypes.VeriloggenNode):
             #        name = compiler._tmp_name('_'.join(['', self.name, varargname]))
             #        v = self.m.Reg(name, self.datawidth, initval=0, signed=True)
             #        self.vararg_regs.append(v)
-            #        args_code.append(argname)
+            #        args_code.append(varargname)
             # for i, arg in enumerate(args[-num_vararg_vars:]):
             #    if not isinstance(arg, vtypes.numerical_types):
             #        raise TypeError('variable length argument support no non-numeric values')
