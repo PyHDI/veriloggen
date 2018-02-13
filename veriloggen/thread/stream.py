@@ -19,6 +19,11 @@ from . import compiler
 from . import thread
 
 
+def TmpStream(m, clk, rst, datawidth=32, fsm_sel_width=16):
+    name = compiler._tmp_name('_tmp_stream')
+    return Stream(m, name, clk, rst, datawidth, fsm_sel_width)
+
+
 class Stream(BaseStream):
     __intrinsics__ = ('set_source', 'set_source_pattern', 'set_source_multidim',
                       'set_sink', 'set_sink_pattern', 'set_sink_multidim',

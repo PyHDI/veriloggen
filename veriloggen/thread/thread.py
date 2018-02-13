@@ -16,6 +16,19 @@ def reset():
     compiler._tmp_count = 0
 
 
+def TmpThread(m, clk, rst, targ, datawidth=32, tid=None):
+    name = compiler._tmp_name()
+    return Thread(m, name, clk, rst, targ, datawidth, tid)
+
+
+def embed_thread(fsm, func, *args, **kwargs):
+    m = fsm.m
+    clk = fsm.clk
+    rst = fsm.rst
+    th = TmpThread(m, clk, rst, func)
+    return th._embed_thread(fsm, *args, **kwargs)
+
+
 class Thread(vtypes.VeriloggenNode):
     __intrinsics__ = ('run', 'join', 'done', 'reset', 'ret')
 
@@ -69,6 +82,16 @@ class Thread(vtypes.VeriloggenNode):
 
         frame = inspect.currentframe()
         self.start_frame = frame.f_back
+
+        self._synthesize_start_fsm(args, kwargs, fsm)
+
+        return fsm
+
+    def _embed_thread(self, fsm, *args, **kwargs):
+        """ extend a given thread FSM (for embed_thread func) """
+
+        frame = inspect.currentframe()
+        self.start_frame = frame.f_back.f_back
 
         self._synthesize_start_fsm(args, kwargs, fsm)
 

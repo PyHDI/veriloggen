@@ -22,6 +22,14 @@ from veriloggen.types.fifo import Fifo
 from veriloggen.types.axi import AxiMaster, AxiSlave
 
 
+__intrinsics__ = ('intrinsic', )
+
+
+def intrinsic(fsm, func, *args, **kwargs):
+    """ function call as an intrinsic """
+    func(fsm, *args, **kwargs)
+
+
 class _verilog_meta(type):
     """ metaclass for verilog operator intrinsics """
 
