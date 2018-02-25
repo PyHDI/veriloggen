@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(
 
 from veriloggen import *
 import veriloggen.thread as vthread
+from veriloggen.thread.uart import UartTx, UartRx
 
 
 def mkTop(clk_name='clk', rst_name='btnCpuReset'):
@@ -54,10 +55,10 @@ def mkLed(baudrate=19200, clockfreq=100 * 1000 * 1000):
     led = m.OutputReg('led', 16, initval=0)
     tx = m.Output('utx')
     rx = m.Input('urx')
-    uart_tx = vthread.UartTx(m, 'inst_tx', 'tx_', clk, rst, tx,
-                             baudrate=baudrate, clockfreq=clockfreq)
-    uart_rx = vthread.UartRx(m, 'inst_rx', 'rx_', clk, rst, rx,
-                             baudrate=baudrate, clockfreq=clockfreq)
+    uart_tx = UartTx(m, 'inst_tx', 'tx_', clk, rst, tx,
+                     baudrate=baudrate, clockfreq=clockfreq)
+    uart_rx = UartRx(m, 'inst_rx', 'rx_', clk, rst, rx,
+                     baudrate=baudrate, clockfreq=clockfreq)
 
     def blink():
         while True:
@@ -85,10 +86,10 @@ def mkTest(baudrate=19200, clockfreq=19200 * 10):
     rx = uut['urx']
     sw = uut['sw']
 
-    uart_tx = vthread.UartTx(m, 'inst_tx', 'tx_', clk, rst, as_wire='txd',
-                             baudrate=baudrate, clockfreq=clockfreq)
-    uart_rx = vthread.UartRx(m, 'inst_rx', 'rx_', clk, rst, as_wire='rxd',
-                             baudrate=baudrate, clockfreq=clockfreq)
+    uart_tx = UartTx(m, 'inst_tx', 'tx_', clk, rst, as_wire='txd',
+                     baudrate=baudrate, clockfreq=clockfreq)
+    uart_rx = UartRx(m, 'inst_rx', 'rx_', clk, rst, as_wire='rxd',
+                     baudrate=baudrate, clockfreq=clockfreq)
 
     txd = uart_tx['txd']
     rxd = uart_rx['rxd']
@@ -119,6 +120,7 @@ def mkTest(baudrate=19200, clockfreq=19200 * 10):
     th.start()
 
     return m
+
 
 if __name__ == '__main__':
     test = mkTest()
