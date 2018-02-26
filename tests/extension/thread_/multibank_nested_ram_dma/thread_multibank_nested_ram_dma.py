@@ -135,7 +135,7 @@ def mkTest(memory_datawidth=128):
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
     init.add(
-        Delay(100000),
+        Delay(200000),
         Systask('finish'),
     )
 

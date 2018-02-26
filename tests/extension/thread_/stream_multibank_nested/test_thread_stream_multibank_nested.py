@@ -733,28 +733,28 @@ module blinkled
   reg _tmp_7;
   reg [33-1:0] _tmp_8;
   reg _tmp_9;
-  wire [33-1:0] _slice_data_10;
+  wire [32-1:0] _slice_data_10;
   wire _slice_valid_10;
   wire _slice_ready_10;
   assign _slice_ready_10 = (_tmp_8 > 0) && !_tmp_9;
   reg _ram_a0_0_cond_0_1;
   reg [33-1:0] _tmp_11;
   reg _tmp_12;
-  wire [33-1:0] _slice_data_13;
+  wire [32-1:0] _slice_data_13;
   wire _slice_valid_13;
   wire _slice_ready_13;
   assign _slice_ready_13 = (_tmp_11 > 0) && !_tmp_12;
   reg _ram_a0_1_cond_0_1;
   reg [33-1:0] _tmp_14;
   reg _tmp_15;
-  wire [33-1:0] _slice_data_16;
+  wire [32-1:0] _slice_data_16;
   wire _slice_valid_16;
   wire _slice_ready_16;
   assign _slice_ready_16 = (_tmp_14 > 0) && !_tmp_15;
   reg _ram_a1_0_cond_0_1;
   reg [33-1:0] _tmp_17;
   reg _tmp_18;
-  wire [33-1:0] _slice_data_19;
+  wire [32-1:0] _slice_data_19;
   wire _slice_valid_19;
   wire _slice_ready_19;
   assign _slice_ready_19 = (_tmp_17 > 0) && !_tmp_18;
@@ -777,28 +777,28 @@ module blinkled
   reg _tmp_29;
   reg [33-1:0] _tmp_30;
   reg _tmp_31;
-  wire [33-1:0] _slice_data_32;
+  wire [32-1:0] _slice_data_32;
   wire _slice_valid_32;
   wire _slice_ready_32;
   assign _slice_ready_32 = (_tmp_30 > 0) && !_tmp_31;
   reg _ram_b0_0_cond_0_1;
   reg [33-1:0] _tmp_33;
   reg _tmp_34;
-  wire [33-1:0] _slice_data_35;
+  wire [32-1:0] _slice_data_35;
   wire _slice_valid_35;
   wire _slice_ready_35;
   assign _slice_ready_35 = (_tmp_33 > 0) && !_tmp_34;
   reg _ram_b0_1_cond_0_1;
   reg [33-1:0] _tmp_36;
   reg _tmp_37;
-  wire [33-1:0] _slice_data_38;
+  wire [32-1:0] _slice_data_38;
   wire _slice_valid_38;
   wire _slice_ready_38;
   assign _slice_ready_38 = (_tmp_36 > 0) && !_tmp_37;
   reg _ram_b1_0_cond_0_1;
   reg [33-1:0] _tmp_39;
   reg _tmp_40;
-  wire [33-1:0] _slice_data_41;
+  wire [32-1:0] _slice_data_41;
   wire _slice_valid_41;
   wire _slice_ready_41;
   assign _slice_ready_41 = (_tmp_39 > 0) && !_tmp_40;
@@ -1017,28 +1017,28 @@ module blinkled
   reg _tmp_124;
   reg [33-1:0] _tmp_125;
   reg _tmp_126;
-  wire [33-1:0] _slice_data_127;
+  wire [32-1:0] _slice_data_127;
   wire _slice_valid_127;
   wire _slice_ready_127;
   assign _slice_ready_127 = (_tmp_125 > 0) && !_tmp_126;
   reg _ram_a0_0_cond_3_1;
   reg [33-1:0] _tmp_128;
   reg _tmp_129;
-  wire [33-1:0] _slice_data_130;
+  wire [32-1:0] _slice_data_130;
   wire _slice_valid_130;
   wire _slice_ready_130;
   assign _slice_ready_130 = (_tmp_128 > 0) && !_tmp_129;
   reg _ram_a0_1_cond_3_1;
   reg [33-1:0] _tmp_131;
   reg _tmp_132;
-  wire [33-1:0] _slice_data_133;
+  wire [32-1:0] _slice_data_133;
   wire _slice_valid_133;
   wire _slice_ready_133;
   assign _slice_ready_133 = (_tmp_131 > 0) && !_tmp_132;
   reg _ram_a1_0_cond_3_1;
   reg [33-1:0] _tmp_134;
   reg _tmp_135;
-  wire [33-1:0] _slice_data_136;
+  wire [32-1:0] _slice_data_136;
   wire _slice_valid_136;
   wire _slice_ready_136;
   assign _slice_ready_136 = (_tmp_134 > 0) && !_tmp_135;
@@ -1061,28 +1061,28 @@ module blinkled
   reg _tmp_146;
   reg [33-1:0] _tmp_147;
   reg _tmp_148;
-  wire [33-1:0] _slice_data_149;
+  wire [32-1:0] _slice_data_149;
   wire _slice_valid_149;
   wire _slice_ready_149;
   assign _slice_ready_149 = (_tmp_147 > 0) && !_tmp_148;
   reg _ram_b0_0_cond_3_1;
   reg [33-1:0] _tmp_150;
   reg _tmp_151;
-  wire [33-1:0] _slice_data_152;
+  wire [32-1:0] _slice_data_152;
   wire _slice_valid_152;
   wire _slice_ready_152;
   assign _slice_ready_152 = (_tmp_150 > 0) && !_tmp_151;
   reg _ram_b0_1_cond_3_1;
   reg [33-1:0] _tmp_153;
   reg _tmp_154;
-  wire [33-1:0] _slice_data_155;
+  wire [32-1:0] _slice_data_155;
   wire _slice_valid_155;
   wire _slice_ready_155;
   assign _slice_ready_155 = (_tmp_153 > 0) && !_tmp_154;
   reg _ram_b1_0_cond_3_1;
   reg [33-1:0] _tmp_156;
   reg _tmp_157;
-  wire [33-1:0] _slice_data_158;
+  wire [32-1:0] _slice_data_158;
   wire _slice_valid_158;
   wire _slice_ready_158;
   assign _slice_ready_158 = (_tmp_156 > 0) && !_tmp_157;
@@ -1449,52 +1449,52 @@ module blinkled
     end
   end
 
-  reg [33-1:0] _slice_data_244;
+  reg [32-1:0] _slice_data_244;
   reg _slice_valid_244;
   wire _slice_ready_244;
-  reg [33-1:0] _slice_data_245;
+  reg [32-1:0] _slice_data_245;
   reg _slice_valid_245;
   wire _slice_ready_245;
-  reg [33-1:0] _slice_data_246;
+  reg [32-1:0] _slice_data_246;
   reg _slice_valid_246;
   wire _slice_ready_246;
-  reg [33-1:0] _slice_data_247;
+  reg [32-1:0] _slice_data_247;
   reg _slice_valid_247;
   wire _slice_ready_247;
-  reg [33-1:0] _slice_data_248;
+  reg [32-1:0] _slice_data_248;
   reg _slice_valid_248;
   wire _slice_ready_248;
-  reg [33-1:0] _slice_data_249;
+  reg [32-1:0] _slice_data_249;
   reg _slice_valid_249;
   wire _slice_ready_249;
-  reg [33-1:0] _slice_data_250;
+  reg [32-1:0] _slice_data_250;
   reg _slice_valid_250;
   wire _slice_ready_250;
-  reg [33-1:0] _slice_data_251;
+  reg [32-1:0] _slice_data_251;
   reg _slice_valid_251;
   wire _slice_ready_251;
-  reg [33-1:0] _slice_data_252;
+  reg [32-1:0] _slice_data_252;
   reg _slice_valid_252;
   wire _slice_ready_252;
-  reg [33-1:0] _slice_data_253;
+  reg [32-1:0] _slice_data_253;
   reg _slice_valid_253;
   wire _slice_ready_253;
-  reg [33-1:0] _slice_data_254;
+  reg [32-1:0] _slice_data_254;
   reg _slice_valid_254;
   wire _slice_ready_254;
-  reg [33-1:0] _slice_data_255;
+  reg [32-1:0] _slice_data_255;
   reg _slice_valid_255;
   wire _slice_ready_255;
-  reg [33-1:0] _slice_data_256;
+  reg [32-1:0] _slice_data_256;
   reg _slice_valid_256;
   wire _slice_ready_256;
-  reg [33-1:0] _slice_data_257;
+  reg [32-1:0] _slice_data_257;
   reg _slice_valid_257;
   wire _slice_ready_257;
-  reg [33-1:0] _slice_data_258;
+  reg [32-1:0] _slice_data_258;
   reg _slice_valid_258;
   wire _slice_ready_258;
-  reg [33-1:0] _slice_data_259;
+  reg [32-1:0] _slice_data_259;
   reg _slice_valid_259;
   wire _slice_ready_259;
   assign _slice_data_10 = _slice_data_244;
@@ -1582,7 +1582,7 @@ module blinkled
       _slice_valid_259 <= 0;
     end else begin
       if((_slice_ready_244 || !_slice_valid_244) && 1 && _tmp_7) begin
-        _slice_data_244 <= _tmp_6[7'sd32:1'sd0];
+        _slice_data_244 <= _tmp_6[6'd31:1'd0];
       end 
       if(_slice_valid_244 && _slice_ready_244) begin
         _slice_valid_244 <= 0;
@@ -1591,7 +1591,7 @@ module blinkled
         _slice_valid_244 <= _tmp_7;
       end 
       if((_slice_ready_245 || !_slice_valid_245) && 1 && _tmp_7) begin
-        _slice_data_245 <= _tmp_6[8'sd64:7'sd32];
+        _slice_data_245 <= _tmp_6[7'd63:7'd32];
       end 
       if(_slice_valid_245 && _slice_ready_245) begin
         _slice_valid_245 <= 0;
@@ -1600,7 +1600,7 @@ module blinkled
         _slice_valid_245 <= _tmp_7;
       end 
       if((_slice_ready_246 || !_slice_valid_246) && 1 && _tmp_7) begin
-        _slice_data_246 <= _tmp_6[8'sd96:8'sd64];
+        _slice_data_246 <= _tmp_6[8'd95:8'd64];
       end 
       if(_slice_valid_246 && _slice_ready_246) begin
         _slice_valid_246 <= 0;
@@ -1609,7 +1609,7 @@ module blinkled
         _slice_valid_246 <= _tmp_7;
       end 
       if((_slice_ready_247 || !_slice_valid_247) && 1 && _tmp_7) begin
-        _slice_data_247 <= _tmp_6[9'sd128:8'sd96];
+        _slice_data_247 <= _tmp_6[8'd127:8'd96];
       end 
       if(_slice_valid_247 && _slice_ready_247) begin
         _slice_valid_247 <= 0;
@@ -1618,7 +1618,7 @@ module blinkled
         _slice_valid_247 <= _tmp_7;
       end 
       if((_slice_ready_248 || !_slice_valid_248) && 1 && _tmp_29) begin
-        _slice_data_248 <= _tmp_28[7'sd32:1'sd0];
+        _slice_data_248 <= _tmp_28[6'd31:1'd0];
       end 
       if(_slice_valid_248 && _slice_ready_248) begin
         _slice_valid_248 <= 0;
@@ -1627,7 +1627,7 @@ module blinkled
         _slice_valid_248 <= _tmp_29;
       end 
       if((_slice_ready_249 || !_slice_valid_249) && 1 && _tmp_29) begin
-        _slice_data_249 <= _tmp_28[8'sd64:7'sd32];
+        _slice_data_249 <= _tmp_28[7'd63:7'd32];
       end 
       if(_slice_valid_249 && _slice_ready_249) begin
         _slice_valid_249 <= 0;
@@ -1636,7 +1636,7 @@ module blinkled
         _slice_valid_249 <= _tmp_29;
       end 
       if((_slice_ready_250 || !_slice_valid_250) && 1 && _tmp_29) begin
-        _slice_data_250 <= _tmp_28[8'sd96:8'sd64];
+        _slice_data_250 <= _tmp_28[8'd95:8'd64];
       end 
       if(_slice_valid_250 && _slice_ready_250) begin
         _slice_valid_250 <= 0;
@@ -1645,7 +1645,7 @@ module blinkled
         _slice_valid_250 <= _tmp_29;
       end 
       if((_slice_ready_251 || !_slice_valid_251) && 1 && _tmp_29) begin
-        _slice_data_251 <= _tmp_28[9'sd128:8'sd96];
+        _slice_data_251 <= _tmp_28[8'd127:8'd96];
       end 
       if(_slice_valid_251 && _slice_ready_251) begin
         _slice_valid_251 <= 0;
@@ -1654,7 +1654,7 @@ module blinkled
         _slice_valid_251 <= _tmp_29;
       end 
       if((_slice_ready_252 || !_slice_valid_252) && 1 && _tmp_124) begin
-        _slice_data_252 <= _tmp_123[7'sd32:1'sd0];
+        _slice_data_252 <= _tmp_123[6'd31:1'd0];
       end 
       if(_slice_valid_252 && _slice_ready_252) begin
         _slice_valid_252 <= 0;
@@ -1663,7 +1663,7 @@ module blinkled
         _slice_valid_252 <= _tmp_124;
       end 
       if((_slice_ready_253 || !_slice_valid_253) && 1 && _tmp_124) begin
-        _slice_data_253 <= _tmp_123[8'sd64:7'sd32];
+        _slice_data_253 <= _tmp_123[7'd63:7'd32];
       end 
       if(_slice_valid_253 && _slice_ready_253) begin
         _slice_valid_253 <= 0;
@@ -1672,7 +1672,7 @@ module blinkled
         _slice_valid_253 <= _tmp_124;
       end 
       if((_slice_ready_254 || !_slice_valid_254) && 1 && _tmp_124) begin
-        _slice_data_254 <= _tmp_123[8'sd96:8'sd64];
+        _slice_data_254 <= _tmp_123[8'd95:8'd64];
       end 
       if(_slice_valid_254 && _slice_ready_254) begin
         _slice_valid_254 <= 0;
@@ -1681,7 +1681,7 @@ module blinkled
         _slice_valid_254 <= _tmp_124;
       end 
       if((_slice_ready_255 || !_slice_valid_255) && 1 && _tmp_124) begin
-        _slice_data_255 <= _tmp_123[9'sd128:8'sd96];
+        _slice_data_255 <= _tmp_123[8'd127:8'd96];
       end 
       if(_slice_valid_255 && _slice_ready_255) begin
         _slice_valid_255 <= 0;
@@ -1690,7 +1690,7 @@ module blinkled
         _slice_valid_255 <= _tmp_124;
       end 
       if((_slice_ready_256 || !_slice_valid_256) && 1 && _tmp_146) begin
-        _slice_data_256 <= _tmp_145[7'sd32:1'sd0];
+        _slice_data_256 <= _tmp_145[6'd31:1'd0];
       end 
       if(_slice_valid_256 && _slice_ready_256) begin
         _slice_valid_256 <= 0;
@@ -1699,7 +1699,7 @@ module blinkled
         _slice_valid_256 <= _tmp_146;
       end 
       if((_slice_ready_257 || !_slice_valid_257) && 1 && _tmp_146) begin
-        _slice_data_257 <= _tmp_145[8'sd64:7'sd32];
+        _slice_data_257 <= _tmp_145[7'd63:7'd32];
       end 
       if(_slice_valid_257 && _slice_ready_257) begin
         _slice_valid_257 <= 0;
@@ -1708,7 +1708,7 @@ module blinkled
         _slice_valid_257 <= _tmp_146;
       end 
       if((_slice_ready_258 || !_slice_valid_258) && 1 && _tmp_146) begin
-        _slice_data_258 <= _tmp_145[8'sd96:8'sd64];
+        _slice_data_258 <= _tmp_145[8'd95:8'd64];
       end 
       if(_slice_valid_258 && _slice_ready_258) begin
         _slice_valid_258 <= 0;
@@ -1717,7 +1717,7 @@ module blinkled
         _slice_valid_258 <= _tmp_146;
       end 
       if((_slice_ready_259 || !_slice_valid_259) && 1 && _tmp_146) begin
-        _slice_data_259 <= _tmp_145[9'sd128:8'sd96];
+        _slice_data_259 <= _tmp_145[8'd127:8'd96];
       end 
       if(_slice_valid_259 && _slice_ready_259) begin
         _slice_valid_259 <= 0;

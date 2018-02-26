@@ -2040,7 +2040,7 @@ class MultibankRAM(object):
         msb = 0
         for ram in self.rams:
             msb = msb + ram.datawidth
-            bank_data = dtypes.Slice(data, msb, lsb)
+            bank_data = dtypes.Slice(data, msb - 1, lsb)
             done = ram.write_dataflow(
                 port, addr, bank_data, length, stride, cond, when)
             done_list.append(done)
@@ -2444,7 +2444,7 @@ class MultibankRAM(object):
         msb = 0
         for ram in rams:
             msb = msb + ram.orig_datawidth
-            bank_data = dtypes.Slice(data, msb, lsb)
+            bank_data = dtypes.Slice(data, msb - 1, lsb)
             done = ram.write_dataflow_block(
                 port, addr, bank_data, length, block_size, stride, cond, when)
             done_list.append(done)
