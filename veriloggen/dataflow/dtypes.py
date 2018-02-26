@@ -1653,6 +1653,8 @@ class Slice(_SpecialOperator):
         lsb = lsb.eval() if isinstance(lsb, _Constant) else lsb
         if not isinstance(msb, int) or not isinstance(lsb, int):
             raise TypeError('msb and lsb must be int')
+        msb = Int(msb, signed=False)
+        lsb = Int(lsb, signed=False)
         _SpecialOperator.__init__(self, var, msb, lsb)
         self.op = vtypes.Slice
 

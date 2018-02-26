@@ -549,7 +549,7 @@ module main
         _plus_valid_0 <= xvalid && yvalid;
       end 
       if((_slice_ready_1 || !_slice_valid_1) && _plus_ready_0 && _plus_valid_0) begin
-        _slice_data_1 <= _plus_data_0[5'sd15:1'sd0];
+        _slice_data_1 <= _plus_data_0[5'd15:1'd0];
       end 
       if(_slice_valid_1 && _slice_ready_1) begin
         _slice_valid_1 <= 0;
