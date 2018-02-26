@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import types_ram_manager_write_dataflow
+import thread_ram_read_dataflow
 
 expected_verilog = """
 module test;
@@ -79,14 +79,37 @@ module main
   localparam fsm_init = 0;
   reg [8-1:0] _tmp_0;
   reg _tmp_1;
-  wire [32-1:0] _minus_data_2;
-  wire _minus_valid_2;
-  wire _minus_ready_2;
-  assign _minus_ready_2 = (_tmp_0 > 0) && !_tmp_1;
+  wire [32-1:0] _counter_data_2;
+  wire _counter_valid_2;
+  wire _counter_ready_2;
+  assign _counter_ready_2 = (_tmp_0 > 0) && !_tmp_1;
   reg _myram_cond_0_1;
+  reg _tmp_3;
+  reg _tmp_4;
+  wire _tmp_5;
+  wire _tmp_6;
+  localparam _tmp_7 = 1;
+  wire [_tmp_7-1:0] _tmp_8;
+  assign _tmp_8 = (_tmp_5 || !_tmp_3) && (_tmp_6 || !_tmp_4);
+  reg [_tmp_7-1:0] __tmp_8_1;
+  wire signed [32-1:0] _tmp_9;
+  reg signed [32-1:0] __tmp_9_1;
+  assign _tmp_9 = (__tmp_8_1)? myram_1_rdata : __tmp_9_1;
+  reg _tmp_10;
+  reg _tmp_11;
+  reg _tmp_12;
+  reg _tmp_13;
+  reg [7-1:0] _tmp_14;
+  wire signed [32-1:0] __variable_data_15;
+  wire __variable_valid_15;
+  wire __variable_ready_15;
+  assign __variable_ready_15 = 1;
+  wire [1-1:0] __variable_data_16;
+  wire __variable_valid_16;
+  wire __variable_ready_16;
+  assign __variable_ready_16 = 1;
   reg [32-1:0] sum;
   reg _seq_cond_0_1;
-  reg _seq_cond_0_2;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -98,6 +121,16 @@ module main
       myram_0_wenable <= 0;
       _tmp_1 <= 0;
       _myram_cond_0_1 <= 0;
+      __tmp_8_1 <= 0;
+      __tmp_9_1 <= 0;
+      _tmp_13 <= 0;
+      _tmp_3 <= 0;
+      _tmp_4 <= 0;
+      _tmp_11 <= 0;
+      _tmp_12 <= 0;
+      _tmp_10 <= 0;
+      myram_1_addr <= 0;
+      _tmp_14 <= 0;
     end else begin
       if(_myram_cond_0_1) begin
         myram_0_wenable <= 0;
@@ -105,66 +138,80 @@ module main
       end 
       myram_1_wdata <= 0;
       myram_1_wenable <= 0;
-      if((fsm == 1) && (_tmp_0 == 0)) begin
+      if((fsm == 0) && (_tmp_0 == 0)) begin
         myram_0_addr <= -1;
         _tmp_0 <= 64;
       end 
-      if(_minus_valid_2 && ((_tmp_0 > 0) && !_tmp_1) && (_tmp_0 > 0)) begin
+      if(_counter_valid_2 && ((_tmp_0 > 0) && !_tmp_1) && (_tmp_0 > 0)) begin
         myram_0_addr <= myram_0_addr + 1;
-        myram_0_wdata <= _minus_data_2;
+        myram_0_wdata <= _counter_data_2;
         myram_0_wenable <= 1;
         _tmp_0 <= _tmp_0 - 1;
       end 
-      if(_minus_valid_2 && ((_tmp_0 > 0) && !_tmp_1) && (_tmp_0 == 1)) begin
+      if(_counter_valid_2 && ((_tmp_0 > 0) && !_tmp_1) && (_tmp_0 == 1)) begin
         _tmp_1 <= 1;
       end 
       _myram_cond_0_1 <= 1;
+      __tmp_8_1 <= _tmp_8;
+      __tmp_9_1 <= _tmp_9;
+      if((_tmp_5 || !_tmp_3) && (_tmp_6 || !_tmp_4) && _tmp_11) begin
+        _tmp_13 <= 0;
+        _tmp_3 <= 0;
+        _tmp_4 <= 0;
+        _tmp_11 <= 0;
+      end 
+      if((_tmp_5 || !_tmp_3) && (_tmp_6 || !_tmp_4) && _tmp_10) begin
+        _tmp_3 <= 1;
+        _tmp_4 <= 1;
+        _tmp_13 <= _tmp_12;
+        _tmp_12 <= 0;
+        _tmp_10 <= 0;
+        _tmp_11 <= 1;
+      end 
+      if((fsm == 3) && (_tmp_14 == 0) && !_tmp_12 && !_tmp_13) begin
+        myram_1_addr <= 0;
+        _tmp_14 <= 31;
+        _tmp_10 <= 1;
+        _tmp_12 <= 0;
+      end 
+      if((_tmp_5 || !_tmp_3) && (_tmp_6 || !_tmp_4) && (_tmp_14 > 0)) begin
+        myram_1_addr <= myram_1_addr + 1;
+        _tmp_14 <= _tmp_14 - 1;
+        _tmp_10 <= 1;
+        _tmp_12 <= 0;
+      end 
+      if((_tmp_5 || !_tmp_3) && (_tmp_6 || !_tmp_4) && (_tmp_14 == 1)) begin
+        _tmp_12 <= 1;
+      end 
     end
   end
 
-  reg [32-1:0] _counter_data_3;
-  reg _counter_valid_3;
-  wire _counter_ready_3;
-  reg [9-1:0] _counter_count_3;
-  reg [32-1:0] _minus_data_4;
-  reg _minus_valid_4;
-  wire _minus_ready_4;
-  assign _counter_ready_3 = (_minus_ready_4 || !_minus_valid_4) && _counter_valid_3;
-  assign _minus_data_2 = _minus_data_4;
-  assign _minus_valid_2 = _minus_valid_4;
-  assign _minus_ready_4 = _minus_ready_2;
+  assign __variable_data_15 = _tmp_9;
+  assign __variable_valid_15 = _tmp_3;
+  assign _tmp_5 = 1 && __variable_ready_15;
+  assign __variable_data_16 = _tmp_13;
+  assign __variable_valid_16 = _tmp_4;
+  assign _tmp_6 = 1 && __variable_ready_16;
+  reg [32-1:0] _counter_data_17;
+  reg _counter_valid_17;
+  wire _counter_ready_17;
+  assign _counter_data_2 = _counter_data_17;
+  assign _counter_valid_2 = _counter_valid_17;
+  assign _counter_ready_17 = _counter_ready_2;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _counter_data_3 <= -2'sd1;
-      _counter_count_3 <= 0;
-      _counter_valid_3 <= 0;
-      _minus_data_4 <= 0;
-      _minus_valid_4 <= 0;
+      _counter_data_17 <= -2'sd1;
+      _counter_valid_17 <= 0;
     end else begin
-      if((_counter_ready_3 || !_counter_valid_3) && 1 && 1) begin
-        _counter_data_3 <= _counter_data_3 + 1;
+      if((_counter_ready_17 || !_counter_valid_17) && 1 && 1) begin
+        _counter_data_17 <= _counter_data_17 + 1;
       end 
-      if((_counter_ready_3 || !_counter_valid_3) && 1 && 1) begin
-        _counter_count_3 <= (_counter_count_3 == 8'sd64 - 1)? 0 : _counter_count_3 + 1;
+      if(_counter_valid_17 && _counter_ready_17) begin
+        _counter_valid_17 <= 0;
       end 
-      if(_counter_valid_3 && _counter_ready_3) begin
-        _counter_valid_3 <= 0;
-      end 
-      if((_counter_ready_3 || !_counter_valid_3) && 1) begin
-        _counter_valid_3 <= 1;
-      end 
-      if((_counter_ready_3 || !_counter_valid_3) && 1 && 1 && (_counter_count_3 == 0)) begin
-        _counter_data_3 <= -2'sd1 + 1;
-      end 
-      if((_minus_ready_4 || !_minus_valid_4) && _counter_ready_3 && _counter_valid_3) begin
-        _minus_data_4 <= _counter_data_3 - 2'sd1;
-      end 
-      if(_minus_valid_4 && _minus_ready_4) begin
-        _minus_valid_4 <= 0;
-      end 
-      if((_minus_ready_4 || !_minus_valid_4) && _counter_ready_3) begin
-        _minus_valid_4 <= _counter_valid_3;
+      if((_counter_ready_17 || !_counter_valid_17) && 1) begin
+        _counter_valid_17 <= 1;
       end 
     end
   end
@@ -172,6 +219,8 @@ module main
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
   localparam fsm_3 = 3;
+  localparam fsm_4 = 4;
+  localparam fsm_5 = 5;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -182,11 +231,19 @@ module main
           fsm <= fsm_1;
         end
         fsm_1: begin
-          fsm <= fsm_2;
+          if(_tmp_1) begin
+            fsm <= fsm_2;
+          end 
         end
         fsm_2: begin
-          if(_tmp_1) begin
-            fsm <= fsm_3;
+          fsm <= fsm_3;
+        end
+        fsm_3: begin
+          fsm <= fsm_4;
+        end
+        fsm_4: begin
+          if(_tmp_13) begin
+            fsm <= fsm_5;
           end 
         end
       endcase
@@ -198,16 +255,14 @@ module main
     if(RST) begin
       sum <= 0;
       _seq_cond_0_1 <= 0;
-      _seq_cond_0_2 <= 0;
     end else begin
-      if(_seq_cond_0_2) begin
-        $display("sum=%d expected_sum=%d", sum, 1952);
+      if(_seq_cond_0_1) begin
+        $display("sum=%d expected_sum=%d", sum, 496);
       end 
-      _seq_cond_0_2 <= _seq_cond_0_1;
-      if(myram_0_wenable) begin
-        sum <= sum + myram_0_wdata;
+      if(__variable_valid_15) begin
+        sum <= sum + __variable_data_15;
       end 
-      _seq_cond_0_1 <= myram_0_wenable && (myram_0_addr == 63);
+      _seq_cond_0_1 <= __variable_valid_15 && (__variable_data_16 == 1);
     end
   end
 
@@ -257,7 +312,7 @@ endmodule
 
 def test():
     veriloggen.reset()
-    test_module = types_ram_manager_write_dataflow.mkTest()
+    test_module = thread_ram_read_dataflow.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

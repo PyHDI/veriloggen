@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import types_ram_manager_write_dataflow_when
+import thread_ram_write_dataflow_when
 
 expected_verilog = """
 module test;
@@ -251,7 +251,7 @@ endmodule
 
 def test():
     veriloggen.reset()
-    test_module = types_ram_manager_write_dataflow_when.mkTest()
+    test_module = thread_ram_write_dataflow_when.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

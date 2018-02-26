@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import types_fifo_delay
+import fifo_rtl
 
 expected_verilog = """
 module test;
@@ -81,28 +81,12 @@ module main
   reg [32-1:0] sum;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
-  reg [32-1:0] _myfifo_wdata_0_1;
-  reg [32-1:0] _myfifo_wdata_0_2;
-  reg [32-1:0] _myfifo_wdata_0_3;
-  reg [32-1:0] _myfifo_wdata_0_4;
+  reg _myfifo_cond_0_1;
+  reg _tmp_0;
   reg _myfifo_cond_1_1;
-  reg _myfifo_cond_1_2;
-  reg _myfifo_cond_1_3;
-  reg _myfifo_cond_1_4;
   reg _myfifo_cond_2_1;
-  reg _myfifo_cond_2_2;
-  reg _myfifo_cond_2_3;
-  reg _myfifo_cond_2_4;
   reg _myfifo_cond_3_1;
   reg _myfifo_cond_3_2;
-  reg _myfifo_cond_3_3;
-  reg _myfifo_cond_3_4;
-  reg _myfifo_cond_3_5;
-  reg _tmp_0;
-  reg _myfifo_cond_4_1;
-  reg _myfifo_cond_5_1;
-  reg _myfifo_cond_6_1;
-  reg _myfifo_cond_6_2;
   reg [32-1:0] _d1_fsm;
   reg _fsm_cond_3_0_1;
   localparam fsm_1 = 1;
@@ -132,13 +116,13 @@ module main
           fsm <= fsm_1;
         end
         fsm_1: begin
-          if(count_myfifo + 5 < 127) begin
+          if(!myfifo_almost_full) begin
             count <= count + 1;
           end 
           if(!myfifo_full && myfifo_enq) begin
             $display("count=%d space=%d has_space=%d", count_myfifo, (127 - count_myfifo), (count_myfifo + 1 < 127));
           end 
-          if((count_myfifo + 5 < 127) && (count == 15)) begin
+          if(!myfifo_almost_full && (count == 126)) begin
             fsm <= fsm_2;
           end 
         end
@@ -153,7 +137,7 @@ module main
             $write("count=%d space=%d has_space=%d ", count_myfifo, (127 - count_myfifo), (count_myfifo + 1 < 127));
           end 
           _fsm_cond_3_0_1 <= _tmp_0;
-          if(count == 16) begin
+          if(count == 127) begin
             fsm <= fsm_4;
           end 
         end
@@ -165,64 +149,29 @@ module main
   always @(posedge CLK) begin
     if(RST) begin
       count_myfifo <= 0;
-      _myfifo_wdata_0_1 <= 0;
-      _myfifo_wdata_0_2 <= 0;
-      _myfifo_wdata_0_3 <= 0;
-      _myfifo_wdata_0_4 <= 0;
-      _myfifo_cond_1_1 <= 0;
-      _myfifo_cond_1_2 <= 0;
-      _myfifo_cond_1_3 <= 0;
-      _myfifo_cond_1_4 <= 0;
       myfifo_wdata <= 0;
-      _myfifo_cond_2_1 <= 0;
-      _myfifo_cond_2_2 <= 0;
-      _myfifo_cond_2_3 <= 0;
-      _myfifo_cond_2_4 <= 0;
       myfifo_enq <= 0;
+      _myfifo_cond_0_1 <= 0;
+      myfifo_deq <= 0;
+      _myfifo_cond_1_1 <= 0;
+      _tmp_0 <= 0;
+      _myfifo_cond_2_1 <= 0;
       _myfifo_cond_3_1 <= 0;
       _myfifo_cond_3_2 <= 0;
-      _myfifo_cond_3_3 <= 0;
-      _myfifo_cond_3_4 <= 0;
-      _myfifo_cond_3_5 <= 0;
-      myfifo_deq <= 0;
-      _myfifo_cond_4_1 <= 0;
-      _tmp_0 <= 0;
-      _myfifo_cond_5_1 <= 0;
-      _myfifo_cond_6_1 <= 0;
-      _myfifo_cond_6_2 <= 0;
     end else begin
-      if(_myfifo_cond_3_5) begin
-        myfifo_enq <= 0;
-      end 
-      if(_myfifo_cond_1_4) begin
-        myfifo_wdata <= _myfifo_wdata_0_4;
-      end 
-      if(_myfifo_cond_2_4) begin
-        myfifo_enq <= 1;
-      end 
-      _myfifo_cond_3_5 <= _myfifo_cond_3_4;
-      _myfifo_wdata_0_4 <= _myfifo_wdata_0_3;
-      _myfifo_cond_1_4 <= _myfifo_cond_1_3;
-      _myfifo_cond_2_4 <= _myfifo_cond_2_3;
-      _myfifo_cond_3_4 <= _myfifo_cond_3_3;
-      _myfifo_wdata_0_3 <= _myfifo_wdata_0_2;
-      _myfifo_cond_1_3 <= _myfifo_cond_1_2;
-      _myfifo_cond_2_3 <= _myfifo_cond_2_2;
-      _myfifo_cond_3_3 <= _myfifo_cond_3_2;
-      if(_myfifo_cond_6_2) begin
+      if(_myfifo_cond_3_2) begin
         _tmp_0 <= 0;
       end 
-      _myfifo_wdata_0_2 <= _myfifo_wdata_0_1;
-      _myfifo_cond_1_2 <= _myfifo_cond_1_1;
-      _myfifo_cond_2_2 <= _myfifo_cond_2_1;
-      _myfifo_cond_3_2 <= _myfifo_cond_3_1;
-      if(_myfifo_cond_4_1) begin
+      if(_myfifo_cond_0_1) begin
+        myfifo_enq <= 0;
+      end 
+      if(_myfifo_cond_1_1) begin
         _tmp_0 <= !myfifo_empty && myfifo_deq;
       end 
-      if(_myfifo_cond_5_1) begin
+      if(_myfifo_cond_2_1) begin
         myfifo_deq <= 0;
       end 
-      _myfifo_cond_6_2 <= _myfifo_cond_6_1;
+      _myfifo_cond_3_2 <= _myfifo_cond_3_1;
       if(myfifo_enq && !myfifo_full && (myfifo_deq && !myfifo_empty)) begin
         count_myfifo <= count_myfifo;
       end else if(myfifo_enq && !myfifo_full) begin
@@ -230,16 +179,19 @@ module main
       end else if(myfifo_deq && !myfifo_empty) begin
         count_myfifo <= count_myfifo - 1;
       end 
-      _myfifo_wdata_0_1 <= count;
-      _myfifo_cond_1_1 <= (fsm == 1) && !myfifo_full;
-      _myfifo_cond_2_1 <= (fsm == 1) && !myfifo_full;
-      _myfifo_cond_3_1 <= 1;
+      if((fsm == 1) && !myfifo_full) begin
+        myfifo_wdata <= count;
+      end 
+      if((fsm == 1) && !myfifo_full) begin
+        myfifo_enq <= 1;
+      end 
+      _myfifo_cond_0_1 <= 1;
       if(fsm == 3) begin
         myfifo_deq <= 1;
       end 
-      _myfifo_cond_4_1 <= fsm == 3;
-      _myfifo_cond_5_1 <= 1;
-      _myfifo_cond_6_1 <= 1;
+      _myfifo_cond_1_1 <= fsm == 3;
+      _myfifo_cond_2_1 <= 1;
+      _myfifo_cond_3_1 <= 1;
     end
   end
 
@@ -301,9 +253,10 @@ module myfifo
 endmodule
 """
 
+
 def test():
     veriloggen.reset()
-    test_module = types_fifo_delay.mkTest()
+    test_module = fifo_rtl.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

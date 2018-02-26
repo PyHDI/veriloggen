@@ -5,11 +5,11 @@ import os
 import math
 
 # the next line can be removed after installation
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__)))))
 
 from veriloggen import *
-import veriloggen.types.ram as ram
+from veriloggen.thread import RAM
 
 
 def mkMain(n=128, datawidth=32, numports=2):
@@ -20,7 +20,7 @@ def mkMain(n=128, datawidth=32, numports=2):
 
     addrwidth = int(math.log(n, 2)) * 2
 
-    myram = ram.SyncRAMManager(m, 'myram', clk, rst, datawidth, addrwidth, 1)
+    myram = RAM(m, 'myram', clk, rst, datawidth, addrwidth, 1)
 
     # example how to access RAM
     count = m.Reg('count', 32, initval=0)
@@ -39,7 +39,7 @@ def mkMain(n=128, datawidth=32, numports=2):
 
     step = 16
 
-    myram.write(0, addr, count, cond=fsm)
+    myram.write_rtl(addr, count, port=0, cond=fsm)
 
     fsm(
         addr.inc(),
@@ -53,7 +53,7 @@ def mkMain(n=128, datawidth=32, numports=2):
 
     fsm.Then().goto_next()
 
-    read_data, read_valid = myram.read(0, addr, cond=fsm)
+    read_data, read_valid = myram.read_rtl(addr, port=0, cond=fsm)
 
     fsm(
         addr.inc(),
@@ -71,9 +71,7 @@ def mkMain(n=128, datawidth=32, numports=2):
     fsm.If(count == step - 1)(
         addr(0),
         count(0)
-    )
-
-    fsm.Then().goto_next()
+    ).Then().goto_next()
 
     fsm.If(read_valid)(
         sum(sum + read_data)
@@ -115,6 +113,7 @@ def mkTest():
     )
 
     return m
+
 
 if __name__ == '__main__':
     test = mkTest()

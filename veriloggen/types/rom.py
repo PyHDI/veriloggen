@@ -5,7 +5,6 @@ import math
 
 import veriloggen.core.vtypes as vtypes
 from veriloggen.core.module import Module
-from veriloggen.seq.seq import Seq
 from . import util
 
 
@@ -41,7 +40,7 @@ def mkROMDefinition(name, values, size, datawidth, sync=False, with_enable=False
     return m
 
 
-class _ROM(object):
+class _ROM_RTL(object):
 
     def __init__(self, m, name, clk, addr, values, enable=None, datawidth=None):
 
@@ -84,15 +83,15 @@ class _ROM(object):
         self.m.Instance(rom_def, name, params=(), ports=ports)
 
 
-class SyncROM(_ROM):
+class SyncROM(_ROM_RTL):
 
     def __init__(self, m, name, clk, addr, values, enable=None, datawidth=None):
-        _ROM.__init__(self, m, name, clk, addr, values,
-                      enable=enable, datawidth=datawidth)
+        _ROM_RTL.__init__(self, m, name, clk, addr, values,
+                          enable=enable, datawidth=datawidth)
 
 
-class AsyncROM(_ROM):
+class AsyncROM(_ROM_RTL):
 
     def __init__(self, m, name, addr, values, enable=None, datawidth=None):
-        _ROM.__init__(self, m, name, None, addr, values,
-                      enable=enable, datawidth=datawidth)
+        _ROM_RTL.__init__(self, m, name, None, addr, values,
+                          enable=enable, datawidth=datawidth)

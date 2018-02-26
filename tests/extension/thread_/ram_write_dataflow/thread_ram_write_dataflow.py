@@ -6,10 +6,11 @@ import math
 
 # the next line can be removed after installation
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))))
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
 
 from veriloggen import *
-import veriloggen.types.fifo as fifo
+from veriloggen.thread import RAM
+import veriloggen.dataflow as dataflow
 
 
 def mkMain(n=128, datawidth=32, numports=2):
@@ -18,59 +19,38 @@ def mkMain(n=128, datawidth=32, numports=2):
     clk = m.Input('CLK')
     rst = m.Input('RST')
 
-    addrwidth = int(math.log(n, 2))
+    addrwidth = int(math.log(n, 2)) * 2
+    myram = RAM(m, 'myram', clk, rst, datawidth, addrwidth, 2)
+    myram.disable_write(1)
 
-    myfifo = fifo.Fifo(m, 'myfifo', clk, rst, datawidth, addrwidth)
-
-    # example how to access BRAM
-    count = m.Reg('count', 32, initval=0)
-    sum = m.Reg('sum', 32, initval=0)
-
+    df = dataflow.DataflowManager(m, clk, rst)
     fsm = FSM(m, 'fsm', clk, rst)
 
-    fsm(
-        count(0),
-    )
-
     fsm.goto_next()
+    
+    # dataflow
+    value = df.Counter(size=64)
+    value = value - 1
 
-    step = 16
-
-    ack, ready = myfifo.enq(count, cond=fsm)
-
-    fsm.If(ready)(
-        count.inc()
-    )
-
-    fsm.If(ack)(
-        Systask('display', 'count=%d space=%d has_space=%d',
-                myfifo.count, myfifo.space, myfifo.has_space())
-    )
-
-    fsm.If(Ands(ready, count == step - 1)).goto_next()
-
-    fsm(
-        count(0)
-    )
-
+    # write dataflow (Dataflow -> RAM)
+    wport = 0
+    waddr = 0
+    wlen = 64
+    done = myram.write_dataflow(wport, waddr, value, wlen, cond=fsm)
     fsm.goto_next()
+    fsm.If(done).goto_next()
 
-    data, valid = myfifo.deq(cond=fsm)
+    # verify
+    sum = m.Reg('sum', 32, initval=0)
+    expected_sum = (waddr + waddr + wlen - 1) * wlen // 2 - wlen
 
-    fsm.If(valid)(
-        sum(sum + data),
-        count.inc(),
-        Systask('write', 'count=%d space=%d has_space=%d ',
-                myfifo.count, myfifo.space, myfifo.has_space())
+    seq = Seq(m, 'seq', clk, rst)
+    seq.If(myram[0].wenable)(
+        sum.add(myram[0].wdata)
     )
-
-    fsm.Then().Delay(1)(
-        Systask('display', "sum=%d", sum)
+    seq.Then().If(myram[0].addr == wlen - 1).Delay(2)(
+        Systask('display', 'sum=%d expected_sum=%d', sum, expected_sum)
     )
-
-    fsm.If(count == step).goto_next()
-
-    fsm.make_always()
 
     return m
 

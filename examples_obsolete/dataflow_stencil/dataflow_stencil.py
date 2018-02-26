@@ -11,8 +11,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(
 
 from veriloggen import *
 import veriloggen.dataflow as dataflow
-import veriloggen.types.ram as ram
 import veriloggen.types.fixed as fixed
+import veriloggen.types.ram as ram
+from veriloggen.thread import RAM
 
 
 def stencil(coe, data):
@@ -80,12 +81,12 @@ def mkStencil(n=16, size=3, datawidth=32, point=16, coe_test=False):
     # RAM
     addrwidth = int(math.log(n, 2)) * 2
 
-    src_rams = [ram.SyncRAMManager(m, 'src_ram%d' % i, clk, rst,
-                                   datawidth=datawidth, addrwidth=addrwidth, numports=2)
+    src_rams = [RAM(m, 'src_ram%d' % i, clk, rst,
+                    datawidth=datawidth, addrwidth=addrwidth, numports=2)
                 for i in range(size)]
 
-    dst_ram = ram.SyncRAMManager(m, 'dst_ram', clk, rst,
-                                 datawidth=datawidth, addrwidth=addrwidth, numports=2)
+    dst_ram = RAM(m, 'dst_ram', clk, rst,
+                  datawidth=datawidth, addrwidth=addrwidth, numports=2)
 
     # connect RAM I/Fs
     for src_ram, ext_src_ram in zip(src_rams, ext_src_rams):
@@ -119,7 +120,7 @@ def mkStencil(n=16, size=3, datawidth=32, point=16, coe_test=False):
     ivalid = []
     for i, src_ram in enumerate(src_rams):
         src_ram.disable_write(0)
-        rdata, rvalid = src_ram.read(0, read_addr, read_fsm)
+        rdata, rvalid = src_ram.read_rtl(read_addr, port=0, cond=read_fsm)
         idata.append(rdata)
         ivalid.append(rvalid)
 
@@ -177,7 +178,7 @@ def mkStencil(n=16, size=3, datawidth=32, point=16, coe_test=False):
         write_addr.inc()
     )
 
-    dst_ram.write(0, write_addr, odata, write_fsm.then)
+    dst_ram.write_rtl(write_addr, odata, port=0, cond=write_fsm.then)
 
     write_fsm.If(ovalid)(
         write_count.inc(),

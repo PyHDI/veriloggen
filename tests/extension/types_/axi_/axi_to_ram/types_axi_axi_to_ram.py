@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
 
 from veriloggen import *
 import veriloggen.types.axi as axi
-import veriloggen.types.ram as ram
+from veriloggen.thread import RAM
 import veriloggen.dataflow as dataflow
 
 
@@ -21,7 +21,7 @@ def mkMain():
     myaxi = axi.AxiMaster(m, 'myaxi', clk, rst)
     myaxi.disable_write()
 
-    myram = ram.SyncRAMManager(m, 'myram', clk, rst, numports=1)
+    myram = RAM(m, 'myram', clk, rst, numports=1)
 
     df = dataflow.DataflowManager(m, clk, rst)
     fsm = FSM(m, 'fsm', clk, rst)

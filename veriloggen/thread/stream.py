@@ -11,7 +11,6 @@ import veriloggen.core.vtypes as vtypes
 from veriloggen.seq.seq import make_condition
 from veriloggen.fsm.fsm import FSM
 from veriloggen.seq.seq import Seq
-from veriloggen.types.ram import SyncRAMManager
 from veriloggen.stream.stream import Stream as BaseStream
 from veriloggen.stream.stypes import Substream as BaseSubstream
 

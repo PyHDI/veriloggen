@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import types_ram_manager_fsm
+import ram_rtl
 
 expected_verilog = """
 module test;
@@ -218,7 +218,7 @@ endmodule
 
 def test():
     veriloggen.reset()
-    test_module = types_ram_manager_fsm.mkTest()
+    test_module = ram_rtl.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
