@@ -5,15 +5,12 @@ import functools
 import math
 
 import veriloggen.core.vtypes as vtypes
-import veriloggen.dataflow as _df
 import veriloggen.types.util as util
 from veriloggen.seq.seq import Seq, TmpSeq
 from veriloggen.fsm.fsm import FSM, TmpFSM
 from veriloggen.types.axi import AxiMaster, AxiSlave
 from veriloggen.optimizer import try_optimize as optimize
-from veriloggen.dataflow.dataflow import DataflowManager
-from veriloggen.dataflow.dtypes import make_condition, read_multi
-from veriloggen.dataflow.dtypes import _Numeric as df_numeric
+from veriloggen.dataflow.dtypes import make_condition
 
 from .ttypes import _MutexFunction
 from .ram import RAM, FixedRAM, MultibankRAM
