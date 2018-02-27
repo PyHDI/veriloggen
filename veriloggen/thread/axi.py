@@ -2,17 +2,26 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import functools
+import math
 
 import veriloggen.core.vtypes as vtypes
+import veriloggen.dataflow as _df
 import veriloggen.types.util as util
+from veriloggen.seq.seq import Seq, TmpSeq
+from veriloggen.fsm.fsm import FSM, TmpFSM
 from veriloggen.types.axi import AxiMaster, AxiSlave
-from veriloggen.fsm.fsm import FSM
+from veriloggen.optimizer import try_optimize as optimize
+from veriloggen.dataflow.dataflow import DataflowManager
+from veriloggen.dataflow.dtypes import make_condition, read_multi
+from veriloggen.dataflow.dtypes import _Numeric as df_numeric
 
 from .ttypes import _MutexFunction
 from .ram import RAM, FixedRAM, MultibankRAM
 
 
 class AXIM(AxiMaster, _MutexFunction):
+    """ AXI Master Interface with DMA controller """
+
     __intrinsics__ = ('read', 'write',
                       'dma_read', 'dma_write',
                       'dma_read_async', 'dma_write_async',
@@ -112,9 +121,9 @@ class AXIM(AxiMaster, _MutexFunction):
 
         cond = fsm.state == fsm.current
 
-        done = AxiMaster.dma_read(self, ram, req_global_addr, req_local_addr, req_size,
-                                  stride=req_local_stride,
-                                  cond=cond, ram_port=port, ram_method=ram_method)
+        done = self.dma_read_rtl(ram, req_local_addr, req_global_addr, req_size,
+                                 local_stride=req_local_stride, port=port,
+                                 cond=cond, ram_method=ram_method)
 
         fsm.If(done).goto_next()
 
@@ -172,9 +181,8 @@ class AXIM(AxiMaster, _MutexFunction):
 
         cond = fsm.state == fsm.current
 
-        done = AxiMaster.dma_read_pattern(self, ram, req_global_addr, req_local_addr,
-                                          req_pattern,
-                                          cond=cond, ram_port=port, ram_method=ram_method)
+        done = self.dma_read_rtl_pattern(ram, req_local_addr, req_global_addr, req_pattern,
+                                         port=port, cond=cond, ram_method=ram_method)
 
         fsm.If(done).goto_next()
 
@@ -230,9 +238,9 @@ class AXIM(AxiMaster, _MutexFunction):
 
         cond = fsm.state == fsm.current
 
-        done = AxiMaster.dma_write(self, ram, req_global_addr, req_local_addr, req_size,
-                                   stride=req_local_stride,
-                                   cond=cond, ram_port=port, ram_method=ram_method)
+        done = self.dma_write_rtl(ram, req_local_addr, req_global_addr, req_size,
+                                  local_stride=req_local_stride, port=port,
+                                  cond=cond, ram_method=ram_method)
 
         fsm.If(done).goto_next()
 
@@ -290,9 +298,8 @@ class AXIM(AxiMaster, _MutexFunction):
 
         cond = fsm.state == fsm.current
 
-        done = AxiMaster.dma_write_pattern(self, ram, req_global_addr, req_local_addr,
-                                           req_pattern,
-                                           cond=cond, ram_port=port, ram_method=ram_method)
+        done = self.dma_write_rtl_pattern(ram, req_local_addr, req_global_addr, req_pattern,
+                                          port=port, cond=cond, ram_method=ram_method)
 
         fsm.If(done).goto_next()
 
@@ -304,8 +311,7 @@ class AXIM(AxiMaster, _MutexFunction):
             order = list(reversed(range(len(shape))))
 
         pattern = self._to_pattern(shape, order)
-        return self.dma_write_pattern(fsm, ram, local_addr, global_addr, pattern,
-                                      port)
+        return self.dma_write_pattern(fsm, ram, local_addr, global_addr, pattern, port)
 
     def dma_read_async(self, fsm, ram, local_addr, global_addr, size,
                        local_stride=1, port=0):
@@ -438,8 +444,7 @@ class AXIM(AxiMaster, _MutexFunction):
             order = list(reversed(range(len(shape))))
 
         pattern = self._to_pattern(shape, order)
-        return self.dma_write_pattern_async(fsm, ram, local_addr, global_addr,
-                                            pattern, port)
+        return self.dma_write_pattern_async(fsm, ram, local_addr, global_addr, pattern, port)
 
     def dma_wait(self, fsm):
         if not self.enable_async:
@@ -465,6 +470,1862 @@ class AXIM(AxiMaster, _MutexFunction):
                                       shape[p + 1:], 1)
             pattern.append((size, stride))
         return pattern
+
+    #-------------------
+    # Low-level (RTL) APIs
+    #-------------------
+    def dma_read_rtl(self, ram, local_addr, global_addr, size,
+                     local_stride=1, port=0, cond=None, ram_method=None):
+        """ Safe API with length and 4KB boundary check """
+
+        ram_datawidth = (ram.datawidth if ram_method is None else
+                         ram.orig_datawidth if 'bcast' in ram_method.func.__name__ else
+                         ram.orig_datawidth if 'block' in ram_method.func.__name__ else
+                         ram.datawidth)
+
+        if vtypes.equals(self.datawidth, ram_datawidth):
+            return self._dma_read_rtl_same(ram, local_addr, global_addr, size,
+                                           local_stride, port, cond, ram_method)
+
+        comp = self.datawidth < ram_datawidth
+        if not isinstance(comp, bool):
+            raise ValueError('datawidth must be int, not (%s, %s)' %
+                             (type(self.datawidth, ram_datawidth)))
+
+        if comp:
+            return self._dma_read_rtl_narrow(ram, local_addr, global_addr, size,
+                                             local_stride, port, cond, ram_method,
+                                             ram_datawidth)
+
+        return self._dma_read_rtl_wide(ram, local_addr, global_addr, size,
+                                       local_stride, port, cond, ram_method,
+                                       ram_datawidth)
+
+    def _dma_read_rtl_same(self, ram, local_addr, global_addr, size,
+                           local_stride=1, port=0, cond=None, ram_method=None):
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        if cond is not None:
+            fsm.If(cond).goto_next()
+
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
+        req_size = self.m.TmpReg(size.bit_length() + 1, initval=0)
+        rest_size = self.m.TmpReg(size.bit_length() + 1, initval=0)
+        max_burstlen = 2 ** self.burst_size_width
+
+        fsm(
+            req_global_addr(self.mask_addr(global_addr)),
+            rest_size(size)
+        )
+
+        wdata = self.m.TmpReg(ram.datawidth, initval=0)
+        wvalid = self.m.TmpReg(initval=0)
+        df_data = self.df.Variable(
+            wdata, wvalid, width=ram.datawidth, signed=False)
+
+        if ram_method is None:
+            ram_method = getattr(ram, 'write_dataflow')
+
+        done = ram_method(port, local_addr, df_data, size,
+                          stride=local_stride, cond=fsm)
+        fsm.goto_next()
+
+        check_state = fsm.current
+
+        # 4KB boundary check
+        fsm.If(rest_size <= max_burstlen,
+               self.check_boundary(req_global_addr, rest_size))(
+            req_size(self.rest_boundary(req_global_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_global_addr))
+        ).Elif(rest_size <= max_burstlen)(
+            req_size(rest_size),
+            rest_size(0)
+        ).Elif(self.check_boundary(req_global_addr, max_burstlen))(
+            req_size(self.rest_boundary(req_global_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_global_addr))
+        ).Else(
+            req_size(max_burstlen),
+            rest_size(rest_size - max_burstlen)
+        )
+        fsm.goto_next()
+
+        ack, counter = self.read_request(req_global_addr, req_size, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        data, valid, last = self.read_data(cond=fsm)
+
+        fsm.Delay(1)(
+            wvalid(0)
+        )
+        fsm.If(valid)(
+            wdata(data),
+            wvalid(1),
+        )
+
+        fsm.If(valid, last)(
+            req_global_addr.add(optimize(req_size * (self.datawidth // 8)))
+        )
+        fsm.If(valid, last, rest_size > 0).goto(check_state)
+        fsm.If(valid, last, rest_size == 0).goto_next()
+
+        done = self.m.TmpReg(initval=0)
+        fsm(
+            done(1)
+        )
+        fsm.Delay(1)(
+            done(0)
+        )
+        fsm.goto_next()
+        fsm.goto_init()
+
+        return done
+
+    def _dma_read_rtl_narrow(self, ram, local_addr, global_addr, size,
+                             local_stride=1, port=0, cond=None, ram_method=None,
+                             ram_datawidth=None):
+        """ axi.datawidth < ram.datawidth """
+
+        if ram_datawidth is None:
+            ram_datawidth = ram.datawidth
+
+        if ram_datawidth % self.datawidth != 0:
+            raise ValueError(
+                'ram_datawidth must be multiple number of axi.datawidth')
+
+        pack_size = ram_datawidth // self.datawidth
+        dma_size = (size << int(math.log(pack_size, 2))
+                    if math.log(pack_size, 2) % 1.0 == 0.0 else
+                    size * pack_size)
+
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        if cond is not None:
+            fsm.If(cond).goto_next()
+
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
+        req_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
+        rest_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
+        max_burstlen = 2 ** self.burst_size_width
+
+        fsm(
+            req_global_addr(self.mask_addr(global_addr)),
+            rest_size(dma_size)
+        )
+
+        wdata = self.m.TmpReg(ram_datawidth, initval=0)
+        wvalid = self.m.TmpReg(initval=0)
+        df_data = self.df.Variable(
+            wdata, wvalid, width=ram_datawidth, signed=False)
+
+        if ram_method is None:
+            ram_method = getattr(ram, 'write_dataflow')
+
+        done = ram_method(port, local_addr, df_data, size,
+                          stride=local_stride, cond=fsm)
+        fsm.goto_next()
+
+        check_state = fsm.current
+
+        # 4KB boundary check
+        fsm.If(rest_size <= max_burstlen,
+               self.check_boundary(req_global_addr, rest_size))(
+            req_size(self.rest_boundary(req_global_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_global_addr))
+        ).Elif(rest_size <= max_burstlen)(
+            req_size(rest_size),
+            rest_size(0)
+        ).Elif(self.check_boundary(req_global_addr, max_burstlen))(
+            req_size(self.rest_boundary(req_global_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_global_addr))
+        ).Else(
+            req_size(max_burstlen),
+            rest_size(rest_size - max_burstlen)
+        )
+        fsm.goto_next()
+
+        ack, counter = self.read_request(req_global_addr, req_size, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        pack_count = self.m.TmpReg(pack_size, initval=0)
+        data, valid, last = self.read_data(cond=fsm)
+
+        fsm.Delay(1)(
+            wvalid(0)
+        )
+        fsm.If(valid)(
+            wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
+            wvalid(0),
+            pack_count.inc()
+        )
+        fsm.If(valid, pack_count == pack_size - 1)(
+            wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
+            wvalid(1),
+            pack_count(0)
+        )
+
+        fsm.If(valid, last)(
+            req_global_addr.add(optimize(req_size * (self.datawidth // 8)))
+        )
+        fsm.If(valid, last, rest_size > 0).goto(check_state)
+        fsm.If(valid, last, rest_size == 0).goto_next()
+
+        done = self.m.TmpReg(initval=0)
+        fsm(
+            done(1)
+        )
+        fsm.Delay(1)(
+            done(0)
+        )
+        fsm.goto_next()
+        fsm.goto_init()
+
+        return done
+
+    def _dma_read_rtl_wide(self, ram, local_addr, global_addr, size,
+                           local_stride=1, port=0, cond=None, ram_method=None,
+                           ram_datawidth=None):
+        """ axi.datawidth > ram.datawidth """
+
+        if ram_datawidth is None:
+            ram_datawidth = ram.datawidth
+
+        if self.datawidth % ram_datawidth != 0:
+            raise ValueError(
+                'axi.datawidth must be multiple number of ram_datawidth')
+
+        pack_size = self.datawidth // ram_datawidth
+        dma_size = (size >> int(math.log(pack_size, 2))
+                    if math.log(pack_size, 2) % 1.0 == 0.0 else
+                    int(size // pack_size))
+
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        if cond is not None:
+            fsm.If(cond).goto_next()
+
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
+        req_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
+        rest_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
+        max_burstlen = 2 ** self.burst_size_width
+
+        fsm(
+            req_global_addr(self.mask_addr(global_addr)),
+            rest_size(dma_size)
+        )
+
+        wdata = self.m.TmpReg(self.datawidth, initval=0)
+        wdata_ram = self.m.TmpWire(ram_datawidth)
+        wdata_ram.assign(wdata)
+        wvalid = self.m.TmpReg(initval=0)
+        df_data = self.df.Variable(
+            wdata_ram, wvalid, width=ram_datawidth, signed=False)
+
+        if ram_method is None:
+            ram_method = getattr(ram, 'write_dataflow')
+
+        done = ram_method(port, local_addr, df_data, size,
+                          stride=local_stride, cond=fsm)
+        fsm.goto_next()
+
+        check_state = fsm.current
+
+        last_done = self.m.TmpReg(initval=0)
+        fsm(
+            last_done(0)
+        )
+
+        # 4KB boundary check
+        fsm.If(rest_size <= max_burstlen,
+               self.check_boundary(req_global_addr, rest_size))(
+            req_size(self.rest_boundary(req_global_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_global_addr))
+        ).Elif(rest_size <= max_burstlen)(
+            req_size(rest_size),
+            rest_size(0)
+        ).Elif(self.check_boundary(req_global_addr, max_burstlen))(
+            req_size(self.rest_boundary(req_global_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_global_addr))
+        ).Else(
+            req_size(max_burstlen),
+            rest_size(rest_size - max_burstlen)
+        )
+        fsm.goto_next()
+
+        ack, counter = self.read_request(req_global_addr, req_size, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        pack_count = self.m.TmpReg(pack_size, initval=0)
+        rcond = make_condition(fsm, pack_count == 0)
+        data, valid, last = self.read_data(cond=rcond)
+
+        fsm.Delay(1)(
+            wvalid(0)
+        )
+        fsm.If(pack_count == 0, valid, last)(
+            last_done(1)
+        )
+        fsm.If(pack_count == 0, valid)(
+            wdata(data),
+            wvalid(1),
+            pack_count.inc()
+        )
+        fsm.If(pack_count > 0)(
+            wdata(wdata >> ram_datawidth),
+            wvalid(1),
+            pack_count.inc()
+        )
+        fsm.If(pack_count == pack_size - 1)(
+            pack_count(0)
+        )
+
+        fsm.If(last_done, pack_count == pack_size - 1)(
+            req_global_addr.add(optimize(req_size * (self.datawidth // 8)))
+        )
+        fsm.If(last_done, pack_count == pack_size -
+               1, rest_size > 0).goto(check_state)
+        fsm.If(last_done, pack_count == pack_size -
+               1, rest_size == 0).goto_next()
+
+        done = self.m.TmpReg(initval=0)
+        fsm(
+            done(1)
+        )
+        fsm.Delay(1)(
+            done(0)
+        )
+        fsm.goto_next()
+        fsm.goto_init()
+
+        return done
+
+    def dma_read_rtl_pattern(self, ram, local_addr, global_addr, pattern,
+                             port=0, cond=None, ram_method=None):
+
+        ram_datawidth = (ram.datawidth if ram_method is None else
+                         ram.orig_datawidth if 'bcast' in ram_method.func.__name__ else
+                         ram.orig_datawidth if 'block' in ram_method.func.__name__ else
+                         ram.datawidth)
+
+        if vtypes.equals(self.datawidth, ram_datawidth):
+            return self._dma_read_rtl_pattern_same(ram, local_addr, global_addr, pattern,
+                                                   port, cond, ram_method)
+
+        comp = self.datawidth < ram_datawidth
+        if not isinstance(comp, bool):
+            raise ValueError('datawidth must be int, not (%s, %s)' %
+                             (type(self.datawidth, ram_datawidth)))
+
+        if comp:
+            return self._dma_read_rtl_pattern_narrow(ram, local_addr, global_addr, pattern,
+                                                     port, cond, ram_method,
+                                                     ram_datawidth)
+
+        return self._dma_read_rtl_pattern_wide(ram, local_addr, global_addr, pattern,
+                                               port, cond, ram_method,
+                                               ram_datawidth)
+
+    def _dma_read_rtl_pattern_same(self, ram, local_addr, global_addr, pattern,
+                                   port=0, cond=None, ram_method=None):
+
+        block_size = pattern[0][0]
+
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        if cond is not None:
+            fsm.If(cond).goto_next()
+
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
+        req_size = self.m.TmpReg(block_size.bit_length() + 1, initval=0)
+        rest_size = self.m.TmpReg(block_size.bit_length() + 1, initval=0)
+        max_burstlen = 2 ** self.burst_size_width
+
+        fsm(
+            req_global_addr(self.mask_addr(global_addr)),
+            rest_size(block_size)
+        )
+
+        count_list = [self.m.TmpReg(size.bit_length() + 1, initval=0)
+                      for size, stride in pattern[1:]]
+
+        for count, (size, stride) in zip(count_list, pattern[1:]):
+            fsm(
+                count(size - 1)
+            )
+
+        wdata = self.m.TmpReg(ram.datawidth, initval=0)
+        wvalid = self.m.TmpReg(initval=0)
+        df_data = self.df.Variable(
+            wdata, wvalid, width=ram.datawidth, signed=False)
+
+        if ram_method is None:
+            ram_method = getattr(ram, 'write_dataflow_pattern')
+
+        done = ram_method(port, local_addr, df_data, pattern, cond=fsm)
+
+        fsm.goto_next()
+
+        check_state = fsm.current
+
+        # 4KB boundary check
+        fsm.If(rest_size <= max_burstlen,
+               self.check_boundary(req_global_addr, rest_size))(
+            req_size(self.rest_boundary(req_global_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_global_addr))
+        ).Elif(rest_size <= max_burstlen)(
+            req_size(rest_size),
+            rest_size(0)
+        ).Elif(self.check_boundary(req_global_addr, max_burstlen))(
+            req_size(self.rest_boundary(req_global_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_global_addr))
+        ).Else(
+            req_size(max_burstlen),
+            rest_size(rest_size - max_burstlen)
+        )
+        fsm.goto_next()
+
+        ack, counter = self.read_request(req_global_addr, req_size, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        data, valid, last = self.read_data(cond=fsm)
+
+        fsm.Delay(1)(
+            wvalid(0)
+        )
+        fsm.If(valid)(
+            wdata(data),
+            wvalid(1),
+        )
+
+        fsm.If(valid, last)(
+            req_global_addr.add(optimize(req_size * (self.datawidth // 8)))
+        )
+
+        update_count = rest_size == 0
+        for count, (size, stride) in zip(count_list, pattern[1:]):
+            fsm.If(valid, last, update_count)(
+                count.dec()
+            )
+            fsm.If(valid, last, update_count, count == 0)(
+                count(size - 1)
+            )
+            update_count = vtypes.Ands(update_count, count == 0)
+
+        fsm.If(valid, last, rest_size == 0, vtypes.Not(update_count))(
+            rest_size(block_size)
+        )
+        fsm.If(valid, last, rest_size > 0).goto(check_state)
+        fsm.If(valid, last, rest_size == 0, vtypes.Not(
+            update_count)).goto(check_state)
+        fsm.If(valid, last, update_count).goto_next()
+
+        done = self.m.TmpReg(initval=0)
+        fsm(
+            done(1)
+        )
+        fsm.Delay(1)(
+            done(0)
+        )
+        fsm.goto_next()
+        fsm.goto_init()
+
+        return done
+
+    def _dma_read_rtl_pattern_narrow(self, ram, local_addr, global_addr, pattern,
+                                     port=0, cond=None, ram_method=None,
+                                     ram_datawidth=None):
+        """ axi.datawidth < ram.datawidth """
+
+        if ram_datawidth is None:
+            ram_datawidth = ram.datawidth
+
+        if ram_datawidth % self.datawidth != 0:
+            raise ValueError(
+                'ram_datawidth must be multiple number of axi.datawidth')
+
+        block_size = pattern[0][0]
+
+        pack_size = ram_datawidth // self.datawidth
+        dma_size = (block_size << int(math.log(pack_size, 2))
+                    if math.log(pack_size, 2) % 1.0 == 0.0 else
+                    block_size * pack_size)
+
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        if cond is not None:
+            fsm.If(cond).goto_next()
+
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
+        req_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
+        rest_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
+        max_burstlen = 2 ** self.burst_size_width
+
+        fsm(
+            req_global_addr(self.mask_addr(global_addr)),
+            rest_size(dma_size)
+        )
+
+        count_list = [self.m.TmpReg(size.bit_length() + 1, initval=0)
+                      for size, stride in pattern[1:]]
+
+        for count, (size, stride) in zip(count_list, pattern[1:]):
+            fsm(
+                count(size - 1)
+            )
+
+        wdata = self.m.TmpReg(ram_datawidth, initval=0)
+        wvalid = self.m.TmpReg(initval=0)
+        df_data = self.df.Variable(
+            wdata, wvalid, width=ram_datawidth, signed=False)
+
+        if ram_method is None:
+            ram_method = getattr(ram, 'write_dataflow_pattern')
+
+        done = ram_method(port, local_addr, df_data, pattern, cond=fsm)
+        fsm.goto_next()
+
+        check_state = fsm.current
+
+        # 4KB boundary check
+        fsm.If(rest_size <= max_burstlen,
+               self.check_boundary(req_global_addr, rest_size))(
+            req_size(self.rest_boundary(req_global_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_global_addr))
+        ).Elif(rest_size <= max_burstlen)(
+            req_size(rest_size),
+            rest_size(0)
+        ).Elif(self.check_boundary(req_global_addr, max_burstlen))(
+            req_size(self.rest_boundary(req_global_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_global_addr))
+        ).Else(
+            req_size(max_burstlen),
+            rest_size(rest_size - max_burstlen)
+        )
+        fsm.goto_next()
+
+        ack, counter = self.read_request(req_global_addr, req_size, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        pack_count = self.m.TmpReg(pack_size, initval=0)
+        data, valid, last = self.read_data(cond=fsm)
+
+        fsm.Delay(1)(
+            wvalid(0)
+        )
+        fsm.If(valid)(
+            wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
+            wvalid(0),
+            pack_count.inc()
+        )
+        fsm.If(valid, pack_count == pack_size - 1)(
+            wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
+            wvalid(1),
+            pack_count(0)
+        )
+
+        fsm.If(valid, last)(
+            req_global_addr.add(optimize(req_size * (self.datawidth // 8)))
+        )
+
+        update_count = rest_size == 0
+        for count, (size, stride) in zip(count_list, pattern[1:]):
+            fsm.If(valid, last, update_count)(
+                count.dec()
+            )
+            fsm.If(valid, last, update_count, count == 0)(
+                count(size - 1)
+            )
+            update_count = vtypes.Ands(update_count, count == 0)
+
+        fsm.If(valid, last, rest_size == 0, vtypes.Not(update_count))(
+            rest_size(dma_size)
+        )
+        fsm.If(valid, last, rest_size > 0).goto(check_state)
+        fsm.If(valid, last, rest_size == 0, vtypes.Not(
+            update_count)).goto(check_state)
+        fsm.If(valid, last, update_count).goto_next()
+
+        done = self.m.TmpReg(initval=0)
+        fsm(
+            done(1)
+        )
+        fsm.Delay(1)(
+            done(0)
+        )
+        fsm.goto_next()
+        fsm.goto_init()
+
+        return done
+
+    def _dma_read_rtl_pattern_wide(self, ram, local_addr, global_addr, pattern,
+                                   port=0, cond=None, ram_method=None,
+                                   ram_datawidth=None):
+        """ axi.datawidth > ram.datawidth """
+
+        if ram_datawidth is None:
+            ram_datawidth = ram.datawidth
+
+        if self.datawidth % ram_datawidth != 0:
+            raise ValueError(
+                'axi.datawidth must be multiple number of ram_datawidth')
+
+        block_size = pattern[0][0]
+
+        pack_size = self.datawidth // ram_datawidth
+        dma_size = (block_size >> int(math.log(pack_size, 2))
+                    if math.log(pack_size, 2) % 1.0 == 0.0 else
+                    int(block_size // pack_size))
+
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        if cond is not None:
+            fsm.If(cond).goto_next()
+
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
+        req_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
+        rest_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
+        max_burstlen = 2 ** self.burst_size_width
+
+        fsm(
+            req_global_addr(self.mask_addr(global_addr)),
+            rest_size(dma_size)
+        )
+
+        count_list = [self.m.TmpReg(size.bit_length() + 1, initval=0)
+                      for size, stride in pattern[1:]]
+
+        for count, (size, stride) in zip(count_list, pattern[1:]):
+            fsm(
+                count(size - 1)
+            )
+
+        wdata = self.m.TmpReg(self.datawidth, initval=0)
+        wdata_ram = self.m.TmpWire(ram_datawidth)
+        wdata_ram.assign(wdata)
+        wvalid = self.m.TmpReg(initval=0)
+        df_data = self.df.Variable(
+            wdata_ram, wvalid, width=ram_datawidth, signed=False)
+
+        if ram_method is None:
+            ram_method = getattr(ram, 'write_dataflow_pattern')
+
+        done = ram_method(port, local_addr, df_data, pattern, cond=fsm)
+        fsm.goto_next()
+
+        check_state = fsm.current
+
+        last_done = self.m.TmpReg(initval=0)
+        fsm(
+            last_done(0)
+        )
+
+        # 4KB boundary check
+        fsm.If(rest_size <= max_burstlen,
+               self.check_boundary(req_global_addr, rest_size))(
+            req_size(self.rest_boundary(req_global_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_global_addr))
+        ).Elif(rest_size <= max_burstlen)(
+            req_size(rest_size),
+            rest_size(0)
+        ).Elif(self.check_boundary(req_global_addr, max_burstlen))(
+            req_size(self.rest_boundary(req_global_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_global_addr))
+        ).Else(
+            req_size(max_burstlen),
+            rest_size(rest_size - max_burstlen)
+        )
+        fsm.goto_next()
+
+        ack, counter = self.read_request(req_global_addr, req_size, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        pack_count = self.m.TmpReg(pack_size, initval=0)
+        rcond = make_condition(fsm, pack_count == 0)
+        data, valid, last = self.read_data(cond=rcond)
+
+        fsm.Delay(1)(
+            wvalid(0)
+        )
+        fsm.If(pack_count == 0, valid, last)(
+            last_done(1)
+        )
+        fsm.If(pack_count == 0, valid)(
+            wdata(data),
+            wvalid(1),
+            pack_count.inc()
+        )
+        fsm.If(pack_count > 0)(
+            wdata(wdata >> ram_datawidth),
+            wvalid(1),
+            pack_count.inc()
+        )
+        fsm.If(pack_count == pack_size - 1)(
+            pack_count(0)
+        )
+
+        fsm.If(last_done, pack_count == pack_size - 1)(
+            req_global_addr.add(optimize(req_size * (self.datawidth // 8)))
+        )
+
+        update_count = rest_size == 0
+        for count, (size, stride) in zip(count_list, pattern[1:]):
+            fsm.If(last_done, pack_count == pack_size - 1, update_count)(
+                count.dec()
+            )
+            fsm.If(last_done, pack_count == pack_size - 1, update_count, count == 0)(
+                count(size - 1)
+            )
+            update_count = vtypes.Ands(update_count, count == 0)
+
+        fsm.If(last_done, pack_count == pack_size - 1, rest_size == 0,
+               vtypes.Not(update_count))(
+            rest_size(dma_size)
+        )
+        fsm.If(last_done, pack_count == pack_size -
+               1, rest_size > 0).goto(check_state)
+        fsm.If(last_done, pack_count == pack_size - 1, rest_size == 0,
+               vtypes.Not(update_count)).goto(check_state)
+        fsm.If(last_done, pack_count == pack_size - 1,
+               update_count).goto_next()
+
+        done = self.m.TmpReg(initval=0)
+        fsm(
+            done(1)
+        )
+        fsm.Delay(1)(
+            done(0)
+        )
+        fsm.goto_next()
+        fsm.goto_init()
+
+        return done
+
+    def dma_read_rtl_multidim(self, ram, local_addr, global_addr, shape, order=None,
+                              port=0, cond=None, ram_method=None):
+
+        if order is None:
+            order = list(reversed(range(len(shape))))
+
+        pattern = self._to_pattern(shape, order)
+        return self.dma_read_rtl_pattern(ram, local_addr, global_addr, pattern,
+                                         port, cond, ram_method)
+
+    def _to_pattern(self, shape, order):
+        pattern = []
+        for p in order:
+            if not isinstance(p, int):
+                raise TypeError(
+                    "Values of 'order' must be 'int', not %s" % str(type(p)))
+            size = shape[p]
+            basevalue = 1 if isinstance(size, int) else vtypes.Int(1)
+            stride = functools.reduce(lambda x, y: x * y,
+                                      shape[p + 1:], basevalue)
+            pattern.append((size, stride))
+        return pattern
+
+    def dma_read_rtl_unsafe(self, ram, local_addr, global_addr, size,
+                            local_stride=1, port=0, cond=None, ram_method=None):
+        """ Unsafe API with no length and 4KB region check """
+
+        ram_datawidth = (ram.datawidth if ram_method is None else
+                         ram.orig_datawidth if 'bcast' in ram_method.func.__name__ else
+                         ram.orig_datawidth if 'block' in ram_method.func.__name__ else
+                         ram.datawidth)
+
+        if vtypes.equals(self.datawidth, ram_datawidth):
+            return self._dma_read_rtl_unsafe_same(ram, local_addr, global_addr, size,
+                                                  local_stride, port, cond, ram_method)
+
+        comp = self.datawidth < ram_datawidth
+        if not isinstance(comp, bool):
+            raise ValueError('datawidth must be int, not (%s, %s)' %
+                             (type(self.datawidth, ram_datawidth)))
+
+        if comp:
+            return self._dma_read_rtl_unsafe_narrow(ram, local_addr, global_addr, size,
+                                                    local_stride, port, cond, ram_method,
+                                                    ram_datawidth)
+
+        return self._dma_read_rtl_unsafe_wide(ram, local_addr, global_addr, size,
+                                              local_stride, port, cond, ram_method,
+                                              ram_datawidth)
+
+    def _dma_read_rtl_unsafe_same(self, ram, local_addr, global_addr, size,
+                                  local_stride=1, port=0, cond=None, ram_method=None):
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        if cond is not None:
+            fsm.If(cond).goto_next()
+
+        ack, counter = self.read_request(global_addr, size, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        wdata = self.m.TmpReg(ram.datawidth, initval=0)
+        wvalid = self.m.TmpReg(initval=0)
+        df_data = self.df.Variable(
+            wdata, wvalid, width=ram.datawidth, signed=False)
+
+        if ram_method is None:
+            ram_method = getattr(ram, 'write_dataflow')
+
+        done = ram_method(port, local_addr, df_data, size,
+                          stride=local_stride, cond=fsm)
+        fsm.goto_next()
+
+        data, valid, last = self.read_data(cond=fsm)
+
+        fsm(
+            wvalid(0)
+        )
+        fsm.If(valid)(
+            wdata(data),
+            wvalid(1),
+        )
+
+        fsm.If(done).goto_init()
+
+        return done
+
+    def _dma_read_rtl_unsafe_narrow(self, ram, local_addr, global_addr, size,
+                                    local_stride=1, port=0, cond=None, ram_method=None,
+                                    ram_datawidth=None):
+        """ axi.datawidth < ram.datawidth """
+
+        if ram_datawidth is None:
+            ram_datawidth = ram.datawidth
+
+        if ram_datawidth % self.datawidth != 0:
+            raise ValueError(
+                'ram_datawidth must be multiple number of axi.datawidth')
+
+        pack_size = ram_datawidth // self.datawidth
+        dma_size = (size << int(math.log(pack_size, 2))
+                    if math.log(pack_size, 2) % 1.0 == 0.0 else
+                    size * pack_size)
+
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        if cond is not None:
+            fsm.If(cond).goto_next()
+
+        ack, counter = self.read_request(global_addr, dma_size, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        wdata = self.m.TmpReg(ram_datawidth, initval=0)
+        wvalid = self.m.TmpReg(initval=0)
+        df_data = self.df.Variable(
+            wdata, wvalid, width=ram_datawidth, signed=False)
+
+        if ram_method is None:
+            ram_method = getattr(ram, 'write_dataflow')
+
+        done = ram_method(port, local_addr, df_data, size,
+                          stride=local_stride, cond=fsm)
+        fsm.goto_next()
+
+        pack_count = self.m.TmpReg(pack_size, initval=0)
+        data, valid, last = self.read_data(cond=fsm)
+
+        fsm(
+            wvalid(0)
+        )
+        fsm.If(valid)(
+            wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
+            wvalid(0),
+            pack_count.inc()
+        )
+        fsm.If(valid, pack_count == pack_size - 1)(
+            wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
+            wvalid(1),
+            pack_count(0)
+        )
+
+        fsm.If(done).goto_init()
+
+        return done
+
+    def _dma_read_rtl_unsafe_wide(self, ram, local_addr, global_addr, size,
+                                  local_stride=1, port=0, cond=None, ram_method=None,
+                                  ram_datawidth=None):
+        """ axi.datawidth > ram.datawidth """
+
+        if ram_datawidth is None:
+            ram_datawidth = ram.datawidth
+
+        if self.datawidth % ram_datawidth != 0:
+            raise ValueError(
+                'axi.datawidth must be multiple number of ram_datawidth')
+
+        pack_size = self.datawidth // ram_datawidth
+        dma_size = (size >> int(math.log(pack_size, 2))
+                    if math.log(pack_size, 2) % 1.0 == 0.0 else
+                    int(size // pack_size))
+
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        if cond is not None:
+            fsm.If(cond).goto_next()
+
+        ack, counter = self.read_request(global_addr, dma_size, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        wdata = self.m.TmpReg(self.datawidth, initval=0)
+        wdata_ram = self.m.TmpWire(ram_datawidth)
+        wdata_ram.assign(wdata)
+        wvalid = self.m.TmpReg(initval=0)
+        df_data = self.df.Variable(
+            wdata_ram, wvalid, width=ram_datawidth, signed=False)
+
+        if ram_method is None:
+            ram_method = getattr(ram, 'write_dataflow')
+
+        done = ram_method(port, local_addr, df_data, size,
+                          stride=local_stride, cond=fsm)
+        fsm.goto_next()
+
+        pack_count = self.m.TmpReg(pack_size, initval=0)
+        rcond = make_condition(fsm, pack_count == 0)
+        data, valid, last = self.read_data(cond=rcond)
+
+        fsm(
+            wvalid(0)
+        )
+        fsm.If(pack_count == 0, valid)(
+            wdata(data),
+            wvalid(1),
+            pack_count.inc()
+        )
+        fsm.If(pack_count > 0)(
+            wdata(wdata >> ram_datawidth),
+            wvalid(1),
+            pack_count.inc()
+        )
+        fsm.If(pack_count == pack_size - 1)(
+            pack_count(0)
+        )
+
+        fsm.If(done).goto_init()
+
+        return done
+
+    def dma_write_rtl(self, ram, local_addr, global_addr, size,
+                      local_stride=1, port=0, cond=None, ram_method=None):
+        """ Safe API with length and 4KB boundary check """
+
+        ram_datawidth = (ram.datawidth if ram_method is None else
+                         ram.orig_datawidth if 'block' in ram_method.func.__name__ else
+                         ram.datawidth)
+
+        if vtypes.equals(self.datawidth, ram_datawidth):
+            return self._dma_write_rtl_same(ram, local_addr, global_addr, size,
+                                            local_stride, port, cond, ram_method)
+
+        comp = self.datawidth < ram_datawidth
+        if not isinstance(comp, bool):
+            raise ValueError('datawidth must be int, not (%s, %s)' %
+                             (type(self.datawidth, ram_datawidth)))
+
+        if comp:
+            return self._dma_write_rtl_narrow(ram, local_addr, global_addr, size,
+                                              local_stride, port, cond, ram_method,
+                                              ram_datawidth)
+
+        return self._dma_write_rtl_wide(ram, local_addr, global_addr, size,
+                                        local_stride, port, cond, ram_method,
+                                        ram_datawidth)
+
+    def _dma_write_rtl_same(self, ram, local_addr, global_addr, size,
+                            local_stride=1, port=0, cond=None, ram_method=None):
+
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        if cond is not None:
+            fsm.If(cond).goto_next()
+
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
+        req_size = self.m.TmpReg(size.bit_length() + 1, initval=0)
+        rest_size = self.m.TmpReg(size.bit_length() + 1, initval=0)
+        max_burstlen = 2 ** self.burst_size_width
+
+        fsm(
+            req_global_addr(self.mask_addr(global_addr)),
+            rest_size(size)
+        )
+
+        if ram_method is None:
+            ram_method = getattr(ram, 'read_dataflow')
+
+        data, last, done = ram_method(port, local_addr, size,
+                                      stride=local_stride, cond=fsm, signed=False)
+        fsm.goto_next()
+
+        check_state = fsm.current
+
+        # 4KB boundary check
+        fsm.If(rest_size <= max_burstlen,
+               self.check_boundary(req_global_addr, rest_size))(
+            req_size(self.rest_boundary(req_global_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_global_addr))
+        ).Elif(rest_size <= max_burstlen)(
+            req_size(rest_size),
+            rest_size(0)
+        ).Elif(self.check_boundary(req_global_addr, max_burstlen))(
+            req_size(self.rest_boundary(req_global_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_global_addr))
+        ).Else(
+            req_size(max_burstlen),
+            rest_size(rest_size - max_burstlen)
+        )
+        fsm.goto_next()
+
+        ack, counter = self.write_request(req_global_addr, req_size, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        done = self.write_dataflow(data, counter, cond=fsm)
+
+        fsm.If(done)(
+            req_global_addr.add(optimize(req_size * (self.datawidth // 8)))
+        )
+        fsm.If(done, rest_size > 0).goto(check_state)
+        fsm.If(done, rest_size == 0).goto_next()
+
+        done = self.m.TmpReg(initval=0)
+        fsm(
+            done(1)
+        )
+        fsm.Delay(1)(
+            done(0)
+        )
+        fsm.goto_next()
+        fsm.goto_init()
+
+        return done
+
+    def _dma_write_rtl_narrow(self, ram, local_addr, global_addr, size,
+                              local_stride=1, port=0, cond=None, ram_method=None,
+                              ram_datawidth=None):
+        """ axi.datawidth < ram.datawidth """
+
+        if ram_datawidth is None:
+            ram_datawidth = ram.datawidth
+
+        if ram_datawidth % self.datawidth != 0:
+            raise ValueError(
+                'ram_datawidth must be multiple number of axi.datawidth')
+
+        pack_size = ram_datawidth // self.datawidth
+        dma_size = (size << int(math.log(pack_size, 2))
+                    if math.log(pack_size, 2) % 1.0 == 0.0 else
+                    size * pack_size)
+
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        if cond is not None:
+            fsm.If(cond).goto_next()
+
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
+        req_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
+        rest_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
+        max_burstlen = 2 ** self.burst_size_width
+
+        fsm(
+            req_global_addr(self.mask_addr(global_addr)),
+            rest_size(dma_size)
+        )
+
+        if ram_method is None:
+            ram_method = getattr(ram, 'read_dataflow')
+
+        data, last, done = ram_method(port, local_addr, size,
+                                      stride=local_stride, cond=fsm, signed=False)
+        fsm.goto_next()
+
+        check_state = fsm.current
+
+        # 4KB boundary check
+        fsm.If(rest_size <= max_burstlen,
+               self.check_boundary(req_global_addr, rest_size))(
+            req_size(self.rest_boundary(req_global_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_global_addr))
+        ).Elif(rest_size <= max_burstlen)(
+            req_size(rest_size),
+            rest_size(0)
+        ).Elif(self.check_boundary(req_global_addr, max_burstlen))(
+            req_size(self.rest_boundary(req_global_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_global_addr))
+        ).Else(
+            req_size(max_burstlen),
+            rest_size(rest_size - max_burstlen)
+        )
+        fsm.goto_next()
+
+        ack, counter = self.write_request(req_global_addr, req_size, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        wdata = self.m.TmpReg(ram_datawidth, initval=0)
+        wvalid = self.m.TmpReg(initval=0)
+        wready = self.m.TmpWire()
+        ack = vtypes.Ors(wready, vtypes.Not(wvalid))
+
+        pack_count = self.m.TmpReg(pack_size, initval=0)
+        rcond = make_condition(fsm, ack, pack_count == 0)
+        rdata, rvalid = data.read(cond=rcond)
+
+        seq = TmpSeq(self.m, self.clk, self.rst)
+        seq.If(ack)(
+            wvalid(0)
+        )
+        seq.If(rvalid)(
+            wdata(rdata),
+            wvalid(1),
+            pack_count.inc()
+        )
+        seq.If(ack, pack_count > 0)(
+            wdata(wdata >> self.datawidth),
+            wvalid(1),
+            pack_count.inc()
+        )
+        seq.If(ack, pack_count == pack_size - 1)(
+            wdata(wdata >> self.datawidth),
+            wvalid(1),
+            pack_count(0)
+        )
+
+        df_data = self.df.Variable(
+            wdata, wvalid, wready, width=self.datawidth, signed=False)
+
+        done = self.write_dataflow(df_data, counter, cond=fsm)
+
+        fsm.If(done)(
+            req_global_addr.add(optimize(req_size * (self.datawidth // 8)))
+        )
+        fsm.If(done, rest_size > 0).goto(check_state)
+        fsm.If(done, rest_size == 0).goto_next()
+
+        done = self.m.TmpReg(initval=0)
+        fsm(
+            done(1)
+        )
+        fsm.Delay(1)(
+            done(0)
+        )
+        fsm.goto_next()
+        fsm.goto_init()
+
+        return done
+
+    def _dma_write_rtl_wide(self, ram, local_addr, global_addr, size,
+                            local_stride=1, port=0, cond=None, ram_method=None,
+                            ram_datawidth=None):
+        """ axi.datawidth > ram.datawidth """
+
+        if ram_datawidth is None:
+            ram_datawidth = ram.datawidth
+
+        if self.datawidth % ram_datawidth != 0:
+            raise ValueError(
+                'axi.datawidth must be multiple number of ram_datawidth')
+
+        pack_size = self.datawidth // ram_datawidth
+        dma_size = (size >> int(math.log(pack_size, 2))
+                    if math.log(pack_size, 2) % 1.0 == 0.0 else
+                    int(size // pack_size))
+
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        if cond is not None:
+            fsm.If(cond).goto_next()
+
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
+        req_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
+        rest_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
+        max_burstlen = 2 ** self.burst_size_width
+
+        fsm(
+            req_global_addr(self.mask_addr(global_addr)),
+            rest_size(dma_size)
+        )
+
+        if ram_method is None:
+            ram_method = getattr(ram, 'read_dataflow')
+
+        data, last, done = ram_method(port, local_addr, size,
+                                      stride=local_stride, cond=fsm, signed=False)
+        fsm.goto_next()
+
+        check_state = fsm.current
+
+        # 4KB boundary check
+        fsm.If(rest_size <= max_burstlen,
+               self.check_boundary(req_global_addr, rest_size))(
+            req_size(self.rest_boundary(req_global_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_global_addr))
+        ).Elif(rest_size <= max_burstlen)(
+            req_size(rest_size),
+            rest_size(0)
+        ).Elif(self.check_boundary(req_global_addr, max_burstlen))(
+            req_size(self.rest_boundary(req_global_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_global_addr))
+        ).Else(
+            req_size(max_burstlen),
+            rest_size(rest_size - max_burstlen)
+        )
+        fsm.goto_next()
+
+        ack, counter = self.write_request(req_global_addr, req_size, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        wdata = self.m.TmpReg(self.datawidth, initval=0)
+        wvalid = self.m.TmpReg(initval=0)
+        wready = self.m.TmpWire()
+        ack = vtypes.Ors(wready, vtypes.Not(wvalid))
+
+        pack_count = self.m.TmpReg(pack_size, initval=0)
+        rcond = make_condition(fsm, ack)
+        rdata, rvalid = data.read(cond=rcond)
+
+        seq = TmpSeq(self.m, self.clk, self.rst)
+        seq.If(ack)(
+            wvalid(0)
+        )
+        seq.If(rvalid)(
+            wdata(vtypes.Cat(rdata, wdata[ram_datawidth:self.datawidth])),
+            wvalid(0),
+            pack_count.inc()
+        )
+        seq.If(rvalid, pack_count == pack_size - 1)(
+            wdata(vtypes.Cat(rdata, wdata[ram_datawidth:self.datawidth])),
+            wvalid(1),
+            pack_count(0)
+        )
+
+        df_data = self.df.Variable(
+            wdata, wvalid, wready, width=self.datawidth, signed=False)
+
+        done = self.write_dataflow(df_data, counter, cond=fsm)
+
+        fsm.If(done)(
+            req_global_addr.add(optimize(req_size * (self.datawidth // 8)))
+        )
+        fsm.If(done, rest_size > 0).goto(check_state)
+        fsm.If(done, rest_size == 0).goto_next()
+
+        done = self.m.TmpReg(initval=0)
+        fsm(
+            done(1)
+        )
+        fsm.Delay(1)(
+            done(0)
+        )
+        fsm.goto_next()
+        fsm.goto_init()
+
+        return done
+
+    def dma_write_rtl_pattern(self, ram, local_addr, global_addr, pattern,
+                              port=0, cond=None, ram_method=None):
+
+        ram_datawidth = (ram.datawidth if ram_method is None else
+                         ram.orig_datawidth if 'block' in ram_method.func.__name__ else
+                         ram.datawidth)
+
+        if vtypes.equals(self.datawidth, ram_datawidth):
+            return self._dma_write_rtl_pattern_same(ram, local_addr, global_addr, pattern,
+                                                    port, cond, ram_method)
+
+        comp = self.datawidth < ram_datawidth
+        if not isinstance(comp, bool):
+            raise ValueError('datawidth must be int, not (%s, %s)' %
+                             (type(self.datawidth, ram_datawidth)))
+
+        if comp:
+            return self._dma_write_rtl_pattern_narrow(ram, local_addr, global_addr, pattern,
+                                                      port, cond, ram_method,
+                                                      ram_datawidth)
+
+        return self._dma_write_rtl_pattern_wide(ram, local_addr, global_addr, pattern,
+                                                port, cond, ram_method,
+                                                ram_datawidth)
+
+    def _dma_write_rtl_pattern_same(self, ram, local_addr, global_addr, pattern,
+                                    port=0, cond=None, ram_method=None):
+
+        block_size = pattern[0][0]
+
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        if cond is not None:
+            fsm.If(cond).goto_next()
+
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
+        req_size = self.m.TmpReg(block_size.bit_length() + 1, initval=0)
+        rest_size = self.m.TmpReg(block_size.bit_length() + 1, initval=0)
+        max_burstlen = 2 ** self.burst_size_width
+
+        fsm(
+            req_global_addr(self.mask_addr(global_addr)),
+            rest_size(block_size)
+        )
+
+        count_list = [self.m.TmpReg(size.bit_length() + 1, initval=0)
+                      for size, stride in pattern[1:]]
+
+        for count, (size, stride) in zip(count_list, pattern[1:]):
+            fsm(
+                count(size - 1)
+            )
+
+        if ram_method is None:
+            ram_method = getattr(ram, 'read_dataflow_pattern')
+
+        data, last, done = ram_method(port, local_addr, pattern,
+                                      cond=fsm, signed=False)
+        fsm.goto_next()
+
+        check_state = fsm.current
+
+        # 4KB boundary check
+        fsm.If(rest_size <= max_burstlen,
+               self.check_boundary(req_global_addr, rest_size))(
+            req_size(self.rest_boundary(req_global_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_global_addr))
+        ).Elif(rest_size <= max_burstlen)(
+            req_size(rest_size),
+            rest_size(0)
+        ).Elif(self.check_boundary(req_global_addr, max_burstlen))(
+            req_size(self.rest_boundary(req_global_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_global_addr))
+        ).Else(
+            req_size(max_burstlen),
+            rest_size(rest_size - max_burstlen)
+        )
+        fsm.goto_next()
+
+        ack, counter = self.write_request(req_global_addr, req_size, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        done = self.write_dataflow(data, counter, cond=fsm)
+
+        fsm.If(done)(
+            req_global_addr.add(optimize(req_size * (self.datawidth // 8)))
+        )
+
+        update_count = rest_size == 0
+        for count, (size, stride) in zip(count_list, pattern[1:]):
+            fsm.If(done, update_count)(
+                count.dec()
+            )
+            fsm.If(done, update_count, count == 0)(
+                count(size - 1)
+            )
+            update_count = vtypes.Ands(update_count, count == 0)
+
+        fsm.If(done, rest_size == 0, vtypes.Not(update_count))(
+            rest_size(block_size)
+        )
+        fsm.If(done, rest_size > 0).goto(check_state)
+        fsm.If(done, rest_size == 0, vtypes.Not(
+            update_count)).goto(check_state)
+        fsm.If(done, update_count).goto_next()
+
+        done = self.m.TmpReg(initval=0)
+        fsm(
+            done(1)
+        )
+        fsm.Delay(1)(
+            done(0)
+        )
+        fsm.goto_next()
+        fsm.goto_init()
+
+        return done
+
+    def _dma_write_rtl_pattern_narrow(self, ram, local_addr, global_addr, pattern,
+                                      port=0, cond=None, ram_method=None,
+                                      ram_datawidth=None):
+        """ axi.datawidth < ram.datawidth """
+
+        if ram_datawidth is None:
+            ram_datawidth = ram.datawidth
+
+        if ram_datawidth % self.datawidth != 0:
+            raise ValueError(
+                'ram_datawidth must be multiple number of axi.datawidth')
+
+        block_size = pattern[0][0]
+
+        pack_size = ram_datawidth // self.datawidth
+        dma_size = (block_size << int(math.log(pack_size, 2))
+                    if math.log(pack_size, 2) % 1.0 == 0.0 else
+                    block_size * pack_size)
+
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        if cond is not None:
+            fsm.If(cond).goto_next()
+
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
+        req_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
+        rest_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
+        max_burstlen = 2 ** self.burst_size_width
+
+        fsm(
+            req_global_addr(self.mask_addr(global_addr)),
+            rest_size(dma_size)
+        )
+
+        count_list = [self.m.TmpReg(size.bit_length() + 1, initval=0)
+                      for size, stride in pattern[1:]]
+
+        for count, (size, stride) in zip(count_list, pattern[1:]):
+            fsm(
+                count(size - 1)
+            )
+
+        if ram_method is None:
+            ram_method = getattr(ram, 'read_dataflow_pattern')
+
+        data, last, done = ram_method(port, local_addr, pattern,
+                                      cond=fsm, signed=False)
+        fsm.goto_next()
+
+        check_state = fsm.current
+
+        # 4KB boundary check
+        fsm.If(rest_size <= max_burstlen,
+               self.check_boundary(req_global_addr, rest_size))(
+            req_size(self.rest_boundary(req_global_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_global_addr))
+        ).Elif(rest_size <= max_burstlen)(
+            req_size(rest_size),
+            rest_size(0)
+        ).Elif(self.check_boundary(req_global_addr, max_burstlen))(
+            req_size(self.rest_boundary(req_global_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_global_addr))
+        ).Else(
+            req_size(max_burstlen),
+            rest_size(rest_size - max_burstlen)
+        )
+        fsm.goto_next()
+
+        ack, counter = self.write_request(req_global_addr, req_size, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        wdata = self.m.TmpReg(ram_datawidth, initval=0)
+        wvalid = self.m.TmpReg(initval=0)
+        wready = self.m.TmpWire()
+        ack = vtypes.Ors(wready, vtypes.Not(wvalid))
+
+        pack_count = self.m.TmpReg(pack_size, initval=0)
+        rcond = make_condition(fsm, ack, pack_count == 0)
+        rdata, rvalid = data.read(cond=rcond)
+
+        seq = TmpSeq(self.m, self.clk, self.rst)
+        seq.If(ack)(
+            wvalid(0)
+        )
+        seq.If(rvalid)(
+            wdata(rdata),
+            wvalid(1),
+            pack_count.inc()
+        )
+        seq.If(ack, pack_count > 0)(
+            wdata(wdata >> self.datawidth),
+            wvalid(1),
+            pack_count.inc()
+        )
+        seq.If(ack, pack_count == pack_size - 1)(
+            wdata(wdata >> self.datawidth),
+            wvalid(1),
+            pack_count(0)
+        )
+
+        df_data = self.df.Variable(
+            wdata, wvalid, wready, width=self.datawidth, signed=False)
+
+        done = self.write_dataflow(df_data, counter, cond=fsm)
+
+        fsm.If(done)(
+            req_global_addr.add(optimize(req_size * (self.datawidth // 8)))
+        )
+
+        update_count = rest_size == 0
+        for count, (size, stride) in zip(count_list, pattern[1:]):
+            fsm.If(done, update_count)(
+                count.dec()
+            )
+            fsm.If(done, update_count, count == 0)(
+                count(size - 1)
+            )
+            update_count = vtypes.Ands(update_count, count == 0)
+
+        fsm.If(done, rest_size == 0, vtypes.Not(update_count))(
+            rest_size(dma_size)
+        )
+        fsm.If(done, rest_size > 0).goto(check_state)
+        fsm.If(done, rest_size == 0, vtypes.Not(
+            update_count)).goto(check_state)
+        fsm.If(done, update_count).goto_next()
+
+        done = self.m.TmpReg(initval=0)
+        fsm(
+            done(1)
+        )
+        fsm.Delay(1)(
+            done(0)
+        )
+        fsm.goto_next()
+        fsm.goto_init()
+
+        return done
+
+    def _dma_write_rtl_pattern_wide(self, ram, local_addr, global_addr, pattern,
+                                    port=0, cond=None, ram_method=None,
+                                    ram_datawidth=None):
+        """ axi.datawidth > ram.datawidth """
+
+        if ram_datawidth is None:
+            ram_datawidth = ram.datawidth
+
+        if self.datawidth % ram_datawidth != 0:
+            raise ValueError(
+                'axi.datawidth must be multiple number of ram_datawidth')
+
+        block_size = pattern[0][0]
+
+        pack_size = self.datawidth // ram_datawidth
+        dma_size = (block_size >> int(math.log(pack_size, 2))
+                    if math.log(pack_size, 2) % 1.0 == 0.0 else
+                    int(block_size // pack_size))
+
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        if cond is not None:
+            fsm.If(cond).goto_next()
+
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
+        req_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
+        rest_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
+        max_burstlen = 2 ** self.burst_size_width
+
+        fsm(
+            req_global_addr(self.mask_addr(global_addr)),
+            rest_size(dma_size)
+        )
+
+        count_list = [self.m.TmpReg(size.bit_length() + 1, initval=0)
+                      for size, stride in pattern[1:]]
+
+        for count, (size, stride) in zip(count_list, pattern[1:]):
+            fsm(
+                count(size - 1)
+            )
+
+        if ram_method is None:
+            ram_method = getattr(ram, 'read_dataflow_pattern')
+
+        data, last, done = ram_method(port, local_addr, pattern,
+                                      cond=fsm, signed=False)
+        fsm.goto_next()
+
+        check_state = fsm.current
+
+        # 4KB boundary check
+        fsm.If(rest_size <= max_burstlen,
+               self.check_boundary(req_global_addr, rest_size))(
+            req_size(self.rest_boundary(req_global_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_global_addr))
+        ).Elif(rest_size <= max_burstlen)(
+            req_size(rest_size),
+            rest_size(0)
+        ).Elif(self.check_boundary(req_global_addr, max_burstlen))(
+            req_size(self.rest_boundary(req_global_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_global_addr))
+        ).Else(
+            req_size(max_burstlen),
+            rest_size(rest_size - max_burstlen)
+        )
+        fsm.goto_next()
+
+        ack, counter = self.write_request(req_global_addr, req_size, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        wdata = self.m.TmpReg(self.datawidth, initval=0)
+        wvalid = self.m.TmpReg(initval=0)
+        wready = self.m.TmpWire()
+        ack = vtypes.Ors(wready, vtypes.Not(wvalid))
+
+        pack_count = self.m.TmpReg(pack_size, initval=0)
+        rcond = make_condition(fsm, ack)
+        rdata, rvalid = data.read(cond=rcond)
+
+        seq = TmpSeq(self.m, self.clk, self.rst)
+        seq.If(ack)(
+            wvalid(0)
+        )
+        seq.If(rvalid)(
+            wdata(vtypes.Cat(rdata, wdata[ram_datawidth:self.datawidth])),
+            wvalid(0),
+            pack_count.inc()
+        )
+        seq.If(rvalid, pack_count == pack_size - 1)(
+            wdata(vtypes.Cat(rdata, wdata[ram_datawidth:self.datawidth])),
+            wvalid(1),
+            pack_count(0)
+        )
+
+        df_data = self.df.Variable(
+            wdata, wvalid, wready, width=self.datawidth, signed=False)
+
+        done = self.write_dataflow(df_data, counter, cond=fsm)
+
+        fsm.If(done)(
+            req_global_addr.add(optimize(req_size * (self.datawidth // 8)))
+        )
+
+        update_count = rest_size == 0
+        for count, (size, stride) in zip(count_list, pattern[1:]):
+            fsm.If(done, update_count)(
+                count.dec()
+            )
+            fsm.If(done, update_count, count == 0)(
+                count(size - 1)
+            )
+            update_count = vtypes.Ands(update_count, count == 0)
+
+        fsm.If(done, rest_size == 0, vtypes.Not(update_count))(
+            rest_size(dma_size)
+        )
+        fsm.If(done, rest_size > 0).goto(check_state)
+        fsm.If(done, rest_size == 0, vtypes.Not(
+            update_count)).goto(check_state)
+        fsm.If(done, update_count).goto_next()
+
+        done = self.m.TmpReg(initval=0)
+        fsm(
+            done(1)
+        )
+        fsm.Delay(1)(
+            done(0)
+        )
+        fsm.goto_next()
+        fsm.goto_init()
+
+        return done
+
+    def dma_write_rtl_multidim(self, ram, local_addr, global_addr, shape, order=None,
+                               port=0, cond=None, ram_method=None):
+
+        if order is None:
+            order = list(reversed(range(len(shape))))
+
+        pattern = self._to_pattern(shape, order)
+        return self.dma_write_rtl_pattern(ram, local_addr, global_addr, pattern,
+                                          port, cond, ram_method)
+
+    def dma_write_rtl_unsafe(self, ram, local_addr, global_addr, size,
+                             local_stride=1, port=0, cond=None, ram_method=None):
+        """ Unsafe API with no length and 4KB region check """
+
+        ram_datawidth = (ram.datawidth if ram_method is None else
+                         ram.orig_datawidth if 'block' in ram_method.func.__name__ else
+                         ram.datawidth)
+
+        if vtypes.equals(self.datawidth, ram_datawidth):
+            return self._dma_write_rtl_unsafe_same(ram, local_addr, global_addr, size,
+                                                   local_stride, port, cond, ram_method)
+
+        comp = self.datawidth < ram_datawidth
+        if not isinstance(comp, bool):
+            raise ValueError('datawidth must be int, not (%s, %s)' %
+                             (type(self.datawidth, ram_datawidth)))
+
+        if comp:
+            return self._dma_write_rtl_unsafe_narrow(ram, local_addr, global_addr, size,
+                                                     local_stride, port, cond, ram_method,
+                                                     ram_datawidth)
+
+        return self._dma_write_rtl_unsafe_wide(ram, local_addr, global_addr, size,
+                                               local_stride, port, cond, ram_method,
+                                               ram_datawidth)
+
+    def _dma_write_rtl_unsafe_same(self, ram, local_addr, global_addr, size,
+                                   local_stride=1, port=0, cond=None, ram_method=None):
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        if cond is not None:
+            fsm.If(cond).goto_next()
+
+        ack, counter = self.write_request(global_addr, size, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        if ram_method is None:
+            ram_method = getattr(ram, 'read_dataflow')
+
+        data, last, done = ram_method(port, local_addr, size,
+                                      stride=local_stride, cond=fsm, signed=False)
+        fsm.goto_next()
+
+        done = self.write_dataflow(data, counter, cond=fsm)
+        fsm.If(done).goto_init()
+
+        return done
+
+    def _dma_write_rtl_unsafe_narrow(self, ram, local_addr, global_addr, size,
+                                     local_stride=1, port=0, cond=None, ram_method=None,
+                                     ram_datawidth=None):
+        """ axi.datawidth < ram.datawidth """
+
+        if ram_datawidth is None:
+            ram_datawidth = ram.datawidth
+
+        if ram_datawidth % self.datawidth != 0:
+            raise ValueError(
+                'ram_datawidth must be multiple number of axi.datawidth')
+
+        pack_size = ram_datawidth // self.datawidth
+        dma_size = (size << int(math.log(pack_size, 2))
+                    if math.log(pack_size, 2) % 1.0 == 0.0 else
+                    size * pack_size)
+
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        if cond is not None:
+            fsm.If(cond).goto_next()
+
+        ack, counter = self.write_request(global_addr, dma_size, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        if ram_method is None:
+            ram_method = getattr(ram, 'read_dataflow')
+
+        data, last, done = ram_method(port, local_addr, size,
+                                      stride=local_stride, cond=fsm, signed=False)
+        fsm.goto_next()
+
+        wdata = self.m.TmpReg(ram_datawidth, initval=0)
+        wvalid = self.m.TmpReg(initval=0)
+        wready = self.m.TmpWire()
+        ack = vtypes.Ors(wready, vtypes.Not(wvalid))
+
+        pack_count = self.m.TmpReg(pack_size, initval=0)
+        rcond = make_condition(fsm, ack, pack_count == 0)
+        rdata, rvalid = data.read(cond=rcond)
+
+        seq = TmpSeq(self.m, self.clk, self.rst)
+        seq.If(ack)(
+            wvalid(0)
+        )
+        seq.If(rvalid)(
+            wdata(rdata),
+            wvalid(1),
+            pack_count.inc()
+        )
+        seq.If(ack, pack_count > 0)(
+            wdata(wdata >> self.datawidth),
+            wvalid(1),
+            pack_count.inc()
+        )
+        seq.If(ack, pack_count == pack_size - 1)(
+            wdata(wdata >> self.datawidth),
+            wvalid(1),
+            pack_count(0)
+        )
+
+        df_data = self.df.Variable(
+            wdata, wvalid, wready, width=self.datawidth, signed=False)
+
+        done = self.write_dataflow(df_data, counter, cond=fsm)
+        fsm.If(done).goto_init()
+
+        return done
+
+    def _dma_write_rtl_unsafe_wide(self, ram, local_addr, global_addr, size,
+                                   local_stride=1, port=0, cond=None, ram_method=None,
+                                   ram_datawidth=None):
+        """ axi.datawidth > ram.datawidth """
+
+        if ram_datawidth is None:
+            ram_datawidth = ram.datawidth
+
+        if self.datawidth % ram_datawidth != 0:
+            raise ValueError(
+                'axi.datawidth must be multiple number of ram_datawidth')
+
+        pack_size = self.datawidth // ram_datawidth
+        dma_size = (size >> int(math.log(pack_size, 2))
+                    if math.log(pack_size, 2) % 1.0 == 0.0 else
+                    int(size // pack_size))
+
+        fsm = TmpFSM(self.m, self.clk, self.rst)
+
+        if cond is not None:
+            fsm.If(cond).goto_next()
+
+        ack, counter = self.write_request(global_addr, dma_size, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        if ram_method is None:
+            ram_method = getattr(ram, 'read_dataflow')
+
+        data, last, done = ram_method(port, local_addr, size,
+                                      stride=local_stride, cond=fsm, signed=False)
+        fsm.goto_next()
+
+        wdata = self.m.TmpReg(self.datawidth, initval=0)
+        wvalid = self.m.TmpReg(initval=0)
+        wready = self.m.TmpWire()
+        ack = vtypes.Ors(wready, vtypes.Not(wvalid))
+
+        pack_count = self.m.TmpReg(pack_size, initval=0)
+        rcond = make_condition(fsm, ack)
+        rdata, rvalid = data.read(cond=rcond)
+
+        seq = TmpSeq(self.m, self.clk, self.rst)
+        seq.If(ack)(
+            wvalid(0)
+        )
+        seq.If(rvalid)(
+            wdata(vtypes.Cat(rdata, wdata[ram_datawidth:self.datawidth])),
+            wvalid(0),
+            pack_count.inc()
+        )
+        seq.If(rvalid, pack_count == pack_size - 1)(
+            wdata(vtypes.Cat(rdata, wdata[ram_datawidth:self.datawidth])),
+            wvalid(1),
+            pack_count(0)
+        )
+
+        df_data = self.df.Variable(
+            wdata, wvalid, wready, width=self.datawidth, signed=False)
+
+        done = self.write_dataflow(df_data, counter, cond=fsm)
+        fsm.If(done).goto_init()
+
+        return done
 
 
 class AXIS(AxiSlave, _MutexFunction):
