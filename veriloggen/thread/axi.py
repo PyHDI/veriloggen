@@ -472,7 +472,7 @@ class AXIM(AxiMaster, _MutexFunction):
     # Low-level (RTL) APIs
     #-------------------
     def dma_read_rtl(self, ram, local_addr, global_addr, size,
-                     local_stride=1, port=0, cond=None, ram_method=None):
+                     local_stride, port=0, cond=None, ram_method=None):
         """ Safe API with length and 4KB boundary check """
 
         ram_datawidth = (ram.datawidth if ram_method is None else
@@ -499,7 +499,7 @@ class AXIM(AxiMaster, _MutexFunction):
                                        ram_datawidth)
 
     def _dma_read_rtl_same(self, ram, local_addr, global_addr, size,
-                           local_stride=1, port=0, cond=None, ram_method=None):
+                           local_stride, port=0, cond=None, ram_method=None):
         fsm = TmpFSM(self.m, self.clk, self.rst)
 
         if cond is not None:
@@ -564,7 +564,7 @@ class AXIM(AxiMaster, _MutexFunction):
         return done
 
     def _dma_read_rtl_narrow(self, ram, local_addr, global_addr, size,
-                             local_stride=1, port=0, cond=None, ram_method=None,
+                             local_stride, port=0, cond=None, ram_method=None,
                              ram_datawidth=None):
         """ axi.datawidth < ram.datawidth """
 
@@ -651,7 +651,7 @@ class AXIM(AxiMaster, _MutexFunction):
         return done
 
     def _dma_read_rtl_wide(self, ram, local_addr, global_addr, size,
-                           local_stride=1, port=0, cond=None, ram_method=None,
+                           local_stride, port=0, cond=None, ram_method=None,
                            ram_datawidth=None):
         """ axi.datawidth > ram.datawidth """
 
@@ -1136,7 +1136,7 @@ class AXIM(AxiMaster, _MutexFunction):
         return pattern
 
     def dma_read_rtl_unsafe(self, ram, local_addr, global_addr, size,
-                            local_stride=1, port=0, cond=None, ram_method=None):
+                            local_stride, port=0, cond=None, ram_method=None):
         """ Unsafe API with no length and 4KB region check """
 
         ram_datawidth = (ram.datawidth if ram_method is None else
@@ -1163,7 +1163,7 @@ class AXIM(AxiMaster, _MutexFunction):
                                               ram_datawidth)
 
     def _dma_read_rtl_unsafe_same(self, ram, local_addr, global_addr, size,
-                                  local_stride=1, port=0, cond=None, ram_method=None):
+                                  local_stride, port=0, cond=None, ram_method=None):
         fsm = TmpFSM(self.m, self.clk, self.rst)
 
         if cond is not None:
@@ -1199,7 +1199,7 @@ class AXIM(AxiMaster, _MutexFunction):
         return done
 
     def _dma_read_rtl_unsafe_narrow(self, ram, local_addr, global_addr, size,
-                                    local_stride=1, port=0, cond=None, ram_method=None,
+                                    local_stride, port=0, cond=None, ram_method=None,
                                     ram_datawidth=None):
         """ axi.datawidth < ram.datawidth """
 
@@ -1257,7 +1257,7 @@ class AXIM(AxiMaster, _MutexFunction):
         return done
 
     def _dma_read_rtl_unsafe_wide(self, ram, local_addr, global_addr, size,
-                                  local_stride=1, port=0, cond=None, ram_method=None,
+                                  local_stride, port=0, cond=None, ram_method=None,
                                   ram_datawidth=None):
         """ axi.datawidth > ram.datawidth """
 
@@ -1321,7 +1321,7 @@ class AXIM(AxiMaster, _MutexFunction):
         return done
 
     def dma_write_rtl(self, ram, local_addr, global_addr, size,
-                      local_stride=1, port=0, cond=None, ram_method=None):
+                      local_stride, port=0, cond=None, ram_method=None):
         """ Safe API with length and 4KB boundary check """
 
         ram_datawidth = (ram.datawidth if ram_method is None else
@@ -1347,7 +1347,7 @@ class AXIM(AxiMaster, _MutexFunction):
                                         ram_datawidth)
 
     def _dma_write_rtl_same(self, ram, local_addr, global_addr, size,
-                            local_stride=1, port=0, cond=None, ram_method=None):
+                            local_stride, port=0, cond=None, ram_method=None):
 
         fsm = TmpFSM(self.m, self.clk, self.rst)
 
@@ -1400,7 +1400,7 @@ class AXIM(AxiMaster, _MutexFunction):
         return done
 
     def _dma_write_rtl_narrow(self, ram, local_addr, global_addr, size,
-                              local_stride=1, port=0, cond=None, ram_method=None,
+                              local_stride, port=0, cond=None, ram_method=None,
                               ram_datawidth=None):
         """ axi.datawidth < ram.datawidth """
 
@@ -1499,7 +1499,7 @@ class AXIM(AxiMaster, _MutexFunction):
         return done
 
     def _dma_write_rtl_wide(self, ram, local_addr, global_addr, size,
-                            local_stride=1, port=0, cond=None, ram_method=None,
+                            local_stride, port=0, cond=None, ram_method=None,
                             ram_datawidth=None):
         """ axi.datawidth > ram.datawidth """
 
@@ -1952,7 +1952,7 @@ class AXIM(AxiMaster, _MutexFunction):
                                           port, cond, ram_method)
 
     def dma_write_rtl_unsafe(self, ram, local_addr, global_addr, size,
-                             local_stride=1, port=0, cond=None, ram_method=None):
+                             local_stride, port=0, cond=None, ram_method=None):
         """ Unsafe API with no length and 4KB region check """
 
         ram_datawidth = (ram.datawidth if ram_method is None else
@@ -1978,7 +1978,7 @@ class AXIM(AxiMaster, _MutexFunction):
                                                ram_datawidth)
 
     def _dma_write_rtl_unsafe_same(self, ram, local_addr, global_addr, size,
-                                   local_stride=1, port=0, cond=None, ram_method=None):
+                                   local_stride, port=0, cond=None, ram_method=None):
         fsm = TmpFSM(self.m, self.clk, self.rst)
 
         if cond is not None:
@@ -2000,7 +2000,7 @@ class AXIM(AxiMaster, _MutexFunction):
         return done
 
     def _dma_write_rtl_unsafe_narrow(self, ram, local_addr, global_addr, size,
-                                     local_stride=1, port=0, cond=None, ram_method=None,
+                                     local_stride, port=0, cond=None, ram_method=None,
                                      ram_datawidth=None):
         """ axi.datawidth < ram.datawidth """
 
@@ -2069,7 +2069,7 @@ class AXIM(AxiMaster, _MutexFunction):
         return done
 
     def _dma_write_rtl_unsafe_wide(self, ram, local_addr, global_addr, size,
-                                   local_stride=1, port=0, cond=None, ram_method=None,
+                                   local_stride, port=0, cond=None, ram_method=None,
                                    ram_datawidth=None):
         """ axi.datawidth > ram.datawidth """
 
