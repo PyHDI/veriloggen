@@ -529,24 +529,8 @@ class AXIM(AxiMaster, _MutexFunction):
 
         check_state = fsm.current
 
-        # 4KB boundary check
-        fsm.If(rest_size <= max_burstlen,
-               self.check_boundary(req_global_addr, rest_size))(
-            req_size(self.rest_boundary(req_global_addr)),
-            rest_size(
-                rest_size - self.rest_boundary(req_global_addr))
-        ).Elif(rest_size <= max_burstlen)(
-            req_size(rest_size),
-            rest_size(0)
-        ).Elif(self.check_boundary(req_global_addr, max_burstlen))(
-            req_size(self.rest_boundary(req_global_addr)),
-            rest_size(
-                rest_size - self.rest_boundary(req_global_addr))
-        ).Else(
-            req_size(max_burstlen),
-            rest_size(rest_size - max_burstlen)
-        )
-        fsm.goto_next()
+        self._check_4KB_boundary(fsm, max_burstlen,
+                                 req_global_addr, req_size, rest_size)
 
         ack, counter = self.read_request(req_global_addr, req_size, cond=fsm)
         fsm.If(ack).goto_next()
@@ -625,24 +609,8 @@ class AXIM(AxiMaster, _MutexFunction):
 
         check_state = fsm.current
 
-        # 4KB boundary check
-        fsm.If(rest_size <= max_burstlen,
-               self.check_boundary(req_global_addr, rest_size))(
-            req_size(self.rest_boundary(req_global_addr)),
-            rest_size(
-                rest_size - self.rest_boundary(req_global_addr))
-        ).Elif(rest_size <= max_burstlen)(
-            req_size(rest_size),
-            rest_size(0)
-        ).Elif(self.check_boundary(req_global_addr, max_burstlen))(
-            req_size(self.rest_boundary(req_global_addr)),
-            rest_size(
-                rest_size - self.rest_boundary(req_global_addr))
-        ).Else(
-            req_size(max_burstlen),
-            rest_size(rest_size - max_burstlen)
-        )
-        fsm.goto_next()
+        self._check_4KB_boundary(fsm, max_burstlen,
+                                 req_global_addr, req_size, rest_size)
 
         ack, counter = self.read_request(req_global_addr, req_size, cond=fsm)
         fsm.If(ack).goto_next()
@@ -735,24 +703,8 @@ class AXIM(AxiMaster, _MutexFunction):
             last_done(0)
         )
 
-        # 4KB boundary check
-        fsm.If(rest_size <= max_burstlen,
-               self.check_boundary(req_global_addr, rest_size))(
-            req_size(self.rest_boundary(req_global_addr)),
-            rest_size(
-                rest_size - self.rest_boundary(req_global_addr))
-        ).Elif(rest_size <= max_burstlen)(
-            req_size(rest_size),
-            rest_size(0)
-        ).Elif(self.check_boundary(req_global_addr, max_burstlen))(
-            req_size(self.rest_boundary(req_global_addr)),
-            rest_size(
-                rest_size - self.rest_boundary(req_global_addr))
-        ).Else(
-            req_size(max_burstlen),
-            rest_size(rest_size - max_burstlen)
-        )
-        fsm.goto_next()
+        self._check_4KB_boundary(fsm, max_burstlen,
+                                 req_global_addr, req_size, rest_size)
 
         ack, counter = self.read_request(req_global_addr, req_size, cond=fsm)
         fsm.If(ack).goto_next()
@@ -869,24 +821,8 @@ class AXIM(AxiMaster, _MutexFunction):
 
         check_state = fsm.current
 
-        # 4KB boundary check
-        fsm.If(rest_size <= max_burstlen,
-               self.check_boundary(req_global_addr, rest_size))(
-            req_size(self.rest_boundary(req_global_addr)),
-            rest_size(
-                rest_size - self.rest_boundary(req_global_addr))
-        ).Elif(rest_size <= max_burstlen)(
-            req_size(rest_size),
-            rest_size(0)
-        ).Elif(self.check_boundary(req_global_addr, max_burstlen))(
-            req_size(self.rest_boundary(req_global_addr)),
-            rest_size(
-                rest_size - self.rest_boundary(req_global_addr))
-        ).Else(
-            req_size(max_burstlen),
-            rest_size(rest_size - max_burstlen)
-        )
-        fsm.goto_next()
+        self._check_4KB_boundary(fsm, max_burstlen,
+                                 req_global_addr, req_size, rest_size)
 
         ack, counter = self.read_request(req_global_addr, req_size, cond=fsm)
         fsm.If(ack).goto_next()
@@ -990,24 +926,8 @@ class AXIM(AxiMaster, _MutexFunction):
 
         check_state = fsm.current
 
-        # 4KB boundary check
-        fsm.If(rest_size <= max_burstlen,
-               self.check_boundary(req_global_addr, rest_size))(
-            req_size(self.rest_boundary(req_global_addr)),
-            rest_size(
-                rest_size - self.rest_boundary(req_global_addr))
-        ).Elif(rest_size <= max_burstlen)(
-            req_size(rest_size),
-            rest_size(0)
-        ).Elif(self.check_boundary(req_global_addr, max_burstlen))(
-            req_size(self.rest_boundary(req_global_addr)),
-            rest_size(
-                rest_size - self.rest_boundary(req_global_addr))
-        ).Else(
-            req_size(max_burstlen),
-            rest_size(rest_size - max_burstlen)
-        )
-        fsm.goto_next()
+        self._check_4KB_boundary(fsm, max_burstlen,
+                                 req_global_addr, req_size, rest_size)
 
         ack, counter = self.read_request(req_global_addr, req_size, cond=fsm)
         fsm.If(ack).goto_next()
@@ -1125,24 +1045,8 @@ class AXIM(AxiMaster, _MutexFunction):
             last_done(0)
         )
 
-        # 4KB boundary check
-        fsm.If(rest_size <= max_burstlen,
-               self.check_boundary(req_global_addr, rest_size))(
-            req_size(self.rest_boundary(req_global_addr)),
-            rest_size(
-                rest_size - self.rest_boundary(req_global_addr))
-        ).Elif(rest_size <= max_burstlen)(
-            req_size(rest_size),
-            rest_size(0)
-        ).Elif(self.check_boundary(req_global_addr, max_burstlen))(
-            req_size(self.rest_boundary(req_global_addr)),
-            rest_size(
-                rest_size - self.rest_boundary(req_global_addr))
-        ).Else(
-            req_size(max_burstlen),
-            rest_size(rest_size - max_burstlen)
-        )
-        fsm.goto_next()
+        self._check_4KB_boundary(fsm, max_burstlen,
+                                 req_global_addr, req_size, rest_size)
 
         ack, counter = self.read_request(req_global_addr, req_size, cond=fsm)
         fsm.If(ack).goto_next()
@@ -1469,24 +1373,8 @@ class AXIM(AxiMaster, _MutexFunction):
 
         check_state = fsm.current
 
-        # 4KB boundary check
-        fsm.If(rest_size <= max_burstlen,
-               self.check_boundary(req_global_addr, rest_size))(
-            req_size(self.rest_boundary(req_global_addr)),
-            rest_size(
-                rest_size - self.rest_boundary(req_global_addr))
-        ).Elif(rest_size <= max_burstlen)(
-            req_size(rest_size),
-            rest_size(0)
-        ).Elif(self.check_boundary(req_global_addr, max_burstlen))(
-            req_size(self.rest_boundary(req_global_addr)),
-            rest_size(
-                rest_size - self.rest_boundary(req_global_addr))
-        ).Else(
-            req_size(max_burstlen),
-            rest_size(rest_size - max_burstlen)
-        )
-        fsm.goto_next()
+        self._check_4KB_boundary(fsm, max_burstlen,
+                                 req_global_addr, req_size, rest_size)
 
         ack, counter = self.write_request(req_global_addr, req_size, cond=fsm)
         fsm.If(ack).goto_next()
@@ -1552,24 +1440,8 @@ class AXIM(AxiMaster, _MutexFunction):
 
         check_state = fsm.current
 
-        # 4KB boundary check
-        fsm.If(rest_size <= max_burstlen,
-               self.check_boundary(req_global_addr, rest_size))(
-            req_size(self.rest_boundary(req_global_addr)),
-            rest_size(
-                rest_size - self.rest_boundary(req_global_addr))
-        ).Elif(rest_size <= max_burstlen)(
-            req_size(rest_size),
-            rest_size(0)
-        ).Elif(self.check_boundary(req_global_addr, max_burstlen))(
-            req_size(self.rest_boundary(req_global_addr)),
-            rest_size(
-                rest_size - self.rest_boundary(req_global_addr))
-        ).Else(
-            req_size(max_burstlen),
-            rest_size(rest_size - max_burstlen)
-        )
-        fsm.goto_next()
+        self._check_4KB_boundary(fsm, max_burstlen,
+                                 req_global_addr, req_size, rest_size)
 
         ack, counter = self.write_request(req_global_addr, req_size, cond=fsm)
         fsm.If(ack).goto_next()
@@ -1667,24 +1539,8 @@ class AXIM(AxiMaster, _MutexFunction):
 
         check_state = fsm.current
 
-        # 4KB boundary check
-        fsm.If(rest_size <= max_burstlen,
-               self.check_boundary(req_global_addr, rest_size))(
-            req_size(self.rest_boundary(req_global_addr)),
-            rest_size(
-                rest_size - self.rest_boundary(req_global_addr))
-        ).Elif(rest_size <= max_burstlen)(
-            req_size(rest_size),
-            rest_size(0)
-        ).Elif(self.check_boundary(req_global_addr, max_burstlen))(
-            req_size(self.rest_boundary(req_global_addr)),
-            rest_size(
-                rest_size - self.rest_boundary(req_global_addr))
-        ).Else(
-            req_size(max_burstlen),
-            rest_size(rest_size - max_burstlen)
-        )
-        fsm.goto_next()
+        self._check_4KB_boundary(fsm, max_burstlen,
+                                 req_global_addr, req_size, rest_size)
 
         ack, counter = self.write_request(req_global_addr, req_size, cond=fsm)
         fsm.If(ack).goto_next()
@@ -1798,24 +1654,8 @@ class AXIM(AxiMaster, _MutexFunction):
 
         check_state = fsm.current
 
-        # 4KB boundary check
-        fsm.If(rest_size <= max_burstlen,
-               self.check_boundary(req_global_addr, rest_size))(
-            req_size(self.rest_boundary(req_global_addr)),
-            rest_size(
-                rest_size - self.rest_boundary(req_global_addr))
-        ).Elif(rest_size <= max_burstlen)(
-            req_size(rest_size),
-            rest_size(0)
-        ).Elif(self.check_boundary(req_global_addr, max_burstlen))(
-            req_size(self.rest_boundary(req_global_addr)),
-            rest_size(
-                rest_size - self.rest_boundary(req_global_addr))
-        ).Else(
-            req_size(max_burstlen),
-            rest_size(rest_size - max_burstlen)
-        )
-        fsm.goto_next()
+        self._check_4KB_boundary(fsm, max_burstlen,
+                                 req_global_addr, req_size, rest_size)
 
         ack, counter = self.write_request(req_global_addr, req_size, cond=fsm)
         fsm.If(ack).goto_next()
@@ -1907,24 +1747,8 @@ class AXIM(AxiMaster, _MutexFunction):
 
         check_state = fsm.current
 
-        # 4KB boundary check
-        fsm.If(rest_size <= max_burstlen,
-               self.check_boundary(req_global_addr, rest_size))(
-            req_size(self.rest_boundary(req_global_addr)),
-            rest_size(
-                rest_size - self.rest_boundary(req_global_addr))
-        ).Elif(rest_size <= max_burstlen)(
-            req_size(rest_size),
-            rest_size(0)
-        ).Elif(self.check_boundary(req_global_addr, max_burstlen))(
-            req_size(self.rest_boundary(req_global_addr)),
-            rest_size(
-                rest_size - self.rest_boundary(req_global_addr))
-        ).Else(
-            req_size(max_burstlen),
-            rest_size(rest_size - max_burstlen)
-        )
-        fsm.goto_next()
+        self._check_4KB_boundary(fsm, max_burstlen,
+                                 req_global_addr, req_size, rest_size)
 
         ack, counter = self.write_request(req_global_addr, req_size, cond=fsm)
         fsm.If(ack).goto_next()
@@ -2048,24 +1872,8 @@ class AXIM(AxiMaster, _MutexFunction):
 
         check_state = fsm.current
 
-        # 4KB boundary check
-        fsm.If(rest_size <= max_burstlen,
-               self.check_boundary(req_global_addr, rest_size))(
-            req_size(self.rest_boundary(req_global_addr)),
-            rest_size(
-                rest_size - self.rest_boundary(req_global_addr))
-        ).Elif(rest_size <= max_burstlen)(
-            req_size(rest_size),
-            rest_size(0)
-        ).Elif(self.check_boundary(req_global_addr, max_burstlen))(
-            req_size(self.rest_boundary(req_global_addr)),
-            rest_size(
-                rest_size - self.rest_boundary(req_global_addr))
-        ).Else(
-            req_size(max_burstlen),
-            rest_size(rest_size - max_burstlen)
-        )
-        fsm.goto_next()
+        self._check_4KB_boundary(fsm, max_burstlen,
+                                 req_global_addr, req_size, rest_size)
 
         ack, counter = self.write_request(req_global_addr, req_size, cond=fsm)
         fsm.If(ack).goto_next()
@@ -2323,6 +2131,26 @@ class AXIM(AxiMaster, _MutexFunction):
         fsm.If(done).goto_init()
 
         return done
+
+    def _check_4KB_boundary(self, fsm, max_burstlen,
+                            req_global_addr, req_size, rest_size):
+        fsm.If(rest_size <= max_burstlen,
+               self.check_boundary(req_global_addr, rest_size))(
+            req_size(self.rest_boundary(req_global_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_global_addr))
+        ).Elif(rest_size <= max_burstlen)(
+            req_size(rest_size),
+            rest_size(0)
+        ).Elif(self.check_boundary(req_global_addr, max_burstlen))(
+            req_size(self.rest_boundary(req_global_addr)),
+            rest_size(
+                rest_size - self.rest_boundary(req_global_addr))
+        ).Else(
+            req_size(max_burstlen),
+            rest_size(rest_size - max_burstlen)
+        )
+        fsm.goto_next()
 
 
 class AXIS(AxiSlave, _MutexFunction):
