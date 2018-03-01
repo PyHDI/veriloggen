@@ -41,6 +41,11 @@ class AXIM(AxiMaster, _MutexFunction):
                                self.clk, self.rst)
             self.dma_fsm_max_state = 0
 
+        # key: (ram._id(), port, ram_method_name)
+        self.cache_dma_reqs = {}
+        self.cache_dma_read_fsms = {}
+        self.cache_dma_write_fsms = {}
+
     def read(self, fsm, global_addr):
         ret = self.read_request(global_addr, length=1, cond=fsm)
         if isinstance(ret, (tuple)):
@@ -55,7 +60,8 @@ class AXIM(AxiMaster, _MutexFunction):
         else:
             data, valid = ret
 
-        rdata = self.m.TmpReg(self.datawidth, initval=0, signed=True)
+        rdata = self.m.TmpReg(self.datawidth, initval=0,
+                              signed=True, prefix='rdata')
         fsm.If(valid)(rdata(data))
         fsm.Then().goto_next()
 
@@ -97,30 +103,54 @@ class AXIM(AxiMaster, _MutexFunction):
             raise TypeError('RAM is required')
 
         port = vtypes.to_int(port)
-        req_local_addr = self.m.TmpReg(ram.addrwidth, initval=0)
-        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
-        req_size = self.m.TmpReg(self.addrwidth, initval=0)
-        if isinstance(local_stride, (int, vtypes.Int)):
-            req_local_stride = local_stride
-        else:
-            req_local_stride = self.m.TmpReg(ram.addrwidth, initval=1)
+        ram_method_name = (ram_method.func.__name__
+                           if ram_method is not None else None)
 
-        fsm(
+        # FSM and req_reg cache
+        cache_key = (ram._id(), port, ram_method_name)
+
+        if cache_key in self.cache_dma_reqs:
+            info = self.cache_dma_reqs[cache_key]
+            seq = info[0]
+            req_local_addr = info[1]
+            req_global_addr = info[2]
+            req_size = info[3]
+            req_local_stride = info[4]
+        else:
+            seq = TmpSeq(self.m, self.clk, self.rst)
+            req_local_addr = self.m.TmpReg(ram.addrwidth, initval=0,
+                                           prefix='req_local_addr')
+            req_global_addr = self.m.TmpReg(self.addrwidth, initval=0,
+                                            prefix='req_global_addr')
+            req_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                                     prefix='req_size')
+            req_local_stride = self.m.TmpReg(ram.addrwidth, initval=1,
+                                             prefix='req_local_stride')
+            info = (seq, req_local_addr, req_global_addr,
+                    req_size, req_local_stride)
+            self.cache_dma_reqs[cache_key] = info
+
+        set_req = self._set_flag(fsm, prefix='set_req')
+        seq.If(set_req)(
             req_local_addr(local_addr),
             req_global_addr(global_addr),
             req_size(size),
+            req_local_stride(local_stride)
         )
-        if not isinstance(local_stride, (int, vtypes.Int)):
-            fsm(
-                req_local_stride(local_stride)
-            )
-        fsm.goto_next()
 
         cond = self._fsm_start(fsm)
 
-        dma_fsm, done = self.dma_read_rtl(ram, req_local_addr, req_global_addr, req_size,
-                                          local_stride=req_local_stride, port=port,
-                                          cond=cond, ram_method=ram_method)
+        if cache_key in self.cache_dma_read_fsms:
+            dma_fsm, done = self.cache_dma_read_fsms[cache_key]
+            src = 0
+            dst = 1
+            dma_fsm.goto_from(src, dst, cond)
+        else:
+            dma_fsm, done = self.dma_read_rtl(ram, req_local_addr, req_global_addr, req_size,
+                                              local_stride=req_local_stride, port=port,
+                                              cond=cond, ram_method=ram_method)
+            self.cache_dma_read_fsms[cache_key] = (dma_fsm, done)
+
         fsm.goto_next()
         fsm.If(done).goto_next()
 
@@ -157,13 +187,17 @@ class AXIM(AxiMaster, _MutexFunction):
             pattern = (pattern,)
 
         port = vtypes.to_int(port)
-        req_local_addr = self.m.TmpReg(ram.addrwidth, initval=0)
-        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
+        req_local_addr = self.m.TmpReg(ram.addrwidth, initval=0,
+                                       prefix='req_local_addr')
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0,
+                                        prefix='req_global_addr')
 
         req_pattern = []
         for size, stride in pattern:
-            req_pattern.append((self.m.TmpReg(size.bit_length() + 1, initval=0),
-                                self.m.TmpReg(stride.bit_length() + 1, initval=0)))
+            req_pattern.append((self.m.TmpReg(ram.addrwidth + 1, initval=0,
+                                              prefix='req_size'),
+                                self.m.TmpReg(ram.addrwidth, initval=0,
+                                              prefix='req_local_stride')))
 
         fsm(
             req_local_addr(local_addr),
@@ -215,30 +249,54 @@ class AXIM(AxiMaster, _MutexFunction):
             raise TypeError('RAM is required')
 
         port = vtypes.to_int(port)
-        req_local_addr = self.m.TmpReg(ram.addrwidth, initval=0)
-        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
-        req_size = self.m.TmpReg(self.addrwidth, initval=0)
-        if isinstance(local_stride, (int, vtypes.Int)):
-            req_local_stride = local_stride
-        else:
-            req_local_stride = self.m.TmpReg(ram.addrwidth, initval=1)
+        ram_method_name = (ram_method.func.__name__
+                           if ram_method is not None else None)
 
-        fsm(
+        # FSM and req_reg cache
+        cache_key = (ram._id(), port, ram_method_name)
+
+        if cache_key in self.cache_dma_reqs:
+            info = self.cache_dma_reqs[cache_key]
+            seq = info[0]
+            req_local_addr = info[1]
+            req_global_addr = info[2]
+            req_size = info[3]
+            req_local_stride = info[4]
+        else:
+            seq = TmpSeq(self.m, self.clk, self.rst)
+            req_local_addr = self.m.TmpReg(ram.addrwidth, initval=0,
+                                           prefix='req_local_addr')
+            req_global_addr = self.m.TmpReg(self.addrwidth, initval=0,
+                                            prefix='req_global_addr')
+            req_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                                     prefix='req_size')
+            req_local_stride = self.m.TmpReg(ram.addrwidth, initval=1,
+                                             prefix='req_local_stride')
+            info = (seq, req_local_addr, req_global_addr,
+                    req_size, req_local_stride)
+            self.cache_dma_reqs[cache_key] = info
+
+        set_req = self._set_flag(fsm, prefix='set_req')
+        seq.If(set_req)(
             req_local_addr(local_addr),
             req_global_addr(global_addr),
-            req_size(size)
+            req_size(size),
+            req_local_stride(local_stride)
         )
-        if not isinstance(local_stride, (int, vtypes.Int)):
-            fsm(
-                req_local_stride(local_stride)
-            )
-        fsm.goto_next()
 
         cond = self._fsm_start(fsm)
 
-        dma_fsm, done = self.dma_write_rtl(ram, req_local_addr, req_global_addr, req_size,
-                                           local_stride=req_local_stride, port=port,
-                                           cond=cond, ram_method=ram_method)
+        if cache_key in self.cache_dma_write_fsms:
+            dma_fsm, done = self.cache_dma_write_fsms[cache_key]
+            src = 0
+            dst = 1
+            dma_fsm.goto_from(src, dst, cond)
+        else:
+            dma_fsm, done = self.dma_write_rtl(ram, req_local_addr, req_global_addr, req_size,
+                                               local_stride=req_local_stride, port=port,
+                                               cond=cond, ram_method=ram_method)
+            self.cache_dma_write_fsms[cache_key] = (dma_fsm, done)
+
         fsm.goto_next()
         fsm.If(done).goto_next()
 
@@ -275,13 +333,17 @@ class AXIM(AxiMaster, _MutexFunction):
             pattern = (pattern,)
 
         port = vtypes.to_int(port)
-        req_local_addr = self.m.TmpReg(ram.addrwidth, initval=0)
-        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
+        req_local_addr = self.m.TmpReg(ram.addrwidth, initval=0,
+                                       prefix='req_local_addr')
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0,
+                                        prefix='req_global_addr')
 
         req_pattern = []
         for size, stride in pattern:
-            req_pattern.append((self.m.TmpReg(size.bit_length() + 1, initval=0),
-                                self.m.TmpReg(stride.bit_length() + 1, initval=0)))
+            req_pattern.append((self.m.TmpReg(ram.addrwidth + 1, initval=0,
+                                              prefix='req_size'),
+                                self.m.TmpReg(ram.addrwidth, initval=0,
+                                              prefix='req_local_stride')))
 
         fsm(
             req_local_addr(local_addr),
@@ -506,9 +568,12 @@ class AXIM(AxiMaster, _MutexFunction):
         if cond is not None:
             fsm.If(cond).goto_next()
 
-        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
-        req_size = self.m.TmpReg(size.bit_length() + 1, initval=0)
-        rest_size = self.m.TmpReg(size.bit_length() + 1, initval=0)
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0,
+                                        prefix='_global_addr')
+        req_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                                 prefix='_size')
+        rest_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                                  prefix='_rest_size')
         max_burstlen = 2 ** self.burst_size_width
 
         fsm(
@@ -516,8 +581,8 @@ class AXIM(AxiMaster, _MutexFunction):
             rest_size(size)
         )
 
-        wdata = self.m.TmpReg(ram.datawidth, initval=0)
-        wvalid = self.m.TmpReg(initval=0)
+        wdata = self.m.TmpReg(ram.datawidth, initval=0, prefix='_wdata')
+        wvalid = self.m.TmpReg(initval=0, prefix='_wvalid')
         df_data = self.df.Variable(
             wdata, wvalid, width=ram.datawidth, signed=False)
 
@@ -578,9 +643,12 @@ class AXIM(AxiMaster, _MutexFunction):
         if cond is not None:
             fsm.If(cond).goto_next()
 
-        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
-        req_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
-        rest_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0,
+                                        prefix='_global_addr')
+        req_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                                 prefix='_size')
+        rest_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                                  prefix='_rest_size')
         max_burstlen = 2 ** self.burst_size_width
 
         fsm(
@@ -588,8 +656,8 @@ class AXIM(AxiMaster, _MutexFunction):
             rest_size(dma_size)
         )
 
-        wdata = self.m.TmpReg(ram_datawidth, initval=0)
-        wvalid = self.m.TmpReg(initval=0)
+        wdata = self.m.TmpReg(ram_datawidth, initval=0, prefix='_wdata')
+        wvalid = self.m.TmpReg(initval=0, prefix='_wvalid')
         df_data = self.df.Variable(
             wdata, wvalid, width=ram_datawidth, signed=False)
 
@@ -608,7 +676,7 @@ class AXIM(AxiMaster, _MutexFunction):
         ack, counter = self.read_request(req_global_addr, req_size, cond=fsm)
         fsm.If(ack).goto_next()
 
-        pack_count = self.m.TmpReg(pack_size, initval=0)
+        pack_count = self.m.TmpReg(pack_size, initval=0, prefix='_pack_count')
         data, valid, last = self.read_data(cond=fsm)
 
         fsm.Delay(1)(
@@ -657,9 +725,12 @@ class AXIM(AxiMaster, _MutexFunction):
         if cond is not None:
             fsm.If(cond).goto_next()
 
-        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
-        req_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
-        rest_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0,
+                                        prefix='_global_addr')
+        req_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                                 prefix='_size')
+        rest_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                                  prefix='_rest_size')
         max_burstlen = 2 ** self.burst_size_width
 
         fsm(
@@ -667,10 +738,10 @@ class AXIM(AxiMaster, _MutexFunction):
             rest_size(dma_size)
         )
 
-        wdata = self.m.TmpReg(self.datawidth, initval=0)
-        wdata_ram = self.m.TmpWire(ram_datawidth)
+        wdata = self.m.TmpReg(self.datawidth, initval=0, prefix='_wdata')
+        wdata_ram = self.m.TmpWire(ram_datawidth, prefix='_wdata_ram')
         wdata_ram.assign(wdata)
-        wvalid = self.m.TmpReg(initval=0)
+        wvalid = self.m.TmpReg(initval=0, prefix='_wvalid')
         df_data = self.df.Variable(
             wdata_ram, wvalid, width=ram_datawidth, signed=False)
 
@@ -683,7 +754,7 @@ class AXIM(AxiMaster, _MutexFunction):
 
         check_state = fsm.current
 
-        last_done = self.m.TmpReg(initval=0)
+        last_done = self.m.TmpReg(initval=0, prefix='_last_done')
         fsm(
             last_done(0)
         )
@@ -694,7 +765,7 @@ class AXIM(AxiMaster, _MutexFunction):
         ack, counter = self.read_request(req_global_addr, req_size, cond=fsm)
         fsm.If(ack).goto_next()
 
-        pack_count = self.m.TmpReg(pack_size, initval=0)
+        pack_count = self.m.TmpReg(pack_size, initval=0, prefix='_pack_count')
         rcond = make_condition(fsm, pack_count == 0)
         data, valid, last = self.read_data(cond=rcond)
 
@@ -766,9 +837,12 @@ class AXIM(AxiMaster, _MutexFunction):
         if cond is not None:
             fsm.If(cond).goto_next()
 
-        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
-        req_size = self.m.TmpReg(block_size.bit_length() + 1, initval=0)
-        rest_size = self.m.TmpReg(block_size.bit_length() + 1, initval=0)
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0,
+                                        prefix='_global_addr')
+        req_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                                 prefix='_size')
+        rest_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                                  prefix='_rest_size')
         max_burstlen = 2 ** self.burst_size_width
 
         fsm(
@@ -776,7 +850,7 @@ class AXIM(AxiMaster, _MutexFunction):
             rest_size(block_size)
         )
 
-        count_list = [self.m.TmpReg(size.bit_length() + 1, initval=0)
+        count_list = [self.m.TmpReg(size.bit_length() + 1, initval=0, prefix='_count')
                       for size, stride in pattern[1:]]
 
         for count, (size, stride) in zip(count_list, pattern[1:]):
@@ -784,8 +858,8 @@ class AXIM(AxiMaster, _MutexFunction):
                 count(size - 1)
             )
 
-        wdata = self.m.TmpReg(ram.datawidth, initval=0)
-        wvalid = self.m.TmpReg(initval=0)
+        wdata = self.m.TmpReg(ram.datawidth, initval=0, prefix='_wdata')
+        wvalid = self.m.TmpReg(initval=0, prefix='_wvalid')
         df_data = self.df.Variable(
             wdata, wvalid, width=ram.datawidth, signed=False)
 
@@ -864,9 +938,12 @@ class AXIM(AxiMaster, _MutexFunction):
         if cond is not None:
             fsm.If(cond).goto_next()
 
-        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
-        req_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
-        rest_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0,
+                                        prefix='_global_addr')
+        req_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                                 prefix='_size')
+        rest_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                                  prefix='_rest_size')
         max_burstlen = 2 ** self.burst_size_width
 
         fsm(
@@ -874,7 +951,7 @@ class AXIM(AxiMaster, _MutexFunction):
             rest_size(dma_size)
         )
 
-        count_list = [self.m.TmpReg(size.bit_length() + 1, initval=0)
+        count_list = [self.m.TmpReg(size.bit_length() + 1, initval=0, prefix='_count')
                       for size, stride in pattern[1:]]
 
         for count, (size, stride) in zip(count_list, pattern[1:]):
@@ -882,8 +959,8 @@ class AXIM(AxiMaster, _MutexFunction):
                 count(size - 1)
             )
 
-        wdata = self.m.TmpReg(ram_datawidth, initval=0)
-        wvalid = self.m.TmpReg(initval=0)
+        wdata = self.m.TmpReg(ram_datawidth, initval=0, prefix='_wdata')
+        wvalid = self.m.TmpReg(initval=0, prefix='_wvalid')
         df_data = self.df.Variable(
             wdata, wvalid, width=ram_datawidth, signed=False)
 
@@ -901,7 +978,7 @@ class AXIM(AxiMaster, _MutexFunction):
         ack, counter = self.read_request(req_global_addr, req_size, cond=fsm)
         fsm.If(ack).goto_next()
 
-        pack_count = self.m.TmpReg(pack_size, initval=0)
+        pack_count = self.m.TmpReg(pack_size, initval=0, prefix='_pack_count')
         data, valid, last = self.read_data(cond=fsm)
 
         fsm.Delay(1)(
@@ -968,9 +1045,12 @@ class AXIM(AxiMaster, _MutexFunction):
         if cond is not None:
             fsm.If(cond).goto_next()
 
-        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
-        req_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
-        rest_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0,
+                                        prefix='_global_addr')
+        req_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                                 prefix='_size')
+        rest_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                                  prefix='_rest_size')
         max_burstlen = 2 ** self.burst_size_width
 
         fsm(
@@ -978,7 +1058,7 @@ class AXIM(AxiMaster, _MutexFunction):
             rest_size(dma_size)
         )
 
-        count_list = [self.m.TmpReg(size.bit_length() + 1, initval=0)
+        count_list = [self.m.TmpReg(size.bit_length() + 1, initval=0, prefix='_count')
                       for size, stride in pattern[1:]]
 
         for count, (size, stride) in zip(count_list, pattern[1:]):
@@ -986,10 +1066,10 @@ class AXIM(AxiMaster, _MutexFunction):
                 count(size - 1)
             )
 
-        wdata = self.m.TmpReg(self.datawidth, initval=0)
-        wdata_ram = self.m.TmpWire(ram_datawidth)
+        wdata = self.m.TmpReg(self.datawidth, initval=0, prefix='_wdata')
+        wdata_ram = self.m.TmpWire(ram_datawidth, prefix='_wdata_ram')
         wdata_ram.assign(wdata)
-        wvalid = self.m.TmpReg(initval=0)
+        wvalid = self.m.TmpReg(initval=0, prefix='_wvalid')
         df_data = self.df.Variable(
             wdata_ram, wvalid, width=ram_datawidth, signed=False)
 
@@ -1001,7 +1081,7 @@ class AXIM(AxiMaster, _MutexFunction):
 
         check_state = fsm.current
 
-        last_done = self.m.TmpReg(initval=0)
+        last_done = self.m.TmpReg(initval=0, prefix='last_done')
         fsm(
             last_done(0)
         )
@@ -1012,7 +1092,7 @@ class AXIM(AxiMaster, _MutexFunction):
         ack, counter = self.read_request(req_global_addr, req_size, cond=fsm)
         fsm.If(ack).goto_next()
 
-        pack_count = self.m.TmpReg(pack_size, initval=0)
+        pack_count = self.m.TmpReg(pack_size, initval=0, prefix='_pack_count')
         rcond = make_condition(fsm, pack_count == 0)
         data, valid, last = self.read_data(cond=rcond)
 
@@ -1307,9 +1387,12 @@ class AXIM(AxiMaster, _MutexFunction):
         if cond is not None:
             fsm.If(cond).goto_next()
 
-        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
-        req_size = self.m.TmpReg(size.bit_length() + 1, initval=0)
-        rest_size = self.m.TmpReg(size.bit_length() + 1, initval=0)
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0,
+                                        prefix='_global_addr')
+        req_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                                 prefix='_size')
+        rest_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                                  prefix='_rest_size')
         max_burstlen = 2 ** self.burst_size_width
 
         fsm(
@@ -1366,9 +1449,12 @@ class AXIM(AxiMaster, _MutexFunction):
         if cond is not None:
             fsm.If(cond).goto_next()
 
-        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
-        req_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
-        rest_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0,
+                                        prefix='_global_addr')
+        req_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                                 prefix='_size')
+        rest_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                                  prefix='_rest_size')
         max_burstlen = 2 ** self.burst_size_width
 
         fsm(
@@ -1391,12 +1477,12 @@ class AXIM(AxiMaster, _MutexFunction):
         ack, counter = self.write_request(req_global_addr, req_size, cond=fsm)
         fsm.If(ack).goto_next()
 
-        wdata = self.m.TmpReg(ram_datawidth, initval=0)
-        wvalid = self.m.TmpReg(initval=0)
-        wready = self.m.TmpWire()
+        wdata = self.m.TmpReg(ram_datawidth, initval=0, prefix='_wdata')
+        wvalid = self.m.TmpReg(initval=0, prefix='_wvalid')
+        wready = self.m.TmpWire(prefix='_wready')
         ack = vtypes.Ors(wready, vtypes.Not(wvalid))
 
-        pack_count = self.m.TmpReg(pack_size, initval=0)
+        pack_count = self.m.TmpReg(pack_size, initval=0, prefix='_pack_count')
         rcond = make_condition(fsm, ack, pack_count == 0)
         rdata, rvalid = data.read(cond=rcond)
 
@@ -1457,9 +1543,12 @@ class AXIM(AxiMaster, _MutexFunction):
         if cond is not None:
             fsm.If(cond).goto_next()
 
-        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
-        req_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
-        rest_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0,
+                                        prefix='_global_addr')
+        req_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                                 prefix='_size')
+        rest_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                                  prefix='_rest_size')
         max_burstlen = 2 ** self.burst_size_width
 
         fsm(
@@ -1482,12 +1571,12 @@ class AXIM(AxiMaster, _MutexFunction):
         ack, counter = self.write_request(req_global_addr, req_size, cond=fsm)
         fsm.If(ack).goto_next()
 
-        wdata = self.m.TmpReg(self.datawidth, initval=0)
-        wvalid = self.m.TmpReg(initval=0)
-        wready = self.m.TmpWire()
+        wdata = self.m.TmpReg(self.datawidth, initval=0, prefix='_wdata')
+        wvalid = self.m.TmpReg(initval=0, prefix='_wvalid')
+        wready = self.m.TmpWire(prefix='_wready')
         ack = vtypes.Ors(wready, vtypes.Not(wvalid))
 
-        pack_count = self.m.TmpReg(pack_size, initval=0)
+        pack_count = self.m.TmpReg(pack_size, initval=0, prefix='_pack_count')
         rcond = make_condition(fsm, ack)
         rdata, rvalid = data.read(cond=rcond)
 
@@ -1556,9 +1645,12 @@ class AXIM(AxiMaster, _MutexFunction):
         if cond is not None:
             fsm.If(cond).goto_next()
 
-        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
-        req_size = self.m.TmpReg(block_size.bit_length() + 1, initval=0)
-        rest_size = self.m.TmpReg(block_size.bit_length() + 1, initval=0)
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0,
+                                        prefix='_global_addr')
+        req_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                                 prefix='_size')
+        rest_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                                  prefix='_rest_size')
         max_burstlen = 2 ** self.burst_size_width
 
         fsm(
@@ -1566,7 +1658,7 @@ class AXIM(AxiMaster, _MutexFunction):
             rest_size(block_size)
         )
 
-        count_list = [self.m.TmpReg(size.bit_length() + 1, initval=0)
+        count_list = [self.m.TmpReg(size.bit_length() + 1, initval=0, prefix='_count')
                       for size, stride in pattern[1:]]
 
         for count, (size, stride) in zip(count_list, pattern[1:]):
@@ -1641,9 +1733,12 @@ class AXIM(AxiMaster, _MutexFunction):
         if cond is not None:
             fsm.If(cond).goto_next()
 
-        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
-        req_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
-        rest_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0,
+                                        prefix='_global_addr')
+        req_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                                 prefix='_size')
+        rest_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                                  prefix='_rest_size')
         max_burstlen = 2 ** self.burst_size_width
 
         fsm(
@@ -1651,7 +1746,7 @@ class AXIM(AxiMaster, _MutexFunction):
             rest_size(dma_size)
         )
 
-        count_list = [self.m.TmpReg(size.bit_length() + 1, initval=0)
+        count_list = [self.m.TmpReg(size.bit_length() + 1, initval=0, prefix='_count')
                       for size, stride in pattern[1:]]
 
         for count, (size, stride) in zip(count_list, pattern[1:]):
@@ -1674,12 +1769,12 @@ class AXIM(AxiMaster, _MutexFunction):
         ack, counter = self.write_request(req_global_addr, req_size, cond=fsm)
         fsm.If(ack).goto_next()
 
-        wdata = self.m.TmpReg(ram_datawidth, initval=0)
-        wvalid = self.m.TmpReg(initval=0)
-        wready = self.m.TmpWire()
+        wdata = self.m.TmpReg(ram_datawidth, initval=0, prefix='_wdata')
+        wvalid = self.m.TmpReg(initval=0, prefix='_wvalid')
+        wready = self.m.TmpWire(prefix='_wready')
         ack = vtypes.Ors(wready, vtypes.Not(wvalid))
 
-        pack_count = self.m.TmpReg(pack_size, initval=0)
+        pack_count = self.m.TmpReg(pack_size, initval=0, prefix='_pack_count')
         rcond = make_condition(fsm, ack, pack_count == 0)
         rdata, rvalid = data.read(cond=rcond)
 
@@ -1758,9 +1853,12 @@ class AXIM(AxiMaster, _MutexFunction):
         if cond is not None:
             fsm.If(cond).goto_next()
 
-        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0)
-        req_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
-        rest_size = self.m.TmpReg(dma_size.bit_length() + 1, initval=0)
+        req_global_addr = self.m.TmpReg(self.addrwidth, initval=0,
+                                        prefix='_global_addr')
+        req_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                                 prefix='_size')
+        rest_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                                  prefix='_rest_size')
         max_burstlen = 2 ** self.burst_size_width
 
         fsm(
@@ -1768,7 +1866,7 @@ class AXIM(AxiMaster, _MutexFunction):
             rest_size(dma_size)
         )
 
-        count_list = [self.m.TmpReg(size.bit_length() + 1, initval=0)
+        count_list = [self.m.TmpReg(size.bit_length() + 1, initval=0, prefix='_count')
                       for size, stride in pattern[1:]]
 
         for count, (size, stride) in zip(count_list, pattern[1:]):
@@ -1791,12 +1889,12 @@ class AXIM(AxiMaster, _MutexFunction):
         ack, counter = self.write_request(req_global_addr, req_size, cond=fsm)
         fsm.If(ack).goto_next()
 
-        wdata = self.m.TmpReg(self.datawidth, initval=0)
-        wvalid = self.m.TmpReg(initval=0)
-        wready = self.m.TmpWire()
+        wdata = self.m.TmpReg(self.datawidth, initval=0, prefix='_wdata')
+        wvalid = self.m.TmpReg(initval=0, prefix='_wvalid')
+        wready = self.m.TmpWire(prefix='_wready')
         ack = vtypes.Ors(wready, vtypes.Not(wvalid))
 
-        pack_count = self.m.TmpReg(pack_size, initval=0)
+        pack_count = self.m.TmpReg(pack_size, initval=0, prefix='_pack_count')
         rcond = make_condition(fsm, ack)
         rdata, rvalid = data.read(cond=rcond)
 

@@ -9,7 +9,7 @@ import veriloggen.dataflow.dtypes as dtypes
 import veriloggen.types.fixed as fxd
 import veriloggen.types.util as util
 
-from veriloggen.seq.seq import Seq
+from veriloggen.seq.seq import Seq, TmpSeq
 from veriloggen.fsm.fsm import TmpFSM
 from veriloggen.types.ram import RAMInterface, mkRAMDefinition
 from veriloggen.dataflow.dataflow import DataflowManager
@@ -56,6 +56,9 @@ class RAM(_MutexFunction):
 
     def __getitem__(self, index):
         return self.interfaces[index]
+
+    def _id(self):
+        return id(self)
 
     @property
     def length(self):
@@ -1174,16 +1177,23 @@ class MultibankRAM(object):
 
         self.df = DataflowManager(self.m, self.clk, self.rst)
 
+        # key: (axi._id(), port, ram_method_name)
+        self.cache_dma_reqs = {}
+
         self.mutex = None
+
+    def __getitem__(self, index):
+        return self.rams[index]
+
+    def _id(self):
+        _ids = [ram._id() for ram in self.rams]
+        return tuple(_ids)
 
     @property
     def length(self):
         if isinstance(self.addrwidth, int):
             return (2 ** self.addrwidth) * self.numbanks
         return (vtypes.Int(2) ** self.addrwidth) * self.numbanks
-
-    def __getitem__(self, index):
-        return self.rams[index]
 
     def disable_write(self, port):
         for ram in self.rams:
@@ -1434,10 +1444,22 @@ class MultibankRAM(object):
     def _dma_read_block(self, fsm, bus, local_addr, global_addr, size,
                         block_size=1, local_stride=1, port=0):
 
-        req_block_size = self.m.TmpReg(self.addrwidth, initval=0)
+        cache_key = (id(bus), port)
 
-        fsm(
-            req_block_size(block_size),
+        if cache_key in self.cache_dma_reqs:
+            info = self.cache_dma_reqs[cache_key]
+            seq = info[0]
+            req_block_size = info[1]
+        else:
+            seq = TmpSeq(bus.m, bus.clk, bus.rst)
+            req_block_size = self.m.TmpReg(self.addrwidth, initval=0,
+                                           prefix='req_block_size')
+            info = (seq, req_block_size)
+            self.cache_dma_reqs[cache_key] = info
+
+        set_req = bus._set_flag(fsm, prefix='set_req')
+        seq.If(set_req)(
+            req_block_size(block_size)
         )
 
         ram_method = functools.partial(self.write_dataflow_block,
@@ -1458,10 +1480,22 @@ class MultibankRAM(object):
     def _dma_write_block(self, fsm, bus, local_addr, global_addr, size,
                          block_size=1, local_stride=1, port=0):
 
-        req_block_size = self.m.TmpReg(self.addrwidth, initval=0)
+        cache_key = (id(bus), port)
 
-        fsm(
-            req_block_size(block_size),
+        if cache_key in self.cache_dma_reqs:
+            info = self.cache_dma_reqs[cache_key]
+            seq = info[0]
+            req_block_size = info[1]
+        else:
+            seq = TmpSeq(bus.m, bus.clk, bus.rst)
+            req_block_size = self.m.TmpReg(self.addrwidth, initval=0,
+                                           prefix='req_block_size')
+            info = (seq, req_block_size)
+            self.cache_dma_reqs[cache_key] = info
+
+        set_req = bus._set_flag(fsm, prefix='set_req')
+        seq.If(set_req)(
+            req_block_size(block_size)
         )
 
         ram_method = functools.partial(self.read_dataflow_block,
