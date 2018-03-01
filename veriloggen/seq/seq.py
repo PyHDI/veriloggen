@@ -57,8 +57,10 @@ def _get_manager_cond(cond):
     return cond
 
 
-def TmpSeq(m, clk, rst=None):
-    name = _tmp_name()
+def TmpSeq(m, clk, rst=None, prefix=None):
+    if prefix is None:
+        prefix = '_tmp_seq'
+    name = _tmp_name(prefix)
     return Seq(m, name, clk, rst)
 
 
@@ -144,7 +146,8 @@ class Seq(vtypes.VeriloggenNode):
         for i in range(delay):
             cond = make_condition(cond)
             if cond is not None:
-                tmp = self.m.TmpReg(var, width=width, initval=initval, signed=signed)
+                tmp = self.m.TmpReg(
+                    var, width=width, initval=initval, signed=signed)
                 self._add_statement([tmp(p)], cond=cond)
                 p = tmp
 
@@ -153,7 +156,8 @@ class Seq(vtypes.VeriloggenNode):
                 if tmp_name in self.prev_dict:
                     p = self.prev_dict[tmp_name]
                     continue
-                tmp = self.m.Reg(tmp_name, width, initval=initval, signed=signed)
+                tmp = self.m.Reg(
+                    tmp_name, width, initval=initval, signed=signed)
                 self.prev_dict[tmp_name] = tmp
                 self._add_statement([tmp(p)])
                 p = tmp

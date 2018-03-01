@@ -563,7 +563,7 @@ class AXIM(AxiMaster, _MutexFunction):
 
     def _dma_read_rtl_same(self, ram, local_addr, global_addr, size,
                            local_stride, port=0, cond=None, ram_method=None):
-        fsm = TmpFSM(self.m, self.clk, self.rst)
+        fsm = TmpFSM(self.m, self.clk, self.rst, prefix='_fsm_dma_read')
 
         if cond is not None:
             fsm.If(cond).goto_next()
@@ -638,7 +638,7 @@ class AXIM(AxiMaster, _MutexFunction):
                     if math.log(pack_size, 2) % 1.0 == 0.0 else
                     size * pack_size)
 
-        fsm = TmpFSM(self.m, self.clk, self.rst)
+        fsm = TmpFSM(self.m, self.clk, self.rst, prefix='_fsm_dma_read')
 
         if cond is not None:
             fsm.If(cond).goto_next()
@@ -720,7 +720,7 @@ class AXIM(AxiMaster, _MutexFunction):
                     if math.log(pack_size, 2) % 1.0 == 0.0 else
                     int(size // pack_size))
 
-        fsm = TmpFSM(self.m, self.clk, self.rst)
+        fsm = TmpFSM(self.m, self.clk, self.rst, prefix='_fsm_dma_read')
 
         if cond is not None:
             fsm.If(cond).goto_next()
@@ -832,7 +832,8 @@ class AXIM(AxiMaster, _MutexFunction):
 
         block_size = pattern[0][0]
 
-        fsm = TmpFSM(self.m, self.clk, self.rst)
+        fsm = TmpFSM(self.m, self.clk, self.rst,
+                     prefix='_fsm_dma_read_pattern')
 
         if cond is not None:
             fsm.If(cond).goto_next()
@@ -933,7 +934,8 @@ class AXIM(AxiMaster, _MutexFunction):
                     if math.log(pack_size, 2) % 1.0 == 0.0 else
                     block_size * pack_size)
 
-        fsm = TmpFSM(self.m, self.clk, self.rst)
+        fsm = TmpFSM(self.m, self.clk, self.rst,
+                     prefix='_fsm_dma_read_pattern')
 
         if cond is not None:
             fsm.If(cond).goto_next()
@@ -1040,7 +1042,8 @@ class AXIM(AxiMaster, _MutexFunction):
                     if math.log(pack_size, 2) % 1.0 == 0.0 else
                     int(block_size // pack_size))
 
-        fsm = TmpFSM(self.m, self.clk, self.rst)
+        fsm = TmpFSM(self.m, self.clk, self.rst,
+                     prefix='_fsm_dma_read_pattern')
 
         if cond is not None:
             fsm.If(cond).goto_next()
@@ -1197,7 +1200,7 @@ class AXIM(AxiMaster, _MutexFunction):
 
     def _dma_read_rtl_unsafe_same(self, ram, local_addr, global_addr, size,
                                   local_stride, port=0, cond=None, ram_method=None):
-        fsm = TmpFSM(self.m, self.clk, self.rst)
+        fsm = TmpFSM(self.m, self.clk, self.rst, prefix='_fsm_dma_read_unsafe')
 
         if cond is not None:
             fsm.If(cond).goto_next()
@@ -1248,7 +1251,7 @@ class AXIM(AxiMaster, _MutexFunction):
                     if math.log(pack_size, 2) % 1.0 == 0.0 else
                     size * pack_size)
 
-        fsm = TmpFSM(self.m, self.clk, self.rst)
+        fsm = TmpFSM(self.m, self.clk, self.rst, prefix='_fsm_dma_read_unsafe')
 
         if cond is not None:
             fsm.If(cond).goto_next()
@@ -1306,7 +1309,7 @@ class AXIM(AxiMaster, _MutexFunction):
                     if math.log(pack_size, 2) % 1.0 == 0.0 else
                     int(size // pack_size))
 
-        fsm = TmpFSM(self.m, self.clk, self.rst)
+        fsm = TmpFSM(self.m, self.clk, self.rst, prefix='_fsm_dma_read_unsafe')
 
         if cond is not None:
             fsm.If(cond).goto_next()
@@ -1382,7 +1385,7 @@ class AXIM(AxiMaster, _MutexFunction):
     def _dma_write_rtl_same(self, ram, local_addr, global_addr, size,
                             local_stride, port=0, cond=None, ram_method=None):
 
-        fsm = TmpFSM(self.m, self.clk, self.rst)
+        fsm = TmpFSM(self.m, self.clk, self.rst, prefix='_fsm_dma_write')
 
         if cond is not None:
             fsm.If(cond).goto_next()
@@ -1444,7 +1447,7 @@ class AXIM(AxiMaster, _MutexFunction):
                     if math.log(pack_size, 2) % 1.0 == 0.0 else
                     size * pack_size)
 
-        fsm = TmpFSM(self.m, self.clk, self.rst)
+        fsm = TmpFSM(self.m, self.clk, self.rst, prefix='_fsm_dma_write')
 
         if cond is not None:
             fsm.If(cond).goto_next()
@@ -1538,7 +1541,7 @@ class AXIM(AxiMaster, _MutexFunction):
                     if math.log(pack_size, 2) % 1.0 == 0.0 else
                     int(size // pack_size))
 
-        fsm = TmpFSM(self.m, self.clk, self.rst)
+        fsm = TmpFSM(self.m, self.clk, self.rst, prefix='_fsm_dma_write')
 
         if cond is not None:
             fsm.If(cond).goto_next()
@@ -1640,7 +1643,8 @@ class AXIM(AxiMaster, _MutexFunction):
 
         block_size = pattern[0][0]
 
-        fsm = TmpFSM(self.m, self.clk, self.rst)
+        fsm = TmpFSM(self.m, self.clk, self.rst,
+                     prefix='_fsm_dma_write_pattern')
 
         if cond is not None:
             fsm.If(cond).goto_next()
@@ -1728,7 +1732,8 @@ class AXIM(AxiMaster, _MutexFunction):
                     if math.log(pack_size, 2) % 1.0 == 0.0 else
                     block_size * pack_size)
 
-        fsm = TmpFSM(self.m, self.clk, self.rst)
+        fsm = TmpFSM(self.m, self.clk, self.rst,
+                     prefix='_fsm_dma_write_pattern')
 
         if cond is not None:
             fsm.If(cond).goto_next()
@@ -1848,7 +1853,8 @@ class AXIM(AxiMaster, _MutexFunction):
                     if math.log(pack_size, 2) % 1.0 == 0.0 else
                     int(block_size // pack_size))
 
-        fsm = TmpFSM(self.m, self.clk, self.rst)
+        fsm = TmpFSM(self.m, self.clk, self.rst,
+                     prefix='_fsm_dma_write_pattern')
 
         if cond is not None:
             fsm.If(cond).goto_next()
@@ -1982,7 +1988,8 @@ class AXIM(AxiMaster, _MutexFunction):
 
     def _dma_write_rtl_unsafe_same(self, ram, local_addr, global_addr, size,
                                    local_stride, port=0, cond=None, ram_method=None):
-        fsm = TmpFSM(self.m, self.clk, self.rst)
+        fsm = TmpFSM(self.m, self.clk, self.rst,
+                     prefix='_fsm_dma_write_unsafe')
 
         if cond is not None:
             fsm.If(cond).goto_next()
@@ -2019,7 +2026,8 @@ class AXIM(AxiMaster, _MutexFunction):
                     if math.log(pack_size, 2) % 1.0 == 0.0 else
                     size * pack_size)
 
-        fsm = TmpFSM(self.m, self.clk, self.rst)
+        fsm = TmpFSM(self.m, self.clk, self.rst,
+                     prefix='_fsm_dma_write_unsafe')
 
         if cond is not None:
             fsm.If(cond).goto_next()
@@ -2088,7 +2096,8 @@ class AXIM(AxiMaster, _MutexFunction):
                     if math.log(pack_size, 2) % 1.0 == 0.0 else
                     int(size // pack_size))
 
-        fsm = TmpFSM(self.m, self.clk, self.rst)
+        fsm = TmpFSM(self.m, self.clk, self.rst,
+                     prefix='_fsm_dma_write_unsafe')
 
         if cond is not None:
             fsm.If(cond).goto_next()

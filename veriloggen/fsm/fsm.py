@@ -27,8 +27,10 @@ def _tmp_name(prefix='_tmp_fsm'):
     return ret
 
 
-def TmpFSM(m, clk, rst, width=32, initname='init'):
-    name = _tmp_name()
+def TmpFSM(m, clk, rst, width=32, initname='init', prefix=None):
+    if prefix is None:
+        prefix = '_tmp_fsm'
+    name = _tmp_name(prefix)
     return FSM(m, name, clk, rst, width, initname)
 
 
