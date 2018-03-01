@@ -116,12 +116,12 @@ class AXIM(AxiMaster, _MutexFunction):
             )
         fsm.goto_next()
 
-        cond = fsm.state == fsm.current
+        cond = self._fsm_start(fsm)
 
-        done = self.dma_read_rtl(ram, req_local_addr, req_global_addr, req_size,
-                                 local_stride=req_local_stride, port=port,
-                                 cond=cond, ram_method=ram_method)
-
+        dma_fsm, done = self.dma_read_rtl(ram, req_local_addr, req_global_addr, req_size,
+                                          local_stride=req_local_stride, port=port,
+                                          cond=cond, ram_method=ram_method)
+        fsm.goto_next()
         fsm.If(done).goto_next()
 
         return 0
@@ -176,11 +176,12 @@ class AXIM(AxiMaster, _MutexFunction):
             )
         fsm.goto_next()
 
-        cond = fsm.state == fsm.current
+        cond = self._fsm_start(fsm)
 
-        done = self.dma_read_rtl_pattern(ram, req_local_addr, req_global_addr, req_pattern,
-                                         port=port, cond=cond, ram_method=ram_method)
+        dma_fsm, done = self.dma_read_rtl_pattern(ram, req_local_addr, req_global_addr, req_pattern,
+                                                  port=port, cond=cond, ram_method=ram_method)
 
+        fsm.goto_next()
         fsm.If(done).goto_next()
 
         return 0
@@ -233,12 +234,12 @@ class AXIM(AxiMaster, _MutexFunction):
             )
         fsm.goto_next()
 
-        cond = fsm.state == fsm.current
+        cond = self._fsm_start(fsm)
 
-        done = self.dma_write_rtl(ram, req_local_addr, req_global_addr, req_size,
-                                  local_stride=req_local_stride, port=port,
-                                  cond=cond, ram_method=ram_method)
-
+        dma_fsm, done = self.dma_write_rtl(ram, req_local_addr, req_global_addr, req_size,
+                                           local_stride=req_local_stride, port=port,
+                                           cond=cond, ram_method=ram_method)
+        fsm.goto_next()
         fsm.If(done).goto_next()
 
         return 0
@@ -293,11 +294,11 @@ class AXIM(AxiMaster, _MutexFunction):
             )
         fsm.goto_next()
 
-        cond = fsm.state == fsm.current
+        cond = self._fsm_start(fsm)
 
-        done = self.dma_write_rtl_pattern(ram, req_local_addr, req_global_addr, req_pattern,
-                                          port=port, cond=cond, ram_method=ram_method)
-
+        dma_fsm, done = self.dma_write_rtl_pattern(ram, req_local_addr, req_global_addr, req_pattern,
+                                                   port=port, cond=cond, ram_method=ram_method)
+        fsm.goto_next()
         fsm.If(done).goto_next()
 
         return 0
@@ -551,17 +552,9 @@ class AXIM(AxiMaster, _MutexFunction):
         fsm.If(valid, last, rest_size > 0).goto(check_state)
         fsm.If(valid, last, rest_size == 0).goto_next()
 
-        done = self.m.TmpReg(initval=0)
-        fsm(
-            done(1)
-        )
-        fsm.Delay(1)(
-            done(0)
-        )
-        fsm.goto_next()
-        fsm.goto_init()
+        done = self._fsm_done(fsm)
 
-        return done
+        return fsm, done
 
     def _dma_read_rtl_narrow(self, ram, local_addr, global_addr, size,
                              local_stride, port=0, cond=None, ram_method=None,
@@ -638,17 +631,9 @@ class AXIM(AxiMaster, _MutexFunction):
         fsm.If(valid, last, rest_size > 0).goto(check_state)
         fsm.If(valid, last, rest_size == 0).goto_next()
 
-        done = self.m.TmpReg(initval=0)
-        fsm(
-            done(1)
-        )
-        fsm.Delay(1)(
-            done(0)
-        )
-        fsm.goto_next()
-        fsm.goto_init()
+        done = self._fsm_done(fsm)
 
-        return done
+        return fsm, done
 
     def _dma_read_rtl_wide(self, ram, local_addr, global_addr, size,
                            local_stride, port=0, cond=None, ram_method=None,
@@ -741,17 +726,9 @@ class AXIM(AxiMaster, _MutexFunction):
         fsm.If(last_done, pack_count == pack_size -
                1, rest_size == 0).goto_next()
 
-        done = self.m.TmpReg(initval=0)
-        fsm(
-            done(1)
-        )
-        fsm.Delay(1)(
-            done(0)
-        )
-        fsm.goto_next()
-        fsm.goto_init()
+        done = self._fsm_done(fsm)
 
-        return done
+        return fsm, done
 
     def dma_read_rtl_pattern(self, ram, local_addr, global_addr, pattern,
                              port=0, cond=None, ram_method=None):
@@ -859,17 +836,9 @@ class AXIM(AxiMaster, _MutexFunction):
             update_count)).goto(check_state)
         fsm.If(valid, last, update_count).goto_next()
 
-        done = self.m.TmpReg(initval=0)
-        fsm(
-            done(1)
-        )
-        fsm.Delay(1)(
-            done(0)
-        )
-        fsm.goto_next()
-        fsm.goto_init()
+        done = self._fsm_done(fsm)
 
-        return done
+        return fsm, done
 
     def _dma_read_rtl_pattern_narrow(self, ram, local_addr, global_addr, pattern,
                                      port=0, cond=None, ram_method=None,
@@ -971,17 +940,9 @@ class AXIM(AxiMaster, _MutexFunction):
             update_count)).goto(check_state)
         fsm.If(valid, last, update_count).goto_next()
 
-        done = self.m.TmpReg(initval=0)
-        fsm(
-            done(1)
-        )
-        fsm.Delay(1)(
-            done(0)
-        )
-        fsm.goto_next()
-        fsm.goto_init()
+        done = self._fsm_done(fsm)
 
-        return done
+        return fsm, done
 
     def _dma_read_rtl_pattern_wide(self, ram, local_addr, global_addr, pattern,
                                    port=0, cond=None, ram_method=None,
@@ -1100,17 +1061,9 @@ class AXIM(AxiMaster, _MutexFunction):
         fsm.If(last_done, pack_count == pack_size - 1,
                update_count).goto_next()
 
-        done = self.m.TmpReg(initval=0)
-        fsm(
-            done(1)
-        )
-        fsm.Delay(1)(
-            done(0)
-        )
-        fsm.goto_next()
-        fsm.goto_init()
+        done = self._fsm_done(fsm)
 
-        return done
+        return fsm, done
 
     def dma_read_rtl_multidim(self, ram, local_addr, global_addr, shape, order=None,
                               port=0, cond=None, ram_method=None):
@@ -1196,7 +1149,7 @@ class AXIM(AxiMaster, _MutexFunction):
 
         fsm.If(done).goto_init()
 
-        return done
+        return fsm, done
 
     def _dma_read_rtl_unsafe_narrow(self, ram, local_addr, global_addr, size,
                                     local_stride, port=0, cond=None, ram_method=None,
@@ -1254,7 +1207,7 @@ class AXIM(AxiMaster, _MutexFunction):
 
         fsm.If(done).goto_init()
 
-        return done
+        return fsm, done
 
     def _dma_read_rtl_unsafe_wide(self, ram, local_addr, global_addr, size,
                                   local_stride, port=0, cond=None, ram_method=None,
@@ -1318,7 +1271,7 @@ class AXIM(AxiMaster, _MutexFunction):
 
         fsm.If(done).goto_init()
 
-        return done
+        return fsm, done
 
     def dma_write_rtl(self, ram, local_addr, global_addr, size,
                       local_stride, port=0, cond=None, ram_method=None):
@@ -1387,17 +1340,9 @@ class AXIM(AxiMaster, _MutexFunction):
         fsm.If(done, rest_size > 0).goto(check_state)
         fsm.If(done, rest_size == 0).goto_next()
 
-        done = self.m.TmpReg(initval=0)
-        fsm(
-            done(1)
-        )
-        fsm.Delay(1)(
-            done(0)
-        )
-        fsm.goto_next()
-        fsm.goto_init()
+        done = self._fsm_done(fsm)
 
-        return done
+        return fsm, done
 
     def _dma_write_rtl_narrow(self, ram, local_addr, global_addr, size,
                               local_stride, port=0, cond=None, ram_method=None,
@@ -1486,17 +1431,9 @@ class AXIM(AxiMaster, _MutexFunction):
         fsm.If(done, rest_size > 0).goto(check_state)
         fsm.If(done, rest_size == 0).goto_next()
 
-        done = self.m.TmpReg(initval=0)
-        fsm(
-            done(1)
-        )
-        fsm.Delay(1)(
-            done(0)
-        )
-        fsm.goto_next()
-        fsm.goto_init()
+        done = self._fsm_done(fsm)
 
-        return done
+        return fsm, done
 
     def _dma_write_rtl_wide(self, ram, local_addr, global_addr, size,
                             local_stride, port=0, cond=None, ram_method=None,
@@ -1580,17 +1517,9 @@ class AXIM(AxiMaster, _MutexFunction):
         fsm.If(done, rest_size > 0).goto(check_state)
         fsm.If(done, rest_size == 0).goto_next()
 
-        done = self.m.TmpReg(initval=0)
-        fsm(
-            done(1)
-        )
-        fsm.Delay(1)(
-            done(0)
-        )
-        fsm.goto_next()
-        fsm.goto_init()
+        done = self._fsm_done(fsm)
 
-        return done
+        return fsm, done
 
     def dma_write_rtl_pattern(self, ram, local_addr, global_addr, pattern,
                               port=0, cond=None, ram_method=None):
@@ -1684,17 +1613,9 @@ class AXIM(AxiMaster, _MutexFunction):
             update_count)).goto(check_state)
         fsm.If(done, update_count).goto_next()
 
-        done = self.m.TmpReg(initval=0)
-        fsm(
-            done(1)
-        )
-        fsm.Delay(1)(
-            done(0)
-        )
-        fsm.goto_next()
-        fsm.goto_init()
+        done = self._fsm_done(fsm)
 
-        return done
+        return fsm, done
 
     def _dma_write_rtl_pattern_narrow(self, ram, local_addr, global_addr, pattern,
                                       port=0, cond=None, ram_method=None,
@@ -1809,17 +1730,9 @@ class AXIM(AxiMaster, _MutexFunction):
             update_count)).goto(check_state)
         fsm.If(done, update_count).goto_next()
 
-        done = self.m.TmpReg(initval=0)
-        fsm(
-            done(1)
-        )
-        fsm.Delay(1)(
-            done(0)
-        )
-        fsm.goto_next()
-        fsm.goto_init()
+        done = self._fsm_done(fsm)
 
-        return done
+        return fsm, done
 
     def _dma_write_rtl_pattern_wide(self, ram, local_addr, global_addr, pattern,
                                     port=0, cond=None, ram_method=None,
@@ -1929,17 +1842,9 @@ class AXIM(AxiMaster, _MutexFunction):
             update_count)).goto(check_state)
         fsm.If(done, update_count).goto_next()
 
-        done = self.m.TmpReg(initval=0)
-        fsm(
-            done(1)
-        )
-        fsm.Delay(1)(
-            done(0)
-        )
-        fsm.goto_next()
-        fsm.goto_init()
+        done = self._fsm_done(fsm)
 
-        return done
+        return fsm, done
 
     def dma_write_rtl_multidim(self, ram, local_addr, global_addr, shape, order=None,
                                port=0, cond=None, ram_method=None):
@@ -1997,7 +1902,7 @@ class AXIM(AxiMaster, _MutexFunction):
         done = self.write_dataflow(data, counter, cond=fsm)
         fsm.If(done).goto_init()
 
-        return done
+        return fsm, done
 
     def _dma_write_rtl_unsafe_narrow(self, ram, local_addr, global_addr, size,
                                      local_stride, port=0, cond=None, ram_method=None,
@@ -2066,7 +1971,7 @@ class AXIM(AxiMaster, _MutexFunction):
         done = self.write_dataflow(df_data, counter, cond=fsm)
         fsm.If(done).goto_init()
 
-        return done
+        return fsm, done
 
     def _dma_write_rtl_unsafe_wide(self, ram, local_addr, global_addr, size,
                                    local_stride, port=0, cond=None, ram_method=None,
@@ -2130,7 +2035,7 @@ class AXIM(AxiMaster, _MutexFunction):
         done = self.write_dataflow(df_data, counter, cond=fsm)
         fsm.If(done).goto_init()
 
-        return done
+        return fsm, done
 
     def _check_4KB_boundary(self, fsm, max_burstlen,
                             req_global_addr, req_size, rest_size):
@@ -2151,6 +2056,26 @@ class AXIM(AxiMaster, _MutexFunction):
             rest_size(rest_size - max_burstlen)
         )
         fsm.goto_next()
+
+    def _set_flag(self, fsm, prefix=None):
+        flag = self.m.TmpReg(initval=0, prefix=prefix)
+        fsm(
+            flag(1)
+        )
+        fsm.Delay(1)(
+            flag(0)
+        )
+        fsm.goto_next()
+        return flag
+
+    def _fsm_start(self, fsm):
+        start = self._set_flag(fsm, 'fsm_start')
+        return start
+
+    def _fsm_done(self, fsm):
+        done = self._set_flag(fsm, 'fsm_done')
+        fsm.goto_init()
+        return done
 
 
 class AXIS(AxiSlave, _MutexFunction):
