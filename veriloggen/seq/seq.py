@@ -5,7 +5,9 @@ import sys
 import collections
 
 import veriloggen.core.vtypes as vtypes
-from veriloggen.seq.subst_visitor import SubstDstVisitor
+from veriloggen.core.module import Module
+from veriloggen.core.submodule import Submodule
+from veriloggen.seq.subst_visitor import *
 from veriloggen.seq.reset_visitor import ResetVisitor
 
 
@@ -67,7 +69,7 @@ def TmpSeq(m, clk, rst=None, prefix=None):
 class Seq(vtypes.VeriloggenNode):
     """ Sequential Logic Manager """
 
-    def __init__(self, m, name, clk, rst=None, nohook=False):
+    def __init__(self, m, name, clk, rst=None, nohook=False, as_module=False):
         self.m = m
         self.name = name
         self.clk = clk
@@ -91,8 +93,10 @@ class Seq(vtypes.VeriloggenNode):
         self.elif_cond = None
         self.next_kwargs = {}
 
+        self.as_module = as_module
+
         if not nohook:
-            self.m.add_hook(self.make_always)
+            self.m.add_hook(self.implement)
 
     #-------------------------------------------------------------------------
     def add(self, *statement, **kwargs):
@@ -338,6 +342,14 @@ class Seq(vtypes.VeriloggenNode):
         src.done = True
 
     #-------------------------------------------------------------------------
+    def implement(self):
+        if self.as_module:
+            self.make_module()
+            return
+
+        self.make_always()
+
+    #-------------------------------------------------------------------------
     def make_always(self, reset=(), body=()):
         if self.done:
             #raise ValueError('make_always() has been already called.')
@@ -361,6 +373,91 @@ class Seq(vtypes.VeriloggenNode):
                 )(
                     part_body,
                 ))
+
+    #-------------------------------------------------------------------------
+    def make_module(self):
+        m = Module(self.name)
+
+        clk = m.Input('CLK')
+
+        if self.rst is not None:
+            rst = m.Input('RST')
+        else:
+            rst = None
+
+        body = self.make_code()
+
+        src_visitor = SubstSrcVisitor()
+        for statement in body:
+            src_visitor.visit(statement)
+
+        srcs = src_visitor.srcs.values()
+        dsts = self.dst_var.values()
+
+        ports = collections.OrderedDict()
+
+        src_rename_dict = OrderedDict()
+
+        for src in srcs:
+            arg_name = '_in_%s' % src.name
+            if isinstance(src, (vtypes.Parameter, vtypes.Localparam)):
+                m.Parameter(arg_name, src.value, src.width, src.signed)
+            elif src.length is not None:
+                # concat all and extract by generate-for
+                raise ValueError('not supported.')
+            else:
+                m.Input(arg_name, src.bit_length(), signed=src.get_signed())
+            ports[arg_name] = src
+            src_rename_dict[src.name] = arg_name
+
+        for dst in dsts:
+            if isinstance(dst, (vtypes.Pointer, vtypes.Slice, vtypes.Cat)):
+                arg_name = _tmp_name('_out')
+            else:
+                arg_name = dst.name
+            out = m.OutputReg(arg_name, dst.bit_length(),
+                              signed=dst.get_signed())
+            out_wire = self.m.TmpWire(dst.bit_length(), signed=dst.get_signed(),
+                                      prefix='_%s' % arg_name)
+            dst.connect(out_wire)
+            ports[arg_name] = out_wire
+
+        src_rename_visitor = SrcRenameVisitor(src_rename_dict)
+
+        body = [src_rename_visitor.visit(statement)
+                for statement in body]
+        reset = self.make_reset()
+
+        if not reset and not body:
+            pass
+        elif not reset or rst is None:
+            m.Always(vtypes.Posedge(clk))(
+                body,
+            )
+        else:
+            m.Always(vtypes.Posedge(clk))(
+                vtypes.If(rst)(
+                    reset,
+                )(
+                    body,
+                ))
+
+        arg_params = []
+        arg_ports = []
+
+        arg_ports.append(('CLK', self.clk))
+        if self.rst is not None:
+            arg_ports.append(('RST', self.rst))
+
+        for name, port in ports.items():
+            if isinstance(port, vtypes.Parameter):
+                arg_params.append((name, port))
+            else:
+                arg_ports.append((name, port))
+
+        sub = Submodule(self.m, m, 'inst_' + m.name, '_' + m.name,
+                        arg_params=arg_params, arg_ports=arg_ports,
+                        as_wire=('.*',))
 
     #-------------------------------------------------------------------------
     def make_code(self):
