@@ -32,7 +32,8 @@ def embed_thread(fsm, func, *args, **kwargs):
 class Thread(vtypes.VeriloggenNode):
     __intrinsics__ = ('run', 'join', 'done', 'reset', 'ret')
 
-    def __init__(self, m, name, clk, rst, targ, datawidth=32, tid=None):
+    def __init__(self, m, name, clk, rst, targ, datawidth=32, tid=None,
+                 as_module=False):
 
         self.m = m
         self.name = name
@@ -41,6 +42,7 @@ class Thread(vtypes.VeriloggenNode):
         self.targ = targ
         self.datawidth = datawidth
         self.tid = tid
+        self.as_module = as_module
 
         self.function_lib = OrderedDict()
         self.intrinsic_functions = OrderedDict()
@@ -69,7 +71,8 @@ class Thread(vtypes.VeriloggenNode):
         frame = inspect.currentframe()
         self.start_frame = frame.f_back
 
-        self.fsm = FSM(self.m, self.name, self.clk, self.rst)
+        self.fsm = FSM(self.m, self.name, self.clk, self.rst,
+                       as_module=self.as_module)
 
         self.start_state = self.fsm.current
         self._synthesize_start_fsm(args, kwargs)
@@ -104,7 +107,8 @@ class Thread(vtypes.VeriloggenNode):
             raise ValueError('already started')
 
         if self.fsm is None:
-            self.fsm = FSM(self.m, self.name, self.clk, self.rst)
+            self.fsm = FSM(self.m, self.name, self.clk, self.rst,
+                           as_module=self.as_module)
 
         self.is_child = True
 
