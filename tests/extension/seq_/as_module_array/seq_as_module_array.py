@@ -12,11 +12,15 @@ from veriloggen import *
 
 def mkLed():
     m = Module('blinkled')
-    interval = m.Parameter('INTERVAL', 16)
+    interval = m.Parameter('INTERVAL', 8)
+    length = m.Parameter('LENGTH', 8)
+
     clk = m.Input('CLK')
     rst = m.Input('RST')
     led = m.OutputReg('LED', 8, initval=0)
     count = m.Reg('count', 32, initval=0)
+
+    array = m.Reg('array', 32, length, initval=0)
 
     seq = Seq(m, 'seq', clk, rst, as_module=True)
 
@@ -25,7 +29,8 @@ def mkLed():
     )
 
     seq.If(count < interval - 1)(
-        count(count + 1)
+        count(count + 1 + array[count]),
+        # array[count](count) # not supported
     )
     seq.If(count == interval - 1)(
         count(0)

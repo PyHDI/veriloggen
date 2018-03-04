@@ -508,7 +508,8 @@ class Module(vtypes.VeriloggenNode):
             if None not in self.generate:
                 self.generate[None] = []
             self.generate[None].append(t)
-            return
+            self.items.append(t)
+            return t
         self.check_existing_identifier(scope)
         if scope in self.generate:
             raise ValueError("scope '%s' is already defined." % scope)
@@ -523,7 +524,8 @@ class Module(vtypes.VeriloggenNode):
             if None not in self.generate:
                 self.generate[None] = []
             self.generate[None].append(t)
-            return
+            self.items.append(t)
+            return t
         self.check_existing_identifier(scope)
         if scope in self.generate:
             raise ValueError("scope '%s' is already defined." % scope)

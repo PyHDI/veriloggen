@@ -1,13 +1,14 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import seq_as_module
+import seq_as_module_array
 
 
 expected_verilog = """
 module test #
 (
-  parameter INTERVAL = 16
+  parameter INTERVAL = 8,
+  parameter LENGTH = 8
 );
 
   reg CLK;
@@ -16,7 +17,8 @@ module test #
 
   blinkled
   #(
-    .INTERVAL(INTERVAL)
+    .INTERVAL(INTERVAL),
+    .LENGTH(LENGTH)
   )
   uut
   (
@@ -51,7 +53,8 @@ endmodule
 
 module blinkled #
 (
-  parameter INTERVAL = 16
+  parameter INTERVAL = 8,
+  parameter LENGTH = 8
 )
 (
   input CLK,
@@ -60,23 +63,35 @@ module blinkled #
 );
 
   reg [32-1:0] count;
-  wire [32-1:0] _seq_count_0;
+  reg [32-1:0] array [0:LENGTH-1];
+  wire [32*LENGTH-1:0] _seq_0;
+  genvar i_1;
+
+  generate for(i_1=0; i_1<LENGTH; i_1=i_1+1) begin
+    assign _seq_0[(i_1+1)*32-1:i_1*32] = array[i_1];
+  end
+  endgenerate
+
+  wire [32-1:0] _seq_count_2;
 
   always @(*) begin
-    count = _seq_count_0;
+    count = _seq_count_2;
   end
 
-  wire [8-1:0] _seq_LED_1;
+  wire [8-1:0] _seq_LED_3;
 
   always @(*) begin
-    LED = _seq_LED_1;
+    LED = _seq_LED_3;
   end
 
   localparam _seq_p_INTERVAL = INTERVAL;
+  localparam _seq_p_LENGTH = LENGTH;
+  reg [_seq_p_LENGTH*32-1:0] _seq_i_array_line;
 
   seq
   #(
-    .p_INTERVAL(_seq_p_INTERVAL)
+    .p_INTERVAL(_seq_p_INTERVAL),
+    .p_LENGTH(_seq_p_LENGTH)
   )
   inst_seq
   (
@@ -84,8 +99,9 @@ module blinkled #
     .RST(RST),
     .i_LED(LED),
     .i_count(count),
-    .count(_seq_count_0),
-    .LED(_seq_LED_1)
+    .i_array_line(_seq_i_array_line),
+    .count(_seq_count_2),
+    .LED(_seq_LED_3)
   );
 
 
@@ -95,16 +111,26 @@ endmodule
 
 module seq #
 (
-  parameter p_INTERVAL = 16
+  parameter p_INTERVAL = 8,
+  parameter p_LENGTH = 8
 )
 (
   input CLK,
   input RST,
   input [8-1:0] i_LED,
   input [32-1:0] i_count,
+  input [p_LENGTH*32-1:0] i_array_line,
   output reg [32-1:0] count,
   output reg [8-1:0] LED
 );
+
+  wire [32-1:0] i_array [0:p_LENGTH-1];
+  genvar i_0;
+
+  generate for(i_0=0; i_0<p_LENGTH; i_0=i_0+1) begin
+    assign i_array[i_0] = i_array_line[(i_0+1)*32-1:i_0*32];
+  end
+  endgenerate
 
 
   always @(posedge CLK) begin
@@ -114,7 +140,7 @@ module seq #
     end else begin
       $display("LED:%d count:%d", i_LED, i_count);
       if(i_count < p_INTERVAL - 1) begin
-        count <= i_count + 1;
+        count <= i_count + 1 + i_array[i_count];
       end 
       if(i_count == p_INTERVAL - 1) begin
         count <= 0;
@@ -129,9 +155,10 @@ module seq #
 endmodule
 """
 
+
 def test():
     veriloggen.reset()
-    test_module = seq_as_module.mkTest()
+    test_module = seq_as_module_array.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

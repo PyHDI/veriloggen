@@ -386,46 +386,102 @@ class Seq(vtypes.VeriloggenNode):
             rst = None
 
         body = self.make_code()
-
+        dsts = self.dst_var.values()
         src_visitor = SubstSrcVisitor()
+
+        # collect sources in destination variable definitions
+        for dst in dsts:
+            if isinstance(dst, (vtypes.Pointer, vtypes.Slice, vtypes.Cat)):
+                raise ValueError(
+                    'Partial assignment is not supported by as_module mode.')
+
+            if isinstance(dst, vtypes._Variable):
+                if dst.width is not None:
+                    src_visitor.visit(dst.width)
+                if dst.length is not None:
+                    src_visitor.visit(dst.length)
+
+        # collect sources in statements
         for statement in body:
             src_visitor.visit(statement)
 
         srcs = src_visitor.srcs.values()
-        dsts = self.dst_var.values()
 
-        ports = collections.OrderedDict()
-
-        src_rename_dict = OrderedDict()
-
+        # collect sources in source variable definitions
         for src in srcs:
-            arg_name = '_in_%s' % src.name
-            if isinstance(src, (vtypes.Parameter, vtypes.Localparam)):
-                m.Parameter(arg_name, src.value, src.width, src.signed)
-            elif src.length is not None:
-                # concat all and extract by generate-for
-                raise ValueError('not supported.')
-            else:
-                m.Input(arg_name, src.bit_length(), signed=src.get_signed())
-            ports[arg_name] = src
-            src_rename_dict[src.name] = arg_name
+            if isinstance(src, vtypes._Variable):
+                if src.width is not None:
+                    src_visitor.visit(src.width)
+                if src.length is not None:
+                    src_visitor.visit(src.length)
 
-        for dst in dsts:
-            if isinstance(dst, (vtypes.Pointer, vtypes.Slice, vtypes.Cat)):
-                arg_name = _tmp_name('_out')
-            else:
-                arg_name = dst.name
-            out = m.OutputReg(arg_name, dst.bit_length(),
-                              signed=dst.get_signed())
-            out_wire = self.m.TmpWire(dst.bit_length(), signed=dst.get_signed(),
-                                      prefix='_%s' % arg_name)
-            dst.connect(out_wire)
-            ports[arg_name] = out_wire
+        srcs = src_visitor.srcs.values()
+
+        params = collections.OrderedDict()
+        ports = collections.OrderedDict()
+        src_rename_dict = collections.OrderedDict()
+
+        # create parameter/localparam definitions
+        for src in srcs:
+            if isinstance(src, (vtypes.Parameter, vtypes.Localparam)):
+                arg_name = 'p_%s' % src.name
+                m.Parameter(arg_name, src.value, src.width, src.signed)
+                src_rename_dict[src.name] = arg_name
+                params[arg_name] = src
 
         src_rename_visitor = SrcRenameVisitor(src_rename_dict)
 
+        for src in srcs:
+            if isinstance(src, (vtypes.Parameter, vtypes.Localparam)):
+                continue
+
+            arg_name = 'i_%s' % src.name
+
+            if src.length is not None:
+                width = src.bit_length()
+                length = src.length
+                pack_width = vtypes.Mul(width, length)
+                out_line = self.m.TmpWire(pack_width, prefix='_%s' % self.name)
+                i = self.m.TmpGenvar(prefix='i')
+                v = out_line[i * width:(i + 1) * width]
+                g = self.m.GenerateFor(i(0), i < length, i(i + 1))
+                p = g.Assign(v(src[i]))
+
+                rep_width = (src_rename_visitor.visit(src.width)
+                             if src.width is not None else None)
+                rep_length = src_rename_visitor.visit(src.length)
+                pack_width = (rep_length if rep_width is None else
+                              vtypes.Mul(rep_length, rep_width))
+                in_line = m.Input(arg_name + '_line', pack_width,
+                                  signed=src.get_signed())
+                in_array = m.Wire(arg_name, rep_width, rep_length,
+                                  signed=src.get_signed())
+                i = m.TmpGenvar(prefix='i')
+                v = in_line[i * rep_width:(i + 1) * rep_width]
+                g = m.GenerateFor(i(0), i < rep_length, i(i + 1))
+                p = g.Assign(in_array[i](v))
+            else:
+                rep_width = (src_rename_visitor.visit(src.width)
+                             if src.width is not None else None)
+                m.Input(arg_name, rep_width, signed=src.get_signed())
+
+            src_rename_dict[src.name] = arg_name
+            ports[arg_name] = src
+
+        for dst in dsts:
+            arg_name = dst.name
+
+            rep_width = (src_rename_visitor.visit(dst.width)
+                         if dst.width is not None else None)
+            out = m.OutputReg(arg_name, rep_width, signed=dst.get_signed())
+            out_wire = self.m.TmpWire(rep_width, signed=dst.get_signed(),
+                                      prefix='_%s_%s' % (self.name, arg_name))
+            self.m.Always()(dst(out_wire, blk=True))
+            ports[arg_name] = out_wire
+
         body = [src_rename_visitor.visit(statement)
                 for statement in body]
+
         reset = self.make_reset()
 
         if not reset and not body:
@@ -442,22 +498,16 @@ class Seq(vtypes.VeriloggenNode):
                     body,
                 ))
 
-        arg_params = []
-        arg_ports = []
+        arg_params = [(name, param) for name, param in params.items()]
 
-        arg_ports.append(('CLK', self.clk))
+        arg_ports = [('CLK', self.clk)]
         if self.rst is not None:
             arg_ports.append(('RST', self.rst))
 
-        for name, port in ports.items():
-            if isinstance(port, vtypes.Parameter):
-                arg_params.append((name, port))
-            else:
-                arg_ports.append((name, port))
+        arg_ports.extend([(name, port) for name, port in ports.items()])
 
-        sub = Submodule(self.m, m, 'inst_' + m.name, '_' + m.name,
-                        arg_params=arg_params, arg_ports=arg_ports,
-                        as_wire=('.*',))
+        sub = Submodule(self.m, m, 'inst_' + m.name, '_%s_' % self.name,
+                        arg_params=arg_params, arg_ports=arg_ports)
 
     #-------------------------------------------------------------------------
     def make_code(self):
