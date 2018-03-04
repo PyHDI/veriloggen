@@ -45,6 +45,17 @@ class SubstDstVisitor(object):
                            if node.false_statement is not None else [])
         return true_statement + false_statement
 
+    def visit_Case(self, node):
+        statement = self.visit(node.statement)
+        return statement
+
+    def visit_Casex(self, node):
+        return self.visit(node)
+
+    def visit_When(self, node):
+        statement = self.visit(node.statement)
+        return statement
+
     def visit_For(self, node):
         pre = self.visit(node.pre)
         post = self.visit(node.post)
@@ -97,6 +108,17 @@ class SubstSrcVisitor(CollectVisitor):
         if node.false_statement is not None:
             self.visit(node.false_statement)
 
+    def visit_Case(self, node):
+        self.visit(node.comp)
+        self.visit(node.statement)
+
+    def visit_Casex(self, node):
+        return self.visit(node)
+
+    def visit_When(self, node):
+        self.visit(node.condition)
+        self.visit(node.statement)
+
     def visit_For(self, node):
         self.visit(node.pre)
         self.visit(node.condition)
@@ -130,10 +152,9 @@ class SrcRenameVisitor(RenameVisitor):
         return [self.visit(n) for n in node]
 
     def visit__Variable(self, node):
-        ret = copy.deepcopy(node)
         if node.name in self.rename_dict:
-            ret.name = self.rename_dict[node.name]
-        return ret
+            return self.rename_dict[node.name]
+        return node
 
     def visit_If(self, node):
         condition = self.visit(node.condition)
@@ -146,6 +167,24 @@ class SrcRenameVisitor(RenameVisitor):
         ret = vtypes.If(condition)
         ret.true_statement = true_statement
         ret.false_statement = false_statement
+        return ret
+
+    def visit_Case(self, node):
+        comp = self.visit(node.comp)
+        statement = self.visit(node.statement)
+        ret = vtypes.Case(comp)
+        ret.statement = statement
+        ret.last = node.last
+        return ret
+
+    def visit_Casex(self, node):
+        return self.visit(node)
+
+    def visit_When(self, node):
+        condition = self.visit(node.condition)
+        statement = self.visit(node.statement)
+        ret = vtypes.When(*condition)
+        ret.statement = statement
         return ret
 
     def visit_For(self, node):

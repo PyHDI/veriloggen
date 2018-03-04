@@ -6,7 +6,9 @@ import collections
 import functools
 
 import veriloggen.core.vtypes as vtypes
-from veriloggen.seq.subst_visitor import SubstDstVisitor
+from veriloggen.core.module import Module
+from veriloggen.core.submodule import Submodule
+from veriloggen.seq.subst_visitor import *
 from veriloggen.seq.reset_visitor import ResetVisitor
 from veriloggen.seq.seq import Seq, make_condition
 
@@ -37,7 +39,8 @@ def TmpFSM(m, clk, rst, width=32, initname='init', prefix=None):
 class FSM(vtypes.VeriloggenNode):
     """ Finite State Machine Generator """
 
-    def __init__(self, m, name, clk, rst, width=32, initname='init', nohook=False):
+    def __init__(self, m, name, clk, rst, width=32, initname='init',
+                 nohook=False, as_module=False):
         self.m = m
         self.name = name
         self.clk = clk
@@ -46,7 +49,7 @@ class FSM(vtypes.VeriloggenNode):
         self.state_count = 0
         self.state = self.m.Reg(name, width)  # set initval later
 
-        self.mark = {}  # key:index
+        self.mark = collections.OrderedDict()  # key:index
         self._set_mark(0, self.name + '_' + initname)
         self.state.initval = self._get_mark(0)
 
@@ -54,9 +57,10 @@ class FSM(vtypes.VeriloggenNode):
         self.jump = collections.defaultdict(list)
 
         self.delay_amount = 0
-        self.delayed_state = {}  # key:delay
+        self.delayed_state = collections.OrderedDict()  # key:delay
         self.delayed_body = collections.defaultdict(
             functools.partial(collections.defaultdict, list))  # key:delay
+        self.delayed_cond = collections.OrderedDict()  # key:name
         self.tmp_count = 0
 
         self.dst_var = collections.OrderedDict()
@@ -73,8 +77,10 @@ class FSM(vtypes.VeriloggenNode):
         self.elif_cond = None
         self.next_kwargs = {}
 
+        self.as_module = as_module
+
         if not nohook:
-            self.m.add_hook(self.make_always)
+            self.m.add_hook(self.implement)
 
     #-------------------------------------------------------------------------
     def goto(self, dst, cond=None, else_dst=None):
@@ -304,6 +310,14 @@ class FSM(vtypes.VeriloggenNode):
         return self.last_condition
 
     #-------------------------------------------------------------------------
+    def implement(self):
+        if self.as_module:
+            self.make_module()
+            return
+
+        self.make_always()
+
+    #-------------------------------------------------------------------------
     def make_always(self, reset=(), body=(), case=True):
         if self.done:
             #raise ValueError('make_always() has been already called.')
@@ -320,6 +334,194 @@ class FSM(vtypes.VeriloggenNode):
             )(
                 part_body,
             ))
+
+    #-------------------------------------------------------------------------
+    def make_module(self, reset=(), body=(), case=True):
+        if self.done:
+            #raise ValueError('make_always() has been already called.')
+            return
+
+        self.done = True
+
+        m = Module('sub_%s' % self.name)
+
+        clk = m.Input('CLK')
+
+        if self.rst is not None:
+            rst = m.Input('RST')
+        else:
+            rst = None
+
+        body = list(body) + list(self.make_case()
+                                 if case else self.make_if())
+        dsts = self.dst_var.values()
+        src_visitor = SubstSrcVisitor()
+
+        # collect sources in destination variable definitions
+        for dst in dsts:
+            if isinstance(dst, (vtypes.Pointer, vtypes.Slice, vtypes.Cat)):
+                raise ValueError(
+                    'Partial assignment is not supported by as_module mode.')
+
+            if isinstance(dst, vtypes._Variable):
+                if dst.width is not None:
+                    src_visitor.visit(dst.width)
+                if dst.length is not None:
+                    src_visitor.visit(dst.length)
+
+        # collect sources in statements
+        for statement in body:
+            src_visitor.visit(statement)
+
+        srcs = src_visitor.srcs.values()
+
+        # collect sources in source variable definitions
+        for src in srcs:
+            if isinstance(src, vtypes._Variable):
+                if src.width is not None:
+                    src_visitor.visit(src.width)
+                if src.length is not None:
+                    src_visitor.visit(src.length)
+
+        srcs = src_visitor.srcs.values()
+
+        params = collections.OrderedDict()
+        ports = collections.OrderedDict()
+        src_rename_dict = collections.OrderedDict()
+
+        fsm_orig_labels = [v.name for v in self.mark.values()]
+        fsm_labels = collections.OrderedDict()
+
+        # create parameter/localparam definitions
+        for src in srcs:
+            if isinstance(src, (vtypes.Parameter, vtypes.Localparam)):
+                if src.name in fsm_orig_labels:
+                    fsm_labels[src.name] = m.Localparam(src.name, src.value)
+                    continue
+
+                arg_name = src.name
+                v = m.Parameter(arg_name, src.value, src.width, src.signed)
+                src_rename_dict[src.name] = v
+                params[arg_name] = src
+
+        src_rename_visitor = SrcRenameVisitor(src_rename_dict)
+
+        state_width = src_rename_visitor.visit(self.state.width)
+        state_initval = src_rename_visitor.visit(self.state.initval)
+        state = m.OutputReg(self.state.name, state_width,
+                            initval=state_initval)
+        out_state = self.m.TmpWire(state_width,
+                                   prefix='_%s_out' % self.state.name)
+        self.m.Always()(self.state(out_state, blk=True))
+        ports[state.name] = out_state
+
+        src_rename_dict[self.state.name] = state
+
+        for delay, s in sorted(self.delayed_state.items(), key=lambda x: x[0]):
+            s_width = src_rename_visitor.visit(s.width)
+            s_initval = src_rename_visitor.visit(s.initval)
+            d = m.OutputReg(s.name, s_width, initval=s_initval)
+            out_d = self.m.TmpWire(s_width, prefix='_%s_out' % d.name)
+            self.m.Always()(s(out_d, blk=True))
+            ports[s.name] = out_d
+
+        state_names = [self.state.name]
+        state_names.extend([s.name for s in self.delayed_state.values()])
+
+        for src in srcs:
+            if isinstance(src, (vtypes.Parameter, vtypes.Localparam)):
+                continue
+
+            if src.name in state_names:
+                continue
+
+            if src.name in list(self.delayed_cond.keys()):
+                rep_width = (src_rename_visitor.visit(src.width)
+                             if src.width is not None else None)
+                v = m.Reg(src.name, rep_width, initval=0)
+                src_rename_dict[src.name] = v
+                continue
+
+            arg_name = 'i_%s' % src.name
+
+            if src.length is not None:
+                width = src.bit_length()
+                length = src.length
+                pack_width = vtypes.Mul(width, length)
+                out_line = self.m.TmpWire(pack_width, prefix='_%s' % self.name)
+                i = self.m.TmpGenvar(prefix='i')
+                v = out_line[i * width:(i + 1) * width]
+                g = self.m.GenerateFor(i(0), i < length, i(i + 1))
+                p = g.Assign(v(src[i]))
+
+                rep_width = (src_rename_visitor.visit(src.width)
+                             if src.width is not None else None)
+                rep_length = src_rename_visitor.visit(src.length)
+                pack_width = (rep_length if rep_width is None else
+                              vtypes.Mul(rep_length, rep_width))
+                in_line = m.Input(arg_name + '_line', pack_width,
+                                  signed=src.get_signed())
+                in_array = m.Wire(arg_name, rep_width, rep_length,
+                                  signed=src.get_signed())
+                i = m.TmpGenvar(prefix='i')
+                v = in_line[i * rep_width:(i + 1) * rep_width]
+                g = m.GenerateFor(i(0), i < rep_length, i(i + 1))
+                p = g.Assign(in_array[i](v))
+
+                src_rename_dict[src.name] = in_array
+                ports[in_line.name] = out_line
+
+            else:
+                rep_width = (src_rename_visitor.visit(src.width)
+                             if src.width is not None else None)
+                v = m.Input(arg_name, rep_width, signed=src.get_signed())
+
+                src_rename_dict[src.name] = v
+                ports[arg_name] = src
+
+        for dst in dsts:
+            if dst.name in list(self.delayed_cond.keys()):
+                continue
+
+            arg_name = dst.name
+
+            rep_width = (src_rename_visitor.visit(dst.width)
+                         if dst.width is not None else None)
+            out = m.OutputReg(arg_name, rep_width, signed=dst.get_signed())
+            out_wire = self.m.TmpWire(rep_width, signed=dst.get_signed(),
+                                      prefix='_%s_%s' % (self.name, arg_name))
+            self.m.Always()(dst(out_wire, blk=True))
+            ports[arg_name] = out_wire
+
+        body = [src_rename_visitor.visit(statement)
+                for statement in body]
+
+        reset = self.make_reset(reset)
+
+        if not reset and not body:
+            pass
+        elif not reset or rst is None:
+            m.Always(vtypes.Posedge(clk))(
+                body,
+            )
+        else:
+            m.Always(vtypes.Posedge(clk))(
+                vtypes.If(rst)(
+                    reset,
+                )(
+                    body,
+                ))
+
+        arg_params = [(name, param) for name, param in params.items()]
+
+        arg_ports = [('CLK', self.clk)]
+        if self.rst is not None:
+            arg_ports.append(('RST', self.rst))
+
+        arg_ports.extend([(name, port) for name, port in ports.items()])
+
+        sub = Submodule(self.m, m, 'inst_' + m.name, '_%s_' % self.name,
+                        arg_params=arg_params, arg_ports=arg_ports)
 
     #-------------------------------------------------------------------------
     def make_case(self):
@@ -495,6 +697,7 @@ class FSM(vtypes.VeriloggenNode):
         for i in range(delay):
             tmp_name = '_'.join([name_prefix, str(i + 1)])
             tmp = self.m.Reg(tmp_name, initval=0)
+            self.delayed_cond[tmp_name] = tmp
             self._add_statement([tmp(prev)], delay=i, no_delay_cond=True)
             prev = tmp
         return prev

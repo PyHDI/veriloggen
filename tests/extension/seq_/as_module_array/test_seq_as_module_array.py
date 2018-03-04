@@ -64,11 +64,11 @@ module blinkled #
 
   reg [32-1:0] count;
   reg [32-1:0] array [0:LENGTH-1];
-  wire [32*LENGTH-1:0] _seq_0;
+  wire [32*LENGTH-1:0] _seq_array_0;
   genvar i_1;
 
   generate for(i_1=0; i_1<LENGTH; i_1=i_1+1) begin
-    assign _seq_0[(i_1+1)*32-1:i_1*32] = array[i_1];
+    assign _seq_array_0[(i_1+1)*32-1:i_1*32] = array[i_1];
   end
   endgenerate
 
@@ -84,14 +84,13 @@ module blinkled #
     LED = _seq_LED_3;
   end
 
-  localparam _seq_p_INTERVAL = INTERVAL;
-  localparam _seq_p_LENGTH = LENGTH;
-  reg [_seq_p_LENGTH*32-1:0] _seq_i_array_line;
+  localparam _seq_INTERVAL = INTERVAL;
+  localparam _seq_LENGTH = LENGTH;
 
   seq
   #(
-    .p_INTERVAL(_seq_p_INTERVAL),
-    .p_LENGTH(_seq_p_LENGTH)
+    .INTERVAL(_seq_INTERVAL),
+    .LENGTH(_seq_LENGTH)
   )
   inst_seq
   (
@@ -99,7 +98,7 @@ module blinkled #
     .RST(RST),
     .i_LED(LED),
     .i_count(count),
-    .i_array_line(_seq_i_array_line),
+    .i_array_line(_seq_array_0),
     .count(_seq_count_2),
     .LED(_seq_LED_3)
   );
@@ -111,23 +110,23 @@ endmodule
 
 module seq #
 (
-  parameter p_INTERVAL = 8,
-  parameter p_LENGTH = 8
+  parameter INTERVAL = 8,
+  parameter LENGTH = 8
 )
 (
   input CLK,
   input RST,
   input [8-1:0] i_LED,
   input [32-1:0] i_count,
-  input [p_LENGTH*32-1:0] i_array_line,
+  input [LENGTH*32-1:0] i_array_line,
   output reg [32-1:0] count,
   output reg [8-1:0] LED
 );
 
-  wire [32-1:0] i_array [0:p_LENGTH-1];
+  wire [32-1:0] i_array [0:LENGTH-1];
   genvar i_0;
 
-  generate for(i_0=0; i_0<p_LENGTH; i_0=i_0+1) begin
+  generate for(i_0=0; i_0<LENGTH; i_0=i_0+1) begin
     assign i_array[i_0] = i_array_line[(i_0+1)*32-1:i_0*32];
   end
   endgenerate
@@ -139,13 +138,13 @@ module seq #
       LED <= 0;
     end else begin
       $display("LED:%d count:%d", i_LED, i_count);
-      if(i_count < p_INTERVAL - 1) begin
+      if(i_count < INTERVAL - 1) begin
         count <= i_count + 1 + i_array[i_count];
       end 
-      if(i_count == p_INTERVAL - 1) begin
+      if(i_count == INTERVAL - 1) begin
         count <= 0;
       end 
-      if(i_count == p_INTERVAL - 1) begin
+      if(i_count == INTERVAL - 1) begin
         LED <= i_LED + 1;
       end 
     end

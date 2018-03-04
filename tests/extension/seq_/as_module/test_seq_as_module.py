@@ -72,11 +72,11 @@ module blinkled #
     LED = _seq_LED_1;
   end
 
-  localparam _seq_p_INTERVAL = INTERVAL;
+  localparam _seq_INTERVAL = INTERVAL;
 
   seq
   #(
-    .p_INTERVAL(_seq_p_INTERVAL)
+    .INTERVAL(_seq_INTERVAL)
   )
   inst_seq
   (
@@ -95,7 +95,7 @@ endmodule
 
 module seq #
 (
-  parameter p_INTERVAL = 16
+  parameter INTERVAL = 16
 )
 (
   input CLK,
@@ -113,13 +113,13 @@ module seq #
       LED <= 0;
     end else begin
       $display("LED:%d count:%d", i_LED, i_count);
-      if(i_count < p_INTERVAL - 1) begin
+      if(i_count < INTERVAL - 1) begin
         count <= i_count + 1;
       end 
-      if(i_count == p_INTERVAL - 1) begin
+      if(i_count == INTERVAL - 1) begin
         count <= 0;
       end 
-      if(i_count == p_INTERVAL - 1) begin
+      if(i_count == INTERVAL - 1) begin
         LED <= i_LED + 1;
       end 
     end

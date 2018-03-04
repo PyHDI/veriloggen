@@ -375,7 +375,13 @@ class Seq(vtypes.VeriloggenNode):
                 ))
 
     #-------------------------------------------------------------------------
-    def make_module(self):
+    def make_module(self, reset=(), body=()):
+        if self.done:
+            #raise ValueError('make_always() has been already called.')
+            return
+
+        self.done = True
+
         m = Module(self.name)
 
         clk = m.Input('CLK')
@@ -385,7 +391,7 @@ class Seq(vtypes.VeriloggenNode):
         else:
             rst = None
 
-        body = self.make_code()
+        body = list(body) + list(self.make_code())
         dsts = self.dst_var.values()
         src_visitor = SubstSrcVisitor()
 
@@ -424,9 +430,9 @@ class Seq(vtypes.VeriloggenNode):
         # create parameter/localparam definitions
         for src in srcs:
             if isinstance(src, (vtypes.Parameter, vtypes.Localparam)):
-                arg_name = 'p_%s' % src.name
-                m.Parameter(arg_name, src.value, src.width, src.signed)
-                src_rename_dict[src.name] = arg_name
+                arg_name = src.name
+                v = m.Parameter(arg_name, src.value, src.width, src.signed)
+                src_rename_dict[src.name] = v
                 params[arg_name] = src
 
         src_rename_visitor = SrcRenameVisitor(src_rename_dict)
@@ -441,7 +447,8 @@ class Seq(vtypes.VeriloggenNode):
                 width = src.bit_length()
                 length = src.length
                 pack_width = vtypes.Mul(width, length)
-                out_line = self.m.TmpWire(pack_width, prefix='_%s' % self.name)
+                out_line = self.m.TmpWire(
+                    pack_width, prefix='_%s_%s' % (self.name, src.name))
                 i = self.m.TmpGenvar(prefix='i')
                 v = out_line[i * width:(i + 1) * width]
                 g = self.m.GenerateFor(i(0), i < length, i(i + 1))
@@ -460,13 +467,17 @@ class Seq(vtypes.VeriloggenNode):
                 v = in_line[i * rep_width:(i + 1) * rep_width]
                 g = m.GenerateFor(i(0), i < rep_length, i(i + 1))
                 p = g.Assign(in_array[i](v))
+
+                src_rename_dict[src.name] = in_array
+                ports[in_line.name] = out_line
+
             else:
                 rep_width = (src_rename_visitor.visit(src.width)
                              if src.width is not None else None)
-                m.Input(arg_name, rep_width, signed=src.get_signed())
+                v = m.Input(arg_name, rep_width, signed=src.get_signed())
 
-            src_rename_dict[src.name] = arg_name
-            ports[arg_name] = src
+                src_rename_dict[src.name] = v
+                ports[arg_name] = src
 
         for dst in dsts:
             arg_name = dst.name
@@ -482,7 +493,7 @@ class Seq(vtypes.VeriloggenNode):
         body = [src_rename_visitor.visit(statement)
                 for statement in body]
 
-        reset = self.make_reset()
+        reset = list(reset) + list(self.make_reset())
 
         if not reset and not body:
             pass
