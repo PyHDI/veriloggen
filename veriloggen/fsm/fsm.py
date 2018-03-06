@@ -29,11 +29,12 @@ def _tmp_name(prefix='_tmp_fsm'):
     return ret
 
 
-def TmpFSM(m, clk, rst, width=32, initname='init', prefix=None):
+def TmpFSM(m, clk, rst, width=32, initname='init',
+           nohook=False, as_module=False, prefix=None):
     if prefix is None:
         prefix = '_tmp_fsm'
     name = _tmp_name(prefix)
-    return FSM(m, name, clk, rst, width, initname)
+    return FSM(m, name, clk, rst, width, initname, nohook, as_module)
 
 
 class FSM(vtypes.VeriloggenNode):

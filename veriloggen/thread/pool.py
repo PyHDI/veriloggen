@@ -24,7 +24,7 @@ class ThreadPool(vtypes.VeriloggenNode):
 
     def __init__(self, m=None, name=None, clk=None, rst=None,
                  targ=None, numthreads=None, datawidth=32,
-                 threads=None, as_module=False):
+                 threads=None, fsm_as_module=False):
 
         if threads is not None:
             if not isinstance(threads, (tuple, list)):
@@ -46,7 +46,8 @@ class ThreadPool(vtypes.VeriloggenNode):
             self.m = m
             self.numthreads = numthreads
             self.threads = [Thread(m, '_'.join([name, str(i)]), clk, rst, targ,
-                                   datawidth=datawidth, tid=i, as_module=as_module)
+                                   datawidth=datawidth, tid=i,
+                                   fsm_as_module=fsm_as_module)
                             for i in range(numthreads)]
 
         else:
@@ -77,7 +78,7 @@ class ThreadPool(vtypes.VeriloggenNode):
 
             if thread.fsm is None:
                 thread.fsm = FSM(thread.m, thread.name, thread.clk, thread.rst,
-                                 as_module=thread.as_module)
+                                 as_module=thread.fsm_as_module)
 
             thread.is_child = True
 

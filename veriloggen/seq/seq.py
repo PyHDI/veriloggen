@@ -59,11 +59,11 @@ def _get_manager_cond(cond):
     return cond
 
 
-def TmpSeq(m, clk, rst=None, prefix=None):
+def TmpSeq(m, clk, rst=None, nohook=False, as_module=False, prefix=None):
     if prefix is None:
         prefix = '_tmp_seq'
     name = _tmp_name(prefix)
-    return Seq(m, name, clk, rst)
+    return Seq(m, name, clk, rst, nohook, as_module)
 
 
 class Seq(vtypes.VeriloggenNode):

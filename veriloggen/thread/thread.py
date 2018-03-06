@@ -16,9 +16,10 @@ def reset():
     compiler._tmp_count = 0
 
 
-def TmpThread(m, clk, rst, targ, datawidth=32, tid=None):
+def TmpThread(m, clk, rst, targ, datawidth=32, tid=None,
+              fsm_as_module=False):
     name = compiler._tmp_name()
-    return Thread(m, name, clk, rst, targ, datawidth, tid)
+    return Thread(m, name, clk, rst, targ, datawidth, tid, fsm_as_module)
 
 
 def embed_thread(fsm, func, *args, **kwargs):
@@ -33,7 +34,7 @@ class Thread(vtypes.VeriloggenNode):
     __intrinsics__ = ('run', 'join', 'done', 'reset', 'ret')
 
     def __init__(self, m, name, clk, rst, targ, datawidth=32, tid=None,
-                 as_module=False):
+                 fsm_as_module=False):
 
         self.m = m
         self.name = name
@@ -42,7 +43,7 @@ class Thread(vtypes.VeriloggenNode):
         self.targ = targ
         self.datawidth = datawidth
         self.tid = tid
-        self.as_module = as_module
+        self.fsm_as_module = fsm_as_module
 
         self.function_lib = OrderedDict()
         self.intrinsic_functions = OrderedDict()
@@ -72,7 +73,7 @@ class Thread(vtypes.VeriloggenNode):
         self.start_frame = frame.f_back
 
         self.fsm = FSM(self.m, self.name, self.clk, self.rst,
-                       as_module=self.as_module)
+                       as_module=self.fsm_as_module)
 
         self.start_state = self.fsm.current
         self._synthesize_start_fsm(args, kwargs)
@@ -108,7 +109,7 @@ class Thread(vtypes.VeriloggenNode):
 
         if self.fsm is None:
             self.fsm = FSM(self.m, self.name, self.clk, self.rst,
-                           as_module=self.as_module)
+                           as_module=self.fsm_as_module)
 
         self.is_child = True
 

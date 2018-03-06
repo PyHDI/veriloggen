@@ -18,9 +18,9 @@ from . import compiler
 from . import thread
 
 
-def TmpStream(m, clk, rst, datawidth=32, fsm_sel_width=16):
+def TmpStream(m, clk, rst, datawidth=32, fsm_sel_width=16, fsm_as_module=False):
     name = compiler._tmp_name('_tmp_stream')
-    return Stream(m, name, clk, rst, datawidth, fsm_sel_width)
+    return Stream(m, name, clk, rst, datawidth, fsm_sel_width, fsm_as_module)
 
 
 class Stream(BaseStream):
@@ -29,18 +29,23 @@ class Stream(BaseStream):
                       'set_sink_empty', 'set_constant',
                       'run', 'join', 'done')
 
-    def __init__(self, m, name, clk, rst, datawidth=32, fsm_sel_width=16):
+    def __init__(self, m, name, clk, rst, datawidth=32,
+                 fsm_sel_width=16, fsm_as_module=False):
+
         BaseStream.__init__(self, module=m, clock=clk, reset=rst,
                             no_hook=True)
 
         self.name = name
         self.datawidth = datawidth
         self.fsm_sel_width = fsm_sel_width
+        self.fsm_as_module = fsm_as_module
+
         self.stream_synthesized = False
         self.fsm_synthesized = False
 
         self.fsm = FSM(self.module, '_%s_fsm' %
-                       self.name, self.clock, self.reset)
+                       self.name, self.clock, self.reset,
+                       as_module=self.fsm_as_module)
         self.start = self.module.Reg(
             '_'.join(['', self.name, 'start']), initval=0)
         self.busy = self.module.Reg(
@@ -197,7 +202,8 @@ class Stream(BaseStream):
 
         fsm_id = self.fsm_id_count
         fsm_name = '_%s_fsm_%d' % (prefix, fsm_id)
-        source_fsm = FSM(self.module, fsm_name, self.clock, self.reset)
+        source_fsm = FSM(self.module, fsm_name, self.clock, self.reset,
+                         as_module=self.fsm_as_module)
         self.fsm_id_map[fsm_id] = source_fsm
         self.fsm_id_count += 1
 
@@ -318,7 +324,8 @@ class Stream(BaseStream):
 
         fsm_id = self.fsm_id_count
         fsm_name = '_%s_fsm_%d' % (prefix, fsm_id)
-        source_fsm = FSM(self.module, fsm_name, self.clock, self.reset)
+        source_fsm = FSM(self.module, fsm_name, self.clock, self.reset,
+                         as_module=self.fsm_as_module)
         self.fsm_id_map[fsm_id] = source_fsm
         self.fsm_id_count += 1
 
@@ -469,7 +476,8 @@ class Stream(BaseStream):
 
         fsm_id = self.fsm_id_count
         fsm_name = '_%s_fsm_%d' % (prefix, fsm_id)
-        sink_fsm = FSM(self.module, fsm_name, self.clock, self.reset)
+        sink_fsm = FSM(self.module, fsm_name, self.clock, self.reset,
+                       as_module=self.fsm_as_module)
         self.fsm_id_map[fsm_id] = sink_fsm
         self.fsm_id_count += 1
 
@@ -588,7 +596,8 @@ class Stream(BaseStream):
 
         fsm_id = self.fsm_id_count
         fsm_name = '_%s_fsm_%d' % (prefix, fsm_id)
-        sink_fsm = FSM(self.module, fsm_name, self.clock, self.reset)
+        sink_fsm = FSM(self.module, fsm_name, self.clock, self.reset,
+                       as_module=self.fsm_as_module)
         self.fsm_id_map[fsm_id] = sink_fsm
         self.fsm_id_count += 1
 

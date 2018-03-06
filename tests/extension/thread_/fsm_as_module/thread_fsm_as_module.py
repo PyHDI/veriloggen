@@ -11,35 +11,21 @@ from veriloggen import *
 import veriloggen.thread as vthread
 
 
-def mkLed(numthreads=8):
+def mkLed():
     m = Module('blinkled')
     clk = m.Input('CLK')
     rst = m.Input('RST')
-
-    mymutex = vthread.Mutex(m, 'mymutex', clk, rst)
-
-    def myfunc(tid):
-        mymutex.lock()
-        print("Thread %d Lock" % tid)
-
-        for i in range(20):
-            pass  # sleep
-
-        print("Thread %d Hello" % tid)
-
-        mymutex.unlock()
-        print("Thread %d Unlock" % tid)
+    led = m.OutputReg('LED', 16, initval=0)
 
     def blink():
-        for tid in range(numthreads):
-            pool.run(tid, tid)
+        sum = 0
+        for i in range(10):
+            sum += i
+        led.value = sum
+        print(sum)
 
-        for tid in range(numthreads):
-            pool.join(tid)
-
-    th = vthread.Thread(m, 'th_blink', clk, rst, blink)
-    pool = vthread.ThreadPool(m, 'th_myfunc', clk, rst, myfunc, numthreads,
-                              as_module=True)
+    th = vthread.Thread(m, 'th_blink', clk, rst, blink,
+                        fsm_as_module=True)
     fsm = th.start()
 
     return m
@@ -62,7 +48,7 @@ def mkTest():
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    simulation.setup_waveform(m, uut)
+    #simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
