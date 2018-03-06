@@ -85,7 +85,7 @@ class RenameVisitor(object):
         condition = self.visit(node.condition)
         true_value = self.visit(node.true_value)
         false_value = self.visit(node.false_value)
-        return vtype.Cond(condition, true_value, false_value)
+        return vtypes.Cond(condition, true_value, false_value)
 
     def visit__BinaryOperator(self, node):
         op = type(node)
