@@ -355,7 +355,9 @@ class FSM(vtypes.VeriloggenNode):
 
         body = list(body) + list(self.make_case()
                                  if case else self.make_if())
-        dsts = self.dst_var.values()
+        dst_var = self.seq.dst_var
+        dst_var.update(self.dst_var)
+        dsts = dst_var.values()
         src_visitor = SubstSrcVisitor()
 
         # collect sources in destination variable definitions
