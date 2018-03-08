@@ -47,6 +47,8 @@ class Stream(BaseStream):
         self.fsm = FSM(self.module, '_%s_fsm' %
                        self.name, self.clock, self.reset,
                        as_module=self.fsm_as_module)
+        self.start_flag = self.module.Wire(
+            '_'.join(['', self.name, 'start_flag']))
         self.start = self.module.Reg(
             '_'.join(['', self.name, 'start']), initval=0)
         self.busy = self.module.Reg(
@@ -77,7 +79,6 @@ class Stream(BaseStream):
 
         self.fsm_id_count = 0
 
-        # self.ram_delay = 4  # must be 3?
         self.ram_delay = 3
 
     def source(self, name=None, datawidth=None, point=0, signed=True):
@@ -840,18 +841,26 @@ class Stream(BaseStream):
         # entry point
         self.fsm._set_index(0)
 
-        start_flag = (fsm.state == fsm.current)
+        cond = (fsm.state == fsm.current)
+        add_mux(self.start_flag, cond, 1)
 
-        self.fsm.If(start_flag)(
+        # after started
+        if self.fsm_synthesized:
+            fsm.goto_next()
+            return
+
+        self.fsm_synthesized = True
+
+        self.fsm.If(self.start_flag)(
             self.start(1),
             self.busy(1)
         )
-        self.fsm.If(start_flag).Delay(1)(
+        self.fsm.If(self.start_flag).Delay(1)(
             self.start(0)
         )
 
         if self.reduce_reset is not None:
-            self.fsm.If(start_flag).Delay(self.ram_delay + 1)(
+            self.fsm.If(self.start_flag).Delay(self.ram_delay + 1)(
                 self.reduce_reset(0)
             )
 
@@ -862,23 +871,16 @@ class Stream(BaseStream):
             sub_fsm = sub.substrm.fsm
             sub_fsm._set_index(0)
             if sub.substrm.reduce_reset is not None:
-                sub_fsm.If(start_flag).Delay(reset_delay)(
+                sub_fsm.If(self.start_flag).Delay(reset_delay)(
                     sub.substrm.reduce_reset(0)
                 )
 
             for cond in sub.conds.values():
-                sub_fsm.If(start_flag)(
+                sub_fsm.If(self.start_flag)(
                     cond(1)
                 )
 
-        self.fsm.If(start_flag).goto_next()
-
-        # after started
-        if self.fsm_synthesized:
-            fsm.goto_next()
-            return
-
-        self.fsm_synthesized = True
+        self.fsm.If(self.start_flag).goto_next()
 
         self.fsm.goto_next()
 
@@ -1035,5 +1037,5 @@ def add_mux(targ, cond, value):
         prev_value = prev_assign.statement.right
         prev_assign.overwrite_right(
             vtypes.Mux(cond, value, prev_value))
-        targ.m.remove(prev_assign)
-        targ.m.append(prev_assign)
+        targ.module.remove(prev_assign)
+        targ.module.append(prev_assign)
