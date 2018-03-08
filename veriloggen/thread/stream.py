@@ -18,9 +18,9 @@ from . import compiler
 from . import thread
 
 
-def TmpStream(m, clk, rst, datawidth=32, fsm_sel_width=16, fsm_as_module=False):
+def TmpStream(m, clk, rst, datawidth=32, ram_sel_width=16, fsm_as_module=False):
     name = compiler._tmp_name('_tmp_stream')
-    return Stream(m, name, clk, rst, datawidth, fsm_sel_width, fsm_as_module)
+    return Stream(m, name, clk, rst, datawidth, ram_sel_width, fsm_as_module=False)
 
 
 class Stream(BaseStream):
@@ -29,15 +29,16 @@ class Stream(BaseStream):
                       'set_sink_empty', 'set_constant',
                       'run', 'join', 'done')
 
-    def __init__(self, m, name, clk, rst, datawidth=32,
-                 fsm_sel_width=16, fsm_as_module=False):
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
+                 ram_sel_width=16, fsm_as_module=False):
 
         BaseStream.__init__(self, module=m, clock=clk, reset=rst,
                             no_hook=True)
 
         self.name = name
         self.datawidth = datawidth
-        self.fsm_sel_width = fsm_sel_width
+        self.addrwidth = addrwidth
+        self.ram_sel_width = ram_sel_width
         self.fsm_as_module = fsm_as_module
 
         self.stream_synthesized = False
@@ -64,14 +65,20 @@ class Stream(BaseStream):
         self.var_id_name_map = OrderedDict()
         self.var_name_id_map = OrderedDict()
         self.var_id_count = 0
+
         self.source_idle_map = OrderedDict()
         self.sink_when_map = OrderedDict()
 
-        self.fsm_id_map = OrderedDict()
-        self.fsm_id_count = 1  # '0' is reserved for idle
-        self.var_id_fsm_sel_map = OrderedDict()  # key: var_id, value: fsm_id reg
+        self.source_ram_id_count = 1  # '0' is reserved for idle
+        self.source_ram_id_map = OrderedDict()  # key: ran._id(), value: count
 
-        self.ram_delay = 4
+        self.sink_ram_id_count = 1  # '0' is reserved for idle
+        self.sink_ram_id_map = OrderedDict()  # key: ran._id(), value: count
+
+        self.fsm_id_count = 0
+
+        # self.ram_delay = 4  # must be 3?
+        self.ram_delay = 3
 
     def source(self, name=None, datawidth=None, point=0, signed=True):
         if self.stream_synthesized:
@@ -100,10 +107,36 @@ class Stream(BaseStream):
         self.var_name_map[name] = var
         self.var_id_name_map[_id] = name
         self.var_name_id_map[name] = _id
-        self.var_id_fsm_sel_map[_id] = self.module.Reg('_%s_fsm_sel' % prefix,
-                                                       self.fsm_sel_width, initval=0)
-        self.source_idle_map[name] = self.module.Reg('_%s_idle' % prefix,
-                                                     initval=1)
+
+        var.source_fsm = None
+        var.source_pat_fsm = None
+
+        var.source_idle = self.module.Reg('_%s_idle' % prefix, initval=1)
+        self.source_idle_map[name] = var.source_idle
+
+        var.source_offset = self.module.Reg('_source_%s_offset' % prefix,
+                                            self.addrwidth, initval=0)
+        var.source_size = self.module.Reg('_source_%s_size' % prefix,
+                                          self.addrwidth + 1, initval=0)
+        var.source_stride = self.module.Reg('_source_%s_stride' % prefix,
+                                            self.addrwidth, initval=0)
+        var.source_count = self.module.Reg('_source_%s_count' % prefix,
+                                           self.addrwidth + 1, initval=0)
+
+        var.source_pat_sizes = []
+        var.source_pat_strides = []
+        var.source_pat_counts = []
+
+        var.source_ram_sel = self.module.Reg('_source_%s_ram_sel' % prefix,
+                                             self.ram_sel_width, initval=0)
+        var.source_ram_raddr = self.module.Reg('_source_%s_ram_raddr' % prefix,
+                                               self.addrwidth, initval=0)
+        var.source_ram_renable = self.module.Reg('_source_%s_ram_renable' % prefix,
+                                                 initval=0)
+        var.source_ram_rdata = self.module.Wire('_source_%s_ram_rdata' % prefix,
+                                                self.datawidth)
+        var.source_ram_rvalid = self.module.Reg('_source_%s_ram_rvalid' % prefix,
+                                                initval=0)
 
         return var
 
@@ -116,13 +149,13 @@ class Stream(BaseStream):
         if name is None:
             name = 'sink_%d' % _id
 
-        prefix = self._prefix(name)
-
         if name in self.var_name_map:
             raise ValueError("'%s' is already defined in stream '%s'" %
                              (name, self.name))
         else:
             data.output(self._dataname(name))
+
+        prefix = self._prefix(name)
 
         self.var_id_count += 1
 
@@ -131,8 +164,31 @@ class Stream(BaseStream):
         self.var_name_map[name] = data
         self.var_id_name_map[_id] = name
         self.var_name_id_map[name] = _id
-        self.var_id_fsm_sel_map[_id] = self.module.Reg('_%s_fsm_sel' % prefix,
-                                                       self.fsm_sel_width, initval=0)
+
+        data.sink_fsm = None
+        data.sink_pat_fsm = None
+
+        data.sink_offset = self.module.Reg('_sink_%s_offset' % prefix,
+                                           self.addrwidth, initval=0)
+        data.sink_size = self.module.Reg('_sink_%s_size' % prefix,
+                                         self.addrwidth + 1, initval=0)
+        data.sink_stride = self.module.Reg('_sink_%s_stride' % prefix,
+                                           self.addrwidth, initval=0)
+        data.sink_count = self.module.Reg('_sink_%s_count' % prefix,
+                                          self.addrwidth + 1, initval=0)
+
+        data.sink_pat_sizes = []
+        data.sink_pat_strides = []
+        data.sink_pat_counts = []
+
+        data.sink_ram_sel = self.module.Reg('_sink_%s_ram_sel' % prefix,
+                                            self.ram_sel_width, initval=0)
+        data.sink_waddr = self.module.Reg('_sink_%s_waddr' % prefix,
+                                          self.addrwidth, initval=0)
+        data.sink_wenable = self.module.Reg('_sink_%s_wenable' % prefix,
+                                            initval=0)
+        data.sink_wdata = self.module.Reg('_sink_%s_wdata' % prefix,
+                                          self.datawidth, initval=0)
 
         if when is not None:
             self.sink(when, when_name)
@@ -166,8 +222,6 @@ class Stream(BaseStream):
         self.var_name_map[name] = var
         self.var_id_name_map[_id] = name
         self.var_name_id_map[name] = _id
-        self.var_id_fsm_sel_map[_id] = self.module.Reg('_%s_fsm_sel' % prefix,
-                                                       self.fsm_sel_width, initval=0)
 
         return var
 
@@ -198,87 +252,89 @@ class Stream(BaseStream):
         if name not in self.sources:
             raise NameError("No such stream '%s'" % name)
 
-        prefix = self._prefix(name)
-
-        fsm_id = self.fsm_id_count
-        fsm_name = '_%s_fsm_%d' % (prefix, fsm_id)
-        source_fsm = FSM(self.module, fsm_name, self.clock, self.reset,
-                         as_module=self.fsm_as_module)
-        self.fsm_id_map[fsm_id] = source_fsm
-        self.fsm_id_count += 1
-
-        source_idle = self.source_idle_map[name]
-        source_offset = self.module.Reg('_%s_offset_%d' % (prefix, fsm_id),
-                                        ram.addrwidth, initval=0)
-        source_size = self.module.Reg('_%s_size_%d' % (prefix, fsm_id),
-                                      ram.addrwidth + 1, initval=0)
-        source_stride = self.module.Reg('_%s_stride_%d' % (prefix, fsm_id),
-                                        ram.addrwidth, initval=0)
-        source_count = self.module.Reg('_%s_count_%d' % (prefix, fsm_id),
-                                       ram.addrwidth + 1, initval=0)
-
-        var_id = self.var_name_id_map[name]
-        fsm_sel = self.var_id_fsm_sel_map[var_id]
+        source_offset = var.source_offset
+        source_size = var.source_size
+        source_stride = var.source_stride
+        source_count = var.source_count
 
         set_cond = (fsm.state == fsm.current)
 
-        source_fsm.If(set_cond)(
+        self.seq.If(set_cond)(
             source_offset(offset),
             source_size(size),
             source_stride(stride)
         )
-        self.seq.If(set_cond)(
-            fsm_sel(fsm_id)
-        )
+
+        raddr = var.source_ram_raddr
+        renable = var.source_ram_renable
+        rdata = var.source_ram_rdata
+        rvalid = var.source_ram_rvalid
+
+        if ram._id() not in self.source_ram_id_map:
+            ram_sel = var.source_ram_sel
+            ram_id = self.source_ram_id_count
+            self.source_ram_id_count += 1
+            self.source_ram_id_map[ram._id()] = ram_id
+
+            self.seq.If(set_cond)(
+                ram_sel(ram_id)
+            )
+
+            ram_cond = (ram_sel == ram_id)
+
+            d, v = ram.read_rtl(raddr, port=port, cond=renable)
+            add_mux(rdata, ram_cond, d)
+
+        # if FSM is already synthesized, skip below
+        if var.source_fsm is not None:
+            fsm.goto_next()
+            return
+
+        # synthesize a new FSM
+        source_idle = var.source_idle
 
         self.seq.If(self.start)(
             source_idle(0)
         )
 
-        source_start = vtypes.Ands(
-            self.start, fsm_sel == fsm_id, source_size > 0)
+        self.seq(
+            rvalid(self.seq.Prev(vtypes.Ands(renable, ram_cond), 1))
+        )
+
+        prefix = self._prefix(name)
+        fsm_id = self.fsm_id_count
+        self.fsm_id_count += 1
+
+        fsm_name = '_%s_fsm_%d' % (prefix, fsm_id)
+        var.source_fsm = FSM(self.module, fsm_name, self.clock, self.reset,
+                             as_module=self.fsm_as_module)
+        source_fsm = var.source_fsm
+
+        source_start = vtypes.Ands(self.start, source_size > 0)
 
         source_fsm.If(source_start)(
+            raddr(source_offset),
+            renable(1),
             source_count(source_size)
         )
         source_fsm.If(source_start).goto_next()
-
-        raddr = self.module.Reg('_%s_raddr_%d' % (prefix, fsm_id),
-                                ram.addrwidth, initval=0)
-        renable = self.module.Reg('_%s_renable_%d' % (prefix, fsm_id),
-                                  initval=0)
-
-        rdata, rvalid = ram.read_rtl(raddr, port=port, cond=renable)
 
         wdata = rdata
         wenable = rvalid
         var.write(wdata, wenable)
 
         source_fsm(
-            raddr(source_offset),
-            renable(1),
-            source_count.dec()
-        )
-        source_fsm.Delay(1)(
-            renable(0)
-        )
-        self.seq.If(source_fsm.state == source_fsm.current,
-                    source_count == 1)(
-            source_idle(1)
-        )
-        source_fsm.If(source_count == 1).goto_init()
-        source_fsm.If(source_count > 1).goto_next()
-
-        source_fsm(
             raddr.add(source_stride),
             renable(1),
             source_count.dec()
         )
+        source_fsm.If(source_count == 1)(
+            renable(0)
+        )
         source_fsm.Delay(1)(
             renable(0)
         )
         source_fsm.If(source_count == 1).goto_init()
-
         self.seq.If(source_fsm.state == source_fsm.current,
                     source_count == 1)(
             source_idle(1)
@@ -290,6 +346,8 @@ class Stream(BaseStream):
 
     def set_source_pattern(self, fsm, name, ram, offset, pattern, port=0):
         """ intrinsic method to assign RAM property to a source stream """
+
+        raise NotImplementedError('not upgraded.')
 
         if not self.stream_synthesized:
             self._implement_stream()
@@ -472,42 +530,57 @@ class Stream(BaseStream):
         if name not in self.sinks:
             raise NameError("No such stream '%s'" % name)
 
-        prefix = self._prefix(name)
-
-        fsm_id = self.fsm_id_count
-        fsm_name = '_%s_fsm_%d' % (prefix, fsm_id)
-        sink_fsm = FSM(self.module, fsm_name, self.clock, self.reset,
-                       as_module=self.fsm_as_module)
-        self.fsm_id_map[fsm_id] = sink_fsm
-        self.fsm_id_count += 1
-
-        sink_offset = self.module.Reg('_%s_offset_%d' % (prefix, fsm_id),
-                                      ram.addrwidth, initval=0)
-        sink_size = self.module.Reg('_%s_size_%d' % (prefix, fsm_id),
-                                    ram.addrwidth + 1, initval=0)
-        sink_stride = self.module.Reg('_%s_stride_%d' % (prefix, fsm_id),
-                                      ram.addrwidth, initval=0)
-        sink_count = self.module.Reg('_%s_count_%d' % (prefix, fsm_id),
-                                     ram.addrwidth + 1, initval=0)
-
-        var_id = self.var_name_id_map[name]
-        fsm_sel = self.var_id_fsm_sel_map[var_id]
+        sink_offset = var.sink_offset
+        sink_size = var.sink_size
+        sink_stride = var.sink_stride
+        sink_count = var.sink_count
 
         set_cond = (fsm.state == fsm.current)
 
-        sink_fsm.If(set_cond)(
+        self.seq.If(set_cond)(
             sink_offset(offset),
             sink_size(size),
             sink_stride(stride)
         )
-        self.seq.If(set_cond)(
-            fsm_sel(fsm_id)
-        )
 
-        sink_start = vtypes.Ands(
-            self.start, fsm_sel == fsm_id, sink_size > 0)
+        waddr = var.sink_waddr
+        wenable = var.sink_wenable
+        wdata = var.sink_wdata
+        rdata = var.read()
+
+        if ram._id() not in self.sink_ram_id_map:
+            ram_sel = var.sink_ram_sel
+            ram_id = self.sink_ram_id_count
+            self.sink_ram_id_count += 1
+            self.sink_ram_id_map[ram._id()] = ram_id
+
+            self.seq.If(set_cond)(
+                ram_sel(ram_id)
+            )
+
+            ram_cond = (ram_sel == ram_id)
+            ram_wenable = vtypes.Ands(wenable, ram_cond)
+            ram.write_rtl(waddr, wdata, port=port, cond=wenable)
+
+        # if FSM is already synthesized, skip below
+        if var.sink_fsm is not None:
+            fsm.goto_next()
+            return
+
+        # synthesize a new FSM
+        prefix = self._prefix(name)
+        fsm_id = self.fsm_id_count
+        self.fsm_id_count += 1
+
+        fsm_name = '_%s_fsm_%d' % (prefix, fsm_id)
+        var.sink_fsm = FSM(self.module, fsm_name, self.clock, self.reset,
+                           as_module=self.fsm_as_module)
+        sink_fsm = var.sink_fsm
+
+        sink_start = vtypes.Ands(self.start, sink_size > 0)
 
         sink_fsm.If(sink_start)(
+            waddr(sink_offset - sink_stride),
             sink_count(sink_size)
         )
         sink_fsm.If(sink_start).goto_next()
@@ -517,33 +590,11 @@ class Stream(BaseStream):
         for i in range(num_wdelay):
             sink_fsm.goto_next()
 
-        waddr = self.module.Reg('_%s_waddr_%d' % (prefix, fsm_id),
-                                ram.addrwidth, initval=0)
-        wenable = self.module.Reg('_%s_wenable_%d' % (prefix, fsm_id),
-                                  initval=0)
-        wdata = self.module.Reg('_%s_wdata_%d' % (prefix, fsm_id),
-                                ram.datawidth, initval=0, signed=True)
-        rdata = var.read()
-
-        ram.write_rtl(waddr, wdata, port=port, cond=wenable)
-
         if name in self.sink_when_map:
             when = self.sink_when_map[name]
             wcond = when.read()
         else:
             wcond = None
-
-        sink_fsm.If(wcond)(
-            waddr(sink_offset),
-            wdata(rdata),
-            wenable(1),
-            sink_count.dec()
-        )
-        sink_fsm.Delay(1)(
-            wenable(0)
-        )
-        sink_fsm.If(wcond, sink_count == 1).goto_init()
-        sink_fsm.If(wcond, sink_count > 1).goto_next()
 
         sink_fsm.If(wcond)(
             waddr.add(sink_stride),
@@ -562,6 +613,8 @@ class Stream(BaseStream):
 
     def set_sink_pattern(self, fsm, name, ram, offset, pattern, port=0):
         """ intrinsic method to assign RAM property to a sink stream """
+
+        raise NotImplementedError('not upgraded.')
 
         if not self.stream_synthesized:
             self._implement_stream()
@@ -745,21 +798,10 @@ class Stream(BaseStream):
         if name not in self.sinks:
             raise NameError("No such stream '%s'" % name)
 
-        prefix = self._prefix(name)
-
-        fsm_id = self.fsm_id_count
-        fsm_name = '_%s_fsm_%d' % (prefix, fsm_id)
-        sink_fsm = None
-        self.fsm_id_map[fsm_id] = sink_fsm
-        self.fsm_id_count += 1
-
-        var_id = self.var_name_id_map[name]
-        fsm_sel = self.var_id_fsm_sel_map[var_id]
-
         set_cond = (fsm.state == fsm.current)
 
         self.seq.If(set_cond)(
-            fsm_sel(fsm_id)
+            ram_sel(0)  # '0' is reserved for empty
         )
 
         fsm.goto_next()
@@ -983,3 +1025,15 @@ class Substream(BaseSubstream):
         for s in ret:
             s.reset_delay += 1
         return ret
+
+
+def add_mux(targ, cond, value):
+    prev_assign = targ._get_assign()
+    if not prev_assign:
+        targ.assign(vtypes.Mux(cond, value, 0))
+    else:
+        prev_value = prev_assign.statement.right
+        prev_assign.overwrite_right(
+            vtypes.Mux(cond, value, prev_value))
+        targ.m.remove(prev_assign)
+        targ.m.append(prev_assign)
