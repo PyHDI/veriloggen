@@ -76,11 +76,8 @@ class Stream(BaseStream):
         self.source_idle_map = OrderedDict()
         self.sink_when_map = OrderedDict()
 
-        self.source_ram_id_count = 1  # '0' is reserved for idle
-        self.source_ram_id_map = OrderedDict()  # key: ran._id(), value: count
-
-        self.sink_ram_id_count = 1  # '0' is reserved for idle
-        self.sink_ram_id_map = OrderedDict()  # key: ran._id(), value: count
+        self.ram_id_count = 1  # '0' is reserved for idle
+        self.ram_id_map = OrderedDict()  # key: ran._id(), value: count
 
         self.fsm_id_count = 0
 
@@ -133,6 +130,7 @@ class Stream(BaseStream):
         var.source_pat_strides = []
         var.source_pat_counts = []
 
+        var.source_ram_id_map = OrderedDict()
         var.source_ram_sel = self.module.Reg('_source_%s_ram_sel' % prefix,
                                              self.ram_sel_width, initval=0)
         var.source_ram_raddr = self.module.Reg('_source_%s_ram_raddr' % prefix,
@@ -187,6 +185,7 @@ class Stream(BaseStream):
         data.sink_pat_strides = []
         data.sink_pat_counts = []
 
+        data.sink_ram_id_map = OrderedDict()
         data.sink_ram_sel = self.module.Reg('_sink_%s_ram_sel' % prefix,
                                             self.ram_sel_width, initval=0)
         data.sink_waddr = self.module.Reg('_sink_%s_waddr' % prefix,
@@ -276,11 +275,15 @@ class Stream(BaseStream):
         rdata = var.source_ram_rdata
         rvalid = var.source_ram_rvalid
 
-        if ram._id() not in self.source_ram_id_map:
+        if ram._id() not in var.source_ram_id_map:
             ram_sel = var.source_ram_sel
-            ram_id = self.source_ram_id_count
-            self.source_ram_id_count += 1
-            self.source_ram_id_map[ram._id()] = ram_id
+
+            if ram._id() not in self.ram_id_map:
+                ram_id = self.ram_id_count
+                self.ram_id_count += 1
+                self.ram_id_map[ram._id()] = ram_id
+            else:
+                ram_id = self.ram_id_map[ram._id()]
 
             self.seq.If(set_cond)(
                 ram_sel(ram_id)
@@ -551,11 +554,17 @@ class Stream(BaseStream):
         wdata = var.sink_wdata
         rdata = var.read()
 
-        if ram._id() not in self.sink_ram_id_map:
+        if ram._id() not in var.sink_ram_id_map:
             ram_sel = var.sink_ram_sel
-            ram_id = self.sink_ram_id_count
-            self.sink_ram_id_count += 1
-            self.sink_ram_id_map[ram._id()] = ram_id
+
+            if ram._id() not in self.ram_id_map:
+                ram_id = self.ram_id_count
+                self.ram_id_count += 1
+                self.ram_id_map[ram._id()] = ram_id
+            else:
+                ram_id = self.ram_id_map[ram._id()]
+
+            var.sink_ram_id_map[ram._id()] = ram_id
 
             self.seq.If(set_cond)(
                 ram_sel(ram_id)
@@ -800,6 +809,8 @@ class Stream(BaseStream):
             raise NameError("No such stream '%s'" % name)
 
         set_cond = (fsm.state == fsm.current)
+
+        ram_sel = var.sink_ram_sel
 
         self.seq.If(set_cond)(
             ram_sel(0)  # '0' is reserved for empty
