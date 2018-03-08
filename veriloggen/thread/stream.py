@@ -30,7 +30,8 @@ class Stream(BaseStream):
                       'run', 'join', 'done')
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
-                 ram_sel_width=16, fsm_as_module=False):
+                 ram_sel_width=16, count_width=16,
+                 fsm_as_module=False):
 
         BaseStream.__init__(self, module=m, clock=clk, reset=rst,
                             no_hook=True)
@@ -39,6 +40,7 @@ class Stream(BaseStream):
         self.datawidth = datawidth
         self.addrwidth = addrwidth
         self.ram_sel_width = ram_sel_width
+        self.count_width = count_width
         self.fsm_as_module = fsm_as_module
 
         self.stream_synthesized = False
@@ -53,6 +55,9 @@ class Stream(BaseStream):
             '_'.join(['', self.name, 'start']), initval=0)
         self.busy = self.module.Reg(
             '_'.join(['', self.name, 'busy']), initval=0)
+        self.sink_wait_count = self.module.Reg(
+            '_'.join(['', self.name, 'sink_wait_count']),
+            self.count_width, initval=0)
 
         self.reduce_reset = None
         self.reduce_reset_var = None
@@ -332,9 +337,6 @@ class Stream(BaseStream):
         source_fsm.If(source_count == 1)(
             renable(0)
         )
-        source_fsm.Delay(1)(
-            renable(0)
-        )
         source_fsm.If(source_count == 1).goto_init()
         self.seq.If(source_fsm.state == source_fsm.current,
                     source_count == 1)(
@@ -578,18 +580,19 @@ class Stream(BaseStream):
                            as_module=self.fsm_as_module)
         sink_fsm = var.sink_fsm
 
+        sink_fsm.seq(
+            wenable(0)
+        )
+
         sink_start = vtypes.Ands(self.start, sink_size > 0)
 
         sink_fsm.If(sink_start)(
             waddr(sink_offset - sink_stride),
-            sink_count(sink_size)
+            sink_count(sink_size),
         )
         sink_fsm.If(sink_start).goto_next()
 
-        num_wdelay = self._write_delay()
-
-        for i in range(num_wdelay):
-            sink_fsm.goto_next()
+        sink_fsm.If(self.sink_wait_count == 0).goto_next()
 
         if name in self.sink_when_map:
             when = self.sink_when_map[name]
@@ -602,9 +605,6 @@ class Stream(BaseStream):
             wdata(rdata),
             wenable(1),
             sink_count.dec()
-        )
-        sink_fsm.Delay(1)(
-            wenable(0)
         )
         sink_fsm.If(wcond, sink_count == 1).goto_init()
 
@@ -851,16 +851,22 @@ class Stream(BaseStream):
 
         self.fsm_synthesized = True
 
+        num_wdelay = self._write_delay()
+
+        self.fsm.seq.If(self.start_flag)(
+            self.sink_wait_count(num_wdelay)
+        )
+        self.fsm.seq.If(self.sink_wait_count > 0)(
+            self.sink_wait_count.dec()
+        )
+
         self.fsm.If(self.start_flag)(
             self.start(1),
             self.busy(1)
         )
-        self.fsm.If(self.start_flag).Delay(1)(
-            self.start(0)
-        )
 
         if self.reduce_reset is not None:
-            self.fsm.If(self.start_flag).Delay(self.ram_delay + 1)(
+            self.fsm.seq.If(self.fsm.seq.Prev(self.start_flag, self.ram_delay + 1))(
                 self.reduce_reset(0)
             )
 
@@ -870,8 +876,9 @@ class Stream(BaseStream):
             reset_delay = self.ram_delay + 1 + sub.start_stage + sub.reset_delay
             sub_fsm = sub.substrm.fsm
             sub_fsm._set_index(0)
+
             if sub.substrm.reduce_reset is not None:
-                sub_fsm.If(self.start_flag).Delay(reset_delay)(
+                sub_fsm.seq.If(sub_fsm.seq.Prev(self.start_flag, reset_delay))(
                     sub.substrm.reduce_reset(0)
                 )
 
@@ -882,6 +889,9 @@ class Stream(BaseStream):
 
         self.fsm.If(self.start_flag).goto_next()
 
+        self.fsm(
+            self.start(0)
+        )
         self.fsm.goto_next()
 
         done_cond = None
@@ -891,14 +901,21 @@ class Stream(BaseStream):
 
         done = self.module.Wire('_%s_done' % self.name)
         done.assign(done_cond)
-        self.fsm.If(done).goto_next()
+
+        pipe_count = self.module.Reg('_%s_pipe_count' % self.name,
+                                     self.count_width, initval=0)
 
         depth = self.pipeline_depth()
-        num_wdelay = self._write_delay()
 
-        # pipeline delay
-        for i in range(depth):
-            self.fsm.goto_next()
+        self.fsm.If(done)(
+            pipe_count(depth)
+        )
+        self.fsm.If(done).goto_next()
+
+        self.fsm.If(pipe_count > 0)(
+            pipe_count.dec()
+        )
+        self.fsm.If(pipe_count == 0).goto_next()
 
         self.fsm.goto_next()
 
@@ -923,10 +940,8 @@ class Stream(BaseStream):
                     cond(0)
                 )
 
-        for i in range(num_wdelay - depth - 1):
-            self.fsm.goto_next()
+        self.fsm.goto_next()
 
-        # finish
         self.fsm(
             self.busy(0)
         )
