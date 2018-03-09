@@ -310,6 +310,10 @@ class FSM(vtypes.VeriloggenNode):
     def then(self):
         return self.last_condition
 
+    @property
+    def here(self):
+        return self.state == self.current
+
     #-------------------------------------------------------------------------
     def implement(self):
         if self.as_module:
