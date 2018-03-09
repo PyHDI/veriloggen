@@ -877,7 +877,7 @@ class Stream(BaseStream):
         )
 
         if self.reduce_reset is not None:
-            self.fsm.seq.If(self.fsm.seq.Prev(self.start_flag, self.ram_delay + 1))(
+            self.fsm.seq.If(self.seq.Prev(self.start_flag, self.ram_delay + 1))(
                 self.reduce_reset(0)
             )
 
@@ -889,7 +889,7 @@ class Stream(BaseStream):
             sub_fsm._set_index(0)
 
             if sub.substrm.reduce_reset is not None:
-                sub_fsm.seq.If(sub_fsm.seq.Prev(self.start_flag, reset_delay))(
+                sub_fsm.seq.If(self.seq.Prev(self.start_flag, reset_delay))(
                     sub.substrm.reduce_reset(0)
                 )
 
