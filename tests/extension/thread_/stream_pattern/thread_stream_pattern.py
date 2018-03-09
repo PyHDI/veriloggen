@@ -63,13 +63,13 @@ def mkLed():
             sum = a + b
             ram_c.write(i + offset, sum)
 
-    def check(offset_stream, offset_seq):
+    def check(size, offset_stream, offset_seq):
         all_ok = True
-        st = ram_c.read(offset_stream)
-        sq = ram_c.read(offset_seq)
-        if vthread.verilog.NotEql(st, sq):
-            all_ok = False
-
+        for i in range(size):
+            st = ram_c.read(i + offset_stream)
+            sq = ram_c.read(i + offset_seq)
+            if vthread.verilog.NotEql(st, sq):
+                all_ok = False
         if all_ok:
             print('OK')
         else:
@@ -91,7 +91,7 @@ def mkLed():
         myaxi.dma_write(ram_c, offset, 1024 * 8, 1)
 
         # verification
-        check(0, offset)
+        check(size, 0, offset)
 
     th = vthread.Thread(m, 'th_comp', clk, rst, comp)
     fsm = th.start()
@@ -124,7 +124,7 @@ def mkTest():
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
     init.add(
-        Delay(100000),
+        Delay(200000),
         Systask('finish'),
     )
 

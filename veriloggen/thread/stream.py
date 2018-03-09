@@ -30,7 +30,7 @@ class Stream(BaseStream):
                       'run', 'join', 'done')
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
-                 ram_sel_width=16, count_width=16,
+                 ram_sel_width=16, count_width=16, max_pattern_length=4,
                  fsm_as_module=False):
 
         BaseStream.__init__(self, module=m, clock=clk, reset=rst,
@@ -41,6 +41,7 @@ class Stream(BaseStream):
         self.addrwidth = addrwidth
         self.ram_sel_width = ram_sel_width
         self.count_width = count_width
+        self.max_pattern_length = max_pattern_length
         self.fsm_as_module = fsm_as_module
 
         self.stream_synthesized = False
@@ -81,7 +82,7 @@ class Stream(BaseStream):
 
         self.fsm_id_count = 0
 
-        self.ram_delay = 3
+        self.ram_delay = 4
 
     def source(self, name=None, datawidth=None, point=0, signed=True):
         if self.stream_synthesized:
@@ -117,29 +118,34 @@ class Stream(BaseStream):
         var.source_idle = self.module.Reg('_%s_idle' % prefix, initval=1)
         self.source_idle_map[name] = var.source_idle
 
-        var.source_offset = self.module.Reg('_source_%s_offset' % prefix,
+        # 0: set_source, 1: set_source_pattern
+        var.source_mode = self.module.Reg('_%s_source_mode' % prefix,
+                                          initval=0)
+
+        var.source_offset = self.module.Reg('_%s_source_offset' % prefix,
                                             self.addrwidth, initval=0)
-        var.source_size = self.module.Reg('_source_%s_size' % prefix,
+        var.source_size = self.module.Reg('_%s_source_size' % prefix,
                                           self.addrwidth + 1, initval=0)
-        var.source_stride = self.module.Reg('_source_%s_stride' % prefix,
+        var.source_stride = self.module.Reg('_%s_source_stride' % prefix,
                                             self.addrwidth, initval=0)
-        var.source_count = self.module.Reg('_source_%s_count' % prefix,
+        var.source_count = self.module.Reg('_%s_source_count' % prefix,
                                            self.addrwidth + 1, initval=0)
 
-        var.source_pat_sizes = []
-        var.source_pat_strides = []
-        var.source_pat_counts = []
+        var.source_pat_offsets = None
+        var.source_pat_sizes = None
+        var.source_pat_strides = None
+        var.source_pat_counts = None
 
         var.source_ram_id_map = OrderedDict()
-        var.source_ram_sel = self.module.Reg('_source_%s_ram_sel' % prefix,
+        var.source_ram_sel = self.module.Reg('_%s_source_ram_sel' % prefix,
                                              self.ram_sel_width, initval=0)
-        var.source_ram_raddr = self.module.Reg('_source_%s_ram_raddr' % prefix,
+        var.source_ram_raddr = self.module.Reg('_%s_source_ram_raddr' % prefix,
                                                self.addrwidth, initval=0)
-        var.source_ram_renable = self.module.Reg('_source_%s_ram_renable' % prefix,
+        var.source_ram_renable = self.module.Reg('_%s_source_ram_renable' % prefix,
                                                  initval=0)
-        var.source_ram_rdata = self.module.Wire('_source_%s_ram_rdata' % prefix,
+        var.source_ram_rdata = self.module.Wire('_%s_source_ram_rdata' % prefix,
                                                 self.datawidth)
-        var.source_ram_rvalid = self.module.Reg('_source_%s_ram_rvalid' % prefix,
+        var.source_ram_rvalid = self.module.Reg('_%s_source_ram_rvalid' % prefix,
                                                 initval=0)
 
         return var
@@ -172,28 +178,33 @@ class Stream(BaseStream):
         data.sink_fsm = None
         data.sink_pat_fsm = None
 
-        data.sink_offset = self.module.Reg('_sink_%s_offset' % prefix,
+        # 0: set_sink, 1: set_sink_pattern
+        data.sink_mode = self.module.Reg('_%s_sink_mode' % prefix,
+                                         initval=0)
+
+        data.sink_offset = self.module.Reg('_%s_sink_offset' % prefix,
                                            self.addrwidth, initval=0)
-        data.sink_size = self.module.Reg('_sink_%s_size' % prefix,
+        data.sink_size = self.module.Reg('_%s_sink_size' % prefix,
                                          self.addrwidth + 1, initval=0)
-        data.sink_stride = self.module.Reg('_sink_%s_stride' % prefix,
+        data.sink_stride = self.module.Reg('_%s_sink_stride' % prefix,
                                            self.addrwidth, initval=0)
-        data.sink_count = self.module.Reg('_sink_%s_count' % prefix,
+        data.sink_count = self.module.Reg('_%s_sink_count' % prefix,
                                           self.addrwidth + 1, initval=0)
 
-        data.sink_pat_sizes = []
-        data.sink_pat_strides = []
-        data.sink_pat_counts = []
+        data.sink_pat_offsets = None
+        data.sink_pat_sizes = None
+        data.sink_pat_strides = None
+        data.sink_pat_counts = None
 
         data.sink_ram_id_map = OrderedDict()
-        data.sink_ram_sel = self.module.Reg('_sink_%s_ram_sel' % prefix,
+        data.sink_ram_sel = self.module.Reg('_%s_sink_ram_sel' % prefix,
                                             self.ram_sel_width, initval=0)
-        data.sink_waddr = self.module.Reg('_sink_%s_waddr' % prefix,
-                                          self.addrwidth, initval=0)
-        data.sink_wenable = self.module.Reg('_sink_%s_wenable' % prefix,
-                                            initval=0)
-        data.sink_wdata = self.module.Reg('_sink_%s_wdata' % prefix,
-                                          self.datawidth, initval=0)
+        data.sink_ram_waddr = self.module.Reg('_%s_sink_waddr' % prefix,
+                                              self.addrwidth, initval=0)
+        data.sink_ram_wenable = self.module.Reg('_%s_sink_wenable' % prefix,
+                                                initval=0)
+        data.sink_ram_wdata = self.module.Reg('_%s_sink_wdata' % prefix,
+                                              self.datawidth, initval=0)
 
         if when is not None:
             self.sink(when, when_name)
@@ -257,103 +268,22 @@ class Stream(BaseStream):
         if name not in self.sources:
             raise NameError("No such stream '%s'" % name)
 
-        source_offset = var.source_offset
-        source_size = var.source_size
-        source_stride = var.source_stride
-        source_count = var.source_count
-
-        set_cond = (fsm.state == fsm.current)
+        set_cond = fsm.here
 
         self.seq.If(set_cond)(
-            source_offset(offset),
-            source_size(size),
-            source_stride(stride)
+            var.source_mode(0),
+            var.source_offset(offset),
+            var.source_size(size),
+            var.source_stride(stride)
         )
 
-        raddr = var.source_ram_raddr
-        renable = var.source_ram_renable
-        rdata = var.source_ram_rdata
-        rvalid = var.source_ram_rvalid
-
-        if ram._id() not in var.source_ram_id_map:
-            ram_sel = var.source_ram_sel
-
-            if ram._id() not in self.ram_id_map:
-                ram_id = self.ram_id_count
-                self.ram_id_count += 1
-                self.ram_id_map[ram._id()] = ram_id
-            else:
-                ram_id = self.ram_id_map[ram._id()]
-
-            self.seq.If(set_cond)(
-                ram_sel(ram_id)
-            )
-
-            ram_cond = (ram_sel == ram_id)
-
-            d, v = ram.read_rtl(raddr, port=port, cond=renable)
-            add_mux(rdata, ram_cond, d)
-
-        # if FSM is already synthesized, skip below
-        if var.source_fsm is not None:
-            fsm.goto_next()
-            return
-
-        # synthesize a new FSM
-        source_idle = var.source_idle
-
-        self.seq.If(self.start)(
-            source_idle(0)
-        )
-
-        self.seq(
-            rvalid(self.seq.Prev(vtypes.Ands(renable, ram_cond), 1))
-        )
-
-        prefix = self._prefix(name)
-        fsm_id = self.fsm_id_count
-        self.fsm_id_count += 1
-
-        fsm_name = '_%s_fsm_%d' % (prefix, fsm_id)
-        var.source_fsm = FSM(self.module, fsm_name, self.clock, self.reset,
-                             as_module=self.fsm_as_module)
-        source_fsm = var.source_fsm
-
-        source_start = vtypes.Ands(self.start, source_size > 0)
-
-        source_fsm.If(source_start)(
-            raddr(source_offset),
-            renable(1),
-            source_count(source_size)
-        )
-        source_fsm.If(source_start).goto_next()
-
-        wdata = rdata
-        wenable = rvalid
-        var.write(wdata, wenable)
-
-        source_fsm(
-            raddr.add(source_stride),
-            renable(1),
-            source_count.dec()
-        )
-        source_fsm.If(source_count == 1)(
-            renable(0)
-        )
-        source_fsm.If(source_count == 1).goto_init()
-        self.seq.If(source_fsm.state == source_fsm.current,
-                    source_count == 1)(
-            source_idle(1)
-        )
-
-        source_fsm._set_index(0)
+        self._setup_source_ram(ram, var, port, set_cond)
+        self._synthesize_set_source(var, name)
 
         fsm.goto_next()
 
     def set_source_pattern(self, fsm, name, ram, offset, pattern, port=0):
         """ intrinsic method to assign RAM property to a source stream """
-
-        raise NotImplementedError('not upgraded.')
 
         if not self.stream_synthesized:
             self._implement_stream()
@@ -384,124 +314,31 @@ class Stream(BaseStream):
         if not isinstance(pattern[0], (tuple, list)):
             pattern = (pattern,)
 
-        prefix = self._prefix(name)
+        if len(pattern) > self.max_pattern_length:
+            raise ValueError(
+                "'pattern' length exceeds maximum pattern length.")
 
-        fsm_id = self.fsm_id_count
-        fsm_name = '_%s_fsm_%d' % (prefix, fsm_id)
-        source_fsm = FSM(self.module, fsm_name, self.clock, self.reset,
-                         as_module=self.fsm_as_module)
-        self.fsm_id_map[fsm_id] = source_fsm
-        self.fsm_id_count += 1
+        self._make_source_pattern_vars(var, name)
 
-        source_idle = self.source_idle_map[name]
-        source_offset = self.module.Reg('_%s_offset_%d' % (prefix, fsm_id),
-                                        ram.addrwidth, initval=0)
-        source_pat_offsets = [self.module.Reg('_%s_pat_offset_%d_%d' % (prefix, fsm_id, i),
-                                              ram.addrwidth, initval=0)
-                              for i, _ in enumerate(pattern)]
-        source_pat_sizes = [self.module.Reg('_%s_pat_size_%d_%d' % (prefix, fsm_id, i),
-                                            ram.addrwidth + 1, initval=0)
-                            for i, _ in enumerate(pattern)]
-        source_pat_strides = [self.module.Reg('_%s_pat_stride_%d_%d' % (prefix, fsm_id, i),
-                                              ram.addrwidth, initval=0)
-                              for i, _ in enumerate(pattern)]
-        source_pat_counts = [self.module.Reg('_%s_pat_count_%d_%d' % (prefix, fsm_id, i),
-                                             ram.addrwidth + 1, initval=0)
-                             for i, _ in enumerate(pattern)]
+        set_cond = fsm.here
 
-        var_id = self.var_name_id_map[name]
-        fsm_sel = self.var_id_fsm_sel_map[var_id]
-
-        set_cond = (fsm.state == fsm.current)
-
-        source_fsm.If(set_cond)(
-            source_offset(offset)
-        )
         self.seq.If(set_cond)(
-            fsm_sel(fsm_id)
+            var.source_mode(1),
+            var.source_offset(offset)
         )
 
-        for source_pat_offset in source_pat_offsets:
-            source_fsm.If(set_cond)(
-                source_pat_offset(0)
-            )
+        pad = [(1, 0) for _ in range(self.max_pattern_length - len(pattern))]
 
-        for (source_pat_size, source_pat_stride, (size, stride)) in zip(
-                source_pat_sizes, source_pat_strides, pattern):
-            source_fsm.If(set_cond)(
+        for (source_pat_size, source_pat_stride,
+             (size, stride)) in zip(var.source_pat_sizes, var.source_pat_strides,
+                                    pattern + pad):
+            self.seq.If(set_cond)(
                 source_pat_size(size),
                 source_pat_stride(stride)
             )
 
-        self.seq.If(self.start)(
-            source_idle(0)
-        )
-
-        source_start = vtypes.Ands(self.start, fsm_sel == fsm_id)
-        for source_pat_size in source_pat_sizes:
-            source_start = vtypes.Ands(source_start, source_pat_size > 0)
-
-        for (source_pat_size, source_pat_count) in zip(
-                source_pat_sizes, source_pat_counts):
-            source_fsm.If(source_start)(
-                source_pat_count(source_pat_size - 1)
-            )
-
-        source_fsm.If(source_start).goto_next()
-
-        source_all_offset = self.module.Wire('_%s_all_offset_%d' % (prefix, fsm_id),
-                                             ram.addrwidth)
-        source_all_offset_val = source_offset
-        for source_pat_offset in source_pat_offsets:
-            source_all_offset_val += source_pat_offset
-        source_all_offset.assign(source_all_offset_val)
-
-        raddr = self.module.Reg('_%s_raddr_%d' % (prefix, fsm_id),
-                                ram.addrwidth, initval=0)
-        renable = self.module.Reg('_%s_renable_%d' % (prefix, fsm_id),
-                                  initval=0)
-
-        rdata, rvalid = ram.read_rtl(raddr, port=port, cond=renable)
-
-        wdata = rdata
-        wenable = rvalid
-        var.write(wdata, wenable)
-
-        source_fsm(
-            raddr(source_all_offset),
-            renable(1)
-        )
-        source_fsm.Delay(1)(
-            renable(0)
-        )
-
-        upcond = None
-
-        for (source_pat_offset, source_pat_size,
-             source_pat_stride, source_pat_count) in zip(
-                 source_pat_offsets, source_pat_sizes,
-                 source_pat_strides, source_pat_counts):
-            source_fsm.If(upcond)(
-                source_pat_offset.add(source_pat_stride),
-                source_pat_count.dec()
-            )
-            reset_cond = source_pat_count == 0
-            source_fsm.If(upcond, reset_cond)(
-                source_pat_offset(0),
-                source_pat_count(source_pat_size - 1)
-            )
-            upcond = make_condition(upcond, reset_cond)
-
-        fin_cond = upcond
-
-        source_fsm.If(fin_cond).goto_init()
-
-        self.seq.If(source_fsm.state == source_fsm.current,
-                    fin_cond)(
-            source_idle(1)
-        )
-
-        source_fsm._set_index(0)
+        self._setup_source_ram(ram, var, port, set_cond)
+        self._synthesize_set_source_pattern(var, name)
 
         fsm.goto_next()
 
@@ -536,95 +373,22 @@ class Stream(BaseStream):
         if name not in self.sinks:
             raise NameError("No such stream '%s'" % name)
 
-        sink_offset = var.sink_offset
-        sink_size = var.sink_size
-        sink_stride = var.sink_stride
-        sink_count = var.sink_count
-
-        set_cond = (fsm.state == fsm.current)
+        set_cond = fsm.here
 
         self.seq.If(set_cond)(
-            sink_offset(offset),
-            sink_size(size),
-            sink_stride(stride)
+            var.sink_mode(0),
+            var.sink_offset(offset),
+            var.sink_size(size),
+            var.sink_stride(stride)
         )
 
-        waddr = var.sink_waddr
-        wenable = var.sink_wenable
-        wdata = var.sink_wdata
-        rdata = var.read()
-
-        if ram._id() not in var.sink_ram_id_map:
-            ram_sel = var.sink_ram_sel
-
-            if ram._id() not in self.ram_id_map:
-                ram_id = self.ram_id_count
-                self.ram_id_count += 1
-                self.ram_id_map[ram._id()] = ram_id
-            else:
-                ram_id = self.ram_id_map[ram._id()]
-
-            var.sink_ram_id_map[ram._id()] = ram_id
-
-            self.seq.If(set_cond)(
-                ram_sel(ram_id)
-            )
-
-            ram_cond = (ram_sel == ram_id)
-            ram_wenable = vtypes.Ands(wenable, ram_cond)
-            ram.write_rtl(waddr, wdata, port=port, cond=wenable)
-
-        # if FSM is already synthesized, skip below
-        if var.sink_fsm is not None:
-            fsm.goto_next()
-            return
-
-        # synthesize a new FSM
-        prefix = self._prefix(name)
-        fsm_id = self.fsm_id_count
-        self.fsm_id_count += 1
-
-        fsm_name = '_%s_fsm_%d' % (prefix, fsm_id)
-        var.sink_fsm = FSM(self.module, fsm_name, self.clock, self.reset,
-                           as_module=self.fsm_as_module)
-        sink_fsm = var.sink_fsm
-
-        sink_fsm.seq(
-            wenable(0)
-        )
-
-        sink_start = vtypes.Ands(self.start, sink_size > 0)
-
-        sink_fsm.If(sink_start)(
-            waddr(sink_offset - sink_stride),
-            sink_count(sink_size),
-        )
-        sink_fsm.If(sink_start).goto_next()
-
-        sink_fsm.If(self.sink_wait_count == 0).goto_next()
-
-        if name in self.sink_when_map:
-            when = self.sink_when_map[name]
-            wcond = when.read()
-        else:
-            wcond = None
-
-        sink_fsm.If(wcond)(
-            waddr.add(sink_stride),
-            wdata(rdata),
-            wenable(1),
-            sink_count.dec()
-        )
-        sink_fsm.If(wcond, sink_count == 1).goto_init()
-
-        sink_fsm._set_index(0)
+        self._setup_sink_ram(ram, var, port, set_cond)
+        self._synthesize_set_sink(var, name)
 
         fsm.goto_next()
 
     def set_sink_pattern(self, fsm, name, ram, offset, pattern, port=0):
         """ intrinsic method to assign RAM property to a sink stream """
-
-        raise NotImplementedError('not upgraded.')
 
         if not self.stream_synthesized:
             self._implement_stream()
@@ -655,125 +419,31 @@ class Stream(BaseStream):
         if not isinstance(pattern[0], (tuple, list)):
             pattern = (pattern,)
 
-        prefix = self._prefix(name)
+        if len(pattern) > self.max_pattern_length:
+            raise ValueError(
+                "'pattern' length exceeds maximum pattern length.")
 
-        fsm_id = self.fsm_id_count
-        fsm_name = '_%s_fsm_%d' % (prefix, fsm_id)
-        sink_fsm = FSM(self.module, fsm_name, self.clock, self.reset,
-                       as_module=self.fsm_as_module)
-        self.fsm_id_map[fsm_id] = sink_fsm
-        self.fsm_id_count += 1
+        self._make_sink_pattern_vars(var, name)
 
-        sink_offset = self.module.Reg('_%s_offset_%d' % (prefix, fsm_id),
-                                      ram.addrwidth, initval=0)
-        sink_pat_offsets = [self.module.Reg('_%s_pat_offset_%d_%d' % (prefix, fsm_id, i),
-                                            ram.addrwidth, initval=0)
-                            for i, _ in enumerate(pattern)]
-        sink_pat_sizes = [self.module.Reg('_%s_pat_size_%d_%d' % (prefix, fsm_id, i),
-                                          ram.addrwidth + 1, initval=0)
-                          for i, _ in enumerate(pattern)]
-        sink_pat_strides = [self.module.Reg('_%s_pat_stride_%d_%d' % (prefix, fsm_id, i),
-                                            ram.addrwidth, initval=0)
-                            for i, _ in enumerate(pattern)]
-        sink_pat_counts = [self.module.Reg('_%s_pat_count_%d_%d' % (prefix, fsm_id, i),
-                                           ram.addrwidth + 1, initval=0)
-                           for i, _ in enumerate(pattern)]
+        set_cond = fsm.here
 
-        var_id = self.var_name_id_map[name]
-        fsm_sel = self.var_id_fsm_sel_map[var_id]
-
-        set_cond = (fsm.state == fsm.current)
-
-        sink_fsm.If(set_cond)(
-            sink_offset(offset)
-        )
         self.seq.If(set_cond)(
-            fsm_sel(fsm_id)
+            var.sink_mode(1),
+            var.sink_offset(offset)
         )
 
-        for sink_pat_offset in sink_pat_offsets:
-            sink_fsm.If(set_cond)(
-                sink_pat_offset(0)
-            )
+        pad = [(1, 0) for _ in range(self.max_pattern_length - len(pattern))]
 
-        for (sink_pat_size, sink_pat_stride, (size, stride)) in zip(
-                sink_pat_sizes, sink_pat_strides, pattern):
-            sink_fsm.If(set_cond)(
+        for (sink_pat_size, sink_pat_stride,
+             (size, stride)) in zip(var.sink_pat_sizes, var.sink_pat_strides,
+                                    pattern + pad):
+            self.seq.If(set_cond)(
                 sink_pat_size(size),
                 sink_pat_stride(stride)
             )
 
-        sink_start = vtypes.Ands(self.start, fsm_sel == fsm_id)
-        for sink_pat_size in sink_pat_sizes:
-            sink_start = vtypes.Ands(sink_start, sink_pat_size > 0)
-
-        for (sink_pat_size, sink_pat_count) in zip(
-                sink_pat_sizes, sink_pat_counts):
-            sink_fsm.If(sink_start)(
-                sink_pat_count(sink_pat_size - 1)
-            )
-
-        sink_fsm.If(sink_start).goto_next()
-
-        num_wdelay = self._write_delay()
-
-        for i in range(num_wdelay):
-            sink_fsm.goto_next()
-
-        sink_all_offset = self.module.Wire('_%s_all_offset_%d' % (prefix, fsm_id),
-                                           ram.addrwidth)
-        sink_all_offset_val = sink_offset
-        for sink_pat_offset in sink_pat_offsets:
-            sink_all_offset_val += sink_pat_offset
-        sink_all_offset.assign(sink_all_offset_val)
-
-        waddr = self.module.Reg('_%s_waddr_%d' % (prefix, fsm_id),
-                                ram.addrwidth, initval=0)
-        wenable = self.module.Reg('_%s_wenable_%d' % (prefix, fsm_id),
-                                  initval=0)
-        wdata = self.module.Reg('_%s_wdata_%d' % (prefix, fsm_id),
-                                ram.datawidth, initval=0, signed=True)
-        rdata = var.read()
-
-        ram.write_rtl(waddr, wdata, port=port, cond=wenable)
-
-        if name in self.sink_when_map:
-            when = self.sink_when_map[name]
-            wcond = when.read()
-        else:
-            wcond = None
-
-        sink_fsm.If(wcond)(
-            waddr(sink_all_offset),
-            wdata(rdata),
-            wenable(1)
-        )
-        sink_fsm.Delay(1)(
-            wenable(0)
-        )
-
-        upcond = None
-
-        for (sink_pat_offset, sink_pat_size,
-             sink_pat_stride, sink_pat_count) in zip(
-                 sink_pat_offsets, sink_pat_sizes,
-                 sink_pat_strides, sink_pat_counts):
-            sink_fsm.If(upcond)(
-                sink_pat_offset.add(sink_pat_stride),
-                sink_pat_count.dec()
-            )
-            reset_cond = sink_pat_count == 0
-            sink_fsm.If(upcond, reset_cond)(
-                sink_pat_offset(0),
-                sink_pat_count(sink_pat_size - 1)
-            )
-            upcond = make_condition(upcond, reset_cond)
-
-        fin_cond = upcond
-
-        sink_fsm.If(fin_cond).goto_init()
-
-        sink_fsm._set_index(0)
+        self._setup_sink_ram(ram, var, port, set_cond)
+        self._synthesize_set_sink_pattern(var, name)
 
         fsm.goto_next()
 
@@ -808,7 +478,7 @@ class Stream(BaseStream):
         if name not in self.sinks:
             raise NameError("No such stream '%s'" % name)
 
-        set_cond = (fsm.state == fsm.current)
+        set_cond = fsm.here
 
         ram_sel = var.sink_ram_sel
 
@@ -840,7 +510,7 @@ class Stream(BaseStream):
         if name not in self.constants:
             raise NameError("No such stream '%s'" % name)
 
-        set_cond = (fsm.state == fsm.current)
+        set_cond = fsm.here
 
         wdata = value
         wenable = set_cond
@@ -852,7 +522,7 @@ class Stream(BaseStream):
         # entry point
         self.fsm._set_index(0)
 
-        cond = (fsm.state == fsm.current)
+        cond = fsm.here
         add_mux(self.start_flag, cond, 1)
 
         # after started
@@ -936,7 +606,7 @@ class Stream(BaseStream):
                 self.reduce_reset(1)
             )
 
-        end_flag = self.fsm.state == self.fsm.current
+        end_flag = self.fsm.here
 
         for sub in substreams:
             sub_fsm = sub.substrm.fsm
@@ -969,6 +639,371 @@ class Stream(BaseStream):
 
     def done(self, fsm):
         return vtypes.Not(self.busy)
+
+    def _setup_source_ram(self, ram, var, port, set_cond):
+        if ram._id() in var.source_ram_id_map:
+            ram_id = var.source_ram_id_map[ram._id()]
+            self.seq.If(set_cond)(
+                var.source_ram_sel(ram_id)
+            )
+            return
+
+        if ram._id() not in self.ram_id_map:
+            ram_id = self.ram_id_count
+            self.ram_id_count += 1
+            self.ram_id_map[ram._id()] = ram_id
+        else:
+            ram_id = self.ram_id_map[ram._id()]
+
+        var.source_ram_id_map[ram._id()] = ram_id
+
+        self.seq.If(set_cond)(
+            var.source_ram_sel(ram_id)
+        )
+
+        ram_cond = (var.source_ram_sel == ram_id)
+        renable = vtypes.Ands(var.source_ram_renable, ram_cond)
+
+        d, v = ram.read_rtl(var.source_ram_raddr, port=port, cond=renable)
+        add_mux(var.source_ram_rdata, ram_cond, d)
+
+        self.seq(
+            var.source_ram_rvalid(self.seq.Prev(renable, 1))
+        )
+
+    def _synthesize_set_source(self, var, name):
+        if var.source_fsm is not None:
+            return
+
+        wdata = var.source_ram_rdata
+        wenable = var.source_ram_rvalid
+        var.write(wdata, wenable)
+
+        source_start = vtypes.Ands(self.start, var.source_mode == 0,
+                                   var.source_size > 0)
+
+        self.seq.If(source_start)(
+            var.source_idle(0)
+        )
+
+        fsm_id = self.fsm_id_count
+        self.fsm_id_count += 1
+
+        prefix = self._prefix(name)
+
+        fsm_name = '_%s_source_fsm_%d' % (prefix, fsm_id)
+        var.source_fsm = FSM(self.module, fsm_name, self.clock, self.reset,
+                             as_module=self.fsm_as_module)
+
+        var.source_fsm.If(source_start).goto_next()
+
+        self.seq.If(var.source_fsm.here)(
+            var.source_ram_raddr(var.source_offset),
+            var.source_ram_renable(1),
+            var.source_count(var.source_size)
+        )
+
+        var.source_fsm.goto_next()
+
+        self.seq.If(var.source_fsm.here)(
+            var.source_ram_raddr.add(var.source_stride),
+            var.source_ram_renable(1),
+            var.source_count.dec()
+        )
+        self.seq.If(var.source_fsm.here, var.source_count == 1)(
+            var.source_ram_renable(0),
+            var.source_idle(1)
+        )
+
+        var.source_fsm.If(var.source_count == 1).goto_init()
+
+    def _make_source_pattern_vars(self, var, name):
+        if var.source_pat_offsets is not None:
+            return
+
+        prefix = self._prefix(name)
+
+        var.source_pat_offsets = [self.module.Reg('_source_%s_pat_offset_%d' % (prefix, i),
+                                                  self.addrwidth, initval=0)
+                                  for i in range(self.max_pattern_length)]
+        var.source_pat_sizes = [self.module.Reg('_source_%s_pat_size_%d' % (prefix, i),
+                                                self.addrwidth + 1, initval=0)
+                                for i in range(self.max_pattern_length)]
+        var.source_pat_strides = [self.module.Reg('_source_%s_pat_stride_%d' % (prefix, i),
+                                                  self.addrwidth, initval=0)
+                                  for i in range(self.max_pattern_length)]
+        var.source_pat_counts = [self.module.Reg('_source_%s_pat_count_%d' % (prefix, i),
+                                                 self.addrwidth + 1, initval=0)
+                                 for i in range(self.max_pattern_length)]
+
+    def _synthesize_set_source_pattern(self, var, name):
+        if var.source_pat_fsm is not None:
+            return
+
+        wdata = var.source_ram_rdata
+        wenable = var.source_ram_rvalid
+        var.write(wdata, wenable)
+
+        source_start = vtypes.Ands(self.start, var.source_mode == 1)
+        for source_pat_size in var.source_pat_sizes:
+            source_start = vtypes.Ands(source_start, source_pat_size > 0)
+
+        self.seq.If(source_start)(
+            var.source_idle(0)
+        )
+
+        for source_pat_offset in var.source_pat_offsets:
+            self.seq.If(source_start)(
+                source_pat_offset(0)
+            )
+
+        for (source_pat_size, source_pat_count) in zip(
+                var.source_pat_sizes, var.source_pat_counts):
+            self.seq.If(source_start)(
+                source_pat_count(source_pat_size - 1)
+            )
+
+        fsm_id = self.fsm_id_count
+        self.fsm_id_count += 1
+
+        prefix = self._prefix(name)
+
+        fsm_name = '_%s_source_pat_fsm_%d' % (prefix, fsm_id)
+        var.source_pat_fsm = FSM(self.module, fsm_name,
+                                 self.clock, self.reset,
+                                 as_module=self.fsm_as_module)
+
+        var.source_pat_fsm.If(source_start).goto_next()
+
+        source_all_offset = self.module.Wire('_%s_source_pat_all_offset' % prefix,
+                                             self.addrwidth)
+        source_all_offset_val = var.source_offset
+        for source_pat_offset in var.source_pat_offsets:
+            source_all_offset_val += source_pat_offset
+        source_all_offset.assign(source_all_offset_val)
+
+        self.seq.If(var.source_pat_fsm.here)(
+            var.source_ram_raddr(source_all_offset),
+            var.source_ram_renable(1)
+        )
+
+        upcond = None
+
+        for (source_pat_offset, source_pat_size,
+             source_pat_stride, source_pat_count) in zip(
+                 var.source_pat_offsets, var.source_pat_sizes,
+                 var.source_pat_strides, var.source_pat_counts):
+
+            self.seq.If(var.source_pat_fsm.here, upcond)(
+                source_pat_offset.add(source_pat_stride),
+                source_pat_count.dec()
+            )
+
+            reset_cond = source_pat_count == 0
+            self.seq.If(var.source_pat_fsm.here, upcond, reset_cond)(
+                source_pat_offset(0),
+                source_pat_count(source_pat_size - 1)
+            )
+            upcond = make_condition(upcond, reset_cond)
+
+        fin_cond = upcond
+
+        var.source_pat_fsm.If(fin_cond).goto_next()
+
+        self.seq.If(var.source_pat_fsm.here)(
+            var.source_ram_renable(0),
+            var.source_idle(1)
+        )
+
+        var.source_pat_fsm.goto_init()
+
+    def _setup_sink_ram(self, ram, var, port, set_cond):
+        if ram._id() in var.sink_ram_id_map:
+            ram_id = var.sink_ram_id_map[ram._id()]
+            self.seq.If(set_cond)(
+                var.sink_ram_sel(ram_id)
+            )
+            return
+
+        if ram._id() not in self.ram_id_map:
+            ram_id = self.ram_id_count
+            self.ram_id_count += 1
+            self.ram_id_map[ram._id()] = ram_id
+        else:
+            ram_id = self.ram_id_map[ram._id()]
+
+        var.sink_ram_id_map[ram._id()] = ram_id
+
+        self.seq.If(set_cond)(
+            var.sink_ram_sel(ram_id)
+        )
+
+        ram_cond = (var.sink_ram_sel == ram_id)
+        wenable = vtypes.Ands(var.sink_ram_wenable, ram_cond)
+        ram.write_rtl(var.sink_ram_waddr, var.sink_ram_wdata,
+                      port=port, cond=wenable)
+
+    def _synthesize_set_sink(self, var, name):
+        if var.sink_fsm is not None:
+            return
+
+        sink_start = vtypes.Ands(self.start, var.sink_mode == 0,
+                                 var.sink_size > 0)
+
+        fsm_id = self.fsm_id_count
+        self.fsm_id_count += 1
+
+        prefix = self._prefix(name)
+
+        fsm_name = '_%s_sink_fsm_%d' % (prefix, fsm_id)
+        var.sink_fsm = FSM(self.module, fsm_name, self.clock, self.reset,
+                           as_module=self.fsm_as_module)
+
+        self.seq.If(var.sink_fsm.here)(
+            var.sink_ram_wenable(0)
+        )
+
+        var.sink_fsm.If(sink_start).goto_next()
+
+        self.seq.If(var.sink_fsm.here)(
+            var.sink_ram_waddr(var.sink_offset - var.sink_stride),
+            var.sink_count(var.sink_size)
+        )
+
+        var.sink_fsm.If(self.sink_wait_count == 0).goto_next()
+
+        if name in self.sink_when_map:
+            when = self.sink_when_map[name]
+            wcond = when.read()
+        else:
+            wcond = None
+
+        rdata = var.read()
+
+        self.seq.If(var.sink_fsm.here)(
+            var.sink_ram_wenable(0)
+        )
+        self.seq.If(var.sink_fsm.here, wcond)(
+            var.sink_ram_waddr.add(var.sink_stride),
+            var.sink_ram_wdata(rdata),
+            var.sink_ram_wenable(1),
+            var.sink_count.dec()
+        )
+
+        var.sink_fsm.If(wcond, var.sink_count == 1).goto_init()
+
+    def _make_sink_pattern_vars(self, var, name):
+        if var.sink_pat_offsets is not None:
+            return
+
+        prefix = self._prefix(name)
+
+        var.sink_pat_offsets = [self.module.Reg('_sink_%s_pat_offset_%d' % (prefix, i),
+                                                self.addrwidth, initval=0)
+                                for i in range(self.max_pattern_length)]
+        var.sink_pat_sizes = [self.module.Reg('_sink_%s_pat_size_%d' % (prefix, i),
+                                              self.addrwidth + 1, initval=0)
+                              for i in range(self.max_pattern_length)]
+        var.sink_pat_strides = [self.module.Reg('_sink_%s_pat_stride_%d' % (prefix, i),
+                                                self.addrwidth, initval=0)
+                                for i in range(self.max_pattern_length)]
+        var.sink_pat_counts = [self.module.Reg('_sink_%s_pat_count_%d' % (prefix, i),
+                                               self.addrwidth + 1, initval=0)
+                               for i in range(self.max_pattern_length)]
+
+    def _synthesize_set_sink_pattern(self, var, name):
+        if var.sink_pat_fsm is not None:
+            return
+
+        sink_start = vtypes.Ands(self.start, var.sink_mode == 1)
+        for sink_pat_size in var.sink_pat_sizes:
+            sink_start = vtypes.Ands(sink_start, sink_pat_size > 0)
+
+        fsm_id = self.fsm_id_count
+        self.fsm_id_count += 1
+
+        prefix = self._prefix(name)
+
+        fsm_name = '_%s_sink_pat_fsm_%d' % (prefix, fsm_id)
+        var.sink_pat_fsm = FSM(self.module, fsm_name,
+                               self.clock, self.reset,
+                               as_module=self.fsm_as_module)
+
+        self.seq.If(var.sink_pat_fsm.here)(
+            var.sink_ram_wenable(0)
+        )
+
+        var.sink_pat_fsm.If(sink_start).goto_next()
+
+        self.seq.If(var.sink_pat_fsm.here)(
+            var.sink_ram_waddr(var.sink_offset - var.sink_stride)
+        )
+
+        for sink_pat_offset in var.sink_pat_offsets:
+            self.seq.If(var.sink_pat_fsm.here)(
+                sink_pat_offset(0)
+            )
+
+        for (sink_pat_size, sink_pat_count) in zip(
+                var.sink_pat_sizes, var.sink_pat_counts):
+            self.seq.If(var.sink_pat_fsm.here)(
+                sink_pat_count(sink_pat_size - 1)
+            )
+
+        var.sink_pat_fsm.If(self.sink_wait_count == 0).goto_next()
+
+        if name in self.sink_when_map:
+            when = self.sink_when_map[name]
+            wcond = when.read()
+        else:
+            wcond = None
+
+        sink_all_offset = self.module.Wire('_%s_sink_pat_all_offset' % prefix,
+                                           self.addrwidth)
+        sink_all_offset_val = var.sink_offset
+        for sink_pat_offset in var.sink_pat_offsets:
+            sink_all_offset_val += sink_pat_offset
+        sink_all_offset.assign(sink_all_offset_val)
+
+        if name in self.sink_when_map:
+            when = self.sink_when_map[name]
+            wcond = when.read()
+        else:
+            wcond = None
+
+        rdata = var.read()
+
+        self.seq.If(var.sink_pat_fsm.here)(
+            var.sink_ram_wenable(0)
+        )
+        self.seq.If(var.sink_pat_fsm.here, wcond)(
+            var.sink_ram_waddr(sink_all_offset),
+            var.sink_ram_wdata(rdata),
+            var.sink_ram_wenable(1)
+        )
+
+        upcond = None
+
+        for (sink_pat_offset, sink_pat_size,
+             sink_pat_stride, sink_pat_count) in zip(
+                 var.sink_pat_offsets, var.sink_pat_sizes,
+                 var.sink_pat_strides, var.sink_pat_counts):
+
+            self.seq.If(var.sink_pat_fsm.here, upcond)(
+                sink_pat_offset.add(sink_pat_stride),
+                sink_pat_count.dec()
+            )
+
+            reset_cond = sink_pat_count == 0
+            self.seq.If(var.sink_pat_fsm.here, upcond, reset_cond)(
+                sink_pat_offset(0),
+                sink_pat_count(sink_pat_size - 1)
+            )
+            upcond = make_condition(upcond, reset_cond)
+
+        fin_cond = upcond
+
+        var.sink_pat_fsm.If(fin_cond).goto_init()
 
     def _implement_stream(self):
         self.implement()

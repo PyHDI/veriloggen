@@ -63,13 +63,13 @@ def mkLed():
             sum = a + b
             ram_c.write(i + offset, sum)
 
-    def check(offset_stream, offset_seq):
+    def check(size, offset_stream, offset_seq):
         all_ok = True
-        st = ram_c.read(offset_stream)
-        sq = ram_c.read(offset_seq)
-        if vthread.verilog.NotEql(st, sq):
-            all_ok = False
-
+        for i in range(size):
+            st = ram_c.read(i + offset_stream)
+            sq = ram_c.read(i + offset_seq)
+            if vthread.verilog.NotEql(st, sq):
+                all_ok = False
         if all_ok:
             print('OK')
         else:
@@ -77,18 +77,18 @@ def mkLed():
 
     def comp():
         offset = 0
-        myaxi.dma_read(ram_a, offset, 0, size)
-        myaxi.dma_read(ram_b, offset, 0, size)
+        myaxi.dma_read(ram_a, offset, 128 * 4, size)
+        myaxi.dma_read(ram_b, offset, 128 * 4, size)
         comp_stream(offset)
         myaxi.dma_write(ram_c, offset, 1024 * 4, 1)
 
         offset = size
-        myaxi.dma_read(ram_a, offset, 0, size)
-        myaxi.dma_read(ram_b, offset, 0, size)
+        myaxi.dma_read(ram_a, offset, 128 * 4, size)
+        myaxi.dma_read(ram_b, offset, 128 * 4, size)
         comp_sequential(offset)
         myaxi.dma_write(ram_c, offset, 1024 * 8, 1)
 
-        check(0, offset)
+        check(size, 0, offset)
 
     th = vthread.Thread(m, 'th_comp', clk, rst, comp)
     fsm = th.start()
