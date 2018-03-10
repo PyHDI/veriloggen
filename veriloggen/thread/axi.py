@@ -44,8 +44,16 @@ class AXIM(AxiMaster, _MutexFunction):
                                self.clk, self.rst, as_module=fsm_as_module)
             self.dma_fsm_max_state = 0
 
+        self.req_local_addr = self.m.Reg('_'.join(['', self.name, 'req_local_addr']),
+                                         self.addrwidth, initval=0)
+        self.req_global_addr = self.m.Reg('_'.join(['', self.name, 'req_global_addr']),
+                                          self.addrwidth, initval=0)
+        self.req_size = self.m.Reg('_'.join(['', self.name, 'req_size']),
+                                   self.addrwidth + 1, initval=0)
+        self.req_local_stride = self.m.Reg('_'.join(['', self.name, 'req_local_stride']),
+                                           self.addrwidth, initval=0)
+
         # key: (ram._id(), port, ram_method_name)
-        self.cache_dma_reqs = {}
         self.cache_dma_read_fsms = {}
         self.cache_dma_write_fsms = {}
 
@@ -105,43 +113,21 @@ class AXIM(AxiMaster, _MutexFunction):
         if not isinstance(ram, (RAM, MultibankRAM)):
             raise TypeError('RAM is required')
 
-        port = vtypes.to_int(port)
-        ram_method_name = (ram_method.func.__name__
-                           if ram_method is not None else None)
-
-        # FSM and req_reg cache
-        cache_key = (ram._id(), port, ram_method_name)
-
-        if cache_key in self.cache_dma_reqs:
-            info = self.cache_dma_reqs[cache_key]
-            seq = info[0]
-            req_local_addr = info[1]
-            req_global_addr = info[2]
-            req_size = info[3]
-            req_local_stride = info[4]
-        else:
-            seq = TmpSeq(self.m, self.clk, self.rst)
-            req_local_addr = self.m.TmpReg(ram.addrwidth, initval=0,
-                                           prefix='req_local_addr')
-            req_global_addr = self.m.TmpReg(self.addrwidth, initval=0,
-                                            prefix='req_global_addr')
-            req_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
-                                     prefix='req_size')
-            req_local_stride = self.m.TmpReg(ram.addrwidth, initval=1,
-                                             prefix='req_local_stride')
-            info = (seq, req_local_addr, req_global_addr,
-                    req_size, req_local_stride)
-            self.cache_dma_reqs[cache_key] = info
-
         set_req = self._set_flag(fsm, prefix='set_req')
-        seq.If(set_req)(
-            req_local_addr(local_addr),
-            req_global_addr(global_addr),
-            req_size(size),
-            req_local_stride(local_stride)
+        self.seq.If(set_req)(
+            self.req_local_addr(local_addr),
+            self.req_global_addr(global_addr),
+            self.req_size(size),
+            self.req_local_stride(local_stride)
         )
 
         cond = self._fsm_start(fsm)
+
+        # FSM cache
+        port = vtypes.to_int(port)
+        ram_method_name = (ram_method.func.__name__
+                           if ram_method is not None else None)
+        cache_key = (ram._id(), port, ram_method_name)
 
         if cache_key in self.cache_dma_read_fsms:
             dma_fsm, done = self.cache_dma_read_fsms[cache_key]
@@ -149,8 +135,9 @@ class AXIM(AxiMaster, _MutexFunction):
             dst = 1
             dma_fsm.goto_from(src, dst, cond)
         else:
-            dma_fsm, done = self.dma_read_rtl(ram, req_local_addr, req_global_addr, req_size,
-                                              local_stride=req_local_stride, port=port,
+            dma_fsm, done = self.dma_read_rtl(ram, self.req_local_addr, self.req_global_addr,
+                                              self.req_size,
+                                              local_stride=self.req_local_stride, port=port,
                                               cond=cond, ram_method=ram_method)
             self.cache_dma_read_fsms[cache_key] = (dma_fsm, done)
 
@@ -251,43 +238,21 @@ class AXIM(AxiMaster, _MutexFunction):
         if not isinstance(ram, (RAM, MultibankRAM)):
             raise TypeError('RAM is required')
 
-        port = vtypes.to_int(port)
-        ram_method_name = (ram_method.func.__name__
-                           if ram_method is not None else None)
-
-        # FSM and req_reg cache
-        cache_key = (ram._id(), port, ram_method_name)
-
-        if cache_key in self.cache_dma_reqs:
-            info = self.cache_dma_reqs[cache_key]
-            seq = info[0]
-            req_local_addr = info[1]
-            req_global_addr = info[2]
-            req_size = info[3]
-            req_local_stride = info[4]
-        else:
-            seq = TmpSeq(self.m, self.clk, self.rst)
-            req_local_addr = self.m.TmpReg(ram.addrwidth, initval=0,
-                                           prefix='req_local_addr')
-            req_global_addr = self.m.TmpReg(self.addrwidth, initval=0,
-                                            prefix='req_global_addr')
-            req_size = self.m.TmpReg(self.addrwidth + 1, initval=0,
-                                     prefix='req_size')
-            req_local_stride = self.m.TmpReg(ram.addrwidth, initval=1,
-                                             prefix='req_local_stride')
-            info = (seq, req_local_addr, req_global_addr,
-                    req_size, req_local_stride)
-            self.cache_dma_reqs[cache_key] = info
-
         set_req = self._set_flag(fsm, prefix='set_req')
-        seq.If(set_req)(
-            req_local_addr(local_addr),
-            req_global_addr(global_addr),
-            req_size(size),
-            req_local_stride(local_stride)
+        self.seq.If(set_req)(
+            self.req_local_addr(local_addr),
+            self.req_global_addr(global_addr),
+            self.req_size(size),
+            self.req_local_stride(local_stride)
         )
 
         cond = self._fsm_start(fsm)
+
+        # FSM cache
+        port = vtypes.to_int(port)
+        ram_method_name = (ram_method.func.__name__
+                           if ram_method is not None else None)
+        cache_key = (ram._id(), port, ram_method_name)
 
         if cache_key in self.cache_dma_write_fsms:
             dma_fsm, done = self.cache_dma_write_fsms[cache_key]
@@ -295,8 +260,9 @@ class AXIM(AxiMaster, _MutexFunction):
             dst = 1
             dma_fsm.goto_from(src, dst, cond)
         else:
-            dma_fsm, done = self.dma_write_rtl(ram, req_local_addr, req_global_addr, req_size,
-                                               local_stride=req_local_stride, port=port,
+            dma_fsm, done = self.dma_write_rtl(ram, self.req_local_addr, self.req_global_addr,
+                                               self.req_size,
+                                               local_stride=self.req_local_stride, port=port,
                                                cond=cond, ram_method=ram_method)
             self.cache_dma_write_fsms[cache_key] = (dma_fsm, done)
 
