@@ -277,6 +277,7 @@ class Stream(BaseStream):
             var.source_stride(stride)
         )
 
+        port = vtypes.to_int(port)
         self._setup_source_ram(ram, var, port, set_cond)
         self._synthesize_set_source(var, name)
 
@@ -337,6 +338,7 @@ class Stream(BaseStream):
                 source_pat_stride(stride)
             )
 
+        port = vtypes.to_int(port)
         self._setup_source_ram(ram, var, port, set_cond)
         self._synthesize_set_source_pattern(var, name)
 
@@ -382,6 +384,7 @@ class Stream(BaseStream):
             var.sink_stride(stride)
         )
 
+        port = vtypes.to_int(port)
         self._setup_sink_ram(ram, var, port, set_cond)
         self._synthesize_set_sink(var, name)
 
@@ -442,6 +445,7 @@ class Stream(BaseStream):
                 sink_pat_stride(stride)
             )
 
+        port = vtypes.to_int(port)
         self._setup_sink_ram(ram, var, port, set_cond)
         self._synthesize_set_sink_pattern(var, name)
 
