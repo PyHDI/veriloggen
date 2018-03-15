@@ -31,7 +31,7 @@ class Stream(BaseStream):
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
                  ram_sel_width=16, count_width=16, max_pattern_length=4,
-                 fsm_as_module=False):
+                 fsm_as_module=False, use_wait_count=False):
 
         BaseStream.__init__(self, module=m, clock=clk, reset=rst,
                             no_hook=True)
@@ -43,6 +43,7 @@ class Stream(BaseStream):
         self.count_width = count_width
         self.max_pattern_length = max_pattern_length
         self.fsm_as_module = fsm_as_module
+        self.use_wait_count = use_wait_count
 
         self.stream_synthesized = False
         self.fsm_synthesized = False
@@ -56,9 +57,11 @@ class Stream(BaseStream):
             '_'.join(['', self.name, 'start']), initval=0)
         self.busy = self.module.Reg(
             '_'.join(['', self.name, 'busy']), initval=0)
-        self.sink_wait_count = self.module.Reg(
-            '_'.join(['', self.name, 'sink_wait_count']),
-            self.count_width, initval=0)
+
+        if self.use_wait_count:
+            self.sink_wait_count = self.module.Reg(
+                '_'.join(['', self.name, 'sink_wait_count']),
+                self.count_width, initval=0)
 
         self.reduce_reset = None
         self.reduce_reset_var = None
@@ -268,7 +271,8 @@ class Stream(BaseStream):
         if name not in self.sources:
             raise NameError("No such stream '%s'" % name)
 
-        set_cond = fsm.here
+        #set_cond = fsm.here
+        set_cond = self._set_flag(fsm)
 
         self.seq.If(set_cond)(
             var.source_mode(0),
@@ -321,7 +325,8 @@ class Stream(BaseStream):
 
         self._make_source_pattern_vars(var, name)
 
-        set_cond = fsm.here
+        #set_cond = fsm.here
+        set_cond = self._set_flag(fsm)
 
         self.seq.If(set_cond)(
             var.source_mode(1),
@@ -375,7 +380,8 @@ class Stream(BaseStream):
         if name not in self.sinks:
             raise NameError("No such stream '%s'" % name)
 
-        set_cond = fsm.here
+        #set_cond = fsm.here
+        set_cond = self._set_flag(fsm)
 
         self.seq.If(set_cond)(
             var.sink_mode(0),
@@ -428,7 +434,8 @@ class Stream(BaseStream):
 
         self._make_sink_pattern_vars(var, name)
 
-        set_cond = fsm.here
+        #set_cond = fsm.here
+        set_cond = self._set_flag(fsm)
 
         self.seq.If(set_cond)(
             var.sink_mode(1),
@@ -482,7 +489,8 @@ class Stream(BaseStream):
         if name not in self.sinks:
             raise NameError("No such stream '%s'" % name)
 
-        set_cond = fsm.here
+        #set_cond = fsm.here
+        set_cond = self._set_flag(fsm)
 
         ram_sel = var.sink_ram_sel
 
@@ -514,7 +522,8 @@ class Stream(BaseStream):
         if name not in self.constants:
             raise NameError("No such stream '%s'" % name)
 
-        set_cond = fsm.here
+        #set_cond = fsm.here
+        set_cond = self._set_flag(fsm)
 
         wdata = value
         wenable = set_cond
@@ -526,11 +535,13 @@ class Stream(BaseStream):
         # entry point
         self.fsm._set_index(0)
 
-        cond = fsm.here
+        #cond = fsm.here
+        cond = self._set_flag(fsm)
         add_mux(self.start_flag, cond, 1)
 
         # after started
         if self.fsm_synthesized:
+            fsm.goto_next()
             fsm.goto_next()
             return
 
@@ -538,12 +549,13 @@ class Stream(BaseStream):
 
         num_wdelay = self._write_delay()
 
-        self.fsm.seq.If(self.start_flag)(
-            self.sink_wait_count(num_wdelay)
-        )
-        self.fsm.seq.If(self.sink_wait_count > 0)(
-            self.sink_wait_count.dec()
-        )
+        if self.use_wait_count:
+            self.fsm.seq.If(self.start_flag)(
+                self.sink_wait_count(num_wdelay)
+            )
+            self.fsm.seq.If(self.sink_wait_count > 0)(
+                self.sink_wait_count.dec()
+            )
 
         self.fsm.If(self.start_flag)(
             self.start(1),
@@ -587,20 +599,28 @@ class Stream(BaseStream):
         done = self.module.Wire('_%s_done' % self.name)
         done.assign(done_cond)
 
-        pipe_count = self.module.Reg('_%s_pipe_count' % self.name,
-                                     self.count_width, initval=0)
+        if self.use_wait_count:
+            pipe_wait_count = self.module.Reg('_%s_pipe_wait_count' % self.name,
+                                              self.count_width, initval=0)
 
-        depth = self.pipeline_depth()
+            depth = self.pipeline_depth()
 
-        self.fsm.If(done)(
-            pipe_count(depth)
-        )
-        self.fsm.If(done).goto_next()
+            self.fsm.If(done)(
+                pipe_wait_count(depth)
+            )
+            self.fsm.If(done).goto_next()
 
-        self.fsm.If(pipe_count > 0)(
-            pipe_count.dec()
-        )
-        self.fsm.If(pipe_count == 0).goto_next()
+            self.fsm.If(pipe_wait_count > 0)(
+                pipe_wait_count.dec()
+            )
+            self.fsm.If(pipe_wait_count == 0).goto_next()
+
+        else:
+            self.fsm.If(done).goto_next()
+
+            depth = self.pipeline_depth()
+            for _ in range(depth):
+                self.fsm.goto_next()
 
         self.fsm.goto_next()
 
@@ -633,6 +653,7 @@ class Stream(BaseStream):
 
         self.fsm.goto_init()
 
+        fsm.goto_next()
         fsm.goto_next()
 
         return 0
@@ -874,7 +895,12 @@ class Stream(BaseStream):
             var.sink_count(var.sink_size)
         )
 
-        var.sink_fsm.If(self.sink_wait_count == 0).goto_next()
+        if self.use_wait_count:
+            var.sink_fsm.If(self.sink_wait_count == 0).goto_next()
+        else:
+            num_wdelay = self._write_delay()
+            for _ in range(num_wdelay):
+                var.sink_fsm.goto_next()
 
         if name in self.sink_when_map:
             when = self.sink_when_map[name]
@@ -954,7 +980,12 @@ class Stream(BaseStream):
                 sink_pat_count(sink_pat_size - 1)
             )
 
-        var.sink_pat_fsm.If(self.sink_wait_count == 0).goto_next()
+        if self.use_wait_count:
+            var.sink_pat_fsm.If(self.sink_wait_count == 0).goto_next()
+        else:
+            num_wdelay = self._write_delay()
+            for _ in range(num_wdelay):
+                var.sink_pat_fsm.goto_next()
 
         if name in self.sink_when_map:
             when = self.sink_when_map[name]
@@ -1008,6 +1039,19 @@ class Stream(BaseStream):
         fin_cond = upcond
 
         var.sink_pat_fsm.If(fin_cond).goto_init()
+
+    def _set_flag(self, fsm, prefix='_set_flag'):
+        flag = self.module.TmpReg(initval=0, prefix=prefix)
+        cond = fsm.here
+
+        self.seq(
+            flag(0)
+        )
+        self.seq.If(cond)(
+            flag(1)
+        )
+
+        return flag
 
     def _implement_stream(self):
         self.implement()
