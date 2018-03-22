@@ -19,8 +19,10 @@ def mkLed():
 
     datawidth = 32
     addrwidth = 10
-    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
-    myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth)
+    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth,
+                         num_cmd_delay=1, num_data_delay=1)
+    myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth,
+                        numports=2)
 
     all_ok = m.TmpReg(initval=0)
 
@@ -45,7 +47,7 @@ def mkLed():
 
         laddr = 0
         gaddr = offset
-        myaxi.dma_write(myram, laddr, gaddr, size)
+        myaxi.dma_write(myram, laddr, gaddr, size, port=1)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # write
@@ -55,13 +57,13 @@ def mkLed():
 
         laddr = 0
         gaddr = (size + size) * 4 + offset
-        myaxi.dma_write(myram, laddr, gaddr, size)
+        myaxi.dma_write(myram, laddr, gaddr, size, port=1)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # read
         laddr = 0
         gaddr = offset
-        myaxi.dma_read(myram, laddr, gaddr, size)
+        myaxi.dma_read(myram, laddr, gaddr, size, port=1)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
@@ -73,7 +75,7 @@ def mkLed():
         # read
         laddr = 0
         gaddr = (size + size) * 4 + offset
-        myaxi.dma_read(myram, laddr, gaddr, size)
+        myaxi.dma_read(myram, laddr, gaddr, size, port=0)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
