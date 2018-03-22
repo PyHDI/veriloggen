@@ -120,7 +120,7 @@ class AXIM(AxiMaster, _MutexFunction):
 
         return rdata
 
-    def write(self, fsm, global_addr):
+    def write(self, fsm, global_addr, value):
         ret = self.write_request(global_addr, length=1, cond=fsm)
         if isinstance(ret, (tuple)):
             ack, counter = ret
