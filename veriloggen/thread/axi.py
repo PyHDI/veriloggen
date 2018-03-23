@@ -23,7 +23,7 @@ class AXIM(AxiMaster, _MutexFunction):
     __intrinsics__ = ('read', 'write',
                       'dma_read', 'dma_read_async',
                       'dma_write', 'dma_write_async',
-                      'dma_read_wait', 'dma_write_wait',
+                      'dma_wait_read', 'dma_wait_write',
                       'dma_wait') + _MutexFunction.__intrinsics__
 
     burstlen = 256
@@ -165,20 +165,21 @@ class AXIM(AxiMaster, _MutexFunction):
                  local_stride=1, port=0, ram_method=None):
 
         if self.enable_async:
-            self.dma_read_wait(fsm)
+            self.dma_wait_read(fsm)
 
         self._dma_read(fsm, ram, local_addr, global_addr, size,
                        local_stride, port, ram_method)
 
-        self.dma_read_wait(fsm)
+        self.dma_wait_read(fsm)
 
     def dma_read_async(self, fsm, ram, local_addr, global_addr, size,
                        local_stride=1, port=0, ram_method=None):
 
         if not self.enable_async:
-            raise ValueError('enable_async option is False.')
+            raise ValueError(
+                "Async mode is disabled. Set 'True' to AXIM.enable_async.")
 
-        self.dma_read_wait(fsm)
+        self.dma_wait_read(fsm)
 
         self._dma_read(fsm, ram, local_addr, global_addr, size,
                        local_stride, port, ram_method)
@@ -187,29 +188,30 @@ class AXIM(AxiMaster, _MutexFunction):
                   local_stride=1, port=0, ram_method=None):
 
         if self.enable_async:
-            self.dma_write_wait(fsm)
+            self.dma_wait_write(fsm)
 
         self._dma_write(fsm, ram, local_addr, global_addr, size,
                         local_stride, port, ram_method)
 
-        self.dma_write_wait(fsm)
+        self.dma_wait_write(fsm)
 
     def dma_write_async(self, fsm, ram, local_addr, global_addr, size,
                         local_stride=1, port=0, ram_method=None):
 
         if not self.enable_async:
-            raise ValueError('enable_async option is False.')
+            raise ValueError(
+                "Async mode is disabled. Set 'True' to AXIM.enable_async.")
 
-        self.dma_write_wait(fsm)
+        self.dma_wait_write(fsm)
 
         self._dma_write(fsm, ram, local_addr, global_addr, size,
                         local_stride, port, ram_method)
 
-    def dma_read_wait(self, fsm):
+    def dma_wait_read(self, fsm):
 
         fsm.If(self.read_idle).goto_next()
 
-    def dma_write_wait(self, fsm):
+    def dma_wait_write(self, fsm):
 
         fsm.If(self.write_idle).goto_next()
 
