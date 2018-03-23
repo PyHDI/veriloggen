@@ -23,18 +23,21 @@ class AXIM(AxiMaster, _MutexFunction):
     __intrinsics__ = ('read', 'write',
                       'dma_read', 'dma_read_async',
                       'dma_write', 'dma_write_async',
-                      'dma_read_wait', 'dma_write_wait') + _MutexFunction.__intrinsics__
+                      'dma_read_wait', 'dma_write_wait',
+                      'dma_wait') + _MutexFunction.__intrinsics__
 
     burstlen = 256
 
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=32, lite=False, noio=False,
+                 enable_async=False,
                  num_cmd_delay=0, num_data_delay=0,
                  op_sel_width=8, fsm_as_module=False):
 
         AxiMaster.__init__(self, m, name, clk, rst,
                            datawidth, addrwidth, lite=lite, noio=noio)
 
+        self.enable_async = enable_async
         self.num_cmd_delay = num_cmd_delay
         self.num_data_delay = num_data_delay
         self.op_sel_width = op_sel_width
@@ -110,14 +113,15 @@ class AXIM(AxiMaster, _MutexFunction):
             '_'.join(['', self.name, 'write_data_done']))
 
         self.write_narrow_fsms = OrderedDict()  # key: pack_size
-        self.write_narrow_data_counters = OrderedDict()  # key: pack_size
         self.write_narrow_wdatas = OrderedDict()  # key: pack_size
         self.write_narrow_wvalids = OrderedDict()  # key: pack_size
         self.write_narrow_wreadys = OrderedDict()  # key: pack_size
         self.write_narrow_pack_counts = OrderedDict()  # key: pack_size
 
         self.write_wide_fsms = OrderedDict()  # key: pack_size
-        self.write_wide_data_counters = OrderedDict()  # key: pack_size
+        self.write_wide_wdatas = OrderedDict()  # key: pack_size
+        self.write_wide_wvalids = OrderedDict()  # key: pack_size
+        self.write_wide_wreadys = OrderedDict()  # key: pack_size
         self.write_wide_pack_counts = OrderedDict()  # key: pack_size
 
     def read(self, fsm, global_addr):
@@ -160,7 +164,8 @@ class AXIM(AxiMaster, _MutexFunction):
     def dma_read(self, fsm, ram, local_addr, global_addr, size,
                  local_stride=1, port=0, ram_method=None):
 
-        fsm.If(self.read_idle).goto_next()
+        if self.enable_async:
+            fsm.If(self.read_idle).goto_next()
 
         self._dma_read(fsm, ram, local_addr, global_addr, size,
                        local_stride, port, ram_method)
@@ -170,6 +175,9 @@ class AXIM(AxiMaster, _MutexFunction):
     def dma_read_async(self, fsm, ram, local_addr, global_addr, size,
                        local_stride=1, port=0, ram_method=None):
 
+        if not self.enable_async:
+            raise ValueError('enable_async option is False.')
+
         fsm.If(self.read_idle).goto_next()
 
         self._dma_read(fsm, ram, local_addr, global_addr, size,
@@ -178,7 +186,8 @@ class AXIM(AxiMaster, _MutexFunction):
     def dma_write(self, fsm, ram, local_addr, global_addr, size,
                   local_stride=1, port=0, ram_method=None):
 
-        fsm.If(self.write_idle).goto_next()
+        if self.enable_async:
+            fsm.If(self.write_idle).goto_next()
 
         self._dma_write(fsm, ram, local_addr, global_addr, size,
                         local_stride, port, ram_method)
@@ -187,6 +196,9 @@ class AXIM(AxiMaster, _MutexFunction):
 
     def dma_write_async(self, fsm, ram, local_addr, global_addr, size,
                         local_stride=1, port=0, ram_method=None):
+
+        if not self.enable_async:
+            raise ValueError('enable_async option is False.')
 
         fsm.If(self.write_idle).goto_next()
 
@@ -200,6 +212,10 @@ class AXIM(AxiMaster, _MutexFunction):
     def dma_write_wait(self, fsm):
 
         fsm.If(self.write_idle).goto_next()
+
+    def dma_wait(self, fsm):
+
+        fsm.If(self.read_idle, self.write_idle).goto_next()
 
     # --------------------
     # read
@@ -249,6 +265,7 @@ class AXIM(AxiMaster, _MutexFunction):
                 read_size_in(size),
                 read_local_stride_in(local_stride)
             )
+
             return
 
         port = str(vtypes.to_int(port))
@@ -355,13 +372,14 @@ class AXIM(AxiMaster, _MutexFunction):
             data = self.read_data_wire
             valid = self.read_valid_wire
 
-            wdata, wvalid, w = self._get_op_write_dataflow(ram_datawidth)
-
             # state 0
             fsm.set_index(0)
+            wdata, wvalid, w = self._get_op_write_dataflow(ram_datawidth)
             cond = vtypes.Ands(self.read_start, self.read_op_sel == op_id)
             ram_method(port, self.read_local_addr, w, self.read_size,
                        stride=self.read_local_stride, cond=cond)
+
+            fsm.If(cond).goto_next()
 
             # state 3
             fsm.set_index(3)
@@ -374,6 +392,7 @@ class AXIM(AxiMaster, _MutexFunction):
                 wdata(data),
                 wvalid(1)
             )
+
             return
 
         """ new op and fsm """
@@ -401,7 +420,7 @@ class AXIM(AxiMaster, _MutexFunction):
             cur_global_addr(self.mask_addr(self.read_global_addr)),
             rest_size(self.read_size)
         )
-        fsm.If(self.read_start).goto_next()
+        fsm.If(cond).goto_next()
 
         # state 1
         check_state = fsm.current
@@ -468,17 +487,18 @@ class AXIM(AxiMaster, _MutexFunction):
             self.read_ops.append(op_id)
 
             fsm = self.read_narrow_fsms[pack_size]
+            pack_count = self.read_narrow_pack_counts[pack_size]
             data = self.read_narrow_data_wires[pack_size]
             valid = self.read_narrow_valid_wires[pack_size]
-            pack_count = self.read_narrow_pack_counts[pack_size]
-
-            wdata, wvalid, w = self._get_op_write_dataflow(ram_datawidth)
 
             # state 0
             fsm.set_index(0)
+            wdata, wvalid, w = self._get_op_write_dataflow(ram_datawidth)
             cond = vtypes.Ands(self.read_start, self.read_op_sel == op_id)
             ram_method(port, self.read_local_addr, w, self.read_size,
                        stride=self.read_local_stride, cond=cond)
+
+            fsm.If(cond).goto_next()
 
             # state 3
             fsm.set_index(3)
@@ -497,11 +517,12 @@ class AXIM(AxiMaster, _MutexFunction):
                 wvalid(1),
                 pack_count(0)
             )
+
             return
 
         """ new op and fsm """
         fsm = FSM(self.m, '_'.join(['', self.name,
-                                    'read_narrow_', str(pack_size),
+                                    'read_narrow', str(pack_size),
                                     'fsm']),
                   self.clk, self.rst, as_module=self.fsm_as_module)
         self.read_narrow_fsms[pack_size] = fsm
@@ -509,15 +530,15 @@ class AXIM(AxiMaster, _MutexFunction):
         self.read_ops.append(op_id)
 
         cur_global_addr = self.m.Reg('_'.join(['', self.name,
-                                               'read_narrow_', str(pack_size),
+                                               'read_narrow', str(pack_size),
                                                'cur_global_addr']),
                                      self.addrwidth, initval=0)
         cur_size = self.m.Reg('_'.join(['', self.name,
-                                        'read_narrow_', str(pack_size),
+                                        'read_narrow', str(pack_size),
                                         'cur_size']),
                               self.addrwidth + 1, initval=0)
         rest_size = self.m.Reg('_'.join(['', self.name,
-                                         'read_narrow_', str(pack_size),
+                                         'read_narrow', str(pack_size),
                                          'rest_size']),
                                self.addrwidth + 1, initval=0)
         max_burstlen = 2 ** self.burst_size_width
@@ -532,7 +553,7 @@ class AXIM(AxiMaster, _MutexFunction):
             cur_global_addr(self.mask_addr(self.read_global_addr)),
             rest_size(dma_size)
         )
-        fsm.If(self.read_start).goto_next()
+        fsm.If(cond).goto_next()
 
         # state 1
         check_state = fsm.current
@@ -545,7 +566,7 @@ class AXIM(AxiMaster, _MutexFunction):
 
         # state 3
         pack_count = self.m.Reg('_'.join(['', self.name,
-                                          'read_narrow_', str(pack_size),
+                                          'read_narrow', str(pack_size),
                                           'pack_count']),
                                 int(math.ceil(math.log(pack_size, 2))), initval=0)
         self.read_narrow_pack_counts[pack_size] = pack_count
@@ -588,7 +609,165 @@ class AXIM(AxiMaster, _MutexFunction):
         fsm.goto_init()
 
     def _synthesize_read_fsm_wide(self, ram, port, ram_method, ram_datawidth):
-        raise NotImplementedError()
+        """ axi.datawidth > ram.datawidth """
+
+        if self.datawidth % ram_datawidth != 0:
+            raise ValueError(
+                'axi.datawidth must be multiple number of ram_datawidth')
+
+        pack_size = self.datawidth // ram_datawidth
+        dma_size = (self.read_size >> int(math.log(pack_size, 2))
+                    if math.log(pack_size, 2) % 1.0 == 0.0 else
+                    int(size // pack_size))
+
+        op_id = self._get_read_op_id(ram, port, ram_method)
+        port = vtypes.to_int(port)
+
+        if op_id in self.read_ops:
+            """ already synthesized op """
+            return
+
+        if pack_size in self.read_wide_fsms:
+            """ new op """
+            self.read_ops.append(op_id)
+
+            fsm = self.read_wide_fsms[pack_size]
+            pack_count = self.read_wide_pack_counts[pack_size]
+            data = self.read_wide_data_wires[pack_size]
+            valid = self.read_wide_valid_wires[pack_size]
+
+            # state 0
+            fsm.set_index(0)
+            wdata, wvalid, w = self._get_op_write_dataflow(ram_datawidth)
+            cond = vtypes.Ands(self.read_start, self.read_op_sel == op_id)
+            ram_method(port, self.read_local_addr, w, self.read_size,
+                       stride=self.read_local_stride, cond=cond)
+
+            fsm.If(cond).goto_next()
+
+            # state 3
+            fsm.set_index(3)
+            valid_cond = vtypes.Ands(valid, self.read_op_sel == op_id)
+            stay_cond = self.read_op_sel == op_id
+
+            fsm.If(pack_count == 0, valid_cond)(
+                wdata(data),
+                wvalid(1),
+                pack_count.inc()
+            )
+            fsm.If(pack_count > 0, stay_cond)(
+                wdata(wdata >> ram_datawidth),
+                wvalid(1),
+                pack_count.inc()
+            )
+
+            return
+
+        """ new op and fsm """
+        fsm = FSM(self.m, '_'.join(['', self.name,
+                                    'read_wide', str(pack_size),
+                                    'fsm']),
+                  self.clk, self.rst, as_module=self.fsm_as_module)
+        self.read_wide_fsms[pack_size] = fsm
+
+        self.read_ops.append(op_id)
+
+        cur_global_addr = self.m.Reg('_'.join(['', self.name,
+                                               'read_wide', str(pack_size),
+                                               'cur_global_addr']),
+                                     self.addrwidth, initval=0)
+        cur_size = self.m.Reg('_'.join(['', self.name,
+                                        'read_wide', str(pack_size),
+                                        'cur_size']),
+                              self.addrwidth + 1, initval=0)
+        rest_size = self.m.Reg('_'.join(['', self.name,
+                                         'read_wide', str(pack_size),
+                                         'rest_size']),
+                               self.addrwidth + 1, initval=0)
+        max_burstlen = 2 ** self.burst_size_width
+
+        # state 0
+        wdata, wvalid, w = self._get_op_write_dataflow(ram_datawidth)
+        cond = vtypes.Ands(self.read_start, self.read_op_sel == op_id)
+        ram_method(port, self.read_local_addr, w, self.read_size,
+                   stride=self.read_local_stride, cond=cond)
+
+        fsm.If(self.read_start)(
+            cur_global_addr(self.mask_addr(self.read_global_addr)),
+            rest_size(dma_size)
+        )
+        fsm.If(cond).goto_next()
+
+        # state 1
+        check_state = fsm.current
+        self._check_4KB_boundary(fsm, max_burstlen,
+                                 cur_global_addr, cur_size, rest_size)
+
+        # state 2
+        last_done = self.m.Reg('_'.join(['', self.name,
+                                         'read_wide', str(pack_size),
+                                         'last_done']), initval=0)
+        fsm(
+            last_done(0)
+        )
+
+        ack, counter = self.read_request(cur_global_addr, cur_size, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        # state 3
+        pack_count = self.m.Reg('_'.join(['', self.name,
+                                          'read_wide', str(pack_size),
+                                          'pack_count']),
+                                int(math.ceil(math.log(pack_size, 2))), initval=0)
+        self.read_wide_pack_counts[pack_size] = pack_count
+
+        cond = vtypes.Ands(fsm.here, pack_count == 0)
+        data, valid, last = self.read_data(cond=cond)
+        self.read_wide_data_wires[pack_size] = data
+        self.read_wide_valid_wires[pack_size] = valid
+
+        valid_cond = vtypes.Ands(valid, self.read_op_sel == op_id)
+        stay_cond = self.read_op_sel == op_id
+
+        fsm.Delay(1)(
+            wvalid(0)
+        )
+        fsm.If(pack_count == 0, valid_cond)(
+            wdata(data),
+            wvalid(1),
+            pack_count.inc()
+        )
+        fsm.If(pack_count > 0, stay_cond)(
+            wdata(wdata >> ram_datawidth),
+            wvalid(1),
+            pack_count.inc()
+        )
+        fsm.If(pack_count == pack_size - 1)(
+            pack_count(0)
+        )
+
+        fsm.If(pack_count == 0, valid, last)(
+            last_done(1)
+        )
+
+        fsm.If(last_done, pack_count == pack_size - 1)(
+            cur_global_addr.add(optimize(cur_size * (self.datawidth // 8)))
+        )
+        fsm.If(last_done, pack_count == pack_size - 1,
+               rest_size > 0).goto(check_state)
+        fsm.If(last_done, pack_count == pack_size - 1,
+               rest_size == 0).goto_next()
+
+        for _ in range(self.num_data_delay):
+            fsm.goto_next()
+
+        # state 4
+        set_idle = self._set_flag(fsm)
+        self.seq.If(set_idle)(
+            self.read_idle(1)
+        )
+
+        fsm.goto_init()
 
     # --------------------
     # write
@@ -638,6 +817,7 @@ class AXIM(AxiMaster, _MutexFunction):
                 write_size_in(size),
                 write_local_stride_in(local_stride)
             )
+
             return
 
         port = str(vtypes.to_int(port))
@@ -733,7 +913,7 @@ class AXIM(AxiMaster, _MutexFunction):
         port = vtypes.to_int(port)
 
         if op_id in self.write_ops:
-            """ alwritey synthesized op """
+            """ already synthesized op """
             return
 
         if self.write_fsm is not None:
@@ -754,6 +934,8 @@ class AXIM(AxiMaster, _MutexFunction):
                 for _ in range(self.num_data_delay):
                     data = self.df._Delay(data)
                     last = self.df._Delay(last)
+
+            fsm.If(cond).goto_next()
 
             # state 3
             fsm.set_index(3)
@@ -793,7 +975,7 @@ class AXIM(AxiMaster, _MutexFunction):
             cur_global_addr(self.mask_addr(self.write_global_addr)),
             rest_size(self.write_size)
         )
-        fsm.If(self.write_start).goto_next()
+        fsm.If(cond).goto_next()
 
         # state 1
         check_state = fsm.current
@@ -840,7 +1022,7 @@ class AXIM(AxiMaster, _MutexFunction):
         port = vtypes.to_int(port)
 
         if op_id in self.write_ops:
-            """ alwritey synthesized op """
+            """ already synthesized op """
             return
 
         if pack_size in self.write_narrow_fsms:
@@ -848,7 +1030,6 @@ class AXIM(AxiMaster, _MutexFunction):
             self.write_ops.append(op_id)
 
             fsm = self.write_narrow_fsms[pack_size]
-            counter = self.write_narrow_data_counters[pack_size]
             wdata = self.write_narrow_wdatas[pack_size]
             wvalid = self.write_narrow_wvalids[pack_size]
             wready = self.write_narrow_wreadys[pack_size]
@@ -866,6 +1047,8 @@ class AXIM(AxiMaster, _MutexFunction):
                     data = self.df._Delay(data)
                     last = self.df._Delay(last)
 
+            fsm.If(cond).goto_next()
+
             # state 3
             fsm.set_index(3)
             ack = vtypes.Ors(wready, vtypes.Not(wvalid))
@@ -873,17 +1056,19 @@ class AXIM(AxiMaster, _MutexFunction):
                                self.write_op_sel == op_id)
             rdata, rvalid = data.read(cond=cond)
 
-            self.seq.If(rvalid)(
+            stay_cond = self.write_op_sel == op_id
+
+            self.seq.If(rvalid, stay_cond)(
                 wdata(rdata),
                 wvalid(1),
                 pack_count.inc()
             )
-            self.seq.If(ack, pack_count > 0)(
+            self.seq.If(ack, pack_count > 0, stay_cond)(
                 wdata(wdata >> self.datawidth),
                 wvalid(1),
                 pack_count.inc()
             )
-            self.seq.If(ack, pack_count == pack_size - 1)(
+            self.seq.If(ack, pack_count == pack_size - 1, stay_cond)(
                 wdata(wdata >> self.datawidth),
                 wvalid(1),
                 pack_count(0)
@@ -893,7 +1078,7 @@ class AXIM(AxiMaster, _MutexFunction):
 
         """ new op and fsm """
         fsm = FSM(self.m, '_'.join(['', self.name,
-                                    'write_narrow_', str(pack_size),
+                                    'write_narrow', str(pack_size),
                                     'fsm']),
                   self.clk, self.rst, as_module=self.fsm_as_module)
         self.write_narrow_fsms[pack_size] = fsm
@@ -901,15 +1086,15 @@ class AXIM(AxiMaster, _MutexFunction):
         self.write_ops.append(op_id)
 
         cur_global_addr = self.m.Reg('_'.join(['', self.name,
-                                               'write_narrow_', str(pack_size),
+                                               'write_narrow', str(pack_size),
                                                'cur_global_addr']),
                                      self.addrwidth, initval=0)
         cur_size = self.m.Reg('_'.join(['', self.name,
-                                        'write_narrow_', str(pack_size),
+                                        'write_narrow', str(pack_size),
                                         'cur_size']),
                               self.addrwidth + 1, initval=0)
         rest_size = self.m.Reg('_'.join(['', self.name,
-                                         'write_narrow_', str(pack_size),
+                                         'write_narrow', str(pack_size),
                                          'rest_size']),
                                self.addrwidth + 1, initval=0)
         max_burstlen = 2 ** self.burst_size_width
@@ -929,7 +1114,7 @@ class AXIM(AxiMaster, _MutexFunction):
             cur_global_addr(self.mask_addr(self.write_global_addr)),
             rest_size(dma_size)
         )
-        fsm.If(self.write_start).goto_next()
+        fsm.If(cond).goto_next()
 
         # state 1
         check_state = fsm.current
@@ -938,26 +1123,25 @@ class AXIM(AxiMaster, _MutexFunction):
 
         # state 2
         ack, counter = self.write_request(cur_global_addr, cur_size, cond=fsm)
-        self.write_narrow_data_counters[pack_size] = counter
         fsm.If(ack).goto_next()
 
         # state 3
         wdata = self.m.Reg('_'.join(['', self.name,
-                                     'write_narrow_', str(pack_size),
+                                     'write_narrow', str(pack_size),
                                      'wdata']),
                            ram_datawidth, initval=0)
         self.write_narrow_wdatas[pack_size] = wdata
         wvalid = self.m.Reg('_'.join(['', self.name,
-                                      'write_narrow_', str(pack_size),
+                                      'write_narrow', str(pack_size),
                                       'wvalid']),
                             initval=0)
         self.write_narrow_wvalids[pack_size] = wvalid
         wready = self.m.Wire('_'.join(['', self.name,
-                                       'write_narrow_', str(pack_size),
+                                       'write_narrow', str(pack_size),
                                        'wready']))
         self.write_narrow_wreadys[pack_size] = wready
         pack_count = self.m.Reg('_'.join(['', self.name,
-                                          'write_narrow_', str(pack_size),
+                                          'write_narrow', str(pack_size),
                                           'pack_count']),
                                 int(math.ceil(math.log(pack_size, 2))), initval=0)
         self.write_narrow_pack_counts[pack_size] = pack_count
@@ -967,20 +1151,22 @@ class AXIM(AxiMaster, _MutexFunction):
                            self.write_op_sel == op_id)
         rdata, rvalid = data.read(cond=cond)
 
+        stay_cond = self.write_op_sel == op_id
+
         self.seq.If(ack)(
             wvalid(0)
         )
-        self.seq.If(rvalid)(
+        self.seq.If(rvalid, stay_cond)(
             wdata(rdata),
             wvalid(1),
             pack_count.inc()
         )
-        self.seq.If(ack, pack_count > 0)(
+        self.seq.If(ack, pack_count > 0, stay_cond)(
             wdata(wdata >> self.datawidth),
             wvalid(1),
             pack_count.inc()
         )
-        self.seq.If(ack, pack_count == pack_size - 1)(
+        self.seq.If(ack, pack_count == pack_size - 1, stay_cond)(
             wdata(wdata >> self.datawidth),
             wvalid(1),
             pack_count(0)
@@ -1006,7 +1192,173 @@ class AXIM(AxiMaster, _MutexFunction):
         fsm.goto_init()
 
     def _synthesize_write_fsm_wide(self, ram, port, ram_method, ram_datawidth):
-        raise NotImplementedError()
+        """ axi.datawidth > ram.datawidth """
+
+        if self.datawidth % ram_datawidth != 0:
+            raise ValueError(
+                'axi.datawidth must be multiple number of ram_datawidth')
+
+        pack_size = self.datawidth // ram_datawidth
+        dma_size = (self.write_size >> int(math.log(pack_size, 2))
+                    if math.log(pack_size, 2) % 1.0 == 0.0 else
+                    int(size // pack_size))
+
+        op_id = self._get_write_op_id(ram, port, ram_method)
+        port = vtypes.to_int(port)
+
+        if op_id in self.write_ops:
+            """ already synthesized op """
+            return
+
+        if pack_size in self.write_wide_fsms:
+            """ new op """
+            self.write_ops.append(op_id)
+
+            fsm = self.write_wide_fsms[pack_size]
+            wdata = self.write_wide_wdatas[pack_size]
+            wvalid = self.write_wide_wvalids[pack_size]
+            wready = self.write_wide_wreadys[pack_size]
+            pack_count = self.write_wide_pack_counts[pack_size]
+
+            # state 0
+            fsm.set_index(0)
+            cond = vtypes.Ands(self.write_start, self.write_op_sel == op_id)
+            data, last, done = ram_method(
+                port, self.write_local_addr, self.write_size,
+                stride=self.write_local_stride, cond=cond, signed=False)
+
+            if self.num_data_delay > 0:
+                for _ in range(self.num_data_delay):
+                    data = self.df._Delay(data)
+                    last = self.df._Delay(last)
+
+            fsm.If(cond).goto_next()
+
+            # state 3
+            fsm.set_index(3)
+            ack = vtypes.Ors(wready, vtypes.Not(wvalid))
+            cond = vtypes.Ands(fsm.here, ack, self.write_op_sel == op_id)
+            rdata, rvalid = data.read(cond=cond)
+
+            self.seq.If(rvalid)(
+                wdata(vtypes.Cat(rdata, wdata[ram_datawidth:self.datawidth])),
+                wvalid(0),
+                pack_count.inc()
+            )
+            self.seq.If(rvalid, pack_count == pack_size - 1)(
+                wdata(vtypes.Cat(rdata, wdata[ram_datawidth:self.datawidth])),
+                wvalid(1),
+                pack_count(0)
+            )
+
+            return
+
+        """ new op and fsm """
+        fsm = FSM(self.m, '_'.join(['', self.name,
+                                    'write_wide', str(pack_size),
+                                    'fsm']),
+                  self.clk, self.rst, as_module=self.fsm_as_module)
+        self.write_wide_fsms[pack_size] = fsm
+
+        self.write_ops.append(op_id)
+
+        cur_global_addr = self.m.Reg('_'.join(['', self.name,
+                                               'write_wide', str(pack_size),
+                                               'cur_global_addr']),
+                                     self.addrwidth, initval=0)
+        cur_size = self.m.Reg('_'.join(['', self.name,
+                                        'write_wide', str(pack_size),
+                                        'cur_size']),
+                              self.addrwidth + 1, initval=0)
+        rest_size = self.m.Reg('_'.join(['', self.name,
+                                         'write_wide', str(pack_size),
+                                         'rest_size']),
+                               self.addrwidth + 1, initval=0)
+        max_burstlen = 2 ** self.burst_size_width
+
+        # state 0
+        cond = vtypes.Ands(self.write_start, self.write_op_sel == op_id)
+        data, last, done = ram_method(
+            port, self.write_local_addr, self.write_size,
+            stride=self.write_local_stride, cond=cond, signed=False)
+
+        if self.num_data_delay > 0:
+            for _ in range(self.num_data_delay):
+                data = self.df._Delay(data)
+                last = self.df._Delay(last)
+
+        fsm.If(self.write_start)(
+            cur_global_addr(self.mask_addr(self.write_global_addr)),
+            rest_size(dma_size)
+        )
+        fsm.If(cond).goto_next()
+
+        # state 1
+        check_state = fsm.current
+        self._check_4KB_boundary(fsm, max_burstlen,
+                                 cur_global_addr, cur_size, rest_size)
+
+        # state 2
+        ack, counter = self.write_request(cur_global_addr, cur_size, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        # state 3
+        wdata = self.m.Reg('_'.join(['', self.name,
+                                     'write_wide', str(pack_size),
+                                     'wdata']),
+                           self.datawidth, initval=0)
+        self.write_wide_wdatas[pack_size] = wdata
+        wvalid = self.m.Reg('_'.join(['', self.name,
+                                      'write_wide', str(pack_size),
+                                      'wvalid']),
+                            initval=0)
+        self.write_wide_wvalids[pack_size] = wvalid
+        wready = self.m.Wire('_'.join(['', self.name,
+                                       'write_wide', str(pack_size),
+                                       'wready']))
+        self.write_wide_wreadys[pack_size] = wready
+        pack_count = self.m.Reg('_'.join(['', self.name,
+                                          'write_wide', str(pack_size),
+                                          'pack_count']),
+                                int(math.ceil(math.log(pack_size, 2))), initval=0)
+        self.write_wide_pack_counts[pack_size] = pack_count
+
+        ack = vtypes.Ors(wready, vtypes.Not(wvalid))
+        cond = vtypes.Ands(fsm.here, ack, self.write_op_sel == op_id)
+        rdata, rvalid = data.read(cond=cond)
+
+        self.seq.If(ack)(
+            wvalid(0)
+        )
+        self.seq.If(rvalid)(
+            wdata(vtypes.Cat(rdata, wdata[ram_datawidth:self.datawidth])),
+            wvalid(0),
+            pack_count.inc()
+        )
+        self.seq.If(rvalid, pack_count == pack_size - 1)(
+            wdata(vtypes.Cat(rdata, wdata[ram_datawidth:self.datawidth])),
+            wvalid(1),
+            pack_count(0)
+        )
+
+        data = self.df.Variable(wdata, wvalid, wready,
+                                width=self.datawidth, signed=False)
+
+        done = self.write_dataflow(data, counter, cond=fsm)
+
+        fsm.If(done)(
+            cur_global_addr.add(optimize(cur_size * (self.datawidth // 8)))
+        )
+        fsm.If(done, rest_size > 0).goto(check_state)
+        fsm.If(done, rest_size == 0).goto_next()
+
+        # state 4
+        set_idle = self._set_flag(fsm)
+        self.seq.If(set_idle)(
+            self.write_idle(1)
+        )
+
+        fsm.goto_init()
 
     def _set_flag(self, fsm, prefix='axim_flag'):
         flag = self.m.TmpReg(initval=0, prefix=prefix)
