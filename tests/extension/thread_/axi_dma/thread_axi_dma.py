@@ -47,7 +47,7 @@ def mkLed():
 
         laddr = 0
         gaddr = offset
-        myaxi.dma_write(myram, laddr, gaddr, size, port=1)
+        myaxi.dma_write(myram, laddr, gaddr, size, port=0)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # write
