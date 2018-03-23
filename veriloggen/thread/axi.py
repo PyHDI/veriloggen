@@ -165,12 +165,12 @@ class AXIM(AxiMaster, _MutexFunction):
                  local_stride=1, port=0, ram_method=None):
 
         if self.enable_async:
-            fsm.If(self.read_idle).goto_next()
+            self.dma_read_wait(fsm)
 
         self._dma_read(fsm, ram, local_addr, global_addr, size,
                        local_stride, port, ram_method)
 
-        fsm.If(self.read_idle).goto_next()
+        self.dma_read_wait(fsm)
 
     def dma_read_async(self, fsm, ram, local_addr, global_addr, size,
                        local_stride=1, port=0, ram_method=None):
@@ -178,7 +178,7 @@ class AXIM(AxiMaster, _MutexFunction):
         if not self.enable_async:
             raise ValueError('enable_async option is False.')
 
-        fsm.If(self.read_idle).goto_next()
+        self.dma_read_wait(fsm)
 
         self._dma_read(fsm, ram, local_addr, global_addr, size,
                        local_stride, port, ram_method)
@@ -187,12 +187,12 @@ class AXIM(AxiMaster, _MutexFunction):
                   local_stride=1, port=0, ram_method=None):
 
         if self.enable_async:
-            fsm.If(self.write_idle).goto_next()
+            self.dma_write_wait(fsm)
 
         self._dma_write(fsm, ram, local_addr, global_addr, size,
                         local_stride, port, ram_method)
 
-        fsm.If(self.write_idle).goto_next()
+        self.dma_write_wait(fsm)
 
     def dma_write_async(self, fsm, ram, local_addr, global_addr, size,
                         local_stride=1, port=0, ram_method=None):
@@ -200,7 +200,7 @@ class AXIM(AxiMaster, _MutexFunction):
         if not self.enable_async:
             raise ValueError('enable_async option is False.')
 
-        fsm.If(self.write_idle).goto_next()
+        self.dma_write_wait(fsm)
 
         self._dma_write(fsm, ram, local_addr, global_addr, size,
                         local_stride, port, ram_method)

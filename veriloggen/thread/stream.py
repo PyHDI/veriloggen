@@ -321,6 +321,8 @@ class Stream(BaseStream):
         if not isinstance(pattern[0], (tuple, list)):
             pattern = (pattern,)
 
+        pattern = tuple(pattern)
+
         if len(pattern) > self.max_pattern_length:
             raise ValueError(
                 "'pattern' length exceeds maximum pattern length.")
@@ -335,7 +337,8 @@ class Stream(BaseStream):
             var.source_offset(offset)
         )
 
-        pad = [(1, 0) for _ in range(self.max_pattern_length - len(pattern))]
+        pad = tuple([(1, 0)
+                     for _ in range(self.max_pattern_length - len(pattern))])
 
         for (source_pat_size, source_pat_stride,
              (size, stride)) in zip(var.source_pat_sizes, var.source_pat_strides,
@@ -430,6 +433,8 @@ class Stream(BaseStream):
         if not isinstance(pattern[0], (tuple, list)):
             pattern = (pattern,)
 
+        pattern = tuple(pattern)
+
         if len(pattern) > self.max_pattern_length:
             raise ValueError(
                 "'pattern' length exceeds maximum pattern length.")
@@ -444,7 +449,8 @@ class Stream(BaseStream):
             var.sink_offset(offset)
         )
 
-        pad = [(1, 0) for _ in range(self.max_pattern_length - len(pattern))]
+        pad = tuple([(1, 0)
+                     for _ in range(self.max_pattern_length - len(pattern))])
 
         for (sink_pat_size, sink_pat_stride,
              (size, stride)) in zip(var.sink_pat_sizes, var.sink_pat_strides,
@@ -1043,7 +1049,7 @@ class Stream(BaseStream):
             stride = functools.reduce(lambda x, y: x * y,
                                       shape[p + 1:], basevalue)
             pattern.append((size, stride))
-        return pattern
+        return tuple(pattern)
 
     def _prefix(self, name):
         return '%s_%s' % (self.name, name)

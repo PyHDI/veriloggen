@@ -1098,10 +1098,13 @@ def extract_rams(rams):
 
 
 class MultibankRAM(object):
-    __intrinsics__ = ('read', 'write',
-                      'read_bank', 'write_bank',
-                      'dma_read_bank', 'dma_write_bank',
-                      'dma_read_block', 'dma_write_block') + _MutexFunction.__intrinsics__
+    __intrinsics__ = (
+        'read', 'write',
+        'read_bank', 'write_bank',
+        'dma_read_bank', 'dma_read_bank_async',
+        'dma_write_bank', 'dma_write_bank_async',
+        'dma_read_block', 'dma_read_block_async',
+        'dma_write_block', 'dma_write_block_async') + _MutexFunction.__intrinsics__
 
     def __init__(self, m=None, name=None, clk=None, rst=None,
                  datawidth=32, addrwidth=10, numports=1,
@@ -1390,27 +1393,27 @@ class MultibankRAM(object):
 
     def dma_read_bank(self, fsm, bank, bus, local_addr, global_addr, size,
                       local_stride=1, port=0):
-        check = fsm.current
-        fsm.set_index(check + 1)
 
-        starts = []
-        ends = []
-        for i, ram in enumerate(self.rams):
-            starts.append(fsm.current)
-            bus.dma_read(fsm, ram, local_addr, global_addr, size,
-                         local_stride, port)
-            ends.append(fsm.current)
-            fsm.set_index(fsm.current + 1)
+        if bus.enable_async:
+            bus.dma_read_wait(fsm)
 
-        fin = fsm.current
+        self._dma_read_bank(fsm, bank, bus, local_addr, global_addr, size,
+                            local_stride, port)
 
-        for i, (s, e) in enumerate(zip(starts, ends)):
-            fsm.goto_from(check, s, cond=bank == i)
-            fsm.goto_from(e, fin)
+        bus.dma_read_wait(fsm)
 
-        return 0
+    def dma_read_bank_async(self, fsm, bank, bus, local_addr, global_addr, size,
+                            local_stride=1, port=0):
 
-    def dma_write_bank(self, fsm, bank, bus, local_addr, global_addr, size,
+        if not bus.enable_async:
+            raise ValueError('enable_async option is False.')
+
+        bus.dma_read_wait(fsm)
+
+        self._dma_read_bank(fsm, bank, bus, local_addr, global_addr, size,
+                            local_stride, port)
+
+    def _dma_read_bank(self, fsm, bank, bus, local_addr, global_addr, size,
                        local_stride=1, port=0):
         check = fsm.current
         fsm.set_index(check + 1)
@@ -1419,7 +1422,7 @@ class MultibankRAM(object):
         ends = []
         for i, ram in enumerate(self.rams):
             starts.append(fsm.current)
-            bus.dma_write(fsm, ram, local_addr, global_addr, size,
+            bus._dma_read(fsm, ram, local_addr, global_addr, size,
                           local_stride, port)
             ends.append(fsm.current)
             fsm.set_index(fsm.current + 1)
@@ -1430,16 +1433,69 @@ class MultibankRAM(object):
             fsm.goto_from(check, s, cond=bank == i)
             fsm.goto_from(e, fin)
 
-        return 0
+    def dma_write_bank(self, fsm, bank, bus, local_addr, global_addr, size,
+                       local_stride=1, port=0):
+
+        if bus.enable_async:
+            bus.dma_write_wait(fsm)
+
+        self._dma_write_bank(fsm, bank, bus, local_addr, global_addr, size,
+                             local_stride, port)
+
+        bus.dma_write_wait(fsm)
+
+    def dma_write_bank_async(self, fsm, bank, bus, local_addr, global_addr, size,
+                             local_stride=1, port=0):
+
+        if not bus.enable_async:
+            raise ValueError('enable_async option is False.')
+
+        bus.dma_write_wait(fsm)
+
+        self._dma_write_bank(fsm, bank, bus, local_addr, global_addr, size,
+                             local_stride, port)
+
+    def _dma_write_bank(self, fsm, bank, bus, local_addr, global_addr, size,
+                        local_stride=1, port=0):
+        check = fsm.current
+        fsm.set_index(check + 1)
+
+        starts = []
+        ends = []
+        for i, ram in enumerate(self.rams):
+            starts.append(fsm.current)
+            bus._dma_write(fsm, ram, local_addr, global_addr, size,
+                           local_stride, port)
+            ends.append(fsm.current)
+            fsm.set_index(fsm.current + 1)
+
+        fin = fsm.current
+
+        for i, (s, e) in enumerate(zip(starts, ends)):
+            fsm.goto_from(check, s, cond=bank == i)
+            fsm.goto_from(e, fin)
 
     def dma_read_block(self, fsm, bus, local_addr, global_addr, size,
                        block_size=1, local_stride=1, port=0):
 
         if bus.enable_async:
-            bus.dma_wait(fsm)
+            bus.dma_read_wait(fsm)
 
-        return self._dma_read_block(fsm, bus, local_addr, global_addr, size,
-                                    block_size, local_stride, port)
+        self._dma_read_block(fsm, bus, local_addr, global_addr, size,
+                             block_size, local_stride, port)
+
+        bus.dma_read_wait(fsm)
+
+    def dma_read_block_async(self, fsm, bus, local_addr, global_addr, size,
+                             block_size=1, local_stride=1, port=0):
+
+        if not bus.enable_async:
+            raise ValueError('enable_async option is False.')
+
+        bus.dma_read_wait(fsm)
+
+        self._dma_read_block(fsm, bus, local_addr, global_addr, size,
+                             block_size, local_stride, port)
 
     def _dma_read_block(self, fsm, bus, local_addr, global_addr, size,
                         block_size=1, local_stride=1, port=0):
@@ -1465,17 +1521,30 @@ class MultibankRAM(object):
         ram_method = functools.partial(self.write_dataflow_block,
                                        block_size=req_block_size)
 
-        return bus._dma_read(fsm, self, local_addr, global_addr, size,
-                             local_stride, port, ram_method)
+        bus._dma_read(fsm, self, local_addr, global_addr, size,
+                      local_stride, port, ram_method)
 
     def dma_write_block(self, fsm, bus, local_addr, global_addr, size,
                         block_size=1, local_stride=1, port=0):
 
         if bus.enable_async:
-            bus.dma_wait(fsm)
+            bus.dma_write_wait(fsm)
 
-        return self._dma_write_block(fsm, bus, local_addr, global_addr, size,
-                                     block_size, local_stride, port)
+        self._dma_write_block(fsm, bus, local_addr, global_addr, size,
+                              block_size, local_stride, port)
+
+        bus.dma_write_wait(fsm)
+
+    def dma_write_block_async(self, fsm, bus, local_addr, global_addr, size,
+                              block_size=1, local_stride=1, port=0):
+
+        if not bus.enable_async:
+            raise ValueError('enable_async option is False.')
+
+        bus.dma_write_wait(fsm)
+
+        self._dma_write_block(fsm, bus, local_addr, global_addr, size,
+                              block_size, local_stride, port)
 
     def _dma_write_block(self, fsm, bus, local_addr, global_addr, size,
                          block_size=1, local_stride=1, port=0):
@@ -1501,8 +1570,8 @@ class MultibankRAM(object):
         ram_method = functools.partial(self.read_dataflow_block,
                                        block_size=req_block_size)
 
-        return bus._dma_write(fsm, self, local_addr, global_addr, size,
-                              local_stride, port, ram_method)
+        bus._dma_write(fsm, self, local_addr, global_addr, size,
+                       local_stride, port, ram_method)
 
     def read_dataflow(self, port, addr, length=1,
                       stride=1, cond=None, point=0, signed=True):
