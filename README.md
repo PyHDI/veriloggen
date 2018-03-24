@@ -329,13 +329,19 @@ If you installed GTKwave and enable 'sim.view_waveform()' in 'hello_led.py', you
 Veriloggen Extension Libraries
 ==============================
 
+### Mixed-Paradigm High-Level Synthesis
+
+- veriloggen.thread.Thread: Procedural high-level synthesis for DMA and I/O controls
+- veriloggen.thread.Stream: Dataflow-based high-level synthesis for high-performance stream processing
+
+### Frequently-used Abstractions
+
 - veriloggen.verilog: Verilog HDL source code synthesis and import APIs
 - veriloggen.simulation: Simulation APIs via Verilog simulators
 - veriloggen.seq: Synchronous circuit builder (Seq)
 - veriloggen.fsm: Finite state machine builder (FSM)
-- veriloggen.types: Library of frequently-used structure, such as memory, fixed-point, AXI bus, etc.
-- veriloggen.dataflow: Dataflow-based stream processing hardware builder
-- veriloggen.thread: Tightly-coupled high-level synthesis compiler emedded within Veriloggen HDL
+
+Please see examples and tests directories for many examples.
 
 
 Related Project
