@@ -35,6 +35,21 @@ module test;
   wire [32-1:0] _saxi_rdata;
   wire _saxi_rvalid;
   wire _saxi_rready;
+  reg __saxi_read_start;
+  reg [8-1:0] __saxi_read_op_sel;
+  reg [32-1:0] __saxi_read_local_addr;
+  reg [32-1:0] __saxi_read_global_addr;
+  reg [33-1:0] __saxi_read_size;
+  reg [32-1:0] __saxi_read_local_stride;
+  reg __saxi_read_idle;
+  reg __saxi_write_start;
+  reg [8-1:0] __saxi_write_op_sel;
+  reg [32-1:0] __saxi_write_local_addr;
+  reg [32-1:0] __saxi_write_global_addr;
+  reg [33-1:0] __saxi_write_size;
+  reg [32-1:0] __saxi_write_local_stride;
+  reg __saxi_write_idle;
+  wire __saxi_write_data_done;
   wire [32-1:0] _tmp_0;
   assign _tmp_0 = _saxi_awaddr;
 
@@ -112,11 +127,11 @@ module test;
   reg __saxi_cond_5_1;
   reg signed [32-1:0] _th_ctrl_araddr_8;
   reg __saxi_cond_6_1;
-  reg signed [32-1:0] _tmp_8;
+  reg signed [32-1:0] axim_rdata_8;
   reg signed [32-1:0] _th_ctrl_v_9;
   reg __saxi_cond_7_1;
   assign _saxi_rready = (th_ctrl == 21) || (th_ctrl == 25);
-  reg signed [32-1:0] _tmp_9;
+  reg signed [32-1:0] axim_rdata_9;
   reg signed [32-1:0] _th_ctrl_end_time_10;
   reg signed [32-1:0] _th_ctrl_time_11;
 
@@ -165,6 +180,20 @@ module test;
     _saxi_wvalid = 0;
     _saxi_araddr = 0;
     _saxi_arvalid = 0;
+    __saxi_read_start = 0;
+    __saxi_read_op_sel = 0;
+    __saxi_read_local_addr = 0;
+    __saxi_read_global_addr = 0;
+    __saxi_read_size = 0;
+    __saxi_read_local_stride = 0;
+    __saxi_read_idle = 1;
+    __saxi_write_start = 0;
+    __saxi_write_op_sel = 0;
+    __saxi_write_local_addr = 0;
+    __saxi_write_global_addr = 0;
+    __saxi_write_size = 0;
+    __saxi_write_local_stride = 0;
+    __saxi_write_idle = 1;
     counter = 0;
     th_ctrl = th_ctrl_init;
     _th_ctrl_i_3 = 0;
@@ -180,10 +209,10 @@ module test;
     __saxi_cond_5_1 = 0;
     _th_ctrl_araddr_8 = 0;
     __saxi_cond_6_1 = 0;
-    _tmp_8 = 0;
+    axim_rdata_8 = 0;
     _th_ctrl_v_9 = 0;
     __saxi_cond_7_1 = 0;
-    _tmp_9 = 0;
+    axim_rdata_9 = 0;
     _th_ctrl_end_time_10 = 0;
     _th_ctrl_time_11 = 0;
     #100;
@@ -197,6 +226,8 @@ module test;
 
   always @(posedge CLK) begin
     if(RST) begin
+      __saxi_read_start <= 0;
+      __saxi_write_start <= 0;
       _saxi_awaddr <= 0;
       _saxi_awvalid <= 0;
       __saxi_cond_0_1 <= 0;
@@ -237,6 +268,8 @@ module test;
       if(__saxi_cond_7_1) begin
         _saxi_arvalid <= 0;
       end 
+      __saxi_read_start <= 0;
+      __saxi_write_start <= 0;
       if((th_ctrl == 7) && (_saxi_awready || !_saxi_awvalid)) begin
         _saxi_awaddr <= _th_ctrl_awaddr_4;
         _saxi_awvalid <= 1;
@@ -358,9 +391,9 @@ module test;
       _th_ctrl_size_6 <= 0;
       _th_ctrl_start_time_7 <= 0;
       _th_ctrl_araddr_8 <= 0;
-      _tmp_8 <= 0;
+      axim_rdata_8 <= 0;
       _th_ctrl_v_9 <= 0;
-      _tmp_9 <= 0;
+      axim_rdata_9 <= 0;
       _th_ctrl_end_time_10 <= 0;
       _th_ctrl_time_11 <= 0;
     end else begin
@@ -460,14 +493,14 @@ module test;
         end
         th_ctrl_21: begin
           if(_saxi_rready && _saxi_rvalid) begin
-            _tmp_8 <= _saxi_rdata;
+            axim_rdata_8 <= _saxi_rdata;
           end 
           if(_saxi_rready && _saxi_rvalid) begin
             th_ctrl <= th_ctrl_22;
           end 
         end
         th_ctrl_22: begin
-          _th_ctrl_v_9 <= _tmp_8;
+          _th_ctrl_v_9 <= axim_rdata_8;
           th_ctrl <= th_ctrl_23;
         end
         th_ctrl_23: begin
@@ -484,14 +517,14 @@ module test;
         end
         th_ctrl_25: begin
           if(_saxi_rready && _saxi_rvalid) begin
-            _tmp_9 <= _saxi_rdata;
+            axim_rdata_9 <= _saxi_rdata;
           end 
           if(_saxi_rready && _saxi_rvalid) begin
             th_ctrl <= th_ctrl_26;
           end 
         end
         th_ctrl_26: begin
-          _th_ctrl_v_9 <= _tmp_9;
+          _th_ctrl_v_9 <= axim_rdata_9;
           th_ctrl <= th_ctrl_27;
         end
         th_ctrl_27: begin

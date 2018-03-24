@@ -51,32 +51,32 @@ def mkLed():
         # If RAM is simultaneously accesseed with DMA, different port must be
         # used.
         myaxi.dma_write_async(myram, laddr, gaddr, size, port=1)
-        print('dma_write: [%d] -> [%d] async' % (laddr, gaddr))
+        print('dma_write_async: [%d] -> [%d]' % (laddr, gaddr))
 
         # write
         for i in range(size):
             wdata = i + 1000
             myram.write(i + size, wdata)
 
-        myaxi.dma_wait()
-        print('dma_wait:  [%d] -> [%d]' % (laddr, gaddr))
+        myaxi.dma_wait_write()
+        print('dma_wait_write : [%d] -> [%d]' % (laddr, gaddr))
 
         laddr = size
         gaddr = (size + size) * 4 + offset
         myaxi.dma_write(myram, laddr, gaddr, size, port=1)
-        print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
+        print('dma_write      : [%d] -> [%d]' % (laddr, gaddr))
 
         # read
         laddr = 0
         gaddr = offset
         myaxi.dma_read_async(myram, laddr, gaddr, size, port=1)
-        print('dma_read:  [%d] <- [%d] async' % (laddr, gaddr))
+        print('dma_read_async : [%d] <- [%d]' % (laddr, gaddr))
 
         for sleep in range(size):
             pass
 
-        myaxi.dma_wait()
-        print('dma_wait:  [%d] <- [%d]' % (laddr, gaddr))
+        myaxi.dma_wait_read()
+        print('dma_wait_read  : [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
             rdata = myram.read(i)
@@ -88,7 +88,7 @@ def mkLed():
         laddr = 0
         gaddr = (size + size) * 4 + offset
         myaxi.dma_read(myram, laddr, gaddr, size, port=1)
-        print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
+        print('dma_read       : [%d] <- [%d]' % (laddr, gaddr))
 
         for sleep in range(size):
             pass

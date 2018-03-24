@@ -441,6 +441,21 @@ module blinkled
   output myaxi_rready
 );
 
+  reg _myaxi_read_start;
+  reg [8-1:0] _myaxi_read_op_sel;
+  reg [32-1:0] _myaxi_read_local_addr;
+  reg [32-1:0] _myaxi_read_global_addr;
+  reg [33-1:0] _myaxi_read_size;
+  reg [32-1:0] _myaxi_read_local_stride;
+  reg _myaxi_read_idle;
+  reg _myaxi_write_start;
+  reg [8-1:0] _myaxi_write_op_sel;
+  reg [32-1:0] _myaxi_write_local_addr;
+  reg [32-1:0] _myaxi_write_global_addr;
+  reg [33-1:0] _myaxi_write_size;
+  reg [32-1:0] _myaxi_write_local_stride;
+  reg _myaxi_write_idle;
+  wire _myaxi_write_data_done;
   reg [10-1:0] ram_a_0_addr;
   wire [32-1:0] ram_a_0_rdata;
   reg [32-1:0] ram_a_0_wdata;
@@ -488,65 +503,93 @@ module blinkled
 
   reg [32-1:0] _mystream_fsm;
   localparam _mystream_fsm_init = 0;
+  wire _mystream_start_flag;
   reg _mystream_start;
   reg _mystream_busy;
-  reg [16-1:0] _mystream_a_fsm_sel;
   reg _mystream_a_idle;
-  reg [16-1:0] _mystream_b_fsm_sel;
+  reg _mystream_a_source_mode;
+  reg [32-1:0] _mystream_a_source_offset;
+  reg [33-1:0] _mystream_a_source_size;
+  reg [32-1:0] _mystream_a_source_stride;
+  reg [33-1:0] _mystream_a_source_count;
+  reg [8-1:0] _mystream_a_source_ram_sel;
+  reg [32-1:0] _mystream_a_source_ram_raddr;
+  reg _mystream_a_source_ram_renable;
+  wire [32-1:0] _mystream_a_source_ram_rdata;
+  reg _mystream_a_source_ram_rvalid;
   reg _mystream_b_idle;
-  reg [16-1:0] _mystream_bias_fsm_sel;
-  reg [16-1:0] _mystream_c_fsm_sel;
+  reg _mystream_b_source_mode;
+  reg [32-1:0] _mystream_b_source_offset;
+  reg [33-1:0] _mystream_b_source_size;
+  reg [32-1:0] _mystream_b_source_stride;
+  reg [33-1:0] _mystream_b_source_count;
+  reg [8-1:0] _mystream_b_source_ram_sel;
+  reg [32-1:0] _mystream_b_source_ram_raddr;
+  reg _mystream_b_source_ram_renable;
+  wire [32-1:0] _mystream_b_source_ram_rdata;
+  reg _mystream_b_source_ram_rvalid;
+  reg _mystream_c_sink_mode;
+  reg [32-1:0] _mystream_c_sink_offset;
+  reg [33-1:0] _mystream_c_sink_size;
+  reg [32-1:0] _mystream_c_sink_stride;
+  reg [33-1:0] _mystream_c_sink_count;
+  reg [8-1:0] _mystream_c_sink_ram_sel;
+  reg [32-1:0] _mystream_c_sink_waddr;
+  reg _mystream_c_sink_wenable;
+  reg [32-1:0] _mystream_c_sink_wdata;
   reg [32-1:0] th_comp;
   localparam th_comp_init = 0;
   reg signed [32-1:0] _th_comp_size_0;
   reg signed [32-1:0] _th_comp_double_size_1;
   reg signed [32-1:0] _th_comp_offset_2;
-  reg [10-1:0] _tmp_0;
-  reg [32-1:0] _tmp_1;
-  reg [32-1:0] _tmp_2;
-  reg [32-1:0] _tmp_fsm_0;
-  localparam _tmp_fsm_0_init = 0;
-  reg [32-1:0] _tmp_3;
-  reg [33-1:0] _tmp_4;
-  reg [33-1:0] _tmp_5;
-  reg [32-1:0] _tmp_6;
-  reg _tmp_7;
-  reg [33-1:0] _tmp_8;
-  reg _tmp_9;
-  wire [32-1:0] __variable_data_10;
-  wire __variable_valid_10;
-  wire __variable_ready_10;
-  assign __variable_ready_10 = (_tmp_8 > 0) && !_tmp_9;
+  reg axim_flag_0;
+  reg [32-1:0] _d1_th_comp;
+  reg _th_comp_cond_3_0_1;
+  reg _myaxi_ram_a_0_read_start;
+  reg [8-1:0] _myaxi_ram_a_0_read_op_sel;
+  reg [32-1:0] _myaxi_ram_a_0_read_local_addr;
+  reg [32-1:0] _myaxi_ram_a_0_read_global_addr;
+  reg [33-1:0] _myaxi_ram_a_0_read_size;
+  reg [32-1:0] _myaxi_ram_a_0_read_local_stride;
+  reg [32-1:0] _myaxi_read_fsm;
+  localparam _myaxi_read_fsm_init = 0;
+  reg [32-1:0] _myaxi_read_cur_global_addr;
+  reg [33-1:0] _myaxi_read_cur_size;
+  reg [33-1:0] _myaxi_read_rest_size;
+  reg [32-1:0] _wdata_1;
+  reg _wvalid_2;
+  reg [34-1:0] _tmp_3;
+  reg _tmp_4;
+  wire [32-1:0] __variable_data_5;
+  wire __variable_valid_5;
+  wire __variable_ready_5;
+  assign __variable_ready_5 = (_tmp_3 > 0) && !_tmp_4;
   reg _ram_a_cond_0_1;
-  reg [9-1:0] _tmp_11;
+  reg [9-1:0] _tmp_6;
   reg _myaxi_cond_0_1;
-  reg [32-1:0] _d1__tmp_fsm_0;
-  reg __tmp_fsm_0_cond_4_0_1;
+  assign myaxi_rready = _myaxi_read_fsm == 3;
+  reg [32-1:0] _d1__myaxi_read_fsm;
+  reg __myaxi_read_fsm_cond_3_0_1;
+  reg axim_flag_7;
+  reg __myaxi_read_fsm_cond_4_1_1;
+  reg axim_flag_8;
+  reg _th_comp_cond_7_1_1;
+  reg _myaxi_ram_b_0_read_start;
+  reg [8-1:0] _myaxi_ram_b_0_read_op_sel;
+  reg [32-1:0] _myaxi_ram_b_0_read_local_addr;
+  reg [32-1:0] _myaxi_ram_b_0_read_global_addr;
+  reg [33-1:0] _myaxi_ram_b_0_read_size;
+  reg [32-1:0] _myaxi_ram_b_0_read_local_stride;
+  reg [32-1:0] _wdata_9;
+  reg _wvalid_10;
+  reg [34-1:0] _tmp_11;
   reg _tmp_12;
-  reg __tmp_fsm_0_cond_5_1_1;
-  reg [10-1:0] _tmp_13;
-  reg [32-1:0] _tmp_14;
-  reg [32-1:0] _tmp_15;
-  reg [32-1:0] _tmp_fsm_1;
-  localparam _tmp_fsm_1_init = 0;
-  reg [32-1:0] _tmp_16;
-  reg [33-1:0] _tmp_17;
-  reg [33-1:0] _tmp_18;
-  reg [32-1:0] _tmp_19;
-  reg _tmp_20;
-  reg [33-1:0] _tmp_21;
-  reg _tmp_22;
-  wire [32-1:0] __variable_data_23;
-  wire __variable_valid_23;
-  wire __variable_ready_23;
-  assign __variable_ready_23 = (_tmp_21 > 0) && !_tmp_22;
+  wire [32-1:0] __variable_data_13;
+  wire __variable_valid_13;
+  wire __variable_ready_13;
+  assign __variable_ready_13 = (_tmp_11 > 0) && !_tmp_12;
   reg _ram_b_cond_0_1;
-  reg [9-1:0] _tmp_24;
-  reg _myaxi_cond_1_1;
-  reg [32-1:0] _d1__tmp_fsm_1;
-  reg __tmp_fsm_1_cond_4_0_1;
-  reg _tmp_25;
-  reg __tmp_fsm_1_cond_5_1_1;
+  reg __myaxi_read_fsm_cond_3_2_1;
   reg signed [32-1:0] _th_comp_size_3;
   reg signed [32-1:0] _th_comp_offset_4;
   reg signed [32-1:0] _th_comp_bias_5;
@@ -557,538 +600,402 @@ module blinkled
   reg signed [32-1:0] _plus_data_4;
   wire signed [32-1:0] mystream_c_data;
   assign mystream_c_data = _plus_data_4;
-  reg [32-1:0] _mystream_a_fsm_1;
-  localparam _mystream_a_fsm_1_init = 0;
-  reg [10-1:0] _mystream_a_offset_1;
-  reg [11-1:0] _mystream_a_size_1;
-  reg [10-1:0] _mystream_a_stride_1;
-  reg [11-1:0] _mystream_a_count_1;
-  reg [10-1:0] _mystream_a_raddr_1;
-  reg _mystream_a_renable_1;
-  reg _tmp_26;
+  reg _set_flag_14;
+  reg _tmp_15;
   reg _ram_a_cond_1_1;
   reg _ram_a_cond_2_1;
   reg _ram_a_cond_2_2;
+  assign _mystream_a_source_ram_rdata = (_mystream_a_source_ram_sel == 1)? ram_a_0_rdata : 0;
+  localparam _tmp_16 = 1;
+  wire [_tmp_16-1:0] _tmp_17;
+  assign _tmp_17 = _mystream_a_source_ram_renable && (_mystream_a_source_ram_sel == 1);
+  reg [_tmp_16-1:0] __tmp_17_1;
   reg signed [32-1:0] __variable_wdata_0;
   assign mystream_a_data = __variable_wdata_0;
-  reg [32-1:0] _d1__mystream_a_fsm_1;
-  reg __mystream_a_fsm_1_cond_1_0_1;
-  reg __mystream_a_fsm_1_cond_2_1_1;
-  reg [32-1:0] _mystream_b_fsm_2;
-  localparam _mystream_b_fsm_2_init = 0;
-  reg [10-1:0] _mystream_b_offset_2;
-  reg [11-1:0] _mystream_b_size_2;
-  reg [10-1:0] _mystream_b_stride_2;
-  reg [11-1:0] _mystream_b_count_2;
-  reg [10-1:0] _mystream_b_raddr_2;
-  reg _mystream_b_renable_2;
-  reg _tmp_27;
+  reg [32-1:0] _mystream_a_source_fsm_0;
+  localparam _mystream_a_source_fsm_0_init = 0;
+  reg _set_flag_18;
+  reg _tmp_19;
   reg _ram_b_cond_1_1;
   reg _ram_b_cond_2_1;
   reg _ram_b_cond_2_2;
+  assign _mystream_b_source_ram_rdata = (_mystream_b_source_ram_sel == 2)? ram_b_0_rdata : 0;
+  localparam _tmp_20 = 1;
+  wire [_tmp_20-1:0] _tmp_21;
+  assign _tmp_21 = _mystream_b_source_ram_renable && (_mystream_b_source_ram_sel == 2);
+  reg [_tmp_20-1:0] __tmp_21_1;
   reg signed [32-1:0] __variable_wdata_1;
   assign mystream_b_data = __variable_wdata_1;
-  reg [32-1:0] _d1__mystream_b_fsm_2;
-  reg __mystream_b_fsm_2_cond_1_0_1;
-  reg __mystream_b_fsm_2_cond_2_1_1;
+  reg [32-1:0] _mystream_b_source_fsm_1;
+  localparam _mystream_b_source_fsm_1_init = 0;
+  reg _set_flag_22;
   reg signed [32-1:0] __parametervariable_wdata_2;
   assign mystream_bias_data = __parametervariable_wdata_2;
-  reg [32-1:0] _mystream_c_fsm_3;
-  localparam _mystream_c_fsm_3_init = 0;
-  reg [10-1:0] _mystream_c_offset_3;
-  reg [11-1:0] _mystream_c_size_3;
-  reg [10-1:0] _mystream_c_stride_3;
-  reg [11-1:0] _mystream_c_count_3;
-  reg [10-1:0] _mystream_c_waddr_3;
-  reg _mystream_c_wenable_3;
-  reg signed [32-1:0] _mystream_c_wdata_3;
+  reg _set_flag_23;
   reg _ram_c_cond_0_1;
-  reg [32-1:0] _d1__mystream_c_fsm_3;
-  reg __mystream_c_fsm_3_cond_7_0_1;
-  reg __mystream_c_fsm_3_cond_8_1_1;
-  reg [32-1:0] _d1__mystream_fsm;
-  reg __mystream_fsm_cond_0_0_1;
+  reg [32-1:0] _mystream_c_sink_fsm_2;
+  localparam _mystream_c_sink_fsm_2_init = 0;
+  reg _set_flag_24;
   wire _mystream_done;
   assign _mystream_done = _mystream_a_idle && _mystream_b_idle;
   reg signed [32-1:0] _th_comp_size_6;
   reg signed [32-1:0] _th_comp_offset_7;
   reg signed [32-1:0] _th_comp_bias_8;
-  reg [32-1:0] _mystream_a_fsm_4;
-  localparam _mystream_a_fsm_4_init = 0;
-  reg [10-1:0] _mystream_a_offset_4;
-  reg [11-1:0] _mystream_a_size_4;
-  reg [10-1:0] _mystream_a_stride_4;
-  reg [11-1:0] _mystream_a_count_4;
-  reg [10-1:0] _mystream_a_raddr_4;
-  reg _mystream_a_renable_4;
-  reg _tmp_28;
-  reg _ram_a_cond_3_1;
-  reg _ram_a_cond_4_1;
-  reg _ram_a_cond_4_2;
-  reg [32-1:0] _d1__mystream_a_fsm_4;
-  reg __mystream_a_fsm_4_cond_1_0_1;
-  reg __mystream_a_fsm_4_cond_2_1_1;
-  reg [32-1:0] _mystream_b_fsm_5;
-  localparam _mystream_b_fsm_5_init = 0;
-  reg [10-1:0] _mystream_b_offset_5;
-  reg [11-1:0] _mystream_b_size_5;
-  reg [10-1:0] _mystream_b_stride_5;
-  reg [11-1:0] _mystream_b_count_5;
-  reg [10-1:0] _mystream_b_raddr_5;
-  reg _mystream_b_renable_5;
-  reg _tmp_29;
-  reg _ram_b_cond_3_1;
-  reg _ram_b_cond_4_1;
-  reg _ram_b_cond_4_2;
-  reg [32-1:0] _d1__mystream_b_fsm_5;
-  reg __mystream_b_fsm_5_cond_1_0_1;
-  reg __mystream_b_fsm_5_cond_2_1_1;
-  reg [32-1:0] _mystream_c_fsm_6;
-  localparam _mystream_c_fsm_6_init = 0;
-  reg [10-1:0] _mystream_c_offset_6;
-  reg [11-1:0] _mystream_c_size_6;
-  reg [10-1:0] _mystream_c_stride_6;
-  reg [11-1:0] _mystream_c_count_6;
-  reg [10-1:0] _mystream_c_waddr_6;
-  reg _mystream_c_wenable_6;
-  reg signed [32-1:0] _mystream_c_wdata_6;
-  reg _ram_c_cond_1_1;
-  reg [32-1:0] _d1__mystream_c_fsm_6;
-  reg __mystream_c_fsm_6_cond_7_0_1;
-  reg __mystream_c_fsm_6_cond_8_1_1;
-  reg __mystream_fsm_cond_0_1_1;
-  reg [10-1:0] _tmp_30;
-  reg [32-1:0] _tmp_31;
-  reg [32-1:0] _tmp_32;
-  reg [32-1:0] _tmp_fsm_2;
-  localparam _tmp_fsm_2_init = 0;
-  reg [32-1:0] _tmp_33;
-  reg [33-1:0] _tmp_34;
-  reg [33-1:0] _tmp_35;
-  reg _tmp_36;
-  reg _tmp_37;
-  wire _tmp_38;
-  wire _tmp_39;
-  assign _tmp_39 = 1;
-  localparam _tmp_40 = 1;
-  wire [_tmp_40-1:0] _tmp_41;
-  assign _tmp_41 = (_tmp_38 || !_tmp_36) && (_tmp_39 || !_tmp_37);
-  reg [_tmp_40-1:0] __tmp_41_1;
-  wire signed [32-1:0] _tmp_42;
-  reg signed [32-1:0] __tmp_42_1;
-  assign _tmp_42 = (__tmp_41_1)? ram_c_0_rdata : __tmp_42_1;
-  reg _tmp_43;
+  reg _set_flag_25;
+  reg _set_flag_26;
+  reg _set_flag_27;
+  reg _set_flag_28;
+  reg _set_flag_29;
+  assign _mystream_start_flag = (_set_flag_29)? 1 : 
+                                (_set_flag_24)? 1 : 0;
+  reg axim_flag_30;
+  reg _th_comp_cond_27_2_1;
+  reg _myaxi_ram_c_0_write_start;
+  reg [8-1:0] _myaxi_ram_c_0_write_op_sel;
+  reg [32-1:0] _myaxi_ram_c_0_write_local_addr;
+  reg [32-1:0] _myaxi_ram_c_0_write_global_addr;
+  reg [33-1:0] _myaxi_ram_c_0_write_size;
+  reg [32-1:0] _myaxi_ram_c_0_write_local_stride;
+  reg [32-1:0] _myaxi_write_fsm;
+  localparam _myaxi_write_fsm_init = 0;
+  reg [32-1:0] _myaxi_write_cur_global_addr;
+  reg [33-1:0] _myaxi_write_cur_size;
+  reg [33-1:0] _myaxi_write_rest_size;
+  reg _tmp_31;
+  reg _tmp_32;
+  wire _tmp_33;
+  wire _tmp_34;
+  assign _tmp_34 = 1;
+  localparam _tmp_35 = 1;
+  wire [_tmp_35-1:0] _tmp_36;
+  assign _tmp_36 = (_tmp_33 || !_tmp_31) && (_tmp_34 || !_tmp_32);
+  reg [_tmp_35-1:0] __tmp_36_1;
+  wire signed [32-1:0] _tmp_37;
+  reg signed [32-1:0] __tmp_37_1;
+  assign _tmp_37 = (__tmp_36_1)? ram_c_0_rdata : __tmp_37_1;
+  reg _tmp_38;
+  reg _tmp_39;
+  reg _tmp_40;
+  reg _tmp_41;
+  reg [34-1:0] _tmp_42;
+  reg [9-1:0] _tmp_43;
+  reg _myaxi_cond_1_1;
   reg _tmp_44;
-  reg _tmp_45;
-  reg _tmp_46;
-  reg [33-1:0] _tmp_47;
-  reg [9-1:0] _tmp_48;
+  wire [32-1:0] __variable_data_45;
+  wire __variable_valid_45;
+  wire __variable_ready_45;
+  assign __variable_ready_45 = (_myaxi_write_fsm == 3) && (_myaxi_write_op_sel == 1) && ((_tmp_43 > 0) && (myaxi_wready || !myaxi_wvalid));
   reg _myaxi_cond_2_1;
-  reg _tmp_49;
-  wire [32-1:0] __variable_data_50;
-  wire __variable_valid_50;
-  wire __variable_ready_50;
-  assign __variable_ready_50 = (_tmp_fsm_2 == 4) && ((_tmp_48 > 0) && (myaxi_wready || !myaxi_wvalid));
-  reg _myaxi_cond_3_1;
-  reg _tmp_51;
-  reg [32-1:0] _d1__tmp_fsm_2;
-  reg __tmp_fsm_2_cond_5_0_1;
-  reg [10-1:0] _tmp_52;
-  reg [32-1:0] _tmp_53;
-  reg [32-1:0] _tmp_54;
-  reg [32-1:0] _tmp_fsm_3;
-  localparam _tmp_fsm_3_init = 0;
-  reg [32-1:0] _tmp_55;
-  reg [33-1:0] _tmp_56;
-  reg [33-1:0] _tmp_57;
-  reg [32-1:0] _tmp_58;
-  reg _tmp_59;
-  reg [33-1:0] _tmp_60;
-  reg _tmp_61;
-  wire [32-1:0] __variable_data_62;
-  wire __variable_valid_62;
-  wire __variable_ready_62;
-  assign __variable_ready_62 = (_tmp_60 > 0) && !_tmp_61;
-  reg _ram_a_cond_5_1;
-  reg [9-1:0] _tmp_63;
-  reg _myaxi_cond_4_1;
-  reg [32-1:0] _d1__tmp_fsm_3;
-  reg __tmp_fsm_3_cond_4_0_1;
-  reg _tmp_64;
-  reg __tmp_fsm_3_cond_5_1_1;
-  reg [10-1:0] _tmp_65;
-  reg [32-1:0] _tmp_66;
-  reg [32-1:0] _tmp_67;
-  reg [32-1:0] _tmp_fsm_4;
-  localparam _tmp_fsm_4_init = 0;
-  reg [32-1:0] _tmp_68;
-  reg [33-1:0] _tmp_69;
-  reg [33-1:0] _tmp_70;
-  reg [32-1:0] _tmp_71;
-  reg _tmp_72;
-  reg [33-1:0] _tmp_73;
-  reg _tmp_74;
-  wire [32-1:0] __variable_data_75;
-  wire __variable_valid_75;
-  wire __variable_ready_75;
-  assign __variable_ready_75 = (_tmp_73 > 0) && !_tmp_74;
-  reg _ram_b_cond_5_1;
-  reg [9-1:0] _tmp_76;
-  reg _myaxi_cond_5_1;
-  assign myaxi_rready = (_tmp_fsm_0 == 4) || (_tmp_fsm_1 == 4) || (_tmp_fsm_3 == 4) || (_tmp_fsm_4 == 4);
-  reg [32-1:0] _d1__tmp_fsm_4;
-  reg __tmp_fsm_4_cond_4_0_1;
-  reg _tmp_77;
-  reg __tmp_fsm_4_cond_5_1_1;
+  assign _myaxi_write_data_done = (_tmp_44 && myaxi_wvalid && myaxi_wready)? 1 : 0;
+  reg axim_flag_46;
+  reg [32-1:0] _d1__myaxi_write_fsm;
+  reg __myaxi_write_fsm_cond_4_0_1;
+  reg axim_flag_47;
+  reg _th_comp_cond_32_3_1;
+  reg axim_flag_48;
+  reg _th_comp_cond_36_4_1;
   reg signed [32-1:0] _th_comp_size_9;
   reg signed [32-1:0] _th_comp_offset_10;
   reg signed [32-1:0] _th_comp_bias_11;
   reg signed [32-1:0] _th_comp_sum_12;
   reg signed [32-1:0] _th_comp_i_13;
-  reg _tmp_78;
-  reg _ram_a_cond_6_1;
-  reg _ram_a_cond_7_1;
-  reg _ram_a_cond_7_2;
-  reg signed [32-1:0] _tmp_79;
+  reg _tmp_49;
+  reg _ram_a_cond_3_1;
+  reg _ram_a_cond_4_1;
+  reg _ram_a_cond_4_2;
+  reg signed [32-1:0] _tmp_50;
   reg signed [32-1:0] _th_comp_a_14;
-  reg _tmp_80;
-  reg _ram_b_cond_6_1;
-  reg _ram_b_cond_7_1;
-  reg _ram_b_cond_7_2;
-  reg signed [32-1:0] _tmp_81;
+  reg _tmp_51;
+  reg _ram_b_cond_3_1;
+  reg _ram_b_cond_4_1;
+  reg _ram_b_cond_4_2;
+  reg signed [32-1:0] _tmp_52;
   reg signed [32-1:0] _th_comp_b_15;
-  reg _ram_c_cond_2_1;
-  reg [10-1:0] _tmp_82;
-  reg [32-1:0] _tmp_83;
-  reg [32-1:0] _tmp_84;
-  reg [32-1:0] _tmp_fsm_5;
-  localparam _tmp_fsm_5_init = 0;
-  reg [32-1:0] _tmp_85;
-  reg [33-1:0] _tmp_86;
-  reg [33-1:0] _tmp_87;
-  reg _tmp_88;
-  reg _tmp_89;
-  wire _tmp_90;
-  wire _tmp_91;
-  assign _tmp_91 = 1;
-  localparam _tmp_92 = 1;
-  wire [_tmp_92-1:0] _tmp_93;
-  assign _tmp_93 = (_tmp_90 || !_tmp_88) && (_tmp_91 || !_tmp_89);
-  reg [_tmp_92-1:0] __tmp_93_1;
-  wire signed [32-1:0] _tmp_94;
-  reg signed [32-1:0] __tmp_94_1;
-  assign _tmp_94 = (__tmp_93_1)? ram_c_0_rdata : __tmp_94_1;
-  reg _tmp_95;
-  reg _tmp_96;
-  reg _tmp_97;
-  reg _tmp_98;
-  reg [33-1:0] _tmp_99;
-  reg [9-1:0] _tmp_100;
-  reg _myaxi_cond_6_1;
-  reg _tmp_101;
-  wire [32-1:0] __variable_data_102;
-  wire __variable_valid_102;
-  wire __variable_ready_102;
-  assign __variable_ready_102 = (_tmp_fsm_5 == 4) && ((_tmp_100 > 0) && (myaxi_wready || !myaxi_wvalid));
-  reg _myaxi_cond_7_1;
-  reg _tmp_103;
-  reg [32-1:0] _d1__tmp_fsm_5;
-  reg __tmp_fsm_5_cond_5_0_1;
+  reg _ram_c_cond_1_1;
+  reg axim_flag_53;
+  reg _th_comp_cond_51_5_1;
   reg signed [32-1:0] _th_comp_size_16;
   reg signed [32-1:0] _th_comp_offset_stream_17;
   reg signed [32-1:0] _th_comp_offset_seq_18;
   reg signed [32-1:0] _th_comp_all_ok_19;
   reg signed [32-1:0] _th_comp_i_20;
-  reg _tmp_104;
+  reg _tmp_54;
+  reg _ram_c_cond_2_1;
   reg _ram_c_cond_3_1;
-  reg _ram_c_cond_4_1;
-  reg _ram_c_cond_4_2;
-  reg signed [32-1:0] _tmp_105;
+  reg _ram_c_cond_3_2;
+  reg signed [32-1:0] _tmp_55;
   reg signed [32-1:0] _th_comp_st_21;
-  reg _tmp_106;
+  reg _tmp_56;
+  reg _ram_c_cond_4_1;
   reg _ram_c_cond_5_1;
-  reg _ram_c_cond_6_1;
-  reg _ram_c_cond_6_2;
-  reg signed [32-1:0] _tmp_107;
+  reg _ram_c_cond_5_2;
+  reg signed [32-1:0] _tmp_57;
   reg signed [32-1:0] _th_comp_sq_22;
 
   always @(posedge CLK) begin
     if(RST) begin
+      _myaxi_read_start <= 0;
+      _myaxi_write_start <= 0;
+      _myaxi_ram_a_0_read_start <= 0;
+      _myaxi_ram_a_0_read_op_sel <= 0;
+      _myaxi_ram_a_0_read_local_addr <= 0;
+      _myaxi_ram_a_0_read_global_addr <= 0;
+      _myaxi_ram_a_0_read_size <= 0;
+      _myaxi_ram_a_0_read_local_stride <= 0;
+      _myaxi_read_idle <= 1;
+      _myaxi_read_op_sel <= 0;
+      _myaxi_read_local_addr <= 0;
+      _myaxi_read_global_addr <= 0;
+      _myaxi_read_size <= 0;
+      _myaxi_read_local_stride <= 0;
       myaxi_araddr <= 0;
       myaxi_arlen <= 0;
       myaxi_arvalid <= 0;
-      _tmp_11 <= 0;
+      _tmp_6 <= 0;
       _myaxi_cond_0_1 <= 0;
-      _tmp_24 <= 0;
-      _myaxi_cond_1_1 <= 0;
+      _myaxi_ram_b_0_read_start <= 0;
+      _myaxi_ram_b_0_read_op_sel <= 0;
+      _myaxi_ram_b_0_read_local_addr <= 0;
+      _myaxi_ram_b_0_read_global_addr <= 0;
+      _myaxi_ram_b_0_read_size <= 0;
+      _myaxi_ram_b_0_read_local_stride <= 0;
+      _myaxi_ram_c_0_write_start <= 0;
+      _myaxi_ram_c_0_write_op_sel <= 0;
+      _myaxi_ram_c_0_write_local_addr <= 0;
+      _myaxi_ram_c_0_write_global_addr <= 0;
+      _myaxi_ram_c_0_write_size <= 0;
+      _myaxi_ram_c_0_write_local_stride <= 0;
+      _myaxi_write_idle <= 1;
+      _myaxi_write_op_sel <= 0;
+      _myaxi_write_local_addr <= 0;
+      _myaxi_write_global_addr <= 0;
+      _myaxi_write_size <= 0;
+      _myaxi_write_local_stride <= 0;
       myaxi_awaddr <= 0;
       myaxi_awlen <= 0;
       myaxi_awvalid <= 0;
-      _tmp_48 <= 0;
-      _myaxi_cond_2_1 <= 0;
+      _tmp_43 <= 0;
+      _myaxi_cond_1_1 <= 0;
       myaxi_wdata <= 0;
       myaxi_wvalid <= 0;
       myaxi_wlast <= 0;
       myaxi_wstrb <= 0;
-      _tmp_49 <= 0;
-      _myaxi_cond_3_1 <= 0;
-      _tmp_63 <= 0;
-      _myaxi_cond_4_1 <= 0;
-      _tmp_76 <= 0;
-      _myaxi_cond_5_1 <= 0;
-      _tmp_100 <= 0;
-      _myaxi_cond_6_1 <= 0;
-      _tmp_101 <= 0;
-      _myaxi_cond_7_1 <= 0;
+      _tmp_44 <= 0;
+      _myaxi_cond_2_1 <= 0;
     end else begin
       if(_myaxi_cond_0_1) begin
         myaxi_arvalid <= 0;
       end 
       if(_myaxi_cond_1_1) begin
-        myaxi_arvalid <= 0;
+        myaxi_awvalid <= 0;
       end 
       if(_myaxi_cond_2_1) begin
-        myaxi_awvalid <= 0;
-      end 
-      if(_myaxi_cond_3_1) begin
         myaxi_wvalid <= 0;
         myaxi_wlast <= 0;
-        _tmp_49 <= 0;
+        _tmp_44 <= 0;
       end 
-      if(_myaxi_cond_4_1) begin
-        myaxi_arvalid <= 0;
+      _myaxi_read_start <= 0;
+      _myaxi_write_start <= 0;
+      _myaxi_ram_a_0_read_start <= 0;
+      if(axim_flag_0) begin
+        _myaxi_ram_a_0_read_start <= 1;
+        _myaxi_ram_a_0_read_op_sel <= 1;
+        _myaxi_ram_a_0_read_local_addr <= _th_comp_offset_2;
+        _myaxi_ram_a_0_read_global_addr <= 0;
+        _myaxi_ram_a_0_read_size <= _th_comp_double_size_1;
+        _myaxi_ram_a_0_read_local_stride <= 1;
       end 
-      if(_myaxi_cond_5_1) begin
-        myaxi_arvalid <= 0;
+      if(_myaxi_ram_a_0_read_start) begin
+        _myaxi_read_idle <= 0;
       end 
-      if(_myaxi_cond_6_1) begin
-        myaxi_awvalid <= 0;
+      if(_myaxi_ram_a_0_read_start) begin
+        _myaxi_read_start <= 1;
+        _myaxi_read_op_sel <= _myaxi_ram_a_0_read_op_sel;
+        _myaxi_read_local_addr <= _myaxi_ram_a_0_read_local_addr;
+        _myaxi_read_global_addr <= _myaxi_ram_a_0_read_global_addr;
+        _myaxi_read_size <= _myaxi_ram_a_0_read_size;
+        _myaxi_read_local_stride <= _myaxi_ram_a_0_read_local_stride;
       end 
-      if(_myaxi_cond_7_1) begin
-        myaxi_wvalid <= 0;
-        myaxi_wlast <= 0;
-        _tmp_101 <= 0;
-      end 
-      if((_tmp_fsm_0 == 3) && ((myaxi_arready || !myaxi_arvalid) && (_tmp_11 == 0))) begin
-        myaxi_araddr <= _tmp_3;
-        myaxi_arlen <= _tmp_4 - 1;
+      if((_myaxi_read_fsm == 2) && ((myaxi_arready || !myaxi_arvalid) && (_tmp_6 == 0))) begin
+        myaxi_araddr <= _myaxi_read_cur_global_addr;
+        myaxi_arlen <= _myaxi_read_cur_size - 1;
         myaxi_arvalid <= 1;
-        _tmp_11 <= _tmp_4;
+        _tmp_6 <= _myaxi_read_cur_size;
       end 
       _myaxi_cond_0_1 <= 1;
       if(myaxi_arvalid && !myaxi_arready) begin
         myaxi_arvalid <= myaxi_arvalid;
       end 
-      if(myaxi_rready && myaxi_rvalid && (_tmp_11 > 0)) begin
-        _tmp_11 <= _tmp_11 - 1;
+      if(myaxi_rready && myaxi_rvalid && (_tmp_6 > 0)) begin
+        _tmp_6 <= _tmp_6 - 1;
       end 
-      if((_tmp_fsm_1 == 3) && ((myaxi_arready || !myaxi_arvalid) && (_tmp_24 == 0))) begin
-        myaxi_araddr <= _tmp_16;
-        myaxi_arlen <= _tmp_17 - 1;
-        myaxi_arvalid <= 1;
-        _tmp_24 <= _tmp_17;
+      if(axim_flag_7) begin
+        _myaxi_read_idle <= 1;
+      end 
+      _myaxi_ram_b_0_read_start <= 0;
+      if(axim_flag_8) begin
+        _myaxi_ram_b_0_read_start <= 1;
+        _myaxi_ram_b_0_read_op_sel <= 2;
+        _myaxi_ram_b_0_read_local_addr <= _th_comp_offset_2;
+        _myaxi_ram_b_0_read_global_addr <= 512;
+        _myaxi_ram_b_0_read_size <= _th_comp_double_size_1;
+        _myaxi_ram_b_0_read_local_stride <= 1;
+      end 
+      if(_myaxi_ram_b_0_read_start) begin
+        _myaxi_read_idle <= 0;
+      end 
+      if(_myaxi_ram_b_0_read_start) begin
+        _myaxi_read_start <= 1;
+        _myaxi_read_op_sel <= _myaxi_ram_b_0_read_op_sel;
+        _myaxi_read_local_addr <= _myaxi_ram_b_0_read_local_addr;
+        _myaxi_read_global_addr <= _myaxi_ram_b_0_read_global_addr;
+        _myaxi_read_size <= _myaxi_ram_b_0_read_size;
+        _myaxi_read_local_stride <= _myaxi_ram_b_0_read_local_stride;
+      end 
+      _myaxi_ram_c_0_write_start <= 0;
+      if(axim_flag_30) begin
+        _myaxi_ram_c_0_write_start <= 1;
+        _myaxi_ram_c_0_write_op_sel <= 1;
+        _myaxi_ram_c_0_write_local_addr <= _th_comp_offset_2;
+        _myaxi_ram_c_0_write_global_addr <= 1024;
+        _myaxi_ram_c_0_write_size <= _th_comp_double_size_1;
+        _myaxi_ram_c_0_write_local_stride <= 1;
+      end 
+      if(_myaxi_ram_c_0_write_start) begin
+        _myaxi_write_idle <= 0;
+      end 
+      if(_myaxi_ram_c_0_write_start) begin
+        _myaxi_write_start <= 1;
+        _myaxi_write_op_sel <= _myaxi_ram_c_0_write_op_sel;
+        _myaxi_write_local_addr <= _myaxi_ram_c_0_write_local_addr;
+        _myaxi_write_global_addr <= _myaxi_ram_c_0_write_global_addr;
+        _myaxi_write_size <= _myaxi_ram_c_0_write_size;
+        _myaxi_write_local_stride <= _myaxi_ram_c_0_write_local_stride;
+      end 
+      if((_myaxi_write_fsm == 2) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_43 == 0))) begin
+        myaxi_awaddr <= _myaxi_write_cur_global_addr;
+        myaxi_awlen <= _myaxi_write_cur_size - 1;
+        myaxi_awvalid <= 1;
+        _tmp_43 <= _myaxi_write_cur_size;
+      end 
+      if((_myaxi_write_fsm == 2) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_43 == 0)) && (_myaxi_write_cur_size == 0)) begin
+        myaxi_awvalid <= 0;
       end 
       _myaxi_cond_1_1 <= 1;
-      if(myaxi_arvalid && !myaxi_arready) begin
-        myaxi_arvalid <= myaxi_arvalid;
+      if(myaxi_awvalid && !myaxi_awready) begin
+        myaxi_awvalid <= myaxi_awvalid;
       end 
-      if(myaxi_rready && myaxi_rvalid && (_tmp_24 > 0)) begin
-        _tmp_24 <= _tmp_24 - 1;
+      if(__variable_valid_45 && ((_myaxi_write_fsm == 3) && (_myaxi_write_op_sel == 1) && ((_tmp_43 > 0) && (myaxi_wready || !myaxi_wvalid))) && ((_tmp_43 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_43 > 0))) begin
+        myaxi_wdata <= __variable_data_45;
+        myaxi_wvalid <= 1;
+        myaxi_wlast <= 0;
+        myaxi_wstrb <= { 4{ 1'd1 } };
+        _tmp_43 <= _tmp_43 - 1;
       end 
-      if((_tmp_fsm_2 == 3) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_48 == 0))) begin
-        myaxi_awaddr <= _tmp_33;
-        myaxi_awlen <= _tmp_34 - 1;
-        myaxi_awvalid <= 1;
-        _tmp_48 <= _tmp_34;
-      end 
-      if((_tmp_fsm_2 == 3) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_48 == 0)) && (_tmp_34 == 0)) begin
-        myaxi_awvalid <= 0;
+      if(__variable_valid_45 && ((_myaxi_write_fsm == 3) && (_myaxi_write_op_sel == 1) && ((_tmp_43 > 0) && (myaxi_wready || !myaxi_wvalid))) && ((_tmp_43 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_43 > 0)) && (_tmp_43 == 1)) begin
+        myaxi_wlast <= 1;
+        _tmp_44 <= 1;
       end 
       _myaxi_cond_2_1 <= 1;
-      if(myaxi_awvalid && !myaxi_awready) begin
-        myaxi_awvalid <= myaxi_awvalid;
-      end 
-      if(__variable_valid_50 && ((_tmp_fsm_2 == 4) && ((_tmp_48 > 0) && (myaxi_wready || !myaxi_wvalid))) && ((_tmp_48 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_48 > 0))) begin
-        myaxi_wdata <= __variable_data_50;
-        myaxi_wvalid <= 1;
-        myaxi_wlast <= 0;
-        myaxi_wstrb <= { 4{ 1'd1 } };
-        _tmp_48 <= _tmp_48 - 1;
-      end 
-      if(__variable_valid_50 && ((_tmp_fsm_2 == 4) && ((_tmp_48 > 0) && (myaxi_wready || !myaxi_wvalid))) && ((_tmp_48 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_48 > 0)) && (_tmp_48 == 1)) begin
-        myaxi_wlast <= 1;
-        _tmp_49 <= 1;
-      end 
-      _myaxi_cond_3_1 <= 1;
       if(myaxi_wvalid && !myaxi_wready) begin
         myaxi_wvalid <= myaxi_wvalid;
         myaxi_wlast <= myaxi_wlast;
-        _tmp_49 <= _tmp_49;
+        _tmp_44 <= _tmp_44;
       end 
-      if((_tmp_fsm_3 == 3) && ((myaxi_arready || !myaxi_arvalid) && (_tmp_63 == 0))) begin
-        myaxi_araddr <= _tmp_55;
-        myaxi_arlen <= _tmp_56 - 1;
-        myaxi_arvalid <= 1;
-        _tmp_63 <= _tmp_56;
+      if(axim_flag_46) begin
+        _myaxi_write_idle <= 1;
       end 
-      _myaxi_cond_4_1 <= 1;
-      if(myaxi_arvalid && !myaxi_arready) begin
-        myaxi_arvalid <= myaxi_arvalid;
+      if(axim_flag_47) begin
+        _myaxi_ram_a_0_read_start <= 1;
+        _myaxi_ram_a_0_read_op_sel <= 1;
+        _myaxi_ram_a_0_read_local_addr <= _th_comp_offset_2;
+        _myaxi_ram_a_0_read_global_addr <= 0;
+        _myaxi_ram_a_0_read_size <= _th_comp_double_size_1;
+        _myaxi_ram_a_0_read_local_stride <= 1;
       end 
-      if(myaxi_rready && myaxi_rvalid && (_tmp_63 > 0)) begin
-        _tmp_63 <= _tmp_63 - 1;
+      if(axim_flag_48) begin
+        _myaxi_ram_b_0_read_start <= 1;
+        _myaxi_ram_b_0_read_op_sel <= 2;
+        _myaxi_ram_b_0_read_local_addr <= _th_comp_offset_2;
+        _myaxi_ram_b_0_read_global_addr <= 512;
+        _myaxi_ram_b_0_read_size <= _th_comp_double_size_1;
+        _myaxi_ram_b_0_read_local_stride <= 1;
       end 
-      if((_tmp_fsm_4 == 3) && ((myaxi_arready || !myaxi_arvalid) && (_tmp_76 == 0))) begin
-        myaxi_araddr <= _tmp_68;
-        myaxi_arlen <= _tmp_69 - 1;
-        myaxi_arvalid <= 1;
-        _tmp_76 <= _tmp_69;
-      end 
-      _myaxi_cond_5_1 <= 1;
-      if(myaxi_arvalid && !myaxi_arready) begin
-        myaxi_arvalid <= myaxi_arvalid;
-      end 
-      if(myaxi_rready && myaxi_rvalid && (_tmp_76 > 0)) begin
-        _tmp_76 <= _tmp_76 - 1;
-      end 
-      if((_tmp_fsm_5 == 3) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_100 == 0))) begin
-        myaxi_awaddr <= _tmp_85;
-        myaxi_awlen <= _tmp_86 - 1;
-        myaxi_awvalid <= 1;
-        _tmp_100 <= _tmp_86;
-      end 
-      if((_tmp_fsm_5 == 3) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_100 == 0)) && (_tmp_86 == 0)) begin
-        myaxi_awvalid <= 0;
-      end 
-      _myaxi_cond_6_1 <= 1;
-      if(myaxi_awvalid && !myaxi_awready) begin
-        myaxi_awvalid <= myaxi_awvalid;
-      end 
-      if(__variable_valid_102 && ((_tmp_fsm_5 == 4) && ((_tmp_100 > 0) && (myaxi_wready || !myaxi_wvalid))) && ((_tmp_100 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_100 > 0))) begin
-        myaxi_wdata <= __variable_data_102;
-        myaxi_wvalid <= 1;
-        myaxi_wlast <= 0;
-        myaxi_wstrb <= { 4{ 1'd1 } };
-        _tmp_100 <= _tmp_100 - 1;
-      end 
-      if(__variable_valid_102 && ((_tmp_fsm_5 == 4) && ((_tmp_100 > 0) && (myaxi_wready || !myaxi_wvalid))) && ((_tmp_100 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_100 > 0)) && (_tmp_100 == 1)) begin
-        myaxi_wlast <= 1;
-        _tmp_101 <= 1;
-      end 
-      _myaxi_cond_7_1 <= 1;
-      if(myaxi_wvalid && !myaxi_wready) begin
-        myaxi_wvalid <= myaxi_wvalid;
-        myaxi_wlast <= myaxi_wlast;
-        _tmp_101 <= _tmp_101;
+      if(axim_flag_53) begin
+        _myaxi_ram_c_0_write_start <= 1;
+        _myaxi_ram_c_0_write_op_sel <= 1;
+        _myaxi_ram_c_0_write_local_addr <= _th_comp_offset_2;
+        _myaxi_ram_c_0_write_global_addr <= 2048;
+        _myaxi_ram_c_0_write_size <= _th_comp_double_size_1;
+        _myaxi_ram_c_0_write_local_stride <= 1;
       end 
     end
   end
 
-  assign __variable_data_10 = _tmp_6;
-  assign __variable_valid_10 = _tmp_7;
-  assign __variable_data_23 = _tmp_19;
-  assign __variable_valid_23 = _tmp_20;
-  assign __variable_data_62 = _tmp_58;
-  assign __variable_valid_62 = _tmp_59;
-  assign __variable_data_75 = _tmp_71;
-  assign __variable_valid_75 = _tmp_72;
+  assign __variable_data_5 = _wdata_1;
+  assign __variable_valid_5 = _wvalid_2;
+  assign __variable_data_13 = _wdata_9;
+  assign __variable_valid_13 = _wvalid_10;
 
   always @(posedge CLK) begin
     if(RST) begin
       ram_a_0_addr <= 0;
-      _tmp_8 <= 0;
+      _tmp_3 <= 0;
       ram_a_0_wdata <= 0;
       ram_a_0_wenable <= 0;
-      _tmp_9 <= 0;
+      _tmp_4 <= 0;
       _ram_a_cond_0_1 <= 0;
       _ram_a_cond_1_1 <= 0;
-      _tmp_26 <= 0;
+      _tmp_15 <= 0;
       _ram_a_cond_2_1 <= 0;
       _ram_a_cond_2_2 <= 0;
       _ram_a_cond_3_1 <= 0;
-      _tmp_28 <= 0;
+      _tmp_49 <= 0;
       _ram_a_cond_4_1 <= 0;
       _ram_a_cond_4_2 <= 0;
-      _tmp_60 <= 0;
-      _tmp_61 <= 0;
-      _ram_a_cond_5_1 <= 0;
-      _ram_a_cond_6_1 <= 0;
-      _tmp_78 <= 0;
-      _ram_a_cond_7_1 <= 0;
-      _ram_a_cond_7_2 <= 0;
     end else begin
       if(_ram_a_cond_2_2) begin
-        _tmp_26 <= 0;
+        _tmp_15 <= 0;
       end 
       if(_ram_a_cond_4_2) begin
-        _tmp_28 <= 0;
-      end 
-      if(_ram_a_cond_7_2) begin
-        _tmp_78 <= 0;
+        _tmp_49 <= 0;
       end 
       if(_ram_a_cond_0_1) begin
         ram_a_0_wenable <= 0;
-        _tmp_9 <= 0;
+        _tmp_4 <= 0;
       end 
       if(_ram_a_cond_1_1) begin
-        _tmp_26 <= 1;
+        _tmp_15 <= 1;
       end 
       _ram_a_cond_2_2 <= _ram_a_cond_2_1;
       if(_ram_a_cond_3_1) begin
-        _tmp_28 <= 1;
+        _tmp_49 <= 1;
       end 
       _ram_a_cond_4_2 <= _ram_a_cond_4_1;
-      if(_ram_a_cond_5_1) begin
-        ram_a_0_wenable <= 0;
-        _tmp_61 <= 0;
+      if(_myaxi_read_start && (_myaxi_read_op_sel == 1) && (_tmp_3 == 0)) begin
+        ram_a_0_addr <= _myaxi_read_local_addr - _myaxi_read_local_stride;
+        _tmp_3 <= _myaxi_read_size;
       end 
-      if(_ram_a_cond_6_1) begin
-        _tmp_78 <= 1;
-      end 
-      _ram_a_cond_7_2 <= _ram_a_cond_7_1;
-      if((_tmp_fsm_0 == 1) && (_tmp_8 == 0)) begin
-        ram_a_0_addr <= _tmp_0 - 1;
-        _tmp_8 <= _tmp_2;
-      end 
-      if(__variable_valid_10 && ((_tmp_8 > 0) && !_tmp_9) && (_tmp_8 > 0)) begin
-        ram_a_0_addr <= ram_a_0_addr + 1;
-        ram_a_0_wdata <= __variable_data_10;
+      if(__variable_valid_5 && ((_tmp_3 > 0) && !_tmp_4) && (_tmp_3 > 0)) begin
+        ram_a_0_addr <= ram_a_0_addr + _myaxi_read_local_stride;
+        ram_a_0_wdata <= __variable_data_5;
         ram_a_0_wenable <= 1;
-        _tmp_8 <= _tmp_8 - 1;
+        _tmp_3 <= _tmp_3 - 1;
       end 
-      if(__variable_valid_10 && ((_tmp_8 > 0) && !_tmp_9) && (_tmp_8 == 1)) begin
-        _tmp_9 <= 1;
+      if(__variable_valid_5 && ((_tmp_3 > 0) && !_tmp_4) && (_tmp_3 == 1)) begin
+        _tmp_4 <= 1;
       end 
       _ram_a_cond_0_1 <= 1;
-      if(_mystream_a_renable_1) begin
-        ram_a_0_addr <= _mystream_a_raddr_1;
+      if(_mystream_a_source_ram_renable && (_mystream_a_source_ram_sel == 1)) begin
+        ram_a_0_addr <= _mystream_a_source_ram_raddr;
       end 
-      _ram_a_cond_1_1 <= _mystream_a_renable_1;
-      _ram_a_cond_2_1 <= _mystream_a_renable_1;
-      if(_mystream_a_renable_4) begin
-        ram_a_0_addr <= _mystream_a_raddr_4;
-      end 
-      _ram_a_cond_3_1 <= _mystream_a_renable_4;
-      _ram_a_cond_4_1 <= _mystream_a_renable_4;
-      if((_tmp_fsm_3 == 1) && (_tmp_60 == 0)) begin
-        ram_a_0_addr <= _tmp_52 - 1;
-        _tmp_60 <= _tmp_54;
-      end 
-      if(__variable_valid_62 && ((_tmp_60 > 0) && !_tmp_61) && (_tmp_60 > 0)) begin
-        ram_a_0_addr <= ram_a_0_addr + 1;
-        ram_a_0_wdata <= __variable_data_62;
-        ram_a_0_wenable <= 1;
-        _tmp_60 <= _tmp_60 - 1;
-      end 
-      if(__variable_valid_62 && ((_tmp_60 > 0) && !_tmp_61) && (_tmp_60 == 1)) begin
-        _tmp_61 <= 1;
-      end 
-      _ram_a_cond_5_1 <= 1;
-      if(th_comp == 32) begin
+      _ram_a_cond_1_1 <= _mystream_a_source_ram_renable && (_mystream_a_source_ram_sel == 1);
+      _ram_a_cond_2_1 <= _mystream_a_source_ram_renable && (_mystream_a_source_ram_sel == 1);
+      if(th_comp == 44) begin
         ram_a_0_addr <= _th_comp_i_13 + _th_comp_offset_10;
       end 
-      _ram_a_cond_6_1 <= th_comp == 32;
-      _ram_a_cond_7_1 <= th_comp == 32;
+      _ram_a_cond_3_1 <= th_comp == 44;
+      _ram_a_cond_4_1 <= th_comp == 44;
     end
   end
 
@@ -1096,99 +1003,62 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       ram_b_0_addr <= 0;
-      _tmp_21 <= 0;
+      _tmp_11 <= 0;
       ram_b_0_wdata <= 0;
       ram_b_0_wenable <= 0;
-      _tmp_22 <= 0;
+      _tmp_12 <= 0;
       _ram_b_cond_0_1 <= 0;
       _ram_b_cond_1_1 <= 0;
-      _tmp_27 <= 0;
+      _tmp_19 <= 0;
       _ram_b_cond_2_1 <= 0;
       _ram_b_cond_2_2 <= 0;
       _ram_b_cond_3_1 <= 0;
-      _tmp_29 <= 0;
+      _tmp_51 <= 0;
       _ram_b_cond_4_1 <= 0;
       _ram_b_cond_4_2 <= 0;
-      _tmp_73 <= 0;
-      _tmp_74 <= 0;
-      _ram_b_cond_5_1 <= 0;
-      _ram_b_cond_6_1 <= 0;
-      _tmp_80 <= 0;
-      _ram_b_cond_7_1 <= 0;
-      _ram_b_cond_7_2 <= 0;
     end else begin
       if(_ram_b_cond_2_2) begin
-        _tmp_27 <= 0;
+        _tmp_19 <= 0;
       end 
       if(_ram_b_cond_4_2) begin
-        _tmp_29 <= 0;
-      end 
-      if(_ram_b_cond_7_2) begin
-        _tmp_80 <= 0;
+        _tmp_51 <= 0;
       end 
       if(_ram_b_cond_0_1) begin
         ram_b_0_wenable <= 0;
-        _tmp_22 <= 0;
+        _tmp_12 <= 0;
       end 
       if(_ram_b_cond_1_1) begin
-        _tmp_27 <= 1;
+        _tmp_19 <= 1;
       end 
       _ram_b_cond_2_2 <= _ram_b_cond_2_1;
       if(_ram_b_cond_3_1) begin
-        _tmp_29 <= 1;
+        _tmp_51 <= 1;
       end 
       _ram_b_cond_4_2 <= _ram_b_cond_4_1;
-      if(_ram_b_cond_5_1) begin
-        ram_b_0_wenable <= 0;
-        _tmp_74 <= 0;
+      if(_myaxi_read_start && (_myaxi_read_op_sel == 2) && (_tmp_11 == 0)) begin
+        ram_b_0_addr <= _myaxi_read_local_addr - _myaxi_read_local_stride;
+        _tmp_11 <= _myaxi_read_size;
       end 
-      if(_ram_b_cond_6_1) begin
-        _tmp_80 <= 1;
-      end 
-      _ram_b_cond_7_2 <= _ram_b_cond_7_1;
-      if((_tmp_fsm_1 == 1) && (_tmp_21 == 0)) begin
-        ram_b_0_addr <= _tmp_13 - 1;
-        _tmp_21 <= _tmp_15;
-      end 
-      if(__variable_valid_23 && ((_tmp_21 > 0) && !_tmp_22) && (_tmp_21 > 0)) begin
-        ram_b_0_addr <= ram_b_0_addr + 1;
-        ram_b_0_wdata <= __variable_data_23;
+      if(__variable_valid_13 && ((_tmp_11 > 0) && !_tmp_12) && (_tmp_11 > 0)) begin
+        ram_b_0_addr <= ram_b_0_addr + _myaxi_read_local_stride;
+        ram_b_0_wdata <= __variable_data_13;
         ram_b_0_wenable <= 1;
-        _tmp_21 <= _tmp_21 - 1;
+        _tmp_11 <= _tmp_11 - 1;
       end 
-      if(__variable_valid_23 && ((_tmp_21 > 0) && !_tmp_22) && (_tmp_21 == 1)) begin
-        _tmp_22 <= 1;
+      if(__variable_valid_13 && ((_tmp_11 > 0) && !_tmp_12) && (_tmp_11 == 1)) begin
+        _tmp_12 <= 1;
       end 
       _ram_b_cond_0_1 <= 1;
-      if(_mystream_b_renable_2) begin
-        ram_b_0_addr <= _mystream_b_raddr_2;
+      if(_mystream_b_source_ram_renable && (_mystream_b_source_ram_sel == 2)) begin
+        ram_b_0_addr <= _mystream_b_source_ram_raddr;
       end 
-      _ram_b_cond_1_1 <= _mystream_b_renable_2;
-      _ram_b_cond_2_1 <= _mystream_b_renable_2;
-      if(_mystream_b_renable_5) begin
-        ram_b_0_addr <= _mystream_b_raddr_5;
-      end 
-      _ram_b_cond_3_1 <= _mystream_b_renable_5;
-      _ram_b_cond_4_1 <= _mystream_b_renable_5;
-      if((_tmp_fsm_4 == 1) && (_tmp_73 == 0)) begin
-        ram_b_0_addr <= _tmp_65 - 1;
-        _tmp_73 <= _tmp_67;
-      end 
-      if(__variable_valid_75 && ((_tmp_73 > 0) && !_tmp_74) && (_tmp_73 > 0)) begin
-        ram_b_0_addr <= ram_b_0_addr + 1;
-        ram_b_0_wdata <= __variable_data_75;
-        ram_b_0_wenable <= 1;
-        _tmp_73 <= _tmp_73 - 1;
-      end 
-      if(__variable_valid_75 && ((_tmp_73 > 0) && !_tmp_74) && (_tmp_73 == 1)) begin
-        _tmp_74 <= 1;
-      end 
-      _ram_b_cond_5_1 <= 1;
-      if(th_comp == 34) begin
+      _ram_b_cond_1_1 <= _mystream_b_source_ram_renable && (_mystream_b_source_ram_sel == 2);
+      _ram_b_cond_2_1 <= _mystream_b_source_ram_renable && (_mystream_b_source_ram_sel == 2);
+      if(th_comp == 46) begin
         ram_b_0_addr <= _th_comp_i_13 + _th_comp_offset_10;
       end 
-      _ram_b_cond_6_1 <= th_comp == 34;
-      _ram_b_cond_7_1 <= th_comp == 34;
+      _ram_b_cond_3_1 <= th_comp == 46;
+      _ram_b_cond_4_1 <= th_comp == 46;
     end
   end
 
@@ -1199,40 +1069,30 @@ module blinkled
       ram_c_0_wdata <= 0;
       ram_c_0_wenable <= 0;
       _ram_c_cond_0_1 <= 0;
+      __tmp_36_1 <= 0;
+      __tmp_37_1 <= 0;
+      _tmp_41 <= 0;
+      _tmp_31 <= 0;
+      _tmp_32 <= 0;
+      _tmp_39 <= 0;
+      _tmp_40 <= 0;
+      _tmp_38 <= 0;
+      _tmp_42 <= 0;
       _ram_c_cond_1_1 <= 0;
-      __tmp_41_1 <= 0;
-      __tmp_42_1 <= 0;
-      _tmp_46 <= 0;
-      _tmp_36 <= 0;
-      _tmp_37 <= 0;
-      _tmp_44 <= 0;
-      _tmp_45 <= 0;
-      _tmp_43 <= 0;
-      _tmp_47 <= 0;
       _ram_c_cond_2_1 <= 0;
-      __tmp_93_1 <= 0;
-      __tmp_94_1 <= 0;
-      _tmp_98 <= 0;
-      _tmp_88 <= 0;
-      _tmp_89 <= 0;
-      _tmp_96 <= 0;
-      _tmp_97 <= 0;
-      _tmp_95 <= 0;
-      _tmp_99 <= 0;
+      _tmp_54 <= 0;
       _ram_c_cond_3_1 <= 0;
-      _tmp_104 <= 0;
+      _ram_c_cond_3_2 <= 0;
       _ram_c_cond_4_1 <= 0;
-      _ram_c_cond_4_2 <= 0;
+      _tmp_56 <= 0;
       _ram_c_cond_5_1 <= 0;
-      _tmp_106 <= 0;
-      _ram_c_cond_6_1 <= 0;
-      _ram_c_cond_6_2 <= 0;
+      _ram_c_cond_5_2 <= 0;
     end else begin
-      if(_ram_c_cond_4_2) begin
-        _tmp_104 <= 0;
+      if(_ram_c_cond_3_2) begin
+        _tmp_54 <= 0;
       end 
-      if(_ram_c_cond_6_2) begin
-        _tmp_106 <= 0;
+      if(_ram_c_cond_5_2) begin
+        _tmp_56 <= 0;
       end 
       if(_ram_c_cond_0_1) begin
         ram_c_0_wenable <= 0;
@@ -1241,202 +1101,283 @@ module blinkled
         ram_c_0_wenable <= 0;
       end 
       if(_ram_c_cond_2_1) begin
-        ram_c_0_wenable <= 0;
+        _tmp_54 <= 1;
       end 
-      if(_ram_c_cond_3_1) begin
-        _tmp_104 <= 1;
+      _ram_c_cond_3_2 <= _ram_c_cond_3_1;
+      if(_ram_c_cond_4_1) begin
+        _tmp_56 <= 1;
       end 
-      _ram_c_cond_4_2 <= _ram_c_cond_4_1;
-      if(_ram_c_cond_5_1) begin
-        _tmp_106 <= 1;
-      end 
-      _ram_c_cond_6_2 <= _ram_c_cond_6_1;
-      if(_mystream_c_wenable_3) begin
-        ram_c_0_addr <= _mystream_c_waddr_3;
-        ram_c_0_wdata <= _mystream_c_wdata_3;
+      _ram_c_cond_5_2 <= _ram_c_cond_5_1;
+      if(_mystream_c_sink_wenable && (_mystream_c_sink_ram_sel == 3)) begin
+        ram_c_0_addr <= _mystream_c_sink_waddr;
+        ram_c_0_wdata <= _mystream_c_sink_wdata;
         ram_c_0_wenable <= 1;
       end 
-      _ram_c_cond_0_1 <= _mystream_c_wenable_3;
-      if(_mystream_c_wenable_6) begin
-        ram_c_0_addr <= _mystream_c_waddr_6;
-        ram_c_0_wdata <= _mystream_c_wdata_6;
-        ram_c_0_wenable <= 1;
+      _ram_c_cond_0_1 <= _mystream_c_sink_wenable && (_mystream_c_sink_ram_sel == 3);
+      __tmp_36_1 <= _tmp_36;
+      __tmp_37_1 <= _tmp_37;
+      if((_tmp_33 || !_tmp_31) && (_tmp_34 || !_tmp_32) && _tmp_39) begin
+        _tmp_41 <= 0;
+        _tmp_31 <= 0;
+        _tmp_32 <= 0;
+        _tmp_39 <= 0;
       end 
-      _ram_c_cond_1_1 <= _mystream_c_wenable_6;
-      __tmp_41_1 <= _tmp_41;
-      __tmp_42_1 <= _tmp_42;
-      if((_tmp_38 || !_tmp_36) && (_tmp_39 || !_tmp_37) && _tmp_44) begin
-        _tmp_46 <= 0;
-        _tmp_36 <= 0;
-        _tmp_37 <= 0;
-        _tmp_44 <= 0;
+      if((_tmp_33 || !_tmp_31) && (_tmp_34 || !_tmp_32) && _tmp_38) begin
+        _tmp_31 <= 1;
+        _tmp_32 <= 1;
+        _tmp_41 <= _tmp_40;
+        _tmp_40 <= 0;
+        _tmp_38 <= 0;
+        _tmp_39 <= 1;
       end 
-      if((_tmp_38 || !_tmp_36) && (_tmp_39 || !_tmp_37) && _tmp_43) begin
-        _tmp_36 <= 1;
-        _tmp_37 <= 1;
-        _tmp_46 <= _tmp_45;
-        _tmp_45 <= 0;
-        _tmp_43 <= 0;
-        _tmp_44 <= 1;
+      if(_myaxi_write_start && (_myaxi_write_op_sel == 1) && (_tmp_42 == 0) && !_tmp_40 && !_tmp_41) begin
+        ram_c_0_addr <= _myaxi_write_local_addr;
+        _tmp_42 <= _myaxi_write_size - 1;
+        _tmp_38 <= 1;
+        _tmp_40 <= _myaxi_write_size == 1;
       end 
-      if((_tmp_fsm_2 == 1) && (_tmp_47 == 0) && !_tmp_45 && !_tmp_46) begin
-        ram_c_0_addr <= _tmp_30;
-        _tmp_47 <= _tmp_32 - 1;
-        _tmp_43 <= 1;
-        _tmp_45 <= _tmp_32 == 1;
+      if((_tmp_33 || !_tmp_31) && (_tmp_34 || !_tmp_32) && (_tmp_42 > 0)) begin
+        ram_c_0_addr <= ram_c_0_addr + _myaxi_write_local_stride;
+        _tmp_42 <= _tmp_42 - 1;
+        _tmp_38 <= 1;
+        _tmp_40 <= 0;
       end 
-      if((_tmp_38 || !_tmp_36) && (_tmp_39 || !_tmp_37) && (_tmp_47 > 0)) begin
-        ram_c_0_addr <= ram_c_0_addr + 1;
-        _tmp_47 <= _tmp_47 - 1;
-        _tmp_43 <= 1;
-        _tmp_45 <= 0;
+      if((_tmp_33 || !_tmp_31) && (_tmp_34 || !_tmp_32) && (_tmp_42 == 1)) begin
+        _tmp_40 <= 1;
       end 
-      if((_tmp_38 || !_tmp_36) && (_tmp_39 || !_tmp_37) && (_tmp_47 == 1)) begin
-        _tmp_45 <= 1;
-      end 
-      if(th_comp == 37) begin
+      if(th_comp == 49) begin
         ram_c_0_addr <= _th_comp_i_13 + _th_comp_offset_10;
         ram_c_0_wdata <= _th_comp_sum_12;
         ram_c_0_wenable <= 1;
       end 
-      _ram_c_cond_2_1 <= th_comp == 37;
-      __tmp_93_1 <= _tmp_93;
-      __tmp_94_1 <= _tmp_94;
-      if((_tmp_90 || !_tmp_88) && (_tmp_91 || !_tmp_89) && _tmp_96) begin
-        _tmp_98 <= 0;
-        _tmp_88 <= 0;
-        _tmp_89 <= 0;
-        _tmp_96 <= 0;
-      end 
-      if((_tmp_90 || !_tmp_88) && (_tmp_91 || !_tmp_89) && _tmp_95) begin
-        _tmp_88 <= 1;
-        _tmp_89 <= 1;
-        _tmp_98 <= _tmp_97;
-        _tmp_97 <= 0;
-        _tmp_95 <= 0;
-        _tmp_96 <= 1;
-      end 
-      if((_tmp_fsm_5 == 1) && (_tmp_99 == 0) && !_tmp_97 && !_tmp_98) begin
-        ram_c_0_addr <= _tmp_82;
-        _tmp_99 <= _tmp_84 - 1;
-        _tmp_95 <= 1;
-        _tmp_97 <= _tmp_84 == 1;
-      end 
-      if((_tmp_90 || !_tmp_88) && (_tmp_91 || !_tmp_89) && (_tmp_99 > 0)) begin
-        ram_c_0_addr <= ram_c_0_addr + 1;
-        _tmp_99 <= _tmp_99 - 1;
-        _tmp_95 <= 1;
-        _tmp_97 <= 0;
-      end 
-      if((_tmp_90 || !_tmp_88) && (_tmp_91 || !_tmp_89) && (_tmp_99 == 1)) begin
-        _tmp_97 <= 1;
-      end 
-      if(th_comp == 45) begin
+      _ram_c_cond_1_1 <= th_comp == 49;
+      if(th_comp == 59) begin
         ram_c_0_addr <= _th_comp_i_20 + _th_comp_offset_stream_17;
       end 
-      _ram_c_cond_3_1 <= th_comp == 45;
-      _ram_c_cond_4_1 <= th_comp == 45;
-      if(th_comp == 47) begin
+      _ram_c_cond_2_1 <= th_comp == 59;
+      _ram_c_cond_3_1 <= th_comp == 59;
+      if(th_comp == 61) begin
         ram_c_0_addr <= _th_comp_i_20 + _th_comp_offset_seq_18;
       end 
-      _ram_c_cond_5_1 <= th_comp == 47;
-      _ram_c_cond_6_1 <= th_comp == 47;
+      _ram_c_cond_4_1 <= th_comp == 61;
+      _ram_c_cond_5_1 <= th_comp == 61;
     end
   end
 
-  assign __variable_data_50 = _tmp_42;
-  assign __variable_valid_50 = _tmp_36;
-  assign _tmp_38 = 1 && __variable_ready_50;
-  assign __variable_data_102 = _tmp_94;
-  assign __variable_valid_102 = _tmp_88;
-  assign _tmp_90 = 1 && __variable_ready_102;
+  assign __variable_data_45 = _tmp_37;
+  assign __variable_valid_45 = _tmp_31;
+  assign _tmp_33 = 1 && __variable_ready_45;
 
   always @(posedge CLK) begin
     if(RST) begin
       _plus_data_3 <= 0;
       _plus_data_4 <= 0;
-      _mystream_a_fsm_sel <= 0;
-      _mystream_a_idle <= 1;
+      _set_flag_14 <= 0;
+      _mystream_a_source_mode <= 0;
+      _mystream_a_source_offset <= 0;
+      _mystream_a_source_size <= 0;
+      _mystream_a_source_stride <= 0;
+      _mystream_a_source_ram_sel <= 0;
+      __tmp_17_1 <= 0;
+      _mystream_a_source_ram_rvalid <= 0;
       __variable_wdata_0 <= 0;
-      _mystream_b_fsm_sel <= 0;
-      _mystream_b_idle <= 1;
+      _mystream_a_idle <= 1;
+      _mystream_a_source_ram_raddr <= 0;
+      _mystream_a_source_ram_renable <= 0;
+      _mystream_a_source_count <= 0;
+      _set_flag_18 <= 0;
+      _mystream_b_source_mode <= 0;
+      _mystream_b_source_offset <= 0;
+      _mystream_b_source_size <= 0;
+      _mystream_b_source_stride <= 0;
+      _mystream_b_source_ram_sel <= 0;
+      __tmp_21_1 <= 0;
+      _mystream_b_source_ram_rvalid <= 0;
       __variable_wdata_1 <= 0;
+      _mystream_b_idle <= 1;
+      _mystream_b_source_ram_raddr <= 0;
+      _mystream_b_source_ram_renable <= 0;
+      _mystream_b_source_count <= 0;
+      _set_flag_22 <= 0;
       __parametervariable_wdata_2 <= 0;
-      _mystream_c_fsm_sel <= 0;
+      _set_flag_23 <= 0;
+      _mystream_c_sink_mode <= 0;
+      _mystream_c_sink_offset <= 0;
+      _mystream_c_sink_size <= 0;
+      _mystream_c_sink_stride <= 0;
+      _mystream_c_sink_ram_sel <= 0;
+      _mystream_c_sink_wenable <= 0;
+      _mystream_c_sink_waddr <= 0;
+      _mystream_c_sink_count <= 0;
+      _mystream_c_sink_wdata <= 0;
+      _set_flag_24 <= 0;
+      _set_flag_25 <= 0;
+      _set_flag_26 <= 0;
+      _set_flag_27 <= 0;
+      _set_flag_28 <= 0;
+      _set_flag_29 <= 0;
     end else begin
       _plus_data_3 <= mystream_a_data + mystream_b_data;
       _plus_data_4 <= _plus_data_3 + mystream_bias_data;
-      if(th_comp == 8) begin
-        _mystream_a_fsm_sel <= 1;
+      _set_flag_14 <= 0;
+      if(th_comp == 12) begin
+        _set_flag_14 <= 1;
       end 
-      if(_mystream_start) begin
+      if(_set_flag_14) begin
+        _mystream_a_source_mode <= 0;
+        _mystream_a_source_offset <= _th_comp_offset_4;
+        _mystream_a_source_size <= _th_comp_size_3;
+        _mystream_a_source_stride <= 1;
+      end 
+      if(_set_flag_14) begin
+        _mystream_a_source_ram_sel <= 1;
+      end 
+      __tmp_17_1 <= _tmp_17;
+      _mystream_a_source_ram_rvalid <= __tmp_17_1;
+      if(_mystream_a_source_ram_rvalid) begin
+        __variable_wdata_0 <= _mystream_a_source_ram_rdata;
+      end 
+      if(_mystream_start && (_mystream_a_source_mode == 0) && (_mystream_a_source_size > 0)) begin
         _mystream_a_idle <= 0;
       end 
-      if(_tmp_26) begin
-        __variable_wdata_0 <= ram_a_0_rdata;
+      if(_mystream_a_source_fsm_0 == 1) begin
+        _mystream_a_source_ram_raddr <= _mystream_a_source_offset;
+        _mystream_a_source_ram_renable <= 1;
+        _mystream_a_source_count <= _mystream_a_source_size;
       end 
-      if((_mystream_a_fsm_1 == 1) && (_mystream_a_count_1 == 1)) begin
+      if(_mystream_a_source_fsm_0 == 2) begin
+        _mystream_a_source_ram_raddr <= _mystream_a_source_ram_raddr + _mystream_a_source_stride;
+        _mystream_a_source_ram_renable <= 1;
+        _mystream_a_source_count <= _mystream_a_source_count - 1;
+      end 
+      if((_mystream_a_source_fsm_0 == 2) && (_mystream_a_source_count == 1)) begin
+        _mystream_a_source_ram_renable <= 0;
         _mystream_a_idle <= 1;
       end 
-      if((_mystream_a_fsm_1 == 2) && (_mystream_a_count_1 == 1)) begin
-        _mystream_a_idle <= 1;
+      _set_flag_18 <= 0;
+      if(th_comp == 13) begin
+        _set_flag_18 <= 1;
       end 
-      if(th_comp == 9) begin
-        _mystream_b_fsm_sel <= 2;
+      if(_set_flag_18) begin
+        _mystream_b_source_mode <= 0;
+        _mystream_b_source_offset <= _th_comp_offset_4;
+        _mystream_b_source_size <= _th_comp_size_3;
+        _mystream_b_source_stride <= 1;
       end 
-      if(_mystream_start) begin
+      if(_set_flag_18) begin
+        _mystream_b_source_ram_sel <= 2;
+      end 
+      __tmp_21_1 <= _tmp_21;
+      _mystream_b_source_ram_rvalid <= __tmp_21_1;
+      if(_mystream_b_source_ram_rvalid) begin
+        __variable_wdata_1 <= _mystream_b_source_ram_rdata;
+      end 
+      if(_mystream_start && (_mystream_b_source_mode == 0) && (_mystream_b_source_size > 0)) begin
         _mystream_b_idle <= 0;
       end 
-      if(_tmp_27) begin
-        __variable_wdata_1 <= ram_b_0_rdata;
+      if(_mystream_b_source_fsm_1 == 1) begin
+        _mystream_b_source_ram_raddr <= _mystream_b_source_offset;
+        _mystream_b_source_ram_renable <= 1;
+        _mystream_b_source_count <= _mystream_b_source_size;
       end 
-      if((_mystream_b_fsm_2 == 1) && (_mystream_b_count_2 == 1)) begin
+      if(_mystream_b_source_fsm_1 == 2) begin
+        _mystream_b_source_ram_raddr <= _mystream_b_source_ram_raddr + _mystream_b_source_stride;
+        _mystream_b_source_ram_renable <= 1;
+        _mystream_b_source_count <= _mystream_b_source_count - 1;
+      end 
+      if((_mystream_b_source_fsm_1 == 2) && (_mystream_b_source_count == 1)) begin
+        _mystream_b_source_ram_renable <= 0;
         _mystream_b_idle <= 1;
       end 
-      if((_mystream_b_fsm_2 == 2) && (_mystream_b_count_2 == 1)) begin
-        _mystream_b_idle <= 1;
+      _set_flag_22 <= 0;
+      if(th_comp == 14) begin
+        _set_flag_22 <= 1;
       end 
-      if(th_comp == 10) begin
+      if(_set_flag_22) begin
         __parametervariable_wdata_2 <= _th_comp_bias_5;
       end 
-      if(th_comp == 11) begin
-        _mystream_c_fsm_sel <= 3;
-      end 
+      _set_flag_23 <= 0;
       if(th_comp == 15) begin
-        _mystream_a_fsm_sel <= 4;
+        _set_flag_23 <= 1;
       end 
-      if(_mystream_start) begin
-        _mystream_a_idle <= 0;
+      if(_set_flag_23) begin
+        _mystream_c_sink_mode <= 0;
+        _mystream_c_sink_offset <= _th_comp_offset_4;
+        _mystream_c_sink_size <= _th_comp_size_3;
+        _mystream_c_sink_stride <= 1;
       end 
-      if(_tmp_28) begin
-        __variable_wdata_0 <= ram_a_0_rdata;
+      if(_set_flag_23) begin
+        _mystream_c_sink_ram_sel <= 3;
       end 
-      if((_mystream_a_fsm_4 == 1) && (_mystream_a_count_4 == 1)) begin
-        _mystream_a_idle <= 1;
+      if(_mystream_c_sink_fsm_2 == 0) begin
+        _mystream_c_sink_wenable <= 0;
       end 
-      if((_mystream_a_fsm_4 == 2) && (_mystream_a_count_4 == 1)) begin
-        _mystream_a_idle <= 1;
+      if(_mystream_c_sink_fsm_2 == 1) begin
+        _mystream_c_sink_waddr <= _mystream_c_sink_offset - _mystream_c_sink_stride;
+        _mystream_c_sink_count <= _mystream_c_sink_size;
       end 
+      if(_mystream_c_sink_fsm_2 == 7) begin
+        _mystream_c_sink_wenable <= 0;
+      end 
+      if(_mystream_c_sink_fsm_2 == 7) begin
+        _mystream_c_sink_waddr <= _mystream_c_sink_waddr + _mystream_c_sink_stride;
+        _mystream_c_sink_wdata <= mystream_c_data;
+        _mystream_c_sink_wenable <= 1;
+        _mystream_c_sink_count <= _mystream_c_sink_count - 1;
+      end 
+      _set_flag_24 <= 0;
       if(th_comp == 16) begin
-        _mystream_b_fsm_sel <= 5;
+        _set_flag_24 <= 1;
       end 
-      if(_mystream_start) begin
-        _mystream_b_idle <= 0;
+      _set_flag_25 <= 0;
+      if(th_comp == 20) begin
+        _set_flag_25 <= 1;
       end 
-      if(_tmp_29) begin
-        __variable_wdata_1 <= ram_b_0_rdata;
+      if(_set_flag_25) begin
+        _mystream_a_source_mode <= 0;
+        _mystream_a_source_offset <= _th_comp_offset_7;
+        _mystream_a_source_size <= _th_comp_size_6;
+        _mystream_a_source_stride <= 1;
       end 
-      if((_mystream_b_fsm_5 == 1) && (_mystream_b_count_5 == 1)) begin
-        _mystream_b_idle <= 1;
+      if(_set_flag_25) begin
+        _mystream_a_source_ram_sel <= 1;
       end 
-      if((_mystream_b_fsm_5 == 2) && (_mystream_b_count_5 == 1)) begin
-        _mystream_b_idle <= 1;
+      _set_flag_26 <= 0;
+      if(th_comp == 21) begin
+        _set_flag_26 <= 1;
       end 
-      if(th_comp == 17) begin
+      if(_set_flag_26) begin
+        _mystream_b_source_mode <= 0;
+        _mystream_b_source_offset <= _th_comp_offset_7;
+        _mystream_b_source_size <= _th_comp_size_6;
+        _mystream_b_source_stride <= 1;
+      end 
+      if(_set_flag_26) begin
+        _mystream_b_source_ram_sel <= 2;
+      end 
+      _set_flag_27 <= 0;
+      if(th_comp == 22) begin
+        _set_flag_27 <= 1;
+      end 
+      if(_set_flag_27) begin
         __parametervariable_wdata_2 <= _th_comp_bias_8;
       end 
-      if(th_comp == 18) begin
-        _mystream_c_fsm_sel <= 6;
+      _set_flag_28 <= 0;
+      if(th_comp == 23) begin
+        _set_flag_28 <= 1;
+      end 
+      if(_set_flag_28) begin
+        _mystream_c_sink_mode <= 0;
+        _mystream_c_sink_offset <= _th_comp_offset_7;
+        _mystream_c_sink_size <= _th_comp_size_6;
+        _mystream_c_sink_stride <= 1;
+      end 
+      if(_set_flag_28) begin
+        _mystream_c_sink_ram_sel <= 3;
+      end 
+      _set_flag_29 <= 0;
+      if(th_comp == 24) begin
+        _set_flag_29 <= 1;
       end 
     end
   end
@@ -1448,49 +1389,25 @@ module blinkled
   localparam _mystream_fsm_5 = 5;
   localparam _mystream_fsm_6 = 6;
   localparam _mystream_fsm_7 = 7;
-  localparam _mystream_fsm_8 = 8;
-  localparam _mystream_fsm_9 = 9;
 
   always @(posedge CLK) begin
     if(RST) begin
       _mystream_fsm <= _mystream_fsm_init;
-      _d1__mystream_fsm <= _mystream_fsm_init;
       _mystream_start <= 0;
       _mystream_busy <= 0;
-      __mystream_fsm_cond_0_0_1 <= 0;
-      __mystream_fsm_cond_0_1_1 <= 0;
     end else begin
-      _d1__mystream_fsm <= _mystream_fsm;
-      case(_d1__mystream_fsm)
-        _mystream_fsm_init: begin
-          if(__mystream_fsm_cond_0_0_1) begin
-            _mystream_start <= 0;
-          end 
-          if(__mystream_fsm_cond_0_1_1) begin
-            _mystream_start <= 0;
-          end 
-        end
-      endcase
       case(_mystream_fsm)
         _mystream_fsm_init: begin
-          if(th_comp == 12) begin
+          if(_mystream_start_flag) begin
             _mystream_start <= 1;
             _mystream_busy <= 1;
           end 
-          __mystream_fsm_cond_0_0_1 <= th_comp == 12;
-          if(th_comp == 19) begin
-            _mystream_start <= 1;
-            _mystream_busy <= 1;
-          end 
-          __mystream_fsm_cond_0_1_1 <= th_comp == 19;
-          if(th_comp == 12) begin
-            _mystream_fsm <= _mystream_fsm_1;
-          end 
-          if(th_comp == 19) begin
+          if(_mystream_start_flag) begin
             _mystream_fsm <= _mystream_fsm_1;
           end 
         end
         _mystream_fsm_1: begin
+          _mystream_start <= 0;
           _mystream_fsm <= _mystream_fsm_2;
         end
         _mystream_fsm_2: begin
@@ -1511,12 +1428,6 @@ module blinkled
           _mystream_fsm <= _mystream_fsm_7;
         end
         _mystream_fsm_7: begin
-          _mystream_fsm <= _mystream_fsm_8;
-        end
-        _mystream_fsm_8: begin
-          _mystream_fsm <= _mystream_fsm_9;
-        end
-        _mystream_fsm_9: begin
           _mystream_busy <= 0;
           _mystream_fsm <= _mystream_fsm_init;
         end
@@ -1580,56 +1491,98 @@ module blinkled
   localparam th_comp_54 = 54;
   localparam th_comp_55 = 55;
   localparam th_comp_56 = 56;
+  localparam th_comp_57 = 57;
+  localparam th_comp_58 = 58;
+  localparam th_comp_59 = 59;
+  localparam th_comp_60 = 60;
+  localparam th_comp_61 = 61;
+  localparam th_comp_62 = 62;
+  localparam th_comp_63 = 63;
+  localparam th_comp_64 = 64;
+  localparam th_comp_65 = 65;
+  localparam th_comp_66 = 66;
+  localparam th_comp_67 = 67;
+  localparam th_comp_68 = 68;
+  localparam th_comp_69 = 69;
+  localparam th_comp_70 = 70;
 
   always @(posedge CLK) begin
     if(RST) begin
       th_comp <= th_comp_init;
+      _d1_th_comp <= th_comp_init;
       _th_comp_size_0 <= 0;
       _th_comp_double_size_1 <= 0;
       _th_comp_offset_2 <= 0;
-      _tmp_0 <= 0;
-      _tmp_1 <= 0;
-      _tmp_2 <= 0;
-      _tmp_13 <= 0;
-      _tmp_14 <= 0;
-      _tmp_15 <= 0;
+      axim_flag_0 <= 0;
+      _th_comp_cond_3_0_1 <= 0;
+      axim_flag_8 <= 0;
+      _th_comp_cond_7_1_1 <= 0;
       _th_comp_size_3 <= 0;
       _th_comp_offset_4 <= 0;
       _th_comp_bias_5 <= 0;
       _th_comp_size_6 <= 0;
       _th_comp_offset_7 <= 0;
       _th_comp_bias_8 <= 0;
-      _tmp_30 <= 0;
-      _tmp_31 <= 0;
-      _tmp_32 <= 0;
-      _tmp_52 <= 0;
-      _tmp_53 <= 0;
-      _tmp_54 <= 0;
-      _tmp_65 <= 0;
-      _tmp_66 <= 0;
-      _tmp_67 <= 0;
+      axim_flag_30 <= 0;
+      _th_comp_cond_27_2_1 <= 0;
+      axim_flag_47 <= 0;
+      _th_comp_cond_32_3_1 <= 0;
+      axim_flag_48 <= 0;
+      _th_comp_cond_36_4_1 <= 0;
       _th_comp_size_9 <= 0;
       _th_comp_offset_10 <= 0;
       _th_comp_bias_11 <= 0;
       _th_comp_sum_12 <= 0;
       _th_comp_i_13 <= 0;
-      _tmp_79 <= 0;
+      _tmp_50 <= 0;
       _th_comp_a_14 <= 0;
-      _tmp_81 <= 0;
+      _tmp_52 <= 0;
       _th_comp_b_15 <= 0;
-      _tmp_82 <= 0;
-      _tmp_83 <= 0;
-      _tmp_84 <= 0;
+      axim_flag_53 <= 0;
+      _th_comp_cond_51_5_1 <= 0;
       _th_comp_size_16 <= 0;
       _th_comp_offset_stream_17 <= 0;
       _th_comp_offset_seq_18 <= 0;
       _th_comp_all_ok_19 <= 0;
       _th_comp_i_20 <= 0;
-      _tmp_105 <= 0;
+      _tmp_55 <= 0;
       _th_comp_st_21 <= 0;
-      _tmp_107 <= 0;
+      _tmp_57 <= 0;
       _th_comp_sq_22 <= 0;
     end else begin
+      _d1_th_comp <= th_comp;
+      case(_d1_th_comp)
+        th_comp_3: begin
+          if(_th_comp_cond_3_0_1) begin
+            axim_flag_0 <= 0;
+          end 
+        end
+        th_comp_7: begin
+          if(_th_comp_cond_7_1_1) begin
+            axim_flag_8 <= 0;
+          end 
+        end
+        th_comp_27: begin
+          if(_th_comp_cond_27_2_1) begin
+            axim_flag_30 <= 0;
+          end 
+        end
+        th_comp_32: begin
+          if(_th_comp_cond_32_3_1) begin
+            axim_flag_47 <= 0;
+          end 
+        end
+        th_comp_36: begin
+          if(_th_comp_cond_36_4_1) begin
+            axim_flag_48 <= 0;
+          end 
+        end
+        th_comp_51: begin
+          if(_th_comp_cond_51_5_1) begin
+            axim_flag_53 <= 0;
+          end 
+        end
+      endcase
       case(th_comp)
         th_comp_init: begin
           _th_comp_size_0 <= 32;
@@ -1644,31 +1597,24 @@ module blinkled
           th_comp <= th_comp_3;
         end
         th_comp_3: begin
-          _tmp_0 <= _th_comp_offset_2;
-          _tmp_1 <= 0;
-          _tmp_2 <= _th_comp_double_size_1;
+          axim_flag_0 <= 1;
+          _th_comp_cond_3_0_1 <= 1;
           th_comp <= th_comp_4;
         end
         th_comp_4: begin
-          if(_tmp_12) begin
-            th_comp <= th_comp_5;
-          end 
+          th_comp <= th_comp_5;
         end
         th_comp_5: begin
-          _tmp_13 <= _th_comp_offset_2;
-          _tmp_14 <= 512;
-          _tmp_15 <= _th_comp_double_size_1;
           th_comp <= th_comp_6;
         end
         th_comp_6: begin
-          if(_tmp_25) begin
+          if(_myaxi_read_idle) begin
             th_comp <= th_comp_7;
           end 
         end
         th_comp_7: begin
-          _th_comp_size_3 <= _th_comp_size_0;
-          _th_comp_offset_4 <= _th_comp_offset_2;
-          _th_comp_bias_5 <= 100;
+          axim_flag_8 <= 1;
+          _th_comp_cond_7_1_1 <= 1;
           th_comp <= th_comp_8;
         end
         th_comp_8: begin
@@ -1678,23 +1624,23 @@ module blinkled
           th_comp <= th_comp_10;
         end
         th_comp_10: begin
-          th_comp <= th_comp_11;
+          if(_myaxi_read_idle) begin
+            th_comp <= th_comp_11;
+          end 
         end
         th_comp_11: begin
+          _th_comp_size_3 <= _th_comp_size_0;
+          _th_comp_offset_4 <= _th_comp_offset_2;
+          _th_comp_bias_5 <= 100;
           th_comp <= th_comp_12;
         end
         th_comp_12: begin
           th_comp <= th_comp_13;
         end
         th_comp_13: begin
-          if(!_mystream_busy) begin
-            th_comp <= th_comp_14;
-          end 
+          th_comp <= th_comp_14;
         end
         th_comp_14: begin
-          _th_comp_size_6 <= _th_comp_size_0;
-          _th_comp_offset_7 <= _th_comp_offset_2 + _th_comp_size_0;
-          _th_comp_bias_8 <= 100;
           th_comp <= th_comp_15;
         end
         th_comp_15: begin
@@ -1707,1191 +1653,518 @@ module blinkled
           th_comp <= th_comp_18;
         end
         th_comp_18: begin
-          th_comp <= th_comp_19;
+          if(!_mystream_busy) begin
+            th_comp <= th_comp_19;
+          end 
         end
         th_comp_19: begin
+          _th_comp_size_6 <= _th_comp_size_0;
+          _th_comp_offset_7 <= _th_comp_offset_2 + _th_comp_size_0;
+          _th_comp_bias_8 <= 100;
           th_comp <= th_comp_20;
         end
         th_comp_20: begin
-          if(!_mystream_busy) begin
-            th_comp <= th_comp_21;
-          end 
+          th_comp <= th_comp_21;
         end
         th_comp_21: begin
-          _tmp_30 <= _th_comp_offset_2;
-          _tmp_31 <= 1024;
-          _tmp_32 <= _th_comp_double_size_1;
           th_comp <= th_comp_22;
         end
         th_comp_22: begin
-          if(_tmp_51) begin
-            th_comp <= th_comp_23;
-          end 
+          th_comp <= th_comp_23;
         end
         th_comp_23: begin
-          _th_comp_offset_2 <= _th_comp_double_size_1;
           th_comp <= th_comp_24;
         end
         th_comp_24: begin
-          _tmp_52 <= _th_comp_offset_2;
-          _tmp_53 <= 0;
-          _tmp_54 <= _th_comp_double_size_1;
           th_comp <= th_comp_25;
         end
         th_comp_25: begin
-          if(_tmp_64) begin
-            th_comp <= th_comp_26;
-          end 
+          th_comp <= th_comp_26;
         end
         th_comp_26: begin
-          _tmp_65 <= _th_comp_offset_2;
-          _tmp_66 <= 512;
-          _tmp_67 <= _th_comp_double_size_1;
-          th_comp <= th_comp_27;
-        end
-        th_comp_27: begin
-          if(_tmp_77) begin
-            th_comp <= th_comp_28;
+          if(!_mystream_busy) begin
+            th_comp <= th_comp_27;
           end 
         end
+        th_comp_27: begin
+          axim_flag_30 <= 1;
+          _th_comp_cond_27_2_1 <= 1;
+          th_comp <= th_comp_28;
+        end
         th_comp_28: begin
-          _th_comp_size_9 <= _th_comp_double_size_1;
-          _th_comp_offset_10 <= _th_comp_offset_2;
-          _th_comp_bias_11 <= 100;
           th_comp <= th_comp_29;
         end
         th_comp_29: begin
-          _th_comp_sum_12 <= 0;
           th_comp <= th_comp_30;
         end
         th_comp_30: begin
-          _th_comp_i_13 <= 0;
-          th_comp <= th_comp_31;
+          if(_myaxi_write_idle) begin
+            th_comp <= th_comp_31;
+          end 
         end
         th_comp_31: begin
-          if(_th_comp_i_13 < _th_comp_size_9) begin
-            th_comp <= th_comp_32;
-          end else begin
-            th_comp <= th_comp_39;
-          end
+          _th_comp_offset_2 <= _th_comp_double_size_1;
+          th_comp <= th_comp_32;
         end
         th_comp_32: begin
-          if(_tmp_78) begin
-            _tmp_79 <= ram_a_0_rdata;
-          end 
-          if(_tmp_78) begin
-            th_comp <= th_comp_33;
-          end 
+          axim_flag_47 <= 1;
+          _th_comp_cond_32_3_1 <= 1;
+          th_comp <= th_comp_33;
         end
         th_comp_33: begin
-          _th_comp_a_14 <= _tmp_79;
           th_comp <= th_comp_34;
         end
         th_comp_34: begin
-          if(_tmp_80) begin
-            _tmp_81 <= ram_b_0_rdata;
-          end 
-          if(_tmp_80) begin
-            th_comp <= th_comp_35;
-          end 
+          th_comp <= th_comp_35;
         end
         th_comp_35: begin
-          _th_comp_b_15 <= _tmp_81;
-          th_comp <= th_comp_36;
+          if(_myaxi_read_idle) begin
+            th_comp <= th_comp_36;
+          end 
         end
         th_comp_36: begin
-          _th_comp_sum_12 <= _th_comp_a_14 + _th_comp_b_15 + _th_comp_bias_11;
+          axim_flag_48 <= 1;
+          _th_comp_cond_36_4_1 <= 1;
           th_comp <= th_comp_37;
         end
         th_comp_37: begin
           th_comp <= th_comp_38;
         end
         th_comp_38: begin
-          _th_comp_i_13 <= _th_comp_i_13 + 1;
-          th_comp <= th_comp_31;
+          th_comp <= th_comp_39;
         end
         th_comp_39: begin
-          _tmp_82 <= _th_comp_offset_2;
-          _tmp_83 <= 2048;
-          _tmp_84 <= _th_comp_double_size_1;
-          th_comp <= th_comp_40;
-        end
-        th_comp_40: begin
-          if(_tmp_103) begin
-            th_comp <= th_comp_41;
+          if(_myaxi_read_idle) begin
+            th_comp <= th_comp_40;
           end 
         end
+        th_comp_40: begin
+          _th_comp_size_9 <= _th_comp_double_size_1;
+          _th_comp_offset_10 <= _th_comp_offset_2;
+          _th_comp_bias_11 <= 100;
+          th_comp <= th_comp_41;
+        end
         th_comp_41: begin
-          _th_comp_size_16 <= _th_comp_double_size_1;
-          _th_comp_offset_stream_17 <= 0;
-          _th_comp_offset_seq_18 <= _th_comp_offset_2;
+          _th_comp_sum_12 <= 0;
           th_comp <= th_comp_42;
         end
         th_comp_42: begin
-          _th_comp_all_ok_19 <= 1;
+          _th_comp_i_13 <= 0;
           th_comp <= th_comp_43;
         end
         th_comp_43: begin
-          _th_comp_i_20 <= 0;
-          th_comp <= th_comp_44;
-        end
-        th_comp_44: begin
-          if(_th_comp_i_20 < _th_comp_size_16) begin
-            th_comp <= th_comp_45;
-          end else begin
-            th_comp <= th_comp_52;
-          end
-        end
-        th_comp_45: begin
-          if(_tmp_104) begin
-            _tmp_105 <= ram_c_0_rdata;
-          end 
-          if(_tmp_104) begin
-            th_comp <= th_comp_46;
-          end 
-        end
-        th_comp_46: begin
-          _th_comp_st_21 <= _tmp_105;
-          th_comp <= th_comp_47;
-        end
-        th_comp_47: begin
-          if(_tmp_106) begin
-            _tmp_107 <= ram_c_0_rdata;
-          end 
-          if(_tmp_106) begin
-            th_comp <= th_comp_48;
-          end 
-        end
-        th_comp_48: begin
-          _th_comp_sq_22 <= _tmp_107;
-          th_comp <= th_comp_49;
-        end
-        th_comp_49: begin
-          if(_th_comp_st_21 !== _th_comp_sq_22) begin
-            th_comp <= th_comp_50;
+          if(_th_comp_i_13 < _th_comp_size_9) begin
+            th_comp <= th_comp_44;
           end else begin
             th_comp <= th_comp_51;
           end
         end
+        th_comp_44: begin
+          if(_tmp_49) begin
+            _tmp_50 <= ram_a_0_rdata;
+          end 
+          if(_tmp_49) begin
+            th_comp <= th_comp_45;
+          end 
+        end
+        th_comp_45: begin
+          _th_comp_a_14 <= _tmp_50;
+          th_comp <= th_comp_46;
+        end
+        th_comp_46: begin
+          if(_tmp_51) begin
+            _tmp_52 <= ram_b_0_rdata;
+          end 
+          if(_tmp_51) begin
+            th_comp <= th_comp_47;
+          end 
+        end
+        th_comp_47: begin
+          _th_comp_b_15 <= _tmp_52;
+          th_comp <= th_comp_48;
+        end
+        th_comp_48: begin
+          _th_comp_sum_12 <= _th_comp_a_14 + _th_comp_b_15 + _th_comp_bias_11;
+          th_comp <= th_comp_49;
+        end
+        th_comp_49: begin
+          th_comp <= th_comp_50;
+        end
         th_comp_50: begin
-          _th_comp_all_ok_19 <= 0;
-          th_comp <= th_comp_51;
+          _th_comp_i_13 <= _th_comp_i_13 + 1;
+          th_comp <= th_comp_43;
         end
         th_comp_51: begin
-          _th_comp_i_20 <= _th_comp_i_20 + 1;
-          th_comp <= th_comp_44;
+          axim_flag_53 <= 1;
+          _th_comp_cond_51_5_1 <= 1;
+          th_comp <= th_comp_52;
         end
         th_comp_52: begin
-          if(_th_comp_all_ok_19) begin
-            th_comp <= th_comp_53;
-          end else begin
-            th_comp <= th_comp_55;
-          end
+          th_comp <= th_comp_53;
         end
         th_comp_53: begin
-          $display("OK");
           th_comp <= th_comp_54;
         end
         th_comp_54: begin
-          th_comp <= th_comp_56;
+          if(_myaxi_write_idle) begin
+            th_comp <= th_comp_55;
+          end 
         end
         th_comp_55: begin
-          $display("NG");
+          _th_comp_size_16 <= _th_comp_double_size_1;
+          _th_comp_offset_stream_17 <= 0;
+          _th_comp_offset_seq_18 <= _th_comp_offset_2;
           th_comp <= th_comp_56;
         end
+        th_comp_56: begin
+          _th_comp_all_ok_19 <= 1;
+          th_comp <= th_comp_57;
+        end
+        th_comp_57: begin
+          _th_comp_i_20 <= 0;
+          th_comp <= th_comp_58;
+        end
+        th_comp_58: begin
+          if(_th_comp_i_20 < _th_comp_size_16) begin
+            th_comp <= th_comp_59;
+          end else begin
+            th_comp <= th_comp_66;
+          end
+        end
+        th_comp_59: begin
+          if(_tmp_54) begin
+            _tmp_55 <= ram_c_0_rdata;
+          end 
+          if(_tmp_54) begin
+            th_comp <= th_comp_60;
+          end 
+        end
+        th_comp_60: begin
+          _th_comp_st_21 <= _tmp_55;
+          th_comp <= th_comp_61;
+        end
+        th_comp_61: begin
+          if(_tmp_56) begin
+            _tmp_57 <= ram_c_0_rdata;
+          end 
+          if(_tmp_56) begin
+            th_comp <= th_comp_62;
+          end 
+        end
+        th_comp_62: begin
+          _th_comp_sq_22 <= _tmp_57;
+          th_comp <= th_comp_63;
+        end
+        th_comp_63: begin
+          if(_th_comp_st_21 !== _th_comp_sq_22) begin
+            th_comp <= th_comp_64;
+          end else begin
+            th_comp <= th_comp_65;
+          end
+        end
+        th_comp_64: begin
+          _th_comp_all_ok_19 <= 0;
+          th_comp <= th_comp_65;
+        end
+        th_comp_65: begin
+          _th_comp_i_20 <= _th_comp_i_20 + 1;
+          th_comp <= th_comp_58;
+        end
+        th_comp_66: begin
+          if(_th_comp_all_ok_19) begin
+            th_comp <= th_comp_67;
+          end else begin
+            th_comp <= th_comp_69;
+          end
+        end
+        th_comp_67: begin
+          $display("OK");
+          th_comp <= th_comp_68;
+        end
+        th_comp_68: begin
+          th_comp <= th_comp_70;
+        end
+        th_comp_69: begin
+          $display("NG");
+          th_comp <= th_comp_70;
+        end
       endcase
     end
   end
 
-  localparam _tmp_fsm_0_1 = 1;
-  localparam _tmp_fsm_0_2 = 2;
-  localparam _tmp_fsm_0_3 = 3;
-  localparam _tmp_fsm_0_4 = 4;
-  localparam _tmp_fsm_0_5 = 5;
-  localparam _tmp_fsm_0_6 = 6;
+  localparam _myaxi_read_fsm_1 = 1;
+  localparam _myaxi_read_fsm_2 = 2;
+  localparam _myaxi_read_fsm_3 = 3;
+  localparam _myaxi_read_fsm_4 = 4;
+  localparam _myaxi_read_fsm_5 = 5;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_fsm_0 <= _tmp_fsm_0_init;
-      _d1__tmp_fsm_0 <= _tmp_fsm_0_init;
-      _tmp_3 <= 0;
-      _tmp_5 <= 0;
-      _tmp_4 <= 0;
-      __tmp_fsm_0_cond_4_0_1 <= 0;
-      _tmp_7 <= 0;
-      _tmp_6 <= 0;
-      _tmp_12 <= 0;
-      __tmp_fsm_0_cond_5_1_1 <= 0;
+      _myaxi_read_fsm <= _myaxi_read_fsm_init;
+      _d1__myaxi_read_fsm <= _myaxi_read_fsm_init;
+      _myaxi_read_cur_global_addr <= 0;
+      _myaxi_read_rest_size <= 0;
+      _myaxi_read_cur_size <= 0;
+      __myaxi_read_fsm_cond_3_0_1 <= 0;
+      _wvalid_2 <= 0;
+      _wdata_1 <= 0;
+      axim_flag_7 <= 0;
+      __myaxi_read_fsm_cond_4_1_1 <= 0;
+      __myaxi_read_fsm_cond_3_2_1 <= 0;
+      _wvalid_10 <= 0;
+      _wdata_9 <= 0;
     end else begin
-      _d1__tmp_fsm_0 <= _tmp_fsm_0;
-      case(_d1__tmp_fsm_0)
-        _tmp_fsm_0_4: begin
-          if(__tmp_fsm_0_cond_4_0_1) begin
-            _tmp_7 <= 0;
+      _d1__myaxi_read_fsm <= _myaxi_read_fsm;
+      case(_d1__myaxi_read_fsm)
+        _myaxi_read_fsm_3: begin
+          if(__myaxi_read_fsm_cond_3_0_1) begin
+            _wvalid_2 <= 0;
+          end 
+          if(__myaxi_read_fsm_cond_3_2_1) begin
+            _wvalid_10 <= 0;
           end 
         end
-        _tmp_fsm_0_5: begin
-          if(__tmp_fsm_0_cond_5_1_1) begin
-            _tmp_12 <= 0;
+        _myaxi_read_fsm_4: begin
+          if(__myaxi_read_fsm_cond_4_1_1) begin
+            axim_flag_7 <= 0;
           end 
         end
       endcase
-      case(_tmp_fsm_0)
-        _tmp_fsm_0_init: begin
-          if(th_comp == 4) begin
-            _tmp_fsm_0 <= _tmp_fsm_0_1;
+      case(_myaxi_read_fsm)
+        _myaxi_read_fsm_init: begin
+          if(_myaxi_read_start) begin
+            _myaxi_read_cur_global_addr <= (_myaxi_read_global_addr >> 2) << 2;
+            _myaxi_read_rest_size <= _myaxi_read_size;
+          end 
+          if(_myaxi_read_start && (_myaxi_read_op_sel == 1)) begin
+            _myaxi_read_fsm <= _myaxi_read_fsm_1;
+          end 
+          if(_myaxi_read_start && (_myaxi_read_op_sel == 2)) begin
+            _myaxi_read_fsm <= _myaxi_read_fsm_1;
           end 
         end
-        _tmp_fsm_0_1: begin
-          _tmp_3 <= (_tmp_1 >> 2) << 2;
-          _tmp_5 <= _tmp_2;
-          _tmp_fsm_0 <= _tmp_fsm_0_2;
-        end
-        _tmp_fsm_0_2: begin
-          if((_tmp_5 <= 256) && ((_tmp_3 & 4095) + (_tmp_5 << 2) >= 4096)) begin
-            _tmp_4 <= 4096 - (_tmp_3 & 4095) >> 2;
-            _tmp_5 <= _tmp_5 - (4096 - (_tmp_3 & 4095) >> 2);
-          end else if(_tmp_5 <= 256) begin
-            _tmp_4 <= _tmp_5;
-            _tmp_5 <= 0;
-          end else if((_tmp_3 & 4095) + 1024 >= 4096) begin
-            _tmp_4 <= 4096 - (_tmp_3 & 4095) >> 2;
-            _tmp_5 <= _tmp_5 - (4096 - (_tmp_3 & 4095) >> 2);
+        _myaxi_read_fsm_1: begin
+          if((_myaxi_read_rest_size <= 256) && ((_myaxi_read_cur_global_addr & 4095) + (_myaxi_read_rest_size << 2) >= 4096)) begin
+            _myaxi_read_cur_size <= 4096 - (_myaxi_read_cur_global_addr & 4095) >> 2;
+            _myaxi_read_rest_size <= _myaxi_read_rest_size - (4096 - (_myaxi_read_cur_global_addr & 4095) >> 2);
+          end else if(_myaxi_read_rest_size <= 256) begin
+            _myaxi_read_cur_size <= _myaxi_read_rest_size;
+            _myaxi_read_rest_size <= 0;
+          end else if((_myaxi_read_cur_global_addr & 4095) + 1024 >= 4096) begin
+            _myaxi_read_cur_size <= 4096 - (_myaxi_read_cur_global_addr & 4095) >> 2;
+            _myaxi_read_rest_size <= _myaxi_read_rest_size - (4096 - (_myaxi_read_cur_global_addr & 4095) >> 2);
           end else begin
-            _tmp_4 <= 256;
-            _tmp_5 <= _tmp_5 - 256;
+            _myaxi_read_cur_size <= 256;
+            _myaxi_read_rest_size <= _myaxi_read_rest_size - 256;
           end
-          _tmp_fsm_0 <= _tmp_fsm_0_3;
+          _myaxi_read_fsm <= _myaxi_read_fsm_2;
         end
-        _tmp_fsm_0_3: begin
+        _myaxi_read_fsm_2: begin
           if(myaxi_arready || !myaxi_arvalid) begin
-            _tmp_fsm_0 <= _tmp_fsm_0_4;
+            _myaxi_read_fsm <= _myaxi_read_fsm_3;
           end 
         end
-        _tmp_fsm_0_4: begin
-          __tmp_fsm_0_cond_4_0_1 <= 1;
-          if(myaxi_rready && myaxi_rvalid) begin
-            _tmp_6 <= myaxi_rdata;
-            _tmp_7 <= 1;
+        _myaxi_read_fsm_3: begin
+          __myaxi_read_fsm_cond_3_0_1 <= 1;
+          if(myaxi_rready && myaxi_rvalid && (_myaxi_read_op_sel == 1)) begin
+            _wdata_1 <= myaxi_rdata;
+            _wvalid_2 <= 1;
           end 
           if(myaxi_rready && myaxi_rvalid && myaxi_rlast) begin
-            _tmp_3 <= _tmp_3 + (_tmp_4 << 2);
+            _myaxi_read_cur_global_addr <= _myaxi_read_cur_global_addr + (_myaxi_read_cur_size << 2);
           end 
-          if(myaxi_rready && myaxi_rvalid && myaxi_rlast && (_tmp_5 > 0)) begin
-            _tmp_fsm_0 <= _tmp_fsm_0_2;
+          __myaxi_read_fsm_cond_3_2_1 <= 1;
+          if(myaxi_rready && myaxi_rvalid && (_myaxi_read_op_sel == 2)) begin
+            _wdata_9 <= myaxi_rdata;
+            _wvalid_10 <= 1;
           end 
-          if(myaxi_rready && myaxi_rvalid && myaxi_rlast && (_tmp_5 == 0)) begin
-            _tmp_fsm_0 <= _tmp_fsm_0_5;
+          if(myaxi_rready && myaxi_rvalid && myaxi_rlast && (_myaxi_read_rest_size > 0)) begin
+            _myaxi_read_fsm <= _myaxi_read_fsm_1;
+          end 
+          if(myaxi_rready && myaxi_rvalid && myaxi_rlast && (_myaxi_read_rest_size == 0)) begin
+            _myaxi_read_fsm <= _myaxi_read_fsm_4;
           end 
         end
-        _tmp_fsm_0_5: begin
-          _tmp_12 <= 1;
-          __tmp_fsm_0_cond_5_1_1 <= 1;
-          _tmp_fsm_0 <= _tmp_fsm_0_6;
+        _myaxi_read_fsm_4: begin
+          axim_flag_7 <= 1;
+          __myaxi_read_fsm_cond_4_1_1 <= 1;
+          _myaxi_read_fsm <= _myaxi_read_fsm_5;
         end
-        _tmp_fsm_0_6: begin
-          _tmp_fsm_0 <= _tmp_fsm_0_init;
+        _myaxi_read_fsm_5: begin
+          _myaxi_read_fsm <= _myaxi_read_fsm_init;
         end
       endcase
     end
   end
 
-  localparam _tmp_fsm_1_1 = 1;
-  localparam _tmp_fsm_1_2 = 2;
-  localparam _tmp_fsm_1_3 = 3;
-  localparam _tmp_fsm_1_4 = 4;
-  localparam _tmp_fsm_1_5 = 5;
-  localparam _tmp_fsm_1_6 = 6;
+  localparam _mystream_a_source_fsm_0_1 = 1;
+  localparam _mystream_a_source_fsm_0_2 = 2;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_fsm_1 <= _tmp_fsm_1_init;
-      _d1__tmp_fsm_1 <= _tmp_fsm_1_init;
-      _tmp_16 <= 0;
-      _tmp_18 <= 0;
-      _tmp_17 <= 0;
-      __tmp_fsm_1_cond_4_0_1 <= 0;
-      _tmp_20 <= 0;
-      _tmp_19 <= 0;
-      _tmp_25 <= 0;
-      __tmp_fsm_1_cond_5_1_1 <= 0;
+      _mystream_a_source_fsm_0 <= _mystream_a_source_fsm_0_init;
     end else begin
-      _d1__tmp_fsm_1 <= _tmp_fsm_1;
-      case(_d1__tmp_fsm_1)
-        _tmp_fsm_1_4: begin
-          if(__tmp_fsm_1_cond_4_0_1) begin
-            _tmp_20 <= 0;
+      case(_mystream_a_source_fsm_0)
+        _mystream_a_source_fsm_0_init: begin
+          if(_mystream_start && (_mystream_a_source_mode == 0) && (_mystream_a_source_size > 0)) begin
+            _mystream_a_source_fsm_0 <= _mystream_a_source_fsm_0_1;
           end 
         end
-        _tmp_fsm_1_5: begin
-          if(__tmp_fsm_1_cond_5_1_1) begin
-            _tmp_25 <= 0;
+        _mystream_a_source_fsm_0_1: begin
+          _mystream_a_source_fsm_0 <= _mystream_a_source_fsm_0_2;
+        end
+        _mystream_a_source_fsm_0_2: begin
+          if(_mystream_a_source_count == 1) begin
+            _mystream_a_source_fsm_0 <= _mystream_a_source_fsm_0_init;
           end 
         end
       endcase
-      case(_tmp_fsm_1)
-        _tmp_fsm_1_init: begin
-          if(th_comp == 6) begin
-            _tmp_fsm_1 <= _tmp_fsm_1_1;
+    end
+  end
+
+  localparam _mystream_b_source_fsm_1_1 = 1;
+  localparam _mystream_b_source_fsm_1_2 = 2;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _mystream_b_source_fsm_1 <= _mystream_b_source_fsm_1_init;
+    end else begin
+      case(_mystream_b_source_fsm_1)
+        _mystream_b_source_fsm_1_init: begin
+          if(_mystream_start && (_mystream_b_source_mode == 0) && (_mystream_b_source_size > 0)) begin
+            _mystream_b_source_fsm_1 <= _mystream_b_source_fsm_1_1;
           end 
         end
-        _tmp_fsm_1_1: begin
-          _tmp_16 <= (_tmp_14 >> 2) << 2;
-          _tmp_18 <= _tmp_15;
-          _tmp_fsm_1 <= _tmp_fsm_1_2;
+        _mystream_b_source_fsm_1_1: begin
+          _mystream_b_source_fsm_1 <= _mystream_b_source_fsm_1_2;
         end
-        _tmp_fsm_1_2: begin
-          if((_tmp_18 <= 256) && ((_tmp_16 & 4095) + (_tmp_18 << 2) >= 4096)) begin
-            _tmp_17 <= 4096 - (_tmp_16 & 4095) >> 2;
-            _tmp_18 <= _tmp_18 - (4096 - (_tmp_16 & 4095) >> 2);
-          end else if(_tmp_18 <= 256) begin
-            _tmp_17 <= _tmp_18;
-            _tmp_18 <= 0;
-          end else if((_tmp_16 & 4095) + 1024 >= 4096) begin
-            _tmp_17 <= 4096 - (_tmp_16 & 4095) >> 2;
-            _tmp_18 <= _tmp_18 - (4096 - (_tmp_16 & 4095) >> 2);
+        _mystream_b_source_fsm_1_2: begin
+          if(_mystream_b_source_count == 1) begin
+            _mystream_b_source_fsm_1 <= _mystream_b_source_fsm_1_init;
+          end 
+        end
+      endcase
+    end
+  end
+
+  localparam _mystream_c_sink_fsm_2_1 = 1;
+  localparam _mystream_c_sink_fsm_2_2 = 2;
+  localparam _mystream_c_sink_fsm_2_3 = 3;
+  localparam _mystream_c_sink_fsm_2_4 = 4;
+  localparam _mystream_c_sink_fsm_2_5 = 5;
+  localparam _mystream_c_sink_fsm_2_6 = 6;
+  localparam _mystream_c_sink_fsm_2_7 = 7;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _mystream_c_sink_fsm_2 <= _mystream_c_sink_fsm_2_init;
+    end else begin
+      case(_mystream_c_sink_fsm_2)
+        _mystream_c_sink_fsm_2_init: begin
+          if(_mystream_start && (_mystream_c_sink_mode == 0) && (_mystream_c_sink_size > 0)) begin
+            _mystream_c_sink_fsm_2 <= _mystream_c_sink_fsm_2_1;
+          end 
+        end
+        _mystream_c_sink_fsm_2_1: begin
+          _mystream_c_sink_fsm_2 <= _mystream_c_sink_fsm_2_2;
+        end
+        _mystream_c_sink_fsm_2_2: begin
+          _mystream_c_sink_fsm_2 <= _mystream_c_sink_fsm_2_3;
+        end
+        _mystream_c_sink_fsm_2_3: begin
+          _mystream_c_sink_fsm_2 <= _mystream_c_sink_fsm_2_4;
+        end
+        _mystream_c_sink_fsm_2_4: begin
+          _mystream_c_sink_fsm_2 <= _mystream_c_sink_fsm_2_5;
+        end
+        _mystream_c_sink_fsm_2_5: begin
+          _mystream_c_sink_fsm_2 <= _mystream_c_sink_fsm_2_6;
+        end
+        _mystream_c_sink_fsm_2_6: begin
+          _mystream_c_sink_fsm_2 <= _mystream_c_sink_fsm_2_7;
+        end
+        _mystream_c_sink_fsm_2_7: begin
+          if(_mystream_c_sink_count == 1) begin
+            _mystream_c_sink_fsm_2 <= _mystream_c_sink_fsm_2_init;
+          end 
+        end
+      endcase
+    end
+  end
+
+  localparam _myaxi_write_fsm_1 = 1;
+  localparam _myaxi_write_fsm_2 = 2;
+  localparam _myaxi_write_fsm_3 = 3;
+  localparam _myaxi_write_fsm_4 = 4;
+  localparam _myaxi_write_fsm_5 = 5;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _myaxi_write_fsm <= _myaxi_write_fsm_init;
+      _d1__myaxi_write_fsm <= _myaxi_write_fsm_init;
+      _myaxi_write_cur_global_addr <= 0;
+      _myaxi_write_rest_size <= 0;
+      _myaxi_write_cur_size <= 0;
+      axim_flag_46 <= 0;
+      __myaxi_write_fsm_cond_4_0_1 <= 0;
+    end else begin
+      _d1__myaxi_write_fsm <= _myaxi_write_fsm;
+      case(_d1__myaxi_write_fsm)
+        _myaxi_write_fsm_4: begin
+          if(__myaxi_write_fsm_cond_4_0_1) begin
+            axim_flag_46 <= 0;
+          end 
+        end
+      endcase
+      case(_myaxi_write_fsm)
+        _myaxi_write_fsm_init: begin
+          if(_myaxi_write_start) begin
+            _myaxi_write_cur_global_addr <= (_myaxi_write_global_addr >> 2) << 2;
+            _myaxi_write_rest_size <= _myaxi_write_size;
+          end 
+          if(_myaxi_write_start && (_myaxi_write_op_sel == 1)) begin
+            _myaxi_write_fsm <= _myaxi_write_fsm_1;
+          end 
+        end
+        _myaxi_write_fsm_1: begin
+          if((_myaxi_write_rest_size <= 256) && ((_myaxi_write_cur_global_addr & 4095) + (_myaxi_write_rest_size << 2) >= 4096)) begin
+            _myaxi_write_cur_size <= 4096 - (_myaxi_write_cur_global_addr & 4095) >> 2;
+            _myaxi_write_rest_size <= _myaxi_write_rest_size - (4096 - (_myaxi_write_cur_global_addr & 4095) >> 2);
+          end else if(_myaxi_write_rest_size <= 256) begin
+            _myaxi_write_cur_size <= _myaxi_write_rest_size;
+            _myaxi_write_rest_size <= 0;
+          end else if((_myaxi_write_cur_global_addr & 4095) + 1024 >= 4096) begin
+            _myaxi_write_cur_size <= 4096 - (_myaxi_write_cur_global_addr & 4095) >> 2;
+            _myaxi_write_rest_size <= _myaxi_write_rest_size - (4096 - (_myaxi_write_cur_global_addr & 4095) >> 2);
           end else begin
-            _tmp_17 <= 256;
-            _tmp_18 <= _tmp_18 - 256;
+            _myaxi_write_cur_size <= 256;
+            _myaxi_write_rest_size <= _myaxi_write_rest_size - 256;
           end
-          _tmp_fsm_1 <= _tmp_fsm_1_3;
+          _myaxi_write_fsm <= _myaxi_write_fsm_2;
         end
-        _tmp_fsm_1_3: begin
-          if(myaxi_arready || !myaxi_arvalid) begin
-            _tmp_fsm_1 <= _tmp_fsm_1_4;
-          end 
-        end
-        _tmp_fsm_1_4: begin
-          __tmp_fsm_1_cond_4_0_1 <= 1;
-          if(myaxi_rready && myaxi_rvalid) begin
-            _tmp_19 <= myaxi_rdata;
-            _tmp_20 <= 1;
-          end 
-          if(myaxi_rready && myaxi_rvalid && myaxi_rlast) begin
-            _tmp_16 <= _tmp_16 + (_tmp_17 << 2);
-          end 
-          if(myaxi_rready && myaxi_rvalid && myaxi_rlast && (_tmp_18 > 0)) begin
-            _tmp_fsm_1 <= _tmp_fsm_1_2;
-          end 
-          if(myaxi_rready && myaxi_rvalid && myaxi_rlast && (_tmp_18 == 0)) begin
-            _tmp_fsm_1 <= _tmp_fsm_1_5;
-          end 
-        end
-        _tmp_fsm_1_5: begin
-          _tmp_25 <= 1;
-          __tmp_fsm_1_cond_5_1_1 <= 1;
-          _tmp_fsm_1 <= _tmp_fsm_1_6;
-        end
-        _tmp_fsm_1_6: begin
-          _tmp_fsm_1 <= _tmp_fsm_1_init;
-        end
-      endcase
-    end
-  end
-
-  localparam _mystream_a_fsm_1_1 = 1;
-  localparam _mystream_a_fsm_1_2 = 2;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      _mystream_a_fsm_1 <= _mystream_a_fsm_1_init;
-      _d1__mystream_a_fsm_1 <= _mystream_a_fsm_1_init;
-      _mystream_a_offset_1 <= 0;
-      _mystream_a_size_1 <= 0;
-      _mystream_a_stride_1 <= 0;
-      _mystream_a_count_1 <= 0;
-      _mystream_a_raddr_1 <= 0;
-      _mystream_a_renable_1 <= 0;
-      __mystream_a_fsm_1_cond_1_0_1 <= 0;
-      __mystream_a_fsm_1_cond_2_1_1 <= 0;
-    end else begin
-      _d1__mystream_a_fsm_1 <= _mystream_a_fsm_1;
-      case(_d1__mystream_a_fsm_1)
-        _mystream_a_fsm_1_1: begin
-          if(__mystream_a_fsm_1_cond_1_0_1) begin
-            _mystream_a_renable_1 <= 0;
-          end 
-        end
-        _mystream_a_fsm_1_2: begin
-          if(__mystream_a_fsm_1_cond_2_1_1) begin
-            _mystream_a_renable_1 <= 0;
-          end 
-        end
-      endcase
-      case(_mystream_a_fsm_1)
-        _mystream_a_fsm_1_init: begin
-          if(th_comp == 8) begin
-            _mystream_a_offset_1 <= _th_comp_offset_4;
-            _mystream_a_size_1 <= _th_comp_size_3;
-            _mystream_a_stride_1 <= 1;
-          end 
-          if(_mystream_start && (_mystream_a_fsm_sel == 1) && (_mystream_a_size_1 > 0)) begin
-            _mystream_a_count_1 <= _mystream_a_size_1;
-          end 
-          if(_mystream_start && (_mystream_a_fsm_sel == 1) && (_mystream_a_size_1 > 0)) begin
-            _mystream_a_fsm_1 <= _mystream_a_fsm_1_1;
-          end 
-        end
-        _mystream_a_fsm_1_1: begin
-          _mystream_a_raddr_1 <= _mystream_a_offset_1;
-          _mystream_a_renable_1 <= 1;
-          _mystream_a_count_1 <= _mystream_a_count_1 - 1;
-          __mystream_a_fsm_1_cond_1_0_1 <= 1;
-          if(_mystream_a_count_1 == 1) begin
-            _mystream_a_fsm_1 <= _mystream_a_fsm_1_init;
-          end 
-          if(_mystream_a_count_1 > 1) begin
-            _mystream_a_fsm_1 <= _mystream_a_fsm_1_2;
-          end 
-        end
-        _mystream_a_fsm_1_2: begin
-          _mystream_a_raddr_1 <= _mystream_a_raddr_1 + _mystream_a_stride_1;
-          _mystream_a_renable_1 <= 1;
-          _mystream_a_count_1 <= _mystream_a_count_1 - 1;
-          __mystream_a_fsm_1_cond_2_1_1 <= 1;
-          if(_mystream_a_count_1 == 1) begin
-            _mystream_a_fsm_1 <= _mystream_a_fsm_1_init;
-          end 
-        end
-      endcase
-    end
-  end
-
-  localparam _mystream_b_fsm_2_1 = 1;
-  localparam _mystream_b_fsm_2_2 = 2;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      _mystream_b_fsm_2 <= _mystream_b_fsm_2_init;
-      _d1__mystream_b_fsm_2 <= _mystream_b_fsm_2_init;
-      _mystream_b_offset_2 <= 0;
-      _mystream_b_size_2 <= 0;
-      _mystream_b_stride_2 <= 0;
-      _mystream_b_count_2 <= 0;
-      _mystream_b_raddr_2 <= 0;
-      _mystream_b_renable_2 <= 0;
-      __mystream_b_fsm_2_cond_1_0_1 <= 0;
-      __mystream_b_fsm_2_cond_2_1_1 <= 0;
-    end else begin
-      _d1__mystream_b_fsm_2 <= _mystream_b_fsm_2;
-      case(_d1__mystream_b_fsm_2)
-        _mystream_b_fsm_2_1: begin
-          if(__mystream_b_fsm_2_cond_1_0_1) begin
-            _mystream_b_renable_2 <= 0;
-          end 
-        end
-        _mystream_b_fsm_2_2: begin
-          if(__mystream_b_fsm_2_cond_2_1_1) begin
-            _mystream_b_renable_2 <= 0;
-          end 
-        end
-      endcase
-      case(_mystream_b_fsm_2)
-        _mystream_b_fsm_2_init: begin
-          if(th_comp == 9) begin
-            _mystream_b_offset_2 <= _th_comp_offset_4;
-            _mystream_b_size_2 <= _th_comp_size_3;
-            _mystream_b_stride_2 <= 1;
-          end 
-          if(_mystream_start && (_mystream_b_fsm_sel == 2) && (_mystream_b_size_2 > 0)) begin
-            _mystream_b_count_2 <= _mystream_b_size_2;
-          end 
-          if(_mystream_start && (_mystream_b_fsm_sel == 2) && (_mystream_b_size_2 > 0)) begin
-            _mystream_b_fsm_2 <= _mystream_b_fsm_2_1;
-          end 
-        end
-        _mystream_b_fsm_2_1: begin
-          _mystream_b_raddr_2 <= _mystream_b_offset_2;
-          _mystream_b_renable_2 <= 1;
-          _mystream_b_count_2 <= _mystream_b_count_2 - 1;
-          __mystream_b_fsm_2_cond_1_0_1 <= 1;
-          if(_mystream_b_count_2 == 1) begin
-            _mystream_b_fsm_2 <= _mystream_b_fsm_2_init;
-          end 
-          if(_mystream_b_count_2 > 1) begin
-            _mystream_b_fsm_2 <= _mystream_b_fsm_2_2;
-          end 
-        end
-        _mystream_b_fsm_2_2: begin
-          _mystream_b_raddr_2 <= _mystream_b_raddr_2 + _mystream_b_stride_2;
-          _mystream_b_renable_2 <= 1;
-          _mystream_b_count_2 <= _mystream_b_count_2 - 1;
-          __mystream_b_fsm_2_cond_2_1_1 <= 1;
-          if(_mystream_b_count_2 == 1) begin
-            _mystream_b_fsm_2 <= _mystream_b_fsm_2_init;
-          end 
-        end
-      endcase
-    end
-  end
-
-  localparam _mystream_c_fsm_3_1 = 1;
-  localparam _mystream_c_fsm_3_2 = 2;
-  localparam _mystream_c_fsm_3_3 = 3;
-  localparam _mystream_c_fsm_3_4 = 4;
-  localparam _mystream_c_fsm_3_5 = 5;
-  localparam _mystream_c_fsm_3_6 = 6;
-  localparam _mystream_c_fsm_3_7 = 7;
-  localparam _mystream_c_fsm_3_8 = 8;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      _mystream_c_fsm_3 <= _mystream_c_fsm_3_init;
-      _d1__mystream_c_fsm_3 <= _mystream_c_fsm_3_init;
-      _mystream_c_offset_3 <= 0;
-      _mystream_c_size_3 <= 0;
-      _mystream_c_stride_3 <= 0;
-      _mystream_c_count_3 <= 0;
-      _mystream_c_waddr_3 <= 0;
-      _mystream_c_wdata_3 <= 0;
-      _mystream_c_wenable_3 <= 0;
-      __mystream_c_fsm_3_cond_7_0_1 <= 0;
-      __mystream_c_fsm_3_cond_8_1_1 <= 0;
-    end else begin
-      _d1__mystream_c_fsm_3 <= _mystream_c_fsm_3;
-      case(_d1__mystream_c_fsm_3)
-        _mystream_c_fsm_3_7: begin
-          if(__mystream_c_fsm_3_cond_7_0_1) begin
-            _mystream_c_wenable_3 <= 0;
-          end 
-        end
-        _mystream_c_fsm_3_8: begin
-          if(__mystream_c_fsm_3_cond_8_1_1) begin
-            _mystream_c_wenable_3 <= 0;
-          end 
-        end
-      endcase
-      case(_mystream_c_fsm_3)
-        _mystream_c_fsm_3_init: begin
-          if(th_comp == 11) begin
-            _mystream_c_offset_3 <= _th_comp_offset_4;
-            _mystream_c_size_3 <= _th_comp_size_3;
-            _mystream_c_stride_3 <= 1;
-          end 
-          if(_mystream_start && (_mystream_c_fsm_sel == 3) && (_mystream_c_size_3 > 0)) begin
-            _mystream_c_count_3 <= _mystream_c_size_3;
-          end 
-          if(_mystream_start && (_mystream_c_fsm_sel == 3) && (_mystream_c_size_3 > 0)) begin
-            _mystream_c_fsm_3 <= _mystream_c_fsm_3_1;
-          end 
-        end
-        _mystream_c_fsm_3_1: begin
-          _mystream_c_fsm_3 <= _mystream_c_fsm_3_2;
-        end
-        _mystream_c_fsm_3_2: begin
-          _mystream_c_fsm_3 <= _mystream_c_fsm_3_3;
-        end
-        _mystream_c_fsm_3_3: begin
-          _mystream_c_fsm_3 <= _mystream_c_fsm_3_4;
-        end
-        _mystream_c_fsm_3_4: begin
-          _mystream_c_fsm_3 <= _mystream_c_fsm_3_5;
-        end
-        _mystream_c_fsm_3_5: begin
-          _mystream_c_fsm_3 <= _mystream_c_fsm_3_6;
-        end
-        _mystream_c_fsm_3_6: begin
-          _mystream_c_fsm_3 <= _mystream_c_fsm_3_7;
-        end
-        _mystream_c_fsm_3_7: begin
-          _mystream_c_waddr_3 <= _mystream_c_offset_3;
-          _mystream_c_wdata_3 <= mystream_c_data;
-          _mystream_c_wenable_3 <= 1;
-          _mystream_c_count_3 <= _mystream_c_count_3 - 1;
-          __mystream_c_fsm_3_cond_7_0_1 <= 1;
-          if(_mystream_c_count_3 == 1) begin
-            _mystream_c_fsm_3 <= _mystream_c_fsm_3_init;
-          end 
-          if(_mystream_c_count_3 > 1) begin
-            _mystream_c_fsm_3 <= _mystream_c_fsm_3_8;
-          end 
-        end
-        _mystream_c_fsm_3_8: begin
-          _mystream_c_waddr_3 <= _mystream_c_waddr_3 + _mystream_c_stride_3;
-          _mystream_c_wdata_3 <= mystream_c_data;
-          _mystream_c_wenable_3 <= 1;
-          _mystream_c_count_3 <= _mystream_c_count_3 - 1;
-          __mystream_c_fsm_3_cond_8_1_1 <= 1;
-          if(_mystream_c_count_3 == 1) begin
-            _mystream_c_fsm_3 <= _mystream_c_fsm_3_init;
-          end 
-        end
-      endcase
-    end
-  end
-
-  localparam _mystream_a_fsm_4_1 = 1;
-  localparam _mystream_a_fsm_4_2 = 2;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      _mystream_a_fsm_4 <= _mystream_a_fsm_4_init;
-      _d1__mystream_a_fsm_4 <= _mystream_a_fsm_4_init;
-      _mystream_a_offset_4 <= 0;
-      _mystream_a_size_4 <= 0;
-      _mystream_a_stride_4 <= 0;
-      _mystream_a_count_4 <= 0;
-      _mystream_a_raddr_4 <= 0;
-      _mystream_a_renable_4 <= 0;
-      __mystream_a_fsm_4_cond_1_0_1 <= 0;
-      __mystream_a_fsm_4_cond_2_1_1 <= 0;
-    end else begin
-      _d1__mystream_a_fsm_4 <= _mystream_a_fsm_4;
-      case(_d1__mystream_a_fsm_4)
-        _mystream_a_fsm_4_1: begin
-          if(__mystream_a_fsm_4_cond_1_0_1) begin
-            _mystream_a_renable_4 <= 0;
-          end 
-        end
-        _mystream_a_fsm_4_2: begin
-          if(__mystream_a_fsm_4_cond_2_1_1) begin
-            _mystream_a_renable_4 <= 0;
-          end 
-        end
-      endcase
-      case(_mystream_a_fsm_4)
-        _mystream_a_fsm_4_init: begin
-          if(th_comp == 15) begin
-            _mystream_a_offset_4 <= _th_comp_offset_7;
-            _mystream_a_size_4 <= _th_comp_size_6;
-            _mystream_a_stride_4 <= 1;
-          end 
-          if(_mystream_start && (_mystream_a_fsm_sel == 4) && (_mystream_a_size_4 > 0)) begin
-            _mystream_a_count_4 <= _mystream_a_size_4;
-          end 
-          if(_mystream_start && (_mystream_a_fsm_sel == 4) && (_mystream_a_size_4 > 0)) begin
-            _mystream_a_fsm_4 <= _mystream_a_fsm_4_1;
-          end 
-        end
-        _mystream_a_fsm_4_1: begin
-          _mystream_a_raddr_4 <= _mystream_a_offset_4;
-          _mystream_a_renable_4 <= 1;
-          _mystream_a_count_4 <= _mystream_a_count_4 - 1;
-          __mystream_a_fsm_4_cond_1_0_1 <= 1;
-          if(_mystream_a_count_4 == 1) begin
-            _mystream_a_fsm_4 <= _mystream_a_fsm_4_init;
-          end 
-          if(_mystream_a_count_4 > 1) begin
-            _mystream_a_fsm_4 <= _mystream_a_fsm_4_2;
-          end 
-        end
-        _mystream_a_fsm_4_2: begin
-          _mystream_a_raddr_4 <= _mystream_a_raddr_4 + _mystream_a_stride_4;
-          _mystream_a_renable_4 <= 1;
-          _mystream_a_count_4 <= _mystream_a_count_4 - 1;
-          __mystream_a_fsm_4_cond_2_1_1 <= 1;
-          if(_mystream_a_count_4 == 1) begin
-            _mystream_a_fsm_4 <= _mystream_a_fsm_4_init;
-          end 
-        end
-      endcase
-    end
-  end
-
-  localparam _mystream_b_fsm_5_1 = 1;
-  localparam _mystream_b_fsm_5_2 = 2;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      _mystream_b_fsm_5 <= _mystream_b_fsm_5_init;
-      _d1__mystream_b_fsm_5 <= _mystream_b_fsm_5_init;
-      _mystream_b_offset_5 <= 0;
-      _mystream_b_size_5 <= 0;
-      _mystream_b_stride_5 <= 0;
-      _mystream_b_count_5 <= 0;
-      _mystream_b_raddr_5 <= 0;
-      _mystream_b_renable_5 <= 0;
-      __mystream_b_fsm_5_cond_1_0_1 <= 0;
-      __mystream_b_fsm_5_cond_2_1_1 <= 0;
-    end else begin
-      _d1__mystream_b_fsm_5 <= _mystream_b_fsm_5;
-      case(_d1__mystream_b_fsm_5)
-        _mystream_b_fsm_5_1: begin
-          if(__mystream_b_fsm_5_cond_1_0_1) begin
-            _mystream_b_renable_5 <= 0;
-          end 
-        end
-        _mystream_b_fsm_5_2: begin
-          if(__mystream_b_fsm_5_cond_2_1_1) begin
-            _mystream_b_renable_5 <= 0;
-          end 
-        end
-      endcase
-      case(_mystream_b_fsm_5)
-        _mystream_b_fsm_5_init: begin
-          if(th_comp == 16) begin
-            _mystream_b_offset_5 <= _th_comp_offset_7;
-            _mystream_b_size_5 <= _th_comp_size_6;
-            _mystream_b_stride_5 <= 1;
-          end 
-          if(_mystream_start && (_mystream_b_fsm_sel == 5) && (_mystream_b_size_5 > 0)) begin
-            _mystream_b_count_5 <= _mystream_b_size_5;
-          end 
-          if(_mystream_start && (_mystream_b_fsm_sel == 5) && (_mystream_b_size_5 > 0)) begin
-            _mystream_b_fsm_5 <= _mystream_b_fsm_5_1;
-          end 
-        end
-        _mystream_b_fsm_5_1: begin
-          _mystream_b_raddr_5 <= _mystream_b_offset_5;
-          _mystream_b_renable_5 <= 1;
-          _mystream_b_count_5 <= _mystream_b_count_5 - 1;
-          __mystream_b_fsm_5_cond_1_0_1 <= 1;
-          if(_mystream_b_count_5 == 1) begin
-            _mystream_b_fsm_5 <= _mystream_b_fsm_5_init;
-          end 
-          if(_mystream_b_count_5 > 1) begin
-            _mystream_b_fsm_5 <= _mystream_b_fsm_5_2;
-          end 
-        end
-        _mystream_b_fsm_5_2: begin
-          _mystream_b_raddr_5 <= _mystream_b_raddr_5 + _mystream_b_stride_5;
-          _mystream_b_renable_5 <= 1;
-          _mystream_b_count_5 <= _mystream_b_count_5 - 1;
-          __mystream_b_fsm_5_cond_2_1_1 <= 1;
-          if(_mystream_b_count_5 == 1) begin
-            _mystream_b_fsm_5 <= _mystream_b_fsm_5_init;
-          end 
-        end
-      endcase
-    end
-  end
-
-  localparam _mystream_c_fsm_6_1 = 1;
-  localparam _mystream_c_fsm_6_2 = 2;
-  localparam _mystream_c_fsm_6_3 = 3;
-  localparam _mystream_c_fsm_6_4 = 4;
-  localparam _mystream_c_fsm_6_5 = 5;
-  localparam _mystream_c_fsm_6_6 = 6;
-  localparam _mystream_c_fsm_6_7 = 7;
-  localparam _mystream_c_fsm_6_8 = 8;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      _mystream_c_fsm_6 <= _mystream_c_fsm_6_init;
-      _d1__mystream_c_fsm_6 <= _mystream_c_fsm_6_init;
-      _mystream_c_offset_6 <= 0;
-      _mystream_c_size_6 <= 0;
-      _mystream_c_stride_6 <= 0;
-      _mystream_c_count_6 <= 0;
-      _mystream_c_waddr_6 <= 0;
-      _mystream_c_wdata_6 <= 0;
-      _mystream_c_wenable_6 <= 0;
-      __mystream_c_fsm_6_cond_7_0_1 <= 0;
-      __mystream_c_fsm_6_cond_8_1_1 <= 0;
-    end else begin
-      _d1__mystream_c_fsm_6 <= _mystream_c_fsm_6;
-      case(_d1__mystream_c_fsm_6)
-        _mystream_c_fsm_6_7: begin
-          if(__mystream_c_fsm_6_cond_7_0_1) begin
-            _mystream_c_wenable_6 <= 0;
-          end 
-        end
-        _mystream_c_fsm_6_8: begin
-          if(__mystream_c_fsm_6_cond_8_1_1) begin
-            _mystream_c_wenable_6 <= 0;
-          end 
-        end
-      endcase
-      case(_mystream_c_fsm_6)
-        _mystream_c_fsm_6_init: begin
-          if(th_comp == 18) begin
-            _mystream_c_offset_6 <= _th_comp_offset_7;
-            _mystream_c_size_6 <= _th_comp_size_6;
-            _mystream_c_stride_6 <= 1;
-          end 
-          if(_mystream_start && (_mystream_c_fsm_sel == 6) && (_mystream_c_size_6 > 0)) begin
-            _mystream_c_count_6 <= _mystream_c_size_6;
-          end 
-          if(_mystream_start && (_mystream_c_fsm_sel == 6) && (_mystream_c_size_6 > 0)) begin
-            _mystream_c_fsm_6 <= _mystream_c_fsm_6_1;
-          end 
-        end
-        _mystream_c_fsm_6_1: begin
-          _mystream_c_fsm_6 <= _mystream_c_fsm_6_2;
-        end
-        _mystream_c_fsm_6_2: begin
-          _mystream_c_fsm_6 <= _mystream_c_fsm_6_3;
-        end
-        _mystream_c_fsm_6_3: begin
-          _mystream_c_fsm_6 <= _mystream_c_fsm_6_4;
-        end
-        _mystream_c_fsm_6_4: begin
-          _mystream_c_fsm_6 <= _mystream_c_fsm_6_5;
-        end
-        _mystream_c_fsm_6_5: begin
-          _mystream_c_fsm_6 <= _mystream_c_fsm_6_6;
-        end
-        _mystream_c_fsm_6_6: begin
-          _mystream_c_fsm_6 <= _mystream_c_fsm_6_7;
-        end
-        _mystream_c_fsm_6_7: begin
-          _mystream_c_waddr_6 <= _mystream_c_offset_6;
-          _mystream_c_wdata_6 <= mystream_c_data;
-          _mystream_c_wenable_6 <= 1;
-          _mystream_c_count_6 <= _mystream_c_count_6 - 1;
-          __mystream_c_fsm_6_cond_7_0_1 <= 1;
-          if(_mystream_c_count_6 == 1) begin
-            _mystream_c_fsm_6 <= _mystream_c_fsm_6_init;
-          end 
-          if(_mystream_c_count_6 > 1) begin
-            _mystream_c_fsm_6 <= _mystream_c_fsm_6_8;
-          end 
-        end
-        _mystream_c_fsm_6_8: begin
-          _mystream_c_waddr_6 <= _mystream_c_waddr_6 + _mystream_c_stride_6;
-          _mystream_c_wdata_6 <= mystream_c_data;
-          _mystream_c_wenable_6 <= 1;
-          _mystream_c_count_6 <= _mystream_c_count_6 - 1;
-          __mystream_c_fsm_6_cond_8_1_1 <= 1;
-          if(_mystream_c_count_6 == 1) begin
-            _mystream_c_fsm_6 <= _mystream_c_fsm_6_init;
-          end 
-        end
-      endcase
-    end
-  end
-
-  localparam _tmp_fsm_2_1 = 1;
-  localparam _tmp_fsm_2_2 = 2;
-  localparam _tmp_fsm_2_3 = 3;
-  localparam _tmp_fsm_2_4 = 4;
-  localparam _tmp_fsm_2_5 = 5;
-  localparam _tmp_fsm_2_6 = 6;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      _tmp_fsm_2 <= _tmp_fsm_2_init;
-      _d1__tmp_fsm_2 <= _tmp_fsm_2_init;
-      _tmp_33 <= 0;
-      _tmp_35 <= 0;
-      _tmp_34 <= 0;
-      _tmp_51 <= 0;
-      __tmp_fsm_2_cond_5_0_1 <= 0;
-    end else begin
-      _d1__tmp_fsm_2 <= _tmp_fsm_2;
-      case(_d1__tmp_fsm_2)
-        _tmp_fsm_2_5: begin
-          if(__tmp_fsm_2_cond_5_0_1) begin
-            _tmp_51 <= 0;
-          end 
-        end
-      endcase
-      case(_tmp_fsm_2)
-        _tmp_fsm_2_init: begin
-          if(th_comp == 22) begin
-            _tmp_fsm_2 <= _tmp_fsm_2_1;
-          end 
-        end
-        _tmp_fsm_2_1: begin
-          _tmp_33 <= (_tmp_31 >> 2) << 2;
-          _tmp_35 <= _tmp_32;
-          _tmp_fsm_2 <= _tmp_fsm_2_2;
-        end
-        _tmp_fsm_2_2: begin
-          if((_tmp_35 <= 256) && ((_tmp_33 & 4095) + (_tmp_35 << 2) >= 4096)) begin
-            _tmp_34 <= 4096 - (_tmp_33 & 4095) >> 2;
-            _tmp_35 <= _tmp_35 - (4096 - (_tmp_33 & 4095) >> 2);
-          end else if(_tmp_35 <= 256) begin
-            _tmp_34 <= _tmp_35;
-            _tmp_35 <= 0;
-          end else if((_tmp_33 & 4095) + 1024 >= 4096) begin
-            _tmp_34 <= 4096 - (_tmp_33 & 4095) >> 2;
-            _tmp_35 <= _tmp_35 - (4096 - (_tmp_33 & 4095) >> 2);
-          end else begin
-            _tmp_34 <= 256;
-            _tmp_35 <= _tmp_35 - 256;
-          end
-          _tmp_fsm_2 <= _tmp_fsm_2_3;
-        end
-        _tmp_fsm_2_3: begin
+        _myaxi_write_fsm_2: begin
           if(myaxi_awready || !myaxi_awvalid) begin
-            _tmp_fsm_2 <= _tmp_fsm_2_4;
+            _myaxi_write_fsm <= _myaxi_write_fsm_3;
           end 
         end
-        _tmp_fsm_2_4: begin
-          if(_tmp_49 && myaxi_wvalid && myaxi_wready) begin
-            _tmp_33 <= _tmp_33 + (_tmp_34 << 2);
+        _myaxi_write_fsm_3: begin
+          if(_myaxi_write_data_done) begin
+            _myaxi_write_cur_global_addr <= _myaxi_write_cur_global_addr + (_myaxi_write_cur_size << 2);
           end 
-          if(_tmp_49 && myaxi_wvalid && myaxi_wready && (_tmp_35 > 0)) begin
-            _tmp_fsm_2 <= _tmp_fsm_2_2;
+          if(_myaxi_write_data_done && (_myaxi_write_rest_size > 0)) begin
+            _myaxi_write_fsm <= _myaxi_write_fsm_1;
           end 
-          if(_tmp_49 && myaxi_wvalid && myaxi_wready && (_tmp_35 == 0)) begin
-            _tmp_fsm_2 <= _tmp_fsm_2_5;
-          end 
-        end
-        _tmp_fsm_2_5: begin
-          _tmp_51 <= 1;
-          __tmp_fsm_2_cond_5_0_1 <= 1;
-          _tmp_fsm_2 <= _tmp_fsm_2_6;
-        end
-        _tmp_fsm_2_6: begin
-          _tmp_fsm_2 <= _tmp_fsm_2_init;
-        end
-      endcase
-    end
-  end
-
-  localparam _tmp_fsm_3_1 = 1;
-  localparam _tmp_fsm_3_2 = 2;
-  localparam _tmp_fsm_3_3 = 3;
-  localparam _tmp_fsm_3_4 = 4;
-  localparam _tmp_fsm_3_5 = 5;
-  localparam _tmp_fsm_3_6 = 6;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      _tmp_fsm_3 <= _tmp_fsm_3_init;
-      _d1__tmp_fsm_3 <= _tmp_fsm_3_init;
-      _tmp_55 <= 0;
-      _tmp_57 <= 0;
-      _tmp_56 <= 0;
-      __tmp_fsm_3_cond_4_0_1 <= 0;
-      _tmp_59 <= 0;
-      _tmp_58 <= 0;
-      _tmp_64 <= 0;
-      __tmp_fsm_3_cond_5_1_1 <= 0;
-    end else begin
-      _d1__tmp_fsm_3 <= _tmp_fsm_3;
-      case(_d1__tmp_fsm_3)
-        _tmp_fsm_3_4: begin
-          if(__tmp_fsm_3_cond_4_0_1) begin
-            _tmp_59 <= 0;
+          if(_myaxi_write_data_done && (_myaxi_write_rest_size == 0)) begin
+            _myaxi_write_fsm <= _myaxi_write_fsm_4;
           end 
         end
-        _tmp_fsm_3_5: begin
-          if(__tmp_fsm_3_cond_5_1_1) begin
-            _tmp_64 <= 0;
-          end 
+        _myaxi_write_fsm_4: begin
+          axim_flag_46 <= 1;
+          __myaxi_write_fsm_cond_4_0_1 <= 1;
+          _myaxi_write_fsm <= _myaxi_write_fsm_5;
         end
-      endcase
-      case(_tmp_fsm_3)
-        _tmp_fsm_3_init: begin
-          if(th_comp == 25) begin
-            _tmp_fsm_3 <= _tmp_fsm_3_1;
-          end 
-        end
-        _tmp_fsm_3_1: begin
-          _tmp_55 <= (_tmp_53 >> 2) << 2;
-          _tmp_57 <= _tmp_54;
-          _tmp_fsm_3 <= _tmp_fsm_3_2;
-        end
-        _tmp_fsm_3_2: begin
-          if((_tmp_57 <= 256) && ((_tmp_55 & 4095) + (_tmp_57 << 2) >= 4096)) begin
-            _tmp_56 <= 4096 - (_tmp_55 & 4095) >> 2;
-            _tmp_57 <= _tmp_57 - (4096 - (_tmp_55 & 4095) >> 2);
-          end else if(_tmp_57 <= 256) begin
-            _tmp_56 <= _tmp_57;
-            _tmp_57 <= 0;
-          end else if((_tmp_55 & 4095) + 1024 >= 4096) begin
-            _tmp_56 <= 4096 - (_tmp_55 & 4095) >> 2;
-            _tmp_57 <= _tmp_57 - (4096 - (_tmp_55 & 4095) >> 2);
-          end else begin
-            _tmp_56 <= 256;
-            _tmp_57 <= _tmp_57 - 256;
-          end
-          _tmp_fsm_3 <= _tmp_fsm_3_3;
-        end
-        _tmp_fsm_3_3: begin
-          if(myaxi_arready || !myaxi_arvalid) begin
-            _tmp_fsm_3 <= _tmp_fsm_3_4;
-          end 
-        end
-        _tmp_fsm_3_4: begin
-          __tmp_fsm_3_cond_4_0_1 <= 1;
-          if(myaxi_rready && myaxi_rvalid) begin
-            _tmp_58 <= myaxi_rdata;
-            _tmp_59 <= 1;
-          end 
-          if(myaxi_rready && myaxi_rvalid && myaxi_rlast) begin
-            _tmp_55 <= _tmp_55 + (_tmp_56 << 2);
-          end 
-          if(myaxi_rready && myaxi_rvalid && myaxi_rlast && (_tmp_57 > 0)) begin
-            _tmp_fsm_3 <= _tmp_fsm_3_2;
-          end 
-          if(myaxi_rready && myaxi_rvalid && myaxi_rlast && (_tmp_57 == 0)) begin
-            _tmp_fsm_3 <= _tmp_fsm_3_5;
-          end 
-        end
-        _tmp_fsm_3_5: begin
-          _tmp_64 <= 1;
-          __tmp_fsm_3_cond_5_1_1 <= 1;
-          _tmp_fsm_3 <= _tmp_fsm_3_6;
-        end
-        _tmp_fsm_3_6: begin
-          _tmp_fsm_3 <= _tmp_fsm_3_init;
-        end
-      endcase
-    end
-  end
-
-  localparam _tmp_fsm_4_1 = 1;
-  localparam _tmp_fsm_4_2 = 2;
-  localparam _tmp_fsm_4_3 = 3;
-  localparam _tmp_fsm_4_4 = 4;
-  localparam _tmp_fsm_4_5 = 5;
-  localparam _tmp_fsm_4_6 = 6;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      _tmp_fsm_4 <= _tmp_fsm_4_init;
-      _d1__tmp_fsm_4 <= _tmp_fsm_4_init;
-      _tmp_68 <= 0;
-      _tmp_70 <= 0;
-      _tmp_69 <= 0;
-      __tmp_fsm_4_cond_4_0_1 <= 0;
-      _tmp_72 <= 0;
-      _tmp_71 <= 0;
-      _tmp_77 <= 0;
-      __tmp_fsm_4_cond_5_1_1 <= 0;
-    end else begin
-      _d1__tmp_fsm_4 <= _tmp_fsm_4;
-      case(_d1__tmp_fsm_4)
-        _tmp_fsm_4_4: begin
-          if(__tmp_fsm_4_cond_4_0_1) begin
-            _tmp_72 <= 0;
-          end 
-        end
-        _tmp_fsm_4_5: begin
-          if(__tmp_fsm_4_cond_5_1_1) begin
-            _tmp_77 <= 0;
-          end 
-        end
-      endcase
-      case(_tmp_fsm_4)
-        _tmp_fsm_4_init: begin
-          if(th_comp == 27) begin
-            _tmp_fsm_4 <= _tmp_fsm_4_1;
-          end 
-        end
-        _tmp_fsm_4_1: begin
-          _tmp_68 <= (_tmp_66 >> 2) << 2;
-          _tmp_70 <= _tmp_67;
-          _tmp_fsm_4 <= _tmp_fsm_4_2;
-        end
-        _tmp_fsm_4_2: begin
-          if((_tmp_70 <= 256) && ((_tmp_68 & 4095) + (_tmp_70 << 2) >= 4096)) begin
-            _tmp_69 <= 4096 - (_tmp_68 & 4095) >> 2;
-            _tmp_70 <= _tmp_70 - (4096 - (_tmp_68 & 4095) >> 2);
-          end else if(_tmp_70 <= 256) begin
-            _tmp_69 <= _tmp_70;
-            _tmp_70 <= 0;
-          end else if((_tmp_68 & 4095) + 1024 >= 4096) begin
-            _tmp_69 <= 4096 - (_tmp_68 & 4095) >> 2;
-            _tmp_70 <= _tmp_70 - (4096 - (_tmp_68 & 4095) >> 2);
-          end else begin
-            _tmp_69 <= 256;
-            _tmp_70 <= _tmp_70 - 256;
-          end
-          _tmp_fsm_4 <= _tmp_fsm_4_3;
-        end
-        _tmp_fsm_4_3: begin
-          if(myaxi_arready || !myaxi_arvalid) begin
-            _tmp_fsm_4 <= _tmp_fsm_4_4;
-          end 
-        end
-        _tmp_fsm_4_4: begin
-          __tmp_fsm_4_cond_4_0_1 <= 1;
-          if(myaxi_rready && myaxi_rvalid) begin
-            _tmp_71 <= myaxi_rdata;
-            _tmp_72 <= 1;
-          end 
-          if(myaxi_rready && myaxi_rvalid && myaxi_rlast) begin
-            _tmp_68 <= _tmp_68 + (_tmp_69 << 2);
-          end 
-          if(myaxi_rready && myaxi_rvalid && myaxi_rlast && (_tmp_70 > 0)) begin
-            _tmp_fsm_4 <= _tmp_fsm_4_2;
-          end 
-          if(myaxi_rready && myaxi_rvalid && myaxi_rlast && (_tmp_70 == 0)) begin
-            _tmp_fsm_4 <= _tmp_fsm_4_5;
-          end 
-        end
-        _tmp_fsm_4_5: begin
-          _tmp_77 <= 1;
-          __tmp_fsm_4_cond_5_1_1 <= 1;
-          _tmp_fsm_4 <= _tmp_fsm_4_6;
-        end
-        _tmp_fsm_4_6: begin
-          _tmp_fsm_4 <= _tmp_fsm_4_init;
-        end
-      endcase
-    end
-  end
-
-  localparam _tmp_fsm_5_1 = 1;
-  localparam _tmp_fsm_5_2 = 2;
-  localparam _tmp_fsm_5_3 = 3;
-  localparam _tmp_fsm_5_4 = 4;
-  localparam _tmp_fsm_5_5 = 5;
-  localparam _tmp_fsm_5_6 = 6;
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      _tmp_fsm_5 <= _tmp_fsm_5_init;
-      _d1__tmp_fsm_5 <= _tmp_fsm_5_init;
-      _tmp_85 <= 0;
-      _tmp_87 <= 0;
-      _tmp_86 <= 0;
-      _tmp_103 <= 0;
-      __tmp_fsm_5_cond_5_0_1 <= 0;
-    end else begin
-      _d1__tmp_fsm_5 <= _tmp_fsm_5;
-      case(_d1__tmp_fsm_5)
-        _tmp_fsm_5_5: begin
-          if(__tmp_fsm_5_cond_5_0_1) begin
-            _tmp_103 <= 0;
-          end 
-        end
-      endcase
-      case(_tmp_fsm_5)
-        _tmp_fsm_5_init: begin
-          if(th_comp == 40) begin
-            _tmp_fsm_5 <= _tmp_fsm_5_1;
-          end 
-        end
-        _tmp_fsm_5_1: begin
-          _tmp_85 <= (_tmp_83 >> 2) << 2;
-          _tmp_87 <= _tmp_84;
-          _tmp_fsm_5 <= _tmp_fsm_5_2;
-        end
-        _tmp_fsm_5_2: begin
-          if((_tmp_87 <= 256) && ((_tmp_85 & 4095) + (_tmp_87 << 2) >= 4096)) begin
-            _tmp_86 <= 4096 - (_tmp_85 & 4095) >> 2;
-            _tmp_87 <= _tmp_87 - (4096 - (_tmp_85 & 4095) >> 2);
-          end else if(_tmp_87 <= 256) begin
-            _tmp_86 <= _tmp_87;
-            _tmp_87 <= 0;
-          end else if((_tmp_85 & 4095) + 1024 >= 4096) begin
-            _tmp_86 <= 4096 - (_tmp_85 & 4095) >> 2;
-            _tmp_87 <= _tmp_87 - (4096 - (_tmp_85 & 4095) >> 2);
-          end else begin
-            _tmp_86 <= 256;
-            _tmp_87 <= _tmp_87 - 256;
-          end
-          _tmp_fsm_5 <= _tmp_fsm_5_3;
-        end
-        _tmp_fsm_5_3: begin
-          if(myaxi_awready || !myaxi_awvalid) begin
-            _tmp_fsm_5 <= _tmp_fsm_5_4;
-          end 
-        end
-        _tmp_fsm_5_4: begin
-          if(_tmp_101 && myaxi_wvalid && myaxi_wready) begin
-            _tmp_85 <= _tmp_85 + (_tmp_86 << 2);
-          end 
-          if(_tmp_101 && myaxi_wvalid && myaxi_wready && (_tmp_87 > 0)) begin
-            _tmp_fsm_5 <= _tmp_fsm_5_2;
-          end 
-          if(_tmp_101 && myaxi_wvalid && myaxi_wready && (_tmp_87 == 0)) begin
-            _tmp_fsm_5 <= _tmp_fsm_5_5;
-          end 
-        end
-        _tmp_fsm_5_5: begin
-          _tmp_103 <= 1;
-          __tmp_fsm_5_cond_5_0_1 <= 1;
-          _tmp_fsm_5 <= _tmp_fsm_5_6;
-        end
-        _tmp_fsm_5_6: begin
-          _tmp_fsm_5 <= _tmp_fsm_5_init;
+        _myaxi_write_fsm_5: begin
+          _myaxi_write_fsm <= _myaxi_write_fsm_init;
         end
       endcase
     end

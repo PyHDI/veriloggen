@@ -176,6 +176,21 @@ module test;
   wire [32-1:0] _saxi_rdata;
   wire _saxi_rvalid;
   wire _saxi_rready;
+  reg __saxi_read_start;
+  reg [8-1:0] __saxi_read_op_sel;
+  reg [32-1:0] __saxi_read_local_addr;
+  reg [32-1:0] __saxi_read_global_addr;
+  reg [33-1:0] __saxi_read_size;
+  reg [32-1:0] __saxi_read_local_stride;
+  reg __saxi_read_idle;
+  reg __saxi_write_start;
+  reg [8-1:0] __saxi_write_op_sel;
+  reg [32-1:0] __saxi_write_local_addr;
+  reg [32-1:0] __saxi_write_global_addr;
+  reg [33-1:0] __saxi_write_size;
+  reg [32-1:0] __saxi_write_local_stride;
+  reg __saxi_write_idle;
+  wire __saxi_write_data_done;
   wire [32-1:0] _tmp_5;
   assign _tmp_5 = _saxi_awaddr;
 
@@ -255,11 +270,11 @@ module test;
   reg __saxi_cond_7_1;
   reg signed [32-1:0] _th_ctrl_araddr_16;
   reg __saxi_cond_8_1;
-  reg signed [32-1:0] _tmp_13;
+  reg signed [32-1:0] axim_rdata_13;
   reg signed [32-1:0] _th_ctrl_v_17;
   reg __saxi_cond_9_1;
   assign _saxi_rready = (th_ctrl == 25) || (th_ctrl == 29);
-  reg signed [32-1:0] _tmp_14;
+  reg signed [32-1:0] axim_rdata_14;
   reg signed [32-1:0] _th_ctrl_end_time_18;
   reg signed [32-1:0] _th_ctrl_time_19;
 
@@ -302,6 +317,20 @@ module test;
     _saxi_wvalid = 0;
     _saxi_araddr = 0;
     _saxi_arvalid = 0;
+    __saxi_read_start = 0;
+    __saxi_read_op_sel = 0;
+    __saxi_read_local_addr = 0;
+    __saxi_read_global_addr = 0;
+    __saxi_read_size = 0;
+    __saxi_read_local_stride = 0;
+    __saxi_read_idle = 1;
+    __saxi_write_start = 0;
+    __saxi_write_op_sel = 0;
+    __saxi_write_local_addr = 0;
+    __saxi_write_global_addr = 0;
+    __saxi_write_size = 0;
+    __saxi_write_local_stride = 0;
+    __saxi_write_idle = 1;
     counter = 0;
     th_ctrl = th_ctrl_init;
     _th_ctrl_i_11 = 0;
@@ -319,10 +348,10 @@ module test;
     __saxi_cond_7_1 = 0;
     _th_ctrl_araddr_16 = 0;
     __saxi_cond_8_1 = 0;
-    _tmp_13 = 0;
+    axim_rdata_13 = 0;
     _th_ctrl_v_17 = 0;
     __saxi_cond_9_1 = 0;
-    _tmp_14 = 0;
+    axim_rdata_14 = 0;
     _th_ctrl_end_time_18 = 0;
     _th_ctrl_time_19 = 0;
     #100;
@@ -573,6 +602,8 @@ module test;
 
   always @(posedge uut_CLK) begin
     if(uut_RST) begin
+      __saxi_read_start <= 0;
+      __saxi_write_start <= 0;
       _saxi_awaddr <= 0;
       _saxi_awvalid <= 0;
       __saxi_cond_0_1 <= 0;
@@ -621,6 +652,8 @@ module test;
       if(__saxi_cond_9_1) begin
         _saxi_arvalid <= 0;
       end 
+      __saxi_read_start <= 0;
+      __saxi_write_start <= 0;
       if((th_ctrl == 6) && (_saxi_awready || !_saxi_awvalid)) begin
         _saxi_awaddr <= _th_ctrl_awaddr_12;
         _saxi_awvalid <= 1;
@@ -763,9 +796,9 @@ module test;
       _th_ctrl_dst_offset_14 <= 0;
       _th_ctrl_start_time_15 <= 0;
       _th_ctrl_araddr_16 <= 0;
-      _tmp_13 <= 0;
+      axim_rdata_13 <= 0;
       _th_ctrl_v_17 <= 0;
-      _tmp_14 <= 0;
+      axim_rdata_14 <= 0;
       _th_ctrl_end_time_18 <= 0;
       _th_ctrl_time_19 <= 0;
     end else begin
@@ -883,14 +916,14 @@ module test;
         end
         th_ctrl_25: begin
           if(_saxi_rready && _saxi_rvalid) begin
-            _tmp_13 <= _saxi_rdata;
+            axim_rdata_13 <= _saxi_rdata;
           end 
           if(_saxi_rready && _saxi_rvalid) begin
             th_ctrl <= th_ctrl_26;
           end 
         end
         th_ctrl_26: begin
-          _th_ctrl_v_17 <= _tmp_13;
+          _th_ctrl_v_17 <= axim_rdata_13;
           th_ctrl <= th_ctrl_27;
         end
         th_ctrl_27: begin
@@ -907,14 +940,14 @@ module test;
         end
         th_ctrl_29: begin
           if(_saxi_rready && _saxi_rvalid) begin
-            _tmp_14 <= _saxi_rdata;
+            axim_rdata_14 <= _saxi_rdata;
           end 
           if(_saxi_rready && _saxi_rvalid) begin
             th_ctrl <= th_ctrl_30;
           end 
         end
         th_ctrl_30: begin
-          _th_ctrl_v_17 <= _tmp_14;
+          _th_ctrl_v_17 <= axim_rdata_14;
           th_ctrl <= th_ctrl_31;
         end
         th_ctrl_31: begin
@@ -997,6 +1030,21 @@ module blinkled
     .ram_a_0_wenable(ram_a_0_wenable)
   );
 
+  reg _maxi_read_start;
+  reg [8-1:0] _maxi_read_op_sel;
+  reg [32-1:0] _maxi_read_local_addr;
+  reg [32-1:0] _maxi_read_global_addr;
+  reg [33-1:0] _maxi_read_size;
+  reg [32-1:0] _maxi_read_local_stride;
+  reg _maxi_read_idle;
+  reg _maxi_write_start;
+  reg [8-1:0] _maxi_write_op_sel;
+  reg [32-1:0] _maxi_write_local_addr;
+  reg [32-1:0] _maxi_write_global_addr;
+  reg [33-1:0] _maxi_write_size;
+  reg [32-1:0] _maxi_write_local_stride;
+  reg _maxi_write_idle;
+  wire _maxi_write_data_done;
   reg signed [32-1:0] _saxi_register_0;
   reg signed [32-1:0] _saxi_register_1;
   reg signed [32-1:0] _saxi_register_2;
@@ -1090,158 +1138,196 @@ module blinkled
   reg signed [32-1:0] _th_memcpy_dst_global_addr_8;
   reg signed [32-1:0] _th_memcpy_local_addr_9;
   reg signed [32-1:0] _th_memcpy_dma_size_10;
-  reg [10-1:0] _tmp_9;
-  reg [32-1:0] _tmp_10;
-  reg [32-1:0] _tmp_11;
-  reg [32-1:0] _tmp_fsm_0;
-  localparam _tmp_fsm_0_init = 0;
-  reg [32-1:0] _tmp_12;
-  reg [33-1:0] _tmp_13;
-  reg [33-1:0] _tmp_14;
-  reg [32-1:0] _tmp_15;
-  reg _tmp_16;
-  reg [33-1:0] _tmp_17;
-  reg _tmp_18;
-  wire [32-1:0] __variable_data_19;
-  wire __variable_valid_19;
-  wire __variable_ready_19;
-  assign __variable_ready_19 = (_tmp_17 > 0) && !_tmp_18;
+  reg axim_flag_9;
+  reg [32-1:0] _d1_th_memcpy;
+  reg _th_memcpy_cond_16_0_1;
+  reg _maxi_ram_a_0_read_start;
+  reg [8-1:0] _maxi_ram_a_0_read_op_sel;
+  reg [32-1:0] _maxi_ram_a_0_read_local_addr;
+  reg [32-1:0] _maxi_ram_a_0_read_global_addr;
+  reg [33-1:0] _maxi_ram_a_0_read_size;
+  reg [32-1:0] _maxi_ram_a_0_read_local_stride;
+  reg [32-1:0] _maxi_read_fsm;
+  localparam _maxi_read_fsm_init = 0;
+  reg [32-1:0] _maxi_read_cur_global_addr;
+  reg [33-1:0] _maxi_read_cur_size;
+  reg [33-1:0] _maxi_read_rest_size;
+  reg [32-1:0] _wdata_10;
+  reg _wvalid_11;
+  reg [34-1:0] _tmp_12;
+  reg _tmp_13;
+  wire [32-1:0] __variable_data_14;
+  wire __variable_valid_14;
+  wire __variable_ready_14;
+  assign __variable_ready_14 = (_tmp_12 > 0) && !_tmp_13;
   reg _ram_a_cond_0_1;
-  reg [9-1:0] _tmp_20;
+  reg [9-1:0] _tmp_15;
   reg _maxi_cond_0_1;
-  assign maxi_rready = _tmp_fsm_0 == 4;
-  reg [32-1:0] _d1__tmp_fsm_0;
-  reg __tmp_fsm_0_cond_4_0_1;
-  reg _tmp_21;
-  reg __tmp_fsm_0_cond_5_1_1;
-  reg [10-1:0] _tmp_22;
-  reg [32-1:0] _tmp_23;
-  reg [32-1:0] _tmp_24;
-  reg [32-1:0] _tmp_fsm_1;
-  localparam _tmp_fsm_1_init = 0;
-  reg [32-1:0] _tmp_25;
-  reg [33-1:0] _tmp_26;
-  reg [33-1:0] _tmp_27;
+  assign maxi_rready = _maxi_read_fsm == 3;
+  reg [32-1:0] _d1__maxi_read_fsm;
+  reg __maxi_read_fsm_cond_3_0_1;
+  reg axim_flag_16;
+  reg __maxi_read_fsm_cond_4_1_1;
+  reg axim_flag_17;
+  reg _th_memcpy_cond_20_1_1;
+  reg _maxi_ram_a_0_write_start;
+  reg [8-1:0] _maxi_ram_a_0_write_op_sel;
+  reg [32-1:0] _maxi_ram_a_0_write_local_addr;
+  reg [32-1:0] _maxi_ram_a_0_write_global_addr;
+  reg [33-1:0] _maxi_ram_a_0_write_size;
+  reg [32-1:0] _maxi_ram_a_0_write_local_stride;
+  reg [32-1:0] _maxi_write_fsm;
+  localparam _maxi_write_fsm_init = 0;
+  reg [32-1:0] _maxi_write_cur_global_addr;
+  reg [33-1:0] _maxi_write_cur_size;
+  reg [33-1:0] _maxi_write_rest_size;
+  reg _tmp_18;
+  reg _tmp_19;
+  wire _tmp_20;
+  wire _tmp_21;
+  assign _tmp_21 = 1;
+  localparam _tmp_22 = 1;
+  wire [_tmp_22-1:0] _tmp_23;
+  assign _tmp_23 = (_tmp_20 || !_tmp_18) && (_tmp_21 || !_tmp_19);
+  reg [_tmp_22-1:0] __tmp_23_1;
+  wire signed [32-1:0] _tmp_24;
+  reg signed [32-1:0] __tmp_24_1;
+  assign _tmp_24 = (__tmp_23_1)? ram_a_0_rdata : __tmp_24_1;
+  reg _tmp_25;
+  reg _tmp_26;
+  reg _tmp_27;
   reg _tmp_28;
-  reg _tmp_29;
-  wire _tmp_30;
-  wire _tmp_31;
-  assign _tmp_31 = 1;
-  localparam _tmp_32 = 1;
-  wire [_tmp_32-1:0] _tmp_33;
-  assign _tmp_33 = (_tmp_30 || !_tmp_28) && (_tmp_31 || !_tmp_29);
-  reg [_tmp_32-1:0] __tmp_33_1;
-  wire signed [32-1:0] _tmp_34;
-  reg signed [32-1:0] __tmp_34_1;
-  assign _tmp_34 = (__tmp_33_1)? ram_a_0_rdata : __tmp_34_1;
-  reg _tmp_35;
-  reg _tmp_36;
-  reg _tmp_37;
-  reg _tmp_38;
-  reg [33-1:0] _tmp_39;
-  reg [9-1:0] _tmp_40;
+  reg [34-1:0] _tmp_29;
+  reg [9-1:0] _tmp_30;
   reg _maxi_cond_1_1;
-  reg _tmp_41;
-  wire [32-1:0] __variable_data_42;
-  wire __variable_valid_42;
-  wire __variable_ready_42;
-  assign __variable_ready_42 = (_tmp_fsm_1 == 4) && ((_tmp_40 > 0) && (maxi_wready || !maxi_wvalid));
+  reg _tmp_31;
+  wire [32-1:0] __variable_data_32;
+  wire __variable_valid_32;
+  wire __variable_ready_32;
+  assign __variable_ready_32 = (_maxi_write_fsm == 3) && (_maxi_write_op_sel == 1) && ((_tmp_30 > 0) && (maxi_wready || !maxi_wvalid));
   reg _maxi_cond_2_1;
-  reg _tmp_43;
-  reg [32-1:0] _d1__tmp_fsm_1;
-  reg __tmp_fsm_1_cond_5_0_1;
+  assign _maxi_write_data_done = (_tmp_31 && maxi_wvalid && maxi_wready)? 1 : 0;
+  reg axim_flag_33;
+  reg [32-1:0] _d1__maxi_write_fsm;
+  reg __maxi_write_fsm_cond_4_0_1;
 
   always @(posedge CLK) begin
     if(RST) begin
       ram_a_0_addr <= 0;
-      _tmp_17 <= 0;
+      _tmp_12 <= 0;
       ram_a_0_wdata <= 0;
       ram_a_0_wenable <= 0;
-      _tmp_18 <= 0;
+      _tmp_13 <= 0;
       _ram_a_cond_0_1 <= 0;
-      __tmp_33_1 <= 0;
-      __tmp_34_1 <= 0;
-      _tmp_38 <= 0;
+      __tmp_23_1 <= 0;
+      __tmp_24_1 <= 0;
       _tmp_28 <= 0;
+      _tmp_18 <= 0;
+      _tmp_19 <= 0;
+      _tmp_26 <= 0;
+      _tmp_27 <= 0;
+      _tmp_25 <= 0;
       _tmp_29 <= 0;
-      _tmp_36 <= 0;
-      _tmp_37 <= 0;
-      _tmp_35 <= 0;
-      _tmp_39 <= 0;
     end else begin
       if(_ram_a_cond_0_1) begin
         ram_a_0_wenable <= 0;
-        _tmp_18 <= 0;
+        _tmp_13 <= 0;
       end 
-      if((_tmp_fsm_0 == 1) && (_tmp_17 == 0)) begin
-        ram_a_0_addr <= _tmp_9 - 1;
-        _tmp_17 <= _tmp_11;
+      if(_maxi_read_start && (_maxi_read_op_sel == 1) && (_tmp_12 == 0)) begin
+        ram_a_0_addr <= _maxi_read_local_addr - _maxi_read_local_stride;
+        _tmp_12 <= _maxi_read_size;
       end 
-      if(__variable_valid_19 && ((_tmp_17 > 0) && !_tmp_18) && (_tmp_17 > 0)) begin
-        ram_a_0_addr <= ram_a_0_addr + 1;
-        ram_a_0_wdata <= __variable_data_19;
+      if(__variable_valid_14 && ((_tmp_12 > 0) && !_tmp_13) && (_tmp_12 > 0)) begin
+        ram_a_0_addr <= ram_a_0_addr + _maxi_read_local_stride;
+        ram_a_0_wdata <= __variable_data_14;
         ram_a_0_wenable <= 1;
-        _tmp_17 <= _tmp_17 - 1;
+        _tmp_12 <= _tmp_12 - 1;
       end 
-      if(__variable_valid_19 && ((_tmp_17 > 0) && !_tmp_18) && (_tmp_17 == 1)) begin
-        _tmp_18 <= 1;
+      if(__variable_valid_14 && ((_tmp_12 > 0) && !_tmp_13) && (_tmp_12 == 1)) begin
+        _tmp_13 <= 1;
       end 
       _ram_a_cond_0_1 <= 1;
-      __tmp_33_1 <= _tmp_33;
-      __tmp_34_1 <= _tmp_34;
-      if((_tmp_30 || !_tmp_28) && (_tmp_31 || !_tmp_29) && _tmp_36) begin
-        _tmp_38 <= 0;
+      __tmp_23_1 <= _tmp_23;
+      __tmp_24_1 <= _tmp_24;
+      if((_tmp_20 || !_tmp_18) && (_tmp_21 || !_tmp_19) && _tmp_26) begin
         _tmp_28 <= 0;
-        _tmp_29 <= 0;
-        _tmp_36 <= 0;
+        _tmp_18 <= 0;
+        _tmp_19 <= 0;
+        _tmp_26 <= 0;
       end 
-      if((_tmp_30 || !_tmp_28) && (_tmp_31 || !_tmp_29) && _tmp_35) begin
-        _tmp_28 <= 1;
-        _tmp_29 <= 1;
-        _tmp_38 <= _tmp_37;
-        _tmp_37 <= 0;
-        _tmp_35 <= 0;
-        _tmp_36 <= 1;
+      if((_tmp_20 || !_tmp_18) && (_tmp_21 || !_tmp_19) && _tmp_25) begin
+        _tmp_18 <= 1;
+        _tmp_19 <= 1;
+        _tmp_28 <= _tmp_27;
+        _tmp_27 <= 0;
+        _tmp_25 <= 0;
+        _tmp_26 <= 1;
       end 
-      if((_tmp_fsm_1 == 1) && (_tmp_39 == 0) && !_tmp_37 && !_tmp_38) begin
-        ram_a_0_addr <= _tmp_22;
-        _tmp_39 <= _tmp_24 - 1;
-        _tmp_35 <= 1;
-        _tmp_37 <= _tmp_24 == 1;
+      if(_maxi_write_start && (_maxi_write_op_sel == 1) && (_tmp_29 == 0) && !_tmp_27 && !_tmp_28) begin
+        ram_a_0_addr <= _maxi_write_local_addr;
+        _tmp_29 <= _maxi_write_size - 1;
+        _tmp_25 <= 1;
+        _tmp_27 <= _maxi_write_size == 1;
       end 
-      if((_tmp_30 || !_tmp_28) && (_tmp_31 || !_tmp_29) && (_tmp_39 > 0)) begin
-        ram_a_0_addr <= ram_a_0_addr + 1;
-        _tmp_39 <= _tmp_39 - 1;
-        _tmp_35 <= 1;
-        _tmp_37 <= 0;
+      if((_tmp_20 || !_tmp_18) && (_tmp_21 || !_tmp_19) && (_tmp_29 > 0)) begin
+        ram_a_0_addr <= ram_a_0_addr + _maxi_write_local_stride;
+        _tmp_29 <= _tmp_29 - 1;
+        _tmp_25 <= 1;
+        _tmp_27 <= 0;
       end 
-      if((_tmp_30 || !_tmp_28) && (_tmp_31 || !_tmp_29) && (_tmp_39 == 1)) begin
-        _tmp_37 <= 1;
+      if((_tmp_20 || !_tmp_18) && (_tmp_21 || !_tmp_19) && (_tmp_29 == 1)) begin
+        _tmp_27 <= 1;
       end 
     end
   end
 
-  assign __variable_data_42 = _tmp_34;
-  assign __variable_valid_42 = _tmp_28;
-  assign _tmp_30 = 1 && __variable_ready_42;
+  assign __variable_data_32 = _tmp_24;
+  assign __variable_valid_32 = _tmp_18;
+  assign _tmp_20 = 1 && __variable_ready_32;
 
   always @(posedge CLK) begin
     if(RST) begin
+      _maxi_read_start <= 0;
+      _maxi_write_start <= 0;
+      _maxi_ram_a_0_read_start <= 0;
+      _maxi_ram_a_0_read_op_sel <= 0;
+      _maxi_ram_a_0_read_local_addr <= 0;
+      _maxi_ram_a_0_read_global_addr <= 0;
+      _maxi_ram_a_0_read_size <= 0;
+      _maxi_ram_a_0_read_local_stride <= 0;
+      _maxi_read_idle <= 1;
+      _maxi_read_op_sel <= 0;
+      _maxi_read_local_addr <= 0;
+      _maxi_read_global_addr <= 0;
+      _maxi_read_size <= 0;
+      _maxi_read_local_stride <= 0;
       maxi_araddr <= 0;
       maxi_arlen <= 0;
       maxi_arvalid <= 0;
-      _tmp_20 <= 0;
+      _tmp_15 <= 0;
       _maxi_cond_0_1 <= 0;
+      _maxi_ram_a_0_write_start <= 0;
+      _maxi_ram_a_0_write_op_sel <= 0;
+      _maxi_ram_a_0_write_local_addr <= 0;
+      _maxi_ram_a_0_write_global_addr <= 0;
+      _maxi_ram_a_0_write_size <= 0;
+      _maxi_ram_a_0_write_local_stride <= 0;
+      _maxi_write_idle <= 1;
+      _maxi_write_op_sel <= 0;
+      _maxi_write_local_addr <= 0;
+      _maxi_write_global_addr <= 0;
+      _maxi_write_size <= 0;
+      _maxi_write_local_stride <= 0;
       maxi_awaddr <= 0;
       maxi_awlen <= 0;
       maxi_awvalid <= 0;
-      _tmp_40 <= 0;
+      _tmp_30 <= 0;
       _maxi_cond_1_1 <= 0;
       maxi_wdata <= 0;
       maxi_wvalid <= 0;
       maxi_wlast <= 0;
       maxi_wstrb <= 0;
-      _tmp_41 <= 0;
+      _tmp_31 <= 0;
       _maxi_cond_2_1 <= 0;
     end else begin
       if(_maxi_cond_0_1) begin
@@ -1253,56 +1339,104 @@ module blinkled
       if(_maxi_cond_2_1) begin
         maxi_wvalid <= 0;
         maxi_wlast <= 0;
-        _tmp_41 <= 0;
+        _tmp_31 <= 0;
       end 
-      if((_tmp_fsm_0 == 3) && ((maxi_arready || !maxi_arvalid) && (_tmp_20 == 0))) begin
-        maxi_araddr <= _tmp_12;
-        maxi_arlen <= _tmp_13 - 1;
+      _maxi_read_start <= 0;
+      _maxi_write_start <= 0;
+      _maxi_ram_a_0_read_start <= 0;
+      if(axim_flag_9) begin
+        _maxi_ram_a_0_read_start <= 1;
+        _maxi_ram_a_0_read_op_sel <= 1;
+        _maxi_ram_a_0_read_local_addr <= _th_memcpy_local_addr_9;
+        _maxi_ram_a_0_read_global_addr <= _th_memcpy_src_global_addr_7;
+        _maxi_ram_a_0_read_size <= _th_memcpy_dma_size_10;
+        _maxi_ram_a_0_read_local_stride <= 1;
+      end 
+      if(_maxi_ram_a_0_read_start) begin
+        _maxi_read_idle <= 0;
+      end 
+      if(_maxi_ram_a_0_read_start) begin
+        _maxi_read_start <= 1;
+        _maxi_read_op_sel <= _maxi_ram_a_0_read_op_sel;
+        _maxi_read_local_addr <= _maxi_ram_a_0_read_local_addr;
+        _maxi_read_global_addr <= _maxi_ram_a_0_read_global_addr;
+        _maxi_read_size <= _maxi_ram_a_0_read_size;
+        _maxi_read_local_stride <= _maxi_ram_a_0_read_local_stride;
+      end 
+      if((_maxi_read_fsm == 2) && ((maxi_arready || !maxi_arvalid) && (_tmp_15 == 0))) begin
+        maxi_araddr <= _maxi_read_cur_global_addr;
+        maxi_arlen <= _maxi_read_cur_size - 1;
         maxi_arvalid <= 1;
-        _tmp_20 <= _tmp_13;
+        _tmp_15 <= _maxi_read_cur_size;
       end 
       _maxi_cond_0_1 <= 1;
       if(maxi_arvalid && !maxi_arready) begin
         maxi_arvalid <= maxi_arvalid;
       end 
-      if(maxi_rready && maxi_rvalid && (_tmp_20 > 0)) begin
-        _tmp_20 <= _tmp_20 - 1;
+      if(maxi_rready && maxi_rvalid && (_tmp_15 > 0)) begin
+        _tmp_15 <= _tmp_15 - 1;
       end 
-      if((_tmp_fsm_1 == 3) && ((maxi_awready || !maxi_awvalid) && (_tmp_40 == 0))) begin
-        maxi_awaddr <= _tmp_25;
-        maxi_awlen <= _tmp_26 - 1;
+      if(axim_flag_16) begin
+        _maxi_read_idle <= 1;
+      end 
+      _maxi_ram_a_0_write_start <= 0;
+      if(axim_flag_17) begin
+        _maxi_ram_a_0_write_start <= 1;
+        _maxi_ram_a_0_write_op_sel <= 1;
+        _maxi_ram_a_0_write_local_addr <= _th_memcpy_local_addr_9;
+        _maxi_ram_a_0_write_global_addr <= _th_memcpy_dst_global_addr_8;
+        _maxi_ram_a_0_write_size <= _th_memcpy_dma_size_10;
+        _maxi_ram_a_0_write_local_stride <= 1;
+      end 
+      if(_maxi_ram_a_0_write_start) begin
+        _maxi_write_idle <= 0;
+      end 
+      if(_maxi_ram_a_0_write_start) begin
+        _maxi_write_start <= 1;
+        _maxi_write_op_sel <= _maxi_ram_a_0_write_op_sel;
+        _maxi_write_local_addr <= _maxi_ram_a_0_write_local_addr;
+        _maxi_write_global_addr <= _maxi_ram_a_0_write_global_addr;
+        _maxi_write_size <= _maxi_ram_a_0_write_size;
+        _maxi_write_local_stride <= _maxi_ram_a_0_write_local_stride;
+      end 
+      if((_maxi_write_fsm == 2) && ((maxi_awready || !maxi_awvalid) && (_tmp_30 == 0))) begin
+        maxi_awaddr <= _maxi_write_cur_global_addr;
+        maxi_awlen <= _maxi_write_cur_size - 1;
         maxi_awvalid <= 1;
-        _tmp_40 <= _tmp_26;
+        _tmp_30 <= _maxi_write_cur_size;
       end 
-      if((_tmp_fsm_1 == 3) && ((maxi_awready || !maxi_awvalid) && (_tmp_40 == 0)) && (_tmp_26 == 0)) begin
+      if((_maxi_write_fsm == 2) && ((maxi_awready || !maxi_awvalid) && (_tmp_30 == 0)) && (_maxi_write_cur_size == 0)) begin
         maxi_awvalid <= 0;
       end 
       _maxi_cond_1_1 <= 1;
       if(maxi_awvalid && !maxi_awready) begin
         maxi_awvalid <= maxi_awvalid;
       end 
-      if(__variable_valid_42 && ((_tmp_fsm_1 == 4) && ((_tmp_40 > 0) && (maxi_wready || !maxi_wvalid))) && ((_tmp_40 > 0) && (maxi_wready || !maxi_wvalid) && (_tmp_40 > 0))) begin
-        maxi_wdata <= __variable_data_42;
+      if(__variable_valid_32 && ((_maxi_write_fsm == 3) && (_maxi_write_op_sel == 1) && ((_tmp_30 > 0) && (maxi_wready || !maxi_wvalid))) && ((_tmp_30 > 0) && (maxi_wready || !maxi_wvalid) && (_tmp_30 > 0))) begin
+        maxi_wdata <= __variable_data_32;
         maxi_wvalid <= 1;
         maxi_wlast <= 0;
         maxi_wstrb <= { 4{ 1'd1 } };
-        _tmp_40 <= _tmp_40 - 1;
+        _tmp_30 <= _tmp_30 - 1;
       end 
-      if(__variable_valid_42 && ((_tmp_fsm_1 == 4) && ((_tmp_40 > 0) && (maxi_wready || !maxi_wvalid))) && ((_tmp_40 > 0) && (maxi_wready || !maxi_wvalid) && (_tmp_40 > 0)) && (_tmp_40 == 1)) begin
+      if(__variable_valid_32 && ((_maxi_write_fsm == 3) && (_maxi_write_op_sel == 1) && ((_tmp_30 > 0) && (maxi_wready || !maxi_wvalid))) && ((_tmp_30 > 0) && (maxi_wready || !maxi_wvalid) && (_tmp_30 > 0)) && (_tmp_30 == 1)) begin
         maxi_wlast <= 1;
-        _tmp_41 <= 1;
+        _tmp_31 <= 1;
       end 
       _maxi_cond_2_1 <= 1;
       if(maxi_wvalid && !maxi_wready) begin
         maxi_wvalid <= maxi_wvalid;
         maxi_wlast <= maxi_wlast;
-        _tmp_41 <= _tmp_41;
+        _tmp_31 <= _tmp_31;
+      end 
+      if(axim_flag_33) begin
+        _maxi_write_idle <= 1;
       end 
     end
   end
 
-  assign __variable_data_19 = _tmp_15;
-  assign __variable_valid_19 = _tmp_16;
+  assign __variable_data_14 = _wdata_10;
+  assign __variable_valid_14 = _wvalid_11;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -1441,42 +1575,42 @@ module blinkled
       if((_saxi_register_0 == 1) && (th_memcpy == 2) && (0 == 7)) begin
         _saxi_register_7 <= 0;
       end 
-      if((th_memcpy == 24) && (4 == 0)) begin
+      if((th_memcpy == 28) && (4 == 0)) begin
         _saxi_register_0 <= 1;
         _saxi_flag_0 <= 1;
         _saxi_resetval_0 <= 0;
       end 
-      if((th_memcpy == 24) && (4 == 1)) begin
+      if((th_memcpy == 28) && (4 == 1)) begin
         _saxi_register_1 <= 1;
         _saxi_flag_1 <= 1;
         _saxi_resetval_1 <= 0;
       end 
-      if((th_memcpy == 24) && (4 == 2)) begin
+      if((th_memcpy == 28) && (4 == 2)) begin
         _saxi_register_2 <= 1;
         _saxi_flag_2 <= 1;
         _saxi_resetval_2 <= 0;
       end 
-      if((th_memcpy == 24) && (4 == 3)) begin
+      if((th_memcpy == 28) && (4 == 3)) begin
         _saxi_register_3 <= 1;
         _saxi_flag_3 <= 1;
         _saxi_resetval_3 <= 0;
       end 
-      if((th_memcpy == 24) && (4 == 4)) begin
+      if((th_memcpy == 28) && (4 == 4)) begin
         _saxi_register_4 <= 1;
         _saxi_flag_4 <= 1;
         _saxi_resetval_4 <= 0;
       end 
-      if((th_memcpy == 24) && (4 == 5)) begin
+      if((th_memcpy == 28) && (4 == 5)) begin
         _saxi_register_5 <= 1;
         _saxi_flag_5 <= 1;
         _saxi_resetval_5 <= 0;
       end 
-      if((th_memcpy == 24) && (4 == 6)) begin
+      if((th_memcpy == 28) && (4 == 6)) begin
         _saxi_register_6 <= 1;
         _saxi_flag_6 <= 1;
         _saxi_resetval_6 <= 0;
       end 
-      if((th_memcpy == 24) && (4 == 7)) begin
+      if((th_memcpy == 28) && (4 == 7)) begin
         _saxi_register_7 <= 1;
         _saxi_flag_7 <= 1;
         _saxi_resetval_7 <= 0;
@@ -1541,10 +1675,15 @@ module blinkled
   localparam th_memcpy_24 = 24;
   localparam th_memcpy_25 = 25;
   localparam th_memcpy_26 = 26;
+  localparam th_memcpy_27 = 27;
+  localparam th_memcpy_28 = 28;
+  localparam th_memcpy_29 = 29;
+  localparam th_memcpy_30 = 30;
 
   always @(posedge CLK) begin
     if(RST) begin
       th_memcpy <= th_memcpy_init;
+      _d1_th_memcpy <= th_memcpy_init;
       _th_memcpy_copy_bytes_0 <= 0;
       _th_memcpy_src_offset_1 <= 0;
       _th_memcpy_dst_offset_2 <= 0;
@@ -1556,13 +1695,24 @@ module blinkled
       _th_memcpy_dst_global_addr_8 <= 0;
       _th_memcpy_local_addr_9 <= 0;
       _th_memcpy_dma_size_10 <= 0;
-      _tmp_9 <= 0;
-      _tmp_10 <= 0;
-      _tmp_11 <= 0;
-      _tmp_22 <= 0;
-      _tmp_23 <= 0;
-      _tmp_24 <= 0;
+      axim_flag_9 <= 0;
+      _th_memcpy_cond_16_0_1 <= 0;
+      axim_flag_17 <= 0;
+      _th_memcpy_cond_20_1_1 <= 0;
     end else begin
+      _d1_th_memcpy <= th_memcpy;
+      case(_d1_th_memcpy)
+        th_memcpy_16: begin
+          if(_th_memcpy_cond_16_0_1) begin
+            axim_flag_9 <= 0;
+          end 
+        end
+        th_memcpy_20: begin
+          if(_th_memcpy_cond_20_1_1) begin
+            axim_flag_17 <= 0;
+          end 
+        end
+      endcase
       case(th_memcpy)
         th_memcpy_init: begin
           th_memcpy <= th_memcpy_1;
@@ -1571,7 +1721,7 @@ module blinkled
           if(1) begin
             th_memcpy <= th_memcpy_2;
           end else begin
-            th_memcpy <= th_memcpy_26;
+            th_memcpy <= th_memcpy_30;
           end
         end
         th_memcpy_2: begin
@@ -1617,7 +1767,7 @@ module blinkled
           if(_th_memcpy_rest_words_6 > 0) begin
             th_memcpy <= th_memcpy_12;
           end else begin
-            th_memcpy <= th_memcpy_24;
+            th_memcpy <= th_memcpy_28;
           end
         end
         th_memcpy_12: begin
@@ -1639,220 +1789,226 @@ module blinkled
           th_memcpy <= th_memcpy_16;
         end
         th_memcpy_16: begin
-          _tmp_9 <= _th_memcpy_local_addr_9;
-          _tmp_10 <= _th_memcpy_src_global_addr_7;
-          _tmp_11 <= _th_memcpy_dma_size_10;
+          axim_flag_9 <= 1;
+          _th_memcpy_cond_16_0_1 <= 1;
           th_memcpy <= th_memcpy_17;
         end
         th_memcpy_17: begin
-          if(_tmp_21) begin
-            th_memcpy <= th_memcpy_18;
-          end 
+          th_memcpy <= th_memcpy_18;
         end
         th_memcpy_18: begin
-          _tmp_22 <= _th_memcpy_local_addr_9;
-          _tmp_23 <= _th_memcpy_dst_global_addr_8;
-          _tmp_24 <= _th_memcpy_dma_size_10;
           th_memcpy <= th_memcpy_19;
         end
         th_memcpy_19: begin
-          if(_tmp_43) begin
+          if(_maxi_read_idle) begin
             th_memcpy <= th_memcpy_20;
           end 
         end
         th_memcpy_20: begin
-          _th_memcpy_src_global_addr_7 <= _th_memcpy_src_global_addr_7 + (_th_memcpy_dma_size_10 << 2);
+          axim_flag_17 <= 1;
+          _th_memcpy_cond_20_1_1 <= 1;
           th_memcpy <= th_memcpy_21;
         end
         th_memcpy_21: begin
-          _th_memcpy_dst_global_addr_8 <= _th_memcpy_dst_global_addr_8 + (_th_memcpy_dma_size_10 << 2);
           th_memcpy <= th_memcpy_22;
         end
         th_memcpy_22: begin
-          _th_memcpy_rest_words_6 <= _th_memcpy_rest_words_6 - _th_memcpy_dma_size_10;
           th_memcpy <= th_memcpy_23;
         end
         th_memcpy_23: begin
-          th_memcpy <= th_memcpy_11;
+          if(_maxi_write_idle) begin
+            th_memcpy <= th_memcpy_24;
+          end 
         end
         th_memcpy_24: begin
+          _th_memcpy_src_global_addr_7 <= _th_memcpy_src_global_addr_7 + (_th_memcpy_dma_size_10 << 2);
           th_memcpy <= th_memcpy_25;
         end
         th_memcpy_25: begin
+          _th_memcpy_dst_global_addr_8 <= _th_memcpy_dst_global_addr_8 + (_th_memcpy_dma_size_10 << 2);
+          th_memcpy <= th_memcpy_26;
+        end
+        th_memcpy_26: begin
+          _th_memcpy_rest_words_6 <= _th_memcpy_rest_words_6 - _th_memcpy_dma_size_10;
+          th_memcpy <= th_memcpy_27;
+        end
+        th_memcpy_27: begin
+          th_memcpy <= th_memcpy_11;
+        end
+        th_memcpy_28: begin
+          th_memcpy <= th_memcpy_29;
+        end
+        th_memcpy_29: begin
           th_memcpy <= th_memcpy_1;
         end
       endcase
     end
   end
 
-  localparam _tmp_fsm_0_1 = 1;
-  localparam _tmp_fsm_0_2 = 2;
-  localparam _tmp_fsm_0_3 = 3;
-  localparam _tmp_fsm_0_4 = 4;
-  localparam _tmp_fsm_0_5 = 5;
-  localparam _tmp_fsm_0_6 = 6;
+  localparam _maxi_read_fsm_1 = 1;
+  localparam _maxi_read_fsm_2 = 2;
+  localparam _maxi_read_fsm_3 = 3;
+  localparam _maxi_read_fsm_4 = 4;
+  localparam _maxi_read_fsm_5 = 5;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_fsm_0 <= _tmp_fsm_0_init;
-      _d1__tmp_fsm_0 <= _tmp_fsm_0_init;
-      _tmp_12 <= 0;
-      _tmp_14 <= 0;
-      _tmp_13 <= 0;
-      __tmp_fsm_0_cond_4_0_1 <= 0;
-      _tmp_16 <= 0;
-      _tmp_15 <= 0;
-      _tmp_21 <= 0;
-      __tmp_fsm_0_cond_5_1_1 <= 0;
+      _maxi_read_fsm <= _maxi_read_fsm_init;
+      _d1__maxi_read_fsm <= _maxi_read_fsm_init;
+      _maxi_read_cur_global_addr <= 0;
+      _maxi_read_rest_size <= 0;
+      _maxi_read_cur_size <= 0;
+      __maxi_read_fsm_cond_3_0_1 <= 0;
+      _wvalid_11 <= 0;
+      _wdata_10 <= 0;
+      axim_flag_16 <= 0;
+      __maxi_read_fsm_cond_4_1_1 <= 0;
     end else begin
-      _d1__tmp_fsm_0 <= _tmp_fsm_0;
-      case(_d1__tmp_fsm_0)
-        _tmp_fsm_0_4: begin
-          if(__tmp_fsm_0_cond_4_0_1) begin
-            _tmp_16 <= 0;
+      _d1__maxi_read_fsm <= _maxi_read_fsm;
+      case(_d1__maxi_read_fsm)
+        _maxi_read_fsm_3: begin
+          if(__maxi_read_fsm_cond_3_0_1) begin
+            _wvalid_11 <= 0;
           end 
         end
-        _tmp_fsm_0_5: begin
-          if(__tmp_fsm_0_cond_5_1_1) begin
-            _tmp_21 <= 0;
+        _maxi_read_fsm_4: begin
+          if(__maxi_read_fsm_cond_4_1_1) begin
+            axim_flag_16 <= 0;
           end 
         end
       endcase
-      case(_tmp_fsm_0)
-        _tmp_fsm_0_init: begin
-          if(th_memcpy == 17) begin
-            _tmp_fsm_0 <= _tmp_fsm_0_1;
+      case(_maxi_read_fsm)
+        _maxi_read_fsm_init: begin
+          if(_maxi_read_start) begin
+            _maxi_read_cur_global_addr <= (_maxi_read_global_addr >> 2) << 2;
+            _maxi_read_rest_size <= _maxi_read_size;
+          end 
+          if(_maxi_read_start && (_maxi_read_op_sel == 1)) begin
+            _maxi_read_fsm <= _maxi_read_fsm_1;
           end 
         end
-        _tmp_fsm_0_1: begin
-          _tmp_12 <= (_tmp_10 >> 2) << 2;
-          _tmp_14 <= _tmp_11;
-          _tmp_fsm_0 <= _tmp_fsm_0_2;
-        end
-        _tmp_fsm_0_2: begin
-          if((_tmp_14 <= 256) && ((_tmp_12 & 4095) + (_tmp_14 << 2) >= 4096)) begin
-            _tmp_13 <= 4096 - (_tmp_12 & 4095) >> 2;
-            _tmp_14 <= _tmp_14 - (4096 - (_tmp_12 & 4095) >> 2);
-          end else if(_tmp_14 <= 256) begin
-            _tmp_13 <= _tmp_14;
-            _tmp_14 <= 0;
-          end else if((_tmp_12 & 4095) + 1024 >= 4096) begin
-            _tmp_13 <= 4096 - (_tmp_12 & 4095) >> 2;
-            _tmp_14 <= _tmp_14 - (4096 - (_tmp_12 & 4095) >> 2);
+        _maxi_read_fsm_1: begin
+          if((_maxi_read_rest_size <= 256) && ((_maxi_read_cur_global_addr & 4095) + (_maxi_read_rest_size << 2) >= 4096)) begin
+            _maxi_read_cur_size <= 4096 - (_maxi_read_cur_global_addr & 4095) >> 2;
+            _maxi_read_rest_size <= _maxi_read_rest_size - (4096 - (_maxi_read_cur_global_addr & 4095) >> 2);
+          end else if(_maxi_read_rest_size <= 256) begin
+            _maxi_read_cur_size <= _maxi_read_rest_size;
+            _maxi_read_rest_size <= 0;
+          end else if((_maxi_read_cur_global_addr & 4095) + 1024 >= 4096) begin
+            _maxi_read_cur_size <= 4096 - (_maxi_read_cur_global_addr & 4095) >> 2;
+            _maxi_read_rest_size <= _maxi_read_rest_size - (4096 - (_maxi_read_cur_global_addr & 4095) >> 2);
           end else begin
-            _tmp_13 <= 256;
-            _tmp_14 <= _tmp_14 - 256;
+            _maxi_read_cur_size <= 256;
+            _maxi_read_rest_size <= _maxi_read_rest_size - 256;
           end
-          _tmp_fsm_0 <= _tmp_fsm_0_3;
+          _maxi_read_fsm <= _maxi_read_fsm_2;
         end
-        _tmp_fsm_0_3: begin
+        _maxi_read_fsm_2: begin
           if(maxi_arready || !maxi_arvalid) begin
-            _tmp_fsm_0 <= _tmp_fsm_0_4;
+            _maxi_read_fsm <= _maxi_read_fsm_3;
           end 
         end
-        _tmp_fsm_0_4: begin
-          __tmp_fsm_0_cond_4_0_1 <= 1;
-          if(maxi_rready && maxi_rvalid) begin
-            _tmp_15 <= maxi_rdata;
-            _tmp_16 <= 1;
+        _maxi_read_fsm_3: begin
+          __maxi_read_fsm_cond_3_0_1 <= 1;
+          if(maxi_rready && maxi_rvalid && (_maxi_read_op_sel == 1)) begin
+            _wdata_10 <= maxi_rdata;
+            _wvalid_11 <= 1;
           end 
           if(maxi_rready && maxi_rvalid && maxi_rlast) begin
-            _tmp_12 <= _tmp_12 + (_tmp_13 << 2);
+            _maxi_read_cur_global_addr <= _maxi_read_cur_global_addr + (_maxi_read_cur_size << 2);
           end 
-          if(maxi_rready && maxi_rvalid && maxi_rlast && (_tmp_14 > 0)) begin
-            _tmp_fsm_0 <= _tmp_fsm_0_2;
+          if(maxi_rready && maxi_rvalid && maxi_rlast && (_maxi_read_rest_size > 0)) begin
+            _maxi_read_fsm <= _maxi_read_fsm_1;
           end 
-          if(maxi_rready && maxi_rvalid && maxi_rlast && (_tmp_14 == 0)) begin
-            _tmp_fsm_0 <= _tmp_fsm_0_5;
+          if(maxi_rready && maxi_rvalid && maxi_rlast && (_maxi_read_rest_size == 0)) begin
+            _maxi_read_fsm <= _maxi_read_fsm_4;
           end 
         end
-        _tmp_fsm_0_5: begin
-          _tmp_21 <= 1;
-          __tmp_fsm_0_cond_5_1_1 <= 1;
-          _tmp_fsm_0 <= _tmp_fsm_0_6;
+        _maxi_read_fsm_4: begin
+          axim_flag_16 <= 1;
+          __maxi_read_fsm_cond_4_1_1 <= 1;
+          _maxi_read_fsm <= _maxi_read_fsm_5;
         end
-        _tmp_fsm_0_6: begin
-          _tmp_fsm_0 <= _tmp_fsm_0_init;
+        _maxi_read_fsm_5: begin
+          _maxi_read_fsm <= _maxi_read_fsm_init;
         end
       endcase
     end
   end
 
-  localparam _tmp_fsm_1_1 = 1;
-  localparam _tmp_fsm_1_2 = 2;
-  localparam _tmp_fsm_1_3 = 3;
-  localparam _tmp_fsm_1_4 = 4;
-  localparam _tmp_fsm_1_5 = 5;
-  localparam _tmp_fsm_1_6 = 6;
+  localparam _maxi_write_fsm_1 = 1;
+  localparam _maxi_write_fsm_2 = 2;
+  localparam _maxi_write_fsm_3 = 3;
+  localparam _maxi_write_fsm_4 = 4;
+  localparam _maxi_write_fsm_5 = 5;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_fsm_1 <= _tmp_fsm_1_init;
-      _d1__tmp_fsm_1 <= _tmp_fsm_1_init;
-      _tmp_25 <= 0;
-      _tmp_27 <= 0;
-      _tmp_26 <= 0;
-      _tmp_43 <= 0;
-      __tmp_fsm_1_cond_5_0_1 <= 0;
+      _maxi_write_fsm <= _maxi_write_fsm_init;
+      _d1__maxi_write_fsm <= _maxi_write_fsm_init;
+      _maxi_write_cur_global_addr <= 0;
+      _maxi_write_rest_size <= 0;
+      _maxi_write_cur_size <= 0;
+      axim_flag_33 <= 0;
+      __maxi_write_fsm_cond_4_0_1 <= 0;
     end else begin
-      _d1__tmp_fsm_1 <= _tmp_fsm_1;
-      case(_d1__tmp_fsm_1)
-        _tmp_fsm_1_5: begin
-          if(__tmp_fsm_1_cond_5_0_1) begin
-            _tmp_43 <= 0;
+      _d1__maxi_write_fsm <= _maxi_write_fsm;
+      case(_d1__maxi_write_fsm)
+        _maxi_write_fsm_4: begin
+          if(__maxi_write_fsm_cond_4_0_1) begin
+            axim_flag_33 <= 0;
           end 
         end
       endcase
-      case(_tmp_fsm_1)
-        _tmp_fsm_1_init: begin
-          if(th_memcpy == 19) begin
-            _tmp_fsm_1 <= _tmp_fsm_1_1;
+      case(_maxi_write_fsm)
+        _maxi_write_fsm_init: begin
+          if(_maxi_write_start) begin
+            _maxi_write_cur_global_addr <= (_maxi_write_global_addr >> 2) << 2;
+            _maxi_write_rest_size <= _maxi_write_size;
+          end 
+          if(_maxi_write_start && (_maxi_write_op_sel == 1)) begin
+            _maxi_write_fsm <= _maxi_write_fsm_1;
           end 
         end
-        _tmp_fsm_1_1: begin
-          _tmp_25 <= (_tmp_23 >> 2) << 2;
-          _tmp_27 <= _tmp_24;
-          _tmp_fsm_1 <= _tmp_fsm_1_2;
-        end
-        _tmp_fsm_1_2: begin
-          if((_tmp_27 <= 256) && ((_tmp_25 & 4095) + (_tmp_27 << 2) >= 4096)) begin
-            _tmp_26 <= 4096 - (_tmp_25 & 4095) >> 2;
-            _tmp_27 <= _tmp_27 - (4096 - (_tmp_25 & 4095) >> 2);
-          end else if(_tmp_27 <= 256) begin
-            _tmp_26 <= _tmp_27;
-            _tmp_27 <= 0;
-          end else if((_tmp_25 & 4095) + 1024 >= 4096) begin
-            _tmp_26 <= 4096 - (_tmp_25 & 4095) >> 2;
-            _tmp_27 <= _tmp_27 - (4096 - (_tmp_25 & 4095) >> 2);
+        _maxi_write_fsm_1: begin
+          if((_maxi_write_rest_size <= 256) && ((_maxi_write_cur_global_addr & 4095) + (_maxi_write_rest_size << 2) >= 4096)) begin
+            _maxi_write_cur_size <= 4096 - (_maxi_write_cur_global_addr & 4095) >> 2;
+            _maxi_write_rest_size <= _maxi_write_rest_size - (4096 - (_maxi_write_cur_global_addr & 4095) >> 2);
+          end else if(_maxi_write_rest_size <= 256) begin
+            _maxi_write_cur_size <= _maxi_write_rest_size;
+            _maxi_write_rest_size <= 0;
+          end else if((_maxi_write_cur_global_addr & 4095) + 1024 >= 4096) begin
+            _maxi_write_cur_size <= 4096 - (_maxi_write_cur_global_addr & 4095) >> 2;
+            _maxi_write_rest_size <= _maxi_write_rest_size - (4096 - (_maxi_write_cur_global_addr & 4095) >> 2);
           end else begin
-            _tmp_26 <= 256;
-            _tmp_27 <= _tmp_27 - 256;
+            _maxi_write_cur_size <= 256;
+            _maxi_write_rest_size <= _maxi_write_rest_size - 256;
           end
-          _tmp_fsm_1 <= _tmp_fsm_1_3;
+          _maxi_write_fsm <= _maxi_write_fsm_2;
         end
-        _tmp_fsm_1_3: begin
+        _maxi_write_fsm_2: begin
           if(maxi_awready || !maxi_awvalid) begin
-            _tmp_fsm_1 <= _tmp_fsm_1_4;
+            _maxi_write_fsm <= _maxi_write_fsm_3;
           end 
         end
-        _tmp_fsm_1_4: begin
-          if(_tmp_41 && maxi_wvalid && maxi_wready) begin
-            _tmp_25 <= _tmp_25 + (_tmp_26 << 2);
+        _maxi_write_fsm_3: begin
+          if(_maxi_write_data_done) begin
+            _maxi_write_cur_global_addr <= _maxi_write_cur_global_addr + (_maxi_write_cur_size << 2);
           end 
-          if(_tmp_41 && maxi_wvalid && maxi_wready && (_tmp_27 > 0)) begin
-            _tmp_fsm_1 <= _tmp_fsm_1_2;
+          if(_maxi_write_data_done && (_maxi_write_rest_size > 0)) begin
+            _maxi_write_fsm <= _maxi_write_fsm_1;
           end 
-          if(_tmp_41 && maxi_wvalid && maxi_wready && (_tmp_27 == 0)) begin
-            _tmp_fsm_1 <= _tmp_fsm_1_5;
+          if(_maxi_write_data_done && (_maxi_write_rest_size == 0)) begin
+            _maxi_write_fsm <= _maxi_write_fsm_4;
           end 
         end
-        _tmp_fsm_1_5: begin
-          _tmp_43 <= 1;
-          __tmp_fsm_1_cond_5_0_1 <= 1;
-          _tmp_fsm_1 <= _tmp_fsm_1_6;
+        _maxi_write_fsm_4: begin
+          axim_flag_33 <= 1;
+          __maxi_write_fsm_cond_4_0_1 <= 1;
+          _maxi_write_fsm <= _maxi_write_fsm_5;
         end
-        _tmp_fsm_1_6: begin
-          _tmp_fsm_1 <= _tmp_fsm_1_init;
+        _maxi_write_fsm_5: begin
+          _maxi_write_fsm <= _maxi_write_fsm_init;
         end
       endcase
     end
