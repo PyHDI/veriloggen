@@ -1206,6 +1206,43 @@ class MultibankRAM(object):
             )
             ram._write_disabled[port] = True
 
+    def connect_rtl(self, port, addr, wdata=None, wenable=None, rdata=None):
+        """ connect native signals to the internal RAM interface """
+
+        if math.log(self.numbanks, 2) % 1.0 != 0.0:
+            raise ValueError('numbanks must be power-of-2')
+
+        if self.seq is None:
+            self.seq = Seq(self.m, self.name, self.clk, self.rst)
+
+        bank = self.m.TmpWire(self.shift)
+        bank.assign(addr)
+        addr = addr >> self.shift
+
+        rdata_list = []
+        for i, ram in enumerate(self.rams):
+            ram.interfaces[port].addr.connect(addr)
+
+            if wdata is not None:
+                ram.interfaces[port].wdata.connect(wdata)
+
+            bank_wenable = vtypes.Ands(wenable, bank == i)
+            if wenable is not None:
+                ram.interfaces[port].wenable.connect(bank_wenable)
+
+            rdata_list.append(ram.interfaces[port].rdata)
+
+        bank_reg = self.seq.Prev(bank, 1, initval=0)
+        pat = [(bank_reg == i, rdata_list[i])
+               for i, ram in enumerate(self.rams)]
+        pat.append((None, 0))
+
+        rdata_wire = self.m.TmpWire(self.orig_datawidth, signed=True)
+        rdata_wire.assign(vtypes.PatternMux(pat))
+
+        if rdata is not None:
+            rdata.connect(rdata_wire)
+
     def read_rtl(self, addr, port=0, cond=None):
         """
         @return data, valid
