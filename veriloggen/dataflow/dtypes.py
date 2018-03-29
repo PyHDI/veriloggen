@@ -802,8 +802,11 @@ class Times(_BinaryOperator):
 
 
 class Divide(_BinaryOperator):
-    latency = 32 + 3
-    variable_latency = 'bit_length'
+    latency = 32 + 5
+    variable_latency = 'get_latency'
+
+    def get_latency(self):
+        return self.bit_length() + 5
 
     def eval(self):
         left = self.left.eval()
@@ -947,8 +950,11 @@ class Divide(_BinaryOperator):
 
 
 class Mod(_BinaryOperator):
-    latency = 32 + 3
-    variable_latency = 'bit_length'
+    latency = 32 + 5
+    variable_latency = 'get_latency'
+
+    def get_latency(self):
+        return self.bit_length() + 5
 
     def eval(self):
         return self.left.eval() % self.right.eval()

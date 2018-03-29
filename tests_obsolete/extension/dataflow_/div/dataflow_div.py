@@ -17,7 +17,7 @@ def mkMain():
     y = dataflow.Variable('ydata', valid='yvalid', ready='yready', signed=False)
 
     # dataflow definition
-    z = x // 2 + y
+    z = dataflow.Div(x, y) + y
 
     # set output attribute
     z.output('zdata', valid='zvalid', ready='zready')
@@ -59,10 +59,9 @@ def mkTest(numports=8):
     reset_done = m.Reg('reset_done', initval=0)
     reset_stmt = []
     reset_stmt.append(reset_done(0))
-    #reset_stmt.append( xdata(0) )
-    reset_stmt.append(xdata(2))
+    reset_stmt.append(xdata(128))
     reset_stmt.append(xvalid(0))
-    reset_stmt.append(ydata(0))
+    reset_stmt.append(ydata(1))
     reset_stmt.append(yvalid(0))
     reset_stmt.append(zready(0))
 

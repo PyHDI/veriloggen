@@ -792,7 +792,12 @@ module main
   reg _mod_sign29__0;
   reg _mod_sign30__0;
   reg _mod_sign31__0;
-  assign _mod_osign_0 = _mod_sign31__0;
+  reg _mod_sign32__0;
+  reg _mod_sign33__0;
+  reg _mod_sign34__0;
+  reg _mod_sign35__0;
+  reg _mod_sign36__0;
+  assign _mod_osign_0 = _mod_sign36__0;
   wire _mod_enable_0;
   wire _mod_update_0;
   assign _mod_enable_0 = (_mod_ready_0 || !_mod_valid_0) && xready && xvalid;
@@ -943,14 +948,34 @@ module main
   reg __delay_valid_32;
   wire __delay_ready_32;
   assign __delay_ready_31 = (__delay_ready_32 || !__delay_valid_32) && __delay_valid_31;
-  reg [32-1:0] _plus_data_33;
-  reg _plus_valid_33;
-  wire _plus_ready_33;
-  assign _mod_ready_0 = (_plus_ready_33 || !_plus_valid_33) && (_mod_valid_0 && __delay_valid_32);
-  assign __delay_ready_32 = (_plus_ready_33 || !_plus_valid_33) && (_mod_valid_0 && __delay_valid_32);
-  assign zdata = _plus_data_33;
-  assign zvalid = _plus_valid_33;
-  assign _plus_ready_33 = zready;
+  reg [32-1:0] __delay_data_33;
+  reg __delay_valid_33;
+  wire __delay_ready_33;
+  assign __delay_ready_32 = (__delay_ready_33 || !__delay_valid_33) && __delay_valid_32;
+  reg [32-1:0] __delay_data_34;
+  reg __delay_valid_34;
+  wire __delay_ready_34;
+  assign __delay_ready_33 = (__delay_ready_34 || !__delay_valid_34) && __delay_valid_33;
+  reg [32-1:0] __delay_data_35;
+  reg __delay_valid_35;
+  wire __delay_ready_35;
+  assign __delay_ready_34 = (__delay_ready_35 || !__delay_valid_35) && __delay_valid_34;
+  reg [32-1:0] __delay_data_36;
+  reg __delay_valid_36;
+  wire __delay_ready_36;
+  assign __delay_ready_35 = (__delay_ready_36 || !__delay_valid_36) && __delay_valid_35;
+  reg [32-1:0] __delay_data_37;
+  reg __delay_valid_37;
+  wire __delay_ready_37;
+  assign __delay_ready_36 = (__delay_ready_37 || !__delay_valid_37) && __delay_valid_36;
+  reg [32-1:0] _plus_data_38;
+  reg _plus_valid_38;
+  wire _plus_ready_38;
+  assign _mod_ready_0 = (_plus_ready_38 || !_plus_valid_38) && (_mod_valid_0 && __delay_valid_37);
+  assign __delay_ready_37 = (_plus_ready_38 || !_plus_valid_38) && (_mod_valid_0 && __delay_valid_37);
+  assign zdata = _plus_data_38;
+  assign zvalid = _plus_valid_38;
+  assign _plus_ready_38 = zready;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -994,6 +1019,11 @@ module main
       _mod_sign29__0 <= 0;
       _mod_sign30__0 <= 0;
       _mod_sign31__0 <= 0;
+      _mod_sign32__0 <= 0;
+      _mod_sign33__0 <= 0;
+      _mod_sign34__0 <= 0;
+      _mod_sign35__0 <= 0;
+      _mod_sign36__0 <= 0;
       __delay_data_1 <= 0;
       __delay_valid_1 <= 0;
       __delay_data_2 <= 0;
@@ -1058,8 +1088,18 @@ module main
       __delay_valid_31 <= 0;
       __delay_data_32 <= 0;
       __delay_valid_32 <= 0;
-      _plus_data_33 <= 0;
-      _plus_valid_33 <= 0;
+      __delay_data_33 <= 0;
+      __delay_valid_33 <= 0;
+      __delay_data_34 <= 0;
+      __delay_valid_34 <= 0;
+      __delay_data_35 <= 0;
+      __delay_valid_35 <= 0;
+      __delay_data_36 <= 0;
+      __delay_valid_36 <= 0;
+      __delay_data_37 <= 0;
+      __delay_valid_37 <= 0;
+      _plus_data_38 <= 0;
+      _plus_valid_38 <= 0;
     end else begin
       if(_mod_ready_0 || !_mod_valid_0) begin
         _mod_ldata_0 <= xdata;
@@ -1180,6 +1220,21 @@ module main
       end 
       if(_mod_ready_0 || !_mod_valid_0) begin
         _mod_sign31__0 <= _mod_sign30__0;
+      end 
+      if(_mod_ready_0 || !_mod_valid_0) begin
+        _mod_sign32__0 <= _mod_sign31__0;
+      end 
+      if(_mod_ready_0 || !_mod_valid_0) begin
+        _mod_sign33__0 <= _mod_sign32__0;
+      end 
+      if(_mod_ready_0 || !_mod_valid_0) begin
+        _mod_sign34__0 <= _mod_sign33__0;
+      end 
+      if(_mod_ready_0 || !_mod_valid_0) begin
+        _mod_sign35__0 <= _mod_sign34__0;
+      end 
+      if(_mod_ready_0 || !_mod_valid_0) begin
+        _mod_sign36__0 <= _mod_sign35__0;
       end 
       if((__delay_ready_1 || !__delay_valid_1) && yready && yvalid) begin
         __delay_data_1 <= ydata;
@@ -1469,14 +1524,59 @@ module main
       if((__delay_ready_32 || !__delay_valid_32) && __delay_ready_31) begin
         __delay_valid_32 <= __delay_valid_31;
       end 
-      if((_plus_ready_33 || !_plus_valid_33) && (_mod_ready_0 && __delay_ready_32) && (_mod_valid_0 && __delay_valid_32)) begin
-        _plus_data_33 <= _mod_data_0 + __delay_data_32;
+      if((__delay_ready_33 || !__delay_valid_33) && __delay_ready_32 && __delay_valid_32) begin
+        __delay_data_33 <= __delay_data_32;
       end 
-      if(_plus_valid_33 && _plus_ready_33) begin
-        _plus_valid_33 <= 0;
+      if(__delay_valid_33 && __delay_ready_33) begin
+        __delay_valid_33 <= 0;
       end 
-      if((_plus_ready_33 || !_plus_valid_33) && (_mod_ready_0 && __delay_ready_32)) begin
-        _plus_valid_33 <= _mod_valid_0 && __delay_valid_32;
+      if((__delay_ready_33 || !__delay_valid_33) && __delay_ready_32) begin
+        __delay_valid_33 <= __delay_valid_32;
+      end 
+      if((__delay_ready_34 || !__delay_valid_34) && __delay_ready_33 && __delay_valid_33) begin
+        __delay_data_34 <= __delay_data_33;
+      end 
+      if(__delay_valid_34 && __delay_ready_34) begin
+        __delay_valid_34 <= 0;
+      end 
+      if((__delay_ready_34 || !__delay_valid_34) && __delay_ready_33) begin
+        __delay_valid_34 <= __delay_valid_33;
+      end 
+      if((__delay_ready_35 || !__delay_valid_35) && __delay_ready_34 && __delay_valid_34) begin
+        __delay_data_35 <= __delay_data_34;
+      end 
+      if(__delay_valid_35 && __delay_ready_35) begin
+        __delay_valid_35 <= 0;
+      end 
+      if((__delay_ready_35 || !__delay_valid_35) && __delay_ready_34) begin
+        __delay_valid_35 <= __delay_valid_34;
+      end 
+      if((__delay_ready_36 || !__delay_valid_36) && __delay_ready_35 && __delay_valid_35) begin
+        __delay_data_36 <= __delay_data_35;
+      end 
+      if(__delay_valid_36 && __delay_ready_36) begin
+        __delay_valid_36 <= 0;
+      end 
+      if((__delay_ready_36 || !__delay_valid_36) && __delay_ready_35) begin
+        __delay_valid_36 <= __delay_valid_35;
+      end 
+      if((__delay_ready_37 || !__delay_valid_37) && __delay_ready_36 && __delay_valid_36) begin
+        __delay_data_37 <= __delay_data_36;
+      end 
+      if(__delay_valid_37 && __delay_ready_37) begin
+        __delay_valid_37 <= 0;
+      end 
+      if((__delay_ready_37 || !__delay_valid_37) && __delay_ready_36) begin
+        __delay_valid_37 <= __delay_valid_36;
+      end 
+      if((_plus_ready_38 || !_plus_valid_38) && (_mod_ready_0 && __delay_ready_37) && (_mod_valid_0 && __delay_valid_37)) begin
+        _plus_data_38 <= _mod_data_0 + __delay_data_37;
+      end 
+      if(_plus_valid_38 && _plus_ready_38) begin
+        _plus_valid_38 <= 0;
+      end 
+      if((_plus_ready_38 || !_plus_valid_38) && (_mod_ready_0 && __delay_ready_37)) begin
+        _plus_valid_38 <= _mod_valid_0 && __delay_valid_37;
       end 
     end
   end
