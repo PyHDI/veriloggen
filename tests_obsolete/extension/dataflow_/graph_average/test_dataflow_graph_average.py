@@ -814,9 +814,7 @@ module main
   reg _divide_sign32__6;
   reg _divide_sign33__6;
   reg _divide_sign34__6;
-  reg _divide_sign35__6;
-  reg _divide_sign36__6;
-  assign _divide_osign_6 = _divide_sign36__6;
+  assign _divide_osign_6 = _divide_sign34__6;
   wire _divide_enable_6;
   wire _divide_update_6;
   assign _divide_enable_6 = (_divide_ready_6 || !_divide_valid_6) && _plus_ready_5 && _plus_valid_5;
@@ -898,8 +896,6 @@ module main
       _divide_sign32__6 <= 0;
       _divide_sign33__6 <= 0;
       _divide_sign34__6 <= 0;
-      _divide_sign35__6 <= 0;
-      _divide_sign36__6 <= 0;
     end else begin
       if((_plus_ready_0 || !_plus_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
         _plus_data_0 <= xdata + ydata;
@@ -1071,12 +1067,6 @@ module main
       end 
       if(_divide_ready_6 || !_divide_valid_6) begin
         _divide_sign34__6 <= _divide_sign33__6;
-      end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign35__6 <= _divide_sign34__6;
-      end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign36__6 <= _divide_sign35__6;
       end 
     end
   end

@@ -261,9 +261,7 @@ module main
   reg _divide_div_sign_tmp_32_2;
   reg _divide_div_sign_tmp_33_2;
   reg _divide_div_sign_tmp_34_2;
-  reg _divide_div_sign_tmp_35_2;
-  reg _divide_div_sign_tmp_36_2;
-  assign _divide_div_osign_2 = _divide_div_sign_tmp_36_2;
+  assign _divide_div_osign_2 = _divide_div_sign_tmp_34_2;
   wire _divide_div_update_2;
   assign _divide_div_update_2 = _tmp_0;
 
@@ -363,8 +361,6 @@ module main
       _divide_div_sign_tmp_32_2 <= 0;
       _divide_div_sign_tmp_33_2 <= 0;
       _divide_div_sign_tmp_34_2 <= 0;
-      _divide_div_sign_tmp_35_2 <= 0;
-      _divide_div_sign_tmp_36_2 <= 0;
     end else begin
       if(_tmp_0) begin
         _ivalid_0 <= ivalid;
@@ -596,12 +592,6 @@ module main
       end 
       if(_tmp_0) begin
         _divide_div_sign_tmp_34_2 <= _divide_div_sign_tmp_33_2;
-      end 
-      if(_tmp_0) begin
-        _divide_div_sign_tmp_35_2 <= _divide_div_sign_tmp_34_2;
-      end 
-      if(_tmp_0) begin
-        _divide_div_sign_tmp_36_2 <= _divide_div_sign_tmp_35_2;
       end 
     end
   end

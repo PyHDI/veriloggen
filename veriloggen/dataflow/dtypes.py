@@ -816,6 +816,9 @@ class Divide(_BinaryOperator):
         return Divide(left, right)
 
     def _implement(self, m, seq):
+        if self.latency <= 5:
+            raise ValueError("Latency of div operator must be greater than 5")
+
         width = self.bit_length()
         signed = self.get_signed()
 
@@ -905,7 +908,7 @@ class Divide(_BinaryOperator):
         m.Assign(valid(v))
 
         s = sign
-        for i in range(self.latency):
+        for i in range(self.latency - 2):
             ns = m.Reg(self._tmp_data(tmp, prefix='sign' +
                                       str(i) + '_'), initval=0)
             seq(ns(s), cond=accept)
@@ -960,6 +963,9 @@ class Mod(_BinaryOperator):
         return self.left.eval() % self.right.eval()
 
     def _implement(self, m, seq):
+        if self.latency <= 5:
+            raise ValueError("Latency of div operator must be greater than 5")
+
         width = self.bit_length()
         signed = self.get_signed()
 
@@ -1049,7 +1055,7 @@ class Mod(_BinaryOperator):
         m.Assign(valid(v))
 
         s = sign
-        for i in range(self.latency):
+        for i in range(self.latency - 2):
             ns = m.Reg(self._tmp_data(tmp, prefix='sign' +
                                       str(i) + '_'), initval=0)
             seq(ns(s), cond=accept)

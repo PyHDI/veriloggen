@@ -795,9 +795,7 @@ module main
   reg _mod_sign32__0;
   reg _mod_sign33__0;
   reg _mod_sign34__0;
-  reg _mod_sign35__0;
-  reg _mod_sign36__0;
-  assign _mod_osign_0 = _mod_sign36__0;
+  assign _mod_osign_0 = _mod_sign34__0;
   wire _mod_enable_0;
   wire _mod_update_0;
   assign _mod_enable_0 = (_mod_ready_0 || !_mod_valid_0) && xready && xvalid;
@@ -1022,8 +1020,6 @@ module main
       _mod_sign32__0 <= 0;
       _mod_sign33__0 <= 0;
       _mod_sign34__0 <= 0;
-      _mod_sign35__0 <= 0;
-      _mod_sign36__0 <= 0;
       __delay_data_1 <= 0;
       __delay_valid_1 <= 0;
       __delay_data_2 <= 0;
@@ -1229,12 +1225,6 @@ module main
       end 
       if(_mod_ready_0 || !_mod_valid_0) begin
         _mod_sign34__0 <= _mod_sign33__0;
-      end 
-      if(_mod_ready_0 || !_mod_valid_0) begin
-        _mod_sign35__0 <= _mod_sign34__0;
-      end 
-      if(_mod_ready_0 || !_mod_valid_0) begin
-        _mod_sign36__0 <= _mod_sign35__0;
       end 
       if((__delay_ready_1 || !__delay_valid_1) && yready && yvalid) begin
         __delay_data_1 <= ydata;
