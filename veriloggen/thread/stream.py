@@ -18,9 +18,11 @@ from veriloggen.stream.stypes import Substream as BaseSubstream
 from . import compiler
 from . import thread
 
-mode_normal = 1
-mode_pattern = 2
-mode_multipattern = 4
+mode_width = 3
+mode_idle = vtypes.Int(0, mode_width, base=2)
+mode_normal = vtypes.Int(1, mode_width, base=2)
+mode_pattern = vtypes.Int(2, mode_width, base=2)
+mode_multipattern = vtypes.Int(4, mode_width, base=2)
 
 
 def TmpStream(m, clk, rst,
@@ -127,13 +129,14 @@ class Stream(BaseStream):
 
         var.source_fsm = None
         var.source_pat_fsm = None
+        var.source_multipat_fsm = None
 
         var.source_idle = self.module.Reg('_%s_idle' % prefix, initval=1)
         self.source_idle_map[name] = var.source_idle
 
         # 3'b001: set_source, 3'b010: set_source_pattern, 3'b100: set_source_multipattern
-        var.source_mode = self.module.Reg('_%s_source_mode' % prefix, 3,
-                                          initval=1)
+        var.source_mode = self.module.Reg('_%s_source_mode' % prefix, mode_width,
+                                          initval=mode_idle)
 
         var.source_offset = self.module.Reg('_%s_source_offset' % prefix,
                                             self.addrwidth, initval=0)
@@ -196,10 +199,11 @@ class Stream(BaseStream):
 
         data.sink_fsm = None
         data.sink_pat_fsm = None
+        data.sink_multipat_fsm = None
 
         # 3'b001: set_sink, 3'b010: set_sink_pattern, 3'b100: set_sink_multipattern
-        data.sink_mode = self.module.Reg('_%s_sink_mode' % prefix, 3,
-                                         initval=1)
+        data.sink_mode = self.module.Reg('_%s_sink_mode' % prefix, mode_width,
+                                         initval=mode_idle)
 
         data.sink_offset = self.module.Reg('_%s_sink_offset' % prefix,
                                            self.addrwidth, initval=0)
@@ -589,7 +593,97 @@ class Stream(BaseStream):
         return self.set_sink_pattern(fsm, name, ram, offset, pattern, port)
 
     def set_sink_multipattern(self, fsm, name, ram, offsets, patterns, port=0):
-        pass
+        """ intrinsic method to assign multiple patterns to a RAM """
+
+        if not self.stream_synthesized:
+            self._implement_stream()
+
+        if isinstance(name, str):
+            var = self.var_name_map[name]
+        elif isinstance(name, vtypes.Str):
+            name = name.value
+            var = self.var_name_map[name]
+        elif isinstance(name, int):
+            var = self.var_id_map[name]
+        elif isinstance(name, vtypes.Int):
+            name = name.value
+            var = self.var_id_map[name]
+        else:
+            raise TypeError('Unsupported index name')
+
+        if name not in self.sinks:
+            raise NameError("No such stream '%s'" % name)
+
+        if not isinstance(patterns, (tuple, list)):
+            raise TypeError('patterns must be list or tuple.')
+
+        if not patterns:
+            raise ValueError(
+                'patterns must have one [(size, stride)] list at least.')
+
+        if not isinstance(offsets, (tuple, list)):
+            offsets = [offsets] * len(patterns)
+
+        if not offsets:
+            raise ValueError('offsets must have one offset value at least.')
+
+        offsets = tuple(offsets)
+        patterns = tuple(patterns)
+
+        if len(offsets) != len(patterns):
+            raise ValueError(
+                "number of offsets must be 1 or equal to the number of patterns.")
+
+        if len(offsets) > self.max_multipattern_length:
+            raise ValueError(
+                "'offsets' length exceeds maximum multipattern length.")
+
+        if len(patterns) > self.max_multipattern_length:
+            raise ValueError(
+                "'patterns' length exceeds maximum multipattern length.")
+
+        for pattern in patterns:
+            if len(pattern) > self.max_pattern_length:
+                raise ValueError(
+                    "'pattern' length exceeds maximum pattern length.")
+
+        self._make_sink_multipattern_vars(var, name)
+
+        #set_cond = fsm.here
+        set_cond = self._set_flag(fsm)
+
+        self.seq.If(set_cond)(
+            var.sink_mode(mode_multipattern),
+            var.sink_multipat_num_patterns(len(patterns))
+        )
+
+        offsets_pad = tuple(
+            [0 for _ in range(self.max_multipattern_length - len(patterns))])
+
+        for offset, multipat_offset in zip(offsets + offsets_pad,
+                                           var.sink_multipat_offsets):
+            self.seq.If(set_cond)(
+                multipat_offset(offset)
+            )
+
+        for multipat_sizes, multipat_strides, pattern in zip(
+                var.sink_multipat_sizes, var.sink_multipat_strides, patterns):
+            pad = tuple([(1, 0)
+                         for _ in range(self.max_pattern_length - len(pattern))])
+
+            for (multipat_size, multipat_stride,
+                 (size, stride)) in zip(multipat_sizes, multipat_strides,
+                                        pattern + pad):
+                self.seq.If(set_cond)(
+                    multipat_size(size),
+                    multipat_stride(stride)
+                )
+
+        port = vtypes.to_int(port)
+        self._setup_sink_ram(ram, var, port, set_cond)
+        self._synthesize_set_sink_multipattern(var, name)
+
+        fsm.goto_next()
 
     def set_sink_empty(self, fsm, name):
         """ intrinsic method to assign RAM property to a sink stream """
@@ -803,8 +897,8 @@ class Stream(BaseStream):
         wenable = var.source_ram_rvalid
         var.write(wdata, wenable)
 
-        source_start = vtypes.Ands(self.start, var.source_mode == mode_normal,
-                                   var.source_size > 0)
+        source_start = vtypes.Ands(self.start,
+                                   vtypes.And(var.source_mode, mode_normal))
 
         self.seq.If(source_start)(
             var.source_idle(0)
@@ -869,9 +963,8 @@ class Stream(BaseStream):
         wenable = var.source_ram_rvalid
         var.write(wdata, wenable)
 
-        source_start = vtypes.Ands(self.start, var.source_mode == mode_pattern)
-        for source_pat_size in var.source_pat_sizes:
-            source_start = vtypes.Ands(source_start, source_pat_size > 0)
+        source_start = vtypes.Ands(self.start,
+                                   vtypes.And(var.source_mode, mode_pattern))
 
         self.seq.If(source_start)(
             var.source_idle(0)
@@ -983,8 +1076,8 @@ class Stream(BaseStream):
         wenable = var.source_ram_rvalid
         var.write(wdata, wenable)
 
-        source_start = vtypes.Ands(
-            self.start, var.source_mode == mode_multipattern)
+        source_start = vtypes.Ands(self.start,
+                                   vtypes.And(var.source_mode, mode_multipattern))
 
         self.seq.If(source_start)(
             var.source_idle(0)
@@ -1117,8 +1210,8 @@ class Stream(BaseStream):
         if var.sink_fsm is not None:
             return
 
-        sink_start = vtypes.Ands(self.start, var.sink_mode == mode_normal,
-                                 var.sink_size > 0)
+        sink_start = vtypes.Ands(self.start,
+                                 vtypes.And(var.sink_mode, mode_normal))
 
         fsm_id = self.fsm_id_count
         self.fsm_id_count += 1
@@ -1187,9 +1280,8 @@ class Stream(BaseStream):
         if var.sink_pat_fsm is not None:
             return
 
-        sink_start = vtypes.Ands(self.start, var.sink_mode == mode_pattern)
-        for sink_pat_size in var.sink_pat_sizes:
-            sink_start = vtypes.Ands(sink_start, sink_pat_size > 0)
+        sink_start = vtypes.Ands(self.start,
+                                 vtypes.And(var.sink_mode, mode_pattern))
 
         fsm_id = self.fsm_id_count
         self.fsm_id_count += 1
@@ -1206,10 +1298,6 @@ class Stream(BaseStream):
         )
 
         var.sink_pat_fsm.If(sink_start).goto_next()
-
-        self.seq.If(var.sink_pat_fsm.here)(
-            var.sink_ram_waddr(var.sink_offset - var.sink_stride)
-        )
 
         for sink_pat_cur_offset in var.sink_pat_cur_offsets:
             self.seq.If(var.sink_pat_fsm.here)(
@@ -1278,6 +1366,162 @@ class Stream(BaseStream):
         fin_cond = upcond
 
         var.sink_pat_fsm.If(fin_cond).goto_init()
+
+    def _make_sink_multipattern_vars(self, var, name):
+        if var.sink_multipat_cur_offsets is not None:
+            return
+
+        prefix = self._prefix(name)
+
+        var.sink_multipat_num_patterns = self.module.Reg(
+            '_sink_%s_multipat_num_patterns' % prefix,
+            int(math.ceil(math.log(self.max_multipattern_length, 2))), initval=0)
+        var.sink_multipat_offsets = [
+            self.module.Reg('_sink_%s_multipat_%d_offset' % (prefix, j),
+                            self.addrwidth, initval=0)
+            for j in range(self.max_multipattern_length)]
+        var.sink_multipat_cur_offsets = [
+            self.module.Reg('_sink_%s_multipat_%d_cur_offset' % (prefix, i),
+                            self.addrwidth, initval=0)
+            for i in range(self.max_pattern_length)]
+        var.sink_multipat_sizes = [[self.module.Reg('_sink_%s_multipat_%d_size_%d' %
+                                                    (prefix, j, i),
+                                                    self.addrwidth + 1, initval=0)
+                                    for i in range(self.max_pattern_length)]
+                                   for j in range(self.max_multipattern_length)]
+        var.sink_multipat_strides = [[self.module.Reg('_sink_%s_multipat_%d_stride_%d' %
+                                                      (prefix, j, i),
+                                                      self.addrwidth, initval=0)
+                                      for i in range(self.max_pattern_length)]
+                                     for j in range(self.max_multipattern_length)]
+        var.sink_multipat_counts = [[self.module.Reg('_sink_%s_multipat_%d_count_%d' %
+                                                     (prefix, j, i),
+                                                     self.addrwidth + 1, initval=0)
+                                     for i in range(self.max_pattern_length)]
+                                    for j in range(self.max_multipattern_length)]
+
+    def _synthesize_set_sink_multipattern(self, var, name):
+        if var.sink_multipat_fsm is not None:
+            return
+
+        sink_start = vtypes.Ands(self.start,
+                                 vtypes.And(var.sink_mode, mode_multipattern))
+
+        fsm_id = self.fsm_id_count
+        self.fsm_id_count += 1
+
+        prefix = self._prefix(name)
+
+        fsm_name = '_%s_sink_multipat_fsm_%d' % (prefix, fsm_id)
+        var.sink_multipat_fsm = FSM(self.module, fsm_name,
+                                    self.clock, self.reset,
+                                    as_module=self.fsm_as_module)
+
+        self.seq.If(var.sink_multipat_fsm.here)(
+            var.sink_ram_wenable(0)
+        )
+
+        self.seq.If(sink_start)(
+            var.sink_multipat_num_patterns.dec()
+        )
+
+        var.sink_multipat_fsm.If(sink_start).goto_next()
+
+        for sink_multipat_cur_offset in var.sink_multipat_cur_offsets:
+            self.seq.If(var.sink_multipat_fsm.here)(
+                sink_multipat_cur_offset(0)
+            )
+
+        for (sink_multipat_size, sink_multipat_count) in zip(
+                var.sink_multipat_sizes[0], var.sink_multipat_counts[0]):
+            self.seq.If(sink_start)(
+                sink_multipat_count(sink_multipat_size - 1)
+            )
+
+        num_wdelay = self._write_delay()
+        for _ in range(num_wdelay):
+            var.sink_multipat_fsm.goto_next()
+
+        if name in self.sink_when_map:
+            when = self.sink_when_map[name]
+            wcond = when.read()
+        else:
+            wcond = None
+
+        sink_all_offset = self.module.Wire('_%s_sink_multipat_all_offset' % prefix,
+                                           self.addrwidth)
+        sink_all_offset_val = var.sink_multipat_offsets[0]
+        for sink_multipat_cur_offset in var.sink_multipat_cur_offsets:
+            sink_all_offset_val += sink_multipat_cur_offset
+        sink_all_offset.assign(sink_all_offset_val)
+
+        if name in self.sink_when_map:
+            when = self.sink_when_map[name]
+            wcond = when.read()
+        else:
+            wcond = None
+
+        rdata = var.read()
+
+        self.seq.If(var.sink_multipat_fsm.here)(
+            var.sink_ram_wenable(0)
+        )
+        self.seq.If(var.sink_multipat_fsm.here, wcond)(
+            var.sink_ram_waddr(sink_all_offset),
+            var.sink_ram_wdata(rdata),
+            var.sink_ram_wenable(1)
+        )
+
+        upcond = None
+
+        for (sink_multipat_cur_offset, sink_multipat_size,
+             sink_multipat_stride, sink_multipat_count) in zip(
+                 var.sink_multipat_cur_offsets, var.sink_multipat_sizes[0],
+                 var.sink_multipat_strides[0], var.sink_multipat_counts[0]):
+
+            self.seq.If(var.sink_multipat_fsm.here, upcond)(
+                sink_multipat_cur_offset.add(sink_multipat_stride),
+                sink_multipat_count.dec()
+            )
+
+            reset_cond = sink_multipat_count == 0
+            self.seq.If(var.sink_multipat_fsm.here, upcond, reset_cond)(
+                sink_multipat_cur_offset(0),
+                sink_multipat_count(sink_multipat_size - 1)
+            )
+            upcond = make_condition(upcond, reset_cond)
+
+        fin_cond = upcond
+
+        prev_offset = var.sink_multipat_offsets[0]
+        for multipat_offset in var.sink_multipat_offsets[1:]:
+            self.seq.If(fin_cond, var.sink_multipat_fsm.here)(
+                prev_offset(multipat_offset)
+            )
+            prev_offset = multipat_offset
+
+        prev_sizes = var.sink_multipat_sizes[0]
+        for multipat_sizes in var.sink_multipat_sizes[1:]:
+            for prev_size, size in zip(prev_sizes, multipat_sizes):
+                self.seq.If(fin_cond, var.sink_multipat_fsm.here)(
+                    prev_size(size)
+                )
+            prev_sizes = multipat_sizes
+
+        prev_strides = var.sink_multipat_strides[0]
+        for multipat_strides in var.sink_multipat_strides[1:]:
+            for prev_stride, stride in zip(prev_strides, multipat_strides):
+                self.seq.If(fin_cond, var.sink_multipat_fsm.here)(
+                    prev_stride(stride)
+                )
+            prev_strides = multipat_strides
+
+        self.seq.If(fin_cond, var.sink_multipat_fsm.here)(
+            var.sink_multipat_num_patterns.dec()
+        )
+
+        var.sink_multipat_fsm.If(fin_cond,
+                                 var.sink_multipat_num_patterns == 0).goto_init()
 
     def _set_flag(self, fsm, prefix='_set_flag'):
         flag = self.module.TmpReg(initval=0, prefix=prefix)
