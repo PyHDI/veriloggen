@@ -507,7 +507,7 @@ module blinkled
   reg _mystream_start;
   reg _mystream_busy;
   reg _mystream_a_idle;
-  reg _mystream_a_source_mode;
+  reg [3-1:0] _mystream_a_source_mode;
   reg [32-1:0] _mystream_a_source_offset;
   reg [33-1:0] _mystream_a_source_size;
   reg [32-1:0] _mystream_a_source_stride;
@@ -518,7 +518,7 @@ module blinkled
   wire [32-1:0] _mystream_a_source_ram_rdata;
   reg _mystream_a_source_ram_rvalid;
   reg _mystream_b_idle;
-  reg _mystream_b_source_mode;
+  reg [3-1:0] _mystream_b_source_mode;
   reg [32-1:0] _mystream_b_source_offset;
   reg [33-1:0] _mystream_b_source_size;
   reg [32-1:0] _mystream_b_source_stride;
@@ -528,7 +528,7 @@ module blinkled
   reg _mystream_b_source_ram_renable;
   wire [32-1:0] _mystream_b_source_ram_rdata;
   reg _mystream_b_source_ram_rvalid;
-  reg _mystream_sum_sink_mode;
+  reg [3-1:0] _mystream_sum_sink_mode;
   reg [32-1:0] _mystream_sum_sink_offset;
   reg [33-1:0] _mystream_sum_sink_size;
   reg [32-1:0] _mystream_sum_sink_stride;
@@ -594,10 +594,10 @@ module blinkled
   reg signed [32-1:0] _plus_data_2;
   wire signed [32-1:0] mystream_sum_data;
   assign mystream_sum_data = _plus_data_2;
-  reg [32-1:0] _source_mystream_a_pat_offset_0;
-  reg [32-1:0] _source_mystream_a_pat_offset_1;
-  reg [32-1:0] _source_mystream_a_pat_offset_2;
-  reg [32-1:0] _source_mystream_a_pat_offset_3;
+  reg [32-1:0] _source_mystream_a_pat_cur_offset_0;
+  reg [32-1:0] _source_mystream_a_pat_cur_offset_1;
+  reg [32-1:0] _source_mystream_a_pat_cur_offset_2;
+  reg [32-1:0] _source_mystream_a_pat_cur_offset_3;
   reg [33-1:0] _source_mystream_a_pat_size_0;
   reg [33-1:0] _source_mystream_a_pat_size_1;
   reg [33-1:0] _source_mystream_a_pat_size_2;
@@ -625,11 +625,11 @@ module blinkled
   reg [32-1:0] _mystream_a_source_pat_fsm_0;
   localparam _mystream_a_source_pat_fsm_0_init = 0;
   wire [32-1:0] _mystream_a_source_pat_all_offset;
-  assign _mystream_a_source_pat_all_offset = _mystream_a_source_offset + _source_mystream_a_pat_offset_0 + _source_mystream_a_pat_offset_1 + _source_mystream_a_pat_offset_2 + _source_mystream_a_pat_offset_3;
-  reg [32-1:0] _source_mystream_b_pat_offset_0;
-  reg [32-1:0] _source_mystream_b_pat_offset_1;
-  reg [32-1:0] _source_mystream_b_pat_offset_2;
-  reg [32-1:0] _source_mystream_b_pat_offset_3;
+  assign _mystream_a_source_pat_all_offset = _mystream_a_source_offset + _source_mystream_a_pat_cur_offset_0 + _source_mystream_a_pat_cur_offset_1 + _source_mystream_a_pat_cur_offset_2 + _source_mystream_a_pat_cur_offset_3;
+  reg [32-1:0] _source_mystream_b_pat_cur_offset_0;
+  reg [32-1:0] _source_mystream_b_pat_cur_offset_1;
+  reg [32-1:0] _source_mystream_b_pat_cur_offset_2;
+  reg [32-1:0] _source_mystream_b_pat_cur_offset_3;
   reg [33-1:0] _source_mystream_b_pat_size_0;
   reg [33-1:0] _source_mystream_b_pat_size_1;
   reg [33-1:0] _source_mystream_b_pat_size_2;
@@ -657,7 +657,7 @@ module blinkled
   reg [32-1:0] _mystream_b_source_pat_fsm_1;
   localparam _mystream_b_source_pat_fsm_1_init = 0;
   wire [32-1:0] _mystream_b_source_pat_all_offset;
-  assign _mystream_b_source_pat_all_offset = _mystream_b_source_offset + _source_mystream_b_pat_offset_0 + _source_mystream_b_pat_offset_1 + _source_mystream_b_pat_offset_2 + _source_mystream_b_pat_offset_3;
+  assign _mystream_b_source_pat_all_offset = _mystream_b_source_offset + _source_mystream_b_pat_cur_offset_0 + _source_mystream_b_pat_cur_offset_1 + _source_mystream_b_pat_cur_offset_2 + _source_mystream_b_pat_cur_offset_3;
   reg _set_flag_22;
   reg _ram_c_cond_0_1;
   reg [32-1:0] _mystream_sum_sink_fsm_2;
@@ -1188,7 +1188,7 @@ module blinkled
     if(RST) begin
       _plus_data_2 <= 0;
       _set_flag_14 <= 0;
-      _mystream_a_source_mode <= 0;
+      _mystream_a_source_mode <= 3'b0;
       _mystream_a_source_offset <= 0;
       _source_mystream_a_pat_size_0 <= 0;
       _source_mystream_a_pat_stride_0 <= 0;
@@ -1203,10 +1203,10 @@ module blinkled
       _mystream_a_source_ram_rvalid <= 0;
       __variable_wdata_0 <= 0;
       _mystream_a_idle <= 1;
-      _source_mystream_a_pat_offset_0 <= 0;
-      _source_mystream_a_pat_offset_1 <= 0;
-      _source_mystream_a_pat_offset_2 <= 0;
-      _source_mystream_a_pat_offset_3 <= 0;
+      _source_mystream_a_pat_cur_offset_0 <= 0;
+      _source_mystream_a_pat_cur_offset_1 <= 0;
+      _source_mystream_a_pat_cur_offset_2 <= 0;
+      _source_mystream_a_pat_cur_offset_3 <= 0;
       _source_mystream_a_pat_count_0 <= 0;
       _source_mystream_a_pat_count_1 <= 0;
       _source_mystream_a_pat_count_2 <= 0;
@@ -1214,7 +1214,7 @@ module blinkled
       _mystream_a_source_ram_raddr <= 0;
       _mystream_a_source_ram_renable <= 0;
       _set_flag_18 <= 0;
-      _mystream_b_source_mode <= 0;
+      _mystream_b_source_mode <= 3'b0;
       _mystream_b_source_offset <= 0;
       _source_mystream_b_pat_size_0 <= 0;
       _source_mystream_b_pat_stride_0 <= 0;
@@ -1229,10 +1229,10 @@ module blinkled
       _mystream_b_source_ram_rvalid <= 0;
       __variable_wdata_1 <= 0;
       _mystream_b_idle <= 1;
-      _source_mystream_b_pat_offset_0 <= 0;
-      _source_mystream_b_pat_offset_1 <= 0;
-      _source_mystream_b_pat_offset_2 <= 0;
-      _source_mystream_b_pat_offset_3 <= 0;
+      _source_mystream_b_pat_cur_offset_0 <= 0;
+      _source_mystream_b_pat_cur_offset_1 <= 0;
+      _source_mystream_b_pat_cur_offset_2 <= 0;
+      _source_mystream_b_pat_cur_offset_3 <= 0;
       _source_mystream_b_pat_count_0 <= 0;
       _source_mystream_b_pat_count_1 <= 0;
       _source_mystream_b_pat_count_2 <= 0;
@@ -1240,7 +1240,7 @@ module blinkled
       _mystream_b_source_ram_raddr <= 0;
       _mystream_b_source_ram_renable <= 0;
       _set_flag_22 <= 0;
-      _mystream_sum_sink_mode <= 0;
+      _mystream_sum_sink_mode <= 3'b0;
       _mystream_sum_sink_offset <= 0;
       _mystream_sum_sink_size <= 0;
       _mystream_sum_sink_stride <= 0;
@@ -1257,7 +1257,7 @@ module blinkled
         _set_flag_14 <= 1;
       end 
       if(_set_flag_14) begin
-        _mystream_a_source_mode <= 1;
+        _mystream_a_source_mode <= 3'b10;
         _mystream_a_source_offset <= _th_comp_offset_1 + 10;
       end 
       if(_set_flag_14) begin
@@ -1284,31 +1284,31 @@ module blinkled
       if(_mystream_a_source_ram_rvalid) begin
         __variable_wdata_0 <= _mystream_a_source_ram_rdata;
       end 
-      if(_mystream_start && (_mystream_a_source_mode == 1) && (_source_mystream_a_pat_size_0 > 0) && (_source_mystream_a_pat_size_1 > 0) && (_source_mystream_a_pat_size_2 > 0) && (_source_mystream_a_pat_size_3 > 0)) begin
+      if(_mystream_start && _mystream_a_source_mode & 3'b10) begin
         _mystream_a_idle <= 0;
       end 
-      if(_mystream_start && (_mystream_a_source_mode == 1) && (_source_mystream_a_pat_size_0 > 0) && (_source_mystream_a_pat_size_1 > 0) && (_source_mystream_a_pat_size_2 > 0) && (_source_mystream_a_pat_size_3 > 0)) begin
-        _source_mystream_a_pat_offset_0 <= 0;
+      if(_mystream_start && _mystream_a_source_mode & 3'b10) begin
+        _source_mystream_a_pat_cur_offset_0 <= 0;
       end 
-      if(_mystream_start && (_mystream_a_source_mode == 1) && (_source_mystream_a_pat_size_0 > 0) && (_source_mystream_a_pat_size_1 > 0) && (_source_mystream_a_pat_size_2 > 0) && (_source_mystream_a_pat_size_3 > 0)) begin
-        _source_mystream_a_pat_offset_1 <= 0;
+      if(_mystream_start && _mystream_a_source_mode & 3'b10) begin
+        _source_mystream_a_pat_cur_offset_1 <= 0;
       end 
-      if(_mystream_start && (_mystream_a_source_mode == 1) && (_source_mystream_a_pat_size_0 > 0) && (_source_mystream_a_pat_size_1 > 0) && (_source_mystream_a_pat_size_2 > 0) && (_source_mystream_a_pat_size_3 > 0)) begin
-        _source_mystream_a_pat_offset_2 <= 0;
+      if(_mystream_start && _mystream_a_source_mode & 3'b10) begin
+        _source_mystream_a_pat_cur_offset_2 <= 0;
       end 
-      if(_mystream_start && (_mystream_a_source_mode == 1) && (_source_mystream_a_pat_size_0 > 0) && (_source_mystream_a_pat_size_1 > 0) && (_source_mystream_a_pat_size_2 > 0) && (_source_mystream_a_pat_size_3 > 0)) begin
-        _source_mystream_a_pat_offset_3 <= 0;
+      if(_mystream_start && _mystream_a_source_mode & 3'b10) begin
+        _source_mystream_a_pat_cur_offset_3 <= 0;
       end 
-      if(_mystream_start && (_mystream_a_source_mode == 1) && (_source_mystream_a_pat_size_0 > 0) && (_source_mystream_a_pat_size_1 > 0) && (_source_mystream_a_pat_size_2 > 0) && (_source_mystream_a_pat_size_3 > 0)) begin
+      if(_mystream_start && _mystream_a_source_mode & 3'b10) begin
         _source_mystream_a_pat_count_0 <= _source_mystream_a_pat_size_0 - 1;
       end 
-      if(_mystream_start && (_mystream_a_source_mode == 1) && (_source_mystream_a_pat_size_0 > 0) && (_source_mystream_a_pat_size_1 > 0) && (_source_mystream_a_pat_size_2 > 0) && (_source_mystream_a_pat_size_3 > 0)) begin
+      if(_mystream_start && _mystream_a_source_mode & 3'b10) begin
         _source_mystream_a_pat_count_1 <= _source_mystream_a_pat_size_1 - 1;
       end 
-      if(_mystream_start && (_mystream_a_source_mode == 1) && (_source_mystream_a_pat_size_0 > 0) && (_source_mystream_a_pat_size_1 > 0) && (_source_mystream_a_pat_size_2 > 0) && (_source_mystream_a_pat_size_3 > 0)) begin
+      if(_mystream_start && _mystream_a_source_mode & 3'b10) begin
         _source_mystream_a_pat_count_2 <= _source_mystream_a_pat_size_2 - 1;
       end 
-      if(_mystream_start && (_mystream_a_source_mode == 1) && (_source_mystream_a_pat_size_0 > 0) && (_source_mystream_a_pat_size_1 > 0) && (_source_mystream_a_pat_size_2 > 0) && (_source_mystream_a_pat_size_3 > 0)) begin
+      if(_mystream_start && _mystream_a_source_mode & 3'b10) begin
         _source_mystream_a_pat_count_3 <= _source_mystream_a_pat_size_3 - 1;
       end 
       if(_mystream_a_source_pat_fsm_0 == 1) begin
@@ -1316,35 +1316,35 @@ module blinkled
         _mystream_a_source_ram_renable <= 1;
       end 
       if(_mystream_a_source_pat_fsm_0 == 1) begin
-        _source_mystream_a_pat_offset_0 <= _source_mystream_a_pat_offset_0 + _source_mystream_a_pat_stride_0;
+        _source_mystream_a_pat_cur_offset_0 <= _source_mystream_a_pat_cur_offset_0 + _source_mystream_a_pat_stride_0;
         _source_mystream_a_pat_count_0 <= _source_mystream_a_pat_count_0 - 1;
       end 
       if((_mystream_a_source_pat_fsm_0 == 1) && (_source_mystream_a_pat_count_0 == 0)) begin
-        _source_mystream_a_pat_offset_0 <= 0;
+        _source_mystream_a_pat_cur_offset_0 <= 0;
         _source_mystream_a_pat_count_0 <= _source_mystream_a_pat_size_0 - 1;
       end 
       if((_mystream_a_source_pat_fsm_0 == 1) && (_source_mystream_a_pat_count_0 == 0)) begin
-        _source_mystream_a_pat_offset_1 <= _source_mystream_a_pat_offset_1 + _source_mystream_a_pat_stride_1;
+        _source_mystream_a_pat_cur_offset_1 <= _source_mystream_a_pat_cur_offset_1 + _source_mystream_a_pat_stride_1;
         _source_mystream_a_pat_count_1 <= _source_mystream_a_pat_count_1 - 1;
       end 
       if((_mystream_a_source_pat_fsm_0 == 1) && (_source_mystream_a_pat_count_0 == 0) && (_source_mystream_a_pat_count_1 == 0)) begin
-        _source_mystream_a_pat_offset_1 <= 0;
+        _source_mystream_a_pat_cur_offset_1 <= 0;
         _source_mystream_a_pat_count_1 <= _source_mystream_a_pat_size_1 - 1;
       end 
       if((_mystream_a_source_pat_fsm_0 == 1) && ((_source_mystream_a_pat_count_0 == 0) && (_source_mystream_a_pat_count_1 == 0))) begin
-        _source_mystream_a_pat_offset_2 <= _source_mystream_a_pat_offset_2 + _source_mystream_a_pat_stride_2;
+        _source_mystream_a_pat_cur_offset_2 <= _source_mystream_a_pat_cur_offset_2 + _source_mystream_a_pat_stride_2;
         _source_mystream_a_pat_count_2 <= _source_mystream_a_pat_count_2 - 1;
       end 
       if((_mystream_a_source_pat_fsm_0 == 1) && ((_source_mystream_a_pat_count_0 == 0) && (_source_mystream_a_pat_count_1 == 0)) && (_source_mystream_a_pat_count_2 == 0)) begin
-        _source_mystream_a_pat_offset_2 <= 0;
+        _source_mystream_a_pat_cur_offset_2 <= 0;
         _source_mystream_a_pat_count_2 <= _source_mystream_a_pat_size_2 - 1;
       end 
       if((_mystream_a_source_pat_fsm_0 == 1) && ((_source_mystream_a_pat_count_0 == 0) && (_source_mystream_a_pat_count_1 == 0) && (_source_mystream_a_pat_count_2 == 0))) begin
-        _source_mystream_a_pat_offset_3 <= _source_mystream_a_pat_offset_3 + _source_mystream_a_pat_stride_3;
+        _source_mystream_a_pat_cur_offset_3 <= _source_mystream_a_pat_cur_offset_3 + _source_mystream_a_pat_stride_3;
         _source_mystream_a_pat_count_3 <= _source_mystream_a_pat_count_3 - 1;
       end 
       if((_mystream_a_source_pat_fsm_0 == 1) && ((_source_mystream_a_pat_count_0 == 0) && (_source_mystream_a_pat_count_1 == 0) && (_source_mystream_a_pat_count_2 == 0)) && (_source_mystream_a_pat_count_3 == 0)) begin
-        _source_mystream_a_pat_offset_3 <= 0;
+        _source_mystream_a_pat_cur_offset_3 <= 0;
         _source_mystream_a_pat_count_3 <= _source_mystream_a_pat_size_3 - 1;
       end 
       if(_mystream_a_source_pat_fsm_0 == 2) begin
@@ -1356,7 +1356,7 @@ module blinkled
         _set_flag_18 <= 1;
       end 
       if(_set_flag_18) begin
-        _mystream_b_source_mode <= 1;
+        _mystream_b_source_mode <= 3'b10;
         _mystream_b_source_offset <= _th_comp_offset_1 + 10;
       end 
       if(_set_flag_18) begin
@@ -1383,31 +1383,31 @@ module blinkled
       if(_mystream_b_source_ram_rvalid) begin
         __variable_wdata_1 <= _mystream_b_source_ram_rdata;
       end 
-      if(_mystream_start && (_mystream_b_source_mode == 1) && (_source_mystream_b_pat_size_0 > 0) && (_source_mystream_b_pat_size_1 > 0) && (_source_mystream_b_pat_size_2 > 0) && (_source_mystream_b_pat_size_3 > 0)) begin
+      if(_mystream_start && _mystream_b_source_mode & 3'b10) begin
         _mystream_b_idle <= 0;
       end 
-      if(_mystream_start && (_mystream_b_source_mode == 1) && (_source_mystream_b_pat_size_0 > 0) && (_source_mystream_b_pat_size_1 > 0) && (_source_mystream_b_pat_size_2 > 0) && (_source_mystream_b_pat_size_3 > 0)) begin
-        _source_mystream_b_pat_offset_0 <= 0;
+      if(_mystream_start && _mystream_b_source_mode & 3'b10) begin
+        _source_mystream_b_pat_cur_offset_0 <= 0;
       end 
-      if(_mystream_start && (_mystream_b_source_mode == 1) && (_source_mystream_b_pat_size_0 > 0) && (_source_mystream_b_pat_size_1 > 0) && (_source_mystream_b_pat_size_2 > 0) && (_source_mystream_b_pat_size_3 > 0)) begin
-        _source_mystream_b_pat_offset_1 <= 0;
+      if(_mystream_start && _mystream_b_source_mode & 3'b10) begin
+        _source_mystream_b_pat_cur_offset_1 <= 0;
       end 
-      if(_mystream_start && (_mystream_b_source_mode == 1) && (_source_mystream_b_pat_size_0 > 0) && (_source_mystream_b_pat_size_1 > 0) && (_source_mystream_b_pat_size_2 > 0) && (_source_mystream_b_pat_size_3 > 0)) begin
-        _source_mystream_b_pat_offset_2 <= 0;
+      if(_mystream_start && _mystream_b_source_mode & 3'b10) begin
+        _source_mystream_b_pat_cur_offset_2 <= 0;
       end 
-      if(_mystream_start && (_mystream_b_source_mode == 1) && (_source_mystream_b_pat_size_0 > 0) && (_source_mystream_b_pat_size_1 > 0) && (_source_mystream_b_pat_size_2 > 0) && (_source_mystream_b_pat_size_3 > 0)) begin
-        _source_mystream_b_pat_offset_3 <= 0;
+      if(_mystream_start && _mystream_b_source_mode & 3'b10) begin
+        _source_mystream_b_pat_cur_offset_3 <= 0;
       end 
-      if(_mystream_start && (_mystream_b_source_mode == 1) && (_source_mystream_b_pat_size_0 > 0) && (_source_mystream_b_pat_size_1 > 0) && (_source_mystream_b_pat_size_2 > 0) && (_source_mystream_b_pat_size_3 > 0)) begin
+      if(_mystream_start && _mystream_b_source_mode & 3'b10) begin
         _source_mystream_b_pat_count_0 <= _source_mystream_b_pat_size_0 - 1;
       end 
-      if(_mystream_start && (_mystream_b_source_mode == 1) && (_source_mystream_b_pat_size_0 > 0) && (_source_mystream_b_pat_size_1 > 0) && (_source_mystream_b_pat_size_2 > 0) && (_source_mystream_b_pat_size_3 > 0)) begin
+      if(_mystream_start && _mystream_b_source_mode & 3'b10) begin
         _source_mystream_b_pat_count_1 <= _source_mystream_b_pat_size_1 - 1;
       end 
-      if(_mystream_start && (_mystream_b_source_mode == 1) && (_source_mystream_b_pat_size_0 > 0) && (_source_mystream_b_pat_size_1 > 0) && (_source_mystream_b_pat_size_2 > 0) && (_source_mystream_b_pat_size_3 > 0)) begin
+      if(_mystream_start && _mystream_b_source_mode & 3'b10) begin
         _source_mystream_b_pat_count_2 <= _source_mystream_b_pat_size_2 - 1;
       end 
-      if(_mystream_start && (_mystream_b_source_mode == 1) && (_source_mystream_b_pat_size_0 > 0) && (_source_mystream_b_pat_size_1 > 0) && (_source_mystream_b_pat_size_2 > 0) && (_source_mystream_b_pat_size_3 > 0)) begin
+      if(_mystream_start && _mystream_b_source_mode & 3'b10) begin
         _source_mystream_b_pat_count_3 <= _source_mystream_b_pat_size_3 - 1;
       end 
       if(_mystream_b_source_pat_fsm_1 == 1) begin
@@ -1415,35 +1415,35 @@ module blinkled
         _mystream_b_source_ram_renable <= 1;
       end 
       if(_mystream_b_source_pat_fsm_1 == 1) begin
-        _source_mystream_b_pat_offset_0 <= _source_mystream_b_pat_offset_0 + _source_mystream_b_pat_stride_0;
+        _source_mystream_b_pat_cur_offset_0 <= _source_mystream_b_pat_cur_offset_0 + _source_mystream_b_pat_stride_0;
         _source_mystream_b_pat_count_0 <= _source_mystream_b_pat_count_0 - 1;
       end 
       if((_mystream_b_source_pat_fsm_1 == 1) && (_source_mystream_b_pat_count_0 == 0)) begin
-        _source_mystream_b_pat_offset_0 <= 0;
+        _source_mystream_b_pat_cur_offset_0 <= 0;
         _source_mystream_b_pat_count_0 <= _source_mystream_b_pat_size_0 - 1;
       end 
       if((_mystream_b_source_pat_fsm_1 == 1) && (_source_mystream_b_pat_count_0 == 0)) begin
-        _source_mystream_b_pat_offset_1 <= _source_mystream_b_pat_offset_1 + _source_mystream_b_pat_stride_1;
+        _source_mystream_b_pat_cur_offset_1 <= _source_mystream_b_pat_cur_offset_1 + _source_mystream_b_pat_stride_1;
         _source_mystream_b_pat_count_1 <= _source_mystream_b_pat_count_1 - 1;
       end 
       if((_mystream_b_source_pat_fsm_1 == 1) && (_source_mystream_b_pat_count_0 == 0) && (_source_mystream_b_pat_count_1 == 0)) begin
-        _source_mystream_b_pat_offset_1 <= 0;
+        _source_mystream_b_pat_cur_offset_1 <= 0;
         _source_mystream_b_pat_count_1 <= _source_mystream_b_pat_size_1 - 1;
       end 
       if((_mystream_b_source_pat_fsm_1 == 1) && ((_source_mystream_b_pat_count_0 == 0) && (_source_mystream_b_pat_count_1 == 0))) begin
-        _source_mystream_b_pat_offset_2 <= _source_mystream_b_pat_offset_2 + _source_mystream_b_pat_stride_2;
+        _source_mystream_b_pat_cur_offset_2 <= _source_mystream_b_pat_cur_offset_2 + _source_mystream_b_pat_stride_2;
         _source_mystream_b_pat_count_2 <= _source_mystream_b_pat_count_2 - 1;
       end 
       if((_mystream_b_source_pat_fsm_1 == 1) && ((_source_mystream_b_pat_count_0 == 0) && (_source_mystream_b_pat_count_1 == 0)) && (_source_mystream_b_pat_count_2 == 0)) begin
-        _source_mystream_b_pat_offset_2 <= 0;
+        _source_mystream_b_pat_cur_offset_2 <= 0;
         _source_mystream_b_pat_count_2 <= _source_mystream_b_pat_size_2 - 1;
       end 
       if((_mystream_b_source_pat_fsm_1 == 1) && ((_source_mystream_b_pat_count_0 == 0) && (_source_mystream_b_pat_count_1 == 0) && (_source_mystream_b_pat_count_2 == 0))) begin
-        _source_mystream_b_pat_offset_3 <= _source_mystream_b_pat_offset_3 + _source_mystream_b_pat_stride_3;
+        _source_mystream_b_pat_cur_offset_3 <= _source_mystream_b_pat_cur_offset_3 + _source_mystream_b_pat_stride_3;
         _source_mystream_b_pat_count_3 <= _source_mystream_b_pat_count_3 - 1;
       end 
       if((_mystream_b_source_pat_fsm_1 == 1) && ((_source_mystream_b_pat_count_0 == 0) && (_source_mystream_b_pat_count_1 == 0) && (_source_mystream_b_pat_count_2 == 0)) && (_source_mystream_b_pat_count_3 == 0)) begin
-        _source_mystream_b_pat_offset_3 <= 0;
+        _source_mystream_b_pat_cur_offset_3 <= 0;
         _source_mystream_b_pat_count_3 <= _source_mystream_b_pat_size_3 - 1;
       end 
       if(_mystream_b_source_pat_fsm_1 == 2) begin
@@ -1455,7 +1455,7 @@ module blinkled
         _set_flag_22 <= 1;
       end 
       if(_set_flag_22) begin
-        _mystream_sum_sink_mode <= 0;
+        _mystream_sum_sink_mode <= 3'b1;
         _mystream_sum_sink_offset <= _th_comp_offset_1;
         _mystream_sum_sink_size <= 16;
         _mystream_sum_sink_stride <= 1;
@@ -2046,7 +2046,7 @@ module blinkled
     end else begin
       case(_mystream_a_source_pat_fsm_0)
         _mystream_a_source_pat_fsm_0_init: begin
-          if(_mystream_start && (_mystream_a_source_mode == 1) && (_source_mystream_a_pat_size_0 > 0) && (_source_mystream_a_pat_size_1 > 0) && (_source_mystream_a_pat_size_2 > 0) && (_source_mystream_a_pat_size_3 > 0)) begin
+          if(_mystream_start && _mystream_a_source_mode & 3'b10) begin
             _mystream_a_source_pat_fsm_0 <= _mystream_a_source_pat_fsm_0_1;
           end 
         end
@@ -2071,7 +2071,7 @@ module blinkled
     end else begin
       case(_mystream_b_source_pat_fsm_1)
         _mystream_b_source_pat_fsm_1_init: begin
-          if(_mystream_start && (_mystream_b_source_mode == 1) && (_source_mystream_b_pat_size_0 > 0) && (_source_mystream_b_pat_size_1 > 0) && (_source_mystream_b_pat_size_2 > 0) && (_source_mystream_b_pat_size_3 > 0)) begin
+          if(_mystream_start && _mystream_b_source_mode & 3'b10) begin
             _mystream_b_source_pat_fsm_1 <= _mystream_b_source_pat_fsm_1_1;
           end 
         end
@@ -2100,7 +2100,7 @@ module blinkled
     end else begin
       case(_mystream_sum_sink_fsm_2)
         _mystream_sum_sink_fsm_2_init: begin
-          if(_mystream_start && (_mystream_sum_sink_mode == 0) && (_mystream_sum_sink_size > 0)) begin
+          if(_mystream_start && _mystream_sum_sink_mode & 3'b1) begin
             _mystream_sum_sink_fsm_2 <= _mystream_sum_sink_fsm_2_1;
           end 
         end

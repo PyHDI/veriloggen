@@ -522,7 +522,7 @@ module blinkled
   reg _addsub_stream_start;
   reg _addsub_stream_busy;
   reg _addsub_stream_a_idle;
-  reg _addsub_stream_a_source_mode;
+  reg [3-1:0] _addsub_stream_a_source_mode;
   reg [32-1:0] _addsub_stream_a_source_offset;
   reg [33-1:0] _addsub_stream_a_source_size;
   reg [32-1:0] _addsub_stream_a_source_stride;
@@ -533,7 +533,7 @@ module blinkled
   wire [32-1:0] _addsub_stream_a_source_ram_rdata;
   reg _addsub_stream_a_source_ram_rvalid;
   reg _addsub_stream_b_idle;
-  reg _addsub_stream_b_source_mode;
+  reg [3-1:0] _addsub_stream_b_source_mode;
   reg [32-1:0] _addsub_stream_b_source_offset;
   reg [33-1:0] _addsub_stream_b_source_size;
   reg [32-1:0] _addsub_stream_b_source_stride;
@@ -543,7 +543,7 @@ module blinkled
   reg _addsub_stream_b_source_ram_renable;
   wire [32-1:0] _addsub_stream_b_source_ram_rdata;
   reg _addsub_stream_b_source_ram_rvalid;
-  reg _addsub_stream_c_sink_mode;
+  reg [3-1:0] _addsub_stream_c_sink_mode;
   reg [32-1:0] _addsub_stream_c_sink_offset;
   reg [33-1:0] _addsub_stream_c_sink_size;
   reg [32-1:0] _addsub_stream_c_sink_stride;
@@ -552,7 +552,7 @@ module blinkled
   reg [32-1:0] _addsub_stream_c_sink_waddr;
   reg _addsub_stream_c_sink_wenable;
   reg [32-1:0] _addsub_stream_c_sink_wdata;
-  reg _addsub_stream_d_sink_mode;
+  reg [3-1:0] _addsub_stream_d_sink_mode;
   reg [32-1:0] _addsub_stream_d_sink_offset;
   reg [33-1:0] _addsub_stream_d_sink_size;
   reg [32-1:0] _addsub_stream_d_sink_stride;
@@ -567,7 +567,7 @@ module blinkled
   reg _main_stream_start;
   reg _main_stream_busy;
   reg _main_stream_a_idle;
-  reg _main_stream_a_source_mode;
+  reg [3-1:0] _main_stream_a_source_mode;
   reg [32-1:0] _main_stream_a_source_offset;
   reg [33-1:0] _main_stream_a_source_size;
   reg [32-1:0] _main_stream_a_source_stride;
@@ -578,7 +578,7 @@ module blinkled
   wire [32-1:0] _main_stream_a_source_ram_rdata;
   reg _main_stream_a_source_ram_rvalid;
   reg _main_stream_b_idle;
-  reg _main_stream_b_source_mode;
+  reg [3-1:0] _main_stream_b_source_mode;
   reg [32-1:0] _main_stream_b_source_offset;
   reg [33-1:0] _main_stream_b_source_size;
   reg [32-1:0] _main_stream_b_source_stride;
@@ -602,7 +602,7 @@ module blinkled
   assign addsub_stream_c_data = __delay_data_16;
   reg _substream_addsub_stream_a_data_cond_14_0;
   reg _substream_addsub_stream_b_data_cond_14_1;
-  reg _main_stream_c_sink_mode;
+  reg [3-1:0] _main_stream_c_sink_mode;
   reg [32-1:0] _main_stream_c_sink_offset;
   reg [33-1:0] _main_stream_c_sink_size;
   reg [32-1:0] _main_stream_c_sink_stride;
@@ -611,7 +611,7 @@ module blinkled
   reg [32-1:0] _main_stream_c_sink_waddr;
   reg _main_stream_c_sink_wenable;
   reg [32-1:0] _main_stream_c_sink_wdata;
-  reg _main_stream_d_sink_mode;
+  reg [3-1:0] _main_stream_d_sink_mode;
   reg [32-1:0] _main_stream_d_sink_offset;
   reg [33-1:0] _main_stream_d_sink_size;
   reg [32-1:0] _main_stream_d_sink_stride;
@@ -1688,7 +1688,7 @@ module blinkled
       _minus_data_6 <= 0;
       __delay_data_16 <= 0;
       _set_flag_14 <= 0;
-      _addsub_stream_a_source_mode <= 0;
+      _addsub_stream_a_source_mode <= 3'b0;
       _addsub_stream_a_source_offset <= 0;
       _addsub_stream_a_source_size <= 0;
       _addsub_stream_a_source_stride <= 0;
@@ -1701,7 +1701,7 @@ module blinkled
       _addsub_stream_a_source_ram_renable <= 0;
       _addsub_stream_a_source_count <= 0;
       _set_flag_18 <= 0;
-      _addsub_stream_b_source_mode <= 0;
+      _addsub_stream_b_source_mode <= 3'b0;
       _addsub_stream_b_source_offset <= 0;
       _addsub_stream_b_source_size <= 0;
       _addsub_stream_b_source_stride <= 0;
@@ -1714,7 +1714,7 @@ module blinkled
       _addsub_stream_b_source_ram_renable <= 0;
       _addsub_stream_b_source_count <= 0;
       _set_flag_22 <= 0;
-      _addsub_stream_c_sink_mode <= 0;
+      _addsub_stream_c_sink_mode <= 3'b0;
       _addsub_stream_c_sink_offset <= 0;
       _addsub_stream_c_sink_size <= 0;
       _addsub_stream_c_sink_stride <= 0;
@@ -1724,7 +1724,7 @@ module blinkled
       _addsub_stream_c_sink_count <= 0;
       _addsub_stream_c_sink_wdata <= 0;
       _set_flag_23 <= 0;
-      _addsub_stream_d_sink_mode <= 0;
+      _addsub_stream_d_sink_mode <= 3'b0;
       _addsub_stream_d_sink_offset <= 0;
       _addsub_stream_d_sink_size <= 0;
       _addsub_stream_d_sink_stride <= 0;
@@ -1746,7 +1746,7 @@ module blinkled
         _set_flag_14 <= 1;
       end 
       if(_set_flag_14) begin
-        _addsub_stream_a_source_mode <= 0;
+        _addsub_stream_a_source_mode <= 3'b1;
         _addsub_stream_a_source_offset <= _th_comp_offset_5;
         _addsub_stream_a_source_size <= _th_comp_size_4;
         _addsub_stream_a_source_stride <= 1;
@@ -1759,7 +1759,7 @@ module blinkled
       if(_addsub_stream_a_source_ram_rvalid) begin
         __variable_wdata_0 <= _addsub_stream_a_source_ram_rdata;
       end 
-      if(_addsub_stream_start && (_addsub_stream_a_source_mode == 0) && (_addsub_stream_a_source_size > 0)) begin
+      if(_addsub_stream_start && _addsub_stream_a_source_mode & 3'b1) begin
         _addsub_stream_a_idle <= 0;
       end 
       if(_addsub_stream_a_source_fsm_0 == 1) begin
@@ -1781,7 +1781,7 @@ module blinkled
         _set_flag_18 <= 1;
       end 
       if(_set_flag_18) begin
-        _addsub_stream_b_source_mode <= 0;
+        _addsub_stream_b_source_mode <= 3'b1;
         _addsub_stream_b_source_offset <= _th_comp_offset_5;
         _addsub_stream_b_source_size <= _th_comp_size_4;
         _addsub_stream_b_source_stride <= 1;
@@ -1794,7 +1794,7 @@ module blinkled
       if(_addsub_stream_b_source_ram_rvalid) begin
         __variable_wdata_1 <= _addsub_stream_b_source_ram_rdata;
       end 
-      if(_addsub_stream_start && (_addsub_stream_b_source_mode == 0) && (_addsub_stream_b_source_size > 0)) begin
+      if(_addsub_stream_start && _addsub_stream_b_source_mode & 3'b1) begin
         _addsub_stream_b_idle <= 0;
       end 
       if(_addsub_stream_b_source_fsm_1 == 1) begin
@@ -1816,7 +1816,7 @@ module blinkled
         _set_flag_22 <= 1;
       end 
       if(_set_flag_22) begin
-        _addsub_stream_c_sink_mode <= 0;
+        _addsub_stream_c_sink_mode <= 3'b1;
         _addsub_stream_c_sink_offset <= _th_comp_offset_5;
         _addsub_stream_c_sink_size <= _th_comp_size_4;
         _addsub_stream_c_sink_stride <= 1;
@@ -1845,7 +1845,7 @@ module blinkled
         _set_flag_23 <= 1;
       end 
       if(_set_flag_23) begin
-        _addsub_stream_d_sink_mode <= 0;
+        _addsub_stream_d_sink_mode <= 3'b1;
         _addsub_stream_d_sink_offset <= _th_comp_offset_5;
         _addsub_stream_d_sink_size <= _th_comp_size_4;
         _addsub_stream_d_sink_stride <= 1;
@@ -1967,7 +1967,7 @@ module blinkled
       _minus_data_21 <= 0;
       __delay_data_26 <= 0;
       _set_flag_61 <= 0;
-      _main_stream_a_source_mode <= 0;
+      _main_stream_a_source_mode <= 3'b0;
       _main_stream_a_source_offset <= 0;
       _main_stream_a_source_size <= 0;
       _main_stream_a_source_stride <= 0;
@@ -1980,7 +1980,7 @@ module blinkled
       _main_stream_a_source_ram_renable <= 0;
       _main_stream_a_source_count <= 0;
       _set_flag_65 <= 0;
-      _main_stream_b_source_mode <= 0;
+      _main_stream_b_source_mode <= 3'b0;
       _main_stream_b_source_offset <= 0;
       _main_stream_b_source_size <= 0;
       _main_stream_b_source_stride <= 0;
@@ -1993,7 +1993,7 @@ module blinkled
       _main_stream_b_source_ram_renable <= 0;
       _main_stream_b_source_count <= 0;
       _set_flag_69 <= 0;
-      _main_stream_c_sink_mode <= 0;
+      _main_stream_c_sink_mode <= 3'b0;
       _main_stream_c_sink_offset <= 0;
       _main_stream_c_sink_size <= 0;
       _main_stream_c_sink_stride <= 0;
@@ -2003,7 +2003,7 @@ module blinkled
       _main_stream_c_sink_count <= 0;
       _main_stream_c_sink_wdata <= 0;
       _set_flag_70 <= 0;
-      _main_stream_d_sink_mode <= 0;
+      _main_stream_d_sink_mode <= 3'b0;
       _main_stream_d_sink_offset <= 0;
       _main_stream_d_sink_size <= 0;
       _main_stream_d_sink_stride <= 0;
@@ -2029,7 +2029,7 @@ module blinkled
         _set_flag_61 <= 1;
       end 
       if(_set_flag_61) begin
-        _main_stream_a_source_mode <= 0;
+        _main_stream_a_source_mode <= 3'b1;
         _main_stream_a_source_offset <= _th_comp_offset_21;
         _main_stream_a_source_size <= _th_comp_size_20;
         _main_stream_a_source_stride <= 1;
@@ -2042,7 +2042,7 @@ module blinkled
       if(_main_stream_a_source_ram_rvalid) begin
         __variable_wdata_8 <= _main_stream_a_source_ram_rdata;
       end 
-      if(_main_stream_start && (_main_stream_a_source_mode == 0) && (_main_stream_a_source_size > 0)) begin
+      if(_main_stream_start && _main_stream_a_source_mode & 3'b1) begin
         _main_stream_a_idle <= 0;
       end 
       if(_main_stream_a_source_fsm_0 == 1) begin
@@ -2064,7 +2064,7 @@ module blinkled
         _set_flag_65 <= 1;
       end 
       if(_set_flag_65) begin
-        _main_stream_b_source_mode <= 0;
+        _main_stream_b_source_mode <= 3'b1;
         _main_stream_b_source_offset <= _th_comp_offset_21;
         _main_stream_b_source_size <= _th_comp_size_20;
         _main_stream_b_source_stride <= 1;
@@ -2077,7 +2077,7 @@ module blinkled
       if(_main_stream_b_source_ram_rvalid) begin
         __variable_wdata_9 <= _main_stream_b_source_ram_rdata;
       end 
-      if(_main_stream_start && (_main_stream_b_source_mode == 0) && (_main_stream_b_source_size > 0)) begin
+      if(_main_stream_start && _main_stream_b_source_mode & 3'b1) begin
         _main_stream_b_idle <= 0;
       end 
       if(_main_stream_b_source_fsm_1 == 1) begin
@@ -2099,7 +2099,7 @@ module blinkled
         _set_flag_69 <= 1;
       end 
       if(_set_flag_69) begin
-        _main_stream_c_sink_mode <= 0;
+        _main_stream_c_sink_mode <= 3'b1;
         _main_stream_c_sink_offset <= _th_comp_offset_21;
         _main_stream_c_sink_size <= _th_comp_size_20;
         _main_stream_c_sink_stride <= 1;
@@ -2128,7 +2128,7 @@ module blinkled
         _set_flag_70 <= 1;
       end 
       if(_set_flag_70) begin
-        _main_stream_d_sink_mode <= 0;
+        _main_stream_d_sink_mode <= 3'b1;
         _main_stream_d_sink_offset <= _th_comp_offset_21;
         _main_stream_d_sink_size <= _th_comp_size_20;
         _main_stream_d_sink_stride <= 1;
@@ -3381,7 +3381,7 @@ module blinkled
     end else begin
       case(_addsub_stream_a_source_fsm_0)
         _addsub_stream_a_source_fsm_0_init: begin
-          if(_addsub_stream_start && (_addsub_stream_a_source_mode == 0) && (_addsub_stream_a_source_size > 0)) begin
+          if(_addsub_stream_start && _addsub_stream_a_source_mode & 3'b1) begin
             _addsub_stream_a_source_fsm_0 <= _addsub_stream_a_source_fsm_0_1;
           end 
         end
@@ -3406,7 +3406,7 @@ module blinkled
     end else begin
       case(_addsub_stream_b_source_fsm_1)
         _addsub_stream_b_source_fsm_1_init: begin
-          if(_addsub_stream_start && (_addsub_stream_b_source_mode == 0) && (_addsub_stream_b_source_size > 0)) begin
+          if(_addsub_stream_start && _addsub_stream_b_source_mode & 3'b1) begin
             _addsub_stream_b_source_fsm_1 <= _addsub_stream_b_source_fsm_1_1;
           end 
         end
@@ -3437,7 +3437,7 @@ module blinkled
     end else begin
       case(_addsub_stream_c_sink_fsm_2)
         _addsub_stream_c_sink_fsm_2_init: begin
-          if(_addsub_stream_start && (_addsub_stream_c_sink_mode == 0) && (_addsub_stream_c_sink_size > 0)) begin
+          if(_addsub_stream_start && _addsub_stream_c_sink_mode & 3'b1) begin
             _addsub_stream_c_sink_fsm_2 <= _addsub_stream_c_sink_fsm_2_1;
           end 
         end
@@ -3486,7 +3486,7 @@ module blinkled
     end else begin
       case(_addsub_stream_d_sink_fsm_3)
         _addsub_stream_d_sink_fsm_3_init: begin
-          if(_addsub_stream_start && (_addsub_stream_d_sink_mode == 0) && (_addsub_stream_d_sink_size > 0)) begin
+          if(_addsub_stream_start && _addsub_stream_d_sink_mode & 3'b1) begin
             _addsub_stream_d_sink_fsm_3 <= _addsub_stream_d_sink_fsm_3_1;
           end 
         end
@@ -3607,7 +3607,7 @@ module blinkled
     end else begin
       case(_main_stream_a_source_fsm_0)
         _main_stream_a_source_fsm_0_init: begin
-          if(_main_stream_start && (_main_stream_a_source_mode == 0) && (_main_stream_a_source_size > 0)) begin
+          if(_main_stream_start && _main_stream_a_source_mode & 3'b1) begin
             _main_stream_a_source_fsm_0 <= _main_stream_a_source_fsm_0_1;
           end 
         end
@@ -3632,7 +3632,7 @@ module blinkled
     end else begin
       case(_main_stream_b_source_fsm_1)
         _main_stream_b_source_fsm_1_init: begin
-          if(_main_stream_start && (_main_stream_b_source_mode == 0) && (_main_stream_b_source_size > 0)) begin
+          if(_main_stream_start && _main_stream_b_source_mode & 3'b1) begin
             _main_stream_b_source_fsm_1 <= _main_stream_b_source_fsm_1_1;
           end 
         end
@@ -3669,7 +3669,7 @@ module blinkled
     end else begin
       case(_main_stream_c_sink_fsm_2)
         _main_stream_c_sink_fsm_2_init: begin
-          if(_main_stream_start && (_main_stream_c_sink_mode == 0) && (_main_stream_c_sink_size > 0)) begin
+          if(_main_stream_start && _main_stream_c_sink_mode & 3'b1) begin
             _main_stream_c_sink_fsm_2 <= _main_stream_c_sink_fsm_2_1;
           end 
         end
@@ -3742,7 +3742,7 @@ module blinkled
     end else begin
       case(_main_stream_d_sink_fsm_3)
         _main_stream_d_sink_fsm_3_init: begin
-          if(_main_stream_start && (_main_stream_d_sink_mode == 0) && (_main_stream_d_sink_size > 0)) begin
+          if(_main_stream_start && _main_stream_d_sink_mode & 3'b1) begin
             _main_stream_d_sink_fsm_3 <= _main_stream_d_sink_fsm_3_1;
           end 
         end

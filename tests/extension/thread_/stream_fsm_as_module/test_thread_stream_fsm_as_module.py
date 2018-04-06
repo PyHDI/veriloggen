@@ -507,7 +507,7 @@ module blinkled
   reg _mystream_start;
   reg _mystream_busy;
   reg _mystream_a_idle;
-  reg _mystream_a_source_mode;
+  reg [3-1:0] _mystream_a_source_mode;
   reg [32-1:0] _mystream_a_source_offset;
   reg [33-1:0] _mystream_a_source_size;
   reg [32-1:0] _mystream_a_source_stride;
@@ -518,7 +518,7 @@ module blinkled
   wire [32-1:0] _mystream_a_source_ram_rdata;
   reg _mystream_a_source_ram_rvalid;
   reg _mystream_b_idle;
-  reg _mystream_b_source_mode;
+  reg [3-1:0] _mystream_b_source_mode;
   reg [32-1:0] _mystream_b_source_offset;
   reg [33-1:0] _mystream_b_source_size;
   reg [32-1:0] _mystream_b_source_stride;
@@ -528,7 +528,7 @@ module blinkled
   reg _mystream_b_source_ram_renable;
   wire [32-1:0] _mystream_b_source_ram_rdata;
   reg _mystream_b_source_ram_rvalid;
-  reg _mystream_c_sink_mode;
+  reg [3-1:0] _mystream_c_sink_mode;
   reg [32-1:0] _mystream_c_sink_offset;
   reg [33-1:0] _mystream_c_sink_size;
   reg [32-1:0] _mystream_c_sink_stride;
@@ -1155,7 +1155,7 @@ module blinkled
     if(RST) begin
       _plus_data_2 <= 0;
       _set_flag_14 <= 0;
-      _mystream_a_source_mode <= 0;
+      _mystream_a_source_mode <= 3'b0;
       _mystream_a_source_offset <= 0;
       _mystream_a_source_size <= 0;
       _mystream_a_source_stride <= 0;
@@ -1168,7 +1168,7 @@ module blinkled
       _mystream_a_source_ram_renable <= 0;
       _mystream_a_source_count <= 0;
       _set_flag_18 <= 0;
-      _mystream_b_source_mode <= 0;
+      _mystream_b_source_mode <= 3'b0;
       _mystream_b_source_offset <= 0;
       _mystream_b_source_size <= 0;
       _mystream_b_source_stride <= 0;
@@ -1181,7 +1181,7 @@ module blinkled
       _mystream_b_source_ram_renable <= 0;
       _mystream_b_source_count <= 0;
       _set_flag_22 <= 0;
-      _mystream_c_sink_mode <= 0;
+      _mystream_c_sink_mode <= 3'b0;
       _mystream_c_sink_offset <= 0;
       _mystream_c_sink_size <= 0;
       _mystream_c_sink_stride <= 0;
@@ -1198,7 +1198,7 @@ module blinkled
         _set_flag_14 <= 1;
       end 
       if(_set_flag_14) begin
-        _mystream_a_source_mode <= 0;
+        _mystream_a_source_mode <= 3'b1;
         _mystream_a_source_offset <= _th_comp_offset_3;
         _mystream_a_source_size <= _th_comp_size_2;
         _mystream_a_source_stride <= 1;
@@ -1211,7 +1211,7 @@ module blinkled
       if(_mystream_a_source_ram_rvalid) begin
         __variable_wdata_0 <= _mystream_a_source_ram_rdata;
       end 
-      if(_mystream_start && (_mystream_a_source_mode == 0) && (_mystream_a_source_size > 0)) begin
+      if(_mystream_start && _mystream_a_source_mode & 3'b1) begin
         _mystream_a_idle <= 0;
       end 
       if(_mystream_a_source_fsm_0 == 1) begin
@@ -1233,7 +1233,7 @@ module blinkled
         _set_flag_18 <= 1;
       end 
       if(_set_flag_18) begin
-        _mystream_b_source_mode <= 0;
+        _mystream_b_source_mode <= 3'b1;
         _mystream_b_source_offset <= _th_comp_offset_3;
         _mystream_b_source_size <= _th_comp_size_2;
         _mystream_b_source_stride <= 1;
@@ -1246,7 +1246,7 @@ module blinkled
       if(_mystream_b_source_ram_rvalid) begin
         __variable_wdata_1 <= _mystream_b_source_ram_rdata;
       end 
-      if(_mystream_start && (_mystream_b_source_mode == 0) && (_mystream_b_source_size > 0)) begin
+      if(_mystream_start && _mystream_b_source_mode & 3'b1) begin
         _mystream_b_idle <= 0;
       end 
       if(_mystream_b_source_fsm_1 == 1) begin
@@ -1268,7 +1268,7 @@ module blinkled
         _set_flag_22 <= 1;
       end 
       if(_set_flag_22) begin
-        _mystream_c_sink_mode <= 0;
+        _mystream_c_sink_mode <= 3'b1;
         _mystream_c_sink_offset <= _th_comp_offset_3;
         _mystream_c_sink_size <= _th_comp_size_2;
         _mystream_c_sink_stride <= 1;
@@ -1861,7 +1861,6 @@ module blinkled
     ._mystream_a_source_fsm_0(__mystream_a_source_fsm_0_out_55),
     .i__mystream_start(_mystream_start),
     .i__mystream_a_source_mode(_mystream_a_source_mode),
-    .i__mystream_a_source_size(_mystream_a_source_size),
     .i__mystream_a_source_count(_mystream_a_source_count)
   );
 
@@ -1882,7 +1881,6 @@ module blinkled
     ._mystream_b_source_fsm_1(__mystream_b_source_fsm_1_out_56),
     .i__mystream_start(_mystream_start),
     .i__mystream_b_source_mode(_mystream_b_source_mode),
-    .i__mystream_b_source_size(_mystream_b_source_size),
     .i__mystream_b_source_count(_mystream_b_source_count)
   );
 
@@ -1907,7 +1905,6 @@ module blinkled
     ._mystream_c_sink_fsm_2(__mystream_c_sink_fsm_2_out_57),
     .i__mystream_start(_mystream_start),
     .i__mystream_c_sink_mode(_mystream_c_sink_mode),
-    .i__mystream_c_sink_size(_mystream_c_sink_size),
     .i__mystream_c_sink_count(_mystream_c_sink_count)
   );
 
@@ -2141,8 +2138,7 @@ module sub__mystream_a_source_fsm_0
   input RST,
   output reg [32-1:0] _mystream_a_source_fsm_0,
   input i__mystream_start,
-  input i__mystream_a_source_mode,
-  input [33-1:0] i__mystream_a_source_size,
+  input [3-1:0] i__mystream_a_source_mode,
   input [33-1:0] i__mystream_a_source_count
 );
 
@@ -2156,7 +2152,7 @@ module sub__mystream_a_source_fsm_0
     end else begin
       case(_mystream_a_source_fsm_0)
         _mystream_a_source_fsm_0_init: begin
-          if(i__mystream_start && (i__mystream_a_source_mode == 0) && (i__mystream_a_source_size > 0)) begin
+          if(i__mystream_start && i__mystream_a_source_mode & 3'b1) begin
             _mystream_a_source_fsm_0 <= _mystream_a_source_fsm_0_1;
           end 
         end
@@ -2183,8 +2179,7 @@ module sub__mystream_b_source_fsm_1
   input RST,
   output reg [32-1:0] _mystream_b_source_fsm_1,
   input i__mystream_start,
-  input i__mystream_b_source_mode,
-  input [33-1:0] i__mystream_b_source_size,
+  input [3-1:0] i__mystream_b_source_mode,
   input [33-1:0] i__mystream_b_source_count
 );
 
@@ -2198,7 +2193,7 @@ module sub__mystream_b_source_fsm_1
     end else begin
       case(_mystream_b_source_fsm_1)
         _mystream_b_source_fsm_1_init: begin
-          if(i__mystream_start && (i__mystream_b_source_mode == 0) && (i__mystream_b_source_size > 0)) begin
+          if(i__mystream_start && i__mystream_b_source_mode & 3'b1) begin
             _mystream_b_source_fsm_1 <= _mystream_b_source_fsm_1_1;
           end 
         end
@@ -2225,8 +2220,7 @@ module sub__mystream_c_sink_fsm_2
   input RST,
   output reg [32-1:0] _mystream_c_sink_fsm_2,
   input i__mystream_start,
-  input i__mystream_c_sink_mode,
-  input [33-1:0] i__mystream_c_sink_size,
+  input [3-1:0] i__mystream_c_sink_mode,
   input [33-1:0] i__mystream_c_sink_count
 );
 
@@ -2244,7 +2238,7 @@ module sub__mystream_c_sink_fsm_2
     end else begin
       case(_mystream_c_sink_fsm_2)
         _mystream_c_sink_fsm_2_init: begin
-          if(i__mystream_start && (i__mystream_c_sink_mode == 0) && (i__mystream_c_sink_size > 0)) begin
+          if(i__mystream_start && i__mystream_c_sink_mode & 3'b1) begin
             _mystream_c_sink_fsm_2 <= _mystream_c_sink_fsm_2_1;
           end 
         end

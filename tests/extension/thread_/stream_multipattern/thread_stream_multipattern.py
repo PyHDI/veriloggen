@@ -25,9 +25,12 @@ def mkLed():
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
     ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
 
-    patterns = (((32, 1), (4, 32)),  # pattern 1
-                ((16, 2), (4, 32)))  # pattern 2
-    size = 32 * 4
+    patterns = (((8, 1), (2, 8)),  # pattern 1
+                ((8, 2), (2, 16)))  # pattern 2
+    offsets = (0, 16)
+    sizes = (16, 16)
+    strides = (1, 2)
+    dma_size = 48
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
     a = strm.source('a')
@@ -35,32 +38,35 @@ def mkLed():
     c = a + b
     strm.sink(c, 'c')
 
-    def comp_stream(offset):
-        strm.set_source_multipattern('a', ram_a, offset, patterns)
-        strm.set_source_multipattern('b', ram_b, offset, patterns)
-        #strm.set_sink_multipattern('c', ram_c, offset, patterns)
-        strm.set_sink('c', ram_c, offset, 192)
+    def comp_stream():
+        strm.set_source_multipattern('a', ram_a, offsets, patterns)
+        strm.set_source_multipattern('b', ram_b, offsets, patterns)
+        strm.set_sink_multipattern('c', ram_c, offsets, patterns)
         strm.run()
         strm.join()
 
-    def comp_sequential(offset):
-        sum = 0
-        for i in range(size):
-            a = ram_a.read(i + offset)
-            b = ram_b.read(i + offset)
+    def comp_sequential(global_offset):
+        for i in range(sizes[0], strides[0]):
+            a = ram_a.read(i + offsets[0] + global_offset)
+            b = ram_b.read(i + offsets[0] + global_offset)
             sum = a + b
-            ram_c.write(i + offset, sum)
-        for i in range(size, 2):
-            a = ram_a.read(i + offset)
-            b = ram_b.read(i + offset)
+            ram_c.write(i + offsets[0] + global_offset, sum)
+        for i in range(sizes[1], strides[1]):
+            a = ram_a.read(i + offsets[1] + global_offset)
+            b = ram_b.read(i + offsets[1] + global_offset)
             sum = a + b
-            ram_c.write(i + offset, sum)
+            ram_c.write(i + offsets[1] + global_offset, sum)
 
-    def check(size, offset_stream, offset_seq):
+    def check(bias, offset_stream, offset_seq):
         all_ok = True
-        for i in range(size):
-            st = ram_c.read(i + offset_stream)
-            sq = ram_c.read(i + offset_seq)
+        for i in range(sizes[0], strides[0]):
+            st = ram_c.read(i + offset_stream + bias)
+            sq = ram_c.read(i + offset_seq + bias)
+            if vthread.verilog.NotEql(st, sq):
+                all_ok = False
+        for i in range(sizes[1], strides[1]):
+            st = ram_c.read(i + offset_stream + bias)
+            sq = ram_c.read(i + offset_seq + bias)
             if vthread.verilog.NotEql(st, sq):
                 all_ok = False
         if all_ok:
@@ -70,21 +76,20 @@ def mkLed():
 
     def comp():
         # stream
-        offset = 0
-        myaxi.dma_read(ram_a, offset, 0, size)
-        myaxi.dma_read(ram_b, offset, 0, size)
-        comp_stream(offset)
-        myaxi.dma_write(ram_c, offset, 1024 * 4, 1)
+        myaxi.dma_read(ram_a, offsets[0], 0, dma_size)
+        myaxi.dma_read(ram_b, offsets[0], 0, dma_size)
+        comp_stream()
+        myaxi.dma_write(ram_c, offsets[0], 1024 * 4, 1)
 
         # sequential
-        offset = size
-        myaxi.dma_read(ram_a, offset, 0, size)
-        myaxi.dma_read(ram_b, offset, 0, size)
-        comp_sequential(offset)
-        myaxi.dma_write(ram_c, offset, 1024 * 8, 1)
+        bias = dma_size
+        myaxi.dma_read(ram_a, offsets[0], 0, dma_size)
+        myaxi.dma_read(ram_b, offsets[0], 0, dma_size)
+        comp_sequential(bias)
+        myaxi.dma_write(ram_c, offsets[0], 1024 * 8, 1)
 
         # verification
-        check(size, 0, offset)
+        check(bias, 0, bias)
 
     th = vthread.Thread(m, 'th_comp', clk, rst, comp)
     fsm = th.start()

@@ -522,7 +522,7 @@ module blinkled
   reg _macstream_start;
   reg _macstream_busy;
   reg _macstream_a_idle;
-  reg _macstream_a_source_mode;
+  reg [3-1:0] _macstream_a_source_mode;
   reg [32-1:0] _macstream_a_source_offset;
   reg [33-1:0] _macstream_a_source_size;
   reg [32-1:0] _macstream_a_source_stride;
@@ -533,7 +533,7 @@ module blinkled
   wire [32-1:0] _macstream_a_source_ram_rdata;
   reg _macstream_a_source_ram_rvalid;
   reg _macstream_b_idle;
-  reg _macstream_b_source_mode;
+  reg [3-1:0] _macstream_b_source_mode;
   reg [32-1:0] _macstream_b_source_offset;
   reg [33-1:0] _macstream_b_source_size;
   reg [32-1:0] _macstream_b_source_stride;
@@ -544,7 +544,7 @@ module blinkled
   wire [32-1:0] _macstream_b_source_ram_rdata;
   reg _macstream_b_source_ram_rvalid;
   reg _macstream_reduce_reset;
-  reg _macstream_c_sink_mode;
+  reg [3-1:0] _macstream_c_sink_mode;
   reg [32-1:0] _macstream_c_sink_offset;
   reg [33-1:0] _macstream_c_sink_size;
   reg [32-1:0] _macstream_c_sink_stride;
@@ -553,7 +553,7 @@ module blinkled
   reg [32-1:0] _macstream_c_sink_waddr;
   reg _macstream_c_sink_wenable;
   reg [32-1:0] _macstream_c_sink_wdata;
-  reg _macstream_v_sink_mode;
+  reg [3-1:0] _macstream_v_sink_mode;
   reg [32-1:0] _macstream_v_sink_offset;
   reg [33-1:0] _macstream_v_sink_size;
   reg [32-1:0] _macstream_v_sink_stride;
@@ -568,7 +568,7 @@ module blinkled
   reg _mystream_start;
   reg _mystream_busy;
   reg _mystream_x_idle;
-  reg _mystream_x_source_mode;
+  reg [3-1:0] _mystream_x_source_mode;
   reg [32-1:0] _mystream_x_source_offset;
   reg [33-1:0] _mystream_x_source_size;
   reg [32-1:0] _mystream_x_source_stride;
@@ -579,7 +579,7 @@ module blinkled
   wire [32-1:0] _mystream_x_source_ram_rdata;
   reg _mystream_x_source_ram_rvalid;
   reg _mystream_y_idle;
-  reg _mystream_y_source_mode;
+  reg [3-1:0] _mystream_y_source_mode;
   reg [32-1:0] _mystream_y_source_offset;
   reg [33-1:0] _mystream_y_source_size;
   reg [32-1:0] _mystream_y_source_stride;
@@ -629,7 +629,7 @@ module blinkled
   reg _substream_macstream_a_data_cond_14_0;
   reg _substream_macstream_b_data_cond_14_1;
   reg _substream_macstream_const_data_cond_14_2;
-  reg _mystream_z_sink_mode;
+  reg [3-1:0] _mystream_z_sink_mode;
   reg [32-1:0] _mystream_z_sink_offset;
   reg [33-1:0] _mystream_z_sink_size;
   reg [32-1:0] _mystream_z_sink_stride;
@@ -638,7 +638,7 @@ module blinkled
   reg [32-1:0] _mystream_z_sink_waddr;
   reg _mystream_z_sink_wenable;
   reg [32-1:0] _mystream_z_sink_wdata;
-  reg _mystream_v_sink_mode;
+  reg [3-1:0] _mystream_v_sink_mode;
   reg [32-1:0] _mystream_v_sink_offset;
   reg [33-1:0] _mystream_v_sink_size;
   reg [32-1:0] _mystream_v_sink_stride;
@@ -1599,7 +1599,7 @@ module blinkled
       _plus_data_9 <= 0;
       __delay_data_22 <= 0;
       _set_flag_14 <= 0;
-      _macstream_a_source_mode <= 0;
+      _macstream_a_source_mode <= 3'b0;
       _macstream_a_source_offset <= 0;
       _macstream_a_source_size <= 0;
       _macstream_a_source_stride <= 0;
@@ -1612,7 +1612,7 @@ module blinkled
       _macstream_a_source_ram_renable <= 0;
       _macstream_a_source_count <= 0;
       _set_flag_18 <= 0;
-      _macstream_b_source_mode <= 0;
+      _macstream_b_source_mode <= 3'b0;
       _macstream_b_source_offset <= 0;
       _macstream_b_source_size <= 0;
       _macstream_b_source_stride <= 0;
@@ -1627,7 +1627,7 @@ module blinkled
       _set_flag_22 <= 0;
       __parametervariable_wdata_2 <= 0;
       _set_flag_23 <= 0;
-      _macstream_c_sink_mode <= 0;
+      _macstream_c_sink_mode <= 3'b0;
       _macstream_c_sink_offset <= 0;
       _macstream_c_sink_size <= 0;
       _macstream_c_sink_stride <= 0;
@@ -1637,7 +1637,7 @@ module blinkled
       _macstream_c_sink_count <= 0;
       _macstream_c_sink_wdata <= 0;
       _set_flag_24 <= 0;
-      _macstream_v_sink_mode <= 0;
+      _macstream_v_sink_mode <= 3'b0;
       _macstream_v_sink_offset <= 0;
       _macstream_v_sink_size <= 0;
       _macstream_v_sink_stride <= 0;
@@ -1690,7 +1690,7 @@ module blinkled
         _set_flag_14 <= 1;
       end 
       if(_set_flag_14) begin
-        _macstream_a_source_mode <= 0;
+        _macstream_a_source_mode <= 3'b1;
         _macstream_a_source_offset <= _th_comp_offset_6;
         _macstream_a_source_size <= _th_comp_size_5;
         _macstream_a_source_stride <= 1;
@@ -1703,7 +1703,7 @@ module blinkled
       if(_macstream_a_source_ram_rvalid) begin
         __variable_wdata_0 <= _macstream_a_source_ram_rdata;
       end 
-      if(_macstream_start && (_macstream_a_source_mode == 0) && (_macstream_a_source_size > 0)) begin
+      if(_macstream_start && _macstream_a_source_mode & 3'b1) begin
         _macstream_a_idle <= 0;
       end 
       if(_macstream_a_source_fsm_0 == 1) begin
@@ -1725,7 +1725,7 @@ module blinkled
         _set_flag_18 <= 1;
       end 
       if(_set_flag_18) begin
-        _macstream_b_source_mode <= 0;
+        _macstream_b_source_mode <= 3'b1;
         _macstream_b_source_offset <= _th_comp_offset_6;
         _macstream_b_source_size <= _th_comp_size_5;
         _macstream_b_source_stride <= 1;
@@ -1738,7 +1738,7 @@ module blinkled
       if(_macstream_b_source_ram_rvalid) begin
         __variable_wdata_1 <= _macstream_b_source_ram_rdata;
       end 
-      if(_macstream_start && (_macstream_b_source_mode == 0) && (_macstream_b_source_size > 0)) begin
+      if(_macstream_start && _macstream_b_source_mode & 3'b1) begin
         _macstream_b_idle <= 0;
       end 
       if(_macstream_b_source_fsm_1 == 1) begin
@@ -1767,7 +1767,7 @@ module blinkled
         _set_flag_23 <= 1;
       end 
       if(_set_flag_23) begin
-        _macstream_c_sink_mode <= 0;
+        _macstream_c_sink_mode <= 3'b1;
         _macstream_c_sink_offset <= _th_comp_offset_6;
         _macstream_c_sink_size <= _th_comp_size_5;
         _macstream_c_sink_stride <= 1;
@@ -1796,7 +1796,7 @@ module blinkled
         _set_flag_24 <= 1;
       end 
       if(_set_flag_24) begin
-        _macstream_v_sink_mode <= 0;
+        _macstream_v_sink_mode <= 3'b1;
         _macstream_v_sink_offset <= _th_comp_offset_6;
         _macstream_v_sink_size <= _th_comp_size_5;
         _macstream_v_sink_stride <= 1;
@@ -1973,7 +1973,7 @@ module blinkled
       _plus_data_25 <= 0;
       __delay_data_37 <= 0;
       _set_flag_56 <= 0;
-      _mystream_x_source_mode <= 0;
+      _mystream_x_source_mode <= 3'b0;
       _mystream_x_source_offset <= 0;
       _mystream_x_source_size <= 0;
       _mystream_x_source_stride <= 0;
@@ -1986,7 +1986,7 @@ module blinkled
       _mystream_x_source_ram_renable <= 0;
       _mystream_x_source_count <= 0;
       _set_flag_60 <= 0;
-      _mystream_y_source_mode <= 0;
+      _mystream_y_source_mode <= 3'b0;
       _mystream_y_source_offset <= 0;
       _mystream_y_source_size <= 0;
       _mystream_y_source_stride <= 0;
@@ -2001,7 +2001,7 @@ module blinkled
       _set_flag_64 <= 0;
       __parametervariable_wdata_13 <= 0;
       _set_flag_65 <= 0;
-      _mystream_z_sink_mode <= 0;
+      _mystream_z_sink_mode <= 3'b0;
       _mystream_z_sink_offset <= 0;
       _mystream_z_sink_size <= 0;
       _mystream_z_sink_stride <= 0;
@@ -2038,7 +2038,7 @@ module blinkled
         _set_flag_56 <= 1;
       end 
       if(_set_flag_56) begin
-        _mystream_x_source_mode <= 0;
+        _mystream_x_source_mode <= 3'b1;
         _mystream_x_source_offset <= _th_comp_offset_22;
         _mystream_x_source_size <= _th_comp_size_21;
         _mystream_x_source_stride <= 1;
@@ -2051,7 +2051,7 @@ module blinkled
       if(_mystream_x_source_ram_rvalid) begin
         __variable_wdata_11 <= _mystream_x_source_ram_rdata;
       end 
-      if(_mystream_start && (_mystream_x_source_mode == 0) && (_mystream_x_source_size > 0)) begin
+      if(_mystream_start && _mystream_x_source_mode & 3'b1) begin
         _mystream_x_idle <= 0;
       end 
       if(_mystream_x_source_fsm_0 == 1) begin
@@ -2073,7 +2073,7 @@ module blinkled
         _set_flag_60 <= 1;
       end 
       if(_set_flag_60) begin
-        _mystream_y_source_mode <= 0;
+        _mystream_y_source_mode <= 3'b1;
         _mystream_y_source_offset <= _th_comp_offset_22;
         _mystream_y_source_size <= _th_comp_size_21;
         _mystream_y_source_stride <= 1;
@@ -2086,7 +2086,7 @@ module blinkled
       if(_mystream_y_source_ram_rvalid) begin
         __variable_wdata_12 <= _mystream_y_source_ram_rdata;
       end 
-      if(_mystream_start && (_mystream_y_source_mode == 0) && (_mystream_y_source_size > 0)) begin
+      if(_mystream_start && _mystream_y_source_mode & 3'b1) begin
         _mystream_y_idle <= 0;
       end 
       if(_mystream_y_source_fsm_1 == 1) begin
@@ -2115,7 +2115,7 @@ module blinkled
         _set_flag_65 <= 1;
       end 
       if(_set_flag_65) begin
-        _mystream_z_sink_mode <= 0;
+        _mystream_z_sink_mode <= 3'b1;
         _mystream_z_sink_offset <= _th_comp_offset_22;
         _mystream_z_sink_size <= _th_comp_size_21 >>> 2;
         _mystream_z_sink_stride <= 1;
@@ -3255,7 +3255,7 @@ module blinkled
     end else begin
       case(_macstream_a_source_fsm_0)
         _macstream_a_source_fsm_0_init: begin
-          if(_macstream_start && (_macstream_a_source_mode == 0) && (_macstream_a_source_size > 0)) begin
+          if(_macstream_start && _macstream_a_source_mode & 3'b1) begin
             _macstream_a_source_fsm_0 <= _macstream_a_source_fsm_0_1;
           end 
         end
@@ -3280,7 +3280,7 @@ module blinkled
     end else begin
       case(_macstream_b_source_fsm_1)
         _macstream_b_source_fsm_1_init: begin
-          if(_macstream_start && (_macstream_b_source_mode == 0) && (_macstream_b_source_size > 0)) begin
+          if(_macstream_start && _macstream_b_source_mode & 3'b1) begin
             _macstream_b_source_fsm_1 <= _macstream_b_source_fsm_1_1;
           end 
         end
@@ -3317,7 +3317,7 @@ module blinkled
     end else begin
       case(_macstream_c_sink_fsm_2)
         _macstream_c_sink_fsm_2_init: begin
-          if(_macstream_start && (_macstream_c_sink_mode == 0) && (_macstream_c_sink_size > 0)) begin
+          if(_macstream_start && _macstream_c_sink_mode & 3'b1) begin
             _macstream_c_sink_fsm_2 <= _macstream_c_sink_fsm_2_1;
           end 
         end
@@ -3390,7 +3390,7 @@ module blinkled
     end else begin
       case(_macstream_v_sink_fsm_3)
         _macstream_v_sink_fsm_3_init: begin
-          if(_macstream_start && (_macstream_v_sink_mode == 0) && (_macstream_v_sink_size > 0)) begin
+          if(_macstream_start && _macstream_v_sink_mode & 3'b1) begin
             _macstream_v_sink_fsm_3 <= _macstream_v_sink_fsm_3_1;
           end 
         end
@@ -3529,7 +3529,7 @@ module blinkled
     end else begin
       case(_mystream_x_source_fsm_0)
         _mystream_x_source_fsm_0_init: begin
-          if(_mystream_start && (_mystream_x_source_mode == 0) && (_mystream_x_source_size > 0)) begin
+          if(_mystream_start && _mystream_x_source_mode & 3'b1) begin
             _mystream_x_source_fsm_0 <= _mystream_x_source_fsm_0_1;
           end 
         end
@@ -3554,7 +3554,7 @@ module blinkled
     end else begin
       case(_mystream_y_source_fsm_1)
         _mystream_y_source_fsm_1_init: begin
-          if(_mystream_start && (_mystream_y_source_mode == 0) && (_mystream_y_source_size > 0)) begin
+          if(_mystream_start && _mystream_y_source_mode & 3'b1) begin
             _mystream_y_source_fsm_1 <= _mystream_y_source_fsm_1_1;
           end 
         end
@@ -3594,7 +3594,7 @@ module blinkled
     end else begin
       case(_mystream_z_sink_fsm_2)
         _mystream_z_sink_fsm_2_init: begin
-          if(_mystream_start && (_mystream_z_sink_mode == 0) && (_mystream_z_sink_size > 0)) begin
+          if(_mystream_start && _mystream_z_sink_mode & 3'b1) begin
             _mystream_z_sink_fsm_2 <= _mystream_z_sink_fsm_2_1;
           end 
         end

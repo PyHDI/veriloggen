@@ -492,7 +492,7 @@ module blinkled
   reg _mystream_start;
   reg _mystream_busy;
   reg _mystream_a_idle;
-  reg _mystream_a_source_mode;
+  reg [3-1:0] _mystream_a_source_mode;
   reg [32-1:0] _mystream_a_source_offset;
   reg [33-1:0] _mystream_a_source_size;
   reg [32-1:0] _mystream_a_source_stride;
@@ -503,7 +503,7 @@ module blinkled
   wire [32-1:0] _mystream_a_source_ram_rdata;
   reg _mystream_a_source_ram_rvalid;
   reg _mystream_reduce_reset;
-  reg _mystream_sum_sink_mode;
+  reg [3-1:0] _mystream_sum_sink_mode;
   reg [32-1:0] _mystream_sum_sink_offset;
   reg [33-1:0] _mystream_sum_sink_size;
   reg [32-1:0] _mystream_sum_sink_stride;
@@ -512,7 +512,7 @@ module blinkled
   reg [32-1:0] _mystream_sum_sink_waddr;
   reg _mystream_sum_sink_wenable;
   reg [32-1:0] _mystream_sum_sink_wdata;
-  reg _mystream_sum_valid_sink_mode;
+  reg [3-1:0] _mystream_sum_valid_sink_mode;
   reg [32-1:0] _mystream_sum_valid_sink_offset;
   reg [33-1:0] _mystream_sum_valid_sink_size;
   reg [32-1:0] _mystream_sum_valid_sink_stride;
@@ -1016,7 +1016,7 @@ module blinkled
       _pulse_data_6 <= 1'sd0;
       _pulse_count_6 <= 0;
       _set_flag_8 <= 0;
-      _mystream_a_source_mode <= 0;
+      _mystream_a_source_mode <= 3'b0;
       _mystream_a_source_offset <= 0;
       _mystream_a_source_size <= 0;
       _mystream_a_source_stride <= 0;
@@ -1031,7 +1031,7 @@ module blinkled
       _set_flag_12 <= 0;
       __parametervariable_wdata_1 <= 0;
       _set_flag_13 <= 0;
-      _mystream_sum_sink_mode <= 0;
+      _mystream_sum_sink_mode <= 3'b0;
       _mystream_sum_sink_offset <= 0;
       _mystream_sum_sink_size <= 0;
       _mystream_sum_sink_stride <= 0;
@@ -1074,7 +1074,7 @@ module blinkled
         _set_flag_8 <= 1;
       end 
       if(_set_flag_8) begin
-        _mystream_a_source_mode <= 0;
+        _mystream_a_source_mode <= 3'b1;
         _mystream_a_source_offset <= _th_comp_offset_3;
         _mystream_a_source_size <= _th_comp_size_2;
         _mystream_a_source_stride <= 1;
@@ -1087,7 +1087,7 @@ module blinkled
       if(_mystream_a_source_ram_rvalid) begin
         __variable_wdata_0 <= _mystream_a_source_ram_rdata;
       end 
-      if(_mystream_start && (_mystream_a_source_mode == 0) && (_mystream_a_source_size > 0)) begin
+      if(_mystream_start && _mystream_a_source_mode & 3'b1) begin
         _mystream_a_idle <= 0;
       end 
       if(_mystream_a_source_fsm_0 == 1) begin
@@ -1116,7 +1116,7 @@ module blinkled
         _set_flag_13 <= 1;
       end 
       if(_set_flag_13) begin
-        _mystream_sum_sink_mode <= 0;
+        _mystream_sum_sink_mode <= 3'b1;
         _mystream_sum_sink_offset <= _th_comp_offset_3;
         _mystream_sum_sink_size <= 1;
         _mystream_sum_sink_stride <= 1;
@@ -1639,7 +1639,7 @@ module blinkled
     end else begin
       case(_mystream_a_source_fsm_0)
         _mystream_a_source_fsm_0_init: begin
-          if(_mystream_start && (_mystream_a_source_mode == 0) && (_mystream_a_source_size > 0)) begin
+          if(_mystream_start && _mystream_a_source_mode & 3'b1) begin
             _mystream_a_source_fsm_0 <= _mystream_a_source_fsm_0_1;
           end 
         end
@@ -1668,7 +1668,7 @@ module blinkled
     end else begin
       case(_mystream_sum_sink_fsm_1)
         _mystream_sum_sink_fsm_1_init: begin
-          if(_mystream_start && (_mystream_sum_sink_mode == 0) && (_mystream_sum_sink_size > 0)) begin
+          if(_mystream_start && _mystream_sum_sink_mode & 3'b1) begin
             _mystream_sum_sink_fsm_1 <= _mystream_sum_sink_fsm_1_1;
           end 
         end
