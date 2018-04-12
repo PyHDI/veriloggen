@@ -1215,6 +1215,41 @@ Ands = AndList
 Ors = OrList
 
 
+class Cast(_UnaryOperator):
+    latency = 0
+
+    def __init__(self, data, width=None, point=None, signed=None):
+        _UnaryOperator.__init__(self, data)
+        if width is not None:
+            self.width = width
+        if point is not None:
+            self.point = point
+        if signed is not None:
+            self.signed = signed
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency != 0:
+            raise ValueError("Latency mismatch '%d' vs '%s'" %
+                             (self.latency, 0))
+
+        width = self.bit_length()
+        signed = self.get_signed()
+
+        rdata = self.right.sig_data
+        rpoint = self.right.get_point()
+        rsigned = self.right.get_signed()
+
+        if rpoint > self.point:
+            rdata = fx.shift_right(rdata, rpoint - self.point, rsigned)
+        elif rpoint < self.point:
+            rdata = fx.shift_left(rdata, self.point - rpoint, rsigned)
+
+        data = m.Wire(self.name('data'), width, signed=signed)
+        self.sig_data = data
+
+        m.Assign(data(rdata))
+
+
 class _SpecialOperator(_Operator):
     latency = 1
 
