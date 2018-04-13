@@ -546,7 +546,7 @@ module blinkled
   reg [8-1:0] _mystream_sum_valid_sink_ram_sel;
   reg [32-1:0] _mystream_sum_valid_sink_waddr;
   reg _mystream_sum_valid_sink_wenable;
-  reg [32-1:0] _mystream_sum_valid_sink_wdata;
+  reg [1-1:0] _mystream_sum_valid_sink_wdata;
   reg [32-1:0] th_comp;
   localparam th_comp_init = 0;
   reg signed [32-1:0] _th_comp_size_0;

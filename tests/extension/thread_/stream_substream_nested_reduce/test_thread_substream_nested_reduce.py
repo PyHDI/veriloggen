@@ -561,7 +561,7 @@ module blinkled
   reg [8-1:0] _macstream_v_sink_ram_sel;
   reg [32-1:0] _macstream_v_sink_waddr;
   reg _macstream_v_sink_wenable;
-  reg [32-1:0] _macstream_v_sink_wdata;
+  reg [1-1:0] _macstream_v_sink_wdata;
   reg [32-1:0] _neststream_fsm;
   localparam _neststream_fsm_init = 0;
   wire _neststream_start_flag;
@@ -644,7 +644,7 @@ module blinkled
   reg [8-1:0] _neststream_v_sink_ram_sel;
   reg [32-1:0] _neststream_v_sink_waddr;
   reg _neststream_v_sink_wenable;
-  reg [32-1:0] _neststream_v_sink_wdata;
+  reg [1-1:0] _neststream_v_sink_wdata;
   reg [32-1:0] _mystream_fsm;
   localparam _mystream_fsm_init = 0;
   wire _mystream_start_flag;
@@ -725,7 +725,7 @@ module blinkled
   reg [8-1:0] _mystream_v_sink_ram_sel;
   reg [32-1:0] _mystream_v_sink_waddr;
   reg _mystream_v_sink_wenable;
-  reg [32-1:0] _mystream_v_sink_wdata;
+  reg [1-1:0] _mystream_v_sink_wdata;
   reg [32-1:0] th_comp;
   localparam th_comp_init = 0;
   reg signed [32-1:0] _th_comp_size_6;

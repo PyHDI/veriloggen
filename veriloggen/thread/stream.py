@@ -166,7 +166,7 @@ class Stream(BaseStream):
         var.source_ram_renable = self.module.Reg('_%s_source_ram_renable' % prefix,
                                                  initval=0)
         var.source_ram_rdata = self.module.Wire('_%s_source_ram_rdata' % prefix,
-                                                self.datawidth)
+                                                datawidth)
         var.source_ram_rvalid = self.module.Reg('_%s_source_ram_rvalid' % prefix,
                                                 initval=0)
 
@@ -233,7 +233,7 @@ class Stream(BaseStream):
         data.sink_ram_wenable = self.module.Reg('_%s_sink_wenable' % prefix,
                                                 initval=0)
         data.sink_ram_wdata = self.module.Reg('_%s_sink_wdata' % prefix,
-                                              self.datawidth, initval=0)
+                                              data.width, initval=0)
 
         if when is not None:
             self.sink(when, when_name)

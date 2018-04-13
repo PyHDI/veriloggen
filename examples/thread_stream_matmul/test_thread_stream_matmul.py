@@ -547,7 +547,7 @@ module blinkled
   reg [8-1:0] _strm_madd_sum_valid_sink_ram_sel;
   reg [32-1:0] _strm_madd_sum_valid_sink_waddr;
   reg _strm_madd_sum_valid_sink_wenable;
-  reg [32-1:0] _strm_madd_sum_valid_sink_wdata;
+  reg [1-1:0] _strm_madd_sum_valid_sink_wdata;
   reg [32-1:0] th_matmul;
   localparam th_matmul_init = 0;
   reg signed [32-1:0] _th_matmul_matrix_size_0;
