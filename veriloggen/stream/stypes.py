@@ -1679,6 +1679,15 @@ def Average(*args):
     return Div(sum, Int(length, signed=True))
 
 
+def AverageRound(*args):
+    sum = AddTree(*args)
+    length = len(args)
+    sum += length // 2
+    if length & (length - 1) == 0:
+        return Sra(sum, int(log(length, 2)))
+    return Div(sum, Int(length, signed=True))
+
+
 def SraRound(left, right):
     shifted = Sra(left, right)
     last_bit = Sra(left, right - 1)[0]
