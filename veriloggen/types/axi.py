@@ -1405,8 +1405,12 @@ class AxiMemoryModel(object):
             wordsize = self.mem_datawidth // 8
             self._make_img(filename, size, wordsize)
 
-        else:
+        elif isinstance(memimg, str):
             filename = memimg
+
+        else:
+            filename = '_'.join(['', self.name, 'memimg', '.out'])
+            to_memory_image(filename, memimg, datawidth=mem_datawidth)
 
         self.m.Initial(
             vtypes.Systask('readmemh', filename, self.mem)
@@ -1652,3 +1656,84 @@ class AxiMemoryModel(object):
         fsm.goto_next()
 
         return 0
+
+
+def make_memory_image(filename, length, pattern='inc', dtype=None,
+                      datawidth=32, wordwidth=8, endian='little'):
+
+    import numpy as np
+
+    if dtype is None:
+        dtype = np.int32
+
+    if pattern == 'inc':
+        l = list(range(length))
+        array = np.array(l, dtype=dtype)
+    else:
+        array = np.zeros([length], dtype=dtype)
+
+    to_memory_image(filename, array,
+                    datawidth=datawidth, wordwidth=wordwidth,
+                    endian=endian)
+
+
+def to_memory_image(filename, array, length=None,
+                    datawidth=32, wordwidth=8, endian='little'):
+
+    import numpy as np
+
+    if not isinstance(array, np.ndarray):
+        array = np.array(array)
+
+    array = np.reshape(array, [-1])
+
+    if not isinstance(array[0], (int, np.int64, np.int32)):
+        raise TypeError("not supported type: '%s'" %
+                        str(type(array[0])))
+
+    if length is not None:
+        if len(array) > length:
+            array = array[:length]
+        elif len(array) < length:
+            np.append(array, np.zeros([length - len(array)],
+                                      dtype=array.dtype))
+
+    num_hex = int(math.ceil(wordwidth / 4))
+    fmt = ''.join(['%0', str(num_hex), 'x\n'])
+
+    if datawidth >= wordwidth:
+        num = int(math.ceil(datawidth / wordwidth))
+        mask = (2 ** wordwidth) - 1
+
+        with open(filename, 'w') as f:
+            for data in array:
+                values = []
+                for i in range(num):
+                    values.append(data & mask)
+                    data >>= wordwidth
+
+                if endian == 'big':
+                    values.reverse()
+
+                for v in values:
+                    f.write(fmt % v)
+
+    else:
+        num = int(math.ceil(wordwidth / datawidth))
+        mask = (2 ** datawidth) - 1
+
+        with open(filename, 'w') as f:
+            values = []
+            for data in array:
+                values.append(data & mask)
+
+                if len(values) == num:
+                    if endian == 'big':
+                        values.reverse()
+
+                    cat = 0
+                    for i, v in enumerate(values):
+                        cat = cat | (v << (i * datawidth))
+
+                    f.write(fmt % cat)
+                    values = []
