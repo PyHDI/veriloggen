@@ -123,6 +123,15 @@ veriloggen.dataflow:
     sudo apt-get install graphviz
     pip install pygraphviz
 
+-  NumPy: 1.14 or later
+
+This is required for the memory image generation function of
+types.axi.AxiMemoryModel from Python list or numpy.ndarray:
+
+::
+
+    pip install numpy
+
 Install
 -------
 

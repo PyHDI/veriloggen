@@ -26,5 +26,6 @@ setup(name='veriloggen',
       extras_require={
           'graph': ['pygraphviz>=1.3.1'],
           'test': ['pytest>=2.8.2', 'pytest-pythonpath>=0.7'],
+          'memimg': ['numpy>=1.14'],
       },
       )

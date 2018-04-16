@@ -12,7 +12,7 @@ addons:
     - iverilog
 
 install:
-  - pip install pytest pytest-pythonpath pyverilog ipgen
+  - pip install pytest pytest-pythonpath pyverilog ipgen numpy
 
 script:
   - python -m pytest tests examples
