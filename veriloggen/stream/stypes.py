@@ -1350,7 +1350,7 @@ class Slice(_SpecialOperator):
         self.op = vtypes.Slice
 
     def _set_attributes(self):
-        self.width = self.msb - self.lsb + 1
+        self.width = self.msb.eval() - self.lsb.eval() + 1
         self.point = 0
         self.signed = False
 
