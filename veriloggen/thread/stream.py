@@ -1574,7 +1574,10 @@ class Stream(BaseStream):
     def __getattr__(self, attr):
         f = BaseStream.__getattr__(self, attr)
 
-        if callable(f) and f.__name__.startswith('Reduce'):
+        if (callable(f) and
+            (f.__name__.startswith('Reduce') or
+             f.__name__.startswith('Counter') or
+             f.__name__.startswith('Pulse'))):
             if self.reduce_reset is None:
                 self.reduce_reset = self.module.Reg(
                     '_'.join(['', self.name, 'reduce_reset']), initval=1)
