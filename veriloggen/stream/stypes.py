@@ -2102,7 +2102,7 @@ class ReduceCustom(_Accumulator):
 
 class Counter(_Accumulator):
 
-    def __init__(self, step=1, size=None, initval=0,
+    def __init__(self, size=None, step=1, initval=0,
                  control=None, enable=None, reset=None, width=32, signed=False):
 
         self.ops = (lambda x, y: x + step, )
@@ -2183,6 +2183,16 @@ def ReduceCustomValid(ops, right, size, initval=0,
     data = ReduceCustom(ops, right, size, initval,
                         enable, reset, width, signed)
     valid = Pulse(size, right, enable, reset)
+
+    return data, valid
+
+
+def CounterValid(size, step=1, initval=0,
+                 control=None, enable=None, reset=None, width=32, signed=False):
+
+    data = Counter(size, step, initval,
+                   control, enable, reset, width, signed)
+    valid = Pulse(size, control, enable, reset)
 
     return data, valid
 
