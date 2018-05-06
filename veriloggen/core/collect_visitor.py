@@ -86,3 +86,6 @@ class CollectVisitor(object):
 
     def visit__UnaryOperator(self, node):
         self.visit(node.right)
+
+    def visit_EmbeddedNumeric(self, node):
+        return

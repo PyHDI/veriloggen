@@ -81,6 +81,10 @@ class SubstDstVisitor(object):
     def visit_SingleStatement(self, node):
         return []
 
+    def visit_EmbeddedCode(self, node):
+        """ No analysis """
+        return []
+
 
 class SubstSrcVisitor(CollectVisitor):
 
@@ -138,6 +142,10 @@ class SubstSrcVisitor(CollectVisitor):
 
     def visit_SingleStatement(self, node):
         self.visit(node.statement)
+
+    def visit_EmbeddedCode(self, node):
+        """ No analysis """
+        pass
 
 
 class SrcRenameVisitor(RenameVisitor):
@@ -215,6 +223,9 @@ class SrcRenameVisitor(RenameVisitor):
     def visit_SingleStatement(self, node):
         statement = self.visit(node.statement)
         return vtypes.SingleStatement(statement)
+
+    def visit_EmbeddedCode(self, node):
+        return node
 
 
 class DstRenameVisitor(SrcRenameVisitor):

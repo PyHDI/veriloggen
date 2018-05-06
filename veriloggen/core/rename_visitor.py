@@ -97,3 +97,6 @@ class RenameVisitor(object):
         op = type(node)
         right = self.visit(node.right)
         return op(right)
+
+    def visit_EmbeddedNumeric(self, node):
+        return node

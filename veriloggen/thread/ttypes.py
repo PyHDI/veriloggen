@@ -10,7 +10,10 @@ import veriloggen.types.util as util
 from veriloggen.seq.seq import Seq
 
 
-__intrinsics__ = ('intrinsic', )
+__intrinsics__ = ('intrinsic', 'statement', 'subst',
+                  'display', 'write', 'finish', 'signed',
+                  'embedded_code', 'embedded_numeric',
+                  'set_parallel', 'unset_parallel')
 
 
 def intrinsic(fsm, func, *args, **kwargs):
@@ -43,6 +46,56 @@ _verilog = _verilog_meta('verilog', (object,),
 class verilog(_verilog):
     """ verilog operator intrinsics """
     pass
+
+
+# for SingleStatement and EmbeddedCode
+def statement(fsm, *values):
+    for value in values:
+        fsm(
+            value
+        )
+    fsm.goto_next()
+
+
+def subst(fsm, dst, src):
+    statement(fsm, vtypes.Subst(dst, src))
+
+
+def display(fsm, *args):
+    statement(fsm, vtypes.Display(*args))
+
+
+def write(fsm, *args):
+    statement(fsm, vtypes.Write(*args))
+
+
+def finish(fsm):
+    statement(fsm, vtypes.Finish())
+
+
+def signed(fsm, value):
+    return vtypes.Signed(value)
+
+
+def embedded_code(fsm, *codes):
+    codes = [code.value if isinstance(code, vtypes.Str) else code
+             for code in codes]
+    code = '\n'.join(codes)
+    statement(fsm, vtypes.EmbeddedCode(code))
+
+
+def embedded_numeric(fsm, code):
+    return vtypes.EmbeddedNumeric(code)
+
+
+# parallel subst
+def set_parallel(fsm):
+    fsm.parallel = True
+
+
+def unset_parallel(fsm):
+    fsm.parallel = False
+    fsm.goto_next()
 
 
 def Lock(m, name, clk, rst, width=32):

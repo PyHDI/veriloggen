@@ -2071,6 +2071,7 @@ class SystemTask(_Numeric):
 
     def __init__(self, cmd, *args):
         _Numeric.__init__(self)
+        cmd = raw_value(cmd)
         self.cmd = cmd
         self.args = tuple(args)
 
@@ -2083,9 +2084,8 @@ class SystemTask(_Numeric):
 def Systask(cmd, *args):
     return SingleStatement(SystemTask(cmd, *args))
 
+
 # frequently-used system task
-
-
 def Display(*args):
     return Systask('display', *args)
 
@@ -2099,7 +2099,7 @@ def Finish():
 
 
 def Signed(value):
-    return Systask('signed', value)
+    return SystemTask('signed', value)
 
 
 class Event(VeriloggenNode):
@@ -2151,6 +2151,7 @@ class EmbeddedCode(VeriloggenNode):
 
     def __init__(self, code):
         VeriloggenNode.__init__(self)
+        code = raw_value(code)
         self.code = code
 
 

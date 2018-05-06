@@ -1079,6 +1079,9 @@ class CompileVisitor(ast.NodeVisitor):
 
     #-------------------------------------------------------------------------
     def setFsm(self, src=None, dst=None, cond=None, else_dst=None):
+        if (src is None and dst is None and cond is None and else_dst is None and
+                hasattr(self.fsm, 'parallel') and self.fsm.parallel):
+            return
         if src is None:
             src = self.fsm.current
         if dst is None:
@@ -1086,6 +1089,8 @@ class CompileVisitor(ast.NodeVisitor):
         self.fsm.goto_from(src, dst, cond, else_dst)
 
     def incFsmCount(self):
+        if hasattr(self.fsm, 'parallel') and self.fsm.parallel:
+            return
         self.fsm.inc()
 
     def getFsmCount(self):
