@@ -2003,5 +2003,5 @@ def test():
     veriloggen.reset()
     test_module = simulation_simulator_verilator.mkTest()
     sim = simulation.Simulator(test_module, sim='verilator')
-    rslt = sim.run(outputfile='a.out', sim_time=1000 * 20)
+    rslt = sim.run(outputfile='verilator.out', sim_time=1000 * 20)
     assert(expected_rslt == rslt)

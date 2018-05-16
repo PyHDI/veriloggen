@@ -63,7 +63,7 @@ if __name__ == '__main__':
     test = mkTest()
 
     sim = simulation.Simulator(test, sim='verilator')
-    rslt = sim.run(outputfile='a.out', sim_time=1000 * 20)
+    rslt = sim.run(outputfile='verilator.out', sim_time=1000 * 20)
     print(rslt)
 
     # sim.view_waveform()
