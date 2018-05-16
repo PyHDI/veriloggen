@@ -988,10 +988,10 @@ class Module(vtypes.VeriloggenNode):
     #-------------------------------------------------------------------------
     # User interface for Verilog code generation
     #-------------------------------------------------------------------------
-    def to_verilog(self, filename=None):
+    def to_verilog(self, filename=None, noinitial=False):
         import veriloggen.verilog.to_verilog as to_verilog
         obj = self.to_hook_resolved_obj()
-        return to_verilog.write_verilog(obj, filename)
+        return to_verilog.write_verilog(obj, filename, noinitial)
 
     def add_hook(self, method, args=None, kwargs=None):
         """ add a hooked method to 'to_verilog()' """

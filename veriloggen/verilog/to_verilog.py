@@ -13,8 +13,8 @@ from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
 
 
 #-------------------------------------------------------------------------
-def write_verilog(node, filename=None):
-    visitor = VerilogModuleVisitor()
+def write_verilog(node, filename=None, noinitial=False):
+    visitor = VerilogModuleVisitor(noinitial)
     modules = tuple(node.get_modules().values())
 
     module_ast_list = [visitor.visit(mod) for mod in modules
@@ -531,12 +531,13 @@ class VerilogCommonVisitor(object):
 #-------------------------------------------------------------------------
 class VerilogModuleVisitor(VerilogCommonVisitor):
 
-    def __init__(self):
+    def __init__(self, noinitial=False):
         VerilogCommonVisitor.__init__(self)
         self.bind_visitor = VerilogBindVisitor()
         self.always_visitor = VerilogAlwaysVisitor()
         self.blocking_visitor = VerilogBlockingVisitor()
         self.module = None
+        self.noinitial = noinitial
 
     #-------------------------------------------------------------------------
     def make_width(self, node):
@@ -582,9 +583,13 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
         ports = [i for i in ports if i is not None]
         portlist = vast.Portlist(tuple(ports))
 
+        excludes = [vtypes.Input, vtypes.Output,
+                    vtypes.Inout, vtypes.Parameter]
+        if self.noinitial:
+            excludes.append(vtypes.Initial)
+
         items = [self.visit(i) for i in node.items
-                 if not isinstance(i, (vtypes.Input, vtypes.Output,
-                                       vtypes.Inout, vtypes.Parameter))]
+                 if not isinstance(i, tuple(excludes))]
         items = [i for i in items if i is not None]
 
         m = vast.ModuleDef(name, paramlist, portlist, items)
