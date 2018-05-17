@@ -88,7 +88,7 @@ module test;
 
 
   always @(*) begin
-    myaxi_rdata <= memory_rdata;
+    myaxi_rdata = memory_rdata;
   end
 
   wire _tmp_3;

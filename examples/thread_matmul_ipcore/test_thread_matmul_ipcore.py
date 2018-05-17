@@ -106,7 +106,7 @@ module test;
 
 
   always @(*) begin
-    maxi_rdata <= memory_rdata;
+    maxi_rdata = memory_rdata;
   end
 
   wire _tmp_3;

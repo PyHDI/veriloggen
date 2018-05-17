@@ -1618,7 +1618,7 @@ class AxiMemoryModel(object):
         rvalid = ports['_'.join([name, 'rvalid'])]
         rready = ports['_'.join([name, 'rready'])]
 
-        self.m.Always()(rdata(self.rdata.rdata))
+        self.m.Always()(rdata(self.rdata.rdata, blk=True))
         if '_'.join([name, 'rlast']) in ports:
             rlast.connect(self.rdata.rlast)
         rvalid.connect(self.rdata.rvalid)

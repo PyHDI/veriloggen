@@ -145,7 +145,7 @@ module test;
 
 
   always @(*) begin
-    uut_maxi_rdata <= memory_rdata;
+    uut_maxi_rdata = memory_rdata;
   end
 
   wire _tmp_3;
