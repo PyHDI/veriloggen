@@ -7,6 +7,7 @@
 #define Top V{{ verilog_prefix }}
 
 #define MAX_SIM_TIME ({{ sim_time }})
+#define TIME_STEP ({{ time_step }})
 
 {% if dumpfile %}
 #define TRACE
@@ -80,7 +81,7 @@ int main(int argc, char** argv)
       break;
     }
 
-    main_time++;
+    main_time += TIME_STEP;
   }
 
 #ifdef TRACE    

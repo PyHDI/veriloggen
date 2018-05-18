@@ -6,6 +6,10 @@ import subprocess
 import tempfile
 import collections
 from jinja2 import Environment, FileSystemLoader
+try:
+    from math import gcd
+except:
+    from fractions import gcd
 
 import veriloggen.core.vtypes as vtypes
 import veriloggen.core.module as module
@@ -455,9 +459,27 @@ def to_verilator_cpp(top, verilog_prefix, sim_time=0):
               if isinstance(io_var, vtypes.Input) and
               (io_var not in clks) and (io_var not in rsts)]
 
+    time_step = None
+
+    for hperiod in clks.values():
+        if time_step is None:
+            time_step = hperiod
+        else:
+            time_step = gcd(time_step, hperiod)
+
+    for period, positive in rsts.values():
+        if time_step is None:
+            time_step = period
+        else:
+            time_step = gcd(time_step, period)
+
+    if time_step is None:
+        time_step = 1
+
     template_dict = {
         'verilog_prefix': verilog_prefix,
         'sim_time': sim_time,
+        'time_step': time_step,
         'dumpfile': dumpfile,
         'clks': clks,
         'rsts': rsts,
