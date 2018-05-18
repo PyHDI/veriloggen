@@ -1878,6 +1878,7 @@ expected_cpp = """
 #define Top Vout
 
 #define MAX_SIM_TIME (100000)
+#define TIME_STEP (5)
 
 
 #define TRACE
@@ -1932,7 +1933,7 @@ int main(int argc, char** argv)
       break;
     }
 
-    main_time++;
+    main_time += TIME_STEP;
   }
 
 #ifdef TRACE    
