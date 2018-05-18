@@ -547,13 +547,13 @@ def run_verilator(objs, display=False, top=None, outputfile=None,
     to_verilator(top, objs,
                  sim_time, outputfile, verilog_prefix, cpp_prefix)
 
-    for clk in top.verilator_clock.keys():
-        cmd.append('--clk')
-        cmd.append(clk.name)
+    # for clk in top.verilator_clock.keys():
+    #    cmd.append('--clk')
+    #    cmd.append(clk.name)
 
-    for clk in top.verilator_new_clock.keys():
-        cmd.append('--clk')
-        cmd.append(clk.name)
+    # for clk in top.verilator_new_clock.keys():
+    #    cmd.append('--clk')
+    #    cmd.append(clk.name)
 
     # encoding: 'utf-8' ?
     encode = sys.getdefaultencoding()
