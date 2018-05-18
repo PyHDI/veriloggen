@@ -482,7 +482,7 @@ class VerilogCommonVisitor(object):
     def visit_SystemTask(self, node):
         cmd = node.cmd
         if (self.for_verilator and
-                cmd == 'finish' or cmd == 'dumpfile' or cmd == 'dumpvars'):
+                (cmd == 'finish' or cmd == 'dumpfile' or cmd == 'dumpvars')):
             return vast.SystemCall('write', (vast.StringConst(''),))
 
         args = tuple([self.visit(a) for a in node.args])

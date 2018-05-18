@@ -15,6 +15,7 @@ LED:  0 count:         6
 LED:  0 count:         7
 LED:  0 count:         8
 LED:  0 count:         9
+LED:  0 count:        10
 LED:  0 count:         0
 LED:  0 count:         1
 LED:  0 count:         2
@@ -1995,7 +1996,6 @@ LED:  1 count:       952
 LED:  1 count:       953
 LED:  1 count:       954
 LED:  1 count:       955
-LED:  1 count:       956
 """
 
 
