@@ -472,7 +472,7 @@ def to_verilator_cpp(top, verilog_prefix, sim_time=0):
 
 def run_verilator(objs, display=False, top=None, outputfile=None,
                   include=None, define=None, libdir=None,
-                  sim_time=0):
+                  sim_time=0, options=None):
 
     if not isinstance(objs, (tuple, list)):
         objs = [objs]
@@ -497,6 +497,11 @@ def run_verilator(objs, display=False, top=None, outputfile=None,
     cmd = []
     cmd.append('verilator')
     cmd.append('--cc')
+
+    if options is not None:
+        if isinstance(options, (tuple, list)):
+            options = (options,)
+        cmd.append(options)
 
     if hasattr(top, 'verilator_dumpfile'):
         cmd.append('--trace')
@@ -541,6 +546,14 @@ def run_verilator(objs, display=False, top=None, outputfile=None,
 
     to_verilator(top, objs,
                  sim_time, outputfile, verilog_prefix, cpp_prefix)
+
+    for clk in top.verilator_clock.keys():
+        cmd.append('--clk')
+        cmd.append(clk.name)
+
+    for clk in top.verilator_new_clock.keys():
+        cmd.append('--clk')
+        cmd.append(clk.name)
 
     # encoding: 'utf-8' ?
     encode = sys.getdefaultencoding()
@@ -651,7 +664,8 @@ class Simulator(object):
         self.notimingcheck = notimingcheck
 
     def run(self, display=False, top=None, outputfile=None,
-            include=None, define=None, libdir=None, sim_time=0):
+            include=None, define=None, libdir=None,
+            sim_time=0, options=None):
 
         if include is not None and not isinstance(include, (tuple, list)):
             include = (include,)
@@ -678,7 +692,7 @@ class Simulator(object):
         if self.sim == 'verilator':
             return run_verilator(self.objs,
                                  display, top, outputfile, include, define, libdir,
-                                 sim_time=sim_time)
+                                 sim_time=sim_time, options=options)
 
         raise NotImplementedError("not supported simulator: '%s'" % self.sim)
 

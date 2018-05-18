@@ -39,8 +39,9 @@ def write_verilog(node, filename=None, for_verilator=False):
 #-------------------------------------------------------------------------
 class VerilogCommonVisitor(object):
 
-    def __init__(self, for_verilator=False):
+    def __init__(self, for_verilator=False, in_initial=False):
         self.for_verilator = for_verilator
+        self.in_initial = in_initial
 
     def generic_visit(self, node):
         raise TypeError("Type %s is not supported." % str(type(node)))
@@ -411,7 +412,7 @@ class VerilogCommonVisitor(object):
 
     #-------------------------------------------------------------------------
     def visit_For(self, node):
-        for_visitor = VerilogBlockingVisitor(self.for_verilator)
+        for_visitor = VerilogBlockingVisitor(self.for_verilator, self.in_initial)
         pre = for_visitor.visit(node.pre)
         cond = self.visit(node.condition)
         post = for_visitor.visit(node.post)
@@ -481,8 +482,9 @@ class VerilogCommonVisitor(object):
     #-------------------------------------------------------------------------
     def visit_SystemTask(self, node):
         cmd = node.cmd
-        if (self.for_verilator and
-                (cmd == 'finish' or cmd == 'dumpfile' or cmd == 'dumpvars')):
+        if (self.for_verilator and (cmd == 'dumpfile' or cmd == 'dumpvars')):
+            return vast.SystemCall('write', (vast.StringConst(''),))
+        if (self.for_verilator and self.in_initial and cmd == 'finish'):
             return vast.SystemCall('write', (vast.StringConst(''),))
 
         args = tuple([self.visit(a) for a in node.args])
@@ -758,8 +760,10 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
 
     #-------------------------------------------------------------------------
     def visit_Initial(self, node):
+        self.blocking_visitor.in_initial = True
         statement = self._optimize_block(
             vast.Block(tuple([self.blocking_visitor.visit(s) for s in node.statement])))
+        self.blocking_visitor.in_initial = False
         return vast.Initial(statement)
 
     #-------------------------------------------------------------------------
