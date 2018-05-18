@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import shutil
 import veriloggen
 import thread_axi_dma_verilator
 
@@ -1947,6 +1948,8 @@ int main(int argc, char** argv)
 
 
 def test():
+    if shutil.which('verilator') is None:
+        return
     veriloggen.reset()
     test_module = thread_axi_dma_verilator.mkTest()
     verilog = veriloggen.simulation.to_verilator_code(

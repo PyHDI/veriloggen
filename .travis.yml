@@ -10,7 +10,6 @@ addons:
   apt:
     packages:
     - iverilog
-    - verilator
 
 install:
   - pip install pytest pytest-pythonpath pyverilog ipgen numpy

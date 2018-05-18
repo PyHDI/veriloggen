@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import shutil
 import veriloggen
 import simulation_simulator_verilator
 from veriloggen import *
@@ -2000,6 +2001,8 @@ LED:  1 count:       955
 
 
 def test():
+    if shutil.which('verilator') is None:
+        return
     veriloggen.reset()
     test_module = simulation_simulator_verilator.mkTest()
     sim = simulation.Simulator(test_module, sim='verilator')
