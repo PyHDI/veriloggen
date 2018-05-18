@@ -13,8 +13,8 @@ from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
 
 
 #-------------------------------------------------------------------------
-def write_verilog(node, filename=None, noinitial=False):
-    visitor = VerilogModuleVisitor(noinitial)
+def write_verilog(node, filename=None, for_verilator=False):
+    visitor = VerilogModuleVisitor(for_verilator)
     modules = tuple(node.get_modules().values())
 
     module_ast_list = [visitor.visit(mod) for mod in modules
@@ -38,6 +38,9 @@ def write_verilog(node, filename=None, noinitial=False):
 
 #-------------------------------------------------------------------------
 class VerilogCommonVisitor(object):
+
+    def __init__(self, for_verilator=False):
+        self.for_verilator = for_verilator
 
     def generic_visit(self, node):
         raise TypeError("Type %s is not supported." % str(type(node)))
@@ -408,7 +411,7 @@ class VerilogCommonVisitor(object):
 
     #-------------------------------------------------------------------------
     def visit_For(self, node):
-        for_visitor = VerilogBlockingVisitor()
+        for_visitor = VerilogBlockingVisitor(self.for_verilator)
         pre = for_visitor.visit(node.pre)
         cond = self.visit(node.condition)
         post = for_visitor.visit(node.post)
@@ -478,6 +481,10 @@ class VerilogCommonVisitor(object):
     #-------------------------------------------------------------------------
     def visit_SystemTask(self, node):
         cmd = node.cmd
+        if (self.for_verilator and
+                cmd == 'finish' or cmd == 'dumpfile' or cmd == 'dumpvars'):
+            return vast.SystemCall('write', (vast.StringConst(''),))
+
         args = tuple([self.visit(a) for a in node.args])
         return vast.SystemCall(cmd, args)
 
@@ -493,6 +500,8 @@ class VerilogCommonVisitor(object):
         return vast.EventStatement(sensitivity)
 
     def visit_Delay(self, node):
+        if self.for_verilator:
+            return vast.SingleStatement(vast.SystemCall('write', (vast.StringConst(''),)))
         delay = self.visit(node.value)
         return vast.SingleStatement(vast.DelayStatement(delay))
 
@@ -531,13 +540,12 @@ class VerilogCommonVisitor(object):
 #-------------------------------------------------------------------------
 class VerilogModuleVisitor(VerilogCommonVisitor):
 
-    def __init__(self, noinitial=False):
-        VerilogCommonVisitor.__init__(self)
-        self.bind_visitor = VerilogBindVisitor()
-        self.always_visitor = VerilogAlwaysVisitor()
-        self.blocking_visitor = VerilogBlockingVisitor()
+    def __init__(self, for_verilator=False):
+        VerilogCommonVisitor.__init__(self, for_verilator)
+        self.bind_visitor = VerilogBindVisitor(for_verilator)
+        self.always_visitor = VerilogAlwaysVisitor(for_verilator)
+        self.blocking_visitor = VerilogBlockingVisitor(for_verilator)
         self.module = None
-        self.noinitial = noinitial
 
     #-------------------------------------------------------------------------
     def make_width(self, node):
@@ -585,8 +593,6 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
 
         excludes = [vtypes.Input, vtypes.Output,
                     vtypes.Inout, vtypes.Parameter]
-        if self.noinitial:
-            excludes.append(vtypes.Initial)
 
         items = [self.visit(i) for i in node.items
                  if not isinstance(i, tuple(excludes))]
@@ -807,7 +813,7 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
         return tuple(ret)
 
     def visit_GenerateFor(self, node):
-        genfor_visitor = VerilogBlockingVisitor()
+        genfor_visitor = VerilogBlockingVisitor(self.for_verilator)
         pre = genfor_visitor.visit(node.pre)
         cond = genfor_visitor.visit(node.cond)
         post = genfor_visitor.visit(node.post)
@@ -817,7 +823,7 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
         return vast.GenerateStatement(tuple([_for]))
 
     def visit_GenerateIf(self, node):
-        genif_visitor = VerilogBlockingVisitor()
+        genif_visitor = VerilogBlockingVisitor(self.for_verilator)
         cond = genif_visitor.visit(node.cond)
         true_items = self._visit_Generate(node)
         true_block = vast.Block(true_items, scope=node.true_scope)
@@ -863,6 +869,8 @@ class VerilogBlockingVisitor(VerilogCommonVisitor):
         return vast.BlockingSubstitution(lvalue, rvalue, ldelay, rdelay)
 
     def visit_Forever(self, node):
+        if self.for_verilator:
+            return vast.SingleStatement(vast.SystemCall('write', (vast.StringConst(''),)))
         statement = self._optimize_block(
             vast.Block(tuple([self.visit(s) for s in node.statement])))
         return vast.ForeverStatement(statement)

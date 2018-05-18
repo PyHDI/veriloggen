@@ -380,7 +380,7 @@ def run_modelsim(objs, display=False, top=None, outputfile=None,
     return ''.join([syn_rslt, sim_rslt])
 
 
-def _to_verilator_code(top, objs):
+def to_verilator_code(top, objs):
     code = []
 
     if hasattr(top, 'verilator_clock'):
@@ -420,7 +420,7 @@ def _to_verilator_code(top, objs):
 
     for obj in objs:
         if isinstance(obj, module.Module):
-            code.append(obj.to_verilog(noinitial=True))
+            code.append(obj.to_verilog(for_verilator=True))
             code.append('\n')
         if isinstance(obj, str):
             code.append(obj)
@@ -605,7 +605,7 @@ def to_verilator(top, objs,
     verilog_name = verilog_prefix + '.v'
     verilog_path = outputdir + '/' + verilog_name
 
-    verilog_code = _to_verilator_code(top, objs)
+    verilog_code = to_verilator_code(top, objs)
     verilog = open(verilog_path, 'w')
     verilog.write(verilog_code)
     verilog.close()
