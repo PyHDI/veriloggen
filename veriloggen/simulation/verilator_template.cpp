@@ -49,7 +49,7 @@ int main(int argc, char** argv)
   top->{{ input_name }} = 0;
   {%- endfor %}
 
-  while (!Verilated::gotFinish()){
+  while(!Verilated::gotFinish()){
     {%- for clk, hperiod in clks.items() %}
     if(main_time % {{ hperiod }} == 0){
       top->{{ clk }} = !top->{{ clk }};

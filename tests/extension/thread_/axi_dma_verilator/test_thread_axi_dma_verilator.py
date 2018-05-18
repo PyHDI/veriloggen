@@ -1909,7 +1909,7 @@ int main(int argc, char** argv)
 
   // input initialization
 
-  while (!Verilated::gotFinish()){
+  while(!Verilated::gotFinish()){
     if(main_time % 5 == 0){
       top->io_CLK = !top->io_CLK;
     }
