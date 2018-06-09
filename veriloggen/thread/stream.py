@@ -307,7 +307,6 @@ class Stream(BaseStream):
         if name not in self.sources:
             raise NameError("No such stream '%s'" % name)
 
-        #set_cond = fsm.here
         set_cond = self._set_flag(fsm)
 
         self.seq.If(set_cond)(
@@ -363,7 +362,6 @@ class Stream(BaseStream):
 
         self._make_source_pattern_vars(var, name)
 
-        #set_cond = fsm.here
         set_cond = self._set_flag(fsm)
 
         self.seq.If(set_cond)(
@@ -454,7 +452,6 @@ class Stream(BaseStream):
 
         self._make_source_multipattern_vars(var, name)
 
-        #set_cond = fsm.here
         set_cond = self._set_flag(fsm)
 
         self.seq.If(set_cond)(
@@ -512,7 +509,6 @@ class Stream(BaseStream):
         if name not in self.sinks:
             raise NameError("No such stream '%s'" % name)
 
-        #set_cond = fsm.here
         set_cond = self._set_flag(fsm)
         start_delay = self._write_delay() - 1
 
@@ -524,7 +520,6 @@ class Stream(BaseStream):
         )
 
         set_cond = self.seq.Prev(set_cond, start_delay)
-        ###
 
         port = vtypes.to_int(port)
         self._setup_sink_ram(ram, var, port, set_cond)
@@ -572,7 +567,6 @@ class Stream(BaseStream):
 
         self._make_sink_pattern_vars(var, name)
 
-        #set_cond = fsm.here
         set_cond = self._set_flag(fsm)
         start_delay = self._write_delay() - 1
 
@@ -593,7 +587,6 @@ class Stream(BaseStream):
             )
 
         set_cond = self.seq.Prev(set_cond, start_delay)
-        ###
 
         port = vtypes.to_int(port)
         self._setup_sink_ram(ram, var, port, set_cond)
@@ -667,7 +660,6 @@ class Stream(BaseStream):
 
         self._make_sink_multipattern_vars(var, name)
 
-        #set_cond = fsm.here
         set_cond = self._set_flag(fsm)
         start_delay = self._write_delay() - 1
 
@@ -699,7 +691,6 @@ class Stream(BaseStream):
                 )
 
         set_cond = self.seq.Prev(set_cond, start_delay)
-        ###
 
         port = vtypes.to_int(port)
         self._setup_sink_ram(ram, var, port, set_cond)
@@ -729,7 +720,6 @@ class Stream(BaseStream):
         if name not in self.sinks:
             raise NameError("No such stream '%s'" % name)
 
-        #set_cond = fsm.here
         set_cond = self._set_flag(fsm)
         set_cond = self.seq.Prev(set_cond, start_delay)
 
@@ -763,7 +753,6 @@ class Stream(BaseStream):
         if name not in self.constants:
             raise NameError("No such stream '%s'" % name)
 
-        #set_cond = fsm.here
         set_cond = self._set_flag(fsm)
 
         wdata = value
