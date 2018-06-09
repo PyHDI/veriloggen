@@ -721,6 +721,7 @@ class Stream(BaseStream):
             raise NameError("No such stream '%s'" % name)
 
         set_cond = self._set_flag(fsm)
+        start_delay = self._write_delay() - 1
         set_cond = self.seq.Prev(set_cond, start_delay)
 
         ram_sel = var.sink_ram_sel
