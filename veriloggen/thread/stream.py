@@ -43,6 +43,7 @@ class Stream(BaseStream):
                       'set_sink_multipattern',
                       'set_sink_empty', 'set_constant',
                       'run', 'join', 'done')
+    ram_delay = 4
 
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=32,
@@ -72,8 +73,10 @@ class Stream(BaseStream):
             '_'.join(['', self.name, 'start_flag']))
         self.start = self.module.Reg(
             '_'.join(['', self.name, 'start']), initval=0)
-        self.busy = self.module.Reg(
-            '_'.join(['', self.name, 'busy']), initval=0)
+        self.source_busy = self.module.Reg(
+            '_'.join(['', self.name, 'source_busy']), initval=0)
+        self.sink_busy = self.module.Reg(
+            '_'.join(['', self.name, 'sink_busy']), initval=0)
 
         self.reduce_reset = None
         self.reduce_reset_var = None
@@ -96,8 +99,6 @@ class Stream(BaseStream):
         self.ram_id_map = OrderedDict()  # key: ran._id(), value: count
 
         self.fsm_id_count = 0
-
-        self.ram_delay = 4
 
     def source(self, name=None, datawidth=None, point=0, signed=True):
         if self.stream_synthesized:
@@ -753,7 +754,6 @@ class Stream(BaseStream):
         # entry point
         self.fsm._set_index(0)
 
-        #cond = fsm.here
         cond = self._set_flag(fsm)
         add_mux(self.start_flag, cond, 1)
 
@@ -765,40 +765,47 @@ class Stream(BaseStream):
 
         self.fsm_synthesized = True
 
-        num_wdelay = self._write_delay()
+        start_cond = vtypes.Ands(self.fsm.here, self.start_flag)
+
+        # start pulse
+        self.fsm.seq(
+            self.start(0)
+        )
 
         self.fsm.If(self.start_flag)(
             self.start(1),
-            self.busy(1)
+            self.source_busy(1)
         )
 
         if self.reduce_reset is not None:
-            self.fsm.seq.If(self.seq.Prev(self.start_flag, self.ram_delay + 1))(
+            reset_delay = self.ram_delay + 1
+            self.fsm.seq.If(self.seq.Prev(start_cond, reset_delay))(
                 self.reduce_reset(0)
             )
 
         substreams = self._collect_substreams()
-
         for sub in substreams:
-            reset_delay = self.ram_delay + 1 + sub.start_stage + sub.reset_delay
+            sub.substrm.fsm.seq.If(start_cond)(
+                sub.substrm.source_busy(1)
+            )
+
+            start_stage = sub.start_stage
+            reset_delay = self.ram_delay + 1 + sub.reset_delay
+            cond_delay = self.ram_delay + 1 + sub.reset_delay - 1
             sub_fsm = sub.substrm.fsm
             sub_fsm._set_index(0)
 
             if sub.substrm.reduce_reset is not None:
-                sub_fsm.seq.If(self.seq.Prev(self.start_flag, reset_delay))(
+                sub_fsm.seq.If(self.seq.Prev(start_cond, reset_delay))(
                     sub.substrm.reduce_reset(0)
                 )
 
             for cond in sub.conds.values():
-                sub_fsm.If(self.start_flag)(
+                sub_fsm.seq.If(self.seq.Prev(start_cond, cond_delay))(
                     cond(1)
                 )
 
         self.fsm.If(self.start_flag).goto_next()
-
-        self.fsm(
-            self.start(0)
-        )
         self.fsm.goto_next()
 
         done_cond = None
@@ -811,37 +818,53 @@ class Stream(BaseStream):
 
         self.fsm.If(done).goto_next()
 
-        depth = self.pipeline_depth()
-        for _ in range(depth):
-            self.fsm.goto_next()
+        self.fsm(
+            self.source_busy(0)
+        )
 
-        self.fsm.goto_next()
+        end_cond = self.fsm.here
 
         # reset accumulate pipelines
         if self.reduce_reset is not None:
-            self.fsm(
+            reset_delay = 1
+            self.fsm.seq.If(self.seq.Prev(end_cond, reset_delay))(
                 self.reduce_reset(1)
             )
 
-        end_flag = self.fsm.here
-
         for sub in substreams:
+            sub.substrm.fsm.seq.If(end_cond)(
+                sub.substrm.source_busy(0)
+            )
+
+            reset_delay = 1 + sub.reset_delay
+            cond_delay = 1 + sub.reset_delay - 1
             sub_fsm = sub.substrm.fsm
             sub_fsm._set_index(0)
+
             if sub.substrm.reduce_reset is not None:
-                sub_fsm.If(end_flag)(
+                sub_fsm.seq.If(self.seq.Prev(end_cond, reset_delay))(
                     sub.substrm.reduce_reset(1)
                 )
 
             for cond in sub.conds.values():
-                sub_fsm.If(end_flag)(
+                sub_fsm.seq.If(self.seq.Prev(end_cond, cond_delay))(
                     cond(0)
                 )
 
-        self.fsm.goto_next()
+            num_wdelay = sub.substrm._write_delay()
+            sub.substrm.fsm.seq.If(sub.substrm.seq.Prev(end_cond, num_wdelay))(
+                sub.substrm.sink_busy(0)
+            )
+            sub.substrm.fsm.seq.If(start_cond, self.start_flag)(
+                sub.substrm.sink_busy(1)
+            )
 
-        self.fsm(
-            self.busy(0)
+        num_wdelay = self._write_delay()
+        self.fsm.seq.If(self.seq.Prev(end_cond, num_wdelay))(
+            self.sink_busy(0)
+        )
+        self.fsm.seq.If(start_cond, self.start_flag)(
+            self.sink_busy(1)
         )
 
         self.fsm.goto_init()
@@ -852,11 +875,11 @@ class Stream(BaseStream):
         return 0
 
     def join(self, fsm):
-        fsm.If(vtypes.Not(self.busy)).goto_next()
+        fsm.If(vtypes.Not(self.sink_busy)).goto_next()
         return 0
 
     def done(self, fsm):
-        return vtypes.Not(self.busy)
+        return vtypes.Not(self.sink_busy)
 
     def _setup_source_ram(self, ram, var, port, set_cond):
         if ram._id() in var.source_ram_id_map:
@@ -1620,7 +1643,7 @@ class Substream(BaseSubstream):
         ret.append(self)
         ret.extend(self.substrm._collect_substreams())
         for s in ret:
-            s.reset_delay += 1
+            s.reset_delay += 1 + self.start_stage
         return ret
 
 
