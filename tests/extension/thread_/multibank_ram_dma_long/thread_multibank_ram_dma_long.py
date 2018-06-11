@@ -36,7 +36,11 @@ def mkLed(memory_datawidth=128):
         body(size, offset)
 
         if all_ok:
-            print('ALL OK')
+            print('# verify: PASSED')
+        else:
+            print('# verify: FAILED')
+
+        vthread.finish()
 
     def body(size, offset):
         # write
@@ -118,18 +122,28 @@ def mkTest(memory_datawidth=128):
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
     init.add(
-        Delay(100000 * 10),
+        Delay(1000000),
         Systask('finish'),
     )
 
     return m
 
 
-if __name__ == '__main__':
-    test = mkTest()
-    verilog = test.to_verilog('tmp.v')
-    print(verilog)
+def run(filename='tmp.v', simtype='iverilog'):
 
-    sim = simulation.Simulator(test)
-    rslt = sim.run()
+    test = mkTest()
+
+    if filename is not None:
+        test.to_verilog(filename)
+
+    sim = simulation.Simulator(test, sim=simtype)
+    rslt = sim.run(outputfile=simtype + '.out')
+    lines = rslt.splitlines()
+    if simtype == 'verilator' and lines[-1].startswith('-'):
+        rslt = '\n'.join(lines[:-1])
+    return rslt
+
+
+if __name__ == '__main__':
+    rslt = run(filename='tmp.v')
     print(rslt)

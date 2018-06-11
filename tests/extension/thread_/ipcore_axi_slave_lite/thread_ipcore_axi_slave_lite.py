@@ -44,9 +44,9 @@ def mkLed():
             print('# iter %d end' % i)
 
         if all_ok:
-            print('ALL OK')
+            print('# verify (local): PASSED')
         else:
-            print('NOT ALL OK')
+            print('# verify (local): FAILED')
 
         # result
         saxi.write(2, all_ok)
@@ -140,9 +140,9 @@ def mkTest():
         araddr = 8
         v = _saxi.read(araddr)
         if v:
-            print('SLAVE: ALL OK')
+            print('# verify: PASSED')
         else:
-            print('SLAVE: NOT ALL OK')
+            print('# verify: FAILED')
 
     th = vthread.Thread(m, 'th_ctrl', clk, rst, ctrl)
     fsm = th.start()
@@ -156,20 +156,30 @@ def mkTest():
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
     init.add(
-        Delay(100000),
+        Delay(1000000),
         Systask('finish'),
     )
 
     return m
 
 
-if __name__ == '__main__':
-    test = mkTest()
-    verilog = test.to_verilog('tmp.v')
-    print(verilog)
+def run(filename='tmp.v', simtype='iverilog'):
 
-    sim = simulation.Simulator(test)
-    rslt = sim.run()
+    test = mkTest()
+
+    if filename is not None:
+        test.to_verilog(filename)
+
+    sim = simulation.Simulator(test, sim=simtype)
+    rslt = sim.run(outputfile=simtype + '.out')
+    lines = rslt.splitlines()
+    if simtype == 'verilator' and lines[-1].startswith('-'):
+        rslt = '\n'.join(lines[:-1])
+    return rslt
+
+
+if __name__ == '__main__':
+    rslt = run(filename='tmp.v')
     print(rslt)
 
     simcode = """
@@ -191,9 +201,9 @@ initial begin
   _addr = 8;
   slave_read_ipgen_slave_lite_memory_saxi_1(_data, _addr);
   if(_data) begin
-    $display("SLAVE: ALL OK");
+    $display("# verify (IP-XACT): PASSED");
   end else begin
-    $display("SLAVE: NOT ALL OK");
+    $display("# verify (IP-XACT): FAILED");
   end
 
   #10000;
