@@ -78,9 +78,9 @@ def mkLed(matrix_size=16):
             c_addr += matrix_size * (datawidth // 8)
 
         if all_ok:
-            print("OK")
+            print('# verify: PASSED')
         else:
-            print("NG")
+            print('# verify: FAILED')
 
     th = vthread.Thread(m, 'th_matmul', clk, rst, matmul)
     fsm = th.start(matrix_size, 0, 1024, 2048)

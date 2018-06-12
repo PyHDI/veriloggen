@@ -1516,14 +1516,14 @@ module blinkled
           end
         end
         th_matmul_62: begin
-          $display("OK");
+          $display("# verify: PASSED");
           th_matmul <= th_matmul_63;
         end
         th_matmul_63: begin
           th_matmul <= th_matmul_65;
         end
         th_matmul_64: begin
-          $display("NG");
+          $display("# verify: FAILED");
           th_matmul <= th_matmul_65;
         end
         th_matmul_65: begin

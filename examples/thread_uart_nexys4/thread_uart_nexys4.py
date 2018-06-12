@@ -106,7 +106,10 @@ def mkTest(baudrate=19200, clockfreq=19200 * 10):
         Systask('finish')
     )
 
+    all_ok = m.TmpReg(initval=0)
+
     def test():
+        all_ok = True
         for i in range(10):
             s = 100 + i
             uart_tx.send(s)
@@ -116,19 +119,36 @@ def mkTest(baudrate=19200, clockfreq=19200 * 10):
             else:
                 print('NG: %d + %d != %d' % (s, sw, r))
 
+        if all_ok:
+            print('# verify: PASSED')
+        else:
+            print('# verify: FAILED')
+
+        vthread.finish()
+
     th = vthread.Thread(m, 'test', clk, rst, test)
     th.start()
 
     return m
 
 
-if __name__ == '__main__':
-    test = mkTest()
-    verilog = test.to_verilog('tmp.v')
-    print(verilog)
+def run(filename='tmp.v', simtype='iverilog'):
 
-    sim = simulation.Simulator(test)
-    rslt = sim.run()
+    test = mkTest()
+
+    if filename is not None:
+        test.to_verilog(filename)
+
+    sim = simulation.Simulator(test, sim=simtype)
+    rslt = sim.run(outputfile=simtype + '.out')
+    lines = rslt.splitlines()
+    if simtype == 'verilator' and lines[-1].startswith('-'):
+        rslt = '\n'.join(lines[:-1])
+    return rslt
+
+
+if __name__ == '__main__':
+    rslt = run(filename='tmp.v')
     print(rslt)
 
     # for Nexys4 synthesis

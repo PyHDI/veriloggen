@@ -83,8 +83,8 @@ module blinkled
   reg [32-1:0] th_blink;
   localparam th_blink_init = 0;
   reg [8-1:0] _tmp_0;
-  reg signed [32-1:0] _th_blink_c_5;
-  reg signed [32-1:0] _th_blink_data_6;
+  reg signed [32-1:0] _th_blink_c_6;
+  reg signed [32-1:0] _th_blink_data_7;
   localparam th_blink_1 = 1;
   localparam th_blink_2 = 2;
   localparam th_blink_3 = 3;
@@ -99,8 +99,8 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       th_blink <= th_blink_init;
-      _th_blink_c_5 <= 0;
-      _th_blink_data_6 <= 0;
+      _th_blink_c_6 <= 0;
+      _th_blink_data_7 <= 0;
       led <= 0;
       tx_enable <= 0;
     end else begin
@@ -124,19 +124,19 @@ module blinkled
           end 
         end
         th_blink_3: begin
-          _th_blink_c_5 <= _tmp_0;
+          _th_blink_c_6 <= _tmp_0;
           th_blink <= th_blink_4;
         end
         th_blink_4: begin
-          _th_blink_data_6 <= _th_blink_c_5 + sw;
+          _th_blink_data_7 <= _th_blink_c_6 + sw;
           th_blink <= th_blink_5;
         end
         th_blink_5: begin
-          led <= _th_blink_data_6;
+          led <= _th_blink_data_7;
           th_blink <= th_blink_6;
         end
         th_blink_6: begin
-          tx_din <= _th_blink_data_6;
+          tx_din <= _th_blink_data_7;
           tx_enable <= 1;
           th_blink <= th_blink_7;
         end
