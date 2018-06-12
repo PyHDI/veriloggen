@@ -1737,3 +1737,54 @@ def to_memory_image(filename, array, length=None,
 
                     f.write(fmt % cat)
                     values = []
+
+
+def aligned_shape(shape, wordsize, mem_wordsize):
+    aligned_shape = shape[:]
+
+    if wordsize == mem_wordsize or wordsize > mem_wordsize:
+        return aligned_shape
+
+    chunk = mem_wordsize // wordsize
+    res = mem_wordsize - aligned_shape[-1] % chunk
+
+    if res == mem_wordsize:
+        return aligned_shape
+
+    aligned_shape[-1] += res
+    return aligned_shape
+
+
+def shape_to_length(shape):
+    return functools.reduce(lambda x, y: x * y, shape, 1)
+
+
+def memory_word_length(shape, wordsize, block_size=4096):
+    length = shape_to_length(shape)
+    return ((block_size // wordsize) *
+            int(math.ceil(length / (block_size // wordsize))))
+
+
+def set_memory(mem, src, mem_wordsize, src_wordsize, mem_offset):
+    if mem_wordsize < src_wordsize:
+        raise ValueError('not supported')
+
+    src_aligned_shape = aligned_shape(src.shape, src_wordsize, mem_wordsize)
+    num_pack = int(math.ceil(mem_wordsize / src_wordsize))
+
+    pack = 0
+    offset = mem_offset // mem_wordsize
+    index = 0
+    src_mask = 2 ** (8 * src_wordsize) - 1
+    mem_mask = 2 ** (8 * mem_wordsize) - 1
+    for data in src.reshape([-1]):
+        mem[offset + index] = ((data & src_mask) << (8 * (mem_wordsize - src_wordsize)) |
+                               (mem[offset + index] & mem_mask) >> (8 * src_wordsize))
+        if pack == num_pack - 1:
+            pack = 0
+            index += 1
+            if index == src.shape[-1]:
+                index = 0
+                offset += src_aligned_shape[-1]
+        else:
+            pack += 1
