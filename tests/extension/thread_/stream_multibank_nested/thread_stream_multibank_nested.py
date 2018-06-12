@@ -69,9 +69,9 @@ def mkLed(memory_datawidth=128):
             if vthread.verilog.NotEql(st, sq):
                 all_ok = False
         if all_ok:
-            print('OK')
+            print('# verify: PASSED')
         else:
-            print('NG')
+            print('# verify: FAILED')
 
     def comp(size):
         dma_size = size
@@ -92,6 +92,8 @@ def mkLed(memory_datawidth=128):
         myaxi.dma_write(ram_c, dma_offset, 1024 * 2, dma_size)
 
         check(comp_size, 0, comp_offset)
+
+        vthread.finish()
 
     th = vthread.Thread(m, 'th_comp', clk, rst, comp)
     fsm = th.start(32)
@@ -119,23 +121,33 @@ def mkTest(memory_datawidth=128):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    simulation.setup_waveform(m, uut)
+    #simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
     init.add(
-        Delay(100000),
+        Delay(1000000),
         Systask('finish'),
     )
 
     return m
 
 
-if __name__ == '__main__':
-    test = mkTest()
-    verilog = test.to_verilog('tmp.v')
-    print(verilog)
+def run(filename='tmp.v', simtype='iverilog'):
 
-    sim = simulation.Simulator(test)
-    rslt = sim.run()
+    test = mkTest()
+
+    if filename is not None:
+        test.to_verilog(filename)
+
+    sim = simulation.Simulator(test, sim=simtype)
+    rslt = sim.run(outputfile=simtype + '.out')
+    lines = rslt.splitlines()
+    if simtype == 'verilator' and lines[-1].startswith('-'):
+        rslt = '\n'.join(lines[:-1])
+    return rslt
+
+
+if __name__ == '__main__':
+    rslt = run(filename='tmp.v')
     print(rslt)

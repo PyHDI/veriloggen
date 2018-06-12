@@ -50,6 +50,8 @@ def mkLed():
     strm.sink(c, 'c')
     strm.sink(d, 'd')
 
+    all_ok = m.TmpReg(initval=0)
+
     def comp_stream_addsub(size, offset):
         addsubstrm.set_source('a', ram_a, offset, size)
         addsubstrm.set_source('b', ram_b, offset, size)
@@ -85,24 +87,25 @@ def mkLed():
             ram_d.write(i + offset, d)
 
     def check(size, offset_stream, offset_seq):
-        all_ok = True
         for i in range(size):
             st = ram_c.read(i + offset_stream)
             sq = ram_c.read(i + offset_seq)
             if vthread.verilog.NotEql(st, sq):
-                all_ok = False
+                all_ok.value = False
                 print('c: %d %d %d' % (i, st, sq))
             st = ram_d.read(i + offset_stream)
             sq = ram_d.read(i + offset_seq)
             if vthread.verilog.NotEql(st, sq):
-                all_ok = False
+                all_ok.value = False
                 print('d: %d %d %d' % (i, st, sq))
         if all_ok:
-            print('OK')
+            print('# verify: PASSED')
         else:
-            print('NG')
+            print('# verify: FAILED')
 
     def comp(size):
+        all_ok.value = True
+
         # addsub
         # stream
         offset = 0
@@ -145,6 +148,8 @@ def mkLed():
         print('# main')
         check(size, 0, offset)
 
+        vthread.finish()
+
     th = vthread.Thread(m, 'th_comp', clk, rst, comp)
     fsm = th.start(32)
 
@@ -171,23 +176,33 @@ def mkTest():
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    simulation.setup_waveform(m, uut)
+    #simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
     init.add(
-        Delay(100000),
+        Delay(1000000),
         Systask('finish'),
     )
 
     return m
 
 
-if __name__ == '__main__':
-    test = mkTest()
-    verilog = test.to_verilog('tmp.v')
-    print(verilog)
+def run(filename='tmp.v', simtype='iverilog'):
 
-    sim = simulation.Simulator(test)
-    rslt = sim.run()
+    test = mkTest()
+
+    if filename is not None:
+        test.to_verilog(filename)
+
+    sim = simulation.Simulator(test, sim=simtype)
+    rslt = sim.run(outputfile=simtype + '.out')
+    lines = rslt.splitlines()
+    if simtype == 'verilator' and lines[-1].startswith('-'):
+        rslt = '\n'.join(lines[:-1])
+    return rslt
+
+
+if __name__ == '__main__':
+    rslt = run(filename='tmp.v')
     print(rslt)

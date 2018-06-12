@@ -63,7 +63,7 @@ def mkTest(baudrate=19200, clockfreq=19200 * 10):
     rx.assign(txd)
     rxd.assign(tx)
 
-    simulation.setup_waveform(m, uut, uart_tx, uart_rx)
+    #simulation.setup_waveform(m, uut, uart_tx, uart_rx)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

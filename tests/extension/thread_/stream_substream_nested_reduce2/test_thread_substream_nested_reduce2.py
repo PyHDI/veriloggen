@@ -1,22 +1,17 @@
 from __future__ import absolute_import
 from __future__ import print_function
+
 import veriloggen
 import thread_stream_substream_nested_reduce2
 
-expected_verilog = """
-"""
 
-
-def test():
+def test(request):
     veriloggen.reset()
-    test_module = thread_stream_substream_nested_reduce2.mkTest()
-    code = test_module.to_verilog()
 
-    from pyverilog.vparser.parser import VerilogParser
-    from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
-    parser = VerilogParser()
-    expected_ast = parser.parse(expected_verilog)
-    codegen = ASTCodeGenerator()
-    expected_code = codegen.visit(expected_ast)
+    simtype = request.config.getoption('--sim')
 
-    assert(expected_code == code)
+    rslt = thread_stream_substream_nested_reduce2.run(
+        filename=None, simtype=simtype)
+
+    verify_rslt = rslt.splitlines()[-1]
+    assert(verify_rslt == '# verify: PASSED')
