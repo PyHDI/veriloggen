@@ -652,6 +652,9 @@ class AXIM(AxiMaster, _MutexFunction):
             valid_cond = vtypes.Ands(valid, self.read_op_sel == op_id)
             stay_cond = self.read_op_sel == op_id
 
+            fsm.Delay(1)(
+                wvalid(0)
+            )
             fsm.If(pack_count == 0, valid_cond)(
                 wdata(data),
                 wvalid(1),

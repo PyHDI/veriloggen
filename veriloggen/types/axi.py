@@ -1767,24 +1767,69 @@ def memory_word_length(shape, wordsize, block_size=4096):
 
 def set_memory(mem, src, mem_wordsize, src_wordsize, mem_offset):
     if mem_wordsize < src_wordsize:
+        return _set_memory_narrow(mem, src, mem_wordsize, src_wordsize, mem_offset)
+
+    return _set_memory_wide(mem, src, mem_wordsize, src_wordsize, mem_offset)
+
+
+def _set_memory_wide(mem, src, mem_wordsize, src_wordsize, mem_offset):
+
+    if mem_wordsize > 8:
         raise ValueError('not supported')
+
+    import numpy as np
 
     src_aligned_shape = aligned_shape(src.shape, src_wordsize, mem_wordsize)
     num_pack = int(math.ceil(mem_wordsize / src_wordsize))
 
-    pack = 0
+    src_mask = np.uint64(2 ** (8 * src_wordsize) - 1)
+    mem_mask = np.uint64(2 ** (8 * mem_wordsize) - 1)
     offset = mem_offset // mem_wordsize
+    pack = 0
     index = 0
-    src_mask = 2 ** (8 * src_wordsize) - 1
-    mem_mask = 2 ** (8 * mem_wordsize) - 1
+
     for data in src.reshape([-1]):
-        mem[offset + index] = ((data & src_mask) << (8 * (mem_wordsize - src_wordsize)) |
-                               (mem[offset + index] & mem_mask) >> (8 * src_wordsize))
+        v = np.uint64(data) & src_mask
+        shift = np.uint64(8 * src_wordsize * pack)
+        v = v << shift
+        if pack > 0:
+            old = np.uint64(mem[offset]) & mem_mask
+            v = v | old
+        mem[offset] = v
+
+        index += 1
         if pack == num_pack - 1:
             pack = 0
-            index += 1
+            offset += 1
             if index == src.shape[-1]:
                 index = 0
-                offset += src_aligned_shape[-1]
         else:
             pack += 1
+            if index == src.shape[-1]:
+                index = 0
+                pack = 0
+                offset += 1
+
+
+def _set_memory_narrow(mem, src, mem_wordsize, src_wordsize, mem_offset):
+
+    if mem_wordsize > 8:
+        raise ValueError('not supported')
+
+    import numpy as np
+
+    src_aligned_shape = aligned_shape(src.shape, src_wordsize, mem_wordsize)
+    num_pack = int(math.ceil(src_wordsize / mem_wordsize))
+
+    src_mask = np.uint64(2 ** (8 * src_wordsize) - 1)
+    mem_mask = np.uint64(2 ** (8 * mem_wordsize) - 1)
+    offset = mem_offset // mem_wordsize
+
+    for data in src.reshape([-1]):
+        for pack in range(num_pack):
+            v = np.uint64(data)
+            shift = np.uint64(8 * mem_wordsize * pack)
+            v = v >> shift
+            v = v & mem_mask
+            mem[offset] = v
+            offset += 1
