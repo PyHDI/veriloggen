@@ -12,6 +12,13 @@ from veriloggen import *
 import veriloggen.thread as vthread
 import veriloggen.types.axi as axi
 
+axi_wordsize = 4
+data_wordsize = 4
+
+a_offset = 0
+b_offset = 4096
+c_offset = 4096 * 2
+
 
 def mkLed(matrix_size=16):
     m = Module('blinkled')
@@ -94,7 +101,7 @@ def mkLed(matrix_size=16):
             print('# verify: FAILED')
 
     th = vthread.Thread(m, 'th_matmul', clk, rst, matmul)
-    fsm = th.start(matrix_size, 0, 1024, 2048)
+    fsm = th.start(matrix_size, a_offset, b_offset, c_offset)
 
     return m
 
@@ -109,8 +116,8 @@ def mkTest():
     n_raw_a = axi.shape_to_length(a_shape)
     n_raw_b = axi.shape_to_length(b_shape)
 
-    n_a = axi.memory_word_length(a_shape, 4)
-    n_b = axi.memory_word_length(b_shape, 4)
+    n_a = axi.memory_word_length(a_shape, data_wordsize)
+    n_b = axi.memory_word_length(b_shape, data_wordsize)
 
     #a = np.arange(n_raw_a, dtype=np.int32).reshape(a_shape)
     #b = np.arange(n_raw_b, dtype=np.int32).reshape(b_shape) + [n_a]
@@ -133,14 +140,14 @@ def mkTest():
             else:
                 b[y][x] = 0
 
-    a_addr = 0
-    size_a = n_a * 4
-    b_addr = 1024
-    size_b = n_b * 4
+    a_addr = a_offset
+    size_a = n_a * data_wordsize
+    b_addr = b_offset
+    size_b = n_b * data_wordsize
 
-    mem = np.zeros([1024 * 1024 // 4], dtype=np.int32)
-    axi.set_memory(mem, a, 4, 4, a_addr)
-    axi.set_memory(mem, b, 4, 4, b_addr)
+    mem = np.zeros([1024 * 1024 // axi_wordsize], dtype=np.int64)
+    axi.set_memory(mem, a, axi_wordsize, data_wordsize, a_addr)
+    axi.set_memory(mem, b, axi_wordsize, data_wordsize, b_addr)
 
     led = mkLed(matrix_size)
 
@@ -150,7 +157,8 @@ def mkTest():
     clk = ports['CLK']
     rst = ports['RST']
 
-    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memimg=mem)
+    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memimg=mem,
+                                mem_datawidth=8 * axi_wordsize)
     memory.connect(ports, 'myaxi')
 
     uut = m.Instance(led, 'uut',

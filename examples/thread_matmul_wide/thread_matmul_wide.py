@@ -12,7 +12,7 @@ from veriloggen import *
 import veriloggen.thread as vthread
 import veriloggen.types.axi as axi
 
-axi_wordsize = 4
+axi_wordsize = 8
 data_wordsize = 4
 
 a_offset = 0
@@ -36,7 +36,7 @@ def mkLed(matrix_size=16):
     ram_a = vthread.RAM(m, 'ram_a', clk, rst, datawidth, addrwidth)
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
     ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
-    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
+    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth * (axi_wordsize // data_wordsize))
 
     def matmul(matrix_size, a_offset, b_offset, c_offset):
         start_time = timer
@@ -147,8 +147,10 @@ def mkTest():
     clk = ports['CLK']
     rst = ports['RST']
 
-    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memimg=mem,
-                                mem_datawidth=8 * axi_wordsize)
+    memory = axi.AxiMemoryModel(m, 'memory', clk, rst,
+                                datawidth=8 * axi_wordsize,
+                                mem_datawidth=8 * axi_wordsize,
+                                memimg=mem)
     memory.connect(ports, 'myaxi')
 
     uut = m.Instance(led, 'uut',

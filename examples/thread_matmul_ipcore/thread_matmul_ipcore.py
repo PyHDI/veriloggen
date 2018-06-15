@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 import sys
 import os
+import numpy as np
 
 # the next line can be removed after installation
 sys.path.insert(0, os.path.dirname(os.path.dirname(
@@ -11,6 +12,14 @@ from veriloggen import *
 import veriloggen.thread as vthread
 import veriloggen.types.axi as axi
 import veriloggen.types.ipcore as ipcore
+
+axi_wordsize = 4
+data_wordsize = 4
+
+matrix_size = 16
+a_offset = 0
+b_offset = 4096
+c_offset = 4096 * 2
 
 
 def mkLed():
@@ -37,7 +46,6 @@ def mkLed():
             b_offset = saxi.read(3)
             c_offset = saxi.read(4)
             comp(matrix_size, a_offset, b_offset, c_offset)
-            #check(matrix_size, a_offset, b_offset, c_offset)
             saxi.write_flag(5, 1, resetvalue=0)
 
     def comp(matrix_size, a_offset, b_offset, c_offset):
@@ -63,102 +71,64 @@ def mkLed():
             a_addr += matrix_size * (datawidth // 8)
             c_addr += matrix_size * (datawidth // 8)
 
-    def check(matrix_size, a_offset, b_offset, c_offset):
-        all_ok = True
-        c_addr = c_offset
-        for i in range(matrix_size):
-            myaxi.dma_read(ram_c, 0, c_addr, matrix_size)
-            for j in range(matrix_size):
-                v = ram_c.read(j)
-                if i == j and vthread.verilog.NotEql(v, (i + 1) * 2):
-                    all_ok = False
-                    print("NG [%d,%d] = %d" % (i, j, v))
-                if i != j and vthread.verilog.NotEql(v, 0):
-                    all_ok = False
-                    print("NG [%d,%d] = %d" % (i, j, v))
-            c_addr += matrix_size * (datawidth // 8)
-
-        if all_ok:
-            led.value = 0b01010101
-            print("OK")
-        else:
-            led.value = 0x0f
-            print("NG")
-
     th = vthread.Thread(m, 'th_matmul', clk, rst, matmul)
     fsm = th.start()
 
     return m
 
 
-def mkTest(memname='mymem.out'):
-    m = Module('test')
+def mkTest():
 
-    matrix_size = 16
+    a_shape = (matrix_size, matrix_size)
+    b_shape = (matrix_size, matrix_size)
+    c_shape = (a_shape[0], b_shape[0])
 
-    # target instance
+    n_raw_a = axi.shape_to_length(a_shape)
+    n_raw_b = axi.shape_to_length(b_shape)
+
+    n_a = axi.memory_word_length(a_shape, data_wordsize)
+    n_b = axi.memory_word_length(b_shape, data_wordsize)
+
+    #a = np.arange(n_raw_a, dtype=np.int32).reshape(a_shape)
+    #b = np.arange(n_raw_b, dtype=np.int32).reshape(b_shape) + [n_a]
+    a = np.zeros(a_shape, dtype=np.int64)
+    b = np.zeros(b_shape, dtype=np.int64)
+
+    value = 1
+    for y in range(a_shape[0]):
+        for x in range(a_shape[1]):
+            if x == y:
+                a[y][x] = value
+                value += 1
+            else:
+                a[y][x] = 0
+
+    for y in range(b_shape[0]):
+        for x in range(b_shape[1]):
+            if x == y:
+                b[y][x] = 2
+            else:
+                b[y][x] = 0
+
+    a_addr = a_offset
+    size_a = n_a * data_wordsize
+    b_addr = b_offset
+    size_b = n_b * data_wordsize
+
+    mem = np.zeros([1024 * 1024 // axi_wordsize], dtype=np.int64)
+    axi.set_memory(mem, a, axi_wordsize, data_wordsize, a_addr)
+    axi.set_memory(mem, b, axi_wordsize, data_wordsize, b_addr)
+
     led = mkLed()
 
-    # copy paras and ports
+    m = Module('test')
     params = m.copy_params(led)
     ports = m.copy_sim_ports(led)
-
     clk = ports['CLK']
     rst = ports['RST']
 
-    # memory image
-    #memname = 'mymem.out'
-
-    def fwrite(f, value):
-        s = '%08x' % value
-        f.write('%s\n' % s[6:8])
-        f.write('%s\n' % s[4:6])
-        f.write('%s\n' % s[2:4])
-        f.write('%s\n' % s[0:2])
-
-    with open(memname, 'w') as f:
-        # ram_a
-        addr = 0
-        nv = 1
-        for x in range(matrix_size):
-            for y in range(matrix_size):
-                addr += 4
-                if x == y:
-                    value = nv
-                    nv += 1
-                else:
-                    value = 0
-                fwrite(f, value)
-
-        for i in range(1024 - addr):
-            f.write('%s\n' % '00')
-
-        # ram_b
-        addr = 1024
-        for x in range(matrix_size):
-            for y in range(matrix_size):
-                addr += 4
-                if x == y:
-                    value = 2
-                else:
-                    value = 0
-                fwrite(f, value)
-
-        for i in range(2048 - addr):
-            f.write('%s\n' % '00')
-
-        # ram_c
-        addr = 2048
-        for x in range(matrix_size):
-            for y in range(matrix_size):
-                addr += 4
-                value = 100
-                fwrite(f, value)
-
-        for i in range(2 ** 20 - addr):
-            f.write('%s\n' % '00')
-
-    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memimg=memname)
+    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memimg=mem,
+                                mem_datawidth=8 * axi_wordsize)
     memory.connect(ports, 'maxi')
 
     # AXI-Slave controller
@@ -177,22 +147,18 @@ def mkTest(memname='mymem.out'):
             pass
 
         awaddr = 4
-        matrix_size = 16
         print('# matrix_size = %d' % matrix_size)
         _saxi.write(awaddr, matrix_size)
 
         awaddr = 8
-        a_offset = 0
         print('# a_offset = %d' % a_offset)
         _saxi.write(awaddr, a_offset)
 
         awaddr = 12
-        b_offset = 1024 * 1
         print('# b_offset = %d' % b_offset)
         _saxi.write(awaddr, b_offset)
 
         awaddr = 16
-        c_offset = 1024 * 2
         print('# c_offset = %d' % c_offset)
         _saxi.write(awaddr, c_offset)
 
@@ -210,6 +176,25 @@ def mkTest(memname='mymem.out'):
         print('# end time = %d' % end_time)
         time = end_time - start_time
         print('# exec time = %d' % time)
+
+        all_ok = True
+        for y in range(matrix_size):
+            for x in range(matrix_size):
+                v = memory.read(
+                    c_offset + (y * matrix_size + x) * data_wordsize)
+                if y == x and vthread.verilog.NotEql(v, (y + 1) * 2):
+                    all_ok = False
+                    print("NG [%d,%d] = %d" % (y, x, v))
+                if y != x and vthread.verilog.NotEql(v, 0):
+                    all_ok = False
+                    print("NG [%d,%d] = %d" % (y, x, v))
+
+        if all_ok:
+            print('# verify: PASSED')
+        else:
+            print('# verify: FAILED')
+
+        vthread.finish()
 
     th = vthread.Thread(m, 'th_ctrl', clk, rst, ctrl)
     fsm = th.start()
@@ -230,16 +215,26 @@ def mkTest(memname='mymem.out'):
     return m
 
 
-if __name__ == '__main__':
-    memname = 'mymem.out'
-    test = mkTest(memname)
-    verilog = test.to_verilog('tmp.v')
-    print(verilog)
+def run(filename='tmp.v', simtype='iverilog'):
 
-    sim = simulation.Simulator(test)
-    rslt = sim.run()
+    test = mkTest()
+
+    if filename is not None:
+        test.to_verilog(filename)
+
+    sim = simulation.Simulator(test, sim=simtype)
+    rslt = sim.run(outputfile=simtype + '.out')
+    lines = rslt.splitlines()
+    if simtype == 'verilator' and lines[-1].startswith('-'):
+        rslt = '\n'.join(lines[:-1])
+    return rslt
+
+
+if __name__ == '__main__':
+    rslt = run(filename='tmp.v')
     print(rslt)
 
+    memname = '_memory_memimg_.out'
     simcode = """
 reg [31:0] counter;
 always @(posedge sim_clk) begin
@@ -259,22 +254,22 @@ reg [31:0] _data;
 initial begin
   #1000;
   _addr = 4;
-  _data = 16;
+  _data = {matrix_size};
   $display("# matrix_size = %d", _data);
   slave_write_ipgen_slave_lite_memory_saxi_1(_data, _addr);
 
   _addr = 8;
-  _data = 0;
+  _data = {a_offset};
   $display("# a_offset = %d", _data);
   slave_write_ipgen_slave_lite_memory_saxi_1(_data, _addr);
 
   _addr = 12;
-  _data = 1024 * 1;
+  _data = {b_offset};
   $display("# b_offset = %d", _data);
   slave_write_ipgen_slave_lite_memory_saxi_1(_data, _addr);
 
   _addr = 16;
-  _data = 1024 * 2;
+  _data = {c_offset};
   $display("# c_offset = %d", _data);
   slave_write_ipgen_slave_lite_memory_saxi_1(_data, _addr);
 
@@ -298,7 +293,8 @@ initial begin
   #10000;
   $finish;
 end
-"""
+""".format(matrix_size=matrix_size, a_offset=a_offset,
+           b_offset=b_offset, c_offset=c_offset)
 
     m = mkLed()
     ipcore.to_ipcore(m, simcode=simcode, simmemimg=memname, iftype='axi')
