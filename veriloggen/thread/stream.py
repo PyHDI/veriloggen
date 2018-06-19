@@ -803,7 +803,7 @@ class Stream(BaseStream):
 
             start_stage = sub.start_stage
             reset_delay = self.ram_delay + 1 + sub.reset_delay
-            cond_delay = self.ram_delay + 1 + sub.reset_delay - 1
+            cond_delay = self.ram_delay + 1 + sub.reset_delay - 2
             sub_fsm = sub.substrm.fsm
             sub_fsm._set_index(0)
 
