@@ -1740,7 +1740,7 @@ def to_memory_image(filename, array, length=None,
 
 
 def aligned_shape(shape, wordsize, mem_wordsize):
-    aligned_shape = shape[:]
+    aligned_shape = list(shape[:])
 
     if wordsize == mem_wordsize or wordsize > mem_wordsize:
         return aligned_shape
@@ -1765,19 +1765,26 @@ def memory_word_length(shape, wordsize, block_size=4096):
             int(math.ceil(length / (block_size // wordsize))))
 
 
-def set_memory(mem, src, mem_wordsize, src_wordsize, mem_offset):
+def set_memory(mem, src, mem_wordsize, src_wordsize, mem_offset,
+               num_align_words=None):
     if mem_wordsize < src_wordsize:
-        return _set_memory_narrow(mem, src, mem_wordsize, src_wordsize, mem_offset)
+        return _set_memory_narrow(mem, src, mem_wordsize, src_wordsize, mem_offset,
+                                  num_align_words)
 
-    return _set_memory_wide(mem, src, mem_wordsize, src_wordsize, mem_offset)
+    return _set_memory_wide(mem, src, mem_wordsize, src_wordsize, mem_offset,
+                            num_align_words)
 
 
-def _set_memory_wide(mem, src, mem_wordsize, src_wordsize, mem_offset):
+def _set_memory_wide(mem, src, mem_wordsize, src_wordsize, mem_offset,
+                     num_align_words=None):
 
     if mem_wordsize > 8:
         raise ValueError('not supported')
 
     import numpy as np
+
+    if num_align_words is not None:
+        src = align(src, num_align_words)
 
     src_aligned_shape = aligned_shape(src.shape, src_wordsize, mem_wordsize)
     num_pack = int(math.ceil(mem_wordsize / src_wordsize))
@@ -1787,6 +1794,7 @@ def _set_memory_wide(mem, src, mem_wordsize, src_wordsize, mem_offset):
     offset = mem_offset // mem_wordsize
     pack = 0
     index = 0
+    align_count = 0
 
     for data in src.reshape([-1]):
         v = np.uint64(data) & src_mask
@@ -1811,12 +1819,16 @@ def _set_memory_wide(mem, src, mem_wordsize, src_wordsize, mem_offset):
                 offset += 1
 
 
-def _set_memory_narrow(mem, src, mem_wordsize, src_wordsize, mem_offset):
+def _set_memory_narrow(mem, src, mem_wordsize, src_wordsize, mem_offset,
+                       num_align_words=None):
 
     if mem_wordsize > 8:
         raise ValueError('not supported')
 
     import numpy as np
+
+    if num_align_words is not None:
+        src = align(src, num_align_words)
 
     src_aligned_shape = aligned_shape(src.shape, src_wordsize, mem_wordsize)
     num_pack = int(math.ceil(src_wordsize / mem_wordsize))
@@ -1833,3 +1845,27 @@ def _set_memory_narrow(mem, src, mem_wordsize, src_wordsize, mem_offset):
             v = v & mem_mask
             mem[offset] = v
             offset += 1
+
+
+def align(src, num_align_words):
+    if num_align_words == 1:
+        return src
+
+    import numpy as np
+
+    src_aligned_shape = aligned_shape(src.shape, 1, num_align_words)
+    ret = np.zeros(src_aligned_shape).reshape([-1])
+    offset = 0
+    index = 0
+    res = num_align_words - src.shape[-1] % num_align_words
+
+    for data in src.reshape([-1]):
+        ret[offset] = data
+        offset += 1
+        index += 1
+        if index == src.shape[-1]:
+            index = 0
+            if res < num_align_words:
+                offset += res
+
+    return ret
