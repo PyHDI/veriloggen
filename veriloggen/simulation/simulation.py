@@ -527,6 +527,7 @@ def run_verilator(objs, display=False, top=None, outputfile=None,
 
     if hasattr(top, 'verilator_dumpfile'):
         cmd.append('--trace')
+        cmd.append('--trace-underscore')
 
     # cmd.append('-Wall')
     cmd.append('-Wno-lint')
