@@ -278,6 +278,10 @@ class Stream(BaseStream):
         self.var_id_name_map[_id] = name
         self.var_name_id_map[name] = _id
 
+        var.constant_data = self.module.Reg('_%s_constant_data' % prefix,
+                                            datawidth, initval=0)
+        var.has_constant_data = False
+
         return var
 
     def substream(self, substrm):
@@ -756,9 +760,13 @@ class Stream(BaseStream):
 
         set_cond = self._set_flag(fsm)
 
-        wdata = value
-        wenable = set_cond
-        var.write(wdata, wenable)
+        self.seq.If(set_cond)(
+            var.constant_data(value)
+        )
+
+        if not var.has_constant_data:
+            var.write(var.constant_data, self.start)
+            var.has_constant_data = True
 
         fsm.goto_next()
 
@@ -1279,8 +1287,6 @@ class Stream(BaseStream):
         if var.sink_fsm is not None:
             return
 
-#        sink_start = vtypes.Ands(self.start,
-#                                 vtypes.And(var.sink_mode, mode_normal))
         start_delay = self._write_delay()
         start = self.seq.Prev(self.start, start_delay)
         sink_start = vtypes.Ands(start,
@@ -1295,25 +1301,11 @@ class Stream(BaseStream):
         var.sink_fsm = FSM(self.module, fsm_name, self.clock, self.reset,
                            as_module=self.fsm_as_module)
 
-#        self.seq.If(var.sink_fsm.here)(
-#            var.sink_ram_wenable(0)
-#        )
-
-#        var.sink_fsm.If(sink_start).goto_next()
-
-#        self.seq.If(var.sink_fsm.here)(
-#            var.sink_ram_waddr(var.sink_offset - var.sink_stride),
-#            var.sink_count(var.sink_size)
-#        )
         self.seq.If(sink_start)(
             var.sink_ram_waddr(var.sink_offset - var.sink_stride),
             var.sink_count(var.sink_size)
         )
         var.sink_fsm.If(sink_start).goto_next()
-
-#        num_wdelay = self._write_delay()
-#        for _ in range(num_wdelay):
-#            var.sink_fsm.goto_next()
 
         if name in self.sink_when_map:
             when = self.sink_when_map[name]
@@ -1323,9 +1315,6 @@ class Stream(BaseStream):
 
         rdata = var.read()
 
-#        self.seq.If(var.sink_fsm.here)(
-#            var.sink_ram_wenable(0)
-#        )
         self.seq.If(var.sink_fsm.here, wcond)(
             var.sink_ram_waddr.add(var.sink_stride),
             var.sink_ram_wdata(rdata),
@@ -1358,8 +1347,6 @@ class Stream(BaseStream):
         if var.sink_pat_fsm is not None:
             return
 
-#        sink_start = vtypes.Ands(self.start,
-#                                 vtypes.And(var.sink_mode, mode_pattern))
         start_delay = self._write_delay()
         start = self.seq.Prev(self.start, start_delay)
         sink_start = vtypes.Ands(start,
@@ -1375,34 +1362,18 @@ class Stream(BaseStream):
                                self.clock, self.reset,
                                as_module=self.fsm_as_module)
 
-#        self.seq.If(var.sink_pat_fsm.here)(
-#            var.sink_ram_wenable(0)
-#        )
-
-#        var.sink_pat_fsm.If(sink_start).goto_next()
-
         for sink_pat_cur_offset in var.sink_pat_cur_offsets:
-            #            self.seq.If(var.sink_pat_fsm.here)(
-            #                sink_pat_cur_offset(0)
-            #            )
             self.seq.If(sink_start)(
                 sink_pat_cur_offset(0)
             )
 
         for (sink_pat_size, sink_pat_count) in zip(
                 var.sink_pat_sizes, var.sink_pat_counts):
-            #            self.seq.If(var.sink_pat_fsm.here)(
-            #                sink_pat_count(sink_pat_size - 1)
-            #            )
             self.seq.If(sink_start)(
                 sink_pat_count(sink_pat_size - 1)
             )
 
         var.sink_pat_fsm.If(sink_start).goto_next()
-
-#        num_wdelay = self._write_delay()
-#        for _ in range(num_wdelay):
-#            var.sink_pat_fsm.goto_next()
 
         if name in self.sink_when_map:
             when = self.sink_when_map[name]
@@ -1425,9 +1396,6 @@ class Stream(BaseStream):
 
         rdata = var.read()
 
-#        self.seq.If(var.sink_pat_fsm.here)(
-#            var.sink_ram_wenable(0)
-#        )
         self.seq.If(var.sink_pat_fsm.here, wcond)(
             var.sink_ram_waddr(sink_all_offset),
             var.sink_ram_wdata(rdata),
@@ -1494,8 +1462,6 @@ class Stream(BaseStream):
         if var.sink_multipat_fsm is not None:
             return
 
-#        sink_start = vtypes.Ands(self.start,
-#                                 vtypes.And(var.sink_mode, mode_multipattern))
         start_delay = self._write_delay()
         start = self.seq.Prev(self.start, start_delay)
         sink_start = vtypes.Ands(start,
@@ -1511,20 +1477,11 @@ class Stream(BaseStream):
                                     self.clock, self.reset,
                                     as_module=self.fsm_as_module)
 
-#        self.seq.If(var.sink_multipat_fsm.here)(
-#            var.sink_ram_wenable(0)
-#        )
-
         self.seq.If(sink_start)(
             var.sink_multipat_num_patterns.dec()
         )
 
-#        var.sink_multipat_fsm.If(sink_start).goto_next()
-
         for sink_multipat_cur_offset in var.sink_multipat_cur_offsets:
-            #            self.seq.If(var.sink_multipat_fsm.here)(
-            #                sink_multipat_cur_offset(0)
-            #            )
             self.seq.If(sink_start)(
                 sink_multipat_cur_offset(0)
             )
@@ -1536,10 +1493,6 @@ class Stream(BaseStream):
             )
 
         var.sink_multipat_fsm.If(sink_start).goto_next()
-
-#        num_wdelay = self._write_delay()
-#        for _ in range(num_wdelay):
-#            var.sink_multipat_fsm.goto_next()
 
         if name in self.sink_when_map:
             when = self.sink_when_map[name]
