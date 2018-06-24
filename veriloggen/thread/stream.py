@@ -79,8 +79,7 @@ class Stream(BaseStream):
             '_'.join(['', self.name, 'source_busy']), initval=0)
         self.sink_busy = self.module.Reg(
             '_'.join(['', self.name, 'sink_busy']), initval=0)
-        self.sink_cont = self.module.Reg(
-            '_'.join(['', self.name, 'sink_cont']), initval=0)
+        self.sink_wait_count = None
 
         self.reduce_reset = None
         self.reduce_reset_var = None
@@ -874,35 +873,51 @@ class Stream(BaseStream):
                 )
 
             num_wdelay = sub.substrm._write_delay()
-            sub.substrm.fsm.seq.If(vtypes.Not(sub.substrm.sink_cont),
+
+            if sub.substrm.sink_wait_count is None:
+                sub.substrm.sink_wait_count = sub.substrm.module.Reg(
+                    '_'.join(['', sub.substrm.name, 'sink_wait_count']),
+                    int(math.ceil(math.log(num_wdelay, 2))), initval=0)
+
+            sub.substrm.fsm.seq.If(sub.substrm.sink_wait_count == 1,
+                                   vtypes.Not(start_cond),
                                    sub.substrm.seq.Prev(end_cond, num_wdelay))(
                 sub.substrm.sink_busy(0)
-            )
-            sub.substrm.fsm.seq.If(sub.substrm.sink_cont,
-                                   sub.substrm.seq.Prev(end_cond, num_wdelay))(
-                sub.substrm.sink_cont(0)
             )
             sub.substrm.fsm.seq.If(start_cond)(
                 sub.substrm.sink_busy(1)
             )
-            sub.substrm.fsm.seq.If(sub.substrm.sink_busy, start_cond)(
-                sub.substrm.sink_cont(1)
+            sub.substrm.fsm.seq.If(vtypes.Not(start_cond),
+                                   sub.substrm.seq.Prev(end_cond, num_wdelay))(
+                sub.substrm.sink_wait_count.dec()
+            )
+            sub.substrm.fsm.seq.If(start_cond,
+                                   vtypes.Not(sub.substrm.seq.Prev(end_cond, num_wdelay)))(
+                sub.substrm.sink_wait_count.inc()
             )
 
         num_wdelay = self._write_delay()
-        self.fsm.seq.If(vtypes.Not(self.sink_cont),
+
+        if self.sink_wait_count is None:
+            self.sink_wait_count = self.module.Reg(
+                '_'.join(['', self.name, 'sink_wait_count']),
+                int(math.ceil(math.log(num_wdelay, 2))), initval=0)
+
+        self.fsm.seq.If(self.sink_wait_count == 1,
+                        vtypes.Not(start_cond),
                         self.seq.Prev(end_cond, num_wdelay))(
             self.sink_busy(0)
-        )
-        self.fsm.seq.If(self.sink_cont,
-                        self.seq.Prev(end_cond, num_wdelay))(
-            self.sink_cont(0)
         )
         self.fsm.seq.If(start_cond)(
             self.sink_busy(1)
         )
-        self.fsm.seq.If(self.sink_busy, start_cond)(
-            self.sink_cont(1)
+        self.fsm.seq.If(vtypes.Not(start_cond),
+                        self.seq.Prev(end_cond, num_wdelay))(
+            self.sink_wait_count.dec()
+        )
+        self.fsm.seq.If(start_cond,
+                        vtypes.Not(self.seq.Prev(end_cond, num_wdelay)))(
+            self.sink_wait_count.inc()
         )
 
         self.fsm.goto_init()
