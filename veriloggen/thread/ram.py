@@ -1106,77 +1106,27 @@ class MultibankRAM(object):
         'dma_read_block', 'dma_read_block_async',
         'dma_write_block', 'dma_write_block_async') + _MutexFunction.__intrinsics__
 
-    def __init__(self, m=None, name=None, clk=None, rst=None,
-                 datawidth=32, addrwidth=10, numports=1,
-                 numbanks=2, rams=None, keep_hierarchy=False):
+    def __init__(self, m, name, clk, rst,
+                 datawidth=32, addrwidth=10, numports=1, numbanks=2):
 
-        if rams is not None:
-            if not isinstance(rams, (tuple, list)):
-                rams = [rams]
+        if numbanks < 2:
+            raise ValueError('numbanks must be 2 or more')
 
-            if not keep_hierarchy:
-                rams = extract_rams(rams)
-
-            if len(rams) < 2:
-                raise ValueError('numbanks must be 2 or more')
-
-            max_datawidth = 0
-            for ram in rams:
-                max_datawidth = max(max_datawidth, ram.datawidth)
-
-            max_addrwidth = 0
-            for ram in rams:
-                max_addrwidth = max(max_addrwidth, ram.addrwidth)
-
-            max_numports = rams[0].numports
-            for ram in rams[1:]:
-                if max_numports != ram.numports:
-                    raise ValueError('numports must be same')
-
-            self.m = rams[0].m
-            self.name = ('_'.join([ram.name for ram in rams])
-                         if name is None else name)
-            self.clk = rams[0].clk
-            self.rst = rams[0].rst
-            self.orig_datawidth = max_datawidth
-            self.datawidth = max_datawidth * len(rams)
-            self.addrwidth = max_addrwidth
-            self.numports = max_numports
-            self.numbanks = len(rams)
-            self.shift = util.log2(self.numbanks)
-            self.rams = rams
-            self.keep_hierarchy = keep_hierarchy
-            self.seq = None
-
-            for ram in self.rams:
-                if ram.seq is not None:
-                    self.seq = ram.seq
-                    break
-
-        elif (m is not None and name is not None and
-              clk is not None and rst is not None):
-
-            if numbanks < 2:
-                raise ValueError('numbanks must be 2 or more')
-
-            self.m = m
-            self.name = name
-            self.clk = clk
-            self.rst = rst
-            self.orig_datawidth = datawidth
-            self.datawidth = datawidth * numbanks
-            self.addrwidth = addrwidth
-            self.numports = numports
-            self.numbanks = numbanks
-            self.shift = util.log2(self.numbanks)
-            self.rams = [RAM(m, '_'.join([name, '%d' % i]),
-                             clk, rst, datawidth, addrwidth, numports)
-                         for i in range(numbanks)]
-            self.keep_hierarchy = keep_hierarchy
-            self.seq = None
-
-        else:
-            raise ValueError('RAMs or module information must be specified.')
+        self.m = m
+        self.name = name
+        self.clk = clk
+        self.rst = rst
+        self.orig_datawidth = datawidth
+        self.datawidth = datawidth * numbanks
+        self.addrwidth = addrwidth
+        self.numports = numports
+        self.numbanks = numbanks
+        self.shift = util.log2(self.numbanks)
+        self.rams = [RAM(m, '_'.join([name, '%d' % i]),
+                         clk, rst, datawidth, addrwidth, numports)
+                     for i in range(numbanks)]
+        self.keep_hierarchy = False
+        self.seq = None
 
         self.df = DataflowManager(self.m, self.clk, self.rst)
 
@@ -2154,7 +2104,7 @@ class MultibankRAM(object):
             for i, sub in enumerate(ram.rams):
                 rams[i].append(sub)
 
-        rams = [MultibankRAM(rams=ram_list, keep_hierarchy=True)
+        rams = [to_multibank_ram(ram_list, keep_hierarchy=True)
                 for ram_list in rams]
 
         data_list = []
@@ -2580,7 +2530,7 @@ class MultibankRAM(object):
             for i, sub in enumerate(ram.rams):
                 rams[i].append(sub)
 
-        rams = [MultibankRAM(rams=ram_list, keep_hierarchy=True)
+        rams = [to_multibank_ram(ram_list, keep_hierarchy=True)
                 for ram_list in rams]
 
         done_list = []
@@ -2596,3 +2546,71 @@ class MultibankRAM(object):
 
         merged_done = done_list[0]
         return merged_done
+
+
+class _PackedMultibankRAM(MultibankRAM):
+    def __init__(self, src=None, name=None, keep_hierarchy=False):
+
+        if not isinstance(src, (tuple, list)):
+            src = [src]
+
+        if not keep_hierarchy:
+            src = extract_rams(src)
+
+        if len(src) < 2:
+            raise ValueError('numbanks must be 2 or more')
+
+        max_datawidth = 0
+        for ram in src:
+            max_datawidth = max(max_datawidth, ram.datawidth)
+
+        max_addrwidth = 0
+        for ram in src:
+            max_addrwidth = max(max_addrwidth, ram.addrwidth)
+
+        max_numports = src[0].numports
+        for ram in src[1:]:
+            if max_numports != ram.numports:
+                raise ValueError('numports must be same')
+
+        self.m = src[0].m
+        self.name = ('_'.join([ram.name for ram in src])
+                     if name is None else name)
+        self.clk = src[0].clk
+        self.rst = src[0].rst
+        self.orig_datawidth = max_datawidth
+        self.datawidth = max_datawidth * len(src)
+        self.addrwidth = max_addrwidth
+        self.numports = max_numports
+        self.numbanks = len(src)
+        self.shift = util.log2(self.numbanks)
+        self.rams = src
+        self.keep_hierarchy = keep_hierarchy
+        self.seq = None
+
+        for ram in self.rams:
+            if ram.seq is not None:
+                self.seq = ram.seq
+                break
+
+        self.df = DataflowManager(self.m, self.clk, self.rst)
+
+        # key: (axi._id(), port, ram_method_name)
+        self.cache_dma_reqs = {}
+
+        self.mutex = None
+
+
+multibank_ram_cache = {}
+
+
+def to_multibank_ram(rams, name=None, keep_hierarchy=False):
+    ids = tuple([ram._id() for ram in rams])
+
+    if ids in multibank_ram_cache:
+        return multibank_ram_cache[ids]
+
+    ram = _PackedMultibankRAM(rams, name, keep_hierarchy)
+    multibank_ram_cache[ids] = ram
+
+    return ram

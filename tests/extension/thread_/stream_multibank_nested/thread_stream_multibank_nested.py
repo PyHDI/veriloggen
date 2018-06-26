@@ -26,19 +26,19 @@ def mkLed(memory_datawidth=128):
                                   numbanks=numbanks)
     ram_a1 = vthread.MultibankRAM(m, 'ram_a1', clk, rst, datawidth, addrwidth,
                                   numbanks=numbanks)
-    ram_a = vthread.MultibankRAM(rams=(ram_a0, ram_a1), name='ram_a')
+    ram_a = vthread.to_multibank_ram((ram_a0, ram_a1), name='ram_a')
 
     ram_b0 = vthread.MultibankRAM(m, 'ram_b0', clk, rst, datawidth, addrwidth,
                                   numbanks=numbanks)
     ram_b1 = vthread.MultibankRAM(m, 'ram_b1', clk, rst, datawidth, addrwidth,
                                   numbanks=numbanks)
-    ram_b = vthread.MultibankRAM(rams=(ram_b0, ram_b1), name='ram_b')
+    ram_b = vthread.to_multibank_ram((ram_b0, ram_b1), name='ram_b')
 
     ram_c0 = vthread.MultibankRAM(m, 'ram_c0', clk, rst, datawidth, addrwidth,
                                   numbanks=numbanks)
     ram_c1 = vthread.MultibankRAM(m, 'ram_c1', clk, rst, datawidth, addrwidth,
                                   numbanks=numbanks)
-    ram_c = vthread.MultibankRAM(rams=(ram_c0, ram_c1), name='ram_c')
+    ram_c = vthread.to_multibank_ram((ram_c0, ram_c1), name='ram_c')
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
     a = strm.source('a')

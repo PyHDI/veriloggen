@@ -14,7 +14,7 @@ from veriloggen.optimizer import try_optimize as optimize
 from veriloggen.dataflow.dtypes import make_condition
 
 from .ttypes import _MutexFunction
-from .ram import RAM, FixedRAM, MultibankRAM
+from .ram import RAM, FixedRAM, MultibankRAM, to_multibank_ram
 
 
 class AXIM(AxiMaster, _MutexFunction):
@@ -229,7 +229,7 @@ class AXIM(AxiMaster, _MutexFunction):
             raise TypeError('AXIM-lite does not support DMA.')
 
         if isinstance(ram, (tuple, list)):
-            ram = MultibankRAM(rams=ram)
+            ram = to_multibank_ram(ram)
 
         if not isinstance(ram, (RAM, MultibankRAM)):
             raise TypeError('RAM object is required.')
@@ -784,7 +784,7 @@ class AXIM(AxiMaster, _MutexFunction):
             raise TypeError('AXIM-lite does not support DMA.')
 
         if isinstance(ram, (tuple, list)):
-            ram = MultibankRAM(rams=ram)
+            ram = to_multibank_ram(ram)
 
         if not isinstance(ram, (RAM, MultibankRAM)):
             raise TypeError('RAM object is required.')

@@ -27,7 +27,7 @@ def mkLed(memory_datawidth=128):
     rams = [vthread.MultibankRAM(m, 'myram%d' % i, clk, rst, datawidth, addrwidth,
                                  numbanks=pack_size)
             for i in range(numbanks)]
-    myram = vthread.MultibankRAM(rams=rams, keep_hierarchy=True)
+    myram = vthread.to_multibank_ram(rams, keep_hierarchy=True)
 
     all_ok = m.TmpReg(initval=0)
 
