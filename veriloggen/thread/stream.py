@@ -178,6 +178,10 @@ class Stream(BaseStream):
         var.source_ram_rvalid = self.module.Reg('_%s_source_ram_rvalid' % prefix,
                                                 initval=0)
 
+        self.seq(
+            var.source_ram_rvalid(0)
+        )
+
         return var
 
     def sink(self, data, name=None, when=None, when_name=None):
@@ -988,8 +992,8 @@ class Stream(BaseStream):
         d, v = ram.read_rtl(var.source_ram_raddr, port=port, cond=renable)
         add_mux(var.source_ram_rdata, ram_cond, d)
 
-        self.seq(
-            var.source_ram_rvalid(self.seq.Prev(renable, 1))
+        self.seq.If(self.seq.Prev(renable, 1))(
+            var.source_ram_rvalid(1)
         )
 
     def _synthesize_set_source(self, var, name):
