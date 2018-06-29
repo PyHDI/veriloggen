@@ -1664,7 +1664,7 @@ def make_memory_image(filename, length, pattern='inc', dtype=None,
     import numpy as np
 
     if dtype is None:
-        dtype = np.int32
+        dtype = np.int64
 
     if pattern == 'inc':
         l = list(range(length))
@@ -1746,12 +1746,9 @@ def aligned_shape(shape, wordsize, mem_wordsize):
         return aligned_shape
 
     chunk = mem_wordsize // wordsize
-    res = mem_wordsize - aligned_shape[-1] % chunk
+    new_size = int(math.ceil(aligned_shape[-1] / chunk)) * chunk
+    aligned_shape[-1] = new_size
 
-    if res == mem_wordsize:
-        return aligned_shape
-
-    aligned_shape[-1] += res
     return aligned_shape
 
 
@@ -1854,7 +1851,7 @@ def align(src, num_align_words):
     import numpy as np
 
     src_aligned_shape = aligned_shape(src.shape, 1, num_align_words)
-    ret = np.zeros(src_aligned_shape).reshape([-1])
+    ret = np.zeros(src_aligned_shape, dtype=np.int64).reshape([-1])
     offset = 0
     index = 0
     res = num_align_words - src.shape[-1] % num_align_words
