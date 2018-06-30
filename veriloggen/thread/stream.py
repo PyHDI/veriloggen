@@ -38,7 +38,7 @@ def TmpStream(m, clk, rst,
 
 class Stream(BaseStream):
     __intrinsics__ = ('set_source', 'set_source_pattern', 'set_source_multidim',
-                      'set_source_multipattern',
+                      'set_source_multipattern', 'set_source_empty',
                       'set_sink', 'set_sink_pattern', 'set_sink_multidim',
                       'set_sink_multipattern',
                       'set_sink_empty', 'set_constant',
@@ -142,7 +142,8 @@ class Stream(BaseStream):
         var.source_idle = self.module.Reg('_%s_idle' % prefix, initval=1)
         self.source_idle_map[name] = var.source_idle
 
-        # 3'b001: set_source, 3'b010: set_source_pattern, 3'b100: set_source_multipattern
+        # 3'b000: set_source_empty, 3'b001: set_source,
+        # 3'b010: set_source_pattern, 3'b100: set_source_multipattern
         var.source_mode = self.module.Reg('_%s_source_mode' % prefix, mode_width,
                                           initval=mode_idle)
 
@@ -178,7 +179,12 @@ class Stream(BaseStream):
         var.source_ram_rvalid = self.module.Reg('_%s_source_ram_rvalid' % prefix,
                                                 initval=0)
 
+        var.has_source_empty = False
+        var.source_empty_data = self.module.Reg('_%s_source_empty_data' % prefix,
+                                                datawidth, initval=0)
+
         self.seq(
+            var.source_idle(var.source_idle),
             var.source_ram_rvalid(0)
         )
 
@@ -495,6 +501,52 @@ class Stream(BaseStream):
         port = vtypes.to_int(port)
         self._setup_source_ram(ram, var, port, set_cond)
         self._synthesize_set_source_multipattern(var, name)
+
+        fsm.goto_next()
+
+    def set_source_empty(self, fsm, name, value=0):
+
+        if not self.stream_synthesized:
+            self._implement_stream()
+
+        if isinstance(name, str):
+            var = self.var_name_map[name]
+        elif isinstance(name, vtypes.Str):
+            name = name.value
+            var = self.var_name_map[name]
+        elif isinstance(name, int):
+            var = self.var_id_map[name]
+        elif isinstance(name, vtypes.Int):
+            name = name.value
+            var = self.var_id_map[name]
+        else:
+            raise TypeError('Unsupported index name')
+
+        if name not in self.sources:
+            raise NameError("No such stream '%s'" % name)
+
+        set_cond = self._set_flag(fsm)
+
+        self.seq.If(set_cond)(
+            var.source_mode(mode_idle),
+            var.source_empty_data(value)
+        )
+
+        if var.has_source_empty:
+            return
+
+        source_start = vtypes.Ands(self.start,
+                                   vtypes.And(var.source_mode, mode_idle))
+
+        self.seq.If(source_start)(
+            var.source_idle(1)
+        )
+
+        wdata = var.source_empty_data
+        wenable = source_start
+        var.write(wdata, wenable)
+
+        var.has_source_empty = True
 
         fsm.goto_next()
 
