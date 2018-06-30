@@ -96,7 +96,7 @@ def mkLed(matrix_size=16):
     return m
 
 
-def mkTest():
+def mkTest(memimg_name=None):
     matrix_size = 16
 
     a_shape = (matrix_size, matrix_size)
@@ -150,7 +150,8 @@ def mkTest():
     memory = axi.AxiMemoryModel(m, 'memory', clk, rst,
                                 datawidth=8 * axi_wordsize,
                                 mem_datawidth=8 * axi_wordsize,
-                                memimg=mem)
+                                memimg=mem, memimg_name=memimg_name)
+
     memory.connect(ports, 'myaxi')
 
     uut = m.Instance(led, 'uut',
@@ -169,15 +170,20 @@ def mkTest():
     return m
 
 
-def run(filename='tmp.v', simtype='iverilog'):
+def run(filename='tmp.v', simtype='iverilog', outputfile=None):
 
-    test = mkTest()
+    if outputfile is None:
+        outputfile = os.path.splitext(os.path.basename(__file__))[0] + '.out'
+
+    memimg_name = 'memimg_' + outputfile
+
+    test = mkTest(memimg_name=memimg_name)
 
     if filename is not None:
         test.to_verilog(filename)
 
     sim = simulation.Simulator(test, sim=simtype)
-    rslt = sim.run(outputfile=simtype + '.out')
+    rslt = sim.run(outputfile=outputfile)
     lines = rslt.splitlines()
     if simtype == 'verilator' and lines[-1].startswith('-'):
         rslt = '\n'.join(lines[:-1])

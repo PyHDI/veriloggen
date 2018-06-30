@@ -88,7 +88,7 @@ def mkLed(matrix_size=16):
     return m
 
 
-def mkTest():
+def mkTest(memimg_name=None):
     m = Module('test')
 
     matrix_size = 16
@@ -104,7 +104,8 @@ def mkTest():
     rst = ports['RST']
 
     # memory image
-    memname = 'mymem.out'
+    if memimg_name is None:
+        memimg_name = 'mymem.out'
 
     def fwrite(f, value):
         s = '%08x' % value
@@ -113,7 +114,7 @@ def mkTest():
         f.write('%s\n' % s[2:4])
         f.write('%s\n' % s[0:2])
 
-    with open(memname, 'w') as f:
+    with open(memimg_name, 'w') as f:
         # ram_a
         addr = 0
         nv = 1
@@ -155,7 +156,7 @@ def mkTest():
         for i in range(2 ** 20 - addr):
             f.write('%s\n' % '00')
 
-    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memimg=memname)
+    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memimg=memimg_name)
     memory.connect(ports, 'myaxi')
 
     uut = m.Instance(led, 'uut',

@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import os
 import veriloggen
 import simulation_verilator
 
@@ -50,7 +51,7 @@ module test
   reg [8-1:0] _memory_mem [0:2**20-1];
 
   initial begin
-    $readmemh("mymem.out", _memory_mem);
+    $readmemh("memimg_test_simulation_verilator.out", _memory_mem);
   end
 
   reg [32-1:0] _memory_fsm;
@@ -1893,7 +1894,8 @@ int main(int argc, char** argv)
 
 def test():
     veriloggen.reset()
-    test_module = simulation_verilator.mkTest()
+    memimg_name = 'memimg_' + os.path.splitext(os.path.basename(__file__))[0] + '.out'
+    test_module = simulation_verilator.mkTest(memimg_name=memimg_name)
     verilog = veriloggen.simulation.to_verilator_code(
         test_module, [test_module])
     cpp = veriloggen.simulation.to_verilator_cpp(test_module, 'out')
