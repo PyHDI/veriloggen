@@ -1371,7 +1371,8 @@ class AxiMemoryModel(object):
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=32,
                  mem_datawidth=32, mem_addrwidth=20,
-                 memimg=None, write_delay=10, read_delay=10, sleep=4):
+                 memimg=None, memimg_name=None,
+                 write_delay=10, read_delay=10, sleep=4):
 
         if mem_datawidth % 8 != 0:
             raise ValueError('mem_datawidth must be a multiple of 8')
@@ -1401,20 +1402,22 @@ class AxiMemoryModel(object):
             '_'.join(['', self.name, 'mem']), 8, vtypes.Int(2) ** self.mem_addrwidth)
 
         if memimg is None:
-            filename = '_'.join(['', self.name, 'memimg', '.out'])
+            if memimg_name is None:
+                memimg_name = '_'.join(['', self.name, 'memimg', '.out'])
             size = 2 ** self.mem_addrwidth
             wordsize = self.mem_datawidth // 8
-            self._make_img(filename, size, wordsize)
+            self._make_img(memimg_name, size, wordsize)
 
         elif isinstance(memimg, str):
-            filename = memimg
+            memimg_name = memimg
 
         else:
-            filename = '_'.join(['', self.name, 'memimg', '.out'])
-            to_memory_image(filename, memimg, datawidth=mem_datawidth)
+            if memimg_name is None:
+                memimg_name = '_'.join(['', self.name, 'memimg', '.out'])
+            to_memory_image(memimg_name, memimg, datawidth=mem_datawidth)
 
         self.m.Initial(
-            vtypes.Systask('readmemh', filename, self.mem)
+            vtypes.Systask('readmemh', memimg_name, self.mem)
         )
 
         self.fsm = FSM(self.m, '_'.join(['', self.name, 'fsm']), clk, rst)
