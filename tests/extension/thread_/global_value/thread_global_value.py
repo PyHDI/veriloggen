@@ -12,6 +12,7 @@ import veriloggen.thread as vthread
 
 global_value = 100
 
+
 def mkLed():
     m = Module('blinkled')
     clk = m.Input('CLK')
@@ -64,6 +65,7 @@ def mkTest():
     )
 
     return m
+
 
 if __name__ == '__main__':
     test = mkTest()

@@ -60,6 +60,7 @@ def mkTest():
 
     return m
 
+
 if __name__ == '__main__':
     test = mkTest()
     verilog = test.to_verilog('tmp.v')

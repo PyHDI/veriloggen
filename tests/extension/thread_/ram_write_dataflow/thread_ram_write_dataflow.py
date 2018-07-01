@@ -27,7 +27,7 @@ def mkMain(n=128, datawidth=32, numports=2):
     fsm = FSM(m, 'fsm', clk, rst)
 
     fsm.goto_next()
-    
+
     # dataflow
     value = df.Counter(size=64)
     value = value - 1
@@ -82,6 +82,7 @@ def mkTest():
     )
 
     return m
+
 
 if __name__ == '__main__':
     test = mkTest()

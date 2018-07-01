@@ -79,12 +79,13 @@ def mkTest():
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
     init.add(
-#        Delay(10000),
+        #        Delay(10000),
         Delay(100000),
         Systask('finish'),
     )
 
     return m
+
 
 if __name__ == '__main__':
     test = mkTest()

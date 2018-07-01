@@ -100,7 +100,7 @@ def mkTest(baudrate=19200, clockfreq=19200 * 10):
     return m
 
 
-def run(filename='tmp.v', simtype='iverilog'):
+def run(filename='tmp.v', simtype='iverilog', outputfile=None):
 
     test = mkTest()
 
@@ -108,7 +108,7 @@ def run(filename='tmp.v', simtype='iverilog'):
         test.to_verilog(filename)
 
     sim = simulation.Simulator(test, sim=simtype)
-    rslt = sim.run(outputfile=simtype + '.out')
+    rslt = sim.run(outputfile=outputfile)
     lines = rslt.splitlines()
     if simtype == 'verilator' and lines[-1].startswith('-'):
         rslt = '\n'.join(lines[:-1])

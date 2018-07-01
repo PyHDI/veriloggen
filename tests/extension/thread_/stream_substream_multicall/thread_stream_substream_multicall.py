@@ -228,7 +228,7 @@ def mkLed():
     return m
 
 
-def mkTest():
+def mkTest(memimg_name=None):
     m = Module('test')
 
     # target instance
@@ -241,7 +241,7 @@ def mkTest():
     clk = ports['CLK']
     rst = ports['RST']
 
-    memory = axi.AxiMemoryModel(m, 'memory', clk, rst)
+    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memimg_name=memimg_name)
     memory.connect(ports, 'myaxi')
 
     uut = m.Instance(led, 'uut',
@@ -260,15 +260,20 @@ def mkTest():
     return m
 
 
-def run(filename='tmp.v', simtype='iverilog'):
+def run(filename='tmp.v', simtype='iverilog', outputfile=None):
 
-    test = mkTest()
+    if outputfile is None:
+        outputfile = os.path.splitext(os.path.basename(__file__))[0] + '.out'
+
+    memimg_name = 'memimg_' + outputfile
+
+    test = mkTest(memimg_name=memimg_name)
 
     if filename is not None:
         test.to_verilog(filename)
 
     sim = simulation.Simulator(test, sim=simtype)
-    rslt = sim.run(outputfile=simtype + '.out')
+    rslt = sim.run(outputfile=outputfile)
     lines = rslt.splitlines()
     if simtype == 'verilator' and lines[-1].startswith('-'):
         rslt = '\n'.join(lines[:-1])

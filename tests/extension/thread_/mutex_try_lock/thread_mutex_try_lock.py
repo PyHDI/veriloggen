@@ -26,7 +26,7 @@ def mkLed(numthreads=8):
             print("-- Thread %d TryLock" % tid)
             waitcount += 1
             lock = mymutex.try_lock()
-        
+
         print("Thread %d Lock: waitcount=%d" % (tid, waitcount))
 
         for i in range(20):
@@ -78,6 +78,7 @@ def mkTest():
     )
 
     return m
+
 
 if __name__ == '__main__':
     test = mkTest()

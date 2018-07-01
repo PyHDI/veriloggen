@@ -114,7 +114,7 @@ def mkLed(memory_datawidth=128):
     return m
 
 
-def mkTest(memory_datawidth=128):
+def mkTest(memimg_name=None, memory_datawidth=128):
     m = Module('test')
 
     # target instance
@@ -146,15 +146,20 @@ def mkTest(memory_datawidth=128):
     return m
 
 
-def run(filename='tmp.v', simtype='iverilog'):
+def run(filename='tmp.v', simtype='iverilog', outputfile=None):
 
-    test = mkTest()
+    if outputfile is None:
+        outputfile = os.path.splitext(os.path.basename(__file__))[0] + '.out'
+
+    memimg_name = 'memimg_' + outputfile
+
+    test = mkTest(memimg_name=memimg_name)
 
     if filename is not None:
         test.to_verilog(filename)
 
     sim = simulation.Simulator(test, sim=simtype)
-    rslt = sim.run(outputfile=simtype + '.out')
+    rslt = sim.run(outputfile=outputfile)
     lines = rslt.splitlines()
     if simtype == 'verilator' and lines[-1].startswith('-'):
         rslt = '\n'.join(lines[:-1])

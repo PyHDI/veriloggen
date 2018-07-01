@@ -22,12 +22,12 @@ def mkLed():
         a, b, c = 100, 200, 300
         th_subth.run(a, b, c)
         print('# subth run')
-        
+
         led.value = 0
         for i in range(times):
             led.value += 1
             print("led = ", led)
-            
+
         th_subth.join()
         rslt = th_subth.ret()
         print('# subth join: rslt=%d' % rslt)
@@ -74,6 +74,7 @@ def mkTest():
     )
 
     return m
+
 
 if __name__ == '__main__':
     test = mkTest()
