@@ -216,7 +216,9 @@ def test():
     try:
         from shutil import which
     except:
-        from distutils.spawn import find_executable as which
+        # from distutils.spawn import find_executable as which
+        print('no which command')
+        return
 
     if which('vcs'):
         sim = simulation.Simulator(test_module, sim='vcs')
