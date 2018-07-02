@@ -1570,14 +1570,14 @@ class LUT(_SpecialOperator):
         data = m.Wire(self.name('data'), width, signed=signed)
         self.sig_data = data
 
-        inst = rom.mkROMDefinition('_'.join(['', 'LUT', str(tmp)]), self.patterns,
+        inst = rom.mkROMDefinition(self.name('LUT_ROM'), self.patterns,
                                    size, width, sync=True, with_enable=True)
         clk = m._clock
 
         ports = [('CLK', clk), ('addr', address),
                  ('enable', senable), ('val', data)]
 
-        m.Instance(inst, self.name('LUT_mod'), ports=ports)
+        m.Instance(inst, self.name('lut'), ports=ports)
 
 
 class _Delay(_UnaryOperator):
