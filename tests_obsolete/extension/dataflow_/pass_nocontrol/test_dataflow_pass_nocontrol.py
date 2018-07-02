@@ -4,7 +4,11 @@ import veriloggen
 import dataflow_pass_nocontrol
 
 expected_verilog = """
-module test;
+
+module test
+(
+
+);
 
   reg CLK;
   reg RST;
@@ -162,8 +166,8 @@ module main
   assign zdata = xdata;
 
 endmodule
-"""
 
+"""
 
 def test():
     veriloggen.reset()

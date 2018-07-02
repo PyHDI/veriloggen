@@ -4,7 +4,11 @@ import veriloggen
 import dataflow_connect
 
 expected_verilog = """
-module test;
+
+module test
+(
+
+);
 
   reg CLK;
   reg RST;
@@ -55,50 +59,50 @@ module main
   wire [32-1:0] xdata;
   wire xvalid;
   wire xready;
-  reg [32-1:0] _plus_data_0;
-  reg _plus_valid_0;
-  wire _plus_ready_0;
-  assign xready = (_plus_ready_0 || !_plus_valid_0) && xvalid;
-  reg [32-1:0] _plus_data_1;
-  reg _plus_valid_1;
-  wire _plus_ready_1;
-  reg [32-1:0] __delay_data_2;
-  reg __delay_valid_2;
-  wire __delay_ready_2;
-  assign _plus_ready_0 = (_plus_ready_1 || !_plus_valid_1) && _plus_valid_0 && ((__delay_ready_2 || !__delay_valid_2) && _plus_valid_0);
+  reg [32-1:0] _dataflow_plus_data_1;
+  reg _dataflow_plus_valid_1;
+  wire _dataflow_plus_ready_1;
+  assign xready = (_dataflow_plus_ready_1 || !_dataflow_plus_valid_1) && xvalid;
+  reg [32-1:0] _dataflow_plus_data_3;
+  reg _dataflow_plus_valid_3;
+  wire _dataflow_plus_ready_3;
+  reg [32-1:0] _dataflow__delay_data_6;
+  reg _dataflow__delay_valid_6;
+  wire _dataflow__delay_ready_6;
+  assign _dataflow_plus_ready_1 = (_dataflow_plus_ready_3 || !_dataflow_plus_valid_3) && _dataflow_plus_valid_1 && ((_dataflow__delay_ready_6 || !_dataflow__delay_valid_6) && _dataflow_plus_valid_1);
   wire [32-1:0] zdata;
   wire zvalid;
   wire zready;
-  assign zdata = _plus_data_1;
-  assign zvalid = _plus_valid_1;
-  assign _plus_ready_1 = zready;
+  assign zdata = _dataflow_plus_data_3;
+  assign zvalid = _dataflow_plus_valid_3;
+  assign _dataflow_plus_ready_3 = zready;
   wire [32-1:0] ydata;
   wire yvalid;
   wire yready;
-  assign ydata = __delay_data_2;
-  assign yvalid = __delay_valid_2;
-  assign __delay_ready_2 = yready;
+  assign ydata = _dataflow__delay_data_6;
+  assign yvalid = _dataflow__delay_valid_6;
+  assign _dataflow__delay_ready_6 = yready;
   reg [32-1:0] xfsm;
   localparam xfsm_init = 0;
-  reg [32-1:0] _tmp_3;
-  reg [32-1:0] _tmp_4;
-  assign xdata = _tmp_4;
-  reg _tmp_5;
-  assign xvalid = _tmp_5;
+  reg [32-1:0] _tmp_0;
+  reg [32-1:0] _tmp_1;
+  assign xdata = _tmp_1;
+  reg _tmp_2;
+  assign xvalid = _tmp_2;
   reg __dataflow_seq_0_cond_0_1;
   localparam xfsm_1 = 1;
 
   always @(posedge CLK) begin
     if(RST) begin
       xfsm <= xfsm_init;
-      _tmp_3 <= 0;
+      _tmp_0 <= 0;
     end else begin
       case(xfsm)
         xfsm_init: begin
-          if(xready || !_tmp_5) begin
-            _tmp_3 <= _tmp_3 + 1;
+          if(xready || !_tmp_2) begin
+            _tmp_0 <= _tmp_0 + 1;
           end 
-          if((xready || !_tmp_5) && (_tmp_3 == 15)) begin
+          if((xready || !_tmp_2) && (_tmp_0 == 15)) begin
             xfsm <= xfsm_1;
           end 
         end
@@ -125,63 +129,63 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
-      _plus_data_0 <= 0;
-      _plus_valid_0 <= 0;
-      _plus_data_1 <= 0;
-      _plus_valid_1 <= 0;
-      __delay_data_2 <= 0;
-      __delay_valid_2 <= 0;
-      _tmp_4 <= 0;
-      _tmp_5 <= 0;
+      _dataflow_plus_data_1 <= 0;
+      _dataflow_plus_valid_1 <= 0;
+      _dataflow_plus_data_3 <= 0;
+      _dataflow_plus_valid_3 <= 0;
+      _dataflow__delay_data_6 <= 0;
+      _dataflow__delay_valid_6 <= 0;
+      _tmp_1 <= 0;
+      _tmp_2 <= 0;
       __dataflow_seq_0_cond_0_1 <= 0;
     end else begin
       if(__dataflow_seq_0_cond_0_1) begin
-        _tmp_5 <= 0;
+        _tmp_2 <= 0;
       end 
-      if((_plus_ready_0 || !_plus_valid_0) && xready && xvalid) begin
-        _plus_data_0 <= xdata + 2'sd1;
+      if((_dataflow_plus_ready_1 || !_dataflow_plus_valid_1) && xready && xvalid) begin
+        _dataflow_plus_data_1 <= xdata + 2'sd1;
       end 
-      if(_plus_valid_0 && _plus_ready_0) begin
-        _plus_valid_0 <= 0;
+      if(_dataflow_plus_valid_1 && _dataflow_plus_ready_1) begin
+        _dataflow_plus_valid_1 <= 0;
       end 
-      if((_plus_ready_0 || !_plus_valid_0) && xready) begin
-        _plus_valid_0 <= xvalid;
+      if((_dataflow_plus_ready_1 || !_dataflow_plus_valid_1) && xready) begin
+        _dataflow_plus_valid_1 <= xvalid;
       end 
-      if((_plus_ready_1 || !_plus_valid_1) && _plus_ready_0 && _plus_valid_0) begin
-        _plus_data_1 <= _plus_data_0 + 2'sd1;
+      if((_dataflow_plus_ready_3 || !_dataflow_plus_valid_3) && _dataflow_plus_ready_1 && _dataflow_plus_valid_1) begin
+        _dataflow_plus_data_3 <= _dataflow_plus_data_1 + 2'sd1;
       end 
-      if(_plus_valid_1 && _plus_ready_1) begin
-        _plus_valid_1 <= 0;
+      if(_dataflow_plus_valid_3 && _dataflow_plus_ready_3) begin
+        _dataflow_plus_valid_3 <= 0;
       end 
-      if((_plus_ready_1 || !_plus_valid_1) && _plus_ready_0) begin
-        _plus_valid_1 <= _plus_valid_0;
+      if((_dataflow_plus_ready_3 || !_dataflow_plus_valid_3) && _dataflow_plus_ready_1) begin
+        _dataflow_plus_valid_3 <= _dataflow_plus_valid_1;
       end 
-      if((__delay_ready_2 || !__delay_valid_2) && _plus_ready_0 && _plus_valid_0) begin
-        __delay_data_2 <= _plus_data_0;
+      if((_dataflow__delay_ready_6 || !_dataflow__delay_valid_6) && _dataflow_plus_ready_1 && _dataflow_plus_valid_1) begin
+        _dataflow__delay_data_6 <= _dataflow_plus_data_1;
       end 
-      if(__delay_valid_2 && __delay_ready_2) begin
-        __delay_valid_2 <= 0;
+      if(_dataflow__delay_valid_6 && _dataflow__delay_ready_6) begin
+        _dataflow__delay_valid_6 <= 0;
       end 
-      if((__delay_ready_2 || !__delay_valid_2) && _plus_ready_0) begin
-        __delay_valid_2 <= _plus_valid_0;
+      if((_dataflow__delay_ready_6 || !_dataflow__delay_valid_6) && _dataflow_plus_ready_1) begin
+        _dataflow__delay_valid_6 <= _dataflow_plus_valid_1;
       end 
-      if((xfsm == 0) && (xready || !_tmp_5)) begin
-        _tmp_4 <= _tmp_3;
+      if((xfsm == 0) && (xready || !_tmp_2)) begin
+        _tmp_1 <= _tmp_0;
       end 
-      if((xfsm == 0) && (xready || !_tmp_5)) begin
-        _tmp_5 <= 1;
+      if((xfsm == 0) && (xready || !_tmp_2)) begin
+        _tmp_2 <= 1;
       end 
       __dataflow_seq_0_cond_0_1 <= 1;
-      if(_tmp_5 && !xready) begin
-        _tmp_5 <= _tmp_5;
+      if(_tmp_2 && !xready) begin
+        _tmp_2 <= _tmp_2;
       end 
     end
   end
 
 
 endmodule
-"""
 
+"""
 
 def test():
     veriloggen.reset()

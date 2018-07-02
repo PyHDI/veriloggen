@@ -4,7 +4,11 @@ import veriloggen
 import dataflow_two_outputs_mul
 
 expected_verilog = """
-module test;
+
+module test
+(
+
+);
 
   reg CLK;
   reg RST;
@@ -617,117 +621,117 @@ module main
   input z1ready
 );
 
-  wire [32-1:0] _times_data_0;
-  wire _times_valid_0;
-  wire _times_ready_0;
-  wire [64-1:0] _times_odata_0;
-  reg [64-1:0] _times_data_reg_0;
-  assign _times_data_0 = _times_data_reg_0;
-  wire _times_ovalid_0;
-  reg _times_valid_reg_0;
-  assign _times_valid_0 = _times_valid_reg_0;
-  wire _times_enable_0;
-  wire _times_update_0;
-  assign _times_enable_0 = (_times_ready_0 || !_times_valid_0) && (xready && yready) && (xvalid && yvalid);
-  assign _times_update_0 = _times_ready_0 || !_times_valid_0;
+  wire [32-1:0] _dataflow_times_data_2;
+  wire _dataflow_times_valid_2;
+  wire _dataflow_times_ready_2;
+  wire [64-1:0] _dataflow_times_mul_odata_2;
+  reg [64-1:0] _dataflow_times_mul_odata_reg_2;
+  assign _dataflow_times_data_2 = _dataflow_times_mul_odata_reg_2;
+  wire _dataflow_times_mul_ovalid_2;
+  reg _dataflow_times_mul_valid_reg_2;
+  assign _dataflow_times_valid_2 = _dataflow_times_mul_valid_reg_2;
+  wire _dataflow_times_mul_enable_2;
+  wire _dataflow_times_mul_update_2;
+  assign _dataflow_times_mul_enable_2 = (_dataflow_times_ready_2 || !_dataflow_times_valid_2) && (xready && yready) && (xvalid && yvalid);
+  assign _dataflow_times_mul_update_2 = _dataflow_times_ready_2 || !_dataflow_times_valid_2;
 
   multiplier_0
-  mul0
+  _dataflow_times_mul_2
   (
     .CLK(CLK),
     .RST(RST),
-    .update(_times_update_0),
-    .enable(_times_enable_0),
-    .valid(_times_ovalid_0),
+    .update(_dataflow_times_mul_update_2),
+    .enable(_dataflow_times_mul_enable_2),
+    .valid(_dataflow_times_mul_ovalid_2),
     .a(xdata),
     .b(ydata),
-    .c(_times_odata_0)
+    .c(_dataflow_times_mul_odata_2)
   );
 
-  wire [32-1:0] _times_data_1;
-  wire _times_valid_1;
-  wire _times_ready_1;
-  wire [64-1:0] _times_odata_1;
-  reg [64-1:0] _times_data_reg_1;
-  assign _times_data_1 = _times_data_reg_1;
-  wire _times_ovalid_1;
-  reg _times_valid_reg_1;
-  assign _times_valid_1 = _times_valid_reg_1;
-  wire _times_enable_1;
-  wire _times_update_1;
-  assign _times_enable_1 = (_times_ready_1 || !_times_valid_1) && (xready && yready) && (xvalid && yvalid);
-  assign _times_update_1 = _times_ready_1 || !_times_valid_1;
+  wire [32-1:0] _dataflow_times_data_3;
+  wire _dataflow_times_valid_3;
+  wire _dataflow_times_ready_3;
+  wire [64-1:0] _dataflow_times_mul_odata_3;
+  reg [64-1:0] _dataflow_times_mul_odata_reg_3;
+  assign _dataflow_times_data_3 = _dataflow_times_mul_odata_reg_3;
+  wire _dataflow_times_mul_ovalid_3;
+  reg _dataflow_times_mul_valid_reg_3;
+  assign _dataflow_times_valid_3 = _dataflow_times_mul_valid_reg_3;
+  wire _dataflow_times_mul_enable_3;
+  wire _dataflow_times_mul_update_3;
+  assign _dataflow_times_mul_enable_3 = (_dataflow_times_ready_3 || !_dataflow_times_valid_3) && (xready && yready) && (xvalid && yvalid);
+  assign _dataflow_times_mul_update_3 = _dataflow_times_ready_3 || !_dataflow_times_valid_3;
 
   multiplier_1
-  mul1
+  _dataflow_times_mul_3
   (
     .CLK(CLK),
     .RST(RST),
-    .update(_times_update_1),
-    .enable(_times_enable_1),
-    .valid(_times_ovalid_1),
+    .update(_dataflow_times_mul_update_3),
+    .enable(_dataflow_times_mul_enable_3),
+    .valid(_dataflow_times_mul_ovalid_3),
     .a(xdata),
     .b(ydata),
-    .c(_times_odata_1)
+    .c(_dataflow_times_mul_odata_3)
   );
 
-  assign xready = (_times_ready_0 || !_times_valid_0) && (xvalid && yvalid) && ((_times_ready_1 || !_times_valid_1) && (xvalid && yvalid));
-  assign yready = (_times_ready_0 || !_times_valid_0) && (xvalid && yvalid) && ((_times_ready_1 || !_times_valid_1) && (xvalid && yvalid));
-  reg [32-1:0] _plus_data_2;
-  reg _plus_valid_2;
-  wire _plus_ready_2;
-  assign _times_ready_1 = (_plus_ready_2 || !_plus_valid_2) && _times_valid_1;
-  reg [32-1:0] __delay_data_3;
-  reg __delay_valid_3;
-  wire __delay_ready_3;
-  assign _times_ready_0 = (__delay_ready_3 || !__delay_valid_3) && _times_valid_0;
-  assign z2data = _plus_data_2;
-  assign z2valid = _plus_valid_2;
-  assign _plus_ready_2 = z2ready;
-  assign z1data = __delay_data_3;
-  assign z1valid = __delay_valid_3;
-  assign __delay_ready_3 = z1ready;
+  assign xready = (_dataflow_times_ready_2 || !_dataflow_times_valid_2) && (xvalid && yvalid) && ((_dataflow_times_ready_3 || !_dataflow_times_valid_3) && (xvalid && yvalid));
+  assign yready = (_dataflow_times_ready_2 || !_dataflow_times_valid_2) && (xvalid && yvalid) && ((_dataflow_times_ready_3 || !_dataflow_times_valid_3) && (xvalid && yvalid));
+  reg [32-1:0] _dataflow_plus_data_4;
+  reg _dataflow_plus_valid_4;
+  wire _dataflow_plus_ready_4;
+  assign _dataflow_times_ready_3 = (_dataflow_plus_ready_4 || !_dataflow_plus_valid_4) && _dataflow_times_valid_3;
+  reg [32-1:0] _dataflow__delay_data_6;
+  reg _dataflow__delay_valid_6;
+  wire _dataflow__delay_ready_6;
+  assign _dataflow_times_ready_2 = (_dataflow__delay_ready_6 || !_dataflow__delay_valid_6) && _dataflow_times_valid_2;
+  assign z2data = _dataflow_plus_data_4;
+  assign z2valid = _dataflow_plus_valid_4;
+  assign _dataflow_plus_ready_4 = z2ready;
+  assign z1data = _dataflow__delay_data_6;
+  assign z1valid = _dataflow__delay_valid_6;
+  assign _dataflow__delay_ready_6 = z1ready;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _times_data_reg_0 <= 0;
-      _times_valid_reg_0 <= 0;
-      _times_data_reg_1 <= 0;
-      _times_valid_reg_1 <= 0;
-      _plus_data_2 <= 0;
-      _plus_valid_2 <= 0;
-      __delay_data_3 <= 0;
-      __delay_valid_3 <= 0;
+      _dataflow_times_mul_odata_reg_2 <= 0;
+      _dataflow_times_mul_valid_reg_2 <= 0;
+      _dataflow_times_mul_odata_reg_3 <= 0;
+      _dataflow_times_mul_valid_reg_3 <= 0;
+      _dataflow_plus_data_4 <= 0;
+      _dataflow_plus_valid_4 <= 0;
+      _dataflow__delay_data_6 <= 0;
+      _dataflow__delay_valid_6 <= 0;
     end else begin
-      if(_times_ready_0 || !_times_valid_0) begin
-        _times_data_reg_0 <= _times_odata_0;
+      if(_dataflow_times_ready_2 || !_dataflow_times_valid_2) begin
+        _dataflow_times_mul_odata_reg_2 <= _dataflow_times_mul_odata_2;
       end 
-      if(_times_ready_0 || !_times_valid_0) begin
-        _times_valid_reg_0 <= _times_ovalid_0;
+      if(_dataflow_times_ready_2 || !_dataflow_times_valid_2) begin
+        _dataflow_times_mul_valid_reg_2 <= _dataflow_times_mul_ovalid_2;
       end 
-      if(_times_ready_1 || !_times_valid_1) begin
-        _times_data_reg_1 <= _times_odata_1;
+      if(_dataflow_times_ready_3 || !_dataflow_times_valid_3) begin
+        _dataflow_times_mul_odata_reg_3 <= _dataflow_times_mul_odata_3;
       end 
-      if(_times_ready_1 || !_times_valid_1) begin
-        _times_valid_reg_1 <= _times_ovalid_1;
+      if(_dataflow_times_ready_3 || !_dataflow_times_valid_3) begin
+        _dataflow_times_mul_valid_reg_3 <= _dataflow_times_mul_ovalid_3;
       end 
-      if((_plus_ready_2 || !_plus_valid_2) && _times_ready_1 && _times_valid_1) begin
-        _plus_data_2 <= _times_data_1 + 2'sd1;
+      if((_dataflow_plus_ready_4 || !_dataflow_plus_valid_4) && _dataflow_times_ready_3 && _dataflow_times_valid_3) begin
+        _dataflow_plus_data_4 <= _dataflow_times_data_3 + 2'sd1;
       end 
-      if(_plus_valid_2 && _plus_ready_2) begin
-        _plus_valid_2 <= 0;
+      if(_dataflow_plus_valid_4 && _dataflow_plus_ready_4) begin
+        _dataflow_plus_valid_4 <= 0;
       end 
-      if((_plus_ready_2 || !_plus_valid_2) && _times_ready_1) begin
-        _plus_valid_2 <= _times_valid_1;
+      if((_dataflow_plus_ready_4 || !_dataflow_plus_valid_4) && _dataflow_times_ready_3) begin
+        _dataflow_plus_valid_4 <= _dataflow_times_valid_3;
       end 
-      if((__delay_ready_3 || !__delay_valid_3) && _times_ready_0 && _times_valid_0) begin
-        __delay_data_3 <= _times_data_0;
+      if((_dataflow__delay_ready_6 || !_dataflow__delay_valid_6) && _dataflow_times_ready_2 && _dataflow_times_valid_2) begin
+        _dataflow__delay_data_6 <= _dataflow_times_data_2;
       end 
-      if(__delay_valid_3 && __delay_ready_3) begin
-        __delay_valid_3 <= 0;
+      if(_dataflow__delay_valid_6 && _dataflow__delay_ready_6) begin
+        _dataflow__delay_valid_6 <= 0;
       end 
-      if((__delay_ready_3 || !__delay_valid_3) && _times_ready_0) begin
-        __delay_valid_3 <= _times_valid_0;
+      if((_dataflow__delay_ready_6 || !_dataflow__delay_valid_6) && _dataflow_times_ready_2) begin
+        _dataflow__delay_valid_6 <= _dataflow_times_valid_2;
       end 
     end
   end
@@ -920,8 +924,8 @@ module multiplier_core_1
 
 
 endmodule
-"""
 
+"""
 
 def test():
     veriloggen.reset()

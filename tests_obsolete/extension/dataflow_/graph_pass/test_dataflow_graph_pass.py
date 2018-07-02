@@ -4,7 +4,11 @@ import veriloggen
 import dataflow_graph_pass
 
 expected_verilog = """
-module test;
+
+module test
+(
+
+);
 
   reg CLK;
   reg RST;
@@ -293,8 +297,8 @@ module main
   assign xready = zready;
 
 endmodule
-"""
 
+"""
 
 def test():
     veriloggen.reset()

@@ -4,7 +4,11 @@ import veriloggen
 import dataflow_reduceadd_reset
 
 expected_verilog = """
-module test;
+
+module test
+(
+
+);
 
   reg CLK;
   reg RST;
@@ -341,39 +345,39 @@ module main
   input zready
 );
 
-  reg [32-1:0] _reduceadd_data_0;
-  reg _reduceadd_valid_0;
-  wire _reduceadd_ready_0;
-  assign xready = (_reduceadd_ready_0 || !_reduceadd_valid_0) && (xvalid && resetvalid);
-  assign resetready = (_reduceadd_ready_0 || !_reduceadd_valid_0) && (xvalid && resetvalid);
-  assign zdata = _reduceadd_data_0;
-  assign zvalid = _reduceadd_valid_0;
-  assign _reduceadd_ready_0 = zready;
+  reg [32-1:0] _dataflow_reduceadd_data_3;
+  reg _dataflow_reduceadd_valid_3;
+  wire _dataflow_reduceadd_ready_3;
+  assign xready = (_dataflow_reduceadd_ready_3 || !_dataflow_reduceadd_valid_3) && (xvalid && resetvalid);
+  assign resetready = (_dataflow_reduceadd_ready_3 || !_dataflow_reduceadd_valid_3) && (xvalid && resetvalid);
+  assign zdata = _dataflow_reduceadd_data_3;
+  assign zvalid = _dataflow_reduceadd_valid_3;
+  assign _dataflow_reduceadd_ready_3 = zready;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _reduceadd_data_0 <= 1'sd0;
-      _reduceadd_valid_0 <= 0;
+      _dataflow_reduceadd_data_3 <= 1'sd0;
+      _dataflow_reduceadd_valid_3 <= 0;
     end else begin
-      if((_reduceadd_ready_0 || !_reduceadd_valid_0) && (xready && resetready) && (xvalid && resetvalid)) begin
-        _reduceadd_data_0 <= _reduceadd_data_0 + xdata;
+      if((_dataflow_reduceadd_ready_3 || !_dataflow_reduceadd_valid_3) && (xready && resetready) && (xvalid && resetvalid)) begin
+        _dataflow_reduceadd_data_3 <= _dataflow_reduceadd_data_3 + xdata;
       end 
-      if(_reduceadd_valid_0 && _reduceadd_ready_0) begin
-        _reduceadd_valid_0 <= 0;
+      if(_dataflow_reduceadd_valid_3 && _dataflow_reduceadd_ready_3) begin
+        _dataflow_reduceadd_valid_3 <= 0;
       end 
-      if((_reduceadd_ready_0 || !_reduceadd_valid_0) && (xready && resetready)) begin
-        _reduceadd_valid_0 <= xvalid && resetvalid;
+      if((_dataflow_reduceadd_ready_3 || !_dataflow_reduceadd_valid_3) && (xready && resetready)) begin
+        _dataflow_reduceadd_valid_3 <= xvalid && resetvalid;
       end 
-      if((_reduceadd_ready_0 || !_reduceadd_valid_0) && (xready && resetready) && (xvalid && resetvalid) && resetdata) begin
-        _reduceadd_data_0 <= 1'sd0 + xdata;
+      if((_dataflow_reduceadd_ready_3 || !_dataflow_reduceadd_valid_3) && (xready && resetready) && (xvalid && resetvalid) && resetdata) begin
+        _dataflow_reduceadd_data_3 <= 1'sd0 + xdata;
       end 
     end
   end
 
 
 endmodule
-"""
 
+"""
 
 def test():
     veriloggen.reset()

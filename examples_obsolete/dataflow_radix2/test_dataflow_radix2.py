@@ -4,7 +4,11 @@ import veriloggen
 import dataflow_radix2
 
 expected_verilog = """
-module test;
+
+module test
+(
+
+);
 
   reg CLK;
   reg RST;
@@ -155,517 +159,517 @@ module radix2
   output signed [32-1:0] dout0im
 );
 
-  reg signed [32-1:0] _plus_data_0;
-  reg _plus_valid_0;
-  wire _plus_ready_0;
-  reg signed [32-1:0] _plus_data_1;
-  reg _plus_valid_1;
-  wire _plus_ready_1;
-  reg signed [32-1:0] _minus_data_2;
-  reg _minus_valid_2;
-  wire _minus_ready_2;
-  reg signed [32-1:0] _minus_data_3;
-  reg _minus_valid_3;
-  wire _minus_ready_3;
-  reg signed [32-1:0] __delay_data_4;
-  reg __delay_valid_4;
-  wire __delay_ready_4;
-  reg signed [32-1:0] __delay_data_5;
-  reg __delay_valid_5;
-  wire __delay_ready_5;
-  wire signed [32-1:0] _times_data_6;
-  wire _times_valid_6;
-  wire _times_ready_6;
-  wire signed [64-1:0] _times_odata_6;
-  reg signed [64-1:0] _times_data_reg_6;
-  assign _times_data_6 = _times_data_reg_6;
-  wire _times_ovalid_6;
-  reg _times_valid_reg_6;
-  assign _times_valid_6 = _times_valid_reg_6;
-  wire _times_enable_6;
-  wire _times_update_6;
-  assign _times_enable_6 = (_times_ready_6 || !_times_valid_6) && (_minus_ready_2 && __delay_ready_4) && (_minus_valid_2 && __delay_valid_4);
-  assign _times_update_6 = _times_ready_6 || !_times_valid_6;
+  reg signed [32-1:0] _dataflow_plus_data_6;
+  reg _dataflow_plus_valid_6;
+  wire _dataflow_plus_ready_6;
+  reg signed [32-1:0] _dataflow_plus_data_7;
+  reg _dataflow_plus_valid_7;
+  wire _dataflow_plus_ready_7;
+  reg signed [32-1:0] _dataflow_minus_data_8;
+  reg _dataflow_minus_valid_8;
+  wire _dataflow_minus_ready_8;
+  reg signed [32-1:0] _dataflow_minus_data_9;
+  reg _dataflow_minus_valid_9;
+  wire _dataflow_minus_ready_9;
+  reg signed [32-1:0] _dataflow__delay_data_16;
+  reg _dataflow__delay_valid_16;
+  wire _dataflow__delay_ready_16;
+  reg signed [32-1:0] _dataflow__delay_data_17;
+  reg _dataflow__delay_valid_17;
+  wire _dataflow__delay_ready_17;
+  wire signed [32-1:0] _dataflow_times_data_10;
+  wire _dataflow_times_valid_10;
+  wire _dataflow_times_ready_10;
+  wire signed [64-1:0] _dataflow_times_mul_odata_10;
+  reg signed [64-1:0] _dataflow_times_mul_odata_reg_10;
+  assign _dataflow_times_data_10 = _dataflow_times_mul_odata_reg_10;
+  wire _dataflow_times_mul_ovalid_10;
+  reg _dataflow_times_mul_valid_reg_10;
+  assign _dataflow_times_valid_10 = _dataflow_times_mul_valid_reg_10;
+  wire _dataflow_times_mul_enable_10;
+  wire _dataflow_times_mul_update_10;
+  assign _dataflow_times_mul_enable_10 = (_dataflow_times_ready_10 || !_dataflow_times_valid_10) && (_dataflow_minus_ready_8 && _dataflow__delay_ready_16) && (_dataflow_minus_valid_8 && _dataflow__delay_valid_16);
+  assign _dataflow_times_mul_update_10 = _dataflow_times_ready_10 || !_dataflow_times_valid_10;
 
   multiplier_0
-  mul6
+  _dataflow_times_mul_10
   (
     .CLK(CLK),
     .RST(RST),
-    .update(_times_update_6),
-    .enable(_times_enable_6),
-    .valid(_times_ovalid_6),
-    .a(_minus_data_2),
-    .b(__delay_data_4),
-    .c(_times_odata_6)
+    .update(_dataflow_times_mul_update_10),
+    .enable(_dataflow_times_mul_enable_10),
+    .valid(_dataflow_times_mul_ovalid_10),
+    .a(_dataflow_minus_data_8),
+    .b(_dataflow__delay_data_16),
+    .c(_dataflow_times_mul_odata_10)
   );
 
-  wire signed [32-1:0] _times_data_7;
-  wire _times_valid_7;
-  wire _times_ready_7;
-  wire signed [64-1:0] _times_odata_7;
-  reg signed [64-1:0] _times_data_reg_7;
-  assign _times_data_7 = _times_data_reg_7;
-  wire _times_ovalid_7;
-  reg _times_valid_reg_7;
-  assign _times_valid_7 = _times_valid_reg_7;
-  wire _times_enable_7;
-  wire _times_update_7;
-  assign _times_enable_7 = (_times_ready_7 || !_times_valid_7) && (_minus_ready_3 && __delay_ready_5) && (_minus_valid_3 && __delay_valid_5);
-  assign _times_update_7 = _times_ready_7 || !_times_valid_7;
+  wire signed [32-1:0] _dataflow_times_data_11;
+  wire _dataflow_times_valid_11;
+  wire _dataflow_times_ready_11;
+  wire signed [64-1:0] _dataflow_times_mul_odata_11;
+  reg signed [64-1:0] _dataflow_times_mul_odata_reg_11;
+  assign _dataflow_times_data_11 = _dataflow_times_mul_odata_reg_11;
+  wire _dataflow_times_mul_ovalid_11;
+  reg _dataflow_times_mul_valid_reg_11;
+  assign _dataflow_times_valid_11 = _dataflow_times_mul_valid_reg_11;
+  wire _dataflow_times_mul_enable_11;
+  wire _dataflow_times_mul_update_11;
+  assign _dataflow_times_mul_enable_11 = (_dataflow_times_ready_11 || !_dataflow_times_valid_11) && (_dataflow_minus_ready_9 && _dataflow__delay_ready_17) && (_dataflow_minus_valid_9 && _dataflow__delay_valid_17);
+  assign _dataflow_times_mul_update_11 = _dataflow_times_ready_11 || !_dataflow_times_valid_11;
 
   multiplier_1
-  mul7
+  _dataflow_times_mul_11
   (
     .CLK(CLK),
     .RST(RST),
-    .update(_times_update_7),
-    .enable(_times_enable_7),
-    .valid(_times_ovalid_7),
-    .a(_minus_data_3),
-    .b(__delay_data_5),
-    .c(_times_odata_7)
+    .update(_dataflow_times_mul_update_11),
+    .enable(_dataflow_times_mul_enable_11),
+    .valid(_dataflow_times_mul_ovalid_11),
+    .a(_dataflow_minus_data_9),
+    .b(_dataflow__delay_data_17),
+    .c(_dataflow_times_mul_odata_11)
   );
 
-  wire signed [32-1:0] _times_data_8;
-  wire _times_valid_8;
-  wire _times_ready_8;
-  wire signed [64-1:0] _times_odata_8;
-  reg signed [64-1:0] _times_data_reg_8;
-  assign _times_data_8 = _times_data_reg_8;
-  wire _times_ovalid_8;
-  reg _times_valid_reg_8;
-  assign _times_valid_8 = _times_valid_reg_8;
-  wire _times_enable_8;
-  wire _times_update_8;
-  assign _times_enable_8 = (_times_ready_8 || !_times_valid_8) && (_minus_ready_2 && __delay_ready_5) && (_minus_valid_2 && __delay_valid_5);
-  assign _times_update_8 = _times_ready_8 || !_times_valid_8;
+  wire signed [32-1:0] _dataflow_times_data_12;
+  wire _dataflow_times_valid_12;
+  wire _dataflow_times_ready_12;
+  wire signed [64-1:0] _dataflow_times_mul_odata_12;
+  reg signed [64-1:0] _dataflow_times_mul_odata_reg_12;
+  assign _dataflow_times_data_12 = _dataflow_times_mul_odata_reg_12;
+  wire _dataflow_times_mul_ovalid_12;
+  reg _dataflow_times_mul_valid_reg_12;
+  assign _dataflow_times_valid_12 = _dataflow_times_mul_valid_reg_12;
+  wire _dataflow_times_mul_enable_12;
+  wire _dataflow_times_mul_update_12;
+  assign _dataflow_times_mul_enable_12 = (_dataflow_times_ready_12 || !_dataflow_times_valid_12) && (_dataflow_minus_ready_8 && _dataflow__delay_ready_17) && (_dataflow_minus_valid_8 && _dataflow__delay_valid_17);
+  assign _dataflow_times_mul_update_12 = _dataflow_times_ready_12 || !_dataflow_times_valid_12;
 
   multiplier_2
-  mul8
+  _dataflow_times_mul_12
   (
     .CLK(CLK),
     .RST(RST),
-    .update(_times_update_8),
-    .enable(_times_enable_8),
-    .valid(_times_ovalid_8),
-    .a(_minus_data_2),
-    .b(__delay_data_5),
-    .c(_times_odata_8)
+    .update(_dataflow_times_mul_update_12),
+    .enable(_dataflow_times_mul_enable_12),
+    .valid(_dataflow_times_mul_ovalid_12),
+    .a(_dataflow_minus_data_8),
+    .b(_dataflow__delay_data_17),
+    .c(_dataflow_times_mul_odata_12)
   );
 
-  assign _minus_ready_2 = (_times_ready_6 || !_times_valid_6) && (_minus_valid_2 && __delay_valid_4) && ((_times_ready_8 || !_times_valid_8) && (_minus_valid_2 && __delay_valid_5));
-  assign __delay_ready_5 = (_times_ready_7 || !_times_valid_7) && (_minus_valid_3 && __delay_valid_5) && ((_times_ready_8 || !_times_valid_8) && (_minus_valid_2 && __delay_valid_5));
-  wire signed [32-1:0] _times_data_9;
-  wire _times_valid_9;
-  wire _times_ready_9;
-  wire signed [64-1:0] _times_odata_9;
-  reg signed [64-1:0] _times_data_reg_9;
-  assign _times_data_9 = _times_data_reg_9;
-  wire _times_ovalid_9;
-  reg _times_valid_reg_9;
-  assign _times_valid_9 = _times_valid_reg_9;
-  wire _times_enable_9;
-  wire _times_update_9;
-  assign _times_enable_9 = (_times_ready_9 || !_times_valid_9) && (_minus_ready_3 && __delay_ready_4) && (_minus_valid_3 && __delay_valid_4);
-  assign _times_update_9 = _times_ready_9 || !_times_valid_9;
+  assign _dataflow_minus_ready_8 = (_dataflow_times_ready_10 || !_dataflow_times_valid_10) && (_dataflow_minus_valid_8 && _dataflow__delay_valid_16) && ((_dataflow_times_ready_12 || !_dataflow_times_valid_12) && (_dataflow_minus_valid_8 && _dataflow__delay_valid_17));
+  assign _dataflow__delay_ready_17 = (_dataflow_times_ready_11 || !_dataflow_times_valid_11) && (_dataflow_minus_valid_9 && _dataflow__delay_valid_17) && ((_dataflow_times_ready_12 || !_dataflow_times_valid_12) && (_dataflow_minus_valid_8 && _dataflow__delay_valid_17));
+  wire signed [32-1:0] _dataflow_times_data_13;
+  wire _dataflow_times_valid_13;
+  wire _dataflow_times_ready_13;
+  wire signed [64-1:0] _dataflow_times_mul_odata_13;
+  reg signed [64-1:0] _dataflow_times_mul_odata_reg_13;
+  assign _dataflow_times_data_13 = _dataflow_times_mul_odata_reg_13;
+  wire _dataflow_times_mul_ovalid_13;
+  reg _dataflow_times_mul_valid_reg_13;
+  assign _dataflow_times_valid_13 = _dataflow_times_mul_valid_reg_13;
+  wire _dataflow_times_mul_enable_13;
+  wire _dataflow_times_mul_update_13;
+  assign _dataflow_times_mul_enable_13 = (_dataflow_times_ready_13 || !_dataflow_times_valid_13) && (_dataflow_minus_ready_9 && _dataflow__delay_ready_16) && (_dataflow_minus_valid_9 && _dataflow__delay_valid_16);
+  assign _dataflow_times_mul_update_13 = _dataflow_times_ready_13 || !_dataflow_times_valid_13;
 
   multiplier_3
-  mul9
+  _dataflow_times_mul_13
   (
     .CLK(CLK),
     .RST(RST),
-    .update(_times_update_9),
-    .enable(_times_enable_9),
-    .valid(_times_ovalid_9),
-    .a(_minus_data_3),
-    .b(__delay_data_4),
-    .c(_times_odata_9)
+    .update(_dataflow_times_mul_update_13),
+    .enable(_dataflow_times_mul_enable_13),
+    .valid(_dataflow_times_mul_ovalid_13),
+    .a(_dataflow_minus_data_9),
+    .b(_dataflow__delay_data_16),
+    .c(_dataflow_times_mul_odata_13)
   );
 
-  assign _minus_ready_3 = (_times_ready_7 || !_times_valid_7) && (_minus_valid_3 && __delay_valid_5) && ((_times_ready_9 || !_times_valid_9) && (_minus_valid_3 && __delay_valid_4));
-  assign __delay_ready_4 = (_times_ready_6 || !_times_valid_6) && (_minus_valid_2 && __delay_valid_4) && ((_times_ready_9 || !_times_valid_9) && (_minus_valid_3 && __delay_valid_4));
-  reg signed [32-1:0] __delay_data_10;
-  reg __delay_valid_10;
-  wire __delay_ready_10;
-  assign _plus_ready_0 = (__delay_ready_10 || !__delay_valid_10) && _plus_valid_0;
-  reg signed [32-1:0] __delay_data_11;
-  reg __delay_valid_11;
-  wire __delay_ready_11;
-  assign _plus_ready_1 = (__delay_ready_11 || !__delay_valid_11) && _plus_valid_1;
-  reg signed [32-1:0] __delay_data_12;
-  reg __delay_valid_12;
-  wire __delay_ready_12;
-  assign __delay_ready_10 = (__delay_ready_12 || !__delay_valid_12) && __delay_valid_10;
-  reg signed [32-1:0] __delay_data_13;
-  reg __delay_valid_13;
-  wire __delay_ready_13;
-  assign __delay_ready_11 = (__delay_ready_13 || !__delay_valid_13) && __delay_valid_11;
-  reg signed [32-1:0] __delay_data_14;
-  reg __delay_valid_14;
-  wire __delay_ready_14;
-  assign __delay_ready_12 = (__delay_ready_14 || !__delay_valid_14) && __delay_valid_12;
-  reg signed [32-1:0] __delay_data_15;
-  reg __delay_valid_15;
-  wire __delay_ready_15;
-  assign __delay_ready_13 = (__delay_ready_15 || !__delay_valid_15) && __delay_valid_13;
-  reg signed [32-1:0] __delay_data_16;
-  reg __delay_valid_16;
-  wire __delay_ready_16;
-  assign __delay_ready_14 = (__delay_ready_16 || !__delay_valid_16) && __delay_valid_14;
-  reg signed [32-1:0] __delay_data_17;
-  reg __delay_valid_17;
-  wire __delay_ready_17;
-  assign __delay_ready_15 = (__delay_ready_17 || !__delay_valid_17) && __delay_valid_15;
-  reg signed [32-1:0] __delay_data_18;
-  reg __delay_valid_18;
-  wire __delay_ready_18;
-  assign __delay_ready_16 = (__delay_ready_18 || !__delay_valid_18) && __delay_valid_16;
-  reg signed [32-1:0] __delay_data_19;
-  reg __delay_valid_19;
-  wire __delay_ready_19;
-  assign __delay_ready_17 = (__delay_ready_19 || !__delay_valid_19) && __delay_valid_17;
-  reg signed [32-1:0] __delay_data_20;
-  reg __delay_valid_20;
-  wire __delay_ready_20;
-  assign __delay_ready_18 = (__delay_ready_20 || !__delay_valid_20) && __delay_valid_18;
-  reg signed [32-1:0] __delay_data_21;
-  reg __delay_valid_21;
-  wire __delay_ready_21;
-  assign __delay_ready_19 = (__delay_ready_21 || !__delay_valid_21) && __delay_valid_19;
-  reg signed [32-1:0] __delay_data_22;
-  reg __delay_valid_22;
-  wire __delay_ready_22;
-  assign __delay_ready_20 = (__delay_ready_22 || !__delay_valid_22) && __delay_valid_20;
-  reg signed [32-1:0] __delay_data_23;
-  reg __delay_valid_23;
-  wire __delay_ready_23;
-  assign __delay_ready_21 = (__delay_ready_23 || !__delay_valid_23) && __delay_valid_21;
-  reg signed [32-1:0] _minus_data_24;
-  reg _minus_valid_24;
-  wire _minus_ready_24;
-  assign _times_ready_6 = (_minus_ready_24 || !_minus_valid_24) && (_times_valid_6 && _times_valid_7);
-  assign _times_ready_7 = (_minus_ready_24 || !_minus_valid_24) && (_times_valid_6 && _times_valid_7);
-  reg signed [32-1:0] _plus_data_25;
-  reg _plus_valid_25;
-  wire _plus_ready_25;
-  assign _times_ready_8 = (_plus_ready_25 || !_plus_valid_25) && (_times_valid_8 && _times_valid_9);
-  assign _times_ready_9 = (_plus_ready_25 || !_plus_valid_25) && (_times_valid_8 && _times_valid_9);
-  reg signed [32-1:0] __delay_data_26;
-  reg __delay_valid_26;
-  wire __delay_ready_26;
-  assign __delay_ready_22 = (__delay_ready_26 || !__delay_valid_26) && __delay_valid_22;
-  reg signed [32-1:0] __delay_data_27;
-  reg __delay_valid_27;
-  wire __delay_ready_27;
-  assign __delay_ready_23 = (__delay_ready_27 || !__delay_valid_27) && __delay_valid_23;
-  assign dout1re = _minus_data_24;
-  assign _minus_ready_24 = 1;
-  assign dout1im = _plus_data_25;
-  assign _plus_ready_25 = 1;
-  assign dout0re = __delay_data_26;
-  assign __delay_ready_26 = 1;
-  assign dout0im = __delay_data_27;
-  assign __delay_ready_27 = 1;
+  assign _dataflow_minus_ready_9 = (_dataflow_times_ready_11 || !_dataflow_times_valid_11) && (_dataflow_minus_valid_9 && _dataflow__delay_valid_17) && ((_dataflow_times_ready_13 || !_dataflow_times_valid_13) && (_dataflow_minus_valid_9 && _dataflow__delay_valid_16));
+  assign _dataflow__delay_ready_16 = (_dataflow_times_ready_10 || !_dataflow_times_valid_10) && (_dataflow_minus_valid_8 && _dataflow__delay_valid_16) && ((_dataflow_times_ready_13 || !_dataflow_times_valid_13) && (_dataflow_minus_valid_9 && _dataflow__delay_valid_16));
+  reg signed [32-1:0] _dataflow__delay_data_18;
+  reg _dataflow__delay_valid_18;
+  wire _dataflow__delay_ready_18;
+  assign _dataflow_plus_ready_6 = (_dataflow__delay_ready_18 || !_dataflow__delay_valid_18) && _dataflow_plus_valid_6;
+  reg signed [32-1:0] _dataflow__delay_data_26;
+  reg _dataflow__delay_valid_26;
+  wire _dataflow__delay_ready_26;
+  assign _dataflow_plus_ready_7 = (_dataflow__delay_ready_26 || !_dataflow__delay_valid_26) && _dataflow_plus_valid_7;
+  reg signed [32-1:0] _dataflow__delay_data_19;
+  reg _dataflow__delay_valid_19;
+  wire _dataflow__delay_ready_19;
+  assign _dataflow__delay_ready_18 = (_dataflow__delay_ready_19 || !_dataflow__delay_valid_19) && _dataflow__delay_valid_18;
+  reg signed [32-1:0] _dataflow__delay_data_27;
+  reg _dataflow__delay_valid_27;
+  wire _dataflow__delay_ready_27;
+  assign _dataflow__delay_ready_26 = (_dataflow__delay_ready_27 || !_dataflow__delay_valid_27) && _dataflow__delay_valid_26;
+  reg signed [32-1:0] _dataflow__delay_data_20;
+  reg _dataflow__delay_valid_20;
+  wire _dataflow__delay_ready_20;
+  assign _dataflow__delay_ready_19 = (_dataflow__delay_ready_20 || !_dataflow__delay_valid_20) && _dataflow__delay_valid_19;
+  reg signed [32-1:0] _dataflow__delay_data_28;
+  reg _dataflow__delay_valid_28;
+  wire _dataflow__delay_ready_28;
+  assign _dataflow__delay_ready_27 = (_dataflow__delay_ready_28 || !_dataflow__delay_valid_28) && _dataflow__delay_valid_27;
+  reg signed [32-1:0] _dataflow__delay_data_21;
+  reg _dataflow__delay_valid_21;
+  wire _dataflow__delay_ready_21;
+  assign _dataflow__delay_ready_20 = (_dataflow__delay_ready_21 || !_dataflow__delay_valid_21) && _dataflow__delay_valid_20;
+  reg signed [32-1:0] _dataflow__delay_data_29;
+  reg _dataflow__delay_valid_29;
+  wire _dataflow__delay_ready_29;
+  assign _dataflow__delay_ready_28 = (_dataflow__delay_ready_29 || !_dataflow__delay_valid_29) && _dataflow__delay_valid_28;
+  reg signed [32-1:0] _dataflow__delay_data_22;
+  reg _dataflow__delay_valid_22;
+  wire _dataflow__delay_ready_22;
+  assign _dataflow__delay_ready_21 = (_dataflow__delay_ready_22 || !_dataflow__delay_valid_22) && _dataflow__delay_valid_21;
+  reg signed [32-1:0] _dataflow__delay_data_30;
+  reg _dataflow__delay_valid_30;
+  wire _dataflow__delay_ready_30;
+  assign _dataflow__delay_ready_29 = (_dataflow__delay_ready_30 || !_dataflow__delay_valid_30) && _dataflow__delay_valid_29;
+  reg signed [32-1:0] _dataflow__delay_data_23;
+  reg _dataflow__delay_valid_23;
+  wire _dataflow__delay_ready_23;
+  assign _dataflow__delay_ready_22 = (_dataflow__delay_ready_23 || !_dataflow__delay_valid_23) && _dataflow__delay_valid_22;
+  reg signed [32-1:0] _dataflow__delay_data_31;
+  reg _dataflow__delay_valid_31;
+  wire _dataflow__delay_ready_31;
+  assign _dataflow__delay_ready_30 = (_dataflow__delay_ready_31 || !_dataflow__delay_valid_31) && _dataflow__delay_valid_30;
+  reg signed [32-1:0] _dataflow__delay_data_24;
+  reg _dataflow__delay_valid_24;
+  wire _dataflow__delay_ready_24;
+  assign _dataflow__delay_ready_23 = (_dataflow__delay_ready_24 || !_dataflow__delay_valid_24) && _dataflow__delay_valid_23;
+  reg signed [32-1:0] _dataflow__delay_data_32;
+  reg _dataflow__delay_valid_32;
+  wire _dataflow__delay_ready_32;
+  assign _dataflow__delay_ready_31 = (_dataflow__delay_ready_32 || !_dataflow__delay_valid_32) && _dataflow__delay_valid_31;
+  reg signed [32-1:0] _dataflow_minus_data_14;
+  reg _dataflow_minus_valid_14;
+  wire _dataflow_minus_ready_14;
+  assign _dataflow_times_ready_10 = (_dataflow_minus_ready_14 || !_dataflow_minus_valid_14) && (_dataflow_times_valid_10 && _dataflow_times_valid_11);
+  assign _dataflow_times_ready_11 = (_dataflow_minus_ready_14 || !_dataflow_minus_valid_14) && (_dataflow_times_valid_10 && _dataflow_times_valid_11);
+  reg signed [32-1:0] _dataflow_plus_data_15;
+  reg _dataflow_plus_valid_15;
+  wire _dataflow_plus_ready_15;
+  assign _dataflow_times_ready_12 = (_dataflow_plus_ready_15 || !_dataflow_plus_valid_15) && (_dataflow_times_valid_12 && _dataflow_times_valid_13);
+  assign _dataflow_times_ready_13 = (_dataflow_plus_ready_15 || !_dataflow_plus_valid_15) && (_dataflow_times_valid_12 && _dataflow_times_valid_13);
+  reg signed [32-1:0] _dataflow__delay_data_25;
+  reg _dataflow__delay_valid_25;
+  wire _dataflow__delay_ready_25;
+  assign _dataflow__delay_ready_24 = (_dataflow__delay_ready_25 || !_dataflow__delay_valid_25) && _dataflow__delay_valid_24;
+  reg signed [32-1:0] _dataflow__delay_data_33;
+  reg _dataflow__delay_valid_33;
+  wire _dataflow__delay_ready_33;
+  assign _dataflow__delay_ready_32 = (_dataflow__delay_ready_33 || !_dataflow__delay_valid_33) && _dataflow__delay_valid_32;
+  assign dout1re = _dataflow_minus_data_14;
+  assign _dataflow_minus_ready_14 = 1;
+  assign dout1im = _dataflow_plus_data_15;
+  assign _dataflow_plus_ready_15 = 1;
+  assign dout0re = _dataflow__delay_data_25;
+  assign _dataflow__delay_ready_25 = 1;
+  assign dout0im = _dataflow__delay_data_33;
+  assign _dataflow__delay_ready_33 = 1;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _plus_data_0 <= 0;
-      _plus_valid_0 <= 0;
-      _plus_data_1 <= 0;
-      _plus_valid_1 <= 0;
-      _minus_data_2 <= 0;
-      _minus_valid_2 <= 0;
-      _minus_data_3 <= 0;
-      _minus_valid_3 <= 0;
-      __delay_data_4 <= 0;
-      __delay_valid_4 <= 0;
-      __delay_data_5 <= 0;
-      __delay_valid_5 <= 0;
-      _times_data_reg_6 <= 0;
-      _times_valid_reg_6 <= 0;
-      _times_data_reg_7 <= 0;
-      _times_valid_reg_7 <= 0;
-      _times_data_reg_8 <= 0;
-      _times_valid_reg_8 <= 0;
-      _times_data_reg_9 <= 0;
-      _times_valid_reg_9 <= 0;
-      __delay_data_10 <= 0;
-      __delay_valid_10 <= 0;
-      __delay_data_11 <= 0;
-      __delay_valid_11 <= 0;
-      __delay_data_12 <= 0;
-      __delay_valid_12 <= 0;
-      __delay_data_13 <= 0;
-      __delay_valid_13 <= 0;
-      __delay_data_14 <= 0;
-      __delay_valid_14 <= 0;
-      __delay_data_15 <= 0;
-      __delay_valid_15 <= 0;
-      __delay_data_16 <= 0;
-      __delay_valid_16 <= 0;
-      __delay_data_17 <= 0;
-      __delay_valid_17 <= 0;
-      __delay_data_18 <= 0;
-      __delay_valid_18 <= 0;
-      __delay_data_19 <= 0;
-      __delay_valid_19 <= 0;
-      __delay_data_20 <= 0;
-      __delay_valid_20 <= 0;
-      __delay_data_21 <= 0;
-      __delay_valid_21 <= 0;
-      __delay_data_22 <= 0;
-      __delay_valid_22 <= 0;
-      __delay_data_23 <= 0;
-      __delay_valid_23 <= 0;
-      _minus_data_24 <= 0;
-      _minus_valid_24 <= 0;
-      _plus_data_25 <= 0;
-      _plus_valid_25 <= 0;
-      __delay_data_26 <= 0;
-      __delay_valid_26 <= 0;
-      __delay_data_27 <= 0;
-      __delay_valid_27 <= 0;
+      _dataflow_plus_data_6 <= 0;
+      _dataflow_plus_valid_6 <= 0;
+      _dataflow_plus_data_7 <= 0;
+      _dataflow_plus_valid_7 <= 0;
+      _dataflow_minus_data_8 <= 0;
+      _dataflow_minus_valid_8 <= 0;
+      _dataflow_minus_data_9 <= 0;
+      _dataflow_minus_valid_9 <= 0;
+      _dataflow__delay_data_16 <= 0;
+      _dataflow__delay_valid_16 <= 0;
+      _dataflow__delay_data_17 <= 0;
+      _dataflow__delay_valid_17 <= 0;
+      _dataflow_times_mul_odata_reg_10 <= 0;
+      _dataflow_times_mul_valid_reg_10 <= 0;
+      _dataflow_times_mul_odata_reg_11 <= 0;
+      _dataflow_times_mul_valid_reg_11 <= 0;
+      _dataflow_times_mul_odata_reg_12 <= 0;
+      _dataflow_times_mul_valid_reg_12 <= 0;
+      _dataflow_times_mul_odata_reg_13 <= 0;
+      _dataflow_times_mul_valid_reg_13 <= 0;
+      _dataflow__delay_data_18 <= 0;
+      _dataflow__delay_valid_18 <= 0;
+      _dataflow__delay_data_26 <= 0;
+      _dataflow__delay_valid_26 <= 0;
+      _dataflow__delay_data_19 <= 0;
+      _dataflow__delay_valid_19 <= 0;
+      _dataflow__delay_data_27 <= 0;
+      _dataflow__delay_valid_27 <= 0;
+      _dataflow__delay_data_20 <= 0;
+      _dataflow__delay_valid_20 <= 0;
+      _dataflow__delay_data_28 <= 0;
+      _dataflow__delay_valid_28 <= 0;
+      _dataflow__delay_data_21 <= 0;
+      _dataflow__delay_valid_21 <= 0;
+      _dataflow__delay_data_29 <= 0;
+      _dataflow__delay_valid_29 <= 0;
+      _dataflow__delay_data_22 <= 0;
+      _dataflow__delay_valid_22 <= 0;
+      _dataflow__delay_data_30 <= 0;
+      _dataflow__delay_valid_30 <= 0;
+      _dataflow__delay_data_23 <= 0;
+      _dataflow__delay_valid_23 <= 0;
+      _dataflow__delay_data_31 <= 0;
+      _dataflow__delay_valid_31 <= 0;
+      _dataflow__delay_data_24 <= 0;
+      _dataflow__delay_valid_24 <= 0;
+      _dataflow__delay_data_32 <= 0;
+      _dataflow__delay_valid_32 <= 0;
+      _dataflow_minus_data_14 <= 0;
+      _dataflow_minus_valid_14 <= 0;
+      _dataflow_plus_data_15 <= 0;
+      _dataflow_plus_valid_15 <= 0;
+      _dataflow__delay_data_25 <= 0;
+      _dataflow__delay_valid_25 <= 0;
+      _dataflow__delay_data_33 <= 0;
+      _dataflow__delay_valid_33 <= 0;
     end else begin
-      if((_plus_ready_0 || !_plus_valid_0) && 1 && 1) begin
-        _plus_data_0 <= din0re + din1re;
+      if((_dataflow_plus_ready_6 || !_dataflow_plus_valid_6) && 1 && 1) begin
+        _dataflow_plus_data_6 <= din0re + din1re;
       end 
-      if(_plus_valid_0 && _plus_ready_0) begin
-        _plus_valid_0 <= 0;
+      if(_dataflow_plus_valid_6 && _dataflow_plus_ready_6) begin
+        _dataflow_plus_valid_6 <= 0;
       end 
-      if((_plus_ready_0 || !_plus_valid_0) && 1) begin
-        _plus_valid_0 <= 1;
+      if((_dataflow_plus_ready_6 || !_dataflow_plus_valid_6) && 1) begin
+        _dataflow_plus_valid_6 <= 1;
       end 
-      if((_plus_ready_1 || !_plus_valid_1) && 1 && 1) begin
-        _plus_data_1 <= din0im + din1im;
+      if((_dataflow_plus_ready_7 || !_dataflow_plus_valid_7) && 1 && 1) begin
+        _dataflow_plus_data_7 <= din0im + din1im;
       end 
-      if(_plus_valid_1 && _plus_ready_1) begin
-        _plus_valid_1 <= 0;
+      if(_dataflow_plus_valid_7 && _dataflow_plus_ready_7) begin
+        _dataflow_plus_valid_7 <= 0;
       end 
-      if((_plus_ready_1 || !_plus_valid_1) && 1) begin
-        _plus_valid_1 <= 1;
+      if((_dataflow_plus_ready_7 || !_dataflow_plus_valid_7) && 1) begin
+        _dataflow_plus_valid_7 <= 1;
       end 
-      if((_minus_ready_2 || !_minus_valid_2) && 1 && 1) begin
-        _minus_data_2 <= din0re - din1re;
+      if((_dataflow_minus_ready_8 || !_dataflow_minus_valid_8) && 1 && 1) begin
+        _dataflow_minus_data_8 <= din0re - din1re;
       end 
-      if(_minus_valid_2 && _minus_ready_2) begin
-        _minus_valid_2 <= 0;
+      if(_dataflow_minus_valid_8 && _dataflow_minus_ready_8) begin
+        _dataflow_minus_valid_8 <= 0;
       end 
-      if((_minus_ready_2 || !_minus_valid_2) && 1) begin
-        _minus_valid_2 <= 1;
+      if((_dataflow_minus_ready_8 || !_dataflow_minus_valid_8) && 1) begin
+        _dataflow_minus_valid_8 <= 1;
       end 
-      if((_minus_ready_3 || !_minus_valid_3) && 1 && 1) begin
-        _minus_data_3 <= din0im - din1im;
+      if((_dataflow_minus_ready_9 || !_dataflow_minus_valid_9) && 1 && 1) begin
+        _dataflow_minus_data_9 <= din0im - din1im;
       end 
-      if(_minus_valid_3 && _minus_ready_3) begin
-        _minus_valid_3 <= 0;
+      if(_dataflow_minus_valid_9 && _dataflow_minus_ready_9) begin
+        _dataflow_minus_valid_9 <= 0;
       end 
-      if((_minus_ready_3 || !_minus_valid_3) && 1) begin
-        _minus_valid_3 <= 1;
+      if((_dataflow_minus_ready_9 || !_dataflow_minus_valid_9) && 1) begin
+        _dataflow_minus_valid_9 <= 1;
       end 
-      if((__delay_ready_4 || !__delay_valid_4) && 1 && 1) begin
-        __delay_data_4 <= cnstre;
+      if((_dataflow__delay_ready_16 || !_dataflow__delay_valid_16) && 1 && 1) begin
+        _dataflow__delay_data_16 <= cnstre;
       end 
-      if(__delay_valid_4 && __delay_ready_4) begin
-        __delay_valid_4 <= 0;
+      if(_dataflow__delay_valid_16 && _dataflow__delay_ready_16) begin
+        _dataflow__delay_valid_16 <= 0;
       end 
-      if((__delay_ready_4 || !__delay_valid_4) && 1) begin
-        __delay_valid_4 <= 1;
+      if((_dataflow__delay_ready_16 || !_dataflow__delay_valid_16) && 1) begin
+        _dataflow__delay_valid_16 <= 1;
       end 
-      if((__delay_ready_5 || !__delay_valid_5) && 1 && 1) begin
-        __delay_data_5 <= cnstim;
+      if((_dataflow__delay_ready_17 || !_dataflow__delay_valid_17) && 1 && 1) begin
+        _dataflow__delay_data_17 <= cnstim;
       end 
-      if(__delay_valid_5 && __delay_ready_5) begin
-        __delay_valid_5 <= 0;
+      if(_dataflow__delay_valid_17 && _dataflow__delay_ready_17) begin
+        _dataflow__delay_valid_17 <= 0;
       end 
-      if((__delay_ready_5 || !__delay_valid_5) && 1) begin
-        __delay_valid_5 <= 1;
+      if((_dataflow__delay_ready_17 || !_dataflow__delay_valid_17) && 1) begin
+        _dataflow__delay_valid_17 <= 1;
       end 
-      if(_times_ready_6 || !_times_valid_6) begin
-        _times_data_reg_6 <= _times_odata_6;
+      if(_dataflow_times_ready_10 || !_dataflow_times_valid_10) begin
+        _dataflow_times_mul_odata_reg_10 <= _dataflow_times_mul_odata_10;
       end 
-      if(_times_ready_6 || !_times_valid_6) begin
-        _times_valid_reg_6 <= _times_ovalid_6;
+      if(_dataflow_times_ready_10 || !_dataflow_times_valid_10) begin
+        _dataflow_times_mul_valid_reg_10 <= _dataflow_times_mul_ovalid_10;
       end 
-      if(_times_ready_7 || !_times_valid_7) begin
-        _times_data_reg_7 <= _times_odata_7;
+      if(_dataflow_times_ready_11 || !_dataflow_times_valid_11) begin
+        _dataflow_times_mul_odata_reg_11 <= _dataflow_times_mul_odata_11;
       end 
-      if(_times_ready_7 || !_times_valid_7) begin
-        _times_valid_reg_7 <= _times_ovalid_7;
+      if(_dataflow_times_ready_11 || !_dataflow_times_valid_11) begin
+        _dataflow_times_mul_valid_reg_11 <= _dataflow_times_mul_ovalid_11;
       end 
-      if(_times_ready_8 || !_times_valid_8) begin
-        _times_data_reg_8 <= _times_odata_8;
+      if(_dataflow_times_ready_12 || !_dataflow_times_valid_12) begin
+        _dataflow_times_mul_odata_reg_12 <= _dataflow_times_mul_odata_12;
       end 
-      if(_times_ready_8 || !_times_valid_8) begin
-        _times_valid_reg_8 <= _times_ovalid_8;
+      if(_dataflow_times_ready_12 || !_dataflow_times_valid_12) begin
+        _dataflow_times_mul_valid_reg_12 <= _dataflow_times_mul_ovalid_12;
       end 
-      if(_times_ready_9 || !_times_valid_9) begin
-        _times_data_reg_9 <= _times_odata_9;
+      if(_dataflow_times_ready_13 || !_dataflow_times_valid_13) begin
+        _dataflow_times_mul_odata_reg_13 <= _dataflow_times_mul_odata_13;
       end 
-      if(_times_ready_9 || !_times_valid_9) begin
-        _times_valid_reg_9 <= _times_ovalid_9;
+      if(_dataflow_times_ready_13 || !_dataflow_times_valid_13) begin
+        _dataflow_times_mul_valid_reg_13 <= _dataflow_times_mul_ovalid_13;
       end 
-      if((__delay_ready_10 || !__delay_valid_10) && _plus_ready_0 && _plus_valid_0) begin
-        __delay_data_10 <= _plus_data_0;
+      if((_dataflow__delay_ready_18 || !_dataflow__delay_valid_18) && _dataflow_plus_ready_6 && _dataflow_plus_valid_6) begin
+        _dataflow__delay_data_18 <= _dataflow_plus_data_6;
       end 
-      if(__delay_valid_10 && __delay_ready_10) begin
-        __delay_valid_10 <= 0;
+      if(_dataflow__delay_valid_18 && _dataflow__delay_ready_18) begin
+        _dataflow__delay_valid_18 <= 0;
       end 
-      if((__delay_ready_10 || !__delay_valid_10) && _plus_ready_0) begin
-        __delay_valid_10 <= _plus_valid_0;
+      if((_dataflow__delay_ready_18 || !_dataflow__delay_valid_18) && _dataflow_plus_ready_6) begin
+        _dataflow__delay_valid_18 <= _dataflow_plus_valid_6;
       end 
-      if((__delay_ready_11 || !__delay_valid_11) && _plus_ready_1 && _plus_valid_1) begin
-        __delay_data_11 <= _plus_data_1;
+      if((_dataflow__delay_ready_26 || !_dataflow__delay_valid_26) && _dataflow_plus_ready_7 && _dataflow_plus_valid_7) begin
+        _dataflow__delay_data_26 <= _dataflow_plus_data_7;
       end 
-      if(__delay_valid_11 && __delay_ready_11) begin
-        __delay_valid_11 <= 0;
+      if(_dataflow__delay_valid_26 && _dataflow__delay_ready_26) begin
+        _dataflow__delay_valid_26 <= 0;
       end 
-      if((__delay_ready_11 || !__delay_valid_11) && _plus_ready_1) begin
-        __delay_valid_11 <= _plus_valid_1;
+      if((_dataflow__delay_ready_26 || !_dataflow__delay_valid_26) && _dataflow_plus_ready_7) begin
+        _dataflow__delay_valid_26 <= _dataflow_plus_valid_7;
       end 
-      if((__delay_ready_12 || !__delay_valid_12) && __delay_ready_10 && __delay_valid_10) begin
-        __delay_data_12 <= __delay_data_10;
+      if((_dataflow__delay_ready_19 || !_dataflow__delay_valid_19) && _dataflow__delay_ready_18 && _dataflow__delay_valid_18) begin
+        _dataflow__delay_data_19 <= _dataflow__delay_data_18;
       end 
-      if(__delay_valid_12 && __delay_ready_12) begin
-        __delay_valid_12 <= 0;
+      if(_dataflow__delay_valid_19 && _dataflow__delay_ready_19) begin
+        _dataflow__delay_valid_19 <= 0;
       end 
-      if((__delay_ready_12 || !__delay_valid_12) && __delay_ready_10) begin
-        __delay_valid_12 <= __delay_valid_10;
+      if((_dataflow__delay_ready_19 || !_dataflow__delay_valid_19) && _dataflow__delay_ready_18) begin
+        _dataflow__delay_valid_19 <= _dataflow__delay_valid_18;
       end 
-      if((__delay_ready_13 || !__delay_valid_13) && __delay_ready_11 && __delay_valid_11) begin
-        __delay_data_13 <= __delay_data_11;
+      if((_dataflow__delay_ready_27 || !_dataflow__delay_valid_27) && _dataflow__delay_ready_26 && _dataflow__delay_valid_26) begin
+        _dataflow__delay_data_27 <= _dataflow__delay_data_26;
       end 
-      if(__delay_valid_13 && __delay_ready_13) begin
-        __delay_valid_13 <= 0;
+      if(_dataflow__delay_valid_27 && _dataflow__delay_ready_27) begin
+        _dataflow__delay_valid_27 <= 0;
       end 
-      if((__delay_ready_13 || !__delay_valid_13) && __delay_ready_11) begin
-        __delay_valid_13 <= __delay_valid_11;
+      if((_dataflow__delay_ready_27 || !_dataflow__delay_valid_27) && _dataflow__delay_ready_26) begin
+        _dataflow__delay_valid_27 <= _dataflow__delay_valid_26;
       end 
-      if((__delay_ready_14 || !__delay_valid_14) && __delay_ready_12 && __delay_valid_12) begin
-        __delay_data_14 <= __delay_data_12;
+      if((_dataflow__delay_ready_20 || !_dataflow__delay_valid_20) && _dataflow__delay_ready_19 && _dataflow__delay_valid_19) begin
+        _dataflow__delay_data_20 <= _dataflow__delay_data_19;
       end 
-      if(__delay_valid_14 && __delay_ready_14) begin
-        __delay_valid_14 <= 0;
+      if(_dataflow__delay_valid_20 && _dataflow__delay_ready_20) begin
+        _dataflow__delay_valid_20 <= 0;
       end 
-      if((__delay_ready_14 || !__delay_valid_14) && __delay_ready_12) begin
-        __delay_valid_14 <= __delay_valid_12;
+      if((_dataflow__delay_ready_20 || !_dataflow__delay_valid_20) && _dataflow__delay_ready_19) begin
+        _dataflow__delay_valid_20 <= _dataflow__delay_valid_19;
       end 
-      if((__delay_ready_15 || !__delay_valid_15) && __delay_ready_13 && __delay_valid_13) begin
-        __delay_data_15 <= __delay_data_13;
+      if((_dataflow__delay_ready_28 || !_dataflow__delay_valid_28) && _dataflow__delay_ready_27 && _dataflow__delay_valid_27) begin
+        _dataflow__delay_data_28 <= _dataflow__delay_data_27;
       end 
-      if(__delay_valid_15 && __delay_ready_15) begin
-        __delay_valid_15 <= 0;
+      if(_dataflow__delay_valid_28 && _dataflow__delay_ready_28) begin
+        _dataflow__delay_valid_28 <= 0;
       end 
-      if((__delay_ready_15 || !__delay_valid_15) && __delay_ready_13) begin
-        __delay_valid_15 <= __delay_valid_13;
+      if((_dataflow__delay_ready_28 || !_dataflow__delay_valid_28) && _dataflow__delay_ready_27) begin
+        _dataflow__delay_valid_28 <= _dataflow__delay_valid_27;
       end 
-      if((__delay_ready_16 || !__delay_valid_16) && __delay_ready_14 && __delay_valid_14) begin
-        __delay_data_16 <= __delay_data_14;
+      if((_dataflow__delay_ready_21 || !_dataflow__delay_valid_21) && _dataflow__delay_ready_20 && _dataflow__delay_valid_20) begin
+        _dataflow__delay_data_21 <= _dataflow__delay_data_20;
       end 
-      if(__delay_valid_16 && __delay_ready_16) begin
-        __delay_valid_16 <= 0;
+      if(_dataflow__delay_valid_21 && _dataflow__delay_ready_21) begin
+        _dataflow__delay_valid_21 <= 0;
       end 
-      if((__delay_ready_16 || !__delay_valid_16) && __delay_ready_14) begin
-        __delay_valid_16 <= __delay_valid_14;
+      if((_dataflow__delay_ready_21 || !_dataflow__delay_valid_21) && _dataflow__delay_ready_20) begin
+        _dataflow__delay_valid_21 <= _dataflow__delay_valid_20;
       end 
-      if((__delay_ready_17 || !__delay_valid_17) && __delay_ready_15 && __delay_valid_15) begin
-        __delay_data_17 <= __delay_data_15;
+      if((_dataflow__delay_ready_29 || !_dataflow__delay_valid_29) && _dataflow__delay_ready_28 && _dataflow__delay_valid_28) begin
+        _dataflow__delay_data_29 <= _dataflow__delay_data_28;
       end 
-      if(__delay_valid_17 && __delay_ready_17) begin
-        __delay_valid_17 <= 0;
+      if(_dataflow__delay_valid_29 && _dataflow__delay_ready_29) begin
+        _dataflow__delay_valid_29 <= 0;
       end 
-      if((__delay_ready_17 || !__delay_valid_17) && __delay_ready_15) begin
-        __delay_valid_17 <= __delay_valid_15;
+      if((_dataflow__delay_ready_29 || !_dataflow__delay_valid_29) && _dataflow__delay_ready_28) begin
+        _dataflow__delay_valid_29 <= _dataflow__delay_valid_28;
       end 
-      if((__delay_ready_18 || !__delay_valid_18) && __delay_ready_16 && __delay_valid_16) begin
-        __delay_data_18 <= __delay_data_16;
+      if((_dataflow__delay_ready_22 || !_dataflow__delay_valid_22) && _dataflow__delay_ready_21 && _dataflow__delay_valid_21) begin
+        _dataflow__delay_data_22 <= _dataflow__delay_data_21;
       end 
-      if(__delay_valid_18 && __delay_ready_18) begin
-        __delay_valid_18 <= 0;
+      if(_dataflow__delay_valid_22 && _dataflow__delay_ready_22) begin
+        _dataflow__delay_valid_22 <= 0;
       end 
-      if((__delay_ready_18 || !__delay_valid_18) && __delay_ready_16) begin
-        __delay_valid_18 <= __delay_valid_16;
+      if((_dataflow__delay_ready_22 || !_dataflow__delay_valid_22) && _dataflow__delay_ready_21) begin
+        _dataflow__delay_valid_22 <= _dataflow__delay_valid_21;
       end 
-      if((__delay_ready_19 || !__delay_valid_19) && __delay_ready_17 && __delay_valid_17) begin
-        __delay_data_19 <= __delay_data_17;
+      if((_dataflow__delay_ready_30 || !_dataflow__delay_valid_30) && _dataflow__delay_ready_29 && _dataflow__delay_valid_29) begin
+        _dataflow__delay_data_30 <= _dataflow__delay_data_29;
       end 
-      if(__delay_valid_19 && __delay_ready_19) begin
-        __delay_valid_19 <= 0;
+      if(_dataflow__delay_valid_30 && _dataflow__delay_ready_30) begin
+        _dataflow__delay_valid_30 <= 0;
       end 
-      if((__delay_ready_19 || !__delay_valid_19) && __delay_ready_17) begin
-        __delay_valid_19 <= __delay_valid_17;
+      if((_dataflow__delay_ready_30 || !_dataflow__delay_valid_30) && _dataflow__delay_ready_29) begin
+        _dataflow__delay_valid_30 <= _dataflow__delay_valid_29;
       end 
-      if((__delay_ready_20 || !__delay_valid_20) && __delay_ready_18 && __delay_valid_18) begin
-        __delay_data_20 <= __delay_data_18;
+      if((_dataflow__delay_ready_23 || !_dataflow__delay_valid_23) && _dataflow__delay_ready_22 && _dataflow__delay_valid_22) begin
+        _dataflow__delay_data_23 <= _dataflow__delay_data_22;
       end 
-      if(__delay_valid_20 && __delay_ready_20) begin
-        __delay_valid_20 <= 0;
+      if(_dataflow__delay_valid_23 && _dataflow__delay_ready_23) begin
+        _dataflow__delay_valid_23 <= 0;
       end 
-      if((__delay_ready_20 || !__delay_valid_20) && __delay_ready_18) begin
-        __delay_valid_20 <= __delay_valid_18;
+      if((_dataflow__delay_ready_23 || !_dataflow__delay_valid_23) && _dataflow__delay_ready_22) begin
+        _dataflow__delay_valid_23 <= _dataflow__delay_valid_22;
       end 
-      if((__delay_ready_21 || !__delay_valid_21) && __delay_ready_19 && __delay_valid_19) begin
-        __delay_data_21 <= __delay_data_19;
+      if((_dataflow__delay_ready_31 || !_dataflow__delay_valid_31) && _dataflow__delay_ready_30 && _dataflow__delay_valid_30) begin
+        _dataflow__delay_data_31 <= _dataflow__delay_data_30;
       end 
-      if(__delay_valid_21 && __delay_ready_21) begin
-        __delay_valid_21 <= 0;
+      if(_dataflow__delay_valid_31 && _dataflow__delay_ready_31) begin
+        _dataflow__delay_valid_31 <= 0;
       end 
-      if((__delay_ready_21 || !__delay_valid_21) && __delay_ready_19) begin
-        __delay_valid_21 <= __delay_valid_19;
+      if((_dataflow__delay_ready_31 || !_dataflow__delay_valid_31) && _dataflow__delay_ready_30) begin
+        _dataflow__delay_valid_31 <= _dataflow__delay_valid_30;
       end 
-      if((__delay_ready_22 || !__delay_valid_22) && __delay_ready_20 && __delay_valid_20) begin
-        __delay_data_22 <= __delay_data_20;
+      if((_dataflow__delay_ready_24 || !_dataflow__delay_valid_24) && _dataflow__delay_ready_23 && _dataflow__delay_valid_23) begin
+        _dataflow__delay_data_24 <= _dataflow__delay_data_23;
       end 
-      if(__delay_valid_22 && __delay_ready_22) begin
-        __delay_valid_22 <= 0;
+      if(_dataflow__delay_valid_24 && _dataflow__delay_ready_24) begin
+        _dataflow__delay_valid_24 <= 0;
       end 
-      if((__delay_ready_22 || !__delay_valid_22) && __delay_ready_20) begin
-        __delay_valid_22 <= __delay_valid_20;
+      if((_dataflow__delay_ready_24 || !_dataflow__delay_valid_24) && _dataflow__delay_ready_23) begin
+        _dataflow__delay_valid_24 <= _dataflow__delay_valid_23;
       end 
-      if((__delay_ready_23 || !__delay_valid_23) && __delay_ready_21 && __delay_valid_21) begin
-        __delay_data_23 <= __delay_data_21;
+      if((_dataflow__delay_ready_32 || !_dataflow__delay_valid_32) && _dataflow__delay_ready_31 && _dataflow__delay_valid_31) begin
+        _dataflow__delay_data_32 <= _dataflow__delay_data_31;
       end 
-      if(__delay_valid_23 && __delay_ready_23) begin
-        __delay_valid_23 <= 0;
+      if(_dataflow__delay_valid_32 && _dataflow__delay_ready_32) begin
+        _dataflow__delay_valid_32 <= 0;
       end 
-      if((__delay_ready_23 || !__delay_valid_23) && __delay_ready_21) begin
-        __delay_valid_23 <= __delay_valid_21;
+      if((_dataflow__delay_ready_32 || !_dataflow__delay_valid_32) && _dataflow__delay_ready_31) begin
+        _dataflow__delay_valid_32 <= _dataflow__delay_valid_31;
       end 
-      if((_minus_ready_24 || !_minus_valid_24) && (_times_ready_6 && _times_ready_7) && (_times_valid_6 && _times_valid_7)) begin
-        _minus_data_24 <= _times_data_6 - _times_data_7;
+      if((_dataflow_minus_ready_14 || !_dataflow_minus_valid_14) && (_dataflow_times_ready_10 && _dataflow_times_ready_11) && (_dataflow_times_valid_10 && _dataflow_times_valid_11)) begin
+        _dataflow_minus_data_14 <= _dataflow_times_data_10 - _dataflow_times_data_11;
       end 
-      if(_minus_valid_24 && _minus_ready_24) begin
-        _minus_valid_24 <= 0;
+      if(_dataflow_minus_valid_14 && _dataflow_minus_ready_14) begin
+        _dataflow_minus_valid_14 <= 0;
       end 
-      if((_minus_ready_24 || !_minus_valid_24) && (_times_ready_6 && _times_ready_7)) begin
-        _minus_valid_24 <= _times_valid_6 && _times_valid_7;
+      if((_dataflow_minus_ready_14 || !_dataflow_minus_valid_14) && (_dataflow_times_ready_10 && _dataflow_times_ready_11)) begin
+        _dataflow_minus_valid_14 <= _dataflow_times_valid_10 && _dataflow_times_valid_11;
       end 
-      if((_plus_ready_25 || !_plus_valid_25) && (_times_ready_8 && _times_ready_9) && (_times_valid_8 && _times_valid_9)) begin
-        _plus_data_25 <= _times_data_8 + _times_data_9;
+      if((_dataflow_plus_ready_15 || !_dataflow_plus_valid_15) && (_dataflow_times_ready_12 && _dataflow_times_ready_13) && (_dataflow_times_valid_12 && _dataflow_times_valid_13)) begin
+        _dataflow_plus_data_15 <= _dataflow_times_data_12 + _dataflow_times_data_13;
       end 
-      if(_plus_valid_25 && _plus_ready_25) begin
-        _plus_valid_25 <= 0;
+      if(_dataflow_plus_valid_15 && _dataflow_plus_ready_15) begin
+        _dataflow_plus_valid_15 <= 0;
       end 
-      if((_plus_ready_25 || !_plus_valid_25) && (_times_ready_8 && _times_ready_9)) begin
-        _plus_valid_25 <= _times_valid_8 && _times_valid_9;
+      if((_dataflow_plus_ready_15 || !_dataflow_plus_valid_15) && (_dataflow_times_ready_12 && _dataflow_times_ready_13)) begin
+        _dataflow_plus_valid_15 <= _dataflow_times_valid_12 && _dataflow_times_valid_13;
       end 
-      if((__delay_ready_26 || !__delay_valid_26) && __delay_ready_22 && __delay_valid_22) begin
-        __delay_data_26 <= __delay_data_22;
+      if((_dataflow__delay_ready_25 || !_dataflow__delay_valid_25) && _dataflow__delay_ready_24 && _dataflow__delay_valid_24) begin
+        _dataflow__delay_data_25 <= _dataflow__delay_data_24;
       end 
-      if(__delay_valid_26 && __delay_ready_26) begin
-        __delay_valid_26 <= 0;
+      if(_dataflow__delay_valid_25 && _dataflow__delay_ready_25) begin
+        _dataflow__delay_valid_25 <= 0;
       end 
-      if((__delay_ready_26 || !__delay_valid_26) && __delay_ready_22) begin
-        __delay_valid_26 <= __delay_valid_22;
+      if((_dataflow__delay_ready_25 || !_dataflow__delay_valid_25) && _dataflow__delay_ready_24) begin
+        _dataflow__delay_valid_25 <= _dataflow__delay_valid_24;
       end 
-      if((__delay_ready_27 || !__delay_valid_27) && __delay_ready_23 && __delay_valid_23) begin
-        __delay_data_27 <= __delay_data_23;
+      if((_dataflow__delay_ready_33 || !_dataflow__delay_valid_33) && _dataflow__delay_ready_32 && _dataflow__delay_valid_32) begin
+        _dataflow__delay_data_33 <= _dataflow__delay_data_32;
       end 
-      if(__delay_valid_27 && __delay_ready_27) begin
-        __delay_valid_27 <= 0;
+      if(_dataflow__delay_valid_33 && _dataflow__delay_ready_33) begin
+        _dataflow__delay_valid_33 <= 0;
       end 
-      if((__delay_ready_27 || !__delay_valid_27) && __delay_ready_23) begin
-        __delay_valid_27 <= __delay_valid_23;
+      if((_dataflow__delay_ready_33 || !_dataflow__delay_valid_33) && _dataflow__delay_ready_32) begin
+        _dataflow__delay_valid_33 <= _dataflow__delay_valid_32;
       end 
     end
   end
@@ -1044,8 +1048,8 @@ module multiplier_core_3
 
 
 endmodule
-"""
 
+"""
 
 def test():
     veriloggen.reset()

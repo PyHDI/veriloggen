@@ -4,7 +4,11 @@ import veriloggen
 import dataflow_reducecustom
 
 expected_verilog = """
-module test;
+
+module test
+(
+
+);
 
   reg CLK;
   reg RST;
@@ -288,35 +292,35 @@ module main
   input zready
 );
 
-  reg [32-1:0] _reducecustom_data_0;
-  reg _reducecustom_valid_0;
-  wire _reducecustom_ready_0;
-  assign xready = (_reducecustom_ready_0 || !_reducecustom_valid_0) && xvalid;
-  assign zdata = _reducecustom_data_0;
-  assign zvalid = _reducecustom_valid_0;
-  assign _reducecustom_ready_0 = zready;
+  reg [32-1:0] _dataflow_reducecustom_data_2;
+  reg _dataflow_reducecustom_valid_2;
+  wire _dataflow_reducecustom_ready_2;
+  assign xready = (_dataflow_reducecustom_ready_2 || !_dataflow_reducecustom_valid_2) && xvalid;
+  assign zdata = _dataflow_reducecustom_data_2;
+  assign zvalid = _dataflow_reducecustom_valid_2;
+  assign _dataflow_reducecustom_ready_2 = zready;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _reducecustom_data_0 <= 1'sd0;
-      _reducecustom_valid_0 <= 0;
+      _dataflow_reducecustom_data_2 <= 1'sd0;
+      _dataflow_reducecustom_valid_2 <= 0;
     end else begin
-      if((_reducecustom_ready_0 || !_reducecustom_valid_0) && xready && xvalid) begin
-        _reducecustom_data_0 <= _reducecustom_data_0 + xdata;
+      if((_dataflow_reducecustom_ready_2 || !_dataflow_reducecustom_valid_2) && xready && xvalid) begin
+        _dataflow_reducecustom_data_2 <= _dataflow_reducecustom_data_2 + xdata;
       end 
-      if(_reducecustom_valid_0 && _reducecustom_ready_0) begin
-        _reducecustom_valid_0 <= 0;
+      if(_dataflow_reducecustom_valid_2 && _dataflow_reducecustom_ready_2) begin
+        _dataflow_reducecustom_valid_2 <= 0;
       end 
-      if((_reducecustom_ready_0 || !_reducecustom_valid_0) && xready) begin
-        _reducecustom_valid_0 <= xvalid;
+      if((_dataflow_reducecustom_ready_2 || !_dataflow_reducecustom_valid_2) && xready) begin
+        _dataflow_reducecustom_valid_2 <= xvalid;
       end 
     end
   end
 
 
 endmodule
-"""
 
+"""
 def test():
     veriloggen.reset()
     test_module = dataflow_reducecustom.mkTest()

@@ -4,7 +4,11 @@ import veriloggen
 import dataflow_prev
 
 expected_verilog = """
-module test;
+
+module test
+(
+
+);
 
   reg CLK;
   reg RST;
@@ -288,75 +292,75 @@ module main
   input zready
 );
 
-  reg [32-1:0] __prev_data_0;
-  reg [32-1:0] _plus_data_1;
-  reg _plus_valid_1;
-  wire _plus_ready_1;
-  reg [32-1:0] __prev_data_2;
-  reg [32-1:0] __delay_data_3;
-  reg __delay_valid_3;
-  wire __delay_ready_3;
-  assign xready = (_plus_ready_1 || !_plus_valid_1) && (xvalid && xvalid) && ((_plus_ready_1 || !_plus_valid_1) && (xvalid && xvalid)) && ((__delay_ready_3 || !__delay_valid_3) && xvalid);
-  reg [32-1:0] _plus_data_4;
-  reg _plus_valid_4;
-  wire _plus_ready_4;
-  assign _plus_ready_1 = (_plus_ready_4 || !_plus_valid_4) && (_plus_valid_1 && __delay_valid_3);
-  assign __delay_ready_3 = (_plus_ready_4 || !_plus_valid_4) && (_plus_valid_1 && __delay_valid_3);
-  assign zdata = _plus_data_4;
-  assign zvalid = _plus_valid_4;
-  assign _plus_ready_4 = zready;
+  reg [32-1:0] _dataflow__prev_data_1;
+  reg [32-1:0] _dataflow_plus_data_2;
+  reg _dataflow_plus_valid_2;
+  wire _dataflow_plus_ready_2;
+  reg [32-1:0] _dataflow__prev_data_3;
+  reg [32-1:0] _dataflow__delay_data_5;
+  reg _dataflow__delay_valid_5;
+  wire _dataflow__delay_ready_5;
+  assign xready = (_dataflow_plus_ready_2 || !_dataflow_plus_valid_2) && (xvalid && xvalid) && ((_dataflow_plus_ready_2 || !_dataflow_plus_valid_2) && (xvalid && xvalid)) && ((_dataflow__delay_ready_5 || !_dataflow__delay_valid_5) && xvalid);
+  reg [32-1:0] _dataflow_plus_data_4;
+  reg _dataflow_plus_valid_4;
+  wire _dataflow_plus_ready_4;
+  assign _dataflow_plus_ready_2 = (_dataflow_plus_ready_4 || !_dataflow_plus_valid_4) && (_dataflow_plus_valid_2 && _dataflow__delay_valid_5);
+  assign _dataflow__delay_ready_5 = (_dataflow_plus_ready_4 || !_dataflow_plus_valid_4) && (_dataflow_plus_valid_2 && _dataflow__delay_valid_5);
+  assign zdata = _dataflow_plus_data_4;
+  assign zvalid = _dataflow_plus_valid_4;
+  assign _dataflow_plus_ready_4 = zready;
 
   always @(posedge CLK) begin
     if(RST) begin
-      __prev_data_0 <= 0;
-      _plus_data_1 <= 0;
-      _plus_valid_1 <= 0;
-      __prev_data_2 <= 0;
-      __delay_data_3 <= 0;
-      __delay_valid_3 <= 0;
-      _plus_data_4 <= 0;
-      _plus_valid_4 <= 0;
+      _dataflow__prev_data_1 <= 0;
+      _dataflow_plus_data_2 <= 0;
+      _dataflow_plus_valid_2 <= 0;
+      _dataflow__prev_data_3 <= 0;
+      _dataflow__delay_data_5 <= 0;
+      _dataflow__delay_valid_5 <= 0;
+      _dataflow_plus_data_4 <= 0;
+      _dataflow_plus_valid_4 <= 0;
     end else begin
       if(xvalid && xready) begin
-        __prev_data_0 <= xdata;
+        _dataflow__prev_data_1 <= xdata;
       end 
-      if((_plus_ready_1 || !_plus_valid_1) && (xready && xready) && (xvalid && xvalid)) begin
-        _plus_data_1 <= xdata + __prev_data_0;
+      if((_dataflow_plus_ready_2 || !_dataflow_plus_valid_2) && (xready && xready) && (xvalid && xvalid)) begin
+        _dataflow_plus_data_2 <= xdata + _dataflow__prev_data_1;
       end 
-      if(_plus_valid_1 && _plus_ready_1) begin
-        _plus_valid_1 <= 0;
+      if(_dataflow_plus_valid_2 && _dataflow_plus_ready_2) begin
+        _dataflow_plus_valid_2 <= 0;
       end 
-      if((_plus_ready_1 || !_plus_valid_1) && (xready && xready)) begin
-        _plus_valid_1 <= xvalid && xvalid;
+      if((_dataflow_plus_ready_2 || !_dataflow_plus_valid_2) && (xready && xready)) begin
+        _dataflow_plus_valid_2 <= xvalid && xvalid;
       end 
       if(xvalid && xready) begin
-        __prev_data_2 <= __prev_data_0;
+        _dataflow__prev_data_3 <= _dataflow__prev_data_1;
       end 
-      if((__delay_ready_3 || !__delay_valid_3) && xready && xvalid) begin
-        __delay_data_3 <= __prev_data_2;
+      if((_dataflow__delay_ready_5 || !_dataflow__delay_valid_5) && xready && xvalid) begin
+        _dataflow__delay_data_5 <= _dataflow__prev_data_3;
       end 
-      if(__delay_valid_3 && __delay_ready_3) begin
-        __delay_valid_3 <= 0;
+      if(_dataflow__delay_valid_5 && _dataflow__delay_ready_5) begin
+        _dataflow__delay_valid_5 <= 0;
       end 
-      if((__delay_ready_3 || !__delay_valid_3) && xready) begin
-        __delay_valid_3 <= xvalid;
+      if((_dataflow__delay_ready_5 || !_dataflow__delay_valid_5) && xready) begin
+        _dataflow__delay_valid_5 <= xvalid;
       end 
-      if((_plus_ready_4 || !_plus_valid_4) && (_plus_ready_1 && __delay_ready_3) && (_plus_valid_1 && __delay_valid_3)) begin
-        _plus_data_4 <= _plus_data_1 + __delay_data_3;
+      if((_dataflow_plus_ready_4 || !_dataflow_plus_valid_4) && (_dataflow_plus_ready_2 && _dataflow__delay_ready_5) && (_dataflow_plus_valid_2 && _dataflow__delay_valid_5)) begin
+        _dataflow_plus_data_4 <= _dataflow_plus_data_2 + _dataflow__delay_data_5;
       end 
-      if(_plus_valid_4 && _plus_ready_4) begin
-        _plus_valid_4 <= 0;
+      if(_dataflow_plus_valid_4 && _dataflow_plus_ready_4) begin
+        _dataflow_plus_valid_4 <= 0;
       end 
-      if((_plus_ready_4 || !_plus_valid_4) && (_plus_ready_1 && __delay_ready_3)) begin
-        _plus_valid_4 <= _plus_valid_1 && __delay_valid_3;
+      if((_dataflow_plus_ready_4 || !_dataflow_plus_valid_4) && (_dataflow_plus_ready_2 && _dataflow__delay_ready_5)) begin
+        _dataflow_plus_valid_4 <= _dataflow_plus_valid_2 && _dataflow__delay_valid_5;
       end 
     end
   end
 
 
 endmodule
-"""
 
+"""
 
 def test():
     veriloggen.reset()

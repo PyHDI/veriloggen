@@ -4,7 +4,11 @@ import veriloggen
 import dataflow_reduceadd_enable
 
 expected_verilog = """
-module test;
+
+module test
+(
+
+);
 
   reg CLK;
   reg RST;
@@ -394,43 +398,43 @@ module main
   input zready
 );
 
-  reg [32-1:0] _reduceadd_data_0;
-  reg _reduceadd_valid_0;
-  wire _reduceadd_ready_0;
-  assign enableready = (_reduceadd_ready_0 || !_reduceadd_valid_0) && (xvalid && enablevalid && resetvalid);
-  assign xready = (_reduceadd_ready_0 || !_reduceadd_valid_0) && (xvalid && enablevalid && resetvalid);
-  assign resetready = (_reduceadd_ready_0 || !_reduceadd_valid_0) && (xvalid && enablevalid && resetvalid);
-  assign zdata = _reduceadd_data_0;
-  assign zvalid = _reduceadd_valid_0;
-  assign _reduceadd_ready_0 = zready;
+  reg [32-1:0] _dataflow_reduceadd_data_4;
+  reg _dataflow_reduceadd_valid_4;
+  wire _dataflow_reduceadd_ready_4;
+  assign enableready = (_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && (xvalid && enablevalid && resetvalid);
+  assign xready = (_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && (xvalid && enablevalid && resetvalid);
+  assign resetready = (_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && (xvalid && enablevalid && resetvalid);
+  assign zdata = _dataflow_reduceadd_data_4;
+  assign zvalid = _dataflow_reduceadd_valid_4;
+  assign _dataflow_reduceadd_ready_4 = zready;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _reduceadd_data_0 <= 1'sd0;
-      _reduceadd_valid_0 <= 0;
+      _dataflow_reduceadd_data_4 <= 1'sd0;
+      _dataflow_reduceadd_valid_4 <= 0;
     end else begin
-      if((_reduceadd_ready_0 || !_reduceadd_valid_0) && (xready && enableready && resetready) && (xvalid && enablevalid && resetvalid) && enabledata) begin
-        _reduceadd_data_0 <= _reduceadd_data_0 + xdata;
+      if((_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && (xready && enableready && resetready) && (xvalid && enablevalid && resetvalid) && enabledata) begin
+        _dataflow_reduceadd_data_4 <= _dataflow_reduceadd_data_4 + xdata;
       end 
-      if(_reduceadd_valid_0 && _reduceadd_ready_0) begin
-        _reduceadd_valid_0 <= 0;
+      if(_dataflow_reduceadd_valid_4 && _dataflow_reduceadd_ready_4) begin
+        _dataflow_reduceadd_valid_4 <= 0;
       end 
-      if((_reduceadd_ready_0 || !_reduceadd_valid_0) && (xready && enableready && resetready)) begin
-        _reduceadd_valid_0 <= xvalid && enablevalid && resetvalid;
+      if((_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && (xready && enableready && resetready)) begin
+        _dataflow_reduceadd_valid_4 <= xvalid && enablevalid && resetvalid;
       end 
-      if((_reduceadd_ready_0 || !_reduceadd_valid_0) && (xready && enableready && resetready) && (xvalid && enablevalid && resetvalid) && resetdata) begin
-        _reduceadd_data_0 <= 1'sd0;
+      if((_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && (xready && enableready && resetready) && (xvalid && enablevalid && resetvalid) && resetdata) begin
+        _dataflow_reduceadd_data_4 <= 1'sd0;
       end 
-      if((_reduceadd_ready_0 || !_reduceadd_valid_0) && (xready && enableready && resetready) && (xvalid && enablevalid && resetvalid) && enabledata && resetdata) begin
-        _reduceadd_data_0 <= 1'sd0 + xdata;
+      if((_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && (xready && enableready && resetready) && (xvalid && enablevalid && resetvalid) && enabledata && resetdata) begin
+        _dataflow_reduceadd_data_4 <= 1'sd0 + xdata;
       end 
     end
   end
 
 
 endmodule
-"""
 
+"""
 
 def test():
     veriloggen.reset()

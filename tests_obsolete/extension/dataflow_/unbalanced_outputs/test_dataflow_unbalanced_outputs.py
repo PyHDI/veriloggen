@@ -4,8 +4,12 @@ import veriloggen
 import dataflow_unbalanced_outputs
 
 expected_verilog = """
-module test;
-  
+
+module test
+(
+
+);
+
   reg CLK;
   reg RST;
   reg [32-1:0] xdata;
@@ -617,83 +621,83 @@ module main
   input z1ready
 );
 
-  reg [32-1:0] _plus_data_0;
-  reg _plus_valid_0;
-  wire _plus_ready_0;
-  assign xready = (_plus_ready_0 || !_plus_valid_0) && (xvalid && yvalid);
-  reg [32-1:0] __delay_data_1;
-  reg __delay_valid_1;
-  wire __delay_ready_1;
-  assign yready = (_plus_ready_0 || !_plus_valid_0) && (xvalid && yvalid) && ((__delay_ready_1 || !__delay_valid_1) && yvalid);
-  reg [32-1:0] _minus_data_2;
-  reg _minus_valid_2;
-  wire _minus_ready_2;
-  assign __delay_ready_1 = (_minus_ready_2 || !_minus_valid_2) && (_plus_valid_0 && __delay_valid_1);
-  reg [32-1:0] __delay_data_3;
-  reg __delay_valid_3;
-  wire __delay_ready_3;
-  assign _plus_ready_0 = (_minus_ready_2 || !_minus_valid_2) && (_plus_valid_0 && __delay_valid_1) && ((__delay_ready_3 || !__delay_valid_3) && _plus_valid_0);
-  assign z2data = _minus_data_2;
-  assign z2valid = _minus_valid_2;
-  assign _minus_ready_2 = z2ready;
-  assign z1data = __delay_data_3;
-  assign z1valid = __delay_valid_3;
-  assign __delay_ready_3 = z1ready;
+  reg [32-1:0] _dataflow_plus_data_2;
+  reg _dataflow_plus_valid_2;
+  wire _dataflow_plus_ready_2;
+  assign xready = (_dataflow_plus_ready_2 || !_dataflow_plus_valid_2) && (xvalid && yvalid);
+  reg [32-1:0] _dataflow__delay_data_4;
+  reg _dataflow__delay_valid_4;
+  wire _dataflow__delay_ready_4;
+  assign yready = (_dataflow_plus_ready_2 || !_dataflow_plus_valid_2) && (xvalid && yvalid) && ((_dataflow__delay_ready_4 || !_dataflow__delay_valid_4) && yvalid);
+  reg [32-1:0] _dataflow_minus_data_3;
+  reg _dataflow_minus_valid_3;
+  wire _dataflow_minus_ready_3;
+  assign _dataflow__delay_ready_4 = (_dataflow_minus_ready_3 || !_dataflow_minus_valid_3) && (_dataflow_plus_valid_2 && _dataflow__delay_valid_4);
+  reg [32-1:0] _dataflow__delay_data_5;
+  reg _dataflow__delay_valid_5;
+  wire _dataflow__delay_ready_5;
+  assign _dataflow_plus_ready_2 = (_dataflow_minus_ready_3 || !_dataflow_minus_valid_3) && (_dataflow_plus_valid_2 && _dataflow__delay_valid_4) && ((_dataflow__delay_ready_5 || !_dataflow__delay_valid_5) && _dataflow_plus_valid_2);
+  assign z2data = _dataflow_minus_data_3;
+  assign z2valid = _dataflow_minus_valid_3;
+  assign _dataflow_minus_ready_3 = z2ready;
+  assign z1data = _dataflow__delay_data_5;
+  assign z1valid = _dataflow__delay_valid_5;
+  assign _dataflow__delay_ready_5 = z1ready;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _plus_data_0 <= 0;
-      _plus_valid_0 <= 0;
-      __delay_data_1 <= 0;
-      __delay_valid_1 <= 0;
-      _minus_data_2 <= 0;
-      _minus_valid_2 <= 0;
-      __delay_data_3 <= 0;
-      __delay_valid_3 <= 0;
+      _dataflow_plus_data_2 <= 0;
+      _dataflow_plus_valid_2 <= 0;
+      _dataflow__delay_data_4 <= 0;
+      _dataflow__delay_valid_4 <= 0;
+      _dataflow_minus_data_3 <= 0;
+      _dataflow_minus_valid_3 <= 0;
+      _dataflow__delay_data_5 <= 0;
+      _dataflow__delay_valid_5 <= 0;
     end else begin
-      if((_plus_ready_0 || !_plus_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
-        _plus_data_0 <= xdata + ydata;
+      if((_dataflow_plus_ready_2 || !_dataflow_plus_valid_2) && (xready && yready) && (xvalid && yvalid)) begin
+        _dataflow_plus_data_2 <= xdata + ydata;
       end 
-      if(_plus_valid_0 && _plus_ready_0) begin
-        _plus_valid_0 <= 0;
+      if(_dataflow_plus_valid_2 && _dataflow_plus_ready_2) begin
+        _dataflow_plus_valid_2 <= 0;
       end 
-      if((_plus_ready_0 || !_plus_valid_0) && (xready && yready)) begin
-        _plus_valid_0 <= xvalid && yvalid;
+      if((_dataflow_plus_ready_2 || !_dataflow_plus_valid_2) && (xready && yready)) begin
+        _dataflow_plus_valid_2 <= xvalid && yvalid;
       end 
-      if((__delay_ready_1 || !__delay_valid_1) && yready && yvalid) begin
-        __delay_data_1 <= ydata;
+      if((_dataflow__delay_ready_4 || !_dataflow__delay_valid_4) && yready && yvalid) begin
+        _dataflow__delay_data_4 <= ydata;
       end 
-      if(__delay_valid_1 && __delay_ready_1) begin
-        __delay_valid_1 <= 0;
+      if(_dataflow__delay_valid_4 && _dataflow__delay_ready_4) begin
+        _dataflow__delay_valid_4 <= 0;
       end 
-      if((__delay_ready_1 || !__delay_valid_1) && yready) begin
-        __delay_valid_1 <= yvalid;
+      if((_dataflow__delay_ready_4 || !_dataflow__delay_valid_4) && yready) begin
+        _dataflow__delay_valid_4 <= yvalid;
       end 
-      if((_minus_ready_2 || !_minus_valid_2) && (_plus_ready_0 && __delay_ready_1) && (_plus_valid_0 && __delay_valid_1)) begin
-        _minus_data_2 <= _plus_data_0 - __delay_data_1;
+      if((_dataflow_minus_ready_3 || !_dataflow_minus_valid_3) && (_dataflow_plus_ready_2 && _dataflow__delay_ready_4) && (_dataflow_plus_valid_2 && _dataflow__delay_valid_4)) begin
+        _dataflow_minus_data_3 <= _dataflow_plus_data_2 - _dataflow__delay_data_4;
       end 
-      if(_minus_valid_2 && _minus_ready_2) begin
-        _minus_valid_2 <= 0;
+      if(_dataflow_minus_valid_3 && _dataflow_minus_ready_3) begin
+        _dataflow_minus_valid_3 <= 0;
       end 
-      if((_minus_ready_2 || !_minus_valid_2) && (_plus_ready_0 && __delay_ready_1)) begin
-        _minus_valid_2 <= _plus_valid_0 && __delay_valid_1;
+      if((_dataflow_minus_ready_3 || !_dataflow_minus_valid_3) && (_dataflow_plus_ready_2 && _dataflow__delay_ready_4)) begin
+        _dataflow_minus_valid_3 <= _dataflow_plus_valid_2 && _dataflow__delay_valid_4;
       end 
-      if((__delay_ready_3 || !__delay_valid_3) && _plus_ready_0 && _plus_valid_0) begin
-        __delay_data_3 <= _plus_data_0;
+      if((_dataflow__delay_ready_5 || !_dataflow__delay_valid_5) && _dataflow_plus_ready_2 && _dataflow_plus_valid_2) begin
+        _dataflow__delay_data_5 <= _dataflow_plus_data_2;
       end 
-      if(__delay_valid_3 && __delay_ready_3) begin
-        __delay_valid_3 <= 0;
+      if(_dataflow__delay_valid_5 && _dataflow__delay_ready_5) begin
+        _dataflow__delay_valid_5 <= 0;
       end 
-      if((__delay_ready_3 || !__delay_valid_3) && _plus_ready_0) begin
-        __delay_valid_3 <= _plus_valid_0;
+      if((_dataflow__delay_ready_5 || !_dataflow__delay_valid_5) && _dataflow_plus_ready_2) begin
+        _dataflow__delay_valid_5 <= _dataflow_plus_valid_2;
       end 
     end
   end
 
 
 endmodule
-"""
 
+"""
 
 def test():
     veriloggen.reset()

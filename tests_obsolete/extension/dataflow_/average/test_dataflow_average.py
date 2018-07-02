@@ -4,7 +4,11 @@ import veriloggen
 import dataflow_average
 
 expected_verilog = """
-module test;
+
+module test
+(
+
+);
 
   reg CLK;
   reg RST;
@@ -744,329 +748,329 @@ module main
   input zready
 );
 
-  reg [32-1:0] _plus_data_0;
-  reg _plus_valid_0;
-  wire _plus_ready_0;
-  assign xready = (_plus_ready_0 || !_plus_valid_0) && (xvalid && yvalid);
-  assign yready = (_plus_ready_0 || !_plus_valid_0) && (xvalid && yvalid);
-  reg [32-1:0] __prev_data_1;
-  reg [32-1:0] _plus_data_2;
-  reg _plus_valid_2;
-  wire _plus_ready_2;
-  reg [32-1:0] __prev_data_3;
-  reg [32-1:0] __delay_data_4;
-  reg __delay_valid_4;
-  wire __delay_ready_4;
-  assign _plus_ready_0 = (_plus_ready_2 || !_plus_valid_2) && (_plus_valid_0 && _plus_valid_0) && ((_plus_ready_2 || !_plus_valid_2) && (_plus_valid_0 && _plus_valid_0)) && ((__delay_ready_4 || !__delay_valid_4) && _plus_valid_0);
-  reg [32-1:0] _plus_data_5;
-  reg _plus_valid_5;
-  wire _plus_ready_5;
-  assign _plus_ready_2 = (_plus_ready_5 || !_plus_valid_5) && (_plus_valid_2 && __delay_valid_4);
-  assign __delay_ready_4 = (_plus_ready_5 || !_plus_valid_5) && (_plus_valid_2 && __delay_valid_4);
-  wire [32-1:0] _divide_data_6;
-  wire _divide_valid_6;
-  wire _divide_ready_6;
-  reg [32-1:0] _divide_ldata_6;
-  reg signed [32-1:0] _divide_rdata_6;
-  reg [32-1:0] _divide_abs_ldata_6;
-  reg [32-1:0] _divide_abs_rdata_6;
-  wire _divide_osign_6;
-  wire [32-1:0] _divide_abs_odata_6;
-  reg [32-1:0] _divide_odata_6;
-  assign _divide_data_6 = _divide_odata_6;
-  wire _divide_ovalid_6;
-  reg _divide_valid_reg_0_6;
-  reg _divide_valid_reg_1_6;
-  reg _divide_valid_reg_2_6;
-  assign _divide_valid_6 = _divide_valid_reg_2_6;
-  reg _divide_sign0__6;
-  reg _divide_sign1__6;
-  reg _divide_sign2__6;
-  reg _divide_sign3__6;
-  reg _divide_sign4__6;
-  reg _divide_sign5__6;
-  reg _divide_sign6__6;
-  reg _divide_sign7__6;
-  reg _divide_sign8__6;
-  reg _divide_sign9__6;
-  reg _divide_sign10__6;
-  reg _divide_sign11__6;
-  reg _divide_sign12__6;
-  reg _divide_sign13__6;
-  reg _divide_sign14__6;
-  reg _divide_sign15__6;
-  reg _divide_sign16__6;
-  reg _divide_sign17__6;
-  reg _divide_sign18__6;
-  reg _divide_sign19__6;
-  reg _divide_sign20__6;
-  reg _divide_sign21__6;
-  reg _divide_sign22__6;
-  reg _divide_sign23__6;
-  reg _divide_sign24__6;
-  reg _divide_sign25__6;
-  reg _divide_sign26__6;
-  reg _divide_sign27__6;
-  reg _divide_sign28__6;
-  reg _divide_sign29__6;
-  reg _divide_sign30__6;
-  reg _divide_sign31__6;
-  reg _divide_sign32__6;
-  reg _divide_sign33__6;
-  reg _divide_sign34__6;
-  assign _divide_osign_6 = _divide_sign34__6;
-  wire _divide_enable_6;
-  wire _divide_update_6;
-  assign _divide_enable_6 = (_divide_ready_6 || !_divide_valid_6) && _plus_ready_5 && _plus_valid_5;
-  assign _divide_update_6 = _divide_ready_6 || !_divide_valid_6;
+  reg [32-1:0] _dataflow_plus_data_2;
+  reg _dataflow_plus_valid_2;
+  wire _dataflow_plus_ready_2;
+  assign xready = (_dataflow_plus_ready_2 || !_dataflow_plus_valid_2) && (xvalid && yvalid);
+  assign yready = (_dataflow_plus_ready_2 || !_dataflow_plus_valid_2) && (xvalid && yvalid);
+  reg [32-1:0] _dataflow__prev_data_3;
+  reg [32-1:0] _dataflow_plus_data_4;
+  reg _dataflow_plus_valid_4;
+  wire _dataflow_plus_ready_4;
+  reg [32-1:0] _dataflow__prev_data_5;
+  reg [32-1:0] _dataflow__delay_data_9;
+  reg _dataflow__delay_valid_9;
+  wire _dataflow__delay_ready_9;
+  assign _dataflow_plus_ready_2 = (_dataflow_plus_ready_4 || !_dataflow_plus_valid_4) && (_dataflow_plus_valid_2 && _dataflow_plus_valid_2) && ((_dataflow_plus_ready_4 || !_dataflow_plus_valid_4) && (_dataflow_plus_valid_2 && _dataflow_plus_valid_2)) && ((_dataflow__delay_ready_9 || !_dataflow__delay_valid_9) && _dataflow_plus_valid_2);
+  reg [32-1:0] _dataflow_plus_data_6;
+  reg _dataflow_plus_valid_6;
+  wire _dataflow_plus_ready_6;
+  assign _dataflow_plus_ready_4 = (_dataflow_plus_ready_6 || !_dataflow_plus_valid_6) && (_dataflow_plus_valid_4 && _dataflow__delay_valid_9);
+  assign _dataflow__delay_ready_9 = (_dataflow_plus_ready_6 || !_dataflow_plus_valid_6) && (_dataflow_plus_valid_4 && _dataflow__delay_valid_9);
+  wire [32-1:0] _dataflow_divide_data_7;
+  wire _dataflow_divide_valid_7;
+  wire _dataflow_divide_ready_7;
+  reg [32-1:0] _dataflow_divide_div_ldata_7;
+  reg signed [32-1:0] _dataflow_divide_div_rdata_7;
+  reg [32-1:0] _dataflow_divide_div_abs_ldata_7;
+  reg [32-1:0] _dataflow_divide_div_abs_rdata_7;
+  wire _dataflow_divide_div_osign_7;
+  wire [32-1:0] _dataflow_divide_div_abs_odata_7;
+  reg [32-1:0] _dataflow_divide_div_odata_7;
+  assign _dataflow_divide_data_7 = _dataflow_divide_div_odata_7;
+  wire _dataflow_divide_div_ovalid_7;
+  reg _dataflow_divide_div_valid_reg_tmp_0_7;
+  reg _dataflow_divide_div_valid_reg_tmp_1_7;
+  reg _dataflow_divide_div_valid_reg_tmp_2_7;
+  assign _dataflow_divide_valid_7 = _dataflow_divide_div_valid_reg_tmp_2_7;
+  reg _dataflow_divide_div_sign_tmp_0_7;
+  reg _dataflow_divide_div_sign_tmp_1_7;
+  reg _dataflow_divide_div_sign_tmp_2_7;
+  reg _dataflow_divide_div_sign_tmp_3_7;
+  reg _dataflow_divide_div_sign_tmp_4_7;
+  reg _dataflow_divide_div_sign_tmp_5_7;
+  reg _dataflow_divide_div_sign_tmp_6_7;
+  reg _dataflow_divide_div_sign_tmp_7_7;
+  reg _dataflow_divide_div_sign_tmp_8_7;
+  reg _dataflow_divide_div_sign_tmp_9_7;
+  reg _dataflow_divide_div_sign_tmp_10_7;
+  reg _dataflow_divide_div_sign_tmp_11_7;
+  reg _dataflow_divide_div_sign_tmp_12_7;
+  reg _dataflow_divide_div_sign_tmp_13_7;
+  reg _dataflow_divide_div_sign_tmp_14_7;
+  reg _dataflow_divide_div_sign_tmp_15_7;
+  reg _dataflow_divide_div_sign_tmp_16_7;
+  reg _dataflow_divide_div_sign_tmp_17_7;
+  reg _dataflow_divide_div_sign_tmp_18_7;
+  reg _dataflow_divide_div_sign_tmp_19_7;
+  reg _dataflow_divide_div_sign_tmp_20_7;
+  reg _dataflow_divide_div_sign_tmp_21_7;
+  reg _dataflow_divide_div_sign_tmp_22_7;
+  reg _dataflow_divide_div_sign_tmp_23_7;
+  reg _dataflow_divide_div_sign_tmp_24_7;
+  reg _dataflow_divide_div_sign_tmp_25_7;
+  reg _dataflow_divide_div_sign_tmp_26_7;
+  reg _dataflow_divide_div_sign_tmp_27_7;
+  reg _dataflow_divide_div_sign_tmp_28_7;
+  reg _dataflow_divide_div_sign_tmp_29_7;
+  reg _dataflow_divide_div_sign_tmp_30_7;
+  reg _dataflow_divide_div_sign_tmp_31_7;
+  reg _dataflow_divide_div_sign_tmp_32_7;
+  reg _dataflow_divide_div_sign_tmp_33_7;
+  reg _dataflow_divide_div_sign_tmp_34_7;
+  assign _dataflow_divide_div_osign_7 = _dataflow_divide_div_sign_tmp_34_7;
+  wire _dataflow_divide_div_enable_7;
+  wire _dataflow_divide_div_update_7;
+  assign _dataflow_divide_div_enable_7 = (_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) && _dataflow_plus_ready_6 && _dataflow_plus_valid_6;
+  assign _dataflow_divide_div_update_7 = _dataflow_divide_ready_7 || !_dataflow_divide_valid_7;
 
   Divider
   #(
     .W_D(32)
   )
-  div6
+  _dataflow_divide_div_7
   (
     .CLK(CLK),
     .RST(RST),
-    .update(_divide_update_6),
-    .enable(_divide_enable_6),
-    .valid(_divide_ovalid_6),
-    .in_a(_divide_abs_ldata_6),
-    .in_b(_divide_abs_rdata_6),
-    .rslt(_divide_abs_odata_6)
+    .update(_dataflow_divide_div_update_7),
+    .enable(_dataflow_divide_div_enable_7),
+    .valid(_dataflow_divide_div_ovalid_7),
+    .in_a(_dataflow_divide_div_abs_ldata_7),
+    .in_b(_dataflow_divide_div_abs_rdata_7),
+    .rslt(_dataflow_divide_div_abs_odata_7)
   );
 
-  assign _plus_ready_5 = (_divide_ready_6 || !_divide_valid_6) && _plus_valid_5;
-  assign zdata = _divide_data_6;
-  assign zvalid = _divide_valid_6;
-  assign _divide_ready_6 = zready;
+  assign _dataflow_plus_ready_6 = (_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) && _dataflow_plus_valid_6;
+  assign zdata = _dataflow_divide_data_7;
+  assign zvalid = _dataflow_divide_valid_7;
+  assign _dataflow_divide_ready_7 = zready;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _plus_data_0 <= 0;
-      _plus_valid_0 <= 0;
-      __prev_data_1 <= 0;
-      _plus_data_2 <= 0;
-      _plus_valid_2 <= 0;
-      __prev_data_3 <= 0;
-      __delay_data_4 <= 0;
-      __delay_valid_4 <= 0;
-      _plus_data_5 <= 0;
-      _plus_valid_5 <= 0;
-      _divide_ldata_6 <= 0;
-      _divide_rdata_6 <= 0;
-      _divide_abs_ldata_6 <= 0;
-      _divide_abs_rdata_6 <= 0;
-      _divide_odata_6 <= 0;
-      _divide_valid_reg_0_6 <= 0;
-      _divide_valid_reg_1_6 <= 0;
-      _divide_valid_reg_2_6 <= 0;
-      _divide_sign0__6 <= 0;
-      _divide_sign1__6 <= 0;
-      _divide_sign2__6 <= 0;
-      _divide_sign3__6 <= 0;
-      _divide_sign4__6 <= 0;
-      _divide_sign5__6 <= 0;
-      _divide_sign6__6 <= 0;
-      _divide_sign7__6 <= 0;
-      _divide_sign8__6 <= 0;
-      _divide_sign9__6 <= 0;
-      _divide_sign10__6 <= 0;
-      _divide_sign11__6 <= 0;
-      _divide_sign12__6 <= 0;
-      _divide_sign13__6 <= 0;
-      _divide_sign14__6 <= 0;
-      _divide_sign15__6 <= 0;
-      _divide_sign16__6 <= 0;
-      _divide_sign17__6 <= 0;
-      _divide_sign18__6 <= 0;
-      _divide_sign19__6 <= 0;
-      _divide_sign20__6 <= 0;
-      _divide_sign21__6 <= 0;
-      _divide_sign22__6 <= 0;
-      _divide_sign23__6 <= 0;
-      _divide_sign24__6 <= 0;
-      _divide_sign25__6 <= 0;
-      _divide_sign26__6 <= 0;
-      _divide_sign27__6 <= 0;
-      _divide_sign28__6 <= 0;
-      _divide_sign29__6 <= 0;
-      _divide_sign30__6 <= 0;
-      _divide_sign31__6 <= 0;
-      _divide_sign32__6 <= 0;
-      _divide_sign33__6 <= 0;
-      _divide_sign34__6 <= 0;
+      _dataflow_plus_data_2 <= 0;
+      _dataflow_plus_valid_2 <= 0;
+      _dataflow__prev_data_3 <= 0;
+      _dataflow_plus_data_4 <= 0;
+      _dataflow_plus_valid_4 <= 0;
+      _dataflow__prev_data_5 <= 0;
+      _dataflow__delay_data_9 <= 0;
+      _dataflow__delay_valid_9 <= 0;
+      _dataflow_plus_data_6 <= 0;
+      _dataflow_plus_valid_6 <= 0;
+      _dataflow_divide_div_ldata_7 <= 0;
+      _dataflow_divide_div_rdata_7 <= 0;
+      _dataflow_divide_div_abs_ldata_7 <= 0;
+      _dataflow_divide_div_abs_rdata_7 <= 0;
+      _dataflow_divide_div_odata_7 <= 0;
+      _dataflow_divide_div_valid_reg_tmp_0_7 <= 0;
+      _dataflow_divide_div_valid_reg_tmp_1_7 <= 0;
+      _dataflow_divide_div_valid_reg_tmp_2_7 <= 0;
+      _dataflow_divide_div_sign_tmp_0_7 <= 0;
+      _dataflow_divide_div_sign_tmp_1_7 <= 0;
+      _dataflow_divide_div_sign_tmp_2_7 <= 0;
+      _dataflow_divide_div_sign_tmp_3_7 <= 0;
+      _dataflow_divide_div_sign_tmp_4_7 <= 0;
+      _dataflow_divide_div_sign_tmp_5_7 <= 0;
+      _dataflow_divide_div_sign_tmp_6_7 <= 0;
+      _dataflow_divide_div_sign_tmp_7_7 <= 0;
+      _dataflow_divide_div_sign_tmp_8_7 <= 0;
+      _dataflow_divide_div_sign_tmp_9_7 <= 0;
+      _dataflow_divide_div_sign_tmp_10_7 <= 0;
+      _dataflow_divide_div_sign_tmp_11_7 <= 0;
+      _dataflow_divide_div_sign_tmp_12_7 <= 0;
+      _dataflow_divide_div_sign_tmp_13_7 <= 0;
+      _dataflow_divide_div_sign_tmp_14_7 <= 0;
+      _dataflow_divide_div_sign_tmp_15_7 <= 0;
+      _dataflow_divide_div_sign_tmp_16_7 <= 0;
+      _dataflow_divide_div_sign_tmp_17_7 <= 0;
+      _dataflow_divide_div_sign_tmp_18_7 <= 0;
+      _dataflow_divide_div_sign_tmp_19_7 <= 0;
+      _dataflow_divide_div_sign_tmp_20_7 <= 0;
+      _dataflow_divide_div_sign_tmp_21_7 <= 0;
+      _dataflow_divide_div_sign_tmp_22_7 <= 0;
+      _dataflow_divide_div_sign_tmp_23_7 <= 0;
+      _dataflow_divide_div_sign_tmp_24_7 <= 0;
+      _dataflow_divide_div_sign_tmp_25_7 <= 0;
+      _dataflow_divide_div_sign_tmp_26_7 <= 0;
+      _dataflow_divide_div_sign_tmp_27_7 <= 0;
+      _dataflow_divide_div_sign_tmp_28_7 <= 0;
+      _dataflow_divide_div_sign_tmp_29_7 <= 0;
+      _dataflow_divide_div_sign_tmp_30_7 <= 0;
+      _dataflow_divide_div_sign_tmp_31_7 <= 0;
+      _dataflow_divide_div_sign_tmp_32_7 <= 0;
+      _dataflow_divide_div_sign_tmp_33_7 <= 0;
+      _dataflow_divide_div_sign_tmp_34_7 <= 0;
     end else begin
-      if((_plus_ready_0 || !_plus_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
-        _plus_data_0 <= xdata + ydata;
+      if((_dataflow_plus_ready_2 || !_dataflow_plus_valid_2) && (xready && yready) && (xvalid && yvalid)) begin
+        _dataflow_plus_data_2 <= xdata + ydata;
       end 
-      if(_plus_valid_0 && _plus_ready_0) begin
-        _plus_valid_0 <= 0;
+      if(_dataflow_plus_valid_2 && _dataflow_plus_ready_2) begin
+        _dataflow_plus_valid_2 <= 0;
       end 
-      if((_plus_ready_0 || !_plus_valid_0) && (xready && yready)) begin
-        _plus_valid_0 <= xvalid && yvalid;
+      if((_dataflow_plus_ready_2 || !_dataflow_plus_valid_2) && (xready && yready)) begin
+        _dataflow_plus_valid_2 <= xvalid && yvalid;
       end 
-      if(_plus_valid_0 && _plus_ready_0) begin
-        __prev_data_1 <= _plus_data_0;
+      if(_dataflow_plus_valid_2 && _dataflow_plus_ready_2) begin
+        _dataflow__prev_data_3 <= _dataflow_plus_data_2;
       end 
-      if((_plus_ready_2 || !_plus_valid_2) && (_plus_ready_0 && _plus_ready_0) && (_plus_valid_0 && _plus_valid_0)) begin
-        _plus_data_2 <= _plus_data_0 + __prev_data_1;
+      if((_dataflow_plus_ready_4 || !_dataflow_plus_valid_4) && (_dataflow_plus_ready_2 && _dataflow_plus_ready_2) && (_dataflow_plus_valid_2 && _dataflow_plus_valid_2)) begin
+        _dataflow_plus_data_4 <= _dataflow_plus_data_2 + _dataflow__prev_data_3;
       end 
-      if(_plus_valid_2 && _plus_ready_2) begin
-        _plus_valid_2 <= 0;
+      if(_dataflow_plus_valid_4 && _dataflow_plus_ready_4) begin
+        _dataflow_plus_valid_4 <= 0;
       end 
-      if((_plus_ready_2 || !_plus_valid_2) && (_plus_ready_0 && _plus_ready_0)) begin
-        _plus_valid_2 <= _plus_valid_0 && _plus_valid_0;
+      if((_dataflow_plus_ready_4 || !_dataflow_plus_valid_4) && (_dataflow_plus_ready_2 && _dataflow_plus_ready_2)) begin
+        _dataflow_plus_valid_4 <= _dataflow_plus_valid_2 && _dataflow_plus_valid_2;
       end 
-      if(_plus_valid_0 && _plus_ready_0) begin
-        __prev_data_3 <= __prev_data_1;
+      if(_dataflow_plus_valid_2 && _dataflow_plus_ready_2) begin
+        _dataflow__prev_data_5 <= _dataflow__prev_data_3;
       end 
-      if((__delay_ready_4 || !__delay_valid_4) && _plus_ready_0 && _plus_valid_0) begin
-        __delay_data_4 <= __prev_data_3;
+      if((_dataflow__delay_ready_9 || !_dataflow__delay_valid_9) && _dataflow_plus_ready_2 && _dataflow_plus_valid_2) begin
+        _dataflow__delay_data_9 <= _dataflow__prev_data_5;
       end 
-      if(__delay_valid_4 && __delay_ready_4) begin
-        __delay_valid_4 <= 0;
+      if(_dataflow__delay_valid_9 && _dataflow__delay_ready_9) begin
+        _dataflow__delay_valid_9 <= 0;
       end 
-      if((__delay_ready_4 || !__delay_valid_4) && _plus_ready_0) begin
-        __delay_valid_4 <= _plus_valid_0;
+      if((_dataflow__delay_ready_9 || !_dataflow__delay_valid_9) && _dataflow_plus_ready_2) begin
+        _dataflow__delay_valid_9 <= _dataflow_plus_valid_2;
       end 
-      if((_plus_ready_5 || !_plus_valid_5) && (_plus_ready_2 && __delay_ready_4) && (_plus_valid_2 && __delay_valid_4)) begin
-        _plus_data_5 <= _plus_data_2 + __delay_data_4;
+      if((_dataflow_plus_ready_6 || !_dataflow_plus_valid_6) && (_dataflow_plus_ready_4 && _dataflow__delay_ready_9) && (_dataflow_plus_valid_4 && _dataflow__delay_valid_9)) begin
+        _dataflow_plus_data_6 <= _dataflow_plus_data_4 + _dataflow__delay_data_9;
       end 
-      if(_plus_valid_5 && _plus_ready_5) begin
-        _plus_valid_5 <= 0;
+      if(_dataflow_plus_valid_6 && _dataflow_plus_ready_6) begin
+        _dataflow_plus_valid_6 <= 0;
       end 
-      if((_plus_ready_5 || !_plus_valid_5) && (_plus_ready_2 && __delay_ready_4)) begin
-        _plus_valid_5 <= _plus_valid_2 && __delay_valid_4;
+      if((_dataflow_plus_ready_6 || !_dataflow_plus_valid_6) && (_dataflow_plus_ready_4 && _dataflow__delay_ready_9)) begin
+        _dataflow_plus_valid_6 <= _dataflow_plus_valid_4 && _dataflow__delay_valid_9;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_ldata_6 <= _plus_data_5;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_ldata_7 <= _dataflow_plus_data_6;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_rdata_6 <= 3'sd3;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_rdata_7 <= 3'sd3;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_abs_ldata_6 <= _divide_ldata_6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_abs_ldata_7 <= _dataflow_divide_div_ldata_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_abs_rdata_6 <= (_divide_rdata_6[31] == 0)? _divide_rdata_6 : ~_divide_rdata_6 + 1;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_abs_rdata_7 <= (_dataflow_divide_div_rdata_7[31] == 0)? _dataflow_divide_div_rdata_7 : ~_dataflow_divide_div_rdata_7 + 1;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_odata_6 <= _divide_abs_odata_6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_odata_7 <= _dataflow_divide_div_abs_odata_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_valid_reg_0_6 <= _divide_ovalid_6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_valid_reg_tmp_0_7 <= _dataflow_divide_div_ovalid_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_valid_reg_1_6 <= _divide_valid_reg_0_6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_valid_reg_tmp_1_7 <= _dataflow_divide_div_valid_reg_tmp_0_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_valid_reg_2_6 <= _divide_valid_reg_1_6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_valid_reg_tmp_2_7 <= _dataflow_divide_div_valid_reg_tmp_1_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign0__6 <= !((_divide_ldata_6[31] == 0) && (_divide_rdata_6[31] == 0) || (_divide_ldata_6[31] == 1) && (_divide_rdata_6[31] == 1));
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_0_7 <= !((_dataflow_divide_div_ldata_7[31] == 0) && (_dataflow_divide_div_rdata_7[31] == 0) || (_dataflow_divide_div_ldata_7[31] == 1) && (_dataflow_divide_div_rdata_7[31] == 1));
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign1__6 <= _divide_sign0__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_1_7 <= _dataflow_divide_div_sign_tmp_0_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign2__6 <= _divide_sign1__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_2_7 <= _dataflow_divide_div_sign_tmp_1_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign3__6 <= _divide_sign2__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_3_7 <= _dataflow_divide_div_sign_tmp_2_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign4__6 <= _divide_sign3__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_4_7 <= _dataflow_divide_div_sign_tmp_3_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign5__6 <= _divide_sign4__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_5_7 <= _dataflow_divide_div_sign_tmp_4_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign6__6 <= _divide_sign5__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_6_7 <= _dataflow_divide_div_sign_tmp_5_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign7__6 <= _divide_sign6__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_7_7 <= _dataflow_divide_div_sign_tmp_6_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign8__6 <= _divide_sign7__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_8_7 <= _dataflow_divide_div_sign_tmp_7_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign9__6 <= _divide_sign8__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_9_7 <= _dataflow_divide_div_sign_tmp_8_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign10__6 <= _divide_sign9__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_10_7 <= _dataflow_divide_div_sign_tmp_9_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign11__6 <= _divide_sign10__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_11_7 <= _dataflow_divide_div_sign_tmp_10_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign12__6 <= _divide_sign11__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_12_7 <= _dataflow_divide_div_sign_tmp_11_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign13__6 <= _divide_sign12__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_13_7 <= _dataflow_divide_div_sign_tmp_12_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign14__6 <= _divide_sign13__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_14_7 <= _dataflow_divide_div_sign_tmp_13_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign15__6 <= _divide_sign14__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_15_7 <= _dataflow_divide_div_sign_tmp_14_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign16__6 <= _divide_sign15__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_16_7 <= _dataflow_divide_div_sign_tmp_15_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign17__6 <= _divide_sign16__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_17_7 <= _dataflow_divide_div_sign_tmp_16_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign18__6 <= _divide_sign17__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_18_7 <= _dataflow_divide_div_sign_tmp_17_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign19__6 <= _divide_sign18__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_19_7 <= _dataflow_divide_div_sign_tmp_18_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign20__6 <= _divide_sign19__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_20_7 <= _dataflow_divide_div_sign_tmp_19_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign21__6 <= _divide_sign20__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_21_7 <= _dataflow_divide_div_sign_tmp_20_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign22__6 <= _divide_sign21__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_22_7 <= _dataflow_divide_div_sign_tmp_21_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign23__6 <= _divide_sign22__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_23_7 <= _dataflow_divide_div_sign_tmp_22_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign24__6 <= _divide_sign23__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_24_7 <= _dataflow_divide_div_sign_tmp_23_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign25__6 <= _divide_sign24__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_25_7 <= _dataflow_divide_div_sign_tmp_24_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign26__6 <= _divide_sign25__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_26_7 <= _dataflow_divide_div_sign_tmp_25_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign27__6 <= _divide_sign26__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_27_7 <= _dataflow_divide_div_sign_tmp_26_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign28__6 <= _divide_sign27__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_28_7 <= _dataflow_divide_div_sign_tmp_27_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign29__6 <= _divide_sign28__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_29_7 <= _dataflow_divide_div_sign_tmp_28_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign30__6 <= _divide_sign29__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_30_7 <= _dataflow_divide_div_sign_tmp_29_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign31__6 <= _divide_sign30__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_31_7 <= _dataflow_divide_div_sign_tmp_30_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign32__6 <= _divide_sign31__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_32_7 <= _dataflow_divide_div_sign_tmp_31_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign33__6 <= _divide_sign32__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_33_7 <= _dataflow_divide_div_sign_tmp_32_7;
       end 
-      if(_divide_ready_6 || !_divide_valid_6) begin
-        _divide_sign34__6 <= _divide_sign33__6;
+      if(_dataflow_divide_ready_7 || !_dataflow_divide_valid_7) begin
+        _dataflow_divide_div_sign_tmp_34_7 <= _dataflow_divide_div_sign_tmp_33_7;
       end 
     end
   end
@@ -1238,8 +1242,8 @@ module Divider #
 
 
 endmodule
-"""
 
+"""
 
 def test():
     veriloggen.reset()

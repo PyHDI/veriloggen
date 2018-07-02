@@ -4,7 +4,11 @@ import veriloggen
 import dataflow_multireadwrite
 
 expected_verilog = """
-module test;
+
+module test
+(
+
+);
 
   reg CLK;
   reg RST;
@@ -58,24 +62,24 @@ module main
   wire [32-1:0] ydata;
   wire yvalid;
   wire yready;
-  reg [32-1:0] _plus_data_0;
-  reg _plus_valid_0;
-  wire _plus_ready_0;
-  assign xready = (_plus_ready_0 || !_plus_valid_0) && (xvalid && yvalid);
-  assign yready = (_plus_ready_0 || !_plus_valid_0) && (xvalid && yvalid);
+  reg [32-1:0] _dataflow_plus_data_2;
+  reg _dataflow_plus_valid_2;
+  wire _dataflow_plus_ready_2;
+  assign xready = (_dataflow_plus_ready_2 || !_dataflow_plus_valid_2) && (xvalid && yvalid);
+  assign yready = (_dataflow_plus_ready_2 || !_dataflow_plus_valid_2) && (xvalid && yvalid);
   wire [32-1:0] zdata;
   wire zvalid;
   wire zready;
-  assign zdata = _plus_data_0;
-  assign zvalid = _plus_valid_0;
-  assign _plus_ready_0 = zready;
+  assign zdata = _dataflow_plus_data_2;
+  assign zvalid = _dataflow_plus_valid_2;
+  assign _dataflow_plus_ready_2 = zready;
   reg [32-1:0] xfsm;
   localparam xfsm_init = 0;
+  reg [32-1:0] _tmp_0;
   reg [32-1:0] _tmp_1;
-  reg [32-1:0] _tmp_2;
-  assign xdata = _tmp_2;
-  reg _tmp_3;
-  assign xvalid = _tmp_3;
+  assign xdata = _tmp_1;
+  reg _tmp_2;
+  assign xvalid = _tmp_2;
   reg __dataflow_seq_0_cond_0_1;
   reg __dataflow_seq_0_cond_1_1;
   localparam xfsm_1 = 1;
@@ -88,14 +92,14 @@ module main
   always @(posedge CLK) begin
     if(RST) begin
       xfsm <= xfsm_init;
-      _tmp_1 <= 0;
+      _tmp_0 <= 0;
     end else begin
       case(xfsm)
         xfsm_init: begin
-          if(xready || !_tmp_3) begin
-            _tmp_1 <= _tmp_1 + 1;
+          if(xready || !_tmp_2) begin
+            _tmp_0 <= _tmp_0 + 1;
           end 
-          if((xready || !_tmp_3) && (_tmp_1 == 7)) begin
+          if((xready || !_tmp_2) && (_tmp_0 == 7)) begin
             xfsm <= xfsm_1;
           end 
         end
@@ -112,10 +116,10 @@ module main
           xfsm <= xfsm_5;
         end
         xfsm_5: begin
-          if(xready || !_tmp_3) begin
-            _tmp_1 <= _tmp_1 + 1;
+          if(xready || !_tmp_2) begin
+            _tmp_0 <= _tmp_0 + 1;
           end 
-          if((xready || !_tmp_3) && (_tmp_1 == 15)) begin
+          if((xready || !_tmp_2) && (_tmp_0 == 15)) begin
             xfsm <= xfsm_6;
           end 
         end
@@ -125,11 +129,11 @@ module main
 
   reg [32-1:0] yfsm;
   localparam yfsm_init = 0;
+  reg [32-1:0] _tmp_3;
   reg [32-1:0] _tmp_4;
-  reg [32-1:0] _tmp_5;
-  assign ydata = _tmp_5;
-  reg _tmp_6;
-  assign yvalid = _tmp_6;
+  assign ydata = _tmp_4;
+  reg _tmp_5;
+  assign yvalid = _tmp_5;
   reg __dataflow_seq_0_cond_2_1;
   reg __dataflow_seq_0_cond_3_1;
   localparam yfsm_1 = 1;
@@ -144,14 +148,14 @@ module main
   always @(posedge CLK) begin
     if(RST) begin
       yfsm <= yfsm_init;
-      _tmp_4 <= 0;
+      _tmp_3 <= 0;
     end else begin
       case(yfsm)
         yfsm_init: begin
-          if(yready || !_tmp_6) begin
-            _tmp_4 <= _tmp_4 + 1;
+          if(yready || !_tmp_5) begin
+            _tmp_3 <= _tmp_3 + 1;
           end 
-          if((yready || !_tmp_6) && (_tmp_4 == 7)) begin
+          if((yready || !_tmp_5) && (_tmp_3 == 7)) begin
             yfsm <= yfsm_1;
           end 
         end
@@ -174,10 +178,10 @@ module main
           yfsm <= yfsm_7;
         end
         yfsm_7: begin
-          if(yready || !_tmp_6) begin
-            _tmp_4 <= _tmp_4 + 1;
+          if(yready || !_tmp_5) begin
+            _tmp_3 <= _tmp_3 + 1;
           end 
-          if((yready || !_tmp_6) && (_tmp_4 == 15)) begin
+          if((yready || !_tmp_5) && (_tmp_3 == 15)) begin
             yfsm <= yfsm_8;
           end 
         end
@@ -187,8 +191,8 @@ module main
 
   reg [32-1:0] zfsm;
   localparam zfsm_init = 0;
-  reg [32-1:0] _tmp_7;
-  assign zready = (zfsm == 0) || (zfsm == 9) && (_tmp_7 < 32);
+  reg [32-1:0] _tmp_6;
+  assign zready = (zfsm == 0) || (zfsm == 9) && (_tmp_6 < 32);
   localparam zfsm_1 = 1;
   localparam zfsm_2 = 2;
   localparam zfsm_3 = 3;
@@ -202,15 +206,15 @@ module main
   always @(posedge CLK) begin
     if(RST) begin
       zfsm <= zfsm_init;
-      _tmp_7 <= 0;
+      _tmp_6 <= 0;
     end else begin
       case(zfsm)
         zfsm_init: begin
           if(zvalid && (zfsm == 0)) begin
             $display("zfsm_%1d: zdata=%d", zfsm, zdata);
-            _tmp_7 <= _tmp_7 + 1;
+            _tmp_6 <= _tmp_6 + 1;
           end 
-          if(_tmp_7 == 8) begin
+          if(_tmp_6 == 8) begin
             zfsm <= zfsm_1;
           end 
         end
@@ -239,9 +243,9 @@ module main
           zfsm <= zfsm_9;
         end
         zfsm_9: begin
-          if(zvalid && ((zfsm == 9) && (_tmp_7 < 32))) begin
+          if(zvalid && ((zfsm == 9) && (_tmp_6 < 32))) begin
             $display("zfsm_%1d: zdata=%d", zfsm, zdata);
-            _tmp_7 <= _tmp_7 + 1;
+            _tmp_6 <= _tmp_6 + 1;
           end 
         end
       endcase
@@ -251,85 +255,85 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
-      _plus_data_0 <= 0;
-      _plus_valid_0 <= 0;
+      _dataflow_plus_data_2 <= 0;
+      _dataflow_plus_valid_2 <= 0;
+      _tmp_1 <= 0;
       _tmp_2 <= 0;
-      _tmp_3 <= 0;
       __dataflow_seq_0_cond_0_1 <= 0;
       __dataflow_seq_0_cond_1_1 <= 0;
+      _tmp_4 <= 0;
       _tmp_5 <= 0;
-      _tmp_6 <= 0;
       __dataflow_seq_0_cond_2_1 <= 0;
       __dataflow_seq_0_cond_3_1 <= 0;
     end else begin
       if(__dataflow_seq_0_cond_0_1) begin
-        _tmp_3 <= 0;
+        _tmp_2 <= 0;
       end 
       if(__dataflow_seq_0_cond_1_1) begin
-        _tmp_3 <= 0;
+        _tmp_2 <= 0;
       end 
       if(__dataflow_seq_0_cond_2_1) begin
-        _tmp_6 <= 0;
+        _tmp_5 <= 0;
       end 
       if(__dataflow_seq_0_cond_3_1) begin
-        _tmp_6 <= 0;
+        _tmp_5 <= 0;
       end 
-      if((_plus_ready_0 || !_plus_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
-        _plus_data_0 <= xdata + ydata;
+      if((_dataflow_plus_ready_2 || !_dataflow_plus_valid_2) && (xready && yready) && (xvalid && yvalid)) begin
+        _dataflow_plus_data_2 <= xdata + ydata;
       end 
-      if(_plus_valid_0 && _plus_ready_0) begin
-        _plus_valid_0 <= 0;
+      if(_dataflow_plus_valid_2 && _dataflow_plus_ready_2) begin
+        _dataflow_plus_valid_2 <= 0;
       end 
-      if((_plus_ready_0 || !_plus_valid_0) && (xready && yready)) begin
-        _plus_valid_0 <= xvalid && yvalid;
+      if((_dataflow_plus_ready_2 || !_dataflow_plus_valid_2) && (xready && yready)) begin
+        _dataflow_plus_valid_2 <= xvalid && yvalid;
       end 
-      if((xfsm == 0) && (xready || !_tmp_3)) begin
-        _tmp_2 <= _tmp_1;
+      if((xfsm == 0) && (xready || !_tmp_2)) begin
+        _tmp_1 <= _tmp_0;
       end 
-      if((xfsm == 0) && (xready || !_tmp_3)) begin
-        _tmp_3 <= 1;
+      if((xfsm == 0) && (xready || !_tmp_2)) begin
+        _tmp_2 <= 1;
       end 
       __dataflow_seq_0_cond_0_1 <= 1;
-      if(_tmp_3 && !xready) begin
-        _tmp_3 <= _tmp_3;
+      if(_tmp_2 && !xready) begin
+        _tmp_2 <= _tmp_2;
       end 
-      if((xfsm == 5) && (xready || !_tmp_3)) begin
-        _tmp_2 <= _tmp_1;
+      if((xfsm == 5) && (xready || !_tmp_2)) begin
+        _tmp_1 <= _tmp_0;
       end 
-      if((xfsm == 5) && (xready || !_tmp_3)) begin
-        _tmp_3 <= 1;
+      if((xfsm == 5) && (xready || !_tmp_2)) begin
+        _tmp_2 <= 1;
       end 
       __dataflow_seq_0_cond_1_1 <= 1;
-      if(_tmp_3 && !xready) begin
-        _tmp_3 <= _tmp_3;
+      if(_tmp_2 && !xready) begin
+        _tmp_2 <= _tmp_2;
       end 
-      if((yfsm == 0) && (yready || !_tmp_6)) begin
-        _tmp_5 <= _tmp_4;
+      if((yfsm == 0) && (yready || !_tmp_5)) begin
+        _tmp_4 <= _tmp_3;
       end 
-      if((yfsm == 0) && (yready || !_tmp_6)) begin
-        _tmp_6 <= 1;
+      if((yfsm == 0) && (yready || !_tmp_5)) begin
+        _tmp_5 <= 1;
       end 
       __dataflow_seq_0_cond_2_1 <= 1;
-      if(_tmp_6 && !yready) begin
-        _tmp_6 <= _tmp_6;
+      if(_tmp_5 && !yready) begin
+        _tmp_5 <= _tmp_5;
       end 
-      if((yfsm == 7) && (yready || !_tmp_6)) begin
-        _tmp_5 <= _tmp_4;
+      if((yfsm == 7) && (yready || !_tmp_5)) begin
+        _tmp_4 <= _tmp_3;
       end 
-      if((yfsm == 7) && (yready || !_tmp_6)) begin
-        _tmp_6 <= 1;
+      if((yfsm == 7) && (yready || !_tmp_5)) begin
+        _tmp_5 <= 1;
       end 
       __dataflow_seq_0_cond_3_1 <= 1;
-      if(_tmp_6 && !yready) begin
-        _tmp_6 <= _tmp_6;
+      if(_tmp_5 && !yready) begin
+        _tmp_5 <= _tmp_5;
       end 
     end
   end
 
 
 endmodule
-"""
 
+"""
 
 def test():
     veriloggen.reset()

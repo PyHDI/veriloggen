@@ -4,7 +4,11 @@ import veriloggen
 import dataflow_counter
 
 expected_verilog = """
-module test;
+
+module test
+(
+
+);
 
   reg CLK;
   reg RST;
@@ -58,22 +62,22 @@ module main
   output cvalid
 );
 
-  reg [8-1:0] _counter_data_0;
-  reg _counter_valid_0;
-  wire _counter_ready_0;
-  reg [6-1:0] _counter_count_0;
-  reg [8-1:0] _counter_data_1;
-  reg _counter_valid_1;
-  wire _counter_ready_1;
-  reg [7-1:0] _counter_count_1;
-  reg [8-1:0] _plus_data_2;
-  reg _plus_valid_2;
-  wire _plus_ready_2;
-  assign _counter_ready_0 = (_plus_ready_2 || !_plus_valid_2) && (_counter_valid_0 && _counter_valid_1);
-  assign _counter_ready_1 = (_plus_ready_2 || !_plus_valid_2) && (_counter_valid_0 && _counter_valid_1);
-  assign cdata = _plus_data_2;
-  assign cvalid = _plus_valid_2;
-  assign _plus_ready_2 = 1;
+  reg [8-1:0] _dataflow_counter_data_2;
+  reg _dataflow_counter_valid_2;
+  wire _dataflow_counter_ready_2;
+  reg [6-1:0] _dataflow_counter_count_2;
+  reg [8-1:0] _dataflow_counter_data_6;
+  reg _dataflow_counter_valid_6;
+  wire _dataflow_counter_ready_6;
+  reg [7-1:0] _dataflow_counter_count_6;
+  reg [8-1:0] _dataflow_plus_data_8;
+  reg _dataflow_plus_valid_8;
+  wire _dataflow_plus_ready_8;
+  assign _dataflow_counter_ready_2 = (_dataflow_plus_ready_8 || !_dataflow_plus_valid_8) && (_dataflow_counter_valid_2 && _dataflow_counter_valid_6);
+  assign _dataflow_counter_ready_6 = (_dataflow_plus_ready_8 || !_dataflow_plus_valid_8) && (_dataflow_counter_valid_2 && _dataflow_counter_valid_6);
+  assign cdata = _dataflow_plus_data_8;
+  assign cvalid = _dataflow_plus_valid_8;
+  assign _dataflow_plus_ready_8 = 1;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
   reg [32-1:0] count;
@@ -101,61 +105,61 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
-      _counter_data_0 <= -2'sd1;
-      _counter_count_0 <= 0;
-      _counter_valid_0 <= 0;
-      _counter_data_1 <= -3'sd2;
-      _counter_count_1 <= 0;
-      _counter_valid_1 <= 0;
-      _plus_data_2 <= 0;
-      _plus_valid_2 <= 0;
+      _dataflow_counter_data_2 <= -2'sd1;
+      _dataflow_counter_count_2 <= 0;
+      _dataflow_counter_valid_2 <= 0;
+      _dataflow_counter_data_6 <= -3'sd2;
+      _dataflow_counter_count_6 <= 0;
+      _dataflow_counter_valid_6 <= 0;
+      _dataflow_plus_data_8 <= 0;
+      _dataflow_plus_valid_8 <= 0;
     end else begin
-      if((_counter_ready_0 || !_counter_valid_0) && 1 && 1) begin
-        _counter_data_0 <= _counter_data_0 + 1;
+      if((_dataflow_counter_ready_2 || !_dataflow_counter_valid_2) && 1 && 1) begin
+        _dataflow_counter_data_2 <= _dataflow_counter_data_2 + 1;
       end 
-      if((_counter_ready_0 || !_counter_valid_0) && 1 && 1) begin
-        _counter_count_0 <= (_counter_count_0 == 5'sd8 - 1)? 0 : _counter_count_0 + 1;
+      if((_dataflow_counter_ready_2 || !_dataflow_counter_valid_2) && 1 && 1) begin
+        _dataflow_counter_count_2 <= (_dataflow_counter_count_2 == 5'sd8 - 1)? 0 : _dataflow_counter_count_2 + 1;
       end 
-      if(_counter_valid_0 && _counter_ready_0) begin
-        _counter_valid_0 <= 0;
+      if(_dataflow_counter_valid_2 && _dataflow_counter_ready_2) begin
+        _dataflow_counter_valid_2 <= 0;
       end 
-      if((_counter_ready_0 || !_counter_valid_0) && 1) begin
-        _counter_valid_0 <= 1;
+      if((_dataflow_counter_ready_2 || !_dataflow_counter_valid_2) && 1) begin
+        _dataflow_counter_valid_2 <= 1;
       end 
-      if((_counter_ready_0 || !_counter_valid_0) && 1 && 1 && (_counter_count_0 == 0)) begin
-        _counter_data_0 <= -2'sd1 + 1;
+      if((_dataflow_counter_ready_2 || !_dataflow_counter_valid_2) && 1 && 1 && (_dataflow_counter_count_2 == 0)) begin
+        _dataflow_counter_data_2 <= -2'sd1 + 1;
       end 
-      if((_counter_ready_1 || !_counter_valid_1) && 1 && 1) begin
-        _counter_data_1 <= _counter_data_1 + 2;
+      if((_dataflow_counter_ready_6 || !_dataflow_counter_valid_6) && 1 && 1) begin
+        _dataflow_counter_data_6 <= _dataflow_counter_data_6 + 2;
       end 
-      if((_counter_ready_1 || !_counter_valid_1) && 1 && 1) begin
-        _counter_count_1 <= (_counter_count_1 == 6'sd16 - 1)? 0 : _counter_count_1 + 1;
+      if((_dataflow_counter_ready_6 || !_dataflow_counter_valid_6) && 1 && 1) begin
+        _dataflow_counter_count_6 <= (_dataflow_counter_count_6 == 6'sd16 - 1)? 0 : _dataflow_counter_count_6 + 1;
       end 
-      if(_counter_valid_1 && _counter_ready_1) begin
-        _counter_valid_1 <= 0;
+      if(_dataflow_counter_valid_6 && _dataflow_counter_ready_6) begin
+        _dataflow_counter_valid_6 <= 0;
       end 
-      if((_counter_ready_1 || !_counter_valid_1) && 1) begin
-        _counter_valid_1 <= 1;
+      if((_dataflow_counter_ready_6 || !_dataflow_counter_valid_6) && 1) begin
+        _dataflow_counter_valid_6 <= 1;
       end 
-      if((_counter_ready_1 || !_counter_valid_1) && 1 && 1 && (_counter_count_1 == 0)) begin
-        _counter_data_1 <= -3'sd2 + 2;
+      if((_dataflow_counter_ready_6 || !_dataflow_counter_valid_6) && 1 && 1 && (_dataflow_counter_count_6 == 0)) begin
+        _dataflow_counter_data_6 <= -3'sd2 + 2;
       end 
-      if((_plus_ready_2 || !_plus_valid_2) && (_counter_ready_0 && _counter_ready_1) && (_counter_valid_0 && _counter_valid_1)) begin
-        _plus_data_2 <= _counter_data_0 + _counter_data_1;
+      if((_dataflow_plus_ready_8 || !_dataflow_plus_valid_8) && (_dataflow_counter_ready_2 && _dataflow_counter_ready_6) && (_dataflow_counter_valid_2 && _dataflow_counter_valid_6)) begin
+        _dataflow_plus_data_8 <= _dataflow_counter_data_2 + _dataflow_counter_data_6;
       end 
-      if(_plus_valid_2 && _plus_ready_2) begin
-        _plus_valid_2 <= 0;
+      if(_dataflow_plus_valid_8 && _dataflow_plus_ready_8) begin
+        _dataflow_plus_valid_8 <= 0;
       end 
-      if((_plus_ready_2 || !_plus_valid_2) && (_counter_ready_0 && _counter_ready_1)) begin
-        _plus_valid_2 <= _counter_valid_0 && _counter_valid_1;
+      if((_dataflow_plus_ready_8 || !_dataflow_plus_valid_8) && (_dataflow_counter_ready_2 && _dataflow_counter_ready_6)) begin
+        _dataflow_plus_valid_8 <= _dataflow_counter_valid_2 && _dataflow_counter_valid_6;
       end 
     end
   end
 
 
 endmodule
-"""
 
+"""
 def test():
     veriloggen.reset()
     test_module = dataflow_counter.mkTest()

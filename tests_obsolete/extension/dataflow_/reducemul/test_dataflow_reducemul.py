@@ -4,7 +4,11 @@ import veriloggen
 import dataflow_reducemul
 
 expected_verilog = """
-module test;
+
+module test
+(
+
+);
 
   reg CLK;
   reg RST;
@@ -288,35 +292,35 @@ module main
   input zready
 );
 
-  reg [32-1:0] _reducemul_data_0;
-  reg _reducemul_valid_0;
-  wire _reducemul_ready_0;
-  assign xready = (_reducemul_ready_0 || !_reducemul_valid_0) && xvalid;
-  assign zdata = _reducemul_data_0;
-  assign zvalid = _reducemul_valid_0;
-  assign _reducemul_ready_0 = zready;
+  reg [32-1:0] _dataflow_reducemul_data_2;
+  reg _dataflow_reducemul_valid_2;
+  wire _dataflow_reducemul_ready_2;
+  assign xready = (_dataflow_reducemul_ready_2 || !_dataflow_reducemul_valid_2) && xvalid;
+  assign zdata = _dataflow_reducemul_data_2;
+  assign zvalid = _dataflow_reducemul_valid_2;
+  assign _dataflow_reducemul_ready_2 = zready;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _reducemul_data_0 <= 2'sd1;
-      _reducemul_valid_0 <= 0;
+      _dataflow_reducemul_data_2 <= 2'sd1;
+      _dataflow_reducemul_valid_2 <= 0;
     end else begin
-      if((_reducemul_ready_0 || !_reducemul_valid_0) && xready && xvalid) begin
-        _reducemul_data_0 <= _reducemul_data_0 * xdata;
+      if((_dataflow_reducemul_ready_2 || !_dataflow_reducemul_valid_2) && xready && xvalid) begin
+        _dataflow_reducemul_data_2 <= _dataflow_reducemul_data_2 * xdata;
       end 
-      if(_reducemul_valid_0 && _reducemul_ready_0) begin
-        _reducemul_valid_0 <= 0;
+      if(_dataflow_reducemul_valid_2 && _dataflow_reducemul_ready_2) begin
+        _dataflow_reducemul_valid_2 <= 0;
       end 
-      if((_reducemul_ready_0 || !_reducemul_valid_0) && xready) begin
-        _reducemul_valid_0 <= xvalid;
+      if((_dataflow_reducemul_ready_2 || !_dataflow_reducemul_valid_2) && xready) begin
+        _dataflow_reducemul_valid_2 <= xvalid;
       end 
     end
   end
 
 
 endmodule
-"""
 
+"""
 
 def test():
     veriloggen.reset()

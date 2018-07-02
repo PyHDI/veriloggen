@@ -4,7 +4,11 @@ import veriloggen
 import dataflow_mul
 
 expected_verilog = """
-module test;
+
+module test
+(
+
+);
 
   reg CLK;
   reg RST;
@@ -744,49 +748,49 @@ module main
   input zready
 );
 
-  wire [32-1:0] _times_data_0;
-  wire _times_valid_0;
-  wire _times_ready_0;
-  wire [64-1:0] _times_odata_0;
-  reg [64-1:0] _times_data_reg_0;
-  assign _times_data_0 = _times_data_reg_0;
-  wire _times_ovalid_0;
-  reg _times_valid_reg_0;
-  assign _times_valid_0 = _times_valid_reg_0;
-  wire _times_enable_0;
-  wire _times_update_0;
-  assign _times_enable_0 = (_times_ready_0 || !_times_valid_0) && (xready && yready) && (xvalid && yvalid);
-  assign _times_update_0 = _times_ready_0 || !_times_valid_0;
+  wire [32-1:0] _dataflow_times_data_2;
+  wire _dataflow_times_valid_2;
+  wire _dataflow_times_ready_2;
+  wire [64-1:0] _dataflow_times_mul_odata_2;
+  reg [64-1:0] _dataflow_times_mul_odata_reg_2;
+  assign _dataflow_times_data_2 = _dataflow_times_mul_odata_reg_2;
+  wire _dataflow_times_mul_ovalid_2;
+  reg _dataflow_times_mul_valid_reg_2;
+  assign _dataflow_times_valid_2 = _dataflow_times_mul_valid_reg_2;
+  wire _dataflow_times_mul_enable_2;
+  wire _dataflow_times_mul_update_2;
+  assign _dataflow_times_mul_enable_2 = (_dataflow_times_ready_2 || !_dataflow_times_valid_2) && (xready && yready) && (xvalid && yvalid);
+  assign _dataflow_times_mul_update_2 = _dataflow_times_ready_2 || !_dataflow_times_valid_2;
 
   multiplier_0
-  mul0
+  _dataflow_times_mul_2
   (
     .CLK(CLK),
     .RST(RST),
-    .update(_times_update_0),
-    .enable(_times_enable_0),
-    .valid(_times_ovalid_0),
+    .update(_dataflow_times_mul_update_2),
+    .enable(_dataflow_times_mul_enable_2),
+    .valid(_dataflow_times_mul_ovalid_2),
     .a(xdata),
     .b(ydata),
-    .c(_times_odata_0)
+    .c(_dataflow_times_mul_odata_2)
   );
 
-  assign xready = (_times_ready_0 || !_times_valid_0) && (xvalid && yvalid);
-  assign yready = (_times_ready_0 || !_times_valid_0) && (xvalid && yvalid);
-  assign zdata = _times_data_0;
-  assign zvalid = _times_valid_0;
-  assign _times_ready_0 = zready;
+  assign xready = (_dataflow_times_ready_2 || !_dataflow_times_valid_2) && (xvalid && yvalid);
+  assign yready = (_dataflow_times_ready_2 || !_dataflow_times_valid_2) && (xvalid && yvalid);
+  assign zdata = _dataflow_times_data_2;
+  assign zvalid = _dataflow_times_valid_2;
+  assign _dataflow_times_ready_2 = zready;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _times_data_reg_0 <= 0;
-      _times_valid_reg_0 <= 0;
+      _dataflow_times_mul_odata_reg_2 <= 0;
+      _dataflow_times_mul_valid_reg_2 <= 0;
     end else begin
-      if(_times_ready_0 || !_times_valid_0) begin
-        _times_data_reg_0 <= _times_odata_0;
+      if(_dataflow_times_ready_2 || !_dataflow_times_valid_2) begin
+        _dataflow_times_mul_odata_reg_2 <= _dataflow_times_mul_odata_2;
       end 
-      if(_times_ready_0 || !_times_valid_0) begin
-        _times_valid_reg_0 <= _times_ovalid_0;
+      if(_dataflow_times_ready_2 || !_dataflow_times_valid_2) begin
+        _dataflow_times_mul_valid_reg_2 <= _dataflow_times_mul_ovalid_2;
       end 
     end
   end
@@ -886,8 +890,8 @@ module multiplier_core_0
 
 
 endmodule
-"""
 
+"""
 
 def test():
     veriloggen.reset()

@@ -4,7 +4,11 @@ import veriloggen
 import dataflow_reduceadd_valid
 
 expected_verilog = """
-module test;
+
+module test
+(
+
+);
 
   reg CLK;
   reg RST;
@@ -360,96 +364,96 @@ module main
   input vready
 );
 
-  wire [32-1:0] _times_data_0;
-  wire _times_valid_0;
-  wire _times_ready_0;
-  wire [64-1:0] _times_odata_0;
-  reg [64-1:0] _times_data_reg_0;
-  assign _times_data_0 = _times_data_reg_0;
-  wire _times_ovalid_0;
-  reg _times_valid_reg_0;
-  assign _times_valid_0 = _times_valid_reg_0;
-  wire _times_enable_0;
-  wire _times_update_0;
-  assign _times_enable_0 = (_times_ready_0 || !_times_valid_0) && (xready && xready) && (xvalid && xvalid);
-  assign _times_update_0 = _times_ready_0 || !_times_valid_0;
+  wire [32-1:0] _dataflow_times_data_1;
+  wire _dataflow_times_valid_1;
+  wire _dataflow_times_ready_1;
+  wire [64-1:0] _dataflow_times_mul_odata_1;
+  reg [64-1:0] _dataflow_times_mul_odata_reg_1;
+  assign _dataflow_times_data_1 = _dataflow_times_mul_odata_reg_1;
+  wire _dataflow_times_mul_ovalid_1;
+  reg _dataflow_times_mul_valid_reg_1;
+  assign _dataflow_times_valid_1 = _dataflow_times_mul_valid_reg_1;
+  wire _dataflow_times_mul_enable_1;
+  wire _dataflow_times_mul_update_1;
+  assign _dataflow_times_mul_enable_1 = (_dataflow_times_ready_1 || !_dataflow_times_valid_1) && (xready && xready) && (xvalid && xvalid);
+  assign _dataflow_times_mul_update_1 = _dataflow_times_ready_1 || !_dataflow_times_valid_1;
 
   multiplier_0
-  mul0
+  _dataflow_times_mul_1
   (
     .CLK(CLK),
     .RST(RST),
-    .update(_times_update_0),
-    .enable(_times_enable_0),
-    .valid(_times_ovalid_0),
+    .update(_dataflow_times_mul_update_1),
+    .enable(_dataflow_times_mul_enable_1),
+    .valid(_dataflow_times_mul_ovalid_1),
     .a(xdata),
     .b(xdata),
-    .c(_times_odata_0)
+    .c(_dataflow_times_mul_odata_1)
   );
 
-  assign xready = (_times_ready_0 || !_times_valid_0) && (xvalid && xvalid) && ((_times_ready_0 || !_times_valid_0) && (xvalid && xvalid));
-  reg [32-1:0] _reduceadd_data_1;
-  reg _reduceadd_valid_1;
-  wire _reduceadd_ready_1;
-  reg [5-1:0] _reduceadd_count_1;
-  reg [1-1:0] _pulse_data_2;
-  reg _pulse_valid_2;
-  wire _pulse_ready_2;
-  reg [5-1:0] _pulse_count_2;
-  assign _times_ready_0 = (_reduceadd_ready_1 || !_reduceadd_valid_1) && _times_valid_0 && ((_pulse_ready_2 || !_pulse_valid_2) && _times_valid_0);
-  assign zdata = _reduceadd_data_1;
-  assign zvalid = _reduceadd_valid_1;
-  assign _reduceadd_ready_1 = zready;
-  assign vdata = _pulse_data_2;
-  assign vvalid = _pulse_valid_2;
-  assign _pulse_ready_2 = vready;
+  assign xready = (_dataflow_times_ready_1 || !_dataflow_times_valid_1) && (xvalid && xvalid) && ((_dataflow_times_ready_1 || !_dataflow_times_valid_1) && (xvalid && xvalid));
+  reg [32-1:0] _dataflow_reduceadd_data_4;
+  reg _dataflow_reduceadd_valid_4;
+  wire _dataflow_reduceadd_ready_4;
+  reg [5-1:0] _dataflow_reduceadd_count_4;
+  reg [1-1:0] _dataflow_pulse_data_7;
+  reg _dataflow_pulse_valid_7;
+  wire _dataflow_pulse_ready_7;
+  reg [5-1:0] _dataflow_pulse_count_7;
+  assign _dataflow_times_ready_1 = (_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && _dataflow_times_valid_1 && ((_dataflow_pulse_ready_7 || !_dataflow_pulse_valid_7) && _dataflow_times_valid_1);
+  assign zdata = _dataflow_reduceadd_data_4;
+  assign zvalid = _dataflow_reduceadd_valid_4;
+  assign _dataflow_reduceadd_ready_4 = zready;
+  assign vdata = _dataflow_pulse_data_7;
+  assign vvalid = _dataflow_pulse_valid_7;
+  assign _dataflow_pulse_ready_7 = vready;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _times_data_reg_0 <= 0;
-      _times_valid_reg_0 <= 0;
-      _reduceadd_data_1 <= 1'sd0;
-      _reduceadd_count_1 <= 0;
-      _reduceadd_valid_1 <= 0;
-      _pulse_data_2 <= 1'sd0;
-      _pulse_count_2 <= 0;
-      _pulse_valid_2 <= 0;
+      _dataflow_times_mul_odata_reg_1 <= 0;
+      _dataflow_times_mul_valid_reg_1 <= 0;
+      _dataflow_reduceadd_data_4 <= 1'sd0;
+      _dataflow_reduceadd_count_4 <= 0;
+      _dataflow_reduceadd_valid_4 <= 0;
+      _dataflow_pulse_data_7 <= 1'sd0;
+      _dataflow_pulse_count_7 <= 0;
+      _dataflow_pulse_valid_7 <= 0;
     end else begin
-      if(_times_ready_0 || !_times_valid_0) begin
-        _times_data_reg_0 <= _times_odata_0;
+      if(_dataflow_times_ready_1 || !_dataflow_times_valid_1) begin
+        _dataflow_times_mul_odata_reg_1 <= _dataflow_times_mul_odata_1;
       end 
-      if(_times_ready_0 || !_times_valid_0) begin
-        _times_valid_reg_0 <= _times_ovalid_0;
+      if(_dataflow_times_ready_1 || !_dataflow_times_valid_1) begin
+        _dataflow_times_mul_valid_reg_1 <= _dataflow_times_mul_ovalid_1;
       end 
-      if((_reduceadd_ready_1 || !_reduceadd_valid_1) && _times_ready_0 && _times_valid_0) begin
-        _reduceadd_data_1 <= _reduceadd_data_1 + _times_data_0;
+      if((_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && _dataflow_times_ready_1 && _dataflow_times_valid_1) begin
+        _dataflow_reduceadd_data_4 <= _dataflow_reduceadd_data_4 + _dataflow_times_data_1;
       end 
-      if((_reduceadd_ready_1 || !_reduceadd_valid_1) && _times_ready_0 && _times_valid_0) begin
-        _reduceadd_count_1 <= (_reduceadd_count_1 == 4'sd4 - 1)? 0 : _reduceadd_count_1 + 1;
+      if((_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && _dataflow_times_ready_1 && _dataflow_times_valid_1) begin
+        _dataflow_reduceadd_count_4 <= (_dataflow_reduceadd_count_4 == 4'sd4 - 1)? 0 : _dataflow_reduceadd_count_4 + 1;
       end 
-      if(_reduceadd_valid_1 && _reduceadd_ready_1) begin
-        _reduceadd_valid_1 <= 0;
+      if(_dataflow_reduceadd_valid_4 && _dataflow_reduceadd_ready_4) begin
+        _dataflow_reduceadd_valid_4 <= 0;
       end 
-      if((_reduceadd_ready_1 || !_reduceadd_valid_1) && _times_ready_0) begin
-        _reduceadd_valid_1 <= _times_valid_0;
+      if((_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && _dataflow_times_ready_1) begin
+        _dataflow_reduceadd_valid_4 <= _dataflow_times_valid_1;
       end 
-      if((_reduceadd_ready_1 || !_reduceadd_valid_1) && _times_ready_0 && _times_valid_0 && (_reduceadd_count_1 == 0)) begin
-        _reduceadd_data_1 <= 1'sd0 + _times_data_0;
+      if((_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && _dataflow_times_ready_1 && _dataflow_times_valid_1 && (_dataflow_reduceadd_count_4 == 0)) begin
+        _dataflow_reduceadd_data_4 <= 1'sd0 + _dataflow_times_data_1;
       end 
-      if((_pulse_ready_2 || !_pulse_valid_2) && _times_ready_0 && _times_valid_0) begin
-        _pulse_data_2 <= _pulse_count_2 == 4'sd4 - 1;
+      if((_dataflow_pulse_ready_7 || !_dataflow_pulse_valid_7) && _dataflow_times_ready_1 && _dataflow_times_valid_1) begin
+        _dataflow_pulse_data_7 <= _dataflow_pulse_count_7 == 4'sd4 - 1;
       end 
-      if((_pulse_ready_2 || !_pulse_valid_2) && _times_ready_0 && _times_valid_0) begin
-        _pulse_count_2 <= (_pulse_count_2 == 4'sd4 - 1)? 0 : _pulse_count_2 + 1;
+      if((_dataflow_pulse_ready_7 || !_dataflow_pulse_valid_7) && _dataflow_times_ready_1 && _dataflow_times_valid_1) begin
+        _dataflow_pulse_count_7 <= (_dataflow_pulse_count_7 == 4'sd4 - 1)? 0 : _dataflow_pulse_count_7 + 1;
       end 
-      if(_pulse_valid_2 && _pulse_ready_2) begin
-        _pulse_valid_2 <= 0;
+      if(_dataflow_pulse_valid_7 && _dataflow_pulse_ready_7) begin
+        _dataflow_pulse_valid_7 <= 0;
       end 
-      if((_pulse_ready_2 || !_pulse_valid_2) && _times_ready_0) begin
-        _pulse_valid_2 <= _times_valid_0;
+      if((_dataflow_pulse_ready_7 || !_dataflow_pulse_valid_7) && _dataflow_times_ready_1) begin
+        _dataflow_pulse_valid_7 <= _dataflow_times_valid_1;
       end 
-      if((_pulse_ready_2 || !_pulse_valid_2) && _times_ready_0 && _times_valid_0 && (_pulse_count_2 == 0)) begin
-        _pulse_data_2 <= _pulse_count_2 == 4'sd4 - 1;
+      if((_dataflow_pulse_ready_7 || !_dataflow_pulse_valid_7) && _dataflow_times_ready_1 && _dataflow_times_valid_1 && (_dataflow_pulse_count_7 == 0)) begin
+        _dataflow_pulse_data_7 <= _dataflow_pulse_count_7 == 4'sd4 - 1;
       end 
     end
   end
@@ -549,8 +553,8 @@ module multiplier_core_0
 
 
 endmodule
-"""
 
+"""
 
 def test():
     veriloggen.reset()

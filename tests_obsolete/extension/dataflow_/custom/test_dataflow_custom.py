@@ -4,7 +4,11 @@ import veriloggen
 import dataflow_custom
 
 expected_verilog = """
-module test;
+
+module test
+(
+
+);
 
   reg CLK;
   reg RST;
@@ -519,36 +523,36 @@ module main
   input zready
 );
 
-  reg [32-1:0] _customop_data_0;
-  reg _customop_valid_0;
-  wire _customop_ready_0;
-  assign xready = (_customop_ready_0 || !_customop_valid_0) && (xvalid && yvalid);
-  assign yready = (_customop_ready_0 || !_customop_valid_0) && (xvalid && yvalid);
-  assign zdata = _customop_data_0;
-  assign zvalid = _customop_valid_0;
-  assign _customop_ready_0 = zready;
+  reg [32-1:0] _dataflow_customop_data_2;
+  reg _dataflow_customop_valid_2;
+  wire _dataflow_customop_ready_2;
+  assign xready = (_dataflow_customop_ready_2 || !_dataflow_customop_valid_2) && (xvalid && yvalid);
+  assign yready = (_dataflow_customop_ready_2 || !_dataflow_customop_valid_2) && (xvalid && yvalid);
+  assign zdata = _dataflow_customop_data_2;
+  assign zvalid = _dataflow_customop_valid_2;
+  assign _dataflow_customop_ready_2 = zready;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _customop_data_0 <= 0;
-      _customop_valid_0 <= 0;
+      _dataflow_customop_data_2 <= 0;
+      _dataflow_customop_valid_2 <= 0;
     end else begin
-      if((_customop_ready_0 || !_customop_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
-        _customop_data_0 <= xdata + ydata + 100;
+      if((_dataflow_customop_ready_2 || !_dataflow_customop_valid_2) && (xready && yready) && (xvalid && yvalid)) begin
+        _dataflow_customop_data_2 <= xdata + ydata + 100;
       end 
-      if(_customop_valid_0 && _customop_ready_0) begin
-        _customop_valid_0 <= 0;
+      if(_dataflow_customop_valid_2 && _dataflow_customop_ready_2) begin
+        _dataflow_customop_valid_2 <= 0;
       end 
-      if((_customop_ready_0 || !_customop_valid_0) && (xready && yready)) begin
-        _customop_valid_0 <= xvalid && yvalid;
+      if((_dataflow_customop_ready_2 || !_dataflow_customop_valid_2) && (xready && yready)) begin
+        _dataflow_customop_valid_2 <= xvalid && yvalid;
       end 
     end
   end
 
 
 endmodule
-"""
 
+"""
 
 def test():
     veriloggen.reset()

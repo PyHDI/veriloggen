@@ -4,7 +4,11 @@ import veriloggen
 import dataflow_two_outputs_addsub
 
 expected_verilog = """
-module test;
+
+module test
+(
+
+);
 
   reg CLK;
   reg RST;
@@ -617,53 +621,53 @@ module main
   input z2ready
 );
 
-  reg [32-1:0] _plus_data_0;
-  reg _plus_valid_0;
-  wire _plus_ready_0;
-  reg [32-1:0] _minus_data_1;
-  reg _minus_valid_1;
-  wire _minus_ready_1;
-  assign yready = (_plus_ready_0 || !_plus_valid_0) && (xvalid && yvalid) && ((_minus_ready_1 || !_minus_valid_1) && (yvalid && xvalid));
-  assign xready = (_plus_ready_0 || !_plus_valid_0) && (xvalid && yvalid) && ((_minus_ready_1 || !_minus_valid_1) && (yvalid && xvalid));
-  assign z1data = _plus_data_0;
-  assign z1valid = _plus_valid_0;
-  assign _plus_ready_0 = z1ready;
-  assign z2data = _minus_data_1;
-  assign z2valid = _minus_valid_1;
-  assign _minus_ready_1 = z2ready;
+  reg [32-1:0] _dataflow_plus_data_2;
+  reg _dataflow_plus_valid_2;
+  wire _dataflow_plus_ready_2;
+  reg [32-1:0] _dataflow_minus_data_3;
+  reg _dataflow_minus_valid_3;
+  wire _dataflow_minus_ready_3;
+  assign yready = (_dataflow_plus_ready_2 || !_dataflow_plus_valid_2) && (xvalid && yvalid) && ((_dataflow_minus_ready_3 || !_dataflow_minus_valid_3) && (yvalid && xvalid));
+  assign xready = (_dataflow_plus_ready_2 || !_dataflow_plus_valid_2) && (xvalid && yvalid) && ((_dataflow_minus_ready_3 || !_dataflow_minus_valid_3) && (yvalid && xvalid));
+  assign z1data = _dataflow_plus_data_2;
+  assign z1valid = _dataflow_plus_valid_2;
+  assign _dataflow_plus_ready_2 = z1ready;
+  assign z2data = _dataflow_minus_data_3;
+  assign z2valid = _dataflow_minus_valid_3;
+  assign _dataflow_minus_ready_3 = z2ready;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _plus_data_0 <= 0;
-      _plus_valid_0 <= 0;
-      _minus_data_1 <= 0;
-      _minus_valid_1 <= 0;
+      _dataflow_plus_data_2 <= 0;
+      _dataflow_plus_valid_2 <= 0;
+      _dataflow_minus_data_3 <= 0;
+      _dataflow_minus_valid_3 <= 0;
     end else begin
-      if((_plus_ready_0 || !_plus_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
-        _plus_data_0 <= xdata + ydata;
+      if((_dataflow_plus_ready_2 || !_dataflow_plus_valid_2) && (xready && yready) && (xvalid && yvalid)) begin
+        _dataflow_plus_data_2 <= xdata + ydata;
       end 
-      if(_plus_valid_0 && _plus_ready_0) begin
-        _plus_valid_0 <= 0;
+      if(_dataflow_plus_valid_2 && _dataflow_plus_ready_2) begin
+        _dataflow_plus_valid_2 <= 0;
       end 
-      if((_plus_ready_0 || !_plus_valid_0) && (xready && yready)) begin
-        _plus_valid_0 <= xvalid && yvalid;
+      if((_dataflow_plus_ready_2 || !_dataflow_plus_valid_2) && (xready && yready)) begin
+        _dataflow_plus_valid_2 <= xvalid && yvalid;
       end 
-      if((_minus_ready_1 || !_minus_valid_1) && (yready && xready) && (yvalid && xvalid)) begin
-        _minus_data_1 <= ydata - xdata;
+      if((_dataflow_minus_ready_3 || !_dataflow_minus_valid_3) && (yready && xready) && (yvalid && xvalid)) begin
+        _dataflow_minus_data_3 <= ydata - xdata;
       end 
-      if(_minus_valid_1 && _minus_ready_1) begin
-        _minus_valid_1 <= 0;
+      if(_dataflow_minus_valid_3 && _dataflow_minus_ready_3) begin
+        _dataflow_minus_valid_3 <= 0;
       end 
-      if((_minus_ready_1 || !_minus_valid_1) && (yready && xready)) begin
-        _minus_valid_1 <= yvalid && xvalid;
+      if((_dataflow_minus_ready_3 || !_dataflow_minus_valid_3) && (yready && xready)) begin
+        _dataflow_minus_valid_3 <= yvalid && xvalid;
       end 
     end
   end
 
 
 endmodule
-"""
 
+"""
 def test():
     veriloggen.reset()
     test_module = dataflow_two_outputs_addsub.mkTest()

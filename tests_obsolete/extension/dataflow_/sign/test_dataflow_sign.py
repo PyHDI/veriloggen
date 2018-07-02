@@ -4,7 +4,11 @@ import veriloggen
 import dataflow_sign
 
 expected_verilog = """
-module test;
+
+module test
+(
+
+);
 
   reg CLK;
   reg RST;
@@ -519,66 +523,66 @@ module main
   input zready
 );
 
-  reg signed [32-1:0] _minus_data_0;
-  reg _minus_valid_0;
-  wire _minus_ready_0;
-  assign xready = (_minus_ready_0 || !_minus_valid_0) && (xvalid && yvalid);
-  assign yready = (_minus_ready_0 || !_minus_valid_0) && (xvalid && yvalid);
-  reg signed [32-1:0] _plus_data_1;
-  reg _plus_valid_1;
-  wire _plus_ready_1;
-  assign _minus_ready_0 = (_plus_ready_1 || !_plus_valid_1) && _minus_valid_0;
-  reg [1-1:0] _greatereq_data_2;
-  reg _greatereq_valid_2;
-  wire _greatereq_ready_2;
-  assign _plus_ready_1 = (_greatereq_ready_2 || !_greatereq_valid_2) && _plus_valid_1;
-  assign zdata = _greatereq_data_2;
-  assign zvalid = _greatereq_valid_2;
-  assign _greatereq_ready_2 = zready;
+  reg signed [32-1:0] _dataflow_minus_data_2;
+  reg _dataflow_minus_valid_2;
+  wire _dataflow_minus_ready_2;
+  assign xready = (_dataflow_minus_ready_2 || !_dataflow_minus_valid_2) && (xvalid && yvalid);
+  assign yready = (_dataflow_minus_ready_2 || !_dataflow_minus_valid_2) && (xvalid && yvalid);
+  reg signed [32-1:0] _dataflow_plus_data_4;
+  reg _dataflow_plus_valid_4;
+  wire _dataflow_plus_ready_4;
+  assign _dataflow_minus_ready_2 = (_dataflow_plus_ready_4 || !_dataflow_plus_valid_4) && _dataflow_minus_valid_2;
+  reg [1-1:0] _dataflow_greatereq_data_6;
+  reg _dataflow_greatereq_valid_6;
+  wire _dataflow_greatereq_ready_6;
+  assign _dataflow_plus_ready_4 = (_dataflow_greatereq_ready_6 || !_dataflow_greatereq_valid_6) && _dataflow_plus_valid_4;
+  assign zdata = _dataflow_greatereq_data_6;
+  assign zvalid = _dataflow_greatereq_valid_6;
+  assign _dataflow_greatereq_ready_6 = zready;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _minus_data_0 <= 0;
-      _minus_valid_0 <= 0;
-      _plus_data_1 <= 0;
-      _plus_valid_1 <= 0;
-      _greatereq_data_2 <= 0;
-      _greatereq_valid_2 <= 0;
+      _dataflow_minus_data_2 <= 0;
+      _dataflow_minus_valid_2 <= 0;
+      _dataflow_plus_data_4 <= 0;
+      _dataflow_plus_valid_4 <= 0;
+      _dataflow_greatereq_data_6 <= 0;
+      _dataflow_greatereq_valid_6 <= 0;
     end else begin
-      if((_minus_ready_0 || !_minus_valid_0) && (xready && yready) && (xvalid && yvalid)) begin
-        _minus_data_0 <= xdata - ydata;
+      if((_dataflow_minus_ready_2 || !_dataflow_minus_valid_2) && (xready && yready) && (xvalid && yvalid)) begin
+        _dataflow_minus_data_2 <= xdata - ydata;
       end 
-      if(_minus_valid_0 && _minus_ready_0) begin
-        _minus_valid_0 <= 0;
+      if(_dataflow_minus_valid_2 && _dataflow_minus_ready_2) begin
+        _dataflow_minus_valid_2 <= 0;
       end 
-      if((_minus_ready_0 || !_minus_valid_0) && (xready && yready)) begin
-        _minus_valid_0 <= xvalid && yvalid;
+      if((_dataflow_minus_ready_2 || !_dataflow_minus_valid_2) && (xready && yready)) begin
+        _dataflow_minus_valid_2 <= xvalid && yvalid;
       end 
-      if((_plus_ready_1 || !_plus_valid_1) && _minus_ready_0 && _minus_valid_0) begin
-        _plus_data_1 <= _minus_data_0 + 4'sd5;
+      if((_dataflow_plus_ready_4 || !_dataflow_plus_valid_4) && _dataflow_minus_ready_2 && _dataflow_minus_valid_2) begin
+        _dataflow_plus_data_4 <= _dataflow_minus_data_2 + 4'sd5;
       end 
-      if(_plus_valid_1 && _plus_ready_1) begin
-        _plus_valid_1 <= 0;
+      if(_dataflow_plus_valid_4 && _dataflow_plus_ready_4) begin
+        _dataflow_plus_valid_4 <= 0;
       end 
-      if((_plus_ready_1 || !_plus_valid_1) && _minus_ready_0) begin
-        _plus_valid_1 <= _minus_valid_0;
+      if((_dataflow_plus_ready_4 || !_dataflow_plus_valid_4) && _dataflow_minus_ready_2) begin
+        _dataflow_plus_valid_4 <= _dataflow_minus_valid_2;
       end 
-      if((_greatereq_ready_2 || !_greatereq_valid_2) && _plus_ready_1 && _plus_valid_1) begin
-        _greatereq_data_2 <= _plus_data_1 >= 1'sd0;
+      if((_dataflow_greatereq_ready_6 || !_dataflow_greatereq_valid_6) && _dataflow_plus_ready_4 && _dataflow_plus_valid_4) begin
+        _dataflow_greatereq_data_6 <= _dataflow_plus_data_4 >= 1'sd0;
       end 
-      if(_greatereq_valid_2 && _greatereq_ready_2) begin
-        _greatereq_valid_2 <= 0;
+      if(_dataflow_greatereq_valid_6 && _dataflow_greatereq_ready_6) begin
+        _dataflow_greatereq_valid_6 <= 0;
       end 
-      if((_greatereq_ready_2 || !_greatereq_valid_2) && _plus_ready_1) begin
-        _greatereq_valid_2 <= _plus_valid_1;
+      if((_dataflow_greatereq_ready_6 || !_dataflow_greatereq_valid_6) && _dataflow_plus_ready_4) begin
+        _dataflow_greatereq_valid_6 <= _dataflow_plus_valid_4;
       end 
     end
   end
 
 
 endmodule
-"""
 
+"""
 
 def test():
     veriloggen.reset()
