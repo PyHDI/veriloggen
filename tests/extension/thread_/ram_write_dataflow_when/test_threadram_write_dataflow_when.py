@@ -71,16 +71,16 @@ module main
   localparam fsm_init = 0;
   reg [7-1:0] _tmp_0;
   reg _tmp_1;
-  wire _tmp_all_valid_2;
-  wire [32-1:0] _counter_data_3;
-  wire _counter_valid_3;
-  wire _counter_ready_3;
-  assign _counter_ready_3 = (_tmp_0 > 0) && !_tmp_1 && _tmp_all_valid_2;
-  wire [1-1:0] _eq_data_4;
-  wire _eq_valid_4;
-  wire _eq_ready_4;
-  assign _eq_ready_4 = (_tmp_0 > 0) && !_tmp_1 && _tmp_all_valid_2;
-  assign _tmp_all_valid_2 = _counter_valid_3 && _eq_valid_4;
+  wire _dataflow_tmp_all_valid_2;
+  wire [32-1:0] _dataflow_counter_odata_1;
+  wire _dataflow_counter_ovalid_1;
+  wire _dataflow_counter_oready_1;
+  assign _dataflow_counter_oready_1 = (_tmp_0 > 0) && !_tmp_1 && _dataflow_tmp_all_valid_2;
+  wire [1-1:0] _dataflow_eq_odata_7;
+  wire _dataflow_eq_ovalid_7;
+  wire _dataflow_eq_oready_7;
+  assign _dataflow_eq_oready_7 = (_tmp_0 > 0) && !_tmp_1 && _dataflow_tmp_all_valid_2;
+  assign _dataflow_tmp_all_valid_2 = _dataflow_counter_ovalid_1 && _dataflow_eq_ovalid_7;
   reg _myram_cond_0_1;
 
   always @(posedge CLK) begin
@@ -100,94 +100,94 @@ module main
         myram_0_addr <= -1;
         _tmp_0 <= 32;
       end 
-      if(_eq_data_4 && (_counter_valid_3 && ((_tmp_0 > 0) && !_tmp_1 && _tmp_all_valid_2)) && (_tmp_0 > 0)) begin
+      if(_dataflow_eq_odata_7 && (_dataflow_counter_ovalid_1 && ((_tmp_0 > 0) && !_tmp_1 && _dataflow_tmp_all_valid_2)) && (_tmp_0 > 0)) begin
         myram_0_addr <= myram_0_addr + 1;
-        myram_0_wdata <= _counter_data_3;
+        myram_0_wdata <= _dataflow_counter_odata_1;
         myram_0_wenable <= 1;
         _tmp_0 <= _tmp_0 - 1;
       end 
-      if(_eq_data_4 && (_counter_valid_3 && ((_tmp_0 > 0) && !_tmp_1 && _tmp_all_valid_2)) && (_tmp_0 == 1)) begin
+      if(_dataflow_eq_odata_7 && (_dataflow_counter_ovalid_1 && ((_tmp_0 > 0) && !_tmp_1 && _dataflow_tmp_all_valid_2)) && (_tmp_0 == 1)) begin
         _tmp_1 <= 1;
       end 
       _myram_cond_0_1 <= 1;
     end
   end
 
-  reg [32-1:0] _counter_data_5;
-  reg _counter_valid_5;
-  wire _counter_ready_5;
-  reg [32-1:0] _counter_data_6;
-  reg _counter_valid_6;
-  wire _counter_ready_6;
-  reg [6-1:0] _counter_count_6;
-  reg [1-1:0] _eq_data_7;
-  reg _eq_valid_7;
-  wire _eq_ready_7;
-  assign _counter_ready_6 = (_eq_ready_7 || !_eq_valid_7) && _counter_valid_6;
-  reg [32-1:0] __delay_data_8;
-  reg __delay_valid_8;
-  wire __delay_ready_8;
-  assign _counter_ready_5 = (__delay_ready_8 || !__delay_valid_8) && _counter_valid_5;
-  assign _eq_data_4 = _eq_data_7;
-  assign _eq_valid_4 = _eq_valid_7;
-  assign _eq_ready_7 = _eq_ready_4;
-  assign _counter_data_3 = __delay_data_8;
-  assign _counter_valid_3 = __delay_valid_8;
-  assign __delay_ready_8 = _counter_ready_3;
+  reg [32-1:0] _dataflow_counter_data_1;
+  reg _dataflow_counter_valid_1;
+  wire _dataflow_counter_ready_1;
+  reg [32-1:0] _dataflow_counter_data_5;
+  reg _dataflow_counter_valid_5;
+  wire _dataflow_counter_ready_5;
+  reg [6-1:0] _dataflow_counter_count_5;
+  reg [1-1:0] _dataflow_eq_data_7;
+  reg _dataflow_eq_valid_7;
+  wire _dataflow_eq_ready_7;
+  assign _dataflow_counter_ready_5 = (_dataflow_eq_ready_7 || !_dataflow_eq_valid_7) && _dataflow_counter_valid_5;
+  reg [32-1:0] _dataflow__delay_data_9;
+  reg _dataflow__delay_valid_9;
+  wire _dataflow__delay_ready_9;
+  assign _dataflow_counter_ready_1 = (_dataflow__delay_ready_9 || !_dataflow__delay_valid_9) && _dataflow_counter_valid_1;
+  assign _dataflow_eq_odata_7 = _dataflow_eq_data_7;
+  assign _dataflow_eq_ovalid_7 = _dataflow_eq_valid_7;
+  assign _dataflow_eq_ready_7 = _dataflow_eq_oready_7;
+  assign _dataflow_counter_odata_1 = _dataflow__delay_data_9;
+  assign _dataflow_counter_ovalid_1 = _dataflow__delay_valid_9;
+  assign _dataflow__delay_ready_9 = _dataflow_counter_oready_1;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _counter_data_5 <= -2'sd1;
-      _counter_valid_5 <= 0;
-      _counter_data_6 <= -2'sd1;
-      _counter_count_6 <= 0;
-      _counter_valid_6 <= 0;
-      _eq_data_7 <= 0;
-      _eq_valid_7 <= 0;
-      __delay_data_8 <= 0;
-      __delay_valid_8 <= 0;
+      _dataflow_counter_data_1 <= -2'sd1;
+      _dataflow_counter_valid_1 <= 0;
+      _dataflow_counter_data_5 <= -2'sd1;
+      _dataflow_counter_count_5 <= 0;
+      _dataflow_counter_valid_5 <= 0;
+      _dataflow_eq_data_7 <= 0;
+      _dataflow_eq_valid_7 <= 0;
+      _dataflow__delay_data_9 <= 0;
+      _dataflow__delay_valid_9 <= 0;
     end else begin
-      if((_counter_ready_5 || !_counter_valid_5) && 1 && 1) begin
-        _counter_data_5 <= _counter_data_5 + 1;
+      if((_dataflow_counter_ready_1 || !_dataflow_counter_valid_1) && 1 && 1) begin
+        _dataflow_counter_data_1 <= _dataflow_counter_data_1 + 1;
       end 
-      if(_counter_valid_5 && _counter_ready_5) begin
-        _counter_valid_5 <= 0;
+      if(_dataflow_counter_valid_1 && _dataflow_counter_ready_1) begin
+        _dataflow_counter_valid_1 <= 0;
       end 
-      if((_counter_ready_5 || !_counter_valid_5) && 1) begin
-        _counter_valid_5 <= 1;
+      if((_dataflow_counter_ready_1 || !_dataflow_counter_valid_1) && 1) begin
+        _dataflow_counter_valid_1 <= 1;
       end 
-      if((_counter_ready_6 || !_counter_valid_6) && 1 && 1) begin
-        _counter_data_6 <= _counter_data_6 + 1;
+      if((_dataflow_counter_ready_5 || !_dataflow_counter_valid_5) && 1 && 1) begin
+        _dataflow_counter_data_5 <= _dataflow_counter_data_5 + 1;
       end 
-      if((_counter_ready_6 || !_counter_valid_6) && 1 && 1) begin
-        _counter_count_6 <= (_counter_count_6 == 5'sd8 - 1)? 0 : _counter_count_6 + 1;
+      if((_dataflow_counter_ready_5 || !_dataflow_counter_valid_5) && 1 && 1) begin
+        _dataflow_counter_count_5 <= (_dataflow_counter_count_5 == 5'sd8 - 1)? 0 : _dataflow_counter_count_5 + 1;
       end 
-      if(_counter_valid_6 && _counter_ready_6) begin
-        _counter_valid_6 <= 0;
+      if(_dataflow_counter_valid_5 && _dataflow_counter_ready_5) begin
+        _dataflow_counter_valid_5 <= 0;
       end 
-      if((_counter_ready_6 || !_counter_valid_6) && 1) begin
-        _counter_valid_6 <= 1;
+      if((_dataflow_counter_ready_5 || !_dataflow_counter_valid_5) && 1) begin
+        _dataflow_counter_valid_5 <= 1;
       end 
-      if((_counter_ready_6 || !_counter_valid_6) && 1 && 1 && (_counter_count_6 == 0)) begin
-        _counter_data_6 <= -2'sd1 + 1;
+      if((_dataflow_counter_ready_5 || !_dataflow_counter_valid_5) && 1 && 1 && (_dataflow_counter_count_5 == 0)) begin
+        _dataflow_counter_data_5 <= -2'sd1 + 1;
       end 
-      if((_eq_ready_7 || !_eq_valid_7) && _counter_ready_6 && _counter_valid_6) begin
-        _eq_data_7 <= _counter_data_6 == 1'sd0;
+      if((_dataflow_eq_ready_7 || !_dataflow_eq_valid_7) && _dataflow_counter_ready_5 && _dataflow_counter_valid_5) begin
+        _dataflow_eq_data_7 <= _dataflow_counter_data_5 == 1'sd0;
       end 
-      if(_eq_valid_7 && _eq_ready_7) begin
-        _eq_valid_7 <= 0;
+      if(_dataflow_eq_valid_7 && _dataflow_eq_ready_7) begin
+        _dataflow_eq_valid_7 <= 0;
       end 
-      if((_eq_ready_7 || !_eq_valid_7) && _counter_ready_6) begin
-        _eq_valid_7 <= _counter_valid_6;
+      if((_dataflow_eq_ready_7 || !_dataflow_eq_valid_7) && _dataflow_counter_ready_5) begin
+        _dataflow_eq_valid_7 <= _dataflow_counter_valid_5;
       end 
-      if((__delay_ready_8 || !__delay_valid_8) && _counter_ready_5 && _counter_valid_5) begin
-        __delay_data_8 <= _counter_data_5;
+      if((_dataflow__delay_ready_9 || !_dataflow__delay_valid_9) && _dataflow_counter_ready_1 && _dataflow_counter_valid_1) begin
+        _dataflow__delay_data_9 <= _dataflow_counter_data_1;
       end 
-      if(__delay_valid_8 && __delay_ready_8) begin
-        __delay_valid_8 <= 0;
+      if(_dataflow__delay_valid_9 && _dataflow__delay_ready_9) begin
+        _dataflow__delay_valid_9 <= 0;
       end 
-      if((__delay_ready_8 || !__delay_valid_8) && _counter_ready_5) begin
-        __delay_valid_8 <= _counter_valid_5;
+      if((_dataflow__delay_ready_9 || !_dataflow__delay_valid_9) && _dataflow_counter_ready_1) begin
+        _dataflow__delay_valid_9 <= _dataflow_counter_valid_1;
       end 
     end
   end

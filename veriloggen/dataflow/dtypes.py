@@ -2822,7 +2822,8 @@ def read_multi(m, *vars, **opts):
     if not vars:
         raise ValueError('No variables.')
 
-    all_valid = m.Wire(self.name('_tmp_all_valid_'))
+    all_valid = m.Wire('_dataflow_tmp_all_valid_%d' % m.get_tmp())
+
     all_valid_list = []
     rdata_list = []
     rvalid_list = []

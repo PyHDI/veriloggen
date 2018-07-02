@@ -79,10 +79,10 @@ module main
   localparam fsm_init = 0;
   reg [8-1:0] _tmp_0;
   reg _tmp_1;
-  wire [32-1:0] _minus_data_2;
-  wire _minus_valid_2;
-  wire _minus_ready_2;
-  assign _minus_ready_2 = (_tmp_0 > 0) && !_tmp_1;
+  wire [32-1:0] _dataflow_minus_odata_4;
+  wire _dataflow_minus_ovalid_4;
+  wire _dataflow_minus_oready_4;
+  assign _dataflow_minus_oready_4 = (_tmp_0 > 0) && !_tmp_1;
   reg _myram_cond_0_1;
   reg [32-1:0] sum;
   reg _seq_cond_0_1;
@@ -109,62 +109,62 @@ module main
         myram_0_addr <= -1;
         _tmp_0 <= 64;
       end 
-      if(_minus_valid_2 && ((_tmp_0 > 0) && !_tmp_1) && (_tmp_0 > 0)) begin
+      if(_dataflow_minus_ovalid_4 && ((_tmp_0 > 0) && !_tmp_1) && (_tmp_0 > 0)) begin
         myram_0_addr <= myram_0_addr + 1;
-        myram_0_wdata <= _minus_data_2;
+        myram_0_wdata <= _dataflow_minus_odata_4;
         myram_0_wenable <= 1;
         _tmp_0 <= _tmp_0 - 1;
       end 
-      if(_minus_valid_2 && ((_tmp_0 > 0) && !_tmp_1) && (_tmp_0 == 1)) begin
+      if(_dataflow_minus_ovalid_4 && ((_tmp_0 > 0) && !_tmp_1) && (_tmp_0 == 1)) begin
         _tmp_1 <= 1;
       end 
       _myram_cond_0_1 <= 1;
     end
   end
 
-  reg [32-1:0] _counter_data_3;
-  reg _counter_valid_3;
-  wire _counter_ready_3;
-  reg [9-1:0] _counter_count_3;
-  reg [32-1:0] _minus_data_4;
-  reg _minus_valid_4;
-  wire _minus_ready_4;
-  assign _counter_ready_3 = (_minus_ready_4 || !_minus_valid_4) && _counter_valid_3;
-  assign _minus_data_2 = _minus_data_4;
-  assign _minus_valid_2 = _minus_valid_4;
-  assign _minus_ready_4 = _minus_ready_2;
+  reg [32-1:0] _dataflow_counter_data_2;
+  reg _dataflow_counter_valid_2;
+  wire _dataflow_counter_ready_2;
+  reg [9-1:0] _dataflow_counter_count_2;
+  reg [32-1:0] _dataflow_minus_data_4;
+  reg _dataflow_minus_valid_4;
+  wire _dataflow_minus_ready_4;
+  assign _dataflow_counter_ready_2 = (_dataflow_minus_ready_4 || !_dataflow_minus_valid_4) && _dataflow_counter_valid_2;
+  assign _dataflow_minus_odata_4 = _dataflow_minus_data_4;
+  assign _dataflow_minus_ovalid_4 = _dataflow_minus_valid_4;
+  assign _dataflow_minus_ready_4 = _dataflow_minus_oready_4;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _counter_data_3 <= -2'sd1;
-      _counter_count_3 <= 0;
-      _counter_valid_3 <= 0;
-      _minus_data_4 <= 0;
-      _minus_valid_4 <= 0;
+      _dataflow_counter_data_2 <= -2'sd1;
+      _dataflow_counter_count_2 <= 0;
+      _dataflow_counter_valid_2 <= 0;
+      _dataflow_minus_data_4 <= 0;
+      _dataflow_minus_valid_4 <= 0;
     end else begin
-      if((_counter_ready_3 || !_counter_valid_3) && 1 && 1) begin
-        _counter_data_3 <= _counter_data_3 + 1;
+      if((_dataflow_counter_ready_2 || !_dataflow_counter_valid_2) && 1 && 1) begin
+        _dataflow_counter_data_2 <= _dataflow_counter_data_2 + 1;
       end 
-      if((_counter_ready_3 || !_counter_valid_3) && 1 && 1) begin
-        _counter_count_3 <= (_counter_count_3 == 8'sd64 - 1)? 0 : _counter_count_3 + 1;
+      if((_dataflow_counter_ready_2 || !_dataflow_counter_valid_2) && 1 && 1) begin
+        _dataflow_counter_count_2 <= (_dataflow_counter_count_2 == 8'sd64 - 1)? 0 : _dataflow_counter_count_2 + 1;
       end 
-      if(_counter_valid_3 && _counter_ready_3) begin
-        _counter_valid_3 <= 0;
+      if(_dataflow_counter_valid_2 && _dataflow_counter_ready_2) begin
+        _dataflow_counter_valid_2 <= 0;
       end 
-      if((_counter_ready_3 || !_counter_valid_3) && 1) begin
-        _counter_valid_3 <= 1;
+      if((_dataflow_counter_ready_2 || !_dataflow_counter_valid_2) && 1) begin
+        _dataflow_counter_valid_2 <= 1;
       end 
-      if((_counter_ready_3 || !_counter_valid_3) && 1 && 1 && (_counter_count_3 == 0)) begin
-        _counter_data_3 <= -2'sd1 + 1;
+      if((_dataflow_counter_ready_2 || !_dataflow_counter_valid_2) && 1 && 1 && (_dataflow_counter_count_2 == 0)) begin
+        _dataflow_counter_data_2 <= -2'sd1 + 1;
       end 
-      if((_minus_ready_4 || !_minus_valid_4) && _counter_ready_3 && _counter_valid_3) begin
-        _minus_data_4 <= _counter_data_3 - 2'sd1;
+      if((_dataflow_minus_ready_4 || !_dataflow_minus_valid_4) && _dataflow_counter_ready_2 && _dataflow_counter_valid_2) begin
+        _dataflow_minus_data_4 <= _dataflow_counter_data_2 - 2'sd1;
       end 
-      if(_minus_valid_4 && _minus_ready_4) begin
-        _minus_valid_4 <= 0;
+      if(_dataflow_minus_valid_4 && _dataflow_minus_ready_4) begin
+        _dataflow_minus_valid_4 <= 0;
       end 
-      if((_minus_ready_4 || !_minus_valid_4) && _counter_ready_3) begin
-        _minus_valid_4 <= _counter_valid_3;
+      if((_dataflow_minus_ready_4 || !_dataflow_minus_valid_4) && _dataflow_counter_ready_2) begin
+        _dataflow_minus_valid_4 <= _dataflow_counter_valid_2;
       end 
     end
   end
