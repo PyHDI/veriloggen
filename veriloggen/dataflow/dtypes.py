@@ -72,21 +72,15 @@ class _Node(object):
     def __eq__(self, other):
         return (id(self), self.object_id) == (id(other), other.object_id)
 
+    def name(self, prefix=None):
+        clsname = self.__class__.__name__.lower()
+        if prefix is None:
+            prefix = 'tmp'
+        return '_'.join(['__dataflow', clsname, prefix, str(self.object_id)])
+
 
 class _Numeric(_Node):
     latency = 0
-
-    def _tmp_data(self, val, prefix='data'):
-        clsname = self.__class__.__name__.lower()
-        return '_'.join(['', clsname, prefix, str(val)])
-
-    def _tmp_valid(self, val, prefix='valid'):
-        clsname = self.__class__.__name__.lower()
-        return '_'.join(['', clsname, prefix, str(val)])
-
-    def _tmp_ready(self, val, prefix='ready'):
-        clsname = self.__class__.__name__.lower()
-        return '_'.join(['', clsname, prefix, str(val)])
 
     def __hash__(self):
         object_id = self.object_id if hasattr(self, 'object_id') else None
@@ -143,9 +137,8 @@ class _Numeric(_Node):
         if self.m is None:
             raise ValueError("Module information is not set.")
 
-        tmp = self.m.get_tmp()
-        self.output(self._tmp_data(tmp),
-                    self._tmp_valid(tmp), self._tmp_ready(tmp))
+        self.output(self.name('odata'),
+                    self.name('ovalid'), self.name('oready'))
 
     def prev(self, index):
         if index < 0:
@@ -587,9 +580,9 @@ class _BinaryOperator(_Operator):
         signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Reg(self._tmp_data(tmp), width, initval=0, signed=signed)
-        valid = m.Reg(self._tmp_valid(tmp), initval=0)
-        ready = m.Wire(self._tmp_ready(tmp))
+        data = m.Reg(self.name('data'), width, initval=0, signed=signed)
+        valid = m.Reg(self.name('valid'), initval=0)
+        ready = m.Wire(self.name('ready'))
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
@@ -657,9 +650,9 @@ class _UnaryOperator(_Operator):
         signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Reg(self._tmp_data(tmp), width, initval=0, signed=signed)
-        valid = m.Reg(self._tmp_valid(tmp), initval=0)
-        ready = m.Wire(self._tmp_ready(tmp))
+        data = m.Reg(self.name('data'), width, initval=0, signed=signed)
+        valid = m.Reg(self.name('valid'), initval=0)
+        ready = m.Wire(self.name('ready'))
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
@@ -722,9 +715,9 @@ class Times(_BinaryOperator):
         signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Wire(self._tmp_data(tmp), width, signed=signed)
-        valid = m.Wire(self._tmp_valid(tmp))
-        ready = m.Wire(self._tmp_ready(tmp))
+        data = m.Wire(self.name('data'), width, signed=signed)
+        valid = m.Wire(self.name('valid'))
+        ready = m.Wire(self.name('ready'))
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
@@ -743,21 +736,21 @@ class Times(_BinaryOperator):
 
         accept = vtypes.OrList(ready, vtypes.Not(valid))
 
-        odata = m.Wire(self._tmp_data(tmp, prefix='odata'),
+        odata = m.Wire(self.name('mul_odata'),
                        lwidth + rwidth, signed=signed)
-        data_reg = m.Reg(self._tmp_data(tmp, prefix='data_reg'), lwidth + rwidth,
-                         signed=signed, initval=0)
+        odata_reg = m.Reg(self.name('mul_odata_reg'), lwidth + rwidth,
+                          signed=signed, initval=0)
 
         shift_size = min(lpoint, rpoint)
         if shift_size > 0:
-            seq(data_reg(fx.shift_right(odata, shift_size, signed=signed)), cond=accept)
+            seq(odata_reg(fx.shift_right(odata, shift_size, signed=signed)), cond=accept)
         else:
-            seq(data_reg(odata), cond=accept)
+            seq(odata_reg(odata), cond=accept)
 
-        m.Assign(data(data_reg))
+        m.Assign(data(odata_reg))
 
-        ovalid = m.Wire(self._tmp_valid(tmp, prefix='ovalid'))
-        valid_reg = m.Reg(self._tmp_valid(tmp, prefix='valid_reg'), initval=0)
+        ovalid = m.Wire(self.name('mul_ovalid'))
+        valid_reg = m.Reg(self.name('mul_valid_reg'), initval=0)
 
         seq(valid_reg(ovalid), cond=accept)
         m.Assign(valid(valid_reg))
@@ -782,8 +775,8 @@ class Times(_BinaryOperator):
         clk = m._clock
         rst = m._reset
 
-        enable = m.Wire(self._tmp_data(tmp, prefix='enable'))
-        update = m.Wire(self._tmp_data(tmp, prefix='update'))
+        enable = m.Wire(self.name('mul_enable'))
+        update = m.Wire(self.name('mul_update'))
 
         m.Assign(enable(data_cond))
         m.Assign(update(accept))  # NOT valid_cond
@@ -792,7 +785,7 @@ class Times(_BinaryOperator):
                  ('update', update), ('enable', enable), ('valid', ovalid),
                  ('a', ldata), ('b', rdata), ('c', odata)]
 
-        m.Instance(inst, ''.join(['mul', str(tmp)]), ports=ports)
+        m.Instance(inst, self.name('mul'), ports=ports)
 
         _connect_ready(m, lready, ready_cond)
         _connect_ready(m, rready, ready_cond)
@@ -823,9 +816,9 @@ class Divide(_BinaryOperator):
         signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Wire(self._tmp_data(tmp), width, signed=signed)
-        valid = m.Wire(self._tmp_valid(tmp))
-        ready = m.Wire(self._tmp_ready(tmp))
+        data = m.Wire(self.name('data'), width, signed=signed)
+        valid = m.Wire(self.name('valid'))
+        ready = m.Wire(self.name('ready'))
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
@@ -836,9 +829,9 @@ class Divide(_BinaryOperator):
         lsigned = self.left.get_signed()
         rsigned = self.right.get_signed()
 
-        ldata = m.Reg(self._tmp_data(tmp, prefix='ldata'),
+        ldata = m.Reg(self.name('div_ldata'),
                       width, signed=lsigned, initval=0)
-        rdata = m.Reg(self._tmp_data(tmp, prefix='rdata'),
+        rdata = m.Reg(self.name('div_rdata'),
                       width, signed=rsigned, initval=0)
 
         point = max(lpoint, rpoint)
@@ -861,9 +854,9 @@ class Divide(_BinaryOperator):
                                         vtypes.AndList(ldata[width - 1] == 1, rdata[width - 1] == 1)))  # - , -
 
         abs_ldata = m.Reg(
-            self._tmp_data(tmp, prefix='abs_ldata'), width, initval=0)
+            self.name('div_abs_ldata'), width, initval=0)
         abs_rdata = m.Reg(
-            self._tmp_data(tmp, prefix='abs_rdata'), width, initval=0)
+            self.name('div_abs_rdata'), width, initval=0)
 
         if not lsigned:
             seq(abs_ldata(ldata), cond=accept)
@@ -877,16 +870,16 @@ class Divide(_BinaryOperator):
             seq(abs_rdata(vtypes.Mux(rdata[width - 1] == 0, rdata, vtypes.Unot(rdata) + 1)),
                 cond=accept)
 
-        osign = m.Wire(self._tmp_data(tmp, prefix='osign'))
+        osign = m.Wire(self.name('div_osign'))
         abs_odata = m.Wire(
-            self._tmp_data(tmp, prefix='abs_odata'), width, signed=signed)
+            self.name('div_abs_odata'), width, signed=signed)
 
         if shift_size > 0:
             shifted_abs_odata = vtypes.Sll(abs_odata, shift_size)
         else:
             shifted_abs_odata = abs_odata
 
-        odata = m.Reg(self._tmp_data(tmp, prefix='odata'),
+        odata = m.Reg(self.name('div_odata'),
                       width, signed=signed, initval=0)
 
         if not signed:
@@ -897,20 +890,18 @@ class Divide(_BinaryOperator):
 
         m.Assign(data(odata))
 
-        ovalid = m.Wire(self._tmp_valid(tmp, prefix='ovalid'))
+        ovalid = m.Wire(self.name('div_ovalid'))
 
         v = ovalid
         for i in range(3):
-            nv = m.Reg(self._tmp_valid(
-                tmp, prefix='valid_reg_' + str(i)), initval=0)
+            nv = m.Reg(self.name('div_valid_reg_tmp_%d' % i), initval=0)
             seq(nv(v), cond=accept)
             v = nv
         m.Assign(valid(v))
 
         s = sign
         for i in range(self.latency - 2):
-            ns = m.Reg(self._tmp_data(tmp, prefix='sign' +
-                                      str(i) + '_'), initval=0)
+            ns = m.Reg(self.name('div_sign_tmp_%d' % i), initval=0)
             seq(ns(s), cond=accept)
             s = ns
         m.Assign(osign(s))
@@ -933,8 +924,8 @@ class Divide(_BinaryOperator):
         clk = m._clock
         rst = m._reset
 
-        enable = m.Wire(self._tmp_data(tmp, prefix='enable'))
-        update = m.Wire(self._tmp_data(tmp, prefix='update'))
+        enable = m.Wire(self.name('div_enable'))
+        update = m.Wire(self.name('div_update'))
         m.Assign(enable(data_cond))
         m.Assign(update(accept))  # NOT valid_cond
 
@@ -943,7 +934,7 @@ class Divide(_BinaryOperator):
                  ('update', update), ('enable', enable), ('valid', ovalid),
                  ('in_a', abs_ldata), ('in_b', abs_rdata), ('rslt', abs_odata)]
 
-        m.Instance(inst, ''.join(['div', str(tmp)]), params, ports)
+        m.Instance(inst, self.name('div'), params, ports)
 
         _connect_ready(m, lready, ready_cond)
         _connect_ready(m, rready, ready_cond)
@@ -970,9 +961,9 @@ class Mod(_BinaryOperator):
         signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Wire(self._tmp_data(tmp), width, signed=signed)
-        valid = m.Wire(self._tmp_valid(tmp))
-        ready = m.Wire(self._tmp_ready(tmp))
+        data = m.Wire(self.name('data'), width, signed=signed)
+        valid = m.Wire(self.name('valid'))
+        ready = m.Wire(self.name('ready'))
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
@@ -983,9 +974,9 @@ class Mod(_BinaryOperator):
         lsigned = self.left.get_signed()
         rsigned = self.right.get_signed()
 
-        ldata = m.Reg(self._tmp_data(tmp, prefix='ldata'),
+        ldata = m.Reg(self.name('mod_ldata'),
                       width, signed=lsigned, initval=0)
-        rdata = m.Reg(self._tmp_data(tmp, prefix='rdata'),
+        rdata = m.Reg(self.name('mod_rdata'),
                       width, signed=rsigned, initval=0)
 
         point = max(lpoint, rpoint)
@@ -1008,9 +999,9 @@ class Mod(_BinaryOperator):
                                         vtypes.AndList(ldata[width - 1] == 1, rdata[width - 1] == 1)))  # - , -
 
         abs_ldata = m.Reg(
-            self._tmp_data(tmp, prefix='abs_ldata'), width, initval=0)
+            self.name('mod_abs_ldata'), width, initval=0)
         abs_rdata = m.Reg(
-            self._tmp_data(tmp, prefix='abs_rdata'), width, initval=0)
+            self.name('mod_abs_rdata'), width, initval=0)
 
         if not lsigned:
             seq(abs_ldata(ldata), cond=accept)
@@ -1024,16 +1015,16 @@ class Mod(_BinaryOperator):
             seq(abs_rdata(vtypes.Mux(rdata[width - 1] == 0, rdata, vtypes.Unot(rdata) + 1)),
                 cond=accept)
 
-        osign = m.Wire(self._tmp_data(tmp, prefix='osign'))
+        osign = m.Wire(self.name('mod_osign'))
         abs_odata = m.Wire(
-            self._tmp_data(tmp, prefix='abs_odata'), width, signed=signed)
+            self.name('mod_abs_odata'), width, signed=signed)
 
         if shift_size > 0:
             shifted_abs_odata = vtypes.Sll(abs_odata, shift_size)
         else:
             shifted_abs_odata = abs_odata
 
-        odata = m.Reg(self._tmp_data(tmp, prefix='odata'),
+        odata = m.Reg(self.name('mod_odata'),
                       width, signed=signed, initval=0)
 
         if not signed:
@@ -1044,20 +1035,19 @@ class Mod(_BinaryOperator):
 
         m.Assign(data(odata))
 
-        ovalid = m.Wire(self._tmp_valid(tmp, prefix='ovalid'))
+        ovalid = m.Wire(self.name('mod_ovalid'))
 
         v = ovalid
         for i in range(3):
-            nv = m.Reg(self._tmp_valid(
-                tmp, prefix='valid_reg_' + str(i)), initval=0)
+            nv = m.Reg(self.name('mod_valid_reg_tmp_%d' % i), initval=0)
+
             seq(nv(v), cond=accept)
             v = nv
         m.Assign(valid(v))
 
         s = sign
         for i in range(self.latency - 2):
-            ns = m.Reg(self._tmp_data(tmp, prefix='sign' +
-                                      str(i) + '_'), initval=0)
+            ns = m.Reg(self.name('mod_sign_tmp_%d' % i), initval=0)
             seq(ns(s), cond=accept)
             s = ns
         m.Assign(osign(s))
@@ -1080,8 +1070,8 @@ class Mod(_BinaryOperator):
         clk = m._clock
         rst = m._reset
 
-        enable = m.Wire(self._tmp_data(tmp, prefix='enable'))
-        update = m.Wire(self._tmp_data(tmp, prefix='update'))
+        enable = m.Wire(self.name('mod_enable'))
+        update = m.Wire(self.name('mod_update'))
         m.Assign(enable(data_cond))
         m.Assign(update(accept))  # NOT valid_cond
 
@@ -1090,7 +1080,7 @@ class Mod(_BinaryOperator):
                  ('update', update), ('enable', enable), ('valid', ovalid),
                  ('in_a', abs_ldata), ('in_b', abs_rdata), ('mod', abs_odata)]
 
-        m.Instance(inst, ''.join(['div', str(tmp)]), params, ports)
+        m.Instance(inst, self.name('div'), params, ports)
 
         _connect_ready(m, lready, ready_cond)
         _connect_ready(m, rready, ready_cond)
@@ -1278,9 +1268,9 @@ class _BinaryLogicalOperator(_BinaryOperator):
         signed = False
 
         tmp = m.get_tmp()
-        data = m.Reg(self._tmp_data(tmp), width, initval=0, signed=signed)
-        valid = m.Reg(self._tmp_valid(tmp), initval=0)
-        ready = m.Wire(self._tmp_ready(tmp))
+        data = m.Reg(self.name('data'), width, initval=0, signed=signed)
+        valid = m.Reg(self.name('valid'), initval=0)
+        ready = m.Wire(self.name('ready'))
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
@@ -1591,9 +1581,9 @@ class _SpecialOperator(_Operator):
         signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Reg(self._tmp_data(tmp), width, initval=0, signed=signed)
-        valid = m.Reg(self._tmp_valid(tmp), initval=0)
-        ready = m.Wire(self._tmp_ready(tmp))
+        data = m.Reg(self.name('data'), width, initval=0, signed=signed)
+        valid = m.Reg(self.name('valid'), initval=0)
+        ready = m.Wire(self.name('ready'))
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
@@ -1905,9 +1895,9 @@ class LUT(_SpecialOperator):
         signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Wire(self._tmp_data(tmp), width, signed=signed)
-        valid = m.Reg(self._tmp_valid(tmp), initval=0)
-        ready = m.Wire(self._tmp_ready(tmp))
+        data = m.Wire(self.name('data'), width, signed=signed)
+        valid = m.Reg(self.name('valid'), initval=0)
+        ready = m.Wire(self.name('ready'))
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
@@ -1930,10 +1920,10 @@ class LUT(_SpecialOperator):
 
         size = int(log(len(self.patterns), 2))
 
-        inst = rom.mkROMDefinition('_'.join(['', 'LUT', str(tmp)]), self.patterns,
+        inst = rom.mkROMDefinition(self.name('LUT_ROM'), self.patterns,
                                    size, width, sync=True, with_enable=True)
 
-        address = m.Wire(self._tmp_data(tmp, prefix='address'), width=size)
+        address = m.Wire(self.name('lut_address'), width=size)
         address.assign(arg_data)
 
         clk = m._clock
@@ -1941,7 +1931,7 @@ class LUT(_SpecialOperator):
         ports = [('CLK', clk), ('addr', address),
                  ('enable', data_cond), ('val', data)]
 
-        m.Instance(inst, '_'.join(['LUT', str(tmp)]), ports=ports)
+        m.Instance(inst, self.name('lut'), ports=ports)
 
         seq(valid(0), cond=valid_reset_cond)
         seq(valid(all_valid), cond=valid_cond)
@@ -1977,9 +1967,9 @@ class _Delay(_UnaryOperator):
         signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Reg(self._tmp_data(tmp), width, initval=0, signed=signed)
-        valid = m.Reg(self._tmp_valid(tmp), initval=0)
-        ready = m.Wire(self._tmp_ready(tmp))
+        data = m.Reg(self.name('data'), width, initval=0, signed=signed)
+        valid = m.Reg(self.name('valid'), initval=0)
+        ready = m.Wire(self.name('ready'))
         self.sig_data = data
         self.sig_valid = valid
         self.sig_ready = ready
@@ -2035,7 +2025,7 @@ class _Prev(_UnaryOperator):
         signed = self.get_signed()
 
         tmp = m.get_tmp()
-        data = m.Reg(self._tmp_data(tmp), width, initval=0, signed=signed)
+        data = m.Reg(self.name('data'), width, initval=0, signed=signed)
         valid = self.parent_value.sig_valid
         ready = self.parent_value.sig_ready
         self.sig_data = data
@@ -2382,13 +2372,13 @@ class _Accumulator(_UnaryOperator):
             width = 1
 
         tmp = m.get_tmp()
-        data = m.Reg(self._tmp_data(tmp), width,
+        data = m.Reg(self.name('data'), width,
                      initval=initval_data, signed=signed)
-        valid = m.Reg(self._tmp_valid(tmp), initval=0)
-        ready = m.Wire(self._tmp_ready(tmp))
+        valid = m.Reg(self.name('valid'), initval=0)
+        ready = m.Wire(self.name('ready'))
 
         if self.size is not None:
-            count = m.Reg(self._tmp_data(tmp, prefix='count'),
+            count = m.Reg(self.name('count'),
                           size_data.bit_length() + 1, initval=0)
             next_count_value = vtypes.Mux(count == size_data - 1,
                                           0, count + 1)
@@ -2746,18 +2736,6 @@ def _to_constant(obj):
     return obj
 
 
-def _tmp_data(val, prefix='_tmp_data_'):
-    return ''.join([prefix, str(val)])
-
-
-def _tmp_valid(val, prefix='_tmp_valid_'):
-    return ''.join([prefix, str(val)])
-
-
-def _tmp_ready(val, prefix='_tmp_ready_'):
-    return ''.join([prefix, str(val)])
-
-
 def _get_df(*vars):
     ret = None
     for var in vars:
@@ -2856,7 +2834,7 @@ def read_multi(m, *vars, **opts):
         raise ValueError('No variables.')
 
     tmp = m.get_tmp()
-    all_valid = m.Wire(_tmp_valid(tmp, prefix='_tmp_all_valid_'))
+    all_valid = m.Wire(self.name('_tmp_all_valid_'))
     all_valid_list = []
     rdata_list = []
     rvalid_list = []

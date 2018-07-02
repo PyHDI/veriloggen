@@ -172,7 +172,7 @@ class GraphGenerator(_Visitor):
             enable = self.visit(node.enable)
         if node.reset is not None:
             reset = self.visit(node.reset)
-            
+
         self.graph.add_edge(right, node, label='R')
         if node.size is not None:
             self.graph.add_edge(size, node, label='size')

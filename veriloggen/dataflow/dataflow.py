@@ -67,11 +67,11 @@ class Dataflow(object):
                         '_dataflow_seq_%d' % self.object_id)
             self.seq = Seq(self.module, seq_name, self.clock, self.reset)
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def add(self, *nodes):
         self.nodes.update(set(nodes))
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def to_module(self, name, clock='CLK', reset='RST', aswire=False, seq_name=None):
         """ generate a Module definion """
 
@@ -83,7 +83,7 @@ class Dataflow(object):
 
         return m
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def implement(self, m=None, clock=None, reset=None, aswire=None, seq_name=None):
         """ implemente actual registers and operations in Verilog """
 
@@ -168,7 +168,7 @@ class Dataflow(object):
 
         return m
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def draw_graph(self, filename='out.png', prog='dot', rankdir='LR', approx=False):
         if self.last_output is None:
             self.to_module()
@@ -181,7 +181,7 @@ class Dataflow(object):
                              kwargs={'filename': filename, 'prog': prog,
                                      'rankdir': rankdir, 'approx': approx})
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def get_input(self):
         if self.last_input is None:
             return collections.OrderedDict()
@@ -206,11 +206,11 @@ class Dataflow(object):
 
         return ret
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def pipeline_depth(self):
         return self.max_stage
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def __getattr__(self, attr):
         try:
             return object.__getattr__(self, attr)
