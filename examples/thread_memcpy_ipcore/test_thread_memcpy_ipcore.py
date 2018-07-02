@@ -1142,19 +1142,19 @@ module blinkled
   reg _wvalid_11;
   reg [34-1:0] _tmp_12;
   reg _tmp_13;
-  wire [32-1:0] __variable_data_14;
-  wire __variable_valid_14;
-  wire __variable_ready_14;
-  assign __variable_ready_14 = (_tmp_12 > 0) && !_tmp_13;
+  wire [32-1:0] _dataflow__variable_odata_0;
+  wire _dataflow__variable_ovalid_0;
+  wire _dataflow__variable_oready_0;
+  assign _dataflow__variable_oready_0 = (_tmp_12 > 0) && !_tmp_13;
   reg _ram_a_cond_0_1;
-  reg [9-1:0] _tmp_15;
+  reg [9-1:0] _tmp_14;
   reg _maxi_cond_0_1;
   assign maxi_rready = _maxi_read_fsm == 3;
   reg [32-1:0] _d1__maxi_read_fsm;
   reg __maxi_read_fsm_cond_3_0_1;
-  reg axim_flag_16;
+  reg axim_flag_15;
   reg __maxi_read_fsm_cond_4_1_1;
-  reg axim_flag_17;
+  reg axim_flag_16;
   reg _th_memcpy_cond_20_1_1;
   reg _maxi_ram_a_0_write_start;
   reg [8-1:0] _maxi_ram_a_0_write_op_sel;
@@ -1167,33 +1167,33 @@ module blinkled
   reg [32-1:0] _maxi_write_cur_global_addr;
   reg [33-1:0] _maxi_write_cur_size;
   reg [33-1:0] _maxi_write_rest_size;
+  reg _tmp_17;
   reg _tmp_18;
-  reg _tmp_19;
+  wire _tmp_19;
   wire _tmp_20;
-  wire _tmp_21;
-  assign _tmp_21 = 1;
-  localparam _tmp_22 = 1;
-  wire [_tmp_22-1:0] _tmp_23;
-  assign _tmp_23 = (_tmp_20 || !_tmp_18) && (_tmp_21 || !_tmp_19);
-  reg [_tmp_22-1:0] __tmp_23_1;
-  wire signed [32-1:0] _tmp_24;
-  reg signed [32-1:0] __tmp_24_1;
-  assign _tmp_24 = (__tmp_23_1)? ram_a_0_rdata : __tmp_24_1;
+  assign _tmp_20 = 1;
+  localparam _tmp_21 = 1;
+  wire [_tmp_21-1:0] _tmp_22;
+  assign _tmp_22 = (_tmp_19 || !_tmp_17) && (_tmp_20 || !_tmp_18);
+  reg [_tmp_21-1:0] __tmp_22_1;
+  wire signed [32-1:0] _tmp_23;
+  reg signed [32-1:0] __tmp_23_1;
+  assign _tmp_23 = (__tmp_22_1)? ram_a_0_rdata : __tmp_23_1;
+  reg _tmp_24;
   reg _tmp_25;
   reg _tmp_26;
   reg _tmp_27;
-  reg _tmp_28;
-  reg [34-1:0] _tmp_29;
-  reg [9-1:0] _tmp_30;
+  reg [34-1:0] _tmp_28;
+  reg [9-1:0] _tmp_29;
   reg _maxi_cond_1_1;
-  reg _tmp_31;
-  wire [32-1:0] __variable_data_32;
-  wire __variable_valid_32;
-  wire __variable_ready_32;
-  assign __variable_ready_32 = (_maxi_write_fsm == 3) && (_maxi_write_op_sel == 1) && ((_tmp_30 > 0) && (maxi_wready || !maxi_wvalid));
+  reg _tmp_30;
+  wire [32-1:0] _dataflow__variable_odata_1;
+  wire _dataflow__variable_ovalid_1;
+  wire _dataflow__variable_oready_1;
+  assign _dataflow__variable_oready_1 = (_maxi_write_fsm == 3) && (_maxi_write_op_sel == 1) && ((_tmp_29 > 0) && (maxi_wready || !maxi_wvalid));
   reg _maxi_cond_2_1;
-  assign _maxi_write_data_done = (_tmp_31 && maxi_wvalid && maxi_wready)? 1 : 0;
-  reg axim_flag_33;
+  assign _maxi_write_data_done = (_tmp_30 && maxi_wvalid && maxi_wready)? 1 : 0;
+  reg axim_flag_31;
   reg [32-1:0] _d1__maxi_write_fsm;
   reg __maxi_write_fsm_cond_4_0_1;
 
@@ -1205,15 +1205,15 @@ module blinkled
       ram_a_0_wenable <= 0;
       _tmp_13 <= 0;
       _ram_a_cond_0_1 <= 0;
+      __tmp_22_1 <= 0;
       __tmp_23_1 <= 0;
-      __tmp_24_1 <= 0;
-      _tmp_28 <= 0;
-      _tmp_18 <= 0;
-      _tmp_19 <= 0;
-      _tmp_26 <= 0;
       _tmp_27 <= 0;
+      _tmp_17 <= 0;
+      _tmp_18 <= 0;
       _tmp_25 <= 0;
-      _tmp_29 <= 0;
+      _tmp_26 <= 0;
+      _tmp_24 <= 0;
+      _tmp_28 <= 0;
     end else begin
       if(_ram_a_cond_0_1) begin
         ram_a_0_wenable <= 0;
@@ -1223,53 +1223,53 @@ module blinkled
         ram_a_0_addr <= _maxi_read_local_addr - _maxi_read_local_stride;
         _tmp_12 <= _maxi_read_size;
       end 
-      if(__variable_valid_14 && ((_tmp_12 > 0) && !_tmp_13) && (_tmp_12 > 0)) begin
+      if(_dataflow__variable_ovalid_0 && ((_tmp_12 > 0) && !_tmp_13) && (_tmp_12 > 0)) begin
         ram_a_0_addr <= ram_a_0_addr + _maxi_read_local_stride;
-        ram_a_0_wdata <= __variable_data_14;
+        ram_a_0_wdata <= _dataflow__variable_odata_0;
         ram_a_0_wenable <= 1;
         _tmp_12 <= _tmp_12 - 1;
       end 
-      if(__variable_valid_14 && ((_tmp_12 > 0) && !_tmp_13) && (_tmp_12 == 1)) begin
+      if(_dataflow__variable_ovalid_0 && ((_tmp_12 > 0) && !_tmp_13) && (_tmp_12 == 1)) begin
         _tmp_13 <= 1;
       end 
       _ram_a_cond_0_1 <= 1;
+      __tmp_22_1 <= _tmp_22;
       __tmp_23_1 <= _tmp_23;
-      __tmp_24_1 <= _tmp_24;
-      if((_tmp_20 || !_tmp_18) && (_tmp_21 || !_tmp_19) && _tmp_26) begin
-        _tmp_28 <= 0;
+      if((_tmp_19 || !_tmp_17) && (_tmp_20 || !_tmp_18) && _tmp_25) begin
+        _tmp_27 <= 0;
+        _tmp_17 <= 0;
         _tmp_18 <= 0;
-        _tmp_19 <= 0;
+        _tmp_25 <= 0;
+      end 
+      if((_tmp_19 || !_tmp_17) && (_tmp_20 || !_tmp_18) && _tmp_24) begin
+        _tmp_17 <= 1;
+        _tmp_18 <= 1;
+        _tmp_27 <= _tmp_26;
+        _tmp_26 <= 0;
+        _tmp_24 <= 0;
+        _tmp_25 <= 1;
+      end 
+      if(_maxi_write_start && (_maxi_write_op_sel == 1) && (_tmp_28 == 0) && !_tmp_26 && !_tmp_27) begin
+        ram_a_0_addr <= _maxi_write_local_addr;
+        _tmp_28 <= _maxi_write_size - 1;
+        _tmp_24 <= 1;
+        _tmp_26 <= _maxi_write_size == 1;
+      end 
+      if((_tmp_19 || !_tmp_17) && (_tmp_20 || !_tmp_18) && (_tmp_28 > 0)) begin
+        ram_a_0_addr <= ram_a_0_addr + _maxi_write_local_stride;
+        _tmp_28 <= _tmp_28 - 1;
+        _tmp_24 <= 1;
         _tmp_26 <= 0;
       end 
-      if((_tmp_20 || !_tmp_18) && (_tmp_21 || !_tmp_19) && _tmp_25) begin
-        _tmp_18 <= 1;
-        _tmp_19 <= 1;
-        _tmp_28 <= _tmp_27;
-        _tmp_27 <= 0;
-        _tmp_25 <= 0;
+      if((_tmp_19 || !_tmp_17) && (_tmp_20 || !_tmp_18) && (_tmp_28 == 1)) begin
         _tmp_26 <= 1;
-      end 
-      if(_maxi_write_start && (_maxi_write_op_sel == 1) && (_tmp_29 == 0) && !_tmp_27 && !_tmp_28) begin
-        ram_a_0_addr <= _maxi_write_local_addr;
-        _tmp_29 <= _maxi_write_size - 1;
-        _tmp_25 <= 1;
-        _tmp_27 <= _maxi_write_size == 1;
-      end 
-      if((_tmp_20 || !_tmp_18) && (_tmp_21 || !_tmp_19) && (_tmp_29 > 0)) begin
-        ram_a_0_addr <= ram_a_0_addr + _maxi_write_local_stride;
-        _tmp_29 <= _tmp_29 - 1;
-        _tmp_25 <= 1;
-        _tmp_27 <= 0;
-      end 
-      if((_tmp_20 || !_tmp_18) && (_tmp_21 || !_tmp_19) && (_tmp_29 == 1)) begin
-        _tmp_27 <= 1;
       end 
     end
   end
 
-  assign __variable_data_32 = _tmp_24;
-  assign __variable_valid_32 = _tmp_18;
-  assign _tmp_20 = 1 && __variable_ready_32;
+  assign _dataflow__variable_odata_1 = _tmp_23;
+  assign _dataflow__variable_ovalid_1 = _tmp_17;
+  assign _tmp_19 = 1 && _dataflow__variable_oready_1;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -1290,7 +1290,7 @@ module blinkled
       maxi_araddr <= 0;
       maxi_arlen <= 0;
       maxi_arvalid <= 0;
-      _tmp_15 <= 0;
+      _tmp_14 <= 0;
       _maxi_cond_0_1 <= 0;
       _maxi_ram_a_0_write_start <= 0;
       _maxi_ram_a_0_write_op_sel <= 0;
@@ -1307,13 +1307,13 @@ module blinkled
       maxi_awaddr <= 0;
       maxi_awlen <= 0;
       maxi_awvalid <= 0;
-      _tmp_30 <= 0;
+      _tmp_29 <= 0;
       _maxi_cond_1_1 <= 0;
       maxi_wdata <= 0;
       maxi_wvalid <= 0;
       maxi_wlast <= 0;
       maxi_wstrb <= 0;
-      _tmp_31 <= 0;
+      _tmp_30 <= 0;
       _maxi_cond_2_1 <= 0;
     end else begin
       if(_maxi_cond_0_1) begin
@@ -1325,7 +1325,7 @@ module blinkled
       if(_maxi_cond_2_1) begin
         maxi_wvalid <= 0;
         maxi_wlast <= 0;
-        _tmp_31 <= 0;
+        _tmp_30 <= 0;
       end 
       _maxi_read_start <= 0;
       _maxi_write_start <= 0;
@@ -1349,24 +1349,24 @@ module blinkled
         _maxi_read_size <= _maxi_ram_a_0_read_size;
         _maxi_read_local_stride <= _maxi_ram_a_0_read_local_stride;
       end 
-      if((_maxi_read_fsm == 2) && ((maxi_arready || !maxi_arvalid) && (_tmp_15 == 0))) begin
+      if((_maxi_read_fsm == 2) && ((maxi_arready || !maxi_arvalid) && (_tmp_14 == 0))) begin
         maxi_araddr <= _maxi_read_cur_global_addr;
         maxi_arlen <= _maxi_read_cur_size - 1;
         maxi_arvalid <= 1;
-        _tmp_15 <= _maxi_read_cur_size;
+        _tmp_14 <= _maxi_read_cur_size;
       end 
       _maxi_cond_0_1 <= 1;
       if(maxi_arvalid && !maxi_arready) begin
         maxi_arvalid <= maxi_arvalid;
       end 
-      if(maxi_rready && maxi_rvalid && (_tmp_15 > 0)) begin
-        _tmp_15 <= _tmp_15 - 1;
+      if(maxi_rready && maxi_rvalid && (_tmp_14 > 0)) begin
+        _tmp_14 <= _tmp_14 - 1;
       end 
-      if(axim_flag_16) begin
+      if(axim_flag_15) begin
         _maxi_read_idle <= 1;
       end 
       _maxi_ram_a_0_write_start <= 0;
-      if(axim_flag_17) begin
+      if(axim_flag_16) begin
         _maxi_ram_a_0_write_start <= 1;
         _maxi_ram_a_0_write_op_sel <= 1;
         _maxi_ram_a_0_write_local_addr <= _th_memcpy_local_addr_9;
@@ -1385,44 +1385,44 @@ module blinkled
         _maxi_write_size <= _maxi_ram_a_0_write_size;
         _maxi_write_local_stride <= _maxi_ram_a_0_write_local_stride;
       end 
-      if((_maxi_write_fsm == 2) && ((maxi_awready || !maxi_awvalid) && (_tmp_30 == 0))) begin
+      if((_maxi_write_fsm == 2) && ((maxi_awready || !maxi_awvalid) && (_tmp_29 == 0))) begin
         maxi_awaddr <= _maxi_write_cur_global_addr;
         maxi_awlen <= _maxi_write_cur_size - 1;
         maxi_awvalid <= 1;
-        _tmp_30 <= _maxi_write_cur_size;
+        _tmp_29 <= _maxi_write_cur_size;
       end 
-      if((_maxi_write_fsm == 2) && ((maxi_awready || !maxi_awvalid) && (_tmp_30 == 0)) && (_maxi_write_cur_size == 0)) begin
+      if((_maxi_write_fsm == 2) && ((maxi_awready || !maxi_awvalid) && (_tmp_29 == 0)) && (_maxi_write_cur_size == 0)) begin
         maxi_awvalid <= 0;
       end 
       _maxi_cond_1_1 <= 1;
       if(maxi_awvalid && !maxi_awready) begin
         maxi_awvalid <= maxi_awvalid;
       end 
-      if(__variable_valid_32 && ((_maxi_write_fsm == 3) && (_maxi_write_op_sel == 1) && ((_tmp_30 > 0) && (maxi_wready || !maxi_wvalid))) && ((_tmp_30 > 0) && (maxi_wready || !maxi_wvalid) && (_tmp_30 > 0))) begin
-        maxi_wdata <= __variable_data_32;
+      if(_dataflow__variable_ovalid_1 && ((_maxi_write_fsm == 3) && (_maxi_write_op_sel == 1) && ((_tmp_29 > 0) && (maxi_wready || !maxi_wvalid))) && ((_tmp_29 > 0) && (maxi_wready || !maxi_wvalid) && (_tmp_29 > 0))) begin
+        maxi_wdata <= _dataflow__variable_odata_1;
         maxi_wvalid <= 1;
         maxi_wlast <= 0;
         maxi_wstrb <= { 4{ 1'd1 } };
-        _tmp_30 <= _tmp_30 - 1;
+        _tmp_29 <= _tmp_29 - 1;
       end 
-      if(__variable_valid_32 && ((_maxi_write_fsm == 3) && (_maxi_write_op_sel == 1) && ((_tmp_30 > 0) && (maxi_wready || !maxi_wvalid))) && ((_tmp_30 > 0) && (maxi_wready || !maxi_wvalid) && (_tmp_30 > 0)) && (_tmp_30 == 1)) begin
+      if(_dataflow__variable_ovalid_1 && ((_maxi_write_fsm == 3) && (_maxi_write_op_sel == 1) && ((_tmp_29 > 0) && (maxi_wready || !maxi_wvalid))) && ((_tmp_29 > 0) && (maxi_wready || !maxi_wvalid) && (_tmp_29 > 0)) && (_tmp_29 == 1)) begin
         maxi_wlast <= 1;
-        _tmp_31 <= 1;
+        _tmp_30 <= 1;
       end 
       _maxi_cond_2_1 <= 1;
       if(maxi_wvalid && !maxi_wready) begin
         maxi_wvalid <= maxi_wvalid;
         maxi_wlast <= maxi_wlast;
-        _tmp_31 <= _tmp_31;
+        _tmp_30 <= _tmp_30;
       end 
-      if(axim_flag_33) begin
+      if(axim_flag_31) begin
         _maxi_write_idle <= 1;
       end 
     end
   end
 
-  assign __variable_data_14 = _wdata_10;
-  assign __variable_valid_14 = _wvalid_11;
+  assign _dataflow__variable_odata_0 = _wdata_10;
+  assign _dataflow__variable_ovalid_0 = _wvalid_11;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -1683,7 +1683,7 @@ module blinkled
       _th_memcpy_dma_size_10 <= 0;
       axim_flag_9 <= 0;
       _th_memcpy_cond_16_0_1 <= 0;
-      axim_flag_17 <= 0;
+      axim_flag_16 <= 0;
       _th_memcpy_cond_20_1_1 <= 0;
     end else begin
       _d1_th_memcpy <= th_memcpy;
@@ -1695,7 +1695,7 @@ module blinkled
         end
         th_memcpy_20: begin
           if(_th_memcpy_cond_20_1_1) begin
-            axim_flag_17 <= 0;
+            axim_flag_16 <= 0;
           end 
         end
       endcase
@@ -1791,7 +1791,7 @@ module blinkled
           end 
         end
         th_memcpy_20: begin
-          axim_flag_17 <= 1;
+          axim_flag_16 <= 1;
           _th_memcpy_cond_20_1_1 <= 1;
           th_memcpy <= th_memcpy_21;
         end
@@ -1847,7 +1847,7 @@ module blinkled
       __maxi_read_fsm_cond_3_0_1 <= 0;
       _wvalid_11 <= 0;
       _wdata_10 <= 0;
-      axim_flag_16 <= 0;
+      axim_flag_15 <= 0;
       __maxi_read_fsm_cond_4_1_1 <= 0;
     end else begin
       _d1__maxi_read_fsm <= _maxi_read_fsm;
@@ -1859,7 +1859,7 @@ module blinkled
         end
         _maxi_read_fsm_4: begin
           if(__maxi_read_fsm_cond_4_1_1) begin
-            axim_flag_16 <= 0;
+            axim_flag_15 <= 0;
           end 
         end
       endcase
@@ -1911,7 +1911,7 @@ module blinkled
           end 
         end
         _maxi_read_fsm_4: begin
-          axim_flag_16 <= 1;
+          axim_flag_15 <= 1;
           __maxi_read_fsm_cond_4_1_1 <= 1;
           _maxi_read_fsm <= _maxi_read_fsm_5;
         end
@@ -1935,14 +1935,14 @@ module blinkled
       _maxi_write_cur_global_addr <= 0;
       _maxi_write_rest_size <= 0;
       _maxi_write_cur_size <= 0;
-      axim_flag_33 <= 0;
+      axim_flag_31 <= 0;
       __maxi_write_fsm_cond_4_0_1 <= 0;
     end else begin
       _d1__maxi_write_fsm <= _maxi_write_fsm;
       case(_d1__maxi_write_fsm)
         _maxi_write_fsm_4: begin
           if(__maxi_write_fsm_cond_4_0_1) begin
-            axim_flag_33 <= 0;
+            axim_flag_31 <= 0;
           end 
         end
       endcase
@@ -1989,7 +1989,7 @@ module blinkled
           end 
         end
         _maxi_write_fsm_4: begin
-          axim_flag_33 <= 1;
+          axim_flag_31 <= 1;
           __maxi_write_fsm_cond_4_0_1 <= 1;
           _maxi_write_fsm <= _maxi_write_fsm_5;
         end
