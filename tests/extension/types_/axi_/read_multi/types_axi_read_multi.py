@@ -96,7 +96,7 @@ def mkTest():
     # arready (no stall)
     #arready = ports['myaxi_arready']
     #_arready = m.TmpWireLike(arready)
-    #_arready.assign(0)
+    # _arready.assign(0)
     #m.Always()( arready(_arready) )
 
     # arready, rvalid, rdata, rlast
@@ -164,6 +164,7 @@ def mkTest():
     )
 
     return m
+
 
 if __name__ == '__main__':
     test = mkTest()

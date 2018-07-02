@@ -74,7 +74,7 @@ def mkTest():
         wdata(wval)
     )
     fsm.If(ack).goto_next()
-    
+
     # write data (1)
     ack = _axi.write_data(wdata, cond=fsm)
     fsm.If(ack).goto_next()
@@ -115,6 +115,7 @@ def mkTest():
     )
 
     return m
+
 
 if __name__ == '__main__':
     test = mkTest()

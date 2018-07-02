@@ -206,14 +206,14 @@ module main
   wire _tmp_1;
   wire _tmp_2;
   assign myaxi_rready = _tmp_1 && _tmp_2;
-  wire signed [32-1:0] _reduceadd_data_3;
-  wire _reduceadd_valid_3;
-  wire _reduceadd_ready_3;
-  assign _reduceadd_ready_3 = 1;
-  wire [1-1:0] __variable_data_4;
-  wire __variable_valid_4;
-  wire __variable_ready_4;
-  assign __variable_ready_4 = 1;
+  wire signed [32-1:0] _dataflow_reduceadd_odata_4;
+  wire _dataflow_reduceadd_ovalid_4;
+  wire _dataflow_reduceadd_oready_4;
+  assign _dataflow_reduceadd_oready_4 = 1;
+  wire [1-1:0] _dataflow__variable_odata_1;
+  wire _dataflow__variable_ovalid_1;
+  wire _dataflow__variable_oready_1;
+  assign _dataflow__variable_oready_1 = 1;
   reg _data_seq_cond_0_1;
 
   always @(posedge CLK) begin
@@ -257,38 +257,38 @@ module main
     end
   end
 
-  assign __variable_data_4 = myaxi_rlast;
-  assign __variable_valid_4 = myaxi_rvalid;
-  reg [1-1:0] __prev_data_5;
-  reg signed [32-1:0] _reduceadd_data_6;
-  reg _reduceadd_valid_6;
-  wire _reduceadd_ready_6;
-  assign _tmp_1 = 1 && ((_reduceadd_ready_6 || !_reduceadd_valid_6) && (myaxi_rvalid && myaxi_rvalid));
-  assign _tmp_2 = 1 && __variable_ready_4 && ((_reduceadd_ready_6 || !_reduceadd_valid_6) && (myaxi_rvalid && myaxi_rvalid));
-  assign _reduceadd_data_3 = _reduceadd_data_6;
-  assign _reduceadd_valid_3 = _reduceadd_valid_6;
-  assign _reduceadd_ready_6 = _reduceadd_ready_3;
+  assign _dataflow__variable_odata_1 = myaxi_rlast;
+  assign _dataflow__variable_ovalid_1 = myaxi_rvalid;
+  reg [1-1:0] _dataflow__prev_data_2;
+  reg signed [32-1:0] _dataflow_reduceadd_data_4;
+  reg _dataflow_reduceadd_valid_4;
+  wire _dataflow_reduceadd_ready_4;
+  assign _tmp_1 = 1 && ((_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && (myaxi_rvalid && myaxi_rvalid));
+  assign _tmp_2 = 1 && _dataflow__variable_oready_1 && ((_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && (myaxi_rvalid && myaxi_rvalid));
+  assign _dataflow_reduceadd_odata_4 = _dataflow_reduceadd_data_4;
+  assign _dataflow_reduceadd_ovalid_4 = _dataflow_reduceadd_valid_4;
+  assign _dataflow_reduceadd_ready_4 = _dataflow_reduceadd_oready_4;
 
   always @(posedge CLK) begin
     if(RST) begin
-      __prev_data_5 <= 0;
-      _reduceadd_data_6 <= 1'sd0;
-      _reduceadd_valid_6 <= 0;
+      _dataflow__prev_data_2 <= 0;
+      _dataflow_reduceadd_data_4 <= 1'sd0;
+      _dataflow_reduceadd_valid_4 <= 0;
     end else begin
       if(myaxi_rvalid && _tmp_2) begin
-        __prev_data_5 <= myaxi_rlast;
+        _dataflow__prev_data_2 <= myaxi_rlast;
       end 
-      if((_reduceadd_ready_6 || !_reduceadd_valid_6) && (_tmp_1 && _tmp_2) && (myaxi_rvalid && myaxi_rvalid)) begin
-        _reduceadd_data_6 <= _reduceadd_data_6 + myaxi_rdata;
+      if((_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && (_tmp_1 && _tmp_2) && (myaxi_rvalid && myaxi_rvalid)) begin
+        _dataflow_reduceadd_data_4 <= _dataflow_reduceadd_data_4 + myaxi_rdata;
       end 
-      if(_reduceadd_valid_6 && _reduceadd_ready_6) begin
-        _reduceadd_valid_6 <= 0;
+      if(_dataflow_reduceadd_valid_4 && _dataflow_reduceadd_ready_4) begin
+        _dataflow_reduceadd_valid_4 <= 0;
       end 
-      if((_reduceadd_ready_6 || !_reduceadd_valid_6) && (_tmp_1 && _tmp_2)) begin
-        _reduceadd_valid_6 <= myaxi_rvalid && myaxi_rvalid;
+      if((_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && (_tmp_1 && _tmp_2)) begin
+        _dataflow_reduceadd_valid_4 <= myaxi_rvalid && myaxi_rvalid;
       end 
-      if((_reduceadd_ready_6 || !_reduceadd_valid_6) && (_tmp_1 && _tmp_2) && (myaxi_rvalid && myaxi_rvalid) && __prev_data_5) begin
-        _reduceadd_data_6 <= 1'sd0 + myaxi_rdata;
+      if((_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && (_tmp_1 && _tmp_2) && (myaxi_rvalid && myaxi_rvalid) && _dataflow__prev_data_2) begin
+        _dataflow_reduceadd_data_4 <= 1'sd0 + myaxi_rdata;
       end 
     end
   end
@@ -315,9 +315,9 @@ module main
       _data_seq_cond_0_1 <= 0;
     end else begin
       if(_data_seq_cond_0_1) begin
-        $display("sum=%d expected_sum=%d", _reduceadd_data_3, 67552);
+        $display("sum=%d expected_sum=%d", _dataflow_reduceadd_odata_4, 67552);
       end 
-      _data_seq_cond_0_1 <= _reduceadd_valid_3 && __variable_valid_4 && (__variable_data_4 == 1);
+      _data_seq_cond_0_1 <= _dataflow_reduceadd_ovalid_4 && _dataflow__variable_ovalid_1 && (_dataflow__variable_odata_1 == 1);
     end
   end
 

@@ -37,7 +37,7 @@ def mkMain():
         wdata.inc()
     )
     fsm.If(last).goto_next()
-    
+
     # write address (2)
     ack, counter = myaxi.write_request(awaddr, awlen, cond=fsm)
     fsm.If(ack).goto_next()
@@ -95,6 +95,7 @@ def mkTest():
     )
 
     return m
+
 
 if __name__ == '__main__':
     test = mkTest()

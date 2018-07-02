@@ -92,13 +92,13 @@ def mkTest():
     # awready (no stall)
     #awready = ports['myaxi_awready']
     #_awready = m.TmpWireLike(awready)
-    #_awready.assign(1)
+    # _awready.assign(1)
     # m.Always()(awready(_awready))
 
     # wready (nostall)
     #wready = ports['myaxi_wready']
     #_wready = m.TmpWireLike(wready)
-    #_wready.assign(1)
+    # _wready.assign(1)
     # m.Always()(wready(_wready))
 
     # awready (with stall)
@@ -163,7 +163,7 @@ def mkTest():
     # arready (no stall)
     #arready = ports['myaxi_arready']
     #_arready = m.TmpWireLike(arready)
-    #_arready.assign(0)
+    # _arready.assign(0)
     #m.Always()( arready(_arready) )
 
     # arready, rvalid, rdata, rlast
