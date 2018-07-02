@@ -76,7 +76,7 @@ class _Node(object):
         clsname = self.__class__.__name__.lower()
         if prefix is None:
             prefix = 'tmp'
-        return '_'.join(['__dataflow', clsname, prefix, str(self.object_id)])
+        return '_'.join(['_dataflow', clsname, prefix, str(self.object_id)])
 
 
 class _Numeric(_Node):
@@ -579,7 +579,6 @@ class _BinaryOperator(_Operator):
         width = self.bit_length()
         signed = self.get_signed()
 
-        tmp = m.get_tmp()
         data = m.Reg(self.name('data'), width, initval=0, signed=signed)
         valid = m.Reg(self.name('valid'), initval=0)
         ready = m.Wire(self.name('ready'))
@@ -649,7 +648,6 @@ class _UnaryOperator(_Operator):
         width = self.bit_length()
         signed = self.get_signed()
 
-        tmp = m.get_tmp()
         data = m.Reg(self.name('data'), width, initval=0, signed=signed)
         valid = m.Reg(self.name('valid'), initval=0)
         ready = m.Wire(self.name('ready'))
@@ -714,7 +712,6 @@ class Times(_BinaryOperator):
         width = self.bit_length()
         signed = self.get_signed()
 
-        tmp = m.get_tmp()
         data = m.Wire(self.name('data'), width, signed=signed)
         valid = m.Wire(self.name('valid'))
         ready = m.Wire(self.name('ready'))
@@ -815,7 +812,6 @@ class Divide(_BinaryOperator):
         width = self.bit_length()
         signed = self.get_signed()
 
-        tmp = m.get_tmp()
         data = m.Wire(self.name('data'), width, signed=signed)
         valid = m.Wire(self.name('valid'))
         ready = m.Wire(self.name('ready'))
@@ -960,7 +956,6 @@ class Mod(_BinaryOperator):
         width = self.bit_length()
         signed = self.get_signed()
 
-        tmp = m.get_tmp()
         data = m.Wire(self.name('data'), width, signed=signed)
         valid = m.Wire(self.name('valid'))
         ready = m.Wire(self.name('ready'))
@@ -1267,7 +1262,6 @@ class _BinaryLogicalOperator(_BinaryOperator):
         width = self.bit_length()
         signed = False
 
-        tmp = m.get_tmp()
         data = m.Reg(self.name('data'), width, initval=0, signed=signed)
         valid = m.Reg(self.name('valid'), initval=0)
         ready = m.Wire(self.name('ready'))
@@ -1580,7 +1574,6 @@ class _SpecialOperator(_Operator):
         width = self.bit_length()
         signed = self.get_signed()
 
-        tmp = m.get_tmp()
         data = m.Reg(self.name('data'), width, initval=0, signed=signed)
         valid = m.Reg(self.name('valid'), initval=0)
         ready = m.Wire(self.name('ready'))
@@ -1894,7 +1887,6 @@ class LUT(_SpecialOperator):
         width = self.bit_length()
         signed = self.get_signed()
 
-        tmp = m.get_tmp()
         data = m.Wire(self.name('data'), width, signed=signed)
         valid = m.Reg(self.name('valid'), initval=0)
         ready = m.Wire(self.name('ready'))
@@ -1966,7 +1958,6 @@ class _Delay(_UnaryOperator):
         width = self.bit_length()
         signed = self.get_signed()
 
-        tmp = m.get_tmp()
         data = m.Reg(self.name('data'), width, initval=0, signed=signed)
         valid = m.Reg(self.name('valid'), initval=0)
         ready = m.Wire(self.name('ready'))
@@ -2024,7 +2015,6 @@ class _Prev(_UnaryOperator):
         width = self.bit_length()
         signed = self.get_signed()
 
-        tmp = m.get_tmp()
         data = m.Reg(self.name('data'), width, initval=0, signed=signed)
         valid = self.parent_value.sig_valid
         ready = self.parent_value.sig_ready
@@ -2371,7 +2361,6 @@ class _Accumulator(_UnaryOperator):
         if not self.ops and self.size is not None:
             width = 1
 
-        tmp = m.get_tmp()
         data = m.Reg(self.name('data'), width,
                      initval=initval_data, signed=signed)
         valid = m.Reg(self.name('valid'), initval=0)
@@ -2833,7 +2822,6 @@ def read_multi(m, *vars, **opts):
     if not vars:
         raise ValueError('No variables.')
 
-    tmp = m.get_tmp()
     all_valid = m.Wire(self.name('_tmp_all_valid_'))
     all_valid_list = []
     rdata_list = []
