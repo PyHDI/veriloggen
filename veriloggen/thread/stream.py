@@ -291,8 +291,8 @@ class Stream(BaseStream):
         self.var_id_name_map[_id] = name
         self.var_name_id_map[name] = _id
 
-        var.constant_data = self.module.Reg('_%s_constant_data' % prefix,
-                                            datawidth, initval=0)
+        var.next_constant_data = self.module.Reg('_%s_next_constant_data' % prefix,
+                                                 datawidth, initval=0)
         var.has_constant_data = False
 
         return var
@@ -820,11 +820,11 @@ class Stream(BaseStream):
         set_cond = self._set_flag(fsm)
 
         self.seq.If(set_cond)(
-            var.constant_data(value)
+            var.next_constant_data(value)
         )
 
         if not var.has_constant_data:
-            var.write(var.constant_data, self.start)
+            var.write(var.next_constant_data, self.start)
             var.has_constant_data = True
 
         fsm.goto_next()
