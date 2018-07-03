@@ -533,6 +533,7 @@ class Stream(BaseStream):
         )
 
         if var.has_source_empty:
+            fsm.goto_next()
             return
 
         source_start = vtypes.Ands(self.start,
