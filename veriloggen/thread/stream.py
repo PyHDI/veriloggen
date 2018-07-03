@@ -537,7 +537,7 @@ class Stream(BaseStream):
             return
 
         source_start = vtypes.Ands(self.start,
-                                   vtypes.And(var.source_mode, mode_idle))
+                                   vtypes.Not(vtypes.Uor(vtypes.And(var.source_mode, mode_idle))))
 
         self.seq.If(source_start)(
             var.source_idle(1)
