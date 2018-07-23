@@ -237,19 +237,19 @@ module main
         _reduceadd_data_5 <= _reduceadd_data_5 + _plus_data_2;
       end 
       if(_ivalid_0 && _tmp_0) begin
-        _reduceadd_count_5 <= (_reduceadd_count_5 == 5'sd8 - 1)? 0 : _reduceadd_count_5 + 1;
+        _reduceadd_count_5 <= (_reduceadd_count_5 >= 5'sd8 - 1)? 0 : _reduceadd_count_5 + 1;
       end 
       if(_ivalid_0 && _tmp_0 && (_reduceadd_count_5 == 0)) begin
         _reduceadd_data_5 <= 1'sd0 + _plus_data_2;
       end 
       if(_ivalid_0 && _tmp_0) begin
-        _pulse_data_8 <= _pulse_count_8 == 5'sd8 - 1;
+        _pulse_data_8 <= _pulse_count_8 >= 5'sd8 - 1;
       end 
       if(_ivalid_0 && _tmp_0) begin
-        _pulse_count_8 <= (_pulse_count_8 == 5'sd8 - 1)? 0 : _pulse_count_8 + 1;
+        _pulse_count_8 <= (_pulse_count_8 >= 5'sd8 - 1)? 0 : _pulse_count_8 + 1;
       end 
       if(_ivalid_0 && _tmp_0 && (_pulse_count_8 == 0)) begin
-        _pulse_data_8 <= _pulse_count_8 == 5'sd8 - 1;
+        _pulse_data_8 <= _pulse_count_8 >= 5'sd8 - 1;
       end 
     end
   end

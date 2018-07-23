@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 import sys
 import os
-import functools
 
 # the next line can be removed after installation
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
@@ -25,42 +24,43 @@ def mkLed():
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
     ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
 
-    shape = [16, 4, 8]
-    size = functools.reduce(lambda x, y: x * y, shape, 1)
-    order = [1, 2, 0]
-
-    def to_pattern(shape, order):
-        pattern = []
-        for p in order:
-            size = shape[p]
-            stride = functools.reduce(lambda x, y: x * y,
-                                      shape[p + 1:], 1)
-            pattern.append((size, stride))
-        return pattern
-
-    pattern_a = to_pattern(shape, order)
-    pattern_b = to_pattern(shape, order)
-    pattern_c = to_pattern(shape, order)
-
     strm = vthread.Stream(m, 'mystream', clk, rst)
     a = strm.source('a')
     b = strm.source('b')
-    c = a + b
+    c = a * b
     strm.sink(c, 'c')
 
-    def comp_stream(offset):
-        strm.set_source_pattern('a', ram_a, offset, pattern_a)
-        strm.set_source_pattern('b', ram_b, offset, pattern_b)
-        strm.set_sink_pattern('c', ram_c, offset, pattern_c)
+    def comp_stream(size, offset):
+        strm.set_source_pattern('a', ram_a, offset, (size, 1))
+        strm.set_source_pattern('b', ram_b, offset, (size, 1))
+        strm.set_sink_pattern('c', ram_c, offset, (size, 1))
         strm.run()
-        strm.join()
 
-    def comp_sequential(offset):
+        # double buffer of comp and cmd
+        strm.set_source_pattern('a', ram_a, offset + size, (size, 1))
+        strm.set_source_pattern('b', ram_b, offset + size, (size, 1))
+        strm.set_sink_pattern('c', ram_c, offset + size, (size, 1))
+        strm.source_join()
+
+        strm.run()
+
+        # double buffer of comp and cmd
+        strm.set_source_pattern('a', ram_a, offset + size + size, (size, 1))
+        strm.set_source_pattern('b', ram_b, offset + size + size, (size, 1))
+        strm.set_sink_pattern('c', ram_c, offset + size + size, (size, 1))
+        strm.source_join()
+
+        strm.run()
+
+        strm.source_join()
+        strm.sink_join()
+
+    def comp_sequential(size, offset):
         sum = 0
         for i in range(size):
             a = ram_a.read(i + offset)
             b = ram_b.read(i + offset)
-            sum = a + b
+            sum = a * b
             ram_c.write(i + offset, sum)
 
     def check(size, offset_stream, offset_seq):
@@ -70,34 +70,31 @@ def mkLed():
             sq = ram_c.read(i + offset_seq)
             if vthread.verilog.NotEql(st, sq):
                 all_ok = False
-                print(i, st, sq)
         if all_ok:
             print('# verify: PASSED')
         else:
             print('# verify: FAILED')
 
-    def comp():
-        # stream
+    def comp(size):
+        new_size = size + size + size
         offset = 0
-        myaxi.dma_read(ram_a, offset, 0, size)
-        myaxi.dma_read(ram_b, offset, 0, size)
-        comp_stream(offset)
-        myaxi.dma_write(ram_c, offset, 1024 * 4, 1)
+        myaxi.dma_read(ram_a, offset, 0, new_size)
+        myaxi.dma_read(ram_b, offset, 512, new_size)
+        comp_stream(size, offset)
+        myaxi.dma_write(ram_c, offset, 1024, new_size)
 
-        # sequential
-        offset = size
-        myaxi.dma_read(ram_a, offset, 0, size)
-        myaxi.dma_read(ram_b, offset, 0, size)
-        comp_sequential(offset)
-        myaxi.dma_write(ram_c, offset, 1024 * 8, 1)
+        offset = new_size
+        myaxi.dma_read(ram_a, offset, 0, new_size)
+        myaxi.dma_read(ram_b, offset, 512, new_size)
+        comp_sequential(new_size, offset)
+        myaxi.dma_write(ram_c, offset, 1024 * 2, new_size)
 
-        # verification
-        check(size, 0, offset)
+        check(new_size, 0, offset)
 
         vthread.finish()
 
     th = vthread.Thread(m, 'th_comp', clk, rst, comp)
-    fsm = th.start()
+    fsm = th.start(32)
 
     return m
 
@@ -127,7 +124,7 @@ def mkTest(memimg_name=None):
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
     init.add(
-        Delay(200000),
+        Delay(1000000),
         Systask('finish'),
     )
 

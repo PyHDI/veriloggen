@@ -1897,13 +1897,6 @@ class _Accumulator(_UnaryOperator):
                  enable=None, reset=None, width=32, signed=True):
 
         self.size = _to_constant(size) if size is not None else None
-
-        if (self.size is not None and
-            not isinstance(self.size, _Constant) and
-                not isinstance(self.size, _ParameterVariable)):
-            raise TypeError("size must be _Constant or _ParameterVariable, not '%s'" %
-                            str(type(self.size)))
-
         self.initval = (_to_constant(initval)
                         if initval is not None else _to_constant(0))
 
@@ -1957,7 +1950,7 @@ class _Accumulator(_UnaryOperator):
         if self.size is not None:
             count = m.Reg(self.name('count'),
                           size_data.bit_length() + 1, initval=0)
-            next_count_value = vtypes.Mux(count == size_data - 1,
+            next_count_value = vtypes.Mux(count >= size_data - 1,
                                           0, count + 1)
             count_zero = (count == 0)
 
@@ -1982,7 +1975,7 @@ class _Accumulator(_UnaryOperator):
 
         # for Pulse
         if not self.ops and self.size is not None:
-            value = (count == (size_data - 1))
+            value = (count >= (size_data - 1))
 
         if self.reset is not None or self.size is not None:
             reset_value = initval_data
@@ -1999,7 +1992,7 @@ class _Accumulator(_UnaryOperator):
                                     % (str(op), str(type(reset_value))))
 
             if not self.ops and self.size is not None:
-                reset_value = (count == (size_data - 1))
+                reset_value = (count >= (size_data - 1))
 
         if self.enable is not None:
             enable_cond = _and_vars(svalid, senable, enabledata)
