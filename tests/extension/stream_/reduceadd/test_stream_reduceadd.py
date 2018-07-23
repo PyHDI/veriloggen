@@ -194,19 +194,19 @@ module main
         _reduceadd_data_6 <= _reduceadd_data_6 + _plus_data_3;
       end 
       if(__delay_data_10) begin
-        _reduceadd_count_6 <= (_reduceadd_count_6 == 5'sd8 - 1)? 0 : _reduceadd_count_6 + 1;
+        _reduceadd_count_6 <= (_reduceadd_count_6 >= 5'sd8 - 1)? 0 : _reduceadd_count_6 + 1;
       end 
       if(__delay_data_10 && (_reduceadd_count_6 == 0)) begin
         _reduceadd_data_6 <= 1'sd0 + _plus_data_3;
       end 
       if(__delay_data_10) begin
-        _pulse_data_9 <= _pulse_count_9 == 5'sd8 - 1;
+        _pulse_data_9 <= _pulse_count_9 >= 5'sd8 - 1;
       end 
       if(__delay_data_10) begin
-        _pulse_count_9 <= (_pulse_count_9 == 5'sd8 - 1)? 0 : _pulse_count_9 + 1;
+        _pulse_count_9 <= (_pulse_count_9 >= 5'sd8 - 1)? 0 : _pulse_count_9 + 1;
       end 
       if(__delay_data_10 && (_pulse_count_9 == 0)) begin
-        _pulse_data_9 <= _pulse_count_9 == 5'sd8 - 1;
+        _pulse_data_9 <= _pulse_count_9 >= 5'sd8 - 1;
       end 
     end
   end
