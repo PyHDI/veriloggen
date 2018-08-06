@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-from functools import partial
 from collections import OrderedDict
 from math import log
 
@@ -12,6 +11,7 @@ from veriloggen.seq.seq import make_condition as _make_condition
 
 from . import mul
 from . import div
+from . import madd
 
 
 # Object ID counter for object sorting key
@@ -469,10 +469,6 @@ class _BinaryOperator(_Operator):
         self._set_seq(getattr(self.strm, 'seq', None))
 
     def _implement(self, m, seq, svalid=None, senable=None):
-        if self.latency != 1:
-            raise ValueError("Latency mismatch '%d' vs '%s'" %
-                             (self.latency, 1))
-
         width = self.bit_length()
         signed = self.get_signed()
 
@@ -481,10 +477,29 @@ class _BinaryOperator(_Operator):
         ldata, rdata = fx.adjust(self.left.sig_data, self.right.sig_data,
                                  lpoint, rpoint, signed)
 
-        data = m.Reg(self.name('data'), width, initval=0, signed=signed)
-        self.sig_data = data
+        if self.latency == 0:
+            data = m.Wire(self.name('data'), width, signed=signed)
+            data.assign(self.op(ldata, rdata))
+            self.sig_data = data
 
-        seq(data(self.op(ldata, rdata)), cond=senable)
+        elif self.latency == 1:
+            data = m.Reg(self.name('data'), width, initval=0, signed=signed)
+            self.sig_data = data
+            seq(data(self.op(ldata, rdata)), cond=senable)
+
+        else:
+            prev_data = None
+
+            for i in range(self.latency):
+                data = m.Reg(self.name('data_d%d' % i),
+                             width, initval=0, signed=signed)
+                if i == 0:
+                    seq(data(self.op(ldata, rdata)), cond=senable)
+                else:
+                    seq(data(prev_data), cond=senable)
+                prev_data = data
+
+            self.sig_data = data
 
 
 class _UnaryOperator(_Operator):
@@ -510,18 +525,33 @@ class _UnaryOperator(_Operator):
         self._set_seq(getattr(self.strm, 'seq', None))
 
     def _implement(self, m, seq, svalid=None, senable=None):
-        if self.latency != 1:
-            raise ValueError("Latency mismatch '%d' vs '%s'" %
-                             (self.latency, 1))
-
         width = self.bit_length()
         signed = self.get_signed()
         rdata = self.right.sig_data
 
-        data = m.Reg(self.name('data'), width, initval=0, signed=signed)
-        self.sig_data = data
+        if self.latency == 0:
+            data = m.Wire(self.name('data'), width, signed=signed)
+            data.assign(self.op(rdata))
+            self.sig_data = data
 
-        seq(data(self.op(rdata)), cond=senable)
+        elif self.latency == 1:
+            data = m.Reg(self.name('data'), width, initval=0, signed=signed)
+            self.sig_data = data
+            seq(data(self.op(rdata)), cond=senable)
+
+        else:
+            prev_data = None
+
+            for i in range(self.latency):
+                data = m.Reg(self.name('data_d%d' % i),
+                             width, initval=0, signed=signed)
+                if i == 0:
+                    seq(data(self.op(rdata)), cond=senable)
+                else:
+                    seq(data(prev_data), cond=senable)
+                prev_data = data
+
+            self.sig_data = data
 
 
 class Power(_BinaryOperator):
@@ -1287,19 +1317,34 @@ class _SpecialOperator(_Operator):
         self._set_seq(getattr(self.strm, 'seq', None))
 
     def _implement(self, m, seq, svalid=None, senable=None):
-        if self.latency != 1:
-            raise ValueError("Latency mismatch '%d' vs '%s'" %
-                             (self.latency, 1))
-
         width = self.bit_length()
         signed = self.get_signed()
 
         arg_data = [arg.sig_data for arg in self.args]
 
-        data = m.Reg(self.name('data'), width, initval=0, signed=signed)
-        self.sig_data = data
+        if self.latency == 0:
+            data = m.Wire(self.name('data'), width, signed=signed)
+            data.assign(self.op(*arg_data))
+            self.sig_data = data
 
-        seq(data(self.op(*arg_data)), cond=senable)
+        elif self.latency == 1:
+            data = m.Reg(self.name('data'), width, initval=0, signed=signed)
+            self.sig_data = data
+            seq(data(self.op(*arg_data)), cond=senable)
+
+        else:
+            prev_data = None
+
+            for i in range(self.latency):
+                data = m.Reg(self.name('data_d%d' % i),
+                             width, initval=0, signed=signed)
+                if i == 0:
+                    seq(data(self.op(*arg_data)), cond=senable)
+                else:
+                    seq(data(prev_data), cond=senable)
+                prev_data = data
+
+            self.sig_data = data
 
 
 class Pointer(_SpecialOperator):
@@ -1578,6 +1623,146 @@ class LUT(_SpecialOperator):
                  ('enable', senable), ('val', data)]
 
         m.Instance(inst, self.name('lut'), ports=ports)
+
+
+class TimesPlus(_SpecialOperator):
+    latency = 6 + 1
+
+    def __init__(self, a, b, c):
+        _SpecialOperator.__init__(self, a, b, c)
+
+    @property
+    def a(self):
+        return self.args[0]
+
+    @a.setter
+    def a(self, a):
+        self.args[0] = a
+
+    @property
+    def b(self):
+        return self.args[1]
+
+    @b.setter
+    def b(self, b):
+        self.args[1] = b
+
+    @property
+    def c(self):
+        return self.args[2]
+
+    @c.setter
+    def c(self, c):
+        self.args[2] = c
+
+    def _set_attributes(self):
+        a_fp = self.a.get_point()
+        b_fp = self.b.get_point()
+        c_fp = self.c.get_point()
+        a = self.a.bit_length()
+        b = self.b.bit_length()
+        c = self.c.bit_length()
+        self.width = max(a, b, c)
+        self.point = a_fp + b_fp
+        self.signed = self.a.get_signed() and self.b.get_signed() and self.c.get_signed()
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency <= 3:
+            raise ValueError("Latency of '*' operator must be greater than 3")
+
+        width = self.bit_length()
+        signed = self.get_signed()
+
+        apoint = self.a.get_point()
+        bpoint = self.b.get_point()
+        cpoint = self.c.get_point()
+        awidth = self.a.bit_length()
+        bwidth = self.b.bit_length()
+        cwidth = self.c.bit_length()
+        asigned = self.a.get_signed()
+        bsigned = self.b.get_signed()
+        csigned = self.c.get_signed()
+        adata = self.a.sig_data
+        bdata = self.b.sig_data
+        cdata = self.c.sig_data
+
+        if apoint + bpoint != cpoint:
+            raise ValueError('apoint + bpoint == cpoint')
+
+        odata = m.Wire(self.name('madd_odata'),
+                       max(awidth + bwidth, cwidth), signed=signed)
+        odata_reg = m.Reg(self.name('madd_odata_reg'),
+                          max(awidth + bwidth, cwidth), signed=signed, initval=0)
+
+        data = m.Wire(self.name('data'), width, signed=signed)
+        self.sig_data = data
+
+        seq(odata_reg(odata), cond=senable)
+
+        m.Assign(data(odata_reg))
+
+        depth = self.latency - 1
+
+        inst = madd.get_madd(awidth, bwidth, cwidth,
+                             asigned, bsigned, csigned, depth)
+        clk = m._clock
+
+        update = m.Wire(self.name('madd_update'))
+
+        if senable is not None:
+            m.Assign(update(senable))
+        else:
+            m.Assign(update(1))
+
+        ports = [('CLK', clk), ('update', update),
+                 ('a', adata), ('b', bdata), ('c', cdata), ('d', odata)]
+
+        m.Instance(inst, self.name('madd'), ports=ports)
+
+    def eval(self):
+        vars = [var.eval() for var in self.vars]
+        for var in vars:
+            if not isinstance(var, int):
+                return MulAdd(*vars)
+
+        return vars[0] * vars[1] + vars[2]
+
+
+def MulAdd(a, b, c):
+    return TimesPlus(a, b, c)
+
+
+def Madd(a, b, c):
+    return TimesPlus(a, b, c)
+
+
+class PlusN(_SpecialOperator):
+    latency = 1
+
+    def __init__(self, *vars):
+        _SpecialOperator.__init__(self, *vars)
+
+        def func(*args):
+            ret = args[0]
+            for arg in args[1:]:
+                ret += arg
+            return ret
+
+        self.op = func
+
+    def eval(self):
+        vars = [var.eval() for var in self.vars]
+        for var in vars:
+            if not isinstance(var, int):
+                return PlusN(*vars)
+        ret = 0
+        for var in vars:
+            ret += var
+        return ret
+
+
+def AddN(*vars):
+    return PlusN(*vars)
 
 
 class _Delay(_UnaryOperator):
