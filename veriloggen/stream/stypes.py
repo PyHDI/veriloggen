@@ -1625,7 +1625,7 @@ class LUT(_SpecialOperator):
         m.Instance(inst, self.name('lut'), ports=ports)
 
 
-class MulAdd(_SpecialOperator):
+class TimesPlus(_SpecialOperator):
     latency = 6 + 1
 
     def __init__(self, a, b, c):
@@ -1726,6 +1726,14 @@ class MulAdd(_SpecialOperator):
                 return MulAdd(*vars)
 
         return vars[0] * vars[1] + vars[2]
+
+
+def MulAdd(a, b, c):
+    return TimesPlus(a, b, c)
+
+
+def Madd(a, b, c):
+    return TimesPlus(a, b, c)
 
 
 class PlusN(_SpecialOperator):
