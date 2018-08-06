@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-from functools import partial
 from collections import OrderedDict
 from math import log
 
@@ -1630,7 +1629,14 @@ class PlusN(_SpecialOperator):
 
     def __init__(self, *vars):
         _SpecialOperator.__init__(self, *vars)
-        self.op = partial(op_tree, vtypes.Plus, 0)
+
+        def func(*args):
+            ret = args[0]
+            for arg in args[1:]:
+                ret += arg
+            return ret
+
+        self.op = func
 
 
 def AddN(*vars):
