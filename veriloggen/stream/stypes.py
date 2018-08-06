@@ -11,6 +11,7 @@ from veriloggen.seq.seq import make_condition as _make_condition
 
 from . import mul
 from . import div
+from . import madd
 
 
 # Object ID counter for object sorting key
@@ -1624,6 +1625,109 @@ class LUT(_SpecialOperator):
         m.Instance(inst, self.name('lut'), ports=ports)
 
 
+class MulAdd(_SpecialOperator):
+    latency = 6 + 1
+
+    def __init__(self, a, b, c):
+        _SpecialOperator.__init__(self, a, b, c)
+
+    @property
+    def a(self):
+        return self.args[0]
+
+    @a.setter
+    def a(self, a):
+        self.args[0] = a
+
+    @property
+    def b(self):
+        return self.args[1]
+
+    @b.setter
+    def b(self, b):
+        self.args[1] = b
+
+    @property
+    def c(self):
+        return self.args[2]
+
+    @c.setter
+    def c(self, c):
+        self.args[2] = c
+
+    def _set_attributes(self):
+        a_fp = self.a.get_point()
+        b_fp = self.b.get_point()
+        c_fp = self.c.get_point()
+        a = self.a.bit_length()
+        b = self.b.bit_length()
+        c = self.c.bit_length()
+        self.width = max(a, b, c)
+        self.point = a_fp + b_fp
+        self.signed = self.a.get_signed() and self.b.get_signed() and self.c.get_signed()
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency <= 3:
+            raise ValueError("Latency of '*' operator must be greater than 3")
+
+        width = self.bit_length()
+        signed = self.get_signed()
+
+        apoint = self.a.get_point()
+        bpoint = self.b.get_point()
+        cpoint = self.c.get_point()
+        awidth = self.a.bit_length()
+        bwidth = self.b.bit_length()
+        cwidth = self.c.bit_length()
+        asigned = self.a.get_signed()
+        bsigned = self.b.get_signed()
+        csigned = self.c.get_signed()
+        adata = self.a.sig_data
+        bdata = self.b.sig_data
+        cdata = self.c.sig_data
+
+        if apoint + bpoint != cpoint:
+            raise ValueError('apoint + bpoint == cpoint')
+
+        odata = m.Wire(self.name('madd_odata'),
+                       max(awidth + bwidth, cwidth), signed=signed)
+        odata_reg = m.Reg(self.name('madd_odata_reg'),
+                          max(awidth + bwidth, cwidth), signed=signed, initval=0)
+
+        data = m.Wire(self.name('data'), width, signed=signed)
+        self.sig_data = data
+
+        seq(odata_reg(odata), cond=senable)
+
+        m.Assign(data(odata_reg))
+
+        depth = self.latency - 1
+
+        inst = madd.get_madd(awidth, bwidth, cwidth,
+                             asigned, bsigned, csigned, depth)
+        clk = m._clock
+
+        update = m.Wire(self.name('madd_update'))
+
+        if senable is not None:
+            m.Assign(update(senable))
+        else:
+            m.Assign(update(1))
+
+        ports = [('CLK', clk), ('update', update),
+                 ('a', adata), ('b', bdata), ('c', cdata), ('d', odata)]
+
+        m.Instance(inst, self.name('madd'), ports=ports)
+
+    def eval(self):
+        vars = [var.eval() for var in self.vars]
+        for var in vars:
+            if not isinstance(var, int):
+                return MulAdd(*vars)
+
+        return vars[0] * vars[1] + vars[2]
+
+
 class PlusN(_SpecialOperator):
     latency = 1
 
@@ -1637,6 +1741,16 @@ class PlusN(_SpecialOperator):
             return ret
 
         self.op = func
+
+    def eval(self):
+        vars = [var.eval() for var in self.vars]
+        for var in vars:
+            if not isinstance(var, int):
+                return PlusN(*vars)
+        ret = 0
+        for var in vars:
+            ret += var
+        return ret
 
 
 def AddN(*vars):
