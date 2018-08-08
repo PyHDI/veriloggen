@@ -1625,146 +1625,6 @@ class LUT(_SpecialOperator):
         m.Instance(inst, self.name('lut'), ports=ports)
 
 
-class TimesPlus(_SpecialOperator):
-    latency = 6 + 1
-
-    def __init__(self, a, b, c):
-        _SpecialOperator.__init__(self, a, b, c)
-
-    @property
-    def a(self):
-        return self.args[0]
-
-    @a.setter
-    def a(self, a):
-        self.args[0] = a
-
-    @property
-    def b(self):
-        return self.args[1]
-
-    @b.setter
-    def b(self, b):
-        self.args[1] = b
-
-    @property
-    def c(self):
-        return self.args[2]
-
-    @c.setter
-    def c(self, c):
-        self.args[2] = c
-
-    def _set_attributes(self):
-        a_fp = self.a.get_point()
-        b_fp = self.b.get_point()
-        c_fp = self.c.get_point()
-        a = self.a.bit_length()
-        b = self.b.bit_length()
-        c = self.c.bit_length()
-        self.width = max(a, b, c)
-        self.point = a_fp + b_fp
-        self.signed = self.a.get_signed() and self.b.get_signed() and self.c.get_signed()
-
-    def _implement(self, m, seq, svalid=None, senable=None):
-        if self.latency <= 3:
-            raise ValueError("Latency of '*' operator must be greater than 3")
-
-        width = self.bit_length()
-        signed = self.get_signed()
-
-        apoint = self.a.get_point()
-        bpoint = self.b.get_point()
-        cpoint = self.c.get_point()
-        awidth = self.a.bit_length()
-        bwidth = self.b.bit_length()
-        cwidth = self.c.bit_length()
-        asigned = self.a.get_signed()
-        bsigned = self.b.get_signed()
-        csigned = self.c.get_signed()
-        adata = self.a.sig_data
-        bdata = self.b.sig_data
-        cdata = self.c.sig_data
-
-        if apoint + bpoint != cpoint:
-            raise ValueError('apoint + bpoint == cpoint')
-
-        odata = m.Wire(self.name('madd_odata'),
-                       max(awidth + bwidth, cwidth), signed=signed)
-        odata_reg = m.Reg(self.name('madd_odata_reg'),
-                          max(awidth + bwidth, cwidth), signed=signed, initval=0)
-
-        data = m.Wire(self.name('data'), width, signed=signed)
-        self.sig_data = data
-
-        seq(odata_reg(odata), cond=senable)
-
-        m.Assign(data(odata_reg))
-
-        depth = self.latency - 1
-
-        inst = madd.get_madd(awidth, bwidth, cwidth,
-                             asigned, bsigned, csigned, depth)
-        clk = m._clock
-
-        update = m.Wire(self.name('madd_update'))
-
-        if senable is not None:
-            m.Assign(update(senable))
-        else:
-            m.Assign(update(1))
-
-        ports = [('CLK', clk), ('update', update),
-                 ('a', adata), ('b', bdata), ('c', cdata), ('d', odata)]
-
-        m.Instance(inst, self.name('madd'), ports=ports)
-
-    def eval(self):
-        vars = [var.eval() for var in self.vars]
-        for var in vars:
-            if not isinstance(var, int):
-                return MulAdd(*vars)
-
-        return vars[0] * vars[1] + vars[2]
-
-
-def MulAdd(a, b, c):
-    return TimesPlus(a, b, c)
-
-
-def Madd(a, b, c):
-    return TimesPlus(a, b, c)
-
-
-class PlusN(_SpecialOperator):
-    latency = 1
-
-    def __init__(self, *vars):
-        _SpecialOperator.__init__(self, *vars)
-
-        def func(*args):
-            ret = args[0]
-            for arg in args[1:]:
-                ret += arg
-            return ret
-
-        self.op = func
-
-    def eval(self):
-        vars = [var.eval() for var in self.vars]
-        for var in vars:
-            if not isinstance(var, int):
-                return PlusN(*vars)
-        ret = 0
-        for var in vars:
-            ret += var
-        return ret
-
-
-def AddN(*vars):
-    return PlusN(*vars)
-
-
 class _Delay(_UnaryOperator):
 
     def __init__(self, right):
@@ -1828,32 +1688,195 @@ class _Prev(_UnaryOperator):
         seq(data(rdata), cond=senable)
 
 
-def op_tree(op, initval=0, *args):
+class _PlusN(_SpecialOperator):
+    latency = 1
+
+    def __init__(self, *vars):
+        _SpecialOperator.__init__(self, *vars)
+
+        for arg in self.args:
+            if arg.point != 0:
+                raise ValueError('Fixed point is not supported.')
+
+        def func(*args):
+            ret = args[0]
+            for arg in args[1:]:
+                ret += arg
+            return ret
+
+        self.op = func
+
+    def eval(self):
+        vars = [var.eval() for var in self.vars]
+        for var in vars:
+            if not isinstance(var, int):
+                return PlusN(*vars)
+        ret = 0
+        for var in vars:
+            ret += var
+        return ret
+
+
+class _MulAdd(_SpecialOperator):
+    latency = 6 + 1
+
+    def __init__(self, a, b, c):
+        _SpecialOperator.__init__(self, a, b, c)
+
+        if self.a.point + self.b.point != self.c.point:
+            raise ValueError('Unsupported fixed point combination')
+
+    @property
+    def a(self):
+        return self.args[0]
+
+    @a.setter
+    def a(self, a):
+        self.args[0] = a
+
+    @property
+    def b(self):
+        return self.args[1]
+
+    @b.setter
+    def b(self, b):
+        self.args[1] = b
+
+    @property
+    def c(self):
+        return self.args[2]
+
+    @c.setter
+    def c(self, c):
+        self.args[2] = c
+
+    def _set_attributes(self):
+        a_fp = self.a.get_point()
+        b_fp = self.b.get_point()
+        c_fp = self.c.get_point()
+        a = self.a.bit_length()
+        b = self.b.bit_length()
+        c = self.c.bit_length()
+        self.width = max(a, b, c)
+        self.point = a_fp + b_fp
+        self.signed = self.a.get_signed() and self.b.get_signed() and self.c.get_signed()
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency <= 3:
+            raise ValueError("Latency of '*' operator must be greater than 3")
+
+        width = self.bit_length()
+        signed = self.get_signed()
+
+        apoint = self.a.get_point()
+        bpoint = self.b.get_point()
+        cpoint = self.c.get_point()
+        awidth = self.a.bit_length()
+        bwidth = self.b.bit_length()
+        cwidth = self.c.bit_length()
+        asigned = self.a.get_signed()
+        bsigned = self.b.get_signed()
+        csigned = self.c.get_signed()
+        adata = self.a.sig_data
+        bdata = self.b.sig_data
+        cdata = self.c.sig_data
+
+        odata = m.Wire(self.name('madd_odata'),
+                       max(awidth + bwidth, cwidth), signed=signed)
+        odata_reg = m.Reg(self.name('madd_odata_reg'),
+                          max(awidth + bwidth, cwidth), signed=signed, initval=0)
+
+        data = m.Wire(self.name('data'), width, signed=signed)
+        self.sig_data = data
+
+        seq(odata_reg(odata), cond=senable)
+
+        m.Assign(data(odata_reg))
+
+        depth = self.latency - 1
+
+        inst = madd.get_madd(awidth, bwidth, cwidth,
+                             asigned, bsigned, csigned, depth)
+        clk = m._clock
+
+        update = m.Wire(self.name('madd_update'))
+
+        if senable is not None:
+            m.Assign(update(senable))
+        else:
+            m.Assign(update(1))
+
+        ports = [('CLK', clk), ('update', update),
+                 ('a', adata), ('b', bdata), ('c', cdata), ('d', odata)]
+
+        m.Instance(inst, self.name('madd'), ports=ports)
+
+    def eval(self):
+        vars = [var.eval() for var in self.vars]
+        for var in vars:
+            if not isinstance(var, int):
+                return MulAdd(*vars)
+
+        return vars[0] * vars[1] + vars[2]
+
+
+def MulAdd(a, b, c):
+    a_point = a.point if isinstance(a, _Numeric) else 0
+    b_point = b.point if isinstance(b, _Numeric) else 0
+    c_point = c.point if isinstance(c, _Numeric) else 0
+    if a_point + b_point != c_point:
+        return Plus(Times(a, b), c)
+
+    return _MulAdd(a, b, c)
+
+
+def Madd(a, b, c):
+    return MulAdd(a, b, c)
+
+
+def op_tree(op, initval=0, latency=None, *args):
     if len(args) == 1:
         return args[0]
     if len(args) == 0:
         return initval
     half_len = len(args) // 2
-    return op(op_tree(op, initval, *args[:half_len]),
-              op_tree(op, initval, *args[half_len:]))
+    ret = op(op_tree(op, initval, latency, *args[:half_len]),
+             op_tree(op, initval, latency, *args[half_len:]))
+    if latency is not None:
+        ret.latency = latency
+    return ret
+
+
+def PlusN(*args):
+    for arg in args:
+        if isinstance(arg, _Numeric) and arg.point != 0:
+            ret = op_tree(Plus, 0, 0, *args)
+            ret.latency = 1
+            return ret
+
+    return _PlusN(*args)
+
+
+def AddN(*args):
+    return PlusN(*args)
 
 
 def AddTree(*args):
-    return op_tree(Plus, 0, *args)
+    return op_tree(Plus, 0, None, *args)
 
 
 def Max(*args):
     if len(args) == 1:
         return args[0]
     initval = args[0]
-    return op_tree(lambda x, y: Mux(x > y, x, y), initval, *args)
+    return op_tree(lambda x, y: Mux(x > y, x, y), initval, None, *args)
 
 
 def Min(*args):
     if len(args) == 1:
         return args[0]
     initval = args[0]
-    return op_tree(lambda x, y: Mux(x < y, x, y), initval, *args)
+    return op_tree(lambda x, y: Mux(x < y, x, y), initval, None, *args)
 
 
 def Average(*args):
