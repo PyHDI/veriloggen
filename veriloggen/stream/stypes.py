@@ -620,7 +620,7 @@ class Times(_BinaryOperator):
         if senable is not None:
             m.Assign(update(senable))
         else:
-            m.Assign(update(1))
+            m.Assign(update(vtypes.Int(1, 1)))
 
         ports = [('CLK', clk), ('update', update),
                  ('a', ldata), ('b', rdata), ('c', odata)]
@@ -715,10 +715,10 @@ class Divide(_BinaryOperator):
         if senable is not None:
             m.Assign(update(senable))
         else:
-            m.Assign(update(1))
+            m.Assign(update(vtypes.Int(1, 1)))
 
         params = [('W_D', width)]
-        ports = [('CLK', clk), ('RST', rst), ('update', update),  ('enable', 1),
+        ports = [('CLK', clk), ('RST', rst), ('update', update),  ('enable', vtypes.Int(1, 1)),
                  ('in_a', abs_ldata), ('in_b', abs_rdata), ('rslt', abs_odata)]
 
         m.Instance(inst, self.name('div'), params, ports)
@@ -807,10 +807,10 @@ class Mod(_BinaryOperator):
         if senable is not None:
             m.Assign(update(senable))
         else:
-            m.Assign(update(1))
+            m.Assign(update(vtypes.Int(1, 1)))
 
         params = [('W_D', width)]
-        ports = [('CLK', clk), ('RST', rst), ('update', update), ('enable', 1),
+        ports = [('CLK', clk), ('RST', rst), ('update', update), ('enable', vtypes.Int(1, 1)),
                  ('in_a', abs_ldata), ('in_b', abs_rdata), ('mod', abs_odata)]
 
         m.Instance(inst, self.name('div'), params, ports)
@@ -1804,7 +1804,7 @@ class _MulAdd(_SpecialOperator):
         if senable is not None:
             m.Assign(update(senable))
         else:
-            m.Assign(update(1))
+            m.Assign(update(vtypes.Int(1, 1)))
 
         ports = [('CLK', clk), ('update', update),
                  ('a', adata), ('b', bdata), ('c', cdata), ('d', odata)]

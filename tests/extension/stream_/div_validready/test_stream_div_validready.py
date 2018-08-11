@@ -274,7 +274,7 @@ module main
     .CLK(CLK),
     .RST(RST),
     .update(_divide_div_update_2),
-    .enable(1),
+    .enable(1'd1),
     .in_a(_divide_div_abs_ldata_2),
     .in_b(_divide_div_abs_rdata_2),
     .rslt(_divide_div_abs_odata_2)
