@@ -177,7 +177,7 @@ module main
   wire signed [32-1:0] _times_data_2;
   assign _times_data_2 = _times_mul_odata_reg_2;
   wire _times_mul_update_2;
-  assign _times_mul_update_2 = 1;
+  assign _times_mul_update_2 = 1'd1;
 
   multiplier_0
   _times_mul_2
