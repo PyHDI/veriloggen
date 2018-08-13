@@ -136,21 +136,21 @@ module main
   reg signed [32-1:0] _plus_data_12;
   reg signed [32-1:0] _plus_data_14;
   reg signed [32-1:0] _plus_data_16;
-  reg signed [32-1:0] __delay_data_28;
-  reg signed [32-1:0] _plus_data_18;
-  reg signed [32-1:0] _plus_data_19;
-  reg signed [32-1:0] _plus_data_21;
-  reg signed [32-1:0] _plus_data_22;
   reg signed [32-1:0] __delay_data_29;
+  reg signed [32-1:0] _plus_data_19;
   reg signed [32-1:0] _plus_data_20;
+  reg signed [32-1:0] _plus_data_22;
   reg signed [32-1:0] _plus_data_23;
   reg signed [32-1:0] __delay_data_30;
+  reg signed [32-1:0] _plus_data_21;
   reg signed [32-1:0] _plus_data_24;
   reg signed [32-1:0] __delay_data_31;
-  reg signed [32-1:0] _sra_data_25;
+  reg signed [32-1:0] _plus_data_25;
   reg signed [32-1:0] __delay_data_32;
-  reg signed [32-1:0] _plus_data_27;
-  assign zdata = _plus_data_27;
+  reg signed [32-1:0] _sra_data_26;
+  reg signed [32-1:0] __delay_data_33;
+  reg signed [32-1:0] _plus_data_28;
+  assign zdata = _plus_data_28;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -162,20 +162,20 @@ module main
       _plus_data_12 <= 0;
       _plus_data_14 <= 0;
       _plus_data_16 <= 0;
-      __delay_data_28 <= 0;
-      _plus_data_18 <= 0;
-      _plus_data_19 <= 0;
-      _plus_data_21 <= 0;
-      _plus_data_22 <= 0;
       __delay_data_29 <= 0;
+      _plus_data_19 <= 0;
       _plus_data_20 <= 0;
+      _plus_data_22 <= 0;
       _plus_data_23 <= 0;
       __delay_data_30 <= 0;
+      _plus_data_21 <= 0;
       _plus_data_24 <= 0;
       __delay_data_31 <= 0;
-      _sra_data_25 <= 0;
+      _plus_data_25 <= 0;
       __delay_data_32 <= 0;
-      _plus_data_27 <= 0;
+      _sra_data_26 <= 0;
+      __delay_data_33 <= 0;
+      _plus_data_28 <= 0;
     end else begin
       _plus_data_2 <= xdata + 1'sd0;
       _plus_data_4 <= xdata + 2'sd1;
@@ -185,20 +185,20 @@ module main
       _plus_data_12 <= xdata + 4'sd5;
       _plus_data_14 <= xdata + 4'sd6;
       _plus_data_16 <= xdata + 4'sd7;
-      __delay_data_28 <= ydata;
-      _plus_data_18 <= _plus_data_2 + _plus_data_4;
-      _plus_data_19 <= _plus_data_6 + _plus_data_8;
-      _plus_data_21 <= _plus_data_10 + _plus_data_12;
-      _plus_data_22 <= _plus_data_14 + _plus_data_16;
-      __delay_data_29 <= __delay_data_28;
-      _plus_data_20 <= _plus_data_18 + _plus_data_19;
-      _plus_data_23 <= _plus_data_21 + _plus_data_22;
+      __delay_data_29 <= ydata;
+      _plus_data_19 <= _plus_data_2 + _plus_data_4;
+      _plus_data_20 <= _plus_data_6 + _plus_data_8;
+      _plus_data_22 <= _plus_data_10 + _plus_data_12;
+      _plus_data_23 <= _plus_data_14 + _plus_data_16;
       __delay_data_30 <= __delay_data_29;
-      _plus_data_24 <= _plus_data_20 + _plus_data_23;
+      _plus_data_21 <= _plus_data_19 + _plus_data_20;
+      _plus_data_24 <= _plus_data_22 + _plus_data_23;
       __delay_data_31 <= __delay_data_30;
-      _sra_data_25 <= _plus_data_24 >>> 3'sd3;
+      _plus_data_25 <= _plus_data_21 + _plus_data_24;
       __delay_data_32 <= __delay_data_31;
-      _plus_data_27 <= _sra_data_25 + __delay_data_32;
+      _sra_data_26 <= _plus_data_25 >>> 3'sd3;
+      __delay_data_33 <= __delay_data_32;
+      _plus_data_28 <= _sra_data_26 + __delay_data_33;
     end
   end
 
