@@ -1834,16 +1834,20 @@ def Madd(a, b, c):
     return MulAdd(a, b, c)
 
 
-def op_tree(op, initval=0, latency=None, *args):
-    if len(args) == 1:
-        return args[0]
+def op_tree(op, initval, latency, *args):
     if len(args) == 0:
         return initval
+
+    if len(args) == 1:
+        return args[0]
+
     half_len = len(args) // 2
     ret = op(op_tree(op, initval, latency, *args[:half_len]),
              op_tree(op, initval, latency, *args[half_len:]))
+
     if latency is not None:
         ret.latency = latency
+
     return ret
 
 
