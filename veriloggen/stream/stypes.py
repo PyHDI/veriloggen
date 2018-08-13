@@ -1854,7 +1854,7 @@ def op_tree(op, initval, latency, *args):
 def PlusN(*args):
     for arg in args:
         if isinstance(arg, _Numeric) and arg.point != 0:
-            ret = op_tree(Plus, 0, 0, *args)
+            ret = op_tree(Plus, vtypes.Int(0, signed=True), 0, *args)
             ret.latency = 1
             return ret
 
@@ -1866,7 +1866,7 @@ def AddN(*args):
 
 
 def AddTree(*args):
-    return op_tree(Plus, 0, None, *args)
+    return op_tree(Plus, vtypes.Int(0, signed=True), None, *args)
 
 
 def Max(*args):
