@@ -40,8 +40,9 @@ class Stream(BaseStream):
     __intrinsics__ = ('set_source', 'set_source_pattern', 'set_source_multidim',
                       'set_source_multipattern', 'set_source_empty',
                       'set_sink', 'set_sink_pattern', 'set_sink_multidim',
-                      'set_sink_multipattern',
+                      'set_sink_multipattern', 'set_sink_immediate',
                       'set_sink_empty', 'set_constant',
+                      'read_sink',
                       'run', 'join', 'done',
                       'source_join', 'source_done',
                       'sink_join', 'sink_done')
@@ -76,8 +77,8 @@ class Stream(BaseStream):
         self.start = self.module.Reg(
             '_'.join(['', self.name, 'start']), initval=0)
 
-        self.end_flag = self.module.Reg(
-            '_'.join(['', self.name, 'end_flag']), initval=0)
+        self.term_sink = self.module.Reg(
+            '_'.join(['', self.name, 'term_sink']), initval=0)
 
         self.source_busy = self.module.Reg(
             '_'.join(['', self.name, 'source_busy']), initval=0)
@@ -785,6 +786,47 @@ class Stream(BaseStream):
 
         fsm.goto_next()
 
+    def set_sink_immediate(self, fsm, name, size):
+        """ intrinsic method to set a sink stream as an immediate variable """
+
+        if not self.stream_synthesized:
+            self._implement_stream()
+
+        if isinstance(name, str):
+            var = self.var_name_map[name]
+        elif isinstance(name, vtypes.Str):
+            name = name.value
+            var = self.var_name_map[name]
+        elif isinstance(name, int):
+            var = self.var_id_map[name]
+        elif isinstance(name, vtypes.Int):
+            name = name.value
+            var = self.var_id_map[name]
+        else:
+            raise TypeError('Unsupported index name')
+
+        if name not in self.sinks:
+            raise NameError("No such stream '%s'" % name)
+
+        set_cond = self._set_flag(fsm)
+        start_delay = self._write_delay() - 1
+
+        self.seq.If(set_cond).Delay(start_delay).EagerVal()(
+            var.sink_mode(mode_normal),
+            var.sink_size(size)
+        )
+
+        set_cond = self.seq.Prev(set_cond, start_delay)
+
+        ram_sel = var.sink_ram_sel
+        self.seq.If(set_cond)(
+            ram_sel(0)  # '0' is reserved for empty
+        )
+
+        self._synthesize_set_sink(var, name)
+
+        fsm.goto_next()
+
     def set_sink_empty(self, fsm, name):
         """ intrinsic method to assign RAM property to a sink stream """
 
@@ -852,6 +894,32 @@ class Stream(BaseStream):
             var.has_constant_data = True
 
         fsm.goto_next()
+
+    def read_sink(self, fsm, name):
+        """ intrinsic method to read the last output of a sink stream """
+
+        if not self.stream_synthesized:
+            self._implement_stream()
+
+        if isinstance(name, str):
+            var = self.var_name_map[name]
+        elif isinstance(name, vtypes.Str):
+            name = name.value
+            var = self.var_name_map[name]
+        elif isinstance(name, int):
+            var = self.var_id_map[name]
+        elif isinstance(name, vtypes.Int):
+            name = name.value
+            var = self.var_id_map[name]
+        else:
+            raise TypeError('Unsupported index name')
+
+        if name not in self.sinks:
+            raise NameError("No such stream '%s'" % name)
+
+        fsm.goto_next()
+
+        return var.sink_ram_wdata
 
     def run(self, fsm):
         # entry point
@@ -1004,11 +1072,13 @@ class Stream(BaseStream):
             self.sink_wait_count.inc()
         )
 
+        pipeline_depth = self.pipeline_depth()
+
         self.fsm.seq(
-            self.end_flag(0)
+            self.term_sink(0)
         )
-        self.fsm.seq.If(self.seq.Prev(end_cond, num_wdelay))(
-            self.end_flag(1)
+        self.fsm.seq.If(self.seq.Prev(end_cond, pipeline_depth))(
+            self.term_sink(1)
         )
 
         self.fsm.goto_init()
@@ -1490,6 +1560,7 @@ class Stream(BaseStream):
         )
 
         var.sink_fsm.If(wcond, var.sink_count == 1).goto_init()
+        var.sink_fsm.If(self.term_sink).goto_init()
 
     def _make_sink_pattern_vars(self, var, name):
         if var.sink_pat_cur_offsets is not None:
@@ -1614,6 +1685,7 @@ class Stream(BaseStream):
         fin_cond = upcond
 
         var.sink_pat_fsm.If(fin_cond).goto_init()
+        var.sink_pat_fsm.If(self.term_sink).goto_init()
 
     def _make_sink_multipattern_vars(self, var, name):
         if var.sink_multipat_cur_offsets is not None:
@@ -1801,6 +1873,7 @@ class Stream(BaseStream):
 
         var.sink_multipat_fsm.If(fin_cond,
                                  var.sink_multipat_num_patterns == 0).goto_init()
+        var.sink_multipat_fsm.If(self.term_sink).goto_init()
 
     def _set_flag(self, fsm, prefix='_set_flag'):
         flag = self.module.TmpReg(initval=0, prefix=prefix)
