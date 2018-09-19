@@ -77,6 +77,8 @@ class Stream(BaseStream):
         self.start = self.module.Reg(
             '_'.join(['', self.name, 'start']), initval=0)
 
+        self.end_flag = self.module.Reg(
+            '_'.join(['', self.name, 'end_flag']), initval=0)
         self.term_sink = self.module.Reg(
             '_'.join(['', self.name, 'term_sink']), initval=0)
 
@@ -1070,6 +1072,13 @@ class Stream(BaseStream):
         self.fsm.seq.If(start_cond,
                         vtypes.Not(self.seq.Prev(end_cond, num_wdelay)))(
             self.sink_wait_count.inc()
+        )
+
+        self.fsm.seq(
+            self.end_flag(0)
+        )
+        self.fsm.seq.If(self.seq.Prev(end_cond, num_wdelay))(
+            self.end_flag(1)
         )
 
         pipeline_depth = self.pipeline_depth()
