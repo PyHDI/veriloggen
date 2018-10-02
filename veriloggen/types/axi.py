@@ -1364,7 +1364,8 @@ def AxiLiteSlave(m, name, clk, rst, datawidth=32, addrwidth=32,
 
 
 class AxiMemoryModel(object):
-    __intrinsics__ = ('read', 'write')
+    __intrinsics__ = ('read', 'write',
+                      'read_word', 'write_word')
 
     burst_size_width = 8
 
@@ -1655,6 +1656,60 @@ class AxiMemoryModel(object):
         for i in range(num_bytes):
             self.fsm.seq.If(cond)(
                 self.mem[addr + i](wdata_wire[i * 8:i * 8 + 8])
+            )
+
+        fsm.goto_next()
+
+        return 0
+
+    def read_word(self, fsm, word_index, byte_offset, bits=8):
+        """ intrinsic method word-indexed read """
+
+        cond = fsm.state == fsm.current
+        rdata = self.m.TmpReg(bits, initval=0, signed=True)
+        num_bytes = int(math.ceil(bits / 8))
+        addr = byte_offset + word_index * bits / 8
+        shift = word_index * bits % 8
+
+        raw_data = vtypes.Cat(*reversed([self.mem[addr + i]
+                                         for i in range(num_bytes)]))
+
+        fsm.If(cond)(
+            rdata(raw_data >> shift)
+        )
+        fsm.goto_next()
+
+        return rdata
+
+    def write_word(self, fsm, word_index, byte_offset, wdata, bits=8):
+        """ intrinsic method word-indexed write """
+
+        cond = fsm.state == fsm.current
+        rdata = self.m.TmpReg(bits, initval=0, signed=True)
+        num_bytes = int(math.ceil(bits / 8))
+        addr = byte_offset + word_index * bits / 8
+        shift = word_index * bits % 8
+
+        wdata_wire = self.m.TmpWire(bits)
+        wdata_wire.assign(wdata)
+        mem_data = vtypes.Cat(*reversed([self.mem[addr + i]
+                                         for i in range(num_bytes)]))
+        mem_data_wire = self.m.TmpWire(8 * num_bytes)
+        mem_data_wire.assign(mem_data)
+
+        inv_mask = self.m.TmpWire(8 * num_bytes)
+        inv_mask.assign(vtypes.Repeat(vtypes.Int(1, 1), bits) << shift)
+        mask = self.m.TmpWire(8 * num_bytes)
+        mask.assign(vtypes.Unot(inv_mask))
+
+        raw_data = vtypes.Or(wdata_wire << shift,
+                             vtypes.Or(mem_data_wire, mask))
+        raw_data_wire = self.m.TmpWire(8 * num_bytes)
+        raw_data_wire.assign(raw_data)
+
+        for i in range(num_bytes):
+            self.fsm.seq.If(cond)(
+                self.mem[addr + i](raw_data_wire[i * 8:i * 8 + 8])
             )
 
         fsm.goto_next()
