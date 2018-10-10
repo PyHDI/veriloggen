@@ -171,11 +171,6 @@ def run(filename='tmp.v', simtype='iverilog', outputfile=None):
 
     memimg_name = 'memimg_' + outputfile
 
-    if outputfile is None:
-        outputfile = os.path.splitext(os.path.basename(__file__))[0] + '.out'
-
-    memimg_name = 'memimg_' + outputfile
-
     test = mkTest(memimg_name=memimg_name)
 
     if filename is not None:
