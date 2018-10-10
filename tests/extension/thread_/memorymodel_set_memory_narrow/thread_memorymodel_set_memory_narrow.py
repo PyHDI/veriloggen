@@ -3,6 +3,7 @@ from __future__ import print_function
 import sys
 import os
 import math
+import numpy as np
 
 # the next line can be removed after installation
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
@@ -14,6 +15,9 @@ import veriloggen.types.axi as axi
 
 
 def mkLed(axi_datawidth=32, datawidth=4, addrwidth=10):
+    if datawidth >= 8:
+        raise ValueError('not supported.')
+
     m = Module('blinkled')
     clk = m.Input('CLK')
     rst = m.Input('RST')
@@ -34,13 +38,9 @@ def mkLed(axi_datawidth=32, datawidth=4, addrwidth=10):
         saxi.write(1, 0)
 
         all_ok.value = True
-
-        for i in range(4):
-            print('# iter %d start' % i)
-            # Test for 4KB boundary check
-            offset = i * 1024 * 16 + (myaxi.boundary_size - 4)
-            body(size, offset)
-            print('# iter %d end' % i)
+        # Test for 4KB boundary check
+        offset = 1024 * 16 + (myaxi.boundary_size - 4)
+        body(size, offset)
 
         if all_ok:
             print('# verify (local): PASSED')
@@ -54,27 +54,7 @@ def mkLed(axi_datawidth=32, datawidth=4, addrwidth=10):
         saxi.write_flag(1, 1, resetvalue=0)
 
     def body(size, offset):
-        # write
-        for i in range(size):
-            wdata = (i + 100) % (2 ** datawidth)
-            myram.write(i, wdata)
-
-        laddr = 0
-        gaddr = offset
-        myaxi.dma_write(myram, laddr, gaddr, size)
-        print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
-
-        # write
-        for i in range(size):
-            wdata = (i + 1000) % (2 ** datawidth)
-            myram.write(i, wdata)
-
-        laddr = 0
-        gaddr = (size + size) * 4 + offset
-        myaxi.dma_write(myram, laddr, gaddr, size)
-        print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
-
-        # read
+        # read and modify
         laddr = 0
         gaddr = offset
         myaxi.dma_read(myram, laddr, gaddr, size)
@@ -82,35 +62,45 @@ def mkLed(axi_datawidth=32, datawidth=4, addrwidth=10):
 
         for i in range(size):
             rdata = myram.read(i) & (2 ** datawidth - 1)
-            verify = (i + 100) % (2 ** datawidth)
+            verify = (offset * 8 // datawidth + i) % (2 ** datawidth - 1) + 1
+            wdata = (verify + 1000) % (2 ** datawidth - 1)
+            myram.write(i, wdata)
             if vthread.verilog.NotEql(rdata, verify):
                 print('rdata[%d] = %d (!= %d)' % (i, rdata, verify))
                 all_ok.value = False
 
-        # read
+        # write
         laddr = 0
-        gaddr = (size + size) * 4 + offset
+        gaddr = offset
+        myaxi.dma_write(myram, laddr, gaddr, size)
+        print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
+
+        # read (verify)
+        laddr = 0
+        gaddr = offset
         myaxi.dma_read(myram, laddr, gaddr, size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
             rdata = myram.read(i) & (2 ** datawidth - 1)
-            verify = (i + 1000) % (2 ** datawidth)
+            verify = (((offset * 8 // datawidth + i) %
+                       (2 ** datawidth - 1) + 1 + 1000) %
+                      (2 ** datawidth - 1))
             if vthread.verilog.NotEql(rdata, verify):
                 print('rdata[%d] = %d (!= %d)' % (i, rdata, verify))
                 all_ok.value = False
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
-    fsm = th.start(16)
+    fsm = th.start(32)
 
     return m
 
 
-def mkTest(memimg_name=None, axi_datawidth=32, datawidth=4, addrwidth=10):
+def mkTest(memimg_name=None, memimg_datawidth=32, datawidth=4):
     m = Module('test')
 
     # target instance
-    led = mkLed(axi_datawidth, datawidth, addrwidth)
+    led = mkLed(datawidth=datawidth)
 
     # copy paras and ports
     params = m.copy_params(led)
@@ -119,7 +109,15 @@ def mkTest(memimg_name=None, axi_datawidth=32, datawidth=4, addrwidth=10):
     clk = ports['CLK']
     rst = ports['RST']
 
-    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memimg_name=memimg_name)
+    length = 1024 * 1024 // (memimg_datawidth // 8)
+    mem = np.zeros([length], dtype=np.int64)
+    data = np.arange(length, dtype=np.int64) % [2 ** datawidth - 1] + [1]
+    addr = 0
+    axi.set_memory(mem, data, memimg_datawidth, datawidth, addr, None)
+
+    memory = axi.AxiMemoryModel(m, 'memory', clk, rst,
+                                memimg=mem, memimg_name=memimg_name,
+                                memimg_datawidth=memimg_datawidth)
     memory.connect(ports, 'myaxi')
 
     # AXI-Slave controller
@@ -129,15 +127,6 @@ def mkTest(memimg_name=None, axi_datawidth=32, datawidth=4, addrwidth=10):
     def ctrl():
         for i in range(100):
             pass
-
-        for i in range(16):
-            # word addressing
-            v = memory.read_word(i, 0, datawidth)
-            print('read:  mem[%d] -> %x' % (i, v))
-            v = v + 1024
-            # word addressing
-            memory.write_word(i, 0, datawidth)
-            print('write: mem[%d] <- %x' % (i, v))
 
         awaddr = 0
         _saxi.write(awaddr, 1)
@@ -154,6 +143,8 @@ def mkTest(memimg_name=None, axi_datawidth=32, datawidth=4, addrwidth=10):
         else:
             print('# verify: FAILED')
 
+        vthread.finish()
+
     th = vthread.Thread(m, 'th_ctrl', clk, rst, ctrl)
     fsm = th.start()
 
@@ -161,7 +152,7 @@ def mkTest(memimg_name=None, axi_datawidth=32, datawidth=4, addrwidth=10):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    # simulation.setup_waveform(m, uut)
+    #simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

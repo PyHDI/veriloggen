@@ -13,8 +13,8 @@ import veriloggen.thread as vthread
 import veriloggen.types.axi as axi
 import veriloggen.types.ipcore as ipcore
 
-axi_wordsize = 4
-data_wordsize = 4
+axi_datawidth = 32
+datawidth = 32
 
 matrix_size = 16
 a_offset = 0
@@ -28,9 +28,7 @@ def mkLed():
     rst = m.Input('RST')
     led = m.OutputReg('led', 8, initval=0)
 
-    datawidth = 32
     addrwidth = 10
-
     ram_a = vthread.RAM(m, 'ram_a', clk, rst, datawidth, addrwidth)
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
     ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
@@ -86,11 +84,9 @@ def mkTest(memimg_name=None):
     n_raw_a = axi.shape_to_length(a_shape)
     n_raw_b = axi.shape_to_length(b_shape)
 
-    n_a = axi.memory_word_length(a_shape, data_wordsize)
-    n_b = axi.memory_word_length(b_shape, data_wordsize)
+    n_a = axi.shape_to_memory_size(a_shape, datawidth)
+    n_b = axi.shape_to_memory_size(b_shape, datawidth)
 
-    #a = np.arange(n_raw_a, dtype=np.int32).reshape(a_shape)
-    #b = np.arange(n_raw_b, dtype=np.int32).reshape(b_shape) + [n_a]
     a = np.zeros(a_shape, dtype=np.int64)
     b = np.zeros(b_shape, dtype=np.int64)
 
@@ -111,13 +107,13 @@ def mkTest(memimg_name=None):
                 b[y][x] = 0
 
     a_addr = a_offset
-    size_a = n_a * data_wordsize
+    size_a = n_a * datawidth // 8
     b_addr = b_offset
-    size_b = n_b * data_wordsize
+    size_b = n_b * datawidth // 8
 
-    mem = np.zeros([1024 * 1024 // axi_wordsize], dtype=np.int64)
-    axi.set_memory(mem, a, axi_wordsize, data_wordsize, a_addr)
-    axi.set_memory(mem, b, axi_wordsize, data_wordsize, b_addr)
+    mem = np.zeros([1024 * 1024 * 8 // axi_datawidth], dtype=np.int64)
+    axi.set_memory(mem, a, axi_datawidth, datawidth, a_addr)
+    axi.set_memory(mem, b, axi_datawidth, datawidth, b_addr)
 
     led = mkLed()
 
@@ -128,7 +124,7 @@ def mkTest(memimg_name=None):
     rst = ports['RST']
 
     memory = axi.AxiMemoryModel(m, 'memory', clk, rst,
-                                mem_datawidth=8 * axi_wordsize,
+                                mem_datawidth=axi_datawidth,
                                 memimg=mem, memimg_name=memimg_name)
 
     memory.connect(ports, 'maxi')
@@ -183,7 +179,7 @@ def mkTest(memimg_name=None):
         for y in range(matrix_size):
             for x in range(matrix_size):
                 v = memory.read(
-                    c_offset + (y * matrix_size + x) * data_wordsize)
+                    c_offset + (y * matrix_size + x) * datawidth // 8)
                 if y == x and vthread.verilog.NotEql(v, (y + 1) * 2):
                     all_ok = False
                     print("NG [%d,%d] = %d" % (y, x, v))
@@ -241,7 +237,7 @@ if __name__ == '__main__':
     rslt = run(filename='tmp.v')
     print(rslt)
 
-    memname = '_memory_memimg_.out'
+    memname = 'memimg_thread_matmul_ipcore.out'
     simcode = """
 reg [31:0] counter;
 always @(posedge sim_clk) begin
