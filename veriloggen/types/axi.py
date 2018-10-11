@@ -1431,7 +1431,7 @@ class AxiMemoryModel(object):
     @staticmethod
     def _make_img(filename, size, width):
         with open(filename, 'w') as f:
-            for i in range(size // (width // 8)):
+            for i in range(size * 8 // width):
                 s = (''.join(['%0', '%d' %
                               int(math.ceil(width / 4)), 'x'])) % i
                 for w in range(int(math.ceil(width / 4)), 0, -2):
