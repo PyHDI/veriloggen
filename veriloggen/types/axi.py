@@ -1709,7 +1709,7 @@ class AxiMemoryModel(object):
         mask.assign(vtypes.Unot(inv_mask))
 
         raw_data = vtypes.Or(wdata_wire << shift,
-                             vtypes.Or(mem_data_wire, mask))
+                             vtypes.And(mem_data_wire, mask))
         raw_data_wire = self.m.TmpWire(8 * num_bytes)
         raw_data_wire.assign(raw_data)
 

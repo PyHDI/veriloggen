@@ -132,12 +132,13 @@ def mkTest(memimg_name=None, axi_datawidth=32, datawidth=4, addrwidth=10):
 
         for i in range(16):
             # word addressing
-            v = memory.read_word(i, 0, datawidth)
-            print('read:  mem[%d] -> %x' % (i, v))
-            v = v + 1024
+            r = memory.read_word(i, 0, datawidth)
+            print('read:  mem[%d] -> %x' % (i, r))
+
             # word addressing
-            memory.write_word(i, 0, datawidth)
-            print('write: mem[%d] <- %x' % (i, v))
+            w = (r + i + 100) % (2 ** datawidth - 1)
+            memory.write_word(i, 0, w, datawidth)
+            print('write: mem[%d] <- %x' % (i, w))
 
         awaddr = 0
         _saxi.write(awaddr, 1)
