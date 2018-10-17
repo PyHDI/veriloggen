@@ -3,7 +3,6 @@ language: python
 sudo: false
 
 python:
-  - 2.7
   - 3.6
 
 addons:
@@ -13,7 +12,7 @@ addons:
     - verilator
 
 install:
-  - pip install pytest pytest-pythonpath pyverilog ipgen numpy
+  - pip install jinja2 pytest pytest-pythonpath pyverilog ipgen numpy
 
 script:
   - python -m pytest tests examples
