@@ -21,7 +21,7 @@ setup(name='veriloggen',
       license="Apache License 2.0",
       url='https://github.com/PyHDI/veriloggen',
       packages=find_packages(),
-      #package_data={ 'path' : ['*.*'], },
+      package_data={'veriloggen.simulation': ['*.cpp'], },
       install_requires=['pyverilog>=1.1.2', 'ipgen>=1.0.0', 'Jinja2>=2.10'],
       extras_require={
           'graph': ['pygraphviz>=1.3.1'],
