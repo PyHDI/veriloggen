@@ -177,7 +177,7 @@ module main
   wire signed [32-1:0] _times_data_2;
   assign _times_data_2 = _times_mul_odata_reg_2;
   wire _times_mul_update_2;
-  assign _times_mul_update_2 = 1;
+  assign _times_mul_update_2 = 1'd1;
 
   multiplier_0
   _times_mul_2
@@ -269,19 +269,19 @@ module main
         _reduceadd_data_14 <= _reduceadd_data_14 + __substreamoutput_data_11;
       end 
       if(__delay_data_29) begin
-        _reduceadd_count_14 <= (_reduceadd_count_14 == 5'sd8 - 1)? 0 : _reduceadd_count_14 + 1;
+        _reduceadd_count_14 <= (_reduceadd_count_14 >= 5'sd8 - 1)? 0 : _reduceadd_count_14 + 1;
       end 
       if(__delay_data_29 && (_reduceadd_count_14 == 0)) begin
         _reduceadd_data_14 <= 1'sd0 + __substreamoutput_data_11;
       end 
       if(__delay_data_29) begin
-        _pulse_data_17 <= _pulse_count_17 == 5'sd8 - 1;
+        _pulse_data_17 <= _pulse_count_17 >= 5'sd8 - 1;
       end 
       if(__delay_data_29) begin
-        _pulse_count_17 <= (_pulse_count_17 == 5'sd8 - 1)? 0 : _pulse_count_17 + 1;
+        _pulse_count_17 <= (_pulse_count_17 >= 5'sd8 - 1)? 0 : _pulse_count_17 + 1;
       end 
       if(__delay_data_29 && (_pulse_count_17 == 0)) begin
-        _pulse_data_17 <= _pulse_count_17 == 5'sd8 - 1;
+        _pulse_data_17 <= _pulse_count_17 >= 5'sd8 - 1;
       end 
       _plus_data_18 <= _reduceadd_data_14 + 11'sd1000;
       __delay_data_30 <= _pulse_data_17;
