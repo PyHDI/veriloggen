@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 import sys
 import os
+import numpy as np
 
 # the next line can be removed after installation
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
@@ -33,13 +34,9 @@ def mkLed():
         saxi.write(1, 0)
 
         all_ok.value = True
-
-        for i in range(4):
-            print('# iter %d start' % i)
-            # Test for 4KB boundary check
-            offset = i * 1024 * 16 + (myaxi.boundary_size - 4)
-            body(size, offset)
-            print('# iter %d end' % i)
+        # Test for 4KB boundary check
+        offset = 1024 * 16 + (myaxi.boundary_size - 4)
+        body(size, offset)
 
         if all_ok:
             print('# verify (local): PASSED')
@@ -53,27 +50,7 @@ def mkLed():
         saxi.write_flag(1, 1, resetvalue=0)
 
     def body(size, offset):
-        # write
-        for i in range(size):
-            wdata = i + 100
-            myram.write(i, wdata)
-
-        laddr = 0
-        gaddr = offset
-        myaxi.dma_write(myram, laddr, gaddr, size)
-        print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
-
-        # write
-        for i in range(size):
-            wdata = i + 1000
-            myram.write(i, wdata)
-
-        laddr = 0
-        gaddr = (size + size) * 4 + offset
-        myaxi.dma_write(myram, laddr, gaddr, size)
-        print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
-
-        # read
+        # read and modify
         laddr = 0
         gaddr = offset
         myaxi.dma_read(myram, laddr, gaddr, size)
@@ -81,29 +58,39 @@ def mkLed():
 
         for i in range(size):
             rdata = myram.read(i)
-            if vthread.verilog.NotEql(rdata, i + 100):
-                print('rdata[%d] = %d' % (i, rdata))
+            verify = (offset * 8 // datawidth + i)
+            wdata = verify + 1000
+            myram.write(i, wdata)
+            if vthread.verilog.NotEql(rdata, verify):
+                print('rdata[%d] = %d (!= %d)' % (i, rdata, verify))
                 all_ok.value = False
 
-        # read
+        # write
         laddr = 0
-        gaddr = (size + size) * 4 + offset
+        gaddr = offset
+        myaxi.dma_write(myram, laddr, gaddr, size)
+        print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
+
+        # read (verify)
+        laddr = 0
+        gaddr = offset
         myaxi.dma_read(myram, laddr, gaddr, size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
             rdata = myram.read(i)
-            if vthread.verilog.NotEql(rdata, i + 1000):
-                print('rdata[%d] = %d' % (i, rdata))
+            verify = offset * 8 // datawidth + i + 1000
+            if vthread.verilog.NotEql(rdata, verify):
+                print('rdata[%d] = %d (!= %d)' % (i, rdata, verify))
                 all_ok.value = False
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
-    fsm = th.start(16)
+    fsm = th.start(1024)
 
     return m
 
 
-def mkTest(memimg_name=None):
+def mkTest(memimg_name=None, memimg_datawidth=32):
     m = Module('test')
 
     # target instance
@@ -116,7 +103,16 @@ def mkTest(memimg_name=None):
     clk = ports['CLK']
     rst = ports['RST']
 
-    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memimg_name=memimg_name)
+    length = 1024 * 1024 // (memimg_datawidth // 8)
+    mem = np.zeros([length], dtype=np.int64)
+    data = np.arange(length, dtype=np.int64)
+    datawidth = 32
+    addr = 0
+    axi.set_memory(mem, data, memimg_datawidth, datawidth, addr, None)
+
+    memory = axi.AxiMemoryModel(m, 'memory', clk, rst,
+                                memimg=mem, memimg_name=memimg_name,
+                                memimg_datawidth=memimg_datawidth)
     memory.connect(ports, 'myaxi')
 
     # AXI-Slave controller
@@ -126,15 +122,6 @@ def mkTest(memimg_name=None):
     def ctrl():
         for i in range(100):
             pass
-
-        for i in range(16):
-            # byte addressing
-            v = memory.read(i * 4)
-            print('read:  mem[%d] -> %x' % (i, v))
-            v = v + 1024
-            # byte addressing
-            memory.write(i * 4, v)
-            print('write: mem[%d] <- %x' % (i, v))
 
         awaddr = 0
         _saxi.write(awaddr, 1)
@@ -150,6 +137,8 @@ def mkTest(memimg_name=None):
             print('# verify: PASSED')
         else:
             print('# verify: FAILED')
+
+        vthread.finish()
 
     th = vthread.Thread(m, 'th_ctrl', clk, rst, ctrl)
     fsm = th.start()
