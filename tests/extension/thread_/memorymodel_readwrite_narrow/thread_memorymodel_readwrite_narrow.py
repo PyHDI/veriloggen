@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 import sys
 import os
+import math
 
 # the next line can be removed after installation
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
@@ -12,17 +13,17 @@ import veriloggen.thread as vthread
 import veriloggen.types.axi as axi
 
 
-def mkLed():
+def mkLed(axi_datawidth=32, datawidth=4, addrwidth=10):
     m = Module('blinkled')
     clk = m.Input('CLK')
     rst = m.Input('RST')
 
-    datawidth = 32
-    addrwidth = 10
-    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
-    myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth)
+    numbanks = int(math.ceil(axi_datawidth / datawidth))
+    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, axi_datawidth)
+    myram = vthread.MultibankRAM(m, 'myram', clk, rst, datawidth, addrwidth,
+                                 numbanks=numbanks)
 
-    saxi = vthread.AXISLiteRegister(m, 'saxi', clk, rst, datawidth)
+    saxi = vthread.AXISLiteRegister(m, 'saxi', clk, rst, 32)
 
     all_ok = m.TmpReg(initval=0)
 
@@ -55,7 +56,7 @@ def mkLed():
     def body(size, offset):
         # write
         for i in range(size):
-            wdata = i + 100
+            wdata = (i + 100) % (2 ** datawidth)
             myram.write(i, wdata)
 
         laddr = 0
@@ -65,7 +66,7 @@ def mkLed():
 
         # write
         for i in range(size):
-            wdata = i + 1000
+            wdata = (i + 1000) % (2 ** datawidth)
             myram.write(i, wdata)
 
         laddr = 0
@@ -80,9 +81,10 @@ def mkLed():
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
-            rdata = myram.read(i)
-            if vthread.verilog.NotEql(rdata, i + 100):
-                print('rdata[%d] = %d' % (i, rdata))
+            rdata = myram.read(i) & (2 ** datawidth - 1)
+            verify = (i + 100) % (2 ** datawidth)
+            if vthread.verilog.NotEql(rdata, verify):
+                print('rdata[%d] = %d (!= %d)' % (i, rdata, verify))
                 all_ok.value = False
 
         # read
@@ -92,9 +94,10 @@ def mkLed():
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
-            rdata = myram.read(i)
-            if vthread.verilog.NotEql(rdata, i + 1000):
-                print('rdata[%d] = %d' % (i, rdata))
+            rdata = myram.read(i) & (2 ** datawidth - 1)
+            verify = (i + 1000) % (2 ** datawidth)
+            if vthread.verilog.NotEql(rdata, verify):
+                print('rdata[%d] = %d (!= %d)' % (i, rdata, verify))
                 all_ok.value = False
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
@@ -103,11 +106,11 @@ def mkLed():
     return m
 
 
-def mkTest(memimg_name=None):
+def mkTest(memimg_name=None, axi_datawidth=32, datawidth=4, addrwidth=10):
     m = Module('test')
 
     # target instance
-    led = mkLed()
+    led = mkLed(axi_datawidth, datawidth, addrwidth)
 
     # copy paras and ports
     params = m.copy_params(led)
@@ -128,13 +131,14 @@ def mkTest(memimg_name=None):
             pass
 
         for i in range(16):
-            # byte addressing
-            v = memory.read(i * 4)
-            print('read:  mem[%d] -> %x' % (i, v))
-            v = v + 1024
-            # byte addressing
-            memory.write(i * 4, v)
-            print('write: mem[%d] <- %x' % (i, v))
+            # word addressing
+            r = memory.read_word(i, 0, datawidth)
+            print('read:  mem[%d] -> %x' % (i, r))
+
+            # word addressing
+            w = (r + i + 100) % (2 ** datawidth - 1)
+            memory.write_word(i, 0, w, datawidth)
+            print('write: mem[%d] <- %x' % (i, w))
 
         awaddr = 0
         _saxi.write(awaddr, 1)
@@ -158,7 +162,7 @@ def mkTest(memimg_name=None):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    #simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

@@ -1364,7 +1364,8 @@ def AxiLiteSlave(m, name, clk, rst, datawidth=32, addrwidth=32,
 
 
 class AxiMemoryModel(object):
-    __intrinsics__ = ('read', 'write')
+    __intrinsics__ = ('read', 'write',
+                      'read_word', 'write_word')
 
     burst_size_width = 8
 
@@ -1372,6 +1373,7 @@ class AxiMemoryModel(object):
                  datawidth=32, addrwidth=32,
                  mem_datawidth=32, mem_addrwidth=20,
                  memimg=None, memimg_name=None,
+                 memimg_datawidth=None,
                  write_delay=10, read_delay=10, sleep=4):
 
         if mem_datawidth % 8 != 0:
@@ -1405,16 +1407,18 @@ class AxiMemoryModel(object):
             if memimg_name is None:
                 memimg_name = '_'.join(['', self.name, 'memimg', '.out'])
             size = 2 ** self.mem_addrwidth
-            wordsize = self.mem_datawidth // 8
-            self._make_img(memimg_name, size, wordsize)
+            width = self.mem_datawidth
+            self._make_img(memimg_name, size, width)
 
         elif isinstance(memimg, str):
             memimg_name = memimg
 
         else:
+            if memimg_datawidth is None:
+                memimg_datawidth = mem_datawidth
             if memimg_name is None:
                 memimg_name = '_'.join(['', self.name, 'memimg', '.out'])
-            to_memory_image(memimg_name, memimg, datawidth=mem_datawidth)
+            to_memory_image(memimg_name, memimg, datawidth=memimg_datawidth)
 
         self.m.Initial(
             vtypes.Systask('readmemh', memimg_name, self.mem)
@@ -1425,11 +1429,12 @@ class AxiMemoryModel(object):
         self._make_fsm(write_delay, read_delay, sleep)
 
     @staticmethod
-    def _make_img(filename, size, wordsize):
+    def _make_img(filename, size, width):
         with open(filename, 'w') as f:
-            for i in range(int(size // wordsize)):
-                s = (''.join(['%0', '%d' % (wordsize * 2), 'x'])) % i
-                for w in range(wordsize * 2, 0, -2):
+            for i in range(size * 8 // width):
+                s = (''.join(['%0', '%d' %
+                              int(math.ceil(width / 4)), 'x'])) % i
+                for w in range(int(math.ceil(width / 4)), 0, -2):
                     f.write('%s\n' % s[w - 2:w])
 
     def _make_fsm(self, write_delay=10, read_delay=10, sleep=4):
@@ -1661,6 +1666,62 @@ class AxiMemoryModel(object):
 
         return 0
 
+    def read_word(self, fsm, word_index, byte_offset, bits=8):
+        """ intrinsic method word-indexed read """
+
+        cond = fsm.state == fsm.current
+        rdata = self.m.TmpReg(bits, initval=0, signed=True)
+        num_bytes = int(math.ceil(bits / 8))
+        addr = vtypes.Add(byte_offset,
+                          vtypes.Div(vtypes.Mul(word_index, bits), 8))
+        shift = word_index * bits % 8
+
+        raw_data = vtypes.Cat(*reversed([self.mem[addr + i]
+                                         for i in range(num_bytes)]))
+
+        fsm.If(cond)(
+            rdata(raw_data >> shift)
+        )
+        fsm.goto_next()
+
+        return rdata
+
+    def write_word(self, fsm, word_index, byte_offset, wdata, bits=8):
+        """ intrinsic method word-indexed write """
+
+        cond = fsm.state == fsm.current
+        rdata = self.m.TmpReg(bits, initval=0, signed=True)
+        num_bytes = int(math.ceil(bits / 8))
+        addr = vtypes.Add(byte_offset,
+                          vtypes.Div(vtypes.Mul(word_index, bits), 8))
+        shift = word_index * bits % 8
+
+        wdata_wire = self.m.TmpWire(bits)
+        wdata_wire.assign(wdata)
+        mem_data = vtypes.Cat(*reversed([self.mem[addr + i]
+                                         for i in range(num_bytes)]))
+        mem_data_wire = self.m.TmpWire(8 * num_bytes)
+        mem_data_wire.assign(mem_data)
+
+        inv_mask = self.m.TmpWire(8 * num_bytes)
+        inv_mask.assign(vtypes.Repeat(vtypes.Int(1, 1), bits) << shift)
+        mask = self.m.TmpWire(8 * num_bytes)
+        mask.assign(vtypes.Unot(inv_mask))
+
+        raw_data = vtypes.Or(wdata_wire << shift,
+                             vtypes.And(mem_data_wire, mask))
+        raw_data_wire = self.m.TmpWire(8 * num_bytes)
+        raw_data_wire.assign(raw_data)
+
+        for i in range(num_bytes):
+            self.fsm.seq.If(cond)(
+                self.mem[addr + i](raw_data_wire[i * 8:i * 8 + 8])
+            )
+
+        fsm.goto_next()
+
+        return 0
+
 
 def make_memory_image(filename, length, pattern='inc', dtype=None,
                       datawidth=32, wordwidth=8, endian='little'):
@@ -1743,13 +1804,13 @@ def to_memory_image(filename, array, length=None,
                     values = []
 
 
-def aligned_shape(shape, wordsize, mem_wordsize):
+def aligned_shape(shape, datawidth, mem_datawidth):
     aligned_shape = list(shape[:])
 
-    if wordsize == mem_wordsize or wordsize > mem_wordsize:
+    if datawidth == mem_datawidth or datawidth > mem_datawidth:
         return aligned_shape
 
-    chunk = mem_wordsize // wordsize
+    chunk = mem_datawidth // datawidth
     new_size = int(math.ceil(aligned_shape[-1] / chunk)) * chunk
     aligned_shape[-1] = new_size
 
@@ -1760,26 +1821,30 @@ def shape_to_length(shape):
     return functools.reduce(lambda x, y: x * y, shape, 1)
 
 
-def memory_word_length(shape, wordsize, block_size=4096):
+def shape_to_memory_size(shape, datawidth, mem_datawidth=None, block_size=4096):
+    if mem_datawidth is not None:
+        shape = aligned_shape(shape, datawidth, mem_datawidth)
+
+    bytes = int(math.ceil(datawidth / 8))
     length = shape_to_length(shape)
-    return ((block_size // wordsize) *
-            int(math.ceil(length / (block_size // wordsize))))
+    return ((block_size // bytes) *
+            int(math.ceil(length / (block_size // bytes))))
 
 
-def set_memory(mem, src, mem_wordsize, src_wordsize, mem_offset,
+def set_memory(mem, src, mem_datawidth, src_datawidth, mem_offset,
                num_align_words=None):
-    if mem_wordsize < src_wordsize:
-        return _set_memory_narrow(mem, src, mem_wordsize, src_wordsize, mem_offset,
+    if mem_datawidth < src_datawidth:
+        return _set_memory_narrow(mem, src, mem_datawidth, src_datawidth, mem_offset,
                                   num_align_words)
 
-    return _set_memory_wide(mem, src, mem_wordsize, src_wordsize, mem_offset,
+    return _set_memory_wide(mem, src, mem_datawidth, src_datawidth, mem_offset,
                             num_align_words)
 
 
-def _set_memory_wide(mem, src, mem_wordsize, src_wordsize, mem_offset,
+def _set_memory_wide(mem, src, mem_datawidth, src_datawidth, mem_offset,
                      num_align_words=None):
 
-    if mem_wordsize > 8:
+    if mem_datawidth > 64:
         raise ValueError('not supported')
 
     import numpy as np
@@ -1787,19 +1852,19 @@ def _set_memory_wide(mem, src, mem_wordsize, src_wordsize, mem_offset,
     if num_align_words is not None:
         src = align(src, num_align_words)
 
-    src_aligned_shape = aligned_shape(src.shape, src_wordsize, mem_wordsize)
-    num_pack = int(math.ceil(mem_wordsize / src_wordsize))
+    src_aligned_shape = aligned_shape(src.shape, src_datawidth, mem_datawidth)
+    num_pack = int(math.ceil(mem_datawidth / src_datawidth))
 
-    src_mask = np.uint64(2 ** (8 * src_wordsize) - 1)
-    mem_mask = np.uint64(2 ** (8 * mem_wordsize) - 1)
-    offset = mem_offset // mem_wordsize
+    src_mask = np.uint64(2 ** src_datawidth - 1)
+    mem_mask = np.uint64(2 ** mem_datawidth - 1)
+    offset = mem_offset // int(math.ceil(mem_datawidth / 8))
     pack = 0
     index = 0
     align_count = 0
 
     for data in src.reshape([-1]):
         v = np.uint64(data) & src_mask
-        shift = np.uint64(8 * src_wordsize * pack)
+        shift = np.uint64(src_datawidth * pack)
         v = v << shift
         if pack > 0:
             old = np.uint64(mem[offset]) & mem_mask
@@ -1820,10 +1885,10 @@ def _set_memory_wide(mem, src, mem_wordsize, src_wordsize, mem_offset,
                 offset += 1
 
 
-def _set_memory_narrow(mem, src, mem_wordsize, src_wordsize, mem_offset,
+def _set_memory_narrow(mem, src, mem_datawidth, src_datawidth, mem_offset,
                        num_align_words=None):
 
-    if mem_wordsize > 8:
+    if mem_datawidth > 64:
         raise ValueError('not supported')
 
     import numpy as np
@@ -1831,17 +1896,17 @@ def _set_memory_narrow(mem, src, mem_wordsize, src_wordsize, mem_offset,
     if num_align_words is not None:
         src = align(src, num_align_words)
 
-    src_aligned_shape = aligned_shape(src.shape, src_wordsize, mem_wordsize)
-    num_pack = int(math.ceil(src_wordsize / mem_wordsize))
+    src_aligned_shape = aligned_shape(src.shape, src_datawidth, mem_datawidth)
+    num_pack = int(math.ceil(src_datawidth / mem_datawidth))
 
-    src_mask = np.uint64(2 ** (8 * src_wordsize) - 1)
-    mem_mask = np.uint64(2 ** (8 * mem_wordsize) - 1)
-    offset = mem_offset // mem_wordsize
+    src_mask = np.uint64(2 ** src_datawidth - 1)
+    mem_mask = np.uint64(2 ** mem_datawidth - 1)
+    offset = mem_offset // int(math.ceil(mem_datawidth / 8))
 
     for data in src.reshape([-1]):
         for pack in range(num_pack):
             v = np.uint64(data)
-            shift = np.uint64(8 * mem_wordsize * pack)
+            shift = np.uint64(mem_datawidth * pack)
             v = v >> shift
             v = v & mem_mask
             mem[offset] = v
