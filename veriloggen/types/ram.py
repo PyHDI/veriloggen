@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import copy
 import veriloggen.core.vtypes as vtypes
 from veriloggen.core.module import Module
 from . import util
@@ -28,9 +29,25 @@ def mkRAMDefinition(name, datawidth=32, addrwidth=10, numports=2,
             raise TypeError("initvals must be tuple or list, not '%s" %
                             str(type(initvals)))
 
+        new_initvals = []
+        for initval in initvals:
+            if isinstance(initval, int):
+                new_initvals.append(vtypes.Int(initval, datawidth, base=16))
+            elif isinstance(initval, vtypes.Int):
+                v = copy.deepcopy(initval)
+                v.width = datawidth
+                v.base = 16
+                new_initvals.append(v)
+            else:
+                raise TypeError("values of initvals must be int, not '%s" %
+                                str(type(initval)))
+
+        initvals = new_initvals
+
         if 2 ** addrwidth > len(initvals):
             initvals = list(initvals).extend(
-                [0 for _ in 2 ** addrwidth - len(initvals)])
+                [vtypes.Int(0, datawidth, base=16)
+                 for _ in 2 ** addrwidth - len(initvals)])
 
         m.Initial(
             *[mem[i](initval) for i, initval in enumerate(initvals)]
