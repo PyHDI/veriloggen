@@ -6,7 +6,8 @@ from veriloggen.core.module import Module
 from . import util
 
 
-def mkRAMDefinition(name, datawidth=32, addrwidth=10, numports=2, sync=True, with_enable=False):
+def mkRAMDefinition(name, datawidth=32, addrwidth=10, numports=2,
+                    initvals=None, sync=True, with_enable=False):
     m = Module(name)
     clk = m.Input('CLK')
 
@@ -21,6 +22,19 @@ def mkRAMDefinition(name, datawidth=32, addrwidth=10, numports=2, sync=True, wit
         interfaces.append(interface)
 
     mem = m.Reg('mem', datawidth, length=2**addrwidth)
+
+    if initvals is not None:
+        if not isinstance(initvals, (tuple, list)):
+            raise TypeError("initvals must be tuple or list, not '%s" %
+                            str(type(initvals)))
+
+        if 2 ** addrwidth > len(initvals):
+            initvals = list(initvals).extend(
+                [0 for _ in 2 ** addrwidth - len(initvals)])
+
+        m.Initial(
+            *[mem[i](initval) for i, initval in enumerate(initvals)]
+        )
 
     for interface in interfaces:
         body = [
@@ -116,7 +130,8 @@ class RAMMasterInterface(RAMInterface):
 class _RAM_RTL(object):
 
     def __init__(self, m, name, clk,
-                 datawidth=32, addrwidth=10, numports=1, sync=True, with_enable=False):
+                 datawidth=32, addrwidth=10, numports=1,
+                 initvals=None, sync=True, with_enable=False):
 
         self.m = m
         self.name = name
@@ -127,8 +142,8 @@ class _RAM_RTL(object):
                                         itype='Wire', otype='Wire', with_enable=with_enable)
                            for i in range(numports)]
 
-        ram_def = mkRAMDefinition(
-            name, datawidth, addrwidth, numports, sync, with_enable)
+        ram_def = mkRAMDefinition(name, datawidth, addrwidth, numports,
+                                  initvals, sync, with_enable)
 
         self.m.Instance(ram_def, name,
                         params=(), ports=m.connect_ports(ram_def))
@@ -147,14 +162,18 @@ class _RAM_RTL(object):
 class SyncRAM(_RAM_RTL):
 
     def __init__(self, m, name, clk,
-                 datawidth=32, addrwidth=10, numports=1, with_enable=False):
+                 datawidth=32, addrwidth=10, numports=1,
+                 initvals=None, with_enable=False):
         _RAM_RTL.__init__(self, m, name, clk,
-                          datawidth, addrwidth, numports, sync=True, with_enable=with_enable)
+                          datawidth, addrwidth, numports,
+                          initvals, sync=True, with_enable=with_enable)
 
 
 class AsyncRAM(_RAM_RTL):
 
     def __init__(self, m, name, clk,
-                 datawidth=32, addrwidth=10, numports=1, with_enable=False):
+                 datawidth=32, addrwidth=10, numports=1,
+                 initvals=None, with_enable=False):
         _RAM_RTL.__init__(self, m, name, clk,
-                          datawidth, addrwidth, numports, sync=False)
+                          datawidth, addrwidth, numports,
+                          initvals, sync=False)
