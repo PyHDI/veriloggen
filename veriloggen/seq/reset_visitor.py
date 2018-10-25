@@ -55,11 +55,11 @@ class ResetVisitor(object):
         return vtypes.Subst(vtypes.Slice(val.left, node.msb, node.lsb), right)
 
     def visit_Cat(self, node):
-        left = []
-        right = []
+        left_values = []
+        right_values = []
         for v in node.vars:
             val = self.visit(v)
             right = vtypes.IntX() if val is None else val.right
-            left.append(v)
-            right.append(right)
-        return vtypes.Subst(vtypes.Cat(tuple(left)), vtypes.Cat(tuple(right)))
+            left_values.append(v)
+            right_values.append(right)
+        return vtypes.Subst(vtypes.Cat(tuple(left_values)), vtypes.Cat(tuple(right_values)))
