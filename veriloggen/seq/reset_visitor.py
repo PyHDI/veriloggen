@@ -3,6 +3,7 @@ from __future__ import print_function
 
 import os
 import sys
+import copy
 
 import veriloggen.core.vtypes as vtypes
 
@@ -57,9 +58,21 @@ class ResetVisitor(object):
     def visit_Cat(self, node):
         left_values = []
         right_values = []
+
         for v in node.vars:
             val = self.visit(v)
-            right = vtypes.IntX() if val is None else val.right
+            width = v.bit_length()
+            if val is None:
+                right = vtypes.IntX(width)
+            elif isinstance(val.right, int):
+                right = vtypes.Int(val.right, width)
+            elif isinstance(val.right, vtypes._Constant):
+                right = copy.deepcopy(val.right)
+                right.width = width
+            else:
+                right = v._get_module().TmpLocalparam(val.right, width)
+
             left_values.append(v)
             right_values.append(right)
-        return vtypes.Subst(vtypes.Cat(tuple(left_values)), vtypes.Cat(tuple(right_values)))
+
+        return vtypes.Subst(vtypes.Cat(*left_values), vtypes.Cat(*right_values))
