@@ -45,9 +45,9 @@ def mkRAMDefinition(name, datawidth=32, addrwidth=10, numports=2,
         initvals = new_initvals
 
         if 2 ** addrwidth > len(initvals):
-            initvals = list(initvals).extend(
+            initvals.extend(
                 [vtypes.Int(0, datawidth, base=16)
-                 for _ in 2 ** addrwidth - len(initvals)])
+                 for _ in range(2 ** addrwidth - len(initvals))])
 
         m.Initial(
             *[mem[i](initval) for i, initval in enumerate(initvals)]

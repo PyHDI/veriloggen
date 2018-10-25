@@ -19,7 +19,7 @@ def mkLed():
     datawidth = 32
     addrwidth = 10
     numports = 1
-    initvals = [i + 10 for i in range(2 ** addrwidth)]
+    initvals = [i + 10 for i in range(2 ** addrwidth - 100)]
     myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth,
                         numports, initvals)
 
