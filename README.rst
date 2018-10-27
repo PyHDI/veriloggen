@@ -339,7 +339,7 @@ Veriloggen Extension Libraries
 ==============================
 
 Mixed-Paradigm High-Level Synthesis
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------------
 
 -  veriloggen.thread.Thread: Procedural high-level synthesis for DMA and
    I/O controls
@@ -347,7 +347,7 @@ Mixed-Paradigm High-Level Synthesis
    high-performance stream processing
 
 Frequently-used Abstractions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------
 
 -  veriloggen.verilog: Verilog HDL source code synthesis and import APIs
 -  veriloggen.simulation: Simulation APIs via Verilog simulators
