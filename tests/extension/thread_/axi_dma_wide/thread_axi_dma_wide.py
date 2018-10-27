@@ -30,7 +30,7 @@ def mkLed(memory_datawidth=128):
         for i in range(4):
             print('# iter %d start' % i)
             # Test for 4KB boundary check
-            offset = i * 1024 * 16 + (myaxi.boundary_size - 16)
+            offset = i * 1024 * 16 + (myaxi.boundary_size - memory_datawidth // 8)
             body(size, offset)
             print('# iter %d end' % i)
 
@@ -87,7 +87,7 @@ def mkLed(memory_datawidth=128):
                 all_ok.value = False
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
-    fsm = th.start(16)
+    fsm = th.start(17)
 
     return m
 
