@@ -618,9 +618,12 @@ class AXIM(AxiMaster, _MutexFunction):
                 'axi.datawidth must be multiple number of ram_datawidth')
 
         pack_size = self.datawidth // ram_datawidth
-        dma_size = (self.read_size >> int(math.log(pack_size, 2))
-                    if math.log(pack_size, 2) % 1.0 == 0.0 else
-                    int(size // pack_size))
+        shamt = int(math.log(pack_size, 2))
+        res = vtypes.Mux(
+            vtypes.And(self.read_size, 2 ** shamt - 1) > 0, 1, 0)
+        dma_size = (self.read_size >> shamt) + res
+
+        actual_read_size = dma_size << shamt
 
         op_id = self._get_read_op_id(ram, port, ram_method)
         port = vtypes.to_int(port)
@@ -642,7 +645,7 @@ class AXIM(AxiMaster, _MutexFunction):
             fsm.set_index(0)
             wdata, wvalid, w = self._get_op_write_dataflow(ram_datawidth)
             cond = vtypes.Ands(self.read_start, self.read_op_sel == op_id)
-            ram_method(port, self.read_local_addr, w, self.read_size,
+            ram_method(port, self.read_local_addr, w, actual_read_size,
                        stride=self.read_local_stride, cond=cond)
 
             fsm.If(cond).goto_next()
@@ -694,7 +697,7 @@ class AXIM(AxiMaster, _MutexFunction):
         # state 0
         wdata, wvalid, w = self._get_op_write_dataflow(ram_datawidth)
         cond = vtypes.Ands(self.read_start, self.read_op_sel == op_id)
-        ram_method(port, self.read_local_addr, w, self.read_size,
+        ram_method(port, self.read_local_addr, w, actual_read_size,
                    stride=self.read_local_stride, cond=cond)
 
         fsm.If(self.read_start)(
@@ -1204,9 +1207,12 @@ class AXIM(AxiMaster, _MutexFunction):
                 'axi.datawidth must be multiple number of ram_datawidth')
 
         pack_size = self.datawidth // ram_datawidth
-        dma_size = (self.write_size >> int(math.log(pack_size, 2))
-                    if math.log(pack_size, 2) % 1.0 == 0.0 else
-                    int(size // pack_size))
+        shamt = int(math.log(pack_size, 2))
+        res = vtypes.Mux(
+            vtypes.And(self.write_size, 2 ** shamt - 1) > 0, 1, 0)
+        dma_size = (self.write_size >> shamt) + res
+
+        actual_write_size = dma_size << shamt
 
         op_id = self._get_write_op_id(ram, port, ram_method)
         port = vtypes.to_int(port)
@@ -1229,7 +1235,7 @@ class AXIM(AxiMaster, _MutexFunction):
             fsm.set_index(0)
             cond = vtypes.Ands(self.write_start, self.write_op_sel == op_id)
             data, last, done = ram_method(
-                port, self.write_local_addr, self.write_size,
+                port, self.write_local_addr, actual_write_size,
                 stride=self.write_local_stride, cond=cond, signed=False)
 
             if self.num_data_delay > 0:
@@ -1284,7 +1290,7 @@ class AXIM(AxiMaster, _MutexFunction):
         # state 0
         cond = vtypes.Ands(self.write_start, self.write_op_sel == op_id)
         data, last, done = ram_method(
-            port, self.write_local_addr, self.write_size,
+            port, self.write_local_addr, actual_write_size,
             stride=self.write_local_stride, cond=cond, signed=False)
 
         if self.num_data_delay > 0:
