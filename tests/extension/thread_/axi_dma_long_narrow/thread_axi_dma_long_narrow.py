@@ -84,7 +84,7 @@ def mkLed():
                 all_ok.value = False
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
-    fsm = th.start(256 + 256 + 64)
+    fsm = th.start(256 + 256 + 66 + 1)
 
     return m
 
