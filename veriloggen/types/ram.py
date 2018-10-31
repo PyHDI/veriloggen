@@ -30,13 +30,21 @@ def mkRAMDefinition(name, datawidth=32, addrwidth=10, numports=2,
                             str(type(initvals)))
 
         new_initvals = []
+        base = 16
         for initval in initvals:
             if isinstance(initval, int):
                 new_initvals.append(vtypes.Int(initval, datawidth, base=16))
-            elif isinstance(initval, vtypes.Int):
+            elif isinstance(initval, vtypes.Int) and isinstance(initval.value, int):
                 v = copy.deepcopy(initval)
                 v.width = datawidth
-                v.base = 16
+                v.base = base
+                new_initvals.append(v)
+            elif isinstance(initval, vtypes.Int) and isinstance(initval.value, str):
+                v = copy.deepcopy(initval)
+                v.width = datawidth
+                if v.base != 2 and v.base != 16:
+                    raise ValueError('base must be 2 or 16')
+                base = v.base
                 new_initvals.append(v)
             else:
                 raise TypeError("values of initvals must be int, not '%s" %
@@ -46,7 +54,7 @@ def mkRAMDefinition(name, datawidth=32, addrwidth=10, numports=2,
 
         if 2 ** addrwidth > len(initvals):
             initvals.extend(
-                [vtypes.Int(0, datawidth, base=16)
+                [vtypes.Int(0, datawidth, base=base)
                  for _ in range(2 ** addrwidth - len(initvals))])
 
         m.Initial(
