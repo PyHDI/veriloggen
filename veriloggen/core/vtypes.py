@@ -720,9 +720,20 @@ class _Constant(_Numeric):
 
 class Int(_Constant):
 
-    def __init__(self, value, width=None, base=None, signed=False):
+    def __init__(self, value, width=None, base=None, signed=False, is_raw_value=False):
         _Constant.__init__(self, value, width, base)
-        if isinstance(value, int):
+        if is_raw_value:
+            if width is None:
+                raise ValueError(
+                    'width is required when is_raw_value is enabled.')
+            if base is None:
+                raise ValueError(
+                    'base is required when is_raw_value is enabled.')
+            self.value = value
+            self.width = width
+            self.base = base
+            self.signed = signed
+        elif isinstance(value, int):
             self.value = value
             self.width = width
             self.base = base
