@@ -24,7 +24,7 @@ class RAM(_MutexFunction):
 
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=10, numports=1,
-                 nodataflow=False):
+                 initvals=None, nodataflow=False):
 
         self.m = m
         self.name = name
@@ -38,7 +38,8 @@ class RAM(_MutexFunction):
         self.interfaces = [RAMInterface(m, name + '_%d' % i, datawidth, addrwidth)
                            for i in range(numports)]
 
-        self.definition = mkRAMDefinition(name, datawidth, addrwidth, numports)
+        self.definition = mkRAMDefinition(
+            name, datawidth, addrwidth, numports, initvals)
 
         self.inst = self.m.Instance(self.definition, 'inst_' + name,
                                     ports=m.connect_ports(self.definition))

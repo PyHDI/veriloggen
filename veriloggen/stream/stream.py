@@ -3,6 +3,7 @@ from __future__ import print_function
 
 import os
 import sys
+import math
 import copy
 import functools
 from collections import OrderedDict
@@ -67,6 +68,9 @@ class Stream(object):
         self.oready = opts['oready'] if 'oready' in opts else None
 
         self.aswire = opts['aswire'] if 'aswire' in opts else True
+        self.dump = opts['dump'] if 'dump' in opts else False
+        self.dump_base = opts['dump_base'] if 'dump_base' in opts else 10
+        self.dump_mode = opts['dump_mode'] if 'dump_mode' in opts else 'all'
 
         self.seq = None
         self.has_control = False
@@ -84,7 +88,7 @@ class Stream(object):
                         '_stream_seq_%d' % self.object_id)
             self.seq = Seq(self.module, seq_name, self.clock, self.reset)
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def add(self, *nodes):
         self.nodes.update(set(nodes))
 
@@ -105,7 +109,7 @@ class Stream(object):
                     name = node.output_data.name
                 self.named_numerics[name] = node
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def to_module(self, name, clock='CLK', reset='RST', aswire=False, seq_name=None):
         """ generate a Module definion """
 
@@ -117,7 +121,7 @@ class Stream(object):
 
         return m
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def implement(self, m=None, clock=None, reset=None, aswire=None, seq_name=None):
         """ implemente actual registers and operations in Verilog """
 
@@ -219,9 +223,190 @@ class Stream(object):
         self.last_input = input_vars
         self.last_output = output_vars
 
+        if self.dump:
+            self.add_dump(m, seq, input_vars, output_vars, all_vars)
+
         return m
 
-    #-------------------------------------------------------------------------
+    def add_dump(self, m, seq, input_vars, output_vars, all_vars):
+        dump_enable_name = '_stream_dump_enable_%d' % self.object_id
+        dump_enable = m.Reg(dump_enable_name, initval=0)
+        dump_iter_name = '_stream_dump_iter_%d' % self.object_id
+        dump_iter = m.Reg(dump_iter_name, 32, initval=0)
+
+        self.dump_enable = dump_enable
+
+        pipeline_depth = self.pipeline_depth()
+        log_pipeline_depth = int(math.ceil(math.log(pipeline_depth, 10)))
+
+        seq(
+            dump_iter(0)
+        )
+
+        for i in range(pipeline_depth + 1):
+            seq.If(seq.Prev(dump_enable, i))(
+                dump_iter.inc()
+            )
+
+        def get_name(obj):
+            if hasattr(obj, 'name'):
+                return obj.name
+            if isinstance(obj, vtypes._Constant):
+                return obj.__class__.__name__
+            raise TypeError()
+
+        longest_name_len = 0
+        for input_var in sorted(input_vars, key=lambda x: x.object_id):
+            if not (self.dump_mode == 'all' or self.dump_mode == 'input' or
+                    self.dump_mode == 'inout' or
+                    (self.dump_mode == 'selective' and
+                     hasattr(input_var, 'dump') and input_var.dump)):
+                continue
+
+            name = get_name(input_var.sig_data)
+            length = len(name) + 6
+            longest_name_len = max(longest_name_len, length)
+
+        for var in sorted(all_vars, key=lambda x: (-1, x.object_id)
+                          if x.end_stage is None else
+                          (x.end_stage, x.object_id)):
+            if not (self.dump_mode == 'all' or
+                    (self.dump_mode == 'selective' and
+                     hasattr(var, 'dump') and var.dump)):
+                continue
+
+            name = get_name(var.sig_data)
+            length = len(name) + 6
+            longest_name_len = max(longest_name_len, length)
+
+        for output_var in sorted(output_vars, key=lambda x: x.object_id):
+            if not (self.dump_mode == 'all' or self.dump_mode == 'output' or
+                    self.dump_mode == 'inout' or
+                    (self.dump_mode == 'selective' and
+                     hasattr(output_var, 'dump') and output_var.dump)):
+                continue
+
+            name = get_name(output_var.output_sig_data)
+            length = len(name) + 6
+            longest_name_len = max(longest_name_len, length)
+
+        longest_var_len = 0
+        for var in sorted(all_vars, key=lambda x: (-1, x.object_id)
+                          if x.start_stage is None else
+                          (x.start_stage, x.object_id)):
+            bit_length = var.sig_data.bit_length()
+            if bit_length is None:
+                bit_length = 1
+            if bit_length <= 0:
+                bit_length = 1
+
+            base = (var.dump_base if hasattr(var, 'dump_base') else
+                    self.dump_base)
+            length = int(math.ceil(bit_length / math.log(base, 2)))
+            longest_var_len = max(longest_var_len, length)
+
+        for var in sorted(all_vars, key=lambda x: (-1, x.object_id)
+                          if x.start_stage is None else
+                          (x.start_stage, x.object_id)):
+
+            base = (var.dump_base if hasattr(var, 'dump_base') else
+                    self.dump_base)
+            base_char = ('b' if base == 2 else
+                         'o' if base == 8 else
+                         'd' if base == 10 else
+                         'x')
+            prefix = ('0b' if base == 2 else
+                      '0o' if base == 8 else
+                      '  ' if base == 10 else
+                      '0x')
+            var.dump_fmt = ''.join(
+                [prefix, '%', '%d' % (longest_var_len + 1), base_char])
+
+        enables = []
+        for input_var in sorted(input_vars, key=lambda x: x.object_id):
+            if not (self.dump_mode == 'all' or self.dump_mode == 'input' or
+                    self.dump_mode == 'inout' or
+                    (self.dump_mode == 'selective' and
+                     hasattr(input_var, 'dump') and input_var.dump)):
+                continue
+
+            vfmt = input_var.dump_fmt
+
+            name = get_name(input_var.sig_data)
+            name_alignment = ' ' * (longest_name_len - len(name) -
+                                    len('(in) '))
+            fmt = ''.join(['<', self.name, '> (iter %d) ',
+                           '(stage %', str(log_pipeline_depth), 'd, age %d) ', '(in) ',
+                           name_alignment, name, ' = ', vfmt])
+
+            stage = input_var.end_stage if input_var.end_stage is not None else 0
+            enable = seq.Prev(dump_enable, stage)
+            enables.append(enable)
+            age = seq.Prev(dump_iter, stage)
+
+            seq.If(enable)(
+                vtypes.Display(fmt, dump_iter, stage, age, input_var.sig_data)
+            )
+
+        for var in sorted(all_vars, key=lambda x: (-1, x.object_id)
+                          if x.end_stage is None else
+                          (x.end_stage, x.object_id)):
+            if not (self.dump_mode == 'all' or
+                    (self.dump_mode == 'selective' and
+                     hasattr(var, 'dump') and var.dump)):
+                continue
+
+            vfmt = var.dump_fmt
+
+            name = get_name(var.sig_data)
+            name_alignment = ' ' * (longest_name_len - len(name))
+            stage = var.end_stage if var.end_stage is not None else 0
+
+            fmt = ''.join(['<', self.name, '> (iter %d) ',
+                           '(stage %', str(log_pipeline_depth), 'd, age %d) ',
+                           name_alignment, name, ' = ', vfmt])
+
+            enable = seq.Prev(dump_enable, stage)
+            enables.append(enable)
+            age = seq.Prev(dump_iter, stage)
+
+            seq.If(enable)(
+                vtypes.Display(fmt, dump_iter, stage, age, var.sig_data)
+            )
+
+        for output_var in sorted(output_vars, key=lambda x: x.object_id):
+            if not (self.dump_mode == 'all' or self.dump_mode == 'output' or
+                    self.dump_mode == 'inout' or
+                    (self.dump_mode == 'selective' and
+                     hasattr(output_var, 'dump') and output_var.dump)):
+                continue
+
+            vfmt = output_var.dump_fmt
+
+            name = get_name(output_var.output_sig_data)
+            name_alignment = ' ' * (longest_name_len - len(name) -
+                                    len('(out) '))
+            fmt = ''.join(['<', self.name, '> (iter %d) ',
+                           '(stage %', str(log_pipeline_depth), 'd, age %d) ', '(out) ',
+                           name_alignment, name, ' = ', vfmt])
+
+            stage = output_var.end_stage if output_var.end_stage is not None else 0
+            enable = seq.Prev(dump_enable, stage)
+            enables.append(enable)
+            age = seq.Prev(dump_iter, stage)
+
+            seq.If(enable)(
+                vtypes.Display(fmt, dump_iter, stage, age,
+                               output_var.output_sig_data)
+            )
+
+        if enables:
+            seq.If(vtypes.Ors(*enables))(
+                vtypes.Display(''.join(['<', self.name, '> (iter %d) ', '--------']),
+                               dump_iter)
+            )
+
+    # -------------------------------------------------------------------------
     def add_control(self, aswire=True):
         if self.ivalid is not None and isinstance(self.ivalid, str):
             if aswire:
@@ -291,7 +476,7 @@ class Stream(object):
         if self.ovalid is not None:
             self.ovalid.assign(prev)
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def draw_graph(self, filename='out.png', prog='dot', rankdir='LR', approx=False):
         if self.last_output is None:
             self.to_module()
@@ -304,7 +489,7 @@ class Stream(object):
                              kwargs={'filename': filename, 'prog': prog,
                                      'rankdir': rankdir, 'approx': approx})
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def get_input(self):
         if self.last_input is None:
             return OrderedDict()
@@ -329,11 +514,11 @@ class Stream(object):
 
         return ret
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def pipeline_depth(self):
         return self.max_stage
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def __getattr__(self, attr):
         try:
             return object.__getattr__(self, attr)

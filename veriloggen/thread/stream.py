@@ -51,10 +51,12 @@ class Stream(BaseStream):
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=32,
                  max_pattern_length=4, max_multipattern_length=2,
-                 ram_sel_width=8, fsm_as_module=False):
+                 ram_sel_width=8, fsm_as_module=False,
+                 dump=False, dump_base=10, dump_mode='all'):
 
         BaseStream.__init__(self, module=m, clock=clk, reset=rst,
-                            no_hook=True)
+                            no_hook=True,
+                            dump=dump, dump_base=dump_base, dump_mode=dump_mode)
 
         self.name = name
         self.datawidth = datawidth
@@ -956,6 +958,12 @@ class Stream(BaseStream):
                 self.reduce_reset(0)
             )
 
+        if self.dump:
+            dump_delay = self.ram_delay + 1
+            self.fsm.seq.If(self.seq.Prev(start_cond, dump_delay))(
+                self.dump_enable(1)
+            )
+
         substreams = self._collect_substreams()
         for sub in substreams:
             sub.substrm.fsm.seq.If(start_cond)(
@@ -964,8 +972,7 @@ class Stream(BaseStream):
 
             start_stage = sub.start_stage
             reset_delay = self.ram_delay + 1 + sub.reset_delay
-            # cond_delay = self.ram_delay + 1 + sub.reset_delay - 1
-            # increased for constant
+            dump_delay = self.ram_delay + 1 + sub.reset_delay
             cond_delay = self.ram_delay + 1 + sub.reset_delay - 2
             sub_fsm = sub.substrm.fsm
             sub_fsm._set_index(0)
@@ -973,6 +980,11 @@ class Stream(BaseStream):
             if sub.substrm.reduce_reset is not None:
                 sub_fsm.seq.If(self.seq.Prev(start_cond, reset_delay))(
                     sub.substrm.reduce_reset(0)
+                )
+
+            if self.dump and sub.substrm.dump:
+                sub_fsm.seq.If(self.seq.Prev(start_cond, dump_delay))(
+                    sub.substrm.dump_enable(1)
                 )
 
             for cond in sub.conds.values():
@@ -1006,12 +1018,19 @@ class Stream(BaseStream):
                 self.reduce_reset(1)
             )
 
+        if self.dump:
+            dump_delay = 1
+            self.fsm.seq.If(self.seq.Prev(end_cond, dump_delay))(
+                self.dump_enable(0)
+            )
+
         for sub in substreams:
             sub.substrm.fsm.seq.If(end_cond)(
                 sub.substrm.source_busy(0)
             )
 
             reset_delay = 1 + sub.reset_delay
+            dump_delay = 1 + sub.reset_delay
             cond_delay = 1 + sub.reset_delay - 1
             sub_fsm = sub.substrm.fsm
             sub_fsm._set_index(0)
@@ -1019,6 +1038,11 @@ class Stream(BaseStream):
             if sub.substrm.reduce_reset is not None:
                 sub_fsm.seq.If(self.seq.Prev(end_cond, reset_delay))(
                     sub.substrm.reduce_reset(1)
+                )
+
+            if self.dump and sub.substrm.dump:
+                sub_fsm.seq.If(self.seq.Prev(end_cond, dump_delay))(
+                    sub.substrm.dump_enable(0)
                 )
 
             for cond in sub.conds.values():
