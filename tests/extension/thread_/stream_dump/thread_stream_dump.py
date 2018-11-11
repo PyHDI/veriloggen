@@ -25,7 +25,7 @@ def mkLed():
     ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
 
     strm = vthread.Stream(m, 'mystream', clk, rst,
-                          dump=True, dump_mode='all')
+                          dump=True, dump_base=10, dump_mode='all')
     a = strm.source('a')
     b = strm.source('b')
     c = a + b

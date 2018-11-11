@@ -69,7 +69,7 @@ class Stream(object):
 
         self.aswire = opts['aswire'] if 'aswire' in opts else True
         self.dump = opts['dump'] if 'dump' in opts else False
-        self.dump_fmt = opts['dump_fmt'] if 'dump_fmt' in opts else None
+        self.dump_base = opts['dump_base'] if 'dump_base' in opts else 10
         self.dump_mode = opts['dump_mode'] if 'dump_mode' in opts else 'all'
 
         self.seq = None
@@ -290,23 +290,37 @@ class Stream(object):
             length = len(name) + 6
             longest_name_len = max(longest_name_len, length)
 
-        if self.dump_fmt is None:
-            longest_var_len = 0
-            for var in sorted(all_vars, key=lambda x: (-1, x.object_id)
-                              if x.start_stage is None else
-                              (x.start_stage, x.object_id)):
-                bit_length = var.sig_data.bit_length()
-                if bit_length is None:
-                    bit_length = 1
-                if bit_length <= 0:
-                    bit_length = 1
-                length = int(math.ceil(bit_length / math.log(10, 2)))
-                longest_var_len = max(longest_name_len, length)
+        longest_var_len = 0
+        for var in sorted(all_vars, key=lambda x: (-1, x.object_id)
+                          if x.start_stage is None else
+                          (x.start_stage, x.object_id)):
+            bit_length = var.sig_data.bit_length()
+            if bit_length is None:
+                bit_length = 1
+            if bit_length <= 0:
+                bit_length = 1
 
-            val_fmt = ''.join(['%', '%d' % (longest_var_len + 1), 'd'])
+            base = (var.dump_base if hasattr(var, 'dump_base') else
+                    self.dump_base)
+            length = int(math.ceil(bit_length / math.log(base, 2)))
+            longest_var_len = max(longest_var_len, length)
 
-        else:
-            val_fmt = self.dump_fmt
+        for var in sorted(all_vars, key=lambda x: (-1, x.object_id)
+                          if x.start_stage is None else
+                          (x.start_stage, x.object_id)):
+
+            base = (var.dump_base if hasattr(var, 'dump_base') else
+                    self.dump_base)
+            base_char = ('b' if base == 2 else
+                         'o' if base == 8 else
+                         'd' if base == 10 else
+                         'x')
+            prefix = ('0b' if base == 2 else
+                      '0o' if base == 8 else
+                      '  ' if base == 10 else
+                      '0x')
+            var.dump_fmt = ''.join(
+                [prefix, '%', '%d' % (longest_var_len + 1), base_char])
 
         enables = []
         for input_var in sorted(input_vars, key=lambda x: x.object_id):
@@ -316,8 +330,7 @@ class Stream(object):
                      hasattr(input_var, 'dump') and input_var.dump)):
                 continue
 
-            vfmt = (val_fmt if not hasattr(input_var, 'dump_fmt') else
-                    input_var.dump_fmt)
+            vfmt = input_var.dump_fmt
 
             name = get_name(input_var.sig_data)
             name_alignment = ' ' * (longest_name_len - len(name) -
@@ -343,8 +356,7 @@ class Stream(object):
                      hasattr(var, 'dump') and var.dump)):
                 continue
 
-            vfmt = (val_fmt if not hasattr(var, 'dump_fmt') else
-                    var.dump_fmt)
+            vfmt = var.dump_fmt
 
             name = get_name(var.sig_data)
             name_alignment = ' ' * (longest_name_len - len(name))
@@ -369,8 +381,7 @@ class Stream(object):
                      hasattr(output_var, 'dump') and output_var.dump)):
                 continue
 
-            vfmt = (val_fmt if not hasattr(output_var, 'dump_fmt') else
-                    output_var.dump_fmt)
+            vfmt = output_var.dump_fmt
 
             name = get_name(output_var.output_sig_data)
             name_alignment = ' ' * (longest_name_len - len(name) -
