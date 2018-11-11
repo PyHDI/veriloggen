@@ -52,11 +52,11 @@ class Stream(BaseStream):
                  datawidth=32, addrwidth=32,
                  max_pattern_length=4, max_multipattern_length=2,
                  ram_sel_width=8, fsm_as_module=False,
-                 dump=False, dump_fmt=None, dump_mode='all'):
+                 dump=False, dump_base=10, dump_mode='all'):
 
         BaseStream.__init__(self, module=m, clock=clk, reset=rst,
                             no_hook=True,
-                            dump=dump, dump_fmt=dump_fmt, dump_mode=dump_mode)
+                            dump=dump, dump_base=dump_base, dump_mode=dump_mode)
 
         self.name = name
         self.datawidth = datawidth
