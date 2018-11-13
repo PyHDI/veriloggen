@@ -62,6 +62,8 @@ class ResetVisitor(object):
         for v in node.vars:
             val = self.visit(v)
             width = v.bit_length()
+            if width is None:
+                width = 1
             if val is None:
                 right = vtypes.IntX(width)
             elif isinstance(val.right, int):
