@@ -556,7 +556,7 @@ module main
       _dataflow_plus_valid_2 <= 0;
     end else begin
       if((_dataflow_plus_ready_2 || !_dataflow_plus_valid_2) && (xready && yready) && (xvalid && yvalid)) begin
-        _dataflow_plus_data_2 <= xdata + $signed((ydata << 4));
+        _dataflow_plus_data_2 <= xdata + (ydata << 4);
       end 
       if(_dataflow_plus_valid_2 && _dataflow_plus_ready_2) begin
         _dataflow_plus_valid_2 <= 0;

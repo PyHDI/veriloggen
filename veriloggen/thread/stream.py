@@ -9,6 +9,7 @@ import textwrap
 from collections import OrderedDict
 
 import veriloggen.core.vtypes as vtypes
+import veriloggen.types.fixed as fxd
 from veriloggen.seq.seq import make_condition
 from veriloggen.fsm.fsm import FSM
 from veriloggen.seq.seq import Seq
@@ -321,6 +322,7 @@ class Stream(BaseStream):
 
         var.next_constant_data = self.module.Reg('_%s_next_constant_data' % prefix,
                                                  datawidth, initval=0)
+        var.next_constant_data.no_write_check = True
         var.has_constant_data = False
 
         return var
@@ -865,7 +867,7 @@ class Stream(BaseStream):
 
         fsm.goto_next()
 
-    def set_constant(self, fsm, name, value):
+    def set_constant(self, fsm, name, value, raw=False):
         """ intrinsic method to assign constant value to a constant stream """
 
         if not self.stream_synthesized:
@@ -888,6 +890,9 @@ class Stream(BaseStream):
             raise NameError("No such stream '%s'" % name)
 
         set_cond = self._set_flag(fsm)
+
+        if not raw:
+            value = fxd.write_adjust(value, var.point)
 
         self.seq.If(set_cond)(
             var.next_constant_data(value)

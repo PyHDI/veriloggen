@@ -845,72 +845,6 @@ def Div(left, right):
     return Divide(left, right)
 
 
-class Sll(_BinaryOperator):
-    max_width = 1024
-
-    def _set_attributes(self):
-        v = self.right.eval()
-        if isinstance(v, int):
-            return self.left.bit_length() + v
-        v = 2 ** self.right.bit_length()
-        ret = self.left.bit_length() + v
-        if ret > self.max_width:
-            raise ValueError("bit_length is too large '%d'" % ret)
-        self.width = ret
-        left_fp = self.left.get_point()
-        self.point = left_fp
-        self.signed = False
-
-    def _implement(self, m, seq, svalid=None, senable=None):
-        if self.right.get_point() != 0:
-            raise TypeError("shift amount must be int")
-        _BinaryOperator._implement(self, m, seq)
-
-    def eval(self):
-        return self.left.eval() << self.right.eval()
-
-
-class Srl(_BinaryOperator):
-
-    def _set_attributes(self):
-        self.width = self.left.bit_length()
-        self.point = self.left.get_point()
-        self.signed = False
-
-    def _implement(self, m, seq, svalid=None, senable=None):
-        if self.right.get_point() != 0:
-            raise TypeError("shift amount must be int")
-        _BinaryOperator._implement(self, m, seq)
-
-    def eval(self):
-        return self.left.eval() >> self.right.eval()
-
-
-class Sra(_BinaryOperator):
-
-    def _set_attributes(self):
-        self.width = self.left.bit_length()
-        self.point = self.left.get_point()
-        self.signed = self.left.get_signed()
-
-    def _implement(self, m, seq, svalid=None, senable=None):
-        if self.right.get_point() != 0:
-            raise TypeError("shift amount must be int")
-        _BinaryOperator._implement(self, m, seq)
-
-    def eval(self):
-        left = self.left.eval()
-        right = self.right.eval()
-        if isinstance(left, int) and isinstance(right, int):
-            sign = left >= 0
-            left = abs(left)
-            ret = left >> right
-            if not sign:
-                return -1 * ret
-            return ret
-        return Sra(left, right)
-
-
 class LessThan(_BinaryOperator):
 
     def _set_attributes(self):
@@ -977,6 +911,97 @@ class NotEq(_BinaryOperator):
         return self.left.eval() != self.right.eval()
 
 
+class _BinaryShiftOperator(_BinaryOperator):
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.right.get_point() != 0:
+            raise TypeError("shift amount must be int")
+
+        width = self.bit_length()
+        signed = self.get_signed()
+
+        lpoint = self.left.get_point()
+        rpoint = self.right.get_point()
+        ldata, rdata = self.left.sig_data, self.right.sig_data
+
+        if self.latency == 0:
+            data = m.Wire(self.name('data'), width, signed=signed)
+            data.assign(self.op(ldata, rdata))
+            self.sig_data = data
+
+        elif self.latency == 1:
+            data = m.Reg(self.name('data'), width, initval=0, signed=signed)
+            self.sig_data = data
+            seq(data(self.op(ldata, rdata)), cond=senable)
+
+        else:
+            prev_data = None
+
+            for i in range(self.latency):
+                data = m.Reg(self.name('data_d%d' % i),
+                             width, initval=0, signed=signed)
+                if i == 0:
+                    seq(data(self.op(ldata, rdata)), cond=senable)
+                else:
+                    seq(data(prev_data), cond=senable)
+                prev_data = data
+
+            self.sig_data = data
+
+
+class Sll(_BinaryShiftOperator):
+    max_width = 1024
+
+    def _set_attributes(self):
+        v = self.right.eval()
+        if isinstance(v, int):
+            width = self.left.bit_length() + v
+        else:
+            v = 2 ** self.right.bit_length()
+            width = self.left.bit_length() + v
+
+        if width > self.max_width:
+            raise ValueError("bit_length is too large '%d'" % width)
+
+        self.width = width
+        self.point = self.left.get_point()
+        self.signed = self.left.get_signed()
+
+    def eval(self):
+        return self.left.eval() << self.right.eval()
+
+
+class Srl(_BinaryShiftOperator):
+
+    def _set_attributes(self):
+        self.width = self.left.bit_length()
+        self.point = self.left.get_point()
+        self.signed = False
+
+    def eval(self):
+        return self.left.eval() >> self.right.eval()
+
+
+class Sra(_BinaryShiftOperator):
+
+    def _set_attributes(self):
+        self.width = self.left.bit_length()
+        self.point = self.left.get_point()
+        self.signed = self.left.get_signed()
+
+    def eval(self):
+        left = self.left.eval()
+        right = self.right.eval()
+        if isinstance(left, int) and isinstance(right, int):
+            sign = left >= 0
+            left = abs(left)
+            ret = left >> right
+            if not sign:
+                return -1 * ret
+            return ret
+        return Sra(left, right)
+
+
 class _BinaryLogicalOperator(_BinaryOperator):
 
     def _set_attributes(self):
@@ -996,13 +1021,31 @@ class _BinaryLogicalOperator(_BinaryOperator):
 
         lpoint = self.left.get_point()
         rpoint = self.right.get_point()
-        ldata, rdata = fx.adjust(self.left.sig_data, self.right.sig_data,
-                                 lpoint, rpoint, signed)
+        ldata, rdata = self.left.sig_data, self.right.sig_data
 
-        data = m.Reg(self.name('data'), width, initval=0, signed=signed)
-        self.sig_data = data
+        if self.latency == 0:
+            data = m.Wire(self.name('data'), width, signed=signed)
+            data.assign(self.op(ldata, rdata))
+            self.sig_data = data
 
-        seq(data(self.op(ldata, rdata)), cond=senable)
+        elif self.latency == 1:
+            data = m.Reg(self.name('data'), width, initval=0, signed=signed)
+            self.sig_data = data
+            seq(data(self.op(ldata, rdata)), cond=senable)
+
+        else:
+            prev_data = None
+
+            for i in range(self.latency):
+                data = m.Reg(self.name('data_d%d' % i),
+                             width, initval=0, signed=signed)
+                if i == 0:
+                    seq(data(self.op(ldata, rdata)), cond=senable)
+                else:
+                    seq(data(prev_data), cond=senable)
+                prev_data = data
+
+            self.sig_data = data
 
 
 class And(_BinaryLogicalOperator):

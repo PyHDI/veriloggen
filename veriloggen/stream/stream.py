@@ -313,7 +313,8 @@ class Stream(object):
                     self.dump_base)
             base_char = ('b' if base == 2 else
                          'o' if base == 8 else
-                         'd' if base == 10 else
+                         'd' if base == 10 and var.point == 0 else
+                         'f' if base == 10 and var.point > 0 else
                          'x')
             prefix = ('0b' if base == 2 else
                       '0o' if base == 8 else
@@ -344,8 +345,14 @@ class Stream(object):
             enables.append(enable)
             age = seq.Prev(dump_iter, stage)
 
+            if input_var.point == 0:
+                sig_data = input_var.sig_data
+            else:
+                sig_data = vtypes.Div(vtypes.SystemTask('itor', input_var.sig_data),
+                                      1.0 * (2 ** input_var.point))
+
             seq.If(enable)(
-                vtypes.Display(fmt, dump_iter, stage, age, input_var.sig_data)
+                vtypes.Display(fmt, dump_iter, stage, age, sig_data)
             )
 
         for var in sorted(all_vars, key=lambda x: (-1, x.object_id)
@@ -370,8 +377,14 @@ class Stream(object):
             enables.append(enable)
             age = seq.Prev(dump_iter, stage)
 
+            if var.point == 0:
+                sig_data = var.sig_data
+            else:
+                sig_data = vtypes.Div(vtypes.SystemTask('itor', var.sig_data),
+                                      1.0 * (2 ** var.point))
+
             seq.If(enable)(
-                vtypes.Display(fmt, dump_iter, stage, age, var.sig_data)
+                vtypes.Display(fmt, dump_iter, stage, age, sig_data)
             )
 
         for output_var in sorted(output_vars, key=lambda x: x.object_id):
@@ -395,9 +408,14 @@ class Stream(object):
             enables.append(enable)
             age = seq.Prev(dump_iter, stage)
 
+            if output_var.point == 0:
+                sig_data = output_var.output_sig_data
+            else:
+                sig_data = vtypes.Div(vtypes.SystemTask('itor', output_var.output_sig_data),
+                                      1.0 * (2 ** output_var.point))
+
             seq.If(enable)(
-                vtypes.Display(fmt, dump_iter, stage, age,
-                               output_var.output_sig_data)
+                vtypes.Display(fmt, dump_iter, stage, age, sig_data)
             )
 
         if enables:
