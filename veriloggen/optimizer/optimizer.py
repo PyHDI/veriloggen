@@ -4,6 +4,7 @@ import sys
 import os
 
 import veriloggen.core.vtypes as vtypes
+import veriloggen.types.fixed as fxd
 import pyverilog.dataflow.reorder as reorder
 import pyverilog.dataflow.optimizer as voptimizer
 from pyverilog.dataflow.dataflow import *
@@ -26,6 +27,9 @@ def optimize(node, width=32):
 
 
 def makeDFTree(node):
+    if isinstance(node, fxd._FixedBase):
+        raise TypeError('FixedPoint is not supported.')
+
     if isinstance(node, vtypes._Variable):
         name = node.name
         v = DFTerminal(name)

@@ -9,7 +9,7 @@ import textwrap
 from collections import OrderedDict
 
 import veriloggen.core.vtypes as vtypes
-import veriloggen.types.fixed as fixed
+import veriloggen.types.fixed as fxd
 from veriloggen.optimizer import try_optimize as optimize
 from .scope import ScopeName, ScopeFrameList, ScopeFrame
 from .operator import getVeriloggenOp, getMethodName, applyMethod
@@ -67,7 +67,7 @@ class CompileVisitor(ast.NodeVisitor):
         for func in functions.values():
             self.scope.addFunction(func)
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def visit_Import(self, node):
         raise TypeError("{} is not supported.".format(type(node)))
 
@@ -77,7 +77,7 @@ class CompileVisitor(ast.NodeVisitor):
     def visit_ClassDef(self, node):
         raise TypeError("{} is not supported.".format(type(node)))
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def visit_FunctionDef(self, node):
         self.scope.addFunction(node)
 
@@ -95,7 +95,7 @@ class CompileVisitor(ast.NodeVisitor):
         self.incFsmCount()
 
     def _variable_type(self, right):
-        if isinstance(right, fixed._FixedBase):
+        if isinstance(right, fxd._FixedBase):
             ret = {'type': 'fixed',
                    'width': right.bit_length(),
                    'point': right.point,
@@ -361,7 +361,7 @@ class CompileVisitor(ast.NodeVisitor):
                                    iter_node, cond_node, update_node, node_body,
                                    target_update)
 
-    #--------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     def visit_Call(self, node):
         if self.skip():
             return
@@ -401,23 +401,42 @@ class CompileVisitor(ast.NodeVisitor):
                     isinstance(arg.op, ast.Mod) and isinstance(arg.left, ast.Str)):
                 # format string in print statement
                 values, form = self._print_binop_mod(arg)
-                argvalues.extend(values)
+
+                for value in values:
+                    if isinstance(value, fxd._FixedBase):
+                        argvalues.append(vtypes.Div(vtypes.SystemTask('itor', value),
+                                                    1.0 * (2 ** value.point)))
+                    else:
+                        argvalues.append(value)
+
                 formatstring_list.append(form)
                 formatstring_list.append(" ")
+
             elif isinstance(arg, ast.Tuple):
                 for e in arg.elts:
                     value = self.visit(e)
                     if isinstance(value, vtypes.Str):
                         formatstring_list.append(value.value)
                         formatstring_list.append(" ")
+                    elif isinstance(value, fxd._FixedBase):
+                        argvalues.append(vtypes.Div(vtypes.SystemTask('itor', value),
+                                                    1.0 * (2 ** value.point)))
+                        formatstring_list.append("%f")
+                        formatstring_list.append(" ")
                     else:
                         argvalues.append(value)
                         formatstring_list.append("%d")
                         formatstring_list.append(" ")
+
             else:
                 value = self.visit(arg)
                 if isinstance(value, vtypes.Str):
                     formatstring_list.append(value.value)
+                    formatstring_list.append(" ")
+                elif isinstance(value, fxd._FixedBase):
+                    argvalues.append(vtypes.Div(vtypes.SystemTask('itor', value),
+                                                1.0 * (2 ** value.point)))
+                    formatstring_list.append("%f")
                     formatstring_list.append(" ")
                 else:
                     argvalues.append(value)
@@ -665,7 +684,7 @@ class CompileVisitor(ast.NodeVisitor):
         intrinsics = getattr(value, '__intrinsics__', ())
         return (method.__name__ in intrinsics)
 
-    #------------------------------------------------------------------
+    # ------------------------------------------------------------------
     def visit_Nonlocal(self, node):
         for name in node.names:
             self.addNonlocal(name)
@@ -940,7 +959,7 @@ class CompileVisitor(ast.NodeVisitor):
         index = vtypes.raw_value(optimize(index))
         return value[index]
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def skip(self):
         val = self.hasBreak() or self.hasContinue() or self.hasReturn()
         return val
@@ -967,7 +986,7 @@ class CompileVisitor(ast.NodeVisitor):
         signame = _tmp_name('_'.join(['', self.name, name]))
         if width is None:
             width = self.datawidth
-        return fixed.FixedReg(self.m, signame, width=width, point=point, signed=signed)
+        return fxd.FixedReg(self.m, signame, width=width, point=point, signed=signed)
 
     def getVariable(self, name, store=False, _type=None):
         if isinstance(name, vtypes._Numeric):
@@ -1054,7 +1073,7 @@ class CompileVisitor(ast.NodeVisitor):
         if var is None:
             cond = None
 
-        if isinstance(var, fixed._FixedVariable) and isinstance(value, fixed._FixedBase):
+        if isinstance(var, fxd._FixedVariable) and isinstance(value, fxd._FixedBase):
             if var.point != value.point:
                 raise ValueError("Fixed point not match: %d <- %d" %
                                  var.point, value.point)
@@ -1077,7 +1096,7 @@ class CompileVisitor(ast.NodeVisitor):
         state = self.getFsmCount()
         self.scope.addBind(state, var, value, cond)
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def setFsm(self, src=None, dst=None, cond=None, else_dst=None):
         if (src is None and dst is None and cond is None and else_dst is None and
                 hasattr(self.fsm, 'parallel') and self.fsm.parallel):
@@ -1096,7 +1115,7 @@ class CompileVisitor(ast.NodeVisitor):
     def getFsmCount(self):
         return self.fsm.current
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def setFsmLoop(self, begin, end, iter_node=None, step_node=None):
         self.loop_info[(begin, end)] = (iter_node, step_node)
 
@@ -1108,7 +1127,7 @@ class CompileVisitor(ast.NodeVisitor):
                       in self.loop_info.items() if b <= pos and pos <= e]
         return candidates
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def getCurrentScope(self):
         return self.scope.getCurrent()
 
@@ -1118,7 +1137,7 @@ class CompileVisitor(ast.NodeVisitor):
     def popScope(self):
         self.scope.popScopeFrame()
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def addBreak(self):
         count = self.getFsmCount()
         self.scope.addBreak(count)
