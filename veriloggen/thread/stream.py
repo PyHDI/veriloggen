@@ -1241,6 +1241,9 @@ class Stream(BaseStream):
         self.seq.If(enable)(
             dump_ram_step.inc()
         )
+        self.seq.If(self.dump_enable)(
+            dump_ram_step.inc()
+        )
 
         self.seq.If(enable)(
             vtypes.Display(fmt, dump_ram_step, age, addr, data)
