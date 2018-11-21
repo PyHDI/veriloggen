@@ -38,6 +38,9 @@ class RAM(_MutexFunction):
         self.interfaces = [RAMInterface(m, name + '_%d' % i, datawidth, addrwidth)
                            for i in range(numports)]
 
+        for interface in self.interfaces:
+            interface.wdata.no_write_check = True
+
         self.definition = mkRAMDefinition(
             name, datawidth, addrwidth, numports, initvals)
 

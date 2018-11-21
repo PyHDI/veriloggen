@@ -231,7 +231,7 @@ module blinkled
           th_blink <= th_blink_3;
         end
         th_blink_11: begin
-          _th_blink_sum_3 <= 0;
+          _th_blink_sum_3 <= 'sd0;
           th_blink <= th_blink_12;
         end
         th_blink_12: begin
@@ -273,14 +273,14 @@ module blinkled
           th_blink <= th_blink_20;
         end
         th_blink_20: begin
-          $display("rdata = %d", (_th_blink_rdata_5 >> 8));
+          $display("rdata = %d (%f)", (_th_blink_rdata_5 >>> 8), ($itor(_th_blink_rdata_5) / 256.0));
           th_blink <= th_blink_21;
         end
         th_blink_21: begin
           th_blink <= th_blink_13;
         end
         th_blink_22: begin
-           $display("sum = %d", (_th_blink_sum_3 >> 8));
+          $display("sum = %d (%f)", (_th_blink_sum_3 >>> 8), ($itor(_th_blink_sum_3) / 256.0));
           th_blink <= th_blink_23;
         end
       endcase

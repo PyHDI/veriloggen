@@ -1037,7 +1037,7 @@ class Sll(_BinaryOperator):
 
     def __init__(self, left, right):
         _BinaryOperator.__init__(self, left, right)
-        self.signed = False
+        self.signed = get_signed(self.left)
 
     @staticmethod
     def op(left, right, lwidth, rwidth):

@@ -263,7 +263,7 @@ class _FixedBase(object):
 
     @property
     def int_part(self):
-        return self >> self.point
+        return vtypes.Sra(self, self.point)
 
     @property
     def dec_part(self):
@@ -314,6 +314,12 @@ class _FixedBase(object):
 
     def __truediv__(self, r):
         return _FixedDivide(self, r)
+
+    def __lshift__(self, r):
+        return _FixedSll(self, r)
+
+    def __rshift__(self, r):
+        return _FixedSra(self, r)
 
     def __neg__(self):
         return _FixedUminus(self)
@@ -390,6 +396,19 @@ class _FixedBinaryOperator(_FixedBase, vtypes._BinaryOperator):
         point = _max_mux(lpoint, rpoint)
         signed = lsigned and rsigned if not self.overwrite_signed else False
         ldata, rdata = adjust(left, right, lpoint, rpoint, signed)
+        self.point = point
+        return ldata, rdata
+
+
+class _FixedBinaryShiftOperator(_FixedBinaryOperator):
+
+    def init(self, left, right):
+        lpoint = left.point if isinstance(left, _FixedBase) else 0
+        rpoint = right.point if isinstance(right, _FixedBase) else 0
+        if rpoint != 0:
+            raise TypeError("shift amount must be int")
+        point = lpoint
+        ldata, rdata = left, right
         self.point = point
         return ldata, rdata
 
@@ -495,6 +514,30 @@ class _FixedMinus(_FixedBinaryOperator, vtypes.Minus):
     def __init__(self, left, right):
         left, right = self.init(left, right)
         vtypes.Minus.__init__(self, left, right)
+
+
+class _FixedSll(_FixedBinaryShiftOperator, vtypes.Sll):
+    ast_name = 'Sll'
+
+    def __init__(self, left, right):
+        left, right = self.init(left, right)
+        vtypes.Sll.__init__(self, left, right)
+
+
+class _FixedSrl(_FixedBinaryShiftOperator, vtypes.Srl):
+    ast_name = 'Srl'
+
+    def __init__(self, left, right):
+        left, right = self.init(left, right)
+        vtypes.Srl.__init__(self, left, right)
+
+
+class _FixedSra(_FixedBinaryShiftOperator, vtypes.Sra):
+    ast_name = 'Sra'
+
+    def __init__(self, left, right):
+        left, right = self.init(left, right)
+        vtypes.Sra.__init__(self, left, right)
 
 
 class _FixedLessThan(_FixedBinaryOperator, vtypes.LessThan):

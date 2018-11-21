@@ -31,9 +31,9 @@ def mkLed():
         for i in range(times):
             rdata = myram.read(i)
             sum += rdata
-            print('rdata = %d' % rdata.int_part)
+            print('rdata = %d (%f)' % (rdata.int_part, rdata))
 
-        print('sum = %d' % sum.int_part)
+        print('sum = %d (%f)' % (sum.int_part, sum))
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
     fsm = th.start(10)

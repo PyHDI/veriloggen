@@ -109,7 +109,7 @@ module blinkled
           th_blink <= th_blink_5;
         end
         th_blink_5: begin
-          LED <= _th_blink_next_val_2 >> 3;
+          LED <= _th_blink_next_val_2 >>> 3;
           th_blink <= th_blink_6;
         end
         th_blink_6: begin
