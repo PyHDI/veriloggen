@@ -19,35 +19,39 @@ def mkLed():
 
     datawidth = 32
     addrwidth = 10
+    point = 4
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
-    ram_a = vthread.RAM(m, 'ram_a', clk, rst, datawidth, addrwidth)
-    ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
-    ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
+    ram_a = vthread.FixedRAM(m, 'ram_a', clk, rst, datawidth, addrwidth,
+                             point=point)
+    ram_b = vthread.FixedRAM(m, 'ram_b', clk, rst, datawidth, addrwidth,
+                             point=point)
+    ram_c = vthread.FixedRAM(m, 'ram_c', clk, rst, datawidth, addrwidth,
+                             point=point)
 
-    strm = vthread.Stream(m, 'mystream', clk, rst,
-                          dump=True, dump_mode='selective')
-    a = strm.source('a')
-    b = strm.source('b')
-    c = a + b
-    c.dump = True
+    strm = vthread.Stream(m, 'mystream', clk, rst, dump=True)
+    a = strm.source('a', point=point)
+    b = strm.source('b', point=point)
+    const = strm.constant('const', point=point)
+    c = a * b + const
     strm.sink(c, 'c')
-
-    ram_c.dump = True
 
     def comp_stream(size, offset):
         strm.set_source('a', ram_a, offset, size)
         strm.set_source('b', ram_b, offset, size)
         strm.set_sink('c', ram_c, offset, size)
+        const = vthread.fixed.FixedConst(3, point=point)
+        strm.set_constant('const', const)
         strm.run()
         strm.join()
 
     def comp_sequential(size, offset):
-        sum = 0
         for i in range(size):
             a = ram_a.read(i + offset)
             b = ram_b.read(i + offset)
-            sum = a + b
-            ram_c.write(i + offset, sum)
+            const = vthread.fixed.FixedConst(3, point=point)
+            c = a * b + const
+            ram_c.write(i + offset, c)
+            print('a = %f, b = %f, const = %f, c =  %f' % (a, b, const, c))
 
     def check(size, offset_stream, offset_seq):
         all_ok = True

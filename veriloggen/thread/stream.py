@@ -9,6 +9,7 @@ import textwrap
 from collections import OrderedDict
 
 import veriloggen.core.vtypes as vtypes
+import veriloggen.types.fixed as fxd
 from veriloggen.seq.seq import make_condition
 from veriloggen.fsm.fsm import FSM
 from veriloggen.seq.seq import Seq
@@ -321,6 +322,7 @@ class Stream(BaseStream):
 
         var.next_constant_data = self.module.Reg('_%s_next_constant_data' % prefix,
                                                  datawidth, initval=0)
+        var.next_constant_data.no_write_check = True
         var.has_constant_data = False
 
         return var
@@ -865,7 +867,7 @@ class Stream(BaseStream):
 
         fsm.goto_next()
 
-    def set_constant(self, fsm, name, value):
+    def set_constant(self, fsm, name, value, raw=False):
         """ intrinsic method to assign constant value to a constant stream """
 
         if not self.stream_synthesized:
@@ -888,6 +890,9 @@ class Stream(BaseStream):
             raise NameError("No such stream '%s'" % name)
 
         set_cond = self._set_flag(fsm)
+
+        if not raw:
+            value = fxd.write_adjust(value, var.point)
 
         self.seq.If(set_cond)(
             var.next_constant_data(value)
@@ -1173,6 +1178,72 @@ class Stream(BaseStream):
 
         self.seq.If(self.seq.Prev(renable, 1))(
             var.source_ram_rvalid(1)
+        )
+
+        if (self.dump and
+            (self.dump_mode == 'all' or
+             self.dump_mode == 'ram' or
+             (self.dump_mode == 'selective' and
+              hasattr(ram, 'dump') and ram.dump))):
+            self._setup_source_ram_dump(ram, var, renable, d)
+
+    def _setup_source_ram_dump(self, ram, var, read_enable, read_data):
+        pipeline_depth = self.pipeline_depth()
+        log_pipeline_depth = max(
+            int(math.ceil(math.log(pipeline_depth, 10))), 1)
+
+        addr_base = (ram.dump_addr_base if hasattr(ram, 'dump_addr_base') else
+                     self.dump_base)
+        addr_base_char = ('b' if addr_base == 2 else
+                          'o' if addr_base == 8 else
+                          'd' if addr_base == 10 else
+                          'x')
+        addr_prefix = ('0b' if addr_base == 2 else
+                       '0o' if addr_base == 8 else
+                       '  ' if addr_base == 10 else
+                       '0x')
+        addr_vfmt = ''.join([addr_prefix, '%', addr_base_char])
+
+        data_base = (ram.dump_data_base if hasattr(ram, 'dump_data_base') else
+                     self.dump_base)
+        data_base_char = ('b' if data_base == 2 else
+                          'o' if data_base == 8 else
+                          'd' if (data_base == 10 and
+                                  (not hasattr(ram, 'point') or ram.point == 0)) else
+                          'f' if (data_base == 10 and
+                                  hasattr(ram, 'point') and ram.point > 0) else
+                          'x')
+        data_prefix = ('0b' if data_base == 2 else
+                       '0o' if data_base == 8 else
+                       '  ' if data_base == 10 else
+                       '0x')
+        data_vfmt = ''.join([data_prefix, '%', data_base_char])
+
+        name = ram.name
+        fmt = ''.join(['(', self.name, ' step:%d, ',
+                       'read, ', ' ' * (log_pipeline_depth + 2),
+                       'age:%d) ', name,
+                       '[', addr_vfmt, '] = ', data_vfmt])
+
+        dump_ram_step_name = ('_stream_dump_ram_step_%d_%s' %
+                              (self.object_id, name))
+        dump_ram_step = self.module.Reg(dump_ram_step_name, 32,
+                                        initval=0, signed=True)
+
+        enable = self.seq.Prev(read_enable, 2)
+        age = dump_ram_step + 1
+        addr = self.seq.Prev(var.source_ram_raddr, 2)
+        data = read_data
+
+        self.seq(
+            dump_ram_step(-1)
+        )
+        self.seq.If(enable)(
+            dump_ram_step.inc()
+        )
+
+        self.seq.If(enable)(
+            vtypes.Display(fmt, dump_ram_step, age, addr, data)
         )
 
     def _synthesize_set_source(self, var, name):
@@ -1550,6 +1621,60 @@ class Stream(BaseStream):
         wenable = vtypes.Ands(var.sink_ram_wenable, ram_cond)
         ram.write_rtl(var.sink_ram_waddr, var.sink_ram_wdata,
                       port=port, cond=wenable)
+
+        if (self.dump and
+            (self.dump_mode == 'all' or
+             self.dump_mode == 'ram' or
+             (self.dump_mode == 'selective' and
+              hasattr(ram, 'dump') and ram.dump))):
+            self._setup_sink_ram_dump(ram, var, wenable)
+
+    def _setup_sink_ram_dump(self, ram, var, write_enable):
+        pipeline_depth = self.pipeline_depth()
+        log_pipeline_depth = max(
+            int(math.ceil(math.log(pipeline_depth, 10))), 1)
+
+        addr_base = (ram.dump_addr_base if hasattr(ram, 'dump_addr_base') else
+                     self.dump_base)
+        addr_base_char = ('b' if addr_base == 2 else
+                          'o' if addr_base == 8 else
+                          'd' if addr_base == 10 else
+                          'x')
+        addr_prefix = ('0b' if addr_base == 2 else
+                       '0o' if addr_base == 8 else
+                       '  ' if addr_base == 10 else
+                       '0x')
+        addr_vfmt = ''.join([addr_prefix, '%', addr_base_char])
+
+        data_base = (ram.dump_data_base if hasattr(ram, 'dump_data_base') else
+                     self.dump_base)
+        data_base_char = ('b' if data_base == 2 else
+                          'o' if data_base == 8 else
+                          'd' if (data_base == 10 and
+                                  (not hasattr(ram, 'point') or ram.point == 0)) else
+                          'f' if (data_base == 10 and
+                                  hasattr(ram, 'point') and ram.point > 0) else
+                          'x')
+        data_prefix = ('0b' if data_base == 2 else
+                       '0o' if data_base == 8 else
+                       '  ' if data_base == 10 else
+                       '0x')
+        data_vfmt = ''.join([data_prefix, '%', data_base_char])
+
+        name = ram.name
+        fmt = ''.join(['(', self.name, ' step:%d, ',
+                       'write, ', ' ' * (log_pipeline_depth + 1),
+                       'age:%d) ', name,
+                       '[', addr_vfmt, '] = ', data_vfmt])
+
+        enable = var.sink_ram_wenable
+        age = self.seq.Prev(self.dump_step, pipeline_depth + 1)
+        addr = var.sink_ram_waddr
+        data = var.sink_ram_wdata
+
+        self.seq.If(enable)(
+            vtypes.Display(fmt, self.dump_step, age, addr, data)
+        )
 
     def _synthesize_set_sink(self, var, name):
         if var.sink_fsm is not None:
