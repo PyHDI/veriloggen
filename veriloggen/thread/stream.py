@@ -46,7 +46,8 @@ class Stream(BaseStream):
                       'read_sink',
                       'run', 'join', 'done',
                       'source_join', 'source_done',
-                      'sink_join', 'sink_done')
+                      'sink_join', 'sink_done',
+                      'enable_dump', 'disable_dump')
     ram_delay = 4
 
     def __init__(self, m, name, clk, rst,
@@ -965,7 +966,7 @@ class Stream(BaseStream):
 
         if self.dump:
             dump_delay = self.ram_delay + 1
-            self.fsm.seq.If(self.seq.Prev(start_cond, dump_delay))(
+            self.seq.If(self.seq.Prev(start_cond, dump_delay))(
                 self.dump_enable(1)
             )
 
@@ -1025,7 +1026,7 @@ class Stream(BaseStream):
 
         if self.dump:
             dump_delay = 1
-            self.fsm.seq.If(self.seq.Prev(end_cond, dump_delay))(
+            self.seq.If(self.seq.Prev(end_cond, dump_delay))(
                 self.dump_enable(0)
             )
 
@@ -1149,6 +1150,28 @@ class Stream(BaseStream):
     def sink_done(self, fsm):
         return vtypes.Not(self.sink_busy)
 
+    def enable_dump(self, fsm):
+        if not self.dump:
+            raise TypeError('dump mode is disabled.')
+
+        self.seq.If(fsm.here)(
+            self.dump_mask(0)
+        )
+
+        fsm.goto_next()
+        return self.dump_mask
+
+    def disable_dump(self, fsm):
+        if not self.dump:
+            raise TypeError('dump mode is disabled.')
+
+        self.seq.If(fsm.here)(
+            self.dump_mask(1)
+        )
+
+        fsm.goto_next()
+        return self.dump_mask
+
     def _setup_source_ram(self, ram, var, port, set_cond):
         if ram._id() in var.source_ram_id_map:
             ram_id = var.source_ram_id_map[ram._id()]
@@ -1249,7 +1272,7 @@ class Stream(BaseStream):
             dump_ram_step.inc()
         )
 
-        self.seq.If(enable)(
+        self.seq.If(enable, vtypes.Not(self.dump_mask))(
             vtypes.Display(fmt, dump_ram_step, age, addr, data)
         )
 
@@ -1683,7 +1706,7 @@ class Stream(BaseStream):
         else:
             data = var.sink_ram_wdata
 
-        self.seq.If(enable)(
+        self.seq.If(enable, vtypes.Not(self.dump_mask))(
             vtypes.Display(fmt, self.dump_step, age, addr, data)
         )
 
