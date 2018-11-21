@@ -231,21 +231,23 @@ class Stream(object):
     def add_dump(self, m, seq, input_vars, output_vars, all_vars):
         dump_enable_name = '_stream_dump_enable_%d' % self.object_id
         dump_enable = m.Reg(dump_enable_name, initval=0)
-        dump_iter_name = '_stream_dump_iter_%d' % self.object_id
-        dump_iter = m.Reg(dump_iter_name, 32, initval=0)
+        dump_step_name = '_stream_dump_step_%d' % self.object_id
+        dump_step = m.Reg(dump_step_name, 32, initval=0, signed=True)
 
+        self.dump_step = dump_step
         self.dump_enable = dump_enable
 
         pipeline_depth = self.pipeline_depth()
-        log_pipeline_depth = int(math.ceil(math.log(pipeline_depth, 10)))
+        log_pipeline_depth = max(
+            int(math.ceil(math.log(pipeline_depth, 10))), 1)
 
         seq(
-            dump_iter(0)
+            dump_step(0)
         )
 
         for i in range(pipeline_depth + 1):
             seq.If(seq.Prev(dump_enable, i))(
-                dump_iter.inc()
+                dump_step.inc()
             )
 
         def get_name(obj):
@@ -257,7 +259,9 @@ class Stream(object):
 
         longest_name_len = 0
         for input_var in sorted(input_vars, key=lambda x: x.object_id):
-            if not (self.dump_mode == 'all' or self.dump_mode == 'input' or
+            if not (self.dump_mode == 'all' or
+                    self.dump_mode == 'stream' or
+                    self.dump_mode == 'input' or
                     self.dump_mode == 'inout' or
                     (self.dump_mode == 'selective' and
                      hasattr(input_var, 'dump') and input_var.dump)):
@@ -271,6 +275,7 @@ class Stream(object):
                           if x.end_stage is None else
                           (x.end_stage, x.object_id)):
             if not (self.dump_mode == 'all' or
+                    self.dump_mode == 'stream' or
                     (self.dump_mode == 'selective' and
                      hasattr(var, 'dump') and var.dump)):
                 continue
@@ -280,7 +285,9 @@ class Stream(object):
             longest_name_len = max(longest_name_len, length)
 
         for output_var in sorted(output_vars, key=lambda x: x.object_id):
-            if not (self.dump_mode == 'all' or self.dump_mode == 'output' or
+            if not (self.dump_mode == 'all' or
+                    self.dump_mode == 'stream' or
+                    self.dump_mode == 'output' or
                     self.dump_mode == 'inout' or
                     (self.dump_mode == 'selective' and
                      hasattr(output_var, 'dump') and output_var.dump)):
@@ -325,7 +332,9 @@ class Stream(object):
 
         enables = []
         for input_var in sorted(input_vars, key=lambda x: x.object_id):
-            if not (self.dump_mode == 'all' or self.dump_mode == 'input' or
+            if not (self.dump_mode == 'all' or
+                    self.dump_mode == 'stream' or
+                    self.dump_mode == 'input' or
                     self.dump_mode == 'inout' or
                     (self.dump_mode == 'selective' and
                      hasattr(input_var, 'dump') and input_var.dump)):
@@ -336,14 +345,15 @@ class Stream(object):
             name = get_name(input_var.sig_data)
             name_alignment = ' ' * (longest_name_len - len(name) -
                                     len('(in) '))
-            fmt = ''.join(['<', self.name, '> (iter %d) ',
-                           '(stage %', str(log_pipeline_depth), 'd, age %d) ', '(in) ',
+            fmt = ''.join(['<', self.name, ' step:%d, ',
+                           'stage:%', str(
+                               log_pipeline_depth), 'd, age:%d> (in) ',
                            name_alignment, name, ' = ', vfmt])
 
             stage = input_var.end_stage if input_var.end_stage is not None else 0
             enable = seq.Prev(dump_enable, stage)
             enables.append(enable)
-            age = seq.Prev(dump_iter, stage)
+            age = seq.Prev(dump_step, stage)
 
             if input_var.point == 0:
                 sig_data = input_var.sig_data
@@ -352,13 +362,14 @@ class Stream(object):
                                       1.0 * (2 ** input_var.point))
 
             seq.If(enable)(
-                vtypes.Display(fmt, dump_iter, stage, age, sig_data)
+                vtypes.Display(fmt, dump_step, stage, age, sig_data)
             )
 
         for var in sorted(all_vars, key=lambda x: (-1, x.object_id)
                           if x.end_stage is None else
                           (x.end_stage, x.object_id)):
             if not (self.dump_mode == 'all' or
+                    self.dump_mode == 'stream' or
                     (self.dump_mode == 'selective' and
                      hasattr(var, 'dump') and var.dump)):
                 continue
@@ -369,13 +380,13 @@ class Stream(object):
             name_alignment = ' ' * (longest_name_len - len(name))
             stage = var.end_stage if var.end_stage is not None else 0
 
-            fmt = ''.join(['<', self.name, '> (iter %d) ',
-                           '(stage %', str(log_pipeline_depth), 'd, age %d) ',
+            fmt = ''.join(['<', self.name, ' step:%d, ',
+                           'stage:%', str(log_pipeline_depth), 'd, age:%d> ',
                            name_alignment, name, ' = ', vfmt])
 
             enable = seq.Prev(dump_enable, stage)
             enables.append(enable)
-            age = seq.Prev(dump_iter, stage)
+            age = seq.Prev(dump_step, stage)
 
             if var.point == 0:
                 sig_data = var.sig_data
@@ -384,11 +395,13 @@ class Stream(object):
                                       1.0 * (2 ** var.point))
 
             seq.If(enable)(
-                vtypes.Display(fmt, dump_iter, stage, age, sig_data)
+                vtypes.Display(fmt, dump_step, stage, age, sig_data)
             )
 
         for output_var in sorted(output_vars, key=lambda x: x.object_id):
-            if not (self.dump_mode == 'all' or self.dump_mode == 'output' or
+            if not (self.dump_mode == 'all' or
+                    self.dump_mode == 'stream' or
+                    self.dump_mode == 'output' or
                     self.dump_mode == 'inout' or
                     (self.dump_mode == 'selective' and
                      hasattr(output_var, 'dump') and output_var.dump)):
@@ -399,14 +412,15 @@ class Stream(object):
             name = get_name(output_var.output_sig_data)
             name_alignment = ' ' * (longest_name_len - len(name) -
                                     len('(out) '))
-            fmt = ''.join(['<', self.name, '> (iter %d) ',
-                           '(stage %', str(log_pipeline_depth), 'd, age %d) ', '(out) ',
+            fmt = ''.join(['<', self.name, ' step:%d, ',
+                           'stage:%', str(
+                               log_pipeline_depth), 'd, age:%d> (out) ',
                            name_alignment, name, ' = ', vfmt])
 
             stage = output_var.end_stage if output_var.end_stage is not None else 0
             enable = seq.Prev(dump_enable, stage)
             enables.append(enable)
-            age = seq.Prev(dump_iter, stage)
+            age = seq.Prev(dump_step, stage)
 
             if output_var.point == 0:
                 sig_data = output_var.output_sig_data
@@ -415,13 +429,7 @@ class Stream(object):
                                       1.0 * (2 ** output_var.point))
 
             seq.If(enable)(
-                vtypes.Display(fmt, dump_iter, stage, age, sig_data)
-            )
-
-        if enables:
-            seq.If(vtypes.Ors(*enables))(
-                vtypes.Display(''.join(['<', self.name, '> (iter %d) ', '--------']),
-                               dump_iter)
+                vtypes.Display(fmt, dump_step, stage, age, sig_data)
             )
 
     # -------------------------------------------------------------------------

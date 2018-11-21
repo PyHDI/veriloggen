@@ -32,6 +32,8 @@ def mkLed():
     c.dump = True
     strm.sink(c, 'c')
 
+    ram_c.dump = True
+
     def comp_stream(size, offset):
         strm.set_source('a', ram_a, offset, size)
         strm.set_source('b', ram_b, offset, size)
