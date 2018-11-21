@@ -94,8 +94,8 @@ class Stream(object):
             dump_mask_name = '_stream_dump_mask_%d' % self.object_id
             dump_mask = self.module.Reg(dump_mask_name, initval=0)
             dump_step_name = '_stream_dump_step_%d' % self.object_id
-            dump_step = self.module.Reg(dump_step_name, 32,
-                                        initval=0, signed=True)
+            dump_step = self.module.Reg(dump_step_name, 32, initval=0)
+
             self.dump_enable = dump_enable
             self.dump_mask = dump_mask
             self.dump_step = dump_step
@@ -250,7 +250,7 @@ class Stream(object):
             int(math.ceil(math.log(pipeline_depth, 10))), 1)
 
         seq(
-            self.dump_step(0)
+            self.dump_step(1)
         )
 
         for i in range(pipeline_depth + 1):
@@ -361,7 +361,7 @@ class Stream(object):
             stage = input_var.end_stage if input_var.end_stage is not None else 0
             enable = seq.Prev(self.dump_enable, stage)
             enables.append(enable)
-            age = seq.Prev(self.dump_step, stage)
+            age = seq.Prev(self.dump_step, stage) - 1
 
             if input_var.point == 0:
                 sig_data = input_var.sig_data
@@ -394,7 +394,7 @@ class Stream(object):
 
             enable = seq.Prev(self.dump_enable, stage)
             enables.append(enable)
-            age = seq.Prev(self.dump_step, stage)
+            age = seq.Prev(self.dump_step, stage) - 1
 
             if var.point == 0:
                 sig_data = var.sig_data
@@ -428,7 +428,7 @@ class Stream(object):
             stage = output_var.end_stage if output_var.end_stage is not None else 0
             enable = seq.Prev(self.dump_enable, stage)
             enables.append(enable)
-            age = seq.Prev(self.dump_step, stage)
+            age = seq.Prev(self.dump_step, stage) - 1
 
             if output_var.point == 0:
                 sig_data = output_var.output_sig_data
