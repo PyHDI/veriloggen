@@ -1233,7 +1233,11 @@ class Stream(BaseStream):
         enable = self.seq.Prev(read_enable, 2)
         age = dump_ram_step + 1
         addr = self.seq.Prev(var.source_ram_raddr, 2)
-        data = read_data
+        if hasattr(ram, 'point') and ram.point > 0:
+            data = vtypes.Div(vtypes.SystemTask('itor', read_data),
+                              1.0 * (2 ** ram.point))
+        else:
+            data = read_data
 
         self.seq(
             dump_ram_step(-1)
@@ -1673,7 +1677,11 @@ class Stream(BaseStream):
         enable = var.sink_ram_wenable
         age = self.seq.Prev(self.dump_step, pipeline_depth + 1)
         addr = var.sink_ram_waddr
-        data = var.sink_ram_wdata
+        if hasattr(ram, 'point') and ram.point > 0:
+            data = vtypes.Div(vtypes.SystemTask('itor', var.sink_ram_wdata),
+                              1.0 * (2 ** ram.point))
+        else:
+            data = var.sink_ram_wdata
 
         self.seq.If(enable)(
             vtypes.Display(fmt, self.dump_step, age, addr, data)
