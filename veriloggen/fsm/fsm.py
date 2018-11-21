@@ -83,7 +83,7 @@ class FSM(vtypes.VeriloggenNode):
         if not nohook:
             self.m.add_hook(self.implement)
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def goto(self, dst, cond=None, else_dst=None):
         if cond is None and 'cond' in self.next_kwargs:
             cond = self.next_kwargs['cond']
@@ -130,7 +130,7 @@ class FSM(vtypes.VeriloggenNode):
     def inc(self):
         self._set_index(None)
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def add(self, *statement, **kwargs):
         """ add new assignments """
         kwargs.update(self.next_kwargs)
@@ -152,11 +152,15 @@ class FSM(vtypes.VeriloggenNode):
         self._clear_last_if_statement()
         return self._add_statement(statement, **kwargs)
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
+    def add_reset(self, v):
+        return self.seq.add_reset(v)
+
+    # -------------------------------------------------------------------------
     def Prev(self, var, delay, initval=0, cond=None, prefix=None):
         return self.seq.Prev(var, delay, initval, cond, prefix)
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def If(self, *cond):
         self._clear_elif_cond()
 
@@ -267,7 +271,7 @@ class FSM(vtypes.VeriloggenNode):
         self._clear_elif_cond()
         return self
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     @property
     def current(self):
         return self.state_count
@@ -314,7 +318,7 @@ class FSM(vtypes.VeriloggenNode):
     def here(self):
         return self.state == self.current
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def implement(self):
         if self.as_module:
             self.make_module()
@@ -322,7 +326,7 @@ class FSM(vtypes.VeriloggenNode):
 
         self.make_always()
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def make_always(self, reset=(), body=(), case=True):
         if self.done:
             #raise ValueError('make_always() has been already called.')
@@ -340,7 +344,7 @@ class FSM(vtypes.VeriloggenNode):
                 part_body,
             ))
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def make_module(self, reset=(), body=(), case=True):
         if self.done:
             #raise ValueError('make_always() has been already called.')
@@ -530,7 +534,7 @@ class FSM(vtypes.VeriloggenNode):
         sub = Submodule(self.m, m, 'inst_' + m.name, '_%s_' % self.name,
                         arg_params=arg_params, arg_ports=arg_ports)
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def make_case(self):
         indexes = set(self.body.keys())
         indexes.update(set(self.jump.keys()))
@@ -578,7 +582,7 @@ class FSM(vtypes.VeriloggenNode):
                     for index in sorted(indexes, key=lambda x:x)])
         return ret
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def make_reset(self, reset):
         ret = collections.OrderedDict()
 
@@ -621,11 +625,11 @@ class FSM(vtypes.VeriloggenNode):
 
         return list(ret.values())
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def set_index(self, index):
         return self._set_index(index)
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _go(self, src, dst, cond=None, else_dst=None):
         self._add_jump(src, dst, cond, else_dst)
         return self
@@ -633,7 +637,7 @@ class FSM(vtypes.VeriloggenNode):
     def _add_jump(self, src, dst, cond=None, else_dst=None):
         self.jump[src].append((dst, cond, else_dst))
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _add_statement(self, statement, index=None, keep=None, delay=None, cond=None,
                        lazy_cond=False, eager_val=False, no_delay_cond=False):
 
@@ -686,7 +690,7 @@ class FSM(vtypes.VeriloggenNode):
 
         return self
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _add_dst_var(self, statement):
         for s in statement:
             values = self.dst_visitor.visit(s)
@@ -695,7 +699,7 @@ class FSM(vtypes.VeriloggenNode):
                 if k not in self.dst_var:
                     self.dst_var[k] = v
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _add_delayed_cond(self, statement, index, delay):
         name_prefix = '_'.join(
             ['', self.name, 'cond', str(index), str(self.tmp_count)])
@@ -709,7 +713,7 @@ class FSM(vtypes.VeriloggenNode):
             prev = tmp
         return prev
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _add_delayed_subst(self, subst, index, delay):
         if not isinstance(subst, vtypes.Subst):
             return subst
@@ -734,7 +738,7 @@ class FSM(vtypes.VeriloggenNode):
             prev = tmp
         return left(prev)
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _clear_next_kwargs(self):
         self.next_kwargs = {}
 
@@ -756,7 +760,7 @@ class FSM(vtypes.VeriloggenNode):
                 ret = vtypes.Ands(ret, cond)
         return ret
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _set_index(self, index=None):
         if index is None:
             self.state_count += 1
@@ -784,7 +788,7 @@ class FSM(vtypes.VeriloggenNode):
                 return index
         raise KeyError("No such mark in FSM marks: %s" % s.name)
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _add_mark(self, index):
         index = self._to_index(index)
         if index not in self.mark:
@@ -797,7 +801,7 @@ class FSM(vtypes.VeriloggenNode):
             index = self._get_mark_index(index)
         return index
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _add_delayed_state(self, value):
         if not isinstance(value, int):
             raise TypeError("Delay amount must be int, not '%s'" %
@@ -851,7 +855,7 @@ class FSM(vtypes.VeriloggenNode):
                 value = value.Else(self.state(else_dst_mark))
         return value
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _cond_case(self, index):
         if index not in self.mark:
             self._set_mark(index)
@@ -895,7 +899,7 @@ class FSM(vtypes.VeriloggenNode):
     def _get_delayed_if_statement(self, index, delay):
         return vtypes.If(self._delayed_cond_if(index, delay))(*self.delayed_body[delay][index])
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def __call__(self, *statement, **kwargs):
         return self.add(*statement, **kwargs)
 

@@ -88,6 +88,22 @@ class Stream(object):
                         '_stream_seq_%d' % self.object_id)
             self.seq = Seq(self.module, seq_name, self.clock, self.reset)
 
+        if self.dump:
+            dump_enable_name = '_stream_dump_enable_%d' % self.object_id
+            dump_enable = self.module.Reg(dump_enable_name, initval=0)
+            dump_mask_name = '_stream_dump_mask_%d' % self.object_id
+            dump_mask = self.module.Reg(dump_mask_name, initval=0)
+            dump_step_name = '_stream_dump_step_%d' % self.object_id
+            dump_step = self.module.Reg(dump_step_name, 32,
+                                        initval=0, signed=True)
+            self.dump_enable = dump_enable
+            self.dump_mask = dump_mask
+            self.dump_step = dump_step
+
+            if self.seq:
+                self.seq.add_reset(self.dump_enable)
+                self.seq.add_reset(self.dump_mask)
+
     # -------------------------------------------------------------------------
     def add(self, *nodes):
         self.nodes.update(set(nodes))
@@ -229,25 +245,17 @@ class Stream(object):
         return m
 
     def add_dump(self, m, seq, input_vars, output_vars, all_vars):
-        dump_enable_name = '_stream_dump_enable_%d' % self.object_id
-        dump_enable = m.Reg(dump_enable_name, initval=0)
-        dump_step_name = '_stream_dump_step_%d' % self.object_id
-        dump_step = m.Reg(dump_step_name, 32, initval=0, signed=True)
-
-        self.dump_step = dump_step
-        self.dump_enable = dump_enable
-
         pipeline_depth = self.pipeline_depth()
         log_pipeline_depth = max(
             int(math.ceil(math.log(pipeline_depth, 10))), 1)
 
         seq(
-            dump_step(0)
+            self.dump_step(0)
         )
 
         for i in range(pipeline_depth + 1):
-            seq.If(seq.Prev(dump_enable, i))(
-                dump_step.inc()
+            seq.If(seq.Prev(self.dump_enable, i))(
+                self.dump_step.inc()
             )
 
         def get_name(obj):
@@ -351,9 +359,9 @@ class Stream(object):
                            name_alignment, name, ' = ', vfmt])
 
             stage = input_var.end_stage if input_var.end_stage is not None else 0
-            enable = seq.Prev(dump_enable, stage)
+            enable = seq.Prev(self.dump_enable, stage)
             enables.append(enable)
-            age = seq.Prev(dump_step, stage)
+            age = seq.Prev(self.dump_step, stage)
 
             if input_var.point == 0:
                 sig_data = input_var.sig_data
@@ -361,8 +369,8 @@ class Stream(object):
                 sig_data = vtypes.Div(vtypes.SystemTask('itor', input_var.sig_data),
                                       1.0 * (2 ** input_var.point))
 
-            seq.If(enable)(
-                vtypes.Display(fmt, dump_step, stage, age, sig_data)
+            seq.If(enable, vtypes.Not(self.dump_mask))(
+                vtypes.Display(fmt, self.dump_step, stage, age, sig_data)
             )
 
         for var in sorted(all_vars, key=lambda x: (-1, x.object_id)
@@ -384,9 +392,9 @@ class Stream(object):
                            'stage:%', str(log_pipeline_depth), 'd, age:%d> ',
                            name_alignment, name, ' = ', vfmt])
 
-            enable = seq.Prev(dump_enable, stage)
+            enable = seq.Prev(self.dump_enable, stage)
             enables.append(enable)
-            age = seq.Prev(dump_step, stage)
+            age = seq.Prev(self.dump_step, stage)
 
             if var.point == 0:
                 sig_data = var.sig_data
@@ -394,8 +402,8 @@ class Stream(object):
                 sig_data = vtypes.Div(vtypes.SystemTask('itor', var.sig_data),
                                       1.0 * (2 ** var.point))
 
-            seq.If(enable)(
-                vtypes.Display(fmt, dump_step, stage, age, sig_data)
+            seq.If(enable, vtypes.Not(self.dump_mask))(
+                vtypes.Display(fmt, self.dump_step, stage, age, sig_data)
             )
 
         for output_var in sorted(output_vars, key=lambda x: x.object_id):
@@ -418,9 +426,9 @@ class Stream(object):
                            name_alignment, name, ' = ', vfmt])
 
             stage = output_var.end_stage if output_var.end_stage is not None else 0
-            enable = seq.Prev(dump_enable, stage)
+            enable = seq.Prev(self.dump_enable, stage)
             enables.append(enable)
-            age = seq.Prev(dump_step, stage)
+            age = seq.Prev(self.dump_step, stage)
 
             if output_var.point == 0:
                 sig_data = output_var.output_sig_data
@@ -428,8 +436,8 @@ class Stream(object):
                 sig_data = vtypes.Div(vtypes.SystemTask('itor', output_var.output_sig_data),
                                       1.0 * (2 ** output_var.point))
 
-            seq.If(enable)(
-                vtypes.Display(fmt, dump_step, stage, age, sig_data)
+            seq.If(enable, vtypes.Not(self.dump_mask))(
+                vtypes.Display(fmt, self.dump_step, stage, age, sig_data)
             )
 
     # -------------------------------------------------------------------------
