@@ -29,8 +29,8 @@ def mkLed():
         led.value = 0
         next_val = vthread.fixed.FixedConst(0, 8)
         for i in range(times):
-            next_val = next_val + 1
-            led.value = next_val
+            next_val = next_val + vthread.fixed.FixedConst(0.5, 8)
+            led.value = next_val.int_part
             print("led = ", led)
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
