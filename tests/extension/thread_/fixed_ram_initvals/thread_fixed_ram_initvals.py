@@ -9,28 +9,40 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
 
 from veriloggen import *
 import veriloggen.thread as vthread
-import veriloggen.types.fixed as fx
 
 
 def mkLed():
     m = Module('blinkled')
     clk = m.Input('CLK')
     rst = m.Input('RST')
-    led = m.Reg('LED', 8, initval=0)
 
-    count = fx.FixedReg(m, 'count', 8, point=3, initval=0)
-
-    seq = Seq(m, 'seq', clk, rst)
-    seq(
-        count.inc()
-    )
+    datawidth = 32
+    addrwidth = 10
+    numports = 1
+    initvals = [i * 0.5 + 10 for i in range(2 ** addrwidth - 100)]
+    myram = vthread.FixedRAM(m, 'myram', clk, rst, datawidth, addrwidth,
+                             point=8, numports=numports, initvals=initvals)
 
     def blink(times):
-        led.value = 0
         for i in range(times):
-            next_val = count + 3
-            led.value = next_val.int_part
-            print("led = ", led)
+            rdata = myram.read(i)
+            print('rdata = %f' % rdata)
+
+        for i in range(times):
+            rdata = myram.read(i)
+
+            b = vthread.fixed.FixedConst(0.25, 8)
+            wdata = rdata + b
+            myram.write(i, wdata)
+            print('wdata = %f' % wdata)
+
+        sum = vthread.fixed.FixedConst(0, 8)
+        for i in range(times):
+            rdata = myram.read(i)
+            print('rdata = %f' % rdata)
+            sum += rdata
+
+        print('sum = %f' % sum)
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
     fsm = th.start(10)

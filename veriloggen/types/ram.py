@@ -8,7 +8,8 @@ from . import util
 
 
 def mkRAMDefinition(name, datawidth=32, addrwidth=10, numports=2,
-                    initvals=None, sync=True, with_enable=False):
+                    initvals=None, sync=True, with_enable=False,
+                    nocheck_initvals=False):
     m = Module(name)
     clk = m.Input('CLK')
 
@@ -29,28 +30,31 @@ def mkRAMDefinition(name, datawidth=32, addrwidth=10, numports=2,
             raise TypeError("initvals must be tuple or list, not '%s" %
                             str(type(initvals)))
 
-        new_initvals = []
         base = 16
-        for initval in initvals:
-            if isinstance(initval, int):
-                new_initvals.append(vtypes.Int(initval, datawidth, base=16))
-            elif isinstance(initval, vtypes.Int) and isinstance(initval.value, int):
-                v = copy.deepcopy(initval)
-                v.width = datawidth
-                v.base = base
-                new_initvals.append(v)
-            elif isinstance(initval, vtypes.Int) and isinstance(initval.value, str):
-                v = copy.deepcopy(initval)
-                v.width = datawidth
-                if v.base != 2 and v.base != 16:
-                    raise ValueError('base must be 2 or 16')
-                base = v.base
-                new_initvals.append(v)
-            else:
-                raise TypeError("values of initvals must be int, not '%s" %
-                                str(type(initval)))
 
-        initvals = new_initvals
+        if not nocheck_initvals:
+            new_initvals = []
+            for initval in initvals:
+                if isinstance(initval, int):
+                    new_initvals.append(
+                        vtypes.Int(initval, datawidth, base=16))
+                elif isinstance(initval, vtypes.Int) and isinstance(initval.value, int):
+                    v = copy.deepcopy(initval)
+                    v.width = datawidth
+                    v.base = base
+                    new_initvals.append(v)
+                elif isinstance(initval, vtypes.Int) and isinstance(initval.value, str):
+                    v = copy.deepcopy(initval)
+                    v.width = datawidth
+                    if v.base != 2 and v.base != 16:
+                        raise ValueError('base must be 2 or 16')
+                    base = v.base
+                    new_initvals.append(v)
+                else:
+                    raise TypeError("values of initvals must be int, not '%s" %
+                                    str(type(initval)))
+
+            initvals = new_initvals
 
         if 2 ** addrwidth > len(initvals):
             initvals.extend(
