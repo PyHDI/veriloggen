@@ -320,6 +320,48 @@ class Stream(object):
             length = int(math.ceil(bit_length / math.log(base, 2)))
             longest_var_len = max(longest_var_len, length)
 
+        for input_var in sorted(input_vars, key=lambda x: x.object_id):
+
+            base = (input_var.dump_base if hasattr(input_var, 'dump_base') else
+                    self.dump_base)
+            base_char = ('b' if base == 2 else
+                         'o' if base == 8 else
+                         'd' if base == 10 and input_var.point == 0 else
+                         'f' if base == 10 and input_var.point > 0 else
+                         'x')
+            prefix = ('0b' if base == 2 else
+                      '0o' if base == 8 else
+                      '  ' if base == 10 else
+                      '0x')
+
+            fmt_list = [prefix, '%', '%d' % (longest_var_len + 1), base_char]
+
+            if input_var not in all_vars:
+                fmt_list.append(' (unused)')
+
+            input_var.dump_fmt = ''.join(fmt_list)
+
+        for output_var in sorted(output_vars, key=lambda x: x.object_id):
+
+            base = (output_var.dump_base if hasattr(output_var, 'dump_base') else
+                    self.dump_base)
+            base_char = ('b' if base == 2 else
+                         'o' if base == 8 else
+                         'd' if base == 10 and output_var.point == 0 else
+                         'f' if base == 10 and output_var.point > 0 else
+                         'x')
+            prefix = ('0b' if base == 2 else
+                      '0o' if base == 8 else
+                      '  ' if base == 10 else
+                      '0x')
+
+            fmt_list = [prefix, '%', '%d' % (longest_var_len + 1), base_char]
+
+            if output_var not in all_vars:
+                fmt_list.append(' (unused)')
+
+            output_var.dump_fmt = ''.join(fmt_list)
+
         for var in sorted(all_vars, key=lambda x: (-1, x.object_id)
                           if x.start_stage is None else
                           (x.start_stage, x.object_id)):
@@ -335,8 +377,9 @@ class Stream(object):
                       '0o' if base == 8 else
                       '  ' if base == 10 else
                       '0x')
-            var.dump_fmt = ''.join(
-                [prefix, '%', '%d' % (longest_var_len + 1), base_char])
+
+            fmt_list = [prefix, '%', '%d' % (longest_var_len + 1), base_char]
+            var.dump_fmt = ''.join(fmt_list)
 
         enables = []
         for input_var in sorted(input_vars, key=lambda x: x.object_id):
