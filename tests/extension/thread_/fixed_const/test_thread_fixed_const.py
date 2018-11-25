@@ -110,7 +110,7 @@ module blinkled
           end
         end
         th_blink_5: begin
-          _th_blink_next_val_1 <= _th_blink_next_val_1 + 256;
+          _th_blink_next_val_1 <= _th_blink_next_val_1 + 'sd128;
           th_blink <= th_blink_6;
         end
         th_blink_6: begin

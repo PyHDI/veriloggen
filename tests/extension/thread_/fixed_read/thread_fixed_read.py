@@ -28,7 +28,7 @@ def mkLed():
     def blink(times):
         led.value = 0
         for i in range(times):
-            led.value = count
+            led.value = count.int_part
             print("led = ", led)
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)

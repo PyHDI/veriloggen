@@ -86,7 +86,7 @@ def FixedConst(value, point=0, signed=True, raw=False):
     return obj
 
 
-def as_fixed(value, point, signed=True):
+def reinterpret_cast_to_fixed(value, point, signed=True):
     m = value._get_module()
     width = value.bit_length()
     v = FixedTmpWire(m, width=width, point=point, signed=signed)
@@ -225,11 +225,17 @@ def shift_left(value, size, signed=True):
     if isinstance(value, vtypes.Int):
         value = value.value
 
+    if isinstance(value, vtypes.Float):
+        value = value.value
+
     if isinstance(value, int) and isinstance(size, int):
         return value << size
 
     if isinstance(value, bool) and isinstance(size, int):
         return value << size
+
+    if isinstance(value, float) and isinstance(size, int):
+        return value * (2 ** size)
 
     return vtypes.Sll(value, size)
 
@@ -238,11 +244,17 @@ def shift_right(value, size, signed=True):
     if isinstance(value, vtypes.Int):
         value = value.value
 
+    if isinstance(value, vtypes.Float):
+        value = value.value
+
     if isinstance(value, int) and isinstance(size, int):
         return value >> size
 
     if isinstance(value, bool) and isinstance(size, int):
         return value >> size
+
+    if isinstance(value, float) and isinstance(size, int):
+        return value / (2 ** size)
 
     if signed:
         return vtypes.Sra(value, size)
@@ -600,7 +612,9 @@ class _FixedUminus(_FixedUnaryOperator, vtypes.Uminus):
 
 
 class _FixedConstant(_FixedBase):
-    pass
+
+    def __init__(self, orig_value=None):
+        self.orig_value = orig_value
 
 
 class _FixedInt(_FixedConstant, vtypes.Int):
@@ -609,6 +623,7 @@ class _FixedInt(_FixedConstant, vtypes.Int):
 
     def __init__(self, value, width=None, base=None, point=0, signed=True, raw=False):
         value = value if raw else to_fixed(value, point)
+        _FixedConstant.__init__(self, None)
         vtypes.Int.__init__(self, value, width, base, signed)
         self.point = point
 

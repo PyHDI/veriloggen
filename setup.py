@@ -5,7 +5,7 @@ import os
 
 
 def read(filename):
-    return open(os.path.join(os.path.dirname(__file__), filename)).read()
+    return open(os.path.join(os.path.dirname(__file__), filename), encoding='utf8').read()
 
 
 m = re.search(r'(\d+\.\d+\.\d+(-.+)?)',
@@ -23,7 +23,7 @@ setup(name='veriloggen',
       packages=find_packages(),
       package_data={'veriloggen.utils': ['VERSION'],
                     'veriloggen.simulation': ['*.cpp'], },
-      install_requires=['pyverilog>=1.1.2', 'ipgen>=1.0.0', 'Jinja2>=2.10'],
+      install_requires=['pyverilog>=1.1.3', 'ipgen>=1.0.1', 'Jinja2>=2.10'],
       extras_require={
           'graph': ['pygraphviz>=1.3.1'],
           'test': ['pytest>=3.2', 'pytest-pythonpath>=0.7'],

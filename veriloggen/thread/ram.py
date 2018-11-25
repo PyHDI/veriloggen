@@ -24,7 +24,7 @@ class RAM(_MutexFunction):
 
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=10, numports=1,
-                 initvals=None, nodataflow=False):
+                 initvals=None, nocheck_initvals=False, nodataflow=False):
 
         self.m = m
         self.name = name
@@ -42,7 +42,8 @@ class RAM(_MutexFunction):
             interface.wdata.no_write_check = True
 
         self.definition = mkRAMDefinition(
-            name, datawidth, addrwidth, numports, initvals)
+            name, datawidth, addrwidth, numports, initvals,
+            nocheck_initvals=nocheck_initvals)
 
         self.inst = self.m.Instance(self.definition, 'inst_' + name,
                                     ports=m.connect_ports(self.definition))
@@ -1067,10 +1068,16 @@ class RAM(_MutexFunction):
 class FixedRAM(RAM):
 
     def __init__(self, m, name, clk, rst,
-                 datawidth=32, addrwidth=10, numports=1, point=0):
+                 datawidth=32, addrwidth=10, numports=1, point=0,
+                 initvals=None, nocheck_initvals=False, noconvert_initvals=False,
+                 nodataflow=False):
+
+        if initvals is not None and not noconvert_initvals:
+            initvals = [fxd.to_fixed(initval, point) for initval in initvals]
 
         RAM.__init__(self, m, name, clk, rst,
-                     datawidth, addrwidth, numports)
+                     datawidth, addrwidth, numports,
+                     initvals, nocheck_initvals, nodataflow)
 
         self.point = point
 
@@ -1078,7 +1085,7 @@ class FixedRAM(RAM):
         raw_value = RAM.read(self, fsm, addr, port)
         if raw:
             return raw_value
-        return fxd.as_fixed(raw_value, self.point)
+        return fxd.reinterpret_cast_to_fixed(raw_value, self.point)
 
     def write(self, fsm, addr, wdata, port=0, cond=None, raw=False):
         if raw:
