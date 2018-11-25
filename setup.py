@@ -5,7 +5,7 @@ import os
 
 
 def read(filename):
-    return open(os.path.join(os.path.dirname(__file__), filename)).read()
+    return open(os.path.join(os.path.dirname(__file__), filename), encoding='utf8').read()
 
 
 m = re.search(r'(\d+\.\d+\.\d+(-.+)?)',
