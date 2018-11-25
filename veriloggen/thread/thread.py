@@ -33,8 +33,8 @@ def embed_thread(fsm, func, *args, **kwargs):
 class Thread(vtypes.VeriloggenNode):
     __intrinsics__ = ('run', 'join', 'done', 'reset', 'ret')
 
-    def __init__(self, m, name, clk, rst, targ, datawidth=32, tid=None,
-                 fsm_as_module=False):
+    def __init__(self, m, name, clk, rst, targ,
+                 datawidth=32, point=16, tid=None, fsm_as_module=False):
 
         self.m = m
         self.name = name
@@ -42,6 +42,7 @@ class Thread(vtypes.VeriloggenNode):
         self.rst = rst
         self.targ = targ
         self.datawidth = datawidth
+        self.point = point
         self.tid = tid
         self.fsm_as_module = fsm_as_module
 
@@ -224,7 +225,7 @@ class Thread(vtypes.VeriloggenNode):
                                            functions, self.intrinsic_functions,
                                            self.intrinsic_methods,
                                            self.start_frame,
-                                           datawidth=self.datawidth)
+                                           datawidth=self.datawidth, point=self.point)
 
         text = textwrap.dedent(inspect.getsource(self.targ))
         tree = ast.parse(text).body[0]

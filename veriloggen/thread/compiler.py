@@ -13,7 +13,7 @@ import veriloggen.types.fixed as fxd
 from veriloggen.optimizer import try_optimize as optimize
 from .scope import ScopeName, ScopeFrameList, ScopeFrame
 from .operator import getVeriloggenOp, getMethodName, applyMethod
-
+from .fixed import FixedConst
 
 numerical_types = vtypes.numerical_types
 
@@ -46,7 +46,7 @@ class CompileVisitor(ast.NodeVisitor):
                  functions, intrinsic_functions,
                  intrinsic_methods,
                  start_frame,
-                 datawidth=32):
+                 datawidth=32, point=16):
 
         self.m = m
         self.name = name
@@ -60,6 +60,7 @@ class CompileVisitor(ast.NodeVisitor):
 
         self.start_frame = start_frame
         self.datawidth = datawidth
+        self.point = point
 
         self.scope = ScopeFrameList()
         self.loop_info = OrderedDict()
@@ -137,8 +138,14 @@ class CompileVisitor(ast.NodeVisitor):
         if self.skip():
             return
         right = self.visit(node.value)
+        _type = self._variable_type(right)
         left_name = self.visit(node.target)
-        left = self.getVariable(left_name, store=True)
+        left = self.getVariable(left_name, store=True, _type=_type)
+
+        if (not isinstance(left, fxd._FixedBase) and
+                isinstance(right, fxd._FixedBase)):
+            raise TypeError("type mismatch of operator arguments: '%s' and '%s'" %
+                            (str(type(left)), str(type(right))))
 
         try:
             method = getMethodName(node.op)
@@ -147,7 +154,7 @@ class CompileVisitor(ast.NodeVisitor):
         except NotImplementedError:
             op = getVeriloggenOp(node.op)
             if op is None:
-                raise TypeError("Unsupported BinOp: %s" % str(node.op))
+                raise TypeError("unsupported BinOp: %s" % str(node.op))
             rslt = op(left, right)
 
         rslt = optimize(rslt)
@@ -731,7 +738,11 @@ class CompileVisitor(ast.NodeVisitor):
     def visit_Num(self, node):
         if isinstance(node.n, int):
             return vtypes.Int(node.n)
-        return vtypes.Constant(node.n)
+        if isinstance(node.n, float):
+            v = FixedConst(None, node.n, self.point)
+            v.orig_value = node.n
+            return v
+        return vtypes._Constant(node.n)
 
     def visit_Str(self, node):
         return vtypes.Str(node.s)
@@ -760,7 +771,7 @@ class CompileVisitor(ast.NodeVisitor):
         except NotImplementedError:
             op = getVeriloggenOp(node.op)
             if op is None:
-                raise TypeError("Unsupported BinOp: %s" % str(node.op))
+                raise TypeError("unsupported BinOp: %s" % str(node.op))
 
             rslt = values[0]
             for v in values[1:]:
@@ -777,6 +788,11 @@ class CompileVisitor(ast.NodeVisitor):
                 raise TypeError("Can not generate a corresponding node")
             return self._string_operation_plus(left, right)
 
+        if (not isinstance(left, fxd._FixedBase) and
+                isinstance(right, fxd._FixedBase)):
+            raise TypeError("type mismatch of operator arguments: '%s' and '%s'" %
+                            (str(type(left)), str(type(right))))
+
         try:
             method = getMethodName(node.op)
             rslt = applyMethod(left, method, right)
@@ -784,7 +800,7 @@ class CompileVisitor(ast.NodeVisitor):
         except NotImplementedError:
             op = getVeriloggenOp(node.op)
             if op is None:
-                raise TypeError("Unsupported BinOp: %s" % str(node.op))
+                raise TypeError("unsupported BinOp: %s" % str(node.op))
             rslt = op(left, right)
 
         return optimize(rslt)
@@ -803,11 +819,21 @@ class CompileVisitor(ast.NodeVisitor):
         rslts = []
         for i, (method, op) in enumerate(zip(methods, ops)):
             if i == 0:
+                if (not isinstance(left, fxd._FixedBase) and
+                        isinstance(comparators[i], fxd._FixedBase)):
+                    raise TypeError("type mismatch of operator arguments: '%s' and '%s'" %
+                                    (str(type(left)), str(type(comparators[i]))))
+
                 try:
                     rslts.append(applyMethod(left, method, comparators[i]))
                 except NotImplementedError:
                     rslts.append(op(left, comparators[i]))
             else:
+                if (not isinstance(comparators[i - 1], fxd._FixedBase) and
+                        isinstance(comparators[i], fxd._FixedBase)):
+                    raise TypeError("type mismatch of operator arguments: '%s' and '%s'" %
+                                    (str(type(comparators[i - 1])), str(type(comparators[i]))))
+
                 try:
                     rslts.append(
                         applyMethod(comparators[i - 1], method, comparators[i]))
@@ -923,7 +949,7 @@ class CompileVisitor(ast.NodeVisitor):
             return self._extslice(node)
         if isinstance(node.slice, ast.Index):
             return self._index(node)
-        raise TypeError("Unsupported slice type: %s" % str(node.slice))
+        raise TypeError("unsupported slice type: %s" % str(node.slice))
 
     def _slice(self, node):
         value = self.visit(node.value)
@@ -1073,10 +1099,14 @@ class CompileVisitor(ast.NodeVisitor):
         if var is None:
             cond = None
 
+        if not isinstance(var, fxd._FixedVariable) and isinstance(value, fxd._FixedBase):
+            raise ValueError("type mismatch of destination and source: '%s' and '%s'" %
+                             (str(type(var)), str(type(value))))
+
         if isinstance(var, fxd._FixedVariable) and isinstance(value, fxd._FixedBase):
             if var.point != value.point:
-                raise ValueError("Fixed point not match: %d <- %d" %
-                                 var.point, value.point)
+                raise ValueError("type mismatch of fixed point: %d != %d" %
+                                 (var.point, value.point))
 
         value = optimize(value)
         cond = optimize(cond) if cond is not None else None

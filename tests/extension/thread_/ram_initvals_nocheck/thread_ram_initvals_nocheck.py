@@ -9,28 +9,37 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
 
 from veriloggen import *
 import veriloggen.thread as vthread
-import veriloggen.types.fixed as fx
 
 
 def mkLed():
     m = Module('blinkled')
     clk = m.Input('CLK')
     rst = m.Input('RST')
-    led = m.Reg('LED', 8, initval=0)
 
-    count = fx.FixedReg(m, 'count', 8, point=3, initval=0)
-
-    seq = Seq(m, 'seq', clk, rst)
-    seq(
-        count.inc()
-    )
+    datawidth = 32
+    addrwidth = 10
+    numports = 1
+    initvals = [Cat(Int(0, width=16), Int(i, width=12), Int(0, width=4))
+                for i in range(2 ** addrwidth - 100)]
+    myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth,
+                        numports, initvals, nocheck_initvals=True)
 
     def blink(times):
-        led.value = 0
         for i in range(times):
-            next_val = count + 3
-            led.value = next_val.int_part
-            print("led = ", led)
+            rdata = myram.read(i)
+            print('rdata = %d' % rdata)
+
+            wdata = rdata + 1
+            myram.write(i, wdata)
+            print('wdata = %d' % wdata)
+
+        sum = 0
+        for i in range(times):
+            rdata = myram.read(i)
+            sum += rdata
+            print('rdata = %d' % rdata)
+
+        print('sum = %d' % sum)
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
     fsm = th.start(10)

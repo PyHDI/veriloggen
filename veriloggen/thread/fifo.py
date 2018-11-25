@@ -270,7 +270,7 @@ class FixedFIFO(FIFO):
         if raw:
             return raw_value
 
-        return fxd.as_fixed(raw_value, self.point)
+        return fxd.reinterpret_cast_to_fixed(raw_value, self.point)
 
     def try_enq(self, fsm, wdata, raw=False):
         if raw:
@@ -284,4 +284,4 @@ class FixedFIFO(FIFO):
         raw_data, raw_valid = FIFO.try_deq(self, fsm)
         if raw:
             return raw_data, raw_valid
-        return fxd.as_fixed(raw_data, self.point), raw_valid
+        return fxd.reinterpret_cast_to_fixed(raw_data, self.point), raw_valid
