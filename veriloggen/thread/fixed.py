@@ -45,10 +45,9 @@ def reinterpret_cast_to_fixed(fsm, value, point, signed=True):
     return fxd.reinterpret_cast_to_fixed(value, point, signed)
 
 
-def fixed_to_int(fsm, value, point, signed=True):
+def fixed_to_int(fsm, value, point):
     point = vtypes.raw_value(point)
-    signed = vtypes.raw_value(signed)
-    return fxd.fixed_to_int(value, point, signed)
+    return fxd.fixed_to_int(value, point)
 
 
 def fixed_to_real(fsm, value, point, signed=True):
