@@ -126,11 +126,11 @@ def fixed_to_int(value, point):
 
     if isinstance(value, (int, bool, float)) and isinstance(point, int):
         mag = 2 ** point
-        return int(value / mag)
+        return value // mag
 
     if isinstance(value, (int, bool, float)):
         mag = vtypes.Int(2) ** point
-        return vtypes.Int(value) / mag
+        return vtypes.Int(value) // mag
 
     signed = vtypes.get_signed(value)
     return shift_right(value, point, signed)
