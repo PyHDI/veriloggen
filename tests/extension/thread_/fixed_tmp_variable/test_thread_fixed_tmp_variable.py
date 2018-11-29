@@ -58,7 +58,7 @@ module blinkled
   localparam th_blink_init = 0;
   reg signed [32-1:0] _th_blink_times_0;
   reg signed [32-1:0] _th_blink_i_1;
-  reg signed [9-1:0] _th_blink_next_val_2;
+  reg signed [33-1:0] _th_blink_next_val_2;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -105,7 +105,7 @@ module blinkled
           end
         end
         th_blink_4: begin
-          _th_blink_next_val_2 <= count + 24;
+          _th_blink_next_val_2 <= count + 'sd24;
           th_blink <= th_blink_5;
         end
         th_blink_5: begin

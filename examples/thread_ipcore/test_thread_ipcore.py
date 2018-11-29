@@ -697,50 +697,50 @@ module blinkled
       if((_saxi_register_fsm == 2) && (saxi_wready && saxi_wvalid) && (_tmp_5 == 3)) begin
         _saxi_register_3 <= saxi_wdata;
       end 
-      if((_saxi_register_0 == 1) && (th_blink == 2) && (0 == 0)) begin
+      if((_saxi_register_0 == 1) && (th_blink == 2) && 1) begin
         _saxi_register_0 <= 0;
       end 
-      if((_saxi_register_0 == 1) && (th_blink == 2) && (0 == 1)) begin
+      if((_saxi_register_0 == 1) && (th_blink == 2) && 0) begin
         _saxi_register_1 <= 0;
       end 
-      if((_saxi_register_0 == 1) && (th_blink == 2) && (0 == 2)) begin
+      if((_saxi_register_0 == 1) && (th_blink == 2) && 0) begin
         _saxi_register_2 <= 0;
       end 
-      if((_saxi_register_0 == 1) && (th_blink == 2) && (0 == 3)) begin
+      if((_saxi_register_0 == 1) && (th_blink == 2) && 0) begin
         _saxi_register_3 <= 0;
       end 
-      if((th_blink == 3) && (3 == 0)) begin
+      if((th_blink == 3) && 0) begin
         _saxi_register_0 <= 0;
         _saxi_flag_0 <= 0;
       end 
-      if((th_blink == 3) && (3 == 1)) begin
+      if((th_blink == 3) && 0) begin
         _saxi_register_1 <= 0;
         _saxi_flag_1 <= 0;
       end 
-      if((th_blink == 3) && (3 == 2)) begin
+      if((th_blink == 3) && 0) begin
         _saxi_register_2 <= 0;
         _saxi_flag_2 <= 0;
       end 
-      if((th_blink == 3) && (3 == 3)) begin
+      if((th_blink == 3) && 1) begin
         _saxi_register_3 <= 0;
         _saxi_flag_3 <= 0;
       end 
-      if((th_blink == 11) && (3 == 0)) begin
+      if((th_blink == 11) && 0) begin
         _saxi_register_0 <= 1;
         _saxi_flag_0 <= 1;
         _saxi_resetval_0 <= 0;
       end 
-      if((th_blink == 11) && (3 == 1)) begin
+      if((th_blink == 11) && 0) begin
         _saxi_register_1 <= 1;
         _saxi_flag_1 <= 1;
         _saxi_resetval_1 <= 0;
       end 
-      if((th_blink == 11) && (3 == 2)) begin
+      if((th_blink == 11) && 0) begin
         _saxi_register_2 <= 1;
         _saxi_flag_2 <= 1;
         _saxi_resetval_2 <= 0;
       end 
-      if((th_blink == 11) && (3 == 3)) begin
+      if((th_blink == 11) && 1) begin
         _saxi_register_3 <= 1;
         _saxi_flag_3 <= 1;
         _saxi_resetval_3 <= 0;
