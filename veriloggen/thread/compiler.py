@@ -98,7 +98,7 @@ class CompileVisitor(ast.NodeVisitor):
     def _variable_type(self, right):
         if isinstance(right, fxd._FixedBase):
             ret = {'type': 'fixed',
-                   'width': right.bit_length(),
+                   'width': max(right.bit_length(), self.datawidth),
                    'point': right.point,
                    'signed': right.signed}
             return ret
@@ -737,7 +737,8 @@ class CompileVisitor(ast.NodeVisitor):
 
     def visit_Num(self, node):
         if isinstance(node.n, int):
-            return vtypes.Int(node.n)
+            # return vtypes.Int(node.n)
+            return node.n
         if isinstance(node.n, float):
             v = FixedConst(None, node.n, self.point)
             v.orig_value = node.n

@@ -1537,66 +1537,66 @@ module blinkled
       if((_saxi_register_fsm == 2) && (saxi_wready && saxi_wvalid) && (_tmp_5 == 7)) begin
         _saxi_register_7 <= saxi_wdata;
       end 
-      if((_saxi_register_0 == 1) && (th_memcpy == 2) && (0 == 0)) begin
+      if((_saxi_register_0 == 1) && (th_memcpy == 2) && 1) begin
         _saxi_register_0 <= 0;
       end 
-      if((_saxi_register_0 == 1) && (th_memcpy == 2) && (0 == 1)) begin
+      if((_saxi_register_0 == 1) && (th_memcpy == 2) && 0) begin
         _saxi_register_1 <= 0;
       end 
-      if((_saxi_register_0 == 1) && (th_memcpy == 2) && (0 == 2)) begin
+      if((_saxi_register_0 == 1) && (th_memcpy == 2) && 0) begin
         _saxi_register_2 <= 0;
       end 
-      if((_saxi_register_0 == 1) && (th_memcpy == 2) && (0 == 3)) begin
+      if((_saxi_register_0 == 1) && (th_memcpy == 2) && 0) begin
         _saxi_register_3 <= 0;
       end 
-      if((_saxi_register_0 == 1) && (th_memcpy == 2) && (0 == 4)) begin
+      if((_saxi_register_0 == 1) && (th_memcpy == 2) && 0) begin
         _saxi_register_4 <= 0;
       end 
-      if((_saxi_register_0 == 1) && (th_memcpy == 2) && (0 == 5)) begin
+      if((_saxi_register_0 == 1) && (th_memcpy == 2) && 0) begin
         _saxi_register_5 <= 0;
       end 
-      if((_saxi_register_0 == 1) && (th_memcpy == 2) && (0 == 6)) begin
+      if((_saxi_register_0 == 1) && (th_memcpy == 2) && 0) begin
         _saxi_register_6 <= 0;
       end 
-      if((_saxi_register_0 == 1) && (th_memcpy == 2) && (0 == 7)) begin
+      if((_saxi_register_0 == 1) && (th_memcpy == 2) && 0) begin
         _saxi_register_7 <= 0;
       end 
-      if((th_memcpy == 28) && (4 == 0)) begin
+      if((th_memcpy == 28) && 0) begin
         _saxi_register_0 <= 1;
         _saxi_flag_0 <= 1;
         _saxi_resetval_0 <= 0;
       end 
-      if((th_memcpy == 28) && (4 == 1)) begin
+      if((th_memcpy == 28) && 0) begin
         _saxi_register_1 <= 1;
         _saxi_flag_1 <= 1;
         _saxi_resetval_1 <= 0;
       end 
-      if((th_memcpy == 28) && (4 == 2)) begin
+      if((th_memcpy == 28) && 0) begin
         _saxi_register_2 <= 1;
         _saxi_flag_2 <= 1;
         _saxi_resetval_2 <= 0;
       end 
-      if((th_memcpy == 28) && (4 == 3)) begin
+      if((th_memcpy == 28) && 0) begin
         _saxi_register_3 <= 1;
         _saxi_flag_3 <= 1;
         _saxi_resetval_3 <= 0;
       end 
-      if((th_memcpy == 28) && (4 == 4)) begin
+      if((th_memcpy == 28) && 1) begin
         _saxi_register_4 <= 1;
         _saxi_flag_4 <= 1;
         _saxi_resetval_4 <= 0;
       end 
-      if((th_memcpy == 28) && (4 == 5)) begin
+      if((th_memcpy == 28) && 0) begin
         _saxi_register_5 <= 1;
         _saxi_flag_5 <= 1;
         _saxi_resetval_5 <= 0;
       end 
-      if((th_memcpy == 28) && (4 == 6)) begin
+      if((th_memcpy == 28) && 0) begin
         _saxi_register_6 <= 1;
         _saxi_flag_6 <= 1;
         _saxi_resetval_6 <= 0;
       end 
-      if((th_memcpy == 28) && (4 == 7)) begin
+      if((th_memcpy == 28) && 0) begin
         _saxi_register_7 <= 1;
         _saxi_flag_7 <= 1;
         _saxi_resetval_7 <= 0;
