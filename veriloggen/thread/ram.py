@@ -24,7 +24,8 @@ class RAM(_MutexFunction):
 
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=10, numports=1,
-                 initvals=None, nocheck_initvals=False, nodataflow=False):
+                 initvals=None, nocheck_initvals=False,
+                 ram_style=None, nodataflow=False):
 
         self.m = m
         self.name = name
@@ -43,7 +44,8 @@ class RAM(_MutexFunction):
 
         self.definition = mkRAMDefinition(
             name, datawidth, addrwidth, numports, initvals,
-            nocheck_initvals=nocheck_initvals)
+            nocheck_initvals=nocheck_initvals,
+            ram_style=ram_style)
 
         self.inst = self.m.Instance(self.definition, 'inst_' + name,
                                     ports=m.connect_ports(self.definition))
@@ -1070,14 +1072,14 @@ class FixedRAM(RAM):
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=10, numports=1, point=0,
                  initvals=None, nocheck_initvals=False, noconvert_initvals=False,
-                 nodataflow=False):
+                 ram_style=None, nodataflow=False):
 
         if initvals is not None and not noconvert_initvals:
             initvals = [fxd.to_fixed(initval, point) for initval in initvals]
 
         RAM.__init__(self, m, name, clk, rst,
                      datawidth, addrwidth, numports,
-                     initvals, nocheck_initvals, nodataflow)
+                     initvals, nocheck_initvals, ram_style, nodataflow)
 
         self.point = point
 
@@ -1118,7 +1120,8 @@ class MultibankRAM(object):
         'dma_write_block', 'dma_write_block_async') + _MutexFunction.__intrinsics__
 
     def __init__(self, m, name, clk, rst,
-                 datawidth=32, addrwidth=10, numports=1, numbanks=2):
+                 datawidth=32, addrwidth=10, numports=1, numbanks=2,
+                 ram_style=None):
 
         if numbanks < 2:
             raise ValueError('numbanks must be 2 or more')
@@ -1134,7 +1137,8 @@ class MultibankRAM(object):
         self.numbanks = numbanks
         self.shift = util.log2(self.numbanks)
         self.rams = [RAM(m, '_'.join([name, '%d' % i]),
-                         clk, rst, datawidth, addrwidth, numports)
+                         clk, rst, datawidth, addrwidth, numports,
+                         ram_style=ram_style)
                      for i in range(numbanks)]
         self.keep_hierarchy = False
         self.seq = None
