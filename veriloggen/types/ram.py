@@ -9,7 +9,7 @@ from . import util
 
 def mkRAMDefinition(name, datawidth=32, addrwidth=10, numports=2,
                     initvals=None, sync=True, with_enable=False,
-                    nocheck_initvals=False):
+                    nocheck_initvals=False, ram_style=None):
     m = Module(name)
     clk = m.Input('CLK')
 
@@ -22,6 +22,9 @@ def mkRAMDefinition(name, datawidth=32, addrwidth=10, numports=2,
             interface.delay_addr = m.Reg(name + '_%d_daddr' % i, addrwidth)
 
         interfaces.append(interface)
+
+    if ram_style is not None:
+        m.EmbeddedCode(ram_style)
 
     mem = m.Reg('mem', datawidth, length=2**addrwidth)
 
