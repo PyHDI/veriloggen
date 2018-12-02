@@ -1120,7 +1120,8 @@ class MultibankRAM(object):
         'dma_write_block', 'dma_write_block_async') + _MutexFunction.__intrinsics__
 
     def __init__(self, m, name, clk, rst,
-                 datawidth=32, addrwidth=10, numports=1, numbanks=2):
+                 datawidth=32, addrwidth=10, numports=1, numbanks=2,
+                 ram_style=None):
 
         if numbanks < 2:
             raise ValueError('numbanks must be 2 or more')
@@ -1136,7 +1137,8 @@ class MultibankRAM(object):
         self.numbanks = numbanks
         self.shift = util.log2(self.numbanks)
         self.rams = [RAM(m, '_'.join([name, '%d' % i]),
-                         clk, rst, datawidth, addrwidth, numports)
+                         clk, rst, datawidth, addrwidth, numports,
+                         ram_style=ram_style)
                      for i in range(numbanks)]
         self.keep_hierarchy = False
         self.seq = None
