@@ -283,6 +283,9 @@ class VeriloggenNode(object):
     def __invert__(self):
         raise TypeError('Not allowed operation.')
 
+    def __abs__(self):
+        raise TypeError('Not allowed operation.')
+
     def __getitem__(self, r):
         raise TypeError('Not allowed operation.')
 
@@ -360,6 +363,9 @@ class _Numeric(VeriloggenNode):
 
     def __invert__(self):
         return Unot(self)
+
+    def __abs__(self):
+        return Abs(self)
 
     def __getitem__(self, r):
         if isinstance(r, slice):
@@ -1743,6 +1749,24 @@ def Mux(condition, true_value, false_value):
     if isinstance(condition, (bool, int, float, str, list, tuple)):
         return true_value if condition else false_value
     return Cond(condition, true_value, false_value)
+
+
+def Complement2(var):
+    if isinstance(var, (int, bool, float)):
+        return abs(var)
+
+    return Ulnot(var) + Int(1)
+
+
+def Abs(var):
+    return Mux(Sign(var), Complement2(var), var)
+
+
+def Sign(var):
+    if isinstance(var, (int, bool, float)):
+        return var < 0
+
+    return var < Int(0, signed=True)
 
 
 class Sensitive(VeriloggenNode):
