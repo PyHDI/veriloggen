@@ -1755,7 +1755,7 @@ def Complement2(var):
     if isinstance(var, (int, bool, float)):
         return abs(var)
 
-    return Ulnot(var) + Int(1)
+    return Unot(var) + Int(1)
 
 
 def Abs(var):
