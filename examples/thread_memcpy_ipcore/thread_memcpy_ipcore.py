@@ -14,10 +14,9 @@ import veriloggen.types.ipcore as ipcore
 
 
 def mkMemcpy():
-    m = Module('blinkled')
+    m = Module('memcpy')
     clk = m.Input('CLK')
     rst = m.Input('RST')
-    led = m.OutputReg('led', 8, initval=0)
 
     datawidth = 32
     addrwidth = 10

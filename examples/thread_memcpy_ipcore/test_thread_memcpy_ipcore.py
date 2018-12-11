@@ -8,7 +8,6 @@ module test;
 
   reg uut_CLK;
   reg uut_RST;
-  wire [8-1:0] uut_led;
   wire [32-1:0] uut_maxi_awaddr;
   wire [8-1:0] uut_maxi_awlen;
   wire uut_maxi_awvalid;
@@ -40,12 +39,11 @@ module test;
   wire uut_saxi_rvalid;
   reg uut_saxi_rready;
 
-  blinkled
+  memcpy
   uut
   (
     .CLK(uut_CLK),
     .RST(uut_RST),
-    .led(uut_led),
     .maxi_awaddr(uut_maxi_awaddr),
     .maxi_awlen(uut_maxi_awlen),
     .maxi_awvalid(uut_maxi_awvalid),
@@ -978,11 +976,10 @@ endmodule
 
 
 
-module blinkled
+module memcpy
 (
   input CLK,
   input RST,
-  output reg [8-1:0] led,
   output reg [32-1:0] maxi_awaddr,
   output reg [8-1:0] maxi_awlen,
   output reg maxi_awvalid,
