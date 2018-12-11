@@ -346,6 +346,9 @@ class _Numeric(_Node):
     def __pos__(self):
         return Uplus(self)
 
+    def __abs__(self):
+        return Abs(self)
+
     def __getitem__(self, r):
         if isinstance(r, slice):
             size = self.bit_length()
@@ -1134,7 +1137,12 @@ class Ulnot(_UnaryLogicalOperator):
 class Unot(_UnaryLogicalOperator):
 
     def eval(self):
-        return ~ self.right.eval()
+        right = self.right.eval()
+        try:
+            v = ~right
+        except:
+            v = Ulnot(right)
+        return v
 
 
 class Uand(_UnaryLogicalOperator):
@@ -1321,6 +1329,9 @@ class Cast(_UnaryOperator):
         self.sig_data = data
 
         m.Assign(data(rdata))
+
+    def eval(self):
+        return self
 
 
 class _SpecialOperator(_Operator):
@@ -1666,6 +1677,81 @@ class LUT(_SpecialOperator):
                  ('enable', senable), ('val', data)]
 
         m.Instance(inst, self.name('lut'), ports=ports)
+
+
+class Complement2(_SpecialOperator):
+
+    def __init__(self, var):
+        _SpecialOperator.__init__(self, var)
+        self.op = vtypes.Complement2
+
+    def _set_attributes(self):
+        self.width = self.var.bit_length()
+        self.point = self.var.get_point()
+        self.signed = self.var.get_signed()
+
+    @property
+    def var(self):
+        return self.args[0]
+
+    @var.setter
+    def var(self, var):
+        self.args[0] = var
+
+    def eval(self):
+        var = self.var.eval()
+        ret = Complement2(var)
+        return ret
+
+
+class Abs(_SpecialOperator):
+
+    def __init__(self, var):
+        _SpecialOperator.__init__(self, var)
+        self.op = vtypes.Abs
+
+    def _set_attributes(self):
+        self.width = self.var.bit_length()
+        self.point = self.var.get_point()
+        self.signed = self.var.get_signed()
+
+    @property
+    def var(self):
+        return self.args[0]
+
+    @var.setter
+    def var(self, var):
+        self.args[0] = var
+
+    def eval(self):
+        var = self.var.eval()
+        ret = abs(var)
+        return ret
+
+
+class Sign(_SpecialOperator):
+
+    def __init__(self, var):
+        _SpecialOperator.__init__(self, var)
+        self.op = vtypes.Sign
+
+    def _set_attributes(self):
+        self.width = self.var.bit_length()
+        self.point = self.var.get_point()
+        self.signed = self.var.get_signed()
+
+    @property
+    def var(self):
+        return self.args[0]
+
+    @var.setter
+    def var(self, var):
+        self.args[0] = var
+
+    def eval(self):
+        var = self.var.eval()
+        ret = Sign(var)
+        return ret
 
 
 class _Delay(_UnaryOperator):
