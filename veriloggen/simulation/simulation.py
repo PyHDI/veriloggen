@@ -160,47 +160,37 @@ def run_iverilog(objs, display=False, top=None, outputfile=None,
     cmd.append(outputfile)
 
     # encoding: 'utf-8' ?
-    encode = sys.getdefaultencoding()
+    encoding = sys.getdefaultencoding()
 
     code = _to_code(objs)
-    tmp = tempfile.NamedTemporaryFile()
-    tmp.write(code.encode(encode))
+
+    if os.name == 'nt':
+        fd, path = tempfile.mkstemp()
+        os.close(fd)
+        tmp = open(path, 'w+b')
+    else:
+        tmp = tempfile.NamedTemporaryFile()
+
+    tmp.write(code.encode(encoding))
     tmp.read()
     filename = tmp.name
 
     cmd.append(filename)
 
     # synthesis
-    p = subprocess.Popen(' '.join(cmd), shell=True, stdout=subprocess.PIPE)
-    syn_rslt = []
-    while True:
-        stdout_data = p.stdout.readline()
-        syn_rslt.append(stdout_data.decode(encode))
-        if display:
-            print(stdout_data, end='')
-        if not stdout_data:
-            break
-    p.wait()
-    p.stdout.close()
-    syn_rslt = ''.join(syn_rslt)
+    syn_rslt = _exec(' '.join(cmd), encoding, display)
 
     # simulation
-    p = subprocess.Popen('./' + outputfile, shell=True,
-                         stdout=subprocess.PIPE)
-    sim_rslt = []
-    while True:
-        stdout_data = p.stdout.readline()
-        sim_rslt.append(stdout_data.decode(encode))
-        if display:
-            print(stdout_data, end='')
-        if not stdout_data:
-            break
-    p.wait()
-    p.stdout.close()
-    sim_rslt = ''.join(sim_rslt)
+    cmd = []
+    cmd.append('vvp')
+    cmd.append(outputfile)
+    sim_rslt = _exec(' '.join(cmd), encoding, display)
 
     # close temporal source code file
     tmp.close()
+
+    if os.name == 'nt':
+        os.remove(path)
 
     return ''.join([syn_rslt, sim_rslt])
 
@@ -255,47 +245,41 @@ def run_vcs(objs, display=False, top=None, outputfile=None,
     cmd.append(outputfile)
 
     # encoding: 'utf-8' ?
-    encode = sys.getdefaultencoding()
+    encoding = sys.getdefaultencoding()
 
     code = _to_code(objs)
-    tmp = tempfile.NamedTemporaryFile()
-    tmp.write(code.encode(encode))
+
+    if os.name == 'nt':
+        fd, path = tempfile.mkstemp()
+        os.close(fd)
+        tmp = open(path, 'w+b')
+    else:
+        tmp = tempfile.NamedTemporaryFile()
+
+    tmp.write(code.encode(encoding))
     tmp.read()
     filename = tmp.name
 
     cmd.append(filename)
 
     # synthesis
-    p = subprocess.Popen(' '.join(cmd), shell=True, stdout=subprocess.PIPE)
-    syn_rslt = []
-    while True:
-        stdout_data = p.stdout.readline()
-        syn_rslt.append(stdout_data.decode(encode))
-        if display:
-            print(stdout_data, end='')
-        if not stdout_data:
-            break
-    p.wait()
-    p.stdout.close()
-    syn_rslt = ''.join(syn_rslt)
+    syn_rslt = _exec(' '.join(cmd), encoding, display)
 
     # simulation
-    p = subprocess.Popen('./' + outputfile, shell=True,
-                         stdout=subprocess.PIPE)
-    sim_rslt = []
-    while True:
-        stdout_data = p.stdout.readline()
-        sim_rslt.append(stdout_data.decode(encode))
-        if display:
-            print(stdout_data, end='')
-        if not stdout_data:
-            break
-    p.wait()
-    p.stdout.close()
-    sim_rslt = ''.join(sim_rslt)
+    cmd = []
+
+    if os.name == 'nt':
+        cmd.append(outputfile)
+    else:
+        cmd.append('./' + outputfile)
+
+    sim_rslt = _exec(' '.join(cmd), encoding, display)
 
     # close temporal source code file
     tmp.close()
+
+    if os.name == 'nt':
+        os.remove(path)
 
     return ''.join([syn_rslt, sim_rslt])
 
@@ -339,47 +323,38 @@ def run_modelsim(objs, display=False, top=None, outputfile=None,
             cmd.append(l)
 
     # encoding: 'utf-8' ?
-    encode = sys.getdefaultencoding()
+    encoding = sys.getdefaultencoding()
 
     code = _to_code(objs)
-    tmp = tempfile.NamedTemporaryFile()
-    tmp.write(code.encode(encode))
+
+    if os.name == 'nt':
+        fd, path = tempfile.mkstemp()
+        os.close(fd)
+        tmp = open(path, 'w+b')
+    else:
+        tmp = tempfile.NamedTemporaryFile()
+
+    tmp.write(code.encode(encoding))
     tmp.read()
     filename = tmp.name
 
     cmd.append(filename)
 
     # synthesis
-    p = subprocess.Popen(' '.join(cmd), shell=True, stdout=subprocess.PIPE)
-    syn_rslt = []
-    while True:
-        stdout_data = p.stdout.readline()
-        syn_rslt.append(stdout_data.decode(encode))
-        if display:
-            print(stdout_data, end='')
-        if not stdout_data:
-            break
-    p.wait()
-    p.stdout.close()
-    syn_rslt = ''.join(syn_rslt)
+    syn_rslt = _exec(' '.join(cmd), encoding, display)
 
     # simulation
-    p = subprocess.Popen(
-        'vsim -c ' + top + ' -do \"run -all\"', shell=True, stdout=subprocess.PIPE)
-    sim_rslt = []
-    while True:
-        stdout_data = p.stdout.readline()
-        sim_rslt.append(stdout_data.decode(encode))
-        if display:
-            print(stdout_data, end='')
-        if not stdout_data:
-            break
-    p.wait()
-    p.stdout.close()
-    sim_rslt = ''.join(sim_rslt)
+    cmd = []
+    cmd.append('vsim -c')
+    cmd.append(top)
+    cmd.append('-do \"run -all\"')
+    sim_rslt = _exec(' '.join(cmd), encoding, display)
 
     # close temporal source code file
     tmp.close()
+
+    if os.name == 'nt':
+        os.remove(path)
 
     return ''.join([syn_rslt, sim_rslt])
 
@@ -579,53 +554,25 @@ def run_verilator(objs, display=False, top=None, outputfile=None,
     #    cmd.append(clk.name)
 
     # encoding: 'utf-8' ?
-    encode = sys.getdefaultencoding()
+    encoding = sys.getdefaultencoding()
 
     # synthesis
-    p = subprocess.Popen(' '.join(cmd), shell=True, stdout=subprocess.PIPE)
-    syn_rslt = []
-    while True:
-        stdout_data = p.stdout.readline()
-        syn_rslt.append(stdout_data.decode(encode))
-        if display:
-            print(stdout_data, end='')
-        if not stdout_data:
-            break
-    p.wait()
-    p.stdout.close()
-    syn_rslt = ''.join(syn_rslt)
+    syn_rslt = _exec(' '.join(cmd), encoding, display)
 
     # make
     make = ['make -C', outputfile, '-j -f',
             'V' + verilog_prefix + '.mk', 'V' + verilog_prefix]
-
-    p = subprocess.Popen(' '.join(make), shell=True, stdout=subprocess.PIPE)
-    make_rslt = []
-    while True:
-        stdout_data = p.stdout.readline()
-        make_rslt.append(stdout_data.decode(encode))
-        if display:
-            print(stdout_data, end='')
-        if not stdout_data:
-            break
-    p.wait()
-    p.stdout.close()
-    make_rslt = ''.join(make_rslt)
+    make_rslt = _exec(' '.join(make), encoding, display)
 
     # simulation
-    p = subprocess.Popen('./' + outputfile + '/' + 'V' + verilog_prefix, shell=True,
-                         stdout=subprocess.PIPE)
-    sim_rslt = []
-    while True:
-        stdout_data = p.stdout.readline()
-        sim_rslt.append(stdout_data.decode(encode))
-        if display:
-            print(stdout_data, end='')
-        if not stdout_data:
-            break
-    p.wait()
-    p.stdout.close()
-    sim_rslt = ''.join(sim_rslt)
+    cmd = []
+
+    if os.name == 'nt':
+        cmd.append(outputfile + '/' + 'V' + verilog_prefix)
+    else:
+        cmd.append('./' + outputfile + '/' + 'V' + verilog_prefix)
+
+    sim_rslt = _exec(' '.join(cmd), encoding, display)
 
     # return ''.join([syn_rslt, make_rslt, sim_rslt])
     return sim_rslt
@@ -725,3 +672,27 @@ class Simulator(object):
 
         raise NotImplementedError(
             "not supported waveform viewer: '%s'" % self.wave)
+
+
+def _exec(cmd, encoding, display=False):
+    if display:
+        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+        rslt = []
+
+        while True:
+            stdout_data = p.stdout.readline()
+            out = stdout_data.decode(encoding)
+            rslt.append(out)
+            print(out, end='')
+            if not stdout_data:
+                break
+
+        p.wait()
+        p.stdout.close()
+        rslt = ''.join(rslt)
+
+    else:
+        b = subprocess.check_output(cmd, shell=True)
+        rslt = b.decode(encoding)
+
+    return rslt
