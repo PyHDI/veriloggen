@@ -24,13 +24,14 @@ class AXIM(AxiMaster, _MutexFunction):
                       'dma_read', 'dma_read_async',
                       'dma_write', 'dma_write_async',
                       'dma_wait_read', 'dma_wait_write',
-                      'dma_wait') + _MutexFunction.__intrinsics__
+                      'dma_wait_read', 'dma_wait_write', 'dma_wait',
+                      'set_global_base_addr',) + _MutexFunction.__intrinsics__
 
     burstlen = 256
 
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=32, lite=False, noio=False,
-                 enable_async=False,
+                 enable_async=False, use_global_base_addr=False,
                  num_cmd_delay=0, num_data_delay=0,
                  op_sel_width=8, fsm_as_module=False):
 
@@ -38,6 +39,7 @@ class AXIM(AxiMaster, _MutexFunction):
                            datawidth, addrwidth, lite=lite, noio=noio)
 
         self.enable_async = enable_async
+        self.use_global_base_addr = use_global_base_addr
         self.num_cmd_delay = num_cmd_delay
         self.num_data_delay = num_data_delay
         self.op_sel_width = op_sel_width
@@ -101,6 +103,12 @@ class AXIM(AxiMaster, _MutexFunction):
         self.seq(
             self.write_start(0)
         )
+
+        if self.use_global_base_addr:
+            self.global_base_addr = self.m.Reg('_'.join(['', self.name, 'global_base_addr']),
+                                               self.addrwidth, initval=0)
+        else:
+            self.global_base_addr = None
 
         self.write_op_id_map = OrderedDict()
         self.write_op_id_count = 1
@@ -218,6 +226,16 @@ class AXIM(AxiMaster, _MutexFunction):
     def dma_wait(self, fsm):
 
         fsm.If(self.read_idle, self.write_idle).goto_next()
+
+    def set_global_base_addr(self, fsm, addr):
+
+        if not self.use_global_base_addr:
+            raise ValueError("global_base_addr is disabled.")
+
+        flag = self._set_flag(fsm)
+        self.seq.If(flag)(
+            self.global_base_addr(addr)
+        )
 
     # --------------------
     # read
@@ -418,8 +436,13 @@ class AXIM(AxiMaster, _MutexFunction):
         ram_method(port, self.read_local_addr, w, self.read_size,
                    stride=self.read_local_stride, cond=cond)
 
+        if not self.use_global_base_addr:
+            gaddr = self.read_global_addr
+        else:
+            gaddr = self.read_global_addr + self.global_base_addr
+
         fsm.If(self.read_start)(
-            cur_global_addr(self.mask_addr(self.read_global_addr)),
+            cur_global_addr(self.mask_addr(gaddr)),
             rest_size(self.read_size)
         )
         fsm.If(cond).goto_next()
@@ -551,8 +574,13 @@ class AXIM(AxiMaster, _MutexFunction):
         ram_method(port, self.read_local_addr, w, self.read_size,
                    stride=self.read_local_stride, cond=cond)
 
+        if not self.use_global_base_addr:
+            gaddr = self.read_global_addr
+        else:
+            gaddr = self.read_global_addr + self.global_base_addr
+
         fsm.If(self.read_start)(
-            cur_global_addr(self.mask_addr(self.read_global_addr)),
+            cur_global_addr(self.mask_addr(gaddr)),
             rest_size(dma_size)
         )
         fsm.If(cond).goto_next()
@@ -700,8 +728,13 @@ class AXIM(AxiMaster, _MutexFunction):
         ram_method(port, self.read_local_addr, w, actual_read_size,
                    stride=self.read_local_stride, cond=cond)
 
+        if not self.use_global_base_addr:
+            gaddr = self.read_global_addr
+        else:
+            gaddr = self.read_global_addr + self.global_base_addr
+
         fsm.If(self.read_start)(
-            cur_global_addr(self.mask_addr(self.read_global_addr)),
+            cur_global_addr(self.mask_addr(gaddr)),
             rest_size(dma_size)
         )
         fsm.If(cond).goto_next()
@@ -979,8 +1012,13 @@ class AXIM(AxiMaster, _MutexFunction):
                 data = self.df._Delay(data)
                 last = self.df._Delay(last)
 
+        if not self.use_global_base_addr:
+            gaddr = self.write_global_addr
+        else:
+            gaddr = self.write_global_addr + self.global_base_addr
+
         fsm.If(self.write_start)(
-            cur_global_addr(self.mask_addr(self.write_global_addr)),
+            cur_global_addr(self.mask_addr(gaddr)),
             rest_size(self.write_size)
         )
         fsm.If(cond).goto_next()
@@ -1118,8 +1156,13 @@ class AXIM(AxiMaster, _MutexFunction):
                 data = self.df._Delay(data)
                 last = self.df._Delay(last)
 
+        if not self.use_global_base_addr:
+            gaddr = self.write_global_addr
+        else:
+            gaddr = self.write_global_addr + self.global_base_addr
+
         fsm.If(self.write_start)(
-            cur_global_addr(self.mask_addr(self.write_global_addr)),
+            cur_global_addr(self.mask_addr(gaddr)),
             rest_size(dma_size)
         )
         fsm.If(cond).goto_next()
@@ -1298,8 +1341,13 @@ class AXIM(AxiMaster, _MutexFunction):
                 data = self.df._Delay(data)
                 last = self.df._Delay(last)
 
+        if not self.use_global_base_addr:
+            gaddr = self.write_global_addr
+        else:
+            gaddr = self.write_global_addr + self.global_base_addr
+
         fsm.If(self.write_start)(
-            cur_global_addr(self.mask_addr(self.write_global_addr)),
+            cur_global_addr(self.mask_addr(gaddr)),
             rest_size(dma_size)
         )
         fsm.If(cond).goto_next()
