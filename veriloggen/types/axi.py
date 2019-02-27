@@ -1215,7 +1215,7 @@ class AxiSlave(object):
         self.rdata.ruser.assign(user_value)
 
         # write response
-        self.seq.If(self.waddr.awvalid, self.waddr.awready)(
+        self.seq.If(self.waddr.awvalid, self.waddr.awready, vtypes.Not(self.wresp.bvalid))(
             self.wresp.bid(self.waddr.awid)
         )
         self.seq.If(self.raddr.arvalid, self.raddr.arready)(
@@ -1269,7 +1269,8 @@ class AxiSlave(object):
 
         ready = make_condition(cond)
 
-        write_ack = vtypes.Ands(self.waddr.awready, self.waddr.awvalid)
+        write_ack = vtypes.Ands(self.waddr.awready, self.waddr.awvalid,
+                                vtypes.Not(self.wresp.bvalid))
         read_ack = vtypes.Ands(self.raddr.arready, self.raddr.arvalid)
         addr = self.m.TmpReg(self.addrwidth, initval=0)
         writevalid = self.m.TmpReg(initval=0)
@@ -1285,8 +1286,10 @@ class AxiSlave(object):
         )
 
         writeval = (vtypes.Ands(vtypes.Not(writevalid), vtypes.Not(readvalid),
+                                vtypes.Not(self.wresp.bvalid),
                                 prev_awvalid) if ready is None else
                     vtypes.Ands(ready, vtypes.Not(writevalid), vtypes.Not(readvalid),
+                                vtypes.Not(self.wresp.bvalid),
                                 prev_awvalid))
         readval = (vtypes.Ands(vtypes.Not(readvalid), vtypes.Not(writevalid),
                                prev_arvalid) if ready is None else
@@ -1331,7 +1334,8 @@ class AxiSlave(object):
 
         ready = make_condition(cond)
 
-        ack = vtypes.Ands(self.waddr.awready, self.waddr.awvalid)
+        ack = vtypes.Ands(self.waddr.awready, self.waddr.awvalid,
+                          vtypes.Not(self.wresp.bvalid))
         addr = self.m.TmpReg(self.addrwidth, initval=0)
         valid = self.m.TmpReg(initval=0)
 
@@ -1340,8 +1344,12 @@ class AxiSlave(object):
             prev_awvalid(self.waddr.awvalid)
         )
 
-        val = (vtypes.Ands(vtypes.Not(valid), prev_awvalid) if ready is None else
-               vtypes.Ands(ready, vtypes.Not(valid), prev_awvalid))
+        val = (vtypes.Ands(vtypes.Not(valid),
+                           vtypes.Not(self.wresp.bvalid),
+                           prev_awvalid) if ready is None else
+               vtypes.Ands(ready, vtypes.Not(valid),
+                           vtypes.Not(self.wresp.bvalid),
+                           prev_awvalid))
 
         _connect_ready(self.waddr.awready._get_module(),
                        self.waddr.awready, val)
@@ -1769,7 +1777,8 @@ class AxiLiteSlave(AxiSlave):
 
         ready = make_condition(cond)
 
-        write_ack = vtypes.Ands(self.waddr.awready, self.waddr.awvalid)
+        write_ack = vtypes.Ands(self.waddr.awready, self.waddr.awvalid,
+                                vtypes.Not(self.wresp.bvalid))
         read_ack = vtypes.Ands(self.raddr.arready, self.raddr.arvalid)
         addr = self.m.TmpReg(self.addrwidth, initval=0)
         writevalid = self.m.TmpReg(initval=0)
@@ -1785,8 +1794,10 @@ class AxiLiteSlave(AxiSlave):
         )
 
         writeval = (vtypes.Ands(vtypes.Not(writevalid), vtypes.Not(readvalid),
+                                vtypes.Not(self.wresp.bvalid),
                                 prev_awvalid) if ready is None else
                     vtypes.Ands(ready, vtypes.Not(writevalid), vtypes.Not(readvalid),
+                                vtypes.Not(self.wresp.bvalid),
                                 prev_awvalid))
         readval = (vtypes.Ands(vtypes.Not(readvalid), vtypes.Not(writevalid),
                                prev_arvalid) if ready is None else
@@ -1821,7 +1832,8 @@ class AxiLiteSlave(AxiSlave):
 
         ready = make_condition(cond)
 
-        ack = vtypes.Ands(self.waddr.awready, self.waddr.awvalid)
+        ack = vtypes.Ands(self.waddr.awready, self.waddr.awvalid,
+                          vtypes.Not(self.wresp.bvalid))
         addr = self.m.TmpReg(self.addrwidth, initval=0)
         valid = self.m.TmpReg(initval=0)
 
@@ -1830,8 +1842,12 @@ class AxiLiteSlave(AxiSlave):
             prev_awvalid(self.waddr.awvalid)
         )
 
-        val = (vtypes.Ands(vtypes.Not(valid), prev_awvalid) if ready is None else
-               vtypes.Ands(ready, vtypes.Not(valid), prev_awvalid))
+        val = (vtypes.Ands(vtypes.Not(valid),
+                           vtypes.Not(self.wresp.bvalid),
+                           prev_awvalid) if ready is None else
+               vtypes.Ands(ready, vtypes.Not(valid),
+                           vtypes.Not(self.wresp.bvalid),
+                           prev_awvalid))
 
         _connect_ready(self.waddr.awready._get_module(),
                        self.waddr.awready, val)
@@ -2041,7 +2057,7 @@ class AxiMemoryModel(AxiSlave):
         self.fsm = FSM(self.m, '_'.join(['', self.name, 'fsm']), clk, rst)
 
         # write response
-        self.fsm.seq.If(self.waddr.awvalid, self.waddr.awready)(
+        self.fsm.seq.If(self.waddr.awvalid, self.waddr.awready, vtypes.Not(self.wresp.bvalid))(
             self.wresp.bid(self.waddr.awid)
         )
         self.fsm.seq.If(self.raddr.arvalid, self.raddr.arready)(
@@ -2120,7 +2136,7 @@ class AxiMemoryModel(AxiSlave):
         self.fsm._set_index(write_mode)
 
         # awvalid and awready
-        self.fsm.If(self.waddr.awvalid)(
+        self.fsm.If(self.waddr.awvalid, vtypes.Not(self.wresp.bvalid))(
             self.waddr.awready(1),
             write_addr(self.waddr.awaddr),
             write_count(self.waddr.awlen + 1)
