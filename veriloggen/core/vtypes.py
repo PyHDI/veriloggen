@@ -1712,7 +1712,7 @@ class Repeat(_SpecialOperator):
     @staticmethod
     def op(var, width, times):
         ret = 0
-        for i in times:
+        for i in range(times):
             ret = (ret << width) | var
         return ret
 
