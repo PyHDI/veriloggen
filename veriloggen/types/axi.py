@@ -87,11 +87,11 @@ class AxiWriteAddress(AxiInterfaceBase):
         AxiInterfaceBase.__init__(self, m, name, datawidth, addrwidth,
                                   id_width, user_width, itype, otype)
 
-        if id_width > 0:
+        if isinstance(id_width, int) and id_width == 0:
+            self.awid = None
+        else:
             self.awid = util.make_port(
                 m, self.otype, name + '_awid', self.id_width, initval=0)
-        else:
-            self.awid = None
 
         self.awaddr = util.make_port(
             m, self.otype, name + '_awaddr', self.addrwidth, initval=0)
@@ -110,11 +110,11 @@ class AxiWriteAddress(AxiInterfaceBase):
         self.awqos = util.make_port(
             m, self.otype, name + '_awqos', 4, initval=0, no_reg=True)
 
-        if user_width > 0:
+        if isinstance(user_width, int) and user_width == 0:
+            self.awuser = None
+        else:
             self.awuser = util.make_port(
                 m, self.otype, name + '_awuser', self.user_width, initval=0, no_reg=True)
-        else:
-            self.awuser = None
 
         self.awvalid = util.make_port(
             m, self.otype, name + '_awvalid', None, initval=0)
@@ -158,11 +158,11 @@ class AxiWriteData(AxiInterfaceBase):
         self.wlast = util.make_port(
             m, self.otype, name + '_wlast', None, initval=0)
 
-        if user_width > 0:
+        if isinstance(user_width, int) and user_width == 0:
+            self.wuser = None
+        else:
             self.wuser = util.make_port(
                 m, self.otype, name + '_wuser', self.user_width, initval=0, no_reg=True)
-        else:
-            self.wuser = None
 
         self.wvalid = util.make_port(
             m, self.otype, name + '_wvalid', None, initval=0)
@@ -197,20 +197,20 @@ class AxiWriteResponse(AxiInterfaceBase):
         AxiInterfaceBase.__init__(self, m, name, datawidth, addrwidth,
                                   id_width, user_width, itype, otype)
 
-        if id_width > 0:
+        if isinstance(id_width, int) and id_width == 0:
+            self.bid = None
+        else:
             self.bid = util.make_port(
                 m, self.itype, name + '_bid', self.id_width, initval=0)
-        else:
-            self.bid = None
 
         self.bresp = util.make_port(
             m, self.itype, name + '_bresp', 2, initval=0, no_reg=True)
 
-        if user_width > 0:
+        if isinstance(user_width, int) and user_width == 0:
+            self.buser = None
+        else:
             self.buser = util.make_port(
                 m, self.itype, name + '_buser', self.user_width, initval=0, no_reg=True)
-        else:
-            self.buser = None
 
         self.bvalid = util.make_port(
             m, self.itype, name + '_bvalid', None, initval=0)
@@ -243,11 +243,11 @@ class AxiReadAddress(AxiInterfaceBase):
         AxiInterfaceBase.__init__(self, m, name, datawidth, addrwidth,
                                   id_width, user_width, itype, otype)
 
-        if id_width > 0:
+        if isinstance(id_width, int) and id_width == 0:
+            self.arid = None
+        else:
             self.arid = util.make_port(
                 m, self.otype, name + '_arid', self.id_width, initval=0)
-        else:
-            self.arid = None
 
         self.araddr = util.make_port(
             m, self.otype, name + '_araddr', self.addrwidth, initval=0)
@@ -266,11 +266,11 @@ class AxiReadAddress(AxiInterfaceBase):
         self.arqos = util.make_port(
             m, self.otype, name + '_arqos', 4, initval=0, no_reg=True)
 
-        if user_width > 0:
+        if isinstance(user_width, int) and user_width == 0:
+            self.aruser = None
+        else:
             self.aruser = util.make_port(
                 m, self.otype, name + '_aruser', self.user_width, initval=0, no_reg=True)
-        else:
-            self.aruser = None
 
         self.arvalid = util.make_port(
             m, self.otype, name + '_arvalid', None, initval=0)
@@ -308,11 +308,11 @@ class AxiReadData(AxiInterfaceBase):
         AxiInterfaceBase.__init__(self, m, name, datawidth, addrwidth,
                                   id_width, user_width, itype, otype)
 
-        if id_width > 0:
+        if isinstance(id_width, int) and id_width == 0:
+            self.rid = None
+        else:
             self.rid = util.make_port(
                 m, self.itype, name + '_rid', self.id_width, initval=0)
-        else:
-            self.rid = None
 
         self.rdata = util.make_port(
             m, self.itype, name + '_rdata', self.datawidth, initval=0)
@@ -321,11 +321,11 @@ class AxiReadData(AxiInterfaceBase):
         self.rlast = util.make_port(
             m, self.itype, name + '_rlast', None, initval=0)
 
-        if user_width > 0:
+        if isinstance(user_width, int) and user_width == 0:
+            self.ruser = None
+        else:
             self.ruser = util.make_port(
                 m, self.itype, name + '_ruser', self.user_width, initval=0, no_reg=True)
-        else:
-            self.ruser = None
 
         self.rvalid = util.make_port(
             m, self.itype, name + '_rvalid', None, initval=0)
