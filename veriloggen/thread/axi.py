@@ -1535,11 +1535,13 @@ class AXIMLite(axi.AxiLiteMaster, _MutexFunction):
     burstlen = 256
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
+                 cache_mode=axi.CACHE_HP,
                  noio=False,
                  use_global_base_addr=False,
                  fsm_as_module=False):
 
         axi.AxiLiteMaster.__init__(self, m, name, clk, rst, datawidth, addrwidth,
+                                   cache_mode,
                                    noio)
 
         self.use_global_base_addr = use_global_base_addr
@@ -1606,12 +1608,12 @@ class AXIS(axi.AxiSlave, _MutexFunction):
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
                  id_width=1, user_width=1,
-                 burst_mode=axi.BURST_INCR, cache_mode=axi.CACHE_HP, user_value=axi.USER_DEFAULT,
+                 user_value=axi.USER_DEFAULT,
                  noio=False):
 
         axi.AxiSlave.__init__(self, m, name, clk, rst, datawidth, addrwidth,
                               id_width, user_width,
-                              burst_mode, cache_mode, user_value,
+                              user_value,
                               noio)
         self.mutex = None
 

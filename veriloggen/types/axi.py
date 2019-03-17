@@ -132,6 +132,10 @@ class AxiLiteWriteAddress(AxiLiteInterfaceBase):
 
         self.awaddr = util.make_port(
             m, self.otype, name + '_awaddr', self.addrwidth, initval=0)
+        self.awcache = util.make_port(
+            m, self.otype, name + '_awcache', 4, initval=0, no_reg=True)
+        self.awprot = util.make_port(
+            m, self.otype, name + '_awprot', 3, initval=0, no_reg=True)
         self.awvalid = util.make_port(
             m, self.otype, name + '_awvalid', None, initval=0)
         self.awready = util.make_port(
@@ -284,6 +288,10 @@ class AxiLiteReadAddress(AxiLiteInterfaceBase):
 
         self.araddr = util.make_port(
             m, self.otype, name + '_araddr', self.addrwidth, initval=0)
+        self.arcache = util.make_port(
+            m, self.otype, name + '_arcache', 4, initval=0, no_reg=True)
+        self.arprot = util.make_port(
+            m, self.otype, name + '_arprot', 3, initval=0, no_reg=True)
         self.arvalid = util.make_port(
             m, self.otype, name + '_arvalid', None, initval=0)
         self.arready = util.make_port(
@@ -999,6 +1007,7 @@ class AxiMaster(object):
 class AxiLiteMaster(AxiMaster):
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
+                 cache_mode=CACHE_HP,
                  noio=False, nodataflow=False):
 
         self.m = m
@@ -1037,7 +1046,11 @@ class AxiLiteMaster(AxiMaster):
         self.seq = Seq(m, name, clk, rst)
 
         # default values
+        self.waddr.awcache.assign(cache_mode)
+        self.waddr.awprot.assign(0)
         self.wresp.bready.assign(1)
+        self.raddr.arcache.assign(cache_mode)
+        self.raddr.arprot.assign(0)
 
         if nodataflow:
             self.df = None
@@ -1203,10 +1216,14 @@ class AxiLiteMaster(AxiMaster):
             raise ValueError('I/O ports can not be connected to others.')
 
         awaddr = ports['_'.join([name, 'awaddr'])]
+        awcache = ports['_'.join([name, 'awcache'])]
+        awprot = ports['_'.join([name, 'awprot'])]
         awvalid = ports['_'.join([name, 'awvalid'])]
         awready = ports['_'.join([name, 'awready'])]
 
         awaddr.connect(self.waddr.awaddr)
+        awcache.connect(self.waddr.awcache)
+        awprot.connect(self.waddr.awprot)
         awvalid.connect(self.waddr.awvalid)
         self.waddr.awready.connect(awready)
 
@@ -1229,10 +1246,14 @@ class AxiLiteMaster(AxiMaster):
         bready.connect(self.wresp.bready)
 
         araddr = ports['_'.join([name, 'araddr'])]
+        arcache = ports['_'.join([name, 'arcache'])]
+        arprot = ports['_'.join([name, 'arprot'])]
         arvalid = ports['_'.join([name, 'arvalid'])]
         arready = ports['_'.join([name, 'arready'])]
 
         araddr.connect(self.raddr.araddr)
+        arcache.connect(self.raddr.arcache)
+        arprot.connect(self.raddr.arprot)
         arvalid.connect(self.raddr.arvalid)
         self.raddr.arready.connect(arready)
 
@@ -1252,7 +1273,7 @@ class AxiSlave(object):
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
                  id_width=1, user_width=1,
-                 burst_mode=BURST_INCR, cache_mode=CACHE_HP, user_value=USER_DEFAULT,
+                 user_value=USER_DEFAULT,
                  noio=False, nodataflow=False):
 
         self.m = m
@@ -2087,10 +2108,14 @@ class AxiLiteSlave(AxiSlave):
             raise ValueError('I/O ports can not be connected to others.')
 
         awaddr = ports['_'.join([name, 'awaddr'])]
+        awcache = ports['_'.join([name, 'awcache'])]
+        awprot = ports['_'.join([name, 'awprot'])]
         awvalid = ports['_'.join([name, 'awvalid'])]
         awready = ports['_'.join([name, 'awready'])]
 
         self.waddr.awaddr.connect(awaddr)
+        self.waddr.awcache.connect(awcache)
+        self.waddr.awprot.connect(awprot)
         self.waddr.awvalid.connect(awvalid)
         awready.connect(self.waddr.awready)
 
@@ -2113,10 +2138,14 @@ class AxiLiteSlave(AxiSlave):
         self.wresp.bready.connect(bready)
 
         araddr = ports['_'.join([name, 'araddr'])]
+        arcache = ports['_'.join([name, 'arcache'])]
+        arprot = ports['_'.join([name, 'arprot'])]
         arvalid = ports['_'.join([name, 'arvalid'])]
         arready = ports['_'.join([name, 'arready'])]
 
         self.raddr.araddr.connect(araddr)
+        self.raddr.arcache.connect(arcache)
+        self.raddr.arprot.connect(arprot)
         self.raddr.arvalid.connect(arvalid)
         arready.connect(self.raddr.arready)
 
