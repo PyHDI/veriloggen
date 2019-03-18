@@ -13,7 +13,6 @@ all: test
 .PHONY: run
 run:
 	$(PYTHON) $(OPT) $(TARGET) $(ARGS)
-#	make compile run -C *_v1_00_a/test/
 
 .PHONY: test
 test:

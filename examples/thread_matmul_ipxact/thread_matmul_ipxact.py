@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(
 from veriloggen import *
 import veriloggen.thread as vthread
 import veriloggen.types.axi as axi
-import veriloggen.types.ipcore as ipcore
+import veriloggen.types.ipxact as ipxact
 
 axi_datawidth = 32
 datawidth = 32
@@ -237,67 +237,7 @@ if __name__ == '__main__':
     rslt = run(filename='tmp.v')
     print(rslt)
 
-    memname = 'memimg_thread_matmul_ipcore.out'
-    simcode = """
-reg [31:0] counter;
-always @(posedge sim_clk) begin
-  if(!sim_resetn) begin
-    counter <= 0;
-  end else begin
-    counter <= counter + 1;
-  end
-end
-
-reg [31:0] _start_time;
-reg [31:0] _end_time;
-reg [31:0] _time;
-
-reg [31:0] _addr;
-reg [31:0] _data;
-initial begin
-  #1000;
-  _addr = 4;
-  _data = {matrix_size};
-  $display("# matrix_size = %d", _data);
-  slave_write_ipgen_slave_lite_memory_saxi_1(_data, _addr);
-
-  _addr = 8;
-  _data = {a_offset};
-  $display("# a_offset = %d", _data);
-  slave_write_ipgen_slave_lite_memory_saxi_1(_data, _addr);
-
-  _addr = 12;
-  _data = {b_offset};
-  $display("# b_offset = %d", _data);
-  slave_write_ipgen_slave_lite_memory_saxi_1(_data, _addr);
-
-  _addr = 16;
-  _data = {c_offset};
-  $display("# c_offset = %d", _data);
-  slave_write_ipgen_slave_lite_memory_saxi_1(_data, _addr);
-
-  _addr = 0;
-  _data = 1;
-  _start_time = counter;
-  $display("# start time = %d", _start_time);
-  slave_write_ipgen_slave_lite_memory_saxi_1(_data, _addr);
-
-  _addr = 20;
-  _data = 0;
-  while(_data == 0) begin
-    slave_read_ipgen_slave_lite_memory_saxi_1(_data, _addr);
-    nclk();
-  end
-  _end_time = counter;
-  $display("# end time = %d", _end_time);
-  _time = _end_time - _start_time;
-  $display("# exec time = %d", _time);
-
-  #10000;
-  $finish;
-end
-""".format(matrix_size=matrix_size, a_offset=a_offset,
-           b_offset=b_offset, c_offset=c_offset)
-
     m = mkLed()
-    ipcore.to_ipcore(m, simcode=simcode, simmemimg=memname, iftype='axi')
+    ipxact.to_ipxact(m,
+                     clk_ports=[('CLK', ('RST',))],
+                     rst_ports=[('RST', 'ACTIVE_HIGH')])

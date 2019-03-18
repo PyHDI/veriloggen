@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(
 from veriloggen import *
 import veriloggen.thread as vthread
 import veriloggen.types.axi as axi
-import veriloggen.types.ipcore as ipcore
+import veriloggen.types.ipxact as ipxact
 
 
 def mkMemcpy():
@@ -163,60 +163,7 @@ if __name__ == '__main__':
     rslt = sim.run()
     print(rslt)
 
-    simcode = """
-reg [31:0] counter;
-always @(posedge sim_clk) begin
-  if(!sim_resetn) begin
-    counter <= 0;
-  end else begin
-    counter <= counter + 1;
-  end
-end
-
-reg [31:0] _start_time;
-reg [31:0] _end_time;
-reg [31:0] _time;
-
-reg [31:0] _addr;
-reg [31:0] _data;
-initial begin
-  #1000;
-  _addr = 4;
-  _data = 1024 * 4;
-  $display("# copy_bytes = %d", _data);
-  slave_write_ipgen_slave_lite_memory_saxi_1(_data, _addr);
-
-  _addr = 8;
-  _data = 0;
-  $display("# src_offset = %d", _data);
-  slave_write_ipgen_slave_lite_memory_saxi_1(_data, _addr);
-
-  _addr = 12;
-  _data = 1024 * 8;
-  $display("# dst_offset = %d", _data);
-  slave_write_ipgen_slave_lite_memory_saxi_1(_data, _addr);
-
-  _addr = 0;
-  _data = 1;
-  _start_time = counter;
-  $display("# start time = %d", _start_time);
-  slave_write_ipgen_slave_lite_memory_saxi_1(_data, _addr);
-
-  _addr = 16;
-  _data = 0;
-  while(_data == 0) begin
-    slave_read_ipgen_slave_lite_memory_saxi_1(_data, _addr);
-    nclk();
-  end
-  _end_time = counter;
-  $display("# end time = %d", _end_time);
-  _time = _end_time - _start_time;
-  $display("# exec time = %d", _time);
-
-  #10000;
-  $finish;
-end
-"""
-
     m = mkMemcpy()
-    ipcore.to_ipcore(m, simcode=simcode, iftype='axi')
+    ipxact.to_ipxact(m,
+                     clk_ports=[('CLK', ('RST',))],
+                     rst_ports=[('RST', 'ACTIVE_HIGH')])

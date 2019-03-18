@@ -3,7 +3,7 @@ from __future__ import print_function
 
 import os
 import veriloggen
-import thread_matmul_ipcore
+import thread_matmul_ipxact
 
 
 def test(request):
@@ -11,7 +11,7 @@ def test(request):
 
     simtype = request.config.getoption('--sim')
 
-    rslt = thread_matmul_ipcore.run(filename=None, simtype=simtype,
+    rslt = thread_matmul_ipxact.run(filename=None, simtype=simtype,
                                     outputfile=os.path.splitext(os.path.basename(__file__))[0] + '.out')
 
     verify_rslt = rslt.splitlines()[-1]

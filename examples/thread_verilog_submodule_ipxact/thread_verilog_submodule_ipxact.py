@@ -10,22 +10,131 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(
 from veriloggen import *
 import veriloggen.thread as vthread
 import veriloggen.types.axi as axi
-import veriloggen.types.ipcore as ipcore
+import veriloggen.types.ipxact as ipxact
+
+pe_verilog_code = """
+module processing_unit #
+(
+  parameter ADDR_WIDTH = 10,
+  parameter DATA_WIDTH = 32
+)
+(
+  input CLK,
+  input RST,
+  input start,
+  output reg busy,
+  input [ADDR_WIDTH-1:0] size,
+  output reg [ADDR_WIDTH-1:0] addr,
+  input [DATA_WIDTH-1:0] rdata,
+  output reg [DATA_WIDTH-1:0] wdata,
+  output reg wenable
+);
+
+  localparam INCR = 100;
+
+  reg [ADDR_WIDTH-1:0] count;
+  reg [DATA_WIDTH-1:0] rdata_buf;
+  reg [32-1:0] fsm;
+  localparam fsm_init = 0;
+  localparam fsm_1 = 1;
+  localparam fsm_2 = 2;
+  localparam fsm_3 = 3;
+  localparam fsm_4 = 4;
+  localparam fsm_5 = 5;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      fsm <= fsm_init;
+      addr <= 0;
+      count <= 0;
+      busy <= 0;
+      rdata_buf <= 0;
+      wdata <= 0;
+      wenable <= 0;
+    end else begin
+      case(fsm)
+        fsm_init: begin
+          if(start) begin
+            addr <= 0;
+            count <= size;
+            busy <= 1;
+          end 
+          if(start) begin
+            fsm <= fsm_1;
+          end 
+        end
+        fsm_1: begin
+          fsm <= fsm_2;
+        end
+        fsm_2: begin
+          rdata_buf <= rdata;
+          fsm <= fsm_3;
+        end
+        fsm_3: begin
+          wdata <= rdata_buf + INCR;
+          wenable <= 1;
+          fsm <= fsm_4;
+        end
+        fsm_4: begin
+          wenable <= 0;
+          addr <= addr + 1;
+          count <= count - 1;
+          if(count > 1) begin
+            fsm <= fsm_1;
+          end 
+          if(count <= 1) begin
+            fsm <= fsm_5;
+          end 
+        end
+        fsm_5: begin
+          busy <= 0;
+          fsm <= fsm_init;
+        end
+      endcase
+    end
+  end
+
+
+endmodule
+"""
 
 
 def mkMemcpy():
-    m = Module('memcpy')
+    m = Module('blinkled')
     clk = m.Input('CLK')
     rst = m.Input('RST')
+    led = m.OutputReg('led', 8, initval=0)
 
     datawidth = 32
     addrwidth = 10
-
     ram_words = (2 ** addrwidth) // (datawidth // 8)
 
-    ram_a = vthread.RAM(m, 'ram_a', clk, rst, datawidth, addrwidth)
+    ram_a = vthread.RAM(m, 'ram_a', clk, rst, datawidth, addrwidth, numports=2)
     maxi = vthread.AXIM(m, 'maxi', clk, rst, datawidth)
     saxi = vthread.AXISLiteRegister(m, 'saxi', clk, rst, datawidth, length=8)
+
+    # import verilog submodule
+    start = m.Reg('start', initval=0)
+    busy = m.Wire('busy')
+    size = m.Reg('size', addrwidth, initval=0)
+
+    sub = Submodule(m, pe_verilog_code, 'inst_pe', prefix='pe_',
+                    arg_params=(('ADDR_WIDTH', addrwidth),
+                                ('DATA_WIDTH', datawidth)),
+                    arg_ports=(('CLK', clk), ('RST', rst),
+                               ('start', start), ('busy', busy), ('size', size)),
+                    as_wire=('addr', 'rdata', 'wdata', 'wenable'))
+
+    # connect ports to RAM
+    ram_a.connect_rtl(1, sub['addr'], sub['wdata'],
+                      sub['wenable'], sub['rdata'])
+
+    def control_processing_unit(v):
+        size.value = v
+        start.value = 1
+        start.value = 0
+        while busy:
+            pass
 
     def memcpy():
         while True:
@@ -52,6 +161,7 @@ def mkMemcpy():
                 dma_size = rest_words
 
             maxi.dma_read(ram_a, local_addr, src_global_addr, dma_size)
+            control_processing_unit(dma_size)
             maxi.dma_write(ram_a, local_addr, dst_global_addr, dma_size)
 
             src_global_addr += dma_size * (datawidth // 8)
@@ -147,60 +257,7 @@ if __name__ == '__main__':
     rslt = sim.run()
     print(rslt)
 
-    simcode = """
-reg [31:0] counter;
-always @(posedge sim_clk) begin
-  if(!sim_resetn) begin
-    counter <= 0;
-  end else begin
-    counter <= counter + 1;
-  end
-end
-
-reg [31:0] _start_time;
-reg [31:0] _end_time;
-reg [31:0] _time;
-
-reg [31:0] _addr;
-reg [31:0] _data;
-initial begin
-  #1000;
-  _addr = 4;
-  _data = 1024 * 4;
-  $display("# copy_bytes = %d", _data);
-  slave_write_ipgen_slave_lite_memory_saxi_1(_data, _addr);
-
-  _addr = 8;
-  _data = 0;
-  $display("# src_offset = %d", _data);
-  slave_write_ipgen_slave_lite_memory_saxi_1(_data, _addr);
-
-  _addr = 12;
-  _data = 1024 * 8;
-  $display("# dst_offset = %d", _data);
-  slave_write_ipgen_slave_lite_memory_saxi_1(_data, _addr);
-
-  _addr = 0;
-  _data = 1;
-  _start_time = counter;
-  $display("# start time = %d", _start_time);
-  slave_write_ipgen_slave_lite_memory_saxi_1(_data, _addr);
-
-  _addr = 16;
-  _data = 0;
-  while(_data == 0) begin
-    slave_read_ipgen_slave_lite_memory_saxi_1(_data, _addr);
-    nclk();
-  end
-  _end_time = counter;
-  $display("# end time = %d", _end_time);
-  _time = _end_time - _start_time;
-  $display("# exec time = %d", _time);
-
-  #10000;
-  $finish;
-end
-"""
-
     m = mkMemcpy()
-    ipcore.to_ipcore(m, simcode=simcode, iftype='axi')
+    ipxact.to_ipxact(m,
+                     clk_ports=[('CLK', ('RST',))],
+                     rst_ports=[('RST', 'ACTIVE_HIGH')])

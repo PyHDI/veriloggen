@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import thread_add_ipcore
+import thread_add_ipxact
 
 expected_verilog = """
 module test;
@@ -9,46 +9,52 @@ module test;
   reg CLK;
   reg RST;
   reg [32-1:0] saxi_awaddr;
+  reg [4-1:0] saxi_awcache;
+  reg [3-1:0] saxi_awprot;
   reg saxi_awvalid;
   wire saxi_awready;
   reg [32-1:0] saxi_wdata;
   reg [4-1:0] saxi_wstrb;
   reg saxi_wvalid;
   wire saxi_wready;
+  wire [2-1:0] saxi_bresp;
+  wire saxi_bvalid;
+  reg saxi_bready;
   reg [32-1:0] saxi_araddr;
+  reg [4-1:0] saxi_arcache;
+  reg [3-1:0] saxi_arprot;
   reg saxi_arvalid;
   wire saxi_arready;
   wire [32-1:0] saxi_rdata;
+  wire [2-1:0] saxi_rresp;
   wire saxi_rvalid;
   reg saxi_rready;
   reg [32-1:0] _saxi_awaddr;
+  wire [4-1:0] _saxi_awcache;
+  wire [3-1:0] _saxi_awprot;
   reg _saxi_awvalid;
   wire _saxi_awready;
   reg [32-1:0] _saxi_wdata;
   reg [4-1:0] _saxi_wstrb;
   reg _saxi_wvalid;
   wire _saxi_wready;
+  wire [2-1:0] _saxi_bresp;
+  wire _saxi_bvalid;
+  wire _saxi_bready;
   reg [32-1:0] _saxi_araddr;
+  wire [4-1:0] _saxi_arcache;
+  wire [3-1:0] _saxi_arprot;
   reg _saxi_arvalid;
   wire _saxi_arready;
   wire [32-1:0] _saxi_rdata;
+  wire [2-1:0] _saxi_rresp;
   wire _saxi_rvalid;
   wire _saxi_rready;
-  reg __saxi_read_start;
-  reg [8-1:0] __saxi_read_op_sel;
-  reg [32-1:0] __saxi_read_local_addr;
-  reg [32-1:0] __saxi_read_global_addr;
-  reg [33-1:0] __saxi_read_size;
-  reg [32-1:0] __saxi_read_local_stride;
-  reg __saxi_read_idle;
-  reg __saxi_write_start;
-  reg [8-1:0] __saxi_write_op_sel;
-  reg [32-1:0] __saxi_write_local_addr;
-  reg [32-1:0] __saxi_write_global_addr;
-  reg [33-1:0] __saxi_write_size;
-  reg [32-1:0] __saxi_write_local_stride;
-  reg __saxi_write_idle;
-  wire __saxi_write_data_done;
+  assign _saxi_awcache = 3;
+  assign _saxi_awprot = 0;
+  assign _saxi_bready = 1;
+  assign _saxi_arcache = 3;
+  assign _saxi_arprot = 0;
   wire [32-1:0] _tmp_0;
   assign _tmp_0 = _saxi_awaddr;
 
@@ -56,58 +62,96 @@ module test;
     saxi_awaddr = _tmp_0;
   end
 
-  wire _tmp_1;
-  assign _tmp_1 = _saxi_awvalid;
+  wire [4-1:0] _tmp_1;
+  assign _tmp_1 = _saxi_awcache;
 
   always @(*) begin
-    saxi_awvalid = _tmp_1;
+    saxi_awcache = _tmp_1;
+  end
+
+  wire [3-1:0] _tmp_2;
+  assign _tmp_2 = _saxi_awprot;
+
+  always @(*) begin
+    saxi_awprot = _tmp_2;
+  end
+
+  wire _tmp_3;
+  assign _tmp_3 = _saxi_awvalid;
+
+  always @(*) begin
+    saxi_awvalid = _tmp_3;
   end
 
   assign _saxi_awready = saxi_awready;
-  wire [32-1:0] _tmp_2;
-  assign _tmp_2 = _saxi_wdata;
+  wire [32-1:0] _tmp_4;
+  assign _tmp_4 = _saxi_wdata;
 
   always @(*) begin
-    saxi_wdata = _tmp_2;
+    saxi_wdata = _tmp_4;
   end
 
-  wire [4-1:0] _tmp_3;
-  assign _tmp_3 = _saxi_wstrb;
+  wire [4-1:0] _tmp_5;
+  assign _tmp_5 = _saxi_wstrb;
 
   always @(*) begin
-    saxi_wstrb = _tmp_3;
-  end
-
-  wire _tmp_4;
-  assign _tmp_4 = _saxi_wvalid;
-
-  always @(*) begin
-    saxi_wvalid = _tmp_4;
-  end
-
-  assign _saxi_wready = saxi_wready;
-  wire [32-1:0] _tmp_5;
-  assign _tmp_5 = _saxi_araddr;
-
-  always @(*) begin
-    saxi_araddr = _tmp_5;
+    saxi_wstrb = _tmp_5;
   end
 
   wire _tmp_6;
-  assign _tmp_6 = _saxi_arvalid;
+  assign _tmp_6 = _saxi_wvalid;
 
   always @(*) begin
-    saxi_arvalid = _tmp_6;
+    saxi_wvalid = _tmp_6;
+  end
+
+  assign _saxi_wready = saxi_wready;
+  assign _saxi_bresp = saxi_bresp;
+  assign _saxi_bvalid = saxi_bvalid;
+  wire _tmp_7;
+  assign _tmp_7 = _saxi_bready;
+
+  always @(*) begin
+    saxi_bready = _tmp_7;
+  end
+
+  wire [32-1:0] _tmp_8;
+  assign _tmp_8 = _saxi_araddr;
+
+  always @(*) begin
+    saxi_araddr = _tmp_8;
+  end
+
+  wire [4-1:0] _tmp_9;
+  assign _tmp_9 = _saxi_arcache;
+
+  always @(*) begin
+    saxi_arcache = _tmp_9;
+  end
+
+  wire [3-1:0] _tmp_10;
+  assign _tmp_10 = _saxi_arprot;
+
+  always @(*) begin
+    saxi_arprot = _tmp_10;
+  end
+
+  wire _tmp_11;
+  assign _tmp_11 = _saxi_arvalid;
+
+  always @(*) begin
+    saxi_arvalid = _tmp_11;
   end
 
   assign _saxi_arready = saxi_arready;
   assign _saxi_rdata = saxi_rdata;
+  assign _saxi_rresp = saxi_rresp;
   assign _saxi_rvalid = saxi_rvalid;
-  wire _tmp_7;
-  assign _tmp_7 = _saxi_rready;
+  wire _tmp_12;
+  assign _tmp_12 = _saxi_rready;
 
   always @(*) begin
-    saxi_rready = _tmp_7;
+    saxi_rready = _tmp_12;
   end
 
   reg [32-1:0] counter;
@@ -126,13 +170,13 @@ module test;
   reg __saxi_cond_5_1;
   reg signed [32-1:0] _th_ctrl_araddr_8;
   reg __saxi_cond_6_1;
-  reg signed [32-1:0] axim_rdata_8;
+  reg signed [32-1:0] axim_rdata_13;
   reg signed [32-1:0] _th_ctrl_v_9;
   reg __saxi_cond_7_1;
-  reg signed [32-1:0] axim_rdata_9;
+  reg signed [32-1:0] axim_rdata_14;
   reg __saxi_cond_8_1;
   assign _saxi_rready = (th_ctrl == 21) || (th_ctrl == 25) || (th_ctrl == 30);
-  reg signed [32-1:0] axim_rdata_10;
+  reg signed [32-1:0] axim_rdata_15;
   reg signed [32-1:0] _th_ctrl_c_10;
   reg signed [32-1:0] _th_ctrl_end_time_11;
   reg signed [32-1:0] _th_ctrl_time_12;
@@ -143,16 +187,24 @@ module test;
     .CLK(CLK),
     .RST(RST),
     .saxi_awaddr(saxi_awaddr),
+    .saxi_awcache(saxi_awcache),
+    .saxi_awprot(saxi_awprot),
     .saxi_awvalid(saxi_awvalid),
     .saxi_awready(saxi_awready),
     .saxi_wdata(saxi_wdata),
     .saxi_wstrb(saxi_wstrb),
     .saxi_wvalid(saxi_wvalid),
     .saxi_wready(saxi_wready),
+    .saxi_bresp(saxi_bresp),
+    .saxi_bvalid(saxi_bvalid),
+    .saxi_bready(saxi_bready),
     .saxi_araddr(saxi_araddr),
+    .saxi_arcache(saxi_arcache),
+    .saxi_arprot(saxi_arprot),
     .saxi_arvalid(saxi_arvalid),
     .saxi_arready(saxi_arready),
     .saxi_rdata(saxi_rdata),
+    .saxi_rresp(saxi_rresp),
     .saxi_rvalid(saxi_rvalid),
     .saxi_rready(saxi_rready)
   );
@@ -181,20 +233,6 @@ module test;
     _saxi_wvalid = 0;
     _saxi_araddr = 0;
     _saxi_arvalid = 0;
-    __saxi_read_start = 0;
-    __saxi_read_op_sel = 0;
-    __saxi_read_local_addr = 0;
-    __saxi_read_global_addr = 0;
-    __saxi_read_size = 0;
-    __saxi_read_local_stride = 0;
-    __saxi_read_idle = 1;
-    __saxi_write_start = 0;
-    __saxi_write_op_sel = 0;
-    __saxi_write_local_addr = 0;
-    __saxi_write_global_addr = 0;
-    __saxi_write_size = 0;
-    __saxi_write_local_stride = 0;
-    __saxi_write_idle = 1;
     counter = 0;
     th_ctrl = th_ctrl_init;
     _th_ctrl_i_3 = 0;
@@ -210,12 +248,12 @@ module test;
     __saxi_cond_5_1 = 0;
     _th_ctrl_araddr_8 = 0;
     __saxi_cond_6_1 = 0;
-    axim_rdata_8 = 0;
+    axim_rdata_13 = 0;
     _th_ctrl_v_9 = 0;
     __saxi_cond_7_1 = 0;
-    axim_rdata_9 = 0;
+    axim_rdata_14 = 0;
     __saxi_cond_8_1 = 0;
-    axim_rdata_10 = 0;
+    axim_rdata_15 = 0;
     _th_ctrl_c_10 = 0;
     _th_ctrl_end_time_11 = 0;
     _th_ctrl_time_12 = 0;
@@ -230,8 +268,6 @@ module test;
 
   always @(posedge CLK) begin
     if(RST) begin
-      __saxi_read_start <= 0;
-      __saxi_write_start <= 0;
       _saxi_awaddr <= 0;
       _saxi_awvalid <= 0;
       __saxi_cond_0_1 <= 0;
@@ -276,8 +312,6 @@ module test;
       if(__saxi_cond_8_1) begin
         _saxi_arvalid <= 0;
       end 
-      __saxi_read_start <= 0;
-      __saxi_write_start <= 0;
       if((th_ctrl == 7) && (_saxi_awready || !_saxi_awvalid)) begin
         _saxi_awaddr <= _th_ctrl_awaddr_4;
         _saxi_awvalid <= 1;
@@ -412,10 +446,10 @@ module test;
       _th_ctrl_b_6 <= 0;
       _th_ctrl_start_time_7 <= 0;
       _th_ctrl_araddr_8 <= 0;
-      axim_rdata_8 <= 0;
+      axim_rdata_13 <= 0;
       _th_ctrl_v_9 <= 0;
-      axim_rdata_9 <= 0;
-      axim_rdata_10 <= 0;
+      axim_rdata_14 <= 0;
+      axim_rdata_15 <= 0;
       _th_ctrl_c_10 <= 0;
       _th_ctrl_end_time_11 <= 0;
       _th_ctrl_time_12 <= 0;
@@ -516,14 +550,14 @@ module test;
         end
         th_ctrl_21: begin
           if(_saxi_rready && _saxi_rvalid) begin
-            axim_rdata_8 <= _saxi_rdata;
+            axim_rdata_13 <= _saxi_rdata;
           end 
           if(_saxi_rready && _saxi_rvalid) begin
             th_ctrl <= th_ctrl_22;
           end 
         end
         th_ctrl_22: begin
-          _th_ctrl_v_9 <= axim_rdata_8;
+          _th_ctrl_v_9 <= axim_rdata_13;
           th_ctrl <= th_ctrl_23;
         end
         th_ctrl_23: begin
@@ -540,14 +574,14 @@ module test;
         end
         th_ctrl_25: begin
           if(_saxi_rready && _saxi_rvalid) begin
-            axim_rdata_9 <= _saxi_rdata;
+            axim_rdata_14 <= _saxi_rdata;
           end 
           if(_saxi_rready && _saxi_rvalid) begin
             th_ctrl <= th_ctrl_26;
           end 
         end
         th_ctrl_26: begin
-          _th_ctrl_v_9 <= axim_rdata_9;
+          _th_ctrl_v_9 <= axim_rdata_14;
           th_ctrl <= th_ctrl_27;
         end
         th_ctrl_27: begin
@@ -564,14 +598,14 @@ module test;
         end
         th_ctrl_30: begin
           if(_saxi_rready && _saxi_rvalid) begin
-            axim_rdata_10 <= _saxi_rdata;
+            axim_rdata_15 <= _saxi_rdata;
           end 
           if(_saxi_rready && _saxi_rvalid) begin
             th_ctrl <= th_ctrl_31;
           end 
         end
         th_ctrl_31: begin
-          _th_ctrl_c_10 <= axim_rdata_10;
+          _th_ctrl_c_10 <= axim_rdata_15;
           th_ctrl <= th_ctrl_32;
         end
         th_ctrl_32: begin
@@ -608,20 +642,30 @@ module add
   input CLK,
   input RST,
   input [32-1:0] saxi_awaddr,
+  input [4-1:0] saxi_awcache,
+  input [3-1:0] saxi_awprot,
   input saxi_awvalid,
   output saxi_awready,
   input [32-1:0] saxi_wdata,
   input [4-1:0] saxi_wstrb,
   input saxi_wvalid,
   output saxi_wready,
+  output [2-1:0] saxi_bresp,
+  output reg saxi_bvalid,
+  input saxi_bready,
   input [32-1:0] saxi_araddr,
+  input [4-1:0] saxi_arcache,
+  input [3-1:0] saxi_arprot,
   input saxi_arvalid,
   output saxi_arready,
   output reg [32-1:0] saxi_rdata,
+  output [2-1:0] saxi_rresp,
   output reg saxi_rvalid,
   input saxi_rready
 );
 
+  assign saxi_bresp = 0;
+  assign saxi_rresp = 0;
   reg signed [32-1:0] _saxi_register_0;
   reg signed [32-1:0] _saxi_register_1;
   reg signed [32-1:0] _saxi_register_2;
@@ -656,7 +700,7 @@ module add
   reg _tmp_2;
   reg _tmp_3;
   reg _tmp_4;
-  assign saxi_awready = (_saxi_register_fsm == 0) && !_tmp_1 && !_tmp_2 && _tmp_3;
+  assign saxi_awready = (_saxi_register_fsm == 0) && !_tmp_1 && !_tmp_2 && !saxi_bvalid && _tmp_3;
   assign saxi_arready = (_saxi_register_fsm == 0) && !_tmp_2 && !_tmp_1 && _tmp_4;
   reg [_saxi_maskwidth-1:0] _tmp_5;
   wire signed [32-1:0] _tmp_6;
@@ -696,6 +740,7 @@ module add
 
   always @(posedge CLK) begin
     if(RST) begin
+      saxi_bvalid <= 0;
       _tmp_3 <= 0;
       _tmp_4 <= 0;
       _tmp_1 <= 0;
@@ -732,11 +777,17 @@ module add
       if(_saxi_cond_0_1) begin
         saxi_rvalid <= 0;
       end 
+      if(saxi_bvalid && saxi_bready) begin
+        saxi_bvalid <= 0;
+      end 
+      if(saxi_wvalid && saxi_wready) begin
+        saxi_bvalid <= 1;
+      end 
       _tmp_3 <= saxi_awvalid;
       _tmp_4 <= saxi_arvalid;
       _tmp_1 <= 0;
       _tmp_2 <= 0;
-      if(saxi_awready && saxi_awvalid) begin
+      if(saxi_awready && saxi_awvalid && !saxi_bvalid) begin
         _tmp_0 <= saxi_awaddr;
         _tmp_1 <= 1;
       end else if(saxi_arready && saxi_arvalid) begin
@@ -1002,7 +1053,7 @@ endmodule
 
 def test():
     veriloggen.reset()
-    test_module = thread_add_ipcore.mkTest()
+    test_module = thread_add_ipxact.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser

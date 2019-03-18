@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(
 from veriloggen import *
 import veriloggen.thread as vthread
 import veriloggen.types.axi as axi
-import veriloggen.types.ipcore as ipcore
+import veriloggen.types.ipxact as ipxact
 
 
 def mkLed():
@@ -124,4 +124,6 @@ if __name__ == '__main__':
     print(rslt)
 
     m = mkLed()
-    ipcore.to_ipcore(m, iftype='axi')
+    ipxact.to_ipxact(m,
+                     clk_ports=[('CLK', ('RST',))],
+                     rst_ports=[('RST', 'ACTIVE_HIGH')])
