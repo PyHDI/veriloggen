@@ -43,7 +43,7 @@ class ComponentGen(object):
         self.top = None
 
         self.dependency_consumer = set()
-        
+
     def generate(self, m, ip_name, bus_interfaces,
                  clk_ports, rst_ports,
                  ext_ports, ext_params,
@@ -90,7 +90,7 @@ class ComponentGen(object):
         if r:
             self.top.appendChild(r)
 
-#        self.top.appendChild(self.mkModel())
+        self.top.appendChild(self.mkModel())
 #        self.top.appendChild(self.mkChoices())
 #        self.top.appendChild(self.mkFileSets())
 #        self.top.appendChild(self.mkDescription())
@@ -149,7 +149,6 @@ class ComponentGen(object):
 
     def mkBusInterface(self, obj):
         master = is_master(obj)
-        lite = is_lite(obj)
         name = obj.name
         datawidth = obj.datawidth
         interface = self.doc.createElement('spirit:busInterface')
@@ -160,7 +159,7 @@ class ComponentGen(object):
             interface.appendChild(self.mkMaster(name))
         else:
             interface.appendChild(self.mkSlave(name))
-        interface.appendChild(self.mkPortMaps(name, lite))
+        interface.appendChild(self.mkPortMaps(obj))
         interface.appendChild(self.mkBusParameters(name, datawidth, master))
         return interface
 
@@ -194,17 +193,39 @@ class ComponentGen(object):
         slave.appendChild(memorymapref)
         return slave
 
-    def mkPortMaps(self, name, lite=False):
+    def mkPortMaps(self, obj):
+        lite = is_lite(obj)
         portmaps = self.doc.createElement('spirit:portMaps')
-        portlist = PORTLITELIST if lite else PORTLIST
+        portlist = list(PORTLITELIST if lite else PORTLIST)
+
+        if not lite and obj.waddr.awid is None:
+            portlist.remove('AWID')
+        if not lite and obj.waddr.awuser is None:
+            portlist.remove('AWUSER')
+        if not lite and obj.wdata.wuser is None:
+            portlist.remove('WUSER')
+        if not lite and obj.wresp.bid is None:
+            portlist.remove('BID')
+        if not lite and obj.wresp.buser is None:
+            portlist.remove('BUSER')
+        if not lite and obj.raddr.arid is None:
+            portlist.remove('ARID')
+        if not lite and obj.raddr.aruser is None:
+            portlist.remove('ARUSER')
+        if not lite and obj.rdata.rid is None:
+            portlist.remove('RID')
+        if not lite and obj.rdata.ruser is None:
+            portlist.remove('RUSER')
+
         for port in portlist:
-            portmaps.appendChild(self.mkPortMap(name, port))
+            portmaps.appendChild(self.mkPortMap(obj, port))
+
         return portmaps
 
-    def mkPortMap(self, name, attr):
+    def mkPortMap(self, obj, attr):
         portmap = self.doc.createElement('spirit:portMap')
         portmap.appendChild(self.mkLogicalPort(attr))
-        portmap.appendChild(self.mkPhysicalPort(name, attr))
+        portmap.appendChild(self.mkPhysicalPort(obj, attr))
         return portmap
 
     def mkLogicalPort(self, attr):
@@ -212,9 +233,23 @@ class ComponentGen(object):
         logicalport.appendChild(self.mkName(attr))
         return logicalport
 
-    def mkPhysicalPort(self, name, attr):
+    def mkPhysicalPort(self, obj, attr):
+        if hasattr(obj.waddr, attr.lower()):
+            name = getattr(obj.waddr, attr.lower()).name
+        elif hasattr(obj.wdata, attr.lower()):
+            name = getattr(obj.wdata, attr.lower()).name
+        elif hasattr(obj.wresp, attr.lower()):
+            name = getattr(obj.wresp, attr.lower()).name
+        elif hasattr(obj.raddr, attr.lower()):
+            name = getattr(obj.raddr, attr.lower()).name
+        elif hasattr(obj.rdata, attr.lower()):
+            name = getattr(obj.rdata, attr.lower()).name
+        else:
+            raise NameError("No such attribute '%s' in object '%s'" %
+                            (attr.lower(), obj))
+
         physicalport = self.doc.createElement('spirit:physicalPort')
-        physicalport.appendChild(self.mkName(name + '_' + attr))
+        physicalport.appendChild(self.mkName(name))
         return physicalport
 
     def mkBusParameters(self, name, addrwidth, datawidth):
@@ -310,14 +345,14 @@ class ComponentGen(object):
 
         bus_name_list = []
         for bus_interface in self.bus_interfaces:
-            if (isinstance(bus_interface.clk, vtypes.Input) and
-                bus_interface.clk.name == name):
+            if (bus_interface.clk.module.is_input(bus_interface.clk)
+                    and bus_interface.clk.name == name):
                 bus_name_list.append(bus_interface.name)
 
         bus_names = ':'.join(bus_name_list)
 
-        self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE." +
-                          name + ".ASSOCIATED_BUSIF")
+        self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE."
+                          + name + ".ASSOCIATED_BUSIF")
         self.setText(value, bus_names)
         parameter.appendChild(value)
         return parameter
@@ -328,9 +363,9 @@ class ComponentGen(object):
         value = self.doc.createElement('spirit:value')
 
         rst_names = ':'.join(rsts)
-            
-        self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE." +
-                          name + ".ASSOCIATED_RESET")
+
+        self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE."
+                          + name + ".ASSOCIATED_RESET")
         self.setText(value, rst_names)
         parameter.appendChild(value)
         return parameter
@@ -390,8 +425,8 @@ class ComponentGen(object):
         parameter = self.doc.createElement('spirit:parameter')
         parameter.appendChild(self.mkName('POLARITY'))
         value = self.doc.createElement('spirit:value')
-        self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE." +
-                          name + ".POLARITY")
+        self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE."
+                          + name + ".POLARITY")
         self.setText(value, polarity)
         parameter.appendChild(value)
         return parameter
@@ -549,7 +584,7 @@ class ComponentGen(object):
             return None
 
         name = obj.name
-        
+
         register = self.doc.createElement('spirit:register')
         register.appendChild(self.mkName(name + '_control_reg'))
         register.appendChild(self.mkTextNode('spirit:displayName', name + '_control_reg'))
@@ -572,7 +607,7 @@ class ComponentGen(object):
         self.setText(value, 0)
         reset.appendChild(value)
         register.appendChild(reset)
-        
+
         for i in range(length):
             field = self.doc.createElement('spirit:field')
             field.appendChild(self.mkName(name + '_control_reg%d' % i))
@@ -604,7 +639,7 @@ class ComponentGen(object):
                                       'verilog',
                                       self.ip_name,
                                       'xilinx_verilogbehavioralsimulation_view_fileset'))
-        #views.appendChild(self.mkView('xilinx_softwaredriver'
+        # views.appendChild(self.mkView('xilinx_softwaredriver'
         #                              'Software Driver',
         #                              'Verilog Simulation',
         #                              ':vivado.xilinx.com:sw.driver',
@@ -648,31 +683,35 @@ class ComponentGen(object):
         ports = self.doc.createElement('spirit:ports')
 
         for bus_interface in self.bus_interfaces:
-            if isinstance(bus_interface, (axi.AxiLiteMaster, axi.AxiMaster)):
-                for p in self.mkPortMaster(bus_interface):
-                    ports.appendChild(p)
-            else:
-                for p in self.mkPortSlave(bus_interface):
-                    ports.appendChild(p)
-
-        #########
-
-        #for portname, portdir, portlvalue, portvar in self.ext_ports:
-        for portname, port in self.ext_ports.items():
-            portdir = ('in' if isinstance(port, vtypes.Input) else
-                       'out' if isinstance(port, vtypes.Output) else
-                       'inout')
-            if port.width is None:
-                lvalue = None
-            elif isinstance(port.width, (int, bool, float, vtypes._Constant)):
-                lvalue = port.width
-            else:
-                lvalue = port.width
+            for p in self.mkPortBus(bus_interface):
+                ports.appendChild(p)
                 
-            lvar = port.width if port.width is not None else None
-            rvalue = 0 if portlvalue is not None else None
-            ports.appendChild(self.mkPortEntry(portname, portdir,
-                                               lvar, lvalue, None, rvalue))
+        #########
+                    
+#            if isinstance(bus_interface, (axi.AxiLiteMaster, axi.AxiMaster)):
+#                for p in self.mkPortMaster(bus_interface):
+#                    ports.appendChild(p)
+#            else:
+#                for p in self.mkPortSlave(bus_interface):
+#                    ports.appendChild(p)
+
+#
+#        #for portname, portdir, portlvalue, portvar in self.ext_ports:
+#        for portname, port in self.ext_ports.items():
+#            portdir = ('in' if isinstance(port, vtypes.Input) else
+#                       'out' if isinstance(port, vtypes.Output) else
+#                       'inout')
+#            if port.width is None:
+#                lvalue = None
+#            elif isinstance(port.width, (int, bool, float, vtypes._Constant)):
+#                lvalue = port.width
+#            else:
+#                lvalue = port.width
+#
+#            lvar = port.width if port.width is not None else None
+#            rvalue = 0 if portlvalue is not None else None
+#            ports.appendChild(self.mkPortEntry(portname, portdir,
+#                                               lvar, lvalue, None, rvalue))
 
 #        ports.appendChild(self.mkPortEntry('UCLK', 'in',
 #                                           None, None, None, None))
@@ -681,162 +720,220 @@ class ComponentGen(object):
 
         return ports
 
+    def mkPortBus(self, obj):
+        lite = is_lite(obj)
+        portlist = list(PORTLITELIST if lite else PORTLIST)
+
+        if not lite and obj.waddr.awid is None:
+            portlist.remove('AWID')
+        if not lite and obj.waddr.awuser is None:
+            portlist.remove('AWUSER')
+        if not lite and obj.wdata.wuser is None:
+            portlist.remove('WUSER')
+        if not lite and obj.wresp.bid is None:
+            portlist.remove('BID')
+        if not lite and obj.wresp.buser is None:
+            portlist.remove('BUSER')
+        if not lite and obj.raddr.arid is None:
+            portlist.remove('ARID')
+        if not lite and obj.raddr.aruser is None:
+            portlist.remove('ARUSER')
+        if not lite and obj.rdata.rid is None:
+            portlist.remove('RID')
+        if not lite and obj.rdata.ruser is None:
+            portlist.remove('RUSER')
+
+        ret = []
+        for port in portlist:
+            ret.append(self.mkPortSignal(obj, port))
+
+        return ret
+            
+    def mkPortSignal(self, obj, attr):
+        base = obj.name
+
+        if hasattr(obj.waddr, attr.lower()):
+            name = getattr(obj.waddr, attr.lower()).name
+            var = obj.m[name]
+        elif hasattr(obj.wdata, attr.lower()):
+            name = getattr(obj.wdata, attr.lower()).name
+            var = obj.m[name]
+        elif hasattr(obj.wresp, attr.lower()):
+            name = getattr(obj.wresp, attr.lower()).name
+            var = obj.m[name]
+        elif hasattr(obj.raddr, attr.lower()):
+            name = getattr(obj.raddr, attr.lower()).name
+            var = obj.m[name]
+        elif hasattr(obj.rdata, attr.lower()):
+            name = getattr(obj.rdata, attr.lower()).name
+            var = obj.m[name]
+        else:
+            raise NameError("No such attribute '%s' in object '%s'" %
+                            (attr.lower(), obj))
+
+        direction = ('in' if obj.m.is_input(name) else
+                     'out' if obj.m.is_output(name) else
+                     'inout')
+
+        width = self.resolved_m[name].width
+        h = width - 1 if width is not None else None
+        l = 0 if h is not None else None
+
+        return self.mkPortEntry(base, name, direction,
+                                None, h, None, l)
+    
     def mkPortMaster(self, obj):
         lite = is_lite(obj)
         base = obj.name
-        datawidth = obj.datawidth
-        addrwidth = obj.addrwidth
+        wdata_name = obj.wdata.wdata.name
+        awaddr_name = obj.waddr.awaddr.name
+        datawidth = self.resolved_m[wdata_name].width
+        addrwidth = self.resolved_m[awaddr_name].width
         ret = []
 
         def mkStr(b, s):
             return "spirit:decode(id('MODELPARAM_VALUE." + b + '_' + s + "'))"
 
-        if not lite:
-            lvar = '(' + mkStr(base, 'ID_WIDTH') + '-1)',
-            lvalue = 0
-            rvar = None
-            rvalue = 0
-            extensionvar = mkStr(base, 'ID_WIDTH') + ' >0'
-            extensionvalue = 'true'
-            ret.append(self.mkPortEntry(base + '_AWID', 'out',
-                                        lvar, lvalue, rvar, rvalue,
-                                        withdriver=True,
-                                        withextension=True,
-                                        extensionvar=extensionvar,
-                                        extensionvalue=extensionvalue))
+        if not lite and obj.waddr.awid is not None:
+            ret.append(
+                self.mkPortEntry(base, obj.waddr.awid.name, 'out',
+                                 '(' + mkStr(base, 'ID_WIDTH') + '-1)', 0, None, 0))
 
-        lvar = '(' + mkStr(base, 'ADDR_WIDTH') + '-1)'
-        lvalue = self.resolved_m[base + '_awaddr'].width - 1
-        rvar = None
-        rvalue = 0
-        ret.append(self.mkPortEntry(base + '_AWADDR', 'out',
-                                    lvar, lvalue, rvar, rvalue))
-        
+        ret.append(
+            self.mkPortEntry(base, obj.waddr.awaddr.name, 'out',
+                             '(' + mkStr(base, 'ADDR_WIDTH') + '-1)', addrwidth - 1, None, 0))
+
         if not lite:
-            ret.append(self.mkPortEntry(base + '_AWLEN', 'out',
+            ret.append(self.mkPortEntry(base, obj.waddr.awlen.name, 'out',
                                         None, 7, None, 0))
-            ret.append(self.mkPortEntry(base + '_AWSIZE', 'out',
+            ret.append(self.mkPortEntry(base, obj.waddr.awsize.name, 'out',
                                         None, 2, None, 0))
-            ret.append(self.mkPortEntry(base + '_AWBURST', 'out',
+            ret.append(self.mkPortEntry(base, obj.waddr.awburst.name, 'out',
                                         None, 1, None, 0))
-            ret.append(self.mkPortEntry(base + '_AWLOCK', 'out',
+            ret.append(self.mkPortEntry(base, obj.waddr.awlock.name, 'out',
                                         None, 1, None, 0))
-            ret.append(self.mkPortEntry(base + '_AWCACHE', 'out',
-                                        None, 3, None, 0))
 
-        ret.append(self.mkPortEntry(base + '_AWPROT', 'out',
+        ret.append(self.mkPortEntry(base, obj.waddr.awcache.name, 'out',
+                                    None, 3, None, 0))
+        ret.append(self.mkPortEntry(base, obj.waddr.awprot.name, 'out',
                                     None, 2, None, 0))
 
         if not lite:
-            ret.append(self.mkPortEntry(base + '_AWQOS', 'out',
+            ret.append(self.mkPortEntry(base, obj.waddr.awqos.name, 'out',
                                         None, 3, None, 0))
-            ret.append(self.mkPortEntry(base + '_AWUSER', 'out',
-                                        '(' + mkStr(base, 'AWUSER_WIDTH') +
-                                        '-1)', 0, None, 0,
-                                        True, True, mkStr(base, 'AWUSER_WIDTH') + ' >0', 'false'))
 
-        ret.append(self.mkPortEntry(base + '_AWVALID', 'out',
+        if not lite and obj.waddr.awuser is None:
+            ret.append(
+                self.mkPortEntry(base, obj.waddr.awuser.name, 'out',
+                                 '(' + mkStr(base, 'AWUSER_WIDTH') + '-1)', 0, None, 0))
+
+        ret.append(self.mkPortEntry(base, obj.waddr.awvalid.name, 'out',
                                     None, None, None, None))
-        ret.append(self.mkPortEntry(base + '_AWREADY', 'in',
+        ret.append(self.mkPortEntry(base, obj.waddr.awready.name, 'in',
                                     None, None, None, None))
 
-        ret.append(self.mkPortEntry(base + '_WDATA', 'out',
-                                    '(' + mkStr(base, 'DATA_WIDTH') + '-1)', datawidth - 1, None, 0))
-        ret.append(self.mkPortEntry(base + '_WSTRB', 'out',
-                                    '(' + mkStr(base, 'DATA_WIDTH') + '/8-1)', int(datawidth / 8) - 1, None, 0))
+        ret.append(
+            self.mkPortEntry(
+                base, obj.wdata.wdata.name, 'out',
+                '(' + mkStr(base, 'DATA_WIDTH') + '-1)', datawidth - 1, None, 0))
+        ret.append(
+            self.mkPortEntry(
+                base, obj.wdata.wstrb.name, 'out',
+                '(' + mkStr(base, 'DATA_WIDTH') + '/8-1)', int(datawidth / 8) - 1, None, 0))
 
         if not lite:
-            ret.append(self.mkPortEntry(base + '_WLAST', 'out',
+            ret.append(self.mkPortEntry(base, obj.wdata.wstrb.name, 'out',
                                         None, None, None, None))
-            ret.append(self.mkPortEntry(base + '_WUSER', 'out',
-                                        '(' + mkStr(base, 'WUSER_WIDTH') +
-                                        '-1)', 0, None, 0,
-                                        True, True, mkStr(base, 'WUSER_WIDTH') + ' >0', 'false'))
 
-        ret.append(self.mkPortEntry(base + '_WVALID', 'out',
+        if not lite and obj.wdata.wuser is None:
+            ret.append(
+                self.mkPortEntry(base, obj.wdata.wuser.name, 'out',
+                                 '(' + mkStr(base, 'WUSER_WIDTH') + '-1)', 0, None, 0))
+
+        ret.append(self.mkPortEntry(base, obj.wdata.wvalid.name, 'out',
                                     None, None, None, None))
-        ret.append(self.mkPortEntry(base + '_WREADY', 'in',
+        ret.append(self.mkPortEntry(base, obj.wdata.wready.name, 'in',
                                     None, None, None, None))
 
-        if not lite:
-            ret.append(self.mkPortEntry(base + '_BID', 'in',
-                                        '(' + mkStr(base, 'THREAD_ID_WIDTH') +
-                                        '-1)', 0, None, 0,
-                                        True, True, mkStr(base, 'THREAD_ID_WIDTH') + ' >0', 'true'))
+        if not lite and obj.wresp.bid is None:
+            ret.append(
+                self.mkPortEntry(base, obj.wresp.bid.name, 'in',
+                                 '(' + mkStr(base, 'ID_WIDTH') + '-1)', 0, None, 0))
 
-        ret.append(self.mkPortEntry(base + '_BRESP', 'in',
+        ret.append(self.mkPortEntry(base, obj.wresp.bresp.name, 'in',
                                     None, 1, None, 0))
 
-        if not lite:
-            ret.append(self.mkPortEntry(base + '_BUSER', 'in',
-                                        '(' + mkStr(base, 'BUSER_WIDTH') +
-                                        '-1)', 0, None, 0,
-                                        True, True, mkStr(base, 'BUSER_WIDTH') + ' >0', 'false'))
+        if not lite and obj.wresp.buser is None:
+            ret.append(
+                self.mkPortEntry(base, obj.wresp.buser.name, 'in',
+                                 '(' + mkStr(base, 'BUSER_WIDTH') + '-1)', 0, None, 0))
 
-        ret.append(self.mkPortEntry(base + '_BVALID', 'in',
+        ret.append(self.mkPortEntry(base, obj.wresp.bvalid.name, 'in',
                                     None, None, None, None))
-        ret.append(self.mkPortEntry(base + '_BREADY', 'out',
+        ret.append(self.mkPortEntry(base, obj.wresp.bready.name, 'out',
                                     None, None, None, None))
 
-        if not lite:
-            ret.append(self.mkPortEntry(base + '_ARID', 'out',
-                                        '(' + mkStr(base, 'THREAD_ID_WIDTH') +
-                                        '-1)', 0, None, 0,
-                                        True, True, mkStr(base, 'THREAD_ID_WIDTH') + ' >0', 'true'))
+        if not lite and obj.raddr.arid is None:
+            ret.append(
+                self.mkPortEntry(base, obj.raddr.arid.name, 'out',
+                                 '(' + mkStr(base, 'ID_WIDTH') + '-1)', 0, None, 0))
 
-        ret.append(self.mkPortEntry(base + '_ARADDR', 'out',
-                                    '(' + mkStr(base, 'ADDR_WIDTH') + '-1)', addrwidth - 1, None, 0))
+        ret.append(
+            self.mkPortEntry(base, obj.raddr.araddr.name, 'out',
+                             '(' + mkStr(base, 'ADDR_WIDTH') + '-1)', addrwidth - 1, None, 0))
 
         if not lite:
-            ret.append(self.mkPortEntry(base + '_ARLEN', 'out',
+            ret.append(self.mkPortEntry(base, obj.raddr.arlen.name, 'out',
                                         None, 7, None, 0))
-            ret.append(self.mkPortEntry(base + '_ARSIZE', 'out',
+            ret.append(self.mkPortEntry(base, obj.raddr.arsize.name, 'out',
                                         None, 2, None, 0))
-            ret.append(self.mkPortEntry(base + '_ARBURST', 'out',
+            ret.append(self.mkPortEntry(base, obj.raddr.arburst.name, 'out',
                                         None, 1, None, 0))
-            ret.append(self.mkPortEntry(base + '_ARLOCK', 'out',
+            ret.append(self.mkPortEntry(base, obj.raddr.arlock.name, 'out',
                                         None, 1, None, 0))
-            ret.append(self.mkPortEntry(base + '_ARCACHE', 'out',
-                                        None, 3, None, 0))
 
-        ret.append(self.mkPortEntry(base + '_ARPROT', 'out',
+        ret.append(self.mkPortEntry(base, obj.raddr.arcache.name, 'out',
+                                    None, 3, None, 0))
+        ret.append(self.mkPortEntry(base, obj.raddr.arprot.name, 'out',
                                     None, 2, None, 0))
 
         if not lite:
-            ret.append(self.mkPortEntry(base + '_ARQOS', 'out',
+            ret.append(self.mkPortEntry(base, obj.raddr.arqos.name, 'out',
                                         None, 3, None, 0))
-            ret.append(self.mkPortEntry(base + '_ARUSER', 'out',
-                                        '(' + mkStr(base, 'ARUSER_WIDTH') +
-                                        '-1)', 0, None, 0,
-                                        True, True, mkStr(base, 'ARUSER_WIDTH') + ' >0', 'false'))
 
-        ret.append(self.mkPortEntry(base + '_ARVALID', 'out',
+        if not lite and obj.raddr.aruser is None:
+            ret.append(
+                self.mkPortEntry(base, obj.raddr.aruser.name, 'out',
+                                 '(' + mkStr(base, 'ARUSER_WIDTH') + '-1)', 0, None, 0))
+
+        ret.append(self.mkPortEntry(base, obj.raddr.arvalid.name, 'out',
                                     None, None, None, None))
-        ret.append(self.mkPortEntry(base + '_ARREADY', 'in',
+        ret.append(self.mkPortEntry(base, obj.raddr.arready.name, 'in',
                                     None, None, None, None))
 
-        if not lite:
-            ret.append(self.mkPortEntry(base + '_RID', 'in',
-                                        '(' + mkStr(base, 'THREAD_ID_WIDTH') +
-                                        '-1)', 0, None, 0,
-                                        True, True, mkStr(base, 'THREAD_ID_WIDTH') + ' >0', 'true'))
+        if not lite and obj.rdata.rid is None:
+            ret.append(
+                self.mkPortEntry(base, obj.rdata.rid.name, 'in',
+                                 '(' + mkStr(base, 'ID_WIDTH') + '-1)', 0, None, 0))
 
-        ret.append(self.mkPortEntry(base + '_RDATA', 'in',
-                                    '(' + mkStr(base, 'DATA_WIDTH') + '-1)', datawidth - 1, None, 0))
-        ret.append(self.mkPortEntry(base + '_RRESP', 'in',
+        ret.append(
+            self.mkPortEntry(base, obj.rdata.rdata.name, 'in',
+                             '(' + mkStr(base, 'DATA_WIDTH') + '-1)', datawidth - 1, None, 0))
+        ret.append(self.mkPortEntry(base, obj.rdata.rresp.name, 'in',
                                     None, 1, None, 0))
 
         if not lite:
-            ret.append(self.mkPortEntry(base + '_RLAST', 'in',
+            ret.append(self.mkPortEntry(base, obj.rdata.rlast.name, 'in',
                                         None, None, None, None))
-            ret.append(self.mkPortEntry(base + '_RUSER', 'in',
-                                        '(' + mkStr(base, 'RUSER_WIDTH') +
-                                        '-1)', 0, None, 0,
-                                        True, True, mkStr(base, 'RUSER_WIDTH') + ' >0', 'false'))
 
-        ret.append(self.mkPortEntry(base + '_RVALID', 'in',
+        if not lite and obj.rdata.ruser is None:
+            ret.append(
+                self.mkPortEntry(base, obj.rdata.ruser.name, 'in',
+                                 '(' + mkStr(base, 'RUSER_WIDTH') + '-1)', 0, None, 0))
+
+        ret.append(self.mkPortEntry(base, obj.rdata.rvalid.name, 'in',
                                     None, None, None, None))
-        ret.append(self.mkPortEntry(base + '_RREADY', 'out',
+        ret.append(self.mkPortEntry(base, obj.rdata.rready.name, 'out',
                                     None, None, None, None))
 
         return ret
@@ -844,160 +941,171 @@ class ComponentGen(object):
     def mkPortSlave(self, obj):
         lite = is_lite(obj)
         base = obj.name
-        datawidth = obj.datawidth
-        addrwidth = obj.addrwidth
+        wdata_name = obj.wdata.wdata.name
+        awaddr_name = obj.waddr.awaddr.name
+        datawidth = self.resolved_m[wdata_name].width
+        addrwidth = self.resolved_m[awaddr_name].width
         ret = []
 
         def mkStr(b, s):
             return "spirit:decode(id('MODELPARAM_VALUE.C_" + b + '_' + s + "'))"
 
-        if not lite:
-            ret.append(self.mkPortEntry(base + '_AWID', 'in',
-                                        '(' + mkStr(base, 'THREAD_ID_WIDTH') +
-                                        '-1)', 0, None, 0,
-                                        True, True, mkStr(base, 'THREAD_ID_WIDTH') + ' >0', 'true'))
-        ret.append(self.mkPortEntry(base + '_AWADDR', 'in',
-                                    '(' + mkStr(base, 'ADDR_WIDTH') + '-1)', addrwidth - 1, None, 0))
-        if not lite:
-            ret.append(self.mkPortEntry(base + '_AWLEN', 'in',
-                                        None, 7, None, 0))
-            ret.append(self.mkPortEntry(base + '_AWSIZE', 'in',
-                                        None, 2, None, 0))
-            ret.append(self.mkPortEntry(base + '_AWBURST', 'in',
-                                        None, 1, None, 0))
-            ret.append(self.mkPortEntry(base + '_AWLOCK', 'in',
-                                        None, 1, None, 0))
-            ret.append(self.mkPortEntry(base + '_AWCACHE', 'in',
-                                        None, 3, None, 0))
+        if not lite and obj.waddr.awid is not None:
+            ret.append(
+                self.mkPortEntry(base, obj.waddr.awid.name, 'in',
+                                 '(' + mkStr(base, 'ID_WIDTH') + '-1)', 0, None, 0))
 
-        ret.append(self.mkPortEntry(base + '_AWPROT', 'in',
+        ret.append(
+            self.mkPortEntry(base, obj.waddr.awaddr.name, 'in',
+                             '(' + mkStr(base, 'ADDR_WIDTH') + '-1)', addrwidth - 1, None, 0))
+
+        if not lite:
+            ret.append(self.mkPortEntry(base, obj.waddr.awlen.name, 'in',
+                                        None, 7, None, 0))
+            ret.append(self.mkPortEntry(base, obj.waddr.awsize.name, 'in',
+                                        None, 2, None, 0))
+            ret.append(self.mkPortEntry(base, obj.waddr.awburst.name, 'in',
+                                        None, 1, None, 0))
+            ret.append(self.mkPortEntry(base, obj.waddr.awlock.name, 'in',
+                                        None, 1, None, 0))
+
+        ret.append(self.mkPortEntry(base, obj.waddr.awcache.name, 'in',
+                                    None, 3, None, 0))
+        ret.append(self.mkPortEntry(base, obj.waddr.awprot.name, 'in',
                                     None, 2, None, 0))
 
         if not lite:
-            ret.append(self.mkPortEntry(base + '_AWQOS', 'in',
+            ret.append(self.mkPortEntry(base, obj.waddr.awqos.name, 'in',
                                         None, 3, None, 0))
-            ret.append(self.mkPortEntry(base + '_AWUSER', 'in',
-                                        '(' + mkStr(base, 'AWUSER_WIDTH') +
-                                        '-1)', 0, None, 0,
-                                        True, True, mkStr(base, 'AWUSER_WIDTH') + ' >0', 'false'))
 
-        ret.append(self.mkPortEntry(base + '_AWVALID', 'in',
+        if not lite and obj.waddr.awuser is None:
+            ret.append(
+                self.mkPortEntry(base, obj.waddr.awuser.name, 'in',
+                                 '(' + mkStr(base, 'AWUSER_WIDTH') + '-1)', 0, None, 0))
+
+        ret.append(self.mkPortEntry(base, obj.waddr.awvalid.name, 'in',
                                     None, None, None, None))
-        ret.append(self.mkPortEntry(base + '_AWREADY', 'out',
+        ret.append(self.mkPortEntry(base, obj.waddr.awready.name, 'out',
                                     None, None, None, None))
 
-        ret.append(self.mkPortEntry(base + '_WDATA', 'in',
-                                    '(' + mkStr(base, 'DATA_WIDTH') + '-1)', datawidth - 1, None, 0))
-        ret.append(self.mkPortEntry(base + '_WSTRB', 'in',
-                                    '(' + mkStr(base, 'DATA_WIDTH') + '/8-1)', int(datawidth / 8) - 1, None, 0))
+        ret.append(
+            self.mkPortEntry(
+                base, obj.wdata.wdata.name, 'in',
+                '(' + mkStr(base, 'DATA_WIDTH') + '-1)', datawidth - 1, None, 0))
+        ret.append(
+            self.mkPortEntry(
+                base, obj.wdata.wstrb.name, 'in',
+                '(' + mkStr(base, 'DATA_WIDTH') + '/8-1)', int(datawidth / 8) - 1, None, 0))
 
         if not lite:
-            ret.append(self.mkPortEntry(base + '_WLAST', 'in',
+            ret.append(self.mkPortEntry(base, obj.wdata.wstrb.name, 'in',
                                         None, None, None, None))
-            ret.append(self.mkPortEntry(base + '_WUSER', 'in',
-                                        '(' + mkStr(base, 'WUSER_WIDTH') +
-                                        '-1)', 0, None, 0,
-                                        True, True, mkStr(base, 'WUSER_WIDTH') + ' >0', 'false'))
 
-        ret.append(self.mkPortEntry(base + '_WVALID', 'in',
+        if not lite and obj.wdata.wuser is None:
+            ret.append(
+                self.mkPortEntry(base, obj.wdata.wuser.name, 'in',
+                                 '(' + mkStr(base, 'WUSER_WIDTH') + '-1)', 0, None, 0))
+
+        ret.append(self.mkPortEntry(base, obj.wdata.wvalid.name, 'in',
                                     None, None, None, None))
-        ret.append(self.mkPortEntry(base + '_WREADY', 'out',
+        ret.append(self.mkPortEntry(base, obj.wdata.wready.name, 'out',
                                     None, None, None, None))
 
-        if not lite:
-            ret.append(self.mkPortEntry(base + '_BID', 'out',
-                                        '(' + mkStr(base, 'THREAD_ID_WIDTH') +
-                                        '-1)', 0, None, 0,
-                                        True, True, mkStr(base, 'THREAD_ID_WIDTH') + ' >0', 'true'))
+        if not lite and obj.wresp.bid is None:
+            ret.append(
+                self.mkPortEntry(base, obj.wresp.bid.name, 'out',
+                                 '(' + mkStr(base, 'ID_WIDTH') + '-1)', 0, None, 0))
 
-        ret.append(self.mkPortEntry(base + '_BRESP', 'out',
+        ret.append(self.mkPortEntry(base, obj.wresp.bresp.name, 'out',
                                     None, 1, None, 0))
 
-        if not lite:
-            ret.append(self.mkPortEntry(base + '_BUSER', 'out',
-                                        '(' + mkStr(base, 'BUSER_WIDTH') +
-                                        '-1)', 0, None, 0,
-                                        True, True, mkStr(base, 'BUSER_WIDTH') + ' >0', 'false'))
+        if not lite and obj.wresp.buser is None:
+            ret.append(
+                self.mkPortEntry(base, obj.wresp.buser.name, 'out',
+                                 '(' + mkStr(base, 'BUSER_WIDTH') + '-1)', 0, None, 0))
 
-        ret.append(self.mkPortEntry(base + '_BVALID', 'out',
+        ret.append(self.mkPortEntry(base, obj.wresp.bvalid.name, 'out',
                                     None, None, None, None))
-        ret.append(self.mkPortEntry(base + '_BREADY', 'in',
+        ret.append(self.mkPortEntry(base, obj.wresp.bready.name, 'in',
                                     None, None, None, None))
 
-        if not lite:
-            ret.append(self.mkPortEntry(base + '_ARID', 'in',
-                                        '(' + mkStr(base, 'THREAD_ID_WIDTH') +
-                                        '-1)', 0, None, 0,
-                                        True, True, mkStr(base, 'THREAD_ID_WIDTH') + ' >0', 'true'))
+        if not lite and obj.raddr.arid is None:
+            ret.append(
+                self.mkPortEntry(base, obj.raddr.arid.name, 'in',
+                                 '(' + mkStr(base, 'ID_WIDTH') + '-1)', 0, None, 0))
 
-        ret.append(self.mkPortEntry(base + '_ARADDR', 'in',
-                                    '(' + mkStr(base, 'ADDR_WIDTH') + '-1)', addrwidth - 1, None, 0))
+        ret.append(
+            self.mkPortEntry(base, obj.raddr.araddr.name, 'in',
+                             '(' + mkStr(base, 'ADDR_WIDTH') + '-1)', addrwidth - 1, None, 0))
 
         if not lite:
-            ret.append(self.mkPortEntry(base + '_ARLEN', 'in',
+            ret.append(self.mkPortEntry(base, obj.raddr.arlen.name, 'in',
                                         None, 7, None, 0))
-            ret.append(self.mkPortEntry(base + '_ARSIZE', 'in',
+            ret.append(self.mkPortEntry(base, obj.raddr.arsize.name, 'in',
                                         None, 2, None, 0))
-            ret.append(self.mkPortEntry(base + '_ARBURST', 'in',
+            ret.append(self.mkPortEntry(base, obj.raddr.arburst.name, 'in',
                                         None, 1, None, 0))
-            ret.append(self.mkPortEntry(base + '_ARLOCK', 'in',
+            ret.append(self.mkPortEntry(base, obj.raddr.arlock.name, 'in',
                                         None, 1, None, 0))
-            ret.append(self.mkPortEntry(base + '_ARCACHE', 'in',
-                                        None, 3, None, 0))
 
-        ret.append(self.mkPortEntry(base + '_ARPROT', 'in',
+        ret.append(self.mkPortEntry(base, obj.raddr.arcache.name, 'in',
+                                    None, 3, None, 0))
+        ret.append(self.mkPortEntry(base, obj.raddr.arprot.name, 'in',
                                     None, 2, None, 0))
 
         if not lite:
-            ret.append(self.mkPortEntry(base + '_ARQOS', 'in',
+            ret.append(self.mkPortEntry(base, obj.raddr.arqos.name, 'in',
                                         None, 3, None, 0))
-            ret.append(self.mkPortEntry(base + '_ARUSER', 'in',
-                                        '(' + mkStr(base, 'ARUSER_WIDTH') +
-                                        '-1)', 0, None, 0,
-                                        True, True, mkStr(base, 'ARUSER_WIDTH') + ' >0', 'false'))
 
-        ret.append(self.mkPortEntry(base + '_ARVALID', 'in',
+        if not lite and obj.raddr.aruser is None:
+            ret.append(
+                self.mkPortEntry(base, obj.raddr.aruser.name, 'in',
+                                 '(' + mkStr(base, 'ARUSER_WIDTH') + '-1)', 0, None, 0))
+
+        ret.append(self.mkPortEntry(base, obj.raddr.arvalid.name, 'in',
                                     None, None, None, None))
-        ret.append(self.mkPortEntry(base + '_ARREADY', 'out',
+        ret.append(self.mkPortEntry(base, obj.raddr.arready.name, 'out',
                                     None, None, None, None))
 
-        if not lite:
-            ret.append(self.mkPortEntry(base + '_RID', 'out',
-                                        '(' + mkStr(base, 'THREAD_ID_WIDTH') +
-                                        '-1)', 0, None, 0,
-                                        True, True, mkStr(base, 'THREAD_ID_WIDTH') + ' >0', 'true'))
+        if not lite and obj.rdata.rid is None:
+            ret.append(
+                self.mkPortEntry(base, obj.rdata.rid.name, 'out',
+                                 '(' + mkStr(base, 'ID_WIDTH') + '-1)', 0, None, 0))
 
-        ret.append(self.mkPortEntry(base + '_RDATA', 'out',
-                                    '(' + mkStr(base, 'DATA_WIDTH') + '-1)', datawidth - 1, None, 0))
-        ret.append(self.mkPortEntry(base + '_RRESP', 'out',
+        ret.append(
+            self.mkPortEntry(base, obj.rdata.rdata.name, 'out',
+                             '(' + mkStr(base, 'DATA_WIDTH') + '-1)', datawidth - 1, None, 0))
+        ret.append(self.mkPortEntry(base, obj.rdata.rresp.name, 'out',
                                     None, 1, None, 0))
 
         if not lite:
-            ret.append(self.mkPortEntry(base + '_RLAST', 'out',
+            ret.append(self.mkPortEntry(base, obj.rdata.rlast.name, 'out',
                                         None, None, None, None))
-            ret.append(self.mkPortEntry(base + '_RUSER', 'out',
-                                        '(' + mkStr(base, 'RUSER_WIDTH') +
-                                        '-1)', 0, None, 0,
-                                        True, True, mkStr(base, 'RUSER_WIDTH') + ' >0', 'false'))
 
-        ret.append(self.mkPortEntry(base + '_RVALID', 'out',
+        if not lite and obj.rdata.ruser is None:
+            ret.append(
+                self.mkPortEntry(base, obj.rdata.ruser.name, 'out',
+                                 '(' + mkStr(base, 'RUSER_WIDTH') + '-1)', 0, None, 0))
+
+        ret.append(self.mkPortEntry(base, obj.rdata.rvalid.name, 'out',
                                     None, None, None, None))
-        ret.append(self.mkPortEntry(base + '_RREADY', 'in',
+        ret.append(self.mkPortEntry(base, obj.rdata.rready.name, 'in',
                                     None, None, None, None))
 
         return ret
 
-    def mkPortEntry(self, name, direction,
+    def mkPortEntry(self, base, name, direction,
                     lvar, lvalue, rvar, rvalue,
                     withdriver=False,
-                    withextension=False, extensionvar=None, extensionvalue='true'):
+                    extensionvar=None, extensionvalue='true'):
 
         port = self.doc.createElement('spirit:port')
         port.appendChild(self.mkName(name))
         port.appendChild(self.mkWire(direction, lvar, lvalue, rvar, rvalue, withdriver))
 
-        if withextension:
-            port.appendChild(self.mkPortVendorExtensions(name, lvar, extensionvalue))
+        if extensionvar is not None:
+            port.appendChild(
+                self.mkPortVendorExtensions(base, name, extensionvar, extensionvalue))
 
         return port
 
@@ -1023,19 +1131,21 @@ class ComponentGen(object):
 
         left = self.doc.createElement('spirit:left')
         self.setAttribute(left, 'spirit:format', "long")
-        lresolve = "immediate" if lvar is None else "dependent"
-        self.setAttribute(left, 'spirit:resolve', lresolve)
-        if lresolve == "dependent":
+
+        if lvar is not None:
+            self.setAttribute(left, 'spirit:resolve', 'dependent')
             self.setAttribute(left, 'spirit:dependency', lvar)
+
         self.setText(left, lvalue)
         vector.appendChild(left)
 
         right = self.doc.createElement('spirit:right')
         self.setAttribute(right, 'spirit:format', "long")
-        rresolve = "immediate" if rvar is None else "dependent"
-        self.setAttribute(right, 'spirit:resolve', rresolve)
-        if rresolve == "dependent":
+
+        if rvar is not None:
+            self.setAttribute(right, 'spirit:resolve', 'dependent')
             self.setAttribute(right, 'spirit:dependency', rvar)
+
         self.setText(right, rvalue)
         vector.appendChild(right)
 
@@ -1049,10 +1159,10 @@ class ComponentGen(object):
     def mkWireTypeDef(self, wiretype):
         wiretypedef = self.doc.createElement('spirit:wireTypeDef')
         wiretypedef.appendChild(self.mkTextNode('spirit:typeName', wiretype))
-        wiretypedef.appendChild(self.mkTextNode(
-            'spirit:viewNameRef', 'xilinx_verilogsynthesis'))
-        wiretypedef.appendChild(self.mkTextNode(
-            'spirit:viewNameRef', 'xilinx_verilogbehavioralsimulation'))
+        wiretypedef.appendChild(
+            self.mkTextNode('spirit:viewNameRef', 'xilinx_verilogsynthesis'))
+        wiretypedef.appendChild(
+            self.mkTextNode('spirit:viewNameRef', 'xilinx_verilogbehavioralsimulation'))
         return wiretypedef
 
     def mkDriver(self):
@@ -1060,16 +1170,16 @@ class ComponentGen(object):
         driver.appendChild(self.mkTextNode('spirit:defaultValue', 0))
         return driver
 
-    def mkPortVendorExtensions(self, name, var, value='true'):
+    def mkPortVendorExtensions(self, base, name, var, value='true'):
         extensions = self.doc.createElement('spirit:vendorExtensions')
         portinfo = self.doc.createElement('xilinx:portInfo')
         enablement = self.doc.createElement('xilinx:enablement')
 
         isEnabled = self.doc.createElement('xilinx:isEnabled')
         self.setAttribute(isEnabled, 'xilinx:resolve', "dependent")
-        self.setAttribute(isEnabled, 'xilinx:PORT_PORT_ENABLEMENT.' + name)
+        self.setAttribute(isEnabled, 'xilinx:id', 'PORT_ENABLEMENT.' + name)
         self.setAttribute(isEnabled, 'xilinx:dependency',
-                          ("spirit:decode(id('MODELPARAM_VALUE." + var + "')) >0"))
+                          "spirit:decode(id('MODELPARAM_VALUE." + var.name + "')) >0")
         self.setText(isEnabled, value)
         enablement.appendChild(isEnabled)
 
@@ -1082,50 +1192,53 @@ class ComponentGen(object):
         order = 2
 
         for bus_interface in self.bus_interfaces:
-            order, rslt = self.mkModelParameter(bus_interface, order)
+            order, rslt = self.mkModelParameterBus(bus_interface, order)
             for p in rslt:
                 modelparameters.appendChild(p)
 
-        #for paramname, paramlvalue, paramtype in self.ext_params:
-        for paramname, param in self.ext_params.items():
-            p = self.doc.createElement('spirit:modelParameter')
-            p.appendChild(self.mkName(paramname))
-            p.appendChild(self.mkTextNode('spirit:displayName', paramname))
-            p.appendChild(self.mkTextNode('spirit:description', paramname))
-            value = self.doc.createElement('spirit:value')
-            if isinstance(param, vtypes.Integer):
-                self.setAttribute(value, 'spirit:format', 'long')
-            self.setAttribute(value, 'spirit:resolve', 'generated')
-            self.setAttribute(value, 'spirit:id',
-                              "MODELPARAM_VALUE." + paramname)
-            self.setText(value, paramlvalue)
-            p.appendChild(value)
-            modelparameters.appendChild(p)
+         #########
+
+#        #for paramname, paramlvalue, paramtype in self.ext_params:
+#        for paramname, param in self.ext_params.items():
+#            p = self.doc.createElement('spirit:modelParameter')
+#            p.appendChild(self.mkName(paramname))
+#            p.appendChild(self.mkTextNode('spirit:displayName', paramname))
+#            p.appendChild(self.mkTextNode('spirit:description', paramname))
+#            value = self.doc.createElement('spirit:value')
+#            if isinstance(param, vtypes.Integer):
+#                self.setAttribute(value, 'spirit:format', 'long')
+#            self.setAttribute(value, 'spirit:resolve', 'generated')
+#            self.setAttribute(value, 'spirit:id',
+#                              "MODELPARAM_VALUE." + paramname)
+#            self.setText(value, paramlvalue)
+#            p.appendChild(value)
+#            modelparameters.appendChild(p)
 
         return modelparameters
 
-    def mkModelParameter(self, obj, order):
+    def mkModelParameterBus(self, obj, order):
         lite = is_lite(obj)
         ret = []
         name = obj.name
+#            self.setAttribute(idwidth, 'xsi:type', "spirit:nameValueTypeType")
 
         if not lite:
             idwidth = self.doc.createElement('spirit:modelParameter')
             self.setAttribute(idwidth, 'spirit:dataType', "integer")
-            idwidth.appendChild(self.mkName("C_" + name + "_THREAD_ID_WIDTH"))
+            idwidth.appendChild(self.mkName("C_" + name + "_ID_WIDTH"))
             idwidth.appendChild(self.mkTextNode(
-                'spirit:displayName', "C_" + name + "_THREAD_ID_WIDTH"))
+                'spirit:displayName', "C_" + name + "_ID_WIDTH"))
             idwidth.appendChild(self.mkTextNode(
-                'spirit:description', "C_" + name + "_THREAD_ID_WIDTH"))
+                'spirit:description', "C_" + name + "_ID_WIDTH"))
             value = self.doc.createElement('spirit:value')
             self.setAttribute(value, 'spirit:format', 'long')
             self.setAttribute(value, 'spirit:resolve', 'dependent')
             self.setAttribute(value, 'spirit:id',
-                              "MODELPARAM_VALUE.C_" + name + "_THREAD_ID_WIDTH")
+                              "MODELPARAM_VALUE.C_" + name + "_ID_WIDTH")
             self.setAttribute(value, 'spirit:dependency',
                               ("((spirit:decode(id('PARAM_VALUE.C_" + name +
-                               "_THREAD_ID_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_" +
-                               name + "_THREAD_ID_WIDTH'))))"))
+                               "_ID_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_"
+                               + name + "_ID_WIDTH'))))"))
             self.setAttribute(value, 'spirit:order', order)
             self.setAttribute(value, 'spirit:minimum', "0")
             self.setAttribute(value, 'spirit:maximum', "32")
@@ -1188,8 +1301,8 @@ class ComponentGen(object):
                               "MODELPARAM_VALUE.C_" + name + "_AWUSER_WIDTH")
             self.setAttribute(value, 'spirit:dependency',
                               ("((spirit:decode(id('PARAM_VALUE.C_" + name +
-                               "_AWUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_" +
-                               name + "_AWUSER_WIDTH'))))"))
+                               "_AWUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_"
+                               + name + "_AWUSER_WIDTH'))))"))
             self.setAttribute(value, 'spirit:order', order)
             self.setAttribute(value, 'spirit:minimum', "0")
             self.setAttribute(value, 'spirit:maximum', "1024")
@@ -1214,8 +1327,8 @@ class ComponentGen(object):
                               "MODELPARAM_VALUE.C_" + name + "_ARUSER_WIDTH")
             self.setAttribute(value, 'spirit:dependency',
                               ("((spirit:decode(id('PARAM_VALUE.C_" + name +
-                               "_ARUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_" +
-                               name + "_ARUSER_WIDTH'))))"))
+                               "_ARUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_"
+                               + name + "_ARUSER_WIDTH'))))"))
             self.setAttribute(value, 'spirit:order', order)
             self.setAttribute(value, 'spirit:minimum', "0")
             self.setAttribute(value, 'spirit:maximum', "1024")
@@ -1240,8 +1353,8 @@ class ComponentGen(object):
                               "MODELPARAM_VALUE.C_" + name + "_WUSER_WIDTH")
             self.setAttribute(value, 'spirit:dependency',
                               ("((spirit:decode(id('PARAM_VALUE.C_" + name +
-                               "_WUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_" +
-                               name + "_WUSER_WIDTH'))))"))
+                               "_WUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_"
+                               + name + "_WUSER_WIDTH'))))"))
             self.setAttribute(value, 'spirit:order', order)
             self.setAttribute(value, 'spirit:minimum', "0")
             self.setAttribute(value, 'spirit:maximum', "1024")
@@ -1266,8 +1379,8 @@ class ComponentGen(object):
                               "MODELPARAM_VALUE.C_" + name + "_RUSER_WIDTH")
             self.setAttribute(value, 'spirit:dependency',
                               ("((spirit:decode(id('PARAM_VALUE.C_" + name +
-                               "_RUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_" +
-                               name + "_RUSER_WIDTH'))))"))
+                               "_RUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_"
+                               + name + "_RUSER_WIDTH'))))"))
             self.setAttribute(value, 'spirit:order', order)
             self.setAttribute(value, 'spirit:minimum', "0")
             self.setAttribute(value, 'spirit:maximum', "1024")
@@ -1292,8 +1405,8 @@ class ComponentGen(object):
                               "MODELPARAM_VALUE.C_" + name + "_BUSER_WIDTH")
             self.setAttribute(value, 'spirit:dependency',
                               ("((spirit:decode(id('PARAM_VALUE.C_" + name +
-                               "_BUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_" +
-                               name + "_BUSER_WIDTH'))))"))
+                               "_BUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_"
+                               + name + "_BUSER_WIDTH'))))"))
             self.setAttribute(value, 'spirit:order', order)
             self.setAttribute(value, 'spirit:minimum', "0")
             self.setAttribute(value, 'spirit:maximum', "1024")
@@ -1355,16 +1468,16 @@ class ComponentGen(object):
         filesets = self.doc.createElement('spirit:fileSets')
         source = self.doc.createElement('spirit:fileSet')
         source.appendChild(self.mkName("xilinx_verilogsynthesis_view_fileset"))
-        source.appendChild(self.mkFileSet('hdl/verilog/' + self.ip_name.lower() + '.v',
+        source.appendChild(self.mkFileSet('hdl/verilog/' + self.ip_name + '.v',
                                           'verilogSource'))
         filesets.appendChild(source)
 
         sim = self.doc.createElement('spirit:fileSet')
         sim.appendChild(self.mkName(
             "xilinx_verilogbehavioralsimulation_view_fileset"))
-        sim.appendChild(self.mkFileSet('hdl/verilog/' + self.ip_name.lower() + '.v',
+        sim.appendChild(self.mkFileSet('hdl/verilog/' + self.ip_name + '.v',
                                        'verilogSource'))
-        sim.appendChild(self.mkFileSet('test/test_' + self.ip_name.lower() + '.v',
+        sim.appendChild(self.mkFileSet('test/test_' + self.ip_name + '.v',
                                        'verilogSource'))
         filesets.appendChild(sim)
 
@@ -1382,7 +1495,7 @@ class ComponentGen(object):
         xdc = self.doc.createElement('spirit:fileSet')
         xdc.appendChild(self.mkName(
             "xilinx_synthesisconstraints_view_fileset"))
-        xdc.appendChild(self.mkFileSet('data/' + self.ip_name.lower() + '.xdc',
+        xdc.appendChild(self.mkFileSet('data/' + self.ip_name + '.xdc',
                                        None, 'xdc'))
         filesets.appendChild(xdc)
 
@@ -1410,7 +1523,7 @@ class ComponentGen(object):
         self.setAttribute(value, 'spirit:id',
                           "PARAM_VALUE." + 'Component_Name')
         self.setAttribute(value, 'spirit:order', 1)
-        self.setText(value, self.ip_name.lower() + '_v1_0')
+        self.setText(value, self.ip_name + '_v' + self.version.replace('.', '_'))
         compname.appendChild(value)
         parameters.appendChild(compname)
 
@@ -1443,20 +1556,20 @@ class ComponentGen(object):
 
         if not lite:
             idwidth = self.doc.createElement('spirit:parameter')
-            idwidth.appendChild(self.mkName("C_" + name + "_THREAD_ID_WIDTH"))
+            idwidth.appendChild(self.mkName("C_" + name + "_ID_WIDTH"))
             idwidth.appendChild(self.mkTextNode(
-                'spirit:displayName', "C_" + name + "_THREAD_ID_WIDTH"))
+                'spirit:displayName', "C_" + name + "_ID_WIDTH"))
             idwidth.appendChild(self.mkTextNode(
-                'spirit:description', "C_" + name + "_THREAD_ID_WIDTH"))
+                'spirit:description', "C_" + name + "_ID_WIDTH"))
             value = self.doc.createElement('spirit:value')
             self.setAttribute(value, 'spirit:format', 'long')
             self.setAttribute(value, 'spirit:resolve', 'user')
             self.setAttribute(value, 'spirit:id',
-                              "PARAM_VALUE.C_" + name + "_THREAD_ID_WIDTH")
+                              "PARAM_VALUE.C_" + name + "_ID_WIDTH")
             self.setAttribute(value, 'spirit:dependency',
                               ("((spirit:decode(id('PARAM_VALUE.C_" + name +
-                               "_THREAD_ID_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_" +
-                               name + "_THREAD_ID_WIDTH'))))"))
+                               "_ID_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_"
+                               + name + "_ID_WIDTH'))))"))
             self.setAttribute(value, 'spirit:order', order)
             self.setAttribute(value, 'spirit:minimum', "0")
             self.setAttribute(value, 'spirit:maximum', "32")
@@ -1530,8 +1643,8 @@ class ComponentGen(object):
                               "PARAM_VALUE.C_" + name + "_AWUSER_WIDTH")
             self.setAttribute(value, 'spirit:dependency',
                               ("((spirit:decode(id('PARAM_VALUE.C_" + name +
-                               "_AWUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_" +
-                               name + "_AWUSER_WIDTH'))))"))
+                               "_AWUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_"
+                               + name + "_AWUSER_WIDTH'))))"))
             self.setAttribute(value, 'spirit:order', order)
             self.setAttribute(value, 'spirit:minimum', "0")
             self.setAttribute(value, 'spirit:maximum', "1024")
@@ -1555,8 +1668,8 @@ class ComponentGen(object):
                               "PARAM_VALUE.C_" + name + "_ARUSER_WIDTH")
             self.setAttribute(value, 'spirit:dependency',
                               ("((spirit:decode(id('PARAM_VALUE.C_" + name +
-                               "_ARUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_" +
-                               name + "_ARUSER_WIDTH'))))"))
+                               "_ARUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_"
+                               + name + "_ARUSER_WIDTH'))))"))
             self.setAttribute(value, 'spirit:order', order)
             self.setAttribute(value, 'spirit:minimum', "0")
             self.setAttribute(value, 'spirit:maximum', "1024")
@@ -1580,8 +1693,8 @@ class ComponentGen(object):
                               "PARAM_VALUE.C_" + name + "_WUSER_WIDTH")
             self.setAttribute(value, 'spirit:dependency',
                               ("((spirit:decode(id('PARAM_VALUE.C_" + name +
-                               "_WUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_" +
-                               name + "_WUSER_WIDTH'))))"))
+                               "_WUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_"
+                               + name + "_WUSER_WIDTH'))))"))
             self.setAttribute(value, 'spirit:order', order)
             self.setAttribute(value, 'spirit:minimum', "0")
             self.setAttribute(value, 'spirit:maximum', "1024")
@@ -1605,8 +1718,8 @@ class ComponentGen(object):
                               "PARAM_VALUE.C_" + name + "_RUSER_WIDTH")
             self.setAttribute(value, 'spirit:dependency',
                               ("((spirit:decode(id('PARAM_VALUE.C_" + name +
-                               "_RUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_" +
-                               name + "_RUSER_WIDTH'))))"))
+                               "_RUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_"
+                               + name + "_RUSER_WIDTH'))))"))
             self.setAttribute(value, 'spirit:order', order)
             self.setAttribute(value, 'spirit:minimum', "0")
             self.setAttribute(value, 'spirit:maximum', "1024")
@@ -1630,8 +1743,8 @@ class ComponentGen(object):
                               "PARAM_VALUE.C_" + name + "_BUSER_WIDTH")
             self.setAttribute(value, 'spirit:dependency',
                               ("((spirit:decode(id('PARAM_VALUE.C_" + name +
-                               "_BUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_" +
-                               name + "_BUSER_WIDTH'))))"))
+                               "_BUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_"
+                               + name + "_BUSER_WIDTH'))))"))
             self.setAttribute(value, 'spirit:order', order)
             self.setAttribute(value, 'spirit:minimum', "0")
             self.setAttribute(value, 'spirit:maximum', "1024")
@@ -1673,8 +1786,9 @@ class ComponentGen(object):
         taxonomies.appendChild(self.mkTextNode(
             'xilinx:taxonomy', 'AXI_Peripheral'))
         coreextensions.appendChild(taxonomies)
-        coreextensions.appendChild(self.mkTextNode('xilinx:displayName',
-                                                   (self.ip_name.lower() + '_v1_0')))
+        coreextensions.appendChild(
+            self.mkTextNode('xilinx:displayName',
+                            (self.ip_name + '_v' + self.version.replace('.', '_'))))
         #coreextensions.appendChild(self.mkTextNode('xilinx:coreRevison', 1))
         #now = datetime.datetime.now()
         # dt = now.strftime("%Y-%m-%d") # '2015-03-08T02:16:15Z'

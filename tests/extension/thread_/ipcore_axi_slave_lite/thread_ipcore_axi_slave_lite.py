@@ -11,7 +11,7 @@ from veriloggen import *
 import veriloggen.thread as vthread
 import veriloggen.types.axi as axi
 
-import veriloggen.types.ipcore as ipcore
+import veriloggen.types.ipxact as ipxact
 
 
 def mkLed():
@@ -21,7 +21,11 @@ def mkLed():
 
     datawidth = 32
     addrwidth = 10
-    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
+    id_width = 1
+    user_width = 1
+
+    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth,
+                         id_width=id_width, user_width=user_width)
     myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth)
 
     saxi = vthread.AXISLiteRegister(m, 'saxi', clk, rst, datawidth)
@@ -194,37 +198,7 @@ def run(filename='tmp.v', simtype='iverilog', outputfile=None):
 
 
 if __name__ == '__main__':
-    rslt = run(filename='tmp.v')
-    print(rslt)
-
-    simcode = """
-reg [31:0] _addr;
-reg [31:0] _data;
-initial begin
-  #1000;
-  _addr = 0;
-  _data = 1;
-  slave_write_ipgen_slave_lite_memory_saxi_1(_data, _addr);
-
-  _addr = 4;
-  _data = 0;
-  while(_data == 0) begin
-    slave_read_ipgen_slave_lite_memory_saxi_1(_data, _addr);
-    nclk();
-  end
-
-  _addr = 8;
-  slave_read_ipgen_slave_lite_memory_saxi_1(_data, _addr);
-  if(_data) begin
-    $display("# verify (IP-XACT): PASSED");
-  end else begin
-    $display("# verify (IP-XACT): FAILED");
-  end
-
-  #10000;
-  $finish;
-end
-"""
-
     m = mkLed()
-    ipcore.to_ipcore(m, simcode=simcode, iftype='axi')
+    ipxact.to_ipxact(m,
+                     clk_ports=[('CLK', ('RST',))],
+                     rst_ports=[('RST', 'ACTIVE_HIGH')])
