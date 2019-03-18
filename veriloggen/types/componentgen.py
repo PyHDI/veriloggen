@@ -70,12 +70,6 @@ class ComponentGen(object):
 
         self.dependency_consumer = set()
 
-        #self.setAttribute(self.top, 'xmlns:xilinx', "http://www.xilinx.com")
-        #self.setAttribute(self.top, 'xmlns:spirit',
-        #                  "http://www.spiritconsortium.org/XMLSchema/SPIRIT/1685-2009")
-        #self.setAttribute(self.top, 'xmlns:xsi',
-        #                  "http://www.w3.org/2001/XMLSchema-instance")
-
         self.top.appendChild(self.mkVendor())
         self.top.appendChild(self.mkLibrary())
         self.top.appendChild(self.mkName(self.ip_name))
@@ -92,7 +86,7 @@ class ComponentGen(object):
             self.top.appendChild(r)
 
         self.top.appendChild(self.mkModel())
-        self.top.appendChild(self.mkChoices())
+        #self.top.appendChild(self.mkChoices())
         self.top.appendChild(self.mkFileSets())
         self.top.appendChild(self.mkDescription(description))
         self.top.appendChild(self.mkParameters())
@@ -689,7 +683,7 @@ class ComponentGen(object):
 
         for portname, port in self.ext_ports.items():
             ports.appendChild(self.mkPortSignal(port))
-                
+
         return ports
 
     def mkPortBus(self, obj):
@@ -720,7 +714,7 @@ class ComponentGen(object):
             ret.append(self.mkPortBusSignal(obj, port))
 
         return ret
-            
+
     def mkPortBusSignal(self, obj, attr):
         base = obj.name
 
@@ -753,7 +747,7 @@ class ComponentGen(object):
 
         return self.mkPortEntry(name, direction,
                                 None, h, None, l)
-    
+
     def mkPortSignal(self, var):
         name = var.name
         direction = ('in' if isinstance(var, vtypes.Input) else
@@ -766,7 +760,7 @@ class ComponentGen(object):
 
         return self.mkPortEntry(name, direction,
                                 None, h, None, l)
-    
+
     def mkPortEntry(self, name, direction,
                     lvar, lvalue, rvar, rvalue,
                     withdriver=False,
@@ -1082,8 +1076,8 @@ class ComponentGen(object):
 #
 #        return order, ret
 
-    def mkChoices(self):
-        choices = self.doc.createElement('spirit:choices')
+#    def mkChoices(self):
+#        choices = self.doc.createElement('spirit:choices')
 #        choices.appendChild(self.mkChoice(
 #            'choices_0', (32, 64, 128, 256, 512)))
 #
@@ -1119,7 +1113,7 @@ class ComponentGen(object):
 #        choices.appendChild(self.mkChoice(
 #            'choices_5', (1, 2, 4, 8, 16, 32, 64, 128, 256, 512)))
 #
-        return choices
+#        return choices
 
 #    def mkChoice(self, name, arg):
 #        choice = self.doc.createElement('spirit:choice')
