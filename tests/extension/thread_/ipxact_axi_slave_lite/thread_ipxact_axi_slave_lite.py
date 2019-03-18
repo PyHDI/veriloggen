@@ -21,8 +21,8 @@ def mkLed():
 
     datawidth = 32
     addrwidth = 10
-    id_width = 1
-    user_width = 1
+    id_width = 0
+    user_width = 0
 
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth,
                          id_width=id_width, user_width=user_width)
