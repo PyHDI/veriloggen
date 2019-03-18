@@ -86,7 +86,7 @@ class ComponentGen(object):
             self.top.appendChild(r)
 
         self.top.appendChild(self.mkModel())
-        #self.top.appendChild(self.mkChoices())
+#        self.top.appendChild(self.mkChoices())
         self.top.appendChild(self.mkFileSets())
         self.top.appendChild(self.mkDescription(description))
         self.top.appendChild(self.mkParameters())
@@ -634,13 +634,13 @@ class ComponentGen(object):
                                       'verilog',
                                       self.ip_name,
                                       'xilinx_verilogbehavioralsimulation_view_fileset'))
-        # views.appendChild(self.mkView('xilinx_softwaredriver'
-        #                              'Software Driver',
-        #                              'Verilog Simulation',
-        #                              ':vivado.xilinx.com:sw.driver',
-        #                              None,
-        #                              None,
-        #                              'xilinx_softwaredriver_view_fileset'))
+#        views.appendChild(self.mkView('xilinx_softwaredriver'
+#                                      'Software Driver',
+#                                      'Verilog Simulation',
+#                                      ':vivado.xilinx.com:sw.driver',
+#                                      None,
+#                                      None,
+#                                      'xilinx_softwaredriver_view_fileset'))
         views.appendChild(self.mkView('xilinx_xpgui',
                                       'UI Layout',
                                       ':vivado.xilinx.com:xgui.ui',
@@ -1447,10 +1447,10 @@ class ComponentGen(object):
             self.mkTextNode('xilinx:displayName',
                             (self.ip_name + '_v' + self.version.replace('.', '_'))))
 
-        #coreextensions.appendChild(self.mkTextNode('xilinx:coreRevison', 1))
-        #now = datetime.datetime.now()
-        # dt = now.strftime("%Y-%m-%d") # '2015-03-08T02:16:15Z'
-        #coreextensions.appendChild(self.mkTextNode('xilinx:coreCreationDateTime', dt))
+#        coreextensions.appendChild(self.mkTextNode('xilinx:coreRevison', 1))
+#        now = datetime.datetime.now()
+#        dt = now.strftime("%Y-%m-%d") # '2015-03-08T02:16:15Z'
+#        coreextensions.appendChild(self.mkTextNode('xilinx:coreCreationDateTime', dt))
 
         return coreextensions
 
