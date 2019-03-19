@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
 from veriloggen import *
 import veriloggen.types.axi as axi
 
-import veriloggen.types.ipcore as ipcore
+import veriloggen.types.ipxact as ipxact
 
 
 def mkMain():
@@ -115,6 +115,7 @@ def mkTest():
 
     return m
 
+
 if __name__ == '__main__':
     test = mkTest()
     verilog = test.to_verilog('tmp.v')
@@ -124,28 +125,7 @@ if __name__ == '__main__':
     rslt = sim.run()
     print(rslt)
 
-    # sim.view_waveform()
-
-    simcode = """
-reg [31:0] sum;
-reg [31:0] read_addr;
-reg [31:0] read_data;
-initial begin
-  #1000;
-  sum = 0;
-  read_addr = 1024;
-  slave_read_ipgen_slave_lite_memory_myaxi_0(read_data, read_addr);
-  sum = sum + read_data;
-  $display("read_data = %d", read_data);
-  read_addr = 1024 + 1024;
-  slave_read_ipgen_slave_lite_memory_myaxi_0(read_data, read_addr);
-  sum = sum + read_data;
-  $display("read_data = %d", read_data);
-  $display("sum = %d", sum);
-  #10000;
-  $finish;
-end
-"""
-
     m = mkMain()
-    ipcore.to_ipcore(m, 'myipcore', simcode=simcode, iftype='axi')
+    ipxact.to_ipxact(m,
+                     clk_ports=[('CLK', ('RST',))],
+                     rst_ports=[('RST', 'ACTIVE_HIGH')])

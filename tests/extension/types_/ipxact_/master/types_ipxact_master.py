@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
 from veriloggen import *
 import veriloggen.types.axi as axi
 
-import veriloggen.types.ipcore as ipcore
+import veriloggen.types.ipxact as ipxact
 
 
 def mkMain():
@@ -99,6 +99,7 @@ def mkTest():
 
     return m
 
+
 if __name__ == '__main__':
     test = mkTest()
     verilog = test.to_verilog('tmp.v')
@@ -108,14 +109,7 @@ if __name__ == '__main__':
     rslt = sim.run()
     print(rslt)
 
-    # sim.view_waveform()
-
-    simcode = """
-initial begin
-  #10000;
-  $finish;
-end
-"""
-
     m = mkMain()
-    ipcore.to_ipcore(m, 'myipcore', simcode=simcode, iftype='axi')
+    ipxact.to_ipxact(m,
+                     clk_ports=[('CLK', ('RST',))],
+                     rst_ports=[('RST', 'ACTIVE_HIGH')])
