@@ -8,21 +8,46 @@ module test;
 
   reg CLK;
   reg RST;
+  wire [1-1:0] myaxi_awid;
   wire [32-1:0] myaxi_awaddr;
   wire [8-1:0] myaxi_awlen;
+  wire [3-1:0] myaxi_awsize;
+  wire [2-1:0] myaxi_awburst;
+  wire [2-1:0] myaxi_awlock;
+  wire [4-1:0] myaxi_awcache;
+  wire [3-1:0] myaxi_awprot;
+  wire [4-1:0] myaxi_awqos;
+  wire [1-1:0] myaxi_awuser;
   wire myaxi_awvalid;
   reg myaxi_awready;
   wire [32-1:0] myaxi_wdata;
   wire [4-1:0] myaxi_wstrb;
   wire myaxi_wlast;
+  wire [1-1:0] myaxi_wuser;
   wire myaxi_wvalid;
   reg myaxi_wready;
+  reg [1-1:0] myaxi_bid;
+  reg [2-1:0] myaxi_bresp;
+  reg [1-1:0] myaxi_buser;
+  reg myaxi_bvalid;
+  wire myaxi_bready;
+  wire [1-1:0] myaxi_arid;
   wire [32-1:0] myaxi_araddr;
   wire [8-1:0] myaxi_arlen;
+  wire [3-1:0] myaxi_arsize;
+  wire [2-1:0] myaxi_arburst;
+  wire [2-1:0] myaxi_arlock;
+  wire [4-1:0] myaxi_arcache;
+  wire [3-1:0] myaxi_arprot;
+  wire [4-1:0] myaxi_arqos;
+  wire [1-1:0] myaxi_aruser;
   wire myaxi_arvalid;
   reg myaxi_arready;
+  reg [1-1:0] myaxi_rid;
   reg [32-1:0] myaxi_rdata;
+  reg [2-1:0] myaxi_rresp;
   reg myaxi_rlast;
+  reg [1-1:0] myaxi_ruser;
   reg myaxi_rvalid;
   wire myaxi_rready;
   wire _tmp_0;
@@ -123,21 +148,46 @@ module test;
   (
     .CLK(CLK),
     .RST(RST),
+    .myaxi_awid(myaxi_awid),
     .myaxi_awaddr(myaxi_awaddr),
     .myaxi_awlen(myaxi_awlen),
+    .myaxi_awsize(myaxi_awsize),
+    .myaxi_awburst(myaxi_awburst),
+    .myaxi_awlock(myaxi_awlock),
+    .myaxi_awcache(myaxi_awcache),
+    .myaxi_awprot(myaxi_awprot),
+    .myaxi_awqos(myaxi_awqos),
+    .myaxi_awuser(myaxi_awuser),
     .myaxi_awvalid(myaxi_awvalid),
     .myaxi_awready(myaxi_awready),
     .myaxi_wdata(myaxi_wdata),
     .myaxi_wstrb(myaxi_wstrb),
     .myaxi_wlast(myaxi_wlast),
+    .myaxi_wuser(myaxi_wuser),
     .myaxi_wvalid(myaxi_wvalid),
     .myaxi_wready(myaxi_wready),
+    .myaxi_bid(myaxi_bid),
+    .myaxi_bresp(myaxi_bresp),
+    .myaxi_buser(myaxi_buser),
+    .myaxi_bvalid(myaxi_bvalid),
+    .myaxi_bready(myaxi_bready),
+    .myaxi_arid(myaxi_arid),
     .myaxi_araddr(myaxi_araddr),
     .myaxi_arlen(myaxi_arlen),
+    .myaxi_arsize(myaxi_arsize),
+    .myaxi_arburst(myaxi_arburst),
+    .myaxi_arlock(myaxi_arlock),
+    .myaxi_arcache(myaxi_arcache),
+    .myaxi_arprot(myaxi_arprot),
+    .myaxi_arqos(myaxi_arqos),
+    .myaxi_aruser(myaxi_aruser),
     .myaxi_arvalid(myaxi_arvalid),
     .myaxi_arready(myaxi_arready),
+    .myaxi_rid(myaxi_rid),
     .myaxi_rdata(myaxi_rdata),
+    .myaxi_rresp(myaxi_rresp),
     .myaxi_rlast(myaxi_rlast),
+    .myaxi_ruser(myaxi_ruser),
     .myaxi_rvalid(myaxi_rvalid),
     .myaxi_rready(myaxi_rready)
   );
@@ -145,7 +195,7 @@ module test;
 
   initial begin
     $dumpfile("uut.vcd");
-    $dumpvars(0, uut, CLK, RST, myaxi_awaddr, myaxi_awlen, myaxi_awvalid, myaxi_awready, myaxi_wdata, myaxi_wstrb, myaxi_wlast, myaxi_wvalid, myaxi_wready, myaxi_araddr, myaxi_arlen, myaxi_arvalid, myaxi_arready, myaxi_rdata, myaxi_rlast, myaxi_rvalid, myaxi_rready, _tmp_0, _tmp_1, raddr, _arlen, _d1_raddr, _raddr_cond_3_0_1);
+    $dumpvars(0, uut, CLK, RST, myaxi_awid, myaxi_awaddr, myaxi_awlen, myaxi_awsize, myaxi_awburst, myaxi_awlock, myaxi_awcache, myaxi_awprot, myaxi_awqos, myaxi_awuser, myaxi_awvalid, myaxi_awready, myaxi_wdata, myaxi_wstrb, myaxi_wlast, myaxi_wuser, myaxi_wvalid, myaxi_wready, myaxi_bid, myaxi_bresp, myaxi_buser, myaxi_bvalid, myaxi_bready, myaxi_arid, myaxi_araddr, myaxi_arlen, myaxi_arsize, myaxi_arburst, myaxi_arlock, myaxi_arcache, myaxi_arprot, myaxi_arqos, myaxi_aruser, myaxi_arvalid, myaxi_arready, myaxi_rid, myaxi_rdata, myaxi_rresp, myaxi_rlast, myaxi_ruser, myaxi_rvalid, myaxi_rready, _tmp_0, _tmp_1, raddr, _arlen, _d1_raddr, _raddr_cond_3_0_1);
   end
 
 
@@ -180,25 +230,66 @@ module main
 (
   input CLK,
   input RST,
+  output reg [1-1:0] myaxi_awid,
   output reg [32-1:0] myaxi_awaddr,
   output reg [8-1:0] myaxi_awlen,
+  output [3-1:0] myaxi_awsize,
+  output [2-1:0] myaxi_awburst,
+  output [2-1:0] myaxi_awlock,
+  output [4-1:0] myaxi_awcache,
+  output [3-1:0] myaxi_awprot,
+  output [4-1:0] myaxi_awqos,
+  output [1-1:0] myaxi_awuser,
   output reg myaxi_awvalid,
   input myaxi_awready,
   output reg [32-1:0] myaxi_wdata,
   output reg [4-1:0] myaxi_wstrb,
   output reg myaxi_wlast,
+  output [1-1:0] myaxi_wuser,
   output reg myaxi_wvalid,
   input myaxi_wready,
+  input [1-1:0] myaxi_bid,
+  input [2-1:0] myaxi_bresp,
+  input [1-1:0] myaxi_buser,
+  input myaxi_bvalid,
+  output myaxi_bready,
+  output reg [1-1:0] myaxi_arid,
   output reg [32-1:0] myaxi_araddr,
   output reg [8-1:0] myaxi_arlen,
+  output [3-1:0] myaxi_arsize,
+  output [2-1:0] myaxi_arburst,
+  output [2-1:0] myaxi_arlock,
+  output [4-1:0] myaxi_arcache,
+  output [3-1:0] myaxi_arprot,
+  output [4-1:0] myaxi_arqos,
+  output [1-1:0] myaxi_aruser,
   output reg myaxi_arvalid,
   input myaxi_arready,
+  input [1-1:0] myaxi_rid,
   input [32-1:0] myaxi_rdata,
+  input [2-1:0] myaxi_rresp,
   input myaxi_rlast,
+  input [1-1:0] myaxi_ruser,
   input myaxi_rvalid,
   output myaxi_rready
 );
 
+  assign myaxi_awsize = 2;
+  assign myaxi_awburst = 1;
+  assign myaxi_awlock = 0;
+  assign myaxi_awcache = 3;
+  assign myaxi_awprot = 0;
+  assign myaxi_awqos = 0;
+  assign myaxi_awuser = 1;
+  assign myaxi_wuser = 1;
+  assign myaxi_bready = 1;
+  assign myaxi_arsize = 2;
+  assign myaxi_arburst = 1;
+  assign myaxi_arlock = 0;
+  assign myaxi_arcache = 3;
+  assign myaxi_arprot = 0;
+  assign myaxi_arqos = 0;
+  assign myaxi_aruser = 1;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
   reg [32-1:0] sum;
@@ -241,13 +332,15 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
+      myaxi_awid <= 0;
       myaxi_awaddr <= 0;
       myaxi_awlen <= 0;
       myaxi_awvalid <= 0;
       myaxi_wdata <= 0;
       myaxi_wstrb <= 0;
-      myaxi_wvalid <= 0;
       myaxi_wlast <= 0;
+      myaxi_wvalid <= 0;
+      myaxi_arid <= 0;
       myaxi_araddr <= 0;
       myaxi_arlen <= 0;
       myaxi_arvalid <= 0;
@@ -257,14 +350,16 @@ module main
       if(_myaxi_cond_0_1) begin
         myaxi_arvalid <= 0;
       end 
+      myaxi_awid <= 0;
       myaxi_awaddr <= 0;
       myaxi_awlen <= 0;
       myaxi_awvalid <= 0;
       myaxi_wdata <= 0;
       myaxi_wstrb <= 0;
-      myaxi_wvalid <= 0;
       myaxi_wlast <= 0;
+      myaxi_wvalid <= 0;
       if((fsm == 0) && ((myaxi_arready || !myaxi_arvalid) && (_tmp_0 == 0))) begin
+        myaxi_arid <= 0;
         myaxi_araddr <= 1024;
         myaxi_arlen <= 63;
         myaxi_arvalid <= 1;
