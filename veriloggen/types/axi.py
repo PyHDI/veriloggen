@@ -4,6 +4,7 @@ from __future__ import division
 
 import functools
 import math
+from collections import defaultdict
 
 import veriloggen.core.vtypes as vtypes
 from veriloggen.seq.seq import Seq
@@ -1315,7 +1316,7 @@ class AxiSlave(object):
 
         # default values
         self.wresp.bresp.assign(0)
-        if wresp.buser is not None:
+        if self.wresp.buser is not None:
             self.wresp.buser.assign(user_value)
         self.rdata.rresp.assign(0)
         if self.rdata.ruser is not None:
@@ -1709,6 +1710,8 @@ class AxiSlave(object):
         if not self.noio:
             raise ValueError('I/O ports can not be connected to others.')
 
+        ports = defaultdict(lambda: None, ports)
+
         if '_'.join([name, 'awid']) in ports:
             awid = ports['_'.join([name, 'awid'])]
         else:
@@ -1731,13 +1734,14 @@ class AxiSlave(object):
         if self.waddr.awid is not None:
             self.waddr.awid.connect(awid if awid is not None else 0)
         self.waddr.awaddr.connect(awaddr)
-        self.waddr.awlen.connect(awlen)
-        self.waddr.awsize.connect(awsize)
-        self.waddr.awburst.connect(awburst)
-        self.waddr.awlock.connect(awlock)
+        self.waddr.awlen.connect(awlen if awlen is not None else 0)
+        self.waddr.awsize.connect(awsize if awsize is not None else
+                                  int(math.log(self.datawidth // 8)))
+        self.waddr.awburst.connect(awburst if awburst is not None else BURST_INCR)
+        self.waddr.awlock.connect(awlock if awlock is not None else 0)
         self.waddr.awcache.connect(awcache)
         self.waddr.awprot.connect(awprot)
-        self.waddr.awqos.connect(awqos)
+        self.waddr.awqos.connect(awqos if awqos is not None else 0)
         if self.waddr.awuser is not None:
             self.waddr.awuser.connect(awuser if awuser is not None else 0)
         self.waddr.awvalid.connect(awvalid)
@@ -1755,7 +1759,7 @@ class AxiSlave(object):
 
         self.wdata.wdata.connect(wdata)
         self.wdata.wstrb.connect(wstrb)
-        self.wdata.wlast.connect(wlast)
+        self.wdata.wlast.connect(wlast if wlast is not None else 1)
         if self.wdata.wuser is not None:
             self.wdata.wuser.connect(wuser if wuser is not None else 0)
         self.wdata.wvalid.connect(wvalid)
@@ -1803,13 +1807,14 @@ class AxiSlave(object):
         if self.raddr.arid is not None:
             self.raddr.arid.connect(arid if arid is not None else 0)
         self.raddr.araddr.connect(araddr)
-        self.raddr.arlen.connect(arlen)
-        self.raddr.arsize.connect(arsize)
-        self.raddr.arburst.connect(arburst)
-        self.raddr.arlock.connect(arlock)
+        self.raddr.arlen.connect(arlen if arlen is not None else 0)
+        self.raddr.arsize.connect(arsize if arsize is not None else
+                                  int(math.log(self.datawidth // 8)))
+        self.raddr.arburst.connect(arburst if arburst is not None else BURST_INCR)
+        self.raddr.arlock.connect(arlock if arlock is not None else 0)
         self.raddr.arcache.connect(arcache)
         self.raddr.arprot.connect(arprot)
-        self.raddr.arqos.connect(arqos)
+        self.raddr.arqos.connect(arqos if arqos is not None else 0)
         if self.raddr.aruser is not None:
             self.raddr.aruser.connect(aruser if aruser is not None else 0)
         self.raddr.arvalid.connect(arvalid)
@@ -1833,7 +1838,8 @@ class AxiSlave(object):
             rid.connect(self.rdata.rid if self.rdata.rid is not None else 0)
         rdata.connect(self.rdata.rdata)
         rresp.connect(self.rdata.rresp)
-        rlast.connect(self.rdata.rlast)
+        if rlast is not None:
+            rlast.connect(self.rdata.rlast)
         if ruser is not None:
             ruser.connect(self.rdata.ruser if self.rdata.ruser is not None else 0)
         rvalid.connect(self.rdata.rvalid)
@@ -2186,6 +2192,8 @@ class AxiMemoryModel(AxiSlave):
         self.id_width = id_width
         self.user_width = user_width
 
+        self.noio = True
+
         self.mem_datawidth = mem_datawidth
         self.mem_addrwidth = mem_addrwidth
 
@@ -2408,137 +2416,6 @@ class AxiMemoryModel(AxiSlave):
         # read complete
         self.fsm.If(self.rdata.rvalid, self.rdata.rready,
                     read_count == 0).goto_init()
-
-    def connect(self, ports, name):
-        if '_'.join([name, 'awid']) in ports:
-            awid = ports['_'.join([name, 'awid'])]
-        else:
-            awid = None
-        awaddr = ports['_'.join([name, 'awaddr'])]
-        awlen = ports['_'.join([name, 'awlen'])]
-        awsize = ports['_'.join([name, 'awsize'])]
-        awburst = ports['_'.join([name, 'awburst'])]
-        awlock = ports['_'.join([name, 'awlock'])]
-        awcache = ports['_'.join([name, 'awcache'])]
-        awprot = ports['_'.join([name, 'awprot'])]
-        awqos = ports['_'.join([name, 'awqos'])]
-        if '_'.join([name, 'awuser']) in ports:
-            awuser = ports['_'.join([name, 'awuser'])]
-        else:
-            awuser = None
-        awvalid = ports['_'.join([name, 'awvalid'])]
-        awready = ports['_'.join([name, 'awready'])]
-
-        if self.waddr.awid is not None:
-            self.waddr.awid.connect(awid if awid is not None else 0)
-        self.waddr.awaddr.connect(awaddr)
-        self.waddr.awlen.connect(awlen)
-        self.waddr.awsize.connect(awsize)
-        self.waddr.awburst.connect(awburst)
-        self.waddr.awlock.connect(awlock)
-        self.waddr.awcache.connect(awcache)
-        self.waddr.awprot.connect(awprot)
-        self.waddr.awqos.connect(awqos)
-        if self.waddr.awuser is not None:
-            self.waddr.awuser.connect(awuser if awuser is not None else 0)
-        self.waddr.awvalid.connect(awvalid)
-        awready.connect(self.waddr.awready)
-
-        wdata = ports['_'.join([name, 'wdata'])]
-        wstrb = ports['_'.join([name, 'wstrb'])]
-        wlast = ports['_'.join([name, 'wlast'])]
-        if '_'.join([name, 'wuser']) in ports:
-            wuser = ports['_'.join([name, 'wuser'])]
-        else:
-            wuser = None
-        wvalid = ports['_'.join([name, 'wvalid'])]
-        wready = ports['_'.join([name, 'wready'])]
-
-        self.wdata.wdata.connect(wdata)
-        self.wdata.wstrb.connect(wstrb)
-        self.wdata.wlast.connect(wlast)
-        if self.wdata.wuser is not None:
-            self.wdata.wuser.connect(wuser if wuser is not None else 0)
-        self.wdata.wvalid.connect(wvalid)
-        wready.connect(self.wdata.wready)
-
-        if '_'.join([name, 'bid']) in ports:
-            bid = ports['_'.join([name, 'bid'])]
-        else:
-            bid = None
-        bresp = ports['_'.join([name, 'bresp'])]
-        if '_'.join([name, 'buser']) in ports:
-            buser = ports['_'.join([name, 'buser'])]
-        else:
-            buser = None
-        bvalid = ports['_'.join([name, 'bvalid'])]
-        bready = ports['_'.join([name, 'bready'])]
-
-        if bid is not None:
-            bid.connect(self.wresp.bid if self.wresp.bid is not None else 0)
-        bresp.connect(self.wresp.bresp)
-        if buser is not None:
-            buser.connect(self.wresp.buser if self.wresp.buser is not None else 0)
-        bvalid.connect(self.wresp.bvalid)
-        self.wresp.bready.connect(bready)
-
-        if '_'.join([name, 'arid']) in ports:
-            arid = ports['_'.join([name, 'arid'])]
-        else:
-            arid = None
-        araddr = ports['_'.join([name, 'araddr'])]
-        arlen = ports['_'.join([name, 'arlen'])]
-        arsize = ports['_'.join([name, 'arsize'])]
-        arburst = ports['_'.join([name, 'arburst'])]
-        arlock = ports['_'.join([name, 'arlock'])]
-        arcache = ports['_'.join([name, 'arcache'])]
-        arprot = ports['_'.join([name, 'arprot'])]
-        arqos = ports['_'.join([name, 'arqos'])]
-        if '_'.join([name, 'aruser']) in ports:
-            aruser = ports['_'.join([name, 'aruser'])]
-        else:
-            aruser = None
-        arvalid = ports['_'.join([name, 'arvalid'])]
-        arready = ports['_'.join([name, 'arready'])]
-
-        if self.raddr.arid is not None:
-            self.raddr.arid.connect(arid if arid is not None else 0)
-        self.raddr.araddr.connect(araddr)
-        self.raddr.arlen.connect(arlen)
-        self.raddr.arsize.connect(arsize)
-        self.raddr.arburst.connect(arburst)
-        self.raddr.arlock.connect(arlock)
-        self.raddr.arcache.connect(arcache)
-        self.raddr.arprot.connect(arprot)
-        self.raddr.arqos.connect(arqos)
-        if self.raddr.aruser is not None:
-            self.raddr.aruser.connect(aruser if aruser is not None else 0)
-        self.raddr.arvalid.connect(arvalid)
-        arready.connect(self.raddr.arready)
-
-        if '_'.join([name, 'rid']) in ports:
-            rid = ports['_'.join([name, 'rid'])]
-        else:
-            rid = None
-        rdata = ports['_'.join([name, 'rdata'])]
-        rresp = ports['_'.join([name, 'rresp'])]
-        rlast = ports['_'.join([name, 'rlast'])]
-        if '_'.join([name, 'ruser']) in ports:
-            ruser = ports['_'.join([name, 'ruser'])]
-        else:
-            ruser = None
-        rvalid = ports['_'.join([name, 'rvalid'])]
-        rready = ports['_'.join([name, 'rready'])]
-
-        if rid is not None:
-            rid.connect(self.rdata.rid if self.rdata.rid is not None else 0)
-        rdata.connect(self.rdata.rdata)
-        rresp.connect(self.rdata.rresp)
-        rlast.connect(self.rdata.rlast)
-        if ruser is not None:
-            ruser.connect(self.rdata.ruser if self.rdata.ruser is not None else 0)
-        rvalid.connect(self.rdata.rvalid)
-        self.rdata.rready.connect(rready)
 
     def read(self, fsm, addr):
         """ intrinsic for thread """
