@@ -63,8 +63,17 @@ def to_ipxact(m, ip_name=None, ip_ver='1.0',
     bus_interfaces = masterbus + slavebus
 
     for bus_interface in bus_interfaces:
-        clk = bus_interface.clk.name if isinstance(bus_interface.clk, vtypes.Input) else None
-        rst = bus_interface.rst.name if isinstance(bus_interface.rst, vtypes.Input) else None
+        if (isinstance(bus_interface.clk, vtypes._Variable) and
+                bus_interface.clk.module.is_input(bus_interface.clk.name)):
+            clk = bus_interface.clk.name
+        else:
+            clk = None
+
+        if (isinstance(bus_interface.rst, vtypes._Variable) and
+                bus_interface.rst.module.is_input(bus_interface.rst.name)):
+            rst = bus_interface.rst.name
+        else:
+            rst = None
 
         if clk is not None and clk not in clk_ports:
             clk_ports[clk] = []

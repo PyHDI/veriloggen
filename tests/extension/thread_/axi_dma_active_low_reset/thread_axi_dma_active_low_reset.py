@@ -15,7 +15,8 @@ import veriloggen.types.axi as axi
 def mkLed():
     m = Module('blinkled')
     clk = m.Input('CLK')
-    # active low reset
+
+    # active low
     rst_x = m.Input('RST_X')
 
     # active low -> active high
@@ -111,7 +112,7 @@ def mkTest(memimg_name=None):
 
     clk = ports['CLK']
 
-    # active low reset
+    # active low
     rst_x = ports['RST_X']
 
     # active low -> active high

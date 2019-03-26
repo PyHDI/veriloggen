@@ -340,8 +340,9 @@ class ComponentGen(object):
 
         bus_name_list = []
         for bus_interface in self.bus_interfaces:
-            if (bus_interface.clk.module.is_input(bus_interface.clk)
-                    and bus_interface.clk.name == name):
+            if (isinstance(bus_interface.clk, vtypes._Variable) and
+                bus_interface.clk.module.is_input(bus_interface.clk.name) and
+                    bus_interface.clk.name == name):
                 bus_name_list.append(bus_interface.name)
 
         bus_names = ':'.join(bus_name_list)
