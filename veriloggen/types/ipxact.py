@@ -11,7 +11,7 @@ from . import componentgen
 TEMPLATE_DIR = os.path.dirname(os.path.abspath(__file__)) + '/template/'
 
 
-def to_ipxact(m, ip_name=None, ip_ver='v1_00_a',
+def to_ipxact(m, ip_name=None, ip_ver='1.0',
               clk_ports=None, rst_ports=None):
 
     if ip_name is None:
@@ -31,7 +31,7 @@ def to_ipxact(m, ip_name=None, ip_ver='v1_00_a',
     if isinstance(rst_ports, (list, tuple)):
         rst_ports = OrderedDict(rst_ports)
 
-    dirname = ''.join([ip_name, '_', ip_ver, '/'])
+    dirname = ''.join([ip_name, '_v', ip_ver.replace('.', '_'), '/'])
 
     verilogname = ip_name + '.v'
     xmlname = 'component.xml'
@@ -68,16 +68,16 @@ def to_ipxact(m, ip_name=None, ip_ver='v1_00_a',
 
         if clk is not None and clk not in clk_ports:
             clk_ports[clk] = []
-            
+
         if clk is not None and rst is not None and rst not in clk_ports[clk]:
             clk_ports[clk].append(rst)
 
         if rst is not None and rst not in rst_ports:
             rst_ports[rst] = 'ACTIVE_HIGH'
-            
+
     ext_ports = m.io_variable
     ext_params = m.global_constant
-    
+
     # component.xml
     gen = componentgen.ComponentGen()
     xml_code = gen.generate(m,
@@ -86,7 +86,8 @@ def to_ipxact(m, ip_name=None, ip_ver='v1_00_a',
                             clk_ports,
                             rst_ports,
                             ext_ports,
-                            ext_params)
+                            ext_params,
+                            version=ip_ver)
 
     f = open(xmlpath + xmlname, 'w')
     f.write(xml_code)
@@ -115,7 +116,7 @@ def to_ipxact(m, ip_name=None, ip_ver='v1_00_a',
 
     # hdl file
     code = m.to_verilog()
-    
+
     f = open(verilogpath + verilogname, 'w')
     f.write(code)
     f.close()
