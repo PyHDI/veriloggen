@@ -27,11 +27,8 @@ def mkLed():
 
     datawidth = 32
     addrwidth = 10
-    id_width = 0
-    user_width = 0
 
-    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth,
-                         id_width=id_width, user_width=user_width)
+    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
     myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth)
 
     saxi = vthread.AXISLiteRegister(m, 'saxi', clk, rst, datawidth)

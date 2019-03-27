@@ -29,7 +29,6 @@ module test;
   reg [2-1:0] myaxi_rresp;
   reg myaxi_rvalid;
   wire myaxi_rready;
-  wire [1-1:0] memory_awid;
   wire [32-1:0] memory_awaddr;
   wire [8-1:0] memory_awlen;
   wire [3-1:0] memory_awsize;
@@ -44,15 +43,11 @@ module test;
   wire [32-1:0] memory_wdata;
   wire [4-1:0] memory_wstrb;
   wire memory_wlast;
-  wire [1-1:0] memory_wuser;
   wire memory_wvalid;
   reg memory_wready;
-  reg [1-1:0] memory_bid;
   wire [2-1:0] memory_bresp;
-  wire [1-1:0] memory_buser;
   reg memory_bvalid;
   wire memory_bready;
-  wire [1-1:0] memory_arid;
   wire [32-1:0] memory_araddr;
   wire [8-1:0] memory_arlen;
   wire [3-1:0] memory_arsize;
@@ -64,17 +59,13 @@ module test;
   wire [1-1:0] memory_aruser;
   wire memory_arvalid;
   reg memory_arready;
-  reg [1-1:0] memory_rid;
   reg [32-1:0] memory_rdata;
   wire [2-1:0] memory_rresp;
   reg memory_rlast;
-  wire [1-1:0] memory_ruser;
   reg memory_rvalid;
   wire memory_rready;
   assign memory_bresp = 0;
-  assign memory_buser = 1;
   assign memory_rresp = 0;
-  assign memory_ruser = 1;
   reg [32-1:0] _memory_fsm;
   localparam _memory_fsm_init = 0;
   reg [8-1:0] _memory_mem [0:2**20-1];
@@ -92,7 +83,6 @@ module test;
   reg __memory_fsm_cond_100_0_1;
   reg __memory_fsm_cond_200_1_1;
   reg __memory_fsm_cond_211_2_1;
-  assign memory_awid = 0;
   assign memory_awaddr = myaxi_awaddr;
   assign memory_awlen = 0;
   assign memory_awsize = 1;
@@ -113,7 +103,6 @@ module test;
   assign memory_wdata = myaxi_wdata;
   assign memory_wstrb = myaxi_wstrb;
   assign memory_wlast = 1;
-  assign memory_wuser = 0;
   assign memory_wvalid = myaxi_wvalid;
   wire _tmp_1;
   assign _tmp_1 = memory_wready;
@@ -137,7 +126,6 @@ module test;
   end
 
   assign memory_bready = myaxi_bready;
-  assign memory_arid = 0;
   assign memory_araddr = myaxi_araddr;
   assign memory_arlen = 0;
   assign memory_arsize = 1;
@@ -209,7 +197,7 @@ module test;
 
   initial begin
     $dumpfile("uut.vcd");
-    $dumpvars(0, uut, CLK, RST, myaxi_awaddr, myaxi_awcache, myaxi_awprot, myaxi_awvalid, myaxi_awready, myaxi_wdata, myaxi_wstrb, myaxi_wvalid, myaxi_wready, myaxi_bresp, myaxi_bvalid, myaxi_bready, myaxi_araddr, myaxi_arcache, myaxi_arprot, myaxi_arvalid, myaxi_arready, myaxi_rdata, myaxi_rresp, myaxi_rvalid, myaxi_rready, memory_awid, memory_awaddr, memory_awlen, memory_awsize, memory_awburst, memory_awlock, memory_awcache, memory_awprot, memory_awqos, memory_awuser, memory_awvalid, memory_awready, memory_wdata, memory_wstrb, memory_wlast, memory_wuser, memory_wvalid, memory_wready, memory_bid, memory_bresp, memory_buser, memory_bvalid, memory_bready, memory_arid, memory_araddr, memory_arlen, memory_arsize, memory_arburst, memory_arlock, memory_arcache, memory_arprot, memory_arqos, memory_aruser, memory_arvalid, memory_arready, memory_rid, memory_rdata, memory_rresp, memory_rlast, memory_ruser, memory_rvalid, memory_rready, _memory_fsm, _write_count, _write_addr, _read_count, _read_addr, _sleep_count, _d1__memory_fsm, __memory_fsm_cond_100_0_1, __memory_fsm_cond_200_1_1, __memory_fsm_cond_211_2_1, _tmp_0, _tmp_1, _tmp_2, _tmp_3, _tmp_4, _tmp_5, _tmp_6, _tmp_7);
+    $dumpvars(0, uut, CLK, RST, myaxi_awaddr, myaxi_awcache, myaxi_awprot, myaxi_awvalid, myaxi_awready, myaxi_wdata, myaxi_wstrb, myaxi_wvalid, myaxi_wready, myaxi_bresp, myaxi_bvalid, myaxi_bready, myaxi_araddr, myaxi_arcache, myaxi_arprot, myaxi_arvalid, myaxi_arready, myaxi_rdata, myaxi_rresp, myaxi_rvalid, myaxi_rready, memory_awaddr, memory_awlen, memory_awsize, memory_awburst, memory_awlock, memory_awcache, memory_awprot, memory_awqos, memory_awuser, memory_awvalid, memory_awready, memory_wdata, memory_wstrb, memory_wlast, memory_wvalid, memory_wready, memory_bresp, memory_bvalid, memory_bready, memory_araddr, memory_arlen, memory_arsize, memory_arburst, memory_arlock, memory_arcache, memory_arprot, memory_arqos, memory_aruser, memory_arvalid, memory_arready, memory_rdata, memory_rresp, memory_rlast, memory_rvalid, memory_rready, _memory_fsm, _write_count, _write_addr, _read_count, _read_addr, _sleep_count, _d1__memory_fsm, __memory_fsm_cond_100_0_1, __memory_fsm_cond_200_1_1, __memory_fsm_cond_211_2_1, _tmp_0, _tmp_1, _tmp_2, _tmp_3, _tmp_4, _tmp_5, _tmp_6, _tmp_7);
   end
 
 
@@ -225,10 +213,8 @@ module test;
     RST = 0;
     memory_awready = 0;
     memory_wready = 0;
-    memory_bid = 0;
     memory_bvalid = 0;
     memory_arready = 0;
-    memory_rid = 0;
     memory_rdata = 0;
     memory_rlast = 0;
     memory_rvalid = 0;
@@ -297,17 +283,9 @@ module test;
       memory_rlast <= 0;
       __memory_fsm_cond_211_2_1 <= 0;
       memory_rdata <= 0;
-      memory_bid <= 0;
-      memory_rid <= 0;
       memory_bvalid <= 0;
       _sleep_count <= 0;
     end else begin
-      if(memory_awvalid && memory_awready && !memory_bvalid) begin
-        memory_bid <= memory_awid;
-      end 
-      if(memory_arvalid && memory_arready) begin
-        memory_rid <= memory_arid;
-      end 
       if(memory_bvalid && memory_bready) begin
         memory_bvalid <= 0;
       end 

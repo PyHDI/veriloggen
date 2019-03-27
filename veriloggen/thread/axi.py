@@ -30,16 +30,28 @@ class AXIM(axi.AxiMaster, _MutexFunction):
     burstlen = 256
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
-                 id_width=1, user_width=1,
-                 burst_mode=axi.BURST_INCR, cache_mode=axi.CACHE_HP, user_value=axi.USER_DEFAULT,
+                 waddr_id_width=0, wdata_id_width=0, wresp_id_width=0,
+                 raddr_id_width=0, rdata_id_width=0,
+                 waddr_user_width=1, wdata_user_width=0, wresp_user_width=0,
+                 raddr_user_width=1, rdata_user_width=0,
+                 waddr_burst_mode=axi.BURST_INCR, raddr_burst_mode=axi.BURST_INCR,
+                 waddr_cache_mode=axi.CACHE_HP, raddr_cache_mode=axi.CACHE_HP,
+                 waddr_user_value=axi.AxUSER_DEFAULT, wdata_user_value=axi.USER_DEFAULT,
+                 raddr_user_value=axi.AxUSER_DEFAULT,
                  noio=False,
                  enable_async=False, use_global_base_addr=False,
                  num_cmd_delay=0, num_data_delay=0,
                  op_sel_width=8, fsm_as_module=False):
 
         axi.AxiMaster.__init__(self, m, name, clk, rst, datawidth, addrwidth,
-                               id_width, user_width,
-                               burst_mode, cache_mode, user_value,
+                               waddr_id_width, wdata_id_width, wresp_id_width,
+                               raddr_id_width, rdata_id_width,
+                               waddr_user_width, wdata_user_width, wresp_user_width,
+                               raddr_user_width, rdata_user_width,
+                               waddr_burst_mode, raddr_burst_mode,
+                               waddr_cache_mode, raddr_cache_mode,
+                               waddr_user_value, wdata_user_value,
+                               raddr_user_value,
                                noio)
 
         self.enable_async = enable_async
@@ -1535,13 +1547,13 @@ class AXIMLite(axi.AxiLiteMaster, _MutexFunction):
     burstlen = 256
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
-                 cache_mode=axi.CACHE_HP,
+                 waddr_cache_mode=axi.CACHE_HP, raddr_cache_mode=axi.CACHE_HP,
                  noio=False,
                  use_global_base_addr=False,
                  fsm_as_module=False):
 
         axi.AxiLiteMaster.__init__(self, m, name, clk, rst, datawidth, addrwidth,
-                                   cache_mode,
+                                   waddr_cache_mode, raddr_cache_mode,
                                    noio)
 
         self.use_global_base_addr = use_global_base_addr
@@ -1607,13 +1619,21 @@ class AXIS(axi.AxiSlave, _MutexFunction):
     __intrinsics__ = _MutexFunction.__intrinsics__
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
-                 id_width=1, user_width=1,
-                 user_value=axi.USER_DEFAULT,
+                 waddr_id_width=0, wdata_id_width=0, wresp_id_width=0,
+                 raddr_id_width=0, rdata_id_width=0,
+                 waddr_user_width=1, wdata_user_width=0, wresp_user_width=0,
+                 raddr_user_width=1, rdata_user_width=0,
+                 wresp_user_value=axi.USER_DEFAULT,
+                 rdata_user_value=axi.USER_DEFAULT,
                  noio=False):
 
         axi.AxiSlave.__init__(self, m, name, clk, rst, datawidth, addrwidth,
-                              id_width, user_width,
-                              user_value,
+                              waddr_id_width, wdata_id_width, wresp_id_width,
+                              raddr_id_width, rdata_id_width,
+                              waddr_user_width, wdata_user_width, wresp_user_width,
+                              raddr_user_width, rdata_user_width,
+                              wresp_user_value,
+                              rdata_user_value,
                               noio)
         self.mutex = None
 
@@ -1632,13 +1652,21 @@ class AXISRegister(AXIS):
                       'wait_flag') + _MutexFunction.__intrinsics__
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
-                 id_width=1, user_width=1,
-                 burst_mode=axi.BURST_INCR, cache_mode=axi.CACHE_HP, user_value=axi.USER_DEFAULT,
+                 waddr_id_width=0, wdata_id_width=0, wresp_id_width=0,
+                 raddr_id_width=0, rdata_id_width=0,
+                 waddr_user_width=1, wdata_user_width=0, wresp_user_width=0,
+                 raddr_user_width=1, rdata_user_width=0,
+                 wresp_user_value=axi.USER_DEFAULT,
+                 rdata_user_value=axi.USER_DEFAULT,
                  noio=False, length=4, fsm_as_module=False):
 
         AXIS.__init__(self, m, name, clk, rst, datawidth, addrwidth,
-                      id_width, user_width,
-                      burst_mode, cache_mode, user_value,
+                      waddr_id_width, wdata_id_width, wresp_id_width,
+                      raddr_id_width, rdata_id_width,
+                      waddr_user_width, wdata_user_width, wresp_user_width,
+                      raddr_user_width, rdata_user_width,
+                      wresp_user_value,
+                      rdata_user_value,
                       noio)
 
         self.fsm_as_module = fsm_as_module

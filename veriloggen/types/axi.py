@@ -24,7 +24,8 @@ BURST_WRAP = 0b10
 CACHE_HP = 0b0011
 CACHE_ACP = 0b1111
 
-USER_DEFAULT = 0b1
+AxUSER_DEFAULT = 0b1
+USER_DEFAULT = 0
 
 
 def _connect_ready(m, var, val):
@@ -453,8 +454,14 @@ class AxiMaster(object):
     boundary_size = 4096
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
-                 id_width=1, user_width=1,
-                 burst_mode=BURST_INCR, cache_mode=CACHE_HP, user_value=USER_DEFAULT,
+                 waddr_id_width=0, wdata_id_width=0, wresp_id_width=0,
+                 raddr_id_width=0, rdata_id_width=0,
+                 waddr_user_width=1, wdata_user_width=0, wresp_user_width=0,
+                 raddr_user_width=1, rdata_user_width=0,
+                 waddr_burst_mode=BURST_INCR, raddr_burst_mode=BURST_INCR,
+                 waddr_cache_mode=CACHE_HP, raddr_cache_mode=CACHE_HP,
+                 waddr_user_value=AxUSER_DEFAULT, wdata_user_value=USER_DEFAULT,
+                 raddr_user_value=AxUSER_DEFAULT,
                  noio=False, nodataflow=False):
 
         self.m = m
@@ -465,8 +472,6 @@ class AxiMaster(object):
 
         self.datawidth = datawidth
         self.addrwidth = addrwidth
-        self.id_width = id_width
-        self.user_width = user_width
 
         self.noio = noio
 
@@ -479,41 +484,41 @@ class AxiMaster(object):
         otype = util.t_Reg if noio else None
 
         self.waddr = AxiMasterWriteAddress(m, name, datawidth, addrwidth,
-                                           id_width, user_width, itype, otype)
+                                           waddr_id_width, waddr_user_width, itype, otype)
         self.wdata = AxiMasterWriteData(m, name, datawidth, addrwidth,
-                                        id_width, user_width, itype, otype)
+                                        wdata_id_width, wdata_user_width, itype, otype)
         self.wresp = AxiMasterWriteResponse(m, name, datawidth, addrwidth,
-                                            id_width, user_width, itype, otype)
+                                            wresp_id_width, wresp_user_width, itype, otype)
         self.raddr = AxiMasterReadAddress(m, name, datawidth, addrwidth,
-                                          id_width, user_width, itype, otype)
+                                          raddr_id_width, raddr_user_width, itype, otype)
 
         otype = util.t_Wire if noio else None
 
         self.rdata = AxiMasterReadData(m, name, datawidth, addrwidth,
-                                       id_width, user_width, itype, otype)
+                                       rdata_id_width, rdata_user_width, itype, otype)
 
         self.seq = Seq(m, name, clk, rst)
 
         # default values
         self.waddr.awsize.assign(int(math.log(self.datawidth / 8, 2)))
-        self.waddr.awburst.assign(burst_mode)
+        self.waddr.awburst.assign(waddr_burst_mode)
         self.waddr.awlock.assign(0)
-        self.waddr.awcache.assign(cache_mode)
+        self.waddr.awcache.assign(waddr_cache_mode)
         self.waddr.awprot.assign(0)
         self.waddr.awqos.assign(0)
         if self.waddr.awuser is not None:
-            self.waddr.awuser.assign(user_value)
+            self.waddr.awuser.assign(waddr_user_value)
         if self.wdata.wuser is not None:
-            self.wdata.wuser.assign(user_value)
+            self.wdata.wuser.assign(wdata_user_value)
         self.wresp.bready.assign(1)
         self.raddr.arsize.assign(int(math.log(self.datawidth / 8, 2)))
-        self.raddr.arburst.assign(burst_mode)
+        self.raddr.arburst.assign(raddr_burst_mode)
         self.raddr.arlock.assign(0)
-        self.raddr.arcache.assign(cache_mode)
+        self.raddr.arcache.assign(raddr_cache_mode)
         self.raddr.arprot.assign(0)
         self.raddr.arqos.assign(0)
         if self.raddr.aruser is not None:
-            self.raddr.aruser.assign(user_value)
+            self.raddr.aruser.assign(raddr_user_value)
 
         self.write_counters = []
         self.read_counters = []
@@ -1008,7 +1013,7 @@ class AxiMaster(object):
 class AxiLiteMaster(AxiMaster):
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
-                 cache_mode=CACHE_HP,
+                 waddr_cache_mode=CACHE_HP, raddr_cache_mode=CACHE_HP,
                  noio=False, nodataflow=False):
 
         self.m = m
@@ -1047,10 +1052,10 @@ class AxiLiteMaster(AxiMaster):
         self.seq = Seq(m, name, clk, rst)
 
         # default values
-        self.waddr.awcache.assign(cache_mode)
+        self.waddr.awcache.assign(waddr_cache_mode)
         self.waddr.awprot.assign(0)
         self.wresp.bready.assign(1)
-        self.raddr.arcache.assign(cache_mode)
+        self.raddr.arcache.assign(raddr_cache_mode)
         self.raddr.arprot.assign(0)
 
         if nodataflow:
@@ -1273,8 +1278,12 @@ class AxiSlave(object):
     burst_size_width = 8
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
-                 id_width=1, user_width=1,
-                 user_value=USER_DEFAULT,
+                 waddr_id_width=0, wdata_id_width=0, wresp_id_width=0,
+                 raddr_id_width=0, rdata_id_width=0,
+                 waddr_user_width=1, wdata_user_width=0, wresp_user_width=0,
+                 raddr_user_width=1, rdata_user_width=0,
+                 wresp_user_value=USER_DEFAULT,
+                 rdata_user_value=USER_DEFAULT,
                  noio=False, nodataflow=False):
 
         self.m = m
@@ -1285,8 +1294,6 @@ class AxiSlave(object):
 
         self.datawidth = datawidth
         self.addrwidth = addrwidth
-        self.id_width = id_width
-        self.user_width = user_width
 
         self.noio = noio
 
@@ -1299,28 +1306,28 @@ class AxiSlave(object):
         otype = util.t_Wire if noio else None
 
         self.waddr = AxiSlaveWriteAddress(m, name, datawidth, addrwidth,
-                                          id_width, user_width, itype, otype)
+                                          waddr_id_width, waddr_user_width, itype, otype)
         self.wdata = AxiSlaveWriteData(m, name, datawidth, addrwidth,
-                                       id_width, user_width, itype, otype)
+                                       wdata_id_width, wdata_user_width, itype, otype)
         self.wresp = AxiSlaveWriteResponse(m, name, datawidth, addrwidth,
-                                           id_width, user_width, itype, otype)
+                                           wresp_id_width, wresp_user_width, itype, otype)
         self.raddr = AxiSlaveReadAddress(m, name, datawidth, addrwidth,
-                                         id_width, user_width, itype, otype)
+                                         raddr_id_width, raddr_user_width, itype, otype)
 
         itype = util.t_Reg if noio else None
 
         self.rdata = AxiSlaveReadData(m, name, datawidth, addrwidth,
-                                      id_width, user_width, itype, otype)
+                                      rdata_id_width, rdata_user_width, itype, otype)
 
         self.seq = Seq(m, name, clk, rst)
 
         # default values
         self.wresp.bresp.assign(0)
         if self.wresp.buser is not None:
-            self.wresp.buser.assign(user_value)
+            self.wresp.buser.assign(wresp_user_value)
         self.rdata.rresp.assign(0)
         if self.rdata.ruser is not None:
-            self.rdata.ruser.assign(user_value)
+            self.rdata.ruser.assign(rdata_user_value)
 
         # write response
         if self.wresp.bid is not None:
@@ -2175,8 +2182,12 @@ class AxiMemoryModel(AxiSlave):
                  memimg=None, memimg_name=None,
                  memimg_datawidth=None,
                  write_delay=10, read_delay=10, sleep=4,
-                 id_width=1, user_width=1,
-                 burst_mode=BURST_INCR, cache_mode=CACHE_HP, user_value=USER_DEFAULT):
+                 waddr_id_width=0, wdata_id_width=0, wresp_id_width=0,
+                 raddr_id_width=0, rdata_id_width=0,
+                 waddr_user_width=1, wdata_user_width=0, wresp_user_width=0,
+                 raddr_user_width=1, rdata_user_width=0,
+                 wresp_user_value=USER_DEFAULT,
+                 rdata_user_value=USER_DEFAULT):
 
         if mem_datawidth % 8 != 0:
             raise ValueError('mem_datawidth must be a multiple of 8')
@@ -2189,8 +2200,6 @@ class AxiMemoryModel(AxiSlave):
 
         self.datawidth = datawidth
         self.addrwidth = addrwidth
-        self.id_width = id_width
-        self.user_width = user_width
 
         self.noio = True
 
@@ -2201,23 +2210,23 @@ class AxiMemoryModel(AxiSlave):
         otype = util.t_Wire
 
         self.waddr = AxiSlaveWriteAddress(m, name, datawidth, addrwidth,
-                                          id_width, user_width, itype, otype)
+                                          waddr_id_width, waddr_user_width, itype, otype)
         self.wdata = AxiSlaveWriteData(m, name, datawidth, addrwidth,
-                                       id_width, user_width, itype, otype)
+                                       wdata_id_width, wdata_user_width, itype, otype)
         self.wresp = AxiSlaveWriteResponse(m, name, datawidth, addrwidth,
-                                           id_width, user_width, itype, otype)
+                                           wresp_id_width, wresp_user_width, itype, otype)
         self.raddr = AxiSlaveReadAddress(m, name, datawidth, addrwidth,
-                                         id_width, user_width, itype, otype)
+                                         raddr_id_width, raddr_user_width, itype, otype)
         self.rdata = AxiSlaveReadData(m, name, datawidth, addrwidth,
-                                      id_width, user_width, itype, otype)
+                                      rdata_id_width, rdata_user_width, itype, otype)
 
         # default values
         self.wresp.bresp.assign(0)
         if self.wresp.buser is not None:
-            self.wresp.buser.assign(user_value)
+            self.wresp.buser.assign(wresp_user_value)
         self.rdata.rresp.assign(0)
         if self.rdata.ruser is not None:
-            self.rdata.ruser.assign(user_value)
+            self.rdata.ruser.assign(rdata_user_value)
 
         self.fsm = FSM(self.m, '_'.join(['', self.name, 'fsm']), clk, rst)
 
