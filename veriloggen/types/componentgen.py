@@ -4,6 +4,7 @@ from __future__ import print_function
 import xml.dom.minidom
 import datetime
 import copy
+import math
 
 import veriloggen.core.vtypes as vtypes
 from veriloggen.resolver import resolver
@@ -35,7 +36,7 @@ class ComponentGen(object):
         self.ext_ports = None
         self.ext_params = None
 
-        self.vendor = 'user'
+        self.vendor = 'user.org'
         self.library = 'user'
         self.version = '1.0'
 
@@ -47,7 +48,7 @@ class ComponentGen(object):
     def generate(self, m, ip_name, bus_interfaces,
                  clk_ports, rst_ports,
                  ext_ports, ext_params,
-                 vendor='user', library='user', version='1.0',
+                 vendor='user.org', library='user', version='1.0',
                  description='user description'):
 
         self.m = m
@@ -68,6 +69,12 @@ class ComponentGen(object):
         self.doc = impl.createDocument('spirit', 'spirit:component', None)
         self.top = self.doc.documentElement
 
+        self.setAttribute(self.top, 'xmlns:xilinx', "http://www.xilinx.com")
+        self.setAttribute(self.top, 'xmlns:spirit',
+                          "http://www.spiritconsortium.org/XMLSchema/SPIRIT/1685-2009")
+        self.setAttribute(self.top, 'xmlns:xsi',
+                          "http://www.w3.org/2001/XMLSchema-instance")
+
         self.dependency_consumer = set()
 
         self.top.appendChild(self.mkVendor())
@@ -86,7 +93,7 @@ class ComponentGen(object):
             self.top.appendChild(r)
 
         self.top.appendChild(self.mkModel())
-#        self.top.appendChild(self.mkChoices())
+        # self.top.appendChild(self.mkChoices())
         self.top.appendChild(self.mkFileSets())
         self.top.appendChild(self.mkDescription(description))
         self.top.appendChild(self.mkParameters())
@@ -95,9 +102,7 @@ class ComponentGen(object):
         return self.doc.toprettyxml(indent='  ')
 
     def setAttribute(self, obj, name, text):
-        attrobj = self.doc.createAttribute(name)
-        attrobj.value = str(text)
-        obj.setAttributeNode(attrobj)
+        obj.setAttribute(name, str(text))
 
     def setText(self, obj, text):
         textobj = self.doc.createTextNode(str(text))
@@ -155,7 +160,7 @@ class ComponentGen(object):
         else:
             interface.appendChild(self.mkSlave(name))
         interface.appendChild(self.mkPortMaps(obj))
-        #interface.appendChild(self.mkBusParameters(name, datawidth, master))
+        # interface.appendChild(self.mkBusParameters(name, datawidth, master))
         return interface
 
     def mkBusType(self):
@@ -247,39 +252,40 @@ class ComponentGen(object):
         physicalport.appendChild(self.mkName(name))
         return physicalport
 
-    def mkBusParameters(self, name, addrwidth, datawidth):
-        parameters = self.doc.createElement('spirit:parameters')
-        parameters.appendChild(self.mkBusParameterAddrWidth(name, addrwidth))
-        parameters.appendChild(self.mkBusParameterDataWidth(name, datawidth))
-        parameters.appendChild(self.mkBusParameterSupportsNarrowBurst(name, 0))
-        return parameters
+#    def mkBusParameters(self, name, addrwidth, datawidth):
+#        parameters = self.doc.createElement('spirit:parameters')
+#        parameters.appendChild(self.mkBusParameterAddrWidth(name, addrwidth))
+#        parameters.appendChild(self.mkBusParameterDataWidth(name, datawidth))
+#        parameters.appendChild(self.mkBusParameterSupportsNarrowBurst(name, 0))
+#        return parameters
 
-    def mkBusParameterAddrWidth(self, name, num):
-        parameter = self.doc.createElement('spirit:parameter')
-        parameter.appendChild(self.mkName('ADDR_WIDTH'))
-        value = self.doc.createElement('spirit:value')
-        self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE." + name + ".ADDR_WIDTH")
-        self.setText(value, num)
-        parameter.appendChild(value)
-        return parameter
+#    def mkBusParameterAddrWidth(self, name, num):
+#        parameter = self.doc.createElement('spirit:parameter')
+#        parameter.appendChild(self.mkName('ADDR_WIDTH'))
+#        value = self.doc.createElement('spirit:value')
+#        self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE." + name + ".ADDR_WIDTH")
+#        self.setText(value, num)
+#        parameter.appendChild(value)
+#        return parameter
 
-    def mkBusParameterDataWidth(self, name, num):
-        parameter = self.doc.createElement('spirit:parameter')
-        parameter.appendChild(self.mkName('DATA_WIDTH'))
-        value = self.doc.createElement('spirit:value')
-        self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE." + name + ".DATA_WIDTH")
-        self.setText(value, num)
-        parameter.appendChild(value)
-        return parameter
+#    def mkBusParameterDataWidth(self, name, num):
+#        parameter = self.doc.createElement('spirit:parameter')
+#        parameter.appendChild(self.mkName('DATA_WIDTH'))
+#        value = self.doc.createElement('spirit:value')
+#        self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE." + name + ".DATA_WIDTH")
+#        self.setText(value, num)
+#        parameter.appendChild(value)
+#        return parameter
 
-    def mkBusParameterSupportsNarrowBurst(self, name, num):
-        parameter = self.doc.createElement('spirit:parameter')
-        parameter.appendChild(self.mkName('SUPPORTS_NARROW_BURST'))
-        value = self.doc.createElement('spirit:value')
-        self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE." + name + ".SUPPORTS_NARROW_BURST")
-        self.setText(value, num)
-        parameter.appendChild(value)
-        return parameter
+#    def mkBusParameterSupportsNarrowBurst(self, name, num):
+#        parameter = self.doc.createElement('spirit:parameter')
+#        parameter.appendChild(self.mkName('SUPPORTS_NARROW_BURST'))
+#        value = self.doc.createElement('spirit:value')
+#        self.setAttribute(value, 'spirit:id',
+#                          "BUSIFPARAM_VALUE." + name + ".SUPPORTS_NARROW_BURST")
+#        self.setText(value, num)
+#        parameter.appendChild(value)
+#        return parameter
 
     def mkBusInterfaceClock(self, name, rsts):
         interface = self.doc.createElement('spirit:busInterface')
@@ -340,15 +346,15 @@ class ComponentGen(object):
 
         bus_name_list = []
         for bus_interface in self.bus_interfaces:
-            if (isinstance(bus_interface.clk, vtypes._Variable) and
-                bus_interface.clk.module.is_input(bus_interface.clk.name) and
-                    bus_interface.clk.name == name):
+            if (isinstance(bus_interface.clk, vtypes._Variable)
+                and bus_interface.clk.module.is_input(bus_interface.clk.name)
+                    and bus_interface.clk.name == name):
                 bus_name_list.append(bus_interface.name)
 
         bus_names = ':'.join(bus_name_list)
 
-        self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE."
-                          + name + ".ASSOCIATED_BUSIF")
+        self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE." +
+                          name + ".ASSOCIATED_BUSIF")
         self.setText(value, bus_names)
         parameter.appendChild(value)
         return parameter
@@ -360,8 +366,8 @@ class ComponentGen(object):
 
         rst_names = ':'.join(rsts)
 
-        self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE."
-                          + name + ".ASSOCIATED_RESET")
+        self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE." +
+                          name + ".ASSOCIATED_RESET")
         self.setText(value, rst_names)
         parameter.appendChild(value)
         return parameter
@@ -421,8 +427,8 @@ class ComponentGen(object):
         parameter = self.doc.createElement('spirit:parameter')
         parameter.appendChild(self.mkName('POLARITY'))
         value = self.doc.createElement('spirit:value')
-        self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE."
-                          + name + ".POLARITY")
+        self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE." +
+                          name + ".POLARITY")
         self.setText(value, polarity)
         parameter.appendChild(value)
         return parameter
@@ -446,53 +452,34 @@ class ComponentGen(object):
 
         range = self.doc.createElement('spirit:range')
         self.setAttribute(range, 'spirit:format', "long")
-
-        if not isinstance(obj.addrwidth, int):
-            self.setAttribute(range, 'spirit:resolve', "dependent")
-            dep = "'MODELPARAM_VALUE." + name + "_ADDR_WIDTH'"
-            self.dependency_consumer.add(dep)
-            self.setAttribute(range, 'spirit:dependency',
-                              ("pow(2,(spirit:decode(id(" + dep + ")) - 1) + 1)"))
-            self.setAttribute(range, 'spirit:minimum', "0")
-            self.setAttribute(range, 'spirit:maximum', str(vtypes.Int(2) ** obj.addrwidth))
-        else:
-            self.setAttribute(range, 'spirit:resolve', "immediate")
-
+        # self.setAttribute(range, 'spirit:resolve', "immediate")
         range_value = 2 ** self.resolved_m[obj.name + '_awaddr'].width
         self.setText(range, range_value)
         space.appendChild(range)
 
         width = self.doc.createElement('spirit:width')
         self.setAttribute(width, 'spirit:format', "long")
-
-        if not isinstance(obj.datawidth, int):
-            self.setAttribute(width, 'spirit:resolve', "dependent")
-            dep = "'MODELPARAM_VALUE." + name + "_DATA_WIDTH'"
-            self.dependency_consumer.add(dep)
-            self.setAttribute(width, 'spirit:dependency',
-                              ("(spirit:decode(id(" + dep + ")) - 1) + 1"))
-
         width_value = self.resolved_m[obj.name + '_wdata'].width
         self.setText(width, width_value)
         space.appendChild(width)
 
-        #space.appendChild(self.mkAddressSpaceParameters(name))
+        # space.appendChild(self.mkAddressSpaceParameters(name))
         return space
 
-    def mkAddressSpaceParameters(self, name):
-        parameters = self.doc.createElement('spirit:parameters')
-        parameters.appendChild(self.mkAddressSpaceParameterPreferredUsage(name))
-        return parameters
+#    def mkAddressSpaceParameters(self, name):
+#        parameters = self.doc.createElement('spirit:parameters')
+#        parameters.appendChild(self.mkAddressSpaceParameterPreferredUsage(name))
+#        return parameters
 
-    def mkAddressSpaceParameterPreferredUsage(self, name):
-        base = self.doc.createElement('spirit:parameter')
-        base.appendChild(self.mkName('PREFERRED_USAGE'))
-        value = self.doc.createElement('spirit:value')
-        self.setAttribute(value, 'spirit:id',
-                          "ADDRSPACEPARAM_VALUE." + name + ".PREFERRED_USAGE")
-        self.setText(value, 'MEMORY')
-        base.appendChild(value)
-        return base
+#    def mkAddressSpaceParameterPreferredUsage(self, name):
+#        base = self.doc.createElement('spirit:parameter')
+#        base.appendChild(self.mkName('PREFERRED_USAGE'))
+#        value = self.doc.createElement('spirit:value')
+#        self.setAttribute(value, 'spirit:id',
+#                          "ADDRSPACEPARAM_VALUE." + name + ".PREFERRED_USAGE")
+#        self.setText(value, 'MEMORY')
+#        base.appendChild(value)
+#        return base
 
     def mkMemoryMaps(self):
         isempty = True
@@ -511,7 +498,7 @@ class ComponentGen(object):
         map.appendChild(self.mkName(name))
 
         addressblock = self.doc.createElement('spirit:addressBlock')
-        addressblock.appendChild(self.mkName(name + '_REG'))
+        addressblock.appendChild(self.mkName(name + '_reg'))
 
         baseaddr = self.doc.createElement('spirit:baseAddress')
         self.setAttribute(baseaddr, 'spirit:format', "long")
@@ -520,8 +507,12 @@ class ComponentGen(object):
 
         range = self.doc.createElement('spirit:range')
         self.setAttribute(range, 'spirit:format', "long")
-        self.setAttribute(range, 'spirit:resolve', "generated")
-        map_range = 65536
+
+        if hasattr(obj, 'register') and isinstance(obj.register, (tuple, list)):
+            map_range = 2 ** int(math.ceil(math.log(max(len(obj.register), 4096), 2)))
+        else:
+            map_range = 2 ** self.resolved_m[obj.name + '_awaddr'].width
+
         self.setText(range, map_range)
         addressblock.appendChild(range)
 
@@ -534,91 +525,91 @@ class ComponentGen(object):
         self.setText(usage, 'register')
         addressblock.appendChild(usage)
 
-        addressblock.appendChild(self.mkMemoryMapParameters(name))
+        # addressblock.appendChild(self.mkMemoryMapParameters(name))
 
-        reg = self.mkMemoryMapRegister(obj)
-        if reg:
-            addressblock.appendChild(reg)
+        #reg = self.mkMemoryMapRegister(obj)
+        # if reg:
+        #    addressblock.appendChild(reg)
 
         map.appendChild(addressblock)
 
         return map
 
-    def mkMemoryMapParameters(self, name):
-        parameters = self.doc.createElement('spirit:parameters')
-        parameters.appendChild(self.mkMemoryMapParameterBase(name))
-        parameters.appendChild(self.mkMemoryMapParameterHigh(name))
-        return parameters
+#    def mkMemoryMapParameters(self, name):
+#        parameters = self.doc.createElement('spirit:parameters')
+#        parameters.appendChild(self.mkMemoryMapParameterBase(name))
+#        parameters.appendChild(self.mkMemoryMapParameterHigh(name))
+#        return parameters
 
-    def mkMemoryMapParameterBase(self, name):
-        base = self.doc.createElement('spirit:parameter')
-        base.appendChild(self.mkName('OFFSET_BASE_PARAM'))
-        value = self.doc.createElement('spirit:value')
-        self.setAttribute(value, 'spirit:id',
-                          "ADDRBLOCKPARAM_VALUE." + name + "_REG.OFFSET_BASE_PARAM")
-        self.setText(value, 'C_' + name + '_BASEADDR')
-        base.appendChild(value)
-        return base
+#    def mkMemoryMapParameterBase(self, name):
+#        base = self.doc.createElement('spirit:parameter')
+#        base.appendChild(self.mkName('OFFSET_BASE_PARAM'))
+#        value = self.doc.createElement('spirit:value')
+#        self.setAttribute(value, 'spirit:id',
+#                          "ADDRBLOCKPARAM_VALUE." + name + "_REG.OFFSET_BASE_PARAM")
+#        self.setText(value, 'C_' + name + '_BASEADDR')
+#        base.appendChild(value)
+#        return base
 
-    def mkMemoryMapParameterHigh(self, name):
-        high = self.doc.createElement('spirit:parameter')
-        high.appendChild(self.mkName('OFFSET_HIGH_PARAM'))
-        value = self.doc.createElement('spirit:value')
-        self.setAttribute(value, 'spirit:id',
-                          "ADDRBLOCKPARAM_VALUE." + name + "_REG.OFFSET_HIGH_PARAM")
-        self.setText(value, 'C_' + name + '_HIGHADDR')
-        high.appendChild(value)
-        return high
+#    def mkMemoryMapParameterHigh(self, name):
+#        high = self.doc.createElement('spirit:parameter')
+#        high.appendChild(self.mkName('OFFSET_HIGH_PARAM'))
+#        value = self.doc.createElement('spirit:value')
+#        self.setAttribute(value, 'spirit:id',
+#                          "ADDRBLOCKPARAM_VALUE." + name + "_REG.OFFSET_HIGH_PARAM")
+#        self.setText(value, 'C_' + name + '_HIGHADDR')
+#        high.appendChild(value)
+#        return high
 
-    def mkMemoryMapRegister(self, obj):
-        if hasattr(obj, 'register') and isinstance(obj.register, (tuple, list)):
-            length = len(obj.register)
-        else:
-            length = None
-
-        if length is None:
-            return None
-
-        name = obj.name
-
-        register = self.doc.createElement('spirit:register')
-        register.appendChild(self.mkName(name + '_control_reg'))
-        register.appendChild(self.mkTextNode('spirit:displayName', name + '_control_reg'))
-        register.appendChild(self.mkTextNode('spirit:displayName', name + '_control_reg'))
-
-        offset = self.doc.createElement('spirit:addressOffset')
-        self.setText(offset, 0)
-        register.appendChild(offset)
-
-        size = self.doc.createElement('spirit:size')
-        self.setAttribute(size, 'spirit:format', "long")
-        self.setText(size, length)
-        register.appendChild(size)
-
-        register.appendChild(self.mkTextNode('spirit:access', 'read-write'))
-
-        reset = self.doc.createElement('spirit:reset')
-        value = self.doc.createElement('spirit:value')
-        self.setAttribute(value, 'spirit:format', "long")
-        self.setText(value, 0)
-        reset.appendChild(value)
-        register.appendChild(reset)
-
-        for i in range(length):
-            field = self.doc.createElement('spirit:field')
-            field.appendChild(self.mkName(name + '_control_reg%d' % i))
-            field.appendChild(self.mkTextNode('spirit:description', name + '_control_reg%d' % i))
-            field.appendChild(self.mkTextNode('spirit:bitOffset', 0))
-            field.appendChild(self.mkTextNode('spirit:access', 'read-write'))
-            register.appendChild(field)
-
-        return register
+#    def mkMemoryMapRegister(self, obj):
+#        if hasattr(obj, 'register') and isinstance(obj.register, (tuple, list)):
+#            length = len(obj.register)
+#        else:
+#            length = None
+#
+#        if length is None:
+#            return None
+#
+#        name = obj.name
+#
+#        register = self.doc.createElement('spirit:register')
+#        register.appendChild(self.mkName(name + '_control_reg'))
+#        register.appendChild(self.mkTextNode('spirit:displayName', name + '_control_reg'))
+#        register.appendChild(self.mkTextNode('spirit:displayName', name + '_control_reg'))
+#
+#        offset = self.doc.createElement('spirit:addressOffset')
+#        self.setText(offset, 0)
+#        register.appendChild(offset)
+#
+#        size = self.doc.createElement('spirit:size')
+#        self.setAttribute(size, 'spirit:format', "long")
+#        self.setText(size, length)
+#        register.appendChild(size)
+#
+#        register.appendChild(self.mkTextNode('spirit:access', 'read-write'))
+#
+#        reset = self.doc.createElement('spirit:reset')
+#        value = self.doc.createElement('spirit:value')
+#        self.setAttribute(value, 'spirit:format', "long")
+#        self.setText(value, 0)
+#        reset.appendChild(value)
+#        register.appendChild(reset)
+#
+#        for i in range(length):
+#            field = self.doc.createElement('spirit:field')
+#            field.appendChild(self.mkName(name + '_control_reg%d' % i))
+#            field.appendChild(self.mkTextNode('spirit:description', name + '_control_reg%d' % i))
+#            field.appendChild(self.mkTextNode('spirit:bitOffset', 0))
+#            field.appendChild(self.mkTextNode('spirit:access', 'read-write'))
+#            register.appendChild(field)
+#
+#        return register
 
     def mkModel(self):
         model = self.doc.createElement('spirit:model')
         model.appendChild(self.mkViews())
         model.appendChild(self.mkPorts())
-#        model.appendChild(self.mkModelParameters())
+        # model.appendChild(self.mkModelParameters())
         return model
 
     def mkViews(self):
@@ -648,12 +639,12 @@ class ComponentGen(object):
                                       None,
                                       None,
                                       'xilinx_xpgui_view_fileset'))
-        views.appendChild(self.mkView('bd_tcl',
-                                      'Block Diagram',
-                                      ':vivado.xilinx.com:block.diagram',
-                                      None,
-                                      None,
-                                      'bd_tcl_view_fileset'))
+#        views.appendChild(self.mkView('bd_tcl',
+#                                      'Block Diagram',
+#                                      ':vivado.xilinx.com:block.diagram',
+#                                      None,
+#                                      None,
+#                                      'bd_tcl_view_fileset'))
         return views
 
     def mkView(self, name, displayname, envidentifier, language, modelname, localname):
@@ -678,76 +669,76 @@ class ComponentGen(object):
     def mkPorts(self):
         ports = self.doc.createElement('spirit:ports')
 
-        for bus_interface in self.bus_interfaces:
-            for p in self.mkPortBus(bus_interface):
-                ports.appendChild(p)
+#        for bus_interface in self.bus_interfaces:
+#            for p in self.mkPortBus(bus_interface):
+#                ports.appendChild(p)
 
         for portname, port in self.ext_ports.items():
             ports.appendChild(self.mkPortSignal(port))
 
         return ports
 
-    def mkPortBus(self, obj):
-        lite = is_lite(obj)
-        portlist = list(PORTLITELIST if lite else PORTLIST)
+#    def mkPortBus(self, obj):
+#        lite = is_lite(obj)
+#        portlist = list(PORTLITELIST if lite else PORTLIST)
+#
+#        if not lite and obj.waddr.awid is None:
+#            portlist.remove('AWID')
+#        if not lite and obj.waddr.awuser is None:
+#            portlist.remove('AWUSER')
+#        if not lite and obj.wdata.wuser is None:
+#            portlist.remove('WUSER')
+#        if not lite and obj.wresp.bid is None:
+#            portlist.remove('BID')
+#        if not lite and obj.wresp.buser is None:
+#            portlist.remove('BUSER')
+#        if not lite and obj.raddr.arid is None:
+#            portlist.remove('ARID')
+#        if not lite and obj.raddr.aruser is None:
+#            portlist.remove('ARUSER')
+#        if not lite and obj.rdata.rid is None:
+#            portlist.remove('RID')
+#        if not lite and obj.rdata.ruser is None:
+#            portlist.remove('RUSER')
+#
+#        ret = []
+#        for port in portlist:
+#            ret.append(self.mkPortBusSignal(obj, port))
+#
+#        return ret
 
-        if not lite and obj.waddr.awid is None:
-            portlist.remove('AWID')
-        if not lite and obj.waddr.awuser is None:
-            portlist.remove('AWUSER')
-        if not lite and obj.wdata.wuser is None:
-            portlist.remove('WUSER')
-        if not lite and obj.wresp.bid is None:
-            portlist.remove('BID')
-        if not lite and obj.wresp.buser is None:
-            portlist.remove('BUSER')
-        if not lite and obj.raddr.arid is None:
-            portlist.remove('ARID')
-        if not lite and obj.raddr.aruser is None:
-            portlist.remove('ARUSER')
-        if not lite and obj.rdata.rid is None:
-            portlist.remove('RID')
-        if not lite and obj.rdata.ruser is None:
-            portlist.remove('RUSER')
-
-        ret = []
-        for port in portlist:
-            ret.append(self.mkPortBusSignal(obj, port))
-
-        return ret
-
-    def mkPortBusSignal(self, obj, attr):
-        base = obj.name
-
-        if hasattr(obj.waddr, attr.lower()):
-            name = getattr(obj.waddr, attr.lower()).name
-            var = obj.m[name]
-        elif hasattr(obj.wdata, attr.lower()):
-            name = getattr(obj.wdata, attr.lower()).name
-            var = obj.m[name]
-        elif hasattr(obj.wresp, attr.lower()):
-            name = getattr(obj.wresp, attr.lower()).name
-            var = obj.m[name]
-        elif hasattr(obj.raddr, attr.lower()):
-            name = getattr(obj.raddr, attr.lower()).name
-            var = obj.m[name]
-        elif hasattr(obj.rdata, attr.lower()):
-            name = getattr(obj.rdata, attr.lower()).name
-            var = obj.m[name]
-        else:
-            raise NameError("No such attribute '%s' in object '%s'" %
-                            (attr.lower(), obj))
-
-        direction = ('in' if obj.m.is_input(name) else
-                     'out' if obj.m.is_output(name) else
-                     'inout')
-
-        width = self.resolved_m[name].width
-        h = width - 1 if width is not None else None
-        l = 0 if h is not None else None
-
-        return self.mkPortEntry(name, direction,
-                                None, h, None, l)
+#    def mkPortBusSignal(self, obj, attr):
+#        base = obj.name
+#
+#        if hasattr(obj.waddr, attr.lower()):
+#            name = getattr(obj.waddr, attr.lower()).name
+#            var = obj.m[name]
+#        elif hasattr(obj.wdata, attr.lower()):
+#            name = getattr(obj.wdata, attr.lower()).name
+#            var = obj.m[name]
+#        elif hasattr(obj.wresp, attr.lower()):
+#            name = getattr(obj.wresp, attr.lower()).name
+#            var = obj.m[name]
+#        elif hasattr(obj.raddr, attr.lower()):
+#            name = getattr(obj.raddr, attr.lower()).name
+#            var = obj.m[name]
+#        elif hasattr(obj.rdata, attr.lower()):
+#            name = getattr(obj.rdata, attr.lower()).name
+#            var = obj.m[name]
+#        else:
+#            raise NameError("No such attribute '%s' in object '%s'" %
+#                            (attr.lower(), obj))
+#
+#        direction = ('in' if obj.m.is_input(name) else
+#                     'out' if obj.m.is_output(name) else
+#                     'inout')
+#
+#        width = self.resolved_m[name].width
+#        h = width - 1 if width is not None else None
+#        l = 0 if h is not None else None
+#
+#        return self.mkPortEntry(name, direction,
+#                                None, h, None, l)
 
     def mkPortSignal(self, var):
         name = var.name
@@ -1127,17 +1118,17 @@ class ComponentGen(object):
         filesets = self.doc.createElement('spirit:fileSets')
         source = self.doc.createElement('spirit:fileSet')
         source.appendChild(self.mkName("xilinx_verilogsynthesis_view_fileset"))
-        source.appendChild(self.mkFileSet('hdl/verilog/' + self.ip_name + '.v',
+        source.appendChild(self.mkFileSet('hdl/' + self.ip_name + '.v',
                                           'verilogSource'))
         filesets.appendChild(source)
 
         sim = self.doc.createElement('spirit:fileSet')
         sim.appendChild(self.mkName(
             "xilinx_verilogbehavioralsimulation_view_fileset"))
-        sim.appendChild(self.mkFileSet('hdl/verilog/' + self.ip_name + '.v',
+        sim.appendChild(self.mkFileSet('hdl/' + self.ip_name + '.v',
                                        'verilogSource'))
-        sim.appendChild(self.mkFileSet('test/test_' + self.ip_name + '.v',
-                                       'verilogSource'))
+        # sim.appendChild(self.mkFileSet('test/test_' + self.ip_name + '.v',
+        #                               'verilogSource'))
         filesets.appendChild(sim)
 
         xguitcl = self.doc.createElement('spirit:fileSet')
@@ -1146,17 +1137,17 @@ class ComponentGen(object):
                                            'tclSource', 'XGUI_VERSION_2'))
         filesets.appendChild(xguitcl)
 
-        bdtcl = self.doc.createElement('spirit:fileSet')
-        bdtcl.appendChild(self.mkName("bd_tcl_view_fileset"))
-        bdtcl.appendChild(self.mkFileSet('bd/bd.tcl', 'tclSource'))
-        filesets.appendChild(bdtcl)
+        # bdtcl = self.doc.createElement('spirit:fileSet')
+        # bdtcl.appendChild(self.mkName("bd_tcl_view_fileset"))
+        # bdtcl.appendChild(self.mkFileSet('bd/bd.tcl', 'tclSource'))
+        # filesets.appendChild(bdtcl)
 
-        xdc = self.doc.createElement('spirit:fileSet')
-        xdc.appendChild(self.mkName(
-            "xilinx_synthesisconstraints_view_fileset"))
-        xdc.appendChild(self.mkFileSet('data/' + self.ip_name + '.xdc',
-                                       None, 'xdc'))
-        filesets.appendChild(xdc)
+        # xdc = self.doc.createElement('spirit:fileSet')
+        # xdc.appendChild(self.mkName(
+        #    "xilinx_synthesisconstraints_view_fileset"))
+        # xdc.appendChild(self.mkFileSet('data/' + self.ip_name + '.xdc',
+        #                               None, 'xdc'))
+        # filesets.appendChild(xdc)
 
         return filesets
 
@@ -1441,17 +1432,27 @@ class ComponentGen(object):
         supported.appendChild(family)
 
         coreextensions.appendChild(supported)
+
         taxonomies = self.doc.createElement('xilinx:taxonomies')
-        taxonomies.appendChild(self.mkTextNode('xilinx:taxonomy', 'AXI_Peripheral'))
+        taxonomies.appendChild(self.mkTextNode('xilinx:taxonomy', '/UserIP'))
         coreextensions.appendChild(taxonomies)
+
         coreextensions.appendChild(
             self.mkTextNode('xilinx:displayName',
                             (self.ip_name + '_v' + self.version.replace('.', '_'))))
 
-#        coreextensions.appendChild(self.mkTextNode('xilinx:coreRevison', 1))
-#        now = datetime.datetime.now()
-#        dt = now.strftime("%Y-%m-%d") # '2015-03-08T02:16:15Z'
-#        coreextensions.appendChild(self.mkTextNode('xilinx:coreCreationDateTime', dt))
+        # coreextensions.appendChild(
+        #    self.mkTextNode('xilinx:autoFamilySupportLevel', 'level_1'))
+
+        # designtoolcontexts = self.doc.createElement('xilinx:designToolContexts')
+        # designtoolcontexts.appendChild(self.mkTextNode('xilinx:designToolContext', 'IPI'))
+        # coreextensions.appendChild(designtoolcontexts)
+
+        coreextensions.appendChild(self.mkTextNode('xilinx:coreRevision', 1))
+
+        # now = datetime.datetime.now()
+        # dt = now.strftime("%Y-%m-%d") # '2015-03-08T02:16:15Z'
+        # coreextensions.appendChild(self.mkTextNode('xilinx:coreCreationDateTime', dt))
 
         return coreextensions
 

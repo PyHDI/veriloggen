@@ -39,7 +39,7 @@ def to_ipxact(m, ip_name=None, ip_ver='1.0',
     #bdname = 'bd.tcl'
     xguiname = 'xgui.tcl'
 
-    verilogpath = dirname + 'hdl/verilog/'
+    verilogpath = dirname + 'hdl/'
     xmlpath = dirname
     #xdcpath = dirname + 'data/'
     #bdpath = dirname + 'bd/'
@@ -55,8 +55,6 @@ def to_ipxact(m, ip_name=None, ip_ver='1.0',
         os.mkdir(dirname + '/' + 'xgui')
     if not os.path.exists(dirname + '/' + 'hdl'):
         os.mkdir(dirname + '/' + 'hdl')
-    if not os.path.exists(dirname + '/' + 'hdl/verilog'):
-        os.mkdir(dirname + '/' + 'hdl/verilog')
 
     masterbus = m.masterbus if hasattr(m, 'masterbus') else []
     slavebus = m.slavebus if hasattr(m, 'slavebus') else []
