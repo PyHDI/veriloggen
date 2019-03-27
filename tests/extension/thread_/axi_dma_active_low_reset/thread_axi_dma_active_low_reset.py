@@ -17,11 +17,11 @@ def mkLed():
     clk = m.Input('CLK')
 
     # active low
-    rst_x = m.Input('RST_X')
+    resetn = m.Input('RESETN')
 
     # active low -> active high
     rst = m.Wire('RST')
-    rst.assign(Not(rst_x))
+    rst.assign(Not(resetn))
 
     datawidth = 32
     addrwidth = 10
@@ -113,11 +113,11 @@ def mkTest(memimg_name=None):
     clk = ports['CLK']
 
     # active low
-    rst_x = ports['RST_X']
+    resetn = ports['RESETN']
 
     # active low -> active high
     rst = m.Wire('RST')
-    rst.assign(Not(rst_x))
+    rst.assign(Not(resetn))
 
     memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memimg_name=memimg_name)
     memory.connect(ports, 'myaxi')
@@ -128,7 +128,7 @@ def mkTest(memimg_name=None):
 
     #simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
-    init = simulation.setup_reset(m, rst_x, m.make_reset(), period=100, polarity='low')
+    init = simulation.setup_reset(m, resetn, m.make_reset(), period=100, polarity='low')
 
     init.add(
         Delay(1000000),
