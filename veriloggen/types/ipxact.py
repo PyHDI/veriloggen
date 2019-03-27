@@ -35,22 +35,22 @@ def to_ipxact(m, ip_name=None, ip_ver='1.0',
 
     verilogname = ip_name + '.v'
     xmlname = 'component.xml'
-    xdcname = ip_name + '.xdc'
-    bdname = 'bd.tcl'
+    #xdcname = ip_name + '.xdc'
+    #bdname = 'bd.tcl'
     xguiname = 'xgui.tcl'
 
     verilogpath = dirname + 'hdl/verilog/'
     xmlpath = dirname
-    xdcpath = dirname + 'data/'
-    bdpath = dirname + 'bd/'
+    #xdcpath = dirname + 'data/'
+    #bdpath = dirname + 'bd/'
     xguipath = dirname + 'xgui/'
 
     if not os.path.exists(dirname):
         os.mkdir(dirname)
-    if not os.path.exists(dirname + '/' + 'data'):
-        os.mkdir(dirname + '/' + 'data')
-    if not os.path.exists(dirname + '/' + 'bd'):
-        os.mkdir(dirname + '/' + 'bd')
+    #if not os.path.exists(dirname + '/' + 'data'):
+    #    os.mkdir(dirname + '/' + 'data')
+    #if not os.path.exists(dirname + '/' + 'bd'):
+    #    os.mkdir(dirname + '/' + 'bd')
     if not os.path.exists(dirname + '/' + 'xgui'):
         os.mkdir(dirname + '/' + 'xgui')
     if not os.path.exists(dirname + '/' + 'hdl'):
@@ -102,19 +102,19 @@ def to_ipxact(m, ip_name=None, ip_ver='1.0',
     f.write(xml_code)
     f.close()
 
-    # xdc
-    xdc_code = open(TEMPLATE_DIR + 'ipxact.xdc', 'r').read()
+    ## xdc
+    #xdc_code = open(TEMPLATE_DIR + 'ipxact.xdc', 'r').read()
 
-    f = open(xdcpath + xdcname, 'w')
-    f.write(xdc_code)
-    f.close()
+    #f = open(xdcpath + xdcname, 'w')
+    #f.write(xdc_code)
+    #f.close()
 
-    # bd
-    bd_code = open(TEMPLATE_DIR + 'bd.tcl', 'r').read()
+    ## bd
+    #bd_code = open(TEMPLATE_DIR + 'bd.tcl', 'r').read()
 
-    f = open(bdpath + bdname, 'w')
-    f.write(bd_code)
-    f.close()
+    #f = open(bdpath + bdname, 'w')
+    #f.write(bd_code)
+    #f.close()
 
     # xgui file
     xgui_code = open(TEMPLATE_DIR + 'xgui_tcl.txt', 'r').read()

@@ -18,10 +18,10 @@ PORTLIST = ('AWID', 'AWADDR', 'AWLEN', 'AWSIZE', 'AWBURST', 'AWLOCK',
             'ARCACHE', 'ARPROT', 'ARQOS', 'ARUSER', 'ARVALID', 'ARREADY',
             'RID', 'RDATA', 'RRESP', 'RLAST', 'RUSER', 'RVALID', 'RREADY')
 
-PORTLITELIST = ('AWADDR', 'AWPROT', 'AWVALID', 'AWREADY',
+PORTLITELIST = ('AWADDR', 'AWCACHE', 'AWPROT', 'AWVALID', 'AWREADY',
                 'WDATA', 'WSTRB', 'WVALID', 'WREADY',
                 'BRESP', 'BVALID', 'BREADY',
-                'ARADDR', 'ARPROT', 'ARVALID', 'ARREADY',
+                'ARADDR', 'ARCACHE', 'ARPROT', 'ARVALID', 'ARREADY',
                 'RDATA', 'RRESP', 'RVALID', 'RREADY')
 
 
@@ -134,11 +134,11 @@ class ComponentGen(object):
         for bus_interface in self.bus_interfaces:
             bus.appendChild(self.mkBusInterface(bus_interface))
 
-        for clk_name, assoc_rsts in self.clk_ports.items():
-            bus.appendChild(self.mkBusInterfaceClock(clk_name, assoc_rsts))
-
         for rst_name, rst_polarity in self.rst_ports.items():
             bus.appendChild(self.mkBusInterfaceReset(rst_name, rst_polarity))
+
+        for clk_name, assoc_rsts in self.clk_ports.items():
+            bus.appendChild(self.mkBusInterfaceClock(clk_name, assoc_rsts))
 
         return bus
 
@@ -155,7 +155,7 @@ class ComponentGen(object):
         else:
             interface.appendChild(self.mkSlave(name))
         interface.appendChild(self.mkPortMaps(obj))
-        interface.appendChild(self.mkBusParameters(name, datawidth, master))
+        #interface.appendChild(self.mkBusParameters(name, datawidth, master))
         return interface
 
     def mkBusType(self):
@@ -476,7 +476,7 @@ class ComponentGen(object):
         self.setText(width, width_value)
         space.appendChild(width)
 
-        space.appendChild(self.mkAddressSpaceParameters(name))
+        #space.appendChild(self.mkAddressSpaceParameters(name))
         return space
 
     def mkAddressSpaceParameters(self, name):
