@@ -49,7 +49,8 @@ class ComponentGen(object):
                  clk_ports, rst_ports,
                  ext_ports, ext_params,
                  vendor='user.org', library='user', version='1.0',
-                 description='user description'):
+                 description='user description',
+                 supported_families=('zynq', 'zynquplus')):
 
         self.m = m
         self.ip_name = ip_name
@@ -64,6 +65,12 @@ class ComponentGen(object):
         self.vendor = vendor
         self.library = library
         self.version = version
+
+        if not supported_families:
+            raise ValueError(
+                'supported_families must be a list or tuple with valid names.')
+
+        self.supported_families = supported_families
 
         impl = xml.dom.minidom.getDOMImplementation()
         self.doc = impl.createDocument('spirit', 'spirit:component', None)
@@ -93,7 +100,6 @@ class ComponentGen(object):
             self.top.appendChild(r)
 
         self.top.appendChild(self.mkModel())
-        # self.top.appendChild(self.mkChoices())
         self.top.appendChild(self.mkFileSets())
         self.top.appendChild(self.mkDescription(description))
         self.top.appendChild(self.mkParameters())
@@ -151,16 +157,19 @@ class ComponentGen(object):
         master = is_master(obj)
         name = obj.name
         datawidth = obj.datawidth
+
         interface = self.doc.createElement('spirit:busInterface')
         interface.appendChild(self.mkName(name))
         interface.appendChild(self.mkBusType())
         interface.appendChild(self.mkAbstractionType())
+
         if master:
             interface.appendChild(self.mkMaster(name))
         else:
             interface.appendChild(self.mkSlave(name))
+
         interface.appendChild(self.mkPortMaps(obj))
-        # interface.appendChild(self.mkBusParameters(name, datawidth, master))
+
         return interface
 
     def mkBusType(self):
@@ -252,41 +261,6 @@ class ComponentGen(object):
         physicalport.appendChild(self.mkName(name))
         return physicalport
 
-#    def mkBusParameters(self, name, addrwidth, datawidth):
-#        parameters = self.doc.createElement('spirit:parameters')
-#        parameters.appendChild(self.mkBusParameterAddrWidth(name, addrwidth))
-#        parameters.appendChild(self.mkBusParameterDataWidth(name, datawidth))
-#        parameters.appendChild(self.mkBusParameterSupportsNarrowBurst(name, 0))
-#        return parameters
-
-#    def mkBusParameterAddrWidth(self, name, num):
-#        parameter = self.doc.createElement('spirit:parameter')
-#        parameter.appendChild(self.mkName('ADDR_WIDTH'))
-#        value = self.doc.createElement('spirit:value')
-#        self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE." + name + ".ADDR_WIDTH")
-#        self.setText(value, num)
-#        parameter.appendChild(value)
-#        return parameter
-
-#    def mkBusParameterDataWidth(self, name, num):
-#        parameter = self.doc.createElement('spirit:parameter')
-#        parameter.appendChild(self.mkName('DATA_WIDTH'))
-#        value = self.doc.createElement('spirit:value')
-#        self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE." + name + ".DATA_WIDTH")
-#        self.setText(value, num)
-#        parameter.appendChild(value)
-#        return parameter
-
-#    def mkBusParameterSupportsNarrowBurst(self, name, num):
-#        parameter = self.doc.createElement('spirit:parameter')
-#        parameter.appendChild(self.mkName('SUPPORTS_NARROW_BURST'))
-#        value = self.doc.createElement('spirit:value')
-#        self.setAttribute(value, 'spirit:id',
-#                          "BUSIFPARAM_VALUE." + name + ".SUPPORTS_NARROW_BURST")
-#        self.setText(value, num)
-#        parameter.appendChild(value)
-#        return parameter
-
     def mkBusInterfaceClock(self, name, rsts):
         interface = self.doc.createElement('spirit:busInterface')
         interface.appendChild(self.mkName(name))
@@ -346,15 +320,15 @@ class ComponentGen(object):
 
         bus_name_list = []
         for bus_interface in self.bus_interfaces:
-            if (isinstance(bus_interface.clk, vtypes._Variable)
-                and bus_interface.clk.module.is_input(bus_interface.clk.name)
-                    and bus_interface.clk.name == name):
+            if (isinstance(bus_interface.clk, vtypes._Variable) and
+                bus_interface.clk.module.is_input(bus_interface.clk.name) and
+                    bus_interface.clk.name == name):
                 bus_name_list.append(bus_interface.name)
 
         bus_names = ':'.join(bus_name_list)
 
-        self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE." +
-                          name + ".ASSOCIATED_BUSIF")
+        self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE."
+                          + name + ".ASSOCIATED_BUSIF")
         self.setText(value, bus_names)
         parameter.appendChild(value)
         return parameter
@@ -366,8 +340,8 @@ class ComponentGen(object):
 
         rst_names = ':'.join(rsts)
 
-        self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE." +
-                          name + ".ASSOCIATED_RESET")
+        self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE."
+                          + name + ".ASSOCIATED_RESET")
         self.setText(value, rst_names)
         parameter.appendChild(value)
         return parameter
@@ -427,8 +401,8 @@ class ComponentGen(object):
         parameter = self.doc.createElement('spirit:parameter')
         parameter.appendChild(self.mkName('POLARITY'))
         value = self.doc.createElement('spirit:value')
-        self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE." +
-                          name + ".POLARITY")
+        self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE."
+                          + name + ".POLARITY")
         self.setText(value, polarity)
         parameter.appendChild(value)
         return parameter
@@ -452,7 +426,6 @@ class ComponentGen(object):
 
         range = self.doc.createElement('spirit:range')
         self.setAttribute(range, 'spirit:format', "long")
-        # self.setAttribute(range, 'spirit:resolve', "immediate")
         range_value = 2 ** self.resolved_m[obj.name + '_awaddr'].width
         self.setText(range, range_value)
         space.appendChild(range)
@@ -463,23 +436,7 @@ class ComponentGen(object):
         self.setText(width, width_value)
         space.appendChild(width)
 
-        # space.appendChild(self.mkAddressSpaceParameters(name))
         return space
-
-#    def mkAddressSpaceParameters(self, name):
-#        parameters = self.doc.createElement('spirit:parameters')
-#        parameters.appendChild(self.mkAddressSpaceParameterPreferredUsage(name))
-#        return parameters
-
-#    def mkAddressSpaceParameterPreferredUsage(self, name):
-#        base = self.doc.createElement('spirit:parameter')
-#        base.appendChild(self.mkName('PREFERRED_USAGE'))
-#        value = self.doc.createElement('spirit:value')
-#        self.setAttribute(value, 'spirit:id',
-#                          "ADDRSPACEPARAM_VALUE." + name + ".PREFERRED_USAGE")
-#        self.setText(value, 'MEMORY')
-#        base.appendChild(value)
-#        return base
 
     def mkMemoryMaps(self):
         isempty = True
@@ -525,91 +482,14 @@ class ComponentGen(object):
         self.setText(usage, 'register')
         addressblock.appendChild(usage)
 
-        # addressblock.appendChild(self.mkMemoryMapParameters(name))
-
-        #reg = self.mkMemoryMapRegister(obj)
-        # if reg:
-        #    addressblock.appendChild(reg)
-
         map.appendChild(addressblock)
 
         return map
-
-#    def mkMemoryMapParameters(self, name):
-#        parameters = self.doc.createElement('spirit:parameters')
-#        parameters.appendChild(self.mkMemoryMapParameterBase(name))
-#        parameters.appendChild(self.mkMemoryMapParameterHigh(name))
-#        return parameters
-
-#    def mkMemoryMapParameterBase(self, name):
-#        base = self.doc.createElement('spirit:parameter')
-#        base.appendChild(self.mkName('OFFSET_BASE_PARAM'))
-#        value = self.doc.createElement('spirit:value')
-#        self.setAttribute(value, 'spirit:id',
-#                          "ADDRBLOCKPARAM_VALUE." + name + "_REG.OFFSET_BASE_PARAM")
-#        self.setText(value, 'C_' + name + '_BASEADDR')
-#        base.appendChild(value)
-#        return base
-
-#    def mkMemoryMapParameterHigh(self, name):
-#        high = self.doc.createElement('spirit:parameter')
-#        high.appendChild(self.mkName('OFFSET_HIGH_PARAM'))
-#        value = self.doc.createElement('spirit:value')
-#        self.setAttribute(value, 'spirit:id',
-#                          "ADDRBLOCKPARAM_VALUE." + name + "_REG.OFFSET_HIGH_PARAM")
-#        self.setText(value, 'C_' + name + '_HIGHADDR')
-#        high.appendChild(value)
-#        return high
-
-#    def mkMemoryMapRegister(self, obj):
-#        if hasattr(obj, 'register') and isinstance(obj.register, (tuple, list)):
-#            length = len(obj.register)
-#        else:
-#            length = None
-#
-#        if length is None:
-#            return None
-#
-#        name = obj.name
-#
-#        register = self.doc.createElement('spirit:register')
-#        register.appendChild(self.mkName(name + '_control_reg'))
-#        register.appendChild(self.mkTextNode('spirit:displayName', name + '_control_reg'))
-#        register.appendChild(self.mkTextNode('spirit:displayName', name + '_control_reg'))
-#
-#        offset = self.doc.createElement('spirit:addressOffset')
-#        self.setText(offset, 0)
-#        register.appendChild(offset)
-#
-#        size = self.doc.createElement('spirit:size')
-#        self.setAttribute(size, 'spirit:format', "long")
-#        self.setText(size, length)
-#        register.appendChild(size)
-#
-#        register.appendChild(self.mkTextNode('spirit:access', 'read-write'))
-#
-#        reset = self.doc.createElement('spirit:reset')
-#        value = self.doc.createElement('spirit:value')
-#        self.setAttribute(value, 'spirit:format', "long")
-#        self.setText(value, 0)
-#        reset.appendChild(value)
-#        register.appendChild(reset)
-#
-#        for i in range(length):
-#            field = self.doc.createElement('spirit:field')
-#            field.appendChild(self.mkName(name + '_control_reg%d' % i))
-#            field.appendChild(self.mkTextNode('spirit:description', name + '_control_reg%d' % i))
-#            field.appendChild(self.mkTextNode('spirit:bitOffset', 0))
-#            field.appendChild(self.mkTextNode('spirit:access', 'read-write'))
-#            register.appendChild(field)
-#
-#        return register
 
     def mkModel(self):
         model = self.doc.createElement('spirit:model')
         model.appendChild(self.mkViews())
         model.appendChild(self.mkPorts())
-        # model.appendChild(self.mkModelParameters())
         return model
 
     def mkViews(self):
@@ -626,33 +506,19 @@ class ComponentGen(object):
                                       'verilog',
                                       self.ip_name,
                                       'xilinx_verilogbehavioralsimulation_view_fileset'))
-#        views.appendChild(self.mkView('xilinx_softwaredriver'
-#                                      'Software Driver',
-#                                      'Verilog Simulation',
-#                                      ':vivado.xilinx.com:sw.driver',
-#                                      None,
-#                                      None,
-#                                      'xilinx_softwaredriver_view_fileset'))
         views.appendChild(self.mkView('xilinx_xpgui',
                                       'UI Layout',
                                       ':vivado.xilinx.com:xgui.ui',
                                       None,
                                       None,
                                       'xilinx_xpgui_view_fileset'))
-#        views.appendChild(self.mkView('bd_tcl',
-#                                      'Block Diagram',
-#                                      ':vivado.xilinx.com:block.diagram',
-#                                      None,
-#                                      None,
-#                                      'bd_tcl_view_fileset'))
         return views
 
     def mkView(self, name, displayname, envidentifier, language, modelname, localname):
         view = self.doc.createElement('spirit:view')
         view.appendChild(self.mkName(name))
         view.appendChild(self.mkTextNode('spirit:displayName', displayname))
-        view.appendChild(self.mkTextNode(
-            'spirit:envIdentifier', envidentifier))
+        view.appendChild(self.mkTextNode('spirit:envIdentifier', envidentifier))
 
         if language is not None:
             view.appendChild(self.mkTextNode('spirit:language', language))
@@ -669,76 +535,10 @@ class ComponentGen(object):
     def mkPorts(self):
         ports = self.doc.createElement('spirit:ports')
 
-#        for bus_interface in self.bus_interfaces:
-#            for p in self.mkPortBus(bus_interface):
-#                ports.appendChild(p)
-
         for portname, port in self.ext_ports.items():
             ports.appendChild(self.mkPortSignal(port))
 
         return ports
-
-#    def mkPortBus(self, obj):
-#        lite = is_lite(obj)
-#        portlist = list(PORTLITELIST if lite else PORTLIST)
-#
-#        if not lite and obj.waddr.awid is None:
-#            portlist.remove('AWID')
-#        if not lite and obj.waddr.awuser is None:
-#            portlist.remove('AWUSER')
-#        if not lite and obj.wdata.wuser is None:
-#            portlist.remove('WUSER')
-#        if not lite and obj.wresp.bid is None:
-#            portlist.remove('BID')
-#        if not lite and obj.wresp.buser is None:
-#            portlist.remove('BUSER')
-#        if not lite and obj.raddr.arid is None:
-#            portlist.remove('ARID')
-#        if not lite and obj.raddr.aruser is None:
-#            portlist.remove('ARUSER')
-#        if not lite and obj.rdata.rid is None:
-#            portlist.remove('RID')
-#        if not lite and obj.rdata.ruser is None:
-#            portlist.remove('RUSER')
-#
-#        ret = []
-#        for port in portlist:
-#            ret.append(self.mkPortBusSignal(obj, port))
-#
-#        return ret
-
-#    def mkPortBusSignal(self, obj, attr):
-#        base = obj.name
-#
-#        if hasattr(obj.waddr, attr.lower()):
-#            name = getattr(obj.waddr, attr.lower()).name
-#            var = obj.m[name]
-#        elif hasattr(obj.wdata, attr.lower()):
-#            name = getattr(obj.wdata, attr.lower()).name
-#            var = obj.m[name]
-#        elif hasattr(obj.wresp, attr.lower()):
-#            name = getattr(obj.wresp, attr.lower()).name
-#            var = obj.m[name]
-#        elif hasattr(obj.raddr, attr.lower()):
-#            name = getattr(obj.raddr, attr.lower()).name
-#            var = obj.m[name]
-#        elif hasattr(obj.rdata, attr.lower()):
-#            name = getattr(obj.rdata, attr.lower()).name
-#            var = obj.m[name]
-#        else:
-#            raise NameError("No such attribute '%s' in object '%s'" %
-#                            (attr.lower(), obj))
-#
-#        direction = ('in' if obj.m.is_input(name) else
-#                     'out' if obj.m.is_output(name) else
-#                     'inout')
-#
-#        width = self.resolved_m[name].width
-#        h = width - 1 if width is not None else None
-#        l = 0 if h is not None else None
-#
-#        return self.mkPortEntry(name, direction,
-#                                None, h, None, l)
 
     def mkPortSignal(self, var):
         name = var.name
@@ -846,276 +646,9 @@ class ComponentGen(object):
         extensions.appendChild(portinfo)
         return extensions
 
-#    def mkModelParameters(self):
-#        modelparameters = self.doc.createElement('spirit:modelParameters')
-#        order = 2
-#
-#        for paramname, param in self.ext_params.items():
-#            p = self.doc.createElement('spirit:modelParameter')
-#            p.appendChild(self.mkName(paramname))
-#            p.appendChild(self.mkTextNode('spirit:displayName', paramname))
-#            p.appendChild(self.mkTextNode('spirit:description', paramname))
-#            value = self.doc.createElement('spirit:value')
-#            if isinstance(param, vtypes.Integer):
-#                self.setAttribute(value, 'spirit:format', 'long')
-#            self.setAttribute(value, 'spirit:resolve', 'generated')
-#            self.setAttribute(value, 'spirit:id',
-#                              "MODELPARAM_VALUE." + paramname)
-#            self.setText(value, paramlvalue)
-#            p.appendChild(value)
-#            modelparameters.appendChild(p)
-#
-#        return modelparameters
-
-#    def mkModelParameterBus(self, obj, order):
-#        lite = is_lite(obj)
-#        ret = []
-#        name = obj.name
-#
-#        if not lite:
-#            idwidth = self.doc.createElement('spirit:modelParameter')
-#            self.setAttribute(idwidth, 'spirit:dataType', "integer")
-#            idwidth.appendChild(self.mkName("C_" + name + "_ID_WIDTH"))
-#            idwidth.appendChild(self.mkTextNode(
-#                'spirit:displayName', "C_" + name + "_ID_WIDTH"))
-#            idwidth.appendChild(self.mkTextNode(
-#                'spirit:description', "C_" + name + "_ID_WIDTH"))
-#            value = self.doc.createElement('spirit:value')
-#            self.setAttribute(value, 'spirit:format', 'long')
-#            self.setAttribute(value, 'spirit:resolve', 'dependent')
-#            self.setAttribute(value, 'spirit:id',
-#                              "MODELPARAM_VALUE.C_" + name + "_ID_WIDTH")
-#            self.setAttribute(value, 'spirit:dependency',
-#                              ("((spirit:decode(id('PARAM_VALUE.C_" + name +
-#                               "_ID_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_"
-#                               + name + "_ID_WIDTH'))))"))
-#            self.setAttribute(value, 'spirit:order', order)
-#            self.setAttribute(value, 'spirit:minimum', "0")
-#            self.setAttribute(value, 'spirit:maximum', "32")
-#            self.setAttribute(value, 'spirit:rangeType', "long")
-#            self.setText(value, 1)
-#            idwidth.appendChild(value)
-#            ret.append(idwidth)
-#            order += 1
-#
-#        addrwidth = self.doc.createElement('spirit:modelParameter')
-#        self.setAttribute(addrwidth, 'spirit:dataType', "integer")
-#        addrwidth.appendChild(self.mkName("C_" + name + "_ADDR_WIDTH"))
-#        addrwidth.appendChild(self.mkTextNode(
-#            'spirit:displayName', "C_" + name + "_ADDR_WIDTH"))
-#        addrwidth.appendChild(self.mkTextNode(
-#            'spirit:description', "C_" + name + "_ADDR_WIDTH"))
-#        value = self.doc.createElement('spirit:value')
-#        self.setAttribute(value, 'spirit:format', 'long')
-#        self.setAttribute(value, 'spirit:resolve', 'generated')
-#        self.setAttribute(value, 'spirit:id',
-#                          "MODELPARAM_VALUE.C_" + name + "_ADDR_WIDTH")
-#        self.setAttribute(value, 'spirit:order', order)
-#        self.setAttribute(value, 'spirit:rangeType', "long")
-#        self.setText(value, obj.addrwidth)
-#        addrwidth.appendChild(value)
-#        ret.append(addrwidth)
-#        order += 1
-#
-#        datawidth = self.doc.createElement('spirit:modelParameter')
-#        self.setAttribute(datawidth, 'spirit:dataType', "integer")
-#        datawidth.appendChild(self.mkName("C_" + name + "_DATA_WIDTH"))
-#        datawidth.appendChild(self.mkTextNode(
-#            'spirit:displayName', "C_" + name + "_DATA_WIDTH"))
-#        datawidth.appendChild(self.mkTextNode(
-#            'spirit:description', "C_" + name + "_DATA_WIDTH"))
-#        value = self.doc.createElement('spirit:value')
-#        self.setAttribute(value, 'spirit:format', 'long')
-#        self.setAttribute(value, 'spirit:resolve', 'generated')
-#        self.setAttribute(value, 'spirit:id',
-#                          "MODELPARAM_VALUE.C_" + name + "_DATA_WIDTH")
-#        self.setAttribute(value, 'spirit:order', order)
-#        self.setAttribute(value, 'spirit:rangeType', "long")
-#        self.setText(value, obj.datawidth)
-#        datawidth.appendChild(value)
-#        ret.append(datawidth)
-#        order += 1
-#
-#        if not lite:
-#            awuserwidth = self.doc.createElement('spirit:modelParameter')
-#            self.setAttribute(awuserwidth, 'spirit:dataType', "integer")
-#            awuserwidth.appendChild(self.mkName("C_" + name + "_AWUSER_WIDTH"))
-#            awuserwidth.appendChild(self.mkTextNode(
-#                'spirit:displayName', "C_" + name + "_AWUSER_WIDTH"))
-#            awuserwidth.appendChild(self.mkTextNode(
-#                'spirit:description', "C_" + name + "_AWUSER_WIDTH"))
-#            value = self.doc.createElement('spirit:value')
-#            self.setAttribute(value, 'spirit:format', 'long')
-#            self.setAttribute(value, 'spirit:resolve', 'dependent')
-#            self.setAttribute(value, 'spirit:id',
-#                              "MODELPARAM_VALUE.C_" + name + "_AWUSER_WIDTH")
-#            self.setAttribute(value, 'spirit:dependency',
-#                              ("((spirit:decode(id('PARAM_VALUE.C_" + name +
-#                               "_AWUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_"
-#                               + name + "_AWUSER_WIDTH'))))"))
-#            self.setAttribute(value, 'spirit:order', order)
-#            self.setAttribute(value, 'spirit:minimum', "0")
-#            self.setAttribute(value, 'spirit:maximum', "1024")
-#            self.setAttribute(value, 'spirit:rangeType', "long")
-#            self.setText(value, 1)
-#            awuserwidth.appendChild(value)
-#            ret.append(awuserwidth)
-#            order += 1
-#
-#        if not lite:
-#            aruserwidth = self.doc.createElement('spirit:modelParameter')
-#            self.setAttribute(aruserwidth, 'spirit:dataType', "integer")
-#            aruserwidth.appendChild(self.mkName("C_" + name + "_ARUSER_WIDTH"))
-#            aruserwidth.appendChild(self.mkTextNode(
-#                'spirit:displayName', "C_" + name + "_ARUSER_WIDTH"))
-#            aruserwidth.appendChild(self.mkTextNode(
-#                'spirit:description', "C_" + name + "_ARUSER_WIDTH"))
-#            value = self.doc.createElement('spirit:value')
-#            self.setAttribute(value, 'spirit:format', 'long')
-#            self.setAttribute(value, 'spirit:resolve', 'dependent')
-#            self.setAttribute(value, 'spirit:id',
-#                              "MODELPARAM_VALUE.C_" + name + "_ARUSER_WIDTH")
-#            self.setAttribute(value, 'spirit:dependency',
-#                              ("((spirit:decode(id('PARAM_VALUE.C_" + name +
-#                               "_ARUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_"
-#                               + name + "_ARUSER_WIDTH'))))"))
-#            self.setAttribute(value, 'spirit:order', order)
-#            self.setAttribute(value, 'spirit:minimum', "0")
-#            self.setAttribute(value, 'spirit:maximum', "1024")
-#            self.setAttribute(value, 'spirit:rangeType', "long")
-#            self.setText(value, 1)
-#            aruserwidth.appendChild(value)
-#            ret.append(aruserwidth)
-#            order += 1
-#
-#        if not lite:
-#            wuserwidth = self.doc.createElement('spirit:modelParameter')
-#            self.setAttribute(wuserwidth, 'spirit:dataType', "integer")
-#            wuserwidth.appendChild(self.mkName("C_" + name + "_WUSER_WIDTH"))
-#            wuserwidth.appendChild(self.mkTextNode(
-#                'spirit:displayName', "C_" + name + "_WUSER_WIDTH"))
-#            wuserwidth.appendChild(self.mkTextNode(
-#                'spirit:description', "C_" + name + "_WUSER_WIDTH"))
-#            value = self.doc.createElement('spirit:value')
-#            self.setAttribute(value, 'spirit:format', 'long')
-#            self.setAttribute(value, 'spirit:resolve', 'dependent')
-#            self.setAttribute(value, 'spirit:id',
-#                              "MODELPARAM_VALUE.C_" + name + "_WUSER_WIDTH")
-#            self.setAttribute(value, 'spirit:dependency',
-#                              ("((spirit:decode(id('PARAM_VALUE.C_" + name +
-#                               "_WUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_"
-#                               + name + "_WUSER_WIDTH'))))"))
-#            self.setAttribute(value, 'spirit:order', order)
-#            self.setAttribute(value, 'spirit:minimum', "0")
-#            self.setAttribute(value, 'spirit:maximum', "1024")
-#            self.setAttribute(value, 'spirit:rangeType', "long")
-#            self.setText(value, 1)
-#            wuserwidth.appendChild(value)
-#            ret.append(wuserwidth)
-#            order += 1
-#
-#        if not lite:
-#            ruserwidth = self.doc.createElement('spirit:modelParameter')
-#            self.setAttribute(ruserwidth, 'spirit:dataType', "integer")
-#            ruserwidth.appendChild(self.mkName("C_" + name + "_RUSER_WIDTH"))
-#            ruserwidth.appendChild(self.mkTextNode(
-#                'spirit:displayName', "C_" + name + "_RUSER_WIDTH"))
-#            ruserwidth.appendChild(self.mkTextNode(
-#                'spirit:description', "C_" + name + "_RUSER_WIDTH"))
-#            value = self.doc.createElement('spirit:value')
-#            self.setAttribute(value, 'spirit:format', 'long')
-#            self.setAttribute(value, 'spirit:resolve', 'dependent')
-#            self.setAttribute(value, 'spirit:id',
-#                              "MODELPARAM_VALUE.C_" + name + "_RUSER_WIDTH")
-#            self.setAttribute(value, 'spirit:dependency',
-#                              ("((spirit:decode(id('PARAM_VALUE.C_" + name +
-#                               "_RUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_"
-#                               + name + "_RUSER_WIDTH'))))"))
-#            self.setAttribute(value, 'spirit:order', order)
-#            self.setAttribute(value, 'spirit:minimum', "0")
-#            self.setAttribute(value, 'spirit:maximum', "1024")
-#            self.setAttribute(value, 'spirit:rangeType', "long")
-#            self.setText(value, 1)
-#            ruserwidth.appendChild(value)
-#            ret.append(ruserwidth)
-#            order += 1
-#
-#        if not lite:
-#            buserwidth = self.doc.createElement('spirit:modelParameter')
-#            self.setAttribute(buserwidth, 'spirit:dataType', "integer")
-#            buserwidth.appendChild(self.mkName("C_" + name + "_BUSER_WIDTH"))
-#            buserwidth.appendChild(self.mkTextNode(
-#                'spirit:displayName', "C_" + name + "_BUSER_WIDTH"))
-#            buserwidth.appendChild(self.mkTextNode(
-#                'spirit:description', "C_" + name + "_BUSER_WIDTH"))
-#            value = self.doc.createElement('spirit:value')
-#            self.setAttribute(value, 'spirit:format', 'long')
-#            self.setAttribute(value, 'spirit:resolve', 'dependent')
-#            self.setAttribute(value, 'spirit:id',
-#                              "MODELPARAM_VALUE.C_" + name + "_BUSER_WIDTH")
-#            self.setAttribute(value, 'spirit:dependency',
-#                              ("((spirit:decode(id('PARAM_VALUE.C_" + name +
-#                               "_BUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_"
-#                               + name + "_BUSER_WIDTH'))))"))
-#            self.setAttribute(value, 'spirit:order', order)
-#            self.setAttribute(value, 'spirit:minimum', "0")
-#            self.setAttribute(value, 'spirit:maximum', "1024")
-#            self.setAttribute(value, 'spirit:rangeType', "long")
-#            self.setText(value, 1)
-#            buserwidth.appendChild(value)
-#            ret.append(buserwidth)
-#            order += 1
-#
-#        return order, ret
-
-#    def mkChoices(self):
-#        choices = self.doc.createElement('spirit:choices')
-#        choices.appendChild(self.mkChoice(
-#            'choices_0', (32, 64, 128, 256, 512)))
-#
-#        choices_1 = self.doc.createElement('spirit:choice')
-#        choices_1.appendChild(self.mkName('choices_1'))
-#        choices_1_true = self.doc.createElement('spirit:enumeration')
-#        self.setAttribute(choices_1_true, 'spirit:text', 'true')
-#        self.setText(choices_1_true, 1)
-#        choices_1_false = self.doc.createElement('spirit:enumeration')
-#        self.setAttribute(choices_1_false, 'spirit:text', 'false')
-#        self.setText(choices_1_false, 0)
-#        choices_1.appendChild(choices_1_true)
-#        choices_1.appendChild(choices_1_false)
-#        choices.appendChild(choices_1)
-#
-#        choices.appendChild(self.mkChoice(
-#            'choices_2', (32, 64, 128, 256, 512)))
-#
-#        choices_3 = self.doc.createElement('spirit:choice')
-#        choices_3.appendChild(self.mkName('choices_3'))
-#        choices_3_true = self.doc.createElement('spirit:enumeration')
-#        self.setAttribute(choices_3_true, 'spirit:text', 'true')
-#        self.setText(choices_3_true, 1)
-#        choices_3_false = self.doc.createElement('spirit:enumeration')
-#        self.setAttribute(choices_3_false, 'spirit:text', 'false')
-#        self.setText(choices_3_false, 0)
-#        choices_3.appendChild(choices_3_true)
-#        choices_3.appendChild(choices_3_false)
-#        choices.appendChild(choices_3)
-#
-#        choices.appendChild(self.mkChoice(
-#            'choices_4', (1, 2, 4, 8, 16, 32, 64, 128, 256, 512)))
-#        choices.appendChild(self.mkChoice(
-#            'choices_5', (1, 2, 4, 8, 16, 32, 64, 128, 256, 512)))
-#
-#        return choices
-
-#    def mkChoice(self, name, arg):
-#        choice = self.doc.createElement('spirit:choice')
-#        choice.appendChild(self.mkName(name))
-#        for a in arg:
-#            choice.appendChild(self.mkTextNode('spirit:enumeration', a))
-#        return choice
-
     def mkFileSets(self):
         filesets = self.doc.createElement('spirit:fileSets')
+
         source = self.doc.createElement('spirit:fileSet')
         source.appendChild(self.mkName("xilinx_verilogsynthesis_view_fileset"))
         source.appendChild(self.mkFileSet('hdl/' + self.ip_name + '.v',
@@ -1127,8 +660,6 @@ class ComponentGen(object):
             "xilinx_verilogbehavioralsimulation_view_fileset"))
         sim.appendChild(self.mkFileSet('hdl/' + self.ip_name + '.v',
                                        'verilogSource'))
-        # sim.appendChild(self.mkFileSet('test/test_' + self.ip_name + '.v',
-        #                               'verilogSource'))
         filesets.appendChild(sim)
 
         xguitcl = self.doc.createElement('spirit:fileSet')
@@ -1136,18 +667,6 @@ class ComponentGen(object):
         xguitcl.appendChild(self.mkFileSet('xgui/xgui.tcl',
                                            'tclSource', 'XGUI_VERSION_2'))
         filesets.appendChild(xguitcl)
-
-        # bdtcl = self.doc.createElement('spirit:fileSet')
-        # bdtcl.appendChild(self.mkName("bd_tcl_view_fileset"))
-        # bdtcl.appendChild(self.mkFileSet('bd/bd.tcl', 'tclSource'))
-        # filesets.appendChild(bdtcl)
-
-        # xdc = self.doc.createElement('spirit:fileSet')
-        # xdc.appendChild(self.mkName(
-        #    "xilinx_synthesisconstraints_view_fileset"))
-        # xdc.appendChild(self.mkFileSet('data/' + self.ip_name + '.xdc',
-        #                               None, 'xdc'))
-        # filesets.appendChild(xdc)
 
         return filesets
 
@@ -1177,234 +696,7 @@ class ComponentGen(object):
         compname.appendChild(value)
         parameters.appendChild(compname)
 
-#        order = 2
-#        for memory in self.bus_interfaces:
-#            order, rslt = self.mkParameter(memory, order)
-#            for p in rslt:
-#                parameters.appendChild(p)
-#
-#        for paramname, paramlvalue, paramtype in self.ext_params:
-#            p = self.doc.createElement('spirit:parameter')
-#            p.appendChild(self.mkName(paramname))
-#            p.appendChild(self.mkTextNode('spirit:displayName', paramname))
-#            p.appendChild(self.mkTextNode('spirit:description', paramname))
-#            value = self.doc.createElement('spirit:value')
-#            if paramtype == 'integer':
-#                self.setAttribute(value, 'spirit:format', 'long')
-#            self.setAttribute(value, 'spirit:resolve', 'user')
-#            self.setAttribute(value, 'spirit:id', "PARAM_VALUE." + paramname)
-#            self.setText(value, paramlvalue)
-#            p.appendChild(value)
-#            parameters.appendChild(p)
-
         return parameters
-
-#    def mkParameter(self, obj, order):
-#        lite = is_lite(obj)
-#        ret = []
-#        name = obj.name
-#
-#        if not lite:
-#            idwidth = self.doc.createElement('spirit:parameter')
-#            idwidth.appendChild(self.mkName("C_" + name + "_ID_WIDTH"))
-#            idwidth.appendChild(self.mkTextNode(
-#                'spirit:displayName', "C_" + name + "_ID_WIDTH"))
-#            idwidth.appendChild(self.mkTextNode(
-#                'spirit:description', "C_" + name + "_ID_WIDTH"))
-#            value = self.doc.createElement('spirit:value')
-#            self.setAttribute(value, 'spirit:format', 'long')
-#            self.setAttribute(value, 'spirit:resolve', 'user')
-#            self.setAttribute(value, 'spirit:id',
-#                              "PARAM_VALUE.C_" + name + "_ID_WIDTH")
-#            self.setAttribute(value, 'spirit:dependency',
-#                              ("((spirit:decode(id('PARAM_VALUE.C_" + name +
-#                               "_ID_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_"
-#                               + name + "_ID_WIDTH'))))"))
-#            self.setAttribute(value, 'spirit:order', order)
-#            self.setAttribute(value, 'spirit:minimum', "0")
-#            self.setAttribute(value, 'spirit:maximum', "32")
-#            self.setAttribute(value, 'spirit:rangeType', "long")
-#            self.setText(value, 1)
-#            idwidth.appendChild(value)
-#            ret.append(idwidth)
-#            order += 1
-#
-#        addrwidth = self.doc.createElement('spirit:parameter')
-#        addrwidth.appendChild(self.mkName("C_" + name + "_ADDR_WIDTH"))
-#        addrwidth.appendChild(self.mkTextNode(
-#            'spirit:displayName', "C_" + name + "_ADDR_WIDTH"))
-#        addrwidth.appendChild(self.mkTextNode(
-#            'spirit:description', "C_" + name + "_ADDR_WIDTH"))
-#        value = self.doc.createElement('spirit:value')
-#        self.setAttribute(value, 'spirit:format', 'long')
-#        self.setAttribute(value, 'spirit:resolve', 'user')
-#        self.setAttribute(value, 'spirit:id',
-#                          "PARAM_VALUE.C_" + name + "_ADDR_WIDTH")
-#        self.setAttribute(value, 'spirit:order', order)
-#        self.setAttribute(value, 'spirit:rangeType', "long")
-#        self.setText(value, obj.addrwidth)
-#        addrwidth.appendChild(value)
-#        extensions = self.doc.createElement('spirit:vendorExtensions')
-#        parameterinfo = self.doc.createElement('xilinx:parameterInfo')
-#        enablement = self.doc.createElement('xilinx:enablement')
-#        enablement.appendChild(self.mkTextNode('xilinx:isEnabled', 'false'))
-#        parameterinfo.appendChild(enablement)
-#        extensions.appendChild(parameterinfo)
-#        addrwidth.appendChild(extensions)
-#        ret.append(addrwidth)
-#        order += 1
-#
-#        datawidth = self.doc.createElement('spirit:parameter')
-#        datawidth.appendChild(self.mkName("C_" + name + "_DATA_WIDTH"))
-#        datawidth.appendChild(self.mkTextNode(
-#            'spirit:displayName', "C_" + name + "_DATA_WIDTH"))
-#        datawidth.appendChild(self.mkTextNode(
-#            'spirit:description', "C_" + name + "_DATA_WIDTH"))
-#        value = self.doc.createElement('spirit:value')
-#        self.setAttribute(value, 'spirit:format', 'long')
-#        self.setAttribute(value, 'spirit:resolve', 'user')
-#        self.setAttribute(value, 'spirit:id',
-#                          "PARAM_VALUE.C_" + name + "_DATA_WIDTH")
-#        self.setAttribute(value, 'spirit:order', order)
-#        self.setAttribute(value, 'spirit:rangeType', "long")
-#        self.setText(value, obj.datawidth)
-#        datawidth.appendChild(value)
-#        extensions = self.doc.createElement('spirit:vendorExtensions')
-#        parameterinfo = self.doc.createElement('xilinx:parameterInfo')
-#        enablement = self.doc.createElement('xilinx:enablement')
-#        enablement.appendChild(self.mkTextNode('xilinx:isEnabled', 'false'))
-#        parameterinfo.appendChild(enablement)
-#        extensions.appendChild(parameterinfo)
-#        datawidth.appendChild(extensions)
-#        ret.append(datawidth)
-#        order += 1
-#
-#        if not lite:
-#            awuserwidth = self.doc.createElement('spirit:parameter')
-#            awuserwidth.appendChild(self.mkName("C_" + name + "_AWUSER_WIDTH"))
-#            awuserwidth.appendChild(self.mkTextNode(
-#                'spirit:displayName', "C_" + name + "_AWUSER_WIDTH"))
-#            awuserwidth.appendChild(self.mkTextNode(
-#                'spirit:description', "C_" + name + "_AWUSER_WIDTH"))
-#            value = self.doc.createElement('spirit:value')
-#            self.setAttribute(value, 'spirit:format', 'long')
-#            self.setAttribute(value, 'spirit:resolve', 'dependent')
-#            self.setAttribute(value, 'spirit:id',
-#                              "PARAM_VALUE.C_" + name + "_AWUSER_WIDTH")
-#            self.setAttribute(value, 'spirit:dependency',
-#                              ("((spirit:decode(id('PARAM_VALUE.C_" + name +
-#                               "_AWUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_"
-#                               + name + "_AWUSER_WIDTH'))))"))
-#            self.setAttribute(value, 'spirit:order', order)
-#            self.setAttribute(value, 'spirit:minimum', "0")
-#            self.setAttribute(value, 'spirit:maximum', "1024")
-#            self.setAttribute(value, 'spirit:rangeType', "long")
-#            self.setText(value, 0)
-#            awuserwidth.appendChild(value)
-#            ret.append(awuserwidth)
-#            order += 1
-#
-#        if not lite:
-#            aruserwidth = self.doc.createElement('spirit:parameter')
-#            aruserwidth.appendChild(self.mkName("C_" + name + "_ARUSER_WIDTH"))
-#            aruserwidth.appendChild(self.mkTextNode(
-#                'spirit:displayName', "C_" + name + "_ARUSER_WIDTH"))
-#            aruserwidth.appendChild(self.mkTextNode(
-#                'spirit:description', "C_" + name + "_ARUSER_WIDTH"))
-#            value = self.doc.createElement('spirit:value')
-#            self.setAttribute(value, 'spirit:format', 'long')
-#            self.setAttribute(value, 'spirit:resolve', 'dependent')
-#            self.setAttribute(value, 'spirit:id',
-#                              "PARAM_VALUE.C_" + name + "_ARUSER_WIDTH")
-#            self.setAttribute(value, 'spirit:dependency',
-#                              ("((spirit:decode(id('PARAM_VALUE.C_" + name +
-#                               "_ARUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_"
-#                               + name + "_ARUSER_WIDTH'))))"))
-#            self.setAttribute(value, 'spirit:order', order)
-#            self.setAttribute(value, 'spirit:minimum', "0")
-#            self.setAttribute(value, 'spirit:maximum', "1024")
-#            self.setAttribute(value, 'spirit:rangeType', "long")
-#            self.setText(value, 0)
-#            aruserwidth.appendChild(value)
-#            ret.append(aruserwidth)
-#            order += 1
-#
-#        if not lite:
-#            wuserwidth = self.doc.createElement('spirit:parameter')
-#            wuserwidth.appendChild(self.mkName("C_" + name + "_WUSER_WIDTH"))
-#            wuserwidth.appendChild(self.mkTextNode(
-#                'spirit:displayName', "C_" + name + "_WUSER_WIDTH"))
-#            wuserwidth.appendChild(self.mkTextNode(
-#                'spirit:description', "C_" + name + "_WUSER_WIDTH"))
-#            value = self.doc.createElement('spirit:value')
-#            self.setAttribute(value, 'spirit:format', 'long')
-#            self.setAttribute(value, 'spirit:resolve', 'dependent')
-#            self.setAttribute(value, 'spirit:id',
-#                              "PARAM_VALUE.C_" + name + "_WUSER_WIDTH")
-#            self.setAttribute(value, 'spirit:dependency',
-#                              ("((spirit:decode(id('PARAM_VALUE.C_" + name +
-#                               "_WUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_"
-#                               + name + "_WUSER_WIDTH'))))"))
-#            self.setAttribute(value, 'spirit:order', order)
-#            self.setAttribute(value, 'spirit:minimum', "0")
-#            self.setAttribute(value, 'spirit:maximum', "1024")
-#            self.setAttribute(value, 'spirit:rangeType', "long")
-#            self.setText(value, 0)
-#            wuserwidth.appendChild(value)
-#            ret.append(wuserwidth)
-#            order += 1
-#
-#        if not lite:
-#            ruserwidth = self.doc.createElement('spirit:parameter')
-#            ruserwidth.appendChild(self.mkName("C_" + name + "_RUSER_WIDTH"))
-#            ruserwidth.appendChild(self.mkTextNode(
-#                'spirit:displayName', "C_" + name + "_RUSER_WIDTH"))
-#            ruserwidth.appendChild(self.mkTextNode(
-#                'spirit:description', "C_" + name + "_RUSER_WIDTH"))
-#            value = self.doc.createElement('spirit:value')
-#            self.setAttribute(value, 'spirit:format', 'long')
-#            self.setAttribute(value, 'spirit:resolve', 'dependent')
-#            self.setAttribute(value, 'spirit:id',
-#                              "PARAM_VALUE.C_" + name + "_RUSER_WIDTH")
-#            self.setAttribute(value, 'spirit:dependency',
-#                              ("((spirit:decode(id('PARAM_VALUE.C_" + name +
-#                               "_RUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_"
-#                               + name + "_RUSER_WIDTH'))))"))
-#            self.setAttribute(value, 'spirit:order', order)
-#            self.setAttribute(value, 'spirit:minimum', "0")
-#            self.setAttribute(value, 'spirit:maximum', "1024")
-#            self.setAttribute(value, 'spirit:rangeType', "long")
-#            self.setText(value, 0)
-#            ruserwidth.appendChild(value)
-#            ret.append(ruserwidth)
-#            order += 1
-#
-#        if not lite:
-#            buserwidth = self.doc.createElement('spirit:parameter')
-#            buserwidth.appendChild(self.mkName("C_" + name + "_BUSER_WIDTH"))
-#            buserwidth.appendChild(self.mkTextNode(
-#                'spirit:displayName', "C_" + name + "_BUSER_WIDTH"))
-#            buserwidth.appendChild(self.mkTextNode(
-#                'spirit:description', "C_" + name + "_BUSER_WIDTH"))
-#            value = self.doc.createElement('spirit:value')
-#            self.setAttribute(value, 'spirit:format', 'long')
-#            self.setAttribute(value, 'spirit:resolve', 'dependent')
-#            self.setAttribute(value, 'spirit:id',
-#                              "PARAM_VALUE.C_" + name + "_BUSER_WIDTH")
-#            self.setAttribute(value, 'spirit:dependency',
-#                              ("((spirit:decode(id('PARAM_VALUE.C_" + name +
-#                               "_BUSER_WIDTH')) <= 0 ) + (spirit:decode(id('PARAM_VALUE.C_"
-#                               + name + "_BUSER_WIDTH'))))"))
-#            self.setAttribute(value, 'spirit:order', order)
-#            self.setAttribute(value, 'spirit:minimum', "0")
-#            self.setAttribute(value, 'spirit:maximum', "1024")
-#            self.setAttribute(value, 'spirit:rangeType', "long")
-#            self.setText(value, 0)
-#            buserwidth.appendChild(value)
-#            ret.append(buserwidth)
-#            order += 1
-#
-#        return order, ret
 
     def mkVendorExtensions(self):
         extensions = self.doc.createElement('spirit:vendorExtensions')
@@ -1419,17 +711,11 @@ class ComponentGen(object):
         coreextensions = self.doc.createElement('xilinx:coreExtensions')
         supported = self.doc.createElement('xilinx:supportedFamilies')
 
-        # Zynq
-        family = self.doc.createElement('xilinx:family')
-        self.setAttribute(family, 'xilinx:lifeCycle', 'Production')
-        self.setText(family, 'zynq')
-        supported.appendChild(family)
-
-        # Zynq Ultrascale+
-        family = self.doc.createElement('xilinx:family')
-        self.setAttribute(family, 'xilinx:lifeCycle', 'Production')
-        self.setText(family, 'zynquplus')
-        supported.appendChild(family)
+        for name in self.supported_families:
+            family = self.doc.createElement('xilinx:family')
+            self.setAttribute(family, 'xilinx:lifeCycle', 'Production')
+            self.setText(family, name)
+            supported.appendChild(family)
 
         coreextensions.appendChild(supported)
 
@@ -1441,18 +727,11 @@ class ComponentGen(object):
             self.mkTextNode('xilinx:displayName',
                             (self.ip_name + '_v' + self.version.replace('.', '_'))))
 
-        # coreextensions.appendChild(
-        #    self.mkTextNode('xilinx:autoFamilySupportLevel', 'level_1'))
-
-        # designtoolcontexts = self.doc.createElement('xilinx:designToolContexts')
-        # designtoolcontexts.appendChild(self.mkTextNode('xilinx:designToolContext', 'IPI'))
-        # coreextensions.appendChild(designtoolcontexts)
-
         coreextensions.appendChild(self.mkTextNode('xilinx:coreRevision', 1))
 
-        # now = datetime.datetime.now()
-        # dt = now.strftime("%Y-%m-%d") # '2015-03-08T02:16:15Z'
-        # coreextensions.appendChild(self.mkTextNode('xilinx:coreCreationDateTime', dt))
+        now = datetime.datetime.now()
+        dt = now.strftime("%Y-%m-%dT%H:%M:%SZ")  # '2015-03-08T02:16:15Z'
+        coreextensions.appendChild(self.mkTextNode('xilinx:coreCreationDateTime', dt))
 
         return coreextensions
 
