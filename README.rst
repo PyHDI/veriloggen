@@ -5,7 +5,7 @@ Veriloggen
 
 A library for constructing a Verilog HDL source code in Python
 
-Copyright (C) 2015, Shinya Takamaeda-Yamazaki
+Copyright 2015, Shinya Takamaeda-Yamazaki
 
 E-mail: takamaeda_at_ist.hokudai.ac.jp
 
