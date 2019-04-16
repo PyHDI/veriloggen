@@ -9,20 +9,35 @@ module test;
   reg CLK;
   reg RST;
   wire [32-1:0] myaxi_awaddr;
+  wire [4-1:0] myaxi_awcache;
+  wire [3-1:0] myaxi_awprot;
   wire myaxi_awvalid;
   reg myaxi_awready;
   wire [32-1:0] myaxi_wdata;
   wire [4-1:0] myaxi_wstrb;
   wire myaxi_wvalid;
   reg myaxi_wready;
+  reg [2-1:0] myaxi_bresp;
+  reg myaxi_bvalid;
+  wire myaxi_bready;
   wire [32-1:0] myaxi_araddr;
+  wire [4-1:0] myaxi_arcache;
+  wire [3-1:0] myaxi_arprot;
   wire myaxi_arvalid;
   reg myaxi_arready;
   reg [32-1:0] myaxi_rdata;
+  reg [2-1:0] myaxi_rresp;
   reg myaxi_rvalid;
   wire myaxi_rready;
   wire [32-1:0] memory_awaddr;
   wire [8-1:0] memory_awlen;
+  wire [3-1:0] memory_awsize;
+  wire [2-1:0] memory_awburst;
+  wire [2-1:0] memory_awlock;
+  wire [4-1:0] memory_awcache;
+  wire [3-1:0] memory_awprot;
+  wire [4-1:0] memory_awqos;
+  wire [1-1:0] memory_awuser;
   wire memory_awvalid;
   reg memory_awready;
   wire [32-1:0] memory_wdata;
@@ -30,22 +45,35 @@ module test;
   wire memory_wlast;
   wire memory_wvalid;
   reg memory_wready;
+  wire [2-1:0] memory_bresp;
+  reg memory_bvalid;
+  wire memory_bready;
   wire [32-1:0] memory_araddr;
   wire [8-1:0] memory_arlen;
+  wire [3-1:0] memory_arsize;
+  wire [2-1:0] memory_arburst;
+  wire [2-1:0] memory_arlock;
+  wire [4-1:0] memory_arcache;
+  wire [3-1:0] memory_arprot;
+  wire [4-1:0] memory_arqos;
+  wire [1-1:0] memory_aruser;
   wire memory_arvalid;
   reg memory_arready;
   reg [32-1:0] memory_rdata;
+  wire [2-1:0] memory_rresp;
   reg memory_rlast;
   reg memory_rvalid;
   wire memory_rready;
+  assign memory_bresp = 0;
+  assign memory_rresp = 0;
+  reg [32-1:0] _memory_fsm;
+  localparam _memory_fsm_init = 0;
   reg [8-1:0] _memory_mem [0:2**20-1];
 
   initial begin
     $readmemh("_memory_memimg_.out", _memory_mem);
   end
 
-  reg [32-1:0] _memory_fsm;
-  localparam _memory_fsm_init = 0;
   reg [33-1:0] _write_count;
   reg [32-1:0] _write_addr;
   reg [33-1:0] _read_count;
@@ -57,6 +85,13 @@ module test;
   reg __memory_fsm_cond_211_2_1;
   assign memory_awaddr = myaxi_awaddr;
   assign memory_awlen = 0;
+  assign memory_awsize = 1;
+  assign memory_awburst = 1;
+  assign memory_awlock = 0;
+  assign memory_awcache = myaxi_awcache;
+  assign memory_awprot = myaxi_awprot;
+  assign memory_awqos = 0;
+  assign memory_awuser = 0;
   assign memory_awvalid = myaxi_awvalid;
   wire _tmp_0;
   assign _tmp_0 = memory_awready;
@@ -76,26 +111,57 @@ module test;
     myaxi_wready = _tmp_1;
   end
 
-  assign memory_araddr = myaxi_araddr;
-  assign memory_arlen = 0;
-  assign memory_arvalid = myaxi_arvalid;
-  wire _tmp_2;
-  assign _tmp_2 = memory_arready;
+  wire [2-1:0] _tmp_2;
+  assign _tmp_2 = memory_bresp;
 
   always @(*) begin
-    myaxi_arready = _tmp_2;
-  end
-
-
-  always @(*) begin
-    myaxi_rdata = memory_rdata;
+    myaxi_bresp = _tmp_2;
   end
 
   wire _tmp_3;
-  assign _tmp_3 = memory_rvalid;
+  assign _tmp_3 = memory_bvalid;
 
   always @(*) begin
-    myaxi_rvalid = _tmp_3;
+    myaxi_bvalid = _tmp_3;
+  end
+
+  assign memory_bready = myaxi_bready;
+  assign memory_araddr = myaxi_araddr;
+  assign memory_arlen = 0;
+  assign memory_arsize = 1;
+  assign memory_arburst = 1;
+  assign memory_arlock = 0;
+  assign memory_arcache = myaxi_arcache;
+  assign memory_arprot = myaxi_arprot;
+  assign memory_arqos = 0;
+  assign memory_aruser = 0;
+  assign memory_arvalid = myaxi_arvalid;
+  wire _tmp_4;
+  assign _tmp_4 = memory_arready;
+
+  always @(*) begin
+    myaxi_arready = _tmp_4;
+  end
+
+  wire [32-1:0] _tmp_5;
+  assign _tmp_5 = memory_rdata;
+
+  always @(*) begin
+    myaxi_rdata = _tmp_5;
+  end
+
+  wire [2-1:0] _tmp_6;
+  assign _tmp_6 = memory_rresp;
+
+  always @(*) begin
+    myaxi_rresp = _tmp_6;
+  end
+
+  wire _tmp_7;
+  assign _tmp_7 = memory_rvalid;
+
+  always @(*) begin
+    myaxi_rvalid = _tmp_7;
   end
 
   assign memory_rready = myaxi_rready;
@@ -106,16 +172,24 @@ module test;
     .CLK(CLK),
     .RST(RST),
     .myaxi_awaddr(myaxi_awaddr),
+    .myaxi_awcache(myaxi_awcache),
+    .myaxi_awprot(myaxi_awprot),
     .myaxi_awvalid(myaxi_awvalid),
     .myaxi_awready(myaxi_awready),
     .myaxi_wdata(myaxi_wdata),
     .myaxi_wstrb(myaxi_wstrb),
     .myaxi_wvalid(myaxi_wvalid),
     .myaxi_wready(myaxi_wready),
+    .myaxi_bresp(myaxi_bresp),
+    .myaxi_bvalid(myaxi_bvalid),
+    .myaxi_bready(myaxi_bready),
     .myaxi_araddr(myaxi_araddr),
+    .myaxi_arcache(myaxi_arcache),
+    .myaxi_arprot(myaxi_arprot),
     .myaxi_arvalid(myaxi_arvalid),
     .myaxi_arready(myaxi_arready),
     .myaxi_rdata(myaxi_rdata),
+    .myaxi_rresp(myaxi_rresp),
     .myaxi_rvalid(myaxi_rvalid),
     .myaxi_rready(myaxi_rready)
   );
@@ -123,7 +197,7 @@ module test;
 
   initial begin
     $dumpfile("uut.vcd");
-    $dumpvars(0, uut, CLK, RST, myaxi_awaddr, myaxi_awvalid, myaxi_awready, myaxi_wdata, myaxi_wstrb, myaxi_wvalid, myaxi_wready, myaxi_araddr, myaxi_arvalid, myaxi_arready, myaxi_rdata, myaxi_rvalid, myaxi_rready, memory_awaddr, memory_awlen, memory_awvalid, memory_awready, memory_wdata, memory_wstrb, memory_wlast, memory_wvalid, memory_wready, memory_araddr, memory_arlen, memory_arvalid, memory_arready, memory_rdata, memory_rlast, memory_rvalid, memory_rready, _memory_fsm, _write_count, _write_addr, _read_count, _read_addr, _sleep_count, _d1__memory_fsm, __memory_fsm_cond_100_0_1, __memory_fsm_cond_200_1_1, __memory_fsm_cond_211_2_1, _tmp_0, _tmp_1, _tmp_2, _tmp_3);
+    $dumpvars(0, uut, CLK, RST, myaxi_awaddr, myaxi_awcache, myaxi_awprot, myaxi_awvalid, myaxi_awready, myaxi_wdata, myaxi_wstrb, myaxi_wvalid, myaxi_wready, myaxi_bresp, myaxi_bvalid, myaxi_bready, myaxi_araddr, myaxi_arcache, myaxi_arprot, myaxi_arvalid, myaxi_arready, myaxi_rdata, myaxi_rresp, myaxi_rvalid, myaxi_rready, memory_awaddr, memory_awlen, memory_awsize, memory_awburst, memory_awlock, memory_awcache, memory_awprot, memory_awqos, memory_awuser, memory_awvalid, memory_awready, memory_wdata, memory_wstrb, memory_wlast, memory_wvalid, memory_wready, memory_bresp, memory_bvalid, memory_bready, memory_araddr, memory_arlen, memory_arsize, memory_arburst, memory_arlock, memory_arcache, memory_arprot, memory_arqos, memory_aruser, memory_arvalid, memory_arready, memory_rdata, memory_rresp, memory_rlast, memory_rvalid, memory_rready, _memory_fsm, _write_count, _write_addr, _read_count, _read_addr, _sleep_count, _d1__memory_fsm, __memory_fsm_cond_100_0_1, __memory_fsm_cond_200_1_1, __memory_fsm_cond_211_2_1, _tmp_0, _tmp_1, _tmp_2, _tmp_3, _tmp_4, _tmp_5, _tmp_6, _tmp_7);
   end
 
 
@@ -139,6 +213,7 @@ module test;
     RST = 0;
     memory_awready = 0;
     memory_wready = 0;
+    memory_bvalid = 0;
     memory_arready = 0;
     memory_rdata = 0;
     memory_rlast = 0;
@@ -208,8 +283,15 @@ module test;
       memory_rlast <= 0;
       __memory_fsm_cond_211_2_1 <= 0;
       memory_rdata <= 0;
+      memory_bvalid <= 0;
       _sleep_count <= 0;
     end else begin
+      if(memory_bvalid && memory_bready) begin
+        memory_bvalid <= 0;
+      end 
+      if(memory_wvalid && memory_wready && memory_wlast) begin
+        memory_bvalid <= 1;
+      end 
       _sleep_count <= _sleep_count + 1;
       if(_sleep_count == 3) begin
         _sleep_count <= 0;
@@ -243,7 +325,7 @@ module test;
           end 
         end
         _memory_fsm_100: begin
-          if(memory_awvalid) begin
+          if(memory_awvalid && !memory_bvalid) begin
             memory_awready <= 1;
             _write_addr <= memory_awaddr;
             _write_count <= memory_awlen + 1;
@@ -408,20 +490,33 @@ module main
   input CLK,
   input RST,
   output reg [32-1:0] myaxi_awaddr,
+  output [4-1:0] myaxi_awcache,
+  output [3-1:0] myaxi_awprot,
   output reg myaxi_awvalid,
   input myaxi_awready,
   output reg [32-1:0] myaxi_wdata,
   output reg [4-1:0] myaxi_wstrb,
   output reg myaxi_wvalid,
   input myaxi_wready,
+  input [2-1:0] myaxi_bresp,
+  input myaxi_bvalid,
+  output myaxi_bready,
   output reg [32-1:0] myaxi_araddr,
+  output [4-1:0] myaxi_arcache,
+  output [3-1:0] myaxi_arprot,
   output reg myaxi_arvalid,
   input myaxi_arready,
   input [32-1:0] myaxi_rdata,
+  input [2-1:0] myaxi_rresp,
   input myaxi_rvalid,
   output myaxi_rready
 );
 
+  assign myaxi_awcache = 3;
+  assign myaxi_awprot = 0;
+  assign myaxi_bready = 1;
+  assign myaxi_arcache = 3;
+  assign myaxi_arprot = 0;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
   reg [32-1:0] sum;

@@ -75,7 +75,6 @@ Requirements
 -  pytest: 3.2 or later
 -  pytest-pythonpath: 0.7 or later
 -  Pyverilog: 1.1.3 or later
--  IPgen: 1.0.1 or later
 
 ::
 

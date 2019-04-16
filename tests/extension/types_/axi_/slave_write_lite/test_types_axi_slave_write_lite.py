@@ -10,31 +10,52 @@ module test;
   reg RST;
   wire [32-1:0] sum;
   reg [32-1:0] myaxi_awaddr;
+  reg [4-1:0] myaxi_awcache;
+  reg [3-1:0] myaxi_awprot;
   reg myaxi_awvalid;
   wire myaxi_awready;
   reg [32-1:0] myaxi_wdata;
   reg [4-1:0] myaxi_wstrb;
   reg myaxi_wvalid;
   wire myaxi_wready;
+  wire [2-1:0] myaxi_bresp;
+  wire myaxi_bvalid;
+  reg myaxi_bready;
   reg [32-1:0] myaxi_araddr;
+  reg [4-1:0] myaxi_arcache;
+  reg [3-1:0] myaxi_arprot;
   reg myaxi_arvalid;
   wire myaxi_arready;
   wire [32-1:0] myaxi_rdata;
+  wire [2-1:0] myaxi_rresp;
   wire myaxi_rvalid;
   reg myaxi_rready;
   reg [32-1:0] _axi_awaddr;
+  wire [4-1:0] _axi_awcache;
+  wire [3-1:0] _axi_awprot;
   reg _axi_awvalid;
   wire _axi_awready;
   reg [32-1:0] _axi_wdata;
   reg [4-1:0] _axi_wstrb;
   reg _axi_wvalid;
   wire _axi_wready;
+  wire [2-1:0] _axi_bresp;
+  wire _axi_bvalid;
+  wire _axi_bready;
   reg [32-1:0] _axi_araddr;
+  wire [4-1:0] _axi_arcache;
+  wire [3-1:0] _axi_arprot;
   reg _axi_arvalid;
   wire _axi_arready;
   wire [32-1:0] _axi_rdata;
+  wire [2-1:0] _axi_rresp;
   wire _axi_rvalid;
   wire _axi_rready;
+  assign _axi_awcache = 3;
+  assign _axi_awprot = 0;
+  assign _axi_bready = 1;
+  assign _axi_arcache = 3;
+  assign _axi_arprot = 0;
   assign _axi_rready = 0;
   wire [32-1:0] _tmp_0;
   assign _tmp_0 = _axi_awaddr;
@@ -43,58 +64,96 @@ module test;
     myaxi_awaddr = _tmp_0;
   end
 
-  wire _tmp_1;
-  assign _tmp_1 = _axi_awvalid;
+  wire [4-1:0] _tmp_1;
+  assign _tmp_1 = _axi_awcache;
 
   always @(*) begin
-    myaxi_awvalid = _tmp_1;
+    myaxi_awcache = _tmp_1;
+  end
+
+  wire [3-1:0] _tmp_2;
+  assign _tmp_2 = _axi_awprot;
+
+  always @(*) begin
+    myaxi_awprot = _tmp_2;
+  end
+
+  wire _tmp_3;
+  assign _tmp_3 = _axi_awvalid;
+
+  always @(*) begin
+    myaxi_awvalid = _tmp_3;
   end
 
   assign _axi_awready = myaxi_awready;
-  wire [32-1:0] _tmp_2;
-  assign _tmp_2 = _axi_wdata;
+  wire [32-1:0] _tmp_4;
+  assign _tmp_4 = _axi_wdata;
 
   always @(*) begin
-    myaxi_wdata = _tmp_2;
+    myaxi_wdata = _tmp_4;
   end
 
-  wire [4-1:0] _tmp_3;
-  assign _tmp_3 = _axi_wstrb;
+  wire [4-1:0] _tmp_5;
+  assign _tmp_5 = _axi_wstrb;
 
   always @(*) begin
-    myaxi_wstrb = _tmp_3;
-  end
-
-  wire _tmp_4;
-  assign _tmp_4 = _axi_wvalid;
-
-  always @(*) begin
-    myaxi_wvalid = _tmp_4;
-  end
-
-  assign _axi_wready = myaxi_wready;
-  wire [32-1:0] _tmp_5;
-  assign _tmp_5 = _axi_araddr;
-
-  always @(*) begin
-    myaxi_araddr = _tmp_5;
+    myaxi_wstrb = _tmp_5;
   end
 
   wire _tmp_6;
-  assign _tmp_6 = _axi_arvalid;
+  assign _tmp_6 = _axi_wvalid;
 
   always @(*) begin
-    myaxi_arvalid = _tmp_6;
+    myaxi_wvalid = _tmp_6;
+  end
+
+  assign _axi_wready = myaxi_wready;
+  assign _axi_bresp = myaxi_bresp;
+  assign _axi_bvalid = myaxi_bvalid;
+  wire _tmp_7;
+  assign _tmp_7 = _axi_bready;
+
+  always @(*) begin
+    myaxi_bready = _tmp_7;
+  end
+
+  wire [32-1:0] _tmp_8;
+  assign _tmp_8 = _axi_araddr;
+
+  always @(*) begin
+    myaxi_araddr = _tmp_8;
+  end
+
+  wire [4-1:0] _tmp_9;
+  assign _tmp_9 = _axi_arcache;
+
+  always @(*) begin
+    myaxi_arcache = _tmp_9;
+  end
+
+  wire [3-1:0] _tmp_10;
+  assign _tmp_10 = _axi_arprot;
+
+  always @(*) begin
+    myaxi_arprot = _tmp_10;
+  end
+
+  wire _tmp_11;
+  assign _tmp_11 = _axi_arvalid;
+
+  always @(*) begin
+    myaxi_arvalid = _tmp_11;
   end
 
   assign _axi_arready = myaxi_arready;
   assign _axi_rdata = myaxi_rdata;
+  assign _axi_rresp = myaxi_rresp;
   assign _axi_rvalid = myaxi_rvalid;
-  wire _tmp_7;
-  assign _tmp_7 = _axi_rready;
+  wire _tmp_12;
+  assign _tmp_12 = _axi_rready;
 
   always @(*) begin
-    myaxi_rready = _tmp_7;
+    myaxi_rready = _tmp_12;
   end
 
   reg [32-1:0] fsm;
@@ -112,16 +171,24 @@ module test;
     .RST(RST),
     .sum(sum),
     .myaxi_awaddr(myaxi_awaddr),
+    .myaxi_awcache(myaxi_awcache),
+    .myaxi_awprot(myaxi_awprot),
     .myaxi_awvalid(myaxi_awvalid),
     .myaxi_awready(myaxi_awready),
     .myaxi_wdata(myaxi_wdata),
     .myaxi_wstrb(myaxi_wstrb),
     .myaxi_wvalid(myaxi_wvalid),
     .myaxi_wready(myaxi_wready),
+    .myaxi_bresp(myaxi_bresp),
+    .myaxi_bvalid(myaxi_bvalid),
+    .myaxi_bready(myaxi_bready),
     .myaxi_araddr(myaxi_araddr),
+    .myaxi_arcache(myaxi_arcache),
+    .myaxi_arprot(myaxi_arprot),
     .myaxi_arvalid(myaxi_arvalid),
     .myaxi_arready(myaxi_arready),
     .myaxi_rdata(myaxi_rdata),
+    .myaxi_rresp(myaxi_rresp),
     .myaxi_rvalid(myaxi_rvalid),
     .myaxi_rready(myaxi_rready)
   );
@@ -129,7 +196,7 @@ module test;
 
   initial begin
     $dumpfile("uut.vcd");
-    $dumpvars(0, uut, CLK, RST, sum, myaxi_awaddr, myaxi_awvalid, myaxi_awready, myaxi_wdata, myaxi_wstrb, myaxi_wvalid, myaxi_wready, myaxi_araddr, myaxi_arvalid, myaxi_arready, myaxi_rdata, myaxi_rvalid, myaxi_rready, _axi_awaddr, _axi_awvalid, _axi_awready, _axi_wdata, _axi_wstrb, _axi_wvalid, _axi_wready, _axi_araddr, _axi_arvalid, _axi_arready, _axi_rdata, _axi_rvalid, _axi_rready, _tmp_0, _tmp_1, _tmp_2, _tmp_3, _tmp_4, _tmp_5, _tmp_6, _tmp_7, fsm, __axi_cond_0_1, wdata, __axi_cond_1_1, __axi_cond_2_1, __axi_cond_3_1);
+    $dumpvars(0, uut, CLK, RST, sum, myaxi_awaddr, myaxi_awcache, myaxi_awprot, myaxi_awvalid, myaxi_awready, myaxi_wdata, myaxi_wstrb, myaxi_wvalid, myaxi_wready, myaxi_bresp, myaxi_bvalid, myaxi_bready, myaxi_araddr, myaxi_arcache, myaxi_arprot, myaxi_arvalid, myaxi_arready, myaxi_rdata, myaxi_rresp, myaxi_rvalid, myaxi_rready, _axi_awaddr, _axi_awcache, _axi_awprot, _axi_awvalid, _axi_awready, _axi_wdata, _axi_wstrb, _axi_wvalid, _axi_wready, _axi_bresp, _axi_bvalid, _axi_bready, _axi_araddr, _axi_arcache, _axi_arprot, _axi_arvalid, _axi_arready, _axi_rdata, _axi_rresp, _axi_rvalid, _axi_rready, _tmp_0, _tmp_1, _tmp_2, _tmp_3, _tmp_4, _tmp_5, _tmp_6, _tmp_7, _tmp_8, _tmp_9, _tmp_10, _tmp_11, _tmp_12, fsm, __axi_cond_0_1, wdata, __axi_cond_1_1, __axi_cond_2_1, __axi_cond_3_1);
   end
 
 
@@ -703,42 +770,59 @@ module main
   input RST,
   output reg [32-1:0] sum,
   input [32-1:0] myaxi_awaddr,
+  input [4-1:0] myaxi_awcache,
+  input [3-1:0] myaxi_awprot,
   input myaxi_awvalid,
   output myaxi_awready,
   input [32-1:0] myaxi_wdata,
   input [4-1:0] myaxi_wstrb,
   input myaxi_wvalid,
   output myaxi_wready,
+  output [2-1:0] myaxi_bresp,
+  output reg myaxi_bvalid,
+  input myaxi_bready,
   input [32-1:0] myaxi_araddr,
+  input [4-1:0] myaxi_arcache,
+  input [3-1:0] myaxi_arprot,
   input myaxi_arvalid,
   output myaxi_arready,
   output reg [32-1:0] myaxi_rdata,
+  output [2-1:0] myaxi_rresp,
   output reg myaxi_rvalid,
   input myaxi_rready
 );
 
+  assign myaxi_bresp = 0;
+  assign myaxi_rresp = 0;
   assign myaxi_arready = 0;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
   reg [32-1:0] _tmp_0;
   reg _tmp_1;
   reg _tmp_2;
-  assign myaxi_awready = (fsm == 0) && !_tmp_1 && _tmp_2;
+  assign myaxi_awready = (fsm == 0) && !_tmp_1 && !myaxi_bvalid && _tmp_2;
   assign myaxi_wready = fsm == 1;
 
   always @(posedge CLK) begin
     if(RST) begin
+      myaxi_bvalid <= 0;
       myaxi_rvalid <= 0;
       _tmp_2 <= 0;
       _tmp_0 <= 0;
       _tmp_1 <= 0;
     end else begin
+      if(myaxi_bvalid && myaxi_bready) begin
+        myaxi_bvalid <= 0;
+      end 
+      if(myaxi_wvalid && myaxi_wready) begin
+        myaxi_bvalid <= 1;
+      end 
       myaxi_rvalid <= 0;
       _tmp_2 <= myaxi_awvalid;
-      if(myaxi_awready && myaxi_awvalid) begin
+      if(myaxi_awready && myaxi_awvalid && !myaxi_bvalid) begin
         _tmp_0 <= myaxi_awaddr;
       end 
-      _tmp_1 <= myaxi_awready && myaxi_awvalid;
+      _tmp_1 <= myaxi_awready && myaxi_awvalid && !myaxi_bvalid;
     end
   end
 

@@ -68,7 +68,8 @@ def setup_clock(m, clk, hperiod=5):
 
 def setup_reset(m, reset, *statement, **kwargs):
     period = kwargs['period'] if 'period' in kwargs else 100
-    positive = kwargs['positive'] if 'positive' in kwargs else True
+    polarity = kwargs['polarity'] if 'polarity' in kwargs else 'high'
+    positive = 'high' in polarity.lower()
 
     ret = m.Initial(
         reset(not positive),

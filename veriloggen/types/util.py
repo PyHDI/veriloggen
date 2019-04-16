@@ -18,8 +18,17 @@ def swap_type(cls):
 
 
 def make_port(m, _type, *args, **kwargs):
+    if 'no_reg' in kwargs and kwargs['no_reg']:
+        _type = _type.replace('Reg', '')
+        if len(_type) == 0:
+            _type = 'Wire'
+
+    if 'no_reg' in kwargs:
+        del kwargs['no_reg']
+
     if 'initval' in kwargs and 'Reg' not in _type:
         del kwargs['initval']
+
     return getattr(m, _type)(*args, **kwargs)
 
 
