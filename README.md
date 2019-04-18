@@ -58,7 +58,7 @@ Veriloggen project always welcomes questions, bug reports, feature proposals, an
 
 ### for questions, bug reports, and feature proposals
 
-Please leave your comment on the [issue tracker](https://github.com/PyHDI/Veriloggen/issues) on GitHub.
+Please leave your comment on the [issue tracker](https://github.com/PyHDI/veriloggen/issues) on GitHub.
 
 ### for pull requests
 

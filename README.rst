@@ -68,7 +68,7 @@ for questions, bug reports, and feature proposals
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Please leave your comment on the `issue
-tracker <https://github.com/PyHDI/Veriloggen/issues>`__ on GitHub.
+tracker <https://github.com/PyHDI/veriloggen/issues>`__ on GitHub.
 
 for pull requests
 ~~~~~~~~~~~~~~~~~
