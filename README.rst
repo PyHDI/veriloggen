@@ -5,9 +5,7 @@ Veriloggen
 
 A library for constructing a Verilog HDL source code in Python
 
-Copyright 2015, Shinya Takamaeda-Yamazaki
-
-E-mail: takamaeda_at_ist.hokudai.ac.jp
+Copyright 2015, Shinya Takamaeda-Yamazaki and Contributors
 
 License
 =======
@@ -65,13 +63,13 @@ proposals, and pull requests on
 `GitHub <https://github.com/PyHDI/veriloggen>`__.
 
 for questions, bug reports, and feature proposals
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 Please leave your comment on the `issue
 tracker <https://github.com/PyHDI/veriloggen/issues>`__ on GitHub.
 
 for pull requests
-~~~~~~~~~~~~~~~~~
+-----------------
 
 Please check “CONTRIBUTORS.md” for the contributors who provided pull
 requests.
@@ -387,9 +385,6 @@ Related Project
 
 `Pyverilog <https://github.com/PyHDI/Pyverilog>`__ - Python-based
 Hardware Design Processing Toolkit for Verilog HDL
-
-`IPgen <https://github.com/PyHDI/ipgen>`__ - IP-core package generator
-for AXI4/Avalon
 
 .. |Build Status| image:: https://travis-ci.org/PyHDI/veriloggen.svg
    :target: https://travis-ci.org/PyHDI/veriloggen
