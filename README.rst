@@ -99,7 +99,7 @@ Requirements
 
    sudo apt install iverilog
 
--  Pyverilog: 1.1.3 or later
+-  Pyverilog: 1.1.4 or later
 -  Jinja2: 2.10 or later
 -  NumPy: 1.14 or later
 
