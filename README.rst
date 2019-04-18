@@ -102,21 +102,28 @@ Requirements
 -  Pyverilog: 1.1.3 or later
 -  Jinja2: 2.10 or later
 -  NumPy: 1.14 or later
--  pytest: 3.2 or later
--  pytest-pythonpath: 0.7 or later
 
 ::
 
-   pip3 install pyverilog jinja2 numpy pytest pytest-pythonpath
+   pip3 install pyverilog jinja2 numpy
 
-Optional depedency
-------------------
+Optional Installation
+---------------------
+
+-  pytest: 3.2 or later
+-  pytest-pythonpath: 0.7 or later
+
+These are required for the testing execution of test codes in tests and
+examples.
+
+::
+
+   pip3 install pytest pytest-pythonpath
 
 -  Graphviz: 2.38.0 or later
 -  Pygraphviz: 1.3.1 or later
 
-These softwares are required for graph visualization by
-veriloggen.dataflow:
+These are required for graph visualization by veriloggen.dataflow:
 
 ::
 
