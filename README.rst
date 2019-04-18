@@ -68,7 +68,7 @@ for questions, bug reports, and feature proposals
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Please leave your comment on the `issue
-tracker <https://github.com/PyHDI/Veriloggen/issues>`__ on GitHub.
+tracker <https://github.com/PyHDI/veriloggen/issues>`__ on GitHub.
 
 for pull requests
 ~~~~~~~~~~~~~~~~~
@@ -99,37 +99,36 @@ Requirements
 
    sudo apt install iverilog
 
+-  Pyverilog: 1.1.4 or later
 -  Jinja2: 2.10 or later
--  pytest: 3.2 or later
--  pytest-pythonpath: 0.7 or later
--  Pyverilog: 1.1.3 or later
+-  NumPy: 1.14 or later
 
 ::
 
-   pip3 install jinja2 pytest pytest-pythonpath pyverilog ipgen
+   pip3 install pyverilog jinja2 numpy
 
-Options
--------
+Optional Installation
+---------------------
+
+-  pytest: 3.2 or later
+-  pytest-pythonpath: 0.7 or later
+
+These are required for the testing execution of test codes in tests and
+examples.
+
+::
+
+   pip3 install pytest pytest-pythonpath
 
 -  Graphviz: 2.38.0 or later
 -  Pygraphviz: 1.3.1 or later
 
-These softwares are required for graph visualization by
-veriloggen.dataflow:
+These are required for graph visualization by veriloggen.dataflow:
 
 ::
 
    sudo apt install graphviz
    pip3 install pygraphviz
-
--  NumPy: 1.14 or later
-
-This is required for the memory image generation function of
-types.axi.AxiMemoryModel from Python list or numpy.ndarray:
-
-::
-
-   pip3 install numpy
 
 Install
 -------
