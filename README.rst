@@ -5,7 +5,7 @@ Veriloggen
 
 A library for constructing a Verilog HDL source code in Python
 
-Copyright (C) 2015, Shinya Takamaeda-Yamazaki
+Copyright 2015, Shinya Takamaeda-Yamazaki
 
 E-mail: takamaeda_at_ist.hokudai.ac.jp
 
@@ -57,6 +57,34 @@ Veriloggen is not designed for designing a hardware by programmer
 directly, but is for providing an efficient abstraction to develop a
 more efficient domain specific language and tools.
 
+Contribute to Veriloggen
+========================
+
+Veriloggen project always welcomes questions, bug reports, feature
+proposals, and pull requests on
+`GitHub <https://github.com/PyHDI/veriloggen>`__.
+
+for questions, bug reports, and feature proposals
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Please leave your comment on the `issue
+tracker <https://github.com/PyHDI/veriloggen/issues>`__ on GitHub.
+
+for pull requests
+~~~~~~~~~~~~~~~~~
+
+Please check “CONTRIBUTORS.md” for the contributors who provided pull
+requests.
+
+Veriloggen uses **pytest** for the integration testing. **When you send
+a pull request, please include a testing example with pytest.** To write
+a testing code, please refer the existing testing examples in “tests”
+directory.
+
+If the pull request code passes all the tests successfully and has no
+obvious problem, it will be merged to the *develop* branch by the main
+committers.
+
 Installation
 ============
 
@@ -71,38 +99,36 @@ Requirements
 
    sudo apt install iverilog
 
+-  Pyverilog: 1.1.4 or later
 -  Jinja2: 2.10 or later
--  pytest: 3.2 or later
--  pytest-pythonpath: 0.7 or later
--  Pyverilog: 1.1.3 or later
--  IPgen: 1.0.1 or later
+-  NumPy: 1.14 or later
 
 ::
 
-   pip3 install jinja2 pytest pytest-pythonpath pyverilog ipgen
+   pip3 install pyverilog jinja2 numpy
 
-Options
--------
+Optional Installation
+---------------------
+
+-  pytest: 3.2 or later
+-  pytest-pythonpath: 0.7 or later
+
+These are required for the testing execution of test codes in tests and
+examples.
+
+::
+
+   pip3 install pytest pytest-pythonpath
 
 -  Graphviz: 2.38.0 or later
 -  Pygraphviz: 1.3.1 or later
 
-These softwares are required for graph visualization by
-veriloggen.dataflow:
+These are required for graph visualization by veriloggen.dataflow:
 
 ::
 
    sudo apt install graphviz
    pip3 install pygraphviz
-
--  NumPy: 1.14 or later
-
-This is required for the memory image generation function of
-types.axi.AxiMemoryModel from Python list or numpy.ndarray:
-
-::
-
-   pip3 install numpy
 
 Install
 -------
