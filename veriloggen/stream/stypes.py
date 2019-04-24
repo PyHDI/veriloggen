@@ -2659,7 +2659,7 @@ class _SubstreamOutput(_UnaryOperator):
         seq(data(rdata), cond=senable)
 
 
-class Buffer(_UnaryOperator):
+class RingBuffer(_UnaryOperator):
     latency = 1
 
     def __init__(self, var, length,
@@ -2686,8 +2686,8 @@ class Buffer(_UnaryOperator):
         self._set_seq(getattr(self.strm, 'seq', None))
 
     def read(self, pos):
-        var = _BufferOutput(self, pos, self.num_ports,
-                            self.enable, self.reset)
+        var = _RingBufferOutput(self, pos, self.num_ports,
+                                self.enable, self.reset)
         self.read_vars.append(var)
         self.num_ports += 1
         return var
@@ -2728,7 +2728,7 @@ class Buffer(_UnaryOperator):
         self.sig_data = wdata
 
 
-class _BufferOutput(_UnaryOperator):
+class _RingBufferOutput(_UnaryOperator):
     latency = 1
 
     def __init__(self, buf, pos, port,

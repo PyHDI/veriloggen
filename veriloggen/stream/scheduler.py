@@ -136,7 +136,7 @@ class ASAPScheduler(_Scheduler):
         node._set_end_stage(end)
         return end
 
-    def visit_Buffer(self, node):
+    def visit_RingBuffer(self, node):
         if node._has_start_stage():
             return node._get_end_stage()
         right = self.visit(node.right)
@@ -153,7 +153,7 @@ class ASAPScheduler(_Scheduler):
         node._set_end_stage(end)
         return end
 
-    def visit__BufferOutput(self, node):
+    def visit__RingBufferOutput(self, node):
         if node._has_start_stage():
             return node._get_end_stage()
         right = self.visit(node.right)
