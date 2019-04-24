@@ -2,11 +2,12 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 from collections import OrderedDict
-from math import log
+from math import log, ceil
 
 import veriloggen.core.vtypes as vtypes
 import veriloggen.types.fixed as fx
 import veriloggen.types.rom as rom
+import veriloggen.types.ram as ram
 from veriloggen.seq.seq import make_condition as _make_condition
 
 from . import mul
@@ -721,7 +722,7 @@ class Divide(_BinaryOperator):
             m.Assign(update(vtypes.Int(1, 1)))
 
         params = [('W_D', width)]
-        ports = [('CLK', clk), ('RST', rst), ('update', update),  ('enable', vtypes.Int(1, 1)),
+        ports = [('CLK', clk), ('RST', rst), ('update', update), ('enable', vtypes.Int(1, 1)),
                  ('in_a', abs_ldata), ('in_b', abs_rdata), ('rslt', abs_odata)]
 
         m.Instance(inst, self.name('div'), params, ports)
@@ -2656,6 +2657,135 @@ class _SubstreamOutput(_UnaryOperator):
         self.sig_data = data
 
         seq(data(rdata), cond=senable)
+
+
+class Buffer(_UnaryOperator):
+    latency = 1
+
+    def __init__(self, var, length,
+                 enable=None, reset=None):
+
+        self.enable = _to_constant(enable)
+        if self.enable is not None:
+            self.enable._add_sink(self)
+
+        self.reset = _to_constant(reset)
+        if self.reset is not None:
+            self.reset._add_sink(self)
+
+        self.length = length
+
+        _UnaryOperator.__init__(self, var)
+
+        self.num_ports = 1
+        self.read_vars = []
+
+    def _set_managers(self):
+        self._set_strm(_get_strm(self.right, self.enable, self.reset))
+        self._set_module(getattr(self.strm, 'module', None))
+        self._set_seq(getattr(self.strm, 'seq', None))
+
+    def read(self, pos):
+        var = _BufferOutput(self, pos, self.num_ports,
+                            self.enable, self.reset)
+        self.read_vars.append(var)
+        self.num_ports += 1
+        return var
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency != 1:
+            raise ValueError("Latency mismatch '%d' vs '%s'" %
+                             (self.latency, 1))
+
+        datawidth = self.bit_length()
+        addrwidth = int(ceil(log(self.length, 2)))
+        signed = self.get_signed()
+
+        clk = m._clock
+        self.ram = ram.SyncRAM(m, self.name('ram'),
+                               clk, datawidth, addrwidth, self.num_ports)
+
+        enabledata = self.enable.sig_data if self.enable is not None else None
+        resetdata = self.reset.sig_data if self.reset is not None else None
+
+        wdata = m.Wire(self.name('wdata'), datawidth, signed=signed)
+        wdata.assign(self.right.sig_data)
+
+        waddr = m.Reg(self.name('waddr'), addrwidth, initval=0)
+
+        wcond = _and_vars(svalid, senable, enabledata)
+
+        next_waddr = vtypes.Mux(waddr == self.length - 1, 0, waddr + 1)
+        seq(waddr(next_waddr), cond=wcond)
+
+        reset_waddr = 0
+        reset_cond = _and_vars(svalid, senable, enabledata, resetdata)
+        seq(waddr(reset_waddr), cond=reset_cond)
+
+        wenable = vtypes.Not(reset_cond) if reset_cond is not None else 1
+        self.ram.connect(0, waddr, wdata, wenable)
+
+        self.sig_data = wdata
+
+
+class _BufferOutput(_UnaryOperator):
+    latency = 1
+
+    def __init__(self, buf, pos, port,
+                 enable=None, reset=None):
+
+        self.enable = _to_constant(enable)
+        if self.enable is not None:
+            self.enable._add_sink(self)
+
+        self.reset = _to_constant(reset)
+        if self.reset is not None:
+            self.reset._add_sink(self)
+
+        self.pos = pos
+        self.port = port
+
+        _UnaryOperator.__init__(self, buf)
+
+    def _set_managers(self):
+        self._set_strm(_get_strm(self.right, self.pos, self.enable, self.reset))
+        self._set_module(getattr(self.strm, 'module', None))
+        self._set_seq(getattr(self.strm, 'seq', None))
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency != 1:
+            raise ValueError("Latency mismatch '%d' vs '%s'" %
+                             (self.latency, 1))
+
+        datawidth = self.bit_length()
+        addrwidth = int(ceil(log(self.right.length, 2)))
+        signed = self.get_signed()
+
+        enabledata = self.enable.sig_data if self.enable is not None else None
+        resetdata = self.reset.sig_data if self.reset is not None else None
+
+        rdata = m.Wire(self.name('rdata'), datawidth, signed=signed)
+
+        raddr_base = m.Reg(self.name('raddr'), addrwidth, initval=0)
+
+        rcond = _and_vars(svalid, senable, enabledata)
+
+        next_raddr_base = vtypes.Mux(raddr_base == self.right.length - 1,
+                                     0, raddr_base + 1)
+        seq(raddr_base(next_raddr_base), cond=rcond)
+
+        reset_raddr_base = 0
+        reset_cond = _and_vars(svalid, senable, enabledata, resetdata)
+        seq(raddr_base(reset_raddr_base), cond=reset_cond)
+
+        raddr = raddr_base + self.pos.sig_data
+        raddr = vtypes.Mux(raddr >= self.right.length,
+                           raddr - self.right.length, raddr)
+
+        self.right.ram.connect(self.port, raddr, 0, 0)
+        rdata.assign(self.right.ram.rdata(self.port))
+
+        self.sig_data = rdata
 
 
 def make_condition(*cond, **kwargs):

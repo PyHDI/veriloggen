@@ -27,6 +27,12 @@ class _Visitor(object):
         return rslt
 
     def _visit(self, node):
+        if isinstance(node, stypes.Buffer):
+            return self.visit_Buffer(node)
+
+        if isinstance(node, stypes._BufferOutput):
+            return self.visit__BufferOutput(node)
+
         if isinstance(node, stypes._Accumulator):
             return self.visit__Accumulator(node)
 
@@ -62,6 +68,12 @@ class _Visitor(object):
         raise NotImplementedError()
 
     def visit__Accumulator(self, node):
+        raise NotImplementedError()
+
+    def visit_Buffer(self, node):
+        raise NotImplementedError()
+
+    def visit__BufferOutput(self, node):
         raise NotImplementedError()
 
     def visit__ParameterVariable(self, node):
@@ -100,6 +112,19 @@ class InputVisitor(_Visitor):
         enable = self.visit(node.enable) if node.enable is not None else set()
         reset = self.visit(node.reset) if node.reset is not None else set()
         return right | size | initval | enable | reset
+
+    def visit_Buffer(self, node):
+        right = self.visit(node.right)
+        enable = self.visit(node.enable) if node.enable is not None else set()
+        reset = self.visit(node.reset) if node.reset is not None else set()
+        return right | enable | reset
+
+    def visit__BufferOutput(self, node):
+        right = self.visit(node.right)
+        pos = self.visit(node.pos)
+        enable = self.visit(node.enable) if node.enable is not None else set()
+        reset = self.visit(node.reset) if node.reset is not None else set()
+        return right | pos | enable | reset
 
     def visit__ParameterVariable(self, node):
         return set([node])
@@ -144,6 +169,23 @@ class OutputVisitor(_Visitor):
         reset = set()
         mine = set([node]) if node._has_output() else set()
         return right | size | initval | enable | reset | mine
+
+    def visit_Buffer(self, node):
+        right = self.visit(node.right)
+        enable = self.visit(node.enable) if node.enable is not None else set()
+        #reset = self.visit(node.reset) if node.reset is not None else set()
+        reset = set()
+        mine = set([node]) if node._has_output() else set()
+        return right | enable | reset | mine
+
+    def visit__BufferOutput(self, node):
+        right = self.visit(node.right)
+        pos = self.visit(node.pos)
+        enable = self.visit(node.enable) if node.enable is not None else set()
+        #reset = self.visit(node.reset) if node.reset is not None else set()
+        reset = set()
+        mine = set([node]) if node._has_output() else set()
+        return right | pos | enable | reset | mine
 
     def visit__ParameterVariable(self, node):
         mine = set([node]) if node._has_output() else set()
@@ -190,6 +232,21 @@ class OperatorVisitor(_Visitor):
         reset = self.visit(node.reset) if node.reset is not None else set()
         mine = set([node])
         return right | size | initval | enable | reset | mine
+
+    def visit_Buffer(self, node):
+        right = self.visit(node.right)
+        enable = self.visit(node.enable) if node.enable is not None else set()
+        reset = self.visit(node.reset) if node.reset is not None else set()
+        mine = set([node])
+        return right | enable | reset | mine
+
+    def visit__BufferOutput(self, node):
+        right = self.visit(node.right)
+        pos = self.visit(node.pos)
+        enable = self.visit(node.enable) if node.enable is not None else set()
+        reset = self.visit(node.reset) if node.reset is not None else set()
+        mine = set([node])
+        return right | pos | enable | reset | mine
 
     def visit__ParameterVariable(self, node):
         return set()
