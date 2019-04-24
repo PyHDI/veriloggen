@@ -2722,7 +2722,8 @@ class RingBuffer(_UnaryOperator):
         reset_cond = _and_vars(svalid, senable, enabledata, resetdata)
         seq(waddr(reset_waddr), cond=reset_cond)
 
-        wenable = vtypes.Not(reset_cond) if reset_cond is not None else 1
+        resetdata_x = vtypes.Not(resetdata) if resetdata is not None else 1
+        wenable = _and_vars(svalid, senable, enabledata, resetdata_x)
         self.ram.connect(0, waddr, wdata, wenable)
 
         self.sig_data = wdata
@@ -2791,9 +2792,9 @@ class Scratchpad(_BinaryOperator):
     latency = 1
 
     def __init__(self, var, addr, length,
-                 enable=None, reset=None):
+                 when=None, reset=None):
 
-        self.enable = _to_constant(enable)
+        self.enable = _to_constant(when)
         if self.enable is not None:
             self.enable._add_sink(self)
 
@@ -2841,9 +2842,8 @@ class Scratchpad(_BinaryOperator):
         waddr = m.Wire(self.name('waddr'), addrwidth)
         waddr.assign(self.right.sig_data)
 
-        reset_cond = _and_vars(svalid, senable, enabledata, resetdata)
-
-        wenable = vtypes.Not(reset_cond) if reset_cond is not None else 1
+        resetdata_x = vtypes.Not(resetdata) if resetdata is not None else 1
+        wenable = _and_vars(svalid, senable, enabledata, resetdata_x)
         self.ram.connect(0, waddr, wdata, wenable)
 
         self.sig_data = wdata
