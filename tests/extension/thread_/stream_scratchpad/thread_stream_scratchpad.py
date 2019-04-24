@@ -29,9 +29,12 @@ def mkLed():
     counter = strm.Counter()
 
     a = strm.source('a')
+    a_addr = strm.Counter() - 1
 
-    buf = strm.RingBuffer(a, length=128)
-    a_old = buf.read(-img_width)
+    sp = strm.Scratchpad(a, a_addr, length=128)
+
+    a_old_addr = strm.Counter() - img_width - 1
+    a_old = sp.read(a_old_addr)
 
     b = a + a_old
 

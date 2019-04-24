@@ -156,13 +156,32 @@ class ASAPScheduler(_Scheduler):
     def visit__RingBufferOutput(self, node):
         if node._has_start_stage():
             return node._get_end_stage()
+        left = self.visit(node.left)
         right = self.visit(node.right)
-        pos = self.visit(node.pos)
         enable = self.visit(node.enable) if node.enable is not None else None
         reset = self.visit(node.reset) if node.reset is not None else None
-        mine = self.max_stage(right, pos, enable, reset)
+        mine = self.max_stage(left, right, enable, reset)
+        node.left = self.fill_gap(node.left, mine)
         node.right = self.fill_gap(node.right, mine)
-        node.pos = self.fill_gap(node.pos, mine)
+        if node.enable is not None:
+            node.enable = self.fill_gap(node.enable, mine)
+        if node.reset is not None:
+            node.reset = self.fill_gap(node.reset, mine)
+        node._set_start_stage(mine)
+        end = self.next_stage(node, mine)
+        node._set_end_stage(end)
+        return end
+
+    def visit_Scratchpad(self, node):
+        if node._has_start_stage():
+            return node._get_end_stage()
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        enable = self.visit(node.enable) if node.enable is not None else None
+        reset = self.visit(node.reset) if node.reset is not None else None
+        mine = self.max_stage(left, right, enable, reset)
+        node.left = self.fill_gap(node.left, mine)
+        node.right = self.fill_gap(node.right, mine)
         if node.enable is not None:
             node.enable = self.fill_gap(node.enable, mine)
         if node.reset is not None:

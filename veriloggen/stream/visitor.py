@@ -33,6 +33,9 @@ class _Visitor(object):
         if isinstance(node, stypes._RingBufferOutput):
             return self.visit__RingBufferOutput(node)
 
+        if isinstance(node, stypes.Scratchpad):
+            return self.visit_Scratchpad(node)
+
         if isinstance(node, stypes._Accumulator):
             return self.visit__Accumulator(node)
 
@@ -74,6 +77,9 @@ class _Visitor(object):
         raise NotImplementedError()
 
     def visit__RingBufferOutput(self, node):
+        raise NotImplementedError()
+
+    def visit_Scratchpad(self, node):
         raise NotImplementedError()
 
     def visit__ParameterVariable(self, node):
@@ -120,11 +126,18 @@ class InputVisitor(_Visitor):
         return right | enable | reset
 
     def visit__RingBufferOutput(self, node):
+        left = self.visit(node.left)
         right = self.visit(node.right)
-        pos = self.visit(node.pos)
         enable = self.visit(node.enable) if node.enable is not None else set()
         reset = self.visit(node.reset) if node.reset is not None else set()
-        return right | pos | enable | reset
+        return left | right | enable | reset
+
+    def visit_Scratchpad(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        enable = self.visit(node.enable) if node.enable is not None else set()
+        reset = self.visit(node.reset) if node.reset is not None else set()
+        return left | right | enable | reset
 
     def visit__ParameterVariable(self, node):
         return set([node])
@@ -179,13 +192,22 @@ class OutputVisitor(_Visitor):
         return right | enable | reset | mine
 
     def visit__RingBufferOutput(self, node):
+        left = self.visit(node.left)
         right = self.visit(node.right)
-        pos = self.visit(node.pos)
         enable = self.visit(node.enable) if node.enable is not None else set()
         #reset = self.visit(node.reset) if node.reset is not None else set()
         reset = set()
         mine = set([node]) if node._has_output() else set()
-        return right | pos | enable | reset | mine
+        return left | right | enable | reset | mine
+
+    def visit_Scratchpad(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        enable = self.visit(node.enable) if node.enable is not None else set()
+        #reset = self.visit(node.reset) if node.reset is not None else set()
+        reset = set()
+        mine = set([node]) if node._has_output() else set()
+        return left | right | enable | reset | mine
 
     def visit__ParameterVariable(self, node):
         mine = set([node]) if node._has_output() else set()
@@ -241,12 +263,20 @@ class OperatorVisitor(_Visitor):
         return right | enable | reset | mine
 
     def visit__RingBufferOutput(self, node):
+        left = self.visit(node.left)
         right = self.visit(node.right)
-        pos = self.visit(node.pos)
         enable = self.visit(node.enable) if node.enable is not None else set()
         reset = self.visit(node.reset) if node.reset is not None else set()
         mine = set([node])
-        return right | pos | enable | reset | mine
+        return left | right | enable | reset | mine
+
+    def visit_Scratchpad(self, node):
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        enable = self.visit(node.enable) if node.enable is not None else set()
+        reset = self.visit(node.reset) if node.reset is not None else set()
+        mine = set([node])
+        return left | right | enable | reset | mine
 
     def visit__ParameterVariable(self, node):
         return set()

@@ -1205,9 +1205,9 @@ class Stream(BaseStream):
 
         if (self.dump and
             (self.dump_mode == 'all' or
-             self.dump_mode == 'ram' or
+                 self.dump_mode == 'ram' or
              (self.dump_mode == 'selective' and
-              hasattr(ram, 'dump') and ram.dump))):
+                 hasattr(ram, 'dump') and ram.dump))):
             self._setup_source_ram_dump(ram, var, renable, d)
 
     def _setup_source_ram_dump(self, ram, var, read_enable, read_data):
@@ -1653,9 +1653,9 @@ class Stream(BaseStream):
 
         if (self.dump and
             (self.dump_mode == 'all' or
-             self.dump_mode == 'ram' or
+                 self.dump_mode == 'ram' or
              (self.dump_mode == 'selective' and
-              hasattr(ram, 'dump') and ram.dump))):
+                 hasattr(ram, 'dump') and ram.dump))):
             self._setup_sink_ram_dump(ram, var, wenable)
 
     def _setup_sink_ram_dump(self, ram, var, write_enable):
@@ -2121,7 +2121,8 @@ class Stream(BaseStream):
             (f.__name__.startswith('Reduce') or
              f.__name__.startswith('Counter') or
              f.__name__.startswith('Pulse') or
-             f.__name__.startswith('RingBuffer'))):
+             f.__name__.startswith('RingBuffer') or
+             f.__name__.startswith('Scratchpad'))):
             if self.reduce_reset is None:
                 self.reduce_reset = self.module.Reg(
                     '_'.join(['', self.name, 'reduce_reset']), initval=1)

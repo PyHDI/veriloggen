@@ -2685,8 +2685,8 @@ class RingBuffer(_UnaryOperator):
         self._set_module(getattr(self.strm, 'module', None))
         self._set_seq(getattr(self.strm, 'seq', None))
 
-    def read(self, pos):
-        var = _RingBufferOutput(self, pos, self.num_ports,
+    def read(self, offset):
+        var = _RingBufferOutput(self, offset, self.num_ports,
                                 self.enable, self.reset)
         self.read_vars.append(var)
         self.num_ports += 1
@@ -2728,10 +2728,10 @@ class RingBuffer(_UnaryOperator):
         self.sig_data = wdata
 
 
-class _RingBufferOutput(_UnaryOperator):
+class _RingBufferOutput(_BinaryOperator):
     latency = 1
 
-    def __init__(self, buf, pos, port,
+    def __init__(self, buf, offset, port,
                  enable=None, reset=None):
 
         self.enable = _to_constant(enable)
@@ -2742,13 +2742,12 @@ class _RingBufferOutput(_UnaryOperator):
         if self.reset is not None:
             self.reset._add_sink(self)
 
-        self.pos = pos
         self.port = port
 
-        _UnaryOperator.__init__(self, buf)
+        _BinaryOperator.__init__(self, buf, offset)
 
     def _set_managers(self):
-        self._set_strm(_get_strm(self.right, self.pos, self.enable, self.reset))
+        self._set_strm(_get_strm(self.left, self.right, self.enable, self.reset))
         self._set_module(getattr(self.strm, 'module', None))
         self._set_seq(getattr(self.strm, 'seq', None))
 
@@ -2758,7 +2757,7 @@ class _RingBufferOutput(_UnaryOperator):
                              (self.latency, 1))
 
         datawidth = self.bit_length()
-        addrwidth = int(ceil(log(self.right.length, 2)))
+        addrwidth = int(ceil(log(self.left.length, 2)))
         signed = self.get_signed()
 
         enabledata = self.enable.sig_data if self.enable is not None else None
@@ -2770,7 +2769,7 @@ class _RingBufferOutput(_UnaryOperator):
 
         rcond = _and_vars(svalid, senable, enabledata)
 
-        next_raddr_base = vtypes.Mux(raddr_base == self.right.length - 1,
+        next_raddr_base = vtypes.Mux(raddr_base == self.left.length - 1,
                                      0, raddr_base + 1)
         seq(raddr_base(next_raddr_base), cond=rcond)
 
@@ -2778,12 +2777,101 @@ class _RingBufferOutput(_UnaryOperator):
         reset_cond = _and_vars(svalid, senable, enabledata, resetdata)
         seq(raddr_base(reset_raddr_base), cond=reset_cond)
 
-        raddr = raddr_base + self.pos.sig_data
-        raddr = vtypes.Mux(raddr >= self.right.length,
-                           raddr - self.right.length, raddr)
+        raddr = raddr_base + self.right.sig_data
+        raddr = vtypes.Mux(raddr >= self.left.length,
+                           raddr - self.left.length, raddr)
 
-        self.right.ram.connect(self.port, raddr, 0, 0)
-        rdata.assign(self.right.ram.rdata(self.port))
+        self.left.ram.connect(self.port, raddr, 0, 0)
+        rdata.assign(self.left.ram.rdata(self.port))
+
+        self.sig_data = rdata
+
+
+class Scratchpad(_BinaryOperator):
+    latency = 1
+
+    def __init__(self, var, addr, length,
+                 enable=None, reset=None):
+
+        self.enable = _to_constant(enable)
+        if self.enable is not None:
+            self.enable._add_sink(self)
+
+        self.reset = _to_constant(reset)
+        if self.reset is not None:
+            self.reset._add_sink(self)
+
+        self.length = length
+
+        _BinaryOperator.__init__(self, var, addr)
+
+        self.num_ports = 1
+        self.read_vars = []
+
+    def _set_managers(self):
+        self._set_strm(_get_strm(self.left, self.right, self.enable, self.reset))
+        self._set_module(getattr(self.strm, 'module', None))
+        self._set_seq(getattr(self.strm, 'seq', None))
+
+    def read(self, addr):
+        var = _ScratchpadOutput(self, addr, self.num_ports)
+        self.read_vars.append(var)
+        self.num_ports += 1
+        return var
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency != 1:
+            raise ValueError("Latency mismatch '%d' vs '%s'" %
+                             (self.latency, 1))
+
+        datawidth = self.bit_length()
+        addrwidth = int(ceil(log(self.length, 2)))
+        signed = self.get_signed()
+
+        clk = m._clock
+        self.ram = ram.SyncRAM(m, self.name('ram'),
+                               clk, datawidth, addrwidth, self.num_ports)
+
+        enabledata = self.enable.sig_data if self.enable is not None else None
+        resetdata = self.reset.sig_data if self.reset is not None else None
+
+        wdata = m.Wire(self.name('wdata'), datawidth, signed=signed)
+        wdata.assign(self.left.sig_data)
+
+        waddr = m.Wire(self.name('waddr'), addrwidth)
+        waddr.assign(self.right.sig_data)
+
+        reset_cond = _and_vars(svalid, senable, enabledata, resetdata)
+
+        wenable = vtypes.Not(reset_cond) if reset_cond is not None else 1
+        self.ram.connect(0, waddr, wdata, wenable)
+
+        self.sig_data = wdata
+
+
+class _ScratchpadOutput(_BinaryOperator):
+    latency = 1
+
+    def __init__(self, sp, addr, port):
+        self.port = port
+        _BinaryOperator.__init__(self, sp, addr)
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency != 1:
+            raise ValueError("Latency mismatch '%d' vs '%s'" %
+                             (self.latency, 1))
+
+        datawidth = self.bit_length()
+        addrwidth = int(ceil(log(self.left.length, 2)))
+        signed = self.get_signed()
+
+        rdata = m.Wire(self.name('rdata'), datawidth, signed=signed)
+
+        raddr = m.Wire(self.name('raddr'), addrwidth)
+        raddr.assign(self.right.sig_data)
+
+        self.left.ram.connect(self.port, raddr, 0, 0)
+        rdata.assign(self.left.ram.rdata(self.port))
 
         self.sig_data = rdata
 
