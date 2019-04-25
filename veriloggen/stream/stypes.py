@@ -2746,6 +2746,7 @@ class _RingBufferOutput(_BinaryOperator):
         self.port = port
 
         _BinaryOperator.__init__(self, buf, offset)
+        self.buf = buf
 
     def _set_managers(self):
         self._set_strm(_get_strm(self.left, self.right, self.enable, self.reset))
@@ -2758,7 +2759,7 @@ class _RingBufferOutput(_BinaryOperator):
                              (self.latency, 1))
 
         datawidth = self.bit_length()
-        addrwidth = int(ceil(log(self.left.length, 2)))
+        addrwidth = int(ceil(log(self.buf.length, 2)))
         signed = self.get_signed()
 
         enabledata = self.enable.sig_data if self.enable is not None else None
@@ -2770,7 +2771,7 @@ class _RingBufferOutput(_BinaryOperator):
 
         rcond = _and_vars(svalid, senable, enabledata)
 
-        next_raddr_base = vtypes.Mux(raddr_base == self.left.length - 1,
+        next_raddr_base = vtypes.Mux(raddr_base == self.buf.length - 1,
                                      0, raddr_base + 1)
         seq(raddr_base(next_raddr_base), cond=rcond)
 
@@ -2779,11 +2780,11 @@ class _RingBufferOutput(_BinaryOperator):
         seq(raddr_base(reset_raddr_base), cond=reset_cond)
 
         raddr = raddr_base + self.right.sig_data
-        raddr = vtypes.Mux(raddr >= self.left.length,
-                           raddr - self.left.length, raddr)
+        raddr = vtypes.Mux(raddr >= self.buf.length,
+                           raddr - self.buf.length, raddr)
 
-        self.left.ram.connect(self.port, raddr, 0, 0)
-        rdata.assign(self.left.ram.rdata(self.port))
+        self.buf.ram.connect(self.port, raddr, 0, 0)
+        rdata.assign(self.buf.ram.rdata(self.port))
 
         self.sig_data = rdata
 
@@ -2855,6 +2856,7 @@ class _ScratchpadOutput(_BinaryOperator):
     def __init__(self, sp, addr, port):
         self.port = port
         _BinaryOperator.__init__(self, sp, addr)
+        self.sp = sp
 
     def _implement(self, m, seq, svalid=None, senable=None):
         if self.latency != 1:
@@ -2862,7 +2864,7 @@ class _ScratchpadOutput(_BinaryOperator):
                              (self.latency, 1))
 
         datawidth = self.bit_length()
-        addrwidth = int(ceil(log(self.left.length, 2)))
+        addrwidth = int(ceil(log(self.sp.length, 2)))
         signed = self.get_signed()
 
         rdata = m.Wire(self.name('rdata'), datawidth, signed=signed)
@@ -2870,8 +2872,8 @@ class _ScratchpadOutput(_BinaryOperator):
         raddr = m.Wire(self.name('raddr'), addrwidth)
         raddr.assign(self.right.sig_data)
 
-        self.left.ram.connect(self.port, raddr, 0, 0)
-        rdata.assign(self.left.ram.rdata(self.port))
+        self.sp.ram.connect(self.port, raddr, 0, 0)
+        rdata.assign(self.sp.ram.rdata(self.port))
 
         self.sig_data = rdata
 
