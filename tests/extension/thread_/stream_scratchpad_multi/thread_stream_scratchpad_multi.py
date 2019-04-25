@@ -46,7 +46,8 @@ def mkLed():
     a7 = a6.prev(1)
     a8 = a7.prev(1)
 
-    b = a0 + a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8
+    #b = a0 + a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8
+    b = strm.AddN(a0, a1, a2, a3, a4, a5, a6, a7, a8)
 
     strm.sink(b, 'b', when=counter > img_width + img_width + 2)
 
