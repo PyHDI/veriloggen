@@ -50,13 +50,13 @@ def mkLed():
 
     def comp_stream(size, offset):
         strm.set_source('a', ram_a, offset, size * 3)
-        strm.set_sink('b', ram_b, offset, size)
+        strm.set_sink('b', ram_b, offset, size - 2)
         strm.set_constant('img_width', size)
         strm.run()
         strm.join()
 
     def comp_sequential(size, offset):
-        for i in range(size):
+        for i in range(size - 2):
             a0 = ram_a.read(i + offset)
             a1 = ram_a.read(i + offset + 1)
             a2 = ram_a.read(i + offset + 2)
@@ -71,7 +71,7 @@ def mkLed():
 
     def check(size, offset_stream, offset_seq):
         all_ok = True
-        for i in range(size):
+        for i in range(size - 2):
             st = ram_b.read(i + offset_stream)
             sq = ram_b.read(i + offset_seq)
             if vthread.verilog.NotEql(st, sq):
