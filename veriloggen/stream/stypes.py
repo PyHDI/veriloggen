@@ -66,6 +66,13 @@ class _Node(object):
         self.object_id = _object_counter
         _object_counter += 1
 
+        # for graph visualizer
+        self.graph_label = None
+        self.graph_shape = 'circle'
+        self.graph_color = 'black'
+        self.graph_style = ''
+        self.graph_peripheries = 1
+
     def __hash__(self):
         object_id = self.object_id if hasattr(self, 'object_id') else None
         return hash((id(self), object_id))
@@ -1347,6 +1354,8 @@ class _SpecialOperator(_Operator):
         self._set_attributes()
         self._set_managers()
 
+        self.graph_shape = 'ellipse'
+
     def _set_attributes(self):
         if len(self.args) > 1:
             wargs = [arg.bit_length() for arg in self.args]
@@ -1641,6 +1650,7 @@ class LUT(_SpecialOperator):
         self.point = point
         self.signed = signed
         self.patterns = patterns
+        self.graph_label = 'LUT'
 
     def _set_attributes(self):
         pass
@@ -1762,6 +1772,11 @@ class _Delay(_UnaryOperator):
         # parent value for delayed_value and previous_value
         self.parent_value = None
 
+        self.graph_label = 'Delay'
+        self.graph_shape = 'box'
+        self.graph_color = 'lightgray'
+        self.graph_style = 'filled'
+
     def _set_parent_value(self, value):
         self.parent_value = value
 
@@ -1793,6 +1808,11 @@ class _Prev(_UnaryOperator):
         _UnaryOperator.__init__(self, right)
         # parent value for delayed_value and previous_value
         self.parent_value = None
+
+        self.graph_label = 'Prev'
+        self.graph_shape = 'box'
+        self.graph_color = 'lightgray'
+        self.graph_style = 'filled'
 
     def _set_parent_value(self, value):
         self.parent_value = value
@@ -1828,13 +1848,14 @@ class _PlusN(_SpecialOperator):
             if arg.point != 0:
                 raise ValueError('Fixed point is not supported.')
 
-        def func(*args):
+        def plus_n(*args):
             ret = args[0]
             for arg in args[1:]:
                 ret += arg
             return ret
 
-        self.op = func
+        self.op = plus_n
+        self.graph_label = 'PlusN'
 
     def eval(self):
         vars = [var.eval() for var in self.vars]
@@ -1855,6 +1876,8 @@ class _MulAdd(_SpecialOperator):
 
         if self.a.point + self.b.point != self.c.point:
             raise ValueError('Unsupported fixed point combination')
+
+        self.graph_label = 'MulAdd'
 
     @property
     def a(self):
@@ -2046,6 +2069,11 @@ class _Constant(_Numeric):
         self._set_managers()
         self.sig_data = self.value
 
+        self.graph_shape = 'box'
+        self.graph_color = 'lightblue'
+        self.graph_style = 'rounded,filled'
+        self.graph_peripheries = 2
+
     def _set_attributes(self):
         self.width = self.value.bit_length() + 1
         self.point = 0
@@ -2074,6 +2102,20 @@ class _Variable(_Numeric):
         self.width = width
         self.point = point
         self.signed = signed
+
+        if isinstance(self.input_data, _Numeric):
+            self.graph_label = self.input_data.graph_label
+        else:
+            inobj = str(self.input_data)
+            label_data = [inobj, str(self.width)]
+            if self.point > 0:
+                label_data.append(str(self.point))
+            self.graph_label = ':'.join(label_data)
+
+        self.graph_shape = 'box'
+        self.graph_color = 'lightblue'
+        self.graph_style = 'filled'
+        self.graph_peripheries = 2
 
     def eval(self):
         return self
@@ -2208,6 +2250,17 @@ class _ParameterVariable(_Variable):
                            point=point, signed=signed)
         self.value = value
 
+        inobj = str(self.input_data)
+        label_data = [inobj, str(self.width)]
+        if self.point > 0:
+            label_data.append(str(self.point))
+        self.graph_label = ':'.join(label_data)
+
+        self.graph_shape = 'circle'
+        self.graph_color = 'lightblue'
+        self.graph_style = 'rounded,filled'
+        self.graph_peripheries = 2
+
     def _implement(self, m, seq, svalid=None, senable=None):
         pass
 
@@ -2257,7 +2310,9 @@ class _Accumulator(_UnaryOperator):
         _UnaryOperator.__init__(self, right)
         self.width = width
         self.signed = signed
-        self.label = None
+
+        self.graph_shape = 'box'
+        self.graph_style = 'rounded'
 
     def _set_attributes(self):
         self.point = self.right.get_point()
@@ -2432,7 +2487,7 @@ class ReduceCustom(_Accumulator):
         if not isinstance(ops, (tuple, list)):
             ops = tuple([ops])
         self.ops = ops
-        self.label = label
+        self.graph_label = label
 
 
 class Counter(_Accumulator):
@@ -2449,7 +2504,7 @@ class Counter(_Accumulator):
 
         _Accumulator.__init__(self, control, size, initval,
                               enable, reset, width, signed)
-        self.label = 'Counter'
+        self.graph_label = 'Counter'
 
 
 class Pulse(_Accumulator):
@@ -2467,7 +2522,7 @@ class Pulse(_Accumulator):
 
         _Accumulator.__init__(self, control, size, initval,
                               enable, reset, width, signed)
-        self.label = 'Pulse'
+        self.graph_label = 'Pulse'
 
 
 def _ReduceValid(cls, right, size, initval=0,
@@ -2589,6 +2644,12 @@ class Substream(_SpecialOperator):
         self.point = 0
         self.signed = True
 
+        self.graph_label = 'Substream' if callable(substrm.name) else substrm.name
+        self.graph_shape = 'box'
+        self.graph_color = 'black'
+        self.graph_style = 'rounded'
+        self.graph_peripheries = 2
+
         if not substrm.aswire:
             raise ValueError('aswire must be True.')
         if substrm.module is None:
@@ -2626,7 +2687,7 @@ class Substream(_SpecialOperator):
         var = self.substrm.get_named_numeric(name)
         if self.strm is None:
             return _SubstreamOutput(self, var)
-        return self.strm._SubstreamOutput(self, var)
+        return self.strm._SubstreamOutput(self, var, name)
 
     def _implement(self, m, seq, svalid=None, senable=None):
         arg_data = [arg.sig_data for arg in self.args]
@@ -2640,13 +2701,20 @@ class Substream(_SpecialOperator):
 
 class _SubstreamOutput(_UnaryOperator):
 
-    def __init__(self, substrm, output_var):
+    def __init__(self, substrm, output_var, var_name):
         _UnaryOperator.__init__(self, substrm)
+        self.var_name = var_name
         self.output_var = output_var
 
         self.width = output_var.bit_length()
         self.point = output_var.get_point()
         self.signed = output_var.get_signed()
+
+        self.graph_label = substrm.graph_label + '\n' + self.var_name
+        self.graph_shape = 'box'
+        self.graph_color = 'black'
+        self.graph_style = 'rounded'
+        self.graph_peripheries = 2
 
     def _implement(self, m, seq, svalid=None, senable=None):
         width = self.bit_length()
@@ -2679,6 +2747,10 @@ class RingBuffer(_UnaryOperator):
 
         self.num_ports = 1
         self.read_vars = []
+
+        self.graph_label = 'RingBufferIn'
+        self.graph_shape = 'box'
+        self.graph_style = 'rounded'
 
     def _set_managers(self):
         self._set_strm(_get_strm(self.right, self.enable, self.reset))
@@ -2748,6 +2820,10 @@ class _RingBufferOutput(_BinaryOperator):
         _BinaryOperator.__init__(self, buf, offset)
         self.buf = buf
 
+        self.graph_label = 'RingBufferOut'
+        self.graph_shape = 'box'
+        self.graph_style = 'rounded'
+
     def _set_managers(self):
         self._set_strm(_get_strm(self.left, self.right, self.enable, self.reset))
         self._set_module(getattr(self.strm, 'module', None))
@@ -2810,6 +2886,10 @@ class Scratchpad(_BinaryOperator):
         self.num_ports = 1
         self.read_vars = []
 
+        self.graph_label = 'ScratchpadIn'
+        self.graph_shape = 'box'
+        self.graph_style = 'rounded'
+
     def _set_managers(self):
         self._set_strm(_get_strm(self.left, self.right, self.enable, self.reset))
         self._set_module(getattr(self.strm, 'module', None))
@@ -2857,6 +2937,10 @@ class _ScratchpadOutput(_BinaryOperator):
         self.port = port
         _BinaryOperator.__init__(self, sp, addr)
         self.sp = sp
+
+        self.graph_label = 'ScratchpadOut'
+        self.graph_shape = 'box'
+        self.graph_style = 'rounded'
 
     def _implement(self, m, seq, svalid=None, senable=None):
         if self.latency != 1:

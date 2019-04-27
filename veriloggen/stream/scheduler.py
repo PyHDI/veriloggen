@@ -191,6 +191,9 @@ class ASAPScheduler(_Scheduler):
         node._set_end_stage(end)
         return end
 
+    def visit__ScratchpadOutput(self, node):
+        return self.visit__BinaryOperator(node)
+
     def visit__ParameterVariable(self, node):
         return None
 

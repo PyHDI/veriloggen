@@ -65,7 +65,7 @@ class GraphGenerator(_Visitor):
             self.graph.add_edge(src, outobj)
             self.output_nodes.append(outobj)
 
-    def _add_gap(self, node, mark=''):
+    def _add_gap(self, node, label=''):
         if self.approx:
             return node
 
@@ -75,21 +75,52 @@ class GraphGenerator(_Visitor):
         prev = node
         for i in range(node.end_stage - node.start_stage - 1):
             tmp = self._get_tmp()
-            self.graph.add_node(tmp, label=mark, shape='box',
+            self.graph.add_node(tmp, label=label, shape='box',
                                 color='lightgray', style='filled')
             self.graph.add_edge(prev, tmp)
             self._set_rank(node.start_stage + 2 + i, tmp)
             prev = tmp
         return prev
 
-    def _get_mark(self, obj):
-        if obj is None:
-            return ''
-        if obj.__name__ in vtypes.operator_dict:
-            return vtypes.operator_dict[obj.__name__]
-        if hasattr(obj, '__call__'):
-            return obj.__name__
-        return 'custom'
+    def _get_op_label(self, op):
+        if op.__name__ in vtypes.operator_dict:
+            return vtypes.operator_dict[op.__name__]
+
+        if hasattr(op, '__call__'):
+            return op.__name__
+
+        return 'custom_op'
+
+    def _get_label(self, obj):
+        if obj.graph_label is not None:
+            return obj.graph_label
+
+        if hasattr(obj, 'ops'):
+            return ' '.join([self._get_op_label(op) for op in obj.ops])
+
+        if not hasattr(obj, 'op') or obj.op is None:
+            return obj.__class__.__name__
+
+        op = obj.op
+        return self._get_op_label(op)
+
+    def _get_shape(self, node):
+        if node.graph_shape is not None:
+            return node.graph_shape
+        return 'circle'
+
+    def _get_color(self, node):
+        if node.graph_color is not None:
+            return node.graph_color
+        return 'black'
+
+    def _get_style(self, node):
+        if node.graph_style is not None:
+            return node.graph_style
+        return ''
+
+    def _get_peripheries(self, node):
+        return node.graph_peripheries
 
     def _get_tmp(self):
         v = self.tmp_count
@@ -97,8 +128,13 @@ class GraphGenerator(_Visitor):
         return hash((id(self), v))
 
     def visit__BinaryOperator(self, node):
-        mark = self._get_mark(node.op)
-        self.graph.add_node(node, label=mark, shape='circle')
+        label = self._get_label(node)
+        shape = self._get_shape(node)
+        color = self._get_color(node)
+        style = self._get_style(node)
+        self.graph.add_node(node,
+                            label=label, shape=shape,
+                            color=color, style=style)
 
         left = self.visit(node.left)
         right = self.visit(node.right)
@@ -108,7 +144,7 @@ class GraphGenerator(_Visitor):
         if node.start_stage is not None:
             self._set_rank(node.start_stage + 1, node)
 
-        prev = self._add_gap(node, mark)
+        prev = self._add_gap(node, label)
         self._add_output(node, prev)
         return prev
 
@@ -118,20 +154,18 @@ class GraphGenerator(_Visitor):
             self._add_output(node, prev)
             return prev
 
-        mark = ('delay' if isinstance(node, stypes._Delay) else
-                'prev' if isinstance(node, stypes._Prev) else
-                self._get_mark(node.op))
-        shape = 'box' if isinstance(
-            node, (stypes._Delay, stypes._Prev)) else 'circle'
-        color = 'lightgray' if isinstance(
-            node, (stypes._Delay, stypes._Prev)) else 'black'
-        style = 'filled' if isinstance(
-            node, (stypes._Delay, stypes._Prev)) else None
-        self.graph.add_node(node, label=mark, shape=shape,
-                            color=color, style=style)
+        label = self._get_label(node)
+        shape = self._get_shape(node)
+        color = self._get_color(node)
+        style = self._get_style(node)
+        peripheries = self._get_peripheries(node)
+        self.graph.add_node(node,
+                            label=label, shape=shape,
+                            color=color, style=style,
+                            peripheries=peripheries)
 
         right = self.visit(node.right)
-        self.graph.add_edge(right, node, label='R')
+        self.graph.add_edge(right, node, label='')
 
         if node.start_stage is None:
             pass
@@ -140,29 +174,42 @@ class GraphGenerator(_Visitor):
         else:
             self._set_rank(node.start_stage + 1, node)
 
-        prev = self._add_gap(node, mark)
+        prev = self._add_gap(node, label)
         self._add_output(node, prev)
         return prev
 
     def visit__SpecialOperator(self, node):
-        mark = self._get_mark(node.op)
-        self.graph.add_node(node, label=mark, shape='ellipse')
+        label = self._get_label(node)
+        shape = self._get_shape(node)
+        color = self._get_color(node)
+        style = self._get_style(node)
+        peripheries = self._get_peripheries(node)
+        self.graph.add_node(node,
+                            label=label, shape=shape,
+                            color=color, style=style,
+                            peripheries=peripheries)
 
         for i, arg in enumerate(node.args):
             a = self.visit(arg)
-            self.graph.add_edge(a, node, label=str(i))
+            self.graph.add_edge(a, node, label='p%d' % i)
 
         if node.start_stage is not None:
             self._set_rank(node.start_stage + 1, node)
 
-        prev = self._add_gap(node, mark)
+        prev = self._add_gap(node, label)
         self._add_output(node, prev)
         return prev
 
     def visit__Accumulator(self, node):
-        mark = (' '.join([self._get_mark(op) for op in node.ops])
-                if node.label is None else node.label)
-        self.graph.add_node(node, label=mark, shape='box', style='rounded')
+        label = self._get_label(node)
+        shape = self._get_shape(node)
+        color = self._get_color(node)
+        style = self._get_style(node)
+        peripheries = self._get_peripheries(node)
+        self.graph.add_node(node,
+                            label=label, shape=shape,
+                            color=color, style=style,
+                            peripheries=peripheries)
 
         right = self.visit(node.right)
         initval = self.visit(node.initval)
@@ -170,7 +217,7 @@ class GraphGenerator(_Visitor):
             enable = self.visit(node.enable)
         if node.reset is not None:
             reset = self.visit(node.reset)
-        self.graph.add_edge(right, node, label='R')
+        self.graph.add_edge(right, node, label='data')
         self.graph.add_edge(initval, node, label='initval')
         if node.enable is not None:
             self.graph.add_edge(enable, node, label='enable')
@@ -180,19 +227,134 @@ class GraphGenerator(_Visitor):
         if node.start_stage is not None:
             self._set_rank(node.start_stage + 1, node)
 
-        prev = self._add_gap(node, mark)
+        prev = self._add_gap(node, label)
+        self._add_output(node, prev)
+        return prev
+
+    def visit_RingBuffer(self, node):
+        label = self._get_label(node)
+        shape = self._get_shape(node)
+        color = self._get_color(node)
+        style = self._get_style(node)
+        peripheries = self._get_peripheries(node)
+        self.graph.add_node(node,
+                            label=label, shape=shape,
+                            color=color, style=style,
+                            peripheries=peripheries)
+
+        right = self.visit(node.right)
+        if node.enable is not None:
+            enable = self.visit(node.enable)
+        if node.reset is not None:
+            reset = self.visit(node.reset)
+        self.graph.add_edge(right, node, label='data')
+        if node.enable is not None:
+            self.graph.add_edge(enable, node, label='enable')
+        if node.reset is not None:
+            self.graph.add_edge(reset, node, label='reset')
+
+        if node.start_stage is not None:
+            self._set_rank(node.start_stage + 1, node)
+
+        prev = self._add_gap(node, label)
+        self._add_output(node, prev)
+        return prev
+
+    def visit__RingBufferOutput(self, node):
+        label = self._get_label(node)
+        shape = self._get_shape(node)
+        color = self._get_color(node)
+        style = self._get_style(node)
+        peripheries = self._get_peripheries(node)
+        self.graph.add_node(node,
+                            label=label, shape=shape,
+                            color=color, style=style,
+                            peripheries=peripheries)
+
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        if node.enable is not None:
+            enable = self.visit(node.enable)
+        if node.reset is not None:
+            reset = self.visit(node.reset)
+        self.graph.add_edge(left, node, label='buf')
+        self.graph.add_edge(right, node, label='offset')
+        if node.enable is not None:
+            self.graph.add_edge(enable, node, label='enable')
+        if node.reset is not None:
+            self.graph.add_edge(reset, node, label='reset')
+
+        if node.start_stage is not None:
+            self._set_rank(node.start_stage + 1, node)
+
+        prev = self._add_gap(node, label)
+        self._add_output(node, prev)
+        return prev
+
+    def visit_Scratchpad(self, node):
+        label = self._get_label(node)
+        shape = self._get_shape(node)
+        color = self._get_color(node)
+        style = self._get_style(node)
+        peripheries = self._get_peripheries(node)
+        self.graph.add_node(node,
+                            label=label, shape=shape,
+                            color=color, style=style,
+                            peripheries=peripheries)
+
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        if node.enable is not None:
+            enable = self.visit(node.enable)
+        if node.reset is not None:
+            reset = self.visit(node.reset)
+        self.graph.add_edge(left, node, label='data')
+        self.graph.add_edge(right, node, label='addr')
+        if node.enable is not None:
+            self.graph.add_edge(enable, node, label='enable')
+        if node.reset is not None:
+            self.graph.add_edge(reset, node, label='reset')
+
+        if node.start_stage is not None:
+            self._set_rank(node.start_stage + 1, node)
+
+        prev = self._add_gap(node, label)
+        self._add_output(node, prev)
+        return prev
+
+    def visit__ScratchpadOutput(self, node):
+        label = self._get_label(node)
+        shape = self._get_shape(node)
+        color = self._get_color(node)
+        style = self._get_style(node)
+        peripheries = self._get_peripheries(node)
+        self.graph.add_node(node,
+                            label=label, shape=shape,
+                            color=color, style=style,
+                            peripheries=peripheries)
+
+        left = self.visit(node.left)
+        right = self.visit(node.right)
+        self.graph.add_edge(left, node, label='sp')
+        self.graph.add_edge(right, node, label='addr')
+
+        if node.start_stage is not None:
+            self._set_rank(node.start_stage + 1, node)
+
+        prev = self._add_gap(node, label)
         self._add_output(node, prev)
         return prev
 
     def visit__ParameterVariable(self, node):
-        inobj = str(node.input_data)
-        label_data = [inobj, str(node.width)]
-        if node.point > 0:
-            label_data.append(str(node.point))
-        label = ':'.join(label_data)
-
-        self.graph.add_node(node, label=label, shape='',
-                            color='lightblue', style='rounded,filled', peripheries=2)
+        label = self._get_label(node)
+        shape = self._get_shape(node)
+        color = self._get_color(node)
+        style = self._get_style(node)
+        peripheries = self._get_peripheries(node)
+        self.graph.add_node(node,
+                            label=label, shape=shape,
+                            color=color, style=style,
+                            peripheries=peripheries)
 
         self.input_nodes.append(node)
         self._add_output(node, node)
@@ -203,14 +365,15 @@ class GraphGenerator(_Visitor):
             input_data = self.visit(node.input_data)
             return input_data
 
-        inobj = str(node.input_data)
-        label_data = [inobj, str(node.width)]
-        if node.point > 0:
-            label_data.append(str(node.point))
-        label = ':'.join(label_data)
-
-        self.graph.add_node(node, label=label, shape='box',
-                            color='lightblue', style='filled', peripheries=2)
+        label = self._get_label(node)
+        shape = self._get_shape(node)
+        color = self._get_color(node)
+        style = self._get_style(node)
+        peripheries = self._get_peripheries(node)
+        self.graph.add_node(node,
+                            label=label, shape=shape,
+                            color=color, style=style,
+                            peripheries=peripheries)
 
         self.input_nodes.append(node)
         self._add_output(node, node)
@@ -225,8 +388,15 @@ class GraphGenerator(_Visitor):
         else:
             value = str(node.value)
 
-        self.graph.add_node(node, label=value, shape='',
-                            color='lightblue', style='filled')
+        label = value
+        shape = self._get_shape(node)
+        color = self._get_color(node)
+        style = self._get_style(node)
+        peripheries = self._get_peripheries(node)
+        self.graph.add_node(node,
+                            label=label, shape=shape,
+                            color=color, style=style,
+                            peripheries=peripheries)
 
         self._add_output(node, node)
         return node

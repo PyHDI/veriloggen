@@ -36,6 +36,9 @@ class _Visitor(object):
         if isinstance(node, stypes.Scratchpad):
             return self.visit_Scratchpad(node)
 
+        if isinstance(node, stypes._ScratchpadOutput):
+            return self.visit__ScratchpadOutput(node)
+
         if isinstance(node, stypes._Accumulator):
             return self.visit__Accumulator(node)
 
@@ -80,6 +83,9 @@ class _Visitor(object):
         raise NotImplementedError()
 
     def visit_Scratchpad(self, node):
+        raise NotImplementedError()
+
+    def visit__ScratchpadOutput(self, node):
         raise NotImplementedError()
 
     def visit__ParameterVariable(self, node):
@@ -138,6 +144,9 @@ class InputVisitor(_Visitor):
         enable = self.visit(node.enable) if node.enable is not None else set()
         reset = self.visit(node.reset) if node.reset is not None else set()
         return left | right | enable | reset
+
+    def visit__ScratchpadOutput(self, node):
+        return self.visit__BinaryOperator(node)
 
     def visit__ParameterVariable(self, node):
         return set([node])
@@ -209,6 +218,9 @@ class OutputVisitor(_Visitor):
         mine = set([node]) if node._has_output() else set()
         return left | right | enable | reset | mine
 
+    def visit__ScratchpadOutput(self, node):
+        return self.visit__BinaryOperator(node)
+
     def visit__ParameterVariable(self, node):
         mine = set([node]) if node._has_output() else set()
         return mine
@@ -277,6 +289,9 @@ class OperatorVisitor(_Visitor):
         reset = self.visit(node.reset) if node.reset is not None else set()
         mine = set([node])
         return left | right | enable | reset | mine
+
+    def visit__ScratchpadOutput(self, node):
+        return self.visit__BinaryOperator(node)
 
     def visit__ParameterVariable(self, node):
         return set()
