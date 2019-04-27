@@ -1811,8 +1811,6 @@ class _Prev(_UnaryOperator):
 
         self.graph_label = 'Prev'
         self.graph_shape = 'box'
-        self.graph_color = 'lightgray'
-        self.graph_style = 'filled'
 
     def _set_parent_value(self, value):
         self.parent_value = value
@@ -2072,7 +2070,7 @@ class _Constant(_Numeric):
         self.graph_shape = 'box'
         self.graph_color = 'lightblue'
         self.graph_style = 'rounded,filled'
-        self.graph_peripheries = 2
+        self.graph_peripheries = 1
 
     def _set_attributes(self):
         self.width = self.value.bit_length() + 1
@@ -2258,8 +2256,8 @@ class _ParameterVariable(_Variable):
 
         self.graph_shape = 'circle'
         self.graph_color = 'lightblue'
-        self.graph_style = 'rounded,filled'
-        self.graph_peripheries = 2
+        self.graph_style = 'filled'
+        self.graph_peripheries = 1
 
     def _implement(self, m, seq, svalid=None, senable=None):
         pass
@@ -2646,8 +2644,6 @@ class Substream(_SpecialOperator):
 
         self.graph_label = 'Substream' if callable(substrm.name) else substrm.name
         self.graph_shape = 'box'
-        self.graph_color = 'black'
-        self.graph_style = 'rounded'
         self.graph_peripheries = 2
 
         if not substrm.aswire:
@@ -2712,8 +2708,6 @@ class _SubstreamOutput(_UnaryOperator):
 
         self.graph_label = substrm.graph_label + '\n' + self.var_name
         self.graph_shape = 'box'
-        self.graph_color = 'black'
-        self.graph_style = 'rounded'
         self.graph_peripheries = 2
 
     def _implement(self, m, seq, svalid=None, senable=None):
@@ -2750,7 +2744,6 @@ class RingBuffer(_UnaryOperator):
 
         self.graph_label = 'RingBufferIn'
         self.graph_shape = 'box'
-        self.graph_style = 'rounded'
 
     def _set_managers(self):
         self._set_strm(_get_strm(self.right, self.enable, self.reset))
@@ -2822,7 +2815,6 @@ class _RingBufferOutput(_BinaryOperator):
 
         self.graph_label = 'RingBufferOut'
         self.graph_shape = 'box'
-        self.graph_style = 'rounded'
 
     def _set_managers(self):
         self._set_strm(_get_strm(self.left, self.right, self.enable, self.reset))
@@ -2888,7 +2880,6 @@ class Scratchpad(_BinaryOperator):
 
         self.graph_label = 'ScratchpadIn'
         self.graph_shape = 'box'
-        self.graph_style = 'rounded'
 
     def _set_managers(self):
         self._set_strm(_get_strm(self.left, self.right, self.enable, self.reset))
@@ -2940,7 +2931,6 @@ class _ScratchpadOutput(_BinaryOperator):
 
         self.graph_label = 'ScratchpadOut'
         self.graph_shape = 'box'
-        self.graph_style = 'rounded'
 
     def _implement(self, m, seq, svalid=None, senable=None):
         if self.latency != 1:
