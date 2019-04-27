@@ -454,6 +454,7 @@ class _Operator(_Numeric):
 
 
 class _BinaryOperator(_Operator):
+    latency = 1
 
     def __init__(self, left, right):
         _Operator.__init__(self)
@@ -514,6 +515,7 @@ class _BinaryOperator(_Operator):
 
 
 class _UnaryOperator(_Operator):
+    latency = 1
 
     def __init__(self, right):
         _Operator.__init__(self)
@@ -1766,6 +1768,7 @@ class Sign(_SpecialOperator):
 
 
 class _Delay(_UnaryOperator):
+    latency = 1
 
     def __init__(self, right):
         _UnaryOperator.__init__(self, right)
