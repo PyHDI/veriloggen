@@ -27,6 +27,9 @@ class _Visitor(object):
         return rslt
 
     def _visit(self, node):
+        if isinstance(node, stypes.Substream):
+            return self.visit_Substream(node)
+
         if isinstance(node, stypes.RingBuffer):
             return self.visit_RingBuffer(node)
 
@@ -74,6 +77,9 @@ class _Visitor(object):
         raise NotImplementedError()
 
     def visit__Accumulator(self, node):
+        raise NotImplementedError()
+
+    def visit_Substream(self, node):
         raise NotImplementedError()
 
     def visit_RingBuffer(self, node):
@@ -124,6 +130,9 @@ class InputVisitor(_Visitor):
         enable = self.visit(node.enable) if node.enable is not None else set()
         reset = self.visit(node.reset) if node.reset is not None else set()
         return right | size | initval | enable | reset
+
+    def visit_Substream(self, node):
+        return self.visit__SpecialOperator(node)
 
     def visit_RingBuffer(self, node):
         right = self.visit(node.right)
@@ -191,6 +200,9 @@ class OutputVisitor(_Visitor):
         reset = set()
         mine = set([node]) if node._has_output() else set()
         return right | size | initval | enable | reset | mine
+
+    def visit_Substream(self, node):
+        return self.visit__SpecialOperator(node)
 
     def visit_RingBuffer(self, node):
         right = self.visit(node.right)
@@ -266,6 +278,9 @@ class OperatorVisitor(_Visitor):
         reset = self.visit(node.reset) if node.reset is not None else set()
         mine = set([node])
         return right | size | initval | enable | reset | mine
+
+    def visit_Substream(self, node):
+        return self.visit__SpecialOperator(node)
 
     def visit_RingBuffer(self, node):
         right = self.visit(node.right)

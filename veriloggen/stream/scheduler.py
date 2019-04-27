@@ -136,6 +136,9 @@ class ASAPScheduler(_Scheduler):
         node._set_end_stage(end)
         return end
 
+    def visit_Substream(self, node):
+        return self.visit__SpecialOperator(node)
+
     def visit_RingBuffer(self, node):
         if node._has_start_stage():
             return node._get_end_stage()

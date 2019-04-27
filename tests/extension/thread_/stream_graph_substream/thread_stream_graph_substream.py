@@ -187,7 +187,7 @@ def mkLed():
     fsm = th.start(32)
 
     try:
-        strm.draw_graph()
+        actstrm.draw_graph()
     except:
         pass
 

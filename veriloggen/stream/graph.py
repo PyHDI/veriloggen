@@ -191,7 +191,7 @@ class GraphGenerator(_Visitor):
 
         for i, arg in enumerate(node.args):
             a = self.visit(arg)
-            self.graph.add_edge(a, node, label='p%d' % i)
+            self.graph.add_edge(a, node, label='a%d' % i)
 
         if node.start_stage is not None:
             self._set_rank(node.start_stage + 1, node)
@@ -223,6 +223,28 @@ class GraphGenerator(_Visitor):
             self.graph.add_edge(enable, node, label='enable')
         if node.reset is not None:
             self.graph.add_edge(reset, node, label='reset')
+
+        if node.start_stage is not None:
+            self._set_rank(node.start_stage + 1, node)
+
+        prev = self._add_gap(node, label)
+        self._add_output(node, prev)
+        return prev
+
+    def visit_Substream(self, node):
+        label = self._get_label(node)
+        shape = self._get_shape(node)
+        color = self._get_color(node)
+        style = self._get_style(node)
+        peripheries = self._get_peripheries(node)
+        self.graph.add_node(node,
+                            label=label, shape=shape,
+                            color=color, style=style,
+                            peripheries=peripheries)
+
+        for arg, name in zip(node.args, node.conds.keys()):
+            a = self.visit(arg)
+            self.graph.add_edge(a, node, label=name)
 
         if node.start_stage is not None:
             self._set_rank(node.start_stage + 1, node)
