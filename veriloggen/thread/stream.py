@@ -1061,7 +1061,7 @@ class Stream(BaseStream):
             if sub.substrm.sink_wait_count is None:
                 sub.substrm.sink_wait_count = sub.substrm.module.Reg(
                     '_'.join(['', sub.substrm.name, 'sink_wait_count']),
-                    int(math.ceil(math.log(num_wdelay, 2))), initval=0)
+                    int(math.ceil(math.log(max(num_wdelay, 2), 2))), initval=0)
 
             sub.substrm.fsm.seq.If(sub.substrm.sink_wait_count == 1,
                                    vtypes.Not(start_cond),
@@ -1085,7 +1085,7 @@ class Stream(BaseStream):
         if self.sink_wait_count is None:
             self.sink_wait_count = self.module.Reg(
                 '_'.join(['', self.name, 'sink_wait_count']),
-                int(math.ceil(math.log(num_wdelay, 2))), initval=0)
+                int(math.ceil(math.log(max(num_wdelay, 2), 2))), initval=0)
 
         self.fsm.seq.If(self.sink_wait_count == 1,
                         vtypes.Not(start_cond),
@@ -1205,15 +1205,15 @@ class Stream(BaseStream):
 
         if (self.dump and
             (self.dump_mode == 'all' or
-             self.dump_mode == 'ram' or
+                 self.dump_mode == 'ram' or
              (self.dump_mode == 'selective' and
-              hasattr(ram, 'dump') and ram.dump))):
+                 hasattr(ram, 'dump') and ram.dump))):
             self._setup_source_ram_dump(ram, var, renable, d)
 
     def _setup_source_ram_dump(self, ram, var, read_enable, read_data):
         pipeline_depth = self.pipeline_depth()
         log_pipeline_depth = max(
-            int(math.ceil(math.log(pipeline_depth, 10))), 1)
+            int(math.ceil(math.log(max(pipeline_depth, 10), 10))), 1)
 
         addr_base = (ram.dump_addr_base if hasattr(ram, 'dump_addr_base') else
                      self.dump_base)
@@ -1451,7 +1451,7 @@ class Stream(BaseStream):
 
         var.source_multipat_num_patterns = self.module.Reg(
             '_source_%s_multipat_num_patterns' % prefix,
-            int(math.ceil(math.log(self.max_multipattern_length, 2))), initval=0)
+            int(math.ceil(math.log(max(self.max_multipattern_length, 2), 2))), initval=0)
         var.source_multipat_offsets = [
             self.module.Reg('_source_%s_multipat_%d_offset' % (prefix, j),
                             self.addrwidth, initval=0)
@@ -1653,15 +1653,15 @@ class Stream(BaseStream):
 
         if (self.dump and
             (self.dump_mode == 'all' or
-             self.dump_mode == 'ram' or
+                 self.dump_mode == 'ram' or
              (self.dump_mode == 'selective' and
-              hasattr(ram, 'dump') and ram.dump))):
+                 hasattr(ram, 'dump') and ram.dump))):
             self._setup_sink_ram_dump(ram, var, wenable)
 
     def _setup_sink_ram_dump(self, ram, var, write_enable):
         pipeline_depth = self.pipeline_depth()
         log_pipeline_depth = max(
-            int(math.ceil(math.log(pipeline_depth, 10))), 1)
+            int(math.ceil(math.log(max(pipeline_depth, 10), 10))), 1)
 
         addr_base = (ram.dump_addr_base if hasattr(ram, 'dump_addr_base') else
                      self.dump_base)
@@ -1886,7 +1886,7 @@ class Stream(BaseStream):
 
         var.sink_multipat_num_patterns = self.module.Reg(
             '_sink_%s_multipat_num_patterns' % prefix,
-            int(math.ceil(math.log(self.max_multipattern_length, 2))), initval=0)
+            int(math.ceil(math.log(max(self.max_multipattern_length, 2), 2))), initval=0)
         var.sink_multipat_offsets = [
             self.module.Reg('_sink_%s_multipat_%d_offset' % (prefix, j),
                             self.addrwidth, initval=0)
@@ -2120,7 +2120,9 @@ class Stream(BaseStream):
         if (callable(f) and
             (f.__name__.startswith('Reduce') or
              f.__name__.startswith('Counter') or
-             f.__name__.startswith('Pulse'))):
+             f.__name__.startswith('Pulse') or
+             f.__name__.startswith('RingBuffer') or
+             f.__name__.startswith('Scratchpad'))):
             if self.reduce_reset is None:
                 self.reduce_reset = self.module.Reg(
                     '_'.join(['', self.name, 'reduce_reset']), initval=1)

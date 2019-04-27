@@ -247,7 +247,7 @@ class Stream(object):
     def add_dump(self, m, seq, input_vars, output_vars, all_vars):
         pipeline_depth = self.pipeline_depth()
         log_pipeline_depth = max(
-            int(math.ceil(math.log(pipeline_depth, 10))), 1)
+            int(math.ceil(math.log(max(pipeline_depth, 10), 10))), 1)
 
         seq(
             self.dump_step(1)
