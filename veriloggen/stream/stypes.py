@@ -1025,10 +1025,6 @@ class _BinaryLogicalOperator(_BinaryOperator):
         self.signed = False
 
     def _implement(self, m, seq, svalid=None, senable=None):
-        if self.latency != 1:
-            raise ValueError("Latency mismatch '%d' vs '%s'" %
-                             (self.latency, 1))
-
         width = self.bit_length()
         signed = False
 
@@ -2718,10 +2714,29 @@ class _SubstreamOutput(_UnaryOperator):
         signed = self.get_signed()
         rdata = self.output_var.read()
 
-        data = m.Reg(self.name('data'), width, initval=0, signed=signed)
-        self.sig_data = data
+        if self.latency == 0:
+            data = m.Wire(self.name('data'), width, signed=signed)
+            data.assign(rdata)
+            self.sig_data = data
 
-        seq(data(rdata), cond=senable)
+        elif self.latency == 1:
+            data = m.Reg(self.name('data'), width, initval=0, signed=signed)
+            self.sig_data = data
+            seq(data(rdata), cond=senable)
+
+        else:
+            prev_data = None
+
+            for i in range(self.latency):
+                data = m.Reg(self.name('data_d%d' % i),
+                             width, initval=0, signed=signed)
+                if i == 0:
+                    seq(data(rdata), cond=senable)
+                else:
+                    seq(data(prev_data), cond=senable)
+                prev_data = data
+
+            self.sig_data = data
 
 
 class RingBuffer(_UnaryOperator):
