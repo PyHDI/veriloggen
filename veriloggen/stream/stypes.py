@@ -2645,7 +2645,7 @@ class Substream(_SpecialOperator):
         self.point = 0
         self.signed = True
 
-        self.graph_label = 'Substream' if callable(substrm.name) else substrm.name
+        self.graph_label = substrm.name if hasattr(substrm, 'name') else 'Substream'
         self.graph_shape = 'box'
         self.graph_peripheries = 2
 
