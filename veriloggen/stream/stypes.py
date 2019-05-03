@@ -1497,6 +1497,83 @@ class Slice(_SpecialOperator):
         return Slice(var, msb, lsb)
 
 
+def Split(data, width=None, point=None, signed=None, num_chunks=None):
+    """
+    Split the given data into multiple chunks
+
+    Parameters
+    ----------
+    data : _Numeric
+        Input data
+
+    width : int
+        Data width of separated chunks (default: same as input data)
+
+    point : int
+        Fixed-point position of separated chunks (default: same as input data)
+
+    signed : bool
+        Sign (default: same as input data)
+
+    num_chunks: int
+        The number of separated chunks (default: (input data width) / width)
+
+    Returns
+    -------
+    chunks : list
+        A list of separated chunks
+
+        For the consistency with Cat operator, the order of chunks is higher-bit first.
+        If data is a 32-bit value, and width is 8, returned list of chunks will be
+            chunks = [data[31:24], data[23:16], data[15:8], data[7:0]]
+    """
+
+    data = _to_constant(data)
+
+    if width is None and num_chunks is None:
+        raise ValueError('width or num_chunks must be specified.')
+
+    if width is not None and num_chunks is not None:
+        raise ValueError('Either of width or num_chunks must be specified.')
+
+    if width is None:
+        width = int(ceil(data.bit_length() / num_chunks))
+    elif num_chunks is None:
+        num_chunks = int(ceil(data.bit_length() / width))
+
+    if point is None:
+        point = data.get_point()
+
+    if signed is None:
+        signed = data.get_signed()
+
+    total_width = width * num_chunks
+    ret = []
+    for i in range(0, total_width, width):
+        if i + width > data.bit_length():
+            if signed:
+                sign = data[-1]
+                sign.latency = 0
+                pad = Repeat(sign, total_width - data.bit_length())
+                pad.latency = 0
+            else:
+                pad = Int(0, signed=False)
+                pad.width = total_width - data.bit_length()
+
+            slc = Slice(data, data.bit_length() - 1, i)
+            slc.latency = 0
+            v = Cat(pad, slc)
+            v.latency = 0
+        else:
+            v = Slice(data, i + width - 1, i)
+            v.latency = 0
+
+        ret.append(Cast(v, width, point, signed))
+
+    ret.reverse()
+    return ret
+
+
 class Cat(_SpecialOperator):
 
     def __init__(self, *vars):
