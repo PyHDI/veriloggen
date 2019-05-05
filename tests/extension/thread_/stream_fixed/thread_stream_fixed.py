@@ -19,7 +19,7 @@ def mkLed():
 
     datawidth = 32
     addrwidth = 10
-    point = 4
+    point = 32
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
     ram_a = vthread.FixedRAM(m, 'ram_a', clk, rst, datawidth, addrwidth,
                              point=point)
@@ -32,14 +32,14 @@ def mkLed():
     a = strm.source('a', point=point)
     b = strm.source('b', point=point)
     const = strm.constant('const', point=point)
-    c = a * b + const
+    c = a + b + const
     strm.sink(c, 'c')
 
     def comp_stream(size, offset):
         strm.set_source('a', ram_a, offset, size)
         strm.set_source('b', ram_b, offset, size)
         strm.set_sink('c', ram_c, offset, size)
-        const = vthread.fixed.FixedConst(3.5, point=point)
+        const = vthread.fixed.FixedConst(0.0, point=point)
         strm.set_constant('const', const)
         strm.run()
         strm.join()
@@ -48,10 +48,10 @@ def mkLed():
         for i in range(size):
             a = ram_a.read(i + offset)
             b = ram_b.read(i + offset)
-            const = vthread.fixed.FixedConst(3.5, point=point)
-            c = a * b + const
+            const = vthread.fixed.FixedConst(0.0, point=point)
+            c = a + b + const
             ram_c.write(i + offset, c)
-            print('a = %f, b = %f, const = %f, c =  %f' % (a, b, const, c))
+            #print('a = %f, b = %f, const = %f, c =  %f' % (a, b, const, c))
 
     def check(size, offset_stream, offset_seq):
         all_ok = True

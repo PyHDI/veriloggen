@@ -272,7 +272,7 @@ class Stream(object):
                     self.dump_mode == 'input' or
                     self.dump_mode == 'inout' or
                     (self.dump_mode == 'selective' and
-                     hasattr(input_var, 'dump') and input_var.dump)):
+                        hasattr(input_var, 'dump') and input_var.dump)):
                 continue
 
             name = get_name(input_var.sig_data)
@@ -285,7 +285,7 @@ class Stream(object):
             if not (self.dump_mode == 'all' or
                     self.dump_mode == 'stream' or
                     (self.dump_mode == 'selective' and
-                     hasattr(var, 'dump') and var.dump)):
+                        hasattr(var, 'dump') and var.dump)):
                 continue
 
             name = get_name(var.sig_data)
@@ -298,7 +298,7 @@ class Stream(object):
                     self.dump_mode == 'output' or
                     self.dump_mode == 'inout' or
                     (self.dump_mode == 'selective' and
-                     hasattr(output_var, 'dump') and output_var.dump)):
+                        hasattr(output_var, 'dump') and output_var.dump)):
                 continue
 
             name = get_name(output_var.output_sig_data)
@@ -317,8 +317,10 @@ class Stream(object):
 
             base = (var.dump_base if hasattr(var, 'dump_base') else
                     self.dump_base)
-            length = int(math.ceil(bit_length / math.log(base, 2)))
-            longest_var_len = max(longest_var_len, length)
+            total_length = int(math.ceil(bit_length / math.log(base, 2)))
+            point_length = int(math.ceil(var.point / math.log(base, 2)))
+            point_length = max(point_length, 8)
+            longest_var_len = max(longest_var_len, total_length, point_length)
 
         for input_var in sorted(input_vars, key=lambda x: x.object_id):
 
@@ -334,7 +336,13 @@ class Stream(object):
                       '  ' if base == 10 else
                       '0x')
 
-            fmt_list = [prefix, '%', '%d' % (longest_var_len + 1), base_char]
+            if base_char == 'f':
+                point_length = int(math.ceil(input_var.point / math.log(base, 2)))
+                point_length = max(point_length, 8)
+                fmt_list = [prefix, '%',
+                            '%d.%d' % (longest_var_len + 1, point_length), base_char]
+            else:
+                fmt_list = [prefix, '%', '%d' % (longest_var_len + 1), base_char]
 
             if input_var not in all_vars:
                 fmt_list.append(' (unused)')
@@ -355,7 +363,13 @@ class Stream(object):
                       '  ' if base == 10 else
                       '0x')
 
-            fmt_list = [prefix, '%', '%d' % (longest_var_len + 1), base_char]
+            if base_char == 'f':
+                point_length = int(math.ceil(output_var.point / math.log(base, 2)))
+                point_length = max(point_length, 8)
+                fmt_list = [prefix, '%',
+                            '%d.%d' % (longest_var_len + 1, point_length), base_char]
+            else:
+                fmt_list = [prefix, '%', '%d' % (longest_var_len + 1), base_char]
 
             if output_var not in all_vars:
                 fmt_list.append(' (unused)')
@@ -378,7 +392,14 @@ class Stream(object):
                       '  ' if base == 10 else
                       '0x')
 
-            fmt_list = [prefix, '%', '%d' % (longest_var_len + 1), base_char]
+            if base_char == 'f':
+                point_length = int(math.ceil(var.point / math.log(base, 2)))
+                point_length = max(point_length, 8)
+                fmt_list = [prefix, '%',
+                            '%d.%d' % (longest_var_len + 1, point_length), base_char]
+            else:
+                fmt_list = [prefix, '%', '%d' % (longest_var_len + 1), base_char]
+
             var.dump_fmt = ''.join(fmt_list)
 
         enables = []
@@ -388,7 +409,7 @@ class Stream(object):
                     self.dump_mode == 'input' or
                     self.dump_mode == 'inout' or
                     (self.dump_mode == 'selective' and
-                     hasattr(input_var, 'dump') and input_var.dump)):
+                        hasattr(input_var, 'dump') and input_var.dump)):
                 continue
 
             vfmt = input_var.dump_fmt
@@ -422,7 +443,7 @@ class Stream(object):
             if not (self.dump_mode == 'all' or
                     self.dump_mode == 'stream' or
                     (self.dump_mode == 'selective' and
-                     hasattr(var, 'dump') and var.dump)):
+                        hasattr(var, 'dump') and var.dump)):
                 continue
 
             vfmt = var.dump_fmt
@@ -455,7 +476,7 @@ class Stream(object):
                     self.dump_mode == 'output' or
                     self.dump_mode == 'inout' or
                     (self.dump_mode == 'selective' and
-                     hasattr(output_var, 'dump') and output_var.dump)):
+                        hasattr(output_var, 'dump') and output_var.dump)):
                 continue
 
             vfmt = output_var.dump_fmt
