@@ -318,9 +318,10 @@ class Stream(object):
             base = (var.dump_base if hasattr(var, 'dump_base') else
                     self.dump_base)
             total_length = int(math.ceil(bit_length / math.log(base, 2)))
-            point_length = int(math.ceil(var.point / math.log(base, 2)))
-            point_length = max(point_length, 8)
-            longest_var_len = max(longest_var_len, total_length, point_length)
+            #point_length = int(math.ceil(var.point / math.log(base, 2)))
+            #point_length = max(point_length, 8)
+            #longest_var_len = max(longest_var_len, total_length, point_length)
+            longest_var_len = max(longest_var_len, total_length)
 
         for input_var in sorted(input_vars, key=lambda x: x.object_id):
 
@@ -328,21 +329,25 @@ class Stream(object):
                     self.dump_base)
             base_char = ('b' if base == 2 else
                          'o' if base == 8 else
-                         'd' if base == 10 and input_var.point == 0 else
-                         'f' if base == 10 and input_var.point > 0 else
+                         'd' if base == 10 and input_var.point <= 0 else
+                         # 'f' if base == 10 and input_var.point > 0 else
+                         'g' if base == 10 and input_var.point > 0 else
                          'x')
             prefix = ('0b' if base == 2 else
                       '0o' if base == 8 else
                       '  ' if base == 10 else
                       '0x')
 
-            if base_char == 'f':
-                point_length = int(math.ceil(input_var.point / math.log(base, 2)))
-                point_length = max(point_length, 8)
-                fmt_list = [prefix, '%',
-                            '%d.%d' % (longest_var_len + 1, point_length), base_char]
-            else:
-                fmt_list = [prefix, '%', '%d' % (longest_var_len + 1), base_char]
+            # if base_char == 'f':
+            #    point_length = int(math.ceil(input_var.point / math.log(base, 2)))
+            #    point_length = max(point_length, 8)
+            #    fmt_list = [prefix, '%',
+            #                '%d.%d' % (longest_var_len + 1, point_length), base_char]
+            # if base_char == 'g':
+            #    fmt_list = [prefix, '%', base_char]
+            # else:
+            #    fmt_list = [prefix, '%', '%d' % (longest_var_len + 1), base_char]
+            fmt_list = [prefix, '%', '%d' % (longest_var_len + 1), base_char]
 
             if input_var not in all_vars:
                 fmt_list.append(' (unused)')
@@ -355,21 +360,25 @@ class Stream(object):
                     self.dump_base)
             base_char = ('b' if base == 2 else
                          'o' if base == 8 else
-                         'd' if base == 10 and output_var.point == 0 else
-                         'f' if base == 10 and output_var.point > 0 else
+                         'd' if base == 10 and output_var.point <= 0 else
+                         # 'f' if base == 10 and output_var.point > 0 else
+                         'g' if base == 10 and output_var.point > 0 else
                          'x')
             prefix = ('0b' if base == 2 else
                       '0o' if base == 8 else
                       '  ' if base == 10 else
                       '0x')
 
-            if base_char == 'f':
-                point_length = int(math.ceil(output_var.point / math.log(base, 2)))
-                point_length = max(point_length, 8)
-                fmt_list = [prefix, '%',
-                            '%d.%d' % (longest_var_len + 1, point_length), base_char]
-            else:
-                fmt_list = [prefix, '%', '%d' % (longest_var_len + 1), base_char]
+            # if base_char == 'f':
+            #    point_length = int(math.ceil(output_var.point / math.log(base, 2)))
+            #    point_length = max(point_length, 8)
+            #    fmt_list = [prefix, '%',
+            #                '%d.%d' % (longest_var_len + 1, point_length), base_char]
+            # if base_char == 'g':
+            #    fmt_list = [prefix, '%', base_char]
+            # else:
+            #    fmt_list = [prefix, '%', '%d' % (longest_var_len + 1), base_char]
+            fmt_list = [prefix, '%', '%d' % (longest_var_len + 1), base_char]
 
             if output_var not in all_vars:
                 fmt_list.append(' (unused)')
@@ -384,21 +393,25 @@ class Stream(object):
                     self.dump_base)
             base_char = ('b' if base == 2 else
                          'o' if base == 8 else
-                         'd' if base == 10 and var.point == 0 else
-                         'f' if base == 10 and var.point > 0 else
+                         'd' if base == 10 and var.point <= 0 else
+                         # 'f' if base == 10 and var.point > 0 else
+                         'g' if base == 10 and var.point > 0 else
                          'x')
             prefix = ('0b' if base == 2 else
                       '0o' if base == 8 else
                       '  ' if base == 10 else
                       '0x')
 
-            if base_char == 'f':
-                point_length = int(math.ceil(var.point / math.log(base, 2)))
-                point_length = max(point_length, 8)
-                fmt_list = [prefix, '%',
-                            '%d.%d' % (longest_var_len + 1, point_length), base_char]
-            else:
-                fmt_list = [prefix, '%', '%d' % (longest_var_len + 1), base_char]
+            # if base_char == 'f':
+            #    point_length = int(math.ceil(var.point / math.log(base, 2)))
+            #    point_length = max(point_length, 8)
+            #    fmt_list = [prefix, '%',
+            #                '%d.%d' % (longest_var_len + 1, point_length), base_char]
+            # if base_char == 'g':
+            #    fmt_list = [prefix, '%', base_char]
+            # else:
+            #    fmt_list = [prefix, '%', '%d' % (longest_var_len + 1), base_char]
+            fmt_list = [prefix, '%', '%d' % (longest_var_len + 1), base_char]
 
             var.dump_fmt = ''.join(fmt_list)
 
@@ -427,11 +440,13 @@ class Stream(object):
             enables.append(enable)
             age = seq.Prev(self.dump_step, stage) - 1
 
-            if input_var.point == 0:
-                sig_data = input_var.sig_data
-            else:
+            if input_var.point > 0:
                 sig_data = vtypes.Div(vtypes.SystemTask('itor', input_var.sig_data),
                                       1.0 * (2 ** input_var.point))
+            elif input_var.point < 0:
+                sig_data = vtypes.Times(input_var.sig_data, 2 ** -input_var.point)
+            else:
+                sig_data = input_var.sig_data
 
             seq.If(enable, vtypes.Not(self.dump_mask))(
                 vtypes.Display(fmt, self.dump_step, stage, age, sig_data)
@@ -460,11 +475,13 @@ class Stream(object):
             enables.append(enable)
             age = seq.Prev(self.dump_step, stage) - 1
 
-            if var.point == 0:
-                sig_data = var.sig_data
-            else:
+            if var.point > 0:
                 sig_data = vtypes.Div(vtypes.SystemTask('itor', var.sig_data),
                                       1.0 * (2 ** var.point))
+            elif var.point < 0:
+                sig_data = vtypes.Times(var.sig_data, 2 ** -var.point)
+            else:
+                sig_data = var.sig_data
 
             seq.If(enable, vtypes.Not(self.dump_mask))(
                 vtypes.Display(fmt, self.dump_step, stage, age, sig_data)
@@ -494,11 +511,13 @@ class Stream(object):
             enables.append(enable)
             age = seq.Prev(self.dump_step, stage) - 1
 
-            if output_var.point == 0:
-                sig_data = output_var.output_sig_data
-            else:
+            if output_var.point > 0:
                 sig_data = vtypes.Div(vtypes.SystemTask('itor', output_var.output_sig_data),
                                       1.0 * (2 ** output_var.point))
+            elif output_var.point < 0:
+                sig_data = vtypes.Times(output_var.output_sig_data, 2 ** -output_var.point)
+            else:
+                sig_data = output_var.output_sig_data
 
             seq.If(enable, vtypes.Not(self.dump_mask))(
                 vtypes.Display(fmt, self.dump_step, stage, age, sig_data)

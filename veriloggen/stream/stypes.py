@@ -589,7 +589,7 @@ class Times(_BinaryOperator):
         left = self.left.bit_length()
         right = self.right.bit_length()
         self.width = max(left, right)
-        self.point = max(left_fp, right_fp)
+        self.point = min(max(left_fp, right_fp), left_fp + right_fp)
         self.signed = self.left.get_signed() and self.right.get_signed()
 
     def _implement(self, m, seq, svalid=None, senable=None):
@@ -615,7 +615,7 @@ class Times(_BinaryOperator):
         data = m.Wire(self.name('data'), width, signed=signed)
         self.sig_data = data
 
-        shift_size = min(lpoint, rpoint)
+        shift_size = lpoint + rpoint - self.point
         if shift_size > 0:
             seq(odata_reg(fx.shift_right(odata, shift_size, signed=signed)), cond=senable)
         else:
