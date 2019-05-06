@@ -1233,23 +1233,26 @@ class Stream(BaseStream):
                           'o' if data_base == 8 else
                           'd' if (data_base == 10 and
                                   (not hasattr(ram, 'point') or ram.point == 0)) else
-                          'f' if (data_base == 10 and
+                          #'f' if (data_base == 10 and
+                          #        hasattr(ram, 'point') and ram.point > 0) else
+                          'g' if (data_base == 10 and
                                   hasattr(ram, 'point') and ram.point > 0) else
                           'x')
         data_prefix = ('0b' if data_base == 2 else
                        '0o' if data_base == 8 else
                        '  ' if data_base == 10 else
                        '0x')
-        if data_base_char == 'f':
-            point_len = int(math.ceil(ram.point / math.log(10, 2)))
-            point_len = max(point_len, 8)
-            total_len = int(math.ceil(ram.datawidth / math.log(10, 2)))
-            total_len = max(total_len, point_len)
-            data_vfmt = ''.join([data_prefix, '%',
-                                 '%d.%d' % (total_len + 1, point_len),
-                                 data_base_char])
-        else:
-            data_vfmt = ''.join([data_prefix, '%', data_base_char])
+        #if data_base_char == 'f':
+        #    point_len = int(math.ceil(ram.point / math.log(10, 2)))
+        #    point_len = max(point_len, 8)
+        #    total_len = int(math.ceil(ram.datawidth / math.log(10, 2)))
+        #    total_len = max(total_len, point_len)
+        #    data_vfmt = ''.join([data_prefix, '%',
+        #                         '%d.%d' % (total_len + 1, point_len),
+        #                         data_base_char])
+        #else:
+        #    data_vfmt = ''.join([data_prefix, '%', data_base_char])
+        data_vfmt = ''.join([data_prefix, '%', data_base_char])
 
         name = ram.name
         fmt = ''.join(['(', self.name, ' step:%d, ',
@@ -1690,23 +1693,26 @@ class Stream(BaseStream):
                           'o' if data_base == 8 else
                           'd' if (data_base == 10 and
                                   (not hasattr(ram, 'point') or ram.point == 0)) else
-                          'f' if (data_base == 10 and
+                          #'f' if (data_base == 10 and
+                          #        hasattr(ram, 'point') and ram.point > 0) else
+                          'g' if (data_base == 10 and
                                   hasattr(ram, 'point') and ram.point > 0) else
                           'x')
         data_prefix = ('0b' if data_base == 2 else
                        '0o' if data_base == 8 else
                        '  ' if data_base == 10 else
                        '0x')
-        if data_base_char == 'f':
-            point_len = int(math.ceil(ram.point / math.log(10, 2)))
-            point_len = max(point_len, 8)
-            total_len = int(math.ceil(ram.datawidth / math.log(10, 2)))
-            total_len = max(total_len, point_len)
-            data_vfmt = ''.join([data_prefix, '%',
-                                 '%d.%d' % (total_len + 1, point_len),
-                                 data_base_char])
-        else:
-            data_vfmt = ''.join([data_prefix, '%', data_base_char])
+        #if data_base_char == 'f':
+        #    point_len = int(math.ceil(ram.point / math.log(10, 2)))
+        #    point_len = max(point_len, 8)
+        #    total_len = int(math.ceil(ram.datawidth / math.log(10, 2)))
+        #    total_len = max(total_len, point_len)
+        #    data_vfmt = ''.join([data_prefix, '%',
+        #                         '%d.%d' % (total_len + 1, point_len),
+        #                         data_base_char])
+        #else:
+        #    data_vfmt = ''.join([data_prefix, '%', data_base_char])
+        data_vfmt = ''.join([data_prefix, '%', data_base_char])
 
         name = ram.name
         fmt = ''.join(['(', self.name, ' step:%d, ',
