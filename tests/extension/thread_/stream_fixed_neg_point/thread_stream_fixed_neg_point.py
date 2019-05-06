@@ -19,7 +19,7 @@ def mkLed():
 
     datawidth = 32
     addrwidth = 10
-    point = 4
+    point = -4
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
     ram_a = vthread.FixedRAM(m, 'ram_a', clk, rst, datawidth, addrwidth,
                              point=point)
@@ -39,7 +39,7 @@ def mkLed():
         strm.set_source('a', ram_a, offset, size)
         strm.set_source('b', ram_b, offset, size)
         strm.set_sink('c', ram_c, offset, size)
-        const = vthread.fixed.FixedConst(1, point=point)
+        const = vthread.fixed.FixedConst(32, point=point)
         strm.set_constant('const', const)
         strm.run()
         strm.join()
@@ -48,7 +48,7 @@ def mkLed():
         for i in range(size):
             a = ram_a.read(i + offset)
             b = ram_b.read(i + offset)
-            const = vthread.fixed.FixedConst(1, point=point)
+            const = vthread.fixed.FixedConst(32, point=point)
             c = a * b + const
             ram_c.write(i + offset, c)
             print('a = %10g, b = %10g, const = %10g, c =  %10g' % (a, b, const, c))

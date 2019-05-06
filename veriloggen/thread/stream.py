@@ -1232,7 +1232,7 @@ class Stream(BaseStream):
         data_base_char = ('b' if data_base == 2 else
                           'o' if data_base == 8 else
                           'd' if (data_base == 10 and
-                                  (not hasattr(ram, 'point') or ram.point == 0)) else
+                                  (not hasattr(ram, 'point') or ram.point <= 0)) else
                           #'f' if (data_base == 10 and
                           #        hasattr(ram, 'point') and ram.point > 0) else
                           'g' if (data_base == 10 and
@@ -1270,6 +1270,8 @@ class Stream(BaseStream):
         if hasattr(ram, 'point') and ram.point > 0:
             data = vtypes.Div(vtypes.SystemTask('itor', read_data),
                               1.0 * (2 ** ram.point))
+        elif hasattr(ram, 'point') and ram.point < 0:
+            data = vtypes.Times(read_data, 2 ** -ram.point)
         else:
             data = read_data
 
@@ -1692,7 +1694,7 @@ class Stream(BaseStream):
         data_base_char = ('b' if data_base == 2 else
                           'o' if data_base == 8 else
                           'd' if (data_base == 10 and
-                                  (not hasattr(ram, 'point') or ram.point == 0)) else
+                                  (not hasattr(ram, 'point') or ram.point <= 0)) else
                           #'f' if (data_base == 10 and
                           #        hasattr(ram, 'point') and ram.point > 0) else
                           'g' if (data_base == 10 and
@@ -1726,6 +1728,8 @@ class Stream(BaseStream):
         if hasattr(ram, 'point') and ram.point > 0:
             data = vtypes.Div(vtypes.SystemTask('itor', var.sink_ram_wdata),
                               1.0 * (2 ** ram.point))
+        elif hasattr(ram, 'point') and ram.point < 0:
+            data = vtypes.Times(var.sink_ram_wdata, 2 ** -ram.point)
         else:
             data = var.sink_ram_wdata
 
