@@ -16,7 +16,7 @@ module test;
   reg [4-1:0] myaxi_awcache;
   reg [3-1:0] myaxi_awprot;
   reg [4-1:0] myaxi_awqos;
-  reg [1-1:0] myaxi_awuser;
+  reg [2-1:0] myaxi_awuser;
   reg myaxi_awvalid;
   wire myaxi_awready;
   reg [32-1:0] myaxi_wdata;
@@ -35,7 +35,7 @@ module test;
   reg [4-1:0] myaxi_arcache;
   reg [3-1:0] myaxi_arprot;
   reg [4-1:0] myaxi_arqos;
-  reg [1-1:0] myaxi_aruser;
+  reg [2-1:0] myaxi_aruser;
   reg myaxi_arvalid;
   wire myaxi_arready;
   wire [32-1:0] myaxi_rdata;
@@ -51,7 +51,7 @@ module test;
   wire [4-1:0] _axi_awcache;
   wire [3-1:0] _axi_awprot;
   wire [4-1:0] _axi_awqos;
-  wire [1-1:0] _axi_awuser;
+  wire [2-1:0] _axi_awuser;
   reg _axi_awvalid;
   wire _axi_awready;
   reg [32-1:0] _axi_wdata;
@@ -70,7 +70,7 @@ module test;
   wire [4-1:0] _axi_arcache;
   wire [3-1:0] _axi_arprot;
   wire [4-1:0] _axi_arqos;
-  wire [1-1:0] _axi_aruser;
+  wire [2-1:0] _axi_aruser;
   reg _axi_arvalid;
   wire _axi_arready;
   wire [32-1:0] _axi_rdata;
@@ -149,7 +149,7 @@ module test;
     myaxi_awqos = _tmp_7;
   end
 
-  wire [1-1:0] _tmp_8;
+  wire [2-1:0] _tmp_8;
   assign _tmp_8 = _axi_awuser;
 
   always @(*) begin
@@ -258,7 +258,7 @@ module test;
     myaxi_arqos = _tmp_22;
   end
 
-  wire [1-1:0] _tmp_23;
+  wire [2-1:0] _tmp_23;
   assign _tmp_23 = _axi_aruser;
 
   always @(*) begin
@@ -499,7 +499,7 @@ module main
   input [4-1:0] myaxi_awcache,
   input [3-1:0] myaxi_awprot,
   input [4-1:0] myaxi_awqos,
-  input [1-1:0] myaxi_awuser,
+  input [2-1:0] myaxi_awuser,
   input myaxi_awvalid,
   output myaxi_awready,
   input [32-1:0] myaxi_wdata,
@@ -518,7 +518,7 @@ module main
   input [4-1:0] myaxi_arcache,
   input [3-1:0] myaxi_arprot,
   input [4-1:0] myaxi_arqos,
-  input [1-1:0] myaxi_aruser,
+  input [2-1:0] myaxi_aruser,
   input myaxi_arvalid,
   output myaxi_arready,
   output reg [32-1:0] myaxi_rdata,
