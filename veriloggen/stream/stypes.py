@@ -1527,7 +1527,7 @@ class Slice(_SpecialOperator):
         return Slice(var, msb, lsb)
 
 
-def Split(data, width=None, point=None, signed=None, num_chunks=None):
+def Split(data, width=None, point=None, signed=None, num_chunks=None, reverse=False):
     """
     Split the given data into multiple chunks
 
@@ -1548,6 +1548,9 @@ def Split(data, width=None, point=None, signed=None, num_chunks=None):
     num_chunks: int
         The number of separated chunks (default: (input data width) / width)
 
+    reverse: bool
+        reverse flag. If true, a reversed list is returned
+
     Returns
     -------
     chunks : list
@@ -1556,6 +1559,7 @@ def Split(data, width=None, point=None, signed=None, num_chunks=None):
         For the consistency with Cat operator, the order of chunks is higher-bit first.
         If data is a 32-bit value, and width is 8, returned list of chunks will be
             chunks = [data[31:24], data[23:16], data[15:8], data[7:0]]
+        If reverse == True, it returns the reversed list of chunks
     """
 
     data = _to_constant(data)
@@ -1600,7 +1604,9 @@ def Split(data, width=None, point=None, signed=None, num_chunks=None):
 
         ret.append(ReinterpretCast(v, width, point, signed))
 
-    ret.reverse()
+    if not reverse:
+        ret.reverse()
+
     return ret
 
 
