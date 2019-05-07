@@ -1323,18 +1323,48 @@ class Cast(_UnaryOperator):
         signed = self.get_signed()
 
         rdata = self.right.sig_data
+        rwidth = self.right.bit_length()
         rpoint = self.right.get_point()
         rsigned = self.right.get_signed()
 
+        rdata_src = m.Wire(self.name('src'), rwidth, signed=rsigned)
+        rdata_src.assign(rdata)
+
         if rpoint > self.point:
-            rdata = fx.shift_right(rdata, rpoint - self.point, rsigned)
+            rdata_src = fx.shift_right(rdata_src, rpoint - self.point, rsigned)
         elif rpoint < self.point:
-            rdata = fx.shift_left(rdata, self.point - rpoint, rsigned)
+            rdata_src = fx.shift_left(rdata_src, self.point - rpoint, rsigned)
 
         data = m.Wire(self.name('data'), width, signed=signed)
         self.sig_data = data
 
-        m.Assign(data(rdata))
+        m.Assign(data(rdata_src))
+
+    def eval(self):
+        return self
+
+
+class ReinterpretCast(Cast):
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency != 0:
+            raise ValueError("Latency mismatch '%d' vs '%s'" %
+                             (self.latency, 0))
+
+        width = self.bit_length()
+        signed = self.get_signed()
+
+        rdata = self.right.sig_data
+        rwidth = self.right.bit_length()
+        rsigned = self.right.get_signed()
+
+        rdata_src = m.Wire(self.name('src'), rwidth, signed=rsigned)
+        rdata_src.assign(rdata)
+
+        data = m.Wire(self.name('data'), width, signed=signed)
+        self.sig_data = data
+
+        m.Assign(data(rdata_src))
 
     def eval(self):
         return self
@@ -1568,7 +1598,7 @@ def Split(data, width=None, point=None, signed=None, num_chunks=None):
             v = Slice(data, i + width - 1, i)
             v.latency = 0
 
-        ret.append(Cast(v, width, point, signed))
+        ret.append(ReinterpretCast(v, width, point, signed))
 
     ret.reverse()
     return ret

@@ -27,10 +27,10 @@ def mkLed():
     strm = vthread.Stream(m, 'mystream', clk, rst)
     a = strm.source('a')
     b = strm.source('b')
-    a = strm.Cast(a, 64, 4)
-    b = strm.Cast(b, 64, 4)
+    a = strm.ReinterpretCast(a, 64, 2)
+    b = strm.ReinterpretCast(b, 64, 2)
     c = a * b
-    c = strm.Cast(c, 32, 0)
+    c = strm.ReinterpretCast(c, 32, 0)
     strm.sink(c, 'c')
 
     def comp_stream(size, offset):
@@ -45,7 +45,7 @@ def mkLed():
         for i in range(size):
             a = ram_a.read(i + offset)
             b = ram_b.read(i + offset)
-            sum = a * b
+            sum = a * b >> 2
             ram_c.write(i + offset, sum)
 
     def check(size, offset_stream, offset_seq):
