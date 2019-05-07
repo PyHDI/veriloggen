@@ -17,7 +17,7 @@ module test;
   wire [4-1:0] myaxi_awcache;
   wire [3-1:0] myaxi_awprot;
   wire [4-1:0] myaxi_awqos;
-  wire [1-1:0] myaxi_awuser;
+  wire [2-1:0] myaxi_awuser;
   wire myaxi_awvalid;
   reg myaxi_awready;
   wire [32-1:0] myaxi_wdata;
@@ -36,7 +36,7 @@ module test;
   wire [4-1:0] myaxi_arcache;
   wire [3-1:0] myaxi_arprot;
   wire [4-1:0] myaxi_arqos;
-  wire [1-1:0] myaxi_aruser;
+  wire [2-1:0] myaxi_aruser;
   wire myaxi_arvalid;
   reg myaxi_arready;
   reg [32-1:0] myaxi_rdata;
@@ -52,7 +52,7 @@ module test;
   wire [4-1:0] memory_awcache;
   wire [3-1:0] memory_awprot;
   wire [4-1:0] memory_awqos;
-  wire [1-1:0] memory_awuser;
+  wire [2-1:0] memory_awuser;
   wire memory_awvalid;
   reg memory_awready;
   wire [32-1:0] memory_wdata;
@@ -71,7 +71,7 @@ module test;
   wire [4-1:0] memory_arcache;
   wire [3-1:0] memory_arprot;
   wire [4-1:0] memory_arqos;
-  wire [1-1:0] memory_aruser;
+  wire [2-1:0] memory_aruser;
   wire memory_arvalid;
   reg memory_arready;
   reg [32-1:0] memory_rdata;
@@ -535,7 +535,7 @@ module main
   output [4-1:0] myaxi_awcache,
   output [3-1:0] myaxi_awprot,
   output [4-1:0] myaxi_awqos,
-  output [1-1:0] myaxi_awuser,
+  output [2-1:0] myaxi_awuser,
   output reg myaxi_awvalid,
   input myaxi_awready,
   output reg [32-1:0] myaxi_wdata,
@@ -554,7 +554,7 @@ module main
   output [4-1:0] myaxi_arcache,
   output [3-1:0] myaxi_arprot,
   output [4-1:0] myaxi_arqos,
-  output [1-1:0] myaxi_aruser,
+  output [2-1:0] myaxi_aruser,
   output reg myaxi_arvalid,
   input myaxi_arready,
   input [32-1:0] myaxi_rdata,
