@@ -96,7 +96,7 @@ def reinterpret_cast_to_fixed(value, point, signed=True):
 
 def to_fixed(value, point):
     if point < 0:
-        raise ValueError('point must be more than 0')
+        return _to_fixed_neg_point(value, point)
 
     if point == 0:
         return value
@@ -117,9 +117,27 @@ def to_fixed(value, point):
     return shift_left(value, point, signed)
 
 
+def _to_fixed_neg_point(value, point):
+    point = -point
+
+    if isinstance(value, (int, bool, float)) and isinstance(point, int):
+        mag = 2 ** point
+        return int(value / mag)
+
+    if isinstance(value, (int, bool)):
+        return vtypes.Int(value) >> point
+
+    if isinstance(value, float):
+        mag = vtypes.Int(2) ** point
+        return vtypes.Float(value) / mag
+
+    signed = vtypes.get_signed(value)
+    return shift_right(value, point, signed)
+
+
 def fixed_to_int(value, point):
     if point < 0:
-        raise ValueError('point must be more than 0')
+        return _fixed_to_int_neg_point(value, point)
 
     if point == 0:
         return value
@@ -136,9 +154,24 @@ def fixed_to_int(value, point):
     return shift_right(value, point, signed)
 
 
+def _fixed_to_int_reg_point(value, point):
+    point = -point
+
+    if isinstance(value, (int, bool, float)) and isinstance(point, int):
+        mag = 2 ** point
+        return value * mag
+
+    if isinstance(value, (int, bool, float)):
+        mag = vtypes.Int(2) ** point
+        return vtypes.Int(value) * mag
+
+    signed = vtypes.get_signed(value)
+    return shift_left(value, point, signed)
+
+
 def fixed_to_int_low(value, point):
     if point < 0:
-        raise ValueError('point must be more than 0')
+        return 0
 
     if point == 0:
         return 0
@@ -152,7 +185,7 @@ def fixed_to_int_low(value, point):
 
 def fixed_to_real(value, point):
     if point < 0:
-        raise ValueError('point must be more than 0')
+        return vtypes.SystemTask('itor', fixed_to_int(value, point))
 
     if point == 0:
         return vtypes.SystemTask('itor', value)
@@ -198,8 +231,7 @@ def adjust(left, right, lpoint, rpoint, signed=True):
     diff_lpoint = 0 if rpoint < lpoint else rpoint - lpoint
     diff_rpoint = 0 if lpoint < rpoint else lpoint - rpoint
     ldata = left if diff_lpoint == 0 else shift_left(left, diff_lpoint, signed)
-    rdata = right if diff_rpoint == 0 else shift_left(
-        right, diff_rpoint, signed)
+    rdata = right if diff_rpoint == 0 else shift_left(right, diff_rpoint, signed)
     _ldata = to_signed(ldata) if signed and diff_lpoint != 0 else ldata
     _rdata = to_signed(rdata) if signed and diff_rpoint != 0 else rdata
     return _ldata, _rdata
@@ -452,11 +484,11 @@ class _FixedTimes(_FixedSkipUnaryOperator):
         rpoint = right.point if isinstance(right, _FixedBase) else 0
         lsigned = vtypes.get_signed(left)
         rsigned = vtypes.get_signed(right)
-        point = _max_mux(lpoint, rpoint)
+        point = _min_mux(_max_mux(lpoint, rpoint), lpoint + rpoint)
         signed = lsigned and rsigned if not self.overwrite_signed else False
         ldata = to_signed(left) if signed else left
         rdata = to_signed(right) if signed else right
-        shift_size = _min_mux(lpoint, rpoint)
+        shift_size = lpoint + rpoint - point
         data = vtypes.Times(ldata, rdata)
         if signed:
             data = vtypes.Sra(data, shift_size)

@@ -17,7 +17,7 @@ module test;
   wire [4-1:0] uut_maxi_awcache;
   wire [3-1:0] uut_maxi_awprot;
   wire [4-1:0] uut_maxi_awqos;
-  wire [1-1:0] uut_maxi_awuser;
+  wire [2-1:0] uut_maxi_awuser;
   wire uut_maxi_awvalid;
   reg uut_maxi_awready;
   wire [32-1:0] uut_maxi_wdata;
@@ -36,7 +36,7 @@ module test;
   wire [4-1:0] uut_maxi_arcache;
   wire [3-1:0] uut_maxi_arprot;
   wire [4-1:0] uut_maxi_arqos;
-  wire [1-1:0] uut_maxi_aruser;
+  wire [2-1:0] uut_maxi_aruser;
   wire uut_maxi_arvalid;
   reg uut_maxi_arready;
   reg [32-1:0] uut_maxi_rdata;
@@ -138,7 +138,7 @@ module test;
   wire [4-1:0] memory_awcache;
   wire [3-1:0] memory_awprot;
   wire [4-1:0] memory_awqos;
-  wire [1-1:0] memory_awuser;
+  wire [2-1:0] memory_awuser;
   wire memory_awvalid;
   reg memory_awready;
   wire [32-1:0] memory_wdata;
@@ -157,7 +157,7 @@ module test;
   wire [4-1:0] memory_arcache;
   wire [3-1:0] memory_arprot;
   wire [4-1:0] memory_arqos;
-  wire [1-1:0] memory_aruser;
+  wire [2-1:0] memory_aruser;
   wire memory_arvalid;
   reg memory_arready;
   reg [32-1:0] memory_rdata;
@@ -1127,7 +1127,7 @@ module blinkled
   output [4-1:0] maxi_awcache,
   output [3-1:0] maxi_awprot,
   output [4-1:0] maxi_awqos,
-  output [1-1:0] maxi_awuser,
+  output [2-1:0] maxi_awuser,
   output reg maxi_awvalid,
   input maxi_awready,
   output reg [32-1:0] maxi_wdata,
@@ -1146,7 +1146,7 @@ module blinkled
   output [4-1:0] maxi_arcache,
   output [3-1:0] maxi_arprot,
   output [4-1:0] maxi_arqos,
-  output [1-1:0] maxi_aruser,
+  output [2-1:0] maxi_aruser,
   output reg maxi_arvalid,
   input maxi_arready,
   input [32-1:0] maxi_rdata,

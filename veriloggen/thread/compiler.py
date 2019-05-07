@@ -411,8 +411,12 @@ class CompileVisitor(ast.NodeVisitor):
 
                 for value in values:
                     if isinstance(value, fxd._FixedBase):
-                        argvalues.append(vtypes.Div(vtypes.SystemTask('itor', value),
-                                                    1.0 * (2 ** value.point)))
+                        if value.point >= 0:
+                            argvalues.append(vtypes.Div(vtypes.SystemTask('itor', value),
+                                                        1.0 * (2 ** value.point)))
+                        else:
+                            argvalues.append(vtypes.Times(value, 2 ** -value.point))
+
                     else:
                         argvalues.append(value)
 
@@ -426,8 +430,12 @@ class CompileVisitor(ast.NodeVisitor):
                         formatstring_list.append(value.value)
                         formatstring_list.append(" ")
                     elif isinstance(value, fxd._FixedBase):
-                        argvalues.append(vtypes.Div(vtypes.SystemTask('itor', value),
-                                                    1.0 * (2 ** value.point)))
+                        if value.point >= 0:
+                            argvalues.append(vtypes.Div(vtypes.SystemTask('itor', value),
+                                                        1.0 * (2 ** value.point)))
+                        else:
+                            argvalues.append(vtypes.Times(value, 2 ** value.point))
+
                         formatstring_list.append("%f")
                         formatstring_list.append(" ")
                     else:
@@ -441,8 +449,12 @@ class CompileVisitor(ast.NodeVisitor):
                     formatstring_list.append(value.value)
                     formatstring_list.append(" ")
                 elif isinstance(value, fxd._FixedBase):
-                    argvalues.append(vtypes.Div(vtypes.SystemTask('itor', value),
-                                                1.0 * (2 ** value.point)))
+                    if value.point >= 0:
+                        argvalues.append(vtypes.Div(vtypes.SystemTask('itor', value),
+                                                    1.0 * (2 ** value.point)))
+                    else:
+                        argvalues.append(vtypes.Times(value, 2 ** value.point))
+
                     formatstring_list.append("%f")
                     formatstring_list.append(" ")
                 else:

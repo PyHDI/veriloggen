@@ -24,7 +24,7 @@ BURST_WRAP = 0b10
 CACHE_HP = 0b0011
 CACHE_ACP = 0b1111
 
-AxUSER_DEFAULT = 0b1
+AxUSER_DEFAULT = 0b01
 USER_DEFAULT = 0
 
 
@@ -83,7 +83,7 @@ class AxiLiteInterfaceBase(AxiInterfaceBase):
 class AxiWriteAddress(AxiInterfaceBase):
 
     def __init__(self, m, name=None, datawidth=32, addrwidth=32,
-                 id_width=1, user_width=1,
+                 id_width=0, user_width=2,
                  itype=None, otype=None):
 
         AxiInterfaceBase.__init__(self, m, name, datawidth, addrwidth,
@@ -147,7 +147,7 @@ class AxiLiteWriteAddress(AxiLiteInterfaceBase):
 class AxiWriteData(AxiInterfaceBase):
 
     def __init__(self, m, name=None, datawidth=32, addrwidth=32,
-                 id_width=1, user_width=1,
+                 id_width=0, user_width=0,
                  itype=None, otype=None):
 
         AxiInterfaceBase.__init__(self, m, name, datawidth, addrwidth,
@@ -193,7 +193,7 @@ class AxiLiteWriteData(AxiLiteInterfaceBase):
 class AxiWriteResponse(AxiInterfaceBase):
 
     def __init__(self, m, name=None, datawidth=32, addrwidth=32,
-                 id_width=1, user_width=1,
+                 id_width=0, user_width=0,
                  itype=None, otype=None):
 
         AxiInterfaceBase.__init__(self, m, name, datawidth, addrwidth,
@@ -239,7 +239,7 @@ class AxiLiteWriteResponse(AxiLiteInterfaceBase):
 class AxiReadAddress(AxiInterfaceBase):
 
     def __init__(self, m, name=None, datawidth=32, addrwidth=32,
-                 id_width=1, user_width=1,
+                 id_width=0, user_width=2,
                  itype=None, otype=None):
 
         AxiInterfaceBase.__init__(self, m, name, datawidth, addrwidth,
@@ -304,7 +304,7 @@ class AxiReadData(AxiInterfaceBase):
     _O = util.t_Output
 
     def __init__(self, m, name=None, datawidth=32, addrwidth=32,
-                 id_width=1, user_width=1,
+                 id_width=0, user_width=0,
                  itype=None, otype=None):
 
         AxiInterfaceBase.__init__(self, m, name, datawidth, addrwidth,
@@ -456,8 +456,8 @@ class AxiMaster(object):
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
                  waddr_id_width=0, wdata_id_width=0, wresp_id_width=0,
                  raddr_id_width=0, rdata_id_width=0,
-                 waddr_user_width=1, wdata_user_width=0, wresp_user_width=0,
-                 raddr_user_width=1, rdata_user_width=0,
+                 waddr_user_width=2, wdata_user_width=0, wresp_user_width=0,
+                 raddr_user_width=2, rdata_user_width=0,
                  waddr_burst_mode=BURST_INCR, raddr_burst_mode=BURST_INCR,
                  waddr_cache_mode=CACHE_HP, raddr_cache_mode=CACHE_HP,
                  waddr_user_value=AxUSER_DEFAULT, wdata_user_value=USER_DEFAULT,
@@ -1280,8 +1280,8 @@ class AxiSlave(object):
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
                  waddr_id_width=0, wdata_id_width=0, wresp_id_width=0,
                  raddr_id_width=0, rdata_id_width=0,
-                 waddr_user_width=1, wdata_user_width=0, wresp_user_width=0,
-                 raddr_user_width=1, rdata_user_width=0,
+                 waddr_user_width=2, wdata_user_width=0, wresp_user_width=0,
+                 raddr_user_width=2, rdata_user_width=0,
                  wresp_user_value=USER_DEFAULT,
                  rdata_user_value=USER_DEFAULT,
                  noio=False, nodataflow=False):
@@ -2184,8 +2184,8 @@ class AxiMemoryModel(AxiSlave):
                  write_delay=10, read_delay=10, sleep=4,
                  waddr_id_width=0, wdata_id_width=0, wresp_id_width=0,
                  raddr_id_width=0, rdata_id_width=0,
-                 waddr_user_width=1, wdata_user_width=0, wresp_user_width=0,
-                 raddr_user_width=1, rdata_user_width=0,
+                 waddr_user_width=2, wdata_user_width=0, wresp_user_width=0,
+                 raddr_user_width=2, rdata_user_width=0,
                  wresp_user_value=USER_DEFAULT,
                  rdata_user_value=USER_DEFAULT):
 

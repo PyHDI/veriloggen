@@ -2,11 +2,12 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 from collections import OrderedDict
-from math import log
+from math import log, ceil
 
 import veriloggen.core.vtypes as vtypes
 import veriloggen.types.fixed as fx
 import veriloggen.types.rom as rom
+import veriloggen.types.ram as ram
 from veriloggen.seq.seq import make_condition as _make_condition
 
 from . import mul
@@ -64,6 +65,13 @@ class _Node(object):
         global _object_counter
         self.object_id = _object_counter
         _object_counter += 1
+
+        # for graph visualizer
+        self.graph_label = None
+        self.graph_shape = 'circle'
+        self.graph_color = 'black'
+        self.graph_style = ''
+        self.graph_peripheries = 1
 
     def __hash__(self):
         object_id = self.object_id if hasattr(self, 'object_id') else None
@@ -446,6 +454,7 @@ class _Operator(_Numeric):
 
 
 class _BinaryOperator(_Operator):
+    latency = 1
 
     def __init__(self, left, right):
         _Operator.__init__(self)
@@ -506,6 +515,7 @@ class _BinaryOperator(_Operator):
 
 
 class _UnaryOperator(_Operator):
+    latency = 1
 
     def __init__(self, right):
         _Operator.__init__(self)
@@ -579,7 +589,7 @@ class Times(_BinaryOperator):
         left = self.left.bit_length()
         right = self.right.bit_length()
         self.width = max(left, right)
-        self.point = max(left_fp, right_fp)
+        self.point = min(max(left_fp, right_fp), left_fp + right_fp)
         self.signed = self.left.get_signed() and self.right.get_signed()
 
     def _implement(self, m, seq, svalid=None, senable=None):
@@ -605,7 +615,7 @@ class Times(_BinaryOperator):
         data = m.Wire(self.name('data'), width, signed=signed)
         self.sig_data = data
 
-        shift_size = min(lpoint, rpoint)
+        shift_size = lpoint + rpoint - self.point
         if shift_size > 0:
             seq(odata_reg(fx.shift_right(odata, shift_size, signed=signed)), cond=senable)
         else:
@@ -721,7 +731,7 @@ class Divide(_BinaryOperator):
             m.Assign(update(vtypes.Int(1, 1)))
 
         params = [('W_D', width)]
-        ports = [('CLK', clk), ('RST', rst), ('update', update),  ('enable', vtypes.Int(1, 1)),
+        ports = [('CLK', clk), ('RST', rst), ('update', update), ('enable', vtypes.Int(1, 1)),
                  ('in_a', abs_ldata), ('in_b', abs_rdata), ('rslt', abs_odata)]
 
         m.Instance(inst, self.name('div'), params, ports)
@@ -1015,10 +1025,6 @@ class _BinaryLogicalOperator(_BinaryOperator):
         self.signed = False
 
     def _implement(self, m, seq, svalid=None, senable=None):
-        if self.latency != 1:
-            raise ValueError("Latency mismatch '%d' vs '%s'" %
-                             (self.latency, 1))
-
         width = self.bit_length()
         signed = False
 
@@ -1317,18 +1323,48 @@ class Cast(_UnaryOperator):
         signed = self.get_signed()
 
         rdata = self.right.sig_data
+        rwidth = self.right.bit_length()
         rpoint = self.right.get_point()
         rsigned = self.right.get_signed()
 
+        rdata_src = m.Wire(self.name('src'), rwidth, signed=rsigned)
+        rdata_src.assign(rdata)
+
         if rpoint > self.point:
-            rdata = fx.shift_right(rdata, rpoint - self.point, rsigned)
+            rdata_src = fx.shift_right(rdata_src, rpoint - self.point, rsigned)
         elif rpoint < self.point:
-            rdata = fx.shift_left(rdata, self.point - rpoint, rsigned)
+            rdata_src = fx.shift_left(rdata_src, self.point - rpoint, rsigned)
 
         data = m.Wire(self.name('data'), width, signed=signed)
         self.sig_data = data
 
-        m.Assign(data(rdata))
+        m.Assign(data(rdata_src))
+
+    def eval(self):
+        return self
+
+
+class ReinterpretCast(Cast):
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency != 0:
+            raise ValueError("Latency mismatch '%d' vs '%s'" %
+                             (self.latency, 0))
+
+        width = self.bit_length()
+        signed = self.get_signed()
+
+        rdata = self.right.sig_data
+        rwidth = self.right.bit_length()
+        rsigned = self.right.get_signed()
+
+        rdata_src = m.Wire(self.name('src'), rwidth, signed=rsigned)
+        rdata_src.assign(rdata)
+
+        data = m.Wire(self.name('data'), width, signed=signed)
+        self.sig_data = data
+
+        m.Assign(data(rdata_src))
 
     def eval(self):
         return self
@@ -1345,6 +1381,8 @@ class _SpecialOperator(_Operator):
         self.op = None
         self._set_attributes()
         self._set_managers()
+
+        self.graph_shape = 'ellipse'
 
     def _set_attributes(self):
         if len(self.args) > 1:
@@ -1487,6 +1525,89 @@ class Slice(_SpecialOperator):
                 mask = (mask << 1) | 0x1
             return (var >> lsb) & mask
         return Slice(var, msb, lsb)
+
+
+def Split(data, width=None, point=None, signed=None, num_chunks=None, reverse=False):
+    """
+    Split the given data into multiple chunks
+
+    Parameters
+    ----------
+    data : _Numeric
+        Input data
+
+    width : int
+        Data width of separated chunks (default: same as input data)
+
+    point : int
+        Fixed-point position of separated chunks (default: same as input data)
+
+    signed : bool
+        Sign (default: same as input data)
+
+    num_chunks: int
+        The number of separated chunks (default: (input data width) / width)
+
+    reverse: bool
+        reverse flag. If true, a reversed list is returned
+
+    Returns
+    -------
+    chunks : list
+        A list of separated chunks
+
+        For the consistency with Cat operator, the order of chunks is higher-bit first.
+        If data is a 32-bit value, and width is 8, returned list of chunks will be
+            chunks = [data[31:24], data[23:16], data[15:8], data[7:0]]
+        If reverse == True, it returns the reversed list of chunks
+    """
+
+    data = _to_constant(data)
+
+    if width is None and num_chunks is None:
+        raise ValueError('width or num_chunks must be specified.')
+
+    if width is not None and num_chunks is not None:
+        raise ValueError('Either of width or num_chunks must be specified.')
+
+    if width is None:
+        width = int(ceil(data.bit_length() / num_chunks))
+    elif num_chunks is None:
+        num_chunks = int(ceil(data.bit_length() / width))
+
+    if point is None:
+        point = data.get_point()
+
+    if signed is None:
+        signed = data.get_signed()
+
+    total_width = width * num_chunks
+    ret = []
+    for i in range(0, total_width, width):
+        if i + width > data.bit_length():
+            if signed:
+                sign = data[-1]
+                sign.latency = 0
+                pad = Repeat(sign, total_width - data.bit_length())
+                pad.latency = 0
+            else:
+                pad = Int(0, signed=False)
+                pad.width = total_width - data.bit_length()
+
+            slc = Slice(data, data.bit_length() - 1, i)
+            slc.latency = 0
+            v = Cat(pad, slc)
+            v.latency = 0
+        else:
+            v = Slice(data, i + width - 1, i)
+            v.latency = 0
+
+        ret.append(ReinterpretCast(v, width, point, signed))
+
+    if not reverse:
+        ret.reverse()
+
+    return ret
 
 
 class Cat(_SpecialOperator):
@@ -1640,6 +1761,7 @@ class LUT(_SpecialOperator):
         self.point = point
         self.signed = signed
         self.patterns = patterns
+        self.graph_label = 'LUT'
 
     def _set_attributes(self):
         pass
@@ -1755,11 +1877,17 @@ class Sign(_SpecialOperator):
 
 
 class _Delay(_UnaryOperator):
+    latency = 1
 
     def __init__(self, right):
         _UnaryOperator.__init__(self, right)
         # parent value for delayed_value and previous_value
         self.parent_value = None
+
+        self.graph_label = 'Delay'
+        self.graph_shape = 'box'
+        self.graph_color = 'lightgray'
+        self.graph_style = 'filled'
 
     def _set_parent_value(self, value):
         self.parent_value = value
@@ -1792,6 +1920,9 @@ class _Prev(_UnaryOperator):
         _UnaryOperator.__init__(self, right)
         # parent value for delayed_value and previous_value
         self.parent_value = None
+
+        self.graph_label = 'Prev'
+        self.graph_shape = 'box'
 
     def _set_parent_value(self, value):
         self.parent_value = value
@@ -1827,13 +1958,14 @@ class _PlusN(_SpecialOperator):
             if arg.point != 0:
                 raise ValueError('Fixed point is not supported.')
 
-        def func(*args):
+        def plus_n(*args):
             ret = args[0]
             for arg in args[1:]:
                 ret += arg
             return ret
 
-        self.op = func
+        self.op = plus_n
+        self.graph_label = 'PlusN'
 
     def eval(self):
         vars = [var.eval() for var in self.vars]
@@ -1854,6 +1986,8 @@ class _MulAdd(_SpecialOperator):
 
         if self.a.point + self.b.point != self.c.point:
             raise ValueError('Unsupported fixed point combination')
+
+        self.graph_label = 'MulAdd'
 
     @property
     def a(self):
@@ -2045,6 +2179,11 @@ class _Constant(_Numeric):
         self._set_managers()
         self.sig_data = self.value
 
+        self.graph_shape = 'box'
+        self.graph_color = 'lightblue'
+        self.graph_style = 'rounded,filled'
+        self.graph_peripheries = 1
+
     def _set_attributes(self):
         self.width = self.value.bit_length() + 1
         self.point = 0
@@ -2073,6 +2212,20 @@ class _Variable(_Numeric):
         self.width = width
         self.point = point
         self.signed = signed
+
+        if isinstance(self.input_data, _Numeric):
+            self.graph_label = self.input_data.graph_label
+        else:
+            inobj = str(self.input_data)
+            label_data = [inobj, str(self.width)]
+            if self.point > 0:
+                label_data.append(str(self.point))
+            self.graph_label = ':'.join(label_data)
+
+        self.graph_shape = 'box'
+        self.graph_color = 'lightblue'
+        self.graph_style = 'filled'
+        self.graph_peripheries = 2
 
     def eval(self):
         return self
@@ -2207,6 +2360,17 @@ class _ParameterVariable(_Variable):
                            point=point, signed=signed)
         self.value = value
 
+        inobj = str(self.input_data)
+        label_data = [inobj, str(self.width)]
+        if self.point > 0:
+            label_data.append(str(self.point))
+        self.graph_label = ':'.join(label_data)
+
+        self.graph_shape = 'circle'
+        self.graph_color = 'lightblue'
+        self.graph_style = 'filled'
+        self.graph_peripheries = 1
+
     def _implement(self, m, seq, svalid=None, senable=None):
         pass
 
@@ -2256,7 +2420,9 @@ class _Accumulator(_UnaryOperator):
         _UnaryOperator.__init__(self, right)
         self.width = width
         self.signed = signed
-        self.label = None
+
+        self.graph_shape = 'box'
+        self.graph_style = 'rounded'
 
     def _set_attributes(self):
         self.point = self.right.get_point()
@@ -2431,7 +2597,7 @@ class ReduceCustom(_Accumulator):
         if not isinstance(ops, (tuple, list)):
             ops = tuple([ops])
         self.ops = ops
-        self.label = label
+        self.graph_label = label
 
 
 class Counter(_Accumulator):
@@ -2448,7 +2614,7 @@ class Counter(_Accumulator):
 
         _Accumulator.__init__(self, control, size, initval,
                               enable, reset, width, signed)
-        self.label = 'Counter'
+        self.graph_label = 'Counter'
 
 
 class Pulse(_Accumulator):
@@ -2466,7 +2632,7 @@ class Pulse(_Accumulator):
 
         _Accumulator.__init__(self, control, size, initval,
                               enable, reset, width, signed)
-        self.label = 'Pulse'
+        self.graph_label = 'Pulse'
 
 
 def _ReduceValid(cls, right, size, initval=0,
@@ -2588,6 +2754,10 @@ class Substream(_SpecialOperator):
         self.point = 0
         self.signed = True
 
+        self.graph_label = substrm.name if hasattr(substrm, 'name') else 'Substream'
+        self.graph_shape = 'box'
+        self.graph_peripheries = 2
+
         if not substrm.aswire:
             raise ValueError('aswire must be True.')
         if substrm.module is None:
@@ -2625,7 +2795,7 @@ class Substream(_SpecialOperator):
         var = self.substrm.get_named_numeric(name)
         if self.strm is None:
             return _SubstreamOutput(self, var)
-        return self.strm._SubstreamOutput(self, var)
+        return self.strm._SubstreamOutput(self, var, name)
 
     def _implement(self, m, seq, svalid=None, senable=None):
         arg_data = [arg.sig_data for arg in self.args]
@@ -2639,23 +2809,278 @@ class Substream(_SpecialOperator):
 
 class _SubstreamOutput(_UnaryOperator):
 
-    def __init__(self, substrm, output_var):
+    def __init__(self, substrm, output_var, var_name):
         _UnaryOperator.__init__(self, substrm)
+        self.var_name = var_name
         self.output_var = output_var
 
         self.width = output_var.bit_length()
         self.point = output_var.get_point()
         self.signed = output_var.get_signed()
 
+        self.graph_label = substrm.graph_label + '\n' + self.var_name
+        self.graph_shape = 'box'
+        self.graph_peripheries = 2
+
     def _implement(self, m, seq, svalid=None, senable=None):
         width = self.bit_length()
         signed = self.get_signed()
         rdata = self.output_var.read()
 
-        data = m.Reg(self.name('data'), width, initval=0, signed=signed)
-        self.sig_data = data
+        if self.latency == 0:
+            data = m.Wire(self.name('data'), width, signed=signed)
+            data.assign(rdata)
+            self.sig_data = data
 
-        seq(data(rdata), cond=senable)
+        elif self.latency == 1:
+            data = m.Reg(self.name('data'), width, initval=0, signed=signed)
+            self.sig_data = data
+            seq(data(rdata), cond=senable)
+
+        else:
+            prev_data = None
+
+            for i in range(self.latency):
+                data = m.Reg(self.name('data_d%d' % i),
+                             width, initval=0, signed=signed)
+                if i == 0:
+                    seq(data(rdata), cond=senable)
+                else:
+                    seq(data(prev_data), cond=senable)
+                prev_data = data
+
+            self.sig_data = data
+
+
+class RingBuffer(_UnaryOperator):
+    latency = 1
+
+    def __init__(self, var, length,
+                 enable=None, reset=None):
+
+        self.enable = _to_constant(enable)
+        if self.enable is not None:
+            self.enable._add_sink(self)
+
+        self.reset = _to_constant(reset)
+        if self.reset is not None:
+            self.reset._add_sink(self)
+
+        self.length = length
+
+        _UnaryOperator.__init__(self, var)
+
+        self.num_ports = 1
+        self.read_vars = []
+
+        self.graph_label = 'RingBufferIn'
+        self.graph_shape = 'box'
+
+    def _set_managers(self):
+        self._set_strm(_get_strm(self.right, self.enable, self.reset))
+        self._set_module(getattr(self.strm, 'module', None))
+        self._set_seq(getattr(self.strm, 'seq', None))
+
+    def read(self, offset):
+        var = _RingBufferOutput(self, offset, self.num_ports,
+                                self.enable, self.reset)
+        self.read_vars.append(var)
+        self.num_ports += 1
+        return var
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency != 1:
+            raise ValueError("Latency mismatch '%d' vs '%s'" %
+                             (self.latency, 1))
+
+        datawidth = self.bit_length()
+        addrwidth = int(ceil(log(self.length, 2)))
+        signed = self.get_signed()
+
+        clk = m._clock
+        self.ram = ram.SyncRAM(m, self.name('ram'),
+                               clk, datawidth, addrwidth, self.num_ports)
+
+        enabledata = self.enable.sig_data if self.enable is not None else None
+        resetdata = self.reset.sig_data if self.reset is not None else None
+
+        wdata = m.Wire(self.name('wdata'), datawidth, signed=signed)
+        wdata.assign(self.right.sig_data)
+
+        waddr = m.Reg(self.name('waddr'), addrwidth, initval=0)
+
+        wcond = _and_vars(svalid, senable, enabledata)
+
+        next_waddr = vtypes.Mux(waddr == self.length - 1, 0, waddr + 1)
+        seq(waddr(next_waddr), cond=wcond)
+
+        reset_waddr = 0
+        reset_cond = _and_vars(svalid, senable, enabledata, resetdata)
+        seq(waddr(reset_waddr), cond=reset_cond)
+
+        resetdata_x = vtypes.Not(resetdata) if resetdata is not None else 1
+        wenable = _and_vars(svalid, senable, enabledata, resetdata_x)
+        self.ram.connect(0, waddr, wdata, wenable)
+
+        self.sig_data = wdata
+
+
+class _RingBufferOutput(_BinaryOperator):
+    latency = 1
+
+    def __init__(self, buf, offset, port,
+                 enable=None, reset=None):
+
+        self.enable = _to_constant(enable)
+        if self.enable is not None:
+            self.enable._add_sink(self)
+
+        self.reset = _to_constant(reset)
+        if self.reset is not None:
+            self.reset._add_sink(self)
+
+        self.port = port
+
+        _BinaryOperator.__init__(self, buf, offset)
+        self.buf = buf
+
+        self.graph_label = 'RingBufferOut'
+        self.graph_shape = 'box'
+
+    def _set_managers(self):
+        self._set_strm(_get_strm(self.left, self.right, self.enable, self.reset))
+        self._set_module(getattr(self.strm, 'module', None))
+        self._set_seq(getattr(self.strm, 'seq', None))
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency != 1:
+            raise ValueError("Latency mismatch '%d' vs '%s'" %
+                             (self.latency, 1))
+
+        datawidth = self.bit_length()
+        addrwidth = int(ceil(log(self.buf.length, 2)))
+        signed = self.get_signed()
+
+        enabledata = self.enable.sig_data if self.enable is not None else None
+        resetdata = self.reset.sig_data if self.reset is not None else None
+
+        rdata = m.Wire(self.name('rdata'), datawidth, signed=signed)
+
+        raddr_base = m.Reg(self.name('raddr'), addrwidth, initval=0)
+
+        rcond = _and_vars(svalid, senable, enabledata)
+
+        next_raddr_base = vtypes.Mux(raddr_base == self.buf.length - 1,
+                                     0, raddr_base + 1)
+        seq(raddr_base(next_raddr_base), cond=rcond)
+
+        reset_raddr_base = 0
+        reset_cond = _and_vars(svalid, senable, enabledata, resetdata)
+        seq(raddr_base(reset_raddr_base), cond=reset_cond)
+
+        raddr = raddr_base + self.right.sig_data
+        raddr = vtypes.Mux(raddr >= self.buf.length,
+                           raddr - self.buf.length, raddr)
+
+        self.buf.ram.connect(self.port, raddr, 0, 0)
+        rdata.assign(self.buf.ram.rdata(self.port))
+
+        self.sig_data = rdata
+
+
+class Scratchpad(_BinaryOperator):
+    latency = 1
+
+    def __init__(self, var, addr, length,
+                 when=None, reset=None):
+
+        self.enable = _to_constant(when)
+        if self.enable is not None:
+            self.enable._add_sink(self)
+
+        self.reset = _to_constant(reset)
+        if self.reset is not None:
+            self.reset._add_sink(self)
+
+        self.length = length
+
+        _BinaryOperator.__init__(self, var, addr)
+
+        self.num_ports = 1
+        self.read_vars = []
+
+        self.graph_label = 'ScratchpadIn'
+        self.graph_shape = 'box'
+
+    def _set_managers(self):
+        self._set_strm(_get_strm(self.left, self.right, self.enable, self.reset))
+        self._set_module(getattr(self.strm, 'module', None))
+        self._set_seq(getattr(self.strm, 'seq', None))
+
+    def read(self, addr):
+        var = _ScratchpadOutput(self, addr, self.num_ports)
+        self.read_vars.append(var)
+        self.num_ports += 1
+        return var
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency != 1:
+            raise ValueError("Latency mismatch '%d' vs '%s'" %
+                             (self.latency, 1))
+
+        datawidth = self.bit_length()
+        addrwidth = int(ceil(log(self.length, 2)))
+        signed = self.get_signed()
+
+        clk = m._clock
+        self.ram = ram.SyncRAM(m, self.name('ram'),
+                               clk, datawidth, addrwidth, self.num_ports)
+
+        enabledata = self.enable.sig_data if self.enable is not None else None
+        resetdata = self.reset.sig_data if self.reset is not None else None
+
+        wdata = m.Wire(self.name('wdata'), datawidth, signed=signed)
+        wdata.assign(self.left.sig_data)
+
+        waddr = m.Wire(self.name('waddr'), addrwidth)
+        waddr.assign(self.right.sig_data)
+
+        resetdata_x = vtypes.Not(resetdata) if resetdata is not None else 1
+        wenable = _and_vars(svalid, senable, enabledata, resetdata_x)
+        self.ram.connect(0, waddr, wdata, wenable)
+
+        self.sig_data = wdata
+
+
+class _ScratchpadOutput(_BinaryOperator):
+    latency = 1
+
+    def __init__(self, sp, addr, port):
+        self.port = port
+        _BinaryOperator.__init__(self, sp, addr)
+        self.sp = sp
+
+        self.graph_label = 'ScratchpadOut'
+        self.graph_shape = 'box'
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency != 1:
+            raise ValueError("Latency mismatch '%d' vs '%s'" %
+                             (self.latency, 1))
+
+        datawidth = self.bit_length()
+        addrwidth = int(ceil(log(self.sp.length, 2)))
+        signed = self.get_signed()
+
+        rdata = m.Wire(self.name('rdata'), datawidth, signed=signed)
+
+        raddr = m.Wire(self.name('raddr'), addrwidth)
+        raddr.assign(self.right.sig_data)
+
+        self.sp.ram.connect(self.port, raddr, 0, 0)
+        rdata.assign(self.sp.ram.rdata(self.port))
+
+        self.sig_data = rdata
 
 
 def make_condition(*cond, **kwargs):

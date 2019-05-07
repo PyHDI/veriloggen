@@ -27,8 +27,8 @@ def mkLed():
     strm = vthread.Stream(m, 'mystream', clk, rst)
     a = strm.source('a')
     b = strm.source('b')
-    a = strm.Cast(a, 64, 0)
-    b = strm.Cast(b, 64, 0)
+    a = strm.Cast(a, 64, 4)
+    b = strm.Cast(b, 64, 4)
     c = a * b
     c = strm.Cast(c, 32, 0)
     strm.sink(c, 'c')

@@ -128,13 +128,19 @@ module main
   output signed [32-1:0] zdata
 );
 
+  wire signed [32-1:0] _cast_src_2;
+  assign _cast_src_2 = xdata;
   wire signed [64-1:0] _cast_data_2;
-  assign _cast_data_2 = xdata << 8;
+  assign _cast_data_2 = _cast_src_2 << 8;
+  wire signed [32-1:0] _cast_src_3;
+  assign _cast_src_3 = ydata;
   wire signed [64-1:0] _cast_data_3;
-  assign _cast_data_3 = ydata << 8;
+  assign _cast_data_3 = _cast_src_3 << 8;
   reg signed [64-1:0] _plus_data_4;
+  wire signed [64-1:0] _cast_src_5;
+  assign _cast_src_5 = _plus_data_4;
   wire signed [32-1:0] _cast_data_5;
-  assign _cast_data_5 = _plus_data_4 >>> 8;
+  assign _cast_data_5 = _cast_src_5 >>> 8;
   assign zdata = _cast_data_5;
 
   always @(posedge CLK) begin
