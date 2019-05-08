@@ -1198,7 +1198,7 @@ module blinkled
   assign maxi_awcache = 3;
   assign maxi_awprot = 0;
   assign maxi_awqos = 0;
-  assign maxi_awuser = 1;
+  assign maxi_awuser = 0;
   assign maxi_bready = 1;
   assign maxi_arsize = 2;
   assign maxi_arburst = 1;
@@ -1206,7 +1206,7 @@ module blinkled
   assign maxi_arcache = 3;
   assign maxi_arprot = 0;
   assign maxi_arqos = 0;
-  assign maxi_aruser = 1;
+  assign maxi_aruser = 0;
   reg _maxi_read_start;
   reg [8-1:0] _maxi_read_op_sel;
   reg [32-1:0] _maxi_read_local_addr;
