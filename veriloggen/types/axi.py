@@ -17,15 +17,19 @@ from veriloggen.dataflow.dtypes import _Numeric as df_numeric
 from . import util
 
 
-BURST_FIXED = 0b0
-BURST_INCR = 0b1
+BURST_FIXED = 0b00
+BURST_INCR = 0b01
 BURST_WRAP = 0b10
 
-CACHE_HP = 0b0011
-CACHE_ACP = 0b1111
+AxCACHE_NONCOHERENT = 0b0011
+AxCACHE_COHERENT = 0b1111
 
-AxUSER_DEFAULT = 0b01
-USER_DEFAULT = 0
+AxPROT_NONCOHERENT = 0b000
+AxPROT_COHERENT = 0b010
+
+AxUSER_NONCOHERENT = 0b00
+AxUSER_COHERENT = 0b01
+xUSER_DEFAULT = 0b00
 
 
 def _connect_ready(m, var, val):
@@ -459,9 +463,10 @@ class AxiMaster(object):
                  waddr_user_width=2, wdata_user_width=0, wresp_user_width=0,
                  raddr_user_width=2, rdata_user_width=0,
                  waddr_burst_mode=BURST_INCR, raddr_burst_mode=BURST_INCR,
-                 waddr_cache_mode=CACHE_HP, raddr_cache_mode=CACHE_HP,
-                 waddr_user_value=AxUSER_DEFAULT, wdata_user_value=USER_DEFAULT,
-                 raddr_user_value=AxUSER_DEFAULT,
+                 waddr_cache_mode=AxCACHE_NONCOHERENT, raddr_cache_mode=AxCACHE_NONCOHERENT,
+                 waddr_prot_mode=AxPROT_NONCOHERENT, raddr_prot_mode=AxPROT_NONCOHERENT,
+                 waddr_user_mode=AxUSER_NONCOHERENT, wdata_user_mode=xUSER_DEFAULT,
+                 raddr_user_mode=AxUSER_NONCOHERENT,
                  noio=False, nodataflow=False):
 
         self.m = m
@@ -504,21 +509,21 @@ class AxiMaster(object):
         self.waddr.awburst.assign(waddr_burst_mode)
         self.waddr.awlock.assign(0)
         self.waddr.awcache.assign(waddr_cache_mode)
-        self.waddr.awprot.assign(0)
+        self.waddr.awprot.assign(waddr_prot_mode)
         self.waddr.awqos.assign(0)
         if self.waddr.awuser is not None:
-            self.waddr.awuser.assign(waddr_user_value)
+            self.waddr.awuser.assign(waddr_user_mode)
         if self.wdata.wuser is not None:
-            self.wdata.wuser.assign(wdata_user_value)
+            self.wdata.wuser.assign(wdata_user_mode)
         self.wresp.bready.assign(1)
         self.raddr.arsize.assign(int(math.log(self.datawidth / 8, 2)))
         self.raddr.arburst.assign(raddr_burst_mode)
         self.raddr.arlock.assign(0)
         self.raddr.arcache.assign(raddr_cache_mode)
-        self.raddr.arprot.assign(0)
+        self.raddr.arprot.assign(raddr_prot_mode)
         self.raddr.arqos.assign(0)
         if self.raddr.aruser is not None:
-            self.raddr.aruser.assign(raddr_user_value)
+            self.raddr.aruser.assign(raddr_user_mode)
 
         self.write_counters = []
         self.read_counters = []
@@ -1013,7 +1018,8 @@ class AxiMaster(object):
 class AxiLiteMaster(AxiMaster):
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
-                 waddr_cache_mode=CACHE_HP, raddr_cache_mode=CACHE_HP,
+                 waddr_cache_mode=AxCACHE_NONCOHERENT, raddr_cache_mode=AxCACHE_NONCOHERENT,
+                 waddr_prot_mode=AxPROT_NONCOHERENT, raddr_prot_mode=AxPROT_NONCOHERENT,
                  noio=False, nodataflow=False):
 
         self.m = m
@@ -1053,10 +1059,10 @@ class AxiLiteMaster(AxiMaster):
 
         # default values
         self.waddr.awcache.assign(waddr_cache_mode)
-        self.waddr.awprot.assign(0)
+        self.waddr.awprot.assign(waddr_prot_mode)
         self.wresp.bready.assign(1)
         self.raddr.arcache.assign(raddr_cache_mode)
-        self.raddr.arprot.assign(0)
+        self.raddr.arprot.assign(raddr_prot_mode)
 
         if nodataflow:
             self.df = None
@@ -1282,8 +1288,8 @@ class AxiSlave(object):
                  raddr_id_width=0, rdata_id_width=0,
                  waddr_user_width=2, wdata_user_width=0, wresp_user_width=0,
                  raddr_user_width=2, rdata_user_width=0,
-                 wresp_user_value=USER_DEFAULT,
-                 rdata_user_value=USER_DEFAULT,
+                 wresp_user_mode=xUSER_DEFAULT,
+                 rdata_user_mode=xUSER_DEFAULT,
                  noio=False, nodataflow=False):
 
         self.m = m
@@ -1324,10 +1330,10 @@ class AxiSlave(object):
         # default values
         self.wresp.bresp.assign(0)
         if self.wresp.buser is not None:
-            self.wresp.buser.assign(wresp_user_value)
+            self.wresp.buser.assign(wresp_user_mode)
         self.rdata.rresp.assign(0)
         if self.rdata.ruser is not None:
-            self.rdata.ruser.assign(rdata_user_value)
+            self.rdata.ruser.assign(rdata_user_mode)
 
         # write response
         if self.wresp.bid is not None:
@@ -2186,8 +2192,8 @@ class AxiMemoryModel(AxiSlave):
                  raddr_id_width=0, rdata_id_width=0,
                  waddr_user_width=2, wdata_user_width=0, wresp_user_width=0,
                  raddr_user_width=2, rdata_user_width=0,
-                 wresp_user_value=USER_DEFAULT,
-                 rdata_user_value=USER_DEFAULT):
+                 wresp_user_mode=xUSER_DEFAULT,
+                 rdata_user_mode=xUSER_DEFAULT):
 
         if mem_datawidth % 8 != 0:
             raise ValueError('mem_datawidth must be a multiple of 8')
@@ -2223,10 +2229,10 @@ class AxiMemoryModel(AxiSlave):
         # default values
         self.wresp.bresp.assign(0)
         if self.wresp.buser is not None:
-            self.wresp.buser.assign(wresp_user_value)
+            self.wresp.buser.assign(wresp_user_mode)
         self.rdata.rresp.assign(0)
         if self.rdata.ruser is not None:
-            self.rdata.ruser.assign(rdata_user_value)
+            self.rdata.ruser.assign(rdata_user_mode)
 
         self.fsm = FSM(self.m, '_'.join(['', self.name, 'fsm']), clk, rst)
 
