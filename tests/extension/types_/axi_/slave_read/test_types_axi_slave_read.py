@@ -84,7 +84,7 @@ module test;
   assign _axi_awcache = 3;
   assign _axi_awprot = 0;
   assign _axi_awqos = 0;
-  assign _axi_awuser = 1;
+  assign _axi_awuser = 0;
   assign _axi_bready = 1;
   assign _axi_arsize = 2;
   assign _axi_arburst = 1;
@@ -92,7 +92,7 @@ module test;
   assign _axi_arcache = 3;
   assign _axi_arprot = 0;
   assign _axi_arqos = 0;
-  assign _axi_aruser = 1;
+  assign _axi_aruser = 0;
   wire [32-1:0] _tmp_0;
   assign _tmp_0 = _axi_awaddr;
 

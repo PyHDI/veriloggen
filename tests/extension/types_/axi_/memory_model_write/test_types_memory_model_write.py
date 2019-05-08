@@ -567,7 +567,7 @@ module main
   assign myaxi_awcache = 3;
   assign myaxi_awprot = 0;
   assign myaxi_awqos = 0;
-  assign myaxi_awuser = 1;
+  assign myaxi_awuser = 0;
   assign myaxi_bready = 1;
   assign myaxi_arsize = 2;
   assign myaxi_arburst = 1;
@@ -575,7 +575,7 @@ module main
   assign myaxi_arcache = 3;
   assign myaxi_arprot = 0;
   assign myaxi_arqos = 0;
-  assign myaxi_aruser = 1;
+  assign myaxi_aruser = 0;
   assign myaxi_rready = 0;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
