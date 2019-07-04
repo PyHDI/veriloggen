@@ -89,8 +89,6 @@ def mkLed():
         extin.data(extout.data + 100)
     )
 
-    strm.draw_graph()
-
     return m
 
 
