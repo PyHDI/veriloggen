@@ -3083,6 +3083,83 @@ class _ScratchpadOutput(_BinaryOperator):
         self.sig_data = rdata
 
 
+class ToExtern(_UnaryOperator):
+    latency = 1
+
+    def __init__(self, right):
+        _UnaryOperator.__init__(self, right)
+
+        self.graph_label = 'ToExtern'
+        self.graph_shape = 'box'
+
+    @property
+    def data(self):
+        return self.sig_data
+
+    def eval(self):
+        return self
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        width = self.bit_length()
+        signed = self.get_signed()
+        rdata = self.right.sig_data
+
+        self.valid = svalid
+        self.enable = senable
+
+        if self.latency == 0:
+            data = m.Wire(self.name('data'), width, signed=signed)
+            data.assign(rdata)
+            self.sig_data = data
+
+        elif self.latency == 1:
+            data = m.Reg(self.name('data'), width, initval=0, signed=signed)
+            self.sig_data = data
+            seq(data(rdata), cond=senable)
+
+        else:
+            prev_data = None
+
+            for i in range(self.latency):
+                data = m.Reg(self.name('data_d%d' % i),
+                             width, initval=0, signed=signed)
+                if i == 0:
+                    seq(data(self.op(rdata)), cond=senable)
+                else:
+                    seq(data(prev_data), cond=senable)
+                prev_data = data
+
+            self.sig_data = data
+
+
+class FromExtern(_UnaryOperator):
+    latency = 1
+
+    def __init__(self, right, latency=1):
+        _UnaryOperator.__init__(self, right)
+        self.latency = latency
+
+        self.graph_label = 'FromExtern'
+        self.graph_shape = 'box'
+
+    @property
+    def data(self):
+        return self.sig_data
+
+    def eval(self):
+        return self
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        width = self.bit_length()
+        signed = self.get_signed()
+
+        self.valid = svalid
+        self.enable = senable
+
+        data = m.Reg(self.name('data'), width, initval=0, signed=signed)
+        self.sig_data = data
+
+
 def make_condition(*cond, **kwargs):
     ready = kwargs['ready'] if 'ready' in kwargs else None
 
