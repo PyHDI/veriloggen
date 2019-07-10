@@ -38,14 +38,12 @@ def mkLed():
         strm.set_source('a', ram_a, offset + size, size + size)
         strm.set_constant('size', size + size)
         strm.set_sink('sum', ram_b, offset + 1, 1)
-        strm.source_join()
-        strm.run()
+        strm.source_join_and_run()
 
         strm.set_source('a', ram_a, offset + size + size + size, size + size + size)
         strm.set_constant('size', size + size + size)
         strm.set_sink('sum', ram_b, offset + 2, 1)
-        strm.source_join()
-        strm.run()
+        strm.source_join_and_run()
 
         strm.source_join()
         strm.sink_join()
