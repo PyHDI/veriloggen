@@ -23,16 +23,15 @@ def mkLed():
     ram_a = vthread.RAM(m, 'ram_a', clk, rst, datawidth, addrwidth)
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
 
+    ram_ext = vthread.RAM(m, 'ram_ext', clk, rst, datawidth, addrwidth, numports=2)
+
     strm = vthread.Stream(m, 'mystream', clk, rst)
 
     a = strm.source('a')
+    r_addr = strm.Counter() - 1  # 0, 1, 2, ...
 
-    # to extern
-    extout = strm.ToExtern(a)
-    extin = strm.FromExtern(extout, latency=1)
-
-    # from extern
-    b = a + extin + 1
+    r = strm.ReadRAM(ram_ext, r_addr, port=1)
+    b = r + 100
 
     strm.sink(b, 'b')
 
@@ -44,10 +43,9 @@ def mkLed():
 
     def comp_sequential(size, offset):
         for i in range(size):
-            a = ram_a.read(i + offset)
-            extout = a
-            extin = extout + 100
-            b = a + extin + 1
+            r_addr = ram_a.read(i)
+            r = ram_a.read(r_addr)
+            b = r + 100
             ram_b.write(i + offset, b)
 
     def check(size, offset_stream, offset_seq):
@@ -63,15 +61,18 @@ def mkLed():
             print('# verify: FAILED')
 
     def comp(size):
+        for i in range(size):
+            ram_a.write(i, size - i - 1)
+
         # stream
         offset = 0
-        myaxi.dma_read(ram_a, offset, 0, size)
+        myaxi.dma_read(ram_ext, offset, 0, size)
         comp_stream(size, offset)
         myaxi.dma_write(ram_b, offset, 1024, size)
 
         # sequential
         offset = size * 4
-        myaxi.dma_read(ram_a, offset, 0, size)
+        myaxi.dma_read(ram_ext, offset, 0, size)
         comp_sequential(size, offset)
         myaxi.dma_write(ram_b, offset, 1024 * 2, size)
 
@@ -82,12 +83,6 @@ def mkLed():
 
     th = vthread.Thread(m, 'th_comp', clk, rst, comp)
     fsm = th.start(32)
-
-    # extern behavior in RTL
-    ext_seq = Seq(m, 'ext_seq', clk, rst)
-    ext_seq.If(extout.valid)(
-        extin.data(extout.data + 100)
-    )
 
     return m
 

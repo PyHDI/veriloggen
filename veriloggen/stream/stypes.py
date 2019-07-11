@@ -3135,8 +3135,17 @@ class ToExtern(_UnaryOperator):
 class FromExtern(_UnaryOperator):
     latency = 1
 
-    def __init__(self, right, latency=1):
+    def __init__(self, right, width=None, point=None, signed=True, latency=1):
         _UnaryOperator.__init__(self, right)
+
+        if width is not None:
+            self.width = width
+
+        if point is not None:
+            self.point = point
+
+        self.signed = signed
+
         self.latency = latency
 
         self.graph_label = 'FromExtern'
@@ -3158,6 +3167,50 @@ class FromExtern(_UnaryOperator):
 
         data = m.Reg(self.name('data'), width, initval=0, signed=signed)
         self.sig_data = data
+
+
+class ReadRAM(_UnaryOperator):
+    latency = 1
+
+    def __init__(self, ram, addr, width=None, point=None, signed=True, port=0):
+        _UnaryOperator.__init__(self, addr)
+
+        self.ram = ram
+
+        if width is None:
+            self.width = ram.datawidth
+        else:
+            self.width = width
+
+        if point is None:
+            self.point = 0 if not hasattr(ram, 'point') else ram.point
+        else:
+            self.point = point
+
+        self.signed = signed
+        self.port = port
+
+        self.graph_label = 'Read ' + ram.name if hasattr(ram, 'name') else 'Read RAM'
+        self.graph_shape = 'box'
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        datawidth = self.bit_length()
+        addrwidth = int(log(self.ram.length, 2))
+        signed = self.get_signed()
+
+        rdata = m.Wire(self.name('rdata'), datawidth, signed=signed)
+
+        raddr = m.Wire(self.name('raddr'), addrwidth)
+        raddr.assign(self.right.sig_data)
+
+        if hasattr(self.ram, 'connect'):
+            self.ram.connect(self.port, raddr, 0, 0)
+            rdata.assign(self.ram.rdata(self.port))
+
+        elif hasattr(self.ram, 'connect_rtl'):
+            self.ram.connect_rtl(self.port, raddr, 0, 0, rdata)
+
+        self.sig_data = rdata
 
 
 def make_condition(*cond, **kwargs):
