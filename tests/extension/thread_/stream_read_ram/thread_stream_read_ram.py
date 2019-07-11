@@ -28,7 +28,7 @@ def mkLed():
     strm = vthread.Stream(m, 'mystream', clk, rst)
 
     a = strm.source('a')
-    r_addr = strm.Counter() - 1  # 0, 1, 2, ...
+    r_addr = a
 
     r = strm.ReadRAM(ram_ext, r_addr, port=1)
     b = r + 100
@@ -44,7 +44,7 @@ def mkLed():
     def comp_sequential(size, offset):
         for i in range(size):
             r_addr = ram_a.read(i)
-            r = ram_a.read(r_addr)
+            r = ram_ext.read(r_addr)
             b = r + 100
             ram_b.write(i + offset, b)
 
