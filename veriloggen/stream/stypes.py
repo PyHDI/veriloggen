@@ -3171,6 +3171,43 @@ class FromExtern(_UnaryOperator):
         self.sig_data = data
 
 
+class Reg(_SpecialOperator):
+    latency = 1
+
+    def __init__(self, data, when=None):
+
+        args = [data]
+        if when is not None:
+            args.append(when)
+
+        _SpecialOperator.__init__(self, *args)
+
+        self.width = data.bit_length()
+        self.point = data.get_point()
+        self.signed = data.get_signed()
+
+        self.graph_label = 'Reg'
+        self.graph_shape = 'box'
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency != 1:
+            raise ValueError("Latency mismatch '%d' != '%s'" %
+                             (self.latency, 1))
+
+        width = self.bit_length()
+        signed = self.get_signed()
+
+        arg_data = [arg.sig_data for arg in self.args]
+
+        data = m.Reg(self.name('data'), width, initval=0, signed=signed)
+        self.sig_data = data
+
+        when_cond = self.args[1].sig_data if len(self.args) == 2 else None
+        enable = _and_vars(senable, when_cond)
+
+        seq(data(arg_data[0]), cond=enable)
+
+
 class ReadRAM(_SpecialOperator):
     latency = 3
 
