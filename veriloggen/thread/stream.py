@@ -336,7 +336,9 @@ class Stream(BaseStream):
         self.substreams.append(sub)
         return sub
 
-    def read_RAM(self, name, addr, datawidth=None, point=0, signed=True):
+    def read_RAM(self, name, addr, when=None,
+                 datawidth=None, point=0, signed=True):
+
         if self.stream_synthesized:
             raise ValueError(
                 'cannot modify the stream because already synthesized')
@@ -356,7 +358,8 @@ class Stream(BaseStream):
         if datawidth is None:
             datawidth = self.datawidth
 
-        var = self.ReadRAM(addr, width=datawidth, point=point, signed=signed, ram_name=name)
+        var = self.ReadRAM(addr, when=when,
+                           width=datawidth, point=point, signed=signed, ram_name=name)
 
         self.read_rams[name] = var
         self.var_id_map[_id] = var

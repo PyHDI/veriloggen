@@ -3169,11 +3169,17 @@ class FromExtern(_UnaryOperator):
         self.sig_data = data
 
 
-class ReadRAM(_BinaryOperator):
+class ReadRAM(_SpecialOperator):
     latency = 3
 
-    def __init__(self, addr, reset, width=None, point=None, signed=True, ram_name=None):
-        _BinaryOperator.__init__(self, addr, reset)
+    def __init__(self, addr, reset, when=None,
+                 width=None, point=None, signed=True, ram_name=None):
+
+        args = [addr, reset]
+        if when is not None:
+            args.append(when)
+
+        _SpecialOperator.__init__(self, *args)
 
         if width is not None:
             self.width = width
@@ -3191,6 +3197,9 @@ class ReadRAM(_BinaryOperator):
             raise ValueError("Latency mismatch '%d' < '%s'" %
                              (self.latency, 2))
 
+        if len(self.args) == 3 and self.latency == 2:
+            raise ValueError('Output register is required for when option')
+
         if senable is not None:
             raise NotImplementedError('senable is not supported.')
 
@@ -3206,29 +3215,40 @@ class ReadRAM(_BinaryOperator):
         elif self.latency == 3:
             data = m.Reg(self.name('data'), datawidth, initval=0, signed=signed)
             self.sig_data = data
-            seq(data(rdata), cond=senable)
+            when_cond = self.args[2].sig_data if len(self.args) == 3 else None
+            if when_cond is not None:
+                when_cond = seq.Prev(when_cond, 2)
+            enable = _and_vars(senable, when_cond)
+            seq(data(rdata), cond=enable)
 
         else:
             prev_data = None
 
+            when_cond_base = self.args[2].sig_data if len(self.args) == 3 else None
+
             for i in range(self.latency - 2):
                 data = m.Reg(self.name('data_d%d' % i), datawidth,
                              initval=0, signed=signed)
-                if i == 0:
-                    seq(data(rdata), cond=senable)
+                if when_cond_base is not None:
+                    when_cond = seq.Prev(when_cond, i + 2)
                 else:
-                    seq(data(prev_data), cond=senable)
+                    when_cond = None
+                enable = _and_vars(senable, when_cond)
+                if i == 0:
+                    seq(data(rdata), cond=enable)
+                else:
+                    seq(data(prev_data), cond=enable)
                 prev_data = data
 
             self.sig_data = data
 
     @property
     def addr(self):
-        return self.left.sig_data
+        return self.args[0].sig_data
 
     @property
     def enable(self):
-        return vtypes.Not(self.right.sig_data)
+        return vtypes.Not(self.args[1].sig_data)
 
 
 def make_condition(*cond, **kwargs):
