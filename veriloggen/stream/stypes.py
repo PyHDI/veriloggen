@@ -3169,48 +3169,66 @@ class FromExtern(_UnaryOperator):
         self.sig_data = data
 
 
-class ReadRAM(_UnaryOperator):
-    latency = 1
+class ReadRAM(_BinaryOperator):
+    latency = 3
 
-    def __init__(self, ram, addr, width=None, point=None, signed=True, port=0):
-        _UnaryOperator.__init__(self, addr)
+    def __init__(self, addr, reset, width=None, point=None, signed=True, ram_name=None):
+        _BinaryOperator.__init__(self, addr, reset)
 
-        self.ram = ram
-
-        if width is None:
-            self.width = ram.datawidth
-        else:
+        if width is not None:
             self.width = width
 
-        if point is None:
-            self.point = 0 if not hasattr(ram, 'point') else ram.point
-        else:
+        if point is not None:
             self.point = point
 
         self.signed = signed
-        self.port = port
 
-        self.graph_label = 'Read ' + ram.name if hasattr(ram, 'name') else 'Read RAM'
+        self.graph_label = 'ReadRAM' if ram_name is None else ('ReadRAM\n%s' % ram_name)
         self.graph_shape = 'box'
 
     def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency < 2:
+            raise ValueError("Latency mismatch '%d' < '%s'" %
+                             (self.latency, 2))
+
+        if senable is not None:
+            raise NotImplementedError('senable is not supported.')
+
         datawidth = self.bit_length()
-        addrwidth = int(log(self.ram.length, 2))
         signed = self.get_signed()
-
         rdata = m.Wire(self.name('rdata'), datawidth, signed=signed)
+        self.read_data = rdata
 
-        raddr = m.Wire(self.name('raddr'), addrwidth)
-        raddr.assign(self.right.sig_data)
+        if self.latency == 2:
+            data = m.Wire(self.name('data'), datawidth, signed=signed)
+            self.sig_data = data
 
-        if hasattr(self.ram, 'connect'):
-            self.ram.connect(self.port, raddr, 0, 0)
-            rdata.assign(self.ram.rdata(self.port))
+        elif self.latency == 3:
+            data = m.Reg(self.name('data'), datawidth, initval=0, signed=signed)
+            self.sig_data = data
+            seq(data(rdata), cond=senable)
 
-        elif hasattr(self.ram, 'connect_rtl'):
-            self.ram.connect_rtl(self.port, raddr, 0, 0, rdata)
+        else:
+            prev_data = None
 
-        self.sig_data = rdata
+            for i in range(self.latency - 2):
+                data = m.Reg(self.name('data_d%d' % i), datawidth,
+                             initval=0, signed=signed)
+                if i == 0:
+                    seq(data(rdata), cond=senable)
+                else:
+                    seq(data(prev_data), cond=senable)
+                prev_data = data
+
+            self.sig_data = data
+
+    @property
+    def addr(self):
+        return self.left.sig_data
+
+    @property
+    def enable(self):
+        return vtypes.Not(self.right.sig_data)
 
 
 def make_condition(*cond, **kwargs):

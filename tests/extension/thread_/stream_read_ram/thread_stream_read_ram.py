@@ -30,7 +30,7 @@ def mkLed():
     a = strm.source('a')
     r_addr = a
 
-    r = strm.ReadRAM(ram_ext, r_addr, port=1)
+    r = strm.read_RAM('ext', r_addr)
     b = r + 100
 
     strm.sink(b, 'b')
@@ -38,6 +38,7 @@ def mkLed():
     def comp_stream(size, offset):
         strm.set_source('a', ram_a, offset, size)
         strm.set_sink('b', ram_b, offset, size)
+        strm.set_read_RAM('ext', ram_ext)
         strm.run()
         strm.join()
 
