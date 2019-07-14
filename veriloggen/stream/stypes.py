@@ -3251,6 +3251,45 @@ class ReadRAM(_SpecialOperator):
         return vtypes.Not(self.args[1].sig_data)
 
 
+class WriteRAM(_SpecialOperator):
+    latency = 1
+
+    def __init__(self, addr, data, reset, when=None,
+                 ram_name=None):
+
+        args = [addr, data, reset]
+        if when is not None:
+            args.append(when)
+
+        _SpecialOperator.__init__(self, *args)
+
+        self.graph_label = 'WriteRAM' if ram_name is None else ('WriteRAM\n%s' % ram_name)
+        self.graph_shape = 'box'
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency != 1:
+            raise ValueError("Latency mismatch '%d' != '%s'" %
+                             (self.latency, 1))
+
+        if senable is not None:
+            raise NotImplementedError('senable is not supported.')
+
+        self.sig_data = vtypes.Int(0)
+
+    @property
+    def addr(self):
+        return self.args[0].sig_data
+
+    @property
+    def write_data(self):
+        return self.args[1].sig_data
+
+    @property
+    def enable(self):
+        when_cond = self.args[3].sig_data if len(self.args) == 4 else None
+        return _and_vars(vtypes.Not(self.args[2].sig_data), when_cond)
+
+
 def make_condition(*cond, **kwargs):
     ready = kwargs['ready'] if 'ready' in kwargs else None
 

@@ -43,7 +43,7 @@ class Stream(BaseStream):
                       'set_sink', 'set_sink_pattern', 'set_sink_multidim',
                       'set_sink_multipattern', 'set_sink_immediate',
                       'set_sink_empty', 'set_constant',
-                      'set_read_RAM',
+                      'set_read_RAM', 'set_write_RAM',
                       'read_sink',
                       'run', 'join', 'done',
                       'source_join', 'source_done',
@@ -102,6 +102,7 @@ class Stream(BaseStream):
         self.constants = OrderedDict()
         self.substreams = []
         self.read_rams = OrderedDict()
+        self.write_rams = OrderedDict()
 
         self.var_name_map = OrderedDict()
         self.var_id_map = OrderedDict()
@@ -370,6 +371,41 @@ class Stream(BaseStream):
         var.read_ram_id_map = OrderedDict()
         var.read_ram_sel = self.module.Reg('_%s_read_ram_sel' % prefix,
                                            self.ram_sel_width, initval=0)
+
+        return var
+
+    def write_RAM(self, name, addr, data, when=None):
+
+        if self.stream_synthesized:
+            raise ValueError(
+                'cannot modify the stream because already synthesized')
+
+        _id = self.var_id_count
+        if name is None:
+            name = 'write_ram_%d' % _id
+
+        if name in self.var_name_map:
+            raise ValueError("'%s' is already defined in stream '%s'" %
+                             (name, self.name))
+
+        prefix = self._prefix(name)
+
+        self.var_id_count += 1
+
+        var = self.WriteRAM(addr, data, when=when, ram_name=name)
+
+        self.write_rams[name] = var
+        self.var_id_map[_id] = var
+        self.var_name_map[name] = var
+        self.var_id_name_map[_id] = name
+        self.var_name_id_map[name] = _id
+
+        var.write_ram_id_map = OrderedDict()
+        var.write_ram_sel = self.module.Reg('_%s_write_ram_sel' % prefix,
+                                            self.ram_sel_width, initval=0)
+
+        # to avoid to be removed by optimizations
+        self.sink(var, 'dummy_sink_%s' % name)
 
         return var
 
@@ -971,6 +1007,35 @@ class Stream(BaseStream):
 
         port = vtypes.to_int(port)
         self._setup_read_ram(ram, var, port, set_cond)
+
+        fsm.goto_next()
+
+    def set_write_RAM(self, fsm, name, ram, port=0):
+        """ intrinsic method to assign RAM property to a write-RAM interface """
+
+        if not self.stream_synthesized:
+            self._implement_stream()
+
+        if isinstance(name, str):
+            var = self.var_name_map[name]
+        elif isinstance(name, vtypes.Str):
+            name = name.value
+            var = self.var_name_map[name]
+        elif isinstance(name, int):
+            var = self.var_id_map[name]
+        elif isinstance(name, vtypes.Int):
+            name = name.value
+            var = self.var_id_map[name]
+        else:
+            raise TypeError('Unsupported index name')
+
+        if name not in self.write_rams:
+            raise NameError("No such stream '%s'" % name)
+
+        set_cond = self._set_flag(fsm)
+
+        port = vtypes.to_int(port)
+        self._setup_write_ram(ram, var, port, set_cond)
 
         fsm.goto_next()
 
@@ -2291,6 +2356,104 @@ class Stream(BaseStream):
             vtypes.Display(fmt, dump_ram_step, age, addr, data)
         )
 
+    def _setup_write_ram(self, ram, var, port, set_cond):
+        if ram._id() in var.write_ram_id_map:
+            ram_id = var.write_ram_id_map[ram._id()]
+            self.seq.If(set_cond)(
+                var.write_ram_sel(ram_id)
+            )
+            return
+
+        if ram._id() not in self.ram_id_map:
+            ram_id = self.ram_id_count
+            self.ram_id_count += 1
+            self.ram_id_map[ram._id()] = ram_id
+        else:
+            ram_id = self.ram_id_map[ram._id()]
+
+        var.write_ram_id_map[ram._id()] = ram_id
+
+        self.seq.If(set_cond)(
+            var.write_ram_sel(ram_id)
+        )
+
+        ram_cond = (var.write_ram_sel == ram_id)
+        wenable = vtypes.Ands(var.enable, ram_cond)
+
+        ram.write_rtl(var.addr, var.write_data, port=port, cond=wenable)
+
+        if (self.dump and
+            (self.dump_mode == 'all' or
+                 self.dump_mode == 'ram' or
+             (self.dump_mode == 'selective' and
+                 hasattr(ram, 'dump') and ram.dump))):
+            self._setup_write_ram_dump(ram, var, wenable, var.write_data)
+
+    def _setup_write_ram_dump(self, ram, var, write_enable):
+        pipeline_depth = self.pipeline_depth()
+        log_pipeline_depth = max(
+            int(math.ceil(math.log(max(pipeline_depth, 10), 10))), 1)
+
+        addr_base = (ram.dump_addr_base if hasattr(ram, 'dump_addr_base') else
+                     self.dump_base)
+        addr_base_char = ('b' if addr_base == 2 else
+                          'o' if addr_base == 8 else
+                          'd' if addr_base == 10 else
+                          'x')
+        addr_prefix = ('0b' if addr_base == 2 else
+                       '0o' if addr_base == 8 else
+                       '  ' if addr_base == 10 else
+                       '0x')
+        addr_vfmt = ''.join([addr_prefix, '%', addr_base_char])
+
+        data_base = (ram.dump_data_base if hasattr(ram, 'dump_data_base') else
+                     self.dump_base)
+        data_base_char = ('b' if data_base == 2 else
+                          'o' if data_base == 8 else
+                          'd' if (data_base == 10 and
+                                  (not hasattr(ram, 'point') or ram.point <= 0)) else
+                          # 'f' if (data_base == 10 and
+                          #        hasattr(ram, 'point') and ram.point > 0) else
+                          'g' if (data_base == 10 and
+                                  hasattr(ram, 'point') and ram.point > 0) else
+                          'x')
+        data_prefix = ('0b' if data_base == 2 else
+                       '0o' if data_base == 8 else
+                       '  ' if data_base == 10 else
+                       '0x')
+        # if data_base_char == 'f':
+        #    point_len = int(math.ceil(ram.point / math.log(10, 2)))
+        #    point_len = max(point_len, 8)
+        #    total_len = int(math.ceil(ram.datawidth / math.log(10, 2)))
+        #    total_len = max(total_len, point_len)
+        #    data_vfmt = ''.join([data_prefix, '%',
+        #                         '%d.%d' % (total_len + 1, point_len),
+        #                         data_base_char])
+        # else:
+        #    data_vfmt = ''.join([data_prefix, '%', data_base_char])
+        data_vfmt = ''.join([data_prefix, '%', data_base_char])
+
+        name = ram.name
+        fmt = ''.join(['(', self.name, ' step:%d, ',
+                       'write, ', ' ' * (log_pipeline_depth + 1),
+                       'age:%d) ', name,
+                       '[', addr_vfmt, '] = ', data_vfmt])
+
+        enable = write_enable
+        age = self.seq.Prev(self.dump_step, pipeline_depth + 1) - 1
+        addr = var.addr
+        if hasattr(ram, 'point') and ram.point > 0:
+            data = vtypes.Div(vtypes.SystemTask('itor', var.write_data),
+                              1.0 * (2 ** ram.point))
+        elif hasattr(ram, 'point') and ram.point < 0:
+            data = vtypes.Times(var.write_data, 2 ** -ram.point)
+        else:
+            data = var.write_data
+
+        self.seq.If(enable, vtypes.Not(self.dump_mask))(
+            vtypes.Display(fmt, self.dump_step, age, addr, data)
+        )
+
     def _set_flag(self, fsm, prefix='_set_flag'):
         flag = self.module.TmpReg(initval=0, prefix=prefix)
         cond = fsm.here
@@ -2348,7 +2511,8 @@ class Stream(BaseStream):
              f.__name__.startswith('Pulse') or
              f.__name__.startswith('RingBuffer') or
              f.__name__.startswith('Scratchpad') or
-             f.__name__.startswith('ReadRAM'))):
+             f.__name__.startswith('ReadRAM') or
+             f.__name__.startswith('WriteRAM'))):
             if self.reduce_reset is None:
                 self.reduce_reset = self.module.Reg(
                     '_'.join(['', self.name, 'reduce_reset']), initval=1)
