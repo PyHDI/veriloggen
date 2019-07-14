@@ -3089,6 +3089,8 @@ class ToExtern(_UnaryOperator):
     def __init__(self, right):
         _UnaryOperator.__init__(self, right)
 
+        self.output_tmp()
+
         self.graph_label = 'ToExtern'
         self.graph_shape = 'box'
 
@@ -3262,6 +3264,12 @@ class WriteRAM(_SpecialOperator):
             args.append(when)
 
         _SpecialOperator.__init__(self, *args)
+
+        self.width = 1
+        self.point = 0
+        self.signed = True
+
+        self.output_tmp()
 
         self.graph_label = 'WriteRAM' if ram_name is None else ('WriteRAM\n%s' % ram_name)
         self.graph_shape = 'box'

@@ -404,9 +404,6 @@ class Stream(BaseStream):
         var.write_ram_sel = self.module.Reg('_%s_write_ram_sel' % prefix,
                                             self.ram_sel_width, initval=0)
 
-        # to avoid to be removed by optimizations
-        self.sink(var, 'dummy_sink_%s' % name)
-
         return var
 
     def set_source(self, fsm, name, ram, offset, size, stride=1, port=0):
