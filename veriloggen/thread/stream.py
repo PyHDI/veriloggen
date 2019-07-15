@@ -2384,7 +2384,7 @@ class Stream(BaseStream):
                  self.dump_mode == 'ram' or
              (self.dump_mode == 'selective' and
                  hasattr(ram, 'dump') and ram.dump))):
-            self._setup_write_ram_dump(ram, var, wenable, var.write_data)
+            self._setup_write_ram_dump(ram, var, wenable)
 
     def _setup_write_ram_dump(self, ram, var, write_enable):
         pipeline_depth = self.pipeline_depth()
