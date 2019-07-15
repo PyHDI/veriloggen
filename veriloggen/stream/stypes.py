@@ -3135,6 +3135,7 @@ class ToExtern(_UnaryOperator):
 
 
 class FromExtern(_UnaryOperator):
+    __intrinsics__ = ('write')
     latency = 1
 
     def __init__(self, right, width=None, point=None, signed=True, latency=1):
@@ -3169,6 +3170,13 @@ class FromExtern(_UnaryOperator):
 
         data = m.Reg(self.name('data'), width, initval=0, signed=signed)
         self.sig_data = data
+
+    def write(self, fsm, value):
+        cond = fsm.here
+
+        self.seq.If(cond)(
+            self.sig_data(value)
+        )
 
 
 class Reg(_SpecialOperator):

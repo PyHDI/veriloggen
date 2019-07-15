@@ -27,27 +27,29 @@ def mkLed():
 
     a = strm.source('a')
 
-    # to extern
+    # to/from extern
     extout = strm.ToExtern(a)
     extin = strm.FromExtern(extout, latency=1)
 
-    # from extern
-    b = a + extin + 1
+    b = extin + 1000
 
     strm.sink(b, 'b')
 
     def comp_stream(size, offset):
         strm.set_source('a', ram_a, offset, size)
         strm.set_sink('b', ram_b, offset, size)
+        # reset FromExtern value
+        extin.write(0)
         strm.run()
         strm.join()
 
     def comp_sequential(size, offset):
+        extin = 0
         for i in range(size):
             a = ram_a.read(i + offset)
             extout = a
-            extin = extout + 100
-            b = a + extin + 1
+            extin += extout
+            b = extin + 1000
             ram_b.write(i + offset, b)
 
     def check(size, offset_stream, offset_seq):
@@ -83,10 +85,9 @@ def mkLed():
     th = vthread.Thread(m, 'th_comp', clk, rst, comp)
     fsm = th.start(32)
 
-    # extern behavior in RTL
-    ext_seq = Seq(m, 'ext_seq', clk, rst)
-    ext_seq.If(extout.valid)(
-        extin.data(extout.data + 100)
+    # extern behavior in RTL (accumulator)
+    extin.seq.If(extout.valid)(
+        extin.data(extin.data + extout.data)
     )
 
     return m
