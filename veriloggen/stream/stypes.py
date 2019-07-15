@@ -3172,6 +3172,7 @@ class FromExtern(_UnaryOperator):
 
 
 class Reg(_SpecialOperator):
+    __intrinsics__ = ('write')
     latency = 1
 
     def __init__(self, data, when=None):
@@ -3206,6 +3207,13 @@ class Reg(_SpecialOperator):
         enable = _and_vars(senable, when_cond)
 
         seq(data(arg_data[0]), cond=enable)
+
+    def write(self, fsm, value):
+        cond = fsm.here
+
+        self.seq.If(cond)(
+            self.sig_data(value)
+        )
 
 
 class ReadRAM(_SpecialOperator):

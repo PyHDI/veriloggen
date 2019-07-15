@@ -29,7 +29,7 @@ def mkLed():
 
     # to extern
 
-    when = a < 4
+    when = a > 4
     r = strm.Reg(a, when)
 
     # from extern
@@ -40,14 +40,16 @@ def mkLed():
     def comp_stream(size, offset):
         strm.set_source('a', ram_a, offset, size)
         strm.set_sink('b', ram_b, offset, size)
+        # set Reg value
+        r.write(1000)
         strm.run()
         strm.join()
 
     def comp_sequential(size, offset):
-        r = 0
+        r = 1000
         for i in range(size):
             a = ram_a.read(i + offset)
-            if a < 4:
+            if a > 4:
                 r = a
             b = r + 100
             ram_b.write(i + offset, b)
