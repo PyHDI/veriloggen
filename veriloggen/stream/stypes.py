@@ -3103,6 +3103,7 @@ class ToExtern(_UnaryOperator):
 
     def _implement(self, m, seq, svalid=None, senable=None):
         width = self.bit_length()
+        point = self.get_point()
         signed = self.get_signed()
         rdata = self.right.sig_data
 
@@ -3110,12 +3111,12 @@ class ToExtern(_UnaryOperator):
         self.enable = senable
 
         if self.latency == 0:
-            data = m.Wire(self.name('data'), width, signed=signed)
+            data = fx.FixedWire(m, self.name('data'), width, point, signed=signed)
             data.assign(rdata)
             self.sig_data = data
 
         elif self.latency == 1:
-            data = m.Reg(self.name('data'), width, initval=0, signed=signed)
+            data = fx.FixedReg(m, self.name('data'), width, point, initval=0, signed=signed)
             self.sig_data = data
             seq(data(rdata), cond=senable)
 
@@ -3123,8 +3124,8 @@ class ToExtern(_UnaryOperator):
             prev_data = None
 
             for i in range(self.latency):
-                data = m.Reg(self.name('data_d%d' % i),
-                             width, initval=0, signed=signed)
+                data = fx.Reg(m, self.name('data_d%d' % i),
+                              width, point, initval=0, signed=signed)
                 if i == 0:
                     seq(data(self.op(rdata)), cond=senable)
                 else:
@@ -3163,12 +3164,13 @@ class FromExtern(_UnaryOperator):
 
     def _implement(self, m, seq, svalid=None, senable=None):
         width = self.bit_length()
+        point = self.get_point()
         signed = self.get_signed()
 
         self.valid = svalid
         self.enable = senable
 
-        data = m.Reg(self.name('data'), width, initval=0, signed=signed)
+        data = fx.FixedReg(m, self.name('data'), width, point, initval=0, signed=signed)
         self.sig_data = data
 
     def write(self, fsm, value):
@@ -3204,11 +3206,12 @@ class Reg(_SpecialOperator):
                              (self.latency, 1))
 
         width = self.bit_length()
+        point = self.get_point()
         signed = self.get_signed()
 
         arg_data = [arg.sig_data for arg in self.args]
 
-        data = m.Reg(self.name('data'), width, initval=0, signed=signed)
+        data = fx.FixedReg(m, self.name('data'), width, point, initval=0, signed=signed)
         self.sig_data = data
 
         when_cond = self.args[1].sig_data if len(self.args) == 2 else None
