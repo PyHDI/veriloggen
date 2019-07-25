@@ -3083,6 +3083,277 @@ class _ScratchpadOutput(_BinaryOperator):
         self.sig_data = rdata
 
 
+class ToExtern(_UnaryOperator):
+    latency = 1
+
+    def __init__(self, right):
+        _UnaryOperator.__init__(self, right)
+
+        self.output_tmp()
+
+        self.graph_label = 'ToExtern'
+        self.graph_shape = 'box'
+
+    @property
+    def data(self):
+        return self.sig_data
+
+    def eval(self):
+        return self
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        width = self.bit_length()
+        point = self.get_point()
+        signed = self.get_signed()
+        rdata = self.right.sig_data
+
+        self.valid = svalid
+        self.enable = senable
+
+        if self.latency == 0:
+            data = fx.FixedWire(m, self.name('data'), width, point, signed=signed)
+            data.assign(rdata)
+            self.sig_data = data
+
+        elif self.latency == 1:
+            data = fx.FixedReg(m, self.name('data'), width, point, initval=0, signed=signed)
+            self.sig_data = data
+            seq(data(rdata), cond=senable)
+
+        else:
+            prev_data = None
+
+            for i in range(self.latency):
+                data = fx.Reg(m, self.name('data_d%d' % i),
+                              width, point, initval=0, signed=signed)
+                if i == 0:
+                    seq(data(self.op(rdata)), cond=senable)
+                else:
+                    seq(data(prev_data), cond=senable)
+                prev_data = data
+
+            self.sig_data = data
+
+
+class FromExtern(_UnaryOperator):
+    __intrinsics__ = ('write')
+    latency = 1
+
+    def __init__(self, right, width=None, point=None, signed=True, latency=1):
+        _UnaryOperator.__init__(self, right)
+
+        if width is not None:
+            self.width = width
+
+        if point is not None:
+            self.point = point
+
+        self.signed = signed
+
+        self.latency = latency
+
+        self.graph_label = 'FromExtern'
+        self.graph_shape = 'box'
+
+    @property
+    def data(self):
+        return self.sig_data
+
+    def eval(self):
+        return self
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        width = self.bit_length()
+        point = self.get_point()
+        signed = self.get_signed()
+
+        self.valid = svalid
+        self.enable = senable
+
+        data = fx.FixedReg(m, self.name('data'), width, point, initval=0, signed=signed)
+        self.sig_data = data
+
+    def write(self, fsm, value):
+        cond = fsm.here
+
+        self.seq.If(cond)(
+            self.sig_data(value)
+        )
+
+
+class Reg(_SpecialOperator):
+    __intrinsics__ = ('write')
+    latency = 1
+
+    def __init__(self, data, when=None):
+
+        args = [data]
+        if when is not None:
+            args.append(when)
+
+        _SpecialOperator.__init__(self, *args)
+
+        self.width = data.bit_length()
+        self.point = data.get_point()
+        self.signed = data.get_signed()
+
+        self.graph_label = 'Reg'
+        self.graph_shape = 'box'
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency != 1:
+            raise ValueError("Latency mismatch '%d' != '%s'" %
+                             (self.latency, 1))
+
+        width = self.bit_length()
+        point = self.get_point()
+        signed = self.get_signed()
+
+        arg_data = [arg.sig_data for arg in self.args]
+
+        data = fx.FixedReg(m, self.name('data'), width, point, initval=0, signed=signed)
+        self.sig_data = data
+
+        when_cond = self.args[1].sig_data if len(self.args) == 2 else None
+        enable = _and_vars(senable, when_cond)
+
+        seq(data(arg_data[0]), cond=enable)
+
+    def write(self, fsm, value):
+        cond = fsm.here
+
+        self.seq.If(cond)(
+            self.sig_data(value)
+        )
+
+
+class ReadRAM(_SpecialOperator):
+    latency = 3
+
+    def __init__(self, addr, reset, when=None,
+                 width=None, point=None, signed=True, ram_name=None):
+
+        args = [addr, reset]
+        if when is not None:
+            args.append(when)
+
+        _SpecialOperator.__init__(self, *args)
+
+        if width is not None:
+            self.width = width
+
+        if point is not None:
+            self.point = point
+
+        self.signed = signed
+
+        self.graph_label = 'ReadRAM' if ram_name is None else ('ReadRAM\n%s' % ram_name)
+        self.graph_shape = 'box'
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency < 2:
+            raise ValueError("Latency mismatch '%d' < '%s'" %
+                             (self.latency, 2))
+
+        if len(self.args) == 3 and self.latency == 2:
+            raise ValueError('Output register is required for when option')
+
+        if senable is not None:
+            raise NotImplementedError('senable is not supported.')
+
+        datawidth = self.bit_length()
+        signed = self.get_signed()
+        rdata = m.Wire(self.name('rdata'), datawidth, signed=signed)
+        self.read_data = rdata
+
+        if self.latency == 2:
+            data = m.Wire(self.name('data'), datawidth, signed=signed)
+            self.sig_data = data
+
+        elif self.latency == 3:
+            data = m.Reg(self.name('data'), datawidth, initval=0, signed=signed)
+            self.sig_data = data
+            when_cond = self.args[2].sig_data if len(self.args) == 3 else None
+            if when_cond is not None:
+                when_cond = seq.Prev(when_cond, 2)
+            enable = _and_vars(senable, when_cond)
+            seq(data(rdata), cond=enable)
+
+        else:
+            prev_data = None
+
+            when_cond_base = self.args[2].sig_data if len(self.args) == 3 else None
+
+            for i in range(self.latency - 2):
+                data = m.Reg(self.name('data_d%d' % i), datawidth,
+                             initval=0, signed=signed)
+                if when_cond_base is not None:
+                    when_cond = seq.Prev(when_cond, i + 2)
+                else:
+                    when_cond = None
+                enable = _and_vars(senable, when_cond)
+                if i == 0:
+                    seq(data(rdata), cond=enable)
+                else:
+                    seq(data(prev_data), cond=enable)
+                prev_data = data
+
+            self.sig_data = data
+
+    @property
+    def addr(self):
+        return self.args[0].sig_data
+
+    @property
+    def enable(self):
+        return vtypes.Not(self.args[1].sig_data)
+
+
+class WriteRAM(_SpecialOperator):
+    latency = 1
+
+    def __init__(self, addr, data, reset, when=None,
+                 ram_name=None):
+
+        args = [addr, data, reset]
+        if when is not None:
+            args.append(when)
+
+        _SpecialOperator.__init__(self, *args)
+
+        self.width = 1
+        self.point = 0
+        self.signed = True
+
+        self.output_tmp()
+
+        self.graph_label = 'WriteRAM' if ram_name is None else ('WriteRAM\n%s' % ram_name)
+        self.graph_shape = 'box'
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency != 1:
+            raise ValueError("Latency mismatch '%d' != '%s'" %
+                             (self.latency, 1))
+
+        if senable is not None:
+            raise NotImplementedError('senable is not supported.')
+
+        self.sig_data = vtypes.Int(0)
+
+    @property
+    def addr(self):
+        return self.args[0].sig_data
+
+    @property
+    def write_data(self):
+        return self.args[1].sig_data
+
+    @property
+    def enable(self):
+        when_cond = self.args[3].sig_data if len(self.args) == 4 else None
+        return _and_vars(vtypes.Not(self.args[2].sig_data), when_cond)
+
+
 def make_condition(*cond, **kwargs):
     ready = kwargs['ready'] if 'ready' in kwargs else None
 
