@@ -837,6 +837,9 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
         _if = vast.IfStatement(cond, true_block, false_block)
         return vast.GenerateStatement(tuple([_if]))
 
+    def visit_GenerateIfElse(self, node):
+        return None
+
 
 #-------------------------------------------------------------------------
 class VerilogBindVisitor(VerilogCommonVisitor):

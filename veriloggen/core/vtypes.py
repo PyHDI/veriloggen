@@ -2099,7 +2099,11 @@ class Scope(_Numeric):
             raise ValueError("Scope requires at least one argument.")
 
     def bit_length(self):
-        return self.args[-1].bit_length()
+        try:
+            w = self.args[-1].bit_length()
+            return w
+        except:
+            raise ValueError('could not identify bit_length.')
 
 
 class SystemTask(_Numeric):
