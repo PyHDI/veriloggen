@@ -104,7 +104,7 @@ class ConstantVisitor(_CommonVisitor):
         _CommonVisitor.__init__(self)
         self.const_dict = const_dict
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def get_const(self, name):
         if name not in self.const_dict:
             raise KeyError("No such constant: '%s'" % name)
@@ -119,7 +119,7 @@ class ConstantVisitor(_CommonVisitor):
     def get_const_dict(self):
         return self.const_dict
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _visit_param(self, node):
         if self.has_const(node.name):
             value = self.get_const(node.name)
@@ -136,7 +136,7 @@ class ConstantVisitor(_CommonVisitor):
     def visit_AnyType(self, node):
         return self._visit_param(node)
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def visit__BinaryOperator(self, node):
         left = self.visit(node.left)
         right = self.visit(node.right)
@@ -157,7 +157,7 @@ class ConstantVisitor(_CommonVisitor):
             return node.op(right, rwidth)
         return node
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def visit_Pointer(self, node):
         var = self.visit(node.var)
         pos = self.visit(node.pos)
@@ -215,7 +215,7 @@ class ReplaceVisitor(ConstantVisitor):
     def visit_list(self, node):
         return [self.visit(n) for n in node]
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def visit__BinaryOperator(self, node):
         left = self.visit(node.left)
         right = self.visit(node.right)
@@ -311,7 +311,7 @@ class ReplaceVisitor(ConstantVisitor):
             node.false_value = false_value
         return node
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def visit_Posedge(self, node):
         name = self.visit(node.name)
         if check_overwrite(name):
@@ -327,7 +327,7 @@ class ReplaceVisitor(ConstantVisitor):
     def visit_SensitiveAll(self, node):
         return node
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def visit_Subst(self, node):
         left = self.visit(node.left)
         right = self.visit(node.right)
@@ -342,7 +342,7 @@ class ReplaceVisitor(ConstantVisitor):
             node.rdelay = rdelay
         return node
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def visit_If(self, node):
         condition = self.visit(node.condition)
         true_statement = self.visit(node.true_statement)
@@ -665,12 +665,14 @@ class ModuleReplaceVisitor(_CachedVisitor):
         return node
 
     def visit_GenerateFor(self, node):
-        raise NotImplementedError(
-            "GenerateFor statement is not currently supported.")
+        # raise NotImplementedError(
+        #    "GenerateFor statement is not currently supported.")
+        return node
 
     def visit_GenerateIf(self, node):
-        raise NotImplementedError(
-            "GenerateIf statement is not currently supported.")
+        # raise NotImplementedError(
+        #    "GenerateIf statement is not currently supported.")
+        return node
 
 
 def resolve(m, const_dict=None):
