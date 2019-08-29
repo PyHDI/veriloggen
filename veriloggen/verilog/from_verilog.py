@@ -16,9 +16,9 @@ from pyverilog.dataflow.modulevisitor import ModuleVisitor
 from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
 
 
-#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # User interfaces to read Verilog source code
-#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 def read_verilog_stubmodule(*filelist, **opt):
     module_dict = to_module_dict(*filelist, **opt)
     codegen = ASTCodeGenerator()
@@ -60,7 +60,7 @@ def read_verilog_stubmodule_str(code, encode='utf-8'):
     return ret
 
 
-#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 def to_module_dict(*filelist, **opt):
     ast = to_ast(*filelist, **opt)
 
@@ -75,7 +75,7 @@ def to_module_dict(*filelist, **opt):
     return module_dict
 
 
-#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 def to_ast(*filelist, **opt):
     include = opt['include'] if 'include' in opt else ()
     define = opt['define'] if 'define' in opt else ()
@@ -94,14 +94,14 @@ def to_ast(*filelist, **opt):
     return ast
 
 
-#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 def to_tuple(s):
     if not isinstance(s, (list, tuple)):
         return tuple([s])
     return s
 
 
-#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 class ReadOnlyModule(object):
 
     def __init__(self, m):
@@ -111,7 +111,7 @@ class ReadOnlyModule(object):
         return getattr(self.m, attr)
 
 
-#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 class VerilogReadVisitor(object):
 
     def __init__(self, ast_module_dict, converted_modules=None):
@@ -217,10 +217,29 @@ class VerilogReadVisitor(object):
     def visit_Identifier(self, node):
         if node.scope is not None:
             labels = self.visit(node.scope)
-            labels.append(node.name)
+
+            if not isinstance(self.m, (module.Module, ReadOnlyModule)):
+                lables.append(vtypes.AnyType(name=node.name))
+                return vtypes.Scope(*labels)
+
+            m = self.m
+            for label in labels:
+                name = label.name if isinstance(label, vtypes.ScopeIndex) else label
+                m = m.find_identifier(name)
+
+            v = m.find_identifier(node.name)
+            if v is None:
+                labels.append(vtypes.AnyType(name=node.name))
+            elif v.name in m.variable:
+                labels.append(m.variable[v.name])
+            else:
+                labels.append(v)
+
             return vtypes.Scope(*labels)
+
         if not isinstance(self.m, (module.Module, ReadOnlyModule)):
             return vtypes.AnyType(name=node.name)
+
         ret = self.m.find_identifier(node.name)
         if ret is None:
             return vtypes.AnyType(name=node.name)
@@ -892,6 +911,7 @@ class VerilogReadVisitor(object):
         statement = self.visit(item.true_statement)
         self.pop_module()
         _if_false = _if_true.Else(false_scope)
+        self.add_object(_if_false)
         self.push_module(_if_false)
         statement = (self.visit(item.false_statement)
                      if item.false_statement is not None else None)

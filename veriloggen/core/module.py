@@ -1069,6 +1069,15 @@ class Module(vtypes.VeriloggenNode):
             self.generate[obj.true_scope] = obj
             return
 
+        if isinstance(obj, GenerateIfElse):
+            if obj.false_scope is None:
+                if None not in self.generate:
+                    self.generate[None] = []
+                self.generate[None].append(obj)
+                return
+            self.generate[obj.false_scope] = obj
+            return
+
         if isinstance(obj, Instance):
             if isinstance(obj.module, Module):
                 self.instance[obj.instname] = obj
