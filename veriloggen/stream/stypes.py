@@ -2549,16 +2549,6 @@ class _Accumulator(_UnaryOperator):
                 seq(data(reset_value), cond=reset_cond)
 
 
-class Predicate(_Accumulator):
-    ops = (lambda x, y: y, )
-
-    def __init__(self, value, condition, initval=0,
-                 reset=None, width=32, signed=True):
-        size = 1
-        _Accumulator.__init__(self, value, size, initval,
-                              condition, reset, width, signed)
-
-
 class ReduceAdd(_Accumulator):
     ops = (vtypes.Plus, )
 
@@ -3235,6 +3225,18 @@ class Reg(_SpecialOperator):
         self.seq.If(cond)(
             self.sig_data(value)
         )
+
+
+class Predicate(Reg):
+    __intrinsics__ = ()
+
+    def __init__(self, data, when):
+        Reg.__init__(self, data, when)
+        self.graph_label = 'Predicate'
+        self.graph_shape = 'box'
+
+    def write(self, fsm, value):
+        raise NotImplementedError()
 
 
 class ReadRAM(_SpecialOperator):
