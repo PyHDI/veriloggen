@@ -27,7 +27,7 @@ def mkLed():
     strm = vthread.Stream(m, 'mystream', clk, rst)
     a = strm.source('a')
     b = strm.source('b')
-    c = strm.Predicate(a, b > 128 + 16)
+    c = strm.Predicate(a, strm.Ands(b > 128 + 4, b <= 128 + 16))
     strm.sink(c, 'c')
 
     def comp_stream(size, offset):
@@ -42,7 +42,7 @@ def mkLed():
         for i in range(size):
             a = ram_a.read(i + offset)
             b = ram_b.read(i + offset)
-            if b > 128 + 16:
+            if b > 128 + 4 and b <= 128 + 16:
                 c = a
             ram_c.write(i + offset, c)
 
@@ -53,7 +53,6 @@ def mkLed():
             sq = ram_c.read(i + offset_seq)
             if vthread.verilog.NotEql(st, sq):
                 all_ok = False
-                print(i, st, sq)
         if all_ok:
             print('# verify: PASSED')
         else:
