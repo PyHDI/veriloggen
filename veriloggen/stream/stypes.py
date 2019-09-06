@@ -2856,7 +2856,7 @@ class RingBuffer(_UnaryOperator):
     latency = 1
 
     def __init__(self, var, length,
-                 enable=None, reset=None, disable_reset=False):
+                 enable=None, reset=None):
 
         self.enable = _to_constant(enable)
         if self.enable is not None:
@@ -2869,7 +2869,6 @@ class RingBuffer(_UnaryOperator):
         self.length = length
 
         _UnaryOperator.__init__(self, var)
-        self.disable_reset = disable_reset
 
         self.num_ports = 1
         self.read_vars = []
@@ -2919,10 +2918,7 @@ class RingBuffer(_UnaryOperator):
         reset_waddr = 0
         reset_cond = _and_vars(svalid, senable, enabledata, resetdata)
 
-        if self.disable_reset:
-            seq(waddr(waddr), cond=reset_cond)
-        else:
-            seq(waddr(reset_waddr), cond=reset_cond)
+        seq(waddr(waddr), cond=reset_cond)
 
         resetdata_x = vtypes.Not(resetdata) if resetdata is not None else 1
         wenable = _and_vars(svalid, senable, enabledata, resetdata_x)

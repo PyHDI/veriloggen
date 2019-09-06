@@ -31,7 +31,7 @@ def mkLed():
 
     a = strm.source('a')
 
-    buf = strm.RingBuffer(a, length=128, disable_reset=True)
+    buf = strm.RingBuffer(a, length=128)
     a_old = buf.read(-img_width)
 
     b = a + a_old
