@@ -2915,9 +2915,7 @@ class RingBuffer(_UnaryOperator):
         next_waddr = vtypes.Mux(waddr == self.length - 1, 0, waddr + 1)
         seq(waddr(next_waddr), cond=wcond)
 
-        reset_waddr = 0
         reset_cond = _and_vars(svalid, senable, enabledata, resetdata)
-
         seq(waddr(waddr), cond=reset_cond)
 
         resetdata_x = vtypes.Not(resetdata) if resetdata is not None else 1
