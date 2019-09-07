@@ -2908,15 +2908,15 @@ class RingBuffer(_UnaryOperator):
         wdata.assign(self.right.sig_data)
 
         waddr = m.Reg(self.name('waddr'), addrwidth, initval=0)
+        self.waddr = waddr
 
         wcond = _and_vars(svalid, senable, enabledata)
 
         next_waddr = vtypes.Mux(waddr == self.length - 1, 0, waddr + 1)
         seq(waddr(next_waddr), cond=wcond)
 
-        reset_waddr = 0
         reset_cond = _and_vars(svalid, senable, enabledata, resetdata)
-        seq(waddr(reset_waddr), cond=reset_cond)
+        seq(waddr(waddr), cond=reset_cond)
 
         resetdata_x = vtypes.Not(resetdata) if resetdata is not None else 1
         wenable = _and_vars(svalid, senable, enabledata, resetdata_x)
@@ -2966,17 +2966,8 @@ class _RingBufferOutput(_BinaryOperator):
 
         rdata = m.Wire(self.name('rdata'), datawidth, signed=signed)
 
-        raddr_base = m.Reg(self.name('raddr'), addrwidth, initval=0)
-
-        rcond = _and_vars(svalid, senable, enabledata)
-
-        next_raddr_base = vtypes.Mux(raddr_base == self.buf.length - 1,
-                                     0, raddr_base + 1)
-        seq(raddr_base(next_raddr_base), cond=rcond)
-
-        reset_raddr_base = 0
-        reset_cond = _and_vars(svalid, senable, enabledata, resetdata)
-        seq(raddr_base(reset_raddr_base), cond=reset_cond)
+        diff_latency = self.start_stage - self.buf.start_stage
+        raddr_base = seq.Prev(self.buf.waddr, diff_latency)
 
         raddr = raddr_base + self.right.sig_data
         raddr = vtypes.Mux(raddr >= self.buf.length,
