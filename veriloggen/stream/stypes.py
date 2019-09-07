@@ -3172,8 +3172,7 @@ class FromExtern(_UnaryOperator):
         )
 
 
-class Reg(_SpecialOperator):
-    __intrinsics__ = ('write')
+class Predicate(_SpecialOperator):
     latency = 1
 
     def __init__(self, data, when=None):
@@ -3188,7 +3187,7 @@ class Reg(_SpecialOperator):
         self.point = data.get_point()
         self.signed = data.get_signed()
 
-        self.graph_label = 'Reg'
+        self.graph_label = 'Predicate'
         self.graph_shape = 'box'
 
     def _implement(self, m, seq, svalid=None, senable=None):
@@ -3210,24 +3209,21 @@ class Reg(_SpecialOperator):
 
         seq(data(arg_data[0]), cond=enable)
 
+
+class Reg(Predicate):
+    __intrinsics__ = ('write')
+
+    def __init__(self, data, when=None):
+        Predicate.__init__(self, data, when)
+        self.graph_label = 'Reg'
+        self.graph_shape = 'box'
+
     def write(self, fsm, value):
         cond = fsm.here
 
         self.seq.If(cond)(
             self.sig_data(value)
         )
-
-
-class Predicate(Reg):
-    __intrinsics__ = ()
-
-    def __init__(self, data, when):
-        Reg.__init__(self, data, when)
-        self.graph_label = 'Predicate'
-        self.graph_shape = 'box'
-
-    def write(self, fsm, value):
-        raise NotImplementedError()
 
 
 class ReadRAM(_SpecialOperator):
