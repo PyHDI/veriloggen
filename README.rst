@@ -90,7 +90,6 @@ Requirements
 ------------
 
 -  Python3: 3.6 or later
-
 -  Icarus Verilog: 10.1 or later
 
 ::
@@ -105,23 +104,28 @@ Requirements
 
    pip3 install pyverilog jinja2 numpy
 
-Optional Installation
----------------------
+Optional installation for testing
+---------------------------------
+
+These are required for the testing execution of test codes in tests and
+examples. We recommend to these testing library to verify the under
+development behavior.
 
 -  pytest: 3.2 or later
 -  pytest-pythonpath: 0.7 or later
-
-These are required for the testing execution of test codes in tests and
-examples.
 
 ::
 
    pip3 install pytest pytest-pythonpath
 
+Optional installation for visualization
+---------------------------------------
+
+To visualize the generated hardware by veriloggen.stream, these
+libraries are required.
+
 -  Graphviz: 2.38.0 or later
 -  Pygraphviz: 1.3.1 or later
-
-These are required for graph visualization by veriloggen.dataflow:
 
 ::
 
@@ -131,7 +135,7 @@ These are required for graph visualization by veriloggen.dataflow:
 Install
 -------
 
-Install Veriloggen:
+Now you can install Veriloggen using setup.py script.
 
 ::
 
@@ -151,7 +155,7 @@ without any installation on your host platform.
    cd veriloggen/examples/led/
    make
 
-Getting Started
+Getting started
 ===============
 
 You can find some examples in ‘veriloggen/examples/’ and
@@ -359,10 +363,10 @@ If you installed GTKwave and enable ‘sim.view_waveform()’ in
 
    waveform.png
 
-Veriloggen Extension Libraries
+Veriloggen extension libraries
 ==============================
 
-Mixed-Paradigm High-Level Synthesis
+Mixed-paradigm high-level synthesis
 -----------------------------------
 
 -  veriloggen.thread.Thread: Procedural high-level synthesis for DMA and
@@ -370,7 +374,7 @@ Mixed-Paradigm High-Level Synthesis
 -  veriloggen.thread.Stream: Dataflow-based high-level synthesis for
    high-performance stream processing
 
-Frequently-used Abstractions
+Frequently-used abstractions
 ----------------------------
 
 -  veriloggen.verilog: Verilog HDL source code synthesis and import APIs
@@ -380,7 +384,7 @@ Frequently-used Abstractions
 
 Please see examples and tests directories for many examples.
 
-Related Project
+Related project
 ===============
 
 `Pyverilog <https://github.com/PyHDI/Pyverilog>`__ - Python-based

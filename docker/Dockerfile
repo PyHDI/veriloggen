@@ -4,8 +4,7 @@ RUN apt install build-essential -y
 RUN apt install git -y
 RUN apt install python3 python3-pip -y
 RUN apt install iverilog gtkwave -y
-RUN apt install python-pygraphviz -y
-RUN pip3 install jinja2 pytest pytest-pythonpath pyverilog ipgen
+RUN pip3 install jinja2 numpy pytest pytest-pythonpath pyverilog
 RUN mkdir /home/veriloggen/
 WORKDIR "/home/veriloggen"
 RUN git clone https://github.com/PyHDI/veriloggen.git
