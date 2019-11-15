@@ -94,8 +94,8 @@ pip3 install pyverilog jinja2 numpy
 Optional installation for testing
 --------------------
 
-These are required for the testing execution of test codes in tests and examples.
-We recommend to these testing library to verify the under development behavior.
+These are required for automatic testing of **tests** and **examples**.
+We recommend to install these testing library to verify experimental features.
 
 - pytest: 3.2 or later
 - pytest-pythonpath: 0.7 or later
