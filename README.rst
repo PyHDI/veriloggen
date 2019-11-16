@@ -96,8 +96,8 @@ Requirements
 
    sudo apt install iverilog
 
--  Pyverilog: 1.1.4 or later
 -  Jinja2: 2.10 or later
+-  Pyverilog: 1.1.4 or later
 -  NumPy: 1.14 or later
 
 ::
@@ -117,6 +117,14 @@ features.
 ::
 
    pip3 install pytest pytest-pythonpath
+
+For fast RTL simulation, we recommend to install Verilator.
+
+-  Verilator: 3.916 or later
+
+::
+
+   sudo apt install verilator
 
 Optional installation for visualization
 ---------------------------------------
@@ -154,6 +162,27 @@ without any installation on your host platform.
    sudo docker run --name veriloggen -i -t user/veriloggen /bin/bash
    cd veriloggen/examples/led/
    make
+
+Examples and testing
+====================
+
+There are some exapmles in **examples** and various testing codes in
+**tests**. The testing codes are actually good small examples suggesting
+how to represent a desired function.
+
+To run the testing codes, please type the following commands.
+
+::
+
+   cd tests
+   python3 -m pytest .
+
+If you use Verilator instead of Icarus Verilog for RTL simulation, set
+“–sim” option.
+
+::
+
+   python3 -m pytest --sim=verilator .
 
 Getting started
 ===============
