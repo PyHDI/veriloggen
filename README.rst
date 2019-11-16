@@ -3,7 +3,7 @@ Veriloggen
 
 |Build Status|
 
-A library for constructing a Verilog HDL source code in Python
+A Mixed-Paradigm Hardware Construction Framework
 
 Copyright 2015, Shinya Takamaeda-Yamazaki and Contributors
 
@@ -43,13 +43,21 @@ Pyverilog. (Veriloggen is constructed on Pyverilog.)
 What’s Veriloggen?
 ==================
 
-Veriloggen is an open-sourced library for constructing a Verilog HDL
-source code in Python.
+Veriloggen is a mixed-paradigm framework for constructing a hardware in
+Python.
 
-Veriloggen is not a behavior synthesis (or high level synthesis).
-Veriloggen provides a lightweight abstraction of Verilog HDL AST. You
-can build up a hardware design written in Verilog HDL very easily by
-using the AST abstraction and the entire functionality of Python.
+Veriloggen provides a low-level abstraction of Verilog HDL AST. You can
+build up a hardware design written in Verilog HDL very easily by using
+the AST abstraction and the entire functionality of Python.
+
+In addition to the low-level abstraction of Verilog HDL, Veriloggen
+provides high-level abstractions to productively express a hardware
+structure.
+
+-  **Stream** is a dataflow-based high-level synthesis layer for
+   high-performance parallel stream processing.
+-  **Thread** is a procedural high-level synthesis layer to express
+   sequential behaviors, such as DMA transfers and controls.
 
 Veriloggen is not designed for designing a hardware by programmer
 directly, but is for providing an efficient abstraction to develop a
@@ -418,6 +426,9 @@ Related project
 
 `Pyverilog <https://github.com/PyHDI/Pyverilog>`__ - Python-based
 Hardware Design Processing Toolkit for Verilog HDL
+
+`NNgen <https://github.com/NNgen/nngen>`__ - A Fully-Customizable
+Hardware Synthesis Compiler for Deep Neural Network
 
 .. |Build Status| image:: https://travis-ci.org/PyHDI/veriloggen.svg
    :target: https://travis-ci.org/PyHDI/veriloggen
