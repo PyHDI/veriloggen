@@ -134,10 +134,10 @@ Now you can install Veriloggen using setup.py script.
 python3 setup.py install
 ```
 
-On Docker
+Docker
 --------------------
 
-Dockerfile is available, so that you can try Veriloggen on Docker without any installation on your host platform.
+Dockerfile is available. You can try Veriloggen on Docker without any installation on your host platform.
 
 ```
 cd docker
