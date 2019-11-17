@@ -377,8 +377,9 @@ class FSM(vtypes.VeriloggenNode):
             if isinstance(dst, vtypes._Variable):
                 if dst.width is not None:
                     src_visitor.visit(dst.width)
-                if dst.length is not None:
-                    src_visitor.visit(dst.length)
+                if dst.dims is not None:
+                    for dim in dst.dims:
+                        src_visitor.visit(dim)
 
         # collect sources in statements
         for statement in body:
@@ -391,8 +392,9 @@ class FSM(vtypes.VeriloggenNode):
             if isinstance(src, vtypes._Variable):
                 if src.width is not None:
                     src_visitor.visit(src.width)
-                if src.length is not None:
-                    src_visitor.visit(src.length)
+                if src.dims is not None:
+                    for dim in src.dims:
+                        src_visitor.visit(dim)
 
         srcs = src_visitor.srcs.values()
 
@@ -455,29 +457,89 @@ class FSM(vtypes.VeriloggenNode):
 
             arg_name = 'i_%s' % src.name
 
-            if src.length is not None:
+            if src.dims is not None:
+                # outside FSM-module
                 width = src.bit_length()
-                length = src.length
+                dims = src.dims
+                length = None
+                for dim in dims:
+                    if length is None:
+                        length = dim
+                    else:
+                        length *= dim
                 pack_width = vtypes.Mul(width, length)
                 out_line = self.m.TmpWire(pack_width, prefix='_%s' % self.name)
-                i = self.m.TmpGenvar(prefix='i')
-                v = out_line[i * width:(i + 1) * width]
-                g = self.m.GenerateFor(i(0), i < length, i(i + 1))
-                p = g.Assign(v(src[i]))
 
+                g = self.m
+                s = src
+                a = None
+                for d, dim in enumerate(dims):
+                    i = g.TmpGenvar(prefix='i')
+                    g = g.GenerateFor(i(0), i < dim, i(i + 1))
+                    s = vtypes.Pointer(s, i)
+                    b = None
+                    for dm in dims[d + 1:]:
+                        if b is None:
+                            b = dm
+                        else:
+                            b *= dm
+                    if a is None:
+                        if b is None:
+                            a = i
+                        else:
+                            a = i * b
+                    else:
+                        if b is None:
+                            a += i
+                        else:
+                            a += i * b
+
+                v = out_line[a * width:(a + 1) * width]
+                p = g.Assign(v(s))
+
+                # inside FSM-module
                 rep_width = (src_rename_visitor.visit(src.width)
                              if src.width is not None else None)
-                rep_length = src_rename_visitor.visit(src.length)
+                rep_dims = src_rename_visitor.visit(src.dims)
+                rep_length = None
+                for rep_dim in rep_dims:
+                    if rep_length is None:
+                        rep_length = rep_dim
+                    else:
+                        rep_length *= rep_dim
                 pack_width = (rep_length if rep_width is None else
                               vtypes.Mul(rep_length, rep_width))
                 in_line = m.Input(arg_name + '_line', pack_width,
                                   signed=src.get_signed())
                 in_array = m.Wire(arg_name, rep_width, rep_length,
                                   signed=src.get_signed())
-                i = m.TmpGenvar(prefix='i')
-                v = in_line[i * rep_width:(i + 1) * rep_width]
-                g = m.GenerateFor(i(0), i < rep_length, i(i + 1))
-                p = g.Assign(in_array[i](v))
+
+                g = m
+                ia = in_array
+                a = None
+                for rep_dim in rep_dims:
+                    i = g.TmpGenvar(prefix='i')
+                    g = g.GenerateFor(i(0), i < rep_dim, i(i + 1))
+                    ia = vtypes.Pointer(ia, i)
+                    b = None
+                    for rep_dm in rep_dims[d + 1:]:
+                        if b is None:
+                            b = rep_dm
+                        else:
+                            b *= rep_dm
+                    if a is None:
+                        if b is None:
+                            a = i
+                        else:
+                            a = i * b
+                    else:
+                        if b is None:
+                            a += i
+                        else:
+                            a += i * b
+
+                v = in_line[a * rep_width:(a + 1) * rep_width]
+                p = g.Assign(ia(v))
 
                 src_rename_dict[src.name] = in_array
                 ports[in_line.name] = out_line

@@ -579,8 +579,8 @@ class ModuleReplaceVisitor(_CachedVisitor):
         for var in vars.values():
             if var.width is not None:
                 var.width = self.replace_visitor.visit(var.width)
-            if var.length is not None:
-                var.length = self.replace_visitor.visit(var.length)
+            if var.dims is not None:
+                var.dims = self.replace_visitor.visit(var.dims)
 
         for asg in node.assign:
             self.visit(asg)
@@ -600,16 +600,19 @@ class ModuleReplaceVisitor(_CachedVisitor):
         return node
 
     def visit__Variable(self, node):
-        width = self.replace_visitor.visit(
-            node.width) if node.width is not None else None
-        length = self.replace_visitor.visit(
-            node.length) if node.length is not None else None
-        initval = self.replace_visitor.visit(
-            node.initval) if node.initval is not None else None
+        width = self.replace_visitor.visit(node.width) if node.width is not None else None
+        dims = self.replace_visitor.visit(node.dims) if node.dims is not None else None
+        initval = self.replace_visitor.visit(node.initval) if node.initval is not None else None
         if check_constant(width):
             node.width = width
-        if check_constant(length):
-            node.length = length
+        if node.dims is not None:
+            new_dims = []
+            for dim, old_dim in zip(dims, node.dims):
+                if check_constant(dim):
+                    new_dims.append(dim)
+                else:
+                    new_dims.append(old_dim)
+            node.dims = tuple(dims)
         if check_constant(initval):
             node.initval = initval
         return node
