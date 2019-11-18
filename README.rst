@@ -105,8 +105,8 @@ Requirements
    sudo apt install iverilog
 
 -  Jinja2: 2.10 or later
--  Pyverilog: 1.1.4 or later
--  NumPy: 1.14 or later
+-  Pyverilog: 1.2.0 or later
+-  NumPy: 1.17 or later
 
 ::
 
@@ -119,8 +119,8 @@ These are required for automatic testing of **tests** and **examples**.
 We recommend to install these testing library to verify experimental
 features.
 
--  pytest: 3.2 or later
--  pytest-pythonpath: 0.7 or later
+-  pytest: 3.8.1 or later
+-  pytest-pythonpath: 0.7.3 or later
 
 ::
 
@@ -151,7 +151,7 @@ libraries are required.
 Install
 -------
 
-Now you can install Veriloggen using setup.py script.
+Now you can install Veriloggen using setup.py script:
 
 ::
 
