@@ -12,7 +12,7 @@ module test;
   wire [8-1:0] uut_maxi_awlen;
   wire [3-1:0] uut_maxi_awsize;
   wire [2-1:0] uut_maxi_awburst;
-  wire [2-1:0] uut_maxi_awlock;
+  wire [1-1:0] uut_maxi_awlock;
   wire [4-1:0] uut_maxi_awcache;
   wire [3-1:0] uut_maxi_awprot;
   wire [4-1:0] uut_maxi_awqos;
@@ -31,7 +31,7 @@ module test;
   wire [8-1:0] uut_maxi_arlen;
   wire [3-1:0] uut_maxi_arsize;
   wire [2-1:0] uut_maxi_arburst;
-  wire [2-1:0] uut_maxi_arlock;
+  wire [1-1:0] uut_maxi_arlock;
   wire [4-1:0] uut_maxi_arcache;
   wire [3-1:0] uut_maxi_arprot;
   wire [4-1:0] uut_maxi_arqos;
@@ -132,7 +132,7 @@ module test;
   wire [8-1:0] memory_awlen;
   wire [3-1:0] memory_awsize;
   wire [2-1:0] memory_awburst;
-  wire [2-1:0] memory_awlock;
+  wire [1-1:0] memory_awlock;
   wire [4-1:0] memory_awcache;
   wire [3-1:0] memory_awprot;
   wire [4-1:0] memory_awqos;
@@ -151,7 +151,7 @@ module test;
   wire [8-1:0] memory_arlen;
   wire [3-1:0] memory_arsize;
   wire [2-1:0] memory_arburst;
-  wire [2-1:0] memory_arlock;
+  wire [1-1:0] memory_arlock;
   wire [4-1:0] memory_arcache;
   wire [3-1:0] memory_arprot;
   wire [4-1:0] memory_arqos;
@@ -1120,7 +1120,7 @@ module memcpy
   output reg [8-1:0] maxi_awlen,
   output [3-1:0] maxi_awsize,
   output [2-1:0] maxi_awburst,
-  output [2-1:0] maxi_awlock,
+  output [1-1:0] maxi_awlock,
   output [4-1:0] maxi_awcache,
   output [3-1:0] maxi_awprot,
   output [4-1:0] maxi_awqos,
@@ -1139,7 +1139,7 @@ module memcpy
   output reg [8-1:0] maxi_arlen,
   output [3-1:0] maxi_arsize,
   output [2-1:0] maxi_arburst,
-  output [2-1:0] maxi_arlock,
+  output [1-1:0] maxi_arlock,
   output [4-1:0] maxi_arcache,
   output [3-1:0] maxi_arprot,
   output [4-1:0] maxi_arqos,

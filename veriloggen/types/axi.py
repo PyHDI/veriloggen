@@ -108,7 +108,7 @@ class AxiWriteAddress(AxiInterfaceBase):
         self.awburst = util.make_port(
             m, self.otype, name + '_awburst', 2, initval=0, no_reg=True)
         self.awlock = util.make_port(
-            m, self.otype, name + '_awlock', 2, initval=0, no_reg=True)
+            m, self.otype, name + '_awlock', 1, initval=0, no_reg=True)
         self.awcache = util.make_port(
             m, self.otype, name + '_awcache', 4, initval=0, no_reg=True)
         self.awprot = util.make_port(
@@ -264,7 +264,7 @@ class AxiReadAddress(AxiInterfaceBase):
         self.arburst = util.make_port(
             m, self.otype, name + '_arburst', 2, initval=0, no_reg=True)
         self.arlock = util.make_port(
-            m, self.otype, name + '_arlock', 2, initval=0, no_reg=True)
+            m, self.otype, name + '_arlock', 1, initval=0, no_reg=True)
         self.arcache = util.make_port(
             m, self.otype, name + '_arcache', 4, initval=0, no_reg=True)
         self.arprot = util.make_port(
