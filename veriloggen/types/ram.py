@@ -26,7 +26,7 @@ def mkRAMDefinition(name, datawidth=32, addrwidth=10, numports=2,
     if ram_style is not None:
         m.EmbeddedCode(ram_style)
 
-    mem = m.Reg('mem', datawidth, length=2**addrwidth)
+    mem = m.Reg('mem', datawidth, 2**addrwidth)
 
     if initvals is not None:
         if not isinstance(initvals, (tuple, list)):

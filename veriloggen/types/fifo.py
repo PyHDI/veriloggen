@@ -102,7 +102,7 @@ def mkFifoDefinition(name, datawidth=32, addrwidth=4):
     wif = FifoWriteSlaveInterface(m, name, datawidth)
     rif = FifoReadSlaveInterface(m, name, datawidth)
 
-    mem = m.Reg('mem', datawidth, length=2**addrwidth)
+    mem = m.Reg('mem', datawidth, 2**addrwidth)
     head = m.Reg('head', addrwidth, initval=0)
     tail = m.Reg('tail', addrwidth, initval=0)
 

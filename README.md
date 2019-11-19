@@ -3,7 +3,7 @@ Veriloggen
 
 [![Build Status](https://travis-ci.org/PyHDI/veriloggen.svg)](https://travis-ci.org/PyHDI/veriloggen)
 
-A library for constructing a Verilog HDL source code in Python
+A Mixed-Paradigm Hardware Construction Framework
 
 Copyright 2015, Shinya Takamaeda-Yamazaki and Contributors
 
@@ -42,10 +42,15 @@ url={http://dx.doi.org/10.1007/978-3-319-16214-0_42},
 What's Veriloggen?
 ==============================
 
-Veriloggen is an open-sourced library for constructing a Verilog HDL source code in Python.
+Veriloggen is a mixed-paradigm framework for constructing a hardware in Python.
 
-Veriloggen is not a behavior synthesis (or high level synthesis). Veriloggen provides a lightweight abstraction of Verilog HDL AST. You can build up a hardware design written in Verilog HDL very easily by using the AST abstraction and the entire functionality of Python.
- 
+Veriloggen provides a low-level abstraction of Verilog HDL AST. You can build up a hardware design written in Verilog HDL very easily by using the AST abstraction and the entire functionality of Python.
+
+In addition to the low-level abstraction of Verilog HDL, Veriloggen provides high-level abstractions to productively express a hardware structure.
+
+- **Stream** is a dataflow-based high-level synthesis layer for high-performance parallel stream processing.
+- **Thread** is a procedural high-level synthesis layer to express sequential behaviors, such as DMA transfers and controls.
+
 Veriloggen is not designed for designing a hardware by programmer directly, but is for providing an efficient abstraction to develop a more efficient domain specific language and tools.
 
 
@@ -77,37 +82,48 @@ Requirements
 --------------------
 
 - Python3: 3.6 or later
-
 - Icarus Verilog: 10.1 or later
 
 ```
 sudo apt install iverilog
 ```
 
-- Pyverilog: 1.1.4 or later
 - Jinja2: 2.10 or later
-- NumPy: 1.14 or later
+- Pyverilog: 1.2.0 or later
+- NumPy: 1.17 or later
 
 ```
 pip3 install pyverilog jinja2 numpy
 ```
 
-Optional Installation
+Optional installation for testing
 --------------------
 
-- pytest: 3.2 or later
-- pytest-pythonpath: 0.7 or later
+These are required for automatic testing of **tests** and **examples**.
+We recommend to install these testing library to verify experimental features.
 
-These are required for the testing execution of test codes in tests and examples.
+- pytest: 3.8.1 or later
+- pytest-pythonpath: 0.7.3 or later
 
 ```
 pip3 install pytest pytest-pythonpath
 ```
 
+For fast RTL simulation, we recommend to install Verilator.
+
+- Verilator: 3.916 or later
+
+```
+sudo apt install verilator
+```
+
+Optional installation for visualization
+--------------------
+
+To visualize the generated hardware by veriloggen.stream, these libraries are required.
+
 - Graphviz: 2.38.0 or later
 - Pygraphviz: 1.3.1 or later
-
-These are required for graph visualization by veriloggen.dataflow:
 
 ```
 sudo apt install graphviz
@@ -117,16 +133,16 @@ pip3 install pygraphviz
 Install
 --------------------
 
-Install Veriloggen:
+Now you can install Veriloggen using setup.py script:
 
 ```
 python3 setup.py install
 ```
 
-On Docker
+Docker
 --------------------
 
-Dockerfile is available, so that you can try Veriloggen on Docker without any installation on your host platform.
+Dockerfile is available. You can try Veriloggen on Docker without any installation on your host platform.
 
 ```
 cd docker
@@ -137,7 +153,27 @@ make
 ```
 
 
-Getting Started
+Examples and testing
+==============================
+
+There are some exapmles in **examples** and various testing codes in **tests**.
+The testing codes are actually good small examples suggesting how to represent a desired function.
+
+To run the testing codes, please type the following commands.
+
+```
+cd tests
+python3 -m pytest .
+```
+
+If you use Verilator instead of Icarus Verilog for RTL simulation, set "--sim" option.
+
+```
+python3 -m pytest --sim=verilator .
+```
+
+
+Getting started
 ==============================
 
 You can find some examples in 'veriloggen/examples/' and 'veriloggen/tests'.
@@ -338,16 +374,16 @@ If you installed GTKwave and enable 'sim.view_waveform()' in 'hello_led.py', you
 ![waveform.png](img/waveform.png)
 
 
-Veriloggen Extension Libraries
+Veriloggen extension libraries
 ==============================
 
-Mixed-Paradigm High-Level Synthesis
+Mixed-paradigm high-level synthesis
 --------------------
 
 - veriloggen.thread.Thread: Procedural high-level synthesis for DMA and I/O controls
 - veriloggen.thread.Stream: Dataflow-based high-level synthesis for high-performance stream processing
 
-Frequently-used Abstractions
+Frequently-used abstractions
 --------------------
 
 - veriloggen.verilog: Verilog HDL source code synthesis and import APIs
@@ -358,8 +394,11 @@ Frequently-used Abstractions
 Please see examples and tests directories for many examples.
 
 
-Related Project
+Related project
 ==============================
 
 [Pyverilog](https://github.com/PyHDI/Pyverilog)
 - Python-based Hardware Design Processing Toolkit for Verilog HDL
+
+[NNgen](https://github.com/NNgen/nngen)
+- A Fully-Customizable Hardware Synthesis Compiler for Deep Neural Network

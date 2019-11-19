@@ -26,7 +26,7 @@ def mkBram(datawidth=32, addrwidth=10, numports=2):
         delay_addr = m.Reg('delay_ADDR%d' % i, addrwidth)
         ports.append( (addr, din, we, dout, delay_addr) )
 
-    mem = m.Reg('mem', datawidth, length=Int(2)**addrwidth)
+    mem = m.Reg('mem', datawidth, Int(2)**addrwidth)
 
     for i in range(numports):
         addr, din ,we, dout, delay_addr = ports[i]

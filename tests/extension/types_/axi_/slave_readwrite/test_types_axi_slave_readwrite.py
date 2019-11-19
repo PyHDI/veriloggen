@@ -13,7 +13,7 @@ module test;
   reg [8-1:0] myaxi_awlen;
   reg [3-1:0] myaxi_awsize;
   reg [2-1:0] myaxi_awburst;
-  reg [2-1:0] myaxi_awlock;
+  reg [1-1:0] myaxi_awlock;
   reg [4-1:0] myaxi_awcache;
   reg [3-1:0] myaxi_awprot;
   reg [4-1:0] myaxi_awqos;
@@ -32,7 +32,7 @@ module test;
   reg [8-1:0] myaxi_arlen;
   reg [3-1:0] myaxi_arsize;
   reg [2-1:0] myaxi_arburst;
-  reg [2-1:0] myaxi_arlock;
+  reg [1-1:0] myaxi_arlock;
   reg [4-1:0] myaxi_arcache;
   reg [3-1:0] myaxi_arprot;
   reg [4-1:0] myaxi_arqos;
@@ -48,7 +48,7 @@ module test;
   reg [8-1:0] _axi_awlen;
   wire [3-1:0] _axi_awsize;
   wire [2-1:0] _axi_awburst;
-  wire [2-1:0] _axi_awlock;
+  wire [1-1:0] _axi_awlock;
   wire [4-1:0] _axi_awcache;
   wire [3-1:0] _axi_awprot;
   wire [4-1:0] _axi_awqos;
@@ -67,7 +67,7 @@ module test;
   reg [8-1:0] _axi_arlen;
   wire [3-1:0] _axi_arsize;
   wire [2-1:0] _axi_arburst;
-  wire [2-1:0] _axi_arlock;
+  wire [1-1:0] _axi_arlock;
   wire [4-1:0] _axi_arcache;
   wire [3-1:0] _axi_arprot;
   wire [4-1:0] _axi_arqos;
@@ -122,7 +122,7 @@ module test;
     myaxi_awburst = _tmp_3;
   end
 
-  wire [2-1:0] _tmp_4;
+  wire [1-1:0] _tmp_4;
   assign _tmp_4 = _axi_awlock;
 
   always @(*) begin
@@ -231,7 +231,7 @@ module test;
     myaxi_arburst = _tmp_18;
   end
 
-  wire [2-1:0] _tmp_19;
+  wire [1-1:0] _tmp_19;
   assign _tmp_19 = _axi_arlock;
 
   always @(*) begin
@@ -629,7 +629,7 @@ module main
   input [8-1:0] myaxi_awlen,
   input [3-1:0] myaxi_awsize,
   input [2-1:0] myaxi_awburst,
-  input [2-1:0] myaxi_awlock,
+  input [1-1:0] myaxi_awlock,
   input [4-1:0] myaxi_awcache,
   input [3-1:0] myaxi_awprot,
   input [4-1:0] myaxi_awqos,
@@ -648,7 +648,7 @@ module main
   input [8-1:0] myaxi_arlen,
   input [3-1:0] myaxi_arsize,
   input [2-1:0] myaxi_arburst,
-  input [2-1:0] myaxi_arlock,
+  input [1-1:0] myaxi_arlock,
   input [4-1:0] myaxi_arcache,
   input [3-1:0] myaxi_arprot,
   input [4-1:0] myaxi_arqos,

@@ -196,23 +196,32 @@ class VerilogReadVisitor(object):
             return p
 
         name = node.name
-        width = self.visit(node.width) if node.width is not None else None
+        raw_width = self.visit(node.width) if node.width is not None else None
+        width = to_width(raw_width)
+        raw_dims = self.visit(node.dimensions) if node.dimensions is not None else None
+        dims = to_dims(raw_dims)
         _type = getattr(vtypes, node.type, None)
         if _type is None:
             raise TypeError("No such port type '%s'" % node.type)
-        p = _type(name, width)
+        p = _type(name, width, dims, raw_width=raw_width, raw_dims=raw_dims)
         self.add_object(p)
         return p
 
     def visit_Width(self, node):
         msb = self.visit(node.msb)
-        width = msb + 1
-        return width
+        lsb = self.visit(node.lsb)
+        return msb, lsb
 
     def visit_Length(self, node):
-        lsb = self.visit(node.lsb)
-        length = lsb + 1
-        return length
+        l = self.visit(node.msb)
+        r = self.visit(node.lsb)
+        return l, r
+
+    def visit_Dimensions(self, node):
+        dims = []
+        for length in node.lengths:
+            dims.append(self.visit(length))
+        return tuple(dims)
 
     def visit_Identifier(self, node):
         if node.scope is not None:
@@ -258,126 +267,105 @@ class VerilogReadVisitor(object):
 
     def visit_Input(self, node):
         name = node.name
-        width = self.visit(node.width) if node.width is not None else None
+        raw_width = self.visit(node.width) if node.width is not None else None
+        width = to_width(raw_width)
+        raw_dims = self.visit(node.dimensions) if node.dimensions is not None else None
+        dims = to_dims(raw_dims)
         signed = node.signed
-        obj = vtypes.Input(width, signed=signed, name=name)
-        if node.width is not None:
-            obj._set_raw_width(self.visit(node.width.msb),
-                               self.visit(node.width.lsb))
+        obj = vtypes.Input(width, dims, signed=signed, name=name,
+                           raw_width=raw_width, raw_dims=raw_dims)
         self.add_object(obj)
         return obj
 
     def visit_Output(self, node):
         name = node.name
-        width = self.visit(node.width) if node.width is not None else None
+        raw_width = self.visit(node.width) if node.width is not None else None
+        width = to_width(raw_width)
+        raw_dims = self.visit(node.dimensions) if node.dimensions is not None else None
+        dims = to_dims(raw_dims)
         signed = node.signed
-        obj = vtypes.Output(width, signed=signed, name=name)
-        if node.width is not None:
-            obj._set_raw_width(self.visit(node.width.msb),
-                               self.visit(node.width.lsb))
+        obj = vtypes.Output(width, dims, signed=signed, name=name,
+                            raw_width=raw_width, raw_dims=raw_dims)
         self.add_object(obj)
         return obj
 
     def visit_Inout(self, node):
         name = node.name
-        width = self.visit(node.width) if node.width is not None else None
+        raw_width = self.visit(node.width) if node.width is not None else None
+        width = to_width(raw_width)
+        raw_dims = self.visit(node.dimensions) if node.dimensions is not None else None
+        dims = to_dims(raw_dims)
         signed = node.signed
-        obj = vtypes.Inout(width, signed=signed, name=name)
-        if node.width is not None:
-            obj._set_raw_width(self.visit(node.width.msb),
-                               self.visit(node.width.lsb))
+        obj = vtypes.Inout(width, dims, signed=signed, name=name,
+                           raw_width=raw_width, raw_dims=raw_dims)
         self.add_object(obj)
         return obj
 
     def visit_Tri(self, node):
         name = node.name
-        width = self.visit(node.width) if node.width is not None else None
+        raw_width = self.visit(node.width) if node.width is not None else None
+        width = to_width(raw_width)
+        raw_dims = self.visit(node.dimensions) if node.dimensions is not None else None
+        dims = to_dims(raw_dims)
         signed = node.signed
-        obj = vtypes.Tri(width, signed=signed, name=name)
-        if node.width is not None:
-            obj._set_raw_width(self.visit(node.width.msb),
-                               self.visit(node.width.lsb))
+        obj = vtypes.Tri(width, dims, signed=signed, name=name,
+                         raw_width=raw_width, raw_dims=raw_dims)
         self.add_object(obj)
         return obj
 
     def visit_Wire(self, node):
         name = node.name
-        width = self.visit(node.width) if node.width is not None else None
+        raw_width = self.visit(node.width) if node.width is not None else None
+        width = to_width(raw_width)
+        raw_dims = self.visit(node.dimensions) if node.dimensions is not None else None
+        dims = to_dims(raw_dims)
         signed = node.signed
-        obj = vtypes.Wire(width, signed=signed, name=name)
-        if node.width is not None:
-            obj._set_raw_width(self.visit(node.width.msb),
-                               self.visit(node.width.lsb))
+        obj = vtypes.Wire(width, dims, signed=signed, name=name,
+                          raw_width=raw_width, raw_dims=raw_dims)
         self.add_object(obj)
         return obj
 
     def visit_Reg(self, node):
         name = node.name
-        width = self.visit(node.width) if node.width is not None else None
+        raw_width = self.visit(node.width) if node.width is not None else None
+        width = to_width(raw_width)
+        raw_dims = self.visit(node.dimensions) if node.dimensions is not None else None
+        dims = to_dims(raw_dims)
         signed = node.signed
-        obj = vtypes.Reg(width, signed=signed, name=name)
-        if node.width is not None:
-            obj._set_raw_width(self.visit(node.width.msb),
-                               self.visit(node.width.lsb))
-        self.add_object(obj)
-        return obj
-
-    def visit_WireArray(self, node):
-        name = node.name
-        width = self.visit(node.width) if node.width is not None else None
-        length = self.visit(node.length)
-        signed = node.signed
-        obj = vtypes.Wire(width, length=length, signed=signed, name=name)
-        if node.width is not None:
-            obj._set_raw_width(self.visit(node.width.msb),
-                               self.visit(node.width.lsb))
-        obj._set_raw_length(self.visit(node.length.msb),
-                            self.visit(node.length.lsb))
-        self.add_object(obj)
-        return obj
-
-    def visit_RegArray(self, node):
-        name = node.name
-        width = self.visit(node.width) if node.width is not None else None
-        length = self.visit(node.length)
-        signed = node.signed
-        obj = vtypes.Reg(width, length=length, signed=signed, name=name)
-        if node.width is not None:
-            obj._set_raw_width(self.visit(node.width.msb),
-                               self.visit(node.width.lsb))
-        obj._set_raw_length(self.visit(node.length.msb),
-                            self.visit(node.length.lsb))
+        obj = vtypes.Reg(width, dims, signed=signed, name=name,
+                         raw_width=raw_width, raw_dims=raw_dims)
         self.add_object(obj)
         return obj
 
     def visit_Integer(self, node):
         name = node.name
-        width = self.visit(node.width) if node.width is not None else None
+        raw_width = self.visit(node.width) if node.width is not None else None
+        width = to_width(raw_width)
+        raw_dims = self.visit(node.dimensions) if node.dimensions is not None else None
+        dims = to_dims(raw_dims)
         signed = node.signed
-        obj = vtypes.Integer(width, signed=signed, name=name)
-        if node.width is not None:
-            obj._set_raw_width(self.visit(node.width.msb),
-                               self.visit(node.width.lsb))
+        obj = vtypes.Integer(width, dims, signed=signed, name=name,
+                             raw_width=raw_width, raw_dims=raw_dims)
         self.add_object(obj)
         return obj
 
     def visit_Real(self, node):
         name = node.name
-        width = self.visit(node.width) if node.width is not None else None
-        obj = vtypes.Real(width, name=name)
-        if node.width is not None:
-            obj._set_raw_width(self.visit(node.width.msb),
-                               self.visit(node.width.lsb))
+        raw_width = self.visit(node.width) if node.width is not None else None
+        width = to_width(raw_width)
+        raw_dims = self.visit(node.dimensions) if node.dimensions is not None else None
+        dims = to_dims(raw_dims)
+        obj = vtypes.Real(width, dims, name=name, raw_width=raw_width, raw_dims=raw_dims)
         self.add_object(obj)
         return obj
 
     def visit_Genvar(self, node):
         name = node.name
-        width = self.visit(node.width) if node.width is not None else None
-        obj = vtypes.Genvar(width, name=name)
-        if node.width is not None:
-            obj._set_raw_width(self.visit(node.width.msb),
-                               self.visit(node.width.lsb))
+        raw_width = self.visit(node.width) if node.width is not None else None
+        width = to_width(raw_width)
+        raw_dims = self.visit(node.dimensions) if node.dimensions is not None else None
+        dims = to_dims(raw_dims)
+        obj = vtypes.Genvar(width, dims, name=name, raw_width=raw_width, raw_dims=raw_dims)
         self.add_object(obj)
         return obj
 
@@ -389,36 +377,30 @@ class VerilogReadVisitor(object):
     def visit_Parameter(self, node):
         name = node.name
         value = self.visit(node.value)
-        width = self.visit(node.width) if node.width is not None else None
+        raw_width = self.visit(node.width) if node.width is not None else None
+        width = to_width(raw_width)
         signed = node.signed
-        param = vtypes.Parameter(value, width, signed, name=name)
-        if node.width is not None:
-            param._set_raw_width(self.visit(node.width.msb),
-                                 self.visit(node.width.lsb))
+        param = vtypes.Parameter(value, width, signed, name=name, raw_width=raw_width)
         self.add_object(param)
         return param
 
     def visit_Localparam(self, node):
         name = node.name
         value = self.visit(node.value)
-        width = self.visit(node.width) if node.width is not None else None
+        raw_width = self.visit(node.width) if node.width is not None else None
+        width = to_width(raw_width)
         signed = node.signed
-        param = vtypes.Localparam(value, width, signed, name=name)
-        if node.width is not None:
-            param._set_raw_width(self.visit(node.width.msb),
-                                 self.visit(node.width.lsb))
+        param = vtypes.Localparam(value, width, signed, name=name, raw_width=raw_width)
         self.add_object(param)
         return param
 
     def visit_Supply(self, node):
         name = node.name
         value = self.visit(node.value)
-        width = self.visit(node.width) if node.width is not None else None
+        raw_width = self.visit(node.width) if node.width is not None else None
+        width = to_width(raw_width)
         signed = node.signed
-        param = vtypes.Supply(value, width, signed, name=name)
-        if node.width is not None:
-            param._set_raw_width(self.visit(node.width.msb),
-                                 self.visit(node.width.lsb))
+        param = vtypes.Supply(value, width, signed, name=name, raw_width=raw_width)
         self.add_object(param)
         return param
 
@@ -789,12 +771,10 @@ class VerilogReadVisitor(object):
         self.push_read_only_module()
 
         name = node.name
-        width = self.visit(
-            node.retwidth) if node.retwidth is not None else None
-        func = function.Function(name, width)
-        if node.retwidth is not None:
-            func._set_raw_width(self.visit(node.retwidth.msb),
-                                self.visit(node.retwidth.lsb))
+        raw_width = (self.visit(node.retwidth)
+                     if node.retwidth is not None else None)
+        width = to_width(raw_width)
+        func = function.Function(name, width, raw_width=raw_width)
         statement = [self.visit(s) for s in node.statement]
         body = []
 
@@ -802,20 +782,17 @@ class VerilogReadVisitor(object):
             if isinstance(s, (tuple, list)):  # from the visitor result of decl
                 for d in s:
                     if isinstance(d, vtypes.Input):
-                        t = func.Input(d.name, d.width,
-                                       d.length, d.signed, d.value)
-                        if d.width_msb is not None and d.width_lsb is not None:
-                            t._set_raw_width(d.width_msb, d.width_lsb)
+                        t = func.Input(d.name, d.width, d.dims, d.signed, d.value)
+                        t.raw_width = d.raw_width
+                        t.raw_dims = d.raw_dims
                     elif isinstance(d, vtypes.Reg):
-                        t = func.Reg(d.name, d.width, d.length,
-                                     d.signed, d.value)
-                        if d.width_msb is not None and d.width_lsb is not None:
-                            t._set_raw_width(d.width_msb, d.width_lsb)
+                        t = func.Reg(d.name, d.width, d.dims, d.signed, d.value)
+                        t.raw_width = d.raw_width
+                        t.raw_dims = d.raw_dims
                     elif isinstance(d, vtypes.Integer):
-                        t = func.Integer(
-                            d.name, d.width, d.length, d.signed, d.value)
-                        if d.width_msb is not None and d.width_lsb is not None:
-                            t._set_raw_width(d.width_msb, d.width_lsb)
+                        t = func.Integer(d.name, d.width, d.dims, d.signed, d.value)
+                        t.raw_width = d.raw_width
+                        t.raw_dims = d.raw_dims
                     else:
                         body.append(s)
             else:
@@ -848,20 +825,17 @@ class VerilogReadVisitor(object):
             if isinstance(s, (tuple, list)):  # from the visitor result of decl
                 for d in s:
                     if isinstance(d, vtypes.Input):
-                        t = _task.Input(d.name, d.width,
-                                        d.length, d.signed, d.value)
-                        if d.width_msb is not None and d.width_lsb is not None:
-                            t._set_raw_width(d.width_msb, d.width_lsb)
+                        t = _task.Input(d.name, d.width, d.dims, d.signed, d.value)
+                        t.raw_width = d.raw_width
+                        t.raw_dims = d.raw_dims
                     elif isinstance(d, vtypes.Reg):
-                        t = _task.Reg(d.name, d.width, d.length,
-                                      d.signed, d.value)
-                        if d.width_msb is not None and d.width_lsb is not None:
-                            t._set_raw_width(d.width_msb, d.width_lsb)
+                        t = _task.Reg(d.name, d.width, d.dims, d.signed, d.value)
+                        t.raw_width = d.raw_width
+                        t.raw_dims = d.raw_dims
                     elif isinstance(d, vtypes.Integer):
-                        t = _task.Integer(
-                            d.name, d.width, d.length, d.signed, d.value)
-                        if d.width_msb is not None and d.width_lsb is not None:
-                            t._set_raw_width(d.width_msb, d.width_lsb)
+                        t = _task.Integer(d.name, d.width, d.dims, d.signed, d.value)
+                        t.raw_width = d.raw_width
+                        t.raw_dims = d.raw_dims
                     else:
                         body.append(s)
             else:
@@ -963,3 +937,41 @@ class VerilogReadVisitor(object):
         if isinstance(statement, vtypes.Delay):
             return statement
         return vtypes.SingleStatement(statement)
+
+
+def to_width(raw_width):
+    if raw_width is None:
+        return None
+
+    msb = raw_width[0]
+    lsb = raw_width[1]
+
+    if isinstance(msb, vtypes.Int):
+        msb = msb.value
+
+    if isinstance(lsb, vtypes.Int):
+        lsb = lsb.value
+
+    if isinstance(lsb, int):
+        if lsb == 0:
+            return msb + 1
+        return msb - (lsb - 1)
+
+    if isinstance(msb, vtypes._Numeric):
+        return msb - lsb + 1
+
+    msb = vtypes.Int(msb)
+
+    return msb - lsb + 1
+
+
+def to_dims(raw_dims):
+    if raw_dims is None:
+        return None
+
+    dims = []
+
+    for raw_dim in raw_dims:
+        dims.append(to_width((raw_dim[1], raw_dim[0])))
+
+    return tuple(dims)

@@ -453,11 +453,7 @@ class _Numeric(VeriloggenNode):
         return self.__next__()
 
     def _len(self):
-        if hasattr(self, 'length') and self.length is not None:
-            ret = self.length
-        else:
-            ret = self.bit_length()
-        return ret
+        return self.bit_length()
 
     def __len__(self):
         ret = self._len()
@@ -468,22 +464,36 @@ class _Numeric(VeriloggenNode):
 
 class _Variable(_Numeric):
 
-    def __init__(self, width=1, length=None, signed=False, value=None, initval=None, name=None,
-                 module=None):
+    def __init__(self, width=1, dims=None, signed=False, value=None, initval=None, name=None,
+                 raw_width=None, raw_dims=None, module=None):
         _Numeric.__init__(self)
         self.name = name
         self.width = width
-        self.width_msb = None
-        self.width_lsb = None
-        self.length = length
-        self.length_msb = None
-        self.length_lsb = None
+        if dims is not None and not isinstance(dims, (tuple, list)):
+            dims = tuple([dims])
+        self.dims = dims
         self.signed = signed
         self.value = value
         self.initval = initval
+
+        self.raw_width = raw_width  # (MSB, LSB)
+        if raw_dims is not None:
+            for raw_dim in raw_dims:
+                if not isinstance(raw_dim, tuple):
+                    raise TypeError('dim must be tuple.')
+                if len(raw_dim) != 2:
+                    raise TypeError('len of dim must be 2.')
+            self.raw_dims = tuple(raw_dims)  # [(L, R), ...]
+        else:
+            self.raw_dims = None
+
         self.module = module
         self.subst = []
         self.assign_value = None
+
+    @property
+    def shape(self):
+        return self.dims
 
     def write(self, value, blk=False, ldelay=None, rdelay=None):
         return _write_subst(self, value, blk, ldelay, rdelay)
@@ -536,25 +546,14 @@ class _Variable(_Numeric):
     def _get_subst(self):
         return self.subst
 
-    def _set_raw_width(self, msb, lsb):
-        self.width_msb = msb
-        self.width_lsb = lsb
-
-    def _set_raw_length(self, msb, lsb):
-        self.length_msb = msb
-        self.length_lsb = lsb
-
     def _get_module(self):
         return self.module
 
     def __setattr__(self, attr, value):
-        # when width or length is overwritten, msb and lsb values are reset.
         if attr == 'width':
-            object.__setattr__(self, 'width_msb', None)
-            object.__setattr__(self, 'width_lsb', None)
-        if attr == 'length':
-            object.__setattr__(self, 'length_msb', None)
-            object.__setattr__(self, 'length_lsb', None)
+            object.__setattr__(self, 'raw_width', None)
+        if attr == 'dims':
+            object.__setattr__(self, 'raw_dims', None)
         object.__setattr__(self, attr, value)
 
     def __str__(self):
@@ -562,6 +561,12 @@ class _Variable(_Numeric):
 
     def __call__(self, value, blk=False, ldelay=None, rdelay=None):
         return self.write(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
+
+    def _len(self):
+        if self.dims is not None:
+            return self.dims[0]
+
+        return self.bit_length()
 
 
 class Input(_Variable):
@@ -673,11 +678,12 @@ class AnyType(_Variable):
 
 class _ParameterVariable(_Variable):
 
-    def __init__(self, value, width=None, signed=False, name=None, module=None):
+    def __init__(self, value, width=None, signed=False, name=None,
+                 raw_width=None, module=None):
         if isinstance(value, _ParameterVariable):
             value = value.value
         _Variable.__init__(self, width=width, signed=signed, value=value, name=name,
-                           module=module)
+                           raw_width=raw_width, module=module)
 
     def bit_length(self):
         if self.width is None:
@@ -1516,8 +1522,26 @@ class Pointer(_SpecialOperator):
         return self
 
     def bit_length(self):
-        if isinstance(self.var, _Variable) and self.var.length is not None:
+        if isinstance(self.var, _Variable) and self.var.dims is not None:
             return self.var.bit_length()
+
+        if isinstance(self.var, Pointer):
+            root = self.var
+            depth = 1
+            while True:
+                if not isinstance(root, Pointer):
+                    break
+                root = root.var
+                depth += 1
+
+            if not hasattr(root, 'dims'):
+                return 1
+
+            if len(root.dims) >= depth:
+                return root.bit_length()
+
+            return 1
+
         return 1
 
     def assign(self, value):
@@ -1555,6 +1579,23 @@ class Pointer(_SpecialOperator):
 
     def __call__(self, value, blk=False, ldelay=None, rdelay=None):
         return self.write(value, blk=blk, ldelay=ldelay, rdelay=rdelay)
+
+    def _len(self):
+        root = self.var
+        depth = 1
+        while True:
+            if not isinstance(root, Pointer):
+                break
+            root = root.var
+            depth += 1
+
+        if not hasattr(root, 'dims'):
+            return 1
+
+        if len(root.dims) > depth:
+            return root.dims[depth - 1]
+
+        return self.bit_length()
 
     @staticmethod
     def op(var, pos):

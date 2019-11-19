@@ -21,64 +21,64 @@ def _tmp_name(prefix='_tmp_fixed'):
 
 
 def FixedInput(m, name, width=32, point=0,
-               length=None, signed=True):
-    obj = _FixedInput(width=width, length=length, signed=signed,
+               dims=None, signed=True):
+    obj = _FixedInput(width=width, dims=dims, signed=signed,
                       name=name, module=m, point=point)
     m.add_object(obj)
     return obj
 
 
 def FixedOutput(m, name, width=32, point=0,
-                length=None, signed=True):
-    obj = _FixedOutput(width=width, length=length, signed=signed,
+                dims=None, signed=True):
+    obj = _FixedOutput(width=width, dims=dims, signed=signed,
                        name=name, module=m, point=point)
     m.add_object(obj)
     return obj
 
 
 def FixedOutputReg(m, name, width=32, point=0,
-                   length=None, signed=True, initval=None):
-    obj = _FixedOutput(width=width, length=length, signed=signed,
+                   dims=None, signed=True, initval=None):
+    obj = _FixedOutput(width=width, dims=dims, signed=signed,
                        name=name, module=m, point=point)
     m.add_object(obj)
-    obj = _FixedReg(width=width, length=length, signed=signed, initval=initval,
+    obj = _FixedReg(width=width, dims=dims, signed=signed, initval=initval,
                     name=name, module=m, point=point)
     m.add_object(obj)
     return obj
 
 
 def FixedInout(m, name, width=32, point=0,
-               length=None, signed=True):
-    obj = _FixedInout(width=width, length=length, signed=signed,
+               dims=None, signed=True):
+    obj = _FixedInout(width=width, dims=dims, signed=signed,
                       name=name, module=m, point=point)
     m.add_object(obj)
     return obj
 
 
 def FixedReg(m, name, width=32, point=0,
-             length=None, signed=True, initval=None):
-    obj = _FixedReg(width=width, length=length, signed=signed, initval=initval,
+             dims=None, signed=True, initval=None):
+    obj = _FixedReg(width=width, dims=dims, signed=signed, initval=initval,
                     name=name, module=m, point=point)
     m.add_object(obj)
     return obj
 
 
 def FixedWire(m, name, width=32, point=0,
-              length=None, signed=True):
-    obj = _FixedWire(width=width, length=length, signed=signed,
+              dims=None, signed=True):
+    obj = _FixedWire(width=width, dims=dims, signed=signed,
                      name=name, module=m, point=point)
     m.add_object(obj)
     return obj
 
 
-def FixedTmpReg(m, width=32, point=0, length=None, signed=True, initval=None):
+def FixedTmpReg(m, width=32, point=0, dims=None, signed=True, initval=None):
     name = _tmp_name()
-    return FixedReg(m, name, width, point, length, signed, initval)
+    return FixedReg(m, name, width, point, dims, signed, initval)
 
 
-def FixedTmpWire(m, width=32, point=0, length=None, signed=True):
+def FixedTmpWire(m, width=32, point=0, dims=None, signed=True):
     name = _tmp_name()
-    return FixedWire(m, name, width, point, length, signed)
+    return FixedWire(m, name, width, point, dims, signed)
 
 
 def FixedConst(value, point=0, signed=True, raw=False):
@@ -377,13 +377,13 @@ class _FixedVariable(_FixedBase, vtypes._Variable):
     __hash__ = vtypes._Variable.__hash__
     no_write_check = True
 
-    def __init__(self, width=1, length=None, signed=True, value=None, initval=None, name=None,
+    def __init__(self, width=1, dims=None, signed=True, value=None, initval=None, name=None,
                  module=None, point=0):
         self.point = point
         if initval is not None and not isinstance(initval, _FixedConstant):
             initval = to_fixed(initval, point)
-        vtypes._Variable.__init__(
-            self, width, length, signed, value, initval, name, module)
+        vtypes._Variable.__init__(self, width, dims, signed, value, initval, name,
+                                  module=module)
 
     def write(self, value, blk=False, ldelay=None, rdelay=None):
         v = self._adjust(value)

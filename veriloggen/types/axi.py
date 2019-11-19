@@ -108,7 +108,7 @@ class AxiWriteAddress(AxiInterfaceBase):
         self.awburst = util.make_port(
             m, self.otype, name + '_awburst', 2, initval=0, no_reg=True)
         self.awlock = util.make_port(
-            m, self.otype, name + '_awlock', 2, initval=0, no_reg=True)
+            m, self.otype, name + '_awlock', 1, initval=0, no_reg=True)
         self.awcache = util.make_port(
             m, self.otype, name + '_awcache', 4, initval=0, no_reg=True)
         self.awprot = util.make_port(
@@ -264,7 +264,7 @@ class AxiReadAddress(AxiInterfaceBase):
         self.arburst = util.make_port(
             m, self.otype, name + '_arburst', 2, initval=0, no_reg=True)
         self.arlock = util.make_port(
-            m, self.otype, name + '_arlock', 2, initval=0, no_reg=True)
+            m, self.otype, name + '_arlock', 1, initval=0, no_reg=True)
         self.arcache = util.make_port(
             m, self.otype, name + '_arcache', 4, initval=0, no_reg=True)
         self.arprot = util.make_port(
@@ -2255,9 +2255,6 @@ class AxiMemoryModel(AxiSlave):
             self.wresp.bvalid(1)
         )
 
-        self.mem = self.m.Reg(
-            '_'.join(['', self.name, 'mem']), 8, vtypes.Int(2) ** self.mem_addrwidth)
-
         if memimg is None:
             if memimg_name is None:
                 memimg_name = '_'.join(['', self.name, 'memimg', '.out'])
@@ -2268,12 +2265,24 @@ class AxiMemoryModel(AxiSlave):
         elif isinstance(memimg, str):
             memimg_name = memimg
 
+            num_words = sum(1 for line in open(memimg, 'r'))
+            # resize mem_addrwidth according to the memimg size
+            self.mem_addrwidth = max(self.mem_addrwidth,
+                                     int(math.ceil(math.log(num_words, 2))))
+
         else:
             if memimg_datawidth is None:
                 memimg_datawidth = mem_datawidth
             if memimg_name is None:
                 memimg_name = '_'.join(['', self.name, 'memimg', '.out'])
-            to_memory_image(memimg_name, memimg, datawidth=memimg_datawidth)
+
+            num_words = to_memory_image(memimg_name, memimg, datawidth=memimg_datawidth)
+            # resize mem_addrwidth according to the memimg size
+            self.mem_addrwidth = max(self.mem_addrwidth,
+                                     int(math.ceil(math.log(num_words, 2))))
+
+        self.mem = self.m.Reg(
+            '_'.join(['', self.name, 'mem']), 8, vtypes.Int(2) ** self.mem_addrwidth)
 
         self.m.Initial(
             vtypes.Systask('readmemh', memimg_name, self.mem)
@@ -2582,6 +2591,9 @@ def to_memory_image(filename, array, length=None,
                 for v in values:
                     f.write(fmt % v)
 
+        num_lines = len(array) * num
+        return num_lines
+
     else:
         num = int(math.ceil(wordwidth / datawidth))
         mask = (2 ** datawidth) - 1
@@ -2601,6 +2613,9 @@ def to_memory_image(filename, array, length=None,
 
                     f.write(fmt % cat)
                     values = []
+
+        num_lines = len(array) // num
+        return num_lines
 
 
 def aligned_shape(shape, datawidth, mem_datawidth):

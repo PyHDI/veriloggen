@@ -16,18 +16,18 @@ class Task(vtypes.VeriloggenNode):
         self.variable = collections.OrderedDict()
         self.statement = None
 
-    def Input(self, name, width=None, length=None, signed=False, value=None):
-        t = vtypes.Input(width, length, signed, value, name=name)
+    def Input(self, name, width=None, dims=None, signed=False, value=None):
+        t = vtypes.Input(width, dims, signed, value, name=name)
         self.io_variable[name] = t
         return t
 
-    def Reg(self, name, width=None, length=None, signed=False, value=None):
-        t = vtypes.Reg(width, length, signed, value, name=name)
+    def Reg(self, name, width=None, dims=None, signed=False, value=None):
+        t = vtypes.Reg(width, dims, signed, value, name=name)
         self.variable[name] = t
         return t
 
-    def Integer(self, name, width=None, length=None, signed=False, value=None):
-        t = vtypes.Integer(width, length, signed, value, name=name)
+    def Integer(self, name, width=None, dims=None, signed=False, value=None):
+        t = vtypes.Integer(width, dims, signed, value, name=name)
         self.variable[name] = t
         return t
 

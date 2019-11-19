@@ -2908,15 +2908,15 @@ class RingBuffer(_UnaryOperator):
         wdata.assign(self.right.sig_data)
 
         waddr = m.Reg(self.name('waddr'), addrwidth, initval=0)
+        self.waddr = waddr
 
         wcond = _and_vars(svalid, senable, enabledata)
 
         next_waddr = vtypes.Mux(waddr == self.length - 1, 0, waddr + 1)
         seq(waddr(next_waddr), cond=wcond)
 
-        reset_waddr = 0
         reset_cond = _and_vars(svalid, senable, enabledata, resetdata)
-        seq(waddr(reset_waddr), cond=reset_cond)
+        seq(waddr(waddr), cond=reset_cond)
 
         resetdata_x = vtypes.Not(resetdata) if resetdata is not None else 1
         wenable = _and_vars(svalid, senable, enabledata, resetdata_x)
@@ -2966,17 +2966,8 @@ class _RingBufferOutput(_BinaryOperator):
 
         rdata = m.Wire(self.name('rdata'), datawidth, signed=signed)
 
-        raddr_base = m.Reg(self.name('raddr'), addrwidth, initval=0)
-
-        rcond = _and_vars(svalid, senable, enabledata)
-
-        next_raddr_base = vtypes.Mux(raddr_base == self.buf.length - 1,
-                                     0, raddr_base + 1)
-        seq(raddr_base(next_raddr_base), cond=rcond)
-
-        reset_raddr_base = 0
-        reset_cond = _and_vars(svalid, senable, enabledata, resetdata)
-        seq(raddr_base(reset_raddr_base), cond=reset_cond)
+        diff_latency = self.start_stage - self.buf.start_stage
+        raddr_base = seq.Prev(self.buf.waddr, diff_latency)
 
         raddr = raddr_base + self.right.sig_data
         raddr = vtypes.Mux(raddr >= self.buf.length,
@@ -3181,8 +3172,7 @@ class FromExtern(_UnaryOperator):
         )
 
 
-class Reg(_SpecialOperator):
-    __intrinsics__ = ('write')
+class Predicate(_SpecialOperator):
     latency = 1
 
     def __init__(self, data, when=None):
@@ -3197,7 +3187,7 @@ class Reg(_SpecialOperator):
         self.point = data.get_point()
         self.signed = data.get_signed()
 
-        self.graph_label = 'Reg'
+        self.graph_label = 'Predicate'
         self.graph_shape = 'box'
 
     def _implement(self, m, seq, svalid=None, senable=None):
@@ -3218,6 +3208,15 @@ class Reg(_SpecialOperator):
         enable = _and_vars(senable, when_cond)
 
         seq(data(arg_data[0]), cond=enable)
+
+
+class Reg(Predicate):
+    __intrinsics__ = ('write')
+
+    def __init__(self, data, when=None):
+        Predicate.__init__(self, data, when)
+        self.graph_label = 'Reg'
+        self.graph_shape = 'box'
 
     def write(self, fsm, value):
         cond = fsm.here
