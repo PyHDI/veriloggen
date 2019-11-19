@@ -47,46 +47,46 @@ class Module(vtypes.VeriloggenNode):
     #-------------------------------------------------------------------------
     # User interface for variables
     #-------------------------------------------------------------------------
-    def Input(self, name, width=None, length=None, signed=False, value=None):
+    def Input(self, name, width=None, dims=None, signed=False, value=None):
 
-        t = vtypes.Input(width, length, signed, value, name=name, module=self)
+        t = vtypes.Input(width, dims, signed, value, name=name, module=self)
         self.check_existing_identifier(name, vtypes.Wire)
         self.io_variable[name] = t
         self.items.append(t)
         return t
 
-    def Output(self, name, width=None, length=None, signed=False, value=None):
+    def Output(self, name, width=None, dims=None, signed=False, value=None):
 
-        t = vtypes.Output(width, length, signed, value, name=name, module=self)
+        t = vtypes.Output(width, dims, signed, value, name=name, module=self)
         self.check_existing_identifier(name, vtypes.Wire, vtypes.Reg)
         self.io_variable[name] = t
         self.items.append(t)
         return t
 
-    def OutputReg(self, name, width=None, length=None, signed=False, value=None,
+    def OutputReg(self, name, width=None, dims=None, signed=False, value=None,
                   initval=None):
 
-        t = vtypes.Output(width, length, signed, value, name=name, module=self)
+        t = vtypes.Output(width, dims, signed, value, name=name, module=self)
         self.check_existing_identifier(name)
         self.io_variable[name] = t
         self.items.append(t)
-        t = vtypes.Reg(width, length, signed, value,
+        t = vtypes.Reg(width, dims, signed, value,
                        initval, name=name, module=self)
         self.variable[name] = t
         self.items.append(t)
         return t
 
-    def Inout(self, name, width=None, length=None, signed=False, value=None):
+    def Inout(self, name, width=None, dims=None, signed=False, value=None):
 
-        t = vtypes.Inout(width, length, signed, value, name=name, module=self)
+        t = vtypes.Inout(width, dims, signed, value, name=name, module=self)
         self.check_existing_identifier(name, vtypes.Wire)
         self.io_variable[name] = t
         self.items.append(t)
         return t
 
-    def Wire(self, name, width=None, length=None, signed=False, value=None):
+    def Wire(self, name, width=None, dims=None, signed=False, value=None):
 
-        t = vtypes.Wire(width, length, signed, value, name=name, module=self)
+        t = vtypes.Wire(width, dims, signed, value, name=name, module=self)
         self.check_existing_identifier(name, vtypes.Input, vtypes.Output)
         if self.is_reg(name):
             raise ValueError("Object '%s' is already defined." % name)
@@ -94,85 +94,85 @@ class Module(vtypes.VeriloggenNode):
         self.items.append(t)
         return t
 
-    def TmpWire(self, width=None, length=None, signed=False, value=None,
+    def TmpWire(self, width=None, dims=None, signed=False, value=None,
                 prefix=None):
 
         if prefix is None:
             prefix = self.tmp_prefix
         name = '_'.join([prefix, str(self.get_tmp())])
-        return self.Wire(name, width, length, signed, value)
+        return self.Wire(name, width, dims, signed, value)
 
-    def Reg(self, name, width=None, length=None, signed=False, value=None,
+    def Reg(self, name, width=None, dims=None, signed=False, value=None,
             initval=None):
 
-        t = vtypes.Reg(width, length, signed, value,
+        t = vtypes.Reg(width, dims, signed, value,
                        initval, name=name, module=self)
         self.check_existing_identifier(name, vtypes.Output)
         self.variable[name] = t
         self.items.append(t)
         return t
 
-    def TmpReg(self, width=None, length=None, signed=False, value=None,
+    def TmpReg(self, width=None, dims=None, signed=False, value=None,
                initval=None, prefix=None):
 
         if prefix is None:
             prefix = self.tmp_prefix
         name = '_'.join([prefix, str(self.get_tmp())])
-        return self.Reg(name, width, length, signed, value, initval)
+        return self.Reg(name, width, dims, signed, value, initval)
 
-    def Integer(self, name, width=None, length=None, signed=False, value=None,
+    def Integer(self, name, width=None, dims=None, signed=False, value=None,
                 initval=None):
 
-        t = vtypes.Integer(width, length, signed, value,
+        t = vtypes.Integer(width, dims, signed, value,
                            initval, name=name, module=self)
         self.check_existing_identifier(name)
         self.variable[name] = t
         self.items.append(t)
         return t
 
-    def TmpInteger(self, width=None, length=None, signed=False, value=None,
+    def TmpInteger(self, width=None, dims=None, signed=False, value=None,
                    initval=None, prefix=None):
 
         if prefix is None:
             prefix = self.tmp_prefix
         name = '_'.join([prefix, str(self.get_tmp())])
-        return self.Integer(name, width, length, signed, value, initval)
+        return self.Integer(name, width, dims, signed, value, initval)
 
-    def Real(self, name, width=None, length=None, signed=False, value=None,
+    def Real(self, name, width=None, dims=None, signed=False, value=None,
              initval=None):
 
-        t = vtypes.Real(width, length, signed, value,
+        t = vtypes.Real(width, dims, signed, value,
                         initval, name=name, module=self)
         self.check_existing_identifier(name)
         self.variable[name] = t
         self.items.append(t)
         return t
 
-    def TmpReal(self, width=None, length=None, signed=False, value=None,
+    def TmpReal(self, width=None, dims=None, signed=False, value=None,
                 initval=None, prefix=None):
 
         if prefix is None:
             prefix = self.tmp_prefix
         name = '_'.join([prefix, str(self.get_tmp())])
-        return self.Real(name, width, length, signed, value, initval)
+        return self.Real(name, width, dims, signed, value, initval)
 
-    def Genvar(self, name, width=None, length=None, signed=False, value=None):
+    def Genvar(self, name, width=None, dims=None, signed=False, value=None):
 
-        t = vtypes.Genvar(width, length, signed, value, name=name, module=self)
+        t = vtypes.Genvar(width, dims, signed, value, name=name, module=self)
         self.check_existing_identifier(name)
         self.variable[name] = t
         self.items.append(t)
         return t
 
-    def TmpGenvar(self, width=None, length=None, signed=False, value=None,
+    def TmpGenvar(self, width=None, dims=None, signed=False, value=None,
                   prefix=None):
 
         if prefix is None:
             prefix = self.tmp_prefix
         name = '_'.join([prefix, str(self.get_tmp())])
-        return self.Genvar(name, width, length, signed, value)
+        return self.Genvar(name, width, dims, signed, value)
 
-    def Parameter(self, name, value, width=None, signed=False, length=None):
+    def Parameter(self, name, value, width=None, signed=False, dims=None):
 
         t = vtypes.Parameter(value, width, signed, name=name, module=self)
         self.check_existing_identifier(name)
@@ -180,7 +180,7 @@ class Module(vtypes.VeriloggenNode):
         self.items.append(t)
         return t
 
-    def Localparam(self, name, value, width=None, signed=False, length=None):
+    def Localparam(self, name, value, width=None, signed=False, dims=None):
 
         t = vtypes.Localparam(value, width, signed, name=name, module=self)
         self.check_existing_identifier(name)
@@ -188,237 +188,231 @@ class Module(vtypes.VeriloggenNode):
         self.items.append(t)
         return t
 
-    def TmpLocalparam(self, value, width=None, signed=False, length=None,
+    def TmpLocalparam(self, value, width=None, signed=False, dims=None,
                       prefix=None):
 
         if prefix is None:
             prefix = self.tmp_prefix
         name = '_'.join([prefix, str(self.get_tmp())])
-        return self.Localparam(name, value, width, signed, length)
+        return self.Localparam(name, value, width, signed, dims)
 
     #-------------------------------------------------------------------------
-    def InputLike(self, src, name=None, width=None, length=None,
+    def InputLike(self, src, name=None, width=None, dims=None,
                   signed=None, value=None):
 
         if name is None:
             name = src.name
         if width is None:
             width = src.width
-        #if length is None: length = src.length
-        if length is None:
-            length = None
+        if dims is None:
+            dims = src.dims
         if signed is None:
             signed = src.signed
         if value is None:
             value = src.value
-        return self.Input(name, width, length, signed, value)
+        return self.Input(name, width, dims, signed, value)
 
-    def OutputLike(self, src, name=None, width=None, length=None,
+    def OutputLike(self, src, name=None, width=None, dims=None,
                    signed=None, value=None):
 
         if name is None:
             name = src.name
         if width is None:
             width = src.width
-        #if length is None: length = src.length
-        if length is None:
-            length = None
+        if dims is None:
+            dims = src.dims
         if signed is None:
             signed = src.signed
         if value is None:
             value = src.value
-        return self.Output(name, width, length, signed, value)
+        return self.Output(name, width, dims, signed, value)
 
-    def OutputRegLike(self, src, name=None, width=None, length=None,
+    def OutputRegLike(self, src, name=None, width=None, dims=None,
                       signed=None, value=None, initval=None):
 
         if name is None:
             name = src.name
         if width is None:
             width = src.width
-        #if length is None: length = src.length
-        if length is None:
-            length = None
+        if dims is None:
+            dims = src.dims
         if signed is None:
             signed = src.signed
         if value is None:
             value = src.value
         if initval is None:
             initval = src.initval
-        return self.OutputReg(name, width, length, signed, value, initval)
+        return self.OutputReg(name, width, dims, signed, value, initval)
 
-    def InoutLike(self, src, name=None, width=None, length=None,
+    def InoutLike(self, src, name=None, width=None, dims=None,
                   signed=None, value=None):
 
         if name is None:
             name = src.name
         if width is None:
             width = src.width
-        #if length is None: length = src.length
-        if length is None:
-            length = None
+        if dims is None:
+            dims = src.dims
         if signed is None:
             signed = src.signed
         if value is None:
             value = src.value
-        return self.Inout(name, width, length, signed, value)
+        return self.Inout(name, width, dims, signed, value)
 
-    def WireLike(self, src, name=None, width=None, length=None,
+    def WireLike(self, src, name=None, width=None, dims=None,
                  signed=None, value=None):
 
         if name is None:
             name = src.name
         if width is None:
             width = src.width
-        if length is None:
-            length = src.length
+        if dims is None:
+            dims = src.dims
         if signed is None:
             signed = src.signed
         if value is None:
             value = src.value
-        return self.Wire(name, width, length, signed, value)
+        return self.Wire(name, width, dims, signed, value)
 
-    def TmpWireLike(self, src, width=None, length=None,
+    def TmpWireLike(self, src, width=None, dims=None,
                     signed=None, value=None, prefix=None):
 
         if width is None:
             width = src.width
-        if length is None:
-            length = src.length
+        if dims is None:
+            dims = src.dims
         if signed is None:
             signed = src.signed
         if value is None:
             value = src.value
-        return self.TmpWire(width, length, signed, value, prefix)
+        return self.TmpWire(width, dims, signed, value, prefix)
 
-    def RegLike(self, src, name=None, width=None, length=None,
+    def RegLike(self, src, name=None, width=None, dims=None,
                 signed=None, value=None, initval=None):
 
         if name is None:
             name = src.name
         if width is None:
             width = src.width
-        if length is None:
-            length = src.length
+        if dims is None:
+            dims = src.dims
         if signed is None:
             signed = src.signed
         if value is None:
             value = src.value
         if initval is None:
             initval = src.initval
-        return self.Reg(name, width, length, signed, value, initval)
+        return self.Reg(name, width, dims, signed, value, initval)
 
-    def TmpRegLike(self, src, width=None, length=None,
+    def TmpRegLike(self, src, width=None, dims=None,
                    signed=None, value=None, initval=None, prefix=None):
 
         if width is None:
             width = src.width
-        if length is None:
-            length = src.length
+        if dims is None:
+            dims = src.dims
         if signed is None:
             signed = src.signed
         if value is None:
             value = src.value
         if initval is None:
             initval = src.initval
-        return self.TmpReg(width, length, signed, value, initval, prefix)
+        return self.TmpReg(width, dims, signed, value, initval, prefix)
 
-    def IntegerLike(self, src, name=None, width=None, length=None,
+    def IntegerLike(self, src, name=None, width=None, dims=None,
                     signed=None, value=None, initval=None):
 
         if name is None:
             name = src.name
         if width is None:
             width = src.width
-        if length is None:
-            length = src.length
+        if dims is None:
+            dims = src.dims
         if signed is None:
             signed = src.signed
         if value is None:
             value = src.value
         if initval is None:
             initval = src.initval
-        return self.Integer(name, width, length, signed, value, initval)
+        return self.Integer(name, width, dims, signed, value, initval)
 
-    def TmpIntegerLike(self, src, width=None, length=None,
+    def TmpIntegerLike(self, src, width=None, dims=None,
                        signed=None, value=None, initval=None, prefix=None):
 
         if width is None:
             width = src.width
-        if length is None:
-            length = src.length
+        if dims is None:
+            dims = src.dims
         if signed is None:
             signed = src.signed
         if value is None:
             value = src.value
         if initval is None:
             initval = src.initval
-        return self.TmpInteger(width, length, signed, value, initval, prefix)
+        return self.TmpInteger(width, dims, signed, value, initval, prefix)
 
-    def RealLike(self, src, name=None, width=None, length=None,
+    def RealLike(self, src, name=None, width=None, dims=None,
                  signed=None, value=None, initval=None):
 
         if name is None:
             name = src.name
         if width is None:
             width = src.width
-        if length is None:
-            length = src.length
+        if dims is None:
+            dims = src.dims
         if signed is None:
             signed = src.signed
         if value is None:
             value = src.value
         if initval is None:
             initval = src.initval
-        return self.Real(name, width, length, signed, value, initval)
+        return self.Real(name, width, dims, signed, value, initval)
 
-    def TmpRealLike(self, src, width=None, length=None,
+    def TmpRealLike(self, src, width=None, dims=None,
                     signed=None, value=None, initval=None, prefix=None):
 
         if width is None:
             width = src.width
-        if length is None:
-            length = src.length
+        if dims is None:
+            dims = src.dims
         if signed is None:
             signed = src.signed
         if value is None:
             value = src.value
         if initval is None:
             initval = src.initval
-        return self.TmpReal(width, length, signed, value, initval, prefix)
+        return self.TmpReal(width, dims, signed, value, initval, prefix)
 
-    def GenvarLike(self, src, name=None, width=None, length=None,
+    def GenvarLike(self, src, name=None, width=None, dims=None,
                    signed=None, value=None):
 
         if name is None:
             name = src.name
         if width is None:
             width = src.width
-        #if length is None: length = src.length
-        if length is None:
-            length = None
+        if dims is None:
+            dims = src.dims
         if signed is None:
             signed = src.signed
         if value is None:
             value = src.value
-        return self.Genvar(name, width, length, signed, value)
+        return self.Genvar(name, width, dims, signed, value)
 
-    def TmpGenvarLike(self, src, width=None, length=None,
+    def TmpGenvarLike(self, src, width=None, dims=None,
                       signed=None, value=None, prefix=None):
 
         if width is None:
             width = src.width
-        #if length is None: length = src.length
-        if length is None:
-            length = None
+        if dims is None:
+            dims = src.dims
         if signed is None:
             signed = src.signed
         if value is None:
             value = src.value
-        return self.TmpGenvar(width, length, signed, value, prefix)
+        return self.TmpGenvar(width, dims, signed, value, prefix)
 
     def ParameterLike(self, src, name=None, value=None, width=None,
-                      signed=False, length=None):
+                      signed=False, dims=None):
 
         if name is None:
             name = src.name
@@ -428,12 +422,12 @@ class Module(vtypes.VeriloggenNode):
             width = src.width
         if signed is None:
             signed = src.signed
-        if length is None:
-            length = src.length
-        return self.Parameter(name, value, width, signed, length)
+        if dims is None:
+            dims = src.dims
+        return self.Parameter(name, value, width, signed, dims)
 
     def LocalparamLike(self, src, name=None, value=None, width=None,
-                       signed=False, length=None):
+                       signed=False, dims=None):
 
         if name is None:
             name = src.name
@@ -443,12 +437,12 @@ class Module(vtypes.VeriloggenNode):
             width = src.width
         if signed is None:
             signed = src.signed
-        if length is None:
-            length = src.length
-        return self.Localparam(name, value, width, signed, length)
+        if dims is None:
+            dims = src.dims
+        return self.Localparam(name, value, width, signed, dims)
 
     def TmpLocalparamLike(self, src, value=None, width=None,
-                          signed=False, length=None, prefix=None):
+                          signed=False, dims=None, prefix=None):
 
         if value is None:
             value = src.value
@@ -456,9 +450,9 @@ class Module(vtypes.VeriloggenNode):
             width = src.width
         if signed is None:
             signed = src.signed
-        if length is None:
-            length = src.length
-        return self.TmpLocalparam(value, width, signed, length, prefix)
+        if dims is None:
+            dims = src.dims
+        return self.TmpLocalparam(value, width, signed, dims, prefix)
 
     #-------------------------------------------------------------------------
     # User interface for control statements
@@ -1395,17 +1389,17 @@ class Generate(Module):
         Module.__init__(self)
         self.m = m
 
-    def Input(self, name, width=None, length=None, signed=False, value=None):
+    def Input(self, name, width=None, dims=None, signed=False, value=None):
         raise TypeError("Input port is not allowed in generate statement")
 
-    def Output(self, name, width=None, length=None, signed=False, value=None):
+    def Output(self, name, width=None, dims=None, signed=False, value=None):
         raise TypeError("Output port is not allowed in generate statement")
 
-    def OutputReg(self, name, width=None, length=None, signed=False, value=None,
+    def OutputReg(self, name, width=None, dims=None, signed=False, value=None,
                   initval=None):
         raise TypeError("OutputReg port is not allowed in generate statement")
 
-    def Inout(self, name, width=None, length=None, signed=False, value=None):
+    def Inout(self, name, width=None, dims=None, signed=False, value=None):
         raise TypeError("Inout port is not allowed in generate statement")
 
     def find_identifier(self, name):

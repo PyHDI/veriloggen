@@ -504,9 +504,9 @@ class CompileVisitor(ast.NodeVisitor):
         if not isinstance(value, numerical_types):
             return len(value)
 
-        length = getattr(value, 'length', None)
-        if length is not None:
-            return length
+        ln = getattr(value, '_len', None)
+        if ln is not None:
+            return ln
 
         return value.bit_length()
 

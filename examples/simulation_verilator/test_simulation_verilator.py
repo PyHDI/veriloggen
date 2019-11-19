@@ -18,7 +18,7 @@ module test
   wire [8-1:0] myaxi_awlen;
   wire [3-1:0] myaxi_awsize;
   wire [2-1:0] myaxi_awburst;
-  wire [2-1:0] myaxi_awlock;
+  wire [1-1:0] myaxi_awlock;
   wire [4-1:0] myaxi_awcache;
   wire [3-1:0] myaxi_awprot;
   wire [4-1:0] myaxi_awqos;
@@ -37,7 +37,7 @@ module test
   wire [8-1:0] myaxi_arlen;
   wire [3-1:0] myaxi_arsize;
   wire [2-1:0] myaxi_arburst;
-  wire [2-1:0] myaxi_arlock;
+  wire [1-1:0] myaxi_arlock;
   wire [4-1:0] myaxi_arcache;
   wire [3-1:0] myaxi_arprot;
   wire [4-1:0] myaxi_arqos;
@@ -53,7 +53,7 @@ module test
   wire [8-1:0] memory_awlen;
   wire [3-1:0] memory_awsize;
   wire [2-1:0] memory_awburst;
-  wire [2-1:0] memory_awlock;
+  wire [1-1:0] memory_awlock;
   wire [4-1:0] memory_awcache;
   wire [3-1:0] memory_awprot;
   wire [4-1:0] memory_awqos;
@@ -72,7 +72,7 @@ module test
   wire [8-1:0] memory_arlen;
   wire [3-1:0] memory_arsize;
   wire [2-1:0] memory_arburst;
-  wire [2-1:0] memory_arlock;
+  wire [1-1:0] memory_arlock;
   wire [4-1:0] memory_arcache;
   wire [3-1:0] memory_arprot;
   wire [4-1:0] memory_arqos;
@@ -546,7 +546,7 @@ module blinkled
   output reg [8-1:0] myaxi_awlen,
   output [3-1:0] myaxi_awsize,
   output [2-1:0] myaxi_awburst,
-  output [2-1:0] myaxi_awlock,
+  output [1-1:0] myaxi_awlock,
   output [4-1:0] myaxi_awcache,
   output [3-1:0] myaxi_awprot,
   output [4-1:0] myaxi_awqos,
@@ -565,7 +565,7 @@ module blinkled
   output reg [8-1:0] myaxi_arlen,
   output [3-1:0] myaxi_arsize,
   output [2-1:0] myaxi_arburst,
-  output [2-1:0] myaxi_arlock,
+  output [1-1:0] myaxi_arlock,
   output [4-1:0] myaxi_arcache,
   output [3-1:0] myaxi_arprot,
   output [4-1:0] myaxi_arqos,

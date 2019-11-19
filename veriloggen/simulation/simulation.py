@@ -21,19 +21,19 @@ def setup_waveform(m, *uuts, **kwargs):
     for uut in uuts:
         if isinstance(uut, (tuple, list)):
             for u in uut:
-                if isinstance(u, vtypes._Variable) and u.length is not None:
+                if isinstance(u, vtypes._Variable) and u.dims is not None:
                     continue
                 new_uuts.append(u)
         elif isinstance(uut, dict):
             _uut = list(uut.values())
             for u in _uut:
-                if isinstance(u, vtypes._Variable) and u.length is not None:
+                if isinstance(u, vtypes._Variable) and u.dims is not None:
                     continue
                 new_uuts.append(u)
         elif isinstance(uut, submodule.Submodule):
             new_uuts.append(uut.inst)
         else:
-            if isinstance(uut, vtypes._Variable) and uut.length is not None:
+            if isinstance(uut, vtypes._Variable) and uut.dims is not None:
                 continue
             new_uuts.append(uut)
 
