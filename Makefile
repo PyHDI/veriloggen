@@ -17,6 +17,6 @@ clean:
 	make clean -C ./tests_obsolete
 	rm -rf *.egg-info build dist *.pyc __pycache__ parsetab.py .cache *.out *.png *.dot tmp.v uut.vcd
 
-.PHONY: release
-release:
-	pandoc README.md -t rst > README.rst
+#.PHONY: release
+#release:
+#	pandoc README.md -t rst > README.rst

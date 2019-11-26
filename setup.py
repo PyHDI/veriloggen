@@ -14,8 +14,9 @@ version = m.group(1) if m is not None else '0.0.0'
 
 setup(name='veriloggen',
       version=version,
-      description='A library for constructing a Verilog HDL source code in Python',
-      long_description=read('README.rst'),
+      description='A Mixed-Paradigm Hardware Construction Framework',
+      long_description=read('README.md'),
+      long_description_content_type="text/markdown",
       keywords='FPGA, Verilog HDL, High-Level Synthesis',
       author='Shinya Takamaeda-Yamazaki',
       license="Apache License 2.0",
