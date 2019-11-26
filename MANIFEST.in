@@ -5,7 +5,8 @@ include .travis.yml
 include Makefile
 include docker/Dockerfile
 include hello_led.py
-recursive-include utils *
+include veriloggen/Makefile
+include veriloggen/VERSION
 recursive-include tests *
 recursive-include examples *
 recursive-include img *

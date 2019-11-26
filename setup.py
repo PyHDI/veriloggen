@@ -1,19 +1,15 @@
 from setuptools import setup, find_packages
 
-import re
 import os
 
 
 def read(filename):
-    return open(os.path.join(os.path.dirname(__file__), filename), encoding='utf8').read()
+    # return open(os.path.join(os.path.dirname(__file__), filename), encoding='utf8').read()
+    return open(os.path.join(os.path.dirname(__file__), filename)).read()
 
-
-m = re.search(r'(\d+\.\d+\.\d+(-.+)?)',
-              read('veriloggen/utils/VERSION').splitlines()[0])
-version = m.group(1) if m is not None else '0.0.0'
 
 setup(name='veriloggen',
-      version=version,
+      version=read('veriloggen/VERSION'),
       description='A Mixed-Paradigm Hardware Construction Framework',
       long_description=read('README.md'),
       long_description_content_type="text/markdown",
@@ -22,8 +18,9 @@ setup(name='veriloggen',
       license="Apache License 2.0",
       url='https://github.com/PyHDI/veriloggen',
       packages=find_packages(),
-      package_data={'veriloggen.utils': ['VERSION'],
-                    'veriloggen.simulation': ['*.cpp'], },
+      package_data={'veriloggen': ['VERSION'],
+                    'veriloggen.simulation': ['*.cpp'],
+                    },
       install_requires=['Jinja2>=2.10',
                         'pyverilog>=1.2.0',
                         'numpy>=1.17'],
