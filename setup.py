@@ -9,7 +9,7 @@ def read(filename):
 
 
 setup(name='veriloggen',
-      version=read('veriloggen/VERSION'),
+      version=read('veriloggen/VERSION').splitlines()[0],
       description='A Mixed-Paradigm Hardware Construction Framework',
       long_description=read('README.md'),
       long_description_content_type="text/markdown",
