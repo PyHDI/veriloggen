@@ -2301,10 +2301,12 @@ class AxiMemoryModel(AxiSlave):
         mask = np.full([1], 2 ** 8 - 1, dtype=np.int64)
         data = (((zero + base) >> shamt) & mask).reshape([-1])
         fmt = '%02x\n'
-        s = ''.join([fmt % d for d in data])
 
         with open(filename, 'w') as f:
-            f.write(s)
+            for i in range(0, len(data), blksize):
+                blk = data[i:i + blksize]
+                s = ''.join([fmt % d for d in blk])
+                f.write(s)
 
     def _make_fsm(self, write_delay=10, read_delay=10, sleep=4):
         write_mode = 100
@@ -2558,7 +2560,7 @@ def make_memory_image(filename, length, pattern='inc', dtype=None,
 
 
 def to_memory_image(filename, array, length=None,
-                    datawidth=32, wordwidth=8, endian='little'):
+                    datawidth=32, wordwidth=8, endian='little', blksize=4096):
 
     import numpy as np
 
@@ -2592,9 +2594,12 @@ def to_memory_image(filename, array, length=None,
 
         mask = np.full([1], 2 ** wordwidth - 1, dtype=np.int64)
         data = (((zero + base) >> shamt) & mask).reshape([-1])
-        s = ''.join([fmt % d for d in data])
+
         with open(filename, 'w') as f:
-            f.write(s)
+            for i in range(0, len(data), blksize):
+                blk = data[i:i + blksize]
+                s = ''.join([fmt % d for d in blk])
+                f.write(s)
 
         return len(data)
 
@@ -2609,9 +2614,12 @@ def to_memory_image(filename, array, length=None,
         mask = np.full([1], 2 ** datawidth - 1, dtype=np.int64)
         data = (base.reshape([-1, num]) & mask) << shamt
         data = np.bitwise_or.reduce(data, -1).reshape([-1])
-        s = ''.join(fmt % d for d in data)
+
         with open(filename, 'w') as f:
-            f.write(s)
+            for i in range(0, len(data), blksize):
+                blk = data[i:i + blksize]
+                s = ''.join([fmt % d for d in blk])
+                f.write(s)
 
         return len(data)
 
