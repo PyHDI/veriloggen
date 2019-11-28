@@ -2291,13 +2291,22 @@ class AxiMemoryModel(AxiSlave):
         self._make_fsm(write_delay, read_delay, sleep)
 
     @staticmethod
-    def _make_img(filename, size, width):
+    def _make_img(filename, size, width, blksize=4096):
+        import numpy as np
+
+        wordsize = width // 8
+        zero = np.zeros([size // wordsize, wordsize], dtype=np.int64)
+        base = np.arange(size // wordsize, dtype=np.int64).reshape([-1, 1])
+        shamt = np.arange(wordsize, dtype=np.int64) * [8]
+        mask = np.full([1], 2 ** 8 - 1, dtype=np.int64)
+        data = (((zero + base) >> shamt) & mask).reshape([-1])
+        fmt = '%02x\n'
+
         with open(filename, 'w') as f:
-            for i in range(size * 8 // width):
-                s = (''.join(['%0', '%d' %
-                              int(math.ceil(width / 4)), 'x'])) % i
-                for w in range(int(math.ceil(width / 4)), 0, -2):
-                    f.write('%s\n' % s[w - 2:w])
+            for i in range(0, len(data), blksize):
+                blk = data[i:i + blksize]
+                s = ''.join([fmt % d for d in blk])
+                f.write(s)
 
     def _make_fsm(self, write_delay=10, read_delay=10, sleep=4):
         write_mode = 100
@@ -2551,7 +2560,7 @@ def make_memory_image(filename, length, pattern='inc', dtype=None,
 
 
 def to_memory_image(filename, array, length=None,
-                    datawidth=32, wordwidth=8, endian='little'):
+                    datawidth=32, wordwidth=8, endian='little', blksize=4096):
 
     import numpy as np
 
@@ -2576,46 +2585,43 @@ def to_memory_image(filename, array, length=None,
 
     if datawidth >= wordwidth:
         num = int(math.ceil(datawidth / wordwidth))
-        mask = (2 ** wordwidth) - 1
+
+        zero = np.zeros(list(array.shape) + [num], dtype=np.int64)
+        base = array.reshape([-1, 1])
+        shamt = np.arange(num, dtype=np.int64) * [wordwidth]
+        if endian == 'big':
+            shamt.reverse()
+
+        mask = np.full([1], 2 ** wordwidth - 1, dtype=np.int64)
+        data = (((zero + base) >> shamt) & mask).reshape([-1])
 
         with open(filename, 'w') as f:
-            for data in array:
-                values = []
-                for i in range(num):
-                    values.append(data & mask)
-                    data >>= wordwidth
+            for i in range(0, len(data), blksize):
+                blk = data[i:i + blksize]
+                s = ''.join([fmt % d for d in blk])
+                f.write(s)
 
-                if endian == 'big':
-                    values.reverse()
-
-                for v in values:
-                    f.write(fmt % v)
-
-        num_lines = len(array) * num
-        return num_lines
+        return len(data)
 
     else:
         num = int(math.ceil(wordwidth / datawidth))
-        mask = (2 ** datawidth) - 1
+
+        base = array.reshape([-1, num])
+        shamt = np.arange(num, dtype=np.int64) * [datawidth]
+        if endian == 'big':
+            shamt.reverse()
+
+        mask = np.full([1], 2 ** datawidth - 1, dtype=np.int64)
+        data = (base.reshape([-1, num]) & mask) << shamt
+        data = np.bitwise_or.reduce(data, -1).reshape([-1])
 
         with open(filename, 'w') as f:
-            values = []
-            for data in array:
-                values.append(data & mask)
+            for i in range(0, len(data), blksize):
+                blk = data[i:i + blksize]
+                s = ''.join([fmt % d for d in blk])
+                f.write(s)
 
-                if len(values) == num:
-                    if endian == 'big':
-                        values.reverse()
-
-                    cat = 0
-                    for i, v in enumerate(values):
-                        cat = cat | (v << (i * datawidth))
-
-                    f.write(fmt % cat)
-                    values = []
-
-        num_lines = len(array) // num
-        return num_lines
+        return len(data)
 
 
 def aligned_shape(shape, datawidth, mem_datawidth):
@@ -2666,37 +2672,26 @@ def _set_memory_wide(mem, src, mem_datawidth, src_datawidth, mem_offset,
     if num_align_words is not None:
         src = align(src, num_align_words)
 
-    src_aligned_shape = aligned_shape(src.shape, src_datawidth, mem_datawidth)
     num_pack = int(math.ceil(mem_datawidth / src_datawidth))
-
-    src_mask = np.uint64(2 ** src_datawidth - 1)
-    mem_mask = np.uint64(2 ** mem_datawidth - 1)
+    src_mask = np.full([1], 2 ** src_datawidth - 1, dtype=np.int64)
+    mem_mask = np.full([1], 2 ** mem_datawidth - 1, dtype=np.int64)
     offset = mem_offset // int(math.ceil(mem_datawidth / 8))
-    pack = 0
-    index = 0
-    align_count = 0
 
-    for data in src.reshape([-1]):
-        v = np.uint64(data) & src_mask
-        shift = np.uint64(src_datawidth * pack)
-        v = v << shift
-        if pack > 0:
-            old = np.uint64(mem[offset]) & mem_mask
-            v = v | old
-        mem[offset] = v
+    if src.shape[-1] % num_pack != 0:
+        pads = []
+        for s in src.shape[:-1]:
+            pads.append((0, 0))
+        pads.append((0, num_pack - src.shape[-1]))
 
-        index += 1
-        if pack == num_pack - 1:
-            pack = 0
-            offset += 1
-            if index == src.shape[-1]:
-                index = 0
-        else:
-            pack += 1
-            if index == src.shape[-1]:
-                index = 0
-                pack = 0
-                offset += 1
+        src = np.pad(src, pads, 'constant')
+
+    masked_data = src.astype(np.int64) & src_mask
+    pack = np.arange(src.shape[-1], dtype=np.int64) % [num_pack]
+    shift = [src_datawidth] * pack
+    v = (masked_data << shift) & mem_mask
+    v = np.reshape(v, [-1, num_pack])
+    v = np.bitwise_or.reduce(v, -1)
+    mem[offset:offset + v.shape[-1]] = v
 
 
 def _set_memory_narrow(mem, src, mem_datawidth, src_datawidth, mem_offset,
@@ -2710,21 +2705,19 @@ def _set_memory_narrow(mem, src, mem_datawidth, src_datawidth, mem_offset,
     if num_align_words is not None:
         src = align(src, num_align_words)
 
-    src_aligned_shape = aligned_shape(src.shape, src_datawidth, mem_datawidth)
     num_pack = int(math.ceil(src_datawidth / mem_datawidth))
-
-    src_mask = np.uint64(2 ** src_datawidth - 1)
-    mem_mask = np.uint64(2 ** mem_datawidth - 1)
+    src_mask = np.full([1], 2 ** src_datawidth - 1, dtype=np.int64)
+    mem_mask = np.full([1], 2 ** mem_datawidth - 1, dtype=np.int64)
     offset = mem_offset // int(math.ceil(mem_datawidth / 8))
 
-    for data in src.reshape([-1]):
-        for pack in range(num_pack):
-            v = np.uint64(data)
-            shift = np.uint64(mem_datawidth * pack)
-            v = v >> shift
-            v = v & mem_mask
-            mem[offset] = v
-            offset += 1
+    pack = np.arange(num_pack, dtype=np.int64)
+    shift = [mem_datawidth] * pack
+    dup_src_based = np.zeros(list(src.shape) + [num_pack], dtype=np.int64)
+    dup_src = dup_src_based + np.reshape(src, list(src.shape) + [1])
+    v = dup_src >> shift
+    v = np.reshape(v, [-1])
+    v = v & mem_mask
+    mem[offset:offset + v.shape[-1]] = v
 
 
 def align(src, num_align_words):
