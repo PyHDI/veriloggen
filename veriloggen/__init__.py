@@ -19,8 +19,13 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-# expand the recursive call limit for python 3.6 and later
+import os
 import sys
+
+
+__version__ = open(os.path.join(os.path.dirname(__file__), "VERSION")).read().splitlines()[0]
+
+# expand the recursive call limit for python 3.6 and later
 sys.setrecursionlimit(1000 * 10)
 
 # Verilog HDL Core
