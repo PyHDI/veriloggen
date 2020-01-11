@@ -1794,9 +1794,13 @@ class LUT(_SpecialOperator):
         inst = rom.mkROMDefinition(self.name('LUT_ROM'), self.patterns,
                                    size, width, sync=True, with_enable=True)
         clk = m._clock
+        if senable is not None:
+            enable = senable
+        else:
+            enable = vtypes.Int(1, 1)
 
         ports = [('CLK', clk), ('addr', address),
-                 ('enable', senable), ('val', data)]
+                 ('enable', enable), ('val', data)]
 
         m.Instance(inst, self.name('lut'), ports=ports)
 
