@@ -20,11 +20,11 @@ def mkLed():
     datawidth = 32
     addrwidth = 10
     ram_a = vthread.RAM(m, 'ram_a', clk, rst, datawidth, addrwidth,
-                        numports=2, export_ports=(1,))
+                        numports=2, external_ports=(1,))
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth,
-                        numports=2, export_ports=(1,))
+                        numports=2, external_ports=(1,))
     ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth,
-                        numports=2, export_ports=(1,))
+                        numports=2, external_ports=(1,))
 
     saxi = vthread.AXISLiteRegister(m, 'saxi', clk, rst, datawidth)
 
