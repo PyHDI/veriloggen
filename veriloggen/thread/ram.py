@@ -1083,14 +1083,14 @@ class FixedRAM(RAM):
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=10, numports=1, point=0,
                  initvals=None, nocheck_initvals=False, noconvert_initvals=False,
-                 ram_style=None, nodataflow=False):
+                 ram_style=None, nodataflow=False, export_ports=None):
 
         if initvals is not None and not noconvert_initvals:
             initvals = [fxd.to_fixed(initval, point) for initval in initvals]
 
         RAM.__init__(self, m, name, clk, rst,
                      datawidth, addrwidth, numports,
-                     initvals, nocheck_initvals, ram_style, nodataflow)
+                     initvals, nocheck_initvals, ram_style, nodataflow, export_ports)
 
         self.point = point
 
@@ -1132,7 +1132,7 @@ class MultibankRAM(object):
 
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=10, numports=1, numbanks=2,
-                 ram_style=None):
+                 ram_style=None, export_ports=None):
 
         if numbanks < 2:
             raise ValueError('numbanks must be 2 or more')
@@ -1149,7 +1149,7 @@ class MultibankRAM(object):
         self.shift = util.log2(self.numbanks)
         self.rams = [RAM(m, '_'.join([name, '%d' % i]),
                          clk, rst, datawidth, addrwidth, numports,
-                         ram_style=ram_style)
+                         ram_style=ram_style, export_ports=export_ports)
                      for i in range(numbanks)]
         self.keep_hierarchy = False
         self.seq = None
