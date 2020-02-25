@@ -25,7 +25,7 @@ class RAM(_MutexFunction):
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=10, numports=1,
                  initvals=None, nocheck_initvals=False,
-                 ram_style=None, nodataflow=False):
+                 ram_style=None, nodataflow=False, export_ports=None):
 
         self.m = m
         self.name = name
@@ -36,8 +36,19 @@ class RAM(_MutexFunction):
         self.addrwidth = addrwidth
         self.numports = numports
 
-        self.interfaces = [RAMInterface(m, name + '_%d' % i, datawidth, addrwidth)
-                           for i in range(numports)]
+        if export_ports is None:
+            export_ports = ()
+
+        self.interfaces = []
+
+        for i in range(numports):
+            if i in export_ports:
+                interface = RAMInterface(m, name + '_%d' % i, datawidth, addrwidth,
+                                         itype='Input', otype='Output')
+            else:
+                interface = RAMInterface(m, name + '_%d' % i, datawidth, addrwidth)
+
+            self.interfaces.append(interface)
 
         for interface in self.interfaces:
             interface.wdata.no_write_check = True
@@ -1072,14 +1083,14 @@ class FixedRAM(RAM):
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=10, numports=1, point=0,
                  initvals=None, nocheck_initvals=False, noconvert_initvals=False,
-                 ram_style=None, nodataflow=False):
+                 ram_style=None, nodataflow=False, export_ports=None):
 
         if initvals is not None and not noconvert_initvals:
             initvals = [fxd.to_fixed(initval, point) for initval in initvals]
 
         RAM.__init__(self, m, name, clk, rst,
                      datawidth, addrwidth, numports,
-                     initvals, nocheck_initvals, ram_style, nodataflow)
+                     initvals, nocheck_initvals, ram_style, nodataflow, export_ports)
 
         self.point = point
 
@@ -1121,7 +1132,7 @@ class MultibankRAM(object):
 
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=10, numports=1, numbanks=2,
-                 ram_style=None):
+                 ram_style=None, export_ports=None):
 
         if numbanks < 2:
             raise ValueError('numbanks must be 2 or more')
@@ -1138,7 +1149,7 @@ class MultibankRAM(object):
         self.shift = util.log2(self.numbanks)
         self.rams = [RAM(m, '_'.join([name, '%d' % i]),
                          clk, rst, datawidth, addrwidth, numports,
-                         ram_style=ram_style)
+                         ram_style=ram_style, export_ports=export_ports)
                      for i in range(numbanks)]
         self.keep_hierarchy = False
         self.seq = None
