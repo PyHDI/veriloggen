@@ -25,7 +25,7 @@ class RAM(_MutexFunction):
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=10, numports=1,
                  initvals=None, nocheck_initvals=False,
-                 ram_style=None, nodataflow=False):
+                 ram_style=None, nodataflow=False, export_ports=None):
 
         self.m = m
         self.name = name
@@ -36,8 +36,19 @@ class RAM(_MutexFunction):
         self.addrwidth = addrwidth
         self.numports = numports
 
-        self.interfaces = [RAMInterface(m, name + '_%d' % i, datawidth, addrwidth)
-                           for i in range(numports)]
+        if export_ports is None:
+            export_ports = ()
+
+        self.interfaces = []
+
+        for i in range(numports):
+            if i in export_ports:
+                interface = RAMInterface(m, name + '_%d' % i, datawidth, addrwidth,
+                                         itype='Input', otype='Output')
+            else:
+                interface = RAMInterface(m, name + '_%d' % i, datawidth, addrwidth)
+
+            self.interfaces.append(interface)
 
         for interface in self.interfaces:
             interface.wdata.no_write_check = True
