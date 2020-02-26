@@ -41,19 +41,19 @@ def mkLed():
         strm.run()
         strm.join()
 
-    def comp(size):
-
+    def comp():
         while True:
             saxi.wait_flag(0, value=1, resetvalue=0)
             saxi.write(1, 1)  # set busy
-            offset = saxi.read(2)
+            size = saxi.read(2)
+            offset = saxi.read(3)
             comp_stream(size, offset)
             saxi.write(1, 0)  # unset busy
 
         vthread.finish()
 
     th = vthread.Thread(m, 'th_comp', clk, rst, comp)
-    fsm = th.start(32)
+    fsm = th.start()
 
     return m
 
