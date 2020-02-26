@@ -2009,6 +2009,62 @@ class AXISLiteRegister(AXISLite):
         fsm.If(wait_cond).goto_next()
 
 
+class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
+    """ AXI Stream Interface for Input """
+
+    __intrinsics__ = ('read',)
+
+    def __init__(self, m, name, clk, rst, datawidth=32,
+                 with_last=False,
+                 id_width=0, user_width=0, dest_width=0,
+                 noio=False):
+
+        axi.AxiStreamIn.__init__(self, m, name, clk, rst, datawidth,
+                                 with_last,
+                                 id_width, user_width, dest_width,
+                                 noio)
+
+    def read(self, fsm):
+        data, last, _id, user, dest, valid = self.read_data(cond=fsm)
+
+        rdata = self.m.TmpReg(self.datawidth, initval=0,
+                              signed=True, prefix='axistreamin_rdata')
+
+        if last is not None:
+            rlast = self.m.TmpReg(1, initval=0,
+                                  signed=False, prefix='axistreamin_rlast')
+        else:
+            rlast = True
+
+        fsm.If(valid)(
+            rdata(data),
+            rlast(last) if last is not None else ()
+        )
+        fsm.Then().goto_next()
+
+        return rdata, rlast
+
+
+class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
+    """ AXI Stream Interface for Output """
+
+    __intrinsics__ = ('write',)
+
+    def __init__(self, m, name, clk, rst, datawidth=32,
+                 with_last=False,
+                 id_width=0, user_width=0, dest_width=0,
+                 noio=False):
+
+        axi.AxiStreamOut.__init__(self, m, name, clk, rst, datawidth,
+                                  with_last,
+                                  id_width, user_width, dest_width,
+                                  noio)
+
+    def write(self, fsm, value, last=False):
+        ack = self.write_data(value, last, cond=fsm)
+        fsm.If(ack).goto_next()
+
+
 def add_mux(targ, cond, value):
     prev_assign = targ._get_assign()
     if not prev_assign:
