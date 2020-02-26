@@ -31,7 +31,6 @@ def mkLed():
             saxi.wait_flag(0, value=1, resetvalue=0)
             saxi.write(1, 1)  # set busy
             size = saxi.read(2)
-            offset = saxi.read(3)
 
             for i in range(size):
                 a, a_last = axi_a.read()
