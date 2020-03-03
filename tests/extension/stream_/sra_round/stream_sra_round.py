@@ -51,7 +51,7 @@ def mkTest(numports=8):
     reset_done = m.Reg('reset_done', initval=0)
     reset_stmt = []
     reset_stmt.append(reset_done(0))
-    reset_stmt.append(xdata(0))
+    reset_stmt.append(xdata(-128))
     reset_stmt.append(ydata(1))
 
     simulation.setup_waveform(m, uut)
@@ -64,30 +64,44 @@ def mkTest(numports=8):
         Delay(1000),
         reset_done(1),
         nclk(clk),
-        Delay(10000),
+        Delay(100000),
         Systask('finish'),
     )
 
     send_fsm = FSM(m, 'send_fsm', clk, rst)
-    send_count = m.Reg('send_count', 32, initval=0)
+    send_count = m.Reg('send_count', 32, initval=-128)
     send_fsm.If(reset_done).goto_next()
-    send_fsm(
-        xdata(xdata + 9),
-        ydata(2),
-        Display('xdata=%d', xdata),
-        Display('ydata=%d', ydata),
-        send_count.inc()
-    )
-    send_fsm.If(send_count == 20).goto_next()
+
+    for i in range(8):
+        send_fsm(
+            xdata(-128),
+            ydata(i),
+            send_count(-128),
+        )
+        send_fsm.goto_next()
+        send_fsm(
+                xdata(xdata + 1),
+            Display('xdata=%d', xdata),
+            Display('ydata=%d', ydata),
+            send_count.inc()
+        )
+        send_fsm.If(send_count == 127).goto_next()
 
     recv_fsm = FSM(m, 'recv_fsm', clk, rst)
     recv_count = m.Reg('recv_count', 32, initval=0)
     recv_fsm.If(reset_done).goto_next()
-    recv_fsm(
-        Display('zdata=%d', zdata),
-        recv_count.inc()
-    )
-    recv_fsm.If(recv_count == 20 + 10).goto_next()
+
+    for i in range(8):
+        recv_fsm(
+            recv_count(-128)
+        )
+        recv_fsm.goto_next()
+
+        recv_fsm(
+            Display('zdata=%d', zdata),
+            recv_count.inc()
+        )
+        recv_fsm.If(recv_count == 127 + 10).goto_next()
 
     return m
 

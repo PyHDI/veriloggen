@@ -2168,9 +2168,16 @@ def AverageRound(*args):
 
 
 def SraRound(left, right):
-    shifted = Sra(left, right)
-    last_bit = Sra(left, right - 1)[0]
-    return Mux(right == Int(0), left, shifted + last_bit)
+    msb = left[-1]
+
+    rounder = Sll(Int(1), right[0:int(log(right.width))] - 1)
+    pre_round = left + rounder
+
+    shifted = Mux(msb, Sra(pre_round - 1, right),
+                       Srl(pre_round, right))
+    shifted.width = left.width
+
+    return Mux(right == Int(0), left, shifted)
 
 
 class _Constant(_Numeric):
