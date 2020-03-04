@@ -10,6 +10,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
 from veriloggen import *
 import veriloggen.stream as stream
 
+from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
+#from pprint import pprint
 
 def mkMain():
     # input variiable
@@ -25,14 +27,14 @@ def mkMain():
     st = stream.Stream(z)
     m = st.to_module('main')
 
-    return m
+    return m, st.pipeline_depth()
 
 
 def mkTest(numports=8):
     m = Module('test')
 
     # target instance
-    main = mkMain()
+    main, latency = mkMain()
 
     params = m.copy_params(main)
     ports = m.copy_sim_ports(main)
@@ -43,6 +45,8 @@ def mkTest(numports=8):
     xdata = ports['xdata']
     ydata = ports['ydata']
     zdata = ports['zdata']
+    xdata.signed = True
+    zdata.signed = True
 
     uut = m.Instance(main, 'uut',
                      params=m.connect_params(main),
@@ -51,8 +55,10 @@ def mkTest(numports=8):
     reset_done = m.Reg('reset_done', initval=0)
     reset_stmt = []
     reset_stmt.append(reset_done(0))
-    reset_stmt.append(xdata(-128))
-    reset_stmt.append(ydata(1))
+    reset_stmt.append(xdata(0))
+    reset_stmt.append(ydata(0))
+
+    end_of_sim = m.Reg('end_of_sim', initval=0)
 
     simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
@@ -64,44 +70,69 @@ def mkTest(numports=8):
         Delay(1000),
         reset_done(1),
         nclk(clk),
-        Delay(100000),
+        Delay(10),
+        Event(Posedge(end_of_sim)),
+        Delay(100),
         Systask('finish'),
     )
 
     send_fsm = FSM(m, 'send_fsm', clk, rst)
-    send_count = m.Reg('send_count', 32, initval=-128)
+    send_count = m.Reg('send_count', 32, initval=0)
     send_fsm.If(reset_done).goto_next()
 
-    for i in range(8):
-        send_fsm(
-            xdata(-128),
-            ydata(i),
-            send_count(-128),
-        )
-        send_fsm.goto_next()
-        send_fsm(
+    test_val_boader = [-2147483648,-10, 1, 2147483637]
+    test_window = 9
+    test_shift = [0,1,2,3,15,16,17,30,31,32]
+
+    for i in test_shift:
+        for j in test_val_boader:
+            send_fsm(
+                xdata(j),
+                ydata(i),
+                send_count(0),
+            )
+            send_fsm.goto_next()
+
+            send_fsm(
                 xdata(xdata + 1),
-            Display('xdata=%d', xdata),
-            Display('ydata=%d', ydata),
-            send_count.inc()
-        )
-        send_fsm.If(send_count == 127).goto_next()
+                send_count.inc(),
+                Display('xdata=%d', xdata),
+                Display('ydata=%d', ydata)
+            )
+            send_fsm.goto_next(cond=send_count==test_window)
 
     recv_fsm = FSM(m, 'recv_fsm', clk, rst)
     recv_count = m.Reg('recv_count', 32, initval=0)
     recv_fsm.If(reset_done).goto_next()
 
-    for i in range(8):
-        recv_fsm(
-            recv_count(-128)
-        )
-        recv_fsm.goto_next()
+    recv_fsm(
+        recv_count(0),
+    )
+    recv_fsm.goto_next()
 
-        recv_fsm(
-            Display('zdata=%d', zdata),
-            recv_count.inc()
-        )
-        recv_fsm.If(recv_count == 127 + 10).goto_next()
+    recv_fsm.If(recv_count < latency-2)(
+        recv_count.inc()
+    ).Else(
+        recv_count(0)
+    )
+    recv_fsm.goto_next(cond=recv_count>=latency-2)
+
+    for i in test_shift:
+        for j in test_val_boader:
+            recv_fsm(
+                recv_count(0),
+            )
+            recv_fsm.goto_next()
+
+            recv_fsm(
+                Display('zdata=%d', zdata),
+                recv_count.inc()
+            )
+            recv_fsm.goto_next(cond=recv_count==test_window)
+
+    recv_fsm(
+        end_of_sim(1)
+    )
 
     return m
 
@@ -116,6 +147,14 @@ if __name__ == '__main__':
     rslt = sim.run()  # display=False
     #rslt = sim.run(display=True)
     print(rslt)
+
+    vx = list(map(lambda x: int(str.split(x,"=")[1]), filter(lambda x: "xdata" in x  , str.split(rslt, "\n"))))
+    vy = list(map(lambda x: int(str.split(x,"=")[1]), filter(lambda x: "ydata" in x  , str.split(rslt, "\n"))))
+    vz = list(map(lambda x: int(str.split(x,"=")[1]), filter(lambda x: "zdata" in x  , str.split(rslt, "\n"))))
+    ez = list(map(lambda x,y: int( Decimal(str(x/(2.0**y))).quantize(Decimal('0'), rounding=ROUND_HALF_UP)), vx,vy))
+
+    #pprint(list(zip(lx,ly,lz,ez)))
+    assert(all(map(lambda v, e: v==e, vz, ez)))
 
     # launch waveform viewer (GTKwave)
     # sim.view_waveform() # background=False
