@@ -11,7 +11,7 @@ from veriloggen import *
 import veriloggen.stream as stream
 
 from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
-#from pprint import pprint
+from pprint import pprint
 
 def mkMain():
     # input variiable
@@ -26,6 +26,8 @@ def mkMain():
 
     st = stream.Stream(z)
     m = st.to_module('main')
+
+    #st.draw_graph()
 
     return m, st.pipeline_depth()
 
@@ -146,14 +148,14 @@ if __name__ == '__main__':
     sim = simulation.Simulator(test)
     rslt = sim.run()  # display=False
     #rslt = sim.run(display=True)
-    print(rslt)
+    #print(rslt)
 
     vx = list(map(lambda x: int(str.split(x,"=")[1]), filter(lambda x: "xdata" in x  , str.split(rslt, "\n"))))
     vy = list(map(lambda x: int(str.split(x,"=")[1]), filter(lambda x: "ydata" in x  , str.split(rslt, "\n"))))
     vz = list(map(lambda x: int(str.split(x,"=")[1]), filter(lambda x: "zdata" in x  , str.split(rslt, "\n"))))
     ez = list(map(lambda x,y: int( Decimal(str(x/(2.0**y))).quantize(Decimal('0'), rounding=ROUND_HALF_UP)), vx,vy))
 
-    #pprint(list(zip(lx,ly,lz,ez)))
+    pprint(list(zip(vx,vy,vz,ez)))
     assert(all(map(lambda v, e: v==e, vz, ez)))
 
     # launch waveform viewer (GTKwave)

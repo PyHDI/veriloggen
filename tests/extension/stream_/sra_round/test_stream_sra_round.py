@@ -868,12 +868,12 @@ module test
           recv_fsm <= recv_fsm_2;
         end
         recv_fsm_2: begin
-          if(recv_count < 5) begin
+          if(recv_count < 0) begin
             recv_count <= recv_count + 1;
           end else begin
             recv_count <= 0;
           end
-          if(recv_count >= 5) begin
+          if(recv_count >= 0) begin
             recv_fsm <= recv_fsm_3;
           end 
         end
@@ -1338,100 +1338,45 @@ module main
   output signed [32-1:0] zdata
 );
 
-  reg [1-1:0] _pointer_data_2;
-  reg [5-1:0] _slice_data_8;
-  reg [1-1:0] _eq_data_24;
+  wire [1-1:0] _pointer_data_2;
+  assign _pointer_data_2 = xdata[6'sd31];
+  wire [5-1:0] _slice_data_6;
+  assign _slice_data_6 = ydata[4'd4:1'd0];
+  wire [5-1:0] _minus_data_7;
+  assign _minus_data_7 = _slice_data_6 - 2'sd1;
+  wire signed [34-1:0] _sll_data_10;
+  assign _sll_data_10 = 2'sd1 << _minus_data_7;
+  wire signed [2-1:0] _cond_data_18;
+  assign _cond_data_18 = (_pointer_data_2)? -2'sd1 : 1'sd0;
+  wire signed [33-1:0] _plus_data_19;
+  assign _plus_data_19 = xdata + _sll_data_10;
+  wire signed [33-1:0] _plus_data_20;
+  assign _plus_data_20 = _plus_data_19 + _cond_data_18;
+  wire signed [32-1:0] _sra_data_21;
+  assign _sra_data_21 = _plus_data_20 >>> ydata;
+  reg [1-1:0] _eq_data_23;
+  reg signed [32-1:0] __delay_data_25;
   reg signed [32-1:0] __delay_data_26;
-  reg signed [32-1:0] __delay_data_31;
-  reg [5-1:0] _minus_data_9;
-  reg signed [2-1:0] _cond_data_19;
-  reg signed [32-1:0] __delay_data_27;
-  reg signed [32-1:0] __delay_data_32;
-  reg [1-1:0] __delay_data_36;
-  reg signed [34-1:0] _sll_data_11;
-  reg signed [32-1:0] __delay_data_28;
-  reg signed [2-1:0] __delay_data_29;
-  reg signed [32-1:0] __delay_data_33;
-  reg [1-1:0] __delay_data_37;
-  reg signed [34-1:0] _plus_data_20;
-  reg signed [2-1:0] __delay_data_30;
-  reg signed [32-1:0] __delay_data_34;
-  reg [1-1:0] __delay_data_38;
-  reg signed [32-1:0] __delay_data_41;
-  reg signed [34-1:0] _plus_data_21;
-  reg signed [32-1:0] __delay_data_35;
-  reg [1-1:0] __delay_data_39;
-  reg signed [32-1:0] __delay_data_42;
-  reg signed [32-1:0] _sra_data_22;
-  reg [1-1:0] __delay_data_40;
-  reg signed [32-1:0] __delay_data_43;
-  reg signed [32-1:0] _cond_data_25;
-  assign zdata = _cond_data_25;
+  reg signed [32-1:0] _cond_data_24;
+  assign zdata = _cond_data_24;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _pointer_data_2 <= 0;
-      _slice_data_8 <= 0;
-      _eq_data_24 <= 0;
+      _eq_data_23 <= 0;
+      __delay_data_25 <= 0;
       __delay_data_26 <= 0;
-      __delay_data_31 <= 0;
-      _minus_data_9 <= 0;
-      _cond_data_19 <= 0;
-      __delay_data_27 <= 0;
-      __delay_data_32 <= 0;
-      __delay_data_36 <= 0;
-      _sll_data_11 <= 0;
-      __delay_data_28 <= 0;
-      __delay_data_29 <= 0;
-      __delay_data_33 <= 0;
-      __delay_data_37 <= 0;
-      _plus_data_20 <= 0;
-      __delay_data_30 <= 0;
-      __delay_data_34 <= 0;
-      __delay_data_38 <= 0;
-      __delay_data_41 <= 0;
-      _plus_data_21 <= 0;
-      __delay_data_35 <= 0;
-      __delay_data_39 <= 0;
-      __delay_data_42 <= 0;
-      _sra_data_22 <= 0;
-      __delay_data_40 <= 0;
-      __delay_data_43 <= 0;
-      _cond_data_25 <= 0;
+      _cond_data_24 <= 0;
     end else begin
-      _pointer_data_2 <= xdata[6'sd31];
-      _slice_data_8 <= ydata[4'd4:1'd0];
-      _eq_data_24 <= ydata == 1'sd0;
-      __delay_data_26 <= xdata;
-      __delay_data_31 <= ydata;
-      _minus_data_9 <= _slice_data_8 - 2'sd1;
-      _cond_data_19 <= (_pointer_data_2)? -2'sd1 : 1'sd0;
-      __delay_data_27 <= __delay_data_26;
-      __delay_data_32 <= __delay_data_31;
-      __delay_data_36 <= _eq_data_24;
-      _sll_data_11 <= 2'sd1 << _minus_data_9;
-      __delay_data_28 <= __delay_data_27;
-      __delay_data_29 <= _cond_data_19;
-      __delay_data_33 <= __delay_data_32;
-      __delay_data_37 <= __delay_data_36;
-      _plus_data_20 <= __delay_data_28 + _sll_data_11;
-      __delay_data_30 <= __delay_data_29;
-      __delay_data_34 <= __delay_data_33;
-      __delay_data_38 <= __delay_data_37;
-      __delay_data_41 <= __delay_data_28;
-      _plus_data_21 <= _plus_data_20 + __delay_data_30;
-      __delay_data_35 <= __delay_data_34;
-      __delay_data_39 <= __delay_data_38;
-      __delay_data_42 <= __delay_data_41;
-      _sra_data_22 <= _plus_data_21 >>> __delay_data_35;
-      __delay_data_40 <= __delay_data_39;
-      __delay_data_43 <= __delay_data_42;
-      _cond_data_25 <= (__delay_data_40)? __delay_data_43 : _sra_data_22;
+      _eq_data_23 <= ydata == 1'sd0;
+      __delay_data_25 <= xdata;
+      __delay_data_26 <= _sra_data_21;
+      _cond_data_24 <= (_eq_data_23)? __delay_data_25 : __delay_data_26;
     end
   end
 
 
 endmodule
+
 """
 
 
@@ -1460,7 +1405,7 @@ def test():
     vz = list(map(lambda x: int(str.split(x,"=")[1]), filter(lambda x: "zdata" in x  , str.split(rslt, "\n"))))
     ez = list(map(lambda x,y: int( Decimal(str(x/(2.0**y))).quantize(Decimal('0'), rounding=ROUND_HALF_UP)), vx,vy))
 
-    #pprint(list(zip(lx,ly,lz,ez)))
+    #pprint(list(zip(vx,vy,vz,ez)))
 
-    assert(all(map(lambda x ,y: x == y, vz,ez)))
+    assert(all(map(lambda x ,y: x == y, vz, ez)))
 

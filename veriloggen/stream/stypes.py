@@ -2169,15 +2169,33 @@ def AverageRound(*args):
 
 def SraRound(left, right):
     msb = left[-1]
+    msb.latency = 0
 
-    pre_round = Int(0)
-    pre_round.width = left.width + 1
+    if isinstance(right, int):
+        rounder = Sll(Int(1), right - 1)
+    else:
+        right_slice = right[0:int(log(right.width, 2))]
+        right_slice.latency = 0
+        right_slice = right_slice - 1
+        right_slice.latency = 0
+        rounder = Sll(Int(1), right_slice)
 
-    rounder = Sll(Int(1), right[0:int(log(right.width, 2))] - 1)
+    rounder.latency = 0
     rounder_sign = Mux(msb, Int(-1), Int(0))
-    pre_round = left + rounder + rounder_sign
+    rounder_sign.latency = 0
+
+#    if left.width < right
+#        raise ValueError("Shift amount of SraRound operator must be less than val bit width")
+
+    pre_round = left + rounder
+    pre_round.width = left.width + 1
+    pre_round.latency = 0
+    pre_round = pre_round + rounder_sign
+    pre_round.latency = 0
+
     shifted = Sra(pre_round, right)
     shifted.width = left.width
+    shifted.latency = 0
 
     return Mux(right == Int(0), left, shifted)
 
