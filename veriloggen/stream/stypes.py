@@ -2174,7 +2174,7 @@ def SraRound(left, right):
     if isinstance(right, int):
         rounder = Sll(Int(1), right - 1)
     else:
-        right_slice = right[0:int(log(right.width, 2))]
+        right_slice = right[0:int(log(left.width, 2))]
         right_slice.latency = 0
         right_slice = right_slice - 1
         right_slice.latency = 0
