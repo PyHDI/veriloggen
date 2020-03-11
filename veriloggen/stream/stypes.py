@@ -926,6 +926,12 @@ class NotEq(_BinaryOperator):
 
 class _BinaryShiftOperator(_BinaryOperator):
 
+    def __init__(self, left, right):
+        _BinaryOperator.__init__(self, left, right)
+        s = self.right.eval()
+        if isinstance(s, int):
+            self.latency = 0
+
     def _implement(self, m, seq, svalid=None, senable=None):
         if self.right.get_point() != 0:
             raise TypeError("shift amount must be int")
@@ -1445,6 +1451,10 @@ class Pointer(_SpecialOperator):
         _SpecialOperator.__init__(self, var, pos)
         self.op = vtypes.Pointer
 
+        p = self.args[1].eval()
+        if isinstance(p, int):
+            self.latency = 0
+
     def _set_attributes(self):
         self.width = 1
         self.point = 0
@@ -1475,6 +1485,7 @@ class Pointer(_SpecialOperator):
 
 
 class Slice(_SpecialOperator):
+    latency = 0
 
     def __init__(self, var, msb, lsb):
         msb = msb.eval() if isinstance(msb, _Constant) else msb
@@ -1611,6 +1622,7 @@ def Split(data, width=None, point=None, signed=None, num_chunks=None, reverse=Fa
 
 
 class Cat(_SpecialOperator):
+    latency = 0
 
     def __init__(self, *vars):
         _SpecialOperator.__init__(self, *vars)
@@ -2201,7 +2213,10 @@ def SraRound(left, right):
     shifted.width = left.width
     shifted.latency = 0
 
-    return Mux(right == Int(0), left, shifted)
+    cond = right == Int(0)
+    cond.latency = 0
+
+    return Mux(cond, left, shifted)
 
 
 class _Constant(_Numeric):
