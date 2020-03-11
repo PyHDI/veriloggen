@@ -13,6 +13,7 @@ import veriloggen.stream as stream
 from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
 from pprint import pprint
 
+
 def mkMain():
     # input variiable
     x = stream.Variable('xdata')
@@ -27,7 +28,7 @@ def mkMain():
     st = stream.Stream(z)
     m = st.to_module('main')
 
-    #st.draw_graph()
+    # st.draw_graph()
 
     return m, st.pipeline_depth()
 
@@ -82,9 +83,9 @@ def mkTest(numports=8):
     send_count = m.Reg('send_count', 32, initval=0)
     send_fsm.If(reset_done).goto_next()
 
-    test_val_boader = [-2147483648,-10, 1, 2147483637]
+    test_val_boader = [-2147483648, -10, 1, 2147483637]
     test_window = 9
-    test_shift = [0,1,2,3,15,16,17,30,31,32]
+    test_shift = [0, 1, 2, 3, 15, 16, 17, 30, 31, 32]
 
     for i in test_shift:
         for j in test_val_boader:
@@ -101,23 +102,25 @@ def mkTest(numports=8):
                 Display('xdata=%d', xdata),
                 Display('ydata=%d', ydata)
             )
-            send_fsm.goto_next(cond=send_count==test_window)
+            send_fsm.goto_next(cond=send_count == test_window)
 
     recv_fsm = FSM(m, 'recv_fsm', clk, rst)
     recv_count = m.Reg('recv_count', 32, initval=0)
     recv_fsm.If(reset_done).goto_next()
 
-    recv_fsm(
-        recv_count(0),
-    )
-    recv_fsm.goto_next()
+    if latency >= 1:
+        recv_fsm(
+            recv_count(0),
+        )
+        recv_fsm.goto_next()
 
-    recv_fsm.If(recv_count < latency-2)(
-        recv_count.inc()
-    ).Else(
-        recv_count(0)
-    )
-    recv_fsm.goto_next(cond=recv_count>=latency-2)
+    if latency >= 2:
+        recv_fsm.If(recv_count < latency - 2)(
+            recv_count.inc()
+        ).Else(
+            recv_count(0)
+        )
+        recv_fsm.goto_next(cond=recv_count >= latency - 2)
 
     for i in test_shift:
         for j in test_val_boader:
@@ -130,7 +133,7 @@ def mkTest(numports=8):
                 Display('zdata=%d', zdata),
                 recv_count.inc()
             )
-            recv_fsm.goto_next(cond=recv_count==test_window)
+            recv_fsm.goto_next(cond=recv_count == test_window)
 
     recv_fsm(
         end_of_sim(1)
@@ -148,15 +151,20 @@ if __name__ == '__main__':
     sim = simulation.Simulator(test)
     rslt = sim.run()  # display=False
     #rslt = sim.run(display=True)
-    #print(rslt)
+    # print(rslt)
 
-    vx = list(map(lambda x: int(str.split(x,"=")[1]), filter(lambda x: "xdata" in x  , str.split(rslt, "\n"))))
-    vy = list(map(lambda x: int(str.split(x,"=")[1]), filter(lambda x: "ydata" in x  , str.split(rslt, "\n"))))
-    vz = list(map(lambda x: int(str.split(x,"=")[1]), filter(lambda x: "zdata" in x  , str.split(rslt, "\n"))))
-    ez = list(map(lambda x,y: int( Decimal(str(x/(2.0**y))).quantize(Decimal('0'), rounding=ROUND_HALF_UP)), vx,vy))
+    vx = list(map(lambda x: int(str.split(x, "=")[1]), filter(
+        lambda x: "xdata" in x, str.split(rslt, "\n"))))
+    vy = list(map(lambda x: int(str.split(x, "=")[1]), filter(
+        lambda x: "ydata" in x, str.split(rslt, "\n"))))
+    vz = list(map(lambda x: int(str.split(x, "=")[1]), filter(
+        lambda x: "zdata" in x, str.split(rslt, "\n"))))
+    ez = list(map(lambda x, y:
+                  int(Decimal(str(x / (2.0**y))).quantize(
+                      Decimal('0'), rounding=ROUND_HALF_UP)), vx, vy))
 
-    pprint(list(zip(vx,vy,vz,ez)))
-    assert(all(map(lambda v, e: v==e, vz, ez)))
+    pprint(list(zip(vx, vy, vz, ez)))
+    assert(all(map(lambda v, e: v == e, vz, ez)))
 
     # launch waveform viewer (GTKwave)
     # sim.view_waveform() # background=False
