@@ -2168,9 +2168,40 @@ def AverageRound(*args):
 
 
 def SraRound(left, right):
-    shifted = Sra(left, right)
-    last_bit = Sra(left, right - 1)[0]
-    return Mux(right == Int(0), left, shifted + last_bit)
+    msb = left[-1]
+    msb.latency = 0
+
+    if isinstance(right, int) and right <= 0:
+        rounder = 0
+    elif isinstance(right, int):
+        rounder = 1 << (right - 1)
+    else:
+        right_slice = right
+        right_width = int(ceil(log(left.width, 2)))
+        if right_width < right.width:
+            right_slice = right[0:right_width]
+            right_slice.latency = 0
+
+        right_minus_one = right_slice - 1
+        right_minus_one.latency = 0
+        rounder = Sll(Int(1), right_minus_one)
+        rounder.latency = 0
+
+    rounder_sign = Mux(msb, Int(-1), Int(0))
+    rounder_sign.latency = 0
+
+    pre_round = left + rounder
+    pre_round.width = left.width + 1
+    pre_round.latency = 0
+
+    pre_round = pre_round + rounder_sign
+    pre_round.latency = 0
+
+    shifted = Sra(pre_round, right)
+    shifted.width = left.width
+    shifted.latency = 0
+
+    return Mux(right == Int(0), left, shifted)
 
 
 class _Constant(_Numeric):
