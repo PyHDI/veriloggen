@@ -4,7 +4,7 @@ import veriloggen
 import stream_sra_round
 
 from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
-#from pprint import pprint
+
 
 expected_verilog = """
 module test
@@ -849,7 +849,6 @@ module test
   localparam recv_fsm_80 = 80;
   localparam recv_fsm_81 = 81;
   localparam recv_fsm_82 = 82;
-  localparam recv_fsm_83 = 83;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -868,456 +867,446 @@ module test
           recv_fsm <= recv_fsm_2;
         end
         recv_fsm_2: begin
-          if(recv_count < 0) begin
-            recv_count <= recv_count + 1;
-          end else begin
-            recv_count <= 0;
-          end
-          if(recv_count >= 0) begin
-            recv_fsm <= recv_fsm_3;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_3;
         end
         recv_fsm_3: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_4;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_4;
+          end 
         end
         recv_fsm_4: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_5;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_5;
         end
         recv_fsm_5: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_6;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_6;
+          end 
         end
         recv_fsm_6: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_7;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_7;
         end
         recv_fsm_7: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_8;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_8;
+          end 
         end
         recv_fsm_8: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_9;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_9;
         end
         recv_fsm_9: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_10;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_10;
+          end 
         end
         recv_fsm_10: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_11;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_11;
         end
         recv_fsm_11: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_12;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_12;
+          end 
         end
         recv_fsm_12: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_13;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_13;
         end
         recv_fsm_13: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_14;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_14;
+          end 
         end
         recv_fsm_14: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_15;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_15;
         end
         recv_fsm_15: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_16;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_16;
+          end 
         end
         recv_fsm_16: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_17;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_17;
         end
         recv_fsm_17: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_18;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_18;
+          end 
         end
         recv_fsm_18: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_19;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_19;
         end
         recv_fsm_19: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_20;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_20;
+          end 
         end
         recv_fsm_20: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_21;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_21;
         end
         recv_fsm_21: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_22;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_22;
+          end 
         end
         recv_fsm_22: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_23;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_23;
         end
         recv_fsm_23: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_24;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_24;
+          end 
         end
         recv_fsm_24: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_25;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_25;
         end
         recv_fsm_25: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_26;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_26;
+          end 
         end
         recv_fsm_26: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_27;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_27;
         end
         recv_fsm_27: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_28;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_28;
+          end 
         end
         recv_fsm_28: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_29;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_29;
         end
         recv_fsm_29: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_30;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_30;
+          end 
         end
         recv_fsm_30: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_31;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_31;
         end
         recv_fsm_31: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_32;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_32;
+          end 
         end
         recv_fsm_32: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_33;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_33;
         end
         recv_fsm_33: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_34;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_34;
+          end 
         end
         recv_fsm_34: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_35;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_35;
         end
         recv_fsm_35: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_36;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_36;
+          end 
         end
         recv_fsm_36: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_37;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_37;
         end
         recv_fsm_37: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_38;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_38;
+          end 
         end
         recv_fsm_38: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_39;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_39;
         end
         recv_fsm_39: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_40;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_40;
+          end 
         end
         recv_fsm_40: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_41;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_41;
         end
         recv_fsm_41: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_42;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_42;
+          end 
         end
         recv_fsm_42: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_43;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_43;
         end
         recv_fsm_43: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_44;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_44;
+          end 
         end
         recv_fsm_44: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_45;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_45;
         end
         recv_fsm_45: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_46;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_46;
+          end 
         end
         recv_fsm_46: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_47;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_47;
         end
         recv_fsm_47: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_48;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_48;
+          end 
         end
         recv_fsm_48: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_49;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_49;
         end
         recv_fsm_49: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_50;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_50;
+          end 
         end
         recv_fsm_50: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_51;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_51;
         end
         recv_fsm_51: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_52;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_52;
+          end 
         end
         recv_fsm_52: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_53;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_53;
         end
         recv_fsm_53: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_54;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_54;
+          end 
         end
         recv_fsm_54: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_55;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_55;
         end
         recv_fsm_55: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_56;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_56;
+          end 
         end
         recv_fsm_56: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_57;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_57;
         end
         recv_fsm_57: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_58;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_58;
+          end 
         end
         recv_fsm_58: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_59;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_59;
         end
         recv_fsm_59: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_60;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_60;
+          end 
         end
         recv_fsm_60: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_61;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_61;
         end
         recv_fsm_61: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_62;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_62;
+          end 
         end
         recv_fsm_62: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_63;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_63;
         end
         recv_fsm_63: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_64;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_64;
+          end 
         end
         recv_fsm_64: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_65;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_65;
         end
         recv_fsm_65: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_66;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_66;
+          end 
         end
         recv_fsm_66: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_67;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_67;
         end
         recv_fsm_67: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_68;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_68;
+          end 
         end
         recv_fsm_68: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_69;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_69;
         end
         recv_fsm_69: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_70;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_70;
+          end 
         end
         recv_fsm_70: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_71;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_71;
         end
         recv_fsm_71: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_72;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_72;
+          end 
         end
         recv_fsm_72: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_73;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_73;
         end
         recv_fsm_73: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_74;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_74;
+          end 
         end
         recv_fsm_74: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_75;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_75;
         end
         recv_fsm_75: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_76;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_76;
+          end 
         end
         recv_fsm_76: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_77;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_77;
         end
         recv_fsm_77: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_78;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_78;
+          end 
         end
         recv_fsm_78: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_79;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_79;
         end
         recv_fsm_79: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_80;
+          $display("zdata=%d", zdata);
+          recv_count <= recv_count + 1;
+          if(recv_count == 9) begin
+            recv_fsm <= recv_fsm_80;
+          end 
         end
         recv_fsm_80: begin
-          $display("zdata=%d", zdata);
-          recv_count <= recv_count + 1;
-          if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_81;
-          end 
+          recv_count <= 0;
+          recv_fsm <= recv_fsm_81;
         end
         recv_fsm_81: begin
-          recv_count <= 0;
-          recv_fsm <= recv_fsm_82;
-        end
-        recv_fsm_82: begin
           $display("zdata=%d", zdata);
           recv_count <= recv_count + 1;
           if(recv_count == 9) begin
-            recv_fsm <= recv_fsm_83;
+            recv_fsm <= recv_fsm_82;
           end 
         end
-        recv_fsm_83: begin
+        recv_fsm_82: begin
           end_of_sim <= 1;
         end
       endcase
@@ -1346,31 +1335,24 @@ module main
   assign _minus_data_7 = _slice_data_6 - 2'sd1;
   wire signed [34-1:0] _sll_data_10;
   assign _sll_data_10 = 2'sd1 << _minus_data_7;
-  wire signed [2-1:0] _cond_data_18;
-  assign _cond_data_18 = (_pointer_data_2)? -2'sd1 : 1'sd0;
-  wire signed [33-1:0] _plus_data_19;
-  assign _plus_data_19 = xdata + _sll_data_10;
-  wire signed [33-1:0] _plus_data_20;
-  assign _plus_data_20 = _plus_data_19 + _cond_data_18;
-  wire signed [32-1:0] _sra_data_21;
-  assign _sra_data_21 = _plus_data_20 >>> ydata;
-  reg [1-1:0] _eq_data_23;
-  reg signed [32-1:0] __delay_data_25;
-  reg signed [32-1:0] __delay_data_26;
-  reg signed [32-1:0] _cond_data_24;
-  assign zdata = _cond_data_24;
+  wire signed [2-1:0] _cond_data_23;
+  assign _cond_data_23 = (_pointer_data_2)? -2'sd1 : 1'sd0;
+  wire signed [33-1:0] _plus_data_24;
+  assign _plus_data_24 = xdata + _sll_data_10;
+  wire signed [33-1:0] _plus_data_25;
+  assign _plus_data_25 = _plus_data_24 + _cond_data_23;
+  wire signed [32-1:0] _sra_data_26;
+  assign _sra_data_26 = _plus_data_25 >>> ydata;
+  wire [1-1:0] _eq_data_28;
+  assign _eq_data_28 = ydata == 1'sd0;
+  reg signed [32-1:0] _cond_data_29;
+  assign zdata = _cond_data_29;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _eq_data_23 <= 0;
-      __delay_data_25 <= 0;
-      __delay_data_26 <= 0;
-      _cond_data_24 <= 0;
+      _cond_data_29 <= 0;
     end else begin
-      _eq_data_23 <= ydata == 1'sd0;
-      __delay_data_25 <= xdata;
-      __delay_data_26 <= _sra_data_21;
-      _cond_data_24 <= (_eq_data_23)? __delay_data_25 : __delay_data_26;
+      _cond_data_29 <= (_eq_data_28)? xdata : _sra_data_26;
     end
   end
 
@@ -1400,12 +1382,14 @@ def test():
     #rslt = sim.run(display=True)
     print(rslt)
 
-    vx = list(map(lambda x: int(str.split(x,"=")[1]), filter(lambda x: "xdata" in x  , str.split(rslt, "\n"))))
-    vy = list(map(lambda x: int(str.split(x,"=")[1]), filter(lambda x: "ydata" in x  , str.split(rslt, "\n"))))
-    vz = list(map(lambda x: int(str.split(x,"=")[1]), filter(lambda x: "zdata" in x  , str.split(rslt, "\n"))))
-    ez = list(map(lambda x,y: int( Decimal(str(x/(2.0**y))).quantize(Decimal('0'), rounding=ROUND_HALF_UP)), vx,vy))
+    vx = list(map(lambda x: int(str.split(x, "=")[1]),
+                  filter(lambda x: "xdata" in x, str.split(rslt, "\n"))))
+    vy = list(map(lambda x: int(str.split(x, "=")[1]),
+                  filter(lambda x: "ydata" in x, str.split(rslt, "\n"))))
+    vz = list(map(lambda x: int(str.split(x, "=")[1]),
+                  filter(lambda x: "zdata" in x, str.split(rslt, "\n"))))
+    ez = list(map(lambda x, y:
+                  int(Decimal(str(x / (2.0**y))).quantize(Decimal('0'),
+                                                          rounding=ROUND_HALF_UP)), vx, vy))
 
-    #pprint(list(zip(vx,vy,vz,ez)))
-
-    assert(all(map(lambda x ,y: x == y, vz, ez)))
-
+    assert(all(map(lambda x, y: x == y, vz, ez)))
