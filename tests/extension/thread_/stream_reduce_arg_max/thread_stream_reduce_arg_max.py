@@ -26,24 +26,24 @@ def mkLed():
     strm = vthread.Stream(m, 'mystream', clk, rst)
     a = strm.source('a')
     size = strm.constant('size')
-    max, max_valid = strm.ReduceArgMaxValid(a, size)
-    strm.sink(max, 'max', when=max_valid, when_name='max_valid')
+    index, _max, argmax_valid = strm.ReduceArgMaxValid(a, size)
+    strm.sink(index, 'index', when=argmax_valid, when_name='argmax_valid')
 
     def comp_stream(size, offset):
         strm.set_source('a', ram_a, offset, size)
         strm.set_constant('size', size)
-        strm.set_sink('max', ram_b, offset, 1)
+        strm.set_sink('index', ram_b, offset, 1)
         strm.run()
         strm.join()
 
     def comp_sequential(size, offset):
         index = 0
-        max = 0
+        _max = 0
         for i in range(size):
             a = ram_a.read(i + offset)
-            if a > max:
+            if a > _max:
                 index = i
-                max = a
+                _max = a
         ram_b.write(offset, index)
 
     def check(size, offset_stream, offset_seq):

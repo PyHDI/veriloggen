@@ -2610,6 +2610,7 @@ class ReduceAdd(_Accumulator):
                  enable=None, reset=None, width=32, signed=True):
         _Accumulator.__init__(self, right, size, initval,
                               enable, reset, width, signed)
+        self.graph_label = 'ReduceAdd'
 
 
 class ReduceSub(_Accumulator):
@@ -2619,6 +2620,7 @@ class ReduceSub(_Accumulator):
                  enable=None, reset=None, width=32, signed=True):
         _Accumulator.__init__(self, right, size, initval,
                               enable, reset, width, signed)
+        self.graph_label = 'ReduceSub'
 
 
 class ReduceMul(_Accumulator):
@@ -2629,6 +2631,7 @@ class ReduceMul(_Accumulator):
                  enable=None, reset=None, width=32, signed=True):
         _Accumulator.__init__(self, right, size, initval,
                               enable, reset, width, signed)
+        self.graph_label = 'ReduceMul'
 
 
 class ReduceDiv(_Accumulator):
@@ -2640,6 +2643,7 @@ class ReduceDiv(_Accumulator):
         raise NotImplementedError()
         _Accumulator.__init__(self, right, size, initval,
                               enable, reset, width, signed)
+        self.graph_label = 'ReduceDiv'
 
 
 class ReduceMax(_Accumulator):
@@ -2649,6 +2653,7 @@ class ReduceMax(_Accumulator):
                  enable=None, reset=None, width=32, signed=True):
         _Accumulator.__init__(self, right, size, initval,
                               enable, reset, width, signed)
+        self.graph_label = 'ReduceMax'
 
 
 class ReduceMin(_Accumulator):
@@ -2658,6 +2663,7 @@ class ReduceMin(_Accumulator):
                  enable=None, reset=None, width=32, signed=True):
         _Accumulator.__init__(self, right, size, initval,
                               enable, reset, width, signed)
+        self.graph_label = 'ReduceMin'
 
 
 class ReduceCustom(_Accumulator):
@@ -3444,45 +3450,49 @@ class WriteRAM(_SpecialOperator):
 def ReduceArgMax(right, size=None, initval=0,
                  enable=None, reset=None, width=32, signed=True):
 
-    reduce_max = ReduceMax(right, size, initval,
-                           enable, reset, width, signed)
+    _max = ReduceMax(right, size, initval,
+                     enable, reset, width, signed)
     counter = Counter(size, control=right, enable=enable, reset=reset)
-    update = NotEq(reduce_max, reduce_max.prev(1))
+    update = NotEq(_max, _max.prev(1))
     update.latency = 0
-    return Predicate(counter, update)
+    index = Predicate(counter, update)
+    return index, _max
 
 
 def ReduceArgMin(right, size=None, initval=0,
                  enable=None, reset=None, width=32, signed=True):
 
-    reduce_min = ReduceMin(right, size, initval,
-                           enable, reset, width, signed)
+    _min = ReduceMin(right, size, initval,
+                     enable, reset, width, signed)
     counter = Counter(size, control=right, enable=enable, reset=reset)
-    update = NotEq(reduce_min, reduce_min.prev(1))
+    update = NotEq(_min, reduce_min.prev(1))
     update.latency = 0
-    return Predicate(counter, update)
+    index = Predicate(counter, update)
+    return index, _min
 
 
 def ReduceArgMaxValid(right, size=None, initval=0,
                       enable=None, reset=None, width=32, signed=True):
 
-    reduce_max, valid = ReduceMaxValid(right, size, initval,
-                                       enable, reset, width, signed)
+    _max, valid = ReduceMaxValid(right, size, initval,
+                                 enable, reset, width, signed)
     counter = Counter(size, control=right, enable=enable, reset=reset)
-    update = NotEq(reduce_max, reduce_max.prev(1))
+    update = NotEq(_max, _max.prev(1))
     update.latency = 0
-    return Predicate(counter, update), valid
+    index = Predicate(counter, update)
+    return index, _max, valid
 
 
 def ReduceArgMinValid(right, size=None, initval=0,
                       enable=None, reset=None, width=32, signed=True):
 
-    reduce_min, valid = ReduceMinValid(right, size, initval,
-                                       enable, reset, width, signed)
+    _min, valid = ReduceMinValid(right, size, initval,
+                                 enable, reset, width, signed)
     counter = Counter(size, control=right, enable=enable, reset=reset)
-    update = NotEq(reduce_min, reduce_min.prev(1))
+    update = NotEq(_min, _min.prev(1))
     update.latency = 0
-    return Predicate(counter, update), valid
+    index = Predicate(counter, update)
+    return index, _min, valid
 
 
 def make_condition(*cond, **kwargs):
