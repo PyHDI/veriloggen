@@ -858,6 +858,10 @@ def Div(left, right):
     return Divide(left, right)
 
 
+def Neg(right):
+    return Uminus(right)
+
+
 class LessThan(_BinaryOperator):
 
     def _set_attributes(self):
@@ -2638,6 +2642,24 @@ class ReduceDiv(_Accumulator):
                               enable, reset, width, signed)
 
 
+class ReduceMax(_Accumulator):
+    ops = (lambda x, y: vtypes.Mux(x < y, y, x), )
+
+    def __init__(self, right, size=None, initval=0,
+                 enable=None, reset=None, width=32, signed=True):
+        _Accumulator.__init__(self, right, size, initval,
+                              enable, reset, width, signed)
+
+
+class ReduceMin(_Accumulator):
+    ops = (lambda x, y: vtypes.Mux(x > y, y, x), )
+
+    def __init__(self, right, size=None, initval=0,
+                 enable=None, reset=None, width=32, signed=True):
+        _Accumulator.__init__(self, right, size, initval,
+                              enable, reset, width, signed)
+
+
 class ReduceCustom(_Accumulator):
 
     def __init__(self, ops, right, size=None, initval=0,
@@ -2723,6 +2745,22 @@ def ReduceDivValid(right, size, initval=0,
                    enable=None, reset=None, width=32, signed=True):
 
     cls = ReduceDiv
+    return _ReduceValid(cls, right, size, initval,
+                        enable, reset, width, signed)
+
+
+def ReduceMaxValid(right, size, initval=0,
+                   enable=None, reset=None, width=32, signed=True):
+
+    cls = ReduceMax
+    return _ReduceValid(cls, right, size, initval,
+                        enable, reset, width, signed)
+
+
+def ReduceMinValid(right, size, initval=0,
+                   enable=None, reset=None, width=32, signed=True):
+
+    cls = ReduceMin
     return _ReduceValid(cls, right, size, initval,
                         enable, reset, width, signed)
 
@@ -3401,6 +3439,50 @@ class WriteRAM(_SpecialOperator):
     def enable(self):
         when_cond = self.args[3].sig_data if len(self.args) == 4 else None
         return _and_vars(vtypes.Not(self.args[2].sig_data), when_cond)
+
+
+def ReduceArgMax(right, size=None, initval=0,
+                 enable=None, reset=None, width=32, signed=True):
+
+    reduce_max = ReduceMax(right, size, initval,
+                           enable, reset, width, signed)
+    counter = Counter(size, control=right, enable=enable, reset=reset)
+    update = NotEq(reduce_max, reduce_max.prev(1))
+    update.latency = 0
+    return Predicate(counter, update)
+
+
+def ReduceArgMin(right, size=None, initval=0,
+                 enable=None, reset=None, width=32, signed=True):
+
+    reduce_min = ReduceMin(right, size, initval,
+                           enable, reset, width, signed)
+    counter = Counter(size, control=right, enable=enable, reset=reset)
+    update = NotEq(reduce_min, reduce_min.prev(1))
+    update.latency = 0
+    return Predicate(counter, update)
+
+
+def ReduceArgMaxValid(right, size=None, initval=0,
+                      enable=None, reset=None, width=32, signed=True):
+
+    reduce_max, valid = ReduceMaxValid(right, size, initval,
+                                       enable, reset, width, signed)
+    counter = Counter(size, control=right, enable=enable, reset=reset)
+    update = NotEq(reduce_max, reduce_max.prev(1))
+    update.latency = 0
+    return Predicate(counter, update), valid
+
+
+def ReduceArgMinValid(right, size=None, initval=0,
+                      enable=None, reset=None, width=32, signed=True):
+
+    reduce_min, valid = ReduceMinValid(right, size, initval,
+                                       enable, reset, width, signed)
+    counter = Counter(size, control=right, enable=enable, reset=reset)
+    update = NotEq(reduce_min, reduce_min.prev(1))
+    update.latency = 0
+    return Predicate(counter, update), valid
 
 
 def make_condition(*cond, **kwargs):
