@@ -1968,6 +1968,19 @@ class _Prev(_UnaryOperator):
         seq(data(rdata), cond=senable)
 
 
+class Alias(_UnaryOperator):
+    latency = 0
+
+    def __init__(self, right):
+        _UnaryOperator.__init__(self, right)
+        self.op = lambda x: x
+
+        self.graph_label = 'Alias'
+        self.graph_shape = 'box'
+        self.graph_color = 'lightgray'
+        self.graph_style = 'filled'
+
+
 class _PlusN(_SpecialOperator):
     latency = 1
 
