@@ -12,7 +12,7 @@ TEMPLATE_DIR = os.path.dirname(os.path.abspath(__file__)) + '/template/'
 
 
 def to_ipxact(m, ip_name=None, ip_ver='1.0',
-              clk_ports=None, rst_ports=None):
+              clk_ports=None, rst_ports=None, irq_ports=None):
 
     if ip_name is None:
         ip_name = m.name
@@ -30,6 +30,12 @@ def to_ipxact(m, ip_name=None, ip_ver='1.0',
 
     if isinstance(rst_ports, (list, tuple)):
         rst_ports = OrderedDict(rst_ports)
+
+    if irq_ports is None:
+        irq_ports = {}
+
+    if isinstance(irq_ports, (list, tuple)):
+        irq_ports = OrderedDict(irq_ports)
 
     dirname = ''.join([ip_name, '_v', ip_ver.replace('.', '_'), '/'])
 
@@ -92,6 +98,7 @@ def to_ipxact(m, ip_name=None, ip_ver='1.0',
                             bus_interfaces,
                             clk_ports,
                             rst_ports,
+                            irq_ports,
                             ext_ports,
                             ext_params,
                             version=ip_ver)
