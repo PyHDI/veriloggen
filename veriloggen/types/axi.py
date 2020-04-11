@@ -2265,6 +2265,8 @@ class AxiStreamIn(object):
                                      id_width, user_width, dest_width,
                                      itype, otype)
 
+        self.seq = Seq(m, name, clk, rst)
+
         if nodataflow:
             self.df = None
         else:
@@ -2467,7 +2469,7 @@ class AxiStreamOut(object):
 
     def write_dataflow(self, data, last=None, _id=None, user=None, dest=None, cond=None, when=None):
         """
-        @return done
+        @return ack
         'data', 'last', '_id', 'user', 'dest', and 'when' must be dataflow variables
         """
         ack = vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid))
@@ -2535,13 +2537,9 @@ class AxiStreamOut(object):
             self.tdata.tlast(self.tdata.tlast) if self.tdata.tlast is not None else ()
         )
 
-        last = self.tdata.tlast
-        if last is not None:
-            done = vtypes.Ands(last, self.tdata.tvalid, self.tdata.tready)
-        else:
-            done = vtypes.Ands(self.tdata.tvalid, self.tdata.tready)
+        ack = vtypes.Ands(self.tdata.tvalid, self.tdata.tready)
 
-        return done
+        return ack
 
     def connect(self, ports, name):
         if not self.noio:
