@@ -2330,7 +2330,7 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
             rest_size.dec()
         )
 
-        fsm.If(valid, rest_size <= 1).goto_next()
+        fsm.If(valid, vtypes.Ors(rest_size <= 1, last)).goto_next()
 
         for _ in range(self.num_data_delay):
             fsm.goto_next()
@@ -2393,7 +2393,7 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
                 wvalid(0),
                 pack_count.inc()
             )
-            fsm.If(valid_cond, pack_count == pack_size - 1)(
+            fsm.If(valid_cond, vtypes.Ors(pack_count == pack_size - 1, last))(
                 wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
                 wvalid(1),
                 pack_count(0)
@@ -2437,7 +2437,7 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
                                 int(math.ceil(math.log(pack_size, 2))), initval=0)
         self.read_narrow_pack_counts[pack_size] = pack_count
 
-        data, valid, last = self.read_data(cond=fsm)
+        data, last, _id, user, dest, valid = self.read_data(cond=fsm)
         self.read_narrow_data_wires[pack_size] = data
         self.read_narrow_valid_wires[pack_size] = valid
 
@@ -2451,7 +2451,7 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
             wvalid(0),
             pack_count.inc()
         )
-        fsm.If(valid_cond, pack_count == pack_size - 1)(
+        fsm.If(valid_cond, vtypes.Ors(pack_count == pack_size - 1, last))(
             wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
             wvalid(1),
             pack_count(0)
@@ -2460,7 +2460,7 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
             rest_size.dec()
         )
 
-        fsm.If(valid, rest_size <= 1).goto_next()
+        fsm.If(valid, vtypes.Ors(rest_size <= 1, last)).goto_next()
 
         for _ in range(self.num_data_delay):
             fsm.goto_next()
@@ -2572,12 +2572,17 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
         self.read_wide_pack_counts[pack_size] = pack_count
 
         cond = vtypes.Ands(fsm.here, pack_count == 0)
-        data, valid, last = self.read_data(cond=cond)
+        data, last, _id, user, dest, valid = self.read_data(cond=fsm)
         self.read_wide_data_wires[pack_size] = data
         self.read_wide_valid_wires[pack_size] = valid
 
         valid_cond = vtypes.Ands(valid, self.read_op_sel == op_id)
         stay_cond = self.read_op_sel == op_id
+
+        wlast = self.m.Reg('_'.join(['', self.name,
+                                     'read_wide', str(pack_size),
+                                     'wlast']),
+                           initval=0)
 
         fsm.Delay(1)(
             wvalid(0)
@@ -2585,6 +2590,7 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
         fsm.If(pack_count == 0, valid_cond)(
             wdata(data),
             wvalid(1),
+            wlast(last),
             pack_count.inc()
         )
         fsm.If(pack_count > 0, stay_cond)(
@@ -2601,7 +2607,7 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
         )
 
         fsm.If(pack_count == pack_size - 1,
-               rest_size == 0).goto_next()
+               vtypes.Ors(rest_size == 0, wlast)).goto_next()
 
         for _ in range(self.num_data_delay):
             fsm.goto_next()
