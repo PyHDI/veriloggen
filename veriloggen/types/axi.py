@@ -2257,6 +2257,11 @@ class AxiStreamIn(object):
 
         self.noio = noio
 
+        if not hasattr(self.m, 'streaminbus'):
+            self.m.streaminbus = []
+
+        self.m.streaminbus.append(self)
+
         itype = util.t_Wire if noio else None
         otype = util.t_Wire if noio else None
 
@@ -2412,6 +2417,11 @@ class AxiStreamOut(object):
         self.datawidth = datawidth
 
         self.noio = noio
+
+        if not hasattr(self.m, 'streamoutbus'):
+            self.m.streamoutbus = []
+
+        self.m.streamoutbus.append(self)
 
         itype = util.t_Wire if noio else None
         otype = util.t_Reg if noio else None
