@@ -153,11 +153,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         if self.use_global_base_addr:
             global_addr = self.global_base_addr + global_addr
 
-        ret = self.read_request(global_addr, length=1, cond=fsm)
-        if isinstance(ret, (tuple)):
-            ack, counter = ret
-        else:
-            ack = ret
+        ack = self.read_request(global_addr, length=1, cond=fsm)
         fsm.If(ack).goto_next()
 
         ret = self.read_data(cond=fsm)
@@ -177,11 +173,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         if self.use_global_base_addr:
             global_addr = self.global_base_addr + global_addr
 
-        ret = self.write_request(global_addr, length=1, cond=fsm)
-        if isinstance(ret, (tuple)):
-            ack, counter = ret
-        else:
-            ack = ret
+        ack = self.write_request(global_addr, length=1, cond=fsm)
         fsm.If(ack).goto_next()
 
         ret = self.write_data(value, cond=fsm)
@@ -473,7 +465,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
                                  cur_global_addr, cur_size, rest_size)
 
         # state 2
-        ack, counter = self.read_request(cur_global_addr, cur_size, cond=fsm)
+        ack, counter = self.read_request_counter(cur_global_addr, cur_size, cond=fsm)
         fsm.If(ack).goto_next()
 
         # state 3
@@ -611,7 +603,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
                                  cur_global_addr, cur_size, rest_size)
 
         # state 2
-        ack, counter = self.read_request(cur_global_addr, cur_size, cond=fsm)
+        ack, counter = self.read_request_counter(cur_global_addr, cur_size, cond=fsm)
         fsm.If(ack).goto_next()
 
         # state 3
@@ -772,7 +764,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             last_done(0)
         )
 
-        ack, counter = self.read_request(cur_global_addr, cur_size, cond=fsm)
+        ack, counter = self.read_request_counter(cur_global_addr, cur_size, cond=fsm)
         fsm.If(ack).goto_next()
 
         # state 3
@@ -1046,7 +1038,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
                                  cur_global_addr, cur_size, rest_size)
 
         # state 2
-        ack, counter = self.write_request(cur_global_addr, cur_size, cond=fsm)
+        ack, counter = self.write_request_counter(cur_global_addr, cur_size, cond=fsm)
         self.write_data_counter = counter
         fsm.If(ack).goto_next()
 
@@ -1190,7 +1182,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
                                  cur_global_addr, cur_size, rest_size)
 
         # state 2
-        ack, counter = self.write_request(cur_global_addr, cur_size, cond=fsm)
+        ack, counter = self.write_request_counter(cur_global_addr, cur_size, cond=fsm)
         fsm.If(ack).goto_next()
 
         # state 3
@@ -1375,7 +1367,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
                                  cur_global_addr, cur_size, rest_size)
 
         # state 2
-        ack, counter = self.write_request(cur_global_addr, cur_size, cond=fsm)
+        ack, counter = self.write_request_counter(cur_global_addr, cur_size, cond=fsm)
         fsm.If(ack).goto_next()
 
         # state 3
@@ -1568,11 +1560,7 @@ class AXIMLite(axi.AxiLiteMaster, _MutexFunction):
         if self.use_global_base_addr:
             global_addr = self.global_base_addr + global_addr
 
-        ret = self.read_request(global_addr, length=1, cond=fsm)
-        if isinstance(ret, (tuple)):
-            ack, counter = ret
-        else:
-            ack = ret
+        ack = self.read_request(global_addr, length=1, cond=fsm)
         fsm.If(ack).goto_next()
 
         ret = self.read_data(cond=fsm)
@@ -1592,11 +1580,7 @@ class AXIMLite(axi.AxiLiteMaster, _MutexFunction):
         if self.use_global_base_addr:
             global_addr = self.global_base_addr + global_addr
 
-        ret = self.write_request(global_addr, length=1, cond=fsm)
-        if isinstance(ret, (tuple)):
-            ack, counter = ret
-        else:
-            ack = ret
+        ack = self.write_request(global_addr, length=1, cond=fsm)
         fsm.If(ack).goto_next()
 
         ret = self.write_data(value, cond=fsm)
@@ -2069,11 +2053,13 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
         self.read_narrow_pack_counts = OrderedDict()  # key: pack_size
         self.read_narrow_data_wires = OrderedDict()  # key: pack_size
         self.read_narrow_valid_wires = OrderedDict()  # key: pack_size
+        self.read_narrow_rest_size_wires = OrderedDict()  # key: pack_size
 
         self.read_wide_fsms = OrderedDict()  # key: pack_size
         self.read_wide_pack_counts = OrderedDict()  # key: pack_size
         self.read_wide_data_wires = OrderedDict()  # key: pack_size
         self.read_wide_valid_wires = OrderedDict()  # key: pack_size
+        self.read_wide_rest_size_wires = OrderedDict()  # key: pack_size
 
     def read(self, fsm):
         data, last, _id, user, dest, valid = self.read_data(cond=fsm)
@@ -2330,7 +2316,7 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
             rest_size.dec()
         )
 
-        fsm.If(valid, vtypes.Ors(rest_size <= 1, last)).goto_next()
+        fsm.If(valid, rest_size <= 1).goto_next()
 
         for _ in range(self.num_data_delay):
             fsm.goto_next()
@@ -2393,7 +2379,7 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
                 wvalid(0),
                 pack_count.inc()
             )
-            fsm.If(valid_cond, vtypes.Ors(pack_count == pack_size - 1, last))(
+            fsm.If(valid_cond, pack_count == pack_size - 1)(
                 wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
                 wvalid(1),
                 pack_count(0)
@@ -2451,7 +2437,7 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
             wvalid(0),
             pack_count.inc()
         )
-        fsm.If(valid_cond, vtypes.Ors(pack_count == pack_size - 1, last))(
+        fsm.If(valid_cond, pack_count == pack_size - 1)(
             wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
             wvalid(1),
             pack_count(0)
@@ -2460,7 +2446,7 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
             rest_size.dec()
         )
 
-        fsm.If(valid, vtypes.Ors(rest_size <= 1, last)).goto_next()
+        fsm.If(valid, rest_size <= 1).goto_next()
 
         for _ in range(self.num_data_delay):
             fsm.goto_next()
@@ -2572,7 +2558,7 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
         self.read_wide_pack_counts[pack_size] = pack_count
 
         cond = vtypes.Ands(fsm.here, pack_count == 0)
-        data, last, _id, user, dest, valid = self.read_data(cond=fsm)
+        data, last, _id, user, dest, valid = self.read_data(cond=cond)
         self.read_wide_data_wires[pack_size] = data
         self.read_wide_valid_wires[pack_size] = valid
 
@@ -2602,12 +2588,11 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
             pack_count(0)
         )
 
-        fsm.If(valid_cond)(
+        fsm.If(pack_count == 0, valid_cond)(
             rest_size.dec()
         )
 
-        fsm.If(pack_count == pack_size - 1,
-               vtypes.Ors(rest_size == 0, wlast)).goto_next()
+        fsm.If(pack_count == pack_size - 1, rest_size == 0).goto_next()
 
         for _ in range(self.num_data_delay):
             fsm.goto_next()
@@ -3378,7 +3363,7 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
         return op_id
 
 
-class AXIM_AXIStreamIn(AXIM):
+class AXIM_for_AXIStreamIn(AXIM):
 
     def __init__(self, streamin, name,
                  waddr_id_width=0, wdata_id_width=0, wresp_id_width=0,
@@ -3561,9 +3546,15 @@ class AXIM_AXIStreamIn(AXIM):
                                  cur_global_addr, cur_size, rest_size)
 
         # state 2
-        ack, counter = self.read_request(cur_global_addr, cur_size, cond=fsm)
-        fsm.If(ack, rest_size > 0).goto(check_state)
-        fsm.If(ack, rest_size == 0).goto_next()
+        ack = self.read_request(cur_global_addr, cur_size, cond=fsm)
+        fsm.If(ack).goto_next()
+
+        accept = vtypes.Ands(self.raddr.arvalid, self.raddr.arready)
+        fsm.If(accept)(
+            cur_global_addr.add(optimize(cur_size * (self.datawidth // 8)))
+        )
+        fsm.If(accept, rest_size > 0).goto(check_state)
+        fsm.If(accept, rest_size == 0).goto_next()
 
         for _ in range(self.num_data_delay):
             fsm.goto_next()
@@ -3577,7 +3568,7 @@ class AXIM_AXIStreamIn(AXIM):
         fsm.goto_init()
 
 
-class AXIM_AXIStreamOut(AXIM):
+class AXIM_for_AXIStreamOut(AXIM):
 
     def __init__(self, streamout, name,
                  waddr_id_width=0, wdata_id_width=0, wresp_id_width=0,
@@ -3768,7 +3759,7 @@ class AXIM_AXIStreamOut(AXIM):
                                  cur_global_addr, cur_size, rest_size)
 
         # state 2
-        ack, counter = self.write_request(cur_global_addr, cur_size, cond=fsm)
+        ack, counter = self.write_request_counter(cur_global_addr, cur_size, cond=fsm)
         self.write_data_counter = counter
         fsm.If(ack).goto_next()
 
@@ -3791,6 +3782,114 @@ class AXIM_AXIStreamOut(AXIM):
         )
 
         fsm.goto_init()
+
+
+class AXIM2(AXIM_for_AXIStreamIn):
+
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
+                 waddr_id_width=0, wdata_id_width=0, wresp_id_width=0,
+                 raddr_id_width=0, rdata_id_width=0,
+                 waddr_user_width=2, wdata_user_width=0, wresp_user_width=0,
+                 raddr_user_width=2, rdata_user_width=0,
+                 waddr_burst_mode=axi.BURST_INCR, raddr_burst_mode=axi.BURST_INCR,
+                 waddr_cache_mode=axi.AxCACHE_NONCOHERENT, raddr_cache_mode=axi.AxCACHE_NONCOHERENT,
+                 waddr_prot_mode=axi.AxPROT_NONCOHERENT, raddr_prot_mode=axi.AxPROT_NONCOHERENT,
+                 waddr_user_mode=axi.AxUSER_NONCOHERENT, wdata_user_mode=axi.xUSER_DEFAULT,
+                 raddr_user_mode=axi.AxUSER_NONCOHERENT,
+                 noio=False,
+                 enable_async=True, use_global_base_addr=False,
+                 num_cmd_delay=0, num_data_delay=0,
+                 op_sel_width=8, fsm_as_module=False):
+
+        streamin = AXIStreamIn(m, '_'.join(['', name, 'streamin']), clk, rst, datawidth, addrwidth,
+                               with_last=True,
+                               id_width=rdata_id_width, user_width=rdata_user_width, dest_width=0,
+                               noio=True,
+                               enable_async=enable_async,
+                               num_cmd_delay=num_cmd_delay, num_data_delay=num_data_delay,
+                               op_sel_width=op_sel_width, fsm_as_module=fsm_as_module)
+
+        AXIM.__init__(self, m, name, clk, rst, datawidth, addrwidth,
+                      waddr_id_width, wdata_id_width, wresp_id_width,
+                      raddr_id_width, rdata_id_width,
+                      waddr_user_width, wdata_user_width, wresp_user_width,
+                      raddr_user_width, rdata_user_width,
+                      waddr_burst_mode, raddr_burst_mode,
+                      waddr_cache_mode, raddr_cache_mode,
+                      waddr_prot_mode, raddr_prot_mode,
+                      waddr_user_mode, wdata_user_mode,
+                      raddr_user_mode,
+                      noio,
+                      enable_async, use_global_base_addr,
+                      num_cmd_delay, num_data_delay,
+                      op_sel_width, fsm_as_module)
+
+        self.streamin = streamin
+        self.streamin.connect_master_rdata(self)
+
+    def dma_read(self, fsm, ram, local_addr, global_addr, size,
+                 local_stride=1, port=0, ram_method=None):
+
+        if ram_method is None:
+            ram_method = getattr(ram, 'write_dataflow')
+
+        ram_method_name = (ram_method.func.__name__
+                           if isinstance(ram_method, functools.partial) else
+                           ram_method.__name__)
+        ram_datawidth = (ram.datawidth if ram_method is None else
+                         ram.orig_datawidth if 'bcast' in ram_method_name else
+                         ram.orig_datawidth if 'block' in ram_method_name else
+                         ram.datawidth)
+
+        if ram_datawidth == self.datawidth:
+            dma_size = size
+        elif ram_datawidth > self.datawidth:
+            pack_size = ram_datawidth // self.datawidth
+            dma_size = (size << int(math.log(pack_size, 2))
+                        if math.log(pack_size, 2) % 1.0 == 0.0 else
+                        size * pack_size)
+        else:
+            pack_size = self.datawidth // ram_datawidth
+            shamt = int(math.log(pack_size, 2))
+            res = vtypes.Mux(
+                vtypes.And(size, 2 ** shamt - 1) > 0, 1, 0)
+            dma_size = (size >> shamt) + res
+
+        AXIM_for_AXIStreamIn.dma_read_async(self, fsm, global_addr, dma_size)
+        self.streamin.read_stream(fsm, ram, local_addr, size,
+                                  local_stride, port, ram_method)
+
+    def dma_read_async(self, fsm, ram, local_addr, global_addr, size,
+                       local_stride=1, port=0, ram_method=None):
+
+        if ram_method is None:
+            ram_method = getattr(ram, 'write_dataflow')
+
+        ram_method_name = (ram_method.func.__name__
+                           if isinstance(ram_method, functools.partial) else
+                           ram_method.__name__)
+        ram_datawidth = (ram.datawidth if ram_method is None else
+                         ram.orig_datawidth if 'bcast' in ram_method_name else
+                         ram.orig_datawidth if 'block' in ram_method_name else
+                         ram.datawidth)
+
+        if ram_datawidth == self.datawidth:
+            dma_size = size
+        elif ram_datawidth > self.datawidth:
+            pack_size = ram_datawidth // self.datawidth
+            dma_size = (size << int(math.log(pack_size, 2))
+                        if math.log(pack_size, 2) % 1.0 == 0.0 else
+                        size * pack_size)
+        else:
+            pack_size = self.datawidth // ram_datawidth
+            shamt = int(math.log(pack_size, 2))
+            res = vtypes.Mux(
+                vtypes.And(size, 2 ** shamt - 1) > 0, 1, 0)
+            dma_size = (size >> shamt) + res
+
+        AXIM_for_AXIStreamIn.dma_read_async(self, fsm, global_addr, dma_size)
+        self.streamin.read_stream_async(fsm, ram, local_addr, size,
+                                        local_stride, port, ram_method)
 
 
 def add_mux(targ, cond, value):

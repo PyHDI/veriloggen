@@ -654,7 +654,47 @@ class AxiMaster(object):
         mask = boundary_size - 1
         return (vtypes.Int(boundary_size) - (addr & mask)) >> util.log2(datawidth // 8)
 
-    def write_request(self, addr, length=1, cond=None, counter=None):
+    def write_request(self, addr, length=1, cond=None):
+        """
+        @return ack
+        """
+        if self._write_disabled:
+            raise TypeError('Write disabled.')
+
+        if isinstance(length, int) and length > 2 ** self.burst_size_width:
+            raise ValueError("length must be less than 257.")
+
+        if isinstance(length, int) and length < 1:
+            raise ValueError("length must be more than 0.")
+
+        if cond is not None:
+            self.seq.If(cond)
+
+        ack = vtypes.Ors(self.waddr.awready, vtypes.Not(self.waddr.awvalid))
+
+        self.seq.If(ack)(
+            self.waddr.awid(0) if self.waddr.awid is not None else (),
+            self.waddr.awaddr(addr),
+            self.waddr.awlen(length - 1),
+            self.waddr.awvalid(1)
+        )
+        self.seq.Then().If(length == 0)(
+            self.waddr.awvalid(0)
+        )
+
+        # de-assert
+        self.seq.Delay(1)(
+            self.waddr.awvalid(0)
+        )
+
+        # retry
+        self.seq.If(vtypes.Ands(self.waddr.awvalid, vtypes.Not(self.waddr.awready)))(
+            self.waddr.awvalid(self.waddr.awvalid)
+        )
+
+        return ack
+
+    def write_request_counter(self, addr, length=1, cond=None, counter=None):
         """
         @return ack, counter
         """
@@ -820,7 +860,44 @@ class AxiMaster(object):
 
         return done
 
-    def read_request(self, addr, length=1, cond=None, counter=None):
+    def read_request(self, addr, length=1, cond=None):
+        """
+        @return ack
+        """
+        if self._read_disabled:
+            raise TypeError('Read disabled.')
+
+        if isinstance(length, int) and length > 2 ** self.burst_size_width:
+            raise ValueError("length must be less than 257.")
+
+        if isinstance(length, int) and length < 1:
+            raise ValueError("length must be more than 0.")
+
+        if cond is not None:
+            self.seq.If(cond)
+
+        ack = vtypes.Ors(self.raddr.arready, vtypes.Not(self.raddr.arvalid))
+
+        self.seq.If(ack)(
+            self.raddr.arid(0) if self.raddr.arid is not None else (),
+            self.raddr.araddr(addr),
+            self.raddr.arlen(length - 1),
+            self.raddr.arvalid(1)
+        )
+
+        # de-assert
+        self.seq.Delay(1)(
+            self.raddr.arvalid(0)
+        )
+
+        # retry
+        self.seq.If(vtypes.Ands(self.raddr.arvalid, vtypes.Not(self.raddr.arready)))(
+            self.raddr.arvalid(self.raddr.arvalid)
+        )
+
+        return ack
+
+    def read_request_counter(self, addr, length=1, cond=None, counter=None):
         """
         @return ack, counter
         """
@@ -1446,7 +1523,7 @@ class AxiSlave(object):
 
         self._read_disabled = True
 
-    def pull_request(self, cond, counter=None):
+    def pull_request_counter(self, cond, counter=None):
         """
         @return addr, counter, readvalid, writevalid
         """
@@ -1506,7 +1583,7 @@ class AxiSlave(object):
 
         return addr, counter, readvalid, writevalid
 
-    def pull_write_request(self, cond=None, counter=None):
+    def pull_write_request_counter(self, cond=None, counter=None):
         """
         @return addr, counter, valid
         """
@@ -1636,7 +1713,7 @@ class AxiSlave(object):
 
         return df_data, df_mask, df_last, done
 
-    def pull_read_request(self, cond=None, counter=None):
+    def pull_read_request_counter(self, cond=None, counter=None):
         """
         @return addr, counter, valid
         """
