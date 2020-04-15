@@ -23,7 +23,7 @@ def mkMain():
     fsm = FSM(m, 'fsm', clk, rst)
 
     # write address
-    addr, counter, valid = myaxi.pull_write_request(cond=fsm)
+    addr, counter, valid = myaxi.pull_write_request_counter(cond=fsm)
     fsm.If(valid).goto_next()
 
     # write data
@@ -65,7 +65,7 @@ def mkTest():
     awlen = 64
     expected_sum = ((0 + (awlen - 1)) * awlen) // 2
 
-    ack, counter = _axi.write_request(awaddr, awlen, cond=fsm)
+    ack, counter = _axi.write_request_counter(awaddr, awlen, cond=fsm)
     fsm.If(ack).goto_next()
 
     # write data (1)
@@ -83,7 +83,7 @@ def mkTest():
     awlen = 128
     expected_sum += ((prev_awlen + (prev_awlen + awlen - 1)) * awlen) // 2
 
-    ack, counter = _axi.write_request(awaddr, awlen, cond=fsm)
+    ack, counter = _axi.write_request_counter(awaddr, awlen, cond=fsm)
     fsm.If(ack).goto_next()
 
     # write data (2)

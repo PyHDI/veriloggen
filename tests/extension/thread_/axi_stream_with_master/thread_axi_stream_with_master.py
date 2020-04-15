@@ -28,9 +28,9 @@ def mkLed():
     axi_b = vthread.AXIStreamIn(m, 'axi_b', clk, rst, datawidth, with_last=True, noio=True)
     axi_c = vthread.AXIStreamOut(m, 'axi_c', clk, rst, datawidth, with_last=True, noio=True)
 
-    maxi_a = vthread.AXIM_AXIStreamIn(axi_a, 'maxi_a')
-    maxi_b = vthread.AXIM_AXIStreamIn(axi_b, 'maxi_b')
-    maxi_c = vthread.AXIM_AXIStreamOut(axi_c, 'maxi_c')
+    maxi_a = vthread.AXIM_for_AXIStreamIn(axi_a, 'maxi_a')
+    maxi_b = vthread.AXIM_for_AXIStreamIn(axi_b, 'maxi_b')
+    maxi_c = vthread.AXIM_for_AXIStreamOut(axi_c, 'maxi_c')
 
     def comp_sequential(size, offset):
         sum = 0

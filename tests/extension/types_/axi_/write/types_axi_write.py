@@ -25,7 +25,7 @@ def mkMain():
     awaddr = 1024
     awlen = 64
 
-    ack, counter = myaxi.write_request(awaddr, awlen, cond=fsm)
+    ack, counter = myaxi.write_request_counter(awaddr, awlen, cond=fsm)
     fsm.If(ack).goto_next()
 
     # write data

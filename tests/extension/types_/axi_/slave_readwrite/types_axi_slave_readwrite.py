@@ -22,7 +22,7 @@ def mkMain():
     fsm = FSM(m, 'fsm', clk, rst)
 
     # request
-    addr, counter, readvalid, writevalid = myaxi.pull_request(cond=fsm)
+    addr, counter, readvalid, writevalid = myaxi.pull_request_counter(cond=fsm)
     rdata = m.Reg('rdata', 32, initval=0)
     fsm.If(readvalid)(
         rdata(addr >> 2)
@@ -80,7 +80,7 @@ def mkTest():
     arlen = 64
     expected_rsum = (araddr // 4 + araddr // 4 + arlen - 1) * arlen // 2
 
-    ack, counter = _axi.read_request(araddr, arlen, cond=fsm)
+    ack, counter = _axi.read_request_counter(araddr, arlen, cond=fsm)
     fsm.If(ack).goto_next()
 
     # read data (1)
@@ -96,7 +96,7 @@ def mkTest():
     arlen = 128
     expected_rsum += (araddr // 4 + araddr // 4 + arlen - 1) * arlen // 2
 
-    ack, counter = _axi.read_request(araddr, arlen, cond=fsm)
+    ack, counter = _axi.read_request_counter(araddr, arlen, cond=fsm)
     fsm.If(ack).goto_next()
 
     # read data (2)
@@ -117,7 +117,7 @@ def mkTest():
     awlen = 64
     expected_sum = ((0 + (awlen - 1)) * awlen) // 2
 
-    ack, counter = _axi.write_request(awaddr, awlen, cond=fsm)
+    ack, counter = _axi.write_request_counter(awaddr, awlen, cond=fsm)
     fsm.If(ack).goto_next()
 
     # write data (1)
@@ -135,7 +135,7 @@ def mkTest():
     awlen = 128
     expected_sum += ((prev_awlen + (prev_awlen + awlen - 1)) * awlen) // 2
 
-    ack, counter = _axi.write_request(awaddr, awlen, cond=fsm)
+    ack, counter = _axi.write_request_counter(awaddr, awlen, cond=fsm)
     fsm.If(ack).goto_next()
 
     # write data (2)

@@ -24,12 +24,12 @@ def mkMain():
     # write address
     awaddr = 1024
     awlen = 64
-    ack, counter0 = myaxi.write_request(awaddr, awlen, cond=fsm)
+    ack, counter0 = myaxi.write_request_counter(awaddr, awlen, cond=fsm)
     fsm.If(ack).goto_next()
 
     awaddr = 1024 * 2
     awlen = 64
-    ack, counter1 = myaxi.write_request(awaddr, awlen, cond=fsm)
+    ack, counter1 = myaxi.write_request_counter(awaddr, awlen, cond=fsm)
     fsm.If(ack).goto_next()
 
     # write data
