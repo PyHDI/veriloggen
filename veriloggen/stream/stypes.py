@@ -2398,7 +2398,7 @@ class _Accumulator(_UnaryOperator):
     latency = 1
     ops = (vtypes.Plus, )
 
-    def __init__(self, right, size=None, initval=None,
+    def __init__(self, right, size=None, initval=None, interval=None,
                  enable=None, reset=None, width=32, signed=True):
 
         self.size = _to_constant(size) if size is not None else None
@@ -2408,6 +2408,8 @@ class _Accumulator(_UnaryOperator):
         if not isinstance(self.initval, _Constant):
             raise TypeError("initval must be Constant, not '%s'" %
                             str(type(self.initval)))
+        
+        self.interval = interval
 
         self.enable = _to_constant(enable)
         if self.enable is not None:
@@ -2442,6 +2444,8 @@ class _Accumulator(_UnaryOperator):
                              (self.latency, 1))
 
         size_data = self.size.sig_data if self.size is not None else None
+        if self.size is not None and self.interval is not None:
+            size_data *= self.interval
         initval_data = self.initval.sig_data
 
         width = self.bit_length()
@@ -2460,6 +2464,11 @@ class _Accumulator(_UnaryOperator):
             next_count_value = vtypes.Mux(count >= size_data - 1,
                                           0, count + 1)
             count_zero = (count == 0)
+        
+        if self.interval is not None:
+            interval_count = m.Reg(self.name('interval_count'), width, initval=0)
+            next_interval_count = vtypes.Mux(interval_count >= self.interval - 1, 0, interval_count + 1)
+            interval_enable = (interval_count ==  0)
 
         self.sig_data = data
 
@@ -2484,7 +2493,9 @@ class _Accumulator(_UnaryOperator):
         if not self.ops and self.size is not None:
             value = (count >= (size_data - 1))
 
-        if self.reset is not None or self.size is not None:
+        reset_value = initval_data
+        if self.size is not None:
+        # if self.reset is not None or self.size is not None:
             reset_value = initval_data
             for op in self.ops:
                 if not isinstance(op, type):
@@ -2502,24 +2513,43 @@ class _Accumulator(_UnaryOperator):
                 reset_value = (count >= (size_data - 1))
 
         if self.enable is not None:
+            if self.interval is not None:
+                enable_cond = _and_vars(svalid, senable, enabledata, interval_enable)
+                seq(data(value), cond = enable_cond)
+            else:
+                enable_cond = _and_vars(svalid, senable, enabledata)
+                seq(data(value), cond = enable_cond)
+
             enable_cond = _and_vars(svalid, senable, enabledata)
-            seq(data(value), cond=enable_cond)
-
             if self.size is not None:
                 seq(count(next_count_value), cond=enable_cond)
 
+            if self.interval is not None:
+                seq(interval_count(next_interval_count), cond=enable_cond)
+        
         else:
+            if self.interval is not None:
+                enable_cond = _and_vars(svalid, senable, interval_enable)
+                seq(data(value), cond = enable_cond)
+            else:
+                enable_cond = _and_vars(svalid, senable)
+                seq(data(value), cond = enable_cond)
+
             enable_cond = _and_vars(svalid, senable)
-            seq(data(value), cond=enable_cond)
 
             if self.size is not None:
                 seq(count(next_count_value), cond=enable_cond)
+            
+            if self.interval is not None:
+                seq(interval_count(next_interval_count), cond=enable_cond)
 
         if self.reset is not None:
             if self.enable is None:
                 reset_cond = _and_vars(svalid, senable, resetdata)
                 seq(data(reset_value), cond=reset_cond)
-
+                
+                if self.interval is not None:
+                    seq(interval_count(0), cond=reset_cond)
                 if self.size is not None:
                     seq(count(0), cond=reset_cond)
                     reset_cond = _and_vars(svalid, senable, count_zero)
@@ -2533,6 +2563,8 @@ class _Accumulator(_UnaryOperator):
                     svalid, senable, enabledata, resetdata)
                 seq(data(reset_value), cond=reset_enable_cond)
 
+                if self.interval is not None:
+                    seq(interval_count(0), cond=reset_enable_cond)
                 if self.size is not None:
                     seq(count(0), cond=reset_enable_cond)
                     reset_enable_cond = _and_vars(
@@ -2602,7 +2634,7 @@ class ReduceCustom(_Accumulator):
 
 class Counter(_Accumulator):
 
-    def __init__(self, size=None, step=1, initval=0,
+    def __init__(self, size=None, step=1, initval=0, interval=1,
                  control=None, enable=None, reset=None, width=32, signed=False):
 
         self.ops = (lambda x, y: x + step, )
@@ -2612,7 +2644,7 @@ class Counter(_Accumulator):
 
         initval -= step
 
-        _Accumulator.__init__(self, control, size, initval,
+        _Accumulator.__init__(self, control, size, initval, interval,
                               enable, reset, width, signed)
         self.graph_label = 'Counter'
 
@@ -2687,7 +2719,7 @@ def ReduceCustomValid(ops, right, size, initval=0,
     return data, valid
 
 
-def CounterValid(size, step=1, initval=0,
+def CounterValid(size, step=1, initval=None,
                  control=None, enable=None, reset=None, width=32, signed=False):
 
     data = Counter(size, step, initval,
