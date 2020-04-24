@@ -2401,15 +2401,15 @@ class _Accumulator(_UnaryOperator):
     def __init__(self, right, size=None, initval=None, interval=None,
                  enable=None, reset=None, width=32, signed=True):
 
-        self.size = _to_constant(size) if size is not None else None
+        self.interval = _to_constant(interval) if interval is not None else None
+        self.size = (_to_constant(size * interval) if size is not None and interval is not None
+            else (_to_constant(size) if size is not None else None))
         self.initval = (_to_constant(initval)
                         if initval is not None else _to_constant(0))
 
         if not isinstance(self.initval, _Constant):
             raise TypeError("initval must be Constant, not '%s'" %
                             str(type(self.initval)))
-        
-        self.interval = interval
 
         self.enable = _to_constant(enable)
         if self.enable is not None:
@@ -2444,8 +2444,9 @@ class _Accumulator(_UnaryOperator):
                              (self.latency, 1))
 
         size_data = self.size.sig_data if self.size is not None else None
-        if self.size is not None and self.interval is not None:
-            size_data *= self.interval
+        interval_data = self.interval.sig_data if self.interval is not None else None
+        # if self.size is not None and self.interval is not None:
+            # size_data *= self.interval
         initval_data = self.initval.sig_data
 
         width = self.bit_length()
@@ -2467,7 +2468,7 @@ class _Accumulator(_UnaryOperator):
         
         if self.interval is not None:
             interval_count = m.Reg(self.name('interval_count'), width, initval=0)
-            next_interval_count = vtypes.Mux(interval_count >= self.interval - 1, 0, interval_count + 1)
+            next_interval_count = vtypes.Mux(interval_count >= interval_data - 1, 0, interval_count + 1)
             interval_enable = (interval_count ==  0)
 
         self.sig_data = data
