@@ -2445,8 +2445,6 @@ class _Accumulator(_UnaryOperator):
 
         size_data = self.size.sig_data if self.size is not None else None
         interval_data = self.interval.sig_data if self.interval is not None else None
-        # if self.size is not None and self.interval is not None:
-            # size_data *= self.interval
         initval_data = self.initval.sig_data
 
         width = self.bit_length()
