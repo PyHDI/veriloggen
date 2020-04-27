@@ -29,7 +29,7 @@ def mkLed():
     counter = strm.Counter()
 
     a = strm.source('a')
-    a_addr = strm.Counter() - 1
+    a_addr = strm.Counter()
     sp = strm.Scratchpad(a, a_addr, length=128)
 
     a0 = a
@@ -49,7 +49,7 @@ def mkLed():
     #b = a0 + a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8
     b = strm.AddN(a0, a1, a2, a3, a4, a5, a6, a7, a8)
 
-    strm.sink(b, 'b', when=counter > img_width + img_width + 2)
+    strm.sink(b, 'b', when=counter >= img_width + img_width + 2)
 
     def comp_stream(size, offset):
         strm.set_source('a', ram_a, offset, size * 3)

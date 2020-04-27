@@ -2465,10 +2465,12 @@ class _Accumulator(_UnaryOperator):
     latency = 1
     ops = (vtypes.Plus, )
 
-    def __init__(self, right, size=None, initval=None,
+    def __init__(self, right, size=None, initval=None, interval=None,
                  enable=None, reset=None, width=32, signed=True):
 
-        self.size = _to_constant(size) if size is not None else None
+        self.interval = _to_constant(interval) if interval is not None else None
+        self.size = (_to_constant(size * interval) if size is not None and interval is not None
+            else (_to_constant(size) if size is not None else None))
         self.initval = (_to_constant(initval)
                         if initval is not None else _to_constant(0))
 
@@ -2509,6 +2511,7 @@ class _Accumulator(_UnaryOperator):
                              (self.latency, 1))
 
         size_data = self.size.sig_data if self.size is not None else None
+        interval_data = self.interval.sig_data if self.interval is not None else None
         initval_data = self.initval.sig_data
 
         width = self.bit_length()
@@ -2527,6 +2530,11 @@ class _Accumulator(_UnaryOperator):
             next_count_value = vtypes.Mux(count >= size_data - 1,
                                           0, count + 1)
             count_zero = (count == 0)
+        
+        if self.interval is not None:
+            interval_count = m.Reg(self.name('interval_count'), width, initval=0)
+            next_interval_count = vtypes.Mux(interval_count >= interval_data - 1, 0, interval_count + 1)
+            interval_enable = (interval_count ==  0)
 
         self.sig_data = data
 
@@ -2551,7 +2559,9 @@ class _Accumulator(_UnaryOperator):
         if not self.ops and self.size is not None:
             value = (count >= (size_data - 1))
 
-        if self.reset is not None or self.size is not None:
+        reset_value = initval_data
+        if self.size is not None:
+        # if self.reset is not None or self.size is not None:
             reset_value = initval_data
             for op in self.ops:
                 if not isinstance(op, type):
@@ -2569,24 +2579,43 @@ class _Accumulator(_UnaryOperator):
                 reset_value = (count >= (size_data - 1))
 
         if self.enable is not None:
+            if self.interval is not None:
+                enable_cond = _and_vars(svalid, senable, enabledata, interval_enable)
+                seq(data(value), cond = enable_cond)
+            else:
+                enable_cond = _and_vars(svalid, senable, enabledata)
+                seq(data(value), cond = enable_cond)
+
             enable_cond = _and_vars(svalid, senable, enabledata)
-            seq(data(value), cond=enable_cond)
-
             if self.size is not None:
                 seq(count(next_count_value), cond=enable_cond)
 
+            if self.interval is not None:
+                seq(interval_count(next_interval_count), cond=enable_cond)
+        
         else:
+            if self.interval is not None:
+                enable_cond = _and_vars(svalid, senable, interval_enable)
+                seq(data(value), cond = enable_cond)
+            else:
+                enable_cond = _and_vars(svalid, senable)
+                seq(data(value), cond = enable_cond)
+
             enable_cond = _and_vars(svalid, senable)
-            seq(data(value), cond=enable_cond)
 
             if self.size is not None:
                 seq(count(next_count_value), cond=enable_cond)
+            
+            if self.interval is not None:
+                seq(interval_count(next_interval_count), cond=enable_cond)
 
         if self.reset is not None:
             if self.enable is None:
                 reset_cond = _and_vars(svalid, senable, resetdata)
                 seq(data(reset_value), cond=reset_cond)
-
+                
+                if self.interval is not None:
+                    seq(interval_count(0), cond=reset_cond)
                 if self.size is not None:
                     seq(count(0), cond=reset_cond)
                     reset_cond = _and_vars(svalid, senable, count_zero)
@@ -2600,6 +2629,8 @@ class _Accumulator(_UnaryOperator):
                     svalid, senable, enabledata, resetdata)
                 seq(data(reset_value), cond=reset_enable_cond)
 
+                if self.interval is not None:
+                    seq(interval_count(0), cond=reset_enable_cond)
                 if self.size is not None:
                     seq(count(0), cond=reset_enable_cond)
                     reset_enable_cond = _and_vars(
@@ -2619,9 +2650,9 @@ class _Accumulator(_UnaryOperator):
 class ReduceAdd(_Accumulator):
     ops = (vtypes.Plus, )
 
-    def __init__(self, right, size=None, initval=0,
+    def __init__(self, right, size=None, initval=0, interval=None,
                  enable=None, reset=None, width=32, signed=True):
-        _Accumulator.__init__(self, right, size, initval,
+        _Accumulator.__init__(self, right, size, initval, interval,
                               enable, reset, width, signed)
         self.graph_label = 'ReduceAdd'
 
@@ -2629,9 +2660,9 @@ class ReduceAdd(_Accumulator):
 class ReduceSub(_Accumulator):
     ops = (vtypes.Minus, )
 
-    def __init__(self, right, size=None, initval=0,
+    def __init__(self, right, size=None, initval=0, interval=None,
                  enable=None, reset=None, width=32, signed=True):
-        _Accumulator.__init__(self, right, size, initval,
+        _Accumulator.__init__(self, right, size, initval, interval,
                               enable, reset, width, signed)
         self.graph_label = 'ReduceSub'
 
@@ -2640,9 +2671,9 @@ class ReduceMul(_Accumulator):
     latency = 1
     ops = (vtypes.Times, )
 
-    def __init__(self, right, size=None, initval=0,
+    def __init__(self, right, size=None, initval=0, interval=None,
                  enable=None, reset=None, width=32, signed=True):
-        _Accumulator.__init__(self, right, size, initval,
+        _Accumulator.__init__(self, right, size, initval, interval,
                               enable, reset, width, signed)
         self.graph_label = 'ReduceMul'
 
@@ -2651,10 +2682,10 @@ class ReduceDiv(_Accumulator):
     latency = 32
     ops = ()
 
-    def __init__(self, right, size=None, initval=0,
+    def __init__(self, right, size=None, initval=0, interval=None,
                  enable=None, reset=None, width=32, signed=True):
         raise NotImplementedError()
-        _Accumulator.__init__(self, right, size, initval,
+        _Accumulator.__init__(self, right, size, initval, interval,
                               enable, reset, width, signed)
         self.graph_label = 'ReduceDiv'
 
@@ -2662,9 +2693,9 @@ class ReduceDiv(_Accumulator):
 class ReduceMax(_Accumulator):
     ops = (lambda x, y: vtypes.Mux(x < y, y, x), )
 
-    def __init__(self, right, size=None, initval=0,
+    def __init__(self, right, size=None, initval=0, interval=None,
                  enable=None, reset=None, width=32, signed=True):
-        _Accumulator.__init__(self, right, size, initval,
+        _Accumulator.__init__(self, right, size, initval, interval,
                               enable, reset, width, signed)
         self.graph_label = 'ReduceMax'
 
@@ -2672,18 +2703,18 @@ class ReduceMax(_Accumulator):
 class ReduceMin(_Accumulator):
     ops = (lambda x, y: vtypes.Mux(x > y, y, x), )
 
-    def __init__(self, right, size=None, initval=0,
+    def __init__(self, right, size=None, initval=0, interval=None,
                  enable=None, reset=None, width=32, signed=True):
-        _Accumulator.__init__(self, right, size, initval,
+        _Accumulator.__init__(self, right, size, initval, interval,
                               enable, reset, width, signed)
         self.graph_label = 'ReduceMin'
 
 
 class ReduceCustom(_Accumulator):
 
-    def __init__(self, ops, right, size=None, initval=0,
+    def __init__(self, ops, right, size=None, initval=0, interval=None,
                  enable=None, reset=None, width=32, signed=True, label=None):
-        _Accumulator.__init__(self, right, size, initval,
+        _Accumulator.__init__(self, right, size, initval, interval,
                               enable, reset, width, signed)
         if not isinstance(ops, (tuple, list)):
             ops = tuple([ops])
@@ -2693,7 +2724,7 @@ class ReduceCustom(_Accumulator):
 
 class Counter(_Accumulator):
 
-    def __init__(self, size=None, step=1, initval=0,
+    def __init__(self, size=None, step=1, initval=0, interval=None,
                  control=None, enable=None, reset=None, width=32, signed=False):
 
         self.ops = (lambda x, y: x + step, )
@@ -2703,7 +2734,7 @@ class Counter(_Accumulator):
 
         initval -= step
 
-        _Accumulator.__init__(self, control, size, initval,
+        _Accumulator.__init__(self, control, size, initval, interval,
                               enable, reset, width, signed)
         self.graph_label = 'Counter'
 
@@ -2711,7 +2742,7 @@ class Counter(_Accumulator):
 class Pulse(_Accumulator):
     ops = ()
 
-    def __init__(self, size, control=None, enable=None, reset=None):
+    def __init__(self, size, control=None, enable=None, reset=None, interval=None):
 
         if control is None:
             control = 0
@@ -2721,83 +2752,83 @@ class Pulse(_Accumulator):
         width = 1
         signed = False
 
-        _Accumulator.__init__(self, control, size, initval,
+        _Accumulator.__init__(self, control, size, initval, interval,
                               enable, reset, width, signed)
         self.graph_label = 'Pulse'
 
 
-def _ReduceValid(cls, right, size, initval=0,
+def _ReduceValid(cls, right, size, initval=0, interval=None,
                  enable=None, reset=None, width=32, signed=True):
 
-    data = cls(right, size, initval,
+    data = cls(right, size, initval, interval,
                enable, reset, width, signed)
     valid = Pulse(size, right, enable, reset)
 
     return data, valid
 
 
-def ReduceAddValid(right, size, initval=0,
+def ReduceAddValid(right, size, initval=0, interval=None,
                    enable=None, reset=None, width=32, signed=True):
 
     cls = ReduceAdd
-    return _ReduceValid(cls, right, size, initval,
+    return _ReduceValid(cls, right, size, initval, interval,
                         enable, reset, width, signed)
 
 
-def ReduceSubValid(right, size, initval=0,
+def ReduceSubValid(right, size, initval=0, interval=None,
                    enable=None, reset=None, width=32, signed=True):
 
     cls = ReduceSub
-    return _ReduceValid(cls, right, size, initval,
+    return _ReduceValid(cls, right, size, initval, interval,
                         enable, reset, width, signed)
 
 
-def ReduceMulValid(right, size, initval=0,
+def ReduceMulValid(right, size, initval=0, interval=None,
                    enable=None, reset=None, width=32, signed=True):
 
     cls = ReduceMul
-    return _ReduceValid(cls, right, size, initval,
+    return _ReduceValid(cls, right, size, initval, interval,
                         enable, reset, width, signed)
 
 
-def ReduceDivValid(right, size, initval=0,
+def ReduceDivValid(right, size, initval=0, interval=None,
                    enable=None, reset=None, width=32, signed=True):
 
     cls = ReduceDiv
-    return _ReduceValid(cls, right, size, initval,
+    return _ReduceValid(cls, right, size, initval, interval,
                         enable, reset, width, signed)
 
 
-def ReduceMaxValid(right, size, initval=0,
+def ReduceMaxValid(right, size, initval=0, interval=None,
                    enable=None, reset=None, width=32, signed=True):
 
     cls = ReduceMax
-    return _ReduceValid(cls, right, size, initval,
+    return _ReduceValid(cls, right, size, initval, interval,
                         enable, reset, width, signed)
 
 
-def ReduceMinValid(right, size, initval=0,
+def ReduceMinValid(right, size, initval=0, interval=None,
                    enable=None, reset=None, width=32, signed=True):
 
     cls = ReduceMin
-    return _ReduceValid(cls, right, size, initval,
+    return _ReduceValid(cls, right, size, initval, interval,
                         enable, reset, width, signed)
 
 
-def ReduceCustomValid(ops, right, size, initval=0,
+def ReduceCustomValid(ops, right, size, initval=0, interval=None,
                       enable=None, reset=None, width=32, signed=True):
 
-    data = ReduceCustom(ops, right, size, initval,
+    data = ReduceCustom(ops, right, size, initval, interval,
                         enable, reset, width, signed)
     valid = Pulse(size, right, enable, reset)
 
     return data, valid
 
 
-def CounterValid(size, step=1, initval=0,
+def CounterValid(size, step=1, initval=0, interval=None,
                  control=None, enable=None, reset=None, width=32, signed=False):
 
-    data = Counter(size, step, initval,
+    data = Counter(size, step, initval, interval,
                    control, enable, reset, width, signed)
     valid = Pulse(size, control, enable, reset)
 
@@ -3460,10 +3491,10 @@ class WriteRAM(_SpecialOperator):
         return _and_vars(vtypes.Not(self.args[2].sig_data), when_cond)
 
 
-def ReduceArgMax(right, size=None, initval=0,
+def ReduceArgMax(right, size=None, initval=0, interval=None,
                  enable=None, reset=None, width=32, signed=True):
 
-    _max = ReduceMax(right, size, initval,
+    _max = ReduceMax(right, size, initval, interval,
                      enable, reset, width, signed)
     counter = Counter(size, control=right, enable=enable, reset=reset)
     update = NotEq(_max, _max.prev(1))
@@ -3472,10 +3503,10 @@ def ReduceArgMax(right, size=None, initval=0,
     return index, _max
 
 
-def ReduceArgMin(right, size=None, initval=0,
+def ReduceArgMin(right, size=None, initval=0, interval=None,
                  enable=None, reset=None, width=32, signed=True):
 
-    _min = ReduceMin(right, size, initval,
+    _min = ReduceMin(right, size, initval, interval,
                      enable, reset, width, signed)
     counter = Counter(size, control=right, enable=enable, reset=reset)
     update = NotEq(_min, reduce_min.prev(1))
@@ -3484,10 +3515,10 @@ def ReduceArgMin(right, size=None, initval=0,
     return index, _min
 
 
-def ReduceArgMaxValid(right, size=None, initval=0,
+def ReduceArgMaxValid(right, size=None, initval=0, interval=None,
                       enable=None, reset=None, width=32, signed=True):
 
-    _max, valid = ReduceMaxValid(right, size, initval,
+    _max, valid = ReduceMaxValid(right, size, initval, interval,
                                  enable, reset, width, signed)
     counter = Counter(size, control=right, enable=enable, reset=reset)
     update = NotEq(_max, _max.prev(1))
@@ -3496,10 +3527,10 @@ def ReduceArgMaxValid(right, size=None, initval=0,
     return index, _max, valid
 
 
-def ReduceArgMinValid(right, size=None, initval=0,
+def ReduceArgMinValid(right, size=None, initval=0, interval=None,
                       enable=None, reset=None, width=32, signed=True):
 
-    _min, valid = ReduceMinValid(right, size, initval,
+    _min, valid = ReduceMinValid(right, size, initval, interval,
                                  enable, reset, width, signed)
     counter = Counter(size, control=right, enable=enable, reset=reset)
     update = NotEq(_min, _min.prev(1))
