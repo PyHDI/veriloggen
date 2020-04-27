@@ -2562,8 +2562,8 @@ class _Accumulator(_UnaryOperator):
             value = (count >= (size_data - 1))
 
         reset_value = initval_data
+
         if self.size is not None:
-            reset_value = initval_data
             for op in self.ops:
                 if not isinstance(op, type):
                     reset_value = op(reset_value, rdata)
