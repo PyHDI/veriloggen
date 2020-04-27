@@ -2468,11 +2468,12 @@ class _Accumulator(_UnaryOperator):
     def __init__(self, right, size=None, initval=None, interval=None,
                  enable=None, reset=None, width=32, signed=True):
 
-        self.interval = _to_constant(interval) if interval is not None else None
-        self.size = (_to_constant(size * interval) if size is not None and interval is not None
-            else (_to_constant(size) if size is not None else None))
+        self.size = (_to_constant(size * interval)
+                     if size is not None and interval is not None else
+                     _to_constant(size) if size is not None else None)
         self.initval = (_to_constant(initval)
                         if initval is not None else _to_constant(0))
+        self.interval = _to_constant(interval) if interval is not None else None
 
         if not isinstance(self.initval, _Constant):
             raise TypeError("initval must be Constant, not '%s'" %
@@ -2530,10 +2531,11 @@ class _Accumulator(_UnaryOperator):
             next_count_value = vtypes.Mux(count >= size_data - 1,
                                           0, count + 1)
             count_zero = (count == 0)
-        
+
         if self.interval is not None:
             interval_count = m.Reg(self.name('interval_count'), width, initval=0)
-            next_interval_count = vtypes.Mux(interval_count >= interval_data - 1, 0, interval_count + 1)
+            next_interval_count = vtypes.Mux(interval_count >= interval_data - 1,
+                                             0, interval_count + 1)
             interval_enable = (interval_count ==  0)
 
         self.sig_data = data
@@ -2561,7 +2563,6 @@ class _Accumulator(_UnaryOperator):
 
         reset_value = initval_data
         if self.size is not None:
-        # if self.reset is not None or self.size is not None:
             reset_value = initval_data
             for op in self.ops:
                 if not isinstance(op, type):
@@ -2592,7 +2593,7 @@ class _Accumulator(_UnaryOperator):
 
             if self.interval is not None:
                 seq(interval_count(next_interval_count), cond=enable_cond)
-        
+
         else:
             if self.interval is not None:
                 enable_cond = _and_vars(svalid, senable, interval_enable)
@@ -2605,7 +2606,7 @@ class _Accumulator(_UnaryOperator):
 
             if self.size is not None:
                 seq(count(next_count_value), cond=enable_cond)
-            
+
             if self.interval is not None:
                 seq(interval_count(next_interval_count), cond=enable_cond)
 
@@ -2613,7 +2614,7 @@ class _Accumulator(_UnaryOperator):
             if self.enable is None:
                 reset_cond = _and_vars(svalid, senable, resetdata)
                 seq(data(reset_value), cond=reset_cond)
-                
+
                 if self.interval is not None:
                     seq(interval_count(0), cond=reset_cond)
                 if self.size is not None:
