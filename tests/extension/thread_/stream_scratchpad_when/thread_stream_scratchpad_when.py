@@ -29,16 +29,16 @@ def mkLed():
     counter = strm.Counter()
 
     a = strm.source('a')
-    a_addr = strm.Counter() - 1
+    a_addr = strm.Counter()
 
     sp = strm.Scratchpad(a, a_addr, when=counter <= img_width, length=128)
 
-    a_old_addr = strm.Counter() - img_width - 1
+    a_old_addr = strm.Counter() - img_width
     a_old = sp.read(a_old_addr)
 
     b = a + a_old
 
-    strm.sink(b, 'b', when=counter > img_width)
+    strm.sink(b, 'b', when=counter >= img_width)
 
     def comp_stream(size, offset):
         strm.set_source('a', ram_a, offset, size * 2)

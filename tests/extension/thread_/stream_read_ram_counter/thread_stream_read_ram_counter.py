@@ -28,7 +28,7 @@ def mkLed():
     strm = vthread.Stream(m, 'mystream', clk, rst)
 
     a = strm.source('a')
-    r_addr = strm.Counter() - 1
+    r_addr = strm.Counter()
     r_addr = strm.Mux(r_addr < 3, 3, r_addr)
 
     r = strm.read_RAM('ext', r_addr)
