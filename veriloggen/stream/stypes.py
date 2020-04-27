@@ -2583,9 +2583,9 @@ class _Accumulator(_UnaryOperator):
 class ReduceAdd(_Accumulator):
     ops = (vtypes.Plus, )
 
-    def __init__(self, right, size=None, initval=0,
+    def __init__(self, right, size=None, initval=0, interval=None,
                  enable=None, reset=None, width=32, signed=True):
-        _Accumulator.__init__(self, right, size, initval,
+        _Accumulator.__init__(self, right, size, initval, interval,
                               enable, reset, width, signed)
 
 
@@ -2633,7 +2633,7 @@ class ReduceCustom(_Accumulator):
 
 class Counter(_Accumulator):
 
-    def __init__(self, size=None, step=1, initval=0, interval=1,
+    def __init__(self, size=None, step=1, initval=0, interval=None,
                  control=None, enable=None, reset=None, width=32, signed=False):
 
         self.ops = (lambda x, y: x + step, )
@@ -2651,7 +2651,7 @@ class Counter(_Accumulator):
 class Pulse(_Accumulator):
     ops = ()
 
-    def __init__(self, size, control=None, enable=None, reset=None):
+    def __init__(self, size, control=None, enable=None, reset=None, interval=None):
 
         if control is None:
             control = 0
@@ -2661,67 +2661,67 @@ class Pulse(_Accumulator):
         width = 1
         signed = False
 
-        _Accumulator.__init__(self, control, size, initval,
+        _Accumulator.__init__(self, control, size, initval, interval,
                               enable, reset, width, signed)
         self.graph_label = 'Pulse'
 
 
-def _ReduceValid(cls, right, size, initval=0,
+def _ReduceValid(cls, right, size, initval=0, interval=None,
                  enable=None, reset=None, width=32, signed=True):
 
-    data = cls(right, size, initval,
+    data = cls(right, size, initval, interval,
                enable, reset, width, signed)
     valid = Pulse(size, right, enable, reset)
 
     return data, valid
 
 
-def ReduceAddValid(right, size, initval=0,
+def ReduceAddValid(right, size, initval=0, interval=None,
                    enable=None, reset=None, width=32, signed=True):
 
     cls = ReduceAdd
-    return _ReduceValid(cls, right, size, initval,
+    return _ReduceValid(cls, right, size, initval, interval,
                         enable, reset, width, signed)
 
 
-def ReduceSubValid(right, size, initval=0,
+def ReduceSubValid(right, size, initval=0, interval=None,
                    enable=None, reset=None, width=32, signed=True):
 
     cls = ReduceSub
-    return _ReduceValid(cls, right, size, initval,
+    return _ReduceValid(cls, right, size, initval, interval,
                         enable, reset, width, signed)
 
 
-def ReduceMulValid(right, size, initval=0,
+def ReduceMulValid(right, size, initval=0, interval=None,
                    enable=None, reset=None, width=32, signed=True):
 
     cls = ReduceMul
-    return _ReduceValid(cls, right, size, initval,
+    return _ReduceValid(cls, right, size, initval, interval,
                         enable, reset, width, signed)
 
 
-def ReduceDivValid(right, size, initval=0,
+def ReduceDivValid(right, size, initval=0, interval=None,
                    enable=None, reset=None, width=32, signed=True):
 
     cls = ReduceDiv
-    return _ReduceValid(cls, right, size, initval,
+    return _ReduceValid(cls, right, size, initval, interval,
                         enable, reset, width, signed)
 
 
-def ReduceCustomValid(ops, right, size, initval=0,
+def ReduceCustomValid(ops, right, size, initval=0, interval=None,
                       enable=None, reset=None, width=32, signed=True):
 
-    data = ReduceCustom(ops, right, size, initval,
+    data = ReduceCustom(ops, right, size, initval, interval,
                         enable, reset, width, signed)
     valid = Pulse(size, right, enable, reset)
 
     return data, valid
 
 
-def CounterValid(size, step=1, initval=None,
+def CounterValid(size, step=1, initval=0, interval=None,
                  control=None, enable=None, reset=None, width=32, signed=False):
 
-    data = Counter(size, step, initval,
+    data = Counter(size, step, initval, interval,
                    control, enable, reset, width, signed)
     valid = Pulse(size, control, enable, reset)
 
