@@ -2691,6 +2691,12 @@ def _set_memory_wide(mem, src, mem_datawidth, src_datawidth, mem_offset,
     v = (masked_data << shift) & mem_mask
     v = np.reshape(v, [-1, num_pack])
     v = np.bitwise_or.reduce(v, -1)
+
+    dst_size = mem[offset:offset + v.shape[-1]].size
+    if v.size > dst_size:
+        raise ValueError("""too large source data: """
+                         """destination size (%d) < source size (%d)""" %
+                         (dst_size, v.size))
     mem[offset:offset + v.shape[-1]] = v
 
 
@@ -2717,6 +2723,12 @@ def _set_memory_narrow(mem, src, mem_datawidth, src_datawidth, mem_offset,
     v = dup_src >> shift
     v = np.reshape(v, [-1])
     v = v & mem_mask
+
+    dst_size = mem[offset:offset + v.shape[-1]].size
+    if v.size > dst_size:
+        raise ValueError("""too large source data: """
+                         """destination size (%d) < source size (%d)""" %
+                         (dst_size, v.size))
     mem[offset:offset + v.shape[-1]] = v
 
 

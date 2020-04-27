@@ -225,6 +225,12 @@ class Stream(BaseStream):
         if name in self.var_name_map:
             raise ValueError("'%s' is already defined in stream '%s'" %
                              (name, self.name))
+
+        elif data.output_data is not None:
+            # implicit Alias
+            alias = self.Alias(data)
+            return self.sink(alias, name, when, when_name)
+
         else:
             data.output(self._dataname(name))
 
