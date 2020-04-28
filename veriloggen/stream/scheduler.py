@@ -122,9 +122,11 @@ class ASAPScheduler(_Scheduler):
             return node._get_end_stage()
         right = self.visit(node.right)
         initval = self.visit(node.initval)
+        dependency = (self.visit(node.dependency)
+                      if node.dependency is not None else None)
         enable = self.visit(node.enable) if node.enable is not None else None
         reset = self.visit(node.reset) if node.reset is not None else None
-        mine = self.max_stage(right, initval, enable, reset)
+        mine = self.max_stage(right, initval, dependency, enable, reset)
         node.right = self.fill_gap(node.right, mine)
         node.initval = self.fill_gap(node.initval, mine)
         if node.enable is not None:
