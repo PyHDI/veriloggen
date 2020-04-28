@@ -212,6 +212,10 @@ class GraphGenerator(_Visitor):
                             peripheries=peripheries)
 
         right = self.visit(node.right)
+        if node.size is not None:
+            size = self.visit(node.size)
+        if node.interval is not None:
+            interval = self.visit(node.interval)
         initval = self.visit(node.initval)
         if node.dependency is not None:
             dependency = self.visit(node.dependency)
@@ -220,6 +224,10 @@ class GraphGenerator(_Visitor):
         if node.reset is not None:
             reset = self.visit(node.reset)
         self.graph.add_edge(right, node, label='data')
+        if node.size is not None:
+            self.graph.add_edge(size, node, label='size')
+        if node.interval is not None:
+            self.graph.add_edge(interval, node, label='interval')
         self.graph.add_edge(initval, node, label='initval')
         if node.dependency is not None:
             self.graph.add_edge(dependency, node, label='dependency')

@@ -125,13 +125,15 @@ class InputVisitor(_Visitor):
     def visit__Accumulator(self, node):
         right = self.visit(node.right)
         size = self.visit(node.size) if node.size is not None else set()
+        interval = (self.visit(node.interval)
+                    if node.interval is not None else set())
         initval = (self.visit(node.initval)
                    if node.initval is not None else set())
         dependency = (self.visit(node.dependency)
                       if node.dependency is not None else set())
         enable = self.visit(node.enable) if node.enable is not None else set()
         reset = self.visit(node.reset) if node.reset is not None else set()
-        return right | size | initval | dependency | enable | reset
+        return right | size | interval | initval | dependency | enable | reset
 
     def visit_Substream(self, node):
         return self.visit__SpecialOperator(node)
@@ -195,6 +197,8 @@ class OutputVisitor(_Visitor):
     def visit__Accumulator(self, node):
         right = self.visit(node.right)
         size = self.visit(node.size) if node.size is not None else set()
+        interval = (self.visit(node.interval)
+                    if node.interval is not None else set())
         initval = (self.visit(node.initval)
                    if node.initval is not None else set())
         dependency = (self.visit(node.dependency)
@@ -203,7 +207,7 @@ class OutputVisitor(_Visitor):
         #reset = self.visit(node.reset) if node.reset is not None else set()
         reset = set()
         mine = set([node]) if node._has_output() else set()
-        return right | size | initval | dependency | enable | reset | mine
+        return right | size | interval | initval | dependency | enable | reset | mine
 
     def visit_Substream(self, node):
         return self.visit__SpecialOperator(node)
@@ -276,6 +280,8 @@ class OperatorVisitor(_Visitor):
     def visit__Accumulator(self, node):
         right = self.visit(node.right)
         size = self.visit(node.size) if node.size is not None else set()
+        interval = (self.visit(node.interval)
+                    if node.interval is not None else set())
         initval = (self.visit(node.initval)
                    if node.initval is not None else set())
         dependency = (self.visit(node.dependency)
@@ -283,7 +289,7 @@ class OperatorVisitor(_Visitor):
         enable = self.visit(node.enable) if node.enable is not None else set()
         reset = self.visit(node.reset) if node.reset is not None else set()
         mine = set([node])
-        return right | size | initval | dependency | enable | reset | mine
+        return right | size | interval | initval | dependency | enable | reset | mine
 
     def visit_Substream(self, node):
         return self.visit__SpecialOperator(node)
