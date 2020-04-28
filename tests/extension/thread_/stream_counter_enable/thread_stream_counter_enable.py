@@ -25,15 +25,12 @@ def mkLed():
     ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
-    cnt1 = strm.Counter()
-    cnt2 = strm.Counter(initval=1)
-    cnt3 = strm.Counter(initval=2, size=5)
-    cnt4 = strm.Counter(initval=3, interval=3)
-    cnt5 = strm.Counter(initval=4, interval=3, size=7)
-    cnt6 = strm.Counter(initval=4, step=2, interval=2)
     a = strm.source('a')
     b = strm.source('b')
-    c = a + b - a - b + cnt1 + cnt2 + cnt3 + cnt4 + cnt5 + cnt6
+    x = strm.Counter(initval=0, size=4)
+    y = strm.Counter(initval=0, size=4, enable=x==3)
+    z = strm.Counter(initval=0, size=4, enable=y==3)
+    c = a + b - a - b + z + y + x
     strm.sink(c, 'c')
 
     def comp_stream(size, offset):
@@ -44,19 +41,26 @@ def mkLed():
         strm.join()
 
     def comp_sequential(size, offset):
-        cnt = 0
+        sum = 0
+        x = 0
+        y = 0
+        z = 0
         for i in range(size):
-            cnt1 = cnt
-            cnt2 = 1 + cnt
-            cnt3 = (cnt + 2) % 5
-            cnt4 = (cnt // 3) + 3
-            cnt5 = ((cnt // 3) + 4) % 7
-            cnt6 = (cnt // 2) * 2 + 4
             a = ram_a.read(i + offset)
             b = ram_b.read(i + offset)
-            sum = a + b - a - b + cnt1 + cnt2 + cnt3 + cnt4 + cnt5 + cnt6
+            sum = a + b - a - b + z + y + x
             ram_c.write(i + offset, sum)
-            cnt += 1
+            if y == 3:
+                z += 1
+                if z == 4:
+                    z = 0
+            if x == 3:
+                y += 1
+                if y == 4:
+                    y = 0
+            x += 1
+            if x == 4:
+                x = 0
 
     def check(size, offset_stream, offset_seq):
         all_ok = True
@@ -65,7 +69,6 @@ def mkLed():
             sq = ram_c.read(i + offset_seq)
             if vthread.verilog.NotEql(st, sq):
                 all_ok = False
-                print(i, st, sq)
         if all_ok:
             print('# verify: PASSED')
         else:
