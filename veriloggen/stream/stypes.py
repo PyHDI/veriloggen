@@ -2465,13 +2465,15 @@ class _Accumulator(_UnaryOperator):
     latency = 1
     ops = (vtypes.Plus, )
 
-    def __init__(self, right, size=None, interval=None, initval=None,
+    def __init__(self, right, size=None, interval=None, initval=None, offset=None,
                  dependency=None, enable=None, reset=None, width=32, signed=True):
 
         self.size = _to_constant(size) if size is not None else None
         self.interval = _to_constant(interval) if interval is not None else None
         self.initval = (_to_constant(initval)
                         if initval is not None else _to_constant(0))
+        self.offset = (_to_constant(offset)
+                       if offset is not None else None)
 
         if not isinstance(self.initval, _Constant):
             raise TypeError("initval must be Constant, not '%s'" %
@@ -2664,8 +2666,9 @@ class ReduceAdd(_Accumulator):
 
     def __init__(self, right, size=None, interval=None, initval=0,
                  enable=None, reset=None, width=32, signed=True):
+        offset = None
         dependency = None
-        _Accumulator.__init__(self, right, size, interval, initval,
+        _Accumulator.__init__(self, right, size, interval, initval, offset,
                               dependency, enable, reset, width, signed)
         self.graph_label = 'ReduceAdd'
 
@@ -2675,8 +2678,9 @@ class ReduceSub(_Accumulator):
 
     def __init__(self, right, size=None, interval=None, initval=0,
                  enable=None, reset=None, width=32, signed=True):
+        offset = None
         dependency = None
-        _Accumulator.__init__(self, right, size, interval, initval,
+        _Accumulator.__init__(self, right, size, interval, initval, offset,
                               dependency, enable, reset, width, signed)
         self.graph_label = 'ReduceSub'
 
@@ -2687,8 +2691,9 @@ class ReduceMul(_Accumulator):
 
     def __init__(self, right, size=None, interval=None, initval=0,
                  enable=None, reset=None, width=32, signed=True):
+        offset = None
         dependency = None
-        _Accumulator.__init__(self, right, size, interval, initval,
+        _Accumulator.__init__(self, right, size, interval, initval, offset,
                               dependency, enable, reset, width, signed)
         self.graph_label = 'ReduceMul'
 
@@ -2700,8 +2705,9 @@ class ReduceDiv(_Accumulator):
     def __init__(self, right, size=None, interval=None, initval=0,
                  enable=None, reset=None, width=32, signed=True):
         raise NotImplementedError()
+        offset = None
         dependency = None
-        _Accumulator.__init__(self, right, size, interval, initval,
+        _Accumulator.__init__(self, right, size, interval, initval, offset,
                               dependency, enable, reset, width, signed)
         self.graph_label = 'ReduceDiv'
 
@@ -2711,8 +2717,9 @@ class ReduceMax(_Accumulator):
 
     def __init__(self, right, size=None, interval=None, initval=0,
                  enable=None, reset=None, width=32, signed=True):
+        offset = None
         dependency = None
-        _Accumulator.__init__(self, right, size, interval, initval,
+        _Accumulator.__init__(self, right, size, interval, initval, offset,
                               dependency, enable, reset, width, signed)
         self.graph_label = 'ReduceMax'
 
@@ -2722,8 +2729,9 @@ class ReduceMin(_Accumulator):
 
     def __init__(self, right, size=None, interval=None, initval=0,
                  enable=None, reset=None, width=32, signed=True):
+        offset = None
         dependency = None
-        _Accumulator.__init__(self, right, size, interval, initval,
+        _Accumulator.__init__(self, right, size, interval, initval, offset,
                               dependency, enable, reset, width, signed)
         self.graph_label = 'ReduceMin'
 
@@ -2732,8 +2740,9 @@ class ReduceCustom(_Accumulator):
 
     def __init__(self, ops, right, size=None, interval=None, initval=0,
                  enable=None, reset=None, width=32, signed=True, label=None):
+        offset = None
         dependency = None
-        _Accumulator.__init__(self, right, size, interval, initval,
+        _Accumulator.__init__(self, right, size, interval, initval, offset,
                               dependency, enable, reset, width, signed)
         if not isinstance(ops, (tuple, list)):
             ops = tuple([ops])
@@ -2743,10 +2752,10 @@ class ReduceCustom(_Accumulator):
 
 class Counter(_Accumulator):
 
-    def __init__(self, size=None, step=1, interval=None, initval=0,
+    def __init__(self, size=None, step=1, interval=None, initval=0, offset=None,
                  dependency=None, enable=None, reset=None, width=32, signed=False):
 
-        _Accumulator.__init__(self, step, size, interval, initval,
+        _Accumulator.__init__(self, step, size, interval, initval, offset,
                               dependency, enable, reset, width, signed)
         self.graph_label = 'Counter'
 
@@ -2759,6 +2768,7 @@ class Counter(_Accumulator):
         interval_data = self.interval.sig_data if self.interval is not None else None
 
         initval_data = self.initval.sig_data
+        offset_data = self.offset.sig_data if self.offset is not None else None
         width = self.bit_length()
         signed = self.get_signed()
 
@@ -2770,7 +2780,10 @@ class Counter(_Accumulator):
                       initval=initval_data, signed=signed)
 
         next_count_value = count + step
-        if self.size is not None:
+        if self.size is not None and self.offset is not None:
+            next_count_value = vtypes.Mux(count >= size_data - step,
+                                          offset_data, next_count_value)
+        elif self.size is not None:
             next_count_value = vtypes.Mux(count >= size_data - step,
                                           next_count_value - size_data, next_count_value)
 
@@ -2835,10 +2848,11 @@ class Pulse(_Accumulator):
             right = dependency
 
         initval = 0
+        offset = None
         width = 1
         signed = False
 
-        _Accumulator.__init__(self, right, size, interval, initval,
+        _Accumulator.__init__(self, right, size, interval, initval, offset,
                               dependency, enable, reset, width, signed)
         self.graph_label = 'Pulse'
 
@@ -2911,10 +2925,10 @@ def ReduceCustomValid(ops, right, size, interval=None, initval=0,
     return data, valid
 
 
-def CounterValid(size, step=1, interval=None, initval=0,
+def CounterValid(size, step=1, interval=None, initval=0, offset=None,
                  dependency=None, enable=None, reset=None, width=32, signed=False):
 
-    data = Counter(size, step, interval, initval,
+    data = Counter(size, step, interval, initval, offset,
                    dependency, enable, reset, width, signed)
     valid = Pulse(size, dependency=dependency, enable=enable, reset=reset)
 

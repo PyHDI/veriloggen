@@ -125,6 +125,8 @@ class ASAPScheduler(_Scheduler):
         interval = (self.visit(node.interval)
                     if node.interval is not None else None)
         initval = self.visit(node.initval)
+        offset = (self.visit(node.offset)
+                  if node.offset is not None else None)
         dependency = (self.visit(node.dependency)
                       if node.dependency is not None else None)
         enable = self.visit(node.enable) if node.enable is not None else None
@@ -136,6 +138,8 @@ class ASAPScheduler(_Scheduler):
         if node.interval is not None:
             node.interval = self.fill_gap(node.interval, mine)
         node.initval = self.fill_gap(node.initval, mine)
+        if node.offset is not None:
+            node.offset = self.fill_gap(node.offset, mine)
         if node.enable is not None:
             node.enable = self.fill_gap(node.enable, mine)
         if node.reset is not None:
