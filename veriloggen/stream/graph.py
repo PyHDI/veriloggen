@@ -217,6 +217,8 @@ class GraphGenerator(_Visitor):
         if node.interval is not None:
             interval = self.visit(node.interval)
         initval = self.visit(node.initval)
+        if node.offset is not None:
+            offset = self.visit(node.offset)
         if node.dependency is not None:
             dependency = self.visit(node.dependency)
         if node.enable is not None:
@@ -229,6 +231,8 @@ class GraphGenerator(_Visitor):
         if node.interval is not None:
             self.graph.add_edge(interval, node, label='interval')
         self.graph.add_edge(initval, node, label='initval')
+        if node.offset is not None:
+            self.graph.add_edge(offset, node, label='offset')
         if node.dependency is not None:
             self.graph.add_edge(dependency, node, label='dependency')
         if node.enable is not None:

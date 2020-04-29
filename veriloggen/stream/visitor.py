@@ -129,11 +129,13 @@ class InputVisitor(_Visitor):
                     if node.interval is not None else set())
         initval = (self.visit(node.initval)
                    if node.initval is not None else set())
+        offset = (self.visit(node.offset)
+                  if node.offset is not None else set())
         dependency = (self.visit(node.dependency)
                       if node.dependency is not None else set())
         enable = self.visit(node.enable) if node.enable is not None else set()
         reset = self.visit(node.reset) if node.reset is not None else set()
-        return right | size | interval | initval | dependency | enable | reset
+        return right | size | interval | initval | offset | dependency | enable | reset
 
     def visit_Substream(self, node):
         return self.visit__SpecialOperator(node)
@@ -201,13 +203,15 @@ class OutputVisitor(_Visitor):
                     if node.interval is not None else set())
         initval = (self.visit(node.initval)
                    if node.initval is not None else set())
+        offset = (self.visit(node.offset)
+                  if node.offset is not None else set())
         dependency = (self.visit(node.dependency)
                       if node.dependency is not None else set())
         enable = self.visit(node.enable) if node.enable is not None else set()
         #reset = self.visit(node.reset) if node.reset is not None else set()
         reset = set()
         mine = set([node]) if node._has_output() else set()
-        return right | size | interval | initval | dependency | enable | reset | mine
+        return right | size | interval | initval | offset | dependency | enable | reset | mine
 
     def visit_Substream(self, node):
         return self.visit__SpecialOperator(node)
@@ -284,12 +288,14 @@ class OperatorVisitor(_Visitor):
                     if node.interval is not None else set())
         initval = (self.visit(node.initval)
                    if node.initval is not None else set())
+        offset = (self.visit(node.offset)
+                  if node.offset is not None else set())
         dependency = (self.visit(node.dependency)
                       if node.dependency is not None else set())
         enable = self.visit(node.enable) if node.enable is not None else set()
         reset = self.visit(node.reset) if node.reset is not None else set()
         mine = set([node])
-        return right | size | interval | initval | dependency | enable | reset | mine
+        return right | size | interval | initval | offset | dependency | enable | reset | mine
 
     def visit_Substream(self, node):
         return self.visit__SpecialOperator(node)
