@@ -3505,6 +3505,7 @@ class ReadRAM(_SpecialOperator):
 
         if self.latency == 2:
             data = m.Wire(self.name('data'), datawidth, signed=signed)
+            data.assign(rdata)
             self.sig_data = data
 
         elif self.latency == 3:
