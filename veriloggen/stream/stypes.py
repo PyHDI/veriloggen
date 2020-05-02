@@ -3493,10 +3493,10 @@ class ReadRAM(_SpecialOperator):
                              (self.latency, 2))
 
         if len(self.args) == 3 and self.latency == 2:
-            raise ValueError('Output register is required for when option')
+            raise ValueError('latency = 2 is not allowed, if when option is used.')
 
-        if senable is not None:
-            raise NotImplementedError('senable is not supported.')
+        if senable is not None and self.latency == 2:
+            raise NotImplementedError('senable is not supported, if when option is used.')
 
         datawidth = self.bit_length()
         signed = self.get_signed()
