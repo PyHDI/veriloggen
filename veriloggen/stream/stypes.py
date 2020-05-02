@@ -1757,6 +1757,32 @@ def Mux(condition, true_value, false_value):
     return Cond(condition, true_value, false_value)
 
 
+class _Sync(_SpecialOperator):
+    latency = 0
+
+    def __init__(self, vars, index):
+        self.index = index
+        _SpecialOperator.__init__(self, *vars)
+        self.op = lambda *args: args[index]
+        self.graph_label = 'Sync %d' % index
+
+    def _set_attributes(self):
+        var = self.args[self.index]
+        self.width = var.width
+        self.point = var.point
+        self.signed = var.signed
+
+
+def Sync(*vars):
+    """ Synchronize 'start_stage' of multiple variables """
+
+    ret_vars = []
+    for i, var in enumerate(vars):
+        ret_vars.append(_Sync(vars, i))
+
+    return tuple(ret_vars)
+
+
 class CustomOp(_SpecialOperator):
 
     def __init__(self, op, *vars):
