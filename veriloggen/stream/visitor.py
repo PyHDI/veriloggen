@@ -30,6 +30,21 @@ class _Visitor(object):
         if isinstance(node, stypes.Substream):
             return self.visit_Substream(node)
 
+        if isinstance(node, stypes._Sync):
+            return self.visit__Sync(node)
+
+        if isinstance(node, stypes.ForwardDest):
+            return self.visit_ForwardDest(node)
+
+        if isinstance(node, stypes.ForwardSource):
+            return self.visit_ForwardSource(node)
+
+        if isinstance(node, stypes.ReadRAM):
+            return self.visit_ReadRAM(node)
+
+        if isinstance(node, stypes.WriteRAM):
+            return self.visit_WriteRAM(node)
+
         if isinstance(node, stypes.RingBuffer):
             return self.visit_RingBuffer(node)
 
@@ -80,6 +95,21 @@ class _Visitor(object):
         raise NotImplementedError()
 
     def visit_Substream(self, node):
+        raise NotImplementedError()
+
+    def visit__Sync(self, node):
+        raise NotImplementedError()
+
+    def visit_ForwardDest(self, node):
+        raise NotImplementedError()
+
+    def visit_ForwardSource(self, node):
+        raise NotImplementedError()
+
+    def visit_ReadRAM(self, node):
+        raise NotImplementedError()
+
+    def visit_WriteRAM(self, node):
         raise NotImplementedError()
 
     def visit_RingBuffer(self, node):
@@ -138,6 +168,21 @@ class InputVisitor(_Visitor):
         return right | size | interval | initval | offset | dependency | enable | reset
 
     def visit_Substream(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit__Sync(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_ForwardDest(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_ForwardSource(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_ReadRAM(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_WriteRAM(self, node):
         return self.visit__SpecialOperator(node)
 
     def visit_RingBuffer(self, node):
@@ -214,6 +259,21 @@ class OutputVisitor(_Visitor):
         return right | size | interval | initval | offset | dependency | enable | reset | mine
 
     def visit_Substream(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit__Sync(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_ForwardDest(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_ForwardSource(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_ReadRAM(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_WriteRAM(self, node):
         return self.visit__SpecialOperator(node)
 
     def visit_RingBuffer(self, node):
@@ -298,6 +358,21 @@ class OperatorVisitor(_Visitor):
         return right | size | interval | initval | offset | dependency | enable | reset | mine
 
     def visit_Substream(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit__Sync(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_ForwardDest(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_ForwardSource(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_ReadRAM(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_WriteRAM(self, node):
         return self.visit__SpecialOperator(node)
 
     def visit_RingBuffer(self, node):

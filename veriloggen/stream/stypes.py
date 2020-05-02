@@ -1768,9 +1768,9 @@ class _Sync(_SpecialOperator):
 
     def _set_attributes(self):
         var = self.args[self.index]
-        self.width = var.width
-        self.point = var.point
-        self.signed = var.signed
+        self.width = var.bit_length()
+        self.point = var.get_point()
+        self.signed = var.get_signed()
 
 
 def Sync(*vars):
@@ -1781,6 +1781,87 @@ def Sync(*vars):
         ret_vars.append(_Sync(vars, i))
 
     return tuple(ret_vars)
+
+
+class ForwardDest(_SpecialOperator):
+    latency = 0
+
+    def __init__(self, value, index):
+        _SpecialOperator.__init__(self, value, index)
+        self.graph_label = 'ForwardDest'
+        self.graph_shape = 'box'
+        self.forward_value = None
+        self.forward_index = None
+
+    def _set_attributes(self):
+        value = self.args[0]
+        self.width = value.bit_length()
+        self.point = value.get_point()
+        self.signed = value.get_signed()
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency != 0:
+            raise ValueError("Latency mismatch '%d' vs '%s'" %
+                             (self.latency, 0))
+
+        width = self.bit_length()
+        signed = self.get_signed()
+
+        value = self.args[0].sig_data
+        index = self.args[1].sig_data
+
+        index_width = self.args[1].bit_length()
+        index_signed = self.args[1].get_signed()
+
+        self.forward_value = m.Wire(self.name('forward_value'), width, signed=signed)
+        self.forward_index = m.Wire(self.name('forward_index'), index_width, signed=index_signed)
+        self.forward_valid = m.Wire(self.name('forward_valid'))
+
+        data = m.Wire(self.name('data'), width, signed=signed)
+        data.assign(vtypes.Mux(_and_vars(self.forward_valid, index == self.forward_index),
+                               self.forward_value, value))
+        self.sig_data = data
+
+
+class ForwardSource(_SpecialOperator):
+    latency = 0
+
+    def __init__(self, value, index, dest, reset):
+        _SpecialOperator.__init__(self, value, index, reset)
+        self.dest = dest
+
+        self.output_tmp()
+
+        self.graph_label = 'ForwardSource'
+        self.graph_shape = 'box'
+
+    def _set_attributes(self):
+        value = self.args[0]
+        self.width = value.bit_length()
+        self.point = value.get_point()
+        self.signed = value.get_signed()
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency != 0:
+            raise ValueError("Latency mismatch '%d' vs '%s'" %
+                             (self.latency, 0))
+
+        if self.args[0].end_stage != self.dest.end_stage + 1:
+            raise ValueError("Latency of operator between ForwardDest and ForwardSource must be 1.")
+
+        width = self.bit_length()
+        signed = self.get_signed()
+        value = self.args[0].sig_data
+        index = self.args[1].sig_data
+        resetdata = self.args[2].sig_data
+
+        data = m.Wire(self.name('data'), width, signed=signed)
+        data.assign(value)
+        self.sig_data = data
+
+        self.dest.forward_value.assign(value)
+        self.dest.forward_index.assign(index)
+        self.dest.forward_valid.assign(vtypes.Not(resetdata))
 
 
 class CustomOp(_SpecialOperator):
