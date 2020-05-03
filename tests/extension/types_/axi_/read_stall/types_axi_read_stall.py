@@ -27,7 +27,7 @@ def mkMain():
     arlen = 64
     expected_sum = (araddr + araddr + arlen - 1) * arlen // 2
 
-    ack, counter = myaxi.read_request(araddr, arlen, cond=fsm)
+    ack, counter = myaxi.read_request_counter(araddr, arlen, cond=fsm)
     fsm.If(ack).goto_next()
 
     # read data

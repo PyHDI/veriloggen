@@ -22,7 +22,7 @@ def mkMain():
     fsm = FSM(m, 'fsm', clk, rst)
 
     # read address
-    addr, counter, valid = myaxi.pull_read_request(cond=fsm)
+    addr, counter, valid = myaxi.pull_read_request_counter(cond=fsm)
     rdata = m.Reg('rdata', 32, initval=0)
     fsm.If(valid)(
         rdata(addr >> 2)
@@ -67,7 +67,7 @@ def mkTest():
     arlen = 64
     expected_sum = (araddr // 4 + araddr // 4 + arlen - 1) * arlen // 2
 
-    ack, counter = _axi.read_request(araddr, arlen, cond=fsm)
+    ack, counter = _axi.read_request_counter(araddr, arlen, cond=fsm)
     fsm.If(ack).goto_next()
 
     # read data (1)
@@ -83,7 +83,7 @@ def mkTest():
     arlen = 128
     expected_sum += (araddr // 4 + araddr // 4 + arlen - 1) * arlen // 2
 
-    ack, counter = _axi.read_request(araddr, arlen, cond=fsm)
+    ack, counter = _axi.read_request_counter(araddr, arlen, cond=fsm)
     fsm.If(ack).goto_next()
 
     # read data (2)

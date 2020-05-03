@@ -29,7 +29,7 @@ def mkMain():
     # AXI read request
     araddr = 1024
     arlen = 64
-    ack, axi_counter = myaxi.read_request(araddr, arlen, cond=fsm)
+    ack, axi_counter = myaxi.read_request_counter(araddr, arlen, cond=fsm)
     fsm.If(ack).goto_next()
 
     # AXI read dataflow (AXI -> Dataflow)

@@ -27,7 +27,7 @@ def mkMain():
     # AXI read request
     araddr = 1024
     arlen = 64
-    ack, counter = myaxi.read_request(araddr, arlen, cond=fsm)
+    ack, counter = myaxi.read_request_counter(araddr, arlen, cond=fsm)
     fsm.If(ack).goto_next()
 
     # AXI read dataflow (AXI -> Dataflow)
@@ -45,7 +45,7 @@ def mkMain():
     # AXI write request
     awaddr = 1024
     awlen = 64
-    ack, counter = myaxi.write_request(awaddr, awlen, cond=fsm)
+    ack, counter = myaxi.write_request_counter(awaddr, awlen, cond=fsm)
     fsm.If(ack).goto_next()
 
     # RAM read dataflow (RAM -> Dataflow)
