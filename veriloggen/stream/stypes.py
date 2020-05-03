@@ -858,6 +858,10 @@ def Div(left, right):
     return Divide(left, right)
 
 
+def Neg(right):
+    return Uminus(right)
+
+
 class LessThan(_BinaryOperator):
 
     def _set_attributes(self):
@@ -925,6 +929,12 @@ class NotEq(_BinaryOperator):
 
 
 class _BinaryShiftOperator(_BinaryOperator):
+
+    def __init__(self, left, right):
+        _BinaryOperator.__init__(self, left, right)
+        s = self.right.eval()
+        if isinstance(s, int):
+            self.latency = 0
 
     def _implement(self, m, seq, svalid=None, senable=None):
         if self.right.get_point() != 0:
@@ -1445,6 +1455,10 @@ class Pointer(_SpecialOperator):
         _SpecialOperator.__init__(self, var, pos)
         self.op = vtypes.Pointer
 
+        p = self.args[1].eval()
+        if isinstance(p, int):
+            self.latency = 0
+
     def _set_attributes(self):
         self.width = 1
         self.point = 0
@@ -1475,6 +1489,7 @@ class Pointer(_SpecialOperator):
 
 
 class Slice(_SpecialOperator):
+    latency = 0
 
     def __init__(self, var, msb, lsb):
         msb = msb.eval() if isinstance(msb, _Constant) else msb
@@ -1611,6 +1626,7 @@ def Split(data, width=None, point=None, signed=None, num_chunks=None, reverse=Fa
 
 
 class Cat(_SpecialOperator):
+    latency = 0
 
     def __init__(self, *vars):
         _SpecialOperator.__init__(self, *vars)
@@ -1741,6 +1757,113 @@ def Mux(condition, true_value, false_value):
     return Cond(condition, true_value, false_value)
 
 
+class _Sync(_SpecialOperator):
+    latency = 0
+
+    def __init__(self, vars, index):
+        self.index = index
+        _SpecialOperator.__init__(self, *vars)
+        self.op = lambda *args: args[index]
+        self.graph_label = 'Sync %d' % index
+
+    def _set_attributes(self):
+        var = self.args[self.index]
+        self.width = var.bit_length()
+        self.point = var.get_point()
+        self.signed = var.get_signed()
+
+
+def Sync(*vars):
+    """ Synchronize 'start_stage' of multiple variables """
+
+    ret_vars = []
+    for i, var in enumerate(vars):
+        ret_vars.append(_Sync(vars, i))
+
+    return tuple(ret_vars)
+
+
+class ForwardDest(_SpecialOperator):
+    latency = 0
+
+    def __init__(self, value, index):
+        _SpecialOperator.__init__(self, value, index)
+        self.graph_label = 'ForwardDest'
+        self.graph_shape = 'box'
+        self.forward_value = None
+        self.forward_index = None
+
+    def _set_attributes(self):
+        value = self.args[0]
+        self.width = value.bit_length()
+        self.point = value.get_point()
+        self.signed = value.get_signed()
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency != 0:
+            raise ValueError("Latency mismatch '%d' vs '%s'" %
+                             (self.latency, 0))
+
+        width = self.bit_length()
+        signed = self.get_signed()
+
+        value = self.args[0].sig_data
+        index = self.args[1].sig_data
+
+        index_width = self.args[1].bit_length()
+        index_signed = self.args[1].get_signed()
+
+        self.forward_value = m.Wire(self.name('forward_value'), width, signed=signed)
+        self.forward_index = m.Wire(self.name('forward_index'), index_width, signed=index_signed)
+        self.forward_valid = m.Wire(self.name('forward_valid'))
+
+        data = m.Wire(self.name('data'), width, signed=signed)
+        data.assign(vtypes.Mux(_and_vars(self.forward_valid, index == self.forward_index),
+                               self.forward_value, value))
+        self.sig_data = data
+
+
+class ForwardSource(_SpecialOperator):
+    latency = 0
+
+    def __init__(self, value, index, dest, reset):
+        _SpecialOperator.__init__(self, value, index, reset)
+        self.dest = dest
+
+        self.output_tmp()
+
+        self.graph_label = 'ForwardSource'
+        self.graph_shape = 'box'
+
+    def _set_attributes(self):
+        value = self.args[0]
+        self.width = value.bit_length()
+        self.point = value.get_point()
+        self.signed = value.get_signed()
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency != 0:
+            raise ValueError("Latency mismatch '%d' vs '%s'" %
+                             (self.latency, 0))
+
+        if self.args[0].end_stage != self.dest.end_stage + 1:
+            raise ValueError("Latency of operator between ForwardDest and ForwardSource must be 1.")
+
+        width = self.bit_length()
+        signed = self.get_signed()
+        value = self.args[0].sig_data
+        index = self.args[1].sig_data
+        resetdata = self.args[2].sig_data
+
+        data = m.Wire(self.name('data'), width, signed=signed)
+        data.assign(value)
+        self.sig_data = data
+
+        self.dest.forward_value.assign(value)
+        self.dest.forward_index.assign(index)
+        self.dest.forward_valid.assign(vtypes.Not(resetdata))
+
+
 class CustomOp(_SpecialOperator):
 
     def __init__(self, op, *vars):
@@ -1794,9 +1917,13 @@ class LUT(_SpecialOperator):
         inst = rom.mkROMDefinition(self.name('LUT_ROM'), self.patterns,
                                    size, width, sync=True, with_enable=True)
         clk = m._clock
+        if senable is not None:
+            enable = senable
+        else:
+            enable = vtypes.Int(1, 1)
 
         ports = [('CLK', clk), ('addr', address),
-                 ('enable', senable), ('val', data)]
+                 ('enable', enable), ('val', data)]
 
         m.Instance(inst, self.name('lut'), ports=ports)
 
@@ -1946,6 +2073,19 @@ class _Prev(_UnaryOperator):
         self.sig_data = data
 
         seq(data(rdata), cond=senable)
+
+
+class Alias(_UnaryOperator):
+    latency = 0
+
+    def __init__(self, right):
+        _UnaryOperator.__init__(self, right)
+        self.op = lambda x: x
+
+        self.graph_label = 'Alias'
+        self.graph_shape = 'box'
+        self.graph_color = 'lightgray'
+        self.graph_style = 'filled'
 
 
 class _PlusN(_SpecialOperator):
@@ -2164,9 +2304,43 @@ def AverageRound(*args):
 
 
 def SraRound(left, right):
-    shifted = Sra(left, right)
-    last_bit = Sra(left, right - 1)[0]
-    return Mux(right == Int(0), left, shifted + last_bit)
+    msb = left[-1]
+    msb.latency = 0
+
+    if isinstance(right, int) and right <= 0:
+        rounder = 0
+    elif isinstance(right, int):
+        rounder = 1 << (right - 1)
+    else:
+        right_slice = right
+        right_width = int(ceil(log(left.width, 2)))
+        if right_width < right.width:
+            right_slice = right[0:right_width]
+            right_slice.latency = 0
+
+        right_minus_one = right_slice - 1
+        right_minus_one.latency = 0
+        rounder = Sll(Int(1), right_minus_one)
+        rounder.latency = 0
+
+    rounder_sign = Mux(msb, Int(-1), Int(0))
+    rounder_sign.latency = 0
+
+    pre_round = left + rounder
+    pre_round.width = left.width + 1
+    pre_round.latency = 0
+
+    pre_round = pre_round + rounder_sign
+    pre_round.latency = 0
+
+    shifted = Sra(pre_round, right)
+    shifted.width = left.width
+    shifted.latency = 0
+
+    cond = right == Int(0)
+    cond.latency = 0
+
+    return Mux(cond, left, shifted)
 
 
 class _Constant(_Numeric):
@@ -2398,16 +2572,21 @@ class _Accumulator(_UnaryOperator):
     latency = 1
     ops = (vtypes.Plus, )
 
-    def __init__(self, right, size=None, initval=None,
-                 enable=None, reset=None, width=32, signed=True):
+    def __init__(self, right, size=None, interval=None, initval=None, offset=None,
+                 dependency=None, enable=None, reset=None, width=32, signed=True):
 
         self.size = _to_constant(size) if size is not None else None
+        self.interval = _to_constant(interval) if interval is not None else None
         self.initval = (_to_constant(initval)
                         if initval is not None else _to_constant(0))
+        self.offset = (_to_constant(offset)
+                       if offset is not None else None)
 
         if not isinstance(self.initval, _Constant):
             raise TypeError("initval must be Constant, not '%s'" %
                             str(type(self.initval)))
+
+        self.dependency = dependency
 
         self.enable = _to_constant(enable)
         if self.enable is not None:
@@ -2442,8 +2621,9 @@ class _Accumulator(_UnaryOperator):
                              (self.latency, 1))
 
         size_data = self.size.sig_data if self.size is not None else None
-        initval_data = self.initval.sig_data
+        interval_data = self.interval.sig_data if self.interval is not None else None
 
+        initval_data = self.initval.sig_data
         width = self.bit_length()
         signed = self.get_signed()
 
@@ -2460,6 +2640,12 @@ class _Accumulator(_UnaryOperator):
             next_count_value = vtypes.Mux(count >= size_data - 1,
                                           0, count + 1)
             count_zero = (count == 0)
+
+        if self.interval is not None:
+            interval_count = m.Reg(self.name('interval_count'), width, initval=0)
+            next_interval_count = vtypes.Mux(interval_count >= interval_data - 1,
+                                             0, interval_count + 1)
+            interval_enable = (interval_count == interval_data - 1)
 
         self.sig_data = data
 
@@ -2484,8 +2670,9 @@ class _Accumulator(_UnaryOperator):
         if not self.ops and self.size is not None:
             value = (count >= (size_data - 1))
 
-        if self.reset is not None or self.size is not None:
-            reset_value = initval_data
+        reset_value = initval_data
+
+        if self.size is not None:
             for op in self.ops:
                 if not isinstance(op, type):
                     reset_value = op(reset_value, rdata)
@@ -2498,51 +2685,83 @@ class _Accumulator(_UnaryOperator):
                     raise TypeError("Operator '%s' returns unsupported object type '%s'."
                                     % (str(op), str(type(reset_value))))
 
-            if not self.ops and self.size is not None:
+            # for Pulse
+            if not self.ops:
                 reset_value = (count >= (size_data - 1))
 
         if self.enable is not None:
-            enable_cond = _and_vars(svalid, senable, enabledata)
+            if self.interval is not None:
+                enable_cond = _and_vars(svalid, senable, enabledata, interval_enable)
+            else:
+                enable_cond = _and_vars(svalid, senable, enabledata)
+
             seq(data(value), cond=enable_cond)
 
             if self.size is not None:
+                if self.interval is not None:
+                    enable_cond = _and_vars(svalid, senable, enabledata, interval_enable)
+                else:
+                    enable_cond = _and_vars(svalid, senable, enabledata)
+
                 seq(count(next_count_value), cond=enable_cond)
+
+            enable_cond = _and_vars(svalid, senable, enabledata)
+            if self.interval is not None:
+                seq(interval_count(next_interval_count), cond=enable_cond)
 
         else:
-            enable_cond = _and_vars(svalid, senable)
+            if self.interval is not None:
+                enable_cond = _and_vars(svalid, senable, interval_enable)
+            else:
+                enable_cond = _and_vars(svalid, senable)
+
             seq(data(value), cond=enable_cond)
 
             if self.size is not None:
+                if self.interval is not None:
+                    enable_cond = _and_vars(svalid, senable, interval_enable)
+                else:
+                    enable_cond = _and_vars(svalid, senable)
+
                 seq(count(next_count_value), cond=enable_cond)
 
+            enable_cond = _and_vars(svalid, senable)
+            if self.interval is not None:
+                seq(interval_count(next_interval_count), cond=enable_cond)
+
         if self.reset is not None:
-            if self.enable is None:
-                reset_cond = _and_vars(svalid, senable, resetdata)
-                seq(data(reset_value), cond=reset_cond)
-
-                if self.size is not None:
-                    seq(count(0), cond=reset_cond)
-                    reset_cond = _and_vars(svalid, senable, count_zero)
-                    seq(data(reset_value), cond=reset_cond)
-
-            else:
+            if self.enable is not None:
                 reset_cond = _and_vars(svalid, senable, resetdata)
                 seq(data(initval_data), cond=reset_cond)
 
-                reset_enable_cond = _and_vars(
-                    svalid, senable, enabledata, resetdata)
+                if self.interval is not None:
+                    seq(interval_count(0), cond=reset_cond)
+
+                reset_enable_cond = _and_vars(svalid, senable, enabledata, resetdata)
                 seq(data(reset_value), cond=reset_enable_cond)
 
                 if self.size is not None:
                     seq(count(0), cond=reset_enable_cond)
-                    reset_enable_cond = _and_vars(
-                        svalid, senable, enabledata, count_zero)
+
+                    reset_enable_cond = _and_vars(svalid, senable, enabledata, count_zero)
                     seq(data(reset_value), cond=reset_enable_cond)
+
+            else:
+                reset_cond = _and_vars(svalid, senable, resetdata)
+                seq(data(reset_value), cond=reset_cond)
+
+                if self.interval is not None:
+                    seq(interval_count(0), cond=reset_cond)
+
+                if self.size is not None:
+                    seq(count(0), cond=reset_cond)
+
+                    reset_cond = _and_vars(svalid, senable, count_zero)
+                    seq(data(reset_value), cond=reset_cond)
 
         elif self.size is not None:
             if self.enable is not None:
-                reset_enable_cond = _and_vars(
-                    svalid, senable, enabledata, count_zero)
+                reset_enable_cond = _and_vars(svalid, senable, enabledata, count_zero)
                 seq(data(reset_value), cond=reset_enable_cond)
             else:
                 reset_cond = _and_vars(svalid, senable, count_zero)
@@ -2552,48 +2771,86 @@ class _Accumulator(_UnaryOperator):
 class ReduceAdd(_Accumulator):
     ops = (vtypes.Plus, )
 
-    def __init__(self, right, size=None, initval=0,
+    def __init__(self, right, size=None, interval=None, initval=0,
                  enable=None, reset=None, width=32, signed=True):
-        _Accumulator.__init__(self, right, size, initval,
-                              enable, reset, width, signed)
+        offset = None
+        dependency = None
+        _Accumulator.__init__(self, right, size, interval, initval, offset,
+                              dependency, enable, reset, width, signed)
+        self.graph_label = 'ReduceAdd'
 
 
 class ReduceSub(_Accumulator):
     ops = (vtypes.Minus, )
 
-    def __init__(self, right, size=None, initval=0,
+    def __init__(self, right, size=None, interval=None, initval=0,
                  enable=None, reset=None, width=32, signed=True):
-        _Accumulator.__init__(self, right, size, initval,
-                              enable, reset, width, signed)
+        offset = None
+        dependency = None
+        _Accumulator.__init__(self, right, size, interval, initval, offset,
+                              dependency, enable, reset, width, signed)
+        self.graph_label = 'ReduceSub'
 
 
 class ReduceMul(_Accumulator):
     latency = 1
     ops = (vtypes.Times, )
 
-    def __init__(self, right, size=None, initval=0,
+    def __init__(self, right, size=None, interval=None, initval=0,
                  enable=None, reset=None, width=32, signed=True):
-        _Accumulator.__init__(self, right, size, initval,
-                              enable, reset, width, signed)
+        offset = None
+        dependency = None
+        _Accumulator.__init__(self, right, size, interval, initval, offset,
+                              dependency, enable, reset, width, signed)
+        self.graph_label = 'ReduceMul'
 
 
 class ReduceDiv(_Accumulator):
     latency = 32
     ops = ()
 
-    def __init__(self, right, size=None, initval=0,
+    def __init__(self, right, size=None, interval=None, initval=0,
                  enable=None, reset=None, width=32, signed=True):
         raise NotImplementedError()
-        _Accumulator.__init__(self, right, size, initval,
-                              enable, reset, width, signed)
+        offset = None
+        dependency = None
+        _Accumulator.__init__(self, right, size, interval, initval, offset,
+                              dependency, enable, reset, width, signed)
+        self.graph_label = 'ReduceDiv'
+
+
+class ReduceMax(_Accumulator):
+    ops = (lambda x, y: vtypes.Mux(x < y, y, x), )
+
+    def __init__(self, right, size=None, interval=None, initval=0,
+                 enable=None, reset=None, width=32, signed=True):
+        offset = None
+        dependency = None
+        _Accumulator.__init__(self, right, size, interval, initval, offset,
+                              dependency, enable, reset, width, signed)
+        self.graph_label = 'ReduceMax'
+
+
+class ReduceMin(_Accumulator):
+    ops = (lambda x, y: vtypes.Mux(x > y, y, x), )
+
+    def __init__(self, right, size=None, interval=None, initval=0,
+                 enable=None, reset=None, width=32, signed=True):
+        offset = None
+        dependency = None
+        _Accumulator.__init__(self, right, size, interval, initval, offset,
+                              dependency, enable, reset, width, signed)
+        self.graph_label = 'ReduceMin'
 
 
 class ReduceCustom(_Accumulator):
 
-    def __init__(self, ops, right, size=None, initval=0,
+    def __init__(self, ops, right, size=None, interval=None, initval=0,
                  enable=None, reset=None, width=32, signed=True, label=None):
-        _Accumulator.__init__(self, right, size, initval,
-                              enable, reset, width, signed)
+        offset = None
+        dependency = None
+        _Accumulator.__init__(self, right, size, interval, initval, offset,
+                              dependency, enable, reset, width, signed)
         if not isinstance(ops, (tuple, list)):
             ops = tuple([ops])
         self.ops = ops
@@ -2602,97 +2859,185 @@ class ReduceCustom(_Accumulator):
 
 class Counter(_Accumulator):
 
-    def __init__(self, size=None, step=1, initval=0,
-                 control=None, enable=None, reset=None, width=32, signed=False):
+    def __init__(self, size=None, step=1, interval=None, initval=0, offset=None,
+                 dependency=None, enable=None, reset=None, width=32, signed=False):
 
-        self.ops = (lambda x, y: x + step, )
-
-        if control is None:
-            control = 0
-
-        initval -= step
-
-        _Accumulator.__init__(self, control, size, initval,
-                              enable, reset, width, signed)
+        _Accumulator.__init__(self, step, size, interval, initval, offset,
+                              dependency, enable, reset, width, signed)
         self.graph_label = 'Counter'
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency != 1:
+            raise ValueError("Latency mismatch '%d' vs '%s'" %
+                             (self.latency, 1))
+
+        size_data = self.size.sig_data if self.size is not None else None
+        interval_data = self.interval.sig_data if self.interval is not None else None
+
+        initval_data = self.initval.sig_data
+        offset_data = self.offset.sig_data if self.offset is not None else None
+        width = self.bit_length()
+        signed = self.get_signed()
+
+        step = self.right.sig_data
+
+        data = m.Reg(self.name('data'), width,
+                     initval=initval_data, signed=signed)
+        count = m.Reg(self.name('count'), width,
+                      initval=initval_data, signed=signed)
+
+        next_count_value = count + step
+        if self.size is not None and self.offset is not None:
+            next_count_value = vtypes.Mux(count >= size_data - step,
+                                          offset_data, next_count_value)
+        elif self.size is not None:
+            next_count_value = vtypes.Mux(count >= size_data - step,
+                                          next_count_value - size_data, next_count_value)
+
+        if self.interval is not None:
+            interval_count = m.Reg(self.name('interval_count'), width, initval=0)
+            next_interval_count = vtypes.Mux(interval_count >= interval_data - 1,
+                                             0, interval_count + 1)
+            interval_enable = (interval_count == interval_data - 1)
+
+        self.sig_data = data
+
+        enabledata = self.enable.sig_data if self.enable is not None else None
+        resetdata = self.reset.sig_data if self.reset is not None else None
+
+        if self.enable is not None:
+            if self.interval is not None:
+                enable_cond = _and_vars(svalid, senable, enabledata, interval_enable)
+            else:
+                enable_cond = _and_vars(svalid, senable, enabledata)
+
+            seq(count(next_count_value), cond=enable_cond)
+
+            enable_cond = _and_vars(svalid, senable, enabledata)
+            if self.interval is not None:
+                seq(interval_count(next_interval_count), cond=enable_cond)
+
+            enable_cond = _and_vars(svalid, senable)
+            seq(data(count), cond=enable_cond)
+
+        else:
+            if self.interval is not None:
+                enable_cond = _and_vars(svalid, senable, interval_enable)
+            else:
+                enable_cond = _and_vars(svalid, senable)
+
+            seq(count(next_count_value), cond=enable_cond)
+
+            enable_cond = _and_vars(svalid, senable)
+            if self.interval is not None:
+                seq(interval_count(next_interval_count), cond=enable_cond)
+
+            seq(data(count), cond=enable_cond)
+
+        if self.reset is not None:
+            reset_cond = _and_vars(svalid, senable, resetdata)
+            seq(count(initval_data), cond=reset_cond)
+
+            if self.interval is not None:
+                seq(interval_count(0), cond=reset_cond)
+
+            seq(data(initval_data), cond=reset_cond)
 
 
 class Pulse(_Accumulator):
     ops = ()
 
-    def __init__(self, size, control=None, enable=None, reset=None):
+    def __init__(self, size, interval=None,
+                 dependency=None, enable=None, reset=None):
 
-        if control is None:
-            control = 0
+        right = 0
+        if dependency is not None:
+            right = dependency
 
-        step = 1
         initval = 0
+        offset = None
         width = 1
         signed = False
 
-        _Accumulator.__init__(self, control, size, initval,
-                              enable, reset, width, signed)
+        _Accumulator.__init__(self, right, size, interval, initval, offset,
+                              dependency, enable, reset, width, signed)
         self.graph_label = 'Pulse'
 
 
-def _ReduceValid(cls, right, size, initval=0,
+def _ReduceValid(cls, right, size, interval=None, initval=0,
                  enable=None, reset=None, width=32, signed=True):
 
-    data = cls(right, size, initval,
+    data = cls(right, size, interval, initval,
                enable, reset, width, signed)
-    valid = Pulse(size, right, enable, reset)
+    valid = Pulse(size, dependency=right, enable=enable, reset=reset)
 
     return data, valid
 
 
-def ReduceAddValid(right, size, initval=0,
+def ReduceAddValid(right, size, interval=None, initval=0,
                    enable=None, reset=None, width=32, signed=True):
 
     cls = ReduceAdd
-    return _ReduceValid(cls, right, size, initval,
+    return _ReduceValid(cls, right, size, interval, initval,
                         enable, reset, width, signed)
 
 
-def ReduceSubValid(right, size, initval=0,
+def ReduceSubValid(right, size, interval=None, initval=0,
                    enable=None, reset=None, width=32, signed=True):
 
     cls = ReduceSub
-    return _ReduceValid(cls, right, size, initval,
+    return _ReduceValid(cls, right, size, interval, initval,
                         enable, reset, width, signed)
 
 
-def ReduceMulValid(right, size, initval=0,
+def ReduceMulValid(right, size, interval=None, initval=0,
                    enable=None, reset=None, width=32, signed=True):
 
     cls = ReduceMul
-    return _ReduceValid(cls, right, size, initval,
+    return _ReduceValid(cls, right, size, interval, initval,
                         enable, reset, width, signed)
 
 
-def ReduceDivValid(right, size, initval=0,
+def ReduceDivValid(right, size, interval=None, initval=0,
                    enable=None, reset=None, width=32, signed=True):
 
     cls = ReduceDiv
-    return _ReduceValid(cls, right, size, initval,
+    return _ReduceValid(cls, right, size, interval, initval,
                         enable, reset, width, signed)
 
 
-def ReduceCustomValid(ops, right, size, initval=0,
+def ReduceMaxValid(right, size, interval=None, initval=0,
+                   enable=None, reset=None, width=32, signed=True):
+
+    cls = ReduceMax
+    return _ReduceValid(cls, right, size, interval, initval,
+                        enable, reset, width, signed)
+
+
+def ReduceMinValid(right, size, interval=None, initval=0,
+                   enable=None, reset=None, width=32, signed=True):
+
+    cls = ReduceMin
+    return _ReduceValid(cls, right, size, interval, initval,
+                        enable, reset, width, signed)
+
+
+def ReduceCustomValid(ops, right, size, interval=None, initval=0,
                       enable=None, reset=None, width=32, signed=True):
 
-    data = ReduceCustom(ops, right, size, initval,
+    data = ReduceCustom(ops, right, size, interval, initval,
                         enable, reset, width, signed)
-    valid = Pulse(size, right, enable, reset)
+    valid = Pulse(size, dependency=right, enable=enable, reset=reset)
 
     return data, valid
 
 
-def CounterValid(size, step=1, initval=0,
-                 control=None, enable=None, reset=None, width=32, signed=False):
+def CounterValid(size, step=1, interval=None, initval=0, offset=None,
+                 dependency=None, enable=None, reset=None, width=32, signed=False):
 
-    data = Counter(size, step, initval,
-                   control, enable, reset, width, signed)
-    valid = Pulse(size, control, enable, reset)
+    data = Counter(size, step, interval, initval, offset,
+                   dependency, enable, reset, width, signed)
+    valid = Pulse(size, dependency=dependency, enable=enable, reset=reset)
 
     return data, valid
 
@@ -3255,10 +3600,10 @@ class ReadRAM(_SpecialOperator):
                              (self.latency, 2))
 
         if len(self.args) == 3 and self.latency == 2:
-            raise ValueError('Output register is required for when option')
+            raise ValueError("latency = 2 is not allowed, if 'when' option is used.")
 
-        if senable is not None:
-            raise NotImplementedError('senable is not supported.')
+        if senable is not None and self.latency == 2:
+            raise NotImplementedError("senable is not supported, if 'when' option is used.")
 
         datawidth = self.bit_length()
         signed = self.get_signed()
@@ -3267,6 +3612,7 @@ class ReadRAM(_SpecialOperator):
 
         if self.latency == 2:
             data = m.Wire(self.name('data'), datawidth, signed=signed)
+            data.assign(rdata)
             self.sig_data = data
 
         elif self.latency == 3:
@@ -3334,9 +3680,6 @@ class WriteRAM(_SpecialOperator):
             raise ValueError("Latency mismatch '%d' != '%s'" %
                              (self.latency, 1))
 
-        if senable is not None:
-            raise NotImplementedError('senable is not supported.')
-
         self.sig_data = vtypes.Int(0)
 
     @property
@@ -3351,6 +3694,54 @@ class WriteRAM(_SpecialOperator):
     def enable(self):
         when_cond = self.args[3].sig_data if len(self.args) == 4 else None
         return _and_vars(vtypes.Not(self.args[2].sig_data), when_cond)
+
+
+def ReduceArgMax(right, size=None, interval=None, initval=0,
+                 enable=None, reset=None, width=32, signed=True):
+
+    _max = ReduceMax(right, size, interval, initval,
+                     enable, reset, width, signed)
+    counter = Counter(size, dependency=right, enable=enable, reset=reset)
+    update = NotEq(_max, _max.prev(1))
+    update.latency = 0
+    index = Predicate(counter, update)
+    return index, _max
+
+
+def ReduceArgMin(right, size=None, interval=None, initval=0,
+                 enable=None, reset=None, width=32, signed=True):
+
+    _min = ReduceMin(right, size, interval, initval,
+                     enable, reset, width, signed)
+    counter = Counter(size, dependency=right, enable=enable, reset=reset)
+    update = NotEq(_min, reduce_min.prev(1))
+    update.latency = 0
+    index = Predicate(counter, update)
+    return index, _min
+
+
+def ReduceArgMaxValid(right, size=None, interval=None, initval=0,
+                      enable=None, reset=None, width=32, signed=True):
+
+    _max, valid = ReduceMaxValid(right, size, interval, initval,
+                                 enable, reset, width, signed)
+    counter = Counter(size, dependency=right, enable=enable, reset=reset)
+    update = NotEq(_max, _max.prev(1))
+    update.latency = 0
+    index = Predicate(counter, update)
+    return index, _max, valid
+
+
+def ReduceArgMinValid(right, size=None, interval=None, initval=0,
+                      enable=None, reset=None, width=32, signed=True):
+
+    _min, valid = ReduceMinValid(right, size, interval, initval,
+                                 enable, reset, width, signed)
+    counter = Counter(size, dependency=right, enable=enable, reset=reset)
+    update = NotEq(_min, _min.prev(1))
+    update.latency = 0
+    index = Predicate(counter, update)
+    return index, _min, valid
 
 
 def make_condition(*cond, **kwargs):

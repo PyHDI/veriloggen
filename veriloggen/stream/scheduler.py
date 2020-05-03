@@ -121,12 +121,25 @@ class ASAPScheduler(_Scheduler):
         if node._has_start_stage():
             return node._get_end_stage()
         right = self.visit(node.right)
+        size = self.visit(node.size) if node.size is not None else None
+        interval = (self.visit(node.interval)
+                    if node.interval is not None else None)
         initval = self.visit(node.initval)
+        offset = (self.visit(node.offset)
+                  if node.offset is not None else None)
+        dependency = (self.visit(node.dependency)
+                      if node.dependency is not None else None)
         enable = self.visit(node.enable) if node.enable is not None else None
         reset = self.visit(node.reset) if node.reset is not None else None
-        mine = self.max_stage(right, initval, enable, reset)
+        mine = self.max_stage(right, size, interval, initval, dependency, enable, reset)
         node.right = self.fill_gap(node.right, mine)
+        if node.size is not None:
+            node.size = self.fill_gap(node.size, mine)
+        if node.interval is not None:
+            node.interval = self.fill_gap(node.interval, mine)
         node.initval = self.fill_gap(node.initval, mine)
+        if node.offset is not None:
+            node.offset = self.fill_gap(node.offset, mine)
         if node.enable is not None:
             node.enable = self.fill_gap(node.enable, mine)
         if node.reset is not None:
@@ -137,6 +150,21 @@ class ASAPScheduler(_Scheduler):
         return end
 
     def visit_Substream(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit__Sync(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_ForwardDest(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_ForwardSource(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_ReadRAM(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_WriteRAM(self, node):
         return self.visit__SpecialOperator(node)
 
     def visit_RingBuffer(self, node):

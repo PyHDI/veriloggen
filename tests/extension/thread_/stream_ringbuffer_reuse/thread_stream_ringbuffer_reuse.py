@@ -36,7 +36,7 @@ def mkLed():
 
     b = a + a_old
 
-    strm.sink(b, 'b', when=counter > wait_num)
+    strm.sink(b, 'b', when=counter >= wait_num)
 
     def comp_stream(size, offset):
         strm.set_source('a', ram_a, offset, size * 2)

@@ -69,7 +69,7 @@ for pull requests
 
 Please check "CONTRIBUTORS.md" for the contributors who provided pull requests.
 
-Veriloggen uses **pytest** for the integration testing. **When you send a pull request, please include a testing example with pytest.** 
+Veriloggen uses **pytest** for the integration testing. **When you send a pull request, please include a testing example with pytest.**
 To write a testing code, please refer the existing testing examples in "tests" directory.
 
 If the pull request code passes all the tests successfully and has no obvious problem, it will be merged to the *develop* branch by the main committers.
@@ -89,7 +89,7 @@ sudo apt install iverilog
 ```
 
 - Jinja2: 2.10 or later
-- Pyverilog: 1.2.0 or later
+- Pyverilog: 1.2.1 or later
 - NumPy: 1.17 or later
 
 ```

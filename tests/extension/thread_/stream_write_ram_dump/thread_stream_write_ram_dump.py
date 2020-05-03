@@ -32,16 +32,16 @@ def mkLed():
     counter = strm.Counter()
 
     a = strm.source('a')
-    a_addr = strm.Counter() - 1
+    a_addr = strm.Counter()
 
-    strm.write_RAM('write_ext', a_addr, a, when=counter <= img_width)
+    strm.write_RAM('write_ext', a_addr, a, when=counter < img_width)
 
-    a_old_addr = strm.Counter() - img_width - 1
+    a_old_addr = strm.Counter() - img_width
     a_old = strm.read_RAM('read_ext', a_old_addr)
 
     b = a + a_old
 
-    strm.sink(b, 'b', when=counter > img_width)
+    strm.sink(b, 'b', when=counter >= img_width)
 
     def comp_stream(size, offset):
         strm.set_source('a', ram_a, offset, size * 2)

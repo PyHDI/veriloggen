@@ -30,6 +30,21 @@ class _Visitor(object):
         if isinstance(node, stypes.Substream):
             return self.visit_Substream(node)
 
+        if isinstance(node, stypes._Sync):
+            return self.visit__Sync(node)
+
+        if isinstance(node, stypes.ForwardDest):
+            return self.visit_ForwardDest(node)
+
+        if isinstance(node, stypes.ForwardSource):
+            return self.visit_ForwardSource(node)
+
+        if isinstance(node, stypes.ReadRAM):
+            return self.visit_ReadRAM(node)
+
+        if isinstance(node, stypes.WriteRAM):
+            return self.visit_WriteRAM(node)
+
         if isinstance(node, stypes.RingBuffer):
             return self.visit_RingBuffer(node)
 
@@ -82,6 +97,21 @@ class _Visitor(object):
     def visit_Substream(self, node):
         raise NotImplementedError()
 
+    def visit__Sync(self, node):
+        raise NotImplementedError()
+
+    def visit_ForwardDest(self, node):
+        raise NotImplementedError()
+
+    def visit_ForwardSource(self, node):
+        raise NotImplementedError()
+
+    def visit_ReadRAM(self, node):
+        raise NotImplementedError()
+
+    def visit_WriteRAM(self, node):
+        raise NotImplementedError()
+
     def visit_RingBuffer(self, node):
         raise NotImplementedError()
 
@@ -125,13 +155,34 @@ class InputVisitor(_Visitor):
     def visit__Accumulator(self, node):
         right = self.visit(node.right)
         size = self.visit(node.size) if node.size is not None else set()
+        interval = (self.visit(node.interval)
+                    if node.interval is not None else set())
         initval = (self.visit(node.initval)
                    if node.initval is not None else set())
+        offset = (self.visit(node.offset)
+                  if node.offset is not None else set())
+        dependency = (self.visit(node.dependency)
+                      if node.dependency is not None else set())
         enable = self.visit(node.enable) if node.enable is not None else set()
         reset = self.visit(node.reset) if node.reset is not None else set()
-        return right | size | initval | enable | reset
+        return right | size | interval | initval | offset | dependency | enable | reset
 
     def visit_Substream(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit__Sync(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_ForwardDest(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_ForwardSource(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_ReadRAM(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_WriteRAM(self, node):
         return self.visit__SpecialOperator(node)
 
     def visit_RingBuffer(self, node):
@@ -193,15 +244,36 @@ class OutputVisitor(_Visitor):
     def visit__Accumulator(self, node):
         right = self.visit(node.right)
         size = self.visit(node.size) if node.size is not None else set()
+        interval = (self.visit(node.interval)
+                    if node.interval is not None else set())
         initval = (self.visit(node.initval)
                    if node.initval is not None else set())
+        offset = (self.visit(node.offset)
+                  if node.offset is not None else set())
+        dependency = (self.visit(node.dependency)
+                      if node.dependency is not None else set())
         enable = self.visit(node.enable) if node.enable is not None else set()
         #reset = self.visit(node.reset) if node.reset is not None else set()
         reset = set()
         mine = set([node]) if node._has_output() else set()
-        return right | size | initval | enable | reset | mine
+        return right | size | interval | initval | offset | dependency | enable | reset | mine
 
     def visit_Substream(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit__Sync(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_ForwardDest(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_ForwardSource(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_ReadRAM(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_WriteRAM(self, node):
         return self.visit__SpecialOperator(node)
 
     def visit_RingBuffer(self, node):
@@ -272,14 +344,35 @@ class OperatorVisitor(_Visitor):
     def visit__Accumulator(self, node):
         right = self.visit(node.right)
         size = self.visit(node.size) if node.size is not None else set()
+        interval = (self.visit(node.interval)
+                    if node.interval is not None else set())
         initval = (self.visit(node.initval)
                    if node.initval is not None else set())
+        offset = (self.visit(node.offset)
+                  if node.offset is not None else set())
+        dependency = (self.visit(node.dependency)
+                      if node.dependency is not None else set())
         enable = self.visit(node.enable) if node.enable is not None else set()
         reset = self.visit(node.reset) if node.reset is not None else set()
         mine = set([node])
-        return right | size | initval | enable | reset | mine
+        return right | size | interval | initval | offset | dependency | enable | reset | mine
 
     def visit_Substream(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit__Sync(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_ForwardDest(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_ForwardSource(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_ReadRAM(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_WriteRAM(self, node):
         return self.visit__SpecialOperator(node)
 
     def visit_RingBuffer(self, node):

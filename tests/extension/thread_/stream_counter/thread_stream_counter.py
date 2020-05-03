@@ -25,10 +25,15 @@ def mkLed():
     ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
-    cnt = strm.Counter()
+    cnt1 = strm.Counter()
+    cnt2 = strm.Counter(initval=1)
+    cnt3 = strm.Counter(initval=2, size=5)
+    cnt4 = strm.Counter(initval=3, interval=3)
+    cnt5 = strm.Counter(initval=4, interval=3, size=7)
+    cnt6 = strm.Counter(initval=4, step=2, interval=2)
     a = strm.source('a')
     b = strm.source('b')
-    c = a + b + cnt
+    c = a + b - a - b + cnt1 + cnt2 + cnt3 + cnt4 + cnt5 + cnt6
     strm.sink(c, 'c')
 
     def comp_stream(size, offset):
@@ -39,14 +44,19 @@ def mkLed():
         strm.join()
 
     def comp_sequential(size, offset):
-        sum = 0
         cnt = 0
         for i in range(size):
+            cnt1 = cnt
+            cnt2 = 1 + cnt
+            cnt3 = (cnt + 2) % 5
+            cnt4 = (cnt // 3) + 3
+            cnt5 = ((cnt // 3) + 4) % 7
+            cnt6 = (cnt // 2) * 2 + 4
             a = ram_a.read(i + offset)
             b = ram_b.read(i + offset)
-            cnt += 1
-            sum = a + b + cnt
+            sum = a + b - a - b + cnt1 + cnt2 + cnt3 + cnt4 + cnt5 + cnt6
             ram_c.write(i + offset, sum)
+            cnt += 1
 
     def check(size, offset_stream, offset_seq):
         all_ok = True
@@ -55,6 +65,7 @@ def mkLed():
             sq = ram_c.read(i + offset_seq)
             if vthread.verilog.NotEql(st, sq):
                 all_ok = False
+                print(i, st, sq)
         if all_ok:
             print('# verify: PASSED')
         else:

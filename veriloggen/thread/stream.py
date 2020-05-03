@@ -43,7 +43,7 @@ class Stream(BaseStream):
                       'set_sink', 'set_sink_pattern', 'set_sink_multidim',
                       'set_sink_multipattern', 'set_sink_immediate',
                       'set_sink_empty', 'set_constant',
-                      'set_read_RAM', 'set_write_RAM',
+                      'set_read_RAM', 'set_write_RAM', 'set_read_modify_write_RAM',
                       'read_sink',
                       'run', 'join', 'done',
                       'source_join', 'source_done',
@@ -103,6 +103,7 @@ class Stream(BaseStream):
         self.substreams = []
         self.read_rams = OrderedDict()
         self.write_rams = OrderedDict()
+        self.read_modify_write_rams = OrderedDict()
 
         self.var_name_map = OrderedDict()
         self.var_id_map = OrderedDict()
@@ -225,6 +226,12 @@ class Stream(BaseStream):
         if name in self.var_name_map:
             raise ValueError("'%s' is already defined in stream '%s'" %
                              (name, self.name))
+
+        elif data.output_data is not None:
+            # implicit Alias
+            alias = self.Alias(data)
+            return self.sink(alias, name, when, when_name)
+
         else:
             data.output(self._dataname(name))
 
@@ -405,6 +412,69 @@ class Stream(BaseStream):
                                             self.ram_sel_width, initval=0)
 
         return var
+
+    def read_modify_write_RAM(self, name, raddrs, waddr, op, op_args, when=None,
+                              datawidth_list=None, point_list=None, signed_list=None):
+
+        if self.stream_synthesized:
+            raise ValueError(
+                'cannot modify the stream because already synthesized')
+
+        _id = self.var_id_count
+        if name is None:
+            name = 'read_modify_write_ram_%d' % _id
+
+        if name in self.var_name_map:
+            raise ValueError("'%s' is already defined in stream '%s'" %
+                             (name, self.name))
+
+        self.var_id_count += 1
+
+        if datawidth_list is None:
+            datawidth_list = [None for raddr in raddrs]
+            point_list = [None for raddr in raddrs]
+            signed_list = [True for raddr in raddrs]
+
+        if len(raddrs) > 1:
+            raddrs = self.Sync(*raddrs)
+
+        read_vars = []
+        read_rams = []
+
+        for i, (raddr, datawidth, point, signed) in enumerate(
+                zip(raddrs, datawidth_list, point_list, signed_list)):
+
+            read_name = '_'.join([name, 'read', '%d' % i])
+            read_var = self.read_RAM(read_name, raddr, when=None,
+                                     datawidth=datawidth, point=point, signed=signed)
+            read_var.latency = 2
+            read_vars.append(read_var)
+            read_rams.append(read_name)
+
+        read_vars = [self.ForwardDest(read_var, raddr)
+                     for read_var, raddr in zip(read_vars, raddrs)]
+
+        args = []
+        args.extend(read_vars)
+        args.extend(op_args)
+        write_var = op(*args)
+
+        for read_var in read_vars:
+            self.ForwardSource(write_var, waddr, read_var)
+
+        write_name = '_'.join([name, 'write'])
+        write_var = self.write_RAM(write_name, waddr, write_var, when=when)
+        write_ram = write_name
+
+        read_rams = tuple(read_rams)
+
+        self.read_modify_write_rams[name] = (read_rams, write_ram)
+        self.var_id_map[_id] = (read_rams, write_ram)
+        self.var_name_map[name] = (read_rams, write_ram)
+        self.var_id_name_map[_id] = name
+        self.var_name_id_map[name] = _id
+
+        return write_var
 
     def set_source(self, fsm, name, ram, offset, size, stride=1, port=0):
         """ intrinsic method to assign RAM property to a source stream """
@@ -1035,6 +1105,43 @@ class Stream(BaseStream):
         self._setup_write_ram(ram, var, port, set_cond)
 
         fsm.goto_next()
+
+    def set_read_modify_write_RAM(self, fsm, name, ram, read_ports=None, write_port=None):
+
+        if not self.stream_synthesized:
+            self._implement_stream()
+
+        if isinstance(name, str):
+            var = self.var_name_map[name]
+        elif isinstance(name, vtypes.Str):
+            name = name.value
+            var = self.var_name_map[name]
+        elif isinstance(name, int):
+            var = self.var_id_map[name]
+        elif isinstance(name, vtypes.Int):
+            name = name.value
+            var = self.var_id_map[name]
+        else:
+            raise TypeError('Unsupported index name')
+
+        if name not in self.read_modify_write_rams:
+            raise NameError("No such stream '%s'" % name)
+
+        read_rams, write_ram = var
+
+        if read_ports is None:
+            read_ports = [i for i, read_ram in enumerate(read_ram)]
+
+        if write_port is None:
+            write_port = read_ports[-1] + 1
+
+        for i, (read_ram, read_port) in enumerate(zip(read_rams, read_ports)):
+            read_name = read_ram
+            self.set_read_RAM(fsm, read_name, ram, port=read_port)
+            fsm._set_index(fsm.current - 1)
+
+        write_name = write_ram
+        self.set_write_RAM(fsm, write_name, ram, port=write_port)
 
     def read_sink(self, fsm, name):
         """ intrinsic method to read the last output of a sink stream """
@@ -2509,7 +2616,8 @@ class Stream(BaseStream):
              f.__name__.startswith('RingBuffer') or
              f.__name__.startswith('Scratchpad') or
              f.__name__.startswith('ReadRAM') or
-             f.__name__.startswith('WriteRAM'))):
+             f.__name__.startswith('WriteRAM') or
+             f.__name__.startswith('ForwardSource'))):
             if self.reduce_reset is None:
                 self.reduce_reset = self.module.Reg(
                     '_'.join(['', self.name, 'reduce_reset']), initval=1)

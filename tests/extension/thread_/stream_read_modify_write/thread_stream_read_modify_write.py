@@ -21,60 +21,50 @@ def mkLed():
     addrwidth = 10
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
     ram_a = vthread.RAM(m, 'ram_a', clk, rst, datawidth, addrwidth)
-    ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
+    ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth, numports=2)
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
-    img_width = strm.constant('img_width')
-
-    counter = strm.Counter()
-
+    numbins = strm.constant('numbins')
+    offset = strm.constant('offset')
     a = strm.source('a')
-    a_addr = strm.Counter() - 1
-    sp = strm.Scratchpad(a, a_addr, length=128)
+    a = strm.Mux(a < 0, 0, a)
+    a.latency = 0
+    a = strm.Mux(a >= numbins, numbins - 1, a)
+    a.latency = 0
 
-    a0 = a
-    a1 = a0.prev(1)
-    a2 = a1.prev(1)
+    raddr = a + offset
+    raddrs = (raddr,)
+    waddr = raddr
+    op = strm.Add
+    op_args = (1,)
+    strm.read_modify_write_RAM('ext', raddrs, waddr, op, op_args)
 
-    a3_addr = a_addr - img_width
-    a3 = sp.read(a3_addr)
-    a4 = a3.prev(1)
-    a5 = a4.prev(1)
+    def comp_stream(numbins, size, offset):
+        for i in range(numbins):
+            ram_b.write(i + offset, 0)
 
-    a6_addr = a3_addr - img_width
-    a6 = sp.read(a6_addr)
-    a7 = a6.prev(1)
-    a8 = a7.prev(1)
-
-    #b = a0 + a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8
-    b = strm.AddN(a0, a1, a2, a3, a4, a5, a6, a7, a8)
-
-    strm.sink(b, 'b', when=counter > img_width + img_width + 2)
-
-    def comp_stream(size, offset):
-        strm.set_source('a', ram_a, offset, size * 3)
-        strm.set_sink('b', ram_b, offset, size - 2)
-        strm.set_constant('img_width', size)
+        strm.set_constant('numbins', numbins)
+        strm.set_constant('offset', offset)
+        strm.set_source('a', ram_a, offset, size)
+        strm.set_read_modify_write_RAM('ext', ram_b, read_ports=(0,), write_port=1)
         strm.run()
         strm.join()
 
-    def comp_sequential(size, offset):
-        for i in range(size - 2):
-            a0 = ram_a.read(i + offset)
-            a1 = ram_a.read(i + offset + 1)
-            a2 = ram_a.read(i + offset + 2)
-            a3 = ram_a.read(i + offset + size)
-            a4 = ram_a.read(i + offset + size + 1)
-            a5 = ram_a.read(i + offset + size + 2)
-            a6 = ram_a.read(i + offset + size + size)
-            a7 = ram_a.read(i + offset + size + size + 1)
-            a8 = ram_a.read(i + offset + size + size + 2)
-            b = a0 + a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8
-            ram_b.write(i + offset, b)
+    def comp_sequential(numbins, size, offset):
+        for i in range(numbins):
+            ram_b.write(i + offset, 0)
+
+        for i in range(size):
+            a = ram_a.read(i + offset)
+            a = 0 if a < 0 else a
+            a = numbins - 1 if a >= numbins else a
+            current = ram_b.read(a + offset)
+            updated = current + 1
+            ram_b.write(a + offset, updated)
 
     def check(size, offset_stream, offset_seq):
         all_ok = True
-        for i in range(size - 2):
+        for i in range(size):
             st = ram_b.read(i + offset_stream)
             sq = ram_b.read(i + offset_seq)
             if vthread.verilog.NotEql(st, sq):
@@ -85,20 +75,22 @@ def mkLed():
             print('# verify: FAILED')
 
     def comp(size):
+        numbins = 8
+
         # stream
         offset = 0
-        myaxi.dma_read(ram_a, offset, 0, size * 3)
-        comp_stream(size, offset)
-        myaxi.dma_write(ram_b, offset, 1024, size)
+        myaxi.dma_read(ram_a, offset, 0, size)
+        comp_stream(numbins, size, offset)
+        myaxi.dma_write(ram_b, offset, 1024, numbins)
 
         # sequential
         offset = size * 4
-        myaxi.dma_read(ram_a, offset, 0, size * 3)
-        comp_sequential(size, offset)
-        myaxi.dma_write(ram_b, offset, 1024 * 2, size)
+        myaxi.dma_read(ram_a, offset, 0, size * 2)
+        comp_sequential(numbins, size, offset)
+        myaxi.dma_write(ram_b, offset, 1024 * 2, numbins)
 
         # verification
-        check(size, 0, offset)
+        check(numbins, 0, offset)
 
         vthread.finish()
 
@@ -128,7 +120,7 @@ def mkTest(memimg_name=None):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    #simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

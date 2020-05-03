@@ -46,7 +46,7 @@ def mkLed():
     #b = a0 + a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8
     b = strm.AddN(a0, a1, a2, a3, a4, a5, a6, a7, a8)
 
-    strm.sink(b, 'b', when=counter > img_width + img_width + 2)
+    strm.sink(b, 'b', when=counter >= img_width + img_width + 2)
 
     def comp_stream(size, offset):
         strm.set_source('a', ram_a, offset, size * 3)

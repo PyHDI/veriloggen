@@ -33,6 +33,7 @@ class ComponentGen(object):
         self.bus_interfaces = None
         self.clk_ports = None
         self.rst_ports = None
+        self.irq_ports = None
         self.ext_ports = None
         self.ext_params = None
 
@@ -46,7 +47,7 @@ class ComponentGen(object):
         self.dependency_consumer = set()
 
     def generate(self, m, ip_name, bus_interfaces,
-                 clk_ports, rst_ports,
+                 clk_ports, rst_ports, irq_ports,
                  ext_ports, ext_params,
                  vendor='user.org', library='user', version='1.0',
                  description='user description',
@@ -57,6 +58,7 @@ class ComponentGen(object):
         self.bus_interfaces = bus_interfaces
         self.clk_ports = clk_ports
         self.rst_ports = rst_ports
+        self.irq_ports = irq_ports
         self.ext_ports = ext_ports
         self.ext_params = ext_params
 
@@ -150,6 +152,9 @@ class ComponentGen(object):
 
         for clk_name, assoc_rsts in self.clk_ports.items():
             bus.appendChild(self.mkBusInterfaceClock(clk_name, assoc_rsts))
+
+        for irq_name, sensitivity in self.irq_ports.items():
+            bus.appendChild(self.mkBusInterfaceInterrupt(irq_name, sensitivity))
 
         return bus
 
@@ -404,6 +409,67 @@ class ComponentGen(object):
         self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE."
                           + name + ".POLARITY")
         self.setText(value, polarity)
+        parameter.appendChild(value)
+        return parameter
+
+    def mkBusInterfaceInterrupt(self, name, sensitivity):
+        interface = self.doc.createElement('spirit:busInterface')
+        interface.appendChild(self.mkName(name))
+        interface.appendChild(self.mkBusTypeInterrupt())
+        interface.appendChild(self.mkAbstractionTypeInterrupt())
+        interface.appendChild(self.mkMasterInterrupt())
+        interface.appendChild(self.mkPortMapsInterrupt(name))
+        interface.appendChild(self.mkBusParametersInterrupt(name, sensitivity))
+        return interface
+
+    def mkBusTypeInterrupt(self):
+        bustype = self.doc.createElement('spirit:busType')
+        self.setAttribute(bustype, 'spirit:vendor', "xilinx.com")
+        self.setAttribute(bustype, 'spirit:library', "signal")
+        self.setAttribute(bustype, 'spirit:name', "interrupt")
+        self.setAttribute(bustype, 'spirit:version', "1.0")
+        return bustype
+
+    def mkAbstractionTypeInterrupt(self):
+        abstractiontype = self.doc.createElement('spirit:abstractionType')
+        self.setAttribute(abstractiontype, 'spirit:vendor', "xilinx.com")
+        self.setAttribute(abstractiontype, 'spirit:library', "signal")
+        self.setAttribute(abstractiontype, 'spirit:name', "interrupt_rtl")
+        self.setAttribute(abstractiontype, 'spirit:version', "1.0")
+        return abstractiontype
+
+    def mkMasterInterrupt(self):
+        master = self.doc.createElement('spirit:master')
+        return master
+
+    def mkPortMapsInterrupt(self, name):
+        portmaps = self.doc.createElement('spirit:portMaps')
+        portmaps.appendChild(self.mkPortMapInterrupt(name))
+        return portmaps
+
+    def mkPortMapInterrupt(self, name):
+        portmap = self.doc.createElement('spirit:portMap')
+        portmap.appendChild(self.mkLogicalPort('INTERRUPT'))
+        portmap.appendChild(self.mkPhysicalPortInterrupt(name))
+        return portmap
+
+    def mkPhysicalPortInterrupt(self, name):
+        physicalport = self.doc.createElement('spirit:physicalPort')
+        physicalport.appendChild(self.mkName(name))
+        return physicalport
+
+    def mkBusParametersInterrupt(self, name, sensitivity):
+        parameters = self.doc.createElement('spirit:parameters')
+        parameters.appendChild(self.mkBusParameterSensitivity(name, sensitivity))
+        return parameters
+
+    def mkBusParameterSensitivity(self, name, sensitivity):
+        parameter = self.doc.createElement('spirit:parameter')
+        parameter.appendChild(self.mkName('SENSITIVITY'))
+        value = self.doc.createElement('spirit:value')
+        self.setAttribute(value, 'spirit:id', "BUSIFPARAM_VALUE."
+                          + name.upper() + ".SENSITIVITY")
+        self.setText(value, sensitivity)
         parameter.appendChild(value)
         return parameter
 

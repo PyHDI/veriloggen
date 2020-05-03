@@ -147,8 +147,8 @@ module main
   reg signed [32-1:0] __delay_data_31;
   reg signed [32-1:0] _plus_data_25;
   reg signed [32-1:0] __delay_data_32;
-  reg signed [32-1:0] _sra_data_26;
-  reg signed [32-1:0] __delay_data_33;
+  wire signed [32-1:0] _sra_data_26;
+  assign _sra_data_26 = _plus_data_25 >>> 3'sd3;
   reg signed [32-1:0] _plus_data_28;
   assign zdata = _plus_data_28;
 
@@ -173,8 +173,6 @@ module main
       __delay_data_31 <= 0;
       _plus_data_25 <= 0;
       __delay_data_32 <= 0;
-      _sra_data_26 <= 0;
-      __delay_data_33 <= 0;
       _plus_data_28 <= 0;
     end else begin
       _plus_data_2 <= xdata + 1'sd0;
@@ -196,9 +194,7 @@ module main
       __delay_data_31 <= __delay_data_30;
       _plus_data_25 <= _plus_data_21 + _plus_data_24;
       __delay_data_32 <= __delay_data_31;
-      _sra_data_26 <= _plus_data_25 >>> 3'sd3;
-      __delay_data_33 <= __delay_data_32;
-      _plus_data_28 <= _sra_data_26 + __delay_data_33;
+      _plus_data_28 <= _sra_data_26 + __delay_data_32;
     end
   end
 
