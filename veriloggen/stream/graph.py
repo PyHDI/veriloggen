@@ -269,6 +269,136 @@ class GraphGenerator(_Visitor):
         self._add_output(node, prev)
         return prev
 
+    def visit__Sync(self, node):
+        label = self._get_label(node)
+        shape = self._get_shape(node)
+        color = self._get_color(node)
+        style = self._get_style(node)
+        peripheries = self._get_peripheries(node)
+        self.graph.add_node(node,
+                            label=label, shape=shape,
+                            color=color, style=style,
+                            peripheries=peripheries)
+
+        for i, arg in enumerate(node.args):
+            if i != node.index:
+                continue
+            a = self.visit(arg)
+            self.graph.add_edge(a, node, label='a%d' % i)
+
+        if node.start_stage is not None:
+            self._set_rank(node.start_stage + 1, node)
+
+        prev = self._add_gap(node, label)
+        self._add_output(node, prev)
+        return prev
+
+    def visit_ForwardDest(self, node):
+        label = self._get_label(node)
+        shape = self._get_shape(node)
+        color = self._get_color(node)
+        style = self._get_style(node)
+        peripheries = self._get_peripheries(node)
+        self.graph.add_node(node,
+                            label=label, shape=shape,
+                            color=color, style=style,
+                            peripheries=peripheries)
+
+        value = self.visit(node.args[0])
+        self.graph.add_edge(value, node, label='value')
+        index = self.visit(node.args[1])
+        self.graph.add_edge(index, node, label='index')
+
+        if node.start_stage is not None:
+            self._set_rank(node.start_stage + 1, node)
+
+        prev = self._add_gap(node, label)
+        self._add_output(node, prev)
+        return prev
+
+    def visit_ForwardSource(self, node):
+        label = self._get_label(node)
+        shape = self._get_shape(node)
+        color = self._get_color(node)
+        style = self._get_style(node)
+        peripheries = self._get_peripheries(node)
+        self.graph.add_node(node,
+                            label=label, shape=shape,
+                            color=color, style=style,
+                            peripheries=peripheries)
+
+        value = self.visit(node.args[0])
+        self.graph.add_edge(value, node, label='value')
+        index = self.visit(node.args[1])
+        self.graph.add_edge(index, node, label='index')
+        reset = self.visit(node.args[2])
+        self.graph.add_edge(reset, node, label='reset')
+        dest = self.visit(node.dest)
+        self.graph.add_edge(node, dest, label='dest')
+
+        if node.start_stage is not None:
+            self._set_rank(node.start_stage + 1, node)
+
+        prev = self._add_gap(node, label)
+        self._add_output(node, prev)
+        return prev
+
+    def visit_ReadRAM(self, node):
+        label = self._get_label(node)
+        shape = self._get_shape(node)
+        color = self._get_color(node)
+        style = self._get_style(node)
+        peripheries = self._get_peripheries(node)
+        self.graph.add_node(node,
+                            label=label, shape=shape,
+                            color=color, style=style,
+                            peripheries=peripheries)
+
+        addr = self.visit(node.args[0])
+        self.graph.add_edge(addr, node, label='addr')
+        reset = self.visit(node.args[1])
+        self.graph.add_edge(reset, node, label='reset')
+
+        if len(node.args) == 3:
+            when = self.visit(node.args[2])
+            self.graph.add_edge(when, node, label='when')
+
+        if node.start_stage is not None:
+            self._set_rank(node.start_stage + 1, node)
+
+        prev = self._add_gap(node, label)
+        self._add_output(node, prev)
+        return prev
+
+    def visit_WriteRAM(self, node):
+        label = self._get_label(node)
+        shape = self._get_shape(node)
+        color = self._get_color(node)
+        style = self._get_style(node)
+        peripheries = self._get_peripheries(node)
+        self.graph.add_node(node,
+                            label=label, shape=shape,
+                            color=color, style=style,
+                            peripheries=peripheries)
+
+        addr = self.visit(node.args[0])
+        self.graph.add_edge(addr, node, label='addr')
+        data = self.visit(node.args[1])
+        self.graph.add_edge(data, node, label='data')
+        reset = self.visit(node.args[2])
+        self.graph.add_edge(reset, node, label='reset')
+
+        if len(node.args) == 4:
+            when = self.visit(node.args[3])
+            self.graph.add_edge(when, node, label='when')
+
+        if node.start_stage is not None:
+            self._set_rank(node.start_stage + 1, node)
+
+        prev = self._add_gap(node, label)
+        self._add_output(node, prev)
+        return prev
+
     def visit_RingBuffer(self, node):
         label = self._get_label(node)
         shape = self._get_shape(node)
