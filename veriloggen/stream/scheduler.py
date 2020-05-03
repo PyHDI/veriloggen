@@ -152,6 +152,21 @@ class ASAPScheduler(_Scheduler):
     def visit_Substream(self, node):
         return self.visit__SpecialOperator(node)
 
+    def visit__Sync(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_ForwardDest(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_ForwardSource(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_ReadRAM(self, node):
+        return self.visit__SpecialOperator(node)
+
+    def visit_WriteRAM(self, node):
+        return self.visit__SpecialOperator(node)
+
     def visit_RingBuffer(self, node):
         if node._has_start_stage():
             return node._get_end_stage()
