@@ -190,3 +190,14 @@ class Submodule(vtypes.VeriloggenNode):
             return self.all_ports[key]
 
         raise KeyError("'%s' submodule has no item '%s'" % (self.name, key))
+
+    def __getattr__(self, attr):
+        try:
+            return vtypes.VeriloggenNode.__getattr__(self, attr)
+
+        except AttributeError as e:
+
+            if attr not in self.all_params and attr not in self.all_ports:
+                raise e
+
+            return self.__getitem__(attr)
