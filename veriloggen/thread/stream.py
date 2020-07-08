@@ -40,9 +40,12 @@ def TmpStream(m, clk, rst,
 class Stream(BaseStream):
     __intrinsics__ = ('set_source', 'set_source_pattern', 'set_source_multidim',
                       'set_source_multipattern', 'set_source_empty',
+                      'set_source_fifo',
                       'set_sink', 'set_sink_pattern', 'set_sink_multidim',
                       'set_sink_multipattern', 'set_sink_immediate',
-                      'set_sink_empty', 'set_constant',
+                      'set_sink_fifo',
+                      'set_sink_empty',
+                      'set_constant',
                       'set_read_RAM', 'set_write_RAM', 'set_read_modify_write_RAM',
                       'read_sink',
                       'run', 'join', 'done',
@@ -678,6 +681,10 @@ class Stream(BaseStream):
 
         fsm.goto_next()
 
+    def set_source_fifo(self, fsm, name, fifo, size):
+        """ intrinsic method to assign FIFO property to a source stream """
+        raise NotImplementedError()
+
     def set_source_empty(self, fsm, name, value=0):
 
         if not self.stream_synthesized:
@@ -976,6 +983,10 @@ class Stream(BaseStream):
         self._synthesize_set_sink(var, name)
 
         fsm.goto_next()
+
+    def set_sink_fifo(self, fsm, name, fifo, size):
+        """ intrinsic method to assign FIFO property to a sink stream """
+        raise NotImplementedError()
 
     def set_sink_empty(self, fsm, name):
         """ intrinsic method to assign RAM property to a sink stream """

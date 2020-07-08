@@ -20,15 +20,18 @@ def mkLed():
     datawidth = 32
     addrwidth = 10
 
-    axi_a = vthread.AXIStreamIn(m, 'axi_a', clk, rst, datawidth, with_last=True)
-    axi_b = vthread.AXIStreamIn(m, 'axi_b', clk, rst, datawidth, with_last=True)
-    axi_c = vthread.AXIStreamOut(m, 'axi_c', clk, rst, datawidth, with_last=True)
+    axi_a = vthread.AXIStreamIn(m, 'axi_a', clk, rst, datawidth, with_last=True,
+                                enable_async=True)
+    axi_b = vthread.AXIStreamIn(m, 'axi_b', clk, rst, datawidth, with_last=True,
+                                enable_async=True)
+    axi_c = vthread.AXIStreamOut(m, 'axi_c', clk, rst, datawidth, with_last=True,
+                                 enable_async=True)
 
     saxi = vthread.AXISLiteRegister(m, 'saxi', clk, rst, datawidth)
 
-    ram_a = vthread.RAM(m, 'ram_a', clk, rst, datawidth, addrwidth, numports=2)
-    ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth, numports=2)
-    ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth, numports=2)
+    fifo_a = vthread.FIFO(m, 'fifo_a', clk, rst, datawidth, addrwidth)
+    fifo_b = vthread.FIFO(m, 'fifo_b', clk, rst, datawidth, addrwidth)
+    fifo_c = vthread.FIFO(m, 'fifo_c', clk, rst, datawidth, addrwidth)
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
     a = strm.source('a')
@@ -36,10 +39,10 @@ def mkLed():
     c = a + b
     strm.sink(c, 'c')
 
-    def comp_stream(size, offset):
-        strm.set_source('a', ram_a, offset, size)
-        strm.set_source('b', ram_b, offset, size)
-        strm.set_sink('c', ram_c, offset, size)
+    def comp_stream(size):
+        strm.set_source_fifo('a', fifo_a, size)
+        strm.set_source_fifo('b', fifo_b, size)
+        strm.set_sink_fifo('c', fifo_c, size)
         strm.run()
         strm.join()
 
@@ -50,10 +53,12 @@ def mkLed():
             size = saxi.read(2)
             offset = 0
 
-            axi_a.write_ram(ram_a, offset, size, port=1)  # blocking read
-            axi_b.write_ram(ram_b, offset, size, port=1)  # blocking read
-            comp_stream(size, offset)
-            axi_c.read_ram(ram_c, offset, size, port=1)  # blocking write
+            axi_a.write_fifo(fifo_a, size)  # non-blocking
+            axi_b.write_fifo(fifo_b, size)  # non-blocking
+            comp_stream(size)
+            axi_c.read_fifo(fifo_c, size)  # non-blocking
+
+            axi_c.wait_read_fifo()  # wait
 
             saxi.write(1, 0)  # unset busy
 

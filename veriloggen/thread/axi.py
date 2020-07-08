@@ -1996,8 +1996,9 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
     """ AXI Stream Interface for Input """
 
     __intrinsics__ = ('read',
-                      'read_stream', 'read_stream_async',
-                      'wait_read_stream')
+                      'write_ram', 'write_ram_async',
+                      'write_fifo',
+                      'wait_write_ram', 'wait_write_fifo')
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
                  with_last=False,
@@ -2081,35 +2082,49 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
 
         return rdata, rlast
 
-    def read_stream(self, fsm, ram, local_addr, size,
-                    local_stride=1, port=0, ram_method=None):
+    def write_ram(self, fsm, ram, local_addr, size,
+                  local_stride=1, port=0, ram_method=None):
 
         if self.enable_async:
-            self.wait_read_stream(fsm)
+            self.wait_write_ram(fsm)
 
-        self._read_stream(fsm, ram, local_addr, size,
-                          local_stride, port, ram_method)
+        self._write_ram(fsm, ram, local_addr, size,
+                        local_stride, port, ram_method)
 
-        self.wait_read_stream(fsm)
+        self.wait_write_ram(fsm)
 
-    def read_stream_async(self, fsm, ram, local_addr, size,
-                          local_stride=1, port=0, ram_method=None):
+    def write_ram_async(self, fsm, ram, local_addr, size,
+                        local_stride=1, port=0, ram_method=None):
 
         if not self.enable_async:
             raise ValueError(
                 "Async mode is disabled. Set 'True' to AXIM.enable_async.")
 
-        self.wait_read_stream(fsm)
+        self.wait_write_ram(fsm)
 
-        self._read_stream(fsm, ram, local_addr, size,
-                          local_stride, port, ram_method)
+        self._write_ram(fsm, ram, local_addr, size,
+                        local_stride, port, ram_method)
 
-    def wait_read_stream(self, fsm):
+    def write_fifo(self, fsm, fifo, size):
+
+        if not self.enable_async:
+            raise ValueError(
+                "Async mode is disabled. Set 'True' to AXIM.enable_async.")
+
+        self.wait_write_fifo(fsm)
+
+        self._write_fifo(fsm, fifo, size)
+
+    def wait_write_ram(self, fsm):
 
         fsm.If(self.read_idle).goto_next()
 
-    def _read_stream(self, fsm, ram, local_addr, size,
-                     local_stride=1, port=0, ram_method=None):
+    def wait_write_fifo(self, fsm):
+
+        fsm.If(self.read_idle).goto_next()
+
+    def _write_ram(self, fsm, ram, local_addr, size,
+                   local_stride=1, port=0, ram_method=None):
 
         if isinstance(ram, (tuple, list)):
             ram = to_multibank_ram(ram)
@@ -2374,10 +2389,20 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
             fsm.Delay(1)(
                 wvalid(0)
             )
+            fsm.If(rest_size == 0, pack_count > 0)(
+                wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
+                wvalid(0),
+                pack_count.inc()
+            )
             fsm.If(valid_cond)(
                 wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
                 wvalid(0),
                 pack_count.inc()
+            )
+            fsm.If(rest_size == 0, pack_count == pack_size - 1)(
+                wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
+                wvalid(1),
+                pack_count(0)
             )
             fsm.If(valid_cond, pack_count == pack_size - 1)(
                 wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
@@ -2432,10 +2457,20 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
         fsm.Delay(1)(
             wvalid(0)
         )
+        fsm.If(rest_size == 0, pack_count > 0)(
+            wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
+            wvalid(0),
+            pack_count.inc()
+        )
         fsm.If(valid_cond)(
             wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
             wvalid(0),
             pack_count.inc()
+        )
+        fsm.If(rest_size == 0, pack_count == pack_size - 1)(
+            wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
+            wvalid(1),
+            pack_count(0)
         )
         fsm.If(valid_cond, pack_count == pack_size - 1)(
             wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
@@ -2446,7 +2481,7 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
             rest_size.dec()
         )
 
-        fsm.If(valid, rest_size <= 1).goto_next()
+        fsm.If(wvalid, rest_size == 0).goto_next()
 
         for _ in range(self.num_data_delay):
             fsm.goto_next()
@@ -2634,6 +2669,20 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
 
         return op_id
 
+    def _get_read_op_id_fifo(self, fifo):
+
+        fifo_id = fifo._id()
+        op = fifo_id
+
+        if op in self.read_op_id_map:
+            op_id = self.read_op_id_map[op]
+        else:
+            op_id = self.read_op_id_count
+            self.read_op_id_count += 1
+            self.read_op_id_map[op] = op_id
+
+        return op_id
+
     def _get_op_write_dataflow(self, ram_datawidth):
         if self.datawidth == ram_datawidth:
             wdata = self.m.TmpReg(ram_datawidth, initval=0, prefix='_wdata')
@@ -2669,13 +2718,493 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
 
         return (wdata, wvalid, w)
 
+    def _write_fifo(self, fsm, fifo, size):
+
+        if not isinstance(fifo, FIFO):
+            raise TypeError('FIFO object is required.')
+
+        start = self._set_flag(fsm)
+
+        for _ in range(self.num_cmd_delay + 1):
+            fsm.goto_next()
+
+        self._set_read_request_fifo(fifo, start, size)
+
+        self._synthesize_read_fsm_fifo(fifo)
+
+    def _set_read_request_fifo(self, fifo, start):
+
+        op_id = self._get_read_op_id_fifo(fifo)
+
+        if op_id in self.read_ops:
+            (read_start, read_op_sel, read_size_in) = self.read_ops[op_id]
+
+            self.seq.If(start)(
+                read_start(1),
+                read_op_sel(op_id)
+            )
+
+            return
+
+        read_start = self.m.Reg(
+            '_'.join(['', self.name, ram.name, port, 'read_start']),
+            initval=0)
+        read_op_sel = self.m.Reg(
+            '_'.join(['', self.name, ram.name, port, 'read_op_sel']),
+            self.op_sel_width, initval=0)
+        read_size = self.m.Reg(
+            '_'.join(['', self.name, ram.name, port, 'read_size']),
+            self.addrwidth + 1, initval=0)
+
+        self.seq(
+            read_start(0)
+        )
+        self.seq.If(start)(
+            read_start(1),
+            read_op_sel(op_id),
+            read_size(size),
+        )
+
+        self.read_reqs[op_id] = (read_start, read_op_sel, read_size)
+
+        if self.num_cmd_delay > 0:
+            read_start = self.seq.Prev(read_start, self.num_cmd_delay)
+            read_op_sel = self.seq.Prev(read_op_sel, self.num_cmd_delay)
+            read_size = self.seq.Prev(read_size, self.num_cmd_delay)
+
+        self.seq.If(read_start)(
+            self.read_idle(0)
+        )
+
+        self.seq.If(read_start)(
+            self.read_start(1),
+            self.read_op_sel(read_op_sel),
+            self.read_size(read_size),
+        )
+
+    def _synthesize_read_fsm_fifo(self, fifo):
+
+        fifo_datawidth = fifo.datawidth
+
+        if not isinstance(fifo_datawidth, int):
+            raise TypeError("fifo_datawidth must be int, not '%s'" %
+                            str(type(fifo_datawidth)))
+
+        if self.datawidth == fifo_datawidth:
+            return self._synthesize_read_fsm_fifo_same(fifo, fifo_datawidth)
+
+        if self.datawidth < fifo_datawidth:
+            return self._synthesize_read_fsm_fifo_narrow(fifo, fifo_datawidth)
+
+        return self._synthesize_read_fsm_fifo_wide(fifo, fifo_datawidth)
+
+    def _synthesize_read_fsm_fifo_same(self, fifo, fifo_datawidth):
+
+        op_id = self._get_read_op_id_fifo(fifo)
+
+        if op_id in self.read_ops:
+            """ already synthesized op """
+            return
+
+        if self.read_fsm is not None:
+            """ new op """
+            self.read_ops.append(op_id)
+
+            fsm = self.read_fsm
+            data = self.read_data_wire
+            valid = self.read_valid_wire
+            rest_size = self.read_rest_size
+
+            # state 0
+            fsm.set_index(0)
+            cond = vtypes.Ands(self.read_start, self.read_op_sel == op_id)
+
+            fsm.If(cond).goto_next()
+
+            # state 1
+            fsm.set_index(1)
+            valid_cond = vtypes.Ands(valid, self.read_op_sel == op_id)
+
+            ack, _ = fifo.enq_rtl(data, cond=valid_cond)
+
+            fsm.If(valid_cond)(
+                rest_size.dec()
+            )
+
+            return
+
+        """ new op and fsm """
+        fsm = FSM(self.m, '_'.join(['', self.name, 'read_fsm']),
+                  self.clk, self.rst, as_module=self.fsm_as_module)
+        self.read_fsm = fsm
+
+        self.read_ops.append(op_id)
+
+        rest_size = self.m.Reg('_'.join(['', self.name, 'read_rest_size']),
+                               self.addrwidth + 1, initval=0)
+        self.read_rest_size = rest_size
+
+        # state 0
+        cond = vtypes.Ands(self.read_start, self.read_op_sel == op_id)
+
+        fsm.If(self.read_start)(
+            rest_size(self.read_size)
+        )
+        fsm.If(cond).goto_next()
+
+        # state 1
+        ready = vtypes.Not(fifo.almost_full)
+        read_cond = vtypes.Ands(fsm.here, ready)
+
+        data, last, _id, user, dest, valid = self.read_data(cond=read_cond)
+        self.read_data_wire = data
+        self.read_valid_wire = valid
+
+        valid_cond = vtypes.Ands(valid, self.read_op_sel == op_id)
+
+        ack, _ = fifo.enq_rtl(data, cond=valid_cond)
+
+        fsm.If(valid_cond)(
+            rest_size.dec()
+        )
+
+        fsm.If(valid, rest_size <= 1).goto_next()
+
+        for _ in range(self.num_data_delay):
+            fsm.goto_next()
+
+        # state 2
+        set_idle = self._set_flag(fsm)
+        self.seq.If(set_idle)(
+            self.read_idle(1)
+        )
+
+        fsm.goto_init()
+
+    def _synthesize_read_fsm_fifo_narrow(self, fifo, fifo_datawidth):
+        """ axi.datawidth < fifo.datawidth """
+
+        if fifo_datawidth % self.datawidth != 0:
+            raise ValueError(
+                'fifo_datawidth must be multiple number of axi.datawidth')
+
+        pack_size = fifo_datawidth // self.datawidth
+        dma_size = (self.read_size << int(math.log(pack_size, 2))
+                    if math.log(pack_size, 2) % 1.0 == 0.0 else
+                    self.read_size * pack_size)
+
+        op_id = self._get_read_op_id_fifo(fifo)
+
+        if op_id in self.read_ops:
+            """ already synthesized op """
+            return
+
+        if pack_size in self.read_narrow_fsms:
+            """ new op """
+            self.read_ops.append(op_id)
+
+            fsm = self.read_narrow_fsms[pack_size]
+            pack_count = self.read_narrow_pack_counts[pack_size]
+            data = self.read_narrow_data_wires[pack_size]
+            valid = self.read_narrow_valid_wires[pack_size]
+            rest_size = self.read_narrow_rest_size_wires[pack_size]
+
+            # state 0
+            fsm.set_index(0)
+            cond = vtypes.Ands(self.read_start, self.read_op_sel == op_id)
+
+            fsm.If(cond).goto_next()
+
+            # state 1
+            fsm.set_index(1)
+
+            wdata = self.m.Reg('_'.join(['', self.name,
+                                         'read_narrow', str(pack_size),
+                                         'wdata']),
+                               fifo_datawidth, initval=0)
+            wvalid = self.m.Reg('_'.join(['', self.name,
+                                          'read_narrow', str(pack_size),
+                                          'wvalid']))
+
+            valid_cond = vtypes.Ands(valid, self.read_op_sel == op_id)
+            ack, _ = fifo.enq_rtl(data, cond=valid_cond)
+
+            fsm.Delay(1)(
+                wvalid(0)
+            )
+            fsm.If(rest_size == 0, pack_count > 0)(
+                wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
+                wvalid(0),
+                pack_count.inc()
+            )
+            fsm.If(valid_cond)(
+                wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
+                wvalid(0),
+                pack_count.inc()
+            )
+            fsm.If(rest_size == 0, pack_count == pack_size - 1)(
+                wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
+                wvalid(1),
+                pack_count(0)
+            )
+            fsm.If(valid_cond, pack_count == pack_size - 1)(
+                wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
+                wvalid(1),
+                pack_count(0)
+            )
+            fsm.If(valid_cond)(
+                rest_size.dec()
+            )
+
+            return
+
+        """ new op and fsm """
+        fsm = FSM(self.m, '_'.join(['', self.name,
+                                    'read_narrow', str(pack_size),
+                                    'fsm']),
+                  self.clk, self.rst, as_module=self.fsm_as_module)
+        self.read_narrow_fsms[pack_size] = fsm
+
+        self.read_ops.append(op_id)
+
+        rest_size = self.m.Reg('_'.join(['', self.name,
+                                         'read_narrow', str(pack_size),
+                                         'rest_size']),
+                               self.addrwidth + 1, initval=0)
+        self.read_narrow_rest_size_wires[pack_size] = rest_size
+
+        # state 0
+        cond = vtypes.Ands(self.read_start, self.read_op_sel == op_id)
+
+        fsm.If(self.read_start)(
+            rest_size(dma_size)
+        )
+        fsm.If(cond).goto_next()
+
+        # state 1
+        pack_count = self.m.Reg('_'.join(['', self.name,
+                                          'read_narrow', str(pack_size),
+                                          'pack_count']),
+                                int(math.ceil(math.log(pack_size, 2))), initval=0)
+        self.read_narrow_pack_counts[pack_size] = pack_count
+
+        ready = vtypes.Not(fifo.almost_full)
+        read_cond = vtypes.Ands(fsm.here, ready)
+
+        data, last, _id, user, dest, valid = self.read_data(cond=read_cond)
+        self.read_narrow_data_wires[pack_size] = data
+        self.read_narrow_valid_wires[pack_size] = valid
+
+        wdata = self.m.Reg('_'.join(['', self.name,
+                                     'read_narrow', str(pack_size),
+                                     'wdata']),
+                           fifo_datawidth, initval=0)
+        wvalid = self.m.Reg('_'.join(['', self.name,
+                                      'read_narrow', str(pack_size),
+                                      'wvalid']))
+
+        valid_cond = vtypes.Ands(valid, self.read_op_sel == op_id)
+        ack, _ = fifo.enq_rtl(data, cond=wvalid)
+
+        fsm.Delay(1)(
+            wvalid(0)
+        )
+        fsm.If(rest_size == 0, pack_count > 0)(
+            wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
+            wvalid(0),
+            pack_count.inc()
+        )
+        fsm.If(valid_cond)(
+            wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
+            wvalid(0),
+            pack_count.inc()
+        )
+        fsm.If(rest_size == 0, pack_count == pack_size - 1)(
+            wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
+            wvalid(1),
+            pack_count(0)
+        )
+        fsm.If(valid_cond, pack_count == pack_size - 1)(
+            wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
+            wvalid(1),
+            pack_count(0)
+        )
+        fsm.If(valid_cond)(
+            rest_size.dec()
+        )
+
+        fsm.If(wvalid, rest_size == 0).goto_next()
+
+        for _ in range(self.num_data_delay):
+            fsm.goto_next()
+
+        # state 2
+        set_idle = self._set_flag(fsm)
+        self.seq.If(set_idle)(
+            self.read_idle(1)
+        )
+
+        fsm.goto_init()
+
+    def _synthesize_read_fsm_fifo_wide(self, fifo, fifo_datawidth):
+        """ axi.datawidth > ram.datawidth """
+
+        if self.datawidth % fifo_datawidth != 0:
+            raise ValueError(
+                'axi.datawidth must be multiple number of fifo_datawidth')
+
+        pack_size = self.datawidth // fifo_datawidth
+        shamt = int(math.log(pack_size, 2))
+        res = vtypes.Mux(
+            vtypes.And(self.read_size, 2 ** shamt - 1) > 0, 1, 0)
+        dma_size = (self.read_size >> shamt) + res
+
+        actual_read_size = dma_size << shamt
+
+        op_id = self._get_read_op_id_fifo(fifo)
+
+        if op_id in self.read_ops:
+            """ already synthesized op """
+            return
+
+        if pack_size in self.read_wide_fsms:
+            """ new op """
+            self.read_ops.append(op_id)
+
+            fsm = self.read_wide_fsms[pack_size]
+            pack_count = self.read_wide_pack_counts[pack_size]
+            data = self.read_wide_data_wires[pack_size]
+            valid = self.read_wide_valid_wires[pack_size]
+            rest_size = self.read_wide_rest_size_wires[pack_size]
+
+            # state 0
+            fsm.set_index(0)
+            cond = vtypes.Ands(self.read_start, self.read_op_sel == op_id)
+            fsm.If(cond).goto_next()
+
+            # state 1
+            fsm.set_index(1)
+            valid_cond = vtypes.Ands(valid, self.read_op_sel == op_id)
+            stay_cond = self.read_op_sel == op_id
+
+            fsm.Delay(1)(
+                wvalid(0)
+            )
+            fsm.If(pack_count == 0, valid_cond)(
+                wdata(data),
+                wvalid(1),
+                pack_count.inc()
+            )
+            fsm.If(pack_count > 0, stay_cond)(
+                wdata(wdata >> ram_datawidth),
+                wvalid(1),
+                pack_count.inc()
+            )
+            fsm.If(valid_cond)(
+                rest_size.dec()
+            )
+
+            return
+
+        """ new op and fsm """
+        fsm = FSM(self.m, '_'.join(['', self.name,
+                                    'read_wide', str(pack_size),
+                                    'fsm']),
+                  self.clk, self.rst, as_module=self.fsm_as_module)
+        self.read_wide_fsms[pack_size] = fsm
+
+        self.read_ops.append(op_id)
+
+        rest_size = self.m.Reg('_'.join(['', self.name,
+                                         'read_wide', str(pack_size),
+                                         'rest_size']),
+                               self.addrwidth + 1, initval=0)
+        self.read_wide_rest_size_wires[pack_size] = rest_size
+
+        # state 0
+        cond = vtypes.Ands(self.read_start, self.read_op_sel == op_id)
+
+        fsm.If(self.read_start)(
+            rest_size(dma_size)
+        )
+        fsm.If(cond).goto_next()
+
+        # state 1
+        pack_count = self.m.Reg('_'.join(['', self.name,
+                                          'read_wide', str(pack_size),
+                                          'pack_count']),
+                                int(math.ceil(math.log(pack_size, 2))), initval=0)
+        self.read_wide_pack_counts[pack_size] = pack_count
+
+        ready = vtypes.Not(fifo.almost_full)
+        read_cond = vtypes.Ands(fsm.here, ready)
+
+        cond = vtypes.Ands(fsm.here, pack_count == 0, read_cond)
+        data, last, _id, user, dest, valid = self.read_data(cond=cond)
+        self.read_wide_data_wires[pack_size] = data
+        self.read_wide_valid_wires[pack_size] = valid
+
+        wdata = self.m.Reg('_'.join(['', self.name,
+                                     'read_wide', str(pack_size),
+                                     'wdata']),
+                           self.datawidth, initval=0)
+        wvalid = self.m.Reg('_'.join(['', self.name,
+                                      'read_wide', str(pack_size),
+                                      'wvalid']))
+
+        valid_cond = vtypes.Ands(valid, self.read_op_sel == op_id)
+        stay_cond = self.read_op_sel == op_id
+
+        ack, _ = fifo.enq_rtl(wdata, cond=wvalid)
+
+        wlast = self.m.Reg('_'.join(['', self.name,
+                                     'read_wide', str(pack_size),
+                                     'wlast']),
+                           initval=0)
+
+        fsm.Delay(1)(
+            wvalid(0)
+        )
+        fsm.If(pack_count == 0, valid_cond)(
+            wdata(data),
+            wvalid(1),
+            wlast(last),
+            pack_count.inc()
+        )
+        fsm.If(pack_count > 0, stay_cond)(
+            wdata(wdata >> ram_datawidth),
+            wvalid(1),
+            pack_count.inc()
+        )
+        fsm.If(pack_count == pack_size - 1)(
+            pack_count(0)
+        )
+
+        fsm.If(pack_count == 0, valid_cond)(
+            rest_size.dec()
+        )
+
+        fsm.If(pack_count == pack_size - 1, rest_size == 0).goto_next()
+
+        for _ in range(self.num_data_delay):
+            fsm.goto_next()
+
+        # state 2
+        set_idle = self._set_flag(fsm)
+        self.seq.If(set_idle)(
+            self.read_idle(1)
+        )
+
+        fsm.goto_init()
+
 
 class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
     """ AXI Stream Interface for Output """
 
     __intrinsics__ = ('write',
-                      'write_stream', 'write_stream_async',
-                      'wait_write_stream')
+                      'read_ram', 'read_ram_async',
+                      'read_fifo',
+                      'wait_read_ram', 'wait_read_fifo')
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
                  with_last=False,
@@ -2745,35 +3274,41 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
         ack = self.write_data(value, last, cond=fsm)
         fsm.If(ack).goto_next()
 
-    def write_stream(self, fsm, ram, local_addr, size,
-                     local_stride=1, port=0, ram_method=None):
+    def read_ram(self, fsm, ram, local_addr, size,
+                 local_stride=1, port=0, ram_method=None):
 
         if self.enable_async:
-            self.wait_write_stream(fsm)
+            self.wait_read_ram(fsm)
 
-        self._write_stream(fsm, ram, local_addr, size,
-                           local_stride, port, ram_method)
+        self._read_ram(fsm, ram, local_addr, size,
+                       local_stride, port, ram_method)
 
-        self.wait_write_stream(fsm)
+        self.wait_read_ram(fsm)
 
-    def write_stream_async(self, fsm, ram, local_addr, size,
-                           local_stride=1, port=0, ram_method=None):
+    def read_ram_async(self, fsm, ram, local_addr, size,
+                       local_stride=1, port=0, ram_method=None):
 
         if not self.enable_async:
             raise ValueError(
                 "Async mode is disabled. Set 'True' to AXIM.enable_async.")
 
-        self.wait_write_stream(fsm)
+        self.wait_read_ram(fsm)
 
-        self._write_stream(fsm, ram, local_addr, size,
-                           local_stride, port, ram_method)
+        self._read_ram(fsm, ram, local_addr, size,
+                       local_stride, port, ram_method)
 
-    def wait_write_stream(self, fsm):
+    def read_fifo(self, fsm, fifo, size):
+        raise NotImplementedError()
+
+    def wait_read_ram(self, fsm):
 
         fsm.If(self.write_idle).goto_next()
 
-    def _write_stream(self, fsm, ram, local_addr, size,
-                      local_stride=1, port=0, ram_method=None):
+    def wait_read_fifo(self, fsm):
+        raise NotImplementedError()
+
+    def _read_ram(self, fsm, ram, local_addr, size,
+                  local_stride=1, port=0, ram_method=None):
 
         if isinstance(ram, (tuple, list)):
             ram = to_multibank_ram(ram)
@@ -3856,8 +4391,8 @@ class AXIM2(AXIM_for_AXIStreamIn):
             dma_size = (size >> shamt) + res
 
         AXIM_for_AXIStreamIn.dma_read_async(self, fsm, global_addr, dma_size)
-        self.streamin.read_stream(fsm, ram, local_addr, size,
-                                  local_stride, port, ram_method)
+        self.streamin.write_ram(fsm, ram, local_addr, size,
+                                local_stride, port, ram_method)
 
     def dma_read_async(self, fsm, ram, local_addr, global_addr, size,
                        local_stride=1, port=0, ram_method=None):
@@ -3888,8 +4423,8 @@ class AXIM2(AXIM_for_AXIStreamIn):
             dma_size = (size >> shamt) + res
 
         AXIM_for_AXIStreamIn.dma_read_async(self, fsm, global_addr, dma_size)
-        self.streamin.read_stream_async(fsm, ram, local_addr, size,
-                                        local_stride, port, ram_method)
+        self.streamin.write_ram_async(fsm, ram, local_addr, size,
+                                      local_stride, port, ram_method)
 
 
 def add_mux(targ, cond, value):
