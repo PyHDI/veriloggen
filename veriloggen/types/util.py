@@ -49,3 +49,15 @@ def log2(value, maxsize=32):
     for i in range(1, maxsize):
         patterns.append((value < 2 ** i, i))
     return vtypes.PatternMux(patterns)
+
+
+def add_mux(targ, cond, value):
+    prev_assign = targ._get_assign()
+    if not prev_assign:
+        targ.assign(vtypes.Mux(cond, value, 0))
+    else:
+        prev_value = prev_assign.statement.right
+        prev_assign.overwrite_right(
+            vtypes.Mux(cond, value, prev_value))
+        targ.module.remove(prev_assign)
+        targ.module.append(prev_assign)
