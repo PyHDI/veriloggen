@@ -18,12 +18,6 @@ module test;
 
 
   initial begin
-    $dumpfile("uut.vcd");
-    $dumpvars(0, uut, CLK, RST);
-  end
-
-
-  initial begin
     CLK = 0;
     forever begin
       #5 CLK = !CLK;
