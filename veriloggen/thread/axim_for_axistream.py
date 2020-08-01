@@ -1,6 +1,9 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import math
+import functools
+
 import veriloggen.core.vtypes as vtypes
 import veriloggen.types.axi as axi
 from veriloggen.fsm.fsm import FSM
