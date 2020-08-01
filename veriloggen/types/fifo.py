@@ -41,7 +41,7 @@ class FifoWriteInterface(object):
 
 
 class FifoReadInterface(object):
-    _I = 'Reg'
+    _I = 'Wire'
     _O = 'Wire'
 
     def __init__(self, m, name=None, datawidth=32, itype=None, otype=None,
@@ -93,7 +93,7 @@ class FifoReadMasterInterface(FifoReadInterface):
     _O = 'Input'
 
 
-#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 def mkFifoDefinition(name, datawidth=32, addrwidth=4):
     m = module.Module(name)
     clk = m.Input('CLK')

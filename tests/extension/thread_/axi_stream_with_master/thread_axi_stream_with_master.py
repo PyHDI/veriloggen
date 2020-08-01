@@ -20,68 +20,66 @@ def mkLed():
     datawidth = 32
     addrwidth = 10
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
-    ram_a = vthread.RAM(m, 'ram_a', clk, rst, datawidth, addrwidth)
-    ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
-    ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
+    myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth, numports=2)
 
-    axi_a = vthread.AXIStreamIn(m, 'axi_a', clk, rst, datawidth, with_last=True, noio=True)
-    axi_b = vthread.AXIStreamIn(m, 'axi_b', clk, rst, datawidth, with_last=True, noio=True)
-    axi_c = vthread.AXIStreamOut(m, 'axi_c', clk, rst, datawidth, with_last=True, noio=True)
+    axi_in = vthread.AXIStreamIn(m, 'axi_in', clk, rst, datawidth,
+                                 with_last=True, noio=True)
+    axi_out = vthread.AXIStreamOut(m, 'axi_out', clk, rst, datawidth,
+                                   with_last=True, noio=True)
 
-    maxi_a = vthread.AXIM_for_AXIStreamIn(axi_a, 'maxi_a')
-    maxi_b = vthread.AXIM_for_AXIStreamIn(axi_b, 'maxi_b')
-    maxi_c = vthread.AXIM_for_AXIStreamOut(axi_c, 'maxi_c')
+    maxi_in = vthread.AXIM_for_AXIStreamIn(axi_in, 'maxi_in')
+    maxi_out = vthread.AXIM_for_AXIStreamOut(axi_out, 'maxi_out')
 
-    def comp_sequential(size, offset):
-        sum = 0
-        for i in range(size):
-            a = ram_a.read(i + offset)
-            b = ram_b.read(i + offset)
-            sum = a + b + 100
-            ram_c.write(i + offset, sum)
+    all_ok = m.TmpReg(initval=0)
 
-    def check(size, offset_stream, offset_seq):
-        all_ok = True
-        for i in range(size):
-            st = ram_c.read(i + offset_stream)
-            sq = ram_c.read(i + offset_seq)
-            if vthread.verilog.NotEql(st, sq):
-                all_ok = False
+    def blink(size):
+        all_ok.value = True
+
+        for i in range(4):
+            print('# iter %d start' % i)
+            # Test for 4KB boundary check
+            offset = i * 1024 * 16 + (myaxi.boundary_size - 4)
+            body(size, offset)
+            print('# iter %d end' % i)
+
         if all_ok:
             print('# verify: PASSED')
         else:
             print('# verify: FAILED')
 
-    def comp(size):
-        # stream
-        offset = 0
-        maxi_a.dma_read_async(0, size)  # only 1st transaction is non-blocking
-        maxi_b.dma_read_async(512, size)  # only 1st transaction is non-blocking
-        maxi_c.dma_write_async(1024, size)  # only 1st transaction is non-blocking
-
-        for i in range(size):
-            a, a_last = axi_a.read()
-            b, b_last = axi_b.read()
-            c = a + b + 100
-            c_last = a_last
-            axi_c.write(c, c_last)
-
-        # sequential
-        offset = size
-        myaxi.dma_read(ram_a, offset, 0, size)
-        myaxi.dma_read(ram_b, offset, 512, size)
-        comp_sequential(size, offset)
-        myaxi.dma_write(ram_c, offset, 1024 * 2, size)
-
-        # verification
-        myaxi.dma_read(ram_c, 0, 1024, size)
-        myaxi.dma_read(ram_c, offset, 1024 * 2, size)
-        check(size, 0, offset)
-
         vthread.finish()
 
-    th = vthread.Thread(m, 'th_comp', clk, rst, comp)
-    fsm = th.start(32)
+    def body(size, offset):
+        # write a test vector
+        for i in range(size):
+            wdata = i + 100
+            myram.write(i, wdata)
+
+        laddr = 0
+        gaddr = offset
+        myaxi.dma_write(myram, laddr, gaddr, size, port=1)
+
+        # AXI-stream read -> AXI-stream write
+        maxi_in.dma_read_async(gaddr, size)
+        out_gaddr = (size + size) * 4 + offset
+        maxi_out.dma_write_async(out_gaddr, size)
+
+        for i in range(size):
+            va, va_last = axi_in.read()
+            axi_out.write(va, va_last)
+
+        # check
+        myaxi.dma_read(myram, 0, gaddr, size, port=1)
+        myaxi.dma_read(myram, size, out_gaddr, size, port=1)
+
+        for i in range(size):
+            v0 = myram.read(i)
+            v1 = myram.read(i + size)
+            if vthread.verilog.NotEql(v0, v1):
+                all_ok.value = False
+
+    th = vthread.Thread(m, 'th_blink', clk, rst, blink)
+    fsm = th.start(17)
 
     return m
 
@@ -99,12 +97,11 @@ def mkTest(memimg_name=None):
     clk = ports['CLK']
     rst = ports['RST']
 
-    memory = axi.AxiMultiportMemoryModel(m, 'memory', clk, rst, numports=4,
+    memory = axi.AxiMultiportMemoryModel(m, 'memory', clk, rst, numports=3,
                                          memimg_name=memimg_name)
     memory.connect(0, ports, 'myaxi')
-    memory.connect(1, ports, 'maxi_a')
-    memory.connect(2, ports, 'maxi_b')
-    memory.connect(3, ports, 'maxi_c')
+    memory.connect(1, ports, 'maxi_in')
+    memory.connect(2, ports, 'maxi_out')
 
     uut = m.Instance(led, 'uut',
                      params=m.connect_params(led),

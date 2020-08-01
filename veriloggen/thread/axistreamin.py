@@ -12,6 +12,7 @@ from veriloggen.optimizer import try_optimize as optimize
 
 from .ttypes import _MutexFunction
 from .ram import RAM, MultibankRAM, to_multibank_ram
+from .fifo import FIFO
 
 
 class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
@@ -25,7 +26,7 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
                  with_last=False,
                  id_width=0, user_width=0, dest_width=0,
                  noio=False,
-                 enable_async=False,
+                 enable_async=True,
                  num_cmd_delay=0, num_data_delay=0,
                  op_sel_width=8, fsm_as_module=False):
 
@@ -764,6 +765,9 @@ class AXIStreamInFifo(AXIStreamIn):
 
     def _write_fifo(self, fsm, fifo, size):
 
+        if self.num_data_delay != 0:
+            raise ValueError('num_data_delay must be 0.')
+
         if not isinstance(fifo, FIFO):
             raise TypeError('FIFO object is required.')
 
@@ -791,13 +795,13 @@ class AXIStreamInFifo(AXIStreamIn):
             return
 
         read_start = self.m.Reg(
-            '_'.join(['', self.name, ram.name, port, 'read_start']),
+            '_'.join(['', self.name, fifo.name, 'read_start']),
             initval=0)
         read_op_sel = self.m.Reg(
-            '_'.join(['', self.name, ram.name, port, 'read_op_sel']),
+            '_'.join(['', self.name, fifo.name, 'read_op_sel']),
             self.op_sel_width, initval=0)
         read_size = self.m.Reg(
-            '_'.join(['', self.name, ram.name, port, 'read_size']),
+            '_'.join(['', self.name, fifo.name, 'read_size']),
             self.addrwidth + 1, initval=0)
 
         self.seq(
@@ -914,9 +918,6 @@ class AXIStreamInFifo(AXIStreamIn):
 
         fsm.If(valid, rest_size <= 1).goto_next()
 
-        for _ in range(self.num_data_delay):
-            fsm.goto_next()
-
         # state 2
         set_idle = self._set_flag(fsm)
         self.seq.If(set_idle)(
@@ -971,28 +972,28 @@ class AXIStreamInFifo(AXIStreamIn):
                                           'wvalid']))
 
             valid_cond = vtypes.Ands(valid, self.read_op_sel == op_id)
-            ack, _ = fifo.enq_rtl(data, cond=valid_cond)
+            ack, _ = fifo.enq_rtl(wdata, cond=wvalid)
 
             fsm.Delay(1)(
                 wvalid(0)
             )
             fsm.If(rest_size == 0, pack_count > 0)(
-                wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
+                wdata(vtypes.Cat(data, wdata[self.datawidth:fifo_datawidth])),
                 wvalid(0),
                 pack_count.inc()
             )
             fsm.If(valid_cond)(
-                wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
+                wdata(vtypes.Cat(data, wdata[self.datawidth:fifo_datawidth])),
                 wvalid(0),
                 pack_count.inc()
             )
             fsm.If(rest_size == 0, pack_count == pack_size - 1)(
-                wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
+                wdata(vtypes.Cat(data, wdata[self.datawidth:fifo_datawidth])),
                 wvalid(1),
                 pack_count(0)
             )
             fsm.If(valid_cond, pack_count == pack_size - 1)(
-                wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
+                wdata(vtypes.Cat(data, wdata[self.datawidth:fifo_datawidth])),
                 wvalid(1),
                 pack_count(0)
             )
@@ -1048,28 +1049,28 @@ class AXIStreamInFifo(AXIStreamIn):
                                       'wvalid']))
 
         valid_cond = vtypes.Ands(valid, self.read_op_sel == op_id)
-        ack, _ = fifo.enq_rtl(data, cond=wvalid)
+        ack, _ = fifo.enq_rtl(wdata, cond=wvalid)
 
         fsm.Delay(1)(
             wvalid(0)
         )
         fsm.If(rest_size == 0, pack_count > 0)(
-            wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
+            wdata(vtypes.Cat(data, wdata[self.datawidth:fifo_datawidth])),
             wvalid(0),
             pack_count.inc()
         )
         fsm.If(valid_cond)(
-            wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
+            wdata(vtypes.Cat(data, wdata[self.datawidth:fifo_datawidth])),
             wvalid(0),
             pack_count.inc()
         )
         fsm.If(rest_size == 0, pack_count == pack_size - 1)(
-            wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
+            wdata(vtypes.Cat(data, wdata[self.datawidth:fifo_datawidth])),
             wvalid(1),
             pack_count(0)
         )
         fsm.If(valid_cond, pack_count == pack_size - 1)(
-            wdata(vtypes.Cat(data, wdata[self.datawidth:ram_datawidth])),
+            wdata(vtypes.Cat(data, wdata[self.datawidth:fifo_datawidth])),
             wvalid(1),
             pack_count(0)
         )
@@ -1078,9 +1079,6 @@ class AXIStreamInFifo(AXIStreamIn):
         )
 
         fsm.If(wvalid, rest_size == 0).goto_next()
-
-        for _ in range(self.num_data_delay):
-            fsm.goto_next()
 
         # state 2
         set_idle = self._set_flag(fsm)
@@ -1091,7 +1089,7 @@ class AXIStreamInFifo(AXIStreamIn):
         fsm.goto_init()
 
     def _synthesize_read_fsm_fifo_wide(self, fifo, fifo_datawidth):
-        """ axi.datawidth > ram.datawidth """
+        """ axi.datawidth > fifo.datawidth """
 
         if self.datawidth % fifo_datawidth != 0:
             raise ValueError(
@@ -1140,7 +1138,7 @@ class AXIStreamInFifo(AXIStreamIn):
                 pack_count.inc()
             )
             fsm.If(pack_count > 0, stay_cond)(
-                wdata(wdata >> ram_datawidth),
+                wdata(wdata >> fifo_datawidth),
                 wvalid(1),
                 pack_count.inc()
             )
@@ -1216,7 +1214,7 @@ class AXIStreamInFifo(AXIStreamIn):
             pack_count.inc()
         )
         fsm.If(pack_count > 0, stay_cond)(
-            wdata(wdata >> ram_datawidth),
+            wdata(wdata >> fifo_datawidth),
             wvalid(1),
             pack_count.inc()
         )
@@ -1229,9 +1227,6 @@ class AXIStreamInFifo(AXIStreamIn):
         )
 
         fsm.If(pack_count == pack_size - 1, rest_size == 0).goto_next()
-
-        for _ in range(self.num_data_delay):
-            fsm.goto_next()
 
         # state 2
         set_idle = self._set_flag(fsm)

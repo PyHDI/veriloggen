@@ -12,6 +12,7 @@ from veriloggen.optimizer import try_optimize as optimize
 
 from .ttypes import _MutexFunction
 from .ram import RAM, MultibankRAM, to_multibank_ram
+from .fifo import FIFO
 
 
 class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
@@ -25,7 +26,7 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
                  with_last=False,
                  id_width=0, user_width=0, dest_width=0,
                  noio=False,
-                 enable_async=False,
+                 enable_async=True,
                  num_cmd_delay=0, num_data_delay=0,
                  op_sel_width=8, fsm_as_module=False):
 
@@ -67,19 +68,19 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
         self.write_ops = []
 
         self.write_fsm = None
-        self.write_data_counter = None
+        self.write_counter = None
 
         self.write_narrow_fsms = OrderedDict()  # key: pack_size
+        self.write_narrow_counters = OrderedDict()  # key: pack_size
         self.write_narrow_wdatas = OrderedDict()  # key: pack_size
         self.write_narrow_wvalids = OrderedDict()  # key: pack_size
-        self.write_narrow_wreadys = OrderedDict()  # key: pack_size
         self.write_narrow_wlasts = OrderedDict()  # key: pack_size
         self.write_narrow_pack_counts = OrderedDict()  # key: pack_size
 
         self.write_wide_fsms = OrderedDict()  # key: pack_size
+        self.write_wide_counters = OrderedDict()  # key: pack_size
         self.write_wide_wdatas = OrderedDict()  # key: pack_size
         self.write_wide_wvalids = OrderedDict()  # key: pack_size
-        self.write_wide_wreadys = OrderedDict()  # key: pack_size
         self.write_wide_wlasts = OrderedDict()  # key: pack_size
         self.write_wide_pack_counts = OrderedDict()  # key: pack_size
 
@@ -252,7 +253,7 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
             self.write_ops.append(op_id)
 
             fsm = self.write_fsm
-            counter = self.write_data_counter
+            counter = self.write_counter
 
             # state 0
             fsm.set_index(0)
@@ -271,11 +272,14 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
             # state 1
             fsm.set_index(1)
             cond = vtypes.Ands(fsm.here, self.write_op_sel == op_id)
-            ack = self.write_dataflow(data, cond=cond)
 
-            fsm.If(ack)(
-                counter.dec()
-            )
+            write_ready = vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid))
+            read_cond = vtypes.Ands(cond, write_ready)
+
+            rdata, rvalid = data.read(cond=read_cond)
+            rlast, _ = last.read(cond=read_cond)
+
+            _ = self.write_data(rdata, rlast, cond=rvalid)
 
             return
 
@@ -299,7 +303,7 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
 
         counter = self.m.Reg('_'.join(['', self.name, 'write_counter']),
                              self.addrwidth + 1, initval=0)
-        self.write_data_counter = counter
+        self.write_counter = counter
 
         fsm.If(self.write_start)(
             counter(self.write_size)
@@ -308,14 +312,22 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
 
         # state 1
         cond = vtypes.Ands(fsm.here, self.write_op_sel == op_id)
-        ack = self.write_dataflow(data, last, cond=cond)
+
+        write_ready = vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid))
+        read_cond = vtypes.Ands(cond, write_ready)
+
+        rdata, rvalid = data.read(cond=read_cond)
+        rlast, _ = last.read(cond=read_cond)
+
+        _ = self.write_data(rdata, rlast, cond=rvalid)
+
+        ack = vtypes.Ands(self.tdata.tvalid, self.tdata.tready)
 
         fsm.If(ack)(
             counter.dec()
         )
 
-        done = counter <= 1
-
+        done = counter == 0
         fsm.If(done).goto_next()
 
         # state 2
@@ -350,9 +362,9 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
             self.write_ops.append(op_id)
 
             fsm = self.write_narrow_fsms[pack_size]
+            counter = self.write_narrow_counters[pack_size]
             wdata = self.write_narrow_wdatas[pack_size]
             wvalid = self.write_narrow_wvalids[pack_size]
-            wready = self.write_narrow_wreadys[pack_size]
             wlast = self.write_narrow_wlasts[pack_size]
             pack_count = self.write_narrow_pack_counts[pack_size]
 
@@ -372,29 +384,21 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
 
             # state 1
             fsm.set_index(1)
-            ack = vtypes.Ors(wready, vtypes.Not(wvalid))
-            cond = vtypes.Ands(fsm.here, ack, pack_count == 0,
-                               self.write_op_sel == op_id)
-            rdata, rvalid = data.read(cond=cond)
-            rlast, _ = last.read(cond=cond)
+            cond = vtypes.Ands(fsm.here, self.write_op_sel == op_id)
+
+            write_ready = vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid))
+            read_cond = vtyeps.Ands(cond, write_ready, pack_count == 0)
+
+            rdata, rvalid = data.read(cond=read_cond)
+            rlast, _ = last.read(cond=read_cond)
 
             stay_cond = self.write_op_sel == op_id
 
-            self.seq.If(rvalid, stay_cond)(
+            self.seq.If(write_ready, rvalid, stay_cond)(
                 wdata(rdata),
                 wvalid(1),
                 wlast(rlast),
                 pack_count.inc()
-            )
-            self.seq.If(ack, pack_count > 0, stay_cond)(
-                wdata(wdata >> self.datawidth),
-                wvalid(1),
-                pack_count.inc()
-            )
-            self.seq.If(ack, pack_count == pack_size - 1, stay_cond)(
-                wdata(wdata >> self.datawidth),
-                wvalid(1),
-                pack_count(0)
             )
 
             return
@@ -420,9 +424,9 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
                 last = self.df._Delay(last)
 
         counter = self.m.Reg('_'.join(['', self.name,
-                                       'write_narrow', str(pack_size),
-                                       'counter']),
+                                       'write_narrow', str(pack_size), 'counter']),
                              self.addrwidth + 1, initval=0)
+        self.write_narrow_counters[pack_size] = counter
 
         fsm.If(self.write_start)(
             counter(dma_size)
@@ -440,10 +444,6 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
                                       'wvalid']),
                             initval=0)
         self.write_narrow_wvalids[pack_size] = wvalid
-        wready = self.m.Wire('_'.join(['', self.name,
-                                       'write_narrow', str(pack_size),
-                                       'wready']))
-        self.write_narrow_wreadys[pack_size] = wready
         wlast = self.m.Reg('_'.join(['', self.name,
                                      'write_narrow', str(pack_size),
                                      'wlast']),
@@ -455,52 +455,45 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
                                 int(math.ceil(math.log(pack_size, 2))), initval=0)
         self.write_narrow_pack_counts[pack_size] = pack_count
 
-        ack = vtypes.Ors(wready, vtypes.Not(wvalid))
-        cond = vtypes.Ands(fsm.here, ack, pack_count == 0,
-                           self.write_op_sel == op_id)
-        rdata, rvalid = data.read(cond=cond)
-        rlast, _ = last.read(cond=cond)
+        cond = vtypes.Ands(fsm.here, self.write_op_sel == op_id)
+
+        write_ready = vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid))
+        read_cond = vtypes.Ands(cond, write_ready, pack_count == 0)
+
+        rdata, rvalid = data.read(cond=read_cond)
+        rlast, _ = last.read(cond=read_cond)
 
         stay_cond = self.write_op_sel == op_id
 
-        self.seq.If(ack)(
-            wvalid(0)
+        self.seq.If(write_ready)(
+            wvalid(0),
+            wlast(0)
         )
-        self.seq.If(rvalid, stay_cond)(
+        self.seq.If(write_ready, rvalid, stay_cond)(
             wdata(rdata),
             wvalid(1),
             wlast(rlast),
             pack_count.inc()
         )
-        self.seq.If(ack, pack_count > 0, stay_cond)(
+        self.seq.If(write_ready, pack_count > 0)(
             wdata(wdata >> self.datawidth),
             wvalid(1),
             pack_count.inc()
         )
-        self.seq.If(ack, pack_count == pack_size - 1, stay_cond)(
+        self.seq.If(write_ready, pack_count == pack_size - 1)(
             wdata(wdata >> self.datawidth),
             wvalid(1),
             pack_count(0)
         )
 
-        data = self.df.Variable(wdata, wvalid, wready,
-                                width=self.datawidth, signed=False)
+        _ = self.write_data(wdata, wlast, cond=wvalid)
 
-        wlast_out = self.m.Wire('_'.join(['', self.name,
-                                          'write_narrow', str(pack_size),
-                                          'wlast_out']))
-        wlast_out.assign(vtypes.Ands(wlast, pack_count == pack_size - 1))
-
-        last = self.df.Variable(wlast_out, wvalid, None,
-                                width=1, signed=False)
-
-        ack = self.write_dataflow(data, last, cond=fsm)
-
+        ack = vtypes.Ands(self.tdata.tvalid, self.tdata.tready)
         fsm.If(ack)(
             counter.dec()
         )
 
-        done = counter <= 1
+        done = counter == 0
         fsm.If(done).goto_next()
 
         # state 2
@@ -538,9 +531,9 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
             self.write_ops.append(op_id)
 
             fsm = self.write_wide_fsms[pack_size]
+            counter = self.write_wide_counters[pack_size]
             wdata = self.write_wide_wdatas[pack_size]
             wvalid = self.write_wide_wvalids[pack_size]
-            wready = self.write_wide_wreadys[pack_size]
             wlast = self.write_wide_wlasts[pack_size]
             pack_count = self.write_wide_pack_counts[pack_size]
 
@@ -560,17 +553,27 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
 
             # state 1
             fsm.set_index(1)
+            cond = vtypes.Ands(fsm.here, self.write_op_sel == op_id)
+
+            write_ready = vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid))
+            read_cond = cond
+
+            rdata, rvalid = data.read(cond=read_cond)
+            rlast, _ = last.read(cond=read_cond)
+
+            stay_cond = self.write_op_sel == op_id
+
             ack = vtypes.Ors(wready, vtypes.Not(wvalid))
             cond = vtypes.Ands(fsm.here, ack, self.write_op_sel == op_id)
             rdata, rvalid = data.read(cond=cond)
 
-            self.seq.If(rvalid)(
+            self.seq.If(rvalid, stay_cond)(
                 wdata(vtypes.Cat(rdata, wdata[ram_datawidth:self.datawidth])),
                 wvalid(0),
-                wlast(rlast),
+                wlast(0),
                 pack_count.inc()
             )
-            self.seq.If(rvalid, pack_count == pack_size - 1)(
+            self.seq.If(rvalid, stay_cond, pack_count == pack_size - 1)(
                 wdata(vtypes.Cat(rdata, wdata[ram_datawidth:self.datawidth])),
                 wvalid(1),
                 wlast(rlast),
@@ -600,9 +603,9 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
                 last = self.df._Delay(last)
 
         counter = self.m.Reg('_'.join(['', self.name,
-                                       'write_wide', str(pack_size),
-                                       'counter']),
+                                       'write_wide', str(pack_size), 'counter']),
                              self.addrwidth + 1, initval=0)
+        self.write_wide_counters[pack_size] = counter
 
         fsm.If(self.write_start)(
             counter(dma_size)
@@ -620,10 +623,6 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
                                       'wvalid']),
                             initval=0)
         self.write_wide_wvalids[pack_size] = wvalid
-        wready = self.m.Wire('_'.join(['', self.name,
-                                       'write_wide', str(pack_size),
-                                       'wready']))
-        self.write_wide_wreadys[pack_size] = wready
         wlast = self.m.Reg('_'.join(['', self.name,
                                      'write_wide', str(pack_size),
                                      'wlast']),
@@ -635,40 +634,41 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
                                 int(math.ceil(math.log(pack_size, 2))), initval=0)
         self.write_wide_pack_counts[pack_size] = pack_count
 
-        ack = vtypes.Ors(wready, vtypes.Not(wvalid))
-        cond = vtypes.Ands(fsm.here, ack, self.write_op_sel == op_id)
-        rdata, rvalid = data.read(cond=cond)
-        rlast, _ = last.read(cond=cond)
+        cond = vtypes.Ands(fsm.here, self.write_op_sel == op_id)
 
-        self.seq.If(ack)(
-            wvalid(0)
+        write_ready = vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid))
+        read_cond = cond
+
+        rdata, rvalid = data.read(cond=read_cond)
+        rlast, _ = last.read(cond=read_cond)
+
+        stay_cond = self.write_op_sel == op_id
+
+        self.seq.If(write_ready)(
+            wvalid(0),
+            wlast(0)
         )
-        self.seq.If(rvalid)(
+        self.seq.If(rvalid, stay_cond)(
             wdata(vtypes.Cat(rdata, wdata[ram_datawidth:self.datawidth])),
             wvalid(0),
-            wlast(rlast),
+            wlast(0),
             pack_count.inc()
         )
-        self.seq.If(rvalid, pack_count == pack_size - 1)(
+        self.seq.If(rvalid, stay_cond, pack_count == pack_size - 1)(
             wdata(vtypes.Cat(rdata, wdata[ram_datawidth:self.datawidth])),
             wvalid(1),
             wlast(rlast),
             pack_count(0)
         )
 
-        data = self.df.Variable(wdata, wvalid, wready,
-                                width=self.datawidth, signed=False)
+        _ = self.write_data(wdata, wlast, cond=wvalid)
 
-        last = self.df.Variable(wlast, wvalid, None,
-                                width=1, signed=False)
-
-        ack = self.write_dataflow(data, last, cond=fsm)
-
+        ack = vtypes.Ands(self.tdata.tvalid, self.tdata.tready)
         fsm.If(ack)(
             counter.dec()
         )
 
-        done = counter <= 1
+        done = counter == 0
         fsm.If(done).goto_next()
 
         # state 2
@@ -760,6 +760,9 @@ class AXIStreamOutFifo(AXIStreamOut):
 
     def _read_fifo(self, fsm, fifo, size):
 
+        if self.num_data_delay != 0:
+            raise ValueError('num_data_delay must be 0.')
+
         if not isinstance(fifo, FIFO):
             raise TypeError('FIFO object is required.')
 
@@ -789,13 +792,13 @@ class AXIStreamOutFifo(AXIStreamOut):
             return
 
         write_start = self.m.Reg(
-            '_'.join(['', self.name, ram.name, port, 'write_start']),
+            '_'.join(['', self.name, fifo.name, 'write_start']),
             initval=0)
         write_op_sel = self.m.Reg(
-            '_'.join(['', self.name, ram.name, port, 'write_op_sel']),
+            '_'.join(['', self.name, fifo.name, 'write_op_sel']),
             self.op_sel_width, initval=0)
         write_size = self.m.Reg(
-            '_'.join(['', self.name, ram.name, port, 'write_size']),
+            '_'.join(['', self.name, fifo.name, 'write_size']),
             self.addrwidth + 1, initval=0)
 
         self.seq(
@@ -840,7 +843,7 @@ class AXIStreamOutFifo(AXIStreamOut):
 
         return self._synthesize_write_fsm_fifo_wide(fifo, fifo_datawidth)
 
-    def _synthesize_write_fsm_fifo_same(self, fsm, fifo_datawidth):
+    def _synthesize_write_fsm_fifo_same(self, fifo, fifo_datawidth):
 
         op_id = self._get_write_op_id_fifo(fifo)
 
@@ -853,34 +856,43 @@ class AXIStreamOutFifo(AXIStreamOut):
             self.write_ops.append(op_id)
 
             fsm = self.write_fsm
-            counter = self.write_data_counter
+            counter = self.write_counter
 
             # state 0
             fsm.set_index(0)
             cond = vtypes.Ands(self.write_start, self.write_op_sel == op_id)
+
+            fifo_counter = self.m.TmpReg(prefix='_'.join(['', self.name, 'write_fifo_counter']),
+                                         width=self.addrwidth + 1, initval=0)
+            fsm.If(self.write_start)(
+                fifo_counter(self.write_size)
+            )
 
             fsm.If(cond).goto_next()
 
             # state 1
             fsm.set_index(1)
             cond = vtypes.Ands(fsm.here, self.write_op_sel == op_id)
+            write_ready = vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid))
+            fifo_ready = vtypes.Not(fifo.empty)
+            deq_cond = vtypes.Ands(cond, write_ready, fifo_ready, fifo_counter > 0)
 
-            rready = self.m.TmpWire()
-            deq_cond = vtypes.Ands(cond, rready)
-            rdata, rvalid = fifo.deq_rtl(cond=deq_cond)
-
-            ldata = self.m.TmpWire()
-            ldata.assign(counter <= 1)
-
-            data = self.df.Variable(rdata, rvalid, rready,
-                                    width=fifo_datawidth, signed=False)
-            last = self.df.Variable(ldata, rvalid, width=1, signed=False)
-
-            ack = self.write_dataflow(data, last, cond=cond)
-
-            fsm.If(ack)(
-                counter.dec()
+            rdata, rvalid, _ = fifo.deq_rtl(cond=deq_cond)
+            rlast = self.m.TmpReg(prefix='rlast', initval=0)
+            self.seq.If(deq_cond)(
+                rlast(fifo_counter <= 1)
             )
+            fsm.If(deq_cond)(
+                fifo_counter.dec()
+            )
+
+            repeat_rvalid = self.m.TmpReg(prefix='repeat_rvalid', initval=0)
+            self.seq(repeat_rvalid(0))
+            self.seq.If(rvalid, vtypes.Not(write_ready))(repeat_rvalid(1))
+            self.seq.If(repeat_rvalid, vtypes.Not(write_ready))(repeat_rvalid(1))
+            cur_rvalid = vtypes.Ors(rvalid, repeat_rvalid)
+
+            _ = self.write_data(rdata, rlast, cond=cur_rvalid)
 
             return
 
@@ -896,35 +908,50 @@ class AXIStreamOutFifo(AXIStreamOut):
 
         counter = self.m.Reg('_'.join(['', self.name, 'write_counter']),
                              self.addrwidth + 1, initval=0)
-        self.write_data_counter = counter
+        self.write_counter = counter
 
         fsm.If(self.write_start)(
             counter(self.write_size)
         )
+
+        fifo_counter = self.m.TmpReg(prefix='_'.join(['', self.name, 'write_fifo_counter']),
+                                     width=self.addrwidth + 1, initval=0)
+        fsm.If(self.write_start)(
+            fifo_counter(self.write_size)
+        )
+
         fsm.If(cond).goto_next()
 
         # state 1
         cond = vtypes.Ands(fsm.here, self.write_op_sel == op_id)
+        write_ready = vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid))
+        fifo_ready = vtypes.Not(fifo.empty)
+        deq_cond = vtypes.Ands(cond, write_ready, fifo_ready, fifo_counter > 0)
 
-        rready = self.m.TmpWire()
-        deq_cond = vtypes.Ands(cond, rready)
-        rdata, rvalid = fifo.deq_rtl(cond=deq_cond)
+        rdata, rvalid, _ = fifo.deq_rtl(cond=deq_cond)
+        rlast = self.m.TmpReg(prefix='rlast', initval=0)
+        self.seq.If(deq_cond)(
+            rlast(fifo_counter <= 1)
+        )
+        fsm.If(deq_cond)(
+            fifo_counter.dec()
+        )
 
-        ldata = self.m.TmpWire()
-        ldata.assign(counter <= 1)
+        repeat_rvalid = self.m.TmpReg(prefix='repeat_rvalid', initval=0)
+        self.seq(repeat_rvalid(0))
+        self.seq.If(rvalid, vtypes.Not(write_ready))(repeat_rvalid(1))
+        self.seq.If(repeat_rvalid, vtypes.Not(write_ready))(repeat_rvalid(1))
+        cur_rvalid = vtypes.Ors(rvalid, repeat_rvalid)
 
-        data = self.df.Variable(rdata, rvalid, rready,
-                                width=fifo_datawidth, signed=False)
-        last = self.df.Variable(ldata, rvalid, width=1, signed=False)
+        _ = self.write_data(rdata, rlast, cond=cur_rvalid)
 
-        ack = self.write_dataflow(data, last, cond=cond)
+        ack = vtypes.Ands(self.tdata.tvalid, self.tdata.tready)
 
         fsm.If(ack)(
             counter.dec()
         )
 
-        done = counter <= 1
-
+        done = counter == 0
         fsm.If(done).goto_next()
 
         # state 2
@@ -942,7 +969,7 @@ class AXIStreamOutFifo(AXIStreamOut):
             raise ValueError(
                 'fifo_datawidth must be multiple number of axi.datawidth')
 
-        pack_size = ram_datawidth // self.datawidth
+        pack_size = fifo_datawidth // self.datawidth
         dma_size = (self.write_size << int(math.log(pack_size, 2))
                     if math.log(pack_size, 2) % 1.0 == 0.0 else
                     self.write_size * pack_size)
@@ -958,39 +985,64 @@ class AXIStreamOutFifo(AXIStreamOut):
             self.write_ops.append(op_id)
 
             fsm = self.write_narrow_fsms[pack_size]
+            counter = self.write_narrow_counters[pack_size]
             wdata = self.write_narrow_wdatas[pack_size]
             wvalid = self.write_narrow_wvalids[pack_size]
-            wready = self.write_narrow_wreadys[pack_size]
+            wlast = self.write_narrow_wlasts[pack_size]
             pack_count = self.write_narrow_pack_counts[pack_size]
 
             # state 0
             fsm.set_index(0)
             cond = vtypes.Ands(self.write_start, self.write_op_sel == op_id)
 
+            fifo_counter = self.m.TmpReg(prefix='_'.join(
+                ['', self.name, 'write_narrow', str(pack_size), 'counter']),
+                                         width=self.addrwidth + 1, initval=0)
+            fsm.If(self.write_start)(
+                fifo_counter(self.write_size)
+            )
+
             fsm.If(cond).goto_next()
 
             # state 1
             fsm.set_index(1)
-            ack = vtypes.Ors(wready, vtypes.Not(wvalid))
-            cond = vtypes.Ands(fsm.here, ack, pack_count == 0,
-                               self.write_op_sel == op_id)
-            rdata, rvalid = fifo.deq_rtl(cond=cond)
+            cond = vtypes.Ands(fsm.here, self.write_op_sel == op_id)
+
+            write_ready = vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid))
+            fifo_ready = vtypes.Not(fifo.empty)
+            deq_cond = vtypes.Ands(cond, write_ready, fifo_ready,
+                                   vtypes.Ors(pack_count == pack_size - 1,
+                                              vtypes.Ands(pack_count == 0,
+                                                          fifo_counter == self.write_size)),
+                                   fifo_counter > 0)
+
+            rdata, rvalid, _ = fifo.deq_rtl(cond=deq_cond)
+            rlast = self.m.TmpReg(prefix='rlast', initval=0)
+            self.seq.If(deq_cond)(
+                rlast(fifo_counter <= 1)
+            )
+            fsm.If(deq_cond)(
+                fifo_counter.dec()
+            )
+
+            repeat_rvalid = self.m.TmpReg(prefix='repeat_rvalid', initval=0)
+            self.seq(repeat_rvalid(0))
+            self.seq.If(rvalid, vtypes.Not(write_ready))(repeat_rvalid(1))
+            self.seq.If(repeat_rvalid, vtypes.Not(write_ready))(repeat_rvalid(1))
+            cur_rvalid = vtypes.Ors(rvalid, repeat_rvalid)
 
             stay_cond = self.write_op_sel == op_id
 
-            self.seq.If(rvalid, stay_cond)(
+            self.seq.If(write_ready, cur_rvalid, stay_cond)(
                 wdata(rdata),
                 wvalid(1),
+                wlast(0),
                 pack_count.inc()
             )
-            self.seq.If(ack, pack_count > 0, stay_cond)(
+            self.seq.If(write_ready, pack_count == pack_size - 1)(
                 wdata(wdata >> self.datawidth),
                 wvalid(1),
-                pack_count.inc()
-            )
-            self.seq.If(ack, pack_count == pack_size - 1, stay_cond)(
-                wdata(wdata >> self.datawidth),
-                wvalid(1),
+                wlast(rlast),
                 pack_count(0)
             )
 
@@ -1007,83 +1059,108 @@ class AXIStreamOutFifo(AXIStreamOut):
 
         # state 0
         cond = vtypes.Ands(self.write_start, self.write_op_sel == op_id)
+
         counter = self.m.Reg('_'.join(['', self.name,
-                                       'write_narrow', str(pack_size),
-                                       'counter']),
+                                       'write_narrow', str(pack_size), 'counter']),
                              self.addrwidth + 1, initval=0)
+        self.write_narrow_counters[pack_size] = counter
 
         fsm.If(self.write_start)(
             counter(dma_size)
         )
+
+        fifo_counter = self.m.TmpReg(prefix='_'.join(['', self.name,
+                                                      'write_narrow', str(pack_size), 'counter']),
+                                     width=self.addrwidth + 1, initval=0)
+        fsm.If(self.write_start)(
+            fifo_counter(self.write_size)
+        )
+
         fsm.If(cond).goto_next()
 
         # state 1
         wdata = self.m.Reg('_'.join(['', self.name,
                                      'write_narrow', str(pack_size),
                                      'wdata']),
-                           ram_datawidth, initval=0)
+                           fifo_datawidth, initval=0)
         self.write_narrow_wdatas[pack_size] = wdata
         wvalid = self.m.Reg('_'.join(['', self.name,
                                       'write_narrow', str(pack_size),
                                       'wvalid']),
                             initval=0)
         self.write_narrow_wvalids[pack_size] = wvalid
-        wready = self.m.Wire('_'.join(['', self.name,
-                                       'write_narrow', str(pack_size),
-                                       'wready']))
-        self.write_narrow_wreadys[pack_size] = wready
+        wlast = self.m.Reg('_'.join(['', self.name,
+                                     'write_narrow', str(pack_size),
+                                     'wlast']),
+                           initval=0)
+        self.write_narrow_wlasts[pack_size] = wlast
         pack_count = self.m.Reg('_'.join(['', self.name,
                                           'write_narrow', str(pack_size),
                                           'pack_count']),
                                 int(math.ceil(math.log(pack_size, 2))), initval=0)
         self.write_narrow_pack_counts[pack_size] = pack_count
 
-        ack = vtypes.Ors(wready, vtypes.Not(wvalid))
-        cond = vtypes.Ands(fsm.here, ack, pack_count == 0,
-                           self.write_op_sel == op_id)
-        rdata, rvalid = fifo.deq_rtl(cond=cond)
-        rlast = self.m.TmpWire()
-        rlast.assign(counter <= 1)
+        cond = vtypes.Ands(fsm.here, self.write_op_sel == op_id)
+
+        write_ready = vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid))
+        fifo_ready = vtypes.Not(fifo.empty)
+        deq_cond = vtypes.Ands(cond, write_ready, fifo_ready,
+                               vtypes.Ors(pack_count == pack_size - 1,
+                                          vtypes.Ands(pack_count == 0,
+                                                      fifo_counter == self.write_size)),
+                               fifo_counter > 0)
+
+        rdata, rvalid, _ = fifo.deq_rtl(cond=deq_cond)
+        rlast = self.m.TmpReg(prefix='rlast', initval=0)
+        self.seq.If(deq_cond)(
+            rlast(fifo_counter <= 1)
+        )
+        fsm.If(deq_cond)(
+            fifo_counter.dec()
+        )
+
+        repeat_rvalid = self.m.TmpReg(prefix='repeat_rvalid', initval=0)
+        self.seq(repeat_rvalid(0))
+        self.seq.If(rvalid, vtypes.Not(write_ready))(repeat_rvalid(1))
+        self.seq.If(repeat_rvalid, vtypes.Not(write_ready))(repeat_rvalid(1))
+        cur_rvalid = vtypes.Ors(rvalid, repeat_rvalid)
+
+        self.m.TmpWireLike(rdata, prefix='debug_rdata').assign(rdata)
+        self.m.TmpWireLike(rvalid, prefix='debug_rvalid').assign(rvalid)
 
         stay_cond = self.write_op_sel == op_id
 
-        self.seq.If(ack)(
-            wvalid(0)
+        self.seq.If(write_ready)(
+            wvalid(0),
+            wlast(0)
         )
-        self.seq.If(rvalid, stay_cond)(
+        self.seq.If(write_ready, cur_rvalid, stay_cond)(
             wdata(rdata),
             wvalid(1),
+            wlast(0),
             pack_count.inc()
         )
-        self.seq.If(ack, pack_count > 0, stay_cond)(
+        self.seq.If(write_ready, pack_count > 0)(
             wdata(wdata >> self.datawidth),
             wvalid(1),
+            wlast(0),
             pack_count.inc()
         )
-        self.seq.If(ack, pack_count == pack_size - 1, stay_cond)(
+        self.seq.If(write_ready, pack_count == pack_size - 1)(
             wdata(wdata >> self.datawidth),
             wvalid(1),
+            wlast(rlast),
             pack_count(0)
         )
 
-        data = self.df.Variable(wdata, wvalid, wready,
-                                width=self.datawidth, signed=False)
+        _ = self.write_data(wdata, wlast, cond=wvalid)
 
-        wlast_out = self.m.Wire('_'.join(['', self.name,
-                                          'write_narrow', str(pack_size),
-                                          'wlast_out']))
-        wlast_out.assign(counter <= 1)
-
-        last = self.df.Variable(wlast_out, wvalid, None,
-                                width=1, signed=False)
-
-        ack = self.write_dataflow(data, last, cond=fsm)
-
+        ack = vtypes.Ands(self.tdata.tvalid, self.tdata.tready)
         fsm.If(ack)(
             counter.dec()
         )
 
-        done = counter <= 1
+        done = counter == 0
         fsm.If(done).goto_next()
 
         # state 2
@@ -1110,7 +1187,6 @@ class AXIStreamOutFifo(AXIStreamOut):
         actual_write_size = dma_size << shamt
 
         op_id = self._get_write_op_id_fifo(fifo)
-        port = vtypes.to_int(port)
 
         if op_id in self.write_ops:
             """ already synthesized op """
@@ -1120,7 +1196,56 @@ class AXIStreamOutFifo(AXIStreamOut):
             """ new op """
             self.write_ops.append(op_id)
 
-            # ???
+            fsm = self.write_narrow_fsms[pack_size]
+            counter = self.write_narrow_counters[pack_size]
+            wdata = self.write_narrow_wdatas[pack_size]
+            wvalid = self.write_narrow_wvalids[pack_size]
+            wlast = self.write_narrow_wlasts[pack_size]
+            pack_count = self.write_narrow_pack_counts[pack_size]
+
+            # state 0
+            fsm.set_index(0)
+            cond = vtypes.Ands(self.write_start, self.write_op_sel == op_id)
+
+            fsm.If(cond).goto_next()
+
+            # state 1
+            fsm.set_index(1)
+            cond = vtypes.Ands(fsm.here, self.write_op_sel == op_id)
+
+            write_ready = vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid))
+            fifo_ready = vtypes.Not(fifo.empty)
+            deq_cond = vtypes.Ands(cond, fifo_ready, counter > 0)
+
+            rdata, rvalid, _ = fifo.deq_rtl(cond=deq_cond)
+            rlast = counter <= 1
+
+            repeat_rvalid = self.m.TmpReg(prefix='repeat_rvalid', initval=0)
+            self.seq(repeat_rvalid(0))
+            self.seq.If(rvalid, vtypes.Not(write_ready))(repeat_rvalid(1))
+            self.seq.If(repeat_rvalid, vtypes.Not(write_ready))(repeat_rvalid(1))
+            cur_rvalid = vtypes.Ors(rvalid, repeat_rvalid)
+
+            stay_cond = self.write_op_sel == op_id
+
+            self.seq.If(write_ready)(
+                wvalid(0),
+                wlast(0)
+            )
+            self.seq.If(cur_rvalid, stay_cond)(
+                wdata(vtypes.Cat(rdata, wdata[fifo_datawidth:self.datawidth])),
+                wvalid(0),
+                wlast(0),
+                pack_count.inc()
+            )
+            self.seq.If(cur_rvalid, stay_cond, pack_count == pack_size - 1)(
+                wdata(vtypes.Cat(rdata, wdata[fifo_datawidth:self.datawidth])),
+                wvalid(1),
+                wlast(rlast),
+                pack_count(0)
+            )
+
+            return
 
         """ new op and fsm """
         fsm = FSM(self.m, '_'.join(['', self.name,
@@ -1135,9 +1260,9 @@ class AXIStreamOutFifo(AXIStreamOut):
         cond = vtypes.Ands(self.write_start, self.write_op_sel == op_id)
 
         counter = self.m.Reg('_'.join(['', self.name,
-                                       'write_wide', str(pack_size),
-                                       'counter']),
+                                       'write_wide', str(pack_size), 'counter']),
                              self.addrwidth + 1, initval=0)
+        self.write_wide_counters[pack_size] = counter
 
         fsm.If(self.write_start)(
             counter(dma_size)
@@ -1155,52 +1280,59 @@ class AXIStreamOutFifo(AXIStreamOut):
                                       'wvalid']),
                             initval=0)
         self.write_wide_wvalids[pack_size] = wvalid
-        wready = self.m.Wire('_'.join(['', self.name,
-                                       'write_wide', str(pack_size),
-                                       'wready']))
-        self.write_wide_wreadys[pack_size] = wready
+        wlast = self.m.Reg('_'.join(['', self.name,
+                                     'write_wide', str(pack_size),
+                                     'wlast']),
+                           initval=0)
+        self.write_wide_wlasts[pack_size] = wlast
         pack_count = self.m.Reg('_'.join(['', self.name,
                                           'write_wide', str(pack_size),
                                           'pack_count']),
                                 int(math.ceil(math.log(pack_size, 2))), initval=0)
         self.write_wide_pack_counts[pack_size] = pack_count
 
-        ack = vtypes.Ors(wready, vtypes.Not(wvalid))
-        cond = vtypes.Ands(fsm.here, ack, self.write_op_sel == op_id)
-        rdata, rvalid = fifo.deq_rtl(cond=cond)
+        cond = vtypes.Ands(fsm.here, self.write_op_sel == op_id)
 
-        self.seq.If(ack)(
-            wvalid(0)
-        )
-        self.seq.If(rvalid)(
-            wdata(vtypes.Cat(rdata, wdata[ram_datawidth:self.datawidth])),
+        write_ready = vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid))
+        fifo_ready = vtypes.Not(fifo.empty)
+        deq_cond = vtypes.Ands(cond, fifo_ready, counter > 0)
+
+        rdata, rvalid, _ = fifo.deq_rtl(cond=deq_cond)
+        rlast = counter <= 1
+
+        repeat_rvalid = self.m.TmpReg(prefix='repeat_rvalid', initval=0)
+        self.seq(repeat_rvalid(0))
+        self.seq.If(rvalid, vtypes.Not(write_ready))(repeat_rvalid(1))
+        self.seq.If(repeat_rvalid, vtypes.Not(write_ready))(repeat_rvalid(1))
+        cur_rvalid = vtypes.Ors(rvalid, repeat_rvalid)
+
+        stay_cond = self.write_op_sel == op_id
+
+        self.seq.If(write_ready)(
             wvalid(0),
+            wlast(0)
+        )
+        self.seq.If(cur_rvalid, stay_cond)(
+            wdata(vtypes.Cat(rdata, wdata[fifo_datawidth:self.datawidth])),
+            wvalid(0),
+            wlast(0),
             pack_count.inc()
         )
-        self.seq.If(rvalid, pack_count == pack_size - 1)(
-            wdata(vtypes.Cat(rdata, wdata[ram_datawidth:self.datawidth])),
+        self.seq.If(cur_rvalid, stay_cond, pack_count == pack_size - 1)(
+            wdata(vtypes.Cat(rdata, wdata[fifo_datawidth:self.datawidth])),
             wvalid(1),
+            wlast(rlast),
             pack_count(0)
         )
 
-        data = self.df.Variable(wdata, wvalid, wready,
-                                width=self.datawidth, signed=False)
+        _ = self.write_data(wdata, wlast, cond=wvalid)
 
-        wlast_out = self.m.Wire('_'.join(['', self.name,
-                                          'write_wide', str(pack_size),
-                                          'wlast_out']))
-        wlast_out.assign(counter <= 1)
-
-        last = self.df.Variable(wlast_out, wvalid, None,
-                                width=1, signed=False)
-
-        ack = self.write_dataflow(data, last, cond=fsm)
-
+        ack = vtypes.Ands(self.tdata.tvalid, self.tdata.tready)
         fsm.If(ack)(
             counter.dec()
         )
 
-        done = counter <= 1
+        done = counter == 0
         fsm.If(done).goto_next()
 
         # state 2

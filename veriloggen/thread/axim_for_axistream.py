@@ -1,6 +1,11 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import veriloggen.core.vtypes as vtypes
+import veriloggen.types.axi as axi
+from veriloggen.fsm.fsm import FSM
+from veriloggen.optimizer import try_optimize as optimize
+
 from .axim import AXIM
 from .axistreamin import AXIStreamIn, AXIStreamInFifo
 from .axistreamout import AXIStreamOut, AXIStreamOutFifo

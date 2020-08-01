@@ -12,7 +12,7 @@ import veriloggen.thread as vthread
 import veriloggen.types.axi as axi
 
 
-def mkLed():
+def mkLed(word_datawidth=128):
     m = Module('blinkled')
     clk = m.Input('CLK')
     rst = m.Input('RST')
@@ -20,7 +20,7 @@ def mkLed():
     datawidth = 32
     addrwidth = 10
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
-    myram = vthread.RAM(m, 'myram', clk, rst, datawidth * 2, addrwidth)
+    myram = vthread.RAM(m, 'myram', clk, rst, word_datawidth, addrwidth)
 
     all_ok = m.TmpReg(initval=0)
 
@@ -28,7 +28,7 @@ def mkLed():
         all_ok.value = True
 
         # Test for 4KB boundary check
-        offset = myaxi.boundary_size - 4
+        offset = myaxi.boundary_size - (word_datawidth // 8)
         body(size, offset)
 
         if all_ok:
@@ -55,7 +55,7 @@ def mkLed():
             myram.write(i, wdata)
 
         laddr = 0
-        gaddr = (size + size) * 4 + offset
+        gaddr = (size + size) * (word_datawidth // 8) + offset
         myaxi.dma_write(myram, laddr, gaddr, size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
@@ -73,7 +73,7 @@ def mkLed():
 
         # read
         laddr = 0
-        gaddr = (size + size) * 4 + offset
+        gaddr = (size + size) * (word_datawidth // 8) + offset
         myaxi.dma_read(myram, laddr, gaddr, size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
@@ -89,11 +89,11 @@ def mkLed():
     return m
 
 
-def mkTest(memimg_name=None):
+def mkTest(memimg_name=None, word_datawidth=128):
     m = Module('test')
 
     # target instance
-    led = mkLed()
+    led = mkLed(word_datawidth)
 
     # copy paras and ports
     params = m.copy_params(led)

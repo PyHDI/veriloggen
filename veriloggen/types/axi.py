@@ -1014,7 +1014,7 @@ class AxiMaster(object):
         df = self.df if self.df is not None else _df
 
         df_data = df.Variable(data, valid, data_ready,
-                              point=point, signed=signed)
+                              width=self.datawidth, point=point, signed=signed)
         df_last = df.Variable(last, valid, last_ready, width=1, signed=False)
         done = vtypes.Ands(last, self.rdata.rvalid, self.rdata.rready)
 
@@ -1704,11 +1704,12 @@ class AxiSlave(object):
             counter.dec()
         )
 
-        df_data = self.df.Variable(data, valid, data_ready, signed=False)
+        df_data = self.df.Variable(data, valid, data_ready,
+                                   width=self.datawidth, signed=False)
         df_mask = self.df.Variable(mask, valid, mask_ready,
                                    width=self.datawidth // 4, signed=False)
-        df_last = self.df.Variable(
-            last, valid, last_ready, width=1, signed=False)
+        df_last = self.df.Variable(last, valid, last_ready,
+                                   width=1, signed=False)
         done = vtypes.Ands(last, self.wdata.wvalid, self.wdata.wready)
 
         return df_data, df_mask, df_last, done
@@ -2414,7 +2415,7 @@ class AxiStreamIn(object):
         df = self.df if self.df is not None else _df
 
         df_data = df.Variable(data, valid, data_ready,
-                              point=point, signed=signed)
+                              width=self.datawidth, point=point, signed=signed)
         if last is not None:
             df_last = df.Variable(last, valid, last_ready, width=1, signed=False)
             done = vtypes.Ands(last, self.tdata.tvalid, self.tdata.tready)

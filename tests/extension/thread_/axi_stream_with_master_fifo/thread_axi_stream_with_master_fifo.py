@@ -19,8 +19,21 @@ def mkLed():
 
     datawidth = 32
     addrwidth = 10
-    myaxi = vthread.AXIM2(m, 'myaxi', clk, rst, datawidth)
-    myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth)
+
+    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
+    myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth, numports=2)
+
+    axi_in = vthread.AXIStreamInFifo(m, 'axi_in', clk, rst, datawidth,
+                                     with_last=True, noio=True)
+    axi_out = vthread.AXIStreamOutFifo(m, 'axi_out', clk, rst, datawidth,
+                                       with_last=True, noio=True)
+
+    maxi_in = vthread.AXIM_for_AXIStreamIn(axi_in, 'maxi_in')
+    maxi_out = vthread.AXIM_for_AXIStreamOut(axi_out, 'maxi_out')
+
+    fifo_addrwidth = 8
+    fifo_in = vthread.FIFO(m, 'fifo_in', clk, rst, datawidth, fifo_addrwidth)
+    fifo_out = vthread.FIFO(m, 'fifo_out', clk, rst, datawidth, fifo_addrwidth)
 
     all_ok = m.TmpReg(initval=0)
 
@@ -30,7 +43,7 @@ def mkLed():
         for i in range(4):
             print('# iter %d start' % i)
             # Test for 4KB boundary check
-            offset = i * 1024 * 16 + (myaxi.boundary_size - 4)
+            offset = i * 1024 * 16 + (myaxi.boundary_size - (datawidth // 8))
             body(size, offset)
             print('# iter %d end' % i)
 
@@ -42,52 +55,39 @@ def mkLed():
         vthread.finish()
 
     def body(size, offset):
-        # write
+        # write a test vector
         for i in range(size):
             wdata = i + 100
             myram.write(i, wdata)
 
         laddr = 0
         gaddr = offset
-        myaxi.dma_write(myram, laddr, gaddr, size)
-        print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
+        myaxi.dma_write(myram, laddr, gaddr, size, port=1)
 
-        # write
-        for i in range(size):
-            wdata = i + 1000
-            myram.write(i, wdata)
-
-        laddr = 0
-        gaddr = (size + size) * 4 + offset
-        myaxi.dma_write(myram, laddr, gaddr, size)
-        print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
-
-        # read
-        laddr = 0
-        gaddr = offset
-        myaxi.dma_read(myram, laddr, gaddr, size)
-        print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
+        # AXI-stream read -> FIFO -> FIFO -> AXI-stream write
+        maxi_in.dma_read_async(gaddr, size)
+        axi_in.write_fifo(fifo_in, size)
 
         for i in range(size):
-            rdata = myram.read(i)
-            if vthread.verilog.NotEql(rdata, i + 100):
-                print('rdata[%d] = %d' % (i, rdata))
-                all_ok.value = False
+            va = fifo_in.deq()
+            fifo_out.enq(va)
 
-        # read
-        laddr = 0
-        gaddr = (size + size) * 4 + offset
-        myaxi.dma_read(myram, laddr, gaddr, size)
-        print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
+        out_gaddr = (size + size) * (datawidth // 8) + offset
+        maxi_out.dma_write_async(out_gaddr, size)
+        axi_out.read_fifo(fifo_out, size)
+
+        # check
+        myaxi.dma_read(myram, 0, gaddr, size, port=1)
+        myaxi.dma_read(myram, size, out_gaddr, size, port=1)
 
         for i in range(size):
-            rdata = myram.read(i)
-            if vthread.verilog.NotEql(rdata, i + 1000):
-                print('rdata[%d] = %d' % (i, rdata))
+            v0 = myram.read(i)
+            v1 = myram.read(i + size)
+            if vthread.verilog.NotEql(v0, v1):
                 all_ok.value = False
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
-    fsm = th.start(16)
+    fsm = th.start(17)
 
     return m
 
@@ -105,8 +105,11 @@ def mkTest(memimg_name=None):
     clk = ports['CLK']
     rst = ports['RST']
 
-    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memimg_name=memimg_name)
-    memory.connect(ports, 'myaxi')
+    memory = axi.AxiMultiportMemoryModel(m, 'memory', clk, rst, numports=3,
+                                         memimg_name=memimg_name)
+    memory.connect(0, ports, 'myaxi')
+    memory.connect(1, ports, 'maxi_in')
+    memory.connect(2, ports, 'maxi_out')
 
     uut = m.Instance(led, 'uut',
                      params=m.connect_params(led),
