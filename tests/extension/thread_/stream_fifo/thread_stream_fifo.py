@@ -20,64 +20,127 @@ def mkLed():
     datawidth = 32
     addrwidth = 10
 
-    axi_a = vthread.AXIStreamIn(m, 'axi_a', clk, rst, datawidth, with_last=True,
-                                enable_async=True)
-    axi_b = vthread.AXIStreamIn(m, 'axi_b', clk, rst, datawidth, with_last=True,
-                                enable_async=True)
-    axi_c = vthread.AXIStreamOut(m, 'axi_c', clk, rst, datawidth, with_last=True,
-                                 enable_async=True)
+    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
+    myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth, numports=2)
 
-    saxi = vthread.AXISLiteRegister(m, 'saxi', clk, rst, datawidth)
+    axi_in = vthread.AXIStreamInFifo(m, 'axi_in', clk, rst, datawidth,
+                                     with_last=True, noio=True)
+    axi_out = vthread.AXIStreamOutFifo(m, 'axi_out', clk, rst, datawidth,
+                                       with_last=True, noio=True)
 
-    fifo_a = vthread.FIFO(m, 'fifo_a', clk, rst, datawidth, addrwidth)
-    fifo_b = vthread.FIFO(m, 'fifo_b', clk, rst, datawidth, addrwidth)
-    fifo_c = vthread.FIFO(m, 'fifo_c', clk, rst, datawidth, addrwidth)
+    maxi_in = vthread.AXIM_for_AXIStreamIn(axi_in, 'maxi_in')
+    maxi_out = vthread.AXIM_for_AXIStreamOut(axi_out, 'maxi_out')
+
+    fifo_addrwidth = 8
+    fifo_in = vthread.FIFO(m, 'fifo_in', clk, rst, datawidth, fifo_addrwidth)
+    fifo_out = vthread.FIFO(m, 'fifo_out', clk, rst, datawidth, fifo_addrwidth)
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
     a = strm.source('a')
-    b = strm.source('b')
-    c = a + b
-    strm.sink(c, 'c')
+    b = a + 1000
+    strm.sink(b, 'b')
+
+    all_ok = m.TmpReg(initval=0)
 
     def comp_stream(size):
-        strm.set_source_fifo('a', fifo_a, size)
-        strm.set_source_fifo('b', fifo_b, size)
-        strm.set_sink_fifo('c', fifo_c, size)
+        strm.set_source_fifo('a', fifo_in, size)
+        strm.set_sink_fifo('b', fifo_out, size)
         strm.run()
         strm.join()
 
-    def comp():
-        while True:
-            saxi.wait_flag(0, value=1, resetvalue=0)
-            saxi.write(1, 1)  # set busy
-            size = saxi.read(2)
-            offset = 0
+    def comp(size):
+        offset = 0
 
-            axi_a.write_fifo(fifo_a, size)  # non-blocking
-            axi_b.write_fifo(fifo_b, size)  # non-blocking
-            comp_stream(size)
-            axi_c.read_fifo(fifo_c, size)  # non-blocking
+        # write a test vector
+        for i in range(size):
+            wdata = i + 100
+            myram.write(i, wdata)
 
-            axi_c.wait_read_fifo()  # wait
+        laddr = 0
+        gaddr = offset
+        myaxi.dma_write(myram, laddr, gaddr, size, port=1)
 
-            saxi.write(1, 0)  # unset busy
+        # AXI-stream read -> FIFO -> FIFO -> AXI-stream write
+        maxi_in.dma_read_async(gaddr, size)
+        axi_in.write_fifo(fifo_in, size)
+
+        comp_stream(size)
+
+        out_gaddr = (size + size) * (datawidth // 8) + offset
+        maxi_out.dma_write_async(out_gaddr, size)
+        axi_out.read_fifo(fifo_out, size)
+
+        # check
+        myaxi.dma_read(myram, 0, gaddr, size, port=1)
+        myaxi.dma_read(myram, size, out_gaddr, size, port=1)
+
+        for i in range(size):
+            v0 = myram.read(i)
+            v1 = myram.read(i + size)
+            if vthread.verilog.NotEql(v0 + 1000, v1):
+                all_ok.value = False
 
         vthread.finish()
 
-    th = vthread.Thread(m, 'th_comp', clk, rst, comp)
-    fsm = th.start()
+    th = vthread.Thread(m, 'comp', clk, rst, comp)
+    fsm = th.start(17)
+
+    return m
+
+
+def mkTest(memimg_name=None):
+    m = Module('test')
+
+    # target instance
+    led = mkLed()
+
+    # copy paras and ports
+    params = m.copy_params(led)
+    ports = m.copy_sim_ports(led)
+
+    clk = ports['CLK']
+    rst = ports['RST']
+
+    memory = axi.AxiMultiportMemoryModel(m, 'memory', clk, rst, numports=3,
+                                         memimg_name=memimg_name)
+    memory.connect(0, ports, 'myaxi')
+    memory.connect(1, ports, 'maxi_in')
+    memory.connect(2, ports, 'maxi_out')
+
+    uut = m.Instance(led, 'uut',
+                     params=m.connect_params(led),
+                     ports=m.connect_ports(led))
+
+    # simulation.setup_waveform(m, uut)
+    simulation.setup_clock(m, clk, hperiod=5)
+    init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
+
+    init.add(
+        Delay(1000000),
+        Systask('finish'),
+    )
 
     return m
 
 
 def run(filename='tmp.v', simtype='iverilog', outputfile=None):
 
-    test = mkLed()
+    if outputfile is None:
+        outputfile = os.path.splitext(os.path.basename(__file__))[0] + '.out'
+
+    memimg_name = 'memimg_' + outputfile
+
+    test = mkTest(memimg_name=memimg_name)
 
     if filename is not None:
         test.to_verilog(filename)
 
-    return '# verify: PASSED'
+    sim = simulation.Simulator(test, sim=simtype)
+    rslt = sim.run(outputfile=outputfile)
+    lines = rslt.splitlines()
+    if simtype == 'verilator' and lines[-1].startswith('-'):
+        rslt = '\n'.join(lines[:-1])
+    return rslt
 
 
 if __name__ == '__main__':
