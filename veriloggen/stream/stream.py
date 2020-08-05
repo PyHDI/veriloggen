@@ -566,7 +566,6 @@ class Stream(object):
             return
 
         if self.ivalid is None:
-            self.iready.assign(self.oready)
             self.senable = self.oready
             return
 
