@@ -156,8 +156,7 @@ class Seq(vtypes.VeriloggenNode):
         for i in range(delay):
             cond = make_condition(cond)
             if cond is not None:
-                tmp = self.m.TmpReg(
-                    var, width=width, initval=initval, signed=signed)
+                tmp = self.m.TmpReg(width=width, initval=initval, signed=signed)
                 self._add_statement([tmp(p)], cond=cond)
                 p = tmp
 
