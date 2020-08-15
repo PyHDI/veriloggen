@@ -147,7 +147,11 @@ class Seq(vtypes.VeriloggenNode):
             w.assign(var)
             var = w
 
-        name_prefix = prefix + var.name
+        if hasattr(var, 'name'):
+            name_prefix = prefix + var.name
+        else:
+            name_prefix = _tmp_name(prefix)
+
         key = '_'.join([name_prefix, str(delay)])
         if key in self.prev_dict:
             return self.prev_dict[key]
