@@ -44,9 +44,9 @@ class Module(vtypes.VeriloggenNode):
         self.hook = []
         self.used = False
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # User interface for variables
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def Input(self, name, width=None, dims=None, signed=False, value=None):
 
         t = vtypes.Input(width, dims, signed, value, name=name, module=self)
@@ -196,267 +196,289 @@ class Module(vtypes.VeriloggenNode):
         name = '_'.join([prefix, str(self.get_tmp())])
         return self.Localparam(name, value, width, signed, dims)
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def InputLike(self, src, name=None, width=None, dims=None,
                   signed=None, value=None):
 
         if name is None:
+            if not hasattr(src, 'name'):
+                raise ValueError("'name' is required.")
             name = src.name
         if width is None:
-            width = src.width
+            width = src.bit_length()
         if dims is None:
-            dims = src.dims
+            dims = vtypes.get_dims(src)
         if signed is None:
-            signed = src.signed
+            signed = vtypes.get_signed(src)
         if value is None:
-            value = src.value
+            value = vtypes.get_value(src)
         return self.Input(name, width, dims, signed, value)
 
     def OutputLike(self, src, name=None, width=None, dims=None,
                    signed=None, value=None):
 
         if name is None:
+            if not hasattr(src, 'name'):
+                raise ValueError("'name' is required.")
             name = src.name
         if width is None:
-            width = src.width
+            width = src.bit_length()
         if dims is None:
-            dims = src.dims
+            dims = vtypes.get_dims(src)
         if signed is None:
-            signed = src.signed
+            signed = vtypes.get_signed(src)
         if value is None:
-            value = src.value
+            value = vtypes.get_value(src)
         return self.Output(name, width, dims, signed, value)
 
     def OutputRegLike(self, src, name=None, width=None, dims=None,
                       signed=None, value=None, initval=None):
 
         if name is None:
+            if not hasattr(src, 'name'):
+                raise ValueError("'name' is required.")
             name = src.name
         if width is None:
-            width = src.width
+            width = src.bit_length()
         if dims is None:
-            dims = src.dims
+            dims = vtypes.get_dims(src)
         if signed is None:
-            signed = src.signed
+            signed = vtypes.get_signed(src)
         if value is None:
-            value = src.value
+            value = vtypes.get_value(src)
         if initval is None:
-            initval = src.initval
+            initval = vtypes.get_initval(src)
         return self.OutputReg(name, width, dims, signed, value, initval)
 
     def InoutLike(self, src, name=None, width=None, dims=None,
                   signed=None, value=None):
 
         if name is None:
+            if not hasattr(src, 'name'):
+                raise ValueError("'name' is required.")
             name = src.name
         if width is None:
-            width = src.width
+            width = src.bit_length()
         if dims is None:
-            dims = src.dims
+            dims = vtypes.get_dims(src)
         if signed is None:
-            signed = src.signed
+            signed = vtypes.get_signed(src)
         if value is None:
-            value = src.value
+            value = vtypes.get_value(src)
         return self.Inout(name, width, dims, signed, value)
 
     def WireLike(self, src, name=None, width=None, dims=None,
                  signed=None, value=None):
 
         if name is None:
+            if not hasattr(src, 'name'):
+                raise ValueError("'name' is required.")
             name = src.name
         if width is None:
-            width = src.width
+            width = src.bit_length()
         if dims is None:
-            dims = src.dims
+            dims = vtypes.get_dims(src)
         if signed is None:
-            signed = src.signed
+            signed = vtypes.get_signed(src)
         if value is None:
-            value = src.value
+            value = vtypes.get_value(src)
         return self.Wire(name, width, dims, signed, value)
 
     def TmpWireLike(self, src, width=None, dims=None,
                     signed=None, value=None, prefix=None):
 
         if width is None:
-            width = src.width
+            width = src.bit_length()
         if dims is None:
-            dims = src.dims
+            dims = vtypes.get_dims(src)
         if signed is None:
-            signed = src.signed
+            signed = vtypes.get_signed(src)
         if value is None:
-            value = src.value
+            value = vtypes.get_value(src)
         return self.TmpWire(width, dims, signed, value, prefix)
 
     def RegLike(self, src, name=None, width=None, dims=None,
                 signed=None, value=None, initval=None):
 
         if name is None:
+            if not hasattr(src, 'name'):
+                raise ValueError("'name' is required.")
             name = src.name
         if width is None:
-            width = src.width
+            width = src.bit_length()
         if dims is None:
-            dims = src.dims
+            dims = vtypes.get_dims(src)
         if signed is None:
-            signed = src.signed
+            signed = vtypes.get_signed(src)
         if value is None:
-            value = src.value
+            value = vtypes.get_value(src)
         if initval is None:
-            initval = src.initval
+            initval = vtypes.get_initval(src)
         return self.Reg(name, width, dims, signed, value, initval)
 
     def TmpRegLike(self, src, width=None, dims=None,
                    signed=None, value=None, initval=None, prefix=None):
 
         if width is None:
-            width = src.width
+            width = src.bit_length()
         if dims is None:
-            dims = src.dims
+            dims = vtypes.get_dims(src)
         if signed is None:
-            signed = src.signed
+            signed = vtypes.get_signed(src)
         if value is None:
-            value = src.value
+            value = vtypes.get_value(src)
         if initval is None:
-            initval = src.initval
+            initval = vtypes.get_initval(src)
         return self.TmpReg(width, dims, signed, value, initval, prefix)
 
     def IntegerLike(self, src, name=None, width=None, dims=None,
                     signed=None, value=None, initval=None):
 
         if name is None:
+            if not hasattr(src, 'name'):
+                raise ValueError("'name' is required.")
             name = src.name
         if width is None:
-            width = src.width
+            width = src.bit_length()
         if dims is None:
-            dims = src.dims
+            dims = vtypes.get_dims(src)
         if signed is None:
-            signed = src.signed
+            signed = vtypes.get_signed(src)
         if value is None:
-            value = src.value
+            value = vtypes.get_value(src)
         if initval is None:
-            initval = src.initval
+            initval = vtypes.get_initval(src)
         return self.Integer(name, width, dims, signed, value, initval)
 
     def TmpIntegerLike(self, src, width=None, dims=None,
                        signed=None, value=None, initval=None, prefix=None):
 
         if width is None:
-            width = src.width
+            width = src.bit_length()
         if dims is None:
-            dims = src.dims
+            dims = vtypes.get_dims(src)
         if signed is None:
-            signed = src.signed
+            signed = vtypes.get_signed(src)
         if value is None:
-            value = src.value
+            value = vtypes.get_value(src)
         if initval is None:
-            initval = src.initval
+            initval = vtypes.get_initval(src)
         return self.TmpInteger(width, dims, signed, value, initval, prefix)
 
     def RealLike(self, src, name=None, width=None, dims=None,
                  signed=None, value=None, initval=None):
 
         if name is None:
+            if not hasattr(src, 'name'):
+                raise ValueError("'name' is required.")
             name = src.name
         if width is None:
-            width = src.width
+            width = src.bit_length()
         if dims is None:
-            dims = src.dims
+            dims = vtypes.get_dims(src)
         if signed is None:
-            signed = src.signed
+            signed = vtypes.get_signed(src)
         if value is None:
-            value = src.value
+            value = vtypes.get_value(src)
         if initval is None:
-            initval = src.initval
+            initval = vtypes.get_initval(src)
         return self.Real(name, width, dims, signed, value, initval)
 
     def TmpRealLike(self, src, width=None, dims=None,
                     signed=None, value=None, initval=None, prefix=None):
 
         if width is None:
-            width = src.width
+            width = src.bit_length()
         if dims is None:
-            dims = src.dims
+            dims = vtypes.get_dims(src)
         if signed is None:
-            signed = src.signed
+            signed = vtypes.get_signed(src)
         if value is None:
-            value = src.value
+            value = vtypes.get_value(src)
         if initval is None:
-            initval = src.initval
+            initval = vtypes.get_initval(src)
         return self.TmpReal(width, dims, signed, value, initval, prefix)
 
     def GenvarLike(self, src, name=None, width=None, dims=None,
                    signed=None, value=None):
 
         if name is None:
+            if not hasattr(src, 'name'):
+                raise ValueError("'name' is required.")
             name = src.name
         if width is None:
-            width = src.width
+            width = src.bit_length()
         if dims is None:
-            dims = src.dims
+            dims = vtypes.get_dims(src)
         if signed is None:
-            signed = src.signed
+            signed = vtypes.get_signed(src)
         if value is None:
-            value = src.value
+            value = vtypes.get_value(src)
         return self.Genvar(name, width, dims, signed, value)
 
     def TmpGenvarLike(self, src, width=None, dims=None,
                       signed=None, value=None, prefix=None):
 
         if width is None:
-            width = src.width
+            width = src.bit_length()
         if dims is None:
-            dims = src.dims
+            dims = vtypes.get_dims(src)
         if signed is None:
-            signed = src.signed
+            signed = vtypes.get_signed(src)
         if value is None:
-            value = src.value
+            value = vtypes.get_value(src)
         return self.TmpGenvar(width, dims, signed, value, prefix)
 
     def ParameterLike(self, src, name=None, value=None, width=None,
                       signed=False, dims=None):
 
         if name is None:
+            if not hasattr(src, 'name'):
+                raise ValueError("'name' is required.")
             name = src.name
-        if value is None:
-            value = src.value
         if width is None:
-            width = src.width
-        if signed is None:
-            signed = src.signed
+            width = src.bit_length()
         if dims is None:
-            dims = src.dims
+            dims = vtypes.get_dims(src)
+        if signed is None:
+            signed = vtypes.get_signed(src)
+        if value is None:
+            value = vtypes.get_value(src)
         return self.Parameter(name, value, width, signed, dims)
 
     def LocalparamLike(self, src, name=None, value=None, width=None,
                        signed=False, dims=None):
 
         if name is None:
+            if not hasattr(src, 'name'):
+                raise ValueError("'name' is required.")
             name = src.name
-        if value is None:
-            value = src.value
         if width is None:
-            width = src.width
-        if signed is None:
-            signed = src.signed
+            width = src.bit_length()
         if dims is None:
-            dims = src.dims
+            dims = vtypes.get_dims(src)
+        if signed is None:
+            signed = vtypes.get_signed(src)
+        if value is None:
+            value = vtypes.get_value(src)
         return self.Localparam(name, value, width, signed, dims)
 
     def TmpLocalparamLike(self, src, value=None, width=None,
                           signed=False, dims=None, prefix=None):
 
-        if value is None:
-            value = src.value
         if width is None:
-            width = src.width
-        if signed is None:
-            signed = src.signed
+            width = src.bit_length()
         if dims is None:
-            dims = src.dims
+            dims = vtypes.get_dims(src)
+        if signed is None:
+            signed = vtypes.get_signed(src)
+        if value is None:
+            value = vtypes.get_value(src)
         return self.TmpLocalparam(value, width, signed, dims, prefix)
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # User interface for control statements
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def Always(self, *sensitivity):
 
         t = vtypes.Always(*sensitivity)
@@ -494,7 +516,7 @@ class Module(vtypes.VeriloggenNode):
         self.items.append(t)
         return t
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def GenerateFor(self, pre, cond, post, scope=None):
 
         t = GenerateFor(self, pre, cond, post, scope)
@@ -527,7 +549,7 @@ class Module(vtypes.VeriloggenNode):
         self.items.append(t)
         return t
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def Instance(self, module, instname, params=None, ports=None):
 
         if isinstance(module, str):
@@ -553,16 +575,16 @@ class Module(vtypes.VeriloggenNode):
 
         return t
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def EmbeddedCode(self, code):
 
         t = vtypes.EmbeddedCode(code)
         self.items.append(t)
         return t
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # User intarface for reset assignments
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def make_reset(self):
         ret = []
         for vname, var in self.variable.items():
@@ -571,9 +593,9 @@ class Module(vtypes.VeriloggenNode):
                 ret.append(r)
         return ret
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # User interface for accessing internal information
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def get_params(self):
         return self.global_constant
 
@@ -597,7 +619,7 @@ class Module(vtypes.VeriloggenNode):
             raise NameError("No such variable '%s'" % r)
         return v
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def copy_params(self, src, prefix=None, postfix=None,
                     include=None, exclude=None, rename_exclude=None,
                     use_fullmatch=False):
@@ -892,7 +914,7 @@ class Module(vtypes.VeriloggenNode):
                                        include, exclude, rename_exclude,
                                        use_fullmatch, use_wire)
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def connect_params(self, targ, prefix=None, postfix=None,
                        include=None, exclude=None, strict=False):
         if prefix is None:
@@ -979,9 +1001,9 @@ class Module(vtypes.VeriloggenNode):
                 ret.append((key, self.variable[my_key]))
         return ret
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # User interface for Verilog code generation
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def to_verilog(self, filename=None, for_verilator=False):
         import veriloggen.verilog.to_verilog as to_verilog
         obj = self.to_hook_resolved_obj()
@@ -991,7 +1013,7 @@ class Module(vtypes.VeriloggenNode):
         """ add a hooked method to 'to_verilog()' """
         self.hook.append((method, args, kwargs))
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def add_object(self, obj):
         if isinstance(obj, vtypes._Variable) and obj.name is None:
             raise ValueError("Object must have a name.")
@@ -1082,7 +1104,7 @@ class Module(vtypes.VeriloggenNode):
 
         raise TypeError("Object type '%s' is not supported." % str(type(obj)))
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def add_function(self, t):
         if not isinstance(t, function.Function):
             raise TypeError(
@@ -1100,7 +1122,7 @@ class Module(vtypes.VeriloggenNode):
         self.items.append(t)
         return t
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def remove(self, v):
         vid = id(v)
         for i, item in enumerate(self.items):
@@ -1111,7 +1133,7 @@ class Module(vtypes.VeriloggenNode):
     def append(self, v):
         self.items.append(v)
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def find_identifier(self, name):
         if name in self.io_variable:
             return self.io_variable[name]
@@ -1131,13 +1153,13 @@ class Module(vtypes.VeriloggenNode):
             return self.generate[name]
         return None
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def get_tmp(self):
         ret = self.tmp_count
         self.tmp_count += 1
         return ret
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def is_input(self, name):
         if name not in self.io_variable:
             return False
@@ -1177,7 +1199,7 @@ class Module(vtypes.VeriloggenNode):
             return True
         return False
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def get_opposite_variable(self, var, use_wire=False):
         if isinstance(var, vtypes.Input):
             if use_wire:
@@ -1189,7 +1211,7 @@ class Module(vtypes.VeriloggenNode):
             return vtypes.Wire
         raise TypeError('No corresponding IO type for %s' % str(type(var)))
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def to_hook_resolved_obj(self):
         # if there is no hooked method, object copy is not required.
         if not self.has_hook():
@@ -1217,7 +1239,7 @@ class Module(vtypes.VeriloggenNode):
                 return True
         return False
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def find_module(self, name):
         if name in self.submodule:
             return self.submodule[name]

@@ -129,6 +129,23 @@ def get_signed(obj):
     return False
 
 
+def get_dims(obj):
+    if hasattr(obj, 'dims'):
+        return obj.dims
+    return None
+
+
+def get_value(obj):
+    if hasattr(obj, 'value'):
+        return obj.value
+    return None
+
+def get_initval(obj):
+    if hasattr(obj, 'initval'):
+        return obj.initval
+    return None
+
+
 def max_width(left, right):
     if left is None and right is None:
         return None
@@ -682,6 +699,8 @@ class _ParameterVariable(_Variable):
                  raw_width=None, module=None):
         if isinstance(value, _ParameterVariable):
             value = value.value
+        if value is None:
+            raise ValueError('value must not be None.')
         _Variable.__init__(self, width=width, signed=signed, value=value, name=name,
                            raw_width=raw_width, module=module)
 
