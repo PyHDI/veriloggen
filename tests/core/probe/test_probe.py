@@ -15,8 +15,8 @@ module blinkled #
   );
 
   reg [32-1:0] _tmp_0;
-  wire [32-1:0] probe_1;
-  assign probe_1 = _tmp_0;
+  wire [32-1:0] _probe_1;
+  assign _probe_1 = _tmp_0;
 
   always @(posedge CLK) begin
     if(RST) begin
