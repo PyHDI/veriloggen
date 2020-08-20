@@ -476,7 +476,7 @@ class Module(vtypes.VeriloggenNode):
             value = vtypes.get_value(src)
         return self.TmpLocalparam(value, width, signed, dims, prefix)
 
-    def Probe(self, src, prefix='probe'):
+    def Probe(self, src, prefix='_probe'):
         v = self.TmpWireLike(src, prefix=prefix)
         v.assign(src)
         return v
