@@ -476,6 +476,11 @@ class Module(vtypes.VeriloggenNode):
             value = vtypes.get_value(src)
         return self.TmpLocalparam(value, width, signed, dims, prefix)
 
+    def Probe(self, src, prefix='probe'):
+        v = self.TmpWireLike(src, prefix=prefix)
+        v.assign(src)
+        return v
+
     # -------------------------------------------------------------------------
     # User interface for control statements
     # -------------------------------------------------------------------------
