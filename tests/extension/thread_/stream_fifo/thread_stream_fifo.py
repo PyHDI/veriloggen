@@ -60,7 +60,7 @@ def mkLed():
         gaddr = offset
         myaxi.dma_write(myram, laddr, gaddr, size, port=1)
 
-        # AXI-stream read -> FIFO -> FIFO -> AXI-stream write
+        # AXI-stream read -> FIFO -> Stream -> FIFO -> AXI-stream write
         maxi_in.dma_read_async(gaddr, size)
         axi_in.write_fifo(fifo_in, size)
 

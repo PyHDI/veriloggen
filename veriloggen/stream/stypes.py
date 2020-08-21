@@ -3147,7 +3147,13 @@ class Substream(_SpecialOperator):
 
         for data, (name, cond) in zip(arg_data, self.conds.items()):
             var = self.substrm.get_named_numeric(name)
-            var.write(data, cond)
+            if senable is not None and cond is not None:
+                write_cond = vtypes.Ands(cond, senable)
+            elif senable is not None:
+                write_cond = senable
+            else:
+                write_cond = cond
+            var.write(data, write_cond)
 
         self.sig_data = vtypes.Int(0)
 

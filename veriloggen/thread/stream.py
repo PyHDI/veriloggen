@@ -53,7 +53,9 @@ class Stream(BaseStream):
                       'sink_join', 'sink_done',
                       'source_join_and_run',
                       'enable_dump', 'disable_dump')
-    ram_delay = 4
+    ### ???
+    # ram_delay = 4
+    ram_delay = 4 + 1
 
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=32,
@@ -61,7 +63,12 @@ class Stream(BaseStream):
                  ram_sel_width=8, fsm_as_module=False,
                  dump=False, dump_base=10, dump_mode='all'):
 
+        # external throttling signal
+        self.stream_ready = m.Wire('_'.join(['', name, 'stream_ready']))
+        self.stream_ready.assign(1)
+
         BaseStream.__init__(self, module=m, clock=clk, reset=rst,
+                            oready=self.stream_ready,
                             no_hook=True,
                             dump=dump, dump_base=dump_base, dump_mode=dump_mode)
 
@@ -81,15 +88,20 @@ class Stream(BaseStream):
         self.fsm = FSM(self.module, '_%s_fsm' %
                        self.name, self.clock, self.reset,
                        as_module=self.fsm_as_module)
+
         self.start_flag = self.module.Wire(
             '_'.join(['', self.name, 'start_flag']))
-        self.start = self.module.Reg(
-            '_'.join(['', self.name, 'start']), initval=0)
+        ### ???
+        # self.start = self.module.Reg(
+        #     '_'.join(['', self.name, 'start']), initval=0)
 
-        self.end_flag = self.module.Reg(
-            '_'.join(['', self.name, 'end_flag']), initval=0)
+        ### ???
+        # self.end_flag = self.module.Reg(
+        #     '_'.join(['', self.name, 'end_flag']), initval=0)
+        self.end_flag = self.module.Wire(
+            '_'.join(['', self.name, 'end_flag']))
         self.term_sink = self.module.Reg(
-            '_'.join(['', self.name, 'term_sink']), initval=0)
+             '_'.join(['', self.name, 'term_sink']), initval=0)
 
         self.source_busy = self.module.Reg(
             '_'.join(['', self.name, 'source_busy']), initval=0)
@@ -203,16 +215,22 @@ class Stream(BaseStream):
                                                  initval=0)
         var.source_ram_rdata = self.module.Wire('_%s_source_ram_rdata' % prefix,
                                                 datawidth)
-        var.source_ram_rvalid = self.module.Reg('_%s_source_ram_rvalid' % prefix,
-                                                initval=0)
+        ### ???
+        # var.source_ram_rvalid = self.module.Reg('_%s_source_ram_rvalid' % prefix,
+        #                                        initval=0)
+        var.source_ram_rvalid = self.module.Wire('_%s_source_ram_rvalid' % prefix)
 
         var.has_source_empty = False
         var.source_empty_data = self.module.Reg('_%s_source_empty_data' % prefix,
                                                 datawidth, initval=0)
 
+        ### ???
+        # self.seq(
+        #    var.source_idle(var.source_idle),
+        #    var.source_ram_rvalid(0)
+        # )
         self.seq(
-            var.source_idle(var.source_idle),
-            var.source_ram_rvalid(0)
+            var.source_idle(var.source_idle)
         )
 
         return var
@@ -717,7 +735,10 @@ class Stream(BaseStream):
             fsm.goto_next()
             return
 
-        source_start = vtypes.Ands(self.start,
+        ### ???
+        # source_start = vtypes.Ands(self.start,
+        #                            vtypes.Not(vtypes.Uor(vtypes.And(var.source_mode, mode_idle))))
+        source_start = vtypes.Ands(self.start_flag,
                                    vtypes.Not(vtypes.Uor(vtypes.And(var.source_mode, mode_idle))))
 
         self.seq.If(source_start)(
@@ -1053,8 +1074,12 @@ class Stream(BaseStream):
             var.next_constant_data(value)
         )
 
+        ### ???
+        # if not var.has_constant_data:
+        #     var.write(var.next_constant_data, self.start)
+        #     var.has_constant_data = True
         if not var.has_constant_data:
-            var.write(var.next_constant_data, self.start)
+            var.write(var.next_constant_data, self.start_flag)
             var.has_constant_data = True
 
         fsm.goto_next()
@@ -1205,25 +1230,30 @@ class Stream(BaseStream):
 
         start_cond = vtypes.Ands(self.fsm.here, self.start_flag)
 
-        # start pulse
-        self.fsm.seq(
-            self.start(0)
-        )
+        ### ???
+        # # start pulse
+        # self.fsm.seq(
+        #     self.start(0)
+        # )
+
+        # self.fsm.If(self.start_flag)(
+        #     self.start(1),
+        #     self.source_busy(1)
+        # )
 
         self.fsm.If(self.start_flag)(
-            self.start(1),
             self.source_busy(1)
         )
 
         if self.reduce_reset is not None:
-            reset_delay = self.ram_delay + 1
-            self.fsm.seq.If(self.seq.Prev(start_cond, reset_delay))(
+            reset_delay = self.ram_delay
+            self.fsm.seq.If(self.seq.Prev(start_cond, reset_delay, cond=self.stream_ready))(
                 self.reduce_reset(0)
             )
 
         if self.dump:
-            dump_delay = self.ram_delay + 1
-            self.seq.If(self.seq.Prev(start_cond, dump_delay))(
+            dump_delay = self.ram_delay
+            self.seq.If(self.seq.Prev(start_cond, dump_delay, cond=self.stream_ready))(
                 self.dump_enable(1)
             )
 
@@ -1241,17 +1271,17 @@ class Stream(BaseStream):
             sub_fsm._set_index(0)
 
             if sub.substrm.reduce_reset is not None:
-                sub_fsm.seq.If(self.seq.Prev(start_cond, reset_delay))(
+                sub_fsm.seq.If(self.seq.Prev(start_cond, reset_delay, cond=self.stream_ready))(
                     sub.substrm.reduce_reset(0)
                 )
 
             if self.dump and sub.substrm.dump:
-                sub_fsm.seq.If(self.seq.Prev(start_cond, dump_delay))(
+                sub_fsm.seq.If(self.seq.Prev(start_cond, dump_delay, cond=self.stream_ready))(
                     sub.substrm.dump_enable(1)
                 )
 
             for cond in sub.conds.values():
-                sub_fsm.seq.If(self.seq.Prev(start_cond, cond_delay))(
+                sub_fsm.seq.If(self.seq.Prev(start_cond, cond_delay, cond=self.stream_ready))(
                     cond(1)
                 )
 
@@ -1263,27 +1293,40 @@ class Stream(BaseStream):
                                        key=lambda x: x[0]):
             done_cond = make_condition(done_cond, source_idle)
 
-        done = self.module.Wire('_%s_done' % self.name)
-        done.assign(done_cond)
+        ### ???
+        # done = self.module.Wire('_%s_done' % self.name)
+        # done.assign(done_cond)
 
-        self.fsm.If(done).goto_next()
+        # self.fsm.If(done).goto_next()
 
-        self.fsm(
-            self.source_busy(0)
+        # self.fsm(
+        #     self.source_busy(0)
+        # )
+
+        # end_cond = self.fsm.here
+
+        done_cond = make_condition(done_cond, self.fsm.here)
+        self.end_flag.assign(done_cond)
+        end_cond = self.end_flag
+
+        self.fsm.If(end_cond)(
+             self.source_busy(0)
         )
-
-        end_cond = self.fsm.here
 
         # reset accumulate pipelines
         if self.reduce_reset is not None:
-            reset_delay = 1
-            self.fsm.seq.If(self.seq.Prev(end_cond, reset_delay))(
+            ### ???
+            # reset_delay = 1
+            reset_delay = self.ram_delay - 2
+            self.fsm.seq.If(self.seq.Prev(end_cond, reset_delay, cond=self.stream_ready))(
                 self.reduce_reset(1)
             )
 
         if self.dump:
-            dump_delay = 1
-            self.seq.If(self.seq.Prev(end_cond, dump_delay))(
+            ### ???
+            # dump_delay = 1
+            dump_delay = self.ram_delay - 2
+            self.seq.If(self.seq.Prev(end_cond, dump_delay, cond=self.stream_ready))(
                 self.dump_enable(0)
             )
 
@@ -1299,17 +1342,17 @@ class Stream(BaseStream):
             sub_fsm._set_index(0)
 
             if sub.substrm.reduce_reset is not None:
-                sub_fsm.seq.If(self.seq.Prev(end_cond, reset_delay))(
+                sub_fsm.seq.If(self.seq.Prev(end_cond, reset_delay, cond=self.stream_ready))(
                     sub.substrm.reduce_reset(1)
                 )
 
             if self.dump and sub.substrm.dump:
-                sub_fsm.seq.If(self.seq.Prev(end_cond, dump_delay))(
+                sub_fsm.seq.If(self.seq.Prev(end_cond, dump_delay, cond=self.stream_ready))(
                     sub.substrm.dump_enable(0)
                 )
 
             for cond in sub.conds.values():
-                sub_fsm.seq.If(self.seq.Prev(end_cond, cond_delay))(
+                sub_fsm.seq.If(self.seq.Prev(end_cond, cond_delay, cond=self.stream_ready))(
                     cond(0)
                 )
 
@@ -1322,18 +1365,21 @@ class Stream(BaseStream):
 
             sub.substrm.fsm.seq.If(sub.substrm.sink_wait_count == 1,
                                    vtypes.Not(start_cond),
-                                   sub.substrm.seq.Prev(end_cond, num_wdelay))(
+                                   sub.substrm.seq.Prev(end_cond, num_wdelay,
+                                                        cond=self.stream_ready))(
                 sub.substrm.sink_busy(0)
             )
             sub.substrm.fsm.seq.If(start_cond)(
                 sub.substrm.sink_busy(1)
             )
             sub.substrm.fsm.seq.If(vtypes.Not(start_cond),
-                                   sub.substrm.seq.Prev(end_cond, num_wdelay))(
+                                   sub.substrm.seq.Prev(end_cond, num_wdelay,
+                                                        cond=self.stream_ready))(
                 sub.substrm.sink_wait_count.dec()
             )
             sub.substrm.fsm.seq.If(start_cond,
-                                   vtypes.Not(sub.substrm.seq.Prev(end_cond, num_wdelay)))(
+                                   vtypes.Not(sub.substrm.seq.Prev(end_cond, num_wdelay,
+                                                                   cond=self.stream_ready)))(
                 sub.substrm.sink_wait_count.inc()
             )
 
@@ -1346,38 +1392,46 @@ class Stream(BaseStream):
 
         self.fsm.seq.If(self.sink_wait_count == 1,
                         vtypes.Not(start_cond),
-                        self.seq.Prev(end_cond, num_wdelay))(
+                        self.seq.Prev(end_cond, num_wdelay, cond=self.stream_ready))(
             self.sink_busy(0)
         )
         self.fsm.seq.If(start_cond)(
             self.sink_busy(1)
         )
         self.fsm.seq.If(vtypes.Not(start_cond),
-                        self.seq.Prev(end_cond, num_wdelay))(
+                        self.seq.Prev(end_cond, num_wdelay, cond=self.stream_ready))(
             self.sink_wait_count.dec()
         )
         self.fsm.seq.If(start_cond,
-                        vtypes.Not(self.seq.Prev(end_cond, num_wdelay)))(
+                        vtypes.Not(self.seq.Prev(end_cond, num_wdelay, cond=self.stream_ready)))(
             self.sink_wait_count.inc()
         )
 
-        self.fsm.seq(
-            self.end_flag(0)
-        )
-        self.fsm.seq.If(self.seq.Prev(end_cond, num_wdelay))(
-            self.end_flag(1)
-        )
+        ### ???
+        #self.fsm.seq(
+        #    self.end_flag(0)
+        #)
+        #self.fsm.seq.If(self.seq.Prev(end_cond, num_wdelay))(
+        #    self.end_flag(1)
+            #)
 
-        pipeline_depth = self.pipeline_depth()
+        # pipeline_depth = self.pipeline_depth()
 
+        ### ???
         self.fsm.seq(
             self.term_sink(0)
         )
-        self.fsm.seq.If(self.seq.Prev(end_cond, pipeline_depth))(
-            self.term_sink(1)
+        # self.fsm.seq.If(self.seq.Prev(end_cond, pipeline_depth))(
+        #     self.term_sink(1)
+        # )
+
+        term_delay = num_wdelay - 3
+        self.fsm.seq.If(self.seq.Prev(end_cond, term_delay, cond=self.stream_ready))(
+             self.term_sink(1)
         )
 
-        self.fsm.goto_init()
+        # self.fsm.goto_init()
+        self.fsm.If(end_cond).goto_init()
 
         return 0
 
@@ -1458,14 +1512,22 @@ class Stream(BaseStream):
         )
 
         ram_cond = (var.source_ram_sel == ram_id)
-        renable = vtypes.Ands(var.source_ram_renable, ram_cond)
+        ### ???
+        # renable = vtypes.Ands(var.source_ram_renable, ram_cond)
+        renable = vtypes.Ands(self.stream_ready, var.source_ram_renable, ram_cond)
 
         d, v = ram.read_rtl(var.source_ram_raddr, port=port, cond=renable)
+        ### ???
+        # add_mux(var.source_ram_rdata, ram_cond, d)
+        d = self.seq.Prev(d, 1, cond=v)
+        v = self.seq.Prev(v, 1, cond=self.stream_ready)
         add_mux(var.source_ram_rdata, ram_cond, d)
+        add_mux(var.source_ram_rvalid, ram_cond, v)
 
-        self.seq.If(self.seq.Prev(renable, 1))(
-            var.source_ram_rvalid(1)
-        )
+        ### ???
+        # self.seq.If(self.seq.Prev(renable, 1))(
+        #     var.source_ram_rvalid(1)
+        # )
 
         if (self.dump and
             (self.dump_mode == 'all' or
@@ -1528,9 +1590,9 @@ class Stream(BaseStream):
                               (self.object_id, name))
         dump_ram_step = self.module.Reg(dump_ram_step_name, 32, initval=0)
 
-        enable = self.seq.Prev(read_enable, 2)
+        enable = self.seq.Prev(read_enable, 2, cond=self.stream_ready)
         age = dump_ram_step
-        addr = self.seq.Prev(var.source_ram_raddr, 2)
+        addr = self.seq.Prev(var.source_ram_raddr, 2, cond=self.stream_ready)
         if hasattr(ram, 'point') and ram.point > 0:
             data = vtypes.Div(vtypes.SystemTask('itor', read_data),
                               1.0 * (2 ** ram.point))
@@ -1558,10 +1620,15 @@ class Stream(BaseStream):
             return
 
         wdata = var.source_ram_rdata
-        wenable = var.source_ram_rvalid
+        ### ???
+        # wenable = var.source_ram_rvalid
+        wenable = vtypes.Ands(self.stream_ready, var.source_ram_rvalid)
         var.write(wdata, wenable)
 
-        source_start = vtypes.Ands(self.start,
+        ### ???
+        # source_start = vtypes.Ands(self.start,
+        #                            vtypes.And(var.source_mode, mode_normal))
+        source_start = vtypes.Ands(self.start_flag,
                                    vtypes.And(var.source_mode, mode_normal))
 
         self.seq.If(source_start)(
@@ -1633,10 +1700,15 @@ class Stream(BaseStream):
             return
 
         wdata = var.source_ram_rdata
-        wenable = var.source_ram_rvalid
+        ### ???
+        # wenable = var.source_ram_rvalid
+        wenable = vtypes.Ands(self.stream_ready, var.source_ram_rvalid)
         var.write(wdata, wenable)
 
-        source_start = vtypes.Ands(self.start,
+        ### ???
+        # source_start = vtypes.Ands(self.start,
+        #                            vtypes.And(var.source_mode, mode_pattern))
+        source_start = vtypes.Ands(self.start_flag,
                                    vtypes.And(var.source_mode, mode_pattern))
 
         self.seq.If(source_start)(
@@ -1774,10 +1846,15 @@ class Stream(BaseStream):
             return
 
         wdata = var.source_ram_rdata
-        wenable = var.source_ram_rvalid
+        ### ???
+        # wenable = var.source_ram_rvalid
+        wenable = vtypes.Ands(self.stream_ready, var.source_ram_rvalid)
         var.write(wdata, wenable)
 
-        source_start = vtypes.Ands(self.start,
+        ### ???
+        # source_start = vtypes.Ands(self.start,
+        #                            vtypes.And(var.source_mode, mode_multipattern))
+        source_start = vtypes.Ands(self.start_flag,
                                    vtypes.And(var.source_mode, mode_multipattern))
 
         self.seq.If(source_start)(
@@ -1925,7 +2002,9 @@ class Stream(BaseStream):
         )
 
         ram_cond = (var.sink_ram_sel == ram_id)
-        wenable = vtypes.Ands(var.sink_ram_wenable, ram_cond)
+        ### ???
+        # wenable = vtypes.Ands(var.sink_ram_wenable, ram_cond)
+        wenable = vtypes.Ands(self.stream_ready, var.sink_ram_wenable, ram_cond)
         ram.write_rtl(var.sink_ram_waddr, var.sink_ram_wdata,
                       port=port, cond=wenable)
 
@@ -1987,7 +2066,7 @@ class Stream(BaseStream):
                        '[', addr_vfmt, '] = ', data_vfmt])
 
         enable = var.sink_ram_wenable
-        age = self.seq.Prev(self.dump_step, pipeline_depth + 1) - 1
+        age = self.seq.Prev(self.dump_step, pipeline_depth + 1, cond=self.stream_ready) - 1
         addr = var.sink_ram_waddr
         if hasattr(ram, 'point') and ram.point > 0:
             data = vtypes.Div(vtypes.SystemTask('itor', var.sink_ram_wdata),
@@ -2006,7 +2085,9 @@ class Stream(BaseStream):
             return
 
         start_delay = self._write_delay()
-        start = self.seq.Prev(self.start, start_delay)
+        ### ???
+        # start = self.seq.Prev(self.start, start_delay)
+        start = self.seq.Prev(self.start_flag, start_delay, cond=self.stream_ready)
         sink_start = vtypes.Ands(start,
                                  vtypes.And(var.sink_mode, mode_normal))
 
@@ -2076,7 +2157,9 @@ class Stream(BaseStream):
             return
 
         start_delay = self._write_delay()
-        start = self.seq.Prev(self.start, start_delay)
+        ### ???
+        # start = self.seq.Prev(self.start, start_delay)
+        start = self.seq.Prev(self.start_flag, start_delay, cond=self.stream_ready)
         sink_start = vtypes.Ands(start,
                                  vtypes.And(var.sink_mode, mode_pattern))
 
@@ -2223,7 +2306,9 @@ class Stream(BaseStream):
             return
 
         start_delay = self._write_delay()
-        start = self.seq.Prev(self.start, start_delay)
+        ### ???
+        # start = self.seq.Prev(self.start, start_delay)
+        start = self.seq.Prev(self.start_flag, start_delay, cond=self.stream_ready)
         sink_start = vtypes.Ands(start,
                                  vtypes.And(var.sink_mode, mode_multipattern))
 
@@ -2380,9 +2465,15 @@ class Stream(BaseStream):
         )
 
         ram_cond = (var.read_ram_sel == ram_id)
-        renable = vtypes.Ands(var.enable, ram_cond)
+        ### ???
+        # renable = vtypes.Ands(var.enable, ram_cond)
+        renable = vtypes.Ands(self.stream_ready, var.enable, ram_cond)
 
         d, v = ram.read_rtl(var.addr, port=port, cond=renable)
+        ### ???
+        # add_mux(var.read_data, ram_cond, d)
+        d = self.seq.Prev(d, 1, cond=v)
+        v = self.seq.Prev(v, 1, cond=self.stream_ready)
         add_mux(var.read_data, ram_cond, d)
 
         if (self.dump and
@@ -2446,9 +2537,9 @@ class Stream(BaseStream):
                               (self.object_id, name))
         dump_ram_step = self.module.Reg(dump_ram_step_name, 32, initval=0)
 
-        enable = self.seq.Prev(read_enable, 2)
+        enable = self.seq.Prev(read_enable, 2, cond=self.stream_ready)
         age = dump_ram_step
-        addr = self.seq.Prev(var.addr, 2)
+        addr = self.seq.Prev(var.addr, 2, cond=self.stream_ready)
         if hasattr(ram, 'point') and ram.point > 0:
             data = vtypes.Div(vtypes.SystemTask('itor', read_data),
                               1.0 * (2 ** ram.point))
@@ -2493,7 +2584,9 @@ class Stream(BaseStream):
         )
 
         ram_cond = (var.write_ram_sel == ram_id)
-        wenable = vtypes.Ands(var.enable, ram_cond)
+        ### ???
+        # wenable = vtypes.Ands(var.enable, ram_cond)
+        wenable = vtypes.Ands(self.stream_ready, var.enable, ram_cond)
 
         ram.write_rtl(var.addr, var.write_data, port=port, cond=wenable)
 
@@ -2555,7 +2648,7 @@ class Stream(BaseStream):
                        '[', addr_vfmt, '] = ', data_vfmt])
 
         enable = write_enable
-        age = self.seq.Prev(self.dump_step, pipeline_depth + 1) - 1
+        age = self.seq.Prev(self.dump_step, pipeline_depth + 1, cond=self.stream_ready) - 1
         addr = var.addr
         if hasattr(ram, 'point') and ram.point > 0:
             data = vtypes.Div(vtypes.SystemTask('itor', var.write_data),
@@ -2653,12 +2746,14 @@ class Substream(BaseSubstream):
         source_name = self.substrm._dataname(name)
         cond = self.module.Reg(compiler._tmp_name(self.name('%s_cond' % source_name)),
                                initval=0)
+        ### ???
         BaseSubstream.write(self, source_name, data, cond)
 
     def to_constant(self, name, data):
         constant_name = self.substrm._dataname(name)
         cond = self.module.Reg(compiler._tmp_name(self.name('%s_cond' % constant_name)),
                                initval=0)
+        ### ???
         BaseSubstream.write(self, constant_name, data, cond)
 
     def from_sink(self, name):
