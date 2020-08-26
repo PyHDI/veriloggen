@@ -1368,6 +1368,11 @@ class Or(_BinaryLogicalOperator):
 
 class Land(_BinaryLogicalOperator):
 
+    def _set_attributes(self):
+        self.width = 1
+        self.point = 0
+        self.signed = False
+
     def eval(self):
         left = self.left.eval()
         right = self.right.eval()
@@ -1377,6 +1382,11 @@ class Land(_BinaryLogicalOperator):
 
 
 class Lor(_BinaryLogicalOperator):
+
+    def _set_attributes(self):
+        self.width = 1
+        self.point = 0
+        self.signed = False
 
     def eval(self):
         left = self.left.eval()
