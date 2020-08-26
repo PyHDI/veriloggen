@@ -1309,9 +1309,7 @@ class Land(_BinaryOperator):
         return False
 
     def bit_length(self):
-        left = self.left.bit_length()
-        right = self.right.bit_length()
-        return max_width(left, right)
+        return 1
 
 
 class Lor(_BinaryOperator):
@@ -1327,9 +1325,7 @@ class Lor(_BinaryOperator):
         return False
 
     def bit_length(self):
-        left = self.left.bit_length()
-        right = self.right.bit_length()
-        return max_width(left, right)
+        return 1
 
 
 class Uplus(_UnaryOperator):
