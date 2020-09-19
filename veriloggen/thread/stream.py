@@ -64,7 +64,7 @@ class Stream(BaseStream):
 
         # stall control
         self.stream_oready = m.Wire('_'.join(['', name, 'stream_oready']))
-        self.stream_oready.assign(1)  ### ???
+        self.stream_oready.assign(1)  # ???
 
         BaseStream.__init__(self, module=m, clock=clk, reset=rst,
                             oready=self.stream_oready,
@@ -782,11 +782,11 @@ class Stream(BaseStream):
             raise NameError("No such stream '%s'" % name)
 
         set_cond_base = self._set_flag(fsm)
-        set_cond = self._delayed_from_source_to_sink(set_cond_base)
+        set_cond = self._delay_from_start_to_sink(set_cond_base)
         sink_mode = mode_normal
-        sink_offset = self._delayed_from_source_to_sink(offset)
-        sink_size = self._delayed_from_source_to_sink(size)
-        sink_stride = self._delayed_from_source_to_sink(stride)
+        sink_offset = self._delay_from_start_to_sink(offset)
+        sink_size = self._delay_from_start_to_sink(size)
+        sink_stride = self._delay_from_start_to_sink(stride)
 
         self.seq.If(set_cond)(
             var.sink_mode(mode_normal),
@@ -843,9 +843,9 @@ class Stream(BaseStream):
 
         set_cond_base = self._set_flag(fsm)
 
-        set_cond = self._delayed_from_source_to_sink(set_cond_base)
+        set_cond = self._delay_from_start_to_sink(set_cond_base)
         sink_mode = mode_pattern
-        sink_offset = self._delayed_from_source_to_sink(offset)
+        sink_offset = self._delay_from_start_to_sink(offset)
 
         self.seq.If(set_cond)(
             var.sink_mode(sink_mode),
@@ -859,8 +859,8 @@ class Stream(BaseStream):
              (size, stride)) in zip(var.sink_pat_sizes, var.sink_pat_strides,
                                     pattern + pad):
 
-            sink_size = self._delayed_from_source_to_sink(size)
-            sink_stride = self._delayed_from_source_to_sink(stride)
+            sink_size = self._delay_from_start_to_sink(size)
+            sink_stride = self._delay_from_start_to_sink(stride)
 
             self.seq.If(set_cond)(
                 sink_pat_size(sink_size),
@@ -941,7 +941,7 @@ class Stream(BaseStream):
 
         set_cond_base = self._set_flag(fsm)
 
-        set_cond = self._delayed_from_source_to_sink(set_cond_base)
+        set_cond = self._delay_from_start_to_sink(set_cond_base)
         sink_mode = mode_multipattern
 
         self.seq.If(set_cond)(
@@ -955,7 +955,7 @@ class Stream(BaseStream):
         for offset, multipat_offset in zip(offsets + offsets_pad,
                                            var.sink_multipat_offsets):
 
-            sink_offset = self._delayed_from_source_to_sink(offset)
+            sink_offset = self._delay_from_start_to_sink(offset)
 
             self.seq.If(set_cond)(
                 multipat_offset(sink_offset)
@@ -970,8 +970,8 @@ class Stream(BaseStream):
                  (size, stride)) in zip(multipat_sizes, multipat_strides,
                                         pattern + pad):
 
-                sink_size = self._delayed_from_source_to_sink(size)
-                sink_stride = self._delayed_from_source_to_sink(stride)
+                sink_size = self._delay_from_start_to_sink(size)
+                sink_stride = self._delay_from_start_to_sink(stride)
 
                 self.seq.If(set_cond)(
                     multipat_size(sink_size),
@@ -1007,9 +1007,9 @@ class Stream(BaseStream):
             raise NameError("No such stream '%s'" % name)
 
         set_cond_base = self._set_flag(fsm)
-        set_cond = self._delayed_from_source_to_sink(set_cond_base)
+        set_cond = self._delay_from_start_to_sink(set_cond_base)
         sink_mode = mode_normal
-        sink_size = self._delayed_from_source_to_sink(size)
+        sink_size = self._delay_from_start_to_sink(size)
 
         self.seq.If(set_cond)(
             var.sink_mode(sink_mode),
@@ -1052,7 +1052,7 @@ class Stream(BaseStream):
             raise NameError("No such stream '%s'" % name)
 
         set_cond_base = self._set_flag(fsm)
-        set_cond = self._delayed_from_source_to_sink(set_cond_base)
+        set_cond = self._delay_from_start_to_sink(set_cond_base)
 
         ram_sel = var.sink_ram_sel
         self.seq.If(set_cond)(
@@ -1257,16 +1257,13 @@ class Stream(BaseStream):
         start_cond = self.source_start
 
         if self.reduce_reset is not None:
-            reset_delay = self.ram_delay
-            self.fsm.seq.If(self.seq.Prev(start_cond, reset_delay, cond=self.stream_oready),
-                            self.stream_oready)(
+            self.fsm.seq.If(self._delay_from_start_to_source(start_cond))(
                 self.reduce_reset(0)
             )
 
         if self.dump:
             dump_delay = self.ram_delay
-            self.seq.If(self.seq.Prev(start_cond, dump_delay, cond=self.stream_oready),
-                        self.stream_oready)(
+            self.seq.If(self._delay_from_start_to_source(start_cond))(
                 self.dump_enable(1)
             )
 
@@ -1321,22 +1318,19 @@ class Stream(BaseStream):
 
         self.fsm.If(self.stream_oready, end_cond).goto_init()
 
-        # ??? start
         # reset accumulate pipelines
         if self.reduce_reset is not None:
-            reset_delay = self.ram_delay
-            self.fsm.seq.If(self.seq.Prev(end_cond, reset_delay, cond=self.stream_oready),
-                            self.stream_oready)(
+            self.fsm.seq.If(self._delay_from_start_to_source(end_cond))(
                 self.reduce_reset(1)
             )
 
         if self.dump:
             dump_delay = self.ram_delay
-            self.seq.If(self.seq.Prev(end_cond, dump_delay, cond=self.stream_oready),
-                        self.stream_oready)(
+            self.seq.If(self._delay_from_start_to_source(end_cond))(
                 self.dump_enable(0)
             )
 
+        # ??? start
         for sub in substreams:
             sub.substrm.fsm.seq.If(end_cond)(
                 sub.substrm.source_busy(0)
@@ -1367,9 +1361,9 @@ class Stream(BaseStream):
                 )
         # ??? end
 
-        self.sink_start.assign(self._delayed_from_source_to_sink(self.source_start))
-        self.sink_stop.assign(self._delayed_from_source_to_sink(self.source_stop))
-        self.sink_busy.assign(self._delayed_from_source_to_sink(self.source_busy))
+        self.sink_start.assign(self._delay_from_start_to_sink(self.source_start))
+        self.sink_stop.assign(self._delay_from_start_to_sink(self.source_stop))
+        self.sink_busy.assign(self._delay_from_start_to_sink(self.source_busy))
 
         return 0
 
@@ -1428,13 +1422,20 @@ class Stream(BaseStream):
         fsm.goto_next()
         return self.dump_mask
 
-    def _delayed_from_source_to_sink(self, v):
+    def _delay_from_start_to_sink(self, v):
         delay = self._write_delay() - 1
-        source_value = self.seq.Prev(v, 1, cond=self.stream_oready)
-        first_renable = self.seq.Prev(source_value, 1, cond=self.stream_oready)
+        start_value = self.seq.Prev(v, 1, cond=self.stream_oready)
+        first_renable = self.seq.Prev(start_value, 1, cond=self.stream_oready)
         first_rvalid = self.seq.Prev(first_renable, 2)
         sink_value = self.seq.Prev(first_rvalid, delay, cond=self.stream_oready)
         return sink_value
+
+    def _delay_from_start_to_source(self, v):
+        start_value = self.seq.Prev(v, 1, cond=self.stream_oready)
+        first_renable = self.seq.Prev(start_value, 1, cond=self.stream_oready)
+        first_rvalid = self.seq.Prev(first_renable, 2)
+        source_value = vtypes.Ands(first_rvalid, self.stream_oready)
+        return source_value
 
     def _setup_source_ram(self, ram, var, port, set_cond):
         if ram._id() in var.source_ram_id_map:
