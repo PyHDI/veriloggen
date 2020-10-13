@@ -3121,12 +3121,6 @@ class Substream(_SpecialOperator):
             raise ValueError('clock must not be None.')
         if substrm.reset is None:
             raise ValueError('reset must not be None.')
-        if (substrm.ivalid is not None or
-                substrm.iready is not None):
-            raise ValueError('ivalid and iready signals must be empty.')
-        if (substrm.ovalid is not None or
-                substrm.oready is not None):
-            raise ValueError('ovalid and oready signals must be empty.')
 
         if not substrm.implemented:
             substrm.implement()

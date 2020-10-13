@@ -104,6 +104,11 @@ class Stream(BaseStream):
         self.sink_busy = self.module.Wire(
             '_'.join(['', self.name, 'sink_busy']))
 
+        self.busy = self.module.Wire(
+            '_'.join(['', self.name, 'busy']))
+        self.busy_buf = self.module.Reg(
+            '_'.join(['', self.name, 'busy_buf']), initval=0)
+
         self.reduce_reset = None
         self.reduce_reset_var = None
 
@@ -370,6 +375,20 @@ class Stream(BaseStream):
         return var
 
     def substream(self, substrm):
+        _id = self.var_id_count
+        name = 'substream_%d' % _id
+
+        if name in self.var_name_map:
+            raise ValueError("'%s' is already defined in stream '%s'" %
+                             (name, self.name))
+
+        prefix = self._prefix(name)
+
+        self.var_id_count += 1
+
+        cond = self.module.Reg('_%s_cond' % prefix, initval=0)
+        add_mux(substrm.stream_oready, cond, self.stream_oready)
+
         sub = Substream(self.module, self.clock, self.reset, substrm, self)
         self.substreams.append(sub)
         return sub
@@ -1262,43 +1281,37 @@ class Stream(BaseStream):
             )
 
         if self.dump:
-            dump_delay = self.ram_delay
             self.seq.If(self._delay_from_start_to_source(start_cond))(
                 self.dump_enable(1)
             )
 
-        # ??? start
         substreams = self._collect_substreams()
         for sub in substreams:
+            start_stage = sub.start_stage
+            reset_delay = sub.reset_delay
+            dump_delay = sub.reset_delay
+            cond_delay = sub.reset_delay - 1
+            sub_fsm = sub.substrm.fsm
+            sub_fsm._set_index(0)
+
             sub.substrm.fsm.seq.If(start_cond, self.stream_oready)(
                 sub.substrm.source_busy(1)
             )
 
-            start_stage = sub.start_stage
-            reset_delay = self.ram_delay + 1 + sub.reset_delay  # ???
-            dump_delay = self.ram_delay + 1 + sub.reset_delay  # ???
-            cond_delay = self.ram_delay + 1 + sub.reset_delay - 2  # ???
-            sub_fsm = sub.substrm.fsm
-            sub_fsm._set_index(0)
-
             if sub.substrm.reduce_reset is not None:
-                sub_fsm.seq.If(self.seq.Prev(start_cond, reset_delay, cond=self.stream_oready),
-                               self.stream_oready)(
+                sub_fsm.seq.If(self._delay_from_start_to_substream(start_cond, reset_delay))(
                     sub.substrm.reduce_reset(0)
                 )
 
             if self.dump and sub.substrm.dump:
-                sub_fsm.seq.If(self.seq.Prev(start_cond, dump_delay, cond=self.stream_oready),
-                               self.stream_oready)(
+                sub_fsm.seq.If(self._delay_from_start_to_substream(start_cond, dump_delay))(
                     sub.substrm.dump_enable(1)
                 )
 
             for cond in sub.conds.values():
-                sub_fsm.seq.If(self.seq.Prev(start_cond, cond_delay, cond=self.stream_oready),
-                               self.stream_oready)(
+                sub_fsm.seq.If(self._delay_from_start_to_substream(start_cond, cond_delay))(
                     cond(1)
                 )
-        # ??? end
 
         # compute and join
         done_cond = None
@@ -1330,51 +1343,53 @@ class Stream(BaseStream):
                 self.dump_enable(0)
             )
 
-        # ??? start
         for sub in substreams:
             sub.substrm.fsm.seq.If(end_cond)(
                 sub.substrm.source_busy(0)
             )
 
-            reset_delay = 1 + sub.reset_delay  # ???
-            dump_delay = 1 + sub.reset_delay  # ???
-            cond_delay = 1 + sub.reset_delay - 1  # ???
+            reset_delay = sub.reset_delay
+            dump_delay = sub.reset_delay
+            cond_delay = sub.reset_delay - 1
             sub_fsm = sub.substrm.fsm
             sub_fsm._set_index(0)
 
             if sub.substrm.reduce_reset is not None:
-                sub_fsm.seq.If(self.seq.Prev(end_cond, reset_delay, cond=self.stream_oready),
-                               self.stream_oready)(
+                sub_fsm.seq.If(self._delay_from_start_to_substream(end_cond, reset_delay))(
                     sub.substrm.reduce_reset(1)
                 )
 
             if self.dump and sub.substrm.dump:
-                sub_fsm.seq.If(self.seq.Prev(end_cond, dump_delay, cond=self.stream_oready),
-                               self.stream_oready)(
+                sub_fsm.seq.If(self._delay_from_start_to_substream(end_cond, dump_delay))(
                     sub.substrm.dump_enable(0)
                 )
 
             for cond in sub.conds.values():
-                sub_fsm.seq.If(self.seq.Prev(end_cond, cond_delay, cond=self.stream_oready),
-                               self.stream_oready)(
+                sub_fsm.seq.If(self._delay_from_start_to_substream(end_cond, cond_delay))(
                     cond(0)
                 )
-        # ??? end
 
         self.sink_start.assign(self._delay_from_start_to_sink(self.source_start))
         self.sink_stop.assign(self._delay_from_start_to_sink(self.source_stop))
         self.sink_busy.assign(self._delay_from_start_to_sink(self.source_busy))
 
+        self.seq.If(vtypes.Not(self.sink_busy), self.seq.Prev(self.sink_busy, 1))(
+            self.busy_buf(0)
+        )
+        self.seq.If(self.source_busy)(
+            self.busy_buf(1)
+        )
+
+        self.busy.assign(vtypes.Ors(self.source_busy, self.sink_busy, self.busy_buf))
+
         return 0
 
     def join(self, fsm):
-        fsm.If(vtypes.Not(self.source_busy),
-               vtypes.Not(self.sink_busy)).goto_next()
+        fsm.If(vtypes.Not(self.busy)).goto_next()
         return 0
 
     def done(self, fsm):
-        return vtypes.Ands(vtypes.Not(self.source_busy),
-                           vtypes.Not(self.sink_busy))
+        return vtypes.Not(self.busy)
 
     def source_join(self, fsm):
         fsm.If(vtypes.Not(self.source_busy)).goto_next()
@@ -1436,6 +1451,16 @@ class Stream(BaseStream):
         first_rvalid = self.seq.Prev(first_renable, 2)
         source_value = vtypes.Ands(first_rvalid, self.stream_oready)
         return source_value
+
+    def _delay_from_start_to_substream(self, v, delay):
+        start_value = self.seq.Prev(v, 1, cond=self.stream_oready)
+        first_renable = self.seq.Prev(start_value, 1, cond=self.stream_oready)
+        first_rvalid = self.seq.Prev(first_renable, 2)
+        if delay > 0:
+            substream_value = self.seq.Prev(first_rvalid, delay, cond=self.stream_oready)
+        else:
+            substream_value = vtypes.Ands(first_rvalid, self.stream_oready)
+        return substream_value
 
     def _setup_source_ram(self, ram, var, port, set_cond):
         if ram._id() in var.source_ram_id_map:
@@ -2664,14 +2689,12 @@ class Substream(BaseSubstream):
         source_name = self.substrm._dataname(name)
         cond = self.module.Reg(compiler._tmp_name(self.name('%s_cond' % source_name)),
                                initval=0)
-        # ???
         BaseSubstream.write(self, source_name, data, cond)
 
     def to_constant(self, name, data):
         constant_name = self.substrm._dataname(name)
         cond = self.module.Reg(compiler._tmp_name(self.name('%s_cond' % constant_name)),
                                initval=0)
-        # ???
         BaseSubstream.write(self, constant_name, data, cond)
 
     def from_sink(self, name):
