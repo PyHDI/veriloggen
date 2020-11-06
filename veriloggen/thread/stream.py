@@ -19,11 +19,12 @@ from veriloggen.stream.stypes import Substream as BaseSubstream
 from . import compiler
 from . import thread
 
-mode_width = 3
+mode_width = 4
 mode_idle = vtypes.Int(0, mode_width, base=2)
-mode_normal = vtypes.Int(1, mode_width, base=2)
-mode_pattern = vtypes.Int(2, mode_width, base=2)
-mode_multipattern = vtypes.Int(4, mode_width, base=2)
+mode_ram_normal = vtypes.Int(1 << 0, mode_width, base=2)
+mode_ram_pattern = vtypes.Int(1 << 1, mode_width, base=2)
+mode_ram_multipattern = vtypes.Int(1 << 2, mode_width, base=2)
+mode_fifo = vtypes.Int(1 << 3, mode_width, base=2)
 
 
 def TmpStream(m, clk, rst,
@@ -63,8 +64,12 @@ class Stream(BaseStream):
                  dump=False, dump_base=10, dump_mode='all'):
 
         # stall control
+        self.source_fifo_oready = m.Wire('_'.join(['', name, 'source_fifo_oready']))
+        self.source_fifo_oready.assign(1)
+
         self.stream_oready = m.Wire('_'.join(['', name, 'stream_oready']))
-        self.stream_oready.assign(1)  # ???
+        self.stream_oready.assign(1)
+        ### ???
 
         BaseStream.__init__(self, module=m, clock=clk, reset=rst,
                             oready=self.stream_oready,
@@ -129,8 +134,8 @@ class Stream(BaseStream):
         self.source_idle_map = OrderedDict()
         self.sink_when_map = OrderedDict()
 
-        self.ram_id_count = 1  # '0' is reserved for idle
-        self.ram_id_map = OrderedDict()  # key: ran._id(), value: count
+        self.buf_id_count = 1  # '0' is reserved for idle
+        self.buf_id_map = OrderedDict()  # key: buf._id(), value: count
 
         self.fsm_id_count = 0
 
@@ -214,10 +219,12 @@ class Stream(BaseStream):
         var.source_multipat_size_bufs = None
         var.source_multipat_stride_bufs = None
 
+        # RAM, FIFO
+        var.source_id_map = OrderedDict()
+        var.source_sel = self.module.Reg('_%s_source_sel' % prefix,
+                                         self.ram_sel_width, initval=0)
+
         # RAM
-        var.source_ram_id_map = OrderedDict()
-        var.source_ram_sel = self.module.Reg('_%s_source_ram_sel' % prefix,
-                                             self.ram_sel_width, initval=0)
         var.source_ram_raddr = self.module.Reg('_%s_source_ram_raddr' % prefix,
                                                self.addrwidth, initval=0)
         var.source_ram_renable = self.module.Reg('_%s_source_ram_renable' % prefix,
@@ -226,11 +233,22 @@ class Stream(BaseStream):
                                                 datawidth)
         var.source_ram_rvalid = self.module.Wire('_%s_source_ram_rvalid' % prefix)
 
+        # FIFO
+        var.source_fifo_deq = self.module.Reg('_%s_source_fifo_deq' % prefix,
+                                              initval=0)
+        var.source_fifo_rdata = self.module.Wire('_%s_source_fifo_rdata' % prefix,
+                                                datawidth)
+        var.source_fifo_rvalid = self.module.Wire('_%s_source_fifo_rvalid' % prefix)
+
+        # empty
         var.has_source_empty = False
         var.source_empty_data = self.module.Reg('_%s_source_empty_data' % prefix,
                                                 datawidth, initval=0)
 
         # default value
+        self.seq.If(self.source_fifo_oready)(
+            var.source_fifo_deq(0)
+        )
         self.seq.If(self.stream_oready)(
             var.source_ram_renable(0)
         )
@@ -550,7 +568,7 @@ class Stream(BaseStream):
         set_cond = self._set_flag(fsm)
 
         self.seq.If(set_cond)(
-            var.source_mode(mode_normal),
+            var.source_mode(mode_ram_normal),
             var.source_offset(offset),
             var.source_size(size),
             var.source_stride(stride)
@@ -605,7 +623,7 @@ class Stream(BaseStream):
         set_cond = self._set_flag(fsm)
 
         self.seq.If(set_cond)(
-            var.source_mode(mode_pattern),
+            var.source_mode(mode_ram_pattern),
             var.source_offset(offset)
         )
 
@@ -695,7 +713,7 @@ class Stream(BaseStream):
         set_cond = self._set_flag(fsm)
 
         self.seq.If(set_cond)(
-            var.source_mode(mode_multipattern),
+            var.source_mode(mode_ram_multipattern),
             var.source_multipat_num_patterns(len(patterns))
         )
 
@@ -729,7 +747,37 @@ class Stream(BaseStream):
 
     def set_source_fifo(self, fsm, name, fifo, size):
         """ intrinsic method to assign FIFO property to a source stream """
-        raise NotImplementedError()
+
+        if not self.stream_synthesized:
+            self._implement_stream()
+
+        if isinstance(name, str):
+            var = self.var_name_map[name]
+        elif isinstance(name, vtypes.Str):
+            name = name.value
+            var = self.var_name_map[name]
+        elif isinstance(name, int):
+            var = self.var_id_map[name]
+        elif isinstance(name, vtypes.Int):
+            name = name.value
+            var = self.var_id_map[name]
+        else:
+            raise TypeError('Unsupported index name')
+
+        if name not in self.sources:
+            raise NameError("No such stream '%s'" % name)
+
+        set_cond = self._set_flag(fsm)
+
+        self.seq.If(set_cond)(
+            var.source_mode(mode_fifo),
+            var.source_size(size),
+        )
+
+        self._setup_source_fifo(fifo, var, set_cond)
+        self._synthesize_set_source_fifo(var, name)
+
+        fsm.goto_next()
 
     def set_source_empty(self, fsm, name, value=0):
 
@@ -802,13 +850,13 @@ class Stream(BaseStream):
 
         set_cond_base = self._set_flag(fsm)
         set_cond = self._delay_from_start_to_sink(set_cond_base)
-        sink_mode = mode_normal
+        sink_mode = mode_ram_normal
         sink_offset = self._delay_from_start_to_sink(offset)
         sink_size = self._delay_from_start_to_sink(size)
         sink_stride = self._delay_from_start_to_sink(stride)
 
         self.seq.If(set_cond)(
-            var.sink_mode(mode_normal),
+            var.sink_mode(mode_ram_normal),
             var.sink_offset(offset),
             var.sink_size(size),
             var.sink_stride(stride)
@@ -863,7 +911,7 @@ class Stream(BaseStream):
         set_cond_base = self._set_flag(fsm)
 
         set_cond = self._delay_from_start_to_sink(set_cond_base)
-        sink_mode = mode_pattern
+        sink_mode = mode_ram_pattern
         sink_offset = self._delay_from_start_to_sink(offset)
 
         self.seq.If(set_cond)(
@@ -961,7 +1009,7 @@ class Stream(BaseStream):
         set_cond_base = self._set_flag(fsm)
 
         set_cond = self._delay_from_start_to_sink(set_cond_base)
-        sink_mode = mode_multipattern
+        sink_mode = mode_ram_multipattern
 
         self.seq.If(set_cond)(
             var.sink_mode(sink_mode),
@@ -1027,7 +1075,7 @@ class Stream(BaseStream):
 
         set_cond_base = self._set_flag(fsm)
         set_cond = self._delay_from_start_to_sink(set_cond_base)
-        sink_mode = mode_normal
+        sink_mode = mode_ram_normal
         sink_size = self._delay_from_start_to_sink(size)
 
         self.seq.If(set_cond)(
@@ -1242,8 +1290,6 @@ class Stream(BaseStream):
         cond = self._set_flag(fsm)
 
         self._run(cond)
-
-        fsm.If(self.source_busy).goto_next()
         fsm.goto_next()
 
         return 0
@@ -1262,18 +1308,17 @@ class Stream(BaseStream):
         self.fsm._set_index(0)
 
         # start
-        self.fsm.seq.If(self.stream_oready)(
-            self.source_start(0)
+        self.fsm.If(self.run_flag)(
+            self.source_start(1)
         )
-
-        self.fsm.If(self.stream_oready, self.run_flag)(
-            self.source_start(1),
-            self.source_busy(1)
-        )
-
-        self.fsm.If(self.source_start, self.stream_oready).goto_next()
+        self.fsm.If(self.run_flag).goto_next()
 
         start_cond = self.source_start
+
+        self.fsm.If(start_cond, self.stream_oready)(
+            self.source_start(0),
+            self.source_busy(1)
+        )
 
         if self.reduce_reset is not None:
             self.fsm.seq.If(self._delay_from_start_to_source(start_cond))(
@@ -1284,6 +1329,8 @@ class Stream(BaseStream):
             self.seq.If(self._delay_from_start_to_source(start_cond))(
                 self.dump_enable(1)
             )
+
+        self.fsm.If(start_cond, self.stream_oready).goto_next()
 
         substreams = self._collect_substreams()
         for sub in substreams:
@@ -1463,27 +1510,27 @@ class Stream(BaseStream):
         return substream_value
 
     def _setup_source_ram(self, ram, var, port, set_cond):
-        if ram._id() in var.source_ram_id_map:
-            ram_id = var.source_ram_id_map[ram._id()]
+        if ram._id() in var.source_id_map:
+            ram_id = var.source_id_map[ram._id()]
             self.seq.If(set_cond)(
-                var.source_ram_sel(ram_id)
+                var.source_sel(ram_id)
             )
             return
 
-        if ram._id() not in self.ram_id_map:
-            ram_id = self.ram_id_count
-            self.ram_id_count += 1
-            self.ram_id_map[ram._id()] = ram_id
+        if ram._id() not in self.buf_id_map:
+            ram_id = self.buf_id_count
+            self.buf_id_count += 1
+            self.buf_id_map[ram._id()] = ram_id
         else:
-            ram_id = self.ram_id_map[ram._id()]
+            ram_id = self.buf_id_map[ram._id()]
 
-        var.source_ram_id_map[ram._id()] = ram_id
+        var.source_id_map[ram._id()] = ram_id
 
         self.seq.If(set_cond)(
-            var.source_ram_sel(ram_id)
+            var.source_sel(ram_id)
         )
 
-        ram_cond = (var.source_ram_sel == ram_id)
+        ram_cond = (var.source_sel == ram_id)
         renable = vtypes.Ands(var.source_ram_renable, ram_cond)
 
         d, v = ram.read_rtl(var.source_ram_raddr, port=port, cond=renable)
@@ -1584,7 +1631,7 @@ class Stream(BaseStream):
             return
 
         source_start = vtypes.Ands(self.source_start,
-                                   vtypes.And(var.source_mode, mode_normal))
+                                   vtypes.And(var.source_mode, mode_ram_normal))
 
         self.seq.If(source_start, self.stream_oready)(
             var.source_idle(0),
@@ -1664,7 +1711,7 @@ class Stream(BaseStream):
         var.write(wdata, wenable)
 
         source_start = vtypes.Ands(self.source_start, self.stream_oready,
-                                   vtypes.And(var.source_mode, mode_pattern))
+                                   vtypes.And(var.source_mode, mode_ram_pattern))
 
         self.seq.If(source_start)(
             var.source_idle(0),
@@ -1805,30 +1852,35 @@ class Stream(BaseStream):
         var.write(wdata, wenable)
 
         source_start = vtypes.Ands(self.source_start, self.stream_oready,
-                                   vtypes.And(var.source_mode, mode_multipattern))
+                                   vtypes.And(var.source_mode, mode_ram_multipattern))
 
         self.seq.If(source_start)(
             var.source_idle(0)
         )
 
-        for source_multipat_offset_buf, source_multipat_offset in zip(var.source_multipat_offset_bufs,
-                                                                      var.source_multipat_offsets):
+        for (source_multipat_offset_buf,
+             source_multipat_offset) in zip(var.source_multipat_offset_bufs,
+                                            var.source_multipat_offsets):
             self.seq.If(source_start)(
                 source_multipat_offset_buf(source_multipat_offset)
             )
 
-        for source_multipat_size_buf_line, source_multipat_size_line in zip(var.source_multipat_size_bufs,
-                                                                            var.source_multipat_sizes):
-            for source_multipat_size_buf, source_multipat_size in zip(source_multipat_size_buf_line,
-                                                                      source_multipat_size_line):
+        for (source_multipat_size_buf_line,
+             source_multipat_size_line) in zip(var.source_multipat_size_bufs,
+                                               var.source_multipat_sizes):
+            for (source_multipat_size_buf,
+                 source_multipat_size) in zip(source_multipat_size_buf_line,
+                                              source_multipat_size_line):
                 self.seq.If(source_start)(
                     source_multipat_size_buf(source_multipat_size)
                 )
 
-        for source_multipat_stride_buf_line, source_multipat_stride_line in zip(var.source_multipat_stride_bufs,
-                                                                                var.source_multipat_strides):
-            for source_multipat_stride_buf, source_multipat_stride in zip(source_multipat_stride_buf_line,
-                                                                          source_multipat_stride_line):
+        for (source_multipat_stride_buf_line,
+             source_multipat_stride_line) in zip(var.source_multipat_stride_bufs,
+                                                 var.source_multipat_strides):
+            for (source_multipat_stride_buf,
+                 source_multipat_stride) in zip(source_multipat_stride_buf_line,
+                                                source_multipat_stride_line):
                 self.seq.If(source_start)(
                     source_multipat_stride_buf(source_multipat_stride)
                 )
@@ -1930,6 +1982,106 @@ class Stream(BaseStream):
 
         var.source_multipat_fsm.goto_init()
 
+    def _setup_source_fifo(self, fifo, var, set_cond):
+        if fifo._id() in var.source_id_map:
+            fifo_id = var.source_id_map[fifo._id()]
+            self.seq.If(set_cond)(
+                var.source_sel(fifo_id)
+            )
+            return
+
+        if fifo._id() not in self.buf_id_map:
+            fifo_id = self.buf_id_count
+            self.buf_id_count += 1
+            self.buf_id_map[fifo._id()] = fifo_id
+        else:
+            fifo_id = self.buf_id_map[fifo._id()]
+
+        var.source_id_map[fifo._id()] = fifo_id
+
+        self.seq.If(set_cond)(
+            var.source_sel(fifo_id)
+        )
+
+        fifo_cond = (var.source_sel == fifo_id)
+        deq = vtypes.Ands(self.source_fifo_oready, var.source_fifo_deq, fifo_cond)
+
+        d, v, ready = fifo.deq_rtl(cond=deq)
+
+        prev_deq = self.seq.Prev(deq, 1)
+        d_out = self.seq.Prev(d, 1, cond=v)
+        v_out = self.seq.Prev(v, 1)
+        add_mux(var.source_fifo_rdata, fifo_cond, d_out)
+        add_mux(var.source_fifo_rvalid, fifo_cond, v_out)
+        self.module.Probe(d, prefix='_probe_d')
+        self.module.Probe(v, prefix='_probe_v')
+        self.module.Probe(d_out, prefix='_probe_d_out')
+        self.module.Probe(v_out, prefix='_probe_v_out')
+        ### ???
+
+        # stall control
+        cond = vtypes.Ands(self.source_busy, fifo_cond)
+        fifo_oready = vtypes.Ors(ready, var.source_idle)
+        add_mux(self.source_fifo_oready, cond, fifo_oready)
+
+        #stream_oready = vtypes.Ors(self.seq.Prev(self.source_fifo_oready, 1), self.seq.Prev(var.source_idle, 1))
+        stream_oready = self.source_fifo_oready
+        add_mux(self.stream_oready, cond, stream_oready)
+        ### ???
+
+        if (self.dump and
+            (self.dump_mode == 'all' or
+             self.dump_mode == 'fifo' or
+             (self.dump_mode == 'selective' and
+                 hasattr(fifo, 'dump') and fifo.dump))):
+            # self._setup_source_fifo_dump(fifo, var, deq, d)
+            raise NotImplementedError()
+
+    def _synthesize_set_source_fifo(self, var, name):
+        if var.source_fsm is not None:
+            return
+
+        source_start = vtypes.Ands(self.source_start,
+                                   vtypes.And(var.source_mode, mode_fifo))
+
+        self.seq.If(source_start, self.stream_oready)(
+            var.source_idle(0),
+            var.source_size_buf(var.source_size),
+        )
+
+        wdata = var.source_fifo_rdata
+        wenable = vtypes.Ands(self.stream_oready, var.source_fifo_rvalid)
+        var.write(wdata, wenable)
+
+        fsm_id = self.fsm_id_count
+        self.fsm_id_count += 1
+
+        prefix = self._prefix(name)
+
+        fsm_name = '_%s_source_fsm_%d' % (prefix, fsm_id)
+        var.source_fsm = FSM(self.module, fsm_name, self.clock, self.reset,
+                             as_module=self.fsm_as_module)
+
+        var.source_fsm.If(source_start, self.stream_oready).goto_next()
+
+        self.seq.If(var.source_fsm.here, self.source_fifo_oready)(
+            var.source_fifo_deq(1),
+            var.source_count(var.source_size_buf)
+        )
+
+        var.source_fsm.If(self.source_fifo_oready).goto_next()
+
+        self.seq.If(var.source_fsm.here, self.source_fifo_oready)(
+            var.source_fifo_deq(1),
+            var.source_count.dec()
+        )
+        self.seq.If(var.source_fsm.here, var.source_count == 1, self.source_fifo_oready)(
+            var.source_fifo_deq(0),
+            var.source_idle(1)
+        )
+
+        var.source_fsm.If(var.source_count == 1, self.source_fifo_oready).goto_init()
+
     def _setup_sink_ram(self, ram, var, port, set_cond):
         if ram._id() in var.sink_ram_id_map:
             ram_id = var.sink_ram_id_map[ram._id()]
@@ -1938,12 +2090,12 @@ class Stream(BaseStream):
             )
             return
 
-        if ram._id() not in self.ram_id_map:
-            ram_id = self.ram_id_count
-            self.ram_id_count += 1
-            self.ram_id_map[ram._id()] = ram_id
+        if ram._id() not in self.buf_id_map:
+            ram_id = self.buf_id_count
+            self.buf_id_count += 1
+            self.buf_id_map[ram._id()] = ram_id
         else:
-            ram_id = self.ram_id_map[ram._id()]
+            ram_id = self.buf_id_map[ram._id()]
 
         var.sink_ram_id_map[ram._id()] = ram_id
 
@@ -2033,7 +2185,7 @@ class Stream(BaseStream):
             return
 
         sink_start = vtypes.Ands(self.sink_start,
-                                 vtypes.And(var.sink_mode, mode_normal))
+                                 vtypes.And(var.sink_mode, mode_ram_normal))
 
         self.seq.If(sink_start, self.stream_oready)(
             var.sink_offset_buf(var.sink_offset),
@@ -2112,7 +2264,7 @@ class Stream(BaseStream):
         start_delay = self._write_delay()
         start = self.seq.Prev(self.source_start, start_delay, cond=self.stream_oready)
         sink_start = vtypes.Ands(start, self.stream_oready,
-                                 vtypes.And(var.sink_mode, mode_pattern))
+                                 vtypes.And(var.sink_mode, mode_ram_pattern))
 
         fsm_id = self.fsm_id_count
         self.fsm_id_count += 1
@@ -2259,7 +2411,7 @@ class Stream(BaseStream):
         start_delay = self._write_delay()
         start = self.seq.Prev(self.source_start, start_delay, cond=self.stream_oready)
         sink_start = vtypes.Ands(start, self.stream_oready,
-                                 vtypes.And(var.sink_mode, mode_multipattern))
+                                 vtypes.And(var.sink_mode, mode_ram_multipattern))
 
         fsm_id = self.fsm_id_count
         self.fsm_id_count += 1
@@ -2400,12 +2552,12 @@ class Stream(BaseStream):
             )
             return
 
-        if ram._id() not in self.ram_id_map:
-            ram_id = self.ram_id_count
-            self.ram_id_count += 1
-            self.ram_id_map[ram._id()] = ram_id
+        if ram._id() not in self.buf_id_map:
+            ram_id = self.buf_id_count
+            self.buf_id_count += 1
+            self.buf_id_map[ram._id()] = ram_id
         else:
-            ram_id = self.ram_id_map[ram._id()]
+            ram_id = self.buf_id_map[ram._id()]
 
         var.read_ram_id_map[ram._id()] = ram_id
 
@@ -2515,12 +2667,12 @@ class Stream(BaseStream):
             )
             return
 
-        if ram._id() not in self.ram_id_map:
-            ram_id = self.ram_id_count
-            self.ram_id_count += 1
-            self.ram_id_map[ram._id()] = ram_id
+        if ram._id() not in self.buf_id_map:
+            ram_id = self.buf_id_count
+            self.buf_id_count += 1
+            self.buf_id_map[ram._id()] = ram_id
         else:
-            ram_id = self.ram_id_map[ram._id()]
+            ram_id = self.buf_id_map[ram._id()]
 
         var.write_ram_id_map[ram._id()] = ram_id
 
