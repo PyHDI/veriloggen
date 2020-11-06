@@ -21,69 +21,88 @@ def mkLed():
     addrwidth = 10
 
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
-    myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth, numports=2)
-
     axi_in = vthread.AXIStreamInFifo(m, 'axi_in', clk, rst, datawidth,
                                      with_last=True, noio=True)
-    axi_out = vthread.AXIStreamOutFifo(m, 'axi_out', clk, rst, datawidth,
-                                       with_last=True, noio=True)
-
     maxi_in = vthread.AXIM_for_AXIStreamIn(axi_in, 'maxi_in')
-    maxi_out = vthread.AXIM_for_AXIStreamOut(axi_out, 'maxi_out')
+
+    # axi_out = vthread.AXIStreamOutFifo(m, 'axi_out', clk, rst, datawidth,
+    #                                    with_last=True, noio=True)
+    # maxi_out = vthread.AXIM_for_AXIStreamOut(axi_out, 'maxi_out')
 
     fifo_addrwidth = 8
-    fifo_in = vthread.FIFO(m, 'fifo_in', clk, rst, datawidth, fifo_addrwidth)
-    fifo_out = vthread.FIFO(m, 'fifo_out', clk, rst, datawidth, fifo_addrwidth)
+    fifo_a = vthread.FIFO(m, 'fifo_a', clk, rst, datawidth, fifo_addrwidth)
+    ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
+    ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
+
+    # for comp_sequential
+    ram_a = vthread.RAM(m, 'ram_a', clk, rst, datawidth, addrwidth)
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
     a = strm.source('a')
-    b = a + 1000
-    strm.sink(b, 'b')
+    b = strm.source('b')
+    c = a + b
+    strm.sink(c, 'c')
 
-    all_ok = m.TmpReg(initval=0)
-
-    def comp_stream(size):
-        strm.set_source_fifo('a', fifo_in, size)
-        strm.set_sink_fifo('b', fifo_out, size)
+    def comp_stream(size, offset):
+        strm.set_source_fifo('a', fifo_a, size)
+        strm.set_source('b', ram_b, offset, size)
+        strm.set_sink('c', ram_c, offset, size)
         strm.run()
         strm.join()
 
+    def comp_sequential(size, offset):
+        sum = 0
+        for i in range(size):
+            a = ram_a.read(i + offset)
+            b = ram_b.read(i + offset)
+            sum = a + b
+            ram_c.write(i + offset, sum)
+
+    def check(size, offset_stream, offset_seq):
+        all_ok = True
+        for i in range(size):
+            st = ram_c.read(i + offset_stream)
+            sq = ram_c.read(i + offset_seq)
+            if vthread.verilog.NotEql(st, sq):
+                all_ok = False
+                print(i, st, sq)
+        if all_ok:
+            print('# verify: PASSED')
+        else:
+            print('# verify: FAILED')
+
     def comp(size):
+        # stream
         offset = 0
 
-        # write a test vector
-        for i in range(size):
-            wdata = i + 100
-            myram.write(i, wdata)
-
-        laddr = 0
-        gaddr = offset
-        myaxi.dma_write(myram, laddr, gaddr, size, port=1)
+        # ram_b
+        myaxi.dma_read(ram_b, offset, 0, size)
 
         # AXI-stream read -> FIFO -> Stream -> FIFO -> AXI-stream write
-        maxi_in.dma_read_async(gaddr, size)
-        axi_in.write_fifo(fifo_in, size)
+        # fifo_a
+        maxi_in.dma_read_async(512, size)
+        axi_in.write_fifo(fifo_a, size)
 
-        comp_stream(size)
+        #myaxi.dma_read(ram_b, offset, 0, size) # ???
 
-        out_gaddr = (size + size) * (datawidth // 8) + offset
-        maxi_out.dma_write_async(out_gaddr, size)
-        axi_out.read_fifo(fifo_out, size)
+        comp_stream(size, offset)
+        myaxi.dma_write(ram_c, offset, 1024, size)
 
-        # check
-        myaxi.dma_read(myram, 0, gaddr, size, port=1)
-        myaxi.dma_read(myram, size, out_gaddr, size, port=1)
+        # sequential
+        offset = size
+        myaxi.dma_read(ram_a, offset, 0, size)
+        myaxi.dma_read(ram_b, offset, 512, size)
+        comp_sequential(size, offset)
+        myaxi.dma_write(ram_c, offset, 1024 * 2, size)
 
-        for i in range(size):
-            v0 = myram.read(i)
-            v1 = myram.read(i + size)
-            if vthread.verilog.NotEql(v0 + 1000, v1):
-                all_ok.value = False
+        # verification
+        check(size, 0, offset)
 
         vthread.finish()
 
     th = vthread.Thread(m, 'comp', clk, rst, comp)
-    fsm = th.start(17)
+    # fsm = th.start(32)
+    fsm = th.start(11)
 
     return m
 
@@ -101,17 +120,19 @@ def mkTest(memimg_name=None):
     clk = ports['CLK']
     rst = ports['RST']
 
-    memory = axi.AxiMultiportMemoryModel(m, 'memory', clk, rst, numports=3,
+    # memory = axi.AxiMultiportMemoryModel(m, 'memory', clk, rst, numports=3,
+    #                                     memimg_name=memimg_name)
+    memory = axi.AxiMultiportMemoryModel(m, 'memory', clk, rst, numports=2,
                                          memimg_name=memimg_name)
     memory.connect(0, ports, 'myaxi')
     memory.connect(1, ports, 'maxi_in')
-    memory.connect(2, ports, 'maxi_out')
+    # memory.connect(2, ports, 'maxi_out')
 
     uut = m.Instance(led, 'uut',
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    # simulation.setup_waveform(m, uut)
+    simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
