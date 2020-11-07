@@ -109,16 +109,7 @@ class FIFO(_MutexFunction):
         util.add_mux(self.rif.deq, deq_cond, 1)
 
         data = self.rif.rdata
-        valid = self.m.TmpReg(initval=0)
-
-        self.seq.If(deq_cond)(
-            valid(1)
-        )
-
-        # de-assert
-        self.seq.Delay(1)(
-            valid(0)
-        )
+        valid = self.seq.Prev(deq_cond, 1)
 
         return data, valid, ready
 
