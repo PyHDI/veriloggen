@@ -19,7 +19,8 @@ def mkRAMDefinition(name, datawidth=32, addrwidth=10, numports=2,
         interface = RAMSlaveInterface(
             m, name + '_%d' % i, datawidth, addrwidth, with_enable=with_enable)
         if sync:
-            interface.delay_addr = m.Reg(name + '_%d_daddr' % i, addrwidth)
+            interface.rdata_out = m.Reg(name + '_%d_rdata_out' % i, datawidth)
+            m.Assign(interface.rdata(interface.rdata_out))
 
         interfaces.append(interface)
 
@@ -69,24 +70,23 @@ def mkRAMDefinition(name, datawidth=32, addrwidth=10, numports=2,
         )
 
     for interface in interfaces:
-        body = [
-            vtypes.If(interface.wenable)(
-                mem[interface.addr](interface.wdata)
-            )]
+        write_body = [mem[interface.addr](interface.wdata)]
 
         if sync:
-            body.append(interface.delay_addr(interface.addr))
+            write_body.append(interface.rdata_out(interface.wdata))
+            read_body = [interface.rdata_out(mem[interface.addr])]
+            body = vtypes.If(interface.wenable)(*write_body).Else(*read_body)
+        else:
+            body = vtypes.If(interface.wenable)(*write_body)
 
         if with_enable:
-            body = vtypes.If(interface.enable)(*body)
+            body = vtypes.If(interface.enable)(body)
 
         m.Always(vtypes.Posedge(clk))(
             body
         )
 
-        if sync:
-            m.Assign(interface.rdata(mem[interface.delay_addr]))
-        else:
+        if not sync:
             m.Assign(interface.rdata(mem[interface.addr]))
 
     return m
