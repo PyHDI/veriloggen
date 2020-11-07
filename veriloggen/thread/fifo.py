@@ -26,8 +26,8 @@ class FIFO(_MutexFunction):
         self.datawidth = datawidth
         self.addrwidth = addrwidth
 
-        self.wif = FifoWriteInterface(self.m, name, datawidth)
-        self.rif = FifoReadInterface(self.m, name, datawidth)
+        self.wif = FifoWriteInterface(self.m, name, datawidth, itype='Wire', otype='Wire')
+        self.rif = FifoReadInterface(self.m, name, datawidth, itype='Wire', otype='Wire')
 
         self.definition = mkFifoDefinition(name, datawidth, addrwidth)
 
@@ -81,20 +81,15 @@ class FIFO(_MutexFunction):
 
         if cond is not None:
             enq_cond = vtypes.Ands(cond, ready)
+            enable = cond
         else:
             enq_cond = ready
+            enable = vtypes.Int(1, 1)
 
-        self.seq.If(enq_cond)(
-            self.wif.wdata(wdata),
-            self.wif.enq(1)
-        )
+        util.add_mux(self.wif.wdata, enable, wdata)
+        util.add_mux(self.wif.enq, enable, enq_cond)
 
-        # de-assert
-        self.seq.Delay(1)(
-            self.wif.enq(0)
-        )
-
-        ack = vtypes.Ands(self.seq.Prev(ready, 1), self.wif.enq)
+        ack = self.seq.Prev(ready, 1)
 
         return ack, ready
 
