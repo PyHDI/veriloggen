@@ -44,9 +44,10 @@ class RAM(_MutexFunction):
         for i in range(numports):
             if i in external_ports:
                 interface = RAMInterface(m, name + '_%d' % i, datawidth, addrwidth,
-                                         itype='Input', otype='Output')
+                                         itype='Input', otype='Output', with_enable=True)
             else:
-                interface = RAMInterface(m, name + '_%d' % i, datawidth, addrwidth)
+                interface = RAMInterface(m, name + '_%d' % i, datawidth, addrwidth,
+                                         itype='Wire', otype='Wire', with_enable=True)
 
             self.interfaces.append(interface)
 
@@ -55,6 +56,7 @@ class RAM(_MutexFunction):
 
         self.definition = mkRAMDefinition(
             name, datawidth, addrwidth, numports, initvals,
+            with_enable=True,
             nocheck_initvals=nocheck_initvals,
             ram_style=ram_style)
 
@@ -85,19 +87,16 @@ class RAM(_MutexFunction):
         return vtypes.Int(2) ** self.addrwidth
 
     def disable_write(self, port):
-        self.seq(
-            self.interfaces[port].wdata(0),
-            self.interfaces[port].wenable(0)
-        )
+        self.interfaces[port].wdata.connect(0)
+        self.interfaces[port].wenable.connect(0)
         self._write_disabled[port] = True
 
     def disable_port(self, port):
-        self.seq(
-            self.interfaces[port].addr(0),
-        )
+        self.interfaces[port].addr.connect(0)
+        self.interfaces[port].enable.connect(0)
         self._port_disabled[port] = True
 
-    def connect_rtl(self, port, addr, wdata=None, wenable=None, rdata=None):
+    def connect_rtl(self, port, addr, wdata=None, wenable=None, rdata=None, enable=None):
         """ connect native signals to the internal RAM interface """
 
         self.interfaces[port].addr.connect(addr)
@@ -107,6 +106,8 @@ class RAM(_MutexFunction):
             self.interfaces[port].wenable.connect(wenable)
         if rdata is not None:
             rdata.connect(self.interfaces[port].rdata)
+        if enable is not None:
+            self.interfaces[port].enable.connect(enable)
 
     def read_rtl(self, addr, port=0, cond=None):
         """
@@ -115,20 +116,16 @@ class RAM(_MutexFunction):
         if cond is not None:
             self.seq.If(cond)
 
-        self.seq(
-            self.interfaces[port].addr(addr)
-        )
+        if cond is not None:
+            enable = cond
+        else:
+            enable = vtypes.Int(1, 1)
+
+        util.add_mux(self.interfaces[port].addr, enable, addr)
+        util.add_mux(self.interfaces[port].enable, enable, vtypes.Int(1, 1))
 
         rdata = self.interfaces[port].rdata
-        rvalid = self.m.TmpReg(initval=0)
-
-        self.seq.Then().Delay(1)(
-            rvalid(1)
-        )
-
-        self.seq.Then().Delay(2)(
-            rvalid(0)
-        )
+        rvalid = self.seq.Prev(enable, 1)
 
         return rdata, rvalid
 
@@ -140,17 +137,14 @@ class RAM(_MutexFunction):
             raise TypeError('Write disabled.')
 
         if cond is not None:
-            self.seq.If(cond)
+            enable = cond
+        else:
+            enable = vtypes.Int(1, 1)
 
-        self.seq(
-            self.interfaces[port].addr(addr),
-            self.interfaces[port].wdata(wdata),
-            self.interfaces[port].wenable(1)
-        )
-
-        self.seq.Then().Delay(1)(
-            self.interfaces[port].wenable(0)
-        )
+        util.add_mux(self.interfaces[port].addr, enable, addr)
+        util.add_mux(self.interfaces[port].wdata, enable, wdata)
+        util.add_mux(self.interfaces[port].wenable, enable, vtypes.Int(1, 1))
+        util.add_mux(self.interfaces[port].enable, enable, vtypes.Int(1, 1))
 
     def read(self, fsm, addr, port=0):
         """ intrinsic read operation using a shared Seq object """
@@ -201,13 +195,14 @@ class RAM(_MutexFunction):
 
         ext_cond = make_condition(cond)
         data_cond = make_condition(data_ack, last_ack)
-        prev_data_cond = self.seq.Prev(data_cond, 1)
+        # prev_data_cond = self.seq.Prev(data_cond, 1)
 
         data = self.m.TmpWireLike(self.interfaces[port].rdata, signed=True)
 
-        prev_data = self.seq.Prev(data, 1)
-        data.assign(vtypes.Mux(prev_data_cond,
-                               self.interfaces[port].rdata, prev_data))
+        # prev_data = self.seq.Prev(data, 1)
+        # data.assign(vtypes.Mux(prev_data_cond,
+        #                        self.interfaces[port].rdata, prev_data))
+        data.assign(self.interfaces[port].rdata)
 
         next_valid_on = self.m.TmpReg(initval=0)
         next_valid_off = self.m.TmpReg(initval=0)
@@ -216,6 +211,13 @@ class RAM(_MutexFunction):
         last = self.m.TmpReg(initval=0)
 
         counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
+
+        read_addr = self.m.TmpRegLike(self.interfaces[port].addr, initval=0)
+
+        read_cond = next_valid_on
+        read_enable = vtypes.Ands(data_cond, next_valid_on)
+        util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
+        util.add_mux(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
 
         self.seq.If(data_cond, next_valid_off)(
             last(0),
@@ -235,14 +237,14 @@ class RAM(_MutexFunction):
 
         self.seq.If(ext_cond, counter == 0,
                     vtypes.Not(next_last), vtypes.Not(last))(
-            self.interfaces[port].addr(addr),
+            read_addr(addr),
             counter(length - 1),
             next_valid_on(1),
             next_last(length == 1)
         )
 
         self.seq.If(data_cond, counter > 0)(
-            self.interfaces[port].addr(self.interfaces[port].addr + stride),
+            read_addr(read_addr + stride),
             counter.dec(),
             next_valid_on(1),
             next_last(0)
@@ -288,13 +290,14 @@ class RAM(_MutexFunction):
 
         ext_cond = make_condition(cond)
         data_cond = make_condition(data_ack, last_ack)
-        prev_data_cond = self.seq.Prev(data_cond, 1)
+        # prev_data_cond = self.seq.Prev(data_cond, 1)
 
         data = self.m.TmpWireLike(self.interfaces[port].rdata, signed=True)
 
-        prev_data = self.seq.Prev(data, 1)
-        data.assign(vtypes.Mux(prev_data_cond,
-                               self.interfaces[port].rdata, prev_data))
+        # prev_data = self.seq.Prev(data, 1)
+        # data.assign(vtypes.Mux(prev_data_cond,
+        #                        self.interfaces[port].rdata, prev_data))
+        data.assign(self.interfaces[port].rdata)
 
         next_valid_on = self.m.TmpReg(initval=0)
         next_valid_off = self.m.TmpReg(initval=0)
@@ -319,6 +322,13 @@ class RAM(_MutexFunction):
         count_list = [self.m.TmpReg(out_size.bit_length() + 1, initval=0)
                       for (out_size, out_stride) in pattern]
 
+        read_addr = self.m.TmpRegLike(self.interfaces[port].addr, initval=0)
+
+        read_cond = next_valid_on
+        read_enable = vtypes.Ands(data_cond, next_valid_on)
+        util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
+        util.add_mux(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+
         self.seq.If(data_cond, next_valid_off)(
             last(0),
             data_valid(0),
@@ -337,13 +347,13 @@ class RAM(_MutexFunction):
 
         self.seq.If(ext_cond, vtypes.Not(running),
                     vtypes.Not(next_last), vtypes.Not(last))(
-            self.interfaces[port].addr(addr),
+            read_addr(addr),
             running(1),
             next_valid_on(1)
         )
 
         self.seq.If(data_cond, running)(
-            self.interfaces[port].addr(next_addr),
+            read_addr(next_addr),
             next_valid_on(1),
             next_last(0)
         )
@@ -410,7 +420,7 @@ class RAM(_MutexFunction):
                 carry = vtypes.Ands(carry, out_size == 1)
 
         next_addr.assign(vtypes.Mux(update_addr, offset_addr,
-                                    self.interfaces[port].addr + stride_value))
+                                    read_addr + stride_value))
 
         self.seq.If(data_cond, running, last_one)(
             running(0),
@@ -479,24 +489,36 @@ class RAM(_MutexFunction):
 
         fsm = TmpFSM(self.m, self.clk, self.rst)
 
+        read_addr = self.m.TmpRegLike(self.interfaces[port].addr, initval=0)
+
         # initial state
         fsm.If(ext_cond)(
-            self.interfaces[port].addr(addr - stride),
+            read_addr(addr - stride),
             fetch_done(0),
             counter(length)
         )
         fsm.If(ext_cond, length > 0).goto_next()
 
+        read_cond = vtypes.Ands(fsm.here, ext_cond)
+        read_enable = vtypes.Ands(fsm.here, ext_cond)
+        util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
+        util.add_mux(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+
         # initial prefetch state
         for n in next_reuse_data:
             fsm(
-                self.interfaces[port].addr(
-                    self.interfaces[port].addr + stride),
+                read_addr(read_addr + stride),
                 counter(vtypes.Mux(counter > 0, counter - 1, counter))
             )
             fsm.Delay(2)(
                 n(self.interfaces[port].rdata)
             )
+
+            read_cond = fsm.here
+            read_enable = fsm.here
+            util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
+            util.add_mux(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+
             fsm.goto_next()
 
         fsm.goto_next()
@@ -523,13 +545,18 @@ class RAM(_MutexFunction):
 
         for n in next_reuse_data:
             fsm(
-                self.interfaces[port].addr(
-                    self.interfaces[port].addr + stride),
+                read_addr(read_addr + stride),
                 counter(vtypes.Mux(counter > 0, counter - 1, counter))
             )
             fsm.Delay(2)(
                 n(self.interfaces[port].rdata)
             )
+
+            read_cond = fsm.here
+            read_enable = fsm.here
+            util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
+            util.add_mux(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+
             fsm.goto_next()
 
         fsm.goto_next()
@@ -668,17 +695,23 @@ class RAM(_MutexFunction):
             else:
                 carry = vtypes.Ands(carry, out_size == 1)
 
+        read_addr = self.m.TmpRegLike(self.interfaces[port].addr, initval=0)
         next_addr.assign(vtypes.Mux(update_addr, offset_addr,
-                                    self.interfaces[port].addr + stride_value))
+                                    read_addr + stride_value))
 
         fsm = TmpFSM(self.m, self.clk, self.rst)
 
         # initial state
         fsm.If(ext_cond)(
-            self.interfaces[port].addr(addr - stride_value),
+            read_.addr(addr - stride_value),
             prefetch_done(0),
             fetch_done(0)
         )
+
+        read_cond = vtypes.Ands(fsm.here, ext_cond)
+        read_enable = vtypes.Ands(fsm.here, ext_cond)
+        util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
+        util.add_mux(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
 
         first = True
         for offset, count, (out_size, out_stride) in zip(offsets, count_list, pattern):
@@ -708,7 +741,7 @@ class RAM(_MutexFunction):
                     count(out_size - 1)
                 )
                 fsm(
-                    self.interfaces[port].addr(next_addr)
+                    read_addr(next_addr)
                 )
                 fsm.Delay(2)(
                     n(self.interfaces[port].rdata)
@@ -721,6 +754,11 @@ class RAM(_MutexFunction):
                     fsm.If(update_offset, count == 0)(
                         offset(0)
                     )
+
+                read_cond = fsm.here
+                read_enable = fsm.here
+                util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
+                util.add_mux(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
 
                 if update_count is None:
                     update_count = count == 0
@@ -784,11 +822,16 @@ class RAM(_MutexFunction):
                     count(out_size - 1)
                 )
                 fsm(
-                    self.interfaces[port].addr(next_addr)
+                    read_addr(next_addr)
                 )
                 fsm.Delay(2)(
                     n(self.interfaces[port].rdata)
                 )
+
+                read_cond = fsm.here
+                read_enable = fsm.here
+                util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
+                util.add_mux(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
 
                 if offset is not None:
                     fsm.If(update_offset, vtypes.Not(carry))(
@@ -922,15 +965,24 @@ class RAM(_MutexFunction):
         if when_cond is not None:
             raw_valid = vtypes.Ands(when_cond, raw_valid)
 
+        write_addr = self.m.TmpRegLike(self.interfaces[port].addr, initval=0)
+        write_data = self.m.TmpRegLike(self.interfaces[port].wdata, initval=0)
+        write_enable = self.m.TmpRegLike(self.interfaces[port].wenable, initval=0)
+
+        util.add_mux(self.interfaces[port].addr, write_enable, write_addr)
+        util.add_mux(self.interfaces[port].wdata, write_enable, write_data)
+        util.add_mux(self.interfaces[port].wenable, write_enable, vtypes.Int(1, 1))
+        util.add_mux(self.interfaces[port].enable, write_enable, vtypes.Int(1, 1))
+
         self.seq.If(ext_cond, counter == 0)(
-            self.interfaces[port].addr(addr - stride),
+            write_addr(addr - stride),
             counter(length),
         )
 
         self.seq.If(raw_valid, counter > 0)(
-            self.interfaces[port].addr(self.interfaces[port].addr + stride),
-            self.interfaces[port].wdata(raw_data),
-            self.interfaces[port].wenable(1),
+            write_addr(write_addr + stride),
+            write_data(raw_data),
+            write_enable(1),
             counter.dec()
         )
 
@@ -940,7 +992,7 @@ class RAM(_MutexFunction):
 
         # de-assert
         self.seq.Delay(1)(
-            self.interfaces[port].wenable(0),
+            write_enable(0),
             last(0)
         )
 
@@ -1002,10 +1054,19 @@ class RAM(_MutexFunction):
             running(1)
         )
 
+        write_addr = self.m.TmpRegLike(self.interfaces[port].addr, initval=0)
+        write_data = self.m.TmpRegLike(self.interfaces[port].wdata, initval=0)
+        write_enable = self.m.TmpRegLike(self.interfaces[port].wenable, initval=0)
+
+        util.add_mux(self.interfaces[port].addr, write_enable, write_addr)
+        util.add_mux(self.interfaces[port].wdata, write_enable, write_data)
+        util.add_mux(self.interfaces[port].wenable, write_enable, vtypes.Int(1, 1))
+        util.add_mux(self.interfaces[port].enable, write_enable, vtypes.Int(1, 1))
+
         self.seq.If(raw_valid, running)(
-            self.interfaces[port].addr(offset_addr),
-            self.interfaces[port].wdata(raw_data),
-            self.interfaces[port].wenable(1)
+            write_addr(offset_addr),
+            write_data(raw_data),
+            write_enable(1)
         )
 
         update_count = None
@@ -1042,7 +1103,7 @@ class RAM(_MutexFunction):
 
         # de-assert
         self.seq.Delay(1)(
-            self.interfaces[port].wenable(0),
+            write_enable(0),
             last(0)
         )
 
