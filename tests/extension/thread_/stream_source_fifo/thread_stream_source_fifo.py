@@ -101,8 +101,7 @@ def mkLed():
         vthread.finish()
 
     th = vthread.Thread(m, 'comp', clk, rst, comp)
-    # fsm = th.start(32)
-    fsm = th.start(11)
+    fsm = th.start(32)
 
     return m
 
