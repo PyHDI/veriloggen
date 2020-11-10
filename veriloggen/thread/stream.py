@@ -1291,6 +1291,8 @@ class Stream(BaseStream):
 
         self._run(cond)
         fsm.goto_next()
+        fsm.goto_next()
+        fsm.goto_next()
 
         return 0
 
@@ -1321,12 +1323,12 @@ class Stream(BaseStream):
         )
 
         if self.reduce_reset is not None:
-            self.fsm.seq.If(self._delay_from_start_to_source(start_cond))(
+            self.fsm.seq.If(self._delay_from_start_to_reduce_reset_off(start_cond))(
                 self.reduce_reset(0)
             )
 
         if self.dump:
-            self.seq.If(self._delay_from_start_to_source(start_cond))(
+            self.seq.If(self._delay_from_start_to_reduce_reset_off(start_cond))(
                 self.dump_enable(1)
             )
 
@@ -1346,19 +1348,22 @@ class Stream(BaseStream):
             )
 
             if sub.substrm.reduce_reset is not None:
-                sub_fsm.seq.If(self._delay_from_start_to_substream(start_cond, reset_delay))(
+                sub_fsm.seq.If(self._delay_from_start_to_substream_reduce_reset_off(start_cond, reset_delay))(
                     sub.substrm.reduce_reset(0)
                 )
 
             if self.dump and sub.substrm.dump:
-                sub_fsm.seq.If(self._delay_from_start_to_substream(start_cond, dump_delay))(
+                sub_fsm.seq.If(self._delay_from_start_to_substream_reduce_reset_off(start_cond, dump_delay))(
                     sub.substrm.dump_enable(1)
                 )
 
             for cond in sub.conds.values():
-                sub_fsm.seq.If(self._delay_from_start_to_substream(start_cond, cond_delay))(
+                sub_fsm.seq.If(self._delay_from_start_to_substream_reduce_reset_off(start_cond, cond_delay))(
                     cond(1)
                 )
+
+        # compute (at this cycle, source_idle <- 0)
+        self.fsm.If(self.stream_oready).goto_next()
 
         # compute and join
         done_cond = None
@@ -1380,13 +1385,13 @@ class Stream(BaseStream):
 
         # reset accumulate pipelines
         if self.reduce_reset is not None:
-            self.fsm.seq.If(self._delay_from_start_to_source(end_cond))(
+            self.fsm.seq.If(self._delay_from_start_to_reduce_reset_on(end_cond))(
                 self.reduce_reset(1)
             )
 
         if self.dump:
             dump_delay = self.ram_delay
-            self.seq.If(self._delay_from_start_to_source(end_cond))(
+            self.seq.If(self._delay_from_start_to_reduce_reset_on(end_cond))(
                 self.dump_enable(0)
             )
 
@@ -1402,17 +1407,17 @@ class Stream(BaseStream):
             sub_fsm._set_index(0)
 
             if sub.substrm.reduce_reset is not None:
-                sub_fsm.seq.If(self._delay_from_start_to_substream(end_cond, reset_delay))(
+                sub_fsm.seq.If(self._delay_from_start_to_substream_reduce_reset_on(end_cond, reset_delay))(
                     sub.substrm.reduce_reset(1)
                 )
 
             if self.dump and sub.substrm.dump:
-                sub_fsm.seq.If(self._delay_from_start_to_substream(end_cond, dump_delay))(
+                sub_fsm.seq.If(self._delay_from_start_to_substream_reduce_reset_on(end_cond, dump_delay))(
                     sub.substrm.dump_enable(0)
                 )
 
             for cond in sub.conds.values():
-                sub_fsm.seq.If(self._delay_from_start_to_substream(end_cond, cond_delay))(
+                sub_fsm.seq.If(self._delay_from_start_to_substream_reduce_reset_on(end_cond, cond_delay))(
                     cond(0)
                 )
 
@@ -1488,21 +1493,36 @@ class Stream(BaseStream):
         delay = self._write_delay() - 1
         start_value = self.seq.Prev(v, 1, cond=self.stream_oready)
         first_renable = self.seq.Prev(start_value, 1, cond=self.stream_oready)
-        first_rvalid = self.seq.Prev(first_renable, 2)
+        first_rvalid = self.seq.Prev(first_renable, 1, cond=self.stream_oready)
         sink_value = self.seq.Prev(first_rvalid, delay, cond=self.stream_oready)
         return sink_value
 
-    def _delay_from_start_to_source(self, v):
+    def _delay_from_start_to_reduce_reset_off(self, v):
         start_value = self.seq.Prev(v, 1, cond=self.stream_oready)
         first_renable = self.seq.Prev(start_value, 1, cond=self.stream_oready)
-        first_rvalid = self.seq.Prev(first_renable, 2)
+        first_rvalid = self.seq.Prev(first_renable, 1, cond=self.stream_oready)
         source_value = vtypes.Ands(first_rvalid, self.stream_oready)
         return source_value
 
-    def _delay_from_start_to_substream(self, v, delay):
+    def _delay_from_start_to_reduce_reset_on(self, v):
+        start_value = self.seq.Prev(v, 1, cond=self.stream_oready)
+        source_value = vtypes.Ands(start_value, self.stream_oready)
+        return source_value
+
+    def _delay_from_start_to_substream_reduce_reset_off(self, v, delay):
         start_value = self.seq.Prev(v, 1, cond=self.stream_oready)
         first_renable = self.seq.Prev(start_value, 1, cond=self.stream_oready)
-        first_rvalid = self.seq.Prev(first_renable, 2)
+        first_rvalid = self.seq.Prev(first_renable, 1, cond=self.stream_oready)
+        if delay > 0:
+            substream_value = self.seq.Prev(first_rvalid, delay, cond=self.stream_oready)
+        else:
+            substream_value = vtypes.Ands(first_rvalid, self.stream_oready)
+        return substream_value
+
+    def _delay_from_start_to_substream_reduce_reset_on(self, v, delay):
+        start_value = self.seq.Prev(v, 1, cond=self.stream_oready)
+        first_renable = self.seq.Prev(start_value, 1, cond=self.stream_oready)
+        first_rvalid = self.seq.Prev(first_renable, 1, cond=self.stream_oready)
         if delay > 0:
             substream_value = self.seq.Prev(first_rvalid, delay, cond=self.stream_oready)
         else:
@@ -1634,7 +1654,7 @@ class Stream(BaseStream):
                                    vtypes.And(var.source_mode, mode_ram_normal))
 
         self.seq.If(source_start, self.stream_oready)(
-            var.source_idle(0),
+            #var.source_idle(0),
             var.source_offset_buf(var.source_offset),
             var.source_size_buf(var.source_size),
             var.source_stride_buf(var.source_stride)
@@ -1656,6 +1676,7 @@ class Stream(BaseStream):
         var.source_fsm.If(source_start, self.stream_oready).goto_next()
 
         self.seq.If(var.source_fsm.here, self.stream_oready)(
+            var.source_idle(0),
             var.source_ram_raddr(var.source_offset_buf),
             var.source_ram_renable(1),
             var.source_count(var.source_size_buf)
@@ -2007,24 +2028,14 @@ class Stream(BaseStream):
         deq = vtypes.Ands(self.source_fifo_oready, var.source_fifo_deq, fifo_cond)
 
         d, v, ready = fifo.deq_rtl(cond=deq)
-
-        prev_deq = self.seq.Prev(deq, 1)
-        d_out = self.seq.Prev(d, 1, cond=v)
-        v_out = self.seq.Prev(v, 1)
-        add_mux(var.source_fifo_rdata, fifo_cond, d_out)
-        add_mux(var.source_fifo_rvalid, fifo_cond, v_out)
-        self.module.Probe(d, prefix='_probe_d')
-        self.module.Probe(v, prefix='_probe_v')
-        self.module.Probe(d_out, prefix='_probe_d_out')
-        self.module.Probe(v_out, prefix='_probe_v_out')
-        ### ???
+        add_mux(var.source_fifo_rdata, fifo_cond, d)
+        add_mux(var.source_fifo_rvalid, fifo_cond, v)
 
         # stall control
         cond = vtypes.Ands(self.source_busy, fifo_cond)
         fifo_oready = vtypes.Ors(ready, var.source_idle)
         add_mux(self.source_fifo_oready, cond, fifo_oready)
 
-        #stream_oready = vtypes.Ors(self.seq.Prev(self.source_fifo_oready, 1), self.seq.Prev(var.source_idle, 1))
         stream_oready = self.source_fifo_oready
         add_mux(self.stream_oready, cond, stream_oready)
         ### ???
@@ -2105,6 +2116,8 @@ class Stream(BaseStream):
 
         ram_cond = (var.sink_ram_sel == ram_id)
         wenable = vtypes.Ands(self.stream_oready, var.sink_ram_wenable, ram_cond)
+        self.module.Probe(wenable, prefix='_probe_wenable')
+        self.module.Probe(var.sink_ram_waddr, prefix='_probe_waddr')
         ram.write_rtl(var.sink_ram_waddr, var.sink_ram_wdata,
                       port=port, cond=wenable)
 
