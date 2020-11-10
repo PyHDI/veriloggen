@@ -64,12 +64,8 @@ class Stream(BaseStream):
                  dump=False, dump_base=10, dump_mode='all'):
 
         # stall control
-        self.source_fifo_oready = m.Wire('_'.join(['', name, 'source_fifo_oready']))
-        self.source_fifo_oready.assign(1)
-
         self.stream_oready = m.Wire('_'.join(['', name, 'stream_oready']))
         self.stream_oready.assign(1)
-        ### ???
 
         BaseStream.__init__(self, module=m, clock=clk, reset=rst,
                             oready=self.stream_oready,
@@ -246,7 +242,7 @@ class Stream(BaseStream):
                                                 datawidth, initval=0)
 
         # default value
-        self.seq.If(self.source_fifo_oready)(
+        self.seq.If(self.stream_oready)(
             var.source_fifo_deq(0)
         )
         self.seq.If(self.stream_oready)(
@@ -2025,7 +2021,7 @@ class Stream(BaseStream):
         )
 
         fifo_cond = (var.source_sel == fifo_id)
-        deq = vtypes.Ands(self.source_fifo_oready, var.source_fifo_deq, fifo_cond)
+        deq = vtypes.Ands(self.stream_oready, var.source_fifo_deq, fifo_cond)
 
         d, v, ready = fifo.deq_rtl(cond=deq)
         add_mux(var.source_fifo_rdata, fifo_cond, d)
@@ -2034,11 +2030,7 @@ class Stream(BaseStream):
         # stall control
         cond = vtypes.Ands(self.source_busy, fifo_cond)
         fifo_oready = vtypes.Ors(ready, var.source_idle)
-        add_mux(self.source_fifo_oready, cond, fifo_oready)
-
-        stream_oready = self.source_fifo_oready
-        add_mux(self.stream_oready, cond, stream_oready)
-        ### ???
+        add_mux(self.stream_oready, cond, fifo_oready)
 
         if (self.dump and
             (self.dump_mode == 'all' or
@@ -2075,23 +2067,23 @@ class Stream(BaseStream):
 
         var.source_fsm.If(source_start, self.stream_oready).goto_next()
 
-        self.seq.If(var.source_fsm.here, self.source_fifo_oready)(
+        self.seq.If(var.source_fsm.here, self.stream_oready)(
             var.source_fifo_deq(1),
             var.source_count(var.source_size_buf)
         )
 
-        var.source_fsm.If(self.source_fifo_oready).goto_next()
+        var.source_fsm.If(self.stream_oready).goto_next()
 
-        self.seq.If(var.source_fsm.here, self.source_fifo_oready)(
+        self.seq.If(var.source_fsm.here, self.stream_oready)(
             var.source_fifo_deq(1),
             var.source_count.dec()
         )
-        self.seq.If(var.source_fsm.here, var.source_count == 1, self.source_fifo_oready)(
+        self.seq.If(var.source_fsm.here, var.source_count == 1, self.stream_oready)(
             var.source_fifo_deq(0),
             var.source_idle(1)
         )
 
-        var.source_fsm.If(var.source_count == 1, self.source_fifo_oready).goto_init()
+        var.source_fsm.If(var.source_count == 1, self.stream_oready).goto_init()
 
     def _setup_sink_ram(self, ram, var, port, set_cond):
         if ram._id() in var.sink_ram_id_map:
