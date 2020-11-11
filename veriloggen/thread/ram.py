@@ -215,7 +215,7 @@ class RAM(_MutexFunction):
         next_last = self.m.TmpReg(initval=0)
         last = self.m.TmpReg(initval=0)
 
-        counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
+        counter = self.m.TmpReg(vtypes.get_width(length), initval=0)
 
         self.seq.If(data_cond, next_valid_off)(
             last(0),
@@ -316,7 +316,7 @@ class RAM(_MutexFunction):
 
         offsets.insert(0, None)
 
-        count_list = [self.m.TmpReg(out_size.bit_length() + 1, initval=0)
+        count_list = [self.m.TmpReg(vtypes.get_width(out_size), initval=0)
                       for (out_size, out_stride) in pattern]
 
         self.seq.If(data_cond, next_valid_off)(
@@ -465,7 +465,7 @@ class RAM(_MutexFunction):
         ext_cond = make_condition(cond)
         data_cond = make_condition(data_ack, last_ack)
 
-        counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
+        counter = self.m.TmpReg(vtypes.get_width(length), initval=0)
 
         last = self.m.TmpReg(initval=0)
         reuse_data = [self.m.TmpReg(self.datawidth, initval=0, signed=True)
@@ -473,7 +473,7 @@ class RAM(_MutexFunction):
         next_reuse_data = [self.m.TmpReg(self.datawidth, initval=0, signed=True)
                            for _ in range(num_outputs)]
 
-        reuse_count = self.m.TmpReg(reuse_size.bit_length() + 1, initval=0)
+        reuse_count = self.m.TmpReg(vtypes.get_width(reuse_size), initval=0)
         fill_reuse_count = self.m.TmpReg(initval=0)
         fetch_done = self.m.TmpReg(initval=0)
 
@@ -633,7 +633,7 @@ class RAM(_MutexFunction):
 
         offsets.insert(0, None)
 
-        count_list = [self.m.TmpReg(out_size.bit_length() + 1, initval=0)
+        count_list = [self.m.TmpReg(vtypes.get_width(out_size), initval=0)
                       for (out_size, out_stride) in pattern]
 
         last = self.m.TmpReg(initval=0)
@@ -642,7 +642,7 @@ class RAM(_MutexFunction):
         next_reuse_data = [self.m.TmpReg(self.datawidth, initval=0, signed=True)
                            for _ in range(num_outputs)]
 
-        reuse_count = self.m.TmpReg(reuse_size.bit_length() + 1, initval=0)
+        reuse_count = self.m.TmpReg(vtypes.get_width(reuse_size), initval=0)
         fill_reuse_count = self.m.TmpReg(initval=0)
 
         prefetch_done = self.m.TmpReg(initval=0)
@@ -904,7 +904,7 @@ class RAM(_MutexFunction):
         if self._write_disabled[port]:
             raise TypeError('Write disabled.')
 
-        counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
+        counter = self.m.TmpReg(vtypes.get_width(length), initval=0)
         last = self.m.TmpReg(initval=0)
 
         ext_cond = make_condition(cond)
@@ -995,7 +995,7 @@ class RAM(_MutexFunction):
             offset_addr_value = offset + offset_addr_value
         offset_addr.assign(offset_addr_value)
 
-        count_list = [self.m.TmpReg(out_size.bit_length() + 1, initval=0)
+        count_list = [self.m.TmpReg(vtypes.get_width(out_size), initval=0)
                       for (out_size, out_stride) in pattern]
 
         self.seq.If(ext_cond, vtypes.Not(running))(
@@ -1676,7 +1676,7 @@ class MultibankRAM(object):
         next_last = self.m.TmpReg(initval=0)
         last = self.m.TmpReg(initval=0)
 
-        counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
+        counter = self.m.TmpReg(vtypes.get_width(length), initval=0)
 
         self.seq.If(data_cond, next_valid_off)(
             last(0),
@@ -1820,7 +1820,7 @@ class MultibankRAM(object):
 
         offsets.insert(0, None)
 
-        count_list = [self.m.TmpReg(out_size.bit_length() + 1, initval=0)
+        count_list = [self.m.TmpReg(vtypes.get_width(out_size), initval=0)
                       for (out_size, out_stride) in pattern]
 
         self.seq.If(data_cond, next_valid_off)(
@@ -2027,8 +2027,8 @@ class MultibankRAM(object):
         next_last = self.m.TmpReg(initval=0)
         last = self.m.TmpReg(initval=0)
 
-        block_counter = self.m.TmpReg(block_size.bit_length() + 1, initval=0)
-        counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
+        block_counter = self.m.TmpReg(vtypes.get_width(block_size), initval=0)
+        counter = self.m.TmpReg(vtypes.get_width(length), initval=0)
 
         self.seq.If(data_cond, next_valid_off)(
             last(0),
@@ -2183,7 +2183,7 @@ class MultibankRAM(object):
             if ram._write_disabled[port]:
                 raise TypeError('Write disabled.')
 
-        counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
+        counter = self.m.TmpReg(vtypes.get_width(length), initval=0)
         last = self.m.TmpReg(initval=0)
 
         ext_cond = dtypes.make_condition(cond)
@@ -2306,7 +2306,7 @@ class MultibankRAM(object):
         bank_sel = self.m.TmpWire(log_numbanks)
         bank_sel.assign(offset_addr)
 
-        count_list = [self.m.TmpReg(out_size.bit_length() + 1, initval=0)
+        count_list = [self.m.TmpReg(vtypes.get_width(out_size), initval=0)
                       for (out_size, out_stride) in pattern]
 
         self.seq.If(ext_cond, vtypes.Not(running))(
@@ -2441,8 +2441,8 @@ class MultibankRAM(object):
             if ram._write_disabled[port]:
                 raise TypeError('Write disabled.')
 
-        block_counter = self.m.TmpReg(block_size.bit_length() + 1, initval=0)
-        counter = self.m.TmpReg(length.bit_length() + 1, initval=0)
+        block_counter = self.m.TmpReg(vtypes.get_width(block_size), initval=0)
+        counter = self.m.TmpReg(vtypes.get_width(length), initval=0)
         last = self.m.TmpReg(initval=0)
 
         ext_cond = dtypes.make_condition(cond)
