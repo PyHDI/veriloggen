@@ -81,7 +81,7 @@ module main
   assign myram_0_wdata = wdata;
   assign myram_0_wenable = waddr < 16;
   reg [32-1:0] raddr;
-  localparam _tmp_0 = 1;
+  localparam _tmp_0 = 2;
   wire signed [_tmp_0-1:0] _tmp_1;
   assign _tmp_1 = 1;
   reg signed [_tmp_0-1:0] __tmp_1_1;
@@ -91,7 +91,7 @@ module main
   assign myram_1_addr = raddr;
   assign myram_1_wdata = 0;
   assign myram_1_wenable = 0;
-  localparam _tmp_2 = (_tmp_0 >= 1)? _tmp_0 : 1;
+  localparam _tmp_2 = 1;
   wire [_tmp_2-1:0] _tmp_3;
   assign _tmp_3 = __tmp_1_4 && (raddr < 16);
   reg [_tmp_2-1:0] __tmp_3_1;

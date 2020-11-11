@@ -102,29 +102,29 @@ module blinkled #
   output reg [WIDTH-1:0] y
 );
 
-  localparam _tmp_0 = ((WIDTH >= 7)? WIDTH : 7) + 1;
+  localparam _tmp_0 = ((WIDTH >= 8)? WIDTH : 8) + 1;
   wire [_tmp_0-1:0] _tmp_1;
   assign _tmp_1 = x + 100;
   reg [_tmp_0-1:0] __tmp_1_1;
-  localparam _tmp_2 = ((WIDTH >= 7)? WIDTH : 7) + 1;
+  localparam _tmp_2 = ((WIDTH >= 8)? WIDTH : 8) + 1;
   wire [_tmp_2-1:0] _tmp_3;
   assign _tmp_3 = x + 100;
   reg [_tmp_2-1:0] __tmp_3_1;
   reg [_tmp_2-1:0] __tmp_3_2;
-  localparam _tmp_4 = ((WIDTH >= 7)? WIDTH : 7) + 1;
+  localparam _tmp_4 = ((WIDTH >= 8)? WIDTH : 8) + 1;
   wire [_tmp_4-1:0] _tmp_5;
   assign _tmp_5 = x + 100;
   reg [_tmp_4-1:0] __tmp_5_1;
   reg [_tmp_4-1:0] __tmp_5_2;
   reg [_tmp_4-1:0] __tmp_5_3;
-  localparam _tmp_6 = ((WIDTH >= 7)? WIDTH : 7) + 1;
+  localparam _tmp_6 = ((WIDTH >= 8)? WIDTH : 8) + 1;
   wire [_tmp_6-1:0] _tmp_7;
   assign _tmp_7 = x + 100;
   reg [_tmp_6-1:0] __tmp_7_1;
   reg [_tmp_6-1:0] __tmp_7_2;
   reg [_tmp_6-1:0] __tmp_7_3;
   reg [_tmp_6-1:0] __tmp_7_4;
-  localparam _tmp_8 = ((WIDTH >= 7)? WIDTH : 7) + 1;
+  localparam _tmp_8 = ((WIDTH >= 8)? WIDTH : 8) + 1;
   wire [_tmp_8-1:0] _tmp_9;
   assign _tmp_9 = x + 100;
   reg [_tmp_8-1:0] __tmp_9_1;
@@ -132,7 +132,7 @@ module blinkled #
   reg [_tmp_8-1:0] __tmp_9_3;
   reg [_tmp_8-1:0] __tmp_9_4;
   reg [_tmp_8-1:0] __tmp_9_5;
-  localparam _tmp_10 = ((WIDTH >= 7)? WIDTH : 7) + 1;
+  localparam _tmp_10 = ((WIDTH >= 8)? WIDTH : 8) + 1;
   wire [_tmp_10-1:0] _tmp_11;
   assign _tmp_11 = x + 100;
   reg [_tmp_10-1:0] __tmp_11_1;
@@ -141,7 +141,7 @@ module blinkled #
   reg [_tmp_10-1:0] __tmp_11_4;
   reg [_tmp_10-1:0] __tmp_11_5;
   reg [_tmp_10-1:0] __tmp_11_6;
-  localparam _tmp_12 = ((WIDTH >= 7)? WIDTH : 7) + 1;
+  localparam _tmp_12 = ((WIDTH >= 8)? WIDTH : 8) + 1;
   wire [_tmp_12-1:0] _tmp_13;
   assign _tmp_13 = x + 100;
   reg [_tmp_12-1:0] __tmp_13_1;
