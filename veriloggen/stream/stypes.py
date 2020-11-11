@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import numpy as np
+import itertools
 from collections import OrderedDict
 from math import log, ceil
 
@@ -3526,27 +3528,33 @@ class FromExtern(_UnaryOperator):
             self.sig_data(value)
         )
 
+
 class _LineBufferOut(_UnaryOperator):
     latency = 1
+
     def index_to_index_tuple(self, index):
         orig_index = index
         index_list = []
-        prod = lambda l : 1 if len(l) == 0 else l[0] * prod(l[1:])
+        def prod(l): return 1 if len(l) == 0 else l[0] * prod(l[1:])
+
         for i in range(1, self.linebuf.n_dim):
             elmnum = prod(self.linebuf.shape[:-i])
             index_list = [index // elmnum] + index_list
             index = index % elmnum
+
         index_list = [index] + index_list
         return tuple(index_list)
 
     def __init__(self, linebuf, index):
         self.linebuf = linebuf
+
         if isinstance(index, tuple) and all(isinstance(i, int) for i in index):
             self.index = index
         elif isinstance(index, int):
             self.index = self.index_to_index_tuple(index)
         else:
             raise ValueError("index must be int constant or tuple of int constant")
+
         self.width = linebuf.width
         self.point = linebuf.point
         self.signed = linebuf.signed
@@ -3557,21 +3565,35 @@ class _LineBufferOut(_UnaryOperator):
     def _implement(self, m, seq, svalid=None, senable=None):
         self.sig_data = self.linebuf.windowreg[self.index]
 
-import numpy as np
-import itertools
 
 class LineBuffer(_SpecialOperator):
-    def __init__(self, shape, memlens, data, head_initvals, tail_initvals, shift_cond, rotate_conds=None):
-        if not isinstance(shape, tuple) or all(isinstance(d, int) for d in shape) is False:
+    def __init__(self, shape, memlens, data,
+                 head_initvals, tail_initvals,
+                 shift_cond, rotate_conds=None):
+
+        if (not isinstance(shape, tuple) or
+                all(isinstance(d, int) for d in shape) is False):
             raise ValueError("shape must be tuple of int constant")
-        if isinstance(memlens, list) is False or all([isinstance(memlen, int) for memlen in memlens]) is False:
+
+        if (isinstance(memlens, list) is False or
+                all([isinstance(memlen, int) for memlen in memlens]) is False):
             raise ValueError("memlen must be list of int constant")
+
         self.shape = shape
         self.n_dim = len(self.shape)
-        if not isinstance(head_initvals, list) or len(head_initvals) != self.n_dim - 1 or all([isinstance(val, int) for val in head_initvals]) is False:
-            raise ValueError("head_initval must be list of int constant whose length is len(shape)-1")
-        if not isinstance(tail_initvals, list) or len(tail_initvals) != self.n_dim - 1 or all([isinstance(val, int) for val in tail_initvals]) is False:
-            raise ValueError("tail_initval must be list of int constant whose length is len(shape)-1")
+
+        if (not isinstance(head_initvals, list) or
+            len(head_initvals) != self.n_dim - 1 or
+                all([isinstance(val, int) for val in head_initvals]) is False):
+            raise ValueError(
+                "head_initval must be list of int constant whose length is len(shape)-1")
+
+        if (not isinstance(tail_initvals, list) or
+            len(tail_initvals) != self.n_dim - 1 or
+                all([isinstance(val, int) for val in tail_initvals]) is False):
+            raise ValueError(
+                "tail_initval must be list of int constant whose length is len(shape)-1")
+
         args = [data, shift_cond]
         if rotate_conds is not None:
             if len(rotate_conds) != self.n_dim - 1:
@@ -3579,33 +3601,40 @@ class LineBuffer(_SpecialOperator):
             args.extend(rotate_conds)
 
         _SpecialOperator.__init__(self, *args)
-        self.width = data.bit_length()
+        self.width = data.get_width()
         self.point = data.get_point()
         self.signed = data.get_signed()
         self.graph_label = 'LineBuffer'
         self.graph_shape = 'box'
-        prod = lambda l : 1 if len(l) == 0 else l[0] * prod(l[1:])
+        def prod(l): return 1 if len(l) == 0 else l[0] * prod(l[1:])
         self.window_num = prod(self.shape)
         self.windowreg = np.empty(self.shape, dtype=object)
         self.head_initvals = head_initvals
         self.tail_initvals = tail_initvals
         self.memlens = memlens
         self._delay_cnt = 0
+
     def _delayed(self, m, seq, data):
         if data is None:
             return None
-        delayed = fx.FixedReg(m, self.name('delay' + str(self._delay_cnt)), data.bit_length(), 0, initval=0, signed=data.get_signed())
+
+        delayed = fx.FixedReg(m, self.name('delay' + str(self._delay_cnt)),
+                              data.get_width(), 0, initval=0, signed=data.get_signed())
         seq(delayed(data))
         self._delay_cnt += 1
         return delayed
+
     def _implement(self, m, seq, svalid=None, senable=None):
-        width = self.bit_length()
+        width = self.get_width()
         point = self.get_point()
         signed = self.get_signed()
         window_indices = list(itertools.product(*[range(d) for d in self.shape]))
+
         for index in window_indices:
             window_index_s = '_'.join(list(map(str, index)))
-            self.windowreg[index] = fx.FixedReg(m, self.name('winreg' + window_index_s), width, point, initval=0, signed=signed)
+            self.windowreg[index] = fx.FixedReg(m, self.name(
+                'winreg' + window_index_s), width, point, initval=0, signed=signed)
+
         shiftmemout = [None] * (self.n_dim)
         for i in range(1, self.n_dim):
             dim_i_memshape = self.shape[i:]
@@ -3614,7 +3643,8 @@ class LineBuffer(_SpecialOperator):
             dim_i_mem_indices = itertools.product(*dim_i_rangelist)
             for mem_index in dim_i_mem_indices:
                 mem_index_s = '_'.join(list(map(str, mem_index)))
-                shiftmemout[i][mem_index] = fx.FixedWire(m, self.name('shiftmemout' + mem_index_s), width, point, signed=signed)
+                shiftmemout[i][mem_index] = fx.FixedWire(m, self.name(
+                    'shiftmemout' + mem_index_s), width, point, signed=signed)
 
         arg_data = [arg.sig_data for arg in self.args]
         delayed_src = self._delayed(m, seq, arg_data[0])
@@ -3627,9 +3657,12 @@ class LineBuffer(_SpecialOperator):
             head_tail_enables = [enable] * (self.n_dim - 1)
         else:
             delayed_rotate_conds = [self._delayed(m, seq, cond) for cond in arg_data[2:]]
-            delayed_enable = _and_vars(senable, (vtypes.OrList(*([delayed_shift_cond] + delayed_rotate_conds))))
+            delayed_enable = _and_vars(senable, (vtypes.OrList(
+                *([delayed_shift_cond] + delayed_rotate_conds))))
             enable = _and_vars(senable, (vtypes.OrList(*arg_data[1:])))
-            head_tail_enables = [_and_vars(senable, (vtypes.OrList(*([shift_cond] + arg_data[2+i-1:])))) for i in range(1, self.n_dim)]
+            head_tail_enables = [_and_vars(senable, (vtypes.OrList(
+                *([shift_cond] + arg_data[2 + i - 1:])))) for i in range(1, self.n_dim)]
+
         def increment_index(index):
             # get incremented index accoring to shape
             incremented = list(index)
@@ -3645,11 +3678,13 @@ class LineBuffer(_SpecialOperator):
                     incremented[d] = 0
                 d += 1
             return tuple(incremented)
-        #connect window registers input
+
+        # connect window registers input
         for index in window_indices:
-            is_dim_edge = [i == dim-1 for i, dim in zip(index, self.shape)]
+            is_dim_edge = [i == dim - 1 for i, dim in zip(index, self.shape)]
             mine = self.windowreg[index]
             cond_data_pairs = []
+
             if is_dim_edge[0] is True:
                 #shift input
                 if all(is_dim_edge):
@@ -3662,6 +3697,7 @@ class LineBuffer(_SpecialOperator):
                     shift_mem_index = increment_index(index)[shift_mem_dim:]
                     shift_data = shiftmemout[shift_mem_dim][shift_mem_index]
                     cond_data_pairs.append([delayed_shift_cond, shift_data])
+
                 #rotate input
                 if delayed_rotate_conds is not None:
                     for rotate_dim, rotate_cond in zip(range(1, self.n_dim), delayed_rotate_conds):
@@ -3677,33 +3713,43 @@ class LineBuffer(_SpecialOperator):
                 newdata = cond_data_pairs[0][1]
                 for cond, data in cond_data_pairs[1:]:
                     newdata = vtypes.Mux(cond, data, newdata)
+
             else:
                 #input from previous window register
                 prev_index = (index[0]+1,) + index[1:]
                 newdata = self.windowreg[prev_index]
             #assign window register input
             seq(mine(newdata), cond=delayed_enable)
+
         #head, tail
         heads = [None] * self.n_dim
         tails = [None] * self.n_dim
-        for dim, head_initval, tail_initval, memlen, head_tail_enable in zip(range(1, self.n_dim), self.head_initvals, self.tail_initvals, self.memlens, head_tail_enables):
-            heads[dim] = fx.FixedReg(m, self.name('head' + str(dim)), width, point, initval=head_initval, signed=signed)
-            tails[dim] = fx.FixedReg(m, self.name('tail' + str(dim)), width, point, initval=tail_initval, signed=signed)
+        for (dim, head_initval, tail_initval, memlen, head_tail_enable) in zip(
+                range(1, self.n_dim), self.head_initvals, self.tail_initvals, self.memlens, head_tail_enables):
+            heads[dim] = fx.FixedReg(m, self.name('head' + str(dim)),
+                                     width, point, initval=head_initval, signed=signed)
+            tails[dim] = fx.FixedReg(m, self.name('tail' + str(dim)),
+                                     width, point, initval=tail_initval, signed=signed)
             next_head = vtypes.Mux(heads[dim] == memlen-1, 0, heads[dim] + 1)
             next_tail = vtypes.Mux(tails[dim] == memlen-1, 0, tails[dim] + 1)
             seq(heads[dim](next_head), cond=head_tail_enable)
             seq(tails[dim](next_tail), cond=head_tail_enable)
+
         raddrs = heads
         waddrs = [self._delayed(m, seq, tail) for tail in tails]
+
         #connect shift memory
-        for mem_dim, raddr_data, waddr_data, memlen in zip(range(1, self.n_dim), raddrs[1:], waddrs[1:], self.memlens):
+        for (mem_dim, raddr_data, waddr_data, memlen) in zip(
+                range(1, self.n_dim), raddrs[1:], waddrs[1:], self.memlens):
             if delayed_rotate_conds is None:
                 wenable = _and_vars(svalid, senable, delayed_shift_cond)
             else:
-                wenable = _and_vars(svalid, senable, vtypes.OrList(*([delayed_shift_cond] + delayed_rotate_conds[mem_dim-1:])))
+                wenable = _and_vars(svalid, senable,
+                                    vtypes.OrList(*([delayed_shift_cond] + delayed_rotate_conds[mem_dim-1:])))
+
             mem_indices = itertools.product(*[range(d) for d in self.shape[mem_dim:]])
             for mem_index in mem_indices:
-                datawidth = self.bit_length()
+                datawidth = self.get_width()
                 addrwidth = int(ceil(log(memlen, 2)))
                 num_ports = 2
                 clk = m._clock
@@ -3728,9 +3774,10 @@ class LineBuffer(_SpecialOperator):
                 shiftmemout[mem_dim][mem_index].assign(shiftmem.rdata(1))
 
         self.sig_data = delayed_src #dummy
-    
+
     def get_window(self, index):
         return _LineBufferOut(self, index)
+
 
 class Predicate(_SpecialOperator):
     latency = 1
