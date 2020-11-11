@@ -55,7 +55,7 @@ class _ROM_RTL(object):
         if datawidth is None:
             datawidth = 1
             for v in values:
-                w = v.bit_length()
+                w = vtypes.get_width(v)
                 if w is not None and w > datawidth:
                     datawidth = w
 

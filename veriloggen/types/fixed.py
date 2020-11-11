@@ -88,7 +88,7 @@ def FixedConst(value, point=0, signed=True, raw=False):
 
 def reinterpret_cast_to_fixed(value, point, signed=True):
     m = value._get_module()
-    width = value.bit_length()
+    width = vtypes.get_width(value)
     v = FixedTmpWire(m, width=width, point=point, signed=signed)
     v.assign_raw(value)
     return v
@@ -199,7 +199,7 @@ def fixed_to_real(value, point):
 
     signed = vtypes.get_signed(value)
 
-    width = value.bit_length()
+    width = vtypes.get_width(value)
     msb = (value[width - 1] if isinstance(value, vtypes._Variable) else
            (value >> (width - 1)) & 0x1)
 
@@ -508,8 +508,8 @@ class _FixedDivide(_FixedSkipUnaryOperator):
         rsigned = vtypes.get_signed(right)
         point = _max_mux(lpoint, rpoint)
         signed = lsigned and rsigned if not self.overwrite_signed else False
-        lwidth = left.bit_length()
-        rwidth = right.bit_length()
+        lwidth = vtypes.get_width(left)
+        rwidth = vtypes.get_width(right)
 
         if lpoint <= rpoint:
             ldata, rdata = adjust(left, right, lpoint, rpoint, signed)
