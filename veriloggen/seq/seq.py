@@ -135,6 +135,12 @@ class Seq(vtypes.VeriloggenNode):
         if delay <= 0:
             return var
 
+        if isinstance(var, (int, float, bool)):
+            return var
+
+        if isinstance(var, vtypes._Constant):
+            return var
+
         if prefix is None:
             prefix = '_'
 
