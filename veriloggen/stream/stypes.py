@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import numpy as np
+import itertools
 from collections import OrderedDict
 from math import log, ceil
 
@@ -179,7 +181,7 @@ class _Numeric(_Node):
     def get_point(self):
         return self.point
 
-    def bit_length(self):
+    def get_width(self):
         return self.width
 
     def eval(self):
@@ -222,7 +224,7 @@ class _Numeric(_Node):
         if self.m is None:
             raise ValueError("Module information is not set.")
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         type_i = m.Wire if aswire else m.Input
@@ -359,7 +361,7 @@ class _Numeric(_Node):
 
     def __getitem__(self, r):
         if isinstance(r, slice):
-            size = self.bit_length()
+            size = self.get_width()
 
             right = r.start
             if right is None:
@@ -396,7 +398,7 @@ class _Numeric(_Node):
                 return Cat(*values)
 
         if isinstance(r, int) and r < 0:
-            r = self.bit_length() - abs(r)
+            r = self.get_width() - abs(r)
 
         return Pointer(self, r)
 
@@ -427,7 +429,7 @@ class _Numeric(_Node):
         return self.__next__()
 
     def __len__(self):
-        ret = self.bit_length()
+        ret = self.get_width()
         if not isinstance(ret, int):
             raise ValueError("Non int length.")
         return ret
@@ -469,8 +471,8 @@ class _BinaryOperator(_Operator):
     def _set_attributes(self):
         left_fp = self.left.get_point()
         right_fp = self.right.get_point()
-        left = self.left.bit_length() - left_fp
-        right = self.right.bit_length() - right_fp
+        left = self.left.get_width() - left_fp
+        right = self.right.get_width() - right_fp
         self.width = max(left, right) + max(left_fp, right_fp)
         self.point = max(left_fp, right_fp)
         self.signed = self.left.get_signed() and self.right.get_signed()
@@ -481,7 +483,7 @@ class _BinaryOperator(_Operator):
         self._set_seq(getattr(self.strm, 'seq', None))
 
     def _implement(self, m, seq, svalid=None, senable=None):
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         lpoint = self.left.get_point()
@@ -526,7 +528,7 @@ class _UnaryOperator(_Operator):
         self._set_managers()
 
     def _set_attributes(self):
-        right = self.right.bit_length()
+        right = self.right.get_width()
         right_fp = self.right.get_point()
         self.width = right
         self.point = right_fp
@@ -538,7 +540,7 @@ class _UnaryOperator(_Operator):
         self._set_seq(getattr(self.strm, 'seq', None))
 
     def _implement(self, m, seq, svalid=None, senable=None):
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
         rdata = self.right.sig_data
 
@@ -586,8 +588,8 @@ class Times(_BinaryOperator):
     def _set_attributes(self):
         left_fp = self.left.get_point()
         right_fp = self.right.get_point()
-        left = self.left.bit_length()
-        right = self.right.bit_length()
+        left = self.left.get_width()
+        right = self.right.get_width()
         self.width = max(left, right)
         self.point = min(max(left_fp, right_fp), left_fp + right_fp)
         self.signed = self.left.get_signed() and self.right.get_signed()
@@ -596,13 +598,13 @@ class Times(_BinaryOperator):
         if self.latency <= 3:
             raise ValueError("Latency of '*' operator must be greater than 3")
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         lpoint = self.left.get_point()
         rpoint = self.right.get_point()
-        lwidth = self.left.bit_length()
-        rwidth = self.right.bit_length()
+        lwidth = self.left.get_width()
+        rwidth = self.right.get_width()
         lsigned = self.left.get_signed()
         rsigned = self.right.get_signed()
         ldata = self.left.sig_data
@@ -646,7 +648,7 @@ class Divide(_BinaryOperator):
     variable_latency = 'get_latency'
 
     def get_latency(self):
-        return self.bit_length() + 5
+        return self.get_width() + 5
 
     def eval(self):
         left = self.left.eval()
@@ -659,7 +661,7 @@ class Divide(_BinaryOperator):
         if self.latency <= 5:
             raise ValueError("Latency of div operator must be greater than 5")
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         lpoint = self.left.get_point()
@@ -742,7 +744,7 @@ class Mod(_BinaryOperator):
     variable_latency = 'get_latency'
 
     def get_latency(self):
-        return self.bit_length() + 5
+        return self.get_width() + 5
 
     def eval(self):
         return self.left.eval() % self.right.eval()
@@ -751,7 +753,7 @@ class Mod(_BinaryOperator):
         if self.latency <= 5:
             raise ValueError("Latency of div operator must be greater than 5")
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         lpoint = self.left.get_point()
@@ -940,7 +942,7 @@ class _BinaryShiftOperator(_BinaryOperator):
         if self.right.get_point() != 0:
             raise TypeError("shift amount must be int")
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         lpoint = self.left.get_point()
@@ -978,13 +980,13 @@ class Sll(_BinaryShiftOperator):
     def _set_attributes(self):
         v = self.right.eval()
         if isinstance(v, int):
-            width = self.left.bit_length() + v
+            width = self.left.get_width() + v
         else:
-            v = 2 ** self.right.bit_length()
-            width = self.left.bit_length() + v
+            v = 2 ** self.right.get_width()
+            width = self.left.get_width() + v
 
         if width > self.max_width:
-            raise ValueError("bit_length is too large '%d'" % width)
+            raise ValueError("bitwidth is too large '%d'" % width)
 
         self.width = width
         self.point = self.left.get_point()
@@ -997,7 +999,7 @@ class Sll(_BinaryShiftOperator):
 class Srl(_BinaryShiftOperator):
 
     def _set_attributes(self):
-        self.width = self.left.bit_length()
+        self.width = self.left.get_width()
         self.point = self.left.get_point()
         self.signed = False
 
@@ -1008,7 +1010,7 @@ class Srl(_BinaryShiftOperator):
 class Sra(_BinaryShiftOperator):
 
     def _set_attributes(self):
-        self.width = self.left.bit_length()
+        self.width = self.left.get_width()
         self.point = self.left.get_point()
         self.signed = self.left.get_signed()
 
@@ -1028,14 +1030,14 @@ class Sra(_BinaryShiftOperator):
 class _BinaryLogicalOperator(_BinaryOperator):
 
     def _set_attributes(self):
-        left = self.left.bit_length()
-        right = self.right.bit_length()
+        left = self.left.get_width()
+        right = self.right.get_width()
         self.width = max(left, right)
         self.point = 0
         self.signed = False
 
     def _implement(self, m, seq, svalid=None, senable=None):
-        width = self.bit_length()
+        width = self.get_width()
         signed = False
 
         lpoint = self.left.get_point()
@@ -1141,7 +1143,7 @@ class Uminus(_UnaryOperator):
 class _UnaryLogicalOperator(_UnaryOperator):
 
     def _set_attributes(self):
-        right = self.right.bit_length()
+        right = self.right.get_width()
         self.width = right
         self.point = 0
         self.signed = False
@@ -1182,7 +1184,7 @@ class Uand(_UnaryLogicalOperator):
         if isinstance(right, bool):
             return right
         if isinstance(right, int):
-            width = self.right.bit_length()
+            width = self.right.get_width()
             for i in range(width):
                 if right & 0x1 == 0:
                     return False
@@ -1202,7 +1204,7 @@ class Unand(_UnaryLogicalOperator):
         if isinstance(right, bool):
             return not right
         if isinstance(right, int):
-            width = self.right.bit_length()
+            width = self.right.get_width()
             for i in range(width):
                 if right & 0x1 == 0:
                     return True
@@ -1222,7 +1224,7 @@ class Uor(_UnaryLogicalOperator):
         if isinstance(right, bool):
             return right
         if isinstance(right, int):
-            width = self.right.bit_length()
+            width = self.right.get_width()
             for i in range(width):
                 if right & 0x1 == 1:
                     return True
@@ -1242,7 +1244,7 @@ class Unor(_UnaryLogicalOperator):
         if isinstance(right, bool):
             return not right
         if isinstance(right, int):
-            width = self.right.bit_length()
+            width = self.right.get_width()
             for i in range(width):
                 if right & 0x1 == 1:
                     return False
@@ -1262,7 +1264,7 @@ class Uxor(_UnaryLogicalOperator):
         if isinstance(right, bool):
             return right
         if isinstance(right, int):
-            width = self.right.bit_length()
+            width = self.right.get_width()
             ret = 1
             for i in range(width):
                 ret = ret ^ (right & 0x1)
@@ -1282,7 +1284,7 @@ class Uxnor(_UnaryLogicalOperator):
         if isinstance(right, bool):
             return not right
         if isinstance(right, int):
-            width = self.right.bit_length()
+            width = self.right.get_width()
             ret = 1
             for i in range(width):
                 ret = ret ^ (right & 0x1)
@@ -1339,11 +1341,11 @@ class Cast(_UnaryOperator):
             raise ValueError("Latency mismatch '%d' vs '%s'" %
                              (self.latency, 0))
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         rdata = self.right.sig_data
-        rwidth = self.right.bit_length()
+        rwidth = self.right.get_width()
         rpoint = self.right.get_point()
         rsigned = self.right.get_signed()
 
@@ -1371,11 +1373,11 @@ class ReinterpretCast(Cast):
             raise ValueError("Latency mismatch '%d' vs '%s'" %
                              (self.latency, 0))
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         rdata = self.right.sig_data
-        rwidth = self.right.bit_length()
+        rwidth = self.right.get_width()
         rsigned = self.right.get_signed()
 
         rdata_src = m.Wire(self.name('src'), rwidth, signed=rsigned)
@@ -1406,12 +1408,12 @@ class _SpecialOperator(_Operator):
 
     def _set_attributes(self):
         if len(self.args) > 1:
-            wargs = [arg.bit_length() for arg in self.args]
+            wargs = [arg.get_width() for arg in self.args]
             self.width = max(*wargs)
             pargs = [arg.get_point() for arg in self.args]
             self.point = max(*pargs)
         elif self.args:
-            self.width = self.args[0].bit_length()
+            self.width = self.args[0].get_width()
             self.point = self.args[0].get_point()
         else:
             self.width = 1
@@ -1429,7 +1431,7 @@ class _SpecialOperator(_Operator):
         self._set_seq(getattr(self.strm, 'seq', None))
 
     def _implement(self, m, seq, svalid=None, senable=None):
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         arg_data = [arg.sig_data for arg in self.args]
@@ -1596,9 +1598,9 @@ def Split(data, width=None, point=None, signed=None, num_chunks=None, reverse=Fa
         raise ValueError('Either of width or num_chunks must be specified.')
 
     if width is None:
-        width = int(ceil(data.bit_length() / num_chunks))
+        width = int(ceil(data.get_width() / num_chunks))
     elif num_chunks is None:
-        num_chunks = int(ceil(data.bit_length() / width))
+        num_chunks = int(ceil(data.get_width() / width))
 
     if point is None:
         point = data.get_point()
@@ -1609,17 +1611,17 @@ def Split(data, width=None, point=None, signed=None, num_chunks=None, reverse=Fa
     total_width = width * num_chunks
     ret = []
     for i in range(0, total_width, width):
-        if i + width > data.bit_length():
+        if i + width > data.get_width():
             if signed:
                 sign = data[-1]
                 sign.latency = 0
-                pad = Repeat(sign, total_width - data.bit_length())
+                pad = Repeat(sign, total_width - data.get_width())
                 pad.latency = 0
             else:
                 pad = Int(0, signed=False)
-                pad.width = total_width - data.bit_length()
+                pad.width = total_width - data.get_width()
 
-            slc = Slice(data, data.bit_length() - 1, i)
+            slc = Slice(data, data.get_width() - 1, i)
             slc.latency = 0
             v = Cat(pad, slc)
             v.latency = 0
@@ -1645,7 +1647,7 @@ class Cat(_SpecialOperator):
     def _set_attributes(self):
         ret = 0
         for v in self.vars:
-            ret += v.bit_length()
+            ret += v.get_width()
         self.width = ret
         self.point = 0
         self.signed = False
@@ -1665,7 +1667,7 @@ class Cat(_SpecialOperator):
                 return Cat(*vars)
         ret = 0
         for var in vars:
-            ret = (ret << var.bit_length()) | var
+            ret = (ret << var.get_width()) | var
         return ret
 
 
@@ -1679,7 +1681,7 @@ class Repeat(_SpecialOperator):
         self.op = vtypes.Repeat
 
     def _set_attributes(self):
-        self.width = self.var.bit_length() * self.times.eval()
+        self.width = self.var.get_width() * self.times.eval()
         self.point = 0
         self.signed = False
 
@@ -1704,7 +1706,7 @@ class Repeat(_SpecialOperator):
         times = self.times.eval()
         ret = 0
         for i in times:
-            ret = (ret << var.bit_length()) | var
+            ret = (ret << var.get_width()) | var
         return ret
 
 
@@ -1717,8 +1719,8 @@ class Cond(_SpecialOperator):
     def _set_attributes(self):
         true_value_fp = self.true_value.get_point()
         false_value_fp = self.false_value.get_point()
-        true_value = self.true_value.bit_length() - true_value_fp
-        false_value = self.false_value.bit_length() - false_value_fp
+        true_value = self.true_value.get_width() - true_value_fp
+        false_value = self.false_value.get_width() - false_value_fp
         self.width = max(true_value, false_value) + \
             max(true_value_fp, false_value_fp)
         self.point = max(true_value_fp, false_value_fp)
@@ -1778,7 +1780,7 @@ class _Sync(_SpecialOperator):
 
     def _set_attributes(self):
         var = self.args[self.index]
-        self.width = var.bit_length()
+        self.width = var.get_width()
         self.point = var.get_point()
         self.signed = var.get_signed()
 
@@ -1805,7 +1807,7 @@ class ForwardDest(_SpecialOperator):
 
     def _set_attributes(self):
         value = self.args[0]
-        self.width = value.bit_length()
+        self.width = value.get_width()
         self.point = value.get_point()
         self.signed = value.get_signed()
 
@@ -1814,13 +1816,13 @@ class ForwardDest(_SpecialOperator):
             raise ValueError("Latency mismatch '%d' vs '%s'" %
                              (self.latency, 0))
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         value = self.args[0].sig_data
         index = self.args[1].sig_data
 
-        index_width = self.args[1].bit_length()
+        index_width = self.args[1].get_width()
         index_signed = self.args[1].get_signed()
 
         self.forward_value = m.Wire(self.name('forward_value'), width, signed=signed)
@@ -1847,7 +1849,7 @@ class ForwardSource(_SpecialOperator):
 
     def _set_attributes(self):
         value = self.args[0]
-        self.width = value.bit_length()
+        self.width = value.get_width()
         self.point = value.get_point()
         self.signed = value.get_signed()
 
@@ -1859,7 +1861,7 @@ class ForwardSource(_SpecialOperator):
         if self.args[0].end_stage != self.dest.end_stage + 1:
             raise ValueError("Latency of operator between ForwardDest and ForwardSource must be 1.")
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
         value = self.args[0].sig_data
         index = self.args[1].sig_data
@@ -1912,7 +1914,7 @@ class LUT(_SpecialOperator):
             raise ValueError("Latency mismatch '%d' vs '%s'" %
                              (self.latency, 1))
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         arg_data = self.address.sig_data
@@ -1945,7 +1947,7 @@ class Complement2(_SpecialOperator):
         self.op = vtypes.Complement2
 
     def _set_attributes(self):
-        self.width = self.var.bit_length()
+        self.width = self.var.get_width()
         self.point = self.var.get_point()
         self.signed = self.var.get_signed()
 
@@ -1970,7 +1972,7 @@ class Abs(_SpecialOperator):
         self.op = vtypes.Abs
 
     def _set_attributes(self):
-        self.width = self.var.bit_length()
+        self.width = self.var.get_width()
         self.point = self.var.get_point()
         self.signed = self.var.get_signed()
 
@@ -1995,7 +1997,7 @@ class Sign(_SpecialOperator):
         self.op = vtypes.Sign
 
     def _set_attributes(self):
-        self.width = self.var.bit_length()
+        self.width = self.var.get_width()
         self.point = self.var.get_point()
         self.signed = self.var.get_signed()
 
@@ -2040,7 +2042,7 @@ class _Delay(_UnaryOperator):
             raise ValueError("Latency mismatch '%d' vs '%s'" %
                              (self.latency, 1))
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
         rdata = self.right.sig_data
 
@@ -2075,7 +2077,7 @@ class _Prev(_UnaryOperator):
             raise ValueError("Latency mismatch '%d' vs '%s'" %
                              (self.latency, 0))
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
         rdata = self.right.sig_data
 
@@ -2167,9 +2169,9 @@ class _MulAdd(_SpecialOperator):
         a_fp = self.a.get_point()
         b_fp = self.b.get_point()
         c_fp = self.c.get_point()
-        a = self.a.bit_length()
-        b = self.b.bit_length()
-        c = self.c.bit_length()
+        a = self.a.get_width()
+        b = self.b.get_width()
+        c = self.c.get_width()
         self.width = max(a, b, c)
         self.point = a_fp + b_fp
         self.signed = self.a.get_signed() and self.b.get_signed() and self.c.get_signed()
@@ -2178,15 +2180,15 @@ class _MulAdd(_SpecialOperator):
         if self.latency <= 3:
             raise ValueError("Latency of '*' operator must be greater than 3")
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         apoint = self.a.get_point()
         bpoint = self.b.get_point()
         cpoint = self.c.get_point()
-        awidth = self.a.bit_length()
-        bwidth = self.b.bit_length()
-        cwidth = self.c.bit_length()
+        awidth = self.a.get_width()
+        bwidth = self.b.get_width()
+        cwidth = self.c.get_width()
         asigned = self.a.get_signed()
         bsigned = self.b.get_signed()
         csigned = self.c.get_signed()
@@ -2369,7 +2371,7 @@ class _Constant(_Numeric):
         self.graph_peripheries = 1
 
     def _set_attributes(self):
-        self.width = self.value.bit_length() + 1
+        self.width = vtypes.get_width(self.value)
         self.point = 0
         self.signed = False
 
@@ -2442,7 +2444,7 @@ class _Variable(_Numeric):
             raise TypeError("Variable with Input type is not supported.")
 
         if isinstance(self.sig_data, vtypes.Wire):
-            width = self.bit_length()
+            width = self.get_width()
             signed = self.get_signed()
             if hasattr(self, 'sig_data_write'):
                 data = self.sig_data_write
@@ -2489,7 +2491,7 @@ class _Variable(_Numeric):
         type_i = m.Wire if aswire else m.Input
         type_o = m.Wire if aswire else m.Output
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         if isinstance(self.input_data, (vtypes._Numeric, int, bool)):
@@ -2561,7 +2563,7 @@ class _ParameterVariable(_Variable):
     def _implement_input(self, m, seq, aswire=False):
         type_i = m.Wire if aswire else m.Input
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         if isinstance(self.input_data, (vtypes._Numeric, int, bool)):
@@ -2634,7 +2636,7 @@ class _Accumulator(_UnaryOperator):
         interval_data = self.interval.sig_data if self.interval is not None else None
 
         initval_data = self.initval.sig_data
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         # for Pulse
@@ -2646,7 +2648,7 @@ class _Accumulator(_UnaryOperator):
 
         if self.size is not None:
             count = m.Reg(self.name('count'),
-                          size_data.bit_length() + 1, initval=0)
+                          size_data.get_width() + 1, initval=0)
             next_count_value = vtypes.Mux(count >= size_data - 1,
                                           0, count + 1)
             count_zero = (count == 0)
@@ -2886,7 +2888,7 @@ class Counter(_Accumulator):
 
         initval_data = self.initval.sig_data
         offset_data = self.offset.sig_data if self.offset is not None else None
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         step = self.right.sig_data
@@ -3059,7 +3061,7 @@ class Int(_Constant):
         self.signed = signed
 
     def _set_attributes(self):
-        self.width = self.value.bit_length() + 1
+        self.width = vtypes.get_width(self.value)
         self.point = 0
 
     def _implement(self, m, seq, svalid=None, senable=None):
@@ -3083,7 +3085,7 @@ class FixedPoint(_Constant):
         self.signed = signed
 
     def _set_attributes(self):
-        self.width = self.value.bit_length() + 1
+        self.width = vtypes.get_width(self.value)
         self.point = 0
 
     def _implement(self, m, seq, svalid=None, senable=None):
@@ -3169,7 +3171,7 @@ class _SubstreamOutput(_UnaryOperator):
         self.var_name = var_name
         self.output_var = output_var
 
-        self.width = output_var.bit_length()
+        self.width = output_var.get_width()
         self.point = output_var.get_point()
         self.signed = output_var.get_signed()
 
@@ -3178,7 +3180,7 @@ class _SubstreamOutput(_UnaryOperator):
         self.graph_peripheries = 2
 
     def _implement(self, m, seq, svalid=None, senable=None):
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
         rdata = self.output_var.read()
 
@@ -3248,7 +3250,7 @@ class RingBuffer(_UnaryOperator):
             raise ValueError("Latency mismatch '%d' vs '%s'" %
                              (self.latency, 1))
 
-        datawidth = self.bit_length()
+        datawidth = self.get_width()
         addrwidth = int(ceil(log(self.length, 2)))
         signed = self.get_signed()
 
@@ -3312,7 +3314,7 @@ class _RingBufferOutput(_BinaryOperator):
             raise ValueError("Latency mismatch '%d' vs '%s'" %
                              (self.latency, 1))
 
-        datawidth = self.bit_length()
+        datawidth = self.get_width()
         addrwidth = int(ceil(log(self.buf.length, 2)))
         signed = self.get_signed()
 
@@ -3374,7 +3376,7 @@ class Scratchpad(_BinaryOperator):
             raise ValueError("Latency mismatch '%d' vs '%s'" %
                              (self.latency, 1))
 
-        datawidth = self.bit_length()
+        datawidth = self.get_width()
         addrwidth = int(ceil(log(self.length, 2)))
         signed = self.get_signed()
 
@@ -3414,7 +3416,7 @@ class _ScratchpadOutput(_BinaryOperator):
             raise ValueError("Latency mismatch '%d' vs '%s'" %
                              (self.latency, 1))
 
-        datawidth = self.bit_length()
+        datawidth = self.get_width()
         addrwidth = int(ceil(log(self.sp.length, 2)))
         signed = self.get_signed()
 
@@ -3448,7 +3450,7 @@ class ToExtern(_UnaryOperator):
         return self
 
     def _implement(self, m, seq, svalid=None, senable=None):
-        width = self.bit_length()
+        width = self.get_width()
         point = self.get_point()
         signed = self.get_signed()
         rdata = self.right.sig_data
@@ -3509,7 +3511,7 @@ class FromExtern(_UnaryOperator):
         return self
 
     def _implement(self, m, seq, svalid=None, senable=None):
-        width = self.bit_length()
+        width = self.get_width()
         point = self.get_point()
         signed = self.get_signed()
 
@@ -3526,27 +3528,33 @@ class FromExtern(_UnaryOperator):
             self.sig_data(value)
         )
 
+
 class _LineBufferOut(_UnaryOperator):
     latency = 1
+
     def index_to_index_tuple(self, index):
         orig_index = index
         index_list = []
-        prod = lambda l : 1 if len(l) == 0 else l[0] * prod(l[1:])
+        def prod(l): return 1 if len(l) == 0 else l[0] * prod(l[1:])
+
         for i in range(1, self.linebuf.n_dim):
             elmnum = prod(self.linebuf.shape[:-i])
             index_list = [index // elmnum] + index_list
             index = index % elmnum
+
         index_list = [index] + index_list
         return tuple(index_list)
 
     def __init__(self, linebuf, index):
         self.linebuf = linebuf
+
         if isinstance(index, tuple) and all(isinstance(i, int) for i in index):
             self.index = index
         elif isinstance(index, int):
             self.index = self.index_to_index_tuple(index)
         else:
             raise ValueError("index must be int constant or tuple of int constant")
+
         self.width = linebuf.width
         self.point = linebuf.point
         self.signed = linebuf.signed
@@ -3557,21 +3565,35 @@ class _LineBufferOut(_UnaryOperator):
     def _implement(self, m, seq, svalid=None, senable=None):
         self.sig_data = self.linebuf.windowreg[self.index]
 
-import numpy as np
-import itertools
 
 class LineBuffer(_SpecialOperator):
-    def __init__(self, shape, memlens, data, head_initvals, tail_initvals, shift_cond, rotate_conds=None):
-        if not isinstance(shape, tuple) or all(isinstance(d, int) for d in shape) is False:
+    def __init__(self, shape, memlens, data,
+                 head_initvals, tail_initvals,
+                 shift_cond, rotate_conds=None):
+
+        if (not isinstance(shape, tuple) or
+                all(isinstance(d, int) for d in shape) is False):
             raise ValueError("shape must be tuple of int constant")
-        if isinstance(memlens, list) is False or all([isinstance(memlen, int) for memlen in memlens]) is False:
+
+        if (isinstance(memlens, list) is False or
+                all([isinstance(memlen, int) for memlen in memlens]) is False):
             raise ValueError("memlen must be list of int constant")
+
         self.shape = shape
         self.n_dim = len(self.shape)
-        if not isinstance(head_initvals, list) or len(head_initvals) != self.n_dim - 1 or all([isinstance(val, int) for val in head_initvals]) is False:
-            raise ValueError("head_initval must be list of int constant whose length is len(shape)-1")
-        if not isinstance(tail_initvals, list) or len(tail_initvals) != self.n_dim - 1 or all([isinstance(val, int) for val in tail_initvals]) is False:
-            raise ValueError("tail_initval must be list of int constant whose length is len(shape)-1")
+
+        if (not isinstance(head_initvals, list) or
+            len(head_initvals) != self.n_dim - 1 or
+                all([isinstance(val, int) for val in head_initvals]) is False):
+            raise ValueError(
+                "head_initval must be list of int constant whose length is len(shape)-1")
+
+        if (not isinstance(tail_initvals, list) or
+            len(tail_initvals) != self.n_dim - 1 or
+                all([isinstance(val, int) for val in tail_initvals]) is False):
+            raise ValueError(
+                "tail_initval must be list of int constant whose length is len(shape)-1")
+
         args = [data, shift_cond]
         if rotate_conds is not None:
             if len(rotate_conds) != self.n_dim - 1:
@@ -3579,33 +3601,40 @@ class LineBuffer(_SpecialOperator):
             args.extend(rotate_conds)
 
         _SpecialOperator.__init__(self, *args)
-        self.width = data.bit_length()
+        self.width = data.get_width()
         self.point = data.get_point()
         self.signed = data.get_signed()
         self.graph_label = 'LineBuffer'
         self.graph_shape = 'box'
-        prod = lambda l : 1 if len(l) == 0 else l[0] * prod(l[1:])
+        def prod(l): return 1 if len(l) == 0 else l[0] * prod(l[1:])
         self.window_num = prod(self.shape)
         self.windowreg = np.empty(self.shape, dtype=object)
         self.head_initvals = head_initvals
         self.tail_initvals = tail_initvals
         self.memlens = memlens
         self._delay_cnt = 0
+
     def _delayed(self, m, seq, data):
         if data is None:
             return None
-        delayed = fx.FixedReg(m, self.name('delay' + str(self._delay_cnt)), data.bit_length(), 0, initval=0, signed=data.get_signed())
+
+        delayed = fx.FixedReg(m, self.name('delay' + str(self._delay_cnt)),
+                              data.get_width(), 0, initval=0, signed=data.get_signed())
         seq(delayed(data))
         self._delay_cnt += 1
         return delayed
+
     def _implement(self, m, seq, svalid=None, senable=None):
-        width = self.bit_length()
+        width = self.get_width()
         point = self.get_point()
         signed = self.get_signed()
         window_indices = list(itertools.product(*[range(d) for d in self.shape]))
+
         for index in window_indices:
             window_index_s = '_'.join(list(map(str, index)))
-            self.windowreg[index] = fx.FixedReg(m, self.name('winreg' + window_index_s), width, point, initval=0, signed=signed)
+            self.windowreg[index] = fx.FixedReg(m, self.name(
+                'winreg' + window_index_s), width, point, initval=0, signed=signed)
+
         shiftmemout = [None] * (self.n_dim)
         for i in range(1, self.n_dim):
             dim_i_memshape = self.shape[i:]
@@ -3614,7 +3643,8 @@ class LineBuffer(_SpecialOperator):
             dim_i_mem_indices = itertools.product(*dim_i_rangelist)
             for mem_index in dim_i_mem_indices:
                 mem_index_s = '_'.join(list(map(str, mem_index)))
-                shiftmemout[i][mem_index] = fx.FixedWire(m, self.name('shiftmemout' + mem_index_s), width, point, signed=signed)
+                shiftmemout[i][mem_index] = fx.FixedWire(m, self.name(
+                    'shiftmemout' + mem_index_s), width, point, signed=signed)
 
         arg_data = [arg.sig_data for arg in self.args]
         delayed_src = self._delayed(m, seq, arg_data[0])
@@ -3627,9 +3657,12 @@ class LineBuffer(_SpecialOperator):
             head_tail_enables = [enable] * (self.n_dim - 1)
         else:
             delayed_rotate_conds = [self._delayed(m, seq, cond) for cond in arg_data[2:]]
-            delayed_enable = _and_vars(senable, (vtypes.OrList(*([delayed_shift_cond] + delayed_rotate_conds))))
+            delayed_enable = _and_vars(senable, (vtypes.OrList(
+                *([delayed_shift_cond] + delayed_rotate_conds))))
             enable = _and_vars(senable, (vtypes.OrList(*arg_data[1:])))
-            head_tail_enables = [_and_vars(senable, (vtypes.OrList(*([shift_cond] + arg_data[2+i-1:])))) for i in range(1, self.n_dim)]
+            head_tail_enables = [_and_vars(senable, (vtypes.OrList(
+                *([shift_cond] + arg_data[2 + i - 1:])))) for i in range(1, self.n_dim)]
+
         def increment_index(index):
             # get incremented index accoring to shape
             incremented = list(index)
@@ -3645,11 +3678,13 @@ class LineBuffer(_SpecialOperator):
                     incremented[d] = 0
                 d += 1
             return tuple(incremented)
-        #connect window registers input
+
+        # connect window registers input
         for index in window_indices:
-            is_dim_edge = [i == dim-1 for i, dim in zip(index, self.shape)]
+            is_dim_edge = [i == dim - 1 for i, dim in zip(index, self.shape)]
             mine = self.windowreg[index]
             cond_data_pairs = []
+
             if is_dim_edge[0] is True:
                 #shift input
                 if all(is_dim_edge):
@@ -3662,6 +3697,7 @@ class LineBuffer(_SpecialOperator):
                     shift_mem_index = increment_index(index)[shift_mem_dim:]
                     shift_data = shiftmemout[shift_mem_dim][shift_mem_index]
                     cond_data_pairs.append([delayed_shift_cond, shift_data])
+
                 #rotate input
                 if delayed_rotate_conds is not None:
                     for rotate_dim, rotate_cond in zip(range(1, self.n_dim), delayed_rotate_conds):
@@ -3677,33 +3713,43 @@ class LineBuffer(_SpecialOperator):
                 newdata = cond_data_pairs[0][1]
                 for cond, data in cond_data_pairs[1:]:
                     newdata = vtypes.Mux(cond, data, newdata)
+
             else:
                 #input from previous window register
                 prev_index = (index[0]+1,) + index[1:]
                 newdata = self.windowreg[prev_index]
             #assign window register input
             seq(mine(newdata), cond=delayed_enable)
+
         #head, tail
         heads = [None] * self.n_dim
         tails = [None] * self.n_dim
-        for dim, head_initval, tail_initval, memlen, head_tail_enable in zip(range(1, self.n_dim), self.head_initvals, self.tail_initvals, self.memlens, head_tail_enables):
-            heads[dim] = fx.FixedReg(m, self.name('head' + str(dim)), width, point, initval=head_initval, signed=signed)
-            tails[dim] = fx.FixedReg(m, self.name('tail' + str(dim)), width, point, initval=tail_initval, signed=signed)
+        for (dim, head_initval, tail_initval, memlen, head_tail_enable) in zip(
+                range(1, self.n_dim), self.head_initvals, self.tail_initvals, self.memlens, head_tail_enables):
+            heads[dim] = fx.FixedReg(m, self.name('head' + str(dim)),
+                                     width, point, initval=head_initval, signed=signed)
+            tails[dim] = fx.FixedReg(m, self.name('tail' + str(dim)),
+                                     width, point, initval=tail_initval, signed=signed)
             next_head = vtypes.Mux(heads[dim] == memlen-1, 0, heads[dim] + 1)
             next_tail = vtypes.Mux(tails[dim] == memlen-1, 0, tails[dim] + 1)
             seq(heads[dim](next_head), cond=head_tail_enable)
             seq(tails[dim](next_tail), cond=head_tail_enable)
+
         raddrs = heads
         waddrs = [self._delayed(m, seq, tail) for tail in tails]
+
         #connect shift memory
-        for mem_dim, raddr_data, waddr_data, memlen in zip(range(1, self.n_dim), raddrs[1:], waddrs[1:], self.memlens):
+        for (mem_dim, raddr_data, waddr_data, memlen) in zip(
+                range(1, self.n_dim), raddrs[1:], waddrs[1:], self.memlens):
             if delayed_rotate_conds is None:
                 wenable = _and_vars(svalid, senable, delayed_shift_cond)
             else:
-                wenable = _and_vars(svalid, senable, vtypes.OrList(*([delayed_shift_cond] + delayed_rotate_conds[mem_dim-1:])))
+                wenable = _and_vars(svalid, senable,
+                                    vtypes.OrList(*([delayed_shift_cond] + delayed_rotate_conds[mem_dim-1:])))
+
             mem_indices = itertools.product(*[range(d) for d in self.shape[mem_dim:]])
             for mem_index in mem_indices:
-                datawidth = self.bit_length()
+                datawidth = self.get_width()
                 addrwidth = int(ceil(log(memlen, 2)))
                 num_ports = 2
                 clk = m._clock
@@ -3728,9 +3774,10 @@ class LineBuffer(_SpecialOperator):
                 shiftmemout[mem_dim][mem_index].assign(shiftmem.rdata(1))
 
         self.sig_data = delayed_src #dummy
-    
+
     def get_window(self, index):
         return _LineBufferOut(self, index)
+
 
 class Predicate(_SpecialOperator):
     latency = 1
@@ -3743,7 +3790,7 @@ class Predicate(_SpecialOperator):
 
         _SpecialOperator.__init__(self, *args)
 
-        self.width = data.bit_length()
+        self.width = data.get_width()
         self.point = data.get_point()
         self.signed = data.get_signed()
 
@@ -3755,7 +3802,7 @@ class Predicate(_SpecialOperator):
             raise ValueError("Latency mismatch '%d' != '%s'" %
                              (self.latency, 1))
 
-        width = self.bit_length()
+        width = self.get_width()
         point = self.get_point()
         signed = self.get_signed()
 
@@ -3820,7 +3867,7 @@ class ReadRAM(_SpecialOperator):
         if senable is not None and self.latency == 2:
             raise NotImplementedError("senable is not supported, if 'when' option is used.")
 
-        datawidth = self.bit_length()
+        datawidth = self.get_width()
         signed = self.get_signed()
         rdata = m.Wire(self.name('rdata'), datawidth, signed=signed)
         self.read_data = rdata

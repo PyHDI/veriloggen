@@ -30,19 +30,18 @@ def mkMain(n=128, datawidth=32, numports=2):
     wenable = waddr < 16
 
     myram.connect(0, waddr, wdata, wenable)
-    
+
     seq.If(wenable)(
         waddr.inc(),
         wdata.inc()
     )
-    
 
     # read
     raddr = m.Reg('raddr', 32, initval=0)
     renable = make_condition(seq.Prev(1, delay=4, initval=0), raddr < 16)
-   
+
     myram.connect(1, raddr, 0, 0)
-    
+
     seq.If(renable)(
         raddr.inc(),
     )
@@ -92,6 +91,7 @@ def mkTest():
     )
 
     return m
+
 
 if __name__ == '__main__':
     test = mkTest()

@@ -61,7 +61,7 @@ class ResetVisitor(object):
 
         for v in node.vars:
             val = self.visit(v)
-            width = v.bit_length()
+            width = vtypes.get_width(v)
             if width is None:
                 width = 1
             if val is None:

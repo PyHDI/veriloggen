@@ -10,7 +10,7 @@ import veriloggen.core.module as module
 
 
 def get_width(node):
-    ret = node.bit_length()
+    ret = vtypes.get_width(node)
     if isinstance(node, int) and ret < 32:
         return 32
     if ret is None or isinstance(node, vtypes.AnyType):

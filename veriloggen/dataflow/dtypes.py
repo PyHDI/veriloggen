@@ -211,7 +211,7 @@ class _Numeric(_Node):
     def get_point(self):
         return self.point
 
-    def bit_length(self):
+    def get_width(self):
         return self.width
 
     def eval(self):
@@ -265,7 +265,7 @@ class _Numeric(_Node):
         if self.m is None:
             raise ValueError("Module information is not set.")
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         type_i = m.Wire if aswire else m.Input
@@ -423,7 +423,7 @@ class _Numeric(_Node):
 
     def __getitem__(self, r):
         if isinstance(r, slice):
-            size = self.bit_length()
+            size = self.get_width()
 
             right = r.start
             if right is None:
@@ -460,7 +460,7 @@ class _Numeric(_Node):
                 return Cat(*values)
 
         if isinstance(r, int) and r < 0:
-            r = self.bit_length() - abs(r)
+            r = self.get_width() - abs(r)
 
         return Pointer(self, r)
 
@@ -491,7 +491,7 @@ class _Numeric(_Node):
         return self.__next__()
 
     def __len__(self):
-        ret = self.bit_length()
+        ret = self.get_width()
         if not isinstance(ret, int):
             raise ValueError("Non int length.")
         return ret
@@ -560,8 +560,8 @@ class _BinaryOperator(_Operator):
     def _set_attributes(self):
         left_fp = self.left.get_point()
         right_fp = self.right.get_point()
-        left = self.left.bit_length() - left_fp
-        right = self.right.bit_length() - right_fp
+        left = self.left.get_width() - left_fp
+        right = self.right.get_width() - right_fp
         self.width = max(left, right) + max(left_fp, right_fp)
         self.point = max(left_fp, right_fp)
         self.signed = self.left.get_signed() and self.right.get_signed()
@@ -576,7 +576,7 @@ class _BinaryOperator(_Operator):
             raise ValueError("Latency mismatch '%d' vs '%s'" %
                              (self.latency, 1))
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         data = m.Reg(self.name('data'), width, initval=0, signed=signed)
@@ -629,7 +629,7 @@ class _UnaryOperator(_Operator):
         self._set_managers()
 
     def _set_attributes(self):
-        right = self.right.bit_length()
+        right = self.right.get_width()
         right_fp = self.right.get_point()
         self.width = right
         self.point = right_fp
@@ -645,7 +645,7 @@ class _UnaryOperator(_Operator):
             raise ValueError("Latency mismatch '%d' vs '%s'" %
                              (self.latency, 1))
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         data = m.Reg(self.name('data'), width, initval=0, signed=signed)
@@ -699,8 +699,8 @@ class Times(_BinaryOperator):
     def _set_attributes(self):
         left_fp = self.left.get_point()
         right_fp = self.right.get_point()
-        left = self.left.bit_length()
-        right = self.right.bit_length()
+        left = self.left.get_width()
+        right = self.right.get_width()
         self.width = max(left, right)
         self.point = max(left_fp, right_fp)
         self.signed = self.left.get_signed() and self.right.get_signed()
@@ -709,7 +709,7 @@ class Times(_BinaryOperator):
         if self.latency < 3:
             raise ValueError("Latency of '*' operator must be greater than 2")
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         data = m.Wire(self.name('data'), width, signed=signed)
@@ -719,8 +719,8 @@ class Times(_BinaryOperator):
         self.sig_valid = valid
         self.sig_ready = ready
 
-        lwidth = self.left.bit_length()
-        rwidth = self.right.bit_length()
+        lwidth = self.left.get_width()
+        rwidth = self.right.get_width()
 
         lpoint = self.left.get_point()
         rpoint = self.right.get_point()
@@ -796,7 +796,7 @@ class Divide(_BinaryOperator):
     variable_latency = 'get_latency'
 
     def get_latency(self):
-        return self.bit_length() + 5
+        return self.get_width() + 5
 
     def eval(self):
         left = self.left.eval()
@@ -809,7 +809,7 @@ class Divide(_BinaryOperator):
         if self.latency <= 5:
             raise ValueError("Latency of div operator must be greater than 5")
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         data = m.Wire(self.name('data'), width, signed=signed)
@@ -944,7 +944,7 @@ class Mod(_BinaryOperator):
     variable_latency = 'get_latency'
 
     def get_latency(self):
-        return self.bit_length() + 5
+        return self.get_width() + 5
 
     def eval(self):
         return self.left.eval() % self.right.eval()
@@ -953,7 +953,7 @@ class Mod(_BinaryOperator):
         if self.latency <= 5:
             raise ValueError("Latency of div operator must be greater than 5")
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         data = m.Wire(self.name('data'), width, signed=signed)
@@ -1189,7 +1189,7 @@ class _BinaryShiftOperator(_BinaryOperator):
             raise ValueError("Latency mismatch '%d' vs '%s'" %
                              (self.latency, 1))
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         data = m.Reg(self.name('data'), width, initval=0, signed=signed)
@@ -1236,13 +1236,13 @@ class Sll(_BinaryShiftOperator):
     def _set_attributes(self):
         v = self.right.eval()
         if isinstance(v, int):
-            width = self.left.bit_length() + v
+            width = self.left.get_width() + v
         else:
-            v = 2 ** self.right.bit_length()
-            width = self.left.bit_length() + v
+            v = 2 ** self.right.get_width()
+            width = self.left.get_width() + v
 
         if width > self.max_width:
-            raise ValueError("bit_length is too large '%d'" % width)
+            raise ValueError("bitwidth is too large '%d'" % width)
 
         self.width = width
         left_fp = self.left.get_point()
@@ -1256,7 +1256,7 @@ class Sll(_BinaryShiftOperator):
 class Srl(_BinaryShiftOperator):
 
     def _set_attributes(self):
-        self.width = self.left.bit_length()
+        self.width = self.left.get_width()
         self.point = self.left.get_point()
         self.signed = False
 
@@ -1267,7 +1267,7 @@ class Srl(_BinaryShiftOperator):
 class Sra(_BinaryShiftOperator):
 
     def _set_attributes(self):
-        self.width = self.left.bit_length()
+        self.width = self.left.get_width()
         self.point = self.left.get_point()
         self.signed = self.left.get_signed()
 
@@ -1287,8 +1287,8 @@ class Sra(_BinaryShiftOperator):
 class _BinaryLogicalOperator(_BinaryOperator):
 
     def _set_attributes(self):
-        left = self.left.bit_length()
-        right = self.right.bit_length()
+        left = self.left.get_width()
+        right = self.right.get_width()
         self.width = max(left, right)
         self.point = 0
         self.signed = False
@@ -1298,7 +1298,7 @@ class _BinaryLogicalOperator(_BinaryOperator):
             raise ValueError("Latency mismatch '%d' vs '%s'" %
                              (self.latency, 1))
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = False
 
         data = m.Reg(self.name('data'), width, initval=0, signed=signed)
@@ -1411,7 +1411,7 @@ class Uminus(_UnaryOperator):
 class _UnaryLogicalOperator(_UnaryOperator):
 
     def _set_attributes(self):
-        right = self.right.bit_length()
+        right = self.right.get_width()
         self.width = right
         self.point = 0
         self.signed = False
@@ -1447,7 +1447,7 @@ class Uand(_UnaryLogicalOperator):
         if isinstance(right, bool):
             return right
         if isinstance(right, int):
-            width = self.right.bit_length()
+            width = self.right.get_width()
             for i in range(width):
                 if right & 0x1 == 0:
                     return False
@@ -1467,7 +1467,7 @@ class Unand(_UnaryLogicalOperator):
         if isinstance(right, bool):
             return not right
         if isinstance(right, int):
-            width = self.right.bit_length()
+            width = self.right.get_width()
             for i in range(width):
                 if right & 0x1 == 0:
                     return True
@@ -1487,7 +1487,7 @@ class Uor(_UnaryLogicalOperator):
         if isinstance(right, bool):
             return right
         if isinstance(right, int):
-            width = self.right.bit_length()
+            width = self.right.get_width()
             for i in range(width):
                 if right & 0x1 == 1:
                     return True
@@ -1507,7 +1507,7 @@ class Unor(_UnaryLogicalOperator):
         if isinstance(right, bool):
             return not right
         if isinstance(right, int):
-            width = self.right.bit_length()
+            width = self.right.get_width()
             for i in range(width):
                 if right & 0x1 == 1:
                     return False
@@ -1527,7 +1527,7 @@ class Uxor(_UnaryLogicalOperator):
         if isinstance(right, bool):
             return right
         if isinstance(right, int):
-            width = self.right.bit_length()
+            width = self.right.get_width()
             ret = 1
             for i in range(width):
                 ret = ret ^ (right & 0x1)
@@ -1547,7 +1547,7 @@ class Uxnor(_UnaryLogicalOperator):
         if isinstance(right, bool):
             return not right
         if isinstance(right, int):
-            width = self.right.bit_length()
+            width = self.right.get_width()
             ret = 1
             for i in range(width):
                 ret = ret ^ (right & 0x1)
@@ -1600,7 +1600,7 @@ class _SpecialOperator(_Operator):
         self._set_managers()
 
     def _set_attributes(self):
-        wargs = [arg.bit_length() for arg in self.args]
+        wargs = [arg.get_width() for arg in self.args]
         self.width = max(*wargs)
         pargs = [arg.get_point() for arg in self.args]
         self.point = max(*pargs)
@@ -1620,7 +1620,7 @@ class _SpecialOperator(_Operator):
             raise ValueError("Latency mismatch '%d' vs '%s'" %
                              (self.latency, 1))
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         data = m.Reg(self.name('data'), width, initval=0, signed=signed)
@@ -1752,7 +1752,7 @@ class Cat(_SpecialOperator):
     def _set_attributes(self):
         ret = 0
         for v in self.vars:
-            ret += v.bit_length()
+            ret += v.get_width()
         self.width = ret
         self.point = 0
         self.signed = False
@@ -1772,7 +1772,7 @@ class Cat(_SpecialOperator):
                 return Cat(*vars)
         ret = 0
         for var in vars:
-            ret = (ret << var.bit_length()) | var
+            ret = (ret << var.get_width()) | var
         return ret
 
 
@@ -1786,7 +1786,7 @@ class Repeat(_SpecialOperator):
         self.op = vtypes.Repeat
 
     def _set_attributes(self):
-        self.width = self.var.bit_length() * self.times.eval()
+        self.width = self.var.get_width() * self.times.eval()
         self.point = 0
         self.signed = False
 
@@ -1811,7 +1811,7 @@ class Repeat(_SpecialOperator):
         times = self.times.eval()
         ret = 0
         for i in times:
-            ret = (ret << var.bit_length()) | var
+            ret = (ret << var.get_width()) | var
         return ret
 
 
@@ -1824,8 +1824,8 @@ class Cond(_SpecialOperator):
     def _set_attributes(self):
         true_value_fp = self.true_value.get_point()
         false_value_fp = self.false_value.get_point()
-        true_value = self.true_value.bit_length() - true_value_fp
-        false_value = self.false_value.bit_length() - false_value_fp
+        true_value = self.true_value.get_width() - true_value_fp
+        false_value = self.false_value.get_width() - false_value_fp
         self.width = max(true_value, false_value) + \
             max(true_value_fp, false_value_fp)
         self.point = max(true_value_fp, false_value_fp)
@@ -1933,7 +1933,7 @@ class LUT(_SpecialOperator):
             raise ValueError("Latency mismatch '%d' vs '%s'" %
                              (self.latency, 1))
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         data = m.Wire(self.name('data'), width, signed=signed)
@@ -2004,7 +2004,7 @@ class _Delay(_UnaryOperator):
             raise ValueError("Latency mismatch '%d' vs '%s'" %
                              (self.latency, 1))
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         data = m.Reg(self.name('data'), width, initval=0, signed=signed)
@@ -2061,7 +2061,7 @@ class _Prev(_UnaryOperator):
             raise ValueError("Latency mismatch '%d' vs '%s'" %
                              (self.latency, 0))
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         data = m.Reg(self.name('data'), width, initval=0, signed=signed)
@@ -2089,7 +2089,7 @@ class _Constant(_Numeric):
         self.sig_data = self.value
 
     def _set_attributes(self):
-        self.width = self.value.bit_length() + 1
+        self.width = vtypes.get_width(self.value)
         self.point = 0
         self.signed = False
 
@@ -2164,7 +2164,7 @@ class _Variable(_Numeric):
             if hasattr(self, 'sig_data_write'):
                 data = self.sig_data_write
             else:
-                data = self.m.TmpReg(self.bit_length(), initval=0,
+                data = self.m.TmpReg(self.get_width(), initval=0,
                                      signed=self.get_signed())
                 self.sig_data_write = data
                 self.sig_data.assign(data)
@@ -2244,7 +2244,7 @@ class _Variable(_Numeric):
         type_i = m.Wire if aswire else m.Input
         type_o = m.Wire if aswire else m.Output
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         if isinstance(self.input_data, (vtypes._Numeric, int, bool)):
@@ -2321,7 +2321,7 @@ class _ParameterVariable(_Variable):
     def _implement_input(self, m, seq, aswire=False):
         type_i = m.Wire if aswire else m.Input
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         if isinstance(self.input_data, (vtypes._Numeric, int, bool)):
@@ -2403,7 +2403,7 @@ class _Accumulator(_UnaryOperator):
         #initval_valid = self.initval.sig_valid
         #initval_ready = self.initval.sig_ready
 
-        width = self.bit_length()
+        width = self.get_width()
         signed = self.get_signed()
 
         # for Pulse
@@ -2417,7 +2417,7 @@ class _Accumulator(_UnaryOperator):
 
         if self.size is not None:
             count = m.Reg(self.name('count'),
-                          size_data.bit_length() + 1, initval=0)
+                          size_data.get_width() + 1, initval=0)
             next_count_value = vtypes.Mux(count == size_data - 1,
                                           0, count + 1)
             count_zero = (count == 0)
@@ -2685,7 +2685,7 @@ class Int(_Constant):
         self.signed = signed
 
     def _set_attributes(self):
-        self.width = self.value.bit_length() + 1
+        self.width = vtypes.get_width(self.value)
         self.point = 0
 
     def _implement(self, m, seq):
@@ -2713,7 +2713,7 @@ class FixedPoint(_Constant):
         self.signed = signed
 
     def _set_attributes(self):
-        self.width = self.value.bit_length() + 1
+        self.width = vtypes.get_width(self.value)
         self.point = 0
 
     def _implement(self, m, seq):

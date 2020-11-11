@@ -1377,7 +1377,7 @@ module blinkled
   reg [33-1:0] _maxi_read_rest_size;
   reg [32-1:0] _wdata_13;
   reg _wvalid_14;
-  reg [34-1:0] _tmp_15;
+  reg [33-1:0] _tmp_15;
   reg _tmp_16;
   wire [32-1:0] _dataflow__variable_odata_0;
   wire _dataflow__variable_ovalid_0;
@@ -1421,7 +1421,7 @@ module blinkled
   reg _tmp_28;
   reg _tmp_29;
   reg _tmp_30;
-  reg [34-1:0] _tmp_31;
+  reg [33-1:0] _tmp_31;
   reg [9-1:0] _tmp_32;
   reg _maxi_cond_1_1;
   reg _tmp_33;

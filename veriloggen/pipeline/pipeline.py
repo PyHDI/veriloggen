@@ -378,7 +378,7 @@ class _PipelineVariable(_PipelineNumeric):
         if index in self.prev_dict:
             return self.prev_dict[index]
 
-        width = self.data.bit_length()
+        width = vtypes.get_width(self.data)
         p = self
 
         for i in range(index):
@@ -436,8 +436,8 @@ class _PipelineVariable(_PipelineNumeric):
         if self.valid is not None:
             self.df.seq.add(self.valid(0), cond=cond)
 
-    def bit_length(self):
-        return self.data.bit_length()
+    def get_width(self):
+        return vtypes.get_width(self.data)
 
     def _add_preg(self, stage_id, var):
         self.preg_dict[stage_id] = var
@@ -572,7 +572,7 @@ class DataVisitor(_PipelineVisitor):
             diff = max_stage - stage
             p = arg
             for i in range(diff):
-                width = rslt[1].bit_length()
+                width = vtypes.get_width(rslt[1])
                 p = self.df.stage(p, width=width, preg=arg)
 
             new_args.append(p)

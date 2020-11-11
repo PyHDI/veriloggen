@@ -459,7 +459,7 @@ class FSM(vtypes.VeriloggenNode):
 
             if src.dims is not None:
                 # outside FSM-module
-                width = src.bit_length()
+                width = src.get_width()
                 dims = src.dims
                 length = None
                 for dim in dims:
@@ -784,7 +784,7 @@ class FSM(vtypes.VeriloggenNode):
         if isinstance(right, (bool, int, float, str,
                               vtypes._Constant, vtypes._ParameterVariable)):
             return subst
-        width = left.bit_length()
+        width = vtypes.get_width(left)
         signed = vtypes.get_signed(left)
         prev = right
 
