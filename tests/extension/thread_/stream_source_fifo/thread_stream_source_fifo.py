@@ -65,7 +65,6 @@ def mkLed():
             sq = ram_c.read(i + offset_seq)
             if vthread.verilog.NotEql(st, sq):
                 all_ok = False
-                print(i, st, sq)
         if all_ok:
             print('# verify: PASSED')
         else:
@@ -78,7 +77,7 @@ def mkLed():
         # ram_b
         myaxi.dma_read(ram_b, offset, 0, size)
 
-        # AXI-stream read -> FIFO -> Stream -> FIFO -> AXI-stream write
+        # AXI-stream read -> FIFO -> Stream
         # fifo_a
         maxi_in.dma_read_async(512, size)
         axi_in.write_fifo(fifo_a, size)
