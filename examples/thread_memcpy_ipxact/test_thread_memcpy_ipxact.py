@@ -1316,7 +1316,7 @@ module memcpy
   reg [33-1:0] _maxi_read_rest_size;
   reg [32-1:0] _wdata_10;
   reg _wvalid_11;
-  reg [34-1:0] _tmp_12;
+  reg [33-1:0] _tmp_12;
   reg _tmp_13;
   wire [32-1:0] _dataflow__variable_odata_0;
   wire _dataflow__variable_ovalid_0;
@@ -1359,7 +1359,7 @@ module memcpy
   reg _tmp_25;
   reg _tmp_26;
   reg _tmp_27;
-  reg [34-1:0] _tmp_28;
+  reg [33-1:0] _tmp_28;
   reg [9-1:0] _tmp_29;
   reg _maxi_cond_1_1;
   reg _tmp_30;

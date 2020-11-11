@@ -98,7 +98,7 @@ class CompileVisitor(ast.NodeVisitor):
     def _variable_type(self, right):
         if isinstance(right, fxd._FixedBase):
             ret = {'type': 'fixed',
-                   'width': max(right.bit_length(), self.datawidth),
+                   'width': max(right.get_width(), self.datawidth),
                    'point': right.point,
                    'signed': right.signed}
             return ret
@@ -508,7 +508,7 @@ class CompileVisitor(ast.NodeVisitor):
         if ln is not None:
             return ln
 
-        return value.bit_length()
+        return vtypes.get_width(value)
 
     def _call_Name_function(self, node, name):
         tree = self.getFunction(name)
@@ -747,7 +747,29 @@ class CompileVisitor(ast.NodeVisitor):
         self.incFsmCount()
         return left
 
+    def visit_Constant(self, node):
+        if isinstance(node.value, int):
+            return node.value
+        if isinstance(node.value, float):
+            v = FixedConst(None, node.value, self.point)
+            v.orig_value = node.value
+            return v
+
+        if isinstance(node.value, str):
+            return vtypes.Str(node.value)
+
+        if node.value == True:
+            return vtypes.Int(1)
+        if node.value == False:
+            return vtypes.Int(0)
+        if node.value == None:
+            return vtypes.Int(0)
+
+        raise TypeError("%s in Const.value is not supported." %
+                        str(node.value))
+
     def visit_Num(self, node):
+        # deprecated, merged to visit_Constant
         if isinstance(node.n, int):
             # return vtypes.Int(node.n)
             return node.n
@@ -758,6 +780,7 @@ class CompileVisitor(ast.NodeVisitor):
         return vtypes._Constant(node.n)
 
     def visit_Str(self, node):
+        # deprecated, merged to visit_Constant
         return vtypes.Str(node.s)
 
     def visit_UnaryOp(self, node):
@@ -865,7 +888,7 @@ class CompileVisitor(ast.NodeVisitor):
         return ret
 
     def visit_NameConstant(self, node):
-        # for Python 3.4
+        # deprecated, merged to visit_Constant
         if node.value == True:
             return vtypes.Int(1)
         if node.value == False:
@@ -876,7 +899,8 @@ class CompileVisitor(ast.NodeVisitor):
                         str(node.value))
 
     def visit_Name(self, node):
-        # for Python 3.3 or older
+        # Checking True, False, and None here for python 3.3 or older.
+        # See visit_Constant and visit_NameConstant for newer versions.
         if node.id == 'True':
             return vtypes.Int(1)
         if node.id == 'False':
@@ -957,14 +981,18 @@ class CompileVisitor(ast.NodeVisitor):
 
     def visit_Subscript(self, node):
         if isinstance(node.slice, ast.Slice):
-            return self._slice(node)
+            return self._subscript_slice(node)
         if isinstance(node.slice, ast.ExtSlice):
-            return self._extslice(node)
+            return self._subscript_extslice(node)
         if isinstance(node.slice, ast.Index):
-            return self._index(node)
-        raise TypeError("unsupported slice type: %s" % str(node.slice))
+            return self._subscript_index(node)
 
-    def _slice(self, node):
+        value = self.visit(node.value)
+        index = self.visit(node.slice)
+        index = vtypes.raw_value(optimize(index))
+        return value[index]
+
+    def _subscript_slice(self, node):
         value = self.visit(node.value)
         lower = (self.visit(node.slice.lower)
                  if node.slice.lower is not None else None)
@@ -977,7 +1005,7 @@ class CompileVisitor(ast.NodeVisitor):
         step = vtypes.raw_value(optimize(step))
         return value[lower:upper:step]
 
-    def _extslice(self, node):
+    def _subscript_extslice(self, node):
         value = self.visit(node.value)
         for dim in node.slice.dims:
             lower = (self.visit(dim.lower)
@@ -992,7 +1020,7 @@ class CompileVisitor(ast.NodeVisitor):
             value = value[lower:upper:step]
         return value
 
-    def _index(self, node):
+    def _subscript_index(self, node):
         value = self.visit(node.value)
         index = self.visit(node.slice.value)
         index = vtypes.raw_value(optimize(index))

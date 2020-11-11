@@ -685,7 +685,7 @@ module blinkled
   reg [33-1:0] _myaxi_read_rest_size;
   reg [32-1:0] _wdata_1;
   reg _wvalid_2;
-  reg [34-1:0] _tmp_3;
+  reg [33-1:0] _tmp_3;
   reg _tmp_4;
   wire [32-1:0] _dataflow__variable_odata_0;
   wire _dataflow__variable_ovalid_0;
@@ -711,7 +711,7 @@ module blinkled
   reg [32-1:0] _myaxi_ram_b_0_read_local_stride;
   reg [32-1:0] _wdata_8;
   reg _wvalid_9;
-  reg [34-1:0] _tmp_10;
+  reg [33-1:0] _tmp_10;
   reg _tmp_11;
   wire [32-1:0] _dataflow__variable_odata_1;
   wire _dataflow__variable_ovalid_1;
@@ -763,7 +763,7 @@ module blinkled
   reg _tmp_25;
   reg _tmp_26;
   reg _tmp_27;
-  reg [34-1:0] _tmp_28;
+  reg [33-1:0] _tmp_28;
   reg [9-1:0] _tmp_29;
   reg _myaxi_cond_1_1;
   reg _tmp_30;
@@ -795,7 +795,7 @@ module blinkled
   reg [32-1:0] _myaxi_ram_c_0_read_local_stride;
   reg [32-1:0] _wdata_33;
   reg _wvalid_34;
-  reg [34-1:0] _tmp_35;
+  reg [33-1:0] _tmp_35;
   reg _tmp_36;
   wire [32-1:0] _dataflow__variable_odata_4;
   wire _dataflow__variable_ovalid_4;

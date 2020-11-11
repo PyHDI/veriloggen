@@ -119,12 +119,12 @@ class Multiplier(object):
                  lwidth=None, rwidth=None, lsigned=True, rsigned=True, depth=6):
 
         if lwidth is None:
-            lwidth = left.bit_length()
+            lwidth = vtypes.get_width(left)
         if lwidth is None:
             lwidth = 1
 
         if rwidth is None:
-            rwidth = right.bit_length()
+            rwidth = vtypes.get_width(right)
         if rwidth is None:
             rwidth = 1
 

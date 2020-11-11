@@ -309,15 +309,15 @@ class Stream(object):
         for var in sorted(all_vars, key=lambda x: (-1, x.object_id)
                           if x.start_stage is None else
                           (x.start_stage, x.object_id)):
-            bit_length = var.sig_data.bit_length()
-            if bit_length is None:
-                bit_length = 1
-            if bit_length <= 0:
-                bit_length = 1
+            bitwidth = vtypes.get_width(var.sig_data)
+            if bitwidth is None:
+                bitwidth = 1
+            if bitwidth <= 0:
+                bitwidth = 1
 
             base = (var.dump_base if hasattr(var, 'dump_base') else
                     self.dump_base)
-            total_length = int(math.ceil(bit_length / math.log(base, 2)))
+            total_length = int(math.ceil(bitwidth / math.log(base, 2)))
             #point_length = int(math.ceil(var.point / math.log(base, 2)))
             #point_length = max(point_length, 8)
             #longest_var_len = max(longest_var_len, total_length, point_length)
