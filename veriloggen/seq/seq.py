@@ -138,7 +138,7 @@ class Seq(vtypes.VeriloggenNode):
         if prefix is None:
             prefix = '_'
 
-        width = var.bit_length()
+        width = vtypes.get_width(var)
         signed = vtypes.get_signed(var)
 
         if not isinstance(var, vtypes._Variable):
@@ -455,7 +455,7 @@ class Seq(vtypes.VeriloggenNode):
 
             if src.dims is not None:
                 # outside FSM-module
-                width = src.bit_length()
+                width = src.get_width()
                 dims = src.dims
                 length = None
                 for dim in dims:
@@ -689,7 +689,7 @@ class Seq(vtypes.VeriloggenNode):
         if isinstance(right, (bool, int, float, str,
                               vtypes._Constant, vtypes._ParameterVariable)):
             return subst
-        width = left.bit_length()
+        width = vtypes.get_width(left)
         signed = vtypes.get_signed(left)
         prev = right
 
