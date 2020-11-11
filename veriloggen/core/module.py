@@ -205,7 +205,7 @@ class Module(vtypes.VeriloggenNode):
                 raise ValueError("'name' is required.")
             name = src.name
         if width is None:
-            width = src.bit_length()
+            width = vtypes.get_width(src)
         if dims is None:
             dims = vtypes.get_dims(src)
         if signed is None:
@@ -222,7 +222,7 @@ class Module(vtypes.VeriloggenNode):
                 raise ValueError("'name' is required.")
             name = src.name
         if width is None:
-            width = src.bit_length()
+            width = vtypes.get_width(src)
         if dims is None:
             dims = vtypes.get_dims(src)
         if signed is None:
@@ -239,7 +239,7 @@ class Module(vtypes.VeriloggenNode):
                 raise ValueError("'name' is required.")
             name = src.name
         if width is None:
-            width = src.bit_length()
+            width = vtypes.get_width(src)
         if dims is None:
             dims = vtypes.get_dims(src)
         if signed is None:
@@ -258,7 +258,7 @@ class Module(vtypes.VeriloggenNode):
                 raise ValueError("'name' is required.")
             name = src.name
         if width is None:
-            width = src.bit_length()
+            width = vtypes.get_width(src)
         if dims is None:
             dims = vtypes.get_dims(src)
         if signed is None:
@@ -275,7 +275,7 @@ class Module(vtypes.VeriloggenNode):
                 raise ValueError("'name' is required.")
             name = src.name
         if width is None:
-            width = src.bit_length()
+            width = vtypes.get_width(src)
         if dims is None:
             dims = vtypes.get_dims(src)
         if signed is None:
@@ -288,7 +288,7 @@ class Module(vtypes.VeriloggenNode):
                     signed=None, value=None, prefix=None):
 
         if width is None:
-            width = src.bit_length()
+            width = vtypes.get_width(src)
         if dims is None:
             dims = vtypes.get_dims(src)
         if signed is None:
@@ -305,7 +305,7 @@ class Module(vtypes.VeriloggenNode):
                 raise ValueError("'name' is required.")
             name = src.name
         if width is None:
-            width = src.bit_length()
+            width = vtypes.get_width(src)
         if dims is None:
             dims = vtypes.get_dims(src)
         if signed is None:
@@ -320,7 +320,7 @@ class Module(vtypes.VeriloggenNode):
                    signed=None, value=None, initval=None, prefix=None):
 
         if width is None:
-            width = src.bit_length()
+            width = vtypes.get_width(src)
         if dims is None:
             dims = vtypes.get_dims(src)
         if signed is None:
@@ -339,7 +339,7 @@ class Module(vtypes.VeriloggenNode):
                 raise ValueError("'name' is required.")
             name = src.name
         if width is None:
-            width = src.bit_length()
+            width = vtypes.get_width(src)
         if dims is None:
             dims = vtypes.get_dims(src)
         if signed is None:
@@ -354,7 +354,7 @@ class Module(vtypes.VeriloggenNode):
                        signed=None, value=None, initval=None, prefix=None):
 
         if width is None:
-            width = src.bit_length()
+            width = vtypes.get_width(src)
         if dims is None:
             dims = vtypes.get_dims(src)
         if signed is None:
@@ -373,7 +373,7 @@ class Module(vtypes.VeriloggenNode):
                 raise ValueError("'name' is required.")
             name = src.name
         if width is None:
-            width = src.bit_length()
+            width = vtypes.get_width(src)
         if dims is None:
             dims = vtypes.get_dims(src)
         if signed is None:
@@ -388,7 +388,7 @@ class Module(vtypes.VeriloggenNode):
                     signed=None, value=None, initval=None, prefix=None):
 
         if width is None:
-            width = src.bit_length()
+            width = vtypes.get_width(src)
         if dims is None:
             dims = vtypes.get_dims(src)
         if signed is None:
@@ -407,7 +407,7 @@ class Module(vtypes.VeriloggenNode):
                 raise ValueError("'name' is required.")
             name = src.name
         if width is None:
-            width = src.bit_length()
+            width = vtypes.get_width(src)
         if dims is None:
             dims = vtypes.get_dims(src)
         if signed is None:
@@ -420,7 +420,7 @@ class Module(vtypes.VeriloggenNode):
                       signed=None, value=None, prefix=None):
 
         if width is None:
-            width = src.bit_length()
+            width = vtypes.get_width(src)
         if dims is None:
             dims = vtypes.get_dims(src)
         if signed is None:
@@ -437,7 +437,7 @@ class Module(vtypes.VeriloggenNode):
                 raise ValueError("'name' is required.")
             name = src.name
         if width is None:
-            width = src.bit_length()
+            width = vtypes.get_width(src)
         if dims is None:
             dims = vtypes.get_dims(src)
         if signed is None:
@@ -454,7 +454,7 @@ class Module(vtypes.VeriloggenNode):
                 raise ValueError("'name' is required.")
             name = src.name
         if width is None:
-            width = src.bit_length()
+            width = vtypes.get_width(src)
         if dims is None:
             dims = vtypes.get_dims(src)
         if signed is None:
@@ -467,7 +467,7 @@ class Module(vtypes.VeriloggenNode):
                           signed=False, dims=None, prefix=None):
 
         if width is None:
-            width = src.bit_length()
+            width = vtypes.get_width(src)
         if dims is None:
             dims = vtypes.get_dims(src)
         if signed is None:

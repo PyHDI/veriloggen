@@ -50,7 +50,7 @@ class Function(vtypes.VeriloggenNode):
     def read(self):
         return self
 
-    def bit_length(self):
+    def get_width(self):
         return self.width
 
     def _add_subst(self, s):
