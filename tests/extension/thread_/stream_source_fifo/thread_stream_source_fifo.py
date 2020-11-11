@@ -83,8 +83,6 @@ def mkLed():
         maxi_in.dma_read_async(512, size)
         axi_in.write_fifo(fifo_a, size)
 
-        #myaxi.dma_read(ram_b, offset, 0, size) # ???
-
         comp_stream(size, offset)
         myaxi.dma_write(ram_c, offset, 1024, size)
 
@@ -131,7 +129,7 @@ def mkTest(memimg_name=None):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
