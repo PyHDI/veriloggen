@@ -2070,7 +2070,7 @@ class Stream(BaseStream):
         # stall control
         cond = vtypes.Ands(self.source_busy, fifo_cond)
         fifo_oready = vtypes.Ors(ready, var.source_idle)
-        add_mux(self.stream_oready, cond, fifo_oready)
+        add_cond(self.stream_oready, cond, fifo_oready)
 
         if (self.dump and
             (self.dump_mode == 'all' or
@@ -2615,7 +2615,7 @@ class Stream(BaseStream):
         # stall control
         cond = vtypes.Ands(self.sink_busy, fifo_cond)
         fifo_oready = ready
-        add_mux(self.stream_oready, cond, fifo_oready)
+        add_cond(self.stream_oready, cond, fifo_oready)
 
         if (self.dump and
             (self.dump_mode == 'all' or
@@ -2997,5 +2997,17 @@ def add_mux(targ, cond, value):
         prev_value = prev_assign.statement.right
         prev_assign.overwrite_right(
             vtypes.Mux(cond, value, prev_value))
+        targ.module.remove(prev_assign)
+        targ.module.append(prev_assign)
+
+
+def add_cond(targ, cond, value):
+    prev_assign = targ._get_assign()
+    if not prev_assign:
+        targ.assign(vtypes.Mux(cond, value, 1))
+    else:
+        prev_value = prev_assign.statement.right
+        prev_assign.overwrite_right(
+            vtypes.Ands(vtypes.Mux(cond, value, 1), prev_value))
         targ.module.remove(prev_assign)
         targ.module.append(prev_assign)
