@@ -195,13 +195,9 @@ class RAM(_MutexFunction):
 
         ext_cond = make_condition(cond)
         data_cond = make_condition(data_ack, last_ack)
-        # prev_data_cond = self.seq.Prev(data_cond, 1)
 
         data = self.m.TmpWireLike(self.interfaces[port].rdata, signed=True)
 
-        # prev_data = self.seq.Prev(data, 1)
-        # data.assign(vtypes.Mux(prev_data_cond,
-        #                        self.interfaces[port].rdata, prev_data))
         data.assign(self.interfaces[port].rdata)
 
         next_valid_on = self.m.TmpReg(initval=0)
@@ -290,13 +286,9 @@ class RAM(_MutexFunction):
 
         ext_cond = make_condition(cond)
         data_cond = make_condition(data_ack, last_ack)
-        # prev_data_cond = self.seq.Prev(data_cond, 1)
 
         data = self.m.TmpWireLike(self.interfaces[port].rdata, signed=True)
 
-        # prev_data = self.seq.Prev(data, 1)
-        # data.assign(vtypes.Mux(prev_data_cond,
-        #                        self.interfaces[port].rdata, prev_data))
         data.assign(self.interfaces[port].rdata)
 
         next_valid_on = self.m.TmpReg(initval=0)
