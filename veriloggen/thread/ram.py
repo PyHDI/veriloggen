@@ -9,11 +9,10 @@ import veriloggen.dataflow.dtypes as dtypes
 import veriloggen.types.fixed as fxd
 import veriloggen.types.util as util
 
-from veriloggen.seq.seq import Seq, TmpSeq
+from veriloggen.seq.seq import Seq, TmpSeq, make_condition
 from veriloggen.fsm.fsm import TmpFSM
 from veriloggen.types.ram import RAMInterface, mkRAMDefinition
 from veriloggen.dataflow.dataflow import DataflowManager
-from veriloggen.dataflow.dtypes import make_condition, read_multi
 from veriloggen.dataflow.dtypes import _Numeric as df_numeric
 
 from .ttypes import _MutexFunction
@@ -113,8 +112,8 @@ class RAM(_MutexFunction):
         """
         @return data, valid
         """
-        if cond is not None:
-            self.seq.If(cond)
+
+        cond = make_condition(cond)
 
         if cond is not None:
             enable = cond
@@ -135,6 +134,8 @@ class RAM(_MutexFunction):
         """
         if self._write_disabled[port]:
             raise TypeError('Write disabled.')
+
+        cond = make_condition(cond)
 
         if cond is not None:
             enable = cond
@@ -193,8 +194,8 @@ class RAM(_MutexFunction):
         data_ack = vtypes.Ors(data_ready, vtypes.Not(data_valid))
         last_ack = vtypes.Ors(last_ready, vtypes.Not(last_valid))
 
-        ext_cond = make_condition(cond)
-        data_cond = make_condition(data_ack, last_ack)
+        ext_cond = dtypes.make_condition(cond)
+        data_cond = dtypes.make_condition(data_ack, last_ack)
 
         data = self.m.TmpWireLike(self.interfaces[port].rdata, signed=True)
 
@@ -284,8 +285,8 @@ class RAM(_MutexFunction):
         data_ack = vtypes.Ors(data_ready, vtypes.Not(data_valid))
         last_ack = vtypes.Ors(last_ready, vtypes.Not(last_valid))
 
-        ext_cond = make_condition(cond)
-        data_cond = make_condition(data_ack, last_ack)
+        ext_cond = dtypes.make_condition(cond)
+        data_cond = dtypes.make_condition(data_ack, last_ack)
 
         data = self.m.TmpWireLike(self.interfaces[port].rdata, signed=True)
 
@@ -464,8 +465,8 @@ class RAM(_MutexFunction):
                                  for v, r in zip(data_valid, data_ready)])
         last_ack = vtypes.Ors(last_ready, vtypes.Not(last_valid))
 
-        ext_cond = make_condition(cond)
-        data_cond = make_condition(data_ack, last_ack)
+        ext_cond = dtypes.make_condition(cond)
+        data_cond = dtypes.make_condition(data_ack, last_ack)
 
         counter = self.m.TmpReg(vtypes.get_width(length), initval=0)
 
@@ -637,8 +638,8 @@ class RAM(_MutexFunction):
                                  for v, r in zip(data_valid, data_ready)])
         last_ack = vtypes.Ors(last_ready, vtypes.Not(last_valid))
 
-        ext_cond = make_condition(cond)
-        data_cond = make_condition(data_ack, last_ack)
+        ext_cond = dtypes.make_condition(cond)
+        data_cond = dtypes.make_condition(data_ack, last_ack)
 
         next_addr = self.m.TmpWire(self.addrwidth)
         offset_addr = self.m.TmpWire(self.addrwidth)
@@ -942,18 +943,18 @@ class RAM(_MutexFunction):
         counter = self.m.TmpReg(vtypes.get_width(length), initval=0)
         last = self.m.TmpReg(initval=0)
 
-        ext_cond = make_condition(cond)
-        data_cond = make_condition(counter > 0, vtypes.Not(last))
+        ext_cond = dtypes.make_condition(cond)
+        data_cond = dtypes.make_condition(counter > 0, vtypes.Not(last))
 
         if when is None or not isinstance(when, df_numeric):
             raw_data, raw_valid = data.read(cond=data_cond)
         else:
-            data_list, raw_valid = read_multi(
+            data_list, raw_valid = dtypes.read_multi(
                 self.m, data, when, cond=data_cond)
             raw_data = data_list[0]
             when = data_list[1]
 
-        when_cond = make_condition(when, ready=data_cond)
+        when_cond = dtypes.make_condition(when, ready=data_cond)
         if when_cond is not None:
             raw_valid = vtypes.Ands(when_cond, raw_valid)
 
@@ -1016,18 +1017,18 @@ class RAM(_MutexFunction):
 
         running = self.m.TmpReg(initval=0)
 
-        ext_cond = make_condition(cond)
-        data_cond = make_condition(running, vtypes.Not(last))
+        ext_cond = dtypes.make_condition(cond)
+        data_cond = dtypes.make_condition(running, vtypes.Not(last))
 
         if when is None or not isinstance(when, df_numeric):
             raw_data, raw_valid = data.read(cond=data_cond)
         else:
-            data_list, raw_valid = read_multi(
+            data_list, raw_valid = dtypes.read_multi(
                 self.m, data, when, cond=data_cond)
             raw_data = data_list[0]
             when = data_list[1]
 
-        when_cond = make_condition(when, ready=data_cond)
+        when_cond = dtypes.make_condition(when, ready=data_cond)
         if when_cond is not None:
             raw_valid = vtypes.Ands(when_cond, raw_valid)
 

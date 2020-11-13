@@ -5,7 +5,7 @@ import veriloggen.core.vtypes as vtypes
 import veriloggen.types.util as util
 import veriloggen.types.fixed as fxd
 
-from veriloggen.seq.seq import Seq
+from veriloggen.seq.seq import Seq, make_condition
 from veriloggen.types.fifo import FifoReadInterface, FifoWriteInterface, mkFifoDefinition
 
 from .ttypes import _MutexFunction
@@ -77,6 +77,7 @@ class FIFO(_MutexFunction):
         if self._enq_disabled:
             raise TypeError('Enq disabled.')
 
+        cond = make_condition(cond)
         ready = vtypes.Not(self.wif.almost_full)
 
         if cond is not None:
@@ -99,6 +100,7 @@ class FIFO(_MutexFunction):
         if self._deq_disabled:
             raise TypeError('Deq disabled.')
 
+        cond = make_condition(cond)
         ready = vtypes.Not(self.rif.empty)
 
         if cond is not None:
