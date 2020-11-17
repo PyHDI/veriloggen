@@ -56,16 +56,21 @@ def mkLed():
             print('# verify: FAILED')
 
     def comp(size):
+        # stream
         offset = 0
         myaxi.dma_read(ram_a, offset, 0, size)
         comp_stream(size, offset)
         myaxi.dma_write(ram_b, offset, 1024, 1)
 
+        # sequential
         offset = size
         myaxi.dma_read(ram_a, offset, 0, size)
         comp_sequential(size, offset)
         myaxi.dma_write(ram_b, offset, 1024 * 2, 1)
 
+        # verification
+        myaxi.dma_read(ram_b, 0, 1024, 1)
+        myaxi.dma_read(ram_b, offset, 1024 * 2, 1)
         check(1, 0, offset)
 
         vthread.finish()
@@ -96,7 +101,7 @@ def mkTest(memimg_name=None):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    #simulation.setup_waveform(m, uut)
+    simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
