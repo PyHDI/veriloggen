@@ -1236,7 +1236,7 @@ class MultibankRAM(object):
             )
             ram._write_disabled[port] = True
 
-    def connect_rtl(self, port, addr, wdata=None, wenable=None, rdata=None):
+    def connect_rtl(self, port, addr, wdata=None, wenable=None, rdata=None, enable=None):
         """ connect native signals to the internal RAM interface """
 
         if math.log(self.numbanks, 2) % 1.0 != 0.0:
@@ -1261,6 +1261,9 @@ class MultibankRAM(object):
                 ram.interfaces[port].wenable.connect(bank_wenable)
 
             rdata_list.append(ram.interfaces[port].rdata)
+            bank_enable = vtypes.Ands(enable, bank == i)
+            if enable is not None:
+                ram.interfaces[port].enable.connect(bank_enable)
 
         bank_reg = self.seq.Prev(bank, 1, initval=0)
         pat = [(bank_reg == i, rdata_list[i])
@@ -1290,7 +1293,7 @@ class MultibankRAM(object):
         bank.assign(addr)
         addr = addr >> self.shift
 
-        bank_reg = self.seq.Prev(bank, 2, initval=0)
+        bank_reg = self.seq.Prev(bank, 1, initval=0)
 
         for ram in self.rams:
             rdata, rvalid = ram.read_rtl(addr, port, cond)
@@ -1380,7 +1383,7 @@ class MultibankRAM(object):
                 rdata_reg(rdata_list[i])
             )
 
-        fsm.If(rvalid_list[0]).goto_next()
+        fsm.If(vtypes.Ors(*rvalid_list)).goto_next()
 
         return rdata_reg
 
@@ -1440,7 +1443,7 @@ class MultibankRAM(object):
                 rdata_reg(rdata_list[i])
             )
 
-        fsm.If(rvalid_list[0]).goto_next()
+        fsm.If(vtypes.Ors(*rvalid_list)).goto_next()
 
         return rdata_reg
 
@@ -1692,10 +1695,8 @@ class MultibankRAM(object):
         data_list = [self.m.TmpWireLike(ram.interfaces[port].rdata, signed=True)
                      for ram in self.rams]
 
-        prev_data_list = [self.seq.Prev(data, 1) for data in data_list]
-        for data, prev_data, ram in zip(data_list, prev_data_list, self.rams):
-            data.assign(vtypes.Mux(prev_data_cond,
-                                   ram.interfaces[port].rdata, prev_data))
+        for data, ram in zip(data_list, self.rams):
+            data.assign(ram.interfaces[port].rdata)
 
         log_numbanks = util.log2(self.numbanks)
         reg_addr = self.m.TmpReg(self.addrwidth + log_numbanks, initval=0)
@@ -1713,16 +1714,13 @@ class MultibankRAM(object):
             reg_bank_sel(bank_sel)
         )
 
-        patterns = [(reg_bank_sel == i, data)
+        cur_bank_sel = vtypes.Mux(prev_data_cond, reg_bank_sel, prev_reg_bank_sel)
+        patterns = [(cur_bank_sel == i, data)
                     for i, data in enumerate(data_list)]
         patterns.append((None, 0))
-        prev_patterns = [(prev_reg_bank_sel == i, data)
-                         for i, data in enumerate(prev_data_list)]
-        prev_patterns.append((None, 0))
+
         data = self.m.TmpWire(self.orig_datawidth, signed=True)
-        data.assign(vtypes.Mux(prev_data_cond,
-                               vtypes.PatternMux(*patterns),
-                               vtypes.PatternMux(*prev_patterns)))
+        data.assign(vtypes.PatternMux(*patterns))
 
         next_valid_on = self.m.TmpReg(initval=0)
         next_valid_off = self.m.TmpReg(initval=0)
@@ -1731,6 +1729,15 @@ class MultibankRAM(object):
         last = self.m.TmpReg(initval=0)
 
         counter = self.m.TmpReg(vtypes.get_width(length), initval=0)
+
+        read_addrs = [self.m.TmpRegLike(ram.interfaces[port].addr, initval=0)
+                      for ram in self.rams]
+
+        read_cond = next_valid_on
+        read_enable = vtypes.Ands(data_cond, next_valid_on)
+        for ram, read_addr in zip(self.rams, read_addrs):
+            util.add_mux(ram.interfaces[port].addr, read_cond, read_addr)
+            util.add_mux(ram.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
 
         self.seq.If(data_cond, next_valid_off)(
             last(0),
@@ -1756,10 +1763,10 @@ class MultibankRAM(object):
             next_last(length == 1)
         )
 
-        for ram in self.rams:
-            ram.seq.If(ext_cond, counter == 0,
-                       vtypes.Not(next_last), vtypes.Not(last))(
-                ram.interfaces[port].addr(addr >> log_numbanks)
+        for read_addr in read_addrs:
+            self.seq.If(ext_cond, counter == 0,
+                        vtypes.Not(next_last), vtypes.Not(last))(
+                read_addr(addr >> log_numbanks)
             )
 
         self.seq.If(data_cond, counter > 0)(
@@ -1769,9 +1776,9 @@ class MultibankRAM(object):
             next_last(0)
         )
 
-        for ram, ram_addr in zip(self.rams, ram_addr_list):
-            ram.seq.If(data_cond, counter > 0)(
-                ram.interfaces[port].addr(ram_addr)
+        for read_addr, ram_addr in zip(read_addrs, ram_addr_list):
+            self.seq.If(data_cond, counter > 0)(
+                read_addr(ram_addr)
             )
 
         self.seq.If(data_cond, counter == 1)(
@@ -1823,10 +1830,8 @@ class MultibankRAM(object):
         data_list = [self.m.TmpWireLike(ram.interfaces[port].rdata, signed=True)
                      for ram in self.rams]
 
-        prev_data_list = [self.seq.Prev(data, 1) for data in data_list]
-        for data, prev_data, ram in zip(data_list, prev_data_list, self.rams):
-            data.assign(vtypes.Mux(prev_data_cond,
-                                   ram.interfaces[port].rdata, prev_data))
+        for data, ram in zip(data_list, self.rams):
+            data.assign(ram.interfaces[port].rdata)
 
         log_numbanks = util.log2(self.numbanks)
         reg_addr = self.m.TmpReg(self.addrwidth + log_numbanks, initval=0)
@@ -1839,16 +1844,13 @@ class MultibankRAM(object):
             reg_bank_sel(bank_sel)
         )
 
-        patterns = [(reg_bank_sel == i, data)
+        cur_bank_sel = vtypes.Mux(prev_data_cond, reg_bank_sel, prev_reg_bank_sel)
+        patterns = [(cur_bank_sel == i, data)
                     for i, data in enumerate(data_list)]
         patterns.append((None, 0))
-        prev_patterns = [(prev_reg_bank_sel == i, data)
-                         for i, data in enumerate(prev_data_list)]
-        prev_patterns.append((None, 0))
+
         data = self.m.TmpWire(self.orig_datawidth, signed=True)
-        data.assign(vtypes.Mux(prev_data_cond,
-                               vtypes.PatternMux(*patterns),
-                               vtypes.PatternMux(*prev_patterns)))
+        data.assign(vtypes.PatternMux(*patterns))
 
         next_valid_on = self.m.TmpReg(initval=0)
         next_valid_off = self.m.TmpReg(initval=0)
@@ -1877,6 +1879,15 @@ class MultibankRAM(object):
         count_list = [self.m.TmpReg(vtypes.get_width(out_size), initval=0)
                       for (out_size, out_stride) in pattern]
 
+        read_addrs = [self.m.TmpRegLike(ram.interfaces[port].addr, initval=0)
+                      for ram in self.rams]
+
+        read_cond = next_valid_on
+        read_enable = vtypes.Ands(data_cond, next_valid_on)
+        for ram, read_addr in zip(self.rams, read_addrs):
+            util.add_mux(ram.interfaces[port].addr, read_cond, read_addr)
+            util.add_mux(ram.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+
         self.seq.If(data_cond, next_valid_off)(
             last(0),
             data_valid(0),
@@ -1900,10 +1911,10 @@ class MultibankRAM(object):
             next_valid_on(1)
         )
 
-        for ram in self.rams:
-            ram.seq.If(ext_cond, vtypes.Not(running),
-                       vtypes.Not(next_last), vtypes.Not(last))(
-                ram.interfaces[port].addr(addr >> log_numbanks)
+        for read_addr in read_addrs:
+            self.seq.If(ext_cond, vtypes.Not(running),
+                        vtypes.Not(next_last), vtypes.Not(last))(
+                read_addr(addr >> log_numbanks)
             )
 
         self.seq.If(data_cond, running)(
@@ -1912,8 +1923,8 @@ class MultibankRAM(object):
             next_last(0)
         )
 
-        for ram in self.rams:
-            ram.seq.If(data_cond, running)(
+        for read_addr, ram_addr in zip(read_addrs, ram_addr_list):
+            self.seq.If(data_cond, running)(
                 ram.interfaces[port].addr(ram_addr)
             )
 
@@ -2037,10 +2048,8 @@ class MultibankRAM(object):
         data_list = [self.m.TmpWireLike(ram.interfaces[port].rdata, signed=True)
                      for ram in self.rams]
 
-        prev_data_list = [self.seq.Prev(data, 1) for data in data_list]
-        for data, prev_data, ram in zip(data_list, prev_data_list, self.rams):
-            data.assign(vtypes.Mux(prev_data_cond,
-                                   ram.interfaces[port].rdata, prev_data))
+        for data, ram in zip(data_list, self.rams):
+            data.assign(ram.interfaces[port].rdata)
 
         log_numbanks = util.log2(self.numbanks)
 
@@ -2064,16 +2073,13 @@ class MultibankRAM(object):
             reg_bank_sel(bank_sel)
         )
 
-        patterns = [(reg_bank_sel == i, data)
+        cur_bank_sel = vtypes.Mux(prev_data_cond, reg_bank_sel, prev_reg_bank_sel)
+        patterns = [(cur_bank_sel == i, data)
                     for i, data in enumerate(data_list)]
         patterns.append((None, 0))
-        prev_patterns = [(prev_reg_bank_sel == i, data)
-                         for i, data in enumerate(prev_data_list)]
-        prev_patterns.append((None, 0))
+
         data = self.m.TmpWire(self.orig_datawidth, signed=True)
-        data.assign(vtypes.Mux(prev_data_cond,
-                               vtypes.PatternMux(*patterns),
-                               vtypes.PatternMux(*prev_patterns)))
+        data.assign(vtypes.PatternMux(*patterns))
 
         next_valid_on = self.m.TmpReg(initval=0)
         next_valid_off = self.m.TmpReg(initval=0)
@@ -2083,6 +2089,15 @@ class MultibankRAM(object):
 
         block_counter = self.m.TmpReg(vtypes.get_width(block_size), initval=0)
         counter = self.m.TmpReg(vtypes.get_width(length), initval=0)
+
+        read_addrs = [self.m.TmpRegLike(ram.interfaces[port].addr, initval=0)
+                      for ram in self.rams]
+
+        read_cond = next_valid_on
+        read_enable = vtypes.Ands(data_cond, next_valid_on)
+        for ram, read_addr in zip(self.rams, read_addrs):
+            util.add_mux(ram.interfaces[port].addr, read_cond, read_addr)
+            util.add_mux(ram.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
 
         self.seq.If(data_cond, next_valid_off)(
             last(0),
@@ -2116,10 +2131,10 @@ class MultibankRAM(object):
                 reg_addr(addr)
             )
 
-        for ram in self.rams:
-            ram.seq.If(ext_cond, counter == 0,
-                       vtypes.Not(next_last), vtypes.Not(last))(
-                ram.interfaces[port].addr(addr)
+        for read_addr in read_addrs:
+            self.seq.If(ext_cond, counter == 0,
+                        vtypes.Not(next_last), vtypes.Not(last))(
+                read_addr(addr)
             )
 
         self.seq.If(data_cond, counter > 0)(
@@ -2144,9 +2159,9 @@ class MultibankRAM(object):
                 reg_addr(next_addr)
             )
 
-        for i, (ram, ram_addr) in enumerate(zip(self.rams, ram_addr_list)):
-            ram.seq.If(data_cond, counter > 0, bank_sel == i)(
-                ram.interfaces[port].addr(ram_addr)
+        for i, (read_addr, ram_addr) in enumerate(zip(read_addrs, ram_addr_list)):
+            self.seq.If(data_cond, counter > 0, bank_sel == i)(
+                read_addr(ram_addr)
             )
 
         self.seq.If(data_cond, counter == 1)(
@@ -2230,6 +2245,12 @@ class MultibankRAM(object):
         'data' and 'when' must be dataflow variables
         """
 
+        ### ???
+        # ram.interfaces[port].addr -> write_addr
+        # ram.interfaces[port].wdata -> write_data
+        # ram.interfaces[port].wdata -> write_data
+        raise NotImplementedError('Not updated yet.')
+
         if self.seq is None:
             self.seq = Seq(self.m, self.name, self.clk, self.rst)
 
@@ -2307,6 +2328,12 @@ class MultibankRAM(object):
         @return done
         'data' and 'when' must be dataflow variables
         """
+
+        ### ???
+        # ram.interfaces[port].addr -> write_addr
+        # ram.interfaces[port].wdata -> write_data
+        # ram.interfaces[port].wdata -> write_data
+        raise NotImplementedError('Not updated yet.')
 
         if self.seq is None:
             self.seq = Seq(self.m, self.name, self.clk, self.rst)
@@ -2483,6 +2510,12 @@ class MultibankRAM(object):
         @return done
         'data' and 'when' must be dataflow variables
         """
+
+        ### ???
+        # ram.interfaces[port].addr -> write_addr
+        # ram.interfaces[port].wdata -> write_data
+        # ram.interfaces[port].wdata -> write_data
+        raise NotImplementedError('Not updated yet.')
 
         if self.keep_hierarchy and isinstance(self.rams[0], MultibankRAM):
             return self._write_dataflow_block_nested(port, addr, data, length, block_size,

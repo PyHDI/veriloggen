@@ -3834,7 +3834,7 @@ class Reg(Predicate):
 
 
 class ReadRAM(_SpecialOperator):
-    latency = 3
+    latency = 1
 
     def __init__(self, addr, reset, when=None,
                  width=None, point=None, signed=True, ram_name=None):
@@ -3857,27 +3857,25 @@ class ReadRAM(_SpecialOperator):
         self.graph_shape = 'box'
 
     def _implement(self, m, seq, svalid=None, senable=None):
-        if self.latency < 2:
+        if self.latency < 1:
             raise ValueError("Latency mismatch '%d' < '%s'" %
-                             (self.latency, 2))
-
-        if len(self.args) == 3 and self.latency == 2:
-            raise ValueError("latency = 2 is not allowed, if 'when' option is used.")
-
-        if senable is not None and self.latency == 2:
-            raise NotImplementedError("senable is not supported, if 'when' option is used.")
+                             (self.latency, 1))
 
         datawidth = self.get_width()
         signed = self.get_signed()
         rdata = m.Wire(self.name('rdata'), datawidth, signed=signed)
         self.read_data = rdata
 
-        if self.latency == 2:
+        _senable = m.Wire(self.name('senable'))
+        _senable.assign(senable)
+        self._senable = _senable
+
+        if self.latency == 1:
             data = m.Wire(self.name('data'), datawidth, signed=signed)
             data.assign(rdata)
             self.sig_data = data
 
-        elif self.latency == 3:
+        elif self.latency == 2:
             data = m.Reg(self.name('data'), datawidth, initval=0, signed=signed)
             self.sig_data = data
             when_cond = self.args[2].sig_data if len(self.args) == 3 else None
@@ -3891,7 +3889,7 @@ class ReadRAM(_SpecialOperator):
 
             when_cond_base = self.args[2].sig_data if len(self.args) == 3 else None
 
-            for i in range(self.latency - 2):
+            for i in range(self.latency - 1):
                 data = m.Reg(self.name('data_d%d' % i), datawidth,
                              initval=0, signed=signed)
                 if when_cond_base is not None:
@@ -3913,7 +3911,10 @@ class ReadRAM(_SpecialOperator):
 
     @property
     def enable(self):
-        return vtypes.Not(self.args[1].sig_data)
+        _senable = self._senable
+        reset = vtypes.Not(self.args[1].sig_data)
+        when_cond = self.args[2].sig_data if len(self.args) == 3 else None
+        return _and_vars(_senable, reset, when_cond)
 
 
 class WriteRAM(_SpecialOperator):
@@ -3942,6 +3943,10 @@ class WriteRAM(_SpecialOperator):
             raise ValueError("Latency mismatch '%d' != '%s'" %
                              (self.latency, 1))
 
+        _senable = m.Wire(self.name('senable'))
+        _senable.assign(senable)
+        self._senable = _senable
+
         self.sig_data = vtypes.Int(0)
 
     @property
@@ -3954,8 +3959,10 @@ class WriteRAM(_SpecialOperator):
 
     @property
     def enable(self):
+        _senable = self._senable
+        reset = vtypes.Not(self.args[2].sig_data)
         when_cond = self.args[3].sig_data if len(self.args) == 4 else None
-        return _and_vars(vtypes.Not(self.args[2].sig_data), when_cond)
+        return _and_vars(_senable, reset, when_cond)
 
 
 def ReduceArgMax(right, size=None, interval=None, initval=0,

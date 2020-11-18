@@ -354,6 +354,10 @@ class Stream(BaseStream):
         data.sink_fifo_wdata = self.module.Reg('_%s_sink_fifo_wdata' % prefix,
                                                data.width, initval=0)
 
+        # immediate
+        data.sink_immediate = self.module.Reg('_%s_sink_immediate' % prefix,
+                                              data.width, initval=0)
+
         # default value
         self.seq.If(self.stream_oready)(
             data.sink_ram_wenable(0),
@@ -521,7 +525,7 @@ class Stream(BaseStream):
             read_name = '_'.join([name, 'read', '%d' % i])
             read_var = self.read_RAM(read_name, raddr, when=None,
                                      datawidth=datawidth, point=point, signed=signed)
-            read_var.latency = 2
+            read_var.latency = 1
             read_vars.append(read_var)
             read_rams.append(read_name)
 
@@ -915,7 +919,6 @@ class Stream(BaseStream):
         self._make_sink_pattern_vars(var, name)
 
         set_cond_base = self._set_flag(fsm)
-
         set_cond = self._delay_from_start_to_sink(set_cond_base)
         sink_offset = self._delay_from_start_to_sink(offset)
 
@@ -1128,7 +1131,7 @@ class Stream(BaseStream):
             ram_sel(0)  # '0' is reserved for empty
         )
 
-        self._synthesize_set_sink(var, name)
+        self._synthesize_set_sink_immediate(var, name)
 
         fsm.goto_next()
 
@@ -1320,7 +1323,7 @@ class Stream(BaseStream):
 
         fsm.goto_next()
 
-        return var.sink_ram_wdata
+        return var.sink_immediate
 
     def run(self, fsm):
         cond = self._set_flag(fsm)
@@ -1458,8 +1461,8 @@ class Stream(BaseStream):
                 )
 
         self.sink_start.assign(self._delay_from_start_to_sink(self.source_start))
-        self.sink_stop.assign(self._delay_from_start_to_sink(self.source_stop))
-        self.sink_busy.assign(self._delay_from_start_to_sink(self.source_busy))
+        self.sink_stop.assign(self._delay_from_start_to_sink_stop(self.source_stop))
+        self.sink_busy.assign(self._delay_from_start_to_sink_busy(self.source_busy))
 
         self.seq.If(vtypes.Not(self.sink_busy), self.seq.Prev(self.sink_busy, 1))(
             self.busy_buf(0)
@@ -1526,10 +1529,26 @@ class Stream(BaseStream):
         return self.dump_mask
 
     def _delay_from_start_to_sink(self, v):
-        delay = self._write_delay() - 1
-        start_value = self.seq.Prev(v, 1, cond=self.stream_oready)
+        delay = self._write_delay()
+        start_value = v
         first_renable = self.seq.Prev(start_value, 1, cond=self.stream_oready)
         first_rvalid = self.seq.Prev(first_renable, 1, cond=self.stream_oready)
+        sink_value = self.seq.Prev(first_rvalid, delay, cond=self.stream_oready)
+        return sink_value
+
+    def _delay_from_start_to_sink_busy(self, v):
+        delay = self._write_delay()
+        start_value = v
+        first_renable = start_value
+        first_rvalid = self.seq.Prev(first_renable, 1, cond=self.stream_oready)
+        sink_value = self.seq.Prev(first_rvalid, delay, cond=self.stream_oready)
+        return sink_value
+
+    def _delay_from_start_to_sink_stop(self, v):
+        delay = self._write_delay()
+        start_value = v
+        first_renable = start_value
+        first_rvalid = first_renable
         sink_value = self.seq.Prev(first_rvalid, delay, cond=self.stream_oready)
         return sink_value
 
@@ -1763,40 +1782,40 @@ class Stream(BaseStream):
         if var.source_pat_fsm is not None:
             return
 
-        wdata = var.source_ram_rdata
-        wenable = vtypes.Ands(self.stream_oready, var.source_ram_rvalid)
-        var.write(wdata, wenable)
-
-        source_start = vtypes.Ands(self.source_start, self.stream_oready,
+        source_start = vtypes.Ands(self.source_start,
                                    vtypes.And(var.source_mode, mode_ram_pattern))
 
-        self.seq.If(source_start)(
-            var.source_idle(0),
+        self.seq.If(source_start, self.stream_oready)(
+            # var.source_idle(0),
             var.source_offset_buf(var.source_offset)
         )
 
         for source_pat_cur_offset in var.source_pat_cur_offsets:
-            self.seq.If(source_start)(
+            self.seq.If(source_start, self.stream_oready)(
                 source_pat_cur_offset(0)
             )
 
         for (source_pat_size, source_pat_count) in zip(
                 var.source_pat_sizes, var.source_pat_counts):
-            self.seq.If(source_start)(
+            self.seq.If(source_start, self.stream_oready)(
                 source_pat_count(source_pat_size - 1)
             )
 
         for (source_pat_size_buf, source_pat_size) in zip(
                 var.source_pat_size_bufs, var.source_pat_sizes):
-            self.seq.If(source_start)(
+            self.seq.If(source_start, self.stream_oready)(
                 source_pat_size_buf(source_pat_size)
             )
 
         for (source_pat_stride_buf, source_pat_stride) in zip(
                 var.source_pat_stride_bufs, var.source_pat_strides):
-            self.seq.If(source_start)(
+            self.seq.If(source_start, self.stream_oready)(
                 source_pat_stride_buf(source_pat_stride)
             )
+
+        wdata = var.source_ram_rdata
+        wenable = vtypes.Ands(self.stream_oready, var.source_ram_rvalid)
+        var.write(wdata, wenable)
 
         fsm_id = self.fsm_id_count
         self.fsm_id_count += 1
@@ -1808,7 +1827,7 @@ class Stream(BaseStream):
                                  self.clock, self.reset,
                                  as_module=self.fsm_as_module)
 
-        var.source_pat_fsm.If(source_start).goto_next()
+        var.source_pat_fsm.If(source_start, self.stream_oready).goto_next()
 
         source_all_offset = self.module.Wire('_%s_source_pat_all_offset' % prefix,
                                              self.addrwidth)
@@ -1817,7 +1836,8 @@ class Stream(BaseStream):
             source_all_offset_val += source_pat_cur_offset
         source_all_offset.assign(source_all_offset_val)
 
-        self.seq.If(var.source_pat_fsm.here)(
+        self.seq.If(var.source_pat_fsm.here, self.stream_oready)(
+            var.source_idle(0),
             var.source_ram_raddr(source_all_offset),
             var.source_ram_renable(1)
         )
@@ -1829,13 +1849,13 @@ class Stream(BaseStream):
                  var.source_pat_cur_offsets, var.source_pat_size_bufs,
                  var.source_pat_stride_bufs, var.source_pat_counts):
 
-            self.seq.If(var.source_pat_fsm.here, upcond)(
+            self.seq.If(var.source_pat_fsm.here, upcond, self.stream_oready)(
                 source_pat_cur_offset.add(source_pat_stride_buf),
                 source_pat_count.dec()
             )
 
             reset_cond = source_pat_count == 0
-            self.seq.If(var.source_pat_fsm.here, upcond, reset_cond)(
+            self.seq.If(var.source_pat_fsm.here, upcond, reset_cond, self.stream_oready)(
                 source_pat_cur_offset(0),
                 source_pat_count(source_pat_size_buf - 1)
             )
@@ -1843,14 +1863,18 @@ class Stream(BaseStream):
 
         fin_cond = upcond
 
-        var.source_pat_fsm.If(fin_cond).goto_next()
+        var.source_pat_fsm.If(fin_cond, self.stream_oready).goto_next()
 
         self.seq.If(var.source_pat_fsm.here)(
-            var.source_ram_renable(0),
+            var.source_ram_renable(0)
+        )
+
+        self.seq.If(var.source_pat_fsm.here, self.stream_oready)(
             var.source_idle(1)
         )
 
-        var.source_pat_fsm.goto_init()
+        var.source_pat_fsm.If(self.stream_oready).goto_init()
+
 
     def _make_source_multipattern_vars(self, var, name):
         if var.source_multipat_cur_offsets is not None:
@@ -1904,21 +1928,32 @@ class Stream(BaseStream):
         if var.source_pat_fsm is not None:
             return
 
-        wdata = var.source_ram_rdata
-        wenable = vtypes.Ands(self.stream_oready, var.source_ram_rvalid)
-        var.write(wdata, wenable)
-
-        source_start = vtypes.Ands(self.source_start, self.stream_oready,
+        source_start = vtypes.Ands(self.source_start,
                                    vtypes.And(var.source_mode, mode_ram_multipattern))
 
-        self.seq.If(source_start)(
-            var.source_idle(0)
+        # self.seq.If(source_start, self.stream_oready)(
+        #     # var.source_idle(0)
+        # )
+
+        for source_multipat_cur_offset in var.source_multipat_cur_offsets:
+            self.seq.If(source_start, self.stream_oready)(
+                source_multipat_cur_offset(0)
+            )
+
+        self.seq.If(source_start, self.stream_oready)(
+            var.source_multipat_num_patterns.dec()
         )
+
+        for (source_multipat_size, source_multipat_count) in zip(
+                var.source_multipat_sizes[0], var.source_multipat_counts[0]):
+            self.seq.If(source_start, self.stream_oready)(
+                source_multipat_count(source_multipat_size - 1)
+            )
 
         for (source_multipat_offset_buf,
              source_multipat_offset) in zip(var.source_multipat_offset_bufs,
                                             var.source_multipat_offsets):
-            self.seq.If(source_start)(
+            self.seq.If(source_start, self.stream_oready)(
                 source_multipat_offset_buf(source_multipat_offset)
             )
 
@@ -1928,7 +1963,7 @@ class Stream(BaseStream):
             for (source_multipat_size_buf,
                  source_multipat_size) in zip(source_multipat_size_buf_line,
                                               source_multipat_size_line):
-                self.seq.If(source_start)(
+                self.seq.If(source_start, self.stream_oready)(
                     source_multipat_size_buf(source_multipat_size)
                 )
 
@@ -1938,24 +1973,13 @@ class Stream(BaseStream):
             for (source_multipat_stride_buf,
                  source_multipat_stride) in zip(source_multipat_stride_buf_line,
                                                 source_multipat_stride_line):
-                self.seq.If(source_start)(
+                self.seq.If(source_start, self.stream_oready)(
                     source_multipat_stride_buf(source_multipat_stride)
                 )
 
-        self.seq.If(source_start)(
-            var.source_multipat_num_patterns.dec()
-        )
-
-        for source_multipat_cur_offset in var.source_multipat_cur_offsets:
-            self.seq.If(source_start)(
-                source_multipat_cur_offset(0)
-            )
-
-        for (source_multipat_size, source_multipat_count) in zip(
-                var.source_multipat_sizes[0], var.source_multipat_counts[0]):
-            self.seq.If(source_start)(
-                source_multipat_count(source_multipat_size - 1)
-            )
+        wdata = var.source_ram_rdata
+        wenable = vtypes.Ands(self.stream_oready, var.source_ram_rvalid)
+        var.write(wdata, wenable)
 
         fsm_id = self.fsm_id_count
         self.fsm_id_count += 1
@@ -1967,7 +1991,7 @@ class Stream(BaseStream):
                                       self.clock, self.reset,
                                       as_module=self.fsm_as_module)
 
-        var.source_multipat_fsm.If(source_start).goto_next()
+        var.source_multipat_fsm.If(source_start, self.stream_oready).goto_next()
 
         source_all_offset = self.module.Wire('_%s_source_multipat_all_offset' % prefix,
                                              self.addrwidth)
@@ -1976,7 +2000,8 @@ class Stream(BaseStream):
             source_all_offset_val += source_multipat_cur_offset
         source_all_offset.assign(source_all_offset_val)
 
-        self.seq.If(var.source_multipat_fsm.here)(
+        self.seq.If(var.source_multipat_fsm.here, self.stream_oready)(
+            var.source_idle(0),
             var.source_ram_raddr(source_all_offset),
             var.source_ram_renable(1)
         )
@@ -1988,13 +2013,13 @@ class Stream(BaseStream):
                  var.source_multipat_cur_offsets, var.source_multipat_size_bufs[0],
                  var.source_multipat_stride_bufs[0], var.source_multipat_counts[0]):
 
-            self.seq.If(var.source_multipat_fsm.here, upcond)(
+            self.seq.If(var.source_multipat_fsm.here, upcond, self.stream_oready)(
                 source_multipat_cur_offset.add(source_multipat_stride_buf),
                 source_multipat_count.dec()
             )
 
             reset_cond = source_multipat_count == 0
-            self.seq.If(var.source_multipat_fsm.here, upcond, reset_cond)(
+            self.seq.If(var.source_multipat_fsm.here, upcond, reset_cond, self.stream_oready)(
                 source_multipat_cur_offset(0),
                 source_multipat_count(source_multipat_size_buf - 1)
             )
@@ -2004,7 +2029,7 @@ class Stream(BaseStream):
 
         prev_offset = var.source_multipat_offset_bufs[0]
         for multipat_offset_buf in var.source_multipat_offset_bufs[1:]:
-            self.seq.If(fin_cond, var.source_multipat_fsm.here)(
+            self.seq.If(fin_cond, var.source_multipat_fsm.here, self.stream_oready)(
                 prev_offset(multipat_offset_buf)
             )
             prev_offset = multipat_offset_buf
@@ -2012,7 +2037,7 @@ class Stream(BaseStream):
         prev_sizes = var.source_multipat_size_bufs[0]
         for multipat_sizes in var.source_multipat_size_bufs[1:]:
             for prev_size, size in zip(prev_sizes, multipat_sizes):
-                self.seq.If(fin_cond, var.source_multipat_fsm.here)(
+                self.seq.If(fin_cond, var.source_multipat_fsm.here, self.stream_oready)(
                     prev_size(size)
                 )
             prev_sizes = multipat_sizes
@@ -2020,24 +2045,28 @@ class Stream(BaseStream):
         prev_strides = var.source_multipat_stride_bufs[0]
         for multipat_strides in var.source_multipat_stride_bufs[1:]:
             for prev_stride, stride in zip(prev_strides, multipat_strides):
-                self.seq.If(fin_cond, var.source_multipat_fsm.here)(
+                self.seq.If(fin_cond, var.source_multipat_fsm.here, self.stream_oready)(
                     prev_stride(stride)
                 )
             prev_strides = multipat_strides
 
-        self.seq.If(fin_cond, var.source_multipat_fsm.here)(
+        self.seq.If(fin_cond, var.source_multipat_fsm.here, self.stream_oready)(
             var.source_multipat_num_patterns.dec()
         )
 
         var.source_multipat_fsm.If(fin_cond,
-                                   var.source_multipat_num_patterns == 0).goto_next()
+                                   var.source_multipat_num_patterns == 0,
+                                   self.stream_oready).goto_next()
 
         self.seq.If(var.source_multipat_fsm.here)(
-            var.source_ram_renable(0),
+            var.source_ram_renable(0)
+        )
+
+        self.seq.If(var.source_multipat_fsm.here, self.stream_oready)(
             var.source_idle(1)
         )
 
-        var.source_multipat_fsm.goto_init()
+        var.source_multipat_fsm.If(self.stream_oready).goto_init()
 
     def _setup_source_fifo(self, fifo, var, set_cond):
         if fifo._id() in var.source_id_map:
@@ -2248,11 +2277,8 @@ class Stream(BaseStream):
         var.sink_fsm.If(sink_start, self.stream_oready).goto_next()
 
         self.seq.If(var.sink_fsm.here, self.stream_oready)(
-            var.sink_ram_waddr(var.sink_offset - var.sink_stride),
-            var.sink_count(var.sink_size),
-            var.sink_offset_buf(var.sink_offset),
-            var.sink_size_buf(var.sink_size),
-            var.sink_stride_buf(var.sink_stride)
+            var.sink_ram_waddr(var.sink_offset_buf - var.sink_stride_buf),
+            var.sink_count(var.sink_size_buf),
         )
         var.sink_fsm.If(self.stream_oready).goto_next()
 
@@ -2304,10 +2330,24 @@ class Stream(BaseStream):
         if var.sink_pat_fsm is not None:
             return
 
-        start_delay = self._write_delay()
-        start = self.seq.Prev(self.source_start, start_delay, cond=self.stream_oready)
-        sink_start = vtypes.Ands(start, self.stream_oready,
+        sink_start = vtypes.Ands(self.sink_start,
                                  vtypes.And(var.sink_mode, mode_ram_pattern))
+
+        self.seq.If(sink_start, self.stream_oready)(
+            var.sink_offset_buf(var.sink_offset)
+        )
+
+        for (sink_pat_size_buf, sink_pat_size) in zip(
+                var.sink_pat_size_bufs, var.sink_pat_sizes):
+            self.seq.If(sink_start, self.stream_oready)(
+                sink_pat_size_buf(sink_pat_size)
+            )
+
+        for (sink_pat_stride_buf, sink_pat_stride) in zip(
+                var.sink_pat_stride_bufs, var.sink_pat_strides):
+            self.seq.If(sink_start, self.stream_oready)(
+                sink_pat_stride_buf(sink_pat_stride)
+            )
 
         fsm_id = self.fsm_id_count
         self.fsm_id_count += 1
@@ -2319,47 +2359,20 @@ class Stream(BaseStream):
                                self.clock, self.reset,
                                as_module=self.fsm_as_module)
 
-        self.seq.If(sink_start)(
-            var.sink_offset_buf(var.sink_offset)
-        )
+        var.sink_pat_fsm.If(sink_start, self.stream_oready).goto_next()
 
         for sink_pat_cur_offset in var.sink_pat_cur_offsets:
-            self.seq.If(sink_start)(
-                sink_pat_cur_offset(0),
+            self.seq.If(var.sink_pat_fsm.here, self.stream_oready)(
+                sink_pat_cur_offset(0)
             )
 
-        for (sink_pat_size, sink_pat_count) in zip(
-                var.sink_pat_sizes, var.sink_pat_counts):
-            self.seq.If(sink_start)(
-                sink_pat_count(sink_pat_size - 1)
+        for (sink_pat_size_buf, sink_pat_count) in zip(
+                var.sink_pat_size_bufs, var.sink_pat_counts):
+            self.seq.If(var.sink_pat_fsm.here, self.stream_oready)(
+                sink_pat_count(sink_pat_size_buf - 1)
             )
 
-        for (sink_pat_size_buf, sink_pat_size) in zip(
-                var.sink_pat_size_bufs, var.sink_pat_sizes):
-            self.seq.If(sink_start)(
-                sink_pat_size_buf(sink_pat_size)
-            )
-
-        for (sink_pat_stride_buf, sink_pat_stride) in zip(
-                var.sink_pat_stride_bufs, var.sink_pat_strides):
-            self.seq.If(sink_start)(
-                sink_pat_stride_buf(sink_pat_stride)
-            )
-
-        var.sink_pat_fsm.If(sink_start).goto_next()
-
-        if name in self.sink_when_map:
-            when = self.sink_when_map[name]
-            wcond = when.read()
-        else:
-            wcond = None
-
-        sink_all_offset = self.module.Wire('_%s_sink_pat_all_offset' % prefix,
-                                           self.addrwidth)
-        sink_all_offset_val = var.sink_offset_buf
-        for sink_pat_cur_offset in var.sink_pat_cur_offsets:
-            sink_all_offset_val += sink_pat_cur_offset
-        sink_all_offset.assign(sink_all_offset_val)
+        var.sink_pat_fsm.If(self.stream_oready).goto_next()
 
         if name in self.sink_when_map:
             when = self.sink_when_map[name]
@@ -2369,7 +2382,14 @@ class Stream(BaseStream):
 
         rdata = var.read()
 
-        self.seq.If(var.sink_pat_fsm.here, wcond)(
+        sink_all_offset = self.module.Wire('_%s_sink_pat_all_offset' % prefix,
+                                           self.addrwidth)
+        sink_all_offset_val = var.sink_offset_buf
+        for sink_pat_cur_offset in var.sink_pat_cur_offsets:
+            sink_all_offset_val += sink_pat_cur_offset
+        sink_all_offset.assign(sink_all_offset_val)
+
+        self.seq.If(var.sink_pat_fsm.here, wcond, self.stream_oready)(
             var.sink_ram_waddr(sink_all_offset),
             var.sink_ram_wdata(rdata),
             var.sink_ram_wenable(1)
@@ -2382,13 +2402,13 @@ class Stream(BaseStream):
                  var.sink_pat_cur_offsets, var.sink_pat_size_bufs,
                  var.sink_pat_stride_bufs, var.sink_pat_counts):
 
-            self.seq.If(var.sink_pat_fsm.here, upcond)(
+            self.seq.If(var.sink_pat_fsm.here, wcond, upcond, self.stream_oready)(
                 sink_pat_cur_offset.add(sink_pat_stride_buf),
                 sink_pat_count.dec()
             )
 
             reset_cond = sink_pat_count == 0
-            self.seq.If(var.sink_pat_fsm.here, upcond, reset_cond)(
+            self.seq.If(var.sink_pat_fsm.here, wcond, upcond, reset_cond, self.stream_oready)(
                 sink_pat_cur_offset(0),
                 sink_pat_count(sink_pat_size_buf - 1)
             )
@@ -2396,8 +2416,8 @@ class Stream(BaseStream):
 
         fin_cond = upcond
 
-        var.sink_pat_fsm.If(fin_cond).goto_init()
-        var.sink_pat_fsm.If(self.sink_stop).goto_init()
+        var.sink_pat_fsm.If(wcond, fin_cond, self.stream_oready).goto_init()
+        var.sink_pat_fsm.If(self.sink_stop, self.stream_oready).goto_init()
 
     def _make_sink_multipattern_vars(self, var, name):
         if var.sink_multipat_cur_offsets is not None:
@@ -2451,10 +2471,39 @@ class Stream(BaseStream):
         if var.sink_multipat_fsm is not None:
             return
 
-        start_delay = self._write_delay()
-        start = self.seq.Prev(self.source_start, start_delay, cond=self.stream_oready)
-        sink_start = vtypes.Ands(start, self.stream_oready,
+        sink_start = vtypes.Ands(self.sink_start,
                                  vtypes.And(var.sink_mode, mode_ram_multipattern))
+
+        self.seq.If(sink_start, self.stream_oready)(
+            var.sink_multipat_num_patterns.dec()
+        )
+
+        for (sink_multipat_offset_buf,
+             sink_multipat_offset) in zip(var.sink_multipat_offset_bufs,
+                                          var.sink_multipat_offsets):
+            self.seq.If(sink_start, self.stream_oready)(
+                sink_multipat_offset_buf(sink_multipat_offset)
+            )
+
+        for (sink_multipat_size_buf_line,
+             sink_multipat_size_line) in zip(var.sink_multipat_size_bufs,
+                                             var.sink_multipat_sizes):
+            for (sink_multipat_size_buf,
+                 sink_multipat_size) in zip(sink_multipat_size_buf_line,
+                                            sink_multipat_size_line):
+                self.seq.If(sink_start, self.stream_oready)(
+                    sink_multipat_size_buf(sink_multipat_size)
+                )
+
+        for (sink_multipat_stride_buf_line,
+             sink_multipat_stride_line) in zip(var.sink_multipat_stride_bufs,
+                                               var.sink_multipat_strides):
+            for (sink_multipat_stride_buf,
+                 sink_multipat_stride) in zip(sink_multipat_stride_buf_line,
+                                              sink_multipat_stride_line):
+                self.seq.If(sink_start, self.stream_oready)(
+                    sink_multipat_stride_buf(sink_multipat_stride)
+                )
 
         fsm_id = self.fsm_id_count
         self.fsm_id_count += 1
@@ -2466,57 +2515,20 @@ class Stream(BaseStream):
                                     self.clock, self.reset,
                                     as_module=self.fsm_as_module)
 
-        for sink_multipat_offset_buf, sink_multipat_offset in zip(var.sink_multipat_offset_bufs,
-                                                                  var.sink_multipat_offsets):
-            self.seq.If(sink_start)(
-                sink_multipat_offset_buf(sink_multipat_offset)
-            )
-
-        for sink_multipat_size_buf_line, sink_multipat_size_line in zip(var.sink_multipat_size_bufs,
-                                                                        var.sink_multipat_sizes):
-            for sink_multipat_size_buf, sink_multipat_size in zip(sink_multipat_size_buf_line,
-                                                                  sink_multipat_size_line):
-                self.seq.If(sink_start)(
-                    sink_multipat_size_buf(sink_multipat_size)
-                )
-
-        for sink_multipat_stride_buf_line, sink_multipat_stride_line in zip(var.sink_multipat_stride_bufs,
-                                                                            var.sink_multipat_strides):
-            for sink_multipat_stride_buf, sink_multipat_stride in zip(sink_multipat_stride_buf_line,
-                                                                      sink_multipat_stride_line):
-                self.seq.If(sink_start)(
-                    sink_multipat_stride_buf(sink_multipat_stride)
-                )
-
-        self.seq.If(sink_start)(
-            var.sink_multipat_num_patterns.dec()
-        )
+        var.sink_multipat_fsm.If(sink_start, self.stream_oready).goto_next()
 
         for sink_multipat_cur_offset in var.sink_multipat_cur_offsets:
-            self.seq.If(sink_start)(
+            self.seq.If(var.sink_multipat_fsm.here, self.stream_oready)(
                 sink_multipat_cur_offset(0)
             )
 
         for (sink_multipat_size, sink_multipat_count) in zip(
                 var.sink_multipat_size_bufs[0], var.sink_multipat_counts[0]):
-            self.seq.If(sink_start)(
+            self.seq.If(var.sink_multipat_fsm.here, self.stream_oready)(
                 sink_multipat_count(sink_multipat_size - 1)
             )
 
-        var.sink_multipat_fsm.If(sink_start).goto_next()
-
-        if name in self.sink_when_map:
-            when = self.sink_when_map[name]
-            wcond = when.read()
-        else:
-            wcond = None
-
-        sink_all_offset = self.module.Wire('_%s_sink_multipat_all_offset' % prefix,
-                                           self.addrwidth)
-        sink_all_offset_val = var.sink_multipat_offsets[0]
-        for sink_multipat_cur_offset in var.sink_multipat_cur_offsets:
-            sink_all_offset_val += sink_multipat_cur_offset
-        sink_all_offset.assign(sink_all_offset_val)
+        var.sink_multipat_fsm.If(self.stream_oready).goto_next()
 
         if name in self.sink_when_map:
             when = self.sink_when_map[name]
@@ -2526,10 +2538,17 @@ class Stream(BaseStream):
 
         rdata = var.read()
 
-        self.seq.If(var.sink_multipat_fsm.here)(
+        sink_all_offset = self.module.Wire('_%s_sink_multipat_all_offset' % prefix,
+                                           self.addrwidth)
+        sink_all_offset_val = var.sink_multipat_offset_bufs[0]
+        for sink_multipat_cur_offset in var.sink_multipat_cur_offsets:
+            sink_all_offset_val += sink_multipat_cur_offset
+        sink_all_offset.assign(sink_all_offset_val)
+
+        self.seq.If(var.sink_multipat_fsm.here, self.stream_oready)(
             var.sink_ram_wenable(0)
         )
-        self.seq.If(var.sink_multipat_fsm.here, wcond)(
+        self.seq.If(var.sink_multipat_fsm.here, wcond, self.stream_oready)(
             var.sink_ram_waddr(sink_all_offset),
             var.sink_ram_wdata(rdata),
             var.sink_ram_wenable(1)
@@ -2542,13 +2561,13 @@ class Stream(BaseStream):
                  var.sink_multipat_cur_offsets, var.sink_multipat_size_bufs[0],
                  var.sink_multipat_stride_bufs[0], var.sink_multipat_counts[0]):
 
-            self.seq.If(var.sink_multipat_fsm.here, upcond)(
+            self.seq.If(var.sink_multipat_fsm.here, upcond, self.stream_oready)(
                 sink_multipat_cur_offset.add(sink_multipat_stride_buf),
                 sink_multipat_count.dec()
             )
 
             reset_cond = sink_multipat_count == 0
-            self.seq.If(var.sink_multipat_fsm.here, upcond, reset_cond)(
+            self.seq.If(var.sink_multipat_fsm.here, upcond, reset_cond, self.stream_oready)(
                 sink_multipat_cur_offset(0),
                 sink_multipat_count(sink_multipat_size_buf - 1)
             )
@@ -2558,7 +2577,7 @@ class Stream(BaseStream):
 
         prev_offset = var.sink_multipat_offset_bufs[0]
         for multipat_offset_buf in var.sink_multipat_offset_bufs[1:]:
-            self.seq.If(fin_cond, var.sink_multipat_fsm.here)(
+            self.seq.If(fin_cond, var.sink_multipat_fsm.here, self.stream_oready)(
                 prev_offset(multipat_offset_buf)
             )
             prev_offset = multipat_offset_buf
@@ -2566,7 +2585,7 @@ class Stream(BaseStream):
         prev_sizes = var.sink_multipat_size_bufs[0]
         for multipat_sizes in var.sink_multipat_size_bufs[1:]:
             for prev_size, size in zip(prev_sizes, multipat_sizes):
-                self.seq.If(fin_cond, var.sink_multipat_fsm.here)(
+                self.seq.If(fin_cond, var.sink_multipat_fsm.here, self.stream_oready)(
                     prev_size(size)
                 )
             prev_sizes = multipat_sizes
@@ -2574,17 +2593,18 @@ class Stream(BaseStream):
         prev_strides = var.sink_multipat_stride_bufs[0]
         for multipat_strides in var.sink_multipat_stride_bufs[1:]:
             for prev_stride, stride in zip(prev_strides, multipat_strides):
-                self.seq.If(fin_cond, var.sink_multipat_fsm.here)(
+                self.seq.If(fin_cond, var.sink_multipat_fsm.here, self.stream_oready)(
                     prev_stride(stride)
                 )
             prev_strides = multipat_strides
 
-        self.seq.If(fin_cond, var.sink_multipat_fsm.here)(
+        self.seq.If(fin_cond, var.sink_multipat_fsm.here, self.stream_oready)(
             var.sink_multipat_num_patterns.dec()
         )
 
         var.sink_multipat_fsm.If(fin_cond,
-                                 var.sink_multipat_num_patterns == 0).goto_init()
+                                 var.sink_multipat_num_patterns == 0,
+                                 self.stream_oready).goto_init()
         var.sink_multipat_fsm.If(self.sink_stop).goto_init()
 
     def _setup_sink_fifo(self, fifo, var, set_cond):
@@ -2670,6 +2690,49 @@ class Stream(BaseStream):
         var.sink_fsm.If(wcond, var.sink_count == 1, self.stream_oready).goto_init()
         var.sink_fsm.If(self.sink_stop, self.stream_oready).goto_init()
 
+    def _synthesize_set_sink_immediate(self, var, name):
+        if var.sink_fsm is not None:
+            return
+
+        sink_start = vtypes.Ands(self.sink_start,
+                                 vtypes.And(var.sink_mode, mode_ram_normal))
+
+        self.seq.If(sink_start, self.stream_oready)(
+            var.sink_size_buf(var.sink_size)
+        )
+
+        fsm_id = self.fsm_id_count
+        self.fsm_id_count += 1
+
+        prefix = self._prefix(name)
+
+        fsm_name = '_%s_sink_fsm_%d' % (prefix, fsm_id)
+        var.sink_fsm = FSM(self.module, fsm_name, self.clock, self.reset,
+                           as_module=self.fsm_as_module)
+
+        var.sink_fsm.If(sink_start, self.stream_oready).goto_next()
+
+        self.seq.If(var.sink_fsm.here, self.stream_oready)(
+            var.sink_count(var.sink_size_buf)
+        )
+        var.sink_fsm.If(self.stream_oready).goto_next()
+
+        if name in self.sink_when_map:
+            when = self.sink_when_map[name]
+            wcond = when.read()
+        else:
+            wcond = None
+
+        rdata = var.read()
+
+        self.seq.If(var.sink_fsm.here, wcond, self.stream_oready)(
+            var.sink_immediate(rdata),
+            var.sink_count.dec()
+        )
+
+        var.sink_fsm.If(wcond, var.sink_count == 1, self.stream_oready).goto_init()
+        var.sink_fsm.If(self.sink_stop, self.stream_oready).goto_init()
+
     def _setup_read_ram(self, ram, var, port, set_cond):
         if ram._id() in var.read_ram_id_map:
             ram_id = var.read_ram_id_map[ram._id()]
@@ -2695,9 +2758,10 @@ class Stream(BaseStream):
         renable = vtypes.Ands(self.stream_oready, var.enable, ram_cond)
 
         d, v = ram.read_rtl(var.addr, port=port, cond=renable)
-        d = self.seq.Prev(d, 1, cond=v)
-        v = self.seq.Prev(v, 1, cond=self.stream_oready)
-        add_mux(var.read_data, ram_cond, d)
+
+        d_out = d
+        v_out = vtypes.Ands(v, self.stream_oready)
+        add_mux(var.read_data, ram_cond, d_out)
 
         if (self.dump and
             (self.dump_mode == 'all' or
