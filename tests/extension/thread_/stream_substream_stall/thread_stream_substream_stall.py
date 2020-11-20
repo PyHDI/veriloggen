@@ -133,7 +133,8 @@ def mkLed():
             if vthread.verilog.NotEql(st, sq):
                 all_ok.value = False
         if all_ok:
-            print('# verify: PASSED')
+            #print('# verify: PASSED')
+            print('# verify: FAILED, fix it!')
         else:
             print('# verify: FAILED')
 
@@ -157,6 +158,8 @@ def mkLed():
 
         # verification
         print('# MUL')
+        myaxi.dma_read(ram_c, 0, 1024, size)
+        myaxi.dma_read(ram_c, offset, 1024 * 2, size)
         check(size, 0, offset)
 
         # mac
@@ -176,6 +179,8 @@ def mkLed():
 
         # verification
         print('# MAC')
+        myaxi.dma_read(ram_c, 0, 1024, size)
+        myaxi.dma_read(ram_c, offset, 1024 * 2, size)
         check(1, 0, offset)
 
         # act
@@ -195,6 +200,8 @@ def mkLed():
 
         # verification
         print('# ACT')
+        myaxi.dma_read(ram_c, 0, 1024, size)
+        myaxi.dma_read(ram_c, offset, 1024 * 2, size)
         check(1, 0, offset)
 
         vthread.finish()
@@ -225,7 +232,7 @@ def mkTest(memimg_name=None):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    #simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

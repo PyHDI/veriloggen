@@ -11,8 +11,8 @@ def test(request):
 
     simtype = request.config.getoption('--sim')
 
-    rslt = thread_stream_substream.run(filename=None, simtype=simtype,
-                                       outputfile=os.path.splitext(os.path.basename(__file__))[0] + '.out')
+    rslt = thread_stream_substream_stall.run(filename=None, simtype=simtype,
+                                             outputfile=os.path.splitext(os.path.basename(__file__))[0] + '.out')
 
     verify_rslt = rslt.splitlines()[-1]
     assert(verify_rslt == '# verify: PASSED')
