@@ -93,9 +93,9 @@ def mkLed():
             a = ram_a.read(i + offset)
             b = ram_b.read(i + offset)
             sum += a * b
-            count += 1
             ram_c.write(i + offset, sum)
             ram_d.write(i + offset, count == (reduce_size - 1))
+            count += 1
             if count == reduce_size:
                 sum = 0
                 count = 0
@@ -147,6 +147,8 @@ def mkLed():
 
         # verification
         print('# macstream')
+        myaxi.dma_read(ram_c, 0, 1024, size)
+        myaxi.dma_read(ram_c, offset, 1024 * 2, size)
         check(size, 0, offset)
 
         # stream
@@ -165,6 +167,8 @@ def mkLed():
 
         # verification
         print('# mystream')
+        myaxi.dma_read(ram_c, 0, 1024, size // reduce_size)
+        myaxi.dma_read(ram_c, offset, 1024 * 2, size // reduce_size)
         check(size // reduce_size, 0, offset)
 
         vthread.finish()
@@ -195,7 +199,7 @@ def mkTest(memimg_name=None):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    #simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

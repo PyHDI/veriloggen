@@ -128,7 +128,7 @@ def mkTest(memimg_name=None):
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
     init.add(
-        Delay(200000),
+        Delay(400000),
         Systask('finish'),
     )
 

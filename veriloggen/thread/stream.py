@@ -90,6 +90,7 @@ class Stream(BaseStream):
 
         self.run_flag = self.module.Wire(
             '_'.join(['', self.name, 'run_flag']))
+        self.run_flag.assign(0)
 
         self.source_start = self.module.Reg(
             '_'.join(['', self.name, 'source_start']), initval=0)
@@ -109,6 +110,9 @@ class Stream(BaseStream):
             '_'.join(['', self.name, 'busy']))
         self.busy_buf = self.module.Reg(
             '_'.join(['', self.name, 'busy_buf']), initval=0)
+
+        self.is_root = self.module.Wire('_'.join(['', self.name, 'is_root']))
+        self.is_root.assign(1)
 
         self.reduce_reset = None
         self.reduce_reset_var = None
@@ -228,14 +232,14 @@ class Stream(BaseStream):
                                                  initval=0)
         var.source_ram_rdata = self.module.Wire('_%s_source_ram_rdata' % prefix,
                                                 datawidth)
-        var.source_ram_rvalid = self.module.Wire('_%s_source_ram_rvalid' % prefix)
+        # var.source_ram_rvalid = self.module.Wire('_%s_source_ram_rvalid' % prefix)
 
         # FIFO
         var.source_fifo_deq = self.module.Reg('_%s_source_fifo_deq' % prefix,
                                               initval=0)
         var.source_fifo_rdata = self.module.Wire('_%s_source_fifo_rdata' % prefix,
                                                  datawidth)
-        var.source_fifo_rvalid = self.module.Wire('_%s_source_fifo_rvalid' % prefix)
+        # var.source_fifo_rvalid = self.module.Wire('_%s_source_fifo_rvalid' % prefix)
 
         # empty
         var.has_source_empty = False
@@ -412,11 +416,7 @@ class Stream(BaseStream):
                              (name, self.name))
 
         prefix = self._prefix(name)
-
         self.var_id_count += 1
-
-        cond = self.module.Reg('_%s_cond' % prefix, initval=0)
-        add_mux(substrm.stream_oready, cond, self.stream_oready)
 
         sub = Substream(self.module, self.clock, self.reset, substrm, self)
         self.substreams.append(sub)
@@ -830,7 +830,8 @@ class Stream(BaseStream):
         )
 
         wdata = var.source_empty_data
-        wenable = source_start
+        # wenable = source_start
+        wenable = vtypes.Ands(source_start, self.is_root)
         var.write(wdata, wenable)
 
         var.has_source_empty = True
@@ -876,7 +877,7 @@ class Stream(BaseStream):
         self._setup_sink_ram(ram, var, port, set_cond)
         self._synthesize_set_sink(var, name)
 
-        fsm.goto_next()
+        fsm.If(self.stream_oready).goto_next()
 
     def set_sink_pattern(self, fsm, name, ram, offset, pattern, port=0):
         """ intrinsic method to assign RAM property to a sink stream """
@@ -946,7 +947,7 @@ class Stream(BaseStream):
         self._setup_sink_ram(ram, var, port, set_cond)
         self._synthesize_set_sink_pattern(var, name)
 
-        fsm.goto_next()
+        fsm.If(self.stream_oready).goto_next()
 
     def set_sink_multidim(self, fsm, name, ram, offset, shape, order=None, port=0):
         """ intrinsic method to assign RAM property to a sink stream """
@@ -1056,7 +1057,7 @@ class Stream(BaseStream):
         self._setup_sink_ram(ram, var, port, set_cond)
         self._synthesize_set_sink_multipattern(var, name)
 
-        fsm.goto_next()
+        fsm.If(self.stream_oready).goto_next()
 
     def set_sink_fifo(self, fsm, name, fifo, size):
         """ intrinsic method to assign FIFO property to a sink stream """
@@ -1092,7 +1093,7 @@ class Stream(BaseStream):
         self._setup_sink_fifo(fifo, var, set_cond)
         self._synthesize_set_sink_fifo(var, name)
 
-        fsm.goto_next()
+        fsm.If(self.stream_oready).goto_next()
 
     def set_sink_immediate(self, fsm, name, size):
         """ intrinsic method to set a sink stream as an immediate variable """
@@ -1133,7 +1134,7 @@ class Stream(BaseStream):
 
         self._synthesize_set_sink_immediate(var, name)
 
-        fsm.goto_next()
+        fsm.If(self.stream_oready).goto_next()
 
     def set_sink_empty(self, fsm, name):
         """ intrinsic method to assign RAM property to a sink stream """
@@ -1165,7 +1166,7 @@ class Stream(BaseStream):
             ram_sel(0)  # '0' is reserved for empty
         )
 
-        fsm.goto_next()
+        fsm.If(self.stream_oready).goto_next()
 
     def set_constant(self, fsm, name, value, raw=False):
         """ intrinsic method to assign constant value to a constant stream """
@@ -1330,8 +1331,8 @@ class Stream(BaseStream):
 
         self._run(cond)
         fsm.goto_next()
-        fsm.goto_next()
-        fsm.goto_next()
+
+        fsm.If(self.busy).goto_next()
 
         return 0
 
@@ -1339,6 +1340,12 @@ class Stream(BaseStream):
         add_mux(self.run_flag, cond, 1)
 
         if not self.fsm_synthesized:
+            substreams = self._collect_substreams()
+            for sub in substreams:
+                if not sub.substrm.fsm_synthesized:
+                    sub.substrm._synthesize_run()
+                    sub.substrm.fsm_synthesized = True
+
             self._synthesize_run()
             self.fsm_synthesized = True
 
@@ -1539,7 +1546,8 @@ class Stream(BaseStream):
     def _delay_from_start_to_sink_busy(self, v):
         delay = self._write_delay()
         start_value = v
-        first_renable = start_value
+        #first_renable = start_value
+        first_renable = self.seq.Prev(start_value, 1, cond=self.stream_oready)
         first_rvalid = self.seq.Prev(first_renable, 1, cond=self.stream_oready)
         sink_value = self.seq.Prev(first_rvalid, delay, cond=self.stream_oready)
         return sink_value
@@ -1606,14 +1614,15 @@ class Stream(BaseStream):
         )
 
         ram_cond = (var.source_sel == ram_id)
-        renable = vtypes.Ands(var.source_ram_renable, ram_cond)
+        renable = vtypes.Ands(self.stream_oready, var.source_ram_renable, ram_cond)
 
         d, v = ram.read_rtl(var.source_ram_raddr, port=port, cond=renable)
 
         d_out = d
-        v_out = vtypes.Ands(v, self.stream_oready)
+        # v_out = vtypes.Mux(self.seq.Prev(self.stream_oready, 1),
+        #                    v, self.seq.Prev(v, 1, cond=self.stream_oready))
         add_mux(var.source_ram_rdata, ram_cond, d_out)
-        add_mux(var.source_ram_rvalid, ram_cond, v_out)
+        # add_mux(var.source_ram_rvalid, ram_cond, v_out)
 
         if (self.dump and
             (self.dump_mode == 'all' or
@@ -1716,7 +1725,8 @@ class Stream(BaseStream):
         )
 
         wdata = var.source_ram_rdata
-        wenable = vtypes.Ands(self.stream_oready, var.source_ram_rvalid)
+        # wenable = vtypes.Ands(self.stream_oready, var.source_ram_rvalid)
+        wenable = vtypes.Ands(self.stream_oready, self.source_busy, self.is_root)
         var.write(wdata, wenable)
 
         fsm_id = self.fsm_id_count
@@ -1814,7 +1824,8 @@ class Stream(BaseStream):
             )
 
         wdata = var.source_ram_rdata
-        wenable = vtypes.Ands(self.stream_oready, var.source_ram_rvalid)
+        # wenable = vtypes.Ands(self.stream_oready, var.source_ram_rvalid)
+        wenable = vtypes.Ands(self.stream_oready, self.source_busy, self.is_root)
         var.write(wdata, wenable)
 
         fsm_id = self.fsm_id_count
@@ -1874,7 +1885,6 @@ class Stream(BaseStream):
         )
 
         var.source_pat_fsm.If(self.stream_oready).goto_init()
-
 
     def _make_source_multipattern_vars(self, var, name):
         if var.source_multipat_cur_offsets is not None:
@@ -1978,7 +1988,8 @@ class Stream(BaseStream):
                 )
 
         wdata = var.source_ram_rdata
-        wenable = vtypes.Ands(self.stream_oready, var.source_ram_rvalid)
+        # wenable = vtypes.Ands(self.stream_oready, var.source_ram_rvalid)
+        wenable = vtypes.Ands(self.stream_oready, self.source_busy, self.is_root)
         var.write(wdata, wenable)
 
         fsm_id = self.fsm_id_count
@@ -2093,8 +2104,12 @@ class Stream(BaseStream):
         deq = vtypes.Ands(self.stream_oready, var.source_fifo_deq, fifo_cond)
 
         d, v, ready = fifo.deq_rtl(cond=deq)
-        add_mux(var.source_fifo_rdata, fifo_cond, d)
-        add_mux(var.source_fifo_rvalid, fifo_cond, v)
+
+        d_out = d
+        # v_out = vtypes.Mux(self.seq.Prev(self.stream_oready, 1),
+        #                    v, self.seq.Prev(v, 1, cond=self.stream_oready))
+        add_mux(var.source_fifo_rdata, fifo_cond, d_out)
+        # add_mux(var.source_fifo_rvalid, fifo_cond, v_out)
 
         # stall control
         cond = vtypes.Ands(self.source_busy, fifo_cond)
@@ -2122,7 +2137,8 @@ class Stream(BaseStream):
         )
 
         wdata = var.source_fifo_rdata
-        wenable = vtypes.Ands(self.stream_oready, var.source_fifo_rvalid)
+        # wenable = vtypes.Ands(self.stream_oready, var.source_fifo_rvalid)
+        wenable = vtypes.Ands(self.stream_oready, self.source_busy, self.is_root)
         var.write(wdata, wenable)
 
         fsm_id = self.fsm_id_count
@@ -2760,7 +2776,8 @@ class Stream(BaseStream):
         d, v = ram.read_rtl(var.addr, port=port, cond=renable)
 
         d_out = d
-        v_out = vtypes.Ands(v, self.stream_oready)
+        # v_out = vtypes.Mux(self.seq.Prev(self.stream_oready, 1),
+        #                    v, self.seq.Prev(v, 1, cond=self.stream_oready))
         add_mux(var.read_data, ram_cond, d_out)
 
         if (self.dump and
@@ -3004,6 +3021,9 @@ class Stream(BaseStream):
              f.__name__.startswith('Pulse') or
              f.__name__.startswith('RingBuffer') or
              f.__name__.startswith('Scratchpad') or
+             f.__name__.startswith('ToExtern') or
+             f.__name__.startswith('Predicate') or
+             f.__name__.startswith('Reg') or
              f.__name__.startswith('ReadRAM') or
              f.__name__.startswith('WriteRAM') or
              f.__name__.startswith('ForwardSource'))):
@@ -3025,6 +3045,11 @@ class Substream(BaseSubstream):
         self.clock = clock
         self.reset = reset
         self.reset_delay = 0
+
+        if strm is not None:
+            add_mux(substrm.stream_oready, strm.busy, strm.stream_oready)
+            add_mux(substrm.is_root, strm.busy, 0)
+
         BaseSubstream.__init__(self, substrm, strm)
 
     def to_source(self, name, data):

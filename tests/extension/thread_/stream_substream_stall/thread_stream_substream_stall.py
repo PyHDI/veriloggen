@@ -132,9 +132,10 @@ def mkLed():
             sq = ram_c.read(i + offset_seq)
             if vthread.verilog.NotEql(st, sq):
                 all_ok.value = False
+                print(i, st, sq)
         if all_ok:
-            #print('# verify: PASSED')
-            print('# verify: FAILED, fix it!')
+            # print('# verify: PASSED')
+            print('# verify: FAILED, FIX ME: the print statement above is moved outside of the if-statement, it works well.')
         else:
             print('# verify: FAILED')
 
@@ -232,7 +233,7 @@ def mkTest(memimg_name=None):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    # simulation.setup_waveform(m, uut)
+    simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

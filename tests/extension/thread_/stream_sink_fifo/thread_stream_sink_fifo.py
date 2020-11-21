@@ -40,6 +40,8 @@ def mkLed():
     strm = vthread.Stream(m, 'mystream', clk, rst)
     a = strm.source('a')
     b = strm.source('b')
+    a = a * strm.Int(2)
+    b = b * strm.Int(3)
     c = a + b
     strm.sink(c, 'c')
 
@@ -55,6 +57,8 @@ def mkLed():
         for i in range(size):
             a = ram_a.read(i + offset)
             b = ram_b.read(i + offset)
+            a = a * 2
+            b = b * 3
             sum = a + b
             ram_c.write(i + offset, sum)
 
@@ -89,8 +93,8 @@ def mkLed():
 
         # sequential
         offset = size
-        myaxi.dma_read(ram_a, offset, 0, size)
-        myaxi.dma_read(ram_b, offset, 512, size)
+        myaxi.dma_read(ram_a, offset, 512, size)
+        myaxi.dma_read(ram_b, offset, 0, size)
         comp_sequential(size, offset)
         myaxi.dma_write(ram_c, offset, 1024 * 2, size)
 

@@ -57,7 +57,7 @@ def mkLed():
         strm.run()
 
         strm.source_join()
-        strm.sink_join()
+        strm.join()
 
     def comp_sequential(size, offset):
         sum = 0
@@ -93,18 +93,23 @@ def mkLed():
 
     def comp(size):
         new_size = size + size + size
+        # stream
         offset = 0
         myaxi.dma_read(ram_a, offset, 0, new_size)
         myaxi.dma_read(ram_b, offset, 512, new_size)
         comp_stream(size, offset)
         myaxi.dma_write(ram_c, offset, 1024, new_size)
 
+        # sequential
         offset = new_size
         myaxi.dma_read(ram_a, offset, 0, new_size)
         myaxi.dma_read(ram_b, offset, 512, new_size)
         comp_sequential(size, offset)
         myaxi.dma_write(ram_c, offset, 1024 * 2, new_size)
 
+        # verification
+        myaxi.dma_read(ram_c, 0, 1024, new_size)
+        myaxi.dma_read(ram_c, offset, 1024 * 2, new_size)
         check(new_size, 0, offset)
 
         vthread.finish()
