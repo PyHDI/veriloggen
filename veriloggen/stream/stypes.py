@@ -3431,11 +3431,11 @@ class _ScratchpadOutput(_BinaryOperator):
         self.sig_data = rdata
 
 
-class ToExtern(_UnaryOperator):
+class ToExtern(_SpecialOperator):
     latency = 1
 
-    def __init__(self, right):
-        _UnaryOperator.__init__(self, right)
+    def __init__(self, value, reset):
+        _SpecialOperator.__init__(self, value, reset)
 
         self.output_tmp()
 
@@ -3453,31 +3453,45 @@ class ToExtern(_UnaryOperator):
         width = self.get_width()
         point = self.get_point()
         signed = self.get_signed()
-        rdata = self.right.sig_data
+        ldata = self.args[0].sig_data
+        not_reset = vtypes.Not(self.args[1].sig_data)
 
-        self.valid = svalid
-        self.enable = senable
+        valid_value = _and_vars(senable, not_reset)
 
         if self.latency == 0:
+            valid = m.Wire(self.name('valid'))
+            valid.assign(valid_value)
+            self.valid = valid
+
             data = fx.FixedWire(m, self.name('data'), width, point, signed=signed)
-            data.assign(rdata)
+            data.assign(ldata)
             self.sig_data = data
 
         elif self.latency == 1:
+            valid = m.Reg(self.name('valid'), initval=0)
+            self.valid = valid
+            seq(valid(valid_value), cond=senable)
+
             data = fx.FixedReg(m, self.name('data'), width, point, initval=0, signed=signed)
             self.sig_data = data
-            seq(data(rdata), cond=senable)
+            seq(data(ldata), cond=senable)
 
         else:
+            prev_valid = None
             prev_data = None
 
             for i in range(self.latency):
+                valid = m.Reg(self.name('valid_d%d' % i), initval=0)
                 data = fx.Reg(m, self.name('data_d%d' % i),
                               width, point, initval=0, signed=signed)
                 if i == 0:
-                    seq(data(self.op(rdata)), cond=senable)
+                    seq(valid(valid_value), cond=senable)
+                    seq(data(self.op(ldata)), cond=senable)
                 else:
+                    seq(valid(prev_valid), cond=senable)
                     seq(data(prev_data), cond=senable)
+
+                prev_valid = valid
                 prev_data = data
 
             self.sig_data = data
@@ -3782,11 +3796,18 @@ class LineBuffer(_SpecialOperator):
 class Predicate(_SpecialOperator):
     latency = 1
 
-    def __init__(self, data, when=None):
+    def __init__(self, data, when=None, reset=None):
+
+        self.when_index = 0
+        self.reset_index = 0
 
         args = [data]
         if when is not None:
             args.append(when)
+            self.when_index += 1
+        if reset is not None:
+            args.append(reset)
+            self.reset_index = self.when_index + 1
 
         _SpecialOperator.__init__(self, *args)
 
@@ -3811,8 +3832,10 @@ class Predicate(_SpecialOperator):
         data = fx.FixedReg(m, self.name('data'), width, point, initval=0, signed=signed)
         self.sig_data = data
 
-        when_cond = self.args[1].sig_data if len(self.args) == 2 else None
-        enable = _and_vars(senable, when_cond)
+        when_cond = self.args[self.when_index].sig_data if self.when_index > 0 else None
+        reset_cond = self.args[self.reset_index].sig_data if self.reset_index > 0 else None
+        not_reset = vtypes.Not(reset_cond) if reset_cond is not None else None
+        enable = _and_vars(senable, when_cond, not_reset)
 
         seq(data(arg_data[0]), cond=enable)
 
@@ -3820,8 +3843,8 @@ class Predicate(_SpecialOperator):
 class Reg(Predicate):
     __intrinsics__ = ('write')
 
-    def __init__(self, data, when=None):
-        Predicate.__init__(self, data, when)
+    def __init__(self, data, when=None, reset=None):
+        Predicate.__init__(self, data, when, reset)
         self.graph_label = 'Reg'
         self.graph_shape = 'box'
 
@@ -3866,9 +3889,12 @@ class ReadRAM(_SpecialOperator):
         rdata = m.Wire(self.name('rdata'), datawidth, signed=signed)
         self.read_data = rdata
 
-        _senable = m.Wire(self.name('senable'))
-        _senable.assign(senable)
-        self._senable = _senable
+        not_reset = vtypes.Not(self.args[1].sig_data)
+        when_cond = self.args[2].sig_data if len(self.args) == 3 else None
+        enable_value = _and_vars(senable, not_reset, when_cond)
+        enable = m.Wire(self.name('enable'))
+        enable.assign(enable_value)
+        self.enable = enable
 
         if self.latency == 1:
             data = m.Wire(self.name('data'), datawidth, signed=signed)
@@ -3880,7 +3906,7 @@ class ReadRAM(_SpecialOperator):
             self.sig_data = data
             when_cond = self.args[2].sig_data if len(self.args) == 3 else None
             if when_cond is not None:
-                when_cond = seq.Prev(when_cond, 2)
+                when_cond = seq.Prev(when_cond, 1)
             enable = _and_vars(senable, when_cond)
             seq(data(rdata), cond=enable)
 
@@ -3893,7 +3919,7 @@ class ReadRAM(_SpecialOperator):
                 data = m.Reg(self.name('data_d%d' % i), datawidth,
                              initval=0, signed=signed)
                 if when_cond_base is not None:
-                    when_cond = seq.Prev(when_cond, i + 2)
+                    when_cond = seq.Prev(when_cond, i + 1)
                 else:
                     when_cond = None
                 enable = _and_vars(senable, when_cond)
@@ -3908,13 +3934,6 @@ class ReadRAM(_SpecialOperator):
     @property
     def addr(self):
         return self.args[0].sig_data
-
-    @property
-    def enable(self):
-        _senable = self._senable
-        reset = vtypes.Not(self.args[1].sig_data)
-        when_cond = self.args[2].sig_data if len(self.args) == 3 else None
-        return _and_vars(_senable, reset, when_cond)
 
 
 class WriteRAM(_SpecialOperator):
@@ -3943,9 +3962,12 @@ class WriteRAM(_SpecialOperator):
             raise ValueError("Latency mismatch '%d' != '%s'" %
                              (self.latency, 1))
 
-        _senable = m.Wire(self.name('senable'))
-        _senable.assign(senable)
-        self._senable = _senable
+        not_reset = vtypes.Not(self.args[2].sig_data)
+        when_cond = self.args[3].sig_data if len(self.args) == 4 else None
+        enable_value = _and_vars(senable, not_reset, when_cond)
+        enable = m.Wire(self.name('enable'))
+        enable.assign(enable_value)
+        self.enable = enable
 
         self.sig_data = vtypes.Int(0)
 
@@ -3956,13 +3978,6 @@ class WriteRAM(_SpecialOperator):
     @property
     def write_data(self):
         return self.args[1].sig_data
-
-    @property
-    def enable(self):
-        _senable = self._senable
-        reset = vtypes.Not(self.args[2].sig_data)
-        when_cond = self.args[3].sig_data if len(self.args) == 4 else None
-        return _and_vars(_senable, reset, when_cond)
 
 
 def ReduceArgMax(right, size=None, interval=None, initval=0,
