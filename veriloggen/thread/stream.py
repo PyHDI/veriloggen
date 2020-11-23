@@ -860,7 +860,7 @@ class Stream(BaseStream):
         if name not in self.sinks:
             raise NameError("No such stream '%s'" % name)
 
-        set_cond_base = self._set_flag(fsm)
+        set_cond_base = self._set_flag(fsm, self.stream_oready)
         set_cond = self._delay_from_start_to_sink(set_cond_base)
         sink_offset = self._delay_from_start_to_sink(offset)
         sink_size = self._delay_from_start_to_sink(size)
@@ -919,7 +919,7 @@ class Stream(BaseStream):
 
         self._make_sink_pattern_vars(var, name)
 
-        set_cond_base = self._set_flag(fsm)
+        set_cond_base = self._set_flag(fsm, self.stream_oready)
         set_cond = self._delay_from_start_to_sink(set_cond_base)
         sink_offset = self._delay_from_start_to_sink(offset)
 
@@ -1015,8 +1015,7 @@ class Stream(BaseStream):
 
         self._make_sink_multipattern_vars(var, name)
 
-        set_cond_base = self._set_flag(fsm)
-
+        set_cond_base = self._set_flag(fsm, self.stream_oready)
         set_cond = self._delay_from_start_to_sink(set_cond_base)
 
         self.seq.If(set_cond)(
@@ -1081,7 +1080,7 @@ class Stream(BaseStream):
         if name not in self.sinks:
             raise NameError("No such stream '%s'" % name)
 
-        set_cond_base = self._set_flag(fsm)
+        set_cond_base = self._set_flag(fsm, self.stream_oready)
         set_cond = self._delay_from_start_to_sink(set_cond_base)
         sink_size = self._delay_from_start_to_sink(size)
 
@@ -1117,7 +1116,7 @@ class Stream(BaseStream):
         if name not in self.sinks:
             raise NameError("No such stream '%s'" % name)
 
-        set_cond_base = self._set_flag(fsm)
+        set_cond_base = self._set_flag(fsm, self.stream_oready)
         set_cond = self._delay_from_start_to_sink(set_cond_base)
         sink_mode = mode_ram_normal
         sink_size = self._delay_from_start_to_sink(size)
@@ -1158,7 +1157,7 @@ class Stream(BaseStream):
         if name not in self.sinks:
             raise NameError("No such stream '%s'" % name)
 
-        set_cond_base = self._set_flag(fsm)
+        set_cond_base = self._set_flag(fsm, self.stream_oready)
         set_cond = self._delay_from_start_to_sink(set_cond_base)
 
         ram_sel = var.sink_sel
@@ -2964,14 +2963,18 @@ class Stream(BaseStream):
             vtypes.Display(fmt, self.dump_step, age, addr, data)
         )
 
-    def _set_flag(self, fsm, prefix='_set_flag'):
+    def _set_flag(self, fsm, cond=None, prefix='_set_flag'):
         flag = self.module.TmpReg(initval=0, prefix=prefix)
-        cond = fsm.here
 
-        self.seq(
+        if cond is not None:
+            set_cond = vtypes.Ands(cond, fsm.here)
+        else:
+            set_cond = fsm.here
+
+        self.seq.If(cond)(
             flag(0)
         )
-        self.seq.If(cond)(
+        self.seq.If(set_cond)(
             flag(1)
         )
 
