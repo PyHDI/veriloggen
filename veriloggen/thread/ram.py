@@ -2283,7 +2283,7 @@ class MultibankRAM(object):
 
         write_addr_list = [self.m.TmpRegLike(ram.interfaces[port].addr, initval=0)
                            for ram in self.rams]
-        write_data_list = [self.m.TmpRegLike(ram.interfaces[port].data, initval=0)
+        write_data_list = [self.m.TmpRegLike(ram.interfaces[port].wdata, initval=0)
                            for ram in self.rams]
         write_enable_list = [self.m.TmpRegLike(ram.interfaces[port].enable, initval=0)
                              for ram in self.rams]
@@ -2291,7 +2291,7 @@ class MultibankRAM(object):
         for ram, write_addr, write_data, write_enable in zip(self.rams, write_addr_list,
                                                              write_data_list, write_enable_list):
             util.add_mux(ram.interfaces[port].addr, write_enable, write_addr)
-            util.add_mux(ram.interfaces[port].data, write_enable, write_data)
+            util.add_mux(ram.interfaces[port].wdata, write_enable, write_data)
             util.add_mux(ram.interfaces[port].wenable, write_enable, vtypes.Int(1, 1))
             util.add_mux(ram.interfaces[port].enable, write_enable, vtypes.Int(1, 1))
 
@@ -2396,7 +2396,7 @@ class MultibankRAM(object):
 
         write_addr_list = [self.m.TmpRegLike(ram.interfaces[port].addr, initval=0)
                            for ram in self.rams]
-        write_data_list = [self.m.TmpRegLike(ram.interfaces[port].data, initval=0)
+        write_data_list = [self.m.TmpRegLike(ram.interfaces[port].wdata, initval=0)
                            for ram in self.rams]
         write_enable_list = [self.m.TmpRegLike(ram.interfaces[port].enable, initval=0)
                              for ram in self.rams]
@@ -2404,7 +2404,7 @@ class MultibankRAM(object):
         for ram, write_addr, write_data, write_enable in zip(self.rams, write_addr_list,
                                                              write_data_list, write_enable_list):
             util.add_mux(ram.interfaces[port].addr, write_enable, write_addr)
-            util.add_mux(ram.interfaces[port].data, write_enable, write_data)
+            util.add_mux(ram.interfaces[port].wdata, write_enable, write_data)
             util.add_mux(ram.interfaces[port].wenable, write_enable, vtypes.Int(1, 1))
             util.add_mux(ram.interfaces[port].enable, write_enable, vtypes.Int(1, 1))
 
@@ -2580,7 +2580,7 @@ class MultibankRAM(object):
 
         write_addr_list = [self.m.TmpRegLike(ram.interfaces[port].addr, initval=0)
                            for ram in self.rams]
-        write_data_list = [self.m.TmpRegLike(ram.interfaces[port].data, initval=0)
+        write_data_list = [self.m.TmpRegLike(ram.interfaces[port].wdata, initval=0)
                            for ram in self.rams]
         write_enable_list = [self.m.TmpRegLike(ram.interfaces[port].enable, initval=0)
                              for ram in self.rams]
@@ -2588,7 +2588,7 @@ class MultibankRAM(object):
         for ram, write_addr, write_data, write_enable in zip(self.rams, write_addr_list,
                                                              write_data_list, write_enable_list):
             util.add_mux(ram.interfaces[port].addr, write_enable, write_addr)
-            util.add_mux(ram.interfaces[port].data, write_enable, write_data)
+            util.add_mux(ram.interfaces[port].wdata, write_enable, write_data)
             util.add_mux(ram.interfaces[port].wenable, write_enable, vtypes.Int(1, 1))
             util.add_mux(ram.interfaces[port].enable, write_enable, vtypes.Int(1, 1))
 
