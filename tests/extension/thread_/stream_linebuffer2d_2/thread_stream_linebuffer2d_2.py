@@ -36,7 +36,7 @@ def mkLed():
     # shift, rotate x44
     shift_cond = strm.Or((counter < 10), ((counter >= 20) & (counter&1 == 0)))
     rotate_cond = strm.Or(((counter >= 10) & (counter < 20)), ((counter >= 20) & (counter&1 == 1)))
-    linebuf = strm.LineBuffer(shape=(3, 3), memlens=[4],  data=src, head_initvals=[3], tail_initvals=[0],shift_cond=shift_cond, rotate_conds=[rotate_cond])
+    linebuf = strm.LineBuffer(shape=(3, 3), memlens=[4],  data=src, head_initvals=[0], tail_initvals=[3],shift_cond=shift_cond, rotate_conds=[rotate_cond])
     window = [None] * 9
     for y in range(3):
         for x in range(3):
@@ -56,8 +56,8 @@ def mkLed():
         strm.join()
 
     def comp_sequential(width, height, offset):
-        tail = 0
-        head = 3
+        head = 0
+        tail = 3
         window_0 = window_1 = window_2 = 0
         window_3 = window_4 = window_5 = 0
         window_6 = window_7 = window_8 = 0
@@ -110,6 +110,7 @@ def mkLed():
         for i in range(size):
             st = ram_dst.read(offset_stream + i)
             sq = ram_dst.read(offset_seq + i)
+            print(st, sq)
             if vthread.verilog.NotEql(st, sq):
                 all_ok = False
         if all_ok:
