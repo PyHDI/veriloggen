@@ -31,17 +31,19 @@ def mkLed():
     counter = strm.Counter(initval=0)
     width = strm.constant('width')
     height = strm.constant('height')
-    # shift x10
+    # shift x20
     # rotate x10
-    # shift, rotate x44
-    shift_cond = strm.Or((counter < 10), ((counter >= 20) & (counter&1 == 0)))
-    rotate_cond = strm.Or(((counter >= 10) & (counter < 20)), ((counter >= 20) & (counter&1 == 1)))
-    linebuf = strm.LineBuffer(shape=(3, 3), memlens=[4],  data=src, head_initvals=[3], tail_initvals=[0],shift_cond=shift_cond, rotate_conds=[rotate_cond])
+    # shift, rotate x34
+    shift_cond = strm.Or((counter < 20), ((counter >= 30) & (counter&1 == 0)))
+    rotate_cond = strm.Or(((counter >= 20) & (counter < 30)), ((counter >= 30) & (counter&1 == 1)))
+    linebuf = strm.LineBuffer(shape=(3, 3), memlens=[4],  data=src, head_initvals=[0], tail_initvals=[3],shift_cond=shift_cond, rotate_conds=[rotate_cond])
     window = [None] * 9
     for y in range(3):
         for x in range(3):
             window[y * 3 + x] = linebuf.get_window(y * 3 + x)
-    dst = strm.AddN(*window)
+    #The window register contains an invalid value in the beginning because the initial value of shift memory is undefined.
+    #Do not output sum until all the window register have valid value.
+    dst = strm.Mux(counter < 20, window[8], strm.AddN(*window))
     strm.sink(dst, 'dst')
 
     #for sequential
@@ -56,22 +58,16 @@ def mkLed():
         strm.join()
 
     def comp_sequential(width, height, offset):
-        tail = 0
-        head = 3
+        head = 0
+        tail = 3
         window_0 = window_1 = window_2 = 0
         window_3 = window_4 = window_5 = 0
         window_6 = window_7 = window_8 = 0
 
-        #initialize shift memory
-        for i in range(4):
-            ram_bufs[2].write(i, 0)
-            ram_bufs[1].write(i, 0)
-            ram_bufs[0].write(i, 0)
-
         for i in range(width * height):
             src = ram_src.read(offset + i)
-            shift = ((i < 10) or ((i >= 20) and (i&1 == 0)))
-            rotate = (((i >= 10) and (i < 20)) or ((i >= 20) and (i&1 == 1)))
+            shift = ((i < 20) or ((i >= 30) and (i&1 == 0)))
+            rotate = (((i >= 20) and (i < 30)) or ((i >= 30) and (i&1 == 1)))
             if shift:
                 ram_bufs[2].write(tail, window_8)
                 window_8 = window_7
@@ -103,13 +99,17 @@ def mkLed():
                 head = head + 1 if head < 3 else 0
                 tail = tail + 1 if tail < 3 else 0
             sum = window_0 + window_1 +  window_2 +  window_3 +  window_4 +  window_5 +  window_6 +  window_7 + window_8
-            ram_dst.write(offset + i, sum)
+            if i < 20:
+                ram_dst.write(offset + i, window_0)
+            else:
+                ram_dst.write(offset + i, sum)
             
     def check(offset_stream, offset_seq, size):
         all_ok = True
         for i in range(size):
             st = ram_dst.read(offset_stream + i)
             sq = ram_dst.read(offset_seq + i)
+            # print(st, sq)
             if vthread.verilog.NotEql(st, sq):
                 all_ok = False
         if all_ok:
