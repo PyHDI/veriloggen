@@ -60,13 +60,13 @@ def mkLed():
         strm.join()
 
     def comp_sequential(width, height, roffset, woffset):
-        for y in range(height*2):
-            for x in range(width*2):
-                src_i = x//2 + (y//2) * width
+        for y in range(height * 2):
+            for x in range(width * 2):
+                src_i = x // 2 + (y // 2) * width
                 dst_i = x + y * width * 2
                 val = ram_src.read(roffset + src_i)
                 ram_dst.write(woffset + dst_i, val)
-            
+
     def check(offset_stream, offset_seq, size):
         all_ok = True
         for i in range(size):
@@ -99,7 +99,7 @@ def mkLed():
 
         myaxi.dma_read(ram_src, roffset, 0, in_size)
         comp_sequential(width, height, roffset, woffset)
-        myaxi.dma_write(ram_dst, woffset, 2*1024, out_size)
+        myaxi.dma_write(ram_dst, woffset, 2 * 1024, out_size)
 
         check(0, woffset, out_size)
         saxi.write(addr=1, value=1)
