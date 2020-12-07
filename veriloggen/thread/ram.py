@@ -105,8 +105,15 @@ class RAM(_MutexFunction):
             self.interfaces[port].wenable.connect(wenable)
         if rdata is not None:
             rdata.connect(self.interfaces[port].rdata)
+
         if enable is not None:
-            self.interfaces[port].enable.connect(enable)
+            if hasattr(self.interfaces[port], 'enable'):
+                self.interfaces[port].enable.connect(enable)
+            else:
+                raise ValueError("RAM '%s' has no enable port.")
+
+        elif hasattr(self.interfaces[port], 'enable'):
+            raise ValueError('enable must be assigned.')
 
     def read_rtl(self, addr, port=0, cond=None):
         """
@@ -1238,6 +1245,16 @@ class MultibankRAM(object):
 
     def connect_rtl(self, port, addr, wdata=None, wenable=None, rdata=None, enable=None):
         """ connect native signals to the internal RAM interface """
+
+        if enable is not None:
+            for ram in self.rams:
+                if not hasattr(ram.interfaces[port], 'enable'):
+                    raise ValueError("RAM '%s' has no enable port.")
+
+        else:
+            for ram in self.rams:
+                if hasattr(ram.interfaces[port], 'enable'):
+                    raise ValueError('enable must be assigned.')
 
         if math.log(self.numbanks, 2) % 1.0 != 0.0:
             raise ValueError('numbanks must be power-of-2')

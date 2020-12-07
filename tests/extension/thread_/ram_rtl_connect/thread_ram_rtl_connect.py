@@ -79,7 +79,8 @@ def mkLed():
     fsm.goto_next()
 
     # connect ports to RAM
-    myram.connect_rtl(1, addr, wdata, wenable, rdata)
+    enable = 1
+    myram.connect_rtl(1, addr, wdata, wenable, rdata, enable)
 
     def blink(times):
         write_done.value = 0
