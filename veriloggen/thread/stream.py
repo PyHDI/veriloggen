@@ -63,11 +63,13 @@ class Stream(BaseStream):
                  ram_sel_width=8, fsm_as_module=False,
                  dump=False, dump_base=10, dump_mode='all'):
 
-        # stall control
+        # pipeline control
+        self.stream_ivalid = m.Reg('_'.join(['', name, 'stream_ivalid']), initval=0)
         self.stream_oready = m.Wire('_'.join(['', name, 'stream_oready']))
         self.stream_oready.assign(1)
 
         BaseStream.__init__(self, module=m, clock=clk, reset=rst,
+                            ivalid=self.stream_ivalid,
                             oready=self.stream_oready,
                             no_hook=True,
                             dump=dump, dump_base=dump_base, dump_mode=dump_mode)
@@ -1367,13 +1369,17 @@ class Stream(BaseStream):
             self.source_busy(1)
         )
 
+        self.fsm.seq.If(self._delay_from_start_to_ivalid_on(start_cond))(
+            self.stream_ivalid(1)
+        )
+
         if self.reduce_reset is not None:
             self.fsm.seq.If(self._delay_from_start_to_reduce_reset_off(start_cond))(
                 self.reduce_reset(0)
             )
 
         if self.dump:
-            self.seq.If(self._delay_from_start_to_reduce_reset_off(start_cond))(
+            self.seq.If(self._delay_from_start_to_ivalid_on(start_cond))(
                 self.dump_enable(1)
             )
 
@@ -1392,18 +1398,22 @@ class Stream(BaseStream):
                 sub.substrm.source_busy(1)
             )
 
+            sub_fsm.seq.If(self._delay_from_start_to_substream_ivalid_on(start_cond, reset_delay))(
+                sub.substrm.stream_ivalid(1)
+            )
+
             if sub.substrm.reduce_reset is not None:
                 sub_fsm.seq.If(self._delay_from_start_to_substream_reduce_reset_off(start_cond, reset_delay))(
                     sub.substrm.reduce_reset(0)
                 )
 
             if self.dump and sub.substrm.dump:
-                sub_fsm.seq.If(self._delay_from_start_to_substream_reduce_reset_off(start_cond, dump_delay))(
+                sub_fsm.seq.If(self._delay_from_start_to_substream_ivalid_on(start_cond, dump_delay))(
                     sub.substrm.dump_enable(1)
                 )
 
             for cond in sub.conds.values():
-                sub_fsm.seq.If(self._delay_from_start_to_substream_reduce_reset_off(start_cond, cond_delay))(
+                sub_fsm.seq.If(self._delay_from_start_to_substream_ivalid_on(start_cond, cond_delay))(
                     cond(1)
                 )
 
@@ -1428,6 +1438,10 @@ class Stream(BaseStream):
 
         self.fsm.If(self.stream_oready, end_cond).goto_init()
 
+        self.fsm.seq.If(self._delay_from_start_to_ivalid_off(end_cond))(
+            self.stream_ivalid(0)
+        )
+
         # reset accumulate pipelines
         if self.reduce_reset is not None:
             self.fsm.seq.If(self._delay_from_start_to_reduce_reset_on(end_cond))(
@@ -1436,7 +1450,7 @@ class Stream(BaseStream):
 
         if self.dump:
             dump_delay = self.ram_delay
-            self.seq.If(self._delay_from_start_to_reduce_reset_on(end_cond))(
+            self.seq.If(self._delay_from_start_to_ivalid_off(end_cond))(
                 self.dump_enable(0)
             )
 
@@ -1451,18 +1465,22 @@ class Stream(BaseStream):
             sub_fsm = sub.substrm.fsm
             sub_fsm._set_index(0)
 
+            sub_fsm.seq.If(self._delay_from_start_to_substream_ivalid_off(end_cond, reset_delay))(
+                sub.substrm.stream_ivalid(0)
+            )
+
             if sub.substrm.reduce_reset is not None:
                 sub_fsm.seq.If(self._delay_from_start_to_substream_reduce_reset_on(end_cond, reset_delay))(
                     sub.substrm.reduce_reset(1)
                 )
 
             if self.dump and sub.substrm.dump:
-                sub_fsm.seq.If(self._delay_from_start_to_substream_reduce_reset_on(end_cond, dump_delay))(
+                sub_fsm.seq.If(self._delay_from_start_to_substream_ivalid_off(end_cond, dump_delay))(
                     sub.substrm.dump_enable(0)
                 )
 
             for cond in sub.conds.values():
-                sub_fsm.seq.If(self._delay_from_start_to_substream_reduce_reset_on(end_cond, cond_delay))(
+                sub_fsm.seq.If(self._delay_from_start_to_substream_ivalid_off(end_cond, cond_delay))(
                     cond(0)
                 )
 
@@ -1545,7 +1563,6 @@ class Stream(BaseStream):
     def _delay_from_start_to_sink_busy(self, v):
         delay = self._write_delay()
         start_value = v
-        #first_renable = start_value
         first_renable = self.seq.Prev(start_value, 1, cond=self.stream_oready)
         first_rvalid = self.seq.Prev(first_renable, 1, cond=self.stream_oready)
         sink_value = self.seq.Prev(first_rvalid, delay, cond=self.stream_oready)
@@ -1559,11 +1576,24 @@ class Stream(BaseStream):
         sink_value = self.seq.Prev(first_rvalid, delay, cond=self.stream_oready)
         return sink_value
 
-    def _delay_from_start_to_reduce_reset_off(self, v):
+    def _delay_from_start_to_ivalid_on(self, v):
         start_value = self.seq.Prev(v, 1, cond=self.stream_oready)
         first_renable = self.seq.Prev(start_value, 1, cond=self.stream_oready)
         first_rvalid = self.seq.Prev(first_renable, 1, cond=self.stream_oready)
         source_value = vtypes.Ands(first_rvalid, self.stream_oready)
+        return source_value
+
+    def _delay_from_start_to_reduce_reset_off(self, v):
+        start_value = self.seq.Prev(v, 1, cond=self.stream_oready)
+        start_value = self.seq.Prev(start_value, 1, cond=self.stream_oready)
+        first_renable = self.seq.Prev(start_value, 1, cond=self.stream_oready)
+        first_rvalid = self.seq.Prev(first_renable, 1, cond=self.stream_oready)
+        source_value = vtypes.Ands(first_rvalid, self.stream_oready)
+        return source_value
+
+    def _delay_from_start_to_ivalid_off(self, v):
+        start_value = self.seq.Prev(v, 1, cond=self.stream_oready)
+        source_value = vtypes.Ands(start_value, self.stream_oready)
         return source_value
 
     def _delay_from_start_to_reduce_reset_on(self, v):
@@ -1571,7 +1601,28 @@ class Stream(BaseStream):
         source_value = vtypes.Ands(start_value, self.stream_oready)
         return source_value
 
+    def _delay_from_start_to_substream_ivalid_on(self, v, delay):
+        start_value = self.seq.Prev(v, 1, cond=self.stream_oready)
+        first_renable = self.seq.Prev(start_value, 1, cond=self.stream_oready)
+        first_rvalid = self.seq.Prev(first_renable, 1, cond=self.stream_oready)
+        if delay > 0:
+            substream_value = self.seq.Prev(first_rvalid, delay, cond=self.stream_oready)
+        else:
+            substream_value = vtypes.Ands(first_rvalid, self.stream_oready)
+        return substream_value
+
     def _delay_from_start_to_substream_reduce_reset_off(self, v, delay):
+        start_value = self.seq.Prev(v, 1, cond=self.stream_oready)
+        start_value = self.seq.Prev(start_value, 1, cond=self.stream_oready)
+        first_renable = self.seq.Prev(start_value, 1, cond=self.stream_oready)
+        first_rvalid = self.seq.Prev(first_renable, 1, cond=self.stream_oready)
+        if delay > 0:
+            substream_value = self.seq.Prev(first_rvalid, delay, cond=self.stream_oready)
+        else:
+            substream_value = vtypes.Ands(first_rvalid, self.stream_oready)
+        return substream_value
+
+    def _delay_from_start_to_substream_ivalid_off(self, v, delay):
         start_value = self.seq.Prev(v, 1, cond=self.stream_oready)
         first_renable = self.seq.Prev(start_value, 1, cond=self.stream_oready)
         first_rvalid = self.seq.Prev(first_renable, 1, cond=self.stream_oready)
@@ -3021,22 +3072,26 @@ class Stream(BaseStream):
         if (callable(f) and
             (f.__name__.startswith('Reduce') or
              f.__name__.startswith('Counter') or
-             f.__name__.startswith('Pulse') or
-             f.__name__.startswith('RingBuffer') or
-             f.__name__.startswith('Scratchpad') or
-             f.__name__.startswith('ToExtern') or
-             f.__name__.startswith('Predicate') or
-             f.__name__.startswith('Reg') or
-             f.__name__.startswith('ReadRAM') or
-             f.__name__.startswith('WriteRAM') or
-             f.__name__.startswith('ForwardSource'))):
+             f.__name__.startswith('Pulse'))):
+
             if self.reduce_reset is None:
                 self.reduce_reset = self.module.Reg(
                     '_'.join(['', self.name, 'reduce_reset']), initval=1)
                 self.reduce_reset_var = self.Variable(
                     self.reduce_reset, width=1)
 
-            return functools.partial(f, reset=self.reduce_reset_var)
+            @functools.wraps(f)
+            def func(*args, **kwargs):
+                if 'reset' in kwargs:
+                    reset = self.Lor(self.reduce_reset_var, kwargs['reset'])
+                    reset.latency = 0
+                else:
+                    reset = self.reduce_reset_var
+
+                kwargs['reset'] = reset
+                return f(*args, **kwargs)
+
+            return func
 
         return f
 
