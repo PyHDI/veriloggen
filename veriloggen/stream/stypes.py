@@ -2102,6 +2102,26 @@ class Alias(_UnaryOperator):
         self.graph_style = 'filled'
 
 
+class Probe(_UnaryOperator):
+    latency = 0
+
+    def __init__(self, right, prefix='Probe'):
+        _UnaryOperator.__init__(self, right)
+        self.op = lambda x: x
+
+        self.probe_name = '{}_{}'.format(prefix, self.object_id)
+        self.graph_label = self.probe_name
+        self.graph_shape = 'box'
+        self.graph_color = 'lightgray'
+        self.graph_style = 'filled'
+
+    def name(self, prefix=None):
+        clsname = self.__class__.__name__.lower()
+        if prefix is None:
+            prefix = 'tmp'
+        return '_'.join(['', clsname, prefix, self.probe_name])
+
+
 class _PlusN(_SpecialOperator):
     latency = 1
 
@@ -3643,7 +3663,8 @@ class LineBuffer(_SpecialOperator):
                     shift_mem_dim = self.n_dim
                     cond_data_pairs.append([delayed_shift_cond, delayed_src])
                 else:
-                    find_first_false = lambda x, i=0: i if x[0] is False else find_first_false(x[1:], i+1)
+                    def find_first_false(x, i=0):
+                        return i if x[0] is False else find_first_false(x[1:], i + 1)
                     first_false_index = find_first_false(is_dim_edge)
                     shift_mem_dim = first_false_index
                     shift_mem_index = increment_index(index)[shift_mem_dim:]
@@ -3668,7 +3689,7 @@ class LineBuffer(_SpecialOperator):
 
             else:
                 # input from previous window register
-                prev_index = (index[0]+1,) + index[1:]
+                prev_index = (index[0] + 1,) + index[1:]
                 newdata = self.windowreg[prev_index]
             # assign window register input
             seq(mine(newdata), cond=delayed_enable)
@@ -3682,8 +3703,8 @@ class LineBuffer(_SpecialOperator):
                                      width, point, initval=head_initval, signed=signed)
             tails[dim] = fx.FixedReg(m, self.name('tail' + str(dim)),
                                      width, point, initval=tail_initval, signed=signed)
-            next_head = vtypes.Mux(heads[dim] == memlen-1, 0, heads[dim] + 1)
-            next_tail = vtypes.Mux(tails[dim] == memlen-1, 0, tails[dim] + 1)
+            next_head = vtypes.Mux(heads[dim] == memlen - 1, 0, heads[dim] + 1)
+            next_tail = vtypes.Mux(tails[dim] == memlen - 1, 0, tails[dim] + 1)
             seq(heads[dim](next_head), cond=head_tail_enable)
             seq(tails[dim](next_tail), cond=head_tail_enable)
 
@@ -3699,7 +3720,7 @@ class LineBuffer(_SpecialOperator):
                 wenable = _and_vars(svalid, senable, delayed_shift_cond)
             else:
                 wenable = _and_vars(svalid, senable,
-                                    vtypes.OrList(*([delayed_shift_cond] + delayed_rotate_conds[mem_dim-1:])))
+                                    vtypes.OrList(*([delayed_shift_cond] + delayed_rotate_conds[mem_dim - 1:])))
 
             mem_indices = itertools.product(*[range(d) for d in self.shape[mem_dim:]])
             for mem_index in mem_indices:
@@ -3708,13 +3729,14 @@ class LineBuffer(_SpecialOperator):
                 num_ports = 2
                 clk = m._clock
                 shiftmem_name = 'shiftmem_' + '_'.join(list(map(str, mem_index)))
-                shiftmem = ram.SyncRAM(m, self.name(shiftmem_name), clk, datawidth, addrwidth, num_ports)
+                shiftmem = ram.SyncRAM(m, self.name(shiftmem_name), clk,
+                                       datawidth, addrwidth, num_ports)
                 if mem_dim == 1:
                     window_index = (0, ) + mem_index
                     wdata_data = self.windowreg[window_index]
                 else:
                     mem_input_index = (0, ) + mem_index
-                    wdata_data = shiftmemout[mem_dim-1][mem_input_index]
+                    wdata_data = shiftmemout[mem_dim - 1][mem_input_index]
                 wdata = m.Wire(self.name(shiftmem_name + '_wdata'), datawidth, signed=signed)
                 wdata.assign(wdata_data)
                 waddr = m.Wire(self.name(shiftmem_name + '_waddr'), addrwidth)
@@ -3728,7 +3750,7 @@ class LineBuffer(_SpecialOperator):
                 # connect shiftmemout wire
                 shiftmemout[mem_dim][mem_index].assign(shiftmem.rdata(1))
 
-        self.sig_data = delayed_src # dummy output
+        self.sig_data = delayed_src  # dummy output
 
     def get_window(self, index):
         return _LineBufferOut(self, index)
