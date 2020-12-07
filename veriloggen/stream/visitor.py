@@ -188,22 +188,19 @@ class InputVisitor(_Visitor):
     def visit_RingBuffer(self, node):
         right = self.visit(node.right)
         enable = self.visit(node.enable) if node.enable is not None else set()
-        reset = self.visit(node.reset) if node.reset is not None else set()
-        return right | enable | reset
+        return right | enable
 
     def visit__RingBufferOutput(self, node):
         left = self.visit(node.left)
         right = self.visit(node.right)
         enable = self.visit(node.enable) if node.enable is not None else set()
-        reset = self.visit(node.reset) if node.reset is not None else set()
-        return left | right | enable | reset
+        return left | right | enable
 
     def visit_Scratchpad(self, node):
         left = self.visit(node.left)
         right = self.visit(node.right)
         enable = self.visit(node.enable) if node.enable is not None else set()
-        reset = self.visit(node.reset) if node.reset is not None else set()
-        return left | right | enable | reset
+        return left | right | enable
 
     def visit__ScratchpadOutput(self, node):
         return self.visit__BinaryOperator(node)
@@ -253,8 +250,7 @@ class OutputVisitor(_Visitor):
         dependency = (self.visit(node.dependency)
                       if node.dependency is not None else set())
         enable = self.visit(node.enable) if node.enable is not None else set()
-        #reset = self.visit(node.reset) if node.reset is not None else set()
-        reset = set()
+        reset = self.visit(node.reset) if node.reset is not None else set()
         mine = set([node]) if node._has_output() else set()
         return right | size | interval | initval | offset | dependency | enable | reset | mine
 
@@ -279,28 +275,22 @@ class OutputVisitor(_Visitor):
     def visit_RingBuffer(self, node):
         right = self.visit(node.right)
         enable = self.visit(node.enable) if node.enable is not None else set()
-        #reset = self.visit(node.reset) if node.reset is not None else set()
-        reset = set()
         mine = set([node]) if node._has_output() else set()
-        return right | enable | reset | mine
+        return right | enable | mine
 
     def visit__RingBufferOutput(self, node):
         left = self.visit(node.left)
         right = self.visit(node.right)
         enable = self.visit(node.enable) if node.enable is not None else set()
-        #reset = self.visit(node.reset) if node.reset is not None else set()
-        reset = set()
         mine = set([node]) if node._has_output() else set()
-        return left | right | enable | reset | mine
+        return left | right | enable | mine
 
     def visit_Scratchpad(self, node):
         left = self.visit(node.left)
         right = self.visit(node.right)
         enable = self.visit(node.enable) if node.enable is not None else set()
-        #reset = self.visit(node.reset) if node.reset is not None else set()
-        reset = set()
         mine = set([node]) if node._has_output() else set()
-        return left | right | enable | reset | mine
+        return left | right | enable | mine
 
     def visit__ScratchpadOutput(self, node):
         return self.visit__BinaryOperator(node)
@@ -378,25 +368,22 @@ class OperatorVisitor(_Visitor):
     def visit_RingBuffer(self, node):
         right = self.visit(node.right)
         enable = self.visit(node.enable) if node.enable is not None else set()
-        reset = self.visit(node.reset) if node.reset is not None else set()
         mine = set([node])
-        return right | enable | reset | mine
+        return right | enable | mine
 
     def visit__RingBufferOutput(self, node):
         left = self.visit(node.left)
         right = self.visit(node.right)
         enable = self.visit(node.enable) if node.enable is not None else set()
-        reset = self.visit(node.reset) if node.reset is not None else set()
         mine = set([node])
-        return left | right | enable | reset | mine
+        return left | right | enable | mine
 
     def visit_Scratchpad(self, node):
         left = self.visit(node.left)
         right = self.visit(node.right)
         enable = self.visit(node.enable) if node.enable is not None else set()
-        reset = self.visit(node.reset) if node.reset is not None else set()
         mine = set([node])
-        return left | right | enable | reset | mine
+        return left | right | enable | mine
 
     def visit__ScratchpadOutput(self, node):
         return self.visit__BinaryOperator(node)

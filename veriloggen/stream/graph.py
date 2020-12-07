@@ -331,8 +331,6 @@ class GraphGenerator(_Visitor):
         self.graph.add_edge(value, node, label='value')
         index = self.visit(node.args[1])
         self.graph.add_edge(index, node, label='index')
-        reset = self.visit(node.args[2])
-        self.graph.add_edge(reset, node, label='reset')
         dest = self.visit(node.dest)
         self.graph.add_edge(node, dest, label='dest')
 
@@ -356,8 +354,6 @@ class GraphGenerator(_Visitor):
 
         addr = self.visit(node.args[0])
         self.graph.add_edge(addr, node, label='addr')
-        reset = self.visit(node.args[1])
-        self.graph.add_edge(reset, node, label='reset')
 
         if len(node.args) == 3:
             when = self.visit(node.args[2])
@@ -385,8 +381,6 @@ class GraphGenerator(_Visitor):
         self.graph.add_edge(addr, node, label='addr')
         data = self.visit(node.args[1])
         self.graph.add_edge(data, node, label='data')
-        reset = self.visit(node.args[2])
-        self.graph.add_edge(reset, node, label='reset')
 
         if len(node.args) == 4:
             when = self.visit(node.args[3])
@@ -413,13 +407,9 @@ class GraphGenerator(_Visitor):
         right = self.visit(node.right)
         if node.enable is not None:
             enable = self.visit(node.enable)
-        if node.reset is not None:
-            reset = self.visit(node.reset)
         self.graph.add_edge(right, node, label='data')
         if node.enable is not None:
             self.graph.add_edge(enable, node, label='enable')
-        if node.reset is not None:
-            self.graph.add_edge(reset, node, label='reset')
 
         if node.start_stage is not None:
             self._set_rank(node.start_stage + 1, node)
@@ -443,14 +433,10 @@ class GraphGenerator(_Visitor):
         right = self.visit(node.right)
         if node.enable is not None:
             enable = self.visit(node.enable)
-        if node.reset is not None:
-            reset = self.visit(node.reset)
         self.graph.add_edge(left, node, label='buf')
         self.graph.add_edge(right, node, label='offset')
         if node.enable is not None:
             self.graph.add_edge(enable, node, label='enable')
-        if node.reset is not None:
-            self.graph.add_edge(reset, node, label='reset')
 
         if node.start_stage is not None:
             self._set_rank(node.start_stage + 1, node)
@@ -474,14 +460,10 @@ class GraphGenerator(_Visitor):
         right = self.visit(node.right)
         if node.enable is not None:
             enable = self.visit(node.enable)
-        if node.reset is not None:
-            reset = self.visit(node.reset)
         self.graph.add_edge(left, node, label='data')
         self.graph.add_edge(right, node, label='addr')
         if node.enable is not None:
             self.graph.add_edge(enable, node, label='enable')
-        if node.reset is not None:
-            self.graph.add_edge(reset, node, label='reset')
 
         if node.start_stage is not None:
             self._set_rank(node.start_stage + 1, node)
