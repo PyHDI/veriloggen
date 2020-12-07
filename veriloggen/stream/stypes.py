@@ -2144,7 +2144,7 @@ class Probe(_UnaryOperator):
         self.op = lambda x: x
 
         self.probe_name = '{}_{}'.format(prefix, self.object_id)
-        self.graph_label = self.probe_name
+        self.graph_label = 'Probe\n{}'.format(self.probe_name)
         self.graph_shape = 'box'
         self.graph_color = 'lightgray'
         self.graph_style = 'filled'
