@@ -25,7 +25,7 @@ def mkLed():
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
-    a = strm.source('a')
+    a = strm.source('a') + 1000
     size = strm.constant('size')
     sum, sum_valid = strm.ReduceAddValid(a, size)
     strm.sink(sum, 'sum', when=sum_valid, when_name='sum_valid')
@@ -49,7 +49,7 @@ def mkLed():
     def comp_sequential(size, offset):
         sum = 0
         for i in range(size):
-            a = ram_a.read(i + offset)
+            a = ram_a.read(i + offset) + 1000
             sum += a
         ram_b.write(offset, sum)
 
@@ -106,7 +106,7 @@ def mkTest(memimg_name=None):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

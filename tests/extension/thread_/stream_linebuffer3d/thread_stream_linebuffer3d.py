@@ -20,9 +20,11 @@ def mkLed():
 
     datawidth = 32
     addrwidth = 10
-    saxi_length = 5
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
+
+    saxi_length = 5
     saxi = vthread.AXISLiteRegister(m, 'saxi', clk, rst, datawidth=datawidth, length=saxi_length)
+
     ram_src = vthread.RAM(m, 'ram_src', clk, rst, datawidth, addrwidth)
     ram_dummy_src = vthread.RAM(m, 'ram_dummy_src', clk, rst, datawidth, addrwidth)
     ram_dst = vthread.RAM(m, 'ram_dst', clk, rst, datawidth, addrwidth)
@@ -30,19 +32,25 @@ def mkLed():
     strm = vthread.Stream(m, 'mystream', clk, rst)
     dummy_src = strm.source('dummy_src')
     c = strm.Counter(initval=0, size=4)
-    x = strm.Counter(initval=0, size=8, enable=(c==3))
-    y = strm.Counter(initval=0, size=8, enable=((c==3) & (x==7)))
-    shift_cond = (x&1 == 0) & ((y&1) == 0)
-    rotate_cond1 = (((((x&1) == 0) & ((y&1) == 0)) == 0) & (((x&1) == 0) == 0))
-    rotate_cond2 = (((((x&1) == 0) & ((y&1) == 0)) == 0) & ((x&1) == 0))
+    x = strm.Counter(initval=0, size=8, enable=(c == 3))
+    y = strm.Counter(initval=0, size=8, enable=((c == 3) & (x == 7)))
+
+    shift_cond = (x & 1 == 0) & ((y & 1) == 0)
+    rotate_cond1 = (((((x & 1) == 0) & ((y & 1) == 0)) == 0) & (((x & 1) == 0) == 0))
+    rotate_cond2 = (((((x & 1) == 0) & ((y & 1) == 0)) == 0) & ((x & 1) == 0))
     read_cond = shift_cond
     addrcounter = strm.Counter(initval=0, enable=read_cond)
     src = strm.read_RAM('ram_src', addr=addrcounter, when=read_cond, datawidth=datawidth)
     counter = strm.Counter(initval=0)
     width = strm.constant('width')
     height = strm.constant('height')
-    linebuf = strm.LineBuffer(shape=(1, 1, 1), memlens=[4, 13], head_initvals=[0, 0], tail_initvals=[3, 12], data=src, shift_cond=shift_cond, rotate_conds=[rotate_cond1, rotate_cond2])
+
+    linebuf = strm.LineBuffer(shape=(1, 1, 1), memlens=[4, 13],
+                              head_initvals=[0, 0], tail_initvals=[3, 12],
+                              data=src, shift_cond=shift_cond,
+                              rotate_conds=[rotate_cond1, rotate_cond2])
     dst = linebuf.get_window(0)
+
     strm.sink(dst, 'dst')
 
     def comp_stream(channel, width, height, offset):
@@ -55,15 +63,15 @@ def mkLed():
         strm.join()
 
     def comp_sequential(channel, width, height, roffset, woffset):
-        for yy in range(height*2):
-            for xx in range(width*2):
+        for yy in range(height * 2):
+            for xx in range(width * 2):
                 for c in range(channel):
                     # f(c, x, y) = in(c, x/2, y/2);
-                    src_i = (xx//2) * channel + (yy//2) * width * channel + c
+                    src_i = (xx // 2) * channel + (yy // 2) * width * channel + c
                     dst_i = xx * channel + yy * width * 2 * channel + c
                     val = ram_src.read(roffset + src_i)
                     ram_dst.write(woffset + dst_i, val)
-            
+
     def check(offset_stream, offset_seq, size):
         all_ok = True
         for i in range(size):
@@ -71,7 +79,6 @@ def mkLed():
             sq = ram_dst.read(offset_seq + i)
             if vthread.verilog.NotEql(st, sq):
                 all_ok = False
-            # print(st, sq)
         if all_ok:
             print('# verify: PASSED')
         else:
@@ -96,14 +103,14 @@ def mkLed():
         woffset = outsize
         myaxi.dma_read(ram_src, roffset, 0, insize)
         comp_sequential(channel, width, height, roffset, woffset)
-        myaxi.dma_write(ram_dst, woffset, 2*1024, outsize)
+        myaxi.dma_write(ram_dst, woffset, 2 * 1024, outsize)
 
         check(0, woffset, outsize)
         saxi.write(addr=1, value=1)
 
     th = vthread.Thread(m, 'th_comp', clk, rst, comp)
     fsm = th.start()
-    strm.draw_graph(filename='strm.png')
+
     return m
 
 
@@ -153,7 +160,7 @@ def mkTest(memimg_name=None):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    #simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

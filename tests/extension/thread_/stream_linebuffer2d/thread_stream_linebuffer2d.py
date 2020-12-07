@@ -20,9 +20,11 @@ def mkLed():
 
     datawidth = 32
     addrwidth = 10
-    saxi_length = 4
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
+
+    saxi_length = 4
     saxi = vthread.AXISLiteRegister(m, 'saxi', clk, rst, datawidth=datawidth, length=saxi_length)
+
     ram_src = vthread.RAM(m, 'ram_src', clk, rst, datawidth, addrwidth)
     ram_dummy_src = vthread.RAM(m, 'ram_dummy_src', clk, rst, datawidth, addrwidth)
     ram_dst = vthread.RAM(m, 'ram_dst', clk, rst, datawidth, addrwidth)
@@ -30,10 +32,10 @@ def mkLed():
     strm = vthread.Stream(m, 'mystream', clk, rst)
     dummy_src = strm.source('dummy_src')
     x = strm.Counter(initval=0, size=8)
-    y = strm.Counter(initval=0, size=8, enable=(x==7))
-    
-    shift_cond = ((x&1 == 0) & (y&1 == 0))
-    rotate_cond = ((shift_cond == 0) & (x&1 == 0))
+    y = strm.Counter(initval=0, size=8, enable=(x == 7))
+
+    shift_cond = ((x & 1 == 0) & (y & 1 == 0))
+    rotate_cond = ((shift_cond == 0) & (x & 1 == 0))
     read_cond = shift_cond
     addrcounter = strm.Counter(initval=0, enable=read_cond)
     src = strm.read_RAM('ram_src', addr=addrcounter, when=read_cond, datawidth=datawidth)
@@ -41,10 +43,13 @@ def mkLed():
     width = strm.constant('width')
     height = strm.constant('height')
 
-    linebuf = strm.LineBuffer(shape=(1, 1), memlens=[4], head_initvals=[0], tail_initvals=[3], data=src, shift_cond=shift_cond, rotate_conds = [rotate_cond])
+    linebuf = strm.LineBuffer(shape=(1, 1), memlens=[4],
+                              head_initvals=[0], tail_initvals=[3],
+                              data=src, shift_cond=shift_cond, rotate_conds=[rotate_cond])
     dst = linebuf.get_window(0)
+
     strm.sink(dst, 'dst')
-    
+
     def comp_stream(width, height, offset):
         strm.set_source('dummy_src', ram_dummy_src, offset, width * height * 2 * 2)
         strm.set_read_RAM('ram_src', ram_src)
@@ -69,7 +74,6 @@ def mkLed():
             sq = ram_dst.read(offset_seq + i)
             if vthread.verilog.NotEql(st, sq):
                 all_ok = False
-            # print(st, sq)
         if all_ok:
             print('# verify: PASSED')
         else:
@@ -102,7 +106,7 @@ def mkLed():
 
     th = vthread.Thread(m, 'th_comp', clk, rst, comp)
     fsm = th.start()
-    strm.draw_graph(filename='strm.png')
+
     return m
 
 
@@ -149,7 +153,7 @@ def mkTest(memimg_name=None):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    #simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
