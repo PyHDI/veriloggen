@@ -3331,7 +3331,8 @@ class RingBuffer(_UnaryOperator):
 
         clk = m._clock
         self.ram = ram.SyncRAM(m, self.name('ram'),
-                               clk, datawidth, addrwidth, self.num_ports)
+                               clk, datawidth, addrwidth, self.num_ports,
+                               with_enable=True)
 
         enabledata = self.enable.sig_data if self.enable is not None else None
 
@@ -3347,7 +3348,7 @@ class RingBuffer(_UnaryOperator):
         seq(waddr(next_waddr), cond=wcond)
 
         wenable = wcond
-        self.ram.connect(0, waddr, wdata, wenable)
+        self.ram.connect(0, waddr, wdata, wenable, wenable)
 
         self.sig_data = wdata
 
@@ -3383,18 +3384,17 @@ class _RingBufferOutput(_BinaryOperator):
         addrwidth = int(ceil(log(self.buf.length, 2)))
         signed = self.get_signed()
 
-        enabledata = self.enable.sig_data if self.enable is not None else None
-
         rdata = m.Wire(self.name('rdata'), datawidth, signed=signed)
 
         diff_latency = self.start_stage - self.buf.start_stage
-        raddr_base = seq.Prev(self.buf.waddr, diff_latency)
+        renable = _and_vars(svalid, senable)
+        raddr_base = seq.Prev(self.buf.waddr, diff_latency, cond=renable)
 
         raddr = raddr_base + self.right.sig_data
         raddr = vtypes.Mux(raddr >= self.buf.length,
                            raddr - self.buf.length, raddr)
 
-        self.buf.ram.connect(self.port, raddr, 0, 0)
+        self.buf.ram.connect(self.port, raddr, 0, 0, renable)
         rdata.assign(self.buf.ram.rdata(self.port))
 
         self.sig_data = rdata
@@ -3441,7 +3441,8 @@ class Scratchpad(_BinaryOperator):
 
         clk = m._clock
         self.ram = ram.SyncRAM(m, self.name('ram'),
-                               clk, datawidth, addrwidth, self.num_ports)
+                               clk, datawidth, addrwidth, self.num_ports,
+                               with_enable=True)
 
         enabledata = self.enable.sig_data if self.enable is not None else None
 
@@ -3452,7 +3453,7 @@ class Scratchpad(_BinaryOperator):
         waddr.assign(self.right.sig_data)
 
         wenable = _and_vars(svalid, senable, enabledata)
-        self.ram.connect(0, waddr, wdata, wenable)
+        self.ram.connect(0, waddr, wdata, wenable, wenable)
 
         self.sig_data = wdata
 
@@ -3482,7 +3483,9 @@ class _ScratchpadOutput(_BinaryOperator):
         raddr = m.Wire(self.name('raddr'), addrwidth)
         raddr.assign(self.right.sig_data)
 
-        self.sp.ram.connect(self.port, raddr, 0, 0)
+        renable = _and_vars(svalid, senable)
+
+        self.sp.ram.connect(self.port, raddr, 0, 0, renable)
         rdata.assign(self.sp.ram.rdata(self.port))
 
         self.sig_data = rdata
