@@ -23,38 +23,35 @@ def mkLed():
     addrwidth = 10
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
 
-    saxi_length = 4
+    saxi_length = 5
     saxi = vthread.AXISLiteRegister(m, 'saxi', clk, rst, datawidth=datawidth, length=saxi_length)
 
     ram_src = vthread.RAM(m, 'ram_src', clk, rst, datawidth, addrwidth)
+    ram_dummy_src = vthread.RAM(m, 'ram_dummy_src', clk, rst, datawidth, addrwidth)
     ram_dst = vthread.RAM(m, 'ram_dst', clk, rst, datawidth, addrwidth)
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
-    src = strm.source('src')
+    dummy_src = strm.source('dummy_src')
+    c = strm.Counter(initval=0, size=4)
+    x = strm.Counter(initval=0, size=8, enable=(c == 3))
+    y = strm.Counter(initval=0, size=8, enable=((c == 3) & (x == 7)))
+
+    shift_cond = (x & 1 == 0) & ((y & 1) == 0)
+    rotate_cond1 = (((((x & 1) == 0) & ((y & 1) == 0)) == 0) & (((x & 1) == 0) == 0))
+    rotate_cond2 = (((((x & 1) == 0) & ((y & 1) == 0)) == 0) & ((x & 1) == 0))
+    read_cond = shift_cond
+    addrcounter = strm.Counter(initval=0, enable=read_cond)
+    src = strm.read_RAM('ram_src', addr=addrcounter, when=read_cond, datawidth=datawidth)
     counter = strm.Counter(initval=0)
     width = strm.constant('width')
     height = strm.constant('height')
 
-    # shift x20
-    # rotate x10
-    # shift, rotate x34
-    shift_cond = strm.Or((counter < 20), ((counter >= 30) & (counter & 1 == 0)))
-    rotate_cond = strm.Or(((counter >= 20) & (counter < 30)),
-                          ((counter >= 30) & (counter & 1 == 1)))
+    linebuf = strm.LineBuffer(shape=(1, 1, 1), memlens=[4, 13],
+                              head_initvals=[0, 0], tail_initvals=[3, 12],
+                              data=src, shift_cond=shift_cond,
+                              rotate_conds=[rotate_cond1, rotate_cond2])
+    dst = linebuf.get_window(0)
 
-    linebuf = strm.LineBuffer(shape=(3, 3), memlens=[4],
-                              data=src, head_initvals=[0], tail_initvals=[3],
-                              shift_cond=shift_cond, rotate_conds=[rotate_cond])
-
-    window = [None] * 9
-    for y in range(3):
-        for x in range(3):
-            window[y * 3 + x] = linebuf.get_window(y * 3 + x)
-
-    # The window register contains an invalid value in the beginning
-    # because the initial value of shift memory is undefined.
-    # Do not output sum until all the window register have valid value.
-    dst = strm.Mux(counter < 20, window[8], strm.AddN(*window))
     strm.sink(dst, 'dst')
 
     # add a stall condition
@@ -66,65 +63,24 @@ def mkLed():
 
     util.add_mux(strm.stream_oready, 1, count == 0)
 
-    # for sequential
-    ram_bufs = [vthread.RAM(m, 'ram_buf' + str(i), clk, rst, datawidth, addrwidth)
-                for i in range(3)]
-
-    def comp_stream(width, height, offset):
-        strm.set_source('src', ram_src, offset, width * height)
-        strm.set_sink('dst', ram_dst, offset, width * height)
+    def comp_stream(channel, width, height, offset):
+        strm.set_source('dummy_src', ram_dummy_src, offset, channel * width * height * 2 * 2)
+        strm.set_read_RAM('ram_src', ram_src)
+        strm.set_sink('dst', ram_dst, offset, channel * width * height * 2 * 2)
         strm.set_constant('width', width)
         strm.set_constant('height', height)
         strm.run()
         strm.join()
 
-    def comp_sequential(width, height, offset):
-        head = 0
-        tail = 3
-        window_0 = window_1 = window_2 = 0
-        window_3 = window_4 = window_5 = 0
-        window_6 = window_7 = window_8 = 0
-
-        for i in range(width * height):
-            src = ram_src.read(offset + i)
-            shift = ((i < 20) or ((i >= 30) and (i & 1 == 0)))
-            rotate = (((i >= 20) and (i < 30)) or ((i >= 30) and (i & 1 == 1)))
-            if shift:
-                ram_bufs[2].write(tail, window_8)
-                window_8 = window_7
-                window_7 = window_6
-                window_6 = ram_bufs[1].read(head)
-                ram_bufs[1].write(tail, window_5)
-                window_5 = window_4
-                window_4 = window_3
-                window_3 = ram_bufs[0].read(head)
-                ram_bufs[0].write(tail, window_2)
-                window_2 = window_1
-                window_1 = window_0
-                window_0 = src
-                head = head + 1 if head < 3 else 0
-                tail = tail + 1 if tail < 3 else 0
-            elif rotate:
-                ram_bufs[2].write(tail, window_8)
-                window_8 = window_7
-                window_7 = window_6
-                window_6 = ram_bufs[2].read(head)
-                ram_bufs[1].write(tail, window_5)
-                window_5 = window_4
-                window_4 = window_3
-                window_3 = ram_bufs[1].read(head)
-                ram_bufs[0].write(tail, window_2)
-                window_2 = window_1
-                window_1 = window_0
-                window_0 = ram_bufs[0].read(head)
-                head = head + 1 if head < 3 else 0
-                tail = tail + 1 if tail < 3 else 0
-            sum = window_0 + window_1 + window_2 + window_3 + \
-                window_4 + window_5 + window_6 + window_7 + window_8
-            if i < 20:
-                ram_dst.write(offset + i, window_0)
-            else:
-                ram_dst.write(offset + i, sum)
+    def comp_sequential(channel, width, height, roffset, woffset):
+        for yy in range(height * 2):
+            for xx in range(width * 2):
+                for c in range(channel):
+                    # f(c, x, y) = in(c, x/2, y/2);
+                    src_i = (xx // 2) * channel + (yy // 2) * width * channel + c
+                    dst_i = xx * channel + yy * width * 2 * channel + c
+                    val = ram_src.read(roffset + src_i)
+                    ram_dst.write(woffset + dst_i, val)
 
     def check(offset_stream, offset_seq, size):
         all_ok = True
@@ -141,21 +97,25 @@ def mkLed():
     def comp():
         saxi.write(addr=1, value=0)
         saxi.wait_flag(0, value=1, resetvalue=0)
-        width = saxi.read(2)
-        height = saxi.read(3)
-        size = width * height
+        channel = saxi.read(2)
+        width = saxi.read(3)
+        height = saxi.read(4)
+        insize = channel * width * height
+        outsize = channel * width * 2 * height * 2
 
-        offset = 0
-        myaxi.dma_read(ram_src, offset, 0, size)
-        comp_stream(width, height, offset)
-        myaxi.dma_write(ram_dst, offset, 1024, size)
+        roffset = 0
+        woffset = 0
+        myaxi.dma_read(ram_src, roffset, 0, insize)
+        comp_stream(channel, width, height, roffset)
+        myaxi.dma_write(ram_dst, woffset, 1024, outsize)
 
-        offset = size
-        myaxi.dma_read(ram_src, offset, 0, size)
-        comp_sequential(width, height, offset)
-        myaxi.dma_write(ram_dst, offset, 2 * 1024, size)
+        roffset = insize
+        woffset = outsize
+        myaxi.dma_read(ram_src, roffset, 0, insize)
+        comp_sequential(channel, width, height, roffset, woffset)
+        myaxi.dma_write(ram_dst, woffset, 2 * 1024, outsize)
 
-        check(0, offset, size)
+        check(0, woffset, outsize)
         saxi.write(addr=1, value=1)
 
     th = vthread.Thread(m, 'th_comp', clk, rst, comp)
@@ -183,12 +143,15 @@ def mkTest(memimg_name=None):
     maxi.connect(ports, 'saxi')
 
     def ctrl():
-        width, height = [8, 8]
+        channel, width, height = [4, 4, 4]
 
         awaddr = 2 * 4
-        maxi.write(awaddr, width)
+        maxi.write(awaddr, channel)
 
         awaddr = 3 * 4
+        maxi.write(awaddr, width)
+
+        awaddr = 4 * 4
         maxi.write(awaddr, height)
 
         awaddr = 0 * 4

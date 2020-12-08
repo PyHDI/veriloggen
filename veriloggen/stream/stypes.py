@@ -3690,7 +3690,6 @@ class LineBuffer(_SpecialOperator):
         self.head_initvals = head_initvals
         self.tail_initvals = tail_initvals
         self.memlens = memlens
-        self._delay_cnt = 0
 
     def _implement(self, m, seq, svalid=None, senable=None):
         width = self.get_width()
@@ -3701,8 +3700,8 @@ class LineBuffer(_SpecialOperator):
 
         for index in window_indices:
             window_index_s = '_'.join(list(map(str, index)))
-            self.windowreg[index] = fx.FixedReg(m, self.name('winreg' + window_index_s),
-                                                width, point, initval=0, signed=signed)
+            self.windowreg[index] = m.Reg(self.name('winreg' + window_index_s),
+                                          width, initval=0, signed=signed)
 
         shiftmemout = [None] * (self.n_dim)
 
@@ -3713,27 +3712,25 @@ class LineBuffer(_SpecialOperator):
             dim_i_mem_indices = itertools.product(*dim_i_rangelist)
             for mem_index in dim_i_mem_indices:
                 mem_index_s = '_'.join(list(map(str, mem_index)))
-                shiftmemout[i][mem_index] = fx.FixedWire(m, self.name('shiftmemout' + mem_index_s),
-                                                         width, point, signed=signed)
+                shiftmemout[i][mem_index] = m.Wire(self.name('shiftmemout' + mem_index_s),
+                                                   width, signed=signed)
 
         arg_data = [arg.sig_data for arg in self.args]
 
         delayed_src = seq.Prev(arg_data[0], 1, cond=senable)
         shift_cond = arg_data[1]
-        delayed_shift_cond = _and_vars(senable, seq.Prev(arg_data[1], 1, cond=senable))
+        delayed_shift_cond = seq.Prev(arg_data[1], 1, cond=senable)
 
         if len(arg_data) == 2:
             delayed_rotate_conds = None
-            delayed_enable = _and_vars(senable, delayed_shift_cond)
-            enable = _and_vars(senable, arg_data[1])
+            delayed_enable = delayed_shift_cond
+            enable = arg_data[1]
             head_tail_enables = [enable] * (self.n_dim - 1)
         else:
             delayed_rotate_conds = [seq.Prev(cond, 1, cond=senable) for cond in arg_data[2:]]
-            delayed_enable = _and_vars(senable,
-                                       (vtypes.OrList(*([delayed_shift_cond] + delayed_rotate_conds))))
-            enable = _and_vars(senable, (vtypes.OrList(*arg_data[1:])))
-            head_tail_enables = [_and_vars(senable,
-                                           (vtypes.OrList(*([shift_cond] + arg_data[2 + i - 1:]))))
+            delayed_enable = vtypes.OrList(*([delayed_shift_cond] + delayed_rotate_conds))
+            enable = vtypes.OrList(*arg_data[1:])
+            head_tail_enables = [vtypes.OrList(*([shift_cond] + arg_data[2 + i - 1:]))
                                  for i in range(1, self.n_dim)]
 
         def increment_index(index):
@@ -3794,21 +3791,22 @@ class LineBuffer(_SpecialOperator):
                 newdata = self.windowreg[prev_index]
 
             # assign window register input
-            seq(mine(newdata), cond=delayed_enable)
+            seq(mine(newdata), cond=_and_vars(senable, delayed_enable))
 
         # head, tail
         heads = [None] * self.n_dim
         tails = [None] * self.n_dim
         for (dim, head_initval, tail_initval, memlen, head_tail_enable) in zip(
                 range(1, self.n_dim), self.head_initvals, self.tail_initvals, self.memlens, head_tail_enables):
-            heads[dim] = fx.FixedReg(m, self.name('head' + str(dim)),
-                                     width, point, initval=head_initval, signed=signed)
-            tails[dim] = fx.FixedReg(m, self.name('tail' + str(dim)),
-                                     width, point, initval=tail_initval, signed=signed)
+            heads[dim] = m.Reg(self.name('head' + str(dim)),
+                               width, initval=head_initval, signed=signed)
+            tails[dim] = m.Reg(self.name('tail' + str(dim)),
+                               width, initval=tail_initval, signed=signed)
             next_head = vtypes.Mux(heads[dim] == memlen - 1, 0, heads[dim] + 1)
             next_tail = vtypes.Mux(tails[dim] == memlen - 1, 0, tails[dim] + 1)
-            seq(heads[dim](next_head), cond=head_tail_enable)
-            seq(tails[dim](next_tail), cond=head_tail_enable)
+
+            seq(heads[dim](next_head), cond=_and_vars(senable, head_tail_enable))
+            seq(tails[dim](next_tail), cond=_and_vars(senable, head_tail_enable))
 
         raddrs = heads
         waddrs = [(seq.Prev(tail, 1, cond=senable) if tail is not None else tail)
@@ -3818,10 +3816,10 @@ class LineBuffer(_SpecialOperator):
         for (mem_dim, raddr_data, waddr_data, memlen) in zip(
                 range(1, self.n_dim), raddrs[1:], waddrs[1:], self.memlens):
             if delayed_rotate_conds is None:
-                wenable = _and_vars(senable, delayed_shift_cond)
+                wenable = delayed_shift_cond
             else:
-                wenable = _and_vars(senable,
-                                    vtypes.OrList(*([delayed_shift_cond] + delayed_rotate_conds[mem_dim - 1:])))
+                wenable = vtypes.OrList(
+                    *([delayed_shift_cond] + delayed_rotate_conds[mem_dim - 1:]))
 
             mem_indices = itertools.product(*[range(d) for d in self.shape[mem_dim:]])
 
@@ -3832,7 +3830,8 @@ class LineBuffer(_SpecialOperator):
                 clk = m._clock
                 shiftmem_name = 'shiftmem_' + '_'.join(list(map(str, mem_index)))
                 shiftmem = ram.SyncRAM(m, self.name(shiftmem_name), clk,
-                                       datawidth, addrwidth, num_ports)
+                                       datawidth, addrwidth, num_ports,
+                                       with_enable=True)
 
                 if mem_dim == 1:
                     window_index = (0, ) + mem_index
@@ -3845,11 +3844,13 @@ class LineBuffer(_SpecialOperator):
                 wdata.assign(wdata_data)
                 waddr = m.Wire(self.name(shiftmem_name + '_waddr'), addrwidth)
                 waddr.assign(waddr_data)
-                shiftmem.connect(0, waddr, wdata, wenable)
+                shiftmem.connect(0, waddr, wdata, wenable, wenable)
+
                 rdata = m.Wire(self.name(shiftmem_name + '_rdata'), datawidth, signed=signed)
                 raddr = m.Wire(self.name(shiftmem_name + '_raddr'), addrwidth)
                 raddr.assign(raddr_data)
-                shiftmem.connect(1, raddr, 0, 0)
+                renable = senable
+                shiftmem.connect(1, raddr, 0, 0, renable)
 
                 # connect shiftmemout wire
                 shiftmemout[mem_dim][mem_index].assign(shiftmem.rdata(1))
