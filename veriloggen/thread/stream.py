@@ -1584,8 +1584,8 @@ class Stream(BaseStream):
         return source_value
 
     def _delay_from_start_to_reduce_reset_off(self, v):
-        start_value = self.seq.Prev(v, 1, cond=self.stream_oready)
-        start_value = self.seq.Prev(start_value, 1, cond=self.stream_oready)
+        initial_reset = self.seq.Prev(v, 1, cond=self.stream_oready)
+        start_value = self.seq.Prev(initial_reset, 1, cond=self.stream_oready)
         first_renable = self.seq.Prev(start_value, 1, cond=self.stream_oready)
         first_rvalid = self.seq.Prev(first_renable, 1, cond=self.stream_oready)
         source_value = vtypes.Ands(first_rvalid, self.stream_oready)
@@ -1606,40 +1606,40 @@ class Stream(BaseStream):
         first_renable = self.seq.Prev(start_value, 1, cond=self.stream_oready)
         first_rvalid = self.seq.Prev(first_renable, 1, cond=self.stream_oready)
         if delay > 0:
-            substream_value = self.seq.Prev(first_rvalid, delay, cond=self.stream_oready)
+            delayed_value = self.seq.Prev(first_rvalid, delay, cond=self.stream_oready)
+            substream_value = vtypes.Ands(delayed_value, self.stream_oready)
         else:
             substream_value = vtypes.Ands(first_rvalid, self.stream_oready)
         return substream_value
 
     def _delay_from_start_to_substream_reduce_reset_off(self, v, delay):
-        start_value = self.seq.Prev(v, 1, cond=self.stream_oready)
-        start_value = self.seq.Prev(start_value, 1, cond=self.stream_oready)
+        initial_reset = self.seq.Prev(v, 1, cond=self.stream_oready)
+        start_value = self.seq.Prev(initial_reset, 1, cond=self.stream_oready)
         first_renable = self.seq.Prev(start_value, 1, cond=self.stream_oready)
         first_rvalid = self.seq.Prev(first_renable, 1, cond=self.stream_oready)
         if delay > 0:
-            substream_value = self.seq.Prev(first_rvalid, delay, cond=self.stream_oready)
+            delayed_value = self.seq.Prev(first_rvalid, delay, cond=self.stream_oready)
+            substream_value = vtypes.Ands(delayed_value, self.stream_oready)
         else:
             substream_value = vtypes.Ands(first_rvalid, self.stream_oready)
         return substream_value
 
     def _delay_from_start_to_substream_ivalid_off(self, v, delay):
         start_value = self.seq.Prev(v, 1, cond=self.stream_oready)
-        first_renable = self.seq.Prev(start_value, 1, cond=self.stream_oready)
-        first_rvalid = self.seq.Prev(first_renable, 1, cond=self.stream_oready)
         if delay > 0:
-            substream_value = self.seq.Prev(first_rvalid, delay, cond=self.stream_oready)
+            delayed_value = self.seq.Prev(start_value, delay, cond=self.stream_oready)
+            substream_value = vtypes.Ands(delayed_value, self.stream_oready)
         else:
-            substream_value = vtypes.Ands(first_rvalid, self.stream_oready)
+            substream_value = vtypes.Ands(start_value, self.stream_oready)
         return substream_value
 
     def _delay_from_start_to_substream_reduce_reset_on(self, v, delay):
         start_value = self.seq.Prev(v, 1, cond=self.stream_oready)
-        first_renable = self.seq.Prev(start_value, 1, cond=self.stream_oready)
-        first_rvalid = self.seq.Prev(first_renable, 1, cond=self.stream_oready)
         if delay > 0:
-            substream_value = self.seq.Prev(first_rvalid, delay, cond=self.stream_oready)
+            delayed_value = self.seq.Prev(start_value, delay, cond=self.stream_oready)
+            substream_value = vtypes.Ands(delayed_value, self.stream_oready)
         else:
-            substream_value = vtypes.Ands(first_rvalid, self.stream_oready)
+            substream_value = vtypes.Ands(start_value, self.stream_oready)
         return substream_value
 
     def _setup_source_ram(self, ram, var, port, set_cond):
@@ -1669,10 +1669,7 @@ class Stream(BaseStream):
         d, v = ram.read_rtl(var.source_ram_raddr, port=port, cond=renable)
 
         d_out = d
-        # v_out = vtypes.Mux(self.seq.Prev(self.stream_oready, 1),
-        #                    v, self.seq.Prev(v, 1, cond=self.stream_oready))
         add_mux(var.source_ram_rdata, ram_cond, d_out)
-        # add_mux(var.source_ram_rvalid, ram_cond, v_out)
 
         if (self.dump and
             (self.dump_mode == 'all' or
@@ -2156,10 +2153,7 @@ class Stream(BaseStream):
         d, v, ready = fifo.deq_rtl(cond=deq)
 
         d_out = d
-        # v_out = vtypes.Mux(self.seq.Prev(self.stream_oready, 1),
-        #                    v, self.seq.Prev(v, 1, cond=self.stream_oready))
         add_mux(var.source_fifo_rdata, fifo_cond, d_out)
-        # add_mux(var.source_fifo_rvalid, fifo_cond, v_out)
 
         # stall control
         cond = vtypes.Ands(self.source_busy, fifo_cond)
@@ -2826,8 +2820,6 @@ class Stream(BaseStream):
         d, v = ram.read_rtl(var.addr, port=port, cond=renable)
 
         d_out = d
-        # v_out = vtypes.Mux(self.seq.Prev(self.stream_oready, 1),
-        #                    v, self.seq.Prev(v, 1, cond=self.stream_oready))
         add_mux(var.read_data, ram_cond, d_out)
 
         if (self.dump and
