@@ -88,6 +88,11 @@ class _Node(object):
             prefix = 'tmp'
         return '_'.join(['', clsname, prefix, str(self.object_id)])
 
+    def name_chain(self):
+        clsname = self.__class__.__name__.lower()
+        mine = '_'.join(['', clsname, str(self.object_id)])
+        return [mine]
+
 
 class _Numeric(_Node):
     latency = 0
@@ -2041,14 +2046,30 @@ class _Delay(_UnaryOperator):
         return self
 
     def name(self, prefix=None):
-        clsname = self.__class__.__name__.lower()
-        if prefix is None:
-            prefix = 'tmp'
+        mine = _Node.name(self, prefix)
+        chain = self.right.name_chain()
 
-        right_name = self.right.name(prefix='')
-        if len(right_name) > self.max_name_length:
-            right_name = right_name[:self.max_name_length]
-        return '_'.join(['', clsname, prefix, str(self.object_id), right_name])
+        name_list = []
+        length = len(mine) + len(chain[-1])
+
+        name_list.append(mine)
+
+        for c in chain[:-1]:
+            if length + len(c) + 2 > self.max_name_length:
+                name_list.append('__')
+                length += 2
+                break
+
+            name_list.append(c)
+            length += len(c)
+
+        name_list.append(chain[-1])
+        return ''.join(name_list)
+
+    def name_chain(self):
+        mine = _Node.name_chain(self)
+        chain = self.right.name_chain()
+        return mine + chain
 
     def _implement(self, m, seq, svalid=None, senable=None):
         if self.latency != 1:
@@ -2087,14 +2108,30 @@ class _Prev(_UnaryOperator):
         return self
 
     def name(self, prefix=None):
-        clsname = self.__class__.__name__.lower()
-        if prefix is None:
-            prefix = 'tmp'
+        mine = _Node.name(self, prefix)
+        chain = self.right.name_chain()
 
-        right_name = self.right.name(prefix='')
-        if len(right_name) > self.max_name_length:
-            right_name = right_name[:self.max_name_length]
-        return '_'.join(['', clsname, prefix, str(self.object_id), right_name])
+        name_list = []
+        length = len(mine) + len(chain[-1])
+
+        name_list.append(mine)
+
+        for c in chain[:-1]:
+            if length + len(c) + 2 > self.max_name_length:
+                name_list.append('__')
+                length += 2
+                break
+
+            name_list.append(c)
+            length += len(c)
+
+        name_list.append(chain[-1])
+        return ''.join(name_list)
+
+    def name_chain(self):
+        mine = _Node.name_chain(self)
+        chain = self.right.name_chain()
+        return mine + chain
 
     def _implement(self, m, seq, svalid=None, senable=None):
         if self.latency != 0:
@@ -2125,14 +2162,30 @@ class Alias(_UnaryOperator):
         self.graph_style = 'filled'
 
     def name(self, prefix=None):
-        clsname = self.__class__.__name__.lower()
-        if prefix is None:
-            prefix = 'tmp'
+        mine = _Node.name(self, prefix)
+        chain = self.right.name_chain()
 
-        right_name = self.right.name(prefix='')
-        if len(right_name) > self.max_name_length:
-            right_name = right_name[:self.max_name_length]
-        return '_'.join(['', clsname, prefix, str(self.object_id), right_name])
+        name_list = []
+        length = len(mine) + len(chain[-1])
+
+        name_list.append(mine)
+
+        for c in chain[:-1]:
+            if length + len(c) + 2 > self.max_name_length:
+                name_list.append('__')
+                length += 2
+                break
+
+            name_list.append(c)
+            length += len(c)
+
+        name_list.append(chain[-1])
+        return ''.join(name_list)
+
+    def name_chain(self):
+        mine = _Node.name_chain(self)
+        chain = self.right.name_chain()
+        return mine + chain
 
 
 class Probe(_UnaryOperator):
@@ -2154,10 +2207,30 @@ class Probe(_UnaryOperator):
         if prefix is None:
             prefix = 'tmp'
 
-        right_name = self.right.name(prefix='')
-        if len(right_name) > self.max_name_length:
-            right_name = right_name[:self.max_name_length]
-        return '_'.join(['', clsname, prefix, self.probe_name, right_name])
+        mine = '_'.join(['', clsname, prefix, self.probe_name])
+        chain = self.right.name_chain()
+
+        name_list = []
+        length = len(mine) + len(chain[-1])
+
+        name_list.append(mine)
+
+        for c in chain[:-1]:
+            if length + len(c) + 2 > self.max_name_length:
+                name_list.append('__')
+                length += 2
+                break
+
+            name_list.append(c)
+            length += len(c)
+
+        name_list.append(chain[-1])
+        return ''.join(name_list)
+
+    def name_chain(self):
+        mine = _Node.name_chain(self)
+        chain = self.right.name_chain()
+        return mine + chain
 
 
 class _PlusN(_SpecialOperator):
