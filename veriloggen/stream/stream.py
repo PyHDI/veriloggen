@@ -583,7 +583,7 @@ class Stream(object):
         prev = self.ivalid
 
         for i in range(self.max_stage):
-            v = self.module.Reg("_{}_{}".format(name, i), initval=0)
+            v = self.module.Reg("_{}_{}".format(name, i + 1), initval=0)
             self.valid_list.append(v)
             seq(v(prev), cond=cond)
             prev = v
