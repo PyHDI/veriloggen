@@ -64,7 +64,7 @@ def mkLed():
         count.inc()
     )
 
-    util.add_mux(strm.stream_oready, 1, count == 0)
+    util.add_cond(strm.stream_oready, 1, count == 0)
 
     # for sequential
     ram_bufs = [vthread.RAM(m, 'ram_buf' + str(i), clk, rst, datawidth, addrwidth)

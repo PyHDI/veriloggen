@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 import sys
 import os
+import functools
 
 # the next line can be removed after installation
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
@@ -10,7 +11,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
 from veriloggen import *
 import veriloggen.thread as vthread
 import veriloggen.types.axi as axi
-import veriloggen.types.util as util
 
 
 def mkLed():
@@ -23,47 +23,51 @@ def mkLed():
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
     ram_a = vthread.RAM(m, 'ram_a', clk, rst, datawidth, addrwidth)
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
+    ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
 
-    ram_ext = vthread.RAM(m, 'ram_ext', clk, rst, datawidth, addrwidth)
+    shape = [16, 4, 8]
+    size = functools.reduce(lambda x, y: x * y, shape, 1)
+    order = [1, 2, 0]
+
+    def to_pattern(shape, order):
+        pattern = []
+        for p in order:
+            size = shape[p]
+            stride = functools.reduce(lambda x, y: x * y,
+                                      shape[p + 1:], 1)
+            pattern.append((size, stride))
+        return pattern
+
+    pattern_a = to_pattern(shape, order)
+    pattern_b = to_pattern(shape, order)
+    pattern_c = to_pattern(shape, order)
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
-
     a = strm.source('a')
-    r_addr = a
+    b = strm.source('b')
+    c = a + b
+    strm.sink(c, 'c')
 
-    r = strm.read_RAM('ext', r_addr)
-    b = r + 100 + r_addr
-
-    strm.sink(b, 'b')
-
-    # add a stall condition
-    count = m.Reg('count', 4, initval=0)
-    seq = Seq(m, 'seq', clk, rst)
-    seq(
-        count.inc()
-    )
-
-    util.add_cond(strm.stream_oready, 1, count == 0)
-
-    def comp_stream(size, offset):
-        strm.set_source('a', ram_a, offset, size)
-        strm.set_sink('b', ram_b, offset, size)
-        strm.set_read_RAM('ext', ram_ext)
+    def comp_stream(offset):
+        strm.set_source_pattern('a', ram_a, offset, pattern_a)
+        strm.set_source_pattern('b', ram_b, offset, pattern_b)
+        strm.set_sink_pattern('c', ram_c, offset, pattern_c)
         strm.run()
         strm.join()
 
-    def comp_sequential(size, offset):
+    def comp_sequential(offset):
+        sum = 0
         for i in range(size):
-            r_addr = ram_a.read(i)
-            r = ram_ext.read(r_addr)
-            b = r + 100 + r_addr
-            ram_b.write(i + offset, b)
+            a = ram_a.read(i + offset)
+            b = ram_b.read(i + offset)
+            sum = a + b
+            ram_c.write(i + offset, sum)
 
-    def check(size, offset_stream, offset_seq):
+    def check(offset_stream, offset_seq):
         all_ok = True
         for i in range(size):
-            st = ram_b.read(i + offset_stream)
-            sq = ram_b.read(i + offset_seq)
+            st = ram_c.read(i + offset_stream)
+            sq = ram_c.read(i + offset_seq)
             if vthread.verilog.NotEql(st, sq):
                 all_ok = False
         if all_ok:
@@ -71,31 +75,30 @@ def mkLed():
         else:
             print('# verify: FAILED')
 
-    def comp(size):
-        for i in range(size):
-            ram_a.write(i, size - i - 1)
-
+    def comp():
         # stream
         offset = 0
-        myaxi.dma_read(ram_ext, offset, 0, size)
-        comp_stream(size, offset)
-        myaxi.dma_write(ram_b, offset, 1024, size)
+        myaxi.dma_read(ram_a, offset, 0, size)
+        myaxi.dma_read(ram_b, offset, 1024 * 4, size)
+        comp_stream(offset)
+        myaxi.dma_write(ram_c, offset, 1024 * 8, size)
 
         # sequential
-        offset = size * 4
-        myaxi.dma_read(ram_ext, offset, 0, size)
-        comp_sequential(size, offset)
-        myaxi.dma_write(ram_b, offset, 1024 * 2, size)
+        offset = size
+        myaxi.dma_read(ram_a, offset, 0, size)
+        myaxi.dma_read(ram_b, offset, 1024 * 4, size)
+        comp_sequential(offset)
+        myaxi.dma_write(ram_c, offset, 1024 * 12, size)
 
         # verification
-        myaxi.dma_read(ram_b, 0, 1024, size)
-        myaxi.dma_read(ram_b, offset, 1024 * 2, size)
-        check(size, 0, offset)
+        myaxi.dma_read(ram_c, 0, 1024 * 8, size)
+        myaxi.dma_read(ram_c, offset, 1024 * 12, size)
+        check(0, offset)
 
         vthread.finish()
 
     th = vthread.Thread(m, 'th_comp', clk, rst, comp)
-    fsm = th.start(32)
+    fsm = th.start()
 
     return m
 
@@ -125,7 +128,7 @@ def mkTest(memimg_name=None):
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
     init.add(
-        Delay(1000000),
+        Delay(400000),
         Systask('finish'),
     )
 

@@ -61,7 +61,7 @@ def mkLed():
         count.inc()
     )
 
-    util.add_mux(strm.stream_oready, 1, count == 0)
+    util.add_cond(strm.stream_oready, 1, count == 0)
 
     def comp_stream(channel, width, height, offset):
         strm.set_source('dummy_src', ram_dummy_src, offset, channel * width * height * 2 * 2)

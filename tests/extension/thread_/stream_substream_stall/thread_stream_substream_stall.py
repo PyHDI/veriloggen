@@ -38,7 +38,7 @@ def mkLed():
         count.inc()
     )
 
-    util.add_mux(mulstrm.stream_oready, 1, count == 0)
+    util.add_cond(mulstrm.stream_oready, 1, count == 0)
 
     macstrm = vthread.Stream(m, 'mac_stream', clk, rst)
     a = macstrm.source('a')
@@ -54,7 +54,7 @@ def mkLed():
     macstrm.sink(sum, 'sum', when=sum_valid, when_name='sum_valid')
 
     # add a stall condition
-    util.add_mux(macstrm.stream_oready, 1, count == 0)
+    util.add_cond(macstrm.stream_oready, 1, count == 0)
 
     actstrm = vthread.Stream(m, 'act_stream', clk, rst)
     a = actstrm.source('a')
@@ -73,7 +73,7 @@ def mkLed():
     actstrm.sink(sum, 'sum', when=sum_valid, when_name='sum_valid')
 
     # add a stall condition
-    util.add_mux(actstrm.stream_oready, 1, count == 0)
+    util.add_cond(actstrm.stream_oready, 1, count == 0)
 
     all_ok = m.TmpReg(initval=0)
 

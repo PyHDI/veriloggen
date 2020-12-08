@@ -22,19 +22,23 @@ def mkLed():
     addrwidth = 10
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
     ram_a = vthread.RAM(m, 'ram_a', clk, rst, datawidth, addrwidth)
-    ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
-
-    ram_ext = vthread.RAM(m, 'ram_ext', clk, rst, datawidth, addrwidth)
+    ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth, numports=2)
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
-
+    numbins = strm.constant('numbins')
+    offset = strm.constant('offset')
     a = strm.source('a')
-    r_addr = a
+    a = strm.Mux(a < 0, 0, a)
+    a.latency = 0
+    a = strm.Mux(a >= numbins, numbins - 1, a)
+    a.latency = 0
 
-    r = strm.read_RAM('ext', r_addr)
-    b = r + 100 + r_addr
-
-    strm.sink(b, 'b')
+    raddr = a + offset
+    raddrs = (raddr,)
+    waddr = raddr
+    op = strm.Add
+    op_args = (1,)
+    strm.read_modify_write_RAM('ext', raddrs, waddr, op, op_args)
 
     # add a stall condition
     count = m.Reg('count', 4, initval=0)
@@ -45,19 +49,28 @@ def mkLed():
 
     util.add_cond(strm.stream_oready, 1, count == 0)
 
-    def comp_stream(size, offset):
+    def comp_stream(numbins, size, offset):
+        for i in range(numbins):
+            ram_b.write(i + offset, 0)
+
+        strm.set_constant('numbins', numbins)
+        strm.set_constant('offset', offset)
         strm.set_source('a', ram_a, offset, size)
-        strm.set_sink('b', ram_b, offset, size)
-        strm.set_read_RAM('ext', ram_ext)
+        strm.set_read_modify_write_RAM('ext', ram_b, read_ports=(0,), write_port=1)
         strm.run()
         strm.join()
 
-    def comp_sequential(size, offset):
+    def comp_sequential(numbins, size, offset):
+        for i in range(numbins):
+            ram_b.write(i + offset, 0)
+
         for i in range(size):
-            r_addr = ram_a.read(i)
-            r = ram_ext.read(r_addr)
-            b = r + 100 + r_addr
-            ram_b.write(i + offset, b)
+            a = ram_a.read(i + offset)
+            a = 0 if a < 0 else a
+            a = numbins - 1 if a >= numbins else a
+            current = ram_b.read(a + offset)
+            updated = current + 1
+            ram_b.write(a + offset, updated)
 
     def check(size, offset_stream, offset_seq):
         all_ok = True
@@ -72,25 +85,24 @@ def mkLed():
             print('# verify: FAILED')
 
     def comp(size):
-        for i in range(size):
-            ram_a.write(i, size - i - 1)
+        numbins = 8
 
         # stream
         offset = 0
-        myaxi.dma_read(ram_ext, offset, 0, size)
-        comp_stream(size, offset)
-        myaxi.dma_write(ram_b, offset, 1024, size)
+        myaxi.dma_read(ram_a, offset, 0, size)
+        comp_stream(numbins, size, offset)
+        myaxi.dma_write(ram_b, offset, 1024, numbins)
 
         # sequential
         offset = size * 4
-        myaxi.dma_read(ram_ext, offset, 0, size)
-        comp_sequential(size, offset)
-        myaxi.dma_write(ram_b, offset, 1024 * 2, size)
+        myaxi.dma_read(ram_a, offset, 0, size * 2)
+        comp_sequential(numbins, size, offset)
+        myaxi.dma_write(ram_b, offset, 1024 * 2, numbins)
 
         # verification
-        myaxi.dma_read(ram_b, 0, 1024, size)
-        myaxi.dma_read(ram_b, offset, 1024 * 2, size)
-        check(size, 0, offset)
+        myaxi.dma_read(ram_b, 0, 1024, numbins)
+        myaxi.dma_read(ram_b, offset, 1024 * 2, numbins)
+        check(numbins, 0, offset)
 
         vthread.finish()
 
