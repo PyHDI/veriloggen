@@ -2024,7 +2024,7 @@ class Sign(_SpecialOperator):
 
 class _Delay(_UnaryOperator):
     latency = 1
-    max_name_length = 256
+    max_name_length = 64
 
     def __init__(self, right):
         _UnaryOperator.__init__(self, right)
@@ -2088,7 +2088,7 @@ class _Delay(_UnaryOperator):
 
 class _Prev(_UnaryOperator):
     latency = 0
-    max_name_length = 256
+    max_name_length = 64
 
     def __init__(self, right):
         _UnaryOperator.__init__(self, right)
@@ -2150,7 +2150,7 @@ class _Prev(_UnaryOperator):
 
 class Alias(_UnaryOperator):
     latency = 0
-    max_name_length = 256
+    max_name_length = 64
 
     def __init__(self, right):
         _UnaryOperator.__init__(self, right)
@@ -2190,7 +2190,7 @@ class Alias(_UnaryOperator):
 
 class Probe(_UnaryOperator):
     latency = 0
-    max_name_length = 256
+    max_name_length = 64
 
     def __init__(self, right, prefix='Probe'):
         _UnaryOperator.__init__(self, right)
