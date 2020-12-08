@@ -61,3 +61,15 @@ def add_mux(targ, cond, value):
             vtypes.Mux(cond, value, prev_value))
         targ.module.remove(prev_assign)
         targ.module.append(prev_assign)
+
+
+def add_cond(targ, cond, value):
+    prev_assign = targ._get_assign()
+    if not prev_assign:
+        targ.assign(vtypes.Mux(cond, value, 1))
+    else:
+        prev_value = prev_assign.statement.right
+        prev_assign.overwrite_right(
+            vtypes.Ands(vtypes.Mux(cond, value, 1), prev_value))
+        targ.module.remove(prev_assign)
+        targ.module.append(prev_assign)
