@@ -234,14 +234,12 @@ class Stream(BaseStream):
                                                  initval=0)
         var.source_ram_rdata = self.module.Wire('_%s_source_ram_rdata' % prefix,
                                                 datawidth)
-        # var.source_ram_rvalid = self.module.Wire('_%s_source_ram_rvalid' % prefix)
 
         # FIFO
         var.source_fifo_deq = self.module.Reg('_%s_source_fifo_deq' % prefix,
                                               initval=0)
         var.source_fifo_rdata = self.module.Wire('_%s_source_fifo_rdata' % prefix,
                                                  datawidth)
-        # var.source_fifo_rvalid = self.module.Wire('_%s_source_fifo_rvalid' % prefix)
 
         # empty
         var.has_source_empty = False
@@ -832,7 +830,6 @@ class Stream(BaseStream):
         )
 
         wdata = var.source_empty_data
-        # wenable = source_start
         wenable = vtypes.Ands(source_start, self.is_root)
         var.write(wdata, wenable)
 
@@ -1772,7 +1769,6 @@ class Stream(BaseStream):
         )
 
         wdata = var.source_ram_rdata
-        # wenable = vtypes.Ands(self.stream_oready, var.source_ram_rvalid)
         wenable = vtypes.Ands(self.stream_oready, self.source_busy, self.is_root)
         var.write(wdata, wenable)
 
@@ -1871,7 +1867,6 @@ class Stream(BaseStream):
             )
 
         wdata = var.source_ram_rdata
-        # wenable = vtypes.Ands(self.stream_oready, var.source_ram_rvalid)
         wenable = vtypes.Ands(self.stream_oready, self.source_busy, self.is_root)
         var.write(wdata, wenable)
 
@@ -1923,7 +1918,7 @@ class Stream(BaseStream):
 
         var.source_pat_fsm.If(fin_cond, self.stream_oready).goto_next()
 
-        self.seq.If(var.source_pat_fsm.here)(
+        self.seq.If(var.source_pat_fsm.here, self.stream_oready)(
             var.source_ram_renable(0)
         )
 
@@ -2035,7 +2030,6 @@ class Stream(BaseStream):
                 )
 
         wdata = var.source_ram_rdata
-        # wenable = vtypes.Ands(self.stream_oready, var.source_ram_rvalid)
         wenable = vtypes.Ands(self.stream_oready, self.source_busy, self.is_root)
         var.write(wdata, wenable)
 
@@ -2116,7 +2110,7 @@ class Stream(BaseStream):
                                    var.source_multipat_num_patterns == 0,
                                    self.stream_oready).goto_next()
 
-        self.seq.If(var.source_multipat_fsm.here)(
+        self.seq.If(var.source_multipat_fsm.here, self.stream_oready)(
             var.source_ram_renable(0)
         )
 
@@ -2181,7 +2175,6 @@ class Stream(BaseStream):
         )
 
         wdata = var.source_fifo_rdata
-        # wenable = vtypes.Ands(self.stream_oready, var.source_fifo_rvalid)
         wenable = vtypes.Ands(self.stream_oready, self.source_busy, self.is_root)
         var.write(wdata, wenable)
 
@@ -2665,7 +2658,7 @@ class Stream(BaseStream):
         var.sink_multipat_fsm.If(fin_cond,
                                  var.sink_multipat_num_patterns == 0,
                                  self.stream_oready).goto_init()
-        var.sink_multipat_fsm.If(self.sink_stop).goto_init()
+        var.sink_multipat_fsm.If(self.sink_stop, self.stream_oready).goto_init()
 
     def _setup_sink_fifo(self, fifo, var, set_cond):
         if fifo._id() in var.sink_id_map:
