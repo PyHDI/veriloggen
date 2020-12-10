@@ -19,30 +19,48 @@ def mkLed():
 
     datawidth = 32
     addrwidth = 10
+
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
-    ram_a = vthread.RAM(m, 'ram_a', clk, rst, datawidth, addrwidth)
+    axi_in = vthread.AXIStreamInFifo(m, 'axi_in', clk, rst, datawidth,
+                                     with_last=True, noio=True)
+    maxi_in = vthread.AXIM_for_AXIStreamIn(axi_in, 'maxi_in')
+
+    axi_out = vthread.AXIStreamOutFifo(m, 'axi_out', clk, rst, datawidth,
+                                       with_last=True, noio=True)
+    maxi_out = vthread.AXIM_for_AXIStreamOut(axi_out, 'maxi_out')
+
+    fifo_addrwidth = 8
+    fifo_a = vthread.FIFO(m, 'fifo_a', clk, rst, datawidth, fifo_addrwidth)
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
+    fifo_c = vthread.FIFO(m, 'fifo_c', clk, rst, datawidth, fifo_addrwidth)
+
+    # for comp_sequential
+    ram_a = vthread.RAM(m, 'ram_a', clk, rst, datawidth, addrwidth)
     ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
 
     strm = vthread.Stream(m, 'mystream', clk, rst,
                           dump=True, dump_base=10, dump_mode='all')
     a = strm.source('a')
     b = strm.source('b')
+    a = a * strm.Int(2)
+    b = b * strm.Int(3)
     c = a + b
     strm.sink(c, 'c')
 
     def comp_stream(size, offset):
-        strm.set_source('a', ram_a, offset, size)
+        strm.set_source_fifo('a', fifo_a, size)
         strm.set_source('b', ram_b, offset, size)
-        strm.set_sink('c', ram_c, offset, size)
+        strm.set_sink_fifo('c', fifo_c, size)
         strm.run()
-        strm.join()
+        # strm.join()
 
     def comp_sequential(size, offset):
         sum = 0
         for i in range(size):
             a = ram_a.read(i + offset)
             b = ram_b.read(i + offset)
+            a = a * 2
+            b = b * 3
             sum = a + b
             ram_c.write(i + offset, sum)
 
@@ -61,15 +79,28 @@ def mkLed():
     def comp(size):
         # stream
         offset = 0
-        myaxi.dma_read(ram_a, offset, 0, size)
-        myaxi.dma_read(ram_b, offset, 512, size)
+
+        # ram_b
+        myaxi.dma_read(ram_b, offset, 0, size)
+
+        # AXI-stream read -> FIFO -> Stream
+        # fifo_a
+        maxi_in.dma_read_async(512, size)
+        axi_in.write_fifo(fifo_a, size)
+
         comp_stream(size, offset)
-        myaxi.dma_write(ram_c, offset, 1024, size)
+
+        # Stream -> FIFO -> AXI-stream write
+        # fifo_c
+        maxi_out.dma_write_async(1024, size)
+        axi_out.read_fifo(fifo_c, size)
+
+        strm.join()
 
         # sequential
         offset = size
-        myaxi.dma_read(ram_a, offset, 0, size)
-        myaxi.dma_read(ram_b, offset, 512, size)
+        myaxi.dma_read(ram_a, offset, 512, size)
+        myaxi.dma_read(ram_b, offset, 0, size)
         comp_sequential(size, offset)
         myaxi.dma_write(ram_c, offset, 1024 * 2, size)
 
@@ -80,7 +111,7 @@ def mkLed():
 
         vthread.finish()
 
-    th = vthread.Thread(m, 'th_comp', clk, rst, comp)
+    th = vthread.Thread(m, 'comp', clk, rst, comp)
     fsm = th.start(32)
 
     return m
@@ -99,8 +130,11 @@ def mkTest(memimg_name=None):
     clk = ports['CLK']
     rst = ports['RST']
 
-    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memimg_name=memimg_name)
-    memory.connect(ports, 'myaxi')
+    memory = axi.AxiMultiportMemoryModel(m, 'memory', clk, rst, numports=3,
+                                         memimg_name=memimg_name)
+    memory.connect(0, ports, 'myaxi')
+    memory.connect(1, ports, 'maxi_in')
+    memory.connect(2, ports, 'maxi_out')
 
     uut = m.Instance(led, 'uut',
                      params=m.connect_params(led),
