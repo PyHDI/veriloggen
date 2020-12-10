@@ -493,7 +493,7 @@ class RAM(_MutexFunction):
 
         # initial state
         fsm.If(ext_cond)(
-            read_addr(addr - stride),
+            read_addr(addr),
             fetch_done(0),
             counter(length)
         )
@@ -510,7 +510,7 @@ class RAM(_MutexFunction):
                 read_addr(read_addr + stride),
                 counter(vtypes.Mux(counter > 0, counter - 1, counter))
             )
-            fsm.Delay(2)(
+            fsm.Delay(1)(
                 n(self.interfaces[port].rdata)
             )
 
@@ -548,7 +548,7 @@ class RAM(_MutexFunction):
                 read_addr(read_addr + stride),
                 counter(vtypes.Mux(counter > 0, counter - 1, counter))
             )
-            fsm.Delay(2)(
+            fsm.Delay(1)(
                 n(self.interfaces[port].rdata)
             )
 
@@ -703,7 +703,7 @@ class RAM(_MutexFunction):
 
         # initial state
         fsm.If(ext_cond)(
-            read_.addr(addr - stride_value),
+            read_.addr(addr),
             prefetch_done(0),
             fetch_done(0)
         )
@@ -743,7 +743,7 @@ class RAM(_MutexFunction):
                 fsm(
                     read_addr(next_addr)
                 )
-                fsm.Delay(2)(
+                fsm.Delay(1)(
                     n(self.interfaces[port].rdata)
                 )
 
@@ -824,7 +824,7 @@ class RAM(_MutexFunction):
                 fsm(
                     read_addr(next_addr)
                 )
-                fsm.Delay(2)(
+                fsm.Delay(1)(
                     n(self.interfaces[port].rdata)
                 )
 
@@ -933,9 +933,9 @@ class RAM(_MutexFunction):
             order = list(reversed(range(len(shape))))
 
         pattern = self._to_pattern(shape, order)
-        return self.read_dataflow_pattern(port, addr, pattern,
-                                          reuse_size, num_outputs,
-                                          cond=cond, point=point, signed=signed)
+        return self.read_dataflow_reuse_pattern(port, addr, pattern,
+                                                reuse_size, num_outputs,
+                                                cond=cond, point=point, signed=signed)
 
     def write_dataflow(self, port, addr, data, length=1,
                        stride=1, cond=None, when=None):
