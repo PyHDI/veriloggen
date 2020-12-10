@@ -1729,9 +1729,9 @@ class Stream(BaseStream):
                               (self.object_id, name))
         dump_ram_step = self.module.Reg(dump_ram_step_name, 32, initval=0)
 
-        enable = self.seq.Prev(read_enable, 2, cond=self.stream_oready)
+        enable = self.seq.Prev(read_enable, 1, cond=self.stream_oready)
         age = dump_ram_step
-        addr = self.seq.Prev(var.source_ram_raddr, 2, cond=self.stream_oready)
+        addr = self.seq.Prev(var.source_ram_raddr, 1, cond=self.stream_oready)
         if hasattr(ram, 'point') and ram.point > 0:
             data = vtypes.Div(vtypes.SystemTask('itor', read_data),
                               1.0 * (2 ** ram.point))
@@ -2159,8 +2159,73 @@ class Stream(BaseStream):
              self.dump_mode == 'fifo' or
              (self.dump_mode == 'selective' and
                  hasattr(fifo, 'dump') and fifo.dump))):
-            # self._setup_source_fifo_dump(fifo, var, deq, d)
-            raise NotImplementedError()
+            self._setup_source_fifo_dump(fifo, var, deq, d)
+
+    def _setup_source_fifo_dump(self, fifo, var, deq, read_data):
+        pipeline_depth = self.pipeline_depth()
+        log_pipeline_depth = max(
+            int(math.ceil(math.log(max(pipeline_depth, 10), 10))), 1)
+
+        data_base = (fifo.dump_data_base if hasattr(fifo, 'dump_data_base') else
+                     self.dump_base)
+        data_base_char = ('b' if data_base == 2 else
+                          'o' if data_base == 8 else
+                          'd' if (data_base == 10 and
+                                  (not hasattr(fifo, 'point') or fifo.point <= 0)) else
+                          # 'f' if (data_base == 10 and
+                          #        hasattr(fifo, 'point') and fifo.point > 0) else
+                          'g' if (data_base == 10 and
+                                  hasattr(fifo, 'point') and fifo.point > 0) else
+                          'x')
+        data_prefix = ('0b' if data_base == 2 else
+                       '0o' if data_base == 8 else
+                       '  ' if data_base == 10 else
+                       '0x')
+        # if data_base_char == 'f':
+        #    point_len = int(math.ceil(fifo.point / math.log(10, 2)))
+        #    point_len = max(point_len, 8)
+        #    total_len = int(math.ceil(fifo.datawidth / math.log(10, 2)))
+        #    total_len = max(total_len, point_len)
+        #    data_vfmt = ''.join([data_prefix, '%',
+        #                         '%d.%d' % (total_len + 1, point_len),
+        #                         data_base_char])
+        # else:
+        #    data_vfmt = ''.join([data_prefix, '%', data_base_char])
+        data_vfmt = ''.join([data_prefix, '%', data_base_char])
+
+        name = fifo.name
+        fmt = ''.join(['(', self.name, ' step:%d, ',
+                       'read, ', ' ' * (log_pipeline_depth + 2),
+                       'age:%d) ', name,
+                       ' = ', data_vfmt])
+
+        dump_fifo_step_name = ('_stream_dump_fifo_step_%d_%s' %
+                              (self.object_id, name))
+        dump_fifo_step = self.module.Reg(dump_fifo_step_name, 32, initval=0)
+
+        enable = self.seq.Prev(deq, 1, cond=self.stream_oready)
+        age = dump_fifo_step
+        if hasattr(fifo, 'point') and fifo.point > 0:
+            data = vtypes.Div(vtypes.SystemTask('itor', read_data),
+                              1.0 * (2 ** fifo.point))
+        elif hasattr(fifo, 'point') and fifo.point < 0:
+            data = vtypes.Times(read_data, 2 ** -fifo.point)
+        else:
+            data = read_data
+
+        self.seq(
+            dump_fifo_step(0)
+        )
+        self.seq.If(enable)(
+            dump_fifo_step.inc()
+        )
+        self.seq.If(self.dump_enable)(
+            dump_fifo_step.inc()
+        )
+
+        self.seq.If(enable, vtypes.Not(self.dump_mask))(
+            vtypes.Display(fmt, dump_fifo_step, age, data)
+        )
 
     def _synthesize_set_source_fifo(self, var, name):
         if var.source_fsm is not None:
@@ -2695,8 +2760,59 @@ class Stream(BaseStream):
              self.dump_mode == 'fifo' or
              (self.dump_mode == 'selective' and
                  hasattr(fifo, 'dump') and fifo.dump))):
-            # self._setup_sink_fifo_dump(fifo, var, wenable)
-            raise NotImplementedError()
+            self._setup_sink_fifo_dump(fifo, var, enq)
+
+    def _setup_sink_fifo_dump(self, fifo, var, enq):
+        pipeline_depth = self.pipeline_depth()
+        log_pipeline_depth = max(
+            int(math.ceil(math.log(max(pipeline_depth, 10), 10))), 1)
+
+        data_base = (fifo.dump_data_base if hasattr(fifo, 'dump_data_base') else
+                     self.dump_base)
+        data_base_char = ('b' if data_base == 2 else
+                          'o' if data_base == 8 else
+                          'd' if (data_base == 10 and
+                                  (not hasattr(fifo, 'point') or fifo.point <= 0)) else
+                          # 'f' if (data_base == 10 and
+                          #        hasattr(fifo, 'point') and fifo.point > 0) else
+                          'g' if (data_base == 10 and
+                                  hasattr(fifo, 'point') and fifo.point > 0) else
+                          'x')
+        data_prefix = ('0b' if data_base == 2 else
+                       '0o' if data_base == 8 else
+                       '  ' if data_base == 10 else
+                       '0x')
+        # if data_base_char == 'f':
+        #    point_len = int(math.ceil(fifo.point / math.log(10, 2)))
+        #    point_len = max(point_len, 8)
+        #    total_len = int(math.ceil(fifo.datawidth / math.log(10, 2)))
+        #    total_len = max(total_len, point_len)
+        #    data_vfmt = ''.join([data_prefix, '%',
+        #                         '%d.%d' % (total_len + 1, point_len),
+        #                         data_base_char])
+        # else:
+        #    data_vfmt = ''.join([data_prefix, '%', data_base_char])
+        data_vfmt = ''.join([data_prefix, '%', data_base_char])
+
+        name = fifo.name
+        fmt = ''.join(['(', self.name, ' step:%d, ',
+                       'write, ', ' ' * (log_pipeline_depth + 1),
+                       'age:%d) ', name,
+                       ' = ', data_vfmt])
+
+        enable = var.sink_fifo_enq
+        age = self.seq.Prev(self.dump_step, pipeline_depth + 1, cond=self.stream_oready) - 1
+        if hasattr(fifo, 'point') and fifo.point > 0:
+            data = vtypes.Div(vtypes.SystemTask('itor', var.sink_fifo_wdata),
+                              1.0 * (2 ** fifo.point))
+        elif hasattr(fifo, 'point') and fifo.point < 0:
+            data = vtypes.Times(var.sink_fifo_wdata, 2 ** -fifo.point)
+        else:
+            data = var.sink_fifo_wdata
+
+        self.seq.If(enable, vtypes.Not(self.dump_mask))(
+            vtypes.Display(fmt, self.dump_step, age, data)
+        )
 
     def _synthesize_set_sink_fifo(self, var, name):
         if var.sink_fsm is not None:
@@ -2876,9 +2992,9 @@ class Stream(BaseStream):
                               (self.object_id, name))
         dump_ram_step = self.module.Reg(dump_ram_step_name, 32, initval=0)
 
-        enable = self.seq.Prev(read_enable, 2, cond=self.stream_oready)
+        enable = self.seq.Prev(read_enable, 1, cond=self.stream_oready)
         age = dump_ram_step
-        addr = self.seq.Prev(var.addr, 2, cond=self.stream_oready)
+        addr = self.seq.Prev(var.addr, 1, cond=self.stream_oready)
         if hasattr(ram, 'point') and ram.point > 0:
             data = vtypes.Div(vtypes.SystemTask('itor', read_data),
                               1.0 * (2 ** ram.point))
