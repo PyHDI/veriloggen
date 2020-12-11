@@ -2805,11 +2805,15 @@ class _Accumulator(_UnaryOperator):
         if len(reset_cond_values) > 0:
             reset_cond.assign(vtypes.Ors(*reset_cond_values))
             if self.size is not None:
-                current_count = vtypes.Mux(reset_cond, 0, count)
+                current_count = m.WireLike(count, name=self.name('current_count'))
+                current_count.assign(vtypes.Mux(reset_cond, 0, count))
             if self.interval is not None:
-                current_interval_count = vtypes.Mux(reset_cond, 0, interval_count)
+                current_interval_count = m.WireLike(
+                    interval_count, name=self.name('current_interval_count'))
+                current_interval_count.assign(vtypes.Mux(reset_cond, 0, interval_count))
 
-            current_data = vtypes.Mux(reset_cond, initval_data, data)
+            current_data = m.WireLike(data, name=self.name('current_data'))
+            current_data.assign(vtypes.Mux(reset_cond, initval_data, data))
 
         else:
             reset_cond.assign(0)
@@ -2997,13 +3001,16 @@ class Counter(_Accumulator):
         reset_cond = m.Wire(self.name('reset_cond'))
         if self.reset is not None:
             reset_cond.assign(resetdata)
-            current_count = vtypes.Mux(reset_cond, initval_data, count)
+            current_count = m.WireLike(count, name=self.name('current_count'))
+            current_count.assign(vtypes.Mux(reset_cond, initval_data, count))
         else:
             reset_cond.assign(0)
             current_count = count
 
         if self.interval is not None:
-            current_interval_count = vtypes.Mux(reset_cond, 0, interval_count)
+            current_interval_count = m.WireLike(
+                interval_count, name=self.name('current_interval_count'))
+            current_interval_count.assign(vtypes.Mux(reset_cond, 0, interval_count))
 
         next_count_value = current_count + step
 
