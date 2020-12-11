@@ -127,7 +127,7 @@ def mkMemcpy():
 
     # connect ports to RAM
     ram_a.connect_rtl(1, sub['addr'], sub['wdata'],
-                      sub['wenable'], sub['rdata'])
+                      sub['wenable'], sub['rdata'], 1)
 
     def control_processing_unit(v):
         size.value = v

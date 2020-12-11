@@ -193,29 +193,43 @@ module main
   assign cdata = _times_data_2;
   reg signed [32-1:0] _plus_data_6;
   reg signed [32-1:0] _plus_data_8;
-  reg signed [32-1:0] __delay_data_20;
+  reg signed [32-1:0] __delay_data_20__variable_5;
   reg signed [32-1:0] __variable_wdata_0;
   assign adata = __variable_wdata_0;
   reg signed [32-1:0] __variable_wdata_1;
   assign bdata = __variable_wdata_1;
-  reg signed [32-1:0] __delay_data_21;
-  reg signed [32-1:0] __delay_data_22;
-  reg signed [32-1:0] __delay_data_23;
-  reg signed [32-1:0] __delay_data_24;
-  reg signed [32-1:0] __delay_data_25;
-  reg signed [32-1:0] __delay_data_26;
-  reg signed [32-1:0] __delay_data_27;
-  reg signed [32-1:0] __delay_data_28;
+  reg signed [32-1:0] __delay_data_21__delay_20__variable_5;
+  reg signed [32-1:0] __delay_data_22__delay_21__delay_20__variable_5;
+  reg signed [32-1:0] __delay_data_23__delay_22__delay_21__delay_20__variable_5;
+  reg signed [32-1:0] __delay_data_24__delay_23__delay_22__delay_21____variable_5;
+  reg signed [32-1:0] __delay_data_25__delay_24__delay_23__delay_22____variable_5;
+  reg signed [32-1:0] __delay_data_26__delay_25__delay_24__delay_23____variable_5;
+  reg signed [32-1:0] __delay_data_27__delay_26__delay_25__delay_24____variable_5;
+  reg signed [32-1:0] __delay_data_28__delay_27__delay_26__delay_25____variable_5;
   reg signed [32-1:0] __substreamoutput_data_11;
-  reg signed [32-1:0] __delay_data_29;
+  reg signed [32-1:0] __delay_data_29__delay_28__delay_27__delay_26____variable_5;
   reg signed [32-1:0] _reduceadd_data_14;
   reg [6-1:0] _reduceadd_count_14;
+  reg _reduceadd_prev_count_max_14;
+  wire _reduceadd_reset_cond_14;
+  assign _reduceadd_reset_cond_14 = _reduceadd_prev_count_max_14;
+  wire [6-1:0] _reduceadd_current_count_14;
+  assign _reduceadd_current_count_14 = (_reduceadd_reset_cond_14)? 0 : _reduceadd_count_14;
+  wire signed [32-1:0] _reduceadd_current_data_14;
+  assign _reduceadd_current_data_14 = (_reduceadd_reset_cond_14)? 1'sd0 : _reduceadd_data_14;
   reg [1-1:0] _pulse_data_17;
   reg [6-1:0] _pulse_count_17;
+  reg _pulse_prev_count_max_17;
+  wire _pulse_reset_cond_17;
+  assign _pulse_reset_cond_17 = _pulse_prev_count_max_17;
+  wire [6-1:0] _pulse_current_count_17;
+  assign _pulse_current_count_17 = (_pulse_reset_cond_17)? 0 : _pulse_count_17;
+  wire [1-1:0] _pulse_current_data_17;
+  assign _pulse_current_data_17 = (_pulse_reset_cond_17)? 1'sd0 : _pulse_data_17;
   reg signed [32-1:0] _plus_data_18;
-  reg [1-1:0] __delay_data_30;
+  reg [1-1:0] __delay_data_30_pulse_17;
   assign zdata = _plus_data_18;
-  assign vdata = __delay_data_30;
+  assign vdata = __delay_data_30_pulse_17;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -234,57 +248,59 @@ module main
     if(RST) begin
       _plus_data_6 <= 0;
       _plus_data_8 <= 0;
-      __delay_data_20 <= 0;
-      __delay_data_21 <= 0;
-      __delay_data_22 <= 0;
-      __delay_data_23 <= 0;
-      __delay_data_24 <= 0;
-      __delay_data_25 <= 0;
-      __delay_data_26 <= 0;
-      __delay_data_27 <= 0;
-      __delay_data_28 <= 0;
+      __delay_data_20__variable_5 <= 0;
+      __delay_data_21__delay_20__variable_5 <= 0;
+      __delay_data_22__delay_21__delay_20__variable_5 <= 0;
+      __delay_data_23__delay_22__delay_21__delay_20__variable_5 <= 0;
+      __delay_data_24__delay_23__delay_22__delay_21____variable_5 <= 0;
+      __delay_data_25__delay_24__delay_23__delay_22____variable_5 <= 0;
+      __delay_data_26__delay_25__delay_24__delay_23____variable_5 <= 0;
+      __delay_data_27__delay_26__delay_25__delay_24____variable_5 <= 0;
+      __delay_data_28__delay_27__delay_26__delay_25____variable_5 <= 0;
       __substreamoutput_data_11 <= 0;
-      __delay_data_29 <= 0;
+      __delay_data_29__delay_28__delay_27__delay_26____variable_5 <= 0;
       _reduceadd_data_14 <= 1'sd0;
       _reduceadd_count_14 <= 0;
+      _reduceadd_prev_count_max_14 <= 0;
       _pulse_data_17 <= 1'sd0;
       _pulse_count_17 <= 0;
+      _pulse_prev_count_max_17 <= 0;
       _plus_data_18 <= 0;
-      __delay_data_30 <= 0;
+      __delay_data_30_pulse_17 <= 0;
     end else begin
       _plus_data_6 <= xdata + 2'sd1;
       _plus_data_8 <= ydata + 3'sd2;
-      __delay_data_20 <= edata;
-      __delay_data_21 <= __delay_data_20;
-      __delay_data_22 <= __delay_data_21;
-      __delay_data_23 <= __delay_data_22;
-      __delay_data_24 <= __delay_data_23;
-      __delay_data_25 <= __delay_data_24;
-      __delay_data_26 <= __delay_data_25;
-      __delay_data_27 <= __delay_data_26;
-      __delay_data_28 <= __delay_data_27;
+      __delay_data_20__variable_5 <= edata;
+      __delay_data_21__delay_20__variable_5 <= __delay_data_20__variable_5;
+      __delay_data_22__delay_21__delay_20__variable_5 <= __delay_data_21__delay_20__variable_5;
+      __delay_data_23__delay_22__delay_21__delay_20__variable_5 <= __delay_data_22__delay_21__delay_20__variable_5;
+      __delay_data_24__delay_23__delay_22__delay_21____variable_5 <= __delay_data_23__delay_22__delay_21__delay_20__variable_5;
+      __delay_data_25__delay_24__delay_23__delay_22____variable_5 <= __delay_data_24__delay_23__delay_22__delay_21____variable_5;
+      __delay_data_26__delay_25__delay_24__delay_23____variable_5 <= __delay_data_25__delay_24__delay_23__delay_22____variable_5;
+      __delay_data_27__delay_26__delay_25__delay_24____variable_5 <= __delay_data_26__delay_25__delay_24__delay_23____variable_5;
+      __delay_data_28__delay_27__delay_26__delay_25____variable_5 <= __delay_data_27__delay_26__delay_25__delay_24____variable_5;
       __substreamoutput_data_11 <= cdata;
-      __delay_data_29 <= __delay_data_28;
-      if(__delay_data_29) begin
-        _reduceadd_data_14 <= _reduceadd_data_14 + __substreamoutput_data_11;
+      __delay_data_29__delay_28__delay_27__delay_26____variable_5 <= __delay_data_28__delay_27__delay_26__delay_25____variable_5;
+      if(__delay_data_29__delay_28__delay_27__delay_26____variable_5) begin
+        _reduceadd_data_14 <= _reduceadd_current_data_14 + __substreamoutput_data_11;
       end 
-      if(__delay_data_29) begin
-        _reduceadd_count_14 <= (_reduceadd_count_14 >= 5'sd8 - 1)? 0 : _reduceadd_count_14 + 1;
+      if(__delay_data_29__delay_28__delay_27__delay_26____variable_5) begin
+        _reduceadd_count_14 <= (_reduceadd_current_count_14 >= 5'sd8 - 1)? 0 : _reduceadd_current_count_14 + 1;
       end 
-      if(__delay_data_29 && (_reduceadd_count_14 == 0)) begin
-        _reduceadd_data_14 <= 1'sd0 + __substreamoutput_data_11;
+      if(__delay_data_29__delay_28__delay_27__delay_26____variable_5) begin
+        _reduceadd_prev_count_max_14 <= _reduceadd_current_count_14 >= 5'sd8 - 1;
       end 
-      if(__delay_data_29) begin
-        _pulse_data_17 <= _pulse_count_17 >= 5'sd8 - 1;
+      if(__delay_data_29__delay_28__delay_27__delay_26____variable_5) begin
+        _pulse_data_17 <= _pulse_current_count_17 >= 5'sd8 - 1;
       end 
-      if(__delay_data_29) begin
-        _pulse_count_17 <= (_pulse_count_17 >= 5'sd8 - 1)? 0 : _pulse_count_17 + 1;
+      if(__delay_data_29__delay_28__delay_27__delay_26____variable_5) begin
+        _pulse_count_17 <= (_pulse_current_count_17 >= 5'sd8 - 1)? 0 : _pulse_current_count_17 + 1;
       end 
-      if(__delay_data_29 && (_pulse_count_17 == 0)) begin
-        _pulse_data_17 <= _pulse_count_17 >= 5'sd8 - 1;
+      if(__delay_data_29__delay_28__delay_27__delay_26____variable_5) begin
+        _pulse_prev_count_max_17 <= _pulse_current_count_17 >= 5'sd8 - 1;
       end 
       _plus_data_18 <= _reduceadd_data_14 + 11'sd1000;
-      __delay_data_30 <= _pulse_data_17;
+      __delay_data_30_pulse_17 <= _pulse_data_17;
     end
   end
 

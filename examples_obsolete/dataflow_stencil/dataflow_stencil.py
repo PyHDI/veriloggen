@@ -243,7 +243,7 @@ def mkTest(n=16, size=3, datawidth=32, point=16, coe_test=False):
     reset_stmt.append(wdata(0))
     reset_stmt.append(wenable(0))
 
-    simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, reset_stmt, period=100)
 

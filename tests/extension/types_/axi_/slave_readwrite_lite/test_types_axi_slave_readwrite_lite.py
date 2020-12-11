@@ -198,12 +198,6 @@ module test;
 
 
   initial begin
-    $dumpfile("uut.vcd");
-    $dumpvars(0, uut, CLK, RST, sum, myaxi_awaddr, myaxi_awcache, myaxi_awprot, myaxi_awvalid, myaxi_awready, myaxi_wdata, myaxi_wstrb, myaxi_wvalid, myaxi_wready, myaxi_bresp, myaxi_bvalid, myaxi_bready, myaxi_araddr, myaxi_arcache, myaxi_arprot, myaxi_arvalid, myaxi_arready, myaxi_rdata, myaxi_rresp, myaxi_rvalid, myaxi_rready, _axi_awaddr, _axi_awcache, _axi_awprot, _axi_awvalid, _axi_awready, _axi_wdata, _axi_wstrb, _axi_wvalid, _axi_wready, _axi_bresp, _axi_bvalid, _axi_bready, _axi_araddr, _axi_arcache, _axi_arprot, _axi_arvalid, _axi_arready, _axi_rdata, _axi_rresp, _axi_rvalid, _axi_rready, _tmp_0, _tmp_1, _tmp_2, _tmp_3, _tmp_4, _tmp_5, _tmp_6, _tmp_7, _tmp_8, _tmp_9, _tmp_10, _tmp_11, _tmp_12, fsm, rsum, __axi_cond_0_1, __axi_cond_1_1, __axi_cond_2_1, wdata, __axi_cond_3_1, __axi_cond_4_1, __axi_cond_5_1);
-  end
-
-
-  initial begin
     CLK = 0;
     forever begin
       #5 CLK = !CLK;

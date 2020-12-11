@@ -180,6 +180,7 @@ module test;
   reg [33-1:0] _read_count;
   reg [32-1:0] _read_addr;
   reg [33-1:0] _sleep_count;
+  reg [33-1:0] _sub_sleep_count;
   reg [32-1:0] _d1__memory_fsm;
   reg __memory_fsm_cond_100_0_1;
   reg __memory_fsm_cond_200_1_1;
@@ -453,6 +454,7 @@ module test;
     _read_count = 0;
     _read_addr = 0;
     _sleep_count = 0;
+    _sub_sleep_count = 0;
     _d1__memory_fsm = _memory_fsm_init;
     __memory_fsm_cond_100_0_1 = 0;
     __memory_fsm_cond_200_1_1 = 0;
@@ -543,6 +545,7 @@ module test;
       __memory_fsm_cond_211_2_1 <= 0;
       memory_rdata <= 0;
       memory_bvalid <= 0;
+      _sub_sleep_count <= 0;
       _sleep_count <= 0;
     end else begin
       if(memory_bvalid && memory_bready) begin
@@ -551,8 +554,16 @@ module test;
       if(memory_wvalid && memory_wready && memory_wlast) begin
         memory_bvalid <= 1;
       end 
-      _sleep_count <= _sleep_count + 1;
       if(_sleep_count == 3) begin
+        _sub_sleep_count <= _sub_sleep_count + 1;
+      end 
+      if((_sleep_count == 3) && (_sub_sleep_count == 3)) begin
+        _sub_sleep_count <= 0;
+      end 
+      if(_sleep_count < 3) begin
+        _sleep_count <= _sleep_count + 1;
+      end 
+      if((_sub_sleep_count == 3) && (_sleep_count == 3)) begin
         _sleep_count <= 0;
       end 
       _d1__memory_fsm <= _memory_fsm;
@@ -1334,6 +1345,7 @@ module blinkled
   assign ram_a_1_wdata = pe_wdata;
   assign ram_a_1_wenable = pe_wenable;
   assign pe_rdata = ram_a_1_rdata;
+  assign ram_a_1_enable = 1;
   reg [32-1:0] th_memcpy;
   localparam th_memcpy_init = 0;
   reg signed [32-1:0] _th_memcpy_copy_bytes_0;

@@ -176,9 +176,6 @@ module main
   output signed [32-1:0] zdata
 );
 
-  wire _tmp_0;
-  assign _tmp_0 = !ovalid || oready;
-  reg _ivalid_0;
   reg _ivalid_1;
   reg _ivalid_2;
   reg _ivalid_3;
@@ -215,8 +212,9 @@ module main
   reg _ivalid_34;
   reg _ivalid_35;
   reg _ivalid_36;
-  assign ovalid = _ivalid_36;
-  assign iready = _tmp_0;
+  reg _ivalid_37;
+  assign ovalid = _ivalid_37;
+  assign iready = oready;
   reg signed [32-1:0] _divide_div_ldata_2;
   reg signed [32-1:0] _divide_div_rdata_2;
   reg [32-1:0] _divide_div_abs_ldata_2;
@@ -263,7 +261,7 @@ module main
   reg _divide_div_sign_tmp_34_2;
   assign _divide_div_osign_2 = _divide_div_sign_tmp_34_2;
   wire _divide_div_update_2;
-  assign _divide_div_update_2 = _tmp_0;
+  assign _divide_div_update_2 = oready;
 
   Divider
   #(
@@ -284,7 +282,6 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
-      _ivalid_0 <= 0;
       _ivalid_1 <= 0;
       _ivalid_2 <= 0;
       _ivalid_3 <= 0;
@@ -321,6 +318,7 @@ module main
       _ivalid_34 <= 0;
       _ivalid_35 <= 0;
       _ivalid_36 <= 0;
+      _ivalid_37 <= 0;
       _divide_div_ldata_2 <= 0;
       _divide_div_rdata_2 <= 0;
       _divide_div_abs_ldata_2 <= 0;
@@ -362,235 +360,235 @@ module main
       _divide_div_sign_tmp_33_2 <= 0;
       _divide_div_sign_tmp_34_2 <= 0;
     end else begin
-      if(_tmp_0) begin
-        _ivalid_0 <= ivalid;
+      if(oready) begin
+        _ivalid_1 <= ivalid;
       end 
-      if(_tmp_0) begin
-        _ivalid_1 <= _ivalid_0;
-      end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_2 <= _ivalid_1;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_3 <= _ivalid_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_4 <= _ivalid_3;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_5 <= _ivalid_4;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_6 <= _ivalid_5;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_7 <= _ivalid_6;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_8 <= _ivalid_7;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_9 <= _ivalid_8;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_10 <= _ivalid_9;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_11 <= _ivalid_10;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_12 <= _ivalid_11;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_13 <= _ivalid_12;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_14 <= _ivalid_13;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_15 <= _ivalid_14;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_16 <= _ivalid_15;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_17 <= _ivalid_16;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_18 <= _ivalid_17;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_19 <= _ivalid_18;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_20 <= _ivalid_19;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_21 <= _ivalid_20;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_22 <= _ivalid_21;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_23 <= _ivalid_22;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_24 <= _ivalid_23;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_25 <= _ivalid_24;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_26 <= _ivalid_25;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_27 <= _ivalid_26;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_28 <= _ivalid_27;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_29 <= _ivalid_28;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_30 <= _ivalid_29;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_31 <= _ivalid_30;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_32 <= _ivalid_31;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_33 <= _ivalid_32;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_34 <= _ivalid_33;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_35 <= _ivalid_34;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _ivalid_36 <= _ivalid_35;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
+        _ivalid_37 <= _ivalid_36;
+      end 
+      if(oready) begin
         _divide_div_ldata_2 <= xdata;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_rdata_2 <= ydata;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_abs_ldata_2 <= (_divide_div_ldata_2[31] == 0)? _divide_div_ldata_2 : ~_divide_div_ldata_2 + 1;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_abs_rdata_2 <= (_divide_div_rdata_2[31] == 0)? _divide_div_rdata_2 : ~_divide_div_rdata_2 + 1;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_odata_2 <= (_divide_div_osign_2 == 0)? _divide_div_abs_odata_2 : ~_divide_div_abs_odata_2 + 1;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_0_2 <= !((_divide_div_ldata_2[31] == 0) && (_divide_div_rdata_2[31] == 0) || (_divide_div_ldata_2[31] == 1) && (_divide_div_rdata_2[31] == 1));
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_1_2 <= _divide_div_sign_tmp_0_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_2_2 <= _divide_div_sign_tmp_1_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_3_2 <= _divide_div_sign_tmp_2_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_4_2 <= _divide_div_sign_tmp_3_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_5_2 <= _divide_div_sign_tmp_4_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_6_2 <= _divide_div_sign_tmp_5_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_7_2 <= _divide_div_sign_tmp_6_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_8_2 <= _divide_div_sign_tmp_7_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_9_2 <= _divide_div_sign_tmp_8_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_10_2 <= _divide_div_sign_tmp_9_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_11_2 <= _divide_div_sign_tmp_10_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_12_2 <= _divide_div_sign_tmp_11_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_13_2 <= _divide_div_sign_tmp_12_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_14_2 <= _divide_div_sign_tmp_13_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_15_2 <= _divide_div_sign_tmp_14_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_16_2 <= _divide_div_sign_tmp_15_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_17_2 <= _divide_div_sign_tmp_16_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_18_2 <= _divide_div_sign_tmp_17_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_19_2 <= _divide_div_sign_tmp_18_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_20_2 <= _divide_div_sign_tmp_19_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_21_2 <= _divide_div_sign_tmp_20_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_22_2 <= _divide_div_sign_tmp_21_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_23_2 <= _divide_div_sign_tmp_22_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_24_2 <= _divide_div_sign_tmp_23_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_25_2 <= _divide_div_sign_tmp_24_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_26_2 <= _divide_div_sign_tmp_25_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_27_2 <= _divide_div_sign_tmp_26_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_28_2 <= _divide_div_sign_tmp_27_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_29_2 <= _divide_div_sign_tmp_28_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_30_2 <= _divide_div_sign_tmp_29_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_31_2 <= _divide_div_sign_tmp_30_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_32_2 <= _divide_div_sign_tmp_31_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_33_2 <= _divide_div_sign_tmp_32_2;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _divide_div_sign_tmp_34_2 <= _divide_div_sign_tmp_33_2;
       end 
     end
