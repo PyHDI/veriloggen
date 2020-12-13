@@ -35,6 +35,8 @@ def mkLed(numthreads=8):
         print("Thread %d Unlock" % tid)
 
     def blink():
+        all_ok = True
+
         size = 16
         for i in range(size):
             myram.write(i, 0)
@@ -50,6 +52,16 @@ def mkLed(numthreads=8):
             led.value = read_data
             print("result ram[%d] = %d" % (i, read_data))
 
+            expected = i * numthreads + (0 + numthreads - 1) * numthreads // 2
+            if vthread.verilog.NotEql(read_data, expected):
+                all_ok = False
+                print(i, read_data, expected)
+
+        if all_ok:
+            print('# verify: PASSED')
+        else:
+            print('# verify: FAILED')
+
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
     pool = vthread.ThreadPool(m, 'th_myfunc', clk, rst, myfunc, numthreads)
     fsm = th.start()
@@ -57,7 +69,7 @@ def mkLed(numthreads=8):
     return m
 
 
-def mkTest():
+def mkTest(memimg_name=None):
     m = Module('test')
 
     # target instance
@@ -74,12 +86,12 @@ def mkTest():
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
     init.add(
-        #        Delay(10000),
+        # Delay(10000),
         Delay(100000),
         Systask('finish'),
     )
@@ -87,11 +99,26 @@ def mkTest():
     return m
 
 
-if __name__ == '__main__':
-    test = mkTest()
-    verilog = test.to_verilog('tmp.v')
-    print(verilog)
+def run(filename='tmp.v', simtype='iverilog', outputfile=None):
 
-    sim = simulation.Simulator(test)
-    rslt = sim.run()
+    if outputfile is None:
+        outputfile = os.path.splitext(os.path.basename(__file__))[0] + '.out'
+
+    memimg_name = 'memimg_' + outputfile
+
+    test = mkTest(memimg_name=memimg_name)
+
+    if filename is not None:
+        test.to_verilog(filename)
+
+    sim = simulation.Simulator(test, sim=simtype)
+    rslt = sim.run(outputfile=outputfile)
+    lines = rslt.splitlines()
+    if simtype == 'verilator' and lines[-1].startswith('-'):
+        rslt = '\n'.join(lines[:-1])
+    return rslt
+
+
+if __name__ == '__main__':
+    rslt = run(filename='tmp.v')
     print(rslt)

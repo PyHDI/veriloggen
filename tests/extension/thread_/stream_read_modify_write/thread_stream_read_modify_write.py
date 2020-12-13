@@ -90,6 +90,8 @@ def mkLed():
         myaxi.dma_write(ram_b, offset, 1024 * 2, numbins)
 
         # verification
+        myaxi.dma_read(ram_b, 0, 1024, numbins)
+        myaxi.dma_read(ram_b, offset, 1024 * 2, numbins)
         check(numbins, 0, offset)
 
         vthread.finish()

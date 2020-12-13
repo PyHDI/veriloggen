@@ -20,9 +20,11 @@ def mkLed():
 
     datawidth = 32
     addrwidth = 10
-    saxi_length = 4
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
+
+    saxi_length = 4
     saxi = vthread.AXISLiteRegister(m, 'saxi', clk, rst, datawidth=datawidth, length=saxi_length)
+
     ram_src = vthread.RAM(m, 'ram_src', clk, rst, datawidth, addrwidth)
     ram_dst = vthread.RAM(m, 'ram_dst', clk, rst, datawidth, addrwidth)
 
@@ -31,21 +33,32 @@ def mkLed():
     counter = strm.Counter(initval=0)
     width = strm.constant('width')
     height = strm.constant('height')
-    # shift x10
+
+    # shift x20
     # rotate x10
-    # shift, rotate x44
-    shift_cond = strm.Or((counter < 10), ((counter >= 20) & (counter&1 == 0)))
-    rotate_cond = strm.Or(((counter >= 10) & (counter < 20)), ((counter >= 20) & (counter&1 == 1)))
-    linebuf = strm.LineBuffer(shape=(3, 3), memlens=[4],  data=src, head_initvals=[3], tail_initvals=[0],shift_cond=shift_cond, rotate_conds=[rotate_cond])
+    # shift, rotate x34
+    shift_cond = strm.Or((counter < 20), ((counter >= 30) & (counter & 1 == 0)))
+    rotate_cond = strm.Or(((counter >= 20) & (counter < 30)),
+                          ((counter >= 30) & (counter & 1 == 1)))
+
+    linebuf = strm.LineBuffer(shape=(3, 3), memlens=[4],
+                              data=src, head_initvals=[0], tail_initvals=[3],
+                              shift_cond=shift_cond, rotate_conds=[rotate_cond])
+
     window = [None] * 9
     for y in range(3):
         for x in range(3):
             window[y * 3 + x] = linebuf.get_window(y * 3 + x)
-    dst = strm.AddN(*window)
+
+    # The window register contains an invalid value in the beginning
+    # because the initial value of shift memory is undefined.
+    # Do not output sum until all the window register have valid value.
+    dst = strm.Mux(counter < 20, window[8], strm.AddN(*window))
     strm.sink(dst, 'dst')
 
-    #for sequential
-    ram_bufs = [vthread.RAM(m, 'ram_buf' + str(i), clk, rst, datawidth, addrwidth) for i in range(3)]
+    # for sequential
+    ram_bufs = [vthread.RAM(m, 'ram_buf' + str(i), clk, rst, datawidth, addrwidth)
+                for i in range(3)]
 
     def comp_stream(width, height, offset):
         strm.set_source('src', ram_src, offset, width * height)
@@ -56,22 +69,16 @@ def mkLed():
         strm.join()
 
     def comp_sequential(width, height, offset):
-        tail = 0
-        head = 3
+        head = 0
+        tail = 3
         window_0 = window_1 = window_2 = 0
         window_3 = window_4 = window_5 = 0
         window_6 = window_7 = window_8 = 0
 
-        #initialize shift memory
-        for i in range(4):
-            ram_bufs[2].write(i, 0)
-            ram_bufs[1].write(i, 0)
-            ram_bufs[0].write(i, 0)
-
         for i in range(width * height):
             src = ram_src.read(offset + i)
-            shift = ((i < 10) or ((i >= 20) and (i&1 == 0)))
-            rotate = (((i >= 10) and (i < 20)) or ((i >= 20) and (i&1 == 1)))
+            shift = ((i < 20) or ((i >= 30) and (i & 1 == 0)))
+            rotate = (((i >= 20) and (i < 30)) or ((i >= 30) and (i & 1 == 1)))
             if shift:
                 ram_bufs[2].write(tail, window_8)
                 window_8 = window_7
@@ -102,9 +109,13 @@ def mkLed():
                 window_0 = ram_bufs[0].read(head)
                 head = head + 1 if head < 3 else 0
                 tail = tail + 1 if tail < 3 else 0
-            sum = window_0 + window_1 +  window_2 +  window_3 +  window_4 +  window_5 +  window_6 +  window_7 + window_8
-            ram_dst.write(offset + i, sum)
-            
+            sum = window_0 + window_1 + window_2 + window_3 + \
+                window_4 + window_5 + window_6 + window_7 + window_8
+            if i < 20:
+                ram_dst.write(offset + i, window_0)
+            else:
+                ram_dst.write(offset + i, sum)
+
     def check(offset_stream, offset_seq, size):
         all_ok = True
         for i in range(size):
@@ -132,14 +143,14 @@ def mkLed():
         offset = size
         myaxi.dma_read(ram_src, offset, 0, size)
         comp_sequential(width, height, offset)
-        myaxi.dma_write(ram_dst, offset, 2*1024, size)
+        myaxi.dma_write(ram_dst, offset, 2 * 1024, size)
 
         check(0, offset, size)
         saxi.write(addr=1, value=1)
 
     th = vthread.Thread(m, 'th_comp', clk, rst, comp)
     fsm = th.start()
-    strm.draw_graph(filename='strm.png')
+
     return m
 
 
@@ -186,7 +197,7 @@ def mkTest(memimg_name=None):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    #simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

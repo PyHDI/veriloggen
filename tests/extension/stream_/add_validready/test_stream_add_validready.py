@@ -176,23 +176,21 @@ module main
   output signed [32-1:0] zdata
 );
 
-  wire _tmp_0;
-  assign _tmp_0 = !ovalid || oready;
-  reg _ivalid_0;
-  assign ovalid = _ivalid_0;
-  assign iready = _tmp_0;
+  reg _ivalid_1;
+  assign ovalid = _ivalid_1;
+  assign iready = oready;
   reg signed [32-1:0] _plus_data_2;
   assign zdata = _plus_data_2;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _ivalid_0 <= 0;
+      _ivalid_1 <= 0;
       _plus_data_2 <= 0;
     end else begin
-      if(_tmp_0) begin
-        _ivalid_0 <= ivalid;
+      if(oready) begin
+        _ivalid_1 <= ivalid;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _plus_data_2 <= xdata + ydata;
       end 
     end

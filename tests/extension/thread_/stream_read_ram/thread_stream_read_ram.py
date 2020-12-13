@@ -23,7 +23,7 @@ def mkLed():
     ram_a = vthread.RAM(m, 'ram_a', clk, rst, datawidth, addrwidth)
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
 
-    ram_ext = vthread.RAM(m, 'ram_ext', clk, rst, datawidth, addrwidth, numports=2)
+    ram_ext = vthread.RAM(m, 'ram_ext', clk, rst, datawidth, addrwidth)
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
 
@@ -31,7 +31,7 @@ def mkLed():
     r_addr = a
 
     r = strm.read_RAM('ext', r_addr)
-    b = r + 100
+    b = r + 100 + r_addr
 
     strm.sink(b, 'b')
 
@@ -46,7 +46,7 @@ def mkLed():
         for i in range(size):
             r_addr = ram_a.read(i)
             r = ram_ext.read(r_addr)
-            b = r + 100
+            b = r + 100 + r_addr
             ram_b.write(i + offset, b)
 
     def check(size, offset_stream, offset_seq):
@@ -78,6 +78,8 @@ def mkLed():
         myaxi.dma_write(ram_b, offset, 1024 * 2, size)
 
         # verification
+        myaxi.dma_read(ram_b, 0, 1024, size)
+        myaxi.dma_read(ram_b, offset, 1024 * 2, size)
         check(size, 0, offset)
 
         vthread.finish()
@@ -108,7 +110,7 @@ def mkTest(memimg_name=None):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    #simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

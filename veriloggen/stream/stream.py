@@ -553,29 +553,27 @@ class Stream(object):
         self.valid_list = None
 
         if self.ivalid is None and self.oready is None:
+            self.senable = None
             if self.ovalid is not None:
                 self.ovalid.assign(1)
             if self.iready is not None:
                 self.iready.assign(1)
-            self.senable = None
-            return
-
-        if self.oready is None:
-            self._make_valid_chain(seq)
-            self.senable = None
             return
 
         if self.ivalid is None:
-            self.iready.assign(self.oready)
             self.senable = self.oready
+            if self.iready is not None:
+                self.iready.assign(self.senable)
             return
 
-        cond = vtypes.OrList(vtypes.Not(self.ovalid), self.oready)
-        self.senable = self.module.TmpWire()
-        self.senable.assign(cond)
+        if self.oready is None:
+            self.senable = None
+        else:
+            self.senable = self.oready
 
         self._make_valid_chain(seq, self.senable)
-        self.iready.assign(self.senable)
+        if self.iready is not None:
+            self.iready.assign(self.senable)
 
     def _make_valid_chain(self, seq, cond=None):
         self.valid_list = []
@@ -585,7 +583,7 @@ class Stream(object):
         prev = self.ivalid
 
         for i in range(self.max_stage):
-            v = self.module.Reg("_{}_{}".format(name, i), initval=0)
+            v = self.module.Reg("_{}_{}".format(name, i + 1), initval=0)
             self.valid_list.append(v)
             seq(v(prev), cond=cond)
             prev = v

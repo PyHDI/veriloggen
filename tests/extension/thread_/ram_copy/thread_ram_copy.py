@@ -18,25 +18,39 @@ def mkLed():
 
     datawidth = 32
     addrwidth = 10
-    
+
     ram0 = vthread.RAM(m, 'ram0', clk, rst, datawidth, addrwidth)
     ram1 = vthread.RAM(m, 'ram1', clk, rst, datawidth, addrwidth)
 
     def blink(times):
+        all_ok = True
+
+        write_sum = 0
         for i in range(times):
             wdata = i
             ram0.write(i, wdata)
+            write_sum += wdata
             print('wdata = %d' % wdata)
 
         vthread.copy(ram0, ram1, 0, 0, times)
 
-        sum = 0
+        read_sum = 0
         for i in range(times):
             rdata = ram1.read(i)
-            sum += rdata
+            read_sum += rdata
             print('rdata = %d' % rdata)
+            if vthread.verilog.NotEql(rdata, i):
+                all_ok = False
 
-        print('sum = %d' % sum)
+        print('read_sum = %d' % read_sum)
+
+        if vthread.verilog.NotEql(read_sum, write_sum):
+            all_ok = False
+
+        if all_ok:
+            print('# verify: PASSED')
+        else:
+            print('# verify: FAILED')
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
     fsm = th.start(10)
@@ -44,7 +58,7 @@ def mkLed():
     return m
 
 
-def mkTest():
+def mkTest(memimg_name=None):
     m = Module('test')
 
     # target instance
@@ -73,11 +87,26 @@ def mkTest():
     return m
 
 
-if __name__ == '__main__':
-    test = mkTest()
-    verilog = test.to_verilog('tmp.v')
-    print(verilog)
+def run(filename='tmp.v', simtype='iverilog', outputfile=None):
 
-    sim = simulation.Simulator(test)
-    rslt = sim.run()
+    if outputfile is None:
+        outputfile = os.path.splitext(os.path.basename(__file__))[0] + '.out'
+
+    memimg_name = 'memimg_' + outputfile
+
+    test = mkTest(memimg_name=memimg_name)
+
+    if filename is not None:
+        test.to_verilog(filename)
+
+    sim = simulation.Simulator(test, sim=simtype)
+    rslt = sim.run(outputfile=outputfile)
+    lines = rslt.splitlines()
+    if simtype == 'verilator' and lines[-1].startswith('-'):
+        rslt = '\n'.join(lines[:-1])
+    return rslt
+
+
+if __name__ == '__main__':
+    rslt = run(filename='tmp.v')
     print(rslt)

@@ -27,10 +27,17 @@ def mkLed():
 
     patterns = (((8, 1), (2, 8)),  # pattern 1
                 ((8, 2), (2, 16)))  # pattern 2
-    offsets = (0, 16)
-    sizes = (16, 16)
-    strides = (1, 2)
-    dma_size = 48
+
+    sizes = [functools.reduce(lambda x, y: x * y, [pat[0] for pat in pattern], 1)
+             for pattern in patterns]
+    strides = [pattern[0][1] for pattern in patterns]
+    offsets = [0]
+    i = 0
+    for size, stride in zip(sizes[:-1], strides[:-1]):
+        offsets.append(offsets[i] + size * stride)
+        i += 1
+    dma_size = functools.reduce(lambda x, y: x + y,
+                                [size * stride for size, stride in zip(sizes, strides)])
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
     a = strm.source('a')
@@ -46,27 +53,36 @@ def mkLed():
         strm.join()
 
     def comp_sequential(global_offset):
-        for i in range(sizes[0], strides[0]):
-            a = ram_a.read(i + offsets[0] + global_offset)
-            b = ram_b.read(i + offsets[0] + global_offset)
+        addr = 0
+        for i in range(sizes[0]):
+            a = ram_a.read(addr + offsets[0] + global_offset)
+            b = ram_b.read(addr + offsets[0] + global_offset)
             sum = a + b
-            ram_c.write(i + offsets[0] + global_offset, sum)
-        for i in range(sizes[1], strides[1]):
-            a = ram_a.read(i + offsets[1] + global_offset)
-            b = ram_b.read(i + offsets[1] + global_offset)
-            sum = a + b
-            ram_c.write(i + offsets[1] + global_offset, sum)
+            ram_c.write(addr + offsets[0] + global_offset, sum)
+            addr += strides[0]
 
-    def check(bias, offset_stream, offset_seq):
+        addr = 0
+        for i in range(sizes[1]):
+            a = ram_a.read(addr + offsets[1] + global_offset)
+            b = ram_b.read(addr + offsets[1] + global_offset)
+            sum = a + b
+            ram_c.write(addr + offsets[1] + global_offset, sum)
+            addr += strides[1]
+
+    def check(offset_stream, offset_seq):
         all_ok = True
-        for i in range(sizes[0], strides[0]):
-            st = ram_c.read(i + offset_stream + bias)
-            sq = ram_c.read(i + offset_seq + bias)
+        addr = 0
+        for i in range(sizes[0]):
+            st = ram_c.read(addr + offsets[0] + offset_stream)
+            sq = ram_c.read(addr + offsets[0] + offset_seq)
+            addr += strides[0]
             if vthread.verilog.NotEql(st, sq):
                 all_ok = False
-        for i in range(sizes[1], strides[1]):
-            st = ram_c.read(i + offset_stream + bias)
-            sq = ram_c.read(i + offset_seq + bias)
+        addr = 0
+        for i in range(sizes[1]):
+            st = ram_c.read(addr + offsets[1] + offset_stream)
+            sq = ram_c.read(addr + offsets[1] + offset_seq)
+            addr += strides[1]
             if vthread.verilog.NotEql(st, sq):
                 all_ok = False
         if all_ok:
@@ -76,20 +92,21 @@ def mkLed():
 
     def comp():
         # stream
-        myaxi.dma_read(ram_a, offsets[0], 0, dma_size)
-        myaxi.dma_read(ram_b, offsets[0], 0, dma_size)
+        myaxi.dma_read(ram_a, 0, 0, dma_size)
+        myaxi.dma_read(ram_b, 0, 0, dma_size)
         comp_stream()
-        myaxi.dma_write(ram_c, offsets[0], 1024 * 4, 1)
+        myaxi.dma_write(ram_c, 0, 1024 * 8, dma_size)
 
         # sequential
-        bias = dma_size
-        myaxi.dma_read(ram_a, offsets[0], 0, dma_size)
-        myaxi.dma_read(ram_b, offsets[0], 0, dma_size)
-        comp_sequential(bias)
-        myaxi.dma_write(ram_c, offsets[0], 1024 * 8, 1)
+        myaxi.dma_read(ram_a, dma_size, 0, dma_size)
+        myaxi.dma_read(ram_b, dma_size, 0, dma_size)
+        comp_sequential(dma_size)
+        myaxi.dma_write(ram_c, dma_size, 1024 * 12, dma_size)
 
         # verification
-        check(bias, 0, bias)
+        myaxi.dma_read(ram_c, 0, 1024 * 8, dma_size)
+        myaxi.dma_read(ram_c, dma_size, 1024 * 12, dma_size)
+        check(0, dma_size)
 
         vthread.finish()
 
@@ -119,7 +136,7 @@ def mkTest(memimg_name=None):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    #simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

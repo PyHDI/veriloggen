@@ -12,7 +12,7 @@ def test(request):
     simtype = request.config.getoption('--sim')
 
     rslt = thread_stream_linebuffer2d.run(filename=None, simtype=simtype,
-                                    outputfile=os.path.splitext(os.path.basename(__file__))[0] + '.out')
+                                          outputfile=os.path.splitext(os.path.basename(__file__))[0] + '.out')
 
     verify_rslt = rslt.splitlines()[-1]
     assert(verify_rslt == '# verify: PASSED')

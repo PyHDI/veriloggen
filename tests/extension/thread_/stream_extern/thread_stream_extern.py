@@ -78,6 +78,8 @@ def mkLed():
         myaxi.dma_write(ram_b, offset, 1024 * 2, size)
 
         # verification
+        myaxi.dma_read(ram_b, offset, 1024, size)
+        myaxi.dma_read(ram_b, offset, 1024 * 2, size)
         check(size, 0, offset)
 
         vthread.finish()
@@ -113,7 +115,7 @@ def mkTest(memimg_name=None):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    #simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

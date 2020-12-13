@@ -99,6 +99,7 @@ module test
   reg [33-1:0] _read_count;
   reg [32-1:0] _read_addr;
   reg [33-1:0] _sleep_count;
+  reg [33-1:0] _sub_sleep_count;
   reg [32-1:0] _d1__memory_fsm;
   reg __memory_fsm_cond_100_0_1;
   reg __memory_fsm_cond_200_1_1;
@@ -263,6 +264,7 @@ module test
     _read_count = 0;
     _read_addr = 0;
     _sleep_count = 0;
+    _sub_sleep_count = 0;
     _d1__memory_fsm = _memory_fsm_init;
     __memory_fsm_cond_100_0_1 = 0;
     __memory_fsm_cond_200_1_1 = 0;
@@ -337,6 +339,7 @@ module test
       __memory_fsm_cond_211_2_1 <= 0;
       memory_rdata <= 0;
       memory_bvalid <= 0;
+      _sub_sleep_count <= 0;
       _sleep_count <= 0;
     end else begin
       if(memory_bvalid && memory_bready) begin
@@ -345,8 +348,16 @@ module test
       if(memory_wvalid && memory_wready && memory_wlast) begin
         memory_bvalid <= 1;
       end 
-      _sleep_count <= _sleep_count + 1;
       if(_sleep_count == 3) begin
+        _sub_sleep_count <= _sub_sleep_count + 1;
+      end 
+      if((_sleep_count == 3) && (_sub_sleep_count == 3)) begin
+        _sub_sleep_count <= 0;
+      end 
+      if(_sleep_count < 3) begin
+        _sleep_count <= _sleep_count + 1;
+      end 
+      if((_sub_sleep_count == 3) && (_sleep_count == 3)) begin
         _sleep_count <= 0;
       end 
       _d1__memory_fsm <= _memory_fsm;
@@ -580,10 +591,11 @@ module blinkled
 );
 
   reg [32-1:0] timer;
-  reg [10-1:0] ram_a_0_addr;
+  wire [10-1:0] ram_a_0_addr;
   wire [32-1:0] ram_a_0_rdata;
-  reg [32-1:0] ram_a_0_wdata;
-  reg ram_a_0_wenable;
+  wire [32-1:0] ram_a_0_wdata;
+  wire ram_a_0_wenable;
+  wire ram_a_0_enable;
 
   ram_a
   inst_ram_a
@@ -592,13 +604,15 @@ module blinkled
     .ram_a_0_addr(ram_a_0_addr),
     .ram_a_0_rdata(ram_a_0_rdata),
     .ram_a_0_wdata(ram_a_0_wdata),
-    .ram_a_0_wenable(ram_a_0_wenable)
+    .ram_a_0_wenable(ram_a_0_wenable),
+    .ram_a_0_enable(ram_a_0_enable)
   );
 
-  reg [10-1:0] ram_b_0_addr;
+  wire [10-1:0] ram_b_0_addr;
   wire [32-1:0] ram_b_0_rdata;
-  reg [32-1:0] ram_b_0_wdata;
-  reg ram_b_0_wenable;
+  wire [32-1:0] ram_b_0_wdata;
+  wire ram_b_0_wenable;
+  wire ram_b_0_enable;
 
   ram_b
   inst_ram_b
@@ -607,13 +621,15 @@ module blinkled
     .ram_b_0_addr(ram_b_0_addr),
     .ram_b_0_rdata(ram_b_0_rdata),
     .ram_b_0_wdata(ram_b_0_wdata),
-    .ram_b_0_wenable(ram_b_0_wenable)
+    .ram_b_0_wenable(ram_b_0_wenable),
+    .ram_b_0_enable(ram_b_0_enable)
   );
 
-  reg [10-1:0] ram_c_0_addr;
+  wire [10-1:0] ram_c_0_addr;
   wire [32-1:0] ram_c_0_rdata;
-  reg [32-1:0] ram_c_0_wdata;
-  reg ram_c_0_wenable;
+  wire [32-1:0] ram_c_0_wdata;
+  wire ram_c_0_wenable;
+  wire ram_c_0_enable;
 
   ram_c
   inst_ram_c
@@ -622,7 +638,8 @@ module blinkled
     .ram_c_0_addr(ram_c_0_addr),
     .ram_c_0_rdata(ram_c_0_rdata),
     .ram_c_0_wdata(ram_c_0_wdata),
-    .ram_c_0_wenable(ram_c_0_wenable)
+    .ram_c_0_wenable(ram_c_0_wenable),
+    .ram_c_0_enable(ram_c_0_enable)
   );
 
   assign myaxi_awsize = 2;
@@ -691,17 +708,22 @@ module blinkled
   wire _dataflow__variable_ovalid_0;
   wire _dataflow__variable_oready_0;
   assign _dataflow__variable_oready_0 = (_tmp_3 > 0) && !_tmp_4;
+  reg [10-1:0] _tmp_5;
+  reg [32-1:0] _tmp_6;
+  reg _tmp_7;
+  assign ram_a_0_wdata = (_tmp_7)? _tmp_6 : 0;
+  assign ram_a_0_wenable = (_tmp_7)? 1'd1 : 0;
   reg _ram_a_cond_0_1;
-  reg [9-1:0] _tmp_5;
+  reg [9-1:0] _tmp_8;
   reg _myaxi_cond_0_1;
   assign myaxi_rready = _myaxi_read_fsm == 3;
   reg [32-1:0] _d1__myaxi_read_fsm;
   reg __myaxi_read_fsm_cond_3_0_1;
-  reg axim_flag_6;
+  reg axim_flag_9;
   reg __myaxi_read_fsm_cond_4_1_1;
   reg signed [32-1:0] _th_matmul_b_addr_12;
   reg signed [32-1:0] _th_matmul_j_13;
-  reg axim_flag_7;
+  reg axim_flag_10;
   reg _th_matmul_cond_13_1_1;
   reg _myaxi_ram_b_0_read_start;
   reg [8-1:0] _myaxi_ram_b_0_read_op_sel;
@@ -709,32 +731,44 @@ module blinkled
   reg [32-1:0] _myaxi_ram_b_0_read_global_addr;
   reg [33-1:0] _myaxi_ram_b_0_read_size;
   reg [32-1:0] _myaxi_ram_b_0_read_local_stride;
-  reg [32-1:0] _wdata_8;
-  reg _wvalid_9;
-  reg [33-1:0] _tmp_10;
-  reg _tmp_11;
+  reg [32-1:0] _wdata_11;
+  reg _wvalid_12;
+  reg [33-1:0] _tmp_13;
+  reg _tmp_14;
   wire [32-1:0] _dataflow__variable_odata_1;
   wire _dataflow__variable_ovalid_1;
   wire _dataflow__variable_oready_1;
-  assign _dataflow__variable_oready_1 = (_tmp_10 > 0) && !_tmp_11;
+  assign _dataflow__variable_oready_1 = (_tmp_13 > 0) && !_tmp_14;
+  reg [10-1:0] _tmp_15;
+  reg [32-1:0] _tmp_16;
+  reg _tmp_17;
+  assign ram_b_0_wdata = (_tmp_17)? _tmp_16 : 0;
+  assign ram_b_0_wenable = (_tmp_17)? 1'd1 : 0;
   reg _ram_b_cond_0_1;
   reg __myaxi_read_fsm_cond_3_2_1;
   reg signed [32-1:0] _th_matmul_sum_14;
   reg signed [32-1:0] _th_matmul_k_15;
-  reg _tmp_12;
-  reg _ram_a_cond_1_1;
-  reg _ram_a_cond_2_1;
-  reg _ram_a_cond_2_2;
-  reg signed [32-1:0] _tmp_13;
+  assign ram_a_0_addr = (th_matmul == 20)? _th_matmul_k_15 : 
+                        (_tmp_7)? _tmp_5 : 0;
+  assign ram_a_0_enable = (th_matmul == 20)? 1'd1 : 
+                          (_tmp_7)? 1'd1 : 0;
+  localparam _tmp_18 = 1;
+  wire [_tmp_18-1:0] _tmp_19;
+  assign _tmp_19 = th_matmul == 20;
+  reg [_tmp_18-1:0] __tmp_19_1;
+  reg signed [32-1:0] _tmp_20;
   reg signed [32-1:0] _th_matmul_x_16;
-  reg _tmp_14;
-  reg _ram_b_cond_1_1;
-  reg _ram_b_cond_2_1;
-  reg _ram_b_cond_2_2;
-  reg signed [32-1:0] _tmp_15;
+  assign ram_b_0_addr = (th_matmul == 22)? _th_matmul_k_15 : 
+                        (_tmp_17)? _tmp_15 : 0;
+  assign ram_b_0_enable = (th_matmul == 22)? 1'd1 : 
+                          (_tmp_17)? 1'd1 : 0;
+  localparam _tmp_21 = 1;
+  wire [_tmp_21-1:0] _tmp_22;
+  assign _tmp_22 = th_matmul == 22;
+  reg [_tmp_21-1:0] __tmp_22_1;
+  reg signed [32-1:0] _tmp_23;
   reg signed [32-1:0] _th_matmul_y_17;
-  reg _ram_c_cond_0_1;
-  reg axim_flag_16;
+  reg axim_flag_24;
   reg _th_matmul_cond_29_2_1;
   reg _myaxi_ram_c_0_write_start;
   reg [8-1:0] _myaxi_ram_c_0_write_op_sel;
@@ -747,33 +781,29 @@ module blinkled
   reg [32-1:0] _myaxi_write_cur_global_addr;
   reg [33-1:0] _myaxi_write_cur_size;
   reg [33-1:0] _myaxi_write_rest_size;
-  reg _tmp_17;
-  reg _tmp_18;
-  wire _tmp_19;
-  wire _tmp_20;
-  assign _tmp_20 = 1;
-  localparam _tmp_21 = 1;
-  wire [_tmp_21-1:0] _tmp_22;
-  assign _tmp_22 = (_tmp_19 || !_tmp_17) && (_tmp_20 || !_tmp_18);
-  reg [_tmp_21-1:0] __tmp_22_1;
-  wire signed [32-1:0] _tmp_23;
-  reg signed [32-1:0] __tmp_23_1;
-  assign _tmp_23 = (__tmp_22_1)? ram_c_0_rdata : __tmp_23_1;
-  reg _tmp_24;
   reg _tmp_25;
   reg _tmp_26;
-  reg _tmp_27;
-  reg [33-1:0] _tmp_28;
-  reg [9-1:0] _tmp_29;
-  reg _myaxi_cond_1_1;
+  wire _tmp_27;
+  wire _tmp_28;
+  assign _tmp_28 = 1;
+  wire signed [32-1:0] _tmp_29;
+  assign _tmp_29 = ram_c_0_rdata;
   reg _tmp_30;
+  reg _tmp_31;
+  reg _tmp_32;
+  reg _tmp_33;
+  reg [33-1:0] _tmp_34;
+  reg [10-1:0] _tmp_35;
+  reg [9-1:0] _tmp_36;
+  reg _myaxi_cond_1_1;
+  reg _tmp_37;
   wire [32-1:0] _dataflow__variable_odata_2;
   wire _dataflow__variable_ovalid_2;
   wire _dataflow__variable_oready_2;
-  assign _dataflow__variable_oready_2 = (_myaxi_write_fsm == 3) && (_myaxi_write_op_sel == 1) && ((_tmp_29 > 0) && (myaxi_wready || !myaxi_wvalid));
+  assign _dataflow__variable_oready_2 = (_myaxi_write_fsm == 3) && (_myaxi_write_op_sel == 1) && ((_tmp_36 > 0) && (myaxi_wready || !myaxi_wvalid));
   reg _myaxi_cond_2_1;
-  assign _myaxi_write_data_done = (_tmp_30 && myaxi_wvalid && myaxi_wready)? 1 : 0;
-  reg axim_flag_31;
+  assign _myaxi_write_data_done = (_tmp_37 && myaxi_wvalid && myaxi_wready)? 1 : 0;
+  reg axim_flag_38;
   reg [32-1:0] _d1__myaxi_write_fsm;
   reg __myaxi_write_fsm_cond_4_0_1;
   reg signed [32-1:0] _th_matmul_end_time_18;
@@ -785,7 +815,7 @@ module blinkled
   reg signed [32-1:0] _th_matmul_all_ok_24;
   reg signed [32-1:0] _th_matmul_c_addr_25;
   reg signed [32-1:0] _th_matmul_i_26;
-  reg axim_flag_32;
+  reg axim_flag_39;
   reg _th_matmul_cond_44_3_1;
   reg _myaxi_ram_c_0_read_start;
   reg [8-1:0] _myaxi_ram_c_0_read_op_sel;
@@ -793,22 +823,37 @@ module blinkled
   reg [32-1:0] _myaxi_ram_c_0_read_global_addr;
   reg [33-1:0] _myaxi_ram_c_0_read_size;
   reg [32-1:0] _myaxi_ram_c_0_read_local_stride;
-  reg [32-1:0] _wdata_33;
-  reg _wvalid_34;
-  reg [33-1:0] _tmp_35;
-  reg _tmp_36;
+  reg [32-1:0] _wdata_40;
+  reg _wvalid_41;
+  reg [33-1:0] _tmp_42;
+  reg _tmp_43;
   wire [32-1:0] _dataflow__variable_odata_4;
   wire _dataflow__variable_ovalid_4;
   wire _dataflow__variable_oready_4;
-  assign _dataflow__variable_oready_4 = (_tmp_35 > 0) && !_tmp_36;
-  reg _ram_c_cond_1_1;
+  assign _dataflow__variable_oready_4 = (_tmp_42 > 0) && !_tmp_43;
+  reg [10-1:0] _tmp_44;
+  reg [32-1:0] _tmp_45;
+  reg _tmp_46;
+  assign ram_c_0_wdata = (_tmp_46)? _tmp_45 : 
+                         (th_matmul == 26)? _th_matmul_sum_14 : 0;
+  assign ram_c_0_wenable = (_tmp_46)? 1'd1 : 
+                           (th_matmul == 26)? 1'd1 : 0;
+  reg _ram_c_cond_0_1;
   reg __myaxi_read_fsm_cond_3_3_1;
   reg signed [32-1:0] _th_matmul_j_27;
-  reg _tmp_37;
-  reg _ram_c_cond_2_1;
-  reg _ram_c_cond_3_1;
-  reg _ram_c_cond_3_2;
-  reg signed [32-1:0] _tmp_38;
+  assign ram_c_0_addr = (th_matmul == 50)? _th_matmul_j_27 : 
+                        (_tmp_46)? _tmp_44 : 
+                        (_tmp_30)? _tmp_35 : 
+                        (th_matmul == 26)? _th_matmul_j_13 : 0;
+  assign ram_c_0_enable = (th_matmul == 50)? 1'd1 : 
+                          (_tmp_46)? 1'd1 : 
+                          ((_tmp_27 || !_tmp_25) && (_tmp_28 || !_tmp_26) && _tmp_30)? 1'd1 : 
+                          (th_matmul == 26)? 1'd1 : 0;
+  localparam _tmp_47 = 1;
+  wire [_tmp_47-1:0] _tmp_48;
+  assign _tmp_48 = th_matmul == 50;
+  reg [_tmp_47-1:0] __tmp_48_1;
+  reg signed [32-1:0] _tmp_49;
   reg signed [32-1:0] _th_matmul_v_28;
 
   always @(posedge CLK) begin
@@ -822,197 +867,142 @@ module blinkled
 
   always @(posedge CLK) begin
     if(RST) begin
-      ram_a_0_addr <= 0;
+      _tmp_5 <= 0;
       _tmp_3 <= 0;
-      ram_a_0_wdata <= 0;
-      ram_a_0_wenable <= 0;
+      _tmp_6 <= 0;
+      _tmp_7 <= 0;
       _tmp_4 <= 0;
       _ram_a_cond_0_1 <= 0;
-      _ram_a_cond_1_1 <= 0;
-      _tmp_12 <= 0;
-      _ram_a_cond_2_1 <= 0;
-      _ram_a_cond_2_2 <= 0;
+      __tmp_19_1 <= 0;
     end else begin
-      if(_ram_a_cond_2_2) begin
-        _tmp_12 <= 0;
-      end 
       if(_ram_a_cond_0_1) begin
-        ram_a_0_wenable <= 0;
+        _tmp_7 <= 0;
         _tmp_4 <= 0;
       end 
-      if(_ram_a_cond_1_1) begin
-        _tmp_12 <= 1;
-      end 
-      _ram_a_cond_2_2 <= _ram_a_cond_2_1;
       if(_myaxi_read_start && (_myaxi_read_op_sel == 1) && (_tmp_3 == 0)) begin
-        ram_a_0_addr <= _myaxi_read_local_addr - _myaxi_read_local_stride;
+        _tmp_5 <= _myaxi_read_local_addr - _myaxi_read_local_stride;
         _tmp_3 <= _myaxi_read_size;
       end 
       if(_dataflow__variable_ovalid_0 && ((_tmp_3 > 0) && !_tmp_4) && (_tmp_3 > 0)) begin
-        ram_a_0_addr <= ram_a_0_addr + _myaxi_read_local_stride;
-        ram_a_0_wdata <= _dataflow__variable_odata_0;
-        ram_a_0_wenable <= 1;
+        _tmp_5 <= _tmp_5 + _myaxi_read_local_stride;
+        _tmp_6 <= _dataflow__variable_odata_0;
+        _tmp_7 <= 1;
         _tmp_3 <= _tmp_3 - 1;
       end 
       if(_dataflow__variable_ovalid_0 && ((_tmp_3 > 0) && !_tmp_4) && (_tmp_3 == 1)) begin
         _tmp_4 <= 1;
       end 
       _ram_a_cond_0_1 <= 1;
-      if(th_matmul == 20) begin
-        ram_a_0_addr <= _th_matmul_k_15;
-      end 
-      _ram_a_cond_1_1 <= th_matmul == 20;
-      _ram_a_cond_2_1 <= th_matmul == 20;
+      __tmp_19_1 <= _tmp_19;
     end
   end
 
 
   always @(posedge CLK) begin
     if(RST) begin
-      ram_b_0_addr <= 0;
-      _tmp_10 <= 0;
-      ram_b_0_wdata <= 0;
-      ram_b_0_wenable <= 0;
-      _tmp_11 <= 0;
-      _ram_b_cond_0_1 <= 0;
-      _ram_b_cond_1_1 <= 0;
+      _tmp_15 <= 0;
+      _tmp_13 <= 0;
+      _tmp_16 <= 0;
+      _tmp_17 <= 0;
       _tmp_14 <= 0;
-      _ram_b_cond_2_1 <= 0;
-      _ram_b_cond_2_2 <= 0;
+      _ram_b_cond_0_1 <= 0;
+      __tmp_22_1 <= 0;
     end else begin
-      if(_ram_b_cond_2_2) begin
+      if(_ram_b_cond_0_1) begin
+        _tmp_17 <= 0;
         _tmp_14 <= 0;
       end 
-      if(_ram_b_cond_0_1) begin
-        ram_b_0_wenable <= 0;
-        _tmp_11 <= 0;
+      if(_myaxi_read_start && (_myaxi_read_op_sel == 2) && (_tmp_13 == 0)) begin
+        _tmp_15 <= _myaxi_read_local_addr - _myaxi_read_local_stride;
+        _tmp_13 <= _myaxi_read_size;
       end 
-      if(_ram_b_cond_1_1) begin
+      if(_dataflow__variable_ovalid_1 && ((_tmp_13 > 0) && !_tmp_14) && (_tmp_13 > 0)) begin
+        _tmp_15 <= _tmp_15 + _myaxi_read_local_stride;
+        _tmp_16 <= _dataflow__variable_odata_1;
+        _tmp_17 <= 1;
+        _tmp_13 <= _tmp_13 - 1;
+      end 
+      if(_dataflow__variable_ovalid_1 && ((_tmp_13 > 0) && !_tmp_14) && (_tmp_13 == 1)) begin
         _tmp_14 <= 1;
       end 
-      _ram_b_cond_2_2 <= _ram_b_cond_2_1;
-      if(_myaxi_read_start && (_myaxi_read_op_sel == 2) && (_tmp_10 == 0)) begin
-        ram_b_0_addr <= _myaxi_read_local_addr - _myaxi_read_local_stride;
-        _tmp_10 <= _myaxi_read_size;
-      end 
-      if(_dataflow__variable_ovalid_1 && ((_tmp_10 > 0) && !_tmp_11) && (_tmp_10 > 0)) begin
-        ram_b_0_addr <= ram_b_0_addr + _myaxi_read_local_stride;
-        ram_b_0_wdata <= _dataflow__variable_odata_1;
-        ram_b_0_wenable <= 1;
-        _tmp_10 <= _tmp_10 - 1;
-      end 
-      if(_dataflow__variable_ovalid_1 && ((_tmp_10 > 0) && !_tmp_11) && (_tmp_10 == 1)) begin
-        _tmp_11 <= 1;
-      end 
       _ram_b_cond_0_1 <= 1;
-      if(th_matmul == 22) begin
-        ram_b_0_addr <= _th_matmul_k_15;
-      end 
-      _ram_b_cond_1_1 <= th_matmul == 22;
-      _ram_b_cond_2_1 <= th_matmul == 22;
+      __tmp_22_1 <= _tmp_22;
     end
   end
 
 
   always @(posedge CLK) begin
     if(RST) begin
-      ram_c_0_addr <= 0;
-      ram_c_0_wdata <= 0;
-      ram_c_0_wenable <= 0;
-      _ram_c_cond_0_1 <= 0;
-      __tmp_22_1 <= 0;
-      __tmp_23_1 <= 0;
-      _tmp_27 <= 0;
-      _tmp_17 <= 0;
-      _tmp_18 <= 0;
+      _tmp_33 <= 0;
       _tmp_25 <= 0;
       _tmp_26 <= 0;
-      _tmp_24 <= 0;
-      _tmp_28 <= 0;
+      _tmp_31 <= 0;
+      _tmp_32 <= 0;
+      _tmp_30 <= 0;
       _tmp_35 <= 0;
-      _tmp_36 <= 0;
-      _ram_c_cond_1_1 <= 0;
-      _ram_c_cond_2_1 <= 0;
-      _tmp_37 <= 0;
-      _ram_c_cond_3_1 <= 0;
-      _ram_c_cond_3_2 <= 0;
+      _tmp_34 <= 0;
+      _tmp_44 <= 0;
+      _tmp_42 <= 0;
+      _tmp_45 <= 0;
+      _tmp_46 <= 0;
+      _tmp_43 <= 0;
+      _ram_c_cond_0_1 <= 0;
+      __tmp_48_1 <= 0;
     end else begin
-      if(_ram_c_cond_3_2) begin
-        _tmp_37 <= 0;
-      end 
       if(_ram_c_cond_0_1) begin
-        ram_c_0_wenable <= 0;
+        _tmp_46 <= 0;
+        _tmp_43 <= 0;
       end 
-      if(_ram_c_cond_1_1) begin
-        ram_c_0_wenable <= 0;
-        _tmp_36 <= 0;
-      end 
-      if(_ram_c_cond_2_1) begin
-        _tmp_37 <= 1;
-      end 
-      _ram_c_cond_3_2 <= _ram_c_cond_3_1;
-      if(th_matmul == 26) begin
-        ram_c_0_addr <= _th_matmul_j_13;
-        ram_c_0_wdata <= _th_matmul_sum_14;
-        ram_c_0_wenable <= 1;
-      end 
-      _ram_c_cond_0_1 <= th_matmul == 26;
-      __tmp_22_1 <= _tmp_22;
-      __tmp_23_1 <= _tmp_23;
-      if((_tmp_19 || !_tmp_17) && (_tmp_20 || !_tmp_18) && _tmp_25) begin
-        _tmp_27 <= 0;
-        _tmp_17 <= 0;
-        _tmp_18 <= 0;
+      if((_tmp_27 || !_tmp_25) && (_tmp_28 || !_tmp_26) && _tmp_31) begin
+        _tmp_33 <= 0;
         _tmp_25 <= 0;
-      end 
-      if((_tmp_19 || !_tmp_17) && (_tmp_20 || !_tmp_18) && _tmp_24) begin
-        _tmp_17 <= 1;
-        _tmp_18 <= 1;
-        _tmp_27 <= _tmp_26;
         _tmp_26 <= 0;
-        _tmp_24 <= 0;
+        _tmp_31 <= 0;
+      end 
+      if((_tmp_27 || !_tmp_25) && (_tmp_28 || !_tmp_26) && _tmp_30) begin
         _tmp_25 <= 1;
-      end 
-      if(_myaxi_write_start && (_myaxi_write_op_sel == 1) && (_tmp_28 == 0) && !_tmp_26 && !_tmp_27) begin
-        ram_c_0_addr <= _myaxi_write_local_addr;
-        _tmp_28 <= _myaxi_write_size - 1;
-        _tmp_24 <= 1;
-        _tmp_26 <= _myaxi_write_size == 1;
-      end 
-      if((_tmp_19 || !_tmp_17) && (_tmp_20 || !_tmp_18) && (_tmp_28 > 0)) begin
-        ram_c_0_addr <= ram_c_0_addr + _myaxi_write_local_stride;
-        _tmp_28 <= _tmp_28 - 1;
-        _tmp_24 <= 1;
-        _tmp_26 <= 0;
-      end 
-      if((_tmp_19 || !_tmp_17) && (_tmp_20 || !_tmp_18) && (_tmp_28 == 1)) begin
         _tmp_26 <= 1;
+        _tmp_33 <= _tmp_32;
+        _tmp_32 <= 0;
+        _tmp_30 <= 0;
+        _tmp_31 <= 1;
       end 
-      if(_myaxi_read_start && (_myaxi_read_op_sel == 3) && (_tmp_35 == 0)) begin
-        ram_c_0_addr <= _myaxi_read_local_addr - _myaxi_read_local_stride;
-        _tmp_35 <= _myaxi_read_size;
+      if(_myaxi_write_start && (_myaxi_write_op_sel == 1) && (_tmp_34 == 0) && !_tmp_32 && !_tmp_33) begin
+        _tmp_35 <= _myaxi_write_local_addr;
+        _tmp_34 <= _myaxi_write_size - 1;
+        _tmp_30 <= 1;
+        _tmp_32 <= _myaxi_write_size == 1;
       end 
-      if(_dataflow__variable_ovalid_4 && ((_tmp_35 > 0) && !_tmp_36) && (_tmp_35 > 0)) begin
-        ram_c_0_addr <= ram_c_0_addr + _myaxi_read_local_stride;
-        ram_c_0_wdata <= _dataflow__variable_odata_4;
-        ram_c_0_wenable <= 1;
-        _tmp_35 <= _tmp_35 - 1;
+      if((_tmp_27 || !_tmp_25) && (_tmp_28 || !_tmp_26) && (_tmp_34 > 0)) begin
+        _tmp_35 <= _tmp_35 + _myaxi_write_local_stride;
+        _tmp_34 <= _tmp_34 - 1;
+        _tmp_30 <= 1;
+        _tmp_32 <= 0;
       end 
-      if(_dataflow__variable_ovalid_4 && ((_tmp_35 > 0) && !_tmp_36) && (_tmp_35 == 1)) begin
-        _tmp_36 <= 1;
+      if((_tmp_27 || !_tmp_25) && (_tmp_28 || !_tmp_26) && (_tmp_34 == 1)) begin
+        _tmp_32 <= 1;
       end 
-      _ram_c_cond_1_1 <= 1;
-      if(th_matmul == 50) begin
-        ram_c_0_addr <= _th_matmul_j_27;
+      if(_myaxi_read_start && (_myaxi_read_op_sel == 3) && (_tmp_42 == 0)) begin
+        _tmp_44 <= _myaxi_read_local_addr - _myaxi_read_local_stride;
+        _tmp_42 <= _myaxi_read_size;
       end 
-      _ram_c_cond_2_1 <= th_matmul == 50;
-      _ram_c_cond_3_1 <= th_matmul == 50;
+      if(_dataflow__variable_ovalid_4 && ((_tmp_42 > 0) && !_tmp_43) && (_tmp_42 > 0)) begin
+        _tmp_44 <= _tmp_44 + _myaxi_read_local_stride;
+        _tmp_45 <= _dataflow__variable_odata_4;
+        _tmp_46 <= 1;
+        _tmp_42 <= _tmp_42 - 1;
+      end 
+      if(_dataflow__variable_ovalid_4 && ((_tmp_42 > 0) && !_tmp_43) && (_tmp_42 == 1)) begin
+        _tmp_43 <= 1;
+      end 
+      _ram_c_cond_0_1 <= 1;
+      __tmp_48_1 <= _tmp_48;
     end
   end
 
-  assign _dataflow__variable_odata_2 = _tmp_23;
-  assign _dataflow__variable_ovalid_2 = _tmp_17;
-  assign _tmp_19 = 1 && _dataflow__variable_oready_2;
+  assign _dataflow__variable_odata_2 = _tmp_29;
+  assign _dataflow__variable_ovalid_2 = _tmp_25;
+  assign _tmp_27 = 1 && _dataflow__variable_oready_2;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -1033,7 +1023,7 @@ module blinkled
       myaxi_araddr <= 0;
       myaxi_arlen <= 0;
       myaxi_arvalid <= 0;
-      _tmp_5 <= 0;
+      _tmp_8 <= 0;
       _myaxi_cond_0_1 <= 0;
       _myaxi_ram_b_0_read_start <= 0;
       _myaxi_ram_b_0_read_op_sel <= 0;
@@ -1056,13 +1046,13 @@ module blinkled
       myaxi_awaddr <= 0;
       myaxi_awlen <= 0;
       myaxi_awvalid <= 0;
-      _tmp_29 <= 0;
+      _tmp_36 <= 0;
       _myaxi_cond_1_1 <= 0;
       myaxi_wdata <= 0;
       myaxi_wvalid <= 0;
       myaxi_wlast <= 0;
       myaxi_wstrb <= 0;
-      _tmp_30 <= 0;
+      _tmp_37 <= 0;
       _myaxi_cond_2_1 <= 0;
       _myaxi_ram_c_0_read_start <= 0;
       _myaxi_ram_c_0_read_op_sel <= 0;
@@ -1080,7 +1070,7 @@ module blinkled
       if(_myaxi_cond_2_1) begin
         myaxi_wvalid <= 0;
         myaxi_wlast <= 0;
-        _tmp_30 <= 0;
+        _tmp_37 <= 0;
       end 
       _myaxi_read_start <= 0;
       _myaxi_write_start <= 0;
@@ -1104,24 +1094,24 @@ module blinkled
         _myaxi_read_size <= _myaxi_ram_a_0_read_size;
         _myaxi_read_local_stride <= _myaxi_ram_a_0_read_local_stride;
       end 
-      if((_myaxi_read_fsm == 2) && ((myaxi_arready || !myaxi_arvalid) && (_tmp_5 == 0))) begin
+      if((_myaxi_read_fsm == 2) && ((myaxi_arready || !myaxi_arvalid) && (_tmp_8 == 0))) begin
         myaxi_araddr <= _myaxi_read_cur_global_addr;
         myaxi_arlen <= _myaxi_read_cur_size - 1;
         myaxi_arvalid <= 1;
-        _tmp_5 <= _myaxi_read_cur_size;
+        _tmp_8 <= _myaxi_read_cur_size;
       end 
       _myaxi_cond_0_1 <= 1;
       if(myaxi_arvalid && !myaxi_arready) begin
         myaxi_arvalid <= myaxi_arvalid;
       end 
-      if(myaxi_rready && myaxi_rvalid && (_tmp_5 > 0)) begin
-        _tmp_5 <= _tmp_5 - 1;
+      if(myaxi_rready && myaxi_rvalid && (_tmp_8 > 0)) begin
+        _tmp_8 <= _tmp_8 - 1;
       end 
-      if(axim_flag_6) begin
+      if(axim_flag_9) begin
         _myaxi_read_idle <= 1;
       end 
       _myaxi_ram_b_0_read_start <= 0;
-      if(axim_flag_7) begin
+      if(axim_flag_10) begin
         _myaxi_ram_b_0_read_start <= 1;
         _myaxi_ram_b_0_read_op_sel <= 2;
         _myaxi_ram_b_0_read_local_addr <= 0;
@@ -1141,7 +1131,7 @@ module blinkled
         _myaxi_read_local_stride <= _myaxi_ram_b_0_read_local_stride;
       end 
       _myaxi_ram_c_0_write_start <= 0;
-      if(axim_flag_16) begin
+      if(axim_flag_24) begin
         _myaxi_ram_c_0_write_start <= 1;
         _myaxi_ram_c_0_write_op_sel <= 1;
         _myaxi_ram_c_0_write_local_addr <= 0;
@@ -1160,41 +1150,41 @@ module blinkled
         _myaxi_write_size <= _myaxi_ram_c_0_write_size;
         _myaxi_write_local_stride <= _myaxi_ram_c_0_write_local_stride;
       end 
-      if((_myaxi_write_fsm == 2) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_29 == 0))) begin
+      if((_myaxi_write_fsm == 2) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_36 == 0))) begin
         myaxi_awaddr <= _myaxi_write_cur_global_addr;
         myaxi_awlen <= _myaxi_write_cur_size - 1;
         myaxi_awvalid <= 1;
-        _tmp_29 <= _myaxi_write_cur_size;
+        _tmp_36 <= _myaxi_write_cur_size;
       end 
-      if((_myaxi_write_fsm == 2) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_29 == 0)) && (_myaxi_write_cur_size == 0)) begin
+      if((_myaxi_write_fsm == 2) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_36 == 0)) && (_myaxi_write_cur_size == 0)) begin
         myaxi_awvalid <= 0;
       end 
       _myaxi_cond_1_1 <= 1;
       if(myaxi_awvalid && !myaxi_awready) begin
         myaxi_awvalid <= myaxi_awvalid;
       end 
-      if(_dataflow__variable_ovalid_2 && ((_myaxi_write_fsm == 3) && (_myaxi_write_op_sel == 1) && ((_tmp_29 > 0) && (myaxi_wready || !myaxi_wvalid))) && ((_tmp_29 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_29 > 0))) begin
+      if(_dataflow__variable_ovalid_2 && ((_myaxi_write_fsm == 3) && (_myaxi_write_op_sel == 1) && ((_tmp_36 > 0) && (myaxi_wready || !myaxi_wvalid))) && ((_tmp_36 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_36 > 0))) begin
         myaxi_wdata <= _dataflow__variable_odata_2;
         myaxi_wvalid <= 1;
         myaxi_wlast <= 0;
         myaxi_wstrb <= { 4{ 1'd1 } };
-        _tmp_29 <= _tmp_29 - 1;
+        _tmp_36 <= _tmp_36 - 1;
       end 
-      if(_dataflow__variable_ovalid_2 && ((_myaxi_write_fsm == 3) && (_myaxi_write_op_sel == 1) && ((_tmp_29 > 0) && (myaxi_wready || !myaxi_wvalid))) && ((_tmp_29 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_29 > 0)) && (_tmp_29 == 1)) begin
+      if(_dataflow__variable_ovalid_2 && ((_myaxi_write_fsm == 3) && (_myaxi_write_op_sel == 1) && ((_tmp_36 > 0) && (myaxi_wready || !myaxi_wvalid))) && ((_tmp_36 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_36 > 0)) && (_tmp_36 == 1)) begin
         myaxi_wlast <= 1;
-        _tmp_30 <= 1;
+        _tmp_37 <= 1;
       end 
       _myaxi_cond_2_1 <= 1;
       if(myaxi_wvalid && !myaxi_wready) begin
         myaxi_wvalid <= myaxi_wvalid;
         myaxi_wlast <= myaxi_wlast;
-        _tmp_30 <= _tmp_30;
+        _tmp_37 <= _tmp_37;
       end 
-      if(axim_flag_31) begin
+      if(axim_flag_38) begin
         _myaxi_write_idle <= 1;
       end 
       _myaxi_ram_c_0_read_start <= 0;
-      if(axim_flag_32) begin
+      if(axim_flag_39) begin
         _myaxi_ram_c_0_read_start <= 1;
         _myaxi_ram_c_0_read_op_sel <= 3;
         _myaxi_ram_c_0_read_local_addr <= 0;
@@ -1218,10 +1208,10 @@ module blinkled
 
   assign _dataflow__variable_odata_0 = _wdata_1;
   assign _dataflow__variable_ovalid_0 = _wvalid_2;
-  assign _dataflow__variable_odata_1 = _wdata_8;
-  assign _dataflow__variable_ovalid_1 = _wvalid_9;
-  assign _dataflow__variable_odata_4 = _wdata_33;
-  assign _dataflow__variable_ovalid_4 = _wvalid_34;
+  assign _dataflow__variable_odata_1 = _wdata_11;
+  assign _dataflow__variable_ovalid_1 = _wvalid_12;
+  assign _dataflow__variable_odata_4 = _wdata_40;
+  assign _dataflow__variable_ovalid_4 = _wvalid_41;
   localparam th_matmul_1 = 1;
   localparam th_matmul_2 = 2;
   localparam th_matmul_3 = 3;
@@ -1309,15 +1299,15 @@ module blinkled
       _th_matmul_cond_6_0_1 <= 0;
       _th_matmul_b_addr_12 <= 0;
       _th_matmul_j_13 <= 0;
-      axim_flag_7 <= 0;
+      axim_flag_10 <= 0;
       _th_matmul_cond_13_1_1 <= 0;
       _th_matmul_sum_14 <= 0;
       _th_matmul_k_15 <= 0;
-      _tmp_13 <= 0;
+      _tmp_20 <= 0;
       _th_matmul_x_16 <= 0;
-      _tmp_15 <= 0;
+      _tmp_23 <= 0;
       _th_matmul_y_17 <= 0;
-      axim_flag_16 <= 0;
+      axim_flag_24 <= 0;
       _th_matmul_cond_29_2_1 <= 0;
       _th_matmul_end_time_18 <= 0;
       _th_matmul_time_19 <= 0;
@@ -1328,10 +1318,10 @@ module blinkled
       _th_matmul_all_ok_24 <= 0;
       _th_matmul_c_addr_25 <= 0;
       _th_matmul_i_26 <= 0;
-      axim_flag_32 <= 0;
+      axim_flag_39 <= 0;
       _th_matmul_cond_44_3_1 <= 0;
       _th_matmul_j_27 <= 0;
-      _tmp_38 <= 0;
+      _tmp_49 <= 0;
       _th_matmul_v_28 <= 0;
     end else begin
       _d1_th_matmul <= th_matmul;
@@ -1343,17 +1333,17 @@ module blinkled
         end
         th_matmul_13: begin
           if(_th_matmul_cond_13_1_1) begin
-            axim_flag_7 <= 0;
+            axim_flag_10 <= 0;
           end 
         end
         th_matmul_29: begin
           if(_th_matmul_cond_29_2_1) begin
-            axim_flag_16 <= 0;
+            axim_flag_24 <= 0;
           end 
         end
         th_matmul_44: begin
           if(_th_matmul_cond_44_3_1) begin
-            axim_flag_32 <= 0;
+            axim_flag_39 <= 0;
           end 
         end
       endcase
@@ -1424,7 +1414,7 @@ module blinkled
           end
         end
         th_matmul_13: begin
-          axim_flag_7 <= 1;
+          axim_flag_10 <= 1;
           _th_matmul_cond_13_1_1 <= 1;
           th_matmul <= th_matmul_14;
         end
@@ -1455,27 +1445,27 @@ module blinkled
           end
         end
         th_matmul_20: begin
-          if(_tmp_12) begin
-            _tmp_13 <= ram_a_0_rdata;
+          if(__tmp_19_1) begin
+            _tmp_20 <= ram_a_0_rdata;
           end 
-          if(_tmp_12) begin
+          if(__tmp_19_1) begin
             th_matmul <= th_matmul_21;
           end 
         end
         th_matmul_21: begin
-          _th_matmul_x_16 <= _tmp_13;
+          _th_matmul_x_16 <= _tmp_20;
           th_matmul <= th_matmul_22;
         end
         th_matmul_22: begin
-          if(_tmp_14) begin
-            _tmp_15 <= ram_b_0_rdata;
+          if(__tmp_22_1) begin
+            _tmp_23 <= ram_b_0_rdata;
           end 
-          if(_tmp_14) begin
+          if(__tmp_22_1) begin
             th_matmul <= th_matmul_23;
           end 
         end
         th_matmul_23: begin
-          _th_matmul_y_17 <= _tmp_15;
+          _th_matmul_y_17 <= _tmp_23;
           th_matmul <= th_matmul_24;
         end
         th_matmul_24: begin
@@ -1498,7 +1488,7 @@ module blinkled
           th_matmul <= th_matmul_12;
         end
         th_matmul_29: begin
-          axim_flag_16 <= 1;
+          axim_flag_24 <= 1;
           _th_matmul_cond_29_2_1 <= 1;
           th_matmul <= th_matmul_30;
         end
@@ -1564,7 +1554,7 @@ module blinkled
           end
         end
         th_matmul_44: begin
-          axim_flag_32 <= 1;
+          axim_flag_39 <= 1;
           _th_matmul_cond_44_3_1 <= 1;
           th_matmul <= th_matmul_45;
         end
@@ -1591,15 +1581,15 @@ module blinkled
           end
         end
         th_matmul_50: begin
-          if(_tmp_37) begin
-            _tmp_38 <= ram_c_0_rdata;
+          if(__tmp_48_1) begin
+            _tmp_49 <= ram_c_0_rdata;
           end 
-          if(_tmp_37) begin
+          if(__tmp_48_1) begin
             th_matmul <= th_matmul_51;
           end 
         end
         th_matmul_51: begin
-          _th_matmul_v_28 <= _tmp_38;
+          _th_matmul_v_28 <= _tmp_49;
           th_matmul <= th_matmul_52;
         end
         th_matmul_52: begin
@@ -1686,14 +1676,14 @@ module blinkled
       __myaxi_read_fsm_cond_3_0_1 <= 0;
       _wvalid_2 <= 0;
       _wdata_1 <= 0;
-      axim_flag_6 <= 0;
+      axim_flag_9 <= 0;
       __myaxi_read_fsm_cond_4_1_1 <= 0;
       __myaxi_read_fsm_cond_3_2_1 <= 0;
-      _wvalid_9 <= 0;
-      _wdata_8 <= 0;
+      _wvalid_12 <= 0;
+      _wdata_11 <= 0;
       __myaxi_read_fsm_cond_3_3_1 <= 0;
-      _wvalid_34 <= 0;
-      _wdata_33 <= 0;
+      _wvalid_41 <= 0;
+      _wdata_40 <= 0;
     end else begin
       _d1__myaxi_read_fsm <= _myaxi_read_fsm;
       case(_d1__myaxi_read_fsm)
@@ -1702,15 +1692,15 @@ module blinkled
             _wvalid_2 <= 0;
           end 
           if(__myaxi_read_fsm_cond_3_2_1) begin
-            _wvalid_9 <= 0;
+            _wvalid_12 <= 0;
           end 
           if(__myaxi_read_fsm_cond_3_3_1) begin
-            _wvalid_34 <= 0;
+            _wvalid_41 <= 0;
           end 
         end
         _myaxi_read_fsm_4: begin
           if(__myaxi_read_fsm_cond_4_1_1) begin
-            axim_flag_6 <= 0;
+            axim_flag_9 <= 0;
           end 
         end
       endcase
@@ -1762,13 +1752,13 @@ module blinkled
           end 
           __myaxi_read_fsm_cond_3_2_1 <= 1;
           if(myaxi_rready && myaxi_rvalid && (_myaxi_read_op_sel == 2)) begin
-            _wdata_8 <= myaxi_rdata;
-            _wvalid_9 <= 1;
+            _wdata_11 <= myaxi_rdata;
+            _wvalid_12 <= 1;
           end 
           __myaxi_read_fsm_cond_3_3_1 <= 1;
           if(myaxi_rready && myaxi_rvalid && (_myaxi_read_op_sel == 3)) begin
-            _wdata_33 <= myaxi_rdata;
-            _wvalid_34 <= 1;
+            _wdata_40 <= myaxi_rdata;
+            _wvalid_41 <= 1;
           end 
           if(myaxi_rready && myaxi_rvalid && myaxi_rlast && (_myaxi_read_rest_size > 0)) begin
             _myaxi_read_fsm <= _myaxi_read_fsm_1;
@@ -1778,7 +1768,7 @@ module blinkled
           end 
         end
         _myaxi_read_fsm_4: begin
-          axim_flag_6 <= 1;
+          axim_flag_9 <= 1;
           __myaxi_read_fsm_cond_4_1_1 <= 1;
           _myaxi_read_fsm <= _myaxi_read_fsm_5;
         end
@@ -1802,14 +1792,14 @@ module blinkled
       _myaxi_write_cur_global_addr <= 0;
       _myaxi_write_rest_size <= 0;
       _myaxi_write_cur_size <= 0;
-      axim_flag_31 <= 0;
+      axim_flag_38 <= 0;
       __myaxi_write_fsm_cond_4_0_1 <= 0;
     end else begin
       _d1__myaxi_write_fsm <= _myaxi_write_fsm;
       case(_d1__myaxi_write_fsm)
         _myaxi_write_fsm_4: begin
           if(__myaxi_write_fsm_cond_4_0_1) begin
-            axim_flag_31 <= 0;
+            axim_flag_38 <= 0;
           end 
         end
       endcase
@@ -1856,7 +1846,7 @@ module blinkled
           end 
         end
         _myaxi_write_fsm_4: begin
-          axim_flag_31 <= 1;
+          axim_flag_38 <= 1;
           __myaxi_write_fsm_cond_4_0_1 <= 1;
           _myaxi_write_fsm <= _myaxi_write_fsm_5;
         end
@@ -1878,20 +1868,25 @@ module ram_a
   input [10-1:0] ram_a_0_addr,
   output [32-1:0] ram_a_0_rdata,
   input [32-1:0] ram_a_0_wdata,
-  input ram_a_0_wenable
+  input ram_a_0_wenable,
+  input ram_a_0_enable
 );
 
-  reg [10-1:0] ram_a_0_daddr;
+  reg [32-1:0] ram_a_0_rdata_out;
+  assign ram_a_0_rdata = ram_a_0_rdata_out;
   reg [32-1:0] mem [0:1024-1];
 
   always @(posedge CLK) begin
-    if(ram_a_0_wenable) begin
-      mem[ram_a_0_addr] <= ram_a_0_wdata;
+    if(ram_a_0_enable) begin
+      if(ram_a_0_wenable) begin
+        mem[ram_a_0_addr] <= ram_a_0_wdata;
+        ram_a_0_rdata_out <= ram_a_0_wdata;
+      end else begin
+        ram_a_0_rdata_out <= mem[ram_a_0_addr];
+      end
     end 
-    ram_a_0_daddr <= ram_a_0_addr;
   end
 
-  assign ram_a_0_rdata = mem[ram_a_0_daddr];
 
 endmodule
 
@@ -1903,20 +1898,25 @@ module ram_b
   input [10-1:0] ram_b_0_addr,
   output [32-1:0] ram_b_0_rdata,
   input [32-1:0] ram_b_0_wdata,
-  input ram_b_0_wenable
+  input ram_b_0_wenable,
+  input ram_b_0_enable
 );
 
-  reg [10-1:0] ram_b_0_daddr;
+  reg [32-1:0] ram_b_0_rdata_out;
+  assign ram_b_0_rdata = ram_b_0_rdata_out;
   reg [32-1:0] mem [0:1024-1];
 
   always @(posedge CLK) begin
-    if(ram_b_0_wenable) begin
-      mem[ram_b_0_addr] <= ram_b_0_wdata;
+    if(ram_b_0_enable) begin
+      if(ram_b_0_wenable) begin
+        mem[ram_b_0_addr] <= ram_b_0_wdata;
+        ram_b_0_rdata_out <= ram_b_0_wdata;
+      end else begin
+        ram_b_0_rdata_out <= mem[ram_b_0_addr];
+      end
     end 
-    ram_b_0_daddr <= ram_b_0_addr;
   end
 
-  assign ram_b_0_rdata = mem[ram_b_0_daddr];
 
 endmodule
 
@@ -1928,20 +1928,25 @@ module ram_c
   input [10-1:0] ram_c_0_addr,
   output [32-1:0] ram_c_0_rdata,
   input [32-1:0] ram_c_0_wdata,
-  input ram_c_0_wenable
+  input ram_c_0_wenable,
+  input ram_c_0_enable
 );
 
-  reg [10-1:0] ram_c_0_daddr;
+  reg [32-1:0] ram_c_0_rdata_out;
+  assign ram_c_0_rdata = ram_c_0_rdata_out;
   reg [32-1:0] mem [0:1024-1];
 
   always @(posedge CLK) begin
-    if(ram_c_0_wenable) begin
-      mem[ram_c_0_addr] <= ram_c_0_wdata;
+    if(ram_c_0_enable) begin
+      if(ram_c_0_wenable) begin
+        mem[ram_c_0_addr] <= ram_c_0_wdata;
+        ram_c_0_rdata_out <= ram_c_0_wdata;
+      end else begin
+        ram_c_0_rdata_out <= mem[ram_c_0_addr];
+      end
     end 
-    ram_c_0_daddr <= ram_c_0_addr;
   end
 
-  assign ram_c_0_rdata = mem[ram_c_0_daddr];
 
 endmodule
 

@@ -34,7 +34,7 @@ def mkMain(n=128, datawidth=32, numports=2):
 
     fsm.goto_next()
 
-    step = 127
+    step = n - 2
 
     ack, ready = myfifo.enq_rtl(count, cond=fsm)
 
@@ -55,7 +55,7 @@ def mkMain(n=128, datawidth=32, numports=2):
 
     fsm.goto_next()
 
-    data, valid = myfifo.deq_rtl(cond=fsm)
+    data, valid, ready = myfifo.deq_rtl(cond=fsm)
 
     fsm.If(valid)(
         sum(sum + data),
@@ -69,6 +69,12 @@ def mkMain(n=128, datawidth=32, numports=2):
     )
 
     fsm.If(count == step).goto_next()
+
+    fsm(
+        Systask('display', "expected_sum=%d", (step - 1) * step // 2)
+    )
+
+    fsm.goto_next()
 
     fsm.make_always()
 

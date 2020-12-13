@@ -2,9 +2,10 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import veriloggen.core.vtypes as vtypes
+import veriloggen.types.util as util
 import veriloggen.types.fixed as fxd
 
-from veriloggen.seq.seq import Seq
+from veriloggen.seq.seq import Seq, make_condition
 from veriloggen.types.fifo import FifoReadInterface, FifoWriteInterface, mkFifoDefinition
 
 from .ttypes import _MutexFunction
@@ -25,8 +26,8 @@ class FIFO(_MutexFunction):
         self.datawidth = datawidth
         self.addrwidth = addrwidth
 
-        self.wif = FifoWriteInterface(self.m, name, datawidth)
-        self.rif = FifoReadInterface(self.m, name, datawidth)
+        self.wif = FifoWriteInterface(self.m, name, datawidth, itype='Wire', otype='Wire')
+        self.rif = FifoReadInterface(self.m, name, datawidth, itype='Wire', otype='Wire')
 
         self.definition = mkFifoDefinition(name, datawidth, addrwidth)
 
@@ -57,6 +58,9 @@ class FIFO(_MutexFunction):
 
         self.mutex = None
 
+    def _id(self):
+        return id(self)
+
     def disable_enq(self):
         self.seq(
             self.wif.enq(0)
@@ -64,76 +68,52 @@ class FIFO(_MutexFunction):
         self._enq_disabled = True
 
     def disable_deq(self):
-        self.seq(
-            self.rif.deq(0)
-        )
+        self.rif.deq.assign(0)
         self._deq_disabled = True
 
-    def enq_rtl(self, wdata, cond=None, delay=0):
+    def enq_rtl(self, wdata, cond=None):
         """ Enque """
 
         if self._enq_disabled:
             raise TypeError('Enq disabled.')
 
+        cond = make_condition(cond)
+        ready = vtypes.Not(self.wif.almost_full)
+
         if cond is not None:
-            self.seq.If(cond)
-
-        current_delay = self.seq.current_delay
-
-        not_full = vtypes.Not(self.wif.full)
-        ack = vtypes.Ands(not_full, self.wif.enq)
-        if current_delay + delay == 0:
-            ready = vtypes.Not(self.wif.almost_full)
+            enq_cond = vtypes.Ands(cond, ready)
+            enable = cond
         else:
-            ready = self._count + (current_delay + delay + 1) < self._max_size
+            enq_cond = ready
+            enable = vtypes.Int(1, 1)
 
-        self.seq.Delay(current_delay + delay).EagerVal().If(not_full)(
-            self.wif.wdata(wdata)
-        )
-        self.seq.Then().Delay(current_delay + delay)(
-            self.wif.enq(1)
-        )
+        util.add_mux(self.wif.wdata, enable, wdata)
+        util.add_mux(self.wif.enq, enable, enq_cond)
 
-        # de-assert
-        self.seq.Delay(current_delay + delay + 1)(
-            self.wif.enq(0)
-        )
+        ack = self.seq.Prev(ready, 1)
 
         return ack, ready
 
-    def deq_rtl(self, cond=None, delay=0):
+    def deq_rtl(self, cond=None):
         """ Deque """
 
         if self._deq_disabled:
             raise TypeError('Deq disabled.')
 
+        cond = make_condition(cond)
+        ready = vtypes.Not(self.rif.empty)
+
         if cond is not None:
-            self.seq.If(cond)
+            deq_cond = vtypes.Ands(cond, ready)
+        else:
+            deq_cond = ready
 
-        not_empty = vtypes.Not(self.rif.empty)
+        util.add_mux(self.rif.deq, deq_cond, 1)
 
-        current_delay = self.seq.current_delay
+        data = self.rif.rdata
+        valid = self.seq.Prev(deq_cond, 1)
 
-        self.seq.Delay(current_delay + delay)(
-            self.rif.deq(1)
-        )
-
-        rdata = self.rif.rdata
-        rvalid = self.m.TmpReg(initval=0)
-
-        self.seq.Then().Delay(current_delay + delay + 1)(
-            rvalid(vtypes.Ands(not_empty, self.rif.deq))
-        )
-
-        # de-assert
-        self.seq.Delay(current_delay + delay + 1)(
-            self.rif.deq(0)
-        )
-        self.seq.Delay(current_delay + delay + 2)(
-            rvalid(0)
-        )
-
-        return rdata, rvalid
+        return data, valid, ready
 
     @property
     def wdata(self):
@@ -185,9 +165,8 @@ class FIFO(_MutexFunction):
     def deq(self, fsm):
         cond = fsm.state == fsm.current
 
-        rdata, rvalid = self.deq_rtl(cond=cond)
-        fsm.If(vtypes.Not(self.empty)).goto_next()
-        fsm.goto_next()
+        rdata, rvalid, rready = self.deq_rtl(cond=cond)
+        fsm.If(rready).goto_next()
 
         rdata_reg = self.m.TmpReg(self.datawidth, initval=0, signed=True)
 
@@ -215,8 +194,7 @@ class FIFO(_MutexFunction):
     def try_deq(self, fsm):
         cond = fsm.state == fsm.current
 
-        rdata, rvalid = self.deq_rtl(cond=cond)
-        fsm.goto_next()
+        rdata, rvalid, rready = self.deq_rtl(cond=cond)
         fsm.goto_next()
 
         rdata_reg = self.m.TmpReg(self.datawidth, initval=0, signed=True)

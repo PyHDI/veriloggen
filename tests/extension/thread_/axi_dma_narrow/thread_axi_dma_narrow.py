@@ -12,17 +12,15 @@ import veriloggen.thread as vthread
 import veriloggen.types.axi as axi
 
 
-def mkLed():
+def mkLed(word_datawidth=128):
     m = Module('blinkled')
     clk = m.Input('CLK')
     rst = m.Input('RST')
 
     datawidth = 32
     addrwidth = 10
-    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth,
-                         num_cmd_delay=1, num_data_delay=3)
-    myram = vthread.RAM(m, 'myram', clk, rst, datawidth * 2, addrwidth,
-                        numports=2)
+    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
+    myram = vthread.RAM(m, 'myram', clk, rst, word_datawidth, addrwidth)
 
     all_ok = m.TmpReg(initval=0)
 
@@ -32,7 +30,7 @@ def mkLed():
         for i in range(4):
             print('# iter %d start' % i)
             # Test for 4KB boundary check
-            offset = i * 1024 * 16 + (myaxi.boundary_size - 4)
+            offset = i * 1024 * 16 + (myaxi.boundary_size - (word_datawidth // 8))
             body(size, offset)
             print('# iter %d end' % i)
 
@@ -51,7 +49,7 @@ def mkLed():
 
         laddr = 0
         gaddr = offset
-        myaxi.dma_write(myram, laddr, gaddr, size, port=0)
+        myaxi.dma_write(myram, laddr, gaddr, size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # write
@@ -60,14 +58,14 @@ def mkLed():
             myram.write(i, wdata)
 
         laddr = 0
-        gaddr = (size + size) * 4 + offset
-        myaxi.dma_write(myram, laddr, gaddr, size, port=1)
+        gaddr = (size + size) * (word_datawidth // 8) + offset
+        myaxi.dma_write(myram, laddr, gaddr, size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # read
         laddr = 0
         gaddr = offset
-        myaxi.dma_read(myram, laddr, gaddr, size, port=1)
+        myaxi.dma_read(myram, laddr, gaddr, size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
@@ -78,8 +76,8 @@ def mkLed():
 
         # read
         laddr = 0
-        gaddr = (size + size) * 4 + offset
-        myaxi.dma_read(myram, laddr, gaddr, size, port=0)
+        gaddr = (size + size) * (word_datawidth // 8) + offset
+        myaxi.dma_read(myram, laddr, gaddr, size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
@@ -94,11 +92,11 @@ def mkLed():
     return m
 
 
-def mkTest(memimg_name=None):
+def mkTest(memimg_name=None, word_datawidth=128):
     m = Module('test')
 
     # target instance
-    led = mkLed()
+    led = mkLed(word_datawidth)
 
     # copy paras and ports
     params = m.copy_params(led)
@@ -114,7 +112,7 @@ def mkTest(memimg_name=None):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    #simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
