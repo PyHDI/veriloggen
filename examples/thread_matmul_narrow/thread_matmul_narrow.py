@@ -15,47 +15,45 @@ import veriloggen.types.axi as axi
 axi_datawidth = 32
 datawidth = 64
 
+matrix_size = 16
 a_offset = 0
 b_offset = 4096
 c_offset = 4096 * 2
 
 
-def mkLed(matrix_size=16):
+def mkLed():
     m = Module('blinkled')
     clk = m.Input('CLK')
     rst = m.Input('RST')
-
-    seq = Seq(m, 'seq', clk, rst)
-    timer = m.Reg('timer', 32, initval=0)
-    seq(
-        timer.inc()
-    )
 
     addrwidth = 10
     ram_a = vthread.RAM(m, 'ram_a', clk, rst, datawidth, addrwidth)
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
     ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
-    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth //
-                         (datawidth // axi_datawidth))
 
-    def matmul(matrix_size, a_offset, b_offset, c_offset):
-        start_time = timer
-        comp(matrix_size, a_offset, b_offset, c_offset)
-        end_time = timer
-        time = end_time - start_time
-        print("Time (cycles): %d" % time)
-        check(matrix_size, a_offset, b_offset, c_offset)
-        vthread.finish()
+    maxi = vthread.AXIM(m, 'maxi', clk, rst, datawidth //
+                        (datawidth // axi_datawidth))
+    saxi = vthread.AXISLiteRegister(m, 'saxi', clk, rst, 32, length=8)
+
+    def matmul():
+        while True:
+            saxi.wait_flag(0, value=1, resetvalue=0)
+            matrix_size = saxi.read(1)
+            a_offset = saxi.read(2)
+            b_offset = saxi.read(3)
+            c_offset = saxi.read(4)
+            comp(matrix_size, a_offset, b_offset, c_offset)
+            saxi.write_flag(5, 1, resetvalue=0)
 
     def comp(matrix_size, a_offset, b_offset, c_offset):
         a_addr, c_addr = a_offset, c_offset
 
         for i in range(matrix_size):
-            myaxi.dma_read(ram_a, 0, a_addr, matrix_size)
+            maxi.dma_read(ram_a, 0, a_addr, matrix_size)
 
             b_addr = b_offset
             for j in range(matrix_size):
-                myaxi.dma_read(ram_b, 0, b_addr, matrix_size)
+                maxi.dma_read(ram_b, 0, b_addr, matrix_size)
 
                 sum = 0
                 for k in range(matrix_size):
@@ -66,38 +64,17 @@ def mkLed(matrix_size=16):
 
                 b_addr += matrix_size * (datawidth // 8)
 
-            myaxi.dma_write(ram_c, 0, c_addr, matrix_size)
+            maxi.dma_write(ram_c, 0, c_addr, matrix_size)
             a_addr += matrix_size * (datawidth // 8)
             c_addr += matrix_size * (datawidth // 8)
 
-    def check(matrix_size, a_offset, b_offset, c_offset):
-        all_ok = True
-        c_addr = c_offset
-        for i in range(matrix_size):
-            myaxi.dma_read(ram_c, 0, c_addr, matrix_size)
-            for j in range(matrix_size):
-                v = ram_c.read(j)
-                if i == j and vthread.verilog.NotEql(v, (i + 1) * 2):
-                    all_ok = False
-                    print("NG [%d,%d] = %d" % (i, j, v))
-                if i != j and vthread.verilog.NotEql(v, 0):
-                    all_ok = False
-                    print("NG [%d,%d] = %d" % (i, j, v))
-            c_addr += matrix_size * (datawidth // 8)
-
-        if all_ok:
-            print('# verify: PASSED')
-        else:
-            print('# verify: FAILED')
-
     th = vthread.Thread(m, 'th_matmul', clk, rst, matmul)
-    fsm = th.start(matrix_size, a_offset, b_offset, c_offset)
+    fsm = th.start()
 
     return m
 
 
 def mkTest(memimg_name=None):
-    matrix_size = 16
 
     a_shape = (matrix_size, matrix_size)
     b_shape = (matrix_size, matrix_size)
@@ -137,7 +114,7 @@ def mkTest(memimg_name=None):
     axi.set_memory(mem, a, axi_datawidth, datawidth, a_addr)
     axi.set_memory(mem, b, axi_datawidth, datawidth, b_addr)
 
-    led = mkLed(matrix_size)
+    led = mkLed()
 
     m = Module('test')
     params = m.copy_params(led)
@@ -149,7 +126,75 @@ def mkTest(memimg_name=None):
                                 mem_datawidth=axi_datawidth,
                                 memimg=mem, memimg_name=memimg_name)
 
-    memory.connect(ports, 'myaxi')
+    memory.connect(ports, 'maxi')
+
+    # AXI-Slave controller
+    _saxi = vthread.AXIMLite(m, '_saxi', clk, rst, noio=True)
+    _saxi.connect(ports, 'saxi')
+
+    # Timer
+    counter = m.Reg('counter', 32, initval=0)
+    seq = Seq(m, 'seq', clk, rst)
+    seq(
+        counter.inc()
+    )
+
+    def ctrl():
+        for i in range(100):
+            pass
+
+        awaddr = 4
+        print('# matrix_size = %d' % matrix_size)
+        _saxi.write(awaddr, matrix_size)
+
+        awaddr = 8
+        print('# a_offset = %d' % a_offset)
+        _saxi.write(awaddr, a_offset)
+
+        awaddr = 12
+        print('# b_offset = %d' % b_offset)
+        _saxi.write(awaddr, b_offset)
+
+        awaddr = 16
+        print('# c_offset = %d' % c_offset)
+        _saxi.write(awaddr, c_offset)
+
+        awaddr = 0
+        start_time = counter
+        print('# start time = %d' % start_time)
+        _saxi.write(awaddr, 1)
+
+        araddr = 20
+        v = _saxi.read(araddr)
+        while v == 0:
+            v = _saxi.read(araddr)
+
+        end_time = counter
+        print('# end time = %d' % end_time)
+        time = end_time - start_time
+        print('# exec time = %d' % time)
+
+        all_ok = True
+        for y in range(matrix_size):
+            for x in range(matrix_size):
+                v = memory.read(
+                    c_offset + (y * matrix_size + x) * datawidth // 8)
+                if y == x and vthread.verilog.NotEql(v, (y + 1) * 2):
+                    all_ok = False
+                    print("NG [%d,%d] = %d" % (y, x, v))
+                if y != x and vthread.verilog.NotEql(v, 0):
+                    all_ok = False
+                    print("NG [%d,%d] = %d" % (y, x, v))
+
+        if all_ok:
+            print('# verify: PASSED')
+        else:
+            print('# verify: FAILED')
+
+        vthread.finish()
+
+    th = vthread.Thread(m, 'th_ctrl', clk, rst, ctrl)
+    fsm = th.start()
 
     uut = m.Instance(led, 'uut',
                      params=m.connect_params(led),
