@@ -11,7 +11,7 @@ import numpy as np
 # In[2]:
 
 
-bitfile = "axistream_fifo_multistream.bit"
+bitfile = "thread_stream_axi_stream_fifo.bit"
 overlay = Overlay(bitfile)
 overlay.ip_dict.keys()
 
