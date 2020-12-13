@@ -75,10 +75,8 @@ def run(filename='tmp.v', simtype='iverilog', outputfile=None):
 
     test = mkLed()
 
-    if filename is not None:
-        test.to_verilog(filename)
-
-    return '# verify: PASSED'
+    code = test.to_verilog(filename)
+    return code
 
 
 if __name__ == '__main__':
