@@ -471,7 +471,7 @@ class AxiStreamInData(AxiStreamInterfaceBase):
     _O = util.t_Output
 
     def __init__(self, m, name=None, datawidth=32,
-                 with_last=False,
+                 with_last=True,
                  id_width=0, user_width=0, dest_width=0,
                  itype=None, otype=None):
 
@@ -2324,7 +2324,7 @@ class AxiLiteSlave(AxiSlave):
 class AxiStreamIn(object):
 
     def __init__(self, m, name, clk, rst, datawidth=32,
-                 with_last=False,
+                 with_last=True,
                  id_width=0, user_width=0, dest_width=0,
                  noio=False, nodataflow=False):
 
@@ -2567,7 +2567,7 @@ class AxiStreamIn(object):
 class AxiStreamOut(object):
 
     def __init__(self, m, name, clk, rst, datawidth=32,
-                 with_last=False,
+                 with_last=True,
                  id_width=0, user_width=0, dest_width=0,
                  noio=False, nodataflow=False):
 
