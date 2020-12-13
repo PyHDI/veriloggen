@@ -62,7 +62,7 @@ def mkLed():
             read_size = saxi.read(2)
             write_size = saxi.read(3)
             reduce_size = saxi.read(4)
-            offset = saxi.read(5)
+            bias_addr = saxi.read(5)
 
             if read_size <= 0:
                 read_size = 1
@@ -71,7 +71,7 @@ def mkLed():
             if reduce_size <= 0:
                 reduce_size = 1
 
-            maxi.dma_read(ram_b, 0, offset, write_size)
+            maxi.dma_read(ram_b, 0, bias_addr, write_size)
 
             axi_in.write_fifo(fifo_a, read_size)
             axi_out.read_fifo(fifo_c, write_size)
