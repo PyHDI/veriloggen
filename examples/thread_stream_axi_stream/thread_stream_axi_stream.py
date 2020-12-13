@@ -71,7 +71,7 @@ def mkLed():
             if reduce_size <= 0:
                 reduce_size = 1
 
-            maxi.dma_read(ram_b, offset, 0, write_size)
+            maxi.dma_read(ram_b, 0, offset, write_size)
 
             axi_in.write_fifo(fifo_a, read_size)
             axi_out.read_fifo(fifo_c, write_size)
