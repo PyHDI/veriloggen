@@ -234,5 +234,3 @@ def run(filename='tmp.v', simtype='iverilog', outputfile=None):
 if __name__ == '__main__':
     rslt = run(filename='tmp.v')
     print(rslt)
-
-    m = mkLed()
