@@ -22,6 +22,8 @@ def mkLed():
     addrwidth = 10
 
     maxi = vthread.AXIM(m, 'maxi', clk, rst, datawidth)
+    maxi.disable_write()
+
     saxi = vthread.AXISLiteRegister(m, 'saxi', clk, rst,
                                     datawidth=32, length=8)
 
