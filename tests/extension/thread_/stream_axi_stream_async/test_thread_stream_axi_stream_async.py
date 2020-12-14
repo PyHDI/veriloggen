@@ -330,7 +330,8 @@ module blinkled
   reg signed [32-1:0] _plus_data_2;
   wire signed [32-1:0] mystream_c_data;
   assign mystream_c_data = _plus_data_2;
-  reg _set_flag_27;
+  wire _set_flag_27;
+  assign _set_flag_27 = th_comp == 17;
   assign ram_a_0_addr = (_mystream_stream_oready && _mystream_a_source_ram_renable && (_mystream_a_source_sel == 1))? _mystream_a_source_ram_raddr : 0;
   assign ram_a_0_enable = (_mystream_stream_oready && _mystream_a_source_ram_renable && (_mystream_a_source_sel == 1))? 1'd1 : 0;
   localparam _tmp_28 = 1;
@@ -342,7 +343,8 @@ module blinkled
   assign mystream_a_data = __variable_wdata_0;
   reg [32-1:0] _mystream_a_source_fsm_0;
   localparam _mystream_a_source_fsm_0_init = 0;
-  reg _set_flag_30;
+  wire _set_flag_30;
+  assign _set_flag_30 = th_comp == 18;
   assign ram_b_0_addr = (_mystream_stream_oready && _mystream_b_source_ram_renable && (_mystream_b_source_sel == 2))? _mystream_b_source_ram_raddr : 0;
   assign ram_b_0_enable = (_mystream_stream_oready && _mystream_b_source_ram_renable && (_mystream_b_source_sel == 2))? 1'd1 : 0;
   localparam _tmp_31 = 1;
@@ -354,7 +356,8 @@ module blinkled
   assign mystream_b_data = __variable_wdata_1;
   reg [32-1:0] _mystream_b_source_fsm_1;
   localparam _mystream_b_source_fsm_1_init = 0;
-  reg _set_flag_33;
+  wire _set_flag_33;
+  assign _set_flag_33 = th_comp == 19;
   reg _tmp_34;
   reg _tmp_35;
   reg _tmp_36;
@@ -370,7 +373,8 @@ module blinkled
   assign ram_c_0_enable = (_mystream_stream_oready && _mystream_c_sink_wenable && (_mystream_c_sink_sel == 3))? 1'd1 : 0;
   reg [32-1:0] _mystream_c_sink_fsm_2;
   localparam _mystream_c_sink_fsm_2_init = 0;
-  reg _set_flag_43;
+  wire _set_flag_43;
+  assign _set_flag_43 = th_comp == 20;
   assign _mystream_run_flag = (_set_flag_43)? 1 : 0;
   reg _tmp_44;
   reg _tmp_45;
@@ -853,7 +857,6 @@ module blinkled
       _mystream_c_sink_fifo_enq <= 0;
       __mystream_stream_ivalid_1 <= 0;
       _plus_data_2 <= 0;
-      _set_flag_27 <= 0;
       _mystream_a_source_mode <= 4'b0;
       _mystream_a_source_offset <= 0;
       _mystream_a_source_size <= 0;
@@ -865,7 +868,6 @@ module blinkled
       __variable_wdata_0 <= 0;
       _mystream_a_source_ram_raddr <= 0;
       _mystream_a_source_count <= 0;
-      _set_flag_30 <= 0;
       _mystream_b_source_mode <= 4'b0;
       _mystream_b_source_offset <= 0;
       _mystream_b_source_size <= 0;
@@ -877,7 +879,6 @@ module blinkled
       __variable_wdata_1 <= 0;
       _mystream_b_source_ram_raddr <= 0;
       _mystream_b_source_count <= 0;
-      _set_flag_33 <= 0;
       _tmp_34 <= 0;
       _tmp_35 <= 0;
       _tmp_36 <= 0;
@@ -898,7 +899,6 @@ module blinkled
       _mystream_c_sink_waddr <= 0;
       _mystream_c_sink_count <= 0;
       _mystream_c_sink_wdata <= 0;
-      _set_flag_43 <= 0;
       _tmp_44 <= 0;
       _tmp_45 <= 0;
       _tmp_46 <= 0;
@@ -933,10 +933,6 @@ module blinkled
       if(_mystream_stream_oready) begin
         _plus_data_2 <= mystream_a_data + mystream_b_data;
       end 
-      _set_flag_27 <= 0;
-      if(th_comp == 17) begin
-        _set_flag_27 <= 1;
-      end 
       if(_set_flag_27) begin
         _mystream_a_source_mode <= 4'b1;
         _mystream_a_source_offset <= _th_comp_offset_3;
@@ -969,10 +965,6 @@ module blinkled
         _mystream_a_source_ram_renable <= 0;
         _mystream_a_idle <= 1;
       end 
-      _set_flag_30 <= 0;
-      if(th_comp == 18) begin
-        _set_flag_30 <= 1;
-      end 
       if(_set_flag_30) begin
         _mystream_b_source_mode <= 4'b1;
         _mystream_b_source_offset <= _th_comp_offset_3;
@@ -1004,12 +996,6 @@ module blinkled
       if((_mystream_b_source_fsm_1 == 2) && (_mystream_b_source_count == 1) && _mystream_stream_oready) begin
         _mystream_b_source_ram_renable <= 0;
         _mystream_b_idle <= 1;
-      end 
-      if(_mystream_stream_oready) begin
-        _set_flag_33 <= 0;
-      end 
-      if(_mystream_stream_oready && (th_comp == 19)) begin
-        _set_flag_33 <= 1;
       end 
       if(_mystream_stream_oready) begin
         _tmp_34 <= _set_flag_33;
@@ -1061,10 +1047,6 @@ module blinkled
         _mystream_c_sink_wdata <= mystream_c_data;
         _mystream_c_sink_wenable <= 1;
         _mystream_c_sink_count <= _mystream_c_sink_count - 1;
-      end 
-      _set_flag_43 <= 0;
-      if(th_comp == 20) begin
-        _set_flag_43 <= 1;
       end 
       if(_mystream_stream_oready) begin
         _tmp_44 <= _mystream_source_start;
@@ -1158,8 +1140,14 @@ module blinkled
             _mystream_source_stop <= 1;
             _mystream_source_busy <= 0;
           end 
+          if(_mystream_stream_oready && (_mystream_a_idle && _mystream_b_idle && (_mystream_fsm == 3)) && _mystream_run_flag) begin
+            _mystream_source_start <= 1;
+          end 
           if(_mystream_stream_oready && (_mystream_a_idle && _mystream_b_idle && (_mystream_fsm == 3))) begin
             _mystream_fsm <= _mystream_fsm_init;
+          end 
+          if(_mystream_stream_oready && (_mystream_a_idle && _mystream_b_idle && (_mystream_fsm == 3)) && _mystream_run_flag) begin
+            _mystream_fsm <= _mystream_fsm_1;
           end 
         end
       endcase
