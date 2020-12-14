@@ -552,7 +552,8 @@ module blinkled
   assign mystream_reduce_sum_data = _reduceadd_data_5;
   wire [1-1:0] mystream_reduce_sum_valid_data;
   assign mystream_reduce_sum_valid_data = _pulse_data_7;
-  reg _set_flag_30;
+  wire _set_flag_30;
+  assign _set_flag_30 = th_comp == 25;
   assign fifo_a_deq = (_mystream_reduce_stream_oready && _mystream_reduce_a_source_fifo_deq && (_mystream_reduce_a_source_sel == 1) && !fifo_a_empty)? 1 : 0;
   localparam _tmp_31 = 1;
   wire [_tmp_31-1:0] _tmp_32;
@@ -563,10 +564,12 @@ module blinkled
   assign mystream_reduce_a_data = __variable_wdata_0;
   reg [32-1:0] _mystream_reduce_a_source_fsm_0;
   localparam _mystream_reduce_a_source_fsm_0_init = 0;
-  reg _set_flag_33;
+  wire _set_flag_33;
+  assign _set_flag_33 = th_comp == 26;
   reg signed [32-1:0] __variable_wdata_1;
   assign mystream_reduce_reduce_size_data = __variable_wdata_1;
-  reg _set_flag_34;
+  wire _set_flag_34;
+  assign _set_flag_34 = th_comp == 27;
   reg _tmp_35;
   reg _tmp_36;
   reg _tmp_37;
@@ -602,7 +605,8 @@ module blinkled
   reg signed [32-1:0] _plus_data_10;
   wire signed [32-1:0] mystream_bias_z_data;
   assign mystream_bias_z_data = _plus_data_10;
-  reg _set_flag_57;
+  wire _set_flag_57;
+  assign _set_flag_57 = th_comp == 28;
   assign fifo_b_deq = (_mystream_bias_stream_oready && _mystream_bias_x_source_fifo_deq && (_mystream_bias_x_source_sel == 1) && !fifo_b_empty)? 1 : 0;
   localparam _tmp_58 = 1;
   wire [_tmp_58-1:0] _tmp_59;
@@ -613,7 +617,8 @@ module blinkled
   assign mystream_bias_x_data = __variable_wdata_8;
   reg [32-1:0] _mystream_bias_x_source_fsm_0;
   localparam _mystream_bias_x_source_fsm_0_init = 0;
-  reg _set_flag_60;
+  wire _set_flag_60;
+  assign _set_flag_60 = th_comp == 29;
   assign ram_b_0_addr = (_mystream_bias_stream_oready && _mystream_bias_y_source_ram_renable && (_mystream_bias_y_source_sel == 2))? _mystream_bias_y_source_ram_raddr : 
                         (_tmp_16)? _tmp_14 : 0;
   assign ram_b_0_enable = (_mystream_bias_stream_oready && _mystream_bias_y_source_ram_renable && (_mystream_bias_y_source_sel == 2))? 1'd1 : 
@@ -627,7 +632,8 @@ module blinkled
   assign mystream_bias_y_data = __variable_wdata_9;
   reg [32-1:0] _mystream_bias_y_source_fsm_1;
   localparam _mystream_bias_y_source_fsm_1_init = 0;
-  reg _set_flag_63;
+  wire _set_flag_63;
+  assign _set_flag_63 = th_comp == 30;
   reg _tmp_64;
   reg _tmp_65;
   reg _tmp_66;
@@ -643,7 +649,8 @@ module blinkled
   assign _mystream_bias_stream_oready = ((_mystream_bias_sink_busy && (_mystream_bias_z_sink_sel == 3))? !fifo_c_almost_full : 1) && (((_mystream_bias_source_busy && (_mystream_bias_x_source_sel == 1))? !fifo_b_empty || _mystream_bias_x_idle : 1) && 1);
   reg [32-1:0] _mystream_bias_z_sink_fsm_2;
   localparam _mystream_bias_z_sink_fsm_2_init = 0;
-  reg _set_flag_72;
+  wire _set_flag_72;
+  assign _set_flag_72 = th_comp == 31;
   assign _mystream_reduce_run_flag = (_set_flag_72)? 1 : 0;
   reg _tmp_73;
   reg _tmp_74;
@@ -693,7 +700,8 @@ module blinkled
   assign _mystream_reduce_sink_busy = _tmp_113;
   reg __mystream_reduce_sink_busy_1;
   assign _mystream_reduce_busy = _mystream_reduce_source_busy || _mystream_reduce_sink_busy || _mystream_reduce_busy_buf;
-  reg _set_flag_114;
+  wire _set_flag_114;
+  assign _set_flag_114 = th_comp == 33;
   assign _mystream_bias_run_flag = (_set_flag_114)? 1 : 0;
   reg _tmp_115;
   reg _tmp_116;
@@ -1255,17 +1263,14 @@ module blinkled
       _pulse_data_7 <= 1'sd0;
       _pulse_count_7 <= 0;
       _pulse_prev_count_max_7 <= 0;
-      _set_flag_30 <= 0;
       _mystream_reduce_a_source_mode <= 4'b0;
       _mystream_reduce_a_source_size <= 0;
       _mystream_reduce_a_source_sel <= 0;
       _mystream_reduce_a_source_size_buf <= 0;
       __variable_wdata_0 <= 0;
       _mystream_reduce_a_source_count <= 0;
-      _set_flag_33 <= 0;
       _mystream_reduce_reduce_size_next_constant_data <= 0;
       __variable_wdata_1 <= 0;
-      _set_flag_34 <= 0;
       _tmp_35 <= 0;
       _tmp_36 <= 0;
       _tmp_37 <= 0;
@@ -1292,7 +1297,6 @@ module blinkled
       _mystream_reduce_sum_sink_size_buf <= 0;
       _mystream_reduce_sum_sink_count <= 0;
       _mystream_reduce_sum_sink_fifo_wdata <= 0;
-      _set_flag_72 <= 0;
       _tmp_73 <= 0;
       _tmp_74 <= 0;
       _tmp_75 <= 0;
@@ -1439,10 +1443,6 @@ module blinkled
       if(__mystream_reduce_stream_ivalid_7 && _mystream_reduce_stream_oready) begin
         _pulse_prev_count_max_7 <= _pulse_current_count_7 >= __delay_data_17__delay_16__delay_15__delay_14____variable_1 - 1;
       end 
-      _set_flag_30 <= 0;
-      if(th_comp == 25) begin
-        _set_flag_30 <= 1;
-      end 
       if(_set_flag_30) begin
         _mystream_reduce_a_source_mode <= 4'b1000;
         _mystream_reduce_a_source_size <= _th_comp_read_size_0;
@@ -1469,21 +1469,11 @@ module blinkled
         _mystream_reduce_a_source_fifo_deq <= 0;
         _mystream_reduce_a_idle <= 1;
       end 
-      _set_flag_33 <= 0;
-      if(th_comp == 26) begin
-        _set_flag_33 <= 1;
-      end 
       if(_set_flag_33) begin
         _mystream_reduce_reduce_size_next_constant_data <= _th_comp_reduce_size_2;
       end 
       if(_mystream_reduce_source_start) begin
         __variable_wdata_1 <= _mystream_reduce_reduce_size_next_constant_data;
-      end 
-      if(_mystream_reduce_stream_oready) begin
-        _set_flag_34 <= 0;
-      end 
-      if(_mystream_reduce_stream_oready && (th_comp == 27)) begin
-        _set_flag_34 <= 1;
       end 
       if(_mystream_reduce_stream_oready) begin
         _tmp_35 <= _set_flag_34;
@@ -1563,10 +1553,6 @@ module blinkled
         _mystream_reduce_sum_sink_fifo_wdata <= mystream_reduce_sum_data;
         _mystream_reduce_sum_sink_fifo_enq <= 1;
         _mystream_reduce_sum_sink_count <= _mystream_reduce_sum_sink_count - 1;
-      end 
-      _set_flag_72 <= 0;
-      if(th_comp == 31) begin
-        _set_flag_72 <= 1;
       end 
       if(_mystream_reduce_stream_oready) begin
         _tmp_73 <= _mystream_reduce_source_start;
@@ -1745,8 +1731,14 @@ module blinkled
             _mystream_reduce_source_stop <= 1;
             _mystream_reduce_source_busy <= 0;
           end 
+          if(_mystream_reduce_stream_oready && (_mystream_reduce_a_idle && (_mystream_reduce_fsm == 3)) && _mystream_reduce_run_flag) begin
+            _mystream_reduce_source_start <= 1;
+          end 
           if(_mystream_reduce_stream_oready && (_mystream_reduce_a_idle && (_mystream_reduce_fsm == 3))) begin
             _mystream_reduce_fsm <= _mystream_reduce_fsm_init;
+          end 
+          if(_mystream_reduce_stream_oready && (_mystream_reduce_a_idle && (_mystream_reduce_fsm == 3)) && _mystream_reduce_run_flag) begin
+            _mystream_reduce_fsm <= _mystream_reduce_fsm_1;
           end 
         end
       endcase
@@ -1766,14 +1758,12 @@ module blinkled
       _mystream_bias_z_sink_fifo_enq <= 0;
       __mystream_bias_stream_ivalid_1 <= 0;
       _plus_data_10 <= 0;
-      _set_flag_57 <= 0;
       _mystream_bias_x_source_mode <= 4'b0;
       _mystream_bias_x_source_size <= 0;
       _mystream_bias_x_source_sel <= 0;
       _mystream_bias_x_source_size_buf <= 0;
       __variable_wdata_8 <= 0;
       _mystream_bias_x_source_count <= 0;
-      _set_flag_60 <= 0;
       _mystream_bias_y_source_mode <= 4'b0;
       _mystream_bias_y_source_offset <= 0;
       _mystream_bias_y_source_size <= 0;
@@ -1785,7 +1775,6 @@ module blinkled
       __variable_wdata_9 <= 0;
       _mystream_bias_y_source_ram_raddr <= 0;
       _mystream_bias_y_source_count <= 0;
-      _set_flag_63 <= 0;
       _tmp_64 <= 0;
       _tmp_65 <= 0;
       _tmp_66 <= 0;
@@ -1798,7 +1787,6 @@ module blinkled
       _mystream_bias_z_sink_size_buf <= 0;
       _mystream_bias_z_sink_count <= 0;
       _mystream_bias_z_sink_fifo_wdata <= 0;
-      _set_flag_114 <= 0;
       _tmp_115 <= 0;
       _tmp_116 <= 0;
       _tmp_117 <= 0;
@@ -1833,10 +1821,6 @@ module blinkled
       if(_mystream_bias_stream_oready) begin
         _plus_data_10 <= mystream_bias_x_data + mystream_bias_y_data;
       end 
-      _set_flag_57 <= 0;
-      if(th_comp == 28) begin
-        _set_flag_57 <= 1;
-      end 
       if(_set_flag_57) begin
         _mystream_bias_x_source_mode <= 4'b1000;
         _mystream_bias_x_source_size <= _th_comp_write_size_1;
@@ -1862,10 +1846,6 @@ module blinkled
       if((_mystream_bias_x_source_fsm_0 == 2) && (_mystream_bias_x_source_count == 1) && _mystream_bias_stream_oready) begin
         _mystream_bias_x_source_fifo_deq <= 0;
         _mystream_bias_x_idle <= 1;
-      end 
-      _set_flag_60 <= 0;
-      if(th_comp == 29) begin
-        _set_flag_60 <= 1;
       end 
       if(_set_flag_60) begin
         _mystream_bias_y_source_mode <= 4'b1;
@@ -1898,12 +1878,6 @@ module blinkled
       if((_mystream_bias_y_source_fsm_1 == 2) && (_mystream_bias_y_source_count == 1) && _mystream_bias_stream_oready) begin
         _mystream_bias_y_source_ram_renable <= 0;
         _mystream_bias_y_idle <= 1;
-      end 
-      if(_mystream_bias_stream_oready) begin
-        _set_flag_63 <= 0;
-      end 
-      if(_mystream_bias_stream_oready && (th_comp == 30)) begin
-        _set_flag_63 <= 1;
       end 
       if(_mystream_bias_stream_oready) begin
         _tmp_64 <= _set_flag_63;
@@ -1941,10 +1915,6 @@ module blinkled
         _mystream_bias_z_sink_fifo_wdata <= mystream_bias_z_data;
         _mystream_bias_z_sink_fifo_enq <= 1;
         _mystream_bias_z_sink_count <= _mystream_bias_z_sink_count - 1;
-      end 
-      _set_flag_114 <= 0;
-      if(th_comp == 33) begin
-        _set_flag_114 <= 1;
       end 
       if(_mystream_bias_stream_oready) begin
         _tmp_115 <= _mystream_bias_source_start;
@@ -2038,8 +2008,14 @@ module blinkled
             _mystream_bias_source_stop <= 1;
             _mystream_bias_source_busy <= 0;
           end 
+          if(_mystream_bias_stream_oready && (_mystream_bias_x_idle && _mystream_bias_y_idle && (_mystream_bias_fsm == 3)) && _mystream_bias_run_flag) begin
+            _mystream_bias_source_start <= 1;
+          end 
           if(_mystream_bias_stream_oready && (_mystream_bias_x_idle && _mystream_bias_y_idle && (_mystream_bias_fsm == 3))) begin
             _mystream_bias_fsm <= _mystream_bias_fsm_init;
+          end 
+          if(_mystream_bias_stream_oready && (_mystream_bias_x_idle && _mystream_bias_y_idle && (_mystream_bias_fsm == 3)) && _mystream_bias_run_flag) begin
+            _mystream_bias_fsm <= _mystream_bias_fsm_1;
           end 
         end
       endcase
