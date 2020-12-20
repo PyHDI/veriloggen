@@ -2713,25 +2713,43 @@ class _ParameterVariable(_Variable):
         return _Numeric.__getattribute__(self, attr)
 
 
-class _Accumulator(_UnaryOperator):
+class _Accumulator(_Operator):
     latency = 1
     ops = (vtypes.Plus, )
 
     def __init__(self, right, size=None, interval=None, initval=None, offset=None,
                  dependency=None, enable=None, reset=None, width=32, signed=True):
 
+        _Operator.__init__(self)
+
+        self.right = _to_constant(right)
+        self.right._add_sink(self)
+
         self.size = _to_constant(size) if size is not None else None
+        if self.size is not None:
+            self.size._add_sink(self)
+
         self.interval = _to_constant(interval) if interval is not None else None
+        if self.interval is not None:
+            self.interval._add_sink(self)
+
         self.initval = (_to_constant(initval)
                         if initval is not None else _to_constant(0))
-        self.offset = (_to_constant(offset)
-                       if offset is not None else None)
+        if self.initval is not None:
+            self.initval._add_sink(self)
 
         if not isinstance(self.initval, _Constant):
             raise TypeError("initval must be Constant, not '%s'" %
                             str(type(self.initval)))
 
+        self.offset = (_to_constant(offset)
+                       if offset is not None else None)
+        if self.offset is not None:
+            self.offset._add_sink(self)
+
         self.dependency = dependency
+        if self.dependency is not None:
+            self.dependency._add_sink(self)
 
         self.enable = _to_constant(enable)
         if self.enable is not None:
@@ -2741,9 +2759,11 @@ class _Accumulator(_UnaryOperator):
         if self.reset is not None:
             self.reset._add_sink(self)
 
-        _UnaryOperator.__init__(self, right)
         self.width = width
         self.signed = signed
+
+        self._set_attributes()
+        self._set_managers()
 
         self.graph_shape = 'box'
         self.graph_style = 'rounded'
@@ -2752,9 +2772,8 @@ class _Accumulator(_UnaryOperator):
         self.point = self.right.get_point()
 
     def _set_managers(self):
-        self._set_strm(_get_strm(self.right, self.initval,
-                                 self.offset, self.dependency,
-                                 self.enable, self.reset))
+        self._set_strm(_get_strm(self.right, self.interval, self.initval, self.offset,
+                                 self.dependency, self.enable, self.reset))
         self._set_module(getattr(self.strm, 'module', None))
         self._set_seq(getattr(self.strm, 'seq', None))
 
@@ -3297,18 +3316,18 @@ class _SubstreamOutput(_UnaryOperator):
             self.sig_data = data
 
 
-class RingBuffer(_UnaryOperator):
+class RingBuffer(_SpecialOperator):
     latency = 1
 
     def __init__(self, var, length, enable=None):
 
-        self.enable = _to_constant(enable)
-        if self.enable is not None:
-            self.enable._add_sink(self)
+        args = [var]
+        if enable is not None:
+            args.append(enable)
+
+        _SpecialOperator.__init__(self, *args)
 
         self.length = length
-
-        _UnaryOperator.__init__(self, var)
 
         self.num_ports = 1
         self.read_vars = []
@@ -3316,13 +3335,8 @@ class RingBuffer(_UnaryOperator):
         self.graph_label = 'RingBufferIn'
         self.graph_shape = 'box'
 
-    def _set_managers(self):
-        self._set_strm(_get_strm(self.right, self.enable))
-        self._set_module(getattr(self.strm, 'module', None))
-        self._set_seq(getattr(self.strm, 'seq', None))
-
-    def read(self, offset):
-        var = _RingBufferOutput(self, offset, self.num_ports, self.enable)
+    def read(self, offset, enable=None):
+        var = _RingBufferOutput(self, offset, self.num_ports, enable)
         self.read_vars.append(var)
         self.num_ports += 1
         return var
@@ -3341,46 +3355,41 @@ class RingBuffer(_UnaryOperator):
                                clk, datawidth, addrwidth, self.num_ports,
                                with_enable=True)
 
-        enabledata = self.enable.sig_data if self.enable is not None else None
-
         wdata = m.Wire(self.name('wdata'), datawidth, signed=signed)
-        wdata.assign(self.right.sig_data)
+        wdata.assign(self.args[0].sig_data)
 
         waddr = m.Reg(self.name('waddr'), addrwidth, initval=0)
         self.waddr = waddr
 
-        wcond = _and_vars(svalid, senable, enabledata)
+        enabledata = self.args[1].sig_data if len(self.args) > 1 else None
+        wenable_value = _and_vars(svalid, senable, enabledata)
+        wenable = m.Wire(self.name('wenable'))
+        wenable.assign(wenable_value)
 
         next_waddr = vtypes.Mux(waddr == self.length - 1, 0, waddr + 1)
-        seq(waddr(next_waddr), cond=wcond)
+        seq(waddr(next_waddr), cond=wenable)
 
-        wenable = wcond
         self.ram.connect(0, waddr, wdata, wenable, wenable)
 
         self.sig_data = wdata
 
 
-class _RingBufferOutput(_BinaryOperator):
+class _RingBufferOutput(_SpecialOperator):
     latency = 1
 
     def __init__(self, buf, offset, port, enable=None):
 
-        self.enable = _to_constant(enable)
-        if self.enable is not None:
-            self.enable._add_sink(self)
+        args = [buf, offset]
+        if enable is not None:
+            args.append(enable)
 
-        self.port = port
+        _SpecialOperator.__init__(self, *args)
 
-        _BinaryOperator.__init__(self, buf, offset)
         self.buf = buf
+        self.port = port
 
         self.graph_label = 'RingBufferOut'
         self.graph_shape = 'box'
-
-    def _set_managers(self):
-        self._set_strm(_get_strm(self.left, self.right, self.enable))
-        self._set_module(getattr(self.strm, 'module', None))
-        self._set_seq(getattr(self.strm, 'seq', None))
 
     def _implement(self, m, seq, svalid=None, senable=None):
         if self.latency != 1:
@@ -3393,13 +3402,21 @@ class _RingBufferOutput(_BinaryOperator):
 
         rdata = m.Wire(self.name('rdata'), datawidth, signed=signed)
 
+        renable_base = _and_vars(svalid, senable)
         diff_latency = self.start_stage - self.buf.start_stage
-        renable = _and_vars(svalid, senable)
-        raddr_base = seq.Prev(self.buf.waddr, diff_latency, cond=renable)
 
-        raddr = raddr_base + self.right.sig_data
-        raddr = vtypes.Mux(raddr >= self.buf.length,
-                           raddr - self.buf.length, raddr)
+        raddr_base = seq.Prev(self.buf.waddr, diff_latency, cond=renable_base)
+        raddr_value = raddr_base + self.args[1].sig_data
+        raddr_value = vtypes.Mux(raddr_value >= self.buf.length,
+                                 raddr_value - self.buf.length, raddr_value)
+
+        raddr = m.Wire(self.name('raddr'), addrwidth)
+        raddr.assign(raddr_value)
+
+        enabledata = self.args[2].sig_data if len(self.args) > 2 else None
+        renable_value = _and_vars(renable_base, enabledata)
+        renable = m.Wire(self.name('renable'))
+        renable.assign(renable_value)
 
         self.buf.ram.connect(self.port, raddr, 0, 0, renable)
         rdata.assign(self.buf.ram.rdata(self.port))
@@ -3407,18 +3424,18 @@ class _RingBufferOutput(_BinaryOperator):
         self.sig_data = rdata
 
 
-class Scratchpad(_BinaryOperator):
+class Scratchpad(_SpecialOperator):
     latency = 1
 
     def __init__(self, var, addr, length, when=None):
 
-        self.enable = _to_constant(when)
-        if self.enable is not None:
-            self.enable._add_sink(self)
+        args = [var, addr]
+        if when is not None:
+            args.append(when)
+
+        _SpecialOperator.__init__(self, *args)
 
         self.length = length
-
-        _BinaryOperator.__init__(self, var, addr)
 
         self.num_ports = 1
         self.read_vars = []
@@ -3426,13 +3443,8 @@ class Scratchpad(_BinaryOperator):
         self.graph_label = 'ScratchpadIn'
         self.graph_shape = 'box'
 
-    def _set_managers(self):
-        self._set_strm(_get_strm(self.left, self.right, self.enable))
-        self._set_module(getattr(self.strm, 'module', None))
-        self._set_seq(getattr(self.strm, 'seq', None))
-
-    def read(self, addr):
-        var = _ScratchpadOutput(self, addr, self.num_ports)
+    def read(self, addr, enable=None):
+        var = _ScratchpadOutput(self, addr, self.num_ports, enable)
         self.read_vars.append(var)
         self.num_ports += 1
         return var
@@ -3451,27 +3463,35 @@ class Scratchpad(_BinaryOperator):
                                clk, datawidth, addrwidth, self.num_ports,
                                with_enable=True)
 
-        enabledata = self.enable.sig_data if self.enable is not None else None
-
         wdata = m.Wire(self.name('wdata'), datawidth, signed=signed)
-        wdata.assign(self.left.sig_data)
+        wdata.assign(self.args[0].sig_data)
 
         waddr = m.Wire(self.name('waddr'), addrwidth)
-        waddr.assign(self.right.sig_data)
+        waddr.assign(self.args[1].sig_data)
 
-        wenable = _and_vars(svalid, senable, enabledata)
+        enabledata = self.args[2].sig_data if len(self.args) > 2 else None
+        wenable_value = _and_vars(svalid, senable, enabledata)
+        wenable = m.Wire(self.name('wenable'))
+        wenable.assign(wenable_value)
+
         self.ram.connect(0, waddr, wdata, wenable, wenable)
 
         self.sig_data = wdata
 
 
-class _ScratchpadOutput(_BinaryOperator):
+class _ScratchpadOutput(_SpecialOperator):
     latency = 1
 
-    def __init__(self, sp, addr, port):
-        self.port = port
-        _BinaryOperator.__init__(self, sp, addr)
+    def __init__(self, sp, addr, port, enable=None):
+
+        args = [sp, addr]
+        if enable is not None:
+            args.append(enable)
+
+        _SpecialOperator.__init__(self, *args)
+
         self.sp = sp
+        self.port = port
 
         self.graph_label = 'ScratchpadOut'
         self.graph_shape = 'box'
@@ -3488,9 +3508,14 @@ class _ScratchpadOutput(_BinaryOperator):
         rdata = m.Wire(self.name('rdata'), datawidth, signed=signed)
 
         raddr = m.Wire(self.name('raddr'), addrwidth)
-        raddr.assign(self.right.sig_data)
+        raddr.assign(self.args[1].sig_data)
 
-        renable = _and_vars(svalid, senable)
+        renable_base = _and_vars(svalid, senable)
+
+        enabledata = self.args[2].sig_data if len(self.args) > 2 else None
+        renable_value = _and_vars(renable_base, enabledata)
+        renable = m.Wire(self.name('renable'))
+        renable.assign(renable_value)
 
         self.sp.ram.connect(self.port, raddr, 0, 0, renable)
         rdata.assign(self.sp.ram.rdata(self.port))
