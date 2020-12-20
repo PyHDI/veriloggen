@@ -54,7 +54,9 @@ def log2(value, maxsize=32):
 def add_mux(targ, cond, value):
     prev_assign = targ._get_assign()
     if not prev_assign:
-        targ.assign(value)
+        # targ.assign(value)
+        # for easy debugging
+        targ.assign(vtypes.Mux(cond, value, value))
     else:
         prev_value = prev_assign.statement.right
         prev_assign.overwrite_right(
