@@ -73,11 +73,11 @@ module blinkled
   reg signed [32-1:0] _th_blink_write_sum_2;
   reg signed [32-1:0] _th_blink_i_3;
   reg signed [32-1:0] _th_blink_wdata_4;
-  assign myram_0_wdata = (th_blink == 6)? _th_blink_wdata_4 : 0;
+  assign myram_0_wdata = (th_blink == 6)? _th_blink_wdata_4 : 'hx;
   assign myram_0_wenable = (th_blink == 6)? 1'd1 : 0;
   reg signed [32-1:0] _th_blink_read_sum_5;
   assign myram_0_addr = (th_blink == 13)? _th_blink_i_3 : 
-                        (th_blink == 6)? _th_blink_i_3 : 0;
+                        (th_blink == 6)? _th_blink_i_3 : 'hx;
   assign myram_0_enable = (th_blink == 13)? 1'd1 : 
                           (th_blink == 6)? 1'd1 : 0;
   localparam _tmp_0 = 1;

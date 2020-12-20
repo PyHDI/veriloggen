@@ -1355,7 +1355,7 @@ module blinkled
   reg [10-1:0] _tmp_14;
   reg [32-1:0] _tmp_15;
   reg _tmp_16;
-  assign ram_a_0_wdata = (_tmp_16)? _tmp_15 : 0;
+  assign ram_a_0_wdata = (_tmp_16)? _tmp_15 : 'hx;
   assign ram_a_0_wenable = (_tmp_16)? 1'd1 : 0;
   reg _ram_a_cond_0_1;
   reg [9-1:0] _tmp_17;
@@ -1392,7 +1392,7 @@ module blinkled
   reg [33-1:0] _tmp_29;
   reg [10-1:0] _tmp_30;
   assign ram_a_0_addr = (_tmp_25)? _tmp_30 : 
-                        (_tmp_16)? _tmp_14 : 0;
+                        (_tmp_16)? _tmp_14 : 'hx;
   assign ram_a_0_enable = ((_tmp_22 || !_tmp_20) && (_tmp_23 || !_tmp_21) && _tmp_25)? 1'd1 : 
                           (_tmp_16)? 1'd1 : 0;
   reg [9-1:0] _tmp_31;

@@ -126,19 +126,19 @@ module blinkled
   reg signed [32-1:0] _th_blink_wdata_4;
   wire [2-1:0] _tmp_0;
   assign _tmp_0 = _th_blink_i_3;
-  assign myram_0_0_wdata = ((th_blink == 6) && (_tmp_0 == 0))? _th_blink_wdata_4 : 0;
+  assign myram_0_0_wdata = ((th_blink == 6) && (_tmp_0 == 0))? _th_blink_wdata_4 : 'hx;
   assign myram_0_0_wenable = ((th_blink == 6) && (_tmp_0 == 0))? 1'd1 : 0;
-  assign myram_1_0_wdata = ((th_blink == 6) && (_tmp_0 == 1))? _th_blink_wdata_4 : 0;
+  assign myram_1_0_wdata = ((th_blink == 6) && (_tmp_0 == 1))? _th_blink_wdata_4 : 'hx;
   assign myram_1_0_wenable = ((th_blink == 6) && (_tmp_0 == 1))? 1'd1 : 0;
-  assign myram_2_0_wdata = ((th_blink == 6) && (_tmp_0 == 2))? _th_blink_wdata_4 : 0;
+  assign myram_2_0_wdata = ((th_blink == 6) && (_tmp_0 == 2))? _th_blink_wdata_4 : 'hx;
   assign myram_2_0_wenable = ((th_blink == 6) && (_tmp_0 == 2))? 1'd1 : 0;
-  assign myram_3_0_wdata = ((th_blink == 6) && (_tmp_0 == 3))? _th_blink_wdata_4 : 0;
+  assign myram_3_0_wdata = ((th_blink == 6) && (_tmp_0 == 3))? _th_blink_wdata_4 : 'hx;
   assign myram_3_0_wenable = ((th_blink == 6) && (_tmp_0 == 3))? 1'd1 : 0;
   reg signed [32-1:0] _th_blink_read_sum_5;
   wire [2-1:0] _tmp_1;
   assign _tmp_1 = _th_blink_i_3;
   assign myram_0_0_addr = (th_blink == 13)? _th_blink_i_3 >> 2 : 
-                          ((th_blink == 6) && (_tmp_0 == 0))? _th_blink_i_3 >> 2 : 0;
+                          ((th_blink == 6) && (_tmp_0 == 0))? _th_blink_i_3 >> 2 : 'hx;
   assign myram_0_0_enable = (th_blink == 13)? 1'd1 : 
                             ((th_blink == 6) && (_tmp_0 == 0))? 1'd1 : 0;
   localparam _tmp_2 = 1;
@@ -146,7 +146,7 @@ module blinkled
   assign _tmp_3 = th_blink == 13;
   reg [_tmp_2-1:0] __tmp_3_1;
   assign myram_1_0_addr = (th_blink == 13)? _th_blink_i_3 >> 2 : 
-                          ((th_blink == 6) && (_tmp_0 == 1))? _th_blink_i_3 >> 2 : 0;
+                          ((th_blink == 6) && (_tmp_0 == 1))? _th_blink_i_3 >> 2 : 'hx;
   assign myram_1_0_enable = (th_blink == 13)? 1'd1 : 
                             ((th_blink == 6) && (_tmp_0 == 1))? 1'd1 : 0;
   localparam _tmp_4 = 1;
@@ -154,7 +154,7 @@ module blinkled
   assign _tmp_5 = th_blink == 13;
   reg [_tmp_4-1:0] __tmp_5_1;
   assign myram_2_0_addr = (th_blink == 13)? _th_blink_i_3 >> 2 : 
-                          ((th_blink == 6) && (_tmp_0 == 2))? _th_blink_i_3 >> 2 : 0;
+                          ((th_blink == 6) && (_tmp_0 == 2))? _th_blink_i_3 >> 2 : 'hx;
   assign myram_2_0_enable = (th_blink == 13)? 1'd1 : 
                             ((th_blink == 6) && (_tmp_0 == 2))? 1'd1 : 0;
   localparam _tmp_6 = 1;
@@ -162,7 +162,7 @@ module blinkled
   assign _tmp_7 = th_blink == 13;
   reg [_tmp_6-1:0] __tmp_7_1;
   assign myram_3_0_addr = (th_blink == 13)? _th_blink_i_3 >> 2 : 
-                          ((th_blink == 6) && (_tmp_0 == 3))? _th_blink_i_3 >> 2 : 0;
+                          ((th_blink == 6) && (_tmp_0 == 3))? _th_blink_i_3 >> 2 : 'hx;
   assign myram_3_0_enable = (th_blink == 13)? 1'd1 : 
                             ((th_blink == 6) && (_tmp_0 == 3))? 1'd1 : 0;
   localparam _tmp_8 = 1;

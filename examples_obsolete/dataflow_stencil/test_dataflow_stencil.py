@@ -342,7 +342,7 @@ module stencil
   reg [32-1:0] read_addr;
   assign src_ram0_0_wdata = 0;
   assign src_ram0_0_wenable = 0;
-  assign src_ram0_0_addr = (read_fsm == 1)? read_addr : 0;
+  assign src_ram0_0_addr = (read_fsm == 1)? read_addr : 'hx;
   assign src_ram0_0_enable = (read_fsm == 1)? 1'd1 : 0;
   localparam _tmp_1 = 1;
   wire [_tmp_1-1:0] _tmp_2;
@@ -350,7 +350,7 @@ module stencil
   reg [_tmp_1-1:0] __tmp_2_1;
   assign src_ram1_0_wdata = 0;
   assign src_ram1_0_wenable = 0;
-  assign src_ram1_0_addr = (read_fsm == 1)? read_addr : 0;
+  assign src_ram1_0_addr = (read_fsm == 1)? read_addr : 'hx;
   assign src_ram1_0_enable = (read_fsm == 1)? 1'd1 : 0;
   localparam _tmp_3 = 1;
   wire [_tmp_3-1:0] _tmp_4;
@@ -358,7 +358,7 @@ module stencil
   reg [_tmp_3-1:0] __tmp_4_1;
   assign src_ram2_0_wdata = 0;
   assign src_ram2_0_wenable = 0;
-  assign src_ram2_0_addr = (read_fsm == 1)? read_addr : 0;
+  assign src_ram2_0_addr = (read_fsm == 1)? read_addr : 'hx;
   assign src_ram2_0_enable = (read_fsm == 1)? 1'd1 : 0;
   localparam _tmp_5 = 1;
   wire [_tmp_5-1:0] _tmp_6;
@@ -431,8 +431,8 @@ module stencil
   localparam write_fsm_init = 0;
   reg [32-1:0] write_count;
   reg [32-1:0] write_addr;
-  assign dst_ram_0_addr = ((write_fsm == 0) && (ovalid && (write_count > 1)))? write_addr : 0;
-  assign dst_ram_0_wdata = ((write_fsm == 0) && (ovalid && (write_count > 1)))? odata : 0;
+  assign dst_ram_0_addr = ((write_fsm == 0) && (ovalid && (write_count > 1)))? write_addr : 'hx;
+  assign dst_ram_0_wdata = ((write_fsm == 0) && (ovalid && (write_count > 1)))? odata : 'hx;
   assign dst_ram_0_wenable = ((write_fsm == 0) && (ovalid && (write_count > 1)))? 1'd1 : 0;
   assign dst_ram_0_enable = ((write_fsm == 0) && (ovalid && (write_count > 1)))? 1'd1 : 0;
 
