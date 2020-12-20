@@ -88,7 +88,7 @@ class FIFO(_MutexFunction):
             enable = vtypes.Int(1, 1)
 
         util.add_mux(self.wif.wdata, enable, wdata)
-        util.add_mux(self.wif.enq, enable, enq_cond)
+        util.add_enable_cond(self.wif.enq, enable, enq_cond)
 
         ack = self.seq.Prev(ready, 1)
 
@@ -108,7 +108,7 @@ class FIFO(_MutexFunction):
         else:
             deq_cond = ready
 
-        util.add_mux(self.rif.deq, deq_cond, 1)
+        util.add_enable_cond(self.rif.deq, deq_cond, 1)
 
         data = self.rif.rdata
         valid = self.seq.Prev(deq_cond, 1)

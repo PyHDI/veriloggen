@@ -10,6 +10,7 @@ from collections import OrderedDict
 
 import veriloggen.core.vtypes as vtypes
 import veriloggen.types.fixed as fxd
+import veriloggen.types.util as util
 from veriloggen.seq.seq import make_condition
 from veriloggen.fsm.fsm import FSM
 from veriloggen.seq.seq import Seq
@@ -1335,7 +1336,7 @@ class Stream(BaseStream):
         return 0
 
     def _run(self, cond):
-        add_mux(self.run_flag, cond, 1)
+        util.add_enable_cond(self.run_flag, cond, 1)
 
         if not self.fsm_synthesized:
             substreams = self._collect_substreams()
@@ -1676,7 +1677,7 @@ class Stream(BaseStream):
         d, v = ram.read_rtl(var.source_ram_raddr, port=port, cond=renable)
 
         d_out = d
-        add_mux(var.source_ram_rdata, ram_cond, d_out)
+        util.add_mux(var.source_ram_rdata, ram_cond, d_out)
 
         if (self.dump and
             (self.dump_mode == 'all' or
@@ -2157,12 +2158,12 @@ class Stream(BaseStream):
         d, v, ready = fifo.deq_rtl(cond=deq)
 
         d_out = d
-        add_mux(var.source_fifo_rdata, fifo_cond, d_out)
+        util.add_mux(var.source_fifo_rdata, fifo_cond, d_out)
 
         # stall control
         cond = vtypes.Ands(self.source_busy, fifo_cond)
         fifo_oready = vtypes.Ors(ready, var.source_idle)
-        add_cond(self.stream_oready, cond, fifo_oready)
+        util.add_disable_cond(self.stream_oready, cond, fifo_oready)
 
         if (self.dump and
             (self.dump_mode == 'all' or
@@ -2763,7 +2764,7 @@ class Stream(BaseStream):
         # stall control
         cond = vtypes.Ands(self.sink_busy, fifo_cond)
         fifo_oready = ready
-        add_cond(self.stream_oready, cond, fifo_oready)
+        util.add_disable_cond(self.stream_oready, cond, fifo_oready)
 
         if (self.dump and
             (self.dump_mode == 'all' or
@@ -2939,7 +2940,7 @@ class Stream(BaseStream):
         d, v = ram.read_rtl(var.addr, port=port, cond=renable)
 
         d_out = d
-        add_mux(var.read_data, ram_cond, d_out)
+        util.add_mux(var.read_data, ram_cond, d_out)
 
         if (self.dump and
             (self.dump_mode == 'all' or
@@ -3204,8 +3205,8 @@ class Substream(BaseSubstream):
         self.reset_delay = 0
 
         if strm is not None:
-            add_mux(substrm.stream_oready, strm.busy, strm.stream_oready)
-            add_mux(substrm.is_root, strm.busy, 0)
+            util.add_enable_cond(substrm.stream_oready, strm.busy, strm.stream_oready)
+            util.add_enable_cond(substrm.is_root, strm.busy, 0)
 
         BaseSubstream.__init__(self, substrm, strm)
 
@@ -3233,27 +3234,3 @@ class Substream(BaseSubstream):
         for s in ret:
             s.reset_delay += 1 + self.start_stage
         return ret
-
-
-def add_mux(targ, cond, value):
-    prev_assign = targ._get_assign()
-    if not prev_assign:
-        targ.assign(vtypes.Mux(cond, value, 0))
-    else:
-        prev_value = prev_assign.statement.right
-        prev_assign.overwrite_right(
-            vtypes.Mux(cond, value, prev_value))
-        targ.module.remove(prev_assign)
-        targ.module.append(prev_assign)
-
-
-def add_cond(targ, cond, value):
-    prev_assign = targ._get_assign()
-    if not prev_assign:
-        targ.assign(vtypes.Mux(cond, value, 1))
-    else:
-        prev_value = prev_assign.statement.right
-        prev_assign.overwrite_right(
-            vtypes.Ands(vtypes.Mux(cond, value, 1), prev_value))
-        targ.module.remove(prev_assign)
-        targ.module.append(prev_assign)
