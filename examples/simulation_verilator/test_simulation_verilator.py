@@ -711,7 +711,7 @@ module blinkled
   reg [10-1:0] _tmp_5;
   reg [32-1:0] _tmp_6;
   reg _tmp_7;
-  assign ram_a_0_wdata = (_tmp_7)? _tmp_6 : 0;
+  assign ram_a_0_wdata = (_tmp_7)? _tmp_6 : 'hx;
   assign ram_a_0_wenable = (_tmp_7)? 1'd1 : 0;
   reg _ram_a_cond_0_1;
   reg [9-1:0] _tmp_8;
@@ -742,14 +742,14 @@ module blinkled
   reg [10-1:0] _tmp_15;
   reg [32-1:0] _tmp_16;
   reg _tmp_17;
-  assign ram_b_0_wdata = (_tmp_17)? _tmp_16 : 0;
+  assign ram_b_0_wdata = (_tmp_17)? _tmp_16 : 'hx;
   assign ram_b_0_wenable = (_tmp_17)? 1'd1 : 0;
   reg _ram_b_cond_0_1;
   reg __myaxi_read_fsm_cond_3_2_1;
   reg signed [32-1:0] _th_matmul_sum_14;
   reg signed [32-1:0] _th_matmul_k_15;
   assign ram_a_0_addr = (th_matmul == 20)? _th_matmul_k_15 : 
-                        (_tmp_7)? _tmp_5 : 0;
+                        (_tmp_7)? _tmp_5 : 'hx;
   assign ram_a_0_enable = (th_matmul == 20)? 1'd1 : 
                           (_tmp_7)? 1'd1 : 0;
   localparam _tmp_18 = 1;
@@ -759,7 +759,7 @@ module blinkled
   reg signed [32-1:0] _tmp_20;
   reg signed [32-1:0] _th_matmul_x_16;
   assign ram_b_0_addr = (th_matmul == 22)? _th_matmul_k_15 : 
-                        (_tmp_17)? _tmp_15 : 0;
+                        (_tmp_17)? _tmp_15 : 'hx;
   assign ram_b_0_enable = (th_matmul == 22)? 1'd1 : 
                           (_tmp_17)? 1'd1 : 0;
   localparam _tmp_21 = 1;
@@ -835,7 +835,7 @@ module blinkled
   reg [32-1:0] _tmp_45;
   reg _tmp_46;
   assign ram_c_0_wdata = (_tmp_46)? _tmp_45 : 
-                         (th_matmul == 26)? _th_matmul_sum_14 : 0;
+                         (th_matmul == 26)? _th_matmul_sum_14 : 'hx;
   assign ram_c_0_wenable = (_tmp_46)? 1'd1 : 
                            (th_matmul == 26)? 1'd1 : 0;
   reg _ram_c_cond_0_1;
@@ -844,7 +844,7 @@ module blinkled
   assign ram_c_0_addr = (th_matmul == 50)? _th_matmul_j_27 : 
                         (_tmp_46)? _tmp_44 : 
                         (_tmp_30)? _tmp_35 : 
-                        (th_matmul == 26)? _th_matmul_j_13 : 0;
+                        (th_matmul == 26)? _th_matmul_j_13 : 'hx;
   assign ram_c_0_enable = (th_matmul == 50)? 1'd1 : 
                           (_tmp_46)? 1'd1 : 
                           ((_tmp_27 || !_tmp_25) && (_tmp_28 || !_tmp_26) && _tmp_30)? 1'd1 : 

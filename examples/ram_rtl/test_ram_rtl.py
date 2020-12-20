@@ -74,10 +74,10 @@ module main
   reg [32-1:0] addr;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
-  assign myram_0_wdata = (fsm == 1)? count : 0;
+  assign myram_0_wdata = (fsm == 1)? count : 'hx;
   assign myram_0_wenable = (fsm == 1)? 1'd1 : 0;
   assign myram_0_addr = (fsm == 2)? addr : 
-                        (fsm == 1)? addr : 0;
+                        (fsm == 1)? addr : 'hx;
   assign myram_0_enable = (fsm == 2)? 1'd1 : 
                           (fsm == 1)? 1'd1 : 0;
   localparam _tmp_0 = 1;

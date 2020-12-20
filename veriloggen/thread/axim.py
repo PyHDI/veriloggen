@@ -990,7 +990,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             fsm.set_index(3)
             cond = vtypes.Ands(fsm.here, self.write_op_sel == op_id)
             done_out = self.write_dataflow(data, counter, cond=cond)
-            util.add_mux(self.write_data_done, done_out, 1)
+            util.add_enable_cond(self.write_data_done, done_out, 1)
 
             return
 
@@ -1044,7 +1044,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         # state 3
         cond = vtypes.Ands(fsm.here, self.write_op_sel == op_id)
         done_out = self.write_dataflow(data, counter, cond=cond)
-        util.add_mux(self.write_data_done, done_out, 1)
+        util.add_enable_cond(self.write_data_done, done_out, 1)
 
         fsm.If(self.write_data_done)(
             cur_global_addr.add(optimize(cur_size * (self.datawidth // 8)))
@@ -1599,4 +1599,3 @@ class AXIMLite(axi.AxiLiteMaster, _MutexFunction):
         self.seq.If(flag)(
             self.global_base_addr(addr)
         )
-

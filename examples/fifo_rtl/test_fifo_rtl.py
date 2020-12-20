@@ -81,7 +81,7 @@ module main
   reg [32-1:0] sum;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
-  assign myfifo_wdata = (fsm == 1)? count : 0;
+  assign myfifo_wdata = (fsm == 1)? count : 'hx;
   assign myfifo_enq = (fsm == 1)? (fsm == 1) && !myfifo_almost_full : 0;
   localparam _tmp_0 = 1;
   wire [_tmp_0-1:0] _tmp_1;

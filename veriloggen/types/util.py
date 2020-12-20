@@ -54,6 +54,18 @@ def log2(value, maxsize=32):
 def add_mux(targ, cond, value):
     prev_assign = targ._get_assign()
     if not prev_assign:
+        targ.assign(vtypes.Mux(cond, value, vtypes.IntX()))
+    else:
+        prev_value = prev_assign.statement.right
+        prev_assign.overwrite_right(
+            vtypes.Mux(cond, value, prev_value))
+        targ.module.remove(prev_assign)
+        targ.module.append(prev_assign)
+
+
+def add_enable_cond(targ, cond, value):
+    prev_assign = targ._get_assign()
+    if not prev_assign:
         targ.assign(vtypes.Mux(cond, value, 0))
     else:
         prev_value = prev_assign.statement.right
@@ -63,7 +75,7 @@ def add_mux(targ, cond, value):
         targ.module.append(prev_assign)
 
 
-def add_cond(targ, cond, value):
+def add_disable_cond(targ, cond, value):
     prev_assign = targ._get_assign()
     if not prev_assign:
         targ.assign(vtypes.Mux(cond, value, 1))

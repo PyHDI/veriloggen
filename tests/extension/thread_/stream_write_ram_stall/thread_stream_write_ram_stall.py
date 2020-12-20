@@ -51,7 +51,7 @@ def mkLed():
         count.inc()
     )
 
-    util.add_cond(strm.stream_oready, 1, count == 0)
+    util.add_disable_cond(strm.stream_oready, 1, count == 0)
 
     def comp_stream(size, offset):
         strm.set_source('a', ram_a, offset, size * 2)

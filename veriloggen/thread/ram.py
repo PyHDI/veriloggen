@@ -128,7 +128,7 @@ class RAM(_MutexFunction):
             enable = vtypes.Int(1, 1)
 
         util.add_mux(self.interfaces[port].addr, enable, addr)
-        util.add_mux(self.interfaces[port].enable, enable, vtypes.Int(1, 1))
+        util.add_enable_cond(self.interfaces[port].enable, enable, vtypes.Int(1, 1))
 
         rdata = self.interfaces[port].rdata
         rvalid = self.seq.Prev(enable, 1)
@@ -151,8 +151,8 @@ class RAM(_MutexFunction):
 
         util.add_mux(self.interfaces[port].addr, enable, addr)
         util.add_mux(self.interfaces[port].wdata, enable, wdata)
-        util.add_mux(self.interfaces[port].wenable, enable, vtypes.Int(1, 1))
-        util.add_mux(self.interfaces[port].enable, enable, vtypes.Int(1, 1))
+        util.add_enable_cond(self.interfaces[port].wenable, enable, vtypes.Int(1, 1))
+        util.add_enable_cond(self.interfaces[port].enable, enable, vtypes.Int(1, 1))
 
     def read(self, fsm, addr, port=0):
         """ intrinsic read operation using a shared Seq object """
@@ -221,7 +221,7 @@ class RAM(_MutexFunction):
         read_cond = next_valid_on
         read_enable = vtypes.Ands(data_cond, next_valid_on)
         util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
-        util.add_mux(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+        util.add_enable_cond(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
 
         self.seq.If(data_cond, next_valid_off)(
             last(0),
@@ -327,7 +327,7 @@ class RAM(_MutexFunction):
         read_cond = next_valid_on
         read_enable = vtypes.Ands(data_cond, next_valid_on)
         util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
-        util.add_mux(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+        util.add_enable_cond(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
 
         self.seq.If(data_cond, next_valid_off)(
             last(0),
@@ -502,7 +502,7 @@ class RAM(_MutexFunction):
         read_cond = vtypes.Ands(fsm.here, ext_cond)
         read_enable = vtypes.Ands(fsm.here, ext_cond)
         util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
-        util.add_mux(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+        util.add_enable_cond(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
 
         # initial prefetch state
         for n in next_reuse_data:
@@ -517,7 +517,7 @@ class RAM(_MutexFunction):
             read_cond = fsm.here
             read_enable = fsm.here
             util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
-            util.add_mux(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+            util.add_enable_cond(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
 
             fsm.goto_next()
 
@@ -555,7 +555,7 @@ class RAM(_MutexFunction):
             read_cond = fsm.here
             read_enable = fsm.here
             util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
-            util.add_mux(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+            util.add_enable_cond(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
 
             fsm.goto_next()
 
@@ -711,7 +711,7 @@ class RAM(_MutexFunction):
         read_cond = vtypes.Ands(fsm.here, ext_cond)
         read_enable = vtypes.Ands(fsm.here, ext_cond)
         util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
-        util.add_mux(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+        util.add_enable_cond(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
 
         first = True
         for offset, count, (out_size, out_stride) in zip(offsets, count_list, pattern):
@@ -758,7 +758,7 @@ class RAM(_MutexFunction):
                 read_cond = fsm.here
                 read_enable = fsm.here
                 util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
-                util.add_mux(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+                util.add_enable_cond(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
 
                 if update_count is None:
                     update_count = count == 0
@@ -831,7 +831,7 @@ class RAM(_MutexFunction):
                 read_cond = fsm.here
                 read_enable = fsm.here
                 util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
-                util.add_mux(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+                util.add_enable_cond(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
 
                 if offset is not None:
                     fsm.If(update_offset, vtypes.Not(carry))(
@@ -971,8 +971,8 @@ class RAM(_MutexFunction):
 
         util.add_mux(self.interfaces[port].addr, write_enable, write_addr)
         util.add_mux(self.interfaces[port].wdata, write_enable, write_data)
-        util.add_mux(self.interfaces[port].wenable, write_enable, vtypes.Int(1, 1))
-        util.add_mux(self.interfaces[port].enable, write_enable, vtypes.Int(1, 1))
+        util.add_enable_cond(self.interfaces[port].wenable, write_enable, vtypes.Int(1, 1))
+        util.add_enable_cond(self.interfaces[port].enable, write_enable, vtypes.Int(1, 1))
 
         self.seq.If(ext_cond, counter == 0)(
             write_addr(addr - stride),
@@ -1060,8 +1060,8 @@ class RAM(_MutexFunction):
 
         util.add_mux(self.interfaces[port].addr, write_enable, write_addr)
         util.add_mux(self.interfaces[port].wdata, write_enable, write_data)
-        util.add_mux(self.interfaces[port].wenable, write_enable, vtypes.Int(1, 1))
-        util.add_mux(self.interfaces[port].enable, write_enable, vtypes.Int(1, 1))
+        util.add_enable_cond(self.interfaces[port].wenable, write_enable, vtypes.Int(1, 1))
+        util.add_enable_cond(self.interfaces[port].enable, write_enable, vtypes.Int(1, 1))
 
         self.seq.If(raw_valid, running)(
             write_addr(offset_addr),
@@ -1754,7 +1754,7 @@ class MultibankRAM(object):
         read_enable = vtypes.Ands(data_cond, next_valid_on)
         for ram, read_addr in zip(self.rams, read_addr_list):
             util.add_mux(ram.interfaces[port].addr, read_cond, read_addr)
-            util.add_mux(ram.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+            util.add_enable_cond(ram.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
 
         self.seq.If(data_cond, next_valid_off)(
             last(0),
@@ -1903,7 +1903,7 @@ class MultibankRAM(object):
         read_enable = vtypes.Ands(data_cond, next_valid_on)
         for ram, read_addr in zip(self.rams, read_addr_list):
             util.add_mux(ram.interfaces[port].addr, read_cond, read_addr)
-            util.add_mux(ram.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+            util.add_enable_cond(ram.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
 
         self.seq.If(data_cond, next_valid_off)(
             last(0),
@@ -2114,7 +2114,7 @@ class MultibankRAM(object):
         read_enable = vtypes.Ands(data_cond, next_valid_on)
         for ram, read_addr in zip(self.rams, read_addr_list):
             util.add_mux(ram.interfaces[port].addr, read_cond, read_addr)
-            util.add_mux(ram.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+            util.add_enable_cond(ram.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
 
         self.seq.If(data_cond, next_valid_off)(
             last(0),
@@ -2309,8 +2309,8 @@ class MultibankRAM(object):
                                                              write_data_list, write_enable_list):
             util.add_mux(ram.interfaces[port].addr, write_enable, write_addr)
             util.add_mux(ram.interfaces[port].wdata, write_enable, write_data)
-            util.add_mux(ram.interfaces[port].wenable, write_enable, vtypes.Int(1, 1))
-            util.add_mux(ram.interfaces[port].enable, write_enable, vtypes.Int(1, 1))
+            util.add_enable_cond(ram.interfaces[port].wenable, write_enable, vtypes.Int(1, 1))
+            util.add_enable_cond(ram.interfaces[port].enable, write_enable, vtypes.Int(1, 1))
 
         self.seq.If(ext_cond, counter == 0)(
             reg_addr(addr - stride),
@@ -2422,8 +2422,8 @@ class MultibankRAM(object):
                                                              write_data_list, write_enable_list):
             util.add_mux(ram.interfaces[port].addr, write_enable, write_addr)
             util.add_mux(ram.interfaces[port].wdata, write_enable, write_data)
-            util.add_mux(ram.interfaces[port].wenable, write_enable, vtypes.Int(1, 1))
-            util.add_mux(ram.interfaces[port].enable, write_enable, vtypes.Int(1, 1))
+            util.add_enable_cond(ram.interfaces[port].wenable, write_enable, vtypes.Int(1, 1))
+            util.add_enable_cond(ram.interfaces[port].enable, write_enable, vtypes.Int(1, 1))
 
         self.seq.If(ext_cond, vtypes.Not(running))(
             running(1)
@@ -2606,8 +2606,8 @@ class MultibankRAM(object):
                                                              write_data_list, write_enable_list):
             util.add_mux(ram.interfaces[port].addr, write_enable, write_addr)
             util.add_mux(ram.interfaces[port].wdata, write_enable, write_data)
-            util.add_mux(ram.interfaces[port].wenable, write_enable, vtypes.Int(1, 1))
-            util.add_mux(ram.interfaces[port].enable, write_enable, vtypes.Int(1, 1))
+            util.add_enable_cond(ram.interfaces[port].wenable, write_enable, vtypes.Int(1, 1))
+            util.add_enable_cond(ram.interfaces[port].enable, write_enable, vtypes.Int(1, 1))
 
         self.seq.If(ext_cond, counter == 0)(
             bank_sel(0),
