@@ -25,7 +25,7 @@ def mkLed():
     ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
-    size = strm.constant('size')
+    size = strm.parameter('size')
     cnt, valid = strm.CounterValid(size)
     a = strm.source('a')
     b = strm.source('b')
@@ -34,7 +34,7 @@ def mkLed():
     strm.sink(c, 'c')
 
     def comp_stream(size, offset):
-        strm.set_constant('size', size // 2)
+        strm.set_parameter('size', size // 2)
         strm.set_source('a', ram_a, offset, size)
         strm.set_source('b', ram_b, offset, size)
         strm.set_sink('c', ram_c, offset, size)

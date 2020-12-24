@@ -27,57 +27,25 @@ def mkLed():
     strm = vthread.Stream(m, 'mystream', clk, rst)
     a = strm.source('a')
     b = strm.source('b')
-    bias = strm.constant('bias')
-    c = a * b + bias
+    bias = strm.parameter('bias')
+    c = a + b + bias
     strm.sink(c, 'c')
 
-    def comp_stream(size, offset):
+    def comp_stream(size, offset, bias):
         strm.set_source('a', ram_a, offset, size)
         strm.set_source('b', ram_b, offset, size)
-        strm.set_constant('bias', 10)
+        strm.set_parameter('bias', bias)
         strm.set_sink('c', ram_c, offset, size)
         strm.run()
-
-        # double buffer of comp and cmd
-        strm.set_source('a', ram_a, offset + size, size)
-        strm.set_source('b', ram_b, offset + size, size)
-        strm.set_constant('bias', 100)
-        strm.set_sink('c', ram_c, offset + size, size)
-        strm.source_join()
-
-        strm.run()
-
-        # double buffer of comp and cmd
-        strm.set_source('a', ram_a, offset + size + size, size)
-        strm.set_source('b', ram_b, offset + size + size, size)
-        strm.set_constant('bias', 1000)
-        strm.set_sink('c', ram_c, offset + size + size, size)
-        strm.source_join()
-
-        strm.run()
-
-        strm.source_join()
         strm.join()
 
-    def comp_sequential(size, offset):
+    def comp_sequential(size, offset, bias):
         sum = 0
         for i in range(size):
             a = ram_a.read(i + offset)
             b = ram_b.read(i + offset)
-            sum = a * b + 10
+            sum = a + b + bias
             ram_c.write(i + offset, sum)
-
-        for i in range(size):
-            a = ram_a.read(i + offset + size)
-            b = ram_b.read(i + offset + size)
-            sum = a * b + 100
-            ram_c.write(i + offset + size, sum)
-
-        for i in range(size):
-            a = ram_a.read(i + offset + size + size)
-            b = ram_b.read(i + offset + size + size)
-            sum = a * b + 1000
-            ram_c.write(i + offset + size + size, sum)
 
     def check(size, offset_stream, offset_seq):
         all_ok = True
@@ -92,25 +60,24 @@ def mkLed():
             print('# verify: FAILED')
 
     def comp(size):
-        new_size = size + size + size
         # stream
+        double_size = size + size
         offset = 0
-        myaxi.dma_read(ram_a, offset, 0, new_size)
-        myaxi.dma_read(ram_b, offset, 512, new_size)
-        comp_stream(size, offset)
-        myaxi.dma_write(ram_c, offset, 1024, new_size)
+        myaxi.dma_read(ram_a, offset, 0, double_size)
+        myaxi.dma_read(ram_b, offset, 512, double_size)
+        comp_stream(size, offset, 100)
+        comp_stream(size, offset + size, 100)
+        myaxi.dma_write(ram_c, offset, 1024, double_size)
 
         # sequential
-        offset = new_size
-        myaxi.dma_read(ram_a, offset, 0, new_size)
-        myaxi.dma_read(ram_b, offset, 512, new_size)
-        comp_sequential(size, offset)
-        myaxi.dma_write(ram_c, offset, 1024 * 2, new_size)
+        offset = double_size
+        myaxi.dma_read(ram_a, offset, 0, double_size)
+        myaxi.dma_read(ram_b, offset, 512, double_size)
+        comp_sequential(double_size, offset, 100)
+        myaxi.dma_write(ram_c, offset, 1024 * 2, double_size)
 
         # verification
-        myaxi.dma_read(ram_c, 0, 1024, new_size)
-        myaxi.dma_read(ram_c, offset, 1024 * 2, new_size)
-        check(new_size, 0, offset)
+        check(double_size, 0, offset)
 
         vthread.finish()
 
@@ -140,7 +107,7 @@ def mkTest(memimg_name=None):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    # simulation.setup_waveform(m, uut)
+    #simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

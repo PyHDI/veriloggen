@@ -41,7 +41,7 @@ def mkLed():
 
     strm0 = vthread.Stream(m, 'mystream_reduce', clk, rst)
     a = strm0.source('a')
-    reduce_size = strm0.constant('reduce_size')
+    reduce_size = strm0.parameter('reduce_size')
     v = a * a
     sum, sum_valid = strm0.ReduceAddValid(v, reduce_size)
     strm0.sink(sum, 'sum', when=sum_valid, when_name='sum_valid')
@@ -77,7 +77,7 @@ def mkLed():
             axi_out.read_fifo(fifo_c, write_size)
 
             strm0.set_source_fifo('a', fifo_a, read_size)
-            strm0.set_constant('reduce_size', reduce_size)
+            strm0.set_parameter('reduce_size', reduce_size)
             strm0.set_sink_fifo('sum', fifo_b, write_size)
 
             strm1.set_source_fifo('x', fifo_b, write_size)

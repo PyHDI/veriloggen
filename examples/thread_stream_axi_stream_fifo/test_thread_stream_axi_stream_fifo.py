@@ -311,7 +311,7 @@ module blinkled
   reg _mystream_reduce_a_source_fifo_deq;
   wire [32-1:0] _mystream_reduce_a_source_fifo_rdata;
   reg [32-1:0] _mystream_reduce_a_source_empty_data;
-  reg [32-1:0] _mystream_reduce_reduce_size_next_constant_data;
+  reg [32-1:0] _mystream_reduce_reduce_size_next_parameter_data;
   reg _mystream_reduce_reduce_reset;
   reg [33-1:0] _mystream_reduce_sum_sink_count;
   reg [4-1:0] _mystream_reduce_sum_sink_mode;
@@ -1269,7 +1269,7 @@ module blinkled
       _mystream_reduce_a_source_size_buf <= 0;
       __variable_wdata_0 <= 0;
       _mystream_reduce_a_source_count <= 0;
-      _mystream_reduce_reduce_size_next_constant_data <= 0;
+      _mystream_reduce_reduce_size_next_parameter_data <= 0;
       __variable_wdata_1 <= 0;
       _tmp_35 <= 0;
       _tmp_36 <= 0;
@@ -1470,10 +1470,10 @@ module blinkled
         _mystream_reduce_a_idle <= 1;
       end 
       if(_set_flag_33) begin
-        _mystream_reduce_reduce_size_next_constant_data <= _th_comp_reduce_size_2;
+        _mystream_reduce_reduce_size_next_parameter_data <= _th_comp_reduce_size_2;
       end 
       if(_mystream_reduce_source_start) begin
-        __variable_wdata_1 <= _mystream_reduce_reduce_size_next_constant_data;
+        __variable_wdata_1 <= _mystream_reduce_reduce_size_next_parameter_data;
       end 
       if(_mystream_reduce_stream_oready) begin
         _tmp_35 <= _set_flag_34;

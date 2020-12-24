@@ -24,8 +24,8 @@ def mkLed():
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth, numports=2)
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
-    numbins = strm.constant('numbins')
-    offset = strm.constant('offset')
+    numbins = strm.parameter('numbins')
+    offset = strm.parameter('offset')
     a = strm.source('a')
     a = strm.Mux(a < 0, 0, a)
     a.latency = 0
@@ -43,8 +43,8 @@ def mkLed():
         for i in range(numbins):
             ram_b.write(i + offset, 0)
 
-        strm.set_constant('numbins', numbins)
-        strm.set_constant('offset', offset)
+        strm.set_parameter('numbins', numbins)
+        strm.set_parameter('offset', offset)
         strm.set_source('a', ram_a, offset, size)
         strm.set_read_modify_write_RAM('ext', ram_b, read_ports=(0,), write_port=1)
         strm.run()

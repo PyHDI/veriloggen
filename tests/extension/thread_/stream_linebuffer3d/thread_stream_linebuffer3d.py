@@ -42,8 +42,8 @@ def mkLed():
     addrcounter = strm.Counter(initval=0, enable=read_cond)
     src = strm.read_RAM('ram_src', addr=addrcounter, when=read_cond, datawidth=datawidth)
     counter = strm.Counter(initval=0)
-    width = strm.constant('width')
-    height = strm.constant('height')
+    width = strm.parameter('width')
+    height = strm.parameter('height')
 
     linebuf = strm.LineBuffer(shape=(1, 1, 1), memlens=[4, 13],
                               head_initvals=[0, 0], tail_initvals=[3, 12],
@@ -57,8 +57,8 @@ def mkLed():
         strm.set_source('dummy_src', ram_dummy_src, offset, channel * width * height * 2 * 2)
         strm.set_read_RAM('ram_src', ram_src)
         strm.set_sink('dst', ram_dst, offset, channel * width * height * 2 * 2)
-        strm.set_constant('width', width)
-        strm.set_constant('height', height)
+        strm.set_parameter('width', width)
+        strm.set_parameter('height', height)
         strm.run()
         strm.join()
 

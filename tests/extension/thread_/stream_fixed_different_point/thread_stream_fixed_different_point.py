@@ -31,7 +31,7 @@ def mkLed():
     strm = vthread.Stream(m, 'mystream', clk, rst, dump=True)
     a = strm.source('a', point=point)
     b = strm.source('b', point=-point)
-    const = strm.constant('const', point=point)
+    const = strm.parameter('const', point=point)
     c = a * b + const
     strm.sink(c, 'c')
 
@@ -40,7 +40,7 @@ def mkLed():
         strm.set_source('b', ram_b, offset, size)
         strm.set_sink('c', ram_c, offset, size)
         const = vthread.fixed.FixedConst(10, point=point)
-        strm.set_constant('const', const)
+        strm.set_parameter('const', const)
         strm.run()
         strm.join()
 

@@ -31,8 +31,8 @@ def mkLed():
     strm = vthread.Stream(m, 'mystream', clk, rst)
     src = strm.source('src')
     counter = strm.Counter(initval=0)
-    width = strm.constant('width')
-    height = strm.constant('height')
+    width = strm.parameter('width')
+    height = strm.parameter('height')
 
     # shift x20
     # rotate x10
@@ -63,8 +63,8 @@ def mkLed():
     def comp_stream(width, height, offset):
         strm.set_source('src', ram_src, offset, width * height)
         strm.set_sink('dst', ram_dst, offset, width * height)
-        strm.set_constant('width', width)
-        strm.set_constant('height', height)
+        strm.set_parameter('width', width)
+        strm.set_parameter('height', height)
         strm.run()
         strm.join()
 

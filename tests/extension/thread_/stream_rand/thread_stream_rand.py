@@ -74,9 +74,9 @@ def mkLed():
             if vthread.verilog.NotEql(st, sq):
                 all_ok = False
         print('# verify: PASSED')
-        #if all_ok:
+        # if all_ok:
         #    print('# verify: PASSED')
-        #else:
+        # else:
         #    print('# verify: FAILED')
 
     def comp(size):

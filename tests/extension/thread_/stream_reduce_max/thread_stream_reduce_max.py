@@ -25,13 +25,13 @@ def mkLed():
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
     a = strm.source('a')
-    size = strm.constant('size')
+    size = strm.parameter('size')
     sum, sum_valid = strm.ReduceMaxValid(a, size)
     strm.sink(sum, 'sum', when=sum_valid, when_name='sum_valid')
 
     def comp_stream(size, offset):
         strm.set_source('a', ram_a, offset, size)
-        strm.set_constant('size', size)
+        strm.set_parameter('size', size)
         strm.set_sink('sum', ram_b, offset, 1)
         strm.run()
         strm.join()

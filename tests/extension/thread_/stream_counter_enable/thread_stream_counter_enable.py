@@ -28,8 +28,8 @@ def mkLed():
     a = strm.source('a')
     b = strm.source('b')
     x = strm.Counter(initval=0, size=4)
-    y = strm.Counter(initval=0, size=4, enable=x==3)
-    z = strm.Counter(initval=0, size=4, enable=y==3)
+    y = strm.Counter(initval=0, size=4, enable=x == 3)
+    z = strm.Counter(initval=0, size=4, enable=y == 3)
     c = a + b - a - b + z + y + x
     strm.sink(c, 'c')
 
