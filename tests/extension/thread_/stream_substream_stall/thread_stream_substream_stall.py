@@ -49,7 +49,7 @@ def mkLed():
     sub.to_source('x', a)
     sub.to_source('y', b)
     c = sub.from_sink('z')
-    size = macstrm.constant('size')
+    size = macstrm.parameter('size')
     sum, sum_valid = macstrm.ReduceAddValid(c, size)
     macstrm.sink(sum, 'sum', when=sum_valid, when_name='sum_valid')
 
@@ -67,7 +67,7 @@ def mkLed():
     sub.to_source('x', a)
     sub.to_source('y', b)
     c = sub.from_sink('z')
-    size = actstrm.constant('size')
+    size = actstrm.parameter('size')
     sum, sum_valid = actstrm.ReduceAddValid(c, size)
     sum = actstrm.Mux(sum > 0, sum, 0)
     actstrm.sink(sum, 'sum', when=sum_valid, when_name='sum_valid')
@@ -87,7 +87,7 @@ def mkLed():
     def comp_stream_mac(size, offset):
         macstrm.set_source('a', ram_a, offset, size)
         macstrm.set_source('b', ram_b, offset, size)
-        macstrm.set_constant('size', size)
+        macstrm.set_parameter('size', size)
         macstrm.set_sink('sum', ram_c, offset, 1)
         macstrm.run()
         macstrm.join()
@@ -95,7 +95,7 @@ def mkLed():
     def comp_stream_act(size, offset):
         actstrm.set_source('a', ram_a, offset, size)
         actstrm.set_source('b', ram_b, offset, size)
-        actstrm.set_constant('size', size)
+        actstrm.set_parameter('size', size)
         actstrm.set_sink('sum', ram_c, offset, 1)
         actstrm.run()
         actstrm.join()

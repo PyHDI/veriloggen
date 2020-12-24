@@ -47,7 +47,7 @@ class Stream(BaseStream):
                       'set_sink_multipattern', 'set_sink_immediate',
                       'set_sink_fifo',
                       'set_sink_empty',
-                      'set_constant',
+                      'set_parameter',
                       'set_read_RAM', 'set_write_RAM', 'set_read_modify_write_RAM',
                       'read_sink',
                       'run', 'join', 'done',
@@ -122,7 +122,7 @@ class Stream(BaseStream):
 
         self.sources = OrderedDict()
         self.sinks = OrderedDict()
-        self.constants = OrderedDict()
+        self.parameters = OrderedDict()
         self.substreams = []
         self.read_rams = OrderedDict()
         self.write_rams = OrderedDict()
@@ -373,14 +373,14 @@ class Stream(BaseStream):
             self.sink(when, when_name)
             self.sink_when_map[name] = when
 
-    def constant(self, name=None, datawidth=None, point=0, signed=True):
+    def parameter(self, name=None, datawidth=None, point=0, signed=True):
         if self.stream_synthesized:
             raise ValueError(
                 'cannot modify the stream because already synthesized')
 
         _id = self.var_id_count
         if name is None:
-            name = 'constant_%d' % _id
+            name = 'parameter_%d' % _id
 
         if name in self.var_name_map:
             raise ValueError("'%s' is already defined in stream '%s'" %
@@ -395,16 +395,16 @@ class Stream(BaseStream):
 
         var = self.Variable(self._dataname(name), datawidth, point, signed)
 
-        self.constants[name] = var
+        self.parameters[name] = var
         self.var_id_map[_id] = var
         self.var_name_map[name] = var
         self.var_id_name_map[_id] = name
         self.var_name_id_map[name] = _id
 
-        var.next_constant_data = self.module.Reg('_%s_next_constant_data' % prefix,
+        var.next_parameter_data = self.module.Reg('_%s_next_parameter_data' % prefix,
                                                  datawidth, initval=0)
-        var.next_constant_data.no_write_check = True
-        var.has_constant_data = False
+        var.next_parameter_data.no_write_check = True
+        var.has_parameter_data = False
 
         return var
 
@@ -1167,8 +1167,8 @@ class Stream(BaseStream):
 
         fsm.If(self.stream_oready).goto_next()
 
-    def set_constant(self, fsm, name, value, raw=False):
-        """ intrinsic method to assign constant value to a constant stream """
+    def set_parameter(self, fsm, name, value, raw=False):
+        """ intrinsic method to assign parameter value to a parameter stream """
 
         if not self.stream_synthesized:
             self._implement_stream()
@@ -1186,7 +1186,7 @@ class Stream(BaseStream):
         else:
             raise TypeError('Unsupported index name')
 
-        if name not in self.constants:
+        if name not in self.parameters:
             raise NameError("No such stream '%s'" % name)
 
         set_cond = self._set_flag(fsm)
@@ -1195,12 +1195,12 @@ class Stream(BaseStream):
             value = fxd.write_adjust(value, var.point)
 
         self.seq.If(set_cond)(
-            var.next_constant_data(value)
+            var.next_parameter_data(value)
         )
 
-        if not var.has_constant_data:
-            var.write(var.next_constant_data, self.source_start)
-            var.has_constant_data = True
+        if not var.has_parameter_data:
+            var.write(var.next_parameter_data, self.source_start)
+            var.has_parameter_data = True
 
         fsm.goto_next()
 
@@ -3216,11 +3216,11 @@ class Substream(BaseSubstream):
                                initval=0)
         BaseSubstream.write(self, source_name, data, cond)
 
-    def to_constant(self, name, data):
-        constant_name = self.substrm._dataname(name)
-        cond = self.module.Reg(compiler._tmp_name(self.name('%s_cond' % constant_name)),
+    def to_parameter(self, name, data):
+        parameter_name = self.substrm._dataname(name)
+        cond = self.module.Reg(compiler._tmp_name(self.name('%s_cond' % parameter_name)),
                                initval=0)
-        BaseSubstream.write(self, constant_name, data, cond)
+        BaseSubstream.write(self, parameter_name, data, cond)
 
     def from_sink(self, name):
         sink_name = self.substrm._dataname(name)

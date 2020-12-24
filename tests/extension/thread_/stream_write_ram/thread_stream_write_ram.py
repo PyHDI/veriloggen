@@ -27,7 +27,7 @@ def mkLed():
     ram_ext.disable_write(1)
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
-    img_width = strm.constant('img_width')
+    img_width = strm.parameter('img_width')
 
     counter = strm.Counter()
 
@@ -46,7 +46,7 @@ def mkLed():
     def comp_stream(size, offset):
         strm.set_source('a', ram_a, offset, size * 2)
         strm.set_sink('b', ram_b, offset, size)
-        strm.set_constant('img_width', size)
+        strm.set_parameter('img_width', size)
         strm.set_write_RAM('write_ext', ram_ext, port=0)
         strm.set_read_RAM('read_ext', ram_ext, port=1)
         strm.run()

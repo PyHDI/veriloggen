@@ -28,7 +28,7 @@ def mkLed():
                           dump=True, dump_base=10, dump_mode='all')
     a = strm.source('a')
     b = strm.source('b')
-    unused = strm.constant('unused')
+    unused = strm.parameter('unused')
     c = a + b
     strm.sink(c, 'c')
 
@@ -36,7 +36,7 @@ def mkLed():
         strm.set_source('a', ram_a, offset, size)
         strm.set_source('b', ram_b, offset, size)
         strm.set_sink('c', ram_c, offset, size)
-        strm.set_constant('unused', 100)
+        strm.set_parameter('unused', 100)
         strm.run()
         strm.join()
 

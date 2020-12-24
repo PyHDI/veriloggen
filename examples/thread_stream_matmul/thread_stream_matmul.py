@@ -38,14 +38,14 @@ def mkLed():
     strm = vthread.Stream(m, 'strm_madd', clk, rst)
     a = strm.source('a')
     b = strm.source('b')
-    size = strm.constant('size')
+    size = strm.parameter('size')
     sum, sum_valid = strm.ReduceAddValid(a * b, size)
     strm.sink(sum, 'sum', when=sum_valid, when_name='sum_valid')
 
     def strm_madd(size, waddr):
         strm.set_source('a', ram_a, 0, size)
         strm.set_source('b', ram_b, 0, size)
-        strm.set_constant('size', size)
+        strm.set_parameter('size', size)
         strm.set_sink('sum', ram_c, waddr, 1)
         strm.run()
         strm.join()
