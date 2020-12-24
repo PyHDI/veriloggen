@@ -67,7 +67,9 @@ class Stream(BaseStream):
         # pipeline control
         self.stream_ivalid = m.Reg('_'.join(['', name, 'stream_ivalid']), initval=0)
         self.stream_oready = m.Wire('_'.join(['', name, 'stream_oready']))
-        self.stream_oready.assign(1)
+        self.stream_internal_oready = m.Wire('_'.join(['', name, 'stream_internal_oready']))
+        self.stream_internal_oready.assign(1)
+        self.stream_oready.assign(self.stream_internal_oready)
 
         BaseStream.__init__(self, module=m, clock=clk, reset=rst,
                             ivalid=self.stream_ivalid,
@@ -3205,8 +3207,11 @@ class Substream(BaseSubstream):
         self.reset_delay = 0
 
         if strm is not None:
-            util.add_enable_cond(substrm.stream_oready, strm.busy, strm.stream_oready)
             util.add_enable_cond(substrm.is_root, strm.busy, 0)
+            # parent to child
+            util.add_disable_cond(substrm.stream_oready, strm.busy, strm.stream_oready)
+            # child to parent
+            util.add_disable_cond(strm.stream_internal_oready, strm.busy, substrm.stream_internal_oready)
 
         BaseSubstream.__init__(self, substrm, strm)
 

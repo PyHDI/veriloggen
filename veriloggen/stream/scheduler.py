@@ -88,6 +88,8 @@ class ASAPScheduler(_Scheduler):
         node._set_start_stage(mine)
         if getattr(node, 'variable_latency', None):
             node.latency = getattr(node, node.variable_latency)()
+        if getattr(node, 'variable_iteration_interval', None):
+            node.iteration_interval = getattr(node, node.variable_iteration_interval)()
         end = self.next_stage(node, mine)
         node._set_end_stage(end)
         return end
@@ -99,6 +101,10 @@ class ASAPScheduler(_Scheduler):
         mine = self.max_stage(right)
         node.right = self.fill_gap(node.right, mine)
         node._set_start_stage(mine)
+        if getattr(node, 'variable_latency', None):
+            node.latency = getattr(node, node.variable_latency)()
+        if getattr(node, 'variable_iteration_interval', None):
+            node.iteration_interval = getattr(node, node.variable_iteration_interval)()
         end = self.next_stage(node, mine)
         node._set_end_stage(end)
         return end
@@ -113,6 +119,10 @@ class ASAPScheduler(_Scheduler):
         mine = self.max_stage(*ret)
         node.args = [self.fill_gap(var, mine) for var in node.args]
         node._set_start_stage(mine)
+        if getattr(node, 'variable_latency', None):
+            node.latency = getattr(node, node.variable_latency)()
+        if getattr(node, 'variable_iteration_interval', None):
+            node.iteration_interval = getattr(node, node.variable_iteration_interval)()
         end = self.next_stage(node, mine)
         node._set_end_stage(end)
         return end
@@ -147,6 +157,10 @@ class ASAPScheduler(_Scheduler):
             node.reset = self.fill_gap(node.reset, mine)
         node.reg_initval = self.fill_gap(node.reg_initval, mine)
         node._set_start_stage(mine)
+        if getattr(node, 'variable_latency', None):
+            node.latency = getattr(node, node.variable_latency)()
+        if getattr(node, 'variable_iteration_interval', None):
+            node.iteration_interval = getattr(node, node.variable_iteration_interval)()
         end = self.next_stage(node, mine)
         node._set_end_stage(end)
         return end
