@@ -145,6 +145,7 @@ class ASAPScheduler(_Scheduler):
             node.enable = self.fill_gap(node.enable, mine)
         if node.reset is not None:
             node.reset = self.fill_gap(node.reset, mine)
+        node.reg_initval = self.fill_gap(node.reg_initval, mine)
         node._set_start_stage(mine)
         end = self.next_stage(node, mine)
         node._set_end_stage(end)

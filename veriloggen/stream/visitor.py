@@ -106,9 +106,13 @@ class InputVisitor(_Visitor):
                   if node.offset is not None else set())
         dependency = (self.visit(node.dependency)
                       if node.dependency is not None else set())
-        enable = self.visit(node.enable) if node.enable is not None else set()
-        reset = self.visit(node.reset) if node.reset is not None else set()
-        return right | size | interval | initval | offset | dependency | enable | reset
+        enable = (self.visit(node.enable)
+                  if node.enable is not None else set())
+        reset = (self.visit(node.reset)
+                 if node.reset is not None else set())
+        reg_initval = (self.visit(node.reg_initval)
+                   if node.reg_initval is not None else set())
+        return right | size | interval | initval | offset | dependency | enable | reset | reg_initval
 
     def visit__ParameterVariable(self, node):
         return set([node])
@@ -154,10 +158,14 @@ class OutputVisitor(_Visitor):
                   if node.offset is not None else set())
         dependency = (self.visit(node.dependency)
                       if node.dependency is not None else set())
-        enable = self.visit(node.enable) if node.enable is not None else set()
-        reset = self.visit(node.reset) if node.reset is not None else set()
+        enable = (self.visit(node.enable)
+                  if node.enable is not None else set())
+        reset = (self.visit(node.reset)
+                 if node.reset is not None else set())
+        reg_initval = (self.visit(node.reg_initval)
+                   if node.reg_initval is not None else set())
         mine = set([node]) if node._has_output() else set()
-        return right | size | interval | initval | offset | dependency | enable | reset | mine
+        return right | size | interval | initval | offset | dependency | enable | reset | reg_initval | mine
 
     def visit__ParameterVariable(self, node):
         mine = set([node]) if node._has_output() else set()
@@ -206,10 +214,14 @@ class OperatorVisitor(_Visitor):
                   if node.offset is not None else set())
         dependency = (self.visit(node.dependency)
                       if node.dependency is not None else set())
-        enable = self.visit(node.enable) if node.enable is not None else set()
-        reset = self.visit(node.reset) if node.reset is not None else set()
+        enable = (self.visit(node.enable)
+                  if node.enable is not None else set())
+        reset = (self.visit(node.reset)
+                 if node.reset is not None else set())
+        reg_initval = (self.visit(node.reg_initval)
+                   if node.reg_initval is not None else set())
         mine = set([node])
-        return right | size | interval | initval | offset | dependency | enable | reset | mine
+        return right | size | interval | initval | offset | dependency | enable | reset | reg_initval | mine
 
     def visit__ParameterVariable(self, node):
         return set()
