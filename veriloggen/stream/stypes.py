@@ -2718,7 +2718,7 @@ class _Accumulator(_Operator):
     ops = (vtypes.Plus, )
 
     def __init__(self, right, size=None, interval=None, initval=None, offset=None,
-                 dependency=None, enable=None, reset=None, width=32, signed=True):
+                 dependency=None, enable=None, reset=None, reg_initval=None, width=32, signed=True):
 
         _Operator.__init__(self)
 
@@ -2738,10 +2738,6 @@ class _Accumulator(_Operator):
         if self.initval is not None:
             self.initval._add_sink(self)
 
-        if not isinstance(self.initval, _Constant):
-            raise TypeError("initval must be Constant, not '%s'" %
-                            str(type(self.initval)))
-
         self.offset = (_to_constant(offset)
                        if offset is not None else None)
         if self.offset is not None:
@@ -2759,6 +2755,17 @@ class _Accumulator(_Operator):
         if self.reset is not None:
             self.reset._add_sink(self)
 
+        if reg_initval is not None:
+            self.reg_initval = _to_constant(reg_initval)
+        elif isinstance(self.initval, _Constant):
+            self.reg_initval = self.initval
+        else:
+            self.reg_initval = _to_constant(0)
+
+        if not isinstance(self.reg_initval, _Constant):
+            raise TypeError("reg_initval must be Constant, not '%s'" %
+                            str(type(self.reg_initval)))
+
         self.width = width
         self.signed = signed
 
@@ -2773,7 +2780,7 @@ class _Accumulator(_Operator):
 
     def _set_managers(self):
         self._set_strm(_get_strm(self.right, self.interval, self.initval, self.offset,
-                                 self.dependency, self.enable, self.reset))
+                                 self.dependency, self.enable, self.reset, self.reg_initval))
         self._set_module(getattr(self.strm, 'module', None))
         self._set_seq(getattr(self.strm, 'seq', None))
 
@@ -2787,7 +2794,6 @@ class _Accumulator(_Operator):
 
         size_data = self.size.sig_data if self.size is not None else None
         interval_data = self.interval.sig_data if self.interval is not None else None
-
         initval_data = self.initval.sig_data
         width = self.get_width()
         signed = self.get_signed()
@@ -2796,8 +2802,10 @@ class _Accumulator(_Operator):
         if not self.ops and self.size is not None:
             width = 1
 
+        reg_initval_data = self.reg_initval.sig_data
+
         data = m.Reg(self.name('data'), width,
-                     initval=initval_data, signed=signed)
+                     initval=reg_initval_data, signed=signed)
 
         self.sig_data = data
 
@@ -2894,11 +2902,11 @@ class ReduceAdd(_Accumulator):
     ops = (vtypes.Plus, )
 
     def __init__(self, right, size=None, interval=None, initval=0,
-                 enable=None, reset=None, width=32, signed=True):
+                 enable=None, reset=None, reg_initval=None, width=32, signed=True):
         offset = None
         dependency = None
         _Accumulator.__init__(self, right, size, interval, initval, offset,
-                              dependency, enable, reset, width, signed)
+                              dependency, enable, reset, reg_initval, width, signed)
         self.graph_label = 'ReduceAdd'
 
 
@@ -2906,11 +2914,11 @@ class ReduceSub(_Accumulator):
     ops = (vtypes.Minus, )
 
     def __init__(self, right, size=None, interval=None, initval=0,
-                 enable=None, reset=None, width=32, signed=True):
+                 enable=None, reset=None, reg_initval=None, width=32, signed=True):
         offset = None
         dependency = None
         _Accumulator.__init__(self, right, size, interval, initval, offset,
-                              dependency, enable, reset, width, signed)
+                              dependency, enable, reset, reg_initval, width, signed)
         self.graph_label = 'ReduceSub'
 
 
@@ -2919,11 +2927,11 @@ class ReduceMul(_Accumulator):
     ops = (vtypes.Times, )
 
     def __init__(self, right, size=None, interval=None, initval=0,
-                 enable=None, reset=None, width=32, signed=True):
+                 enable=None, reset=None, reg_initval=None, width=32, signed=True):
         offset = None
         dependency = None
         _Accumulator.__init__(self, right, size, interval, initval, offset,
-                              dependency, enable, reset, width, signed)
+                              dependency, enable, reset, reg_initval, width, signed)
         self.graph_label = 'ReduceMul'
 
 
@@ -2932,12 +2940,12 @@ class ReduceDiv(_Accumulator):
     ops = ()
 
     def __init__(self, right, size=None, interval=None, initval=0,
-                 enable=None, reset=None, width=32, signed=True):
+                 enable=None, reset=None, reg_initval=None, width=32, signed=True):
         raise NotImplementedError()
         offset = None
         dependency = None
         _Accumulator.__init__(self, right, size, interval, initval, offset,
-                              dependency, enable, reset, width, signed)
+                              dependency, enable, reset, reg_initval, width, signed)
         self.graph_label = 'ReduceDiv'
 
 
@@ -2945,11 +2953,11 @@ class ReduceMax(_Accumulator):
     ops = (lambda x, y: vtypes.Mux(x < y, y, x), )
 
     def __init__(self, right, size=None, interval=None, initval=0,
-                 enable=None, reset=None, width=32, signed=True):
+                 enable=None, reset=None, reg_initval=None, width=32, signed=True):
         offset = None
         dependency = None
         _Accumulator.__init__(self, right, size, interval, initval, offset,
-                              dependency, enable, reset, width, signed)
+                              dependency, enable, reset, reg_initval, width, signed)
         self.graph_label = 'ReduceMax'
 
 
@@ -2957,22 +2965,22 @@ class ReduceMin(_Accumulator):
     ops = (lambda x, y: vtypes.Mux(x > y, y, x), )
 
     def __init__(self, right, size=None, interval=None, initval=0,
-                 enable=None, reset=None, width=32, signed=True):
+                 enable=None, reset=None, reg_initval=None, width=32, signed=True):
         offset = None
         dependency = None
         _Accumulator.__init__(self, right, size, interval, initval, offset,
-                              dependency, enable, reset, width, signed)
+                              dependency, enable, reset, reg_initval, width, signed)
         self.graph_label = 'ReduceMin'
 
 
 class ReduceCustom(_Accumulator):
 
     def __init__(self, ops, right, size=None, interval=None, initval=0,
-                 enable=None, reset=None, width=32, signed=True, label=None):
+                 enable=None, reset=None, reg_initval=None, width=32, signed=True, label=None):
         offset = None
         dependency = None
         _Accumulator.__init__(self, right, size, interval, initval, offset,
-                              dependency, enable, reset, width, signed)
+                              dependency, enable, reset, reg_initval, width, signed)
         if not isinstance(ops, (tuple, list)):
             ops = tuple([ops])
         self.ops = ops
@@ -2982,10 +2990,10 @@ class ReduceCustom(_Accumulator):
 class Counter(_Accumulator):
 
     def __init__(self, size=None, step=1, interval=None, initval=0, offset=None,
-                 dependency=None, enable=None, reset=None, width=32, signed=False):
+                 dependency=None, enable=None, reset=None, reg_initval=None, width=32, signed=False):
 
         _Accumulator.__init__(self, step, size, interval, initval, offset,
-                              dependency, enable, reset, width, signed)
+                              dependency, enable, reset, reg_initval, width, signed)
         self.graph_label = 'Counter'
 
     def _implement(self, m, seq, svalid=None, senable=None):
@@ -2995,7 +3003,6 @@ class Counter(_Accumulator):
 
         size_data = self.size.sig_data if self.size is not None else None
         interval_data = self.interval.sig_data if self.interval is not None else None
-
         initval_data = self.initval.sig_data
         width = self.get_width()
         signed = self.get_signed()
@@ -3003,11 +3010,13 @@ class Counter(_Accumulator):
         step = self.right.sig_data
         offset_data = self.offset.sig_data if self.offset is not None else None
 
+        reg_initval_data = self.reg_initval.sig_data
+
         data = m.Reg(self.name('data'), width,
-                     initval=initval_data, signed=signed)
+                     initval=reg_initval_data, signed=signed)
 
         count = m.Reg(self.name('count'), width,
-                      initval=initval_data, signed=signed)
+                      initval=reg_initval_data, signed=signed)
 
         self.sig_data = data
 
@@ -3051,7 +3060,7 @@ class Counter(_Accumulator):
             enable_reset_cond = _and_vars(enable_cond, reset_cond)
             seq(data(initval_data), cond=enable_reset_cond)
 
-        seq(data(count), cond=enable_cond)
+        seq(data(current_count), cond=enable_cond)
 
         if self.enable is not None:
             enable_cond = _and_vars(enable_cond, enabledata)
@@ -3075,87 +3084,88 @@ class Pulse(_Accumulator):
 
         initval = 0
         offset = None
+        reg_initval = None
         width = 1
         signed = False
 
         _Accumulator.__init__(self, right, size, interval, initval, offset,
-                              dependency, enable, reset, width, signed)
+                              dependency, enable, reset, reg_initval, width, signed)
         self.graph_label = 'Pulse'
 
 
 def _ReduceValid(cls, right, size, interval=None, initval=0,
-                 enable=None, reset=None, width=32, signed=True):
+                 enable=None, reset=None, reg_initval=None, width=32, signed=True):
 
     data = cls(right, size, interval, initval,
-               enable, reset, width, signed)
+               enable, reset, reg_initval, width, signed)
     valid = Pulse(size, dependency=right, enable=enable, reset=reset)
 
     return data, valid
 
 
 def ReduceAddValid(right, size, interval=None, initval=0,
-                   enable=None, reset=None, width=32, signed=True):
+                   enable=None, reset=None, reg_initval=None, width=32, signed=True):
 
     cls = ReduceAdd
     return _ReduceValid(cls, right, size, interval, initval,
-                        enable, reset, width, signed)
+                        enable, reset, reg_initval, width, signed)
 
 
 def ReduceSubValid(right, size, interval=None, initval=0,
-                   enable=None, reset=None, width=32, signed=True):
+                   enable=None, reset=None, reg_initval=None, width=32, signed=True):
 
     cls = ReduceSub
     return _ReduceValid(cls, right, size, interval, initval,
-                        enable, reset, width, signed)
+                        enable, reset, reg_initval, width, signed)
 
 
 def ReduceMulValid(right, size, interval=None, initval=0,
-                   enable=None, reset=None, width=32, signed=True):
+                   enable=None, reset=None, reg_initval=None, width=32, signed=True):
 
     cls = ReduceMul
     return _ReduceValid(cls, right, size, interval, initval,
-                        enable, reset, width, signed)
+                        enable, reset, reg_initval, width, signed)
 
 
 def ReduceDivValid(right, size, interval=None, initval=0,
-                   enable=None, reset=None, width=32, signed=True):
+                   enable=None, reset=None, reg_initval=None, width=32, signed=True):
 
     cls = ReduceDiv
     return _ReduceValid(cls, right, size, interval, initval,
-                        enable, reset, width, signed)
+                        enable, reset, reg_initval, width, signed)
 
 
 def ReduceMaxValid(right, size, interval=None, initval=0,
-                   enable=None, reset=None, width=32, signed=True):
+                   enable=None, reset=None, reg_initval=None, width=32, signed=True):
 
     cls = ReduceMax
     return _ReduceValid(cls, right, size, interval, initval,
-                        enable, reset, width, signed)
+                        enable, reset, reg_initval, width, signed)
 
 
 def ReduceMinValid(right, size, interval=None, initval=0,
-                   enable=None, reset=None, width=32, signed=True):
+                   enable=None, reset=None, reg_initval=None, width=32, signed=True):
 
     cls = ReduceMin
     return _ReduceValid(cls, right, size, interval, initval,
-                        enable, reset, width, signed)
+                        enable, reset, reg_initval, width, signed)
 
 
 def ReduceCustomValid(ops, right, size, interval=None, initval=0,
-                      enable=None, reset=None, width=32, signed=True):
+                      enable=None, reset=None, reg_initval=None, width=32, signed=True):
 
     data = ReduceCustom(ops, right, size, interval, initval,
-                        enable, reset, width, signed)
+                        enable, reset, reg_initval, width, signed)
     valid = Pulse(size, dependency=right, enable=enable, reset=reset)
 
     return data, valid
 
 
 def CounterValid(size, step=1, interval=None, initval=0, offset=None,
-                 dependency=None, enable=None, reset=None, width=32, signed=False):
+                 dependency=None, enable=None, reset=None, reg_initval=None, width=32, signed=False):
 
     data = Counter(size, step, interval, initval, offset,
-                   dependency, enable, reset, width, signed)
+                   dependency, enable, reset, reg_initval, width, signed)
     valid = Pulse(size, dependency=dependency, enable=enable, reset=reset)
 
     return data, valid
@@ -4072,10 +4082,10 @@ class WriteRAM(_SpecialOperator):
 
 
 def ReduceArgMax(right, size=None, interval=None, initval=0,
-                 enable=None, reset=None, width=32, signed=True):
+                 enable=None, reset=None, reg_initval=None, width=32, signed=True):
 
     _max = ReduceMax(right, size, interval, initval,
-                     enable, reset, width, signed)
+                     enable, reset, reg_initval, width, signed)
     counter = Counter(size, dependency=right, enable=enable, reset=reset)
     update = NotEq(_max, _max.prev(1))
     update.latency = 0
@@ -4084,10 +4094,10 @@ def ReduceArgMax(right, size=None, interval=None, initval=0,
 
 
 def ReduceArgMin(right, size=None, interval=None, initval=0,
-                 enable=None, reset=None, width=32, signed=True):
+                 enable=None, reset=None, reg_initval=None, width=32, signed=True):
 
     _min = ReduceMin(right, size, interval, initval,
-                     enable, reset, width, signed)
+                     enable, reset, reg_initval, width, signed)
     counter = Counter(size, dependency=right, enable=enable, reset=reset)
     update = NotEq(_min, reduce_min.prev(1))
     update.latency = 0
@@ -4096,10 +4106,10 @@ def ReduceArgMin(right, size=None, interval=None, initval=0,
 
 
 def ReduceArgMaxValid(right, size=None, interval=None, initval=0,
-                      enable=None, reset=None, width=32, signed=True):
+                      enable=None, reset=None, reg_initval=None, width=32, signed=True):
 
     _max, valid = ReduceMaxValid(right, size, interval, initval,
-                                 enable, reset, width, signed)
+                                 enable, reset, reg_initval, width, signed)
     counter = Counter(size, dependency=right, enable=enable, reset=reset)
     update = NotEq(_max, _max.prev(1))
     update.latency = 0
@@ -4108,10 +4118,10 @@ def ReduceArgMaxValid(right, size=None, interval=None, initval=0,
 
 
 def ReduceArgMinValid(right, size=None, interval=None, initval=0,
-                      enable=None, reset=None, width=32, signed=True):
+                      enable=None, reset=None, reg_initval=None, width=32, signed=True):
 
     _min, valid = ReduceMinValid(right, size, interval, initval,
-                                 enable, reset, width, signed)
+                                 enable, reset, reg_initval, width, signed)
     counter = Counter(size, dependency=right, enable=enable, reset=reset)
     update = NotEq(_min, _min.prev(1))
     update.latency = 0

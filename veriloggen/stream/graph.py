@@ -239,6 +239,7 @@ class GraphGenerator(_Visitor):
             self.graph.add_edge(enable, node, label='enable')
         if node.reset is not None:
             self.graph.add_edge(reset, node, label='reset')
+        # reg_initval = self.visit(node.reg_initval)
 
         if node.start_stage is not None:
             self._set_rank(node.start_stage + 1, node)
