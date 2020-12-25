@@ -404,7 +404,7 @@ class Stream(BaseStream):
         self.var_name_id_map[name] = _id
 
         var.next_parameter_data = self.module.Reg('_%s_next_parameter_data' % prefix,
-                                                 datawidth, initval=0)
+                                                  datawidth, initval=0)
         var.next_parameter_data.no_write_check = True
         var.has_parameter_data = False
 
@@ -422,6 +422,21 @@ class Stream(BaseStream):
         self.var_id_count += 1
 
         sub = Substream(self.module, self.clock, self.reset, substrm, self)
+        self.substreams.append(sub)
+        return sub
+
+    def substream_multicycle(self, substrm):
+        _id = self.var_id_count
+        name = 'substream_multicycle_%d' % _id
+
+        if name in self.var_name_map:
+            raise ValueError("'%s' is already defined in stream '%s'" %
+                             (name, self.name))
+
+        prefix = self._prefix(name)
+        self.var_id_count += 1
+
+        sub = SubstreamMultiCycle(self.module, self.clock, self.reset, substrm, self)
         self.substreams.append(sub)
         return sub
 
@@ -1386,8 +1401,6 @@ class Stream(BaseStream):
                 self.dump_enable(1)
             )
 
-        self.fsm.If(start_cond, self.stream_oready).goto_next()
-
         substreams = self._collect_substreams()
         for sub in substreams:
             start_stage = sub.start_stage
@@ -1420,8 +1433,19 @@ class Stream(BaseStream):
                     cond(1)
                 )
 
+        self.fsm.If(start_cond, self.stream_oready).goto_next()
+
         # compute (at this cycle, source_idle <- 0)
         self.fsm.If(self.stream_oready).goto_next()
+
+# NOT OK
+#        substreams = self._collect_substreams()
+#        for sub in substreams:
+#            if isinstance(sub, SubstreamMultiCycle):
+#                sub_fsm = sub.substrm.fsm
+#                sub_fsm.seq.If(self.fsm.here)(
+#                    sub.substrm.stream_ivalid(sub.ii_count == 0)
+#                )
 
         # compute and join
         done_cond = None
@@ -3200,20 +3224,20 @@ class Stream(BaseStream):
 
 class Substream(BaseSubstream):
 
-    def __init__(self, module, clock, reset, substrm, strm=None):
+    def __init__(self, module, clock, reset, substrm, strm):
         self.module = module
         self.clock = clock
         self.reset = reset
         self.reset_delay = 0
 
-        if strm is not None:
-            util.add_enable_cond(substrm.is_root, strm.busy, 0)
-            # parent to child
-            util.add_disable_cond(substrm.stream_oready, strm.busy, strm.stream_oready)
-            # child to parent
-            util.add_disable_cond(strm.stream_internal_oready, strm.busy, substrm.stream_internal_oready)
-
         BaseSubstream.__init__(self, substrm, strm)
+
+        util.add_enable_cond(substrm.is_root, strm.busy, 0)
+        # parent to child
+        util.add_disable_cond(substrm.stream_oready, strm.busy, strm.stream_oready)
+        # child to parent
+        util.add_disable_cond(strm.stream_internal_oready, strm.busy,
+                              substrm.stream_internal_oready)
 
     def to_source(self, name, data):
         source_name = self.substrm._dataname(name)
@@ -3239,3 +3263,46 @@ class Substream(BaseSubstream):
         for s in ret:
             s.reset_delay += 1 + self.start_stage
         return ret
+
+
+class SubstreamMultiCycle(Substream):
+
+    def __init__(self, module, clock, reset, substrm, strm):
+        self.module = module
+        self.clock = clock
+        self.reset = reset
+        self.reset_delay = 0
+
+        BaseSubstream.__init__(self, substrm, strm)
+
+        util.add_enable_cond(substrm.is_root, strm.busy, 0)
+
+        self.iteration_interval = self.latency - 1
+        self.latency = 1 + 1
+
+        enable_cond = vtypes.Ands(self.strm.busy, self.strm.stream_oready, substrm.stream_ivalid)
+
+        self.ii_count = self.module.Reg(self.name('ii_count'),
+                                   int(math.ceil(math.log(self.iteration_interval, 2))) + 1, initval=0)
+        self.ii_stall_cond = self.module.Wire(self.name('ii_stall_cond'))
+        self.ii_stall_cond.assign(self.ii_count > 0)
+        util.add_disable_cond(self.strm.stream_internal_oready, self.ii_stall_cond, vtypes.Int(0))
+
+        self.strm.seq.If(enable_cond)(
+            self.ii_count.inc()
+        )
+        self.strm.seq.If(self.ii_count > 0)(
+            self.ii_count.inc()
+        )
+        self.strm.seq.If(self.ii_count == self.iteration_interval - 1)(
+            self.ii_count(0)
+        )
+
+        # parent to child
+        child_oready = vtypes.Ors(self.strm.stream_oready,
+                                  vtypes.Ands(self.substrm.stream_internal_oready, self.ii_stall_cond))
+        util.add_disable_cond(self.substrm.stream_oready, self.strm.busy, child_oready)
+
+        # child to parent
+        parent_internal_oready = vtypes.Not(self.ii_stall_cond)
+        util.add_disable_cond(self.strm.stream_internal_oready, self.strm.busy, parent_internal_oready)
