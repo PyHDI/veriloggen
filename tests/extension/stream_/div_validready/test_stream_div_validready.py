@@ -211,14 +211,16 @@ module main
   reg _ivalid_33;
   reg _ivalid_34;
   reg _ivalid_35;
-  reg _ivalid_36;
-  reg _ivalid_37;
-  assign ovalid = _ivalid_37;
+  assign ovalid = _ivalid_35;
   assign iready = oready;
-  reg signed [32-1:0] _divide_div_ldata_2;
-  reg signed [32-1:0] _divide_div_rdata_2;
-  reg [32-1:0] _divide_div_abs_ldata_2;
-  reg [32-1:0] _divide_div_abs_rdata_2;
+  wire signed [32-1:0] _divide_div_ldata_2;
+  wire signed [32-1:0] _divide_div_rdata_2;
+  assign _divide_div_ldata_2 = xdata;
+  assign _divide_div_rdata_2 = ydata;
+  wire [32-1:0] _divide_div_abs_ldata_2;
+  wire [32-1:0] _divide_div_abs_rdata_2;
+  assign _divide_div_abs_ldata_2 = (_divide_div_ldata_2[31] == 0)? _divide_div_ldata_2 : ~_divide_div_ldata_2 + 1;
+  assign _divide_div_abs_rdata_2 = (_divide_div_rdata_2[31] == 0)? _divide_div_rdata_2 : ~_divide_div_rdata_2 + 1;
   wire _divide_div_osign_2;
   wire signed [32-1:0] _divide_div_abs_odata_2;
   reg signed [32-1:0] _divide_div_odata_2;
@@ -257,9 +259,7 @@ module main
   reg _divide_div_sign_tmp_30_2;
   reg _divide_div_sign_tmp_31_2;
   reg _divide_div_sign_tmp_32_2;
-  reg _divide_div_sign_tmp_33_2;
-  reg _divide_div_sign_tmp_34_2;
-  assign _divide_div_osign_2 = _divide_div_sign_tmp_34_2;
+  assign _divide_div_osign_2 = _divide_div_sign_tmp_32_2;
   wire _divide_div_update_2;
   assign _divide_div_update_2 = oready;
 
@@ -317,12 +317,6 @@ module main
       _ivalid_33 <= 0;
       _ivalid_34 <= 0;
       _ivalid_35 <= 0;
-      _ivalid_36 <= 0;
-      _ivalid_37 <= 0;
-      _divide_div_ldata_2 <= 0;
-      _divide_div_rdata_2 <= 0;
-      _divide_div_abs_ldata_2 <= 0;
-      _divide_div_abs_rdata_2 <= 0;
       _divide_div_odata_2 <= 0;
       _divide_div_sign_tmp_0_2 <= 0;
       _divide_div_sign_tmp_1_2 <= 0;
@@ -357,8 +351,6 @@ module main
       _divide_div_sign_tmp_30_2 <= 0;
       _divide_div_sign_tmp_31_2 <= 0;
       _divide_div_sign_tmp_32_2 <= 0;
-      _divide_div_sign_tmp_33_2 <= 0;
-      _divide_div_sign_tmp_34_2 <= 0;
     end else begin
       if(oready) begin
         _ivalid_1 <= ivalid;
@@ -466,24 +458,6 @@ module main
         _ivalid_35 <= _ivalid_34;
       end 
       if(oready) begin
-        _ivalid_36 <= _ivalid_35;
-      end 
-      if(oready) begin
-        _ivalid_37 <= _ivalid_36;
-      end 
-      if(oready) begin
-        _divide_div_ldata_2 <= xdata;
-      end 
-      if(oready) begin
-        _divide_div_rdata_2 <= ydata;
-      end 
-      if(oready) begin
-        _divide_div_abs_ldata_2 <= (_divide_div_ldata_2[31] == 0)? _divide_div_ldata_2 : ~_divide_div_ldata_2 + 1;
-      end 
-      if(oready) begin
-        _divide_div_abs_rdata_2 <= (_divide_div_rdata_2[31] == 0)? _divide_div_rdata_2 : ~_divide_div_rdata_2 + 1;
-      end 
-      if(oready) begin
         _divide_div_odata_2 <= (_divide_div_osign_2 == 0)? _divide_div_abs_odata_2 : ~_divide_div_abs_odata_2 + 1;
       end 
       if(oready) begin
@@ -584,12 +558,6 @@ module main
       end 
       if(oready) begin
         _divide_div_sign_tmp_32_2 <= _divide_div_sign_tmp_31_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_33_2 <= _divide_div_sign_tmp_32_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_34_2 <= _divide_div_sign_tmp_33_2;
       end 
     end
   end

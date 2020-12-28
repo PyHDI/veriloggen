@@ -3752,7 +3752,7 @@ class Str(_Constant):
 
 class Substream(_SpecialOperator):
 
-    def __init__(self, child, strm):
+    def __init__(self, child, strm=None):
         _SpecialOperator.__init__(self)
 
         if not child.aswire:
@@ -3763,9 +3763,6 @@ class Substream(_SpecialOperator):
             raise ValueError('clock must not be None.')
         if child.reset is None:
             raise ValueError('reset must not be None.')
-
-        if not isinstance(child.ivalid, vtypes.Reg):
-            raise ValueError('Child stream for Substream must have ivalid as Reg.')
 
         if not child.implemented:
             child.implement()
@@ -3803,8 +3800,9 @@ class Substream(_SpecialOperator):
     def _implement(self, m, seq, svalid=None, senable=None):
         arg_data = [arg.sig_data for arg in self.args]
 
-        ivalid_cond = _and_vars(svalid, senable)
-        seq(self.child.ivalid(vtypes.Int(1, 1)), cond=ivalid_cond)
+        if self.child.ivalid is not None:
+            ivalid_cond = _and_vars(svalid, senable)
+            seq(self.child.ivalid(vtypes.Int(1, 1)), cond=ivalid_cond)
 
         for data, (name, cond) in zip(arg_data, self.conds.items()):
             enable_cond = _and_vars(svalid, senable, cond)
@@ -3820,7 +3818,7 @@ class Substream(_SpecialOperator):
 
 class SubstreamMultiCycle(Substream):
 
-    def __init__(self, child, strm):
+    def __init__(self, child, strm=None):
         Substream.__init__(self, child, strm)
         self.graph_label = child.name if hasattr(child, 'name') else 'SubstreamMultiCycle'
 
