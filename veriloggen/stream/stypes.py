@@ -519,9 +519,10 @@ class _BinaryOperator(_Operator):
                                  int(ceil(log(self.iteration_interval, 2))) + 1, initval=0)
                 ii_stall_cond = m.Wire(self.name('ii_stall_cond'))
                 ii_stall_cond.assign(ii_count > 0)
-                util.add_disable_cond(self.strm.stream_internal_oready, ii_stall_cond, vtypes.Int(0))
+                util.add_disable_cond(self.strm.internal_oready,
+                                      ii_stall_cond, vtypes.Int(0))
 
-                seq.If(enable_cond)(
+                seq.If(ii_count == 0, enable_cond)(
                     ii_count.inc()
                 )
                 seq.If(ii_count > 0)(
@@ -594,9 +595,10 @@ class _UnaryOperator(_Operator):
                                  int(ceil(log(self.iteration_interval, 2))) + 1, initval=0)
                 ii_stall_cond = m.Wire(self.name('ii_stall_cond'))
                 ii_stall_cond.assign(ii_count > 0)
-                util.add_disable_cond(self.strm.stream_internal_oready, ii_stall_cond, vtypes.Int(0))
+                util.add_disable_cond(self.strm.internal_oready,
+                                      ii_stall_cond, vtypes.Int(0))
 
-                seq.If(enable_cond)(
+                seq.If(ii_count == 0, enable_cond)(
                     ii_count.inc()
                 )
                 seq.If(ii_count > 0)(
@@ -916,9 +918,9 @@ class DivideMultiCycle(_BinaryOperator):
                          int(ceil(log(self.iteration_interval, 2))) + 1, initval=0)
         ii_stall_cond = m.Wire(self.name('ii_stall_cond'))
         ii_stall_cond.assign(ii_count > 0)
-        util.add_disable_cond(self.strm.stream_internal_oready, ii_stall_cond, vtypes.Int(0))
+        util.add_disable_cond(self.strm.internal_oready, ii_stall_cond, vtypes.Int(0))
 
-        seq.If(enable_cond)(
+        seq.If(ii_count == 0, enable_cond)(
             ii_count.inc()
         )
         seq.If(ii_count > 0)(
@@ -1618,9 +1620,10 @@ class _SpecialOperator(_Operator):
                                  int(ceil(log(self.iteration_interval, 2))) + 1, initval=0)
                 ii_stall_cond = m.Wire(self.name('ii_stall_cond'))
                 ii_stall_cond.assign(ii_count > 0)
-                util.add_disable_cond(self.strm.stream_internal_oready, ii_stall_cond, vtypes.Int(0))
+                util.add_disable_cond(self.strm.internal_oready,
+                                      ii_stall_cond, vtypes.Int(0))
 
-                seq.If(enable_cond)(
+                seq.If(ii_count == 0, enable_cond)(
                     ii_count.inc()
                 )
                 seq.If(ii_count > 0)(
@@ -3089,9 +3092,9 @@ class _Accumulator(_Operator):
                              int(ceil(log(self.iteration_interval, 2))) + 1, initval=0)
             ii_stall_cond = m.Wire(self.name('ii_stall_cond'))
             ii_stall_cond.assign(ii_count > 0)
-            util.add_disable_cond(self.strm.stream_internal_oready, ii_stall_cond, vtypes.Int(0))
+            util.add_disable_cond(self.strm.internal_oready, ii_stall_cond, vtypes.Int(0))
 
-            seq.If(enable_cond)(
+            seq.If(ii_count == 0, enable_cond)(
                 ii_count.inc()
             )
             seq.If(ii_count > 0)(
@@ -3126,7 +3129,7 @@ class ReduceSub(_Accumulator):
         self.graph_label = 'ReduceSub'
 
 
-#class ReduceMul(_Accumulator):
+# class ReduceMul(_Accumulator):
 #    latency = 1
 #    ops = (vtypes.Times, )
 #
@@ -3253,9 +3256,9 @@ class ReduceMul(_Accumulator):
                          int(ceil(log(self.iteration_interval, 2))) + 1, initval=0)
         ii_stall_cond = m.Wire(self.name('ii_stall_cond'))
         ii_stall_cond.assign(ii_count > 0)
-        util.add_disable_cond(self.strm.stream_internal_oready, ii_stall_cond, vtypes.Int(0))
+        util.add_disable_cond(self.strm.internal_oready, ii_stall_cond, vtypes.Int(0))
 
-        seq.If(enable_cond)(
+        seq.If(ii_count == 0, enable_cond)(
             ii_count.inc()
         )
         seq.If(ii_count > 0)(
@@ -3410,9 +3413,9 @@ class ReduceDiv(_Accumulator):
                          int(ceil(log(self.iteration_interval, 2))) + 1, initval=0)
         ii_stall_cond = m.Wire(self.name('ii_stall_cond'))
         ii_stall_cond.assign(ii_count > 0)
-        util.add_disable_cond(self.strm.stream_internal_oready, ii_stall_cond, vtypes.Int(0))
+        util.add_disable_cond(self.strm.internal_oready, ii_stall_cond, vtypes.Int(0))
 
-        seq.If(enable_cond)(
+        seq.If(ii_count == 0, enable_cond)(
             ii_count.inc()
         )
         seq.If(ii_count > 0)(
@@ -3748,34 +3751,39 @@ class Str(_Constant):
 
 
 class Substream(_SpecialOperator):
-    def __init__(self, substrm, strm=None):
-        _SpecialOperator.__init__(self)
-        self.strm = strm
-        self._set_managers()
 
+    def __init__(self, child, strm):
+        _SpecialOperator.__init__(self)
+
+        if not child.aswire:
+            raise ValueError('aswire must be True.')
+        if child.module is None:
+            raise ValueError('module must not be None.')
+        if child.clock is None:
+            raise ValueError('clock must not be None.')
+        if child.reset is None:
+            raise ValueError('reset must not be None.')
+
+        if not isinstance(child.ivalid, vtypes.Reg):
+            raise ValueError('Child stream for Substream must have ivalid as Reg.')
+
+        if not child.implemented:
+            child.implement()
+
+        self.child = child
+        self.strm = strm
+
+        self._set_managers()
         self.width = 1
         self.point = 0
         self.signed = True
+        self.latency = child.pipeline_depth() + 1
 
-        self.graph_label = substrm.name if hasattr(substrm, 'name') else 'Substream'
+        self.conds = OrderedDict()
+
+        self.graph_label = child.name if hasattr(child, 'name') else 'Substream'
         self.graph_shape = 'box'
         self.graph_peripheries = 2
-
-        if not substrm.aswire:
-            raise ValueError('aswire must be True.')
-        if substrm.module is None:
-            raise ValueError('module must not be None.')
-        if substrm.clock is None:
-            raise ValueError('clock must not be None.')
-        if substrm.reset is None:
-            raise ValueError('reset must not be None.')
-
-        if not substrm.implemented:
-            substrm.implement()
-
-        self.substrm = substrm
-        self.latency = substrm.pipeline_depth() + 1
-        self.conds = OrderedDict()
 
     def _set_managers(self):
         self._set_module(getattr(self.strm, 'module', None))
@@ -3789,28 +3797,92 @@ class Substream(_SpecialOperator):
         self.conds[name] = cond
 
     def read(self, name):
-        var = self.substrm.get_named_numeric(name)
-        if self.strm is None:
-            return _SubstreamOutput(self, var)
+        var = self.child.get_named_numeric(name)
         return self.strm._SubstreamOutput(self, var, name)
 
     def _implement(self, m, seq, svalid=None, senable=None):
         arg_data = [arg.sig_data for arg in self.args]
 
+        ivalid_cond = _and_vars(svalid, senable)
+        seq(self.child.ivalid(vtypes.Int(1, 1)), cond=ivalid_cond)
+
         for data, (name, cond) in zip(arg_data, self.conds.items()):
-            var = self.substrm.get_named_numeric(name)
-            if senable is not None and cond is not None:
-                write_cond = vtypes.Ands(cond, senable)
-            elif senable is not None:
-                write_cond = senable
-            else:
-                write_cond = cond
-            var.write(data, write_cond)
+            enable_cond = _and_vars(svalid, senable, cond)
+            var = self.child.get_named_numeric(name)
+            var.write(data, enable_cond)
+
+        if self.strm.dump and self.child.dump:
+            dump_cond = _and_vars(svalid, senable)
+            seq(self.child.dump_enable(self.strm.dump_enable), cond=dump_cond)
+
+        self.sig_data = vtypes.Int(0)
+
+
+class SubstreamMultiCycle(Substream):
+
+    def __init__(self, child, strm):
+        Substream.__init__(self, child, strm)
+        self.graph_label = child.name if hasattr(child, 'name') else 'SubstreamMultiCycle'
+
+        # self.iteration_interval = self.latency - 1
+        # self.latency = 1 + 1
+        self.iteration_interval = self.latency - 1 - 1
+        self.latency = 1 + 1
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        arg_data = [arg.sig_data for arg in self.args]
+
+        # multicycle control
+        ii_count = m.Reg(self.name('ii_count'),
+                         int(ceil(log(self.iteration_interval, 2))) + 1, initval=0)
+        ii_stall_cond = m.Wire(self.name('ii_stall_cond'))
+        ii_stall_cond.assign(ii_count > 0)
+        util.add_disable_cond(self.strm.internal_oready, ii_stall_cond, vtypes.Int(0))
+
+        child_oready = vtypes.Ors(self.strm.oready,
+                                  vtypes.Ands(self.child.internal_oready, ii_stall_cond))
+        util.add_disable_cond(self.child.oready, self.strm.busy, child_oready)
+
+        enable_cond = _and_vars(svalid, senable)
+
+        cont = m.Reg(self.name('ii_cont'), initval=0)
+
+        seq.If(ii_count == 0, cont)(
+            ii_count.inc(),
+            cont(0)
+        )
+        seq.If(ii_count == 0, enable_cond)(
+            ii_count.inc(),
+            cont(1)
+        )
+        seq.If(ii_count > 0, self.child.internal_oready)(
+            ii_count.inc()
+        )
+        seq.If(ii_count == self.iteration_interval - 1, self.child.internal_oready)(
+            ii_count(0)
+        )
+
+        seq.If(self.strm.busy, self.child.ivalid)(
+            self.child.ivalid(vtypes.Int(0, 1))
+        )
+        seq.If(enable_cond, ii_count == 0)(
+            self.child.ivalid(vtypes.Int(1, 1))
+        )
+
+        for data, (name, cond) in zip(arg_data, self.conds.items()):
+            enable_cond = _and_vars(svalid, senable, cond)
+            var = self.child.get_named_numeric(name)
+            var.write(data, enable_cond)
+
+        if self.strm.dump and self.child.dump:
+            dump_cond = _and_vars(svalid, senable)
+            seq(self.child.dump_enable(self.strm.dump_enable), cond=dump_cond)
 
         self.sig_data = vtypes.Int(0)
 
 
 class _SubstreamOutput(_UnaryOperator):
+    latency = 0
 
     def __init__(self, substrm, output_var, var_name):
         _UnaryOperator.__init__(self, substrm)
@@ -4521,6 +4593,9 @@ class ReadRAM(_SpecialOperator):
         rdata = m.Wire(self.name('rdata'), datawidth, signed=signed)
         self.read_data = rdata
 
+        self.raddr = m.WireLike(self.args[0].sig_data, name=self.name('addr'))
+        self.raddr.assign(self.args[0].sig_data)
+
         when_cond = self.args[1].sig_data if len(self.args) == 2 else None
         enable_value = _and_vars(svalid, senable, when_cond)
         enable = m.Wire(self.name('enable'))
@@ -4564,11 +4639,11 @@ class ReadRAM(_SpecialOperator):
 
     @property
     def addr(self):
-        return self.args[0].sig_data
+        return self.raddr
 
 
 class WriteRAM(_SpecialOperator):
-    latency = 1
+    latency = 0
 
     def __init__(self, addr, data, when=None,
                  ram_name=None):
@@ -4589,25 +4664,27 @@ class WriteRAM(_SpecialOperator):
         self.graph_shape = 'box'
 
     def _implement(self, m, seq, svalid=None, senable=None):
-        if self.latency != 1:
-            raise ValueError("Latency mismatch '%d' != '%s'" %
-                             (self.latency, 1))
-
         when_cond = self.args[2].sig_data if len(self.args) == 3 else None
         enable_value = _and_vars(svalid, senable, when_cond)
         enable = m.Wire(self.name('enable'))
         enable.assign(enable_value)
         self.enable = enable
 
+        self.waddr = m.WireLike(self.args[0].sig_data, name=self.name('addr'))
+        self.waddr.assign(self.args[0].sig_data)
+
+        self.wdata = m.WireLike(self.args[1].sig_data, name=self.name('wdata'))
+        self.wdata.assign(self.args[1].sig_data)
+
         self.sig_data = vtypes.Int(0)
 
     @property
     def addr(self):
-        return self.args[0].sig_data
+        return self.waddr
 
     @property
     def write_data(self):
-        return self.args[1].sig_data
+        return self.wdata
 
 
 def ReduceArgMax(right, size=None, interval=None, initval=0,

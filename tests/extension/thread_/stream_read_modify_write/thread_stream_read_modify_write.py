@@ -85,7 +85,7 @@ def mkLed():
 
         # sequential
         offset = size * 4
-        myaxi.dma_read(ram_a, offset, 0, size * 2)
+        myaxi.dma_read(ram_a, offset, 0, size)
         comp_sequential(numbins, size, offset)
         myaxi.dma_write(ram_b, offset, 1024 * 2, numbins)
 

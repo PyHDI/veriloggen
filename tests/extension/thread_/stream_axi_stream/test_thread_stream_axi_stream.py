@@ -191,7 +191,9 @@ module blinkled
 
   reg _mystream_stream_ivalid;
   wire _mystream_stream_oready;
-  assign _mystream_stream_oready = 1;
+  wire _mystream_stream_internal_oready;
+  assign _mystream_stream_internal_oready = 1;
+  assign _mystream_stream_oready = _mystream_stream_internal_oready;
   reg [32-1:0] _mystream_fsm;
   localparam _mystream_fsm_init = 0;
   wire _mystream_run_flag;
@@ -1103,13 +1105,13 @@ module blinkled
       _mystream_source_stop <= 0;
       _mystream_stream_ivalid <= 0;
     end else begin
-      if(_tmp_46 && _mystream_stream_oready) begin
+      if(_mystream_stream_oready && _tmp_46) begin
         _mystream_stream_ivalid <= 1;
       end 
       if(_mystream_stream_oready) begin
         _mystream_source_stop <= 0;
       end 
-      if(_tmp_49 && _mystream_stream_oready) begin
+      if(_mystream_stream_oready && _tmp_49) begin
         _mystream_stream_ivalid <= 0;
       end 
       case(_mystream_fsm)

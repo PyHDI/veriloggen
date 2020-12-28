@@ -64,7 +64,7 @@ def mkLed():
         count.inc()
     )
 
-    util.add_disable_cond(strm.stream_oready, 1, count == 0)
+    util.add_disable_cond(strm.oready, 1, count == 0)
 
     # for sequential
     ram_bufs = [vthread.RAM(m, 'ram_buf' + str(i), clk, rst, datawidth, addrwidth)

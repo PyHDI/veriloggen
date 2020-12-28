@@ -28,20 +28,36 @@ def mkLed():
     mulx = mulstrm.source('x')
     muly = mulstrm.source('y')
     mulz = mulx * muly
-    mulz = mulz + mulx + muly - mulx - muly
     mulstrm.sink(mulz, 'z')
 
-    wrapstrm = vthread.Stream(m, 'wrap_stream', clk, rst)
-    a = wrapstrm.source('a')
-    b = wrapstrm.source('b')
+    macstrm = vthread.Stream(m, 'mac_stream', clk, rst)
+    a = macstrm.source('a')
+    b = macstrm.source('b')
     a = a + 1
     b = b + 1
-    sub = wrapstrm.substream_multicycle(mulstrm)
+    sub = macstrm.substream_multicycle(mulstrm)
     sub.to_source('x', a)
     sub.to_source('y', b)
     c = sub.from_sink('z')
-    c = c + 100
-    wrapstrm.sink(c, 'c')
+    size = macstrm.parameter('size')
+    sum, sum_valid = macstrm.ReduceAddValid(c, size)
+    macstrm.sink(sum, 'sum', when=sum_valid, when_name='sum_valid')
+
+    actstrm = vthread.Stream(m, 'act_stream', clk, rst)
+    a = actstrm.source('a')
+    b = actstrm.source('b')
+    a = a + 1
+    b = b + 1
+    a = a + 1
+    b = b + 1
+    sub = actstrm.substream_multicycle(mulstrm)
+    sub.to_source('x', a)
+    sub.to_source('y', b)
+    c = sub.from_sink('z')
+    size = actstrm.parameter('size')
+    sum, sum_valid = actstrm.ReduceAddValid(c, size)
+    sum = actstrm.Mux(sum > 0, sum, 0)
+    actstrm.sink(sum, 'sum', when=sum_valid, when_name='sum_valid')
 
     all_ok = m.TmpReg(initval=0)
 
@@ -52,12 +68,21 @@ def mkLed():
         mulstrm.run()
         mulstrm.join()
 
-    def comp_stream_wrap(size, offset):
-        wrapstrm.set_source('a', ram_a, offset, size)
-        wrapstrm.set_source('b', ram_b, offset, size)
-        wrapstrm.set_sink('c', ram_c, offset, size)
-        wrapstrm.run()
-        wrapstrm.join()
+    def comp_stream_mac(size, offset):
+        macstrm.set_source('a', ram_a, offset, size)
+        macstrm.set_source('b', ram_b, offset, size)
+        macstrm.set_parameter('size', size)
+        macstrm.set_sink('sum', ram_c, offset, 1)
+        macstrm.run()
+        macstrm.join()
+
+    def comp_stream_act(size, offset):
+        actstrm.set_source('a', ram_a, offset, size)
+        actstrm.set_source('b', ram_b, offset, size)
+        actstrm.set_parameter('size', size)
+        actstrm.set_sink('sum', ram_c, offset, 1)
+        actstrm.run()
+        actstrm.join()
 
     def comp_sequential_mul(size, offset):
         sum = 0
@@ -67,14 +92,23 @@ def mkLed():
             sum = a * b
             ram_c.write(i + offset, sum)
 
-    def comp_sequential_wrap(size, offset):
+    def comp_sequential_mac(size, offset):
         sum = 0
         for i in range(size):
             a = ram_a.read(i + offset) + 1
             b = ram_b.read(i + offset) + 1
-            sum = a * b
-            sum += 100
-            ram_c.write(i + offset, sum)
+            sum += a * b
+        ram_c.write(offset, sum)
+
+    def comp_sequential_act(size, offset):
+        sum = 0
+        for i in range(size):
+            a = ram_a.read(i + offset) + 1 + 1
+            b = ram_b.read(i + offset) + 1 + 1
+            sum += a * b
+        if sum <= 0:
+            sum = 0
+        ram_c.write(offset, sum)
 
     def check(size, offset_stream, offset_seq):
         for i in range(size):
@@ -111,26 +145,47 @@ def mkLed():
         myaxi.dma_read(ram_c, offset, 1024 * 2, size)
         check(size, 0, offset)
 
-        # wrap
+        # mac
         # stream
         offset = 0
         myaxi.dma_read(ram_a, offset, 0, size)
         myaxi.dma_read(ram_b, offset, 512, size)
-        comp_stream_wrap(size, offset)
-        myaxi.dma_write(ram_c, offset, 1024, size)
+        comp_stream_mac(size, offset)
+        myaxi.dma_write(ram_c, offset, 1024, 1)
 
         # sequential
         offset = size
         myaxi.dma_read(ram_a, offset, 0, size)
         myaxi.dma_read(ram_b, offset, 512, size)
-        comp_sequential_wrap(size, offset)
-        myaxi.dma_write(ram_c, offset, 1024 * 2, size)
+        comp_sequential_mac(size, offset)
+        myaxi.dma_write(ram_c, offset, 1024 * 2, 1)
 
         # verification
-        print('# WRAP')
+        print('# MAC')
         myaxi.dma_read(ram_c, 0, 1024, size)
         myaxi.dma_read(ram_c, offset, 1024 * 2, size)
-        check(size, 0, offset)
+        check(1, 0, offset)
+
+        # act
+        # stream
+        offset = 0
+        myaxi.dma_read(ram_a, offset, 0, size)
+        myaxi.dma_read(ram_b, offset, 512, size)
+        comp_stream_act(size, offset)
+        myaxi.dma_write(ram_c, offset, 1024, 1)
+
+        # sequential
+        offset = size
+        myaxi.dma_read(ram_a, offset, 0, size)
+        myaxi.dma_read(ram_b, offset, 512, size)
+        comp_sequential_act(size, offset)
+        myaxi.dma_write(ram_c, offset, 1024 * 2, 1)
+
+        # verification
+        print('# ACT')
+        myaxi.dma_read(ram_c, 0, 1024, size)
+        myaxi.dma_read(ram_c, offset, 1024 * 2, size)
+        check(1, 0, offset)
 
         vthread.finish()
 
