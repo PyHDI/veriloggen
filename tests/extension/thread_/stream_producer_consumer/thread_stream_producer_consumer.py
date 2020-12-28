@@ -61,7 +61,7 @@ def mkLed():
     index = sub.from_sink('index')
     valid = a_index == size - 1
 
-    strm.sink(index, 'index', when=valid, when_name='vailid')
+    strm.sink(index, 'index', when=valid, when_name='valid')
 
     def comp_stream(size, offset):
         strm.set_source('a', ram_a, offset, size)
