@@ -53,7 +53,7 @@ def mkLed():
         count.inc()
     )
 
-    util.add_disable_cond(strm.stream_oready, 1, count == 0)
+    util.add_disable_cond(strm.oready, 1, count == 0)
 
     def comp_stream():
         strm.set_source_multipattern('a', ram_a, offsets, patterns)

@@ -197,18 +197,15 @@ module main
     if(RST) begin
       _plus_data_3 <= 0;
       __delay_data_10__variable_2 <= 0;
-      _reduceadd_data_4 <= 1'sd0;
       _reduceadd_count_4 <= 0;
       _reduceadd_prev_count_max_4 <= 0;
-      _pulse_data_7 <= 1'sd0;
+      _reduceadd_data_4 <= 1'sd0;
       _pulse_count_7 <= 0;
       _pulse_prev_count_max_7 <= 0;
+      _pulse_data_7 <= 1'sd0;
     end else begin
       _plus_data_3 <= xdata + ydata;
       __delay_data_10__variable_2 <= edata;
-      if(__delay_data_10__variable_2) begin
-        _reduceadd_data_4 <= _reduceadd_current_data_4 + _plus_data_3;
-      end 
       if(__delay_data_10__variable_2) begin
         _reduceadd_count_4 <= (_reduceadd_current_count_4 >= 5'sd8 - 1)? 0 : _reduceadd_current_count_4 + 1;
       end 
@@ -216,13 +213,16 @@ module main
         _reduceadd_prev_count_max_4 <= _reduceadd_current_count_4 >= 5'sd8 - 1;
       end 
       if(__delay_data_10__variable_2) begin
-        _pulse_data_7 <= _pulse_current_count_7 >= 5'sd8 - 1;
+        _reduceadd_data_4 <= _reduceadd_current_data_4 + _plus_data_3;
       end 
       if(__delay_data_10__variable_2) begin
         _pulse_count_7 <= (_pulse_current_count_7 >= 5'sd8 - 1)? 0 : _pulse_current_count_7 + 1;
       end 
       if(__delay_data_10__variable_2) begin
         _pulse_prev_count_max_7 <= _pulse_current_count_7 >= 5'sd8 - 1;
+      end 
+      if(__delay_data_10__variable_2) begin
+        _pulse_data_7 <= _pulse_current_count_7 >= 5'sd8 - 1;
       end 
     end
   end

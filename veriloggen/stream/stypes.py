@@ -8,6 +8,7 @@ from math import log, ceil
 
 import veriloggen.core.vtypes as vtypes
 import veriloggen.types.fixed as fx
+import veriloggen.types.util as util
 import veriloggen.types.rom as rom
 import veriloggen.types.ram as ram
 from veriloggen.seq.seq import make_condition as _make_condition
@@ -96,6 +97,7 @@ class _Node(object):
 
 class _Numeric(_Node):
     latency = 0
+    iteration_interval = 1
 
     def __hash__(self):
         object_id = self.object_id if hasattr(self, 'object_id') else None
@@ -455,6 +457,7 @@ class _Numeric(_Node):
 
 class _Operator(_Numeric):
     latency = 1
+    iteration_interval = 1
 
     def _implement(self, m, seq, svalid=None, senable=None):
         raise NotImplementedError('_implement() is not implemented.')
@@ -496,6 +499,10 @@ class _BinaryOperator(_Operator):
         ldata, rdata = fx.adjust(self.left.sig_data, self.right.sig_data,
                                  lpoint, rpoint, signed)
 
+        enable_cond = senable
+        if self.iteration_interval != 1:
+            enable_cond = _and_vars(enable_cond, svalid)
+
         if self.latency == 0:
             data = m.Wire(self.name('data'), width, signed=signed)
             data.assign(self.op(ldata, rdata))
@@ -504,7 +511,26 @@ class _BinaryOperator(_Operator):
         elif self.latency == 1:
             data = m.Reg(self.name('data'), width, initval=0, signed=signed)
             self.sig_data = data
-            seq(data(self.op(ldata, rdata)), cond=senable)
+            seq(data(self.op(ldata, rdata)), cond=enable_cond)
+
+            # multicycle control
+            if self.iteration_interval != 1:
+                ii_count = m.Reg(self.name('ii_count'),
+                                 int(ceil(log(self.iteration_interval, 2))) + 1, initval=0)
+                ii_stall_cond = m.Wire(self.name('ii_stall_cond'))
+                ii_stall_cond.assign(ii_count > 0)
+                util.add_disable_cond(self.strm.internal_oready,
+                                      ii_stall_cond, vtypes.Int(0))
+
+                seq.If(ii_count == 0, enable_cond)(
+                    ii_count.inc()
+                )
+                seq.If(ii_count > 0)(
+                    ii_count.inc()
+                )
+                seq.If(ii_count == self.iteration_interval - 1)(
+                    ii_count(0)
+                )
 
         else:
             prev_data = None
@@ -513,9 +539,9 @@ class _BinaryOperator(_Operator):
                 data = m.Reg(self.name('data_d%d' % i),
                              width, initval=0, signed=signed)
                 if i == 0:
-                    seq(data(self.op(ldata, rdata)), cond=senable)
+                    seq(data(self.op(ldata, rdata)), cond=enable_cond)
                 else:
-                    seq(data(prev_data), cond=senable)
+                    seq(data(prev_data), cond=enable_cond)
                 prev_data = data
 
             self.sig_data = data
@@ -549,6 +575,10 @@ class _UnaryOperator(_Operator):
         signed = self.get_signed()
         rdata = self.right.sig_data
 
+        enable_cond = senable
+        if self.iteration_interval != 1:
+            enable_cond = _and_vars(enable_cond, svalid)
+
         if self.latency == 0:
             data = m.Wire(self.name('data'), width, signed=signed)
             data.assign(self.op(rdata))
@@ -557,7 +587,26 @@ class _UnaryOperator(_Operator):
         elif self.latency == 1:
             data = m.Reg(self.name('data'), width, initval=0, signed=signed)
             self.sig_data = data
-            seq(data(self.op(rdata)), cond=senable)
+            seq(data(self.op(rdata)), cond=enable_cond)
+
+            # multicycle control
+            if self.iteration_interval != 1:
+                ii_count = m.Reg(self.name('ii_count'),
+                                 int(ceil(log(self.iteration_interval, 2))) + 1, initval=0)
+                ii_stall_cond = m.Wire(self.name('ii_stall_cond'))
+                ii_stall_cond.assign(ii_count > 0)
+                util.add_disable_cond(self.strm.internal_oready,
+                                      ii_stall_cond, vtypes.Int(0))
+
+                seq.If(ii_count == 0, enable_cond)(
+                    ii_count.inc()
+                )
+                seq.If(ii_count > 0)(
+                    ii_count.inc()
+                )
+                seq.If(ii_count == self.iteration_interval - 1)(
+                    ii_count(0)
+                )
 
         else:
             prev_data = None
@@ -566,9 +615,9 @@ class _UnaryOperator(_Operator):
                 data = m.Reg(self.name('data_d%d' % i),
                              width, initval=0, signed=signed)
                 if i == 0:
-                    seq(data(self.op(rdata)), cond=senable)
+                    seq(data(self.op(rdata)), cond=enable_cond)
                 else:
-                    seq(data(prev_data), cond=senable)
+                    seq(data(prev_data), cond=enable_cond)
                 prev_data = data
 
             self.sig_data = data
@@ -585,7 +634,7 @@ class Power(_BinaryOperator):
 
 
 class Times(_BinaryOperator):
-    latency = 6 + 1
+    latency = 2 + 1
 
     def eval(self):
         return self.left.eval() * self.right.eval()
@@ -600,8 +649,8 @@ class Times(_BinaryOperator):
         self.signed = self.left.get_signed() and self.right.get_signed()
 
     def _implement(self, m, seq, svalid=None, senable=None):
-        if self.latency <= 3:
-            raise ValueError("Latency of '*' operator must be greater than 3")
+        if self.latency < 3:
+            raise ValueError("Latency of '*' operator must be greater than 2")
 
         width = self.get_width()
         signed = self.get_signed()
@@ -649,11 +698,11 @@ class Times(_BinaryOperator):
 
 
 class Divide(_BinaryOperator):
-    latency = 32 + 5
+    latency = 32 + 3
     variable_latency = 'get_latency'
 
     def get_latency(self):
-        return self.get_width() + 5
+        return self.get_width() + 3
 
     def eval(self):
         left = self.left.eval()
@@ -677,11 +726,11 @@ class Divide(_BinaryOperator):
         lval, rval = fx.adjust(self.left.sig_data, self.right.sig_data,
                                lpoint, rpoint, signed)
 
-        ldata = m.Reg(self.name('div_ldata'), width, signed=lsigned, initval=0)
-        rdata = m.Reg(self.name('div_rdata'), width, signed=rsigned, initval=0)
+        ldata = m.Wire(self.name('div_ldata'), width, signed=lsigned)
+        rdata = m.Wire(self.name('div_rdata'), width, signed=rsigned)
 
-        seq(ldata(lval), cond=senable)
-        seq(rdata(rval), cond=senable)
+        ldata.assign(lval)
+        rdata.assign(rval)
 
         sign = vtypes.Not(
             vtypes.OrList(vtypes.AndList(ldata[width - 1] == 0,
@@ -689,20 +738,18 @@ class Divide(_BinaryOperator):
                           vtypes.AndList(ldata[width - 1] == 1,
                                          rdata[width - 1] == 1)))  # - , -
 
-        abs_ldata = m.Reg(self.name('div_abs_ldata'), width, initval=0)
-        abs_rdata = m.Reg(self.name('div_abs_rdata'), width, initval=0)
+        abs_ldata = m.Wire(self.name('div_abs_ldata'), width)
+        abs_rdata = m.Wire(self.name('div_abs_rdata'), width)
 
         if not lsigned:
-            seq(abs_ldata(ldata), cond=senable)
+            abs_ldata.assign(ldata)
         else:
-            seq(abs_ldata(vtypes.Mux(ldata[width - 1] == 0, ldata, vtypes.Unot(ldata) + 1)),
-                cond=senable)
+            abs_ldata.assign(vtypes.Mux(ldata[width - 1] == 0, ldata, vtypes.Unot(ldata) + 1))
 
         if not rsigned:
-            seq(abs_rdata(rdata), cond=senable)
+            abs_rdata.assign(rdata)
         else:
-            seq(abs_rdata(vtypes.Mux(rdata[width - 1] == 0, rdata, vtypes.Unot(rdata) + 1)),
-                cond=senable)
+            abs_rdata.assign(vtypes.Mux(rdata[width - 1] == 0, rdata, vtypes.Unot(rdata) + 1))
 
         osign = m.Wire(self.name('div_osign'))
         abs_odata = m.Wire(self.name('div_abs_odata'), width, signed=signed)
@@ -745,11 +792,11 @@ class Divide(_BinaryOperator):
 
 
 class Mod(_BinaryOperator):
-    latency = 32 + 5
+    latency = 32 + 3
     variable_latency = 'get_latency'
 
     def get_latency(self):
-        return self.get_width() + 5
+        return self.get_width() + 3
 
     def eval(self):
         return self.left.eval() % self.right.eval()
@@ -769,11 +816,11 @@ class Mod(_BinaryOperator):
         lval, rval = fx.adjust(self.left.sig_data, self.right.sig_data,
                                lpoint, rpoint, signed)
 
-        ldata = m.Reg(self.name('mod_ldata'), width, signed=lsigned, initval=0)
-        rdata = m.Reg(self.name('mod_rdata'), width, signed=rsigned, initval=0)
+        ldata = m.Wire(self.name('mod_ldata'), width, signed=lsigned)
+        rdata = m.Wire(self.name('mod_rdata'), width, signed=rsigned)
 
-        seq(ldata(lval), cond=senable)
-        seq(rdata(rval), cond=senable)
+        ldata.assign(lval)
+        rdata.assign(rval)
 
         sign = vtypes.Not(
             vtypes.OrList(vtypes.AndList(ldata[width - 1] == 0,
@@ -781,20 +828,18 @@ class Mod(_BinaryOperator):
                           vtypes.AndList(ldata[width - 1] == 1,
                                          rdata[width - 1] == 1)))  # - , -
 
-        abs_ldata = m.Reg(self.name('div_abs_ldata'), width, initval=0)
-        abs_rdata = m.Reg(self.name('div_abs_rdata'), width, initval=0)
+        abs_ldata = m.Wire(self.name('div_abs_ldata'), width)
+        abs_rdata = m.Wire(self.name('div_abs_rdata'), width)
 
         if not lsigned:
-            seq(abs_ldata(ldata), cond=senable)
+            abs_ldata.assign(ldata)
         else:
-            seq(abs_ldata(vtypes.Mux(ldata[width - 1] == 0, ldata, vtypes.Unot(ldata) + 1)),
-                cond=senable)
+            abs_ldata.assign(vtypes.Mux(ldata[width - 1] == 0, ldata, vtypes.Unot(ldata) + 1))
 
         if not rsigned:
-            seq(abs_rdata(rdata), cond=senable)
+            abs_rdata.assign(rdata)
         else:
-            seq(abs_rdata(vtypes.Mux(rdata[width - 1] == 0, rdata, vtypes.Unot(rdata) + 1)),
-                cond=senable)
+            abs_rdata.assign(vtypes.Mux(rdata[width - 1] == 0, rdata, vtypes.Unot(rdata) + 1))
 
         osign = m.Wire(self.name('mod_osign'))
         abs_odata = m.Wire(self.name('mod_abs_odata'), width, signed=signed)
@@ -836,6 +881,116 @@ class Mod(_BinaryOperator):
         m.Instance(inst, self.name('div'), params, ports)
 
 
+class DivideMultiCycle(_BinaryOperator):
+    latency = 1
+    iteration_interval = 32 + 3
+    variable_iteration_interval = 'get_latency'
+
+    def get_latency(self):
+        return self.get_width() + 3
+
+    def eval(self):
+        left = self.left.eval()
+        right = self.right.eval()
+        if isinstance(left, int) and isinstance(right, int):
+            return int(left / right)
+        return Divide(left, right)
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        width = self.get_width()
+        signed = self.get_signed()
+
+        lpoint = self.left.get_point()
+        rpoint = self.right.get_point()
+        lsigned = self.left.get_signed()
+        rsigned = self.right.get_signed()
+
+        lval, rval = fx.adjust(self.left.sig_data, self.right.sig_data,
+                               lpoint, rpoint, signed)
+
+        ldata = m.Wire(self.name('div_ldata'), width, signed=lsigned)
+        rdata = m.Wire(self.name('div_rdata'), width, signed=rsigned)
+
+        # multicycle control
+        enable_cond = _and_vars(senable, svalid)
+
+        ii_count = m.Reg(self.name('ii_count'),
+                         int(ceil(log(self.iteration_interval, 2))) + 1, initval=0)
+        ii_stall_cond = m.Wire(self.name('ii_stall_cond'))
+        ii_stall_cond.assign(ii_count > 0)
+        util.add_disable_cond(self.strm.internal_oready, ii_stall_cond, vtypes.Int(0))
+
+        seq.If(ii_count == 0, enable_cond)(
+            ii_count.inc()
+        )
+        seq.If(ii_count > 0)(
+            ii_count.inc()
+        )
+        seq.If(ii_count == self.iteration_interval - 1)(
+            ii_count(0)
+        )
+
+        comp_cond = vtypes.Ors(enable_cond, ii_stall_cond)
+
+        ldata.assign(lval)
+        rdata.assign(rval)
+
+        sign = vtypes.Not(
+            vtypes.OrList(vtypes.AndList(ldata[width - 1] == 0,
+                                         rdata[width - 1] == 0),  # + , +
+                          vtypes.AndList(ldata[width - 1] == 1,
+                                         rdata[width - 1] == 1)))  # - , -
+
+        abs_ldata = m.Wire(self.name('div_abs_ldata'), width)
+        abs_rdata = m.Wire(self.name('div_abs_rdata'), width)
+
+        if not lsigned:
+            abs_ldata.assign(ldata)
+        else:
+            abs_ldata.assign(vtypes.Mux(ldata[width - 1] == 0, ldata, vtypes.Unot(ldata) + 1))
+
+        if not rsigned:
+            abs_rdata.assign(rdata)
+        else:
+            abs_rdata.assign(vtypes.Mux(rdata[width - 1] == 0, rdata, vtypes.Unot(rdata) + 1))
+
+        osign = m.Wire(self.name('div_osign'))
+        abs_odata = m.Wire(self.name('div_abs_odata'), width, signed=signed)
+        odata = m.Reg(self.name('div_odata'), width, signed=signed, initval=0)
+
+        if not signed:
+            seq(odata(abs_odata), cond=comp_cond)
+        else:
+            seq(odata(vtypes.Mux(osign == 0, abs_odata, vtypes.Unot(abs_odata) + 1)),
+                cond=comp_cond)
+
+        data = m.Wire(self.name('data'), width, signed=signed)
+        self.sig_data = data
+
+        m.Assign(data(odata))
+
+        s = sign
+        for i in range(self.latency - 2):
+            ns = m.Reg(self.name('div_sign_tmp_%d' % i), initval=0)
+            seq(ns(s), cond=comp_cond)
+            s = ns
+        m.Assign(osign(s))
+
+        inst = div.get_div()
+        clk = m._clock
+        rst = m._reset
+
+        update = m.Wire(self.name('div_update'))
+
+        m.Assign(update(comp_cond))
+
+        params = [('W_D', width)]
+        ports = [('CLK', clk), ('RST', rst), ('update', update), ('enable', vtypes.Int(1, 1)),
+                 ('in_a', abs_ldata), ('in_b', abs_rdata), ('rslt', abs_odata)]
+
+        m.Instance(inst, self.name('div'), params, ports)
+
+
 class Plus(_BinaryOperator):
 
     def eval(self):
@@ -863,6 +1018,10 @@ def Mul(left, right):
 
 def Div(left, right):
     return Divide(left, right)
+
+
+def DivMultiCycle(left, right):
+    return DivideMultiCycle(left, right)
 
 
 def Neg(right):
@@ -1441,6 +1600,10 @@ class _SpecialOperator(_Operator):
 
         arg_data = [arg.sig_data for arg in self.args]
 
+        enable_cond = senable
+        if self.iteration_interval != 1:
+            enable_cond = _and_vars(enable_cond, svalid)
+
         if self.latency == 0:
             data = m.Wire(self.name('data'), width, signed=signed)
             data.assign(self.op(*arg_data))
@@ -1449,7 +1612,26 @@ class _SpecialOperator(_Operator):
         elif self.latency == 1:
             data = m.Reg(self.name('data'), width, initval=0, signed=signed)
             self.sig_data = data
-            seq(data(self.op(*arg_data)), cond=senable)
+            seq(data(self.op(*arg_data)), cond=enable_cond)
+
+            # multicycle control
+            if self.iteration_interval != 1:
+                ii_count = m.Reg(self.name('ii_count'),
+                                 int(ceil(log(self.iteration_interval, 2))) + 1, initval=0)
+                ii_stall_cond = m.Wire(self.name('ii_stall_cond'))
+                ii_stall_cond.assign(ii_count > 0)
+                util.add_disable_cond(self.strm.internal_oready,
+                                      ii_stall_cond, vtypes.Int(0))
+
+                seq.If(ii_count == 0, enable_cond)(
+                    ii_count.inc()
+                )
+                seq.If(ii_count > 0)(
+                    ii_count.inc()
+                )
+                seq.If(ii_count == self.iteration_interval - 1)(
+                    ii_count(0)
+                )
 
         else:
             prev_data = None
@@ -1458,9 +1640,9 @@ class _SpecialOperator(_Operator):
                 data = m.Reg(self.name('data_d%d' % i),
                              width, initval=0, signed=signed)
                 if i == 0:
-                    seq(data(self.op(*arg_data)), cond=senable)
+                    seq(data(self.op(*arg_data)), cond=enable_cond)
                 else:
-                    seq(data(prev_data), cond=senable)
+                    seq(data(prev_data), cond=enable_cond)
                 prev_data = data
 
             self.sig_data = data
@@ -2264,7 +2446,7 @@ class _PlusN(_SpecialOperator):
 
 
 class _MulAdd(_SpecialOperator):
-    latency = 6 + 1
+    latency = 2 + 1
 
     def __init__(self, a, b, c):
         _SpecialOperator.__init__(self, a, b, c)
@@ -2310,8 +2492,8 @@ class _MulAdd(_SpecialOperator):
         self.signed = self.a.get_signed() and self.b.get_signed() and self.c.get_signed()
 
     def _implement(self, m, seq, svalid=None, senable=None):
-        if self.latency <= 3:
-            raise ValueError("Latency of '*' operator must be greater than 3")
+        if self.latency < 3:
+            raise ValueError("Latency of '*' operator must be greater than 2")
 
         width = self.get_width()
         signed = self.get_signed()
@@ -2789,8 +2971,15 @@ class _Accumulator(_Operator):
 
     def _implement(self, m, seq, svalid=None, senable=None):
         if self.latency != 1:
-            raise ValueError("Latency mismatch '%d' vs '%s'" %
+            raise ValueError("Latency must be '%d', not '%d'" %
                              (self.latency, 1))
+
+        if self.iteration_interval != 1 and self.latency != 1:
+            raise ValueError("When iteration_interval != 1, latency must be '%d', not '%d'" %
+                             (self.latency, 1))
+
+        if self.iteration_interval != 1 and self.strm is None:
+            raise ValueError("When iteration_interval != 1, strm must be assigned.")
 
         size_data = self.size.sig_data if self.size is not None else None
         interval_data = self.interval.sig_data if self.interval is not None else None
@@ -2891,11 +3080,29 @@ class _Accumulator(_Operator):
             seq(interval_count(next_interval_count), cond=enable_cond)
             enable_cond = _and_vars(enable_cond, interval_enable)
 
-        seq(data(value), cond=enable_cond)
-
         if self.size is not None:
             seq(count(next_count_value), cond=enable_cond)
             seq(prev_count_max(count_max), cond=enable_cond)
+
+        seq(data(value), cond=enable_cond)
+
+        # multicycle control
+        if self.iteration_interval != 1:
+            ii_count = m.Reg(self.name('ii_count'),
+                             int(ceil(log(self.iteration_interval, 2))) + 1, initval=0)
+            ii_stall_cond = m.Wire(self.name('ii_stall_cond'))
+            ii_stall_cond.assign(ii_count > 0)
+            util.add_disable_cond(self.strm.internal_oready, ii_stall_cond, vtypes.Int(0))
+
+            seq.If(ii_count == 0, enable_cond)(
+                ii_count.inc()
+            )
+            seq.If(ii_count > 0)(
+                ii_count.inc()
+            )
+            seq.If(ii_count == self.iteration_interval - 1)(
+                ii_count(0)
+            )
 
 
 class ReduceAdd(_Accumulator):
@@ -2922,9 +3129,23 @@ class ReduceSub(_Accumulator):
         self.graph_label = 'ReduceSub'
 
 
+# class ReduceMul(_Accumulator):
+#    latency = 1
+#    ops = (vtypes.Times, )
+#
+#    def __init__(self, right, size=None, interval=None, initval=0,
+#                 enable=None, reset=None, reg_initval=None, width=32, signed=True):
+#        offset = None
+#        dependency = None
+#        _Accumulator.__init__(self, right, size, interval, initval, offset,
+#                              dependency, enable, reset, reg_initval, width, signed)
+#        self.graph_label = 'ReduceMul'
+
+
 class ReduceMul(_Accumulator):
     latency = 1
-    ops = (vtypes.Times, )
+    iteration_interval = 2 + 1
+    ops = ()
 
     def __init__(self, right, size=None, interval=None, initval=0,
                  enable=None, reset=None, reg_initval=None, width=32, signed=True):
@@ -2934,19 +3155,330 @@ class ReduceMul(_Accumulator):
                               dependency, enable, reset, reg_initval, width, signed)
         self.graph_label = 'ReduceMul'
 
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency != 1:
+            raise ValueError("Latency must be '%d', not '%d'" %
+                             (self.latency, 1))
+
+        if self.iteration_interval != 1 and self.latency != 1:
+            raise ValueError("When iteration_interval != 1, latency must be '%d', not '%d'" %
+                             (self.latency, 1))
+
+        if self.iteration_interval != 1 and self.strm is None:
+            raise ValueError("When iteration_interval != 1, strm must be assigned.")
+
+        size_data = self.size.sig_data if self.size is not None else None
+        interval_data = self.interval.sig_data if self.interval is not None else None
+        initval_data = self.initval.sig_data
+        width = self.get_width()
+        signed = self.get_signed()
+
+        reg_initval_data = self.reg_initval.sig_data
+
+        data = m.Reg(self.name('data'), width,
+                     initval=reg_initval_data, signed=signed)
+
+        self.sig_data = data
+
+        rdata = self.right.sig_data
+        enabledata = self.enable.sig_data if self.enable is not None else None
+        resetdata = self.reset.sig_data if self.reset is not None else None
+
+        if self.interval is not None:
+            interval_count = m.Reg(self.name('interval_count'), width, initval=0)
+
+        reset_cond_values = []
+
+        if self.reset is not None:
+            reset_cond_values.append(resetdata)
+
+        if self.size is not None:
+            count = m.Reg(self.name('count'),
+                          size_data.get_width() + 1, initval=0)
+            prev_count_max = m.Reg(self.name('prev_count_max'), initval=0)
+            reset_cond_values.append(prev_count_max)
+
+        reset_cond = m.Wire(self.name('reset_cond'))
+
+        if len(reset_cond_values) > 0:
+            reset_cond.assign(vtypes.Ors(*reset_cond_values))
+            if self.size is not None:
+                current_count = m.WireLike(count, name=self.name('current_count'))
+                current_count.assign(vtypes.Mux(reset_cond, 0, count))
+            if self.interval is not None:
+                current_interval_count = m.WireLike(
+                    interval_count, name=self.name('current_interval_count'))
+                current_interval_count.assign(vtypes.Mux(reset_cond, 0, interval_count))
+
+            current_data = m.WireLike(data, name=self.name('current_data'))
+            current_data.assign(vtypes.Mux(reset_cond, initval_data, data))
+
+        else:
+            reset_cond.assign(0)
+            if self.size is not None:
+                current_count = count
+            if self.interval is not None:
+                current_interval_count = interval_count
+
+            current_data = data
+
+        if self.size is not None:
+            next_count_value = vtypes.Mux(current_count >= size_data - 1,
+                                          0, current_count + 1)
+            count_max = (current_count >= size_data - 1)
+
+        if self.interval is not None:
+            next_interval_count = vtypes.Mux(current_interval_count >= interval_data - 1,
+                                             0, current_interval_count + 1)
+            interval_enable = (current_interval_count == interval_data - 1)
+
+        enable_cond = _and_vars(svalid, senable)
+
+        if self.reset is not None:
+            enable_reset_cond = _and_vars(enable_cond, reset_cond)
+            seq(data(initval_data), cond=enable_reset_cond)
+
+        if self.enable is not None:
+            enable_cond = _and_vars(enable_cond, enabledata)
+
+        if self.interval is not None:
+            seq(interval_count(next_interval_count), cond=enable_cond)
+            enable_cond = _and_vars(enable_cond, interval_enable)
+
+        if self.size is not None:
+            seq(count(next_count_value), cond=enable_cond)
+            seq(prev_count_max(count_max), cond=enable_cond)
+
+        # seq(data(value), cond=enable_cond)
+
+        # multicycle control
+        ii_count = m.Reg(self.name('ii_count'),
+                         int(ceil(log(self.iteration_interval, 2))) + 1, initval=0)
+        ii_stall_cond = m.Wire(self.name('ii_stall_cond'))
+        ii_stall_cond.assign(ii_count > 0)
+        util.add_disable_cond(self.strm.internal_oready, ii_stall_cond, vtypes.Int(0))
+
+        seq.If(ii_count == 0, enable_cond)(
+            ii_count.inc()
+        )
+        seq.If(ii_count > 0)(
+            ii_count.inc()
+        )
+        seq.If(ii_count == self.iteration_interval - 1)(
+            ii_count(0)
+        )
+
+        comp_cond = vtypes.Ors(enable_cond, ii_stall_cond)
+
+        depth = self.iteration_interval - 1
+
+        inst = mul.get_mul(width, width, signed, signed, depth)
+        clk = m._clock
+
+        update = m.Wire(self.name('mul_update'))
+
+        m.Assign(update(comp_cond))
+
+        odata = m.Wire(self.name('mul_odata'), width + width, signed=signed)
+
+        ports = [('CLK', clk), ('update', update),
+                 ('a', current_data), ('b', rdata), ('c', odata)]
+
+        m.Instance(inst, self.name('mul'), ports=ports)
+
+        shift_size = self.point
+        if shift_size > 0:
+            value = fx.shift_right(odata, shift_size, signed=signed)
+        else:
+            value = odata
+
+        seq(data(value), cond=ii_count == self.iteration_interval - 1)
+
 
 class ReduceDiv(_Accumulator):
-    latency = 32
+    latency = 1
+    iteration_interval = 32 + 3
+    variable_iteration_interval = 'get_latency'
     ops = ()
+
+    def get_latency(self):
+        return self.get_width() + 3
 
     def __init__(self, right, size=None, interval=None, initval=0,
                  enable=None, reset=None, reg_initval=None, width=32, signed=True):
-        raise NotImplementedError()
         offset = None
         dependency = None
         _Accumulator.__init__(self, right, size, interval, initval, offset,
                               dependency, enable, reset, reg_initval, width, signed)
         self.graph_label = 'ReduceDiv'
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency != 1:
+            raise ValueError("Latency must be '%d', not '%d'" %
+                             (self.latency, 1))
+
+        if self.iteration_interval != 1 and self.latency != 1:
+            raise ValueError("When iteration_interval != 1, latency must be '%d', not '%d'" %
+                             (self.latency, 1))
+
+        if self.iteration_interval != 1 and self.strm is None:
+            raise ValueError("When iteration_interval != 1, strm must be assigned.")
+
+        size_data = self.size.sig_data if self.size is not None else None
+        interval_data = self.interval.sig_data if self.interval is not None else None
+        initval_data = self.initval.sig_data
+        width = self.get_width()
+        signed = self.get_signed()
+
+        reg_initval_data = self.reg_initval.sig_data
+
+        data = m.Reg(self.name('data'), width,
+                     initval=reg_initval_data, signed=signed)
+
+        self.sig_data = data
+
+        rdata = self.right.sig_data
+        enabledata = self.enable.sig_data if self.enable is not None else None
+        resetdata = self.reset.sig_data if self.reset is not None else None
+
+        if self.interval is not None:
+            interval_count = m.Reg(self.name('interval_count'), width, initval=0)
+
+        reset_cond_values = []
+
+        if self.reset is not None:
+            reset_cond_values.append(resetdata)
+
+        if self.size is not None:
+            count = m.Reg(self.name('count'),
+                          size_data.get_width() + 1, initval=0)
+            prev_count_max = m.Reg(self.name('prev_count_max'), initval=0)
+            reset_cond_values.append(prev_count_max)
+
+        reset_cond = m.Wire(self.name('reset_cond'))
+
+        if len(reset_cond_values) > 0:
+            reset_cond.assign(vtypes.Ors(*reset_cond_values))
+            if self.size is not None:
+                current_count = m.WireLike(count, name=self.name('current_count'))
+                current_count.assign(vtypes.Mux(reset_cond, 0, count))
+            if self.interval is not None:
+                current_interval_count = m.WireLike(
+                    interval_count, name=self.name('current_interval_count'))
+                current_interval_count.assign(vtypes.Mux(reset_cond, 0, interval_count))
+
+            current_data = m.WireLike(data, name=self.name('current_data'))
+            current_data.assign(vtypes.Mux(reset_cond, initval_data, data))
+
+        else:
+            reset_cond.assign(0)
+            if self.size is not None:
+                current_count = count
+            if self.interval is not None:
+                current_interval_count = interval_count
+
+            current_data = data
+
+        if self.size is not None:
+            next_count_value = vtypes.Mux(current_count >= size_data - 1,
+                                          0, current_count + 1)
+            count_max = (current_count >= size_data - 1)
+
+        if self.interval is not None:
+            next_interval_count = vtypes.Mux(current_interval_count >= interval_data - 1,
+                                             0, current_interval_count + 1)
+            interval_enable = (current_interval_count == interval_data - 1)
+
+        enable_cond = _and_vars(svalid, senable)
+
+        if self.reset is not None:
+            enable_reset_cond = _and_vars(enable_cond, reset_cond)
+            seq(data(initval_data), cond=enable_reset_cond)
+
+        if self.enable is not None:
+            enable_cond = _and_vars(enable_cond, enabledata)
+
+        if self.interval is not None:
+            seq(interval_count(next_interval_count), cond=enable_cond)
+            enable_cond = _and_vars(enable_cond, interval_enable)
+
+        if self.size is not None:
+            seq(count(next_count_value), cond=enable_cond)
+            seq(prev_count_max(count_max), cond=enable_cond)
+
+        # seq(data(value), cond=enable_cond)
+
+        # multicycle control
+        ii_count = m.Reg(self.name('ii_count'),
+                         int(ceil(log(self.iteration_interval, 2))) + 1, initval=0)
+        ii_stall_cond = m.Wire(self.name('ii_stall_cond'))
+        ii_stall_cond.assign(ii_count > 0)
+        util.add_disable_cond(self.strm.internal_oready, ii_stall_cond, vtypes.Int(0))
+
+        seq.If(ii_count == 0, enable_cond)(
+            ii_count.inc()
+        )
+        seq.If(ii_count > 0)(
+            ii_count.inc()
+        )
+        seq.If(ii_count == self.iteration_interval - 1)(
+            ii_count(0)
+        )
+
+        comp_cond = vtypes.Ors(enable_cond, ii_stall_cond)
+
+        ldata = m.Wire(self.name('div_ldata'), width, signed=signed)
+        ldata.assign(current_data)
+
+        sign = vtypes.Not(
+            vtypes.OrList(vtypes.AndList(ldata[width - 1] == 0,
+                                         rdata[width - 1] == 0),  # + , +
+                          vtypes.AndList(ldata[width - 1] == 1,
+                                         rdata[width - 1] == 1)))  # - , -
+
+        abs_ldata = m.Wire(self.name('div_abs_ldata'), width)
+        abs_rdata = m.Wire(self.name('div_abs_rdata'), width)
+
+        if signed:
+            abs_ldata.assign(ldata)
+            abs_rdata.assign(rdata)
+        else:
+            abs_ldata.assign(vtypes.Mux(ldata[width - 1] == 0, ldata, vtypes.Unot(ldata) + 1))
+            abs_rdata.assign(vtypes.Mux(rdata[width - 1] == 0, rdata, vtypes.Unot(rdata) + 1))
+
+        osign = m.Wire(self.name('div_osign'))
+        abs_odata = m.Wire(self.name('div_abs_odata'), width, signed=signed)
+        odata = m.Wire(self.name('div_odata'), width, signed=signed)
+
+        if not signed:
+            odata.assign(abs_odata)
+        else:
+            odata.assign(vtypes.Mux(osign == 0, abs_odata, vtypes.Unot(abs_odata) + 1))
+
+        s = sign
+        for i in range(self.latency - 2):
+            ns = m.Reg(self.name('div_sign_tmp_%d' % i), initval=0)
+            seq(ns(s), cond=comp_cond)
+            s = ns
+        m.Assign(osign(s))
+
+        inst = div.get_div()
+        clk = m._clock
+        rst = m._reset
+
+        update = m.Wire(self.name('div_update'))
+
+        m.Assign(update(comp_cond))
+
+        params = [('W_D', width)]
+        ports = [('CLK', clk), ('RST', rst), ('update', update), ('enable', vtypes.Int(1, 1)),
+                 ('in_a', abs_ldata), ('in_b', abs_rdata), ('rslt', abs_odata)]
+
+        m.Instance(inst, self.name('div'), params, ports)
+
+        value = odata
+
+        seq(data(value), cond=ii_count == self.iteration_interval - 1)
 
 
 class ReduceMax(_Accumulator):
@@ -3219,34 +3751,36 @@ class Str(_Constant):
 
 
 class Substream(_SpecialOperator):
-    def __init__(self, substrm, strm=None):
-        _SpecialOperator.__init__(self)
-        self.strm = strm
-        self._set_managers()
 
+    def __init__(self, child, strm=None):
+        _SpecialOperator.__init__(self)
+
+        if not child.aswire:
+            raise ValueError('aswire must be True.')
+        if child.module is None:
+            raise ValueError('module must not be None.')
+        if child.clock is None:
+            raise ValueError('clock must not be None.')
+        if child.reset is None:
+            raise ValueError('reset must not be None.')
+
+        if not child.implemented:
+            child.implement()
+
+        self.child = child
+        self.strm = strm
+
+        self._set_managers()
         self.width = 1
         self.point = 0
         self.signed = True
+        self.latency = child.pipeline_depth() + 1
 
-        self.graph_label = substrm.name if hasattr(substrm, 'name') else 'Substream'
+        self.conds = OrderedDict()
+
+        self.graph_label = child.name if hasattr(child, 'name') else 'Substream'
         self.graph_shape = 'box'
         self.graph_peripheries = 2
-
-        if not substrm.aswire:
-            raise ValueError('aswire must be True.')
-        if substrm.module is None:
-            raise ValueError('module must not be None.')
-        if substrm.clock is None:
-            raise ValueError('clock must not be None.')
-        if substrm.reset is None:
-            raise ValueError('reset must not be None.')
-
-        if not substrm.implemented:
-            substrm.implement()
-
-        self.substrm = substrm
-        self.latency = substrm.pipeline_depth() + 1
-        self.conds = OrderedDict()
 
     def _set_managers(self):
         self._set_module(getattr(self.strm, 'module', None))
@@ -3260,28 +3794,93 @@ class Substream(_SpecialOperator):
         self.conds[name] = cond
 
     def read(self, name):
-        var = self.substrm.get_named_numeric(name)
-        if self.strm is None:
-            return _SubstreamOutput(self, var)
+        var = self.child.get_named_numeric(name)
         return self.strm._SubstreamOutput(self, var, name)
 
     def _implement(self, m, seq, svalid=None, senable=None):
         arg_data = [arg.sig_data for arg in self.args]
 
+        if self.child.ivalid is not None:
+            ivalid_cond = _and_vars(svalid, senable)
+            seq(self.child.ivalid(vtypes.Int(1, 1)), cond=ivalid_cond)
+
         for data, (name, cond) in zip(arg_data, self.conds.items()):
-            var = self.substrm.get_named_numeric(name)
-            if senable is not None and cond is not None:
-                write_cond = vtypes.Ands(cond, senable)
-            elif senable is not None:
-                write_cond = senable
-            else:
-                write_cond = cond
-            var.write(data, write_cond)
+            enable_cond = _and_vars(svalid, senable, cond)
+            var = self.child.get_named_numeric(name)
+            var.write(data, enable_cond)
+
+        if self.strm.dump and self.child.dump:
+            dump_cond = _and_vars(svalid, senable)
+            seq(self.child.dump_enable(self.strm.dump_enable), cond=dump_cond)
+
+        self.sig_data = vtypes.Int(0)
+
+
+class SubstreamMultiCycle(Substream):
+
+    def __init__(self, child, strm=None):
+        Substream.__init__(self, child, strm)
+        self.graph_label = child.name if hasattr(child, 'name') else 'SubstreamMultiCycle'
+
+        # self.iteration_interval = self.latency - 1
+        # self.latency = 1 + 1
+        self.iteration_interval = self.latency - 1 - 1
+        self.latency = 1 + 1
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        arg_data = [arg.sig_data for arg in self.args]
+
+        # multicycle control
+        ii_count = m.Reg(self.name('ii_count'),
+                         int(ceil(log(self.iteration_interval, 2))) + 1, initval=0)
+        ii_stall_cond = m.Wire(self.name('ii_stall_cond'))
+        ii_stall_cond.assign(ii_count > 0)
+        util.add_disable_cond(self.strm.internal_oready, ii_stall_cond, vtypes.Int(0))
+
+        child_oready = vtypes.Ors(self.strm.oready,
+                                  vtypes.Ands(self.child.internal_oready, ii_stall_cond))
+        util.add_disable_cond(self.child.oready, self.strm.busy, child_oready)
+
+        enable_cond = _and_vars(svalid, senable)
+
+        cont = m.Reg(self.name('ii_cont'), initval=0)
+
+        seq.If(ii_count == 0, cont)(
+            ii_count.inc(),
+            cont(0)
+        )
+        seq.If(ii_count == 0, enable_cond)(
+            ii_count.inc(),
+            cont(1)
+        )
+        seq.If(ii_count > 0, self.child.internal_oready)(
+            ii_count.inc()
+        )
+        seq.If(ii_count == self.iteration_interval - 1, self.child.internal_oready)(
+            ii_count(0)
+        )
+
+        seq.If(self.strm.busy, self.child.ivalid)(
+            self.child.ivalid(vtypes.Int(0, 1))
+        )
+        seq.If(enable_cond, ii_count == 0)(
+            self.child.ivalid(vtypes.Int(1, 1))
+        )
+
+        for data, (name, cond) in zip(arg_data, self.conds.items()):
+            enable_cond = _and_vars(svalid, senable, cond)
+            var = self.child.get_named_numeric(name)
+            var.write(data, enable_cond)
+
+        if self.strm.dump and self.child.dump:
+            dump_cond = _and_vars(svalid, senable)
+            seq(self.child.dump_enable(self.strm.dump_enable), cond=dump_cond)
 
         self.sig_data = vtypes.Int(0)
 
 
 class _SubstreamOutput(_UnaryOperator):
+    latency = 0
 
     def __init__(self, substrm, output_var, var_name):
         _UnaryOperator.__init__(self, substrm)
@@ -3992,6 +4591,9 @@ class ReadRAM(_SpecialOperator):
         rdata = m.Wire(self.name('rdata'), datawidth, signed=signed)
         self.read_data = rdata
 
+        self.raddr = m.WireLike(self.args[0].sig_data, name=self.name('addr'))
+        self.raddr.assign(self.args[0].sig_data)
+
         when_cond = self.args[1].sig_data if len(self.args) == 2 else None
         enable_value = _and_vars(svalid, senable, when_cond)
         enable = m.Wire(self.name('enable'))
@@ -4035,11 +4637,11 @@ class ReadRAM(_SpecialOperator):
 
     @property
     def addr(self):
-        return self.args[0].sig_data
+        return self.raddr
 
 
 class WriteRAM(_SpecialOperator):
-    latency = 1
+    latency = 0
 
     def __init__(self, addr, data, when=None,
                  ram_name=None):
@@ -4060,25 +4662,27 @@ class WriteRAM(_SpecialOperator):
         self.graph_shape = 'box'
 
     def _implement(self, m, seq, svalid=None, senable=None):
-        if self.latency != 1:
-            raise ValueError("Latency mismatch '%d' != '%s'" %
-                             (self.latency, 1))
-
         when_cond = self.args[2].sig_data if len(self.args) == 3 else None
         enable_value = _and_vars(svalid, senable, when_cond)
         enable = m.Wire(self.name('enable'))
         enable.assign(enable_value)
         self.enable = enable
 
+        self.waddr = m.WireLike(self.args[0].sig_data, name=self.name('addr'))
+        self.waddr.assign(self.args[0].sig_data)
+
+        self.wdata = m.WireLike(self.args[1].sig_data, name=self.name('wdata'))
+        self.wdata.assign(self.args[1].sig_data)
+
         self.sig_data = vtypes.Int(0)
 
     @property
     def addr(self):
-        return self.args[0].sig_data
+        return self.waddr
 
     @property
     def write_data(self):
-        return self.args[1].sig_data
+        return self.wdata
 
 
 def ReduceArgMax(right, size=None, interval=None, initval=0,

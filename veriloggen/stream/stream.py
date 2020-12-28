@@ -636,7 +636,7 @@ class Stream(object):
     # -------------------------------------------------------------------------
     def __getattr__(self, attr):
         try:
-            return object.__getattr__(self, attr)
+            return object.__getattribute__(self, attr)
 
         except AttributeError as e:
             if attr.startswith('__') or attr not in dir(stypes):

@@ -231,12 +231,12 @@ module main
       _ivalid_1 <= 0;
       _ivalid_2 <= 0;
       _plus_data_2 <= 0;
-      _reduceadd_data_3 <= 1'sd0;
       _reduceadd_count_3 <= 0;
       _reduceadd_prev_count_max_3 <= 0;
-      _pulse_data_6 <= 1'sd0;
+      _reduceadd_data_3 <= 1'sd0;
       _pulse_count_6 <= 0;
       _pulse_prev_count_max_6 <= 0;
+      _pulse_data_6 <= 1'sd0;
     end else begin
       if(oready) begin
         _ivalid_1 <= ivalid;
@@ -248,22 +248,22 @@ module main
         _plus_data_2 <= xdata + ydata;
       end 
       if(_ivalid_1 && oready) begin
-        _reduceadd_data_3 <= _reduceadd_current_data_3 + _plus_data_2;
-      end 
-      if(_ivalid_1 && oready) begin
         _reduceadd_count_3 <= (_reduceadd_current_count_3 >= 5'sd8 - 1)? 0 : _reduceadd_current_count_3 + 1;
       end 
       if(_ivalid_1 && oready) begin
         _reduceadd_prev_count_max_3 <= _reduceadd_current_count_3 >= 5'sd8 - 1;
       end 
       if(_ivalid_1 && oready) begin
-        _pulse_data_6 <= _pulse_current_count_6 >= 5'sd8 - 1;
+        _reduceadd_data_3 <= _reduceadd_current_data_3 + _plus_data_2;
       end 
       if(_ivalid_1 && oready) begin
         _pulse_count_6 <= (_pulse_current_count_6 >= 5'sd8 - 1)? 0 : _pulse_current_count_6 + 1;
       end 
       if(_ivalid_1 && oready) begin
         _pulse_prev_count_max_6 <= _pulse_current_count_6 >= 5'sd8 - 1;
+      end 
+      if(_ivalid_1 && oready) begin
+        _pulse_data_6 <= _pulse_current_count_6 >= 5'sd8 - 1;
       end 
     end
   end
