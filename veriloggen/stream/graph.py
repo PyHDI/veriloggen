@@ -342,6 +342,56 @@ class GraphGenerator(_Visitor):
         self._add_output(node, prev)
         return prev
 
+    def visit_Consumer(self, node):
+        label = self._get_label(node)
+        shape = self._get_shape(node)
+        color = self._get_color(node)
+        style = self._get_style(node)
+        peripheries = self._get_peripheries(node)
+        self.graph.add_node(node,
+                            label=label, shape=shape,
+                            color=color, style=style,
+                            peripheries=peripheries)
+
+        initval = self.visit(node.args[0])
+        self.graph.add_edge(initval, node, label='initval')
+
+        if node.start_stage is not None:
+            self._set_rank(node.start_stage + 1, node)
+
+        prev = self._add_gap(node, label)
+        self._add_output(node, prev)
+        return prev
+
+    def visit_Producer(self, node):
+        label = self._get_label(node)
+        shape = self._get_shape(node)
+        color = self._get_color(node)
+        style = self._get_style(node)
+        peripheries = self._get_peripheries(node)
+        self.graph.add_node(node,
+                            label=label, shape=shape,
+                            color=color, style=style,
+                            peripheries=peripheries)
+
+        dest = self.visit(node.dest)
+        self.graph.add_edge(node, dest, label='dest')
+        value = self.visit(node.args[0])
+        self.graph.add_edge(value, node, label='value')
+        if node.when_index > 0:
+            when = self.visit(node.args[node.when_index])
+            self.graph.add_edge(when, node, label='when')
+        if node.reset_index > 0:
+            reset = self.visit(node.args[node.reset_index])
+            self.graph.add_edge(reset, node, label='reset')
+
+        if node.start_stage is not None:
+            self._set_rank(node.start_stage + 1, node)
+
+        prev = self._add_gap(node, label)
+        self._add_output(node, prev)
+        return prev
+
     def visit_ReadRAM(self, node):
         label = self._get_label(node)
         shape = self._get_shape(node)

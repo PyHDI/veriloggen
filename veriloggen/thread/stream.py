@@ -3120,7 +3120,8 @@ class Stream(BaseStream):
         if (callable(f) and
             (f.__name__.startswith('Reduce') or
              f.__name__.startswith('Counter') or
-             f.__name__.startswith('Pulse'))):
+             f.__name__.startswith('Pulse') or
+             f.__name__.startswith('Producer'))):
 
             if self.reduce_reset is None:
                 self._make_reduce_reset()

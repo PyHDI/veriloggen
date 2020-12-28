@@ -2065,6 +2065,120 @@ class ForwardSource(_SpecialOperator):
         self.dest.forward_valid.assign(svalid)
 
 
+class Consumer(_SpecialOperator):
+    latency = 1
+
+    def __init__(self, initval=0, width=32, point=0, signed=True, reg_initval=None):
+        args = [initval]
+        if reg_initval is not None:
+            args.append(reg_initval)
+
+        _SpecialOperator.__init__(self, *args)
+
+        self.width = width
+        self.point = point
+        self.signed = signed
+
+        self.graph_label = 'Consumer'
+        self.graph_shape = 'box'
+
+        self.producer_value = None
+        self.producer_valid = None
+        self.producer_reset = None
+
+    def _set_attributes(self):
+        value = self.args[0]
+        self.width = value.get_width()
+        self.point = value.get_point()
+        self.signed = value.get_signed()
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency != 1:
+            raise ValueError("Latency mismatch '%d' vs '%s'" %
+                             (self.latency, 1))
+
+        width = self.get_width()
+        signed = self.get_signed()
+        self.producer_value = m.Wire(self.name('producer_value'), width, signed=signed)
+        self.sig_data = self.producer_value
+
+
+class Producer(_SpecialOperator):
+    latency = 1 + 1
+
+    def __init__(self, dest, value, when=None, reset=None):
+        self.dest = dest
+
+        args = [value]
+        self.when_index = 0
+        self.reset_index = 0
+
+        if when is not None:
+            args.append(when)
+            self.when_index = 1
+
+        if reset is not None:
+            args.append(reset)
+            self.reset_index = self.when_index + 1
+
+        _SpecialOperator.__init__(self, *args)
+
+        self.output_tmp()
+
+        self.graph_label = 'Producer'
+        self.graph_shape = 'box'
+
+    def _set_attributes(self):
+        value = self.args[0]
+        self.width = value.get_width()
+        self.point = value.get_point()
+        self.signed = value.get_signed()
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency != 2:
+            raise ValueError("Latency mismatch '%d' vs '%s'" %
+                             (self.latency, 2))
+
+        if svalid is None:
+            svalid = vtypes.Int(1, width=1)
+
+        width = self.get_width()
+        signed = self.get_signed()
+        value = self.args[0].sig_data
+
+        whendata = (self.args[self.when_index].sig_data
+                    if self.when_index > 0 else vtypes.Int(1, 1))
+        when = m.WireLike(whendata, name=self.name('when'))
+        when.assign(whendata)
+
+        resetdata = (self.args[self.reset_index].sig_data
+                     if self.reset_index > 0 else vtypes.Int(0, 1))
+        reset = m.WireLike(resetdata, name=self.name('reset'))
+        reset.assign(resetdata)
+
+        initval_data = self.dest.args[0].sig_data
+        reg_initval_data = (self.dest.args[1].sig_data
+                            if len(self.dest.args) > 1 else
+                            self.dest.args[0].sig_data
+                            if isinstance(self.dest.args[0], _Constant) else
+                            vtypes.Int(0))
+
+        data = m.Reg(self.name('data'), width, initval=reg_initval_data, signed=signed)
+
+        enable_cond = _and_vars(svalid, senable)
+
+        seq.If(enable_cond, when)(
+            data(value)
+        )
+        seq.If(enable_cond, reset)(
+            data(initval_data)
+        )
+
+        self.dest.producer_value.assign(data)
+
+        self.sig_data = seq.Prev(data, 1, cond=enable_cond)
+
+
 class CustomOp(_SpecialOperator):
 
     def __init__(self, op, *vars):
@@ -3822,8 +3936,9 @@ class SubstreamMultiCycle(Substream):
         Substream.__init__(self, child, strm)
         self.graph_label = child.name if hasattr(child, 'name') else 'SubstreamMultiCycle'
 
+        # conservative scheduling
         # self.iteration_interval = self.latency - 1
-        # self.latency = 1 + 1
+        # aggressive scheduling
         self.iteration_interval = self.latency - 1 - 1
         self.latency = 1 + 1
 
