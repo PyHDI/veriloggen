@@ -30,6 +30,7 @@ mode_ram_multipattern = vtypes.Int(1 << 2, mode_width, base=2)
 mode_fifo = vtypes.Int(1 << 3, mode_width, base=2)
 
 reduce_reset_name = '_reduce_reset'
+terminate_prefix = '_terminate_%d'
 
 
 def TmpStream(m, clk, rst,
@@ -104,8 +105,8 @@ class Stream(BaseStream):
 
         self.source_start = self.module.Reg(
             '_'.join(['', self.name, 'source_start']), initval=0)
-        self.source_stop = self.module.Reg(
-            '_'.join(['', self.name, 'source_stop']), initval=0)
+        self.source_stop = self.module.Wire(
+            '_'.join(['', self.name, 'source_stop']))
         self.source_busy = self.module.Reg(
             '_'.join(['', self.name, 'source_busy']), initval=0)
 
@@ -118,13 +119,11 @@ class Stream(BaseStream):
 
         self.busy = self.module.Wire(
             '_'.join(['', self.name, 'busy']))
-        self.busy_buf = self.module.Reg(
-            '_'.join(['', self.name, 'busy_buf']), initval=0)
+        self.busy_reg = self.module.Reg(
+            '_'.join(['', self.name, 'busy_reg']), initval=0)
 
         self.is_root = self.module.Wire('_'.join(['', self.name, 'is_root']))
         self.is_root.assign(1)
-
-        self.reduce_reset = None
 
         self.sources = OrderedDict()
         self.sinks = OrderedDict()
@@ -142,6 +141,9 @@ class Stream(BaseStream):
 
         self.source_idle_map = OrderedDict()
         self.sink_when_map = OrderedDict()
+
+        self.reduce_reset = None
+        self.terminates = []
 
         self.buf_id_count = 1  # '0' is reserved for idle
         self.buf_id_map = OrderedDict()  # key: buf._id(), value: count
@@ -381,6 +383,14 @@ class Stream(BaseStream):
         if when is not None:
             self.sink(when, when_name)
             self.sink_when_map[name] = when
+
+    def terminate(self, data):
+        _id = self.var_id_count
+        name = terminate_prefix % _id
+
+        self.terminates.append(data)
+
+        self.sink(data, name)
 
     def parameter(self, name=None, datawidth=None, point=0, signed=True):
         if self.stream_synthesized:
@@ -1441,11 +1451,29 @@ class Stream(BaseStream):
 
         end_cond = make_condition(done_cond, self.fsm.here)
 
-        self.fsm.seq.If(self.oready)(
-            self.source_stop(0)
-        )
+        # terminate
+        term_cond = None
+        for term in self.terminates:
+            v = term.read()
+            if term_cond is None:
+                term_cond = v
+            else:
+                term_cond = vtypes.Ors(term_cond, v)
+
+        if term_cond is not None:
+            term_cond = make_condition(term_cond, self.fsm.here, self.valid_list[-1])
+            end_cond = vtypes.Ors(end_cond, term_cond)
+
+            # force flush
+            for valid in self.valid_list:
+                self.seq.If(self.oready, term_cond)(
+                    valid(0)
+                )
+
+        # source_stop and source_busy
+        self.source_stop.assign(vtypes.Ands(self.oready, end_cond))
+
         self.fsm.If(self.oready, end_cond)(
-            self.source_stop(1),
             self.source_busy(0)
         )
 
@@ -1476,17 +1504,36 @@ class Stream(BaseStream):
             )
 
         self.sink_start.assign(self._delay_from_start_to_sink(self.source_start))
-        self.sink_stop.assign(self._delay_from_start_to_sink_stop(self.source_stop))
-        self.sink_busy.assign(self._delay_from_start_to_sink_busy(self.source_busy))
 
-        self.seq.If(vtypes.Not(self.sink_busy), self.seq.Prev(self.sink_busy, 1))(
-            self.busy_buf(0)
+        # force flush
+        if term_cond is not None:
+            not_term_cond = vtypes.Not(term_cond)
+            masked_source_stop = vtypes.Ands(self.source_stop, not_term_cond)
+            sink_stop_value = vtypes.Ors(term_cond,
+                                         self._delay_from_start_to_sink_stop(masked_source_stop))
+            self.sink_stop.assign(sink_stop_value)
+            self.sink_busy.assign(
+                self._delay_from_start_to_sink_busy(self.source_busy,
+                                                    self.seq.Prev(term_cond, 1, cond=self.oready)))
+        else:
+            sink_stop_value = self._delay_from_start_to_sink_stop(self.source_stop)
+            self.sink_stop.assign(sink_stop_value)
+            self.sink_busy.assign(self._delay_from_start_to_sink_busy(self.source_busy))
+
+        # negative edge
+        self.seq.If(vtypes.Not(self.sink_busy), self.seq.Prev(self.sink_busy, 1, cond=self.oready))(
+            self.busy_reg(0)
         )
         self.seq.If(self.source_busy)(
-            self.busy_buf(1)
+            self.busy_reg(1)
         )
 
-        self.busy.assign(vtypes.Ors(self.source_busy, self.sink_busy, self.busy_buf))
+        if term_cond is not None:
+            self.seq.If(self.oready, term_cond)(
+                self.busy_reg(0)
+            )
+
+        self.busy.assign(vtypes.Ors(self.source_busy, self.sink_busy, self.busy_reg))
 
         return 0
 
@@ -1554,18 +1601,29 @@ class Stream(BaseStream):
     def _delay_from_start_to_sink_stop(self, v):
         delay = self._write_delay()
         start_value = v
-        first_renable = start_value
-        first_rvalid = first_renable
-        sink_value = self.seq.Prev(first_rvalid, delay, cond=self.oready)
-        return sink_value
-
-    def _delay_from_start_to_sink_busy(self, v):
-        delay = self._write_delay()
-        start_value = v
         first_renable = self.seq.Prev(start_value, 1, cond=self.oready)
         first_rvalid = self.seq.Prev(first_renable, 1, cond=self.oready)
         sink_value = self.seq.Prev(first_rvalid, delay, cond=self.oready)
         return sink_value
+
+    def _delay_from_start_to_sink_busy(self, v, term=None):
+        delay = self._write_delay()
+        # start_value = v
+        # first_renable = self.seq.Prev(start_value, 1, cond=self.oready)
+        # first_rvalid = self.seq.Prev(first_renable, 1, cond=self.oready)
+        # sink_value = self.seq.Prev(first_rvalid, delay, cond=self.oready)
+        # return sink_value
+        for i in range(delay + 2):
+            n = self.module.TmpReg(initval=0)
+            self.seq.If(self.oready)(
+                n(v)
+            )
+            if term is not None:
+                self.seq.If(self.oready, term)(
+                    n(0)
+                )
+            v = n
+        return v
 
     def _delay_from_start_to_ivalid_on(self, v):
         start_value = self.seq.Prev(v, 1, cond=self.oready)
@@ -1759,6 +1817,13 @@ class Stream(BaseStream):
 
         var.source_fsm.If(var.source_count == 1, self.oready).goto_init()
 
+        # force flush
+        self.seq.If(var.source_fsm.here, self.source_stop, self.oready)(
+            var.source_ram_renable(0),
+            var.source_idle(1)
+        )
+        var.source_fsm.If(self.source_stop, self.oready).goto_init()
+
     def _make_source_pattern_vars(self, var, name):
         if var.source_pat_cur_offsets is not None:
             return
@@ -1871,13 +1936,18 @@ class Stream(BaseStream):
 
         fin_cond = upcond
 
+        # force flush
+        self.seq.If(var.source_pat_fsm.here, self.source_stop, self.oready)(
+            var.source_ram_renable(0),
+            var.source_idle(1)
+        )
+        var.source_pat_fsm.If(self.source_stop, self.oready).goto_init()
+
+        # finalize
         var.source_pat_fsm.If(fin_cond, self.oready).goto_next()
 
         self.seq.If(var.source_pat_fsm.here, self.oready)(
-            var.source_ram_renable(0)
-        )
-
-        self.seq.If(var.source_pat_fsm.here, self.oready)(
+            var.source_ram_renable(0),
             var.source_idle(1)
         )
 
@@ -2061,15 +2131,20 @@ class Stream(BaseStream):
             var.source_multipat_num_patterns.dec()
         )
 
+        # force flush
+        self.seq.If(var.source_multipat_fsm.here, self.source_stop, self.oready)(
+            var.source_ram_renable(0),
+            var.source_idle(1)
+        )
+        var.source_multipat_fsm.If(self.source_stop, self.oready).goto_init()
+
+        # finalize
         var.source_multipat_fsm.If(fin_cond,
                                    var.source_multipat_num_patterns == 0,
                                    self.oready).goto_next()
 
         self.seq.If(var.source_multipat_fsm.here, self.oready)(
-            var.source_ram_renable(0)
-        )
-
-        self.seq.If(var.source_multipat_fsm.here, self.oready)(
+            var.source_ram_renable(0),
             var.source_idle(1)
         )
 
@@ -2224,8 +2299,14 @@ class Stream(BaseStream):
             var.source_fifo_deq(0),
             var.source_idle(1)
         )
-
         var.source_fsm.If(var.source_count == 1, self.oready).goto_init()
+
+        # force flush
+        self.seq.If(var.source_fsm.here, self.source_stop, self.oready)(
+            var.source_fifo_deq(0),
+            var.source_idle(1)
+        )
+        var.source_fsm.If(self.source_stop, self.oready).goto_init()
 
     def _setup_sink_ram(self, ram, var, port, set_cond):
         if ram._id() in var.sink_id_map:

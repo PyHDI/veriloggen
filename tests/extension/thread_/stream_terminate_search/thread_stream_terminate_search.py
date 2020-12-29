@@ -20,38 +20,36 @@ def mkLed():
     datawidth = 32
     addrwidth = 10
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
+    myaxi.disable_write()
     ram_a = vthread.RAM(m, 'ram_a', clk, rst, datawidth, addrwidth)
-    ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
-    ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
     a = strm.source('a')
-    b = strm.source('b')
-    c = a + b
-    strm.sink(c, 'c')
+    i = strm.Counter()
+    term = a == 270
+    strm.sink(i, 'i')
+    strm.terminate(term)
 
     def comp_stream(size, offset):
         strm.set_source('a', ram_a, offset, size)
-        strm.set_source('b', ram_b, offset, size)
-        strm.set_sink('c', ram_c, offset, size)
+        strm.set_sink_immediate('i', 0)
         strm.run()
         strm.join()
+        i = strm.read_sink('i')
+        return i
 
     def comp_sequential(size, offset):
-        sum = 0
         for i in range(size):
             a = ram_a.read(i + offset)
-            b = ram_b.read(i + offset)
-            sum = a + b
-            ram_c.write(i + offset, sum)
+            if a == 270:
+                return i
+        return size - 1
 
-    def check(size, offset_stream, offset_seq):
+    def check(size_stream, size_seq):
         all_ok = True
-        for i in range(size):
-            st = ram_c.read(i + offset_stream)
-            sq = ram_c.read(i + offset_seq)
-            if vthread.verilog.NotEql(st, sq):
-                all_ok = False
+        if vthread.verilog.NotEql(size_stream, size_seq):
+            all_ok = False
+        print(size_stream, size_seq)
         if all_ok:
             print('# verify: PASSED')
         else:
@@ -60,22 +58,17 @@ def mkLed():
     def comp(size):
         # stream
         offset = 0
-        myaxi.dma_read(ram_a, offset, 0, size)
-        myaxi.dma_read(ram_b, offset, 512, size)
-        comp_stream(size, offset)
-        myaxi.dma_write(ram_c, offset, 1024, size)
+        myaxi.dma_read(ram_a, offset, 1024, size)
+        st_i = comp_stream(size, offset)
+        st_i = comp_stream(size, offset)
 
         # sequential
         offset = size
-        myaxi.dma_read(ram_a, offset, 0, size)
-        myaxi.dma_read(ram_b, offset, 512, size)
-        comp_sequential(size, offset)
-        myaxi.dma_write(ram_c, offset, 1024 * 2, size)
+        myaxi.dma_read(ram_a, offset, 1024, size)
+        sq_i = comp_sequential(size, offset)
 
         # verification
-        myaxi.dma_read(ram_c, 0, 1024, size)
-        myaxi.dma_read(ram_c, offset, 1024 * 2, size)
-        check(size, 0, offset)
+        check(st_i, sq_i)
 
         vthread.finish()
 
@@ -105,7 +98,7 @@ def mkTest(memimg_name=None):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

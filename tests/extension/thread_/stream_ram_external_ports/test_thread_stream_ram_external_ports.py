@@ -168,13 +168,13 @@ module blinkled
   localparam _mystream_fsm_init = 0;
   wire _mystream_run_flag;
   reg _mystream_source_start;
-  reg _mystream_source_stop;
+  wire _mystream_source_stop;
   reg _mystream_source_busy;
   wire _mystream_sink_start;
   wire _mystream_sink_stop;
   wire _mystream_sink_busy;
   wire _mystream_busy;
-  reg _mystream_busy_buf;
+  reg _mystream_busy_reg;
   wire _mystream_is_root;
   assign _mystream_is_root = 1;
   reg _mystream_a_idle;
@@ -288,6 +288,7 @@ module blinkled
   reg _tmp_26;
   reg _tmp_27;
   reg _tmp_28;
+  assign _mystream_source_stop = _mystream_stream_oready && (_mystream_a_idle && _mystream_b_idle && (_mystream_fsm == 3));
   localparam _tmp_29 = 1;
   wire [_tmp_29-1:0] _tmp_30;
   assign _tmp_30 = _mystream_a_idle && _mystream_b_idle && (_mystream_fsm == 3);
@@ -297,13 +298,15 @@ module blinkled
   reg _tmp_34;
   assign _mystream_sink_start = _tmp_34;
   reg _tmp_35;
-  assign _mystream_sink_stop = _tmp_35;
   reg _tmp_36;
   reg _tmp_37;
+  assign _mystream_sink_stop = _tmp_37;
   reg _tmp_38;
-  assign _mystream_sink_busy = _tmp_38;
-  reg __mystream_sink_busy_1;
-  assign _mystream_busy = _mystream_source_busy || _mystream_sink_busy || _mystream_busy_buf;
+  reg _tmp_39;
+  reg _tmp_40;
+  assign _mystream_sink_busy = _tmp_40;
+  reg _tmp_41;
+  assign _mystream_busy = _mystream_source_busy || _mystream_sink_busy || _mystream_busy_reg;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -543,8 +546,10 @@ module blinkled
       _tmp_36 <= 0;
       _tmp_37 <= 0;
       _tmp_38 <= 0;
-      __mystream_sink_busy_1 <= 0;
-      _mystream_busy_buf <= 0;
+      _tmp_39 <= 0;
+      _tmp_40 <= 0;
+      _tmp_41 <= 0;
+      _mystream_busy_reg <= 0;
     end else begin
       if(_mystream_stream_oready) begin
         _mystream_a_source_ram_renable <= 0;
@@ -598,6 +603,10 @@ module blinkled
         _mystream_a_source_ram_renable <= 0;
         _mystream_a_idle <= 1;
       end 
+      if((_mystream_a_source_fsm_0 == 2) && _mystream_source_stop && _mystream_stream_oready) begin
+        _mystream_a_source_ram_renable <= 0;
+        _mystream_a_idle <= 1;
+      end 
       if(_set_flag_12) begin
         _mystream_b_source_mode <= 4'b1;
         _mystream_b_source_offset <= _th_comp_offset_3;
@@ -627,6 +636,10 @@ module blinkled
         _mystream_b_source_count <= _mystream_b_source_count - 1;
       end 
       if((_mystream_b_source_fsm_1 == 2) && (_mystream_b_source_count == 1) && _mystream_stream_oready) begin
+        _mystream_b_source_ram_renable <= 0;
+        _mystream_b_idle <= 1;
+      end 
+      if((_mystream_b_source_fsm_1 == 2) && _mystream_source_stop && _mystream_stream_oready) begin
         _mystream_b_source_ram_renable <= 0;
         _mystream_b_idle <= 1;
       end 
@@ -706,20 +719,28 @@ module blinkled
         _tmp_35 <= _mystream_source_stop;
       end 
       if(_mystream_stream_oready) begin
-        _tmp_36 <= _mystream_source_busy;
+        _tmp_36 <= _tmp_35;
       end 
       if(_mystream_stream_oready) begin
         _tmp_37 <= _tmp_36;
       end 
       if(_mystream_stream_oready) begin
-        _tmp_38 <= _tmp_37;
+        _tmp_38 <= _mystream_source_busy;
       end 
-      __mystream_sink_busy_1 <= _mystream_sink_busy;
-      if(!_mystream_sink_busy && __mystream_sink_busy_1) begin
-        _mystream_busy_buf <= 0;
+      if(_mystream_stream_oready) begin
+        _tmp_39 <= _tmp_38;
+      end 
+      if(_mystream_stream_oready) begin
+        _tmp_40 <= _tmp_39;
+      end 
+      if(_mystream_stream_oready) begin
+        _tmp_41 <= _mystream_sink_busy;
+      end 
+      if(!_mystream_sink_busy && _tmp_41) begin
+        _mystream_busy_reg <= 0;
       end 
       if(_mystream_source_busy) begin
-        _mystream_busy_buf <= 1;
+        _mystream_busy_reg <= 1;
       end 
     end
   end
@@ -733,14 +754,10 @@ module blinkled
       _mystream_fsm <= _mystream_fsm_init;
       _mystream_source_start <= 0;
       _mystream_source_busy <= 0;
-      _mystream_source_stop <= 0;
       _mystream_stream_ivalid <= 0;
     end else begin
       if(_mystream_stream_oready && _tmp_28) begin
         _mystream_stream_ivalid <= 1;
-      end 
-      if(_mystream_stream_oready) begin
-        _mystream_source_stop <= 0;
       end 
       if(_mystream_stream_oready && _tmp_31) begin
         _mystream_stream_ivalid <= 0;
@@ -770,7 +787,6 @@ module blinkled
         end
         _mystream_fsm_3: begin
           if(_mystream_stream_oready && (_mystream_a_idle && _mystream_b_idle && (_mystream_fsm == 3))) begin
-            _mystream_source_stop <= 1;
             _mystream_source_busy <= 0;
           end 
           if(_mystream_stream_oready && (_mystream_a_idle && _mystream_b_idle && (_mystream_fsm == 3)) && _mystream_run_flag) begin
@@ -904,6 +920,9 @@ module blinkled
           if((_mystream_a_source_count == 1) && _mystream_stream_oready) begin
             _mystream_a_source_fsm_0 <= _mystream_a_source_fsm_0_init;
           end 
+          if(_mystream_source_stop && _mystream_stream_oready) begin
+            _mystream_a_source_fsm_0 <= _mystream_a_source_fsm_0_init;
+          end 
         end
       endcase
     end
@@ -929,6 +948,9 @@ module blinkled
         end
         _mystream_b_source_fsm_1_2: begin
           if((_mystream_b_source_count == 1) && _mystream_stream_oready) begin
+            _mystream_b_source_fsm_1 <= _mystream_b_source_fsm_1_init;
+          end 
+          if(_mystream_source_stop && _mystream_stream_oready) begin
             _mystream_b_source_fsm_1 <= _mystream_b_source_fsm_1_init;
           end 
         end
