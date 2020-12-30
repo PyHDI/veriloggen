@@ -453,7 +453,7 @@ class AXIM2(AXIM_for_AXIStreamIn):
                  op_sel_width=8, fsm_as_module=False):
 
         streamin = AXIStreamIn(m, '_'.join(['', name, 'streamin']), clk, rst, datawidth, addrwidth,
-                               with_last=True,
+                               with_last=True, with_strb=False,
                                id_width=rdata_id_width, user_width=rdata_user_width, dest_width=0,
                                noio=True,
                                enable_async=enable_async,
