@@ -172,14 +172,14 @@ class Stream(BaseStream):
 
         var = self.Variable(self._dataname(name), datawidth, point, signed)
 
+        if no_ctrl:
+            return var
+
         self.sources[name] = var
         self.var_id_map[_id] = var
         self.var_name_map[name] = var
         self.var_id_name_map[_id] = name
         self.var_name_id_map[name] = _id
-
-        if no_ctrl:
-            return var
 
         var.source_fsm = None
         var.source_pat_fsm = None
