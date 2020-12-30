@@ -471,7 +471,7 @@ class AxiStreamInData(AxiStreamInterfaceBase):
     _O = util.t_Output
 
     def __init__(self, m, name=None, datawidth=32,
-                 with_last=True,
+                 with_last=True, with_strb=False,
                  id_width=0, user_width=0, dest_width=0,
                  itype=None, otype=None):
 
@@ -491,6 +491,12 @@ class AxiStreamInData(AxiStreamInterfaceBase):
         else:
             self.tlast = util.make_port(
                 m, self.itype, name + '_tlast', initval=0)
+
+        if not with_strb:
+            self.tstrb = None
+        else:
+            self.tstrb = util.make_port(
+                m, self.itype, name + '_tstrb', self.datawidth // 8, initval=0)
 
         if isinstance(user_width, int) and user_width == 0:
             self.tuser = None
@@ -2324,7 +2330,7 @@ class AxiLiteSlave(AxiSlave):
 class AxiStreamIn(object):
 
     def __init__(self, m, name, clk, rst, datawidth=32,
-                 with_last=True,
+                 with_last=True, with_strb=False,
                  id_width=0, user_width=0, dest_width=0,
                  noio=False, nodataflow=False):
 
@@ -2347,7 +2353,7 @@ class AxiStreamIn(object):
         otype = util.t_Wire if noio else None
 
         self.tdata = AxiStreamInData(m, name, datawidth,
-                                     with_last,
+                                     with_last, with_strb,
                                      id_width, user_width, dest_width,
                                      itype, otype)
 
@@ -2567,7 +2573,7 @@ class AxiStreamIn(object):
 class AxiStreamOut(object):
 
     def __init__(self, m, name, clk, rst, datawidth=32,
-                 with_last=True,
+                 with_last=True, with_strb=False,
                  id_width=0, user_width=0, dest_width=0,
                  noio=False, nodataflow=False):
 
@@ -2590,7 +2596,7 @@ class AxiStreamOut(object):
         otype = util.t_Wire if noio else None
 
         self.tdata = AxiStreamOutData(m, name, datawidth,
-                                      with_last,
+                                      with_last, with_strb,
                                       id_width, user_width, dest_width,
                                       itype, otype)
 

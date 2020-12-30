@@ -23,7 +23,7 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
                       'wait_read_ram')
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
-                 with_last=True,
+                 with_last=True, with_strb=False,
                  id_width=0, user_width=0, dest_width=0,
                  noio=False,
                  enable_async=True,
@@ -31,7 +31,7 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
                  op_sel_width=8, fsm_as_module=False):
 
         axi.AxiStreamOut.__init__(self, m, name, clk, rst, datawidth,
-                                  with_last,
+                                  with_last, with_strb,
                                   id_width, user_width, dest_width,
                                   noio)
 

@@ -25,6 +25,8 @@ PORTLITELIST = ('AWADDR', 'AWCACHE', 'AWPROT', 'AWVALID', 'AWREADY',
                 'ARADDR', 'ARCACHE', 'ARPROT', 'ARVALID', 'ARREADY',
                 'RDATA', 'RRESP', 'RVALID', 'RREADY')
 
+PORTSTREAMLIST = ('TDATA', 'TVALID', 'TREADY', 'TLAST', 'TSTRB', 'TUSER', 'TID', 'TDEST')
+
 
 class ComponentGen(object):
     def __init__(self):
@@ -159,25 +161,38 @@ class ComponentGen(object):
         return bus
 
     def mkBusInterface(self, obj):
-        master = is_master(obj)
         name = obj.name
         datawidth = obj.datawidth
 
         interface = self.doc.createElement('spirit:busInterface')
         interface.appendChild(self.mkName(name))
-        interface.appendChild(self.mkBusType())
-        interface.appendChild(self.mkAbstractionType())
 
-        if master:
+        if is_master(obj):
+            interface.appendChild(self.mkBusTypeMemory())
+            interface.appendChild(self.mkAbstractionTypeMemory())
             interface.appendChild(self.mkMaster(name))
-        else:
+            interface.appendChild(self.mkPortMapsMemory(obj))
+        elif is_slave(obj):
+            interface.appendChild(self.mkBusTypeMemory())
+            interface.appendChild(self.mkAbstractionTypeMemory())
             interface.appendChild(self.mkSlave(name))
-
-        interface.appendChild(self.mkPortMaps(obj))
+            interface.appendChild(self.mkPortMapsMemory(obj))
+        elif is_streamin(obj):
+            interface.appendChild(self.mkBusTypeStream())
+            interface.appendChild(self.mkAbstractionTypeStream())
+            interface.appendChild(self.mkStreamIn(name))
+            interface.appendChild(self.mkPortMapsStream(obj))
+        elif is_streamout(obj):
+            interface.appendChild(self.mkBusTypeStream())
+            interface.appendChild(self.mkAbstractionTypeStream())
+            interface.appendChild(self.mkStreamOut(name))
+            interface.appendChild(self.mkPortMapsStream(obj))
+        else:
+            raise TypeError("Unsupported type: '%s'" % str(type(obj)))
 
         return interface
 
-    def mkBusType(self):
+    def mkBusTypeMemory(self):
         bustype = self.doc.createElement('spirit:busType')
         self.setAttribute(bustype, 'spirit:vendor', "xilinx.com")
         self.setAttribute(bustype, 'spirit:library', "interface")
@@ -185,11 +200,27 @@ class ComponentGen(object):
         self.setAttribute(bustype, 'spirit:version', "1.0")
         return bustype
 
-    def mkAbstractionType(self):
+    def mkAbstractionTypeMemory(self):
         abstractiontype = self.doc.createElement('spirit:abstractionType')
         self.setAttribute(abstractiontype, 'spirit:vendor', "xilinx.com")
         self.setAttribute(abstractiontype, 'spirit:library', "interface")
         self.setAttribute(abstractiontype, 'spirit:name', "aximm_rtl")
+        self.setAttribute(abstractiontype, 'spirit:version', "1.0")
+        return abstractiontype
+
+    def mkBusTypeStream(self):
+        bustype = self.doc.createElement('spirit:busType')
+        self.setAttribute(bustype, 'spirit:vendor', "xilinx.com")
+        self.setAttribute(bustype, 'spirit:library', "interface")
+        self.setAttribute(bustype, 'spirit:name', "axis")
+        self.setAttribute(bustype, 'spirit:version', "1.0")
+        return bustype
+
+    def mkAbstractionTypeStream(self):
+        abstractiontype = self.doc.createElement('spirit:abstractionType')
+        self.setAttribute(abstractiontype, 'spirit:vendor', "xilinx.com")
+        self.setAttribute(abstractiontype, 'spirit:library', "interface")
+        self.setAttribute(abstractiontype, 'spirit:name', "axis_rtl")
         self.setAttribute(abstractiontype, 'spirit:version', "1.0")
         return abstractiontype
 
@@ -207,7 +238,15 @@ class ComponentGen(object):
         slave.appendChild(memorymapref)
         return slave
 
-    def mkPortMaps(self, obj):
+    def mkStreamIn(self, name):
+        streamin = self.doc.createElement('spirit:slave')
+        return streamin
+
+    def mkStreamOut(self, name):
+        streamout = self.doc.createElement('spirit:master')
+        return streamout
+
+    def mkPortMapsMemory(self, obj):
         lite = is_lite(obj)
         portmaps = self.doc.createElement('spirit:portMaps')
         portlist = list(PORTLITELIST if lite else PORTLIST)
@@ -232,14 +271,40 @@ class ComponentGen(object):
             portlist.remove('RUSER')
 
         for port in portlist:
-            portmaps.appendChild(self.mkPortMap(obj, port))
+            portmaps.appendChild(self.mkPortMapMemory(obj, port))
 
         return portmaps
 
-    def mkPortMap(self, obj, attr):
+    def mkPortMapsStream(self, obj):
+        portmaps = self.doc.createElement('spirit:portMaps')
+        portlist = list(PORTSTREAMLIST)
+
+        if obj.tdata.tlast is None:
+            portlist.remove('TLAST')
+        if obj.tdata.tstrb is None:
+            portlist.remove('TSTRB')
+        if obj.tdata.tuser is None:
+            portlist.remove('TUSER')
+        if obj.tdata.tid is None:
+            portlist.remove('TID')
+        if obj.tdata.tdest is None:
+            portlist.remove('TDEST')
+
+        for port in portlist:
+            portmaps.appendChild(self.mkPortMapStream(obj, port))
+
+        return portmaps
+
+    def mkPortMapMemory(self, obj, attr):
         portmap = self.doc.createElement('spirit:portMap')
         portmap.appendChild(self.mkLogicalPort(attr))
-        portmap.appendChild(self.mkPhysicalPort(obj, attr))
+        portmap.appendChild(self.mkPhysicalPortMemory(obj, attr))
+        return portmap
+
+    def mkPortMapStream(self, obj, attr):
+        portmap = self.doc.createElement('spirit:portMap')
+        portmap.appendChild(self.mkLogicalPort(attr))
+        portmap.appendChild(self.mkPhysicalPortStream(obj, attr))
         return portmap
 
     def mkLogicalPort(self, attr):
@@ -247,7 +312,7 @@ class ComponentGen(object):
         logicalport.appendChild(self.mkName(attr))
         return logicalport
 
-    def mkPhysicalPort(self, obj, attr):
+    def mkPhysicalPortMemory(self, obj, attr):
         if hasattr(obj.waddr, attr.lower()):
             name = getattr(obj.waddr, attr.lower()).name
         elif hasattr(obj.wdata, attr.lower()):
@@ -258,6 +323,17 @@ class ComponentGen(object):
             name = getattr(obj.raddr, attr.lower()).name
         elif hasattr(obj.rdata, attr.lower()):
             name = getattr(obj.rdata, attr.lower()).name
+        else:
+            raise NameError("No such attribute '%s' in object '%s'" %
+                            (attr.lower(), obj))
+
+        physicalport = self.doc.createElement('spirit:physicalPort')
+        physicalport.appendChild(self.mkName(name))
+        return physicalport
+
+    def mkPhysicalPortStream(self, obj, attr):
+        if hasattr(obj.tdata, attr.lower()):
+            name = getattr(obj.tdata, attr.lower()).name
         else:
             raise NameError("No such attribute '%s' in object '%s'" %
                             (attr.lower(), obj))
@@ -508,7 +584,7 @@ class ComponentGen(object):
         isempty = True
         maps = self.doc.createElement('spirit:memoryMaps')
         for bus_interface in self.bus_interfaces:
-            if not isinstance(bus_interface, (axi.AxiLiteMaster, axi.AxiMaster)):
+            if isinstance(bus_interface, (axi.AxiLiteSlave, axi.AxiSlave)):
                 maps.appendChild(self.mkMemoryMap(bus_interface))
                 isempty = False
         if isempty:
@@ -804,6 +880,18 @@ class ComponentGen(object):
 
 def is_master(obj):
     return isinstance(obj, (axi.AxiMaster, axi.AxiLiteMaster))
+
+
+def is_slave(obj):
+    return isinstance(obj, (axi.AxiSlave, axi.AxiLiteSlave))
+
+
+def is_streamin(obj):
+    return isinstance(obj, axi.AxiStreamIn)
+
+
+def is_streamout(obj):
+    return isinstance(obj, axi.AxiStreamOut)
 
 
 def is_lite(obj):

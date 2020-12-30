@@ -64,7 +64,9 @@ def to_ipxact(m, ip_name=None, ip_ver='1.0',
 
     masterbus = m.masterbus if hasattr(m, 'masterbus') else []
     slavebus = m.slavebus if hasattr(m, 'slavebus') else []
-    bus_interfaces = masterbus + slavebus
+    streaminbus = m.streaminbus if hasattr(m, 'streaminbus') else []
+    streamoutbus = m.streamoutbus if hasattr(m, 'streamoutbus') else []
+    bus_interfaces = masterbus + slavebus + streaminbus + streamoutbus
 
     for bus_interface in bus_interfaces:
         if (isinstance(bus_interface.clk, vtypes._Variable) and
