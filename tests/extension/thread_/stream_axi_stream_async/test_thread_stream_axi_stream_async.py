@@ -198,13 +198,13 @@ module blinkled
   localparam _mystream_fsm_init = 0;
   wire _mystream_run_flag;
   reg _mystream_source_start;
-  reg _mystream_source_stop;
+  wire _mystream_source_stop;
   reg _mystream_source_busy;
   wire _mystream_sink_start;
   wire _mystream_sink_stop;
   wire _mystream_sink_busy;
   wire _mystream_busy;
-  reg _mystream_busy_buf;
+  reg _mystream_busy_reg;
   wire _mystream_is_root;
   assign _mystream_is_root = 1;
   reg _mystream_a_idle;
@@ -381,6 +381,7 @@ module blinkled
   reg _tmp_44;
   reg _tmp_45;
   reg _tmp_46;
+  assign _mystream_source_stop = _mystream_stream_oready && (_mystream_a_idle && _mystream_b_idle && (_mystream_fsm == 3));
   localparam _tmp_47 = 1;
   wire [_tmp_47-1:0] _tmp_48;
   assign _tmp_48 = _mystream_a_idle && _mystream_b_idle && (_mystream_fsm == 3);
@@ -390,14 +391,16 @@ module blinkled
   reg _tmp_52;
   assign _mystream_sink_start = _tmp_52;
   reg _tmp_53;
-  assign _mystream_sink_stop = _tmp_53;
   reg _tmp_54;
   reg _tmp_55;
+  assign _mystream_sink_stop = _tmp_55;
   reg _tmp_56;
-  assign _mystream_sink_busy = _tmp_56;
-  reg __mystream_sink_busy_1;
-  assign _mystream_busy = _mystream_source_busy || _mystream_sink_busy || _mystream_busy_buf;
-  reg axistreamout_flag_57;
+  reg _tmp_57;
+  reg _tmp_58;
+  assign _mystream_sink_busy = _tmp_58;
+  reg _tmp_59;
+  assign _mystream_busy = _mystream_source_busy || _mystream_sink_busy || _mystream_busy_reg;
+  reg axistreamout_flag_60;
   reg _th_comp_cond_24_2_1;
   reg _axi_c_ram_c_1_write_start;
   reg [8-1:0] _axi_c_ram_c_1_write_op_sel;
@@ -406,20 +409,20 @@ module blinkled
   reg [32-1:0] _axi_c_ram_c_1_write_local_stride;
   reg [32-1:0] _axi_c_write_fsm;
   localparam _axi_c_write_fsm_init = 0;
-  reg _tmp_58;
-  reg _tmp_59;
-  wire _tmp_60;
-  wire _tmp_61;
-  wire signed [32-1:0] _tmp_62;
-  assign _tmp_62 = ram_c_1_rdata;
-  reg _tmp_63;
-  reg _tmp_64;
-  reg _tmp_65;
+  reg _tmp_61;
+  reg _tmp_62;
+  wire _tmp_63;
+  wire _tmp_64;
+  wire signed [32-1:0] _tmp_65;
+  assign _tmp_65 = ram_c_1_rdata;
   reg _tmp_66;
-  reg [33-1:0] _tmp_67;
-  reg [10-1:0] _tmp_68;
-  assign ram_c_1_addr = (_tmp_63)? _tmp_68 : 'hx;
-  assign ram_c_1_enable = ((_tmp_60 || !_tmp_58) && (_tmp_61 || !_tmp_59) && _tmp_63)? 1'd1 : 0;
+  reg _tmp_67;
+  reg _tmp_68;
+  reg _tmp_69;
+  reg [33-1:0] _tmp_70;
+  reg [10-1:0] _tmp_71;
+  assign ram_c_1_addr = (_tmp_66)? _tmp_71 : 'hx;
+  assign ram_c_1_enable = ((_tmp_63 || !_tmp_61) && (_tmp_64 || !_tmp_62) && _tmp_66)? 1'd1 : 0;
   reg [33-1:0] _axi_c_write_counter;
   wire [32-1:0] _dataflow__variable_odata_2;
   wire _dataflow__variable_ovalid_2;
@@ -430,7 +433,7 @@ module blinkled
   wire _dataflow__variable_oready_3;
   assign _dataflow__variable_oready_3 = (_axi_c_write_fsm == 1) && (_axi_c_write_op_sel == 1) && (axi_c_tready || !axi_c_tvalid);
   reg _axi_c_cond_0_1;
-  reg axistreamout_flag_69;
+  reg axistreamout_flag_72;
   reg [32-1:0] _d1__axi_c_write_fsm;
   reg __axi_c_write_fsm_cond_2_0_1;
 
@@ -542,7 +545,7 @@ module blinkled
       end 
       _axi_c_write_start <= 0;
       _axi_c_ram_c_1_write_start <= 0;
-      if(axistreamout_flag_57) begin
+      if(axistreamout_flag_60) begin
         _axi_c_ram_c_1_write_start <= 1;
         _axi_c_ram_c_1_write_op_sel <= 1;
         _axi_c_ram_c_1_write_local_addr <= _th_comp_offset_1;
@@ -569,7 +572,7 @@ module blinkled
         axi_c_tvalid <= axi_c_tvalid;
         axi_c_tlast <= axi_c_tlast;
       end 
-      if(axistreamout_flag_69) begin
+      if(axistreamout_flag_72) begin
         _axi_c_write_idle <= 1;
       end 
     end
@@ -799,53 +802,53 @@ module blinkled
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_66 <= 0;
-      _tmp_58 <= 0;
-      _tmp_59 <= 0;
-      _tmp_64 <= 0;
-      _tmp_65 <= 0;
-      _tmp_63 <= 0;
-      _tmp_68 <= 0;
+      _tmp_69 <= 0;
+      _tmp_61 <= 0;
+      _tmp_62 <= 0;
       _tmp_67 <= 0;
+      _tmp_68 <= 0;
+      _tmp_66 <= 0;
+      _tmp_71 <= 0;
+      _tmp_70 <= 0;
     end else begin
-      if((_tmp_60 || !_tmp_58) && (_tmp_61 || !_tmp_59) && _tmp_64) begin
+      if((_tmp_63 || !_tmp_61) && (_tmp_64 || !_tmp_62) && _tmp_67) begin
+        _tmp_69 <= 0;
+        _tmp_61 <= 0;
+        _tmp_62 <= 0;
+        _tmp_67 <= 0;
+      end 
+      if((_tmp_63 || !_tmp_61) && (_tmp_64 || !_tmp_62) && _tmp_66) begin
+        _tmp_61 <= 1;
+        _tmp_62 <= 1;
+        _tmp_69 <= _tmp_68;
+        _tmp_68 <= 0;
         _tmp_66 <= 0;
-        _tmp_58 <= 0;
-        _tmp_59 <= 0;
-        _tmp_64 <= 0;
+        _tmp_67 <= 1;
       end 
-      if((_tmp_60 || !_tmp_58) && (_tmp_61 || !_tmp_59) && _tmp_63) begin
-        _tmp_58 <= 1;
-        _tmp_59 <= 1;
-        _tmp_66 <= _tmp_65;
-        _tmp_65 <= 0;
-        _tmp_63 <= 0;
-        _tmp_64 <= 1;
+      if(_axi_c_write_start && (_axi_c_write_op_sel == 1) && (_tmp_70 == 0) && !_tmp_68 && !_tmp_69) begin
+        _tmp_71 <= _axi_c_write_local_addr;
+        _tmp_70 <= _axi_c_write_size - 1;
+        _tmp_66 <= 1;
+        _tmp_68 <= _axi_c_write_size == 1;
       end 
-      if(_axi_c_write_start && (_axi_c_write_op_sel == 1) && (_tmp_67 == 0) && !_tmp_65 && !_tmp_66) begin
-        _tmp_68 <= _axi_c_write_local_addr;
-        _tmp_67 <= _axi_c_write_size - 1;
-        _tmp_63 <= 1;
-        _tmp_65 <= _axi_c_write_size == 1;
+      if((_tmp_63 || !_tmp_61) && (_tmp_64 || !_tmp_62) && (_tmp_70 > 0)) begin
+        _tmp_71 <= _tmp_71 + _axi_c_write_local_stride;
+        _tmp_70 <= _tmp_70 - 1;
+        _tmp_66 <= 1;
+        _tmp_68 <= 0;
       end 
-      if((_tmp_60 || !_tmp_58) && (_tmp_61 || !_tmp_59) && (_tmp_67 > 0)) begin
-        _tmp_68 <= _tmp_68 + _axi_c_write_local_stride;
-        _tmp_67 <= _tmp_67 - 1;
-        _tmp_63 <= 1;
-        _tmp_65 <= 0;
-      end 
-      if((_tmp_60 || !_tmp_58) && (_tmp_61 || !_tmp_59) && (_tmp_67 == 1)) begin
-        _tmp_65 <= 1;
+      if((_tmp_63 || !_tmp_61) && (_tmp_64 || !_tmp_62) && (_tmp_70 == 1)) begin
+        _tmp_68 <= 1;
       end 
     end
   end
 
-  assign _dataflow__variable_odata_2 = _tmp_62;
-  assign _dataflow__variable_ovalid_2 = _tmp_58;
-  assign _tmp_60 = 1 && _dataflow__variable_oready_2;
-  assign _dataflow__variable_odata_3 = _tmp_66;
-  assign _dataflow__variable_ovalid_3 = _tmp_59;
-  assign _tmp_61 = 1 && _dataflow__variable_oready_3;
+  assign _dataflow__variable_odata_2 = _tmp_65;
+  assign _dataflow__variable_ovalid_2 = _tmp_61;
+  assign _tmp_63 = 1 && _dataflow__variable_oready_2;
+  assign _dataflow__variable_odata_3 = _tmp_69;
+  assign _dataflow__variable_ovalid_3 = _tmp_62;
+  assign _tmp_64 = 1 && _dataflow__variable_oready_3;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -912,8 +915,10 @@ module blinkled
       _tmp_54 <= 0;
       _tmp_55 <= 0;
       _tmp_56 <= 0;
-      __mystream_sink_busy_1 <= 0;
-      _mystream_busy_buf <= 0;
+      _tmp_57 <= 0;
+      _tmp_58 <= 0;
+      _tmp_59 <= 0;
+      _mystream_busy_reg <= 0;
     end else begin
       if(_mystream_stream_oready) begin
         _mystream_a_source_ram_renable <= 0;
@@ -967,6 +972,10 @@ module blinkled
         _mystream_a_source_ram_renable <= 0;
         _mystream_a_idle <= 1;
       end 
+      if((_mystream_a_source_fsm_0 == 2) && _mystream_source_stop && _mystream_stream_oready) begin
+        _mystream_a_source_ram_renable <= 0;
+        _mystream_a_idle <= 1;
+      end 
       if(_set_flag_30) begin
         _mystream_b_source_mode <= 4'b1;
         _mystream_b_source_offset <= _th_comp_offset_3;
@@ -996,6 +1005,10 @@ module blinkled
         _mystream_b_source_count <= _mystream_b_source_count - 1;
       end 
       if((_mystream_b_source_fsm_1 == 2) && (_mystream_b_source_count == 1) && _mystream_stream_oready) begin
+        _mystream_b_source_ram_renable <= 0;
+        _mystream_b_idle <= 1;
+      end 
+      if((_mystream_b_source_fsm_1 == 2) && _mystream_source_stop && _mystream_stream_oready) begin
         _mystream_b_source_ram_renable <= 0;
         _mystream_b_idle <= 1;
       end 
@@ -1075,20 +1088,28 @@ module blinkled
         _tmp_53 <= _mystream_source_stop;
       end 
       if(_mystream_stream_oready) begin
-        _tmp_54 <= _mystream_source_busy;
+        _tmp_54 <= _tmp_53;
       end 
       if(_mystream_stream_oready) begin
         _tmp_55 <= _tmp_54;
       end 
       if(_mystream_stream_oready) begin
-        _tmp_56 <= _tmp_55;
+        _tmp_56 <= _mystream_source_busy;
       end 
-      __mystream_sink_busy_1 <= _mystream_sink_busy;
-      if(!_mystream_sink_busy && __mystream_sink_busy_1) begin
-        _mystream_busy_buf <= 0;
+      if(_mystream_stream_oready) begin
+        _tmp_57 <= _tmp_56;
+      end 
+      if(_mystream_stream_oready) begin
+        _tmp_58 <= _tmp_57;
+      end 
+      if(_mystream_stream_oready) begin
+        _tmp_59 <= _mystream_sink_busy;
+      end 
+      if(!_mystream_sink_busy && _tmp_59) begin
+        _mystream_busy_reg <= 0;
       end 
       if(_mystream_source_busy) begin
-        _mystream_busy_buf <= 1;
+        _mystream_busy_reg <= 1;
       end 
     end
   end
@@ -1102,14 +1123,10 @@ module blinkled
       _mystream_fsm <= _mystream_fsm_init;
       _mystream_source_start <= 0;
       _mystream_source_busy <= 0;
-      _mystream_source_stop <= 0;
       _mystream_stream_ivalid <= 0;
     end else begin
       if(_mystream_stream_oready && _tmp_46) begin
         _mystream_stream_ivalid <= 1;
-      end 
-      if(_mystream_stream_oready) begin
-        _mystream_source_stop <= 0;
       end 
       if(_mystream_stream_oready && _tmp_49) begin
         _mystream_stream_ivalid <= 0;
@@ -1139,7 +1156,6 @@ module blinkled
         end
         _mystream_fsm_3: begin
           if(_mystream_stream_oready && (_mystream_a_idle && _mystream_b_idle && (_mystream_fsm == 3))) begin
-            _mystream_source_stop <= 1;
             _mystream_source_busy <= 0;
           end 
           if(_mystream_stream_oready && (_mystream_a_idle && _mystream_b_idle && (_mystream_fsm == 3)) && _mystream_run_flag) begin
@@ -1201,7 +1217,7 @@ module blinkled
       _th_comp_cond_11_1_1 <= 0;
       _th_comp_size_2 <= 0;
       _th_comp_offset_3 <= 0;
-      axistreamout_flag_57 <= 0;
+      axistreamout_flag_60 <= 0;
       _th_comp_cond_24_2_1 <= 0;
     end else begin
       _d1_th_comp <= th_comp;
@@ -1218,7 +1234,7 @@ module blinkled
         end
         th_comp_24: begin
           if(_th_comp_cond_24_2_1) begin
-            axistreamout_flag_57 <= 0;
+            axistreamout_flag_60 <= 0;
           end 
         end
       endcase
@@ -1326,7 +1342,7 @@ module blinkled
           end 
         end
         th_comp_24: begin
-          axistreamout_flag_57 <= 1;
+          axistreamout_flag_60 <= 1;
           _th_comp_cond_24_2_1 <= 1;
           th_comp <= th_comp_25;
         end
@@ -1506,6 +1522,9 @@ module blinkled
           if((_mystream_a_source_count == 1) && _mystream_stream_oready) begin
             _mystream_a_source_fsm_0 <= _mystream_a_source_fsm_0_init;
           end 
+          if(_mystream_source_stop && _mystream_stream_oready) begin
+            _mystream_a_source_fsm_0 <= _mystream_a_source_fsm_0_init;
+          end 
         end
       endcase
     end
@@ -1531,6 +1550,9 @@ module blinkled
         end
         _mystream_b_source_fsm_1_2: begin
           if((_mystream_b_source_count == 1) && _mystream_stream_oready) begin
+            _mystream_b_source_fsm_1 <= _mystream_b_source_fsm_1_init;
+          end 
+          if(_mystream_source_stop && _mystream_stream_oready) begin
             _mystream_b_source_fsm_1 <= _mystream_b_source_fsm_1_init;
           end 
         end
@@ -1577,14 +1599,14 @@ module blinkled
       _axi_c_write_fsm <= _axi_c_write_fsm_init;
       _d1__axi_c_write_fsm <= _axi_c_write_fsm_init;
       _axi_c_write_counter <= 0;
-      axistreamout_flag_69 <= 0;
+      axistreamout_flag_72 <= 0;
       __axi_c_write_fsm_cond_2_0_1 <= 0;
     end else begin
       _d1__axi_c_write_fsm <= _axi_c_write_fsm;
       case(_d1__axi_c_write_fsm)
         _axi_c_write_fsm_2: begin
           if(__axi_c_write_fsm_cond_2_0_1) begin
-            axistreamout_flag_69 <= 0;
+            axistreamout_flag_72 <= 0;
           end 
         end
       endcase
@@ -1606,7 +1628,7 @@ module blinkled
           end 
         end
         _axi_c_write_fsm_2: begin
-          axistreamout_flag_69 <= 1;
+          axistreamout_flag_72 <= 1;
           __axi_c_write_fsm_cond_2_0_1 <= 1;
           _axi_c_write_fsm <= _axi_c_write_fsm_3;
         end

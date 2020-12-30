@@ -27,23 +27,50 @@ def mkLed():
     strm = vthread.Stream(m, 'mystream', clk, rst)
     a = strm.source('a')
     b = strm.source('b')
+    th = strm.parameter('th')
     c = a + b
     strm.sink(c, 'c')
+    strm.terminate(c > th)
 
     def comp_stream(size, offset):
-        strm.set_source('a', ram_a, offset, size)
-        strm.set_source('b', ram_b, offset, size)
-        strm.set_sink('c', ram_c, offset, size)
+        half = size // 2
+
+        th = 128 + 9
+        strm.set_source('a', ram_a, offset, half)
+        strm.set_source('b', ram_b, offset, half)
+        strm.set_sink('c', ram_c, offset, half)
+        strm.set_parameter('th', th)
         strm.run()
+
+        th = 128 + size + 13
+        strm.set_source('a', ram_a, offset + half, half)
+        strm.set_source('b', ram_b, offset + half, half)
+        strm.set_sink('c', ram_c, offset + half, half)
+        strm.set_parameter('th', th)
+        strm.source_join_and_run()
+
         strm.join()
 
     def comp_sequential(size, offset):
-        sum = 0
-        for i in range(size):
+        half = size // 2
+
+        th = 128 + 9
+        for i in range(half):
             a = ram_a.read(i + offset)
             b = ram_b.read(i + offset)
-            sum = a + b
-            ram_c.write(i + offset, sum)
+            c = a + b
+            ram_c.write(i + offset, c)
+            if c > th:
+                break
+
+        th = 128 + size + 13
+        for i in range(half):
+            a = ram_a.read(i + offset + half)
+            b = ram_b.read(i + offset + half)
+            c = a + b
+            ram_c.write(i + offset + half, c)
+            if c > th:
+                break
 
     def check(size, offset_stream, offset_seq):
         all_ok = True
@@ -60,6 +87,8 @@ def mkLed():
     def comp(size):
         # stream
         offset = 0
+        for i in range(size):
+            ram_c.write(i + offset, 0)
         myaxi.dma_read(ram_a, offset, 0, size)
         myaxi.dma_read(ram_b, offset, 512, size)
         comp_stream(size, offset)
@@ -67,12 +96,17 @@ def mkLed():
 
         # sequential
         offset = size
+        for i in range(size):
+            ram_c.write(i + offset, 0)
         myaxi.dma_read(ram_a, offset, 0, size)
         myaxi.dma_read(ram_b, offset, 512, size)
         comp_sequential(size, offset)
         myaxi.dma_write(ram_c, offset, 1024 * 2, size)
 
         # verification
+        for i in range(size):
+            ram_c.write(i, 0)
+            ram_c.write(i + offset, 0)
         myaxi.dma_read(ram_c, 0, 1024, size)
         myaxi.dma_read(ram_c, offset, 1024 * 2, size)
         check(size, 0, offset)
@@ -80,7 +114,7 @@ def mkLed():
         vthread.finish()
 
     th = vthread.Thread(m, 'th_comp', clk, rst, comp)
-    fsm = th.start(32)
+    fsm = th.start(64)
 
     return m
 
@@ -105,7 +139,7 @@ def mkTest(memimg_name=None):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
