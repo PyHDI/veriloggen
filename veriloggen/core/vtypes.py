@@ -1907,6 +1907,23 @@ class Always(VeriloggenNode):
         return self.set_statement(*statement)
 
 
+class AlwaysFF(Always):
+
+    pass
+
+
+class AlwaysComb(Always):
+
+    def __init__(self):
+        Always.__init__(self)
+
+
+class AlwaysLatch(Always):
+
+    def __init__(self):
+        Always.__init__(self)
+
+
 class Assign(VeriloggenNode):
 
     def __init__(self, statement):
@@ -2060,6 +2077,10 @@ class Case(VeriloggenNode):
 
 
 class Casex(Case):
+    pass
+
+
+class Casez(Case):
     pass
 
 

@@ -10,10 +10,10 @@ import veriloggen.core.module as module
 import veriloggen.core.function as function
 import veriloggen.core.task as task
 
-import pyverilog.vparser.ast as vast
-from pyverilog.vparser.parser import VerilogCodeParser
+import pyverilog.parser.ast as vast
+from pyverilog.parser.parser import VerilogCodeParser
 from pyverilog.dataflow.modulevisitor import ModuleVisitor
-from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
+from pyverilog.codegen.codegen import ASTCodeGenerator
 
 
 # -------------------------------------------------------------------------
@@ -160,7 +160,7 @@ class VerilogReadVisitor(object):
         visitor = getattr(self, method, self.generic_visit)
         return visitor(node)
 
-    def visit_ModuleDef(self, node):
+    def visit_Module(self, node):
         # check module cache
         if node.name in self.converted_modules:
             return self.converted_modules[node.name]
@@ -174,19 +174,35 @@ class VerilogReadVisitor(object):
         self.converted_modules[node.name] = m
         return m
 
-    def visit_Paramlist(self, node):
-        params = []
-        for param in node.params:
-            p = self.visit(param)
-            params.append(p)
-        return params
+    def visit_DeclParameters(self, node):
+        items = []
+        for item in node.items:
+            p = self.visit(item)
+            items.append(p)
+        return items
 
-    def visit_Portlist(self, node):
-        ports = []
-        for port in node.ports:
-            p = self.visit(port)
-            ports.append(p)
-        return ports
+    def visit_DeclLocalparams(self, node):
+        return self.visit_DeclParameters(node)
+
+    def visit_DeclVars(self, node):
+        items = []
+        for item in node.items:
+            p = self.visit(item)
+            items.append(p)
+        return items
+
+    def visit_DeclVarAssign(self, node):
+        items = []
+        items.append(self.visit(node.var))
+        items.append(self.visit(node.assign))
+        return items
+
+    def visit_DeclInstances(self, node):
+        items = []
+        for item in node.items:
+            p = self.visit(item)
+            items.append(p)
+        return items
 
     def visit_Port(self, node):
         if node.type is None:

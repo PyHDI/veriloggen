@@ -23,6 +23,7 @@ setup(name='veriloggen',
                     'veriloggen.simulation': ['*.cpp'],
                     },
       install_requires=['Jinja2>=2.10',
+                        'ply>=3.4',
                         'pyverilog>=1.3.0',
                         'numpy>=1.17'],
       extras_require={

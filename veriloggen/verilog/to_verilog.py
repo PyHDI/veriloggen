@@ -8,8 +8,8 @@ import re
 import veriloggen.core.vtypes as vtypes
 import veriloggen.core.module as module
 
-import pyverilog.vparser.ast as vast
-from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
+import pyverilog.parser.ast as vast
+from pyverilog.codegen.codegen import ASTCodeGenerator
 
 
 #-------------------------------------------------------------------------
