@@ -26,7 +26,6 @@ def mkLed():
     m = Module('blinkled')
     clk = m.Input('CLK')
     rst = m.Input('RST')
-    led = m.OutputReg('led', 8, initval=0)
 
     addrwidth = 10
     ram_a = vthread.RAM(m, 'ram_a', clk, rst, datawidth, addrwidth)

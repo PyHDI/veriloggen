@@ -59,7 +59,8 @@ def mkMain():
     fsm.Then().If(last).goto_next()
 
     fsm(
-        Systask('display', 'sum=%d expected_sum=%d', sum, expected_sum)
+        Systask('display', 'sum=%d expected_sum=%d', sum, expected_sum),
+        If(NotEql(sum, expected_sum))(Display('# verify: FAILED')).Else(Display('# verify: PASSED'))
     )
     fsm.goto_next()
 
@@ -68,7 +69,7 @@ def mkMain():
     return m
 
 
-def mkTest():
+def mkTest(memimg_name=None):
     m = Module('test')
 
     # target instance
@@ -100,15 +101,31 @@ def mkTest():
     return m
 
 
-if __name__ == '__main__':
-    test = mkTest()
-    verilog = test.to_verilog('tmp.v')
-    print(verilog)
+def run(filename='tmp.v', simtype='iverilog', outputfile=None):
 
-    sim = simulation.Simulator(test)
-    rslt = sim.run()
+    if outputfile is None:
+        outputfile = os.path.splitext(os.path.basename(__file__))[0] + '.out'
+
+    memimg_name = 'memimg_' + outputfile
+
+    test = mkTest(memimg_name=memimg_name)
+
+    if filename is not None:
+        test.to_verilog(filename)
+
+    sim = simulation.Simulator(test, sim=simtype)
+    rslt = sim.run(outputfile=outputfile)
+    lines = rslt.splitlines()
+    if simtype == 'verilator' and lines[-1].startswith('-'):
+        rslt = '\n'.join(lines[:-1])
+    return rslt
+
+
+if __name__ == '__main__':
+    rslt = run(filename='tmp.v')
     print(rslt)
 
+    # IP-XACT
     m = mkMain()
     ipxact.to_ipxact(m,
                      clk_ports=[('CLK', ('RST',))],

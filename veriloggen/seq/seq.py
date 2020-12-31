@@ -135,10 +135,16 @@ class Seq(vtypes.VeriloggenNode):
         if delay <= 0:
             return var
 
+        if isinstance(var, (int, float, bool)):
+            return var
+
+        if isinstance(var, vtypes._Constant):
+            return var
+
         if prefix is None:
             prefix = '_'
 
-        width = var.bit_length()
+        width = vtypes.get_width(var)
         signed = vtypes.get_signed(var)
 
         if not isinstance(var, vtypes._Variable):
@@ -147,7 +153,11 @@ class Seq(vtypes.VeriloggenNode):
             w.assign(var)
             var = w
 
-        name_prefix = prefix + var.name
+        if hasattr(var, 'name'):
+            name_prefix = prefix + var.name
+        else:
+            name_prefix = _tmp_name(prefix)
+
         key = '_'.join([name_prefix, str(delay)])
         if key in self.prev_dict:
             return self.prev_dict[key]
@@ -156,8 +166,7 @@ class Seq(vtypes.VeriloggenNode):
         for i in range(delay):
             cond = make_condition(cond)
             if cond is not None:
-                tmp = self.m.TmpReg(
-                    var, width=width, initval=initval, signed=signed)
+                tmp = self.m.TmpReg(width=width, initval=initval, signed=signed)
                 self._add_statement([tmp(p)], cond=cond)
                 p = tmp
 
@@ -451,7 +460,7 @@ class Seq(vtypes.VeriloggenNode):
 
             if src.dims is not None:
                 # outside FSM-module
-                width = src.bit_length()
+                width = src.get_width()
                 dims = src.dims
                 length = None
                 for dim in dims:
@@ -685,7 +694,7 @@ class Seq(vtypes.VeriloggenNode):
         if isinstance(right, (bool, int, float, str,
                               vtypes._Constant, vtypes._ParameterVariable)):
             return subst
-        width = left.bit_length()
+        width = vtypes.get_width(left)
         signed = vtypes.get_signed(left)
         prev = right
 

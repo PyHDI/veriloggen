@@ -72,7 +72,7 @@ def _saturate_single(value, width=8, max=None, min=None, signed=False):
 
 
 def write(dst, value, blk=False, ldelay=None, rdelay=None, method='write'):
-    width = dst.bit_length()
+    width = vtypes.get_width(dst)
     signed = vtypes.get_signed(dst)
 
     if signed:

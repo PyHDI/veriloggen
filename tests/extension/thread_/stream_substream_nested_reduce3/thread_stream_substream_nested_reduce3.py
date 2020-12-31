@@ -30,7 +30,7 @@ def mkLed():
     macstrm = vthread.Stream(m, 'macstream', clk, rst)
     macstrm_a = macstrm.source('a')
     macstrm_b = macstrm.source('b')
-    macstrm_const = macstrm.constant('const')
+    macstrm_const = macstrm.parameter('const')
     macstrm_mul = macstrm_a * macstrm_b
     macstrm_c, macstrm_v = macstrm.ReduceAddValid(macstrm_mul, macstrm_const)
     macstrm.sink(macstrm_c, 'c')
@@ -39,14 +39,14 @@ def mkLed():
     macstrm2 = vthread.Stream(m, 'macstream2', clk, rst)
     macstrm2_a = macstrm2.source('a')
     macstrm2_b = macstrm2.source('b')
-    macstrm2_const = macstrm2.constant('const')
+    macstrm2_const = macstrm2.parameter('const')
     macstrm2_a = macstrm2_a + 1
     macstrm2_a = macstrm2_a - 1
     macstrm2_b = macstrm2_b * 1
     macsub = macstrm2.substream(macstrm)
     macsub.to_source('a', macstrm2_a)
     macsub.to_source('b', macstrm2_b)
-    macsub.to_constant('const', macstrm2_const)
+    macsub.to_parameter('const', macstrm2_const)
     macstrm2_c = macsub.from_sink('c')
     macstrm2_v = macsub.from_sink('v')
     macstrm2.sink(macstrm2_c, 'c')
@@ -55,14 +55,14 @@ def mkLed():
     neststrm = vthread.Stream(m, 'neststream', clk, rst)
     neststrm_a = neststrm.source('a')
     neststrm_b = neststrm.source('b')
-    neststrm_const = neststrm.constant('const')
+    neststrm_const = neststrm.parameter('const')
     neststrm_a += 1
     neststrm_a += 0
     neststrm_b += 1
     macsub = neststrm.substream(macstrm2)
     macsub.to_source('a', neststrm_a)
     macsub.to_source('b', neststrm_b)
-    macsub.to_constant('const', neststrm_const)
+    macsub.to_parameter('const', neststrm_const)
     neststrm_c = macsub.from_sink('c')
     neststrm_c += neststrm_a
     neststrm_c += 0
@@ -73,11 +73,11 @@ def mkLed():
     strm = vthread.Stream(m, 'mystream', clk, rst)
     x = strm.source('x')
     y = strm.source('y')
-    const = strm.constant('const')
+    const = strm.parameter('const')
     sub = strm.substream(neststrm)
     sub.to_source('a', x)
     sub.to_source('b', y)
-    sub.to_constant('const', const)
+    sub.to_parameter('const', const)
     z = sub.from_sink('c')
     v = sub.from_sink('v')
     z = z + y
@@ -88,7 +88,7 @@ def mkLed():
     def comp_stream_macstrm(size, offset):
         macstrm2.set_source('a', ram_a, offset, size)
         macstrm2.set_source('b', ram_b, offset, size)
-        macstrm2.set_constant('const', reduce_size)
+        macstrm2.set_parameter('const', reduce_size)
         macstrm2.set_sink('c', ram_c, offset, size)
         macstrm2.set_sink('v', ram_d, offset, size)
         macstrm2.run()
@@ -97,7 +97,7 @@ def mkLed():
     def comp_stream_mystrm(size, offset):
         strm.set_source('x', ram_a, offset, size)
         strm.set_source('y', ram_b, offset, size)
-        strm.set_constant('const', reduce_size)
+        strm.set_parameter('const', reduce_size)
         strm.set_sink('z', ram_c, offset, size // reduce_size)
         strm.run()
         strm.join()

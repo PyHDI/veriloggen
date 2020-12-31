@@ -23,7 +23,7 @@ def mkLed():
     ram_a = vthread.RAM(m, 'ram_a', clk, rst, datawidth, addrwidth)
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
 
-    ram_ext = vthread.RAM(m, 'ram_ext', clk, rst, datawidth, addrwidth, numports=2)
+    ram_ext = vthread.RAM(m, 'ram_ext', clk, rst, datawidth, addrwidth)
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
 
@@ -58,6 +58,7 @@ def mkLed():
             sq = ram_b.read(i + offset_seq)
             if vthread.verilog.NotEql(st, sq):
                 all_ok = False
+            print(i, st, sq)
         if all_ok:
             print('# verify: PASSED')
         else:
@@ -80,6 +81,8 @@ def mkLed():
         myaxi.dma_write(ram_b, offset, 1024 * 2, size)
 
         # verification
+        myaxi.dma_read(ram_b, 0, 1024, size)
+        myaxi.dma_read(ram_b, offset, 1024 * 2, size)
         check(size, 0, offset)
 
         vthread.finish()
@@ -110,7 +113,7 @@ def mkTest(memimg_name=None):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    #simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

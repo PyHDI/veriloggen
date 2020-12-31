@@ -24,14 +24,14 @@ def mkLed():
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
-    a = strm.source('a')
-    size = strm.constant('size')
+    a = strm.source('a') + 1000
+    size = strm.parameter('size')
     sum, sum_valid = strm.ReduceAddValid(a, size)
     strm.sink(sum, 'sum', when=sum_valid, when_name='sum_valid')
 
     def comp_stream(size, offset):
         strm.set_source('a', ram_a, offset, size)
-        strm.set_constant('size', size)
+        strm.set_parameter('size', size)
         strm.set_sink('sum', ram_b, offset, 1)
         strm.run()
         strm.join()
@@ -39,7 +39,7 @@ def mkLed():
     def comp_sequential(size, offset):
         sum = 0
         for i in range(size):
-            a = ram_a.read(i + offset)
+            a = ram_a.read(i + offset) + 1000
             sum += a
         ram_b.write(offset, sum)
 
@@ -56,16 +56,21 @@ def mkLed():
             print('# verify: FAILED')
 
     def comp(size):
+        # stream
         offset = 0
         myaxi.dma_read(ram_a, offset, 0, size)
         comp_stream(size, offset)
         myaxi.dma_write(ram_b, offset, 1024, 1)
 
+        # sequential
         offset = size
         myaxi.dma_read(ram_a, offset, 0, size)
         comp_sequential(size, offset)
         myaxi.dma_write(ram_b, offset, 1024 * 2, 1)
 
+        # verification
+        myaxi.dma_read(ram_b, 0, 1024, 1)
+        myaxi.dma_read(ram_b, offset, 1024 * 2, 1)
         check(1, 0, offset)
 
         vthread.finish()
@@ -96,7 +101,7 @@ def mkTest(memimg_name=None):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    #simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

@@ -39,7 +39,7 @@ def mkLed():
     sub.to_source('x', a)
     sub.to_source('y', b)
     c = sub.from_sink('z')
-    size = macstrm.constant('size')
+    size = macstrm.parameter('size')
     sum, sum_valid = macstrm.ReduceAddValid(c, size)
     macstrm.sink(sum, 'sum', when=sum_valid, when_name='sum_valid')
 
@@ -54,7 +54,7 @@ def mkLed():
     sub.to_source('x', a)
     sub.to_source('y', b)
     c = sub.from_sink('z')
-    size = actstrm.constant('size')
+    size = actstrm.parameter('size')
     sum, sum_valid = actstrm.ReduceAddValid(c, size)
     sum = actstrm.Mux(sum > 0, sum, 0)
     actstrm.sink(sum, 'sum', when=sum_valid, when_name='sum_valid')
@@ -71,7 +71,7 @@ def mkLed():
     def comp_stream_mac(size, offset):
         macstrm.set_source('a', ram_a, offset, size)
         macstrm.set_source('b', ram_b, offset, size)
-        macstrm.set_constant('size', size)
+        macstrm.set_parameter('size', size)
         macstrm.set_sink('sum', ram_c, offset, 1)
         macstrm.run()
         macstrm.join()
@@ -79,7 +79,7 @@ def mkLed():
     def comp_stream_act(size, offset):
         actstrm.set_source('a', ram_a, offset, size)
         actstrm.set_source('b', ram_b, offset, size)
-        actstrm.set_constant('size', size)
+        actstrm.set_parameter('size', size)
         actstrm.set_sink('sum', ram_c, offset, 1)
         actstrm.run()
         actstrm.join()
@@ -141,6 +141,8 @@ def mkLed():
 
         # verification
         print('# MUL')
+        myaxi.dma_read(ram_c, 0, 1024, size)
+        myaxi.dma_read(ram_c, offset, 1024 * 2, size)
         check(size, 0, offset)
 
         # mac
@@ -160,6 +162,8 @@ def mkLed():
 
         # verification
         print('# MAC')
+        myaxi.dma_read(ram_c, 0, 1024, size)
+        myaxi.dma_read(ram_c, offset, 1024 * 2, size)
         check(1, 0, offset)
 
         # act
@@ -179,6 +183,8 @@ def mkLed():
 
         # verification
         print('# ACT')
+        myaxi.dma_read(ram_c, 0, 1024, size)
+        myaxi.dma_read(ram_c, offset, 1024 * 2, size)
         check(1, 0, offset)
 
         vthread.finish()
@@ -209,7 +215,7 @@ def mkTest(memimg_name=None):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    #simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

@@ -52,10 +52,11 @@ module main
   input RST
 );
 
-  reg [14-1:0] myram_0_addr;
+  wire [14-1:0] myram_0_addr;
   wire [32-1:0] myram_0_rdata;
-  reg [32-1:0] myram_0_wdata;
-  reg myram_0_wenable;
+  wire [32-1:0] myram_0_wdata;
+  wire myram_0_wenable;
+  wire myram_0_enable;
 
   myram
   inst_myram
@@ -64,7 +65,8 @@ module main
     .myram_0_addr(myram_0_addr),
     .myram_0_rdata(myram_0_rdata),
     .myram_0_wdata(myram_0_wdata),
-    .myram_0_wenable(myram_0_wenable)
+    .myram_0_wenable(myram_0_wenable),
+    .myram_0_enable(myram_0_enable)
   );
 
   reg [32-1:0] count;
@@ -72,17 +74,24 @@ module main
   reg [32-1:0] addr;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
-  reg _myram_cond_0_1;
-  reg _tmp_0;
-  reg _myram_cond_1_1;
-  reg _myram_cond_2_1;
-  reg _myram_cond_2_2;
+  assign myram_0_wdata = (fsm == 1)? count : 'hx;
+  assign myram_0_wenable = (fsm == 1)? 1'd1 : 0;
+  assign myram_0_addr = (fsm == 2)? addr : 
+                        (fsm == 1)? addr : 'hx;
+  assign myram_0_enable = (fsm == 2)? 1'd1 : 
+                          (fsm == 1)? 1'd1 : 0;
+  localparam _tmp_0 = 1;
+  wire [_tmp_0-1:0] _tmp_1;
+  assign _tmp_1 = fsm == 2;
+  reg [_tmp_0-1:0] __tmp_1_1;
   reg [32-1:0] _d1_fsm;
   reg _fsm_cond_2_0_1;
   reg _fsm_cond_3_1_1;
   localparam fsm_1 = 1;
   localparam fsm_2 = 2;
   localparam fsm_3 = 3;
+  localparam fsm_4 = 4;
+  localparam fsm_5 = 5;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -128,10 +137,10 @@ module main
         fsm_2: begin
           addr <= addr + 1;
           count <= count + 1;
-          if(_tmp_0) begin
+          if(__tmp_1_1) begin
             sum <= sum + myram_0_rdata;
           end 
-          _fsm_cond_2_0_1 <= _tmp_0;
+          _fsm_cond_2_0_1 <= __tmp_1_1;
           if(count == 15) begin
             addr <= 0;
             count <= 0;
@@ -141,10 +150,15 @@ module main
           end 
         end
         fsm_3: begin
-          if(_tmp_0) begin
+          if(__tmp_1_1) begin
             sum <= sum + myram_0_rdata;
           end 
-          _fsm_cond_3_1_1 <= _tmp_0;
+          _fsm_cond_3_1_1 <= __tmp_1_1;
+          fsm <= fsm_4;
+        end
+        fsm_4: begin
+          $display("expected_sum=%d", 120);
+          fsm <= fsm_5;
         end
       endcase
     end
@@ -153,36 +167,9 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
-      myram_0_addr <= 0;
-      myram_0_wdata <= 0;
-      myram_0_wenable <= 0;
-      _myram_cond_0_1 <= 0;
-      _myram_cond_1_1 <= 0;
-      _tmp_0 <= 0;
-      _myram_cond_2_1 <= 0;
-      _myram_cond_2_2 <= 0;
+      __tmp_1_1 <= 0;
     end else begin
-      if(_myram_cond_2_2) begin
-        _tmp_0 <= 0;
-      end 
-      if(_myram_cond_0_1) begin
-        myram_0_wenable <= 0;
-      end 
-      if(_myram_cond_1_1) begin
-        _tmp_0 <= 1;
-      end 
-      _myram_cond_2_2 <= _myram_cond_2_1;
-      if(fsm == 1) begin
-        myram_0_addr <= addr;
-        myram_0_wdata <= count;
-        myram_0_wenable <= 1;
-      end 
-      _myram_cond_0_1 <= fsm == 1;
-      if(fsm == 2) begin
-        myram_0_addr <= addr;
-      end 
-      _myram_cond_1_1 <= fsm == 2;
-      _myram_cond_2_1 <= fsm == 2;
+      __tmp_1_1 <= _tmp_1;
     end
   end
 
@@ -197,20 +184,25 @@ module myram
   input [14-1:0] myram_0_addr,
   output [32-1:0] myram_0_rdata,
   input [32-1:0] myram_0_wdata,
-  input myram_0_wenable
+  input myram_0_wenable,
+  input myram_0_enable
 );
 
-  reg [14-1:0] myram_0_daddr;
+  reg [32-1:0] myram_0_rdata_out;
+  assign myram_0_rdata = myram_0_rdata_out;
   reg [32-1:0] mem [0:16384-1];
 
   always @(posedge CLK) begin
-    if(myram_0_wenable) begin
-      mem[myram_0_addr] <= myram_0_wdata;
+    if(myram_0_enable) begin
+      if(myram_0_wenable) begin
+        mem[myram_0_addr] <= myram_0_wdata;
+        myram_0_rdata_out <= myram_0_wdata;
+      end else begin
+        myram_0_rdata_out <= mem[myram_0_addr];
+      end
     end 
-    myram_0_daddr <= myram_0_addr;
   end
 
-  assign myram_0_rdata = mem[myram_0_daddr];
 
 endmodule
 """

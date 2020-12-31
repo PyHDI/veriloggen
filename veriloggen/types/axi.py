@@ -471,7 +471,7 @@ class AxiStreamInData(AxiStreamInterfaceBase):
     _O = util.t_Output
 
     def __init__(self, m, name=None, datawidth=32,
-                 with_last=False,
+                 with_last=True, with_strb=False,
                  id_width=0, user_width=0, dest_width=0,
                  itype=None, otype=None):
 
@@ -491,6 +491,12 @@ class AxiStreamInData(AxiStreamInterfaceBase):
         else:
             self.tlast = util.make_port(
                 m, self.itype, name + '_tlast', initval=0)
+
+        if not with_strb:
+            self.tstrb = None
+        else:
+            self.tstrb = util.make_port(
+                m, self.itype, name + '_tstrb', self.datawidth // 8, initval=0)
 
         if isinstance(user_width, int) and user_width == 0:
             self.tuser = None
@@ -1014,7 +1020,7 @@ class AxiMaster(object):
         df = self.df if self.df is not None else _df
 
         df_data = df.Variable(data, valid, data_ready,
-                              point=point, signed=signed)
+                              width=self.datawidth, point=point, signed=signed)
         df_last = df.Variable(last, valid, last_ready, width=1, signed=False)
         done = vtypes.Ands(last, self.rdata.rvalid, self.rdata.rready)
 
@@ -1704,11 +1710,12 @@ class AxiSlave(object):
             counter.dec()
         )
 
-        df_data = self.df.Variable(data, valid, data_ready, signed=False)
+        df_data = self.df.Variable(data, valid, data_ready,
+                                   width=self.datawidth, signed=False)
         df_mask = self.df.Variable(mask, valid, mask_ready,
                                    width=self.datawidth // 4, signed=False)
-        df_last = self.df.Variable(
-            last, valid, last_ready, width=1, signed=False)
+        df_last = self.df.Variable(last, valid, last_ready,
+                                   width=1, signed=False)
         done = vtypes.Ands(last, self.wdata.wvalid, self.wdata.wready)
 
         return df_data, df_mask, df_last, done
@@ -2323,7 +2330,7 @@ class AxiLiteSlave(AxiSlave):
 class AxiStreamIn(object):
 
     def __init__(self, m, name, clk, rst, datawidth=32,
-                 with_last=False,
+                 with_last=True, with_strb=False,
                  id_width=0, user_width=0, dest_width=0,
                  noio=False, nodataflow=False):
 
@@ -2346,7 +2353,7 @@ class AxiStreamIn(object):
         otype = util.t_Wire if noio else None
 
         self.tdata = AxiStreamInData(m, name, datawidth,
-                                     with_last,
+                                     with_last, with_strb,
                                      id_width, user_width, dest_width,
                                      itype, otype)
 
@@ -2414,7 +2421,7 @@ class AxiStreamIn(object):
         df = self.df if self.df is not None else _df
 
         df_data = df.Variable(data, valid, data_ready,
-                              point=point, signed=signed)
+                              width=self.datawidth, point=point, signed=signed)
         if last is not None:
             df_last = df.Variable(last, valid, last_ready, width=1, signed=False)
             done = vtypes.Ands(last, self.tdata.tvalid, self.tdata.tready)
@@ -2566,7 +2573,7 @@ class AxiStreamIn(object):
 class AxiStreamOut(object):
 
     def __init__(self, m, name, clk, rst, datawidth=32,
-                 with_last=False,
+                 with_last=True, with_strb=False,
                  id_width=0, user_width=0, dest_width=0,
                  noio=False, nodataflow=False):
 
@@ -2589,7 +2596,7 @@ class AxiStreamOut(object):
         otype = util.t_Wire if noio else None
 
         self.tdata = AxiStreamOutData(m, name, datawidth,
-                                      with_last,
+                                      with_last, with_strb,
                                       id_width, user_width, dest_width,
                                       itype, otype)
 
@@ -2810,7 +2817,7 @@ class AxiMemoryModel(AxiSlave):
                  mem_datawidth=32, mem_addrwidth=20,
                  memimg=None, memimg_name=None,
                  memimg_datawidth=None,
-                 write_delay=10, read_delay=10, sleep=4,
+                 write_delay=10, read_delay=10, sleep=4, sub_sleep=4,
                  waddr_id_width=0, wdata_id_width=0, wresp_id_width=0,
                  raddr_id_width=0, rdata_id_width=0,
                  waddr_user_width=2, wdata_user_width=0, wresp_user_width=0,
@@ -2911,7 +2918,7 @@ class AxiMemoryModel(AxiSlave):
             vtypes.Systask('readmemh', memimg_name, self.mem)
         )
 
-        self._make_fsm(write_delay, read_delay, sleep)
+        self._make_fsm(write_delay, read_delay, sleep, sub_sleep)
 
     @staticmethod
     def _make_img(filename, size, width, blksize=4096):
@@ -2931,7 +2938,7 @@ class AxiMemoryModel(AxiSlave):
                 s = ''.join([fmt % d for d in blk])
                 f.write(s)
 
-    def _make_fsm(self, write_delay=10, read_delay=10, sleep=4):
+    def _make_fsm(self, write_delay=10, read_delay=10, sleep=4, sub_sleep=4):
         write_mode = 100
         read_mode = 200
 
@@ -2951,10 +2958,25 @@ class AxiMemoryModel(AxiSlave):
             sleep_count = self.m.Reg(
                 '_'.join(['', 'sleep_count']), self.addrwidth + 1, initval=0)
 
-            self.fsm.seq(
+            if sub_sleep > 0:
+                sub_sleep_count = self.m.Reg(
+                    '_'.join(['', 'sub_sleep_count']), self.addrwidth + 1, initval=0)
+
+                self.fsm.seq.If(sleep_count == sleep - 1)(
+                    sub_sleep_count.inc()
+                )
+                self.fsm.seq.If(sleep_count == sleep - 1,
+                                sub_sleep_count == sub_sleep - 1)(
+                    sub_sleep_count(0)
+                )
+                cond = sub_sleep_count == sub_sleep - 1
+            else:
+                cond = None
+
+            self.fsm.seq.If(sleep_count < sleep - 1)(
                 sleep_count.inc()
             )
-            self.fsm.seq.If(sleep_count == sleep - 1)(
+            self.fsm.seq.If(cond, sleep_count == sleep - 1)(
                 sleep_count(0)
             )
 
@@ -3171,7 +3193,7 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
                  mem_datawidth=32, mem_addrwidth=20,
                  memimg=None, memimg_name=None,
                  memimg_datawidth=None,
-                 write_delay=10, read_delay=10, sleep=4,
+                 write_delay=10, read_delay=10, sleep=4, sub_sleep=4,
                  waddr_id_width=0, wdata_id_width=0, wresp_id_width=0,
                  raddr_id_width=0, rdata_id_width=0,
                  waddr_user_width=2, wdata_user_width=0, wresp_user_width=0,
@@ -3291,9 +3313,9 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
             vtypes.Systask('readmemh', memimg_name, self.mem)
         )
 
-        self._make_fsms(write_delay, read_delay, sleep)
+        self._make_fsms(write_delay, read_delay, sleep, sub_sleep)
 
-    def _make_fsms(self, write_delay=10, read_delay=10, sleep=4):
+    def _make_fsms(self, write_delay=10, read_delay=10, sleep=4, sub_sleep=4):
 
         for i, (fsm, waddr, wdata, wresp, raddr, rdata) in enumerate(
                 zip(self.fsms, self.waddrs, self.wdatas, self.wresps, self.raddrs, self.rdatas)):
@@ -3311,10 +3333,25 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
                 sleep_count = self.m.Reg(
                     '_'.join(['', 'sleep_count_%d' % i]), self.addrwidth + 1, initval=0)
 
-                fsm.seq(
+                if sub_sleep > 0:
+                    sub_sleep_count = self.m.Reg(
+                        '_'.join(['', 'sub_sleep_count_%d' % i]), self.addrwidth + 1, initval=0)
+
+                    fsm.seq.If(sleep_count == sleep - 1)(
+                        sub_sleep_count.inc()
+                    )
+                    fsm.seq.If(sleep_count == sleep - 1,
+                               sub_sleep_count == sub_sleep - 1)(
+                        sub_sleep_count(0)
+                    )
+                    cond = sub_sleep_count == sub_sleep - 1
+                else:
+                    cond = None
+
+                fsm.seq.If(sleep_count < sleep - 1)(
                     sleep_count.inc()
                 )
-                fsm.seq.If(sleep_count == sleep - 1)(
+                fsm.seq.If(cond, sleep_count == sleep - 1)(
                     sleep_count(0)
                 )
 

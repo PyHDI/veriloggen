@@ -30,7 +30,7 @@ def mkLed():
     macstrm = vthread.Stream(m, 'macstream', clk, rst)
     macstrm_a = macstrm.source('a')
     macstrm_b = macstrm.source('b')
-    macstrm_const = macstrm.constant('const')
+    macstrm_const = macstrm.parameter('const')
     macstrm_mul = macstrm_a * macstrm_b
     macstrm_c, macstrm_v = macstrm.ReduceAddValid(macstrm_mul, macstrm_const)
     macstrm_v += 0
@@ -40,11 +40,11 @@ def mkLed():
     strm = vthread.Stream(m, 'mystream', clk, rst)
     x = strm.source('x')
     y = strm.source('y')
-    const = strm.constant('const')
+    const = strm.parameter('const')
     sub = strm.substream(macstrm)
     sub.to_source('a', x)
     sub.to_source('b', y)
-    sub.to_constant('const', const)
+    sub.to_parameter('const', const)
     z = sub.from_sink('c')
     v = sub.from_sink('v')
     z = z + x
@@ -55,7 +55,7 @@ def mkLed():
     def comp_stream_macstrm(size, offset):
         macstrm.set_source('a', ram_a, offset, size)
         macstrm.set_source('b', ram_b, offset, size)
-        macstrm.set_constant('const', reduce_size)
+        macstrm.set_parameter('const', reduce_size)
         macstrm.set_sink('c', ram_c, offset, size)
         macstrm.set_sink('v', ram_d, offset, size)
         macstrm.run()
@@ -64,7 +64,7 @@ def mkLed():
     def comp_stream_mystrm(size, offset):
         strm.set_source('x', ram_a, offset, size)
         strm.set_source('y', ram_b, offset, size)
-        strm.set_constant('const', reduce_size)
+        strm.set_parameter('const', reduce_size)
         strm.set_sink('z', ram_c, offset, size // reduce_size)
         strm.run()
         strm.join()
@@ -105,7 +105,6 @@ def mkLed():
             sq = ram_c.read(i + offset_seq)
             if vthread.verilog.NotEql(st, sq):
                 all_ok.value = False
-                print(i, st, sq)
         if all_ok:
             print('# verify: PASSED')
         else:
@@ -178,7 +177,7 @@ def mkTest(memimg_name=None):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    #simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

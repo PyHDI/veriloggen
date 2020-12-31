@@ -121,12 +121,40 @@ def str_to_width(s):
     return None
 
 
+def get_width(v):
+    if hasattr(v, 'get_width'):
+        return v.get_width()
+
+    w = v.bit_length()
+    if isinstance(v, int):
+        w += 1
+
+    return w
+
+
 def get_signed(obj):
     if hasattr(obj, 'get_signed'):
         return obj.get_signed()
     if isinstance(obj, (int, float)):
         return True
     return False
+
+
+def get_dims(obj):
+    if hasattr(obj, 'dims'):
+        return obj.dims
+    return None
+
+
+def get_value(obj):
+    if hasattr(obj, 'value'):
+        return obj.value
+    return None
+
+def get_initval(obj):
+    if hasattr(obj, 'initval'):
+        return obj.initval
+    return None
 
 
 def max_width(left, right):
@@ -414,7 +442,7 @@ class _Numeric(VeriloggenNode):
                 return Cat(*values)
 
         if isinstance(r, int) and r < 0:
-            r = self.bit_length() - abs(r)
+            r = self.get_width() - abs(r)
 
         return Pointer(self, r)
 
@@ -428,7 +456,10 @@ class _Numeric(VeriloggenNode):
         return Slice(self, msb, lsb)
 
     def bit_length(self):
-        raise TypeError("bit_length() is not supported.")
+        return self.get_width()
+
+    def get_width(self):
+        raise TypeError("get_width() is not supported.")
 
     def get_signed(self):
         if hasattr(self, 'signed') and getattr(self, 'signed'):
@@ -453,7 +484,7 @@ class _Numeric(VeriloggenNode):
         return self.__next__()
 
     def _len(self):
-        return self.bit_length()
+        return self.get_width()
 
     def __len__(self):
         ret = self._len()
@@ -526,7 +557,7 @@ class _Variable(_Numeric):
     def reset(self):
         return None
 
-    def bit_length(self):
+    def get_width(self):
         return self.width
 
     def get_signed(self):
@@ -566,7 +597,7 @@ class _Variable(_Numeric):
         if self.dims is not None:
             return self.dims[0]
 
-        return self.bit_length()
+        return self.get_width()
 
 
 class Input(_Variable):
@@ -682,10 +713,12 @@ class _ParameterVariable(_Variable):
                  raw_width=None, module=None):
         if isinstance(value, _ParameterVariable):
             value = value.value
+        if value is None:
+            raise ValueError('value must not be None.')
         _Variable.__init__(self, width=width, signed=signed, value=value, name=name,
                            raw_width=raw_width, module=module)
 
-    def bit_length(self):
+    def get_width(self):
         if self.width is None:
             return 32
         return self.width
@@ -724,7 +757,7 @@ class _Constant(_Numeric):
     def __str__(self):
         return str(self.value)
 
-    def bit_length(self):
+    def get_width(self):
         if self.width is None:
             return 32
         return self.width
@@ -930,9 +963,9 @@ class _BinaryOperator(_Operator):
         return ''.join(['(', str(self.left), ' ', op2mark(self.__class__.__name__), ' ',
                         str(self.right), ')'])
 
-    def bit_length(self):
-        left = self.left.bit_length()
-        right = self.right.bit_length()
+    def get_width(self):
+        left = get_width(self.left)
+        right = get_width(self.right)
         return max_width(left, right) + 1
 
     def get_signed(self):
@@ -961,8 +994,8 @@ class _UnaryOperator(_Operator):
     def __str__(self):
         return ''.join(['(', op2mark(self.__class__.__name__), str(self.right), ')'])
 
-    def bit_length(self):
-        return self.right.bit_length()
+    def get_width(self):
+        return get_width(self.right)
 
 
 # for FixedPoint
@@ -984,9 +1017,9 @@ class Times(_BinaryOperator):
     def op(left, right, lwidth, rwidth):
         return left * right
 
-    def bit_length(self):
-        left = self.left.bit_length()
-        right = self.right.bit_length()
+    def get_width(self):
+        left = get_width(self.left)
+        right = get_width(self.right)
         return left + right
 
 
@@ -996,9 +1029,9 @@ class Divide(_BinaryOperator):
     def op(left, right, lwidth, rwidth):
         return left // right
 
-    def bit_length(self):
-        left = self.left.bit_length()
-        right = self.right.bit_length()
+    def get_width(self):
+        left = get_width(self.left)
+        right = get_width(self.right)
         return max_width(left, right)
 
 
@@ -1008,9 +1041,9 @@ class Mod(_BinaryOperator):
     def op(left, right, lwidth, rwidth):
         return left % right
 
-    def bit_length(self):
-        left = self.left.bit_length()
-        right = self.right.bit_length()
+    def get_width(self):
+        left = get_width(self.left)
+        right = get_width(self.right)
         return max_width(left, right)
 
 
@@ -1055,9 +1088,9 @@ class Sll(_BinaryOperator):
     def op(left, right, lwidth, rwidth):
         return left << right
 
-    def bit_length(self):
-        left = self.left.bit_length()
-        right = self.right.bit_length()
+    def get_width(self):
+        left = get_width(self.left)
+        right = get_width(self.right)
         return Int(2) ** right + left
 
 
@@ -1071,8 +1104,8 @@ class Srl(_BinaryOperator):
     def op(left, right, lwidth, rwidth):
         return left >> right
 
-    def bit_length(self):
-        left = self.left.bit_length()
+    def get_width(self):
+        left = get_width(self.left)
         return left
 
 
@@ -1091,8 +1124,8 @@ class Sra(_BinaryOperator):
             return -1 * ret
         return ret
 
-    def bit_length(self):
-        left = self.left.bit_length()
+    def get_width(self):
+        left = get_width(self.left)
         return left
 
 
@@ -1106,7 +1139,7 @@ class LessThan(_BinaryOperator):
     def op(left, right, lwidth, rwidth):
         return left < right
 
-    def bit_length(self):
+    def get_width(self):
         return 1
 
 
@@ -1120,7 +1153,7 @@ class GreaterThan(_BinaryOperator):
     def op(left, right, lwidth, rwidth):
         return left > right
 
-    def bit_length(self):
+    def get_width(self):
         return 1
 
 
@@ -1134,7 +1167,7 @@ class LessEq(_BinaryOperator):
     def op(left, right, lwidth, rwidth):
         return left <= right
 
-    def bit_length(self):
+    def get_width(self):
         return 1
 
 
@@ -1148,7 +1181,7 @@ class GreaterEq(_BinaryOperator):
     def op(left, right, lwidth, rwidth):
         return left >= right
 
-    def bit_length(self):
+    def get_width(self):
         return 1
 
 
@@ -1162,7 +1195,7 @@ class Eq(_BinaryOperator):
     def op(left, right, lwidth, rwidth):
         return left == right
 
-    def bit_length(self):
+    def get_width(self):
         return 1
 
 
@@ -1176,7 +1209,7 @@ class NotEq(_BinaryOperator):
     def op(left, right, lwidth, rwidth):
         return left != right
 
-    def bit_length(self):
+    def get_width(self):
         return 1
 
 
@@ -1190,7 +1223,7 @@ class Eql(_BinaryOperator):  # ===
     def op(left, right, lwidth, rwidth):
         return left == right
 
-    def bit_length(self):
+    def get_width(self):
         return 1
 
 
@@ -1204,7 +1237,7 @@ class NotEql(_BinaryOperator):  # !==
     def op(left, right, lwidth, rwidth):
         return left != right
 
-    def bit_length(self):
+    def get_width(self):
         return 1
 
 
@@ -1218,9 +1251,9 @@ class And(_BinaryOperator):
     def op(left, right, lwidth, rwidth):
         return left & right
 
-    def bit_length(self):
-        left = self.left.bit_length()
-        right = self.right.bit_length()
+    def get_width(self):
+        left = get_width(self.left)
+        right = get_width(self.right)
         return max_width(left, right)
 
 
@@ -1234,9 +1267,9 @@ class Xor(_BinaryOperator):
     def op(left, right, lwidth, rwidth):
         return left ^ right
 
-    def bit_length(self):
-        left = self.left.bit_length()
-        right = self.right.bit_length()
+    def get_width(self):
+        left = get_width(self.left)
+        right = get_width(self.right)
         return max_width(left, right)
 
 
@@ -1255,9 +1288,9 @@ class Xnor(_BinaryOperator):
             mask = (0x1 << i) | mask
         return mask & value
 
-    def bit_length(self):
-        left = self.left.bit_length()
-        right = self.right.bit_length()
+    def get_width(self):
+        left = get_width(self.left)
+        right = get_width(self.right)
         return max_width(left, right)
 
 
@@ -1271,9 +1304,9 @@ class Or(_BinaryOperator):
     def op(left, right, lwidth, rwidth):
         return left | right
 
-    def bit_length(self):
-        left = self.left.bit_length()
-        right = self.right.bit_length()
+    def get_width(self):
+        left = get_width(self.left)
+        right = get_width(self.right)
         return max_width(left, right)
 
 
@@ -1289,10 +1322,8 @@ class Land(_BinaryOperator):
             return True
         return False
 
-    def bit_length(self):
-        left = self.left.bit_length()
-        right = self.right.bit_length()
-        return max_width(left, right)
+    def get_width(self):
+        return 1
 
 
 class Lor(_BinaryOperator):
@@ -1307,10 +1338,8 @@ class Lor(_BinaryOperator):
             return True
         return False
 
-    def bit_length(self):
-        left = self.left.bit_length()
-        right = self.right.bit_length()
-        return max_width(left, right)
+    def get_width(self):
+        return 1
 
 
 class Uplus(_UnaryOperator):
@@ -1337,7 +1366,7 @@ class Ulnot(_UnaryOperator):
     def op(right, rwidth):
         return not right
 
-    def bit_length(self):
+    def get_width(self):
         return 1
 
 
@@ -1366,7 +1395,7 @@ class Uand(_UnaryOperator):
                 return False
         return True
 
-    def bit_length(self):
+    def get_width(self):
         return 1
 
 
@@ -1384,7 +1413,7 @@ class Unand(_UnaryOperator):
                 return True
         return False
 
-    def bit_length(self):
+    def get_width(self):
         return 1
 
 
@@ -1402,7 +1431,7 @@ class Uor(_UnaryOperator):
                 return True
         return False
 
-    def bit_length(self):
+    def get_width(self):
         return 1
 
 
@@ -1420,7 +1449,7 @@ class Unor(_UnaryOperator):
                 return False
         return True
 
-    def bit_length(self):
+    def get_width(self):
         return 1
 
 
@@ -1438,7 +1467,7 @@ class Uxor(_UnaryOperator):
             ret = ret ^ v
         return ret
 
-    def bit_length(self):
+    def get_width(self):
         return 1
 
 
@@ -1456,7 +1485,7 @@ class Uxnor(_UnaryOperator):
             ret = ret ^ v
         return ret
 
-    def bit_length(self):
+    def get_width(self):
         return 1
 
 
@@ -1521,9 +1550,9 @@ class Pointer(_SpecialOperator):
     def read(self):
         return self
 
-    def bit_length(self):
+    def get_width(self):
         if isinstance(self.var, _Variable) and self.var.dims is not None:
-            return self.var.bit_length()
+            return get_width(self.var)
 
         if isinstance(self.var, Pointer):
             root = self.var
@@ -1538,7 +1567,7 @@ class Pointer(_SpecialOperator):
                 return 1
 
             if len(root.dims) >= depth:
-                return root.bit_length()
+                return get_width(root)
 
             return 1
 
@@ -1595,7 +1624,7 @@ class Pointer(_SpecialOperator):
         if len(root.dims) > depth:
             return root.dims[depth - 1]
 
-        return self.bit_length()
+        return self.get_width()
 
     @staticmethod
     def op(var, pos):
@@ -1620,7 +1649,7 @@ class Slice(_SpecialOperator):
     def read(self):
         return self
 
-    def bit_length(self):
+    def get_width(self):
         return self.msb - self.lsb + 1
 
     def assign(self, value):
@@ -1682,8 +1711,8 @@ class Cat(_SpecialOperator):
     def read(self):
         return self
 
-    def bit_length(self):
-        values = [v.bit_length() for v in self.vars]
+    def get_width(self):
+        values = [get_width(v) for v in self.vars]
         ret = values[0]
         for v in values[1:]:
             ret = ret + v
@@ -1744,8 +1773,8 @@ class Repeat(_SpecialOperator):
         self.var = var
         self.times = times
 
-    def bit_length(self):
-        return self.var.bit_length() * self.times
+    def get_width(self):
+        return get_width(self.var) * self.times
 
     def __str__(self):
         return ''.join(['{', str(self.times), '{', str(self.var), '}}'])
@@ -1768,9 +1797,9 @@ class Cond(_SpecialOperator):
         self.signed = get_signed(
             self.true_value) or get_signed(self.false_value)
 
-    def bit_length(self):
-        t = self.true_value.bit_length()
-        f = self.false_value.bit_length()
+    def get_width(self):
+        t = get_width(self.true_value)
+        f = get_width(self.false_value)
         return max_width(t, f)
 
     def __str__(self):
@@ -2139,12 +2168,12 @@ class Scope(_Numeric):
         if not args:
             raise ValueError("Scope requires at least one argument.")
 
-    def bit_length(self):
+    def get_width(self):
         try:
-            w = self.args[-1].bit_length()
+            w = get_width(self.args[-1])
             return w
         except:
-            raise ValueError('could not identify bit_length.')
+            raise ValueError('could not identify get_width.')
 
 
 class SystemTask(_Numeric):
@@ -2155,10 +2184,10 @@ class SystemTask(_Numeric):
         self.cmd = cmd
         self.args = tuple(args)
 
-    def bit_length(self):
+    def get_width(self):
         if self.cmd == 'signed':
-            return self.args[0].bit_length()
-        raise TypeError("bit_length() is not supported.")
+            return get_width(self.args[0])
+        raise TypeError("get_width() is not supported.")
 
 
 def Systask(cmd, *args):

@@ -40,16 +40,24 @@ def mkMain(n=128, datawidth=32, numports=2):
     fsm.goto_next()
     fsm.If(done).goto_next()
 
+    # verify
+    sum = m.Reg('sum', 32, initval=0)
+    expected_sum = (waddr + waddr + (wlen - 1) * length) * wlen // 2
+
     seq = Seq(m, 'seq', clk, rst)
 
     seq.If(myram[0].wenable)(
-        Systask('display', '[%d] <- %d', myram[0].addr, myram[0].wdata)
+        sum.add(myram[0].wdata)
+    )
+    seq.Then().If(myram[0].addr == wlen - 1).Delay(2)(
+        Systask('display', 'sum=%d expected_sum=%d', sum, expected_sum),
+        If(NotEql(sum, expected_sum))(Display('# verify: FAILED')).Else(Display('# verify: PASSED'))
     )
 
     return m
 
 
-def mkTest():
+def mkTest(memimg_name=None):
     m = Module('test')
 
     # target instance
@@ -66,7 +74,7 @@ def mkTest():
                      params=m.connect_params(main),
                      ports=m.connect_ports(main))
 
-    simulation.setup_waveform(m, uut, m.get_vars())
+    # simulation.setup_waveform(m, uut, m.get_vars())
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
@@ -78,13 +86,26 @@ def mkTest():
     return m
 
 
+def run(filename='tmp.v', simtype='iverilog', outputfile=None):
+
+    if outputfile is None:
+        outputfile = os.path.splitext(os.path.basename(__file__))[0] + '.out'
+
+    memimg_name = 'memimg_' + outputfile
+
+    test = mkTest(memimg_name=memimg_name)
+
+    if filename is not None:
+        test.to_verilog(filename)
+
+    sim = simulation.Simulator(test, sim=simtype)
+    rslt = sim.run(outputfile=outputfile)
+    lines = rslt.splitlines()
+    if simtype == 'verilator' and lines[-1].startswith('-'):
+        rslt = '\n'.join(lines[:-1])
+    return rslt
+
+
 if __name__ == '__main__':
-    test = mkTest()
-    verilog = test.to_verilog('tmp.v')
-    print(verilog)
-
-    sim = simulation.Simulator(test)
-    rslt = sim.run()
+    rslt = run(filename='tmp.v')
     print(rslt)
-
-    # sim.view_waveform()

@@ -4,11 +4,7 @@ import veriloggen
 import dataflow_stencil
 
 expected_verilog = """
-
-module test
-(
-
-);
+module test;
 
   reg CLK;
   reg RST;
@@ -57,12 +53,6 @@ module test
   );
 
   reg reset_done;
-
-  initial begin
-    $dumpfile("uut.vcd");
-    $dumpvars(0, uut);
-  end
-
 
   initial begin
     CLK = 0;
@@ -218,14 +208,16 @@ module stencil
 );
 
   reg _tmp_0;
-  reg [8-1:0] src_ram0_0_addr;
+  wire [8-1:0] src_ram0_0_addr;
   wire [32-1:0] src_ram0_0_rdata;
-  reg [32-1:0] src_ram0_0_wdata;
-  reg src_ram0_0_wenable;
-  reg [8-1:0] src_ram0_1_addr;
+  wire [32-1:0] src_ram0_0_wdata;
+  wire src_ram0_0_wenable;
+  wire src_ram0_0_enable;
+  wire [8-1:0] src_ram0_1_addr;
   wire [32-1:0] src_ram0_1_rdata;
-  reg [32-1:0] src_ram0_1_wdata;
-  reg src_ram0_1_wenable;
+  wire [32-1:0] src_ram0_1_wdata;
+  wire src_ram0_1_wenable;
+  wire src_ram0_1_enable;
 
   src_ram0
   inst_src_ram0
@@ -235,20 +227,24 @@ module stencil
     .src_ram0_0_rdata(src_ram0_0_rdata),
     .src_ram0_0_wdata(src_ram0_0_wdata),
     .src_ram0_0_wenable(src_ram0_0_wenable),
+    .src_ram0_0_enable(src_ram0_0_enable),
     .src_ram0_1_addr(src_ram0_1_addr),
     .src_ram0_1_rdata(src_ram0_1_rdata),
     .src_ram0_1_wdata(src_ram0_1_wdata),
-    .src_ram0_1_wenable(src_ram0_1_wenable)
+    .src_ram0_1_wenable(src_ram0_1_wenable),
+    .src_ram0_1_enable(src_ram0_1_enable)
   );
 
-  reg [8-1:0] src_ram1_0_addr;
+  wire [8-1:0] src_ram1_0_addr;
   wire [32-1:0] src_ram1_0_rdata;
-  reg [32-1:0] src_ram1_0_wdata;
-  reg src_ram1_0_wenable;
-  reg [8-1:0] src_ram1_1_addr;
+  wire [32-1:0] src_ram1_0_wdata;
+  wire src_ram1_0_wenable;
+  wire src_ram1_0_enable;
+  wire [8-1:0] src_ram1_1_addr;
   wire [32-1:0] src_ram1_1_rdata;
-  reg [32-1:0] src_ram1_1_wdata;
-  reg src_ram1_1_wenable;
+  wire [32-1:0] src_ram1_1_wdata;
+  wire src_ram1_1_wenable;
+  wire src_ram1_1_enable;
 
   src_ram1
   inst_src_ram1
@@ -258,20 +254,24 @@ module stencil
     .src_ram1_0_rdata(src_ram1_0_rdata),
     .src_ram1_0_wdata(src_ram1_0_wdata),
     .src_ram1_0_wenable(src_ram1_0_wenable),
+    .src_ram1_0_enable(src_ram1_0_enable),
     .src_ram1_1_addr(src_ram1_1_addr),
     .src_ram1_1_rdata(src_ram1_1_rdata),
     .src_ram1_1_wdata(src_ram1_1_wdata),
-    .src_ram1_1_wenable(src_ram1_1_wenable)
+    .src_ram1_1_wenable(src_ram1_1_wenable),
+    .src_ram1_1_enable(src_ram1_1_enable)
   );
 
-  reg [8-1:0] src_ram2_0_addr;
+  wire [8-1:0] src_ram2_0_addr;
   wire [32-1:0] src_ram2_0_rdata;
-  reg [32-1:0] src_ram2_0_wdata;
-  reg src_ram2_0_wenable;
-  reg [8-1:0] src_ram2_1_addr;
+  wire [32-1:0] src_ram2_0_wdata;
+  wire src_ram2_0_wenable;
+  wire src_ram2_0_enable;
+  wire [8-1:0] src_ram2_1_addr;
   wire [32-1:0] src_ram2_1_rdata;
-  reg [32-1:0] src_ram2_1_wdata;
-  reg src_ram2_1_wenable;
+  wire [32-1:0] src_ram2_1_wdata;
+  wire src_ram2_1_wenable;
+  wire src_ram2_1_enable;
 
   src_ram2
   inst_src_ram2
@@ -281,20 +281,24 @@ module stencil
     .src_ram2_0_rdata(src_ram2_0_rdata),
     .src_ram2_0_wdata(src_ram2_0_wdata),
     .src_ram2_0_wenable(src_ram2_0_wenable),
+    .src_ram2_0_enable(src_ram2_0_enable),
     .src_ram2_1_addr(src_ram2_1_addr),
     .src_ram2_1_rdata(src_ram2_1_rdata),
     .src_ram2_1_wdata(src_ram2_1_wdata),
-    .src_ram2_1_wenable(src_ram2_1_wenable)
+    .src_ram2_1_wenable(src_ram2_1_wenable),
+    .src_ram2_1_enable(src_ram2_1_enable)
   );
 
-  reg [8-1:0] dst_ram_0_addr;
+  wire [8-1:0] dst_ram_0_addr;
   wire [32-1:0] dst_ram_0_rdata;
-  reg [32-1:0] dst_ram_0_wdata;
-  reg dst_ram_0_wenable;
-  reg [8-1:0] dst_ram_1_addr;
+  wire [32-1:0] dst_ram_0_wdata;
+  wire dst_ram_0_wenable;
+  wire dst_ram_0_enable;
+  wire [8-1:0] dst_ram_1_addr;
   wire [32-1:0] dst_ram_1_rdata;
-  reg [32-1:0] dst_ram_1_wdata;
-  reg dst_ram_1_wenable;
+  wire [32-1:0] dst_ram_1_wdata;
+  wire dst_ram_1_wenable;
+  wire dst_ram_1_enable;
 
   dst_ram
   inst_dst_ram
@@ -304,116 +308,62 @@ module stencil
     .dst_ram_0_rdata(dst_ram_0_rdata),
     .dst_ram_0_wdata(dst_ram_0_wdata),
     .dst_ram_0_wenable(dst_ram_0_wenable),
+    .dst_ram_0_enable(dst_ram_0_enable),
     .dst_ram_1_addr(dst_ram_1_addr),
     .dst_ram_1_rdata(dst_ram_1_rdata),
     .dst_ram_1_wdata(dst_ram_1_wdata),
-    .dst_ram_1_wenable(dst_ram_1_wenable)
+    .dst_ram_1_wenable(dst_ram_1_wenable),
+    .dst_ram_1_enable(dst_ram_1_enable)
   );
 
-  wire [8-1:0] _tmp_1;
-  assign _tmp_1 = ext_src_ram0_addr;
-
-  always @(*) begin
-    src_ram0_1_addr = _tmp_1;
-  end
-
+  assign src_ram0_1_addr = ext_src_ram0_addr;
   assign ext_src_ram0_rdata = src_ram0_1_rdata;
-  wire [32-1:0] _tmp_2;
-  assign _tmp_2 = ext_src_ram0_wdata;
-
-  always @(*) begin
-    src_ram0_1_wdata = _tmp_2;
-  end
-
-  wire _tmp_3;
-  assign _tmp_3 = ext_src_ram0_wenable;
-
-  always @(*) begin
-    src_ram0_1_wenable = _tmp_3;
-  end
-
-  wire [8-1:0] _tmp_4;
-  assign _tmp_4 = ext_src_ram1_addr;
-
-  always @(*) begin
-    src_ram1_1_addr = _tmp_4;
-  end
-
+  assign src_ram0_1_wdata = ext_src_ram0_wdata;
+  assign src_ram0_1_wenable = ext_src_ram0_wenable;
+  assign src_ram0_1_enable = 1;
+  assign src_ram1_1_addr = ext_src_ram1_addr;
   assign ext_src_ram1_rdata = src_ram1_1_rdata;
-  wire [32-1:0] _tmp_5;
-  assign _tmp_5 = ext_src_ram1_wdata;
-
-  always @(*) begin
-    src_ram1_1_wdata = _tmp_5;
-  end
-
-  wire _tmp_6;
-  assign _tmp_6 = ext_src_ram1_wenable;
-
-  always @(*) begin
-    src_ram1_1_wenable = _tmp_6;
-  end
-
-  wire [8-1:0] _tmp_7;
-  assign _tmp_7 = ext_src_ram2_addr;
-
-  always @(*) begin
-    src_ram2_1_addr = _tmp_7;
-  end
-
+  assign src_ram1_1_wdata = ext_src_ram1_wdata;
+  assign src_ram1_1_wenable = ext_src_ram1_wenable;
+  assign src_ram1_1_enable = 1;
+  assign src_ram2_1_addr = ext_src_ram2_addr;
   assign ext_src_ram2_rdata = src_ram2_1_rdata;
-  wire [32-1:0] _tmp_8;
-  assign _tmp_8 = ext_src_ram2_wdata;
-
-  always @(*) begin
-    src_ram2_1_wdata = _tmp_8;
-  end
-
-  wire _tmp_9;
-  assign _tmp_9 = ext_src_ram2_wenable;
-
-  always @(*) begin
-    src_ram2_1_wenable = _tmp_9;
-  end
-
-  wire [8-1:0] _tmp_10;
-  assign _tmp_10 = ext_dst_ram_addr;
-
-  always @(*) begin
-    dst_ram_1_addr = _tmp_10;
-  end
-
+  assign src_ram2_1_wdata = ext_src_ram2_wdata;
+  assign src_ram2_1_wenable = ext_src_ram2_wenable;
+  assign src_ram2_1_enable = 1;
+  assign dst_ram_1_addr = ext_dst_ram_addr;
   assign ext_dst_ram_rdata = dst_ram_1_rdata;
-  wire [32-1:0] _tmp_11;
-  assign _tmp_11 = ext_dst_ram_wdata;
-
-  always @(*) begin
-    dst_ram_1_wdata = _tmp_11;
-  end
-
-  wire _tmp_12;
-  assign _tmp_12 = ext_dst_ram_wenable;
-
-  always @(*) begin
-    dst_ram_1_wenable = _tmp_12;
-  end
-
+  assign dst_ram_1_wdata = ext_dst_ram_wdata;
+  assign dst_ram_1_wenable = ext_dst_ram_wenable;
+  assign dst_ram_1_enable = 1;
   reg [32-1:0] read_fsm;
   localparam read_fsm_init = 0;
   reg [32-1:0] read_count;
   reg [32-1:0] read_addr;
-  reg _tmp_13;
-  reg _src_ram0_cond_0_1;
-  reg _src_ram0_cond_1_1;
-  reg _src_ram0_cond_1_2;
-  reg _tmp_14;
-  reg _src_ram1_cond_0_1;
-  reg _src_ram1_cond_1_1;
-  reg _src_ram1_cond_1_2;
-  reg _tmp_15;
-  reg _src_ram2_cond_0_1;
-  reg _src_ram2_cond_1_1;
-  reg _src_ram2_cond_1_2;
+  assign src_ram0_0_wdata = 0;
+  assign src_ram0_0_wenable = 0;
+  assign src_ram0_0_addr = (read_fsm == 1)? read_addr : 'hx;
+  assign src_ram0_0_enable = (read_fsm == 1)? 1'd1 : 0;
+  localparam _tmp_1 = 1;
+  wire [_tmp_1-1:0] _tmp_2;
+  assign _tmp_2 = read_fsm == 1;
+  reg [_tmp_1-1:0] __tmp_2_1;
+  assign src_ram1_0_wdata = 0;
+  assign src_ram1_0_wenable = 0;
+  assign src_ram1_0_addr = (read_fsm == 1)? read_addr : 'hx;
+  assign src_ram1_0_enable = (read_fsm == 1)? 1'd1 : 0;
+  localparam _tmp_3 = 1;
+  wire [_tmp_3-1:0] _tmp_4;
+  assign _tmp_4 = read_fsm == 1;
+  reg [_tmp_3-1:0] __tmp_4_1;
+  assign src_ram2_0_wdata = 0;
+  assign src_ram2_0_wenable = 0;
+  assign src_ram2_0_addr = (read_fsm == 1)? read_addr : 'hx;
+  assign src_ram2_0_enable = (read_fsm == 1)? 1'd1 : 0;
+  localparam _tmp_5 = 1;
+  wire [_tmp_5-1:0] _tmp_6;
+  assign _tmp_6 = read_fsm == 1;
+  reg [_tmp_5-1:0] __tmp_6_1;
   localparam read_fsm_1 = 1;
   localparam read_fsm_2 = 2;
 
@@ -468,11 +418,11 @@ module stencil
     .CLK(CLK),
     .RST(RST),
     .idata0(src_ram0_0_rdata),
-    .ivalid0(_tmp_13),
+    .ivalid0(__tmp_2_1),
     .idata1(src_ram1_0_rdata),
-    .ivalid1(_tmp_14),
+    .ivalid1(__tmp_4_1),
     .idata2(src_ram2_0_rdata),
-    .ivalid2(_tmp_15),
+    .ivalid2(__tmp_6_1),
     .odata(odata),
     .ovalid(ovalid)
   );
@@ -481,7 +431,10 @@ module stencil
   localparam write_fsm_init = 0;
   reg [32-1:0] write_count;
   reg [32-1:0] write_addr;
-  reg _dst_ram_cond_0_1;
+  assign dst_ram_0_addr = ((write_fsm == 0) && (ovalid && (write_count > 1)))? write_addr : 'hx;
+  assign dst_ram_0_wdata = ((write_fsm == 0) && (ovalid && (write_count > 1)))? odata : 'hx;
+  assign dst_ram_0_wenable = ((write_fsm == 0) && (ovalid && (write_count > 1)))? 1'd1 : 0;
+  assign dst_ram_0_enable = ((write_fsm == 0) && (ovalid && (write_count > 1)))? 1'd1 : 0;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -515,104 +468,27 @@ module stencil
 
   always @(posedge CLK) begin
     if(RST) begin
-      src_ram0_0_wdata <= 0;
-      src_ram0_0_wenable <= 0;
-      src_ram0_0_addr <= 0;
-      _src_ram0_cond_0_1 <= 0;
-      _tmp_13 <= 0;
-      _src_ram0_cond_1_1 <= 0;
-      _src_ram0_cond_1_2 <= 0;
+      __tmp_2_1 <= 0;
     end else begin
-      if(_src_ram0_cond_1_2) begin
-        _tmp_13 <= 0;
-      end 
-      if(_src_ram0_cond_0_1) begin
-        _tmp_13 <= 1;
-      end 
-      _src_ram0_cond_1_2 <= _src_ram0_cond_1_1;
-      src_ram0_0_wdata <= 0;
-      src_ram0_0_wenable <= 0;
-      if(read_fsm == 1) begin
-        src_ram0_0_addr <= read_addr;
-      end 
-      _src_ram0_cond_0_1 <= read_fsm == 1;
-      _src_ram0_cond_1_1 <= read_fsm == 1;
+      __tmp_2_1 <= _tmp_2;
     end
   end
 
 
   always @(posedge CLK) begin
     if(RST) begin
-      src_ram1_0_wdata <= 0;
-      src_ram1_0_wenable <= 0;
-      src_ram1_0_addr <= 0;
-      _src_ram1_cond_0_1 <= 0;
-      _tmp_14 <= 0;
-      _src_ram1_cond_1_1 <= 0;
-      _src_ram1_cond_1_2 <= 0;
+      __tmp_4_1 <= 0;
     end else begin
-      if(_src_ram1_cond_1_2) begin
-        _tmp_14 <= 0;
-      end 
-      if(_src_ram1_cond_0_1) begin
-        _tmp_14 <= 1;
-      end 
-      _src_ram1_cond_1_2 <= _src_ram1_cond_1_1;
-      src_ram1_0_wdata <= 0;
-      src_ram1_0_wenable <= 0;
-      if(read_fsm == 1) begin
-        src_ram1_0_addr <= read_addr;
-      end 
-      _src_ram1_cond_0_1 <= read_fsm == 1;
-      _src_ram1_cond_1_1 <= read_fsm == 1;
+      __tmp_4_1 <= _tmp_4;
     end
   end
 
 
   always @(posedge CLK) begin
     if(RST) begin
-      src_ram2_0_wdata <= 0;
-      src_ram2_0_wenable <= 0;
-      src_ram2_0_addr <= 0;
-      _src_ram2_cond_0_1 <= 0;
-      _tmp_15 <= 0;
-      _src_ram2_cond_1_1 <= 0;
-      _src_ram2_cond_1_2 <= 0;
+      __tmp_6_1 <= 0;
     end else begin
-      if(_src_ram2_cond_1_2) begin
-        _tmp_15 <= 0;
-      end 
-      if(_src_ram2_cond_0_1) begin
-        _tmp_15 <= 1;
-      end 
-      _src_ram2_cond_1_2 <= _src_ram2_cond_1_1;
-      src_ram2_0_wdata <= 0;
-      src_ram2_0_wenable <= 0;
-      if(read_fsm == 1) begin
-        src_ram2_0_addr <= read_addr;
-      end 
-      _src_ram2_cond_0_1 <= read_fsm == 1;
-      _src_ram2_cond_1_1 <= read_fsm == 1;
-    end
-  end
-
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      dst_ram_0_addr <= 0;
-      dst_ram_0_wdata <= 0;
-      dst_ram_0_wenable <= 0;
-      _dst_ram_cond_0_1 <= 0;
-    end else begin
-      if(_dst_ram_cond_0_1) begin
-        dst_ram_0_wenable <= 0;
-      end 
-      if((write_fsm == 0) && (ovalid && (write_count > 1))) begin
-        dst_ram_0_addr <= write_addr;
-        dst_ram_0_wdata <= odata;
-        dst_ram_0_wenable <= 1;
-      end 
-      _dst_ram_cond_0_1 <= (write_fsm == 0) && (ovalid && (write_count > 1));
+      __tmp_6_1 <= _tmp_6;
     end
   end
 
@@ -628,33 +504,43 @@ module src_ram0
   output [32-1:0] src_ram0_0_rdata,
   input [32-1:0] src_ram0_0_wdata,
   input src_ram0_0_wenable,
+  input src_ram0_0_enable,
   input [8-1:0] src_ram0_1_addr,
   output [32-1:0] src_ram0_1_rdata,
   input [32-1:0] src_ram0_1_wdata,
-  input src_ram0_1_wenable
+  input src_ram0_1_wenable,
+  input src_ram0_1_enable
 );
 
-  reg [8-1:0] src_ram0_0_daddr;
-  reg [8-1:0] src_ram0_1_daddr;
+  reg [32-1:0] src_ram0_0_rdata_out;
+  assign src_ram0_0_rdata = src_ram0_0_rdata_out;
+  reg [32-1:0] src_ram0_1_rdata_out;
+  assign src_ram0_1_rdata = src_ram0_1_rdata_out;
   reg [32-1:0] mem [0:256-1];
 
   always @(posedge CLK) begin
-    if(src_ram0_0_wenable) begin
-      mem[src_ram0_0_addr] <= src_ram0_0_wdata;
+    if(src_ram0_0_enable) begin
+      if(src_ram0_0_wenable) begin
+        mem[src_ram0_0_addr] <= src_ram0_0_wdata;
+        src_ram0_0_rdata_out <= src_ram0_0_wdata;
+      end else begin
+        src_ram0_0_rdata_out <= mem[src_ram0_0_addr];
+      end
     end 
-    src_ram0_0_daddr <= src_ram0_0_addr;
   end
 
-  assign src_ram0_0_rdata = mem[src_ram0_0_daddr];
 
   always @(posedge CLK) begin
-    if(src_ram0_1_wenable) begin
-      mem[src_ram0_1_addr] <= src_ram0_1_wdata;
+    if(src_ram0_1_enable) begin
+      if(src_ram0_1_wenable) begin
+        mem[src_ram0_1_addr] <= src_ram0_1_wdata;
+        src_ram0_1_rdata_out <= src_ram0_1_wdata;
+      end else begin
+        src_ram0_1_rdata_out <= mem[src_ram0_1_addr];
+      end
     end 
-    src_ram0_1_daddr <= src_ram0_1_addr;
   end
 
-  assign src_ram0_1_rdata = mem[src_ram0_1_daddr];
 
 endmodule
 
@@ -667,33 +553,43 @@ module src_ram1
   output [32-1:0] src_ram1_0_rdata,
   input [32-1:0] src_ram1_0_wdata,
   input src_ram1_0_wenable,
+  input src_ram1_0_enable,
   input [8-1:0] src_ram1_1_addr,
   output [32-1:0] src_ram1_1_rdata,
   input [32-1:0] src_ram1_1_wdata,
-  input src_ram1_1_wenable
+  input src_ram1_1_wenable,
+  input src_ram1_1_enable
 );
 
-  reg [8-1:0] src_ram1_0_daddr;
-  reg [8-1:0] src_ram1_1_daddr;
+  reg [32-1:0] src_ram1_0_rdata_out;
+  assign src_ram1_0_rdata = src_ram1_0_rdata_out;
+  reg [32-1:0] src_ram1_1_rdata_out;
+  assign src_ram1_1_rdata = src_ram1_1_rdata_out;
   reg [32-1:0] mem [0:256-1];
 
   always @(posedge CLK) begin
-    if(src_ram1_0_wenable) begin
-      mem[src_ram1_0_addr] <= src_ram1_0_wdata;
+    if(src_ram1_0_enable) begin
+      if(src_ram1_0_wenable) begin
+        mem[src_ram1_0_addr] <= src_ram1_0_wdata;
+        src_ram1_0_rdata_out <= src_ram1_0_wdata;
+      end else begin
+        src_ram1_0_rdata_out <= mem[src_ram1_0_addr];
+      end
     end 
-    src_ram1_0_daddr <= src_ram1_0_addr;
   end
 
-  assign src_ram1_0_rdata = mem[src_ram1_0_daddr];
 
   always @(posedge CLK) begin
-    if(src_ram1_1_wenable) begin
-      mem[src_ram1_1_addr] <= src_ram1_1_wdata;
+    if(src_ram1_1_enable) begin
+      if(src_ram1_1_wenable) begin
+        mem[src_ram1_1_addr] <= src_ram1_1_wdata;
+        src_ram1_1_rdata_out <= src_ram1_1_wdata;
+      end else begin
+        src_ram1_1_rdata_out <= mem[src_ram1_1_addr];
+      end
     end 
-    src_ram1_1_daddr <= src_ram1_1_addr;
   end
 
-  assign src_ram1_1_rdata = mem[src_ram1_1_daddr];
 
 endmodule
 
@@ -706,33 +602,43 @@ module src_ram2
   output [32-1:0] src_ram2_0_rdata,
   input [32-1:0] src_ram2_0_wdata,
   input src_ram2_0_wenable,
+  input src_ram2_0_enable,
   input [8-1:0] src_ram2_1_addr,
   output [32-1:0] src_ram2_1_rdata,
   input [32-1:0] src_ram2_1_wdata,
-  input src_ram2_1_wenable
+  input src_ram2_1_wenable,
+  input src_ram2_1_enable
 );
 
-  reg [8-1:0] src_ram2_0_daddr;
-  reg [8-1:0] src_ram2_1_daddr;
+  reg [32-1:0] src_ram2_0_rdata_out;
+  assign src_ram2_0_rdata = src_ram2_0_rdata_out;
+  reg [32-1:0] src_ram2_1_rdata_out;
+  assign src_ram2_1_rdata = src_ram2_1_rdata_out;
   reg [32-1:0] mem [0:256-1];
 
   always @(posedge CLK) begin
-    if(src_ram2_0_wenable) begin
-      mem[src_ram2_0_addr] <= src_ram2_0_wdata;
+    if(src_ram2_0_enable) begin
+      if(src_ram2_0_wenable) begin
+        mem[src_ram2_0_addr] <= src_ram2_0_wdata;
+        src_ram2_0_rdata_out <= src_ram2_0_wdata;
+      end else begin
+        src_ram2_0_rdata_out <= mem[src_ram2_0_addr];
+      end
     end 
-    src_ram2_0_daddr <= src_ram2_0_addr;
   end
 
-  assign src_ram2_0_rdata = mem[src_ram2_0_daddr];
 
   always @(posedge CLK) begin
-    if(src_ram2_1_wenable) begin
-      mem[src_ram2_1_addr] <= src_ram2_1_wdata;
+    if(src_ram2_1_enable) begin
+      if(src_ram2_1_wenable) begin
+        mem[src_ram2_1_addr] <= src_ram2_1_wdata;
+        src_ram2_1_rdata_out <= src_ram2_1_wdata;
+      end else begin
+        src_ram2_1_rdata_out <= mem[src_ram2_1_addr];
+      end
     end 
-    src_ram2_1_daddr <= src_ram2_1_addr;
   end
 
-  assign src_ram2_1_rdata = mem[src_ram2_1_daddr];
 
 endmodule
 
@@ -745,33 +651,43 @@ module dst_ram
   output [32-1:0] dst_ram_0_rdata,
   input [32-1:0] dst_ram_0_wdata,
   input dst_ram_0_wenable,
+  input dst_ram_0_enable,
   input [8-1:0] dst_ram_1_addr,
   output [32-1:0] dst_ram_1_rdata,
   input [32-1:0] dst_ram_1_wdata,
-  input dst_ram_1_wenable
+  input dst_ram_1_wenable,
+  input dst_ram_1_enable
 );
 
-  reg [8-1:0] dst_ram_0_daddr;
-  reg [8-1:0] dst_ram_1_daddr;
+  reg [32-1:0] dst_ram_0_rdata_out;
+  assign dst_ram_0_rdata = dst_ram_0_rdata_out;
+  reg [32-1:0] dst_ram_1_rdata_out;
+  assign dst_ram_1_rdata = dst_ram_1_rdata_out;
   reg [32-1:0] mem [0:256-1];
 
   always @(posedge CLK) begin
-    if(dst_ram_0_wenable) begin
-      mem[dst_ram_0_addr] <= dst_ram_0_wdata;
+    if(dst_ram_0_enable) begin
+      if(dst_ram_0_wenable) begin
+        mem[dst_ram_0_addr] <= dst_ram_0_wdata;
+        dst_ram_0_rdata_out <= dst_ram_0_wdata;
+      end else begin
+        dst_ram_0_rdata_out <= mem[dst_ram_0_addr];
+      end
     end 
-    dst_ram_0_daddr <= dst_ram_0_addr;
   end
 
-  assign dst_ram_0_rdata = mem[dst_ram_0_daddr];
 
   always @(posedge CLK) begin
-    if(dst_ram_1_wenable) begin
-      mem[dst_ram_1_addr] <= dst_ram_1_wdata;
+    if(dst_ram_1_enable) begin
+      if(dst_ram_1_wenable) begin
+        mem[dst_ram_1_addr] <= dst_ram_1_wdata;
+        dst_ram_1_rdata_out <= dst_ram_1_wdata;
+      end else begin
+        dst_ram_1_rdata_out <= mem[dst_ram_1_addr];
+      end
     end 
-    dst_ram_1_daddr <= dst_ram_1_addr;
   end
 
-  assign dst_ram_1_rdata = mem[dst_ram_1_daddr];
 
 endmodule
 
@@ -2533,8 +2449,9 @@ module multiplier_core_8
 
 
 endmodule
-
 """
+
+
 def test():
     veriloggen.reset()
     test_module = dataflow_stencil.mkTest()

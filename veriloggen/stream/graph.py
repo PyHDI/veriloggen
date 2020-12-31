@@ -239,6 +239,7 @@ class GraphGenerator(_Visitor):
             self.graph.add_edge(enable, node, label='enable')
         if node.reset is not None:
             self.graph.add_edge(reset, node, label='reset')
+        # reg_initval = self.visit(node.reg_initval)
 
         if node.start_stage is not None:
             self._set_rank(node.start_stage + 1, node)
@@ -331,10 +332,58 @@ class GraphGenerator(_Visitor):
         self.graph.add_edge(value, node, label='value')
         index = self.visit(node.args[1])
         self.graph.add_edge(index, node, label='index')
-        reset = self.visit(node.args[2])
-        self.graph.add_edge(reset, node, label='reset')
         dest = self.visit(node.dest)
         self.graph.add_edge(node, dest, label='dest')
+
+        if node.start_stage is not None:
+            self._set_rank(node.start_stage + 1, node)
+
+        prev = self._add_gap(node, label)
+        self._add_output(node, prev)
+        return prev
+
+    def visit_Consumer(self, node):
+        label = self._get_label(node)
+        shape = self._get_shape(node)
+        color = self._get_color(node)
+        style = self._get_style(node)
+        peripheries = self._get_peripheries(node)
+        self.graph.add_node(node,
+                            label=label, shape=shape,
+                            color=color, style=style,
+                            peripheries=peripheries)
+
+        initval = self.visit(node.args[0])
+        self.graph.add_edge(initval, node, label='initval')
+
+        if node.start_stage is not None:
+            self._set_rank(node.start_stage + 1, node)
+
+        prev = self._add_gap(node, label)
+        self._add_output(node, prev)
+        return prev
+
+    def visit_Producer(self, node):
+        label = self._get_label(node)
+        shape = self._get_shape(node)
+        color = self._get_color(node)
+        style = self._get_style(node)
+        peripheries = self._get_peripheries(node)
+        self.graph.add_node(node,
+                            label=label, shape=shape,
+                            color=color, style=style,
+                            peripheries=peripheries)
+
+        dest = self.visit(node.dest)
+        self.graph.add_edge(node, dest, label='dest')
+        value = self.visit(node.args[0])
+        self.graph.add_edge(value, node, label='value')
+        if node.when_index > 0:
+            when = self.visit(node.args[node.when_index])
+            self.graph.add_edge(when, node, label='when')
+        if node.reset_index > 0:
+            reset = self.visit(node.args[node.reset_index])
+            self.graph.add_edge(reset, node, label='reset')
 
         if node.start_stage is not None:
             self._set_rank(node.start_stage + 1, node)
@@ -356,8 +405,6 @@ class GraphGenerator(_Visitor):
 
         addr = self.visit(node.args[0])
         self.graph.add_edge(addr, node, label='addr')
-        reset = self.visit(node.args[1])
-        self.graph.add_edge(reset, node, label='reset')
 
         if len(node.args) == 3:
             when = self.visit(node.args[2])
@@ -385,8 +432,6 @@ class GraphGenerator(_Visitor):
         self.graph.add_edge(addr, node, label='addr')
         data = self.visit(node.args[1])
         self.graph.add_edge(data, node, label='data')
-        reset = self.visit(node.args[2])
-        self.graph.add_edge(reset, node, label='reset')
 
         if len(node.args) == 4:
             when = self.visit(node.args[3])
@@ -410,16 +455,11 @@ class GraphGenerator(_Visitor):
                             color=color, style=style,
                             peripheries=peripheries)
 
-        right = self.visit(node.right)
-        if node.enable is not None:
-            enable = self.visit(node.enable)
-        if node.reset is not None:
-            reset = self.visit(node.reset)
-        self.graph.add_edge(right, node, label='data')
-        if node.enable is not None:
+        data = self.visit(node.args[0])
+        self.graph.add_edge(data, node, label='data')
+        if len(node.args) > 1:
+            enable = self.visit(node.args[1])
             self.graph.add_edge(enable, node, label='enable')
-        if node.reset is not None:
-            self.graph.add_edge(reset, node, label='reset')
 
         if node.start_stage is not None:
             self._set_rank(node.start_stage + 1, node)
@@ -439,18 +479,13 @@ class GraphGenerator(_Visitor):
                             color=color, style=style,
                             peripheries=peripheries)
 
-        left = self.visit(node.left)
-        right = self.visit(node.right)
-        if node.enable is not None:
-            enable = self.visit(node.enable)
-        if node.reset is not None:
-            reset = self.visit(node.reset)
-        self.graph.add_edge(left, node, label='buf')
-        self.graph.add_edge(right, node, label='offset')
-        if node.enable is not None:
+        buf = self.visit(node.args[0])
+        offset = self.visit(node.args[1])
+        self.graph.add_edge(buf, node, label='buf')
+        self.graph.add_edge(offset, node, label='offset')
+        if len(node.args) > 2:
+            enable = self.visit(node.args[2])
             self.graph.add_edge(enable, node, label='enable')
-        if node.reset is not None:
-            self.graph.add_edge(reset, node, label='reset')
 
         if node.start_stage is not None:
             self._set_rank(node.start_stage + 1, node)
@@ -470,18 +505,13 @@ class GraphGenerator(_Visitor):
                             color=color, style=style,
                             peripheries=peripheries)
 
-        left = self.visit(node.left)
-        right = self.visit(node.right)
-        if node.enable is not None:
-            enable = self.visit(node.enable)
-        if node.reset is not None:
-            reset = self.visit(node.reset)
-        self.graph.add_edge(left, node, label='data')
-        self.graph.add_edge(right, node, label='addr')
-        if node.enable is not None:
+        data = self.visit(node.args[0])
+        self.graph.add_edge(data, node, label='data')
+        addr = self.visit(node.args[1])
+        self.graph.add_edge(addr, node, label='addr')
+        if len(node.args) > 2:
+            enable = self.visit(node.args[2])
             self.graph.add_edge(enable, node, label='enable')
-        if node.reset is not None:
-            self.graph.add_edge(reset, node, label='reset')
 
         if node.start_stage is not None:
             self._set_rank(node.start_stage + 1, node)
@@ -501,10 +531,13 @@ class GraphGenerator(_Visitor):
                             color=color, style=style,
                             peripheries=peripheries)
 
-        left = self.visit(node.left)
-        right = self.visit(node.right)
-        self.graph.add_edge(left, node, label='sp')
-        self.graph.add_edge(right, node, label='addr')
+        sp = self.visit(node.args[0])
+        addr = self.visit(node.args[1])
+        self.graph.add_edge(sp, node, label='sp')
+        self.graph.add_edge(addr, node, label='addr')
+        if len(node.args) > 2:
+            enable = self.visit(node.args[2])
+            self.graph.add_edge(enable, node, label='enable')
 
         if node.start_stage is not None:
             self._set_rank(node.start_stage + 1, node)

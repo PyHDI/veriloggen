@@ -200,56 +200,70 @@ module main
   output [1-1:0] vdata
 );
 
-  wire _tmp_0;
-  assign _tmp_0 = !ovalid || oready;
-  reg _ivalid_0;
   reg _ivalid_1;
-  assign ovalid = _ivalid_1;
-  assign iready = _tmp_0;
+  reg _ivalid_2;
+  assign ovalid = _ivalid_2;
+  assign iready = oready;
   reg signed [32-1:0] _plus_data_2;
-  reg signed [32-1:0] _reduceadd_data_5;
-  reg [6-1:0] _reduceadd_count_5;
-  reg [1-1:0] _pulse_data_8;
-  reg [6-1:0] _pulse_count_8;
-  assign zdata = _reduceadd_data_5;
-  assign vdata = _pulse_data_8;
+  reg signed [32-1:0] _reduceadd_data_3;
+  reg [6-1:0] _reduceadd_count_3;
+  reg _reduceadd_prev_count_max_3;
+  wire _reduceadd_reset_cond_3;
+  assign _reduceadd_reset_cond_3 = _reduceadd_prev_count_max_3;
+  wire [6-1:0] _reduceadd_current_count_3;
+  assign _reduceadd_current_count_3 = (_reduceadd_reset_cond_3)? 0 : _reduceadd_count_3;
+  wire signed [32-1:0] _reduceadd_current_data_3;
+  assign _reduceadd_current_data_3 = (_reduceadd_reset_cond_3)? 1'sd0 : _reduceadd_data_3;
+  reg [1-1:0] _pulse_data_6;
+  reg [6-1:0] _pulse_count_6;
+  reg _pulse_prev_count_max_6;
+  wire _pulse_reset_cond_6;
+  assign _pulse_reset_cond_6 = _pulse_prev_count_max_6;
+  wire [6-1:0] _pulse_current_count_6;
+  assign _pulse_current_count_6 = (_pulse_reset_cond_6)? 0 : _pulse_count_6;
+  wire [1-1:0] _pulse_current_data_6;
+  assign _pulse_current_data_6 = (_pulse_reset_cond_6)? 1'sd0 : _pulse_data_6;
+  assign zdata = _reduceadd_data_3;
+  assign vdata = _pulse_data_6;
 
   always @(posedge CLK) begin
     if(RST) begin
-      _ivalid_0 <= 0;
       _ivalid_1 <= 0;
+      _ivalid_2 <= 0;
       _plus_data_2 <= 0;
-      _reduceadd_data_5 <= 1'sd0;
-      _reduceadd_count_5 <= 0;
-      _pulse_data_8 <= 1'sd0;
-      _pulse_count_8 <= 0;
+      _reduceadd_count_3 <= 0;
+      _reduceadd_prev_count_max_3 <= 0;
+      _reduceadd_data_3 <= 1'sd0;
+      _pulse_count_6 <= 0;
+      _pulse_prev_count_max_6 <= 0;
+      _pulse_data_6 <= 1'sd0;
     end else begin
-      if(_tmp_0) begin
-        _ivalid_0 <= ivalid;
+      if(oready) begin
+        _ivalid_1 <= ivalid;
       end 
-      if(_tmp_0) begin
-        _ivalid_1 <= _ivalid_0;
+      if(oready) begin
+        _ivalid_2 <= _ivalid_1;
       end 
-      if(_tmp_0) begin
+      if(oready) begin
         _plus_data_2 <= xdata + ydata;
       end 
-      if(_ivalid_0 && _tmp_0) begin
-        _reduceadd_data_5 <= _reduceadd_data_5 + _plus_data_2;
+      if(_ivalid_1 && oready) begin
+        _reduceadd_count_3 <= (_reduceadd_current_count_3 >= 5'sd8 - 1)? 0 : _reduceadd_current_count_3 + 1;
       end 
-      if(_ivalid_0 && _tmp_0) begin
-        _reduceadd_count_5 <= (_reduceadd_count_5 >= 5'sd8 - 1)? 0 : _reduceadd_count_5 + 1;
+      if(_ivalid_1 && oready) begin
+        _reduceadd_prev_count_max_3 <= _reduceadd_current_count_3 >= 5'sd8 - 1;
       end 
-      if(_ivalid_0 && _tmp_0 && (_reduceadd_count_5 == 0)) begin
-        _reduceadd_data_5 <= 1'sd0 + _plus_data_2;
+      if(_ivalid_1 && oready) begin
+        _reduceadd_data_3 <= _reduceadd_current_data_3 + _plus_data_2;
       end 
-      if(_ivalid_0 && _tmp_0) begin
-        _pulse_data_8 <= _pulse_count_8 >= 5'sd8 - 1;
+      if(_ivalid_1 && oready) begin
+        _pulse_count_6 <= (_pulse_current_count_6 >= 5'sd8 - 1)? 0 : _pulse_current_count_6 + 1;
       end 
-      if(_ivalid_0 && _tmp_0) begin
-        _pulse_count_8 <= (_pulse_count_8 >= 5'sd8 - 1)? 0 : _pulse_count_8 + 1;
+      if(_ivalid_1 && oready) begin
+        _pulse_prev_count_max_6 <= _pulse_current_count_6 >= 5'sd8 - 1;
       end 
-      if(_ivalid_0 && _tmp_0 && (_pulse_count_8 == 0)) begin
-        _pulse_data_8 <= _pulse_count_8 >= 5'sd8 - 1;
+      if(_ivalid_1 && oready) begin
+        _pulse_data_6 <= _pulse_current_count_6 >= 5'sd8 - 1;
       end 
     end
   end

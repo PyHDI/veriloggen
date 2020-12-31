@@ -52,29 +52,34 @@ def mkLed():
 
     def check(offset_stream, offset_seq):
         all_ok = True
-        st = ram_c.read(offset_stream)
-        sq = ram_c.read(offset_seq)
-        if vthread.verilog.NotEql(st, sq):
-            all_ok = False
-
+        for i in range(size):
+            st = ram_c.read(i + offset_stream)
+            sq = ram_c.read(i + offset_seq)
+            if vthread.verilog.NotEql(st, sq):
+                all_ok = False
         if all_ok:
             print('# verify: PASSED')
         else:
             print('# verify: FAILED')
 
     def comp():
+        # stream
         offset = 0
         myaxi.dma_read(ram_a, offset, 0, size)
-        myaxi.dma_read(ram_b, offset, 0, size)
+        myaxi.dma_read(ram_b, offset, 1024 * 4, size)
         comp_stream(offset)
-        myaxi.dma_write(ram_c, offset, 1024 * 4, size)
-
-        offset = size
-        myaxi.dma_read(ram_a, offset, 0, size)
-        myaxi.dma_read(ram_b, offset, 0, size)
-        comp_sequential(offset)
         myaxi.dma_write(ram_c, offset, 1024 * 8, size)
 
+        # sequential
+        offset = size
+        myaxi.dma_read(ram_a, offset, 0, size)
+        myaxi.dma_read(ram_b, offset, 1024 * 4, size)
+        comp_sequential(offset)
+        myaxi.dma_write(ram_c, offset, 1024 * 12, size)
+
+        # verification
+        myaxi.dma_read(ram_c, 0, 1024 * 8, size)
+        myaxi.dma_read(ram_c, offset, 1024 * 12, size)
         check(0, offset)
 
         vthread.finish()
@@ -105,12 +110,12 @@ def mkTest(memimg_name=None):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    #simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
     init.add(
-        Delay(200000),
+        Delay(400000),
         Systask('finish'),
     )
 

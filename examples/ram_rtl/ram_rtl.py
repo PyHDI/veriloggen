@@ -81,6 +81,14 @@ def mkMain(n=128, datawidth=32, numports=2):
         Systask('display', "sum=%d", sum)
     )
 
+    fsm.goto_next()
+
+    fsm(
+        Systask('display', "expected_sum=%d", (step - 1) * step // 2)
+    )
+
+    fsm.goto_next()
+
     fsm.make_always()
 
     return m

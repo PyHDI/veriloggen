@@ -20,8 +20,7 @@ def mkLed():
     datawidth = 32
 
     axi_a = vthread.AXIStreamIn(m, 'axi_a', clk, rst, datawidth, with_last=True)
-    axi_b = vthread.AXIStreamIn(m, 'axi_b', clk, rst, datawidth, with_last=True)
-    axi_c = vthread.AXIStreamOut(m, 'axi_c', clk, rst, datawidth, with_last=True)
+    axi_b = vthread.AXIStreamOut(m, 'axi_b', clk, rst, datawidth, with_last=True)
 
     saxi = vthread.AXISLiteRegister(m, 'saxi', clk, rst, datawidth)
 
@@ -34,10 +33,9 @@ def mkLed():
 
             for i in range(size):
                 a, a_last = axi_a.read()
-                b, b_last = axi_b.read()
-                c = a + b
-                c_last = a_last
-                axi_c.write(c, c_last)
+                b = a + 1
+                b_last = a_last
+                axi_b.write(b, b_last)
 
             saxi.write(1, 0)  # unset busy
 
@@ -53,10 +51,8 @@ def run(filename='tmp.v', simtype='iverilog', outputfile=None):
 
     test = mkLed()
 
-    if filename is not None:
-        test.to_verilog(filename)
-
-    return '# verify: PASSED'
+    code = test.to_verilog(filename)
+    return code
 
 
 if __name__ == '__main__':

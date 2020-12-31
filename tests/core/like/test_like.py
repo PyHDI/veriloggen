@@ -7,7 +7,7 @@ expected_verilog = """
 module blinkled #
  (
   parameter WIDTH = 8,
-  parameter WIDTH1 = 8
+  parameter [32-1:0] WIDTH1 = 8
  )
  (
   input CLK, 
@@ -18,8 +18,8 @@ module blinkled #
   output [32-1:0] output_count
  );
 
-  localparam WIDTH2 = 8;
-  localparam _tmp_0 = 8;
+  localparam [32-1:0] WIDTH2 = 8;
+  localparam [32-1:0] _tmp_0 = 8;
 
   wire [32-1:0] wire_count;
   reg [32-1:0] reg_count;
@@ -59,6 +59,7 @@ module blinkled #
   end 
 endmodule
 """
+
 
 def test():
     veriloggen.reset()

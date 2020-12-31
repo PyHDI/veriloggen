@@ -56,7 +56,6 @@ def mkLed(memory_datawidth=128):
             sq = ram_c.read(i + offset_seq)
             if vthread.verilog.NotEql(st, sq):
                 all_ok = False
-                print(i, st, sq)
         if all_ok:
             print('# verify: PASSED')
         else:
@@ -66,20 +65,25 @@ def mkLed(memory_datawidth=128):
         dma_size = size
         comp_size = size * numbanks
 
+        # stream
         dma_offset = 0
         comp_offset = 0
         myaxi.dma_read(ram_a, dma_offset, 0, dma_size)
         myaxi.dma_read(ram_b, dma_offset, 0, dma_size)
-        comp_stream(size, comp_offset)
+        comp_stream(comp_size, comp_offset)
         myaxi.dma_write(ram_c, dma_offset, 1024, dma_size)
 
+        # sequential
         dma_offset = size
         comp_offset = comp_size
         myaxi.dma_read(ram_a, dma_offset, 0, dma_size)
         myaxi.dma_read(ram_b, dma_offset, 0, dma_size)
-        comp_sequential(size, comp_offset)
+        comp_sequential(comp_size, comp_offset)
         myaxi.dma_write(ram_c, dma_offset, 1024 * 2, dma_size)
 
+        # verification
+        myaxi.dma_read(ram_c, 0, 1024, size)
+        myaxi.dma_read(ram_c, dma_offset, 1024 * 2, size)
         check(comp_size, 0, comp_offset)
 
         vthread.finish()
@@ -110,7 +114,7 @@ def mkTest(memimg_name=None, memory_datawidth=128):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    #simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

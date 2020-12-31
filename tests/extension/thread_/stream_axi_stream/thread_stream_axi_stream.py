@@ -50,10 +50,10 @@ def mkLed():
             size = saxi.read(2)
             offset = 0
 
-            axi_a.read_stream(ram_a, offset, size, port=1)  # blocking read
-            axi_b.read_stream(ram_b, offset, size, port=1)  # blocking read
+            axi_a.write_ram(ram_a, offset, size, port=1)  # blocking read
+            axi_b.write_ram(ram_b, offset, size, port=1)  # blocking read
             comp_stream(size, offset)
-            axi_c.write_stream(ram_c, offset, size, port=1)  # blocking write
+            axi_c.read_ram(ram_c, offset, size, port=1)  # blocking write
 
             saxi.write(1, 0)  # unset busy
 
@@ -69,10 +69,8 @@ def run(filename='tmp.v', simtype='iverilog', outputfile=None):
 
     test = mkLed()
 
-    if filename is not None:
-        test.to_verilog(filename)
-
-    return '# verify: PASSED'
+    code = test.to_verilog(filename)
+    return code
 
 
 if __name__ == '__main__':

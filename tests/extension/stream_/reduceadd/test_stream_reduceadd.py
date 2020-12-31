@@ -171,42 +171,58 @@ module main
 );
 
   reg signed [32-1:0] _plus_data_3;
-  reg signed [32-1:0] __delay_data_10;
-  reg signed [32-1:0] _reduceadd_data_6;
-  reg [6-1:0] _reduceadd_count_6;
-  reg [1-1:0] _pulse_data_9;
-  reg [6-1:0] _pulse_count_9;
-  assign zdata = _reduceadd_data_6;
-  assign vdata = _pulse_data_9;
+  reg signed [32-1:0] __delay_data_10__variable_2;
+  reg signed [32-1:0] _reduceadd_data_4;
+  reg [6-1:0] _reduceadd_count_4;
+  reg _reduceadd_prev_count_max_4;
+  wire _reduceadd_reset_cond_4;
+  assign _reduceadd_reset_cond_4 = _reduceadd_prev_count_max_4;
+  wire [6-1:0] _reduceadd_current_count_4;
+  assign _reduceadd_current_count_4 = (_reduceadd_reset_cond_4)? 0 : _reduceadd_count_4;
+  wire signed [32-1:0] _reduceadd_current_data_4;
+  assign _reduceadd_current_data_4 = (_reduceadd_reset_cond_4)? 1'sd0 : _reduceadd_data_4;
+  reg [1-1:0] _pulse_data_7;
+  reg [6-1:0] _pulse_count_7;
+  reg _pulse_prev_count_max_7;
+  wire _pulse_reset_cond_7;
+  assign _pulse_reset_cond_7 = _pulse_prev_count_max_7;
+  wire [6-1:0] _pulse_current_count_7;
+  assign _pulse_current_count_7 = (_pulse_reset_cond_7)? 0 : _pulse_count_7;
+  wire [1-1:0] _pulse_current_data_7;
+  assign _pulse_current_data_7 = (_pulse_reset_cond_7)? 1'sd0 : _pulse_data_7;
+  assign zdata = _reduceadd_data_4;
+  assign vdata = _pulse_data_7;
 
   always @(posedge CLK) begin
     if(RST) begin
       _plus_data_3 <= 0;
-      __delay_data_10 <= 0;
-      _reduceadd_data_6 <= 1'sd0;
-      _reduceadd_count_6 <= 0;
-      _pulse_data_9 <= 1'sd0;
-      _pulse_count_9 <= 0;
+      __delay_data_10__variable_2 <= 0;
+      _reduceadd_count_4 <= 0;
+      _reduceadd_prev_count_max_4 <= 0;
+      _reduceadd_data_4 <= 1'sd0;
+      _pulse_count_7 <= 0;
+      _pulse_prev_count_max_7 <= 0;
+      _pulse_data_7 <= 1'sd0;
     end else begin
       _plus_data_3 <= xdata + ydata;
-      __delay_data_10 <= edata;
-      if(__delay_data_10) begin
-        _reduceadd_data_6 <= _reduceadd_data_6 + _plus_data_3;
+      __delay_data_10__variable_2 <= edata;
+      if(__delay_data_10__variable_2) begin
+        _reduceadd_count_4 <= (_reduceadd_current_count_4 >= 5'sd8 - 1)? 0 : _reduceadd_current_count_4 + 1;
       end 
-      if(__delay_data_10) begin
-        _reduceadd_count_6 <= (_reduceadd_count_6 >= 5'sd8 - 1)? 0 : _reduceadd_count_6 + 1;
+      if(__delay_data_10__variable_2) begin
+        _reduceadd_prev_count_max_4 <= _reduceadd_current_count_4 >= 5'sd8 - 1;
       end 
-      if(__delay_data_10 && (_reduceadd_count_6 == 0)) begin
-        _reduceadd_data_6 <= 1'sd0 + _plus_data_3;
+      if(__delay_data_10__variable_2) begin
+        _reduceadd_data_4 <= _reduceadd_current_data_4 + _plus_data_3;
       end 
-      if(__delay_data_10) begin
-        _pulse_data_9 <= _pulse_count_9 >= 5'sd8 - 1;
+      if(__delay_data_10__variable_2) begin
+        _pulse_count_7 <= (_pulse_current_count_7 >= 5'sd8 - 1)? 0 : _pulse_current_count_7 + 1;
       end 
-      if(__delay_data_10) begin
-        _pulse_count_9 <= (_pulse_count_9 >= 5'sd8 - 1)? 0 : _pulse_count_9 + 1;
+      if(__delay_data_10__variable_2) begin
+        _pulse_prev_count_max_7 <= _pulse_current_count_7 >= 5'sd8 - 1;
       end 
-      if(__delay_data_10 && (_pulse_count_9 == 0)) begin
-        _pulse_data_9 <= _pulse_count_9 >= 5'sd8 - 1;
+      if(__delay_data_10__variable_2) begin
+        _pulse_data_7 <= _pulse_current_count_7 >= 5'sd8 - 1;
       end 
     end
   end
