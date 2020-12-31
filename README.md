@@ -81,7 +81,7 @@ Installation
 Requirements
 --------------------
 
-- Python3: 3.6 or later
+- Python3: 3.7 or later
 - Icarus Verilog: 10.1 or later
 
 ```
@@ -89,7 +89,7 @@ sudo apt install iverilog
 ```
 
 - Jinja2: 2.10 or later
-- Pyverilog: 1.2.1 or later
+- Pyverilog: 1.3.0 or later
 - NumPy: 1.17 or later
 
 ```
