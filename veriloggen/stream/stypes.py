@@ -766,8 +766,10 @@ class Divide(_BinaryOperator):
 
         m.Assign(data(odata))
 
+        depth = self.latency - 1
+
         s = sign
-        for i in range(self.latency - 2):
+        for i in range(depth):
             ns = m.Reg(self.name('div_sign_tmp_%d' % i), initval=0)
             seq(ns(s), cond=senable)
             s = ns
@@ -856,8 +858,10 @@ class Mod(_BinaryOperator):
 
         m.Assign(data(odata))
 
+        depth = self.latency - 1
+
         s = sign
-        for i in range(self.latency - 2):
+        for i in range(depth):
             ns = m.Reg(self.name('div_sign_tmp_%d' % i), initval=0)
             seq(ns(s), cond=senable)
             s = ns
