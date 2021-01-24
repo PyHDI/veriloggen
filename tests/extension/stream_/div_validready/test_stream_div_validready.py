@@ -259,7 +259,8 @@ module main
   reg _divide_div_sign_tmp_30_2;
   reg _divide_div_sign_tmp_31_2;
   reg _divide_div_sign_tmp_32_2;
-  assign _divide_div_osign_2 = _divide_div_sign_tmp_32_2;
+  reg _divide_div_sign_tmp_33_2;
+  assign _divide_div_osign_2 = _divide_div_sign_tmp_33_2;
   wire _divide_div_update_2;
   assign _divide_div_update_2 = oready;
 
@@ -351,6 +352,7 @@ module main
       _divide_div_sign_tmp_30_2 <= 0;
       _divide_div_sign_tmp_31_2 <= 0;
       _divide_div_sign_tmp_32_2 <= 0;
+      _divide_div_sign_tmp_33_2 <= 0;
     end else begin
       if(oready) begin
         _ivalid_1 <= ivalid;
@@ -558,6 +560,9 @@ module main
       end 
       if(oready) begin
         _divide_div_sign_tmp_32_2 <= _divide_div_sign_tmp_31_2;
+      end 
+      if(oready) begin
+        _divide_div_sign_tmp_33_2 <= _divide_div_sign_tmp_32_2;
       end 
     end
   end
