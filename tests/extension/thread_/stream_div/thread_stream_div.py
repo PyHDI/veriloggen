@@ -28,6 +28,7 @@ def mkLed():
     a = strm.source('a')
     b = strm.source('b')
     a = a + 10000
+    a = strm.Mux(a[0] == 0, a * -1, a)
     c = strm.Div(a, b)
     strm.sink(c, 'c')
 
@@ -44,6 +45,8 @@ def mkLed():
             a = ram_a.read(i + offset)
             b = ram_b.read(i + offset)
             a += 10000
+            if a & 1 == 0:
+                a *= -1
             sum = a // b
             ram_c.write(i + offset, sum)
 
