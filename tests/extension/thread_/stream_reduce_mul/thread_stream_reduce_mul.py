@@ -24,7 +24,7 @@ def mkLed():
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
-    a = strm.source('a') + 1
+    a = strm.source('a') - 32
     size = strm.parameter('size')
     mul, mul_valid = strm.ReduceMulValid(a, size, initval=7)
     strm.sink(mul, 'mul', when=mul_valid, when_name='mul_valid')
@@ -39,7 +39,7 @@ def mkLed():
     def comp_sequential(size, offset):
         b = 7
         for i in range(size):
-            a = ram_a.read(i + offset) + 1
+            a = ram_a.read(i + offset) - 32
             b *= a
         ram_b.write(offset, b)
 
