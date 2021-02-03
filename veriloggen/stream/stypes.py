@@ -698,11 +698,11 @@ class Times(_BinaryOperator):
 
 
 class Divide(_BinaryOperator):
-    latency = 32 + 3
+    latency = 32 + 2
     variable_latency = 'get_latency'
 
     def get_latency(self):
-        return self.get_width() + 3
+        return self.get_width() + 2
 
     def eval(self):
         left = self.left.eval()
@@ -729,37 +729,17 @@ class Divide(_BinaryOperator):
         ldata = m.Wire(self.name('div_ldata'), width, signed=lsigned)
         rdata = m.Wire(self.name('div_rdata'), width, signed=rsigned)
 
-        ldata.assign(lval)
-        rdata.assign(rval)
-
-        sign = vtypes.Not(
-            vtypes.OrList(vtypes.AndList(ldata[width - 1] == 0,
-                                         rdata[width - 1] == 0),  # + , +
-                          vtypes.AndList(ldata[width - 1] == 1,
-                                         rdata[width - 1] == 1)))  # - , -
-
-        abs_ldata = m.Wire(self.name('div_abs_ldata'), width)
-        abs_rdata = m.Wire(self.name('div_abs_rdata'), width)
-
-        if not lsigned:
-            abs_ldata.assign(ldata)
+        if lsigned:
+            ldata.assign(vtypes.Signed(lval))
         else:
-            abs_ldata.assign(vtypes.Mux(ldata[width - 1] == 0, ldata, vtypes.Unot(ldata) + 1))
+            ldata.assign(lval)
 
-        if not rsigned:
-            abs_rdata.assign(rdata)
+        if rsigned:
+            rdata.assign(vtypes.Signed(rval))
         else:
-            abs_rdata.assign(vtypes.Mux(rdata[width - 1] == 0, rdata, vtypes.Unot(rdata) + 1))
+            rdata.assign(rval)
 
-        osign = m.Wire(self.name('div_osign'))
-        abs_odata = m.Wire(self.name('div_abs_odata'), width, signed=signed)
-        odata = m.Reg(self.name('div_odata'), width, signed=signed, initval=0)
-
-        if not signed:
-            seq(odata(abs_odata), cond=senable)
-        else:
-            seq(odata(vtypes.Mux(osign == 0, abs_odata, vtypes.Unot(abs_odata) + 1)),
-                cond=senable)
+        odata = m.Wire(self.name('div_odata'), width, signed=signed)
 
         data = m.Wire(self.name('data'), width, signed=signed)
         self.sig_data = data
@@ -767,13 +747,6 @@ class Divide(_BinaryOperator):
         m.Assign(data(odata))
 
         depth = self.latency - 1
-
-        s = sign
-        for i in range(depth):
-            ns = m.Reg(self.name('div_sign_tmp_%d' % i), initval=0)
-            seq(ns(s), cond=senable)
-            s = ns
-        m.Assign(osign(s))
 
         inst = div.get_div()
         clk = m._clock
@@ -786,19 +759,21 @@ class Divide(_BinaryOperator):
         else:
             m.Assign(update(vtypes.Int(1, 1)))
 
-        params = [('W_D', width)]
+        params = [('W_D', width),
+                  ('A_SIGNED', 1 if lsigned else 0), ('B_SIGNED', 1 if rsigned else 0),
+                  ('O_SIGNED', 1 if signed else 0)]
         ports = [('CLK', clk), ('RST', rst), ('update', update), ('enable', vtypes.Int(1, 1)),
-                 ('in_a', abs_ldata), ('in_b', abs_rdata), ('rslt', abs_odata)]
+                 ('in_a', ldata), ('in_b', rdata), ('rslt', odata)]
 
         m.Instance(inst, self.name('div'), params, ports)
 
 
 class Mod(_BinaryOperator):
-    latency = 32 + 3
+    latency = 32 + 2
     variable_latency = 'get_latency'
 
     def get_latency(self):
-        return self.get_width() + 3
+        return self.get_width() + 2
 
     def eval(self):
         return self.left.eval() % self.right.eval()
@@ -821,37 +796,17 @@ class Mod(_BinaryOperator):
         ldata = m.Wire(self.name('mod_ldata'), width, signed=lsigned)
         rdata = m.Wire(self.name('mod_rdata'), width, signed=rsigned)
 
-        ldata.assign(lval)
-        rdata.assign(rval)
-
-        sign = vtypes.Not(
-            vtypes.OrList(vtypes.AndList(ldata[width - 1] == 0,
-                                         rdata[width - 1] == 0),  # + , +
-                          vtypes.AndList(ldata[width - 1] == 1,
-                                         rdata[width - 1] == 1)))  # - , -
-
-        abs_ldata = m.Wire(self.name('div_abs_ldata'), width)
-        abs_rdata = m.Wire(self.name('div_abs_rdata'), width)
-
-        if not lsigned:
-            abs_ldata.assign(ldata)
+        if lsigned:
+            ldata.assign(vtypes.Signed(lval))
         else:
-            abs_ldata.assign(vtypes.Mux(ldata[width - 1] == 0, ldata, vtypes.Unot(ldata) + 1))
+            ldata.assign(lval)
 
-        if not rsigned:
-            abs_rdata.assign(rdata)
+        if rsigned:
+            rdata.assign(vtypes.Signed(rval))
         else:
-            abs_rdata.assign(vtypes.Mux(rdata[width - 1] == 0, rdata, vtypes.Unot(rdata) + 1))
+            rdata.assign(rval)
 
-        osign = m.Wire(self.name('mod_osign'))
-        abs_odata = m.Wire(self.name('mod_abs_odata'), width, signed=signed)
-        odata = m.Reg(self.name('mod_odata'), width, signed=signed, initval=0)
-
-        if not signed:
-            seq(odata(abs_odata), cond=senable)
-        else:
-            seq(odata(vtypes.Mux(osign == 0, abs_odata, vtypes.Unot(abs_odata) + 1)),
-                cond=senable)
+        odata = m.Wire(self.name('mod_odata'), width, signed=signed)
 
         data = m.Wire(self.name('data'), width, signed=signed)
         self.sig_data = data
@@ -859,13 +814,6 @@ class Mod(_BinaryOperator):
         m.Assign(data(odata))
 
         depth = self.latency - 1
-
-        s = sign
-        for i in range(depth):
-            ns = m.Reg(self.name('div_sign_tmp_%d' % i), initval=0)
-            seq(ns(s), cond=senable)
-            s = ns
-        m.Assign(osign(s))
 
         inst = div.get_div()
         clk = m._clock
@@ -878,20 +826,22 @@ class Mod(_BinaryOperator):
         else:
             m.Assign(update(vtypes.Int(1, 1)))
 
-        params = [('W_D', width)]
+        params = [('W_D', width),
+                  ('A_SIGNED', 1 if lsigned else 0), ('B_SIGNED', 1 if rsigned else 0),
+                  ('O_SIGNED', 1 if signed else 0)]
         ports = [('CLK', clk), ('RST', rst), ('update', update), ('enable', vtypes.Int(1, 1)),
-                 ('in_a', abs_ldata), ('in_b', abs_rdata), ('mod', abs_odata)]
+                 ('in_a', ldata), ('in_b', rdata), ('mod', odata)]
 
         m.Instance(inst, self.name('div'), params, ports)
 
 
 class DivideMultiCycle(_BinaryOperator):
     latency = 1
-    iteration_interval = 32 + 3
+    iteration_interval = 32 + 2
     variable_iteration_interval = 'get_latency'
 
     def get_latency(self):
-        return self.get_width() + 3
+        return self.get_width() + 2
 
     def eval(self):
         left = self.left.eval()
@@ -936,49 +886,22 @@ class DivideMultiCycle(_BinaryOperator):
 
         comp_cond = vtypes.Ors(enable_cond, ii_stall_cond)
 
-        ldata.assign(lval)
-        rdata.assign(rval)
-
-        sign = vtypes.Not(
-            vtypes.OrList(vtypes.AndList(ldata[width - 1] == 0,
-                                         rdata[width - 1] == 0),  # + , +
-                          vtypes.AndList(ldata[width - 1] == 1,
-                                         rdata[width - 1] == 1)))  # - , -
-
-        abs_ldata = m.Wire(self.name('div_abs_ldata'), width)
-        abs_rdata = m.Wire(self.name('div_abs_rdata'), width)
-
-        if not lsigned:
-            abs_ldata.assign(ldata)
+        if lsigned:
+            ldata.assign(vtypes.Signed(lval))
         else:
-            abs_ldata.assign(vtypes.Mux(ldata[width - 1] == 0, ldata, vtypes.Unot(ldata) + 1))
+            ldata.assign(lval)
 
-        if not rsigned:
-            abs_rdata.assign(rdata)
+        if rsigned:
+            rdata.assign(vtypes.Signed(rval))
         else:
-            abs_rdata.assign(vtypes.Mux(rdata[width - 1] == 0, rdata, vtypes.Unot(rdata) + 1))
+            rdata.assign(rval)
 
-        osign = m.Wire(self.name('div_osign'))
-        abs_odata = m.Wire(self.name('div_abs_odata'), width, signed=signed)
-        odata = m.Reg(self.name('div_odata'), width, signed=signed, initval=0)
-
-        if not signed:
-            seq(odata(abs_odata), cond=comp_cond)
-        else:
-            seq(odata(vtypes.Mux(osign == 0, abs_odata, vtypes.Unot(abs_odata) + 1)),
-                cond=comp_cond)
+        odata = m.Wire(self.name('div_odata'), width, signed=signed)
 
         data = m.Wire(self.name('data'), width, signed=signed)
         self.sig_data = data
 
         m.Assign(data(odata))
-
-        s = sign
-        for i in range(self.latency - 2):
-            ns = m.Reg(self.name('div_sign_tmp_%d' % i), initval=0)
-            seq(ns(s), cond=comp_cond)
-            s = ns
-        m.Assign(osign(s))
 
         inst = div.get_div()
         clk = m._clock
@@ -988,9 +911,11 @@ class DivideMultiCycle(_BinaryOperator):
 
         m.Assign(update(comp_cond))
 
-        params = [('W_D', width)]
+        params = [('W_D', width),
+                  ('A_SIGNED', 1 if lsigned else 0), ('B_SIGNED', 1 if rsigned else 0),
+                  ('O_SIGNED', 1 if signed else 0)]
         ports = [('CLK', clk), ('RST', rst), ('update', update), ('enable', vtypes.Int(1, 1)),
-                 ('in_a', abs_ldata), ('in_b', abs_rdata), ('rslt', abs_odata)]
+                 ('in_a', ldata), ('in_b', rdata), ('rslt', odata)]
 
         m.Instance(inst, self.name('div'), params, ports)
 
@@ -3298,6 +3223,7 @@ class ReduceMul(_Accumulator):
 
         self.sig_data = data
 
+        rsigned = self.right.get_signed()
         rdata = self.right.sig_data
         enabledata = self.enable.sig_data if self.enable is not None else None
         resetdata = self.reset.sig_data if self.reset is not None else None
@@ -3390,7 +3316,7 @@ class ReduceMul(_Accumulator):
 
         depth = self.iteration_interval - 1
 
-        inst = mul.get_mul(width, width, signed, signed, depth)
+        inst = mul.get_mul(width, width, signed, rsigned, depth)
         clk = m._clock
 
         update = m.Wire(self.name('mul_update'))
@@ -3455,7 +3381,15 @@ class ReduceDiv(_Accumulator):
 
         self.sig_data = data
 
-        rdata = self.right.sig_data
+        rsigned = self.right.get_signed()
+        rval = self.right.sig_data
+        rdata = m.Wire(self.name('div_rdata'), width, signed=rsigned)
+
+        if rsigned:
+            rdata.assign(vtypes.Signed(rval))
+        else:
+            rdata.assign(rval)
+
         enabledata = self.enable.sig_data if self.enable is not None else None
         resetdata = self.reset.sig_data if self.reset is not None else None
 
@@ -3548,37 +3482,9 @@ class ReduceDiv(_Accumulator):
         ldata = m.Wire(self.name('div_ldata'), width, signed=signed)
         ldata.assign(current_data)
 
-        sign = vtypes.Not(
-            vtypes.OrList(vtypes.AndList(ldata[width - 1] == 0,
-                                         rdata[width - 1] == 0),  # + , +
-                          vtypes.AndList(ldata[width - 1] == 1,
-                                         rdata[width - 1] == 1)))  # - , -
-
-        abs_ldata = m.Wire(self.name('div_abs_ldata'), width)
-        abs_rdata = m.Wire(self.name('div_abs_rdata'), width)
-
-        if signed:
-            abs_ldata.assign(ldata)
-            abs_rdata.assign(rdata)
-        else:
-            abs_ldata.assign(vtypes.Mux(ldata[width - 1] == 0, ldata, vtypes.Unot(ldata) + 1))
-            abs_rdata.assign(vtypes.Mux(rdata[width - 1] == 0, rdata, vtypes.Unot(rdata) + 1))
-
-        osign = m.Wire(self.name('div_osign'))
-        abs_odata = m.Wire(self.name('div_abs_odata'), width, signed=signed)
         odata = m.Wire(self.name('div_odata'), width, signed=signed)
 
-        if not signed:
-            odata.assign(abs_odata)
-        else:
-            odata.assign(vtypes.Mux(osign == 0, abs_odata, vtypes.Unot(abs_odata) + 1))
-
-        s = sign
-        for i in range(self.latency - 2):
-            ns = m.Reg(self.name('div_sign_tmp_%d' % i), initval=0)
-            seq(ns(s), cond=comp_cond)
-            s = ns
-        m.Assign(osign(s))
+        depth = self.latency - 1
 
         inst = div.get_div()
         clk = m._clock
@@ -3588,9 +3494,11 @@ class ReduceDiv(_Accumulator):
 
         m.Assign(update(comp_cond))
 
-        params = [('W_D', width)]
+        params = [('W_D', width),
+                  ('A_SIGNED', 1 if signed else 0), ('B_SIGNED', 1 if rsigned else 0),
+                  ('O_SIGNED', 1 if signed else 0)]
         ports = [('CLK', clk), ('RST', rst), ('update', update), ('enable', vtypes.Int(1, 1)),
-                 ('in_a', abs_ldata), ('in_b', abs_rdata), ('rslt', abs_odata)]
+                 ('in_a', ldata), ('in_b', rdata), ('rslt', odata)]
 
         m.Instance(inst, self.name('div'), params, ports)
 

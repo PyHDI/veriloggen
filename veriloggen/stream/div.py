@@ -6,7 +6,10 @@ import veriloggen.verilog.from_verilog as from_verilog
 divider_code = """\
 module Divider #
   (
-   parameter W_D = 32
+   parameter W_D = 32,
+   parameter A_SIGNED = 1,
+   parameter B_SIGNED = 1,
+   parameter O_SIGNED = 1
    )
   (
    input CLK,
@@ -21,7 +24,7 @@ module Divider #
    );
 
   localparam DEPTH = W_D + 1;
-  
+
   function getsign;
     input [W_D-1:0] in;
     getsign = in[W_D-1]; //0: positive, 1: negative
@@ -31,17 +34,17 @@ module Divider #
     input [W_D-1:0] in;
     is_positive = (getsign(in) == 0);
   endfunction
-    
+
   function [W_D-1:0] complement2;
     input [W_D-1:0] in;
     complement2 = ~in + {{(W_D-1){1'b0}}, 1'b1};
   endfunction
-    
+
   function [W_D*2-1:0] complement2_2x;
     input [W_D*2-1:0] in;
     complement2_2x = ~in + {{(W_D*2-1){1'b0}}, 1'b1};
   endfunction
-    
+
   function [W_D-1:0] absolute;
     input [W_D-1:0] in;
     begin
@@ -54,11 +57,12 @@ module Divider #
 
   wire [W_D-1:0] abs_in_a;
   wire [W_D-1:0] abs_in_b;
-  assign abs_in_a = absolute(in_a);
-  assign abs_in_b = absolute(in_b);
+
+  assign abs_in_a = (A_SIGNED)? absolute(in_a) : in_a;
+  assign abs_in_b = (B_SIGNED)? absolute(in_b) : in_b;
 
   genvar d;
-  generate 
+  generate
     for(d=0; d<DEPTH; d=d+1) begin: s_depth
       reg stage_valid;
       reg in_a_positive;
@@ -71,13 +75,13 @@ module Divider #
       wire is_large;
       assign sub_value = dividend - divisor;
       assign is_large = !sub_value[W_D*2-1];
-      
-      if(d == 0) begin 
+
+      if(d == 0) begin
         always @(posedge CLK) begin
           if(RST) begin
             stage_valid   <= 0;
             in_a_positive <= 0;
-            in_b_positive <= 0;          
+            in_b_positive <= 0;
           end else if(update) begin
             stage_valid   <= enable;
             in_a_positive <= is_positive(in_a);
@@ -97,7 +101,7 @@ module Divider #
           end
         end
       end
-      
+
       if(d==0) begin
         always @(posedge CLK) begin
           if(update) begin
@@ -117,7 +121,7 @@ module Divider #
       end
     end
   endgenerate
-  
+
   always @(posedge CLK) begin
     if(RST) begin
       valid <= 0;
@@ -125,29 +129,39 @@ module Divider #
       valid <= s_depth[DEPTH-1].stage_valid;
     end
   end
-    
-  always @(posedge CLK) begin
-    if(update) begin
-      rslt <= (s_depth[DEPTH-1].in_a_positive && s_depth[DEPTH-1].in_b_positive)?
-              s_depth[DEPTH-1].stage_rslt:
-              (!s_depth[DEPTH-1].in_a_positive && s_depth[DEPTH-1].in_b_positive)?
-              complement2_2x(s_depth[DEPTH-1].stage_rslt):
-              (s_depth[DEPTH-1].in_a_positive && !s_depth[DEPTH-1].in_b_positive)?
-              complement2_2x(s_depth[DEPTH-1].stage_rslt):
-              (!s_depth[DEPTH-1].in_a_positive && !s_depth[DEPTH-1].in_b_positive)?
-              s_depth[DEPTH-1].stage_rslt:
-              'hx;
-      mod  <= (s_depth[DEPTH-1].in_a_positive && s_depth[DEPTH-1].in_b_positive)?
-              s_depth[DEPTH-1].dividend[W_D-1:0]:
-              (!s_depth[DEPTH-1].in_a_positive && s_depth[DEPTH-1].in_b_positive)?
-              complement2_2x(s_depth[DEPTH-1].dividend[W_D-1:0]):
-              (s_depth[DEPTH-1].in_a_positive && !s_depth[DEPTH-1].in_b_positive)?
-              s_depth[DEPTH-1].dividend[W_D-1:0]:            
-              (!s_depth[DEPTH-1].in_a_positive && !s_depth[DEPTH-1].in_b_positive)?
-              complement2_2x(s_depth[DEPTH-1].dividend[W_D-1:0]):
-              'hx;
+
+  generate if(O_SIGNED) begin
+    always @(posedge CLK) begin
+      if(update) begin
+        rslt <= (s_depth[DEPTH-1].in_a_positive && s_depth[DEPTH-1].in_b_positive)?
+                s_depth[DEPTH-1].stage_rslt:
+                (!s_depth[DEPTH-1].in_a_positive && s_depth[DEPTH-1].in_b_positive)?
+                complement2_2x(s_depth[DEPTH-1].stage_rslt):
+                (s_depth[DEPTH-1].in_a_positive && !s_depth[DEPTH-1].in_b_positive)?
+                complement2_2x(s_depth[DEPTH-1].stage_rslt):
+                (!s_depth[DEPTH-1].in_a_positive && !s_depth[DEPTH-1].in_b_positive)?
+                s_depth[DEPTH-1].stage_rslt:
+                'hx;
+        mod  <= (s_depth[DEPTH-1].in_a_positive && s_depth[DEPTH-1].in_b_positive)?
+                s_depth[DEPTH-1].dividend[W_D-1:0]:
+                (!s_depth[DEPTH-1].in_a_positive && s_depth[DEPTH-1].in_b_positive)?
+                complement2_2x(s_depth[DEPTH-1].dividend[W_D-1:0]):
+                (s_depth[DEPTH-1].in_a_positive && !s_depth[DEPTH-1].in_b_positive)?
+                s_depth[DEPTH-1].dividend[W_D-1:0]:
+                (!s_depth[DEPTH-1].in_a_positive && !s_depth[DEPTH-1].in_b_positive)?
+                complement2_2x(s_depth[DEPTH-1].dividend[W_D-1:0]):
+                'hx;
+      end
     end
-  end
+  end else begin
+    always @(posedge CLK) begin
+      if(update) begin
+        rslt <= s_depth[DEPTH-1].stage_rslt;
+        mod  <= s_depth[DEPTH-1].dividend[W_D-1:0];
+      end
+    end
+  end endgenerate
+
 endmodule
 """
 
