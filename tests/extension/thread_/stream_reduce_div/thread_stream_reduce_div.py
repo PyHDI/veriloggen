@@ -25,6 +25,7 @@ def mkLed():
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
     a = strm.source('a') + 1
+    a *= -1
     size = strm.parameter('size')
     div, div_valid = strm.ReduceDivValid(a, size, initval=1000000)
     strm.sink(div, 'div', when=div_valid, when_name='div_valid')
@@ -40,6 +41,7 @@ def mkLed():
         b = 1000000
         for i in range(size):
             a = ram_a.read(i + offset) + 1
+            a *= -1
             b /= a
         ram_b.write(offset, b)
 

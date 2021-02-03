@@ -210,63 +210,24 @@ module main
   reg _ivalid_32;
   reg _ivalid_33;
   reg _ivalid_34;
-  reg _ivalid_35;
-  assign ovalid = _ivalid_35;
+  assign ovalid = _ivalid_34;
   assign iready = oready;
   wire signed [32-1:0] _divide_div_ldata_2;
   wire signed [32-1:0] _divide_div_rdata_2;
-  assign _divide_div_ldata_2 = xdata;
-  assign _divide_div_rdata_2 = ydata;
-  wire [32-1:0] _divide_div_abs_ldata_2;
-  wire [32-1:0] _divide_div_abs_rdata_2;
-  assign _divide_div_abs_ldata_2 = (_divide_div_ldata_2[31] == 0)? _divide_div_ldata_2 : ~_divide_div_ldata_2 + 1;
-  assign _divide_div_abs_rdata_2 = (_divide_div_rdata_2[31] == 0)? _divide_div_rdata_2 : ~_divide_div_rdata_2 + 1;
-  wire _divide_div_osign_2;
-  wire signed [32-1:0] _divide_div_abs_odata_2;
-  reg signed [32-1:0] _divide_div_odata_2;
+  assign _divide_div_ldata_2 = $signed(xdata);
+  assign _divide_div_rdata_2 = $signed(ydata);
+  wire signed [32-1:0] _divide_div_odata_2;
   wire signed [32-1:0] _divide_data_2;
   assign _divide_data_2 = _divide_div_odata_2;
-  reg _divide_div_sign_tmp_0_2;
-  reg _divide_div_sign_tmp_1_2;
-  reg _divide_div_sign_tmp_2_2;
-  reg _divide_div_sign_tmp_3_2;
-  reg _divide_div_sign_tmp_4_2;
-  reg _divide_div_sign_tmp_5_2;
-  reg _divide_div_sign_tmp_6_2;
-  reg _divide_div_sign_tmp_7_2;
-  reg _divide_div_sign_tmp_8_2;
-  reg _divide_div_sign_tmp_9_2;
-  reg _divide_div_sign_tmp_10_2;
-  reg _divide_div_sign_tmp_11_2;
-  reg _divide_div_sign_tmp_12_2;
-  reg _divide_div_sign_tmp_13_2;
-  reg _divide_div_sign_tmp_14_2;
-  reg _divide_div_sign_tmp_15_2;
-  reg _divide_div_sign_tmp_16_2;
-  reg _divide_div_sign_tmp_17_2;
-  reg _divide_div_sign_tmp_18_2;
-  reg _divide_div_sign_tmp_19_2;
-  reg _divide_div_sign_tmp_20_2;
-  reg _divide_div_sign_tmp_21_2;
-  reg _divide_div_sign_tmp_22_2;
-  reg _divide_div_sign_tmp_23_2;
-  reg _divide_div_sign_tmp_24_2;
-  reg _divide_div_sign_tmp_25_2;
-  reg _divide_div_sign_tmp_26_2;
-  reg _divide_div_sign_tmp_27_2;
-  reg _divide_div_sign_tmp_28_2;
-  reg _divide_div_sign_tmp_29_2;
-  reg _divide_div_sign_tmp_30_2;
-  reg _divide_div_sign_tmp_31_2;
-  reg _divide_div_sign_tmp_32_2;
-  reg _divide_div_sign_tmp_33_2;
-  assign _divide_div_osign_2 = _divide_div_sign_tmp_33_2;
   wire _divide_div_update_2;
   assign _divide_div_update_2 = oready;
 
   Divider
   #(
-    .W_D(32)
+    .W_D(32),
+    .A_SIGNED(1),
+    .B_SIGNED(1),
+    .O_SIGNED(1)
   )
   _divide_div_2
   (
@@ -274,9 +235,9 @@ module main
     .RST(RST),
     .update(_divide_div_update_2),
     .enable(1'd1),
-    .in_a(_divide_div_abs_ldata_2),
-    .in_b(_divide_div_abs_rdata_2),
-    .rslt(_divide_div_abs_odata_2)
+    .in_a(_divide_div_ldata_2),
+    .in_b(_divide_div_rdata_2),
+    .rslt(_divide_div_odata_2)
   );
 
   assign zdata = _divide_data_2;
@@ -317,42 +278,6 @@ module main
       _ivalid_32 <= 0;
       _ivalid_33 <= 0;
       _ivalid_34 <= 0;
-      _ivalid_35 <= 0;
-      _divide_div_odata_2 <= 0;
-      _divide_div_sign_tmp_0_2 <= 0;
-      _divide_div_sign_tmp_1_2 <= 0;
-      _divide_div_sign_tmp_2_2 <= 0;
-      _divide_div_sign_tmp_3_2 <= 0;
-      _divide_div_sign_tmp_4_2 <= 0;
-      _divide_div_sign_tmp_5_2 <= 0;
-      _divide_div_sign_tmp_6_2 <= 0;
-      _divide_div_sign_tmp_7_2 <= 0;
-      _divide_div_sign_tmp_8_2 <= 0;
-      _divide_div_sign_tmp_9_2 <= 0;
-      _divide_div_sign_tmp_10_2 <= 0;
-      _divide_div_sign_tmp_11_2 <= 0;
-      _divide_div_sign_tmp_12_2 <= 0;
-      _divide_div_sign_tmp_13_2 <= 0;
-      _divide_div_sign_tmp_14_2 <= 0;
-      _divide_div_sign_tmp_15_2 <= 0;
-      _divide_div_sign_tmp_16_2 <= 0;
-      _divide_div_sign_tmp_17_2 <= 0;
-      _divide_div_sign_tmp_18_2 <= 0;
-      _divide_div_sign_tmp_19_2 <= 0;
-      _divide_div_sign_tmp_20_2 <= 0;
-      _divide_div_sign_tmp_21_2 <= 0;
-      _divide_div_sign_tmp_22_2 <= 0;
-      _divide_div_sign_tmp_23_2 <= 0;
-      _divide_div_sign_tmp_24_2 <= 0;
-      _divide_div_sign_tmp_25_2 <= 0;
-      _divide_div_sign_tmp_26_2 <= 0;
-      _divide_div_sign_tmp_27_2 <= 0;
-      _divide_div_sign_tmp_28_2 <= 0;
-      _divide_div_sign_tmp_29_2 <= 0;
-      _divide_div_sign_tmp_30_2 <= 0;
-      _divide_div_sign_tmp_31_2 <= 0;
-      _divide_div_sign_tmp_32_2 <= 0;
-      _divide_div_sign_tmp_33_2 <= 0;
     end else begin
       if(oready) begin
         _ivalid_1 <= ivalid;
@@ -456,114 +381,6 @@ module main
       if(oready) begin
         _ivalid_34 <= _ivalid_33;
       end 
-      if(oready) begin
-        _ivalid_35 <= _ivalid_34;
-      end 
-      if(oready) begin
-        _divide_div_odata_2 <= (_divide_div_osign_2 == 0)? _divide_div_abs_odata_2 : ~_divide_div_abs_odata_2 + 1;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_0_2 <= !((_divide_div_ldata_2[31] == 0) && (_divide_div_rdata_2[31] == 0) || (_divide_div_ldata_2[31] == 1) && (_divide_div_rdata_2[31] == 1));
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_1_2 <= _divide_div_sign_tmp_0_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_2_2 <= _divide_div_sign_tmp_1_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_3_2 <= _divide_div_sign_tmp_2_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_4_2 <= _divide_div_sign_tmp_3_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_5_2 <= _divide_div_sign_tmp_4_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_6_2 <= _divide_div_sign_tmp_5_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_7_2 <= _divide_div_sign_tmp_6_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_8_2 <= _divide_div_sign_tmp_7_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_9_2 <= _divide_div_sign_tmp_8_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_10_2 <= _divide_div_sign_tmp_9_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_11_2 <= _divide_div_sign_tmp_10_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_12_2 <= _divide_div_sign_tmp_11_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_13_2 <= _divide_div_sign_tmp_12_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_14_2 <= _divide_div_sign_tmp_13_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_15_2 <= _divide_div_sign_tmp_14_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_16_2 <= _divide_div_sign_tmp_15_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_17_2 <= _divide_div_sign_tmp_16_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_18_2 <= _divide_div_sign_tmp_17_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_19_2 <= _divide_div_sign_tmp_18_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_20_2 <= _divide_div_sign_tmp_19_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_21_2 <= _divide_div_sign_tmp_20_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_22_2 <= _divide_div_sign_tmp_21_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_23_2 <= _divide_div_sign_tmp_22_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_24_2 <= _divide_div_sign_tmp_23_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_25_2 <= _divide_div_sign_tmp_24_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_26_2 <= _divide_div_sign_tmp_25_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_27_2 <= _divide_div_sign_tmp_26_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_28_2 <= _divide_div_sign_tmp_27_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_29_2 <= _divide_div_sign_tmp_28_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_30_2 <= _divide_div_sign_tmp_29_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_31_2 <= _divide_div_sign_tmp_30_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_32_2 <= _divide_div_sign_tmp_31_2;
-      end 
-      if(oready) begin
-        _divide_div_sign_tmp_33_2 <= _divide_div_sign_tmp_32_2;
-      end 
     end
   end
 
@@ -574,7 +391,10 @@ endmodule
 
 module Divider #
 (
-  parameter W_D = 32
+  parameter W_D = 32,
+  parameter A_SIGNED = 1,
+  parameter B_SIGNED = 1,
+  parameter O_SIGNED = 1
 )
 (
   input CLK,
@@ -635,8 +455,8 @@ module Divider #
 
   wire [W_D-1:0] abs_in_a;
   wire [W_D-1:0] abs_in_b;
-  assign abs_in_a = absolute(in_a);
-  assign abs_in_b = absolute(in_b);
+  assign abs_in_a = (A_SIGNED)? absolute(in_a) : in_a;
+  assign abs_in_b = (B_SIGNED)? absolute(in_b) : in_b;
   genvar d;
 
   generate for(d=0; d<DEPTH; d=d+1) begin : s_depth
@@ -719,18 +539,32 @@ module Divider #
   end
 
 
-  always @(posedge CLK) begin
-    if(update) begin
-      rslt <= (s_depth[(DEPTH - 1)].in_a_positive && s_depth[(DEPTH - 1)].in_b_positive)? s_depth[(DEPTH - 1)].stage_rslt : 
-              (!s_depth[(DEPTH - 1)].in_a_positive && s_depth[(DEPTH - 1)].in_b_positive)? complement2_2x(s_depth[(DEPTH - 1)].stage_rslt) : 
-              (s_depth[(DEPTH - 1)].in_a_positive && !s_depth[(DEPTH - 1)].in_b_positive)? complement2_2x(s_depth[(DEPTH - 1)].stage_rslt) : 
-              (!s_depth[(DEPTH - 1)].in_a_positive && !s_depth[(DEPTH - 1)].in_b_positive)? s_depth[(DEPTH - 1)].stage_rslt : 'hx;
-      mod <= (s_depth[(DEPTH - 1)].in_a_positive && s_depth[(DEPTH - 1)].in_b_positive)? s_depth[(DEPTH - 1)].dividend[W_D-1:0] : 
-             (!s_depth[(DEPTH - 1)].in_a_positive && s_depth[(DEPTH - 1)].in_b_positive)? complement2_2x(s_depth[(DEPTH - 1)].dividend[W_D-1:0]) : 
-             (s_depth[(DEPTH - 1)].in_a_positive && !s_depth[(DEPTH - 1)].in_b_positive)? s_depth[(DEPTH - 1)].dividend[W_D-1:0] : 
-             (!s_depth[(DEPTH - 1)].in_a_positive && !s_depth[(DEPTH - 1)].in_b_positive)? complement2_2x(s_depth[(DEPTH - 1)].dividend[W_D-1:0]) : 'hx;
-    end 
+  generate if(O_SIGNED) begin
+
+    always @(posedge CLK) begin
+      if(update) begin
+        rslt <= (s_depth[(DEPTH - 1)].in_a_positive && s_depth[(DEPTH - 1)].in_b_positive)? s_depth[(DEPTH - 1)].stage_rslt : 
+                (!s_depth[(DEPTH - 1)].in_a_positive && s_depth[(DEPTH - 1)].in_b_positive)? complement2_2x(s_depth[(DEPTH - 1)].stage_rslt) : 
+                (s_depth[(DEPTH - 1)].in_a_positive && !s_depth[(DEPTH - 1)].in_b_positive)? complement2_2x(s_depth[(DEPTH - 1)].stage_rslt) : 
+                (!s_depth[(DEPTH - 1)].in_a_positive && !s_depth[(DEPTH - 1)].in_b_positive)? s_depth[(DEPTH - 1)].stage_rslt : 'hx;
+        mod <= (s_depth[(DEPTH - 1)].in_a_positive && s_depth[(DEPTH - 1)].in_b_positive)? s_depth[(DEPTH - 1)].dividend[W_D-1:0] : 
+               (!s_depth[(DEPTH - 1)].in_a_positive && s_depth[(DEPTH - 1)].in_b_positive)? complement2_2x(s_depth[(DEPTH - 1)].dividend[W_D-1:0]) : 
+               (s_depth[(DEPTH - 1)].in_a_positive && !s_depth[(DEPTH - 1)].in_b_positive)? s_depth[(DEPTH - 1)].dividend[W_D-1:0] : 
+               (!s_depth[(DEPTH - 1)].in_a_positive && !s_depth[(DEPTH - 1)].in_b_positive)? complement2_2x(s_depth[(DEPTH - 1)].dividend[W_D-1:0]) : 'hx;
+      end 
+    end
+
+  end else begin
+
+    always @(posedge CLK) begin
+      if(update) begin
+        rslt <= s_depth[(DEPTH - 1)].stage_rslt;
+        mod <= s_depth[(DEPTH - 1)].dividend[W_D-1:0];
+      end 
+    end
+
   end
+  endgenerate
 
 
 endmodule
