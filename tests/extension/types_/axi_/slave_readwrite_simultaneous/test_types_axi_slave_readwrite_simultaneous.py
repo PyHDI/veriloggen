@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import types_axi_slave_readwrite
+import types_axi_slave_readwrite_simultaneous
 
 expected_verilog = """
 module test;
@@ -285,14 +285,16 @@ module test;
     myaxi_rready = _tmp_25;
   end
 
-  reg [32-1:0] fsm;
-  localparam fsm_init = 0;
+  reg [32-1:0] read_fsm;
+  localparam read_fsm_init = 0;
   reg [32-1:0] rsum;
   reg [9-1:0] _tmp_26;
   reg __axi_cond_0_1;
   reg [9-1:0] _tmp_27;
   reg __axi_cond_1_1;
-  assign _axi_rready = (fsm == 1) || (fsm == 3);
+  assign _axi_rready = (read_fsm == 1) || (read_fsm == 3);
+  reg [32-1:0] write_fsm;
+  localparam write_fsm_init = 0;
   reg [9-1:0] _tmp_28;
   reg __axi_cond_2_1;
   reg [32-1:0] wdata;
@@ -367,12 +369,13 @@ module test;
     _axi_araddr = 0;
     _axi_arlen = 0;
     _axi_arvalid = 0;
-    fsm = fsm_init;
+    read_fsm = read_fsm_init;
     rsum = 0;
     _tmp_26 = 0;
     __axi_cond_0_1 = 0;
     _tmp_27 = 0;
     __axi_cond_1_1 = 0;
+    write_fsm = write_fsm_init;
     _tmp_28 = 0;
     __axi_cond_2_1 = 0;
     wdata = 0;
@@ -438,7 +441,7 @@ module test;
         _axi_wlast <= 0;
         _tmp_31 <= 0;
       end 
-      if((fsm == 0) && ((_axi_arready || !_axi_arvalid) && (_tmp_26 == 0))) begin
+      if((read_fsm == 0) && ((_axi_arready || !_axi_arvalid) && (_tmp_26 == 0))) begin
         _axi_araddr <= 1024;
         _axi_arlen <= 63;
         _axi_arvalid <= 1;
@@ -451,7 +454,7 @@ module test;
       if(_axi_rready && _axi_rvalid && (_tmp_26 > 0)) begin
         _tmp_26 <= _tmp_26 - 1;
       end 
-      if((fsm == 2) && ((_axi_arready || !_axi_arvalid) && (_tmp_27 == 0))) begin
+      if((read_fsm == 2) && ((_axi_arready || !_axi_arvalid) && (_tmp_27 == 0))) begin
         _axi_araddr <= 2048;
         _axi_arlen <= 127;
         _axi_arvalid <= 1;
@@ -464,27 +467,27 @@ module test;
       if(_axi_rready && _axi_rvalid && (_tmp_27 > 0)) begin
         _tmp_27 <= _tmp_27 - 1;
       end 
-      if((fsm == 5) && ((_axi_awready || !_axi_awvalid) && (_tmp_28 == 0))) begin
+      if((write_fsm == 0) && ((_axi_awready || !_axi_awvalid) && (_tmp_28 == 0))) begin
         _axi_awaddr <= 1024;
         _axi_awlen <= 63;
         _axi_awvalid <= 1;
         _tmp_28 <= 64;
       end 
-      if((fsm == 5) && ((_axi_awready || !_axi_awvalid) && (_tmp_28 == 0)) && 0) begin
+      if((write_fsm == 0) && ((_axi_awready || !_axi_awvalid) && (_tmp_28 == 0)) && 0) begin
         _axi_awvalid <= 0;
       end 
       __axi_cond_2_1 <= 1;
       if(_axi_awvalid && !_axi_awready) begin
         _axi_awvalid <= _axi_awvalid;
       end 
-      if((fsm == 6) && ((_tmp_28 > 0) && (_axi_wready || !_axi_wvalid) && (_tmp_28 > 0))) begin
+      if((write_fsm == 1) && ((_tmp_28 > 0) && (_axi_wready || !_axi_wvalid) && (_tmp_28 > 0))) begin
         _axi_wdata <= wdata;
         _axi_wvalid <= 1;
         _axi_wlast <= 0;
         _axi_wstrb <= { 4{ 1'd1 } };
         _tmp_28 <= _tmp_28 - 1;
       end 
-      if((fsm == 6) && ((_tmp_28 > 0) && (_axi_wready || !_axi_wvalid) && (_tmp_28 > 0)) && (_tmp_28 == 1)) begin
+      if((write_fsm == 1) && ((_tmp_28 > 0) && (_axi_wready || !_axi_wvalid) && (_tmp_28 > 0)) && (_tmp_28 == 1)) begin
         _axi_wlast <= 1;
         _tmp_29 <= 1;
       end 
@@ -494,27 +497,27 @@ module test;
         _axi_wlast <= _axi_wlast;
         _tmp_29 <= _tmp_29;
       end 
-      if((fsm == 7) && ((_axi_awready || !_axi_awvalid) && (_tmp_30 == 0))) begin
+      if((write_fsm == 2) && ((_axi_awready || !_axi_awvalid) && (_tmp_30 == 0))) begin
         _axi_awaddr <= 1024;
         _axi_awlen <= 127;
         _axi_awvalid <= 1;
         _tmp_30 <= 128;
       end 
-      if((fsm == 7) && ((_axi_awready || !_axi_awvalid) && (_tmp_30 == 0)) && 0) begin
+      if((write_fsm == 2) && ((_axi_awready || !_axi_awvalid) && (_tmp_30 == 0)) && 0) begin
         _axi_awvalid <= 0;
       end 
       __axi_cond_4_1 <= 1;
       if(_axi_awvalid && !_axi_awready) begin
         _axi_awvalid <= _axi_awvalid;
       end 
-      if((fsm == 8) && ((_tmp_30 > 0) && (_axi_wready || !_axi_wvalid) && (_tmp_30 > 0))) begin
+      if((write_fsm == 3) && ((_tmp_30 > 0) && (_axi_wready || !_axi_wvalid) && (_tmp_30 > 0))) begin
         _axi_wdata <= wdata;
         _axi_wvalid <= 1;
         _axi_wlast <= 0;
         _axi_wstrb <= { 4{ 1'd1 } };
         _tmp_30 <= _tmp_30 - 1;
       end 
-      if((fsm == 8) && ((_tmp_30 > 0) && (_axi_wready || !_axi_wvalid) && (_tmp_30 > 0)) && (_tmp_30 == 1)) begin
+      if((write_fsm == 3) && ((_tmp_30 > 0) && (_axi_wready || !_axi_wvalid) && (_tmp_30 > 0)) && (_tmp_30 == 1)) begin
         _axi_wlast <= 1;
         _tmp_31 <= 1;
       end 
@@ -527,83 +530,93 @@ module test;
     end
   end
 
-  localparam fsm_1 = 1;
-  localparam fsm_2 = 2;
-  localparam fsm_3 = 3;
-  localparam fsm_4 = 4;
-  localparam fsm_5 = 5;
-  localparam fsm_6 = 6;
-  localparam fsm_7 = 7;
-  localparam fsm_8 = 8;
-  localparam fsm_9 = 9;
-  localparam fsm_10 = 10;
+  localparam read_fsm_1 = 1;
+  localparam read_fsm_2 = 2;
+  localparam read_fsm_3 = 3;
+  localparam read_fsm_4 = 4;
+  localparam read_fsm_5 = 5;
 
   always @(posedge CLK) begin
     if(RST) begin
-      fsm <= fsm_init;
+      read_fsm <= read_fsm_init;
       rsum <= 0;
+    end else begin
+      case(read_fsm)
+        read_fsm_init: begin
+          if(_axi_arready || !_axi_arvalid) begin
+            read_fsm <= read_fsm_1;
+          end 
+        end
+        read_fsm_1: begin
+          if(_axi_rready && _axi_rvalid) begin
+            rsum <= rsum + _axi_rdata;
+          end 
+          if(_axi_rready && _axi_rvalid && _axi_rlast) begin
+            read_fsm <= read_fsm_2;
+          end 
+        end
+        read_fsm_2: begin
+          if(_axi_arready || !_axi_arvalid) begin
+            read_fsm <= read_fsm_3;
+          end 
+        end
+        read_fsm_3: begin
+          if(_axi_rready && _axi_rvalid) begin
+            rsum <= rsum + _axi_rdata;
+          end 
+          if(_axi_rready && _axi_rvalid && _axi_rlast) begin
+            read_fsm <= read_fsm_4;
+          end 
+        end
+        read_fsm_4: begin
+          $display("rsum=%d expected_rsum=%d", rsum, 92064);
+          read_fsm <= read_fsm_5;
+        end
+      endcase
+    end
+  end
+
+  localparam write_fsm_1 = 1;
+  localparam write_fsm_2 = 2;
+  localparam write_fsm_3 = 3;
+  localparam write_fsm_4 = 4;
+  localparam write_fsm_5 = 5;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      write_fsm <= write_fsm_init;
       wdata <= 0;
     end else begin
-      case(fsm)
-        fsm_init: begin
-          if(_axi_arready || !_axi_arvalid) begin
-            fsm <= fsm_1;
-          end 
-        end
-        fsm_1: begin
-          if(_axi_rready && _axi_rvalid) begin
-            rsum <= rsum + _axi_rdata;
-          end 
-          if(_axi_rready && _axi_rvalid && _axi_rlast) begin
-            fsm <= fsm_2;
-          end 
-        end
-        fsm_2: begin
-          if(_axi_arready || !_axi_arvalid) begin
-            fsm <= fsm_3;
-          end 
-        end
-        fsm_3: begin
-          if(_axi_rready && _axi_rvalid) begin
-            rsum <= rsum + _axi_rdata;
-          end 
-          if(_axi_rready && _axi_rvalid && _axi_rlast) begin
-            fsm <= fsm_4;
-          end 
-        end
-        fsm_4: begin
-          $display("rsum=%d expected_rsum=%d", rsum, 92064);
-          fsm <= fsm_5;
-        end
-        fsm_5: begin
+      case(write_fsm)
+        write_fsm_init: begin
           if(_axi_awready || !_axi_awvalid) begin
-            fsm <= fsm_6;
+            write_fsm <= write_fsm_1;
           end 
         end
-        fsm_6: begin
+        write_fsm_1: begin
           if((_tmp_28 > 0) && (_axi_wready || !_axi_wvalid)) begin
             wdata <= wdata + 1;
           end 
           if(_tmp_29) begin
-            fsm <= fsm_7;
+            write_fsm <= write_fsm_2;
           end 
         end
-        fsm_7: begin
+        write_fsm_2: begin
           if(_axi_awready || !_axi_awvalid) begin
-            fsm <= fsm_8;
+            write_fsm <= write_fsm_3;
           end 
         end
-        fsm_8: begin
+        write_fsm_3: begin
           if((_tmp_30 > 0) && (_axi_wready || !_axi_wvalid)) begin
             wdata <= wdata + 1;
           end 
           if(_tmp_31) begin
-            fsm <= fsm_9;
+            write_fsm <= write_fsm_4;
           end 
         end
-        fsm_9: begin
+        write_fsm_4: begin
           $display("sum=%d expected_sum=%d", sum, 18336);
-          fsm <= fsm_10;
+          write_fsm <= write_fsm_5;
         end
       endcase
     end
@@ -790,7 +803,7 @@ endmodule
 
 def test():
     veriloggen.reset()
-    test_module = types_axi_slave_readwrite.mkTest()
+    test_module = types_axi_slave_readwrite_simultaneous.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
