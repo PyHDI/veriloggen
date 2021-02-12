@@ -1557,16 +1557,17 @@ class AxiSlave(object):
             prev_arvalid(self.raddr.arvalid)
         )
 
-        writeval = (vtypes.Ands(vtypes.Not(writevalid), vtypes.Not(readvalid),
-                                vtypes.Not(self.wresp.bvalid),
-                                prev_awvalid) if ready is None else
-                    vtypes.Ands(ready, vtypes.Not(writevalid), vtypes.Not(readvalid),
-                                vtypes.Not(self.wresp.bvalid),
-                                prev_awvalid))
-        readval = (vtypes.Ands(vtypes.Not(readvalid), vtypes.Not(writevalid),
-                               prev_arvalid) if ready is None else
-                   vtypes.Ands(ready, vtypes.Not(readvalid), vtypes.Not(writevalid),
-                               prev_arvalid))
+        writeval = vtypes.Ands(vtypes.Not(writevalid), vtypes.Not(readvalid),
+                               vtypes.Not(self.wresp.bvalid),
+                               prev_awvalid)
+        if ready is not None:
+            writeval = vtypes.Ands(ready, writeval)
+
+        readval = vtypes.Ands(vtypes.Not(readvalid), vtypes.Not(writevalid),
+                              prev_arvalid, vtypes.Not(prev_awvalid))
+
+        if ready is not None:
+            readval = vtypes.Ands(ready, readval)
 
         _connect_ready(self.waddr.awready._get_module(),
                        self.waddr.awready, writeval)
@@ -2107,16 +2108,17 @@ class AxiLiteSlave(AxiSlave):
             prev_arvalid(self.raddr.arvalid)
         )
 
-        writeval = (vtypes.Ands(vtypes.Not(writevalid), vtypes.Not(readvalid),
-                                vtypes.Not(self.wresp.bvalid),
-                                prev_awvalid) if ready is None else
-                    vtypes.Ands(ready, vtypes.Not(writevalid), vtypes.Not(readvalid),
-                                vtypes.Not(self.wresp.bvalid),
-                                prev_awvalid))
-        readval = (vtypes.Ands(vtypes.Not(readvalid), vtypes.Not(writevalid),
-                               prev_arvalid) if ready is None else
-                   vtypes.Ands(ready, vtypes.Not(readvalid), vtypes.Not(writevalid),
-                               prev_arvalid))
+        writeval = vtypes.Ands(vtypes.Not(writevalid), vtypes.Not(readvalid),
+                               vtypes.Not(self.wresp.bvalid),
+                               prev_awvalid)
+        if ready is not None:
+            writeval = vtypes.Ands(ready, writeval)
+
+        readval = vtypes.Ands(vtypes.Not(readvalid), vtypes.Not(writevalid),
+                              prev_arvalid, vtypes.Not(prev_awvalid))
+
+        if ready is not None:
+            readval = vtypes.Ands(ready, readval)
 
         _connect_ready(self.waddr.awready._get_module(),
                        self.waddr.awready, writeval)
