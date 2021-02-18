@@ -22,12 +22,15 @@ from veriloggen.stream.stypes import _and_vars
 from . import compiler
 from . import thread
 
-mode_width = 4
+mode_width = 5
 mode_idle = vtypes.Int(0, mode_width, base=2)
 mode_ram_normal = vtypes.Int(1 << 0, mode_width, base=2)
 mode_ram_pattern = vtypes.Int(1 << 1, mode_width, base=2)
 mode_ram_multipattern = vtypes.Int(1 << 2, mode_width, base=2)
-mode_fifo = vtypes.Int(1 << 3, mode_width, base=2)
+mode_ram_iter = vtypes.Int(1 << 3, mode_width, base=2)
+mode_fifo = vtypes.Int(1 << 4, mode_width, base=2)
+
+iter_id_width = 16
 
 reduce_reset_name = '_reduce_reset'
 terminate_prefix = '_terminate_%d'
@@ -45,12 +48,18 @@ def TmpStream(m, clk, rst,
 
 
 class Stream(BaseStream):
-    __intrinsics__ = ('set_source', 'set_source_pattern', 'set_source_multidim',
-                      'set_source_multipattern', 'set_source_empty',
+    __intrinsics__ = ('set_source',
+                      'set_source_pattern', 'set_source_multidim',
+                      'set_source_multipattern',
+                      'set_source_iter',
                       'set_source_fifo',
-                      'set_sink', 'set_sink_pattern', 'set_sink_multidim',
-                      'set_sink_multipattern', 'set_sink_immediate',
+                      'set_source_empty',
+                      'set_sink',
+                      'set_sink_pattern', 'set_sink_multidim',
+                      'set_sink_multipattern',
+                      'set_sink_iter',
                       'set_sink_fifo',
+                      'set_sink_immediate',
                       'set_sink_empty',
                       'set_parameter',
                       'set_read_RAM', 'set_write_RAM', 'set_read_modify_write_RAM',
@@ -184,6 +193,7 @@ class Stream(BaseStream):
         var.source_fsm = None
         var.source_pat_fsm = None
         var.source_multipat_fsm = None
+        var.source_iter_fsms = []
 
         var.source_idle = self.module.Reg('_%s_idle' % prefix, initval=1)
         self.source_idle_map[name] = var.source_idle
@@ -191,13 +201,15 @@ class Stream(BaseStream):
         var.source_count = self.module.Reg('_%s_source_count' % prefix,
                                            self.addrwidth + 1, initval=0)
 
-        # 4'b0000: set_source_empty, 4'b0001: set_source,
-        # 4'b0010: set_source_pattern, 4'b0100: set_source_multipattern
-        # 4'b1000: set_source_fifo
+        # 5'b00000: set_source_empty, 5'b00001: set_source,
+        # 5'b00010: set_source_pattern, 5'b00100: set_source_multipattern,
+        # 5'b01000: set_source_iter,
+        # 5'b10000: set_source_fifo
         var.source_mode = self.module.Reg('_%s_source_mode' % prefix, mode_width,
                                           initval=mode_idle)
-        var.source_mode_buf = self.module.Reg('_%s_source_mode_buf' % prefix, mode_width,
-                                              initval=mode_idle)
+
+        var.source_iter_id = self.module.Reg('_%s_source_iter_id' % prefix, iter_id_width,
+                                             initval=0)
 
         # set_source
         var.source_offset = self.module.Reg('_%s_source_offset' % prefix,
@@ -308,13 +320,15 @@ class Stream(BaseStream):
         data.sink_count = self.module.Reg('_%s_sink_count' % prefix,
                                           self.addrwidth + 1, initval=0)
 
-        # 4'b0000: set_sink_empty, 4'b0001: set_sink,
-        # 4'b0010: set_sink_pattern, 4'b0100: set_sink_multipattern
-        # 4'b1000: set_sink_fifo
+        # 5'b00000: set_sink_empty, 5'b00001: set_sink,
+        # 5'b00010: set_sink_pattern, 5'b00100: set_sink_multipattern,
+        # 5'b01000: set_sink_iter,
+        # 5'b10000: set_sink_fifo
         data.sink_mode = self.module.Reg('_%s_sink_mode' % prefix, mode_width,
                                          initval=mode_idle)
-        data.sink_mode_buf = self.module.Reg('_%s_sink_mode_buf' % prefix, mode_width,
-                                             initval=mode_idle)
+
+        data.sink_iter_id = self.module.Reg('_%s_sink_iter_id' % prefix, iter_id_width,
+                                            initval=0)
 
         # set_sink
         data.sink_offset = self.module.Reg('_%s_sink_offset' % prefix,
@@ -804,6 +818,49 @@ class Stream(BaseStream):
         self._synthesize_set_source_multipattern(var, name)
 
         fsm.goto_next()
+
+    def set_source_iter(self, fsm, name, ram, iter_func, initvals,
+                        args=None, port=0):
+
+        if not isinstance(initvals, (tuple, list)):
+            raise TypeError('initvals be 1 tuple or list.')
+
+        if not self.stream_synthesized:
+            self._implement_stream()
+
+        if isinstance(name, str):
+            var = self.var_name_map[name]
+        elif isinstance(name, vtypes.Str):
+            name = name.value
+            var = self.var_name_map[name]
+        elif isinstance(name, int):
+            var = self.var_id_map[name]
+        elif isinstance(name, vtypes.Int):
+            name = name.value
+            var = self.var_id_map[name]
+        else:
+            raise TypeError('Unsupported index name')
+
+        if name not in self.sources:
+            raise NameError("No such stream '%s'" % name)
+
+        set_cond = self._set_flag(fsm)
+        iter_id = len(var.source_iter_fsms)
+
+        self.seq.If(set_cond)(
+            var.source_mode(mode_ram_iter),
+            var.source_iter_id(iter_id)
+        )
+
+        port = vtypes.to_int(port)
+        self._setup_source_ram(ram, var, port, set_cond)
+
+        ### ???
+        self._synthesize_set_source_iter(var, name, iter_func, initvals, args)
+        ### ???
+
+        fsm.goto_next()
+
 
     def set_source_fifo(self, fsm, name, fifo, size):
         """ intrinsic method to assign FIFO property to a source stream """
@@ -2149,6 +2206,79 @@ class Stream(BaseStream):
         )
 
         var.source_multipat_fsm.If(self.oready).goto_init()
+
+    def _synthesize_set_source_iter(self, var, name, iter_func, initvals, args):
+
+        num_iter_vars = len(initvals)
+
+        if num_iter_vars < 1:
+            raise ValueError('initvals must not be empty.')
+
+        iter_id = len(var.source_iter_fsms)
+
+        source_start = vtypes.Ands(self.source_start,
+                                   vtypes.And(var.source_mode, mode_ram_iter),
+                                   var.source_iter_id == iter_id)
+
+        prefix = self._prefix(name)
+
+        iter_vars = [self.module.Reg('%s_iter_%d_var_%d' % (prefix, iter_id, i),
+                                     self.addrwidth, initval=0)
+                     for i in range(num_iter_vars)]
+
+        for iter_var, initval in zip(iter_vars, initvals):
+            self.seq.If(source_start, self.oready)(
+                iter_var(initval)
+            )
+
+        wdata = var.source_ram_rdata
+        wenable = vtypes.Ands(self.oready, self.source_busy, self.is_root)
+        var.write(wdata, wenable)
+
+        fsm_name = '_%s_source_iter_fsm_%d' % (prefix, iter_id)
+        fsm = FSM(self.module, fsm_name, self.clock, self.reset,
+                  as_module=self.fsm_as_module)
+        var.source_iter_fsms.append(fsm)
+
+        fsm.If(source_start, self.oready).goto_next()
+
+        current_addr = iter_vars[0]
+
+        self.seq.If(fsm.here, self.oready)(
+            var.source_idle(0),
+            var.source_ram_raddr(current_addr),
+            var.source_ram_renable(1),
+        )
+
+        func_args = iter_vars + list(args)
+        ret = iter_func(*func_args)
+
+        last_name = '%s_iter_%d_last' % (prefix, iter_id)
+        last = self.module.Wire(last_name)
+        last.assign(ret[0])
+        next_values = ret[1:]
+
+        for iter_var, next_value in zip(iter_vars, next_values):
+            self.seq.If(fsm.here, self.oready)(
+                iter_var(next_value)
+            )
+
+        # force flush
+        self.seq.If(fsm.here, self.source_stop, self.oready)(
+            var.source_ram_renable(0),
+            var.source_idle(1)
+        )
+        fsm.If(self.source_stop, self.oready).goto_init()
+
+        # finalize
+        fsm.If(last, self.oready).goto_next()
+
+        self.seq.If(fsm.here, self.oready)(
+            var.source_ram_renable(0),
+            var.source_idle(1)
+        )
+
+        fsm.If(self.oready).goto_init()
 
     def _setup_source_fifo(self, fifo, var, set_cond):
         if fifo._id() in var.source_id_map:
