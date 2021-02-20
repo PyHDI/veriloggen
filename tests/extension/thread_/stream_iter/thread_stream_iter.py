@@ -25,9 +25,9 @@ def mkLed():
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
     ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
 
-    def addr_iter(addr, offset, size):
-        next_addr = offset + addr + 1
-        last = addr == size - 1
+    def addr_iter(addr, size, offset):
+        next_addr = addr + 1
+        last = (addr == (offset + size - 1))
         return last, next_addr
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
@@ -39,14 +39,13 @@ def mkLed():
     def comp_stream(size, offset):
         strm.set_source_iter('a', ram_a,
                              iter_func=addr_iter,
-                             initvals=(offset,), args=(offset, size))
+                             initvals=(offset,), args=(size, offset))
         strm.set_source_iter('b', ram_b,
                              iter_func=addr_iter,
-                             initvals=(offset,), args=(offset, size))
-        # strm.set_sink_iter('c', ram_c,
-        #                    iter_func=iter_func,
-        #                    initvals=(offset,), args=(offset, size))
-        strm.set_sink('c', ram_c, offset, size)
+                             initvals=(offset,), args=(size, offset))
+        strm.set_sink_iter('c', ram_c,
+                           iter_func=addr_iter,
+                           initvals=(offset,), args=(size, offset))
         strm.run()
         strm.join()
 
@@ -119,7 +118,7 @@ def mkTest(memimg_name=None):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

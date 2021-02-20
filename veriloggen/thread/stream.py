@@ -316,6 +316,7 @@ class Stream(BaseStream):
         data.sink_fsm = None
         data.sink_pat_fsm = None
         data.sink_multipat_fsm = None
+        data.sink_iter_fsms = []
 
         data.sink_count = self.module.Reg('_%s_sink_count' % prefix,
                                           self.addrwidth + 1, initval=0)
@@ -820,7 +821,7 @@ class Stream(BaseStream):
         fsm.goto_next()
 
     def set_source_iter(self, fsm, name, ram, iter_func, initvals,
-                        args=None, port=0):
+                        args=(), port=0):
 
         if not isinstance(initvals, (tuple, list)):
             raise TypeError('initvals be 1 tuple or list.')
@@ -854,13 +855,9 @@ class Stream(BaseStream):
 
         port = vtypes.to_int(port)
         self._setup_source_ram(ram, var, port, set_cond)
-
-        ### ???
         self._synthesize_set_source_iter(var, name, iter_func, initvals, args)
-        ### ???
 
         fsm.goto_next()
-
 
     def set_source_fifo(self, fsm, name, fifo, size):
         """ intrinsic method to assign FIFO property to a source stream """
@@ -1160,6 +1157,47 @@ class Stream(BaseStream):
         port = vtypes.to_int(port)
         self._setup_sink_ram(ram, var, port, set_cond)
         self._synthesize_set_sink_multipattern(var, name)
+
+        fsm.If(self.oready).goto_next()
+
+    def set_sink_iter(self, fsm, name, ram, iter_func, initvals,
+                      args=(), port=0):
+
+        if not self.stream_synthesized:
+            self._implement_stream()
+
+        if isinstance(name, str):
+            var = self.var_name_map[name]
+        elif isinstance(name, vtypes.Str):
+            name = name.value
+            var = self.var_name_map[name]
+        elif isinstance(name, int):
+            var = self.var_id_map[name]
+        elif isinstance(name, vtypes.Int):
+            name = name.value
+            var = self.var_id_map[name]
+        else:
+            raise TypeError('Unsupported index name')
+
+        if name not in self.sinks:
+            raise NameError("No such stream '%s'" % name)
+
+        set_cond_base = self._set_flag(fsm)
+        set_cond = self._delay_from_start_to_sink(set_cond_base)
+
+        initvals = [self._delay_from_start_to_sink(initval) for initval in initvals]
+        args = [self._delay_from_start_to_sink(arg) for arg in args]
+
+        iter_id = len(var.sink_iter_fsms)
+
+        self.seq.If(set_cond)(
+            var.sink_mode(mode_ram_iter),
+            var.sink_iter_id(iter_id)
+        )
+
+        port = vtypes.to_int(port)
+        self._setup_sink_ram(ram, var, port, set_cond)
+        self._synthesize_set_sink_iter(var, name, iter_func, initvals, args)
 
         fsm.If(self.oready).goto_next()
 
@@ -2559,7 +2597,6 @@ class Stream(BaseStream):
                            as_module=self.fsm_as_module)
 
         var.sink_fsm.If(sink_start, self.oready).goto_next()
-
         self.seq.If(var.sink_fsm.here, self.oready)(
             var.sink_ram_waddr(var.sink_offset_buf - var.sink_stride_buf),
             var.sink_count(var.sink_size_buf),
@@ -2890,6 +2927,76 @@ class Stream(BaseStream):
                                  var.sink_multipat_num_patterns == 0,
                                  self.oready).goto_init()
         var.sink_multipat_fsm.If(self.sink_stop, self.oready).goto_init()
+
+    def _synthesize_set_sink_iter(self, var, name, iter_func, initvals, args):
+
+        num_iter_vars = len(initvals)
+
+        if num_iter_vars < 1:
+            raise ValueError('initvals must not be empty.')
+
+        iter_id = len(var.sink_iter_fsms)
+
+        sink_start = vtypes.Ands(self.sink_start,
+                                 vtypes.And(var.sink_mode, mode_ram_iter),
+                                 var.sink_iter_id == iter_id)
+
+        initvals = [self.seq.Prev(initval, 1, cond=vtypes.Ands(sink_start, self.oready))
+                    for initval in initvals]
+        args = [self.seq.Prev(arg, 1, cond=vtypes.Ands(sink_start, self.oready))
+                for arg in args]
+
+        prefix = self._prefix(name)
+
+        fsm_name = '_%s_sink_iter_fsm_%d' % (prefix, iter_id)
+        fsm = FSM(self.module, fsm_name, self.clock, self.reset,
+                  as_module=self.fsm_as_module)
+        var.sink_iter_fsms.append(fsm)
+
+        fsm.If(sink_start, self.oready).goto_next()
+
+        iter_vars = [self.module.Reg('%s_iter_%d_var_%d' % (prefix, iter_id, i),
+                                     self.addrwidth, initval=0)
+                     for i in range(num_iter_vars)]
+
+        for iter_var, initval in zip(iter_vars, initvals):
+            self.seq.If(sink_start, self.oready)(
+                iter_var(initval)
+            )
+
+        fsm.If(self.oready).goto_next()
+
+        current_addr = iter_vars[0]
+
+        if name in self.sink_when_map:
+            when = self.sink_when_map[name]
+            wcond = when.read()
+        else:
+            wcond = None
+
+        rdata = var.read()
+
+        self.seq.If(fsm.here, wcond, self.oready)(
+            var.sink_ram_waddr(current_addr),
+            var.sink_ram_wdata(rdata),
+            var.sink_ram_wenable(1)
+        )
+
+        func_args = iter_vars + list(args)
+        ret = iter_func(*func_args)
+
+        last_name = '%s_iter_%d_last' % (prefix, iter_id)
+        last = self.module.Wire(last_name)
+        last.assign(ret[0])
+        next_values = ret[1:]
+
+        for iter_var, next_value in zip(iter_vars, next_values):
+            self.seq.If(fsm.here, self.oready, wcond)(
+                iter_var(next_value)
+            )
+
+        fsm.If(last, wcond, self.oready).goto_init()
+        fsm.If(self.sink_stop, self.oready).goto_init()
 
     def _setup_sink_fifo(self, fifo, var, set_cond):
         if fifo._id() in var.sink_id_map:
