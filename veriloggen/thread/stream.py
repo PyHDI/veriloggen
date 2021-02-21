@@ -820,8 +820,7 @@ class Stream(BaseStream):
 
         fsm.goto_next()
 
-    def set_source_iter(self, fsm, name, ram, iter_func, initvals,
-                        args=(), port=0):
+    def set_source_iter(self, fsm, name, ram, func, initvals, args=(), port=0):
 
         if not isinstance(initvals, (tuple, list)):
             raise TypeError('initvals be 1 tuple or list.')
@@ -855,7 +854,7 @@ class Stream(BaseStream):
 
         port = vtypes.to_int(port)
         self._setup_source_ram(ram, var, port, set_cond)
-        self._synthesize_set_source_iter(var, name, iter_func, initvals, args)
+        self._synthesize_set_source_iter(var, name, func, initvals, args)
 
         fsm.goto_next()
 
@@ -1160,8 +1159,7 @@ class Stream(BaseStream):
 
         fsm.If(self.oready).goto_next()
 
-    def set_sink_iter(self, fsm, name, ram, iter_func, initvals,
-                      args=(), port=0):
+    def set_sink_iter(self, fsm, name, ram, func, initvals, args=(), port=0):
 
         if not self.stream_synthesized:
             self._implement_stream()
@@ -1197,7 +1195,7 @@ class Stream(BaseStream):
 
         port = vtypes.to_int(port)
         self._setup_sink_ram(ram, var, port, set_cond)
-        self._synthesize_set_sink_iter(var, name, iter_func, initvals, args)
+        self._synthesize_set_sink_iter(var, name, func, initvals, args)
 
         fsm.If(self.oready).goto_next()
 
@@ -2245,7 +2243,7 @@ class Stream(BaseStream):
 
         var.source_multipat_fsm.If(self.oready).goto_init()
 
-    def _synthesize_set_source_iter(self, var, name, iter_func, initvals, args):
+    def _synthesize_set_source_iter(self, var, name, func, initvals, args):
 
         num_iter_vars = len(initvals)
 
@@ -2289,7 +2287,7 @@ class Stream(BaseStream):
         )
 
         func_args = iter_vars + list(args)
-        ret = iter_func(*func_args)
+        ret = func(*func_args)
 
         last_name = '%s_iter_%d_last' % (prefix, iter_id)
         last = self.module.Wire(last_name)
@@ -2928,7 +2926,7 @@ class Stream(BaseStream):
                                  self.oready).goto_init()
         var.sink_multipat_fsm.If(self.sink_stop, self.oready).goto_init()
 
-    def _synthesize_set_sink_iter(self, var, name, iter_func, initvals, args):
+    def _synthesize_set_sink_iter(self, var, name, func, initvals, args):
 
         num_iter_vars = len(initvals)
 
@@ -2983,7 +2981,7 @@ class Stream(BaseStream):
         )
 
         func_args = iter_vars + list(args)
-        ret = iter_func(*func_args)
+        ret = func(*func_args)
 
         last_name = '%s_iter_%d_last' % (prefix, iter_id)
         last = self.module.Wire(last_name)

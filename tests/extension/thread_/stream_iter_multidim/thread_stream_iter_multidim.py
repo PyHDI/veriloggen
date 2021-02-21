@@ -55,13 +55,13 @@ def mkLed():
 
     def comp_stream(offset):
         strm.set_source_iter('a', ram_a,
-                             iter_func=addr_iter,
+                             func=addr_iter,
                              initvals=(offset, 0, 0, 1, 0, 0, 1), args=(offset,))
         strm.set_source_iter('b', ram_b,
-                             iter_func=addr_iter,
+                             func=addr_iter,
                              initvals=(offset, 0, 0, 1, 0, 0, 1), args=(offset,))
         strm.set_sink_iter('c', ram_c,
-                           iter_func=addr_iter,
+                           func=addr_iter,
                            initvals=(offset, 0, 0, 1, 0, 0, 1), args=(offset,))
         strm.run()
         strm.join()
