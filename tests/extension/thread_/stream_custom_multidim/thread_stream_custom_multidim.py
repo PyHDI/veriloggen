@@ -28,7 +28,7 @@ def mkLed():
     shape = [4, 4, 4]
     size = functools.reduce(lambda x, y: x * y, shape, 1)
 
-    def addr_iter(addr, z_offset, y_offset, x_offset, z, y, x, offset):
+    def addr_func(addr, z_offset, y_offset, x_offset, z, y, x, offset):
         next_addr = offset + z_offset + y_offset + x_offset
 
         next_x = Mux(x == shape[-1] - 1, 0, x + 1)
@@ -54,15 +54,15 @@ def mkLed():
     strm.sink(c, 'c')
 
     def comp_stream(offset):
-        strm.set_source_iter('a', ram_a,
-                             func=addr_iter,
+        strm.set_source_custom('a', ram_a,
+                               func=addr_func,
+                               initvals=(offset, 0, 0, 1, 0, 0, 1), args=(offset,))
+        strm.set_source_custom('b', ram_b,
+                               func=addr_func,
+                               initvals=(offset, 0, 0, 1, 0, 0, 1), args=(offset,))
+        strm.set_sink_custom('c', ram_c,
+                             func=addr_func,
                              initvals=(offset, 0, 0, 1, 0, 0, 1), args=(offset,))
-        strm.set_source_iter('b', ram_b,
-                             func=addr_iter,
-                             initvals=(offset, 0, 0, 1, 0, 0, 1), args=(offset,))
-        strm.set_sink_iter('c', ram_c,
-                           func=addr_iter,
-                           initvals=(offset, 0, 0, 1, 0, 0, 1), args=(offset,))
         strm.run()
         strm.join()
 
