@@ -25,10 +25,27 @@ def mkLed():
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
     ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
 
-    def addr_func(addr, size, offset):
-        next_addr = addr + 1
-        last = (addr == (offset + size - 1))
-        return last, next_addr
+    shape = [4, 4, 4]
+    size = functools.reduce(lambda x, y: x * y, shape, 1)
+
+    def addr_func(addr, z_offset, y_offset, x_offset, z, y, x, offset):
+        next_addr = offset + z_offset + y_offset + x_offset
+
+        next_x = Mux(x == shape[-1] - 1, 0, x + 1)
+        next_y = Mux(Ands(y == shape[-2] - 1, x == shape[-1] - 1), 0,
+                     Mux(x == shape[-1] - 1, y + 1, y))
+        next_z = Mux(Ands(z == shape[-3] - 1, y == shape[-2] - 1, x == shape[-1] - 1), 0,
+                     Mux(Ands(y == shape[-2] - 1, x == shape[-1] - 1), z + 1, z))
+
+        next_x_offset = next_x
+        next_y_offset = Mux(Ands(y == shape[-2] - 1, x == shape[-1] - 1), 0,
+                            Mux(x == shape[-1] - 1, y_offset + shape[-1], y_offset))
+        next_z_offset = Mux(Ands(z == shape[-3] - 1, y == shape[-2] - 1, x == shape[-1] - 1), 0,
+                            Mux(Ands(y == shape[-2] - 1, x == shape[-1] - 1),
+                                z_offset + shape[-2] * shape[-1], z_offset))
+
+        last = Ands(z == 0, y == 0, x == 0)
+        return last, next_addr, next_z_offset, next_y_offset, next_x_offset, next_z, next_y, next_x
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
     a = strm.source('a')
@@ -36,20 +53,20 @@ def mkLed():
     c = a + b
     strm.sink(c, 'c')
 
-    def comp_stream(size, offset):
-        strm.set_source_custom('a', ram_a,
-                               func=addr_func,
-                               initvals=(offset,), args=(size, offset))
-        strm.set_source_custom('b', ram_b,
-                               func=addr_func,
-                               initvals=(offset,), args=(size, offset))
-        strm.set_sink_custom('c', ram_c,
-                             func=addr_func,
-                             initvals=(offset,), args=(size, offset))
+    def comp_stream(offset):
+        strm.set_source_generator('a', ram_a,
+                                  func=addr_func,
+                                  initvals=(offset, 0, 0, 1, 0, 0, 1), args=(offset,))
+        strm.set_source_generator('b', ram_b,
+                                  func=addr_func,
+                                  initvals=(offset, 0, 0, 1, 0, 0, 1), args=(offset,))
+        strm.set_sink_generator('c', ram_c,
+                                func=addr_func,
+                                initvals=(offset, 0, 0, 1, 0, 0, 1), args=(offset,))
         strm.run()
         strm.join()
 
-    def comp_sequential(size, offset):
+    def comp_sequential(offset):
         sum = 0
         for i in range(size):
             a = ram_a.read(i + offset)
@@ -57,7 +74,7 @@ def mkLed():
             sum = a + b
             ram_c.write(i + offset, sum)
 
-    def check(size, offset_stream, offset_seq):
+    def check(offset_stream, offset_seq):
         all_ok = True
         for i in range(size):
             st = ram_c.read(i + offset_stream)
@@ -69,30 +86,30 @@ def mkLed():
         else:
             print('# verify: FAILED')
 
-    def comp(size):
+    def comp():
         # stream
         offset = 0
         myaxi.dma_read(ram_a, offset, 0, size)
         myaxi.dma_read(ram_b, offset, 512, size)
-        comp_stream(size, offset)
+        comp_stream(offset)
         myaxi.dma_write(ram_c, offset, 1024, size)
 
         # sequential
         offset = size
         myaxi.dma_read(ram_a, offset, 0, size)
         myaxi.dma_read(ram_b, offset, 512, size)
-        comp_sequential(size, offset)
+        comp_sequential(offset)
         myaxi.dma_write(ram_c, offset, 1024 * 2, size)
 
         # verification
         myaxi.dma_read(ram_c, 0, 1024, size)
         myaxi.dma_read(ram_c, offset, 1024 * 2, size)
-        check(size, 0, offset)
+        check(0, offset)
 
         vthread.finish()
 
     th = vthread.Thread(m, 'th_comp', clk, rst, comp)
-    fsm = th.start(32)
+    fsm = th.start()
 
     return m
 

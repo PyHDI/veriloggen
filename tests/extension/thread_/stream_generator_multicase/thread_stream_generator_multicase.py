@@ -43,48 +43,25 @@ def mkLed():
 
     def comp_stream(size, offset):
         # 1st settings are dummy
-        strm.set_source_custom('a', ram_a,
-                               func=dummy_addr_func,
-                               initvals=(offset,), args=(size, offset))
-        strm.set_source_custom('b', ram_b,
-                               func=dummy_addr_func,
-                               initvals=(offset,), args=(size, offset))
-        strm.set_sink_custom('c', ram_c,
-                             func=dummy_addr_func,
-                             initvals=(offset,), args=(size, offset))
+        strm.set_source_generator('a', ram_a,
+                                  func=dummy_addr_func,
+                                  initvals=(offset,), args=(size, offset))
+        strm.set_source_generator('b', ram_b,
+                                  func=dummy_addr_func,
+                                  initvals=(offset,), args=(size, offset))
+        strm.set_sink_generator('c', ram_c,
+                                func=dummy_addr_func,
+                                initvals=(offset,), args=(size, offset))
         # 2nd settings for actual
-        strm.set_source_custom('a', ram_a,
-                               func=addr_func,
-                               initvals=(offset,), args=(size, offset))
-        strm.set_source_custom('b', ram_b,
-                               func=addr_func,
-                               initvals=(offset,), args=(size, offset))
-        strm.set_sink_custom('c', ram_c,
-                             func=addr_func,
-                             initvals=(offset,), args=(size, offset))
-        strm.run()
-        strm.join()
-
-        # 1st settings are dummy
-        strm.set_source_custom('a', ram_a,
-                             func=dummy_addr_func,
-                             initvals=(offset,), args=(size, offset))
-        strm.set_source_custom('b', ram_b,
-                             func=dummy_addr_func,
-                             initvals=(offset,), args=(size, offset))
-        strm.set_sink_custom('c', ram_c,
-                             func=dummy_addr_func,
-                             initvals=(offset,), args=(size, offset))
-        # 2nd settings for actual
-        strm.set_source_custom('a', ram_a,
-                             func=addr_func,
-                             initvals=(offset,), args=(size, offset))
-        strm.set_source_custom('b', ram_b,
-                             func=addr_func,
-                             initvals=(offset,), args=(size, offset))
-        strm.set_sink_custom('c', ram_c,
-                             func=addr_func,
-                             initvals=(offset,), args=(size, offset))
+        strm.set_source_generator('a', ram_a,
+                                  func=addr_func,
+                                  initvals=(offset,), args=(size, offset))
+        strm.set_source_generator('b', ram_b,
+                                  func=addr_func,
+                                  initvals=(offset,), args=(size, offset))
+        strm.set_sink_generator('c', ram_c,
+                                func=addr_func,
+                                initvals=(offset,), args=(size, offset))
         strm.run()
         strm.join()
 

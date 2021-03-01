@@ -25,11 +25,6 @@ def mkLed():
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
     ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
 
-    def dummy_addr_func(addr, size, offset):
-        next_addr = addr + 100
-        last = (addr == (offset + size - 1))
-        return last, next_addr
-
     def addr_func(addr, size, offset):
         next_addr = addr + 1
         last = (addr == (offset + size - 1))
@@ -42,26 +37,15 @@ def mkLed():
     strm.sink(c, 'c')
 
     def comp_stream(size, offset):
-        # 1st settings are dummy
-        strm.set_source_custom('a', ram_a,
-                               func=dummy_addr_func,
-                               initvals=(offset,), args=(size, offset))
-        strm.set_source_custom('b', ram_b,
-                               func=dummy_addr_func,
-                               initvals=(offset,), args=(size, offset))
-        strm.set_sink_custom('c', ram_c,
-                             func=dummy_addr_func,
-                             initvals=(offset,), args=(size, offset))
-        # 2nd settings for actual
-        strm.set_source_custom('a', ram_a,
-                             func=addr_func,
-                             initvals=(offset,), args=(size, offset))
-        strm.set_source_custom('b', ram_b,
-                             func=addr_func,
-                             initvals=(offset,), args=(size, offset))
-        strm.set_sink_custom('c', ram_c,
-                             func=addr_func,
-                             initvals=(offset,), args=(size, offset))
+        strm.set_source_generator('a', ram_a,
+                                  func=addr_func,
+                                  initvals=(offset,), args=(size, offset))
+        strm.set_source_generator('b', ram_b,
+                                  func=addr_func,
+                                  initvals=(offset,), args=(size, offset))
+        strm.set_sink_generator('c', ram_c,
+                                func=addr_func,
+                                initvals=(offset,), args=(size, offset))
         strm.run()
         strm.join()
 
