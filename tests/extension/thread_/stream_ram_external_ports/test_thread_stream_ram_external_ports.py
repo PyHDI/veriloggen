@@ -179,8 +179,8 @@ module blinkled
   assign _mystream_is_root = 1;
   reg _mystream_a_idle;
   reg [33-1:0] _mystream_a_source_count;
-  reg [4-1:0] _mystream_a_source_mode;
-  reg [4-1:0] _mystream_a_source_mode_buf;
+  reg [5-1:0] _mystream_a_source_mode;
+  reg [16-1:0] _mystream_a_source_generator_id;
   reg [32-1:0] _mystream_a_source_offset;
   reg [33-1:0] _mystream_a_source_size;
   reg [32-1:0] _mystream_a_source_stride;
@@ -196,8 +196,8 @@ module blinkled
   reg [32-1:0] _mystream_a_source_empty_data;
   reg _mystream_b_idle;
   reg [33-1:0] _mystream_b_source_count;
-  reg [4-1:0] _mystream_b_source_mode;
-  reg [4-1:0] _mystream_b_source_mode_buf;
+  reg [5-1:0] _mystream_b_source_mode;
+  reg [16-1:0] _mystream_b_source_generator_id;
   reg [32-1:0] _mystream_b_source_offset;
   reg [33-1:0] _mystream_b_source_size;
   reg [32-1:0] _mystream_b_source_stride;
@@ -212,8 +212,8 @@ module blinkled
   wire [32-1:0] _mystream_b_source_fifo_rdata;
   reg [32-1:0] _mystream_b_source_empty_data;
   reg [33-1:0] _mystream_c_sink_count;
-  reg [4-1:0] _mystream_c_sink_mode;
-  reg [4-1:0] _mystream_c_sink_mode_buf;
+  reg [5-1:0] _mystream_c_sink_mode;
+  reg [16-1:0] _mystream_c_sink_generator_id;
   reg [32-1:0] _mystream_c_sink_offset;
   reg [33-1:0] _mystream_c_sink_size;
   reg [32-1:0] _mystream_c_sink_stride;
@@ -493,7 +493,7 @@ module blinkled
       _mystream_c_sink_fifo_enq <= 0;
       __mystream_stream_ivalid_1 <= 0;
       _plus_data_2 <= 0;
-      _mystream_a_source_mode <= 4'b0;
+      _mystream_a_source_mode <= 5'b0;
       _mystream_a_source_offset <= 0;
       _mystream_a_source_size <= 0;
       _mystream_a_source_stride <= 0;
@@ -504,7 +504,7 @@ module blinkled
       __variable_wdata_0 <= 0;
       _mystream_a_source_ram_raddr <= 0;
       _mystream_a_source_count <= 0;
-      _mystream_b_source_mode <= 4'b0;
+      _mystream_b_source_mode <= 5'b0;
       _mystream_b_source_offset <= 0;
       _mystream_b_source_size <= 0;
       _mystream_b_source_stride <= 0;
@@ -524,7 +524,7 @@ module blinkled
       _tmp_22 <= 0;
       _tmp_23 <= 0;
       _tmp_24 <= 0;
-      _mystream_c_sink_mode <= 4'b0;
+      _mystream_c_sink_mode <= 5'b0;
       _mystream_c_sink_offset <= 0;
       _mystream_c_sink_size <= 0;
       _mystream_c_sink_stride <= 0;
@@ -572,7 +572,7 @@ module blinkled
         _plus_data_2 <= mystream_a_data + mystream_b_data;
       end 
       if(_set_flag_9) begin
-        _mystream_a_source_mode <= 4'b1;
+        _mystream_a_source_mode <= 5'b1;
         _mystream_a_source_offset <= _th_comp_offset_3;
         _mystream_a_source_size <= _th_comp_size_2;
         _mystream_a_source_stride <= 1;
@@ -580,7 +580,7 @@ module blinkled
       if(_set_flag_9) begin
         _mystream_a_source_sel <= 1;
       end 
-      if(_mystream_source_start && _mystream_a_source_mode & 4'b1 && _mystream_stream_oready) begin
+      if(_mystream_source_start && _mystream_a_source_mode & 5'b1 && _mystream_stream_oready) begin
         _mystream_a_source_offset_buf <= _mystream_a_source_offset;
         _mystream_a_source_size_buf <= _mystream_a_source_size;
         _mystream_a_source_stride_buf <= _mystream_a_source_stride;
@@ -608,7 +608,7 @@ module blinkled
         _mystream_a_idle <= 1;
       end 
       if(_set_flag_12) begin
-        _mystream_b_source_mode <= 4'b1;
+        _mystream_b_source_mode <= 5'b1;
         _mystream_b_source_offset <= _th_comp_offset_3;
         _mystream_b_source_size <= _th_comp_size_2;
         _mystream_b_source_stride <= 1;
@@ -616,7 +616,7 @@ module blinkled
       if(_set_flag_12) begin
         _mystream_b_source_sel <= 2;
       end 
-      if(_mystream_source_start && _mystream_b_source_mode & 4'b1 && _mystream_stream_oready) begin
+      if(_mystream_source_start && _mystream_b_source_mode & 5'b1 && _mystream_stream_oready) begin
         _mystream_b_source_offset_buf <= _mystream_b_source_offset;
         _mystream_b_source_size_buf <= _mystream_b_source_size;
         _mystream_b_source_stride_buf <= _mystream_b_source_stride;
@@ -671,7 +671,7 @@ module blinkled
         _tmp_24 <= _tmp_23;
       end 
       if(_tmp_18) begin
-        _mystream_c_sink_mode <= 4'b1;
+        _mystream_c_sink_mode <= 5'b1;
         _mystream_c_sink_offset <= _tmp_21;
         _mystream_c_sink_size <= _tmp_24;
         _mystream_c_sink_stride <= 1;
@@ -679,7 +679,7 @@ module blinkled
       if(_tmp_18) begin
         _mystream_c_sink_sel <= 3;
       end 
-      if(_mystream_sink_start && _mystream_c_sink_mode & 4'b1 && _mystream_stream_oready) begin
+      if(_mystream_sink_start && _mystream_c_sink_mode & 5'b1 && _mystream_stream_oready) begin
         _mystream_c_sink_offset_buf <= _mystream_c_sink_offset;
         _mystream_c_sink_size_buf <= _mystream_c_sink_size;
         _mystream_c_sink_stride_buf <= _mystream_c_sink_stride;
@@ -907,7 +907,7 @@ module blinkled
     end else begin
       case(_mystream_a_source_fsm_0)
         _mystream_a_source_fsm_0_init: begin
-          if(_mystream_source_start && _mystream_a_source_mode & 4'b1 && _mystream_stream_oready) begin
+          if(_mystream_source_start && _mystream_a_source_mode & 5'b1 && _mystream_stream_oready) begin
             _mystream_a_source_fsm_0 <= _mystream_a_source_fsm_0_1;
           end 
         end
@@ -937,7 +937,7 @@ module blinkled
     end else begin
       case(_mystream_b_source_fsm_1)
         _mystream_b_source_fsm_1_init: begin
-          if(_mystream_source_start && _mystream_b_source_mode & 4'b1 && _mystream_stream_oready) begin
+          if(_mystream_source_start && _mystream_b_source_mode & 5'b1 && _mystream_stream_oready) begin
             _mystream_b_source_fsm_1 <= _mystream_b_source_fsm_1_1;
           end 
         end
@@ -967,7 +967,7 @@ module blinkled
     end else begin
       case(_mystream_c_sink_fsm_2)
         _mystream_c_sink_fsm_2_init: begin
-          if(_mystream_sink_start && _mystream_c_sink_mode & 4'b1 && _mystream_stream_oready) begin
+          if(_mystream_sink_start && _mystream_c_sink_mode & 5'b1 && _mystream_stream_oready) begin
             _mystream_c_sink_fsm_2 <= _mystream_c_sink_fsm_2_1;
           end 
         end
