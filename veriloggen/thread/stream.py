@@ -63,6 +63,7 @@ class Stream(BaseStream):
                       'set_sink_empty',
                       'set_parameter',
                       'set_read_RAM', 'set_write_RAM', 'set_read_modify_write_RAM',
+                      'set_read_fifo', 'set_write_fifo',
                       'read_sink',
                       'run', 'join', 'done',
                       'source_join', 'source_done',
@@ -141,6 +142,8 @@ class Stream(BaseStream):
         self.read_rams = OrderedDict()
         self.write_rams = OrderedDict()
         self.read_modify_write_rams = OrderedDict()
+        self.read_fifos = OrderedDict()
+        self.write_fifos = OrderedDict()
 
         self.var_name_map = OrderedDict()
         self.var_id_map = OrderedDict()
@@ -617,6 +620,75 @@ class Stream(BaseStream):
         self.var_name_id_map[name] = _id
 
         return write_var
+
+    def read_fifo(self, name, when=None,
+                  datawidth=None, point=0, signed=True):
+
+        if self.stream_synthesized:
+            raise ValueError(
+                'cannot modify the stream because already synthesized')
+
+        _id = self.var_id_count
+        if name is None:
+            name = 'read_fifo_%d' % _id
+
+        if name in self.var_name_map:
+            raise ValueError("'%s' is already defined in stream '%s'" %
+                             (name, self.name))
+
+        prefix = self._prefix(name)
+
+        self.var_id_count += 1
+
+        if datawidth is None:
+            datawidth = self.datawidth
+
+        var = self.ReadFIFO(when=when,
+                            width=datawidth, point=point, signed=signed, fifo_name=name)
+
+        self.read_fifos[name] = var
+        self.var_id_map[_id] = var
+        self.var_name_map[name] = var
+        self.var_id_name_map[_id] = name
+        self.var_name_id_map[name] = _id
+
+        var.read_fifo_id_map = OrderedDict()
+        var.read_fifo_sel = self.module.Reg('_%s_read_fifo_sel' % prefix,
+                                            self.ram_sel_width, initval=0)
+
+        return var
+
+    def write_fifo(self, name, data, when=None):
+
+        if self.stream_synthesized:
+            raise ValueError(
+                'cannot modify the stream because already synthesized')
+
+        _id = self.var_id_count
+        if name is None:
+            name = 'write_fifo_%d' % _id
+
+        if name in self.var_name_map:
+            raise ValueError("'%s' is already defined in stream '%s'" %
+                             (name, self.name))
+
+        prefix = self._prefix(name)
+
+        self.var_id_count += 1
+
+        var = self.WriteFIFO(data, when=when, fifo_name=name)
+
+        self.write_fifos[name] = var
+        self.var_id_map[_id] = var
+        self.var_name_map[name] = var
+        self.var_id_name_map[_id] = name
+        self.var_name_id_map[name] = _id
+
+        var.write_fifo_id_map = OrderedDict()
+        var.write_fifo_sel = self.module.Reg('_%s_write_fifo_sel' % prefix,
+                                             self.ram_sel_width, initval=0)
+
+        return var
 
     def set_source(self, fsm, name, ram, offset, size, stride=1, port=0):
         """ intrinsic method to assign RAM property to a source stream """
@@ -1346,7 +1418,7 @@ class Stream(BaseStream):
         fsm.goto_next()
 
     def set_read_RAM(self, fsm, name, ram, port=0):
-        """ intrinsic method to assign RAM property to a read-RAM interface """
+        """ intrinsic method to assign RAM property to a read_RAM interface """
 
         if not self.stream_synthesized:
             self._implement_stream()
@@ -1375,7 +1447,7 @@ class Stream(BaseStream):
         fsm.goto_next()
 
     def set_write_RAM(self, fsm, name, ram, port=0):
-        """ intrinsic method to assign RAM property to a write-RAM interface """
+        """ intrinsic method to assign RAM property to a write_RAM interface """
 
         if not self.stream_synthesized:
             self._implement_stream()
@@ -1439,6 +1511,62 @@ class Stream(BaseStream):
 
         write_name = write_ram
         self.set_write_RAM(fsm, write_name, ram, port=write_port)
+
+    def set_read_fifo(self, fsm, name, fifo):
+        """ intrinsic method to assign FIFO property to a read_fifo interface """
+
+        if not self.stream_synthesized:
+            self._implement_stream()
+
+        if isinstance(name, str):
+            var = self.var_name_map[name]
+        elif isinstance(name, vtypes.Str):
+            name = name.value
+            var = self.var_name_map[name]
+        elif isinstance(name, int):
+            var = self.var_id_map[name]
+        elif isinstance(name, vtypes.Int):
+            name = name.value
+            var = self.var_id_map[name]
+        else:
+            raise TypeError('Unsupported index name')
+
+        if name not in self.read_fifos:
+            raise NameError("No such stream '%s'" % name)
+
+        set_cond = self._set_flag(fsm)
+
+        self._setup_read_fifo(fifo, var, set_cond)
+
+        fsm.goto_next()
+
+    def set_write_fifo(self, fsm, name, fifo):
+        """ intrinsic method to assign FIFO property to a write_fifo interface """
+
+        if not self.stream_synthesized:
+            self._implement_stream()
+
+        if isinstance(name, str):
+            var = self.var_name_map[name]
+        elif isinstance(name, vtypes.Str):
+            name = name.value
+            var = self.var_name_map[name]
+        elif isinstance(name, int):
+            var = self.var_id_map[name]
+        elif isinstance(name, vtypes.Int):
+            name = name.value
+            var = self.var_id_map[name]
+        else:
+            raise TypeError('Unsupported index name')
+
+        if name not in self.write_fifos:
+            raise NameError("No such stream '%s'" % name)
+
+        set_cond = self._set_flag(fsm)
+
+        self._setup_write_fifo(fifo, var, set_cond)
+
+        fsm.goto_next()
 
     def read_sink(self, fsm, name):
         """ intrinsic method to read the last output of a sink stream """
@@ -3384,6 +3512,195 @@ class Stream(BaseStream):
 
         self.seq.If(enable, vtypes.Not(self.dump_mask))(
             vtypes.Display(fmt, self.dump_step, age, addr, data)
+        )
+
+    def _setup_read_fifo(self, fifo, var, set_cond):
+        if fifo._id() in var.read_fifo_id_map:
+            fifo_id = var.read_fifo_id_map[fifo._id()]
+            self.seq.If(set_cond)(
+                var.read_fifo_sel(fifo_id)
+            )
+            return
+
+        if fifo._id() not in self.buf_id_map:
+            fifo_id = self.buf_id_count
+            self.buf_id_count += 1
+            self.buf_id_map[fifo._id()] = fifo_id
+        else:
+            fifo_id = self.buf_id_map[fifo._id()]
+
+        var.read_fifo_id_map[fifo._id()] = fifo_id
+
+        self.seq.If(set_cond)(
+            var.read_fifo_sel(fifo_id)
+        )
+
+        fifo_cond = (var.read_fifo_sel == fifo_id)
+        renable = vtypes.Ands(self.oready, var.enable, fifo_cond)
+
+        d, v, ready = fifo.deq_rtl(cond=renable)
+
+        d_out = d
+        util.add_mux(var.read_data, fifo_cond, d_out)
+        util.add_disable_cond(var.read_ready, fifo_cond, ready)
+
+        if (self.dump and
+            (self.dump_mode == 'all' or
+             self.dump_mode == 'fifo' or
+             (self.dump_mode == 'selective' and
+                 hasattr(fifo, 'dump') and fifo.dump))):
+            self._setup_read_fifo_dump(fifo, var, renable, d)
+
+    def _setup_read_fifo_dump(self, fifo, var, deq, read_data):
+        pipeline_depth = self.pipeline_depth()
+        log_pipeline_depth = max(
+            int(math.ceil(math.log(max(pipeline_depth, 10), 10))), 1)
+
+        data_base = (fifo.dump_data_base if hasattr(fifo, 'dump_data_base') else
+                     self.dump_base)
+        data_base_char = ('b' if data_base == 2 else
+                          'o' if data_base == 8 else
+                          'd' if (data_base == 10 and
+                                  (not hasattr(fifo, 'point') or fifo.point <= 0)) else
+                          # 'f' if (data_base == 10 and
+                          #        hasattr(fifo, 'point') and fifo.point > 0) else
+                          'g' if (data_base == 10 and
+                                  hasattr(fifo, 'point') and fifo.point > 0) else
+                          'x')
+        data_prefix = ('0b' if data_base == 2 else
+                       '0o' if data_base == 8 else
+                       '  ' if data_base == 10 else
+                       '0x')
+        # if data_base_char == 'f':
+        #    point_len = int(math.ceil(fifo.point / math.log(10, 2)))
+        #    point_len = max(point_len, 8)
+        #    total_len = int(math.ceil(fifo.datawidth / math.log(10, 2)))
+        #    total_len = max(total_len, point_len)
+        #    data_vfmt = ''.join([data_prefix, '%',
+        #                         '%d.%d' % (total_len + 1, point_len),
+        #                         data_base_char])
+        # else:
+        #    data_vfmt = ''.join([data_prefix, '%', data_base_char])
+        data_vfmt = ''.join([data_prefix, '%', data_base_char])
+
+        name = fifo.name
+        fmt = ''.join(['(', self.name, ' step:%d, ',
+                       'read, ', ' ' * (log_pipeline_depth + 2),
+                       'age:%d) ', name,
+                       ' = ', data_vfmt])
+
+        dump_fifo_step_name = ('_stream_dump_fifo_step_%d_%s' %
+                               (self.object_id, name))
+        dump_fifo_step = self.module.Reg(dump_fifo_step_name, 32, initval=0)
+
+        enable = self.seq.Prev(deq, 1, cond=self.oready)
+        age = dump_fifo_step
+        if hasattr(fifo, 'point') and fifo.point > 0:
+            data = vtypes.Div(vtypes.SystemTask('itor', read_data),
+                              1.0 * (2 ** fifo.point))
+        elif hasattr(fifo, 'point') and fifo.point < 0:
+            data = vtypes.Times(read_data, 2 ** -fifo.point)
+        else:
+            data = read_data
+
+        self.seq(
+            dump_fifo_step(0)
+        )
+        self.seq.If(enable)(
+            dump_fifo_step.inc()
+        )
+        self.seq.If(self.dump_enable)(
+            dump_fifo_step.inc()
+        )
+
+        self.seq.If(enable, vtypes.Not(self.dump_mask))(
+            vtypes.Display(fmt, dump_fifo_step, age, data)
+        )
+
+    def _setup_write_fifo(self, fifo, var, set_cond):
+        if fifo._id() in var.write_fifo_id_map:
+            fifo_id = var.write_fifo_id_map[fifo._id()]
+            self.seq.If(set_cond)(
+                var.write_fifo_sel(fifo_id)
+            )
+            return
+
+        if fifo._id() not in self.buf_id_map:
+            fifo_id = self.buf_id_count
+            self.buf_id_count += 1
+            self.buf_id_map[fifo._id()] = fifo_id
+        else:
+            fifo_id = self.buf_id_map[fifo._id()]
+
+        var.write_fifo_id_map[fifo._id()] = fifo_id
+
+        self.seq.If(set_cond)(
+            var.write_fifo_sel(fifo_id)
+        )
+
+        fifo_cond = (var.write_fifo_sel == fifo_id)
+        wenable = vtypes.Ands(self.oready, var.enable, fifo_cond)
+        ack, ready = fifo.enq_rtl(var.write_data, cond=wenable)
+
+        util.add_disable_cond(var.write_ready, fifo_cond, ready)
+
+        if (self.dump and
+            (self.dump_mode == 'all' or
+             self.dump_mode == 'fifo' or
+             (self.dump_mode == 'selective' and
+                 hasattr(fifo, 'dump') and fifo.dump))):
+            self._setup_write_fifo_dump(fifo, var, wenable)
+
+    def _setup_write_fifo_dump(self, fifo, var, enq):
+        pipeline_depth = self.pipeline_depth()
+        log_pipeline_depth = max(
+            int(math.ceil(math.log(max(pipeline_depth, 10), 10))), 1)
+
+        data_base = (fifo.dump_data_base if hasattr(fifo, 'dump_data_base') else
+                     self.dump_base)
+        data_base_char = ('b' if data_base == 2 else
+                          'o' if data_base == 8 else
+                          'd' if (data_base == 10 and
+                                  (not hasattr(fifo, 'point') or fifo.point <= 0)) else
+                          # 'f' if (data_base == 10 and
+                          #        hasattr(fifo, 'point') and fifo.point > 0) else
+                          'g' if (data_base == 10 and
+                                  hasattr(fifo, 'point') and fifo.point > 0) else
+                          'x')
+        data_prefix = ('0b' if data_base == 2 else
+                       '0o' if data_base == 8 else
+                       '  ' if data_base == 10 else
+                       '0x')
+        # if data_base_char == 'f':
+        #    point_len = int(math.ceil(fifo.point / math.log(10, 2)))
+        #    point_len = max(point_len, 8)
+        #    total_len = int(math.ceil(fifo.datawidth / math.log(10, 2)))
+        #    total_len = max(total_len, point_len)
+        #    data_vfmt = ''.join([data_prefix, '%',
+        #                         '%d.%d' % (total_len + 1, point_len),
+        #                         data_base_char])
+        # else:
+        #    data_vfmt = ''.join([data_prefix, '%', data_base_char])
+        data_vfmt = ''.join([data_prefix, '%', data_base_char])
+
+        name = fifo.name
+        fmt = ''.join(['(', self.name, ' step:%d, ',
+                       'write, ', ' ' * (log_pipeline_depth + 1),
+                       'age:%d) ', name,
+                       ' = ', data_vfmt])
+
+        enable = var.sink_fifo_enq
+        age = self.seq.Prev(self.dump_step, pipeline_depth + 1, cond=self.oready) - 1
+        if hasattr(fifo, 'point') and fifo.point > 0:
+            data = vtypes.Div(vtypes.SystemTask('itor', var.sink_fifo_wdata),
+                              1.0 * (2 ** fifo.point))
+        elif hasattr(fifo, 'point') and fifo.point < 0:
+            data = vtypes.Times(var.sink_fifo_wdata, 2 ** -fifo.point)
+        else:
+            data = var.sink_fifo_wdata
+
+        self.seq.If(enable, vtypes.Not(self.dump_mask))(
+            vtypes.Display(fmt, self.dump_step, age, data)
         )
 
     def _make_reduce_reset(self):

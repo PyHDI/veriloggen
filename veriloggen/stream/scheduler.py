@@ -83,6 +83,8 @@ class ASAPScheduler(_Scheduler):
         left = self.visit(node.left)
         right = self.visit(node.right)
         mine = self.max_stage(left, right)
+        if mine is None:
+            mine = 0
         node.left = self.fill_gap(node.left, mine)
         node.right = self.fill_gap(node.right, mine)
         node._set_start_stage(mine)
@@ -99,6 +101,8 @@ class ASAPScheduler(_Scheduler):
             return node._get_end_stage()
         right = self.visit(node.right)
         mine = self.max_stage(right)
+        if mine is None:
+            mine = 0
         node.right = self.fill_gap(node.right, mine)
         node._set_start_stage(mine)
         if getattr(node, 'variable_latency', None):
@@ -117,6 +121,8 @@ class ASAPScheduler(_Scheduler):
             var = self.visit(var)
             ret.append(var)
         mine = self.max_stage(*ret)
+        if mine is None:
+            mine = 0
         node.args = [self.fill_gap(var, mine) for var in node.args]
         node._set_start_stage(mine)
         if getattr(node, 'variable_latency', None):
@@ -143,6 +149,8 @@ class ASAPScheduler(_Scheduler):
         reset = self.visit(node.reset) if node.reset is not None else None
         mine = self.max_stage(right, size, interval, initval,
                               offset, dependency, enable, reset)
+        if mine is None:
+            mine = 0
         node.right = self.fill_gap(node.right, mine)
         if node.size is not None:
             node.size = self.fill_gap(node.size, mine)
