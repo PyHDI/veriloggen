@@ -4635,7 +4635,7 @@ class ReadRAM(_SpecialOperator):
         elif self.latency == 2:
             data = m.Reg(self.name('data'), datawidth, initval=0, signed=signed)
             self.sig_data = data
-            when_cond = self.args[2].sig_data if len(self.args) == 3 else None
+            when_cond = self.args[1].sig_data if len(self.args) == 2 else None
             if when_cond is not None:
                 when_cond = seq.Prev(when_cond, 1)
             enable = _and_vars(senable, when_cond)
@@ -4706,6 +4706,141 @@ class WriteRAM(_SpecialOperator):
     @property
     def addr(self):
         return self.waddr
+
+    @property
+    def write_data(self):
+        return self.wdata
+
+
+class ReadFIFO(_SpecialOperator):
+    latency = 1
+
+    def __init__(self, when=None,
+                 width=None, point=None, signed=True, fifo_name=None):
+
+        args = []
+        if when is not None:
+            args.append(when)
+
+        _SpecialOperator.__init__(self, *args)
+
+        if width is not None:
+            self.width = width
+
+        if point is not None:
+            self.point = point
+
+        self.signed = signed
+
+        self.graph_label = 'ReadFIFO' if fifo_name is None else ('ReadFIFO\n%s' % fifo_name)
+        self.graph_shape = 'box'
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency < 1:
+            raise ValueError("Latency mismatch '%d' < '%s'" %
+                             (self.latency, 1))
+
+        datawidth = self.get_width()
+        signed = self.get_signed()
+        rdata = m.Wire(self.name('rdata'), datawidth, signed=signed)
+        self.read_data = rdata
+
+        when_cond = self.args[0].sig_data if len(self.args) == 1 else None
+        enable_value = _and_vars(svalid, senable, when_cond)
+        enable = m.Wire(self.name('enable'))
+        enable.assign(enable_value)
+        self.enable = enable
+
+        read_ready = m.Wire(self.name('read_ready'))
+        self.read_ready = read_ready
+
+        stall_cond = m.Wire(self.name('stall_cond'))
+        if when_cond is None:
+            stall_cond.assign(vtypes.Ands(vtypes.Not(read_ready), svalid))
+        else:
+            stall_cond.assign(vtypes.Ands(vtypes.Not(read_ready), svalid, when_cond))
+
+        util.add_disable_cond(self.strm.internal_oready, stall_cond, vtypes.Int(0))
+
+        if self.latency == 1:
+            data = m.Wire(self.name('data'), datawidth, signed=signed)
+            data.assign(rdata)
+            self.sig_data = data
+
+        elif self.latency == 2:
+            data = m.Reg(self.name('data'), datawidth, initval=0, signed=signed)
+            self.sig_data = data
+            when_cond = self.args[0].sig_data if len(self.args) == 1 else None
+            if when_cond is not None:
+                when_cond = seq.Prev(when_cond, 1)
+            enable = _and_vars(senable, when_cond)
+            seq(data(rdata), cond=enable)
+
+        else:
+            prev_data = None
+
+            when_cond_base = self.args[2].sig_data if len(self.args) == 3 else None
+
+            for i in range(self.latency - 1):
+                data = m.Reg(self.name('data_d%d' % i), datawidth,
+                             initval=0, signed=signed)
+                if when_cond_base is not None:
+                    when_cond = seq.Prev(when_cond, i + 1)
+                else:
+                    when_cond = None
+                enable = _and_vars(senable, when_cond)
+                if i == 0:
+                    seq(data(rdata), cond=enable)
+                else:
+                    seq(data(prev_data), cond=enable)
+                prev_data = data
+
+            self.sig_data = data
+
+
+class WriteFIFO(_SpecialOperator):
+    latency = 0
+
+    def __init__(self, data, when=None,
+                 fifo_name=None):
+
+        args = [data]
+        if when is not None:
+            args.append(when)
+
+        _SpecialOperator.__init__(self, *args)
+
+        self.width = 1
+        self.point = 0
+        self.signed = True
+
+        self.output_tmp()
+
+        self.graph_label = 'WriteFIFO' if fifo_name is None else ('WriteFIFO\n%s' % fifo_name)
+        self.graph_shape = 'box'
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        when_cond = self.args[1].sig_data if len(self.args) == 2 else None
+        enable_value = _and_vars(svalid, senable, when_cond)
+        enable = m.Wire(self.name('enable'))
+        enable.assign(enable_value)
+        self.enable = enable
+
+        self.wdata = m.WireLike(self.args[0].sig_data, name=self.name('wdata'))
+        self.wdata.assign(self.args[0].sig_data)
+
+        self.sig_data = vtypes.Int(0)
+
+        write_ready = m.Wire(self.name('write_ready'))
+        self.write_ready = write_ready
+
+        stall_cond = m.Wire(self.name('stall_cond'))
+        if when_cond is None:
+            stall_cond.assign(vtypes.Ands(vtypes.Not(write_ready), svalid))
+        else:
+            stall_cond.assign(vtypes.Ands(vtypes.Not(write_ready), svalid, when_cond))
+
+        util.add_disable_cond(self.strm.internal_oready, stall_cond, vtypes.Int(0))
 
     @property
     def write_data(self):
