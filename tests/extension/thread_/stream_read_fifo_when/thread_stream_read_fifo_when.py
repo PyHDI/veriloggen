@@ -74,7 +74,6 @@ def mkLed():
             sq = ram_c.read(i + offset_seq)
             if vthread.verilog.NotEql(st, sq):
                 all_ok = False
-            print(i, st, sq)
         if all_ok:
             print('# verify: PASSED')
         else:
