@@ -44,7 +44,6 @@ def mkLed():
     b = strm.source('b')
     aa = a * strm.Int(2)
     bb = b * strm.Int(3)
-
     c = aa + bb
     d = c
     strm.write_fifo('d', d, when=counter[0] == 0)
