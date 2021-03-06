@@ -19,48 +19,35 @@ def mkLed():
 
     datawidth = 32
     addrwidth = 10
-
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
-    axi_in = vthread.AXIStreamInFifo(m, 'axi_in', clk, rst, datawidth,
-                                     with_last=True, noio=True)
-    maxi_in = vthread.AXIM_for_AXIStreamIn(axi_in, 'maxi_in')
-
-    axi_out = vthread.AXIStreamOutFifo(m, 'axi_out', clk, rst, datawidth,
-                                       with_last=True, noio=True)
-    maxi_out = vthread.AXIM_for_AXIStreamOut(axi_out, 'maxi_out')
-
-    fifo_addrwidth = 8
-    fifo_a = vthread.FIFO(m, 'fifo_a', clk, rst, datawidth, fifo_addrwidth)
-    ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
-    fifo_c = vthread.FIFO(m, 'fifo_c', clk, rst, datawidth, fifo_addrwidth)
-
-    # for comp_sequential
     ram_a = vthread.RAM(m, 'ram_a', clk, rst, datawidth, addrwidth)
+    ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
     ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
 
-    strm = vthread.Stream(m, 'mystream', clk, rst)
-    a = strm.source('a')
-    b = strm.source('b')
-    a = a * strm.Int(2)
-    b = b * strm.Int(3)
+    # When infinite is True, the stream does not stop even if all sources are halted.
+    strm = vthread.Stream(m, 'mystream', clk, rst, infinite=True)
+    addr = strm.Counter()
+    size = strm.parameter('size')
+    a = strm.read_RAM('a', addr)
+    b = strm.read_RAM('b', addr)
     c = a + b
-    d = c
-    strm.write_fifo('d', d)
+    strm.sink(c, 'c')
+    # To terminate the exection, a termination condition should be specified.
+    strm.terminate(addr >= size - 1)
 
     def comp_stream(size, offset):
-        strm.set_source_fifo('a', fifo_a, size)
-        strm.set_source('b', ram_b, offset, size)
-        strm.set_write_fifo('d', fifo_c)
+        strm.set_parameter('size', size)
+        strm.set_read_RAM('a', ram_a)
+        strm.set_read_RAM('b', ram_b)
+        strm.set_sink('c', ram_c, offset, size)
         strm.run()
-        # strm.join()
+        strm.join()
 
     def comp_sequential(size, offset):
         sum = 0
         for i in range(size):
             a = ram_a.read(i + offset)
             b = ram_b.read(i + offset)
-            a = a * 2
-            b = b * 3
             sum = a + b
             ram_c.write(i + offset, sum)
 
@@ -79,28 +66,15 @@ def mkLed():
     def comp(size):
         # stream
         offset = 0
-
-        # ram_b
-        myaxi.dma_read(ram_b, offset, 0, size)
-
-        # AXI-stream read -> FIFO -> Stream
-        # fifo_a
-        maxi_in.dma_read_async(512, size)
-        axi_in.write_fifo(fifo_a, size)
-
+        myaxi.dma_read(ram_a, offset, 0, size)
+        myaxi.dma_read(ram_b, offset, 512, size)
         comp_stream(size, offset)
-
-        # Stream -> FIFO -> AXI-stream write
-        # fifo_c
-        maxi_out.dma_write_async(1024, size)
-        axi_out.read_fifo(fifo_c, size)
-
-        strm.join()
+        myaxi.dma_write(ram_c, offset, 1024, size)
 
         # sequential
         offset = size
-        myaxi.dma_read(ram_a, offset, 512, size)
-        myaxi.dma_read(ram_b, offset, 0, size)
+        myaxi.dma_read(ram_a, offset, 0, size)
+        myaxi.dma_read(ram_b, offset, 512, size)
         comp_sequential(size, offset)
         myaxi.dma_write(ram_c, offset, 1024 * 2, size)
 
@@ -111,7 +85,7 @@ def mkLed():
 
         vthread.finish()
 
-    th = vthread.Thread(m, 'comp', clk, rst, comp)
+    th = vthread.Thread(m, 'th_comp', clk, rst, comp)
     fsm = th.start(32)
 
     return m
@@ -130,11 +104,8 @@ def mkTest(memimg_name=None):
     clk = ports['CLK']
     rst = ports['RST']
 
-    memory = axi.AxiMultiportMemoryModel(m, 'memory', clk, rst, numports=3,
-                                         memimg_name=memimg_name)
-    memory.connect(0, ports, 'myaxi')
-    memory.connect(1, ports, 'maxi_in')
-    memory.connect(2, ports, 'maxi_out')
+    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memimg_name=memimg_name)
+    memory.connect(ports, 'myaxi')
 
     uut = m.Instance(led, 'uut',
                      params=m.connect_params(led),
