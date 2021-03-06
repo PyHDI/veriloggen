@@ -43,17 +43,14 @@ def mkLed():
     b = strm.source('b')
     a = a * strm.Int(2)
     b = b * strm.Int(3)
-
     c = a + b
     d = c
     strm.write_fifo('d', d)
-    strm.sink(c, 'c')
 
     def comp_stream(size, offset):
         strm.set_source_fifo('a', fifo_a, size)
         strm.set_source('b', ram_b, offset, size)
         strm.set_write_fifo('d', fifo_c)
-        strm.set_sink_empty('c')
         strm.run()
         # strm.join()
 
