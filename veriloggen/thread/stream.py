@@ -74,6 +74,7 @@ class Stream(BaseStream):
     ram_delay = 0
 
     def __init__(self, m, name, clk, rst,
+                 infinite=False,
                  datawidth=32, addrwidth=32,
                  max_pattern_length=4, max_multipattern_length=2,
                  ram_sel_width=8, fsm_as_module=False,
@@ -96,6 +97,8 @@ class Stream(BaseStream):
         self.name = name
         self.datawidth = datawidth
         self.addrwidth = addrwidth
+
+        self.infinite = infinite
 
         self.max_pattern_length = max_pattern_length
         self.max_multipattern_length = max_multipattern_length
@@ -1671,6 +1674,10 @@ class Stream(BaseStream):
             done_cond = make_condition(done_cond, source_idle)
 
         end_cond = make_condition(done_cond, self.fsm.here)
+
+        # infinite execution (stream does stop even if all sources are halted.)
+        if self.infinite:
+            end_cond = vtypes.Int(0, width=1)
 
         # terminate
         term_cond = None
