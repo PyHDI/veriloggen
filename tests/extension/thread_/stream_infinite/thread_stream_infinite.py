@@ -28,8 +28,9 @@ def mkLed():
     strm = vthread.Stream(m, 'mystream', clk, rst, infinite=True)
     addr = strm.Counter()
     size = strm.parameter('size')
-    a = strm.read_RAM('a', addr)
-    b = strm.read_RAM('b', addr)
+    offset = strm.parameter('offset')
+    a = strm.read_RAM('a', addr + offset)
+    b = strm.read_RAM('b', addr + offset)
     c = a + b
     strm.sink(c, 'c')
     # To terminate the exection, a termination condition should be specified.
@@ -37,6 +38,7 @@ def mkLed():
 
     def comp_stream(size, offset):
         strm.set_parameter('size', size)
+        strm.set_parameter('offset', offset)
         strm.set_read_RAM('a', ram_a)
         strm.set_read_RAM('b', ram_b)
         strm.set_sink('c', ram_c, offset, size)
