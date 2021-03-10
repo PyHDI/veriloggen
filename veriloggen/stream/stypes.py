@@ -3729,6 +3729,146 @@ def CounterValid(size, step=1, interval=None, initval=0, offset=None,
     return data, valid
 
 
+class _CustomCounter(_SpecialOperator):
+    latency = 1
+
+    default_width = 32
+    default_point = 0
+    default_signed = True
+
+    def __init__(self, func, initvals, args=None, reset=None,
+                 width_list=None, point_list=None, signed_list=None):
+
+        _args = list(initvals)
+
+        if args is not None:
+            _args.extend(args)
+
+        if reset is not None:
+            _args.append(reset)
+
+        _SpecialOperator.__init__(self, *_args)
+
+        self.func = func
+        self.reset = self.args[-1] if reset is not None else None
+        self.num_vars = len(initvals)
+
+        if width_list is not None:
+            if len(width_list) != self.num_vars:
+                raise ValueError('width_list must have %d values, not %d.' %
+                                 (self.num_vars, len(width_list)))
+
+            total_width = 0
+            for width in width_list:
+                total_width += width
+
+        else:
+            total_width = self.default_width * self.num_vars
+            width_list = [self.default_width] * self.num_vars
+
+        self.width = total_width
+        self.width_list = width_list
+
+        if signed_list is not None:
+            if len(signed_list) != self.num_vars:
+                raise ValueError('signed_list must have %d values, not %d.' %
+                                 (self.num_vars, len(signed_list)))
+
+        else:
+            signed_list = [self.default_signed] * self.num_vars
+
+        self.signed = False
+        self.signed_list = signed_list
+
+        if point_list is not None:
+            if len(point_list) != self.num_vars:
+                raise ValueError('point_list must have %d values, not %d.' %
+                                 (self.num_vars, len(point_list)))
+        else:
+            point_list = [self.default_point] * self.num_vars
+
+        self.point = 0
+        self.point_list = point_list
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency != 1:
+            raise ValueError("Latency must be '%d', not '%d'" %
+                             (self.latency, 1))
+
+        width = self.get_width()
+        signed = self.get_signed()
+
+        arg_data = [arg.sig_data for arg in self.args]
+
+        enable_cond = senable
+        if self.iteration_interval != 1:
+            enable_cond = _and_vars(enable_cond, svalid)
+
+        resetdata = arg_data[-1] if self.reset is not None else None
+
+        vars = [m.Reg(self.name('var_%d' % i), var_width, initval=0, signed=var_signed)
+                for i, (var_width, var_point, var_signed) in enumerate(
+            zip(self.width_list, self.point_list, self.signed_list))]
+
+        data = m.Wire(self.name('data'), width, signed=signed)
+        data.assign(vtypes.Cat(*vars))
+        self.sig_data = data
+
+        args = arg_data[self.num_vars:self.num_vars + self.num_vars]
+        func_args = vars + args
+        next_vars = self.func(*func_args)
+
+        if len(next_vars) != len(vars):
+            raise ValueError('CustomCounter function must return %d values.' % len(vars))
+
+        for var, next_var in zip(vars, next_vars):
+            seq(var(next_var), cond=enable_cond)
+
+        initvals = arg_data[:self.num_vars]
+
+        if resetdata is not None:
+            reset_cond = _and_vars(enable_cond, resetdata)
+            for var, initval in zip(vars, initvals):
+                seq(var(initval), cond=reset_cond)
+
+        # multicycle control
+        if self.iteration_interval != 1:
+            ii_count = m.Reg(self.name('ii_count'),
+                             int(ceil(log(self.iteration_interval, 2))) + 1, initval=0)
+            ii_stall_cond = m.Wire(self.name('ii_stall_cond'))
+            ii_stall_cond.assign(ii_count > 0)
+            util.add_disable_cond(self.strm.internal_oready,
+                                  ii_stall_cond, vtypes.Int(0))
+
+            seq.If(ii_count == 0, enable_cond)(
+                ii_count.inc()
+            )
+            seq.If(ii_count > 0)(
+                ii_count.inc()
+            )
+            seq.If(ii_count == self.iteration_interval - 1)(
+                ii_count(0)
+            )
+
+
+def CustomCounter(func, initvals, args=None, reset=None,
+                  width_list=None, point_list=None, signed_list=None):
+
+    v = _CustomCounter(func, initvals, args, reset,
+                       width_list, point_list, signed_list)
+
+    return_values = []
+
+    s = 0
+    for width, point, signed in zip(reversed(v.width_list), reversed(v.point_list), reversed(v.signed_list)):
+        r = Slice(v, s + width - 1, s)
+        r = Cast(r, width=width, point=point, signed=signed)
+        s += width
+        return_values.append(r)
+
+    return tuple(reversed(return_values))
+
+
 class Int(_Constant):
 
     def __init__(self, value, signed=True):

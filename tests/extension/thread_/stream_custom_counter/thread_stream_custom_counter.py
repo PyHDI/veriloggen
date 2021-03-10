@@ -24,34 +24,57 @@ def mkLed():
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
     ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
 
-    # When infinite is True, the stream does not stop even if all sources are halted.
-    strm = vthread.Stream(m, 'mystream', clk, rst, infinite=True)
-    addr = strm.Counter()
+    strm = vthread.Stream(m, 'mystream', clk, rst)
     size = strm.parameter('size')
-    offset = strm.parameter('offset')
-    a = strm.read_RAM('a', addr + offset)
-    b = strm.read_RAM('b', addr + offset)
-    c = a + b
+    a = strm.source('a')
+    b = strm.source('b')
+
+    def op_func(x, y, x_size, y_size):
+        x_cond = x == x_size - 1
+        next_x = Mux(x_cond, 0, x + 1)
+        y_cond = Ands(x_cond, y == y_size - 1)
+        next_y = PatternMux((y_cond, 0), (x_cond, y + 1), (None, y))
+        return next_x, next_y
+
+    x_size = 4
+    y_size = 4
+
+    x, y = strm.CustomCounter(func=op_func,
+                              initvals=(0, 0), args=(x_size, y_size),
+                              width_list=(32, 32), signed_list=(True, True))
+
+    c = a + b + x + y - a - b
     strm.sink(c, 'c')
-    # To terminate the exection, a termination condition should be specified.
-    strm.terminate(addr >= size - 1)
 
     def comp_stream(size, offset):
         strm.set_parameter('size', size)
-        strm.set_parameter('offset', offset)
-        strm.set_read_RAM('a', ram_a)
-        strm.set_read_RAM('b', ram_b)
+        strm.set_source('a', ram_a, offset, size)
+        strm.set_source('b', ram_b, offset, size)
         strm.set_sink('c', ram_c, offset, size)
         strm.run()
         strm.join()
 
     def comp_sequential(size, offset):
         sum = 0
+        x = 0
+        y = 0
+        x_size = 4
+        y_size = 4
         for i in range(size):
             a = ram_a.read(i + offset)
             b = ram_b.read(i + offset)
-            sum = a + b
+            sum = a + b + x + y - a - b
             ram_c.write(i + offset, sum)
+            x_cond = x == x_size - 1
+            if x_cond:
+                x = 0
+            else:
+                x = x + 1
+            y_cond = x_cond and (y == y_size - 1)
+            if y_cond:
+                y = 0
+            elif x_cond:
+                y = y + 1
 
     def check(size, offset_stream, offset_seq):
         all_ok = True
