@@ -3729,7 +3729,7 @@ def CounterValid(size, step=1, interval=None, initval=0, offset=None,
     return data, valid
 
 
-class _CustomAcc(_SpecialOperator):
+class _CustomCounter(_SpecialOperator):
     latency = 1
 
     default_width = 32
@@ -3819,7 +3819,7 @@ class _CustomAcc(_SpecialOperator):
         next_vars = self.func(*func_args)
 
         if len(next_vars) != len(vars):
-            raise ValueError('CustomAcc function must return %d values.' % len(vars))
+            raise ValueError('CustomCounter function must return %d values.' % len(vars))
 
         for var, next_var in zip(vars, next_vars):
             seq(var(next_var), cond=enable_cond)
@@ -3851,11 +3851,11 @@ class _CustomAcc(_SpecialOperator):
             )
 
 
-def CustomAcc(func, initvals, args=None, reset=None,
-              width_list=None, point_list=None, signed_list=None):
+def CustomCounter(func, initvals, args=None, reset=None,
+                  width_list=None, point_list=None, signed_list=None):
 
-    v = _CustomAcc(func, initvals, args, reset,
-                   width_list, point_list, signed_list)
+    v = _CustomCounter(func, initvals, args, reset,
+                       width_list, point_list, signed_list)
 
     return_values = []
 

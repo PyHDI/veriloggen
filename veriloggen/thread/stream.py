@@ -3762,7 +3762,7 @@ class Stream(BaseStream):
              f.__name__.startswith('Counter') or
              f.__name__.startswith('Pulse') or
              f.__name__.startswith('Producer') or
-             f.__name__.startswith('CustomAcc'))):
+             f.__name__.startswith('CustomCounter'))):
 
             if self.reduce_reset is None:
                 self._make_reduce_reset()

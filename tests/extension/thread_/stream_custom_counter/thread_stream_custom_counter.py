@@ -33,14 +33,17 @@ def mkLed():
         x_cond = x == x_size - 1
         next_x = Mux(x_cond, 0, x + 1)
         y_cond = Ands(x_cond, y == y_size - 1)
-        next_y = Mux(y_cond, 0, y + 1)
+        next_y = PatternMux((y_cond, 0), (x_cond, y + 1), (None, y))
         return next_x, next_y
 
-    x, y = strm.CustomAcc(func=op_func,
-                          initvals=(0, 0), args=(size, size),
-                          width_list=(32, 32), signed_list=(True, True))
+    x_size = 4
+    y_size = 4
 
-    c = a + b + x + y
+    x, y = strm.CustomCounter(func=op_func,
+                              initvals=(0, 0), args=(x_size, y_size),
+                              width_list=(32, 32), signed_list=(True, True))
+
+    c = a + b + x + y - a - b
     strm.sink(c, 'c')
 
     def comp_stream(size, offset):
@@ -55,12 +58,12 @@ def mkLed():
         sum = 0
         x = 0
         y = 0
-        x_size = size
-        y_size = size
+        x_size = 4
+        y_size = 4
         for i in range(size):
             a = ram_a.read(i + offset)
             b = ram_b.read(i + offset)
-            sum = a + b + x + y
+            sum = a + b + x + y - a - b
             ram_c.write(i + offset, sum)
             x_cond = x == x_size - 1
             if x_cond:
@@ -70,7 +73,7 @@ def mkLed():
             y_cond = x_cond and (y == y_size - 1)
             if y_cond:
                 y = 0
-            else:
+            elif x_cond:
                 y = y + 1
 
     def check(size, offset_stream, offset_seq):
