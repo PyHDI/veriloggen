@@ -92,7 +92,7 @@ class AXISRegister(AXIS):
                   self.clk, self.rst, as_module=self.fsm_as_module)
 
         # request
-        addr, counter, readvalid, writevalid = self.pull_request(cond=fsm)
+        addr, counter, readvalid, writevalid = self.pull_request_counter(cond=fsm)
 
         maskaddr = self.m.TmpReg(self.maskwidth)
         fsm.If(vtypes.Ors(readvalid, writevalid))(
@@ -124,7 +124,7 @@ class AXISRegister(AXIS):
         rval = vtypes.PatternMux(pat)
         resetval.assign(rval)
 
-        ack, last = self.push_read_data(rdata, counter, cond=fsm)
+        ack, valid, last = self.push_read_data(rdata, counter, cond=fsm)
 
         # flag reset
         state_cond = fsm.state == fsm.current
@@ -137,7 +137,7 @@ class AXISRegister(AXIS):
         fsm.If(ack)(
             maskaddr.inc()
         )
-        fsm.If(ack, last).goto_init()
+        fsm.If(valid, last).goto_init()
 
         # write
         write_state = fsm.current + 1
@@ -151,10 +151,11 @@ class AXISRegister(AXIS):
             self.seq.If(state_cond, valid, maskaddr == i)(
                 self.register[i](data)
             )
+
         fsm.If(valid)(
             maskaddr.inc()
         )
-        fsm.goto_init()
+        fsm.If(valid, last).goto_init()
 
     def read(self, fsm, addr):
         if isinstance(addr, int):
@@ -300,7 +301,7 @@ class AXISLiteRegister(AXISLite):
         rval = vtypes.PatternMux(pat)
         resetval.assign(rval)
 
-        ack = self.push_read_data(rdata, cond=fsm)
+        ack, valid = self.push_read_data(rdata, cond=fsm)
 
         # flag reset
         state_cond = fsm.state == fsm.current
@@ -310,7 +311,9 @@ class AXISLiteRegister(AXISLite):
                 self.flag[i](0)
             )
 
-        fsm.If(ack).goto_init()
+        fsm.If(valid).goto_init()
+        fsm.If(ack, vtypes.Not(valid)).goto_next()
+        fsm.If(valid).goto_init()
 
         # write
         write_state = fsm.current + 1
@@ -324,7 +327,8 @@ class AXISLiteRegister(AXISLite):
             self.seq.If(state_cond, valid, maskaddr == i)(
                 self.register[i](data)
             )
-        fsm.goto_init()
+
+        fsm.If(valid).goto_init()
 
     def read(self, fsm, addr):
         if isinstance(addr, int):

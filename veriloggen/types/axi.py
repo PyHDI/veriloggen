@@ -1766,7 +1766,7 @@ class AxiSlave(object):
 
     def push_read_data(self, data, counter=None, cond=None):
         """
-        @return ack, last
+        @return ack, valid, last
         """
         if self._read_disabled:
             raise TypeError('Read disabled.')
@@ -1782,7 +1782,8 @@ class AxiSlave(object):
 
         ack = vtypes.Ands(counter > 0,
                           vtypes.Ors(self.rdata.rready, vtypes.Not(self.rdata.rvalid)))
-        last = self.m.TmpReg(initval=0)
+        valid = vtypes.Ands(self.rdata.rready, self.rdata.rvalid)
+        last = self.rdata.rlast
 
         self.seq.If(vtypes.Ands(ack, counter > 0))(
             self.rdata.rdata(data),
@@ -1791,25 +1792,22 @@ class AxiSlave(object):
             counter.dec()
         )
         self.seq.Then().If(counter == 1)(
-            self.rdata.rlast(1),
-            last(1)
+            self.rdata.rlast(1)
         )
 
         # de-assert
         self.seq.Delay(1)(
             self.rdata.rvalid(0),
-            self.rdata.rlast(0),
-            last(0)
+            self.rdata.rlast(0)
         )
 
         # retry
         self.seq.If(vtypes.Ands(self.rdata.rvalid, vtypes.Not(self.rdata.rready)))(
             self.rdata.rvalid(self.rdata.rvalid),
-            self.rdata.rlast(self.rdata.rlast),
-            last(last)
+            self.rdata.rlast(self.rdata.rlast)
         )
 
-        return ack, last
+        return ack, valid, last
 
     def push_read_dataflow(self, data, counter=None, cond=None):
         """ 
@@ -1827,7 +1825,6 @@ class AxiSlave(object):
 
         ack = vtypes.Ands(counter > 0,
                           vtypes.Ors(self.rdata.rready, vtypes.Not(self.rdata.rvalid)))
-        last = self.m.TmpReg(initval=0)
 
         if cond is None:
             cond = ack
@@ -1846,25 +1843,22 @@ class AxiSlave(object):
             counter.dec()
         )
         self.seq.Then().If(counter == 1)(
-            self.rdata.rlast(1),
-            last(1)
+            self.rdata.rlast(1)
         )
 
         # de-assert
         self.seq.Delay(1)(
             self.rdata.rvalid(0),
-            self.rdata.rlast(0),
-            last(0)
+            self.rdata.rlast(0)
         )
 
         # retry
         self.seq.If(vtypes.Ands(self.rdata.rvalid, vtypes.Not(self.rdata.rready)))(
             self.rdata.rvalid(self.rdata.rvalid),
-            self.rdata.rlast(self.rdata.rlast),
-            last(last)
+            self.rdata.rlast(self.rdata.rlast)
         )
 
-        done = vtypes.Ands(last, self.rdata.rvalid, self.rdata.rready)
+        done = vtypes.Ands(self.rdata.rlast, self.rdata.rvalid, self.rdata.rready)
 
         return done
 
@@ -2239,7 +2233,7 @@ class AxiLiteSlave(AxiSlave):
 
     def push_read_data(self, data, cond=None):
         """
-        @return ack
+        @return ack, valid
         """
         if self._read_disabled:
             raise TypeError('Read disabled.')
@@ -2248,6 +2242,7 @@ class AxiLiteSlave(AxiSlave):
             self.seq.If(cond)
 
         ack = vtypes.Ors(self.rdata.rready, vtypes.Not(self.rdata.rvalid))
+        valid = vtypes.Ands(self.rdata.rready, self.rdata.rvalid)
 
         self.seq.If(ack)(
             self.rdata.rdata(data),
@@ -2264,7 +2259,7 @@ class AxiLiteSlave(AxiSlave):
             self.rdata.rvalid(self.rdata.rvalid)
         )
 
-        return ack
+        return ack, valid
 
     def push_read_dataflow(self, data, counter=None, cond=None):
         """ 
