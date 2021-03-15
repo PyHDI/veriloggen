@@ -30,7 +30,7 @@ def mkMain():
     fsm.If(valid).goto_next()
 
     # read rdata
-    ack = myaxi.push_read_data(rdata, cond=fsm)
+    ack, valid = myaxi.push_read_data(rdata, cond=fsm)
     fsm.If(ack)(
         rdata(rdata + 1)
     )

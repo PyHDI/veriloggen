@@ -540,7 +540,6 @@ module main
   reg _tmp_3;
   assign myaxi_arready = (fsm == 0) && !_tmp_2 && _tmp_3;
   reg [32-1:0] rdata;
-  reg _tmp_4;
   reg _myaxi_cond_0_1;
 
   always @(posedge CLK) begin
@@ -553,13 +552,11 @@ module main
       myaxi_rdata <= 0;
       myaxi_rvalid <= 0;
       myaxi_rlast <= 0;
-      _tmp_4 <= 0;
       _myaxi_cond_0_1 <= 0;
     end else begin
       if(_myaxi_cond_0_1) begin
         myaxi_rvalid <= 0;
         myaxi_rlast <= 0;
-        _tmp_4 <= 0;
       end 
       if(myaxi_bvalid && myaxi_bready) begin
         myaxi_bvalid <= 0;
@@ -581,13 +578,11 @@ module main
       end 
       if((fsm == 1) && ((_tmp_0 > 0) && (myaxi_rready || !myaxi_rvalid) && (_tmp_0 > 0)) && (_tmp_0 == 1)) begin
         myaxi_rlast <= 1;
-        _tmp_4 <= 1;
       end 
       _myaxi_cond_0_1 <= 1;
       if(myaxi_rvalid && !myaxi_rready) begin
         myaxi_rvalid <= myaxi_rvalid;
         myaxi_rlast <= myaxi_rlast;
-        _tmp_4 <= _tmp_4;
       end 
     end
   end
@@ -613,7 +608,7 @@ module main
           if((_tmp_0 > 0) && (myaxi_rready || !myaxi_rvalid)) begin
             rdata <= rdata + 1;
           end 
-          if(_tmp_4) begin
+          if(myaxi_rready && myaxi_rvalid && myaxi_rlast) begin
             fsm <= fsm_2;
           end 
         end

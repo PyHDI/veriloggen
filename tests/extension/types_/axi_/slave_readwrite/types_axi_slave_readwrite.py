@@ -32,11 +32,11 @@ def mkMain():
     fsm.If(readvalid).goto_next()
 
     # read
-    ack, last = myaxi.push_read_data(rdata, counter, cond=fsm)
+    ack, valid, last = myaxi.push_read_data(rdata, counter, cond=fsm)
     fsm.If(ack)(
         rdata(rdata + 1)
     )
-    fsm.If(last).goto_next()
+    fsm.If(valid, last).goto_next()
 
     fsm.goto_init()
 

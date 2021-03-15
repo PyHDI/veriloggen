@@ -153,10 +153,10 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         if self.use_global_base_addr:
             global_addr = self.global_base_addr + global_addr
 
-        ack = self.read_request(global_addr, length=1, cond=fsm)
+        ack, counter = self.read_request_counter(global_addr, length=1, cond=fsm)
         fsm.If(ack).goto_next()
 
-        ret = self.read_data(cond=fsm)
+        ret = self.read_data(counter, cond=fsm)
         if len(ret) == 3:
             data, valid, last = ret
         else:
@@ -173,10 +173,10 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         if self.use_global_base_addr:
             global_addr = self.global_base_addr + global_addr
 
-        ack = self.write_request(global_addr, length=1, cond=fsm)
+        ack, counter = self.write_request_counter(global_addr, length=1, cond=fsm)
         fsm.If(ack).goto_next()
 
-        ret = self.write_data(value, cond=fsm)
+        ret = self.write_data(value, counter, cond=fsm)
         if isinstance(ret, (tuple)):
             ack, last = ret
         else:
@@ -1531,6 +1531,63 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         fsm.goto_next()
 
 
+class AXIMVerify(AXIM):
+    __intrinsics__ = ('read_delayed', 'write_delayed') + AXIM.__intrinsics__
+
+    def read_delayed(self, fsm, global_addr, delay):
+        if self.use_global_base_addr:
+            global_addr = self.global_base_addr + global_addr
+
+        ack, counter = self.read_request_counter(global_addr, length=1, cond=fsm)
+        delay_count = self.m.TmpReg(self.addrwidth, initval=0, prefix='delay_count')
+        fsm(
+            delay_count(delay)
+        )
+        fsm.If(ack).goto_next()
+
+        fsm(
+            delay_count.dec()
+        )
+        fsm.If(delay_count == 0).goto_next()
+
+        ret = self.read_data(counter, cond=fsm)
+        if len(ret) == 3:
+            data, valid, last = ret
+        else:
+            data, valid = ret
+
+        rdata = self.m.TmpReg(self.datawidth, initval=0,
+                              signed=True, prefix='axim_rdata')
+        fsm.If(valid)(rdata(data))
+        fsm.Then().goto_next()
+
+        return rdata
+
+    def write_delayed(self, fsm, global_addr, value, delay):
+        if self.use_global_base_addr:
+            global_addr = self.global_base_addr + global_addr
+
+        ack, counter = self.write_request_counter(global_addr, length=1, cond=fsm)
+        delay_count = self.m.TmpReg(self.addrwidth, initval=0, prefix='delay_count')
+        fsm(
+            delay_count(delay)
+        )
+        fsm.If(ack).goto_next()
+
+        fsm(
+            delay_count.dec()
+        )
+        fsm.If(delay_count == 0).goto_next()
+
+        ret = self.write_data(value, counter, cond=fsm)
+        if isinstance(ret, (tuple)):
+            ack, last = ret
+        else:
+            ack, last = ret, None
+
+        fsm.If(ack).goto_next()
+
+
 class AXIMLite(axi.AxiLiteMaster, _MutexFunction):
     """ AXI-Lite Master Interface """
 
@@ -1600,6 +1657,63 @@ class AXIMLite(axi.AxiLiteMaster, _MutexFunction):
         self.seq.If(flag)(
             self.global_base_addr(addr)
         )
+
+
+class AXIMLiteVerify(AXIMLite):
+    __intrinsics__ = ('read_delayed', 'write_delayed') + AXIMLite.__intrinsics__
+
+    def read_delayed(self, fsm, global_addr, delay):
+        if self.use_global_base_addr:
+            global_addr = self.global_base_addr + global_addr
+
+        ack = self.read_request(global_addr, length=1, cond=fsm)
+        delay_count = self.m.TmpReg(self.addrwidth, initval=0, prefix='delay_count')
+        fsm(
+            delay_count(delay)
+        )
+        fsm.If(ack).goto_next()
+
+        fsm(
+            delay_count.dec()
+        )
+        fsm.If(delay_count == 0).goto_next()
+
+        ret = self.read_data(cond=fsm)
+        if len(ret) == 3:
+            data, valid, last = ret
+        else:
+            data, valid = ret
+
+        rdata = self.m.TmpReg(self.datawidth, initval=0,
+                              signed=True, prefix='axim_rdata')
+        fsm.If(valid)(rdata(data))
+        fsm.Then().goto_next()
+
+        return rdata
+
+    def write_delayed(self, fsm, global_addr, value, delay):
+        if self.use_global_base_addr:
+            global_addr = self.global_base_addr + global_addr
+
+        ack = self.write_request(global_addr, length=1, cond=fsm)
+        delay_count = self.m.TmpReg(self.addrwidth, initval=0, prefix='delay_count')
+        fsm(
+            delay_count(delay)
+        )
+        fsm.If(ack).goto_next()
+
+        fsm(
+            delay_count.dec()
+        )
+        fsm.If(delay_count == 0).goto_next()
+
+        ret = self.write_data(value, cond=fsm)
+        if isinstance(ret, (tuple)):
+            ack, last = ret
+        else:
+            ack, last = ret, None
+
+        fsm.If(ack).goto_next()
 
 
 class AXIS(axi.AxiSlave, _MutexFunction):
@@ -1685,7 +1799,7 @@ class AXISRegister(AXIS):
                   self.clk, self.rst, as_module=self.fsm_as_module)
 
         # request
-        addr, counter, readvalid, writevalid = self.pull_request(cond=fsm)
+        addr, counter, readvalid, writevalid = self.pull_request_counter(cond=fsm)
 
         maskaddr = self.m.TmpReg(self.maskwidth)
         fsm.If(vtypes.Ors(readvalid, writevalid))(
@@ -1717,7 +1831,7 @@ class AXISRegister(AXIS):
         rval = vtypes.PatternMux(pat)
         resetval.assign(rval)
 
-        ack, last = self.push_read_data(rdata, counter, cond=fsm)
+        ack, valid, last = self.push_read_data(rdata, counter, cond=fsm)
 
         # flag reset
         state_cond = fsm.state == fsm.current
@@ -1730,7 +1844,7 @@ class AXISRegister(AXIS):
         fsm.If(ack)(
             maskaddr.inc()
         )
-        fsm.If(ack, last).goto_init()
+        fsm.If(valid, last).goto_init()
 
         # write
         write_state = fsm.current + 1
@@ -1744,10 +1858,11 @@ class AXISRegister(AXIS):
             self.seq.If(state_cond, valid, maskaddr == i)(
                 self.register[i](data)
             )
+
         fsm.If(valid)(
             maskaddr.inc()
         )
-        fsm.goto_init()
+        fsm.If(valid, last).goto_init()
 
     def read(self, fsm, addr):
         if isinstance(addr, int):
@@ -1893,7 +2008,7 @@ class AXISLiteRegister(AXISLite):
         rval = vtypes.PatternMux(pat)
         resetval.assign(rval)
 
-        ack = self.push_read_data(rdata, cond=fsm)
+        ack, valid = self.push_read_data(rdata, cond=fsm)
 
         # flag reset
         state_cond = fsm.state == fsm.current
@@ -1903,7 +2018,9 @@ class AXISLiteRegister(AXISLite):
                 self.flag[i](0)
             )
 
-        fsm.If(ack).goto_init()
+        fsm.If(valid).goto_init()
+        fsm.If(ack, vtypes.Not(valid)).goto_next()
+        fsm.If(valid).goto_init()
 
         # write
         write_state = fsm.current + 1
@@ -1917,7 +2034,8 @@ class AXISLiteRegister(AXISLite):
             self.seq.If(state_cond, valid, maskaddr == i)(
                 self.register[i](data)
             )
-        fsm.goto_init()
+
+        fsm.If(valid).goto_init()
 
     def read(self, fsm, addr):
         if isinstance(addr, int):
