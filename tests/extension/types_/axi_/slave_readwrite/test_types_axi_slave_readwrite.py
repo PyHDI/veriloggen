@@ -669,7 +669,6 @@ module main
   assign myaxi_awready = (fsm == 0) && (!_tmp_2 && !_tmp_3 && !myaxi_bvalid && _tmp_4);
   assign myaxi_arready = (fsm == 0) && (!_tmp_3 && !_tmp_2 && _tmp_5 && !_tmp_4);
   reg [32-1:0] rdata;
-  reg _tmp_6;
   reg _myaxi_cond_0_1;
   assign myaxi_wready = fsm == 100;
 
@@ -685,13 +684,11 @@ module main
       myaxi_rdata <= 0;
       myaxi_rvalid <= 0;
       myaxi_rlast <= 0;
-      _tmp_6 <= 0;
       _myaxi_cond_0_1 <= 0;
     end else begin
       if(_myaxi_cond_0_1) begin
         myaxi_rvalid <= 0;
         myaxi_rlast <= 0;
-        _tmp_6 <= 0;
       end 
       if(myaxi_bvalid && myaxi_bready) begin
         myaxi_bvalid <= 0;
@@ -720,13 +717,11 @@ module main
       end 
       if((fsm == 1) && ((_tmp_0 > 0) && (myaxi_rready || !myaxi_rvalid) && (_tmp_0 > 0)) && (_tmp_0 == 1)) begin
         myaxi_rlast <= 1;
-        _tmp_6 <= 1;
       end 
       _myaxi_cond_0_1 <= 1;
       if(myaxi_rvalid && !myaxi_rready) begin
         myaxi_rvalid <= myaxi_rvalid;
         myaxi_rlast <= myaxi_rlast;
-        _tmp_6 <= _tmp_6;
       end 
       if(myaxi_wready && myaxi_wvalid && (_tmp_0 > 0)) begin
         _tmp_0 <= _tmp_0 - 1;
@@ -761,7 +756,7 @@ module main
           if((_tmp_0 > 0) && (myaxi_rready || !myaxi_rvalid)) begin
             rdata <= rdata + 1;
           end 
-          if(_tmp_6) begin
+          if(myaxi_rready && myaxi_rvalid && myaxi_rlast) begin
             fsm <= fsm_2;
           end 
         end

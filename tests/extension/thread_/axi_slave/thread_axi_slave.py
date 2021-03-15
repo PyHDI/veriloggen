@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 import sys
 import os
-
 # the next line can be removed after installation
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
@@ -22,7 +21,7 @@ def mkLed():
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
     myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth)
 
-    saxi = vthread.AXISLiteRegister(m, 'saxi', clk, rst, datawidth)
+    saxi = vthread.AXISRegister(m, 'saxi', clk, rst, datawidth)
 
     all_ok = m.TmpReg(initval=0)
 
@@ -120,7 +119,7 @@ def mkTest(memimg_name=None):
     memory.connect(ports, 'myaxi')
 
     # AXI-Slave controller
-    _saxi = vthread.AXIMLiteVerify(m, '_saxi', clk, rst, noio=True)
+    _saxi = vthread.AXIMVerify(m, '_saxi', clk, rst, noio=True)
     _saxi.connect(ports, 'saxi')
 
     def ctrl():
