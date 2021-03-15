@@ -96,7 +96,7 @@ module blinkled
                   (_tmp_5 == 2)? _saxi_resetval_2 : 
                   (_tmp_5 == 3)? _saxi_resetval_3 : 'hx;
   reg _saxi_cond_0_1;
-  assign saxi_wready = _saxi_register_fsm == 2;
+  assign saxi_wready = _saxi_register_fsm == 3;
   reg [32-1:0] th_comp;
   localparam th_comp_init = 0;
   reg signed [32-1:0] _th_comp_size_0;
@@ -210,16 +210,16 @@ module blinkled
         _saxi_register_3 <= _tmp_8;
         _saxi_flag_3 <= 0;
       end 
-      if((_saxi_register_fsm == 2) && (saxi_wready && saxi_wvalid) && (_tmp_5 == 0)) begin
+      if((_saxi_register_fsm == 3) && (saxi_wready && saxi_wvalid) && (_tmp_5 == 0)) begin
         _saxi_register_0 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && (saxi_wready && saxi_wvalid) && (_tmp_5 == 1)) begin
+      if((_saxi_register_fsm == 3) && (saxi_wready && saxi_wvalid) && (_tmp_5 == 1)) begin
         _saxi_register_1 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && (saxi_wready && saxi_wvalid) && (_tmp_5 == 2)) begin
+      if((_saxi_register_fsm == 3) && (saxi_wready && saxi_wvalid) && (_tmp_5 == 2)) begin
         _saxi_register_2 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && (saxi_wready && saxi_wvalid) && (_tmp_5 == 3)) begin
+      if((_saxi_register_fsm == 3) && (saxi_wready && saxi_wvalid) && (_tmp_5 == 3)) begin
         _saxi_register_3 <= saxi_wdata;
       end 
       if((_saxi_register_0 == 1) && (th_comp == 2) && 1) begin
@@ -271,6 +271,7 @@ module blinkled
 
   localparam _saxi_register_fsm_1 = 1;
   localparam _saxi_register_fsm_2 = 2;
+  localparam _saxi_register_fsm_3 = 3;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -285,16 +286,26 @@ module blinkled
             _saxi_register_fsm <= _saxi_register_fsm_1;
           end 
           if(_tmp_1) begin
-            _saxi_register_fsm <= _saxi_register_fsm_2;
+            _saxi_register_fsm <= _saxi_register_fsm_3;
           end 
         end
         _saxi_register_fsm_1: begin
-          if(saxi_rready || !saxi_rvalid) begin
+          if(saxi_rready && saxi_rvalid) begin
             _saxi_register_fsm <= _saxi_register_fsm_init;
+          end 
+          if((saxi_rready || !saxi_rvalid) && !(saxi_rready && saxi_rvalid)) begin
+            _saxi_register_fsm <= _saxi_register_fsm_2;
           end 
         end
         _saxi_register_fsm_2: begin
-          _saxi_register_fsm <= _saxi_register_fsm_init;
+          if(saxi_rready && saxi_rvalid) begin
+            _saxi_register_fsm <= _saxi_register_fsm_init;
+          end 
+        end
+        _saxi_register_fsm_3: begin
+          if(saxi_wready && saxi_wvalid) begin
+            _saxi_register_fsm <= _saxi_register_fsm_init;
+          end 
         end
       endcase
     end

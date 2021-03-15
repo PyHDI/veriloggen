@@ -152,10 +152,10 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         if self.use_global_base_addr:
             global_addr = self.global_base_addr + global_addr
 
-        ack = self.read_request(global_addr, length=1, cond=fsm)
+        ack, counter = self.read_request_counter(global_addr, length=1, cond=fsm)
         fsm.If(ack).goto_next()
 
-        ret = self.read_data(cond=fsm)
+        ret = self.read_data(counter, cond=fsm)
         if len(ret) == 3:
             data, valid, last = ret
         else:
@@ -172,10 +172,10 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         if self.use_global_base_addr:
             global_addr = self.global_base_addr + global_addr
 
-        ack = self.write_request(global_addr, length=1, cond=fsm)
+        ack, counter = self.write_request_counter(global_addr, length=1, cond=fsm)
         fsm.If(ack).goto_next()
 
-        ret = self.write_data(value, cond=fsm)
+        ret = self.write_data(value, counter, cond=fsm)
         if isinstance(ret, (tuple)):
             ack, last = ret
         else:
@@ -1530,6 +1530,63 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         fsm.goto_next()
 
 
+class AXIMVerify(AXIM):
+    __intrinsics__ = ('read_delayed', 'write_delayed') + AXIM.__intrinsics__
+
+    def read_delayed(self, fsm, global_addr, delay):
+        if self.use_global_base_addr:
+            global_addr = self.global_base_addr + global_addr
+
+        ack, counter = self.read_request_counter(global_addr, length=1, cond=fsm)
+        delay_count = self.m.TmpReg(self.addrwidth, initval=0, prefix='delay_count')
+        fsm(
+            delay_count(delay)
+        )
+        fsm.If(ack).goto_next()
+
+        fsm(
+            delay_count.dec()
+        )
+        fsm.If(delay_count == 0).goto_next()
+
+        ret = self.read_data(counter, cond=fsm)
+        if len(ret) == 3:
+            data, valid, last = ret
+        else:
+            data, valid = ret
+
+        rdata = self.m.TmpReg(self.datawidth, initval=0,
+                              signed=True, prefix='axim_rdata')
+        fsm.If(valid)(rdata(data))
+        fsm.Then().goto_next()
+
+        return rdata
+
+    def write_delayed(self, fsm, global_addr, value, delay):
+        if self.use_global_base_addr:
+            global_addr = self.global_base_addr + global_addr
+
+        ack, counter = self.write_request_counter(global_addr, length=1, cond=fsm)
+        delay_count = self.m.TmpReg(self.addrwidth, initval=0, prefix='delay_count')
+        fsm(
+            delay_count(delay)
+        )
+        fsm.If(ack).goto_next()
+
+        fsm(
+            delay_count.dec()
+        )
+        fsm.If(delay_count == 0).goto_next()
+
+        ret = self.write_data(value, counter, cond=fsm)
+        if isinstance(ret, (tuple)):
+            ack, last = ret
+        else:
+            ack, last = ret, None
+
+        fsm.If(ack).goto_next()
+
+
 class AXIMLite(axi.AxiLiteMaster, _MutexFunction):
     """ AXI-Lite Master Interface """
 
@@ -1599,3 +1656,60 @@ class AXIMLite(axi.AxiLiteMaster, _MutexFunction):
         self.seq.If(flag)(
             self.global_base_addr(addr)
         )
+
+
+class AXIMLiteVerify(AXIMLite):
+    __intrinsics__ = ('read_delayed', 'write_delayed') + AXIMLite.__intrinsics__
+
+    def read_delayed(self, fsm, global_addr, delay):
+        if self.use_global_base_addr:
+            global_addr = self.global_base_addr + global_addr
+
+        ack = self.read_request(global_addr, length=1, cond=fsm)
+        delay_count = self.m.TmpReg(self.addrwidth, initval=0, prefix='delay_count')
+        fsm(
+            delay_count(delay)
+        )
+        fsm.If(ack).goto_next()
+
+        fsm(
+            delay_count.dec()
+        )
+        fsm.If(delay_count == 0).goto_next()
+
+        ret = self.read_data(cond=fsm)
+        if len(ret) == 3:
+            data, valid, last = ret
+        else:
+            data, valid = ret
+
+        rdata = self.m.TmpReg(self.datawidth, initval=0,
+                              signed=True, prefix='axim_rdata')
+        fsm.If(valid)(rdata(data))
+        fsm.Then().goto_next()
+
+        return rdata
+
+    def write_delayed(self, fsm, global_addr, value, delay):
+        if self.use_global_base_addr:
+            global_addr = self.global_base_addr + global_addr
+
+        ack = self.write_request(global_addr, length=1, cond=fsm)
+        delay_count = self.m.TmpReg(self.addrwidth, initval=0, prefix='delay_count')
+        fsm(
+            delay_count(delay)
+        )
+        fsm.If(ack).goto_next()
+
+        fsm(
+            delay_count.dec()
+        )
+        fsm.If(delay_count == 0).goto_next()
+
+        ret = self.write_data(value, cond=fsm)
+        if isinstance(ret, (tuple)):
+            ack, last = ret
+        else:
+            ack, last = ret, None
+
+        fsm.If(ack).goto_next()
