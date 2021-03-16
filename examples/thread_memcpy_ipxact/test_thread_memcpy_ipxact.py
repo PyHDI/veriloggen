@@ -1268,8 +1268,8 @@ module memcpy
   reg _tmp_2;
   reg _tmp_3;
   reg _tmp_4;
-  assign saxi_awready = (_saxi_register_fsm == 0) && !_tmp_1 && !_tmp_2 && !saxi_bvalid && _tmp_3;
-  assign saxi_arready = (_saxi_register_fsm == 0) && !_tmp_2 && !_tmp_1 && _tmp_4;
+  assign saxi_awready = (_saxi_register_fsm == 0) && (!_tmp_1 && !_tmp_2 && !saxi_bvalid && _tmp_3);
+  assign saxi_arready = (_saxi_register_fsm == 0) && (!_tmp_2 && !_tmp_1 && _tmp_4 && !_tmp_3);
   reg [_saxi_maskwidth-1:0] _tmp_5;
   wire signed [32-1:0] _tmp_6;
   assign _tmp_6 = (_tmp_5 == 0)? _saxi_register_0 : 

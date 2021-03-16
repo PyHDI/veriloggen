@@ -1557,16 +1557,17 @@ class AxiSlave(object):
             prev_arvalid(self.raddr.arvalid)
         )
 
-        writeval = (vtypes.Ands(vtypes.Not(writevalid), vtypes.Not(readvalid),
-                                vtypes.Not(self.wresp.bvalid),
-                                prev_awvalid) if ready is None else
-                    vtypes.Ands(ready, vtypes.Not(writevalid), vtypes.Not(readvalid),
-                                vtypes.Not(self.wresp.bvalid),
-                                prev_awvalid))
-        readval = (vtypes.Ands(vtypes.Not(readvalid), vtypes.Not(writevalid),
-                               prev_arvalid) if ready is None else
-                   vtypes.Ands(ready, vtypes.Not(readvalid), vtypes.Not(writevalid),
-                               prev_arvalid))
+        writeval = vtypes.Ands(vtypes.Not(writevalid), vtypes.Not(readvalid),
+                               vtypes.Not(self.wresp.bvalid),
+                               prev_awvalid)
+        if ready is not None:
+            writeval = vtypes.Ands(ready, writeval)
+
+        readval = vtypes.Ands(vtypes.Not(readvalid), vtypes.Not(writevalid),
+                              prev_arvalid, vtypes.Not(prev_awvalid))
+
+        if ready is not None:
+            readval = vtypes.Ands(ready, readval)
 
         _connect_ready(self.waddr.awready._get_module(),
                        self.waddr.awready, writeval)
@@ -2101,16 +2102,17 @@ class AxiLiteSlave(AxiSlave):
             prev_arvalid(self.raddr.arvalid)
         )
 
-        writeval = (vtypes.Ands(vtypes.Not(writevalid), vtypes.Not(readvalid),
-                                vtypes.Not(self.wresp.bvalid),
-                                prev_awvalid) if ready is None else
-                    vtypes.Ands(ready, vtypes.Not(writevalid), vtypes.Not(readvalid),
-                                vtypes.Not(self.wresp.bvalid),
-                                prev_awvalid))
-        readval = (vtypes.Ands(vtypes.Not(readvalid), vtypes.Not(writevalid),
-                               prev_arvalid) if ready is None else
-                   vtypes.Ands(ready, vtypes.Not(readvalid), vtypes.Not(writevalid),
-                               prev_arvalid))
+        writeval = vtypes.Ands(vtypes.Not(writevalid), vtypes.Not(readvalid),
+                               vtypes.Not(self.wresp.bvalid),
+                               prev_awvalid)
+        if ready is not None:
+            writeval = vtypes.Ands(ready, writeval)
+
+        readval = vtypes.Ands(vtypes.Not(readvalid), vtypes.Not(writevalid),
+                              prev_arvalid, vtypes.Not(prev_awvalid))
+
+        if ready is not None:
+            readval = vtypes.Ands(ready, readval)
 
         _connect_ready(self.waddr.awready._get_module(),
                        self.waddr.awready, writeval)
@@ -2936,6 +2938,8 @@ class AxiMemoryModel(AxiSlave):
     def _make_fsm(self, write_delay=10, read_delay=10, sleep=4, sub_sleep=4):
         write_mode = 100
         read_mode = 200
+        while read_mode <= write_mode + write_delay + 10:
+            read_mode += 100
 
         self.fsm.If(self.waddr.awvalid).goto(write_mode)
         self.fsm.If(self.raddr.arvalid).goto(read_mode)
@@ -3311,6 +3315,8 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
         self._make_fsms(write_delay, read_delay, sleep, sub_sleep)
 
     def _make_fsms(self, write_delay=10, read_delay=10, sleep=4, sub_sleep=4):
+        write_mode = 0
+        read_mode = 0
 
         for i, (fsm, waddr, wdata, wresp, raddr, rdata) in enumerate(
                 zip(self.fsms, self.waddrs, self.wdatas, self.wresps, self.raddrs, self.rdatas)):
@@ -3350,9 +3356,14 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
                     sleep_count(0)
                 )
 
-            offset = 1000 * i
-            write_mode = 100 + offset
-            read_mode = 200 + offset
+            offset = 100 * i
+            while offset <= read_mode + read_delay + 10:
+                offset += 100
+
+            write_mode = offset + 100
+            read_mode = offset + 200
+            while read_mode <= write_mode + write_delay + 10:
+                read_mode += 100
 
             fsm.If(waddr.awvalid).goto(write_mode)
             fsm.If(raddr.arvalid).goto(read_mode)

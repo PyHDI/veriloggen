@@ -479,8 +479,8 @@ module main
   reg _tmp_2;
   reg _tmp_3;
   reg _tmp_4;
-  assign myaxi_awready = (fsm == 0) && !_tmp_1 && !_tmp_2 && !myaxi_bvalid && _tmp_3;
-  assign myaxi_arready = (fsm == 0) && !_tmp_2 && !_tmp_1 && _tmp_4;
+  assign myaxi_awready = (fsm == 0) && (!_tmp_1 && !_tmp_2 && !myaxi_bvalid && _tmp_3);
+  assign myaxi_arready = (fsm == 0) && (!_tmp_2 && !_tmp_1 && _tmp_4 && !_tmp_3);
   reg [32-1:0] rdata;
   reg _myaxi_cond_0_1;
   assign myaxi_wready = fsm == 100;
