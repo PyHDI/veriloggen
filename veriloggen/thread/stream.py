@@ -408,10 +408,9 @@ class Stream(BaseStream):
     def terminate(self, data):
         _id = self.var_id_count
         name = terminate_prefix % _id
-
         self.terminates.append(data)
-
         self.sink(data, name)
+        return data
 
     def parameter(self, name=None, datawidth=None, point=0, signed=True):
         if self.stream_synthesized:
@@ -1673,76 +1672,88 @@ class Stream(BaseStream):
                                        key=lambda x: x[0]):
             done_cond = make_condition(done_cond, source_idle)
 
-        end_cond = make_condition(done_cond, self.fsm.here)
+        source_end_cond = make_condition(done_cond, self.fsm.here)
 
         # infinite execution (stream does stop even if all sources are halted.)
         if self.infinite:
-            end_cond = vtypes.Int(0, width=1)
+            source_end_cond = vtypes.Int(0, width=1)
 
         # terminate
-        term_cond = None
+        source_term_cond = None
         for term in self.terminates:
-            v = term.read()
-            if term_cond is None:
-                term_cond = v
-            else:
-                term_cond = vtypes.Ors(term_cond, v)
-
-        if term_cond is not None:
-            term_cond = make_condition(term_cond, self.fsm.here, self.valid_list[-1])
-            end_cond = vtypes.Ors(end_cond, term_cond)
+            stage = term.end_stage
+            v = make_condition(term.raw_data, self.valid_list[stage])
 
             # force flush
-            for valid in self.valid_list:
-                self.seq.If(self.oready, term_cond)(
+            for valid in self.valid_list[:stage + 1]:
+                self.seq.If(self.oready, v)(
                     valid(0)
                 )
 
-        # source_stop and source_busy
-        self.source_stop.assign(vtypes.Ands(self.oready, end_cond))
+            if source_term_cond is None:
+                source_term_cond = v
+            else:
+                source_term_cond = vtypes.Ors(source_term_cond, v)
 
-        self.fsm.If(self.oready, end_cond)(
+        if source_term_cond is not None:
+            source_end_cond = vtypes.Ors(source_end_cond, source_term_cond)
+
+        sink_term_cond = None
+        for term in self.terminates:
+            v = term.read()
+            if sink_term_cond is None:
+                sink_term_cond = v
+            else:
+                sink_term_cond = vtypes.Ors(sink_term_cond, v)
+
+        if sink_term_cond is not None:
+            sink_term_cond = make_condition(sink_term_cond, self.valid_list[-1])
+
+        # source_stop and source_busy
+        self.source_stop.assign(vtypes.Ands(self.oready, source_end_cond))
+
+        self.fsm.If(self.oready, source_end_cond)(
             self.source_busy(0)
         )
 
-        self.fsm.If(self.oready, end_cond).goto_init()
+        self.fsm.If(self.oready, source_end_cond).goto_init()
 
         # restart
-        self.fsm.If(self.oready, end_cond, self.run_flag)(
+        self.fsm.If(self.oready, source_end_cond, self.run_flag)(
             self.source_start(1)
         )
-        self.fsm.If(self.oready, end_cond, self.run_flag).goto(fsm_restart_state)
+        self.fsm.If(self.oready, source_end_cond, self.run_flag).goto(fsm_restart_state)
 
         # deassert
-        self.fsm.seq.If(self.oready, self._delay_from_start_to_ivalid_off(end_cond))(
+        self.fsm.seq.If(self.oready, self._delay_from_start_to_ivalid_off(source_end_cond))(
             self.ivalid(0)
         )
 
         # reset accumulate pipelines
         if self.reduce_reset is not None:
             cond = vtypes.Ands(self.oready,
-                               self._delay_from_start_to_reduce_reset_on(end_cond))
+                               self._delay_from_start_to_reduce_reset_on(source_end_cond))
             self.reduce_reset.write(1, cond=cond)
 
         if self.dump:
             dump_delay = self.ram_delay
             self.seq.If(self.oready,
-                        self._delay_from_start_to_ivalid_off(end_cond))(
+                        self._delay_from_start_to_ivalid_off(source_end_cond))(
                 self.dump_enable(0)
             )
 
         self.sink_start.assign(self._delay_from_start_to_sink(self.source_start))
 
         # force flush
-        if term_cond is not None:
-            not_term_cond = vtypes.Not(term_cond)
-            masked_source_stop = vtypes.Ands(self.source_stop, not_term_cond)
-            sink_stop_value = vtypes.Ors(term_cond,
+        if sink_term_cond is not None:
+            not_sink_term_cond = vtypes.Not(sink_term_cond)
+            masked_source_stop = vtypes.Ands(self.source_stop, not_sink_term_cond)
+            sink_stop_value = vtypes.Ors(sink_term_cond,
                                          self._delay_from_start_to_sink_stop(masked_source_stop))
             self.sink_stop.assign(sink_stop_value)
             self.sink_busy.assign(
                 self._delay_from_start_to_sink_busy(self.source_busy,
-                                                    self.seq.Prev(term_cond, 1, cond=self.oready)))
+                                                    self.seq.Prev(sink_term_cond, 1, cond=self.oready)))
         else:
             sink_stop_value = self._delay_from_start_to_sink_stop(self.source_stop)
             self.sink_stop.assign(sink_stop_value)
@@ -1756,8 +1767,8 @@ class Stream(BaseStream):
             self.busy_reg(1)
         )
 
-        if term_cond is not None:
-            self.seq.If(self.oready, term_cond)(
+        if sink_term_cond is not None:
+            self.seq.If(self.oready, sink_term_cond)(
                 self.busy_reg(0)
             )
 
