@@ -18,3 +18,7 @@ install:
 
 script:
   - python -m pytest tests examples
+
+branches:
+  except:
+  - feature_systemverilog
