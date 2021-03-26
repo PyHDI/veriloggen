@@ -576,40 +576,42 @@ module main
   assign myaxi_arprot = 0;
   assign myaxi_arqos = 0;
   assign myaxi_aruser = 0;
+  reg [32-1:0] outstanding_wreq_count_0;
   assign myaxi_rready = 0;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
-  reg [9-1:0] _tmp_0;
+  reg [9-1:0] counter_1;
   reg _myaxi_cond_0_1;
   reg [32-1:0] wdata;
-  reg _tmp_1;
+  reg last_2;
   reg _myaxi_cond_1_1;
-  reg [9-1:0] _tmp_2;
+  reg [9-1:0] counter_3;
   reg _myaxi_cond_2_1;
-  reg _tmp_3;
+  reg last_4;
   reg _myaxi_cond_3_1;
   reg [32-1:0] sum;
   reg _seq_cond_0_1;
 
   always @(posedge CLK) begin
     if(RST) begin
+      outstanding_wreq_count_0 <= 0;
       myaxi_araddr <= 0;
       myaxi_arlen <= 0;
       myaxi_arvalid <= 0;
       myaxi_awaddr <= 0;
       myaxi_awlen <= 0;
       myaxi_awvalid <= 0;
-      _tmp_0 <= 0;
+      counter_1 <= 0;
       _myaxi_cond_0_1 <= 0;
       myaxi_wdata <= 0;
       myaxi_wvalid <= 0;
       myaxi_wlast <= 0;
       myaxi_wstrb <= 0;
-      _tmp_1 <= 0;
+      last_2 <= 0;
       _myaxi_cond_1_1 <= 0;
-      _tmp_2 <= 0;
+      counter_3 <= 0;
       _myaxi_cond_2_1 <= 0;
-      _tmp_3 <= 0;
+      last_4 <= 0;
       _myaxi_cond_3_1 <= 0;
     end else begin
       if(_myaxi_cond_0_1) begin
@@ -618,7 +620,7 @@ module main
       if(_myaxi_cond_1_1) begin
         myaxi_wvalid <= 0;
         myaxi_wlast <= 0;
-        _tmp_1 <= 0;
+        last_2 <= 0;
       end 
       if(_myaxi_cond_2_1) begin
         myaxi_awvalid <= 0;
@@ -626,70 +628,76 @@ module main
       if(_myaxi_cond_3_1) begin
         myaxi_wvalid <= 0;
         myaxi_wlast <= 0;
-        _tmp_3 <= 0;
+        last_4 <= 0;
+      end 
+      if(myaxi_awvalid && myaxi_awready && !(myaxi_bvalid && myaxi_bready)) begin
+        outstanding_wreq_count_0 <= outstanding_wreq_count_0 + 1;
+      end 
+      if(!(myaxi_awvalid && myaxi_awready) && (myaxi_bvalid && myaxi_bready) && (outstanding_wreq_count_0 > 0)) begin
+        outstanding_wreq_count_0 <= outstanding_wreq_count_0 - 1;
       end 
       myaxi_araddr <= 0;
       myaxi_arlen <= 0;
       myaxi_arvalid <= 0;
-      if((fsm == 0) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_0 == 0))) begin
+      if((fsm == 0) && ((myaxi_awready || !myaxi_awvalid) && (counter_1 == 0))) begin
         myaxi_awaddr <= 1024;
         myaxi_awlen <= 63;
         myaxi_awvalid <= 1;
-        _tmp_0 <= 64;
+        counter_1 <= 64;
       end 
-      if((fsm == 0) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_0 == 0)) && 0) begin
+      if((fsm == 0) && ((myaxi_awready || !myaxi_awvalid) && (counter_1 == 0)) && 0) begin
         myaxi_awvalid <= 0;
       end 
       _myaxi_cond_0_1 <= 1;
       if(myaxi_awvalid && !myaxi_awready) begin
         myaxi_awvalid <= myaxi_awvalid;
       end 
-      if((fsm == 1) && ((_tmp_0 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_0 > 0))) begin
+      if((fsm == 1) && ((counter_1 > 0) && (myaxi_wready || !myaxi_wvalid) && (counter_1 > 0))) begin
         myaxi_wdata <= wdata;
         myaxi_wvalid <= 1;
         myaxi_wlast <= 0;
         myaxi_wstrb <= { 4{ 1'd1 } };
-        _tmp_0 <= _tmp_0 - 1;
+        counter_1 <= counter_1 - 1;
       end 
-      if((fsm == 1) && ((_tmp_0 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_0 > 0)) && (_tmp_0 == 1)) begin
+      if((fsm == 1) && ((counter_1 > 0) && (myaxi_wready || !myaxi_wvalid) && (counter_1 > 0)) && (counter_1 == 1)) begin
         myaxi_wlast <= 1;
-        _tmp_1 <= 1;
+        last_2 <= 1;
       end 
       _myaxi_cond_1_1 <= 1;
       if(myaxi_wvalid && !myaxi_wready) begin
         myaxi_wvalid <= myaxi_wvalid;
         myaxi_wlast <= myaxi_wlast;
-        _tmp_1 <= _tmp_1;
+        last_2 <= last_2;
       end 
-      if((fsm == 2) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_2 == 0))) begin
+      if((fsm == 2) && ((myaxi_awready || !myaxi_awvalid) && (counter_3 == 0))) begin
         myaxi_awaddr <= 1024;
         myaxi_awlen <= 63;
         myaxi_awvalid <= 1;
-        _tmp_2 <= 64;
+        counter_3 <= 64;
       end 
-      if((fsm == 2) && ((myaxi_awready || !myaxi_awvalid) && (_tmp_2 == 0)) && 0) begin
+      if((fsm == 2) && ((myaxi_awready || !myaxi_awvalid) && (counter_3 == 0)) && 0) begin
         myaxi_awvalid <= 0;
       end 
       _myaxi_cond_2_1 <= 1;
       if(myaxi_awvalid && !myaxi_awready) begin
         myaxi_awvalid <= myaxi_awvalid;
       end 
-      if((fsm == 3) && ((_tmp_2 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_2 > 0))) begin
+      if((fsm == 3) && ((counter_3 > 0) && (myaxi_wready || !myaxi_wvalid) && (counter_3 > 0))) begin
         myaxi_wdata <= wdata;
         myaxi_wvalid <= 1;
         myaxi_wlast <= 0;
         myaxi_wstrb <= { 4{ 1'd1 } };
-        _tmp_2 <= _tmp_2 - 1;
+        counter_3 <= counter_3 - 1;
       end 
-      if((fsm == 3) && ((_tmp_2 > 0) && (myaxi_wready || !myaxi_wvalid) && (_tmp_2 > 0)) && (_tmp_2 == 1)) begin
+      if((fsm == 3) && ((counter_3 > 0) && (myaxi_wready || !myaxi_wvalid) && (counter_3 > 0)) && (counter_3 == 1)) begin
         myaxi_wlast <= 1;
-        _tmp_3 <= 1;
+        last_4 <= 1;
       end 
       _myaxi_cond_3_1 <= 1;
       if(myaxi_wvalid && !myaxi_wready) begin
         myaxi_wvalid <= myaxi_wvalid;
         myaxi_wlast <= myaxi_wlast;
-        _tmp_3 <= _tmp_3;
+        last_4 <= last_4;
       end 
     end
   end
@@ -711,10 +719,10 @@ module main
           end 
         end
         fsm_1: begin
-          if((_tmp_0 > 0) && (myaxi_wready || !myaxi_wvalid)) begin
+          if((counter_1 > 0) && (myaxi_wready || !myaxi_wvalid)) begin
             wdata <= wdata + 1;
           end 
-          if(_tmp_1) begin
+          if(last_2) begin
             fsm <= fsm_2;
           end 
         end
@@ -724,10 +732,10 @@ module main
           end 
         end
         fsm_3: begin
-          if((_tmp_2 > 0) && (myaxi_wready || !myaxi_wvalid)) begin
+          if((counter_3 > 0) && (myaxi_wready || !myaxi_wvalid)) begin
             wdata <= wdata + 1;
           end 
-          if(_tmp_3) begin
+          if(last_4) begin
             fsm <= fsm_4;
           end 
         end

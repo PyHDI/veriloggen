@@ -517,6 +517,7 @@ module main
   assign myaxi_bready = 1;
   assign myaxi_arcache = 3;
   assign myaxi_arprot = 0;
+  reg [32-1:0] outstanding_wreq_count_0;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
   reg [32-1:0] sum;
@@ -572,6 +573,7 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
+      outstanding_wreq_count_0 <= 0;
       myaxi_awaddr <= 0;
       myaxi_awvalid <= 0;
       myaxi_wdata <= 0;
@@ -587,6 +589,12 @@ module main
       end 
       if(_myaxi_cond_1_1) begin
         myaxi_arvalid <= 0;
+      end 
+      if(myaxi_awvalid && myaxi_awready && !(myaxi_bvalid && myaxi_bready)) begin
+        outstanding_wreq_count_0 <= outstanding_wreq_count_0 + 1;
+      end 
+      if(!(myaxi_awvalid && myaxi_awready) && (myaxi_bvalid && myaxi_bready) && (outstanding_wreq_count_0 > 0)) begin
+        outstanding_wreq_count_0 <= outstanding_wreq_count_0 - 1;
       end 
       myaxi_awaddr <= 0;
       myaxi_awvalid <= 0;

@@ -592,6 +592,20 @@ class AxiMaster(object):
         self.write_counters = []
         self.read_counters = []
 
+        # outstanding write request
+        self.outstanding_wreq_count = self.m.TmpReg(self.addrwidth, initval=0,
+                                                    prefix='outstanding_wreq_count')
+
+        self.seq.If(vtypes.Ands(self.waddr.awvalid, self.waddr.awready),
+                    vtypes.Not(vtypes.Ands(self.wresp.bvalid, self.wresp.bready)))(
+            self.outstanding_wreq_count.inc()
+        )
+        self.seq.If(vtypes.Not(vtypes.Ands(self.waddr.awvalid, self.waddr.awready)),
+                    vtypes.Ands(self.wresp.bvalid, self.wresp.bready),
+                    self.outstanding_wreq_count > 0)(
+            self.outstanding_wreq_count.dec()
+        )
+
         if nodataflow:
             self.df = None
         else:
@@ -860,6 +874,9 @@ class AxiMaster(object):
         done = vtypes.Ands(last, self.wdata.wvalid, self.wdata.wready)
 
         return done
+
+    def write_completed(self):
+        return self.outstanding_wreq_count == 0
 
     def read_request(self, addr, length=1, cond=None):
         """
@@ -1206,6 +1223,20 @@ class AxiLiteMaster(AxiMaster):
         self.raddr.arcache.assign(raddr_cache_mode)
         self.raddr.arprot.assign(raddr_prot_mode)
 
+        # outstanding write request
+        self.outstanding_wreq_count = self.m.TmpReg(self.addrwidth, initval=0,
+                                                    prefix='outstanding_wreq_count')
+
+        self.seq.If(vtypes.Ands(self.waddr.awvalid, self.waddr.awready),
+                    vtypes.Not(vtypes.Ands(self.wresp.bvalid, self.wresp.bready)))(
+            self.outstanding_wreq_count.inc()
+        )
+        self.seq.If(vtypes.Not(vtypes.Ands(self.waddr.awvalid, self.waddr.awready)),
+                    vtypes.Ands(self.wresp.bvalid, self.wresp.bready),
+                    self.outstanding_wreq_count > 0)(
+            self.outstanding_wreq_count.dec()
+        )
+
         if nodataflow:
             self.df = None
         else:
@@ -1308,6 +1339,9 @@ class AxiLiteMaster(AxiMaster):
         'data' and 'when' must be dataflow variables
         """
         raise TypeError('lite interface support no dataflow operation.')
+
+    def write_completed(self):
+        return self.outstanding_wreq_count == 0
 
     def read_request(self, addr, length=1, cond=None):
         """
@@ -2379,8 +2413,6 @@ class AxiStreamIn(object):
         """
         @return data, last, _id, user, dest, done
         """
-
-        # ???
         data_ready = self.m.TmpWire(prefix='data_ready')
         last_ready = self.m.TmpWire(prefix='last_ready')
         id_ready = self.m.TmpWire(prefix='id_ready')

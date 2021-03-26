@@ -268,13 +268,14 @@ module main
   assign myaxi_arprot = 0;
   assign myaxi_arqos = 0;
   assign myaxi_aruser = 0;
+  reg [32-1:0] outstanding_wreq_count_0;
   reg [32-1:0] req_fsm;
   localparam req_fsm_init = 0;
-  reg [9-1:0] _tmp_0;
+  reg [9-1:0] counter_1;
   reg _myaxi_cond_0_1;
-  wire _tmp_1;
-  wire _tmp_2;
-  assign myaxi_rready = _tmp_1 && _tmp_2;
+  wire data_ready_2;
+  wire last_ready_3;
+  assign myaxi_rready = data_ready_2 && last_ready_3;
   wire signed [32-1:0] _dataflow_reduceadd_odata_4;
   wire _dataflow_reduceadd_ovalid_4;
   wire _dataflow_reduceadd_oready_4;
@@ -287,6 +288,7 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
+      outstanding_wreq_count_0 <= 0;
       myaxi_awaddr <= 0;
       myaxi_awlen <= 0;
       myaxi_awvalid <= 0;
@@ -297,11 +299,17 @@ module main
       myaxi_araddr <= 0;
       myaxi_arlen <= 0;
       myaxi_arvalid <= 0;
-      _tmp_0 <= 0;
+      counter_1 <= 0;
       _myaxi_cond_0_1 <= 0;
     end else begin
       if(_myaxi_cond_0_1) begin
         myaxi_arvalid <= 0;
+      end 
+      if(myaxi_awvalid && myaxi_awready && !(myaxi_bvalid && myaxi_bready)) begin
+        outstanding_wreq_count_0 <= outstanding_wreq_count_0 + 1;
+      end 
+      if(!(myaxi_awvalid && myaxi_awready) && (myaxi_bvalid && myaxi_bready) && (outstanding_wreq_count_0 > 0)) begin
+        outstanding_wreq_count_0 <= outstanding_wreq_count_0 - 1;
       end 
       myaxi_awaddr <= 0;
       myaxi_awlen <= 0;
@@ -310,18 +318,18 @@ module main
       myaxi_wstrb <= 0;
       myaxi_wlast <= 0;
       myaxi_wvalid <= 0;
-      if((req_fsm == 0) && ((myaxi_arready || !myaxi_arvalid) && (_tmp_0 == 0))) begin
+      if((req_fsm == 0) && ((myaxi_arready || !myaxi_arvalid) && (counter_1 == 0))) begin
         myaxi_araddr <= 1024;
         myaxi_arlen <= 63;
         myaxi_arvalid <= 1;
-        _tmp_0 <= 64;
+        counter_1 <= 64;
       end 
       _myaxi_cond_0_1 <= 1;
       if(myaxi_arvalid && !myaxi_arready) begin
         myaxi_arvalid <= myaxi_arvalid;
       end 
-      if(myaxi_rready && myaxi_rvalid && (_tmp_0 > 0)) begin
-        _tmp_0 <= _tmp_0 - 1;
+      if(myaxi_rready && myaxi_rvalid && (counter_1 > 0)) begin
+        counter_1 <= counter_1 - 1;
       end 
     end
   end
@@ -332,8 +340,8 @@ module main
   reg signed [32-1:0] _dataflow_reduceadd_data_4;
   reg _dataflow_reduceadd_valid_4;
   wire _dataflow_reduceadd_ready_4;
-  assign _tmp_1 = 1 && ((_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && (myaxi_rvalid && myaxi_rvalid));
-  assign _tmp_2 = 1 && _dataflow__variable_oready_1 && ((_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && (myaxi_rvalid && myaxi_rvalid));
+  assign data_ready_2 = 1 && ((_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && (myaxi_rvalid && myaxi_rvalid));
+  assign last_ready_3 = 1 && _dataflow__variable_oready_1 && ((_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && (myaxi_rvalid && myaxi_rvalid));
   assign _dataflow_reduceadd_odata_4 = _dataflow_reduceadd_data_4;
   assign _dataflow_reduceadd_ovalid_4 = _dataflow_reduceadd_valid_4;
   assign _dataflow_reduceadd_ready_4 = _dataflow_reduceadd_oready_4;
@@ -344,19 +352,19 @@ module main
       _dataflow_reduceadd_data_4 <= 1'sd0;
       _dataflow_reduceadd_valid_4 <= 0;
     end else begin
-      if(myaxi_rvalid && _tmp_2) begin
+      if(myaxi_rvalid && last_ready_3) begin
         _dataflow__prev_data_2 <= myaxi_rlast;
       end 
-      if((_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && (_tmp_1 && _tmp_2) && (myaxi_rvalid && myaxi_rvalid)) begin
+      if((_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && (data_ready_2 && last_ready_3) && (myaxi_rvalid && myaxi_rvalid)) begin
         _dataflow_reduceadd_data_4 <= _dataflow_reduceadd_data_4 + myaxi_rdata;
       end 
       if(_dataflow_reduceadd_valid_4 && _dataflow_reduceadd_ready_4) begin
         _dataflow_reduceadd_valid_4 <= 0;
       end 
-      if((_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && (_tmp_1 && _tmp_2)) begin
+      if((_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && (data_ready_2 && last_ready_3)) begin
         _dataflow_reduceadd_valid_4 <= myaxi_rvalid && myaxi_rvalid;
       end 
-      if((_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && (_tmp_1 && _tmp_2) && (myaxi_rvalid && myaxi_rvalid) && _dataflow__prev_data_2) begin
+      if((_dataflow_reduceadd_ready_4 || !_dataflow_reduceadd_valid_4) && (data_ready_2 && last_ready_3) && (myaxi_rvalid && myaxi_rvalid) && _dataflow__prev_data_2) begin
         _dataflow_reduceadd_data_4 <= 1'sd0 + myaxi_rdata;
       end 
     end
