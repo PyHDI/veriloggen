@@ -56,103 +56,104 @@ module test;
   assign _axi_bready = 1;
   assign _axi_arcache = 3;
   assign _axi_arprot = 0;
-  wire [32-1:0] _tmp_0;
-  assign _tmp_0 = _axi_awaddr;
+  reg [32-1:0] outstanding_wreq_count_0;
+  wire [32-1:0] _tmp_1;
+  assign _tmp_1 = _axi_awaddr;
 
   always @(*) begin
-    myaxi_awaddr = _tmp_0;
+    myaxi_awaddr = _tmp_1;
   end
 
-  wire [4-1:0] _tmp_1;
-  assign _tmp_1 = _axi_awcache;
+  wire [4-1:0] _tmp_2;
+  assign _tmp_2 = _axi_awcache;
 
   always @(*) begin
-    myaxi_awcache = _tmp_1;
+    myaxi_awcache = _tmp_2;
   end
 
-  wire [3-1:0] _tmp_2;
-  assign _tmp_2 = _axi_awprot;
+  wire [3-1:0] _tmp_3;
+  assign _tmp_3 = _axi_awprot;
 
   always @(*) begin
-    myaxi_awprot = _tmp_2;
+    myaxi_awprot = _tmp_3;
   end
 
-  wire _tmp_3;
-  assign _tmp_3 = _axi_awvalid;
+  wire _tmp_4;
+  assign _tmp_4 = _axi_awvalid;
 
   always @(*) begin
-    myaxi_awvalid = _tmp_3;
+    myaxi_awvalid = _tmp_4;
   end
 
   assign _axi_awready = myaxi_awready;
-  wire [32-1:0] _tmp_4;
-  assign _tmp_4 = _axi_wdata;
+  wire [32-1:0] _tmp_5;
+  assign _tmp_5 = _axi_wdata;
 
   always @(*) begin
-    myaxi_wdata = _tmp_4;
+    myaxi_wdata = _tmp_5;
   end
 
-  wire [4-1:0] _tmp_5;
-  assign _tmp_5 = _axi_wstrb;
+  wire [4-1:0] _tmp_6;
+  assign _tmp_6 = _axi_wstrb;
 
   always @(*) begin
-    myaxi_wstrb = _tmp_5;
+    myaxi_wstrb = _tmp_6;
   end
 
-  wire _tmp_6;
-  assign _tmp_6 = _axi_wvalid;
+  wire _tmp_7;
+  assign _tmp_7 = _axi_wvalid;
 
   always @(*) begin
-    myaxi_wvalid = _tmp_6;
+    myaxi_wvalid = _tmp_7;
   end
 
   assign _axi_wready = myaxi_wready;
   assign _axi_bresp = myaxi_bresp;
   assign _axi_bvalid = myaxi_bvalid;
-  wire _tmp_7;
-  assign _tmp_7 = _axi_bready;
+  wire _tmp_8;
+  assign _tmp_8 = _axi_bready;
 
   always @(*) begin
-    myaxi_bready = _tmp_7;
+    myaxi_bready = _tmp_8;
   end
 
-  wire [32-1:0] _tmp_8;
-  assign _tmp_8 = _axi_araddr;
+  wire [32-1:0] _tmp_9;
+  assign _tmp_9 = _axi_araddr;
 
   always @(*) begin
-    myaxi_araddr = _tmp_8;
+    myaxi_araddr = _tmp_9;
   end
 
-  wire [4-1:0] _tmp_9;
-  assign _tmp_9 = _axi_arcache;
+  wire [4-1:0] _tmp_10;
+  assign _tmp_10 = _axi_arcache;
 
   always @(*) begin
-    myaxi_arcache = _tmp_9;
+    myaxi_arcache = _tmp_10;
   end
 
-  wire [3-1:0] _tmp_10;
-  assign _tmp_10 = _axi_arprot;
+  wire [3-1:0] _tmp_11;
+  assign _tmp_11 = _axi_arprot;
 
   always @(*) begin
-    myaxi_arprot = _tmp_10;
+    myaxi_arprot = _tmp_11;
   end
 
-  wire _tmp_11;
-  assign _tmp_11 = _axi_arvalid;
+  wire _tmp_12;
+  assign _tmp_12 = _axi_arvalid;
 
   always @(*) begin
-    myaxi_arvalid = _tmp_11;
+    myaxi_arvalid = _tmp_12;
   end
 
   assign _axi_arready = myaxi_arready;
   assign _axi_rdata = myaxi_rdata;
   assign _axi_rresp = myaxi_rresp;
   assign _axi_rvalid = myaxi_rvalid;
-  wire _tmp_12;
-  assign _tmp_12 = _axi_rready;
+  wire _tmp_13;
+  assign _tmp_13 = _axi_rready;
 
   always @(*) begin
-    myaxi_rready = _tmp_12;
+    myaxi_rready = _tmp_13;
   end
 
   reg [32-1:0] read_fsm;
@@ -216,6 +217,7 @@ module test;
     _axi_wvalid = 0;
     _axi_araddr = 0;
     _axi_arvalid = 0;
+    outstanding_wreq_count_0 = 0;
     read_fsm = read_fsm_init;
     rsum = 0;
     __axi_cond_0_1 = 0;
@@ -237,6 +239,7 @@ module test;
 
   always @(posedge CLK) begin
     if(RST) begin
+      outstanding_wreq_count_0 <= 0;
       _axi_araddr <= 0;
       _axi_arvalid <= 0;
       __axi_cond_0_1 <= 0;
@@ -268,6 +271,12 @@ module test;
       end 
       if(__axi_cond_5_1) begin
         _axi_wvalid <= 0;
+      end 
+      if(_axi_awvalid && _axi_awready && !(_axi_bvalid && _axi_bready)) begin
+        outstanding_wreq_count_0 <= outstanding_wreq_count_0 + 1;
+      end 
+      if(!(_axi_awvalid && _axi_awready) && (_axi_bvalid && _axi_bready) && (outstanding_wreq_count_0 > 0)) begin
+        outstanding_wreq_count_0 <= outstanding_wreq_count_0 - 1;
       end 
       if((read_fsm == 0) && (_axi_arready || !_axi_arvalid)) begin
         _axi_araddr <= 1024;
@@ -487,13 +496,13 @@ module main
   assign myaxi_rresp = 0;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
-  reg [32-1:0] _tmp_0;
-  reg _tmp_1;
-  reg _tmp_2;
-  reg _tmp_3;
-  reg _tmp_4;
-  assign myaxi_awready = (fsm == 0) && (!_tmp_1 && !_tmp_2 && !myaxi_bvalid && _tmp_3);
-  assign myaxi_arready = (fsm == 0) && (!_tmp_2 && !_tmp_1 && _tmp_4 && !_tmp_3);
+  reg [32-1:0] addr_0;
+  reg writevalid_1;
+  reg readvalid_2;
+  reg prev_awvalid_3;
+  reg prev_arvalid_4;
+  assign myaxi_awready = (fsm == 0) && (!writevalid_1 && !readvalid_2 && !myaxi_bvalid && prev_awvalid_3);
+  assign myaxi_arready = (fsm == 0) && (!readvalid_2 && !writevalid_1 && prev_arvalid_4 && !prev_awvalid_3);
   reg [32-1:0] rdata;
   reg _myaxi_cond_0_1;
   assign myaxi_wready = fsm == 100;
@@ -501,11 +510,11 @@ module main
   always @(posedge CLK) begin
     if(RST) begin
       myaxi_bvalid <= 0;
-      _tmp_3 <= 0;
-      _tmp_4 <= 0;
-      _tmp_1 <= 0;
-      _tmp_2 <= 0;
-      _tmp_0 <= 0;
+      prev_awvalid_3 <= 0;
+      prev_arvalid_4 <= 0;
+      writevalid_1 <= 0;
+      readvalid_2 <= 0;
+      addr_0 <= 0;
       myaxi_rdata <= 0;
       myaxi_rvalid <= 0;
       _myaxi_cond_0_1 <= 0;
@@ -519,16 +528,16 @@ module main
       if(myaxi_wvalid && myaxi_wready) begin
         myaxi_bvalid <= 1;
       end 
-      _tmp_3 <= myaxi_awvalid;
-      _tmp_4 <= myaxi_arvalid;
-      _tmp_1 <= 0;
-      _tmp_2 <= 0;
+      prev_awvalid_3 <= myaxi_awvalid;
+      prev_arvalid_4 <= myaxi_arvalid;
+      writevalid_1 <= 0;
+      readvalid_2 <= 0;
       if(myaxi_awready && myaxi_awvalid && !myaxi_bvalid) begin
-        _tmp_0 <= myaxi_awaddr;
-        _tmp_1 <= 1;
+        addr_0 <= myaxi_awaddr;
+        writevalid_1 <= 1;
       end else if(myaxi_arready && myaxi_arvalid) begin
-        _tmp_0 <= myaxi_araddr;
-        _tmp_2 <= 1;
+        addr_0 <= myaxi_araddr;
+        readvalid_2 <= 1;
       end 
       if((fsm == 1) && (myaxi_rready || !myaxi_rvalid)) begin
         myaxi_rdata <= rdata;
@@ -554,13 +563,13 @@ module main
     end else begin
       case(fsm)
         fsm_init: begin
-          if(_tmp_2) begin
-            rdata <= _tmp_0 >> 2;
+          if(readvalid_2) begin
+            rdata <= addr_0 >> 2;
           end 
-          if(_tmp_1) begin
+          if(writevalid_1) begin
             fsm <= fsm_100;
           end 
-          if(_tmp_2) begin
+          if(readvalid_2) begin
             fsm <= fsm_1;
           end 
         end
