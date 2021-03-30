@@ -83,13 +83,13 @@ module blinkled
   localparam _saxi_shift = 2;
   reg [32-1:0] _saxi_register_fsm;
   localparam _saxi_register_fsm_init = 0;
-  reg [32-1:0] _tmp_0;
-  reg _tmp_1;
-  reg _tmp_2;
-  reg _tmp_3;
-  reg _tmp_4;
-  assign saxi_awready = (_saxi_register_fsm == 0) && (!_tmp_1 && !_tmp_2 && !saxi_bvalid && _tmp_3);
-  assign saxi_arready = (_saxi_register_fsm == 0) && (!_tmp_2 && !_tmp_1 && _tmp_4 && !_tmp_3);
+  reg [32-1:0] addr_0;
+  reg writevalid_1;
+  reg readvalid_2;
+  reg prev_awvalid_3;
+  reg prev_arvalid_4;
+  assign saxi_awready = (_saxi_register_fsm == 0) && (!writevalid_1 && !readvalid_2 && !saxi_bvalid && prev_awvalid_3);
+  assign saxi_arready = (_saxi_register_fsm == 0) && (!readvalid_2 && !writevalid_1 && prev_arvalid_4 && !prev_awvalid_3);
   reg [_saxi_maskwidth-1:0] _tmp_5;
   wire signed [32-1:0] _tmp_6;
   assign _tmp_6 = (_tmp_5 == 0)? _saxi_register_0 : 
@@ -582,11 +582,11 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       saxi_bvalid <= 0;
-      _tmp_3 <= 0;
-      _tmp_4 <= 0;
-      _tmp_1 <= 0;
-      _tmp_2 <= 0;
-      _tmp_0 <= 0;
+      prev_awvalid_3 <= 0;
+      prev_arvalid_4 <= 0;
+      writevalid_1 <= 0;
+      readvalid_2 <= 0;
+      addr_0 <= 0;
       saxi_rdata <= 0;
       saxi_rvalid <= 0;
       _saxi_cond_0_1 <= 0;
@@ -608,16 +608,16 @@ module blinkled
       if(saxi_wvalid && saxi_wready) begin
         saxi_bvalid <= 1;
       end 
-      _tmp_3 <= saxi_awvalid;
-      _tmp_4 <= saxi_arvalid;
-      _tmp_1 <= 0;
-      _tmp_2 <= 0;
+      prev_awvalid_3 <= saxi_awvalid;
+      prev_arvalid_4 <= saxi_arvalid;
+      writevalid_1 <= 0;
+      readvalid_2 <= 0;
       if(saxi_awready && saxi_awvalid && !saxi_bvalid) begin
-        _tmp_0 <= saxi_awaddr;
-        _tmp_1 <= 1;
+        addr_0 <= saxi_awaddr;
+        writevalid_1 <= 1;
       end else if(saxi_arready && saxi_arvalid) begin
-        _tmp_0 <= saxi_araddr;
-        _tmp_2 <= 1;
+        addr_0 <= saxi_araddr;
+        readvalid_2 <= 1;
       end 
       if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid)) begin
         saxi_rdata <= _tmp_6;
@@ -712,13 +712,13 @@ module blinkled
     end else begin
       case(_saxi_register_fsm)
         _saxi_register_fsm_init: begin
-          if(_tmp_2 || _tmp_1) begin
-            _tmp_5 <= (_tmp_0 >> _saxi_shift) & _saxi_mask;
+          if(readvalid_2 || writevalid_1) begin
+            _tmp_5 <= (addr_0 >> _saxi_shift) & _saxi_mask;
           end 
-          if(_tmp_2) begin
+          if(readvalid_2) begin
             _saxi_register_fsm <= _saxi_register_fsm_1;
           end 
-          if(_tmp_1) begin
+          if(writevalid_1) begin
             _saxi_register_fsm <= _saxi_register_fsm_3;
           end 
         end

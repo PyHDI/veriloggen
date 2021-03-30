@@ -22,7 +22,9 @@ class AXIM(axi.AxiMaster, _MutexFunction):
     __intrinsics__ = ('read', 'write',
                       'dma_read', 'dma_read_async',
                       'dma_write', 'dma_write_async',
-                      'dma_wait_read', 'dma_wait_write', 'dma_wait',
+                      'dma_wait_read', 'dma_wait_write',
+                      'dma_wait_write_idle', 'dma_wait_write_response',
+                      'dma_wait',
                       'set_global_base_addr',) + _MutexFunction.__intrinsics__
 
     burstlen = 256
@@ -210,7 +212,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
                   local_stride=1, port=0, ram_method=None):
 
         if self.enable_async:
-            self.dma_wait_write(fsm)
+            self.dma_wait_write_idle(fsm)
 
         self._dma_write(fsm, ram, local_addr, global_addr, size,
                         local_stride, port, ram_method)
@@ -224,7 +226,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             raise ValueError(
                 "Async mode is disabled. Set 'True' to AXIM.enable_async.")
 
-        self.dma_wait_write(fsm)
+        self.dma_wait_write_idle(fsm)
 
         self._dma_write(fsm, ram, local_addr, global_addr, size,
                         local_stride, port, ram_method)
@@ -235,11 +237,22 @@ class AXIM(axi.AxiMaster, _MutexFunction):
 
     def dma_wait_write(self, fsm):
 
+        res = self.write_completed()
+        fsm.If(self.write_idle, res).goto_next()
+
+    def dma_wait_write_idle(self, fsm):
+
         fsm.If(self.write_idle).goto_next()
+
+    def dma_wait_write_response(self, fsm):
+
+        res = self.write_completed()
+        fsm.If(res).goto_next()
 
     def dma_wait(self, fsm):
 
-        fsm.If(self.read_idle, self.write_idle).goto_next()
+        res = self.write_completed()
+        fsm.If(self.read_idle, self.write_idle, res).goto_next()
 
     def set_global_base_addr(self, fsm, addr):
 

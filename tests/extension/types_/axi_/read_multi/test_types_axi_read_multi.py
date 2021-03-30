@@ -262,12 +262,13 @@ module main
   assign myaxi_arprot = 0;
   assign myaxi_arqos = 0;
   assign myaxi_aruser = 0;
+  reg [32-1:0] outstanding_wreq_count_0;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
   reg [32-1:0] sum;
-  reg [9-1:0] _tmp_0;
+  reg [9-1:0] counter_1;
   reg _myaxi_cond_0_1;
-  reg [9-1:0] _tmp_1;
+  reg [9-1:0] counter_2;
   reg _myaxi_cond_1_1;
   assign myaxi_rready = (fsm == 1) || (fsm == 19);
   localparam fsm_1 = 1;
@@ -383,6 +384,7 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
+      outstanding_wreq_count_0 <= 0;
       myaxi_awaddr <= 0;
       myaxi_awlen <= 0;
       myaxi_awvalid <= 0;
@@ -393,9 +395,9 @@ module main
       myaxi_araddr <= 0;
       myaxi_arlen <= 0;
       myaxi_arvalid <= 0;
-      _tmp_0 <= 0;
+      counter_1 <= 0;
       _myaxi_cond_0_1 <= 0;
-      _tmp_1 <= 0;
+      counter_2 <= 0;
       _myaxi_cond_1_1 <= 0;
     end else begin
       if(_myaxi_cond_0_1) begin
@@ -404,6 +406,12 @@ module main
       if(_myaxi_cond_1_1) begin
         myaxi_arvalid <= 0;
       end 
+      if(myaxi_awvalid && myaxi_awready && !(myaxi_bvalid && myaxi_bready)) begin
+        outstanding_wreq_count_0 <= outstanding_wreq_count_0 + 1;
+      end 
+      if(!(myaxi_awvalid && myaxi_awready) && (myaxi_bvalid && myaxi_bready) && (outstanding_wreq_count_0 > 0)) begin
+        outstanding_wreq_count_0 <= outstanding_wreq_count_0 - 1;
+      end 
       myaxi_awaddr <= 0;
       myaxi_awlen <= 0;
       myaxi_awvalid <= 0;
@@ -411,31 +419,31 @@ module main
       myaxi_wstrb <= 0;
       myaxi_wlast <= 0;
       myaxi_wvalid <= 0;
-      if((fsm == 0) && ((myaxi_arready || !myaxi_arvalid) && (_tmp_0 == 0))) begin
+      if((fsm == 0) && ((myaxi_arready || !myaxi_arvalid) && (counter_1 == 0))) begin
         myaxi_araddr <= 1024;
         myaxi_arlen <= 63;
         myaxi_arvalid <= 1;
-        _tmp_0 <= 64;
+        counter_1 <= 64;
       end 
       _myaxi_cond_0_1 <= 1;
       if(myaxi_arvalid && !myaxi_arready) begin
         myaxi_arvalid <= myaxi_arvalid;
       end 
-      if(myaxi_rready && myaxi_rvalid && (_tmp_0 > 0)) begin
-        _tmp_0 <= _tmp_0 - 1;
+      if(myaxi_rready && myaxi_rvalid && (counter_1 > 0)) begin
+        counter_1 <= counter_1 - 1;
       end 
-      if((fsm == 18) && ((myaxi_arready || !myaxi_arvalid) && (_tmp_1 == 0))) begin
+      if((fsm == 18) && ((myaxi_arready || !myaxi_arvalid) && (counter_2 == 0))) begin
         myaxi_araddr <= 2048;
         myaxi_arlen <= 63;
         myaxi_arvalid <= 1;
-        _tmp_1 <= 64;
+        counter_2 <= 64;
       end 
       _myaxi_cond_1_1 <= 1;
       if(myaxi_arvalid && !myaxi_arready) begin
         myaxi_arvalid <= myaxi_arvalid;
       end 
-      if(myaxi_rready && myaxi_rvalid && (_tmp_1 > 0)) begin
-        _tmp_1 <= _tmp_1 - 1;
+      if(myaxi_rready && myaxi_rvalid && (counter_2 > 0)) begin
+        counter_2 <= counter_2 - 1;
       end 
     end
   end

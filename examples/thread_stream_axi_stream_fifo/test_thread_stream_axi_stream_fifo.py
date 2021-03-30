@@ -92,6 +92,7 @@ module blinkled
   assign maxi_arprot = 0;
   assign maxi_arqos = 0;
   assign maxi_aruser = 0;
+  reg [32-1:0] outstanding_wreq_count_0;
   reg _maxi_read_start;
   reg [8-1:0] _maxi_read_op_sel;
   reg [32-1:0] _maxi_read_local_addr;
@@ -138,41 +139,41 @@ module blinkled
   localparam _saxi_shift = 2;
   reg [32-1:0] _saxi_register_fsm;
   localparam _saxi_register_fsm_init = 0;
-  reg [32-1:0] _tmp_0;
-  reg _tmp_1;
-  reg _tmp_2;
-  reg _tmp_3;
-  reg _tmp_4;
-  assign saxi_awready = (_saxi_register_fsm == 0) && (!_tmp_1 && !_tmp_2 && !saxi_bvalid && _tmp_3);
-  assign saxi_arready = (_saxi_register_fsm == 0) && (!_tmp_2 && !_tmp_1 && _tmp_4 && !_tmp_3);
-  reg [_saxi_maskwidth-1:0] _tmp_5;
-  wire signed [32-1:0] _tmp_6;
-  assign _tmp_6 = (_tmp_5 == 0)? _saxi_register_0 : 
-                  (_tmp_5 == 1)? _saxi_register_1 : 
-                  (_tmp_5 == 2)? _saxi_register_2 : 
-                  (_tmp_5 == 3)? _saxi_register_3 : 
-                  (_tmp_5 == 4)? _saxi_register_4 : 
-                  (_tmp_5 == 5)? _saxi_register_5 : 
-                  (_tmp_5 == 6)? _saxi_register_6 : 
-                  (_tmp_5 == 7)? _saxi_register_7 : 'hx;
-  wire _tmp_7;
-  assign _tmp_7 = (_tmp_5 == 0)? _saxi_flag_0 : 
-                  (_tmp_5 == 1)? _saxi_flag_1 : 
-                  (_tmp_5 == 2)? _saxi_flag_2 : 
-                  (_tmp_5 == 3)? _saxi_flag_3 : 
-                  (_tmp_5 == 4)? _saxi_flag_4 : 
-                  (_tmp_5 == 5)? _saxi_flag_5 : 
-                  (_tmp_5 == 6)? _saxi_flag_6 : 
-                  (_tmp_5 == 7)? _saxi_flag_7 : 'hx;
-  wire signed [32-1:0] _tmp_8;
-  assign _tmp_8 = (_tmp_5 == 0)? _saxi_resetval_0 : 
-                  (_tmp_5 == 1)? _saxi_resetval_1 : 
-                  (_tmp_5 == 2)? _saxi_resetval_2 : 
-                  (_tmp_5 == 3)? _saxi_resetval_3 : 
-                  (_tmp_5 == 4)? _saxi_resetval_4 : 
-                  (_tmp_5 == 5)? _saxi_resetval_5 : 
-                  (_tmp_5 == 6)? _saxi_resetval_6 : 
-                  (_tmp_5 == 7)? _saxi_resetval_7 : 'hx;
+  reg [32-1:0] addr_1;
+  reg writevalid_2;
+  reg readvalid_3;
+  reg prev_awvalid_4;
+  reg prev_arvalid_5;
+  assign saxi_awready = (_saxi_register_fsm == 0) && (!writevalid_2 && !readvalid_3 && !saxi_bvalid && prev_awvalid_4);
+  assign saxi_arready = (_saxi_register_fsm == 0) && (!readvalid_3 && !writevalid_2 && prev_arvalid_5 && !prev_awvalid_4);
+  reg [_saxi_maskwidth-1:0] _tmp_6;
+  wire signed [32-1:0] _tmp_7;
+  assign _tmp_7 = (_tmp_6 == 0)? _saxi_register_0 : 
+                  (_tmp_6 == 1)? _saxi_register_1 : 
+                  (_tmp_6 == 2)? _saxi_register_2 : 
+                  (_tmp_6 == 3)? _saxi_register_3 : 
+                  (_tmp_6 == 4)? _saxi_register_4 : 
+                  (_tmp_6 == 5)? _saxi_register_5 : 
+                  (_tmp_6 == 6)? _saxi_register_6 : 
+                  (_tmp_6 == 7)? _saxi_register_7 : 'hx;
+  wire _tmp_8;
+  assign _tmp_8 = (_tmp_6 == 0)? _saxi_flag_0 : 
+                  (_tmp_6 == 1)? _saxi_flag_1 : 
+                  (_tmp_6 == 2)? _saxi_flag_2 : 
+                  (_tmp_6 == 3)? _saxi_flag_3 : 
+                  (_tmp_6 == 4)? _saxi_flag_4 : 
+                  (_tmp_6 == 5)? _saxi_flag_5 : 
+                  (_tmp_6 == 6)? _saxi_flag_6 : 
+                  (_tmp_6 == 7)? _saxi_flag_7 : 'hx;
+  wire signed [32-1:0] _tmp_9;
+  assign _tmp_9 = (_tmp_6 == 0)? _saxi_resetval_0 : 
+                  (_tmp_6 == 1)? _saxi_resetval_1 : 
+                  (_tmp_6 == 2)? _saxi_resetval_2 : 
+                  (_tmp_6 == 3)? _saxi_resetval_3 : 
+                  (_tmp_6 == 4)? _saxi_resetval_4 : 
+                  (_tmp_6 == 5)? _saxi_resetval_5 : 
+                  (_tmp_6 == 6)? _saxi_resetval_6 : 
+                  (_tmp_6 == 7)? _saxi_resetval_7 : 'hx;
   reg _saxi_cond_0_1;
   assign saxi_wready = _saxi_register_fsm == 3;
   reg _axi_in_read_start;
@@ -419,7 +420,7 @@ module blinkled
   reg signed [32-1:0] _th_comp_write_size_1;
   reg signed [32-1:0] _th_comp_reduce_size_2;
   reg signed [32-1:0] _th_comp_bias_addr_3;
-  reg axim_flag_9;
+  reg axim_flag_10;
   reg [32-1:0] _d1_th_comp;
   reg _th_comp_cond_14_0_1;
   reg _maxi_ram_b_0_read_start;
@@ -433,28 +434,28 @@ module blinkled
   reg [32-1:0] _maxi_read_cur_global_addr;
   reg [33-1:0] _maxi_read_cur_size;
   reg [33-1:0] _maxi_read_rest_size;
-  reg [32-1:0] _wdata_10;
-  reg _wvalid_11;
-  reg [33-1:0] _tmp_12;
-  reg _tmp_13;
+  reg [32-1:0] _wdata_11;
+  reg _wvalid_12;
+  reg [33-1:0] _tmp_13;
+  reg _tmp_14;
   wire [32-1:0] _dataflow__variable_odata_0;
   wire _dataflow__variable_ovalid_0;
   wire _dataflow__variable_oready_0;
-  assign _dataflow__variable_oready_0 = (_tmp_12 > 0) && !_tmp_13;
-  reg [10-1:0] _tmp_14;
-  reg [32-1:0] _tmp_15;
-  reg _tmp_16;
-  assign ram_b_0_wdata = (_tmp_16)? _tmp_15 : 'hx;
-  assign ram_b_0_wenable = (_tmp_16)? 1'd1 : 0;
+  assign _dataflow__variable_oready_0 = (_tmp_13 > 0) && !_tmp_14;
+  reg [10-1:0] _tmp_15;
+  reg [32-1:0] _tmp_16;
+  reg _tmp_17;
+  assign ram_b_0_wdata = (_tmp_17)? _tmp_16 : 'hx;
+  assign ram_b_0_wenable = (_tmp_17)? 1'd1 : 0;
   reg _ram_b_cond_0_1;
-  reg [9-1:0] _tmp_17;
+  reg [9-1:0] counter_18;
   reg _maxi_cond_0_1;
   assign maxi_rready = _maxi_read_fsm == 3;
   reg [32-1:0] _d1__maxi_read_fsm;
   reg __maxi_read_fsm_cond_3_0_1;
-  reg axim_flag_18;
+  reg axim_flag_19;
   reg __maxi_read_fsm_cond_4_1_1;
-  reg axistreamin_flag_19;
+  reg axistreamin_flag_20;
   reg _th_comp_cond_19_1_1;
   reg _axi_in_fifo_a_read_start;
   reg [8-1:0] _axi_in_fifo_a_read_op_sel;
@@ -465,14 +466,14 @@ module blinkled
   assign axi_in_tready = (_axi_in_read_fsm == 1) && !fifo_a_almost_full;
   assign fifo_a_wdata = (axi_in_tready && axi_in_tvalid && (_axi_in_read_op_sel == 1))? axi_in_tdata : 'hx;
   assign fifo_a_enq = (axi_in_tready && axi_in_tvalid && (_axi_in_read_op_sel == 1))? axi_in_tready && axi_in_tvalid && (_axi_in_read_op_sel == 1) && !fifo_a_almost_full : 0;
-  localparam _tmp_20 = 1;
-  wire [_tmp_20-1:0] _tmp_21;
-  assign _tmp_21 = !fifo_a_almost_full;
-  reg [_tmp_20-1:0] __tmp_21_1;
-  reg axistreamin_flag_22;
+  localparam _tmp_21 = 1;
+  wire [_tmp_21-1:0] _tmp_22;
+  assign _tmp_22 = !fifo_a_almost_full;
+  reg [_tmp_21-1:0] __tmp_22_1;
+  reg axistreamin_flag_23;
   reg [32-1:0] _d1__axi_in_read_fsm;
   reg __axi_in_read_fsm_cond_2_0_1;
-  reg axistreamout_flag_23;
+  reg axistreamout_flag_24;
   reg _th_comp_cond_22_2_1;
   reg _axi_out_fifo_c_write_start;
   reg [8-1:0] _axi_out_fifo_c_write_op_sel;
@@ -480,16 +481,16 @@ module blinkled
   reg [32-1:0] _axi_out_write_fsm;
   localparam _axi_out_write_fsm_init = 0;
   reg [33-1:0] _axi_out_write_counter;
-  reg [33-1:0] _axi_out_write_fifo_counter_24;
-  assign fifo_c_deq = ((_axi_out_write_fsm == 1) && (_axi_out_write_op_sel == 1) && (axi_out_tready || !axi_out_tvalid) && !fifo_c_empty && (_axi_out_write_fifo_counter_24 > 0) && !fifo_c_empty)? 1 : 0;
-  localparam _tmp_25 = 1;
-  wire [_tmp_25-1:0] _tmp_26;
-  assign _tmp_26 = (_axi_out_write_fsm == 1) && (_axi_out_write_op_sel == 1) && (axi_out_tready || !axi_out_tvalid) && !fifo_c_empty && (_axi_out_write_fifo_counter_24 > 0) && !fifo_c_empty;
-  reg [_tmp_25-1:0] __tmp_26_1;
-  reg rlast_27;
-  reg repeat_rvalid_28;
+  reg [33-1:0] _axi_out_write_fifo_counter_25;
+  assign fifo_c_deq = ((_axi_out_write_fsm == 1) && (_axi_out_write_op_sel == 1) && (axi_out_tready || !axi_out_tvalid) && !fifo_c_empty && (_axi_out_write_fifo_counter_25 > 0) && !fifo_c_empty)? 1 : 0;
+  localparam _tmp_26 = 1;
+  wire [_tmp_26-1:0] _tmp_27;
+  assign _tmp_27 = (_axi_out_write_fsm == 1) && (_axi_out_write_op_sel == 1) && (axi_out_tready || !axi_out_tvalid) && !fifo_c_empty && (_axi_out_write_fifo_counter_25 > 0) && !fifo_c_empty;
+  reg [_tmp_26-1:0] __tmp_27_1;
+  reg rlast_28;
+  reg repeat_rvalid_29;
   reg _axi_out_cond_0_1;
-  reg axistreamout_flag_29;
+  reg axistreamout_flag_30;
   reg [32-1:0] _d1__axi_out_write_fsm;
   reg __axi_out_write_fsm_cond_2_0_1;
   wire signed [32-1:0] mystream_reduce_a_data;
@@ -544,42 +545,42 @@ module blinkled
   assign mystream_reduce_sum_data = _reduceadd_data_4;
   wire [1-1:0] mystream_reduce_sum_valid_data;
   assign mystream_reduce_sum_valid_data = _pulse_data_6;
-  wire _set_flag_30;
-  assign _set_flag_30 = th_comp == 25;
+  wire _set_flag_31;
+  assign _set_flag_31 = th_comp == 25;
   assign fifo_a_deq = (_mystream_reduce_stream_oready && _mystream_reduce_a_source_fifo_deq && (_mystream_reduce_a_source_sel == 1) && !fifo_a_empty)? 1 : 0;
-  localparam _tmp_31 = 1;
-  wire [_tmp_31-1:0] _tmp_32;
-  assign _tmp_32 = _mystream_reduce_stream_oready && _mystream_reduce_a_source_fifo_deq && (_mystream_reduce_a_source_sel == 1) && !fifo_a_empty;
-  reg [_tmp_31-1:0] __tmp_32_1;
+  localparam _tmp_32 = 1;
+  wire [_tmp_32-1:0] _tmp_33;
+  assign _tmp_33 = _mystream_reduce_stream_oready && _mystream_reduce_a_source_fifo_deq && (_mystream_reduce_a_source_sel == 1) && !fifo_a_empty;
+  reg [_tmp_32-1:0] __tmp_33_1;
   assign _mystream_reduce_a_source_fifo_rdata = (_mystream_reduce_a_source_sel == 1)? fifo_a_rdata : 'hx;
   reg signed [32-1:0] __variable_wdata_0;
   assign mystream_reduce_a_data = __variable_wdata_0;
   reg [32-1:0] _mystream_reduce_a_source_fsm_0;
   localparam _mystream_reduce_a_source_fsm_0_init = 0;
-  wire _set_flag_33;
-  assign _set_flag_33 = th_comp == 26;
+  wire _set_flag_34;
+  assign _set_flag_34 = th_comp == 26;
   reg signed [32-1:0] __variable_wdata_1;
   assign mystream_reduce_reduce_size_data = __variable_wdata_1;
-  wire _set_flag_34;
-  assign _set_flag_34 = th_comp == 27;
-  reg _tmp_35;
+  wire _set_flag_35;
+  assign _set_flag_35 = th_comp == 27;
   reg _tmp_36;
   reg _tmp_37;
   reg _tmp_38;
   reg _tmp_39;
   reg _tmp_40;
-  reg signed [32-1:0] _tmp_41;
+  reg _tmp_41;
   reg signed [32-1:0] _tmp_42;
   reg signed [32-1:0] _tmp_43;
   reg signed [32-1:0] _tmp_44;
   reg signed [32-1:0] _tmp_45;
   reg signed [32-1:0] _tmp_46;
+  reg signed [32-1:0] _tmp_47;
   assign fifo_b_wdata = (_mystream_reduce_stream_oready && _mystream_reduce_sum_sink_fifo_enq && (_mystream_reduce_sum_sink_sel == 2))? _mystream_reduce_sum_sink_fifo_wdata : 'hx;
   assign fifo_b_enq = (_mystream_reduce_stream_oready && _mystream_reduce_sum_sink_fifo_enq && (_mystream_reduce_sum_sink_sel == 2))? _mystream_reduce_stream_oready && _mystream_reduce_sum_sink_fifo_enq && (_mystream_reduce_sum_sink_sel == 2) && !fifo_b_almost_full : 0;
-  localparam _tmp_47 = 1;
-  wire [_tmp_47-1:0] _tmp_48;
-  assign _tmp_48 = !fifo_b_almost_full;
-  reg [_tmp_47-1:0] __tmp_48_1;
+  localparam _tmp_48 = 1;
+  wire [_tmp_48-1:0] _tmp_49;
+  assign _tmp_49 = !fifo_b_almost_full;
+  reg [_tmp_48-1:0] __tmp_49_1;
   assign _mystream_reduce_stream_oready = ((_mystream_reduce_sink_busy && (_mystream_reduce_sum_sink_sel == 2))? !fifo_b_almost_full : 1) && (((_mystream_reduce_source_busy && (_mystream_reduce_a_source_sel == 1))? !fifo_a_empty || _mystream_reduce_a_idle : 1) && _mystream_reduce_stream_internal_oready);
   reg [32-1:0] _mystream_reduce_sum_sink_fsm_1;
   localparam _mystream_reduce_sum_sink_fsm_1_init = 0;
@@ -589,125 +590,126 @@ module blinkled
   reg signed [32-1:0] _plus_data_10;
   wire signed [32-1:0] mystream_bias_z_data;
   assign mystream_bias_z_data = _plus_data_10;
-  wire _set_flag_49;
-  assign _set_flag_49 = th_comp == 28;
+  wire _set_flag_50;
+  assign _set_flag_50 = th_comp == 28;
   assign fifo_b_deq = (_mystream_bias_stream_oready && _mystream_bias_x_source_fifo_deq && (_mystream_bias_x_source_sel == 1) && !fifo_b_empty)? 1 : 0;
-  localparam _tmp_50 = 1;
-  wire [_tmp_50-1:0] _tmp_51;
-  assign _tmp_51 = _mystream_bias_stream_oready && _mystream_bias_x_source_fifo_deq && (_mystream_bias_x_source_sel == 1) && !fifo_b_empty;
-  reg [_tmp_50-1:0] __tmp_51_1;
+  localparam _tmp_51 = 1;
+  wire [_tmp_51-1:0] _tmp_52;
+  assign _tmp_52 = _mystream_bias_stream_oready && _mystream_bias_x_source_fifo_deq && (_mystream_bias_x_source_sel == 1) && !fifo_b_empty;
+  reg [_tmp_51-1:0] __tmp_52_1;
   assign _mystream_bias_x_source_fifo_rdata = (_mystream_bias_x_source_sel == 1)? fifo_b_rdata : 'hx;
   reg signed [32-1:0] __variable_wdata_8;
   assign mystream_bias_x_data = __variable_wdata_8;
   reg [32-1:0] _mystream_bias_x_source_fsm_0;
   localparam _mystream_bias_x_source_fsm_0_init = 0;
-  wire _set_flag_52;
-  assign _set_flag_52 = th_comp == 29;
+  wire _set_flag_53;
+  assign _set_flag_53 = th_comp == 29;
   assign ram_b_0_addr = (_mystream_bias_stream_oready && _mystream_bias_y_source_ram_renable && (_mystream_bias_y_source_sel == 2))? _mystream_bias_y_source_ram_raddr : 
-                        (_tmp_16)? _tmp_14 : 'hx;
+                        (_tmp_17)? _tmp_15 : 'hx;
   assign ram_b_0_enable = (_mystream_bias_stream_oready && _mystream_bias_y_source_ram_renable && (_mystream_bias_y_source_sel == 2))? 1'd1 : 
-                          (_tmp_16)? 1'd1 : 0;
-  localparam _tmp_53 = 1;
-  wire [_tmp_53-1:0] _tmp_54;
-  assign _tmp_54 = _mystream_bias_stream_oready && _mystream_bias_y_source_ram_renable && (_mystream_bias_y_source_sel == 2);
-  reg [_tmp_53-1:0] __tmp_54_1;
+                          (_tmp_17)? 1'd1 : 0;
+  localparam _tmp_54 = 1;
+  wire [_tmp_54-1:0] _tmp_55;
+  assign _tmp_55 = _mystream_bias_stream_oready && _mystream_bias_y_source_ram_renable && (_mystream_bias_y_source_sel == 2);
+  reg [_tmp_54-1:0] __tmp_55_1;
   assign _mystream_bias_y_source_ram_rdata = (_mystream_bias_y_source_sel == 2)? ram_b_0_rdata : 'hx;
   reg signed [32-1:0] __variable_wdata_9;
   assign mystream_bias_y_data = __variable_wdata_9;
   reg [32-1:0] _mystream_bias_y_source_fsm_1;
   localparam _mystream_bias_y_source_fsm_1_init = 0;
-  wire _set_flag_55;
-  assign _set_flag_55 = th_comp == 30;
-  reg _tmp_56;
+  wire _set_flag_56;
+  assign _set_flag_56 = th_comp == 30;
   reg _tmp_57;
   reg _tmp_58;
-  reg signed [32-1:0] _tmp_59;
+  reg _tmp_59;
   reg signed [32-1:0] _tmp_60;
   reg signed [32-1:0] _tmp_61;
+  reg signed [32-1:0] _tmp_62;
   assign fifo_c_wdata = (_mystream_bias_stream_oready && _mystream_bias_z_sink_fifo_enq && (_mystream_bias_z_sink_sel == 3))? _mystream_bias_z_sink_fifo_wdata : 'hx;
   assign fifo_c_enq = (_mystream_bias_stream_oready && _mystream_bias_z_sink_fifo_enq && (_mystream_bias_z_sink_sel == 3))? _mystream_bias_stream_oready && _mystream_bias_z_sink_fifo_enq && (_mystream_bias_z_sink_sel == 3) && !fifo_c_almost_full : 0;
-  localparam _tmp_62 = 1;
-  wire [_tmp_62-1:0] _tmp_63;
-  assign _tmp_63 = !fifo_c_almost_full;
-  reg [_tmp_62-1:0] __tmp_63_1;
+  localparam _tmp_63 = 1;
+  wire [_tmp_63-1:0] _tmp_64;
+  assign _tmp_64 = !fifo_c_almost_full;
+  reg [_tmp_63-1:0] __tmp_64_1;
   assign _mystream_bias_stream_oready = ((_mystream_bias_sink_busy && (_mystream_bias_z_sink_sel == 3))? !fifo_c_almost_full : 1) && (((_mystream_bias_source_busy && (_mystream_bias_x_source_sel == 1))? !fifo_b_empty || _mystream_bias_x_idle : 1) && _mystream_bias_stream_internal_oready);
   reg [32-1:0] _mystream_bias_z_sink_fsm_2;
   localparam _mystream_bias_z_sink_fsm_2_init = 0;
-  wire _set_flag_64;
-  assign _set_flag_64 = th_comp == 31;
-  assign _mystream_reduce_run_flag = (_set_flag_64)? 1 : 0;
-  reg _tmp_65;
+  wire _set_flag_65;
+  assign _set_flag_65 = th_comp == 31;
+  assign _mystream_reduce_run_flag = (_set_flag_65)? 1 : 0;
   reg _tmp_66;
   reg _tmp_67;
   reg _tmp_68;
   reg _tmp_69;
   reg _tmp_70;
+  reg _tmp_71;
   reg [1-1:0] __variable_wdata_3;
   assign mystream_reduce__reduce_reset_data = __variable_wdata_3;
-  reg _tmp_71;
   reg _tmp_72;
   reg _tmp_73;
   reg _tmp_74;
+  reg _tmp_75;
   assign _mystream_reduce_source_stop = _mystream_reduce_stream_oready && (_mystream_reduce_a_idle && (_mystream_reduce_fsm == 3));
-  localparam _tmp_75 = 1;
-  wire [_tmp_75-1:0] _tmp_76;
-  assign _tmp_76 = _mystream_reduce_a_idle && (_mystream_reduce_fsm == 3);
-  reg [_tmp_75-1:0] _tmp_77;
-  localparam _tmp_78 = 1;
-  wire [_tmp_78-1:0] _tmp_79;
-  assign _tmp_79 = _mystream_reduce_a_idle && (_mystream_reduce_fsm == 3);
-  reg [_tmp_78-1:0] _tmp_80;
-  reg _tmp_81;
+  localparam _tmp_76 = 1;
+  wire [_tmp_76-1:0] _tmp_77;
+  assign _tmp_77 = _mystream_reduce_a_idle && (_mystream_reduce_fsm == 3);
+  reg [_tmp_76-1:0] _tmp_78;
+  localparam _tmp_79 = 1;
+  wire [_tmp_79-1:0] _tmp_80;
+  assign _tmp_80 = _mystream_reduce_a_idle && (_mystream_reduce_fsm == 3);
+  reg [_tmp_79-1:0] _tmp_81;
   reg _tmp_82;
   reg _tmp_83;
   reg _tmp_84;
   reg _tmp_85;
   reg _tmp_86;
-  assign _mystream_reduce_sink_start = _tmp_86;
   reg _tmp_87;
+  assign _mystream_reduce_sink_start = _tmp_87;
   reg _tmp_88;
   reg _tmp_89;
   reg _tmp_90;
   reg _tmp_91;
   reg _tmp_92;
-  assign _mystream_reduce_sink_stop = _tmp_92;
   reg _tmp_93;
+  assign _mystream_reduce_sink_stop = _tmp_93;
   reg _tmp_94;
   reg _tmp_95;
   reg _tmp_96;
   reg _tmp_97;
   reg _tmp_98;
-  assign _mystream_reduce_sink_busy = _tmp_98;
   reg _tmp_99;
+  assign _mystream_reduce_sink_busy = _tmp_99;
+  reg _tmp_100;
   assign _mystream_reduce_busy = _mystream_reduce_source_busy || _mystream_reduce_sink_busy || _mystream_reduce_busy_reg;
-  wire _set_flag_100;
-  assign _set_flag_100 = th_comp == 33;
-  assign _mystream_bias_run_flag = (_set_flag_100)? 1 : 0;
-  reg _tmp_101;
+  wire _set_flag_101;
+  assign _set_flag_101 = th_comp == 33;
+  assign _mystream_bias_run_flag = (_set_flag_101)? 1 : 0;
   reg _tmp_102;
   reg _tmp_103;
+  reg _tmp_104;
   assign _mystream_bias_source_stop = _mystream_bias_stream_oready && (_mystream_bias_x_idle && _mystream_bias_y_idle && (_mystream_bias_fsm == 3));
-  localparam _tmp_104 = 1;
-  wire [_tmp_104-1:0] _tmp_105;
-  assign _tmp_105 = _mystream_bias_x_idle && _mystream_bias_y_idle && (_mystream_bias_fsm == 3);
-  reg [_tmp_104-1:0] _tmp_106;
-  reg _tmp_107;
+  localparam _tmp_105 = 1;
+  wire [_tmp_105-1:0] _tmp_106;
+  assign _tmp_106 = _mystream_bias_x_idle && _mystream_bias_y_idle && (_mystream_bias_fsm == 3);
+  reg [_tmp_105-1:0] _tmp_107;
   reg _tmp_108;
   reg _tmp_109;
-  assign _mystream_bias_sink_start = _tmp_109;
   reg _tmp_110;
+  assign _mystream_bias_sink_start = _tmp_110;
   reg _tmp_111;
   reg _tmp_112;
-  assign _mystream_bias_sink_stop = _tmp_112;
   reg _tmp_113;
+  assign _mystream_bias_sink_stop = _tmp_113;
   reg _tmp_114;
   reg _tmp_115;
-  assign _mystream_bias_sink_busy = _tmp_115;
   reg _tmp_116;
+  assign _mystream_bias_sink_busy = _tmp_116;
+  reg _tmp_117;
   assign _mystream_bias_busy = _mystream_bias_source_busy || _mystream_bias_sink_busy || _mystream_bias_busy_reg;
 
   always @(posedge CLK) begin
     if(RST) begin
+      outstanding_wreq_count_0 <= 0;
       _maxi_read_start <= 0;
       _maxi_write_start <= 0;
       maxi_awaddr <= 0;
@@ -732,11 +734,17 @@ module blinkled
       maxi_araddr <= 0;
       maxi_arlen <= 0;
       maxi_arvalid <= 0;
-      _tmp_17 <= 0;
+      counter_18 <= 0;
       _maxi_cond_0_1 <= 0;
     end else begin
       if(_maxi_cond_0_1) begin
         maxi_arvalid <= 0;
+      end 
+      if(maxi_awvalid && maxi_awready && !(maxi_bvalid && maxi_bready)) begin
+        outstanding_wreq_count_0 <= outstanding_wreq_count_0 + 1;
+      end 
+      if(!(maxi_awvalid && maxi_awready) && (maxi_bvalid && maxi_bready) && (outstanding_wreq_count_0 > 0)) begin
+        outstanding_wreq_count_0 <= outstanding_wreq_count_0 - 1;
       end 
       _maxi_read_start <= 0;
       _maxi_write_start <= 0;
@@ -748,7 +756,7 @@ module blinkled
       maxi_wlast <= 0;
       maxi_wvalid <= 0;
       _maxi_ram_b_0_read_start <= 0;
-      if(axim_flag_9) begin
+      if(axim_flag_10) begin
         _maxi_ram_b_0_read_start <= 1;
         _maxi_ram_b_0_read_op_sel <= 1;
         _maxi_ram_b_0_read_local_addr <= 0;
@@ -767,36 +775,36 @@ module blinkled
         _maxi_read_size <= _maxi_ram_b_0_read_size;
         _maxi_read_local_stride <= _maxi_ram_b_0_read_local_stride;
       end 
-      if((_maxi_read_fsm == 2) && ((maxi_arready || !maxi_arvalid) && (_tmp_17 == 0))) begin
+      if((_maxi_read_fsm == 2) && ((maxi_arready || !maxi_arvalid) && (counter_18 == 0))) begin
         maxi_araddr <= _maxi_read_cur_global_addr;
         maxi_arlen <= _maxi_read_cur_size - 1;
         maxi_arvalid <= 1;
-        _tmp_17 <= _maxi_read_cur_size;
+        counter_18 <= _maxi_read_cur_size;
       end 
       _maxi_cond_0_1 <= 1;
       if(maxi_arvalid && !maxi_arready) begin
         maxi_arvalid <= maxi_arvalid;
       end 
-      if(maxi_rready && maxi_rvalid && (_tmp_17 > 0)) begin
-        _tmp_17 <= _tmp_17 - 1;
+      if(maxi_rready && maxi_rvalid && (counter_18 > 0)) begin
+        counter_18 <= counter_18 - 1;
       end 
-      if(axim_flag_18) begin
+      if(axim_flag_19) begin
         _maxi_read_idle <= 1;
       end 
     end
   end
 
-  assign _dataflow__variable_odata_0 = _wdata_10;
-  assign _dataflow__variable_ovalid_0 = _wvalid_11;
+  assign _dataflow__variable_odata_0 = _wdata_11;
+  assign _dataflow__variable_ovalid_0 = _wvalid_12;
 
   always @(posedge CLK) begin
     if(RST) begin
       saxi_bvalid <= 0;
-      _tmp_3 <= 0;
-      _tmp_4 <= 0;
-      _tmp_1 <= 0;
-      _tmp_2 <= 0;
-      _tmp_0 <= 0;
+      prev_awvalid_4 <= 0;
+      prev_arvalid_5 <= 0;
+      writevalid_2 <= 0;
+      readvalid_3 <= 0;
+      addr_1 <= 0;
       saxi_rdata <= 0;
       saxi_rvalid <= 0;
       _saxi_cond_0_1 <= 0;
@@ -826,79 +834,79 @@ module blinkled
       if(saxi_wvalid && saxi_wready) begin
         saxi_bvalid <= 1;
       end 
-      _tmp_3 <= saxi_awvalid;
-      _tmp_4 <= saxi_arvalid;
-      _tmp_1 <= 0;
-      _tmp_2 <= 0;
+      prev_awvalid_4 <= saxi_awvalid;
+      prev_arvalid_5 <= saxi_arvalid;
+      writevalid_2 <= 0;
+      readvalid_3 <= 0;
       if(saxi_awready && saxi_awvalid && !saxi_bvalid) begin
-        _tmp_0 <= saxi_awaddr;
-        _tmp_1 <= 1;
+        addr_1 <= saxi_awaddr;
+        writevalid_2 <= 1;
       end else if(saxi_arready && saxi_arvalid) begin
-        _tmp_0 <= saxi_araddr;
-        _tmp_2 <= 1;
+        addr_1 <= saxi_araddr;
+        readvalid_3 <= 1;
       end 
       if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid)) begin
-        saxi_rdata <= _tmp_6;
+        saxi_rdata <= _tmp_7;
         saxi_rvalid <= 1;
       end 
       _saxi_cond_0_1 <= 1;
       if(saxi_rvalid && !saxi_rready) begin
         saxi_rvalid <= saxi_rvalid;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && _tmp_7 && (_tmp_5 == 0)) begin
-        _saxi_register_0 <= _tmp_8;
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && _tmp_8 && (_tmp_6 == 0)) begin
+        _saxi_register_0 <= _tmp_9;
         _saxi_flag_0 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && _tmp_7 && (_tmp_5 == 1)) begin
-        _saxi_register_1 <= _tmp_8;
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && _tmp_8 && (_tmp_6 == 1)) begin
+        _saxi_register_1 <= _tmp_9;
         _saxi_flag_1 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && _tmp_7 && (_tmp_5 == 2)) begin
-        _saxi_register_2 <= _tmp_8;
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && _tmp_8 && (_tmp_6 == 2)) begin
+        _saxi_register_2 <= _tmp_9;
         _saxi_flag_2 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && _tmp_7 && (_tmp_5 == 3)) begin
-        _saxi_register_3 <= _tmp_8;
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && _tmp_8 && (_tmp_6 == 3)) begin
+        _saxi_register_3 <= _tmp_9;
         _saxi_flag_3 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && _tmp_7 && (_tmp_5 == 4)) begin
-        _saxi_register_4 <= _tmp_8;
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && _tmp_8 && (_tmp_6 == 4)) begin
+        _saxi_register_4 <= _tmp_9;
         _saxi_flag_4 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && _tmp_7 && (_tmp_5 == 5)) begin
-        _saxi_register_5 <= _tmp_8;
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && _tmp_8 && (_tmp_6 == 5)) begin
+        _saxi_register_5 <= _tmp_9;
         _saxi_flag_5 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && _tmp_7 && (_tmp_5 == 6)) begin
-        _saxi_register_6 <= _tmp_8;
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && _tmp_8 && (_tmp_6 == 6)) begin
+        _saxi_register_6 <= _tmp_9;
         _saxi_flag_6 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && _tmp_7 && (_tmp_5 == 7)) begin
-        _saxi_register_7 <= _tmp_8;
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && _tmp_8 && (_tmp_6 == 7)) begin
+        _saxi_register_7 <= _tmp_9;
         _saxi_flag_7 <= 0;
       end 
-      if((_saxi_register_fsm == 3) && (saxi_wready && saxi_wvalid) && (_tmp_5 == 0)) begin
+      if((_saxi_register_fsm == 3) && (saxi_wready && saxi_wvalid) && (_tmp_6 == 0)) begin
         _saxi_register_0 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 3) && (saxi_wready && saxi_wvalid) && (_tmp_5 == 1)) begin
+      if((_saxi_register_fsm == 3) && (saxi_wready && saxi_wvalid) && (_tmp_6 == 1)) begin
         _saxi_register_1 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 3) && (saxi_wready && saxi_wvalid) && (_tmp_5 == 2)) begin
+      if((_saxi_register_fsm == 3) && (saxi_wready && saxi_wvalid) && (_tmp_6 == 2)) begin
         _saxi_register_2 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 3) && (saxi_wready && saxi_wvalid) && (_tmp_5 == 3)) begin
+      if((_saxi_register_fsm == 3) && (saxi_wready && saxi_wvalid) && (_tmp_6 == 3)) begin
         _saxi_register_3 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 3) && (saxi_wready && saxi_wvalid) && (_tmp_5 == 4)) begin
+      if((_saxi_register_fsm == 3) && (saxi_wready && saxi_wvalid) && (_tmp_6 == 4)) begin
         _saxi_register_4 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 3) && (saxi_wready && saxi_wvalid) && (_tmp_5 == 5)) begin
+      if((_saxi_register_fsm == 3) && (saxi_wready && saxi_wvalid) && (_tmp_6 == 5)) begin
         _saxi_register_5 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 3) && (saxi_wready && saxi_wvalid) && (_tmp_5 == 6)) begin
+      if((_saxi_register_fsm == 3) && (saxi_wready && saxi_wvalid) && (_tmp_6 == 6)) begin
         _saxi_register_6 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 3) && (saxi_wready && saxi_wvalid) && (_tmp_5 == 7)) begin
+      if((_saxi_register_fsm == 3) && (saxi_wready && saxi_wvalid) && (_tmp_6 == 7)) begin
         _saxi_register_7 <= saxi_wdata;
       end 
       if((_saxi_register_0 == 1) && (th_comp == 2) && 1) begin
@@ -1002,13 +1010,13 @@ module blinkled
     end else begin
       case(_saxi_register_fsm)
         _saxi_register_fsm_init: begin
-          if(_tmp_2 || _tmp_1) begin
-            _tmp_5 <= (_tmp_0 >> _saxi_shift) & _saxi_mask;
+          if(readvalid_3 || writevalid_2) begin
+            _tmp_6 <= (addr_1 >> _saxi_shift) & _saxi_mask;
           end 
-          if(_tmp_2) begin
+          if(readvalid_3) begin
             _saxi_register_fsm <= _saxi_register_fsm_1;
           end 
-          if(_tmp_1) begin
+          if(writevalid_2) begin
             _saxi_register_fsm <= _saxi_register_fsm_3;
           end 
         end
@@ -1047,7 +1055,7 @@ module blinkled
     end else begin
       _axi_in_read_start <= 0;
       _axi_in_fifo_a_read_start <= 0;
-      if(axistreamin_flag_19) begin
+      if(axistreamin_flag_20) begin
         _axi_in_fifo_a_read_start <= 1;
         _axi_in_fifo_a_read_op_sel <= 1;
         _axi_in_fifo_a_read_size <= _th_comp_read_size_0;
@@ -1060,7 +1068,7 @@ module blinkled
         _axi_in_read_op_sel <= _axi_in_fifo_a_read_op_sel;
         _axi_in_read_size <= _axi_in_fifo_a_read_size;
       end 
-      if(axistreamin_flag_22) begin
+      if(axistreamin_flag_23) begin
         _axi_in_read_idle <= 1;
       end 
     end
@@ -1076,8 +1084,8 @@ module blinkled
       _axi_out_write_idle <= 1;
       _axi_out_write_op_sel <= 0;
       _axi_out_write_size <= 0;
-      rlast_27 <= 0;
-      repeat_rvalid_28 <= 0;
+      rlast_28 <= 0;
+      repeat_rvalid_29 <= 0;
       axi_out_tdata <= 0;
       axi_out_tvalid <= 0;
       axi_out_tlast <= 0;
@@ -1089,7 +1097,7 @@ module blinkled
       end 
       _axi_out_write_start <= 0;
       _axi_out_fifo_c_write_start <= 0;
-      if(axistreamout_flag_23) begin
+      if(axistreamout_flag_24) begin
         _axi_out_fifo_c_write_start <= 1;
         _axi_out_fifo_c_write_op_sel <= 1;
         _axi_out_fifo_c_write_size <= _th_comp_write_size_1;
@@ -1102,27 +1110,27 @@ module blinkled
         _axi_out_write_op_sel <= _axi_out_fifo_c_write_op_sel;
         _axi_out_write_size <= _axi_out_fifo_c_write_size;
       end 
-      if((_axi_out_write_fsm == 1) && (_axi_out_write_op_sel == 1) && (axi_out_tready || !axi_out_tvalid) && !fifo_c_empty && (_axi_out_write_fifo_counter_24 > 0)) begin
-        rlast_27 <= _axi_out_write_fifo_counter_24 <= 1;
+      if((_axi_out_write_fsm == 1) && (_axi_out_write_op_sel == 1) && (axi_out_tready || !axi_out_tvalid) && !fifo_c_empty && (_axi_out_write_fifo_counter_25 > 0)) begin
+        rlast_28 <= _axi_out_write_fifo_counter_25 <= 1;
       end 
-      repeat_rvalid_28 <= 0;
-      if(__tmp_26_1 && !(axi_out_tready || !axi_out_tvalid)) begin
-        repeat_rvalid_28 <= 1;
+      repeat_rvalid_29 <= 0;
+      if(__tmp_27_1 && !(axi_out_tready || !axi_out_tvalid)) begin
+        repeat_rvalid_29 <= 1;
       end 
-      if(repeat_rvalid_28 && !(axi_out_tready || !axi_out_tvalid)) begin
-        repeat_rvalid_28 <= 1;
+      if(repeat_rvalid_29 && !(axi_out_tready || !axi_out_tvalid)) begin
+        repeat_rvalid_29 <= 1;
       end 
-      if((__tmp_26_1 || repeat_rvalid_28) && (axi_out_tready || !axi_out_tvalid)) begin
+      if((__tmp_27_1 || repeat_rvalid_29) && (axi_out_tready || !axi_out_tvalid)) begin
         axi_out_tdata <= fifo_c_rdata;
         axi_out_tvalid <= 1;
-        axi_out_tlast <= rlast_27;
+        axi_out_tlast <= rlast_28;
       end 
       _axi_out_cond_0_1 <= 1;
       if(axi_out_tvalid && !axi_out_tready) begin
         axi_out_tvalid <= axi_out_tvalid;
         axi_out_tlast <= axi_out_tlast;
       end 
-      if(axistreamout_flag_29) begin
+      if(axistreamout_flag_30) begin
         _axi_out_write_idle <= 1;
       end 
     end
@@ -1132,8 +1140,8 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       count_fifo_a <= 0;
-      __tmp_21_1 <= 0;
-      __tmp_32_1 <= 0;
+      __tmp_22_1 <= 0;
+      __tmp_33_1 <= 0;
     end else begin
       if(fifo_a_enq && !fifo_a_full && (fifo_a_deq && !fifo_a_empty)) begin
         count_fifo_a <= count_fifo_a;
@@ -1142,8 +1150,8 @@ module blinkled
       end else if(fifo_a_deq && !fifo_a_empty) begin
         count_fifo_a <= count_fifo_a - 1;
       end 
-      __tmp_21_1 <= _tmp_21;
-      __tmp_32_1 <= _tmp_32;
+      __tmp_22_1 <= _tmp_22;
+      __tmp_33_1 <= _tmp_33;
     end
   end
 
@@ -1151,8 +1159,8 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       count_fifo_b <= 0;
-      __tmp_48_1 <= 0;
-      __tmp_51_1 <= 0;
+      __tmp_49_1 <= 0;
+      __tmp_52_1 <= 0;
     end else begin
       if(fifo_b_enq && !fifo_b_full && (fifo_b_deq && !fifo_b_empty)) begin
         count_fifo_b <= count_fifo_b;
@@ -1161,8 +1169,8 @@ module blinkled
       end else if(fifo_b_deq && !fifo_b_empty) begin
         count_fifo_b <= count_fifo_b - 1;
       end 
-      __tmp_48_1 <= _tmp_48;
-      __tmp_51_1 <= _tmp_51;
+      __tmp_49_1 <= _tmp_49;
+      __tmp_52_1 <= _tmp_52;
     end
   end
 
@@ -1170,8 +1178,8 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       count_fifo_c <= 0;
-      __tmp_26_1 <= 0;
-      __tmp_63_1 <= 0;
+      __tmp_27_1 <= 0;
+      __tmp_64_1 <= 0;
     end else begin
       if(fifo_c_enq && !fifo_c_full && (fifo_c_deq && !fifo_c_empty)) begin
         count_fifo_c <= count_fifo_c;
@@ -1180,41 +1188,41 @@ module blinkled
       end else if(fifo_c_deq && !fifo_c_empty) begin
         count_fifo_c <= count_fifo_c - 1;
       end 
-      __tmp_26_1 <= _tmp_26;
-      __tmp_63_1 <= _tmp_63;
+      __tmp_27_1 <= _tmp_27;
+      __tmp_64_1 <= _tmp_64;
     end
   end
 
 
   always @(posedge CLK) begin
     if(RST) begin
-      _tmp_14 <= 0;
-      _tmp_12 <= 0;
       _tmp_15 <= 0;
-      _tmp_16 <= 0;
       _tmp_13 <= 0;
+      _tmp_16 <= 0;
+      _tmp_17 <= 0;
+      _tmp_14 <= 0;
       _ram_b_cond_0_1 <= 0;
-      __tmp_54_1 <= 0;
+      __tmp_55_1 <= 0;
     end else begin
       if(_ram_b_cond_0_1) begin
-        _tmp_16 <= 0;
-        _tmp_13 <= 0;
+        _tmp_17 <= 0;
+        _tmp_14 <= 0;
       end 
-      if(_maxi_read_start && (_maxi_read_op_sel == 1) && (_tmp_12 == 0)) begin
-        _tmp_14 <= _maxi_read_local_addr - _maxi_read_local_stride;
-        _tmp_12 <= _maxi_read_size;
+      if(_maxi_read_start && (_maxi_read_op_sel == 1) && (_tmp_13 == 0)) begin
+        _tmp_15 <= _maxi_read_local_addr - _maxi_read_local_stride;
+        _tmp_13 <= _maxi_read_size;
       end 
-      if(_dataflow__variable_ovalid_0 && ((_tmp_12 > 0) && !_tmp_13) && (_tmp_12 > 0)) begin
-        _tmp_14 <= _tmp_14 + _maxi_read_local_stride;
-        _tmp_15 <= _dataflow__variable_odata_0;
-        _tmp_16 <= 1;
-        _tmp_12 <= _tmp_12 - 1;
+      if(_dataflow__variable_ovalid_0 && ((_tmp_13 > 0) && !_tmp_14) && (_tmp_13 > 0)) begin
+        _tmp_15 <= _tmp_15 + _maxi_read_local_stride;
+        _tmp_16 <= _dataflow__variable_odata_0;
+        _tmp_17 <= 1;
+        _tmp_13 <= _tmp_13 - 1;
       end 
-      if(_dataflow__variable_ovalid_0 && ((_tmp_12 > 0) && !_tmp_13) && (_tmp_12 == 1)) begin
-        _tmp_13 <= 1;
+      if(_dataflow__variable_ovalid_0 && ((_tmp_13 > 0) && !_tmp_14) && (_tmp_13 == 1)) begin
+        _tmp_14 <= 1;
       end 
       _ram_b_cond_0_1 <= 1;
-      __tmp_54_1 <= _tmp_54;
+      __tmp_55_1 <= _tmp_55;
     end
   end
 
@@ -1253,7 +1261,6 @@ module blinkled
       _mystream_reduce_a_source_count <= 0;
       _mystream_reduce_reduce_size_next_parameter_data <= 0;
       __variable_wdata_1 <= 0;
-      _tmp_35 <= 0;
       _tmp_36 <= 0;
       _tmp_37 <= 0;
       _tmp_38 <= 0;
@@ -1265,25 +1272,25 @@ module blinkled
       _tmp_44 <= 0;
       _tmp_45 <= 0;
       _tmp_46 <= 0;
+      _tmp_47 <= 0;
       _mystream_reduce_sum_sink_mode <= 5'b0;
       _mystream_reduce_sum_sink_size <= 0;
       _mystream_reduce_sum_sink_sel <= 0;
       _mystream_reduce_sum_sink_size_buf <= 0;
       _mystream_reduce_sum_sink_count <= 0;
       _mystream_reduce_sum_sink_fifo_wdata <= 0;
-      _tmp_65 <= 0;
       _tmp_66 <= 0;
       _tmp_67 <= 0;
       _tmp_68 <= 0;
       _tmp_69 <= 0;
       _tmp_70 <= 0;
-      __variable_wdata_3 <= 0;
       _tmp_71 <= 0;
+      __variable_wdata_3 <= 0;
       _tmp_72 <= 0;
       _tmp_73 <= 0;
       _tmp_74 <= 0;
-      _tmp_77 <= 0;
-      _tmp_80 <= 0;
+      _tmp_75 <= 0;
+      _tmp_78 <= 0;
       _tmp_81 <= 0;
       _tmp_82 <= 0;
       _tmp_83 <= 0;
@@ -1303,6 +1310,7 @@ module blinkled
       _tmp_97 <= 0;
       _tmp_98 <= 0;
       _tmp_99 <= 0;
+      _tmp_100 <= 0;
       _mystream_reduce_busy_reg <= 0;
     end else begin
       if(_mystream_reduce_stream_oready) begin
@@ -1375,11 +1383,11 @@ module blinkled
       if(__mystream_reduce_stream_ivalid_3 && _mystream_reduce_stream_oready) begin
         _pulse_data_6 <= _pulse_current_count_6 >= __delay_data_13__delay_12__delay_11__variable_1 - 1;
       end 
-      if(_set_flag_30) begin
+      if(_set_flag_31) begin
         _mystream_reduce_a_source_mode <= 5'b10000;
         _mystream_reduce_a_source_size <= _th_comp_read_size_0;
       end 
-      if(_set_flag_30) begin
+      if(_set_flag_31) begin
         _mystream_reduce_a_source_sel <= 1;
       end 
       if(_mystream_reduce_source_start && _mystream_reduce_a_source_mode & 5'b10000 && _mystream_reduce_stream_oready) begin
@@ -1405,17 +1413,14 @@ module blinkled
         _mystream_reduce_a_source_fifo_deq <= 0;
         _mystream_reduce_a_idle <= 1;
       end 
-      if(_set_flag_33) begin
+      if(_set_flag_34) begin
         _mystream_reduce_reduce_size_next_parameter_data <= _th_comp_reduce_size_2;
       end 
       if(_mystream_reduce_source_start) begin
         __variable_wdata_1 <= _mystream_reduce_reduce_size_next_parameter_data;
       end 
       if(_mystream_reduce_stream_oready) begin
-        _tmp_35 <= _set_flag_34;
-      end 
-      if(_mystream_reduce_stream_oready) begin
-        _tmp_36 <= _tmp_35;
+        _tmp_36 <= _set_flag_35;
       end 
       if(_mystream_reduce_stream_oready) begin
         _tmp_37 <= _tmp_36;
@@ -1430,10 +1435,10 @@ module blinkled
         _tmp_40 <= _tmp_39;
       end 
       if(_mystream_reduce_stream_oready) begin
-        _tmp_41 <= _th_comp_write_size_1;
+        _tmp_41 <= _tmp_40;
       end 
       if(_mystream_reduce_stream_oready) begin
-        _tmp_42 <= _tmp_41;
+        _tmp_42 <= _th_comp_write_size_1;
       end 
       if(_mystream_reduce_stream_oready) begin
         _tmp_43 <= _tmp_42;
@@ -1447,11 +1452,14 @@ module blinkled
       if(_mystream_reduce_stream_oready) begin
         _tmp_46 <= _tmp_45;
       end 
-      if(_tmp_40) begin
-        _mystream_reduce_sum_sink_mode <= 5'b10000;
-        _mystream_reduce_sum_sink_size <= _tmp_46;
+      if(_mystream_reduce_stream_oready) begin
+        _tmp_47 <= _tmp_46;
       end 
-      if(_tmp_40) begin
+      if(_tmp_41) begin
+        _mystream_reduce_sum_sink_mode <= 5'b10000;
+        _mystream_reduce_sum_sink_size <= _tmp_47;
+      end 
+      if(_tmp_41) begin
         _mystream_reduce_sum_sink_sel <= 2;
       end 
       if(_mystream_reduce_sink_start && _mystream_reduce_sum_sink_mode & 5'b10000 && _mystream_reduce_stream_oready) begin
@@ -1467,31 +1475,28 @@ module blinkled
         _mystream_reduce_sum_sink_count <= _mystream_reduce_sum_sink_count - 1;
       end 
       if(_mystream_reduce_stream_oready) begin
-        _tmp_65 <= _mystream_reduce_source_start;
-      end 
-      if(_mystream_reduce_stream_oready) begin
-        _tmp_66 <= _tmp_65;
+        _tmp_66 <= _mystream_reduce_source_start;
       end 
       if(_mystream_reduce_stream_oready) begin
         _tmp_67 <= _tmp_66;
       end 
       if(_mystream_reduce_stream_oready) begin
-        _tmp_68 <= _mystream_reduce_source_start;
+        _tmp_68 <= _tmp_67;
       end 
       if(_mystream_reduce_stream_oready) begin
-        _tmp_69 <= _tmp_68;
+        _tmp_69 <= _mystream_reduce_source_start;
       end 
       if(_mystream_reduce_stream_oready) begin
         _tmp_70 <= _tmp_69;
       end 
-      if(_mystream_reduce_stream_oready && _tmp_70) begin
+      if(_mystream_reduce_stream_oready) begin
+        _tmp_71 <= _tmp_70;
+      end 
+      if(_mystream_reduce_stream_oready && _tmp_71) begin
         __variable_wdata_3 <= 1;
       end 
       if(_mystream_reduce_stream_oready) begin
-        _tmp_71 <= _mystream_reduce_source_start;
-      end 
-      if(_mystream_reduce_stream_oready) begin
-        _tmp_72 <= _tmp_71;
+        _tmp_72 <= _mystream_reduce_source_start;
       end 
       if(_mystream_reduce_stream_oready) begin
         _tmp_73 <= _tmp_72;
@@ -1499,23 +1504,23 @@ module blinkled
       if(_mystream_reduce_stream_oready) begin
         _tmp_74 <= _tmp_73;
       end 
-      if(_mystream_reduce_stream_oready && _tmp_74) begin
+      if(_mystream_reduce_stream_oready) begin
+        _tmp_75 <= _tmp_74;
+      end 
+      if(_mystream_reduce_stream_oready && _tmp_75) begin
         __variable_wdata_3 <= 0;
       end 
       if(_mystream_reduce_stream_oready) begin
-        _tmp_77 <= _tmp_76;
+        _tmp_78 <= _tmp_77;
       end 
       if(_mystream_reduce_stream_oready) begin
-        _tmp_80 <= _tmp_79;
+        _tmp_81 <= _tmp_80;
       end 
-      if(_mystream_reduce_stream_oready && _tmp_80) begin
+      if(_mystream_reduce_stream_oready && _tmp_81) begin
         __variable_wdata_3 <= 1;
       end 
       if(_mystream_reduce_stream_oready) begin
-        _tmp_81 <= _mystream_reduce_source_start;
-      end 
-      if(_mystream_reduce_stream_oready) begin
-        _tmp_82 <= _tmp_81;
+        _tmp_82 <= _mystream_reduce_source_start;
       end 
       if(_mystream_reduce_stream_oready) begin
         _tmp_83 <= _tmp_82;
@@ -1530,10 +1535,10 @@ module blinkled
         _tmp_86 <= _tmp_85;
       end 
       if(_mystream_reduce_stream_oready) begin
-        _tmp_87 <= _mystream_reduce_source_stop;
+        _tmp_87 <= _tmp_86;
       end 
       if(_mystream_reduce_stream_oready) begin
-        _tmp_88 <= _tmp_87;
+        _tmp_88 <= _mystream_reduce_source_stop;
       end 
       if(_mystream_reduce_stream_oready) begin
         _tmp_89 <= _tmp_88;
@@ -1548,10 +1553,10 @@ module blinkled
         _tmp_92 <= _tmp_91;
       end 
       if(_mystream_reduce_stream_oready) begin
-        _tmp_93 <= _mystream_reduce_source_busy;
+        _tmp_93 <= _tmp_92;
       end 
       if(_mystream_reduce_stream_oready) begin
-        _tmp_94 <= _tmp_93;
+        _tmp_94 <= _mystream_reduce_source_busy;
       end 
       if(_mystream_reduce_stream_oready) begin
         _tmp_95 <= _tmp_94;
@@ -1566,9 +1571,12 @@ module blinkled
         _tmp_98 <= _tmp_97;
       end 
       if(_mystream_reduce_stream_oready) begin
-        _tmp_99 <= _mystream_reduce_sink_busy;
+        _tmp_99 <= _tmp_98;
       end 
-      if(!_mystream_reduce_sink_busy && _tmp_99) begin
+      if(_mystream_reduce_stream_oready) begin
+        _tmp_100 <= _mystream_reduce_sink_busy;
+      end 
+      if(!_mystream_reduce_sink_busy && _tmp_100) begin
         _mystream_reduce_busy_reg <= 0;
       end 
       if(_mystream_reduce_source_busy) begin
@@ -1588,10 +1596,10 @@ module blinkled
       _mystream_reduce_source_busy <= 0;
       _mystream_reduce_stream_ivalid <= 0;
     end else begin
-      if(_mystream_reduce_stream_oready && _tmp_67) begin
+      if(_mystream_reduce_stream_oready && _tmp_68) begin
         _mystream_reduce_stream_ivalid <= 1;
       end 
-      if(_mystream_reduce_stream_oready && _tmp_77) begin
+      if(_mystream_reduce_stream_oready && _tmp_78) begin
         _mystream_reduce_stream_ivalid <= 0;
       end 
       case(_mystream_reduce_fsm)
@@ -1665,22 +1673,21 @@ module blinkled
       __variable_wdata_9 <= 0;
       _mystream_bias_y_source_ram_raddr <= 0;
       _mystream_bias_y_source_count <= 0;
-      _tmp_56 <= 0;
       _tmp_57 <= 0;
       _tmp_58 <= 0;
       _tmp_59 <= 0;
       _tmp_60 <= 0;
       _tmp_61 <= 0;
+      _tmp_62 <= 0;
       _mystream_bias_z_sink_mode <= 5'b0;
       _mystream_bias_z_sink_size <= 0;
       _mystream_bias_z_sink_sel <= 0;
       _mystream_bias_z_sink_size_buf <= 0;
       _mystream_bias_z_sink_count <= 0;
       _mystream_bias_z_sink_fifo_wdata <= 0;
-      _tmp_101 <= 0;
       _tmp_102 <= 0;
       _tmp_103 <= 0;
-      _tmp_106 <= 0;
+      _tmp_104 <= 0;
       _tmp_107 <= 0;
       _tmp_108 <= 0;
       _tmp_109 <= 0;
@@ -1691,6 +1698,7 @@ module blinkled
       _tmp_114 <= 0;
       _tmp_115 <= 0;
       _tmp_116 <= 0;
+      _tmp_117 <= 0;
       _mystream_bias_busy_reg <= 0;
     end else begin
       if(_mystream_bias_stream_oready) begin
@@ -1713,11 +1721,11 @@ module blinkled
       if(_mystream_bias_stream_oready) begin
         _plus_data_10 <= mystream_bias_x_data + mystream_bias_y_data;
       end 
-      if(_set_flag_49) begin
+      if(_set_flag_50) begin
         _mystream_bias_x_source_mode <= 5'b10000;
         _mystream_bias_x_source_size <= _th_comp_write_size_1;
       end 
-      if(_set_flag_49) begin
+      if(_set_flag_50) begin
         _mystream_bias_x_source_sel <= 1;
       end 
       if(_mystream_bias_source_start && _mystream_bias_x_source_mode & 5'b10000 && _mystream_bias_stream_oready) begin
@@ -1743,13 +1751,13 @@ module blinkled
         _mystream_bias_x_source_fifo_deq <= 0;
         _mystream_bias_x_idle <= 1;
       end 
-      if(_set_flag_52) begin
+      if(_set_flag_53) begin
         _mystream_bias_y_source_mode <= 5'b1;
         _mystream_bias_y_source_offset <= 0;
         _mystream_bias_y_source_size <= _th_comp_write_size_1;
         _mystream_bias_y_source_stride <= 1;
       end 
-      if(_set_flag_52) begin
+      if(_set_flag_53) begin
         _mystream_bias_y_source_sel <= 2;
       end 
       if(_mystream_bias_source_start && _mystream_bias_y_source_mode & 5'b1 && _mystream_bias_stream_oready) begin
@@ -1780,28 +1788,28 @@ module blinkled
         _mystream_bias_y_idle <= 1;
       end 
       if(_mystream_bias_stream_oready) begin
-        _tmp_56 <= _set_flag_55;
-      end 
-      if(_mystream_bias_stream_oready) begin
-        _tmp_57 <= _tmp_56;
+        _tmp_57 <= _set_flag_56;
       end 
       if(_mystream_bias_stream_oready) begin
         _tmp_58 <= _tmp_57;
       end 
       if(_mystream_bias_stream_oready) begin
-        _tmp_59 <= _th_comp_write_size_1;
+        _tmp_59 <= _tmp_58;
       end 
       if(_mystream_bias_stream_oready) begin
-        _tmp_60 <= _tmp_59;
+        _tmp_60 <= _th_comp_write_size_1;
       end 
       if(_mystream_bias_stream_oready) begin
         _tmp_61 <= _tmp_60;
       end 
-      if(_tmp_58) begin
-        _mystream_bias_z_sink_mode <= 5'b10000;
-        _mystream_bias_z_sink_size <= _tmp_61;
+      if(_mystream_bias_stream_oready) begin
+        _tmp_62 <= _tmp_61;
       end 
-      if(_tmp_58) begin
+      if(_tmp_59) begin
+        _mystream_bias_z_sink_mode <= 5'b10000;
+        _mystream_bias_z_sink_size <= _tmp_62;
+      end 
+      if(_tmp_59) begin
         _mystream_bias_z_sink_sel <= 3;
       end 
       if(_mystream_bias_sink_start && _mystream_bias_z_sink_mode & 5'b10000 && _mystream_bias_stream_oready) begin
@@ -1817,48 +1825,48 @@ module blinkled
         _mystream_bias_z_sink_count <= _mystream_bias_z_sink_count - 1;
       end 
       if(_mystream_bias_stream_oready) begin
-        _tmp_101 <= _mystream_bias_source_start;
-      end 
-      if(_mystream_bias_stream_oready) begin
-        _tmp_102 <= _tmp_101;
+        _tmp_102 <= _mystream_bias_source_start;
       end 
       if(_mystream_bias_stream_oready) begin
         _tmp_103 <= _tmp_102;
       end 
       if(_mystream_bias_stream_oready) begin
-        _tmp_106 <= _tmp_105;
+        _tmp_104 <= _tmp_103;
       end 
       if(_mystream_bias_stream_oready) begin
-        _tmp_107 <= _mystream_bias_source_start;
+        _tmp_107 <= _tmp_106;
       end 
       if(_mystream_bias_stream_oready) begin
-        _tmp_108 <= _tmp_107;
+        _tmp_108 <= _mystream_bias_source_start;
       end 
       if(_mystream_bias_stream_oready) begin
         _tmp_109 <= _tmp_108;
       end 
       if(_mystream_bias_stream_oready) begin
-        _tmp_110 <= _mystream_bias_source_stop;
+        _tmp_110 <= _tmp_109;
       end 
       if(_mystream_bias_stream_oready) begin
-        _tmp_111 <= _tmp_110;
+        _tmp_111 <= _mystream_bias_source_stop;
       end 
       if(_mystream_bias_stream_oready) begin
         _tmp_112 <= _tmp_111;
       end 
       if(_mystream_bias_stream_oready) begin
-        _tmp_113 <= _mystream_bias_source_busy;
+        _tmp_113 <= _tmp_112;
       end 
       if(_mystream_bias_stream_oready) begin
-        _tmp_114 <= _tmp_113;
+        _tmp_114 <= _mystream_bias_source_busy;
       end 
       if(_mystream_bias_stream_oready) begin
         _tmp_115 <= _tmp_114;
       end 
       if(_mystream_bias_stream_oready) begin
-        _tmp_116 <= _mystream_bias_sink_busy;
+        _tmp_116 <= _tmp_115;
       end 
-      if(!_mystream_bias_sink_busy && _tmp_116) begin
+      if(_mystream_bias_stream_oready) begin
+        _tmp_117 <= _mystream_bias_sink_busy;
+      end 
+      if(!_mystream_bias_sink_busy && _tmp_117) begin
         _mystream_bias_busy_reg <= 0;
       end 
       if(_mystream_bias_source_busy) begin
@@ -1878,10 +1886,10 @@ module blinkled
       _mystream_bias_source_busy <= 0;
       _mystream_bias_stream_ivalid <= 0;
     end else begin
-      if(_mystream_bias_stream_oready && _tmp_103) begin
+      if(_mystream_bias_stream_oready && _tmp_104) begin
         _mystream_bias_stream_ivalid <= 1;
       end 
-      if(_mystream_bias_stream_oready && _tmp_106) begin
+      if(_mystream_bias_stream_oready && _tmp_107) begin
         _mystream_bias_stream_ivalid <= 0;
       end 
       case(_mystream_bias_fsm)
@@ -1973,28 +1981,28 @@ module blinkled
       _th_comp_write_size_1 <= 0;
       _th_comp_reduce_size_2 <= 0;
       _th_comp_bias_addr_3 <= 0;
-      axim_flag_9 <= 0;
+      axim_flag_10 <= 0;
       _th_comp_cond_14_0_1 <= 0;
-      axistreamin_flag_19 <= 0;
+      axistreamin_flag_20 <= 0;
       _th_comp_cond_19_1_1 <= 0;
-      axistreamout_flag_23 <= 0;
+      axistreamout_flag_24 <= 0;
       _th_comp_cond_22_2_1 <= 0;
     end else begin
       _d1_th_comp <= th_comp;
       case(_d1_th_comp)
         th_comp_14: begin
           if(_th_comp_cond_14_0_1) begin
-            axim_flag_9 <= 0;
+            axim_flag_10 <= 0;
           end 
         end
         th_comp_19: begin
           if(_th_comp_cond_19_1_1) begin
-            axistreamin_flag_19 <= 0;
+            axistreamin_flag_20 <= 0;
           end 
         end
         th_comp_22: begin
           if(_th_comp_cond_22_2_1) begin
-            axistreamout_flag_23 <= 0;
+            axistreamout_flag_24 <= 0;
           end 
         end
       endcase
@@ -2067,7 +2075,7 @@ module blinkled
           th_comp <= th_comp_14;
         end
         th_comp_14: begin
-          axim_flag_9 <= 1;
+          axim_flag_10 <= 1;
           _th_comp_cond_14_0_1 <= 1;
           th_comp <= th_comp_15;
         end
@@ -2088,7 +2096,7 @@ module blinkled
           end 
         end
         th_comp_19: begin
-          axistreamin_flag_19 <= 1;
+          axistreamin_flag_20 <= 1;
           _th_comp_cond_19_1_1 <= 1;
           th_comp <= th_comp_20;
         end
@@ -2101,7 +2109,7 @@ module blinkled
           end 
         end
         th_comp_22: begin
-          axistreamout_flag_23 <= 1;
+          axistreamout_flag_24 <= 1;
           _th_comp_cond_22_2_1 <= 1;
           th_comp <= th_comp_23;
         end
@@ -2183,21 +2191,21 @@ module blinkled
       _maxi_read_rest_size <= 0;
       _maxi_read_cur_size <= 0;
       __maxi_read_fsm_cond_3_0_1 <= 0;
-      _wvalid_11 <= 0;
-      _wdata_10 <= 0;
-      axim_flag_18 <= 0;
+      _wvalid_12 <= 0;
+      _wdata_11 <= 0;
+      axim_flag_19 <= 0;
       __maxi_read_fsm_cond_4_1_1 <= 0;
     end else begin
       _d1__maxi_read_fsm <= _maxi_read_fsm;
       case(_d1__maxi_read_fsm)
         _maxi_read_fsm_3: begin
           if(__maxi_read_fsm_cond_3_0_1) begin
-            _wvalid_11 <= 0;
+            _wvalid_12 <= 0;
           end 
         end
         _maxi_read_fsm_4: begin
           if(__maxi_read_fsm_cond_4_1_1) begin
-            axim_flag_18 <= 0;
+            axim_flag_19 <= 0;
           end 
         end
       endcase
@@ -2235,8 +2243,8 @@ module blinkled
         _maxi_read_fsm_3: begin
           __maxi_read_fsm_cond_3_0_1 <= 1;
           if(maxi_rready && maxi_rvalid && (_maxi_read_op_sel == 1)) begin
-            _wdata_10 <= maxi_rdata;
-            _wvalid_11 <= 1;
+            _wdata_11 <= maxi_rdata;
+            _wvalid_12 <= 1;
           end 
           if(maxi_rready && maxi_rvalid && maxi_rlast) begin
             _maxi_read_cur_global_addr <= _maxi_read_cur_global_addr + (_maxi_read_cur_size << 2);
@@ -2249,7 +2257,7 @@ module blinkled
           end 
         end
         _maxi_read_fsm_4: begin
-          axim_flag_18 <= 1;
+          axim_flag_19 <= 1;
           __maxi_read_fsm_cond_4_1_1 <= 1;
           _maxi_read_fsm <= _maxi_read_fsm_5;
         end
@@ -2269,14 +2277,14 @@ module blinkled
       _axi_in_read_fsm <= _axi_in_read_fsm_init;
       _d1__axi_in_read_fsm <= _axi_in_read_fsm_init;
       _axi_in_read_rest_size <= 0;
-      axistreamin_flag_22 <= 0;
+      axistreamin_flag_23 <= 0;
       __axi_in_read_fsm_cond_2_0_1 <= 0;
     end else begin
       _d1__axi_in_read_fsm <= _axi_in_read_fsm;
       case(_d1__axi_in_read_fsm)
         _axi_in_read_fsm_2: begin
           if(__axi_in_read_fsm_cond_2_0_1) begin
-            axistreamin_flag_22 <= 0;
+            axistreamin_flag_23 <= 0;
           end 
         end
       endcase
@@ -2298,7 +2306,7 @@ module blinkled
           end 
         end
         _axi_in_read_fsm_2: begin
-          axistreamin_flag_22 <= 1;
+          axistreamin_flag_23 <= 1;
           __axi_in_read_fsm_cond_2_0_1 <= 1;
           _axi_in_read_fsm <= _axi_in_read_fsm_3;
         end
@@ -2318,15 +2326,15 @@ module blinkled
       _axi_out_write_fsm <= _axi_out_write_fsm_init;
       _d1__axi_out_write_fsm <= _axi_out_write_fsm_init;
       _axi_out_write_counter <= 0;
-      _axi_out_write_fifo_counter_24 <= 0;
-      axistreamout_flag_29 <= 0;
+      _axi_out_write_fifo_counter_25 <= 0;
+      axistreamout_flag_30 <= 0;
       __axi_out_write_fsm_cond_2_0_1 <= 0;
     end else begin
       _d1__axi_out_write_fsm <= _axi_out_write_fsm;
       case(_d1__axi_out_write_fsm)
         _axi_out_write_fsm_2: begin
           if(__axi_out_write_fsm_cond_2_0_1) begin
-            axistreamout_flag_29 <= 0;
+            axistreamout_flag_30 <= 0;
           end 
         end
       endcase
@@ -2336,15 +2344,15 @@ module blinkled
             _axi_out_write_counter <= _axi_out_write_size;
           end 
           if(_axi_out_write_start) begin
-            _axi_out_write_fifo_counter_24 <= _axi_out_write_size;
+            _axi_out_write_fifo_counter_25 <= _axi_out_write_size;
           end 
           if(_axi_out_write_start && (_axi_out_write_op_sel == 1)) begin
             _axi_out_write_fsm <= _axi_out_write_fsm_1;
           end 
         end
         _axi_out_write_fsm_1: begin
-          if((_axi_out_write_fsm == 1) && (_axi_out_write_op_sel == 1) && (axi_out_tready || !axi_out_tvalid) && !fifo_c_empty && (_axi_out_write_fifo_counter_24 > 0)) begin
-            _axi_out_write_fifo_counter_24 <= _axi_out_write_fifo_counter_24 - 1;
+          if((_axi_out_write_fsm == 1) && (_axi_out_write_op_sel == 1) && (axi_out_tready || !axi_out_tvalid) && !fifo_c_empty && (_axi_out_write_fifo_counter_25 > 0)) begin
+            _axi_out_write_fifo_counter_25 <= _axi_out_write_fifo_counter_25 - 1;
           end 
           if(axi_out_tvalid && axi_out_tready) begin
             _axi_out_write_counter <= _axi_out_write_counter - 1;
@@ -2354,7 +2362,7 @@ module blinkled
           end 
         end
         _axi_out_write_fsm_2: begin
-          axistreamout_flag_29 <= 1;
+          axistreamout_flag_30 <= 1;
           __axi_out_write_fsm_cond_2_0_1 <= 1;
           _axi_out_write_fsm <= _axi_out_write_fsm_3;
         end
