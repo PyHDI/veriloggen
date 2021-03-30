@@ -598,6 +598,20 @@ class AxiMaster(object):
         self.write_counters = []
         self.read_counters = []
 
+        # outstanding write request
+        self.outstanding_wreq_count = self.m.TmpReg(self.addrwidth, initval=0,
+                                                    prefix='outstanding_wreq_count')
+
+        self.seq.If(vtypes.Ands(self.waddr.awvalid, self.waddr.awready),
+                    vtypes.Not(vtypes.Ands(self.wresp.bvalid, self.wresp.bready)))(
+            self.outstanding_wreq_count.inc()
+        )
+        self.seq.If(vtypes.Not(vtypes.Ands(self.waddr.awvalid, self.waddr.awready)),
+                    vtypes.Ands(self.wresp.bvalid, self.wresp.bready),
+                    self.outstanding_wreq_count > 0)(
+            self.outstanding_wreq_count.dec()
+        )
+
         if nodataflow:
             self.df = None
         else:
@@ -722,7 +736,8 @@ class AxiMaster(object):
         ack = vtypes.Ors(self.waddr.awready, vtypes.Not(self.waddr.awvalid))
 
         if counter is None:
-            counter = self.m.TmpReg(self.burst_size_width + 1, initval=0)
+            counter = self.m.TmpReg(self.burst_size_width + 1, initval=0,
+                                    prefix='counter')
 
         self.write_counters.append(counter)
 
@@ -767,7 +782,7 @@ class AxiMaster(object):
 
         ack = vtypes.Ands(counter > 0,
                           vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid)))
-        last = self.m.TmpReg(initval=0)
+        last = self.m.TmpReg(initval=0, prefix='last')
 
         self.seq.If(vtypes.Ands(ack, counter > 0))(
             self.wdata.wdata(data),
@@ -814,7 +829,7 @@ class AxiMaster(object):
 
         ack = vtypes.Ands(counter > 0,
                           vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid)))
-        last = self.m.TmpReg(initval=0)
+        last = self.m.TmpReg(initval=0, prefix='last')
 
         if cond is None:
             cond = ack
@@ -865,6 +880,9 @@ class AxiMaster(object):
         done = vtypes.Ands(last, self.wdata.wvalid, self.wdata.wready)
 
         return done
+
+    def write_completed(self):
+        return self.outstanding_wreq_count == 0
 
     def read_request(self, addr, length=1, cond=None):
         """
@@ -925,7 +943,7 @@ class AxiMaster(object):
         ack = vtypes.Ors(self.raddr.arready, vtypes.Not(self.raddr.arvalid))
 
         if counter is None:
-            counter = self.m.TmpReg(self.burst_size_width + 1, initval=0)
+            counter = self.m.TmpReg(self.burst_size_width + 1, initval=0, prefix='counter')
 
         self.read_counters.append(counter)
 
@@ -991,8 +1009,8 @@ class AxiMaster(object):
         if counter is None:
             counter = self.read_counters[-1]
 
-        data_ready = self.m.TmpWire()
-        last_ready = self.m.TmpWire()
+        data_ready = self.m.TmpWire(prefix='data_ready')
+        last_ready = self.m.TmpWire(prefix='last_ready')
         data_ready.assign(1)
         last_ready.assign(1)
 
@@ -1211,6 +1229,20 @@ class AxiLiteMaster(AxiMaster):
         self.raddr.arcache.assign(raddr_cache_mode)
         self.raddr.arprot.assign(raddr_prot_mode)
 
+        # outstanding write request
+        self.outstanding_wreq_count = self.m.TmpReg(self.addrwidth, initval=0,
+                                                    prefix='outstanding_wreq_count')
+
+        self.seq.If(vtypes.Ands(self.waddr.awvalid, self.waddr.awready),
+                    vtypes.Not(vtypes.Ands(self.wresp.bvalid, self.wresp.bready)))(
+            self.outstanding_wreq_count.inc()
+        )
+        self.seq.If(vtypes.Not(vtypes.Ands(self.waddr.awvalid, self.waddr.awready)),
+                    vtypes.Ands(self.wresp.bvalid, self.wresp.bready),
+                    self.outstanding_wreq_count > 0)(
+            self.outstanding_wreq_count.dec()
+        )
+
         if nodataflow:
             self.df = None
         else:
@@ -1313,6 +1345,9 @@ class AxiLiteMaster(AxiMaster):
         'data' and 'when' must be dataflow variables
         """
         raise TypeError('lite interface support no dataflow operation.')
+
+    def write_completed(self):
+        return self.outstanding_wreq_count == 0
 
     def read_request(self, addr, length=1, cond=None):
         """
@@ -1537,22 +1572,22 @@ class AxiSlave(object):
             raise TypeError("counter must be Reg or None.")
 
         if counter is None:
-            counter = self.m.TmpReg(self.burst_size_width + 1, initval=0)
+            counter = self.m.TmpReg(self.burst_size_width + 1, initval=0, prefix='counter')
 
         ready = make_condition(cond)
 
         write_ack = vtypes.Ands(self.waddr.awready, self.waddr.awvalid,
                                 vtypes.Not(self.wresp.bvalid))
         read_ack = vtypes.Ands(self.raddr.arready, self.raddr.arvalid)
-        addr = self.m.TmpReg(self.addrwidth, initval=0)
-        writevalid = self.m.TmpReg(initval=0)
-        readvalid = self.m.TmpReg(initval=0)
+        addr = self.m.TmpReg(self.addrwidth, initval=0, prefix='addr')
+        writevalid = self.m.TmpReg(initval=0, prefix='writevalid')
+        readvalid = self.m.TmpReg(initval=0, prefix='readvalid')
 
-        prev_awvalid = self.m.TmpReg(initval=0)
+        prev_awvalid = self.m.TmpReg(initval=0, prefix='prev_awvalid')
         self.seq(
             prev_awvalid(self.waddr.awvalid)
         )
-        prev_arvalid = self.m.TmpReg(initval=0)
+        prev_arvalid = self.m.TmpReg(initval=0, prefix='prev_arvalid')
         self.seq(
             prev_arvalid(self.raddr.arvalid)
         )
@@ -1601,7 +1636,8 @@ class AxiSlave(object):
             raise TypeError("counter must be Reg or None.")
 
         if counter is None:
-            counter = self.m.TmpReg(self.burst_size_width + 1, initval=0)
+            counter = self.m.TmpReg(self.burst_size_width + 1, initval=0,
+                                    prefix='counter')
 
         self.write_counters.append(counter)
 
@@ -1609,10 +1645,10 @@ class AxiSlave(object):
 
         ack = vtypes.Ands(self.waddr.awready, self.waddr.awvalid,
                           vtypes.Not(self.wresp.bvalid))
-        addr = self.m.TmpReg(self.addrwidth, initval=0)
-        valid = self.m.TmpReg(initval=0)
+        addr = self.m.TmpReg(self.addrwidth, initval=0, prefix='addr')
+        valid = self.m.TmpReg(initval=0, prefix='valid')
 
-        prev_awvalid = self.m.TmpReg(initval=0)
+        prev_awvalid = self.m.TmpReg(initval=0, prefix='prev_awvalid')
         self.seq(
             prev_awvalid(self.waddr.awvalid)
         )
@@ -1682,9 +1718,9 @@ class AxiSlave(object):
         if counter is None:
             counter = self.write_counters[-1]
 
-        data_ready = self.m.TmpWire()
-        mask_ready = self.m.TmpWire()
-        last_ready = self.m.TmpWire()
+        data_ready = self.m.TmpWire(prefix='data_ready')
+        mask_ready = self.m.TmpWire(prefix='mask_ready')
+        last_ready = self.m.TmpWire(prefix='last_ready')
         data_ready.assign(1)
         mask_ready.assign(1)
         last_ready.assign(1)
@@ -1732,17 +1768,17 @@ class AxiSlave(object):
             raise TypeError("counter must be Reg or None.")
 
         if counter is None:
-            counter = self.m.TmpReg(self.burst_size_width + 1, initval=0)
+            counter = self.m.TmpReg(self.burst_size_width + 1, initval=0, prefix='counter')
 
         self.read_counters.append(counter)
 
         ready = make_condition(cond)
 
         ack = vtypes.Ands(self.raddr.arready, self.raddr.arvalid)
-        addr = self.m.TmpReg(self.addrwidth, initval=0)
-        valid = self.m.TmpReg(initval=0)
+        addr = self.m.TmpReg(self.addrwidth, initval=0, prefix='addr')
+        valid = self.m.TmpReg(initval=0, prefix='valid')
 
-        prev_arvalid = self.m.TmpReg(initval=0)
+        prev_arvalid = self.m.TmpReg(initval=0, prefix='prev_arvalid')
         self.seq(
             prev_arvalid(self.raddr.arvalid)
         )
@@ -2089,15 +2125,15 @@ class AxiLiteSlave(AxiSlave):
         write_ack = vtypes.Ands(self.waddr.awready, self.waddr.awvalid,
                                 vtypes.Not(self.wresp.bvalid))
         read_ack = vtypes.Ands(self.raddr.arready, self.raddr.arvalid)
-        addr = self.m.TmpReg(self.addrwidth, initval=0)
-        writevalid = self.m.TmpReg(initval=0)
-        readvalid = self.m.TmpReg(initval=0)
+        addr = self.m.TmpReg(self.addrwidth, initval=0, prefix='addr')
+        writevalid = self.m.TmpReg(initval=0, prefix='writevalid')
+        readvalid = self.m.TmpReg(initval=0, prefix='readvalid')
 
-        prev_awvalid = self.m.TmpReg(initval=0)
+        prev_awvalid = self.m.TmpReg(initval=0, prefix='prev_awvalid')
         self.seq(
             prev_awvalid(self.waddr.awvalid)
         )
-        prev_arvalid = self.m.TmpReg(initval=0)
+        prev_arvalid = self.m.TmpReg(initval=0, prefix='prev_arvalid')
         self.seq(
             prev_arvalid(self.raddr.arvalid)
         )
@@ -2144,10 +2180,10 @@ class AxiLiteSlave(AxiSlave):
 
         ack = vtypes.Ands(self.waddr.awready, self.waddr.awvalid,
                           vtypes.Not(self.wresp.bvalid))
-        addr = self.m.TmpReg(self.addrwidth, initval=0)
-        valid = self.m.TmpReg(initval=0)
+        addr = self.m.TmpReg(self.addrwidth, initval=0, prefix='addr')
+        valid = self.m.TmpReg(initval=0, prefix='valid')
 
-        prev_awvalid = self.m.TmpReg(initval=0)
+        prev_awvalid = self.m.TmpReg(initval=0, prefix='prev_awvalid')
         self.seq(
             prev_awvalid(self.waddr.awvalid)
         )
@@ -2207,10 +2243,10 @@ class AxiLiteSlave(AxiSlave):
         ready = make_condition(cond)
 
         ack = vtypes.Ands(self.raddr.arready, self.raddr.arvalid)
-        addr = self.m.TmpReg(self.addrwidth, initval=0)
-        valid = self.m.TmpReg(initval=0)
+        addr = self.m.TmpReg(self.addrwidth, initval=0, prefix='addr')
+        valid = self.m.TmpReg(initval=0, prefix='valid')
 
-        prev_arvalid = self.m.TmpReg(initval=0)
+        prev_arvalid = self.m.TmpReg(initval=0, prefix='prev_arvalid')
         self.seq(
             prev_arvalid(self.raddr.arvalid)
         )
@@ -2384,11 +2420,11 @@ class AxiStreamIn(object):
         """
         @return data, last, _id, user, dest, done
         """
-        data_ready = self.m.TmpWire()
-        last_ready = self.m.TmpWire()
-        id_ready = self.m.TmpWire()
-        user_ready = self.m.TmpWire()
-        dest_ready = self.m.TmpWire()
+        data_ready = self.m.TmpWire(prefix='data_ready')
+        last_ready = self.m.TmpWire(prefix='last_ready')
+        id_ready = self.m.TmpWire(prefix='id_ready')
+        user_ready = self.m.TmpWire(prefix='user_ready')
+        dest_ready = self.m.TmpWire(prefix='dest_ready')
         data_ready.assign(1)
         id_ready.assign(1)
         last_ready.assign(1)
@@ -3098,7 +3134,7 @@ class AxiMemoryModel(AxiSlave):
         """ intrinsic for thread """
 
         cond = fsm.state == fsm.current
-        rdata = self.m.TmpReg(self.mem_datawidth, initval=0, signed=True)
+        rdata = self.m.TmpReg(self.mem_datawidth, initval=0, signed=True, prefix='rdata')
         num_bytes = self.mem_datawidth // 8
 
         fsm.If(cond)(
@@ -3115,7 +3151,7 @@ class AxiMemoryModel(AxiSlave):
         cond = fsm.state == fsm.current
         num_bytes = self.mem_datawidth // 8
 
-        wdata_wire = self.m.TmpWire(self.mem_datawidth)
+        wdata_wire = self.m.TmpWire(self.mem_datawidth, prefix='wdata_wire')
         wdata_wire.assign(wdata)
 
         for i in range(num_bytes):
@@ -3131,7 +3167,7 @@ class AxiMemoryModel(AxiSlave):
         """ intrinsic method word-indexed read """
 
         cond = fsm.state == fsm.current
-        rdata = self.m.TmpReg(bits, initval=0, signed=True)
+        rdata = self.m.TmpReg(bits, initval=0, signed=True, prefix='rdata')
         num_bytes = int(math.ceil(bits / 8))
         addr = vtypes.Add(byte_offset,
                           vtypes.Div(vtypes.Mul(word_index, bits), 8))
@@ -3151,27 +3187,27 @@ class AxiMemoryModel(AxiSlave):
         """ intrinsic method word-indexed write """
 
         cond = fsm.state == fsm.current
-        rdata = self.m.TmpReg(bits, initval=0, signed=True)
+        rdata = self.m.TmpReg(bits, initval=0, signed=True, prefix='rdata')
         num_bytes = int(math.ceil(bits / 8))
         addr = vtypes.Add(byte_offset,
                           vtypes.Div(vtypes.Mul(word_index, bits), 8))
         shift = word_index * bits % 8
 
-        wdata_wire = self.m.TmpWire(bits)
+        wdata_wire = self.m.TmpWire(bits, prefix='wdata_wire')
         wdata_wire.assign(wdata)
         mem_data = vtypes.Cat(*reversed([self.mem[addr + i]
                                          for i in range(num_bytes)]))
-        mem_data_wire = self.m.TmpWire(8 * num_bytes)
+        mem_data_wire = self.m.TmpWire(8 * num_bytes, prefix='mem_data_wire')
         mem_data_wire.assign(mem_data)
 
-        inv_mask = self.m.TmpWire(8 * num_bytes)
+        inv_mask = self.m.TmpWire(8 * num_bytes, prefix='inv_mask')
         inv_mask.assign(vtypes.Repeat(vtypes.Int(1, 1), bits) << shift)
-        mask = self.m.TmpWire(8 * num_bytes)
+        mask = self.m.TmpWire(8 * num_bytes, prefix='mask')
         mask.assign(vtypes.Unot(inv_mask))
 
         raw_data = vtypes.Or(wdata_wire << shift,
                              vtypes.And(mem_data_wire, mask))
-        raw_data_wire = self.m.TmpWire(8 * num_bytes)
+        raw_data_wire = self.m.TmpWire(8 * num_bytes, prefix='raw_data_wire')
         raw_data_wire.assign(raw_data)
 
         for i in range(num_bytes):
