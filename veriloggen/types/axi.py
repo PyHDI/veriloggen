@@ -3831,3 +3831,48 @@ def align(src, num_align_words):
                 offset += res
 
     return ret
+
+
+def split_read_write(m, ports, prefix,
+                     read_prefix='r_', write_prefix='w_'):
+
+    # Read (AR, R)
+    r_ports = {}
+    for name, port in ports.items():
+        r_name = read_prefix + port.name
+
+        if name.startswith(prefix + '_ar') or name.startswith(prefix + '_r'):
+            if isinstance(port, vtypes.Reg):
+                r_port = m.RegLike(port, name=r_name)
+                port.connect(r_port)
+            else:
+                r_port = m.WireLike(port, name=r_name)
+                r_port.connect(port)
+        else:
+            r_port = m.WireLike(port, name=r_name)
+            if isinstance(port, vtypes.Wire):
+                r_port.assign(0)
+
+        r_ports[r_name] = r_port
+
+    # Write (AW, W, B)
+    w_ports = {}
+    for name, port in ports.items():
+        w_name = write_prefix + port.name
+
+        if (name.startswith(prefix + '_aw') or
+            name.startswith(prefix + '_w') or name.startswith(prefix + '_b')):
+            if isinstance(port, vtypes.Reg):
+                w_port = m.RegLike(port, name=w_name)
+                port.connect(w_port)
+            else:
+                w_port = m.WireLike(port, name=w_name)
+                w_port.connect(port)
+        else:
+            w_port = m.WireLike(port, name=w_name)
+            if isinstance(port, vtypes.Wire):
+                w_port.assign(0)
+
+        w_ports[w_name] = w_port
+
+    return r_ports, w_ports
