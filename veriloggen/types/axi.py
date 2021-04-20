@@ -2898,23 +2898,24 @@ class AxiMemoryModel(AxiSlave):
             self.rdata.ruser.assign(rdata_user_mode)
 
         self.fsm = FSM(self.m, '_'.join(['', self.name, 'fsm']), clk, rst)
+        self.seq = self.fsm.seq
 
         # write response
         if self.wresp.bid is not None:
-            self.fsm.seq.If(self.waddr.awvalid, self.waddr.awready,
+            self.seq.If(self.waddr.awvalid, self.waddr.awready,
                             vtypes.Not(self.wresp.bvalid))(
                 self.wresp.bid(self.waddr.awid if self.waddr.awid is not None else 0)
             )
 
         if self.rdata.rid is not None:
-            self.fsm.seq.If(self.raddr.arvalid, self.raddr.arready)(
+            self.seq.If(self.raddr.arvalid, self.raddr.arready)(
                 self.rdata.rid(self.raddr.arid if self.raddr.arid is not None else 0)
             )
 
-        self.fsm.seq.If(self.wresp.bvalid, self.wresp.bready)(
+        self.seq.If(self.wresp.bvalid, self.wresp.bready)(
             self.wresp.bvalid(0)
         )
-        self.fsm.seq.If(self.wdata.wvalid, self.wdata.wready, self.wdata.wlast)(
+        self.seq.If(self.wdata.wvalid, self.wdata.wready, self.wdata.wlast)(
             self.wresp.bvalid(1)
         )
 
@@ -2997,10 +2998,10 @@ class AxiMemoryModel(AxiSlave):
                 sub_sleep_count = self.m.Reg(
                     '_'.join(['', 'sub_sleep_count']), self.addrwidth + 1, initval=0)
 
-                self.fsm.seq.If(sleep_count == sleep - 1)(
+                self.seq.If(sleep_count == sleep - 1)(
                     sub_sleep_count.inc()
                 )
-                self.fsm.seq.If(sleep_count == sleep - 1,
+                self.seq.If(sleep_count == sleep - 1,
                                 sub_sleep_count == sub_sleep - 1)(
                     sub_sleep_count(0)
                 )
@@ -3008,10 +3009,10 @@ class AxiMemoryModel(AxiSlave):
             else:
                 cond = None
 
-            self.fsm.seq.If(sleep_count < sleep - 1)(
+            self.seq.If(sleep_count < sleep - 1)(
                 sleep_count.inc()
             )
-            self.fsm.seq.If(cond, sleep_count == sleep - 1)(
+            self.seq.If(cond, sleep_count == sleep - 1)(
                 sleep_count(0)
             )
 
@@ -3155,7 +3156,7 @@ class AxiMemoryModel(AxiSlave):
         wdata_wire.assign(wdata)
 
         for i in range(num_bytes):
-            self.fsm.seq.If(cond)(
+            self.seq.If(cond)(
                 self.mem[addr + i](wdata_wire[i * 8:i * 8 + 8])
             )
 
@@ -3211,7 +3212,7 @@ class AxiMemoryModel(AxiSlave):
         raw_data_wire.assign(raw_data)
 
         for i in range(num_bytes):
-            self.fsm.seq.If(cond)(
+            self.seq.If(cond)(
                 self.mem[addr + i](raw_data_wire[i * 8:i * 8 + 8])
             )
 
@@ -3351,8 +3352,6 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
         self._make_fsms(write_delay, read_delay, sleep, sub_sleep)
 
     def _make_fsms(self, write_delay=10, read_delay=10, sleep=4, sub_sleep=4):
-        write_mode = 0
-        read_mode = 0
 
         for i, (fsm, waddr, wdata, wresp, raddr, rdata) in enumerate(
                 zip(self.fsms, self.waddrs, self.wdatas, self.wresps, self.raddrs, self.rdatas)):
@@ -3392,12 +3391,8 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
                     sleep_count(0)
                 )
 
-            offset = 100 * i
-            while offset <= read_mode + read_delay + 10:
-                offset += 100
-
-            write_mode = offset + 100
-            read_mode = offset + 200
+            write_mode = 100
+            read_mode = 200
             while read_mode <= write_mode + write_delay + 10:
                 read_mode += 100
 
