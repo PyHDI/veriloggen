@@ -28,10 +28,41 @@ def _tmp_name(prefix='_tmp_thread'):
     return ret
 
 
+class CompileError(Exception):
+
+    def __init__(self, err, code, lineno, col_offset,
+                 end_lineno=None, end_col_offset=None):
+        self.err = err
+        self.code = code
+        self.lineno = lineno
+        self.col_offset = col_offset
+        self.end_lineno = end_lineno
+        self.end_col_offset = end_col_offset
+
+    def __str__(self):
+        return '"{}" in "{}", line {}'.format(self.err, self.code, self.lineno)
+
+
 class FunctionVisitor(ast.NodeVisitor):
 
     def __init__(self):
         self.functions = OrderedDict()
+
+    def visit(self, node):
+        try:
+            r = ast.NodeVisitor.visit(self, node)
+            return r
+
+        except CompileError as e:
+            raise
+
+        except Exception as e:
+            if hasattr(ast, 'unparse'):
+                code = ast.unparse(node)
+            else:
+                code = ast.dump(node)
+            raise CompileError(e, code, node.lineno, node.col_offset,
+                               node.end_lineno, node.end_col_offset)
 
     def getFunctions(self):
         return self.functions
@@ -67,6 +98,23 @@ class CompileVisitor(ast.NodeVisitor):
 
         for func in functions.values():
             self.scope.addFunction(func)
+
+    # -------------------------------------------------------------------------
+    def visit(self, node):
+        try:
+            r = ast.NodeVisitor.visit(self, node)
+            return r
+
+        except CompileError as e:
+            raise
+
+        except Exception as e:
+            if hasattr(ast, 'unparse'):
+                code = ast.unparse(node)
+            else:
+                code = ast.dump(node)
+            raise CompileError(e, code, node.lineno, node.col_offset,
+                               node.end_lineno, node.end_col_offset)
 
     # -------------------------------------------------------------------------
     def visit_Import(self, node):
