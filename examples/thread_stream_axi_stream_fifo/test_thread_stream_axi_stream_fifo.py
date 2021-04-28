@@ -740,10 +740,10 @@ module blinkled
       if(_maxi_cond_0_1) begin
         maxi_arvalid <= 0;
       end 
-      if(maxi_awvalid && maxi_awready && !(maxi_bvalid && maxi_bready)) begin
+      if(maxi_wlast && maxi_wvalid && maxi_wready && !(maxi_bvalid && maxi_bready)) begin
         outstanding_wreq_count_0 <= outstanding_wreq_count_0 + 1;
       end 
-      if(!(maxi_awvalid && maxi_awready) && (maxi_bvalid && maxi_bready) && (outstanding_wreq_count_0 > 0)) begin
+      if(!(maxi_wlast && maxi_wvalid && maxi_wready) && (maxi_bvalid && maxi_bready) && (outstanding_wreq_count_0 > 0)) begin
         outstanding_wreq_count_0 <= outstanding_wreq_count_0 - 1;
       end 
       _maxi_read_start <= 0;
