@@ -326,10 +326,10 @@ module main
       if(_myaxi_cond_0_1) begin
         myaxi_arvalid <= 0;
       end 
-      if(myaxi_awvalid && myaxi_awready && !(myaxi_bvalid && myaxi_bready)) begin
+      if(myaxi_wlast && myaxi_wvalid && myaxi_wready && !(myaxi_bvalid && myaxi_bready)) begin
         outstanding_wreq_count_0 <= outstanding_wreq_count_0 + 1;
       end 
-      if(!(myaxi_awvalid && myaxi_awready) && (myaxi_bvalid && myaxi_bready) && (outstanding_wreq_count_0 > 0)) begin
+      if(!(myaxi_wlast && myaxi_wvalid && myaxi_wready) && (myaxi_bvalid && myaxi_bready) && (outstanding_wreq_count_0 > 0)) begin
         outstanding_wreq_count_0 <= outstanding_wreq_count_0 - 1;
       end 
       myaxi_awaddr <= 0;

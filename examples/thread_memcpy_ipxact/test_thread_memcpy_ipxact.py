@@ -791,10 +791,10 @@ module test;
       if(__saxi_cond_9_1) begin
         _saxi_arvalid <= 0;
       end 
-      if(_saxi_awvalid && _saxi_awready && !(_saxi_bvalid && _saxi_bready)) begin
+      if(_saxi_wvalid && _saxi_wready && !(_saxi_bvalid && _saxi_bready)) begin
         outstanding_wreq_count_9 <= outstanding_wreq_count_9 + 1;
       end 
-      if(!(_saxi_awvalid && _saxi_awready) && (_saxi_bvalid && _saxi_bready) && (outstanding_wreq_count_9 > 0)) begin
+      if(!(_saxi_wvalid && _saxi_wready) && (_saxi_bvalid && _saxi_bready) && (outstanding_wreq_count_9 > 0)) begin
         outstanding_wreq_count_9 <= outstanding_wreq_count_9 - 1;
       end 
       if((th_ctrl == 6) && (_saxi_awready || !_saxi_awvalid)) begin
@@ -1514,10 +1514,10 @@ module memcpy
         maxi_wlast <= 0;
         last_31 <= 0;
       end 
-      if(maxi_awvalid && maxi_awready && !(maxi_bvalid && maxi_bready)) begin
+      if(maxi_wlast && maxi_wvalid && maxi_wready && !(maxi_bvalid && maxi_bready)) begin
         outstanding_wreq_count_0 <= outstanding_wreq_count_0 + 1;
       end 
-      if(!(maxi_awvalid && maxi_awready) && (maxi_bvalid && maxi_bready) && (outstanding_wreq_count_0 > 0)) begin
+      if(!(maxi_wlast && maxi_wvalid && maxi_wready) && (maxi_bvalid && maxi_bready) && (outstanding_wreq_count_0 > 0)) begin
         outstanding_wreq_count_0 <= outstanding_wreq_count_0 - 1;
       end 
       _maxi_read_start <= 0;
