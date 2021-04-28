@@ -441,10 +441,10 @@ module test;
         _axi_wlast <= 0;
         last_32 <= 0;
       end 
-      if(_axi_awvalid && _axi_awready && !(_axi_bvalid && _axi_bready)) begin
+      if(_axi_wlast && _axi_wvalid && _axi_wready && !(_axi_bvalid && _axi_bready)) begin
         outstanding_wreq_count_0 <= outstanding_wreq_count_0 + 1;
       end 
-      if(!(_axi_awvalid && _axi_awready) && (_axi_bvalid && _axi_bready) && (outstanding_wreq_count_0 > 0)) begin
+      if(!(_axi_wlast && _axi_wvalid && _axi_wready) && (_axi_bvalid && _axi_bready) && (outstanding_wreq_count_0 > 0)) begin
         outstanding_wreq_count_0 <= outstanding_wreq_count_0 - 1;
       end 
       if((fsm == 0) && ((_axi_arready || !_axi_arvalid) && (counter_27 == 0))) begin

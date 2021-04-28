@@ -602,11 +602,11 @@ class AxiMaster(object):
         self.outstanding_wreq_count = self.m.TmpReg(self.addrwidth, initval=0,
                                                     prefix='outstanding_wreq_count')
 
-        self.seq.If(vtypes.Ands(self.waddr.awvalid, self.waddr.awready),
+        self.seq.If(vtypes.Ands(self.wdata.wlast, self.wdata.wvalid, self.wdata.wready),
                     vtypes.Not(vtypes.Ands(self.wresp.bvalid, self.wresp.bready)))(
             self.outstanding_wreq_count.inc()
         )
-        self.seq.If(vtypes.Not(vtypes.Ands(self.waddr.awvalid, self.waddr.awready)),
+        self.seq.If(vtypes.Not(vtypes.Ands(self.wdata.wlast, self.wdata.wvalid, self.wdata.wready)),
                     vtypes.Ands(self.wresp.bvalid, self.wresp.bready),
                     self.outstanding_wreq_count > 0)(
             self.outstanding_wreq_count.dec()
@@ -1233,11 +1233,11 @@ class AxiLiteMaster(AxiMaster):
         self.outstanding_wreq_count = self.m.TmpReg(self.addrwidth, initval=0,
                                                     prefix='outstanding_wreq_count')
 
-        self.seq.If(vtypes.Ands(self.waddr.awvalid, self.waddr.awready),
+        self.seq.If(vtypes.Ands(self.wdata.wvalid, self.wdata.wready),
                     vtypes.Not(vtypes.Ands(self.wresp.bvalid, self.wresp.bready)))(
             self.outstanding_wreq_count.inc()
         )
-        self.seq.If(vtypes.Not(vtypes.Ands(self.waddr.awvalid, self.waddr.awready)),
+        self.seq.If(vtypes.Not(vtypes.Ands(self.wdata.wvalid, self.wdata.wready)),
                     vtypes.Ands(self.wresp.bvalid, self.wresp.bready),
                     self.outstanding_wreq_count > 0)(
             self.outstanding_wreq_count.dec()
