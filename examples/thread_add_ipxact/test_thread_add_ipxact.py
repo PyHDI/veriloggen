@@ -315,10 +315,10 @@ module test;
       if(__saxi_cond_8_1) begin
         _saxi_arvalid <= 0;
       end 
-      if(_saxi_awvalid && _saxi_awready && !(_saxi_bvalid && _saxi_bready)) begin
+      if(_saxi_wvalid && _saxi_wready && !(_saxi_bvalid && _saxi_bready)) begin
         outstanding_wreq_count_0 <= outstanding_wreq_count_0 + 1;
       end 
-      if(!(_saxi_awvalid && _saxi_awready) && (_saxi_bvalid && _saxi_bready) && (outstanding_wreq_count_0 > 0)) begin
+      if(!(_saxi_wvalid && _saxi_wready) && (_saxi_bvalid && _saxi_bready) && (outstanding_wreq_count_0 > 0)) begin
         outstanding_wreq_count_0 <= outstanding_wreq_count_0 - 1;
       end 
       if((th_ctrl == 7) && (_saxi_awready || !_saxi_awvalid)) begin
