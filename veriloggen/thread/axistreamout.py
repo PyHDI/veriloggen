@@ -553,10 +553,8 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
 
             # state 1
             fsm.set_index(1)
-            cond = vtypes.Ands(fsm.here, self.write_op_sel == op_id)
-
             write_ready = vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid))
-            read_cond = cond
+            read_cond = vtypes.Ands(fsm.here, write_ready, self.write_op_sel == op_id)
 
             rdata, rvalid = data.read(cond=read_cond)
             rlast, _ = last.read(cond=read_cond)
@@ -634,10 +632,8 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
                                 int(math.ceil(math.log(pack_size, 2))), initval=0)
         self.write_wide_pack_counts[pack_size] = pack_count
 
-        cond = vtypes.Ands(fsm.here, self.write_op_sel == op_id)
-
         write_ready = vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid))
-        read_cond = cond
+        read_cond = vtypes.Ands(fsm.here, write_ready, self.write_op_sel == op_id)
 
         rdata, rvalid = data.read(cond=read_cond)
         rlast, _ = last.read(cond=read_cond)
@@ -782,7 +778,7 @@ class AXIStreamOutFifo(AXIStreamOut):
         op_id = self._get_write_op_id_fifo(fifo)
 
         if op_id in self.write_ops:
-            (write_start, write_op_sel, write_size_in) = self.write_ops[op_id]
+            (write_start, write_op_sel, write_size_in) = self.write_reqs[op_id]
 
             self.seq.If(start)(
                 write_start(1),
@@ -1007,14 +1003,13 @@ class AXIStreamOutFifo(AXIStreamOut):
             # state 1
             fsm.set_index(1)
             cond = vtypes.Ands(fsm.here, self.write_op_sel == op_id)
-
             write_ready = vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid))
             fifo_ready = vtypes.Not(fifo.empty)
-            deq_cond = vtypes.Ands(cond, write_ready, fifo_ready,
+            prev_deq_cond = self.m.TmpWire(prefix='prev_deq_cond')
+            deq_cond = vtypes.Ands(cond, write_ready, fifo_ready, fifo_counter > 0,
                                    vtypes.Ors(pack_count == pack_size - 1,
-                                              vtypes.Ands(pack_count == 0,
-                                                          fifo_counter == self.write_size)),
-                                   fifo_counter > 0)
+                                              vtypes.Ands(pack_count == 0, vtypes.Not(prev_deq_cond))))
+            prev_deq_cond.assign(self.seq.Prev(deq_cond, 1, cond=write_ready))
 
             rdata, rvalid, _ = fifo.deq_rtl(cond=deq_cond)
             rlast = self.m.TmpReg(prefix='rlast', initval=0)
@@ -1101,14 +1096,13 @@ class AXIStreamOutFifo(AXIStreamOut):
         self.write_narrow_pack_counts[pack_size] = pack_count
 
         cond = vtypes.Ands(fsm.here, self.write_op_sel == op_id)
-
         write_ready = vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid))
         fifo_ready = vtypes.Not(fifo.empty)
-        deq_cond = vtypes.Ands(cond, write_ready, fifo_ready,
+        prev_deq_cond = self.m.TmpWire(prefix='prev_deq_cond')
+        deq_cond = vtypes.Ands(cond, write_ready, fifo_ready, fifo_counter > 0,
                                vtypes.Ors(pack_count == pack_size - 1,
-                                          vtypes.Ands(pack_count == 0,
-                                                      fifo_counter == self.write_size)),
-                               fifo_counter > 0)
+                                          vtypes.Ands(pack_count == 0, vtypes.Not(prev_deq_cond))))
+        prev_deq_cond.assign(self.seq.Prev(deq_cond, 1, cond=write_ready))
 
         rdata, rvalid, _ = fifo.deq_rtl(cond=deq_cond)
         rlast = self.m.TmpReg(prefix='rlast', initval=0)
@@ -1124,9 +1118,6 @@ class AXIStreamOutFifo(AXIStreamOut):
         self.seq.If(rvalid, vtypes.Not(write_ready))(repeat_rvalid(1))
         self.seq.If(repeat_rvalid, vtypes.Not(write_ready))(repeat_rvalid(1))
         cur_rvalid = vtypes.Ors(rvalid, repeat_rvalid)
-
-        self.m.TmpWireLike(rdata, prefix='debug_rdata').assign(rdata)
-        self.m.TmpWireLike(rvalid, prefix='debug_rvalid').assign(rvalid)
 
         stay_cond = self.write_op_sel == op_id
 
@@ -1196,35 +1187,27 @@ class AXIStreamOutFifo(AXIStreamOut):
             """ new op """
             self.write_ops.append(op_id)
 
-            fsm = self.write_narrow_fsms[pack_size]
-            counter = self.write_narrow_counters[pack_size]
-            wdata = self.write_narrow_wdatas[pack_size]
-            wvalid = self.write_narrow_wvalids[pack_size]
-            wlast = self.write_narrow_wlasts[pack_size]
-            pack_count = self.write_narrow_pack_counts[pack_size]
+            fsm = self.write_wide_fsms[pack_size]
+            counter = self.write_wide_counters[pack_size]
+            wdata = self.write_wide_wdatas[pack_size]
+            wvalid = self.write_wide_wvalids[pack_size]
+            wlast = self.write_wide_wlasts[pack_size]
+            pack_count = self.write_wide_pack_counts[pack_size]
 
             # state 0
             fsm.set_index(0)
             cond = vtypes.Ands(self.write_start, self.write_op_sel == op_id)
-
             fsm.If(cond).goto_next()
 
             # state 1
             fsm.set_index(1)
             cond = vtypes.Ands(fsm.here, self.write_op_sel == op_id)
-
             write_ready = vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid))
             fifo_ready = vtypes.Not(fifo.empty)
-            deq_cond = vtypes.Ands(cond, fifo_ready, counter > 0)
+            deq_cond = vtypes.Ands(cond, write_ready, fifo_ready, counter > 0)
 
             rdata, rvalid, _ = fifo.deq_rtl(cond=deq_cond)
             rlast = counter <= 1
-
-            repeat_rvalid = self.m.TmpReg(prefix='repeat_rvalid', initval=0)
-            self.seq(repeat_rvalid(0))
-            self.seq.If(rvalid, vtypes.Not(write_ready))(repeat_rvalid(1))
-            self.seq.If(repeat_rvalid, vtypes.Not(write_ready))(repeat_rvalid(1))
-            cur_rvalid = vtypes.Ors(rvalid, repeat_rvalid)
 
             stay_cond = self.write_op_sel == op_id
 
@@ -1232,13 +1215,13 @@ class AXIStreamOutFifo(AXIStreamOut):
                 wvalid(0),
                 wlast(0)
             )
-            self.seq.If(cur_rvalid, stay_cond)(
+            self.seq.If(rvalid, stay_cond)(
                 wdata(vtypes.Cat(rdata, wdata[fifo_datawidth:self.datawidth])),
                 wvalid(0),
                 wlast(0),
                 pack_count.inc()
             )
-            self.seq.If(cur_rvalid, stay_cond, pack_count == pack_size - 1)(
+            self.seq.If(rvalid, stay_cond, pack_count == pack_size - 1)(
                 wdata(vtypes.Cat(rdata, wdata[fifo_datawidth:self.datawidth])),
                 wvalid(1),
                 wlast(rlast),
@@ -1292,19 +1275,12 @@ class AXIStreamOutFifo(AXIStreamOut):
         self.write_wide_pack_counts[pack_size] = pack_count
 
         cond = vtypes.Ands(fsm.here, self.write_op_sel == op_id)
-
         write_ready = vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid))
         fifo_ready = vtypes.Not(fifo.empty)
-        deq_cond = vtypes.Ands(cond, fifo_ready, counter > 0)
+        deq_cond = vtypes.Ands(cond, write_ready, fifo_ready, counter > 0)
 
         rdata, rvalid, _ = fifo.deq_rtl(cond=deq_cond)
         rlast = counter <= 1
-
-        repeat_rvalid = self.m.TmpReg(prefix='repeat_rvalid', initval=0)
-        self.seq(repeat_rvalid(0))
-        self.seq.If(rvalid, vtypes.Not(write_ready))(repeat_rvalid(1))
-        self.seq.If(repeat_rvalid, vtypes.Not(write_ready))(repeat_rvalid(1))
-        cur_rvalid = vtypes.Ors(rvalid, repeat_rvalid)
 
         stay_cond = self.write_op_sel == op_id
 
@@ -1312,13 +1288,13 @@ class AXIStreamOutFifo(AXIStreamOut):
             wvalid(0),
             wlast(0)
         )
-        self.seq.If(cur_rvalid, stay_cond)(
+        self.seq.If(rvalid, stay_cond)(
             wdata(vtypes.Cat(rdata, wdata[fifo_datawidth:self.datawidth])),
             wvalid(0),
             wlast(0),
             pack_count.inc()
         )
-        self.seq.If(cur_rvalid, stay_cond, pack_count == pack_size - 1)(
+        self.seq.If(rvalid, stay_cond, pack_count == pack_size - 1)(
             wdata(vtypes.Cat(rdata, wdata[fifo_datawidth:self.datawidth])),
             wvalid(1),
             wlast(rlast),

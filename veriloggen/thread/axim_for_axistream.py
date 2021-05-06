@@ -266,7 +266,7 @@ class AXIM_for_AXIStreamOut(AXIM):
         self.streamout = streamout
         self.in_streamout = AXIStreamIn(streamout.m, streamout.name + '_in', streamout.clk, streamout.rst,
                                         streamout.datawidth, streamout.addrwidth,
-                                        streamout.tdata.tlast is not None,
+                                        streamout.tdata.tlast is not None, streamout.tdata.tstrb is not None,
                                         streamout.tdata.id_width, streamout.tdata.user_width, streamout.tdata.dest_width,
                                         True,
                                         streamout.enable_async,

@@ -785,7 +785,7 @@ class AXIStreamInFifo(AXIStreamIn):
         op_id = self._get_read_op_id_fifo(fifo)
 
         if op_id in self.read_ops:
-            (read_start, read_op_sel, read_size_in) = self.read_ops[op_id]
+            (read_start, read_op_sel, read_size_in) = self.read_reqs[op_id]
 
             self.seq.If(start)(
                 read_start(1),
@@ -969,7 +969,8 @@ class AXIStreamInFifo(AXIStreamIn):
                                fifo_datawidth, initval=0)
             wvalid = self.m.Reg('_'.join(['', self.name,
                                           'read_narrow', str(pack_size),
-                                          'wvalid']))
+                                          'wvalid']),
+                                initval=0)
 
             valid_cond = vtypes.Ands(valid, self.read_op_sel == op_id)
             ack, _ = fifo.enq_rtl(wdata, cond=wvalid)
@@ -1046,7 +1047,8 @@ class AXIStreamInFifo(AXIStreamIn):
                            fifo_datawidth, initval=0)
         wvalid = self.m.Reg('_'.join(['', self.name,
                                       'read_narrow', str(pack_size),
-                                      'wvalid']))
+                                      'wvalid']),
+                            initval=0)
 
         valid_cond = vtypes.Ands(valid, self.read_op_sel == op_id)
         ack, _ = fifo.enq_rtl(wdata, cond=wvalid)
@@ -1192,7 +1194,8 @@ class AXIStreamInFifo(AXIStreamIn):
                            self.datawidth, initval=0)
         wvalid = self.m.Reg('_'.join(['', self.name,
                                       'read_wide', str(pack_size),
-                                      'wvalid']))
+                                      'wvalid']),
+                            initval=0)
 
         valid_cond = vtypes.Ands(valid, self.read_op_sel == op_id)
         stay_cond = self.read_op_sel == op_id
