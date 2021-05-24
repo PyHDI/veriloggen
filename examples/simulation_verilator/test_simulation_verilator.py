@@ -657,7 +657,7 @@ module blinkled
   assign myaxi_arprot = 0;
   assign myaxi_arqos = 0;
   assign myaxi_aruser = 0;
-  reg [32-1:0] outstanding_wreq_count_0;
+  reg [3-1:0] outstanding_wcount_0;
   reg _myaxi_read_start;
   reg [8-1:0] _myaxi_read_op_sel;
   reg [32-1:0] _myaxi_read_local_addr;
@@ -801,7 +801,7 @@ module blinkled
   wire [32-1:0] _dataflow__variable_odata_2;
   wire _dataflow__variable_ovalid_2;
   wire _dataflow__variable_oready_2;
-  assign _dataflow__variable_oready_2 = (_myaxi_write_fsm == 3) && (_myaxi_write_op_sel == 1) && ((counter_37 > 0) && (myaxi_wready || !myaxi_wvalid));
+  assign _dataflow__variable_oready_2 = (_myaxi_write_fsm == 3) && (_myaxi_write_op_sel == 1) && ((counter_37 > 0) && (outstanding_wcount_0 < 6) && (myaxi_wready || !myaxi_wvalid));
   reg _myaxi_cond_2_1;
   assign _myaxi_write_data_done = (last_38 && myaxi_wvalid && myaxi_wready)? 1 : 0;
   reg axim_flag_39;
@@ -1007,7 +1007,7 @@ module blinkled
 
   always @(posedge CLK) begin
     if(RST) begin
-      outstanding_wreq_count_0 <= 0;
+      outstanding_wcount_0 <= 0;
       _myaxi_read_start <= 0;
       _myaxi_write_start <= 0;
       _myaxi_ram_a_0_read_start <= 0;
@@ -1074,11 +1074,11 @@ module blinkled
         myaxi_wlast <= 0;
         last_38 <= 0;
       end 
-      if(myaxi_wlast && myaxi_wvalid && myaxi_wready && !(myaxi_bvalid && myaxi_bready)) begin
-        outstanding_wreq_count_0 <= outstanding_wreq_count_0 + 1;
+      if(myaxi_wlast && myaxi_wvalid && myaxi_wready && !(myaxi_bvalid && myaxi_bready) && (outstanding_wcount_0 < 7)) begin
+        outstanding_wcount_0 <= outstanding_wcount_0 + 1;
       end 
-      if(!(myaxi_wlast && myaxi_wvalid && myaxi_wready) && (myaxi_bvalid && myaxi_bready) && (outstanding_wreq_count_0 > 0)) begin
-        outstanding_wreq_count_0 <= outstanding_wreq_count_0 - 1;
+      if(!(myaxi_wlast && myaxi_wvalid && myaxi_wready) && (myaxi_bvalid && myaxi_bready) && (outstanding_wcount_0 > 0)) begin
+        outstanding_wcount_0 <= outstanding_wcount_0 - 1;
       end 
       _myaxi_read_start <= 0;
       _myaxi_write_start <= 0;
@@ -1171,14 +1171,14 @@ module blinkled
       if(myaxi_awvalid && !myaxi_awready) begin
         myaxi_awvalid <= myaxi_awvalid;
       end 
-      if(_dataflow__variable_ovalid_2 && ((_myaxi_write_fsm == 3) && (_myaxi_write_op_sel == 1) && ((counter_37 > 0) && (myaxi_wready || !myaxi_wvalid))) && ((counter_37 > 0) && (myaxi_wready || !myaxi_wvalid) && (counter_37 > 0))) begin
+      if(_dataflow__variable_ovalid_2 && ((_myaxi_write_fsm == 3) && (_myaxi_write_op_sel == 1) && ((counter_37 > 0) && (outstanding_wcount_0 < 6) && (myaxi_wready || !myaxi_wvalid))) && ((counter_37 > 0) && (outstanding_wcount_0 < 6) && (myaxi_wready || !myaxi_wvalid) && (counter_37 > 0))) begin
         myaxi_wdata <= _dataflow__variable_odata_2;
         myaxi_wvalid <= 1;
         myaxi_wlast <= 0;
         myaxi_wstrb <= { 4{ 1'd1 } };
         counter_37 <= counter_37 - 1;
       end 
-      if(_dataflow__variable_ovalid_2 && ((_myaxi_write_fsm == 3) && (_myaxi_write_op_sel == 1) && ((counter_37 > 0) && (myaxi_wready || !myaxi_wvalid))) && ((counter_37 > 0) && (myaxi_wready || !myaxi_wvalid) && (counter_37 > 0)) && (counter_37 == 1)) begin
+      if(_dataflow__variable_ovalid_2 && ((_myaxi_write_fsm == 3) && (_myaxi_write_op_sel == 1) && ((counter_37 > 0) && (outstanding_wcount_0 < 6) && (myaxi_wready || !myaxi_wvalid))) && ((counter_37 > 0) && (outstanding_wcount_0 < 6) && (myaxi_wready || !myaxi_wvalid) && (counter_37 > 0)) && (counter_37 == 1)) begin
         myaxi_wlast <= 1;
         last_38 <= 1;
       end 
@@ -1507,7 +1507,7 @@ module blinkled
           th_matmul <= th_matmul_32;
         end
         th_matmul_32: begin
-          if(_myaxi_write_idle && (outstanding_wreq_count_0 == 0)) begin
+          if(_myaxi_write_idle && (outstanding_wcount_0 == 0)) begin
             th_matmul <= th_matmul_33;
           end 
         end

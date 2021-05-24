@@ -94,7 +94,7 @@ module test;
   assign _axi_arprot = 0;
   assign _axi_arqos = 0;
   assign _axi_aruser = 0;
-  reg [32-1:0] outstanding_wreq_count_0;
+  reg [3-1:0] outstanding_wcount_0;
   wire [32-1:0] _tmp_1;
   assign _tmp_1 = _axi_awaddr;
 
@@ -368,7 +368,7 @@ module test;
     _axi_araddr = 0;
     _axi_arlen = 0;
     _axi_arvalid = 0;
-    outstanding_wreq_count_0 = 0;
+    outstanding_wcount_0 = 0;
     fsm = fsm_init;
     rsum = 0;
     counter_27 = 0;
@@ -395,7 +395,7 @@ module test;
 
   always @(posedge CLK) begin
     if(RST) begin
-      outstanding_wreq_count_0 <= 0;
+      outstanding_wcount_0 <= 0;
       _axi_araddr <= 0;
       _axi_arlen <= 0;
       _axi_arvalid <= 0;
@@ -441,11 +441,11 @@ module test;
         _axi_wlast <= 0;
         last_32 <= 0;
       end 
-      if(_axi_wlast && _axi_wvalid && _axi_wready && !(_axi_bvalid && _axi_bready)) begin
-        outstanding_wreq_count_0 <= outstanding_wreq_count_0 + 1;
+      if(_axi_wlast && _axi_wvalid && _axi_wready && !(_axi_bvalid && _axi_bready) && (outstanding_wcount_0 < 7)) begin
+        outstanding_wcount_0 <= outstanding_wcount_0 + 1;
       end 
-      if(!(_axi_wlast && _axi_wvalid && _axi_wready) && (_axi_bvalid && _axi_bready) && (outstanding_wreq_count_0 > 0)) begin
-        outstanding_wreq_count_0 <= outstanding_wreq_count_0 - 1;
+      if(!(_axi_wlast && _axi_wvalid && _axi_wready) && (_axi_bvalid && _axi_bready) && (outstanding_wcount_0 > 0)) begin
+        outstanding_wcount_0 <= outstanding_wcount_0 - 1;
       end 
       if((fsm == 0) && ((_axi_arready || !_axi_arvalid) && (counter_27 == 0))) begin
         _axi_araddr <= 1024;
@@ -486,14 +486,14 @@ module test;
       if(_axi_awvalid && !_axi_awready) begin
         _axi_awvalid <= _axi_awvalid;
       end 
-      if((fsm == 6) && ((counter_29 > 0) && (_axi_wready || !_axi_wvalid) && (counter_29 > 0))) begin
+      if((fsm == 6) && ((counter_29 > 0) && (outstanding_wcount_0 < 6) && (_axi_wready || !_axi_wvalid) && (counter_29 > 0))) begin
         _axi_wdata <= wdata;
         _axi_wvalid <= 1;
         _axi_wlast <= 0;
         _axi_wstrb <= { 4{ 1'd1 } };
         counter_29 <= counter_29 - 1;
       end 
-      if((fsm == 6) && ((counter_29 > 0) && (_axi_wready || !_axi_wvalid) && (counter_29 > 0)) && (counter_29 == 1)) begin
+      if((fsm == 6) && ((counter_29 > 0) && (outstanding_wcount_0 < 6) && (_axi_wready || !_axi_wvalid) && (counter_29 > 0)) && (counter_29 == 1)) begin
         _axi_wlast <= 1;
         last_30 <= 1;
       end 
@@ -516,14 +516,14 @@ module test;
       if(_axi_awvalid && !_axi_awready) begin
         _axi_awvalid <= _axi_awvalid;
       end 
-      if((fsm == 8) && ((counter_31 > 0) && (_axi_wready || !_axi_wvalid) && (counter_31 > 0))) begin
+      if((fsm == 8) && ((counter_31 > 0) && (outstanding_wcount_0 < 6) && (_axi_wready || !_axi_wvalid) && (counter_31 > 0))) begin
         _axi_wdata <= wdata;
         _axi_wvalid <= 1;
         _axi_wlast <= 0;
         _axi_wstrb <= { 4{ 1'd1 } };
         counter_31 <= counter_31 - 1;
       end 
-      if((fsm == 8) && ((counter_31 > 0) && (_axi_wready || !_axi_wvalid) && (counter_31 > 0)) && (counter_31 == 1)) begin
+      if((fsm == 8) && ((counter_31 > 0) && (outstanding_wcount_0 < 6) && (_axi_wready || !_axi_wvalid) && (counter_31 > 0)) && (counter_31 == 1)) begin
         _axi_wlast <= 1;
         last_32 <= 1;
       end 
@@ -590,7 +590,7 @@ module test;
           end 
         end
         fsm_6: begin
-          if((counter_29 > 0) && (_axi_wready || !_axi_wvalid)) begin
+          if((counter_29 > 0) && (outstanding_wcount_0 < 6) && (_axi_wready || !_axi_wvalid)) begin
             wdata <= wdata + 1;
           end 
           if(last_30) begin
@@ -603,7 +603,7 @@ module test;
           end 
         end
         fsm_8: begin
-          if((counter_31 > 0) && (_axi_wready || !_axi_wvalid)) begin
+          if((counter_31 > 0) && (outstanding_wcount_0 < 6) && (_axi_wready || !_axi_wvalid)) begin
             wdata <= wdata + 1;
           end 
           if(last_32) begin

@@ -93,7 +93,7 @@ module test;
   assign _axi_arprot = 0;
   assign _axi_arqos = 0;
   assign _axi_aruser = 0;
-  reg [32-1:0] outstanding_wreq_count_0;
+  reg [3-1:0] outstanding_wcount_0;
   wire [32-1:0] _tmp_1;
   assign _tmp_1 = _axi_awaddr;
 
@@ -357,7 +357,7 @@ module test;
     _axi_araddr = 0;
     _axi_arlen = 0;
     _axi_arvalid = 0;
-    outstanding_wreq_count_0 = 0;
+    outstanding_wcount_0 = 0;
     fsm = fsm_init;
     sum = 0;
     counter_27 = 0;
@@ -375,7 +375,7 @@ module test;
 
   always @(posedge CLK) begin
     if(RST) begin
-      outstanding_wreq_count_0 <= 0;
+      outstanding_wcount_0 <= 0;
       _axi_awaddr <= 0;
       _axi_awlen <= 0;
       _axi_awvalid <= 0;
@@ -397,11 +397,11 @@ module test;
       if(__axi_cond_1_1) begin
         _axi_arvalid <= 0;
       end 
-      if(_axi_wlast && _axi_wvalid && _axi_wready && !(_axi_bvalid && _axi_bready)) begin
-        outstanding_wreq_count_0 <= outstanding_wreq_count_0 + 1;
+      if(_axi_wlast && _axi_wvalid && _axi_wready && !(_axi_bvalid && _axi_bready) && (outstanding_wcount_0 < 7)) begin
+        outstanding_wcount_0 <= outstanding_wcount_0 + 1;
       end 
-      if(!(_axi_wlast && _axi_wvalid && _axi_wready) && (_axi_bvalid && _axi_bready) && (outstanding_wreq_count_0 > 0)) begin
-        outstanding_wreq_count_0 <= outstanding_wreq_count_0 - 1;
+      if(!(_axi_wlast && _axi_wvalid && _axi_wready) && (_axi_bvalid && _axi_bready) && (outstanding_wcount_0 > 0)) begin
+        outstanding_wcount_0 <= outstanding_wcount_0 - 1;
       end 
       _axi_awaddr <= 0;
       _axi_awlen <= 0;
