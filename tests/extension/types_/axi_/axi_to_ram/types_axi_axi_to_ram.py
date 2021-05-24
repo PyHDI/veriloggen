@@ -67,13 +67,14 @@ def mkMain():
         sum.add(rdata_data)
     )
     seq.Then().If(rlast_data == 1).Delay(1)(
-        Systask('display', 'sum=%d expected_sum=%d', sum, expected_sum)
+        Systask('display', 'sum=%d expected_sum=%d', sum, expected_sum),
+        If(NotEql(sum, expected_sum))(Display('# verify: FAILED')).Else(Display('# verify: PASSED'))
     )
 
     return m
 
 
-def mkTest():
+def mkTest(memimg_name=None):
     m = Module('test')
 
     # target instance
@@ -187,7 +188,7 @@ def mkTest():
                      params=m.connect_params(main),
                      ports=m.connect_ports(main))
 
-    simulation.setup_waveform(m, uut, m.get_vars())
+    # simulation.setup_waveform(m, uut, m.get_vars())
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
@@ -199,13 +200,26 @@ def mkTest():
     return m
 
 
+def run(filename='tmp.v', simtype='iverilog', outputfile=None):
+
+    if outputfile is None:
+        outputfile = os.path.splitext(os.path.basename(__file__))[0] + '.out'
+
+    memimg_name = 'memimg_' + outputfile
+
+    test = mkTest(memimg_name=memimg_name)
+
+    if filename is not None:
+        test.to_verilog(filename)
+
+    sim = simulation.Simulator(test, sim=simtype)
+    rslt = sim.run(outputfile=outputfile)
+    lines = rslt.splitlines()
+    if simtype == 'verilator' and lines[-1].startswith('-'):
+        rslt = '\n'.join(lines[:-1])
+    return rslt
+
+
 if __name__ == '__main__':
-    test = mkTest()
-    verilog = test.to_verilog('tmp.v')
-    print(verilog)
-
-    sim = simulation.Simulator(test)
-    rslt = sim.run()
+    rslt = run(filename='tmp.v')
     print(rslt)
-
-    # sim.view_waveform()

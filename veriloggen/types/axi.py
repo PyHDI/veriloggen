@@ -531,7 +531,7 @@ class AxiMaster(object):
                  waddr_prot_mode=AxPROT_NONCOHERENT, raddr_prot_mode=AxPROT_NONCOHERENT,
                  waddr_user_mode=AxUSER_NONCOHERENT, wdata_user_mode=xUSER_DEFAULT,
                  raddr_user_mode=AxUSER_NONCOHERENT,
-                 noio=False, nodataflow=False):
+                 noio=False, nodataflow=False, outstanding_wcount_width=3):
 
         self.m = m
         self.name = name
@@ -593,17 +593,21 @@ class AxiMaster(object):
         self.read_counters = []
 
         # outstanding write request
-        self.outstanding_wreq_count = self.m.TmpReg(self.addrwidth, initval=0,
-                                                    prefix='outstanding_wreq_count')
+        if outstanding_wcount_width < 2:
+            raise ValueError("outstanding_wcount_width must be 2 or more.")
+        self.outstanding_wcount_width = outstanding_wcount_width
+        self.outstanding_wcount = self.m.TmpReg(self.outstanding_wcount_width, initval=0,
+                                                prefix='outstanding_wcount')
 
         self.seq.If(vtypes.Ands(self.wdata.wlast, self.wdata.wvalid, self.wdata.wready),
-                    vtypes.Not(vtypes.Ands(self.wresp.bvalid, self.wresp.bready)))(
-            self.outstanding_wreq_count.inc()
+                    vtypes.Not(vtypes.Ands(self.wresp.bvalid, self.wresp.bready)),
+                    self.outstanding_wcount < 2 ** self.outstanding_wcount_width - 1)(
+            self.outstanding_wcount.inc()
         )
         self.seq.If(vtypes.Not(vtypes.Ands(self.wdata.wlast, self.wdata.wvalid, self.wdata.wready)),
                     vtypes.Ands(self.wresp.bvalid, self.wresp.bready),
-                    self.outstanding_wreq_count > 0)(
-            self.outstanding_wreq_count.dec()
+                    self.outstanding_wcount > 0)(
+            self.outstanding_wcount.dec()
         )
 
         if nodataflow:
@@ -667,6 +671,9 @@ class AxiMaster(object):
             boundary_size = self.boundary_size
         mask = boundary_size - 1
         return (vtypes.Int(boundary_size) - (addr & mask)) >> util.log2(datawidth // 8)
+
+    def write_acceptable(self):
+        return self.outstanding_wcount < 2 ** self.outstanding_wcount_width - 2
 
     def write_request(self, addr, length=1, cond=None):
         """
@@ -775,6 +782,7 @@ class AxiMaster(object):
             self.seq.If(cond)
 
         ack = vtypes.Ands(counter > 0,
+                          self.write_acceptable(),
                           vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid)))
         last = self.m.TmpReg(initval=0, prefix='last')
 
@@ -822,6 +830,7 @@ class AxiMaster(object):
             counter = self.write_counters[-1]
 
         ack = vtypes.Ands(counter > 0,
+                          self.write_acceptable(),
                           vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid)))
         last = self.m.TmpReg(initval=0, prefix='last')
 
@@ -876,7 +885,7 @@ class AxiMaster(object):
         return done
 
     def write_completed(self):
-        return self.outstanding_wreq_count == 0
+        return self.outstanding_wcount == 0
 
     def read_request(self, addr, length=1, cond=None):
         """
@@ -1179,7 +1188,7 @@ class AxiLiteMaster(AxiMaster):
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
                  waddr_cache_mode=AxCACHE_NONCOHERENT, raddr_cache_mode=AxCACHE_NONCOHERENT,
                  waddr_prot_mode=AxPROT_NONCOHERENT, raddr_prot_mode=AxPROT_NONCOHERENT,
-                 noio=False, nodataflow=False):
+                 noio=False, nodataflow=False, outstanding_wcount_width=3):
 
         self.m = m
         self.name = name
@@ -1224,17 +1233,21 @@ class AxiLiteMaster(AxiMaster):
         self.raddr.arprot.assign(raddr_prot_mode)
 
         # outstanding write request
-        self.outstanding_wreq_count = self.m.TmpReg(self.addrwidth, initval=0,
-                                                    prefix='outstanding_wreq_count')
+        if outstanding_wcount_width < 2:
+            raise ValueError("outstanding_wcount_width must be 2 or more.")
+        self.outstanding_wcount_width = outstanding_wcount_width
+        self.outstanding_wcount = self.m.TmpReg(self.outstanding_wcount_width, initval=0,
+                                                prefix='outstanding_wcount')
 
         self.seq.If(vtypes.Ands(self.wdata.wvalid, self.wdata.wready),
-                    vtypes.Not(vtypes.Ands(self.wresp.bvalid, self.wresp.bready)))(
-            self.outstanding_wreq_count.inc()
+                    vtypes.Not(vtypes.Ands(self.wresp.bvalid, self.wresp.bready)),
+                    self.outstanding_wcount < (2 ** self.outstanding_wcount_width - 1))(
+            self.outstanding_wcount.inc()
         )
         self.seq.If(vtypes.Not(vtypes.Ands(self.wdata.wvalid, self.wdata.wready)),
                     vtypes.Ands(self.wresp.bvalid, self.wresp.bready),
-                    self.outstanding_wreq_count > 0)(
-            self.outstanding_wreq_count.dec()
+                    self.outstanding_wcount > 0)(
+            self.outstanding_wcount.dec()
         )
 
         if nodataflow:
@@ -1312,7 +1325,8 @@ class AxiLiteMaster(AxiMaster):
         if cond is not None:
             self.seq.If(cond)
 
-        ack = vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid))
+        ack = vtypes.Ands(self.write_acceptable(),
+                          vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid)))
 
         self.seq.If(ack)(
             self.wdata.wdata(data),
@@ -1341,7 +1355,7 @@ class AxiLiteMaster(AxiMaster):
         raise TypeError('lite interface support no dataflow operation.')
 
     def write_completed(self):
-        return self.outstanding_wreq_count == 0
+        return self.outstanding_wcount == 0
 
     def read_request(self, addr, length=1, cond=None):
         """

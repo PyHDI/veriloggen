@@ -268,7 +268,7 @@ module main
   assign myaxi_arprot = 0;
   assign myaxi_arqos = 0;
   assign myaxi_aruser = 0;
-  reg [32-1:0] outstanding_wreq_count_0;
+  reg [3-1:0] outstanding_wcount_0;
   reg [32-1:0] req_fsm;
   localparam req_fsm_init = 0;
   reg [9-1:0] counter_1;
@@ -288,7 +288,7 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
-      outstanding_wreq_count_0 <= 0;
+      outstanding_wcount_0 <= 0;
       myaxi_awaddr <= 0;
       myaxi_awlen <= 0;
       myaxi_awvalid <= 0;
@@ -305,11 +305,11 @@ module main
       if(_myaxi_cond_0_1) begin
         myaxi_arvalid <= 0;
       end 
-      if(myaxi_wlast && myaxi_wvalid && myaxi_wready && !(myaxi_bvalid && myaxi_bready)) begin
-        outstanding_wreq_count_0 <= outstanding_wreq_count_0 + 1;
+      if(myaxi_wlast && myaxi_wvalid && myaxi_wready && !(myaxi_bvalid && myaxi_bready) && (outstanding_wcount_0 < 7)) begin
+        outstanding_wcount_0 <= outstanding_wcount_0 + 1;
       end 
-      if(!(myaxi_wlast && myaxi_wvalid && myaxi_wready) && (myaxi_bvalid && myaxi_bready) && (outstanding_wreq_count_0 > 0)) begin
-        outstanding_wreq_count_0 <= outstanding_wreq_count_0 - 1;
+      if(!(myaxi_wlast && myaxi_wvalid && myaxi_wready) && (myaxi_bvalid && myaxi_bready) && (outstanding_wcount_0 > 0)) begin
+        outstanding_wcount_0 <= outstanding_wcount_0 - 1;
       end 
       myaxi_awaddr <= 0;
       myaxi_awlen <= 0;

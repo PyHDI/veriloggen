@@ -56,7 +56,7 @@ module test;
   assign _axi_bready = 1;
   assign _axi_arcache = 3;
   assign _axi_arprot = 0;
-  reg [32-1:0] outstanding_wreq_count_0;
+  reg [3-1:0] outstanding_wcount_0;
   wire [32-1:0] _tmp_1;
   assign _tmp_1 = _axi_awaddr;
 
@@ -200,7 +200,7 @@ module test;
 
   initial begin
     $dumpfile("uut.vcd");
-    $dumpvars(0, uut, CLK, RST, sum, myaxi_awaddr, myaxi_awcache, myaxi_awprot, myaxi_awvalid, myaxi_awready, myaxi_wdata, myaxi_wstrb, myaxi_wvalid, myaxi_wready, myaxi_bresp, myaxi_bvalid, myaxi_bready, myaxi_araddr, myaxi_arcache, myaxi_arprot, myaxi_arvalid, myaxi_arready, myaxi_rdata, myaxi_rresp, myaxi_rvalid, myaxi_rready, _axi_awaddr, _axi_awcache, _axi_awprot, _axi_awvalid, _axi_awready, _axi_wdata, _axi_wstrb, _axi_wvalid, _axi_wready, _axi_bresp, _axi_bvalid, _axi_bready, _axi_araddr, _axi_arcache, _axi_arprot, _axi_arvalid, _axi_arready, _axi_rdata, _axi_rresp, _axi_rvalid, _axi_rready, outstanding_wreq_count_0, _tmp_1, _tmp_2, _tmp_3, _tmp_4, _tmp_5, _tmp_6, _tmp_7, _tmp_8, _tmp_9, _tmp_10, _tmp_11, _tmp_12, _tmp_13, fsm, rsum, __axi_cond_0_1, __axi_cond_1_1, __axi_cond_2_1, wdata, __axi_cond_3_1, __axi_cond_4_1, __axi_cond_5_1);
+    $dumpvars(0, uut, CLK, RST, sum, myaxi_awaddr, myaxi_awcache, myaxi_awprot, myaxi_awvalid, myaxi_awready, myaxi_wdata, myaxi_wstrb, myaxi_wvalid, myaxi_wready, myaxi_bresp, myaxi_bvalid, myaxi_bready, myaxi_araddr, myaxi_arcache, myaxi_arprot, myaxi_arvalid, myaxi_arready, myaxi_rdata, myaxi_rresp, myaxi_rvalid, myaxi_rready, _axi_awaddr, _axi_awcache, _axi_awprot, _axi_awvalid, _axi_awready, _axi_wdata, _axi_wstrb, _axi_wvalid, _axi_wready, _axi_bresp, _axi_bvalid, _axi_bready, _axi_araddr, _axi_arcache, _axi_arprot, _axi_arvalid, _axi_arready, _axi_rdata, _axi_rresp, _axi_rvalid, _axi_rready, outstanding_wcount_0, _tmp_1, _tmp_2, _tmp_3, _tmp_4, _tmp_5, _tmp_6, _tmp_7, _tmp_8, _tmp_9, _tmp_10, _tmp_11, _tmp_12, _tmp_13, fsm, rsum, __axi_cond_0_1, __axi_cond_1_1, __axi_cond_2_1, wdata, __axi_cond_3_1, __axi_cond_4_1, __axi_cond_5_1);
   end
 
 
@@ -221,7 +221,7 @@ module test;
     _axi_wvalid = 0;
     _axi_araddr = 0;
     _axi_arvalid = 0;
-    outstanding_wreq_count_0 = 0;
+    outstanding_wcount_0 = 0;
     fsm = fsm_init;
     rsum = 0;
     __axi_cond_0_1 = 0;
@@ -242,7 +242,7 @@ module test;
 
   always @(posedge CLK) begin
     if(RST) begin
-      outstanding_wreq_count_0 <= 0;
+      outstanding_wcount_0 <= 0;
       _axi_araddr <= 0;
       _axi_arvalid <= 0;
       __axi_cond_0_1 <= 0;
@@ -275,11 +275,11 @@ module test;
       if(__axi_cond_5_1) begin
         _axi_wvalid <= 0;
       end 
-      if(_axi_wvalid && _axi_wready && !(_axi_bvalid && _axi_bready)) begin
-        outstanding_wreq_count_0 <= outstanding_wreq_count_0 + 1;
+      if(_axi_wvalid && _axi_wready && !(_axi_bvalid && _axi_bready) && (outstanding_wcount_0 < 7)) begin
+        outstanding_wcount_0 <= outstanding_wcount_0 + 1;
       end 
-      if(!(_axi_wvalid && _axi_wready) && (_axi_bvalid && _axi_bready) && (outstanding_wreq_count_0 > 0)) begin
-        outstanding_wreq_count_0 <= outstanding_wreq_count_0 - 1;
+      if(!(_axi_wvalid && _axi_wready) && (_axi_bvalid && _axi_bready) && (outstanding_wcount_0 > 0)) begin
+        outstanding_wcount_0 <= outstanding_wcount_0 - 1;
       end 
       if((fsm == 0) && (_axi_arready || !_axi_arvalid)) begin
         _axi_araddr <= 1024;
@@ -305,7 +305,7 @@ module test;
       if(_axi_awvalid && !_axi_awready) begin
         _axi_awvalid <= _axi_awvalid;
       end 
-      if((fsm == 6) && (_axi_wready || !_axi_wvalid)) begin
+      if((fsm == 6) && ((outstanding_wcount_0 < 6) && (_axi_wready || !_axi_wvalid))) begin
         _axi_wdata <= wdata;
         _axi_wvalid <= 1;
         _axi_wstrb <= { 4{ 1'd1 } };
@@ -322,7 +322,7 @@ module test;
       if(_axi_awvalid && !_axi_awready) begin
         _axi_awvalid <= _axi_awvalid;
       end 
-      if((fsm == 8) && (_axi_wready || !_axi_wvalid)) begin
+      if((fsm == 8) && ((outstanding_wcount_0 < 6) && (_axi_wready || !_axi_wvalid))) begin
         _axi_wdata <= wdata;
         _axi_wvalid <= 1;
         _axi_wstrb <= { 4{ 1'd1 } };
@@ -399,7 +399,7 @@ module test;
           end 
         end
         fsm_6: begin
-          if(_axi_wready || !_axi_wvalid) begin
+          if((outstanding_wcount_0 < 6) && (_axi_wready || !_axi_wvalid)) begin
             fsm <= fsm_7;
           end 
         end
@@ -410,7 +410,7 @@ module test;
           end 
         end
         fsm_8: begin
-          if(_axi_wready || !_axi_wvalid) begin
+          if((outstanding_wcount_0 < 6) && (_axi_wready || !_axi_wvalid)) begin
             fsm <= fsm_9;
           end 
         end

@@ -260,7 +260,7 @@ module main
   assign myaxi_arprot = 0;
   assign myaxi_arqos = 0;
   assign myaxi_aruser = 0;
-  reg [32-1:0] outstanding_wreq_count_0;
+  reg [3-1:0] outstanding_wcount_0;
   assign myaxi_rready = 0;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
@@ -271,11 +271,11 @@ module main
   wire [32-1:0] _dataflow_counter_odata_1;
   wire _dataflow_counter_ovalid_1;
   wire _dataflow_counter_oready_1;
-  assign _dataflow_counter_oready_1 = (counter_1 > 0) && (myaxi_wready || !myaxi_wvalid) && _dataflow_tmp_all_valid_3;
+  assign _dataflow_counter_oready_1 = (counter_1 > 0) && (outstanding_wcount_0 < 6) && (myaxi_wready || !myaxi_wvalid) && _dataflow_tmp_all_valid_3;
   wire [1-1:0] _dataflow_eq_odata_7;
   wire _dataflow_eq_ovalid_7;
   wire _dataflow_eq_oready_7;
-  assign _dataflow_eq_oready_7 = (counter_1 > 0) && (myaxi_wready || !myaxi_wvalid) && _dataflow_tmp_all_valid_3;
+  assign _dataflow_eq_oready_7 = (counter_1 > 0) && (outstanding_wcount_0 < 6) && (myaxi_wready || !myaxi_wvalid) && _dataflow_tmp_all_valid_3;
   assign _dataflow_tmp_all_valid_3 = _dataflow_counter_ovalid_1 && _dataflow_eq_ovalid_7;
   reg _myaxi_cond_1_1;
   reg [32-1:0] sum;
@@ -283,7 +283,7 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
-      outstanding_wreq_count_0 <= 0;
+      outstanding_wcount_0 <= 0;
       myaxi_araddr <= 0;
       myaxi_arlen <= 0;
       myaxi_arvalid <= 0;
@@ -307,11 +307,11 @@ module main
         myaxi_wlast <= 0;
         last_2 <= 0;
       end 
-      if(myaxi_wlast && myaxi_wvalid && myaxi_wready && !(myaxi_bvalid && myaxi_bready)) begin
-        outstanding_wreq_count_0 <= outstanding_wreq_count_0 + 1;
+      if(myaxi_wlast && myaxi_wvalid && myaxi_wready && !(myaxi_bvalid && myaxi_bready) && (outstanding_wcount_0 < 7)) begin
+        outstanding_wcount_0 <= outstanding_wcount_0 + 1;
       end 
-      if(!(myaxi_wlast && myaxi_wvalid && myaxi_wready) && (myaxi_bvalid && myaxi_bready) && (outstanding_wreq_count_0 > 0)) begin
-        outstanding_wreq_count_0 <= outstanding_wreq_count_0 - 1;
+      if(!(myaxi_wlast && myaxi_wvalid && myaxi_wready) && (myaxi_bvalid && myaxi_bready) && (outstanding_wcount_0 > 0)) begin
+        outstanding_wcount_0 <= outstanding_wcount_0 - 1;
       end 
       myaxi_araddr <= 0;
       myaxi_arlen <= 0;
@@ -329,14 +329,14 @@ module main
       if(myaxi_awvalid && !myaxi_awready) begin
         myaxi_awvalid <= myaxi_awvalid;
       end 
-      if(_dataflow_eq_odata_7 && (_dataflow_counter_ovalid_1 && ((counter_1 > 0) && (myaxi_wready || !myaxi_wvalid) && _dataflow_tmp_all_valid_3)) && ((counter_1 > 0) && (myaxi_wready || !myaxi_wvalid) && (counter_1 > 0))) begin
+      if(_dataflow_eq_odata_7 && (_dataflow_counter_ovalid_1 && ((counter_1 > 0) && (outstanding_wcount_0 < 6) && (myaxi_wready || !myaxi_wvalid) && _dataflow_tmp_all_valid_3)) && ((counter_1 > 0) && (outstanding_wcount_0 < 6) && (myaxi_wready || !myaxi_wvalid) && (counter_1 > 0))) begin
         myaxi_wdata <= _dataflow_counter_odata_1;
         myaxi_wvalid <= 1;
         myaxi_wlast <= 0;
         myaxi_wstrb <= { 4{ 1'd1 } };
         counter_1 <= counter_1 - 1;
       end 
-      if(_dataflow_eq_odata_7 && (_dataflow_counter_ovalid_1 && ((counter_1 > 0) && (myaxi_wready || !myaxi_wvalid) && _dataflow_tmp_all_valid_3)) && ((counter_1 > 0) && (myaxi_wready || !myaxi_wvalid) && (counter_1 > 0)) && (counter_1 == 1)) begin
+      if(_dataflow_eq_odata_7 && (_dataflow_counter_ovalid_1 && ((counter_1 > 0) && (outstanding_wcount_0 < 6) && (myaxi_wready || !myaxi_wvalid) && _dataflow_tmp_all_valid_3)) && ((counter_1 > 0) && (outstanding_wcount_0 < 6) && (myaxi_wready || !myaxi_wvalid) && (counter_1 > 0)) && (counter_1 == 1)) begin
         myaxi_wlast <= 1;
         last_2 <= 1;
       end 

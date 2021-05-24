@@ -297,7 +297,7 @@ module test;
   assign _saxi_bready = 1;
   assign _saxi_arcache = 3;
   assign _saxi_arprot = 0;
-  reg [32-1:0] outstanding_wreq_count_9;
+  reg [3-1:0] outstanding_wcount_9;
   wire [32-1:0] _tmp_10;
   assign _tmp_10 = _saxi_awaddr;
 
@@ -463,7 +463,7 @@ module test;
     _saxi_wvalid = 0;
     _saxi_araddr = 0;
     _saxi_arvalid = 0;
-    outstanding_wreq_count_9 = 0;
+    outstanding_wcount_9 = 0;
     counter = 0;
     th_ctrl = th_ctrl_init;
     _th_ctrl_i_11 = 0;
@@ -742,7 +742,7 @@ module test;
 
   always @(posedge uut_CLK) begin
     if(uut_RST) begin
-      outstanding_wreq_count_9 <= 0;
+      outstanding_wcount_9 <= 0;
       _saxi_awaddr <= 0;
       _saxi_awvalid <= 0;
       __saxi_cond_0_1 <= 0;
@@ -791,11 +791,11 @@ module test;
       if(__saxi_cond_9_1) begin
         _saxi_arvalid <= 0;
       end 
-      if(_saxi_wvalid && _saxi_wready && !(_saxi_bvalid && _saxi_bready)) begin
-        outstanding_wreq_count_9 <= outstanding_wreq_count_9 + 1;
+      if(_saxi_wvalid && _saxi_wready && !(_saxi_bvalid && _saxi_bready) && (outstanding_wcount_9 < 7)) begin
+        outstanding_wcount_9 <= outstanding_wcount_9 + 1;
       end 
-      if(!(_saxi_wvalid && _saxi_wready) && (_saxi_bvalid && _saxi_bready) && (outstanding_wreq_count_9 > 0)) begin
-        outstanding_wreq_count_9 <= outstanding_wreq_count_9 - 1;
+      if(!(_saxi_wvalid && _saxi_wready) && (_saxi_bvalid && _saxi_bready) && (outstanding_wcount_9 > 0)) begin
+        outstanding_wcount_9 <= outstanding_wcount_9 - 1;
       end 
       if((th_ctrl == 6) && (_saxi_awready || !_saxi_awvalid)) begin
         _saxi_awaddr <= _th_ctrl_awaddr_12;
@@ -805,7 +805,7 @@ module test;
       if(_saxi_awvalid && !_saxi_awready) begin
         _saxi_awvalid <= _saxi_awvalid;
       end 
-      if((th_ctrl == 7) && (_saxi_wready || !_saxi_wvalid)) begin
+      if((th_ctrl == 7) && ((outstanding_wcount_9 < 6) && (_saxi_wready || !_saxi_wvalid))) begin
         _saxi_wdata <= 4096;
         _saxi_wvalid <= 1;
         _saxi_wstrb <= { 4{ 1'd1 } };
@@ -822,7 +822,7 @@ module test;
       if(_saxi_awvalid && !_saxi_awready) begin
         _saxi_awvalid <= _saxi_awvalid;
       end 
-      if((th_ctrl == 12) && (_saxi_wready || !_saxi_wvalid)) begin
+      if((th_ctrl == 12) && ((outstanding_wcount_9 < 6) && (_saxi_wready || !_saxi_wvalid))) begin
         _saxi_wdata <= _th_ctrl_src_offset_13;
         _saxi_wvalid <= 1;
         _saxi_wstrb <= { 4{ 1'd1 } };
@@ -839,7 +839,7 @@ module test;
       if(_saxi_awvalid && !_saxi_awready) begin
         _saxi_awvalid <= _saxi_awvalid;
       end 
-      if((th_ctrl == 17) && (_saxi_wready || !_saxi_wvalid)) begin
+      if((th_ctrl == 17) && ((outstanding_wcount_9 < 6) && (_saxi_wready || !_saxi_wvalid))) begin
         _saxi_wdata <= _th_ctrl_dst_offset_14;
         _saxi_wvalid <= 1;
         _saxi_wstrb <= { 4{ 1'd1 } };
@@ -856,7 +856,7 @@ module test;
       if(_saxi_awvalid && !_saxi_awready) begin
         _saxi_awvalid <= _saxi_awvalid;
       end 
-      if((th_ctrl == 22) && (_saxi_wready || !_saxi_wvalid)) begin
+      if((th_ctrl == 22) && ((outstanding_wcount_9 < 6) && (_saxi_wready || !_saxi_wvalid))) begin
         _saxi_wdata <= 1;
         _saxi_wvalid <= 1;
         _saxi_wstrb <= { 4{ 1'd1 } };
@@ -978,7 +978,7 @@ module test;
           end 
         end
         th_ctrl_7: begin
-          if(_saxi_wready || !_saxi_wvalid) begin
+          if((outstanding_wcount_9 < 6) && (_saxi_wready || !_saxi_wvalid)) begin
             th_ctrl <= th_ctrl_8;
           end 
         end
@@ -1000,7 +1000,7 @@ module test;
           end 
         end
         th_ctrl_12: begin
-          if(_saxi_wready || !_saxi_wvalid) begin
+          if((outstanding_wcount_9 < 6) && (_saxi_wready || !_saxi_wvalid)) begin
             th_ctrl <= th_ctrl_13;
           end 
         end
@@ -1022,7 +1022,7 @@ module test;
           end 
         end
         th_ctrl_17: begin
-          if(_saxi_wready || !_saxi_wvalid) begin
+          if((outstanding_wcount_9 < 6) && (_saxi_wready || !_saxi_wvalid)) begin
             th_ctrl <= th_ctrl_18;
           end 
         end
@@ -1044,7 +1044,7 @@ module test;
           end 
         end
         th_ctrl_22: begin
-          if(_saxi_wready || !_saxi_wvalid) begin
+          if((outstanding_wcount_9 < 6) && (_saxi_wready || !_saxi_wvalid)) begin
             th_ctrl <= th_ctrl_23;
           end 
         end
@@ -1213,7 +1213,7 @@ module memcpy
   assign maxi_arprot = 0;
   assign maxi_arqos = 0;
   assign maxi_aruser = 0;
-  reg [32-1:0] outstanding_wreq_count_0;
+  reg [3-1:0] outstanding_wcount_0;
   reg _maxi_read_start;
   reg [8-1:0] _maxi_read_op_sel;
   reg [32-1:0] _maxi_read_local_addr;
@@ -1376,7 +1376,7 @@ module memcpy
   wire [32-1:0] _dataflow__variable_odata_1;
   wire _dataflow__variable_ovalid_1;
   wire _dataflow__variable_oready_1;
-  assign _dataflow__variable_oready_1 = (_maxi_write_fsm == 3) && (_maxi_write_op_sel == 1) && ((counter_30 > 0) && (maxi_wready || !maxi_wvalid));
+  assign _dataflow__variable_oready_1 = (_maxi_write_fsm == 3) && (_maxi_write_op_sel == 1) && ((counter_30 > 0) && (outstanding_wcount_0 < 6) && (maxi_wready || !maxi_wvalid));
   reg _maxi_cond_2_1;
   assign _maxi_write_data_done = (last_31 && maxi_wvalid && maxi_wready)? 1 : 0;
   reg axim_flag_32;
@@ -1459,7 +1459,7 @@ module memcpy
 
   always @(posedge CLK) begin
     if(RST) begin
-      outstanding_wreq_count_0 <= 0;
+      outstanding_wcount_0 <= 0;
       _maxi_read_start <= 0;
       _maxi_write_start <= 0;
       _maxi_ram_a_0_read_start <= 0;
@@ -1514,11 +1514,11 @@ module memcpy
         maxi_wlast <= 0;
         last_31 <= 0;
       end 
-      if(maxi_wlast && maxi_wvalid && maxi_wready && !(maxi_bvalid && maxi_bready)) begin
-        outstanding_wreq_count_0 <= outstanding_wreq_count_0 + 1;
+      if(maxi_wlast && maxi_wvalid && maxi_wready && !(maxi_bvalid && maxi_bready) && (outstanding_wcount_0 < 7)) begin
+        outstanding_wcount_0 <= outstanding_wcount_0 + 1;
       end 
-      if(!(maxi_wlast && maxi_wvalid && maxi_wready) && (maxi_bvalid && maxi_bready) && (outstanding_wreq_count_0 > 0)) begin
-        outstanding_wreq_count_0 <= outstanding_wreq_count_0 - 1;
+      if(!(maxi_wlast && maxi_wvalid && maxi_wready) && (maxi_bvalid && maxi_bready) && (outstanding_wcount_0 > 0)) begin
+        outstanding_wcount_0 <= outstanding_wcount_0 - 1;
       end 
       _maxi_read_start <= 0;
       _maxi_write_start <= 0;
@@ -1591,14 +1591,14 @@ module memcpy
       if(maxi_awvalid && !maxi_awready) begin
         maxi_awvalid <= maxi_awvalid;
       end 
-      if(_dataflow__variable_ovalid_1 && ((_maxi_write_fsm == 3) && (_maxi_write_op_sel == 1) && ((counter_30 > 0) && (maxi_wready || !maxi_wvalid))) && ((counter_30 > 0) && (maxi_wready || !maxi_wvalid) && (counter_30 > 0))) begin
+      if(_dataflow__variable_ovalid_1 && ((_maxi_write_fsm == 3) && (_maxi_write_op_sel == 1) && ((counter_30 > 0) && (outstanding_wcount_0 < 6) && (maxi_wready || !maxi_wvalid))) && ((counter_30 > 0) && (outstanding_wcount_0 < 6) && (maxi_wready || !maxi_wvalid) && (counter_30 > 0))) begin
         maxi_wdata <= _dataflow__variable_odata_1;
         maxi_wvalid <= 1;
         maxi_wlast <= 0;
         maxi_wstrb <= { 4{ 1'd1 } };
         counter_30 <= counter_30 - 1;
       end 
-      if(_dataflow__variable_ovalid_1 && ((_maxi_write_fsm == 3) && (_maxi_write_op_sel == 1) && ((counter_30 > 0) && (maxi_wready || !maxi_wvalid))) && ((counter_30 > 0) && (maxi_wready || !maxi_wvalid) && (counter_30 > 0)) && (counter_30 == 1)) begin
+      if(_dataflow__variable_ovalid_1 && ((_maxi_write_fsm == 3) && (_maxi_write_op_sel == 1) && ((counter_30 > 0) && (outstanding_wcount_0 < 6) && (maxi_wready || !maxi_wvalid))) && ((counter_30 > 0) && (outstanding_wcount_0 < 6) && (maxi_wready || !maxi_wvalid) && (counter_30 > 0)) && (counter_30 == 1)) begin
         maxi_wlast <= 1;
         last_31 <= 1;
       end 
@@ -2013,7 +2013,7 @@ module memcpy
           th_memcpy <= th_memcpy_23;
         end
         th_memcpy_23: begin
-          if(_maxi_write_idle && (outstanding_wreq_count_0 == 0)) begin
+          if(_maxi_write_idle && (outstanding_wcount_0 == 0)) begin
             th_memcpy <= th_memcpy_24;
           end 
         end
