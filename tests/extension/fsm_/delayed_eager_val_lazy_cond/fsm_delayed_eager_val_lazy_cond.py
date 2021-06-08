@@ -4,9 +4,11 @@ import sys
 import os
 
 # the next line can be removed after installation
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
 
 from veriloggen import *
+
 
 def mkLed():
     m = Module('blinkled')
@@ -19,9 +21,9 @@ def mkLed():
     down = m.Wire('down')
     m.Assign(up(1))
     m.Assign(down(0))
-    
+
     fsm = FSM(m, 'fsm', clk, rst)
-    
+
     for i in range(4):
         fsm.goto_next()
 
@@ -37,7 +39,7 @@ def mkLed():
         valid(down)
     )
     fsm.If(c).goto_next()
-    
+
     for i in range(8):
         fsm.goto_next()
 
@@ -54,10 +56,11 @@ def mkLed():
             valid(down)
         )
         fsm.If(c).goto_next()
-    
-    fsm.make_always(reset=[count.reset()], body=[count(count+1)])
+
+    fsm.make_always(reset=[count.reset()], body=[count(count + 1)])
 
     return m
+
 
 def mkTest():
     m = Module('test')
@@ -68,7 +71,7 @@ def mkTest():
     uut = m.Instance(mkLed(), 'uut',
                      ports=(('CLK', clk), ('RST', rst), ('valid', valid)))
 
-    simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, period=100)
 
@@ -78,7 +81,8 @@ def mkTest():
     )
 
     return m
-    
+
+
 if __name__ == '__main__':
     test = mkTest()
     verilog = test.to_verilog('tmp.v')

@@ -56,7 +56,7 @@ def mkTest(numports=8):
     reset_stmt.append(xdata(0))
     reset_stmt.append(ydata(0))
 
-    simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, reset_stmt, period=100)
 

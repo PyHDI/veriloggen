@@ -54,7 +54,7 @@ def mkTest():
     uut = m.Instance(mkLed(), 'uut',
                      ports=(('CLK', clk), ('RST', rst), ('valid', valid)))
 
-    simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, period=100)
 

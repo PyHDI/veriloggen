@@ -32,12 +32,6 @@ module test
   reg end_of_sim;
 
   initial begin
-    $dumpfile("uut.vcd");
-    $dumpvars(0, uut);
-  end
-
-
-  initial begin
     CLK = 0;
     forever begin
       #5 CLK = !CLK;

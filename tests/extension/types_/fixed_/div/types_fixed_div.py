@@ -62,7 +62,7 @@ def mkTest():
     clk = uut['CLK']
     rst = uut['RST']
 
-    simulation.setup_waveform(m, uut, m.get_vars())
+    # simulation.setup_waveform(m, uut, m.get_vars())
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
@@ -72,6 +72,7 @@ def mkTest():
     )
 
     return m
+
 
 if __name__ == '__main__':
     test = mkTest()

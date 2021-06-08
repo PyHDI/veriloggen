@@ -20,7 +20,7 @@ def mkMain(n=128, datawidth=32, numports=2):
 
     width = 4
     addr = m.Reg('addr', width, initval=0)
-    values = [ i * i for i in range(2 ** width) ]
+    values = [i * i for i in range(2 ** width)]
     enable = m.Reg('enable', initval=0)
 
     myrom = rom.SyncROM(m, 'myrom', clk, addr, values, datawidth=8, enable=enable)
@@ -55,7 +55,7 @@ def mkTest():
                      params=m.connect_params(main),
                      ports=m.connect_ports(main))
 
-    simulation.setup_waveform(m, uut, m.get_vars())
+    # simulation.setup_waveform(m, uut, m.get_vars())
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
@@ -65,6 +65,7 @@ def mkTest():
     )
 
     return m
+
 
 if __name__ == '__main__':
     test = mkTest()

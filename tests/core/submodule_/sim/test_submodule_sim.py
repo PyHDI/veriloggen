@@ -26,12 +26,6 @@ module test;
 
 
   initial begin
-    $dumpfile("uut.vcd");
-    $dumpvars(0, top, top_CLK, top_RST, top_LED, top_inst_blinkled_dummy_out0, top_inst_blinkled_dummy_in0);
-  end
-
-
-  initial begin
     top_CLK = 0;
     forever begin
       #5 top_CLK = !top_CLK;
