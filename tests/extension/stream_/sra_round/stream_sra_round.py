@@ -63,7 +63,7 @@ def mkTest(numports=8):
 
     end_of_sim = m.Reg('end_of_sim', initval=0)
 
-    simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, reset_stmt, period=100)
 

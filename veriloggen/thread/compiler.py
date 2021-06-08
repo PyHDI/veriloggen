@@ -128,7 +128,7 @@ class CompileVisitor(ast.NodeVisitor):
 
     # -------------------------------------------------------------------------
     def visit_FunctionDef(self, node):
-        self.scope.addFunction(node)
+        raise NotImplementedError('closure is not supported.')
 
     def visit_Assign(self, node):
         if self.skip():
@@ -753,12 +753,10 @@ class CompileVisitor(ast.NodeVisitor):
 
     # ------------------------------------------------------------------
     def visit_Nonlocal(self, node):
-        for name in node.names:
-            self.addNonlocal(name)
+        raise NotImplementedError('nonlocal is not supported.')
 
     def visit_Global(self, node):
-        for name in node.names:
-            self.addGlobal(name)
+        raise NotImplementedError('global is not supported.')
 
     def visit_Pass(self, node):
         pass
@@ -1132,12 +1130,6 @@ class CompileVisitor(ast.NodeVisitor):
         if name in global_objects:
             return global_objects[name]
         return None
-
-    def addNonlocal(self, name):
-        self.scope.addNonlocal(name)
-
-    def addGlobal(self, name):
-        self.scope.addGlobal(name)
 
     def getFunction(self, name):
         func = self.scope.searchFunction(name)

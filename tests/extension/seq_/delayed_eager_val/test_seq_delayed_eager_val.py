@@ -34,12 +34,6 @@ module test;
 
 
   initial begin
-    $dumpfile("uut.vcd");
-    $dumpvars(0, uut);
-  end
-
-
-  initial begin
     CLK = 0;
     forever begin
       #5 CLK = !CLK;
@@ -335,6 +329,7 @@ module blinkled
 
 endmodule
 """
+
 
 def test():
     veriloggen.reset()

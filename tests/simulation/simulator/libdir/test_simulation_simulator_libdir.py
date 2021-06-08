@@ -24,12 +24,6 @@ module test;
 
 
   initial begin
-    $dumpfile("uut.vcd");
-    $dumpvars(0, uut, uut_CLK, uut_RST, uut_LED);
-  end
-
-
-  initial begin
     uut_CLK = 0;
     forever begin
       #5 uut_CLK = !uut_CLK;
@@ -81,7 +75,6 @@ endmodule
 """
 
 expected_rslt = """\
-VCD info: dumpfile uut.vcd opened for output.
 LED:  x
 LED:  x
 LED:  x

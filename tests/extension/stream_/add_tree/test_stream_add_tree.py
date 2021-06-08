@@ -25,12 +25,6 @@ module test;
   reg reset_done;
 
   initial begin
-    $dumpfile("uut.vcd");
-    $dumpvars(0, uut);
-  end
-
-
-  initial begin
     CLK = 0;
     forever begin
       #5 CLK = !CLK;
