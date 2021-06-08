@@ -22,7 +22,6 @@ class ScopeFrameList(object):
         self.scopeframes = []
         self.scopeframes.append(ScopeFrame(ScopeName(('_',))))
         self.current = self.scopeframes[0]
-        self.globalframe = self.scopeframes[0]
         self.previousframes = OrderedDict()
         self.previousframes[self.current] = None
         self.nextframes = OrderedDict()
@@ -64,65 +63,45 @@ class ScopeFrameList(object):
             targ = self.previousframes[targ]
         return None
 
-    def addNonlocal(self, name):
-        if self.current is None:
-            return None
-        targ = self.current
-        while targ is not None:
-            if targ.ftype == 'call':
-                targ.addNonlocal(name)
-                break
-            targ = self.previousframes[targ]
-        return None
-
-    def addGlobal(self, name):
-        if self.current is None:
-            return None
-        targ = self.current
-        while targ is not None:
-            if targ.ftype == 'call':
-                targ.addGlobal(name)
-                break
-            targ = self.previousframes[targ]
-        return None
-
     def addFunction(self, func):
         self.current.addFunction(func)
 
     def searchVariable(self, name, store=False):
         if self.current is None:
             return None
+
         targ = self.current
-        is_global = False
+
         while targ is not None:
             ret = targ.searchVariable(name)
             if ret is not None:
                 return ret
+
+            ret = targ.searchFunction(name)
+            if ret is not None:
+                return ret
+
             if targ.ftype == 'call':
-                ret = targ.searchNonlocal(name)
-                if ret:
-                    continue
-                ret = targ.searchGlobal(name)
-                if ret:
-                    is_global = True
                 break
+
             targ = self.previousframes[targ]
-        if not store or is_global:
-            ret = self.globalframe.searchVariable(name)
-            return ret
+
         return None
 
     def searchFunction(self, name):
         if self.current is None:
             return None
+
         targ = self.current
+
         while targ is not None:
             ret = targ.searchFunction(name)
-            if ret:
+            if ret is not None:
                 return ret
+
             targ = self.previousframes[targ]
-        ret = self.globalframe.searchFunction(name)
-        return ret
+
+        return None
 
     def addBind(self, state, dst, var, cond=None):
         if dst not in self.binds:
@@ -239,8 +218,6 @@ class ScopeFrame(object):
         self.name = name
         self.ftype = ftype
         self.variables = OrderedDict()
-        self.nonlocals = []
-        self.globals = []
         self.functions = OrderedDict()
         self.unresolved_break = []
         self.unresolved_continue = []
@@ -253,12 +230,6 @@ class ScopeFrame(object):
     def addVariable(self, name, var):
         self.variables[name] = var
 
-    def addNonlocal(self, name):
-        self.nonlocals.append(name)
-
-    def addGlobal(self, name):
-        self.globals.append(name)
-
     def addFunction(self, func):
         name = func.name
         self.functions[name] = func
@@ -268,16 +239,6 @@ class ScopeFrame(object):
             return None
         return self.variables[name]
 
-    def searchNonlocal(self, name):
-        if name not in self.nonlocals:
-            return None
-        return name
-
-    def searchGlobal(self, name):
-        if name not in self.globals:
-            return None
-        return name
-
     def searchFunction(self, name):
         if name not in self.functions:
             return None
@@ -286,12 +247,6 @@ class ScopeFrame(object):
     # getter to all-inclusive information
     def getVariables(self):
         return tuple(self.variables)
-
-    def getNonlocals(self):
-        return tuple(self.nonlocals)
-
-    def getGlobals(self):
-        return tuple(self.globals)
 
     def getFunctions(self):
         return self.functions
