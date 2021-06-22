@@ -90,6 +90,7 @@ class Seq(vtypes.VeriloggenNode):
         self.last_cond = []
         self.last_kwargs = {}
         self.last_if_statement = None
+        self.next_else = False
         self.elif_cond = None
         self.next_kwargs = {}
 
@@ -100,7 +101,7 @@ class Seq(vtypes.VeriloggenNode):
 
     # -------------------------------------------------------------------------
     def add(self, *statement, **kwargs):
-        """ Adding a new assignment. This method is usually called via __call__(). """
+        """ Adding new assignments. This method is usually called via __call__(). """
         kwargs.update(self.next_kwargs)
         self.last_kwargs = kwargs
         self._clear_next_kwargs()
@@ -114,6 +115,14 @@ class Seq(vtypes.VeriloggenNode):
             next_call(*statement)
             self.last_if_statement = next_call
             self._add_dst_var(statement)
+            self._clear_elif_cond()
+            return self
+
+        if self.next_else and not has_args:
+            next_call = self.last_if_statement.Else
+            next_call(*statement)
+            self._add_dst_var(statement)
+            self._clear_last_if_statement()
             self._clear_elif_cond()
             return self
 
@@ -202,7 +211,8 @@ class Seq(vtypes.VeriloggenNode):
 
         return self
 
-    def Else(self, *statement):
+    @property
+    def Else(self):
         self._clear_elif_cond()
 
         if len(self.last_cond) == 0:
@@ -215,24 +225,17 @@ class Seq(vtypes.VeriloggenNode):
         # Else statement is separated.
         if 'delay' in self.last_kwargs and self.last_kwargs['delay'] > 0:
             prev_cond = self.last_cond
-            ret = self.Then()(*statement)
-            self.last_cond = prev_cond
-            return ret
-
-        # if there is additional attribute, Else statement is separated.
-        has_args = not (len(self.next_kwargs) == 0 or  # has no args
-                        (len(self.next_kwargs) == 1 and 'cond' in self.next_kwargs))  # has only 'cond'
-        if has_args:
-            prev_cond = self.last_cond
-            ret = self.Then()(*statement)
+            ret = self.Then()
             self.last_cond = prev_cond
             return ret
 
         if not isinstance(self.last_if_statement, vtypes.If):
             raise ValueError("Last if-statement is not If")
 
-        self.last_if_statement.Else(*statement)
-        self._add_dst_var(statement)
+        self.next_else = True
+
+        cond = self._make_cond(self.last_cond)
+        self.next_kwargs['cond'] = cond
 
         return self
 
@@ -246,8 +249,8 @@ class Seq(vtypes.VeriloggenNode):
         self.last_cond.append(vtypes.Not(old))
         self.last_cond.append(cond)
 
-        # if the true-statement has delay attributes, Else statement is
-        # separated.
+        # if the true-statement has delay attributes,
+        # Else statement is separated.
         if 'delay' in self.last_kwargs and self.last_kwargs['delay'] > 0:
             prev_cond = self.last_cond
             ret = self.Then()
@@ -716,6 +719,7 @@ class Seq(vtypes.VeriloggenNode):
 
     def _clear_last_if_statement(self):
         self.last_if_statement = None
+        self.next_else = False
 
     def _clear_last_cond(self):
         self.last_cond = []

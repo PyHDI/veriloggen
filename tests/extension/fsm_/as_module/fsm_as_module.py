@@ -33,7 +33,8 @@ def mkLed():
     fsm.goto_next()
 
     # jump by using label "init"
-    fsm.goto(dst=init, cond=(count < 1024), else_dst=fsm.next).inc()
+    fsm.goto(dst=init, cond=(count < 1024), else_dst=fsm.next)
+    fsm.inc()
 
     fsm(led(led + 1))
     # jump by using label "here"

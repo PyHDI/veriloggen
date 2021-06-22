@@ -23,7 +23,8 @@ def add_if_else(fsm, ifelse):
     index_merge = fsm.current + len(ifelse.true_statements) + len(ifelse.false_statements) + 1
     index_true = fsm.current + 1 if ifelse.true_statements else index_merge
     
-    fsm.goto( dst=index_true, cond=ifelse.condition, else_dst=index_else ).inc()
+    fsm.goto( dst=index_true, cond=ifelse.condition, else_dst=index_else )
+    fsm.inc()
 
     # then
     for i, s in enumerate(ifelse.true_statements):
@@ -32,7 +33,8 @@ def add_if_else(fsm, ifelse):
             fsm.goto_next()
         else:
             fsm( *s )
-            fsm.goto(index_merge).inc()
+            fsm.goto(index_merge)
+            fsm.inc()
 
     # else
     for i, s in enumerate(ifelse.false_statements):
