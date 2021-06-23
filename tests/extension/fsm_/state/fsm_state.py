@@ -35,29 +35,25 @@ def mkLed():
 
     s0.If(counter == 10)(
         valid(0)
-    )
-    s0.Else(
+    ).Else(
         valid(1)
     )
 
     s1.If(counter == 20)(
         valid(0)
-    )
-    s1.Else(
+    ).Else(
         valid(1)
     )
 
     s2.If(counter == 30)(
         valid(0)
-    )
-    s2.Else(
+    ).Else(
         valid(1)
     )
 
     s0_.If(counter == 40)(
         valid(0)
-    )
-    s0_.Else(
+    ).Else(
         valid(1)
     )
 
