@@ -43,7 +43,7 @@ from .simulation import simulation
 
 # Abstract Extension
 from .seq.seq import Seq, TmpSeq, make_condition
-from .fsm.fsm import FSM, TmpFSM, State
+from .fsm.fsm import FSM, TmpFSM
 from .pipeline.pipeline import Pipeline
 
 # Extension reset

@@ -19,13 +19,13 @@ def mkLed():
 
     fsm = FSM(m, 'fsm', clk, rst)
 
-    s0 = fsm.init  # -> State(fsm, 0)
-    s1 = s0.If(valid).goto_next()  # -> State(fsm, 1)
-    s2 = s1.If(valid).goto_next()  # -> State(fsm, 2)
-    s3 = s2.If(counter[0] == 0).goto(s2.next)  # -> State(fsm, 3)
-    s1_ = s2.Elif(counter[1] == 1).goto(s1)  # -> State(fsm, 1)
-    s2_ = s2.Else.goto(s2)  # -> State(fsm, 2)
-    s0_ = s3.goto(s0)  # -> State(fsm, 0)
+    s0 = fsm.init
+    s1 = fsm.State(s0).If(valid).goto_next()
+    s2 = fsm.State(s1).If(valid).goto_next()
+    s3 = fsm.State(s2).If(counter[0] == 0).goto(fsm.next)
+    s1_ = fsm.State(s2).Elif(counter[1] == 1).goto(s1)
+    s2_ = fsm.State(s2).Else.goto(s2)
+    s0_ = fsm.State(s3).goto(s0)
 
     fsm.Always.If(counter <= 2 ** 8 - 1)(
         counter.inc()
@@ -33,25 +33,25 @@ def mkLed():
         counter(0)
     )
 
-    s0.If(counter == 10)(
+    fsm.State(s0).If(counter == 10)(
         valid(0)
     ).Else(
         valid(1)
     )
 
-    s1.If(counter == 20)(
+    fsm.State(s1).If(counter == 20)(
         valid(0)
     ).Else(
         valid(1)
     )
 
-    s2.If(counter == 30)(
+    fsm.State(s2).If(counter == 30)(
         valid(0)
     ).Else(
         valid(1)
     )
 
-    s0_.If(counter == 40)(
+    fsm.State(s0_).If(counter == 40)(
         valid(0)
     ).Else(
         valid(1)

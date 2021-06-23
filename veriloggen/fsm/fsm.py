@@ -86,9 +86,6 @@ class FSM(vtypes.VeriloggenNode):
 
     # -------------------------------------------------------------------------
     def goto(self, dst, cond=None, else_dst=None):
-        if isinstance(dst, State):
-            dst = dst.index
-
         if cond is None and 'cond' in self.next_kwargs:
             cond = self.next_kwargs['cond']
 
@@ -108,7 +105,7 @@ class FSM(vtypes.VeriloggenNode):
             src = index
 
         self._go(src, dst, cond, else_dst)
-        return State(self, dst)
+        return dst
 
     def goto_init(self, cond=None):
         if cond is None and 'cond' in self.next_kwargs:
@@ -131,7 +128,7 @@ class FSM(vtypes.VeriloggenNode):
 
         dst = 0
         self._go(src, dst, cond)
-        return State(self, dst)
+        return dst
 
     def goto_next(self, cond=None):
         if cond is None and 'cond' in self.next_kwargs:
@@ -155,15 +152,9 @@ class FSM(vtypes.VeriloggenNode):
         dst = src + 1
         self._go(src, dst, cond=cond)
         self.inc()
-        return State(self, dst)
+        return dst
 
     def goto_from(self, src, dst, cond=None, else_dst=None):
-        if isinstance(src, State):
-            src = src.index
-
-        if isinstance(dst, State):
-            dst = dst.index
-
         if cond is None and 'cond' in self.next_kwargs:
             cond = self.next_kwargs['cond']
 
@@ -173,7 +164,7 @@ class FSM(vtypes.VeriloggenNode):
         # self._clear_elif_cond()
 
         self._go(src, dst, cond, else_dst)
-        return State(self, dst)
+        return dst
 
     def inc(self):
         return self._set_index(None)
@@ -300,18 +291,18 @@ class FSM(vtypes.VeriloggenNode):
 
         return self
 
+    def Then(self):
+        cond = self._make_cond(self.last_cond)
+        self._clear_last_cond()
+        self.If(cond)
+        return self
+
     def Delay(self, delay):
         self.next_kwargs['delay'] = delay
         return self
 
     def Keep(self, keep):
         self.next_kwargs['keep'] = keep
-        return self
-
-    def Then(self):
-        cond = self._make_cond(self.last_cond)
-        self._clear_last_cond()
-        self.If(cond)
         return self
 
     def LazyCond(self, value=True):
@@ -325,6 +316,11 @@ class FSM(vtypes.VeriloggenNode):
     def When(self, index):
         self.next_kwargs['index'] = index
         return self
+
+    def State(self, index=None):
+        if index is None:
+            index = fsm.current
+        return State(self, index)
 
     def Clear(self):
         self._clear_next_kwargs()
@@ -340,15 +336,15 @@ class FSM(vtypes.VeriloggenNode):
 
     @property
     def init(self):
-        return State(self, 0)
+        return 0
 
     @property
     def current(self):
-        return State(self, self.state_count)
+        return self.state_count
 
     @property
     def next(self):
-        return State(self, self.state_count + 1)
+        return self.state_count + 1
 
     @property
     def current_delay(self):

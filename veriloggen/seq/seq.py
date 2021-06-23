@@ -267,18 +267,18 @@ class Seq(vtypes.VeriloggenNode):
 
         return self
 
+    def Then(self):
+        cond = self._make_cond(self.last_cond)
+        self._clear_last_cond()
+        self.If(cond)
+        return self
+
     def Delay(self, delay):
         self.next_kwargs['delay'] = delay
         return self
 
     def Keep(self, keep):
         self.next_kwargs['keep'] = keep
-        return self
-
-    def Then(self):
-        cond = self._make_cond(self.last_cond)
-        self._clear_last_cond()
-        self.If(cond)
         return self
 
     def LazyCond(self, value=True):
