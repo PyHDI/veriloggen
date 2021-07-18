@@ -4,9 +4,11 @@ import sys
 import os
 
 # the next line can be removed after installation
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
 
 from veriloggen import *
+
 
 def mkLed():
     m = Module('blinkled')
@@ -20,26 +22,28 @@ def mkLed():
     # get the initial index (= 0)
     init = fsm.current
 
-    fsm( count(count + 1) )
+    fsm(count(count + 1))
     fsm.goto_next()
-    fsm( count(count + 2) )
+    fsm(count(count + 2))
     fsm.goto_next()
-    
+
     # get the current index (= 2)
     here = fsm.current
-    fsm( count(count + 3) )
+    fsm(count(count + 3))
     fsm.goto_next()
 
     # jump by using label "init"
-    fsm.goto( dst=init, cond=(count < 1024), else_dst=fsm.next ).inc()
-    
-    fsm( led(led + 1) )
+    fsm.goto(dst=init, cond=(count < 1024), else_dst=fsm.next)
+    fsm.inc()
+
+    fsm(led(led + 1))
     # jump by using label "here"
     fsm.goto(here)
 
     fsm.make_always()
 
     return m
+
 
 if __name__ == '__main__':
     led = mkLed()
