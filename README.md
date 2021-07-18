@@ -2,6 +2,7 @@ Veriloggen
 ==============================
 
 [![CI](https://github.com/PyHDI/veriloggen/actions/workflows/main.yml/badge.svg?branch=develop)](https://github.com/PyHDI/veriloggen/actions/workflows/main.yml)
+[![Build Status](https://www.travis-ci.com/PyHDI/veriloggen.svg?branch=develop)](https://www.travis-ci.com/PyHDI/veriloggen)
 
 A Mixed-Paradigm Hardware Construction Framework
 
