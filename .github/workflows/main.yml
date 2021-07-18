@@ -1,5 +1,3 @@
-# This is a basic workflow to help you get started with Actions
-
 name: CI
 
 # Controls when the workflow will run
@@ -39,7 +37,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest pytest-pythonpath jinja2 pyverilog numpy
+          pip install pytest pytest-pythonpath pyverilog numpy
       # Run pytest
       - name: Test with pytest
         run: |
