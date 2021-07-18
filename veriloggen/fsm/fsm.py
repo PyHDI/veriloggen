@@ -75,6 +75,7 @@ class FSM(vtypes.VeriloggenNode):
         self.last_cond = []
         self.last_kwargs = {}
         self.last_if_statement = None
+        self.next_else = False
         self.elif_cond = None
         self.next_kwargs = {}
 
@@ -87,65 +88,114 @@ class FSM(vtypes.VeriloggenNode):
     def goto(self, dst, cond=None, else_dst=None):
         if cond is None and 'cond' in self.next_kwargs:
             cond = self.next_kwargs['cond']
-        self._clear_next_kwargs()
-        self._clear_last_if_statement()
-        self._clear_last_cond()
 
-        src = self.current
-        return self._go(src, dst, cond, else_dst)
+        if 'index' in self.next_kwargs:
+            index = self.next_kwargs['index']
+        else:
+            index = None
+
+        self._clear_next_kwargs()
+        # self._clear_last_if_statement()
+        # self._clear_last_cond()
+        # self._clear_elif_cond()
+
+        if index is None:
+            src = self.current
+        else:
+            src = index
+
+        self._go(src, dst, cond, else_dst)
+        return dst
 
     def goto_init(self, cond=None):
         if cond is None and 'cond' in self.next_kwargs:
             cond = self.next_kwargs['cond']
-        self._clear_next_kwargs()
-        self._clear_last_if_statement()
-        self._clear_last_cond()
 
-        src = self.current
+        if 'index' in self.next_kwargs:
+            index = self.next_kwargs['index']
+        else:
+            index = None
+
+        self._clear_next_kwargs()
+        # self._clear_last_if_statement()
+        # self._clear_last_cond()
+        # self._clear_elif_cond()
+
+        if index is None:
+            src = self.current
+        else:
+            src = index
+
         dst = 0
-        return self._go(src, dst, cond)
+        self._go(src, dst, cond)
+        return dst
 
     def goto_next(self, cond=None):
         if cond is None and 'cond' in self.next_kwargs:
             cond = self.next_kwargs['cond']
-        self._clear_next_kwargs()
-        self._clear_last_if_statement()
-        self._clear_last_cond()
 
-        src = self.current
-        dst = self.current + 1
-        ret = self._go(src, dst, cond=cond)
+        if 'index' in self.next_kwargs:
+            index = self.next_kwargs['index']
+        else:
+            index = None
+
+        self._clear_next_kwargs()
+        # self._clear_last_if_statement()
+        # self._clear_last_cond()
+        # self._clear_elif_cond()
+
+        if index is None:
+            src = self.current
+        else:
+            src = index
+
+        dst = src + 1
+        self._go(src, dst, cond=cond)
         self.inc()
-        return ret
+        return dst
 
     def goto_from(self, src, dst, cond=None, else_dst=None):
         if cond is None and 'cond' in self.next_kwargs:
             cond = self.next_kwargs['cond']
-        self._clear_next_kwargs()
-        self._clear_last_if_statement()
-        self._clear_last_cond()
 
-        return self._go(src, dst, cond, else_dst)
+        self._clear_next_kwargs()
+        # self._clear_last_if_statement()
+        # self._clear_last_cond()
+        # self._clear_elif_cond()
+
+        self._go(src, dst, cond, else_dst)
+        return dst
 
     def inc(self):
-        self._set_index(None)
+        return self._set_index(None)
 
     # -------------------------------------------------------------------------
     def add(self, *statement, **kwargs):
-        """ add new assignments """
+        """ Adding new assignments. This method is usually called via __call__(). """
         kwargs.update(self.next_kwargs)
         self.last_kwargs = kwargs
         self._clear_next_kwargs()
 
         # if there is no attributes, Elif object is reused.
         has_args = not (len(kwargs) == 0 or  # has no args
-                        (len(kwargs) == 1 and 'cond' in kwargs))  # has only 'cond'
+                        (len(kwargs) == 1 and 'cond' in kwargs) or  # has only 'cond'
+                        (len(kwargs) == 1 and 'index' in kwargs) or  # has only 'index'
+                        (len(kwargs) == 2 and
+                         'cond' in kwargs and 'index' in kwargs))  # has only 'cond' and 'index'
 
         if self.elif_cond is not None and not has_args:
             next_call = self.last_if_statement.Elif(self.elif_cond)
             next_call(*statement)
             self.last_if_statement = next_call
             self._add_dst_var(statement)
+            self._clear_elif_cond()
+            return self
+
+        if self.next_else and not has_args:
+            next_call = self.last_if_statement.Else
+            next_call(*statement)
+            self._add_dst_var(statement)
+            self._clear_last_if_statement()
             self._clear_elif_cond()
             return self
 
@@ -179,7 +229,8 @@ class FSM(vtypes.VeriloggenNode):
 
         return self
 
-    def Else(self, *statement, **kwargs):
+    @property
+    def Else(self):
         self._clear_elif_cond()
 
         if len(self.last_cond) == 0:
@@ -192,25 +243,20 @@ class FSM(vtypes.VeriloggenNode):
         # Else statement is separated.
         if 'delay' in self.last_kwargs and self.last_kwargs['delay'] > 0:
             prev_cond = self.last_cond
-            ret = self.Then()(*statement)
+            ret = self.Then()
             self.last_cond = prev_cond
             return ret
 
-        # if there is additional attribute, Else statement is separated.
-        has_args = not (len(self.next_kwargs) == 0 or  # has no args
-                        (len(self.next_kwargs) == 1 and 'cond' in kwargs))  # has only 'cond'
+        # if not isinstance(self.last_if_statement, vtypes.If):
+        #     raise ValueError("Last if-statement is not If")
 
-        if has_args:
-            prev_cond = self.last_cond
-            ret = self.Then()(*statement)
-            self.last_cond = prev_cond
-            return ret
+        # self.next_else = True
 
-        if not isinstance(self.last_if_statement, vtypes.If):
-            raise ValueError("Last if-statement is not If")
+        if isinstance(self.last_if_statement, vtypes.If):
+            self.next_else = True
 
-        self.last_if_statement.Else(*statement)
-        self._add_dst_var(statement)
+        cond = self._make_cond(self.last_cond)
+        self.next_kwargs['cond'] = cond
 
         return self
 
@@ -224,22 +270,31 @@ class FSM(vtypes.VeriloggenNode):
         self.last_cond.append(vtypes.Not(old))
         self.last_cond.append(cond)
 
-        # if the true-statement has delay attributes, Else statement is
-        # separated.
+        # if the true-statement has delay attributes,
+        # Else statement is separated.
         if 'delay' in self.last_kwargs and self.last_kwargs['delay'] > 0:
             prev_cond = self.last_cond
             ret = self.Then()
             self.last_cond = prev_cond
             return ret
 
-        if not isinstance(self.last_if_statement, vtypes.If):
-            raise ValueError("Last if-statement is not If")
+        # if not isinstance(self.last_if_statement, vtypes.If):
+        #     raise ValueError("Last if-statement is not If")
 
-        self.elif_cond = cond
+        # self.elif_cond = cond
+
+        if isinstance(self.last_if_statement, vtypes.If):
+            self.elif_cond = cond
 
         cond = self._make_cond(self.last_cond)
         self.next_kwargs['cond'] = cond
 
+        return self
+
+    def Then(self):
+        cond = self._make_cond(self.last_cond)
+        self._clear_last_cond()
+        self.If(cond)
         return self
 
     def Delay(self, delay):
@@ -250,12 +305,6 @@ class FSM(vtypes.VeriloggenNode):
         self.next_kwargs['keep'] = keep
         return self
 
-    def Then(self):
-        cond = self._make_cond(self.last_cond)
-        self._clear_last_cond()
-        self.If(cond)
-        return self
-
     def LazyCond(self, value=True):
         self.next_kwargs['lazy_cond'] = value
         return self
@@ -263,6 +312,15 @@ class FSM(vtypes.VeriloggenNode):
     def EagerVal(self, value=True):
         self.next_kwargs['eager_val'] = value
         return self
+
+    def When(self, index):
+        self.next_kwargs['index'] = index
+        return self
+
+    def State(self, index=None):
+        if index is None:
+            index = fsm.current
+        return State(self, index)
 
     def Clear(self):
         self._clear_next_kwargs()
@@ -273,12 +331,20 @@ class FSM(vtypes.VeriloggenNode):
 
     # -------------------------------------------------------------------------
     @property
+    def Always(self):
+        return self.seq
+
+    @property
+    def init(self):
+        return 0
+
+    @property
     def current(self):
         return self.state_count
 
     @property
     def next(self):
-        return self.current + 1
+        return self.state_count + 1
 
     @property
     def current_delay(self):
@@ -806,6 +872,7 @@ class FSM(vtypes.VeriloggenNode):
 
     def _clear_last_if_statement(self):
         self.last_if_statement = None
+        self.next_else = False
 
     def _clear_last_cond(self):
         self.last_cond = []
@@ -824,9 +891,15 @@ class FSM(vtypes.VeriloggenNode):
 
     # -------------------------------------------------------------------------
     def _set_index(self, index=None):
+        self._clear_next_kwargs()
+        self._clear_last_if_statement()
+        self._clear_last_cond()
+        self._clear_elif_cond()
+
         if index is None:
             self.state_count += 1
             return self.state_count
+
         self.state_count = index
         return self.state_count
 
@@ -970,3 +1043,43 @@ class FSM(vtypes.VeriloggenNode):
 
     def __len__(self):
         return self.state_count + 1
+
+
+class State(vtypes.VeriloggenNode):
+    """ FSM with a specic state index """
+
+    def __init__(self, fsm, index):
+        while isinstance(fsm, State):
+            fsm = fsm.fsm
+
+        while isinstance(index, State):
+            index = index.index
+
+        if not isinstance(fsm, FSM):
+            raise TypeError("'fsm' must be FSM, not '%s'" % str(type(fsm)))
+
+        if not isinstance(index, int):
+            raise TypeError("'index' must be int, not '%s'" % str(type(index)))
+
+        self.fsm = fsm
+        self.index = index
+
+    def __getattr__(self, attr):
+        self.fsm.When(self.index)
+        return getattr(self.fsm, attr)
+
+    def __call__(self, *statement, **kwargs):
+        self.fsm.When(self.index)
+        return self.fsm.__call__(*statement, **kwargs)
+
+    def __add__(self, r):
+        if isinstance(r, State):
+            r = r.index
+
+        return self.index + r
+
+    def __sub__(self, r):
+        if isinstance(r, State):
+            r = r.index
+
+        return self.index - r
