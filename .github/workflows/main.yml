@@ -34,7 +34,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       # Install apt dependencies
       - name: Install apt dependencies
-        run: apt install iverilog verilator
+        run: sudo apt install iverilog verilator
       # Install dependencies
       - name: Install dependencies
         run: |
