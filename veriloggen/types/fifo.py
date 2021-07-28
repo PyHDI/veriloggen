@@ -94,7 +94,8 @@ class FifoReadMasterInterface(FifoReadInterface):
 
 
 # -------------------------------------------------------------------------
-def mkFifoDefinition(name, datawidth=32, addrwidth=4):
+def mkFifoDefinition(name, datawidth=32, addrwidth=4,
+                     sync=True):
     m = module.Module(name)
     clk = m.Input('CLK')
     rst = m.Input('RST')
@@ -118,7 +119,10 @@ def mkFifoDefinition(name, datawidth=32, addrwidth=4):
     is_full.assign(((head + 1) & mask) == tail)
     is_almost_full.assign(((head + 2) & mask) == tail)
 
-    rdata = m.Reg('rdata_reg', datawidth, initval=0)
+    if sync:
+        rdata = m.Reg('rdata_reg', datawidth, initval=0)
+    else:
+        rdata = m.Wire('rdata', datawidth)
 
     wif.full.assign(is_full)
     wif.almost_full.assign(vtypes.Ors(is_almost_full, is_full))
@@ -132,10 +136,16 @@ def mkFifoDefinition(name, datawidth=32, addrwidth=4):
         head.inc()
     )
 
-    seq.If(vtypes.Ands(rif.deq, vtypes.Not(is_empty)))(
-        rdata(mem[tail]),
-        tail.inc()
-    )
+    if sync:
+        seq.If(vtypes.Ands(rif.deq, vtypes.Not(is_empty)))(
+            rdata(mem[tail]),
+            tail.inc()
+        )
+    else:
+        seq.If(vtypes.Ands(rif.deq, vtypes.Not(is_empty)))(
+            tail.inc()
+        )
+        rdata.assign(mem[tail])
 
     rif.rdata.assign(rdata)
 

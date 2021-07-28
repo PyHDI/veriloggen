@@ -5,15 +5,15 @@ import functools
 import math
 
 import veriloggen.core.vtypes as vtypes
-import veriloggen.dataflow.dtypes as dtypes
+#import veriloggen.dataflow.dtypes as dtypes
 import veriloggen.types.fixed as fxd
 import veriloggen.types.util as util
 
 from veriloggen.seq.seq import Seq, TmpSeq, make_condition
 from veriloggen.fsm.fsm import TmpFSM
 from veriloggen.types.ram import RAMInterface, mkRAMDefinition
-from veriloggen.dataflow.dataflow import DataflowManager
-from veriloggen.dataflow.dtypes import _Numeric as df_numeric
+#from veriloggen.dataflow.dataflow import DataflowManager
+#from veriloggen.dataflow.dtypes import _Numeric as df_numeric
 
 from .ttypes import _MutexFunction
 
@@ -24,7 +24,8 @@ class RAM(_MutexFunction):
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=10, numports=1,
                  initvals=None, nocheck_initvals=False,
-                 ram_style=None, nodataflow=False, external_ports=None):
+#                 ram_style=None, nodataflow=False, external_ports=None):
+                 ram_style=None, external_ports=None):
 
         self.m = m
         self.name = name
@@ -63,10 +64,10 @@ class RAM(_MutexFunction):
                                     ports=m.connect_ports(self.definition))
 
         self.seq = Seq(m, name, clk, rst)
-        if nodataflow:
-            self.df = None
-        else:
-            self.df = DataflowManager(self.m, self.clk, self.rst)
+#        if nodataflow:
+#            self.df = None
+#        else:
+#            self.df = DataflowManager(self.m, self.clk, self.rst)
 
         self._write_disabled = [False for i in range(numports)]
         self._port_disabled = [False for i in range(numports)]
@@ -185,958 +186,1059 @@ class RAM(_MutexFunction):
 
         return 0
 
-    def read_dataflow(self, port, addr, length=1,
-                      stride=1, cond=None, point=0, signed=True):
-        """ 
-        @return data, last, done
+    def read_burst(self, addr, stride, length, rready, rquit=False, port=0, cond=None):
+        """
+        @return rdata, rvalid, rlast
         """
 
-        data_valid = self.m.TmpReg(initval=0)
-        last_valid = self.m.TmpReg(initval=0)
-        data_ready = self.m.TmpWire()
-        last_ready = self.m.TmpWire()
-        data_ready.assign(1)
-        last_ready.assign(1)
-
-        data_ack = vtypes.Ors(data_ready, vtypes.Not(data_valid))
-        last_ack = vtypes.Ors(last_ready, vtypes.Not(last_valid))
-
-        ext_cond = dtypes.make_condition(cond)
-        data_cond = dtypes.make_condition(data_ack, last_ack)
-
-        data = self.m.TmpWireLike(self.interfaces[port].rdata, signed=True)
-
-        data.assign(self.interfaces[port].rdata)
-
-        next_valid_on = self.m.TmpReg(initval=0)
-        next_valid_off = self.m.TmpReg(initval=0)
-
-        next_last = self.m.TmpReg(initval=0)
-        last = self.m.TmpReg(initval=0)
-
-        counter = self.m.TmpReg(vtypes.get_width(length), initval=0)
-
-        read_addr = self.m.TmpRegLike(self.interfaces[port].addr, initval=0)
-
-        read_cond = next_valid_on
-        read_enable = vtypes.Ands(data_cond, next_valid_on)
-        util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
-        util.add_enable_cond(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
-
-        self.seq.If(data_cond, next_valid_off)(
-            last(0),
-            data_valid(0),
-            last_valid(0),
-            next_valid_off(0)
-        )
-
-        self.seq.If(data_cond, next_valid_on)(
-            data_valid(1),
-            last_valid(1),
-            last(next_last),
-            next_last(0),
-            next_valid_on(0),
-            next_valid_off(1)
-        )
-
-        self.seq.If(ext_cond, counter == 0,
-                    vtypes.Not(next_last), vtypes.Not(last))(
-            read_addr(addr),
-            counter(length - 1),
-            next_valid_on(1),
-            next_last(length == 1)
-        )
-
-        self.seq.If(data_cond, counter > 0)(
-            read_addr(read_addr + stride),
-            counter.dec(),
-            next_valid_on(1),
-            next_last(0)
-        )
-
-        self.seq.If(data_cond, counter == 1)(
-            next_last(1)
-        )
-
-        df_data = self.df.Variable(data, data_valid, data_ready,
-                                   width=self.datawidth, point=point, signed=signed)
-        df_last = self.df.Variable(
-            last, last_valid, last_ready, width=1, signed=False)
-        done = last
-
-        return df_data, df_last, done
-
-    def read_dataflow_pattern(self, port, addr, pattern,
-                              cond=None, point=0, signed=True):
-        """ 
-        @return data, last, done
-        """
-
-        if not isinstance(pattern, (tuple, list)):
-            raise TypeError('pattern must be list or tuple.')
-
-        if not pattern:
-            raise ValueError(
-                'pattern must have one (size, stride) pair at least.')
-
-        if not isinstance(pattern[0], (tuple, list)):
-            pattern = (pattern,)
-
-        data_valid = self.m.TmpReg(initval=0)
-        last_valid = self.m.TmpReg(initval=0)
-        data_ready = self.m.TmpWire()
-        last_ready = self.m.TmpWire()
-        data_ready.assign(1)
-        last_ready.assign(1)
-
-        data_ack = vtypes.Ors(data_ready, vtypes.Not(data_valid))
-        last_ack = vtypes.Ors(last_ready, vtypes.Not(last_valid))
-
-        ext_cond = dtypes.make_condition(cond)
-        data_cond = dtypes.make_condition(data_ack, last_ack)
-
-        data = self.m.TmpWireLike(self.interfaces[port].rdata, signed=True)
-
-        data.assign(self.interfaces[port].rdata)
-
-        next_valid_on = self.m.TmpReg(initval=0)
-        next_valid_off = self.m.TmpReg(initval=0)
-
-        next_last = self.m.TmpReg(initval=0)
-        last = self.m.TmpReg(initval=0)
-
-        running = self.m.TmpReg(initval=0)
-
-        next_addr = self.m.TmpWire(self.addrwidth)
-        offset_addr = self.m.TmpWire(self.addrwidth)
-        offsets = [self.m.TmpReg(self.addrwidth, initval=0)
-                   for _ in pattern[1:]]
-
-        offset_addr_value = addr
-        for offset in offsets:
-            offset_addr_value = offset + offset_addr_value
-        offset_addr.assign(offset_addr_value)
-
-        offsets.insert(0, None)
-
-        count_list = [self.m.TmpReg(vtypes.get_width(out_size), initval=0)
-                      for (out_size, out_stride) in pattern]
-
-        read_addr = self.m.TmpRegLike(self.interfaces[port].addr, initval=0)
-
-        read_cond = next_valid_on
-        read_enable = vtypes.Ands(data_cond, next_valid_on)
-        util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
-        util.add_enable_cond(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
-
-        self.seq.If(data_cond, next_valid_off)(
-            last(0),
-            data_valid(0),
-            last_valid(0),
-            next_valid_off(0)
-        )
-
-        self.seq.If(data_cond, next_valid_on)(
-            data_valid(1),
-            last_valid(1),
-            last(next_last),
-            next_last(0),
-            next_valid_on(0),
-            next_valid_off(1)
-        )
-
-        self.seq.If(ext_cond, vtypes.Not(running),
-                    vtypes.Not(next_last), vtypes.Not(last))(
-            read_addr(addr),
-            running(1),
-            next_valid_on(1)
-        )
-
-        self.seq.If(data_cond, running)(
-            read_addr(next_addr),
-            next_valid_on(1),
-            next_last(0)
-        )
-
-        update_count = None
-        update_offset = None
-        update_addr = None
-        last_one = None
-        stride_value = None
-        carry = None
-
-        for offset, count, (out_size, out_stride) in zip(offsets, count_list, pattern):
-            self.seq.If(ext_cond, vtypes.Not(running),
-                        vtypes.Not(next_last), vtypes.Not(last))(
-                count(out_size - 1)
-            )
-            self.seq.If(data_cond, running, update_count)(
-                count.dec()
-            )
-            self.seq.If(data_cond, running, update_count, count == 0)(
-                count(out_size - 1)
-            )
-
-            if offset is not None:
-                self.seq.If(ext_cond, vtypes.Not(running),
-                            vtypes.Not(next_last), vtypes.Not(last))(
-                    offset(0)
-                )
-                self.seq.If(data_cond, running, update_offset, vtypes.Not(carry))(
-                    offset(offset + out_stride)
-                )
-                self.seq.If(data_cond, running, update_offset, count == 0)(
-                    offset(0)
-                )
-
-            if update_count is None:
-                update_count = count == 0
-            else:
-                update_count = vtypes.Ands(update_count, count == 0)
-
-            if update_offset is None:
-                update_offset = vtypes.Mux(out_size == 1, 1, count == 1)
-            else:
-                update_offset = vtypes.Ands(update_offset, count == carry)
-
-            if update_addr is None:
-                update_addr = count == 0
-            else:
-                update_addr = vtypes.Mux(carry, count == 0, update_addr)
-
-            if last_one is None:
-                last_one = count == 0
-            else:
-                last_one = vtypes.Ands(last_one, count == 0)
-
-            if stride_value is None:
-                stride_value = out_stride
-            else:
-                stride_value = vtypes.Mux(carry, out_stride, stride_value)
-
-            if carry is None:
-                carry = out_size == 1
-            else:
-                carry = vtypes.Ands(carry, out_size == 1)
-
-        next_addr.assign(vtypes.Mux(update_addr, offset_addr,
-                                    read_addr + stride_value))
-
-        self.seq.If(data_cond, running, last_one)(
-            running(0),
-            next_last(1)
-        )
-
-        df_data = self.df.Variable(data, data_valid, data_ready,
-                                   width=self.datawidth, point=point, signed=signed)
-        df_last = self.df.Variable(
-            last, last_valid, last_ready, width=1, signed=False)
-        done = last
-
-        return df_data, df_last, done
-
-    def read_dataflow_multidim(self, port, addr, shape, order=None,
-                               cond=None, point=0, signed=True):
-        """ 
-        @return data, last, done
-        """
-
-        if order is None:
-            order = list(reversed(range(len(shape))))
-
-        pattern = self._to_pattern(shape, order)
-        return self.read_dataflow_pattern(port, addr, pattern,
-                                          cond=cond, point=point, signed=signed)
-
-    def read_dataflow_reuse(self, port, addr, length=1,
-                            stride=1,
-                            reuse_size=1, num_outputs=1,
-                            cond=None, point=0, signed=True):
-        """ 
-        @return data, last, done
-        """
-
-        if not isinstance(num_outputs, int):
-            raise TypeError('num_outputs must be int')
-
-        data_valid = [self.m.TmpReg(initval=0) for _ in range(num_outputs)]
-        last_valid = self.m.TmpReg(initval=0)
-        data_ready = [self.m.TmpWire() for _ in range(num_outputs)]
-        last_ready = self.m.TmpWire()
-
-        for r in data_ready:
-            r.assign(1)
-        last_ready.assign(1)
-
-        data_ack = vtypes.Ands(*[vtypes.Ors(r, vtypes.Not(v))
-                                 for v, r in zip(data_valid, data_ready)])
-        last_ack = vtypes.Ors(last_ready, vtypes.Not(last_valid))
-
-        ext_cond = dtypes.make_condition(cond)
-        data_cond = dtypes.make_condition(data_ack, last_ack)
-
-        counter = self.m.TmpReg(vtypes.get_width(length), initval=0)
-
-        last = self.m.TmpReg(initval=0)
-        reuse_data = [self.m.TmpReg(self.datawidth, initval=0, signed=True)
-                      for _ in range(num_outputs)]
-        next_reuse_data = [self.m.TmpReg(self.datawidth, initval=0, signed=True)
-                           for _ in range(num_outputs)]
-
-        reuse_count = self.m.TmpReg(vtypes.get_width(reuse_size), initval=0)
-        fill_reuse_count = self.m.TmpReg(initval=0)
-        fetch_done = self.m.TmpReg(initval=0)
-
-        fsm = TmpFSM(self.m, self.clk, self.rst)
-
-        read_addr = self.m.TmpRegLike(self.interfaces[port].addr, initval=0)
-
-        # initial state
-        fsm.If(ext_cond)(
-            read_addr(addr),
-            fetch_done(0),
-            counter(length)
-        )
-        fsm.If(ext_cond, length > 0).goto_next()
-
-        read_cond = vtypes.Ands(fsm.here, ext_cond)
-        read_enable = vtypes.Ands(fsm.here, ext_cond)
-        util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
-        util.add_enable_cond(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
-
-        # initial prefetch state
-        for n in next_reuse_data:
-            fsm(
-                read_addr(read_addr + stride),
-                counter(vtypes.Mux(counter > 0, counter - 1, counter))
-            )
-            fsm.Delay(1)(
-                n(self.interfaces[port].rdata)
-            )
-
-            read_cond = fsm.here
-            read_enable = fsm.here
-            util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
-            util.add_enable_cond(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
-
-            fsm.goto_next()
-
-        fsm.goto_next()
-        fsm.goto_next()
-
-        # initial update state
-        for n, r in zip(next_reuse_data, reuse_data):
-            fsm(
-                r(n)
-            )
+        fsm = TmpFSM(self.m, self.clk, self.rst, prefix='read_burst_fsm')
+
+        _addr = self.m.TmpRegLike(self.interfaces[port].addr, initval=0, prefix='read_burst_addr')
+        _stride = self.m.TmpRegLike(self.interfaces[port].addr, initval=0, prefix='read_burst_stride')
+        _length = self.m.TmpRegLike(self.interfaces[port].addr,
+                                    width=self.interfaces[port].addr.width + 1,
+                                    initval=0, prefix='read_burst_length')
+
+        rvalid = self.m.TmpReg(prefix='read_burst_rvalid', initval=0)
+        rlast = self.m.TmpReg(prefix='read_burst_rlast', initval=0)
+        # first = self.m.TmpReg(prefix='read_burst_first', initval=0)
 
         fsm(
-            fill_reuse_count(1),
-            fetch_done(counter == 0)
+            _addr(addr),
+            _stride(stride),
+            _length(length),
+            rvalid(0),
+            rlast(0),
+            # first(1),
         )
-        fsm.Delay(1)(
-            fill_reuse_count(0)
+        fsm.If(cond, length > 0).goto_next()
+
+        # renable = vtypes.Ands(fsm.here, vtypes.Ors(first, rready))
+        renable = vtypes.Ands(fsm.here, vtypes.Ors(vtypes.Not(rvalid), rready))
+        rdata, _ = self.read_rtl(_addr, port, renable)
+        rdata_wire = self.m.TmpWireLike(rdata, prefix='read_burst_rdata')
+        rdata_wire.assign(rdata)
+
+#        fsm(
+#            first(0)
+#        )
+        fsm.If(rready, _length > 0)(
+            _addr(_addr + _stride),
+            _length.dec(),
+            rvalid(1)
         )
-
-        fsm.goto_next()
-
-        # prefetch state
-        read_start_state = fsm.current
-
-        for n in next_reuse_data:
-            fsm(
-                read_addr(read_addr + stride),
-                counter(vtypes.Mux(counter > 0, counter - 1, counter))
-            )
-            fsm.Delay(1)(
-                n(self.interfaces[port].rdata)
-            )
-
-            read_cond = fsm.here
-            read_enable = fsm.here
-            util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
-            util.add_enable_cond(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
-
-            fsm.goto_next()
-
-        fsm.goto_next()
-        fsm.goto_next()
-
-        # update state
-        for n, r in zip(next_reuse_data, reuse_data):
-            fsm.If(data_cond, reuse_count == 0)(
-                r(n)
-            )
-
-        fsm.If(data_cond, reuse_count == 0)(
-            fill_reuse_count(vtypes.Not(fetch_done)),
-            fetch_done(counter == 0)
+        fsm.If(rready, _length <= 1)(
+            rlast(1)
         )
-        fsm.Delay(1)(
-            fill_reuse_count(0)
+        fsm.If(rlast, rvalid, rready)(
+            rvalid(0),
+            rlast(0),
         )
-
-        # next -> prefetch state or initial state
-        fsm.If(data_cond, reuse_count == 0, counter == 0).goto_init()
-        fsm.If(data_cond, reuse_count == 0, counter > 0).goto(read_start_state)
-
-        # output signal control
-        self.seq.If(data_cond, last_valid)(
-            last(0),
-            [d(0) for d in data_valid],
-            last_valid(0)
+        fsm.If(rquit)(
+            rvalid(0),
+            rlast(0),
         )
+        fsm.If(rlast, rvalid, rready).goto_init()
+        fsm.If(rquit).goto_init()
 
-        self.seq.If(fill_reuse_count)(
-            reuse_count(reuse_size)
-        )
+        return rdata, rvalid, rlast
 
-        self.seq.If(data_cond, reuse_count > 0)(
-            reuse_count.dec(),
-            [d(1) for d in data_valid],
-            last_valid(1),
-            last(0)
-        )
-
-        self.seq.If(data_cond, reuse_count == 1, fetch_done)(
-            last(1)
-        )
-
-        df_last = self.df.Variable(
-            last, last_valid, last_ready, width=1, signed=False)
-        done = last
-
-        df_reuse_data = [self.df.Variable(d, v, r,
-                                          width=self.datawidth, point=point, signed=signed)
-                         for d, v, r in zip(reuse_data, data_valid, data_ready)]
-
-        return tuple(df_reuse_data + [df_last, done])
-
-    def read_dataflow_reuse_pattern(self, port, addr, pattern,
-                                    reuse_size=1, num_outputs=1,
-                                    cond=None, point=0, signed=True):
-        """ 
-        @return data, last, done
+    def write_burst(self, addr, stride, length, wdata, wvalid, wlast, wquit=False, port=0, cond=None):
+        """
+        @return wready, done
         """
 
-        if not isinstance(pattern, (tuple, list)):
-            raise TypeError('pattern must be list or tuple.')
+        fsm = TmpFSM(self.m, self.clk, self.rst, prefix='write_burst_fsm')
 
-        if not pattern:
-            raise ValueError(
-                'pattern must have one (size, stride) pair at least.')
+        _addr = self.m.TmpRegLike(self.interfaces[port].addr, initval=0, prefix='write_burst_addr')
+        _stride = self.m.TmpRegLike(self.interfaces[port].addr, initval=0, prefix='write_burst_stride')
+        _length = self.m.TmpRegLike(self.interfaces[port].addr,
+                                    width=self.interfaces[port].addr.width + 1,
+                                    initval=0, prefix='write_burst_length')
 
-        if not isinstance(pattern[0], (tuple, list)):
-            pattern = (pattern,)
-
-        if not isinstance(num_outputs, int):
-            raise TypeError('num_outputs must be int')
-
-        data_valid = [self.m.TmpReg(initval=0) for _ in range(num_outputs)]
-        last_valid = self.m.TmpReg(initval=0)
-        data_ready = [self.m.TmpWire() for _ in range(num_outputs)]
-        last_ready = self.m.TmpWire()
-
-        for r in data_ready:
-            r.assign(1)
-        last_ready.assign(1)
-
-        data_ack = vtypes.Ands(*[vtypes.Ors(r, vtypes.Not(v))
-                                 for v, r in zip(data_valid, data_ready)])
-        last_ack = vtypes.Ors(last_ready, vtypes.Not(last_valid))
-
-        ext_cond = dtypes.make_condition(cond)
-        data_cond = dtypes.make_condition(data_ack, last_ack)
-
-        next_addr = self.m.TmpWire(self.addrwidth)
-        offset_addr = self.m.TmpWire(self.addrwidth)
-        offsets = [self.m.TmpReg(self.addrwidth, initval=0)
-                   for _ in pattern[1:]]
-
-        offset_addr_value = addr
-        for offset in offsets:
-            offset_addr_value = offset + offset_addr_value
-        offset_addr.assign(offset_addr_value)
-
-        offsets.insert(0, None)
-
-        count_list = [self.m.TmpReg(vtypes.get_width(out_size), initval=0)
-                      for (out_size, out_stride) in pattern]
-
-        last = self.m.TmpReg(initval=0)
-        reuse_data = [self.m.TmpReg(self.datawidth, initval=0, signed=True)
-                      for _ in range(num_outputs)]
-        next_reuse_data = [self.m.TmpReg(self.datawidth, initval=0, signed=True)
-                           for _ in range(num_outputs)]
-
-        reuse_count = self.m.TmpReg(vtypes.get_width(reuse_size), initval=0)
-        fill_reuse_count = self.m.TmpReg(initval=0)
-
-        prefetch_done = self.m.TmpReg(initval=0)
-        fetch_done = self.m.TmpReg(initval=0)
-
-        update_addr = None
-        stride_value = None
-        carry = None
-
-        for offset, count, (out_size, out_stride) in zip(offsets, count_list, pattern):
-            if update_addr is None:
-                update_addr = count == 0
-            else:
-                update_addr = vtypes.Mux(carry, count == 0, update_addr)
-
-            if stride_value is None:
-                stride_value = out_stride
-            else:
-                stride_value = vtypes.Mux(carry, out_stride, stride_value)
-
-            if carry is None:
-                carry = out_size == 1
-            else:
-                carry = vtypes.Ands(carry, out_size == 1)
-
-        read_addr = self.m.TmpRegLike(self.interfaces[port].addr, initval=0)
-        next_addr.assign(vtypes.Mux(update_addr, offset_addr,
-                                    read_addr + stride_value))
-
-        fsm = TmpFSM(self.m, self.clk, self.rst)
-
-        # initial state
-        fsm.If(ext_cond)(
-            read_.addr(addr),
-            prefetch_done(0),
-            fetch_done(0)
-        )
-
-        read_cond = vtypes.Ands(fsm.here, ext_cond)
-        read_enable = vtypes.Ands(fsm.here, ext_cond)
-        util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
-        util.add_enable_cond(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
-
-        first = True
-        for offset, count, (out_size, out_stride) in zip(offsets, count_list, pattern):
-            fsm.If(ext_cond)(
-                count(out_size) if first else count(out_size - 1),
-            )
-            if offset is not None:
-                fsm.If(ext_cond)(
-                    offset(0)
-                )
-            first = False
-
-        fsm.If(ext_cond).goto_next()
-
-        # initial prefetch state
-        for n in next_reuse_data:
-            update_count = None
-            update_offset = None
-            last_one = None
-            carry = None
-
-            for offset, count, (out_size, out_stride) in zip(offsets, count_list, pattern):
-                fsm.If(update_count)(
-                    count.dec()
-                )
-                fsm.If(update_count, count == 0)(
-                    count(out_size - 1)
-                )
-                fsm(
-                    read_addr(next_addr)
-                )
-                fsm.Delay(1)(
-                    n(self.interfaces[port].rdata)
-                )
-
-                if offset is not None:
-                    fsm.If(update_offset, vtypes.Not(carry))(
-                        offset(offset + out_stride)
-                    )
-                    fsm.If(update_offset, count == 0)(
-                        offset(0)
-                    )
-
-                read_cond = fsm.here
-                read_enable = fsm.here
-                util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
-                util.add_enable_cond(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
-
-                if update_count is None:
-                    update_count = count == 0
-                else:
-                    update_count = vtypes.Ands(update_count, count == 0)
-
-                if update_offset is None:
-                    update_offset = vtypes.Mux(out_size == 1, 1, count == 1)
-                else:
-                    update_offset = vtypes.Ands(update_offset, count == carry)
-
-                if last_one is None:
-                    last_one = count == 0
-                else:
-                    last_one = vtypes.Ands(last_one, count == 0)
-
-                if carry is None:
-                    carry = out_size == 1
-                else:
-                    carry = vtypes.Ands(carry, out_size == 1)
-
-            fsm.goto_next()
-
-            fsm.If(last_one)(
-                prefetch_done(1)
-            )
-
-        fsm.goto_next()
-        fsm.goto_next()
-
-        # initial update state
-        for r, n in zip(reuse_data, next_reuse_data):
-            fsm(
-                r(n)
-            )
+        done = self.m.TmpReg(prefix='write_burst_done', initval=0)
 
         fsm(
-            fetch_done(prefetch_done),
-            fill_reuse_count(vtypes.Not(fetch_done))
+            _addr(addr),
+            _stride(stride),
+            _length(length),
+            done(0),
         )
-        fsm.Delay(1)(
-            fill_reuse_count(0)
+        fsm.If(cond, length > 0).goto_next()
+
+        wenable = vtypes.Ands(fsm.here, wvalid)
+        wready = fsm.here
+        self.write_rtl(_addr, wdata, port, wenable)
+
+        fsm.If(wvalid)(
+            _addr(_addr + _stride),
+            _length.dec(),
+            done(0)
         )
-
-        fsm.goto_next()
-
-        # prefetch state
-        read_start_state = fsm.current
-
-        for n in next_reuse_data:
-            update_count = None
-            update_offset = None
-            last_one = None
-            carry = None
-
-            for offset, count, (out_size, out_stride) in zip(offsets, count_list, pattern):
-                fsm.If(update_count)(
-                    count.dec()
-                )
-                fsm.If(update_count, count == 0)(
-                    count(out_size - 1)
-                )
-                fsm(
-                    read_addr(next_addr)
-                )
-                fsm.Delay(1)(
-                    n(self.interfaces[port].rdata)
-                )
-
-                read_cond = fsm.here
-                read_enable = fsm.here
-                util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
-                util.add_enable_cond(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
-
-                if offset is not None:
-                    fsm.If(update_offset, vtypes.Not(carry))(
-                        offset(offset + out_stride)
-                    )
-                    fsm.If(update_offset, count == 0)(
-                        offset(0)
-                    )
-
-                if update_count is None:
-                    update_count = count == 0
-                else:
-                    update_count = vtypes.Ands(update_count, count == 0)
-
-                if update_offset is None:
-                    update_offset = vtypes.Mux(out_size == 1, 1, count == 1)
-                else:
-                    update_offset = vtypes.Ands(update_offset, count == carry)
-
-                if last_one is None:
-                    last_one = count == 0
-                else:
-                    last_one = vtypes.Ands(last_one, count == 0)
-
-                if carry is None:
-                    carry = out_size == 1
-                else:
-                    carry = vtypes.Ands(carry, out_size == 1)
-
-            fsm.goto_next()
-
-            fsm.If(last_one)(
-                prefetch_done(1)
-            )
-
-        fsm.goto_next()
-        fsm.goto_next()
-
-        # update state
-        for r, n in zip(reuse_data, next_reuse_data):
-            fsm.If(data_cond, reuse_count == 0)(
-                r(n)
-            )
-
-        fsm.If(data_cond, reuse_count == 0)(
-            fetch_done(prefetch_done),
-            fill_reuse_count(vtypes.Not(fetch_done))
+        fsm.If(wvalid, _length <= 1)(
+            done(1)
         )
-        fsm.Delay(1)(
-            fill_reuse_count(0)
+        fsm.If(wvalid, wlast)(
+            done(1)
         )
+        fsm.If(wvalid, _length <= 1).goto_init()
+        fsm.If(wvalid, wlast).goto_init()
+        fsm.If(wquit).goto_init()
 
-        # next -> prefetch state or initial state
-        fsm.If(data_cond, reuse_count == 0,
-               fetch_done).goto_init()
-        fsm.If(data_cond, reuse_count == 0,
-               vtypes.Not(fetch_done)).goto(read_start_state)
+        return wready, done
 
-        # output signal control
-        self.seq.If(data_cond, last_valid)(
-            last(0),
-            [d(0) for d in data_valid],
-            last_valid(0)
-        )
+#    def read_dataflow(self, port, addr, length=1,
+#                      stride=1, cond=None, point=0, signed=True):
+#        """ 
+#        @return data, last, done
+#        """
+#
+#        data_valid = self.m.TmpReg(initval=0)
+#        last_valid = self.m.TmpReg(initval=0)
+#        data_ready = self.m.TmpWire()
+#        last_ready = self.m.TmpWire()
+#        data_ready.assign(1)
+#        last_ready.assign(1)
+#
+#        data_ack = vtypes.Ors(data_ready, vtypes.Not(data_valid))
+#        last_ack = vtypes.Ors(last_ready, vtypes.Not(last_valid))
+#
+#        ext_cond = dtypes.make_condition(cond)
+#        data_cond = dtypes.make_condition(data_ack, last_ack)
+#
+#        data = self.m.TmpWireLike(self.interfaces[port].rdata, signed=True)
+#
+#        data.assign(self.interfaces[port].rdata)
+#
+#        next_valid_on = self.m.TmpReg(initval=0)
+#        next_valid_off = self.m.TmpReg(initval=0)
+#
+#        next_last = self.m.TmpReg(initval=0)
+#        last = self.m.TmpReg(initval=0)
+#
+#        counter = self.m.TmpReg(vtypes.get_width(length), initval=0)
+#
+#        read_addr = self.m.TmpRegLike(self.interfaces[port].addr, initval=0)
+#
+#        read_cond = next_valid_on
+#        read_enable = vtypes.Ands(data_cond, next_valid_on)
+#        util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
+#        util.add_enable_cond(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+#
+#        self.seq.If(data_cond, next_valid_off)(
+#            last(0),
+#            data_valid(0),
+#            last_valid(0),
+#            next_valid_off(0)
+#        )
+#
+#        self.seq.If(data_cond, next_valid_on)(
+#            data_valid(1),
+#            last_valid(1),
+#            last(next_last),
+#            next_last(0),
+#            next_valid_on(0),
+#            next_valid_off(1)
+#        )
+#
+#        self.seq.If(ext_cond, counter == 0,
+#                    vtypes.Not(next_last), vtypes.Not(last))(
+#            read_addr(addr),
+#            counter(length - 1),
+#            next_valid_on(1),
+#            next_last(length == 1)
+#        )
+#
+#        self.seq.If(data_cond, counter > 0)(
+#            read_addr(read_addr + stride),
+#            counter.dec(),
+#            next_valid_on(1),
+#            next_last(0)
+#        )
+#
+#        self.seq.If(data_cond, counter == 1)(
+#            next_last(1)
+#        )
+#
+#        df_data = self.df.Variable(data, data_valid, data_ready,
+#                                   width=self.datawidth, point=point, signed=signed)
+#        df_last = self.df.Variable(
+#            last, last_valid, last_ready, width=1, signed=False)
+#        done = last
+#
+#        return df_data, df_last, done
 
-        self.seq.If(fill_reuse_count)(
-            reuse_count(reuse_size)
-        )
+#    def read_dataflow_pattern(self, port, addr, pattern,
+#                              cond=None, point=0, signed=True):
+#        """ 
+#        @return data, last, done
+#        """
+#
+#        if not isinstance(pattern, (tuple, list)):
+#            raise TypeError('pattern must be list or tuple.')
+#
+#        if not pattern:
+#            raise ValueError(
+#                'pattern must have one (size, stride) pair at least.')
+#
+#        if not isinstance(pattern[0], (tuple, list)):
+#            pattern = (pattern,)
+#
+#        data_valid = self.m.TmpReg(initval=0)
+#        last_valid = self.m.TmpReg(initval=0)
+#        data_ready = self.m.TmpWire()
+#        last_ready = self.m.TmpWire()
+#        data_ready.assign(1)
+#        last_ready.assign(1)
+#
+#        data_ack = vtypes.Ors(data_ready, vtypes.Not(data_valid))
+#        last_ack = vtypes.Ors(last_ready, vtypes.Not(last_valid))
+#
+#        ext_cond = dtypes.make_condition(cond)
+#        data_cond = dtypes.make_condition(data_ack, last_ack)
+#
+#        data = self.m.TmpWireLike(self.interfaces[port].rdata, signed=True)
+#
+#        data.assign(self.interfaces[port].rdata)
+#
+#        next_valid_on = self.m.TmpReg(initval=0)
+#        next_valid_off = self.m.TmpReg(initval=0)
+#
+#        next_last = self.m.TmpReg(initval=0)
+#        last = self.m.TmpReg(initval=0)
+#
+#        running = self.m.TmpReg(initval=0)
+#
+#        next_addr = self.m.TmpWire(self.addrwidth)
+#        offset_addr = self.m.TmpWire(self.addrwidth)
+#        offsets = [self.m.TmpReg(self.addrwidth, initval=0)
+#                   for _ in pattern[1:]]
+#
+#        offset_addr_value = addr
+#        for offset in offsets:
+#            offset_addr_value = offset + offset_addr_value
+#        offset_addr.assign(offset_addr_value)
+#
+#        offsets.insert(0, None)
+#
+#        count_list = [self.m.TmpReg(vtypes.get_width(out_size), initval=0)
+#                      for (out_size, out_stride) in pattern]
+#
+#        read_addr = self.m.TmpRegLike(self.interfaces[port].addr, initval=0)
+#
+#        read_cond = next_valid_on
+#        read_enable = vtypes.Ands(data_cond, next_valid_on)
+#        util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
+#        util.add_enable_cond(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+#
+#        self.seq.If(data_cond, next_valid_off)(
+#            last(0),
+#            data_valid(0),
+#            last_valid(0),
+#            next_valid_off(0)
+#        )
+#
+#        self.seq.If(data_cond, next_valid_on)(
+#            data_valid(1),
+#            last_valid(1),
+#            last(next_last),
+#            next_last(0),
+#            next_valid_on(0),
+#            next_valid_off(1)
+#        )
+#
+#        self.seq.If(ext_cond, vtypes.Not(running),
+#                    vtypes.Not(next_last), vtypes.Not(last))(
+#            read_addr(addr),
+#            running(1),
+#            next_valid_on(1)
+#        )
+#
+#        self.seq.If(data_cond, running)(
+#            read_addr(next_addr),
+#            next_valid_on(1),
+#            next_last(0)
+#        )
+#
+#        update_count = None
+#        update_offset = None
+#        update_addr = None
+#        last_one = None
+#        stride_value = None
+#        carry = None
+#
+#        for offset, count, (out_size, out_stride) in zip(offsets, count_list, pattern):
+#            self.seq.If(ext_cond, vtypes.Not(running),
+#                        vtypes.Not(next_last), vtypes.Not(last))(
+#                count(out_size - 1)
+#            )
+#            self.seq.If(data_cond, running, update_count)(
+#                count.dec()
+#            )
+#            self.seq.If(data_cond, running, update_count, count == 0)(
+#                count(out_size - 1)
+#            )
+#
+#            if offset is not None:
+#                self.seq.If(ext_cond, vtypes.Not(running),
+#                            vtypes.Not(next_last), vtypes.Not(last))(
+#                    offset(0)
+#                )
+#                self.seq.If(data_cond, running, update_offset, vtypes.Not(carry))(
+#                    offset(offset + out_stride)
+#                )
+#                self.seq.If(data_cond, running, update_offset, count == 0)(
+#                    offset(0)
+#                )
+#
+#            if update_count is None:
+#                update_count = count == 0
+#            else:
+#                update_count = vtypes.Ands(update_count, count == 0)
+#
+#            if update_offset is None:
+#                update_offset = vtypes.Mux(out_size == 1, 1, count == 1)
+#            else:
+#                update_offset = vtypes.Ands(update_offset, count == carry)
+#
+#            if update_addr is None:
+#                update_addr = count == 0
+#            else:
+#                update_addr = vtypes.Mux(carry, count == 0, update_addr)
+#
+#            if last_one is None:
+#                last_one = count == 0
+#            else:
+#                last_one = vtypes.Ands(last_one, count == 0)
+#
+#            if stride_value is None:
+#                stride_value = out_stride
+#            else:
+#                stride_value = vtypes.Mux(carry, out_stride, stride_value)
+#
+#            if carry is None:
+#                carry = out_size == 1
+#            else:
+#                carry = vtypes.Ands(carry, out_size == 1)
+#
+#        next_addr.assign(vtypes.Mux(update_addr, offset_addr,
+#                                    read_addr + stride_value))
+#
+#        self.seq.If(data_cond, running, last_one)(
+#            running(0),
+#            next_last(1)
+#        )
+#
+#        df_data = self.df.Variable(data, data_valid, data_ready,
+#                                   width=self.datawidth, point=point, signed=signed)
+#        df_last = self.df.Variable(
+#            last, last_valid, last_ready, width=1, signed=False)
+#        done = last
+#
+#        return df_data, df_last, done
+#
+#    def read_dataflow_multidim(self, port, addr, shape, order=None,
+#                               cond=None, point=0, signed=True):
+#        """ 
+#        @return data, last, done
+#        """
+#
+#        if order is None:
+#            order = list(reversed(range(len(shape))))
+#
+#        pattern = self._to_pattern(shape, order)
+#        return self.read_dataflow_pattern(port, addr, pattern,
+#                                          cond=cond, point=point, signed=signed)
+#
+#    def read_dataflow_reuse(self, port, addr, length=1,
+#                            stride=1,
+#                            reuse_size=1, num_outputs=1,
+#                            cond=None, point=0, signed=True):
+#        """ 
+#        @return data, last, done
+#        """
+#
+#        if not isinstance(num_outputs, int):
+#            raise TypeError('num_outputs must be int')
+#
+#        data_valid = [self.m.TmpReg(initval=0) for _ in range(num_outputs)]
+#        last_valid = self.m.TmpReg(initval=0)
+#        data_ready = [self.m.TmpWire() for _ in range(num_outputs)]
+#        last_ready = self.m.TmpWire()
+#
+#        for r in data_ready:
+#            r.assign(1)
+#        last_ready.assign(1)
+#
+#        data_ack = vtypes.Ands(*[vtypes.Ors(r, vtypes.Not(v))
+#                                 for v, r in zip(data_valid, data_ready)])
+#        last_ack = vtypes.Ors(last_ready, vtypes.Not(last_valid))
+#
+#        ext_cond = dtypes.make_condition(cond)
+#        data_cond = dtypes.make_condition(data_ack, last_ack)
+#
+#        counter = self.m.TmpReg(vtypes.get_width(length), initval=0)
+#
+#        last = self.m.TmpReg(initval=0)
+#        reuse_data = [self.m.TmpReg(self.datawidth, initval=0, signed=True)
+#                      for _ in range(num_outputs)]
+#        next_reuse_data = [self.m.TmpReg(self.datawidth, initval=0, signed=True)
+#                           for _ in range(num_outputs)]
+#
+#        reuse_count = self.m.TmpReg(vtypes.get_width(reuse_size), initval=0)
+#        fill_reuse_count = self.m.TmpReg(initval=0)
+#        fetch_done = self.m.TmpReg(initval=0)
+#
+#        fsm = TmpFSM(self.m, self.clk, self.rst)
+#
+#        read_addr = self.m.TmpRegLike(self.interfaces[port].addr, initval=0)
+#
+#        # initial state
+#        fsm.If(ext_cond)(
+#            read_addr(addr),
+#            fetch_done(0),
+#            counter(length)
+#        )
+#        fsm.If(ext_cond, length > 0).goto_next()
+#
+#        read_cond = vtypes.Ands(fsm.here, ext_cond)
+#        read_enable = vtypes.Ands(fsm.here, ext_cond)
+#        util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
+#        util.add_enable_cond(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+#
+#        # initial prefetch state
+#        for n in next_reuse_data:
+#            fsm(
+#                read_addr(read_addr + stride),
+#                counter(vtypes.Mux(counter > 0, counter - 1, counter))
+#            )
+#            fsm.Delay(1)(
+#                n(self.interfaces[port].rdata)
+#            )
+#
+#            read_cond = fsm.here
+#            read_enable = fsm.here
+#            util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
+#            util.add_enable_cond(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+#
+#            fsm.goto_next()
+#
+#        fsm.goto_next()
+#        fsm.goto_next()
+#
+#        # initial update state
+#        for n, r in zip(next_reuse_data, reuse_data):
+#            fsm(
+#                r(n)
+#            )
+#
+#        fsm(
+#            fill_reuse_count(1),
+#            fetch_done(counter == 0)
+#        )
+#        fsm.Delay(1)(
+#            fill_reuse_count(0)
+#        )
+#
+#        fsm.goto_next()
+#
+#        # prefetch state
+#        read_start_state = fsm.current
+#
+#        for n in next_reuse_data:
+#            fsm(
+#                read_addr(read_addr + stride),
+#                counter(vtypes.Mux(counter > 0, counter - 1, counter))
+#            )
+#            fsm.Delay(1)(
+#                n(self.interfaces[port].rdata)
+#            )
+#
+#            read_cond = fsm.here
+#            read_enable = fsm.here
+#            util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
+#            util.add_enable_cond(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+#
+#            fsm.goto_next()
+#
+#        fsm.goto_next()
+#        fsm.goto_next()
+#
+#        # update state
+#        for n, r in zip(next_reuse_data, reuse_data):
+#            fsm.If(data_cond, reuse_count == 0)(
+#                r(n)
+#            )
+#
+#        fsm.If(data_cond, reuse_count == 0)(
+#            fill_reuse_count(vtypes.Not(fetch_done)),
+#            fetch_done(counter == 0)
+#        )
+#        fsm.Delay(1)(
+#            fill_reuse_count(0)
+#        )
+#
+#        # next -> prefetch state or initial state
+#        fsm.If(data_cond, reuse_count == 0, counter == 0).goto_init()
+#        fsm.If(data_cond, reuse_count == 0, counter > 0).goto(read_start_state)
+#
+#        # output signal control
+#        self.seq.If(data_cond, last_valid)(
+#            last(0),
+#            [d(0) for d in data_valid],
+#            last_valid(0)
+#        )
+#
+#        self.seq.If(fill_reuse_count)(
+#            reuse_count(reuse_size)
+#        )
+#
+#        self.seq.If(data_cond, reuse_count > 0)(
+#            reuse_count.dec(),
+#            [d(1) for d in data_valid],
+#            last_valid(1),
+#            last(0)
+#        )
+#
+#        self.seq.If(data_cond, reuse_count == 1, fetch_done)(
+#            last(1)
+#        )
+#
+#        df_last = self.df.Variable(
+#            last, last_valid, last_ready, width=1, signed=False)
+#        done = last
+#
+#        df_reuse_data = [self.df.Variable(d, v, r,
+#                                          width=self.datawidth, point=point, signed=signed)
+#                         for d, v, r in zip(reuse_data, data_valid, data_ready)]
+#
+#        return tuple(df_reuse_data + [df_last, done])
+#
+#    def read_dataflow_reuse_pattern(self, port, addr, pattern,
+#                                    reuse_size=1, num_outputs=1,
+#                                    cond=None, point=0, signed=True):
+#        """ 
+#        @return data, last, done
+#        """
+#
+#        if not isinstance(pattern, (tuple, list)):
+#            raise TypeError('pattern must be list or tuple.')
+#
+#        if not pattern:
+#            raise ValueError(
+#                'pattern must have one (size, stride) pair at least.')
+#
+#        if not isinstance(pattern[0], (tuple, list)):
+#            pattern = (pattern,)
+#
+#        if not isinstance(num_outputs, int):
+#            raise TypeError('num_outputs must be int')
+#
+#        data_valid = [self.m.TmpReg(initval=0) for _ in range(num_outputs)]
+#        last_valid = self.m.TmpReg(initval=0)
+#        data_ready = [self.m.TmpWire() for _ in range(num_outputs)]
+#        last_ready = self.m.TmpWire()
+#
+#        for r in data_ready:
+#            r.assign(1)
+#        last_ready.assign(1)
+#
+#        data_ack = vtypes.Ands(*[vtypes.Ors(r, vtypes.Not(v))
+#                                 for v, r in zip(data_valid, data_ready)])
+#        last_ack = vtypes.Ors(last_ready, vtypes.Not(last_valid))
+#
+#        ext_cond = dtypes.make_condition(cond)
+#        data_cond = dtypes.make_condition(data_ack, last_ack)
+#
+#        next_addr = self.m.TmpWire(self.addrwidth)
+#        offset_addr = self.m.TmpWire(self.addrwidth)
+#        offsets = [self.m.TmpReg(self.addrwidth, initval=0)
+#                   for _ in pattern[1:]]
+#
+#        offset_addr_value = addr
+#        for offset in offsets:
+#            offset_addr_value = offset + offset_addr_value
+#        offset_addr.assign(offset_addr_value)
+#
+#        offsets.insert(0, None)
+#
+#        count_list = [self.m.TmpReg(vtypes.get_width(out_size), initval=0)
+#                      for (out_size, out_stride) in pattern]
+#
+#        last = self.m.TmpReg(initval=0)
+#        reuse_data = [self.m.TmpReg(self.datawidth, initval=0, signed=True)
+#                      for _ in range(num_outputs)]
+#        next_reuse_data = [self.m.TmpReg(self.datawidth, initval=0, signed=True)
+#                           for _ in range(num_outputs)]
+#
+#        reuse_count = self.m.TmpReg(vtypes.get_width(reuse_size), initval=0)
+#        fill_reuse_count = self.m.TmpReg(initval=0)
+#
+#        prefetch_done = self.m.TmpReg(initval=0)
+#        fetch_done = self.m.TmpReg(initval=0)
+#
+#        update_addr = None
+#        stride_value = None
+#        carry = None
+#
+#        for offset, count, (out_size, out_stride) in zip(offsets, count_list, pattern):
+#            if update_addr is None:
+#                update_addr = count == 0
+#            else:
+#                update_addr = vtypes.Mux(carry, count == 0, update_addr)
+#
+#            if stride_value is None:
+#                stride_value = out_stride
+#            else:
+#                stride_value = vtypes.Mux(carry, out_stride, stride_value)
+#
+#            if carry is None:
+#                carry = out_size == 1
+#            else:
+#                carry = vtypes.Ands(carry, out_size == 1)
+#
+#        read_addr = self.m.TmpRegLike(self.interfaces[port].addr, initval=0)
+#        next_addr.assign(vtypes.Mux(update_addr, offset_addr,
+#                                    read_addr + stride_value))
+#
+#        fsm = TmpFSM(self.m, self.clk, self.rst)
+#
+#        # initial state
+#        fsm.If(ext_cond)(
+#            read_.addr(addr),
+#            prefetch_done(0),
+#            fetch_done(0)
+#        )
+#
+#        read_cond = vtypes.Ands(fsm.here, ext_cond)
+#        read_enable = vtypes.Ands(fsm.here, ext_cond)
+#        util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
+#        util.add_enable_cond(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+#
+#        first = True
+#        for offset, count, (out_size, out_stride) in zip(offsets, count_list, pattern):
+#            fsm.If(ext_cond)(
+#                count(out_size) if first else count(out_size - 1),
+#            )
+#            if offset is not None:
+#                fsm.If(ext_cond)(
+#                    offset(0)
+#                )
+#            first = False
+#
+#        fsm.If(ext_cond).goto_next()
+#
+#        # initial prefetch state
+#        for n in next_reuse_data:
+#            update_count = None
+#            update_offset = None
+#            last_one = None
+#            carry = None
+#
+#            for offset, count, (out_size, out_stride) in zip(offsets, count_list, pattern):
+#                fsm.If(update_count)(
+#                    count.dec()
+#                )
+#                fsm.If(update_count, count == 0)(
+#                    count(out_size - 1)
+#                )
+#                fsm(
+#                    read_addr(next_addr)
+#                )
+#                fsm.Delay(1)(
+#                    n(self.interfaces[port].rdata)
+#                )
+#
+#                if offset is not None:
+#                    fsm.If(update_offset, vtypes.Not(carry))(
+#                        offset(offset + out_stride)
+#                    )
+#                    fsm.If(update_offset, count == 0)(
+#                        offset(0)
+#                    )
+#
+#                read_cond = fsm.here
+#                read_enable = fsm.here
+#                util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
+#                util.add_enable_cond(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+#
+#                if update_count is None:
+#                    update_count = count == 0
+#                else:
+#                    update_count = vtypes.Ands(update_count, count == 0)
+#
+#                if update_offset is None:
+#                    update_offset = vtypes.Mux(out_size == 1, 1, count == 1)
+#                else:
+#                    update_offset = vtypes.Ands(update_offset, count == carry)
+#
+#                if last_one is None:
+#                    last_one = count == 0
+#                else:
+#                    last_one = vtypes.Ands(last_one, count == 0)
+#
+#                if carry is None:
+#                    carry = out_size == 1
+#                else:
+#                    carry = vtypes.Ands(carry, out_size == 1)
+#
+#            fsm.goto_next()
+#
+#            fsm.If(last_one)(
+#                prefetch_done(1)
+#            )
+#
+#        fsm.goto_next()
+#        fsm.goto_next()
+#
+#        # initial update state
+#        for r, n in zip(reuse_data, next_reuse_data):
+#            fsm(
+#                r(n)
+#            )
+#
+#        fsm(
+#            fetch_done(prefetch_done),
+#            fill_reuse_count(vtypes.Not(fetch_done))
+#        )
+#        fsm.Delay(1)(
+#            fill_reuse_count(0)
+#        )
+#
+#        fsm.goto_next()
+#
+#        # prefetch state
+#        read_start_state = fsm.current
+#
+#        for n in next_reuse_data:
+#            update_count = None
+#            update_offset = None
+#            last_one = None
+#            carry = None
+#
+#            for offset, count, (out_size, out_stride) in zip(offsets, count_list, pattern):
+#                fsm.If(update_count)(
+#                    count.dec()
+#                )
+#                fsm.If(update_count, count == 0)(
+#                    count(out_size - 1)
+#                )
+#                fsm(
+#                    read_addr(next_addr)
+#                )
+#                fsm.Delay(1)(
+#                    n(self.interfaces[port].rdata)
+#                )
+#
+#                read_cond = fsm.here
+#                read_enable = fsm.here
+#                util.add_mux(self.interfaces[port].addr, read_cond, read_addr)
+#                util.add_enable_cond(self.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+#
+#                if offset is not None:
+#                    fsm.If(update_offset, vtypes.Not(carry))(
+#                        offset(offset + out_stride)
+#                    )
+#                    fsm.If(update_offset, count == 0)(
+#                        offset(0)
+#                    )
+#
+#                if update_count is None:
+#                    update_count = count == 0
+#                else:
+#                    update_count = vtypes.Ands(update_count, count == 0)
+#
+#                if update_offset is None:
+#                    update_offset = vtypes.Mux(out_size == 1, 1, count == 1)
+#                else:
+#                    update_offset = vtypes.Ands(update_offset, count == carry)
+#
+#                if last_one is None:
+#                    last_one = count == 0
+#                else:
+#                    last_one = vtypes.Ands(last_one, count == 0)
+#
+#                if carry is None:
+#                    carry = out_size == 1
+#                else:
+#                    carry = vtypes.Ands(carry, out_size == 1)
+#
+#            fsm.goto_next()
+#
+#            fsm.If(last_one)(
+#                prefetch_done(1)
+#            )
+#
+#        fsm.goto_next()
+#        fsm.goto_next()
+#
+#        # update state
+#        for r, n in zip(reuse_data, next_reuse_data):
+#            fsm.If(data_cond, reuse_count == 0)(
+#                r(n)
+#            )
+#
+#        fsm.If(data_cond, reuse_count == 0)(
+#            fetch_done(prefetch_done),
+#            fill_reuse_count(vtypes.Not(fetch_done))
+#        )
+#        fsm.Delay(1)(
+#            fill_reuse_count(0)
+#        )
+#
+#        # next -> prefetch state or initial state
+#        fsm.If(data_cond, reuse_count == 0,
+#               fetch_done).goto_init()
+#        fsm.If(data_cond, reuse_count == 0,
+#               vtypes.Not(fetch_done)).goto(read_start_state)
+#
+#        # output signal control
+#        self.seq.If(data_cond, last_valid)(
+#            last(0),
+#            [d(0) for d in data_valid],
+#            last_valid(0)
+#        )
+#
+#        self.seq.If(fill_reuse_count)(
+#            reuse_count(reuse_size)
+#        )
+#
+#        self.seq.If(data_cond, reuse_count > 0)(
+#            reuse_count.dec(),
+#            [d(1) for d in data_valid],
+#            last_valid(1),
+#            last(0)
+#        )
+#
+#        self.seq.If(data_cond, reuse_count == 1, fetch_done)(
+#            last(1)
+#        )
+#
+#        df_last = self.df.Variable(
+#            last, last_valid, last_ready, width=1, signed=False)
+#        done = last
+#
+#        df_reuse_data = [self.df.Variable(d, v, r,
+#                                          width=self.datawidth, point=point, signed=signed)
+#                         for d, v, r in zip(reuse_data, data_valid, data_ready)]
+#
+#        return tuple(df_reuse_data + [df_last, done])
+#
+#    def read_dataflow_reuse_multidim(self, port, addr, shape, order=None,
+#                                     reuse_size=1, num_outputs=1,
+#                                     cond=None, point=0, signed=True):
+#        """ 
+#        @return data, last, done
+#        """
+#
+#        if order is None:
+#            order = list(reversed(range(len(shape))))
+#
+#        pattern = self._to_pattern(shape, order)
+#        return self.read_dataflow_reuse_pattern(port, addr, pattern,
+#                                                reuse_size, num_outputs,
+#                                                cond=cond, point=point, signed=signed)
+#
+#    def write_dataflow(self, port, addr, data, length=1,
+#                       stride=1, cond=None, when=None):
+#        """ 
+#        @return done
+#        'data' and 'when' must be dataflow variables
+#        """
+#
+#        if self._write_disabled[port]:
+#            raise TypeError('Write disabled.')
+#
+#        counter = self.m.TmpReg(vtypes.get_width(length), initval=0)
+#        last = self.m.TmpReg(initval=0)
+#
+#        ext_cond = dtypes.make_condition(cond)
+#        data_cond = dtypes.make_condition(counter > 0, vtypes.Not(last))
+#
+#        if when is None or not isinstance(when, df_numeric):
+#            raw_data, raw_valid = data.read(cond=data_cond)
+#        else:
+#            data_list, raw_valid = dtypes.read_multi(
+#                self.m, data, when, cond=data_cond)
+#            raw_data = data_list[0]
+#            when = data_list[1]
+#
+#        when_cond = dtypes.make_condition(when, ready=data_cond)
+#        if when_cond is not None:
+#            raw_valid = vtypes.Ands(when_cond, raw_valid)
+#
+#        write_addr = self.m.TmpRegLike(self.interfaces[port].addr, initval=0)
+#        write_data = self.m.TmpRegLike(self.interfaces[port].wdata, initval=0)
+#        write_enable = self.m.TmpRegLike(self.interfaces[port].wenable, initval=0)
+#
+#        util.add_mux(self.interfaces[port].addr, write_enable, write_addr)
+#        util.add_mux(self.interfaces[port].wdata, write_enable, write_data)
+#        util.add_enable_cond(self.interfaces[port].wenable, write_enable, vtypes.Int(1, 1))
+#        util.add_enable_cond(self.interfaces[port].enable, write_enable, vtypes.Int(1, 1))
+#
+#        self.seq.If(ext_cond, counter == 0)(
+#            write_addr(addr - stride),
+#            counter(length),
+#        )
+#
+#        self.seq.If(raw_valid, counter > 0)(
+#            write_addr(write_addr + stride),
+#            write_data(raw_data),
+#            write_enable(1),
+#            counter.dec()
+#        )
+#
+#        self.seq.If(raw_valid, counter == 1)(
+#            last(1)
+#        )
+#
+#        # de-assert
+#        self.seq.Delay(1)(
+#            write_enable(0),
+#            last(0)
+#        )
+#
+#        done = last
+#
+#        return done
 
-        self.seq.If(data_cond, reuse_count > 0)(
-            reuse_count.dec(),
-            [d(1) for d in data_valid],
-            last_valid(1),
-            last(0)
-        )
+#    def write_dataflow_pattern(self, port, addr, data, pattern,
+#                               cond=None, when=None):
+#        """ 
+#        @return done
+#        'data' and 'when' must be dataflow variables
+#        """
+#
+#        if self._write_disabled[port]:
+#            raise TypeError('Write disabled.')
+#
+#        if not isinstance(pattern, (tuple, list)):
+#            raise TypeError('pattern must be list or tuple.')
+#
+#        if not pattern:
+#            raise ValueError(
+#                'pattern must have one (size, stride) pair at least.')
+#
+#        if not isinstance(pattern[0], (tuple, list)):
+#            pattern = (pattern,)
+#
+#        last = self.m.TmpReg(initval=0)
+#
+#        running = self.m.TmpReg(initval=0)
+#
+#        ext_cond = dtypes.make_condition(cond)
+#        data_cond = dtypes.make_condition(running, vtypes.Not(last))
+#
+#        if when is None or not isinstance(when, df_numeric):
+#            raw_data, raw_valid = data.read(cond=data_cond)
+#        else:
+#            data_list, raw_valid = dtypes.read_multi(
+#                self.m, data, when, cond=data_cond)
+#            raw_data = data_list[0]
+#            when = data_list[1]
+#
+#        when_cond = dtypes.make_condition(when, ready=data_cond)
+#        if when_cond is not None:
+#            raw_valid = vtypes.Ands(when_cond, raw_valid)
+#
+#        offset_addr = self.m.TmpWire(self.addrwidth)
+#        offsets = [self.m.TmpReg(self.addrwidth, initval=0) for _ in pattern]
+#
+#        offset_addr_value = addr
+#        for offset in offsets:
+#            offset_addr_value = offset + offset_addr_value
+#        offset_addr.assign(offset_addr_value)
+#
+#        count_list = [self.m.TmpReg(vtypes.get_width(out_size), initval=0)
+#                      for (out_size, out_stride) in pattern]
+#
+#        self.seq.If(ext_cond, vtypes.Not(running))(
+#            running(1)
+#        )
+#
+#        write_addr = self.m.TmpRegLike(self.interfaces[port].addr, initval=0)
+#        write_data = self.m.TmpRegLike(self.interfaces[port].wdata, initval=0)
+#        write_enable = self.m.TmpRegLike(self.interfaces[port].wenable, initval=0)
+#
+#        util.add_mux(self.interfaces[port].addr, write_enable, write_addr)
+#        util.add_mux(self.interfaces[port].wdata, write_enable, write_data)
+#        util.add_enable_cond(self.interfaces[port].wenable, write_enable, vtypes.Int(1, 1))
+#        util.add_enable_cond(self.interfaces[port].enable, write_enable, vtypes.Int(1, 1))
+#
+#        self.seq.If(raw_valid, running)(
+#            write_addr(offset_addr),
+#            write_data(raw_data),
+#            write_enable(1)
+#        )
+#
+#        update_count = None
+#        last_one = None
+#
+#        for offset, count, (out_size, out_stride) in zip(offsets, count_list, pattern):
+#            self.seq.If(ext_cond, vtypes.Not(running))(
+#                count(out_size - 1),
+#                offset(0)
+#            )
+#            self.seq.If(raw_valid, running, update_count)(
+#                count.dec(),
+#                offset(offset + out_stride)
+#            )
+#            self.seq.If(raw_valid, running, update_count, count == 0)(
+#                count(out_size - 1),
+#                offset(0)
+#            )
+#
+#            if update_count is None:
+#                update_count = count == 0
+#            else:
+#                update_count = vtypes.Ands(update_count, count == 0)
+#
+#            if last_one is None:
+#                last_one = count == 0
+#            else:
+#                last_one = vtypes.Ands(last_one, count == 0)
+#
+#        self.seq.If(raw_valid, last_one)(
+#            running(0),
+#            last(1)
+#        )
+#
+#        # de-assert
+#        self.seq.Delay(1)(
+#            write_enable(0),
+#            last(0)
+#        )
+#
+#        done = last
+#
+#        return done
 
-        self.seq.If(data_cond, reuse_count == 1, fetch_done)(
-            last(1)
-        )
+#    def write_dataflow_multidim(self, port, addr, data, shape, order=None,
+#                                cond=None, when=None):
+#        """ 
+#        @return done
+#        'data' and 'when' must be dataflow variables
+#        """
+#
+#        if order is None:
+#            order = list(reversed(range(len(shape))))
+#
+#        pattern = self._to_pattern(shape, order)
+#        return self.write_dataflow_pattern(port, addr, data, pattern,
+#                                           cond=cond, when=when)
 
-        df_last = self.df.Variable(
-            last, last_valid, last_ready, width=1, signed=False)
-        done = last
-
-        df_reuse_data = [self.df.Variable(d, v, r,
-                                          width=self.datawidth, point=point, signed=signed)
-                         for d, v, r in zip(reuse_data, data_valid, data_ready)]
-
-        return tuple(df_reuse_data + [df_last, done])
-
-    def read_dataflow_reuse_multidim(self, port, addr, shape, order=None,
-                                     reuse_size=1, num_outputs=1,
-                                     cond=None, point=0, signed=True):
-        """ 
-        @return data, last, done
-        """
-
-        if order is None:
-            order = list(reversed(range(len(shape))))
-
-        pattern = self._to_pattern(shape, order)
-        return self.read_dataflow_reuse_pattern(port, addr, pattern,
-                                                reuse_size, num_outputs,
-                                                cond=cond, point=point, signed=signed)
-
-    def write_dataflow(self, port, addr, data, length=1,
-                       stride=1, cond=None, when=None):
-        """ 
-        @return done
-        'data' and 'when' must be dataflow variables
-        """
-
-        if self._write_disabled[port]:
-            raise TypeError('Write disabled.')
-
-        counter = self.m.TmpReg(vtypes.get_width(length), initval=0)
-        last = self.m.TmpReg(initval=0)
-
-        ext_cond = dtypes.make_condition(cond)
-        data_cond = dtypes.make_condition(counter > 0, vtypes.Not(last))
-
-        if when is None or not isinstance(when, df_numeric):
-            raw_data, raw_valid = data.read(cond=data_cond)
-        else:
-            data_list, raw_valid = dtypes.read_multi(
-                self.m, data, when, cond=data_cond)
-            raw_data = data_list[0]
-            when = data_list[1]
-
-        when_cond = dtypes.make_condition(when, ready=data_cond)
-        if when_cond is not None:
-            raw_valid = vtypes.Ands(when_cond, raw_valid)
-
-        write_addr = self.m.TmpRegLike(self.interfaces[port].addr, initval=0)
-        write_data = self.m.TmpRegLike(self.interfaces[port].wdata, initval=0)
-        write_enable = self.m.TmpRegLike(self.interfaces[port].wenable, initval=0)
-
-        util.add_mux(self.interfaces[port].addr, write_enable, write_addr)
-        util.add_mux(self.interfaces[port].wdata, write_enable, write_data)
-        util.add_enable_cond(self.interfaces[port].wenable, write_enable, vtypes.Int(1, 1))
-        util.add_enable_cond(self.interfaces[port].enable, write_enable, vtypes.Int(1, 1))
-
-        self.seq.If(ext_cond, counter == 0)(
-            write_addr(addr - stride),
-            counter(length),
-        )
-
-        self.seq.If(raw_valid, counter > 0)(
-            write_addr(write_addr + stride),
-            write_data(raw_data),
-            write_enable(1),
-            counter.dec()
-        )
-
-        self.seq.If(raw_valid, counter == 1)(
-            last(1)
-        )
-
-        # de-assert
-        self.seq.Delay(1)(
-            write_enable(0),
-            last(0)
-        )
-
-        done = last
-
-        return done
-
-    def write_dataflow_pattern(self, port, addr, data, pattern,
-                               cond=None, when=None):
-        """ 
-        @return done
-        'data' and 'when' must be dataflow variables
-        """
-
-        if self._write_disabled[port]:
-            raise TypeError('Write disabled.')
-
-        if not isinstance(pattern, (tuple, list)):
-            raise TypeError('pattern must be list or tuple.')
-
-        if not pattern:
-            raise ValueError(
-                'pattern must have one (size, stride) pair at least.')
-
-        if not isinstance(pattern[0], (tuple, list)):
-            pattern = (pattern,)
-
-        last = self.m.TmpReg(initval=0)
-
-        running = self.m.TmpReg(initval=0)
-
-        ext_cond = dtypes.make_condition(cond)
-        data_cond = dtypes.make_condition(running, vtypes.Not(last))
-
-        if when is None or not isinstance(when, df_numeric):
-            raw_data, raw_valid = data.read(cond=data_cond)
-        else:
-            data_list, raw_valid = dtypes.read_multi(
-                self.m, data, when, cond=data_cond)
-            raw_data = data_list[0]
-            when = data_list[1]
-
-        when_cond = dtypes.make_condition(when, ready=data_cond)
-        if when_cond is not None:
-            raw_valid = vtypes.Ands(when_cond, raw_valid)
-
-        offset_addr = self.m.TmpWire(self.addrwidth)
-        offsets = [self.m.TmpReg(self.addrwidth, initval=0) for _ in pattern]
-
-        offset_addr_value = addr
-        for offset in offsets:
-            offset_addr_value = offset + offset_addr_value
-        offset_addr.assign(offset_addr_value)
-
-        count_list = [self.m.TmpReg(vtypes.get_width(out_size), initval=0)
-                      for (out_size, out_stride) in pattern]
-
-        self.seq.If(ext_cond, vtypes.Not(running))(
-            running(1)
-        )
-
-        write_addr = self.m.TmpRegLike(self.interfaces[port].addr, initval=0)
-        write_data = self.m.TmpRegLike(self.interfaces[port].wdata, initval=0)
-        write_enable = self.m.TmpRegLike(self.interfaces[port].wenable, initval=0)
-
-        util.add_mux(self.interfaces[port].addr, write_enable, write_addr)
-        util.add_mux(self.interfaces[port].wdata, write_enable, write_data)
-        util.add_enable_cond(self.interfaces[port].wenable, write_enable, vtypes.Int(1, 1))
-        util.add_enable_cond(self.interfaces[port].enable, write_enable, vtypes.Int(1, 1))
-
-        self.seq.If(raw_valid, running)(
-            write_addr(offset_addr),
-            write_data(raw_data),
-            write_enable(1)
-        )
-
-        update_count = None
-        last_one = None
-
-        for offset, count, (out_size, out_stride) in zip(offsets, count_list, pattern):
-            self.seq.If(ext_cond, vtypes.Not(running))(
-                count(out_size - 1),
-                offset(0)
-            )
-            self.seq.If(raw_valid, running, update_count)(
-                count.dec(),
-                offset(offset + out_stride)
-            )
-            self.seq.If(raw_valid, running, update_count, count == 0)(
-                count(out_size - 1),
-                offset(0)
-            )
-
-            if update_count is None:
-                update_count = count == 0
-            else:
-                update_count = vtypes.Ands(update_count, count == 0)
-
-            if last_one is None:
-                last_one = count == 0
-            else:
-                last_one = vtypes.Ands(last_one, count == 0)
-
-        self.seq.If(raw_valid, last_one)(
-            running(0),
-            last(1)
-        )
-
-        # de-assert
-        self.seq.Delay(1)(
-            write_enable(0),
-            last(0)
-        )
-
-        done = last
-
-        return done
-
-    def write_dataflow_multidim(self, port, addr, data, shape, order=None,
-                                cond=None, when=None):
-        """ 
-        @return done
-        'data' and 'when' must be dataflow variables
-        """
-
-        if order is None:
-            order = list(reversed(range(len(shape))))
-
-        pattern = self._to_pattern(shape, order)
-        return self.write_dataflow_pattern(port, addr, data, pattern,
-                                           cond=cond, when=when)
-
-    def _to_pattern(self, shape, order):
-        pattern = []
-        for p in order:
-            if not isinstance(p, int):
-                raise TypeError(
-                    "Values of 'order' must be 'int', not %s" % str(type(p)))
-            size = shape[p]
-            basevalue = 1 if isinstance(size, int) else vtypes.Int(1)
-            stride = functools.reduce(lambda x, y: x * y,
-                                      shape[p + 1:], basevalue)
-            pattern.append((size, stride))
-        return pattern
+#    def _to_pattern(self, shape, order):
+#        pattern = []
+#        for p in order:
+#            if not isinstance(p, int):
+#                raise TypeError(
+#                    "Values of 'order' must be 'int', not %s" % str(type(p)))
+#            size = shape[p]
+#            basevalue = 1 if isinstance(size, int) else vtypes.Int(1)
+#            stride = functools.reduce(lambda x, y: x * y,
+#                                      shape[p + 1:], basevalue)
+#            pattern.append((size, stride))
+#        return pattern
 
 
 class FixedRAM(RAM):
@@ -1144,14 +1246,16 @@ class FixedRAM(RAM):
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=10, numports=1, point=0,
                  initvals=None, nocheck_initvals=False, noconvert_initvals=False,
-                 ram_style=None, nodataflow=False, external_ports=None):
+#                 ram_style=None, nodataflow=False, external_ports=None):
+                 ram_style=None, external_ports=None):
 
         if initvals is not None and not noconvert_initvals:
             initvals = [fxd.to_fixed(initval, point) for initval in initvals]
 
         RAM.__init__(self, m, name, clk, rst,
                      datawidth, addrwidth, numports,
-                     initvals, nocheck_initvals, ram_style, nodataflow, external_ports)
+#                     initvals, nocheck_initvals, ram_style, nodataflow, external_ports)
+                     initvals, nocheck_initvals, ram_style, external_ports)
 
         self.point = point
 
@@ -1215,7 +1319,7 @@ class MultibankRAM(object):
         self.keep_hierarchy = False
         self.seq = None
 
-        self.df = DataflowManager(self.m, self.clk, self.rst)
+#        self.df = DataflowManager(self.m, self.clk, self.rst)
 
         # key: (axi._id(), port, ram_method_name)
         self.cache_dma_reqs = {}
@@ -1329,7 +1433,7 @@ class MultibankRAM(object):
 
         return rdata_wire, rvalid_wire
 
-    def write_rtl(self, addr, data, port=0, cond=None):
+    def write_rtl(self, addr, wdata, port=0, cond=None):
         """
         @return None
         """
@@ -1342,7 +1446,7 @@ class MultibankRAM(object):
 
         for i, ram in enumerate(self.rams):
             bank_cond = vtypes.Ands(cond, bank == i)
-            ram.write_rtl(addr, data, port, bank_cond)
+            ram.write_rtl(addr, wdata, port, bank_cond)
 
         return 0
 
@@ -1481,9 +1585,6 @@ class MultibankRAM(object):
     def dma_read_bank(self, fsm, bank, bus, local_addr, global_addr, size,
                       local_stride=1, port=0):
 
-        if bus.enable_async:
-            bus.dma_wait_read(fsm)
-
         self._dma_read_bank(fsm, bank, bus, local_addr, global_addr, size,
                             local_stride, port)
 
@@ -1495,8 +1596,6 @@ class MultibankRAM(object):
         if not bus.enable_async:
             raise ValueError(
                 "Async mode is disabled. Set 'True' to AXIM.enable_async.")
-
-        bus.dma_wait_read(fsm)
 
         self._dma_read_bank(fsm, bank, bus, local_addr, global_addr, size,
                             local_stride, port)
@@ -1524,9 +1623,6 @@ class MultibankRAM(object):
     def dma_write_bank(self, fsm, bank, bus, local_addr, global_addr, size,
                        local_stride=1, port=0):
 
-        if bus.enable_async:
-            bus.dma_wait_write(fsm)
-
         self._dma_write_bank(fsm, bank, bus, local_addr, global_addr, size,
                              local_stride, port)
 
@@ -1538,8 +1634,6 @@ class MultibankRAM(object):
         if not bus.enable_async:
             raise ValueError(
                 "Async mode is disabled. Set 'True' to AXIM.enable_async.")
-
-        bus.dma_wait_write(fsm)
 
         self._dma_write_bank(fsm, bank, bus, local_addr, global_addr, size,
                              local_stride, port)
@@ -1567,9 +1661,6 @@ class MultibankRAM(object):
     def dma_read_block(self, fsm, bus, local_addr, global_addr, size,
                        block_size=1, local_stride=1, port=0):
 
-        if bus.enable_async:
-            bus.dma_wait_read(fsm)
-
         self._dma_read_block(fsm, bus, local_addr, global_addr, size,
                              block_size, local_stride, port)
 
@@ -1581,8 +1672,6 @@ class MultibankRAM(object):
         if not bus.enable_async:
             raise ValueError(
                 "Async mode is disabled. Set 'True' to AXIM.enable_async.")
-
-        bus.dma_wait_read(fsm)
 
         self._dma_read_block(fsm, bus, local_addr, global_addr, size,
                              block_size, local_stride, port)
@@ -1608,6 +1697,7 @@ class MultibankRAM(object):
             req_block_size(block_size)
         )
 
+        ### ???
         ram_method = functools.partial(self.write_dataflow_block,
                                        block_size=req_block_size)
 
@@ -1616,9 +1706,6 @@ class MultibankRAM(object):
 
     def dma_write_block(self, fsm, bus, local_addr, global_addr, size,
                         block_size=1, local_stride=1, port=0):
-
-        if bus.enable_async:
-            bus.dma_wait_write(fsm)
 
         self._dma_write_block(fsm, bus, local_addr, global_addr, size,
                               block_size, local_stride, port)
@@ -1631,8 +1718,6 @@ class MultibankRAM(object):
         if not bus.enable_async:
             raise ValueError(
                 "Async mode is disabled. Set 'True' to AXIM.enable_async.")
-
-        bus.dma_wait_write(fsm)
 
         self._dma_write_block(fsm, bus, local_addr, global_addr, size,
                               block_size, local_stride, port)
@@ -1658,1054 +1743,1203 @@ class MultibankRAM(object):
             req_block_size(block_size)
         )
 
+        ### ???
         ram_method = functools.partial(self.read_dataflow_block,
                                        block_size=req_block_size)
 
         bus._dma_write(fsm, self, local_addr, global_addr, size,
                        local_stride, port, ram_method)
 
-    def read_dataflow(self, port, addr, length=1,
-                      stride=1, cond=None, point=0, signed=True):
-        """ 
-        @return data, last, done
+#    def read_dataflow(self, port, addr, length=1,
+#                      stride=1, cond=None, point=0, signed=True):
+#        """ 
+#        @return data, last, done
+#        """
+#
+#        data_list = []
+#        last_list = []
+#        done_list = []
+#        for ram in self.rams:
+#            data, last, done = ram.read_dataflow(
+#                port, addr, length, stride, cond, point, signed)
+#            data_list.insert(0, data)
+#            last_list.insert(0, last)
+#            done_list.insert(0, done)
+#
+#        merged_data = dtypes.Cat(*data_list)
+#        merged_last = last_list[-1]
+#        merged_done = done_list[-1]
+#
+#        return merged_data, merged_last, merged_done
+
+#    def read_dataflow_interleave(self, port, addr, length=1,
+#                                 stride=1, cond=None, point=0, signed=True):
+#        """ 
+#        @return data, last, done
+#        """
+#
+#        if self.seq is None:
+#            self.seq = Seq(self.m, self.name, self.clk, self.rst)
+#
+#        data_valid = self.m.TmpReg(initval=0)
+#        last_valid = self.m.TmpReg(initval=0)
+#        data_ready = self.m.TmpWire()
+#        last_ready = self.m.TmpWire()
+#        data_ready.assign(1)
+#        last_ready.assign(1)
+#
+#        data_ack = vtypes.Ors(data_ready, vtypes.Not(data_valid))
+#        last_ack = vtypes.Ors(last_ready, vtypes.Not(last_valid))
+#
+#        ext_cond = dtypes.make_condition(cond)
+#        data_cond = dtypes.make_condition(data_ack, last_ack)
+#        prev_data_cond = self.seq.Prev(data_cond, 1)
+#
+#        data_list = [self.m.TmpWireLike(ram.interfaces[port].rdata, signed=True)
+#                     for ram in self.rams]
+#
+#        for data, ram in zip(data_list, self.rams):
+#            data.assign(ram.interfaces[port].rdata)
+#
+#        log_numbanks = util.log2(self.numbanks)
+#        reg_addr = self.m.TmpReg(self.addrwidth + log_numbanks, initval=0)
+#        next_addr = self.m.TmpWire(self.addrwidth + log_numbanks)
+#        next_addr.assign(reg_addr + stride)
+#        ram_addr_list = [self.m.TmpWire(ram.addrwidth) for ram in self.rams]
+#        for ram_addr in ram_addr_list:
+#            ram_addr.assign(next_addr >> log_numbanks)
+#
+#        bank_sel = self.m.TmpWire(log_numbanks)
+#        bank_sel.assign(reg_addr[0:log_numbanks])
+#        reg_bank_sel = self.m.TmpReg(log_numbanks, initval=0)
+#        prev_reg_bank_sel = self.seq.Prev(reg_bank_sel, 1)
+#        self.seq.If(data_cond)(
+#            reg_bank_sel(bank_sel)
+#        )
+#
+#        cur_bank_sel = vtypes.Mux(prev_data_cond, reg_bank_sel, prev_reg_bank_sel)
+#        patterns = [(cur_bank_sel == i, data)
+#                    for i, data in enumerate(data_list)]
+#        patterns.append((None, 0))
+#
+#        data = self.m.TmpWire(self.orig_datawidth, signed=True)
+#        data.assign(vtypes.PatternMux(*patterns))
+#
+#        next_valid_on = self.m.TmpReg(initval=0)
+#        next_valid_off = self.m.TmpReg(initval=0)
+#
+#        next_last = self.m.TmpReg(initval=0)
+#        last = self.m.TmpReg(initval=0)
+#
+#        counter = self.m.TmpReg(vtypes.get_width(length), initval=0)
+#
+#        read_addr_list = [self.m.TmpRegLike(ram.interfaces[port].addr, initval=0)
+#                          for ram in self.rams]
+#
+#        read_cond = next_valid_on
+#        read_enable = vtypes.Ands(data_cond, next_valid_on)
+#        for ram, read_addr in zip(self.rams, read_addr_list):
+#            util.add_mux(ram.interfaces[port].addr, read_cond, read_addr)
+#            util.add_enable_cond(ram.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+#
+#        self.seq.If(data_cond, next_valid_off)(
+#            last(0),
+#            data_valid(0),
+#            last_valid(0),
+#            next_valid_off(0)
+#        )
+#
+#        self.seq.If(data_cond, next_valid_on)(
+#            data_valid(1),
+#            last_valid(1),
+#            last(next_last),
+#            next_last(0),
+#            next_valid_on(0),
+#            next_valid_off(1)
+#        )
+#
+#        self.seq.If(ext_cond, counter == 0,
+#                    vtypes.Not(next_last), vtypes.Not(last))(
+#            reg_addr(addr),
+#            counter(length - 1),
+#            next_valid_on(1),
+#            next_last(length == 1)
+#        )
+#
+#        for read_addr in read_addr_list:
+#            self.seq.If(ext_cond, counter == 0,
+#                        vtypes.Not(next_last), vtypes.Not(last))(
+#                read_addr(addr >> log_numbanks)
+#            )
+#
+#        self.seq.If(data_cond, counter > 0)(
+#            reg_addr(reg_addr + stride),
+#            counter.dec(),
+#            next_valid_on(1),
+#            next_last(0)
+#        )
+#
+#        for read_addr, ram_addr in zip(read_addr_list, ram_addr_list):
+#            self.seq.If(data_cond, counter > 0)(
+#                read_addr(ram_addr)
+#            )
+#
+#        self.seq.If(data_cond, counter == 1)(
+#            next_last(1)
+#        )
+#
+#        df = self.df if self.df is not None else dataflow
+#
+#        df_data = df.Variable(data, data_valid, data_ready,
+#                              width=self.orig_datawidth, point=point, signed=signed)
+#        df_last = df.Variable(last, last_valid, last_ready, width=1)
+#        done = last
+#
+#        return df_data, df_last, done
+
+#    def read_dataflow_pattern_interleave(self, port, addr, pattern,
+#                                         cond=None, point=0, signed=True):
+#        """ 
+#        @return data, last, done
+#        """
+#
+#        if self.seq is None:
+#            self.seq = Seq(self.m, self.name, self.clk, self.rst)
+#
+#        if not isinstance(pattern, (tuple, list)):
+#            raise TypeError('pattern must be list or tuple.')
+#
+#        if not pattern:
+#            raise ValueError(
+#                'pattern must have one (size, stride) pair at least.')
+#
+#        if not isinstance(pattern[0], (tuple, list)):
+#            pattern = (pattern,)
+#
+#        data_valid = self.m.TmpReg(initval=0)
+#        last_valid = self.m.TmpReg(initval=0)
+#        data_ready = self.m.TmpWire()
+#        last_ready = self.m.TmpWire()
+#        data_ready.assign(1)
+#        last_ready.assign(1)
+#
+#        data_ack = vtypes.Ors(data_ready, vtypes.Not(data_valid))
+#        last_ack = vtypes.Ors(last_ready, vtypes.Not(last_valid))
+#
+#        ext_cond = dtypes.make_condition(cond)
+#        data_cond = dtypes.make_condition(data_ack, last_ack)
+#        prev_data_cond = self.seq.Prev(data_cond, 1)
+#
+#        data_list = [self.m.TmpWireLike(ram.interfaces[port].rdata, signed=True)
+#                     for ram in self.rams]
+#
+#        for data, ram in zip(data_list, self.rams):
+#            data.assign(ram.interfaces[port].rdata)
+#
+#        log_numbanks = util.log2(self.numbanks)
+#        reg_addr = self.m.TmpReg(self.addrwidth + log_numbanks, initval=0)
+#
+#        bank_sel = self.m.TmpWire(log_numbanks)
+#        bank_sel.assign(reg_addr[0:log_numbanks])
+#        reg_bank_sel = self.m.TmpReg(log_numbanks, initval=0)
+#        prev_reg_bank_sel = self.seq.Prev(reg_bank_sel, 1)
+#        self.seq.If(data_cond)(
+#            reg_bank_sel(bank_sel)
+#        )
+#
+#        cur_bank_sel = vtypes.Mux(prev_data_cond, reg_bank_sel, prev_reg_bank_sel)
+#        patterns = [(cur_bank_sel == i, data)
+#                    for i, data in enumerate(data_list)]
+#        patterns.append((None, 0))
+#
+#        data = self.m.TmpWire(self.orig_datawidth, signed=True)
+#        data.assign(vtypes.PatternMux(*patterns))
+#
+#        next_valid_on = self.m.TmpReg(initval=0)
+#        next_valid_off = self.m.TmpReg(initval=0)
+#
+#        next_last = self.m.TmpReg(initval=0)
+#        last = self.m.TmpReg(initval=0)
+#
+#        running = self.m.TmpReg(initval=0)
+#
+#        next_addr = self.m.TmpWire(self.addrwidth + log_numbanks)
+#        offset_addr = self.m.TmpWire(self.addrwidth + log_numbanks)
+#        offsets = [self.m.TmpReg(self.addrwidth + log_numbanks, initval=0)
+#                   for _ in pattern[1:]]
+#
+#        ram_addr_list = [self.m.TmpWire(ram.addrwidth) for ram in self.rams]
+#        for ram_addr in ram_addr_list:
+#            ram_addr.assign(next_addr >> log_numbanks)
+#
+#        offset_addr_value = addr
+#        for offset in offsets:
+#            offset_addr_value = offset + offset_addr_value
+#        offset_addr.assign(offset_addr_value)
+#
+#        offsets.insert(0, None)
+#
+#        count_list = [self.m.TmpReg(vtypes.get_width(out_size), initval=0)
+#                      for (out_size, out_stride) in pattern]
+#
+#        read_addr_list = [self.m.TmpRegLike(ram.interfaces[port].addr, initval=0)
+#                          for ram in self.rams]
+#
+#        read_cond = next_valid_on
+#        read_enable = vtypes.Ands(data_cond, next_valid_on)
+#        for ram, read_addr in zip(self.rams, read_addr_list):
+#            util.add_mux(ram.interfaces[port].addr, read_cond, read_addr)
+#            util.add_enable_cond(ram.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+#
+#        self.seq.If(data_cond, next_valid_off)(
+#            last(0),
+#            data_valid(0),
+#            last_valid(0),
+#            next_valid_off(0)
+#        )
+#
+#        self.seq.If(data_cond, next_valid_on)(
+#            data_valid(1),
+#            last_valid(1),
+#            last(next_last),
+#            next_last(0),
+#            next_valid_on(0),
+#            next_valid_off(1)
+#        )
+#
+#        self.seq.If(ext_cond, vtypes.Not(running),
+#                    vtypes.Not(next_last), vtypes.Not(last))(
+#            reg_addr(addr),
+#            running(1),
+#            next_valid_on(1)
+#        )
+#
+#        for read_addr in read_addr_list:
+#            self.seq.If(ext_cond, vtypes.Not(running),
+#                        vtypes.Not(next_last), vtypes.Not(last))(
+#                read_addr(addr >> log_numbanks)
+#            )
+#
+#        self.seq.If(data_cond, running)(
+#            reg_addr(next_addr),
+#            next_valid_on(1),
+#            next_last(0)
+#        )
+#
+#        for read_addr, ram_addr in zip(read_addr_list, ram_addr_list):
+#            self.seq.If(data_cond, running)(
+#                ram.interfaces[port].addr(ram_addr)
+#            )
+#
+#        update_count = None
+#        update_offset = None
+#        update_addr = None
+#        last_one = None
+#        stride_value = None
+#        carry = None
+#
+#        for offset, count, (out_size, out_stride) in zip(offsets, count_list, pattern):
+#            self.seq.If(ext_cond, vtypes.Not(running),
+#                        vtypes.Not(next_last), vtypes.Not(last))(
+#                count(out_size - 1)
+#            )
+#            self.seq.If(data_cond, running, update_count)(
+#                count.dec()
+#            )
+#            self.seq.If(data_cond, running, update_count, count == 0)(
+#                count(out_size - 1)
+#            )
+#
+#            if offset is not None:
+#                self.seq.If(ext_cond, vtypes.Not(running),
+#                            vtypes.Not(next_last), vtypes.Not(last))(
+#                    offset(0)
+#                )
+#                self.seq.If(data_cond, running, update_offset, vtypes.Not(carry))(
+#                    offset(offset + out_stride)
+#                )
+#                self.seq.If(data_cond, running, update_offset, count == 0)(
+#                    offset(0)
+#                )
+#
+#            if update_count is None:
+#                update_count = count == 0
+#            else:
+#                update_count = vtypes.Ands(update_count, count == 0)
+#
+#            if update_offset is None:
+#                update_offset = vtypes.Mux(out_size == 1, 1, count == 1)
+#            else:
+#                update_offset = vtypes.Ands(update_offset, count == carry)
+#
+#            if update_addr is None:
+#                update_addr = count == 0
+#            else:
+#                update_addr = vtypes.Mux(carry, count == 0, update_addr)
+#
+#            if last_one is None:
+#                last_one = count == 0
+#            else:
+#                last_one = vtypes.Ands(last_one, count == 0)
+#
+#            if stride_value is None:
+#                stride_value = out_stride
+#            else:
+#                stride_value = vtypes.Mux(carry, out_stride, stride_value)
+#
+#            if carry is None:
+#                carry = out_size == 1
+#            else:
+#                carry = vtypes.Ands(carry, out_size == 1)
+#
+#        next_addr.assign(vtypes.Mux(update_addr, offset_addr,
+#                                    reg_addr + stride_value))
+#
+#        self.seq.If(data_cond, running, last_one)(
+#            running(0),
+#            next_last(1)
+#        )
+#
+#        df = self.df if self.df is not None else dataflow
+#
+#        df_data = df.Variable(data, data_valid, data_ready,
+#                              width=self.datawidth, point=point, signed=signed)
+#        df_last = df.Variable(last, last_valid, last_ready, width=1)
+#        done = last
+#
+#        return df_data, df_last, done
+
+#    def read_dataflow_multidim_interleave(self, port, addr, shape, order=None,
+#                                          cond=None, point=0, signed=True):
+#        """ 
+#        @return data, last, done
+#        """
+#        if order is None:
+#            order = list(reversed(range(len(shape))))
+#
+#        pattern = self._to_pattern(shape, order)
+#        return self.read_dataflow_pattern_interleave(port, addr, pattern,
+#                                                     cond=cond, point=point, signed=signed)
+
+    def read_burst_block(self, addr, stride, length, blocksize, rready, rquit=False, port=0, cond=None):
+        """
+        @return rdata, rvalid, rlast
         """
 
-        data_list = []
-        last_list = []
+        ram_rready_list = []
+        ram_rquit_list = []
+        ram_rdata_list = []
+
+        for ram in self.rams:
+            ram_rready = self.m.TmpWire(prefix='read_burst_rready')
+            ram_rquit = self.m.TmpWire(prefix='read_burst_rquit')
+            rdata, _, _ = ram.read_burst(self, addr, stride, length, ram_rready, ram_rquit, port, cond)
+            ram_rready_list.append(ram_rready)
+            ram_rquit_list.append(ram_rquit)
+            ram_rdata_list.append(rdata)
+
+        fsm = TmpFSM(self.m, self.clk, self.rst, prefix='read_burst_block_fsm')
+
+        _length = self.m.TmpRegLike(self.interfaces[port].addr,
+                                    width=self.interfaces[port].addr.width + 1,
+                                    initval=0, prefix='read_burst_length')
+
+
+        rvalid = self.m.TmpReg(prefix='read_burst_block_rvalid', initval=0)
+        rlast = self.m.TmpReg(prefix='read_burst_block_rlast', initval=0)
+
+        fsm(
+            _length(length),
+            rvalid(0),
+            rlast(0),
+        )
+        fsm.If(cond, length > 0).goto_next()
+
+        rdata = self.m.TmpRegLike(self.interfaces[port].rdata, initval=0, prefix='read_burst_block_rdata')
+        loop = fsm.current
+
+        for i, (ram_rready, ram_rquit, ram_rdata) in enumerate(
+                zip(ram_rready_list, ram_rquit_list, ram_rdata_list)):
+
+            ram_rready.assign(vtypes.Ands(rready, fsm.here))
+            ram_rquit.assign(vtypes.Ors(rquit, vtypes.Ands(rvalid, rlast)))
+            util.add_mux(rdata, fsm.here, ram_rdata)
+
+            fsm.If(rready, _length > 0)(
+                _length.dec(),
+                rvalid(1)
+            )
+            fsm.If(rready, _length <= 1)(
+                rlast(1)
+            )
+            fsm.If(rlast, rvalid, rready)(
+                rvalid(0),
+                rlast(0),
+            )
+            fsm.If(rquit)(
+                rvalid(0),
+                rlast(0),
+            )
+            fsm.If(rlast, rvalid, rready).goto_init()
+            fsm.If(rquit).goto_init()
+
+        return rdata, rvalid, rlast
+
+
+#    def read_dataflow_block(self, port, addr, length=1, block_size=1,
+#                            stride=1, cond=None, point=0, signed=True):
+#        """ 
+#        @return data, last, done
+#        """
+#
+#        if self.keep_hierarchy and isinstance(self.rams[0], MultibankRAM):
+#            return self._read_dataflow_block_nested(port, addr, length, block_size,
+#                                                    stride, cond, point, signed)
+#
+#        if self.seq is None:
+#            self.seq = Seq(self.m, self.name, self.clk, self.rst)
+#
+#        data_valid = self.m.TmpReg(initval=0)
+#        last_valid = self.m.TmpReg(initval=0)
+#        data_ready = self.m.TmpWire()
+#        last_ready = self.m.TmpWire()
+#        data_ready.assign(1)
+#        last_ready.assign(1)
+#
+#        data_ack = vtypes.Ors(data_ready, vtypes.Not(data_valid))
+#        last_ack = vtypes.Ors(last_ready, vtypes.Not(last_valid))
+#
+#        ext_cond = dtypes.make_condition(cond)
+#        data_cond = dtypes.make_condition(data_ack, last_ack)
+#        prev_data_cond = self.seq.Prev(data_cond, 1)
+#
+#        data_list = [self.m.TmpWireLike(ram.interfaces[port].rdata, signed=True)
+#                     for ram in self.rams]
+#
+#        for data, ram in zip(data_list, self.rams):
+#            data.assign(ram.interfaces[port].rdata)
+#
+#        log_numbanks = util.log2(self.numbanks)
+#
+#        reg_addr_list = [self.m.TmpReg(self.addrwidth, initval=0)
+#                         for ram in self.rams]
+#
+#        next_addr_list = [self.m.TmpWire(self.addrwidth)
+#                          for ram in self.rams]
+#        for next_addr, reg_addr in zip(next_addr_list, reg_addr_list):
+#            next_addr.assign(reg_addr + stride)
+#
+#        ram_addr_list = [self.m.TmpWire(ram.addrwidth)
+#                         for ram in self.rams]
+#        for ram_addr, next_addr in zip(ram_addr_list, next_addr_list):
+#            ram_addr.assign(next_addr)
+#
+#        bank_sel = self.m.TmpReg(log_numbanks, initval=0)
+#        reg_bank_sel = self.m.TmpReg(log_numbanks, initval=0)
+#        prev_reg_bank_sel = self.seq.Prev(reg_bank_sel, 1)
+#        self.seq.If(data_cond)(
+#            reg_bank_sel(bank_sel)
+#        )
+#
+#        cur_bank_sel = vtypes.Mux(prev_data_cond, reg_bank_sel, prev_reg_bank_sel)
+#        patterns = [(cur_bank_sel == i, data)
+#                    for i, data in enumerate(data_list)]
+#        patterns.append((None, 0))
+#
+#        data = self.m.TmpWire(self.orig_datawidth, signed=True)
+#        data.assign(vtypes.PatternMux(*patterns))
+#
+#        next_valid_on = self.m.TmpReg(initval=0)
+#        next_valid_off = self.m.TmpReg(initval=0)
+#
+#        next_last = self.m.TmpReg(initval=0)
+#        last = self.m.TmpReg(initval=0)
+#
+#        block_counter = self.m.TmpReg(vtypes.get_width(block_size), initval=0)
+#        counter = self.m.TmpReg(vtypes.get_width(length), initval=0)
+#
+#        read_addr_list = [self.m.TmpRegLike(ram.interfaces[port].addr, initval=0)
+#                          for ram in self.rams]
+#
+#        read_cond = next_valid_on
+#        read_enable = vtypes.Ands(data_cond, next_valid_on)
+#        for ram, read_addr in zip(self.rams, read_addr_list):
+#            util.add_mux(ram.interfaces[port].addr, read_cond, read_addr)
+#            util.add_enable_cond(ram.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
+#
+#        self.seq.If(data_cond, next_valid_off)(
+#            last(0),
+#            data_valid(0),
+#            last_valid(0),
+#            next_valid_off(0)
+#        )
+#
+#        self.seq.If(data_cond, next_valid_on)(
+#            data_valid(1),
+#            last_valid(1),
+#            last(next_last),
+#            next_last(0),
+#            next_valid_on(0),
+#            next_valid_off(1)
+#        )
+#
+#        self.seq.If(ext_cond, counter == 0,
+#                    vtypes.Not(next_last), vtypes.Not(last))(
+#            bank_sel(0),
+#            reg_bank_sel(0),
+#            block_counter(block_size - 1),
+#            counter(length - 1),
+#            next_valid_on(1),
+#            next_last(length == 1)
+#        )
+#
+#        for reg_addr in reg_addr_list:
+#            self.seq.If(ext_cond, counter == 0,
+#                        vtypes.Not(next_last), vtypes.Not(last))(
+#                reg_addr(addr)
+#            )
+#
+#        for read_addr in read_addr_list:
+#            self.seq.If(ext_cond, counter == 0,
+#                        vtypes.Not(next_last), vtypes.Not(last))(
+#                read_addr(addr)
+#            )
+#
+#        self.seq.If(data_cond, counter > 0)(
+#            block_counter.dec(),
+#            counter.dec(),
+#            next_valid_on(1),
+#            next_last(0)
+#        )
+#
+#        self.seq.If(data_cond, counter > 0, block_counter == 0)(
+#            block_counter(block_size - 1),
+#            bank_sel.inc()
+#        )
+#
+#        self.seq.If(data_cond, counter > 0, block_counter == 0,
+#                    bank_sel == self.numbanks - 1)(
+#            bank_sel(0)
+#        )
+#
+#        for i, (reg_addr, next_addr) in enumerate(zip(reg_addr_list, next_addr_list)):
+#            self.seq.If(data_cond, counter > 0, bank_sel == i)(
+#                reg_addr(next_addr)
+#            )
+#
+#        for i, (read_addr, ram_addr) in enumerate(zip(read_addr_list, ram_addr_list)):
+#            self.seq.If(data_cond, counter > 0, bank_sel == i)(
+#                read_addr(ram_addr)
+#            )
+#
+#        self.seq.If(data_cond, counter == 1)(
+#            next_last(1)
+#        )
+#
+#        df = self.df if self.df is not None else dataflow
+#
+#        df_data = df.Variable(data, data_valid, data_ready,
+#                              width=self.orig_datawidth, point=point, signed=signed)
+#        df_last = df.Variable(last, last_valid, last_ready, width=1)
+#        done = last
+#
+#        return df_data, df_last, done
+
+#    def _read_dataflow_block_nested(self, port, addr, length=1, block_size=1,
+#                                    stride=1, cond=None, point=0, signed=True):
+#        """ 
+#        @return data, last, done
+#        """
+#
+#        len_rams = 0
+#        for ram in self.rams:
+#            if not isinstance(ram, MultibankRAM):
+#                raise TypeError('All sub-bank RAMs must be MultibankRAM.')
+#            if len_rams == 0:
+#                len_rams = len(ram.rams)
+#            elif len_rams != len(ram.rams):
+#                raise ValueError(
+#                    'All sub-bank RAMs must have the same number of RAMs.')
+#
+#        rams = [[] for i in range(len_rams)]
+#
+#        for ram in self.rams:
+#            for i, sub in enumerate(ram.rams):
+#                rams[i].append(sub)
+#
+#        rams = [to_multibank_ram(ram_list, keep_hierarchy=True)
+#                for ram_list in rams]
+#
+#        data_list = []
+#        last_list = []
+#        done_list = []
+#        for ram in rams:
+#            data, last, done = ram.read_dataflow_block(
+#                port, addr, length, block_size, stride, cond, point, signed)
+#            data_list.insert(0, data)
+#            last_list.insert(0, last)
+#            done_list.insert(0, done)
+#
+#        merged_data = dtypes.Cat(*data_list)
+#        merged_last = last_list[-1]
+#        merged_done = done_list[-1]
+#
+#        return merged_data, merged_last, merged_done
+
+#    def write_dataflow(self, port, addr, data, length=1,
+#                       stride=1, cond=None, when=None):
+#        """ 
+#        @return done
+#        """
+#
+#        done_list = []
+#        lsb = 0
+#        msb = 0
+#        for ram in self.rams:
+#            msb = msb + ram.datawidth
+#            bank_data = dtypes.Slice(data, msb - 1, lsb)
+#            done = ram.write_dataflow(
+#                port, addr, bank_data, length, stride, cond, when)
+#            done_list.append(done)
+#            lsb = msb
+#
+#        merged_done = done_list[0]
+#        return merged_done
+
+#    def write_dataflow_interleave(self, port, addr, data, length=1,
+#                                  stride=1, cond=None, when=None):
+#        """ 
+#        @return done
+#        'data' and 'when' must be dataflow variables
+#        """
+#
+#        if self.seq is None:
+#            self.seq = Seq(self.m, self.name, self.clk, self.rst)
+#
+#        for ram in self.rams:
+#            if ram._write_disabled[port]:
+#                raise TypeError('Write disabled.')
+#
+#        counter = self.m.TmpReg(vtypes.get_width(length), initval=0)
+#        last = self.m.TmpReg(initval=0)
+#
+#        ext_cond = dtypes.make_condition(cond)
+#        data_cond = dtypes.make_condition(counter > 0, vtypes.Not(last))
+#
+#        if when is None or not isinstance(when, dtypes._Numeric):
+#            raw_data, raw_valid = data.read(cond=data_cond)
+#        else:
+#            data_list, raw_valid = dtypes.read_multi(
+#                self.m, data, when, cond=data_cond)
+#            raw_data = data_list[0]
+#            when = data_list[1]
+#
+#        when_cond = dtypes.make_condition(when, ready=data_cond)
+#        if when_cond is not None:
+#            raw_valid = vtypes.Ands(when_cond, raw_valid)
+#
+#        log_numbanks = util.log2(self.numbanks)
+#        reg_addr = self.m.TmpReg(self.addrwidth + log_numbanks, initval=0)
+#        next_addr = self.m.TmpWire(self.addrwidth + log_numbanks)
+#        next_addr.assign(reg_addr + stride)
+#        ram_addr_list = [self.m.TmpWire(ram.addrwidth) for ram in self.rams]
+#        for ram_addr in ram_addr_list:
+#            ram_addr.assign(next_addr >> log_numbanks)
+#
+#        bank_sel = self.m.TmpWire(log_numbanks)
+#        bank_sel.assign(next_addr)
+#
+#        write_addr_list = [self.m.TmpRegLike(ram.interfaces[port].addr, initval=0)
+#                           for ram in self.rams]
+#        write_data_list = [self.m.TmpRegLike(ram.interfaces[port].wdata, initval=0)
+#                           for ram in self.rams]
+#        write_enable_list = [self.m.TmpRegLike(ram.interfaces[port].enable, initval=0)
+#                             for ram in self.rams]
+#
+#        for ram, write_addr, write_data, write_enable in zip(self.rams, write_addr_list,
+#                                                             write_data_list, write_enable_list):
+#            util.add_mux(ram.interfaces[port].addr, write_enable, write_addr)
+#            util.add_mux(ram.interfaces[port].wdata, write_enable, write_data)
+#            util.add_enable_cond(ram.interfaces[port].wenable, write_enable, vtypes.Int(1, 1))
+#            util.add_enable_cond(ram.interfaces[port].enable, write_enable, vtypes.Int(1, 1))
+#
+#        self.seq.If(ext_cond, counter == 0)(
+#            reg_addr(addr - stride),
+#            counter(length),
+#        )
+#
+#        self.seq.If(raw_valid, counter > 0)(
+#            reg_addr(next_addr),
+#            counter.dec()
+#        )
+#
+#        for i, (write_addr, write_data,
+#                write_enable, ram_addr) in enumerate(zip(write_addr_list, write_data_list,
+#                                                         write_enable_list, ram_addr_list)):
+#            self.seq.If(raw_valid, counter > 0)(
+#                write_addr(ram_addr),
+#                write_data(raw_data),
+#                write_enable(bank_sel == i)
+#            )
+#
+#        self.seq.If(raw_valid, counter == 1)(
+#            last(1)
+#        )
+#
+#        # de-assert
+#        self.seq.Delay(1)(
+#            last(0)
+#        )
+#
+#        for write_enable in write_enable_list:
+#            self.seq.Delay(1)(
+#                write_enable(0)
+#            )
+#
+#        done = last
+#
+#        return done
+
+#    def write_dataflow_pattern_interleave(self, port, addr, data, pattern,
+#                                          cond=None, when=None):
+#        """ 
+#        @return done
+#        'data' and 'when' must be dataflow variables
+#        """
+#
+#        if self.seq is None:
+#            self.seq = Seq(self.m, self.name, self.clk, self.rst)
+#
+#        for ram in self.rams:
+#            if ram._write_disabled[port]:
+#                raise TypeError('Write disabled.')
+#
+#        if not isinstance(pattern, (tuple, list)):
+#            raise TypeError('pattern must be list or tuple.')
+#
+#        if not pattern:
+#            raise ValueError(
+#                'pattern must have one (size, stride) pair at least.')
+#
+#        if not isinstance(pattern[0], (tuple, list)):
+#            pattern = (pattern,)
+#
+#        last = self.m.TmpReg(initval=0)
+#
+#        running = self.m.TmpReg(initval=0)
+#
+#        ext_cond = dtypes.make_condition(cond)
+#        data_cond = dtypes.make_condition(running, vtypes.Not(last))
+#
+#        if when is None or not isinstance(when, dtypes._Numeric):
+#            raw_data, raw_valid = data.read(cond=data_cond)
+#        else:
+#            data_list, raw_valid = dtypes.read_multi(
+#                self.m, data, when, cond=data_cond)
+#            raw_data = data_list[0]
+#            when = data_list[1]
+#
+#        when_cond = dtypes.make_condition(when, ready=data_cond)
+#        if when_cond is not None:
+#            raw_valid = vtypes.Ands(when_cond, raw_valid)
+#
+#        offset_addr = self.m.TmpWire(self.addrwidth)
+#        offsets = [self.m.TmpReg(self.addrwidth, initval=0) for _ in pattern]
+#
+#        offset_addr_value = addr
+#        for offset in offsets:
+#            offset_addr_value = offset + offset_addr_value
+#        offset_addr.assign(offset_addr_value)
+#
+#        log_numbanks = util.log2(self.numbanks)
+#        ram_addr_list = [self.m.TmpWire(ram.addrwidth) for ram in self.rams]
+#        for ram_addr in ram_addr_list:
+#            ram_addr.assign(offset_addr >> log_numbanks)
+#
+#        bank_sel = self.m.TmpWire(log_numbanks)
+#        bank_sel.assign(offset_addr)
+#
+#        count_list = [self.m.TmpReg(vtypes.get_width(out_size), initval=0)
+#                      for (out_size, out_stride) in pattern]
+#
+#        write_addr_list = [self.m.TmpRegLike(ram.interfaces[port].addr, initval=0)
+#                           for ram in self.rams]
+#        write_data_list = [self.m.TmpRegLike(ram.interfaces[port].wdata, initval=0)
+#                           for ram in self.rams]
+#        write_enable_list = [self.m.TmpRegLike(ram.interfaces[port].enable, initval=0)
+#                             for ram in self.rams]
+#
+#        for ram, write_addr, write_data, write_enable in zip(self.rams, write_addr_list,
+#                                                             write_data_list, write_enable_list):
+#            util.add_mux(ram.interfaces[port].addr, write_enable, write_addr)
+#            util.add_mux(ram.interfaces[port].wdata, write_enable, write_data)
+#            util.add_enable_cond(ram.interfaces[port].wenable, write_enable, vtypes.Int(1, 1))
+#            util.add_enable_cond(ram.interfaces[port].enable, write_enable, vtypes.Int(1, 1))
+#
+#        self.seq.If(ext_cond, vtypes.Not(running))(
+#            running(1)
+#        )
+#
+#        for i, (write_addr, write_data,
+#                write_enable, ram_addr) in enumerate(zip(write_addr_list, write_data_list,
+#                                                         write_enable_list, ram_addr_list)):
+#            self.seq.If(raw_valid, running)(
+#                write_addr(ram_addr),
+#                write_data(raw_data),
+#                write_enable(bank_sel == i)
+#            )
+#
+#        update_count = None
+#        last_one = None
+#
+#        for offset, count, (out_size, out_stride) in zip(offsets, count_list, pattern):
+#            self.seq.If(ext_cond, vtypes.Not(running))(
+#                count(out_size - 1),
+#                offset(0)
+#            )
+#            self.seq.If(raw_valid, running, update_count)(
+#                count.dec(),
+#                offset(offset + out_stride)
+#            )
+#            self.seq.If(raw_valid, running, update_count, count == 0)(
+#                count(out_size - 1),
+#                offset(0)
+#            )
+#
+#            if update_count is None:
+#                update_count = count == 0
+#            else:
+#                update_count = vtypes.Ands(update_count, count == 0)
+#
+#            if last_one is None:
+#                last_one = count == 0
+#            else:
+#                last_one = vtypes.Ands(last_one, count == 0)
+#
+#        self.seq.If(raw_valid, last_one)(
+#            running(0),
+#            last(1)
+#        )
+#
+#        # de-assert
+#        self.seq.Delay(1)(
+#            last(0)
+#        )
+#
+#        for write_enable in write_enable_list:
+#            self.seq.Delay(1)(
+#                write_enable(0)
+#            )
+#
+#        done = last
+#
+#        return done
+
+#    def write_dataflow_multidim_interleave(self, port, addr, data, shape, order=None,
+#                                           cond=None, when=None):
+#        """ 
+#        @return done
+#        'data' and 'when' must be dataflow variables
+#        """
+#        if order is None:
+#            order = list(reversed(range(len(shape))))
+#
+#        pattern = self._to_pattern(shape, order)
+#        return self.write_dataflow_pattern_interleave(port, addr, data, pattern,
+#                                                      cond=cond, when=when)
+
+    def write_burst_bcast(self, addr, stride, length, wdata, wvalid, wlast, wquit=False, port=0, cond=None):
+        """
+        @return wready, done
+        """
+        wready_list = []
         done_list = []
+
         for ram in self.rams:
-            data, last, done = ram.read_dataflow(
-                port, addr, length, stride, cond, point, signed)
-            data_list.insert(0, data)
-            last_list.insert(0, last)
-            done_list.insert(0, done)
+            wready, done = ram.write_burst(addr, stride, length, wdata, wvalid, wlast, wquit, port, cond)
+            wready_list.append(wready)
+            done_list.append(done_list)
 
-        merged_data = dtypes.Cat(*data_list)
-        merged_last = last_list[-1]
-        merged_done = done_list[-1]
+        return wready_list[0], done_list[0]
 
-        return merged_data, merged_last, merged_done
+#    def write_dataflow_bcast(self, port, addr, data, length=1,
+#                             stride=1, cond=None, when=None):
+#        """ 
+#        @return done
+#        """
+#
+#        done_list = []
+#        for ram in self.rams:
+#            done = ram.write_dataflow(
+#                port, addr, data, length, stride, cond, when)
+#            done_list.append(done)
+#
+#        merged_done = done_list[0]
+#        return merged_done
 
-    def read_dataflow_interleave(self, port, addr, length=1,
-                                 stride=1, cond=None, point=0, signed=True):
-        """ 
-        @return data, last, done
+#    def write_dataflow_pattern_bcast(self, port, addr, data, pattern,
+#                                     cond=None, when=None):
+#        """ 
+#        @return done
+#        'data' and 'when' must be dataflow variables
+#        """
+#
+#        done_list = []
+#        for ram in self.rams:
+#            done = ram.write_dataflow_pattern(
+#                port, addr, data, pattern, cond, when)
+#            done_list.append(done)
+#
+#        merged_done = done_list[0]
+#        return merged_done
+
+#    def write_dataflow_multidim_bcast(self, port, addr, data, shape, order=None,
+#                                      cond=None, when=None):
+#        """ 
+#        @return done
+#        'data' and 'when' must be dataflow variables
+#        """
+#        if order is None:
+#            order = list(reversed(range(len(shape))))
+#
+#        pattern = self._to_pattern(shape, order)
+#        return self.write_dataflow_pattern_bcast(port, addr, data, pattern,
+#                                                 cond=cond, when=when)
+
+    def write_burst_block(self, addr, stride, length, blocksize, wdata, wvalid, wlast, wquit=False, port=0, cond=None):
+        """
+        @return wready, done
         """
 
-        if self.seq is None:
-            self.seq = Seq(self.m, self.name, self.clk, self.rst)
+        ram_wvalid_list = []
+        ram_wquit_list = []
 
-        data_valid = self.m.TmpReg(initval=0)
-        last_valid = self.m.TmpReg(initval=0)
-        data_ready = self.m.TmpWire()
-        last_ready = self.m.TmpWire()
-        data_ready.assign(1)
-        last_ready.assign(1)
+        for ram in self.rams:
+            ram_wvalid = self.m.TmpWire(prefix='write_burst_block_wvalid')
+            ram_wquit = self.m.TmpWire(prefix='write_burst_block_wquit')
+            _ = ram.write_burst(addr, stride, length, wdata, ram_wvalid, wlast, ram_wquit, port, cond)
+            ram_wvalid_list.apppen(ram_wvalid)
+            ram_wquit_list.apppen(ram_wquit)
 
-        data_ack = vtypes.Ors(data_ready, vtypes.Not(data_valid))
-        last_ack = vtypes.Ors(last_ready, vtypes.Not(last_valid))
+        fsm = TmpFSM(self.m, self.clk, self.rst, prefix='write_burst_block_fsm')
 
-        ext_cond = dtypes.make_condition(cond)
-        data_cond = dtypes.make_condition(data_ack, last_ack)
-        prev_data_cond = self.seq.Prev(data_cond, 1)
+        _length = self.m.TmpRegLike(self.interfaces[port].addr,
+                                    width=self.interfaces[port].addr.width + 1,
+                                    initval=0, prefix='write_burst_block_length')
+        _blocksize = self.m.TmpRegLike(self.interfaces[port].addr, initval=0, prefix='write_burst_block_blocksize')
+        done = self.m.TmpReg(prefix='write_burst_block_done', initval=0)
+        count = self.m.TmpRegLike(self.interfaces[port].addr, initval=0, prefix='write_burst_block_count')
 
-        data_list = [self.m.TmpWireLike(ram.interfaces[port].rdata, signed=True)
-                     for ram in self.rams]
-
-        for data, ram in zip(data_list, self.rams):
-            data.assign(ram.interfaces[port].rdata)
-
-        log_numbanks = util.log2(self.numbanks)
-        reg_addr = self.m.TmpReg(self.addrwidth + log_numbanks, initval=0)
-        next_addr = self.m.TmpWire(self.addrwidth + log_numbanks)
-        next_addr.assign(reg_addr + stride)
-        ram_addr_list = [self.m.TmpWire(ram.addrwidth) for ram in self.rams]
-        for ram_addr in ram_addr_list:
-            ram_addr.assign(next_addr >> log_numbanks)
-
-        bank_sel = self.m.TmpWire(log_numbanks)
-        bank_sel.assign(reg_addr[0:log_numbanks])
-        reg_bank_sel = self.m.TmpReg(log_numbanks, initval=0)
-        prev_reg_bank_sel = self.seq.Prev(reg_bank_sel, 1)
-        self.seq.If(data_cond)(
-            reg_bank_sel(bank_sel)
+        fsm(
+            _length(length),
+            _blocksize(blocksize),
+            done(0),
+            count(0),
         )
+        fsm.If(cond, length > 0).goto_next()
 
-        cur_bank_sel = vtypes.Mux(prev_data_cond, reg_bank_sel, prev_reg_bank_sel)
-        patterns = [(cur_bank_sel == i, data)
-                    for i, data in enumerate(data_list)]
-        patterns.append((None, 0))
+        loop = fsm.current
+        wready = fsm.here
 
-        data = self.m.TmpWire(self.orig_datawidth, signed=True)
-        data.assign(vtypes.PatternMux(*patterns))
+        for i, (ram_wvalid, ram_wquit) in enumerate(zip(ram_wvalid_list, ram_wquit_list)):
 
-        next_valid_on = self.m.TmpReg(initval=0)
-        next_valid_off = self.m.TmpReg(initval=0)
+            ram_wvalid.assign(vtypes.Ands(wvalid, fsm.here))
+            ram_wquit.assign(vtypes.Ors(wquit, vtypes.Ands(wvalid, wlast)))
 
-        next_last = self.m.TmpReg(initval=0)
-        last = self.m.TmpReg(initval=0)
-
-        counter = self.m.TmpReg(vtypes.get_width(length), initval=0)
-
-        read_addr_list = [self.m.TmpRegLike(ram.interfaces[port].addr, initval=0)
-                          for ram in self.rams]
-
-        read_cond = next_valid_on
-        read_enable = vtypes.Ands(data_cond, next_valid_on)
-        for ram, read_addr in zip(self.rams, read_addr_list):
-            util.add_mux(ram.interfaces[port].addr, read_cond, read_addr)
-            util.add_enable_cond(ram.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
-
-        self.seq.If(data_cond, next_valid_off)(
-            last(0),
-            data_valid(0),
-            last_valid(0),
-            next_valid_off(0)
-        )
-
-        self.seq.If(data_cond, next_valid_on)(
-            data_valid(1),
-            last_valid(1),
-            last(next_last),
-            next_last(0),
-            next_valid_on(0),
-            next_valid_off(1)
-        )
-
-        self.seq.If(ext_cond, counter == 0,
-                    vtypes.Not(next_last), vtypes.Not(last))(
-            reg_addr(addr),
-            counter(length - 1),
-            next_valid_on(1),
-            next_last(length == 1)
-        )
-
-        for read_addr in read_addr_list:
-            self.seq.If(ext_cond, counter == 0,
-                        vtypes.Not(next_last), vtypes.Not(last))(
-                read_addr(addr >> log_numbanks)
+            fsm.If(wvalid)(
+                _length.dec(),
+                done(0),
+                count.inc(),
+            )
+            fsm.If(wvalid, _length <= 1)(
+                done(1)
+            )
+            fsm.If(wvalid, wlast)(
+                done(1)
+            )
+            fsm.If(wvalid, count == _blocksize - 1)(
+                count(0)
             )
 
-        self.seq.If(data_cond, counter > 0)(
-            reg_addr(reg_addr + stride),
-            counter.dec(),
-            next_valid_on(1),
-            next_last(0)
-        )
-
-        for read_addr, ram_addr in zip(read_addr_list, ram_addr_list):
-            self.seq.If(data_cond, counter > 0)(
-                read_addr(ram_addr)
-            )
-
-        self.seq.If(data_cond, counter == 1)(
-            next_last(1)
-        )
-
-        df = self.df if self.df is not None else dataflow
-
-        df_data = df.Variable(data, data_valid, data_ready,
-                              width=self.orig_datawidth, point=point, signed=signed)
-        df_last = df.Variable(last, last_valid, last_ready, width=1)
-        done = last
-
-        return df_data, df_last, done
-
-    def read_dataflow_pattern_interleave(self, port, addr, pattern,
-                                         cond=None, point=0, signed=True):
-        """ 
-        @return data, last, done
-        """
-
-        if self.seq is None:
-            self.seq = Seq(self.m, self.name, self.clk, self.rst)
-
-        if not isinstance(pattern, (tuple, list)):
-            raise TypeError('pattern must be list or tuple.')
-
-        if not pattern:
-            raise ValueError(
-                'pattern must have one (size, stride) pair at least.')
-
-        if not isinstance(pattern[0], (tuple, list)):
-            pattern = (pattern,)
-
-        data_valid = self.m.TmpReg(initval=0)
-        last_valid = self.m.TmpReg(initval=0)
-        data_ready = self.m.TmpWire()
-        last_ready = self.m.TmpWire()
-        data_ready.assign(1)
-        last_ready.assign(1)
-
-        data_ack = vtypes.Ors(data_ready, vtypes.Not(data_valid))
-        last_ack = vtypes.Ors(last_ready, vtypes.Not(last_valid))
-
-        ext_cond = dtypes.make_condition(cond)
-        data_cond = dtypes.make_condition(data_ack, last_ack)
-        prev_data_cond = self.seq.Prev(data_cond, 1)
-
-        data_list = [self.m.TmpWireLike(ram.interfaces[port].rdata, signed=True)
-                     for ram in self.rams]
-
-        for data, ram in zip(data_list, self.rams):
-            data.assign(ram.interfaces[port].rdata)
-
-        log_numbanks = util.log2(self.numbanks)
-        reg_addr = self.m.TmpReg(self.addrwidth + log_numbanks, initval=0)
-
-        bank_sel = self.m.TmpWire(log_numbanks)
-        bank_sel.assign(reg_addr[0:log_numbanks])
-        reg_bank_sel = self.m.TmpReg(log_numbanks, initval=0)
-        prev_reg_bank_sel = self.seq.Prev(reg_bank_sel, 1)
-        self.seq.If(data_cond)(
-            reg_bank_sel(bank_sel)
-        )
-
-        cur_bank_sel = vtypes.Mux(prev_data_cond, reg_bank_sel, prev_reg_bank_sel)
-        patterns = [(cur_bank_sel == i, data)
-                    for i, data in enumerate(data_list)]
-        patterns.append((None, 0))
-
-        data = self.m.TmpWire(self.orig_datawidth, signed=True)
-        data.assign(vtypes.PatternMux(*patterns))
-
-        next_valid_on = self.m.TmpReg(initval=0)
-        next_valid_off = self.m.TmpReg(initval=0)
-
-        next_last = self.m.TmpReg(initval=0)
-        last = self.m.TmpReg(initval=0)
-
-        running = self.m.TmpReg(initval=0)
-
-        next_addr = self.m.TmpWire(self.addrwidth + log_numbanks)
-        offset_addr = self.m.TmpWire(self.addrwidth + log_numbanks)
-        offsets = [self.m.TmpReg(self.addrwidth + log_numbanks, initval=0)
-                   for _ in pattern[1:]]
-
-        ram_addr_list = [self.m.TmpWire(ram.addrwidth) for ram in self.rams]
-        for ram_addr in ram_addr_list:
-            ram_addr.assign(next_addr >> log_numbanks)
-
-        offset_addr_value = addr
-        for offset in offsets:
-            offset_addr_value = offset + offset_addr_value
-        offset_addr.assign(offset_addr_value)
-
-        offsets.insert(0, None)
-
-        count_list = [self.m.TmpReg(vtypes.get_width(out_size), initval=0)
-                      for (out_size, out_stride) in pattern]
-
-        read_addr_list = [self.m.TmpRegLike(ram.interfaces[port].addr, initval=0)
-                          for ram in self.rams]
-
-        read_cond = next_valid_on
-        read_enable = vtypes.Ands(data_cond, next_valid_on)
-        for ram, read_addr in zip(self.rams, read_addr_list):
-            util.add_mux(ram.interfaces[port].addr, read_cond, read_addr)
-            util.add_enable_cond(ram.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
-
-        self.seq.If(data_cond, next_valid_off)(
-            last(0),
-            data_valid(0),
-            last_valid(0),
-            next_valid_off(0)
-        )
-
-        self.seq.If(data_cond, next_valid_on)(
-            data_valid(1),
-            last_valid(1),
-            last(next_last),
-            next_last(0),
-            next_valid_on(0),
-            next_valid_off(1)
-        )
-
-        self.seq.If(ext_cond, vtypes.Not(running),
-                    vtypes.Not(next_last), vtypes.Not(last))(
-            reg_addr(addr),
-            running(1),
-            next_valid_on(1)
-        )
-
-        for read_addr in read_addr_list:
-            self.seq.If(ext_cond, vtypes.Not(running),
-                        vtypes.Not(next_last), vtypes.Not(last))(
-                read_addr(addr >> log_numbanks)
-            )
-
-        self.seq.If(data_cond, running)(
-            reg_addr(next_addr),
-            next_valid_on(1),
-            next_last(0)
-        )
-
-        for read_addr, ram_addr in zip(read_addr_list, ram_addr_list):
-            self.seq.If(data_cond, running)(
-                ram.interfaces[port].addr(ram_addr)
-            )
-
-        update_count = None
-        update_offset = None
-        update_addr = None
-        last_one = None
-        stride_value = None
-        carry = None
-
-        for offset, count, (out_size, out_stride) in zip(offsets, count_list, pattern):
-            self.seq.If(ext_cond, vtypes.Not(running),
-                        vtypes.Not(next_last), vtypes.Not(last))(
-                count(out_size - 1)
-            )
-            self.seq.If(data_cond, running, update_count)(
-                count.dec()
-            )
-            self.seq.If(data_cond, running, update_count, count == 0)(
-                count(out_size - 1)
-            )
-
-            if offset is not None:
-                self.seq.If(ext_cond, vtypes.Not(running),
-                            vtypes.Not(next_last), vtypes.Not(last))(
-                    offset(0)
-                )
-                self.seq.If(data_cond, running, update_offset, vtypes.Not(carry))(
-                    offset(offset + out_stride)
-                )
-                self.seq.If(data_cond, running, update_offset, count == 0)(
-                    offset(0)
-                )
-
-            if update_count is None:
-                update_count = count == 0
+            if i == len(ram_wvalid_list) - 1:
+                fsm.If(wvalid, wready, count == _blocksize - 1).goto(loop)
             else:
-                update_count = vtypes.Ands(update_count, count == 0)
-
-            if update_offset is None:
-                update_offset = vtypes.Mux(out_size == 1, 1, count == 1)
-            else:
-                update_offset = vtypes.Ands(update_offset, count == carry)
-
-            if update_addr is None:
-                update_addr = count == 0
-            else:
-                update_addr = vtypes.Mux(carry, count == 0, update_addr)
-
-            if last_one is None:
-                last_one = count == 0
-            else:
-                last_one = vtypes.Ands(last_one, count == 0)
-
-            if stride_value is None:
-                stride_value = out_stride
-            else:
-                stride_value = vtypes.Mux(carry, out_stride, stride_value)
-
-            if carry is None:
-                carry = out_size == 1
-            else:
-                carry = vtypes.Ands(carry, out_size == 1)
-
-        next_addr.assign(vtypes.Mux(update_addr, offset_addr,
-                                    reg_addr + stride_value))
-
-        self.seq.If(data_cond, running, last_one)(
-            running(0),
-            next_last(1)
-        )
-
-        df = self.df if self.df is not None else dataflow
-
-        df_data = df.Variable(data, data_valid, data_ready,
-                              width=self.datawidth, point=point, signed=signed)
-        df_last = df.Variable(last, last_valid, last_ready, width=1)
-        done = last
-
-        return df_data, df_last, done
-
-    def read_dataflow_multidim_interleave(self, port, addr, shape, order=None,
-                                          cond=None, point=0, signed=True):
-        """ 
-        @return data, last, done
-        """
-        if order is None:
-            order = list(reversed(range(len(shape))))
-
-        pattern = self._to_pattern(shape, order)
-        return self.read_dataflow_pattern_interleave(port, addr, pattern,
-                                                     cond=cond, point=point, signed=signed)
-
-    def read_dataflow_block(self, port, addr, length=1, block_size=1,
-                            stride=1, cond=None, point=0, signed=True):
-        """ 
-        @return data, last, done
-        """
-
-        if self.keep_hierarchy and isinstance(self.rams[0], MultibankRAM):
-            return self._read_dataflow_block_nested(port, addr, length, block_size,
-                                                    stride, cond, point, signed)
-
-        if self.seq is None:
-            self.seq = Seq(self.m, self.name, self.clk, self.rst)
-
-        data_valid = self.m.TmpReg(initval=0)
-        last_valid = self.m.TmpReg(initval=0)
-        data_ready = self.m.TmpWire()
-        last_ready = self.m.TmpWire()
-        data_ready.assign(1)
-        last_ready.assign(1)
-
-        data_ack = vtypes.Ors(data_ready, vtypes.Not(data_valid))
-        last_ack = vtypes.Ors(last_ready, vtypes.Not(last_valid))
-
-        ext_cond = dtypes.make_condition(cond)
-        data_cond = dtypes.make_condition(data_ack, last_ack)
-        prev_data_cond = self.seq.Prev(data_cond, 1)
-
-        data_list = [self.m.TmpWireLike(ram.interfaces[port].rdata, signed=True)
-                     for ram in self.rams]
-
-        for data, ram in zip(data_list, self.rams):
-            data.assign(ram.interfaces[port].rdata)
-
-        log_numbanks = util.log2(self.numbanks)
-
-        reg_addr_list = [self.m.TmpReg(self.addrwidth, initval=0)
-                         for ram in self.rams]
-
-        next_addr_list = [self.m.TmpWire(self.addrwidth)
-                          for ram in self.rams]
-        for next_addr, reg_addr in zip(next_addr_list, reg_addr_list):
-            next_addr.assign(reg_addr + stride)
-
-        ram_addr_list = [self.m.TmpWire(ram.addrwidth)
-                         for ram in self.rams]
-        for ram_addr, next_addr in zip(ram_addr_list, next_addr_list):
-            ram_addr.assign(next_addr)
-
-        bank_sel = self.m.TmpReg(log_numbanks, initval=0)
-        reg_bank_sel = self.m.TmpReg(log_numbanks, initval=0)
-        prev_reg_bank_sel = self.seq.Prev(reg_bank_sel, 1)
-        self.seq.If(data_cond)(
-            reg_bank_sel(bank_sel)
-        )
-
-        cur_bank_sel = vtypes.Mux(prev_data_cond, reg_bank_sel, prev_reg_bank_sel)
-        patterns = [(cur_bank_sel == i, data)
-                    for i, data in enumerate(data_list)]
-        patterns.append((None, 0))
-
-        data = self.m.TmpWire(self.orig_datawidth, signed=True)
-        data.assign(vtypes.PatternMux(*patterns))
-
-        next_valid_on = self.m.TmpReg(initval=0)
-        next_valid_off = self.m.TmpReg(initval=0)
-
-        next_last = self.m.TmpReg(initval=0)
-        last = self.m.TmpReg(initval=0)
-
-        block_counter = self.m.TmpReg(vtypes.get_width(block_size), initval=0)
-        counter = self.m.TmpReg(vtypes.get_width(length), initval=0)
-
-        read_addr_list = [self.m.TmpRegLike(ram.interfaces[port].addr, initval=0)
-                          for ram in self.rams]
-
-        read_cond = next_valid_on
-        read_enable = vtypes.Ands(data_cond, next_valid_on)
-        for ram, read_addr in zip(self.rams, read_addr_list):
-            util.add_mux(ram.interfaces[port].addr, read_cond, read_addr)
-            util.add_enable_cond(ram.interfaces[port].enable, read_enable, vtypes.Int(1, 1))
-
-        self.seq.If(data_cond, next_valid_off)(
-            last(0),
-            data_valid(0),
-            last_valid(0),
-            next_valid_off(0)
-        )
-
-        self.seq.If(data_cond, next_valid_on)(
-            data_valid(1),
-            last_valid(1),
-            last(next_last),
-            next_last(0),
-            next_valid_on(0),
-            next_valid_off(1)
-        )
-
-        self.seq.If(ext_cond, counter == 0,
-                    vtypes.Not(next_last), vtypes.Not(last))(
-            bank_sel(0),
-            reg_bank_sel(0),
-            block_counter(block_size - 1),
-            counter(length - 1),
-            next_valid_on(1),
-            next_last(length == 1)
-        )
-
-        for reg_addr in reg_addr_list:
-            self.seq.If(ext_cond, counter == 0,
-                        vtypes.Not(next_last), vtypes.Not(last))(
-                reg_addr(addr)
-            )
-
-        for read_addr in read_addr_list:
-            self.seq.If(ext_cond, counter == 0,
-                        vtypes.Not(next_last), vtypes.Not(last))(
-                read_addr(addr)
-            )
-
-        self.seq.If(data_cond, counter > 0)(
-            block_counter.dec(),
-            counter.dec(),
-            next_valid_on(1),
-            next_last(0)
-        )
-
-        self.seq.If(data_cond, counter > 0, block_counter == 0)(
-            block_counter(block_size - 1),
-            bank_sel.inc()
-        )
-
-        self.seq.If(data_cond, counter > 0, block_counter == 0,
-                    bank_sel == self.numbanks - 1)(
-            bank_sel(0)
-        )
-
-        for i, (reg_addr, next_addr) in enumerate(zip(reg_addr_list, next_addr_list)):
-            self.seq.If(data_cond, counter > 0, bank_sel == i)(
-                reg_addr(next_addr)
-            )
-
-        for i, (read_addr, ram_addr) in enumerate(zip(read_addr_list, ram_addr_list)):
-            self.seq.If(data_cond, counter > 0, bank_sel == i)(
-                read_addr(ram_addr)
-            )
-
-        self.seq.If(data_cond, counter == 1)(
-            next_last(1)
-        )
-
-        df = self.df if self.df is not None else dataflow
-
-        df_data = df.Variable(data, data_valid, data_ready,
-                              width=self.orig_datawidth, point=point, signed=signed)
-        df_last = df.Variable(last, last_valid, last_ready, width=1)
-        done = last
-
-        return df_data, df_last, done
-
-    def _read_dataflow_block_nested(self, port, addr, length=1, block_size=1,
-                                    stride=1, cond=None, point=0, signed=True):
-        """ 
-        @return data, last, done
-        """
-
-        len_rams = 0
-        for ram in self.rams:
-            if not isinstance(ram, MultibankRAM):
-                raise TypeError('All sub-bank RAMs must be MultibankRAM.')
-            if len_rams == 0:
-                len_rams = len(ram.rams)
-            elif len_rams != len(ram.rams):
-                raise ValueError(
-                    'All sub-bank RAMs must have the same number of RAMs.')
-
-        rams = [[] for i in range(len_rams)]
-
-        for ram in self.rams:
-            for i, sub in enumerate(ram.rams):
-                rams[i].append(sub)
-
-        rams = [to_multibank_ram(ram_list, keep_hierarchy=True)
-                for ram_list in rams]
-
-        data_list = []
-        last_list = []
-        done_list = []
-        for ram in rams:
-            data, last, done = ram.read_dataflow_block(
-                port, addr, length, block_size, stride, cond, point, signed)
-            data_list.insert(0, data)
-            last_list.insert(0, last)
-            done_list.insert(0, done)
-
-        merged_data = dtypes.Cat(*data_list)
-        merged_last = last_list[-1]
-        merged_done = done_list[-1]
-
-        return merged_data, merged_last, merged_done
-
-    def write_dataflow(self, port, addr, data, length=1,
-                       stride=1, cond=None, when=None):
-        """ 
-        @return done
-        """
-
-        done_list = []
-        lsb = 0
-        msb = 0
-        for ram in self.rams:
-            msb = msb + ram.datawidth
-            bank_data = dtypes.Slice(data, msb - 1, lsb)
-            done = ram.write_dataflow(
-                port, addr, bank_data, length, stride, cond, when)
-            done_list.append(done)
-            lsb = msb
-
-        merged_done = done_list[0]
-        return merged_done
-
-    def write_dataflow_interleave(self, port, addr, data, length=1,
-                                  stride=1, cond=None, when=None):
-        """ 
-        @return done
-        'data' and 'when' must be dataflow variables
-        """
-
-        if self.seq is None:
-            self.seq = Seq(self.m, self.name, self.clk, self.rst)
-
-        for ram in self.rams:
-            if ram._write_disabled[port]:
-                raise TypeError('Write disabled.')
-
-        counter = self.m.TmpReg(vtypes.get_width(length), initval=0)
-        last = self.m.TmpReg(initval=0)
-
-        ext_cond = dtypes.make_condition(cond)
-        data_cond = dtypes.make_condition(counter > 0, vtypes.Not(last))
-
-        if when is None or not isinstance(when, dtypes._Numeric):
-            raw_data, raw_valid = data.read(cond=data_cond)
-        else:
-            data_list, raw_valid = dtypes.read_multi(
-                self.m, data, when, cond=data_cond)
-            raw_data = data_list[0]
-            when = data_list[1]
-
-        when_cond = dtypes.make_condition(when, ready=data_cond)
-        if when_cond is not None:
-            raw_valid = vtypes.Ands(when_cond, raw_valid)
-
-        log_numbanks = util.log2(self.numbanks)
-        reg_addr = self.m.TmpReg(self.addrwidth + log_numbanks, initval=0)
-        next_addr = self.m.TmpWire(self.addrwidth + log_numbanks)
-        next_addr.assign(reg_addr + stride)
-        ram_addr_list = [self.m.TmpWire(ram.addrwidth) for ram in self.rams]
-        for ram_addr in ram_addr_list:
-            ram_addr.assign(next_addr >> log_numbanks)
-
-        bank_sel = self.m.TmpWire(log_numbanks)
-        bank_sel.assign(next_addr)
-
-        write_addr_list = [self.m.TmpRegLike(ram.interfaces[port].addr, initval=0)
-                           for ram in self.rams]
-        write_data_list = [self.m.TmpRegLike(ram.interfaces[port].wdata, initval=0)
-                           for ram in self.rams]
-        write_enable_list = [self.m.TmpRegLike(ram.interfaces[port].enable, initval=0)
-                             for ram in self.rams]
-
-        for ram, write_addr, write_data, write_enable in zip(self.rams, write_addr_list,
-                                                             write_data_list, write_enable_list):
-            util.add_mux(ram.interfaces[port].addr, write_enable, write_addr)
-            util.add_mux(ram.interfaces[port].wdata, write_enable, write_data)
-            util.add_enable_cond(ram.interfaces[port].wenable, write_enable, vtypes.Int(1, 1))
-            util.add_enable_cond(ram.interfaces[port].enable, write_enable, vtypes.Int(1, 1))
-
-        self.seq.If(ext_cond, counter == 0)(
-            reg_addr(addr - stride),
-            counter(length),
-        )
-
-        self.seq.If(raw_valid, counter > 0)(
-            reg_addr(next_addr),
-            counter.dec()
-        )
-
-        for i, (write_addr, write_data,
-                write_enable, ram_addr) in enumerate(zip(write_addr_list, write_data_list,
-                                                         write_enable_list, ram_addr_list)):
-            self.seq.If(raw_valid, counter > 0)(
-                write_addr(ram_addr),
-                write_data(raw_data),
-                write_enable(bank_sel == i)
-            )
-
-        self.seq.If(raw_valid, counter == 1)(
-            last(1)
-        )
-
-        # de-assert
-        self.seq.Delay(1)(
-            last(0)
-        )
-
-        for write_enable in write_enable_list:
-            self.seq.Delay(1)(
-                write_enable(0)
-            )
-
-        done = last
-
-        return done
-
-    def write_dataflow_pattern_interleave(self, port, addr, data, pattern,
-                                          cond=None, when=None):
-        """ 
-        @return done
-        'data' and 'when' must be dataflow variables
-        """
-
-        if self.seq is None:
-            self.seq = Seq(self.m, self.name, self.clk, self.rst)
-
-        for ram in self.rams:
-            if ram._write_disabled[port]:
-                raise TypeError('Write disabled.')
-
-        if not isinstance(pattern, (tuple, list)):
-            raise TypeError('pattern must be list or tuple.')
-
-        if not pattern:
-            raise ValueError(
-                'pattern must have one (size, stride) pair at least.')
-
-        if not isinstance(pattern[0], (tuple, list)):
-            pattern = (pattern,)
-
-        last = self.m.TmpReg(initval=0)
-
-        running = self.m.TmpReg(initval=0)
-
-        ext_cond = dtypes.make_condition(cond)
-        data_cond = dtypes.make_condition(running, vtypes.Not(last))
-
-        if when is None or not isinstance(when, dtypes._Numeric):
-            raw_data, raw_valid = data.read(cond=data_cond)
-        else:
-            data_list, raw_valid = dtypes.read_multi(
-                self.m, data, when, cond=data_cond)
-            raw_data = data_list[0]
-            when = data_list[1]
-
-        when_cond = dtypes.make_condition(when, ready=data_cond)
-        if when_cond is not None:
-            raw_valid = vtypes.Ands(when_cond, raw_valid)
-
-        offset_addr = self.m.TmpWire(self.addrwidth)
-        offsets = [self.m.TmpReg(self.addrwidth, initval=0) for _ in pattern]
-
-        offset_addr_value = addr
-        for offset in offsets:
-            offset_addr_value = offset + offset_addr_value
-        offset_addr.assign(offset_addr_value)
-
-        log_numbanks = util.log2(self.numbanks)
-        ram_addr_list = [self.m.TmpWire(ram.addrwidth) for ram in self.rams]
-        for ram_addr in ram_addr_list:
-            ram_addr.assign(offset_addr >> log_numbanks)
-
-        bank_sel = self.m.TmpWire(log_numbanks)
-        bank_sel.assign(offset_addr)
-
-        count_list = [self.m.TmpReg(vtypes.get_width(out_size), initval=0)
-                      for (out_size, out_stride) in pattern]
-
-        write_addr_list = [self.m.TmpRegLike(ram.interfaces[port].addr, initval=0)
-                           for ram in self.rams]
-        write_data_list = [self.m.TmpRegLike(ram.interfaces[port].wdata, initval=0)
-                           for ram in self.rams]
-        write_enable_list = [self.m.TmpRegLike(ram.interfaces[port].enable, initval=0)
-                             for ram in self.rams]
-
-        for ram, write_addr, write_data, write_enable in zip(self.rams, write_addr_list,
-                                                             write_data_list, write_enable_list):
-            util.add_mux(ram.interfaces[port].addr, write_enable, write_addr)
-            util.add_mux(ram.interfaces[port].wdata, write_enable, write_data)
-            util.add_enable_cond(ram.interfaces[port].wenable, write_enable, vtypes.Int(1, 1))
-            util.add_enable_cond(ram.interfaces[port].enable, write_enable, vtypes.Int(1, 1))
-
-        self.seq.If(ext_cond, vtypes.Not(running))(
-            running(1)
-        )
-
-        for i, (write_addr, write_data,
-                write_enable, ram_addr) in enumerate(zip(write_addr_list, write_data_list,
-                                                         write_enable_list, ram_addr_list)):
-            self.seq.If(raw_valid, running)(
-                write_addr(ram_addr),
-                write_data(raw_data),
-                write_enable(bank_sel == i)
-            )
-
-        update_count = None
-        last_one = None
-
-        for offset, count, (out_size, out_stride) in zip(offsets, count_list, pattern):
-            self.seq.If(ext_cond, vtypes.Not(running))(
-                count(out_size - 1),
-                offset(0)
-            )
-            self.seq.If(raw_valid, running, update_count)(
-                count.dec(),
-                offset(offset + out_stride)
-            )
-            self.seq.If(raw_valid, running, update_count, count == 0)(
-                count(out_size - 1),
-                offset(0)
-            )
-
-            if update_count is None:
-                update_count = count == 0
-            else:
-                update_count = vtypes.Ands(update_count, count == 0)
-
-            if last_one is None:
-                last_one = count == 0
-            else:
-                last_one = vtypes.Ands(last_one, count == 0)
-
-        self.seq.If(raw_valid, last_one)(
-            running(0),
-            last(1)
-        )
-
-        # de-assert
-        self.seq.Delay(1)(
-            last(0)
-        )
-
-        for write_enable in write_enable_list:
-            self.seq.Delay(1)(
-                write_enable(0)
-            )
-
-        done = last
-
-        return done
-
-    def write_dataflow_multidim_interleave(self, port, addr, data, shape, order=None,
-                                           cond=None, when=None):
-        """ 
-        @return done
-        'data' and 'when' must be dataflow variables
-        """
-        if order is None:
-            order = list(reversed(range(len(shape))))
-
-        pattern = self._to_pattern(shape, order)
-        return self.write_dataflow_pattern_interleave(port, addr, data, pattern,
-                                                      cond=cond, when=when)
-
-    def write_dataflow_bcast(self, port, addr, data, length=1,
-                             stride=1, cond=None, when=None):
-        """ 
-        @return done
-        """
-
-        done_list = []
-        for ram in self.rams:
-            done = ram.write_dataflow(
-                port, addr, data, length, stride, cond, when)
-            done_list.append(done)
-
-        merged_done = done_list[0]
-        return merged_done
-
-    def write_dataflow_pattern_bcast(self, port, addr, data, pattern,
-                                     cond=None, when=None):
-        """ 
-        @return done
-        'data' and 'when' must be dataflow variables
-        """
-
-        done_list = []
-        for ram in self.rams:
-            done = ram.write_dataflow_pattern(
-                port, addr, data, pattern, cond, when)
-            done_list.append(done)
-
-        merged_done = done_list[0]
-        return merged_done
-
-    def write_dataflow_multidim_bcast(self, port, addr, data, shape, order=None,
-                                      cond=None, when=None):
-        """ 
-        @return done
-        'data' and 'when' must be dataflow variables
-        """
-        if order is None:
-            order = list(reversed(range(len(shape))))
-
-        pattern = self._to_pattern(shape, order)
-        return self.write_dataflow_pattern_bcast(port, addr, data, pattern,
-                                                 cond=cond, when=when)
-
-    def write_dataflow_block(self, port, addr, data, length=1, block_size=1,
-                             stride=1, cond=None, when=None):
-        """ 
-        @return done
-        'data' and 'when' must be dataflow variables
-        """
-
-        if self.keep_hierarchy and isinstance(self.rams[0], MultibankRAM):
-            return self._write_dataflow_block_nested(port, addr, data, length, block_size,
-                                                     stride, cond, when)
-
-        if self.seq is None:
-            self.seq = Seq(self.m, self.name, self.clk, self.rst)
-
-        for ram in self.rams:
-            if ram._write_disabled[port]:
-                raise TypeError('Write disabled.')
-
-        block_counter = self.m.TmpReg(vtypes.get_width(block_size), initval=0)
-        counter = self.m.TmpReg(vtypes.get_width(length), initval=0)
-        last = self.m.TmpReg(initval=0)
-
-        ext_cond = dtypes.make_condition(cond)
-        data_cond = dtypes.make_condition(counter > 0, vtypes.Not(last))
-
-        if when is None or not isinstance(when, dtypes._Numeric):
-            raw_data, raw_valid = data.read(cond=data_cond)
-        else:
-            data_list, raw_valid = dtypes.read_multi(
-                self.m, data, when, cond=data_cond)
-            raw_data = data_list[0]
-            when = data_list[1]
-
-        when_cond = dtypes.make_condition(when, ready=data_cond)
-        if when_cond is not None:
-            raw_valid = vtypes.Ands(when_cond, raw_valid)
-
-        log_numbanks = util.log2(self.numbanks)
-
-        reg_addr_list = [self.m.TmpReg(self.addrwidth, initval=0)
-                         for ram in self.rams]
-
-        next_addr_list = [self.m.TmpWire(self.addrwidth)
-                          for ram in self.rams]
-        for next_addr, reg_addr in zip(next_addr_list, reg_addr_list):
-            next_addr.assign(reg_addr + stride)
-
-        ram_addr_list = [self.m.TmpWire(ram.addrwidth)
-                         for ram in self.rams]
-        for ram_addr, next_addr in zip(ram_addr_list, next_addr_list):
-            ram_addr.assign(next_addr)
-
-        bank_sel = self.m.TmpReg(log_numbanks, initval=0)
-
-        write_addr_list = [self.m.TmpRegLike(ram.interfaces[port].addr, initval=0)
-                           for ram in self.rams]
-        write_data_list = [self.m.TmpRegLike(ram.interfaces[port].wdata, initval=0)
-                           for ram in self.rams]
-        write_enable_list = [self.m.TmpRegLike(ram.interfaces[port].enable, initval=0)
-                             for ram in self.rams]
-
-        for ram, write_addr, write_data, write_enable in zip(self.rams, write_addr_list,
-                                                             write_data_list, write_enable_list):
-            util.add_mux(ram.interfaces[port].addr, write_enable, write_addr)
-            util.add_mux(ram.interfaces[port].wdata, write_enable, write_data)
-            util.add_enable_cond(ram.interfaces[port].wenable, write_enable, vtypes.Int(1, 1))
-            util.add_enable_cond(ram.interfaces[port].enable, write_enable, vtypes.Int(1, 1))
-
-        self.seq.If(ext_cond, counter == 0)(
-            bank_sel(0),
-            block_counter(block_size - 1),
-            counter(length),
-        )
-
-        for reg_addr in reg_addr_list:
-            self.seq.If(ext_cond, counter == 0)(
-                reg_addr(addr - stride)
-            )
-
-        self.seq.If(raw_valid, counter > 0)(
-            block_counter.dec(),
-            counter.dec()
-        )
-
-        self.seq.If(raw_valid, counter > 0, block_counter == 0)(
-            block_counter(block_size - 1),
-            bank_sel.inc()
-        )
-
-        self.seq.If(raw_valid, counter > 0, block_counter == 0,
-                    bank_sel == self.numbanks - 1)(
-            bank_sel(0)
-        )
-
-        for i, (reg_addr, next_addr) in enumerate(zip(reg_addr_list, next_addr_list)):
-            self.seq.If(raw_valid, counter > 0, bank_sel == i)(
-                reg_addr(next_addr)
-            )
-
-        for i, (write_addr, write_data,
-                write_enable, ram_addr) in enumerate(zip(write_addr_list, write_data_list,
-                                                         write_enable_list, ram_addr_list)):
-            self.seq.If(raw_valid, counter > 0)(
-                write_addr(ram_addr),
-                write_data(raw_data),
-                write_enable(bank_sel == i)
-            )
-
-        self.seq.If(raw_valid, counter == 1)(
-            last(1)
-        )
-
-        # de-assert
-        self.seq.Delay(1)(
-            last(0)
-        )
-
-        for write_enable in write_enable_list:
-            self.seq.Delay(1)(
-                write_enable(0)
-            )
-
-        done = last
-
-        return done
-
-    def _write_dataflow_block_nested(self, port, addr, data, length=1, block_size=1,
-                                     stride=1, cond=None, when=None):
-        """ 
-        @return done
-        'data' and 'when' must be dataflow variables
-        """
-
-        len_rams = 0
-        for ram in self.rams:
-            if not isinstance(ram, MultibankRAM):
-                raise TypeError('All sub-bank RAMs must be MultibankRAM.')
-            if len_rams == 0:
-                len_rams = len(ram.rams)
-            elif len_rams != len(ram.rams):
-                raise ValueError(
-                    'All sub-bank RAMs must have the same number of RAMs.')
-
-        rams = [[] for i in range(len_rams)]
-
-        for ram in self.rams:
-            for i, sub in enumerate(ram.rams):
-                rams[i].append(sub)
-
-        rams = [to_multibank_ram(ram_list, keep_hierarchy=True)
-                for ram_list in rams]
-
-        done_list = []
-        lsb = 0
-        msb = 0
-        for ram in rams:
-            msb = msb + ram.orig_datawidth
-            bank_data = dtypes.Slice(data, msb - 1, lsb)
-            done = ram.write_dataflow_block(
-                port, addr, bank_data, length, block_size, stride, cond, when)
-            done_list.append(done)
-            lsb = msb
-
-        merged_done = done_list[0]
-        return merged_done
+                fsm.If(wvalid, wready, count == _blocksize - 1).goto(fsm.next)
+
+            fsm.If(wvalid, _length <= 1).goto_init()
+            fsm.If(wvalid, wlast).goto_init()
+            fsm.If(wquit).goto_init()
+
+            fsm.inc()
+
+        return wready, done
+
+
+#    def write_dataflow_block(self, port, addr, data, length=1, block_size=1,
+#                             stride=1, cond=None, when=None):
+#        """ 
+#        @return done
+#        'data' and 'when' must be dataflow variables
+#        """
+#
+#        if self.keep_hierarchy and isinstance(self.rams[0], MultibankRAM):
+#            return self._write_dataflow_block_nested(port, addr, data, length, block_size,
+#                                                     stride, cond, when)
+#
+#        if self.seq is None:
+#            self.seq = Seq(self.m, self.name, self.clk, self.rst)
+#
+#        for ram in self.rams:
+#            if ram._write_disabled[port]:
+#                raise TypeError('Write disabled.')
+#
+#        block_counter = self.m.TmpReg(vtypes.get_width(block_size), initval=0)
+#        counter = self.m.TmpReg(vtypes.get_width(length), initval=0)
+#        last = self.m.TmpReg(initval=0)
+#
+#        ext_cond = dtypes.make_condition(cond)
+#        data_cond = dtypes.make_condition(counter > 0, vtypes.Not(last))
+#
+#        if when is None or not isinstance(when, dtypes._Numeric):
+#            raw_data, raw_valid = data.read(cond=data_cond)
+#        else:
+#            data_list, raw_valid = dtypes.read_multi(
+#                self.m, data, when, cond=data_cond)
+#            raw_data = data_list[0]
+#            when = data_list[1]
+#
+#        when_cond = dtypes.make_condition(when, ready=data_cond)
+#        if when_cond is not None:
+#            raw_valid = vtypes.Ands(when_cond, raw_valid)
+#
+#        log_numbanks = util.log2(self.numbanks)
+#
+#        reg_addr_list = [self.m.TmpReg(self.addrwidth, initval=0)
+#                         for ram in self.rams]
+#
+#        next_addr_list = [self.m.TmpWire(self.addrwidth)
+#                          for ram in self.rams]
+#        for next_addr, reg_addr in zip(next_addr_list, reg_addr_list):
+#            next_addr.assign(reg_addr + stride)
+#
+#        ram_addr_list = [self.m.TmpWire(ram.addrwidth)
+#                         for ram in self.rams]
+#        for ram_addr, next_addr in zip(ram_addr_list, next_addr_list):
+#            ram_addr.assign(next_addr)
+#
+#        bank_sel = self.m.TmpReg(log_numbanks, initval=0)
+#
+#        write_addr_list = [self.m.TmpRegLike(ram.interfaces[port].addr, initval=0)
+#                           for ram in self.rams]
+#        write_data_list = [self.m.TmpRegLike(ram.interfaces[port].wdata, initval=0)
+#                           for ram in self.rams]
+#        write_enable_list = [self.m.TmpRegLike(ram.interfaces[port].enable, initval=0)
+#                             for ram in self.rams]
+#
+#        for ram, write_addr, write_data, write_enable in zip(self.rams, write_addr_list,
+#                                                             write_data_list, write_enable_list):
+#            util.add_mux(ram.interfaces[port].addr, write_enable, write_addr)
+#            util.add_mux(ram.interfaces[port].wdata, write_enable, write_data)
+#            util.add_enable_cond(ram.interfaces[port].wenable, write_enable, vtypes.Int(1, 1))
+#            util.add_enable_cond(ram.interfaces[port].enable, write_enable, vtypes.Int(1, 1))
+#
+#        self.seq.If(ext_cond, counter == 0)(
+#            bank_sel(0),
+#            block_counter(block_size - 1),
+#            counter(length),
+#        )
+#
+#        for reg_addr in reg_addr_list:
+#            self.seq.If(ext_cond, counter == 0)(
+#                reg_addr(addr - stride)
+#            )
+#
+#        self.seq.If(raw_valid, counter > 0)(
+#            block_counter.dec(),
+#            counter.dec()
+#        )
+#
+#        self.seq.If(raw_valid, counter > 0, block_counter == 0)(
+#            block_counter(block_size - 1),
+#            bank_sel.inc()
+#        )
+#
+#        self.seq.If(raw_valid, counter > 0, block_counter == 0,
+#                    bank_sel == self.numbanks - 1)(
+#            bank_sel(0)
+#        )
+#
+#        for i, (reg_addr, next_addr) in enumerate(zip(reg_addr_list, next_addr_list)):
+#            self.seq.If(raw_valid, counter > 0, bank_sel == i)(
+#                reg_addr(next_addr)
+#            )
+#
+#        for i, (write_addr, write_data,
+#                write_enable, ram_addr) in enumerate(zip(write_addr_list, write_data_list,
+#                                                         write_enable_list, ram_addr_list)):
+#            self.seq.If(raw_valid, counter > 0)(
+#                write_addr(ram_addr),
+#                write_data(raw_data),
+#                write_enable(bank_sel == i)
+#            )
+#
+#        self.seq.If(raw_valid, counter == 1)(
+#            last(1)
+#        )
+#
+#        # de-assert
+#        self.seq.Delay(1)(
+#            last(0)
+#        )
+#
+#        for write_enable in write_enable_list:
+#            self.seq.Delay(1)(
+#                write_enable(0)
+#            )
+#
+#        done = last
+#
+#        return done
+
+#    def _write_dataflow_block_nested(self, port, addr, data, length=1, block_size=1,
+#                                     stride=1, cond=None, when=None):
+#        """ 
+#        @return done
+#        'data' and 'when' must be dataflow variables
+#        """
+#
+#        len_rams = 0
+#        for ram in self.rams:
+#            if not isinstance(ram, MultibankRAM):
+#                raise TypeError('All sub-bank RAMs must be MultibankRAM.')
+#            if len_rams == 0:
+#                len_rams = len(ram.rams)
+#            elif len_rams != len(ram.rams):
+#                raise ValueError(
+#                    'All sub-bank RAMs must have the same number of RAMs.')
+#
+#        rams = [[] for i in range(len_rams)]
+#
+#        for ram in self.rams:
+#            for i, sub in enumerate(ram.rams):
+#                rams[i].append(sub)
+#
+#        rams = [to_multibank_ram(ram_list, keep_hierarchy=True)
+#                for ram_list in rams]
+#
+#        done_list = []
+#        lsb = 0
+#        msb = 0
+#        for ram in rams:
+#            msb = msb + ram.orig_datawidth
+#            bank_data = dtypes.Slice(data, msb - 1, lsb)
+#            done = ram.write_dataflow_block(
+#                port, addr, bank_data, length, block_size, stride, cond, when)
+#            done_list.append(done)
+#            lsb = msb
+#
+#        merged_done = done_list[0]
+#        return merged_done
 
 
 class _PackedMultibankRAM(MultibankRAM):
@@ -2753,7 +2987,7 @@ class _PackedMultibankRAM(MultibankRAM):
                 self.seq = ram.seq
                 break
 
-        self.df = DataflowManager(self.m, self.clk, self.rst)
+#        self.df = DataflowManager(self.m, self.clk, self.rst)
 
         # key: (axi._id(), port, ram_method_name)
         self.cache_dma_reqs = {}

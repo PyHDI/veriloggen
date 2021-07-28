@@ -16,7 +16,7 @@ class FIFO(_MutexFunction):
                       'is_empty', 'is_almost_empty',
                       'is_full', 'is_almost_full') + _MutexFunction.__intrinsics__
 
-    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=4):
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=4, sync=True):
 
         self.m = m
         self.name = name
@@ -25,11 +25,12 @@ class FIFO(_MutexFunction):
 
         self.datawidth = datawidth
         self.addrwidth = addrwidth
+        self.sync = sync
 
         self.wif = FifoWriteInterface(self.m, name, datawidth, itype='Wire', otype='Wire')
         self.rif = FifoReadInterface(self.m, name, datawidth, itype='Wire', otype='Wire')
 
-        self.definition = mkFifoDefinition(name, datawidth, addrwidth)
+        self.definition = mkFifoDefinition(name, datawidth, addrwidth, sync=sync)
 
         self.inst = self.m.Instance(self.definition, 'inst_' + name,
                                     ports=m.connect_ports(self.definition))
@@ -111,7 +112,11 @@ class FIFO(_MutexFunction):
         util.add_enable_cond(self.rif.deq, deq_cond, 1)
 
         data = self.rif.rdata
-        valid = self.seq.Prev(deq_cond, 1)
+
+        if self.sync:
+            valid = self.seq.Prev(deq_cond, 1)
+        else:
+            valid = deq_cond
 
         return data, valid, ready
 
@@ -166,9 +171,11 @@ class FIFO(_MutexFunction):
         cond = fsm.state == fsm.current
 
         rdata, rvalid, rready = self.deq_rtl(cond=cond)
-        fsm.If(rready).goto_next()
 
         rdata_reg = self.m.TmpReg(self.datawidth, initval=0, signed=True)
+
+        if self.sync:
+            fsm.If(rready).goto_next()
 
         fsm.If(rvalid)(
             rdata_reg(rdata)
@@ -195,7 +202,9 @@ class FIFO(_MutexFunction):
         cond = fsm.state == fsm.current
 
         rdata, rvalid, rready = self.deq_rtl(cond=cond)
-        fsm.goto_next()
+
+        if self.sync:
+            fsm.goto_next()
 
         rdata_reg = self.m.TmpReg(self.datawidth, initval=0, signed=True)
         rvalid_reg = self.m.TmpReg(initval=0)
