@@ -19,10 +19,16 @@ def mkLed(word_datawidth=128):
 
     datawidth = 32
     addrwidth = 10
+    num_words = word_datawidth // datawidth
+
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
     myram = vthread.RAM(m, 'myram', clk, rst, word_datawidth, addrwidth)
 
-    all_ok = m.TmpReg(initval=0)
+    all_ok = m.TmpReg(initval=0, prefix='all_ok')
+    wdata = m.TmpReg(width=word_datawidth, initval=0, prefix='wdata')
+    rdata = m.TmpReg(width=word_datawidth, initval=0, prefix='rdata')
+    rvalue = m.TmpReg(width=datawidth, initval=0, prefix='rvalue')
+    rexpected = m.TmpReg(width=datawidth, initval=0, prefix='rexpected')
 
     def blink(size):
         all_ok.value = True
@@ -44,7 +50,9 @@ def mkLed(word_datawidth=128):
     def body(size, offset):
         # write
         for i in range(size):
-            wdata = i + 100
+            wdata.value = 0
+            for j in range(num_words):
+                wdata.value = (wdata >> datawidth) | ((i * num_words + 0x1000 + j) << (word_datawidth - datawidth))
             myram.write(i, wdata)
 
         laddr = 0
@@ -54,7 +62,9 @@ def mkLed(word_datawidth=128):
 
         # write
         for i in range(size):
-            wdata = i + 1000
+            wdata.value = 0
+            for j in range(num_words):
+                wdata.value = (wdata >> datawidth) | ((i * num_words + 0x4000 + j) << (word_datawidth - datawidth))
             myram.write(i, wdata)
 
         laddr = 0
@@ -69,10 +79,13 @@ def mkLed(word_datawidth=128):
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
-            rdata = myram.read(i)
-            if vthread.verilog.NotEql(rdata, i + 100):
-                print('rdata[%d] = %d' % (i, rdata))
-                all_ok.value = False
+            rdata.value = myram.read(i)
+            for j in range(num_words):
+                rvalue.value = rdata >> (datawidth * j)
+                rexpected.value = i * num_words + 0x1000 + j
+                if vthread.verilog.NotEql(rvalue, rexpected):
+                    print('rdata[%d] = %d' % (i, rvalue))
+                    all_ok.value = False
 
         # read
         laddr = 0
@@ -81,10 +94,13 @@ def mkLed(word_datawidth=128):
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
-            rdata = myram.read(i)
-            if vthread.verilog.NotEql(rdata, i + 1000):
-                print('rdata[%d] = %d' % (i, rdata))
-                all_ok.value = False
+            rdata.value = myram.read(i)
+            for j in range(num_words):
+                rvalue.value = rdata >> (datawidth * j)
+                rexpected.value = i * num_words + 0x4000 + j
+                if vthread.verilog.NotEql(rvalue, rexpected):
+                    print('rdata[%d] = %d' % (i, rvalue))
+                    all_ok.value = False
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
     fsm = th.start(17)
