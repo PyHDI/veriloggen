@@ -553,7 +553,8 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             ram_method(self.read_local_addr_q, self.read_local_stride_q, self.read_local_size_q,
                        wdata, wvalid, False, port=port, cond=ram_cond)
             data_fsm(
-                count(0)
+                count(0),
+                wvalid(0)
             )
 
             # Data state 2
@@ -655,8 +656,10 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             wvalid(1)
         )
 
-        data_fsm.If(cond, self.rdata.rvalid, rest_size <= 1, count == pack_size -1).goto_init()
-        self.seq.If(data_fsm.here, cond, self.rdata.rvalid, rest_size <= 1, count == pack_size - 1)(
+        data_fsm.If(cond, self.rdata.rvalid, rest_size <= 1,
+                    count == pack_size -1).goto_init()
+        self.seq.If(data_fsm.here, cond, self.rdata.rvalid, rest_size <= 1,
+                    count == pack_size - 1)(
             self.read_data_idle(1)
         )
 
@@ -1166,6 +1169,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             )
             data_fsm.If(wcond, count == pack_size - 1).goto(rstate)
             data_fsm.If(wcond, count == pack_size - 1, wlast).goto_init()
+
             self.seq.If(data_fsm.here, wcond, count == pack_size - 1, wlast)(
                 self.write_data_idle(1)
             )
