@@ -96,7 +96,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
                                                             'read_local_stride_fifo']),
                                                   self.addrwidth)
         self.read_local_size_fifo = self.m.Wire('_'.join(['', self.name,
-                                                          'read_local_size_rdata_fifo']),
+                                                          'read_local_size_fifo']),
                                                 self.addrwidth + 1)
 
         read_unpack_values = self.unpack_read_req(self.read_req_fifo.rdata)
@@ -173,7 +173,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
                                                              'write_local_stride_fifo']),
                                                    self.addrwidth)
         self.write_local_size_fifo = self.m.Wire('_'.join(['', self.name,
-                                                           'write_local_size_rdata_fifo']),
+                                                           'write_local_size_fifo']),
                                                  self.addrwidth + 1)
         self.write_update_local_addr_fifo = self.m.Wire('_'.join(['', self.name,
                                                                   'write_update_local_addr_fifo']))
@@ -494,9 +494,10 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             # Data state 1
             data_fsm.set_index(1)
             ram_cond = vtypes.Ands(data_fsm.here, self.read_op_sel_buf == op_id)
-            ram_method(self.read_local_addr_buf, self.read_local_stride_buf, self.read_local_size_buf,
-                       self.rdata.rdata, self.rdata.rvalid, False,
-                       port=port, cond=ram_cond)
+            ram_method(
+                self.read_local_addr_buf, self.read_local_stride_buf, self.read_local_size_buf,
+                self.rdata.rdata, self.rdata.rvalid, False,
+                port=port, cond=ram_cond)
             return
 
         # Data FSM
@@ -569,8 +570,9 @@ class AXIM(axi.AxiMaster, _MutexFunction):
                                    prefix='_'.join(['', self.name, 'read_narrow_wvalid']))
             count = self.m.TmpReg(log_pack_size, initval=0,
                                   prefix='_'.join(['', self.name, 'read_narrow_count']))
-            ram_method(self.read_local_addr_buf, self.read_local_stride_buf, self.read_local_size_buf,
-                       wdata, wvalid, False, port=port, cond=ram_cond)
+            ram_method(
+                self.read_local_addr_buf, self.read_local_stride_buf, self.read_local_size_buf,
+                wdata, wvalid, False, port=port, cond=ram_cond)
             data_fsm(
                 count(0),
                 wvalid(0)
@@ -697,8 +699,9 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             count = self.m.TmpReg(log_pack_size, initval=0,
                                   prefix='_'.join(['', self.name, 'read_wide_count']))
             _wdata = wdata[:ram_datawidth]
-            ram_method(self.read_local_addr_buf, self.read_local_stride_buf, self.read_local_size_buf,
-                       _wdata, wvalid, False, port=port, cond=ram_cond)
+            ram_method(
+                self.read_local_addr_buf, self.read_local_stride_buf, self.read_local_size_buf,
+                _wdata, wvalid, False, port=port, cond=ram_cond)
             data_fsm(
                 count(0),
                 wvalid(0)
