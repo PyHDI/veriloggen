@@ -36,7 +36,7 @@ def mkLed(word_datawidth=128):
         for i in range(4):
             print('# iter %d start' % i)
             # Test for 4KB boundary check
-            offset = i * 1024 * 16 + (myaxi.boundary_size - (word_datawidth // 8))
+            offset = i * 1024 * 16 + (myaxi.boundary_size - (word_datawidth // 8) * 3)
             body(size, offset)
             print('# iter %d end' % i)
 
