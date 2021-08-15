@@ -20,7 +20,7 @@ from .fifo import FIFO
 class AXIM(axi.AxiMaster, _MutexFunction):
     """ AXI Master Interface with DMA controller """
 
-    __intrinsics__ = ('read', 'write',
+    __intrinsics__ = ('read', 'write', 'write_fence',
                       'dma_read', 'dma_read_async',
                       'dma_write', 'dma_write_async',
                       'dma_wait_read', 'dma_wait_write',
@@ -228,41 +228,89 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             self.global_base_addr = None
 
     def read(self, fsm, global_addr):
-        ### ???
         if self.use_global_base_addr:
             global_addr = self.global_base_addr + global_addr
 
-        ack, counter = self.read_request_counter(global_addr, length=1, cond=fsm)
+        global_size = 1
+
+        # state 0
+        self.seq.If(fsm.here, self.read_req_idle)(
+            self.read_req_idle(0)
+        )
+        fsm.If(self.read_req_idle).goto_next()
+
+        # state 1
+        req_cond = fsm.here
+        ack = self.read_request(global_addr, global_size, cond=req_cond)
+        self.seq.If(fsm.here, ack)(
+            self.read_req_idle(1)
+        )
         fsm.If(ack).goto_next()
 
-        ret = self.read_data(counter, cond=fsm)
-        if len(ret) == 3:
-            data, valid, last = ret
-        else:
-            data, valid = ret
+        # state 2
+        self.seq.If(fsm.here, self.read_data_idle)(
+            self.read_data_idle(0)
+        )
+        fsm.If(self.read_data_idle).goto_next()
 
+        # state 3
+        rcond = fsm.here
         rdata = self.m.TmpReg(self.datawidth, initval=0,
                               signed=True, prefix='axim_rdata')
-        fsm.If(valid)(rdata(data))
-        fsm.Then().goto_next()
+        _ = self.read_data(cond=rcond)
+        fsm.If(self.rdata.rvalid)(
+            rdata(self.rdata.rdata)
+        )
+        self.seq.If(fsm.here, self.rdata.rvalid)(
+            self.read_data_idle(1)
+        )
+        fsm.If(self.rdata.rvalid).goto_next()
 
         return rdata
 
     def write(self, fsm, global_addr, value):
-        ### ???
         if self.use_global_base_addr:
             global_addr = self.global_base_addr + global_addr
 
-        ack, counter = self.write_request_counter(global_addr, length=1, cond=fsm)
+        global_size = 1
+
+        # state 0
+        self.seq.If(fsm.here, self.write_req_idle)(
+            self.write_req_idle(0)
+        )
+        fsm.If(self.write_req_idle).goto_next()
+
+        # state 1
+        req_cond = fsm.here
+        ack = self.write_request(global_addr, global_size, cond=req_cond)
+        self.seq.If(fsm.here, ack)(
+            self.write_req_idle(1)
+        )
         fsm.If(ack).goto_next()
 
-        ret = self.write_data(value, counter, cond=fsm)
-        if isinstance(ret, (tuple)):
-            ack, last = ret
-        else:
-            ack, last = ret, None
+        # state 2
+        self.seq.If(fsm.here, self.write_data_idle)(
+            self.write_data_idle(0)
+        )
+        fsm.If(self.write_data_idle).goto_next()
 
+        # state 3
+        wcond = fsm.here
+        wdata = value
+        wlast = 1
+        _ = self.write_data(wdata, wlast, cond=wcond)
+        ack = vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid))
+        self.seq.If(fsm.here, ack)(
+            self.write_data_idle(1)
+        )
         fsm.If(ack).goto_next()
+
+    def write_fence(self, fsm, global_addr, value):
+
+        self.write(fsm, global_addr, value)
+
+        res = self.write_completed()
+        fsm.If(res).goto_next()
 
     def dma_read(self, fsm, ram, local_addr, global_addr, size,
                  local_stride=1, port=0, ram_method=None):
@@ -399,6 +447,9 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         local_size = size
         op_id = self._get_read_op_id(ram, port, ram_method)
 
+        if self.use_global_base_addr:
+            global_addr = global_addr + self.global_base_addr
+
         self.seq.If(start)(
             self.read_start(1),
             self.read_op_sel(op_id),
@@ -418,53 +469,47 @@ class AXIM(axi.AxiMaster, _MutexFunction):
                       self.clk, self.rst, as_module=self.fsm_as_module)
         self.read_req_fsm = req_fsm
 
-        cur_global_addr = self.m.Reg('_'.join(['', self.name, 'read_cur_global_addr']),
-                                     self.addrwidth, initval=0)
         cur_global_size = self.m.Reg('_'.join(['', self.name, 'read_cur_global_size']),
-                              self.addrwidth + 1, initval=0)
-        rest_global_size = self.m.Reg('_'.join(['', self.name, 'read_rest_global_size']),
-                               self.addrwidth + 1, initval=0)
+                                     self.addrwidth + 1, initval=0)
+        cont = self.m.Reg('_'.join(['', self.name, 'read_cont']), initval=0)
         max_burstlen = 2 ** self.burst_size_width
 
         # Req state 0
-        if not self.use_global_base_addr:
-            gaddr = self.read_global_addr
-        else:
-            gaddr = self.read_global_addr + self.global_base_addr
-
-        req_fsm.If(self.read_start)(
-            cur_global_addr(self.mask_addr(gaddr)),
-            rest_global_size(self.read_global_size),
+        self.seq.If(req_fsm.here, self.read_start)(
             self.read_req_idle(0)
         )
+        self.seq.If(self.read_start, self.read_req_fifo.almost_full)(
+            self.read_start(1)
+        )
 
-        enq_cond = vtypes.Ands(req_fsm.here, self.read_start)
-
+        enq_cond = vtypes.Ands(req_fsm.here, self.read_start,
+                               vtypes.Not(self.read_req_fifo.almost_full))
         _ = self.read_req_fifo.enq_rtl(self.pack_read_req(self.read_op_sel,
                                                           self.read_local_addr,
                                                           self.read_local_stride,
                                                           self.read_local_size),
                                        cond=enq_cond)
-        req_fsm.If(self.read_start).goto_next()
+
+        check_cond = vtypes.Ands(req_fsm.here, vtypes.Ors(self.read_start, cont),
+                                 vtypes.Not(self.read_req_fifo.almost_full))
+        self._check_4KB_boundary(req_fsm, max_burstlen,
+                                 self.read_global_addr, cur_global_size, self.read_global_size,
+                                 cond=check_cond)
+        req_fsm.If(check_cond).goto_next()
 
         # Req state 1
-        check_state = req_fsm.current
-        self._check_4KB_boundary(req_fsm, max_burstlen,
-                                 cur_global_addr, cur_global_size, rest_global_size)
-
-        # Req state 2
-        ack = self.read_request(cur_global_addr, cur_global_size, cond=req_fsm)
-        req_fsm.goto_next()
-
-        # Req state 3
+        ack = self.read_request(self.read_global_addr, cur_global_size, cond=req_fsm)
         req_fsm.If(ack)(
-            cur_global_addr.add(optimize(cur_global_size * (self.datawidth // 8)))
+            self.read_global_addr.add(optimize(cur_global_size * (self.datawidth // 8))),
+            cont(1)
         )
-        req_fsm.If(ack).goto(check_state)
-        req_fsm.If(ack, rest_global_size == 0).goto_init()
-        self.seq.If(req_fsm.here, ack, rest_global_size == 0)(
+        req_fsm.If(ack, self.read_global_size == 0)(
+            cont(0)
+        )
+        self.seq.If(req_fsm.here, ack, self.read_global_size == 0)(
             self.read_req_idle(1)
         )
+        req_fsm.If(ack).goto_init()
 
     def _synthesize_read_data_fsm(self, ram, port, ram_method, ram_datawidth):
 
@@ -891,6 +936,9 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         local_size = size
         op_id = self._get_write_op_id(ram, port, ram_method)
 
+        if self.use_global_base_addr:
+            global_addr = global_addr + self.global_base_addr
+
         self.seq.If(start)(
             self.write_start(1),
             self.write_op_sel(op_id),
@@ -910,61 +958,51 @@ class AXIM(axi.AxiMaster, _MutexFunction):
                       self.clk, self.rst, as_module=self.fsm_as_module)
         self.write_req_fsm = req_fsm
 
-        cur_global_addr = self.m.Reg('_'.join(['', self.name, 'write_cur_global_addr']),
-                                     self.addrwidth, initval=0)
-        cur_local_addr = self.m.Reg('_'.join(['', self.name, 'write_cur_local_addr']),
-                                    self.addrwidth, initval=0)
         cur_global_size = self.m.Reg('_'.join(['', self.name, 'write_cur_global_size']),
                               self.addrwidth + 1, initval=0)
-        rest_global_size = self.m.Reg('_'.join(['', self.name, 'write_rest_global_size']),
-                               self.addrwidth + 1, initval=0)
         update_local_addr = self.m.Reg('_'.join(['', self.name, 'write_update_local_addr']),
-                                         initval=1)
+                                       initval=1)
         max_burstlen = 2 ** self.burst_size_width
 
         # Req state 0
-        if not self.use_global_base_addr:
-            gaddr = self.write_global_addr
-        else:
-            gaddr = self.write_global_addr + self.global_base_addr
-
-        req_fsm.If(self.write_start)(
-            cur_global_addr(self.mask_addr(gaddr)),
-            cur_local_addr(self.write_local_addr),
-            rest_global_size(self.write_global_size),
-            update_local_addr(1),
+        self.seq.If(req_fsm.here, self.write_start)(
             self.write_req_idle(0)
         )
-        req_fsm.If(self.write_start).goto_next()
+
+        check_cond = vtypes.Ands(req_fsm.here,
+                                 vtypes.Ors(self.write_start, vtypes.Not(update_local_addr)))
+        self._check_4KB_boundary(req_fsm, max_burstlen,
+                                 self.write_global_addr, cur_global_size, self.write_global_size,
+                                 cond=check_cond)
+        req_fsm.If(check_cond).goto_next()
 
         # Req state 1
-        check_state = req_fsm.current
-        self._check_4KB_boundary(req_fsm, max_burstlen,
-                                 cur_global_addr, cur_global_size, rest_global_size)
-
-        # Req state 2
-        cond = vtypes.Ands(req_fsm.here, self.write_acceptable())
-        ack = self.write_request(cur_global_addr, cur_global_size, cond=cond)
-        req_fsm.goto_next()
-
-        # Req state 3
-        enq_cond = vtypes.Ands(req_fsm.here, ack)
+        enq_cond = vtypes.Ands(req_fsm.here,
+                               vtypes.Not(self.write_req_fifo.almost_full),
+                               vtypes.Ors(self.waddr.awready, vtypes.Not(self.waddr.awvalid)),
+                               self.write_acceptable())
         _ = self.write_req_fifo.enq_rtl(self.pack_write_req(self.write_op_sel,
-                                                            cur_local_addr,
+                                                            self.write_local_addr,
                                                             self.write_local_stride,
                                                             cur_global_size,
                                                             update_local_addr),
                                         cond=enq_cond)
 
-        req_fsm.If(ack)(
-            cur_global_addr.add(optimize(cur_global_size * (self.datawidth // 8))),
+        req_cond = vtypes.Ands(req_fsm.here,
+                               vtypes.Not(self.write_req_fifo.almost_full),
+                               self.write_acceptable())
+        ack = self.write_request(self.write_global_addr, cur_global_size, cond=req_cond)
+        req_fsm.If(enq_cond)(
+            self.write_global_addr.add(optimize(cur_global_size * (self.datawidth // 8))),
             update_local_addr(0),
         )
-        req_fsm.If(ack).goto(check_state)
-        req_fsm.If(ack, rest_global_size == 0).goto_init()
-        self.seq.If(req_fsm.here, ack, rest_global_size == 0)(
+        req_fsm.If(enq_cond, self.write_global_size == 0)(
+            update_local_addr(1),
+        )
+        self.seq.If(req_fsm.here, enq_cond, self.write_global_size == 0)(
             self.write_req_idle(1)
         )
+        req_fsm.If(enq_cond).goto_init()
 
     def _synthesize_write_data_fsm(self, ram, port, ram_method, ram_datawidth):
 
@@ -1025,8 +1063,8 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             wcond = vtypes.Ands(cond, rvalid)
             _ = self.write_data(rdata, rlast, cond=wcond)
 
-            data_fsm.If(wcond, rlast).goto_init()
-            self.seq.If(data_fsm.here, wcond, rlast)(
+            data_fsm.If(wcond, rlast, rready).goto_init()
+            self.seq.If(data_fsm.here, wcond, rlast, rready)(
                 self.write_data_idle(1)
             )
             return
@@ -1071,8 +1109,8 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         wcond = vtypes.Ands(cond, rvalid)
         _ = self.write_data(rdata, rlast, cond=wcond)
 
-        data_fsm.If(wcond, rlast).goto_init()
-        self.seq.If(data_fsm.here, wcond, rlast)(
+        data_fsm.If(wcond, rlast, rready).goto_init()
+        self.seq.If(data_fsm.here, wcond, rlast, rready)(
             self.write_data_idle(1)
         )
 
@@ -1410,24 +1448,24 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         return op_id
 
     def _check_4KB_boundary(self, fsm, max_burstlen,
-                            req_global_addr, req_size, rest_size):
-        fsm.If(rest_size <= max_burstlen,
-               self.check_boundary(req_global_addr, rest_size))(
+                            req_global_addr, req_size, rest_size, cond=None):
+
+        self.seq.If(cond, rest_size <= max_burstlen,
+                    self.check_boundary(req_global_addr, rest_size))(
             req_size(self.rest_boundary(req_global_addr)),
             rest_size(
                 rest_size - self.rest_boundary(req_global_addr))
-        ).Elif(rest_size <= max_burstlen)(
+        ).Elif(cond, rest_size <= max_burstlen)(
             req_size(rest_size),
             rest_size(0)
-        ).Elif(self.check_boundary(req_global_addr, max_burstlen))(
+        ).Elif(cond, self.check_boundary(req_global_addr, max_burstlen))(
             req_size(self.rest_boundary(req_global_addr)),
             rest_size(
                 rest_size - self.rest_boundary(req_global_addr))
-        ).Else(
+        ).Elif(cond)(
             req_size(max_burstlen),
             rest_size(rest_size - max_burstlen)
         )
-        fsm.goto_next()
 
     def pack_read_req(self, op_sel, local_addr, local_stride, local_size):
         return vtypes.Cat(op_sel, local_addr, local_stride, local_size)
@@ -1487,31 +1525,51 @@ class AXIMVerify(AXIM):
         if self.use_global_base_addr:
             global_addr = self.global_base_addr + global_addr
 
-        ack, counter = self.write_request_counter(global_addr, length=1, cond=fsm)
+        global_size = 1
         delay_count = self.m.TmpReg(self.addrwidth, initval=0, prefix='delay_count')
+
+        # state 0
+        self.seq.If(fsm.here, self.write_req_idle)(
+            self.write_req_idle(0)
+        )
         fsm(
             delay_count(delay)
         )
+        fsm.If(self.write_req_idle).goto_next()
+
+        # state 1
+        req_cond = fsm.here
+        ack = self.write_request(global_addr, global_size, cond=req_cond)
+        self.seq.If(fsm.here, ack)(
+            self.write_req_idle(1)
+        )
         fsm.If(ack).goto_next()
 
-        fsm(
+        # state 2
+        fsm.If(delay_count > 0)(
             delay_count.dec()
         )
-        fsm.If(delay_count == 0).goto_next()
+        self.seq.If(fsm.here, delay_count == 0, self.write_data_idle)(
+            self.write_data_idle(0)
+        )
+        fsm.If(delay_count == 0, self.write_data_idle).goto_next()
 
-        ret = self.write_data(value, counter, cond=fsm)
-        if isinstance(ret, (tuple)):
-            ack, last = ret
-        else:
-            ack, last = ret, None
-
+        # state 3
+        wcond = fsm.here
+        wdata = value
+        wlast = 1
+        _ = self.write_data(wdata, wlast, cond=wcond)
+        ack = vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid))
+        self.seq.If(fsm.here, ack)(
+            self.write_data_idle(1)
+        )
         fsm.If(ack).goto_next()
 
 
 class AXIMLite(axi.AxiLiteMaster, _MutexFunction):
     """ AXI-Lite Master Interface """
 
-    __intrinsics__ = ('read', 'write',
+    __intrinsics__ = ('read', 'write', 'write_fence',
                       'set_global_base_addr',) + _MutexFunction.__intrinsics__
 
     burstlen = 256
@@ -1534,41 +1592,88 @@ class AXIMLite(axi.AxiLiteMaster, _MutexFunction):
         self.mutex = None
 
     def read(self, fsm, global_addr):
-        ### ???
         if self.use_global_base_addr:
             global_addr = self.global_base_addr + global_addr
 
-        ack = self.read_request(global_addr, length=1, cond=fsm)
+        global_size = 1
+
+        # state 0
+        self.seq.If(fsm.here, self.read_req_idle)(
+            self.read_req_idle(0)
+        )
+        fsm.If(self.read_req_idle).goto_next()
+
+        # state 1
+        req_cond = fsm.here
+        ack = self.read_request(global_addr, global_size, cond=req_cond)
+        self.seq.If(fsm.here, ack)(
+            self.read_req_idle(1)
+        )
         fsm.If(ack).goto_next()
 
-        ret = self.read_data(cond=fsm)
-        if len(ret) == 3:
-            data, valid, last = ret
-        else:
-            data, valid = ret
+        # state 2
+        self.seq.If(fsm.here, self.read_data_idle)(
+            self.read_data_idle(0)
+        )
+        fsm.If(self.read_data_idle).goto_next()
 
+        # state 3
+        rcond = fsm.here
         rdata = self.m.TmpReg(self.datawidth, initval=0,
                               signed=True, prefix='axim_rdata')
-        fsm.If(valid)(rdata(data))
-        fsm.Then().goto_next()
+        _ = self.read_data(cond=rcond)
+        fsm.If(self.rdata.rvalid)(
+            rdata(self.rdata.rdata)
+        )
+        self.seq.If(fsm.here, self.rdata.rvalid)(
+            self.read_data_idle(1)
+        )
+        fsm.If(self.rdata.rvalid).goto_next()
 
         return rdata
 
     def write(self, fsm, global_addr, value):
-        ### ???
         if self.use_global_base_addr:
             global_addr = self.global_base_addr + global_addr
 
-        ack = self.write_request(global_addr, length=1, cond=fsm)
+        global_size = 1
+
+        # state 0
+        self.seq.If(fsm.here, self.write_req_idle)(
+            self.write_req_idle(0)
+        )
+        fsm.If(self.write_req_idle).goto_next()
+
+        # state 1
+        req_cond = fsm.here
+        ack = self.write_request(global_addr, global_size, cond=req_cond)
+        self.seq.If(fsm.here, ack)(
+            self.write_req_idle(1)
+        )
         fsm.If(ack).goto_next()
 
-        ret = self.write_data(value, cond=fsm)
-        if isinstance(ret, (tuple)):
-            ack, last = ret
-        else:
-            ack, last = ret, None
+        # state 2
+        self.seq.If(fsm.here, self.write_data_idle)(
+            self.write_data_idle(0)
+        )
+        fsm.If(self.write_data_idle).goto_next()
 
+        # state 3
+        wcond = fsm.here
+        wdata = value
+        _ = self.write_data(wdata, cond=wcond)
+        ack = vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid))
+        self.seq.If(fsm.here, ack)(
+            self.write_data_idle(1)
+        )
         fsm.If(ack).goto_next()
+
+    def write_fence(self, fsm, global_addr, value):
+
+        self.write(fsm, global_addr, value)
+
+        res = self.write_completed()
+        fsm.If(res).goto_next()
 
     def set_global_base_addr(self, fsm, addr):
 
@@ -1588,28 +1693,47 @@ class AXIMLiteVerify(AXIMLite):
         if self.use_global_base_addr:
             global_addr = self.global_base_addr + global_addr
 
-        ack = self.read_request(global_addr, length=1, cond=fsm)
+        global_size = 1
         delay_count = self.m.TmpReg(self.addrwidth, initval=0, prefix='delay_count')
+
+        # state 0
+        self.seq.If(fsm.here, self.read_req_idle)(
+            self.read_req_idle(0)
+        )
         fsm(
             delay_count(delay)
         )
+        fsm.If(self.read_req_idle).goto_next()
+
+        # state 1
+        req_cond = fsm.here
+        ack = self.read_request(global_addr, global_size, cond=req_cond)
+        self.seq.If(fsm.here, ack)(
+            self.read_req_idle(1)
+        )
         fsm.If(ack).goto_next()
 
-        fsm(
+        # state 2
+        fsm.If(delay_count > 0)(
             delay_count.dec()
         )
-        fsm.If(delay_count == 0).goto_next()
+        self.seq.If(fsm.here, delay_count == 0, self.read_data_idle)(
+            self.read_data_idle(0)
+        )
+        fsm.If(delay_count == 0, self.read_data_idle).goto_next()
 
-        ret = self.read_data(cond=fsm)
-        if len(ret) == 3:
-            data, valid, last = ret
-        else:
-            data, valid = ret
-
+        # state 3
+        rcond = fsm.here
         rdata = self.m.TmpReg(self.datawidth, initval=0,
                               signed=True, prefix='axim_rdata')
-        fsm.If(valid)(rdata(data))
-        fsm.Then().goto_next()
+        _ = self.read_data(cond=rcond)
+        fsm.If(self.rdata.rvalid)(
+            rdata(self.rdata.rdata)
+        )
+        self.seq.If(fsm.here, self.rdata.rvalid)(
+            self.read_data_idle(1)
+        )
+        fsm.If(self.rdata.rvalid).goto_next()
 
         return rdata
 
@@ -1617,22 +1741,41 @@ class AXIMLiteVerify(AXIMLite):
         if self.use_global_base_addr:
             global_addr = self.global_base_addr + global_addr
 
-        ack = self.write_request(global_addr, length=1, cond=fsm)
+        global_size = 1
         delay_count = self.m.TmpReg(self.addrwidth, initval=0, prefix='delay_count')
+
+        # state 0
+        self.seq.If(fsm.here, self.write_req_idle)(
+            self.write_req_idle(0)
+        )
         fsm(
             delay_count(delay)
         )
+        fsm.If(self.write_req_idle).goto_next()
+
+        # state 1
+        req_cond = fsm.here
+        ack = self.write_request(global_addr, global_size, cond=req_cond)
+        self.seq.If(fsm.here, ack)(
+            self.write_req_idle(1)
+        )
         fsm.If(ack).goto_next()
 
-        fsm(
+        # state 2
+        fsm.If(delay_count > 0)(
             delay_count.dec()
         )
-        fsm.If(delay_count == 0).goto_next()
+        self.seq.If(fsm.here, delay_count == 0, self.write_data_idle)(
+            self.write_data_idle(0)
+        )
+        fsm.If(delay_count == 0, self.write_data_idle).goto_next()
 
-        ret = self.write_data(value, cond=fsm)
-        if isinstance(ret, (tuple)):
-            ack, last = ret
-        else:
-            ack, last = ret, None
-
+        # state 3
+        wcond = fsm.here
+        wdata = value
+        _ = self.write_data(wdata, cond=wcond)
+        ack = vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid))
+        self.seq.If(fsm.here, ack)(
+            self.write_data_idle(1)
+        )
         fsm.If(ack).goto_next()
