@@ -92,9 +92,17 @@ class AXISRegister(AXIS):
                   self.clk, self.rst, as_module=self.fsm_as_module)
 
         # request
-        addr, counter, readvalid, writevalid = self.pull_request_counter(cond=fsm)
+        addr, length, readvalid, writevalid = self.pull_request(cond=fsm)
 
+        rcount = self.m.TmpReg(self.burst_size_width + 1, initval=0,
+                               prefix='axis_rcount')
+        rlast = self.m.TmpReg(initval=0, prefix='axis_rlast')
         maskaddr = self.m.TmpReg(self.maskwidth)
+
+        fsm.If(readvalid)(
+            rcount(length),
+            rlast(length <= 1)
+        )
         fsm.If(vtypes.Ors(readvalid, writevalid))(
             maskaddr((addr >> self.shift) & self.mask),
         )
@@ -106,25 +114,31 @@ class AXISRegister(AXIS):
         fsm.If(readvalid).goto_from(init_state, read_state)
         fsm.set_index(read_state)
 
-        rdata = self.m.TmpWire(self.datawidth, signed=True)
+        rdata = self.m.TmpWire(self.datawidth, signed=True, prefix='axis_rdata')
         pat = [(maskaddr == i, r) for i, r in enumerate(self.register)]
         pat.append((None, vtypes.IntX()))
         rval = vtypes.PatternMux(pat)
         rdata.assign(rval)
 
-        flag = self.m.TmpWire()
+        flag = self.m.TmpWire(prefix='axis_flag')
         pat = [(maskaddr == i, r) for i, r in enumerate(self.flag)]
         pat.append((None, vtypes.IntX()))
         rval = vtypes.PatternMux(pat)
         flag.assign(rval)
 
-        resetval = self.m.TmpWire(self.datawidth, signed=True)
+        resetval = self.m.TmpWire(self.datawidth, signed=True, prefix='axis_resetval')
         pat = [(maskaddr == i, r) for i, r in enumerate(self.resetval)]
         pat.append((None, vtypes.IntX()))
         rval = vtypes.PatternMux(pat)
         resetval.assign(rval)
 
-        ack, valid, last = self.push_read_data(rdata, counter, cond=fsm)
+        ack = self.push_read_data(rdata, rlast, cond=fsm)
+
+        fsm.If(ack)(
+            maskaddr.inc(),
+            rcount.dec(),
+            rlast(rcount <= 1)
+        )
 
         # flag reset
         state_cond = fsm.state == fsm.current
@@ -134,17 +148,14 @@ class AXISRegister(AXIS):
                 self.flag[i](0)
             )
 
-        fsm.If(ack)(
-            maskaddr.inc()
-        )
-        fsm.If(valid, last).goto_init()
+        fsm.If(ack, rlast).goto_init()
 
         # write
         write_state = fsm.current + 1
         fsm.If(writevalid).goto_from(init_state, write_state)
         fsm.set_index(write_state)
 
-        data, mask, valid, last = self.pull_write_data(counter, cond=fsm)
+        data, mask, valid, last = self.pull_write_data(cond=fsm)
 
         state_cond = fsm.state == fsm.current
         for i, r in enumerate(self.register):
@@ -283,25 +294,25 @@ class AXISLiteRegister(AXISLite):
         fsm.If(readvalid).goto_from(init_state, read_state)
         fsm.set_index(read_state)
 
-        rdata = self.m.TmpWire(self.datawidth, signed=True)
+        rdata = self.m.TmpWire(self.datawidth, signed=True, prefix='axislite_rdata')
         pat = [(maskaddr == i, r) for i, r in enumerate(self.register)]
         pat.append((None, vtypes.IntX()))
         rval = vtypes.PatternMux(pat)
         rdata.assign(rval)
 
-        flag = self.m.TmpWire()
+        flag = self.m.TmpWire(prefix='axislite_flag')
         pat = [(maskaddr == i, r) for i, r in enumerate(self.flag)]
         pat.append((None, vtypes.IntX()))
         rval = vtypes.PatternMux(pat)
         flag.assign(rval)
 
-        resetval = self.m.TmpWire(self.datawidth, signed=True)
+        resetval = self.m.TmpWire(self.datawidth, signed=True, prefix='axislite_resetval')
         pat = [(maskaddr == i, r) for i, r in enumerate(self.resetval)]
         pat.append((None, vtypes.IntX()))
         rval = vtypes.PatternMux(pat)
         resetval.assign(rval)
 
-        ack, valid = self.push_read_data(rdata, cond=fsm)
+        ack = self.push_read_data(rdata, cond=fsm)
 
         # flag reset
         state_cond = fsm.state == fsm.current
@@ -311,9 +322,7 @@ class AXISLiteRegister(AXISLite):
                 self.flag[i](0)
             )
 
-        fsm.If(valid).goto_init()
-        fsm.If(ack, vtypes.Not(valid)).goto_next()
-        fsm.If(valid).goto_init()
+        fsm.If(ack).goto_init()
 
         # write
         write_state = fsm.current + 1

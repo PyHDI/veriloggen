@@ -1310,7 +1310,7 @@ class AxiSlave(object):
         """
 
         addr = self.m.TmpReg(self.addrwidth, initval=0, prefix='addr')
-        length= self.m.TmpReg(self.burst_size_width + 1, initval=0, prefix='length')
+        length = self.m.TmpReg(self.burst_size_width + 1, initval=0, prefix='length')
         writevalid = self.m.TmpReg(initval=0, prefix='writevalid')
         readvalid = self.m.TmpReg(initval=0, prefix='readvalid')
 
@@ -1368,7 +1368,7 @@ class AxiSlave(object):
             raise TypeError('Write disabled.')
 
         addr = self.m.TmpReg(self.addrwidth, initval=0, prefix='addr')
-        length= self.m.TmpReg(self.burst_size_width + 1, initval=0, prefix='length')
+        length = self.m.TmpReg(self.burst_size_width + 1, initval=0, prefix='length')
         valid = self.m.TmpReg(initval=0, prefix='valid')
 
         prev_awvalid = self.m.TmpReg(initval=0, prefix='prev_awvalid')
