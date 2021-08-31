@@ -6,11 +6,9 @@ import functools
 from collections import OrderedDict
 
 import veriloggen.core.vtypes as vtypes
-import veriloggen.types.util as util
 import veriloggen.types.axi as axi
 from veriloggen.fsm.fsm import FSM
 from veriloggen.optimizer import try_optimize as optimize
-from veriloggen.seq.seq import make_condition
 
 from .ttypes import _MutexFunction
 from .ram import RAM, MultibankRAM, to_multibank_ram
