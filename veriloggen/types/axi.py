@@ -1932,7 +1932,6 @@ class AxiStreamIn(object):
     def __init__(self, m, name, clk, rst, datawidth=32,
                  with_last=True, with_strb=False,
                  id_width=0, user_width=0, dest_width=0,
-#                 noio=False, nodataflow=False):
                  noio=False):
 
         self.m = m
@@ -1960,11 +1959,6 @@ class AxiStreamIn(object):
 
         self.seq = Seq(m, name, clk, rst)
 
-#        if nodataflow:
-#            self.df = None
-#        else:
-#            self.df = DataflowManager(self.m, self.clk, self.rst)
-
     def read_data(self, cond=None):
         """
         @return data, last, _id, user, dest, valid
@@ -1974,9 +1968,7 @@ class AxiStreamIn(object):
 
         _connect_ready(self.tdata.tready._get_module(), self.tdata.tready, val)
 
-#        ack = vtypes.Ands(self.tdata.tready, self.tdata.tvalid)
         data = self.tdata.tdata
-#        valid = ack
         valid = self.tdata.tvalid
         last = self.tdata.tlast
         _id = self.tdata.tid
@@ -1984,69 +1976,6 @@ class AxiStreamIn(object):
         dest = self.tdata.tdest
 
         return data, last, _id, user, dest, valid
-
-#    def read_dataflow(self, cond=None, point=0, signed=True):
-#        """
-#        @return data, last, _id, user, dest, done
-#        """
-#        data_ready = self.m.TmpWire(prefix='data_ready')
-#        last_ready = self.m.TmpWire(prefix='last_ready')
-#        id_ready = self.m.TmpWire(prefix='id_ready')
-#        user_ready = self.m.TmpWire(prefix='user_ready')
-#        dest_ready = self.m.TmpWire(prefix='dest_ready')
-#        data_ready.assign(1)
-#        id_ready.assign(1)
-#        last_ready.assign(1)
-#        user_ready.assign(1)
-#        dest_ready.assign(1)
-#
-#        if cond is None:
-#            cond = (data_ready, last_ready, id_ready, user_ready, dest_ready)
-#        elif isinstance(cond, (tuple, list)):
-#            cond = tuple(list(cond) + [data_ready, last_ready, id_ready, user_ready, dest_ready])
-#        else:
-#            cond = (cond, data_ready, last_ready, id_ready, user_ready, dest_ready)
-#
-#        ready = make_condition(*cond)
-#        val = 1 if ready is None else ready
-#
-#        _connect_ready(self.tdata.tready._get_module(), self.tdata.tready, val)
-#
-#        ack = vtypes.Ands(self.tdata.tready, self.tdata.tvalid)
-#        data = self.tdata.tdata
-#        valid = self.tdata.tvalid
-#        _id = self.tdata.tid
-#        last = self.tdata.tlast
-#        user = self.tdata.tuser
-#        dest = self.tdata.tdest
-#
-#        df = self.df if self.df is not None else _df
-#
-#        df_data = df.Variable(data, valid, data_ready,
-#                              width=self.datawidth, point=point, signed=signed)
-#        if last is not None:
-#            df_last = df.Variable(last, valid, last_ready, width=1, signed=False)
-#            done = vtypes.Ands(last, self.tdata.tvalid, self.tdata.tready)
-#        else:
-#            df_last = None
-#            done = vtypes.Ands(self.tdata.tvalid, self.tdata.tready)
-#
-#        if _id is not None:
-#            df_id = df.Variable(_id, valid, id_ready, width=_id.width, signed=False)
-#        else:
-#            df_id = None
-#
-#        if user is not None:
-#            df_user = df.Variable(user, valid, user_ready, width=user.width, signed=False)
-#        else:
-#            df_user = None
-#
-#        if dest is not None:
-#            df_dest = df.Variable(dest, valid, dest_ready, width=dest.width, signed=False)
-#        else:
-#            df_dest = None
-#
-#        return df_data, df_last, df_id, df_user, df_dest, done
 
     def connect(self, ports, name):
         if not self.noio:
@@ -2177,7 +2106,6 @@ class AxiStreamOut(object):
     def __init__(self, m, name, clk, rst, datawidth=32,
                  with_last=True, with_strb=False,
                  id_width=0, user_width=0, dest_width=0,
-#                 noio=False, nodataflow=False):
                  noio=False):
 
         self.m = m
@@ -2212,11 +2140,6 @@ class AxiStreamOut(object):
         if self.tdata.tid is not None:
             self.tdata.tid.assign(0)
 
-#        if nodataflow:
-#            self.df = None
-#        else:
-#            self.df = DataflowManager(self.m, self.clk, self.rst)
-
     def write_data(self, data, last=None, _id=None, user=None, dest=None, cond=None):
         """
         @return ack
@@ -2248,80 +2171,6 @@ class AxiStreamOut(object):
         )
 
         return ack
-
-#    def write_dataflow(self, data, last=None, _id=None, user=None, dest=None, cond=None, when=None):
-#        """
-#        @return ack
-#        'data', 'last', '_id', 'user', 'dest', and 'when' must be dataflow variables
-#        """
-#        ack = vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid))
-#
-#        if cond is None:
-#            cond = ack
-#        else:
-#            cond = (cond, ack)
-#
-#        args = [data]
-#        last_index = 0
-#        id_index = 0
-#        user_index = 0
-#        dest_index = 0
-#        when_index = 0
-#        if last is not None:
-#            args.append(last)
-#            last_index = len(args) - 1
-#        if _id is not None:
-#            args.append(_id)
-#            id_index = len(args) - 1
-#        if user is not None:
-#            args.append(user)
-#            user_index = len(args) - 1
-#        if dest is not None:
-#            args.append(dest)
-#            dest_index = len(args) - 1
-#        if when is not None:
-#            args.append(when)
-#            when_index = len(args) - 1
-#
-#        data_list, raw_valid = read_multi(self.m, *args, cond=cond)
-#        raw_data = data_list[0]
-#        raw_last = data_list[last_index] if last_index > 0 else None
-#        raw_id = data_list[id_index] if id_index > 0 else None
-#        raw_user = data_list[user_index] if user_index > 0 else None
-#        raw_dest = data_list[dest_index] if dest_index > 0 else None
-#        raw_when = data_list[when_index] if when_index > 0 else None
-#
-#        when_cond = make_condition(raw_when, ready=cond)
-#        if when_cond is not None:
-#            raw_valid = vtypes.Ands(when_cond, raw_valid)
-#
-#        # write condition
-#        self.seq.If(raw_valid)
-#
-#        self.seq.If(ack)(
-#            self.tdata.tdata(raw_data),
-#            self.tdata.tvalid(1),
-#            self.tdata.tlast(raw_last) if self.tdata.tlast is not None else (),
-#            self.tdata.tid(raw_id) if self.tdata.tid is not None else (),
-#            self.tdata.tuser(raw_user) if self.tdata.tuser is not None else (),
-#            self.tdata.tdest(raw_dest) if self.tdata.tdest is not None else (),
-#        )
-#
-#        # de-assert
-#        self.seq.Delay(1)(
-#            self.tdata.tvalid(0),
-#            self.tdata.tlast(0)
-#        )
-#
-#        # retry
-#        self.seq.If(vtypes.Ands(self.tdata.tvalid, vtypes.Not(self.tdata.tready)))(
-#            self.tdata.tvalid(self.tdata.tvalid),
-#            self.tdata.tlast(self.tdata.tlast) if self.tdata.tlast is not None else ()
-#        )
-#
-#        ack = vtypes.Ands(self.tdata.tvalid, self.tdata.tready)
-#
-#        return ack
 
     def connect(self, ports, name):
         if not self.noio:
