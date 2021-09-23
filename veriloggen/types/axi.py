@@ -649,23 +649,29 @@ class AxiMaster(object):
 
     def mask_addr(self, addr):
         s = util.log2(self.datawidth // 8)
-        return (addr >> s) << s
+        shifted = self.m.TmpWire(self.addrwidth, prefix='mask_addr_shifted')
+        shifted.assign(addr >> s)
+        masked = self.m.TmpWire(self.addrwidth, prefix='mask_addr_masked')
+        masked.assign(shifted << s)
+        return masked
 
     def check_boundary(self, addr, length, datawidth=None, boundary_size=None):
         if datawidth is None:
             datawidth = self.datawidth
         if boundary_size is None:
             boundary_size = self.boundary_size
+        masked_addr = self.mask_addr(addr)
         mask = boundary_size - 1
-        return ((addr & mask) + (length << util.log2(datawidth // 8))) >= boundary_size
+        return ((masked_addr & mask) + (length << util.log2(datawidth // 8))) >= boundary_size
 
     def rest_boundary(self, addr, datawidth=None, boundary_size=None):
         if datawidth is None:
             datawidth = self.datawidth
         if boundary_size is None:
             boundary_size = self.boundary_size
+        masked_addr = self.mask_addr(addr)
         mask = boundary_size - 1
-        return (vtypes.Int(boundary_size) - (addr & mask)) >> util.log2(datawidth // 8)
+        return (vtypes.Int(boundary_size) - (masked_addr & mask)) >> util.log2(datawidth // 8)
 
     def write_acceptable(self):
         return self.outstanding_wcount < 2 ** self.outstanding_wcount_width - 2
