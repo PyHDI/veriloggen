@@ -84,7 +84,7 @@ def mkLed(word_datawidth=128):
                 rvalue.value = rdata >> (datawidth * j)
                 rexpected.value = i * num_words + 0x1000 + j
                 if vthread.verilog.NotEql(rvalue, rexpected):
-                    print('rdata[%d] = %d' % (i, rvalue))
+                    print('rdata[%d] = %d (expected %d)' % (i, rvalue, rexpected))
                     all_ok.value = False
 
         # read
@@ -99,7 +99,7 @@ def mkLed(word_datawidth=128):
                 rvalue.value = rdata >> (datawidth * j)
                 rexpected.value = i * num_words + 0x4000 + j
                 if vthread.verilog.NotEql(rvalue, rexpected):
-                    print('rdata[%d] = %d' % (i, rvalue))
+                    print('rdata[%d] = %d (expected %d)' % (i, rvalue, rexpected))
                     all_ok.value = False
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
