@@ -22,7 +22,8 @@ def mkLed(word_datawidth=128):
     num_words = word_datawidth // datawidth
 
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
-    myram = vthread.RAM(m, 'myram', clk, rst, word_datawidth, addrwidth)
+    myram0 = vthread.RAM(m, 'myram0', clk, rst, word_datawidth, addrwidth)
+    myram1 = vthread.RAM(m, 'myram1', clk, rst, word_datawidth, addrwidth)
 
     all_ok = m.TmpReg(initval=0, prefix='all_ok')
     wdata = m.TmpReg(width=word_datawidth, initval=0, prefix='wdata')
@@ -53,11 +54,11 @@ def mkLed(word_datawidth=128):
             wdata.value = 0
             for j in range(num_words):
                 wdata.value = (wdata >> datawidth) | ((i * num_words + 0x1000 + j) << (word_datawidth - datawidth))
-            myram.write(i, wdata)
+            myram0.write(i, wdata)
 
         laddr = 0
         gaddr = offset
-        myaxi.dma_write(myram, laddr, gaddr, size)
+        myaxi.dma_write(myram0, laddr, gaddr, size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # write
@@ -65,21 +66,21 @@ def mkLed(word_datawidth=128):
             wdata.value = 0
             for j in range(num_words):
                 wdata.value = (wdata >> datawidth) | ((i * num_words + 0x4000 + j) << (word_datawidth - datawidth))
-            myram.write(i, wdata)
+            myram1.write(i, wdata)
 
         laddr = 0
         gaddr = (size + size) * (word_datawidth // 8) + offset
-        myaxi.dma_write(myram, laddr, gaddr, size)
+        myaxi.dma_write(myram1, laddr, gaddr, size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # read
         laddr = 0
         gaddr = offset
-        myaxi.dma_read(myram, laddr, gaddr, size)
+        myaxi.dma_read(myram1, laddr, gaddr, size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
-            rdata.value = myram.read(i)
+            rdata.value = myram1.read(i)
             for j in range(num_words):
                 rvalue.value = rdata >> (datawidth * j)
                 rexpected.value = i * num_words + 0x1000 + j
@@ -90,11 +91,11 @@ def mkLed(word_datawidth=128):
         # read
         laddr = 0
         gaddr = (size + size) * (word_datawidth // 8) + offset
-        myaxi.dma_read(myram, laddr, gaddr, size)
+        myaxi.dma_read(myram0, laddr, gaddr, size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
-            rdata.value = myram.read(i)
+            rdata.value = myram0.read(i)
             for j in range(num_words):
                 rvalue.value = rdata >> (datawidth * j)
                 rexpected.value = i * num_words + 0x4000 + j
