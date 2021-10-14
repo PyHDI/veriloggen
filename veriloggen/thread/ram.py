@@ -229,7 +229,7 @@ class RAM(_MutexFunction):
         fsm.If(rlast, rvalid, rready).goto_init()
         fsm.If(rquit).goto_init()
 
-        return rdata, rvalid, rlast
+        return rdata_wire, rvalid, rlast
 
     def write_burst(self, addr, stride, length, wdata, wvalid, wlast, wquit=False,
                     port=0, cond=None):
@@ -782,42 +782,117 @@ class MultibankRAM(object):
         bus._dma_write(fsm, self, local_addr, global_addr, size,
                        local_stride, port, ram_method)
 
-    def read_burst_block(self, addr, stride, length, blocksize, rready, rquit=False,
-                         port=0, cond=None):
+    def read_burst(self, addr, stride, length, rready, rquit=False, port=0, cond=None):
         """
         @return rdata, rvalid, rlast
         """
 
-        ram_rready_list = []
-        ram_rquit_list = []
-        ram_rdata_list = []
+        fsm = TmpFSM(self.m, self.clk, self.rst, prefix='read_burst_fsm')
 
-        for ram in self.rams:
-            ram_rready = self.m.TmpWire(prefix='read_burst_rready')
-            ram_rquit = self.m.TmpWire(prefix='read_burst_rquit')
-            rdata, _, _ = ram.read_burst(self, addr, stride, length, ram_rready, ram_rquit, port, cond)
-            ram_rready_list.append(ram_rready)
-            ram_rquit_list.append(ram_rquit)
-            ram_rdata_list.append(rdata)
-
-        fsm = TmpFSM(self.m, self.clk, self.rst, prefix='read_burst_block_fsm')
-
-        _length = self.m.TmpRegLike(self.interfaces[port].addr,
-                                    width=self.interfaces[port].addr.width + 1,
+        _addr = self.m.TmpRegLike(self.rams[0].interfaces[port].addr, initval=0,
+                                  prefix='read_burst_addr')
+        _stride = self.m.TmpRegLike(self.rams[0].interfaces[port].addr, initval=0,
+                                    prefix='read_burst_stride')
+        _length = self.m.TmpRegLike(self.rams[0].interfaces[port].addr,
+                                    width=self.rams[0].interfaces[port].addr.width + 1,
                                     initval=0, prefix='read_burst_length')
 
-
-        rvalid = self.m.TmpReg(prefix='read_burst_block_rvalid', initval=0)
-        rlast = self.m.TmpReg(prefix='read_burst_block_rlast', initval=0)
+        rvalid = self.m.TmpReg(prefix='read_burst_rvalid', initval=0)
+        rlast = self.m.TmpReg(prefix='read_burst_rlast', initval=0)
 
         fsm(
+            _addr(addr),
+            _stride(stride),
             _length(length),
             rvalid(0),
             rlast(0),
         )
         fsm.If(cond, length > 0).goto_next()
 
-        rdata = self.m.TmpRegLike(self.interfaces[port].rdata, initval=0, prefix='read_burst_block_rdata')
+        renable = vtypes.Ands(fsm.here, vtypes.Ors(vtypes.Not(rvalid), rready))
+
+        ram_rdata_wires = []
+        for ram in self.rams:
+            rdata, _ = ram.read_rtl(_addr, port, renable)
+            ram_rdata_wire = self.m.TmpWireLike(rdata, prefix='read_burst_ram_rdata')
+            ram_rdata_wire.assign(rdata)
+            ram_rdata_wires.append(ram_rdata_wire)
+
+        ram_rdata_wires.reverse()
+        rdata_wire = self.m.TmpWire(self.datawidth, prefix='read_burst_rdata')
+        rdata_wire.assign(vtypes.Cat(*ram_rdata_wires))
+
+        fsm.If(rready, _length > 0)(
+            _addr(_addr + _stride),
+            _length.dec(),
+            rvalid(1)
+        )
+        fsm.If(rready, _length <= 1)(
+            rlast(1)
+        )
+        fsm.If(rlast, rvalid, rready)(
+            rvalid(0),
+            rlast(0),
+        )
+        fsm.If(rquit)(
+            rvalid(0),
+            rlast(0),
+        )
+        fsm.If(rlast, rvalid, rready).goto_init()
+        fsm.If(rquit).goto_init()
+
+        return rdata_wire, rvalid, rlast
+
+    def read_burst_block(self, addr, stride, length, rready, rquit=False,
+                         port=0, cond=None, blocksize=1):
+        """
+        @return rdata, rvalid, rlast
+        """
+
+        ram_sel_list = []
+        ram_rready_list = []
+        ram_rquit_list = []
+        ram_rdata_list = []
+
+        for ram in self.rams:
+            ram_sel = self.m.TmpReg(prefix='read_burst_block_ram_sel', initval=0)
+            ram_rready = self.m.TmpWire(prefix='read_burst_block_ram_rready')
+            ram_rquit = self.m.TmpWire(prefix='read_burst_block_ram_rquit')
+            ram_rdata, _, _ = ram.read_burst(addr, stride, length, ram_rready, ram_rquit, port, cond)
+            ram_sel_list.append(ram_sel)
+            ram_rready_list.append(ram_rready)
+            ram_rquit_list.append(ram_rquit)
+            ram_rdata_list.append(ram_rdata)
+
+        fsm = TmpFSM(self.m, self.clk, self.rst, prefix='read_burst_block_fsm')
+
+        _length = self.m.TmpRegLike(self.rams[0].interfaces[port].addr,
+                                    width=self.rams[0].interfaces[port].addr.width + 1,
+                                    initval=0, prefix='read_burst_block_length')
+        _blocksize = self.m.TmpRegLike(self.rams[0].interfaces[port].addr, initval=0,
+                                       prefix='write_burst_block_blocksize')
+        count = self.m.TmpRegLike(self.rams[0].interfaces[port].addr, initval=0,
+                                  prefix='write_burst_block_count')
+        rvalid = self.m.TmpReg(prefix='read_burst_block_rvalid', initval=0)
+        rlast = self.m.TmpReg(prefix='read_burst_block_rlast', initval=0)
+
+        fsm(
+            _length(length),
+            _blocksize(blocksize),
+            count(0),
+            rvalid(0),
+            rlast(0),
+        )
+
+        for ram_sel in ram_sel_list:
+            fsm(
+                ram_sel(0)
+            )
+
+        fsm.If(cond, length > 0).goto_next()
+
+        rdata = self.m.TmpWireLike(self.rams[0].interfaces[port].rdata,
+                                   prefix='read_burst_block_rdata')
         loop = fsm.current
 
         for i, (ram_rready, ram_rquit, ram_rdata) in enumerate(
@@ -825,10 +900,21 @@ class MultibankRAM(object):
 
             ram_rready.assign(vtypes.Ands(rready, fsm.here))
             ram_rquit.assign(vtypes.Ors(rquit, vtypes.Ands(rvalid, rlast)))
-            util.add_mux(rdata, fsm.here, ram_rdata)
+
+            util.add_mux(rdata, ram_sel_list[i], ram_rdata)
+            for j, ram_sel in enumerate(ram_sel_list):
+                if i == j:
+                    fsm.If(rready)(
+                        ram_sel(1)
+                    )
+                else:
+                    fsm.If(rready)(
+                        ram_sel(0)
+                    )
 
             fsm.If(rready, _length > 0)(
                 _length.dec(),
+                count.inc(),
                 rvalid(1)
             )
             fsm.If(rready, _length <= 1)(
@@ -842,10 +928,71 @@ class MultibankRAM(object):
                 rvalid(0),
                 rlast(0),
             )
+            fsm.If(rready, count == _blocksize - 1)(
+                count(0)
+            )
+
+            if i == len(ram_rready_list) - 1:
+                fsm.If(rready, count == _blocksize - 1).goto(loop)
+            else:
+                fsm.If(rready, count == _blocksize - 1).goto(fsm.next)
+
             fsm.If(rlast, rvalid, rready).goto_init()
             fsm.If(rquit).goto_init()
 
+            fsm.inc()
+
         return rdata, rvalid, rlast
+
+    def write_burst(self, addr, stride, length, wdata, wvalid, wlast, wquit=False,
+                    port=0, cond=None):
+        """
+        @return wready, done
+        """
+
+        fsm = TmpFSM(self.m, self.clk, self.rst, prefix='write_burst_fsm')
+
+        _addr = self.m.TmpRegLike(self.rams[0].interfaces[port].addr, initval=0,
+                                  prefix='write_burst_addr')
+        _stride = self.m.TmpRegLike(self.rams[0].interfaces[port].addr, initval=0,
+                                    prefix='write_burst_stride')
+        _length = self.m.TmpRegLike(self.rams[0].interfaces[port].addr,
+                                    width=self.rams[0].interfaces[port].addr.width + 1,
+                                    initval=0, prefix='write_burst_length')
+
+        done = self.m.TmpReg(prefix='write_burst_done', initval=0)
+
+        fsm(
+            _addr(addr),
+            _stride(stride),
+            _length(length),
+            done(0),
+        )
+        fsm.If(cond, length > 0).goto_next()
+
+        wenable = vtypes.Ands(fsm.here, wvalid)
+        wready = fsm.here
+        for i, ram in enumerate(self.rams):
+            ram_wdata = self.m.TmpWire(ram.datawidth, prefix='write_burst_ram_wdata')
+            ram_wdata.assign(vtypes.Srl(wdata, self.orig_datawidth * i))
+            ram.write_rtl(_addr, ram_wdata, port, wenable)
+
+        fsm.If(wvalid)(
+            _addr(_addr + _stride),
+            _length.dec(),
+            done(0)
+        )
+        fsm.If(wvalid, _length <= 1)(
+            done(1)
+        )
+        fsm.If(wvalid, wlast)(
+            done(1)
+        )
+        fsm.If(wvalid, _length <= 1).goto_init()
+        fsm.If(wvalid, wlast).goto_init()
+        fsm.If(wquit).goto_init()
+
+        return wready, done
 
     def write_burst_bcast(self, addr, stride, length, wdata, wvalid, wlast, wquit=False,
                           port=0, cond=None):
@@ -863,8 +1010,8 @@ class MultibankRAM(object):
 
         return wready_list[0], done_list[0]
 
-    def write_burst_block(self, addr, stride, length, blocksize, wdata, wvalid, wlast,
-                          wquit=False, port=0, cond=None):
+    def write_burst_block(self, addr, stride, length, wdata, wvalid, wlast,
+                          wquit=False, port=0, cond=None, blocksize=1):
         """
         @return wready, done
         """
@@ -873,22 +1020,22 @@ class MultibankRAM(object):
         ram_wquit_list = []
 
         for ram in self.rams:
-            ram_wvalid = self.m.TmpWire(prefix='write_burst_block_wvalid')
-            ram_wquit = self.m.TmpWire(prefix='write_burst_block_wquit')
+            ram_wvalid = self.m.TmpWire(prefix='write_burst_block_ram_wvalid')
+            ram_wquit = self.m.TmpWire(prefix='write_burst_block_ram_wquit')
             _ = ram.write_burst(addr, stride, length, wdata, ram_wvalid, wlast,
                                 ram_wquit, port, cond)
-            ram_wvalid_list.apppen(ram_wvalid)
-            ram_wquit_list.apppen(ram_wquit)
+            ram_wvalid_list.append(ram_wvalid)
+            ram_wquit_list.append(ram_wquit)
 
         fsm = TmpFSM(self.m, self.clk, self.rst, prefix='write_burst_block_fsm')
 
-        _length = self.m.TmpRegLike(self.interfaces[port].addr,
-                                    width=self.interfaces[port].addr.width + 1,
+        _length = self.m.TmpRegLike(self.rams[0].interfaces[port].addr,
+                                    width=self.rams[0].interfaces[port].addr.width + 1,
                                     initval=0, prefix='write_burst_block_length')
-        _blocksize = self.m.TmpRegLike(self.interfaces[port].addr, initval=0,
+        _blocksize = self.m.TmpRegLike(self.rams[0].interfaces[port].addr, initval=0,
                                        prefix='write_burst_block_blocksize')
         done = self.m.TmpReg(prefix='write_burst_block_done', initval=0)
-        count = self.m.TmpRegLike(self.interfaces[port].addr, initval=0,
+        count = self.m.TmpRegLike(self.rams[0].interfaces[port].addr, initval=0,
                                   prefix='write_burst_block_count')
 
         fsm(
@@ -900,12 +1047,12 @@ class MultibankRAM(object):
         fsm.If(cond, length > 0).goto_next()
 
         loop = fsm.current
-        wready = fsm.here
+        wready = False
 
         for i, (ram_wvalid, ram_wquit) in enumerate(zip(ram_wvalid_list, ram_wquit_list)):
 
             ram_wvalid.assign(vtypes.Ands(wvalid, fsm.here))
-            ram_wquit.assign(vtypes.Ors(wquit, vtypes.Ands(wvalid, wlast)))
+            ram_wquit.assign(vtypes.Ors(wquit, vtypes.Ands(wvalid, wlast), vtypes.Ands(wvalid, _length <= 1)))
 
             fsm.If(wvalid)(
                 _length.dec(),
@@ -923,15 +1070,17 @@ class MultibankRAM(object):
             )
 
             if i == len(ram_wvalid_list) - 1:
-                fsm.If(wvalid, wready, count == _blocksize - 1).goto(loop)
+                fsm.If(wvalid, count == _blocksize - 1).goto(loop)
             else:
-                fsm.If(wvalid, wready, count == _blocksize - 1).goto(fsm.next)
+                fsm.If(wvalid, count == _blocksize - 1).goto(fsm.next)
 
             fsm.If(wvalid, _length <= 1).goto_init()
             fsm.If(wvalid, wlast).goto_init()
             fsm.If(wquit).goto_init()
 
             fsm.inc()
+
+            wready = vtypes.Ors(wready, fsm.here)
 
         return wready, done
 
