@@ -531,6 +531,22 @@ class AXIM(axi.AxiMaster, _MutexFunction):
 
             data_fsm = self.read_data_fsm
 
+            # Data state 0
+            data_fsm.set_index(0)
+            cond = vtypes.Ands(self.read_data_idle,
+                               vtypes.Not(self.read_req_fifo.empty),
+                               self.read_op_sel_fifo == op_id)
+            self.seq.If(data_fsm.here, cond)(
+                self.read_data_idle(0),
+                self.read_op_sel_buf(self.read_op_sel_fifo),
+                self.read_local_addr_buf(self.read_local_addr_fifo),
+                self.read_local_stride_buf(self.read_local_stride_fifo),
+                self.read_local_size_buf(self.read_local_size_fifo),
+            )
+            deq_cond = vtypes.Ands(data_fsm.here, cond)
+            _ = self.read_req_fifo.deq_rtl(cond=deq_cond)
+            data_fsm.If(cond).goto_next()
+
             # Data state 1
             data_fsm.set_index(1)
             ram_cond = vtypes.Ands(data_fsm.here, self.read_op_sel_buf == op_id)
@@ -549,7 +565,8 @@ class AXIM(axi.AxiMaster, _MutexFunction):
 
         # Data state 0
         cond = vtypes.Ands(self.read_data_idle,
-                           vtypes.Not(self.read_req_fifo.empty))
+                           vtypes.Not(self.read_req_fifo.empty),
+                           self.read_op_sel_fifo == op_id)
         self.seq.If(data_fsm.here, cond)(
             self.read_data_idle(0),
             self.read_op_sel_buf(self.read_op_sel_fifo),
@@ -600,6 +617,22 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             self.read_ops.append(op_id)
 
             data_fsm = self.read_data_narrow_fsm
+
+            # Data state 0
+            data_fsm.set_index(0)
+            cond = vtypes.Ands(self.read_data_idle,
+                               vtypes.Not(self.read_req_fifo.empty),
+                               self.read_op_sel_fifo == op_id)
+            self.seq.If(data_fsm.here, cond)(
+                self.read_data_idle(0),
+                self.read_op_sel_buf(self.read_op_sel_fifo),
+                self.read_local_addr_buf(self.read_local_addr_fifo),
+                self.read_local_stride_buf(self.read_local_stride_fifo),
+                self.read_local_size_buf(self.read_local_size_fifo),
+            )
+            deq_cond = vtypes.Ands(data_fsm.here, cond)
+            _ = self.read_req_fifo.deq_rtl(cond=deq_cond)
+            data_fsm.If(cond).goto_next()
 
             # Data state 1
             data_fsm.set_index(1)
@@ -654,7 +687,8 @@ class AXIM(axi.AxiMaster, _MutexFunction):
 
         # Data state 0
         cond = vtypes.Ands(self.read_data_idle,
-                           vtypes.Not(self.read_req_fifo.empty))
+                           vtypes.Not(self.read_req_fifo.empty),
+                           self.read_op_sel_fifo == op_id)
         self.seq.If(data_fsm.here, cond)(
             self.read_data_idle(0),
             self.read_op_sel_buf(self.read_op_sel_fifo),
@@ -730,6 +764,22 @@ class AXIM(axi.AxiMaster, _MutexFunction):
 
             data_fsm = self.read_data_wide_fsm
 
+            # Data state 0
+            data_fsm.set_index(0)
+            cond = vtypes.Ands(self.read_data_idle,
+                               vtypes.Not(self.read_req_fifo.empty),
+                               self.read_op_sel_fifo == op_id)
+            self.seq.If(data_fsm.here, cond)(
+                self.read_data_idle(0),
+                self.read_op_sel_buf(self.read_op_sel_fifo),
+                self.read_local_addr_buf(self.read_local_addr_fifo),
+                self.read_local_stride_buf(self.read_local_stride_fifo),
+                self.read_local_size_buf(self.read_local_size_fifo),
+            )
+            deq_cond = vtypes.Ands(data_fsm.here, cond)
+            _ = self.read_req_fifo.deq_rtl(cond=deq_cond)
+            data_fsm.If(cond).goto_next()
+
             # Data state 1
             data_fsm.set_index(1)
             ram_cond = vtypes.Ands(data_fsm.here, self.read_op_sel_buf == op_id)
@@ -798,7 +848,8 @@ class AXIM(axi.AxiMaster, _MutexFunction):
 
         # Data state 0
         cond = vtypes.Ands(self.read_data_idle,
-                           vtypes.Not(self.read_req_fifo.empty))
+                           vtypes.Not(self.read_req_fifo.empty),
+                           self.read_op_sel_fifo == op_id)
         self.seq.If(data_fsm.here, cond)(
             self.read_data_idle(0),
             self.read_op_sel_buf(self.read_op_sel_fifo),
@@ -1050,6 +1101,22 @@ class AXIM(axi.AxiMaster, _MutexFunction):
 
             data_fsm = self.write_data_fsm
 
+            # Data state 0
+            data_fsm.set_index(0)
+            cond = vtypes.Ands(self.write_data_idle,
+                               vtypes.Not(self.write_req_fifo.empty),
+                               self.write_op_sel_fifo == op_id)
+            self.seq.If(data_fsm.here, cond)(
+                self.write_data_idle(0),
+                self.write_op_sel_buf(self.write_op_sel_fifo),
+                self.write_local_addr_buf(self.write_local_addr_fifo),
+                self.write_local_stride_buf(self.write_local_stride_fifo),
+                self.write_size_buf(self.write_size_fifo),
+            )
+            deq_cond = vtypes.Ands(data_fsm.here, cond)
+            _ = self.write_req_fifo.deq_rtl(cond=deq_cond)
+            data_fsm.If(cond).goto_next()
+
             # Data state 1
             data_fsm.set_index(1)
             ram_cond = vtypes.Ands(data_fsm.here, self.write_op_sel_buf == op_id)
@@ -1091,7 +1158,8 @@ class AXIM(axi.AxiMaster, _MutexFunction):
 
         # Data state 0
         cond = vtypes.Ands(self.write_data_idle,
-                           vtypes.Not(self.write_req_fifo.empty))
+                           vtypes.Not(self.write_req_fifo.empty),
+                           self.write_op_sel_fifo == op_id)
         self.seq.If(data_fsm.here, cond)(
             self.write_data_idle(0),
             self.write_op_sel_buf(self.write_op_sel_fifo),
@@ -1159,6 +1227,23 @@ class AXIM(axi.AxiMaster, _MutexFunction):
 
             data_fsm = self.write_data_narrow_fsm
 
+            # Data state 0
+            data_fsm.set_index(0)
+            cond = vtypes.Ands(self.write_data_idle,
+                               vtypes.Not(self.write_req_fifo.empty),
+                               self.write_op_sel_fifo == op_id)
+            self.seq.If(data_fsm.here, cond)(
+                self.write_data_idle(0),
+                self.write_op_sel_buf(self.write_op_sel_fifo),
+                self.write_local_addr_buf(self.write_local_addr_fifo),
+                self.write_local_stride_buf(self.write_local_stride_fifo),
+                # self.write_size_fifo: local_size
+                self.write_size_buf(self.write_size_fifo),
+            )
+            deq_cond = vtypes.Ands(data_fsm.here, cond)
+            _ = self.write_req_fifo.deq_rtl(cond=deq_cond)
+            data_fsm.If(cond).goto_next()
+
             # Data state 1
             data_fsm.set_index(1)
             ram_cond = vtypes.Ands(data_fsm.here, self.write_op_sel_buf == op_id)
@@ -1223,7 +1308,8 @@ class AXIM(axi.AxiMaster, _MutexFunction):
 
         # Data state 0
         cond = vtypes.Ands(self.write_data_idle,
-                           vtypes.Not(self.write_req_fifo.empty))
+                           vtypes.Not(self.write_req_fifo.empty),
+                           self.write_op_sel_fifo == op_id)
         self.seq.If(data_fsm.here, cond)(
             self.write_data_idle(0),
             self.write_op_sel_buf(self.write_op_sel_fifo),
@@ -1323,6 +1409,27 @@ class AXIM(axi.AxiMaster, _MutexFunction):
 
             data_fsm = self.write_data_wide_fsm
 
+            # Data state 0
+            data_fsm.set_index(0)
+            cond = vtypes.Ands(self.write_data_idle,
+                               vtypes.Not(self.write_req_fifo.empty),
+                               self.write_op_sel_fifo == op_id)
+            res = vtypes.Mux(
+                vtypes.And(self.write_size_fifo, 2 ** log_pack_size - 1) > 0, 1, 0)
+            global_size = (self.write_size_fifo >> log_pack_size) + res
+            local_size = global_size << log_pack_size
+
+            self.seq.If(data_fsm.here, cond)(
+                self.write_data_idle(0),
+                self.write_op_sel_buf(self.write_op_sel_fifo),
+                self.write_local_addr_buf(self.write_local_addr_fifo),
+                self.write_local_stride_buf(self.write_local_stride_fifo),
+                self.write_size_buf(local_size),
+            )
+            deq_cond = vtypes.Ands(data_fsm.here, cond)
+            _ = self.write_req_fifo.deq_rtl(cond=deq_cond)
+            data_fsm.If(cond).goto_next()
+
             # Data state 1
             data_fsm.set_index(1)
             ram_cond = vtypes.Ands(data_fsm.here, self.write_op_sel_buf == op_id)
@@ -1374,7 +1481,8 @@ class AXIM(axi.AxiMaster, _MutexFunction):
 
         # Data state 0
         cond = vtypes.Ands(self.write_data_idle,
-                           vtypes.Not(self.write_req_fifo.empty))
+                           vtypes.Not(self.write_req_fifo.empty),
+                           self.write_op_sel_fifo == op_id)
         res = vtypes.Mux(
             vtypes.And(self.write_size_fifo, 2 ** log_pack_size - 1) > 0, 1, 0)
         global_size = (self.write_size_fifo >> log_pack_size) + res
