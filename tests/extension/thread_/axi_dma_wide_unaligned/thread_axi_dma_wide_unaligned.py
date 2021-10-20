@@ -77,7 +77,7 @@ def mkLed(memory_datawidth=128):
             rdata.value = myram1.read(i)
             rexpected.value = i + 0x1000
             if vthread.verilog.NotEql(rdata, rexpected):
-                print('rdata[%d] = %d' % (i, rdata))
+                print('rdata[%d] = %d (expected %d)' % (i, rdata, rexpected))
                 all_ok.value = False
 
         # read
@@ -90,7 +90,7 @@ def mkLed(memory_datawidth=128):
             rdata.value = myram0.read(i)
             rexpected.value = i + 0x4000
             if vthread.verilog.NotEql(rdata, rexpected):
-                print('rdata[%d] = %d' % (i, rdata))
+                print('rdata[%d] = %d (expected %d)' % (i, rdata, rexpected))
                 all_ok.value = False
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
