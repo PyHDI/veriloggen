@@ -25,7 +25,10 @@ def mkLed():
     # If RAM is simultaneously accesseed with DMA, numports must be 2 or more.
     myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth, numports=2)
 
-    all_ok = m.TmpReg(initval=0)
+    all_ok = m.TmpReg(initval=0, prefix='all_ok')
+    wdata = m.TmpReg(width=datawidth, initval=0, prefix='wdata')
+    rdata = m.TmpReg(width=datawidth, initval=0, prefix='rdata')
+    rexpected = m.TmpReg(width=datawidth, initval=0, prefix='rexpected')
 
     def blink(size):
         all_ok.value = True
@@ -33,7 +36,7 @@ def mkLed():
         for i in range(4):
             print('# iter %d start' % i)
             # Test for 4KB boundary check
-            offset = i * 1024 * 16 + (myaxi.boundary_size - 4)
+            offset = i * 1024 * 16 + (myaxi.boundary_size - (datawidth // 8) * 3)
             body(size, offset)
             print('# iter %d end' % i)
 
@@ -47,19 +50,19 @@ def mkLed():
     def body(size, offset):
         # write
         for i in range(size):
-            wdata = i + 100
+            wdata.value = i + 0x1000
             myram.write(i, wdata)
 
         laddr = 0
         gaddr = offset
-        # If RAM is simultaneously accesseed with DMA, different port must be
-        # used.
+        # If RAM is simultaneously accesseed with DMA,
+        # different port must be used.
         myaxi.dma_write_async(myram, laddr, gaddr, size, port=1)
         print('dma_write_async: [%d] -> [%d]' % (laddr, gaddr))
 
         # write
         for i in range(size):
-            wdata = i + 1000
+            wdata.value = i + 0x4000
             myram.write(i + size, wdata)
 
         myaxi.dma_wait_write()
@@ -67,6 +70,8 @@ def mkLed():
 
         laddr = size
         gaddr = (size + size) * 4 + offset
+        # If RAM is simultaneously accesseed with DMA,
+        # different port must be used.
         myaxi.dma_write(myram, laddr, gaddr, size, port=1)
         print('dma_write      : [%d] -> [%d]' % (laddr, gaddr))
 
@@ -83,9 +88,10 @@ def mkLed():
         print('dma_wait_read  : [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
-            rdata = myram.read(i)
-            if vthread.verilog.NotEql(rdata, i + 100):
-                print('rdata[%d] = %d' % (i, rdata))
+            rdata.value = myram.read(i)
+            rexpected.value = i + 0x1000
+            if vthread.verilog.NotEql(rdata, rexpected):
+                print('rdata[%d] = %d (expected %d)' % (i, rdata, rexpected))
                 all_ok.value = False
 
         # read
@@ -98,9 +104,10 @@ def mkLed():
             pass
 
         for i in range(size):
-            rdata = myram.read(i)
-            if vthread.verilog.NotEql(rdata, i + 1000):
-                print('rdata[%d] = %d' % (i, rdata))
+            rdata.value = myram.read(i)
+            rexpected.value = i + 0x4000
+            if vthread.verilog.NotEql(rdata, rexpected):
+                print('rdata[%d] = %d (expected %d)' % (i, rdata, rexpected))
                 all_ok.value = False
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
@@ -129,7 +136,7 @@ def mkTest(memimg_name=None):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    #simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

@@ -53,7 +53,8 @@ def mkLed(word_datawidth=128):
         for i in range(size):
             wdata.value = 0
             for j in range(num_words):
-                wdata.value = (wdata >> datawidth) | ((i * num_words + 0x1000 + j) << (word_datawidth - datawidth))
+                wdata.value = (wdata >> datawidth) | (
+                    (i * num_words + 0x1000 + j) << (word_datawidth - datawidth))
             myram0.write(i, wdata)
 
         laddr = 0
@@ -65,7 +66,8 @@ def mkLed(word_datawidth=128):
         for i in range(size):
             wdata.value = 0
             for j in range(num_words):
-                wdata.value = (wdata >> datawidth) | ((i * num_words + 0x4000 + j) << (word_datawidth - datawidth))
+                wdata.value = (wdata >> datawidth) | (
+                    (i * num_words + 0x4000 + j) << (word_datawidth - datawidth))
             myram1.write(i, wdata)
 
         laddr = 0
