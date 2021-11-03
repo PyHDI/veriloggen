@@ -1062,22 +1062,6 @@ class AXIM(axi.AxiMaster, _MutexFunction):
 
     def _synthesize_write_data_fsm(self, ram, port, ram_method, ram_datawidth):
 
-        ram_method_name = (ram_method.func.__name__
-                           if isinstance(ram_method, functools.partial) else
-                           ram_method.__name__)
-        ram_datawidth = (ram.datawidth if ram_method is None else
-                         ram.orig_datawidth if 'bcast' in ram_method_name else
-                         ram.orig_datawidth if 'block' in ram_method_name else
-                         ram.datawidth)
-
-        if not isinstance(self.datawidth, int):
-            raise TypeError("axi.datawidth must be int, not '%s'" %
-                            str(type(self.datawidth)))
-
-        if not isinstance(ram_datawidth, int):
-            raise TypeError("ram_datawidth must be int, not '%s'" %
-                            str(type(ram_datawidth)))
-
         if self.datawidth == ram_datawidth:
             return self._synthesize_write_data_fsm_same(ram, port, ram_method, ram_datawidth)
 
