@@ -116,7 +116,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
                                                         'read_local_size_buf']),
                                               self.addrwidth + 1, initval=0)
 
-        self.read_req_idle =  self.m.Reg(
+        self.read_req_idle = self.m.Reg(
             '_'.join(['', self.name, 'read_req_idle']), initval=1)
         self.read_data_idle = self.m.Reg(
             '_'.join(['', self.name, 'read_data_idle']), initval=1)
@@ -147,13 +147,13 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         self.write_global_addr = self.m.Reg('_'.join(['', self.name, 'write_global_addr']),
                                             self.addrwidth, initval=0)
         self.write_global_size = self.m.Reg('_'.join(['', self.name, 'write_global_size']),
-                                         self.addrwidth + 1, initval=0)
+                                            self.addrwidth + 1, initval=0)
         self.write_local_addr = self.m.Reg('_'.join(['', self.name, 'write_local_addr']),
                                            self.addrwidth, initval=0)
         self.write_local_stride = self.m.Reg('_'.join(['', self.name, 'write_local_stride']),
                                              self.addrwidth, initval=0)
         self.write_local_size = self.m.Reg('_'.join(['', self.name, 'write_local_size']),
-                                     self.addrwidth + 1, initval=0)
+                                           self.addrwidth + 1, initval=0)
 
         self.write_req_fifo = FIFO(self.m, '_'.join(['', self.name, 'write_req_fifo']),
                                    self.clk, self.rst,
@@ -171,8 +171,8 @@ class AXIM(axi.AxiMaster, _MutexFunction):
                                                              'write_local_stride_fifo']),
                                                    self.addrwidth)
         self.write_size_fifo = self.m.Wire('_'.join(['', self.name,
-                                                           'write_size_fifo']),
-                                                 self.addrwidth + 1)
+                                                     'write_size_fifo']),
+                                           self.addrwidth + 1)
 
         write_unpack_values = self.unpack_write_req(self.write_req_fifo.rdata)
         self.write_op_sel_fifo.assign(write_unpack_values[0])
@@ -190,10 +190,10 @@ class AXIM(axi.AxiMaster, _MutexFunction):
                                                            'write_local_stride_buf']),
                                                  self.addrwidth, initval=0)
         self.write_size_buf = self.m.Reg('_'.join(['', self.name,
-                                                         'write_size_buf']),
-                                               self.addrwidth + 1, initval=0)
+                                                   'write_size_buf']),
+                                         self.addrwidth + 1, initval=0)
 
-        self.write_req_idle =  self.m.Reg(
+        self.write_req_idle = self.m.Reg(
             '_'.join(['', self.name, 'write_req_idle']), initval=1)
         self.write_data_idle = self.m.Reg(
             '_'.join(['', self.name, 'write_data_idle']), initval=1)
@@ -525,43 +525,18 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             """ already synthesized op """
             return
 
-        if self.read_data_fsm is not None:
-            """ new op """
-            self.read_ops.append(op_id)
-
-            data_fsm = self.read_data_fsm
-
-            # Data state 0
-            data_fsm.set_index(0)
-            cond = vtypes.Ands(self.read_data_idle,
-                               vtypes.Not(self.read_req_fifo.empty),
-                               self.read_op_sel_fifo == op_id)
-            self.seq.If(data_fsm.here, cond)(
-                self.read_data_idle(0),
-                self.read_op_sel_buf(self.read_op_sel_fifo),
-                self.read_local_addr_buf(self.read_local_addr_fifo),
-                self.read_local_stride_buf(self.read_local_stride_fifo),
-                self.read_local_size_buf(self.read_local_size_fifo),
-            )
-            deq_cond = vtypes.Ands(data_fsm.here, cond)
-            _ = self.read_req_fifo.deq_rtl(cond=deq_cond)
-            data_fsm.If(cond).goto_next()
-
-            # Data state 1
-            data_fsm.set_index(1)
-            ram_cond = vtypes.Ands(data_fsm.here, self.read_op_sel_buf == op_id)
-            ram_method(
-                self.read_local_addr_buf, self.read_local_stride_buf, self.read_local_size_buf,
-                self.rdata.rdata, self.rdata.rvalid, False,
-                port=port, cond=ram_cond)
-            return
-
-        # Data FSM
         self.read_ops.append(op_id)
 
-        data_fsm = FSM(self.m, '_'.join(['', self.name, 'read_data_fsm']),
-                      self.clk, self.rst, as_module=self.fsm_as_module)
-        self.read_data_fsm = data_fsm
+        # Data FSM
+        if self.read_data_fsm is not None:
+            """ new op """
+            data_fsm = self.read_data_fsm
+            data_fsm.set_index(0)
+
+        else:
+            data_fsm = FSM(self.m, '_'.join(['', self.name, 'read_data_fsm']),
+                           self.clk, self.rst, as_module=self.fsm_as_module)
+            self.read_data_fsm = data_fsm
 
         # Data state 0
         cond = vtypes.Ands(self.read_data_idle,
@@ -612,78 +587,18 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             """ already synthesized op """
             return
 
-        if self.read_data_narrow_fsm is not None:
-            """ new op """
-            self.read_ops.append(op_id)
-
-            data_fsm = self.read_data_narrow_fsm
-
-            # Data state 0
-            data_fsm.set_index(0)
-            cond = vtypes.Ands(self.read_data_idle,
-                               vtypes.Not(self.read_req_fifo.empty),
-                               self.read_op_sel_fifo == op_id)
-            self.seq.If(data_fsm.here, cond)(
-                self.read_data_idle(0),
-                self.read_op_sel_buf(self.read_op_sel_fifo),
-                self.read_local_addr_buf(self.read_local_addr_fifo),
-                self.read_local_stride_buf(self.read_local_stride_fifo),
-                self.read_local_size_buf(self.read_local_size_fifo),
-            )
-            deq_cond = vtypes.Ands(data_fsm.here, cond)
-            _ = self.read_req_fifo.deq_rtl(cond=deq_cond)
-            data_fsm.If(cond).goto_next()
-
-            # Data state 1
-            data_fsm.set_index(1)
-            ram_cond = vtypes.Ands(data_fsm.here, self.read_op_sel_buf == op_id)
-            wdata = self.m.TmpReg(ram_datawidth, initval=0,
-                                  prefix='_'.join(['', self.name, 'read_narrow_wdata']))
-            wvalid = self.m.TmpReg(initval=0,
-                                   prefix='_'.join(['', self.name, 'read_narrow_wvalid']))
-            count = self.m.TmpReg(log_pack_size, initval=0,
-                                  prefix='_'.join(['', self.name, 'read_narrow_count']))
-            ram_method(
-                self.read_local_addr_buf, self.read_local_stride_buf, self.read_local_size_buf,
-                wdata, wvalid, False, port=port, cond=ram_cond)
-            data_fsm(
-                count(0),
-                wvalid(0)
-            )
-
-            # Data state 2
-            data_fsm.set_index(2)
-            cond = self.read_op_sel_buf == op_id
-            data_fsm.If(cond)(
-                wvalid(0)
-            )
-            data_fsm.If(cond, self.rdata.rvalid, count < pack_size - 1)(
-                count.inc(),
-                wdata(vtypes.Cat(self.rdata.rdata, wdata[self.datawidth:])),
-                wvalid(0),
-            )
-            data_fsm.If(cond, self.rdata.rvalid, count == pack_size - 1)(
-                count(0),
-                wdata(vtypes.Cat(self.rdata.rdata, wdata[self.datawidth:])),
-                wvalid(1)
-            )
-            self.seq.If(data_fsm.here, cond, self.rdata.rvalid, count == pack_size - 1)(
-                self.read_local_size_buf.dec()
-            )
-            data_fsm.If(cond, self.rdata.rvalid, self.read_local_size_buf <= 1,
-                        count == pack_size -1).goto_init()
-            self.seq.If(data_fsm.here, cond, self.rdata.rvalid, self.read_local_size_buf <= 1,
-                        count == pack_size - 1)(
-                self.read_data_idle(1)
-            )
-            return
-
-        # Data FSM
         self.read_ops.append(op_id)
 
-        data_fsm = FSM(self.m, '_'.join(['', self.name, 'read_data_narrow_fsm']),
-                      self.clk, self.rst, as_module=self.fsm_as_module)
-        self.read_data_narrow_fsm = data_fsm
+        # Data FSM
+        if self.read_data_narrow_fsm is not None:
+            """ new op """
+            data_fsm = self.read_data_narrow_fsm
+            data_fsm.set_index(0)
+
+        else:
+            data_fsm = FSM(self.m, '_'.join(['', self.name, 'read_data_narrow_fsm']),
+                           self.clk, self.rst, as_module=self.fsm_as_module)
+            self.read_data_narrow_fsm = data_fsm
 
         # Data state 0
         cond = vtypes.Ands(self.read_data_idle,
@@ -736,7 +651,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         )
 
         data_fsm.If(cond, self.rdata.rvalid, self.read_local_size_buf <= 1,
-                    count == pack_size -1).goto_init()
+                    count == pack_size - 1).goto_init()
         self.seq.If(data_fsm.here, cond, self.rdata.rvalid, self.read_local_size_buf <= 1,
                     count == pack_size - 1)(
             self.read_data_idle(1)
@@ -758,93 +673,18 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             """ already synthesized op """
             return
 
-        if self.read_data_wide_fsm is not None:
-            """ new op """
-            self.read_ops.append(op_id)
-
-            data_fsm = self.read_data_wide_fsm
-
-            # Data state 0
-            data_fsm.set_index(0)
-            cond = vtypes.Ands(self.read_data_idle,
-                               vtypes.Not(self.read_req_fifo.empty),
-                               self.read_op_sel_fifo == op_id)
-            self.seq.If(data_fsm.here, cond)(
-                self.read_data_idle(0),
-                self.read_op_sel_buf(self.read_op_sel_fifo),
-                self.read_local_addr_buf(self.read_local_addr_fifo),
-                self.read_local_stride_buf(self.read_local_stride_fifo),
-                self.read_local_size_buf(self.read_local_size_fifo),
-            )
-            deq_cond = vtypes.Ands(data_fsm.here, cond)
-            _ = self.read_req_fifo.deq_rtl(cond=deq_cond)
-            data_fsm.If(cond).goto_next()
-
-            # Data state 1
-            data_fsm.set_index(1)
-            ram_cond = vtypes.Ands(data_fsm.here, self.read_op_sel_buf == op_id)
-            wdata = self.m.TmpReg(self.datawidth, initval=0,
-                                  prefix='_'.join(['', self.name, 'read_wide_wdata']))
-            wvalid = self.m.TmpReg(initval=0, prefix='_'.join(['', self.name, 'read_wide_wvalid']))
-            count = self.m.TmpReg(log_pack_size, initval=0,
-                                  prefix='_'.join(['', self.name, 'read_wide_count']))
-            _wdata = wdata[:ram_datawidth]
-            ram_method(
-                self.read_local_addr_buf, self.read_local_stride_buf, self.read_local_size_buf,
-                _wdata, wvalid, False, port=port, cond=ram_cond)
-            data_fsm(
-                count(0),
-                wvalid(0)
-            )
-
-            # Data state 2
-            data_fsm.set_index(2)
-            cond = self.read_op_sel_buf == op_id
-            rcond = vtypes.Ands(data_fsm.here, cond, count == 0)
-            _ = self.read_data(cond=rcond)
-            data_fsm.If(cond)(
-                wvalid(0)
-            )
-            data_fsm.If(cond, self.rdata.rvalid, count == 0)(
-                count.inc(),
-                wdata(self.rdata.rdata),
-                wvalid(1),
-            )
-            self.seq.If(data_fsm.here, cond, self.rdata.rvalid, count == 0)(
-                self.read_local_size_buf.dec()
-            )
-            data_fsm.If(cond, count > 0)(
-                count.inc(),
-                wdata(wdata >> ram_datawidth),
-                wvalid(1),
-            )
-            self.seq.If(data_fsm.here, cond, count > 0)(
-                self.read_local_size_buf.dec()
-            )
-            data_fsm.If(cond, count == pack_size - 1)(
-                count(0)
-            )
-
-            data_fsm.If(self.read_local_size_buf <= 1,
-                        cond, count > 0).goto_init()
-            data_fsm.If(self.read_local_size_buf <= 1,
-                        cond, self.rdata.rvalid, count == 0).goto_init()
-            self.seq.If(data_fsm.here, self.read_local_size_buf <= 1,
-                        cond, count > 0)(
-                self.read_data_idle(1)
-            )
-            self.seq.If(data_fsm.here, self.read_local_size_buf <= 1,
-                        cond, self.rdata.rvalid, count == 0)(
-                 self.read_data_idle(1)
-            )
-            return
-
-        # Data FSM
         self.read_ops.append(op_id)
 
-        data_fsm = FSM(self.m, '_'.join(['', self.name, 'read_data_wide_fsm']),
-                      self.clk, self.rst, as_module=self.fsm_as_module)
-        self.read_data_wide_fsm = data_fsm
+        # Data FSM
+        if self.read_data_wide_fsm is not None:
+            """ new op """
+            data_fsm = self.read_data_wide_fsm
+            data_fsm.set_index(0)
+
+        else:
+            data_fsm = FSM(self.m, '_'.join(['', self.name, 'read_data_wide_fsm']),
+                           self.clk, self.rst, as_module=self.fsm_as_module)
+            self.read_data_wide_fsm = data_fsm
 
         # Data state 0
         cond = vtypes.Ands(self.read_data_idle,
@@ -1079,66 +919,18 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             """ already synthesized op """
             return
 
-        if self.write_data_fsm is not None:
-            """ new op """
-            self.write_ops.append(op_id)
-
-            data_fsm = self.write_data_fsm
-
-            # Data state 0
-            data_fsm.set_index(0)
-            cond = vtypes.Ands(self.write_data_idle,
-                               vtypes.Not(self.write_req_fifo.empty),
-                               self.write_op_sel_fifo == op_id)
-            self.seq.If(data_fsm.here, cond)(
-                self.write_data_idle(0),
-                self.write_op_sel_buf(self.write_op_sel_fifo),
-                self.write_local_addr_buf(self.write_local_addr_fifo),
-                self.write_local_stride_buf(self.write_local_stride_fifo),
-                self.write_size_buf(self.write_size_fifo),
-            )
-            deq_cond = vtypes.Ands(data_fsm.here, cond)
-            _ = self.write_req_fifo.deq_rtl(cond=deq_cond)
-            data_fsm.If(cond).goto_next()
-
-            # Data state 1
-            data_fsm.set_index(1)
-            ram_cond = vtypes.Ands(data_fsm.here, self.write_op_sel_buf == op_id)
-            rready = vtypes.Ands(vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid)),
-                                 self.write_size_buf > 0)
-            rdata, rvalid, rlast = ram_method(
-                self.write_local_addr_buf, self.write_local_stride_buf, self.write_size_buf,
-                rready, port=port, cond=ram_cond)
-
-            # Data state 2
-            data_fsm.set_index(2)
-            cond = vtypes.Ands(vtypes.Not(self.write_req_fifo.empty),
-                               self.write_size_buf == 0)
-            self.seq.If(data_fsm.here, cond)(
-                self.write_size_buf(self.write_size_fifo),
-            )
-            deq_cond = vtypes.Ands(data_fsm.here, cond)
-            _ = self.write_req_fifo.deq_rtl(cond=deq_cond)
-
-            wcond = vtypes.Ands(self.write_op_sel_buf == op_id, rvalid, rready)
-            _rlast = vtypes.Ors(rlast, self.write_size_buf == 1)
-            _ = self.write_data(rdata, _rlast, cond=wcond)
-            self.seq.If(data_fsm.here, rvalid, rready)(
-                self.write_size_buf.dec()
-            )
-
-            data_fsm.If(wcond, rlast, rready).goto_init()
-            self.seq.If(data_fsm.here, wcond, rlast, rready)(
-                self.write_data_idle(1)
-            )
-            return
-
-        # Data FSM
         self.write_ops.append(op_id)
 
-        data_fsm = FSM(self.m, '_'.join(['', self.name, 'write_data_fsm']),
-                      self.clk, self.rst, as_module=self.fsm_as_module)
-        self.write_data_fsm = data_fsm
+        # Data FSM
+        if self.write_data_fsm is not None:
+            """ new op """
+            data_fsm = self.write_data_fsm
+            data_fsm.set_index(0)
+
+        else:
+            data_fsm = FSM(self.m, '_'.join(['', self.name, 'write_data_fsm']),
+                           self.clk, self.rst, as_module=self.fsm_as_module)
+            self.write_data_fsm = data_fsm
 
         # Data state 0
         cond = vtypes.Ands(self.write_data_idle,
@@ -1205,90 +997,18 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             """ already synthesized op """
             return
 
-        if self.write_data_narrow_fsm is not None:
-            """ new op """
-            self.write_ops.append(op_id)
-
-            data_fsm = self.write_data_narrow_fsm
-
-            # Data state 0
-            data_fsm.set_index(0)
-            cond = vtypes.Ands(self.write_data_idle,
-                               vtypes.Not(self.write_req_fifo.empty),
-                               self.write_op_sel_fifo == op_id)
-            self.seq.If(data_fsm.here, cond)(
-                self.write_data_idle(0),
-                self.write_op_sel_buf(self.write_op_sel_fifo),
-                self.write_local_addr_buf(self.write_local_addr_fifo),
-                self.write_local_stride_buf(self.write_local_stride_fifo),
-                # self.write_size_fifo: local_size
-                self.write_size_buf(self.write_size_fifo),
-            )
-            deq_cond = vtypes.Ands(data_fsm.here, cond)
-            _ = self.write_req_fifo.deq_rtl(cond=deq_cond)
-            data_fsm.If(cond).goto_next()
-
-            # Data state 1
-            data_fsm.set_index(1)
-            ram_cond = vtypes.Ands(data_fsm.here, self.write_op_sel_buf == op_id)
-            count = self.m.TmpReg(log_pack_size, initval=0,
-                                  prefix='_'.join(['', self.name, 'write_narrow_count']))
-            rready = vtypes.Ands(vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid)),
-                                 count == 0, self.write_size_buf > 0)
-            rdata, rvalid, rlast = ram_method(
-                self.write_local_addr_buf, self.write_local_stride_buf, self.write_size_buf,
-                rready, port=port, cond=ram_cond)
-
-            data_fsm(
-                count(0)
-            )
-
-            # Data state 2
-            data_fsm.set_index(2)
-
-            wdata = self.m.TmpReg(ram_datawidth, initval=0,
-                                  prefix='_'.join(['', self.name, 'write_narrow_wdata']))
-            wlast = self.m.TmpReg(initval=0,
-                                  prefix='_'.join(['', self.name, 'write_narrow_wlast']))
-            wack = vtypes.Ands(vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid)),
-                               self.write_size_buf > 0)
-            wcond = vtypes.Ands(data_fsm.here, self.write_op_sel == op_id, wack,
-                                vtypes.Ors(count > 0, rvalid))
-            _wdata = vtypes.Mux(count == 0, rdata[:self.datawidth], wdata[:self.datawidth])
-            _wlast = self.write_size_buf == 1
-            self.write_data(_wdata, _wlast, cond=wcond)
-
-            self.seq.If(data_fsm.here, wcond)(
-                self.write_size_buf.dec()
-            )
-
-            data_fsm.If(wcond, count == 0)(
-                wdata(rdata[self.datawidth:]),
-                wlast(rlast),
-                count.inc(),
-            )
-            data_fsm.If(wcond, count > 0)(
-                wdata(wdata >> self.datawidth),
-                count.inc(),
-            )
-            data_fsm.If(wcond, count == pack_size - 1)(
-                count(0)
-            )
-
-            data_fsm.If(wcond, count == pack_size - 1, wlast).goto_init()
-
-            self.seq.If(data_fsm.here, wcond, count == pack_size - 1, wlast)(
-                self.write_data_idle(1)
-            )
-
-            return
-
-        # Data FSM
         self.write_ops.append(op_id)
 
-        data_fsm = FSM(self.m, '_'.join(['', self.name, 'write_data_narrow_fsm']),
-                      self.clk, self.rst, as_module=self.fsm_as_module)
-        self.write_data_narrow_fsm = data_fsm
+        # Data FSM
+        if self.write_data_narrow_fsm is not None:
+            """ new op """
+            data_fsm = self.write_data_narrow_fsm
+            data_fsm.set_index(0)
+
+        else:
+            data_fsm = FSM(self.m, '_'.join(['', self.name, 'write_data_narrow_fsm']),
+                           self.clk, self.rst, as_module=self.fsm_as_module)
+            self.write_data_narrow_fsm = data_fsm
 
         # Data state 0
         cond = vtypes.Ands(self.write_data_idle,
@@ -1387,81 +1107,18 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             """ already synthesized op """
             return
 
-        if self.write_data_wide_fsm is not None:
-            """ new op """
-            self.write_ops.append(op_id)
-
-            data_fsm = self.write_data_wide_fsm
-
-            # Data state 0
-            data_fsm.set_index(0)
-            cond = vtypes.Ands(self.write_data_idle,
-                               vtypes.Not(self.write_req_fifo.empty),
-                               self.write_op_sel_fifo == op_id)
-            res = vtypes.Mux(
-                vtypes.And(self.write_size_fifo, 2 ** log_pack_size - 1) > 0, 1, 0)
-            global_size = (self.write_size_fifo >> log_pack_size) + res
-            local_size = global_size << log_pack_size
-
-            self.seq.If(data_fsm.here, cond)(
-                self.write_data_idle(0),
-                self.write_op_sel_buf(self.write_op_sel_fifo),
-                self.write_local_addr_buf(self.write_local_addr_fifo),
-                self.write_local_stride_buf(self.write_local_stride_fifo),
-                self.write_size_buf(local_size),
-            )
-            deq_cond = vtypes.Ands(data_fsm.here, cond)
-            _ = self.write_req_fifo.deq_rtl(cond=deq_cond)
-            data_fsm.If(cond).goto_next()
-
-            # Data state 1
-            data_fsm.set_index(1)
-            ram_cond = vtypes.Ands(data_fsm.here, self.write_op_sel_buf == op_id)
-            count = self.m.TmpReg(log_pack_size, initval=0,
-                                  prefix='_'.join(['', self.name, 'write_wide_count']))
-            rready = vtypes.Ands(vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid), count > 0),
-                                 self.write_size_buf > 0)
-            rdata, rvalid, rlast = ram_method(
-                self.write_local_addr_buf, self.write_local_stride_buf, self.write_size_buf,
-                rready, port=port, cond=ram_cond)
-
-            data_fsm(
-                count(0)
-            )
-
-            # Data state 1
-            data_fsm.set_index(2)
-            wcond = vtypes.Ands(data_fsm.here, self.write_op_sel == op_id,
-                                count == pack_size - 1, rvalid, rready)
-            wdata = self.m.TmpReg(self.datawidth, initval=0,
-                                  prefix='_'.join(['', self.name, 'write_wide_wdata']))
-            _wdata = vtypes.Cat(rdata, wdata[ram_datawidth:self.datawidth])
-            _wlast = vtypes.Ors(rlast, self.write_size_buf == 1)
-            _ = self.write_data(_wdata, _wlast, cond=wcond)
-
-            self.seq.If(data_fsm.here, rvalid, rready)(
-                self.write_size_buf.dec()
-            )
-            data_fsm.If(rvalid, rready)(
-                wdata(_wdata),
-                count.inc(),
-            )
-            data_fsm.If(rvalid, rready, count == pack_size - 1)(
-                count(0)
-            )
-            data_fsm.If(count == pack_size - 1, rvalid, rready, rlast).goto_init()
-
-            self.seq.If(data_fsm.here, count == pack_size - 1, rvalid, rready, rlast)(
-                self.write_data_idle(1)
-            )
-            return
-
-        # Data FSM
         self.write_ops.append(op_id)
 
-        data_fsm = FSM(self.m, '_'.join(['', self.name, 'write_data_wide_fsm']),
-                      self.clk, self.rst, as_module=self.fsm_as_module)
-        self.write_data_wide_fsm = data_fsm
+        # Data FSM
+        if self.write_data_wide_fsm is not None:
+            """ new op """
+            data_fsm = self.write_data_wide_fsm
+            data_fsm.set_index(0)
+
+        else:
+            data_fsm = FSM(self.m, '_'.join(['', self.name, 'write_data_wide_fsm']),
+                           self.clk, self.rst, as_module=self.fsm_as_module)
+            self.write_data_wide_fsm = data_fsm
 
         # Data state 0
         cond = vtypes.Ands(self.write_data_idle,
