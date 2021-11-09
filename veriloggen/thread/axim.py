@@ -976,8 +976,8 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             self.write_size_buf.dec()
         )
 
-        data_fsm.If(wcond, rlast, rready).goto_init()
-        self.seq.If(data_fsm.here, wcond, rlast, rready)(
+        data_fsm.If(wcond, rlast).goto_init()
+        self.seq.If(data_fsm.here, wcond, rlast)(
             self.write_data_idle(1)
         )
 
