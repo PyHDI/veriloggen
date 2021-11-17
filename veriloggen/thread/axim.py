@@ -39,7 +39,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
                  waddr_user_mode=axi.AxUSER_NONCOHERENT, wdata_user_mode=axi.xUSER_DEFAULT,
                  raddr_user_mode=axi.AxUSER_NONCOHERENT,
                  noio=False,
-                 enable_async=False, use_global_base_addr=False,
+                 use_global_base_addr=False,
                  op_sel_width=8, req_fifo_addrwidth=3, fsm_as_module=False):
 
         axi.AxiMaster.__init__(self, m, name, clk, rst, datawidth, addrwidth,
@@ -54,7 +54,6 @@ class AXIM(axi.AxiMaster, _MutexFunction):
                                raddr_user_mode,
                                noio)
 
-        self.enable_async = enable_async
         self.use_global_base_addr = use_global_base_addr
         self.op_sel_width = op_sel_width
         self.req_fifo_addrwidth = req_fifo_addrwidth
@@ -318,10 +317,6 @@ class AXIM(axi.AxiMaster, _MutexFunction):
     def dma_read_async(self, fsm, ram, local_addr, global_addr, size,
                        local_stride=1, port=0, ram_method=None):
 
-        if not self.enable_async:
-            raise ValueError(
-                "Async mode is disabled. Set 'True' to enable_async.")
-
         self._dma_read(fsm, ram, local_addr, global_addr, size,
                        local_stride, port, ram_method)
 
@@ -335,10 +330,6 @@ class AXIM(axi.AxiMaster, _MutexFunction):
 
     def dma_write_async(self, fsm, ram, local_addr, global_addr, size,
                         local_stride=1, port=0, ram_method=None):
-
-        if not self.enable_async:
-            raise ValueError(
-                "Async mode is disabled. Set 'True' to enable_async.")
 
         self._dma_write(fsm, ram, local_addr, global_addr, size,
                         local_stride, port, ram_method)
@@ -1283,34 +1274,34 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         _local_size.assign(local_size)
         return _op_sel, _local_addr, _local_stride, _local_size
 
-    def pack_write_req(self, op_sel, local_addr, local_stride, local_size):
+    def pack_write_req(self, op_sel, local_addr, local_stride, size):
         _op_sel = self.m.TmpWire(self.op_sel_width, prefix='pack_write_req_op_sel')
         _local_addr = self.m.TmpWire(self.addrwidth, prefix='pack_write_req_local_addr')
         _local_stride = self.m.TmpWire(self.addrwidth, prefix='pack_write_req_local_stride')
-        _local_size = self.m.TmpWire(self.addrwidth + 1, prefix='pack_write_req_local_size')
+        _size = self.m.TmpWire(self.addrwidth + 1, prefix='pack_write_req_size')
         _op_sel.assign(op_sel)
         _local_addr.assign(local_addr)
         _local_stride.assign(local_stride)
-        _local_size.assign(local_size)
+        _size.assign(size)
         packed = self.m.TmpWire(self.op_sel_width + self.addrwidth * 3 + 1,
                                 prefix='pack_write_req_packed')
-        packed.assign(vtypes.Cat(_op_sel, _local_addr, _local_stride, _local_size))
+        packed.assign(vtypes.Cat(_op_sel, _local_addr, _local_stride, _size))
         return packed
 
     def unpack_write_req(self, v):
         op_sel = v[self.addrwidth * 3 + 1:self.addrwidth * 3 + 1 + self.op_sel_width]
         local_addr = v[self.addrwidth * 2 + 1:self.addrwidth * 2 + 1 + self.addrwidth]
         local_stride = v[self.addrwidth + 1:self.addrwidth + 1 + self.addrwidth]
-        local_size = v[0:self.addrwidth + 1]
+        size = v[0:self.addrwidth + 1]
         _op_sel = self.m.TmpWire(self.op_sel_width, prefix='unpack_write_req_op_sel')
         _local_addr = self.m.TmpWire(self.addrwidth, prefix='unpack_write_req_local_addr')
         _local_stride = self.m.TmpWire(self.addrwidth, prefix='unpack_write_req_local_stride')
-        _local_size = self.m.TmpWire(self.addrwidth + 1, prefix='unpack_write_req_local_size')
+        _size = self.m.TmpWire(self.addrwidth + 1, prefix='unpack_write_req_size')
         _op_sel.assign(op_sel)
         _local_addr.assign(local_addr)
         _local_stride.assign(local_stride)
-        _local_size.assign(local_size)
-        return _op_sel, _local_addr, _local_stride, _local_size
+        _size.assign(size)
+        return _op_sel, _local_addr, _local_stride, _size
 
 
 class AXIMVerify(AXIM):
