@@ -26,8 +26,6 @@ class AXIM(axi.AxiMaster, _MutexFunction):
                       'dma_wait',
                       'set_global_base_addr',) + _MutexFunction.__intrinsics__
 
-    burstlen = 256
-
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
                  waddr_id_width=0, wdata_id_width=0, wresp_id_width=0,
                  raddr_id_width=0, rdata_id_width=0,
@@ -1405,8 +1403,6 @@ class AXIMLite(axi.AxiLiteMaster, _MutexFunction):
 
     __intrinsics__ = ('read', 'write', 'write_fence',
                       'set_global_base_addr',) + _MutexFunction.__intrinsics__
-
-    burstlen = 256
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
                  waddr_cache_mode=axi.AxCACHE_NONCOHERENT, raddr_cache_mode=axi.AxCACHE_NONCOHERENT,
