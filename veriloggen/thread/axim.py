@@ -1051,7 +1051,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
                               prefix='_'.join(['', self.name, 'write_narrow_wlast']))
         wack = vtypes.Ands(vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid)),
                            self.write_size_buf > 0)
-        wcond = vtypes.Ands(data_fsm.here, self.write_op_sel == op_id, wack,
+        wcond = vtypes.Ands(data_fsm.here, self.write_op_sel_buf == op_id, wack,
                             vtypes.Ors(count > 0, rvalid))
         _wdata = vtypes.Mux(count == 0, rdata[:self.datawidth], wdata[:self.datawidth])
         _wlast = self.write_size_buf == 1
@@ -1158,7 +1158,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         deq_cond = vtypes.Ands(data_fsm.here, cond)
         _ = self.write_req_fifo.deq_rtl(cond=deq_cond)
 
-        wcond = vtypes.Ands(data_fsm.here, self.write_op_sel == op_id,
+        wcond = vtypes.Ands(data_fsm.here, self.write_op_sel_buf == op_id,
                             count == pack_size - 1, rvalid, rready)
         wdata = self.m.TmpReg(self.datawidth, initval=0,
                               prefix='_'.join(['', self.name, 'write_wide_wdata']))
