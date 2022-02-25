@@ -88,6 +88,9 @@ class RAM(_MutexFunction):
         self.interfaces[port].enable.connect(0)
         self._port_disabled[port] = True
 
+    def has_enable(self, port):
+        return hasattr(self.interfaces[port], 'enable')
+
     def connect_rtl(self, port, addr, wdata=None, wenable=None, rdata=None, enable=None):
         """ connect native signals to the internal RAM interface """
 
@@ -100,12 +103,12 @@ class RAM(_MutexFunction):
             rdata.connect(self.interfaces[port].rdata)
 
         if enable is not None:
-            if hasattr(self.interfaces[port], 'enable'):
+            if self.has_enable(port):
                 self.interfaces[port].enable.connect(enable)
             else:
-                raise ValueError("RAM '%s' has no enable port.")
+                raise ValueError("RAM '%s' has no enable port." % self.name)
 
-        elif hasattr(self.interfaces[port], 'enable'):
+        elif self.has_enable(port):
             raise ValueError('enable must be assigned.')
 
     def read_rtl(self, addr, port=0, cond=None):
@@ -185,13 +188,9 @@ class RAM(_MutexFunction):
 
         fsm = TmpFSM(self.m, self.clk, self.rst, prefix='read_burst_fsm')
 
-        _addr = self.m.TmpRegLike(self.interfaces[port].addr, initval=0,
-                                  prefix='read_burst_addr')
-        _stride = self.m.TmpRegLike(self.interfaces[port].addr, initval=0,
-                                    prefix='read_burst_stride')
-        _length = self.m.TmpRegLike(self.interfaces[port].addr,
-                                    width=self.interfaces[port].addr.width + 1,
-                                    initval=0, prefix='read_burst_length')
+        _addr = self.m.TmpReg(self.addrwidth, initval=0, prefix='read_burst_addr')
+        _stride = self.m.TmpReg(self.addrwidth, initval=0, prefix='read_burst_stride')
+        _length = self.m.TmpReg(self.addrwidth + 1, initval=0, prefix='read_burst_length')
 
         rvalid = self.m.TmpReg(prefix='read_burst_rvalid', initval=0)
         rlast = self.m.TmpReg(prefix='read_burst_rlast', initval=0)
@@ -239,13 +238,9 @@ class RAM(_MutexFunction):
 
         fsm = TmpFSM(self.m, self.clk, self.rst, prefix='write_burst_fsm')
 
-        _addr = self.m.TmpRegLike(self.interfaces[port].addr, initval=0,
-                                  prefix='write_burst_addr')
-        _stride = self.m.TmpRegLike(self.interfaces[port].addr, initval=0,
-                                    prefix='write_burst_stride')
-        _length = self.m.TmpRegLike(self.interfaces[port].addr,
-                                    width=self.interfaces[port].addr.width + 1,
-                                    initval=0, prefix='write_burst_length')
+        _addr = self.m.TmpReg(self.addrwidth, initval=0, prefix='write_burst_addr')
+        _stride = self.m.TmpReg(self.addrwidth, initval=0, prefix='write_burst_stride')
+        _length = self.m.TmpReg(self.addrwidth + 1, initval=0, prefix='write_burst_length')
 
         done = self.m.TmpReg(prefix='write_burst_done', initval=0)
 
@@ -375,24 +370,27 @@ class MultibankRAM(object):
 
     def disable_write(self, port):
         for ram in self.rams:
-            ram.seq(
-                ram.interfaces[port].wdata(0),
-                ram.interfaces[port].wenable(0)
-            )
-            ram._write_disabled[port] = True
+            ram.disable_write(port)
+
+    def disable_port(self, port):
+        for ram in self.rams:
+            ram.disable_port(port)
+
+    def has_enable(self, port):
+        for ram in self.rams:
+            if not ram.has_enable(port):
+                return False
+        return True
 
     def connect_rtl(self, port, addr, wdata=None, wenable=None, rdata=None, enable=None):
         """ connect native signals to the internal RAM interface """
 
         if enable is not None:
-            for ram in self.rams:
-                if not hasattr(ram.interfaces[port], 'enable'):
-                    raise ValueError("RAM '%s' has no enable port.")
+            if not self.has_enable(port):
+                raise ValueError("RAM '%s' has no enable port." % self.name)
 
-        else:
-            for ram in self.rams:
-                if hasattr(ram.interfaces[port], 'enable'):
-                    raise ValueError('enable must be assigned.')
+        elif self.has_enable(port):
+            raise ValueError('enable must be assigned.')
 
         if math.log(self.numbanks, 2) % 1.0 != 0.0:
             raise ValueError('numbanks must be power-of-2')
@@ -406,19 +404,20 @@ class MultibankRAM(object):
 
         rdata_list = []
         for i, ram in enumerate(self.rams):
-            ram.interfaces[port].addr.connect(addr)
-
-            if wdata is not None:
-                ram.interfaces[port].wdata.connect(wdata)
-
-            bank_wenable = vtypes.Ands(wenable, bank == i)
             if wenable is not None:
-                ram.interfaces[port].wenable.connect(bank_wenable)
+                bank_wenable = vtypes.Ands(wenable, bank == i)
+            else:
+                bank_wenable = None
 
-            rdata_list.append(ram.interfaces[port].rdata)
-            bank_enable = vtypes.Ands(enable, bank == i)
+            bank_rdata = self.m.TmpWire(self.orig_datawidth, signed=True)
+            rdata_list.append(bank_rdata)
+
             if enable is not None:
-                ram.interfaces[port].enable.connect(bank_enable)
+                bank_enable = vtypes.Ands(enable, bank == i)
+            else:
+                bank_enable = None
+
+            ram.connect_rtl(port, addr, wdata, bank_wenable, bank_rdata, bank_enable)
 
         bank_reg = self.seq.Prev(bank, 1, initval=0)
         pat = [(bank_reg == i, rdata_list[i])
@@ -789,13 +788,9 @@ class MultibankRAM(object):
 
         fsm = TmpFSM(self.m, self.clk, self.rst, prefix='read_burst_fsm')
 
-        _addr = self.m.TmpRegLike(self.rams[0].interfaces[port].addr, initval=0,
-                                  prefix='read_burst_addr')
-        _stride = self.m.TmpRegLike(self.rams[0].interfaces[port].addr, initval=0,
-                                    prefix='read_burst_stride')
-        _length = self.m.TmpRegLike(self.rams[0].interfaces[port].addr,
-                                    width=self.rams[0].interfaces[port].addr.width + 1,
-                                    initval=0, prefix='read_burst_length')
+        _addr = self.m.TmpReg(self.addrwidth, initval=0, prefix='read_burst_addr')
+        _stride = self.m.TmpReg(self.addrwidth, initval=0, prefix='read_burst_stride')
+        _length = self.m.TmpReg(self.addrwidth + 1, initval=0, prefix='read_burst_length')
 
         rvalid = self.m.TmpReg(prefix='read_burst_rvalid', initval=0)
         rlast = self.m.TmpReg(prefix='read_burst_rlast', initval=0)
@@ -866,13 +861,9 @@ class MultibankRAM(object):
 
         fsm = TmpFSM(self.m, self.clk, self.rst, prefix='read_burst_block_fsm')
 
-        _length = self.m.TmpRegLike(self.rams[0].interfaces[port].addr,
-                                    width=self.rams[0].interfaces[port].addr.width + 1,
-                                    initval=0, prefix='read_burst_block_length')
-        _blocksize = self.m.TmpRegLike(self.rams[0].interfaces[port].addr, initval=0,
-                                       prefix='write_burst_block_blocksize')
-        count = self.m.TmpRegLike(self.rams[0].interfaces[port].addr, initval=0,
-                                  prefix='write_burst_block_count')
+        _length = self.m.TmpReg(self.addrwidth + 1, initval=0, prefix='read_burst_block_length')
+        _blocksize = self.m.TmpReg(self.addrwidth, initval=0, prefix='write_burst_block_blocksize')
+        count = self.m.TmpReg(self.addrwidth, initval=0, prefix='write_burst_block_count')
         rvalid = self.m.TmpReg(prefix='read_burst_block_rvalid', initval=0)
         rlast = self.m.TmpReg(prefix='read_burst_block_rlast', initval=0)
 
@@ -891,8 +882,8 @@ class MultibankRAM(object):
 
         fsm.If(cond, length > 0).goto_next()
 
-        rdata = self.m.TmpWireLike(self.rams[0].interfaces[port].rdata,
-                                   prefix='read_burst_block_rdata')
+        rdata = self.m.TmpWire(self.rams[0].datawidth,
+                               prefix='read_burst_block_rdata')
         loop = fsm.current
 
         for i, (ram_rready, ram_rquit, ram_rdata) in enumerate(
@@ -952,13 +943,9 @@ class MultibankRAM(object):
 
         fsm = TmpFSM(self.m, self.clk, self.rst, prefix='write_burst_fsm')
 
-        _addr = self.m.TmpRegLike(self.rams[0].interfaces[port].addr, initval=0,
-                                  prefix='write_burst_addr')
-        _stride = self.m.TmpRegLike(self.rams[0].interfaces[port].addr, initval=0,
-                                    prefix='write_burst_stride')
-        _length = self.m.TmpRegLike(self.rams[0].interfaces[port].addr,
-                                    width=self.rams[0].interfaces[port].addr.width + 1,
-                                    initval=0, prefix='write_burst_length')
+        _addr = self.m.TmpReg(self.addrwidth, initval=0, prefix='write_burst_addr')
+        _stride = self.m.TmpReg(self.addrwidth, initval=0, prefix='write_burst_stride')
+        _length = self.m.TmpReg(self.addrwidth + 1, initval=0, prefix='write_burst_length')
 
         done = self.m.TmpReg(prefix='write_burst_done', initval=0)
 
@@ -1029,14 +1016,10 @@ class MultibankRAM(object):
 
         fsm = TmpFSM(self.m, self.clk, self.rst, prefix='write_burst_block_fsm')
 
-        _length = self.m.TmpRegLike(self.rams[0].interfaces[port].addr,
-                                    width=self.rams[0].interfaces[port].addr.width + 1,
-                                    initval=0, prefix='write_burst_block_length')
-        _blocksize = self.m.TmpRegLike(self.rams[0].interfaces[port].addr, initval=0,
-                                       prefix='write_burst_block_blocksize')
+        _length = self.m.TmpReg(self.addrwidth + 1, initval=0, prefix='write_burst_block_length')
+        _blocksize = self.m.TmpReg(self.addrwidth, initval=0, prefix='write_burst_block_blocksize')
         done = self.m.TmpReg(prefix='write_burst_block_done', initval=0)
-        count = self.m.TmpRegLike(self.rams[0].interfaces[port].addr, initval=0,
-                                  prefix='write_burst_block_count')
+        count = self.m.TmpReg(self.addrwidth, initval=0, prefix='write_burst_block_count')
 
         fsm(
             _length(length),
