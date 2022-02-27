@@ -50,10 +50,10 @@ def mkLed():
             size = saxi.read(2)
             offset = 0
 
-            axi_a.write_ram(ram_a, offset, size, port=1)  # blocking read
-            axi_b.write_ram(ram_b, offset, size, port=1)  # blocking read
+            axi_a.dma_read(ram_a, offset, size, port=1)  # blocking read
+            axi_b.dma_read(ram_b, offset, size, port=1)  # blocking read
             comp_stream(size, offset)
-            axi_c.read_ram(ram_c, offset, size, port=1)  # blocking write
+            axi_c.dma_write(ram_c, offset, size, port=1)  # blocking write
 
             saxi.write(1, 0)  # unset busy
 

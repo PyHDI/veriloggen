@@ -19,6 +19,7 @@ def mkLed():
 
     datawidth = 32
     addrwidth = 10
+
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
     myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth, numports=2)
 
@@ -30,7 +31,10 @@ def mkLed():
     maxi_in = vthread.AXIM_for_AXIStreamIn(axi_in, 'maxi_in')
     maxi_out = vthread.AXIM_for_AXIStreamOut(axi_out, 'maxi_out')
 
-    all_ok = m.TmpReg(initval=0)
+    all_ok = m.TmpReg(initval=0, prefix='all_ok')
+    wdata = m.TmpReg(width=datawidth, initval=0, prefix='wdata')
+    rdata0 = m.TmpReg(width=datawidth, initval=0, prefix='rdata0')
+    rdata1 = m.TmpReg(width=datawidth, initval=0, prefix='rdata1')
 
     def blink(size):
         all_ok.value = True
@@ -38,7 +42,7 @@ def mkLed():
         for i in range(4):
             print('# iter %d start' % i)
             # Test for 4KB boundary check
-            offset = i * 1024 * 16 + (myaxi.boundary_size - 4)
+            offset = i * 1024 * 16 + (myaxi.boundary_size - (datawidth // 8) * 3)
             body(size, offset)
             print('# iter %d end' % i)
 
@@ -52,7 +56,7 @@ def mkLed():
     def body(size, offset):
         # write a test vector
         for i in range(size):
-            wdata = i + 100
+            wdata.value = i + 0x1000
             myram.write(i, wdata)
 
         laddr = 0
@@ -61,6 +65,7 @@ def mkLed():
 
         # AXI-stream read -> AXI-stream write
         maxi_in.dma_read_async(gaddr, size)
+
         out_gaddr = (size + size) * 4 + offset
         maxi_out.dma_write_async(out_gaddr, size)
 
@@ -68,18 +73,21 @@ def mkLed():
             va, va_last = axi_in.read()
             axi_out.write(va, va_last)
 
+        maxi_out.dma_wait_write()
+
         # check
         myaxi.dma_read(myram, 0, gaddr, size, port=1)
         myaxi.dma_read(myram, size, out_gaddr, size, port=1)
 
         for i in range(size):
-            v0 = myram.read(i)
-            v1 = myram.read(i + size)
-            if vthread.verilog.NotEql(v0, v1):
+            rdata0.value = myram.read(i)
+            rdata1.value = myram.read(i + size)
+            if vthread.verilog.NotEql(rdata0, rdata1):
+                print('rdata[%d] = %d (expected %d)' % (i, rdata1, rdata0))
                 all_ok.value = False
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
-    fsm = th.start(17)
+    fsm = th.start(77)
 
     return m
 

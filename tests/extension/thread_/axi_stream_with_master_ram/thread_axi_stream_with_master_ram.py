@@ -33,7 +33,12 @@ def mkLed():
     ram_in = vthread.RAM(m, 'ram_in', clk, rst, datawidth, addrwidth, numports=2)
     ram_out = vthread.RAM(m, 'ram_out', clk, rst, datawidth, addrwidth, numports=2)
 
-    all_ok = m.TmpReg(initval=0)
+    tmp_value = m.TmpReg(width=datawidth, initval=0, prefix='tmp_value')
+
+    all_ok = m.TmpReg(initval=0, prefix='all_ok')
+    wdata = m.TmpReg(width=datawidth, initval=0, prefix='wdata')
+    rdata0 = m.TmpReg(width=datawidth, initval=0, prefix='rdata0')
+    rdata1 = m.TmpReg(width=datawidth, initval=0, prefix='rdata1')
 
     def blink(size):
         all_ok.value = True
@@ -41,7 +46,7 @@ def mkLed():
         for i in range(4):
             print('# iter %d start' % i)
             # Test for 4KB boundary check
-            offset = i * 1024 * 16 + (myaxi.boundary_size - (datawidth // 8))
+            offset = i * 1024 * 16 + (myaxi.boundary_size - (datawidth // 8) * 3)
             body(size, offset)
             print('# iter %d end' % i)
 
@@ -55,7 +60,7 @@ def mkLed():
     def body(size, offset):
         # write a test vector
         for i in range(size):
-            wdata = i + 100
+            wdata.value = i + 0x1000
             myram.write(i, wdata)
 
         laddr = 0
@@ -64,28 +69,30 @@ def mkLed():
 
         # AXI-stream read -> RAM -> RAM -> AXI-stream write
         maxi_in.dma_read_async(gaddr, size)
-        axi_in.write_ram(ram_in, laddr, size, port=1)
+        axi_in.dma_read_async(ram_in, laddr, size, port=1)
+        axi_in.dma_wait_read()
 
         for i in range(size):
-            va = ram_in.read(i)
-            ram_out.write(i, va)
+            tmp_value.value = ram_in.read(i)
+            ram_out.write(i, tmp_value)
 
         out_gaddr = (size + size) * (datawidth // 8) + offset
         maxi_out.dma_write_async(out_gaddr, size)
-        axi_out.read_ram(ram_out, laddr, size, port=1)
+        axi_out.dma_write_async(ram_out, laddr, size, port=1)
+        axi_out.dma_wait_write()
 
         # check
         myaxi.dma_read(myram, 0, gaddr, size, port=1)
         myaxi.dma_read(myram, size, out_gaddr, size, port=1)
 
         for i in range(size):
-            v0 = myram.read(i)
-            v1 = myram.read(i + size)
-            if vthread.verilog.NotEql(v0, v1):
+            rdata0.value = myram.read(i)
+            rdata1.value = myram.read(i + size)
+            if vthread.verilog.NotEql(rdata0, rdata1):
                 all_ok.value = False
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
-    fsm = th.start(17)
+    fsm = th.start(77)
 
     return m
 
