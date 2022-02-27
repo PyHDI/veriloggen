@@ -30,6 +30,11 @@ class FIFO(_MutexFunction):
         self.wif = FifoWriteInterface(self.m, name, datawidth, itype='Wire', otype='Wire')
         self.rif = FifoReadInterface(self.m, name, datawidth, itype='Wire', otype='Wire')
 
+        # default values
+        self.wif.enq.assign(0)
+        self.wif.wdata.assign(vtypes.IntX())
+        self.rif.deq.assign(0)
+
         self.definition = mkFifoDefinition(name, datawidth, addrwidth, sync=sync)
 
         self.inst = self.m.Instance(self.definition, 'inst_' + name,
@@ -54,29 +59,13 @@ class FIFO(_MutexFunction):
             self._count.dec()
         )
 
-        self._enq_disabled = False
-        self._deq_disabled = False
-
         self.mutex = None
 
     def _id(self):
         return id(self)
 
-    def disable_enq(self):
-        self.seq(
-            self.wif.enq(0)
-        )
-        self._enq_disabled = True
-
-    def disable_deq(self):
-        self.rif.deq.assign(0)
-        self._deq_disabled = True
-
     def enq_rtl(self, wdata, cond=None):
         """ Enque """
-
-        if self._enq_disabled:
-            raise TypeError('Enq disabled.')
 
         cond = make_condition(cond)
         ready = vtypes.Not(self.wif.almost_full)
@@ -97,9 +86,6 @@ class FIFO(_MutexFunction):
 
     def deq_rtl(self, cond=None):
         """ Deque """
-
-        if self._deq_disabled:
-            raise TypeError('Deq disabled.')
 
         cond = make_condition(cond)
         ready = vtypes.Not(self.rif.empty)
