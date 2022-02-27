@@ -609,10 +609,6 @@ class MultibankRAM(object):
     def dma_read_bank_async(self, fsm, bank, bus, local_addr, global_addr, size,
                             local_stride=1, port=0):
 
-        if not bus.enable_async:
-            raise ValueError(
-                "Async mode is disabled. Set 'True' to AXIM.enable_async.")
-
         self._dma_read_bank(fsm, bank, bus, local_addr, global_addr, size,
                             local_stride, port)
 
@@ -647,10 +643,6 @@ class MultibankRAM(object):
     def dma_write_bank_async(self, fsm, bank, bus, local_addr, global_addr, size,
                              local_stride=1, port=0):
 
-        if not bus.enable_async:
-            raise ValueError(
-                "Async mode is disabled. Set 'True' to AXIM.enable_async.")
-
         self._dma_write_bank(fsm, bank, bus, local_addr, global_addr, size,
                              local_stride, port)
 
@@ -684,10 +676,6 @@ class MultibankRAM(object):
 
     def dma_read_block_async(self, fsm, bus, local_addr, global_addr, size,
                              block_size=1, local_stride=1, port=0):
-
-        if not bus.enable_async:
-            raise ValueError(
-                "Async mode is disabled. Set 'True' to AXIM.enable_async.")
 
         self._dma_read_block(fsm, bus, local_addr, global_addr, size,
                              block_size, local_stride, port)
@@ -729,10 +717,6 @@ class MultibankRAM(object):
 
     def dma_write_block_async(self, fsm, bus, local_addr, global_addr, size,
                               block_size=1, local_stride=1, port=0):
-
-        if not bus.enable_async:
-            raise ValueError(
-                "Async mode is disabled. Set 'True' to AXIM.enable_async.")
 
         self._dma_write_block(fsm, bus, local_addr, global_addr, size,
                               block_size, local_stride, port)
