@@ -93,7 +93,7 @@ def mkRAMDefinition(name, datawidth=32, addrwidth=10, numports=2,
 
 
 class RAMInterface(object):
-    _I = 'Reg'
+    _I = 'Wire'
     _O = 'Wire'
 
     def __init__(self, m, name=None, datawidth=32, addrwidth=10,

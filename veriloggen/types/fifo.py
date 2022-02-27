@@ -8,7 +8,7 @@ from . import util
 
 
 class FifoWriteInterface(object):
-    _I = 'Reg'
+    _I = 'Wire'
     _O = 'Wire'
 
     def __init__(self, m, name=None, datawidth=32, itype=None, otype=None,
