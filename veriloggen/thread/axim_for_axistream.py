@@ -13,8 +13,10 @@ from .axim import AXIM
 from .axistreamin import AXIStreamIn, AXIStreamInFifo
 from .axistreamout import AXIStreamOut, AXIStreamOutFifo
 
+from .fifo import FIFO
 
-class AXIM_for_AXIStreamIn(AXIM):
+
+class AXIM_for_AXIStreamIn(AXIM, axi.AxiMaster):
 
     def __init__(self, streamin, name,
                  waddr_id_width=0, wdata_id_width=0, wresp_id_width=0,
@@ -22,14 +24,16 @@ class AXIM_for_AXIStreamIn(AXIM):
                  waddr_user_width=2, wdata_user_width=0, wresp_user_width=0,
                  raddr_user_width=2, rdata_user_width=0,
                  waddr_burst_mode=axi.BURST_INCR, raddr_burst_mode=axi.BURST_INCR,
-                 waddr_cache_mode=axi.AxCACHE_NONCOHERENT, raddr_cache_mode=axi.AxCACHE_NONCOHERENT,
-                 waddr_prot_mode=axi.AxPROT_NONCOHERENT, raddr_prot_mode=axi.AxPROT_NONCOHERENT,
-                 waddr_user_mode=axi.AxUSER_NONCOHERENT, wdata_user_mode=axi.xUSER_DEFAULT,
+                 waddr_cache_mode=axi.AxCACHE_NONCOHERENT,
+                 raddr_cache_mode=axi.AxCACHE_NONCOHERENT,
+                 waddr_prot_mode=axi.AxPROT_NONCOHERENT,
+                 raddr_prot_mode=axi.AxPROT_NONCOHERENT,
+                 waddr_user_mode=axi.AxUSER_NONCOHERENT,
+                 wdata_user_mode=axi.xUSER_DEFAULT,
                  raddr_user_mode=axi.AxUSER_NONCOHERENT,
                  noio=False,
-                 enable_async=True, use_global_base_addr=False,
-                 num_cmd_delay=0, num_data_delay=0,
-                 op_sel_width=8, fsm_as_module=False):
+                 use_global_base_addr=False,
+                 req_fifo_addrwidth=3, fsm_as_module=False):
 
         if not isinstance(streamin, AXIStreamIn):
             raise TypeError('AXIStreamIn object is required.')
@@ -43,183 +47,218 @@ class AXIM_for_AXIStreamIn(AXIM):
         datawidth = streamin.datawidth
         addrwidth = streamin.addrwidth
 
-        AXIM.__init__(self, m, name, clk, rst, datawidth, addrwidth,
-                      waddr_id_width, wdata_id_width, wresp_id_width,
-                      raddr_id_width, rdata_id_width,
-                      waddr_user_width, wdata_user_width, wresp_user_width,
-                      raddr_user_width, rdata_user_width,
-                      waddr_burst_mode, raddr_burst_mode,
-                      waddr_cache_mode, raddr_cache_mode,
-                      waddr_prot_mode, raddr_prot_mode,
-                      waddr_user_mode, wdata_user_mode,
-                      raddr_user_mode,
-                      noio,
-                      enable_async, use_global_base_addr,
-                      num_cmd_delay, num_data_delay,
-                      op_sel_width, fsm_as_module)
+        axi.AxiMaster.__init__(self, m, name, clk, rst, datawidth, addrwidth,
+                               waddr_id_width, wdata_id_width, wresp_id_width,
+                               raddr_id_width, rdata_id_width,
+                               waddr_user_width, wdata_user_width, wresp_user_width,
+                               raddr_user_width, rdata_user_width,
+                               waddr_burst_mode, raddr_burst_mode,
+                               waddr_cache_mode, raddr_cache_mode,
+                               waddr_prot_mode, raddr_prot_mode,
+                               waddr_user_mode, wdata_user_mode,
+                               raddr_user_mode,
+                               noio)
+
+        self.use_global_base_addr = use_global_base_addr
+        self.req_fifo_addrwidth = req_fifo_addrwidth
+        self.fsm_as_module = fsm_as_module
+
+        self.mutex = None
+
+        # Read
+        self.read_start = self.m.Reg('_'.join(['', self.name, 'read_start']),
+                                     initval=0)
+        self.read_global_addr = self.m.Reg('_'.join(['', self.name, 'read_global_addr']),
+                                           self.addrwidth, initval=0)
+        self.read_global_size = self.m.Reg('_'.join(['', self.name, 'read_global_size']),
+                                           self.addrwidth + 1, initval=0)
+
+        self.read_req_fifo = FIFO(self.m, '_'.join(['', self.name, 'read_req_fifo']),
+                                  self.clk, self.rst,
+                                  datawidth=self.addrwidth + 1,
+                                  addrwidth=self.req_fifo_addrwidth,
+                                  sync=False)
+
+        self.read_local_size_fifo = self.m.Wire('_'.join(['', self.name,
+                                                          'read_local_size_fifo']),
+                                                self.addrwidth + 1)
+
+        self.read_local_size_fifo.assign(self.read_req_fifo.rdata)
+
+        self.read_local_size_buf = self.m.Reg('_'.join(['', self.name,
+                                                        'read_local_size_buf']),
+                                              self.addrwidth + 1, initval=0)
+
+        self.read_req_idle = self.m.Reg(
+            '_'.join(['', self.name, 'read_req_idle']), initval=1)
+        self.read_data_idle = self.m.Reg(
+            '_'.join(['', self.name, 'read_data_idle']), initval=1)
+
+        self.read_idle = self.m.Wire('_'.join(['', self.name, 'read_idle']))
+        self.read_idle.assign(
+            vtypes.Ands(vtypes.Not(self.read_start), self.read_req_idle,
+                        self.read_req_fifo.empty, self.read_data_idle))
+
+        self.seq(
+            self.read_start(0)
+        )
+
+        self.read_req_fsm = None
+        self.read_data_fsm = None
+
+        if self.use_global_base_addr:
+            self.global_base_addr = self.m.Reg('_'.join(['', self.name, 'global_base_addr']),
+                                               self.addrwidth, initval=0)
+        else:
+            self.global_base_addr = None
+
+        # No write
+        self.disable_write()
 
         self.streamin = streamin
-        self.streamin.connect_master_rdata(self)
-
-        self.disable_write()
+        streamout_name = '_'.join((streamin.name, 'out'))
+        self.streamout = axi.AxiStreamOut(m, streamout_name, clk, rst,
+                                          datawidth=streamin.datawidth,
+                                          with_last=streamin.tdata.tlast is not None,
+                                          with_strb=streamin.tdata.tstrb is not None,
+                                          id_width=streamin.tdata.id_width,
+                                          user_width=streamin.tdata.user_width,
+                                          dest_width=streamin.tdata.dest_width,
+                                          noio=streamin.noio)
+        streamin.connect_stream(self.streamout)
 
     def dma_read(self, fsm, global_addr, size):
         raise NotImplementedError('Blocking dma_read is not supported. Use dma_read_async.')
 
     def dma_read_async(self, fsm, global_addr, size):
 
-        if not self.enable_async:
-            raise ValueError(
-                "Async mode is disabled. Set 'True' to AXIM.enable_async.")
-
-        self.dma_wait_read(fsm)
-
         return self._dma_read(fsm, global_addr, size)
+
+    def dma_write(self, fsm, global_addr, size):
+        raise NotImplementedError('Not supported.')
+
+    def dma_write_async(self, fsm, global_addr, size):
+        raise NotImplementedError('Not supported.')
+
+    def dma_wait(self, fsm):
+        return self.dma_wait_read(fsm)
 
     def _dma_read(self, fsm, global_addr, size):
 
-        start = self._set_flag(fsm)
+        start = vtypes.Ands(fsm.here, self.read_req_idle)
 
-        for _ in range(self.num_cmd_delay + 1):
-            fsm.goto_next()
+        if not isinstance(self.datawidth, int):
+            raise TypeError("axi.datawidth must be int, not '%s'" %
+                            str(type(self.datawidth)))
 
         self._set_read_request(start, global_addr, size)
-        self._synthesize_read_fsm()
+        self._synthesize_read_req_fsm()
+        self._synthesize_read_data_fsm()
 
-        fsm.goto_next()
+        fsm.If(self.read_req_idle).goto_next()
 
     def _set_read_request(self, start, global_addr, size):
 
-        op_id = 1
+        if self.use_global_base_addr:
+            global_addr = global_addr + self.global_base_addr
 
-        if op_id in self.read_reqs:
-            (read_start, read_op_sel,
-             read_global_addr_in,
-             read_size_in) = self.read_reqs[op_id]
-
-            self.seq.If(start)(
-                read_start(1),
-                read_op_sel(op_id),
-                read_global_addr_in(global_addr),
-                read_size_in(size),
-            )
-
-            return
-
-        read_start = self.m.Reg(
-            '_'.join(['', self.name, self.streamin.name, 'read_start']),
-            initval=0)
-        read_op_sel = self.m.Reg(
-            '_'.join(['', self.name, self.streamin.name, 'read_op_sel']),
-            self.op_sel_width, initval=0)
-        read_global_addr = self.m.Reg(
-            '_'.join(['', self.name, self.streamin.name, 'read_global_addr']),
-            self.addrwidth, initval=0)
-        read_size = self.m.Reg(
-            '_'.join(['', self.name, self.streamin.name, 'read_size']),
-            self.addrwidth + 1, initval=0)
-
-        self.seq(
-            read_start(0)
-        )
         self.seq.If(start)(
-            read_start(1),
-            read_op_sel(op_id),
-            read_global_addr(global_addr),
-            read_size(size),
-        )
-
-        self.read_reqs[op_id] = (read_start, read_op_sel,
-                                 read_global_addr,
-                                 read_size)
-
-        if self.num_cmd_delay > 0:
-            read_start = self.seq.Prev(read_start, self.num_cmd_delay)
-            read_op_sel = self.seq.Prev(read_op_sel, self.num_cmd_delay)
-            read_global_addr = self.seq.Prev(
-                read_global_addr, self.num_cmd_delay)
-            read_size = self.seq.Prev(read_size, self.num_cmd_delay)
-
-        self.seq.If(read_start)(
-            self.read_idle(0)
-        )
-
-        self.seq.If(read_start)(
             self.read_start(1),
-            self.read_op_sel(read_op_sel),
-            self.read_global_addr(read_global_addr),
-            self.read_size(read_size),
+            self.read_global_addr(self.mask_addr(global_addr)),
+            self.read_global_size(size),
         )
 
-    def _synthesize_read_fsm(self):
+    def _synthesize_read_req_fsm(self):
 
-        op_id = 1
-
-        if op_id in self.read_ops:
-            """ already synthesized op """
+        if self.read_req_fsm is not None:
             return
 
-        if self.read_fsm is not None:
-            """ new op """
-            self.read_ops.append(op_id)
-            return
+        req_fsm = FSM(self.m, '_'.join(['', self.name, 'read_req_fsm']),
+                      self.clk, self.rst, as_module=self.fsm_as_module)
+        self.read_req_fsm = req_fsm
 
-        """ new op and fsm """
-        fsm = FSM(self.m, '_'.join(['', self.name, 'read_fsm']),
-                  self.clk, self.rst, as_module=self.fsm_as_module)
-        self.read_fsm = fsm
-
-        self.read_ops.append(op_id)
-
-        cur_global_addr = self.m.Reg('_'.join(['', self.name, 'read_cur_global_addr']),
-                                     self.addrwidth, initval=0)
-        cur_size = self.m.Reg('_'.join(['', self.name, 'read_cur_size']),
-                              self.addrwidth + 1, initval=0)
-        rest_size = self.m.Reg('_'.join(['', self.name, 'read_rest_size']),
-                               self.addrwidth + 1, initval=0)
+        cur_global_size = self.m.Reg('_'.join(['', self.name, 'read_cur_global_size']),
+                                     self.addrwidth + 1, initval=0)
+        cont = self.m.Reg('_'.join(['', self.name, 'read_cont']), initval=0)
         max_burstlen = 2 ** self.burst_size_width
 
-        # state 0
-        if not self.use_global_base_addr:
-            gaddr = self.read_global_addr
-        else:
-            gaddr = self.read_global_addr + self.global_base_addr
-
-        fsm.If(self.read_start)(
-            cur_global_addr(self.mask_addr(gaddr)),
-            rest_size(self.read_size)
+        # Req state 0
+        self.seq.If(req_fsm.here, self.read_start)(
+            self.read_req_idle(0)
         )
-        fsm.If(self.read_start).goto_next()
-
-        # state 1
-        check_state = fsm.current
-        self._check_4KB_boundary(fsm, max_burstlen,
-                                 cur_global_addr, cur_size, rest_size)
-
-        # state 2
-        ack = self.read_request(cur_global_addr, cur_size, cond=fsm)
-        fsm.If(ack).goto_next()
-
-        accept = vtypes.Ands(self.raddr.arvalid, self.raddr.arready)
-        fsm.If(accept)(
-            cur_global_addr.add(optimize(cur_size * (self.datawidth // 8)))
-        )
-        fsm.If(accept, rest_size > 0).goto(check_state)
-        fsm.If(accept, rest_size == 0).goto_next()
-
-        for _ in range(self.num_data_delay):
-            fsm.goto_next()
-
-        # state 3
-        set_idle = self._set_flag(fsm)
-        self.seq.If(set_idle)(
-            self.read_idle(1)
+        self.seq.If(self.read_start, self.read_req_fifo.almost_full)(
+            self.read_start(1)
         )
 
-        fsm.goto_init()
+        enq_cond = vtypes.Ands(req_fsm.here, self.read_start,
+                               vtypes.Not(self.read_req_fifo.almost_full))
+        _ = self.read_req_fifo.enq_rtl(self.read_global_size,
+                                       cond=enq_cond)
+
+        check_cond = vtypes.Ands(req_fsm.here, vtypes.Ors(self.read_start, cont),
+                                 vtypes.Not(self.read_req_fifo.almost_full))
+        self._check_4KB_boundary(req_fsm, max_burstlen,
+                                 self.read_global_addr, cur_global_size, self.read_global_size,
+                                 cond=check_cond)
+        req_fsm.If(check_cond).goto_next()
+
+        # Req state 1
+        ack = self.read_request(self.read_global_addr, cur_global_size, cond=req_fsm)
+        req_fsm.If(ack)(
+            self.read_global_addr.add(optimize(cur_global_size * (self.datawidth // 8))),
+            cont(1)
+        )
+        req_fsm.If(ack, self.read_global_size == 0)(
+            cont(0)
+        )
+        self.seq.If(req_fsm.here, ack, self.read_global_size == 0)(
+            self.read_req_idle(1)
+        )
+        req_fsm.If(ack).goto_init()
+
+    def _synthesize_read_data_fsm(self):
+
+        # Data FSM
+        if self.read_data_fsm is not None:
+            return
+
+        data_fsm = FSM(self.m, '_'.join(['', self.name, 'read_data_fsm']),
+                       self.clk, self.rst, as_module=self.fsm_as_module)
+        self.read_data_fsm = data_fsm
+
+        # Data state 0
+        cond = vtypes.Ands(self.read_data_idle,
+                           vtypes.Not(self.read_req_fifo.empty))
+        self.seq.If(data_fsm.here, cond)(
+            self.read_data_idle(0),
+            self.read_local_size_buf(self.read_local_size_fifo),
+        )
+        deq_cond = vtypes.Ands(data_fsm.here, cond)
+        _ = self.read_req_fifo.deq_rtl(cond=deq_cond)
+        data_fsm.If(cond).goto_next()
+
+        # Data state 1
+        rready = vtypes.Ands(vtypes.Ors(self.streamin.tdata.tready,
+                                        vtypes.Not(self.streamin.tdata.tvalid)),
+                             self.read_local_size_buf > 0)
+        _ = self.read_data(cond=rready)
+
+        wlast = self.read_local_size_buf <= 1
+        wcond = vtypes.Ands(self.rdata.rvalid, rready)
+        # self.streamin.write_data(self.rdata.rdata, wlast, cond=wcond) ### ???
+        self.streamout.write_data(self.rdata.rdata, wlast, cond=wcond)
+
+        self.seq.If(data_fsm.here, self.rdata.rvalid, rready)(
+            self.read_local_size_buf.dec()
+        )
+
+        data_fsm.If(wcond, wlast).goto_init()
+        self.seq.If(data_fsm.here, wcond, wlast)(
+            self.read_data_idle(1)
+        )
 
 
-class AXIM_for_AXIStreamOut(AXIM):
+class AXIM_for_AXIStreamOut(AXIM, axi.AxiMaster):
 
     def __init__(self, streamout, name,
                  waddr_id_width=0, wdata_id_width=0, wresp_id_width=0,
@@ -227,14 +266,16 @@ class AXIM_for_AXIStreamOut(AXIM):
                  waddr_user_width=2, wdata_user_width=0, wresp_user_width=0,
                  raddr_user_width=2, rdata_user_width=0,
                  waddr_burst_mode=axi.BURST_INCR, raddr_burst_mode=axi.BURST_INCR,
-                 waddr_cache_mode=axi.AxCACHE_NONCOHERENT, raddr_cache_mode=axi.AxCACHE_NONCOHERENT,
-                 waddr_prot_mode=axi.AxPROT_NONCOHERENT, raddr_prot_mode=axi.AxPROT_NONCOHERENT,
-                 waddr_user_mode=axi.AxUSER_NONCOHERENT, wdata_user_mode=axi.xUSER_DEFAULT,
+                 waddr_cache_mode=axi.AxCACHE_NONCOHERENT,
+                 raddr_cache_mode=axi.AxCACHE_NONCOHERENT,
+                 waddr_prot_mode=axi.AxPROT_NONCOHERENT,
+                 raddr_prot_mode=axi.AxPROT_NONCOHERENT,
+                 waddr_user_mode=axi.AxUSER_NONCOHERENT,
+                 wdata_user_mode=axi.xUSER_DEFAULT,
                  raddr_user_mode=axi.AxUSER_NONCOHERENT,
                  noio=False,
-                 enable_async=True, use_global_base_addr=False,
-                 num_cmd_delay=0, num_data_delay=0,
-                 op_sel_width=8, fsm_as_module=False):
+                 use_global_base_addr=False,
+                 req_fifo_addrwidth=3, fsm_as_module=False):
 
         if not isinstance(streamout, AXIStreamOut):
             raise TypeError('AXIStreamOut object is required.')
@@ -248,296 +289,228 @@ class AXIM_for_AXIStreamOut(AXIM):
         datawidth = streamout.datawidth
         addrwidth = streamout.addrwidth
 
-        AXIM.__init__(self, m, name, clk, rst, datawidth, addrwidth,
-                      waddr_id_width, wdata_id_width, wresp_id_width,
-                      raddr_id_width, rdata_id_width,
-                      waddr_user_width, wdata_user_width, wresp_user_width,
-                      raddr_user_width, rdata_user_width,
-                      waddr_burst_mode, raddr_burst_mode,
-                      waddr_cache_mode, raddr_cache_mode,
-                      waddr_prot_mode, raddr_prot_mode,
-                      waddr_user_mode, wdata_user_mode,
-                      raddr_user_mode,
-                      noio,
-                      enable_async, use_global_base_addr,
-                      num_cmd_delay, num_data_delay,
-                      op_sel_width, fsm_as_module)
+        axi.AxiMaster.__init__(self, m, name, clk, rst, datawidth, addrwidth,
+                               waddr_id_width, wdata_id_width, wresp_id_width,
+                               raddr_id_width, rdata_id_width,
+                               waddr_user_width, wdata_user_width, wresp_user_width,
+                               raddr_user_width, rdata_user_width,
+                               waddr_burst_mode, raddr_burst_mode,
+                               waddr_cache_mode, raddr_cache_mode,
+                               waddr_prot_mode, raddr_prot_mode,
+                               waddr_user_mode, wdata_user_mode,
+                               raddr_user_mode,
+                               noio)
+
+        self.use_global_base_addr = use_global_base_addr
+        self.req_fifo_addrwidth = req_fifo_addrwidth
+        self.fsm_as_module = fsm_as_module
+
+        self.mutex = None
+
+        # Write
+        self.write_start = self.m.Reg('_'.join(['', self.name, 'write_start']),
+                                      initval=0)
+        self.write_global_addr = self.m.Reg('_'.join(['', self.name, 'write_global_addr']),
+                                            self.addrwidth, initval=0)
+        self.write_global_size = self.m.Reg('_'.join(['', self.name, 'write_global_size']),
+                                            self.addrwidth + 1, initval=0)
+
+        self.write_req_fifo = FIFO(self.m, '_'.join(['', self.name, 'write_req_fifo']),
+                                   self.clk, self.rst,
+                                   datawidth=self.addrwidth + 1,
+                                   addrwidth=self.req_fifo_addrwidth,
+                                   sync=False)
+
+        self.write_size_fifo = self.m.Wire('_'.join(['', self.name,
+                                                     'write_size_fifo']),
+                                           self.addrwidth + 1)
+        self.write_size_fifo.assign(self.write_req_fifo.rdata)
+
+        self.write_size_buf = self.m.Reg('_'.join(['', self.name,
+                                                   'write_size_buf']),
+                                         self.addrwidth + 1, initval=0)
+
+        self.write_req_idle = self.m.Reg(
+            '_'.join(['', self.name, 'write_req_idle']), initval=1)
+        self.write_data_idle = self.m.Reg(
+            '_'.join(['', self.name, 'write_data_idle']), initval=1)
+
+        self.write_idle = self.m.Wire('_'.join(['', self.name, 'write_idle']))
+        self.write_idle.assign(
+            vtypes.Ands(vtypes.Not(self.write_start), self.write_req_idle,
+                        self.write_req_fifo.empty, self.write_data_idle))
+
+        self.seq(
+            self.write_start(0)
+        )
+
+        self.write_req_fsm = None
+        self.write_data_fsm = None
+
+        if self.use_global_base_addr:
+            self.global_base_addr = self.m.Reg('_'.join(['', self.name, 'global_base_addr']),
+                                               self.addrwidth, initval=0)
+        else:
+            self.global_base_addr = None
+
+        # No read
+        self.disable_read()
 
         self.streamout = streamout
-        self.in_streamout = AXIStreamIn(streamout.m, streamout.name + '_in', streamout.clk, streamout.rst,
-                                        streamout.datawidth, streamout.addrwidth,
-                                        streamout.tdata.tlast is not None, streamout.tdata.tstrb is not None,
-                                        streamout.tdata.id_width, streamout.tdata.user_width, streamout.tdata.dest_width,
-                                        True,
-                                        streamout.enable_async,
-                                        streamout.num_cmd_delay, streamout.num_data_delay,
-                                        streamout.op_sel_width, streamout.fsm_as_module)
-        self.in_streamout.connect_stream(self.streamout)
+        streamin_name = '_'.join((streamout.name, 'in'))
+        self.streamin = axi.AxiStreamIn(m, streamin_name, clk, rst,
+                                        datawidth=streamout.datawidth,
+                                        with_last=streamout.tdata.tlast is not None,
+                                        with_strb=streamout.tdata.tstrb is not None,
+                                        id_width=streamout.tdata.id_width,
+                                        user_width=streamout.tdata.user_width,
+                                        dest_width=streamout.tdata.dest_width,
+                                        noio=streamout.noio)
+        streamout.connect_stream(self.streamin)
 
-        self.disable_read()
+    def dma_read(self, fsm, global_addr, size):
+        raise NotImplementedError('Not supported.')
+
+    def dma_read_async(self, fsm, global_addr, size):
+        raise NotImplementedError('Not supported.')
 
     def dma_write(self, fsm, global_addr, size):
         raise NotImplementedError('Blocking dma_write is not supported. Use dma_write_async.')
 
     def dma_write_async(self, fsm, global_addr, size):
 
-        if not self.enable_async:
-            raise ValueError(
-                "Async mode is disabled. Set 'True' to AXIM.enable_async.")
-
-        self.dma_wait_write(fsm)
-
         return self._dma_write(fsm, global_addr, size)
 
     def _dma_write(self, fsm, global_addr, size):
 
-        start = self._set_flag(fsm)
+        start = vtypes.Ands(fsm.here, self.write_req_idle)
 
-        for _ in range(self.num_cmd_delay + 1):
-            fsm.goto_next()
+        if not isinstance(self.datawidth, int):
+            raise TypeError("axi.datawidth must be int, not '%s'" %
+                            str(type(self.datawidth)))
 
         self._set_write_request(start, global_addr, size)
-        self._synthesize_write_fsm()
+        self._synthesize_write_req_fsm()
+        self._synthesize_write_data_fsm()
 
-        fsm.goto_next()
+        fsm.If(self.write_req_idle).goto_next()
 
     def _set_write_request(self, start, global_addr, size):
 
-        op_id = 1
+        if self.use_global_base_addr:
+            global_addr = global_addr + self.global_base_addr
 
-        if op_id in self.write_reqs:
-            (write_start, write_op_sel,
-             write_global_addr_in,
-             write_size_in) = self.write_reqs[op_id]
-
-            self.seq.If(start)(
-                write_start(1),
-                write_op_sel(op_id),
-                write_global_addr_in(global_addr),
-                write_size_in(size),
-            )
-
-            return
-
-        write_start = self.m.Reg(
-            '_'.join(['', self.name, self.streamout.name, 'write_start']),
-            initval=0)
-        write_op_sel = self.m.Reg(
-            '_'.join(['', self.name, self.streamout.name, 'write_op_sel']),
-            self.op_sel_width, initval=0)
-        write_global_addr = self.m.Reg(
-            '_'.join(['', self.name, self.streamout.name, 'write_global_addr']),
-            self.addrwidth, initval=0)
-        write_size = self.m.Reg(
-            '_'.join(['', self.name, self.streamout.name, 'write_size']),
-            self.addrwidth + 1, initval=0)
-
-        self.seq(
-            write_start(0)
-        )
         self.seq.If(start)(
-            write_start(1),
-            write_op_sel(op_id),
-            write_global_addr(global_addr),
-            write_size(size),
-        )
-
-        self.write_reqs[op_id] = (write_start, write_op_sel,
-                                  write_global_addr,
-                                  write_size)
-
-        if self.num_cmd_delay > 0:
-            write_start = self.seq.Prev(write_start, self.num_cmd_delay)
-            write_op_sel = self.seq.Prev(write_op_sel, self.num_cmd_delay)
-            write_global_addr = self.seq.Prev(
-                write_global_addr, self.num_cmd_delay)
-            write_size = self.seq.Prev(write_size, self.num_cmd_delay)
-
-        self.seq.If(write_start)(
-            self.write_idle(0)
-        )
-
-        self.seq.If(write_start)(
             self.write_start(1),
-            self.write_op_sel(write_op_sel),
-            self.write_global_addr(write_global_addr),
-            self.write_size(write_size),
+            self.write_global_addr(self.mask_addr(global_addr)),
+            self.write_global_size(size),
         )
 
-    def _synthesize_write_fsm(self):
+    def _synthesize_write_req_fsm(self):
 
-        op_id = 1
-
-        if op_id in self.write_ops:
-            """ already synthesized op """
+        if self.write_req_fsm is not None:
             return
 
-        if self.write_fsm is not None:
-            """ new op """
-            self.write_ops.append(op_id)
-            return
+        req_fsm = FSM(self.m, '_'.join(['', self.name, 'write_req_fsm']),
+                      self.clk, self.rst, as_module=self.fsm_as_module)
+        self.write_req_fsm = req_fsm
 
-        """ new op and fsm """
-        fsm = FSM(self.m, '_'.join(['', self.name, 'write_fsm']),
-                  self.clk, self.rst, as_module=self.fsm_as_module)
-        self.write_fsm = fsm
-
-        self.write_ops.append(op_id)
-
-        cur_global_addr = self.m.Reg('_'.join(['', self.name, 'write_cur_global_addr']),
-                                     self.addrwidth, initval=0)
-        cur_size = self.m.Reg('_'.join(['', self.name, 'write_cur_size']),
-                              self.addrwidth + 1, initval=0)
-        rest_size = self.m.Reg('_'.join(['', self.name, 'write_rest_size']),
-                               self.addrwidth + 1, initval=0)
+        cur_global_size = self.m.Reg('_'.join(['', self.name, 'write_cur_global_size']),
+                                     self.addrwidth + 1, initval=0)
+        cont = self.m.Reg('_'.join(['', self.name, 'write_cont']), initval=0)
         max_burstlen = 2 ** self.burst_size_width
 
-        # state 0
-        if not self.use_global_base_addr:
-            gaddr = self.write_global_addr
-        else:
-            gaddr = self.write_global_addr + self.global_base_addr
-
-        fsm.If(self.write_start)(
-            cur_global_addr(self.mask_addr(gaddr)),
-            rest_size(self.write_size)
+        # Req state 0
+        self.seq.If(req_fsm.here, self.write_start)(
+            self.write_req_idle(0)
         )
-        fsm.If(self.write_start).goto_next()
-
-        # state 1
-        check_state = fsm.current
-        self._check_4KB_boundary(fsm, max_burstlen,
-                                 cur_global_addr, cur_size, rest_size)
-
-        # state 2
-        ack, counter = self.write_request_counter(cur_global_addr, cur_size, cond=fsm)
-        self.write_data_counter = counter
-        fsm.If(ack).goto_next()
-
-        # state 3
-        cond = fsm.here
-        data, last, _id, user, dest, done = self.in_streamout.read_dataflow(cond=cond)
-        done_out = self.write_dataflow(data, counter, cond=cond)
-        self.write_data_done.assign(done_out)
-
-        fsm.If(self.write_data_done)(
-            cur_global_addr.add(optimize(cur_size * (self.datawidth // 8)))
-        )
-        fsm.If(self.write_data_done, rest_size > 0).goto(check_state)
-        fsm.If(self.write_data_done, rest_size == 0).goto_next()
-
-        # state 4
-        set_idle = self._set_flag(fsm)
-        self.seq.If(set_idle)(
-            self.write_idle(1)
+        self.seq.If(self.write_start, self.write_req_fifo.almost_full)(
+            self.write_start(1)
         )
 
-        fsm.goto_init()
+        enq_cond = vtypes.Ands(req_fsm.here, self.write_start,
+                               vtypes.Not(self.write_req_fifo.almost_full))
+        _ = self.write_req_fifo.enq_rtl(self.write_global_size,
+                                        cond=enq_cond)
 
+        check_cond = vtypes.Ands(req_fsm.here, vtypes.Ors(self.write_start, cont),
+                                 vtypes.Not(self.write_req_fifo.almost_full))
+        self._check_4KB_boundary(req_fsm, max_burstlen,
+                                 self.write_global_addr, cur_global_size, self.write_global_size,
+                                 cond=check_cond)
+        req_fsm.If(check_cond).goto_next()
 
-class AXIM2(AXIM_for_AXIStreamIn):
+        # Req state 1
+        enq_cond = vtypes.Ands(req_fsm.here,
+                               vtypes.Not(self.write_req_fifo.almost_full),
+                               vtypes.Ors(self.waddr.awready, vtypes.Not(self.waddr.awvalid)),
+                               self.write_acceptable())
+        _ = self.write_req_fifo.enq_rtl(cur_global_size,
+                                        cond=enq_cond)
 
-    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
-                 waddr_id_width=0, wdata_id_width=0, wresp_id_width=0,
-                 raddr_id_width=0, rdata_id_width=0,
-                 waddr_user_width=2, wdata_user_width=0, wresp_user_width=0,
-                 raddr_user_width=2, rdata_user_width=0,
-                 waddr_burst_mode=axi.BURST_INCR, raddr_burst_mode=axi.BURST_INCR,
-                 waddr_cache_mode=axi.AxCACHE_NONCOHERENT, raddr_cache_mode=axi.AxCACHE_NONCOHERENT,
-                 waddr_prot_mode=axi.AxPROT_NONCOHERENT, raddr_prot_mode=axi.AxPROT_NONCOHERENT,
-                 waddr_user_mode=axi.AxUSER_NONCOHERENT, wdata_user_mode=axi.xUSER_DEFAULT,
-                 raddr_user_mode=axi.AxUSER_NONCOHERENT,
-                 noio=False,
-                 enable_async=True, use_global_base_addr=False,
-                 num_cmd_delay=0, num_data_delay=0,
-                 op_sel_width=8, fsm_as_module=False):
+        req_cond = vtypes.Ands(req_fsm.here,
+                               vtypes.Not(self.write_req_fifo.almost_full),
+                               self.write_acceptable())
+        ack = self.write_request(self.write_global_addr, cur_global_size, cond=req_cond)
+        req_fsm.If(enq_cond)(
+            self.write_global_addr.add(optimize(cur_global_size * (self.datawidth // 8))),
+            cont(1)
+        )
+        req_fsm.If(enq_cond, self.write_global_size == 0)(
+            cont(0)
+        )
+        self.seq.If(req_fsm.here, enq_cond, self.write_global_size == 0)(
+            self.write_req_idle(1)
+        )
+        req_fsm.If(enq_cond).goto_init()
 
-        streamin = AXIStreamIn(m, '_'.join(['', name, 'streamin']), clk, rst, datawidth, addrwidth,
-                               with_last=True, with_strb=False,
-                               id_width=rdata_id_width, user_width=rdata_user_width, dest_width=0,
-                               noio=True,
-                               enable_async=enable_async,
-                               num_cmd_delay=num_cmd_delay, num_data_delay=num_data_delay,
-                               op_sel_width=op_sel_width, fsm_as_module=fsm_as_module)
+    def _synthesize_write_data_fsm(self):
 
-        AXIM.__init__(self, m, name, clk, rst, datawidth, addrwidth,
-                      waddr_id_width, wdata_id_width, wresp_id_width,
-                      raddr_id_width, rdata_id_width,
-                      waddr_user_width, wdata_user_width, wresp_user_width,
-                      raddr_user_width, rdata_user_width,
-                      waddr_burst_mode, raddr_burst_mode,
-                      waddr_cache_mode, raddr_cache_mode,
-                      waddr_prot_mode, raddr_prot_mode,
-                      waddr_user_mode, wdata_user_mode,
-                      raddr_user_mode,
-                      noio,
-                      enable_async, use_global_base_addr,
-                      num_cmd_delay, num_data_delay,
-                      op_sel_width, fsm_as_module)
+        # Data FSM
+        if self.write_data_fsm is not None:
+            return
 
-        self.streamin = streamin
-        self.streamin.connect_master_rdata(self)
+        data_fsm = FSM(self.m, '_'.join(['', self.name, 'write_data_fsm']),
+                       self.clk, self.rst, as_module=self.fsm_as_module)
+        self.write_data_fsm = data_fsm
 
-    def dma_read(self, fsm, ram, local_addr, global_addr, size,
-                 local_stride=1, port=0, ram_method=None):
+        # Data state 0
+        cond = vtypes.Ands(self.write_data_idle,
+                           vtypes.Not(self.write_req_fifo.empty))
+        count = self.m.TmpReg(self.addrwidth + 1, initval=0,
+                              prefix='_'.join(['', self.name, 'write_count']))
+        self.seq.If(data_fsm.here, cond)(
+            self.write_data_idle(0),
+            self.write_size_buf(0),
+            count(self.write_size_fifo)
+        )
+        deq_cond = vtypes.Ands(data_fsm.here, cond)
+        _ = self.write_req_fifo.deq_rtl(cond=deq_cond)
+        data_fsm.If(cond).goto_next()
 
-        if ram_method is None:
-            ram_method = getattr(ram, 'write_dataflow')
+        # Data state 1
+        cond = vtypes.Ands(vtypes.Not(self.write_req_fifo.empty),
+                           self.write_size_buf == 0)
+        self.seq.If(data_fsm.here, cond)(
+            self.write_size_buf(self.write_size_fifo),
+        )
+        deq_cond = vtypes.Ands(data_fsm.here, cond)
+        _ = self.write_req_fifo.deq_rtl(cond=deq_cond)
 
-        ram_method_name = (ram_method.func.__name__
-                           if isinstance(ram_method, functools.partial) else
-                           ram_method.__name__)
-        ram_datawidth = (ram.datawidth if ram_method is None else
-                         ram.orig_datawidth if 'bcast' in ram_method_name else
-                         ram.orig_datawidth if 'block' in ram_method_name else
-                         ram.datawidth)
+        rready = vtypes.Ands(vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid)),
+                             self.write_size_buf > 0)
+        _ = self.streamin.read_data(cond=rready)
 
-        if ram_datawidth == self.datawidth:
-            dma_size = size
-        elif ram_datawidth > self.datawidth:
-            pack_size = ram_datawidth // self.datawidth
-            dma_size = (size << int(math.log(pack_size, 2))
-                        if math.log(pack_size, 2) % 1.0 == 0.0 else
-                        size * pack_size)
-        else:
-            pack_size = self.datawidth // ram_datawidth
-            shamt = int(math.log(pack_size, 2))
-            res = vtypes.Mux(
-                vtypes.And(size, 2 ** shamt - 1) > 0, 1, 0)
-            dma_size = (size >> shamt) + res
+        wlast = self.write_size_buf <= 1
+        wcond = vtypes.Ands(self.streamin.tdata.tvalid, rready)
+        _ = self.write_data(self.streamin.tdata.tdata, wlast, cond=wcond)
 
-        AXIM_for_AXIStreamIn.dma_read_async(self, fsm, global_addr, dma_size)
-        self.streamin.write_ram(fsm, ram, local_addr, size,
-                                local_stride, port, ram_method)
+        self.seq.If(data_fsm.here, self.streamin.tdata.tvalid, rready)(
+            self.write_size_buf.dec(),
+            count.dec()
+        )
 
-    def dma_read_async(self, fsm, ram, local_addr, global_addr, size,
-                       local_stride=1, port=0, ram_method=None):
-
-        if ram_method is None:
-            ram_method = getattr(ram, 'write_dataflow')
-
-        ram_method_name = (ram_method.func.__name__
-                           if isinstance(ram_method, functools.partial) else
-                           ram_method.__name__)
-        ram_datawidth = (ram.datawidth if ram_method is None else
-                         ram.orig_datawidth if 'bcast' in ram_method_name else
-                         ram.orig_datawidth if 'block' in ram_method_name else
-                         ram.datawidth)
-
-        if ram_datawidth == self.datawidth:
-            dma_size = size
-        elif ram_datawidth > self.datawidth:
-            pack_size = ram_datawidth // self.datawidth
-            dma_size = (size << int(math.log(pack_size, 2))
-                        if math.log(pack_size, 2) % 1.0 == 0.0 else
-                        size * pack_size)
-        else:
-            pack_size = self.datawidth // ram_datawidth
-            shamt = int(math.log(pack_size, 2))
-            res = vtypes.Mux(
-                vtypes.And(size, 2 ** shamt - 1) > 0, 1, 0)
-            dma_size = (size >> shamt) + res
-
-        AXIM_for_AXIStreamIn.dma_read_async(self, fsm, global_addr, dma_size)
-        self.streamin.write_ram_async(fsm, ram, local_addr, size,
-                                      local_stride, port, ram_method)
+        data_fsm.If(wcond, count == 1).goto_init()
+        self.seq.If(data_fsm.here, wcond, count == 1)(
+            self.write_data_idle(1)
+        )
