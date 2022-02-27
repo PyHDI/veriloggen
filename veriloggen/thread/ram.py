@@ -50,6 +50,13 @@ class RAM(_MutexFunction):
         for interface in self.interfaces:
             interface.wdata.no_write_check = True
 
+        # default values
+        for i, interface in enumerate(self.interfaces):
+            if i not in external_ports:
+                interface.wdata.assign(vtypes.IntX())
+                interface.wenable.assign(0)
+                interface.enable.assign(0)
+
         self.definition = mkRAMDefinition(
             name, datawidth, addrwidth, numports, initvals,
             with_enable=True,
@@ -60,9 +67,6 @@ class RAM(_MutexFunction):
                                     ports=m.connect_ports(self.definition))
 
         self.seq = Seq(m, name, clk, rst)
-
-        self._write_disabled = [False for i in range(numports)]
-        self._port_disabled = [False for i in range(numports)]
 
         self.mutex = None
 
@@ -77,16 +81,6 @@ class RAM(_MutexFunction):
         if isinstance(self.addrwidth, int):
             return 2 ** self.addrwidth
         return vtypes.Int(2) ** self.addrwidth
-
-    def disable_write(self, port):
-        self.interfaces[port].wdata.connect(0)
-        self.interfaces[port].wenable.connect(0)
-        self._write_disabled[port] = True
-
-    def disable_port(self, port):
-        self.interfaces[port].addr.connect(0)
-        self.interfaces[port].enable.connect(0)
-        self._port_disabled[port] = True
 
     def has_enable(self, port):
         return hasattr(self.interfaces[port], 'enable')
@@ -135,9 +129,6 @@ class RAM(_MutexFunction):
         """
         @return None
         """
-        if self._write_disabled[port]:
-            raise TypeError('Write disabled.')
-
         cond = make_condition(cond)
 
         if cond is not None:
@@ -367,14 +358,6 @@ class MultibankRAM(object):
         if isinstance(self.addrwidth, int):
             return (2 ** self.addrwidth) * self.numbanks
         return (vtypes.Int(2) ** self.addrwidth) * self.numbanks
-
-    def disable_write(self, port):
-        for ram in self.rams:
-            ram.disable_write(port)
-
-    def disable_port(self, port):
-        for ram in self.rams:
-            ram.disable_port(port)
 
     def has_enable(self, port):
         for ram in self.rams:
