@@ -53,6 +53,7 @@ class RAM(_MutexFunction):
         # default values
         for i, interface in enumerate(self.interfaces):
             if i not in external_ports:
+                interface.addr.assign(vtypes.IntX())
                 interface.wdata.assign(vtypes.IntX())
                 interface.wenable.assign(0)
                 interface.enable.assign(0)
@@ -88,17 +89,17 @@ class RAM(_MutexFunction):
     def connect_rtl(self, port, addr, wdata=None, wenable=None, rdata=None, enable=None):
         """ connect native signals to the internal RAM interface """
 
-        self.interfaces[port].addr.connect(addr)
+        util.overwrite_assign(self.interfaces[port].addr, addr)
         if wdata is not None:
-            self.interfaces[port].wdata.connect(wdata)
+            util.overwrite_assign(self.interfaces[port].wdata, wdata)
         if wenable is not None:
-            self.interfaces[port].wenable.connect(wenable)
+            util.overwrite_assign(self.interfaces[port].wenable, wenable)
         if rdata is not None:
             rdata.connect(self.interfaces[port].rdata)
 
         if enable is not None:
             if self.has_enable(port):
-                self.interfaces[port].enable.connect(enable)
+                util.overwrite_assign(self.interfaces[port].enable, enable)
             else:
                 raise ValueError("RAM '%s' has no enable port." % self.name)
 
