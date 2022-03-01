@@ -15,7 +15,7 @@ def mkMain():
     m = Module('main')
     clk = m.Input('CLK')
     rst = m.Input('RST')
-    sum = m.OutputReg('sum', 32, initval=0)
+    sum = m.Reg('sum', 32, initval=0)
 
     myaxi = axi.AxiLiteSlave(m, 'myaxi', clk, rst)
 
@@ -25,16 +25,15 @@ def mkMain():
     addr, readvalid, writevalid = myaxi.pull_request(cond=fsm)
     rdata = m.Reg('rdata', 32, initval=0)
     fsm.If(readvalid)(
-        rdata(addr >> 2)
+        rdata(sum + (addr >> 2)),
     )
-
     fsm.If(writevalid).goto(100)
     fsm.If(readvalid).goto_next()
 
     # read
-    ack, valid = myaxi.push_read_data(rdata, cond=fsm)
+    ack = myaxi.push_read_data(rdata, cond=fsm)
     fsm.If(ack)(
-        rdata(rdata + 1)
+        rdata(rdata + 1),
     )
     fsm.If(ack).goto_next()
 
@@ -47,7 +46,7 @@ def mkMain():
     fsm.If(valid)(
         sum(sum + data)
     )
-    fsm.Then().goto_next()
+    fsm.If(valid).goto_next()
 
     fsm.goto_init()
 
@@ -63,7 +62,6 @@ def mkTest():
     # copy paras and ports
     params = m.copy_params(main)
     ports = m.copy_sim_ports(main)
-    sum = ports['sum']
 
     clk = ports['CLK']
     rst = ports['RST']
@@ -73,78 +71,67 @@ def mkTest():
     _axi.connect(ports, 'myaxi')
 
     fsm = FSM(m, 'fsm', clk, rst)
-    rsum = m.Reg('rsum', 32, initval=0)
 
-    # read address (1)
-    araddr = 1024
-    expected_rsum = araddr // 4
+    # write request (1)
+    awaddr1 = 1024
+    ack = _axi.write_request(awaddr1, cond=fsm)
+    fsm.If(ack).goto_next()
 
-    ack = _axi.read_request(araddr, cond=fsm)
+    # write data (1)
+    wdata1 = 100
+    ack = _axi.write_data(wdata1, cond=fsm)
+
+    fsm.If(ack).goto_next()
+
+    # write request (2)
+    awaddr2 = 1024 + 1024
+    ack = _axi.write_request(awaddr2, cond=fsm)
+    fsm.If(ack).goto_next()
+
+    # write data (2)
+    wdata2 = 200
+    ack = _axi.write_data(wdata2, cond=fsm)
+
+    fsm.If(ack).goto_next()
+    fsm.If(Not(_axi.wdata.wvalid)).goto_next()
+
+    # read request (1)
+    araddr1 = 1024
+    ack = _axi.read_request(araddr1, cond=fsm)
     fsm.If(ack).goto_next()
 
     # read data (1)
     data, valid = _axi.read_data(cond=fsm)
+    sum = m.Reg('sum', width=32, initval=0)
 
     fsm.If(valid)(
-        rsum(rsum + data)
+        sum.add(data)
     )
-    fsm.Then().goto_next()
+    fsm.If(valid).goto_next()
 
-    # read address (2)
-    araddr = 1024 + 1024
-    expected_rsum += araddr // 4
-
-    ack = _axi.read_request(araddr, cond=fsm)
+    # read request (2)
+    araddr2 = 1024 + 1024
+    ack = _axi.read_request(araddr2, cond=fsm)
     fsm.If(ack).goto_next()
 
     # read data (2)
     data, valid = _axi.read_data(cond=fsm)
 
     fsm.If(valid)(
-        rsum(rsum + data)
+        sum.add(data)
     )
-    fsm.Then().goto_next()
+    fsm.If(valid).goto_next()
 
-    fsm(
-        Systask('display', 'rsum=%d expected_rsum=%d', rsum, expected_rsum)
-    )
-    fsm.goto_next()
-
-    # write address (1)
-    awaddr = 1024
-    expected_sum = 100
-
-    ack = _axi.write_request(awaddr, cond=fsm)
-    wdata = m.Reg('wdata', 32, initval=100)
-    fsm(
-        wdata(100)
-    )
-    fsm.If(ack).goto_next()
-
-    # write data (1)
-    ack = _axi.write_data(wdata, cond=fsm)
-
-    fsm.If(ack).goto_next()
-
-    # write address (2)
-    expected_sum += 200
-
-    ack = _axi.write_request(awaddr, cond=fsm)
-    fsm(
-        wdata(200)
-    )
-    fsm.If(ack).goto_next()
-
-    # write data (2)
-    ack = _axi.write_data(wdata, cond=fsm)
-
-    fsm.If(ack).goto_next()
-
-    for _ in range(10):
-        fsm.goto_next()
-
+    # verify
+    write_sum = wdata1 + wdata2
+    expected_sum = write_sum + araddr1 // 4 + write_sum + araddr2 // 4
     fsm(
         Systask('display', 'sum=%d expected_sum=%d', sum, expected_sum)
+    )
+    fsm.If(sum == expected_sum)(
+        Systask('display', '# verify: PASSED')
+    ).Else(
+        Systask('display', '# verify: FAILED')
     )
     fsm.goto_next()
 
@@ -164,13 +151,27 @@ def mkTest():
     return m
 
 
-if __name__ == '__main__':
+def run(filename='tmp.v', simtype='iverilog', outputfile=None):
+
+    if outputfile is None:
+        outputfile = os.path.splitext(os.path.basename(__file__))[0] + '.out'
+
+    # memimg_name = 'memimg_' + outputfile
+
+    # test = mkTest(memimg_name=memimg_name)
     test = mkTest()
-    verilog = test.to_verilog('tmp.v')
-    print(verilog)
 
-    sim = simulation.Simulator(test)
-    rslt = sim.run()
+    if filename is not None:
+        test.to_verilog(filename)
+
+    sim = simulation.Simulator(test, sim=simtype)
+    rslt = sim.run(outputfile=outputfile)
+    lines = rslt.splitlines()
+    if simtype == 'verilator' and lines[-1].startswith('-'):
+        rslt = '\n'.join(lines[:-1])
+    return rslt
+
+
+if __name__ == '__main__':
+    rslt = run(filename='tmp.v')
     print(rslt)
-
-    # sim.view_waveform()

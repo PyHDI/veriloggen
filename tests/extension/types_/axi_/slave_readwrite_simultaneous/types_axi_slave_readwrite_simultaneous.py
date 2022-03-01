@@ -22,32 +22,35 @@ def mkMain():
     fsm = FSM(m, 'fsm', clk, rst)
 
     # request
-    addr, counter, readvalid, writevalid = myaxi.pull_request_counter(cond=fsm)
+    addr, length, readvalid, writevalid = myaxi.pull_request(cond=fsm)
     rdata = m.Reg('rdata', 32, initval=0)
+    rlen = m.Reg('rlen', 32, initval=0)
+    rlast = rlen <= 1
     fsm.If(readvalid)(
-        rdata(addr >> 2)
+        rdata(addr >> 2),
+        rlen(length)
     )
-
     fsm.If(writevalid).goto(100)
     fsm.If(readvalid).goto_next()
 
     # read
-    ack, valid, last = myaxi.push_read_data(rdata, counter, cond=fsm)
+    ack = myaxi.push_read_data(rdata, rlast, cond=fsm)
     fsm.If(ack)(
-        rdata(rdata + 1)
+        rdata(rdata + 1),
+        rlen.dec()
     )
-    fsm.If(valid, last).goto_next()
+    fsm.If(ack, rlast).goto_next()
 
     fsm.goto_init()
 
     # write
     fsm.set_index(100)
-    data, mask, valid, last = myaxi.pull_write_data(counter, cond=fsm)
+    data, mask, valid, last = myaxi.pull_write_data(cond=fsm)
 
     fsm.If(valid)(
         sum(sum + data)
     )
-    fsm.Then().If(last).goto_next()
+    fsm.If(valid, last).goto_next()
 
     fsm.goto_init()
 
@@ -72,86 +75,95 @@ def mkTest():
 
     _axi.connect(ports, 'myaxi')
 
-    # read address (1)
+    # read
     read_fsm = FSM(m, 'read_fsm', clk, rst)
-    rsum = m.Reg('rsum', 32, initval=0)
 
-    araddr = 1024
-    arlen = 64
-    expected_rsum = (araddr // 4 + araddr // 4 + arlen - 1) * arlen // 2
-
-    ack, counter = _axi.read_request_counter(araddr, arlen, cond=read_fsm)
+    # read request (1)
+    araddr1 = 1024
+    arlen1 = 64
+    ack = _axi.read_request(araddr1, arlen1, cond=read_fsm)
     read_fsm.If(ack).goto_next()
 
     # read data (1)
-    data, valid, last = _axi.read_data(counter, cond=read_fsm)
+    data, valid, last = _axi.read_data(cond=read_fsm)
+    rsum = m.Reg('rsum', width=32, initval=0)
 
     read_fsm.If(valid)(
-        rsum(rsum + data)
+        rsum.add(data)
     )
-    read_fsm.Then().If(last).goto_next()
+    read_fsm.If(valid, last).goto_next()
 
-    # read address (2)
-    araddr = 1024 + 1024
-    arlen = 128
-    expected_rsum += (araddr // 4 + araddr // 4 + arlen - 1) * arlen // 2
-
-    ack, counter = _axi.read_request_counter(araddr, arlen, cond=read_fsm)
+    # read request (2)
+    araddr2 = 1024 + 1024
+    arlen2 = 64 + 64
+    ack = _axi.read_request(araddr2, arlen2, cond=read_fsm)
     read_fsm.If(ack).goto_next()
 
     # read data (2)
-    data, valid, last = _axi.read_data(counter, cond=read_fsm)
+    data, valid, last = _axi.read_data(cond=read_fsm)
 
     read_fsm.If(valid)(
-        rsum(rsum + data)
+        rsum.add(data)
     )
-    read_fsm.Then().If(last).goto_next()
+    read_fsm.If(valid, last).goto_next()
 
-    read_fsm(
-        Systask('display', 'rsum=%d expected_rsum=%d', rsum, expected_rsum)
-    )
-    read_fsm.goto_next()
-
-    # write address (1)
+    # write
     write_fsm = FSM(m, 'write_fsm', clk, rst)
 
-    awaddr = 1024
-    awlen = 64
-    expected_sum = ((0 + (awlen - 1)) * awlen) // 2
-
-    ack, counter = _axi.write_request_counter(awaddr, awlen, cond=write_fsm)
+    # write request (1)
+    awaddr1 = 1024
+    awlen1 = 64
+    ack = _axi.write_request(awaddr1, awlen1, cond=write_fsm)
     write_fsm.If(ack).goto_next()
 
     # write data (1)
-    wdata = m.Reg('wdata', 32, initval=0)
-
-    ack, last = _axi.write_data(wdata, counter, cond=write_fsm)
+    wdata1 = m.Reg('wdata1', 32, initval=0)
+    wlast1 = wdata1 == awlen1 - 1
+    ack = _axi.write_data(wdata1, wlast1, cond=write_fsm)
 
     write_fsm.If(ack)(
-        wdata.inc()
+        wdata1.inc()
     )
-    write_fsm.If(last).goto_next()
+    write_fsm.If(ack, wlast1).goto_next()
 
-    # write address (2)
-    prev_awlen = awlen
-    awlen = 128
-    expected_sum += ((prev_awlen + (prev_awlen + awlen - 1)) * awlen) // 2
-
-    ack, counter = _axi.write_request_counter(awaddr, awlen, cond=write_fsm)
+    # write request (2)
+    awaddr2 = 1024 + 1024
+    awlen2 = 64 + 64
+    ack = _axi.write_request(awaddr2, awlen2, cond=write_fsm)
     write_fsm.If(ack).goto_next()
 
     # write data (2)
-    ack, last = _axi.write_data(wdata, counter, cond=write_fsm)
+    wdata2 = m.Reg('wdata2', 32, initval=0)
+    wlast2 = wdata2 == awlen2 - 1
+    ack = _axi.write_data(wdata2, wlast2, cond=write_fsm)
 
     write_fsm.If(ack)(
-        wdata.inc()
+        wdata2.inc()
     )
-    write_fsm.If(last).goto_next()
+    write_fsm.If(ack, wlast2).goto_next()
+    write_fsm.If(Not(_axi.wdata.wvalid)).goto_next()
 
-    write_fsm(
-        Systask('display', 'sum=%d expected_sum=%d', sum, expected_sum)
+    # verify
+    fsm = FSM(m, 'fsm', clk, rst)
+    fsm.If(read_fsm.here, write_fsm.here).goto_next()
+
+    expected_rsum = (((araddr1 // 4 + araddr1 // 4 + arlen1 - 1) * arlen1 // 2) +
+                     ((araddr2 // 4 + araddr2 // 4 + arlen2 - 1) * arlen2 // 2))
+    expected_wsum = (((0 + awlen1 - 1) * awlen1) // 2 +
+                     ((0 + awlen2 - 1) * awlen2) // 2)
+
+    fsm(
+        Systask('display', 'rsum=%d expected_rsum=%d', rsum, expected_rsum)
     )
-    write_fsm.goto_next()
+    fsm(
+        Systask('display', 'wsum=%d expected_wsum=%d', sum, expected_wsum)
+    )
+    fsm.If(rsum == expected_rsum, sum == expected_wsum)(
+        Systask('display', '# verify: PASSED')
+    ).Else(
+        Systask('display', '# verify: FAILED')
+    )
+    fsm.goto_next()
 
     uut = m.Instance(main, 'uut',
                      params=m.connect_params(main),
@@ -169,13 +181,27 @@ def mkTest():
     return m
 
 
-if __name__ == '__main__':
+def run(filename='tmp.v', simtype='iverilog', outputfile=None):
+
+    if outputfile is None:
+        outputfile = os.path.splitext(os.path.basename(__file__))[0] + '.out'
+
+    # memimg_name = 'memimg_' + outputfile
+
+    # test = mkTest(memimg_name=memimg_name)
     test = mkTest()
-    verilog = test.to_verilog('tmp.v')
-    print(verilog)
 
-    sim = simulation.Simulator(test)
-    rslt = sim.run()
+    if filename is not None:
+        test.to_verilog(filename)
+
+    sim = simulation.Simulator(test, sim=simtype)
+    rslt = sim.run(outputfile=outputfile)
+    lines = rslt.splitlines()
+    if simtype == 'verilator' and lines[-1].startswith('-'):
+        rslt = '\n'.join(lines[:-1])
+    return rslt
+
+
+if __name__ == '__main__':
+    rslt = run(filename='tmp.v')
     print(rslt)
-
-    # sim.view_waveform()

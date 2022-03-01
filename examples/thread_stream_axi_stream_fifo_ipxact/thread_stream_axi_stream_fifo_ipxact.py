@@ -74,8 +74,8 @@ def mkLed():
 
             maxi.dma_read(ram_b, 0, bias_addr, write_size)
 
-            axi_in.write_fifo(fifo_a, read_size)
-            axi_out.read_fifo(fifo_c, write_size)
+            axi_in.dma_read_async(fifo_a, read_size)
+            axi_out.dma_write_async(fifo_c, write_size)
 
             strm0.set_source_fifo('a', fifo_a, read_size)
             strm0.set_parameter('reduce_size', reduce_size)

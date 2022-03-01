@@ -23,16 +23,16 @@ def mkMain():
     fsm = FSM(m, 'fsm', clk, rst)
 
     # write address
-    addr, counter, valid = myaxi.pull_write_request_counter(cond=fsm)
+    addr, length, valid = myaxi.pull_write_request(cond=fsm)
     fsm.If(valid).goto_next()
 
     # write data
-    data, mask, valid, last = myaxi.pull_write_data(counter, cond=fsm)
+    data, mask, valid, last = myaxi.pull_write_data(cond=fsm)
 
     fsm.If(valid)(
         sum(sum + data)
     )
-    fsm.Then().If(last).goto_next()
+    fsm.If(valid, last).goto_next()
 
     fsm.goto_init()
 
@@ -60,42 +60,52 @@ def mkTest():
 
     fsm = FSM(m, 'fsm', clk, rst)
 
-    # write address (1)
-    awaddr = 1024
-    awlen = 64
-    expected_sum = ((0 + (awlen - 1)) * awlen) // 2
+    for i in range(100):
+        fsm.goto_next()
 
-    ack, counter = _axi.write_request_counter(awaddr, awlen, cond=fsm)
+    # write request (1)
+    awaddr1 = 1024
+    awlen1 = 64
+    ack = _axi.write_request(awaddr1, awlen1, cond=fsm)
     fsm.If(ack).goto_next()
 
     # write data (1)
-    wdata = m.Reg('wdata', 32, initval=0)
-
-    ack, last = _axi.write_data(wdata, counter, cond=fsm)
+    wdata1 = m.Reg('wdata1', 32, initval=0)
+    wlast1 = wdata1 == awlen1 - 1
+    ack = _axi.write_data(wdata1, wlast1, cond=fsm)
 
     fsm.If(ack)(
-        wdata.inc()
+        wdata1.inc()
     )
-    fsm.If(last).goto_next()
+    fsm.If(ack, wlast1).goto_next()
 
-    # write address (2)
-    prev_awlen = awlen
-    awlen = 128
-    expected_sum += ((prev_awlen + (prev_awlen + awlen - 1)) * awlen) // 2
-
-    ack, counter = _axi.write_request_counter(awaddr, awlen, cond=fsm)
+    # write request (2)
+    awaddr2 = 1024 + 1024
+    awlen2 = 64 + 64
+    ack = _axi.write_request(awaddr2, awlen2, cond=fsm)
     fsm.If(ack).goto_next()
 
     # write data (2)
-    ack, last = _axi.write_data(wdata, counter, cond=fsm)
+    wdata2 = m.Reg('wdata2', 32, initval=0)
+    wlast2 = wdata2 == awlen2 - 1
+    ack = _axi.write_data(wdata2, wlast2, cond=fsm)
 
     fsm.If(ack)(
-        wdata.inc()
+        wdata2.inc()
     )
-    fsm.If(last).goto_next()
+    fsm.If(ack, wlast2).goto_next()
+    fsm.If(Not(_axi.wdata.wvalid)).goto_next()
 
+    # verify
+    expected_sum = (((0 + awlen1 - 1) * awlen1) // 2 +
+                    ((0 + awlen2 - 1) * awlen2) // 2)
     fsm(
         Systask('display', 'sum=%d expected_sum=%d', sum, expected_sum)
+    )
+    fsm.If(sum == expected_sum)(
+        Systask('display', '# verify: PASSED')
+    ).Else(
+        Systask('display', '# verify: FAILED')
     )
     fsm.goto_next()
 
@@ -115,13 +125,27 @@ def mkTest():
     return m
 
 
-if __name__ == '__main__':
+def run(filename='tmp.v', simtype='iverilog', outputfile=None):
+
+    if outputfile is None:
+        outputfile = os.path.splitext(os.path.basename(__file__))[0] + '.out'
+
+    # memimg_name = 'memimg_' + outputfile
+
+    # test = mkTest(memimg_name=memimg_name)
     test = mkTest()
-    verilog = test.to_verilog('tmp.v')
-    print(verilog)
 
-    sim = simulation.Simulator(test)
-    rslt = sim.run()
+    if filename is not None:
+        test.to_verilog(filename)
+
+    sim = simulation.Simulator(test, sim=simtype)
+    rslt = sim.run(outputfile=outputfile)
+    lines = rslt.splitlines()
+    if simtype == 'verilator' and lines[-1].startswith('-'):
+        rslt = '\n'.join(lines[:-1])
+    return rslt
+
+
+if __name__ == '__main__':
+    rslt = run(filename='tmp.v')
     print(rslt)
-
-    # sim.view_waveform()

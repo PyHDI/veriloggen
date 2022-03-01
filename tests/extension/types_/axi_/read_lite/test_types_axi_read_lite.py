@@ -3,7 +3,7 @@ from __future__ import print_function
 
 import os
 import veriloggen
-import types_axi_slave_read
+import types_axi_read_lite
 
 
 def test(request):
@@ -11,8 +11,8 @@ def test(request):
 
     simtype = request.config.getoption('--sim')
 
-    rslt = types_axi_slave_read.run(filename=None, simtype=simtype,
-                                    outputfile=os.path.splitext(os.path.basename(__file__))[0] + '.out')
+    rslt = types_axi_read_lite.run(filename=None, simtype=simtype,
+                                   outputfile=os.path.splitext(os.path.basename(__file__))[0] + '.out')
 
     verify_rslt = rslt.splitlines()[-1]
     assert(verify_rslt == '# verify: PASSED')
