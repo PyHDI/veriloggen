@@ -135,15 +135,15 @@ class RAMInterface(object):
             self.enable = util.make_port(m, itype, name_enable, initval=0)
 
     def connect(self, targ):
-        self.addr.connect(targ.addr)
-        targ.rdata.connect(self.rdata)
-        self.wdata.connect(targ.wdata)
-        self.wenable.connect(targ.wenable)
+        util.overwrite_assign(self.addr, targ.addr)
+        util.overwrite_assign(targ.rdata, self.rdata)
+        util.overwrite_assign(self.wdata, targ.wdata)
+        util.overwrite_assign(self.wenable, targ.wenable)
         if hasattr(self, 'enable'):
             if hasattr(targ, 'enable'):
-                self.enable.connect(targ.enable)
+                util.overwrite_assign(self.enable, targ.enable)
             else:
-                self.enable.connect(1)
+                util.overwrite_assign(self.enable, 1)
         else:
             if hasattr(targ, 'enable'):
                 raise ValueError('no enable port')
