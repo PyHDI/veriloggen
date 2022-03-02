@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 import sys
 import os
+
 # the next line can be removed after installation
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
@@ -17,87 +18,26 @@ def mkLed():
     rst = m.Input('RST')
 
     datawidth = 32
-    addrwidth = 10
-    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
-    myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth)
+    saxi = vthread.AXISRegister(m, 'saxi', clk, rst, datawidth, length=4)
 
-    saxi = vthread.AXISRegister(m, 'saxi', clk, rst, datawidth)
+    def blink():
 
-    all_ok = m.TmpReg(initval=0)
+        while True:
+            saxi.wait_flag(0, value=1, resetvalue=0)
+            saxi.write(1, 1)  # set busy
+            size = saxi.read(2)
 
-    def blink(size):
-        # wait start
-        saxi.wait_flag(0, value=1, resetvalue=0)
-        # reset done
-        saxi.write(1, 0)
+            sum = 0
+            for i in range(size):
+                sum += i
 
-        all_ok.value = True
+            saxi.write(3, sum)
+            saxi.write(1, 0)  # unset busy
 
-        for i in range(4):
-            print('# iter %d start' % i)
-            # Test for 4KB boundary check
-            offset = i * 1024 * 16 + (myaxi.boundary_size - 4)
-            body(size, offset)
-            print('# iter %d end' % i)
-
-        if all_ok:
-            print('# verify (local): PASSED')
-        else:
-            print('# verify (local): FAILED')
-
-        # result
-        saxi.write(2, all_ok)
-
-        # done
-        saxi.write_flag(1, 1, resetvalue=0)
-
-    def body(size, offset):
-        # write
-        for i in range(size):
-            wdata = i + 100
-            myram.write(i, wdata)
-
-        laddr = 0
-        gaddr = offset
-        myaxi.dma_write(myram, laddr, gaddr, size)
-        print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
-
-        # write
-        for i in range(size):
-            wdata = i + 1000
-            myram.write(i, wdata)
-
-        laddr = 0
-        gaddr = (size + size) * 4 + offset
-        myaxi.dma_write(myram, laddr, gaddr, size)
-        print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
-
-        # read
-        laddr = 0
-        gaddr = offset
-        myaxi.dma_read(myram, laddr, gaddr, size)
-        print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
-
-        for i in range(size):
-            rdata = myram.read(i)
-            if vthread.verilog.NotEql(rdata, i + 100):
-                print('rdata[%d] = %d' % (i, rdata))
-                all_ok.value = False
-
-        # read
-        laddr = 0
-        gaddr = (size + size) * 4 + offset
-        myaxi.dma_read(myram, laddr, gaddr, size)
-        print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
-
-        for i in range(size):
-            rdata = myram.read(i)
-            if vthread.verilog.NotEql(rdata, i + 1000):
-                print('rdata[%d] = %d' % (i, rdata))
-                all_ok.value = False
+        vthread.finish()
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
-    fsm = th.start(16)
+    fsm = th.start()
 
     return m
 
@@ -115,28 +55,46 @@ def mkTest(memimg_name=None):
     clk = ports['CLK']
     rst = ports['RST']
 
-    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memimg_name=memimg_name)
-    memory.connect(ports, 'myaxi')
+    # memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memimg_name=memimg_name)
+    # memory.connect(ports, 'myaxi')
 
     # AXI-Slave controller
     _saxi = vthread.AXIMVerify(m, '_saxi', clk, rst, noio=True)
     _saxi.connect(ports, 'saxi')
 
+    k = 100
+    expected_sum = 0
+    for i in range(k):
+        expected_sum += i
+
     def ctrl():
         for i in range(100):
             pass
 
+        # size
+        awaddr = 8
+        _saxi.write_delayed(awaddr, k, 10)
+
+        # start
         awaddr = 0
         _saxi.write_delayed(awaddr, 1, 10)
 
+        for _ in range(10):
+            pass
+
+        # busy check
         araddr = 4
         v = _saxi.read_delayed(araddr, 10)
-        while v == 0:
+        while v != 0:
             v = _saxi.read_delayed(araddr, 10)
 
-        araddr = 8
+        # result
+        araddr = 12
         v = _saxi.read_delayed(araddr, 10)
-        if v:
+
+        print('result = %d, expected = %d' % (v, expected_sum))
+
+        if v == expected_sum:
             print('# verify: PASSED')
         else:
             print('# verify: FAILED')
