@@ -169,22 +169,22 @@ module blinkled
   reg prev_arvalid_12;
   assign saxi_awready = (_saxi_register_fsm == 0) && (!writevalid_9 && !readvalid_10 && !saxi_bvalid && prev_awvalid_11);
   assign saxi_arready = (_saxi_register_fsm == 0) && (!readvalid_10 && !writevalid_9 && prev_arvalid_12 && !prev_awvalid_11);
-  reg [_saxi_maskwidth-1:0] _tmp_13;
+  reg [_saxi_maskwidth-1:0] axis_maskaddr_13;
   wire signed [32-1:0] axislite_rdata_14;
-  assign axislite_rdata_14 = (_tmp_13 == 0)? _saxi_register_0 : 
-                             (_tmp_13 == 1)? _saxi_register_1 : 
-                             (_tmp_13 == 2)? _saxi_register_2 : 
-                             (_tmp_13 == 3)? _saxi_register_3 : 'hx;
+  assign axislite_rdata_14 = (axis_maskaddr_13 == 0)? _saxi_register_0 : 
+                             (axis_maskaddr_13 == 1)? _saxi_register_1 : 
+                             (axis_maskaddr_13 == 2)? _saxi_register_2 : 
+                             (axis_maskaddr_13 == 3)? _saxi_register_3 : 'hx;
   wire axislite_flag_15;
-  assign axislite_flag_15 = (_tmp_13 == 0)? _saxi_flag_0 : 
-                            (_tmp_13 == 1)? _saxi_flag_1 : 
-                            (_tmp_13 == 2)? _saxi_flag_2 : 
-                            (_tmp_13 == 3)? _saxi_flag_3 : 'hx;
+  assign axislite_flag_15 = (axis_maskaddr_13 == 0)? _saxi_flag_0 : 
+                            (axis_maskaddr_13 == 1)? _saxi_flag_1 : 
+                            (axis_maskaddr_13 == 2)? _saxi_flag_2 : 
+                            (axis_maskaddr_13 == 3)? _saxi_flag_3 : 'hx;
   wire signed [32-1:0] axislite_resetval_16;
-  assign axislite_resetval_16 = (_tmp_13 == 0)? _saxi_resetval_0 : 
-                                (_tmp_13 == 1)? _saxi_resetval_1 : 
-                                (_tmp_13 == 2)? _saxi_resetval_2 : 
-                                (_tmp_13 == 3)? _saxi_resetval_3 : 'hx;
+  assign axislite_resetval_16 = (axis_maskaddr_13 == 0)? _saxi_resetval_0 : 
+                                (axis_maskaddr_13 == 1)? _saxi_resetval_1 : 
+                                (axis_maskaddr_13 == 2)? _saxi_resetval_2 : 
+                                (axis_maskaddr_13 == 3)? _saxi_resetval_3 : 'hx;
   reg _saxi_cond_0_1;
   assign saxi_wready = _saxi_register_fsm == 2;
   reg [32-1:0] th_comp;
@@ -324,32 +324,32 @@ module blinkled
       if(saxi_rvalid && !saxi_rready) begin
         saxi_rvalid <= saxi_rvalid;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_15 && (_tmp_13 == 0)) begin
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_15 && (axis_maskaddr_13 == 0)) begin
         _saxi_register_0 <= axislite_resetval_16;
         _saxi_flag_0 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_15 && (_tmp_13 == 1)) begin
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_15 && (axis_maskaddr_13 == 1)) begin
         _saxi_register_1 <= axislite_resetval_16;
         _saxi_flag_1 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_15 && (_tmp_13 == 2)) begin
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_15 && (axis_maskaddr_13 == 2)) begin
         _saxi_register_2 <= axislite_resetval_16;
         _saxi_flag_2 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_15 && (_tmp_13 == 3)) begin
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_15 && (axis_maskaddr_13 == 3)) begin
         _saxi_register_3 <= axislite_resetval_16;
         _saxi_flag_3 <= 0;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (_tmp_13 == 0)) begin
+      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_13 == 0)) begin
         _saxi_register_0 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (_tmp_13 == 1)) begin
+      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_13 == 1)) begin
         _saxi_register_1 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (_tmp_13 == 2)) begin
+      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_13 == 2)) begin
         _saxi_register_2 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (_tmp_13 == 3)) begin
+      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_13 == 3)) begin
         _saxi_register_3 <= saxi_wdata;
       end 
       if((_saxi_register_0 == 1) && (th_comp == 2) && 1) begin
@@ -405,11 +405,12 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       _saxi_register_fsm <= _saxi_register_fsm_init;
+      axis_maskaddr_13 <= 0;
     end else begin
       case(_saxi_register_fsm)
         _saxi_register_fsm_init: begin
           if(readvalid_10 || writevalid_9) begin
-            _tmp_13 <= (addr_8 >> _saxi_shift) & _saxi_mask;
+            axis_maskaddr_13 <= (addr_8 >> _saxi_shift) & _saxi_mask;
           end 
           if(readvalid_10) begin
             _saxi_register_fsm <= _saxi_register_fsm_1;
