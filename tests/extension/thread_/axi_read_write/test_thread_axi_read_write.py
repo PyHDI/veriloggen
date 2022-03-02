@@ -3,7 +3,7 @@ from __future__ import print_function
 
 import os
 import veriloggen
-import types_axi_ram_to_axi
+import thread_axi_read_write
 
 
 def test(request):
@@ -11,8 +11,8 @@ def test(request):
 
     simtype = request.config.getoption('--sim')
 
-    rslt = types_axi_ram_to_axi.run(filename=None, simtype=simtype,
-                                    outputfile=os.path.splitext(os.path.basename(__file__))[0] + '.out')
+    rslt = thread_axi_read_write.run(filename=None, simtype=simtype,
+                                     outputfile=os.path.splitext(os.path.basename(__file__))[0] + '.out')
 
     verify_rslt = rslt.splitlines()[-1]
     assert(verify_rslt == '# verify: PASSED')

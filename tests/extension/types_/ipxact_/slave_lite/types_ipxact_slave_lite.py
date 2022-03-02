@@ -33,11 +33,11 @@ def mkMain():
     fsm.If(valid).goto_next()
 
     # read rdata
-    ack, valid = myaxi.push_read_data(rdata, cond=fsm)
+    ack = myaxi.push_read_data(rdata, cond=fsm)
     fsm.If(ack)(
         rdata(rdata + 1)
     )
-    fsm.Then().goto_next()
+    fsm.If(ack).goto_next()
 
     fsm.goto_init()
 
@@ -63,40 +63,43 @@ def mkTest():
     _axi.connect(ports, 'myaxi')
 
     fsm = FSM(m, 'fsm', clk, rst)
-    sum = m.Reg('sum', 32, initval=0)
 
     # read address (1)
-    araddr = 1024
-    expected_sum = araddr // 4
-
-    ack = _axi.read_request(araddr, cond=fsm)
+    araddr1 = 1024
+    ack = _axi.read_request(araddr1, cond=fsm)
     fsm.If(ack).goto_next()
 
     # read data (1)
     data, valid = _axi.read_data(cond=fsm)
+    sum = m.Reg('sum', 32, initval=0)
 
     fsm.If(valid)(
-        sum(sum + data)
+        sum.add(data)
     )
-    fsm.Then().goto_next()
+    fsm.If(valid).goto_next()
 
     # read address (2)
-    araddr = 1024 + 1024
-    expected_sum += araddr // 4
-
-    ack = _axi.read_request(araddr, cond=fsm)
+    araddr2 = 1024 + 1024
+    ack = _axi.read_request(araddr2, cond=fsm)
     fsm.If(ack).goto_next()
 
     # read data (2)
     data, valid = _axi.read_data(cond=fsm)
 
     fsm.If(valid)(
-        sum(sum + data)
+        sum.add(data)
     )
-    fsm.Then().goto_next()
+    fsm.If(valid).goto_next()
 
+    # verify
+    expected_sum = araddr1 // 4 + araddr2 // 4
     fsm(
         Systask('display', 'sum=%d expected_sum=%d', sum, expected_sum)
+    )
+    fsm.If(sum == expected_sum)(
+        Systask('display', '# verify: PASSED')
+    ).Else(
+        Systask('display', '# verify: FAILED')
     )
     fsm.goto_next()
 
@@ -116,15 +119,32 @@ def mkTest():
     return m
 
 
-if __name__ == '__main__':
-    test = mkTest()
-    verilog = test.to_verilog('tmp.v')
-    print(verilog)
+def run(filename='tmp.v', simtype='iverilog', outputfile=None):
 
-    sim = simulation.Simulator(test)
-    rslt = sim.run()
+    if outputfile is None:
+        outputfile = os.path.splitext(os.path.basename(__file__))[0] + '.out'
+
+    # memimg_name = 'memimg_' + outputfile
+
+    # test = mkTest(memimg_name=memimg_name)
+    test = mkTest()
+
+    if filename is not None:
+        test.to_verilog(filename)
+
+    sim = simulation.Simulator(test, sim=simtype)
+    rslt = sim.run(outputfile=outputfile)
+    lines = rslt.splitlines()
+    if simtype == 'verilator' and lines[-1].startswith('-'):
+        rslt = '\n'.join(lines[:-1])
+    return rslt
+
+
+if __name__ == '__main__':
+    rslt = run(filename='tmp.v')
     print(rslt)
 
+    # IP-XACT
     m = mkMain()
     ipxact.to_ipxact(m,
                      clk_ports=[('CLK', ('RST',))],

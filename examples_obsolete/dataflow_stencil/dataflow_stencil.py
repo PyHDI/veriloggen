@@ -119,7 +119,6 @@ def mkStencil(n=16, size=3, datawidth=32, point=16, coe_test=False):
     idata = []
     ivalid = []
     for i, src_ram in enumerate(src_rams):
-        src_ram.disable_write(0)
         rdata, rvalid = src_ram.read_rtl(read_addr, port=0, cond=read_fsm)
         idata.append(rdata)
         ivalid.append(rvalid)

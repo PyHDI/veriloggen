@@ -31,11 +31,16 @@ def mkLed(word_datawidth=128):
     maxi_in = vthread.AXIM_for_AXIStreamIn(axi_in, 'maxi_in')
     maxi_out = vthread.AXIM_for_AXIStreamOut(axi_out, 'maxi_out')
 
-    fifo_addrwidth = 8
+    fifo_addrwidth = 4
     fifo_in = vthread.FIFO(m, 'fifo_in', clk, rst, word_datawidth, fifo_addrwidth)
     fifo_out = vthread.FIFO(m, 'fifo_out', clk, rst, word_datawidth, fifo_addrwidth)
 
-    all_ok = m.TmpReg(initval=0)
+    tmp_value = m.TmpReg(width=word_datawidth, initval=0, prefix='tmp_value')
+
+    all_ok = m.TmpReg(initval=0, prefix='all_ok')
+    wdata = m.TmpReg(width=word_datawidth, initval=0, prefix='wdata')
+    rdata0 = m.TmpReg(width=word_datawidth, initval=0, prefix='rdata0')
+    rdata1 = m.TmpReg(width=word_datawidth, initval=0, prefix='rdata1')
 
     def blink(size):
         all_ok.value = True
@@ -43,7 +48,7 @@ def mkLed(word_datawidth=128):
         for i in range(4):
             print('# iter %d start' % i)
             # Test for 4KB boundary check
-            offset = i * 1024 * 16 + (myaxi.boundary_size - (word_datawidth // 8))
+            offset = i * 1024 * 16 + (myaxi.boundary_size - (word_datawidth // 8) * 3)
             body(size, offset)
             print('# iter %d end' % i)
 
@@ -57,7 +62,9 @@ def mkLed(word_datawidth=128):
     def body(size, offset):
         # write a test vector
         for i in range(size):
-            wdata = i + 100
+            wdata.value = 0
+            for j in range(word_datawidth // datawidth):
+                wdata.value = (i + 0x1000 * j) << (word_datawidth - datawidth) | (wdata.value >> datawidth)
             myram.write(i, wdata)
 
         laddr = 0
@@ -66,28 +73,30 @@ def mkLed(word_datawidth=128):
 
         # AXI-stream read -> FIFO -> FIFO -> AXI-stream write
         maxi_in.dma_read_async(gaddr, size * (word_datawidth // datawidth))
-        axi_in.write_fifo(fifo_in, size)
-
-        for i in range(size):
-            va = fifo_in.deq()
-            fifo_out.enq(va)
+        axi_in.dma_read_async(fifo_in, size)
 
         out_gaddr = (size + size) * (word_datawidth // 8) + offset
         maxi_out.dma_write_async(out_gaddr, size * (word_datawidth // datawidth))
-        axi_out.read_fifo(fifo_out, size)
+        axi_out.dma_write_async(fifo_out, size)
+
+        for i in range(size):
+            tmp_value.value = fifo_in.deq()
+            fifo_out.enq(tmp_value)
+
+        axi_out.dma_wait_write()
 
         # check
         myaxi.dma_read(myram, 0, gaddr, size, port=1)
         myaxi.dma_read(myram, size, out_gaddr, size, port=1)
 
         for i in range(size):
-            v0 = myram.read(i)
-            v1 = myram.read(i + size)
-            if vthread.verilog.NotEql(v0, v1):
+            rdata0.value = myram.read(i)
+            rdata1.value = myram.read(i + size)
+            if vthread.verilog.NotEql(rdata0, rdata1):
                 all_ok.value = False
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
-    fsm = th.start(17)
+    fsm = th.start(77)
 
     return m
 

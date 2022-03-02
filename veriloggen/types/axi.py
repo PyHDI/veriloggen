@@ -10,10 +10,7 @@ import veriloggen.core.vtypes as vtypes
 from veriloggen.seq.seq import Seq
 from veriloggen.fsm.fsm import FSM
 
-import veriloggen.dataflow as _df
-from veriloggen.dataflow.dataflow import DataflowManager
-from veriloggen.dataflow.dtypes import make_condition, read_multi
-from veriloggen.dataflow.dtypes import _Numeric as df_numeric
+from veriloggen.seq.seq import make_condition
 from . import util
 
 
@@ -537,7 +534,7 @@ class AxiMaster(object):
                  waddr_prot_mode=AxPROT_NONCOHERENT, raddr_prot_mode=AxPROT_NONCOHERENT,
                  waddr_user_mode=AxUSER_NONCOHERENT, wdata_user_mode=xUSER_DEFAULT,
                  raddr_user_mode=AxUSER_NONCOHERENT,
-                 noio=False, nodataflow=False, outstanding_wcount_width=3):
+                 noio=False, outstanding_wcount_width=3):
 
         self.m = m
         self.name = name
@@ -595,9 +592,6 @@ class AxiMaster(object):
         if self.raddr.aruser is not None:
             self.raddr.aruser.assign(raddr_user_mode)
 
-        self.write_counters = []
-        self.read_counters = []
-
         # outstanding write request
         if outstanding_wcount_width < 2:
             raise ValueError("outstanding_wcount_width must be 2 or more.")
@@ -605,21 +599,16 @@ class AxiMaster(object):
         self.outstanding_wcount = self.m.TmpReg(self.outstanding_wcount_width, initval=0,
                                                 prefix='outstanding_wcount')
 
-        self.seq.If(vtypes.Ands(self.wdata.wlast, self.wdata.wvalid, self.wdata.wready),
+        self.seq.If(vtypes.Ands(self.waddr.awvalid, self.waddr.awready),
                     vtypes.Not(vtypes.Ands(self.wresp.bvalid, self.wresp.bready)),
                     self.outstanding_wcount < 2 ** self.outstanding_wcount_width - 1)(
             self.outstanding_wcount.inc()
         )
-        self.seq.If(vtypes.Not(vtypes.Ands(self.wdata.wlast, self.wdata.wvalid, self.wdata.wready)),
+        self.seq.If(vtypes.Not(vtypes.Ands(self.waddr.awvalid, self.waddr.awready)),
                     vtypes.Ands(self.wresp.bvalid, self.wresp.bready),
                     self.outstanding_wcount > 0)(
             self.outstanding_wcount.dec()
         )
-
-        if nodataflow:
-            self.df = None
-        else:
-            self.df = DataflowManager(self.m, self.clk, self.rst)
 
         self._write_disabled = False
         self._read_disabled = False
@@ -660,23 +649,29 @@ class AxiMaster(object):
 
     def mask_addr(self, addr):
         s = util.log2(self.datawidth // 8)
-        return (addr >> s) << s
+        shifted = self.m.TmpWire(self.addrwidth, prefix='mask_addr_shifted')
+        shifted.assign(addr >> s)
+        masked = self.m.TmpWire(self.addrwidth, prefix='mask_addr_masked')
+        masked.assign(shifted << s)
+        return masked
 
     def check_boundary(self, addr, length, datawidth=None, boundary_size=None):
         if datawidth is None:
             datawidth = self.datawidth
         if boundary_size is None:
             boundary_size = self.boundary_size
+        masked_addr = self.mask_addr(addr)
         mask = boundary_size - 1
-        return ((addr & mask) + (length << util.log2(datawidth // 8))) >= boundary_size
+        return ((masked_addr & mask) + (length << util.log2(datawidth // 8))) >= boundary_size
 
     def rest_boundary(self, addr, datawidth=None, boundary_size=None):
         if datawidth is None:
             datawidth = self.datawidth
         if boundary_size is None:
             boundary_size = self.boundary_size
+        masked_addr = self.mask_addr(addr)
         mask = boundary_size - 1
-        return (vtypes.Int(boundary_size) - (addr & mask)) >> util.log2(datawidth // 8)
+        return (vtypes.Int(boundary_size) - (masked_addr & mask)) >> util.log2(datawidth // 8)
 
     def write_acceptable(self):
         return self.outstanding_wcount < 2 ** self.outstanding_wcount_width - 2
@@ -697,7 +692,8 @@ class AxiMaster(object):
         if cond is not None:
             self.seq.If(cond)
 
-        ack = vtypes.Ors(self.waddr.awready, vtypes.Not(self.waddr.awvalid))
+        ack = vtypes.Ands(self.write_acceptable(),
+                          vtypes.Ors(self.waddr.awready, vtypes.Not(self.waddr.awvalid)))
 
         self.seq.If(ack)(
             self.waddr.awid(0) if self.waddr.awid is not None else (),
@@ -721,174 +717,40 @@ class AxiMaster(object):
 
         return ack
 
-    def write_request_counter(self, addr, length=1, cond=None, counter=None):
+    def write_data(self, data, last, cond=None):
         """
-        @return ack, counter
-        """
-        if self._write_disabled:
-            raise TypeError('Write disabled.')
-
-        if isinstance(length, int) and length > 2 ** self.burst_size_width:
-            raise ValueError("length must be less than 257.")
-
-        if isinstance(length, int) and length < 1:
-            raise ValueError("length must be more than 0.")
-
-        if counter is not None and not isinstance(counter, vtypes.Reg):
-            raise TypeError("counter must be Reg or None.")
-
-        if cond is not None:
-            self.seq.If(cond)
-
-        ack = vtypes.Ors(self.waddr.awready, vtypes.Not(self.waddr.awvalid))
-
-        if counter is None:
-            counter = self.m.TmpReg(self.burst_size_width + 1, initval=0,
-                                    prefix='counter')
-
-        self.write_counters.append(counter)
-
-        self.seq.If(vtypes.Ands(ack, counter == 0))(
-            self.waddr.awid(0) if self.waddr.awid is not None else (),
-            self.waddr.awaddr(addr),
-            self.waddr.awlen(length - 1),
-            self.waddr.awvalid(1),
-            counter(length)
-        )
-        self.seq.Then().If(length == 0)(
-            self.waddr.awvalid(0)
-        )
-
-        # de-assert
-        self.seq.Delay(1)(
-            self.waddr.awvalid(0)
-        )
-
-        # retry
-        self.seq.If(vtypes.Ands(self.waddr.awvalid, vtypes.Not(self.waddr.awready)))(
-            self.waddr.awvalid(self.waddr.awvalid)
-        )
-
-        return ack, counter
-
-    def write_data(self, data, counter=None, cond=None):
-        """
-        @return ack, last
+        @return ack
         """
         if self._write_disabled:
             raise TypeError('Write disabled.')
 
-        if counter is not None and not isinstance(counter, vtypes.Reg):
-            raise TypeError("counter must be Reg or None.")
-
-        if counter is None:
-            counter = self.write_counters[-1]
-
         if cond is not None:
             self.seq.If(cond)
 
-        ack = vtypes.Ands(counter > 0,
-                          self.write_acceptable(),
+        ack = vtypes.Ands(self.write_acceptable(),
                           vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid)))
-        last = self.m.TmpReg(initval=0, prefix='last')
 
-        self.seq.If(vtypes.Ands(ack, counter > 0))(
+        self.seq.If(ack)(
             self.wdata.wdata(data),
             self.wdata.wvalid(1),
-            self.wdata.wlast(0),
+            self.wdata.wlast(last),
             self.wdata.wstrb(vtypes.Repeat(
                 vtypes.Int(1, 1), (self.wdata.datawidth // 8))),
-            counter.dec()
-        )
-        self.seq.Then().If(counter == 1)(
-            self.wdata.wlast(1),
-            last(1)
         )
 
         # de-assert
         self.seq.Delay(1)(
             self.wdata.wvalid(0),
             self.wdata.wlast(0),
-            last(0)
         )
 
         # retry
         self.seq.If(vtypes.Ands(self.wdata.wvalid, vtypes.Not(self.wdata.wready)))(
             self.wdata.wvalid(self.wdata.wvalid),
             self.wdata.wlast(self.wdata.wlast),
-            last(last)
         )
 
-        return ack, last
-
-    def write_dataflow(self, data, counter=None, cond=None, when=None):
-        """
-        @return done
-        'data' and 'when' must be dataflow variables
-        """
-        if self._write_disabled:
-            raise TypeError('Write disabled.')
-
-        if counter is not None and not isinstance(counter, vtypes.Reg):
-            raise TypeError("counter must be Reg or None.")
-
-        if counter is None:
-            counter = self.write_counters[-1]
-
-        ack = vtypes.Ands(counter > 0,
-                          self.write_acceptable(),
-                          vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid)))
-        last = self.m.TmpReg(initval=0, prefix='last')
-
-        if cond is None:
-            cond = ack
-        else:
-            cond = (cond, ack)
-
-        if when is None or not isinstance(when, df_numeric):
-            raw_data, raw_valid = data.read(cond=cond)
-        else:
-            data_list, raw_valid = read_multi(self.m, data, when, cond=cond)
-            raw_data = data_list[0]
-            when = data_list[1]
-
-        when_cond = make_condition(when, ready=cond)
-        if when_cond is not None:
-            raw_valid = vtypes.Ands(when_cond, raw_valid)
-
-        # write condition
-        self.seq.If(raw_valid)
-
-        self.seq.If(vtypes.Ands(ack, counter > 0))(
-            self.wdata.wdata(raw_data),
-            self.wdata.wvalid(1),
-            self.wdata.wlast(0),
-            self.wdata.wstrb(vtypes.Repeat(
-                vtypes.Int(1, 1), (self.wdata.datawidth // 8))),
-            counter.dec()
-        )
-        self.seq.Then().If(counter == 1)(
-            self.wdata.wlast(1),
-            last(1)
-        )
-
-        # de-assert
-        self.seq.Delay(1)(
-            self.wdata.wvalid(0),
-            self.wdata.wlast(0),
-            last(0)
-        )
-
-        # retry
-        self.seq.If(vtypes.Ands(self.wdata.wvalid, vtypes.Not(self.wdata.wready)))(
-            self.wdata.wvalid(self.wdata.wvalid),
-            self.wdata.wlast(self.wdata.wlast),
-            last(last)
-        )
-
-        done = vtypes.Ands(last, self.wdata.wvalid, self.wdata.wready)
-
-        return done
+        return ack
 
     def write_completed(self):
         return self.outstanding_wcount == 0
@@ -930,128 +792,23 @@ class AxiMaster(object):
 
         return ack
 
-    def read_request_counter(self, addr, length=1, cond=None, counter=None):
-        """
-        @return ack, counter
-        """
-        if self._read_disabled:
-            raise TypeError('Read disabled.')
-
-        if isinstance(length, int) and length > 2 ** self.burst_size_width:
-            raise ValueError("length must be less than 257.")
-
-        if isinstance(length, int) and length < 1:
-            raise ValueError("length must be more than 0.")
-
-        if counter is not None and not isinstance(counter, vtypes.Reg):
-            raise TypeError("counter must be Reg or None.")
-
-        if cond is not None:
-            self.seq.If(cond)
-
-        ack = vtypes.Ors(self.raddr.arready, vtypes.Not(self.raddr.arvalid))
-
-        if counter is None:
-            counter = self.m.TmpReg(self.burst_size_width + 1, initval=0, prefix='counter')
-
-        self.read_counters.append(counter)
-
-        self.seq.If(vtypes.Ands(ack, counter == 0))(
-            self.raddr.arid(0) if self.raddr.arid is not None else (),
-            self.raddr.araddr(addr),
-            self.raddr.arlen(length - 1),
-            self.raddr.arvalid(1),
-            counter(length)
-        )
-
-        # de-assert
-        self.seq.Delay(1)(
-            self.raddr.arvalid(0)
-        )
-
-        # retry
-        self.seq.If(vtypes.Ands(self.raddr.arvalid, vtypes.Not(self.raddr.arready)))(
-            self.raddr.arvalid(self.raddr.arvalid)
-        )
-
-        return ack, counter
-
-    def read_data(self, counter=None, cond=None):
+    def read_data(self, cond=None):
         """
         @return data, valid, last
         """
         if self._read_disabled:
             raise TypeError('Read disabled.')
 
-        if counter is not None and not isinstance(counter, vtypes.Reg):
-            raise TypeError("counter must be Reg or None.")
-
-        if counter is None:
-            counter = self.read_counters[-1]
-
         ready = make_condition(cond)
         val = 1 if ready is None else ready
 
         _connect_ready(self.rdata.rready._get_module(), self.rdata.rready, val)
 
-        ack = vtypes.Ands(self.rdata.rready, self.rdata.rvalid)
-        data = self.rdata.rdata
-        valid = ack
-        last = self.rdata.rlast
-
-        self.seq.If(vtypes.Ands(ack, counter > 0))(
-            counter.dec()
-        )
-
-        return data, valid, last
-
-    def read_dataflow(self, counter=None, cond=None, point=0, signed=True):
-        """
-        @return data, last, done
-        """
-        if self._read_disabled:
-            raise TypeError('Read disabled.')
-
-        if counter is not None and not isinstance(counter, vtypes.Reg):
-            raise TypeError("counter must be Reg or None.")
-
-        if counter is None:
-            counter = self.read_counters[-1]
-
-        data_ready = self.m.TmpWire(prefix='data_ready')
-        last_ready = self.m.TmpWire(prefix='last_ready')
-        data_ready.assign(1)
-        last_ready.assign(1)
-
-        if cond is None:
-            cond = (data_ready, last_ready)
-        elif isinstance(cond, (tuple, list)):
-            cond = tuple(list(cond) + [data_ready, last_ready])
-        else:
-            cond = (cond, data_ready, last_ready)
-
-        ready = make_condition(*cond)
-        val = 1 if ready is None else ready
-
-        _connect_ready(self.rdata.rready._get_module(), self.rdata.rready, val)
-
-        ack = vtypes.Ands(self.rdata.rready, self.rdata.rvalid)
         data = self.rdata.rdata
         valid = self.rdata.rvalid
         last = self.rdata.rlast
 
-        self.seq.If(vtypes.Ands(ack, counter > 0))(
-            counter.dec()
-        )
-
-        df = self.df if self.df is not None else _df
-
-        df_data = df.Variable(data, valid, data_ready,
-                              width=self.datawidth, point=point, signed=signed)
-        df_last = df.Variable(last, valid, last_ready, width=1, signed=False)
-        done = vtypes.Ands(last, self.rdata.rvalid, self.rdata.rready)
-
-        return df_data, df_last, done
+        return data, valid, last
 
     def connect(self, ports, name):
         if not self.noio:
@@ -1194,7 +951,7 @@ class AxiLiteMaster(AxiMaster):
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
                  waddr_cache_mode=AxCACHE_NONCOHERENT, raddr_cache_mode=AxCACHE_NONCOHERENT,
                  waddr_prot_mode=AxPROT_NONCOHERENT, raddr_prot_mode=AxPROT_NONCOHERENT,
-                 noio=False, nodataflow=False, outstanding_wcount_width=3):
+                 noio=False, outstanding_wcount_width=3):
 
         self.m = m
         self.name = name
@@ -1256,11 +1013,6 @@ class AxiLiteMaster(AxiMaster):
             self.outstanding_wcount.dec()
         )
 
-        if nodataflow:
-            self.df = None
-        else:
-            self.df = DataflowManager(self.m, self.clk, self.rst)
-
         self._write_disabled = False
         self._read_disabled = False
 
@@ -1302,7 +1054,8 @@ class AxiLiteMaster(AxiMaster):
         if cond is not None:
             self.seq.If(cond)
 
-        ack = vtypes.Ors(self.waddr.awready, vtypes.Not(self.waddr.awvalid))
+        ack = vtypes.Ands(self.write_acceptable(),
+                          vtypes.Ors(self.waddr.awready, vtypes.Not(self.waddr.awvalid)))
 
         self.seq.If(ack)(
             self.waddr.awaddr(addr),
@@ -1352,13 +1105,6 @@ class AxiLiteMaster(AxiMaster):
         )
 
         return ack
-
-    def write_dataflow(self, data, counter=None, cond=None, when=None):
-        """
-        @return done
-        'data' and 'when' must be dataflow variables
-        """
-        raise TypeError('lite interface support no dataflow operation.')
 
     def write_completed(self):
         return self.outstanding_wcount == 0
@@ -1412,12 +1158,6 @@ class AxiLiteMaster(AxiMaster):
         valid = ack
 
         return data, valid
-
-    def read_dataflow(self, counter=None, cond=None, point=0, signed=True):
-        """
-        @return data, last, done
-        """
-        raise TypeError('lite interface support no dataflow operation.')
 
     def connect(self, ports, name):
         if not self.noio:
@@ -1486,7 +1226,7 @@ class AxiSlave(object):
                  raddr_user_width=2, rdata_user_width=0,
                  wresp_user_mode=xUSER_DEFAULT,
                  rdata_user_mode=xUSER_DEFAULT,
-                 noio=False, nodataflow=False):
+                 noio=False):
 
         self.m = m
         self.name = name
@@ -1549,14 +1289,6 @@ class AxiSlave(object):
             self.wresp.bvalid(1)
         )
 
-        self.write_counters = []
-        self.read_counters = []
-
-        if nodataflow:
-            self.df = None
-        else:
-            self.df = DataflowManager(self.m, self.clk, self.rst)
-
         self._write_disabled = False
         self._read_disabled = False
 
@@ -1578,22 +1310,13 @@ class AxiSlave(object):
 
         self._read_disabled = True
 
-    def pull_request_counter(self, cond, counter=None):
+    def pull_request(self, cond):
         """
-        @return addr, counter, readvalid, writevalid
+        @return addr, length, readvalid, writevalid
         """
-        if counter is not None and not isinstance(counter, vtypes.Reg):
-            raise TypeError("counter must be Reg or None.")
 
-        if counter is None:
-            counter = self.m.TmpReg(self.burst_size_width + 1, initval=0, prefix='counter')
-
-        ready = make_condition(cond)
-
-        write_ack = vtypes.Ands(self.waddr.awready, self.waddr.awvalid,
-                                vtypes.Not(self.wresp.bvalid))
-        read_ack = vtypes.Ands(self.raddr.arready, self.raddr.arvalid)
         addr = self.m.TmpReg(self.addrwidth, initval=0, prefix='addr')
+        length = self.m.TmpReg(self.burst_size_width + 1, initval=0, prefix='length')
         writevalid = self.m.TmpReg(initval=0, prefix='writevalid')
         readvalid = self.m.TmpReg(initval=0, prefix='readvalid')
 
@@ -1606,6 +1329,11 @@ class AxiSlave(object):
             prev_arvalid(self.raddr.arvalid)
         )
 
+        ready = make_condition(cond)
+        write_ack = vtypes.Ands(self.waddr.awready, self.waddr.awvalid,
+                                vtypes.Not(self.wresp.bvalid))
+        read_ack = vtypes.Ands(self.raddr.arready, self.raddr.arvalid)
+
         writeval = vtypes.Ands(vtypes.Not(writevalid), vtypes.Not(readvalid),
                                vtypes.Not(self.wresp.bvalid),
                                prev_awvalid)
@@ -1614,7 +1342,6 @@ class AxiSlave(object):
 
         readval = vtypes.Ands(vtypes.Not(readvalid), vtypes.Not(writevalid),
                               prev_arvalid, vtypes.Not(prev_awvalid))
-
         if ready is not None:
             readval = vtypes.Ands(ready, readval)
 
@@ -1629,37 +1356,25 @@ class AxiSlave(object):
         )
         self.seq.If(write_ack)(
             addr(self.waddr.awaddr),
-            counter(self.waddr.awlen + 1),
+            length(self.waddr.awlen + 1),
             writevalid(1)
         ).Elif(read_ack)(
             addr(self.raddr.araddr),
-            counter(self.raddr.arlen + 1),
+            length(self.raddr.arlen + 1),
             readvalid(1)
         )
 
-        return addr, counter, readvalid, writevalid
+        return addr, length, readvalid, writevalid
 
-    def pull_write_request_counter(self, cond=None, counter=None):
+    def pull_write_request(self, cond=None):
         """
-        @return addr, counter, valid
+        @return addr, length, valid
         """
         if self._write_disabled:
             raise TypeError('Write disabled.')
 
-        if counter is not None and not isinstance(counter, vtypes.Reg):
-            raise TypeError("counter must be Reg or None.")
-
-        if counter is None:
-            counter = self.m.TmpReg(self.burst_size_width + 1, initval=0,
-                                    prefix='counter')
-
-        self.write_counters.append(counter)
-
-        ready = make_condition(cond)
-
-        ack = vtypes.Ands(self.waddr.awready, self.waddr.awvalid,
-                          vtypes.Not(self.wresp.bvalid))
         addr = self.m.TmpReg(self.addrwidth, initval=0, prefix='addr')
+        length = self.m.TmpReg(self.burst_size_width + 1, initval=0, prefix='length')
         valid = self.m.TmpReg(initval=0, prefix='valid')
 
         prev_awvalid = self.m.TmpReg(initval=0, prefix='prev_awvalid')
@@ -1667,6 +1382,9 @@ class AxiSlave(object):
             prev_awvalid(self.waddr.awvalid)
         )
 
+        ready = make_condition(cond)
+        ack = vtypes.Ands(self.waddr.awready, self.waddr.awvalid,
+                          vtypes.Not(self.wresp.bvalid))
         val = (vtypes.Ands(vtypes.Not(valid),
                            vtypes.Not(self.wresp.bvalid),
                            prev_awvalid) if ready is None else
@@ -1677,119 +1395,45 @@ class AxiSlave(object):
         _connect_ready(self.waddr.awready._get_module(),
                        self.waddr.awready, val)
 
+        self.seq(
+            valid(0)
+        )
         self.seq.If(ack)(
             addr(self.waddr.awaddr),
-            counter(self.waddr.awlen + 1)
+            length(self.waddr.awlen + 1),
+            valid(1)
         )
 
-        self.seq(
-            valid(ack)
-        )
+        return addr, length, valid
 
-        return addr, counter, valid
-
-    def pull_write_data(self, counter=None, cond=None):
+    def pull_write_data(self, cond=None):
         """
         @return data, mask, valid, last
         """
         if self._write_disabled:
             raise TypeError('Write disabled.')
 
-        if counter is not None and not isinstance(counter, vtypes.Reg):
-            raise TypeError("counter must be Reg or None.")
-
-        if counter is None:
-            counter = self.write_counters[-1]
-
         ready = make_condition(cond)
         val = 1 if ready is None else ready
 
         _connect_ready(self.wdata.wready._get_module(), self.wdata.wready, val)
 
-        ack = vtypes.Ands(self.wdata.wready, self.wdata.wvalid)
-        data = self.wdata.wdata
-        mask = self.wdata.wstrb
-        valid = ack
-        last = self.wdata.wlast
-
-        self.seq.If(vtypes.Ands(ack, counter > 0))(
-            counter.dec()
-        )
-
-        return data, mask, valid, last
-
-    def pull_write_dataflow(self, counter=None, cond=None):
-        """
-        @return data, mask, last, done
-        """
-
-        if self._write_disabled:
-            raise TypeError('Write disabled.')
-
-        if counter is not None and not isinstance(counter, vtypes.Reg):
-            raise TypeError("counter must be Reg or None.")
-
-        if counter is None:
-            counter = self.write_counters[-1]
-
-        data_ready = self.m.TmpWire(prefix='data_ready')
-        mask_ready = self.m.TmpWire(prefix='mask_ready')
-        last_ready = self.m.TmpWire(prefix='last_ready')
-        data_ready.assign(1)
-        mask_ready.assign(1)
-        last_ready.assign(1)
-
-        if cond is None:
-            cond = (data_ready, last_ready)
-        elif isinstance(cond, (tuple, list)):
-            cond = tuple(list(cond) + [data_ready, last_ready])
-        else:
-            cond = (cond, data_ready, last_ready)
-
-        ready = make_condition(*cond)
-        val = 1 if ready is None else ready
-
-        _connect_ready(self.wdata.wready._get_module(), self.wdata.wready, val)
-
-        ack = vtypes.Ands(self.wdata.wready, self.wdata.wvalid)
         data = self.wdata.wdata
         mask = self.wdata.wstrb
         valid = self.wdata.wvalid
         last = self.wdata.wlast
 
-        self.seq.If(vtypes.Ands(ack, counter > 0))(
-            counter.dec()
-        )
+        return data, mask, valid, last
 
-        df_data = self.df.Variable(data, valid, data_ready,
-                                   width=self.datawidth, signed=False)
-        df_mask = self.df.Variable(mask, valid, mask_ready,
-                                   width=self.datawidth // 4, signed=False)
-        df_last = self.df.Variable(last, valid, last_ready,
-                                   width=1, signed=False)
-        done = vtypes.Ands(last, self.wdata.wvalid, self.wdata.wready)
-
-        return df_data, df_mask, df_last, done
-
-    def pull_read_request_counter(self, cond=None, counter=None):
+    def pull_read_request(self, cond=None):
         """
-        @return addr, counter, valid
+        @return addr, length, valid
         """
         if self._read_disabled:
             raise TypeError('Read disabled.')
 
-        if counter is not None and not isinstance(counter, vtypes.Reg):
-            raise TypeError("counter must be Reg or None.")
-
-        if counter is None:
-            counter = self.m.TmpReg(self.burst_size_width + 1, initval=0, prefix='counter')
-
-        self.read_counters.append(counter)
-
-        ready = make_condition(cond)
-
-        ack = vtypes.Ands(self.raddr.arready, self.raddr.arvalid)
         addr = self.m.TmpReg(self.addrwidth, initval=0, prefix='addr')
+        length = self.m.TmpReg(self.burst_size_width + 1, initval=0, prefix='length')
         valid = self.m.TmpReg(initval=0, prefix='valid')
 
         prev_arvalid = self.m.TmpReg(initval=0, prefix='prev_arvalid')
@@ -1797,52 +1441,42 @@ class AxiSlave(object):
             prev_arvalid(self.raddr.arvalid)
         )
 
+        ready = make_condition(cond)
+        ack = vtypes.Ands(self.raddr.arready, self.raddr.arvalid)
+
         val = (vtypes.Ands(vtypes.Not(valid), prev_arvalid) if ready is None else
                vtypes.Ands(ready, vtypes.Not(valid), prev_arvalid))
 
         _connect_ready(self.raddr.arready._get_module(),
                        self.raddr.arready, val)
 
+        self.seq(
+            valid(0)
+        )
         self.seq.If(ack)(
             addr(self.raddr.araddr),
-            counter(self.raddr.arlen + 1)
+            length(self.raddr.arlen + 1),
+            valid(1)
         )
 
-        self.seq(
-            valid(ack)
-        )
+        return addr, length, valid
 
-        return addr, counter, valid
-
-    def push_read_data(self, data, counter=None, cond=None):
+    def push_read_data(self, data, last, cond=None):
         """
-        @return ack, valid, last
+        @return ack
         """
         if self._read_disabled:
             raise TypeError('Read disabled.')
-
-        if counter is not None and not isinstance(counter, vtypes.Reg):
-            raise TypeError("counter must be Reg or None.")
-
-        if counter is None:
-            counter = self.read_counters[-1]
 
         if cond is not None:
             self.seq.If(cond)
 
-        ack = vtypes.Ands(counter > 0,
-                          vtypes.Ors(self.rdata.rready, vtypes.Not(self.rdata.rvalid)))
-        valid = vtypes.Ands(self.rdata.rready, self.rdata.rvalid)
-        last = self.rdata.rlast
+        ack = vtypes.Ors(self.rdata.rready, vtypes.Not(self.rdata.rvalid))
 
-        self.seq.If(vtypes.Ands(ack, counter > 0))(
+        self.seq.If(ack)(
             self.rdata.rdata(data),
             self.rdata.rvalid(1),
-            self.rdata.rlast(0),
-            counter.dec()
-        )
-        self.seq.Then().If(counter == 1)(
-            self.rdata.rlast(1)
+            self.rdata.rlast(last),
         )
 
         # de-assert
@@ -1857,60 +1491,7 @@ class AxiSlave(object):
             self.rdata.rlast(self.rdata.rlast)
         )
 
-        return ack, valid, last
-
-    def push_read_dataflow(self, data, counter=None, cond=None):
-        """ 
-        @return done
-        """
-
-        if self._read_disabled:
-            raise TypeError('Read disabled.')
-
-        if counter is not None and not isinstance(counter, vtypes.Reg):
-            raise TypeError("counter must be Reg or None.")
-
-        if counter is None:
-            counter = self.read_counters[-1]
-
-        ack = vtypes.Ands(counter > 0,
-                          vtypes.Ors(self.rdata.rready, vtypes.Not(self.rdata.rvalid)))
-
-        if cond is None:
-            cond = ack
-        else:
-            cond = (cond, ack)
-
-        raw_data, raw_valid = data.read(cond=cond)
-
-        # write condition
-        self.seq.If(raw_valid)
-
-        self.seq.If(vtypes.Ands(ack, counter > 0))(
-            self.rdata.rdata(raw_data),
-            self.rdata.rvalid(1),
-            self.rdata.rlast(0),
-            counter.dec()
-        )
-        self.seq.Then().If(counter == 1)(
-            self.rdata.rlast(1)
-        )
-
-        # de-assert
-        self.seq.Delay(1)(
-            self.rdata.rvalid(0),
-            self.rdata.rlast(0)
-        )
-
-        # retry
-        self.seq.If(vtypes.Ands(self.rdata.rvalid, vtypes.Not(self.rdata.rready)))(
-            self.rdata.rvalid(self.rdata.rvalid),
-            self.rdata.rlast(self.rdata.rlast)
-        )
-
-        done = vtypes.Ands(self.rdata.rlast, self.rdata.rvalid, self.rdata.rready)
-
-        return done
+        return ack
 
     def connect(self, ports, name):
         if not self.noio:
@@ -2055,7 +1636,7 @@ class AxiSlave(object):
 class AxiLiteSlave(AxiSlave):
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
-                 noio=False, nodataflow=False):
+                 noio=False):
 
         self.m = m
         self.name = name
@@ -2104,11 +1685,6 @@ class AxiLiteSlave(AxiSlave):
             self.wresp.bvalid(1)
         )
 
-        if nodataflow:
-            self.df = None
-        else:
-            self.df = DataflowManager(self.m, self.clk, self.rst)
-
         self._write_disabled = False
         self._read_disabled = False
 
@@ -2134,11 +1710,6 @@ class AxiLiteSlave(AxiSlave):
         @return addr, readvalid, writevalid
         """
 
-        ready = make_condition(cond)
-
-        write_ack = vtypes.Ands(self.waddr.awready, self.waddr.awvalid,
-                                vtypes.Not(self.wresp.bvalid))
-        read_ack = vtypes.Ands(self.raddr.arready, self.raddr.arvalid)
         addr = self.m.TmpReg(self.addrwidth, initval=0, prefix='addr')
         writevalid = self.m.TmpReg(initval=0, prefix='writevalid')
         readvalid = self.m.TmpReg(initval=0, prefix='readvalid')
@@ -2152,6 +1723,11 @@ class AxiLiteSlave(AxiSlave):
             prev_arvalid(self.raddr.arvalid)
         )
 
+        ready = make_condition(cond)
+        write_ack = vtypes.Ands(self.waddr.awready, self.waddr.awvalid,
+                                vtypes.Not(self.wresp.bvalid))
+        read_ack = vtypes.Ands(self.raddr.arready, self.raddr.arvalid)
+
         writeval = vtypes.Ands(vtypes.Not(writevalid), vtypes.Not(readvalid),
                                vtypes.Not(self.wresp.bvalid),
                                prev_awvalid)
@@ -2160,7 +1736,6 @@ class AxiLiteSlave(AxiSlave):
 
         readval = vtypes.Ands(vtypes.Not(readvalid), vtypes.Not(writevalid),
                               prev_arvalid, vtypes.Not(prev_awvalid))
-
         if ready is not None:
             readval = vtypes.Ands(ready, readval)
 
@@ -2190,10 +1765,6 @@ class AxiLiteSlave(AxiSlave):
         if self._write_disabled:
             raise TypeError('Write disabled.')
 
-        ready = make_condition(cond)
-
-        ack = vtypes.Ands(self.waddr.awready, self.waddr.awvalid,
-                          vtypes.Not(self.wresp.bvalid))
         addr = self.m.TmpReg(self.addrwidth, initval=0, prefix='addr')
         valid = self.m.TmpReg(initval=0, prefix='valid')
 
@@ -2202,6 +1773,9 @@ class AxiLiteSlave(AxiSlave):
             prev_awvalid(self.waddr.awvalid)
         )
 
+        ready = make_condition(cond)
+        ack = vtypes.Ands(self.waddr.awready, self.waddr.awvalid,
+                          vtypes.Not(self.wresp.bvalid))
         val = (vtypes.Ands(vtypes.Not(valid),
                            vtypes.Not(self.wresp.bvalid),
                            prev_awvalid) if ready is None else
@@ -2212,12 +1786,12 @@ class AxiLiteSlave(AxiSlave):
         _connect_ready(self.waddr.awready._get_module(),
                        self.waddr.awready, val)
 
+        self.seq(
+            valid(0)
+        )
         self.seq.If(ack)(
             addr(self.waddr.awaddr),
-        )
-
-        self.seq(
-            valid(ack)
+            valid(1)
         )
 
         return addr, valid
@@ -2234,18 +1808,11 @@ class AxiLiteSlave(AxiSlave):
 
         _connect_ready(self.wdata.wready._get_module(), self.wdata.wready, val)
 
-        ack = vtypes.Ands(self.wdata.wready, self.wdata.wvalid)
         data = self.wdata.wdata
         mask = self.wdata.wstrb
-        valid = ack
+        valid = self.wdata.wvalid
 
         return data, mask, valid
-
-    def pull_write_dataflow(self, counter=None, cond=None):
-        """
-        @return data, mask, last, done
-        """
-        raise TypeError('lite interface support no dataflow operation.')
 
     def pull_read_request(self, cond=None):
         """
@@ -2254,9 +1821,6 @@ class AxiLiteSlave(AxiSlave):
         if self._read_disabled:
             raise TypeError('Read disabled.')
 
-        ready = make_condition(cond)
-
-        ack = vtypes.Ands(self.raddr.arready, self.raddr.arvalid)
         addr = self.m.TmpReg(self.addrwidth, initval=0, prefix='addr')
         valid = self.m.TmpReg(initval=0, prefix='valid')
 
@@ -2265,25 +1829,27 @@ class AxiLiteSlave(AxiSlave):
             prev_arvalid(self.raddr.arvalid)
         )
 
+        ready = make_condition(cond)
+        ack = vtypes.Ands(self.raddr.arready, self.raddr.arvalid)
         val = (vtypes.Ands(vtypes.Not(valid), prev_arvalid) if ready is None else
                vtypes.Ands(ready, vtypes.Not(valid), prev_arvalid))
 
         _connect_ready(self.raddr.arready._get_module(),
                        self.raddr.arready, val)
 
-        self.seq.If(ack)(
-            addr(self.raddr.araddr)
-        )
-
         self.seq(
-            valid(ack)
+            valid(0)
+        )
+        self.seq.If(ack)(
+            addr(self.raddr.araddr),
+            valid(1)
         )
 
         return addr, valid
 
     def push_read_data(self, data, cond=None):
         """
-        @return ack, valid
+        @return ack
         """
         if self._read_disabled:
             raise TypeError('Read disabled.')
@@ -2292,7 +1858,6 @@ class AxiLiteSlave(AxiSlave):
             self.seq.If(cond)
 
         ack = vtypes.Ors(self.rdata.rready, vtypes.Not(self.rdata.rvalid))
-        valid = vtypes.Ands(self.rdata.rready, self.rdata.rvalid)
 
         self.seq.If(ack)(
             self.rdata.rdata(data),
@@ -2309,13 +1874,7 @@ class AxiLiteSlave(AxiSlave):
             self.rdata.rvalid(self.rdata.rvalid)
         )
 
-        return ack, valid
-
-    def push_read_dataflow(self, data, counter=None, cond=None):
-        """ 
-        @return done
-        """
-        raise TypeError('lite interface support no dataflow operation.')
+        return ack
 
     def connect(self, ports, name):
         if not self.noio:
@@ -2379,7 +1938,7 @@ class AxiStreamIn(object):
     def __init__(self, m, name, clk, rst, datawidth=32,
                  with_last=True, with_strb=False,
                  id_width=0, user_width=0, dest_width=0,
-                 noio=False, nodataflow=False):
+                 noio=False):
 
         self.m = m
         self.name = name
@@ -2406,11 +1965,6 @@ class AxiStreamIn(object):
 
         self.seq = Seq(m, name, clk, rst)
 
-        if nodataflow:
-            self.df = None
-        else:
-            self.df = DataflowManager(self.m, self.clk, self.rst)
-
     def read_data(self, cond=None):
         """
         @return data, last, _id, user, dest, valid
@@ -2420,78 +1974,14 @@ class AxiStreamIn(object):
 
         _connect_ready(self.tdata.tready._get_module(), self.tdata.tready, val)
 
-        ack = vtypes.Ands(self.tdata.tready, self.tdata.tvalid)
         data = self.tdata.tdata
-        valid = ack
+        valid = self.tdata.tvalid
         last = self.tdata.tlast
         _id = self.tdata.tid
         user = self.tdata.tuser
         dest = self.tdata.tdest
 
         return data, last, _id, user, dest, valid
-
-    def read_dataflow(self, cond=None, point=0, signed=True):
-        """
-        @return data, last, _id, user, dest, done
-        """
-        data_ready = self.m.TmpWire(prefix='data_ready')
-        last_ready = self.m.TmpWire(prefix='last_ready')
-        id_ready = self.m.TmpWire(prefix='id_ready')
-        user_ready = self.m.TmpWire(prefix='user_ready')
-        dest_ready = self.m.TmpWire(prefix='dest_ready')
-        data_ready.assign(1)
-        id_ready.assign(1)
-        last_ready.assign(1)
-        user_ready.assign(1)
-        dest_ready.assign(1)
-
-        if cond is None:
-            cond = (data_ready, last_ready, id_ready, user_ready, dest_ready)
-        elif isinstance(cond, (tuple, list)):
-            cond = tuple(list(cond) + [data_ready, last_ready, id_ready, user_ready, dest_ready])
-        else:
-            cond = (cond, data_ready, last_ready, id_ready, user_ready, dest_ready)
-
-        ready = make_condition(*cond)
-        val = 1 if ready is None else ready
-
-        _connect_ready(self.tdata.tready._get_module(), self.tdata.tready, val)
-
-        ack = vtypes.Ands(self.tdata.tready, self.tdata.tvalid)
-        data = self.tdata.tdata
-        valid = self.tdata.tvalid
-        _id = self.tdata.tid
-        last = self.tdata.tlast
-        user = self.tdata.tuser
-        dest = self.tdata.tdest
-
-        df = self.df if self.df is not None else _df
-
-        df_data = df.Variable(data, valid, data_ready,
-                              width=self.datawidth, point=point, signed=signed)
-        if last is not None:
-            df_last = df.Variable(last, valid, last_ready, width=1, signed=False)
-            done = vtypes.Ands(last, self.tdata.tvalid, self.tdata.tready)
-        else:
-            df_last = None
-            done = vtypes.Ands(self.tdata.tvalid, self.tdata.tready)
-
-        if _id is not None:
-            df_id = df.Variable(_id, valid, id_ready, width=_id.width, signed=False)
-        else:
-            df_id = None
-
-        if user is not None:
-            df_user = df.Variable(user, valid, user_ready, width=user.width, signed=False)
-        else:
-            df_user = None
-
-        if dest is not None:
-            df_dest = df.Variable(dest, valid, dest_ready, width=dest.width, signed=False)
-        else:
-            df_dest = None
-
-        return df_data, df_last, df_id, df_user, df_dest, done
 
     def connect(self, ports, name):
         if not self.noio:
@@ -2622,7 +2112,7 @@ class AxiStreamOut(object):
     def __init__(self, m, name, clk, rst, datawidth=32,
                  with_last=True, with_strb=False,
                  id_width=0, user_width=0, dest_width=0,
-                 noio=False, nodataflow=False):
+                 noio=False):
 
         self.m = m
         self.name = name
@@ -2656,11 +2146,6 @@ class AxiStreamOut(object):
         if self.tdata.tid is not None:
             self.tdata.tid.assign(0)
 
-        if nodataflow:
-            self.df = None
-        else:
-            self.df = DataflowManager(self.m, self.clk, self.rst)
-
     def write_data(self, data, last=None, _id=None, user=None, dest=None, cond=None):
         """
         @return ack
@@ -2690,80 +2175,6 @@ class AxiStreamOut(object):
             self.tdata.tvalid(self.tdata.tvalid),
             self.tdata.tlast(self.tdata.tlast) if self.tdata.tlast is not None else ()
         )
-
-        return ack
-
-    def write_dataflow(self, data, last=None, _id=None, user=None, dest=None, cond=None, when=None):
-        """
-        @return ack
-        'data', 'last', '_id', 'user', 'dest', and 'when' must be dataflow variables
-        """
-        ack = vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid))
-
-        if cond is None:
-            cond = ack
-        else:
-            cond = (cond, ack)
-
-        args = [data]
-        last_index = 0
-        id_index = 0
-        user_index = 0
-        dest_index = 0
-        when_index = 0
-        if last is not None:
-            args.append(last)
-            last_index = len(args) - 1
-        if _id is not None:
-            args.append(_id)
-            id_index = len(args) - 1
-        if user is not None:
-            args.append(user)
-            user_index = len(args) - 1
-        if dest is not None:
-            args.append(dest)
-            dest_index = len(args) - 1
-        if when is not None:
-            args.append(when)
-            when_index = len(args) - 1
-
-        data_list, raw_valid = read_multi(self.m, *args, cond=cond)
-        raw_data = data_list[0]
-        raw_last = data_list[last_index] if last_index > 0 else None
-        raw_id = data_list[id_index] if id_index > 0 else None
-        raw_user = data_list[user_index] if user_index > 0 else None
-        raw_dest = data_list[dest_index] if dest_index > 0 else None
-        raw_when = data_list[when_index] if when_index > 0 else None
-
-        when_cond = make_condition(raw_when, ready=cond)
-        if when_cond is not None:
-            raw_valid = vtypes.Ands(when_cond, raw_valid)
-
-        # write condition
-        self.seq.If(raw_valid)
-
-        self.seq.If(ack)(
-            self.tdata.tdata(raw_data),
-            self.tdata.tvalid(1),
-            self.tdata.tlast(raw_last) if self.tdata.tlast is not None else (),
-            self.tdata.tid(raw_id) if self.tdata.tid is not None else (),
-            self.tdata.tuser(raw_user) if self.tdata.tuser is not None else (),
-            self.tdata.tdest(raw_dest) if self.tdata.tdest is not None else (),
-        )
-
-        # de-assert
-        self.seq.Delay(1)(
-            self.tdata.tvalid(0),
-            self.tdata.tlast(0)
-        )
-
-        # retry
-        self.seq.If(vtypes.Ands(self.tdata.tvalid, vtypes.Not(self.tdata.tready)))(
-            self.tdata.tvalid(self.tdata.tvalid),
-            self.tdata.tlast(self.tdata.tlast) if self.tdata.tlast is not None else ()
-        )
-
-        ack = vtypes.Ands(self.tdata.tvalid, self.tdata.tready)
 
         return ack
 

@@ -21,10 +21,15 @@ def mkLed():
     addrwidth = 10
     numbanks = 4
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
-    myram = vthread.MultibankRAM(m, 'myram', clk, rst, datawidth, addrwidth,
-                                 numbanks=numbanks)
+    myram0 = vthread.MultibankRAM(m, 'myram0', clk, rst, datawidth, addrwidth,
+                                  numbanks=numbanks)
+    myram1 = vthread.MultibankRAM(m, 'myram1', clk, rst, datawidth, addrwidth,
+                                  numbanks=numbanks)
 
     all_ok = m.TmpReg(initval=0)
+    wdata = m.TmpReg(width=datawidth, initval=0, prefix='wdata')
+    rdata = m.TmpReg(width=datawidth, initval=0, prefix='rdata')
+    rexpected = m.TmpReg(width=datawidth, initval=0, prefix='rexpected')
 
     def blink(size):
         all_ok.value = True
@@ -32,7 +37,7 @@ def mkLed():
         for i in range(4):
             print('# iter %d start' % i)
             # Test for 4KB boundary check
-            offset = i * 1024 * 16 + (myaxi.boundary_size - 4)
+            offset = i * 1024 * 16 + (myaxi.boundary_size - (datawidth // 8) * 3)
             for bank in range(numbanks):
                 bank_offset = offset + bank * 1024
                 body(bank, size, bank_offset)
@@ -48,46 +53,48 @@ def mkLed():
     def body(bank, size, offset):
         # write
         for i in range(size):
-            wdata = i + 100
-            myram.write_bank(bank, i, wdata)
+            wdata.value = i + 0x1000 + (bank << 16)
+            myram0.write_bank(bank, i, wdata)
 
         laddr = 0
         gaddr = offset
-        myram.dma_write_bank(bank, myaxi, laddr, gaddr, size)
+        myram0.dma_write_bank(bank, myaxi, laddr, gaddr, size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # write
         for i in range(size):
-            wdata = i + 1000
-            myram.write_bank(bank, i, wdata)
+            wdata.value = i + 0x4000 + (bank << 16)
+            myram1.write_bank(bank, i, wdata)
 
         laddr = 0
         gaddr = (size + size) * 4 + offset
-        myram.dma_write_bank(bank, myaxi, laddr, gaddr, size)
+        myram1.dma_write_bank(bank, myaxi, laddr, gaddr, size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # read
         laddr = 0
         gaddr = offset
-        myram.dma_read_bank(bank, myaxi, laddr, gaddr, size)
+        myram1.dma_read_bank(bank, myaxi, laddr, gaddr, size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
-            rdata = myram.read_bank(bank, i)
-            if vthread.verilog.NotEql(rdata, i + 100):
-                print('rdata[%d] = %d' % (i, rdata))
+            rdata.value = myram1.read_bank(bank, i)
+            rexpected.value = i + 0x1000 + (bank << 16)
+            if vthread.verilog.NotEql(rdata, rexpected):
+                print('rdata[%d:%d] = %d (expected %d)' % (bank, i, rdata, rexpected))
                 all_ok.value = False
 
         # read
         laddr = 0
         gaddr = (size + size) * 4 + offset
-        myram.dma_read_bank(bank, myaxi, laddr, gaddr, size)
+        myram0.dma_read_bank(bank, myaxi, laddr, gaddr, size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
-            rdata = myram.read_bank(bank, i)
-            if vthread.verilog.NotEql(rdata, i + 1000):
-                print('rdata[%d] = %d' % (i, rdata))
+            rdata.value = myram0.read_bank(bank, i)
+            rexpected.value = i + 0x4000 + (bank << 16)
+            if vthread.verilog.NotEql(rdata, rexpected):
+                print('rdata[%d:%d] = %d (expected %d)' % (bank, i, rdata, rexpected))
                 all_ok.value = False
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
@@ -116,7 +123,7 @@ def mkTest(memimg_name=None):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    #simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

@@ -20,12 +20,9 @@ def mkLed():
     datawidth = 32
     addrwidth = 10
 
-    axi_a = vthread.AXIStreamIn(m, 'axi_a', clk, rst, datawidth, with_last=True,
-                                enable_async=True)
-    axi_b = vthread.AXIStreamIn(m, 'axi_b', clk, rst, datawidth, with_last=True,
-                                enable_async=True)
-    axi_c = vthread.AXIStreamOut(m, 'axi_c', clk, rst, datawidth, with_last=True,
-                                 enable_async=True)
+    axi_a = vthread.AXIStreamIn(m, 'axi_a', clk, rst, datawidth, with_last=True)
+    axi_b = vthread.AXIStreamIn(m, 'axi_b', clk, rst, datawidth, with_last=True)
+    axi_c = vthread.AXIStreamOut(m, 'axi_c', clk, rst, datawidth, with_last=True)
 
     saxi = vthread.AXISLiteRegister(m, 'saxi', clk, rst, datawidth)
 
@@ -53,13 +50,13 @@ def mkLed():
             size = saxi.read(2)
             offset = 0
 
-            axi_a.write_ram_async(ram_a, offset, size, port=1)  # non-blocking read
-            axi_b.write_ram_async(ram_b, offset, size, port=1)  # non-blocking read
-            axi_a.wait_write_ram()  # wait
-            axi_b.wait_write_ram()  # wait
+            axi_a.dma_read_async(ram_a, offset, size, port=1)  # non-blocking read
+            axi_b.dma_read_async(ram_b, offset, size, port=1)  # non-blocking read
+            axi_a.dma_wait_read()  # wait
+            axi_b.dma_wait_read()  # wait
             comp_stream(size, offset)
-            axi_c.read_ram(ram_c, offset, size, port=1)  # non-blocking write
-            axi_c.wait_read_ram()  # wait
+            axi_c.dma_write_async(ram_c, offset, size, port=1)  # non-blocking write
+            axi_c.dma_wait_write()  # wait
 
             saxi.write(1, 0)  # unset busy
 

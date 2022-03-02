@@ -20,47 +20,48 @@ def mkMain():
     myaxi.disable_write()
 
     fsm = FSM(m, 'fsm', clk, rst)
-    sum = m.Reg('sum', 32, initval=0)
 
-    # read address (1)
-    araddr = 1024
-    arlen = 64
-    expected_sum = (araddr // 4 + araddr // 4 + arlen - 1) * arlen // 2
-
-    ack, counter = myaxi.read_request_counter(araddr, arlen, cond=fsm)
+    # read request (1)
+    araddr1 = 1024
+    arlen1 = 64
+    ack = myaxi.read_request(araddr1, arlen1, cond=fsm)
     fsm.If(ack).goto_next()
 
     # read data (1)
-    data, valid, last = myaxi.read_data(counter, cond=fsm)
+    data, valid, last = myaxi.read_data(cond=fsm)
+    sum = m.Reg('sum', width=32, initval=0)
 
     fsm.If(valid)(
-        sum(sum + data)
+        sum.add(data)
     )
-    fsm.Then().If(last).goto_next()
+    fsm.If(valid, last).goto_next()
 
-    # read address (2)
-    araddr = 1024 + 1024
-    arlen = 64
-    expected_sum += (araddr // 4 + araddr // 4 + arlen - 1) * arlen // 2
-
-    ack, counter = myaxi.read_request_counter(araddr, arlen, cond=fsm)
+    # read request (2)
+    araddr2 = 1024 + 1024
+    arlen2 = 64 + 64
+    ack = myaxi.read_request(araddr2, arlen2, cond=fsm)
     fsm.If(ack).goto_next()
 
     # read data (2)
-    data, valid, last = myaxi.read_data(counter, cond=fsm)
+    data, valid, last = myaxi.read_data(cond=fsm)
 
     fsm.If(valid)(
-        sum(sum + data)
+        sum.add(data)
     )
-    fsm.Then().If(last).goto_next()
+    fsm.If(valid, last).goto_next()
 
+    # verify
+    expected_sum = (((araddr1 // 4 + araddr1 // 4 + arlen1 - 1) * arlen1) // 2 +
+                    ((araddr2 // 4 + araddr2 // 4 + arlen2 - 1) * arlen2) // 2)
     fsm(
-        Systask('display', 'sum=%d expected_sum=%d', sum, expected_sum),
-        If(NotEql(sum, expected_sum))(Display('# verify: FAILED')).Else(Display('# verify: PASSED'))
+        Systask('display', 'sum=%d expected_sum=%d', sum, expected_sum)
+    )
+    fsm.If(sum == expected_sum)(
+        Systask('display', '# verify: PASSED')
+    ).Else(
+        Systask('display', '# verify: FAILED')
     )
     fsm.goto_next()
-
-    fsm.make_always()
 
     return m
 
@@ -78,7 +79,7 @@ def mkTest(memimg_name=None):
     clk = ports['CLK']
     rst = ports['RST']
 
-    memory = axi.AxiMemoryModel(m, 'memory', clk, rst)
+    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memimg_name=memimg_name)
     memory.connect(ports, 'myaxi')
 
     uut = m.Instance(main, 'uut',

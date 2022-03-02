@@ -19,15 +19,16 @@ def mkLed(memory_datawidth=128):
 
     datawidth = 32
     addrwidth = 10
-
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, memory_datawidth)
-
     myram0 = vthread.RAM(m, 'myram_0', clk, rst, datawidth, addrwidth)
     myram1 = vthread.RAM(m, 'myram_1', clk, rst, datawidth, addrwidth)
     myram2 = vthread.RAM(m, 'myram_2', clk, rst, datawidth, addrwidth)
     myram3 = vthread.RAM(m, 'myram_3', clk, rst, datawidth, addrwidth)
 
-    all_ok = m.TmpReg(initval=0)
+    all_ok = m.TmpReg(initval=0, prefix='all_ok')
+    wdata = m.TmpReg(width=datawidth, initval=0, prefix='wdata')
+    rdata = m.TmpReg(width=datawidth, initval=0, prefix='rdata')
+    rexpected = m.TmpReg(width=datawidth, initval=0, prefix='rexpected')
 
     array_len = 256 + 128
     array_size = (array_len + array_len) * 4 * 4
@@ -38,7 +39,7 @@ def mkLed(memory_datawidth=128):
         for i in range(2):
             print('# iter %d start' % i)
             # Test for 4KB boundary check
-            offset = i * 1024 * 16 + (myaxi.boundary_size - 16)
+            offset = i * 1024 * 16 + (myaxi.boundary_size - (memory_datawidth // 8) * 3)
             body(size, offset)
             print('# iter %d end' % i)
 
@@ -52,6 +53,9 @@ def mkLed(memory_datawidth=128):
     def body(size, offset):
         # narrow dma test
         myaxi.dma_read(myram0, 0, 0, size)
+
+        ### ???
+
         myaxi.dma_read(myram1, 0, 0, size)
         myaxi.dma_read(myram2, 0, 0, size)
         myaxi.dma_read(myram3, 0, 0, size)
@@ -62,19 +66,19 @@ def mkLed(memory_datawidth=128):
 
         # write
         for i in range(size):
-            wdata = i + 100
+            wdata.value = i + 0x1000
             myram0.write(i, wdata)
 
         for i in range(size):
-            wdata = i + 100 + 1
+            wdata.value = i + 0x2000
             myram1.write(i, wdata)
 
         for i in range(size):
-            wdata = i + 100 + 2
+            wdata.value = i + 0x3000
             myram2.write(i, wdata)
 
         for i in range(size):
-            wdata = i + 100 + 3
+            wdata.value = i + 0x4000
             myram3.write(i, wdata)
 
         laddr = 0
@@ -85,19 +89,19 @@ def mkLed(memory_datawidth=128):
 
         # write
         for i in range(size):
-            wdata = i + 1000
+            wdata = i + 0x5000
             myram0.write(i, wdata)
 
         for i in range(size):
-            wdata = i + 1000 + 1
+            wdata = i + 0x6000
             myram1.write(i, wdata)
 
         for i in range(size):
-            wdata = i + 1000 + 2
+            wdata = i + 0x7000
             myram2.write(i, wdata)
 
         for i in range(size):
-            wdata = i + 1000 + 3
+            wdata = i + 0x8000
             myram3.write(i, wdata)
 
         laddr = 0
@@ -114,27 +118,31 @@ def mkLed(memory_datawidth=128):
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
-            rdata = myram0.read(i)
-            if vthread.verilog.NotEql(rdata, i + 100):
-                print('rdata[%d] = %d' % (i, rdata))
+            rdata.value = myram0.read(i)
+            rexpected.value = i + 0x1000
+            if vthread.verilog.NotEql(rdata, rexpected):
+                print('rdata[%d] = %d (expected %d)' % (i, rdata, rexpected))
                 all_ok.value = False
 
         for i in range(size):
-            rdata = myram1.read(i)
-            if vthread.verilog.NotEql(rdata, i + 100 + 1):
-                print('rdata[%d] = %d' % (i, rdata))
+            rdata.value = myram1.read(i)
+            rexpected.value = i + 0x2000
+            if vthread.verilog.NotEql(rdata, rexpected):
+                print('rdata[%d] = %d (expected %d)' % (i, rdata, rexpected))
                 all_ok.value = False
 
         for i in range(size):
-            rdata = myram2.read(i)
-            if vthread.verilog.NotEql(rdata, i + 100 + 2):
-                print('rdata[%d] = %d' % (i, rdata))
+            rdata.value = myram2.read(i)
+            rexpected.value = i + 0x3000
+            if vthread.verilog.NotEql(rdata, rexpected):
+                print('rdata[%d] = %d (expected %d)' % (i, rdata, rexpected))
                 all_ok.value = False
 
         for i in range(size):
-            rdata = myram3.read(i)
-            if vthread.verilog.NotEql(rdata, i + 100 + 3):
-                print('rdata[%d] = %d' % (i, rdata))
+            rdata.value = myram3.read(i)
+            rexpected.value = i + 0x4000
+            if vthread.verilog.NotEql(rdata, rexpected):
+                print('rdata[%d] = %d (expected %d)' % (i, rdata, rexpected))
                 all_ok.value = False
 
         # read
@@ -145,27 +153,31 @@ def mkLed(memory_datawidth=128):
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
-            rdata = myram0.read(i)
-            if vthread.verilog.NotEql(rdata, i + 1000):
-                print('rdata[%d] = %d' % (i, rdata))
+            rdata.value = myram0.read(i)
+            rexpected.value = i + 0x5000
+            if vthread.verilog.NotEql(rdata, rexpected):
+                print('rdata[%d] = %d (expected %d)' % (i, rdata, rexpected))
                 all_ok.value = False
 
         for i in range(size):
-            rdata = myram1.read(i)
-            if vthread.verilog.NotEql(rdata, i + 1000 + 1):
-                print('rdata[%d] = %d' % (i, rdata))
+            rdata.value = myram1.read(i)
+            rexpected.value = i + 0x6000
+            if vthread.verilog.NotEql(rdata, rexpected):
+                print('rdata[%d] = %d (expected %d)' % (i, rdata, rexpected))
                 all_ok.value = False
 
         for i in range(size):
-            rdata = myram2.read(i)
-            if vthread.verilog.NotEql(rdata, i + 1000 + 2):
-                print('rdata[%d] = %d' % (i, rdata))
+            rdata.value = myram2.read(i)
+            rexpected.value = i + 0x7000
+            if vthread.verilog.NotEql(rdata, rexpected):
+                print('rdata[%d] = %d (expected %d)' % (i, rdata, rexpected))
                 all_ok.value = False
 
         for i in range(size):
-            rdata = myram3.read(i)
-            if vthread.verilog.NotEql(rdata, i + 1000 + 3):
-                print('rdata[%d] = %d' % (i, rdata))
+            rdata.value = myram3.read(i)
+            rexpected.value = i + 0x8000
+            if vthread.verilog.NotEql(rdata, rexpected):
+                print('rdata[%d] = %d (expected %d)' % (i, rdata, rexpected))
                 all_ok.value = False
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
@@ -194,7 +206,7 @@ def mkTest(memimg_name=None, memory_datawidth=128):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    #simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
