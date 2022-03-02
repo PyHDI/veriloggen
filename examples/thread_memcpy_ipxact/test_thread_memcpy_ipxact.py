@@ -1401,34 +1401,34 @@ module memcpy
   reg prev_arvalid_13;
   assign saxi_awready = (_saxi_register_fsm == 0) && (!writevalid_10 && !readvalid_11 && !saxi_bvalid && prev_awvalid_12);
   assign saxi_arready = (_saxi_register_fsm == 0) && (!readvalid_11 && !writevalid_10 && prev_arvalid_13 && !prev_awvalid_12);
-  reg [_saxi_maskwidth-1:0] _tmp_14;
+  reg [_saxi_maskwidth-1:0] axis_maskaddr_14;
   wire signed [32-1:0] axislite_rdata_15;
-  assign axislite_rdata_15 = (_tmp_14 == 0)? _saxi_register_0 : 
-                             (_tmp_14 == 1)? _saxi_register_1 : 
-                             (_tmp_14 == 2)? _saxi_register_2 : 
-                             (_tmp_14 == 3)? _saxi_register_3 : 
-                             (_tmp_14 == 4)? _saxi_register_4 : 
-                             (_tmp_14 == 5)? _saxi_register_5 : 
-                             (_tmp_14 == 6)? _saxi_register_6 : 
-                             (_tmp_14 == 7)? _saxi_register_7 : 'hx;
+  assign axislite_rdata_15 = (axis_maskaddr_14 == 0)? _saxi_register_0 : 
+                             (axis_maskaddr_14 == 1)? _saxi_register_1 : 
+                             (axis_maskaddr_14 == 2)? _saxi_register_2 : 
+                             (axis_maskaddr_14 == 3)? _saxi_register_3 : 
+                             (axis_maskaddr_14 == 4)? _saxi_register_4 : 
+                             (axis_maskaddr_14 == 5)? _saxi_register_5 : 
+                             (axis_maskaddr_14 == 6)? _saxi_register_6 : 
+                             (axis_maskaddr_14 == 7)? _saxi_register_7 : 'hx;
   wire axislite_flag_16;
-  assign axislite_flag_16 = (_tmp_14 == 0)? _saxi_flag_0 : 
-                            (_tmp_14 == 1)? _saxi_flag_1 : 
-                            (_tmp_14 == 2)? _saxi_flag_2 : 
-                            (_tmp_14 == 3)? _saxi_flag_3 : 
-                            (_tmp_14 == 4)? _saxi_flag_4 : 
-                            (_tmp_14 == 5)? _saxi_flag_5 : 
-                            (_tmp_14 == 6)? _saxi_flag_6 : 
-                            (_tmp_14 == 7)? _saxi_flag_7 : 'hx;
+  assign axislite_flag_16 = (axis_maskaddr_14 == 0)? _saxi_flag_0 : 
+                            (axis_maskaddr_14 == 1)? _saxi_flag_1 : 
+                            (axis_maskaddr_14 == 2)? _saxi_flag_2 : 
+                            (axis_maskaddr_14 == 3)? _saxi_flag_3 : 
+                            (axis_maskaddr_14 == 4)? _saxi_flag_4 : 
+                            (axis_maskaddr_14 == 5)? _saxi_flag_5 : 
+                            (axis_maskaddr_14 == 6)? _saxi_flag_6 : 
+                            (axis_maskaddr_14 == 7)? _saxi_flag_7 : 'hx;
   wire signed [32-1:0] axislite_resetval_17;
-  assign axislite_resetval_17 = (_tmp_14 == 0)? _saxi_resetval_0 : 
-                                (_tmp_14 == 1)? _saxi_resetval_1 : 
-                                (_tmp_14 == 2)? _saxi_resetval_2 : 
-                                (_tmp_14 == 3)? _saxi_resetval_3 : 
-                                (_tmp_14 == 4)? _saxi_resetval_4 : 
-                                (_tmp_14 == 5)? _saxi_resetval_5 : 
-                                (_tmp_14 == 6)? _saxi_resetval_6 : 
-                                (_tmp_14 == 7)? _saxi_resetval_7 : 'hx;
+  assign axislite_resetval_17 = (axis_maskaddr_14 == 0)? _saxi_resetval_0 : 
+                                (axis_maskaddr_14 == 1)? _saxi_resetval_1 : 
+                                (axis_maskaddr_14 == 2)? _saxi_resetval_2 : 
+                                (axis_maskaddr_14 == 3)? _saxi_resetval_3 : 
+                                (axis_maskaddr_14 == 4)? _saxi_resetval_4 : 
+                                (axis_maskaddr_14 == 5)? _saxi_resetval_5 : 
+                                (axis_maskaddr_14 == 6)? _saxi_resetval_6 : 
+                                (axis_maskaddr_14 == 7)? _saxi_resetval_7 : 'hx;
   reg _saxi_cond_0_1;
   assign saxi_wready = _saxi_register_fsm == 2;
   reg [32-1:0] th_memcpy;
@@ -1895,60 +1895,60 @@ module memcpy
       if(saxi_rvalid && !saxi_rready) begin
         saxi_rvalid <= saxi_rvalid;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_16 && (_tmp_14 == 0)) begin
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_16 && (axis_maskaddr_14 == 0)) begin
         _saxi_register_0 <= axislite_resetval_17;
         _saxi_flag_0 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_16 && (_tmp_14 == 1)) begin
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_16 && (axis_maskaddr_14 == 1)) begin
         _saxi_register_1 <= axislite_resetval_17;
         _saxi_flag_1 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_16 && (_tmp_14 == 2)) begin
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_16 && (axis_maskaddr_14 == 2)) begin
         _saxi_register_2 <= axislite_resetval_17;
         _saxi_flag_2 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_16 && (_tmp_14 == 3)) begin
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_16 && (axis_maskaddr_14 == 3)) begin
         _saxi_register_3 <= axislite_resetval_17;
         _saxi_flag_3 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_16 && (_tmp_14 == 4)) begin
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_16 && (axis_maskaddr_14 == 4)) begin
         _saxi_register_4 <= axislite_resetval_17;
         _saxi_flag_4 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_16 && (_tmp_14 == 5)) begin
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_16 && (axis_maskaddr_14 == 5)) begin
         _saxi_register_5 <= axislite_resetval_17;
         _saxi_flag_5 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_16 && (_tmp_14 == 6)) begin
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_16 && (axis_maskaddr_14 == 6)) begin
         _saxi_register_6 <= axislite_resetval_17;
         _saxi_flag_6 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_16 && (_tmp_14 == 7)) begin
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_16 && (axis_maskaddr_14 == 7)) begin
         _saxi_register_7 <= axislite_resetval_17;
         _saxi_flag_7 <= 0;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (_tmp_14 == 0)) begin
+      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_14 == 0)) begin
         _saxi_register_0 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (_tmp_14 == 1)) begin
+      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_14 == 1)) begin
         _saxi_register_1 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (_tmp_14 == 2)) begin
+      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_14 == 2)) begin
         _saxi_register_2 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (_tmp_14 == 3)) begin
+      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_14 == 3)) begin
         _saxi_register_3 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (_tmp_14 == 4)) begin
+      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_14 == 4)) begin
         _saxi_register_4 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (_tmp_14 == 5)) begin
+      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_14 == 5)) begin
         _saxi_register_5 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (_tmp_14 == 6)) begin
+      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_14 == 6)) begin
         _saxi_register_6 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (_tmp_14 == 7)) begin
+      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_14 == 7)) begin
         _saxi_register_7 <= saxi_wdata;
       end 
       if((_saxi_register_0 == 1) && (th_memcpy == 2) && 1) begin
@@ -2024,11 +2024,12 @@ module memcpy
   always @(posedge CLK) begin
     if(RST) begin
       _saxi_register_fsm <= _saxi_register_fsm_init;
+      axis_maskaddr_14 <= 0;
     end else begin
       case(_saxi_register_fsm)
         _saxi_register_fsm_init: begin
           if(readvalid_11 || writevalid_10) begin
-            _tmp_14 <= (addr_9 >> _saxi_shift) & _saxi_mask;
+            axis_maskaddr_14 <= (addr_9 >> _saxi_shift) & _saxi_mask;
           end 
           if(readvalid_11) begin
             _saxi_register_fsm <= _saxi_register_fsm_1;
