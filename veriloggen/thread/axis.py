@@ -97,7 +97,7 @@ class AXISRegister(AXIS):
         rcount = self.m.TmpReg(self.burst_size_width + 1, initval=0,
                                prefix='axis_rcount')
         rlast = self.m.TmpReg(initval=0, prefix='axis_rlast')
-        maskaddr = self.m.TmpReg(self.maskwidth)
+        maskaddr = self.m.TmpReg(self.maskwidth, initval=0, prefix='axis_maskaddr')
 
         fsm.If(readvalid)(
             rcount(length),
@@ -282,7 +282,7 @@ class AXISLiteRegister(AXISLite):
         # request
         addr, readvalid, writevalid = self.pull_request(cond=fsm)
 
-        maskaddr = self.m.TmpReg(self.maskwidth)
+        maskaddr = self.m.TmpReg(self.maskwidth, initval=0, prefix='axis_maskaddr')
         fsm.If(vtypes.Ors(readvalid, writevalid))(
             maskaddr((addr >> self.shift) & self.mask),
         )
