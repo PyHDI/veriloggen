@@ -18,3 +18,6 @@ To synthesize
 --------------------
 
 Use `axi_stream.v` and `design_1.tcl`.
+
+Note that the reset polarity of `RST` of `axi_stream.v` is recognized as `ACTIVE_LOW` when it is imported into the block design in Vivado.
+Please change the the reset polarity to `ACTIVE_HIGH` in the block pin property setting.
