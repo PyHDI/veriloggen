@@ -484,8 +484,10 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         # Req state 1
         ack = self.read_request(self.read_global_addr, cur_global_size, cond=req_fsm)
         req_fsm.If(ack)(
-            self.read_global_addr.add(optimize(cur_global_size * (self.datawidth // 8))),
             cont(1)
+        )
+        self.seq.If(req_fsm.here, ack)(
+            self.read_global_addr.add(optimize(cur_global_size * (self.datawidth // 8)))
         )
         req_fsm.If(ack, self.read_global_size == 0)(
             cont(0)
@@ -878,8 +880,10 @@ class AXIM(axi.AxiMaster, _MutexFunction):
                                self.write_acceptable())
         ack = self.write_request(self.write_global_addr, cur_global_size, cond=req_cond)
         req_fsm.If(enq_cond)(
-            self.write_global_addr.add(optimize(cur_global_size * (self.datawidth // 8))),
             cont(1)
+        )
+        self.seq.If(req_fsm.here, enq_cond)(
+            self.write_global_addr.add(optimize(cur_global_size * (self.datawidth // 8)))
         )
         req_fsm.If(enq_cond, self.write_global_size == 0)(
             cont(0)
