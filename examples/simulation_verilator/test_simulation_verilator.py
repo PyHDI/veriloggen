@@ -1143,6 +1143,9 @@ module blinkled
       if(myaxi_arvalid && !myaxi_arready) begin
         myaxi_arvalid <= myaxi_arvalid;
       end 
+      if((_myaxi_read_req_fsm == 1) && (myaxi_arready || !myaxi_arvalid)) begin
+        _myaxi_read_global_addr <= _myaxi_read_global_addr + (_myaxi_read_cur_global_size << 2);
+      end 
       if((_myaxi_read_req_fsm == 1) && (myaxi_arready || !myaxi_arvalid) && (_myaxi_read_global_size == 0)) begin
         _myaxi_read_req_idle <= 1;
       end 
@@ -1220,6 +1223,9 @@ module blinkled
       _myaxi_cond_1_1 <= 1;
       if(myaxi_awvalid && !myaxi_awready) begin
         myaxi_awvalid <= myaxi_awvalid;
+      end 
+      if((_myaxi_write_req_fsm == 1) && ((_myaxi_write_req_fsm == 1) && !_myaxi_write_req_fifo_almost_full && (myaxi_awready || !myaxi_awvalid) && (outstanding_wcount_0 < 6))) begin
+        _myaxi_write_global_addr <= _myaxi_write_global_addr + (_myaxi_write_cur_global_size << 2);
       end 
       if((_myaxi_write_req_fsm == 1) && ((_myaxi_write_req_fsm == 1) && !_myaxi_write_req_fifo_almost_full && (myaxi_awready || !myaxi_awvalid) && (outstanding_wcount_0 < 6)) && (_myaxi_write_global_size == 0)) begin
         _myaxi_write_req_idle <= 1;
@@ -1704,7 +1710,6 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       _myaxi_read_req_fsm <= _myaxi_read_req_fsm_init;
-      _myaxi_read_global_addr <= 0;
       _myaxi_read_cont <= 0;
     end else begin
       case(_myaxi_read_req_fsm)
@@ -1715,7 +1720,6 @@ module blinkled
         end
         _myaxi_read_req_fsm_1: begin
           if(myaxi_arready || !myaxi_arvalid) begin
-            _myaxi_read_global_addr <= _myaxi_read_global_addr + (_myaxi_read_cur_global_size << 2);
             _myaxi_read_cont <= 1;
           end 
           if((myaxi_arready || !myaxi_arvalid) && (_myaxi_read_global_size == 0)) begin
@@ -1865,7 +1869,6 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       _myaxi_write_req_fsm <= _myaxi_write_req_fsm_init;
-      _myaxi_write_global_addr <= 0;
       _myaxi_write_cont <= 0;
     end else begin
       case(_myaxi_write_req_fsm)
@@ -1876,7 +1879,6 @@ module blinkled
         end
         _myaxi_write_req_fsm_1: begin
           if((_myaxi_write_req_fsm == 1) && !_myaxi_write_req_fifo_almost_full && (myaxi_awready || !myaxi_awvalid) && (outstanding_wcount_0 < 6)) begin
-            _myaxi_write_global_addr <= _myaxi_write_global_addr + (_myaxi_write_cur_global_size << 2);
             _myaxi_write_cont <= 1;
           end 
           if((_myaxi_write_req_fsm == 1) && !_myaxi_write_req_fifo_almost_full && (myaxi_awready || !myaxi_awvalid) && (outstanding_wcount_0 < 6) && (_myaxi_write_global_size == 0)) begin
