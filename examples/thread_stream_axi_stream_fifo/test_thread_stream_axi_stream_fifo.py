@@ -993,6 +993,9 @@ module blinkled
       if(maxi_arvalid && !maxi_arready) begin
         maxi_arvalid <= maxi_arvalid;
       end 
+      if((_maxi_read_req_fsm == 1) && (maxi_arready || !maxi_arvalid)) begin
+        _maxi_read_global_addr <= _maxi_read_global_addr + (_maxi_read_cur_global_size << 2);
+      end 
       if((_maxi_read_req_fsm == 1) && (maxi_arready || !maxi_arvalid) && (_maxi_read_global_size == 0)) begin
         _maxi_read_req_idle <= 1;
       end 
@@ -2349,7 +2352,6 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       _maxi_read_req_fsm <= _maxi_read_req_fsm_init;
-      _maxi_read_global_addr <= 0;
       _maxi_read_cont <= 0;
     end else begin
       case(_maxi_read_req_fsm)
@@ -2360,7 +2362,6 @@ module blinkled
         end
         _maxi_read_req_fsm_1: begin
           if(maxi_arready || !maxi_arvalid) begin
-            _maxi_read_global_addr <= _maxi_read_global_addr + (_maxi_read_cur_global_size << 2);
             _maxi_read_cont <= 1;
           end 
           if((maxi_arready || !maxi_arvalid) && (_maxi_read_global_size == 0)) begin
