@@ -1702,6 +1702,9 @@ module memcpy
       if(maxi_arvalid && !maxi_arready) begin
         maxi_arvalid <= maxi_arvalid;
       end 
+      if((_maxi_read_req_fsm == 1) && (maxi_arready || !maxi_arvalid)) begin
+        _maxi_read_global_addr <= _maxi_read_global_addr + (_maxi_read_cur_global_size << 2);
+      end 
       if((_maxi_read_req_fsm == 1) && (maxi_arready || !maxi_arvalid) && (_maxi_read_global_size == 0)) begin
         _maxi_read_req_idle <= 1;
       end 
@@ -1757,6 +1760,9 @@ module memcpy
       _maxi_cond_1_1 <= 1;
       if(maxi_awvalid && !maxi_awready) begin
         maxi_awvalid <= maxi_awvalid;
+      end 
+      if((_maxi_write_req_fsm == 1) && ((_maxi_write_req_fsm == 1) && !_maxi_write_req_fifo_almost_full && (maxi_awready || !maxi_awvalid) && (outstanding_wcount_0 < 6))) begin
+        _maxi_write_global_addr <= _maxi_write_global_addr + (_maxi_write_cur_global_size << 2);
       end 
       if((_maxi_write_req_fsm == 1) && ((_maxi_write_req_fsm == 1) && !_maxi_write_req_fifo_almost_full && (maxi_awready || !maxi_awvalid) && (outstanding_wcount_0 < 6)) && (_maxi_write_global_size == 0)) begin
         _maxi_write_req_idle <= 1;
@@ -2219,7 +2225,6 @@ module memcpy
   always @(posedge CLK) begin
     if(RST) begin
       _maxi_read_req_fsm <= _maxi_read_req_fsm_init;
-      _maxi_read_global_addr <= 0;
       _maxi_read_cont <= 0;
     end else begin
       case(_maxi_read_req_fsm)
@@ -2230,7 +2235,6 @@ module memcpy
         end
         _maxi_read_req_fsm_1: begin
           if(maxi_arready || !maxi_arvalid) begin
-            _maxi_read_global_addr <= _maxi_read_global_addr + (_maxi_read_cur_global_size << 2);
             _maxi_read_cont <= 1;
           end 
           if((maxi_arready || !maxi_arvalid) && (_maxi_read_global_size == 0)) begin
@@ -2320,7 +2324,6 @@ module memcpy
   always @(posedge CLK) begin
     if(RST) begin
       _maxi_write_req_fsm <= _maxi_write_req_fsm_init;
-      _maxi_write_global_addr <= 0;
       _maxi_write_cont <= 0;
     end else begin
       case(_maxi_write_req_fsm)
@@ -2331,7 +2334,6 @@ module memcpy
         end
         _maxi_write_req_fsm_1: begin
           if((_maxi_write_req_fsm == 1) && !_maxi_write_req_fifo_almost_full && (maxi_awready || !maxi_awvalid) && (outstanding_wcount_0 < 6)) begin
-            _maxi_write_global_addr <= _maxi_write_global_addr + (_maxi_write_cur_global_size << 2);
             _maxi_write_cont <= 1;
           end 
           if((_maxi_write_req_fsm == 1) && !_maxi_write_req_fifo_almost_full && (maxi_awready || !maxi_awvalid) && (outstanding_wcount_0 < 6) && (_maxi_write_global_size == 0)) begin
