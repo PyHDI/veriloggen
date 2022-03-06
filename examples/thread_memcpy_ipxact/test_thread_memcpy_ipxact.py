@@ -417,10 +417,8 @@ module test;
   reg signed [32-1:0] _th_ctrl_araddr_16;
   reg __saxi_cond_8_1;
   reg signed [32-1:0] axim_rdata_23;
-  reg signed [32-1:0] _th_ctrl_v_17;
-  reg __saxi_cond_9_1;
-  reg signed [32-1:0] axim_rdata_24;
-  assign _saxi_rready = (th_ctrl == 30) || (th_ctrl == 35);
+  assign _saxi_rready = th_ctrl == 31;
+  reg signed [32-1:0] _th_ctrl_busy_17;
   reg signed [32-1:0] _th_ctrl_end_time_18;
   reg signed [32-1:0] _th_ctrl_time_19;
 
@@ -484,9 +482,7 @@ module test;
     _th_ctrl_araddr_16 = 0;
     __saxi_cond_8_1 = 0;
     axim_rdata_23 = 0;
-    _th_ctrl_v_17 = 0;
-    __saxi_cond_9_1 = 0;
-    axim_rdata_24 = 0;
+    _th_ctrl_busy_17 = 0;
     _th_ctrl_end_time_18 = 0;
     _th_ctrl_time_19 = 0;
     #100;
@@ -770,7 +766,6 @@ module test;
       _saxi_araddr <= 0;
       _saxi_arvalid <= 0;
       __saxi_cond_8_1 <= 0;
-      __saxi_cond_9_1 <= 0;
     end else begin
       if(__saxi_cond_0_1) begin
         _saxi_awvalid <= 0;
@@ -797,9 +792,6 @@ module test;
         _saxi_wvalid <= 0;
       end 
       if(__saxi_cond_8_1) begin
-        _saxi_arvalid <= 0;
-      end 
-      if(__saxi_cond_9_1) begin
         _saxi_arvalid <= 0;
       end 
       if(_saxi_wvalid && _saxi_wready && !(_saxi_bvalid && _saxi_bready) && (outstanding_wcount_9 < 7)) begin
@@ -876,19 +868,11 @@ module test;
       if(_saxi_wvalid && !_saxi_wready) begin
         _saxi_wvalid <= _saxi_wvalid;
       end 
-      if((th_ctrl == 28) && (_saxi_arready || !_saxi_arvalid)) begin
+      if((th_ctrl == 29) && (_saxi_arready || !_saxi_arvalid)) begin
         _saxi_araddr <= _th_ctrl_araddr_16;
         _saxi_arvalid <= 1;
       end 
       __saxi_cond_8_1 <= 1;
-      if(_saxi_arvalid && !_saxi_arready) begin
-        _saxi_arvalid <= _saxi_arvalid;
-      end 
-      if((th_ctrl == 33) && (_saxi_arready || !_saxi_arvalid)) begin
-        _saxi_araddr <= _th_ctrl_araddr_16;
-        _saxi_arvalid <= 1;
-      end 
-      __saxi_cond_9_1 <= 1;
       if(_saxi_arvalid && !_saxi_arready) begin
         _saxi_arvalid <= _saxi_arvalid;
       end 
@@ -944,8 +928,6 @@ module test;
   localparam th_ctrl_38 = 38;
   localparam th_ctrl_39 = 39;
   localparam th_ctrl_40 = 40;
-  localparam th_ctrl_41 = 41;
-  localparam th_ctrl_42 = 42;
 
   always @(posedge uut_CLK) begin
     if(uut_RST) begin
@@ -957,8 +939,7 @@ module test;
       _th_ctrl_start_time_15 <= 0;
       _th_ctrl_araddr_16 <= 0;
       axim_rdata_23 <= 0;
-      _th_ctrl_v_17 <= 0;
-      axim_rdata_24 <= 0;
+      _th_ctrl_busy_17 <= 0;
       _th_ctrl_end_time_18 <= 0;
       _th_ctrl_time_19 <= 0;
     end else begin
@@ -982,7 +963,7 @@ module test;
           th_ctrl <= th_ctrl_2;
         end
         th_ctrl_4: begin
-          _th_ctrl_awaddr_12 <= 4;
+          _th_ctrl_awaddr_12 <= 8;
           th_ctrl <= th_ctrl_5;
         end
         th_ctrl_5: begin
@@ -1003,7 +984,7 @@ module test;
           end 
         end
         th_ctrl_9: begin
-          _th_ctrl_awaddr_12 <= 8;
+          _th_ctrl_awaddr_12 <= 12;
           th_ctrl <= th_ctrl_10;
         end
         th_ctrl_10: begin
@@ -1028,7 +1009,7 @@ module test;
           end 
         end
         th_ctrl_15: begin
-          _th_ctrl_awaddr_12 <= 12;
+          _th_ctrl_awaddr_12 <= 16;
           th_ctrl <= th_ctrl_16;
         end
         th_ctrl_16: begin
@@ -1078,74 +1059,64 @@ module test;
           end 
         end
         th_ctrl_27: begin
-          _th_ctrl_araddr_16 <= 16;
+          _th_ctrl_araddr_16 <= 4;
           th_ctrl <= th_ctrl_28;
         end
         th_ctrl_28: begin
-          if(_saxi_arready || !_saxi_arvalid) begin
+          if(1) begin
             th_ctrl <= th_ctrl_29;
-          end 
+          end else begin
+            th_ctrl <= th_ctrl_36;
+          end
         end
         th_ctrl_29: begin
-          th_ctrl <= th_ctrl_30;
+          if(_saxi_arready || !_saxi_arvalid) begin
+            th_ctrl <= th_ctrl_30;
+          end 
         end
         th_ctrl_30: begin
+          th_ctrl <= th_ctrl_31;
+        end
+        th_ctrl_31: begin
           if(_saxi_rvalid) begin
             axim_rdata_23 <= _saxi_rdata;
           end 
           if(_saxi_rvalid) begin
-            th_ctrl <= th_ctrl_31;
+            th_ctrl <= th_ctrl_32;
           end 
-        end
-        th_ctrl_31: begin
-          _th_ctrl_v_17 <= axim_rdata_23;
-          th_ctrl <= th_ctrl_32;
         end
         th_ctrl_32: begin
-          if(_th_ctrl_v_17 == 0) begin
-            th_ctrl <= th_ctrl_33;
-          end else begin
-            th_ctrl <= th_ctrl_38;
-          end
+          _th_ctrl_busy_17 <= axim_rdata_23;
+          th_ctrl <= th_ctrl_33;
         end
         th_ctrl_33: begin
-          if(_saxi_arready || !_saxi_arvalid) begin
+          if(!_th_ctrl_busy_17) begin
             th_ctrl <= th_ctrl_34;
-          end 
+          end else begin
+            th_ctrl <= th_ctrl_35;
+          end
         end
         th_ctrl_34: begin
-          th_ctrl <= th_ctrl_35;
+          th_ctrl <= th_ctrl_36;
         end
         th_ctrl_35: begin
-          if(_saxi_rvalid) begin
-            axim_rdata_24 <= _saxi_rdata;
-          end 
-          if(_saxi_rvalid) begin
-            th_ctrl <= th_ctrl_36;
-          end 
+          th_ctrl <= th_ctrl_28;
         end
         th_ctrl_36: begin
-          _th_ctrl_v_17 <= axim_rdata_24;
+          _th_ctrl_end_time_18 <= counter;
           th_ctrl <= th_ctrl_37;
         end
         th_ctrl_37: begin
-          th_ctrl <= th_ctrl_32;
+          $display("# end time = %d", _th_ctrl_end_time_18);
+          th_ctrl <= th_ctrl_38;
         end
         th_ctrl_38: begin
-          _th_ctrl_end_time_18 <= counter;
+          _th_ctrl_time_19 <= _th_ctrl_end_time_18 - _th_ctrl_start_time_15;
           th_ctrl <= th_ctrl_39;
         end
         th_ctrl_39: begin
-          $display("# end time = %d", _th_ctrl_end_time_18);
-          th_ctrl <= th_ctrl_40;
-        end
-        th_ctrl_40: begin
-          _th_ctrl_time_19 <= _th_ctrl_end_time_18 - _th_ctrl_start_time_15;
-          th_ctrl <= th_ctrl_41;
-        end
-        th_ctrl_41: begin
           $display("# exec time = %d", _th_ctrl_time_19);
-          th_ctrl <= th_ctrl_42;
+          th_ctrl <= th_ctrl_40;
         end
       endcase
     end
@@ -1665,7 +1636,7 @@ module memcpy
       end 
       _maxi_read_start <= 0;
       _maxi_write_start <= 0;
-      if((th_memcpy == 16) && _maxi_read_req_idle) begin
+      if((th_memcpy == 17) && _maxi_read_req_idle) begin
         _maxi_read_start <= 1;
         _maxi_read_op_sel <= 1;
         _maxi_read_global_addr <= mask_addr_masked_19;
@@ -1721,7 +1692,7 @@ module memcpy
       if((_maxi_read_data_fsm == 2) && maxi_rvalid && (_maxi_read_local_size_buf <= 1)) begin
         _maxi_read_data_idle <= 1;
       end 
-      if((th_memcpy == 18) && _maxi_write_req_idle) begin
+      if((th_memcpy == 19) && _maxi_write_req_idle) begin
         _maxi_write_start <= 1;
         _maxi_write_op_sel <= 1;
         _maxi_write_global_addr <= mask_addr_masked_44;
@@ -1864,14 +1835,6 @@ module memcpy
       _saxi_flag_6 <= 0;
       _saxi_register_7 <= 0;
       _saxi_flag_7 <= 0;
-      _saxi_resetval_0 <= 0;
-      _saxi_resetval_1 <= 0;
-      _saxi_resetval_2 <= 0;
-      _saxi_resetval_3 <= 0;
-      _saxi_resetval_4 <= 0;
-      _saxi_resetval_5 <= 0;
-      _saxi_resetval_6 <= 0;
-      _saxi_resetval_7 <= 0;
     end else begin
       if(_saxi_cond_0_1) begin
         saxi_rvalid <= 0;
@@ -1981,45 +1944,69 @@ module memcpy
       if((_saxi_register_0 == 1) && (th_memcpy == 2) && 0) begin
         _saxi_register_7 <= 0;
       end 
-      if((th_memcpy == 24) && 0) begin
+      if((th_memcpy == 3) && 0) begin
         _saxi_register_0 <= 1;
-        _saxi_flag_0 <= 1;
-        _saxi_resetval_0 <= 0;
+        _saxi_flag_0 <= 0;
       end 
-      if((th_memcpy == 24) && 0) begin
+      if((th_memcpy == 3) && 1) begin
         _saxi_register_1 <= 1;
-        _saxi_flag_1 <= 1;
-        _saxi_resetval_1 <= 0;
+        _saxi_flag_1 <= 0;
       end 
-      if((th_memcpy == 24) && 0) begin
+      if((th_memcpy == 3) && 0) begin
         _saxi_register_2 <= 1;
-        _saxi_flag_2 <= 1;
-        _saxi_resetval_2 <= 0;
+        _saxi_flag_2 <= 0;
       end 
-      if((th_memcpy == 24) && 0) begin
+      if((th_memcpy == 3) && 0) begin
         _saxi_register_3 <= 1;
-        _saxi_flag_3 <= 1;
-        _saxi_resetval_3 <= 0;
+        _saxi_flag_3 <= 0;
       end 
-      if((th_memcpy == 24) && 1) begin
+      if((th_memcpy == 3) && 0) begin
         _saxi_register_4 <= 1;
-        _saxi_flag_4 <= 1;
-        _saxi_resetval_4 <= 0;
+        _saxi_flag_4 <= 0;
       end 
-      if((th_memcpy == 24) && 0) begin
+      if((th_memcpy == 3) && 0) begin
         _saxi_register_5 <= 1;
-        _saxi_flag_5 <= 1;
-        _saxi_resetval_5 <= 0;
+        _saxi_flag_5 <= 0;
       end 
-      if((th_memcpy == 24) && 0) begin
+      if((th_memcpy == 3) && 0) begin
         _saxi_register_6 <= 1;
-        _saxi_flag_6 <= 1;
-        _saxi_resetval_6 <= 0;
+        _saxi_flag_6 <= 0;
       end 
-      if((th_memcpy == 24) && 0) begin
+      if((th_memcpy == 3) && 0) begin
         _saxi_register_7 <= 1;
-        _saxi_flag_7 <= 1;
-        _saxi_resetval_7 <= 0;
+        _saxi_flag_7 <= 0;
+      end 
+      if((th_memcpy == 25) && 0) begin
+        _saxi_register_0 <= 0;
+        _saxi_flag_0 <= 0;
+      end 
+      if((th_memcpy == 25) && 1) begin
+        _saxi_register_1 <= 0;
+        _saxi_flag_1 <= 0;
+      end 
+      if((th_memcpy == 25) && 0) begin
+        _saxi_register_2 <= 0;
+        _saxi_flag_2 <= 0;
+      end 
+      if((th_memcpy == 25) && 0) begin
+        _saxi_register_3 <= 0;
+        _saxi_flag_3 <= 0;
+      end 
+      if((th_memcpy == 25) && 0) begin
+        _saxi_register_4 <= 0;
+        _saxi_flag_4 <= 0;
+      end 
+      if((th_memcpy == 25) && 0) begin
+        _saxi_register_5 <= 0;
+        _saxi_flag_5 <= 0;
+      end 
+      if((th_memcpy == 25) && 0) begin
+        _saxi_register_6 <= 0;
+        _saxi_flag_6 <= 0;
+      end 
+      if((th_memcpy == 25) && 0) begin
+        _saxi_register_7 <= 0;
+        _saxi_flag_7 <= 0;
       end 
     end
   end
@@ -2084,6 +2071,7 @@ module memcpy
   localparam th_memcpy_24 = 24;
   localparam th_memcpy_25 = 25;
   localparam th_memcpy_26 = 26;
+  localparam th_memcpy_27 = 27;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -2108,7 +2096,7 @@ module memcpy
           if(1) begin
             th_memcpy <= th_memcpy_2;
           end else begin
-            th_memcpy <= th_memcpy_26;
+            th_memcpy <= th_memcpy_27;
           end
         end
         th_memcpy_2: begin
@@ -2117,103 +2105,106 @@ module memcpy
           end 
         end
         th_memcpy_3: begin
-          _th_memcpy_copy_bytes_0 <= _saxi_register_1;
           th_memcpy <= th_memcpy_4;
         end
         th_memcpy_4: begin
-          _th_memcpy_src_offset_1 <= _saxi_register_2;
+          _th_memcpy_copy_bytes_0 <= _saxi_register_2;
           th_memcpy <= th_memcpy_5;
         end
         th_memcpy_5: begin
-          _th_memcpy_dst_offset_2 <= _saxi_register_3;
+          _th_memcpy_src_offset_1 <= _saxi_register_3;
           th_memcpy <= th_memcpy_6;
         end
         th_memcpy_6: begin
-          _th_memcpy_copy_bytes_3 <= _th_memcpy_copy_bytes_0;
-          _th_memcpy_src_offset_4 <= _th_memcpy_src_offset_1;
-          _th_memcpy_dst_offset_5 <= _th_memcpy_dst_offset_2;
+          _th_memcpy_dst_offset_2 <= _saxi_register_4;
           th_memcpy <= th_memcpy_7;
         end
         th_memcpy_7: begin
-          _th_memcpy_rest_words_6 <= _th_memcpy_copy_bytes_3 >>> 2;
+          _th_memcpy_copy_bytes_3 <= _th_memcpy_copy_bytes_0;
+          _th_memcpy_src_offset_4 <= _th_memcpy_src_offset_1;
+          _th_memcpy_dst_offset_5 <= _th_memcpy_dst_offset_2;
           th_memcpy <= th_memcpy_8;
         end
         th_memcpy_8: begin
-          _th_memcpy_src_global_addr_7 <= _th_memcpy_src_offset_4;
+          _th_memcpy_rest_words_6 <= _th_memcpy_copy_bytes_3 >>> 2;
           th_memcpy <= th_memcpy_9;
         end
         th_memcpy_9: begin
-          _th_memcpy_dst_global_addr_8 <= _th_memcpy_dst_offset_5;
+          _th_memcpy_src_global_addr_7 <= _th_memcpy_src_offset_4;
           th_memcpy <= th_memcpy_10;
         end
         th_memcpy_10: begin
-          _th_memcpy_local_addr_9 <= 0;
+          _th_memcpy_dst_global_addr_8 <= _th_memcpy_dst_offset_5;
           th_memcpy <= th_memcpy_11;
         end
         th_memcpy_11: begin
-          if(_th_memcpy_rest_words_6 > 0) begin
-            th_memcpy <= th_memcpy_12;
-          end else begin
-            th_memcpy <= th_memcpy_24;
-          end
+          _th_memcpy_local_addr_9 <= 0;
+          th_memcpy <= th_memcpy_12;
         end
         th_memcpy_12: begin
-          if(_th_memcpy_rest_words_6 > 256) begin
+          if(_th_memcpy_rest_words_6 > 0) begin
             th_memcpy <= th_memcpy_13;
           end else begin
-            th_memcpy <= th_memcpy_15;
+            th_memcpy <= th_memcpy_25;
           end
         end
         th_memcpy_13: begin
-          _th_memcpy_dma_size_10 <= 256;
-          th_memcpy <= th_memcpy_14;
+          if(_th_memcpy_rest_words_6 > 256) begin
+            th_memcpy <= th_memcpy_14;
+          end else begin
+            th_memcpy <= th_memcpy_16;
+          end
         end
         th_memcpy_14: begin
-          th_memcpy <= th_memcpy_16;
+          _th_memcpy_dma_size_10 <= 256;
+          th_memcpy <= th_memcpy_15;
         end
         th_memcpy_15: begin
-          _th_memcpy_dma_size_10 <= _th_memcpy_rest_words_6;
-          th_memcpy <= th_memcpy_16;
+          th_memcpy <= th_memcpy_17;
         end
         th_memcpy_16: begin
-          if(_maxi_read_req_idle) begin
-            th_memcpy <= th_memcpy_17;
-          end 
+          _th_memcpy_dma_size_10 <= _th_memcpy_rest_words_6;
+          th_memcpy <= th_memcpy_17;
         end
         th_memcpy_17: begin
-          if(_maxi_read_idle) begin
+          if(_maxi_read_req_idle) begin
             th_memcpy <= th_memcpy_18;
           end 
         end
         th_memcpy_18: begin
-          if(_maxi_write_req_idle) begin
+          if(_maxi_read_idle) begin
             th_memcpy <= th_memcpy_19;
           end 
         end
         th_memcpy_19: begin
-          if(_maxi_write_idle && (outstanding_wcount_0 == 0)) begin
+          if(_maxi_write_req_idle) begin
             th_memcpy <= th_memcpy_20;
           end 
         end
         th_memcpy_20: begin
-          _th_memcpy_src_global_addr_7 <= _th_memcpy_src_global_addr_7 + (_th_memcpy_dma_size_10 << 2);
-          th_memcpy <= th_memcpy_21;
+          if(_maxi_write_idle && (outstanding_wcount_0 == 0)) begin
+            th_memcpy <= th_memcpy_21;
+          end 
         end
         th_memcpy_21: begin
-          _th_memcpy_dst_global_addr_8 <= _th_memcpy_dst_global_addr_8 + (_th_memcpy_dma_size_10 << 2);
+          _th_memcpy_src_global_addr_7 <= _th_memcpy_src_global_addr_7 + (_th_memcpy_dma_size_10 << 2);
           th_memcpy <= th_memcpy_22;
         end
         th_memcpy_22: begin
-          _th_memcpy_rest_words_6 <= _th_memcpy_rest_words_6 - _th_memcpy_dma_size_10;
+          _th_memcpy_dst_global_addr_8 <= _th_memcpy_dst_global_addr_8 + (_th_memcpy_dma_size_10 << 2);
           th_memcpy <= th_memcpy_23;
         end
         th_memcpy_23: begin
-          th_memcpy <= th_memcpy_11;
+          _th_memcpy_rest_words_6 <= _th_memcpy_rest_words_6 - _th_memcpy_dma_size_10;
+          th_memcpy <= th_memcpy_24;
         end
         th_memcpy_24: begin
-          th_memcpy <= th_memcpy_25;
+          th_memcpy <= th_memcpy_12;
         end
         th_memcpy_25: begin
+          th_memcpy <= th_memcpy_26;
+        end
+        th_memcpy_26: begin
           th_memcpy <= th_memcpy_1;
         end
       endcase
