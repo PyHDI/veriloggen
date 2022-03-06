@@ -139,14 +139,15 @@ def mkMemcpy():
     def memcpy():
         while True:
             saxi.wait_flag(0, value=1, resetvalue=0)
+            saxi.write(1, 1)  # set busy
 
-            copy_bytes = saxi.read(1)
-            src_offset = saxi.read(2)
-            dst_offset = saxi.read(3)
+            copy_bytes = saxi.read(2)
+            src_offset = saxi.read(3)
+            dst_offset = saxi.read(4)
 
             copy(copy_bytes, src_offset, dst_offset)
 
-            saxi.write_flag(4, 1, resetvalue=0)
+            saxi.write(1, 0)  # unset busy
 
     def copy(copy_bytes, src_offset, dst_offset):
         rest_words = copy_bytes // (datawidth // 8)
@@ -204,29 +205,30 @@ def mkTest():
         for i in range(100):
             pass
 
-        awaddr = 4 * 1
+        awaddr = 2 * 4
         print('# copy_bytes = %d' % copy_bytes)
         _saxi.write(awaddr, copy_bytes)
 
-        awaddr = 4 * 2
+        awaddr = 3 * 4
         src_offset = 0
         print('# src_offset = %d' % src_offset)
         _saxi.write(awaddr, src_offset)
 
-        awaddr = 4 * 3
+        awaddr = 4 * 4
         dst_offset = 1024 * 8
         print('# dst_offset = %d' % dst_offset)
         _saxi.write(awaddr, dst_offset)
 
-        awaddr = 4 * 0
+        awaddr = 0 * 4
         start_time = counter
         print('# start time = %d' % start_time)
         _saxi.write(awaddr, 1)
 
-        araddr = 4 * 4
-        v = _saxi.read(araddr)
-        while v == 0:
-            v = _saxi.read(araddr)
+        araddr = 1 * 4
+        while True:
+            busy = _saxi.read(araddr)
+            if not busy:
+                break
 
         end_time = counter
         print('# end time = %d' % end_time)
