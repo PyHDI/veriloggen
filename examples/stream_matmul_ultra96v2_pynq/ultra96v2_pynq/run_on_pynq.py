@@ -25,7 +25,7 @@ blinkled = overlay.blinkled_0
 # In[4]:
 
 
-matrix_size = 128
+matrix_size = 256
 
 a = allocate(shape=(matrix_size, matrix_size), dtype=np.int32)
 b = allocate(shape=(matrix_size, matrix_size), dtype=np.int32)
@@ -43,7 +43,7 @@ a[:] = np.random.randint(-20, 20, (matrix_size, matrix_size), dtype=np.int32)
 # matrix b should be transposed
 b[:] = np.random.randint(-20, 20, (matrix_size, matrix_size), dtype=np.int32)
 c[:] = np.zeros((matrix_size, matrix_size), dtype=np.int32)
-# print(c)
+print(c.reshape([-1])[-16:])
 
 
 # In[6]:
@@ -68,14 +68,14 @@ while True:
 # In[7]:
 
 
-# print(c)
+print(c.reshape([-1])[-16:])
 
 
 # In[8]:
 
 
 expected = np.matmul(a, b.T)
-# print(expected)
+print(expected.reshape([-1])[-16:])
 
 
 # In[9]:
