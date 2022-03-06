@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import veriloggen
-import thread_nexys4
+import thread_multithread
 
 expected_verilog = """
 module test;
@@ -9281,7 +9281,7 @@ endmodule
 
 def test():
     veriloggen.reset()
-    test_module = thread_nexys4.mkTest()
+    test_module = thread_multithread.mkTest()
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
