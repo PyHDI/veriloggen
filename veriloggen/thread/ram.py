@@ -3,6 +3,7 @@ from __future__ import print_function
 
 import functools
 import math
+import collections
 
 import veriloggen.core.vtypes as vtypes
 import veriloggen.types.fixed as fxd
@@ -64,8 +65,11 @@ class RAM(_MutexFunction):
             nocheck_initvals=nocheck_initvals,
             ram_style=ram_style)
 
+        ports = collections.OrderedDict()
+        ports['CLK'] = self.clk
+        ports.update(m.connect_ports(self.definition))
         self.inst = self.m.Instance(self.definition, 'inst_' + name,
-                                    ports=m.connect_ports(self.definition))
+                                    ports=ports)
 
         self.seq = Seq(m, name, clk, rst)
 
