@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import collections
+
 import veriloggen.core.vtypes as vtypes
 import veriloggen.types.util as util
 import veriloggen.types.fixed as fxd
@@ -37,8 +39,12 @@ class FIFO(_MutexFunction):
 
         self.definition = mkFifoDefinition(name, datawidth, addrwidth, sync=sync)
 
+        ports = collections.OrderedDict()
+        ports['CLK'] = self.clk
+        ports['RST'] = self.rst
+        ports.update(m.connect_ports(self.definition))
         self.inst = self.m.Instance(self.definition, 'inst_' + name,
-                                    ports=m.connect_ports(self.definition))
+                                    ports=ports)
 
         self.seq = Seq(m, name, clk, rst)
 
