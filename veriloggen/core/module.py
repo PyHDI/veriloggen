@@ -921,7 +921,9 @@ class Module(vtypes.VeriloggenNode):
 
     # -------------------------------------------------------------------------
     def connect_params(self, targ, prefix=None, postfix=None,
-                       include=None, exclude=None, strict=False):
+                       include=None, exclude=None, strict=False,
+                       use_fullmatch=False):
+
         if prefix is None:
             prefix = ''
         if postfix is None:
@@ -934,7 +936,7 @@ class Module(vtypes.VeriloggenNode):
             exclude = ()
         if isinstance(exclude, str):
             exclude = [exclude]
-        ret = []
+        ret = collections.OrderedDict()
         for key, obj in targ.global_constant.items():
             if not include:
                 skip = False
@@ -958,13 +960,15 @@ class Module(vtypes.VeriloggenNode):
                 raise IndexError(
                     "No such constant '%s' in module '%s'" % (key, self.name))
             if my_key in self.global_constant:
-                ret.append((key, self.global_constant[my_key]))
+                ret[key] = self.global_constant[my_key]
             elif my_key in self.local_constant:
-                ret.append((key, self.local_constant[my_key]))
+                ret[key] = self.local_constant[my_key]
         return ret
 
     def connect_ports(self, targ, prefix=None, postfix=None,
-                      include=None, exclude=None, strict=False):
+                      include=None, exclude=None, strict=False,
+                      use_fullmatch=False):
+
         if prefix is None:
             prefix = ''
         if postfix is None:
@@ -977,7 +981,7 @@ class Module(vtypes.VeriloggenNode):
             exclude = ()
         if isinstance(exclude, str):
             exclude = [exclude]
-        ret = []
+        ret = collections.OrderedDict()
         for key, obj in targ.io_variable.items():
             if not include:
                 skip = False
@@ -1001,9 +1005,9 @@ class Module(vtypes.VeriloggenNode):
                 raise IndexError("No such IO '%s' in module '%s'" %
                                  (key, self.name))
             if my_key in self.io_variable:
-                ret.append((key, self.io_variable[my_key]))
+                ret[key] = self.io_variable[my_key]
             elif my_key in self.variable:
-                ret.append((key, self.variable[my_key]))
+                ret[key] = self.variable[my_key]
         return ret
 
     # -------------------------------------------------------------------------

@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import copy
+import collections
 import veriloggen.core.vtypes as vtypes
 from veriloggen.core.module import Module
 from . import util
@@ -177,8 +178,11 @@ class _RAM_RTL(object):
         ram_def = mkRAMDefinition(name, datawidth, addrwidth, numports,
                                   initvals, sync, with_enable)
 
+        ports = collections.OrderedDict()
+        ports['CLK'] = self.clk
+        ports.update(m.connect_ports(ram_def))
         self.m.Instance(ram_def, name,
-                        params=(), ports=m.connect_ports(ram_def))
+                        params=(), ports=ports)
 
     def connect(self, port, addr, wdata, wenable, enable=None):
         self.m.Assign(self.interfaces[port].addr(addr))
