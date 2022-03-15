@@ -167,8 +167,64 @@ module test;
   wire memory_rready;
   assign memory_bresp = 0;
   assign memory_rresp = 0;
-  reg [32-1:0] _memory_fsm;
-  localparam _memory_fsm_init = 0;
+  reg [32-1:0] _memory_waddr_fsm;
+  localparam _memory_waddr_fsm_init = 0;
+  reg [32-1:0] _memory_wdata_fsm;
+  localparam _memory_wdata_fsm_init = 0;
+  reg [32-1:0] _memory_raddr_fsm;
+  localparam _memory_raddr_fsm_init = 0;
+  reg [32-1:0] _memory_rdata_fsm;
+  localparam _memory_rdata_fsm_init = 0;
+  wire _memory_wreq_fifo_enq;
+  wire [41-1:0] _memory_wreq_fifo_wdata;
+  wire _memory_wreq_fifo_full;
+  wire _memory_wreq_fifo_almost_full;
+  wire _memory_wreq_fifo_deq;
+  wire [41-1:0] _memory_wreq_fifo_rdata;
+  wire _memory_wreq_fifo_empty;
+  wire _memory_wreq_fifo_almost_empty;
+
+  _memory_wreq_fifo
+  inst__memory_wreq_fifo
+  (
+    .CLK(uut_CLK),
+    .RST(uut_RST),
+    ._memory_wreq_fifo_enq(_memory_wreq_fifo_enq),
+    ._memory_wreq_fifo_wdata(_memory_wreq_fifo_wdata),
+    ._memory_wreq_fifo_full(_memory_wreq_fifo_full),
+    ._memory_wreq_fifo_almost_full(_memory_wreq_fifo_almost_full),
+    ._memory_wreq_fifo_deq(_memory_wreq_fifo_deq),
+    ._memory_wreq_fifo_rdata(_memory_wreq_fifo_rdata),
+    ._memory_wreq_fifo_empty(_memory_wreq_fifo_empty),
+    ._memory_wreq_fifo_almost_empty(_memory_wreq_fifo_almost_empty)
+  );
+
+  reg [4-1:0] count__memory_wreq_fifo;
+  wire _memory_rreq_fifo_enq;
+  wire [41-1:0] _memory_rreq_fifo_wdata;
+  wire _memory_rreq_fifo_full;
+  wire _memory_rreq_fifo_almost_full;
+  wire _memory_rreq_fifo_deq;
+  wire [41-1:0] _memory_rreq_fifo_rdata;
+  wire _memory_rreq_fifo_empty;
+  wire _memory_rreq_fifo_almost_empty;
+
+  _memory_rreq_fifo
+  inst__memory_rreq_fifo
+  (
+    .CLK(uut_CLK),
+    .RST(uut_RST),
+    ._memory_rreq_fifo_enq(_memory_rreq_fifo_enq),
+    ._memory_rreq_fifo_wdata(_memory_rreq_fifo_wdata),
+    ._memory_rreq_fifo_full(_memory_rreq_fifo_full),
+    ._memory_rreq_fifo_almost_full(_memory_rreq_fifo_almost_full),
+    ._memory_rreq_fifo_deq(_memory_rreq_fifo_deq),
+    ._memory_rreq_fifo_rdata(_memory_rreq_fifo_rdata),
+    ._memory_rreq_fifo_empty(_memory_rreq_fifo_empty),
+    ._memory_rreq_fifo_almost_empty(_memory_rreq_fifo_almost_empty)
+  );
+
+  reg [4-1:0] count__memory_rreq_fifo;
   reg [8-1:0] _memory_mem [0:2**20-1];
 
   initial begin
@@ -181,10 +237,42 @@ module test;
   reg [32-1:0] _read_addr;
   reg [33-1:0] _sleep_count;
   reg [33-1:0] _sub_sleep_count;
-  reg [32-1:0] _d1__memory_fsm;
-  reg __memory_fsm_cond_100_0_1;
-  reg __memory_fsm_cond_200_1_1;
-  reg __memory_fsm_cond_211_2_1;
+  wire [32-1:0] pack_write_req_global_addr_0;
+  wire [9-1:0] pack_write_req_size_1;
+  assign pack_write_req_global_addr_0 = memory_awaddr;
+  assign pack_write_req_size_1 = memory_awlen + 1;
+  wire [41-1:0] pack_write_req_packed_2;
+  assign pack_write_req_packed_2 = { pack_write_req_global_addr_0, pack_write_req_size_1 };
+  assign _memory_wreq_fifo_wdata = ((_memory_waddr_fsm == 11) && memory_awvalid && memory_awready)? pack_write_req_packed_2 : 'hx;
+  assign _memory_wreq_fifo_enq = ((_memory_waddr_fsm == 11) && memory_awvalid && memory_awready)? (_memory_waddr_fsm == 11) && memory_awvalid && memory_awready && !_memory_wreq_fifo_almost_full : 0;
+  localparam _tmp_3 = 1;
+  wire [_tmp_3-1:0] _tmp_4;
+  assign _tmp_4 = !_memory_wreq_fifo_almost_full;
+  reg [_tmp_3-1:0] __tmp_4_1;
+  wire [32-1:0] unpack_write_req_global_addr_5;
+  wire [9-1:0] unpack_write_req_size_6;
+  assign unpack_write_req_global_addr_5 = _memory_wreq_fifo_rdata[40:9];
+  assign unpack_write_req_size_6 = _memory_wreq_fifo_rdata[8:0];
+  assign _memory_wreq_fifo_deq = ((_memory_wdata_fsm == 0) && !_memory_wreq_fifo_empty && !_memory_wreq_fifo_empty)? 1 : 0;
+  wire [32-1:0] pack_read_req_global_addr_7;
+  wire [9-1:0] pack_read_req_size_8;
+  assign pack_read_req_global_addr_7 = memory_araddr;
+  assign pack_read_req_size_8 = memory_arlen + 1;
+  wire [41-1:0] pack_read_req_packed_9;
+  assign pack_read_req_packed_9 = { pack_read_req_global_addr_7, pack_read_req_size_8 };
+  assign _memory_rreq_fifo_wdata = ((_memory_raddr_fsm == 1) && memory_arvalid && memory_arready)? pack_read_req_packed_9 : 'hx;
+  assign _memory_rreq_fifo_enq = ((_memory_raddr_fsm == 1) && memory_arvalid && memory_arready)? (_memory_raddr_fsm == 1) && memory_arvalid && memory_arready && !_memory_rreq_fifo_almost_full : 0;
+  localparam _tmp_10 = 1;
+  wire [_tmp_10-1:0] _tmp_11;
+  assign _tmp_11 = !_memory_rreq_fifo_almost_full;
+  reg [_tmp_10-1:0] __tmp_11_1;
+  wire [32-1:0] unpack_read_req_global_addr_12;
+  wire [9-1:0] unpack_read_req_size_13;
+  assign unpack_read_req_global_addr_12 = _memory_rreq_fifo_rdata[40:9];
+  assign unpack_read_req_size_13 = _memory_rreq_fifo_rdata[8:0];
+  assign _memory_rreq_fifo_deq = ((_memory_rdata_fsm == 0) && !_memory_rreq_fifo_empty && !_memory_rreq_fifo_empty)? 1 : 0;
+  reg [32-1:0] _d1__memory_rdata_fsm;
+  reg __memory_rdata_fsm_cond_11_0_1;
   assign memory_awaddr = uut_maxi_awaddr;
   assign memory_awlen = uut_maxi_awlen;
   assign memory_awsize = uut_maxi_awsize;
@@ -195,36 +283,36 @@ module test;
   assign memory_awqos = uut_maxi_awqos;
   assign memory_awuser = uut_maxi_awuser;
   assign memory_awvalid = uut_maxi_awvalid;
-  wire _tmp_0;
-  assign _tmp_0 = memory_awready;
+  wire _tmp_14;
+  assign _tmp_14 = memory_awready;
 
   always @(*) begin
-    uut_maxi_awready = _tmp_0;
+    uut_maxi_awready = _tmp_14;
   end
 
   assign memory_wdata = uut_maxi_wdata;
   assign memory_wstrb = uut_maxi_wstrb;
   assign memory_wlast = uut_maxi_wlast;
   assign memory_wvalid = uut_maxi_wvalid;
-  wire _tmp_1;
-  assign _tmp_1 = memory_wready;
+  wire _tmp_15;
+  assign _tmp_15 = memory_wready;
 
   always @(*) begin
-    uut_maxi_wready = _tmp_1;
+    uut_maxi_wready = _tmp_15;
   end
 
-  wire [2-1:0] _tmp_2;
-  assign _tmp_2 = memory_bresp;
+  wire [2-1:0] _tmp_16;
+  assign _tmp_16 = memory_bresp;
 
   always @(*) begin
-    uut_maxi_bresp = _tmp_2;
+    uut_maxi_bresp = _tmp_16;
   end
 
-  wire _tmp_3;
-  assign _tmp_3 = memory_bvalid;
+  wire _tmp_17;
+  assign _tmp_17 = memory_bvalid;
 
   always @(*) begin
-    uut_maxi_bvalid = _tmp_3;
+    uut_maxi_bvalid = _tmp_17;
   end
 
   assign memory_bready = uut_maxi_bready;
@@ -238,39 +326,39 @@ module test;
   assign memory_arqos = uut_maxi_arqos;
   assign memory_aruser = uut_maxi_aruser;
   assign memory_arvalid = uut_maxi_arvalid;
-  wire _tmp_4;
-  assign _tmp_4 = memory_arready;
+  wire _tmp_18;
+  assign _tmp_18 = memory_arready;
 
   always @(*) begin
-    uut_maxi_arready = _tmp_4;
+    uut_maxi_arready = _tmp_18;
   end
 
-  wire [32-1:0] _tmp_5;
-  assign _tmp_5 = memory_rdata;
+  wire [32-1:0] _tmp_19;
+  assign _tmp_19 = memory_rdata;
 
   always @(*) begin
-    uut_maxi_rdata = _tmp_5;
+    uut_maxi_rdata = _tmp_19;
   end
 
-  wire [2-1:0] _tmp_6;
-  assign _tmp_6 = memory_rresp;
+  wire [2-1:0] _tmp_20;
+  assign _tmp_20 = memory_rresp;
 
   always @(*) begin
-    uut_maxi_rresp = _tmp_6;
+    uut_maxi_rresp = _tmp_20;
   end
 
-  wire _tmp_7;
-  assign _tmp_7 = memory_rlast;
+  wire _tmp_21;
+  assign _tmp_21 = memory_rlast;
 
   always @(*) begin
-    uut_maxi_rlast = _tmp_7;
+    uut_maxi_rlast = _tmp_21;
   end
 
-  wire _tmp_8;
-  assign _tmp_8 = memory_rvalid;
+  wire _tmp_22;
+  assign _tmp_22 = memory_rvalid;
 
   always @(*) begin
-    uut_maxi_rvalid = _tmp_8;
+    uut_maxi_rvalid = _tmp_22;
   end
 
   assign memory_rready = uut_maxi_rready;
@@ -300,104 +388,104 @@ module test;
   assign _saxi_bready = 1;
   assign _saxi_arcache = 3;
   assign _saxi_arprot = 0;
-  reg [3-1:0] outstanding_wcount_9;
-  wire [32-1:0] _tmp_10;
-  assign _tmp_10 = _saxi_awaddr;
+  reg [3-1:0] outstanding_wcount_23;
+  wire [32-1:0] _tmp_24;
+  assign _tmp_24 = _saxi_awaddr;
 
   always @(*) begin
-    uut_saxi_awaddr = _tmp_10;
+    uut_saxi_awaddr = _tmp_24;
   end
 
-  wire [4-1:0] _tmp_11;
-  assign _tmp_11 = _saxi_awcache;
+  wire [4-1:0] _tmp_25;
+  assign _tmp_25 = _saxi_awcache;
 
   always @(*) begin
-    uut_saxi_awcache = _tmp_11;
+    uut_saxi_awcache = _tmp_25;
   end
 
-  wire [3-1:0] _tmp_12;
-  assign _tmp_12 = _saxi_awprot;
+  wire [3-1:0] _tmp_26;
+  assign _tmp_26 = _saxi_awprot;
 
   always @(*) begin
-    uut_saxi_awprot = _tmp_12;
+    uut_saxi_awprot = _tmp_26;
   end
 
-  wire _tmp_13;
-  assign _tmp_13 = _saxi_awvalid;
+  wire _tmp_27;
+  assign _tmp_27 = _saxi_awvalid;
 
   always @(*) begin
-    uut_saxi_awvalid = _tmp_13;
+    uut_saxi_awvalid = _tmp_27;
   end
 
   assign _saxi_awready = uut_saxi_awready;
-  wire [32-1:0] _tmp_14;
-  assign _tmp_14 = _saxi_wdata;
+  wire [32-1:0] _tmp_28;
+  assign _tmp_28 = _saxi_wdata;
 
   always @(*) begin
-    uut_saxi_wdata = _tmp_14;
+    uut_saxi_wdata = _tmp_28;
   end
 
-  wire [4-1:0] _tmp_15;
-  assign _tmp_15 = _saxi_wstrb;
+  wire [4-1:0] _tmp_29;
+  assign _tmp_29 = _saxi_wstrb;
 
   always @(*) begin
-    uut_saxi_wstrb = _tmp_15;
+    uut_saxi_wstrb = _tmp_29;
   end
 
-  wire _tmp_16;
-  assign _tmp_16 = _saxi_wvalid;
+  wire _tmp_30;
+  assign _tmp_30 = _saxi_wvalid;
 
   always @(*) begin
-    uut_saxi_wvalid = _tmp_16;
+    uut_saxi_wvalid = _tmp_30;
   end
 
   assign _saxi_wready = uut_saxi_wready;
   assign _saxi_bresp = uut_saxi_bresp;
   assign _saxi_bvalid = uut_saxi_bvalid;
-  wire _tmp_17;
-  assign _tmp_17 = _saxi_bready;
+  wire _tmp_31;
+  assign _tmp_31 = _saxi_bready;
 
   always @(*) begin
-    uut_saxi_bready = _tmp_17;
+    uut_saxi_bready = _tmp_31;
   end
 
-  wire [32-1:0] _tmp_18;
-  assign _tmp_18 = _saxi_araddr;
+  wire [32-1:0] _tmp_32;
+  assign _tmp_32 = _saxi_araddr;
 
   always @(*) begin
-    uut_saxi_araddr = _tmp_18;
+    uut_saxi_araddr = _tmp_32;
   end
 
-  wire [4-1:0] _tmp_19;
-  assign _tmp_19 = _saxi_arcache;
+  wire [4-1:0] _tmp_33;
+  assign _tmp_33 = _saxi_arcache;
 
   always @(*) begin
-    uut_saxi_arcache = _tmp_19;
+    uut_saxi_arcache = _tmp_33;
   end
 
-  wire [3-1:0] _tmp_20;
-  assign _tmp_20 = _saxi_arprot;
+  wire [3-1:0] _tmp_34;
+  assign _tmp_34 = _saxi_arprot;
 
   always @(*) begin
-    uut_saxi_arprot = _tmp_20;
+    uut_saxi_arprot = _tmp_34;
   end
 
-  wire _tmp_21;
-  assign _tmp_21 = _saxi_arvalid;
+  wire _tmp_35;
+  assign _tmp_35 = _saxi_arvalid;
 
   always @(*) begin
-    uut_saxi_arvalid = _tmp_21;
+    uut_saxi_arvalid = _tmp_35;
   end
 
   assign _saxi_arready = uut_saxi_arready;
   assign _saxi_rdata = uut_saxi_rdata;
   assign _saxi_rresp = uut_saxi_rresp;
   assign _saxi_rvalid = uut_saxi_rvalid;
-  wire _tmp_22;
-  assign _tmp_22 = _saxi_rready;
+  wire _tmp_36;
+  assign _tmp_36 = _saxi_rready;
 
   always @(*) begin
-    uut_saxi_rready = _tmp_22;
+    uut_saxi_rready = _tmp_36;
   end
 
   reg [32-1:0] counter;
@@ -418,7 +506,7 @@ module test;
   reg __saxi_cond_7_1;
   reg signed [32-1:0] _th_ctrl_araddr_16;
   reg __saxi_cond_8_1;
-  reg signed [32-1:0] axim_rdata_23;
+  reg signed [32-1:0] axim_rdata_37;
   assign _saxi_rready = th_ctrl == 31;
   reg signed [32-1:0] _th_ctrl_busy_17;
   reg signed [32-1:0] _th_ctrl_end_time_18;
@@ -447,17 +535,22 @@ module test;
     memory_rdata = 0;
     memory_rlast = 0;
     memory_rvalid = 0;
-    _memory_fsm = _memory_fsm_init;
+    _memory_waddr_fsm = _memory_waddr_fsm_init;
+    _memory_wdata_fsm = _memory_wdata_fsm_init;
+    _memory_raddr_fsm = _memory_raddr_fsm_init;
+    _memory_rdata_fsm = _memory_rdata_fsm_init;
+    count__memory_wreq_fifo = 0;
+    count__memory_rreq_fifo = 0;
     _write_count = 0;
     _write_addr = 0;
     _read_count = 0;
     _read_addr = 0;
     _sleep_count = 0;
     _sub_sleep_count = 0;
-    _d1__memory_fsm = _memory_fsm_init;
-    __memory_fsm_cond_100_0_1 = 0;
-    __memory_fsm_cond_200_1_1 = 0;
-    __memory_fsm_cond_211_2_1 = 0;
+    __tmp_4_1 = 0;
+    __tmp_11_1 = 0;
+    _d1__memory_rdata_fsm = _memory_rdata_fsm_init;
+    __memory_rdata_fsm_cond_11_0_1 = 0;
     _saxi_awaddr = 0;
     _saxi_awvalid = 0;
     _saxi_wdata = 0;
@@ -465,7 +558,7 @@ module test;
     _saxi_wvalid = 0;
     _saxi_araddr = 0;
     _saxi_arvalid = 0;
-    outstanding_wcount_9 = 0;
+    outstanding_wcount_23 = 0;
     counter = 0;
     th_ctrl = th_ctrl_init;
     _th_ctrl_i_11 = 0;
@@ -483,7 +576,7 @@ module test;
     __saxi_cond_7_1 = 0;
     _th_ctrl_araddr_16 = 0;
     __saxi_cond_8_1 = 0;
-    axim_rdata_23 = 0;
+    axim_rdata_37 = 0;
     _th_ctrl_busy_17 = 0;
     _th_ctrl_end_time_18 = 0;
     _th_ctrl_time_19 = 0;
@@ -495,63 +588,12 @@ module test;
     $finish;
   end
 
-  localparam _memory_fsm_200 = 200;
-  localparam _memory_fsm_201 = 201;
-  localparam _memory_fsm_202 = 202;
-  localparam _memory_fsm_203 = 203;
-  localparam _memory_fsm_204 = 204;
-  localparam _memory_fsm_205 = 205;
-  localparam _memory_fsm_206 = 206;
-  localparam _memory_fsm_207 = 207;
-  localparam _memory_fsm_208 = 208;
-  localparam _memory_fsm_209 = 209;
-  localparam _memory_fsm_210 = 210;
-  localparam _memory_fsm_211 = 211;
-  localparam _memory_fsm_100 = 100;
-  localparam _memory_fsm_101 = 101;
-  localparam _memory_fsm_102 = 102;
-  localparam _memory_fsm_103 = 103;
-  localparam _memory_fsm_104 = 104;
-  localparam _memory_fsm_105 = 105;
-  localparam _memory_fsm_106 = 106;
-  localparam _memory_fsm_107 = 107;
-  localparam _memory_fsm_108 = 108;
-  localparam _memory_fsm_109 = 109;
-  localparam _memory_fsm_110 = 110;
-  localparam _memory_fsm_111 = 111;
-  localparam _memory_fsm_112 = 112;
 
   always @(posedge uut_CLK) begin
     if(uut_RST) begin
-      _memory_fsm <= _memory_fsm_init;
-      _d1__memory_fsm <= _memory_fsm_init;
-      memory_awready <= 0;
-      _write_addr <= 0;
-      _write_count <= 0;
-      __memory_fsm_cond_100_0_1 <= 0;
-      memory_wready <= 0;
-      memory_arready <= 0;
-      _read_addr <= 0;
-      _read_count <= 0;
-      __memory_fsm_cond_200_1_1 <= 0;
-      memory_rdata[7:0] <= (0 >> 0) & { 8{ 1'd1 } };
-      memory_rdata[15:8] <= (0 >> 8) & { 8{ 1'd1 } };
-      memory_rdata[23:16] <= (0 >> 16) & { 8{ 1'd1 } };
-      memory_rdata[31:24] <= (0 >> 24) & { 8{ 1'd1 } };
-      memory_rvalid <= 0;
-      memory_rlast <= 0;
-      __memory_fsm_cond_211_2_1 <= 0;
-      memory_rdata <= 0;
-      memory_bvalid <= 0;
       _sub_sleep_count <= 0;
       _sleep_count <= 0;
     end else begin
-      if(memory_bvalid && memory_bready) begin
-        memory_bvalid <= 0;
-      end 
-      if(memory_wvalid && memory_wready && memory_wlast) begin
-        memory_bvalid <= 1;
-      end 
       if(_sleep_count == 3) begin
         _sub_sleep_count <= _sub_sleep_count + 1;
       end 
@@ -564,95 +606,116 @@ module test;
       if((_sub_sleep_count == 3) && (_sleep_count == 3)) begin
         _sleep_count <= 0;
       end 
-      _d1__memory_fsm <= _memory_fsm;
-      case(_d1__memory_fsm)
-        _memory_fsm_100: begin
-          if(__memory_fsm_cond_100_0_1) begin
+      if((_memory_wdata_fsm == 1) && memory_wvalid && memory_wready && memory_wstrb[0]) begin
+        _memory_mem[_write_addr + 0] <= memory_wdata[7:0];
+      end 
+      if((_memory_wdata_fsm == 1) && memory_wvalid && memory_wready && memory_wstrb[1]) begin
+        _memory_mem[_write_addr + 1] <= memory_wdata[15:8];
+      end 
+      if((_memory_wdata_fsm == 1) && memory_wvalid && memory_wready && memory_wstrb[2]) begin
+        _memory_mem[_write_addr + 2] <= memory_wdata[23:16];
+      end 
+      if((_memory_wdata_fsm == 1) && memory_wvalid && memory_wready && memory_wstrb[3]) begin
+        _memory_mem[_write_addr + 3] <= memory_wdata[31:24];
+      end 
+    end
+  end
+
+  localparam _memory_waddr_fsm_1 = 1;
+  localparam _memory_waddr_fsm_2 = 2;
+  localparam _memory_waddr_fsm_3 = 3;
+  localparam _memory_waddr_fsm_4 = 4;
+  localparam _memory_waddr_fsm_5 = 5;
+  localparam _memory_waddr_fsm_6 = 6;
+  localparam _memory_waddr_fsm_7 = 7;
+  localparam _memory_waddr_fsm_8 = 8;
+  localparam _memory_waddr_fsm_9 = 9;
+  localparam _memory_waddr_fsm_10 = 10;
+  localparam _memory_waddr_fsm_11 = 11;
+
+  always @(posedge uut_CLK) begin
+    if(uut_RST) begin
+      _memory_waddr_fsm <= _memory_waddr_fsm_init;
+      memory_awready <= 0;
+    end else begin
+      case(_memory_waddr_fsm)
+        _memory_waddr_fsm_init: begin
+          memory_awready <= 0;
+          if(memory_awvalid) begin
+            _memory_waddr_fsm <= _memory_waddr_fsm_1;
+          end 
+        end
+        _memory_waddr_fsm_1: begin
+          _memory_waddr_fsm <= _memory_waddr_fsm_2;
+        end
+        _memory_waddr_fsm_2: begin
+          _memory_waddr_fsm <= _memory_waddr_fsm_3;
+        end
+        _memory_waddr_fsm_3: begin
+          _memory_waddr_fsm <= _memory_waddr_fsm_4;
+        end
+        _memory_waddr_fsm_4: begin
+          _memory_waddr_fsm <= _memory_waddr_fsm_5;
+        end
+        _memory_waddr_fsm_5: begin
+          _memory_waddr_fsm <= _memory_waddr_fsm_6;
+        end
+        _memory_waddr_fsm_6: begin
+          _memory_waddr_fsm <= _memory_waddr_fsm_7;
+        end
+        _memory_waddr_fsm_7: begin
+          _memory_waddr_fsm <= _memory_waddr_fsm_8;
+        end
+        _memory_waddr_fsm_8: begin
+          _memory_waddr_fsm <= _memory_waddr_fsm_9;
+        end
+        _memory_waddr_fsm_9: begin
+          _memory_waddr_fsm <= _memory_waddr_fsm_10;
+        end
+        _memory_waddr_fsm_10: begin
+          _memory_waddr_fsm <= _memory_waddr_fsm_11;
+        end
+        _memory_waddr_fsm_11: begin
+          if(!_memory_wreq_fifo_almost_full) begin
+            memory_awready <= 1;
+          end 
+          if(memory_awvalid && memory_awready) begin
             memory_awready <= 0;
           end 
-        end
-        _memory_fsm_200: begin
-          if(__memory_fsm_cond_200_1_1) begin
-            memory_arready <= 0;
+          if(!memory_awvalid) begin
+            _memory_waddr_fsm <= _memory_waddr_fsm_init;
           end 
-        end
-        _memory_fsm_211: begin
-          if(__memory_fsm_cond_211_2_1) begin
-            memory_rvalid <= 0;
-            memory_rlast <= 0;
+          if(memory_awvalid && memory_awready) begin
+            _memory_waddr_fsm <= _memory_waddr_fsm_init;
           end 
         end
       endcase
-      case(_memory_fsm)
-        _memory_fsm_init: begin
-          if(memory_awvalid) begin
-            _memory_fsm <= _memory_fsm_100;
+    end
+  end
+
+  localparam _memory_wdata_fsm_1 = 1;
+
+  always @(posedge uut_CLK) begin
+    if(uut_RST) begin
+      _memory_wdata_fsm <= _memory_wdata_fsm_init;
+      memory_bvalid <= 0;
+      _write_addr <= 0;
+      _write_count <= 0;
+      memory_wready <= 0;
+    end else begin
+      case(_memory_wdata_fsm)
+        _memory_wdata_fsm_init: begin
+          memory_bvalid <= 0;
+          if(!_memory_wreq_fifo_empty) begin
+            _write_addr <= unpack_write_req_global_addr_5;
+            _write_count <= unpack_write_req_size_6;
+            memory_wready <= 1;
           end 
-          if(memory_arvalid) begin
-            _memory_fsm <= _memory_fsm_200;
+          if(!_memory_wreq_fifo_empty) begin
+            _memory_wdata_fsm <= _memory_wdata_fsm_1;
           end 
         end
-        _memory_fsm_100: begin
-          if(memory_awvalid && !memory_bvalid) begin
-            memory_awready <= 1;
-            _write_addr <= memory_awaddr;
-            _write_count <= memory_awlen + 1;
-          end 
-          __memory_fsm_cond_100_0_1 <= 1;
-          if(!memory_awvalid) begin
-            _memory_fsm <= _memory_fsm_init;
-          end 
-          if(memory_awvalid) begin
-            _memory_fsm <= _memory_fsm_101;
-          end 
-        end
-        _memory_fsm_101: begin
-          _memory_fsm <= _memory_fsm_102;
-        end
-        _memory_fsm_102: begin
-          _memory_fsm <= _memory_fsm_103;
-        end
-        _memory_fsm_103: begin
-          _memory_fsm <= _memory_fsm_104;
-        end
-        _memory_fsm_104: begin
-          _memory_fsm <= _memory_fsm_105;
-        end
-        _memory_fsm_105: begin
-          _memory_fsm <= _memory_fsm_106;
-        end
-        _memory_fsm_106: begin
-          _memory_fsm <= _memory_fsm_107;
-        end
-        _memory_fsm_107: begin
-          _memory_fsm <= _memory_fsm_108;
-        end
-        _memory_fsm_108: begin
-          _memory_fsm <= _memory_fsm_109;
-        end
-        _memory_fsm_109: begin
-          _memory_fsm <= _memory_fsm_110;
-        end
-        _memory_fsm_110: begin
-          _memory_fsm <= _memory_fsm_111;
-        end
-        _memory_fsm_111: begin
-          memory_wready <= 1;
-          _memory_fsm <= _memory_fsm_112;
-        end
-        _memory_fsm_112: begin
-          if(memory_wvalid && memory_wstrb[0]) begin
-            _memory_mem[_write_addr + 0] <= memory_wdata[7:0];
-          end 
-          if(memory_wvalid && memory_wstrb[1]) begin
-            _memory_mem[_write_addr + 1] <= memory_wdata[15:8];
-          end 
-          if(memory_wvalid && memory_wstrb[2]) begin
-            _memory_mem[_write_addr + 2] <= memory_wdata[23:16];
-          end 
-          if(memory_wvalid && memory_wstrb[3]) begin
-            _memory_mem[_write_addr + 3] <= memory_wdata[31:24];
-          end 
+        _memory_wdata_fsm_1: begin
           if(memory_wvalid && memory_wready) begin
             _write_addr <= _write_addr + 4;
             _write_count <= _write_count - 1;
@@ -665,55 +728,129 @@ module test;
           if(memory_wvalid && memory_wready && (_write_count == 1)) begin
             memory_wready <= 0;
           end 
+          if(memory_wvalid && memory_wready && memory_wlast) begin
+            memory_bvalid <= 1;
+          end 
           if(memory_wvalid && memory_wready && (_write_count == 1)) begin
-            _memory_fsm <= _memory_fsm_init;
+            _memory_wdata_fsm <= _memory_wdata_fsm_init;
+          end 
+          if(memory_wvalid && memory_wready && memory_wlast) begin
+            _memory_wdata_fsm <= _memory_wdata_fsm_init;
           end 
         end
-        _memory_fsm_200: begin
+      endcase
+    end
+  end
+
+  localparam _memory_raddr_fsm_1 = 1;
+
+  always @(posedge uut_CLK) begin
+    if(uut_RST) begin
+      _memory_raddr_fsm <= _memory_raddr_fsm_init;
+      memory_arready <= 0;
+    end else begin
+      case(_memory_raddr_fsm)
+        _memory_raddr_fsm_init: begin
+          memory_arready <= 0;
           if(memory_arvalid) begin
+            _memory_raddr_fsm <= _memory_raddr_fsm_1;
+          end 
+        end
+        _memory_raddr_fsm_1: begin
+          if(!_memory_rreq_fifo_almost_full) begin
             memory_arready <= 1;
-            _read_addr <= memory_araddr;
-            _read_count <= memory_arlen + 1;
           end 
-          __memory_fsm_cond_200_1_1 <= 1;
+          if(memory_arvalid && memory_arready) begin
+            memory_arready <= 0;
+          end 
           if(!memory_arvalid) begin
-            _memory_fsm <= _memory_fsm_init;
+            _memory_raddr_fsm <= _memory_raddr_fsm_init;
           end 
-          if(memory_arvalid) begin
-            _memory_fsm <= _memory_fsm_201;
+          if(memory_arvalid && memory_arready) begin
+            _memory_raddr_fsm <= _memory_raddr_fsm_init;
           end 
         end
-        _memory_fsm_201: begin
-          _memory_fsm <= _memory_fsm_202;
+      endcase
+    end
+  end
+
+  localparam _memory_rdata_fsm_1 = 1;
+  localparam _memory_rdata_fsm_2 = 2;
+  localparam _memory_rdata_fsm_3 = 3;
+  localparam _memory_rdata_fsm_4 = 4;
+  localparam _memory_rdata_fsm_5 = 5;
+  localparam _memory_rdata_fsm_6 = 6;
+  localparam _memory_rdata_fsm_7 = 7;
+  localparam _memory_rdata_fsm_8 = 8;
+  localparam _memory_rdata_fsm_9 = 9;
+  localparam _memory_rdata_fsm_10 = 10;
+  localparam _memory_rdata_fsm_11 = 11;
+
+  always @(posedge uut_CLK) begin
+    if(uut_RST) begin
+      _memory_rdata_fsm <= _memory_rdata_fsm_init;
+      _d1__memory_rdata_fsm <= _memory_rdata_fsm_init;
+      _read_addr <= 0;
+      _read_count <= 0;
+      memory_rdata[7:0] <= (0 >> 0) & { 8{ 1'd1 } };
+      memory_rdata[15:8] <= (0 >> 8) & { 8{ 1'd1 } };
+      memory_rdata[23:16] <= (0 >> 16) & { 8{ 1'd1 } };
+      memory_rdata[31:24] <= (0 >> 24) & { 8{ 1'd1 } };
+      memory_rvalid <= 0;
+      memory_rlast <= 0;
+      __memory_rdata_fsm_cond_11_0_1 <= 0;
+      memory_rdata <= 0;
+    end else begin
+      _d1__memory_rdata_fsm <= _memory_rdata_fsm;
+      case(_d1__memory_rdata_fsm)
+        _memory_rdata_fsm_11: begin
+          if(__memory_rdata_fsm_cond_11_0_1) begin
+            memory_rvalid <= 0;
+            memory_rlast <= 0;
+          end 
         end
-        _memory_fsm_202: begin
-          _memory_fsm <= _memory_fsm_203;
+      endcase
+      case(_memory_rdata_fsm)
+        _memory_rdata_fsm_init: begin
+          if(!_memory_rreq_fifo_empty) begin
+            _read_addr <= unpack_read_req_global_addr_12;
+            _read_count <= unpack_read_req_size_13;
+          end 
+          if(!_memory_rreq_fifo_empty) begin
+            _memory_rdata_fsm <= _memory_rdata_fsm_1;
+          end 
         end
-        _memory_fsm_203: begin
-          _memory_fsm <= _memory_fsm_204;
+        _memory_rdata_fsm_1: begin
+          _memory_rdata_fsm <= _memory_rdata_fsm_2;
         end
-        _memory_fsm_204: begin
-          _memory_fsm <= _memory_fsm_205;
+        _memory_rdata_fsm_2: begin
+          _memory_rdata_fsm <= _memory_rdata_fsm_3;
         end
-        _memory_fsm_205: begin
-          _memory_fsm <= _memory_fsm_206;
+        _memory_rdata_fsm_3: begin
+          _memory_rdata_fsm <= _memory_rdata_fsm_4;
         end
-        _memory_fsm_206: begin
-          _memory_fsm <= _memory_fsm_207;
+        _memory_rdata_fsm_4: begin
+          _memory_rdata_fsm <= _memory_rdata_fsm_5;
         end
-        _memory_fsm_207: begin
-          _memory_fsm <= _memory_fsm_208;
+        _memory_rdata_fsm_5: begin
+          _memory_rdata_fsm <= _memory_rdata_fsm_6;
         end
-        _memory_fsm_208: begin
-          _memory_fsm <= _memory_fsm_209;
+        _memory_rdata_fsm_6: begin
+          _memory_rdata_fsm <= _memory_rdata_fsm_7;
         end
-        _memory_fsm_209: begin
-          _memory_fsm <= _memory_fsm_210;
+        _memory_rdata_fsm_7: begin
+          _memory_rdata_fsm <= _memory_rdata_fsm_8;
         end
-        _memory_fsm_210: begin
-          _memory_fsm <= _memory_fsm_211;
+        _memory_rdata_fsm_8: begin
+          _memory_rdata_fsm <= _memory_rdata_fsm_9;
         end
-        _memory_fsm_211: begin
+        _memory_rdata_fsm_9: begin
+          _memory_rdata_fsm <= _memory_rdata_fsm_10;
+        end
+        _memory_rdata_fsm_10: begin
+          _memory_rdata_fsm <= _memory_rdata_fsm_11;
+        end
+        _memory_rdata_fsm_11: begin
           if(memory_rready | !memory_rvalid) begin
             memory_rdata[7:0] <= _memory_mem[_read_addr + 0];
           end 
@@ -734,14 +871,14 @@ module test;
           if((_sleep_count < 3) && (_read_count == 1) && memory_rready | !memory_rvalid) begin
             memory_rlast <= 1;
           end 
-          __memory_fsm_cond_211_2_1 <= 1;
+          __memory_rdata_fsm_cond_11_0_1 <= 1;
           if(memory_rvalid && !memory_rready) begin
             memory_rvalid <= memory_rvalid;
             memory_rdata <= memory_rdata;
             memory_rlast <= memory_rlast;
           end 
           if(memory_rvalid && memory_rready && (_read_count == 0)) begin
-            _memory_fsm <= _memory_fsm_init;
+            _memory_rdata_fsm <= _memory_rdata_fsm_init;
           end 
         end
       endcase
@@ -751,7 +888,41 @@ module test;
 
   always @(posedge uut_CLK) begin
     if(uut_RST) begin
-      outstanding_wcount_9 <= 0;
+      count__memory_wreq_fifo <= 0;
+      __tmp_4_1 <= 0;
+    end else begin
+      if(_memory_wreq_fifo_enq && !_memory_wreq_fifo_full && (_memory_wreq_fifo_deq && !_memory_wreq_fifo_empty)) begin
+        count__memory_wreq_fifo <= count__memory_wreq_fifo;
+      end else if(_memory_wreq_fifo_enq && !_memory_wreq_fifo_full) begin
+        count__memory_wreq_fifo <= count__memory_wreq_fifo + 1;
+      end else if(_memory_wreq_fifo_deq && !_memory_wreq_fifo_empty) begin
+        count__memory_wreq_fifo <= count__memory_wreq_fifo - 1;
+      end 
+      __tmp_4_1 <= _tmp_4;
+    end
+  end
+
+
+  always @(posedge uut_CLK) begin
+    if(uut_RST) begin
+      count__memory_rreq_fifo <= 0;
+      __tmp_11_1 <= 0;
+    end else begin
+      if(_memory_rreq_fifo_enq && !_memory_rreq_fifo_full && (_memory_rreq_fifo_deq && !_memory_rreq_fifo_empty)) begin
+        count__memory_rreq_fifo <= count__memory_rreq_fifo;
+      end else if(_memory_rreq_fifo_enq && !_memory_rreq_fifo_full) begin
+        count__memory_rreq_fifo <= count__memory_rreq_fifo + 1;
+      end else if(_memory_rreq_fifo_deq && !_memory_rreq_fifo_empty) begin
+        count__memory_rreq_fifo <= count__memory_rreq_fifo - 1;
+      end 
+      __tmp_11_1 <= _tmp_11;
+    end
+  end
+
+
+  always @(posedge uut_CLK) begin
+    if(uut_RST) begin
+      outstanding_wcount_23 <= 0;
       _saxi_awaddr <= 0;
       _saxi_awvalid <= 0;
       __saxi_cond_0_1 <= 0;
@@ -796,13 +967,13 @@ module test;
       if(__saxi_cond_8_1) begin
         _saxi_arvalid <= 0;
       end 
-      if(_saxi_wvalid && _saxi_wready && !(_saxi_bvalid && _saxi_bready) && (outstanding_wcount_9 < 7)) begin
-        outstanding_wcount_9 <= outstanding_wcount_9 + 1;
+      if(_saxi_wvalid && _saxi_wready && !(_saxi_bvalid && _saxi_bready) && (outstanding_wcount_23 < 7)) begin
+        outstanding_wcount_23 <= outstanding_wcount_23 + 1;
       end 
-      if(!(_saxi_wvalid && _saxi_wready) && (_saxi_bvalid && _saxi_bready) && (outstanding_wcount_9 > 0)) begin
-        outstanding_wcount_9 <= outstanding_wcount_9 - 1;
+      if(!(_saxi_wvalid && _saxi_wready) && (_saxi_bvalid && _saxi_bready) && (outstanding_wcount_23 > 0)) begin
+        outstanding_wcount_23 <= outstanding_wcount_23 - 1;
       end 
-      if((th_ctrl == 6) && ((outstanding_wcount_9 < 6) && (_saxi_awready || !_saxi_awvalid))) begin
+      if((th_ctrl == 6) && ((outstanding_wcount_23 < 6) && (_saxi_awready || !_saxi_awvalid))) begin
         _saxi_awaddr <= _th_ctrl_awaddr_12;
         _saxi_awvalid <= 1;
       end 
@@ -810,7 +981,7 @@ module test;
       if(_saxi_awvalid && !_saxi_awready) begin
         _saxi_awvalid <= _saxi_awvalid;
       end 
-      if((th_ctrl == 8) && ((outstanding_wcount_9 < 6) && (_saxi_wready || !_saxi_wvalid))) begin
+      if((th_ctrl == 8) && ((outstanding_wcount_23 < 6) && (_saxi_wready || !_saxi_wvalid))) begin
         _saxi_wdata <= 4096;
         _saxi_wvalid <= 1;
         _saxi_wstrb <= { 4{ 1'd1 } };
@@ -819,7 +990,7 @@ module test;
       if(_saxi_wvalid && !_saxi_wready) begin
         _saxi_wvalid <= _saxi_wvalid;
       end 
-      if((th_ctrl == 12) && ((outstanding_wcount_9 < 6) && (_saxi_awready || !_saxi_awvalid))) begin
+      if((th_ctrl == 12) && ((outstanding_wcount_23 < 6) && (_saxi_awready || !_saxi_awvalid))) begin
         _saxi_awaddr <= _th_ctrl_awaddr_12;
         _saxi_awvalid <= 1;
       end 
@@ -827,7 +998,7 @@ module test;
       if(_saxi_awvalid && !_saxi_awready) begin
         _saxi_awvalid <= _saxi_awvalid;
       end 
-      if((th_ctrl == 14) && ((outstanding_wcount_9 < 6) && (_saxi_wready || !_saxi_wvalid))) begin
+      if((th_ctrl == 14) && ((outstanding_wcount_23 < 6) && (_saxi_wready || !_saxi_wvalid))) begin
         _saxi_wdata <= _th_ctrl_src_offset_13;
         _saxi_wvalid <= 1;
         _saxi_wstrb <= { 4{ 1'd1 } };
@@ -836,7 +1007,7 @@ module test;
       if(_saxi_wvalid && !_saxi_wready) begin
         _saxi_wvalid <= _saxi_wvalid;
       end 
-      if((th_ctrl == 18) && ((outstanding_wcount_9 < 6) && (_saxi_awready || !_saxi_awvalid))) begin
+      if((th_ctrl == 18) && ((outstanding_wcount_23 < 6) && (_saxi_awready || !_saxi_awvalid))) begin
         _saxi_awaddr <= _th_ctrl_awaddr_12;
         _saxi_awvalid <= 1;
       end 
@@ -844,7 +1015,7 @@ module test;
       if(_saxi_awvalid && !_saxi_awready) begin
         _saxi_awvalid <= _saxi_awvalid;
       end 
-      if((th_ctrl == 20) && ((outstanding_wcount_9 < 6) && (_saxi_wready || !_saxi_wvalid))) begin
+      if((th_ctrl == 20) && ((outstanding_wcount_23 < 6) && (_saxi_wready || !_saxi_wvalid))) begin
         _saxi_wdata <= _th_ctrl_dst_offset_14;
         _saxi_wvalid <= 1;
         _saxi_wstrb <= { 4{ 1'd1 } };
@@ -853,7 +1024,7 @@ module test;
       if(_saxi_wvalid && !_saxi_wready) begin
         _saxi_wvalid <= _saxi_wvalid;
       end 
-      if((th_ctrl == 24) && ((outstanding_wcount_9 < 6) && (_saxi_awready || !_saxi_awvalid))) begin
+      if((th_ctrl == 24) && ((outstanding_wcount_23 < 6) && (_saxi_awready || !_saxi_awvalid))) begin
         _saxi_awaddr <= _th_ctrl_awaddr_12;
         _saxi_awvalid <= 1;
       end 
@@ -861,7 +1032,7 @@ module test;
       if(_saxi_awvalid && !_saxi_awready) begin
         _saxi_awvalid <= _saxi_awvalid;
       end 
-      if((th_ctrl == 26) && ((outstanding_wcount_9 < 6) && (_saxi_wready || !_saxi_wvalid))) begin
+      if((th_ctrl == 26) && ((outstanding_wcount_23 < 6) && (_saxi_wready || !_saxi_wvalid))) begin
         _saxi_wdata <= 1;
         _saxi_wvalid <= 1;
         _saxi_wstrb <= { 4{ 1'd1 } };
@@ -940,7 +1111,7 @@ module test;
       _th_ctrl_dst_offset_14 <= 0;
       _th_ctrl_start_time_15 <= 0;
       _th_ctrl_araddr_16 <= 0;
-      axim_rdata_23 <= 0;
+      axim_rdata_37 <= 0;
       _th_ctrl_busy_17 <= 0;
       _th_ctrl_end_time_18 <= 0;
       _th_ctrl_time_19 <= 0;
@@ -973,7 +1144,7 @@ module test;
           th_ctrl <= th_ctrl_6;
         end
         th_ctrl_6: begin
-          if((outstanding_wcount_9 < 6) && (_saxi_awready || !_saxi_awvalid)) begin
+          if((outstanding_wcount_23 < 6) && (_saxi_awready || !_saxi_awvalid)) begin
             th_ctrl <= th_ctrl_7;
           end 
         end
@@ -998,7 +1169,7 @@ module test;
           th_ctrl <= th_ctrl_12;
         end
         th_ctrl_12: begin
-          if((outstanding_wcount_9 < 6) && (_saxi_awready || !_saxi_awvalid)) begin
+          if((outstanding_wcount_23 < 6) && (_saxi_awready || !_saxi_awvalid)) begin
             th_ctrl <= th_ctrl_13;
           end 
         end
@@ -1023,7 +1194,7 @@ module test;
           th_ctrl <= th_ctrl_18;
         end
         th_ctrl_18: begin
-          if((outstanding_wcount_9 < 6) && (_saxi_awready || !_saxi_awvalid)) begin
+          if((outstanding_wcount_23 < 6) && (_saxi_awready || !_saxi_awvalid)) begin
             th_ctrl <= th_ctrl_19;
           end 
         end
@@ -1048,7 +1219,7 @@ module test;
           th_ctrl <= th_ctrl_24;
         end
         th_ctrl_24: begin
-          if((outstanding_wcount_9 < 6) && (_saxi_awready || !_saxi_awvalid)) begin
+          if((outstanding_wcount_23 < 6) && (_saxi_awready || !_saxi_awvalid)) begin
             th_ctrl <= th_ctrl_25;
           end 
         end
@@ -1081,14 +1252,14 @@ module test;
         end
         th_ctrl_31: begin
           if(_saxi_rvalid) begin
-            axim_rdata_23 <= _saxi_rdata;
+            axim_rdata_37 <= _saxi_rdata;
           end 
           if(_saxi_rvalid) begin
             th_ctrl <= th_ctrl_32;
           end 
         end
         th_ctrl_32: begin
-          _th_ctrl_busy_17 <= axim_rdata_23;
+          _th_ctrl_busy_17 <= axim_rdata_37;
           th_ctrl <= th_ctrl_33;
         end
         th_ctrl_33: begin
@@ -1768,7 +1939,7 @@ module blinkled
       if((_maxi_write_data_fsm == 2) && (!_maxi_write_req_fifo_empty && (_maxi_write_size_buf == 0))) begin
         _maxi_write_size_buf <= _maxi_write_size_fifo;
       end 
-      if((_maxi_write_op_sel_buf == 1) && read_burst_rvalid_74 && ((maxi_wready || !maxi_wvalid) && (_maxi_write_size_buf > 0)) && ((outstanding_wcount_0 < 6) && (maxi_wready || !maxi_wvalid))) begin
+      if((_maxi_write_op_sel_buf == 1) && read_burst_rvalid_74 && ((maxi_wready || !maxi_wvalid) && (_maxi_write_size_buf > 0)) && (maxi_wready || !maxi_wvalid)) begin
         maxi_wdata <= read_burst_rdata_78;
         maxi_wvalid <= 1;
         maxi_wlast <= read_burst_rlast_75 || (_maxi_write_size_buf == 1);
@@ -2561,6 +2732,112 @@ module _maxi_write_req_fifo
         head <= head + 1;
       end 
       if(_maxi_write_req_fifo_deq && !is_empty) begin
+        tail <= tail + 1;
+      end 
+    end
+  end
+
+
+endmodule
+
+
+
+module _memory_wreq_fifo
+(
+  input CLK,
+  input RST,
+  input _memory_wreq_fifo_enq,
+  input [41-1:0] _memory_wreq_fifo_wdata,
+  output _memory_wreq_fifo_full,
+  output _memory_wreq_fifo_almost_full,
+  input _memory_wreq_fifo_deq,
+  output [41-1:0] _memory_wreq_fifo_rdata,
+  output _memory_wreq_fifo_empty,
+  output _memory_wreq_fifo_almost_empty
+);
+
+  reg [41-1:0] mem [0:8-1];
+  reg [3-1:0] head;
+  reg [3-1:0] tail;
+  wire is_empty;
+  wire is_almost_empty;
+  wire is_full;
+  wire is_almost_full;
+  assign is_empty = head == tail;
+  assign is_almost_empty = head == (tail + 1 & 7);
+  assign is_full = (head + 1 & 7) == tail;
+  assign is_almost_full = (head + 2 & 7) == tail;
+  wire [41-1:0] rdata;
+  assign _memory_wreq_fifo_full = is_full;
+  assign _memory_wreq_fifo_almost_full = is_almost_full || is_full;
+  assign _memory_wreq_fifo_empty = is_empty;
+  assign _memory_wreq_fifo_almost_empty = is_almost_empty || is_empty;
+  assign rdata = mem[tail];
+  assign _memory_wreq_fifo_rdata = rdata;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      head <= 0;
+      tail <= 0;
+    end else begin
+      if(_memory_wreq_fifo_enq && !is_full) begin
+        mem[head] <= _memory_wreq_fifo_wdata;
+        head <= head + 1;
+      end 
+      if(_memory_wreq_fifo_deq && !is_empty) begin
+        tail <= tail + 1;
+      end 
+    end
+  end
+
+
+endmodule
+
+
+
+module _memory_rreq_fifo
+(
+  input CLK,
+  input RST,
+  input _memory_rreq_fifo_enq,
+  input [41-1:0] _memory_rreq_fifo_wdata,
+  output _memory_rreq_fifo_full,
+  output _memory_rreq_fifo_almost_full,
+  input _memory_rreq_fifo_deq,
+  output [41-1:0] _memory_rreq_fifo_rdata,
+  output _memory_rreq_fifo_empty,
+  output _memory_rreq_fifo_almost_empty
+);
+
+  reg [41-1:0] mem [0:8-1];
+  reg [3-1:0] head;
+  reg [3-1:0] tail;
+  wire is_empty;
+  wire is_almost_empty;
+  wire is_full;
+  wire is_almost_full;
+  assign is_empty = head == tail;
+  assign is_almost_empty = head == (tail + 1 & 7);
+  assign is_full = (head + 1 & 7) == tail;
+  assign is_almost_full = (head + 2 & 7) == tail;
+  wire [41-1:0] rdata;
+  assign _memory_rreq_fifo_full = is_full;
+  assign _memory_rreq_fifo_almost_full = is_almost_full || is_full;
+  assign _memory_rreq_fifo_empty = is_empty;
+  assign _memory_rreq_fifo_almost_empty = is_almost_empty || is_empty;
+  assign rdata = mem[tail];
+  assign _memory_rreq_fifo_rdata = rdata;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      head <= 0;
+      tail <= 0;
+    end else begin
+      if(_memory_rreq_fifo_enq && !is_full) begin
+        mem[head] <= _memory_rreq_fifo_wdata;
+        head <= head + 1;
+      end 
+      if(_memory_rreq_fifo_deq && !is_empty) begin
         tail <= tail + 1;
       end 
     end

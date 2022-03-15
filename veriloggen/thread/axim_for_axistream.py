@@ -57,7 +57,7 @@ class AXIM_for_AXIStreamIn(AXIM, axi.AxiMaster):
                                waddr_prot_mode, raddr_prot_mode,
                                waddr_user_mode, wdata_user_mode,
                                raddr_user_mode,
-                               noio)
+                               noio, req_fifo_addrwidth)
 
         self.use_global_base_addr = use_global_base_addr
         self.req_fifo_addrwidth = req_fifo_addrwidth
@@ -301,7 +301,7 @@ class AXIM_for_AXIStreamOut(AXIM, axi.AxiMaster):
                                waddr_prot_mode, raddr_prot_mode,
                                waddr_user_mode, wdata_user_mode,
                                raddr_user_mode,
-                               noio)
+                               noio, req_fifo_addrwidth)
 
         self.use_global_base_addr = use_global_base_addr
         self.req_fifo_addrwidth = req_fifo_addrwidth
