@@ -50,7 +50,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
                                waddr_prot_mode, raddr_prot_mode,
                                waddr_user_mode, wdata_user_mode,
                                raddr_user_mode,
-                               noio)
+                               noio, req_fifo_addrwidth)
 
         self.use_global_base_addr = use_global_base_addr
         self.op_sel_width = op_sel_width
