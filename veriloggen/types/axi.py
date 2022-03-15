@@ -9,6 +9,7 @@ from collections import defaultdict
 import veriloggen.core.vtypes as vtypes
 from veriloggen.seq.seq import Seq
 from veriloggen.fsm.fsm import FSM
+from veriloggen.thread.fifo import FIFO
 
 from veriloggen.seq.seq import make_condition
 from . import util
@@ -727,8 +728,7 @@ class AxiMaster(object):
         if cond is not None:
             self.seq.If(cond)
 
-        ack = vtypes.Ands(self.write_acceptable(),
-                          vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid)))
+        ack = vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid))
 
         self.seq.If(ack)(
             self.wdata.wdata(data),
@@ -2281,7 +2281,8 @@ class AxiMemoryModel(AxiSlave):
                  waddr_user_width=2, wdata_user_width=0, wresp_user_width=0,
                  raddr_user_width=2, rdata_user_width=0,
                  wresp_user_mode=xUSER_DEFAULT,
-                 rdata_user_mode=xUSER_DEFAULT):
+                 rdata_user_mode=xUSER_DEFAULT,
+                 req_fifo_addrwidth=3):
 
         if mem_datawidth % 8 != 0:
             raise ValueError('mem_datawidth must be a multiple of 8')
@@ -2299,6 +2300,8 @@ class AxiMemoryModel(AxiSlave):
 
         self.mem_datawidth = mem_datawidth
         self.mem_addrwidth = mem_addrwidth
+
+        self.req_fifo_addrwidth = req_fifo_addrwidth
 
         itype = util.t_Reg
         otype = util.t_Wire
@@ -2322,27 +2325,22 @@ class AxiMemoryModel(AxiSlave):
         if self.rdata.ruser is not None:
             self.rdata.ruser.assign(rdata_user_mode)
 
-        self.fsm = FSM(self.m, '_'.join(['', self.name, 'fsm']), clk, rst)
-        self.seq = self.fsm.seq
+        self.seq = Seq(self.m, '_'.join(['', self.name, 'seq']), clk, rst)
+        self.waddr_fsm = FSM(self.m, '_'.join(['', self.name, 'waddr_fsm']), clk, rst)
+        self.wdata_fsm = FSM(self.m, '_'.join(['', self.name, 'wdata_fsm']), clk, rst)
+        self.raddr_fsm = FSM(self.m, '_'.join(['', self.name, 'raddr_fsm']), clk, rst)
+        self.rdata_fsm = FSM(self.m, '_'.join(['', self.name, 'rdata_fsm']), clk, rst)
 
-        # write response
-        if self.wresp.bid is not None:
-            self.seq.If(self.waddr.awvalid, self.waddr.awready,
-                            vtypes.Not(self.wresp.bvalid))(
-                self.wresp.bid(self.waddr.awid if self.waddr.awid is not None else 0)
-            )
-
-        if self.rdata.rid is not None:
-            self.seq.If(self.raddr.arvalid, self.raddr.arready)(
-                self.rdata.rid(self.raddr.arid if self.raddr.arid is not None else 0)
-            )
-
-        self.seq.If(self.wresp.bvalid, self.wresp.bready)(
-            self.wresp.bvalid(0)
-        )
-        self.seq.If(self.wdata.wvalid, self.wdata.wready, self.wdata.wlast)(
-            self.wresp.bvalid(1)
-        )
+        self.wreq_fifo = FIFO(self.m, '_'.join(['', self.name, 'wreq_fifo']),
+                              clk, rst,
+                              datawidth=addrwidth + 9 + waddr_id_width,
+                              addrwidth=req_fifo_addrwidth,
+                              sync=False)
+        self.rreq_fifo = FIFO(self.m, '_'.join(['', self.name, 'rreq_fifo']),
+                              clk, rst,
+                              datawidth=addrwidth + 9 + waddr_id_width,
+                              addrwidth=req_fifo_addrwidth,
+                              sync=False)
 
         if memimg is None:
             if memimg_name is None:
@@ -2398,14 +2396,6 @@ class AxiMemoryModel(AxiSlave):
                 f.write(s)
 
     def _make_fsm(self, write_delay=10, read_delay=10, sleep=4, sub_sleep=4):
-        write_mode = 100
-        read_mode = 200
-        while read_mode <= write_mode + write_delay + 10:
-            read_mode += 100
-
-        self.fsm.If(self.waddr.awvalid).goto(write_mode)
-        self.fsm.If(self.raddr.arvalid).goto(read_mode)
-
         write_count = self.m.Reg(
             '_'.join(['', 'write_count']), self.addrwidth + 1, initval=0)
         write_addr = self.m.Reg(
@@ -2427,7 +2417,7 @@ class AxiMemoryModel(AxiSlave):
                     sub_sleep_count.inc()
                 )
                 self.seq.If(sleep_count == sleep - 1,
-                                sub_sleep_count == sub_sleep - 1)(
+                            sub_sleep_count == sub_sleep - 1)(
                     sub_sleep_count(0)
                 )
                 cond = sub_sleep_count == sub_sleep - 1
@@ -2441,120 +2431,185 @@ class AxiMemoryModel(AxiSlave):
                 sleep_count(0)
             )
 
-        # write mode
-        self.fsm._set_index(write_mode)
-
-        # awvalid and awready
-        self.fsm.If(self.waddr.awvalid, vtypes.Not(self.wresp.bvalid))(
-            self.waddr.awready(1),
-            write_addr(self.waddr.awaddr),
-            write_count(self.waddr.awlen + 1)
-        )
-        self.fsm.Delay(1)(
+        # --------------------
+        # waddr FSM
+        # --------------------
+        # waiting a request
+        self.waddr_fsm(
             self.waddr.awready(0)
         )
-        self.fsm.If(vtypes.Not(self.waddr.awvalid)).goto_init()
-        self.fsm.If(self.waddr.awvalid).goto_next()
+        self.waddr_fsm.If(self.waddr.awvalid).goto_next()
 
         # delay
         for _ in range(write_delay):
-            self.fsm.goto_next()
+            self.waddr_fsm.goto_next()
 
-        # wready
-        self.fsm(
+        # response and enqueue
+        self.waddr_fsm.If(vtypes.Not(self.wreq_fifo.almost_full))(
+            self.waddr.awready(1)
+        )
+        self.waddr_fsm.If(self.waddr.awvalid, self.waddr.awready)(
+            self.waddr.awready(0)
+        )
+
+        enq_cond = vtypes.Ands(self.waddr_fsm.here,
+                               self.waddr.awvalid, self.waddr.awready)
+        _ = self.wreq_fifo.enq_rtl(self.pack_write_req(self.waddr.awaddr,
+                                                       self.waddr.awlen + 1,
+                                                       self.waddr.awid),
+                                   cond=enq_cond)
+
+        self.waddr_fsm.If(vtypes.Not(self.waddr.awvalid)).goto_init()
+        self.waddr_fsm.If(self.waddr.awvalid, self.waddr.awready).goto_init()
+
+        # --------------------
+        # wdata FSM
+        # --------------------
+        # waiting a request
+        _waddr, _size, _wid = self.unpack_write_req(self.wreq_fifo.rdata,
+                                                    self.waddr.id_width)
+        deq_cond = vtypes.Ands(self.wdata_fsm.here, vtypes.Not(self.wreq_fifo.empty))
+        _ = self.wreq_fifo.deq_rtl(cond=deq_cond)
+        self.wdata_fsm(
+            self.wresp.bvalid(0)
+        )
+        self.wdata_fsm.If(vtypes.Not(self.wreq_fifo.empty))(
+            write_addr(_waddr),
+            write_count(_size),
             self.wdata.wready(1)
         )
-        self.fsm.goto_next()
+        if self.wresp.bid is not None:
+            self.wdata_fsm.If(vtypes.Not(self.wreq_fifo.empty))(
+                self.wresp.bid(_wid)
+            )
 
-        # wdata -> mem
+        self.wdata_fsm.If(vtypes.Not(self.wreq_fifo.empty)).goto_next()
+
+        # write
         for i in range(int(self.datawidth / 8)):
-            self.fsm.If(self.wdata.wvalid, self.wdata.wstrb[i])(
+            self.seq.If(self.wdata_fsm.here,
+                        self.wdata.wvalid, self.wdata.wready, self.wdata.wstrb[i])(
                 self.mem[write_addr + i](self.wdata.wdata[i * 8:i * 8 + 8])
             )
 
-        self.fsm.If(self.wdata.wvalid, self.wdata.wready)(
+        self.wdata_fsm.If(self.wdata.wvalid, self.wdata.wready)(
             write_addr.add(int(self.datawidth / 8)),
             write_count.dec()
         )
 
         # sleep
         if sleep > 0:
-            self.fsm.If(sleep_count == sleep - 1)(
+            self.wdata_fsm.If(sleep_count == sleep - 1)(
                 self.wdata.wready(0)
             ).Else(
                 self.wdata.wready(1)
             )
 
         # write complete
-        self.fsm.If(self.wdata.wvalid, self.wdata.wready, write_count == 1)(
+        self.wdata_fsm.If(self.wdata.wvalid, self.wdata.wready, write_count == 1)(
             self.wdata.wready(0)
         )
-        self.fsm.Then().goto_init()
-
-        # read mode
-        self.fsm._set_index(read_mode)
-
-        # arvalid and arready
-        self.fsm.If(self.raddr.arvalid)(
-            self.raddr.arready(1),
-            read_addr(self.raddr.araddr),
-            read_count(self.raddr.arlen + 1)
+        self.wdata_fsm.If(self.wdata.wvalid, self.wdata.wready, self.wdata.wlast)(
+            self.wresp.bvalid(1)
         )
-        self.fsm.Delay(1)(
+        self.wdata_fsm.If(self.wdata.wvalid, self.wdata.wready, write_count == 1).goto_init()
+        self.wdata_fsm.If(self.wdata.wvalid, self.wdata.wready, self.wdata.wlast).goto_init()
+
+        # --------------------
+        # raddr FSM
+        # --------------------
+        # waiting a request
+        self.raddr_fsm(
             self.raddr.arready(0)
         )
-        self.fsm.If(vtypes.Not(self.raddr.arvalid)).goto_init()
-        self.fsm.If(self.raddr.arvalid).goto_next()
+        self.raddr_fsm.If(self.raddr.arvalid).goto_next()
+
+        # response and enqueue
+        self.raddr_fsm.If(vtypes.Not(self.rreq_fifo.almost_full))(
+            self.raddr.arready(1)
+        )
+        self.raddr_fsm.If(self.raddr.arvalid, self.raddr.arready)(
+            self.raddr.arready(0)
+        )
+
+        enq_cond = vtypes.Ands(self.raddr_fsm.here,
+                               self.raddr.arvalid, self.raddr.arready)
+        _ = self.rreq_fifo.enq_rtl(self.pack_read_req(self.raddr.araddr,
+                                                      self.raddr.arlen + 1,
+                                                      self.raddr.arid),
+                                   cond=enq_cond)
+
+        self.raddr_fsm.If(vtypes.Not(self.raddr.arvalid)).goto_init()
+        self.raddr_fsm.If(self.raddr.arvalid, self.raddr.arready).goto_init()
+
+        # --------------------
+        # rdata FSM
+        # --------------------
+        # waiting a request
+        _raddr, _size, _rid = self.unpack_read_req(self.rreq_fifo.rdata,
+                                                   self.raddr.id_width)
+        deq_cond = vtypes.Ands(self.rdata_fsm.here, vtypes.Not(self.rreq_fifo.empty))
+        _ = self.rreq_fifo.deq_rtl(cond=deq_cond)
+        self.rdata_fsm.If(vtypes.Not(self.rreq_fifo.empty))(
+            read_addr(_raddr),
+            read_count(_size),
+        )
+        if self.rdata.rid is not None:
+            self.rdata_fsm.If(vtypes.Not(self.rreq_fifo.empty))(
+                self.rdata.rid(_rid)
+            )
+
+        self.rdata_fsm.If(vtypes.Not(self.rreq_fifo.empty)).goto_next()
 
         # delay
         for _ in range(read_delay):
-            self.fsm.goto_next()
+            self.rdata_fsm.goto_next()
 
-        # mem -> rdata
+        # read
         for i in range(int(self.datawidth / 8)):
-            self.fsm.If(vtypes.Or(self.rdata.rready, vtypes.Not(self.rdata.rvalid)))(
+            self.rdata_fsm.If(vtypes.Or(self.rdata.rready, vtypes.Not(self.rdata.rvalid)))(
                 self.rdata.rdata[i * 8:i * 8 + 8](self.mem[read_addr + i])
             )
 
         if sleep > 0:
-            self.fsm.If(sleep_count < sleep - 1, read_count > 0,
-                        vtypes.Or(self.rdata.rready, vtypes.Not(self.rdata.rvalid)))(
+            self.rdata_fsm.If(sleep_count < sleep - 1, read_count > 0,
+                              vtypes.Or(self.rdata.rready, vtypes.Not(self.rdata.rvalid)))(
                 self.rdata.rvalid(1),
                 read_addr.add(int(self.datawidth / 8)),
                 read_count.dec()
             )
-            self.fsm.If(sleep_count < sleep - 1, read_count == 1,
-                        vtypes.Or(self.rdata.rready, vtypes.Not(self.rdata.rvalid)))(
+            self.rdata_fsm.If(sleep_count < sleep - 1, read_count == 1,
+                              vtypes.Or(self.rdata.rready, vtypes.Not(self.rdata.rvalid)))(
                 self.rdata.rlast(1)
             )
         else:
-            self.fsm.If(read_count > 0,
-                        vtypes.Or(self.rdata.rready, vtypes.Not(self.rdata.rvalid)))(
+            self.rdata_fsm.If(read_count > 0,
+                              vtypes.Or(self.rdata.rready, vtypes.Not(self.rdata.rvalid)))(
                 self.rdata.rvalid(1),
                 read_addr.add(int(self.datawidth / 8)),
                 read_count.dec()
             )
-            self.fsm.If(read_count == 1,
-                        vtypes.Or(self.rdata.rready, vtypes.Not(self.rdata.rvalid)))(
+            self.rdata_fsm.If(read_count == 1,
+                              vtypes.Or(self.rdata.rready, vtypes.Not(self.rdata.rvalid)))(
                 self.rdata.rlast(1)
             )
 
         # de-assert
-        self.fsm.Delay(1)(
+        self.rdata_fsm.Delay(1)(
             self.rdata.rvalid(0),
             self.rdata.rlast(0)
         )
 
         # retry
-        self.fsm.If(self.rdata.rvalid, vtypes.Not(self.rdata.rready))(
+        self.rdata_fsm.If(self.rdata.rvalid, vtypes.Not(self.rdata.rready))(
             self.rdata.rvalid(self.rdata.rvalid),
             self.rdata.rdata(self.rdata.rdata),
             self.rdata.rlast(self.rdata.rlast)
         )
 
         # read complete
-        self.fsm.If(self.rdata.rvalid, self.rdata.rready,
-                    read_count == 0).goto_init()
+        self.rdata_fsm.If(self.rdata.rvalid, self.rdata.rready,
+                          read_count == 0).goto_init()
 
     def read(self, fsm, addr):
         """ intrinsic for thread """
@@ -2645,6 +2700,104 @@ class AxiMemoryModel(AxiSlave):
 
         return 0
 
+    def pack_write_req(self, global_addr, size, wid=None):
+        _global_addr = self.m.TmpWire(self.addrwidth, prefix='pack_write_req_global_addr')
+        _size = self.m.TmpWire(9, prefix='pack_write_req_size')
+        if wid is not None:
+            _wid = self.m.TmpWireLike(wid, prefix='pack_write_req_wid')
+
+        _global_addr.assign(global_addr)
+        _size.assign(size)
+        if wid is not None:
+            _wid.assign(wid)
+
+        packed_width = self.addrwidth + 9
+        if wid is not None:
+            packed_width += _wid.width
+
+        packed = self.m.TmpWire(packed_width, prefix='pack_write_req_packed')
+
+        vars = [_global_addr, _size]
+        if wid is not None:
+            vars.append(_wid)
+
+        packed.assign(vtypes.Cat(*vars))
+        return packed
+
+    def unpack_write_req(self, v, id_width=0):
+        offset = 0
+
+        if id_width > 0:
+            wid = v[0: id_width]
+            offset += id_width
+
+        size = v[offset: offset + 9]
+        offset += 9
+        global_addr = v[offset: offset + self.addrwidth]
+
+        _global_addr = self.m.TmpWire(self.addrwidth, prefix='unpack_write_req_global_addr')
+        _size = self.m.TmpWire(9, prefix='unpack_write_req_size')
+        if id_width > 0:
+            _wid = self.m.TmpWire(id_width, prefix='unpack_write_req_wid')
+        else:
+            _wid = 0
+
+        _global_addr.assign(global_addr)
+        _size.assign(size)
+        if id_width > 0:
+            _wid.assign(wid)
+
+        return _global_addr, _size, _wid
+
+    def pack_read_req(self, global_addr, size, rid=None):
+        _global_addr = self.m.TmpWire(self.addrwidth, prefix='pack_read_req_global_addr')
+        _size = self.m.TmpWire(9, prefix='pack_read_req_size')
+        if rid is not None:
+            _rid = self.m.TmpWireLike(rid, prefix='pack_read_req_rid')
+
+        _global_addr.assign(global_addr)
+        _size.assign(size)
+        if rid is not None:
+            _rid.assign(rid)
+
+        packed_width = self.addrwidth + 9
+        if rid is not None:
+            packed_width += _rid.width
+
+        packed = self.m.TmpWire(packed_width, prefix='pack_read_req_packed')
+
+        vars = [_global_addr, _size]
+        if rid is not None:
+            vars.append(_rid)
+
+        packed.assign(vtypes.Cat(*vars))
+        return packed
+
+    def unpack_read_req(self, v, id_width=0):
+        offset = 0
+
+        if id_width > 0:
+            rid = v[0: id_width]
+            offset += id_width
+
+        size = v[offset: offset + 9]
+        offset += 9
+        global_addr = v[offset: offset + self.addrwidth]
+
+        _global_addr = self.m.TmpWire(self.addrwidth, prefix='unpack_read_req_global_addr')
+        _size = self.m.TmpWire(9, prefix='unpack_read_req_size')
+        if id_width > 0:
+            _rid = self.m.TmpWire(id_width, prefix='unpack_read_req_rid')
+        else:
+            _rid = 0
+
+        _global_addr.assign(global_addr)
+        _size.assign(size)
+        if id_width > 0:
+            _rid.assign(rid)
+
+        return _global_addr, _size, _rid
+
 
 class AxiMultiportMemoryModel(AxiMemoryModel):
     __intrinsics__ = ('read', 'write',
@@ -2660,7 +2813,8 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
                  waddr_user_width=2, wdata_user_width=0, wresp_user_width=0,
                  raddr_user_width=2, rdata_user_width=0,
                  wresp_user_mode=xUSER_DEFAULT,
-                 rdata_user_mode=xUSER_DEFAULT):
+                 rdata_user_mode=xUSER_DEFAULT,
+                 req_fifo_addrwidth=3):
 
         if mem_datawidth % 8 != 0:
             raise ValueError('mem_datawidth must be a multiple of 8')
@@ -2712,34 +2866,28 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
                 rdata.ruser.assign(rdata_user_mode)
 
         self.seq = Seq(self.m, '_'.join(['', self.name, 'seq']), clk, rst)
-        self.fsms = [FSM(self.m, '_'.join(['', self.name, 'fsm_%d' % i]), clk, rst)
-                     for i in range(numports)]
 
-        # all FSM shares an indentical Seq
-        for fsm in self.fsms:
-            fsm.seq = self.seq
+        self.waddr_fsms = [FSM(self.m, '_'.join(['', self.name, 'waddr_fsm_%d' % i]), clk, rst)
+                           for i in range(numports)]
+        self.wdata_fsms = [FSM(self.m, '_'.join(['', self.name, 'wdata_fsm_%d' % i]), clk, rst)
+                           for i in range(numports)]
+        self.raddr_fsms = [FSM(self.m, '_'.join(['', self.name, 'raddr_fsm_%d' % i]), clk, rst)
+                           for i in range(numports)]
+        self.rdata_fsms = [FSM(self.m, '_'.join(['', self.name, 'rdata_fsm_%d' % i]), clk, rst)
+                           for i in range(numports)]
 
-        # write response
-        for wresp, waddr in zip(self.wresps, self.waddrs):
-            if wresp.bid is not None:
-                self.seq.If(waddr.awvalid, waddr.awready,
-                            vtypes.Not(wresp.bvalid))(
-                    wresp.bid(waddr.awid if waddr.awid is not None else 0)
-                )
-
-        for rdata, raddr in zip(self.rdatas, self.raddrs):
-            if rdata.rid is not None:
-                self.seq.If(raddr.arvalid, raddr.arready)(
-                    rdata.rid(raddr.arid if raddr.arid is not None else 0)
-                )
-
-        for wresp, wdata in zip(self.wresps, self.wdatas):
-            self.seq.If(wresp.bvalid, wresp.bready)(
-                wresp.bvalid(0)
-            )
-            self.seq.If(wdata.wvalid, wdata.wready, wdata.wlast)(
-                wresp.bvalid(1)
-            )
+        self.wreq_fifos = [FIFO(self.m, '_'.join(['', self.name, 'wreq_fifo_%d' % i]),
+                                clk, rst,
+                                datawidth=addrwidth + 9 + waddr_id_width,
+                                addrwidth=req_fifo_addrwidth,
+                                sync=False)
+                           for i in range(numports)]
+        self.rreq_fifos = [FIFO(self.m, '_'.join(['', self.name, 'rreq_fifo_%d' % i]),
+                                clk, rst,
+                                datawidth=addrwidth + 9 + waddr_id_width,
+                                addrwidth=req_fifo_addrwidth,
+                                sync=False)
+                           for i in range(numports)]
 
         if memimg is None:
             if memimg_name is None:
@@ -2778,8 +2926,12 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
 
     def _make_fsms(self, write_delay=10, read_delay=10, sleep=4, sub_sleep=4):
 
-        for i, (fsm, waddr, wdata, wresp, raddr, rdata) in enumerate(
-                zip(self.fsms, self.waddrs, self.wdatas, self.wresps, self.raddrs, self.rdatas)):
+        for i, (waddr_fsm, wdata_fsm, raddr_fsm, rdata_fsm,
+                wreq_fifo, rreq_fifo,
+                waddr, wdata, wresp, raddr, rdata) in enumerate(
+                zip(self.waddr_fsms, self.wdata_fsms, self.raddr_fsms, self.rdata_fsms,
+                    self.wreq_fifos, self.rreq_fifos,
+                    self.waddrs, self.wdatas, self.wresps, self.raddrs, self.rdatas)):
 
             write_count = self.m.Reg(
                 '_'.join(['', 'write_count_%d' % i]), self.addrwidth + 1, initval=0)
@@ -2798,146 +2950,203 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
                     sub_sleep_count = self.m.Reg(
                         '_'.join(['', 'sub_sleep_count_%d' % i]), self.addrwidth + 1, initval=0)
 
-                    fsm.seq.If(sleep_count == sleep - 1)(
+                    self.seq.If(sleep_count == sleep - 1)(
                         sub_sleep_count.inc()
                     )
-                    fsm.seq.If(sleep_count == sleep - 1,
-                               sub_sleep_count == sub_sleep - 1)(
+                    self.seq.If(sleep_count == sleep - 1,
+                                sub_sleep_count == sub_sleep - 1)(
                         sub_sleep_count(0)
                     )
                     cond = sub_sleep_count == sub_sleep - 1
                 else:
                     cond = None
 
-                fsm.seq.If(sleep_count < sleep - 1)(
+                self.seq.If(sleep_count < sleep - 1)(
                     sleep_count.inc()
                 )
-                fsm.seq.If(cond, sleep_count == sleep - 1)(
+                self.seq.If(cond, sleep_count == sleep - 1)(
                     sleep_count(0)
                 )
 
-            write_mode = 100
-            read_mode = 200
-            while read_mode <= write_mode + write_delay + 10:
-                read_mode += 100
-
-            fsm.If(waddr.awvalid).goto(write_mode)
-            fsm.If(raddr.arvalid).goto(read_mode)
-
-            # write mode
-            fsm._set_index(write_mode)
-
-            # awvalid and awready
-            fsm.If(waddr.awvalid, vtypes.Not(wresp.bvalid))(
-                waddr.awready(1),
-                write_addr(waddr.awaddr),
-                write_count(waddr.awlen + 1)
-            )
-            fsm.Delay(1)(
+            # --------------------
+            # waddr FSM
+            # --------------------
+            # waiting a request
+            waddr_fsm(
                 waddr.awready(0)
             )
-            fsm.If(vtypes.Not(waddr.awvalid)).goto_init()
-            fsm.If(waddr.awvalid).goto_next()
+            waddr_fsm.If(waddr.awvalid).goto_next()
 
             # delay
             for _ in range(write_delay):
-                fsm.goto_next()
+                waddr_fsm.goto_next()
 
-            # wready
-            fsm(
+            # response and enqueue
+            waddr_fsm.If(vtypes.Not(wreq_fifo.almost_full))(
+                waddr.awready(1)
+            )
+            waddr_fsm.If(waddr.awvalid, waddr.awready)(
+                waddr.awready(0)
+            )
+
+            enq_cond = vtypes.Ands(waddr_fsm.here,
+                                   waddr.awvalid, waddr.awready)
+            _ = wreq_fifo.enq_rtl(self.pack_write_req(waddr.awaddr,
+                                                      waddr.awlen + 1,
+                                                      waddr.awid),
+                                  cond=enq_cond)
+
+            waddr_fsm.If(vtypes.Not(waddr.awvalid)).goto_init()
+            waddr_fsm.If(waddr.awvalid, waddr.awready).goto_init()
+
+            # --------------------
+            # wdata FSM
+            # --------------------
+            # waiting a request
+            _waddr, _size, _wid = self.unpack_write_req(wreq_fifo.rdata,
+                                                        waddr.id_width)
+            deq_cond = vtypes.Ands(wdata_fsm.here, vtypes.Not(wreq_fifo.empty))
+            _ = wreq_fifo.deq_rtl(cond=deq_cond)
+            wdata_fsm(
+                wresp.bvalid(0)
+            )
+            wdata_fsm.If(vtypes.Not(wreq_fifo.empty))(
+                write_addr(_waddr),
+                write_count(_size),
                 wdata.wready(1)
             )
-            fsm.goto_next()
+            if wresp.bid is not None:
+                wdata_fsm.If(vtypes.Not(wreq_fifo.empty))(
+                    wresp.bid(_wid)
+                )
 
-            # wdata -> mem
+            wdata_fsm.If(vtypes.Not(wreq_fifo.empty)).goto_next()
+
+            # write
             for i in range(int(self.datawidth / 8)):
-                fsm.If(wdata.wvalid, wdata.wstrb[i])(
+                self.seq.If(wdata_fsm.here,
+                            wdata.wvalid, wdata.wready, wdata.wstrb[i])(
                     self.mem[write_addr + i](wdata.wdata[i * 8:i * 8 + 8])
                 )
 
-            fsm.If(wdata.wvalid, wdata.wready)(
+            wdata_fsm.If(wdata.wvalid, wdata.wready)(
                 write_addr.add(int(self.datawidth / 8)),
                 write_count.dec()
             )
 
             # sleep
             if sleep > 0:
-                fsm.If(sleep_count == sleep - 1)(
+                wdata_fsm.If(sleep_count == sleep - 1)(
                     wdata.wready(0)
                 ).Else(
                     wdata.wready(1)
                 )
 
             # write complete
-            fsm.If(wdata.wvalid, wdata.wready, write_count == 1)(
+            wdata_fsm.If(wdata.wvalid, wdata.wready, write_count == 1)(
                 wdata.wready(0)
             )
-            fsm.Then().goto_init()
-
-            # read mode
-            fsm._set_index(read_mode)
-
-            # arvalid and arready
-            fsm.If(raddr.arvalid)(
-                raddr.arready(1),
-                read_addr(raddr.araddr),
-                read_count(raddr.arlen + 1)
+            wdata_fsm.If(wdata.wvalid, wdata.wready, wdata.wlast)(
+                wresp.bvalid(1)
             )
-            fsm.Delay(1)(
+            wdata_fsm.If(wdata.wvalid, wdata.wready, write_count == 1).goto_init()
+            wdata_fsm.If(wdata.wvalid, wdata.wready, wdata.wlast).goto_init()
+
+            # --------------------
+            # raddr FSM
+            # --------------------
+            # waiting a request
+            raddr_fsm(
                 raddr.arready(0)
             )
-            fsm.If(vtypes.Not(raddr.arvalid)).goto_init()
-            fsm.If(raddr.arvalid).goto_next()
+            raddr_fsm.If(raddr.arvalid).goto_next()
+
+            # response and enqueue
+            raddr_fsm.If(vtypes.Not(rreq_fifo.almost_full))(
+                raddr.arready(1)
+            )
+            raddr_fsm.If(raddr.arvalid, raddr.arready)(
+                raddr.arready(0)
+            )
+
+            enq_cond = vtypes.Ands(raddr_fsm.here,
+                                   raddr.arvalid, raddr.arready)
+            _ = rreq_fifo.enq_rtl(self.pack_read_req(raddr.araddr,
+                                                     raddr.arlen + 1,
+                                                     raddr.arid),
+                                  cond=enq_cond)
+
+            raddr_fsm.If(vtypes.Not(raddr.arvalid)).goto_init()
+            raddr_fsm.If(raddr.arvalid, raddr.arready).goto_init()
+
+            # --------------------
+            # rdata FSM
+            # --------------------
+            # waiting a request
+            _raddr, _size, _rid = self.unpack_read_req(rreq_fifo.rdata,
+                                                       raddr.id_width)
+            deq_cond = vtypes.Ands(rdata_fsm.here, vtypes.Not(rreq_fifo.empty))
+            _ = rreq_fifo.deq_rtl(cond=deq_cond)
+            rdata_fsm.If(vtypes.Not(rreq_fifo.empty))(
+                read_addr(_raddr),
+                read_count(_size),
+            )
+            if rdata.rid is not None:
+                rdata_fsm.If(vtypes.Not(rreq_fifo.empty))(
+                    rdata.rid(_rid)
+                )
+
+            rdata_fsm.If(vtypes.Not(rreq_fifo.empty)).goto_next()
 
             # delay
             for _ in range(read_delay):
-                fsm.goto_next()
+                rdata_fsm.goto_next()
 
-            # mem -> rdata
+            # read
             for i in range(int(self.datawidth / 8)):
-                fsm.If(vtypes.Or(rdata.rready, vtypes.Not(rdata.rvalid)))(
+                rdata_fsm.If(vtypes.Or(rdata.rready, vtypes.Not(rdata.rvalid)))(
                     rdata.rdata[i * 8:i * 8 + 8](self.mem[read_addr + i])
                 )
 
             if sleep > 0:
-                fsm.If(sleep_count < sleep - 1, read_count > 0,
-                       vtypes.Or(rdata.rready, vtypes.Not(rdata.rvalid)))(
+                rdata_fsm.If(sleep_count < sleep - 1, read_count > 0,
+                             vtypes.Or(rdata.rready, vtypes.Not(rdata.rvalid)))(
                     rdata.rvalid(1),
                     read_addr.add(int(self.datawidth / 8)),
                     read_count.dec()
                 )
-                fsm.If(sleep_count < sleep - 1, read_count == 1,
-                       vtypes.Or(rdata.rready, vtypes.Not(rdata.rvalid)))(
+                rdata_fsm.If(sleep_count < sleep - 1, read_count == 1,
+                             vtypes.Or(rdata.rready, vtypes.Not(rdata.rvalid)))(
                     rdata.rlast(1)
                 )
             else:
-                fsm.If(read_count > 0,
-                       vtypes.Or(rdata.rready, vtypes.Not(rdata.rvalid)))(
+                rdata_fsm.If(read_count > 0,
+                             vtypes.Or(rdata.rready, vtypes.Not(rdata.rvalid)))(
                     rdata.rvalid(1),
                     read_addr.add(int(self.datawidth / 8)),
                     read_count.dec()
                 )
-                fsm.If(read_count == 1,
-                       vtypes.Or(rdata.rready, vtypes.Not(rdata.rvalid)))(
+                rdata_fsm.If(read_count == 1,
+                             vtypes.Or(rdata.rready, vtypes.Not(rdata.rvalid)))(
                     rdata.rlast(1)
                 )
 
             # de-assert
-            fsm.Delay(1)(
+            rdata_fsm.Delay(1)(
                 rdata.rvalid(0),
                 rdata.rlast(0)
             )
 
             # retry
-            fsm.If(rdata.rvalid, vtypes.Not(rdata.rready))(
+            rdata_fsm.If(rdata.rvalid, vtypes.Not(rdata.rready))(
                 rdata.rvalid(rdata.rvalid),
                 rdata.rdata(rdata.rdata),
                 rdata.rlast(rdata.rlast)
             )
 
             # read complete
-            fsm.If(rdata.rvalid, rdata.rready,
-                   read_count == 0).goto_init()
+            rdata_fsm.If(rdata.rvalid, rdata.rready,
+                         read_count == 0).goto_init()
 
     def connect(self, index, ports, name):
         if not self.noio:
