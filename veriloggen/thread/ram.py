@@ -186,7 +186,7 @@ class RAM(_MutexFunction):
 
         _addr = self.m.TmpReg(self.addrwidth, initval=0, prefix='read_burst_addr')
         _stride = self.m.TmpReg(self.addrwidth, initval=0, prefix='read_burst_stride')
-        _length = self.m.TmpReg(self.addrwidth + 1, initval=0, prefix='read_burst_length')
+        _length = self.m.TmpReg(length.get_width(), initval=0, prefix='read_burst_length')
 
         rvalid = self.m.TmpReg(prefix='read_burst_rvalid', initval=0)
         rlast = self.m.TmpReg(prefix='read_burst_rlast', initval=0)
@@ -236,7 +236,7 @@ class RAM(_MutexFunction):
 
         _addr = self.m.TmpReg(self.addrwidth, initval=0, prefix='write_burst_addr')
         _stride = self.m.TmpReg(self.addrwidth, initval=0, prefix='write_burst_stride')
-        _length = self.m.TmpReg(self.addrwidth + 1, initval=0, prefix='write_burst_length')
+        _length = self.m.TmpReg(length.get_width(), initval=0, prefix='write_burst_length')
 
         done = self.m.TmpReg(prefix='write_burst_done', initval=0)
 
@@ -335,7 +335,7 @@ class MultibankRAM(object):
         self.rst = rst
         self.orig_datawidth = datawidth
         self.datawidth = datawidth * numbanks
-        self.addrwidth = addrwidth
+        self.addrwidth = addrwidth + util.log2(numbanks)
         self.numports = numports
         self.numbanks = numbanks
         self.shift = util.log2(self.numbanks)
@@ -762,7 +762,7 @@ class MultibankRAM(object):
 
         _addr = self.m.TmpReg(self.addrwidth, initval=0, prefix='read_burst_addr')
         _stride = self.m.TmpReg(self.addrwidth, initval=0, prefix='read_burst_stride')
-        _length = self.m.TmpReg(self.addrwidth + 1, initval=0, prefix='read_burst_length')
+        _length = self.m.TmpReg(length.get_width(), initval=0, prefix='read_burst_length')
 
         rvalid = self.m.TmpReg(prefix='read_burst_rvalid', initval=0)
         rlast = self.m.TmpReg(prefix='read_burst_rlast', initval=0)
@@ -825,7 +825,8 @@ class MultibankRAM(object):
             ram_sel = self.m.TmpReg(prefix='read_burst_block_ram_sel', initval=0)
             ram_rready = self.m.TmpWire(prefix='read_burst_block_ram_rready')
             ram_rquit = self.m.TmpWire(prefix='read_burst_block_ram_rquit')
-            ram_rdata, _, _ = ram.read_burst(addr, stride, length, ram_rready, ram_rquit, port, cond)
+            ram_rdata, _, _ = ram.read_burst(
+                addr, stride, length, ram_rready, ram_rquit, port, cond)
             ram_sel_list.append(ram_sel)
             ram_rready_list.append(ram_rready)
             ram_rquit_list.append(ram_rquit)
@@ -833,7 +834,7 @@ class MultibankRAM(object):
 
         fsm = TmpFSM(self.m, self.clk, self.rst, prefix='read_burst_block_fsm')
 
-        _length = self.m.TmpReg(self.addrwidth + 1, initval=0, prefix='read_burst_block_length')
+        _length = self.m.TmpReg(length.get_width(), initval=0, prefix='read_burst_block_length')
         _blocksize = self.m.TmpReg(self.addrwidth, initval=0, prefix='write_burst_block_blocksize')
         count = self.m.TmpReg(self.addrwidth, initval=0, prefix='write_burst_block_count')
         rvalid = self.m.TmpReg(prefix='read_burst_block_rvalid', initval=0)
@@ -917,7 +918,7 @@ class MultibankRAM(object):
 
         _addr = self.m.TmpReg(self.addrwidth, initval=0, prefix='write_burst_addr')
         _stride = self.m.TmpReg(self.addrwidth, initval=0, prefix='write_burst_stride')
-        _length = self.m.TmpReg(self.addrwidth + 1, initval=0, prefix='write_burst_length')
+        _length = self.m.TmpReg(length.get_width(), initval=0, prefix='write_burst_length')
 
         done = self.m.TmpReg(prefix='write_burst_done', initval=0)
 
@@ -988,7 +989,7 @@ class MultibankRAM(object):
 
         fsm = TmpFSM(self.m, self.clk, self.rst, prefix='write_burst_block_fsm')
 
-        _length = self.m.TmpReg(self.addrwidth + 1, initval=0, prefix='write_burst_block_length')
+        _length = self.m.TmpReg(length.get_width(), initval=0, prefix='write_burst_block_length')
         _blocksize = self.m.TmpReg(self.addrwidth, initval=0, prefix='write_burst_block_blocksize')
         done = self.m.TmpReg(prefix='write_burst_block_done', initval=0)
         count = self.m.TmpReg(self.addrwidth, initval=0, prefix='write_burst_block_count')
@@ -1007,7 +1008,8 @@ class MultibankRAM(object):
         for i, (ram_wvalid, ram_wquit) in enumerate(zip(ram_wvalid_list, ram_wquit_list)):
 
             ram_wvalid.assign(vtypes.Ands(wvalid, fsm.here))
-            ram_wquit.assign(vtypes.Ors(wquit, vtypes.Ands(wvalid, wlast), vtypes.Ands(wvalid, _length <= 1)))
+            ram_wquit.assign(vtypes.Ors(wquit, vtypes.Ands(
+                wvalid, wlast), vtypes.Ands(wvalid, _length <= 1)))
 
             fsm.If(wvalid)(
                 _length.dec(),
@@ -1072,7 +1074,7 @@ class _PackedMultibankRAM(MultibankRAM):
         self.rst = src[0].rst
         self.orig_datawidth = max_datawidth
         self.datawidth = max_datawidth * len(src)
-        self.addrwidth = max_addrwidth
+        self.addrwidth = max_addrwidth + util.log2(len(src))
         self.numports = max_numports
         self.numbanks = len(src)
         self.shift = util.log2(self.numbanks)
