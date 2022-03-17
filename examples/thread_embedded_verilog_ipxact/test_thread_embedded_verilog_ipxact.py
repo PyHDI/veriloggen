@@ -1659,7 +1659,7 @@ module blinkled
   localparam write_burst_fsm_0_init = 0;
   reg [10-1:0] write_burst_addr_39;
   reg [10-1:0] write_burst_stride_40;
-  reg [11-1:0] write_burst_length_41;
+  reg [33-1:0] write_burst_length_41;
   reg write_burst_done_42;
   assign ram_a_0_wdata = ((write_burst_fsm_0 == 1) && maxi_rvalid)? maxi_rdata : 'hx;
   assign ram_a_0_wenable = ((write_burst_fsm_0 == 1) && maxi_rvalid)? 1'd1 : 0;
@@ -1735,7 +1735,7 @@ module blinkled
   localparam read_burst_fsm_1_init = 0;
   reg [10-1:0] read_burst_addr_71;
   reg [10-1:0] read_burst_stride_72;
-  reg [11-1:0] read_burst_length_73;
+  reg [33-1:0] read_burst_length_73;
   reg read_burst_rvalid_74;
   reg read_burst_rlast_75;
   assign ram_a_0_addr = ((read_burst_fsm_1 == 1) && (!read_burst_rvalid_74 || (maxi_wready || !maxi_wvalid) && (_maxi_write_size_buf > 0)))? read_burst_addr_71 : 

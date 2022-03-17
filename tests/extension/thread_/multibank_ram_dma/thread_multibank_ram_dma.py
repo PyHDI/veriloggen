@@ -18,7 +18,7 @@ def mkLed(memory_datawidth=128):
     rst = m.Input('RST')
 
     datawidth = 32
-    addrwidth = 10
+    addrwidth = 4
     numbanks = 4
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, memory_datawidth)
     myram0 = vthread.MultibankRAM(m, 'myram0', clk, rst, datawidth, addrwidth,

@@ -416,7 +416,7 @@ module blinkled
   localparam write_burst_fsm_0_init = 0;
   reg [10-1:0] write_burst_addr_28;
   reg [10-1:0] write_burst_stride_29;
-  reg [11-1:0] write_burst_length_30;
+  reg [33-1:0] write_burst_length_30;
   reg write_burst_done_31;
   assign ram_a_1_addr = ((write_burst_fsm_0 == 1) && axi_a_tvalid)? write_burst_addr_28 : 'hx;
   assign ram_a_1_wdata = ((write_burst_fsm_0 == 1) && axi_a_tvalid)? axi_a_tdata : 'hx;
@@ -446,7 +446,7 @@ module blinkled
   localparam write_burst_fsm_1_init = 0;
   reg [10-1:0] write_burst_addr_39;
   reg [10-1:0] write_burst_stride_40;
-  reg [11-1:0] write_burst_length_41;
+  reg [33-1:0] write_burst_length_41;
   reg write_burst_done_42;
   assign ram_b_1_addr = ((write_burst_fsm_1 == 1) && axi_b_tvalid)? write_burst_addr_39 : 'hx;
   assign ram_b_1_wdata = ((write_burst_fsm_1 == 1) && axi_b_tvalid)? axi_b_tdata : 'hx;
@@ -552,7 +552,7 @@ module blinkled
   localparam read_burst_fsm_2_init = 0;
   reg [10-1:0] read_burst_addr_83;
   reg [10-1:0] read_burst_stride_84;
-  reg [11-1:0] read_burst_length_85;
+  reg [33-1:0] read_burst_length_85;
   reg read_burst_rvalid_86;
   reg read_burst_rlast_87;
   assign ram_c_1_addr = ((read_burst_fsm_2 == 1) && (!read_burst_rvalid_86 || (axi_c_tready || !axi_c_tvalid)))? read_burst_addr_83 : 'hx;
