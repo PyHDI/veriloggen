@@ -640,7 +640,7 @@ module blinkled
   localparam write_burst_fsm_0_init = 0;
   reg [10-1:0] write_burst_addr_43;
   reg [10-1:0] write_burst_stride_44;
-  reg [11-1:0] write_burst_length_45;
+  reg [33-1:0] write_burst_length_45;
   reg write_burst_done_46;
   assign ram_b_0_wdata = ((write_burst_fsm_0 == 1) && maxi_rvalid)? maxi_rdata : 'hx;
   assign ram_b_0_wenable = ((write_burst_fsm_0 == 1) && maxi_rvalid)? 1'd1 : 0;
