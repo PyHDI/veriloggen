@@ -3667,7 +3667,7 @@ class AxiSerialMemoryModel(AxiSlave):
         return 0
 
 
-class AxiSerialMultiportMemoryModel(AxiMemoryModelOld):
+class AxiSerialMultiportMemoryModel(AxiSerialMemoryModel):
     __intrinsics__ = ('read', 'write',
                       'read_word', 'write_word')
 
