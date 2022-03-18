@@ -3288,7 +3288,7 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
         self.rdatas[index].rready.connect(rready)
 
 
-class AxiMemoryModelOld(AxiSlave):
+class AxiSerialMemoryModel(AxiSlave):
     __intrinsics__ = ('read', 'write',
                       'read_word', 'write_word')
 
@@ -3667,7 +3667,7 @@ class AxiMemoryModelOld(AxiSlave):
         return 0
 
 
-class AxiMultiportMemoryModelOld(AxiMemoryModelOld):
+class AxiSerialMultiportMemoryModel(AxiMemoryModelOld):
     __intrinsics__ = ('read', 'write',
                       'read_word', 'write_word')
 
