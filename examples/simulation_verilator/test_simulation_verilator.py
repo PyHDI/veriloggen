@@ -154,8 +154,8 @@ module test
   reg [32-1:0] _write_addr;
   reg [33-1:0] _read_count;
   reg [32-1:0] _read_addr;
-  reg [33-1:0] _sleep_count;
-  reg [33-1:0] _sub_sleep_count;
+  reg [33-1:0] _sleep_interval_count;
+  reg [33-1:0] _keep_sleep_count;
   wire [32-1:0] pack_write_req_global_addr_0;
   wire [9-1:0] pack_write_req_size_1;
   assign pack_write_req_global_addr_0 = memory_awaddr;
@@ -356,8 +356,8 @@ module test
     _write_addr = 0;
     _read_count = 0;
     _read_addr = 0;
-    _sleep_count = 0;
-    _sub_sleep_count = 0;
+    _sleep_interval_count = 0;
+    _keep_sleep_count = 0;
     __tmp_4_1 = 0;
     __tmp_11_1 = 0;
     _d1__memory_rdata_fsm = _memory_rdata_fsm_init;
@@ -387,20 +387,20 @@ module test
 
   always @(posedge CLK) begin
     if(RST) begin
-      _sub_sleep_count <= 0;
-      _sleep_count <= 0;
+      _keep_sleep_count <= 0;
+      _sleep_interval_count <= 0;
     end else begin
-      if(_sleep_count == 3) begin
-        _sub_sleep_count <= _sub_sleep_count + 1;
+      if(_sleep_interval_count == 15) begin
+        _keep_sleep_count <= _keep_sleep_count + 1;
       end 
-      if((_sleep_count == 3) && (_sub_sleep_count == 3)) begin
-        _sub_sleep_count <= 0;
+      if((_sleep_interval_count == 15) && (_keep_sleep_count == 3)) begin
+        _keep_sleep_count <= 0;
       end 
-      if(_sleep_count < 3) begin
-        _sleep_count <= _sleep_count + 1;
+      if(_sleep_interval_count < 15) begin
+        _sleep_interval_count <= _sleep_interval_count + 1;
       end 
-      if((_sub_sleep_count == 3) && (_sleep_count == 3)) begin
-        _sleep_count <= 0;
+      if((_keep_sleep_count == 3) && (_sleep_interval_count == 15)) begin
+        _sleep_interval_count <= 0;
       end 
       if((_memory_wdata_fsm == 1) && memory_wvalid && memory_wready && memory_wstrb[0]) begin
         _memory_mem[_write_addr + 0] <= memory_wdata[7:0];
@@ -516,7 +516,7 @@ module test
             _write_addr <= _write_addr + 4;
             _write_count <= _write_count - 1;
           end 
-          if(_sleep_count == 3) begin
+          if(_sleep_interval_count == 15) begin
             memory_wready <= 0;
           end else begin
             memory_wready <= 1;
@@ -659,12 +659,12 @@ module test
           if(memory_rready | !memory_rvalid) begin
             memory_rdata[31:24] <= _memory_mem[_read_addr + 3];
           end 
-          if((_sleep_count < 3) && (_read_count > 0) && memory_rready | !memory_rvalid) begin
+          if((_sleep_interval_count < 15) && (_read_count > 0) && memory_rready | !memory_rvalid) begin
             memory_rvalid <= 1;
             _read_addr <= _read_addr + 4;
             _read_count <= _read_count - 1;
           end 
-          if((_sleep_count < 3) && (_read_count == 1) && memory_rready | !memory_rvalid) begin
+          if((_sleep_interval_count < 15) && (_read_count == 1) && memory_rready | !memory_rvalid) begin
             memory_rlast <= 1;
           end 
           __memory_rdata_fsm_cond_11_0_1 <= 1;

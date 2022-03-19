@@ -2275,7 +2275,7 @@ class AxiMemoryModel(AxiSlave):
                  mem_datawidth=32, mem_addrwidth=20,
                  memimg=None, memimg_name=None,
                  memimg_datawidth=None,
-                 write_delay=10, read_delay=10, sleep=4, sub_sleep=4,
+                 write_delay=10, read_delay=10, sleep_interval=16, keep_sleep=4,
                  waddr_id_width=0, wdata_id_width=0, wresp_id_width=0,
                  raddr_id_width=0, rdata_id_width=0,
                  waddr_user_width=2, wdata_user_width=0, wresp_user_width=0,
@@ -2375,7 +2375,7 @@ class AxiMemoryModel(AxiSlave):
             vtypes.Systask('readmemh', memimg_name, self.mem)
         )
 
-        self._make_fsm(write_delay, read_delay, sleep, sub_sleep)
+        self._make_fsm(write_delay, read_delay, sleep_interval, keep_sleep)
 
     @staticmethod
     def _make_img(filename, size, width, blksize=4096):
@@ -2395,7 +2395,7 @@ class AxiMemoryModel(AxiSlave):
                 s = ''.join([fmt % d for d in blk])
                 f.write(s)
 
-    def _make_fsm(self, write_delay=10, read_delay=10, sleep=4, sub_sleep=4):
+    def _make_fsm(self, write_delay=10, read_delay=10, sleep_interval=16, keep_sleep=4):
         write_count = self.m.Reg(
             '_'.join(['', 'write_count']), self.addrwidth + 1, initval=0)
         write_addr = self.m.Reg(
@@ -2405,30 +2405,30 @@ class AxiMemoryModel(AxiSlave):
         read_addr = self.m.Reg(
             '_'.join(['', 'read_addr']), self.addrwidth, initval=0)
 
-        if sleep > 0:
-            sleep_count = self.m.Reg(
-                '_'.join(['', 'sleep_count']), self.addrwidth + 1, initval=0)
+        if sleep_interval > 0:
+            sleep_interval_count = self.m.Reg(
+                '_'.join(['', 'sleep_interval_count']), self.addrwidth + 1, initval=0)
 
-            if sub_sleep > 0:
-                sub_sleep_count = self.m.Reg(
-                    '_'.join(['', 'sub_sleep_count']), self.addrwidth + 1, initval=0)
+            if keep_sleep > 0:
+                keep_sleep_count = self.m.Reg(
+                    '_'.join(['', 'keep_sleep_count']), self.addrwidth + 1, initval=0)
 
-                self.seq.If(sleep_count == sleep - 1)(
-                    sub_sleep_count.inc()
+                self.seq.If(sleep_interval_count == sleep_interval - 1)(
+                    keep_sleep_count.inc()
                 )
-                self.seq.If(sleep_count == sleep - 1,
-                            sub_sleep_count == sub_sleep - 1)(
-                    sub_sleep_count(0)
+                self.seq.If(sleep_interval_count == sleep_interval - 1,
+                            keep_sleep_count == keep_sleep - 1)(
+                    keep_sleep_count(0)
                 )
-                cond = sub_sleep_count == sub_sleep - 1
+                cond = keep_sleep_count == keep_sleep - 1
             else:
                 cond = None
 
-            self.seq.If(sleep_count < sleep - 1)(
-                sleep_count.inc()
+            self.seq.If(sleep_interval_count < sleep_interval - 1)(
+                sleep_interval_count.inc()
             )
-            self.seq.If(cond, sleep_count == sleep - 1)(
-                sleep_count(0)
+            self.seq.If(cond, sleep_interval_count == sleep_interval - 1)(
+                sleep_interval_count(0)
             )
 
         # --------------------
@@ -2497,9 +2497,9 @@ class AxiMemoryModel(AxiSlave):
             write_count.dec()
         )
 
-        # sleep
-        if sleep > 0:
-            self.wdata_fsm.If(sleep_count == sleep - 1)(
+        # sleep_interval
+        if sleep_interval > 0:
+            self.wdata_fsm.If(sleep_interval_count == sleep_interval - 1)(
                 self.wdata.wready(0)
             ).Else(
                 self.wdata.wready(1)
@@ -2571,14 +2571,14 @@ class AxiMemoryModel(AxiSlave):
                 self.rdata.rdata[i * 8:i * 8 + 8](self.mem[read_addr + i])
             )
 
-        if sleep > 0:
-            self.rdata_fsm.If(sleep_count < sleep - 1, read_count > 0,
+        if sleep_interval > 0:
+            self.rdata_fsm.If(sleep_interval_count < sleep_interval - 1, read_count > 0,
                               vtypes.Or(self.rdata.rready, vtypes.Not(self.rdata.rvalid)))(
                 self.rdata.rvalid(1),
                 read_addr.add(int(self.datawidth / 8)),
                 read_count.dec()
             )
-            self.rdata_fsm.If(sleep_count < sleep - 1, read_count == 1,
+            self.rdata_fsm.If(sleep_interval_count < sleep_interval - 1, read_count == 1,
                               vtypes.Or(self.rdata.rready, vtypes.Not(self.rdata.rvalid)))(
                 self.rdata.rlast(1)
             )
@@ -2807,7 +2807,7 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
                  mem_datawidth=32, mem_addrwidth=20,
                  memimg=None, memimg_name=None,
                  memimg_datawidth=None,
-                 write_delay=10, read_delay=10, sleep=4, sub_sleep=4,
+                 write_delay=10, read_delay=10, sleep_interval=16, keep_sleep=4,
                  waddr_id_width=0, wdata_id_width=0, wresp_id_width=0,
                  raddr_id_width=0, rdata_id_width=0,
                  waddr_user_width=2, wdata_user_width=0, wresp_user_width=0,
@@ -2922,9 +2922,9 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
             vtypes.Systask('readmemh', memimg_name, self.mem)
         )
 
-        self._make_fsms(write_delay, read_delay, sleep, sub_sleep)
+        self._make_fsms(write_delay, read_delay, sleep_interval, keep_sleep)
 
-    def _make_fsms(self, write_delay=10, read_delay=10, sleep=4, sub_sleep=4):
+    def _make_fsms(self, write_delay=10, read_delay=10, sleep_interval=16, keep_sleep=4):
 
         for i, (waddr_fsm, wdata_fsm, raddr_fsm, rdata_fsm,
                 wreq_fifo, rreq_fifo,
@@ -2942,30 +2942,30 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
             read_addr = self.m.Reg(
                 '_'.join(['', 'read_addr_%d' % i]), self.addrwidth, initval=0)
 
-            if sleep > 0:
-                sleep_count = self.m.Reg(
-                    '_'.join(['', 'sleep_count_%d' % i]), self.addrwidth + 1, initval=0)
+            if sleep_interval > 0:
+                sleep_interval_count = self.m.Reg(
+                    '_'.join(['', 'sleep_interval_count_%d' % i]), self.addrwidth + 1, initval=0)
 
-                if sub_sleep > 0:
-                    sub_sleep_count = self.m.Reg(
-                        '_'.join(['', 'sub_sleep_count_%d' % i]), self.addrwidth + 1, initval=0)
+                if keep_sleep > 0:
+                    keep_sleep_count = self.m.Reg(
+                        '_'.join(['', 'keep_sleep_count_%d' % i]), self.addrwidth + 1, initval=0)
 
-                    self.seq.If(sleep_count == sleep - 1)(
-                        sub_sleep_count.inc()
+                    self.seq.If(sleep_interval_count == sleep_interval - 1)(
+                        keep_sleep_count.inc()
                     )
-                    self.seq.If(sleep_count == sleep - 1,
-                                sub_sleep_count == sub_sleep - 1)(
-                        sub_sleep_count(0)
+                    self.seq.If(sleep_interval_count == sleep_interval - 1,
+                                keep_sleep_count == keep_sleep - 1)(
+                        keep_sleep_count(0)
                     )
-                    cond = sub_sleep_count == sub_sleep - 1
+                    cond = keep_sleep_count == keep_sleep - 1
                 else:
                     cond = None
 
-                self.seq.If(sleep_count < sleep - 1)(
-                    sleep_count.inc()
+                self.seq.If(sleep_interval_count < sleep_interval - 1)(
+                    sleep_interval_count.inc()
                 )
-                self.seq.If(cond, sleep_count == sleep - 1)(
-                    sleep_count(0)
+                self.seq.If(cond, sleep_interval_count == sleep_interval - 1)(
+                    sleep_interval_count(0)
                 )
 
             # --------------------
@@ -3034,9 +3034,9 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
                 write_count.dec()
             )
 
-            # sleep
-            if sleep > 0:
-                wdata_fsm.If(sleep_count == sleep - 1)(
+            # sleep_interval
+            if sleep_interval > 0:
+                wdata_fsm.If(sleep_interval_count == sleep_interval - 1)(
                     wdata.wready(0)
                 ).Else(
                     wdata.wready(1)
@@ -3108,14 +3108,14 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
                     rdata.rdata[i * 8:i * 8 + 8](self.mem[read_addr + i])
                 )
 
-            if sleep > 0:
-                rdata_fsm.If(sleep_count < sleep - 1, read_count > 0,
+            if sleep_interval > 0:
+                rdata_fsm.If(sleep_interval_count < sleep_interval - 1, read_count > 0,
                              vtypes.Or(rdata.rready, vtypes.Not(rdata.rvalid)))(
                     rdata.rvalid(1),
                     read_addr.add(int(self.datawidth / 8)),
                     read_count.dec()
                 )
-                rdata_fsm.If(sleep_count < sleep - 1, read_count == 1,
+                rdata_fsm.If(sleep_interval_count < sleep_interval - 1, read_count == 1,
                              vtypes.Or(rdata.rready, vtypes.Not(rdata.rvalid)))(
                     rdata.rlast(1)
                 )
@@ -3296,7 +3296,7 @@ class AxiSerialMemoryModel(AxiSlave):
                  mem_datawidth=32, mem_addrwidth=20,
                  memimg=None, memimg_name=None,
                  memimg_datawidth=None,
-                 write_delay=10, read_delay=10, sleep=4, sub_sleep=4,
+                 write_delay=10, read_delay=10, sleep_interval=16, keep_sleep=4,
                  waddr_id_width=0, wdata_id_width=0, wresp_id_width=0,
                  raddr_id_width=0, rdata_id_width=0,
                  waddr_user_width=2, wdata_user_width=0, wresp_user_width=0,
@@ -3349,7 +3349,7 @@ class AxiSerialMemoryModel(AxiSlave):
         # write response
         if self.wresp.bid is not None:
             self.seq.If(self.waddr.awvalid, self.waddr.awready,
-                            vtypes.Not(self.wresp.bvalid))(
+                        vtypes.Not(self.wresp.bvalid))(
                 self.wresp.bid(self.waddr.awid if self.waddr.awid is not None else 0)
             )
 
@@ -3398,7 +3398,7 @@ class AxiSerialMemoryModel(AxiSlave):
             vtypes.Systask('readmemh', memimg_name, self.mem)
         )
 
-        self._make_fsm(write_delay, read_delay, sleep, sub_sleep)
+        self._make_fsm(write_delay, read_delay, sleep_interval, keep_sleep)
 
     @staticmethod
     def _make_img(filename, size, width, blksize=4096):
@@ -3418,7 +3418,7 @@ class AxiSerialMemoryModel(AxiSlave):
                 s = ''.join([fmt % d for d in blk])
                 f.write(s)
 
-    def _make_fsm(self, write_delay=10, read_delay=10, sleep=4, sub_sleep=4):
+    def _make_fsm(self, write_delay=10, read_delay=10, sleep_interval=16, keep_sleep=4):
         write_mode = 100
         read_mode = 200
         while read_mode <= write_mode + write_delay + 10:
@@ -3436,30 +3436,30 @@ class AxiSerialMemoryModel(AxiSlave):
         read_addr = self.m.Reg(
             '_'.join(['', 'read_addr']), self.addrwidth, initval=0)
 
-        if sleep > 0:
-            sleep_count = self.m.Reg(
-                '_'.join(['', 'sleep_count']), self.addrwidth + 1, initval=0)
+        if sleep_interval > 0:
+            sleep_interval_count = self.m.Reg(
+                '_'.join(['', 'sleep_interval_count']), self.addrwidth + 1, initval=0)
 
-            if sub_sleep > 0:
-                sub_sleep_count = self.m.Reg(
-                    '_'.join(['', 'sub_sleep_count']), self.addrwidth + 1, initval=0)
+            if keep_sleep > 0:
+                keep_sleep_count = self.m.Reg(
+                    '_'.join(['', 'keep_sleep_count']), self.addrwidth + 1, initval=0)
 
-                self.seq.If(sleep_count == sleep - 1)(
-                    sub_sleep_count.inc()
+                self.seq.If(sleep_interval_count == sleep_interval - 1)(
+                    keep_sleep_count.inc()
                 )
-                self.seq.If(sleep_count == sleep - 1,
-                                sub_sleep_count == sub_sleep - 1)(
-                    sub_sleep_count(0)
+                self.seq.If(sleep_interval_count == sleep_interval - 1,
+                            keep_sleep_count == keep_sleep - 1)(
+                    keep_sleep_count(0)
                 )
-                cond = sub_sleep_count == sub_sleep - 1
+                cond = keep_sleep_count == keep_sleep - 1
             else:
                 cond = None
 
-            self.seq.If(sleep_count < sleep - 1)(
-                sleep_count.inc()
+            self.seq.If(sleep_interval_count < sleep_interval - 1)(
+                sleep_interval_count.inc()
             )
-            self.seq.If(cond, sleep_count == sleep - 1)(
-                sleep_count(0)
+            self.seq.If(cond, sleep_interval_count == sleep_interval - 1)(
+                sleep_interval_count(0)
             )
 
         # write mode
@@ -3498,9 +3498,9 @@ class AxiSerialMemoryModel(AxiSlave):
             write_count.dec()
         )
 
-        # sleep
-        if sleep > 0:
-            self.fsm.If(sleep_count == sleep - 1)(
+        # sleep_interval
+        if sleep_interval > 0:
+            self.fsm.If(sleep_interval_count == sleep_interval - 1)(
                 self.wdata.wready(0)
             ).Else(
                 self.wdata.wready(1)
@@ -3537,14 +3537,14 @@ class AxiSerialMemoryModel(AxiSlave):
                 self.rdata.rdata[i * 8:i * 8 + 8](self.mem[read_addr + i])
             )
 
-        if sleep > 0:
-            self.fsm.If(sleep_count < sleep - 1, read_count > 0,
+        if sleep_interval > 0:
+            self.fsm.If(sleep_interval_count < sleep_interval - 1, read_count > 0,
                         vtypes.Or(self.rdata.rready, vtypes.Not(self.rdata.rvalid)))(
                 self.rdata.rvalid(1),
                 read_addr.add(int(self.datawidth / 8)),
                 read_count.dec()
             )
-            self.fsm.If(sleep_count < sleep - 1, read_count == 1,
+            self.fsm.If(sleep_interval_count < sleep_interval - 1, read_count == 1,
                         vtypes.Or(self.rdata.rready, vtypes.Not(self.rdata.rvalid)))(
                 self.rdata.rlast(1)
             )
@@ -3675,7 +3675,7 @@ class AxiSerialMultiportMemoryModel(AxiSerialMemoryModel):
                  mem_datawidth=32, mem_addrwidth=20,
                  memimg=None, memimg_name=None,
                  memimg_datawidth=None,
-                 write_delay=10, read_delay=10, sleep=4, sub_sleep=4,
+                 write_delay=10, read_delay=10, sleep_interval=16, keep_sleep=4,
                  waddr_id_width=0, wdata_id_width=0, wresp_id_width=0,
                  raddr_id_width=0, rdata_id_width=0,
                  waddr_user_width=2, wdata_user_width=0, wresp_user_width=0,
@@ -3795,9 +3795,9 @@ class AxiSerialMultiportMemoryModel(AxiSerialMemoryModel):
             vtypes.Systask('readmemh', memimg_name, self.mem)
         )
 
-        self._make_fsms(write_delay, read_delay, sleep, sub_sleep)
+        self._make_fsms(write_delay, read_delay, sleep_interval, keep_sleep)
 
-    def _make_fsms(self, write_delay=10, read_delay=10, sleep=4, sub_sleep=4):
+    def _make_fsms(self, write_delay=10, read_delay=10, sleep_interval=16, keep_sleep=4):
 
         for i, (fsm, waddr, wdata, wresp, raddr, rdata) in enumerate(
                 zip(self.fsms, self.waddrs, self.wdatas, self.wresps, self.raddrs, self.rdatas)):
@@ -3811,30 +3811,30 @@ class AxiSerialMultiportMemoryModel(AxiSerialMemoryModel):
             read_addr = self.m.Reg(
                 '_'.join(['', 'read_addr_%d' % i]), self.addrwidth, initval=0)
 
-            if sleep > 0:
-                sleep_count = self.m.Reg(
-                    '_'.join(['', 'sleep_count_%d' % i]), self.addrwidth + 1, initval=0)
+            if sleep_interval > 0:
+                sleep_interval_count = self.m.Reg(
+                    '_'.join(['', 'sleep_interval_count_%d' % i]), self.addrwidth + 1, initval=0)
 
-                if sub_sleep > 0:
-                    sub_sleep_count = self.m.Reg(
-                        '_'.join(['', 'sub_sleep_count_%d' % i]), self.addrwidth + 1, initval=0)
+                if keep_sleep > 0:
+                    keep_sleep_count = self.m.Reg(
+                        '_'.join(['', 'keep_sleep_count_%d' % i]), self.addrwidth + 1, initval=0)
 
-                    fsm.seq.If(sleep_count == sleep - 1)(
-                        sub_sleep_count.inc()
+                    fsm.seq.If(sleep_interval_count == sleep_interval - 1)(
+                        keep_sleep_count.inc()
                     )
-                    fsm.seq.If(sleep_count == sleep - 1,
-                               sub_sleep_count == sub_sleep - 1)(
-                        sub_sleep_count(0)
+                    fsm.seq.If(sleep_interval_count == sleep_interval - 1,
+                               keep_sleep_count == keep_sleep - 1)(
+                        keep_sleep_count(0)
                     )
-                    cond = sub_sleep_count == sub_sleep - 1
+                    cond = keep_sleep_count == keep_sleep - 1
                 else:
                     cond = None
 
-                fsm.seq.If(sleep_count < sleep - 1)(
-                    sleep_count.inc()
+                fsm.seq.If(sleep_interval_count < sleep_interval - 1)(
+                    sleep_interval_count.inc()
                 )
-                fsm.seq.If(cond, sleep_count == sleep - 1)(
-                    sleep_count(0)
+                fsm.seq.If(cond, sleep_interval_count == sleep_interval - 1)(
+                    sleep_interval_count(0)
                 )
 
             write_mode = 100
@@ -3881,9 +3881,9 @@ class AxiSerialMultiportMemoryModel(AxiSerialMemoryModel):
                 write_count.dec()
             )
 
-            # sleep
-            if sleep > 0:
-                fsm.If(sleep_count == sleep - 1)(
+            # sleep_interval
+            if sleep_interval > 0:
+                fsm.If(sleep_interval_count == sleep_interval - 1)(
                     wdata.wready(0)
                 ).Else(
                     wdata.wready(1)
@@ -3920,14 +3920,14 @@ class AxiSerialMultiportMemoryModel(AxiSerialMemoryModel):
                     rdata.rdata[i * 8:i * 8 + 8](self.mem[read_addr + i])
                 )
 
-            if sleep > 0:
-                fsm.If(sleep_count < sleep - 1, read_count > 0,
+            if sleep_interval > 0:
+                fsm.If(sleep_interval_count < sleep_interval - 1, read_count > 0,
                        vtypes.Or(rdata.rready, vtypes.Not(rdata.rvalid)))(
                     rdata.rvalid(1),
                     read_addr.add(int(self.datawidth / 8)),
                     read_count.dec()
                 )
-                fsm.If(sleep_count < sleep - 1, read_count == 1,
+                fsm.If(sleep_interval_count < sleep_interval - 1, read_count == 1,
                        vtypes.Or(rdata.rready, vtypes.Not(rdata.rvalid)))(
                     rdata.rlast(1)
                 )
@@ -4344,7 +4344,7 @@ def split_read_write(m, ports, prefix,
         w_name = write_prefix + port.name
 
         if (name.startswith(prefix + '_aw') or
-            name.startswith(prefix + '_w') or name.startswith(prefix + '_b')):
+                name.startswith(prefix + '_w') or name.startswith(prefix + '_b')):
             if isinstance(port, vtypes.Reg):
                 w_port = m.RegLike(port, name=w_name)
                 port.connect(w_port)
