@@ -361,8 +361,8 @@ class MultibankRAM(object):
     @property
     def length(self):
         if isinstance(self.addrwidth, int):
-            return (2 ** self.addrwidth) * self.numbanks
-        return (vtypes.Int(2) ** self.addrwidth) * self.numbanks
+            return 2 ** self.addrwidth
+        return vtypes.Int(2) ** self.addrwidth
 
     def has_enable(self, port):
         for ram in self.rams:
