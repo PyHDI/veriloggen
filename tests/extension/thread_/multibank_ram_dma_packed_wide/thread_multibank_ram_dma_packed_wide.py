@@ -60,7 +60,7 @@ def mkLed(memory_datawidth=256):
 
         laddr = 0
         gaddr = offset
-        myaxi.dma_write(myram0, laddr, gaddr, size)
+        myaxi.dma_write_packed(myram0, laddr, gaddr, size * numbanks)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # write
@@ -71,13 +71,13 @@ def mkLed(memory_datawidth=256):
 
         laddr = 0
         gaddr = array_size + offset
-        myaxi.dma_write(myram1, laddr, gaddr, size)
+        myaxi.dma_write_packed(myram1, laddr, gaddr, size * numbanks)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # read
         laddr = 0
         gaddr = offset
-        myaxi.dma_read(myram1, laddr, gaddr, size)
+        myaxi.dma_read_packed(myram1, laddr, gaddr, size * numbanks)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for bank in range(numbanks):
@@ -91,7 +91,7 @@ def mkLed(memory_datawidth=256):
         # read
         laddr = 0
         gaddr = array_size + offset
-        myaxi.dma_read(myram0, laddr, gaddr, size)
+        myaxi.dma_read_packed(myram0, laddr, gaddr, size * numbanks)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for bank in range(numbanks):

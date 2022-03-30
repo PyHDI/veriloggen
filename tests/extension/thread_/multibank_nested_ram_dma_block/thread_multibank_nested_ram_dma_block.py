@@ -23,7 +23,6 @@ def mkLed(memory_datawidth=128):
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, memory_datawidth)
 
     pack_size = memory_datawidth // datawidth
-
     rams = [vthread.MultibankRAM(m, 'myram%d' % i, clk, rst, datawidth, addrwidth,
                                  numbanks=pack_size)
             for i in range(numbanks)]
@@ -73,9 +72,7 @@ def mkLed(memory_datawidth=128):
 
         laddr = 0
         gaddr = offset
-        myram.dma_write_block(myaxi, laddr, gaddr,
-                              size // pack_size,
-                              block_size // pack_size)
+        myaxi.dma_write_block(myram, laddr, gaddr, size, block_size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # write
@@ -99,17 +96,13 @@ def mkLed(memory_datawidth=128):
 
         laddr = 0
         gaddr = array_size + offset
-        myram.dma_write_block(myaxi, laddr, gaddr,
-                              size // pack_size,
-                              block_size // pack_size)
+        myaxi.dma_write_block(myram, laddr, gaddr, size, block_size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # read
         laddr = 0
         gaddr = offset
-        myram.dma_read_block(myaxi, laddr, gaddr,
-                             size // pack_size,
-                             block_size // pack_size)
+        myaxi.dma_read_block(myram, laddr, gaddr, size, block_size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         count = 0
@@ -136,8 +129,7 @@ def mkLed(memory_datawidth=128):
         # read
         laddr = 0
         gaddr = array_size + offset
-        myram.dma_read_block(myaxi, laddr, gaddr, size //
-                             pack_size, block_size // pack_size)
+        myaxi.dma_read_block(myram, laddr, gaddr, size, block_size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         count = 0
@@ -187,7 +179,7 @@ def mkTest(memimg_name=None, memory_datawidth=128):
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    #simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

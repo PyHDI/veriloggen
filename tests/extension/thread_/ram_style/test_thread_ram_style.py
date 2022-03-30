@@ -84,7 +84,7 @@ module blinkled
   wire [_tmp_0-1:0] _tmp_1;
   assign _tmp_1 = th_blink == 13;
   reg [_tmp_0-1:0] __tmp_1_1;
-  reg signed [32-1:0] _tmp_2;
+  reg signed [32-1:0] read_rdata_2;
   reg signed [32-1:0] _th_blink_rdata_6;
 
   always @(posedge CLK) begin
@@ -132,7 +132,7 @@ module blinkled
       _th_blink_i_3 <= 0;
       _th_blink_wdata_4 <= 0;
       _th_blink_read_sum_5 <= 0;
-      _tmp_2 <= 0;
+      read_rdata_2 <= 0;
       _th_blink_rdata_6 <= 0;
     end else begin
       case(th_blink)
@@ -195,14 +195,14 @@ module blinkled
         end
         th_blink_13: begin
           if(__tmp_1_1) begin
-            _tmp_2 <= myram_0_rdata;
+            read_rdata_2 <= myram_0_rdata;
           end 
           if(__tmp_1_1) begin
             th_blink <= th_blink_14;
           end 
         end
         th_blink_14: begin
-          _th_blink_rdata_6 <= _tmp_2;
+          _th_blink_rdata_6 <= read_rdata_2;
           th_blink <= th_blink_15;
         end
         th_blink_15: begin

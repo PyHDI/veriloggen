@@ -3,7 +3,7 @@ from __future__ import print_function
 
 import os
 import veriloggen
-import thread_multibank_ram_dma_packed_long
+import thread_multibank_ram_dma_packed
 
 
 def test(request):
@@ -11,8 +11,8 @@ def test(request):
 
     simtype = request.config.getoption('--sim')
 
-    rslt = thread_multibank_ram_dma_packed_long.run(filename=None, simtype=simtype,
-                                                    outputfile=os.path.splitext(os.path.basename(__file__))[0] + '.out')
+    rslt = thread_multibank_ram_dma_packed.run(filename=None, simtype=simtype,
+                                               outputfile=os.path.splitext(os.path.basename(__file__))[0] + '.out')
 
     verify_rslt = rslt.splitlines()[-1]
     assert(verify_rslt == '# verify: PASSED')
