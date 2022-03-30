@@ -727,8 +727,10 @@ module test;
           end
           if(memory_wvalid && memory_wready && (_write_count == 1)) begin
             memory_wready <= 0;
+            memory_bvalid <= 1;
           end 
           if(memory_wvalid && memory_wready && memory_wlast) begin
+            memory_wready <= 0;
             memory_bvalid <= 1;
           end 
           if(memory_wvalid && memory_wready && (_write_count == 1)) begin
@@ -1403,12 +1405,13 @@ module blinkled
   reg [32-1:0] _maxi_read_local_addr;
   reg [32-1:0] _maxi_read_local_stride;
   reg [33-1:0] _maxi_read_local_size;
+  reg [32-1:0] _maxi_read_local_blocksize;
   wire _maxi_read_req_fifo_enq;
-  wire [105-1:0] _maxi_read_req_fifo_wdata;
+  wire [137-1:0] _maxi_read_req_fifo_wdata;
   wire _maxi_read_req_fifo_full;
   wire _maxi_read_req_fifo_almost_full;
   wire _maxi_read_req_fifo_deq;
-  wire [105-1:0] _maxi_read_req_fifo_rdata;
+  wire [137-1:0] _maxi_read_req_fifo_rdata;
   wire _maxi_read_req_fifo_empty;
   wire _maxi_read_req_fifo_almost_empty;
 
@@ -1432,22 +1435,27 @@ module blinkled
   wire [32-1:0] _maxi_read_local_addr_fifo;
   wire [32-1:0] _maxi_read_local_stride_fifo;
   wire [33-1:0] _maxi_read_local_size_fifo;
+  wire [32-1:0] _maxi_read_local_blocksize_fifo;
   wire [8-1:0] unpack_read_req_op_sel_1;
   wire [32-1:0] unpack_read_req_local_addr_2;
   wire [32-1:0] unpack_read_req_local_stride_3;
   wire [33-1:0] unpack_read_req_local_size_4;
-  assign unpack_read_req_op_sel_1 = _maxi_read_req_fifo_rdata[104:97];
-  assign unpack_read_req_local_addr_2 = _maxi_read_req_fifo_rdata[96:65];
-  assign unpack_read_req_local_stride_3 = _maxi_read_req_fifo_rdata[64:33];
-  assign unpack_read_req_local_size_4 = _maxi_read_req_fifo_rdata[32:0];
+  wire [32-1:0] unpack_read_req_local_blocksize_5;
+  assign unpack_read_req_op_sel_1 = _maxi_read_req_fifo_rdata[136:129];
+  assign unpack_read_req_local_addr_2 = _maxi_read_req_fifo_rdata[128:97];
+  assign unpack_read_req_local_stride_3 = _maxi_read_req_fifo_rdata[96:65];
+  assign unpack_read_req_local_size_4 = _maxi_read_req_fifo_rdata[64:32];
+  assign unpack_read_req_local_blocksize_5 = _maxi_read_req_fifo_rdata[31:0];
   assign _maxi_read_op_sel_fifo = unpack_read_req_op_sel_1;
   assign _maxi_read_local_addr_fifo = unpack_read_req_local_addr_2;
   assign _maxi_read_local_stride_fifo = unpack_read_req_local_stride_3;
   assign _maxi_read_local_size_fifo = unpack_read_req_local_size_4;
+  assign _maxi_read_local_blocksize_fifo = unpack_read_req_local_blocksize_5;
   reg [8-1:0] _maxi_read_op_sel_buf;
   reg [32-1:0] _maxi_read_local_addr_buf;
   reg [32-1:0] _maxi_read_local_stride_buf;
   reg [33-1:0] _maxi_read_local_size_buf;
+  reg [32-1:0] _maxi_read_local_blocksize_buf;
   reg _maxi_read_req_idle;
   reg _maxi_read_data_idle;
   wire _maxi_read_idle;
@@ -1459,12 +1467,13 @@ module blinkled
   reg [32-1:0] _maxi_write_local_addr;
   reg [32-1:0] _maxi_write_local_stride;
   reg [33-1:0] _maxi_write_local_size;
+  reg [32-1:0] _maxi_write_local_blocksize;
   wire _maxi_write_req_fifo_enq;
-  wire [105-1:0] _maxi_write_req_fifo_wdata;
+  wire [137-1:0] _maxi_write_req_fifo_wdata;
   wire _maxi_write_req_fifo_full;
   wire _maxi_write_req_fifo_almost_full;
   wire _maxi_write_req_fifo_deq;
-  wire [105-1:0] _maxi_write_req_fifo_rdata;
+  wire [137-1:0] _maxi_write_req_fifo_rdata;
   wire _maxi_write_req_fifo_empty;
   wire _maxi_write_req_fifo_almost_empty;
 
@@ -1488,22 +1497,27 @@ module blinkled
   wire [32-1:0] _maxi_write_local_addr_fifo;
   wire [32-1:0] _maxi_write_local_stride_fifo;
   wire [33-1:0] _maxi_write_size_fifo;
-  wire [8-1:0] unpack_write_req_op_sel_5;
-  wire [32-1:0] unpack_write_req_local_addr_6;
-  wire [32-1:0] unpack_write_req_local_stride_7;
-  wire [33-1:0] unpack_write_req_size_8;
-  assign unpack_write_req_op_sel_5 = _maxi_write_req_fifo_rdata[104:97];
-  assign unpack_write_req_local_addr_6 = _maxi_write_req_fifo_rdata[96:65];
-  assign unpack_write_req_local_stride_7 = _maxi_write_req_fifo_rdata[64:33];
-  assign unpack_write_req_size_8 = _maxi_write_req_fifo_rdata[32:0];
-  assign _maxi_write_op_sel_fifo = unpack_write_req_op_sel_5;
-  assign _maxi_write_local_addr_fifo = unpack_write_req_local_addr_6;
-  assign _maxi_write_local_stride_fifo = unpack_write_req_local_stride_7;
-  assign _maxi_write_size_fifo = unpack_write_req_size_8;
+  wire [32-1:0] _maxi_write_local_blocksize_fifo;
+  wire [8-1:0] unpack_write_req_op_sel_6;
+  wire [32-1:0] unpack_write_req_local_addr_7;
+  wire [32-1:0] unpack_write_req_local_stride_8;
+  wire [33-1:0] unpack_write_req_size_9;
+  wire [32-1:0] unpack_write_req_local_blocksize_10;
+  assign unpack_write_req_op_sel_6 = _maxi_write_req_fifo_rdata[136:129];
+  assign unpack_write_req_local_addr_7 = _maxi_write_req_fifo_rdata[128:97];
+  assign unpack_write_req_local_stride_8 = _maxi_write_req_fifo_rdata[96:65];
+  assign unpack_write_req_size_9 = _maxi_write_req_fifo_rdata[64:32];
+  assign unpack_write_req_local_blocksize_10 = _maxi_write_req_fifo_rdata[31:0];
+  assign _maxi_write_op_sel_fifo = unpack_write_req_op_sel_6;
+  assign _maxi_write_local_addr_fifo = unpack_write_req_local_addr_7;
+  assign _maxi_write_local_stride_fifo = unpack_write_req_local_stride_8;
+  assign _maxi_write_size_fifo = unpack_write_req_size_9;
+  assign _maxi_write_local_blocksize_fifo = unpack_write_req_local_blocksize_10;
   reg [8-1:0] _maxi_write_op_sel_buf;
   reg [32-1:0] _maxi_write_local_addr_buf;
   reg [32-1:0] _maxi_write_local_stride_buf;
   reg [33-1:0] _maxi_write_size_buf;
+  reg [32-1:0] _maxi_write_local_blocksize_buf;
   reg _maxi_write_req_idle;
   reg _maxi_write_data_idle;
   wire _maxi_write_idle;
@@ -1539,41 +1553,41 @@ module blinkled
   localparam _saxi_shift = 2;
   reg [32-1:0] _saxi_register_fsm;
   localparam _saxi_register_fsm_init = 0;
-  reg [32-1:0] addr_9;
-  reg writevalid_10;
-  reg readvalid_11;
-  reg prev_awvalid_12;
-  reg prev_arvalid_13;
-  assign saxi_awready = (_saxi_register_fsm == 0) && (!writevalid_10 && !readvalid_11 && !saxi_bvalid && prev_awvalid_12);
-  assign saxi_arready = (_saxi_register_fsm == 0) && (!readvalid_11 && !writevalid_10 && prev_arvalid_13 && !prev_awvalid_12);
-  reg [_saxi_maskwidth-1:0] axis_maskaddr_14;
-  wire signed [32-1:0] axislite_rdata_15;
-  assign axislite_rdata_15 = (axis_maskaddr_14 == 0)? _saxi_register_0 : 
-                             (axis_maskaddr_14 == 1)? _saxi_register_1 : 
-                             (axis_maskaddr_14 == 2)? _saxi_register_2 : 
-                             (axis_maskaddr_14 == 3)? _saxi_register_3 : 
-                             (axis_maskaddr_14 == 4)? _saxi_register_4 : 
-                             (axis_maskaddr_14 == 5)? _saxi_register_5 : 
-                             (axis_maskaddr_14 == 6)? _saxi_register_6 : 
-                             (axis_maskaddr_14 == 7)? _saxi_register_7 : 'hx;
-  wire axislite_flag_16;
-  assign axislite_flag_16 = (axis_maskaddr_14 == 0)? _saxi_flag_0 : 
-                            (axis_maskaddr_14 == 1)? _saxi_flag_1 : 
-                            (axis_maskaddr_14 == 2)? _saxi_flag_2 : 
-                            (axis_maskaddr_14 == 3)? _saxi_flag_3 : 
-                            (axis_maskaddr_14 == 4)? _saxi_flag_4 : 
-                            (axis_maskaddr_14 == 5)? _saxi_flag_5 : 
-                            (axis_maskaddr_14 == 6)? _saxi_flag_6 : 
-                            (axis_maskaddr_14 == 7)? _saxi_flag_7 : 'hx;
-  wire signed [32-1:0] axislite_resetval_17;
-  assign axislite_resetval_17 = (axis_maskaddr_14 == 0)? _saxi_resetval_0 : 
-                                (axis_maskaddr_14 == 1)? _saxi_resetval_1 : 
-                                (axis_maskaddr_14 == 2)? _saxi_resetval_2 : 
-                                (axis_maskaddr_14 == 3)? _saxi_resetval_3 : 
-                                (axis_maskaddr_14 == 4)? _saxi_resetval_4 : 
-                                (axis_maskaddr_14 == 5)? _saxi_resetval_5 : 
-                                (axis_maskaddr_14 == 6)? _saxi_resetval_6 : 
-                                (axis_maskaddr_14 == 7)? _saxi_resetval_7 : 'hx;
+  reg [32-1:0] addr_11;
+  reg writevalid_12;
+  reg readvalid_13;
+  reg prev_awvalid_14;
+  reg prev_arvalid_15;
+  assign saxi_awready = (_saxi_register_fsm == 0) && (!writevalid_12 && !readvalid_13 && !saxi_bvalid && prev_awvalid_14);
+  assign saxi_arready = (_saxi_register_fsm == 0) && (!readvalid_13 && !writevalid_12 && prev_arvalid_15 && !prev_awvalid_14);
+  reg [_saxi_maskwidth-1:0] axis_maskaddr_16;
+  wire signed [32-1:0] axislite_rdata_17;
+  assign axislite_rdata_17 = (axis_maskaddr_16 == 0)? _saxi_register_0 : 
+                             (axis_maskaddr_16 == 1)? _saxi_register_1 : 
+                             (axis_maskaddr_16 == 2)? _saxi_register_2 : 
+                             (axis_maskaddr_16 == 3)? _saxi_register_3 : 
+                             (axis_maskaddr_16 == 4)? _saxi_register_4 : 
+                             (axis_maskaddr_16 == 5)? _saxi_register_5 : 
+                             (axis_maskaddr_16 == 6)? _saxi_register_6 : 
+                             (axis_maskaddr_16 == 7)? _saxi_register_7 : 'hx;
+  wire axislite_flag_18;
+  assign axislite_flag_18 = (axis_maskaddr_16 == 0)? _saxi_flag_0 : 
+                            (axis_maskaddr_16 == 1)? _saxi_flag_1 : 
+                            (axis_maskaddr_16 == 2)? _saxi_flag_2 : 
+                            (axis_maskaddr_16 == 3)? _saxi_flag_3 : 
+                            (axis_maskaddr_16 == 4)? _saxi_flag_4 : 
+                            (axis_maskaddr_16 == 5)? _saxi_flag_5 : 
+                            (axis_maskaddr_16 == 6)? _saxi_flag_6 : 
+                            (axis_maskaddr_16 == 7)? _saxi_flag_7 : 'hx;
+  wire signed [32-1:0] axislite_resetval_19;
+  assign axislite_resetval_19 = (axis_maskaddr_16 == 0)? _saxi_resetval_0 : 
+                                (axis_maskaddr_16 == 1)? _saxi_resetval_1 : 
+                                (axis_maskaddr_16 == 2)? _saxi_resetval_2 : 
+                                (axis_maskaddr_16 == 3)? _saxi_resetval_3 : 
+                                (axis_maskaddr_16 == 4)? _saxi_resetval_4 : 
+                                (axis_maskaddr_16 == 5)? _saxi_resetval_5 : 
+                                (axis_maskaddr_16 == 6)? _saxi_resetval_6 : 
+                                (axis_maskaddr_16 == 7)? _saxi_resetval_7 : 'hx;
   reg _saxi_cond_0_1;
   assign saxi_wready = _saxi_register_fsm == 2;
 
@@ -1603,97 +1617,93 @@ module blinkled
   reg signed [32-1:0] _th_memcpy_dst_global_addr_8;
   reg signed [32-1:0] _th_memcpy_local_addr_9;
   reg signed [32-1:0] _th_memcpy_dma_size_10;
-  wire [32-1:0] mask_addr_shifted_18;
-  assign mask_addr_shifted_18 = _th_memcpy_src_global_addr_7 >> 2;
-  wire [32-1:0] mask_addr_masked_19;
-  assign mask_addr_masked_19 = mask_addr_shifted_18 << 2;
+  wire [32-1:0] mask_addr_shifted_20;
+  assign mask_addr_shifted_20 = _th_memcpy_src_global_addr_7 >> 2;
+  wire [32-1:0] mask_addr_masked_21;
+  assign mask_addr_masked_21 = mask_addr_shifted_20 << 2;
   reg [32-1:0] _maxi_read_req_fsm;
   localparam _maxi_read_req_fsm_init = 0;
   reg [33-1:0] _maxi_read_cur_global_size;
   reg _maxi_read_cont;
-  wire [8-1:0] pack_read_req_op_sel_20;
-  wire [32-1:0] pack_read_req_local_addr_21;
-  wire [32-1:0] pack_read_req_local_stride_22;
-  wire [33-1:0] pack_read_req_local_size_23;
-  assign pack_read_req_op_sel_20 = _maxi_read_op_sel;
-  assign pack_read_req_local_addr_21 = _maxi_read_local_addr;
-  assign pack_read_req_local_stride_22 = _maxi_read_local_stride;
-  assign pack_read_req_local_size_23 = _maxi_read_local_size;
-  wire [105-1:0] pack_read_req_packed_24;
-  assign pack_read_req_packed_24 = { pack_read_req_op_sel_20, pack_read_req_local_addr_21, pack_read_req_local_stride_22, pack_read_req_local_size_23 };
-  assign _maxi_read_req_fifo_wdata = ((_maxi_read_req_fsm == 0) && _maxi_read_start && !_maxi_read_req_fifo_almost_full)? pack_read_req_packed_24 : 'hx;
+  wire [8-1:0] pack_read_req_op_sel_22;
+  wire [32-1:0] pack_read_req_local_addr_23;
+  wire [32-1:0] pack_read_req_local_stride_24;
+  wire [33-1:0] pack_read_req_local_size_25;
+  wire [32-1:0] pack_read_req_local_blocksize_26;
+  assign pack_read_req_op_sel_22 = _maxi_read_op_sel;
+  assign pack_read_req_local_addr_23 = _maxi_read_local_addr;
+  assign pack_read_req_local_stride_24 = _maxi_read_local_stride;
+  assign pack_read_req_local_size_25 = _maxi_read_local_size;
+  assign pack_read_req_local_blocksize_26 = _maxi_read_local_blocksize;
+  wire [137-1:0] pack_read_req_packed_27;
+  assign pack_read_req_packed_27 = { pack_read_req_op_sel_22, pack_read_req_local_addr_23, pack_read_req_local_stride_24, pack_read_req_local_size_25, pack_read_req_local_blocksize_26 };
+  assign _maxi_read_req_fifo_wdata = ((_maxi_read_req_fsm == 0) && _maxi_read_start && !_maxi_read_req_fifo_almost_full)? pack_read_req_packed_27 : 'hx;
   assign _maxi_read_req_fifo_enq = ((_maxi_read_req_fsm == 0) && _maxi_read_start && !_maxi_read_req_fifo_almost_full)? (_maxi_read_req_fsm == 0) && _maxi_read_start && !_maxi_read_req_fifo_almost_full && !_maxi_read_req_fifo_almost_full : 0;
-  localparam _tmp_25 = 1;
-  wire [_tmp_25-1:0] _tmp_26;
-  assign _tmp_26 = !_maxi_read_req_fifo_almost_full;
-  reg [_tmp_25-1:0] __tmp_26_1;
-  wire [32-1:0] mask_addr_shifted_27;
-  assign mask_addr_shifted_27 = _maxi_read_global_addr >> 2;
-  wire [32-1:0] mask_addr_masked_28;
-  assign mask_addr_masked_28 = mask_addr_shifted_27 << 2;
-  wire [32-1:0] mask_addr_shifted_29;
-  assign mask_addr_shifted_29 = _maxi_read_global_addr >> 2;
-  wire [32-1:0] mask_addr_masked_30;
-  assign mask_addr_masked_30 = mask_addr_shifted_29 << 2;
-  wire [32-1:0] mask_addr_shifted_31;
-  assign mask_addr_shifted_31 = _maxi_read_global_addr >> 2;
-  wire [32-1:0] mask_addr_masked_32;
-  assign mask_addr_masked_32 = mask_addr_shifted_31 << 2;
-  wire [32-1:0] mask_addr_shifted_33;
-  assign mask_addr_shifted_33 = _maxi_read_global_addr >> 2;
-  wire [32-1:0] mask_addr_masked_34;
-  assign mask_addr_masked_34 = mask_addr_shifted_33 << 2;
-  wire [32-1:0] mask_addr_shifted_35;
-  assign mask_addr_shifted_35 = _maxi_read_global_addr >> 2;
-  wire [32-1:0] mask_addr_masked_36;
-  assign mask_addr_masked_36 = mask_addr_shifted_35 << 2;
-  wire [32-1:0] mask_addr_shifted_37;
-  assign mask_addr_shifted_37 = _maxi_read_global_addr >> 2;
-  wire [32-1:0] mask_addr_masked_38;
-  assign mask_addr_masked_38 = mask_addr_shifted_37 << 2;
+  localparam _tmp_28 = 1;
+  wire [_tmp_28-1:0] _tmp_29;
+  assign _tmp_29 = !_maxi_read_req_fifo_almost_full;
+  reg [_tmp_28-1:0] __tmp_29_1;
+  wire [32-1:0] mask_addr_shifted_30;
+  assign mask_addr_shifted_30 = _maxi_read_global_addr >> 2;
+  wire [32-1:0] mask_addr_masked_31;
+  assign mask_addr_masked_31 = mask_addr_shifted_30 << 2;
+  wire [32-1:0] mask_addr_shifted_32;
+  assign mask_addr_shifted_32 = _maxi_read_global_addr >> 2;
+  wire [32-1:0] mask_addr_masked_33;
+  assign mask_addr_masked_33 = mask_addr_shifted_32 << 2;
+  wire [32-1:0] mask_addr_shifted_34;
+  assign mask_addr_shifted_34 = _maxi_read_global_addr >> 2;
+  wire [32-1:0] mask_addr_masked_35;
+  assign mask_addr_masked_35 = mask_addr_shifted_34 << 2;
+  wire [32-1:0] mask_addr_shifted_36;
+  assign mask_addr_shifted_36 = _maxi_read_global_addr >> 2;
+  wire [32-1:0] mask_addr_masked_37;
+  assign mask_addr_masked_37 = mask_addr_shifted_36 << 2;
+  wire [32-1:0] mask_addr_shifted_38;
+  assign mask_addr_shifted_38 = _maxi_read_global_addr >> 2;
+  wire [32-1:0] mask_addr_masked_39;
+  assign mask_addr_masked_39 = mask_addr_shifted_38 << 2;
+  wire [32-1:0] mask_addr_shifted_40;
+  assign mask_addr_shifted_40 = _maxi_read_global_addr >> 2;
+  wire [32-1:0] mask_addr_masked_41;
+  assign mask_addr_masked_41 = mask_addr_shifted_40 << 2;
   reg _maxi_cond_0_1;
   reg [32-1:0] _maxi_read_data_fsm;
   localparam _maxi_read_data_fsm_init = 0;
   assign _maxi_read_req_fifo_deq = ((_maxi_read_data_fsm == 0) && (_maxi_read_data_idle && !_maxi_read_req_fifo_empty && (_maxi_read_op_sel_fifo == 1)) && !_maxi_read_req_fifo_empty)? 1 : 0;
   reg [32-1:0] write_burst_fsm_0;
   localparam write_burst_fsm_0_init = 0;
-  reg [10-1:0] write_burst_addr_39;
-  reg [10-1:0] write_burst_stride_40;
-  reg [33-1:0] write_burst_length_41;
-  reg write_burst_done_42;
+  reg [10-1:0] write_burst_addr_42;
+  reg [10-1:0] write_burst_stride_43;
+  reg [33-1:0] write_burst_length_44;
+  reg write_burst_done_45;
   assign ram_a_0_wdata = ((write_burst_fsm_0 == 1) && maxi_rvalid)? maxi_rdata : 'hx;
   assign ram_a_0_wenable = ((write_burst_fsm_0 == 1) && maxi_rvalid)? 1'd1 : 0;
   assign maxi_rready = _maxi_read_data_fsm == 2;
-  wire [32-1:0] mask_addr_shifted_43;
-  assign mask_addr_shifted_43 = _th_memcpy_dst_global_addr_8 >> 2;
-  wire [32-1:0] mask_addr_masked_44;
-  assign mask_addr_masked_44 = mask_addr_shifted_43 << 2;
+  wire [32-1:0] mask_addr_shifted_46;
+  assign mask_addr_shifted_46 = _th_memcpy_dst_global_addr_8 >> 2;
+  wire [32-1:0] mask_addr_masked_47;
+  assign mask_addr_masked_47 = mask_addr_shifted_46 << 2;
   reg [32-1:0] _maxi_write_req_fsm;
   localparam _maxi_write_req_fsm_init = 0;
   reg [33-1:0] _maxi_write_cur_global_size;
   reg _maxi_write_cont;
-  wire [8-1:0] pack_write_req_op_sel_45;
-  wire [32-1:0] pack_write_req_local_addr_46;
-  wire [32-1:0] pack_write_req_local_stride_47;
-  wire [33-1:0] pack_write_req_size_48;
-  assign pack_write_req_op_sel_45 = _maxi_write_op_sel;
-  assign pack_write_req_local_addr_46 = _maxi_write_local_addr;
-  assign pack_write_req_local_stride_47 = _maxi_write_local_stride;
-  assign pack_write_req_size_48 = _maxi_write_local_size;
-  wire [105-1:0] pack_write_req_packed_49;
-  assign pack_write_req_packed_49 = { pack_write_req_op_sel_45, pack_write_req_local_addr_46, pack_write_req_local_stride_47, pack_write_req_size_48 };
-  localparam _tmp_50 = 1;
-  wire [_tmp_50-1:0] _tmp_51;
-  assign _tmp_51 = !_maxi_write_req_fifo_almost_full;
-  reg [_tmp_50-1:0] __tmp_51_1;
-  wire [32-1:0] mask_addr_shifted_52;
-  assign mask_addr_shifted_52 = _maxi_write_global_addr >> 2;
-  wire [32-1:0] mask_addr_masked_53;
-  assign mask_addr_masked_53 = mask_addr_shifted_52 << 2;
-  wire [32-1:0] mask_addr_shifted_54;
-  assign mask_addr_shifted_54 = _maxi_write_global_addr >> 2;
-  wire [32-1:0] mask_addr_masked_55;
-  assign mask_addr_masked_55 = mask_addr_shifted_54 << 2;
+  wire [8-1:0] pack_write_req_op_sel_48;
+  wire [32-1:0] pack_write_req_local_addr_49;
+  wire [32-1:0] pack_write_req_local_stride_50;
+  wire [33-1:0] pack_write_req_size_51;
+  wire [32-1:0] pack_write_req_local_blocksize_52;
+  assign pack_write_req_op_sel_48 = _maxi_write_op_sel;
+  assign pack_write_req_local_addr_49 = _maxi_write_local_addr;
+  assign pack_write_req_local_stride_50 = _maxi_write_local_stride;
+  assign pack_write_req_size_51 = _maxi_write_local_size;
+  assign pack_write_req_local_blocksize_52 = _maxi_write_local_blocksize;
+  wire [137-1:0] pack_write_req_packed_53;
+  assign pack_write_req_packed_53 = { pack_write_req_op_sel_48, pack_write_req_local_addr_49, pack_write_req_local_stride_50, pack_write_req_size_51, pack_write_req_local_blocksize_52 };
+  localparam _tmp_54 = 1;
+  wire [_tmp_54-1:0] _tmp_55;
+  assign _tmp_55 = !_maxi_write_req_fifo_almost_full;
+  reg [_tmp_54-1:0] __tmp_55_1;
   wire [32-1:0] mask_addr_shifted_56;
   assign mask_addr_shifted_56 = _maxi_write_global_addr >> 2;
   wire [32-1:0] mask_addr_masked_57;
@@ -1710,53 +1720,63 @@ module blinkled
   assign mask_addr_shifted_62 = _maxi_write_global_addr >> 2;
   wire [32-1:0] mask_addr_masked_63;
   assign mask_addr_masked_63 = mask_addr_shifted_62 << 2;
-  wire [8-1:0] pack_write_req_op_sel_64;
-  wire [32-1:0] pack_write_req_local_addr_65;
-  wire [32-1:0] pack_write_req_local_stride_66;
-  wire [33-1:0] pack_write_req_size_67;
-  assign pack_write_req_op_sel_64 = _maxi_write_op_sel;
-  assign pack_write_req_local_addr_65 = _maxi_write_local_addr;
-  assign pack_write_req_local_stride_66 = _maxi_write_local_stride;
-  assign pack_write_req_size_67 = _maxi_write_cur_global_size;
-  wire [105-1:0] pack_write_req_packed_68;
-  assign pack_write_req_packed_68 = { pack_write_req_op_sel_64, pack_write_req_local_addr_65, pack_write_req_local_stride_66, pack_write_req_size_67 };
-  assign _maxi_write_req_fifo_wdata = ((_maxi_write_req_fsm == 1) && !_maxi_write_req_fifo_almost_full && (maxi_awready || !maxi_awvalid) && (outstanding_wcount_0 < 6))? pack_write_req_packed_68 : 
-                                      ((_maxi_write_req_fsm == 0) && _maxi_write_start && !_maxi_write_req_fifo_almost_full)? pack_write_req_packed_49 : 'hx;
+  wire [32-1:0] mask_addr_shifted_64;
+  assign mask_addr_shifted_64 = _maxi_write_global_addr >> 2;
+  wire [32-1:0] mask_addr_masked_65;
+  assign mask_addr_masked_65 = mask_addr_shifted_64 << 2;
+  wire [32-1:0] mask_addr_shifted_66;
+  assign mask_addr_shifted_66 = _maxi_write_global_addr >> 2;
+  wire [32-1:0] mask_addr_masked_67;
+  assign mask_addr_masked_67 = mask_addr_shifted_66 << 2;
+  wire [8-1:0] pack_write_req_op_sel_68;
+  wire [32-1:0] pack_write_req_local_addr_69;
+  wire [32-1:0] pack_write_req_local_stride_70;
+  wire [33-1:0] pack_write_req_size_71;
+  wire [32-1:0] pack_write_req_local_blocksize_72;
+  assign pack_write_req_op_sel_68 = _maxi_write_op_sel;
+  assign pack_write_req_local_addr_69 = _maxi_write_local_addr;
+  assign pack_write_req_local_stride_70 = _maxi_write_local_stride;
+  assign pack_write_req_size_71 = _maxi_write_cur_global_size;
+  assign pack_write_req_local_blocksize_72 = _maxi_write_local_blocksize;
+  wire [137-1:0] pack_write_req_packed_73;
+  assign pack_write_req_packed_73 = { pack_write_req_op_sel_68, pack_write_req_local_addr_69, pack_write_req_local_stride_70, pack_write_req_size_71, pack_write_req_local_blocksize_72 };
+  assign _maxi_write_req_fifo_wdata = ((_maxi_write_req_fsm == 1) && !_maxi_write_req_fifo_almost_full && (maxi_awready || !maxi_awvalid) && (outstanding_wcount_0 < 6))? pack_write_req_packed_73 : 
+                                      ((_maxi_write_req_fsm == 0) && _maxi_write_start && !_maxi_write_req_fifo_almost_full)? pack_write_req_packed_53 : 'hx;
   assign _maxi_write_req_fifo_enq = ((_maxi_write_req_fsm == 1) && !_maxi_write_req_fifo_almost_full && (maxi_awready || !maxi_awvalid) && (outstanding_wcount_0 < 6))? (_maxi_write_req_fsm == 1) && !_maxi_write_req_fifo_almost_full && (maxi_awready || !maxi_awvalid) && (outstanding_wcount_0 < 6) && !_maxi_write_req_fifo_almost_full : 
                                     ((_maxi_write_req_fsm == 0) && _maxi_write_start && !_maxi_write_req_fifo_almost_full)? (_maxi_write_req_fsm == 0) && _maxi_write_start && !_maxi_write_req_fifo_almost_full && !_maxi_write_req_fifo_almost_full : 0;
-  localparam _tmp_69 = 1;
-  wire [_tmp_69-1:0] _tmp_70;
-  assign _tmp_70 = !_maxi_write_req_fifo_almost_full;
-  reg [_tmp_69-1:0] __tmp_70_1;
+  localparam _tmp_74 = 1;
+  wire [_tmp_74-1:0] _tmp_75;
+  assign _tmp_75 = !_maxi_write_req_fifo_almost_full;
+  reg [_tmp_74-1:0] __tmp_75_1;
   reg _maxi_cond_1_1;
   reg [32-1:0] _maxi_write_data_fsm;
   localparam _maxi_write_data_fsm_init = 0;
   reg [32-1:0] read_burst_fsm_1;
   localparam read_burst_fsm_1_init = 0;
-  reg [10-1:0] read_burst_addr_71;
-  reg [10-1:0] read_burst_stride_72;
-  reg [33-1:0] read_burst_length_73;
-  reg read_burst_rvalid_74;
-  reg read_burst_rlast_75;
-  assign ram_a_0_addr = ((read_burst_fsm_1 == 1) && (!read_burst_rvalid_74 || (maxi_wready || !maxi_wvalid) && (_maxi_write_size_buf > 0)))? read_burst_addr_71 : 
-                        ((write_burst_fsm_0 == 1) && maxi_rvalid)? write_burst_addr_39 : 'hx;
-  assign ram_a_0_enable = ((read_burst_fsm_1 == 1) && (!read_burst_rvalid_74 || (maxi_wready || !maxi_wvalid) && (_maxi_write_size_buf > 0)))? 1'd1 : 
+  reg [10-1:0] read_burst_addr_76;
+  reg [10-1:0] read_burst_stride_77;
+  reg [33-1:0] read_burst_length_78;
+  reg read_burst_rvalid_79;
+  reg read_burst_rlast_80;
+  assign ram_a_0_addr = ((read_burst_fsm_1 == 1) && (!read_burst_rvalid_79 || (maxi_wready || !maxi_wvalid) && (_maxi_write_size_buf > 0)))? read_burst_addr_76 : 
+                        ((write_burst_fsm_0 == 1) && maxi_rvalid)? write_burst_addr_42 : 'hx;
+  assign ram_a_0_enable = ((read_burst_fsm_1 == 1) && (!read_burst_rvalid_79 || (maxi_wready || !maxi_wvalid) && (_maxi_write_size_buf > 0)))? 1'd1 : 
                           ((write_burst_fsm_0 == 1) && maxi_rvalid)? 1'd1 : 0;
-  localparam _tmp_76 = 1;
-  wire [_tmp_76-1:0] _tmp_77;
-  assign _tmp_77 = (read_burst_fsm_1 == 1) && (!read_burst_rvalid_74 || (maxi_wready || !maxi_wvalid) && (_maxi_write_size_buf > 0));
-  reg [_tmp_76-1:0] __tmp_77_1;
-  wire [32-1:0] read_burst_rdata_78;
-  assign read_burst_rdata_78 = ram_a_0_rdata;
+  localparam _tmp_81 = 1;
+  wire [_tmp_81-1:0] _tmp_82;
+  assign _tmp_82 = (read_burst_fsm_1 == 1) && (!read_burst_rvalid_79 || (maxi_wready || !maxi_wvalid) && (_maxi_write_size_buf > 0));
+  reg [_tmp_81-1:0] __tmp_82_1;
+  wire [32-1:0] read_burst_rdata_83;
+  assign read_burst_rdata_83 = ram_a_0_rdata;
   assign _maxi_write_req_fifo_deq = ((_maxi_write_data_fsm == 2) && (!_maxi_write_req_fifo_empty && (_maxi_write_size_buf == 0)) && !_maxi_write_req_fifo_empty)? 1 : 
                                     ((_maxi_write_data_fsm == 0) && (_maxi_write_data_idle && !_maxi_write_req_fifo_empty && (_maxi_write_op_sel_fifo == 1)) && !_maxi_write_req_fifo_empty)? 1 : 0;
   reg _maxi_cond_2_1;
 
   always @(posedge CLK) begin
     if(RST) begin
-      __tmp_77_1 <= 0;
+      __tmp_82_1 <= 0;
     end else begin
-      __tmp_77_1 <= _tmp_77;
+      __tmp_82_1 <= _tmp_82;
     end
   end
 
@@ -1772,6 +1792,7 @@ module blinkled
       _maxi_read_local_addr <= 0;
       _maxi_read_local_stride <= 0;
       _maxi_read_local_size <= 0;
+      _maxi_read_local_blocksize <= 0;
       _maxi_read_req_idle <= 1;
       _maxi_read_cur_global_size <= 0;
       maxi_araddr <= 0;
@@ -1783,12 +1804,14 @@ module blinkled
       _maxi_read_local_addr_buf <= 0;
       _maxi_read_local_stride_buf <= 0;
       _maxi_read_local_size_buf <= 0;
+      _maxi_read_local_blocksize_buf <= 0;
       _maxi_write_op_sel <= 0;
       _maxi_write_global_addr <= 0;
       _maxi_write_global_size <= 0;
       _maxi_write_local_addr <= 0;
       _maxi_write_local_stride <= 0;
       _maxi_write_local_size <= 0;
+      _maxi_write_local_blocksize <= 0;
       _maxi_write_req_idle <= 1;
       _maxi_write_cur_global_size <= 0;
       maxi_awaddr <= 0;
@@ -1800,6 +1823,7 @@ module blinkled
       _maxi_write_local_addr_buf <= 0;
       _maxi_write_local_stride_buf <= 0;
       _maxi_write_size_buf <= 0;
+      _maxi_write_local_blocksize_buf <= 0;
       maxi_wdata <= 0;
       maxi_wvalid <= 0;
       maxi_wlast <= 0;
@@ -1827,11 +1851,12 @@ module blinkled
       if((th_memcpy == 17) && _maxi_read_req_idle) begin
         _maxi_read_start <= 1;
         _maxi_read_op_sel <= 1;
-        _maxi_read_global_addr <= mask_addr_masked_19;
+        _maxi_read_global_addr <= mask_addr_masked_21;
         _maxi_read_global_size <= _th_memcpy_dma_size_10;
         _maxi_read_local_addr <= _th_memcpy_local_addr_9;
         _maxi_read_local_stride <= 1;
         _maxi_read_local_size <= _th_memcpy_dma_size_10;
+        _maxi_read_local_blocksize <= 1;
       end 
       if((_maxi_read_req_fsm == 0) && _maxi_read_start) begin
         _maxi_read_req_idle <= 0;
@@ -1839,15 +1864,15 @@ module blinkled
       if(_maxi_read_start && _maxi_read_req_fifo_almost_full) begin
         _maxi_read_start <= 1;
       end 
-      if((_maxi_read_req_fsm == 0) && (_maxi_read_start || _maxi_read_cont) && !_maxi_read_req_fifo_almost_full && (_maxi_read_global_size <= 256) && ((mask_addr_masked_28 & 4095) + (_maxi_read_global_size << 2) >= 4096)) begin
-        _maxi_read_cur_global_size <= 4096 - (mask_addr_masked_30 & 4095) >> 2;
-        _maxi_read_global_size <= _maxi_read_global_size - (4096 - (mask_addr_masked_32 & 4095) >> 2);
+      if((_maxi_read_req_fsm == 0) && (_maxi_read_start || _maxi_read_cont) && !_maxi_read_req_fifo_almost_full && (_maxi_read_global_size <= 256) && ((mask_addr_masked_31 & 4095) + (_maxi_read_global_size << 2) >= 4096)) begin
+        _maxi_read_cur_global_size <= 4096 - (mask_addr_masked_33 & 4095) >> 2;
+        _maxi_read_global_size <= _maxi_read_global_size - (4096 - (mask_addr_masked_35 & 4095) >> 2);
       end else if((_maxi_read_req_fsm == 0) && (_maxi_read_start || _maxi_read_cont) && !_maxi_read_req_fifo_almost_full && (_maxi_read_global_size <= 256)) begin
         _maxi_read_cur_global_size <= _maxi_read_global_size;
         _maxi_read_global_size <= 0;
-      end else if((_maxi_read_req_fsm == 0) && (_maxi_read_start || _maxi_read_cont) && !_maxi_read_req_fifo_almost_full && ((mask_addr_masked_34 & 4095) + 1024 >= 4096)) begin
-        _maxi_read_cur_global_size <= 4096 - (mask_addr_masked_36 & 4095) >> 2;
-        _maxi_read_global_size <= _maxi_read_global_size - (4096 - (mask_addr_masked_38 & 4095) >> 2);
+      end else if((_maxi_read_req_fsm == 0) && (_maxi_read_start || _maxi_read_cont) && !_maxi_read_req_fifo_almost_full && ((mask_addr_masked_37 & 4095) + 1024 >= 4096)) begin
+        _maxi_read_cur_global_size <= 4096 - (mask_addr_masked_39 & 4095) >> 2;
+        _maxi_read_global_size <= _maxi_read_global_size - (4096 - (mask_addr_masked_41 & 4095) >> 2);
       end else if((_maxi_read_req_fsm == 0) && (_maxi_read_start || _maxi_read_cont) && !_maxi_read_req_fifo_almost_full) begin
         _maxi_read_cur_global_size <= 256;
         _maxi_read_global_size <= _maxi_read_global_size - 256;
@@ -1873,6 +1898,7 @@ module blinkled
         _maxi_read_local_addr_buf <= _maxi_read_local_addr_fifo;
         _maxi_read_local_stride_buf <= _maxi_read_local_stride_fifo;
         _maxi_read_local_size_buf <= _maxi_read_local_size_fifo;
+        _maxi_read_local_blocksize_buf <= _maxi_read_local_blocksize_fifo;
       end 
       if((_maxi_read_data_fsm == 2) && maxi_rvalid) begin
         _maxi_read_local_size_buf <= _maxi_read_local_size_buf - 1;
@@ -1883,11 +1909,12 @@ module blinkled
       if((th_memcpy == 19) && _maxi_write_req_idle) begin
         _maxi_write_start <= 1;
         _maxi_write_op_sel <= 1;
-        _maxi_write_global_addr <= mask_addr_masked_44;
+        _maxi_write_global_addr <= mask_addr_masked_47;
         _maxi_write_global_size <= _th_memcpy_dma_size_10;
         _maxi_write_local_addr <= _th_memcpy_local_addr_9;
         _maxi_write_local_stride <= 1;
         _maxi_write_local_size <= _th_memcpy_dma_size_10;
+        _maxi_write_local_blocksize <= 1;
       end 
       if((_maxi_write_req_fsm == 0) && _maxi_write_start) begin
         _maxi_write_req_idle <= 0;
@@ -1895,15 +1922,15 @@ module blinkled
       if(_maxi_write_start && _maxi_write_req_fifo_almost_full) begin
         _maxi_write_start <= 1;
       end 
-      if((_maxi_write_req_fsm == 0) && (_maxi_write_start || _maxi_write_cont) && !_maxi_write_req_fifo_almost_full && (_maxi_write_global_size <= 256) && ((mask_addr_masked_53 & 4095) + (_maxi_write_global_size << 2) >= 4096)) begin
-        _maxi_write_cur_global_size <= 4096 - (mask_addr_masked_55 & 4095) >> 2;
-        _maxi_write_global_size <= _maxi_write_global_size - (4096 - (mask_addr_masked_57 & 4095) >> 2);
+      if((_maxi_write_req_fsm == 0) && (_maxi_write_start || _maxi_write_cont) && !_maxi_write_req_fifo_almost_full && (_maxi_write_global_size <= 256) && ((mask_addr_masked_57 & 4095) + (_maxi_write_global_size << 2) >= 4096)) begin
+        _maxi_write_cur_global_size <= 4096 - (mask_addr_masked_59 & 4095) >> 2;
+        _maxi_write_global_size <= _maxi_write_global_size - (4096 - (mask_addr_masked_61 & 4095) >> 2);
       end else if((_maxi_write_req_fsm == 0) && (_maxi_write_start || _maxi_write_cont) && !_maxi_write_req_fifo_almost_full && (_maxi_write_global_size <= 256)) begin
         _maxi_write_cur_global_size <= _maxi_write_global_size;
         _maxi_write_global_size <= 0;
-      end else if((_maxi_write_req_fsm == 0) && (_maxi_write_start || _maxi_write_cont) && !_maxi_write_req_fifo_almost_full && ((mask_addr_masked_59 & 4095) + 1024 >= 4096)) begin
-        _maxi_write_cur_global_size <= 4096 - (mask_addr_masked_61 & 4095) >> 2;
-        _maxi_write_global_size <= _maxi_write_global_size - (4096 - (mask_addr_masked_63 & 4095) >> 2);
+      end else if((_maxi_write_req_fsm == 0) && (_maxi_write_start || _maxi_write_cont) && !_maxi_write_req_fifo_almost_full && ((mask_addr_masked_63 & 4095) + 1024 >= 4096)) begin
+        _maxi_write_cur_global_size <= 4096 - (mask_addr_masked_65 & 4095) >> 2;
+        _maxi_write_global_size <= _maxi_write_global_size - (4096 - (mask_addr_masked_67 & 4095) >> 2);
       end else if((_maxi_write_req_fsm == 0) && (_maxi_write_start || _maxi_write_cont) && !_maxi_write_req_fifo_almost_full) begin
         _maxi_write_cur_global_size <= 256;
         _maxi_write_global_size <= _maxi_write_global_size - 256;
@@ -1932,6 +1959,7 @@ module blinkled
         _maxi_write_local_addr_buf <= _maxi_write_local_addr_fifo;
         _maxi_write_local_stride_buf <= _maxi_write_local_stride_fifo;
         _maxi_write_size_buf <= _maxi_write_size_fifo;
+        _maxi_write_local_blocksize_buf <= _maxi_write_local_blocksize_fifo;
       end 
       if(_maxi_write_data_fsm == 1) begin
         _maxi_write_size_buf <= 0;
@@ -1939,10 +1967,10 @@ module blinkled
       if((_maxi_write_data_fsm == 2) && (!_maxi_write_req_fifo_empty && (_maxi_write_size_buf == 0))) begin
         _maxi_write_size_buf <= _maxi_write_size_fifo;
       end 
-      if((_maxi_write_op_sel_buf == 1) && read_burst_rvalid_74 && ((maxi_wready || !maxi_wvalid) && (_maxi_write_size_buf > 0)) && (maxi_wready || !maxi_wvalid)) begin
-        maxi_wdata <= read_burst_rdata_78;
+      if((_maxi_write_op_sel_buf == 1) && read_burst_rvalid_79 && ((maxi_wready || !maxi_wvalid) && (_maxi_write_size_buf > 0)) && (maxi_wready || !maxi_wvalid)) begin
+        maxi_wdata <= read_burst_rdata_83;
         maxi_wvalid <= 1;
-        maxi_wlast <= read_burst_rlast_75 || (_maxi_write_size_buf == 1);
+        maxi_wlast <= read_burst_rlast_80 || (_maxi_write_size_buf == 1);
         maxi_wstrb <= { 4{ 1'd1 } };
       end 
       _maxi_cond_2_1 <= 1;
@@ -1950,10 +1978,10 @@ module blinkled
         maxi_wvalid <= maxi_wvalid;
         maxi_wlast <= maxi_wlast;
       end 
-      if((_maxi_write_data_fsm == 2) && read_burst_rvalid_74 && ((maxi_wready || !maxi_wvalid) && (_maxi_write_size_buf > 0))) begin
+      if((_maxi_write_data_fsm == 2) && read_burst_rvalid_79 && ((maxi_wready || !maxi_wvalid) && (_maxi_write_size_buf > 0))) begin
         _maxi_write_size_buf <= _maxi_write_size_buf - 1;
       end 
-      if((_maxi_write_data_fsm == 2) && ((_maxi_write_op_sel_buf == 1) && read_burst_rvalid_74 && ((maxi_wready || !maxi_wvalid) && (_maxi_write_size_buf > 0))) && read_burst_rlast_75) begin
+      if((_maxi_write_data_fsm == 2) && ((_maxi_write_op_sel_buf == 1) && read_burst_rvalid_79 && ((maxi_wready || !maxi_wvalid) && (_maxi_write_size_buf > 0))) && read_burst_rlast_80) begin
         _maxi_write_data_idle <= 1;
       end 
     end
@@ -1963,7 +1991,7 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       count__maxi_read_req_fifo <= 0;
-      __tmp_26_1 <= 0;
+      __tmp_29_1 <= 0;
     end else begin
       if(_maxi_read_req_fifo_enq && !_maxi_read_req_fifo_full && (_maxi_read_req_fifo_deq && !_maxi_read_req_fifo_empty)) begin
         count__maxi_read_req_fifo <= count__maxi_read_req_fifo;
@@ -1972,7 +2000,7 @@ module blinkled
       end else if(_maxi_read_req_fifo_deq && !_maxi_read_req_fifo_empty) begin
         count__maxi_read_req_fifo <= count__maxi_read_req_fifo - 1;
       end 
-      __tmp_26_1 <= _tmp_26;
+      __tmp_29_1 <= _tmp_29;
     end
   end
 
@@ -1980,8 +2008,8 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       count__maxi_write_req_fifo <= 0;
-      __tmp_51_1 <= 0;
-      __tmp_70_1 <= 0;
+      __tmp_55_1 <= 0;
+      __tmp_75_1 <= 0;
     end else begin
       if(_maxi_write_req_fifo_enq && !_maxi_write_req_fifo_full && (_maxi_write_req_fifo_deq && !_maxi_write_req_fifo_empty)) begin
         count__maxi_write_req_fifo <= count__maxi_write_req_fifo;
@@ -1990,8 +2018,8 @@ module blinkled
       end else if(_maxi_write_req_fifo_deq && !_maxi_write_req_fifo_empty) begin
         count__maxi_write_req_fifo <= count__maxi_write_req_fifo - 1;
       end 
-      __tmp_51_1 <= _tmp_51;
-      __tmp_70_1 <= _tmp_70;
+      __tmp_55_1 <= _tmp_55;
+      __tmp_75_1 <= _tmp_75;
     end
   end
 
@@ -1999,11 +2027,11 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       saxi_bvalid <= 0;
-      prev_awvalid_12 <= 0;
-      prev_arvalid_13 <= 0;
-      writevalid_10 <= 0;
-      readvalid_11 <= 0;
-      addr_9 <= 0;
+      prev_awvalid_14 <= 0;
+      prev_arvalid_15 <= 0;
+      writevalid_12 <= 0;
+      readvalid_13 <= 0;
+      addr_11 <= 0;
       saxi_rdata <= 0;
       saxi_rvalid <= 0;
       _saxi_cond_0_1 <= 0;
@@ -2033,79 +2061,79 @@ module blinkled
       if(saxi_wvalid && saxi_wready) begin
         saxi_bvalid <= 1;
       end 
-      prev_awvalid_12 <= saxi_awvalid;
-      prev_arvalid_13 <= saxi_arvalid;
-      writevalid_10 <= 0;
-      readvalid_11 <= 0;
+      prev_awvalid_14 <= saxi_awvalid;
+      prev_arvalid_15 <= saxi_arvalid;
+      writevalid_12 <= 0;
+      readvalid_13 <= 0;
       if(saxi_awready && saxi_awvalid && !saxi_bvalid) begin
-        addr_9 <= saxi_awaddr;
-        writevalid_10 <= 1;
+        addr_11 <= saxi_awaddr;
+        writevalid_12 <= 1;
       end else if(saxi_arready && saxi_arvalid) begin
-        addr_9 <= saxi_araddr;
-        readvalid_11 <= 1;
+        addr_11 <= saxi_araddr;
+        readvalid_13 <= 1;
       end 
       if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid)) begin
-        saxi_rdata <= axislite_rdata_15;
+        saxi_rdata <= axislite_rdata_17;
         saxi_rvalid <= 1;
       end 
       _saxi_cond_0_1 <= 1;
       if(saxi_rvalid && !saxi_rready) begin
         saxi_rvalid <= saxi_rvalid;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_16 && (axis_maskaddr_14 == 0)) begin
-        _saxi_register_0 <= axislite_resetval_17;
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_18 && (axis_maskaddr_16 == 0)) begin
+        _saxi_register_0 <= axislite_resetval_19;
         _saxi_flag_0 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_16 && (axis_maskaddr_14 == 1)) begin
-        _saxi_register_1 <= axislite_resetval_17;
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_18 && (axis_maskaddr_16 == 1)) begin
+        _saxi_register_1 <= axislite_resetval_19;
         _saxi_flag_1 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_16 && (axis_maskaddr_14 == 2)) begin
-        _saxi_register_2 <= axislite_resetval_17;
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_18 && (axis_maskaddr_16 == 2)) begin
+        _saxi_register_2 <= axislite_resetval_19;
         _saxi_flag_2 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_16 && (axis_maskaddr_14 == 3)) begin
-        _saxi_register_3 <= axislite_resetval_17;
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_18 && (axis_maskaddr_16 == 3)) begin
+        _saxi_register_3 <= axislite_resetval_19;
         _saxi_flag_3 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_16 && (axis_maskaddr_14 == 4)) begin
-        _saxi_register_4 <= axislite_resetval_17;
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_18 && (axis_maskaddr_16 == 4)) begin
+        _saxi_register_4 <= axislite_resetval_19;
         _saxi_flag_4 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_16 && (axis_maskaddr_14 == 5)) begin
-        _saxi_register_5 <= axislite_resetval_17;
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_18 && (axis_maskaddr_16 == 5)) begin
+        _saxi_register_5 <= axislite_resetval_19;
         _saxi_flag_5 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_16 && (axis_maskaddr_14 == 6)) begin
-        _saxi_register_6 <= axislite_resetval_17;
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_18 && (axis_maskaddr_16 == 6)) begin
+        _saxi_register_6 <= axislite_resetval_19;
         _saxi_flag_6 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_16 && (axis_maskaddr_14 == 7)) begin
-        _saxi_register_7 <= axislite_resetval_17;
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_18 && (axis_maskaddr_16 == 7)) begin
+        _saxi_register_7 <= axislite_resetval_19;
         _saxi_flag_7 <= 0;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_14 == 0)) begin
+      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_16 == 0)) begin
         _saxi_register_0 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_14 == 1)) begin
+      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_16 == 1)) begin
         _saxi_register_1 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_14 == 2)) begin
+      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_16 == 2)) begin
         _saxi_register_2 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_14 == 3)) begin
+      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_16 == 3)) begin
         _saxi_register_3 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_14 == 4)) begin
+      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_16 == 4)) begin
         _saxi_register_4 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_14 == 5)) begin
+      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_16 == 5)) begin
         _saxi_register_5 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_14 == 6)) begin
+      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_16 == 6)) begin
         _saxi_register_6 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_14 == 7)) begin
+      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_16 == 7)) begin
         _saxi_register_7 <= saxi_wdata;
       end 
       if((_saxi_register_0 == 1) && (th_memcpy == 2) && 1) begin
@@ -2205,17 +2233,17 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       _saxi_register_fsm <= _saxi_register_fsm_init;
-      axis_maskaddr_14 <= 0;
+      axis_maskaddr_16 <= 0;
     end else begin
       case(_saxi_register_fsm)
         _saxi_register_fsm_init: begin
-          if(readvalid_11 || writevalid_10) begin
-            axis_maskaddr_14 <= (addr_9 >> _saxi_shift) & _saxi_mask;
+          if(readvalid_13 || writevalid_12) begin
+            axis_maskaddr_16 <= (addr_11 >> _saxi_shift) & _saxi_mask;
           end 
-          if(readvalid_11) begin
+          if(readvalid_13) begin
             _saxi_register_fsm <= _saxi_register_fsm_1;
           end 
-          if(writevalid_10) begin
+          if(writevalid_12) begin
             _saxi_register_fsm <= _saxi_register_fsm_2;
           end 
         end
@@ -2457,34 +2485,34 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       write_burst_fsm_0 <= write_burst_fsm_0_init;
-      write_burst_addr_39 <= 0;
-      write_burst_stride_40 <= 0;
-      write_burst_length_41 <= 0;
-      write_burst_done_42 <= 0;
+      write_burst_addr_42 <= 0;
+      write_burst_stride_43 <= 0;
+      write_burst_length_44 <= 0;
+      write_burst_done_45 <= 0;
     end else begin
       case(write_burst_fsm_0)
         write_burst_fsm_0_init: begin
-          write_burst_addr_39 <= _maxi_read_local_addr_buf;
-          write_burst_stride_40 <= _maxi_read_local_stride_buf;
-          write_burst_length_41 <= _maxi_read_local_size_buf;
-          write_burst_done_42 <= 0;
+          write_burst_addr_42 <= _maxi_read_local_addr_buf;
+          write_burst_stride_43 <= _maxi_read_local_stride_buf;
+          write_burst_length_44 <= _maxi_read_local_size_buf;
+          write_burst_done_45 <= 0;
           if((_maxi_read_data_fsm == 1) && (_maxi_read_op_sel_buf == 1) && (_maxi_read_local_size_buf > 0)) begin
             write_burst_fsm_0 <= write_burst_fsm_0_1;
           end 
         end
         write_burst_fsm_0_1: begin
           if(maxi_rvalid) begin
-            write_burst_addr_39 <= write_burst_addr_39 + write_burst_stride_40;
-            write_burst_length_41 <= write_burst_length_41 - 1;
-            write_burst_done_42 <= 0;
+            write_burst_addr_42 <= write_burst_addr_42 + write_burst_stride_43;
+            write_burst_length_44 <= write_burst_length_44 - 1;
+            write_burst_done_45 <= 0;
           end 
-          if(maxi_rvalid && (write_burst_length_41 <= 1)) begin
-            write_burst_done_42 <= 1;
+          if(maxi_rvalid && (write_burst_length_44 <= 1)) begin
+            write_burst_done_45 <= 1;
           end 
           if(maxi_rvalid && 0) begin
-            write_burst_done_42 <= 1;
+            write_burst_done_45 <= 1;
           end 
-          if(maxi_rvalid && (write_burst_length_41 <= 1)) begin
+          if(maxi_rvalid && (write_burst_length_44 <= 1)) begin
             write_burst_fsm_0 <= write_burst_fsm_0_init;
           end 
           if(maxi_rvalid && 0) begin
@@ -2543,7 +2571,7 @@ module blinkled
           _maxi_write_data_fsm <= _maxi_write_data_fsm_2;
         end
         _maxi_write_data_fsm_2: begin
-          if((_maxi_write_op_sel_buf == 1) && read_burst_rvalid_74 && ((maxi_wready || !maxi_wvalid) && (_maxi_write_size_buf > 0)) && read_burst_rlast_75) begin
+          if((_maxi_write_op_sel_buf == 1) && read_burst_rvalid_79 && ((maxi_wready || !maxi_wvalid) && (_maxi_write_size_buf > 0)) && read_burst_rlast_80) begin
             _maxi_write_data_fsm <= _maxi_write_data_fsm_init;
           end 
         end
@@ -2556,41 +2584,41 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       read_burst_fsm_1 <= read_burst_fsm_1_init;
-      read_burst_addr_71 <= 0;
-      read_burst_stride_72 <= 0;
-      read_burst_length_73 <= 0;
-      read_burst_rvalid_74 <= 0;
-      read_burst_rlast_75 <= 0;
+      read_burst_addr_76 <= 0;
+      read_burst_stride_77 <= 0;
+      read_burst_length_78 <= 0;
+      read_burst_rvalid_79 <= 0;
+      read_burst_rlast_80 <= 0;
     end else begin
       case(read_burst_fsm_1)
         read_burst_fsm_1_init: begin
-          read_burst_addr_71 <= _maxi_write_local_addr_buf;
-          read_burst_stride_72 <= _maxi_write_local_stride_buf;
-          read_burst_length_73 <= _maxi_write_size_buf;
-          read_burst_rvalid_74 <= 0;
-          read_burst_rlast_75 <= 0;
+          read_burst_addr_76 <= _maxi_write_local_addr_buf;
+          read_burst_stride_77 <= _maxi_write_local_stride_buf;
+          read_burst_length_78 <= _maxi_write_size_buf;
+          read_burst_rvalid_79 <= 0;
+          read_burst_rlast_80 <= 0;
           if((_maxi_write_data_fsm == 1) && (_maxi_write_op_sel_buf == 1) && (_maxi_write_size_buf > 0)) begin
             read_burst_fsm_1 <= read_burst_fsm_1_1;
           end 
         end
         read_burst_fsm_1_1: begin
-          if((maxi_wready || !maxi_wvalid) && (_maxi_write_size_buf > 0) && (read_burst_length_73 > 0)) begin
-            read_burst_addr_71 <= read_burst_addr_71 + read_burst_stride_72;
-            read_burst_length_73 <= read_burst_length_73 - 1;
-            read_burst_rvalid_74 <= 1;
+          if((maxi_wready || !maxi_wvalid) && (_maxi_write_size_buf > 0) && (read_burst_length_78 > 0)) begin
+            read_burst_addr_76 <= read_burst_addr_76 + read_burst_stride_77;
+            read_burst_length_78 <= read_burst_length_78 - 1;
+            read_burst_rvalid_79 <= 1;
           end 
-          if((maxi_wready || !maxi_wvalid) && (_maxi_write_size_buf > 0) && (read_burst_length_73 <= 1)) begin
-            read_burst_rlast_75 <= 1;
+          if((maxi_wready || !maxi_wvalid) && (_maxi_write_size_buf > 0) && (read_burst_length_78 <= 1)) begin
+            read_burst_rlast_80 <= 1;
           end 
-          if(read_burst_rlast_75 && read_burst_rvalid_74 && ((maxi_wready || !maxi_wvalid) && (_maxi_write_size_buf > 0))) begin
-            read_burst_rvalid_74 <= 0;
-            read_burst_rlast_75 <= 0;
+          if(read_burst_rlast_80 && read_burst_rvalid_79 && ((maxi_wready || !maxi_wvalid) && (_maxi_write_size_buf > 0))) begin
+            read_burst_rvalid_79 <= 0;
+            read_burst_rlast_80 <= 0;
           end 
           if(0) begin
-            read_burst_rvalid_74 <= 0;
-            read_burst_rlast_75 <= 0;
+            read_burst_rvalid_79 <= 0;
+            read_burst_rlast_80 <= 0;
           end 
-          if(read_burst_rlast_75 && read_burst_rvalid_74 && ((maxi_wready || !maxi_wvalid) && (_maxi_write_size_buf > 0))) begin
+          if(read_burst_rlast_80 && read_burst_rvalid_79 && ((maxi_wready || !maxi_wvalid) && (_maxi_write_size_buf > 0))) begin
             read_burst_fsm_1 <= read_burst_fsm_1_init;
           end 
           if(0) begin
@@ -2641,16 +2669,16 @@ module _maxi_read_req_fifo
   input CLK,
   input RST,
   input _maxi_read_req_fifo_enq,
-  input [105-1:0] _maxi_read_req_fifo_wdata,
+  input [137-1:0] _maxi_read_req_fifo_wdata,
   output _maxi_read_req_fifo_full,
   output _maxi_read_req_fifo_almost_full,
   input _maxi_read_req_fifo_deq,
-  output [105-1:0] _maxi_read_req_fifo_rdata,
+  output [137-1:0] _maxi_read_req_fifo_rdata,
   output _maxi_read_req_fifo_empty,
   output _maxi_read_req_fifo_almost_empty
 );
 
-  reg [105-1:0] mem [0:8-1];
+  reg [137-1:0] mem [0:8-1];
   reg [3-1:0] head;
   reg [3-1:0] tail;
   wire is_empty;
@@ -2661,7 +2689,7 @@ module _maxi_read_req_fifo
   assign is_almost_empty = head == (tail + 1 & 7);
   assign is_full = (head + 1 & 7) == tail;
   assign is_almost_full = (head + 2 & 7) == tail;
-  wire [105-1:0] rdata;
+  wire [137-1:0] rdata;
   assign _maxi_read_req_fifo_full = is_full;
   assign _maxi_read_req_fifo_almost_full = is_almost_full || is_full;
   assign _maxi_read_req_fifo_empty = is_empty;
@@ -2694,16 +2722,16 @@ module _maxi_write_req_fifo
   input CLK,
   input RST,
   input _maxi_write_req_fifo_enq,
-  input [105-1:0] _maxi_write_req_fifo_wdata,
+  input [137-1:0] _maxi_write_req_fifo_wdata,
   output _maxi_write_req_fifo_full,
   output _maxi_write_req_fifo_almost_full,
   input _maxi_write_req_fifo_deq,
-  output [105-1:0] _maxi_write_req_fifo_rdata,
+  output [137-1:0] _maxi_write_req_fifo_rdata,
   output _maxi_write_req_fifo_empty,
   output _maxi_write_req_fifo_almost_empty
 );
 
-  reg [105-1:0] mem [0:8-1];
+  reg [137-1:0] mem [0:8-1];
   reg [3-1:0] head;
   reg [3-1:0] tail;
   wire is_empty;
@@ -2714,7 +2742,7 @@ module _maxi_write_req_fifo
   assign is_almost_empty = head == (tail + 1 & 7);
   assign is_full = (head + 1 & 7) == tail;
   assign is_almost_full = (head + 2 & 7) == tail;
-  wire [105-1:0] rdata;
+  wire [137-1:0] rdata;
   assign _maxi_write_req_fifo_full = is_full;
   assign _maxi_write_req_fifo_almost_full = is_almost_full || is_full;
   assign _maxi_write_req_fifo_empty = is_empty;

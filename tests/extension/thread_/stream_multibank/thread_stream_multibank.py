@@ -18,7 +18,7 @@ def mkLed(memory_datawidth=128):
     rst = m.Input('RST')
 
     datawidth = 32
-    addrwidth = 10
+    addrwidth = 8
     numbanks = 4
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, memory_datawidth)
     ram_a = vthread.MultibankRAM(m, 'ram_a', clk, rst, datawidth, addrwidth,
@@ -55,6 +55,7 @@ def mkLed(memory_datawidth=128):
             st = ram_c.read(i + offset_stream)
             sq = ram_c.read(i + offset_seq)
             if vthread.verilog.NotEql(st, sq):
+                print(i, st, sq)
                 all_ok = False
         if all_ok:
             print('# verify: PASSED')
@@ -63,33 +64,33 @@ def mkLed(memory_datawidth=128):
 
     def comp(size):
         dma_size = size
-        comp_size = size * numbanks
+        comp_size = size
 
         # stream
         dma_offset = 0
         comp_offset = 0
-        myaxi.dma_read(ram_a, dma_offset, 0, dma_size)
-        myaxi.dma_read(ram_b, dma_offset, 0, dma_size)
+        myaxi.dma_read_packed(ram_a, dma_offset, 0, dma_size)
+        myaxi.dma_read_packed(ram_b, dma_offset, 0, dma_size)
         comp_stream(comp_size, comp_offset)
-        myaxi.dma_write(ram_c, dma_offset, 1024, dma_size)
+        myaxi.dma_write_packed(ram_c, dma_offset, 1024, dma_size)
 
         # sequential
         dma_offset = size
         comp_offset = comp_size
-        myaxi.dma_read(ram_a, dma_offset, 0, dma_size)
-        myaxi.dma_read(ram_b, dma_offset, 0, dma_size)
+        myaxi.dma_read_packed(ram_a, dma_offset, 0, dma_size)
+        myaxi.dma_read_packed(ram_b, dma_offset, 0, dma_size)
         comp_sequential(comp_size, comp_offset)
-        myaxi.dma_write(ram_c, dma_offset, 1024 * 2, dma_size)
+        myaxi.dma_write_packed(ram_c, dma_offset, 1024 * 2, dma_size)
 
         # verification
-        myaxi.dma_read(ram_c, 0, 1024, size)
-        myaxi.dma_read(ram_c, dma_offset, 1024 * 2, size)
+        myaxi.dma_read_packed(ram_c, 0, 1024, size)
+        myaxi.dma_read_packed(ram_c, dma_offset, 1024 * 2, size)
         check(comp_size, 0, comp_offset)
 
         vthread.finish()
 
     th = vthread.Thread(m, 'th_comp', clk, rst, comp)
-    fsm = th.start(32)
+    fsm = th.start(128)
 
     return m
 

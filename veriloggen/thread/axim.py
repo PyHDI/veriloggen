@@ -21,6 +21,13 @@ class AXIM(axi.AxiMaster, _MutexFunction):
     __intrinsics__ = ('read', 'write', 'write_fence',
                       'dma_read', 'dma_read_async',
                       'dma_write', 'dma_write_async',
+                      'dma_read_bank', 'dma_read_bank_async',
+                      'dma_write_bank', 'dma_write_bank_async',
+                      'dma_read_block', 'dma_read_block_async',
+                      'dma_write_block', 'dma_write_block_async',
+                      'dma_read_packed', 'dma_read_packed_async',
+                      'dma_write_packed', 'dma_write_packed_async',
+                      'dma_read_bcast', 'dma_read_bcast_async',
                       'dma_wait_read', 'dma_wait_write',
                       'dma_wait_write_idle', 'dma_wait_write_response',
                       'dma_wait',
@@ -74,10 +81,12 @@ class AXIM(axi.AxiMaster, _MutexFunction):
                                             self.addrwidth, initval=0)
         self.read_local_size = self.m.Reg('_'.join(['', self.name, 'read_local_size']),
                                           self.addrwidth + 1, initval=0)
+        self.read_local_blocksize = self.m.Reg('_'.join(['', self.name, 'read_local_blocksize']),
+                                               self.addrwidth, initval=0)
 
         self.read_req_fifo = FIFO(self.m, '_'.join(['', self.name, 'read_req_fifo']),
                                   self.clk, self.rst,
-                                  datawidth=self.op_sel_width + self.addrwidth * 3 + 1,
+                                  datawidth=self.op_sel_width + self.addrwidth * 4 + 1,
                                   addrwidth=self.req_fifo_addrwidth,
                                   sync=False)
 
@@ -93,12 +102,16 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         self.read_local_size_fifo = self.m.Wire('_'.join(['', self.name,
                                                           'read_local_size_fifo']),
                                                 self.addrwidth + 1)
+        self.read_local_blocksize_fifo = self.m.Wire('_'.join(['', self.name,
+                                                               'read_local_blocksize_fifo']),
+                                                     self.addrwidth)
 
         read_unpack_values = self.unpack_read_req(self.read_req_fifo.rdata)
         self.read_op_sel_fifo.assign(read_unpack_values[0])
         self.read_local_addr_fifo.assign(read_unpack_values[1])
         self.read_local_stride_fifo.assign(read_unpack_values[2])
         self.read_local_size_fifo.assign(read_unpack_values[3])
+        self.read_local_blocksize_fifo.assign(read_unpack_values[4])
 
         self.read_op_sel_buf = self.m.Reg('_'.join(['', self.name,
                                                     'read_op_sel_buf']),
@@ -112,6 +125,9 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         self.read_local_size_buf = self.m.Reg('_'.join(['', self.name,
                                                         'read_local_size_buf']),
                                               self.addrwidth + 1, initval=0)
+        self.read_local_blocksize_buf = self.m.Reg('_'.join(['', self.name,
+                                                             'read_local_blocksize_buf']),
+                                                   self.addrwidth, initval=0)
 
         self.read_req_idle = self.m.Reg(
             '_'.join(['', self.name, 'read_req_idle']), initval=1)
@@ -151,10 +167,12 @@ class AXIM(axi.AxiMaster, _MutexFunction):
                                              self.addrwidth, initval=0)
         self.write_local_size = self.m.Reg('_'.join(['', self.name, 'write_local_size']),
                                            self.addrwidth + 1, initval=0)
+        self.write_local_blocksize = self.m.Reg('_'.join(['', self.name, 'write_local_blocksize']),
+                                                self.addrwidth, initval=0)
 
         self.write_req_fifo = FIFO(self.m, '_'.join(['', self.name, 'write_req_fifo']),
                                    self.clk, self.rst,
-                                   datawidth=self.op_sel_width + self.addrwidth * 3 + 1,
+                                   datawidth=self.op_sel_width + self.addrwidth * 4 + 1,
                                    addrwidth=self.req_fifo_addrwidth,
                                    sync=False)
 
@@ -170,12 +188,16 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         self.write_size_fifo = self.m.Wire('_'.join(['', self.name,
                                                      'write_size_fifo']),
                                            self.addrwidth + 1)
+        self.write_local_blocksize_fifo = self.m.Wire('_'.join(['', self.name,
+                                                                'write_local_blocksize_fifo']),
+                                                      self.addrwidth)
 
         write_unpack_values = self.unpack_write_req(self.write_req_fifo.rdata)
         self.write_op_sel_fifo.assign(write_unpack_values[0])
         self.write_local_addr_fifo.assign(write_unpack_values[1])
         self.write_local_stride_fifo.assign(write_unpack_values[2])
         self.write_size_fifo.assign(write_unpack_values[3])
+        self.write_local_blocksize_fifo.assign(write_unpack_values[4])
 
         self.write_op_sel_buf = self.m.Reg('_'.join(['', self.name,
                                                      'write_op_sel_buf']),
@@ -189,6 +211,9 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         self.write_size_buf = self.m.Reg('_'.join(['', self.name,
                                                    'write_size_buf']),
                                          self.addrwidth + 1, initval=0)
+        self.write_local_blocksize_buf = self.m.Reg('_'.join(['', self.name,
+                                                              'write_local_blocksize_buf']),
+                                                    self.addrwidth, initval=0)
 
         self.write_req_idle = self.m.Reg(
             '_'.join(['', self.name, 'write_req_idle']), initval=1)
@@ -304,34 +329,366 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         res = self.write_completed()
         fsm.If(res).goto_next()
 
-    def dma_read(self, fsm, ram, local_addr, global_addr, size,
-                 local_stride=1, port=0, ram_method=None):
+    # DMA
+    def dma_read(self, fsm, ram, local_addr, global_addr, local_size,
+                 local_stride=1, port=0):
 
-        self._dma_read(fsm, ram, local_addr, global_addr, size,
-                       local_stride, port, ram_method)
+        local_blocksize = 1
+        self._dma_read(fsm, ram, local_addr, global_addr, local_size,
+                       local_stride, local_blocksize, port)
 
         self.dma_wait_read(fsm)
 
-    def dma_read_async(self, fsm, ram, local_addr, global_addr, size,
-                       local_stride=1, port=0, ram_method=None):
+    def dma_read_async(self, fsm, ram, local_addr, global_addr, local_size,
+                       local_stride=1, port=0):
 
-        self._dma_read(fsm, ram, local_addr, global_addr, size,
-                       local_stride, port, ram_method)
+        local_blocksize = 1
+        self._dma_read(fsm, ram, local_addr, global_addr, local_size,
+                       local_stride, local_blocksize, port)
 
-    def dma_write(self, fsm, ram, local_addr, global_addr, size,
-                  local_stride=1, port=0, ram_method=None):
+    def dma_write(self, fsm, ram, local_addr, global_addr, local_size,
+                  local_stride=1, port=0):
 
-        self._dma_write(fsm, ram, local_addr, global_addr, size,
-                        local_stride, port, ram_method)
+        local_blocksize = 1
+        self._dma_write(fsm, ram, local_addr, global_addr, local_size,
+                        local_stride, local_blocksize, port)
 
         self.dma_wait_write(fsm)
 
-    def dma_write_async(self, fsm, ram, local_addr, global_addr, size,
-                        local_stride=1, port=0, ram_method=None):
+    def dma_write_async(self, fsm, ram, local_addr, global_addr, local_size,
+                        local_stride=1, port=0):
 
-        self._dma_write(fsm, ram, local_addr, global_addr, size,
-                        local_stride, port, ram_method)
+        local_blocksize = 1
+        self._dma_write(fsm, ram, local_addr, global_addr, local_size,
+                        local_stride, local_blocksize, port)
 
+    # DMA for each bank
+    def dma_read_bank(self, fsm, ram, bank, local_addr, global_addr, local_size,
+                      local_stride=1, port=0):
+
+        self._dma_read_bank(fsm, ram, bank, local_addr, global_addr, local_size,
+                            local_stride, port)
+
+        self.dma_wait_read(fsm)
+
+    def dma_read_bank_async(self, fsm, ram, bank, local_addr, global_addr, local_size,
+                            local_stride=1, port=0):
+
+        self._dma_read_bank(fsm, ram, bank, local_addr, global_addr, local_size,
+                            local_stride, port)
+
+    def _dma_read_bank(self, fsm, ram, bank, local_addr, global_addr, local_size,
+                       local_stride=1, port=0):
+
+        if isinstance(ram, (tuple, list)):
+            ram = to_multibank_ram(ram)
+
+        if not isinstance(ram, MultibankRAM):
+            raise TypeError("'ram' must be MultibankRAM, not '%s'" % str(type(ram)))
+
+        check = fsm.current
+        fsm.set_index(check + 1)
+
+        starts = []
+        ends = []
+        for i, _ram in enumerate(ram.rams):
+            starts.append(fsm.current)
+            local_blocksize = 1
+            self._dma_read(fsm, _ram, local_addr, global_addr, local_size,
+                           local_stride, local_blocksize, port)
+            ends.append(fsm.current)
+            fsm.set_index(fsm.current + 1)
+
+        fin = fsm.current
+
+        for i, (s, e) in enumerate(zip(starts, ends)):
+            fsm.goto_from(check, s, cond=bank == i)
+            fsm.goto_from(e, fin)
+
+    def dma_write_bank(self, fsm, ram, bank, local_addr, global_addr, local_size,
+                       local_stride=1, port=0):
+
+        self._dma_write_bank(fsm, ram, bank, local_addr, global_addr, local_size,
+                             local_stride, port)
+
+        self.dma_wait_write(fsm)
+
+    def dma_write_bank_async(self, fsm, ram, bank, local_addr, global_addr, local_size,
+                             local_stride=1, port=0):
+
+        self._dma_write_bank(fsm, ram, bank, local_addr, global_addr, local_size,
+                             local_stride, port)
+
+    def _dma_write_bank(self, fsm, ram, bank, local_addr, global_addr, local_size,
+                        local_stride=1, port=0):
+
+        if isinstance(ram, (tuple, list)):
+            ram = to_multibank_ram(ram)
+
+        if not isinstance(ram, MultibankRAM):
+            raise TypeError("'ram' must be MultibankRAM, not '%s'" % str(type(ram)))
+
+        check = fsm.current
+        fsm.set_index(check + 1)
+
+        starts = []
+        ends = []
+        for i, _ram in enumerate(ram.rams):
+            starts.append(fsm.current)
+            local_blocksize = 1
+            self._dma_write(fsm, _ram, local_addr, global_addr, local_size,
+                            local_stride, local_blocksize, port)
+            ends.append(fsm.current)
+            fsm.set_index(fsm.current + 1)
+
+        fin = fsm.current
+
+        for i, (s, e) in enumerate(zip(starts, ends)):
+            fsm.goto_from(check, s, cond=bank == i)
+            fsm.goto_from(e, fin)
+
+    # DMA with block interleave
+    def dma_read_block(self, fsm, ram, local_addr, global_addr, local_size,
+                       local_blocksize=1, local_stride=None, port=0):
+
+        self._dma_read_block(fsm, ram, local_addr, global_addr, local_size,
+                             local_blocksize, local_stride, port)
+
+        self.dma_wait_read(fsm)
+
+    def dma_read_block_async(self, fsm, ram, local_addr, global_addr, local_size,
+                             local_blocksize=1, local_stride=None, port=0):
+
+        self._dma_read_block(fsm, ram, local_addr, global_addr, local_size,
+                             local_blocksize, local_stride, port)
+
+    def _dma_read_block(self, fsm, ram, local_addr, global_addr, local_size,
+                        local_blocksize=1, local_stride=None, port=0):
+
+        if isinstance(ram, (tuple, list)):
+            ram = to_multibank_ram(ram)
+
+        if not isinstance(ram, MultibankRAM):
+            raise TypeError("'ram' must be MultibankRAM, not '%s'" % str(type(ram)))
+
+        if isinstance(ram.rams[0], MultibankRAM):
+            if local_stride is None:
+                local_stride = ram.rams[0].numbanks
+
+            high_local_size = self.m.TmpWire(vtypes.get_width(local_size),
+                                             prefix='_dma_write_block_high_local_size')
+            high_local_size.assign(local_size >> ram.rams[0].shift)
+
+            low_local_size = self.m.TmpWire(ram.rams[0].shift,
+                                            prefix='_dma_write_block_low_local_size')
+            mask = vtypes.Repeat(vtypes.Int(1, 1), ram.rams[0].shift)
+            low_local_size.assign(vtypes.And(local_size, mask))
+
+            local_size = self.m.TmpWire(vtypes.get_width(local_size),
+                                        prefix='_dma_write_block_local_size')
+            local_size.assign(vtypes.Mux(low_local_size > 0,
+                                         high_local_size + 1, high_local_size))
+
+            high_local_blocksize = self.m.TmpWire(vtypes.get_width(local_blocksize),
+                                                  prefix='_dma_read_block_high_local_blocksize')
+            high_local_blocksize.assign(local_blocksize >> ram.rams[0].shift)
+            low_local_blocksize = self.m.TmpWire(vtypes.get_width(ram.rams[0].shift),
+                                                 prefix='_dma_read_block_low_local_blocksize')
+            mask = vtypes.Repeat(vtypes.Int(1, 1), ram.rams[0].shift)
+            low_local_blocksize.assign(vtypes.And(local_blocksize, mask))
+            local_blocksize = self.m.TmpWire(vtypes.get_width(local_blocksize),
+                                             prefix='_dma_read_block_local_blocksize')
+            local_blocksize.assign(vtypes.Mux(low_local_blocksize > 0,
+                                              high_local_blocksize + 1, high_local_blocksize))
+
+        elif local_stride is None:
+            local_stride = 1
+
+        ram_method = ram.write_burst_block
+        self._dma_read(fsm, ram, local_addr, global_addr, local_size,
+                       local_stride, local_blocksize, port, ram_method)
+
+    def dma_write_block(self, fsm, ram, local_addr, global_addr, local_size,
+                        local_blocksize=1, local_stride=None, port=0):
+
+        self._dma_write_block(fsm, ram, local_addr, global_addr, local_size,
+                              local_blocksize, local_stride, port)
+
+        self.dma_wait_write(fsm)
+
+    def dma_write_block_async(self, fsm, ram, local_addr, global_addr, local_size,
+                              local_blocksize=1, local_stride=None, port=0):
+
+        self._dma_write_block(fsm, ram, local_addr, global_addr, local_size,
+                              local_blocksize, local_stride, port)
+
+    def _dma_write_block(self, fsm, ram, local_addr, global_addr, local_size,
+                         local_blocksize=1, local_stride=None, port=0):
+
+        if isinstance(ram, (tuple, list)):
+            ram = to_multibank_ram(ram)
+
+        if not isinstance(ram, MultibankRAM):
+            raise TypeError("'ram' must be MultibankRAM, not '%s'" % str(type(ram)))
+
+        if isinstance(ram.rams[0], MultibankRAM):
+            if local_stride is None:
+                local_stride = ram.rams[0].numbanks
+
+            high_local_size = self.m.TmpWire(vtypes.get_width(local_size),
+                                             prefix='_dma_read_block_high_local_size')
+            high_local_size.assign(local_size >> ram.rams[0].shift)
+
+            low_local_size = self.m.TmpWire(ram.rams[0].shift,
+                                            prefix='_dma_read_block_low_local_size')
+            mask = vtypes.Repeat(vtypes.Int(1, 1), ram.rams[0].shift)
+            low_local_size.assign(vtypes.And(local_size, mask))
+
+            local_size = self.m.TmpWire(vtypes.get_width(local_size),
+                                        prefix='_dma_read_block_local_size')
+            local_size.assign(vtypes.Mux(low_local_size > 0,
+                                         high_local_size + 1, high_local_size))
+
+            high_local_blocksize = self.m.TmpWire(vtypes.get_width(local_blocksize),
+                                                  prefix='_dma_write_block_high_local_blocksize')
+            high_local_blocksize.assign(local_blocksize >> ram.rams[0].shift)
+            low_local_blocksize = self.m.TmpWire(vtypes.get_width(ram.rams[0].shift),
+                                                 prefix='_dma_write_block_low_local_blocksize')
+            mask = vtypes.Repeat(vtypes.Int(1, 1), ram.rams[0].shift)
+            low_local_blocksize.assign(vtypes.And(local_blocksize, mask))
+            local_blocksize = self.m.TmpWire(vtypes.get_width(local_blocksize),
+                                             prefix='_dma_write_block_local_blocksize')
+            local_blocksize.assign(vtypes.Mux(low_local_blocksize > 0,
+                                              high_local_blocksize + 1, high_local_blocksize))
+
+        elif local_stride is None:
+            local_stride = 1
+
+        ram_method = ram.read_burst_block
+        self._dma_write(fsm, ram, local_addr, global_addr, local_size,
+                        local_stride, local_blocksize, port, ram_method)
+
+    # multi-bank packed DMA
+    def dma_read_packed(self, fsm, ram, local_addr, global_addr, local_size,
+                        local_stride=None, port=0):
+
+        self._dma_read_packed(fsm, ram, local_addr, global_addr, local_size,
+                              local_stride, port)
+
+        self.dma_wait_read(fsm)
+
+    def dma_read_packed_async(self, fsm, ram, local_addr, global_addr, local_size,
+                              local_stride=None, port=0):
+
+        self._dma_read_packed(fsm, ram, local_addr, global_addr, local_size,
+                              local_stride, port)
+
+    def _dma_read_packed(self, fsm, ram, local_addr, global_addr, local_size,
+                         local_stride=None, port=0):
+
+        if isinstance(ram, (tuple, list)):
+            ram = to_multibank_ram(ram)
+
+        if not isinstance(ram, MultibankRAM):
+            raise TypeError("'ram' must be MultibankRAM, not '%s'" % str(type(ram)))
+
+        if local_stride is None:
+            local_stride = ram.numbanks
+
+        high_local_size = self.m.TmpWire(vtypes.get_width(local_size),
+                                         prefix='_dma_read_packed_high_local_size')
+        high_local_size.assign(local_size >> ram.shift)
+
+        low_local_size = self.m.TmpWire(ram.shift,
+                                        prefix='_dma_read_packed_low_local_size')
+        mask = vtypes.Repeat(vtypes.Int(1, 1), ram.shift)
+        low_local_size.assign(vtypes.And(local_size, mask))
+
+        local_packed_size = self.m.TmpWire(vtypes.get_width(local_size),
+                                           prefix='_dma_read_packed_local_packed_size')
+        local_packed_size.assign(vtypes.Mux(low_local_size > 0,
+                                            high_local_size + 1, high_local_size))
+
+        ram_method = ram.write_burst_packed
+        local_blocksize = 1
+        self._dma_read(fsm, ram, local_addr, global_addr, local_packed_size,
+                       local_stride, local_blocksize, port, ram_method)
+
+    def dma_write_packed(self, fsm, ram, local_addr, global_addr, local_size,
+                         local_stride=None, port=0):
+
+        self._dma_write_packed(fsm, ram, local_addr, global_addr, local_size,
+                               local_stride, port)
+
+        self.dma_wait_write(fsm)
+
+    def dma_write_packed_async(self, fsm, ram, local_addr, global_addr, local_size,
+                               local_stride=None, port=0):
+
+        self._dma_write_packed(fsm, ram, local_addr, global_addr, local_size,
+                               local_stride, port)
+
+    def _dma_write_packed(self, fsm, ram, local_addr, global_addr, local_size,
+                          local_stride=None, port=0):
+
+        if isinstance(ram, (tuple, list)):
+            ram = to_multibank_ram(ram)
+
+        if not isinstance(ram, MultibankRAM):
+            raise TypeError("'ram' must be MultibankRAM, not '%s'" % str(type(ram)))
+
+        if local_stride is None:
+            local_stride = ram.numbanks
+
+        high_local_size = self.m.TmpWire(vtypes.get_width(local_size),
+                                         prefix='_dma_write_packed_high_local_size')
+        high_local_size.assign(local_size >> ram.shift)
+
+        low_local_size = self.m.TmpWire(ram.shift,
+                                        prefix='_dma_write_packed_low_local_size')
+        mask = vtypes.Repeat(vtypes.Int(1, 1), ram.shift)
+        low_local_size.assign(vtypes.And(local_size, mask))
+
+        local_packed_size = self.m.TmpWire(vtypes.get_width(local_size),
+                                           prefix='_dma_write_packed_local_packed_size')
+        local_packed_size.assign(vtypes.Mux(low_local_size > 0,
+                                            high_local_size + 1, high_local_size))
+
+        ram_method = ram.read_burst_packed
+        local_blocksize = 1
+        self._dma_write(fsm, ram, local_addr, global_addr, local_packed_size,
+                        local_stride, local_blocksize, port, ram_method)
+
+    # DMA with broadcast
+    def dma_read_bcast(self, fsm, ram, local_bank_addr, global_addr, local_bank_size,
+                       local_bank_stride=1, port=0):
+
+        self._dma_read_bcast(fsm, ram, local_bank_addr, global_addr, local_bank_size,
+                             local_bank_stride, port)
+
+        self.dma_wait_read(fsm)
+
+    def dma_read_bcast_async(self, fsm, ram, local_bank_addr, global_addr, local_bank_size,
+                             local_bank_stride=1, port=0):
+
+        self._dma_read_bcast(fsm, ram, local_bank_addr, global_addr, local_bank_size,
+                             local_bank_stride, port)
+
+    def _dma_read_bcast(self, fsm, ram, local_bank_addr, global_addr, local_bank_size,
+                        local_bank_stride=1, port=0):
+
+        if isinstance(ram, (tuple, list)):
+            ram = to_multibank_ram(ram)
+
+        if not isinstance(ram, MultibankRAM):
+            raise TypeError("'ram' must be MultibankRAM, not '%s'" % str(type(ram)))
+
+        ram_method = ram.write_burst_bcast
+        local_blocksize = 1
+        self._dma_read(fsm, ram, local_bank_addr, global_addr, local_bank_size,
+                       local_bank_stride, local_blocksize, port, ram_method)
+
+    # wait
     def dma_wait_read(self, fsm):
 
         fsm.If(self.read_idle).goto_next()
@@ -369,8 +726,8 @@ class AXIM(axi.AxiMaster, _MutexFunction):
     # --------------------
     # read
     # --------------------
-    def _dma_read(self, fsm, ram, local_addr, global_addr, size,
-                  local_stride=1, port=0, ram_method=None):
+    def _dma_read(self, fsm, ram, local_addr, global_addr, local_size,
+                  local_stride=1, local_blocksize=1, port=0, ram_method=None):
 
         if isinstance(ram, (tuple, list)):
             ram = to_multibank_ram(ram)
@@ -381,14 +738,11 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         if ram_method is None:
             ram_method = getattr(ram, 'write_burst')
 
-        start = vtypes.Ands(fsm.here, self.read_req_idle)
-
         ram_method_name = (ram_method.func.__name__
                            if isinstance(ram_method, functools.partial) else
                            ram_method.__name__)
-        ram_datawidth = (ram.datawidth if ram_method is None else
-                         ram.orig_datawidth if 'bcast' in ram_method_name else
-                         ram.orig_datawidth if 'block' in ram_method_name else
+        ram_datawidth = (ram.packed_datawidth if 'packed' in ram_method_name else
+                         ram.rams[0].packed_datawidth if 'block' in ram_method_name else
                          ram.datawidth)
 
         if not isinstance(self.datawidth, int):
@@ -399,36 +753,42 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             raise TypeError("ram_datawidth must be int, not '%s'" %
                             str(type(ram_datawidth)))
 
+        global_size = local_size
+
+        start = vtypes.Ands(fsm.here, self.read_req_idle)
+
         self._set_read_request(ram, port, ram_method, ram_datawidth,
-                               start, local_addr, global_addr, size, local_stride)
+                               start, local_addr, global_addr,
+                               local_size, global_size, local_stride, local_blocksize)
         self._synthesize_read_req_fsm()
         self._synthesize_read_data_fsm(ram, port, ram_method, ram_datawidth)
 
         fsm.If(self.read_req_idle).goto_next()
 
     def _set_read_request(self, ram, port, ram_method, ram_datawidth,
-                          start, local_addr, global_addr, size, local_stride):
+                          start, local_addr, global_addr,
+                          local_size, global_size, local_stride, local_blocksize):
 
+        # adjust global_size
         if self.datawidth == ram_datawidth:
             # same
-            global_size = size
+            pass
 
         elif self.datawidth < ram_datawidth:
             # narrow
             pack_size = ram_datawidth // self.datawidth
-            global_size = (size << int(math.log(pack_size, 2))
+            global_size = (global_size << int(math.log(pack_size, 2))
                            if pack_size & (pack_size - 1) == 0 else
-                           size * pack_size)
+                           global_size * pack_size)
 
         elif self.datawidth > ram_datawidth:
             # wide
             pack_size = self.datawidth // ram_datawidth
             shamt = int(math.log(pack_size, 2))
             res = vtypes.Mux(
-                vtypes.And(size, 2 ** shamt - 1) > 0, 1, 0)
-            global_size = (size >> shamt) + res
+                vtypes.And(global_size, 2 ** shamt - 1) > 0, 1, 0)
+            global_size = (global_size >> shamt) + res
 
-        local_size = size
         op_id = self._get_read_op_id(ram, port, ram_method)
 
         if self.use_global_base_addr:
@@ -442,6 +802,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             self.read_local_addr(local_addr),
             self.read_local_stride(local_stride),
             self.read_local_size(local_size),
+            self.read_local_blocksize(local_blocksize),
         )
 
     def _synthesize_read_req_fsm(self):
@@ -471,7 +832,8 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         _ = self.read_req_fifo.enq_rtl(self.pack_read_req(self.read_op_sel,
                                                           self.read_local_addr,
                                                           self.read_local_stride,
-                                                          self.read_local_size),
+                                                          self.read_local_size,
+                                                          self.read_local_blocksize),
                                        cond=enq_cond)
 
         check_cond = vtypes.Ands(req_fsm.here, vtypes.Ors(self.read_start, cont),
@@ -539,6 +901,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             self.read_local_addr_buf(self.read_local_addr_fifo),
             self.read_local_stride_buf(self.read_local_stride_fifo),
             self.read_local_size_buf(self.read_local_size_fifo),
+            self.read_local_blocksize_buf(self.read_local_blocksize_fifo),
         )
         deq_cond = vtypes.Ands(data_fsm.here, cond)
         _ = self.read_req_fifo.deq_rtl(cond=deq_cond)
@@ -546,7 +909,8 @@ class AXIM(axi.AxiMaster, _MutexFunction):
 
         # Data state 1
         ram_cond = vtypes.Ands(data_fsm.here, self.read_op_sel_buf == op_id)
-        ram_method(self.read_local_addr_buf, self.read_local_stride_buf, self.read_local_size_buf,
+        ram_method(self.read_local_addr_buf, self.read_local_stride_buf,
+                   self.read_local_size_buf, self.read_local_blocksize_buf,
                    self.rdata.rdata, self.rdata.rvalid, False,
                    port=port, cond=ram_cond)
         data_fsm.goto_next()
@@ -601,6 +965,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             self.read_local_addr_buf(self.read_local_addr_fifo),
             self.read_local_stride_buf(self.read_local_stride_fifo),
             self.read_local_size_buf(self.read_local_size_fifo),
+            self.read_local_blocksize_buf(self.read_local_blocksize_fifo),
         )
         deq_cond = vtypes.Ands(data_fsm.here, cond)
         _ = self.read_req_fifo.deq_rtl(cond=deq_cond)
@@ -613,8 +978,10 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         wvalid = self.m.TmpReg(initval=0, prefix='_'.join(['', self.name, 'read_narrow_wvalid']))
         count = self.m.TmpReg(log_pack_size, initval=0,
                               prefix='_'.join(['', self.name, 'read_narrow_count']))
-        ram_method(self.read_local_addr_buf, self.read_local_stride_buf, self.read_local_size_buf,
-                   wdata, wvalid, False, port=port, cond=ram_cond)
+        ram_method(self.read_local_addr_buf, self.read_local_stride_buf,
+                   self.read_local_size_buf, self.read_local_blocksize_buf,
+                   wdata, wvalid, False,
+                   port=port, cond=ram_cond)
         data_fsm(
             count(0),
             wvalid(0)
@@ -687,6 +1054,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             self.read_local_addr_buf(self.read_local_addr_fifo),
             self.read_local_stride_buf(self.read_local_stride_fifo),
             self.read_local_size_buf(self.read_local_size_fifo),
+            self.read_local_blocksize_buf(self.read_local_blocksize_fifo),
         )
         deq_cond = vtypes.Ands(data_fsm.here, cond)
         _ = self.read_req_fifo.deq_rtl(cond=deq_cond)
@@ -700,8 +1068,10 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         count = self.m.TmpReg(log_pack_size, initval=0,
                               prefix='_'.join(['', self.name, 'read_wide_count']))
         _wdata = wdata[:ram_datawidth]
-        ram_method(self.read_local_addr_buf, self.read_local_stride_buf, self.read_local_size_buf,
-                   _wdata, wvalid, False, port=port, cond=ram_cond)
+        ram_method(self.read_local_addr_buf, self.read_local_stride_buf,
+                   self.read_local_size_buf, self.read_local_blocksize_buf,
+                   _wdata, wvalid, False,
+                   port=port, cond=ram_cond)
         data_fsm(
             count(0),
             wvalid(0)
@@ -751,8 +1121,8 @@ class AXIM(axi.AxiMaster, _MutexFunction):
     # --------------------
     # write
     # --------------------
-    def _dma_write(self, fsm, ram, local_addr, global_addr, size,
-                   local_stride=1, port=0, ram_method=None):
+    def _dma_write(self, fsm, ram, local_addr, global_addr, local_size,
+                   local_stride=1, local_blocksize=1, port=0, ram_method=None):
 
         if isinstance(ram, (tuple, list)):
             ram = to_multibank_ram(ram)
@@ -763,14 +1133,11 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         if ram_method is None:
             ram_method = getattr(ram, 'read_burst')
 
-        start = vtypes.Ands(fsm.here, self.write_req_idle)
-
         ram_method_name = (ram_method.func.__name__
                            if isinstance(ram_method, functools.partial) else
                            ram_method.__name__)
-        ram_datawidth = (ram.datawidth if ram_method is None else
-                         ram.orig_datawidth if 'bcast' in ram_method_name else
-                         ram.orig_datawidth if 'block' in ram_method_name else
+        ram_datawidth = (ram.packed_datawidth if 'packed' in ram_method_name else
+                         ram.rams[0].packed_datawidth if 'block' in ram_method_name else
                          ram.datawidth)
 
         if not isinstance(self.datawidth, int):
@@ -781,36 +1148,42 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             raise TypeError("ram_datawidth must be int, not '%s'" %
                             str(type(ram_datawidth)))
 
+        global_size = local_size
+
+        start = vtypes.Ands(fsm.here, self.write_req_idle)
+
         self._set_write_request(ram, port, ram_method, ram_datawidth,
-                                start, local_addr, global_addr, size, local_stride)
+                                start, local_addr, global_addr,
+                                local_size, global_size, local_stride, local_blocksize)
         self._synthesize_write_req_fsm()
         self._synthesize_write_data_fsm(ram, port, ram_method, ram_datawidth)
 
         fsm.If(self.write_req_idle).goto_next()
 
     def _set_write_request(self, ram, port, ram_method, ram_datawidth,
-                           start, local_addr, global_addr, size, local_stride):
+                           start, local_addr, global_addr,
+                           local_size, global_size, local_stride, local_blocksize):
 
+        # adjust global_size
         if self.datawidth == ram_datawidth:
             # same
-            global_size = size
+            pass
 
         elif self.datawidth < ram_datawidth:
             # narrow
             pack_size = ram_datawidth // self.datawidth
-            global_size = (size << int(math.log(pack_size, 2))
+            global_size = (global_size << int(math.log(pack_size, 2))
                            if pack_size & (pack_size - 1) == 0 else
-                           size * pack_size)
+                           global_size * pack_size)
 
         elif self.datawidth > ram_datawidth:
             # wide
             pack_size = self.datawidth // ram_datawidth
             shamt = int(math.log(pack_size, 2))
             res = vtypes.Mux(
-                vtypes.And(size, 2 ** shamt - 1) > 0, 1, 0)
-            global_size = (size >> shamt) + res
+                vtypes.And(global_size, 2 ** shamt - 1) > 0, 1, 0)
+            global_size = (global_size >> shamt) + res
 
-        local_size = size
         op_id = self._get_write_op_id(ram, port, ram_method)
 
         if self.use_global_base_addr:
@@ -824,6 +1197,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             self.write_local_addr(local_addr),
             self.write_local_stride(local_stride),
             self.write_local_size(local_size),
+            self.write_local_blocksize(local_blocksize),
         )
 
     def _synthesize_write_req_fsm(self):
@@ -853,7 +1227,8 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         _ = self.write_req_fifo.enq_rtl(self.pack_write_req(self.write_op_sel,
                                                             self.write_local_addr,
                                                             self.write_local_stride,
-                                                            self.write_local_size),
+                                                            self.write_local_size,
+                                                            self.write_local_blocksize),
                                         cond=enq_cond)
 
         check_cond = vtypes.Ands(req_fsm.here, vtypes.Ors(self.write_start, cont),
@@ -871,8 +1246,9 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         _ = self.write_req_fifo.enq_rtl(self.pack_write_req(self.write_op_sel,
                                                             self.write_local_addr,
                                                             self.write_local_stride,
-                                                            # it should be converted into local_size after deque
-                                                            cur_global_size),
+                                                            # converted into local_size after deque
+                                                            cur_global_size,
+                                                            self.write_local_blocksize),
                                         cond=enq_cond)
 
         req_cond = vtypes.Ands(req_fsm.here,
@@ -935,6 +1311,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             self.write_local_addr_buf(self.write_local_addr_fifo),
             self.write_local_stride_buf(self.write_local_stride_fifo),
             self.write_size_buf(self.write_size_fifo),
+            self.write_local_blocksize_buf(self.write_local_blocksize_fifo),
         )
         deq_cond = vtypes.Ands(data_fsm.here, cond)
         _ = self.write_req_fifo.deq_rtl(cond=deq_cond)
@@ -949,7 +1326,8 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         rready = vtypes.Ands(vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid)),
                              self.write_size_buf > 0)
         rdata, rvalid, rlast = ram_method(
-            self.write_local_addr_buf, self.write_local_stride_buf, self.write_size_buf,
+            self.write_local_addr_buf, self.write_local_stride_buf,
+            self.write_size_buf, self.write_local_blocksize_buf,
             rready, port=port, cond=ram_cond)
         data_fsm.goto_next()
 
@@ -1014,6 +1392,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             self.write_local_stride_buf(self.write_local_stride_fifo),
             # self.write_size_fifo: local_size
             self.write_size_buf(self.write_size_fifo),
+            self.write_local_blocksize_buf(self.write_local_blocksize_fifo),
         )
         deq_cond = vtypes.Ands(data_fsm.here, cond)
         _ = self.write_req_fifo.deq_rtl(cond=deq_cond)
@@ -1030,7 +1409,8 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         rready = vtypes.Ands(vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid)),
                              count == 0, self.write_size_buf > 0)
         rdata, rvalid, rlast = ram_method(
-            self.write_local_addr_buf, self.write_local_stride_buf, self.write_size_buf,
+            self.write_local_addr_buf, self.write_local_stride_buf,
+            self.write_size_buf, self.write_local_blocksize_buf,
             rready, port=port, cond=ram_cond)
 
         data_fsm(
@@ -1128,6 +1508,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             self.write_local_addr_buf(self.write_local_addr_fifo),
             self.write_local_stride_buf(self.write_local_stride_fifo),
             self.write_size_buf(local_size),
+            self.write_local_blocksize_buf(self.write_local_blocksize_fifo),
         )
         deq_cond = vtypes.Ands(data_fsm.here, cond)
         _ = self.write_req_fifo.deq_rtl(cond=deq_cond)
@@ -1144,7 +1525,8 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         rready = vtypes.Ands(vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid), count > 0),
                              self.write_size_buf > 0)
         rdata, rvalid, rlast = ram_method(
-            self.write_local_addr_buf, self.write_local_stride_buf, self.write_size_buf,
+            self.write_local_addr_buf, self.write_local_stride_buf,
+            self.write_size_buf, self.write_local_blocksize_buf,
             rready, port=port, cond=ram_cond)
 
         data_fsm(
@@ -1247,63 +1629,73 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             rest_size(rest_size - max_burstlen)
         )
 
-    def pack_read_req(self, op_sel, local_addr, local_stride, local_size):
+    def pack_read_req(self, op_sel, local_addr, local_stride, local_size, local_blocksize):
         _op_sel = self.m.TmpWire(self.op_sel_width, prefix='pack_read_req_op_sel')
         _local_addr = self.m.TmpWire(self.addrwidth, prefix='pack_read_req_local_addr')
         _local_stride = self.m.TmpWire(self.addrwidth, prefix='pack_read_req_local_stride')
         _local_size = self.m.TmpWire(self.addrwidth + 1, prefix='pack_read_req_local_size')
+        _local_blocksize = self.m.TmpWire(self.addrwidth, prefix='pack_read_req_local_blocksize')
         _op_sel.assign(op_sel)
         _local_addr.assign(local_addr)
         _local_stride.assign(local_stride)
         _local_size.assign(local_size)
-        packed = self.m.TmpWire(self.op_sel_width + self.addrwidth * 3 + 1,
+        _local_blocksize.assign(local_blocksize)
+        packed = self.m.TmpWire(self.op_sel_width + self.addrwidth * 4 + 1,
                                 prefix='pack_read_req_packed')
-        packed.assign(vtypes.Cat(_op_sel, _local_addr, _local_stride, _local_size))
+        packed.assign(vtypes.Cat(_op_sel, _local_addr, _local_stride, _local_size, _local_blocksize))
         return packed
 
     def unpack_read_req(self, v):
-        op_sel = v[self.addrwidth * 3 + 1:self.addrwidth * 3 + 1 + self.op_sel_width]
-        local_addr = v[self.addrwidth * 2 + 1:self.addrwidth * 2 + 1 + self.addrwidth]
-        local_stride = v[self.addrwidth + 1:self.addrwidth + 1 + self.addrwidth]
-        local_size = v[0:self.addrwidth + 1]
+        op_sel = v[self.addrwidth * 4 + 1:self.addrwidth * 4 + 1 + self.op_sel_width]
+        local_addr = v[self.addrwidth * 3 + 1:self.addrwidth * 3 + 1 + self.addrwidth]
+        local_stride = v[self.addrwidth * 2 + 1:self.addrwidth * 2 + 1 + self.addrwidth]
+        local_size = v[self.addrwidth:self.addrwidth * 2 + 1]
+        local_blocksize = v[0:self.addrwidth]
         _op_sel = self.m.TmpWire(self.op_sel_width, prefix='unpack_read_req_op_sel')
         _local_addr = self.m.TmpWire(self.addrwidth, prefix='unpack_read_req_local_addr')
         _local_stride = self.m.TmpWire(self.addrwidth, prefix='unpack_read_req_local_stride')
         _local_size = self.m.TmpWire(self.addrwidth + 1, prefix='unpack_read_req_local_size')
+        _local_blocksize = self.m.TmpWire(self.addrwidth, prefix='unpack_read_req_local_blocksize')
         _op_sel.assign(op_sel)
         _local_addr.assign(local_addr)
         _local_stride.assign(local_stride)
         _local_size.assign(local_size)
-        return _op_sel, _local_addr, _local_stride, _local_size
+        _local_blocksize.assign(local_blocksize)
+        return _op_sel, _local_addr, _local_stride, _local_size, _local_blocksize
 
-    def pack_write_req(self, op_sel, local_addr, local_stride, size):
+    def pack_write_req(self, op_sel, local_addr, local_stride, size, local_blocksize):
         _op_sel = self.m.TmpWire(self.op_sel_width, prefix='pack_write_req_op_sel')
         _local_addr = self.m.TmpWire(self.addrwidth, prefix='pack_write_req_local_addr')
         _local_stride = self.m.TmpWire(self.addrwidth, prefix='pack_write_req_local_stride')
         _size = self.m.TmpWire(self.addrwidth + 1, prefix='pack_write_req_size')
+        _local_blocksize = self.m.TmpWire(self.addrwidth, prefix='pack_write_req_local_blocksize')
         _op_sel.assign(op_sel)
         _local_addr.assign(local_addr)
         _local_stride.assign(local_stride)
         _size.assign(size)
-        packed = self.m.TmpWire(self.op_sel_width + self.addrwidth * 3 + 1,
+        _local_blocksize.assign(local_blocksize)
+        packed = self.m.TmpWire(self.op_sel_width + self.addrwidth * 4 + 1,
                                 prefix='pack_write_req_packed')
-        packed.assign(vtypes.Cat(_op_sel, _local_addr, _local_stride, _size))
+        packed.assign(vtypes.Cat(_op_sel, _local_addr, _local_stride, _size, _local_blocksize))
         return packed
 
     def unpack_write_req(self, v):
-        op_sel = v[self.addrwidth * 3 + 1:self.addrwidth * 3 + 1 + self.op_sel_width]
-        local_addr = v[self.addrwidth * 2 + 1:self.addrwidth * 2 + 1 + self.addrwidth]
-        local_stride = v[self.addrwidth + 1:self.addrwidth + 1 + self.addrwidth]
-        size = v[0:self.addrwidth + 1]
+        op_sel = v[self.addrwidth * 4 + 1:self.addrwidth * 4 + 1 + self.op_sel_width]
+        local_addr = v[self.addrwidth * 3 + 1:self.addrwidth * 3 + 1 + self.addrwidth]
+        local_stride = v[self.addrwidth * 2 + 1:self.addrwidth * 2 + 1 + self.addrwidth]
+        size = v[self.addrwidth:self.addrwidth * 2 + 1]
+        local_blocksize = v[0:self.addrwidth]
         _op_sel = self.m.TmpWire(self.op_sel_width, prefix='unpack_write_req_op_sel')
         _local_addr = self.m.TmpWire(self.addrwidth, prefix='unpack_write_req_local_addr')
         _local_stride = self.m.TmpWire(self.addrwidth, prefix='unpack_write_req_local_stride')
         _size = self.m.TmpWire(self.addrwidth + 1, prefix='unpack_write_req_size')
+        _local_blocksize = self.m.TmpWire(self.addrwidth, prefix='unpack_write_req_local_blocksize')
         _op_sel.assign(op_sel)
         _local_addr.assign(local_addr)
         _local_stride.assign(local_stride)
         _size.assign(size)
-        return _op_sel, _local_addr, _local_stride, _size
+        _local_blocksize.assign(local_blocksize)
+        return _op_sel, _local_addr, _local_stride, _size, _local_blocksize
 
 
 class AXIMVerify(AXIM):

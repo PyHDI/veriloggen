@@ -31,6 +31,10 @@ class RAM(_MutexFunction):
 
         self.datawidth = datawidth
         self.addrwidth = addrwidth
+
+        self.packed_datawidth = datawidth
+        self.packed_addrwidth = addrwidth
+
         self.numports = numports
 
         if external_ports is None:
@@ -86,6 +90,12 @@ class RAM(_MutexFunction):
         if isinstance(self.addrwidth, int):
             return 2 ** self.addrwidth
         return vtypes.Int(2) ** self.addrwidth
+
+    @property
+    def packed_length(self):
+        if isinstance(self.packed_addrwidth, int):
+            return 2 ** self.packed_addrwidth
+        return vtypes.Int(2) ** self.packed_addrwidth
 
     def has_enable(self, port):
         return hasattr(self.interfaces[port], 'enable')
@@ -153,7 +163,8 @@ class RAM(_MutexFunction):
         cond = fsm.state == fsm.current
 
         rdata, rvalid = self.read_rtl(addr, port, cond)
-        rdata_reg = self.m.TmpReg(self.datawidth, initval=0, signed=True)
+        rdata_reg = self.m.TmpReg(self.datawidth, initval=0, signed=True,
+                                  prefix='read_rdata')
 
         fsm.If(rvalid)(
             rdata_reg(rdata)
@@ -177,7 +188,8 @@ class RAM(_MutexFunction):
 
         return 0
 
-    def read_burst(self, addr, stride, length, rready, rquit=False, port=0, cond=None):
+    def read_burst(self, addr, stride, length, blocksize,
+                   rready, rquit=False, port=0, cond=None):
         """
         @return rdata, rvalid, rlast
         """
@@ -186,7 +198,7 @@ class RAM(_MutexFunction):
 
         _addr = self.m.TmpReg(self.addrwidth, initval=0, prefix='read_burst_addr')
         _stride = self.m.TmpReg(self.addrwidth, initval=0, prefix='read_burst_stride')
-        _length = self.m.TmpReg(length.get_width(), initval=0, prefix='read_burst_length')
+        _length = self.m.TmpReg(vtypes.get_width(length), initval=0, prefix='read_burst_length')
 
         rvalid = self.m.TmpReg(prefix='read_burst_rvalid', initval=0)
         rlast = self.m.TmpReg(prefix='read_burst_rlast', initval=0)
@@ -226,8 +238,20 @@ class RAM(_MutexFunction):
 
         return rdata_wire, rvalid, rlast
 
-    def write_burst(self, addr, stride, length, wdata, wvalid, wlast, wquit=False,
-                    port=0, cond=None):
+    def read_burst_block(self, addr, stride, length, blocksize,
+                         rready, rquit=False, port=0, cond=None):
+
+        return self.read_burst(addr, stride, length, blocksize,
+                               rready, rquit, port, cond)
+
+    def read_burst_packed(self, addr, stride, packed_length, blocksize,
+                          rready, rquit=False, port=0, cond=None):
+
+        return self.read_burst(addr, stride, packed_length, blocksize,
+                               rready, rquit, port, cond)
+
+    def write_burst(self, addr, stride, length, blocksize,
+                    wdata, wvalid, wlast, wquit=False, port=0, cond=None):
         """
         @return wready, done
         """
@@ -236,7 +260,7 @@ class RAM(_MutexFunction):
 
         _addr = self.m.TmpReg(self.addrwidth, initval=0, prefix='write_burst_addr')
         _stride = self.m.TmpReg(self.addrwidth, initval=0, prefix='write_burst_stride')
-        _length = self.m.TmpReg(length.get_width(), initval=0, prefix='write_burst_length')
+        _length = self.m.TmpReg(vtypes.get_width(length), initval=0, prefix='write_burst_length')
 
         done = self.m.TmpReg(prefix='write_burst_done', initval=0)
 
@@ -268,6 +292,24 @@ class RAM(_MutexFunction):
         fsm.If(wquit).goto_init()
 
         return wready, done
+
+    def write_burst_block(self, addr, stride, length, blocksize,
+                          wdata, wvalid, wlast, wquit=False, port=0, cond=None):
+
+        return self.write_burst(addr, stride, length, blocksize,
+                                wdata, wvalid, wlast, wquit, port, cond)
+
+    def write_burst_packed(self, addr, stride, packed_length, blocksize,
+                           wdata, wvalid, wlast, wquit=False, port=0, cond=None):
+
+        return self.write_burst(addr, stride, packed_length, blocksize,
+                                wdata, wvalid, wlast, wquit, port, cond)
+
+    def write_burst_bcast(self, bank_addr, bank_stride, bank_length, blocksize,
+                          wdata, wvalid, wlast, wquit=False, port=0, cond=None):
+
+        return self.write_burst(bank_addr, bank_stride, bank_length, blocksize,
+                                wdata, wvalid, wlast, wquit, port, cond)
 
 
 class FixedRAM(RAM):
@@ -313,14 +355,17 @@ def extract_rams(rams):
     return ret
 
 
-class MultibankRAM(object):
+class MultibankRAM(RAM):
     __intrinsics__ = (
         'read', 'write',
         'read_bank', 'write_bank',
         'dma_read_bank', 'dma_read_bank_async',
         'dma_write_bank', 'dma_write_bank_async',
         'dma_read_block', 'dma_read_block_async',
-        'dma_write_block', 'dma_write_block_async') + _MutexFunction.__intrinsics__
+        'dma_write_block', 'dma_write_block_async',
+        'dma_read_packed', 'dma_read_packed_async',
+        'dma_write_packed', 'dma_write_packed_async',
+        'dma_read_bcast', 'dma_read_bcast_async') + _MutexFunction.__intrinsics__
 
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=10, numports=1, numbanks=2,
@@ -333,9 +378,13 @@ class MultibankRAM(object):
         self.name = name
         self.clk = clk
         self.rst = rst
-        self.orig_datawidth = datawidth
-        self.datawidth = datawidth * numbanks
+
+        self.datawidth = datawidth
         self.addrwidth = addrwidth + util.log2(numbanks)
+
+        self.packed_datawidth = datawidth * numbanks
+        self.packed_addrwidth = addrwidth
+
         self.numports = numports
         self.numbanks = numbanks
         self.shift = util.log2(self.numbanks)
@@ -357,12 +406,6 @@ class MultibankRAM(object):
     def _id(self):
         _ids = [ram._id() for ram in self.rams]
         return tuple(_ids)
-
-    @property
-    def length(self):
-        if isinstance(self.addrwidth, int):
-            return 2 ** self.addrwidth
-        return vtypes.Int(2) ** self.addrwidth
 
     def has_enable(self, port):
         for ram in self.rams:
@@ -386,7 +429,7 @@ class MultibankRAM(object):
         if self.seq is None:
             self.seq = Seq(self.m, self.name, self.clk, self.rst)
 
-        bank = self.m.TmpWire(self.shift)
+        bank = self.m.TmpWire(self.shift, prefix='connect_rtl_bank')
         bank.assign(addr)
         addr = addr >> self.shift
 
@@ -397,7 +440,8 @@ class MultibankRAM(object):
             else:
                 bank_wenable = None
 
-            bank_rdata = self.m.TmpWire(self.orig_datawidth, signed=True)
+            bank_rdata = self.m.TmpWire(self.datawidth, signed=True,
+                                        prefix='connect_rtl_bank_rdata')
             rdata_list.append(bank_rdata)
 
             if enable is not None:
@@ -407,12 +451,13 @@ class MultibankRAM(object):
 
             ram.connect_rtl(port, addr, wdata, bank_wenable, bank_rdata, bank_enable)
 
-        bank_reg = self.seq.Prev(bank, 1, initval=0)
+        bank_reg = self.seq.Prev(bank, 1, cond=enable, initval=0)
         pat = [(bank_reg == i, rdata_list[i])
                for i, ram in enumerate(self.rams)]
         pat.append((None, 0))
 
-        rdata_wire = self.m.TmpWire(self.orig_datawidth, signed=True)
+        rdata_wire = self.m.TmpWire(self.datawidth, signed=True,
+                                    prefix='connect_rtl_rdata')
         rdata_wire.assign(vtypes.PatternMux(pat))
 
         if rdata is not None:
@@ -431,19 +476,20 @@ class MultibankRAM(object):
         rdata_list = []
         rvalid_list = []
 
-        bank = self.m.TmpWire(self.shift)
+        bank = self.m.TmpWire(self.shift, prefix='read_rtl_bank')
         bank.assign(addr)
         addr = addr >> self.shift
 
-        bank_reg = self.seq.Prev(bank, 1, initval=0)
+        bank_reg = self.seq.Prev(bank, 1, cond=cond, initval=0)
 
         for ram in self.rams:
             rdata, rvalid = ram.read_rtl(addr, port, cond)
             rdata_list.append(rdata)
             rvalid_list.append(rvalid)
 
-        rdata_wire = self.m.TmpWire(self.orig_datawidth, signed=True)
-        rvalid_wire = self.m.TmpWire()
+        rdata_wire = self.m.TmpWire(self.datawidth, signed=True,
+                                    prefix='read_rtl_rdata')
+        rvalid_wire = self.m.TmpWire(prefix='read_rtl_rvalid')
 
         pat = [(bank_reg == i, rdata_list[i])
                for i, ram in enumerate(self.rams)]
@@ -461,109 +507,13 @@ class MultibankRAM(object):
         if math.log(self.numbanks, 2) % 1.0 != 0.0:
             raise ValueError('numbanks must be power-of-2')
 
-        bank = self.m.TmpWire(self.shift)
+        bank = self.m.TmpWire(self.shift, prefix='write_rtl_bank')
         bank.assign(addr)
         addr = addr >> self.shift
 
         for i, ram in enumerate(self.rams):
             bank_cond = vtypes.Ands(cond, bank == i)
             ram.write_rtl(addr, wdata, port, bank_cond)
-
-        return 0
-
-    def _read_recursive(self, ram, port, addr, cond):
-        if isinstance(ram, MultibankRAM):
-            if math.log(ram.numbanks, 2) % 1.0 != 0.0:
-                raise ValueError('numbanks must be power-of-2')
-
-            rdata_list = []
-            rvalid_list = []
-            bank = self.m.TmpWire(ram.shift)
-            bank.assign(addr)
-            addr = addr >> ram.shift
-
-            for sub in ram.rams:
-                rdata, rvalid = self._read_recursive(sub, port, addr, cond)
-                rdata_list.append(rdata)
-                rvalid_list.append(rvalid)
-
-            rdata_wire = self.m.TmpWire(ram.orig_datawidth, signed=True)
-
-            patterns = [(bank == i, rdata)
-                        for i, rdata in enumerate(rdata_list)]
-            patterns.append((None, 0))
-            rdata_wire.assign(vtypes.PatternMux(*patterns))
-
-            return rdata_wire, rvalid_list[0]
-
-        rdata, rvalid = ram.read_rtl(addr, port, cond)
-        return rdata, rvalid
-
-    def read(self, fsm, addr, port=0):
-        if math.log(self.numbanks, 2) % 1.0 != 0.0:
-            raise ValueError('numbanks must be power-of-2')
-
-        port = vtypes.to_int(port)
-        cond = fsm.state == fsm.current
-
-        rdata_list = []
-        rvalid_list = []
-
-        bank = self.m.TmpWire(self.shift)
-        bank.assign(addr)
-        addr = addr >> self.shift
-
-        for ram in self.rams:
-            rdata, rvalid = self._read_recursive(ram, port, addr, cond)
-            rdata_list.append(rdata)
-            rvalid_list.append(rvalid)
-
-        rdata_reg = self.m.TmpReg(self.orig_datawidth, initval=0, signed=True)
-
-        for i, ram in enumerate(self.rams):
-            fsm.If(rvalid_list[i], bank == i)(
-                rdata_reg(rdata_list[i])
-            )
-
-        fsm.If(vtypes.Ors(*rvalid_list)).goto_next()
-
-        return rdata_reg
-
-    def _write_recursive(self, ram, port, addr, wdata, cond=None):
-        if isinstance(ram, MultibankRAM):
-            if math.log(ram.numbanks, 2) % 1.0 != 0.0:
-                raise ValueError('numbanks must be power-of-2')
-
-            bank = self.m.TmpWire(ram.shift)
-            bank.assign(addr)
-            addr = addr >> ram.shift
-
-            for i, sub in enumerate(ram.rams):
-                bank_cond = vtypes.Ands(cond, bank == i)
-                self._write_recursive(sub, port, addr, wdata, bank_cond)
-
-            return
-
-        ram.write_rtl(addr, wdata, port, cond)
-
-    def write(self, fsm, addr, wdata, port=0, cond=None):
-        if math.log(self.numbanks, 2) % 1.0 != 0.0:
-            raise ValueError('numbanks must be power-of-2')
-
-        if cond is None:
-            cond = fsm.state == fsm.current
-        else:
-            cond = vtypes.Ands(cond, fsm.state == fsm.current)
-
-        bank = self.m.TmpWire(self.shift)
-        bank.assign(addr)
-        addr = addr >> self.shift
-
-        for i, ram in enumerate(self.rams):
-            bank_cond = vtypes.Ands(cond, bank == i)
-            self._write_recursive(ram, port, addr, wdata, bank_cond)
-
-        fsm.goto_next()
 
         return 0
 
@@ -574,11 +524,12 @@ class MultibankRAM(object):
         rdata_list = []
         rvalid_list = []
         for ram in self.rams:
-            rdata, rvalid = self._read_recursive(ram, port, addr, cond)
+            rdata, rvalid = ram.read_rtl(addr, port, cond)
             rdata_list.append(rdata)
             rvalid_list.append(rvalid)
 
-        rdata_reg = self.m.TmpReg(self.orig_datawidth, initval=0, signed=True)
+        rdata_reg = self.m.TmpReg(self.datawidth, initval=0, signed=True,
+                                  prefix='read_bank_rdata')
 
         for i, ram in enumerate(self.rams):
             fsm.If(rvalid_list[i], bank == i)(
@@ -597,236 +548,48 @@ class MultibankRAM(object):
 
         for i, ram in enumerate(self.rams):
             bank_cond = vtypes.Ands(cond, bank == i)
-            self._write_recursive(ram, port, addr, wdata, bank_cond)
+            ram.write_rtl(addr, wdata, port, bank_cond)
 
         fsm.goto_next()
 
         return 0
 
-    def dma_read_bank(self, fsm, bank, bus, local_addr, global_addr, size,
-                      local_stride=1, port=0):
-
-        self._dma_read_bank(fsm, bank, bus, local_addr, global_addr, size,
-                            local_stride, port)
-
-        bus.dma_wait_read(fsm)
-
-    def dma_read_bank_async(self, fsm, bank, bus, local_addr, global_addr, size,
-                            local_stride=1, port=0):
-
-        self._dma_read_bank(fsm, bank, bus, local_addr, global_addr, size,
-                            local_stride, port)
-
-    def _dma_read_bank(self, fsm, bank, bus, local_addr, global_addr, size,
-                       local_stride=1, port=0):
-        check = fsm.current
-        fsm.set_index(check + 1)
-
-        starts = []
-        ends = []
-        for i, ram in enumerate(self.rams):
-            starts.append(fsm.current)
-            bus._dma_read(fsm, ram, local_addr, global_addr, size,
-                          local_stride, port)
-            ends.append(fsm.current)
-            fsm.set_index(fsm.current + 1)
-
-        fin = fsm.current
-
-        for i, (s, e) in enumerate(zip(starts, ends)):
-            fsm.goto_from(check, s, cond=bank == i)
-            fsm.goto_from(e, fin)
-
-    def dma_write_bank(self, fsm, bank, bus, local_addr, global_addr, size,
-                       local_stride=1, port=0):
-
-        self._dma_write_bank(fsm, bank, bus, local_addr, global_addr, size,
-                             local_stride, port)
-
-        bus.dma_wait_write(fsm)
-
-    def dma_write_bank_async(self, fsm, bank, bus, local_addr, global_addr, size,
-                             local_stride=1, port=0):
-
-        self._dma_write_bank(fsm, bank, bus, local_addr, global_addr, size,
-                             local_stride, port)
-
-    def _dma_write_bank(self, fsm, bank, bus, local_addr, global_addr, size,
-                        local_stride=1, port=0):
-        check = fsm.current
-        fsm.set_index(check + 1)
-
-        starts = []
-        ends = []
-        for i, ram in enumerate(self.rams):
-            starts.append(fsm.current)
-            bus._dma_write(fsm, ram, local_addr, global_addr, size,
-                           local_stride, port)
-            ends.append(fsm.current)
-            fsm.set_index(fsm.current + 1)
-
-        fin = fsm.current
-
-        for i, (s, e) in enumerate(zip(starts, ends)):
-            fsm.goto_from(check, s, cond=bank == i)
-            fsm.goto_from(e, fin)
-
-    def dma_read_block(self, fsm, bus, local_addr, global_addr, size,
-                       block_size=1, local_stride=1, port=0):
-
-        self._dma_read_block(fsm, bus, local_addr, global_addr, size,
-                             block_size, local_stride, port)
-
-        bus.dma_wait_read(fsm)
-
-    def dma_read_block_async(self, fsm, bus, local_addr, global_addr, size,
-                             block_size=1, local_stride=1, port=0):
-
-        self._dma_read_block(fsm, bus, local_addr, global_addr, size,
-                             block_size, local_stride, port)
-
-    def _dma_read_block(self, fsm, bus, local_addr, global_addr, size,
-                        block_size=1, local_stride=1, port=0):
-
-        cache_key = (id(bus), port)
-
-        if cache_key in self.cache_dma_reqs:
-            info = self.cache_dma_reqs[cache_key]
-            seq = info[0]
-            req_block_size = info[1]
-        else:
-            seq = TmpSeq(bus.m, bus.clk, bus.rst)
-            req_block_size = self.m.TmpReg(self.addrwidth, initval=0,
-                                           prefix='req_block_size')
-            info = (seq, req_block_size)
-            self.cache_dma_reqs[cache_key] = info
-
-        set_req = bus._set_flag(fsm, prefix='set_req')
-        seq.If(set_req)(
-            req_block_size(block_size)
-        )
-
-        ram_method = functools.partial(self.write_burst_block,
-                                       blocksize=req_block_size)
-
-        bus._dma_read(fsm, self, local_addr, global_addr, size,
-                      local_stride, port, ram_method)
-
-    def dma_write_block(self, fsm, bus, local_addr, global_addr, size,
-                        block_size=1, local_stride=1, port=0):
-
-        self._dma_write_block(fsm, bus, local_addr, global_addr, size,
-                              block_size, local_stride, port)
-
-        bus.dma_wait_write(fsm)
-
-    def dma_write_block_async(self, fsm, bus, local_addr, global_addr, size,
-                              block_size=1, local_stride=1, port=0):
-
-        self._dma_write_block(fsm, bus, local_addr, global_addr, size,
-                              block_size, local_stride, port)
-
-    def _dma_write_block(self, fsm, bus, local_addr, global_addr, size,
-                         block_size=1, local_stride=1, port=0):
-
-        cache_key = (id(bus), port)
-
-        if cache_key in self.cache_dma_reqs:
-            info = self.cache_dma_reqs[cache_key]
-            seq = info[0]
-            req_block_size = info[1]
-        else:
-            seq = TmpSeq(bus.m, bus.clk, bus.rst)
-            req_block_size = self.m.TmpReg(self.addrwidth, initval=0,
-                                           prefix='req_block_size')
-            info = (seq, req_block_size)
-            self.cache_dma_reqs[cache_key] = info
-
-        set_req = bus._set_flag(fsm, prefix='set_req')
-        seq.If(set_req)(
-            req_block_size(block_size)
-        )
-
-        ram_method = functools.partial(self.read_burst_block,
-                                       blocksize=req_block_size)
-
-        bus._dma_write(fsm, self, local_addr, global_addr, size,
-                       local_stride, port, ram_method)
-
-    def read_burst(self, addr, stride, length, rready, rquit=False, port=0, cond=None):
+    def read_burst_block(self, addr, stride, length, blocksize,
+                         rready, rquit=False, port=0, cond=None):
         """
         @return rdata, rvalid, rlast
         """
 
-        fsm = TmpFSM(self.m, self.clk, self.rst, prefix='read_burst_fsm')
+        high_addr = self.m.TmpWire(self.packed_addrwidth,
+                                   prefix='read_burst_block_high_addr')
+        high_addr.assign(addr >> self.shift)
 
-        _addr = self.m.TmpReg(self.addrwidth, initval=0, prefix='read_burst_addr')
-        _stride = self.m.TmpReg(self.addrwidth, initval=0, prefix='read_burst_stride')
-        _length = self.m.TmpReg(length.get_width(), initval=0, prefix='read_burst_length')
-
-        rvalid = self.m.TmpReg(prefix='read_burst_rvalid', initval=0)
-        rlast = self.m.TmpReg(prefix='read_burst_rlast', initval=0)
-
-        fsm(
-            _addr(addr),
-            _stride(stride),
-            _length(length),
-            rvalid(0),
-            rlast(0),
-        )
-        fsm.If(cond, length > 0).goto_next()
-
-        renable = vtypes.Ands(fsm.here, vtypes.Ors(vtypes.Not(rvalid), rready))
-
-        ram_rdata_wires = []
-        for ram in self.rams:
-            rdata, _ = ram.read_rtl(_addr, port, renable)
-            ram_rdata_wire = self.m.TmpWireLike(rdata, prefix='read_burst_ram_rdata')
-            ram_rdata_wire.assign(rdata)
-            ram_rdata_wires.append(ram_rdata_wire)
-
-        ram_rdata_wires.reverse()
-        rdata_wire = self.m.TmpWire(self.datawidth, prefix='read_burst_rdata')
-        rdata_wire.assign(vtypes.Cat(*ram_rdata_wires))
-
-        fsm.If(rready, _length > 0)(
-            _addr(_addr + _stride),
-            _length.dec(),
-            rvalid(1)
-        )
-        fsm.If(rready, _length <= 1)(
-            rlast(1)
-        )
-        fsm.If(rlast, rvalid, rready)(
-            rvalid(0),
-            rlast(0),
-        )
-        fsm.If(rquit)(
-            rvalid(0),
-            rlast(0),
-        )
-        fsm.If(rlast, rvalid, rready).goto_init()
-        fsm.If(rquit).goto_init()
-
-        return rdata_wire, rvalid, rlast
-
-    def read_burst_block(self, addr, stride, length, rready, rquit=False,
-                         port=0, cond=None, blocksize=1):
-        """
-        @return rdata, rvalid, rlast
-        """
+        low_addr = self.m.TmpWire(self.shift,
+                                  prefix='read_burst_block_low_addr')
+        mask = vtypes.Repeat(vtypes.Int(1, 1), self.shift)
+        low_addr.assign(vtypes.And(addr, mask))
 
         ram_sel_list = []
         ram_rready_list = []
         ram_rquit_list = []
         ram_rdata_list = []
 
-        for ram in self.rams:
+        for i, ram in enumerate(self.rams):
+            ram_addr = self.m.TmpWire(ram.packed_addrwidth,
+                                      prefix='read_burst_block_ram_addr')
+            ram_addr.assign(vtypes.Mux(i < low_addr, high_addr + 1, high_addr))
+            ram_stride = stride
+
             ram_sel = self.m.TmpReg(prefix='read_burst_block_ram_sel', initval=0)
             ram_rready = self.m.TmpWire(prefix='read_burst_block_ram_rready')
             ram_rquit = self.m.TmpWire(prefix='read_burst_block_ram_rquit')
-            ram_rdata, _, _ = ram.read_burst(
-                addr, stride, length, ram_rready, ram_rquit, port, cond)
+            ram_length = length
+            ram_blocksize = 1
+
+            ram_rdata, _, _ = ram.read_burst_packed(
+                ram_addr, ram_stride, ram_length, ram_blocksize,
+                ram_rready, ram_rquit, port, cond)
+
             ram_sel_list.append(ram_sel)
             ram_rready_list.append(ram_rready)
             ram_rquit_list.append(ram_rquit)
@@ -834,9 +597,12 @@ class MultibankRAM(object):
 
         fsm = TmpFSM(self.m, self.clk, self.rst, prefix='read_burst_block_fsm')
 
-        _length = self.m.TmpReg(length.get_width(), initval=0, prefix='read_burst_block_length')
-        _blocksize = self.m.TmpReg(self.addrwidth, initval=0, prefix='write_burst_block_blocksize')
-        count = self.m.TmpReg(self.addrwidth, initval=0, prefix='write_burst_block_count')
+        _length = self.m.TmpReg(vtypes.get_width(length), initval=0,
+                                prefix='read_burst_block_length')
+        _blocksize = self.m.TmpReg(vtypes.get_width(blocksize), initval=0,
+                                   prefix='read_burst_block_blocksize')
+        count = self.m.TmpReg(vtypes.get_width(blocksize), initval=0,
+                              prefix='read_burst_block_count')
         rvalid = self.m.TmpReg(prefix='read_burst_block_rvalid', initval=0)
         rlast = self.m.TmpReg(prefix='read_burst_block_rlast', initval=0)
 
@@ -853,14 +619,20 @@ class MultibankRAM(object):
                 ram_sel(0)
             )
 
-        fsm.If(cond, length > 0).goto_next()
+        # first bank depends on low_addr
+        # fsm.If(cond, length > 0).goto_next()
+        fsm.inc()
 
-        rdata = self.m.TmpWire(self.rams[0].datawidth,
+        rdata = self.m.TmpWire(self.rams[0].packed_datawidth,
                                prefix='read_burst_block_rdata')
+
         loop = fsm.current
+        labels = []
 
         for i, (ram_rready, ram_rquit, ram_rdata) in enumerate(
                 zip(ram_rready_list, ram_rquit_list, ram_rdata_list)):
+
+            labels.append(fsm.current)
 
             ram_rready.assign(vtypes.Ands(rready, fsm.here))
             ram_rquit.assign(vtypes.Ors(rquit, vtypes.Ands(rvalid, rlast)))
@@ -906,93 +678,130 @@ class MultibankRAM(object):
 
             fsm.inc()
 
+        # first bank depends on low_addr
+        for i, label in enumerate(labels):
+            fsm.If(cond, length > 0, low_addr == i).goto_from(fsm.init, label)
+
         return rdata, rvalid, rlast
 
-    def write_burst(self, addr, stride, length, wdata, wvalid, wlast, wquit=False,
-                    port=0, cond=None):
+    def read_burst_packed(self, addr, stride, packed_length, blocksize,
+                          rready, rquit=False, port=0, cond=None):
         """
-        @return wready, done
+        @return rdata, rvalid, rlast
         """
 
-        fsm = TmpFSM(self.m, self.clk, self.rst, prefix='write_burst_fsm')
+        fsm = TmpFSM(self.m, self.clk, self.rst, prefix='read_burst_packed_fsm')
 
-        _addr = self.m.TmpReg(self.addrwidth, initval=0, prefix='write_burst_addr')
-        _stride = self.m.TmpReg(self.addrwidth, initval=0, prefix='write_burst_stride')
-        _length = self.m.TmpReg(length.get_width(), initval=0, prefix='write_burst_length')
+        _addr = self.m.TmpReg(self.addrwidth, initval=0,
+                              prefix='read_burst_packed_addr')
+        _stride = self.m.TmpReg(self.addrwidth, initval=0,
+                                prefix='read_burst_packed_stride')
+        _length = self.m.TmpReg(vtypes.get_width(packed_length), initval=0,
+                                prefix='read_burst_packed_length')
 
-        done = self.m.TmpReg(prefix='write_burst_done', initval=0)
+        rvalid = self.m.TmpReg(prefix='read_burst_packed_rvalid', initval=0)
+        rlast = self.m.TmpReg(prefix='read_burst_packed_rlast', initval=0)
 
         fsm(
             _addr(addr),
             _stride(stride),
-            _length(length),
-            done(0),
+            _length(packed_length),
+            rvalid(0),
+            rlast(0),
         )
-        fsm.If(cond, length > 0).goto_next()
 
-        wenable = vtypes.Ands(fsm.here, wvalid)
-        wready = fsm.here
+        fsm.If(cond, packed_length > 0).goto_next()
+
+        renable = vtypes.Ands(fsm.here, vtypes.Ors(vtypes.Not(rvalid), rready))
+
+        ram_rdata_wires = []
         for i, ram in enumerate(self.rams):
-            ram_wdata = self.m.TmpWire(ram.datawidth, prefix='write_burst_ram_wdata')
-            ram_wdata.assign(vtypes.Srl(wdata, self.orig_datawidth * i))
-            ram.write_rtl(_addr, ram_wdata, port, wenable)
+            high_addr = self.m.TmpWire(self.packed_addrwidth,
+                                       prefix='read_burst_packed_high_addr')
+            high_addr.assign(_addr >> self.shift)
 
-        fsm.If(wvalid)(
+            low_addr = self.m.TmpWire(self.shift,
+                                      prefix='read_burst_packed_low_addr')
+            mask = vtypes.Repeat(vtypes.Int(1, 1), self.shift)
+            low_addr.assign(vtypes.And(_addr, mask))
+
+            ram_addr = self.m.TmpWire(ram.addrwidth,
+                                      prefix='read_burst_packed_ram_addr')
+            ram_addr.assign(vtypes.Mux(i < low_addr, high_addr + 1, high_addr))
+            rdata, _ = ram.read_rtl(ram_addr, port, renable)
+            ram_rdata_wire = self.m.TmpWireLike(rdata,
+                                                prefix='read_burst_packed_ram_rdata')
+            ram_rdata_wire.assign(rdata)
+            ram_rdata_wires.append(ram_rdata_wire)
+
+        ram_rdata_wires.reverse()
+        rdata_wire = self.m.TmpWire(self.packed_datawidth,
+                                    prefix='read_burst_packed_rdata')
+        rdata_wire.assign(vtypes.Cat(*ram_rdata_wires))
+
+        fsm.If(rready, _length > 0)(
             _addr(_addr + _stride),
             _length.dec(),
-            done(0)
+            rvalid(1)
         )
-        fsm.If(wvalid, _length <= 1)(
-            done(1)
+        fsm.If(rready, _length <= 1)(
+            rlast(1)
         )
-        fsm.If(wvalid, wlast)(
-            done(1)
+        fsm.If(rlast, rvalid, rready)(
+            rvalid(0),
+            rlast(0),
         )
-        fsm.If(wvalid, _length <= 1).goto_init()
-        fsm.If(wvalid, wlast).goto_init()
-        fsm.If(wquit).goto_init()
+        fsm.If(rquit)(
+            rvalid(0),
+            rlast(0),
+        )
+        fsm.If(rlast, rvalid, rready).goto_init()
+        fsm.If(rquit).goto_init()
+        return rdata_wire, rvalid, rlast
 
-        return wready, done
-
-    def write_burst_bcast(self, addr, stride, length, wdata, wvalid, wlast, wquit=False,
-                          port=0, cond=None):
+    def write_burst_block(self, addr, stride, length, blocksize,
+                          wdata, wvalid, wlast, wquit=False, port=0, cond=None):
         """
         @return wready, done
         """
-        wready_list = []
-        done_list = []
 
-        for ram in self.rams:
-            wready, done = ram.write_burst(addr, stride, length, wdata, wvalid, wlast, wquit,
-                                           port, cond)
-            wready_list.append(wready)
-            done_list.append(done_list)
+        high_addr = self.m.TmpWire(self.packed_addrwidth,
+                                   prefix='write_burst_block_high_addr')
+        high_addr.assign(addr >> self.shift)
 
-        return wready_list[0], done_list[0]
-
-    def write_burst_block(self, addr, stride, length, wdata, wvalid, wlast,
-                          wquit=False, port=0, cond=None, blocksize=1):
-        """
-        @return wready, done
-        """
+        low_addr = self.m.TmpWire(self.shift,
+                                  prefix='write_burst_block_low_addr')
+        mask = vtypes.Repeat(vtypes.Int(1, 1), self.shift)
+        low_addr.assign(vtypes.And(addr, mask))
 
         ram_wvalid_list = []
         ram_wquit_list = []
 
-        for ram in self.rams:
+        for i, ram in enumerate(self.rams):
+            ram_addr = self.m.TmpWire(ram.packed_addrwidth,
+                                      prefix='write_burst_block_ram_addr')
+            ram_addr.assign(vtypes.Mux(i < low_addr, high_addr + 1, high_addr))
+            ram_stride = stride
+
             ram_wvalid = self.m.TmpWire(prefix='write_burst_block_ram_wvalid')
             ram_wquit = self.m.TmpWire(prefix='write_burst_block_ram_wquit')
-            _ = ram.write_burst(addr, stride, length, wdata, ram_wvalid, wlast,
-                                ram_wquit, port, cond)
+            ram_length = length
+            ram_blocksize = 1
+
+            _ = ram.write_burst_packed(ram_addr, ram_stride, ram_length, ram_blocksize,
+                                       wdata, ram_wvalid, wlast, ram_wquit, port, cond)
             ram_wvalid_list.append(ram_wvalid)
             ram_wquit_list.append(ram_wquit)
 
         fsm = TmpFSM(self.m, self.clk, self.rst, prefix='write_burst_block_fsm')
 
-        _length = self.m.TmpReg(length.get_width(), initval=0, prefix='write_burst_block_length')
-        _blocksize = self.m.TmpReg(self.addrwidth, initval=0, prefix='write_burst_block_blocksize')
+        _length = self.m.TmpReg(vtypes.get_width(length), initval=0,
+                                prefix='write_burst_block_length')
+        _blocksize = self.m.TmpReg(vtypes.get_width(blocksize), initval=0,
+                                   prefix='write_burst_block_blocksize')
         done = self.m.TmpReg(prefix='write_burst_block_done', initval=0)
-        count = self.m.TmpReg(self.addrwidth, initval=0, prefix='write_burst_block_count')
+        count = self.m.TmpReg(vtypes.get_width(blocksize), initval=0,
+                              prefix='write_burst_block_count')
 
         fsm(
             _length(length),
@@ -1000,12 +809,19 @@ class MultibankRAM(object):
             done(0),
             count(0),
         )
-        fsm.If(cond, length > 0).goto_next()
+
+        # first bank depends on low_addr
+        # fsm.If(cond, length > 0).goto_next()
+        fsm.inc()
 
         loop = fsm.current
         wready = False
 
+        labels = []
+
         for i, (ram_wvalid, ram_wquit) in enumerate(zip(ram_wvalid_list, ram_wquit_list)):
+
+            labels.append(fsm.current)
 
             ram_wvalid.assign(vtypes.Ands(wvalid, fsm.here))
             ram_wquit.assign(vtypes.Ors(wquit, vtypes.Ands(
@@ -1039,10 +855,94 @@ class MultibankRAM(object):
 
             wready = vtypes.Ors(wready, fsm.here)
 
+        # first bank depends on low_addr
+        for i, label in enumerate(labels):
+            fsm.If(cond, length > 0, low_addr == i).goto_from(fsm.init, label)
+
         return wready, done
+
+    def write_burst_packed(self, addr, stride, packed_length, blocksize,
+                           wdata, wvalid, wlast, wquit=False, port=0, cond=None):
+        """
+        @return wready, done
+        """
+
+        fsm = TmpFSM(self.m, self.clk, self.rst, prefix='write_burst_packed_fsm')
+
+        _addr = self.m.TmpReg(self.addrwidth, initval=0,
+                              prefix='write_burst_packed_addr')
+        _stride = self.m.TmpReg(self.addrwidth, initval=0,
+                                prefix='write_burst_packed_stride')
+        _length = self.m.TmpReg(vtypes.get_width(packed_length), initval=0,
+                                prefix='write_burst_packed_length')
+
+        done = self.m.TmpReg(prefix='write_burst_packed_done', initval=0)
+
+        fsm(
+            _addr(addr),
+            _stride(stride),
+            _length(packed_length),
+            done(0),
+        )
+        fsm.If(cond, packed_length > 0).goto_next()
+
+        wenable = vtypes.Ands(fsm.here, wvalid)
+        wready = fsm.here
+        for i, ram in enumerate(self.rams):
+            high_addr = self.m.TmpWire(self.packed_addrwidth,
+                                       prefix='write_burst_packed_high_addr')
+            high_addr.assign(_addr >> self.shift)
+
+            low_addr = self.m.TmpWire(self.shift,
+                                      prefix='write_burst_packed_low_addr')
+            mask = vtypes.Repeat(vtypes.Int(1, 1), self.shift)
+            low_addr.assign(vtypes.And(_addr, mask))
+
+            ram_addr = self.m.TmpWire(ram.addrwidth,
+                                      prefix='write_burst_packed_ram_addr')
+            ram_addr.assign(vtypes.Mux(i < low_addr, high_addr + 1, high_addr))
+            ram_wdata = self.m.TmpWire(ram.datawidth,
+                                       prefix='write_burst_packed_ram_wdata')
+            ram_wdata.assign(vtypes.Srl(wdata, self.datawidth * i))
+            ram.write_rtl(ram_addr, ram_wdata, port, wenable)
+
+        fsm.If(wvalid)(
+            _addr(_addr + _stride),
+            _length.dec(),
+            done(0)
+        )
+        fsm.If(wvalid, _length <= 1)(
+            done(1)
+        )
+        fsm.If(wvalid, wlast)(
+            done(1)
+        )
+        fsm.If(wvalid, _length <= 1).goto_init()
+        fsm.If(wvalid, wlast).goto_init()
+        fsm.If(wquit).goto_init()
+
+        return wready, done
+
+    def write_burst_bcast(self, bank_addr, bank_stride, bank_length, blocksize,
+                          wdata, wvalid, wlast, wquit=False, port=0, cond=None):
+        """
+        @return wready, done
+        """
+        wready_list = []
+        done_list = []
+
+        for i, ram in enumerate(self.rams):
+            wready, done = ram.write_burst(bank_addr, bank_stride, bank_length,
+                                           wdata, wvalid, wlast, wquit,
+                                           port, cond)
+            wready_list.append(wready)
+            done_list.append(done_list)
+
+        return wready_list[0], done_list[0]
 
 
 class _PackedMultibankRAM(MultibankRAM):
+
     def __init__(self, src=None, name=None, keep_hierarchy=False):
 
         if not isinstance(src, (tuple, list)):
@@ -1062,19 +962,45 @@ class _PackedMultibankRAM(MultibankRAM):
         for ram in src:
             max_addrwidth = max(max_addrwidth, ram.addrwidth)
 
+        max_packed_datawidth = 0
+        for ram in src:
+            max_packed_datawidth = max(max_packed_datawidth, ram.packed_datawidth)
+
+        max_packed_addrwidth = 0
+        for ram in src:
+            max_packed_addrwidth = max(max_packed_addrwidth, ram.packed_addrwidth)
+
         max_numports = src[0].numports
         for ram in src[1:]:
             if max_numports != ram.numports:
                 raise ValueError('numports must be same')
+
+        first = src[0]
+        for ram in src[1:]:
+            if ram.datawidth != first.datawidth:
+                raise ValueError('datawidth must be same')
+            if ram.packed_datawidth != first.packed_datawidth:
+                raise ValueError('packed_datawidth must be same')
+            if isinstance(ram, MultibankRAM) and not isinstance(first, MultibankRAM):
+                raise ValueError('RAM type must be same')
+            if not isinstance(ram, MultibankRAM) and isinstance(first, MultibankRAM):
+                raise ValueError('RAM type must be same')
+            if (isinstance(ram, MultibankRAM) and isinstance(first, MultibankRAM) and
+                ram.numbanks != first.numbanks):
+                raise ValueError('numbanks must be same')
 
         self.m = src[0].m
         self.name = ('_'.join([ram.name for ram in src])
                      if name is None else name)
         self.clk = src[0].clk
         self.rst = src[0].rst
-        self.orig_datawidth = max_datawidth
-        self.datawidth = max_datawidth * len(src)
+
+        self.datawidth = max_datawidth
         self.addrwidth = max_addrwidth + util.log2(len(src))
+
+        self.packed_datawidth = max_packed_datawidth * len(src)
+        self.packed_addrwidth = max_packed_addrwidth
+
         self.numports = max_numports
         self.numbanks = len(src)
         self.shift = util.log2(self.numbanks)

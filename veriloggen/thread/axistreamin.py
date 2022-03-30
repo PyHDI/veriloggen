@@ -127,18 +127,18 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
         return tdata, tlast
 
     def dma_read(self, fsm, ram, local_addr, size,
-                 local_stride=1, port=0, ram_method=None):
+                 local_stride=1, port=0):
 
         self._dma_read(fsm, ram, local_addr, size,
-                       local_stride, port, ram_method)
+                       local_stride, port)
 
         self.dma_wait_read(fsm)
 
     def dma_read_async(self, fsm, ram, local_addr, size,
-                       local_stride=1, port=0, ram_method=None):
+                       local_stride=1, port=0):
 
         self._dma_read(fsm, ram, local_addr, size,
-                       local_stride, port, ram_method)
+                       local_stride, port)
 
     def dma_wait_read(self, fsm):
 
@@ -156,14 +156,11 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
         if ram_method is None:
             ram_method = getattr(ram, 'write_burst')
 
-        start = fsm.here
-
         ram_method_name = (ram_method.func.__name__
                            if isinstance(ram_method, functools.partial) else
                            ram_method.__name__)
-        ram_datawidth = (ram.datawidth if ram_method is None else
-                         ram.orig_datawidth if 'bcast' in ram_method_name else
-                         ram.orig_datawidth if 'block' in ram_method_name else
+        ram_datawidth = (ram.packed_datawidth if 'packed' in ram_method_name else
+                         ram.rams[0].packed_datawidth if 'block' in ram_method_name else
                          ram.datawidth)
 
         if not isinstance(self.datawidth, int):
@@ -173,6 +170,8 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
         if not isinstance(ram_datawidth, int):
             raise TypeError("ram_datawidth must be int, not '%s'" %
                             str(type(ram_datawidth)))
+
+        start = fsm.here
 
         self._set_read_request(ram, port, ram_method, ram_datawidth,
                                start, local_addr, size, local_stride)
@@ -244,7 +243,8 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
 
         # Data state 1
         ram_cond = vtypes.Ands(data_fsm.here, self.read_op_sel_buf == op_id)
-        ram_method(self.read_local_addr_buf, self.read_local_stride_buf, self.read_local_size_buf,
+        ram_method(self.read_local_addr_buf, self.read_local_stride_buf,
+                   self.read_local_size_buf, 1,
                    self.tdata.tdata, self.tdata.tvalid, False,
                    port=port, cond=ram_cond)
         data_fsm.goto_next()
@@ -311,8 +311,10 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
         wvalid = self.m.TmpReg(initval=0, prefix='_'.join(['', self.name, 'read_narrow_wvalid']))
         count = self.m.TmpReg(log_pack_size, initval=0,
                               prefix='_'.join(['', self.name, 'read_narrow_count']))
-        ram_method(self.read_local_addr_buf, self.read_local_stride_buf, self.read_local_size_buf,
-                   wdata, wvalid, False, port=port, cond=ram_cond)
+        ram_method(self.read_local_addr_buf, self.read_local_stride_buf,
+                   self.read_local_size_buf, 1,
+                   wdata, wvalid, False,
+                   port=port, cond=ram_cond)
         data_fsm(
             count(0),
             wvalid(0)
@@ -399,8 +401,10 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
         count = self.m.TmpReg(log_pack_size, initval=0,
                               prefix='_'.join(['', self.name, 'read_wide_count']))
         _wdata = wdata[:ram_datawidth]
-        ram_method(self.read_local_addr_buf, self.read_local_stride_buf, self.read_local_size_buf,
-                   _wdata, wvalid, False, port=port, cond=ram_cond)
+        ram_method(self.read_local_addr_buf, self.read_local_stride_buf,
+                   self.read_local_size_buf, 1,
+                   _wdata, wvalid, False,
+                   port=port, cond=ram_cond)
         data_fsm(
             count(0),
             wvalid(0)

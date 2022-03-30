@@ -26,7 +26,7 @@ def mkLed(memory_datawidth=32):
     myram1 = vthread.MultibankRAM(m, 'myram1', clk, rst, datawidth, addrwidth,
                                   numbanks=numbanks)
 
-    all_ok = m.TmpReg(initval=0)
+    all_ok = m.TmpReg(initval=0, prefix='all_ok')
     wdata = m.TmpReg(width=datawidth, initval=0, prefix='wdata')
     rdata = m.TmpReg(width=datawidth, initval=0, prefix='rdata')
     rexpected = m.TmpReg(width=datawidth, initval=0, prefix='rexpected')
@@ -73,7 +73,7 @@ def mkLed(memory_datawidth=32):
 
         laddr = 0
         gaddr = offset
-        myram0.dma_write_block(myaxi, laddr, gaddr, size, block_size)
+        myaxi.dma_write_block(myram0, laddr, gaddr, size, block_size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # write
@@ -97,13 +97,13 @@ def mkLed(memory_datawidth=32):
 
         laddr = 0
         gaddr = array_size + offset
-        myram1.dma_write_block(myaxi, laddr, gaddr, size, block_size)
+        myaxi.dma_write_block(myram1, laddr, gaddr, size, block_size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # read
         laddr = 0
         gaddr = offset
-        myram1.dma_read_block(myaxi, laddr, gaddr, size, block_size)
+        myaxi.dma_read_block(myram1, laddr, gaddr, size, block_size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         count = 0
@@ -130,7 +130,7 @@ def mkLed(memory_datawidth=32):
         # read
         laddr = 0
         gaddr = array_size + offset
-        myram0.dma_read_block(myaxi, laddr, gaddr, size, block_size)
+        myaxi.dma_read_block(myram0, laddr, gaddr, size, block_size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         count = 0

@@ -523,8 +523,10 @@ module test
           end
           if(memory_wvalid && memory_wready && (_write_count == 1)) begin
             memory_wready <= 0;
+            memory_bvalid <= 1;
           end 
           if(memory_wvalid && memory_wready && memory_wlast) begin
+            memory_wready <= 0;
             memory_bvalid <= 1;
           end 
           if(memory_wvalid && memory_wready && (_write_count == 1)) begin
@@ -942,12 +944,13 @@ module blinkled
   reg [32-1:0] _myaxi_read_local_addr;
   reg [32-1:0] _myaxi_read_local_stride;
   reg [33-1:0] _myaxi_read_local_size;
+  reg [32-1:0] _myaxi_read_local_blocksize;
   wire _myaxi_read_req_fifo_enq;
-  wire [105-1:0] _myaxi_read_req_fifo_wdata;
+  wire [137-1:0] _myaxi_read_req_fifo_wdata;
   wire _myaxi_read_req_fifo_full;
   wire _myaxi_read_req_fifo_almost_full;
   wire _myaxi_read_req_fifo_deq;
-  wire [105-1:0] _myaxi_read_req_fifo_rdata;
+  wire [137-1:0] _myaxi_read_req_fifo_rdata;
   wire _myaxi_read_req_fifo_empty;
   wire _myaxi_read_req_fifo_almost_empty;
 
@@ -971,22 +974,27 @@ module blinkled
   wire [32-1:0] _myaxi_read_local_addr_fifo;
   wire [32-1:0] _myaxi_read_local_stride_fifo;
   wire [33-1:0] _myaxi_read_local_size_fifo;
+  wire [32-1:0] _myaxi_read_local_blocksize_fifo;
   wire [8-1:0] unpack_read_req_op_sel_1;
   wire [32-1:0] unpack_read_req_local_addr_2;
   wire [32-1:0] unpack_read_req_local_stride_3;
   wire [33-1:0] unpack_read_req_local_size_4;
-  assign unpack_read_req_op_sel_1 = _myaxi_read_req_fifo_rdata[104:97];
-  assign unpack_read_req_local_addr_2 = _myaxi_read_req_fifo_rdata[96:65];
-  assign unpack_read_req_local_stride_3 = _myaxi_read_req_fifo_rdata[64:33];
-  assign unpack_read_req_local_size_4 = _myaxi_read_req_fifo_rdata[32:0];
+  wire [32-1:0] unpack_read_req_local_blocksize_5;
+  assign unpack_read_req_op_sel_1 = _myaxi_read_req_fifo_rdata[136:129];
+  assign unpack_read_req_local_addr_2 = _myaxi_read_req_fifo_rdata[128:97];
+  assign unpack_read_req_local_stride_3 = _myaxi_read_req_fifo_rdata[96:65];
+  assign unpack_read_req_local_size_4 = _myaxi_read_req_fifo_rdata[64:32];
+  assign unpack_read_req_local_blocksize_5 = _myaxi_read_req_fifo_rdata[31:0];
   assign _myaxi_read_op_sel_fifo = unpack_read_req_op_sel_1;
   assign _myaxi_read_local_addr_fifo = unpack_read_req_local_addr_2;
   assign _myaxi_read_local_stride_fifo = unpack_read_req_local_stride_3;
   assign _myaxi_read_local_size_fifo = unpack_read_req_local_size_4;
+  assign _myaxi_read_local_blocksize_fifo = unpack_read_req_local_blocksize_5;
   reg [8-1:0] _myaxi_read_op_sel_buf;
   reg [32-1:0] _myaxi_read_local_addr_buf;
   reg [32-1:0] _myaxi_read_local_stride_buf;
   reg [33-1:0] _myaxi_read_local_size_buf;
+  reg [32-1:0] _myaxi_read_local_blocksize_buf;
   reg _myaxi_read_req_idle;
   reg _myaxi_read_data_idle;
   wire _myaxi_read_idle;
@@ -998,12 +1006,13 @@ module blinkled
   reg [32-1:0] _myaxi_write_local_addr;
   reg [32-1:0] _myaxi_write_local_stride;
   reg [33-1:0] _myaxi_write_local_size;
+  reg [32-1:0] _myaxi_write_local_blocksize;
   wire _myaxi_write_req_fifo_enq;
-  wire [105-1:0] _myaxi_write_req_fifo_wdata;
+  wire [137-1:0] _myaxi_write_req_fifo_wdata;
   wire _myaxi_write_req_fifo_full;
   wire _myaxi_write_req_fifo_almost_full;
   wire _myaxi_write_req_fifo_deq;
-  wire [105-1:0] _myaxi_write_req_fifo_rdata;
+  wire [137-1:0] _myaxi_write_req_fifo_rdata;
   wire _myaxi_write_req_fifo_empty;
   wire _myaxi_write_req_fifo_almost_empty;
 
@@ -1027,22 +1036,27 @@ module blinkled
   wire [32-1:0] _myaxi_write_local_addr_fifo;
   wire [32-1:0] _myaxi_write_local_stride_fifo;
   wire [33-1:0] _myaxi_write_size_fifo;
-  wire [8-1:0] unpack_write_req_op_sel_5;
-  wire [32-1:0] unpack_write_req_local_addr_6;
-  wire [32-1:0] unpack_write_req_local_stride_7;
-  wire [33-1:0] unpack_write_req_size_8;
-  assign unpack_write_req_op_sel_5 = _myaxi_write_req_fifo_rdata[104:97];
-  assign unpack_write_req_local_addr_6 = _myaxi_write_req_fifo_rdata[96:65];
-  assign unpack_write_req_local_stride_7 = _myaxi_write_req_fifo_rdata[64:33];
-  assign unpack_write_req_size_8 = _myaxi_write_req_fifo_rdata[32:0];
-  assign _myaxi_write_op_sel_fifo = unpack_write_req_op_sel_5;
-  assign _myaxi_write_local_addr_fifo = unpack_write_req_local_addr_6;
-  assign _myaxi_write_local_stride_fifo = unpack_write_req_local_stride_7;
-  assign _myaxi_write_size_fifo = unpack_write_req_size_8;
+  wire [32-1:0] _myaxi_write_local_blocksize_fifo;
+  wire [8-1:0] unpack_write_req_op_sel_6;
+  wire [32-1:0] unpack_write_req_local_addr_7;
+  wire [32-1:0] unpack_write_req_local_stride_8;
+  wire [33-1:0] unpack_write_req_size_9;
+  wire [32-1:0] unpack_write_req_local_blocksize_10;
+  assign unpack_write_req_op_sel_6 = _myaxi_write_req_fifo_rdata[136:129];
+  assign unpack_write_req_local_addr_7 = _myaxi_write_req_fifo_rdata[128:97];
+  assign unpack_write_req_local_stride_8 = _myaxi_write_req_fifo_rdata[96:65];
+  assign unpack_write_req_size_9 = _myaxi_write_req_fifo_rdata[64:32];
+  assign unpack_write_req_local_blocksize_10 = _myaxi_write_req_fifo_rdata[31:0];
+  assign _myaxi_write_op_sel_fifo = unpack_write_req_op_sel_6;
+  assign _myaxi_write_local_addr_fifo = unpack_write_req_local_addr_7;
+  assign _myaxi_write_local_stride_fifo = unpack_write_req_local_stride_8;
+  assign _myaxi_write_size_fifo = unpack_write_req_size_9;
+  assign _myaxi_write_local_blocksize_fifo = unpack_write_req_local_blocksize_10;
   reg [8-1:0] _myaxi_write_op_sel_buf;
   reg [32-1:0] _myaxi_write_local_addr_buf;
   reg [32-1:0] _myaxi_write_local_stride_buf;
   reg [33-1:0] _myaxi_write_size_buf;
+  reg [32-1:0] _myaxi_write_local_blocksize_buf;
   reg _myaxi_write_req_idle;
   reg _myaxi_write_data_idle;
   wire _myaxi_write_idle;
@@ -1061,131 +1075,127 @@ module blinkled
   reg signed [32-1:0] _th_matmul_a_addr_9;
   reg signed [32-1:0] _th_matmul_c_addr_10;
   reg signed [32-1:0] _th_matmul_i_11;
-  wire [32-1:0] mask_addr_shifted_9;
-  assign mask_addr_shifted_9 = _th_matmul_a_addr_9 >> 2;
-  wire [32-1:0] mask_addr_masked_10;
-  assign mask_addr_masked_10 = mask_addr_shifted_9 << 2;
+  wire [32-1:0] mask_addr_shifted_11;
+  assign mask_addr_shifted_11 = _th_matmul_a_addr_9 >> 2;
+  wire [32-1:0] mask_addr_masked_12;
+  assign mask_addr_masked_12 = mask_addr_shifted_11 << 2;
   reg [32-1:0] _myaxi_read_req_fsm;
   localparam _myaxi_read_req_fsm_init = 0;
   reg [33-1:0] _myaxi_read_cur_global_size;
   reg _myaxi_read_cont;
-  wire [8-1:0] pack_read_req_op_sel_11;
-  wire [32-1:0] pack_read_req_local_addr_12;
-  wire [32-1:0] pack_read_req_local_stride_13;
-  wire [33-1:0] pack_read_req_local_size_14;
-  assign pack_read_req_op_sel_11 = _myaxi_read_op_sel;
-  assign pack_read_req_local_addr_12 = _myaxi_read_local_addr;
-  assign pack_read_req_local_stride_13 = _myaxi_read_local_stride;
-  assign pack_read_req_local_size_14 = _myaxi_read_local_size;
-  wire [105-1:0] pack_read_req_packed_15;
-  assign pack_read_req_packed_15 = { pack_read_req_op_sel_11, pack_read_req_local_addr_12, pack_read_req_local_stride_13, pack_read_req_local_size_14 };
-  assign _myaxi_read_req_fifo_wdata = ((_myaxi_read_req_fsm == 0) && _myaxi_read_start && !_myaxi_read_req_fifo_almost_full)? pack_read_req_packed_15 : 'hx;
+  wire [8-1:0] pack_read_req_op_sel_13;
+  wire [32-1:0] pack_read_req_local_addr_14;
+  wire [32-1:0] pack_read_req_local_stride_15;
+  wire [33-1:0] pack_read_req_local_size_16;
+  wire [32-1:0] pack_read_req_local_blocksize_17;
+  assign pack_read_req_op_sel_13 = _myaxi_read_op_sel;
+  assign pack_read_req_local_addr_14 = _myaxi_read_local_addr;
+  assign pack_read_req_local_stride_15 = _myaxi_read_local_stride;
+  assign pack_read_req_local_size_16 = _myaxi_read_local_size;
+  assign pack_read_req_local_blocksize_17 = _myaxi_read_local_blocksize;
+  wire [137-1:0] pack_read_req_packed_18;
+  assign pack_read_req_packed_18 = { pack_read_req_op_sel_13, pack_read_req_local_addr_14, pack_read_req_local_stride_15, pack_read_req_local_size_16, pack_read_req_local_blocksize_17 };
+  assign _myaxi_read_req_fifo_wdata = ((_myaxi_read_req_fsm == 0) && _myaxi_read_start && !_myaxi_read_req_fifo_almost_full)? pack_read_req_packed_18 : 'hx;
   assign _myaxi_read_req_fifo_enq = ((_myaxi_read_req_fsm == 0) && _myaxi_read_start && !_myaxi_read_req_fifo_almost_full)? (_myaxi_read_req_fsm == 0) && _myaxi_read_start && !_myaxi_read_req_fifo_almost_full && !_myaxi_read_req_fifo_almost_full : 0;
-  localparam _tmp_16 = 1;
-  wire [_tmp_16-1:0] _tmp_17;
-  assign _tmp_17 = !_myaxi_read_req_fifo_almost_full;
-  reg [_tmp_16-1:0] __tmp_17_1;
-  wire [32-1:0] mask_addr_shifted_18;
-  assign mask_addr_shifted_18 = _myaxi_read_global_addr >> 2;
-  wire [32-1:0] mask_addr_masked_19;
-  assign mask_addr_masked_19 = mask_addr_shifted_18 << 2;
-  wire [32-1:0] mask_addr_shifted_20;
-  assign mask_addr_shifted_20 = _myaxi_read_global_addr >> 2;
-  wire [32-1:0] mask_addr_masked_21;
-  assign mask_addr_masked_21 = mask_addr_shifted_20 << 2;
-  wire [32-1:0] mask_addr_shifted_22;
-  assign mask_addr_shifted_22 = _myaxi_read_global_addr >> 2;
-  wire [32-1:0] mask_addr_masked_23;
-  assign mask_addr_masked_23 = mask_addr_shifted_22 << 2;
-  wire [32-1:0] mask_addr_shifted_24;
-  assign mask_addr_shifted_24 = _myaxi_read_global_addr >> 2;
-  wire [32-1:0] mask_addr_masked_25;
-  assign mask_addr_masked_25 = mask_addr_shifted_24 << 2;
-  wire [32-1:0] mask_addr_shifted_26;
-  assign mask_addr_shifted_26 = _myaxi_read_global_addr >> 2;
-  wire [32-1:0] mask_addr_masked_27;
-  assign mask_addr_masked_27 = mask_addr_shifted_26 << 2;
-  wire [32-1:0] mask_addr_shifted_28;
-  assign mask_addr_shifted_28 = _myaxi_read_global_addr >> 2;
-  wire [32-1:0] mask_addr_masked_29;
-  assign mask_addr_masked_29 = mask_addr_shifted_28 << 2;
+  localparam _tmp_19 = 1;
+  wire [_tmp_19-1:0] _tmp_20;
+  assign _tmp_20 = !_myaxi_read_req_fifo_almost_full;
+  reg [_tmp_19-1:0] __tmp_20_1;
+  wire [32-1:0] mask_addr_shifted_21;
+  assign mask_addr_shifted_21 = _myaxi_read_global_addr >> 2;
+  wire [32-1:0] mask_addr_masked_22;
+  assign mask_addr_masked_22 = mask_addr_shifted_21 << 2;
+  wire [32-1:0] mask_addr_shifted_23;
+  assign mask_addr_shifted_23 = _myaxi_read_global_addr >> 2;
+  wire [32-1:0] mask_addr_masked_24;
+  assign mask_addr_masked_24 = mask_addr_shifted_23 << 2;
+  wire [32-1:0] mask_addr_shifted_25;
+  assign mask_addr_shifted_25 = _myaxi_read_global_addr >> 2;
+  wire [32-1:0] mask_addr_masked_26;
+  assign mask_addr_masked_26 = mask_addr_shifted_25 << 2;
+  wire [32-1:0] mask_addr_shifted_27;
+  assign mask_addr_shifted_27 = _myaxi_read_global_addr >> 2;
+  wire [32-1:0] mask_addr_masked_28;
+  assign mask_addr_masked_28 = mask_addr_shifted_27 << 2;
+  wire [32-1:0] mask_addr_shifted_29;
+  assign mask_addr_shifted_29 = _myaxi_read_global_addr >> 2;
+  wire [32-1:0] mask_addr_masked_30;
+  assign mask_addr_masked_30 = mask_addr_shifted_29 << 2;
+  wire [32-1:0] mask_addr_shifted_31;
+  assign mask_addr_shifted_31 = _myaxi_read_global_addr >> 2;
+  wire [32-1:0] mask_addr_masked_32;
+  assign mask_addr_masked_32 = mask_addr_shifted_31 << 2;
   reg _myaxi_cond_0_1;
   reg [32-1:0] _myaxi_read_data_fsm;
   localparam _myaxi_read_data_fsm_init = 0;
   reg [32-1:0] write_burst_fsm_0;
   localparam write_burst_fsm_0_init = 0;
-  reg [10-1:0] write_burst_addr_30;
-  reg [10-1:0] write_burst_stride_31;
-  reg [33-1:0] write_burst_length_32;
-  reg write_burst_done_33;
+  reg [10-1:0] write_burst_addr_33;
+  reg [10-1:0] write_burst_stride_34;
+  reg [33-1:0] write_burst_length_35;
+  reg write_burst_done_36;
   assign ram_a_0_wdata = ((write_burst_fsm_0 == 1) && myaxi_rvalid)? myaxi_rdata : 'hx;
   assign ram_a_0_wenable = ((write_burst_fsm_0 == 1) && myaxi_rvalid)? 1'd1 : 0;
   reg signed [32-1:0] _th_matmul_b_addr_12;
   reg signed [32-1:0] _th_matmul_j_13;
-  wire [32-1:0] mask_addr_shifted_34;
-  assign mask_addr_shifted_34 = _th_matmul_b_addr_12 >> 2;
-  wire [32-1:0] mask_addr_masked_35;
-  assign mask_addr_masked_35 = mask_addr_shifted_34 << 2;
+  wire [32-1:0] mask_addr_shifted_37;
+  assign mask_addr_shifted_37 = _th_matmul_b_addr_12 >> 2;
+  wire [32-1:0] mask_addr_masked_38;
+  assign mask_addr_masked_38 = mask_addr_shifted_37 << 2;
   reg [32-1:0] write_burst_fsm_1;
   localparam write_burst_fsm_1_init = 0;
-  reg [10-1:0] write_burst_addr_36;
-  reg [10-1:0] write_burst_stride_37;
-  reg [33-1:0] write_burst_length_38;
-  reg write_burst_done_39;
+  reg [10-1:0] write_burst_addr_39;
+  reg [10-1:0] write_burst_stride_40;
+  reg [33-1:0] write_burst_length_41;
+  reg write_burst_done_42;
   assign ram_b_0_wdata = ((write_burst_fsm_1 == 1) && myaxi_rvalid)? myaxi_rdata : 'hx;
   assign ram_b_0_wenable = ((write_burst_fsm_1 == 1) && myaxi_rvalid)? 1'd1 : 0;
   reg signed [32-1:0] _th_matmul_sum_14;
   reg signed [32-1:0] _th_matmul_k_15;
   assign ram_a_0_addr = (th_matmul == 16)? _th_matmul_k_15 : 
-                        ((write_burst_fsm_0 == 1) && myaxi_rvalid)? write_burst_addr_30 : 'hx;
+                        ((write_burst_fsm_0 == 1) && myaxi_rvalid)? write_burst_addr_33 : 'hx;
   assign ram_a_0_enable = (th_matmul == 16)? 1'd1 : 
                           ((write_burst_fsm_0 == 1) && myaxi_rvalid)? 1'd1 : 0;
-  localparam _tmp_40 = 1;
-  wire [_tmp_40-1:0] _tmp_41;
-  assign _tmp_41 = th_matmul == 16;
-  reg [_tmp_40-1:0] __tmp_41_1;
-  reg signed [32-1:0] _tmp_42;
-  reg signed [32-1:0] _th_matmul_x_16;
-  assign ram_b_0_addr = (th_matmul == 18)? _th_matmul_k_15 : 
-                        ((write_burst_fsm_1 == 1) && myaxi_rvalid)? write_burst_addr_36 : 'hx;
-  assign ram_b_0_enable = (th_matmul == 18)? 1'd1 : 
-                          ((write_burst_fsm_1 == 1) && myaxi_rvalid)? 1'd1 : 0;
   localparam _tmp_43 = 1;
   wire [_tmp_43-1:0] _tmp_44;
-  assign _tmp_44 = th_matmul == 18;
+  assign _tmp_44 = th_matmul == 16;
   reg [_tmp_43-1:0] __tmp_44_1;
-  reg signed [32-1:0] _tmp_45;
+  reg signed [32-1:0] read_rdata_45;
+  reg signed [32-1:0] _th_matmul_x_16;
+  assign ram_b_0_addr = (th_matmul == 18)? _th_matmul_k_15 : 
+                        ((write_burst_fsm_1 == 1) && myaxi_rvalid)? write_burst_addr_39 : 'hx;
+  assign ram_b_0_enable = (th_matmul == 18)? 1'd1 : 
+                          ((write_burst_fsm_1 == 1) && myaxi_rvalid)? 1'd1 : 0;
+  localparam _tmp_46 = 1;
+  wire [_tmp_46-1:0] _tmp_47;
+  assign _tmp_47 = th_matmul == 18;
+  reg [_tmp_46-1:0] __tmp_47_1;
+  reg signed [32-1:0] read_rdata_48;
   reg signed [32-1:0] _th_matmul_y_17;
-  wire [32-1:0] mask_addr_shifted_46;
-  assign mask_addr_shifted_46 = _th_matmul_c_addr_10 >> 2;
-  wire [32-1:0] mask_addr_masked_47;
-  assign mask_addr_masked_47 = mask_addr_shifted_46 << 2;
+  wire [32-1:0] mask_addr_shifted_49;
+  assign mask_addr_shifted_49 = _th_matmul_c_addr_10 >> 2;
+  wire [32-1:0] mask_addr_masked_50;
+  assign mask_addr_masked_50 = mask_addr_shifted_49 << 2;
   reg [32-1:0] _myaxi_write_req_fsm;
   localparam _myaxi_write_req_fsm_init = 0;
   reg [33-1:0] _myaxi_write_cur_global_size;
   reg _myaxi_write_cont;
-  wire [8-1:0] pack_write_req_op_sel_48;
-  wire [32-1:0] pack_write_req_local_addr_49;
-  wire [32-1:0] pack_write_req_local_stride_50;
-  wire [33-1:0] pack_write_req_size_51;
-  assign pack_write_req_op_sel_48 = _myaxi_write_op_sel;
-  assign pack_write_req_local_addr_49 = _myaxi_write_local_addr;
-  assign pack_write_req_local_stride_50 = _myaxi_write_local_stride;
-  assign pack_write_req_size_51 = _myaxi_write_local_size;
-  wire [105-1:0] pack_write_req_packed_52;
-  assign pack_write_req_packed_52 = { pack_write_req_op_sel_48, pack_write_req_local_addr_49, pack_write_req_local_stride_50, pack_write_req_size_51 };
-  localparam _tmp_53 = 1;
-  wire [_tmp_53-1:0] _tmp_54;
-  assign _tmp_54 = !_myaxi_write_req_fifo_almost_full;
-  reg [_tmp_53-1:0] __tmp_54_1;
-  wire [32-1:0] mask_addr_shifted_55;
-  assign mask_addr_shifted_55 = _myaxi_write_global_addr >> 2;
-  wire [32-1:0] mask_addr_masked_56;
-  assign mask_addr_masked_56 = mask_addr_shifted_55 << 2;
-  wire [32-1:0] mask_addr_shifted_57;
-  assign mask_addr_shifted_57 = _myaxi_write_global_addr >> 2;
-  wire [32-1:0] mask_addr_masked_58;
-  assign mask_addr_masked_58 = mask_addr_shifted_57 << 2;
+  wire [8-1:0] pack_write_req_op_sel_51;
+  wire [32-1:0] pack_write_req_local_addr_52;
+  wire [32-1:0] pack_write_req_local_stride_53;
+  wire [33-1:0] pack_write_req_size_54;
+  wire [32-1:0] pack_write_req_local_blocksize_55;
+  assign pack_write_req_op_sel_51 = _myaxi_write_op_sel;
+  assign pack_write_req_local_addr_52 = _myaxi_write_local_addr;
+  assign pack_write_req_local_stride_53 = _myaxi_write_local_stride;
+  assign pack_write_req_size_54 = _myaxi_write_local_size;
+  assign pack_write_req_local_blocksize_55 = _myaxi_write_local_blocksize;
+  wire [137-1:0] pack_write_req_packed_56;
+  assign pack_write_req_packed_56 = { pack_write_req_op_sel_51, pack_write_req_local_addr_52, pack_write_req_local_stride_53, pack_write_req_size_54, pack_write_req_local_blocksize_55 };
+  localparam _tmp_57 = 1;
+  wire [_tmp_57-1:0] _tmp_58;
+  assign _tmp_58 = !_myaxi_write_req_fifo_almost_full;
+  reg [_tmp_57-1:0] __tmp_58_1;
   wire [32-1:0] mask_addr_shifted_59;
   assign mask_addr_shifted_59 = _myaxi_write_global_addr >> 2;
   wire [32-1:0] mask_addr_masked_60;
@@ -1202,40 +1212,50 @@ module blinkled
   assign mask_addr_shifted_65 = _myaxi_write_global_addr >> 2;
   wire [32-1:0] mask_addr_masked_66;
   assign mask_addr_masked_66 = mask_addr_shifted_65 << 2;
-  wire [8-1:0] pack_write_req_op_sel_67;
-  wire [32-1:0] pack_write_req_local_addr_68;
-  wire [32-1:0] pack_write_req_local_stride_69;
-  wire [33-1:0] pack_write_req_size_70;
-  assign pack_write_req_op_sel_67 = _myaxi_write_op_sel;
-  assign pack_write_req_local_addr_68 = _myaxi_write_local_addr;
-  assign pack_write_req_local_stride_69 = _myaxi_write_local_stride;
-  assign pack_write_req_size_70 = _myaxi_write_cur_global_size;
-  wire [105-1:0] pack_write_req_packed_71;
-  assign pack_write_req_packed_71 = { pack_write_req_op_sel_67, pack_write_req_local_addr_68, pack_write_req_local_stride_69, pack_write_req_size_70 };
-  assign _myaxi_write_req_fifo_wdata = ((_myaxi_write_req_fsm == 1) && !_myaxi_write_req_fifo_almost_full && (myaxi_awready || !myaxi_awvalid) && (outstanding_wcount_0 < 6))? pack_write_req_packed_71 : 
-                                       ((_myaxi_write_req_fsm == 0) && _myaxi_write_start && !_myaxi_write_req_fifo_almost_full)? pack_write_req_packed_52 : 'hx;
+  wire [32-1:0] mask_addr_shifted_67;
+  assign mask_addr_shifted_67 = _myaxi_write_global_addr >> 2;
+  wire [32-1:0] mask_addr_masked_68;
+  assign mask_addr_masked_68 = mask_addr_shifted_67 << 2;
+  wire [32-1:0] mask_addr_shifted_69;
+  assign mask_addr_shifted_69 = _myaxi_write_global_addr >> 2;
+  wire [32-1:0] mask_addr_masked_70;
+  assign mask_addr_masked_70 = mask_addr_shifted_69 << 2;
+  wire [8-1:0] pack_write_req_op_sel_71;
+  wire [32-1:0] pack_write_req_local_addr_72;
+  wire [32-1:0] pack_write_req_local_stride_73;
+  wire [33-1:0] pack_write_req_size_74;
+  wire [32-1:0] pack_write_req_local_blocksize_75;
+  assign pack_write_req_op_sel_71 = _myaxi_write_op_sel;
+  assign pack_write_req_local_addr_72 = _myaxi_write_local_addr;
+  assign pack_write_req_local_stride_73 = _myaxi_write_local_stride;
+  assign pack_write_req_size_74 = _myaxi_write_cur_global_size;
+  assign pack_write_req_local_blocksize_75 = _myaxi_write_local_blocksize;
+  wire [137-1:0] pack_write_req_packed_76;
+  assign pack_write_req_packed_76 = { pack_write_req_op_sel_71, pack_write_req_local_addr_72, pack_write_req_local_stride_73, pack_write_req_size_74, pack_write_req_local_blocksize_75 };
+  assign _myaxi_write_req_fifo_wdata = ((_myaxi_write_req_fsm == 1) && !_myaxi_write_req_fifo_almost_full && (myaxi_awready || !myaxi_awvalid) && (outstanding_wcount_0 < 6))? pack_write_req_packed_76 : 
+                                       ((_myaxi_write_req_fsm == 0) && _myaxi_write_start && !_myaxi_write_req_fifo_almost_full)? pack_write_req_packed_56 : 'hx;
   assign _myaxi_write_req_fifo_enq = ((_myaxi_write_req_fsm == 1) && !_myaxi_write_req_fifo_almost_full && (myaxi_awready || !myaxi_awvalid) && (outstanding_wcount_0 < 6))? (_myaxi_write_req_fsm == 1) && !_myaxi_write_req_fifo_almost_full && (myaxi_awready || !myaxi_awvalid) && (outstanding_wcount_0 < 6) && !_myaxi_write_req_fifo_almost_full : 
                                      ((_myaxi_write_req_fsm == 0) && _myaxi_write_start && !_myaxi_write_req_fifo_almost_full)? (_myaxi_write_req_fsm == 0) && _myaxi_write_start && !_myaxi_write_req_fifo_almost_full && !_myaxi_write_req_fifo_almost_full : 0;
-  localparam _tmp_72 = 1;
-  wire [_tmp_72-1:0] _tmp_73;
-  assign _tmp_73 = !_myaxi_write_req_fifo_almost_full;
-  reg [_tmp_72-1:0] __tmp_73_1;
+  localparam _tmp_77 = 1;
+  wire [_tmp_77-1:0] _tmp_78;
+  assign _tmp_78 = !_myaxi_write_req_fifo_almost_full;
+  reg [_tmp_77-1:0] __tmp_78_1;
   reg _myaxi_cond_1_1;
   reg [32-1:0] _myaxi_write_data_fsm;
   localparam _myaxi_write_data_fsm_init = 0;
   reg [32-1:0] read_burst_fsm_2;
   localparam read_burst_fsm_2_init = 0;
-  reg [10-1:0] read_burst_addr_74;
-  reg [10-1:0] read_burst_stride_75;
-  reg [33-1:0] read_burst_length_76;
-  reg read_burst_rvalid_77;
-  reg read_burst_rlast_78;
-  localparam _tmp_79 = 1;
-  wire [_tmp_79-1:0] _tmp_80;
-  assign _tmp_80 = (read_burst_fsm_2 == 1) && (!read_burst_rvalid_77 || (myaxi_wready || !myaxi_wvalid) && (_myaxi_write_size_buf > 0));
-  reg [_tmp_79-1:0] __tmp_80_1;
-  wire [32-1:0] read_burst_rdata_81;
-  assign read_burst_rdata_81 = ram_c_0_rdata;
+  reg [10-1:0] read_burst_addr_79;
+  reg [10-1:0] read_burst_stride_80;
+  reg [33-1:0] read_burst_length_81;
+  reg read_burst_rvalid_82;
+  reg read_burst_rlast_83;
+  localparam _tmp_84 = 1;
+  wire [_tmp_84-1:0] _tmp_85;
+  assign _tmp_85 = (read_burst_fsm_2 == 1) && (!read_burst_rvalid_82 || (myaxi_wready || !myaxi_wvalid) && (_myaxi_write_size_buf > 0));
+  reg [_tmp_84-1:0] __tmp_85_1;
+  wire [32-1:0] read_burst_rdata_86;
+  assign read_burst_rdata_86 = ram_c_0_rdata;
   assign _myaxi_write_req_fifo_deq = ((_myaxi_write_data_fsm == 2) && (!_myaxi_write_req_fifo_empty && (_myaxi_write_size_buf == 0)) && !_myaxi_write_req_fifo_empty)? 1 : 
                                      ((_myaxi_write_data_fsm == 0) && (_myaxi_write_data_idle && !_myaxi_write_req_fifo_empty && (_myaxi_write_op_sel_fifo == 1)) && !_myaxi_write_req_fifo_empty)? 1 : 0;
   reg _myaxi_cond_2_1;
@@ -1248,19 +1268,19 @@ module blinkled
   reg signed [32-1:0] _th_matmul_all_ok_24;
   reg signed [32-1:0] _th_matmul_c_addr_25;
   reg signed [32-1:0] _th_matmul_i_26;
-  wire [32-1:0] mask_addr_shifted_82;
-  assign mask_addr_shifted_82 = _th_matmul_c_addr_25 >> 2;
-  wire [32-1:0] mask_addr_masked_83;
-  assign mask_addr_masked_83 = mask_addr_shifted_82 << 2;
+  wire [32-1:0] mask_addr_shifted_87;
+  assign mask_addr_shifted_87 = _th_matmul_c_addr_25 >> 2;
+  wire [32-1:0] mask_addr_masked_88;
+  assign mask_addr_masked_88 = mask_addr_shifted_87 << 2;
   assign _myaxi_read_req_fifo_deq = ((_myaxi_read_data_fsm == 0) && (_myaxi_read_data_idle && !_myaxi_read_req_fifo_empty && (_myaxi_read_op_sel_fifo == 3)) && !_myaxi_read_req_fifo_empty)? 1 : 
                                     ((_myaxi_read_data_fsm == 0) && (_myaxi_read_data_idle && !_myaxi_read_req_fifo_empty && (_myaxi_read_op_sel_fifo == 2)) && !_myaxi_read_req_fifo_empty)? 1 : 
                                     ((_myaxi_read_data_fsm == 0) && (_myaxi_read_data_idle && !_myaxi_read_req_fifo_empty && (_myaxi_read_op_sel_fifo == 1)) && !_myaxi_read_req_fifo_empty)? 1 : 0;
   reg [32-1:0] write_burst_fsm_3;
   localparam write_burst_fsm_3_init = 0;
-  reg [10-1:0] write_burst_addr_84;
-  reg [10-1:0] write_burst_stride_85;
-  reg [33-1:0] write_burst_length_86;
-  reg write_burst_done_87;
+  reg [10-1:0] write_burst_addr_89;
+  reg [10-1:0] write_burst_stride_90;
+  reg [33-1:0] write_burst_length_91;
+  reg write_burst_done_92;
   assign ram_c_0_wdata = ((write_burst_fsm_3 == 1) && myaxi_rvalid)? myaxi_rdata : 
                          (th_matmul == 22)? _th_matmul_sum_14 : 'hx;
   assign ram_c_0_wenable = ((write_burst_fsm_3 == 1) && myaxi_rvalid)? 1'd1 : 
@@ -1268,18 +1288,18 @@ module blinkled
   assign myaxi_rready = (_myaxi_read_data_fsm == 2) || (_myaxi_read_data_fsm == 2) || (_myaxi_read_data_fsm == 2);
   reg signed [32-1:0] _th_matmul_j_27;
   assign ram_c_0_addr = (th_matmul == 42)? _th_matmul_j_27 : 
-                        ((write_burst_fsm_3 == 1) && myaxi_rvalid)? write_burst_addr_84 : 
-                        ((read_burst_fsm_2 == 1) && (!read_burst_rvalid_77 || (myaxi_wready || !myaxi_wvalid) && (_myaxi_write_size_buf > 0)))? read_burst_addr_74 : 
+                        ((write_burst_fsm_3 == 1) && myaxi_rvalid)? write_burst_addr_89 : 
+                        ((read_burst_fsm_2 == 1) && (!read_burst_rvalid_82 || (myaxi_wready || !myaxi_wvalid) && (_myaxi_write_size_buf > 0)))? read_burst_addr_79 : 
                         (th_matmul == 22)? _th_matmul_j_13 : 'hx;
   assign ram_c_0_enable = (th_matmul == 42)? 1'd1 : 
                           ((write_burst_fsm_3 == 1) && myaxi_rvalid)? 1'd1 : 
-                          ((read_burst_fsm_2 == 1) && (!read_burst_rvalid_77 || (myaxi_wready || !myaxi_wvalid) && (_myaxi_write_size_buf > 0)))? 1'd1 : 
+                          ((read_burst_fsm_2 == 1) && (!read_burst_rvalid_82 || (myaxi_wready || !myaxi_wvalid) && (_myaxi_write_size_buf > 0)))? 1'd1 : 
                           (th_matmul == 22)? 1'd1 : 0;
-  localparam _tmp_88 = 1;
-  wire [_tmp_88-1:0] _tmp_89;
-  assign _tmp_89 = th_matmul == 42;
-  reg [_tmp_88-1:0] __tmp_89_1;
-  reg signed [32-1:0] _tmp_90;
+  localparam _tmp_93 = 1;
+  wire [_tmp_93-1:0] _tmp_94;
+  assign _tmp_94 = th_matmul == 42;
+  reg [_tmp_93-1:0] __tmp_94_1;
+  reg signed [32-1:0] read_rdata_95;
   reg signed [32-1:0] _th_matmul_v_28;
 
   always @(posedge CLK) begin
@@ -1287,15 +1307,6 @@ module blinkled
       timer <= 0;
     end else begin
       timer <= timer + 1;
-    end
-  end
-
-
-  always @(posedge CLK) begin
-    if(RST) begin
-      __tmp_41_1 <= 0;
-    end else begin
-      __tmp_41_1 <= _tmp_41;
     end
   end
 
@@ -1311,11 +1322,20 @@ module blinkled
 
   always @(posedge CLK) begin
     if(RST) begin
-      __tmp_80_1 <= 0;
-      __tmp_89_1 <= 0;
+      __tmp_47_1 <= 0;
     end else begin
-      __tmp_80_1 <= _tmp_80;
-      __tmp_89_1 <= _tmp_89;
+      __tmp_47_1 <= _tmp_47;
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      __tmp_85_1 <= 0;
+      __tmp_94_1 <= 0;
+    end else begin
+      __tmp_85_1 <= _tmp_85;
+      __tmp_94_1 <= _tmp_94;
     end
   end
 
@@ -1331,6 +1351,7 @@ module blinkled
       _myaxi_read_local_addr <= 0;
       _myaxi_read_local_stride <= 0;
       _myaxi_read_local_size <= 0;
+      _myaxi_read_local_blocksize <= 0;
       _myaxi_read_req_idle <= 1;
       _myaxi_read_cur_global_size <= 0;
       myaxi_araddr <= 0;
@@ -1342,12 +1363,14 @@ module blinkled
       _myaxi_read_local_addr_buf <= 0;
       _myaxi_read_local_stride_buf <= 0;
       _myaxi_read_local_size_buf <= 0;
+      _myaxi_read_local_blocksize_buf <= 0;
       _myaxi_write_op_sel <= 0;
       _myaxi_write_global_addr <= 0;
       _myaxi_write_global_size <= 0;
       _myaxi_write_local_addr <= 0;
       _myaxi_write_local_stride <= 0;
       _myaxi_write_local_size <= 0;
+      _myaxi_write_local_blocksize <= 0;
       _myaxi_write_req_idle <= 1;
       _myaxi_write_cur_global_size <= 0;
       myaxi_awaddr <= 0;
@@ -1359,6 +1382,7 @@ module blinkled
       _myaxi_write_local_addr_buf <= 0;
       _myaxi_write_local_stride_buf <= 0;
       _myaxi_write_size_buf <= 0;
+      _myaxi_write_local_blocksize_buf <= 0;
       myaxi_wdata <= 0;
       myaxi_wvalid <= 0;
       myaxi_wlast <= 0;
@@ -1386,11 +1410,12 @@ module blinkled
       if((th_matmul == 6) && _myaxi_read_req_idle) begin
         _myaxi_read_start <= 1;
         _myaxi_read_op_sel <= 1;
-        _myaxi_read_global_addr <= mask_addr_masked_10;
+        _myaxi_read_global_addr <= mask_addr_masked_12;
         _myaxi_read_global_size <= _th_matmul_matrix_size_5;
         _myaxi_read_local_addr <= 0;
         _myaxi_read_local_stride <= 1;
         _myaxi_read_local_size <= _th_matmul_matrix_size_5;
+        _myaxi_read_local_blocksize <= 1;
       end 
       if((_myaxi_read_req_fsm == 0) && _myaxi_read_start) begin
         _myaxi_read_req_idle <= 0;
@@ -1398,15 +1423,15 @@ module blinkled
       if(_myaxi_read_start && _myaxi_read_req_fifo_almost_full) begin
         _myaxi_read_start <= 1;
       end 
-      if((_myaxi_read_req_fsm == 0) && (_myaxi_read_start || _myaxi_read_cont) && !_myaxi_read_req_fifo_almost_full && (_myaxi_read_global_size <= 256) && ((mask_addr_masked_19 & 4095) + (_myaxi_read_global_size << 2) >= 4096)) begin
-        _myaxi_read_cur_global_size <= 4096 - (mask_addr_masked_21 & 4095) >> 2;
-        _myaxi_read_global_size <= _myaxi_read_global_size - (4096 - (mask_addr_masked_23 & 4095) >> 2);
+      if((_myaxi_read_req_fsm == 0) && (_myaxi_read_start || _myaxi_read_cont) && !_myaxi_read_req_fifo_almost_full && (_myaxi_read_global_size <= 256) && ((mask_addr_masked_22 & 4095) + (_myaxi_read_global_size << 2) >= 4096)) begin
+        _myaxi_read_cur_global_size <= 4096 - (mask_addr_masked_24 & 4095) >> 2;
+        _myaxi_read_global_size <= _myaxi_read_global_size - (4096 - (mask_addr_masked_26 & 4095) >> 2);
       end else if((_myaxi_read_req_fsm == 0) && (_myaxi_read_start || _myaxi_read_cont) && !_myaxi_read_req_fifo_almost_full && (_myaxi_read_global_size <= 256)) begin
         _myaxi_read_cur_global_size <= _myaxi_read_global_size;
         _myaxi_read_global_size <= 0;
-      end else if((_myaxi_read_req_fsm == 0) && (_myaxi_read_start || _myaxi_read_cont) && !_myaxi_read_req_fifo_almost_full && ((mask_addr_masked_25 & 4095) + 1024 >= 4096)) begin
-        _myaxi_read_cur_global_size <= 4096 - (mask_addr_masked_27 & 4095) >> 2;
-        _myaxi_read_global_size <= _myaxi_read_global_size - (4096 - (mask_addr_masked_29 & 4095) >> 2);
+      end else if((_myaxi_read_req_fsm == 0) && (_myaxi_read_start || _myaxi_read_cont) && !_myaxi_read_req_fifo_almost_full && ((mask_addr_masked_28 & 4095) + 1024 >= 4096)) begin
+        _myaxi_read_cur_global_size <= 4096 - (mask_addr_masked_30 & 4095) >> 2;
+        _myaxi_read_global_size <= _myaxi_read_global_size - (4096 - (mask_addr_masked_32 & 4095) >> 2);
       end else if((_myaxi_read_req_fsm == 0) && (_myaxi_read_start || _myaxi_read_cont) && !_myaxi_read_req_fifo_almost_full) begin
         _myaxi_read_cur_global_size <= 256;
         _myaxi_read_global_size <= _myaxi_read_global_size - 256;
@@ -1432,6 +1457,7 @@ module blinkled
         _myaxi_read_local_addr_buf <= _myaxi_read_local_addr_fifo;
         _myaxi_read_local_stride_buf <= _myaxi_read_local_stride_fifo;
         _myaxi_read_local_size_buf <= _myaxi_read_local_size_fifo;
+        _myaxi_read_local_blocksize_buf <= _myaxi_read_local_blocksize_fifo;
       end 
       if((_myaxi_read_data_fsm == 2) && myaxi_rvalid) begin
         _myaxi_read_local_size_buf <= _myaxi_read_local_size_buf - 1;
@@ -1442,11 +1468,12 @@ module blinkled
       if((th_matmul == 11) && _myaxi_read_req_idle) begin
         _myaxi_read_start <= 1;
         _myaxi_read_op_sel <= 2;
-        _myaxi_read_global_addr <= mask_addr_masked_35;
+        _myaxi_read_global_addr <= mask_addr_masked_38;
         _myaxi_read_global_size <= _th_matmul_matrix_size_5;
         _myaxi_read_local_addr <= 0;
         _myaxi_read_local_stride <= 1;
         _myaxi_read_local_size <= _th_matmul_matrix_size_5;
+        _myaxi_read_local_blocksize <= 1;
       end 
       if((_myaxi_read_data_fsm == 0) && (_myaxi_read_data_idle && !_myaxi_read_req_fifo_empty && (_myaxi_read_op_sel_fifo == 2))) begin
         _myaxi_read_data_idle <= 0;
@@ -1454,6 +1481,7 @@ module blinkled
         _myaxi_read_local_addr_buf <= _myaxi_read_local_addr_fifo;
         _myaxi_read_local_stride_buf <= _myaxi_read_local_stride_fifo;
         _myaxi_read_local_size_buf <= _myaxi_read_local_size_fifo;
+        _myaxi_read_local_blocksize_buf <= _myaxi_read_local_blocksize_fifo;
       end 
       if((_myaxi_read_data_fsm == 2) && myaxi_rvalid) begin
         _myaxi_read_local_size_buf <= _myaxi_read_local_size_buf - 1;
@@ -1464,11 +1492,12 @@ module blinkled
       if((th_matmul == 25) && _myaxi_write_req_idle) begin
         _myaxi_write_start <= 1;
         _myaxi_write_op_sel <= 1;
-        _myaxi_write_global_addr <= mask_addr_masked_47;
+        _myaxi_write_global_addr <= mask_addr_masked_50;
         _myaxi_write_global_size <= _th_matmul_matrix_size_5;
         _myaxi_write_local_addr <= 0;
         _myaxi_write_local_stride <= 1;
         _myaxi_write_local_size <= _th_matmul_matrix_size_5;
+        _myaxi_write_local_blocksize <= 1;
       end 
       if((_myaxi_write_req_fsm == 0) && _myaxi_write_start) begin
         _myaxi_write_req_idle <= 0;
@@ -1476,15 +1505,15 @@ module blinkled
       if(_myaxi_write_start && _myaxi_write_req_fifo_almost_full) begin
         _myaxi_write_start <= 1;
       end 
-      if((_myaxi_write_req_fsm == 0) && (_myaxi_write_start || _myaxi_write_cont) && !_myaxi_write_req_fifo_almost_full && (_myaxi_write_global_size <= 256) && ((mask_addr_masked_56 & 4095) + (_myaxi_write_global_size << 2) >= 4096)) begin
-        _myaxi_write_cur_global_size <= 4096 - (mask_addr_masked_58 & 4095) >> 2;
-        _myaxi_write_global_size <= _myaxi_write_global_size - (4096 - (mask_addr_masked_60 & 4095) >> 2);
+      if((_myaxi_write_req_fsm == 0) && (_myaxi_write_start || _myaxi_write_cont) && !_myaxi_write_req_fifo_almost_full && (_myaxi_write_global_size <= 256) && ((mask_addr_masked_60 & 4095) + (_myaxi_write_global_size << 2) >= 4096)) begin
+        _myaxi_write_cur_global_size <= 4096 - (mask_addr_masked_62 & 4095) >> 2;
+        _myaxi_write_global_size <= _myaxi_write_global_size - (4096 - (mask_addr_masked_64 & 4095) >> 2);
       end else if((_myaxi_write_req_fsm == 0) && (_myaxi_write_start || _myaxi_write_cont) && !_myaxi_write_req_fifo_almost_full && (_myaxi_write_global_size <= 256)) begin
         _myaxi_write_cur_global_size <= _myaxi_write_global_size;
         _myaxi_write_global_size <= 0;
-      end else if((_myaxi_write_req_fsm == 0) && (_myaxi_write_start || _myaxi_write_cont) && !_myaxi_write_req_fifo_almost_full && ((mask_addr_masked_62 & 4095) + 1024 >= 4096)) begin
-        _myaxi_write_cur_global_size <= 4096 - (mask_addr_masked_64 & 4095) >> 2;
-        _myaxi_write_global_size <= _myaxi_write_global_size - (4096 - (mask_addr_masked_66 & 4095) >> 2);
+      end else if((_myaxi_write_req_fsm == 0) && (_myaxi_write_start || _myaxi_write_cont) && !_myaxi_write_req_fifo_almost_full && ((mask_addr_masked_66 & 4095) + 1024 >= 4096)) begin
+        _myaxi_write_cur_global_size <= 4096 - (mask_addr_masked_68 & 4095) >> 2;
+        _myaxi_write_global_size <= _myaxi_write_global_size - (4096 - (mask_addr_masked_70 & 4095) >> 2);
       end else if((_myaxi_write_req_fsm == 0) && (_myaxi_write_start || _myaxi_write_cont) && !_myaxi_write_req_fifo_almost_full) begin
         _myaxi_write_cur_global_size <= 256;
         _myaxi_write_global_size <= _myaxi_write_global_size - 256;
@@ -1513,6 +1542,7 @@ module blinkled
         _myaxi_write_local_addr_buf <= _myaxi_write_local_addr_fifo;
         _myaxi_write_local_stride_buf <= _myaxi_write_local_stride_fifo;
         _myaxi_write_size_buf <= _myaxi_write_size_fifo;
+        _myaxi_write_local_blocksize_buf <= _myaxi_write_local_blocksize_fifo;
       end 
       if(_myaxi_write_data_fsm == 1) begin
         _myaxi_write_size_buf <= 0;
@@ -1520,10 +1550,10 @@ module blinkled
       if((_myaxi_write_data_fsm == 2) && (!_myaxi_write_req_fifo_empty && (_myaxi_write_size_buf == 0))) begin
         _myaxi_write_size_buf <= _myaxi_write_size_fifo;
       end 
-      if((_myaxi_write_op_sel_buf == 1) && read_burst_rvalid_77 && ((myaxi_wready || !myaxi_wvalid) && (_myaxi_write_size_buf > 0)) && (myaxi_wready || !myaxi_wvalid)) begin
-        myaxi_wdata <= read_burst_rdata_81;
+      if((_myaxi_write_op_sel_buf == 1) && read_burst_rvalid_82 && ((myaxi_wready || !myaxi_wvalid) && (_myaxi_write_size_buf > 0)) && (myaxi_wready || !myaxi_wvalid)) begin
+        myaxi_wdata <= read_burst_rdata_86;
         myaxi_wvalid <= 1;
-        myaxi_wlast <= read_burst_rlast_78 || (_myaxi_write_size_buf == 1);
+        myaxi_wlast <= read_burst_rlast_83 || (_myaxi_write_size_buf == 1);
         myaxi_wstrb <= { 4{ 1'd1 } };
       end 
       _myaxi_cond_2_1 <= 1;
@@ -1531,20 +1561,21 @@ module blinkled
         myaxi_wvalid <= myaxi_wvalid;
         myaxi_wlast <= myaxi_wlast;
       end 
-      if((_myaxi_write_data_fsm == 2) && read_burst_rvalid_77 && ((myaxi_wready || !myaxi_wvalid) && (_myaxi_write_size_buf > 0))) begin
+      if((_myaxi_write_data_fsm == 2) && read_burst_rvalid_82 && ((myaxi_wready || !myaxi_wvalid) && (_myaxi_write_size_buf > 0))) begin
         _myaxi_write_size_buf <= _myaxi_write_size_buf - 1;
       end 
-      if((_myaxi_write_data_fsm == 2) && ((_myaxi_write_op_sel_buf == 1) && read_burst_rvalid_77 && ((myaxi_wready || !myaxi_wvalid) && (_myaxi_write_size_buf > 0))) && read_burst_rlast_78) begin
+      if((_myaxi_write_data_fsm == 2) && ((_myaxi_write_op_sel_buf == 1) && read_burst_rvalid_82 && ((myaxi_wready || !myaxi_wvalid) && (_myaxi_write_size_buf > 0))) && read_burst_rlast_83) begin
         _myaxi_write_data_idle <= 1;
       end 
       if((th_matmul == 38) && _myaxi_read_req_idle) begin
         _myaxi_read_start <= 1;
         _myaxi_read_op_sel <= 3;
-        _myaxi_read_global_addr <= mask_addr_masked_83;
+        _myaxi_read_global_addr <= mask_addr_masked_88;
         _myaxi_read_global_size <= _th_matmul_matrix_size_20;
         _myaxi_read_local_addr <= 0;
         _myaxi_read_local_stride <= 1;
         _myaxi_read_local_size <= _th_matmul_matrix_size_20;
+        _myaxi_read_local_blocksize <= 1;
       end 
       if((_myaxi_read_data_fsm == 0) && (_myaxi_read_data_idle && !_myaxi_read_req_fifo_empty && (_myaxi_read_op_sel_fifo == 3))) begin
         _myaxi_read_data_idle <= 0;
@@ -1552,6 +1583,7 @@ module blinkled
         _myaxi_read_local_addr_buf <= _myaxi_read_local_addr_fifo;
         _myaxi_read_local_stride_buf <= _myaxi_read_local_stride_fifo;
         _myaxi_read_local_size_buf <= _myaxi_read_local_size_fifo;
+        _myaxi_read_local_blocksize_buf <= _myaxi_read_local_blocksize_fifo;
       end 
       if((_myaxi_read_data_fsm == 2) && myaxi_rvalid) begin
         _myaxi_read_local_size_buf <= _myaxi_read_local_size_buf - 1;
@@ -1566,7 +1598,7 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       count__myaxi_read_req_fifo <= 0;
-      __tmp_17_1 <= 0;
+      __tmp_20_1 <= 0;
     end else begin
       if(_myaxi_read_req_fifo_enq && !_myaxi_read_req_fifo_full && (_myaxi_read_req_fifo_deq && !_myaxi_read_req_fifo_empty)) begin
         count__myaxi_read_req_fifo <= count__myaxi_read_req_fifo;
@@ -1575,7 +1607,7 @@ module blinkled
       end else if(_myaxi_read_req_fifo_deq && !_myaxi_read_req_fifo_empty) begin
         count__myaxi_read_req_fifo <= count__myaxi_read_req_fifo - 1;
       end 
-      __tmp_17_1 <= _tmp_17;
+      __tmp_20_1 <= _tmp_20;
     end
   end
 
@@ -1583,8 +1615,8 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       count__myaxi_write_req_fifo <= 0;
-      __tmp_54_1 <= 0;
-      __tmp_73_1 <= 0;
+      __tmp_58_1 <= 0;
+      __tmp_78_1 <= 0;
     end else begin
       if(_myaxi_write_req_fifo_enq && !_myaxi_write_req_fifo_full && (_myaxi_write_req_fifo_deq && !_myaxi_write_req_fifo_empty)) begin
         count__myaxi_write_req_fifo <= count__myaxi_write_req_fifo;
@@ -1593,8 +1625,8 @@ module blinkled
       end else if(_myaxi_write_req_fifo_deq && !_myaxi_write_req_fifo_empty) begin
         count__myaxi_write_req_fifo <= count__myaxi_write_req_fifo - 1;
       end 
-      __tmp_54_1 <= _tmp_54;
-      __tmp_73_1 <= _tmp_73;
+      __tmp_58_1 <= _tmp_58;
+      __tmp_78_1 <= _tmp_78;
     end
   end
 
@@ -1676,9 +1708,9 @@ module blinkled
       _th_matmul_j_13 <= 0;
       _th_matmul_sum_14 <= 0;
       _th_matmul_k_15 <= 0;
-      _tmp_42 <= 0;
+      read_rdata_45 <= 0;
       _th_matmul_x_16 <= 0;
-      _tmp_45 <= 0;
+      read_rdata_48 <= 0;
       _th_matmul_y_17 <= 0;
       _th_matmul_end_time_18 <= 0;
       _th_matmul_time_19 <= 0;
@@ -1690,7 +1722,7 @@ module blinkled
       _th_matmul_c_addr_25 <= 0;
       _th_matmul_i_26 <= 0;
       _th_matmul_j_27 <= 0;
-      _tmp_90 <= 0;
+      read_rdata_95 <= 0;
       _th_matmul_v_28 <= 0;
     end else begin
       case(th_matmul)
@@ -1779,27 +1811,27 @@ module blinkled
           end
         end
         th_matmul_16: begin
-          if(__tmp_41_1) begin
-            _tmp_42 <= ram_a_0_rdata;
+          if(__tmp_44_1) begin
+            read_rdata_45 <= ram_a_0_rdata;
           end 
-          if(__tmp_41_1) begin
+          if(__tmp_44_1) begin
             th_matmul <= th_matmul_17;
           end 
         end
         th_matmul_17: begin
-          _th_matmul_x_16 <= _tmp_42;
+          _th_matmul_x_16 <= read_rdata_45;
           th_matmul <= th_matmul_18;
         end
         th_matmul_18: begin
-          if(__tmp_44_1) begin
-            _tmp_45 <= ram_b_0_rdata;
+          if(__tmp_47_1) begin
+            read_rdata_48 <= ram_b_0_rdata;
           end 
-          if(__tmp_44_1) begin
+          if(__tmp_47_1) begin
             th_matmul <= th_matmul_19;
           end 
         end
         th_matmul_19: begin
-          _th_matmul_y_17 <= _tmp_45;
+          _th_matmul_y_17 <= read_rdata_48;
           th_matmul <= th_matmul_20;
         end
         th_matmul_20: begin
@@ -1903,15 +1935,15 @@ module blinkled
           end
         end
         th_matmul_42: begin
-          if(__tmp_89_1) begin
-            _tmp_90 <= ram_c_0_rdata;
+          if(__tmp_94_1) begin
+            read_rdata_95 <= ram_c_0_rdata;
           end 
-          if(__tmp_89_1) begin
+          if(__tmp_94_1) begin
             th_matmul <= th_matmul_43;
           end 
         end
         th_matmul_43: begin
-          _th_matmul_v_28 <= _tmp_90;
+          _th_matmul_v_28 <= read_rdata_95;
           th_matmul <= th_matmul_44;
         end
         th_matmul_44: begin
@@ -2054,34 +2086,34 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       write_burst_fsm_0 <= write_burst_fsm_0_init;
-      write_burst_addr_30 <= 0;
-      write_burst_stride_31 <= 0;
-      write_burst_length_32 <= 0;
-      write_burst_done_33 <= 0;
+      write_burst_addr_33 <= 0;
+      write_burst_stride_34 <= 0;
+      write_burst_length_35 <= 0;
+      write_burst_done_36 <= 0;
     end else begin
       case(write_burst_fsm_0)
         write_burst_fsm_0_init: begin
-          write_burst_addr_30 <= _myaxi_read_local_addr_buf;
-          write_burst_stride_31 <= _myaxi_read_local_stride_buf;
-          write_burst_length_32 <= _myaxi_read_local_size_buf;
-          write_burst_done_33 <= 0;
+          write_burst_addr_33 <= _myaxi_read_local_addr_buf;
+          write_burst_stride_34 <= _myaxi_read_local_stride_buf;
+          write_burst_length_35 <= _myaxi_read_local_size_buf;
+          write_burst_done_36 <= 0;
           if((_myaxi_read_data_fsm == 1) && (_myaxi_read_op_sel_buf == 1) && (_myaxi_read_local_size_buf > 0)) begin
             write_burst_fsm_0 <= write_burst_fsm_0_1;
           end 
         end
         write_burst_fsm_0_1: begin
           if(myaxi_rvalid) begin
-            write_burst_addr_30 <= write_burst_addr_30 + write_burst_stride_31;
-            write_burst_length_32 <= write_burst_length_32 - 1;
-            write_burst_done_33 <= 0;
+            write_burst_addr_33 <= write_burst_addr_33 + write_burst_stride_34;
+            write_burst_length_35 <= write_burst_length_35 - 1;
+            write_burst_done_36 <= 0;
           end 
-          if(myaxi_rvalid && (write_burst_length_32 <= 1)) begin
-            write_burst_done_33 <= 1;
+          if(myaxi_rvalid && (write_burst_length_35 <= 1)) begin
+            write_burst_done_36 <= 1;
           end 
           if(myaxi_rvalid && 0) begin
-            write_burst_done_33 <= 1;
+            write_burst_done_36 <= 1;
           end 
-          if(myaxi_rvalid && (write_burst_length_32 <= 1)) begin
+          if(myaxi_rvalid && (write_burst_length_35 <= 1)) begin
             write_burst_fsm_0 <= write_burst_fsm_0_init;
           end 
           if(myaxi_rvalid && 0) begin
@@ -2100,34 +2132,34 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       write_burst_fsm_1 <= write_burst_fsm_1_init;
-      write_burst_addr_36 <= 0;
-      write_burst_stride_37 <= 0;
-      write_burst_length_38 <= 0;
-      write_burst_done_39 <= 0;
+      write_burst_addr_39 <= 0;
+      write_burst_stride_40 <= 0;
+      write_burst_length_41 <= 0;
+      write_burst_done_42 <= 0;
     end else begin
       case(write_burst_fsm_1)
         write_burst_fsm_1_init: begin
-          write_burst_addr_36 <= _myaxi_read_local_addr_buf;
-          write_burst_stride_37 <= _myaxi_read_local_stride_buf;
-          write_burst_length_38 <= _myaxi_read_local_size_buf;
-          write_burst_done_39 <= 0;
+          write_burst_addr_39 <= _myaxi_read_local_addr_buf;
+          write_burst_stride_40 <= _myaxi_read_local_stride_buf;
+          write_burst_length_41 <= _myaxi_read_local_size_buf;
+          write_burst_done_42 <= 0;
           if((_myaxi_read_data_fsm == 1) && (_myaxi_read_op_sel_buf == 2) && (_myaxi_read_local_size_buf > 0)) begin
             write_burst_fsm_1 <= write_burst_fsm_1_1;
           end 
         end
         write_burst_fsm_1_1: begin
           if(myaxi_rvalid) begin
-            write_burst_addr_36 <= write_burst_addr_36 + write_burst_stride_37;
-            write_burst_length_38 <= write_burst_length_38 - 1;
-            write_burst_done_39 <= 0;
+            write_burst_addr_39 <= write_burst_addr_39 + write_burst_stride_40;
+            write_burst_length_41 <= write_burst_length_41 - 1;
+            write_burst_done_42 <= 0;
           end 
-          if(myaxi_rvalid && (write_burst_length_38 <= 1)) begin
-            write_burst_done_39 <= 1;
+          if(myaxi_rvalid && (write_burst_length_41 <= 1)) begin
+            write_burst_done_42 <= 1;
           end 
           if(myaxi_rvalid && 0) begin
-            write_burst_done_39 <= 1;
+            write_burst_done_42 <= 1;
           end 
-          if(myaxi_rvalid && (write_burst_length_38 <= 1)) begin
+          if(myaxi_rvalid && (write_burst_length_41 <= 1)) begin
             write_burst_fsm_1 <= write_burst_fsm_1_init;
           end 
           if(myaxi_rvalid && 0) begin
@@ -2186,7 +2218,7 @@ module blinkled
           _myaxi_write_data_fsm <= _myaxi_write_data_fsm_2;
         end
         _myaxi_write_data_fsm_2: begin
-          if((_myaxi_write_op_sel_buf == 1) && read_burst_rvalid_77 && ((myaxi_wready || !myaxi_wvalid) && (_myaxi_write_size_buf > 0)) && read_burst_rlast_78) begin
+          if((_myaxi_write_op_sel_buf == 1) && read_burst_rvalid_82 && ((myaxi_wready || !myaxi_wvalid) && (_myaxi_write_size_buf > 0)) && read_burst_rlast_83) begin
             _myaxi_write_data_fsm <= _myaxi_write_data_fsm_init;
           end 
         end
@@ -2199,41 +2231,41 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       read_burst_fsm_2 <= read_burst_fsm_2_init;
-      read_burst_addr_74 <= 0;
-      read_burst_stride_75 <= 0;
-      read_burst_length_76 <= 0;
-      read_burst_rvalid_77 <= 0;
-      read_burst_rlast_78 <= 0;
+      read_burst_addr_79 <= 0;
+      read_burst_stride_80 <= 0;
+      read_burst_length_81 <= 0;
+      read_burst_rvalid_82 <= 0;
+      read_burst_rlast_83 <= 0;
     end else begin
       case(read_burst_fsm_2)
         read_burst_fsm_2_init: begin
-          read_burst_addr_74 <= _myaxi_write_local_addr_buf;
-          read_burst_stride_75 <= _myaxi_write_local_stride_buf;
-          read_burst_length_76 <= _myaxi_write_size_buf;
-          read_burst_rvalid_77 <= 0;
-          read_burst_rlast_78 <= 0;
+          read_burst_addr_79 <= _myaxi_write_local_addr_buf;
+          read_burst_stride_80 <= _myaxi_write_local_stride_buf;
+          read_burst_length_81 <= _myaxi_write_size_buf;
+          read_burst_rvalid_82 <= 0;
+          read_burst_rlast_83 <= 0;
           if((_myaxi_write_data_fsm == 1) && (_myaxi_write_op_sel_buf == 1) && (_myaxi_write_size_buf > 0)) begin
             read_burst_fsm_2 <= read_burst_fsm_2_1;
           end 
         end
         read_burst_fsm_2_1: begin
-          if((myaxi_wready || !myaxi_wvalid) && (_myaxi_write_size_buf > 0) && (read_burst_length_76 > 0)) begin
-            read_burst_addr_74 <= read_burst_addr_74 + read_burst_stride_75;
-            read_burst_length_76 <= read_burst_length_76 - 1;
-            read_burst_rvalid_77 <= 1;
+          if((myaxi_wready || !myaxi_wvalid) && (_myaxi_write_size_buf > 0) && (read_burst_length_81 > 0)) begin
+            read_burst_addr_79 <= read_burst_addr_79 + read_burst_stride_80;
+            read_burst_length_81 <= read_burst_length_81 - 1;
+            read_burst_rvalid_82 <= 1;
           end 
-          if((myaxi_wready || !myaxi_wvalid) && (_myaxi_write_size_buf > 0) && (read_burst_length_76 <= 1)) begin
-            read_burst_rlast_78 <= 1;
+          if((myaxi_wready || !myaxi_wvalid) && (_myaxi_write_size_buf > 0) && (read_burst_length_81 <= 1)) begin
+            read_burst_rlast_83 <= 1;
           end 
-          if(read_burst_rlast_78 && read_burst_rvalid_77 && ((myaxi_wready || !myaxi_wvalid) && (_myaxi_write_size_buf > 0))) begin
-            read_burst_rvalid_77 <= 0;
-            read_burst_rlast_78 <= 0;
+          if(read_burst_rlast_83 && read_burst_rvalid_82 && ((myaxi_wready || !myaxi_wvalid) && (_myaxi_write_size_buf > 0))) begin
+            read_burst_rvalid_82 <= 0;
+            read_burst_rlast_83 <= 0;
           end 
           if(0) begin
-            read_burst_rvalid_77 <= 0;
-            read_burst_rlast_78 <= 0;
+            read_burst_rvalid_82 <= 0;
+            read_burst_rlast_83 <= 0;
           end 
-          if(read_burst_rlast_78 && read_burst_rvalid_77 && ((myaxi_wready || !myaxi_wvalid) && (_myaxi_write_size_buf > 0))) begin
+          if(read_burst_rlast_83 && read_burst_rvalid_82 && ((myaxi_wready || !myaxi_wvalid) && (_myaxi_write_size_buf > 0))) begin
             read_burst_fsm_2 <= read_burst_fsm_2_init;
           end 
           if(0) begin
@@ -2249,34 +2281,34 @@ module blinkled
   always @(posedge CLK) begin
     if(RST) begin
       write_burst_fsm_3 <= write_burst_fsm_3_init;
-      write_burst_addr_84 <= 0;
-      write_burst_stride_85 <= 0;
-      write_burst_length_86 <= 0;
-      write_burst_done_87 <= 0;
+      write_burst_addr_89 <= 0;
+      write_burst_stride_90 <= 0;
+      write_burst_length_91 <= 0;
+      write_burst_done_92 <= 0;
     end else begin
       case(write_burst_fsm_3)
         write_burst_fsm_3_init: begin
-          write_burst_addr_84 <= _myaxi_read_local_addr_buf;
-          write_burst_stride_85 <= _myaxi_read_local_stride_buf;
-          write_burst_length_86 <= _myaxi_read_local_size_buf;
-          write_burst_done_87 <= 0;
+          write_burst_addr_89 <= _myaxi_read_local_addr_buf;
+          write_burst_stride_90 <= _myaxi_read_local_stride_buf;
+          write_burst_length_91 <= _myaxi_read_local_size_buf;
+          write_burst_done_92 <= 0;
           if((_myaxi_read_data_fsm == 1) && (_myaxi_read_op_sel_buf == 3) && (_myaxi_read_local_size_buf > 0)) begin
             write_burst_fsm_3 <= write_burst_fsm_3_1;
           end 
         end
         write_burst_fsm_3_1: begin
           if(myaxi_rvalid) begin
-            write_burst_addr_84 <= write_burst_addr_84 + write_burst_stride_85;
-            write_burst_length_86 <= write_burst_length_86 - 1;
-            write_burst_done_87 <= 0;
+            write_burst_addr_89 <= write_burst_addr_89 + write_burst_stride_90;
+            write_burst_length_91 <= write_burst_length_91 - 1;
+            write_burst_done_92 <= 0;
           end 
-          if(myaxi_rvalid && (write_burst_length_86 <= 1)) begin
-            write_burst_done_87 <= 1;
+          if(myaxi_rvalid && (write_burst_length_91 <= 1)) begin
+            write_burst_done_92 <= 1;
           end 
           if(myaxi_rvalid && 0) begin
-            write_burst_done_87 <= 1;
+            write_burst_done_92 <= 1;
           end 
-          if(myaxi_rvalid && (write_burst_length_86 <= 1)) begin
+          if(myaxi_rvalid && (write_burst_length_91 <= 1)) begin
             write_burst_fsm_3 <= write_burst_fsm_3_init;
           end 
           if(myaxi_rvalid && 0) begin
@@ -2390,16 +2422,16 @@ module _myaxi_read_req_fifo
   input CLK,
   input RST,
   input _myaxi_read_req_fifo_enq,
-  input [105-1:0] _myaxi_read_req_fifo_wdata,
+  input [137-1:0] _myaxi_read_req_fifo_wdata,
   output _myaxi_read_req_fifo_full,
   output _myaxi_read_req_fifo_almost_full,
   input _myaxi_read_req_fifo_deq,
-  output [105-1:0] _myaxi_read_req_fifo_rdata,
+  output [137-1:0] _myaxi_read_req_fifo_rdata,
   output _myaxi_read_req_fifo_empty,
   output _myaxi_read_req_fifo_almost_empty
 );
 
-  reg [105-1:0] mem [0:8-1];
+  reg [137-1:0] mem [0:8-1];
   reg [3-1:0] head;
   reg [3-1:0] tail;
   wire is_empty;
@@ -2410,7 +2442,7 @@ module _myaxi_read_req_fifo
   assign is_almost_empty = head == (tail + 1 & 7);
   assign is_full = (head + 1 & 7) == tail;
   assign is_almost_full = (head + 2 & 7) == tail;
-  wire [105-1:0] rdata;
+  wire [137-1:0] rdata;
   assign _myaxi_read_req_fifo_full = is_full;
   assign _myaxi_read_req_fifo_almost_full = is_almost_full || is_full;
   assign _myaxi_read_req_fifo_empty = is_empty;
@@ -2443,16 +2475,16 @@ module _myaxi_write_req_fifo
   input CLK,
   input RST,
   input _myaxi_write_req_fifo_enq,
-  input [105-1:0] _myaxi_write_req_fifo_wdata,
+  input [137-1:0] _myaxi_write_req_fifo_wdata,
   output _myaxi_write_req_fifo_full,
   output _myaxi_write_req_fifo_almost_full,
   input _myaxi_write_req_fifo_deq,
-  output [105-1:0] _myaxi_write_req_fifo_rdata,
+  output [137-1:0] _myaxi_write_req_fifo_rdata,
   output _myaxi_write_req_fifo_empty,
   output _myaxi_write_req_fifo_almost_empty
 );
 
-  reg [105-1:0] mem [0:8-1];
+  reg [137-1:0] mem [0:8-1];
   reg [3-1:0] head;
   reg [3-1:0] tail;
   wire is_empty;
@@ -2463,7 +2495,7 @@ module _myaxi_write_req_fifo
   assign is_almost_empty = head == (tail + 1 & 7);
   assign is_full = (head + 1 & 7) == tail;
   assign is_almost_full = (head + 2 & 7) == tail;
-  wire [105-1:0] rdata;
+  wire [137-1:0] rdata;
   assign _myaxi_write_req_fifo_full = is_full;
   assign _myaxi_write_req_fifo_almost_full = is_almost_full || is_full;
   assign _myaxi_write_req_fifo_empty = is_empty;

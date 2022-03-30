@@ -58,7 +58,7 @@ def mkLed():
 
         laddr = 0
         gaddr = offset
-        myram0.dma_write_bank(bank, myaxi, laddr, gaddr, size)
+        myaxi.dma_write_bank(myram0, bank, laddr, gaddr, size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # write
@@ -68,13 +68,13 @@ def mkLed():
 
         laddr = 0
         gaddr = (size + size) * 4 + offset
-        myram1.dma_write_bank(bank, myaxi, laddr, gaddr, size)
+        myaxi.dma_write_bank(myram1, bank, laddr, gaddr, size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # read
         laddr = 0
         gaddr = offset
-        myram1.dma_read_bank(bank, myaxi, laddr, gaddr, size)
+        myaxi.dma_read_bank(myram1, bank, laddr, gaddr, size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
@@ -87,7 +87,7 @@ def mkLed():
         # read
         laddr = 0
         gaddr = (size + size) * 4 + offset
-        myram0.dma_read_bank(bank, myaxi, laddr, gaddr, size)
+        myaxi.dma_read_bank(myram0, bank, laddr, gaddr, size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
