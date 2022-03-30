@@ -18,7 +18,7 @@ def mkLed(memory_datawidth=128):
     rst = m.Input('RST')
 
     datawidth = 32
-    addrwidth = 10
+    addrwidth = 4
     numbanks = 4
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, memory_datawidth)
     myram0 = vthread.MultibankRAM(m, 'myram0', clk, rst, datawidth, addrwidth,
@@ -26,19 +26,23 @@ def mkLed(memory_datawidth=128):
     myram1 = vthread.MultibankRAM(m, 'myram1', clk, rst, datawidth, addrwidth,
                                   numbanks=numbanks)
 
-    all_ok = m.TmpReg(initval=0)
+    all_ok = m.TmpReg(initval=0, prefix='all_ok')
     wdata = m.TmpReg(width=datawidth, initval=0, prefix='wdata')
     rdata = m.TmpReg(width=datawidth, initval=0, prefix='rdata')
     rexpected = m.TmpReg(width=datawidth, initval=0, prefix='rexpected')
 
-    array_len = 256 + 128
+    array_len = 16
     array_size = (array_len + array_len) * 4 * numbanks
 
     def blink(size):
         all_ok.value = True
 
-        offset = 1024 * 16
-        body(size, offset)
+        for i in range(4):
+            print('# iter %d start' % i)
+            # Test for 4KB boundary check
+            offset = i * 1024 * 16 + (myaxi.boundary_size - (memory_datawidth // 8) * 3)
+            body(size, offset)
+            print('# iter %d end' % i)
 
         if all_ok:
             print('# verify: PASSED')
@@ -56,7 +60,7 @@ def mkLed(memory_datawidth=128):
 
         laddr = 0
         gaddr = offset
-        myaxi.dma_write(myram0, laddr, gaddr, size)
+        myaxi.dma_write_packed(myram0, laddr, gaddr, size * numbanks)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # write
@@ -67,13 +71,13 @@ def mkLed(memory_datawidth=128):
 
         laddr = 0
         gaddr = array_size + offset
-        myaxi.dma_write(myram1, laddr, gaddr, size)
+        myaxi.dma_write_packed(myram1, laddr, gaddr, size * numbanks)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # read
         laddr = 0
         gaddr = offset
-        myaxi.dma_read(myram1, laddr, gaddr, size)
+        myaxi.dma_read_packed(myram1, laddr, gaddr, size * numbanks)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for bank in range(numbanks):
@@ -81,13 +85,13 @@ def mkLed(memory_datawidth=128):
                 rdata.value = myram1.read_bank(bank, i)
                 rexpected.value = i + 0x1000 + (bank << 16)
                 if vthread.verilog.NotEql(rdata, rexpected):
-                    print('rdata[%d] = %d (expected %d)' % (i, rdata, rexpected))
+                    print('rdata[%d:%d] = %d (expected %d)' % (bank, i, rdata, rexpected))
                     all_ok.value = False
 
         # read
         laddr = 0
         gaddr = array_size + offset
-        myaxi.dma_read(myram0, laddr, gaddr, size)
+        myaxi.dma_read_packed(myram0, laddr, gaddr, size * numbanks)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for bank in range(numbanks):
@@ -95,7 +99,7 @@ def mkLed(memory_datawidth=128):
                 rdata.value = myram0.read_bank(bank, i)
                 rexpected.value = i + 0x4000 + (bank << 16)
                 if vthread.verilog.NotEql(rdata, rexpected):
-                    print('rdata[%d] = %d (expected %d)' % (i, rdata, rexpected))
+                    print('rdata[%d:%d] = %d (expected %d)' % (bank, i, rdata, rexpected))
                     all_ok.value = False
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)

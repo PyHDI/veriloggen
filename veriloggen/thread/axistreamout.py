@@ -122,29 +122,25 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
         fsm.If(accept).goto_next()
 
     def dma_write(self, fsm, ram, local_addr, size,
-                  local_stride=1, update_local_addr=1,
-                  port=0, ram_method=None):
+                  local_stride=1, port=0):
 
         self._dma_write(fsm, ram, local_addr, size,
-                        local_stride, update_local_addr,
-                        port, ram_method)
+                        local_stride, port)
 
         self.dma_wait_write(fsm)
 
     def dma_write_async(self, fsm, ram, local_addr, size,
-                        local_stride=1, update_local_addr=1,
-                        port=0, ram_method=None):
+                        local_stride=1, port=0):
 
         self._dma_write(fsm, ram, local_addr, size,
-                        local_stride, update_local_addr, port, ram_method)
+                        local_stride, port)
 
     def dma_wait_write(self, fsm):
 
         fsm.If(self.write_idle).goto_next()
 
     def _dma_write(self, fsm, ram, local_addr, size,
-                   local_stride=1, update_local_addr=1,
-                   port=0, ram_method=None):
+                   local_stride=1, port=0, ram_method=None):
 
         if isinstance(ram, (tuple, list)):
             ram = to_multibank_ram(ram)
@@ -155,14 +151,11 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
         if ram_method is None:
             ram_method = getattr(ram, 'read_burst')
 
-        start = fsm.here
-
         ram_method_name = (ram_method.func.__name__
                            if isinstance(ram_method, functools.partial) else
                            ram_method.__name__)
-        ram_datawidth = (ram.datawidth if ram_method is None else
-                         ram.orig_datawidth if 'bcast' in ram_method_name else
-                         ram.orig_datawidth if 'block' in ram_method_name else
+        ram_datawidth = (ram.packed_datawidth if 'packed' in ram_method_name else
+                         ram.rams[0].packed_datawidth if 'block' in ram_method_name else
                          ram.datawidth)
 
         if not isinstance(self.datawidth, int):
@@ -173,15 +166,16 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
             raise TypeError("ram_datawidth must be int, not '%s'" %
                             str(type(ram_datawidth)))
 
+        start = fsm.here
+
         self._set_write_request(ram, port, ram_method, ram_datawidth,
-                                start, local_addr, size, local_stride,
-                                update_local_addr)
+                                start, local_addr, size, local_stride)
         self._synthesize_write_data_fsm(ram, port, ram_method, ram_datawidth)
 
         fsm.If(vtypes.Not(self.write_req_fifo.almost_full)).goto_next()
 
     def _set_write_request(self, ram, port, ram_method, ram_datawidth,
-                           start, local_addr, size, local_stride, update_local_addr):
+                           start, local_addr, size, local_stride):
 
         local_size = size
         op_id = self._get_write_op_id(ram, port, ram_method)
@@ -246,7 +240,8 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
         ram_cond = vtypes.Ands(data_fsm.here, self.write_op_sel_buf == op_id)
         rready = vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid))
         rdata, rvalid, rlast = ram_method(
-            self.write_local_addr_buf, self.write_local_stride_buf, self.write_size_buf,
+            self.write_local_addr_buf, self.write_local_stride_buf,
+            self.write_size_buf, 1,
             rready, port=port, cond=ram_cond)
         data_fsm.goto_next()
 
@@ -317,7 +312,8 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
         rready = vtypes.Ands(vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid)),
                              count == 0)
         rdata, rvalid, rlast = ram_method(
-            self.write_local_addr_buf, self.write_local_stride_buf, self.write_size_buf,
+            self.write_local_addr_buf, self.write_local_stride_buf,
+            self.write_size_buf, 1,
             rready, port=port, cond=ram_cond)
 
         data_fsm(
@@ -416,7 +412,8 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
                               prefix='_'.join(['', self.name, 'write_wide_count']))
         rready = vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid), count > 0)
         rdata, rvalid, rlast = ram_method(
-            self.write_local_addr_buf, self.write_local_stride_buf, self.write_size_buf,
+            self.write_local_addr_buf, self.write_local_stride_buf,
+            self.write_size_buf, 1,
             rready, port=port, cond=ram_cond)
 
         data_fsm(

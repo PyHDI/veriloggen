@@ -53,9 +53,6 @@ def mkLed(memory_datawidth=128):
     def body(size, offset):
         # narrow dma test
         myaxi.dma_read(myram0, 0, 0, size)
-
-        ### ???
-
         myaxi.dma_read(myram1, 0, 0, size)
         myaxi.dma_read(myram2, 0, 0, size)
         myaxi.dma_read(myram3, 0, 0, size)
@@ -83,8 +80,8 @@ def mkLed(memory_datawidth=128):
 
         laddr = 0
         gaddr = offset
-        myaxi.dma_write([myram0, myram1, myram2, myram3],
-                        laddr, gaddr, size)
+        myaxi.dma_write_packed([myram0, myram1, myram2, myram3],
+                               laddr, gaddr, size * 4)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # write
@@ -106,15 +103,15 @@ def mkLed(memory_datawidth=128):
 
         laddr = 0
         gaddr = array_size + offset
-        myaxi.dma_write([myram0, myram1, myram2, myram3],
-                        laddr, gaddr, size)
+        myaxi.dma_write_packed([myram0, myram1, myram2, myram3],
+                               laddr, gaddr, size * 4)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # read
         laddr = 0
         gaddr = offset
-        myaxi.dma_read([myram0, myram1, myram2, myram3],
-                       laddr, gaddr, size)
+        myaxi.dma_read_packed([myram0, myram1, myram2, myram3],
+                              laddr, gaddr, size * 4)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):
@@ -148,8 +145,8 @@ def mkLed(memory_datawidth=128):
         # read
         laddr = 0
         gaddr = array_size + offset
-        myaxi.dma_read([myram0, myram1, myram2, myram3],
-                       laddr, gaddr, size)
+        myaxi.dma_read_packed([myram0, myram1, myram2, myram3],
+                              laddr, gaddr, size * 4)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for i in range(size):

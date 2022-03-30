@@ -502,8 +502,10 @@ module test;
           end
           if(memory_wvalid && memory_wready && (_write_count == 1)) begin
             memory_wready <= 0;
+            memory_bvalid <= 1;
           end 
           if(memory_wvalid && memory_wready && memory_wlast) begin
+            memory_wready <= 0;
             memory_bvalid <= 1;
           end 
           if(memory_wvalid && memory_wready && (_write_count == 1)) begin

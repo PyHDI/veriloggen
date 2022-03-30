@@ -2507,9 +2507,11 @@ class AxiMemoryModel(AxiSlave):
 
         # write complete
         self.wdata_fsm.If(self.wdata.wvalid, self.wdata.wready, write_count == 1)(
-            self.wdata.wready(0)
+            self.wdata.wready(0),
+            self.wresp.bvalid(1)
         )
         self.wdata_fsm.If(self.wdata.wvalid, self.wdata.wready, self.wdata.wlast)(
+            self.wdata.wready(0),
             self.wresp.bvalid(1)
         )
         self.wdata_fsm.If(self.wdata.wvalid, self.wdata.wready, write_count == 1).goto_init()
@@ -3044,9 +3046,11 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
 
             # write complete
             wdata_fsm.If(wdata.wvalid, wdata.wready, write_count == 1)(
-                wdata.wready(0)
+                wdata.wready(0),
+                wresp.bvalid(1)
             )
             wdata_fsm.If(wdata.wvalid, wdata.wready, wdata.wlast)(
+                wdata.wready(0),
                 wresp.bvalid(1)
             )
             wdata_fsm.If(wdata.wvalid, wdata.wready, write_count == 1).goto_init()
