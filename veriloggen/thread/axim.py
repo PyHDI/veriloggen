@@ -590,7 +590,10 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             ram = to_multibank_ram(ram)
 
         if not isinstance(ram, MultibankRAM):
-            raise TypeError("'ram' must be MultibankRAM, not '%s'" % str(type(ram)))
+            local_stride = 1
+            local_blocksize = 1
+            return self._dma_read(ram, local_addr, global_addr, local_size,
+                                  local_stride, local_blocksize, port)
 
         if local_stride is None:
             local_stride = ram.numbanks
@@ -635,7 +638,10 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             ram = to_multibank_ram(ram)
 
         if not isinstance(ram, MultibankRAM):
-            raise TypeError("'ram' must be MultibankRAM, not '%s'" % str(type(ram)))
+            local_stride = 1
+            local_blocksize = 1
+            return self._dma_write(ram, local_addr, global_addr, local_size,
+                                   local_stride, local_blocksize, port)
 
         if local_stride is None:
             local_stride = ram.numbanks
