@@ -34,6 +34,8 @@ def mkLed(memory_datawidth=128):
     array_len = 256 + 128
     array_size = (array_len + array_len) * 4 * numbanks
 
+    laddr_offset = 32
+
     def blink(size):
         all_ok.value = True
 
@@ -49,50 +51,54 @@ def mkLed(memory_datawidth=128):
 
     def body(size, offset):
         # write
+        ram_offset = laddr_offset // numbanks
         for bank in range(numbanks):
             for i in range(size):
                 wdata.value = i + 0x1000 + (bank << 16)
-                myram0.write_bank(bank, i, wdata)
+                myram0.write_bank(bank, ram_offset + i, wdata)
 
-        laddr = 0
+        laddr = laddr_offset
         gaddr = offset
         myaxi.dma_write_packed(myram0, laddr, gaddr, size * numbanks)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # write
+        ram_offset = laddr_offset // numbanks
         for bank in range(numbanks):
             for i in range(size):
                 wdata.value = i + 0x4000 + (bank << 16)
-                myram1.write_bank(bank, i, wdata)
+                myram1.write_bank(bank, ram_offset + i, wdata)
 
-        laddr = 0
+        laddr = laddr_offset
         gaddr = array_size + offset
         myaxi.dma_write_packed(myram1, laddr, gaddr, size * numbanks)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # read
-        laddr = 0
+        laddr = laddr_offset
         gaddr = offset
         myaxi.dma_read_packed(myram1, laddr, gaddr, size * numbanks)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
+        ram_offset = laddr_offset // numbanks
         for bank in range(numbanks):
             for i in range(size):
-                rdata.value = myram1.read_bank(bank, i)
+                rdata.value = myram1.read_bank(bank, ram_offset + i)
                 rexpected.value = i + 0x1000 + (bank << 16)
                 if vthread.verilog.NotEql(rdata, rexpected):
                     print('rdata[%d] = %d (expected %d)' % (i, rdata, rexpected))
                     all_ok.value = False
 
         # read
-        laddr = 0
+        laddr = laddr_offset
         gaddr = array_size + offset
         myaxi.dma_read_packed(myram0, laddr, gaddr, size * numbanks)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
+        ram_offset = laddr_offset // numbanks
         for bank in range(numbanks):
             for i in range(size):
-                rdata.value = myram0.read_bank(bank, i)
+                rdata.value = myram0.read_bank(bank, ram_offset + i)
                 rexpected.value = i + 0x4000 + (bank << 16)
                 if vthread.verilog.NotEql(rdata, rexpected):
                     print('rdata[%d] = %d (expected %d)' % (i, rdata, rexpected))

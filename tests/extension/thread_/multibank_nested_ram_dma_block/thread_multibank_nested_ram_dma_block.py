@@ -34,6 +34,8 @@ def mkLed(memory_datawidth=128):
     array_len = 128
     array_size = (array_len + array_len) * 4 * numbanks
 
+    laddr_offset = 32
+
     def blink(size):
         all_ok.value = True
 
@@ -53,7 +55,7 @@ def mkLed(memory_datawidth=128):
     def body(size, offset):
         # write
         count = 0
-        blk_offset = 0
+        blk_offset = laddr_offset
         bias = 0
         done = False
         while count < size:
@@ -70,14 +72,14 @@ def mkLed(memory_datawidth=128):
                 bias += block_size
             blk_offset += block_size
 
-        laddr = 0
+        laddr = laddr_offset
         gaddr = offset
         myaxi.dma_write_block(myram, laddr, gaddr, size, block_size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # write
         count = 0
-        blk_offset = 0
+        blk_offset = laddr_offset
         bias = 0
         done = False
         while count < size:
@@ -94,19 +96,19 @@ def mkLed(memory_datawidth=128):
                 bias += block_size
             blk_offset += block_size
 
-        laddr = 0
+        laddr = laddr_offset
         gaddr = array_size + offset
         myaxi.dma_write_block(myram, laddr, gaddr, size, block_size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # read
-        laddr = 0
+        laddr = laddr_offset
         gaddr = offset
         myaxi.dma_read_block(myram, laddr, gaddr, size, block_size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         count = 0
-        blk_offset = 0
+        blk_offset = laddr_offset
         bias = 0
         done = False
         while count < size:
@@ -127,13 +129,13 @@ def mkLed(memory_datawidth=128):
             blk_offset += block_size
 
         # read
-        laddr = 0
+        laddr = laddr_offset
         gaddr = array_size + offset
         myaxi.dma_read_block(myram, laddr, gaddr, size, block_size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         count = 0
-        blk_offset = 0
+        blk_offset = laddr_offset
         bias = 0
         done = False
         while count < size:
