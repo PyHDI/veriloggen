@@ -592,7 +592,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         if not isinstance(ram, MultibankRAM):
             local_stride = 1
             local_blocksize = 1
-            return self._dma_read(ram, local_addr, global_addr, local_size,
+            return self._dma_read(fsm, ram, local_addr, global_addr, local_size,
                                   local_stride, local_blocksize, port)
 
         if local_stride is None:
@@ -640,7 +640,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         if not isinstance(ram, MultibankRAM):
             local_stride = 1
             local_blocksize = 1
-            return self._dma_write(ram, local_addr, global_addr, local_size,
+            return self._dma_write(fsm, ram, local_addr, global_addr, local_size,
                                    local_stride, local_blocksize, port)
 
         if local_stride is None:
