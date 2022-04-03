@@ -363,22 +363,22 @@ class AXIM(axi.AxiMaster, _MutexFunction):
                         local_stride, local_blocksize, port)
 
     # DMA for each bank
-    def dma_read_bank(self, fsm, ram, bank, local_addr, global_addr, local_size,
-                      local_stride=1, port=0):
+    def dma_read_bank(self, fsm, ram, bank, local_bank_addr, global_addr, local_bank_size,
+                      local_bank_stride=1, port=0):
 
-        self._dma_read_bank(fsm, ram, bank, local_addr, global_addr, local_size,
-                            local_stride, port)
+        self._dma_read_bank(fsm, ram, bank, local_bank_addr, global_addr, local_bank_size,
+                            local_bank_stride, port)
 
         self.dma_wait_read(fsm)
 
-    def dma_read_bank_async(self, fsm, ram, bank, local_addr, global_addr, local_size,
-                            local_stride=1, port=0):
+    def dma_read_bank_async(self, fsm, ram, bank, local_bank_addr, global_addr, local_bank_size,
+                            local_bank_stride=1, port=0):
 
-        self._dma_read_bank(fsm, ram, bank, local_addr, global_addr, local_size,
-                            local_stride, port)
+        self._dma_read_bank(fsm, ram, bank, local_bank_addr, global_addr, local_bank_size,
+                            local_bank_stride, port)
 
-    def _dma_read_bank(self, fsm, ram, bank, local_addr, global_addr, local_size,
-                       local_stride=1, port=0):
+    def _dma_read_bank(self, fsm, ram, bank, local_bank_addr, global_addr, local_bank_size,
+                       local_bank_stride=1, port=0):
 
         if isinstance(ram, (tuple, list)):
             ram = to_multibank_ram(ram)
@@ -394,8 +394,8 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         for i, _ram in enumerate(ram.rams):
             starts.append(fsm.current)
             local_blocksize = 1
-            self._dma_read(fsm, _ram, local_addr, global_addr, local_size,
-                           local_stride, local_blocksize, port)
+            self._dma_read(fsm, _ram, local_bank_addr, global_addr, local_bank_size,
+                           local_bank_stride, local_blocksize, port)
             ends.append(fsm.current)
             fsm.set_index(fsm.current + 1)
 
@@ -405,22 +405,22 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             fsm.goto_from(check, s, cond=bank == i)
             fsm.goto_from(e, fin)
 
-    def dma_write_bank(self, fsm, ram, bank, local_addr, global_addr, local_size,
-                       local_stride=1, port=0):
+    def dma_write_bank(self, fsm, ram, bank, local_bank_addr, global_addr, local_bank_size,
+                       local_bank_stride=1, port=0):
 
-        self._dma_write_bank(fsm, ram, bank, local_addr, global_addr, local_size,
-                             local_stride, port)
+        self._dma_write_bank(fsm, ram, bank, local_bank_addr, global_addr, local_bank_size,
+                             local_bank_stride, port)
 
         self.dma_wait_write(fsm)
 
-    def dma_write_bank_async(self, fsm, ram, bank, local_addr, global_addr, local_size,
-                             local_stride=1, port=0):
+    def dma_write_bank_async(self, fsm, ram, bank, local_bank_addr, global_addr, local_bank_size,
+                             local_bank_stride=1, port=0):
 
-        self._dma_write_bank(fsm, ram, bank, local_addr, global_addr, local_size,
-                             local_stride, port)
+        self._dma_write_bank(fsm, ram, bank, local_bank_addr, global_addr, local_bank_size,
+                             local_bank_stride, port)
 
-    def _dma_write_bank(self, fsm, ram, bank, local_addr, global_addr, local_size,
-                        local_stride=1, port=0):
+    def _dma_write_bank(self, fsm, ram, bank, local_bank_addr, global_addr, local_bank_size,
+                        local_bank_stride=1, port=0):
 
         if isinstance(ram, (tuple, list)):
             ram = to_multibank_ram(ram)
@@ -436,8 +436,8 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         for i, _ram in enumerate(ram.rams):
             starts.append(fsm.current)
             local_blocksize = 1
-            self._dma_write(fsm, _ram, local_addr, global_addr, local_size,
-                            local_stride, local_blocksize, port)
+            self._dma_write(fsm, _ram, local_bank_addr, global_addr, local_bank_size,
+                            local_bank_stride, local_blocksize, port)
             ends.append(fsm.current)
             fsm.set_index(fsm.current + 1)
 
@@ -448,21 +448,21 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             fsm.goto_from(e, fin)
 
     # DMA with block interleave
-    def dma_read_block(self, fsm, ram, local_addr, global_addr, local_size,
+    def dma_read_block(self, fsm, ram, local_bank_addr, global_addr, local_size,
                        local_blocksize=1, local_stride=None, port=0):
 
-        self._dma_read_block(fsm, ram, local_addr, global_addr, local_size,
+        self._dma_read_block(fsm, ram, local_bank_addr, global_addr, local_size,
                              local_blocksize, local_stride, port)
 
         self.dma_wait_read(fsm)
 
-    def dma_read_block_async(self, fsm, ram, local_addr, global_addr, local_size,
+    def dma_read_block_async(self, fsm, ram, local_bank_addr, global_addr, local_size,
                              local_blocksize=1, local_stride=None, port=0):
 
-        self._dma_read_block(fsm, ram, local_addr, global_addr, local_size,
+        self._dma_read_block(fsm, ram, local_bank_addr, global_addr, local_size,
                              local_blocksize, local_stride, port)
 
-    def _dma_read_block(self, fsm, ram, local_addr, global_addr, local_size,
+    def _dma_read_block(self, fsm, ram, local_bank_addr, global_addr, local_size,
                         local_blocksize=1, local_stride=None, port=0):
 
         if isinstance(ram, (tuple, list)):
@@ -505,24 +505,24 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             local_stride = 1
 
         ram_method = ram.write_burst_block
-        self._dma_read(fsm, ram, local_addr, global_addr, local_size,
+        self._dma_read(fsm, ram, local_bank_addr, global_addr, local_size,
                        local_stride, local_blocksize, port, ram_method)
 
-    def dma_write_block(self, fsm, ram, local_addr, global_addr, local_size,
+    def dma_write_block(self, fsm, ram, local_bank_addr, global_addr, local_size,
                         local_blocksize=1, local_stride=None, port=0):
 
-        self._dma_write_block(fsm, ram, local_addr, global_addr, local_size,
+        self._dma_write_block(fsm, ram, local_bank_addr, global_addr, local_size,
                               local_blocksize, local_stride, port)
 
         self.dma_wait_write(fsm)
 
-    def dma_write_block_async(self, fsm, ram, local_addr, global_addr, local_size,
+    def dma_write_block_async(self, fsm, ram, local_bank_addr, global_addr, local_size,
                               local_blocksize=1, local_stride=None, port=0):
 
-        self._dma_write_block(fsm, ram, local_addr, global_addr, local_size,
+        self._dma_write_block(fsm, ram, local_bank_addr, global_addr, local_size,
                               local_blocksize, local_stride, port)
 
-    def _dma_write_block(self, fsm, ram, local_addr, global_addr, local_size,
+    def _dma_write_block(self, fsm, ram, local_bank_addr, global_addr, local_size,
                          local_blocksize=1, local_stride=None, port=0):
 
         if isinstance(ram, (tuple, list)):
@@ -565,7 +565,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             local_stride = 1
 
         ram_method = ram.read_burst_block
-        self._dma_write(fsm, ram, local_addr, global_addr, local_size,
+        self._dma_write(fsm, ram, local_bank_addr, global_addr, local_size,
                         local_stride, local_blocksize, port, ram_method)
 
     # multi-bank packed DMA
@@ -1648,7 +1648,8 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         _local_blocksize.assign(local_blocksize)
         packed = self.m.TmpWire(self.op_sel_width + self.addrwidth * 4 + 1,
                                 prefix='pack_read_req_packed')
-        packed.assign(vtypes.Cat(_op_sel, _local_addr, _local_stride, _local_size, _local_blocksize))
+        packed.assign(
+            vtypes.Cat(_op_sel, _local_addr, _local_stride, _local_size, _local_blocksize))
         return packed
 
     def unpack_read_req(self, v):
@@ -1682,7 +1683,8 @@ class AXIM(axi.AxiMaster, _MutexFunction):
         _local_blocksize.assign(local_blocksize)
         packed = self.m.TmpWire(self.op_sel_width + self.addrwidth * 4 + 1,
                                 prefix='pack_write_req_packed')
-        packed.assign(vtypes.Cat(_op_sel, _local_addr, _local_stride, _size, _local_blocksize))
+        packed.assign(
+            vtypes.Cat(_op_sel, _local_addr, _local_stride, _size, _local_blocksize))
         return packed
 
     def unpack_write_req(self, v):
