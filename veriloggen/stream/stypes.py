@@ -4027,10 +4027,10 @@ class SubstreamMultiCycle(Substream):
             ii_count(0)
         )
 
-        seq.If(self.strm.busy, self.child.ivalid)(
+        self.child.fsm.seq.If(self.strm.busy, self.child.ivalid)(
             self.child.ivalid(vtypes.Int(0, 1))
         )
-        seq.If(enable_cond, ii_count == 0)(
+        self.child.fsm.seq.If(enable_cond, ii_count == 0)(
             self.child.ivalid(vtypes.Int(1, 1))
         )
 
