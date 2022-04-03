@@ -875,7 +875,8 @@ class MultibankRAM(RAM):
         done_list = []
 
         for i, ram in enumerate(self.rams):
-            wready, done = ram.write_burst(bank_addr, bank_stride, bank_length,
+            blocksize = 1
+            wready, done = ram.write_burst(bank_addr, bank_stride, bank_length, blocksize,
                                            wdata, wvalid, wlast, wquit,
                                            port, cond)
             wready_list.append(wready)
