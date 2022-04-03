@@ -3838,7 +3838,7 @@ class Substream(BaseSubstream):
         cond_delay = self.reset_delay - 1
         child_source_busy = seq.Prev(self.strm.source_busy, cond_delay, cond=self.strm.oready)
         cond = _and_vars(senable, self.strm.busy)
-        seq(self.child.source_busy(child_source_busy), cond=cond)
+        self.child.fsm.seq(self.child.source_busy(child_source_busy), cond=cond)
 
         # parent to child
         util.add_disable_cond(self.child.is_root, self.strm.busy, 0)
@@ -3886,7 +3886,7 @@ class SubstreamMultiCycle(BaseSubstreamMultiCycle, Substream):
         cond_delay = self.reset_delay - 1
         child_source_busy = seq.Prev(self.strm.source_busy, cond_delay, cond=self.strm.oready)
         cond = _and_vars(senable, self.strm.busy)
-        seq(self.child.source_busy(child_source_busy), cond=cond)
+        self.child.fsm.seq(self.child.source_busy(child_source_busy), cond=cond)
 
         # parent to child
         util.add_disable_cond(self.child.is_root, self.strm.busy, 0)
