@@ -32,7 +32,7 @@ def mkMain():
     fsm.If(valid)(
         sum(sum + data)
     )
-    fsm.Then().goto_next()
+    fsm.If(valid).goto_next()
 
     fsm.goto_init()
 
@@ -63,41 +63,37 @@ def mkTest():
     for i in range(100):
         fsm.goto_next()
 
-    # write address (1)
-    awaddr = 1024
-    wval = 100
-    expected_sum = wval
-
-    ack = _axi.write_request(awaddr, cond=fsm)
-    wdata = m.Reg('wdata', 32, initval=0)
-    fsm.If(ack)(
-        wdata(wval)
-    )
+    # write request (1)
+    awaddr1 = 1024
+    ack = _axi.write_request(awaddr1, cond=fsm)
     fsm.If(ack).goto_next()
 
     # write data (1)
-    ack = _axi.write_data(wdata, cond=fsm)
+    wdata1 = 100
+    ack = _axi.write_data(wdata1, cond=fsm)
     fsm.If(ack).goto_next()
 
-    # write address (2)
-    wval = 200
-    expected_sum += wval
-
-    ack = _axi.write_request(awaddr, cond=fsm)
-    fsm.If(ack)(
-        wdata(wval)
-    )
+    # write request (2)
+    awaddr2 = 1024 + 1024
+    ack = _axi.write_request(awaddr2, cond=fsm)
     fsm.If(ack).goto_next()
 
     # write data (2)
-    ack = _axi.write_data(wdata, cond=fsm)
+    wdata2 = 200
+    ack = _axi.write_data(wdata2, cond=fsm)
     fsm.If(ack).goto_next()
+    fsm.If(Not(_axi.wdata.wvalid)).goto_next()
 
-    for i in range(4):
-        fsm.goto_next()
+    # verify
+    expected_sum = wdata1 + wdata2
 
     fsm(
         Systask('display', 'sum=%d expected_sum=%d', sum, expected_sum)
+    )
+    fsm.If(sum == expected_sum)(
+        Systask('display', '# verify: PASSED')
+    ).Else(
+        Systask('display', '# verify: FAILED')
     )
     fsm.goto_next()
 
@@ -117,13 +113,27 @@ def mkTest():
     return m
 
 
-if __name__ == '__main__':
+def run(filename='tmp.v', simtype='iverilog', outputfile=None):
+
+    if outputfile is None:
+        outputfile = os.path.splitext(os.path.basename(__file__))[0] + '.out'
+
+    # memimg_name = 'memimg_' + outputfile
+
+    # test = mkTest(memimg_name=memimg_name)
     test = mkTest()
-    verilog = test.to_verilog('tmp.v')
-    print(verilog)
 
-    sim = simulation.Simulator(test)
-    rslt = sim.run()
+    if filename is not None:
+        test.to_verilog(filename)
+
+    sim = simulation.Simulator(test, sim=simtype)
+    rslt = sim.run(outputfile=outputfile)
+    lines = rslt.splitlines()
+    if simtype == 'verilator' and lines[-1].startswith('-'):
+        rslt = '\n'.join(lines[:-1])
+    return rslt
+
+
+if __name__ == '__main__':
+    rslt = run(filename='tmp.v')
     print(rslt)
-
-    # sim.view_waveform()

@@ -82,15 +82,18 @@ Installation
 Requirements
 --------------------
 
-- Python3: 3.7 or later
+- Python: 3.7.7 or later
+    - Python 3.9.5 (via pyenv) is recommended for macOS with Apple Silicon.
 - Icarus Verilog: 10.1 or later
 
 ```
 sudo apt install iverilog
 ```
 
-- Pyverilog: 1.3.0 or later
-- NumPy: 1.17 or later
+- pyverilog: 1.3.0 or later
+    - pyverilog requires Jinja2. Jinja2 3.0.3 is recommended for macOS with Apple Silicon.
+- numpy: 1.17 or later
+    - numpy 1.22.1 is recommended for macOS with Apple Silicon.
 
 ```
 pip3 install pyverilog numpy
@@ -111,7 +114,7 @@ pip3 install pytest pytest-pythonpath
 
 For fast RTL simulation, we recommend to install Verilator.
 
-- Verilator: 3.916 or later
+- Verilator: 4.028 or later
 
 ```
 sudo apt install verilator
@@ -122,8 +125,8 @@ Optional installation for visualization
 
 To visualize the generated hardware by veriloggen.stream, these libraries are required.
 
-- Graphviz: 2.38.0 or later
-- Pygraphviz: 1.3.1 or later
+- graphviz: 2.38.0 or later
+- pygraphviz: 1.3.1 or later
 
 ```
 sudo apt install graphviz

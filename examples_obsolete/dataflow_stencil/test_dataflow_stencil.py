@@ -218,6 +218,8 @@ module stencil
   wire [32-1:0] src_ram0_1_wdata;
   wire src_ram0_1_wenable;
   wire src_ram0_1_enable;
+  assign src_ram0_0_wdata = 'hx;
+  assign src_ram0_0_wenable = 0;
 
   src_ram0
   inst_src_ram0
@@ -245,6 +247,8 @@ module stencil
   wire [32-1:0] src_ram1_1_wdata;
   wire src_ram1_1_wenable;
   wire src_ram1_1_enable;
+  assign src_ram1_0_wdata = 'hx;
+  assign src_ram1_0_wenable = 0;
 
   src_ram1
   inst_src_ram1
@@ -272,6 +276,8 @@ module stencil
   wire [32-1:0] src_ram2_1_wdata;
   wire src_ram2_1_wenable;
   wire src_ram2_1_enable;
+  assign src_ram2_0_wdata = 'hx;
+  assign src_ram2_0_wenable = 0;
 
   src_ram2
   inst_src_ram2
@@ -340,24 +346,18 @@ module stencil
   localparam read_fsm_init = 0;
   reg [32-1:0] read_count;
   reg [32-1:0] read_addr;
-  assign src_ram0_0_wdata = 0;
-  assign src_ram0_0_wenable = 0;
   assign src_ram0_0_addr = (read_fsm == 1)? read_addr : 'hx;
   assign src_ram0_0_enable = (read_fsm == 1)? 1'd1 : 0;
   localparam _tmp_1 = 1;
   wire [_tmp_1-1:0] _tmp_2;
   assign _tmp_2 = read_fsm == 1;
   reg [_tmp_1-1:0] __tmp_2_1;
-  assign src_ram1_0_wdata = 0;
-  assign src_ram1_0_wenable = 0;
   assign src_ram1_0_addr = (read_fsm == 1)? read_addr : 'hx;
   assign src_ram1_0_enable = (read_fsm == 1)? 1'd1 : 0;
   localparam _tmp_3 = 1;
   wire [_tmp_3-1:0] _tmp_4;
   assign _tmp_4 = read_fsm == 1;
   reg [_tmp_3-1:0] __tmp_4_1;
-  assign src_ram2_0_wdata = 0;
-  assign src_ram2_0_wenable = 0;
   assign src_ram2_0_addr = (read_fsm == 1)? read_addr : 'hx;
   assign src_ram2_0_enable = (read_fsm == 1)? 1'd1 : 0;
   localparam _tmp_5 = 1;

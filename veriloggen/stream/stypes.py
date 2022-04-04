@@ -3968,7 +3968,7 @@ class Substream(_SpecialOperator):
 
         if self.child.ivalid is not None:
             ivalid_cond = _and_vars(svalid, senable)
-            seq(self.child.ivalid(vtypes.Int(1, 1)), cond=ivalid_cond)
+            self.child.fsm.seq(self.child.ivalid(vtypes.Int(1, 1)), cond=ivalid_cond)
 
         for data, (name, cond) in zip(arg_data, self.conds.items()):
             enable_cond = _and_vars(svalid, senable, cond)
@@ -3977,7 +3977,7 @@ class Substream(_SpecialOperator):
 
         if self.strm.dump and self.child.dump:
             dump_cond = _and_vars(svalid, senable)
-            seq(self.child.dump_enable(self.strm.dump_enable), cond=dump_cond)
+            self.child.seq(self.child.dump_enable(self.strm.dump_enable), cond=dump_cond)
 
         self.sig_data = vtypes.Int(0)
 
@@ -4027,10 +4027,10 @@ class SubstreamMultiCycle(Substream):
             ii_count(0)
         )
 
-        seq.If(self.strm.busy, self.child.ivalid)(
+        self.child.fsm.seq.If(self.strm.busy, self.child.ivalid)(
             self.child.ivalid(vtypes.Int(0, 1))
         )
-        seq.If(enable_cond, ii_count == 0)(
+        self.child.fsm.seq.If(enable_cond, ii_count == 0)(
             self.child.ivalid(vtypes.Int(1, 1))
         )
 
@@ -4041,7 +4041,7 @@ class SubstreamMultiCycle(Substream):
 
         if self.strm.dump and self.child.dump:
             dump_cond = _and_vars(svalid, senable)
-            seq(self.child.dump_enable(self.strm.dump_enable), cond=dump_cond)
+            self.child.seq(self.child.dump_enable(self.strm.dump_enable), cond=dump_cond)
 
         self.sig_data = vtypes.Int(0)
 
@@ -5005,7 +5005,7 @@ def ReduceArgMin(right, size=None, interval=None, initval=0,
     _min = ReduceMin(right, size, interval, initval,
                      enable, reset, reg_initval, width, signed)
     counter = Counter(size, dependency=right, enable=enable, reset=reset)
-    update = NotEq(_min, reduce_min.prev(1))
+    update = NotEq(_min, _min.prev(1))
     update.latency = 0
     index = Predicate(counter, update)
     return index, _min

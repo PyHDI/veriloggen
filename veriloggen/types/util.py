@@ -51,6 +51,16 @@ def log2(value, maxsize=32):
     return vtypes.PatternMux(patterns)
 
 
+def overwrite_assign(targ, value):
+    prev_assign = targ._get_assign()
+    if not prev_assign:
+        targ.assign(value)
+    else:
+        prev_assign.overwrite_right(value)
+        targ.module.remove(prev_assign)
+        targ.module.append(prev_assign)
+
+
 def add_mux(targ, cond, value):
     prev_assign = targ._get_assign()
     if not prev_assign:

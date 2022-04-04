@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import collections
+
 import veriloggen.core.vtypes as vtypes
 import veriloggen.types.util as util
 import veriloggen.types.fixed as fxd
@@ -16,7 +18,7 @@ class FIFO(_MutexFunction):
                       'is_empty', 'is_almost_empty',
                       'is_full', 'is_almost_full') + _MutexFunction.__intrinsics__
 
-    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=4):
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=4, sync=True):
 
         self.m = m
         self.name = name
@@ -25,14 +27,24 @@ class FIFO(_MutexFunction):
 
         self.datawidth = datawidth
         self.addrwidth = addrwidth
+        self.sync = sync
 
         self.wif = FifoWriteInterface(self.m, name, datawidth, itype='Wire', otype='Wire')
         self.rif = FifoReadInterface(self.m, name, datawidth, itype='Wire', otype='Wire')
 
-        self.definition = mkFifoDefinition(name, datawidth, addrwidth)
+        # default values
+        self.wif.enq.assign(0)
+        self.wif.wdata.assign(vtypes.IntX())
+        self.rif.deq.assign(0)
 
+        self.definition = mkFifoDefinition(name, datawidth, addrwidth, sync=sync)
+
+        ports = collections.OrderedDict()
+        ports['CLK'] = self.clk
+        ports['RST'] = self.rst
+        ports.update(m.connect_ports(self.definition))
         self.inst = self.m.Instance(self.definition, 'inst_' + name,
-                                    ports=m.connect_ports(self.definition))
+                                    ports=ports)
 
         self.seq = Seq(m, name, clk, rst)
 
@@ -53,29 +65,13 @@ class FIFO(_MutexFunction):
             self._count.dec()
         )
 
-        self._enq_disabled = False
-        self._deq_disabled = False
-
         self.mutex = None
 
     def _id(self):
         return id(self)
 
-    def disable_enq(self):
-        self.seq(
-            self.wif.enq(0)
-        )
-        self._enq_disabled = True
-
-    def disable_deq(self):
-        self.rif.deq.assign(0)
-        self._deq_disabled = True
-
     def enq_rtl(self, wdata, cond=None):
         """ Enque """
-
-        if self._enq_disabled:
-            raise TypeError('Enq disabled.')
 
         cond = make_condition(cond)
         ready = vtypes.Not(self.wif.almost_full)
@@ -97,9 +93,6 @@ class FIFO(_MutexFunction):
     def deq_rtl(self, cond=None):
         """ Deque """
 
-        if self._deq_disabled:
-            raise TypeError('Deq disabled.')
-
         cond = make_condition(cond)
         ready = vtypes.Not(self.rif.empty)
 
@@ -111,7 +104,11 @@ class FIFO(_MutexFunction):
         util.add_enable_cond(self.rif.deq, deq_cond, 1)
 
         data = self.rif.rdata
-        valid = self.seq.Prev(deq_cond, 1)
+
+        if self.sync:
+            valid = self.seq.Prev(deq_cond, 1)
+        else:
+            valid = deq_cond
 
         return data, valid, ready
 
@@ -166,9 +163,11 @@ class FIFO(_MutexFunction):
         cond = fsm.state == fsm.current
 
         rdata, rvalid, rready = self.deq_rtl(cond=cond)
-        fsm.If(rready).goto_next()
 
         rdata_reg = self.m.TmpReg(self.datawidth, initval=0, signed=True)
+
+        if self.sync:
+            fsm.If(rready).goto_next()
 
         fsm.If(rvalid)(
             rdata_reg(rdata)
@@ -195,7 +194,9 @@ class FIFO(_MutexFunction):
         cond = fsm.state == fsm.current
 
         rdata, rvalid, rready = self.deq_rtl(cond=cond)
-        fsm.goto_next()
+
+        if self.sync:
+            fsm.goto_next()
 
         rdata_reg = self.m.TmpReg(self.datawidth, initval=0, signed=True)
         rvalid_reg = self.m.TmpReg(initval=0)

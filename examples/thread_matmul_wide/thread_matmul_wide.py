@@ -38,12 +38,15 @@ def mkLed():
     def matmul():
         while True:
             saxi.wait_flag(0, value=1, resetvalue=0)
-            matrix_size = saxi.read(1)
-            a_offset = saxi.read(2)
-            b_offset = saxi.read(3)
-            c_offset = saxi.read(4)
+            saxi.write(1, 1)  # set busy
+
+            matrix_size = saxi.read(2)
+            a_offset = saxi.read(3)
+            b_offset = saxi.read(4)
+            c_offset = saxi.read(5)
             comp(matrix_size, a_offset, b_offset, c_offset)
-            saxi.write_flag(5, 1, resetvalue=0)
+
+            saxi.write(1, 0)  # unset busy
 
     def comp(matrix_size, a_offset, b_offset, c_offset):
         a_addr, c_addr = a_offset, c_offset
@@ -144,31 +147,32 @@ def mkTest(memimg_name=None):
         for i in range(100):
             pass
 
-        awaddr = 4
+        awaddr = 2 * 4
         print('# matrix_size = %d' % matrix_size)
         _saxi.write(awaddr, matrix_size)
 
-        awaddr = 8
+        awaddr = 3 * 4
         print('# a_offset = %d' % a_offset)
         _saxi.write(awaddr, a_offset)
 
-        awaddr = 12
+        awaddr = 4 * 4
         print('# b_offset = %d' % b_offset)
         _saxi.write(awaddr, b_offset)
 
-        awaddr = 16
+        awaddr = 5 * 4
         print('# c_offset = %d' % c_offset)
         _saxi.write(awaddr, c_offset)
 
-        awaddr = 0
+        awaddr = 0 * 4
         start_time = counter
         print('# start time = %d' % start_time)
         _saxi.write(awaddr, 1)
 
-        araddr = 20
-        v = _saxi.read(araddr)
-        while v == 0:
-            v = _saxi.read(araddr)
+        araddr = 1 * 4
+        while True:
+            busy = _saxi.read(araddr)
+            if not busy:
+                break
 
         end_time = counter
         print('# end time = %d' % end_time)

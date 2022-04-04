@@ -12,7 +12,7 @@ import veriloggen.thread as vthread
 import veriloggen.types.axi as axi
 
 
-def mkLed(memory_datawidth=128):
+def mkLed():
     m = Module('blinkled')
     clk = m.Input('CLK')
     rst = m.Input('RST')
@@ -20,14 +20,16 @@ def mkLed(memory_datawidth=128):
     datawidth = 32
     addrwidth = 10
     numbanks = 4
-    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, memory_datawidth)
-    myram = vthread.MultibankRAM(m, 'myram', clk, rst, datawidth, addrwidth,
-                                 numbanks=numbanks)
+    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
+    myram0 = vthread.MultibankRAM(m, 'myram0', clk, rst, datawidth, addrwidth,
+                                  numbanks=numbanks)
+    myram1 = vthread.MultibankRAM(m, 'myram1', clk, rst, datawidth, addrwidth,
+                                  numbanks=numbanks)
 
-    all_ok = m.TmpReg(initval=0)
-
-    array_len = 16
-    array_size = (array_len + array_len) * 4 * numbanks
+    all_ok = m.TmpReg(initval=0, prefix='all_ok')
+    wdata = m.TmpReg(width=datawidth, initval=0, prefix='wdata')
+    rdata = m.TmpReg(width=datawidth, initval=0, prefix='rdata')
+    rexpected = m.TmpReg(width=datawidth, initval=0, prefix='rexpected')
 
     def blink(size):
         all_ok.value = True
@@ -35,7 +37,7 @@ def mkLed(memory_datawidth=128):
         for i in range(4):
             print('# iter %d start' % i)
             # Test for 4KB boundary check
-            offset = i * 1024 * 16 + (myaxi.boundary_size - 4)
+            offset = i * 1024 * 16 + (myaxi.boundary_size - (datawidth // 8) * 3)
             body(size, offset)
             print('# iter %d end' % i)
 
@@ -48,64 +50,62 @@ def mkLed(memory_datawidth=128):
 
     def body(size, offset):
         # write
-        for bank in range(numbanks):
-            for i in range(size):
-                wdata = i + 100 + bank
-                myram.write_bank(bank, i, wdata)
+        for i in range(size):
+            wdata.value = i + 0x1000
+            myram0.write(i, wdata)
 
         laddr = 0
         gaddr = offset
-        myaxi.dma_write(myram, laddr, gaddr, size)
+        myaxi.dma_write(myram0, laddr, gaddr, size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # write
-        for bank in range(numbanks):
-            for i in range(size):
-                wdata = i + 1000 + bank
-                myram.write_bank(bank, i, wdata)
+        for i in range(size):
+            wdata.value = i + 0x4000
+            myram1.write(i, wdata)
 
         laddr = 0
-        gaddr = array_size + offset
-        myaxi.dma_write(myram, laddr, gaddr, size)
+        gaddr = (size + size) * 4 + offset
+        myaxi.dma_write(myram1, laddr, gaddr, size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # read
         laddr = 0
         gaddr = offset
-        myaxi.dma_read(myram, laddr, gaddr, size)
+        myaxi.dma_read(myram1, laddr, gaddr, size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
-        for bank in range(numbanks):
-            for i in range(size):
-                rdata = myram.read_bank(bank, i)
-                if vthread.verilog.NotEql(rdata, i + 100 + bank):
-                    print('rdata[%d] = %d' % (i, rdata))
-                    all_ok.value = False
+        for i in range(size):
+            rdata.value = myram1.read(i)
+            rexpected.value = i + 0x1000
+            if vthread.verilog.NotEql(rdata, rexpected):
+                print('rdata[%d] = %d (expected %d)' % (i, rdata, rexpected))
+                all_ok.value = False
 
         # read
         laddr = 0
-        gaddr = array_size + offset
-        myaxi.dma_read(myram, laddr, gaddr, size)
+        gaddr = (size + size) * 4 + offset
+        myaxi.dma_read(myram0, laddr, gaddr, size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
-        for bank in range(numbanks):
-            for i in range(size):
-                rdata = myram.read_bank(bank, i)
-                if vthread.verilog.NotEql(rdata, i + 1000 + bank):
-                    print('rdata[%d] = %d' % (i, rdata))
-                    all_ok.value = False
+        for i in range(size):
+            rdata.value = myram0.read(i)
+            rexpected.value = i + 0x4000
+            if vthread.verilog.NotEql(rdata, rexpected):
+                print('rdata[%d] = %d (expected %d)' % (i, rdata, rexpected))
+                all_ok.value = False
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
-    fsm = th.start(array_len)
+    fsm = th.start(17)
 
     return m
 
 
-def mkTest(memimg_name=None, memory_datawidth=128):
+def mkTest(memimg_name=None):
     m = Module('test')
 
     # target instance
-    led = mkLed(memory_datawidth)
+    led = mkLed()
 
     # copy paras and ports
     params = m.copy_params(led)
@@ -114,14 +114,14 @@ def mkTest(memimg_name=None, memory_datawidth=128):
     clk = ports['CLK']
     rst = ports['RST']
 
-    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memory_datawidth)
+    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memimg_name=memimg_name)
     memory.connect(ports, 'myaxi')
 
     uut = m.Instance(led, 'uut',
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    #simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

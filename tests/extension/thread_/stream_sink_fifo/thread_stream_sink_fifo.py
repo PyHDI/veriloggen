@@ -87,7 +87,7 @@ def mkLed():
         # Stream -> FIFO -> AXI-stream write
         # fifo_c
         maxi_out.dma_write_async(1024, size)
-        axi_out.read_fifo(fifo_c, size)
+        axi_out.dma_write_async(fifo_c, size)
 
         strm.join()
 

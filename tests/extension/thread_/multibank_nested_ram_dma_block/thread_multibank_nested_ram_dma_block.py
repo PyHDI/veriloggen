@@ -23,7 +23,6 @@ def mkLed(memory_datawidth=128):
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, memory_datawidth)
 
     pack_size = memory_datawidth // datawidth
-
     rams = [vthread.MultibankRAM(m, 'myram%d' % i, clk, rst, datawidth, addrwidth,
                                  numbanks=pack_size)
             for i in range(numbanks)]
@@ -34,6 +33,8 @@ def mkLed(memory_datawidth=128):
     block_size = 8
     array_len = 128
     array_size = (array_len + array_len) * 4 * numbanks
+
+    laddr_offset = 32
 
     def blink(size):
         all_ok.value = True
@@ -54,7 +55,7 @@ def mkLed(memory_datawidth=128):
     def body(size, offset):
         # write
         count = 0
-        blk_offset = 0
+        blk_offset = laddr_offset
         bias = 0
         done = False
         while count < size:
@@ -71,16 +72,14 @@ def mkLed(memory_datawidth=128):
                 bias += block_size
             blk_offset += block_size
 
-        laddr = 0
+        laddr = laddr_offset
         gaddr = offset
-        myram.dma_write_block(myaxi, laddr, gaddr,
-                              size // pack_size,
-                              block_size // pack_size)
+        myaxi.dma_write_block(myram, laddr, gaddr, size, block_size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # write
         count = 0
-        blk_offset = 0
+        blk_offset = laddr_offset
         bias = 0
         done = False
         while count < size:
@@ -97,23 +96,19 @@ def mkLed(memory_datawidth=128):
                 bias += block_size
             blk_offset += block_size
 
-        laddr = 0
+        laddr = laddr_offset
         gaddr = array_size + offset
-        myram.dma_write_block(myaxi, laddr, gaddr,
-                              size // pack_size,
-                              block_size // pack_size)
+        myaxi.dma_write_block(myram, laddr, gaddr, size, block_size)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # read
-        laddr = 0
+        laddr = laddr_offset
         gaddr = offset
-        myram.dma_read_block(myaxi, laddr, gaddr,
-                             size // pack_size,
-                             block_size // pack_size)
+        myaxi.dma_read_block(myram, laddr, gaddr, size, block_size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         count = 0
-        blk_offset = 0
+        blk_offset = laddr_offset
         bias = 0
         done = False
         while count < size:
@@ -134,14 +129,13 @@ def mkLed(memory_datawidth=128):
             blk_offset += block_size
 
         # read
-        laddr = 0
+        laddr = laddr_offset
         gaddr = array_size + offset
-        myram.dma_read_block(myaxi, laddr, gaddr, size //
-                             pack_size, block_size // pack_size)
+        myaxi.dma_read_block(myram, laddr, gaddr, size, block_size)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         count = 0
-        blk_offset = 0
+        blk_offset = laddr_offset
         bias = 0
         done = False
         while count < size:
@@ -180,14 +174,15 @@ def mkTest(memimg_name=None, memory_datawidth=128):
     clk = ports['CLK']
     rst = ports['RST']
 
-    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memory_datawidth)
+    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memory_datawidth,
+                                memimg_name=memimg_name)
     memory.connect(ports, 'myaxi')
 
     uut = m.Instance(led, 'uut',
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    #simulation.setup_waveform(m, uut)
+    # simulation.setup_waveform(m, uut)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

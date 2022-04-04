@@ -24,7 +24,6 @@ def mkLed():
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
 
     ram_ext = vthread.RAM(m, 'ram_ext', clk, rst, datawidth, addrwidth, numports=2)
-    ram_ext.disable_write(1)
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
     img_width = strm.parameter('img_width')

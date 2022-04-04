@@ -24,13 +24,14 @@ def mkLed():
     def add():
         while True:
             saxi.wait_flag(0, value=1, resetvalue=0)
+            saxi.write(1, 1)  # set busy
 
             a = saxi.read(2)
             b = saxi.read(3)
             c = a + b
 
             saxi.write(4, c)
-            saxi.write_flag(1, 1, resetvalue=0)
+            saxi.write(1, 0)  # unset busy
 
     th = vthread.Thread(m, 'th_add', clk, rst, add)
     fsm = th.start()
@@ -82,9 +83,10 @@ def mkTest():
         _saxi.write(awaddr, 1)
 
         araddr = 1 * 4
-        v = _saxi.read(araddr)
-        while v == 0:
-            v = _saxi.read(araddr)
+        while True:
+            busy = _saxi.read(araddr)
+            if not busy:
+                break
 
         araddr = 4 * 4
         c = _saxi.read(araddr)

@@ -29,7 +29,7 @@ def mkLed():
                                        with_last=True, noio=True)
     maxi_out = vthread.AXIM_for_AXIStreamOut(axi_out, 'maxi_out')
 
-    fifo_addrwidth = 8
+    fifo_addrwidth = 4
     fifo_a = vthread.FIFO(m, 'fifo_a', clk, rst, datawidth, fifo_addrwidth)
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
     fifo_c = vthread.FIFO(m, 'fifo_c', clk, rst, datawidth, fifo_addrwidth)
@@ -51,7 +51,7 @@ def mkLed():
         strm.set_source('b', ram_b, offset, size)
         strm.set_sink_fifo('c', fifo_c, size)
         strm.run()
-        # strm.join()
+        strm.join()
 
     def comp_sequential(size, offset):
         sum = 0
@@ -85,16 +85,14 @@ def mkLed():
         # AXI-stream read -> FIFO -> Stream
         # fifo_a
         maxi_in.dma_read_async(512, size)
-        axi_in.write_fifo(fifo_a, size)
-
-        comp_stream(size, offset)
+        axi_in.dma_read_async(fifo_a, size)
 
         # Stream -> FIFO -> AXI-stream write
         # fifo_c
         maxi_out.dma_write_async(1024, size)
-        axi_out.read_fifo(fifo_c, size)
+        axi_out.dma_write_async(fifo_c, size)
 
-        strm.join()
+        comp_stream(size, offset)
 
         # sequential
         offset = size

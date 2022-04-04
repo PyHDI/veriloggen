@@ -75,28 +75,28 @@ def mkLed(memory_datawidth=128):
 
     def comp(size):
         dma_size = size
-        comp_size = size * numbanks * 2
+        comp_size = size
 
         dma_offset = 0
         comp_offset = 0
-        myaxi.dma_read(ram_a, dma_offset, 0, dma_size)
-        myaxi.dma_read(ram_b, dma_offset, 0, dma_size)
+        myaxi.dma_read_packed(ram_a, dma_offset, 0, dma_size)
+        myaxi.dma_read_packed(ram_b, dma_offset, 0, dma_size)
         comp_stream(size, comp_offset)
-        myaxi.dma_write(ram_c, dma_offset, 1024, dma_size)
+        myaxi.dma_write_packed(ram_c, dma_offset, 1024, dma_size)
 
         dma_offset = size
         comp_offset = comp_size
-        myaxi.dma_read(ram_a, dma_offset, 0, dma_size)
-        myaxi.dma_read(ram_b, dma_offset, 0, dma_size)
+        myaxi.dma_read_packed(ram_a, dma_offset, 0, dma_size)
+        myaxi.dma_read_packed(ram_b, dma_offset, 0, dma_size)
         comp_sequential(size, comp_offset)
-        myaxi.dma_write(ram_c, dma_offset, 1024 * 2, dma_size)
+        myaxi.dma_write_packed(ram_c, dma_offset, 1024 * 2, dma_size)
 
         check(comp_size, 0, comp_offset)
 
         vthread.finish()
 
     th = vthread.Thread(m, 'th_comp', clk, rst, comp)
-    fsm = th.start(32)
+    fsm = th.start(128)
 
     return m
 
@@ -114,7 +114,8 @@ def mkTest(memimg_name=None, memory_datawidth=128):
     clk = ports['CLK']
     rst = ports['RST']
 
-    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memory_datawidth)
+    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memory_datawidth,
+                                memimg_name=memimg_name)
     memory.connect(ports, 'myaxi')
 
     uut = m.Instance(led, 'uut',

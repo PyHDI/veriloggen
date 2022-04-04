@@ -54,6 +54,8 @@ module blinkled
   wire [32-1:0] ram_a_0_wdata;
   wire ram_a_0_wenable;
   wire ram_a_0_enable;
+  assign ram_a_0_wdata = 'hx;
+  assign ram_a_0_wenable = 0;
 
   ram_a
   inst_ram_a
@@ -76,6 +78,8 @@ module blinkled
   wire [32-1:0] ram_b_0_wdata;
   wire ram_b_0_wenable;
   wire ram_b_0_enable;
+  assign ram_b_0_wdata = 'hx;
+  assign ram_b_0_wenable = 0;
 
   ram_b
   inst_ram_b
@@ -141,24 +145,24 @@ module blinkled
   reg prev_arvalid_4;
   assign saxi_awready = (_saxi_register_fsm == 0) && (!writevalid_1 && !readvalid_2 && !saxi_bvalid && prev_awvalid_3);
   assign saxi_arready = (_saxi_register_fsm == 0) && (!readvalid_2 && !writevalid_1 && prev_arvalid_4 && !prev_awvalid_3);
-  reg [_saxi_maskwidth-1:0] _tmp_5;
-  wire signed [32-1:0] _tmp_6;
-  assign _tmp_6 = (_tmp_5 == 0)? _saxi_register_0 : 
-                  (_tmp_5 == 1)? _saxi_register_1 : 
-                  (_tmp_5 == 2)? _saxi_register_2 : 
-                  (_tmp_5 == 3)? _saxi_register_3 : 'hx;
-  wire _tmp_7;
-  assign _tmp_7 = (_tmp_5 == 0)? _saxi_flag_0 : 
-                  (_tmp_5 == 1)? _saxi_flag_1 : 
-                  (_tmp_5 == 2)? _saxi_flag_2 : 
-                  (_tmp_5 == 3)? _saxi_flag_3 : 'hx;
-  wire signed [32-1:0] _tmp_8;
-  assign _tmp_8 = (_tmp_5 == 0)? _saxi_resetval_0 : 
-                  (_tmp_5 == 1)? _saxi_resetval_1 : 
-                  (_tmp_5 == 2)? _saxi_resetval_2 : 
-                  (_tmp_5 == 3)? _saxi_resetval_3 : 'hx;
+  reg [_saxi_maskwidth-1:0] axis_maskaddr_5;
+  wire signed [32-1:0] axislite_rdata_6;
+  assign axislite_rdata_6 = (axis_maskaddr_5 == 0)? _saxi_register_0 : 
+                            (axis_maskaddr_5 == 1)? _saxi_register_1 : 
+                            (axis_maskaddr_5 == 2)? _saxi_register_2 : 
+                            (axis_maskaddr_5 == 3)? _saxi_register_3 : 'hx;
+  wire axislite_flag_7;
+  assign axislite_flag_7 = (axis_maskaddr_5 == 0)? _saxi_flag_0 : 
+                           (axis_maskaddr_5 == 1)? _saxi_flag_1 : 
+                           (axis_maskaddr_5 == 2)? _saxi_flag_2 : 
+                           (axis_maskaddr_5 == 3)? _saxi_flag_3 : 'hx;
+  wire signed [32-1:0] axislite_resetval_8;
+  assign axislite_resetval_8 = (axis_maskaddr_5 == 0)? _saxi_resetval_0 : 
+                               (axis_maskaddr_5 == 1)? _saxi_resetval_1 : 
+                               (axis_maskaddr_5 == 2)? _saxi_resetval_2 : 
+                               (axis_maskaddr_5 == 3)? _saxi_resetval_3 : 'hx;
   reg _saxi_cond_0_1;
-  assign saxi_wready = _saxi_register_fsm == 3;
+  assign saxi_wready = _saxi_register_fsm == 2;
   reg _mystream_stream_ivalid;
   wire _mystream_stream_oready;
   wire _mystream_stream_internal_oready;
@@ -367,39 +371,39 @@ module blinkled
         readvalid_2 <= 1;
       end 
       if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid)) begin
-        saxi_rdata <= _tmp_6;
+        saxi_rdata <= axislite_rdata_6;
         saxi_rvalid <= 1;
       end 
       _saxi_cond_0_1 <= 1;
       if(saxi_rvalid && !saxi_rready) begin
         saxi_rvalid <= saxi_rvalid;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && _tmp_7 && (_tmp_5 == 0)) begin
-        _saxi_register_0 <= _tmp_8;
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_7 && (axis_maskaddr_5 == 0)) begin
+        _saxi_register_0 <= axislite_resetval_8;
         _saxi_flag_0 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && _tmp_7 && (_tmp_5 == 1)) begin
-        _saxi_register_1 <= _tmp_8;
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_7 && (axis_maskaddr_5 == 1)) begin
+        _saxi_register_1 <= axislite_resetval_8;
         _saxi_flag_1 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && _tmp_7 && (_tmp_5 == 2)) begin
-        _saxi_register_2 <= _tmp_8;
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_7 && (axis_maskaddr_5 == 2)) begin
+        _saxi_register_2 <= axislite_resetval_8;
         _saxi_flag_2 <= 0;
       end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && _tmp_7 && (_tmp_5 == 3)) begin
-        _saxi_register_3 <= _tmp_8;
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_7 && (axis_maskaddr_5 == 3)) begin
+        _saxi_register_3 <= axislite_resetval_8;
         _saxi_flag_3 <= 0;
       end 
-      if((_saxi_register_fsm == 3) && (saxi_wready && saxi_wvalid) && (_tmp_5 == 0)) begin
+      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_5 == 0)) begin
         _saxi_register_0 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 3) && (saxi_wready && saxi_wvalid) && (_tmp_5 == 1)) begin
+      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_5 == 1)) begin
         _saxi_register_1 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 3) && (saxi_wready && saxi_wvalid) && (_tmp_5 == 2)) begin
+      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_5 == 2)) begin
         _saxi_register_2 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 3) && (saxi_wready && saxi_wvalid) && (_tmp_5 == 3)) begin
+      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_5 == 3)) begin
         _saxi_register_3 <= saxi_wdata;
       end 
       if((_saxi_register_0 == 1) && (th_comp == 2) && 1) begin
@@ -451,39 +455,31 @@ module blinkled
 
   localparam _saxi_register_fsm_1 = 1;
   localparam _saxi_register_fsm_2 = 2;
-  localparam _saxi_register_fsm_3 = 3;
 
   always @(posedge CLK) begin
     if(RST) begin
       _saxi_register_fsm <= _saxi_register_fsm_init;
+      axis_maskaddr_5 <= 0;
     end else begin
       case(_saxi_register_fsm)
         _saxi_register_fsm_init: begin
           if(readvalid_2 || writevalid_1) begin
-            _tmp_5 <= (addr_0 >> _saxi_shift) & _saxi_mask;
+            axis_maskaddr_5 <= (addr_0 >> _saxi_shift) & _saxi_mask;
           end 
           if(readvalid_2) begin
             _saxi_register_fsm <= _saxi_register_fsm_1;
           end 
           if(writevalid_1) begin
-            _saxi_register_fsm <= _saxi_register_fsm_3;
-          end 
-        end
-        _saxi_register_fsm_1: begin
-          if(saxi_rready && saxi_rvalid) begin
-            _saxi_register_fsm <= _saxi_register_fsm_init;
-          end 
-          if((saxi_rready || !saxi_rvalid) && !(saxi_rready && saxi_rvalid)) begin
             _saxi_register_fsm <= _saxi_register_fsm_2;
           end 
         end
-        _saxi_register_fsm_2: begin
-          if(saxi_rready && saxi_rvalid) begin
+        _saxi_register_fsm_1: begin
+          if(saxi_rready || !saxi_rvalid) begin
             _saxi_register_fsm <= _saxi_register_fsm_init;
           end 
         end
-        _saxi_register_fsm_3: begin
-          if(saxi_wready && saxi_wvalid) begin
+        _saxi_register_fsm_2: begin
+          if(saxi_wvalid) begin
             _saxi_register_fsm <= _saxi_register_fsm_init;
           end 
         end

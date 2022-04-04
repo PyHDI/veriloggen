@@ -20,8 +20,7 @@ def mkLed():
     datawidth = 32
     addrwidth = 10
 
-    # With async DMA, set enable_async = True
-    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth, enable_async=True)
+    myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
     # If RAM is simultaneously accesseed with DMA, numports must be 2 or more.
     myram = vthread.RAM(m, 'myram', clk, rst, datawidth, addrwidth, numports=2)
 
