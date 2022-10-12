@@ -878,14 +878,15 @@ class VerilogReadVisitor(object):
         false_scope = (item.false_statement.scope
                        if isinstance(item.false_statement, vast.Block)
                        else None)
+
         _if_true = module.GenerateIf(self.m, cond, true_scope)
         ret = _if_true
         self.add_object(_if_true)
         self.push_module(_if_true)
         statement = self.visit(item.true_statement)
         self.pop_module()
+
         _if_false = _if_true.Else(false_scope)
-        self.add_object(_if_false)
         self.push_module(_if_false)
         statement = (self.visit(item.false_statement)
                      if item.false_statement is not None else None)

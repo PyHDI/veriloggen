@@ -42,6 +42,12 @@ class _Visitor(object):
             self, 'visit_' + node.__class__.__name__, self.generic_visit)
         return visitor(node)
 
+    def visit_tuple(self, node):
+        return tuple([self.visit(n) for n in node])
+
+    def visit_list(self, node):
+        return [self.visit(n) for n in node]
+
 
 class _CachedVisitor(_Visitor):
 
@@ -50,10 +56,10 @@ class _CachedVisitor(_Visitor):
         self.visited_node = {}
 
     def visit(self, node):
-        # check the cache
         if isinstance(node, (tuple, list)):
             return self._visit(node)
 
+        # check the cache
         if node in self.visited_node:
             return self.visited_node[node]
 
@@ -209,13 +215,6 @@ class ConstantVisitor(_CommonVisitor):
 
 class ReplaceVisitor(ConstantVisitor):
 
-    def visit_tuple(self, node):
-        return tuple([self.visit(n) for n in node])
-
-    def visit_list(self, node):
-        return [self.visit(n) for n in node]
-
-    # -------------------------------------------------------------------------
     def visit__BinaryOperator(self, node):
         left = self.visit(node.left)
         right = self.visit(node.right)
