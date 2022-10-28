@@ -678,5 +678,5 @@ class ModuleReplaceVisitor(_CachedVisitor):
 
 
 def resolve(m, const_dict=None):
-    mvisitor = ModuleReplaceVisitor(m, const_dict)
+    mvisitor = ModuleReplaceVisitor(copy.deepcopy(m), const_dict)
     return mvisitor.resolve()
