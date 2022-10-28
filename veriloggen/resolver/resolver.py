@@ -676,7 +676,12 @@ class ModuleReplaceVisitor(_CachedVisitor):
         #    "GenerateIf statement is not currently supported.")
         return node
 
+    def visit_GenerateIfElse(self, node):
+        # raise NotImplementedError(
+        #    "GenerateIfElse statement is not currently supported.")
+        return node
+
 
 def resolve(m, const_dict=None):
-    mvisitor = ModuleReplaceVisitor(m, const_dict)
+    mvisitor = ModuleReplaceVisitor(copy.deepcopy(m), const_dict)
     return mvisitor.resolve()
