@@ -887,6 +887,7 @@ class VerilogReadVisitor(object):
         self.pop_module()
 
         _if_false = _if_true.Else(false_scope)
+        self.add_object(_if_false)
         self.push_module(_if_false)
         statement = (self.visit(item.false_statement)
                      if item.false_statement is not None else None)
