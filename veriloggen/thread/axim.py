@@ -793,7 +793,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             shamt = int(math.log(pack_size, 2))
             res = vtypes.Mux(
                 vtypes.And(global_size, 2 ** shamt - 1) > 0, 1, 0)
-            global_size = (global_size >> shamt) + res
+            global_size = vtypes.Add((global_size >> shamt), res)
 
         op_id = self._get_read_op_id(ram, port, ram_method)
 
@@ -1188,7 +1188,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
             shamt = int(math.log(pack_size, 2))
             res = vtypes.Mux(
                 vtypes.And(global_size, 2 ** shamt - 1) > 0, 1, 0)
-            global_size = (global_size >> shamt) + res
+            global_size = vtypes.Add((global_size >> shamt), res)
 
         op_id = self._get_write_op_id(ram, port, ram_method)
 
