@@ -5,9 +5,11 @@ import os
 import collections
 
 # the next line can be removed after installation
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
 
 from veriloggen import *
+
 
 def mkLed():
     m = Module('blinkled')
@@ -27,17 +29,18 @@ def mkLed():
                 count(count + 1)
             )
         ))
-    
+
     m.Always(Posedge(clk))(
         If(rst)(
-            led( 0 )
+            led(0)
         ).Else(
             If(count == 1023)(
-                led( led + 1 )
+                led(led + 1)
             )
         ))
 
     return m
+
 
 def mkTop():
     m = Module('top')
@@ -45,22 +48,33 @@ def mkTop():
 
     clk = m.Input('CLK')
     rst = m.Input('RST')
-    
-    params = m.copy_params(led, prefix='A_')
-    ports = m.copy_ports(led, prefix='A_', exclude=('CLK', 'RST'))
-    
-    params = m.copy_params(led, prefix='B_')
-    ports = m.copy_ports(led, prefix='B_', exclude=('CLK', 'RST'))
-    
+
+    m.copy_params(led, prefix='A_')
+    m.copy_ports(led, prefix='A_', exclude=('CLK', 'RST'))
+
+    m.copy_params(led, prefix='B_')
+    m.copy_ports(led, prefix='B_', exclude=('CLK', 'RST'))
+
+    a_params = m.connect_params(led, prefix='A_')
+    a_ports = collections.OrderedDict()
+    a_ports['CLK'] = clk
+    a_ports['RST'] = rst
+    a_ports.update(m.connect_ports(led, prefix='A_'))
+
+    b_params = m.connect_params(led, prefix='B_')
+    b_ports = collections.OrderedDict()
+    b_ports['CLK'] = clk
+    b_ports['RST'] = rst
+    b_ports.update(m.connect_ports(led, prefix='B_'))
+
     m.Instance(led, 'inst_blinkled_a',
-               m.connect_params(led, prefix='A_'),
-               m.connect_ports(led, prefix='') + m.connect_ports(led, prefix='A_'))
-    
+               params=a_params, ports=a_ports)
+
     m.Instance(led, 'inst_blinkled_b',
-               m.connect_params(led, prefix='B_'),
-               m.connect_ports(led, prefix='') + m.connect_ports(led, prefix='B_'))
+               params=b_params, ports=b_ports)
 
     return m
+
 
 if __name__ == '__main__':
     top = mkTop()

@@ -21,38 +21,62 @@ def mkMain():
 
     fsm = FSM(m, 'fsm', clk, rst)
 
-    # write address
-    awaddr = 1024
-    awlen = 64
-
-    ack, counter = myaxi.write_request_counter(awaddr, awlen, cond=fsm)
+    # write request (1)
+    awaddr1 = 1024
+    awlen1 = 64
+    ack = myaxi.write_request(awaddr1, awlen1, cond=fsm)
     fsm.If(ack).goto_next()
 
-    # write data
-    wdata = m.Reg('wdata', 32, initval=0)
-
-    ack, last = myaxi.write_data(wdata, counter, cond=fsm)
+    # write data (1)
+    wdata1 = m.Reg('wdata1', 32, initval=0)
+    wlast1 = wdata1 == awlen1 - 1
+    ack = myaxi.write_data(wdata1, wlast1, cond=fsm)
 
     fsm.If(ack)(
-        wdata.inc()
+        wdata1.inc()
     )
-    fsm.If(last).goto_next()
+    fsm.If(ack, wlast1).goto_next()
 
-    sum = m.Reg('sum', 32, initval=0)
-    expected_sum = (awlen - 1) * awlen // 2
+    # write request (2)
+    awaddr2 = 1024 + 1024
+    awlen2 = 64 + 64
+    ack = myaxi.write_request(awaddr2, awlen2, cond=fsm)
+    fsm.If(ack).goto_next()
 
+    # write data (2)
+    wdata2 = m.Reg('wdata2', 32, initval=0)
+    wlast2 = wdata2 == awlen2 - 1
+    ack = myaxi.write_data(wdata2, wlast2, cond=fsm)
+
+    fsm.If(ack)(
+        wdata2.inc()
+    )
+    fsm.If(ack, wlast2).goto_next()
+    fsm.If(Not(myaxi.wdata.wvalid)).goto_next()
+
+    # verify
     seq = Seq(m, 'seq', clk, rst)
+    sum = m.Reg('sum', width=32, initval=0)
     seq.If(Ands(myaxi.wdata.wvalid, myaxi.wdata.wready))(
         sum.add(myaxi.wdata.wdata)
     )
-    seq.Then().If(myaxi.wdata.wlast).Delay(1)(
-        Systask('display', "sum=%d expected_sum=%d", sum, expected_sum)
+
+    expected_sum = (((0 + awlen1 - 1) * awlen1) // 2 +
+                    ((0 + awlen2 - 1) * awlen2) // 2)
+    fsm(
+        Systask('display', 'sum=%d expected_sum=%d', sum, expected_sum)
     )
+    fsm.If(sum == expected_sum)(
+        Systask('display', '# verify: PASSED')
+    ).Else(
+        Systask('display', '# verify: FAILED')
+    )
+    fsm.goto_next()
 
     return m
 
 
-def mkTest():
+def mkTest(memimg_name=None):
     m = Module('test')
 
     # target instance
@@ -65,94 +89,8 @@ def mkTest():
     clk = ports['CLK']
     rst = ports['RST']
 
-#    # awready (no stall)
-#    awready = ports['myaxi_awready']
-#    _awready = m.TmpWireLike(awready)
-#    _awready.assign(1)
-#    m.Always()( awready(_awready) )
-#
-#    # wready (nostall)
-#    wready = ports['myaxi_wready']
-#    _wready = m.TmpWireLike(wready)
-#    _wready.assign(1)
-#    m.Always()( wready(_wready) )
-
-    # awready (with stall)
-    waddr_fsm = FSM(m, 'waddr', clk, rst)
-    _awlen = m.Reg('_awlen', 32, initval=0)
-
-    waddr_fsm(
-        ports['myaxi_awready'](0),
-        ports['myaxi_wready'](0),
-        _awlen(0)
-    )
-    waddr_fsm.If(ports['myaxi_awvalid']).goto_next()
-
-    waddr_fsm.If(ports['myaxi_awvalid'])(
-        ports['myaxi_awready'](1)
-    )
-    waddr_fsm.goto_next()
-
-    waddr_fsm(
-        ports['myaxi_awready'](0),
-        _awlen(ports['myaxi_awlen'])
-    )
-    waddr_fsm.goto_next()
-
-    # wready (with stall)
-    waddr_init = waddr_fsm.current
-    waddr_fsm(
-        ports['myaxi_wready'](0)
-    )
-    waddr_fsm.If(ports['myaxi_wvalid']).goto_next()
-
-    waddr_fsm.If(ports['myaxi_wvalid'])(
-        ports['myaxi_wready'](1)
-    )
-    waddr_fsm.goto_next()
-
-    waddr_fsm(
-        ports['myaxi_wready'](0),
-        _awlen.dec()
-    )
-    waddr_fsm.goto(waddr_init)
-    waddr_fsm.If(_awlen == 0).goto_init()
-
-    # wready (no stall)
-#    waddr_fsm(
-#        ports['myaxi_wready'](1)
-#    )
-#    waddr_fsm.Delay(1)(
-#        ports['myaxi_wready'](0)
-#    )
-#    waddr_fsm.If(ports['myaxi_wvalid'])(
-#        _awlen.dec()
-#    )
-#    waddr_fsm.Then().If(_awlen == 0).goto_next()
-
-    # arready (no stall)
-    arready = ports['myaxi_arready']
-    _arready = m.TmpWireLike(arready)
-    _arready.assign(0)
-    m.Always()(arready(_arready))
-
-    # rvalid (no stall)
-    rvalid = ports['myaxi_rvalid']
-    _rvalid = m.TmpWireLike(rvalid)
-    _rvalid.assign(0)
-    m.Always()(rvalid(_rvalid))
-
-    # rdata (no stall)
-    rdata = ports['myaxi_rdata']
-    _rdata = m.TmpWireLike(rdata)
-    _rdata.assign(0)
-    m.Always()(rdata(_rdata))
-
-    # rlast (no stall)
-    rlast = ports['myaxi_rlast']
-    _rlast = m.TmpWireLike(rlast)
-    _rlast.assign(0)
-    m.Always()(rlast(_rlast))
+    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memimg_name=memimg_name)
+    memory.connect(ports, 'myaxi')
 
     uut = m.Instance(main, 'uut',
                      params=m.connect_params(main),
@@ -170,13 +108,26 @@ def mkTest():
     return m
 
 
+def run(filename='tmp.v', simtype='iverilog', outputfile=None):
+
+    if outputfile is None:
+        outputfile = os.path.splitext(os.path.basename(__file__))[0] + '.out'
+
+    memimg_name = 'memimg_' + outputfile
+
+    test = mkTest(memimg_name=memimg_name)
+
+    if filename is not None:
+        test.to_verilog(filename)
+
+    sim = simulation.Simulator(test, sim=simtype)
+    rslt = sim.run(outputfile=outputfile)
+    lines = rslt.splitlines()
+    if simtype == 'verilator' and lines[-1].startswith('-'):
+        rslt = '\n'.join(lines[:-1])
+    return rslt
+
+
 if __name__ == '__main__':
-    test = mkTest()
-    verilog = test.to_verilog('tmp.v')
-    print(verilog)
-
-    sim = simulation.Simulator(test)
-    rslt = sim.run()
+    rslt = run(filename='tmp.v')
     print(rslt)
-
-    # sim.view_waveform()

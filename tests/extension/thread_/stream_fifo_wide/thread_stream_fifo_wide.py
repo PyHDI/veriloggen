@@ -83,14 +83,14 @@ def mkLed(axi_datawidth=32, fifo_datawidth=8):
         # AXI-stream read -> FIFO -> Stream
         # fifo_a
         maxi_in.dma_read_async(512, dma_size)
-        axi_in.write_fifo(fifo_a, _size)
+        axi_in.dma_read_async(fifo_a, _size)
 
         comp_stream(_size, offset)
 
         # Stream -> FIFO -> AXI-stream write
         # fifo_b
         maxi_out.dma_write_async(1024, dma_size)
-        axi_out.read_fifo(fifo_b, _size)
+        axi_out.dma_write_async(fifo_b, _size)
 
         strm.join()
 
@@ -98,14 +98,14 @@ def mkLed(axi_datawidth=32, fifo_datawidth=8):
         # AXI-stream read -> FIFO -> Stream
         # fifo_a
         maxi_in.dma_read_async(512, dma_size)
-        axi_in.write_fifo(fifo_a, _size)
+        axi_in.dma_read_async(fifo_a, _size)
 
         comp_stream(_size, offset)
 
         # Stream -> FIFO -> AXI-stream write
         # fifo_b
         maxi_out.dma_write_async(1024, dma_size)
-        axi_out.read_fifo(fifo_b, _size)
+        axi_out.dma_write_async(fifo_b, _size)
 
         strm.join()
 

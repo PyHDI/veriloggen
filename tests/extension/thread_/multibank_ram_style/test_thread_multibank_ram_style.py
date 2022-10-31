@@ -124,86 +124,94 @@ module blinkled
   reg signed [32-1:0] _th_blink_write_sum_2;
   reg signed [32-1:0] _th_blink_i_3;
   reg signed [32-1:0] _th_blink_wdata_4;
-  wire [2-1:0] _tmp_0;
-  assign _tmp_0 = _th_blink_i_3;
-  assign myram_0_0_wdata = ((th_blink == 6) && (_tmp_0 == 0))? _th_blink_wdata_4 : 'hx;
-  assign myram_0_0_wenable = ((th_blink == 6) && (_tmp_0 == 0))? 1'd1 : 0;
-  assign myram_1_0_wdata = ((th_blink == 6) && (_tmp_0 == 1))? _th_blink_wdata_4 : 'hx;
-  assign myram_1_0_wenable = ((th_blink == 6) && (_tmp_0 == 1))? 1'd1 : 0;
-  assign myram_2_0_wdata = ((th_blink == 6) && (_tmp_0 == 2))? _th_blink_wdata_4 : 'hx;
-  assign myram_2_0_wenable = ((th_blink == 6) && (_tmp_0 == 2))? 1'd1 : 0;
-  assign myram_3_0_wdata = ((th_blink == 6) && (_tmp_0 == 3))? _th_blink_wdata_4 : 'hx;
-  assign myram_3_0_wenable = ((th_blink == 6) && (_tmp_0 == 3))? 1'd1 : 0;
+  wire [2-1:0] write_rtl_bank_0;
+  assign write_rtl_bank_0 = _th_blink_i_3;
+  assign myram_0_0_wdata = ((th_blink == 6) && (write_rtl_bank_0 == 0))? _th_blink_wdata_4 : 'hx;
+  assign myram_0_0_wenable = ((th_blink == 6) && (write_rtl_bank_0 == 0))? 1'd1 : 0;
+  assign myram_1_0_wdata = ((th_blink == 6) && (write_rtl_bank_0 == 1))? _th_blink_wdata_4 : 'hx;
+  assign myram_1_0_wenable = ((th_blink == 6) && (write_rtl_bank_0 == 1))? 1'd1 : 0;
+  assign myram_2_0_wdata = ((th_blink == 6) && (write_rtl_bank_0 == 2))? _th_blink_wdata_4 : 'hx;
+  assign myram_2_0_wenable = ((th_blink == 6) && (write_rtl_bank_0 == 2))? 1'd1 : 0;
+  assign myram_3_0_wdata = ((th_blink == 6) && (write_rtl_bank_0 == 3))? _th_blink_wdata_4 : 'hx;
+  assign myram_3_0_wenable = ((th_blink == 6) && (write_rtl_bank_0 == 3))? 1'd1 : 0;
   reg signed [32-1:0] _th_blink_read_sum_5;
-  wire [2-1:0] _tmp_1;
-  assign _tmp_1 = _th_blink_i_3;
+  wire [2-1:0] read_rtl_bank_1;
+  assign read_rtl_bank_1 = _th_blink_i_3;
+  reg [2-1:0] _tmp_2;
   assign myram_0_0_addr = (th_blink == 13)? _th_blink_i_3 >> 2 : 
-                          ((th_blink == 6) && (_tmp_0 == 0))? _th_blink_i_3 >> 2 : 'hx;
+                          ((th_blink == 6) && (write_rtl_bank_0 == 0))? _th_blink_i_3 >> 2 : 'hx;
   assign myram_0_0_enable = (th_blink == 13)? 1'd1 : 
-                            ((th_blink == 6) && (_tmp_0 == 0))? 1'd1 : 0;
-  localparam _tmp_2 = 1;
-  wire [_tmp_2-1:0] _tmp_3;
-  assign _tmp_3 = th_blink == 13;
-  reg [_tmp_2-1:0] __tmp_3_1;
+                            ((th_blink == 6) && (write_rtl_bank_0 == 0))? 1'd1 : 0;
+  localparam _tmp_3 = 1;
+  wire [_tmp_3-1:0] _tmp_4;
+  assign _tmp_4 = th_blink == 13;
+  reg [_tmp_3-1:0] __tmp_4_1;
   assign myram_1_0_addr = (th_blink == 13)? _th_blink_i_3 >> 2 : 
-                          ((th_blink == 6) && (_tmp_0 == 1))? _th_blink_i_3 >> 2 : 'hx;
+                          ((th_blink == 6) && (write_rtl_bank_0 == 1))? _th_blink_i_3 >> 2 : 'hx;
   assign myram_1_0_enable = (th_blink == 13)? 1'd1 : 
-                            ((th_blink == 6) && (_tmp_0 == 1))? 1'd1 : 0;
-  localparam _tmp_4 = 1;
-  wire [_tmp_4-1:0] _tmp_5;
-  assign _tmp_5 = th_blink == 13;
-  reg [_tmp_4-1:0] __tmp_5_1;
+                            ((th_blink == 6) && (write_rtl_bank_0 == 1))? 1'd1 : 0;
+  localparam _tmp_5 = 1;
+  wire [_tmp_5-1:0] _tmp_6;
+  assign _tmp_6 = th_blink == 13;
+  reg [_tmp_5-1:0] __tmp_6_1;
   assign myram_2_0_addr = (th_blink == 13)? _th_blink_i_3 >> 2 : 
-                          ((th_blink == 6) && (_tmp_0 == 2))? _th_blink_i_3 >> 2 : 'hx;
+                          ((th_blink == 6) && (write_rtl_bank_0 == 2))? _th_blink_i_3 >> 2 : 'hx;
   assign myram_2_0_enable = (th_blink == 13)? 1'd1 : 
-                            ((th_blink == 6) && (_tmp_0 == 2))? 1'd1 : 0;
-  localparam _tmp_6 = 1;
-  wire [_tmp_6-1:0] _tmp_7;
-  assign _tmp_7 = th_blink == 13;
-  reg [_tmp_6-1:0] __tmp_7_1;
+                            ((th_blink == 6) && (write_rtl_bank_0 == 2))? 1'd1 : 0;
+  localparam _tmp_7 = 1;
+  wire [_tmp_7-1:0] _tmp_8;
+  assign _tmp_8 = th_blink == 13;
+  reg [_tmp_7-1:0] __tmp_8_1;
   assign myram_3_0_addr = (th_blink == 13)? _th_blink_i_3 >> 2 : 
-                          ((th_blink == 6) && (_tmp_0 == 3))? _th_blink_i_3 >> 2 : 'hx;
+                          ((th_blink == 6) && (write_rtl_bank_0 == 3))? _th_blink_i_3 >> 2 : 'hx;
   assign myram_3_0_enable = (th_blink == 13)? 1'd1 : 
-                            ((th_blink == 6) && (_tmp_0 == 3))? 1'd1 : 0;
-  localparam _tmp_8 = 1;
-  wire [_tmp_8-1:0] _tmp_9;
-  assign _tmp_9 = th_blink == 13;
-  reg [_tmp_8-1:0] __tmp_9_1;
-  reg signed [32-1:0] _tmp_10;
+                            ((th_blink == 6) && (write_rtl_bank_0 == 3))? 1'd1 : 0;
+  localparam _tmp_9 = 1;
+  wire [_tmp_9-1:0] _tmp_10;
+  assign _tmp_10 = th_blink == 13;
+  reg [_tmp_9-1:0] __tmp_10_1;
+  wire signed [32-1:0] read_rtl_rdata_11;
+  wire read_rtl_rvalid_12;
+  assign read_rtl_rdata_11 = (_tmp_2 == 0)? myram_0_0_rdata : 
+                             (_tmp_2 == 1)? myram_1_0_rdata : 
+                             (_tmp_2 == 2)? myram_2_0_rdata : 
+                             (_tmp_2 == 3)? myram_3_0_rdata : 0;
+  assign read_rtl_rvalid_12 = __tmp_4_1;
+  reg signed [32-1:0] read_rdata_13;
   reg signed [32-1:0] _th_blink_rdata_6;
 
   always @(posedge CLK) begin
     if(RST) begin
-      __tmp_3_1 <= 0;
+      __tmp_4_1 <= 0;
     end else begin
-      __tmp_3_1 <= _tmp_3;
+      __tmp_4_1 <= _tmp_4;
     end
   end
 
 
   always @(posedge CLK) begin
     if(RST) begin
-      __tmp_5_1 <= 0;
+      __tmp_6_1 <= 0;
     end else begin
-      __tmp_5_1 <= _tmp_5;
+      __tmp_6_1 <= _tmp_6;
     end
   end
 
 
   always @(posedge CLK) begin
     if(RST) begin
-      __tmp_7_1 <= 0;
+      __tmp_8_1 <= 0;
     end else begin
-      __tmp_7_1 <= _tmp_7;
+      __tmp_8_1 <= _tmp_8;
     end
   end
 
 
   always @(posedge CLK) begin
     if(RST) begin
-      __tmp_9_1 <= 0;
+      __tmp_10_1 <= 0;
     end else begin
-      __tmp_9_1 <= _tmp_9;
+      __tmp_10_1 <= _tmp_10;
     end
   end
 
@@ -242,7 +250,7 @@ module blinkled
       _th_blink_i_3 <= 0;
       _th_blink_wdata_4 <= 0;
       _th_blink_read_sum_5 <= 0;
-      _tmp_10 <= 0;
+      read_rdata_13 <= 0;
       _th_blink_rdata_6 <= 0;
     end else begin
       case(th_blink)
@@ -304,24 +312,15 @@ module blinkled
           end
         end
         th_blink_13: begin
-          if(__tmp_3_1 && (_tmp_1 == 0)) begin
-            _tmp_10 <= myram_0_0_rdata;
+          if(read_rtl_rvalid_12) begin
+            read_rdata_13 <= read_rtl_rdata_11;
           end 
-          if(__tmp_5_1 && (_tmp_1 == 1)) begin
-            _tmp_10 <= myram_1_0_rdata;
-          end 
-          if(__tmp_7_1 && (_tmp_1 == 2)) begin
-            _tmp_10 <= myram_2_0_rdata;
-          end 
-          if(__tmp_9_1 && (_tmp_1 == 3)) begin
-            _tmp_10 <= myram_3_0_rdata;
-          end 
-          if(__tmp_3_1 || __tmp_5_1 || __tmp_7_1 || __tmp_9_1) begin
+          if(read_rtl_rvalid_12) begin
             th_blink <= th_blink_14;
           end 
         end
         th_blink_14: begin
-          _th_blink_rdata_6 <= _tmp_10;
+          _th_blink_rdata_6 <= read_rdata_13;
           th_blink <= th_blink_15;
         end
         th_blink_15: begin
@@ -370,6 +369,17 @@ module blinkled
           th_blink <= th_blink_25;
         end
       endcase
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _tmp_2 <= 0;
+    end else begin
+      if(th_blink == 13) begin
+        _tmp_2 <= read_rtl_bank_1;
+      end 
     end
   end
 

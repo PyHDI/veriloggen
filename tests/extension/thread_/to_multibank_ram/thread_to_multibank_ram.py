@@ -57,7 +57,7 @@ def mkLed(memory_datawidth=128):
 
         laddr = 0
         gaddr = offset
-        myaxi.dma_write(myram, laddr, gaddr, size)
+        myaxi.dma_write(myram, laddr, gaddr, size * numbanks)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # write
@@ -68,13 +68,13 @@ def mkLed(memory_datawidth=128):
 
         laddr = 0
         gaddr = array_size + offset
-        myaxi.dma_write(myram, laddr, gaddr, size)
+        myaxi.dma_write(myram, laddr, gaddr, size * numbanks)
         print('dma_write: [%d] -> [%d]' % (laddr, gaddr))
 
         # read
         laddr = 0
         gaddr = offset
-        myaxi.dma_read(myram, laddr, gaddr, size)
+        myaxi.dma_read(myram, laddr, gaddr, size * numbanks)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for bank in range(numbanks):
@@ -87,7 +87,7 @@ def mkLed(memory_datawidth=128):
         # read
         laddr = 0
         gaddr = array_size + offset
-        myaxi.dma_read(myram, laddr, gaddr, size)
+        myaxi.dma_read(myram, laddr, gaddr, size * numbanks)
         print('dma_read:  [%d] <- [%d]' % (laddr, gaddr))
 
         for bank in range(numbanks):
@@ -116,7 +116,8 @@ def mkTest(memimg_name=None, memory_datawidth=128):
     clk = ports['CLK']
     rst = ports['RST']
 
-    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memory_datawidth)
+    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memory_datawidth,
+                                memimg_name=memimg_name)
     memory.connect(ports, 'myaxi')
 
     uut = m.Instance(led, 'uut',

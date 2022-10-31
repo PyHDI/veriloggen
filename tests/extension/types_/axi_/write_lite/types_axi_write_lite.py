@@ -21,51 +21,45 @@ def mkMain():
 
     fsm = FSM(m, 'fsm', clk, rst)
 
-    # write address (1)
-    awaddr = 1024
-
-    ack = myaxi.write_request(awaddr, cond=fsm)
+    # write request (1)
+    awaddr1 = 1024
+    ack = myaxi.write_request(awaddr1, cond=fsm)
     fsm.If(ack).goto_next()
 
     # write data (1)
-    wdata = m.Reg('wdata', 32, initval=1024)
+    wdata1 = 100
+    ack = myaxi.write_data(wdata1, cond=fsm)
+    fsm.If(ack).goto_next()
 
-    ack = myaxi.write_data(wdata, cond=fsm)
-
-    fsm.If(ack)(
-        wdata.inc()
-    )
-    fsm.Then().goto_next()
-
-    # write address (2)
-    awaddr = 1024 + 1024
-
-    ack = myaxi.write_request(awaddr, cond=fsm)
+    # write request (2)
+    awaddr2 = 1024 + 1024
+    ack = myaxi.write_request(awaddr2, cond=fsm)
     fsm.If(ack).goto_next()
 
     # write data (2)
-    ack = myaxi.write_data(wdata, cond=fsm)
+    wdata2 = 200
+    ack = myaxi.write_data(wdata2, cond=fsm)
+    fsm.If(ack).goto_next()
+    fsm.If(Not(myaxi.wdata.wvalid)).goto_next()
 
-    fsm.If(ack)(
-        wdata.inc()
-    )
-    fsm.Then().goto_next()
-
-    fsm.goto_next()
-    fsm.goto_next()
-
-    sum = m.Reg('sum', 32, initval=0)
-    expected_sum = 1024 + 1025
-
+    # verify
     seq = Seq(m, 'seq', clk, rst)
+    sum = m.Reg('sum', width=32, initval=0)
     seq.If(Ands(myaxi.wdata.wvalid, myaxi.wdata.wready))(
         sum.add(myaxi.wdata.wdata)
     )
-    seq.Then().Delay(1)(
-        Systask('display', "sum=%d expected_sum=%d", sum, expected_sum),
-        If(fsm.here)(If(NotEql(sum, expected_sum))(
-            Display('# verify: FAILED')).Else(Display('# verify: PASSED')))
+
+    expected_sum = wdata1 + wdata2
+
+    fsm(
+        Systask('display', 'sum=%d expected_sum=%d', sum, expected_sum)
     )
+    fsm.If(sum == expected_sum)(
+        Systask('display', '# verify: PASSED')
+    ).Else(
+        Systask('display', '# verify: FAILED')
+    )
+    fsm.goto_next()
 
     return m
 
@@ -83,7 +77,7 @@ def mkTest(memimg_name=None):
     clk = ports['CLK']
     rst = ports['RST']
 
-    memory = axi.AxiMemoryModel(m, 'memory', clk, rst)
+    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memimg_name=memimg_name)
     memory.connect(ports, 'myaxi')
 
     uut = m.Instance(main, 'uut',

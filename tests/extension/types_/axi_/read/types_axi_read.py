@@ -20,30 +20,48 @@ def mkMain():
     myaxi.disable_write()
 
     fsm = FSM(m, 'fsm', clk, rst)
-    sum = m.Reg('sum', 32, initval=0)
 
-    # read address
-    araddr = 1024
-    arlen = 64
-    expected_sum = (araddr + araddr + arlen - 1) * arlen // 2
-
-    ack, counter = myaxi.read_request_counter(araddr, arlen, cond=fsm)
+    # read request (1)
+    araddr1 = 1024
+    arlen1 = 64
+    ack = myaxi.read_request(araddr1, arlen1, cond=fsm)
     fsm.If(ack).goto_next()
 
-    # read data
-    data, valid, last = myaxi.read_data(counter, cond=fsm)
+    # read data (1)
+    data, valid, last = myaxi.read_data(cond=fsm)
+    sum = m.Reg('sum', width=32, initval=0)
 
     fsm.If(valid)(
-        sum(sum + data)
+        sum.add(data)
     )
-    fsm.Then().If(last).goto_next()
+    fsm.If(valid, last).goto_next()
 
+    # read request (2)
+    araddr2 = 1024 + 1024
+    arlen2 = 64 + 64
+    ack = myaxi.read_request(araddr2, arlen2, cond=fsm)
+    fsm.If(ack).goto_next()
+
+    # read data (2)
+    data, valid, last = myaxi.read_data(cond=fsm)
+
+    fsm.If(valid)(
+        sum.add(data)
+    )
+    fsm.If(valid, last).goto_next()
+
+    # verify
+    expected_sum = (((araddr1 // 4 + araddr1 // 4 + arlen1 - 1) * arlen1) // 2 +
+                    ((araddr2 // 4 + araddr2 // 4 + arlen2 - 1) * arlen2) // 2)
     fsm(
         Systask('display', 'sum=%d expected_sum=%d', sum, expected_sum)
     )
+    fsm.If(sum == expected_sum)(
+        Systask('display', '# verify: PASSED')
+    ).Else(
+        Systask('display', '# verify: FAILED')
+    )
     fsm.goto_next()
-
-    fsm.make_always()
 
     return m
 
@@ -67,17 +85,17 @@ def mkTest():
     _awready.assign(1)
     m.Always()(awready(_awready))
 
-    # wready (nostall)
+    # wready (no stall)
     wready = ports['myaxi_wready']
     _wready = m.TmpWireLike(wready)
     _wready.assign(1)
     m.Always()(wready(_wready))
 
-    # arready (no stall)
-    #arready = ports['myaxi_arready']
-    #_arready = m.TmpWireLike(arready)
-    # _arready.assign(0)
-    #m.Always()( arready(_arready) )
+    # bvalid (no stall)
+    bvalid = ports['myaxi_bvalid']
+    _bvalid = m.TmpWireLike(bvalid)
+    _bvalid.assign(0)
+    m.Always()(bvalid(_bvalid))
 
     # arready, rvalid, rdata, rlast
     raddr_fsm = FSM(m, 'raddr', clk, rst)
@@ -92,7 +110,7 @@ def mkTest():
 
     raddr_fsm.If(ports['myaxi_arvalid'])(
         ports['myaxi_arready'](1),
-        ports['myaxi_rdata'](ports['myaxi_araddr'] - 1)
+        ports['myaxi_rdata']((ports['myaxi_araddr'] >> 2) - 1)
     )
     raddr_fsm.goto_next()
 
@@ -146,13 +164,27 @@ def mkTest():
     return m
 
 
-if __name__ == '__main__':
+def run(filename='tmp.v', simtype='iverilog', outputfile=None):
+
+    if outputfile is None:
+        outputfile = os.path.splitext(os.path.basename(__file__))[0] + '.out'
+
+    # memimg_name = 'memimg_' + outputfile
+
+    # test = mkTest(memimg_name=memimg_name)
     test = mkTest()
-    verilog = test.to_verilog('tmp.v')
-    print(verilog)
 
-    sim = simulation.Simulator(test)
-    rslt = sim.run()
+    if filename is not None:
+        test.to_verilog(filename)
+
+    sim = simulation.Simulator(test, sim=simtype)
+    rslt = sim.run(outputfile=outputfile)
+    lines = rslt.splitlines()
+    if simtype == 'verilator' and lines[-1].startswith('-'):
+        rslt = '\n'.join(lines[:-1])
+    return rslt
+
+
+if __name__ == '__main__':
+    rslt = run(filename='tmp.v')
     print(rslt)
-
-    # sim.view_waveform()

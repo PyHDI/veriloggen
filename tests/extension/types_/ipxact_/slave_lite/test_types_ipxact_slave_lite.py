@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+
 import veriloggen
 import types_ipxact_slave_lite
 
@@ -158,8 +159,8 @@ module test;
 
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
-  reg [32-1:0] sum;
   reg __axi_cond_0_1;
+  reg [32-1:0] sum;
   reg __axi_cond_1_1;
   assign _axi_rready = (fsm == 1) || (fsm == 3);
 
@@ -212,8 +213,8 @@ module test;
     _axi_arvalid = 0;
     outstanding_wcount_0 = 0;
     fsm = fsm_init;
-    sum = 0;
     __axi_cond_0_1 = 0;
+    sum = 0;
     __axi_cond_1_1 = 0;
     #100;
     RST = 1;
@@ -313,6 +314,11 @@ module test;
         end
         fsm_4: begin
           $display("sum=%d expected_sum=%d", sum, 768);
+          if(sum == 768) begin
+            $display("# verify: PASSED");
+          end else begin
+            $display("# verify: FAILED");
+          end
           fsm <= fsm_5;
         end
       endcase
@@ -369,8 +375,8 @@ module main
     if(RST) begin
       myaxi_bvalid <= 0;
       prev_arvalid_2 <= 0;
-      addr_0 <= 0;
       valid_1 <= 0;
+      addr_0 <= 0;
       myaxi_rdata <= 0;
       myaxi_rvalid <= 0;
       _myaxi_cond_0_1 <= 0;
@@ -385,10 +391,11 @@ module main
         myaxi_bvalid <= 1;
       end 
       prev_arvalid_2 <= myaxi_arvalid;
+      valid_1 <= 0;
       if(myaxi_arready && myaxi_arvalid) begin
         addr_0 <= myaxi_araddr;
+        valid_1 <= 1;
       end 
-      valid_1 <= myaxi_arready && myaxi_arvalid;
       if((fsm == 1) && (myaxi_rready || !myaxi_rvalid)) begin
         myaxi_rdata <= rdata;
         myaxi_rvalid <= 1;
