@@ -383,6 +383,45 @@ class _Numeric(VeriloggenNode):
     def __rshift__(self, r):
         return Srl(self, r)
 
+    def __radd__(self, l):
+        return Plus(l, self)
+
+    def __rsub__(self, l):
+        return Minus(l, self)
+
+    def __rpow__(self, l):
+        return Power(l, self)
+
+    def __rmul__(self, l):
+        return Times(l, self)
+
+    def __rdiv__(self, l):
+        return Divide(l, self)
+
+    def __rtruediv__(self, l):
+        return Divide(l, self)
+
+    def __rfloordiv__(self, l):
+        return Divide(l, self)
+
+    def __rmod__(self, l):
+        return Mod(l, self)
+
+    def __rand__(self, l):
+        return And(l, self)
+
+    def __ror__(self, l):
+        return Or(l, self)
+
+    def __rxor__(self, l):
+        return Xor(l, self)
+
+    def __rlshift__(self, l):
+        return Sll(l, self)
+
+    def __rrshift__(self, l):
+        return Srl(l, self)
+
     def __neg__(self):
         return Uminus(self)
 
