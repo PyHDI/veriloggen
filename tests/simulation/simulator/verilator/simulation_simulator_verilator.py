@@ -20,13 +20,13 @@ def mkLed():
 
     seq = Seq(m, 'seq', clk, rst)
 
-    seq.If(count == 1024 - 1)(
+    seq.If(count == 32 - 1)(
         count(0)
     ).Else(
         count.inc()
     )
 
-    seq.If(count == 1024 - 1)(
+    seq.If(count == 32 - 1)(
         led.inc()
     )
 
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     test = mkTest()
 
     sim = simulation.Simulator(test, sim='verilator')
-    rslt = sim.run(outputfile='verilator.out', sim_time=1000 * 20)
+    rslt = sim.run(sim_time=1000 * 2)
     print(rslt)
 
     # sim.view_waveform()
