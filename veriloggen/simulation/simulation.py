@@ -37,7 +37,14 @@ def setup_waveform(m, *uuts, **kwargs):
                 continue
             new_uuts.append(uut)
 
-    dumpfile = kwargs['dumpfile'] if 'dumpfile' in kwargs else 'uut.vcd'
+    if 'dumpfile' in kwargs:
+        dumpfile = kwargs['dumpfile']
+    else:
+        dumpfile_fd = tempfile.NamedTemporaryFile(prefix="waveform_",
+                                                  suffix=".vcd",
+                                                  dir=os.getcwd(),
+                                                  delete=False)
+        dumpfile = dumpfile_fd.name
 
     uuts = new_uuts
     ret = m.Initial(
