@@ -209,7 +209,7 @@ module test;
 
 
   initial begin
-    $dumpfile("uut.vcd");
+    $dumpfile("thread_axi_slave_ipxact.vcd");
     $dumpvars(0, uut);
   end
 

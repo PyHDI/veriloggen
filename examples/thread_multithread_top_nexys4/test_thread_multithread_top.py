@@ -32,7 +32,7 @@ module test;
 
 
   initial begin
-    $dumpfile("uut.vcd");
+    $dumpfile("thread_multithread_top.vcd");
     $dumpvars(0, uut);
   end
 

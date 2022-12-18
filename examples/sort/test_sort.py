@@ -45,7 +45,7 @@ module simsort #
    );
 
   initial begin
-    $dumpfile("uut.vcd");
+    $dumpfile("sort.vcd");
     $dumpvars(0, uut);
   end
 

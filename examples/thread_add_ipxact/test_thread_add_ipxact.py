@@ -210,7 +210,7 @@ module test;
 
 
   initial begin
-    $dumpfile("uut.vcd");
+    $dumpfile("thread_add_ipxact.vcd");
     $dumpvars(0, uut);
   end
 

@@ -238,7 +238,8 @@ def mkTest():
     th = vthread.Thread(m, 'th_ctrl', clk, rst, ctrl)
     fsm = th.start()
 
-    simulation.setup_waveform(m, uut)
+    vcd_name = os.path.splitext(os.path.basename(__file__))[0] + '.vcd'
+    simulation.setup_waveform(m, uut, dumpfile=vcd_name)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 

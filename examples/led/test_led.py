@@ -27,7 +27,7 @@ module test #
   );
 
   initial begin
-    $dumpfile("uut.vcd");
+    $dumpfile("led.vcd");
     $dumpvars(0, uut, CLK, RST, LED);
   end
 

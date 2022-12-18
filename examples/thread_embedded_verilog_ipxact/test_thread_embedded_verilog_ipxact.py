@@ -513,7 +513,7 @@ module test;
   reg signed [32-1:0] _th_ctrl_time_19;
 
   initial begin
-    $dumpfile("uut.vcd");
+    $dumpfile("thread_embedded_verilog_ipxact.vcd");
     $dumpvars(0, uut);
   end
 
