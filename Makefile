@@ -15,7 +15,7 @@ clean:
 	make clean -C ./tests
 	make clean -C ./examples_obsolete
 	make clean -C ./tests_obsolete
-	rm -rf *.egg-info build dist *.pyc __pycache__ parsetab.py .cache *.out *.png *.dot tmp.v uut.vcd
+	rm -rf *.egg-info build dist *.pyc __pycache__ parsetab.py .cache *.out *.png *.dot tmp.v *.vcd
 
 #.PHONY: release
 #release:

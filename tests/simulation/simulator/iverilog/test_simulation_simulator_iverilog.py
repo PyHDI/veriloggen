@@ -28,7 +28,7 @@ module test #
    );
 
 //  initial begin
-//    $dumpfile("uut.vcd");
+//    $dumpfile("simulation_simulator_iverilog.vcd");
 //    $dumpvars(0, uut);
 //  end
 
@@ -214,5 +214,5 @@ def test():
 
     sim = simulation.Simulator(test_module, sim='iverilog')
     rslt = sim.run()
-    
+
     assert(expected_rslt == rslt)
