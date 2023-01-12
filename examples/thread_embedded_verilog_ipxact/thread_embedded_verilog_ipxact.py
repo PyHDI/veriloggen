@@ -82,7 +82,7 @@ end
     return m
 
 
-def mkTest():
+def mkTest(memimg_name=None):
     m = Module('test')
 
     copy_bytes = 1024 * 4
@@ -94,7 +94,8 @@ def mkTest():
     clk = uut['CLK']
     rst = uut['RST']
 
-    memory = axi.AxiMemoryModel(m, 'memory', clk, rst)
+    memory = axi.AxiMemoryModel(m, 'memory', clk, rst,
+                                memimg_name=memimg_name)
     memory.connect(uut.get_inst_ports(), 'maxi')
 
     # AXI-Slave controller
@@ -159,7 +160,10 @@ def mkTest():
 
 
 if __name__ == '__main__':
-    test = mkTest()
+
+    memimg_name = 'memimg_thread_embedded_verilog_ipxact.out'
+
+    test = mkTest(memimg_name=memimg_name)
     verilog = test.to_verilog('tmp.v')
     print(verilog)
 

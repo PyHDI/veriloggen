@@ -228,7 +228,7 @@ module test;
   reg [8-1:0] _memory_mem [0:2**20-1];
 
   initial begin
-    $readmemh("_memory_memimg_.out", _memory_mem);
+    $readmemh("memimg_thread_verilog_submodule_ipxact.out", _memory_mem);
   end
 
   reg [33-1:0] _write_count;
@@ -3047,7 +3047,10 @@ endmodule
 
 def test():
     veriloggen.reset()
-    test_module = thread_verilog_submodule_ipxact.mkTest()
+
+    memimg_name = 'memimg_thread_verilog_submodule_ipxact.out'
+
+    test_module = thread_verilog_submodule_ipxact.mkTest(memimg_name=memimg_name)
     code = test_module.to_verilog()
 
     from pyverilog.vparser.parser import VerilogParser
