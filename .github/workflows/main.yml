@@ -41,4 +41,5 @@ jobs:
       # Run pytest
       - name: Test with pytest
         run: |
-          python -m pytest -n auto tests examples
+          #python -m pytest -n auto tests examples
+          python -m pytest tests examples
