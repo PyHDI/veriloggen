@@ -17,4 +17,4 @@ install:
   - pip install pytest pytest-pythonpath pytest-xdist pyverilog numpy
 
 script:
-  - python -m pytest -n auto tests examples
+  - python -m pytest tests examples
