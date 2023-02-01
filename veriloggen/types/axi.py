@@ -2,8 +2,10 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
+import os
 import functools
 import math
+import tempfile
 from collections import defaultdict
 
 import veriloggen.core.vtypes as vtypes
@@ -2344,7 +2346,8 @@ class AxiMemoryModel(AxiSlave):
 
         if memimg is None:
             if memimg_name is None:
-                memimg_name = '_'.join(['', self.name, 'memimg', '.out'])
+                memimg_name = get_memimg_name()
+
             size = 2 ** self.mem_addrwidth
             width = self.mem_datawidth
             self._make_img(memimg_name, size, width)
@@ -2361,7 +2364,7 @@ class AxiMemoryModel(AxiSlave):
             if memimg_datawidth is None:
                 memimg_datawidth = mem_datawidth
             if memimg_name is None:
-                memimg_name = '_'.join(['', self.name, 'memimg', '.out'])
+                memimg_name = get_memimg_name()
 
             num_words = to_memory_image(memimg_name, memimg, datawidth=memimg_datawidth)
             # resize mem_addrwidth according to the memimg size
@@ -2893,7 +2896,8 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
 
         if memimg is None:
             if memimg_name is None:
-                memimg_name = '_'.join(['', self.name, 'memimg', '.out'])
+                memimg_name = get_memimg_name()
+
             size = 2 ** self.mem_addrwidth
             width = self.mem_datawidth
             self._make_img(memimg_name, size, width)
@@ -2910,7 +2914,7 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
             if memimg_datawidth is None:
                 memimg_datawidth = mem_datawidth
             if memimg_name is None:
-                memimg_name = '_'.join(['', self.name, 'memimg', '.out'])
+                memimg_name = get_memimg_name()
 
             num_words = to_memory_image(memimg_name, memimg, datawidth=memimg_datawidth)
             # resize mem_addrwidth according to the memimg size
@@ -3371,7 +3375,7 @@ class AxiSerialMemoryModel(AxiSlave):
 
         if memimg is None:
             if memimg_name is None:
-                memimg_name = '_'.join(['', self.name, 'memimg', '.out'])
+                memimg_name = get_memimg_name()
             size = 2 ** self.mem_addrwidth
             width = self.mem_datawidth
             self._make_img(memimg_name, size, width)
@@ -3388,7 +3392,7 @@ class AxiSerialMemoryModel(AxiSlave):
             if memimg_datawidth is None:
                 memimg_datawidth = mem_datawidth
             if memimg_name is None:
-                memimg_name = '_'.join(['', self.name, 'memimg', '.out'])
+                memimg_name = get_memimg_name()
 
             num_words = to_memory_image(memimg_name, memimg, datawidth=memimg_datawidth)
             # resize mem_addrwidth according to the memimg size
@@ -3768,7 +3772,7 @@ class AxiSerialMultiportMemoryModel(AxiSerialMemoryModel):
 
         if memimg is None:
             if memimg_name is None:
-                memimg_name = '_'.join(['', self.name, 'memimg', '.out'])
+                memimg_name = get_memimg_name()
             size = 2 ** self.mem_addrwidth
             width = self.mem_datawidth
             self._make_img(memimg_name, size, width)
@@ -3785,7 +3789,7 @@ class AxiSerialMultiportMemoryModel(AxiSerialMemoryModel):
             if memimg_datawidth is None:
                 memimg_datawidth = mem_datawidth
             if memimg_name is None:
-                memimg_name = '_'.join(['', self.name, 'memimg', '.out'])
+                memimg_name = get_memimg_name()
 
             num_words = to_memory_image(memimg_name, memimg, datawidth=memimg_datawidth)
             # resize mem_addrwidth according to the memimg size
@@ -4363,3 +4367,12 @@ def split_read_write(m, ports, prefix,
         w_ports[w_name] = w_port
 
     return r_ports, w_ports
+
+
+def get_memimg_name():
+    memimg_fd = tempfile.NamedTemporaryFile(prefix="memimg_",
+                                            suffix=".out",
+                                            dir=os.getcwd(),
+                                            delete=False)
+    memimg_name = memimg_fd.name
+    return memimg_name

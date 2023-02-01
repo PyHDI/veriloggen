@@ -3,9 +3,9 @@ language: python
 sudo: false
 
 python:
-  - 3.7
-  - 3.8
   - 3.9
+  - 3.10
+  - 3.11
 
 addons:
   apt:
@@ -14,10 +14,10 @@ addons:
     - verilator
 
 install:
-  - pip install pytest pytest-pythonpath pyverilog numpy
+  - pip install pytest pytest-pythonpath pytest-xdist pyverilog numpy
 
 script:
-  - python -m pytest tests examples
+  - python -m pytest -n auto tests examples
 
 branches:
   except:

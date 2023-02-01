@@ -20,13 +20,13 @@ def mkLed():
 
     seq = Seq(m, 'seq', clk, rst)
 
-    seq.If(count == 1024 - 1)(
+    seq.If(count == 32 - 1)(
         count(0)
     ).Else(
         count.inc()
     )
 
-    seq.If(count == 1024 - 1)(
+    seq.If(count == 32 - 1)(
         led.inc()
     )
 
@@ -47,7 +47,8 @@ def mkTest():
     clk = uut['CLK']
     rst = uut['RST']
 
-    # simulation.setup_waveform(m, uut, m.get_vars())
+    # vcd_name = os.path.splitext(os.path.basename(__file__))[0] + '.vcd'
+    # simulation.setup_waveform(m, uut, m.get_vars(), dumpfile=vcd_name)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
@@ -63,7 +64,7 @@ if __name__ == '__main__':
     test = mkTest()
 
     sim = simulation.Simulator(test, sim='verilator')
-    rslt = sim.run(outputfile='verilator.out', sim_time=1000 * 20)
+    rslt = sim.run(sim_time=1000 * 2)
     print(rslt)
 
     # sim.view_waveform()

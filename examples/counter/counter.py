@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 from veriloggen import *
 
+
 def counter(m, clk, rst, width=None, maxval=None, cond=None, initval=0):
     if maxval is None and width is not None:
         maxval = Int(2) ** width
@@ -17,67 +18,71 @@ def counter(m, clk, rst, width=None, maxval=None, cond=None, initval=0):
     if maxval is None and width is None:
         width = 10
         maxval = 1024
-        
+
     c = m.TmpReg(width, initval=initval)
     seq = TmpSeq(m, clk, rst)
-    
+
     if cond is not None:
         # setting the following condition
         seq.If(cond)
-        
+
     seq(
-        If(c == maxval-1)(
+        If(c == maxval - 1)(
             c(0)
         ).Else(
             c.inc()
         )
     )
-    
+
     seq.make_always()
-    
+
     return c
+
 
 def mkLed(width=8):
     m = Module('blinkled')
     clk = m.Input('CLK')
     rst = m.Input('RST')
     led = m.Output('LED', width)
-    
+
     step = 1024
     count = counter(m, clk, rst, maxval=step)
-    led_count = counter(m, clk, rst, width=width, cond=(count==step-1))
+    led_count = counter(m, clk, rst, width=width, cond=(count == step - 1))
     led.assign(led_count)
-    
+
     return m
+
 
 def mkTest():
     m = Module('test')
-    
+
     # target instance
     led = mkLed()
-    
+
     # copy paras and ports
     params = m.copy_params(led)
     ports = m.copy_sim_ports(led)
-    
+
     clk = ports['CLK']
     rst = ports['RST']
-    
+
     uut = m.Instance(led, 'uut',
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
-    
-    simulation.setup_waveform(m, uut, m.get_vars())
+
+    vcd_name = os.path.splitext(os.path.basename(__file__))[0] + '.vcd'
+    simulation.setup_waveform(m, uut, m.get_vars(), dumpfile=vcd_name)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
-    
+
     init.add(
         Delay(1000 * 100),
         Systask('finish'),
     )
 
     return m
-    
+
+
 if __name__ == '__main__':
     test = mkTest()
     verilog = test.to_verilog(filename='tmp.v')
@@ -88,4 +93,4 @@ if __name__ == '__main__':
     rslt = sim.run()
     print(rslt)
 
-    #sim.view_waveform()
+    # sim.view_waveform()

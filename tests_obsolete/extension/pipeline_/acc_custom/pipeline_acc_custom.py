@@ -73,7 +73,8 @@ def mkTest(numports=8):
     reset_stmt.append( vx(0) )
     reset_stmt.append( ry(0) )
     
-    simulation.setup_waveform(m, uut)
+    vcd_name = os.path.splitext(os.path.basename(__file__))[0] + '.vcd'
+    simulation.setup_waveform(m, uut, dumpfile=vcd_name)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, reset_stmt, period=100)
 
