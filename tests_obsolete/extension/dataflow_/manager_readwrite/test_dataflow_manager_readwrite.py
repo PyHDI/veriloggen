@@ -22,7 +22,7 @@ module test
 
 
   initial begin
-    $dumpfile("uut.vcd");
+    $dumpfile("dataflow_manager_readwrite.vcd");
     $dumpvars(0, uut, CLK, RST);
   end
 

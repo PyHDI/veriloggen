@@ -81,7 +81,8 @@ def mkSimSort(numports=4):
     uut = m.Instance(mkSort(numports), 'uut', (width,),
                      [clk, rst] + inputs + outputs + [kick, busy])
     
-    simulation.setup_waveform(m, uut)
+    vcd_name = os.path.splitext(os.path.basename(__file__))[0] + '.vcd'
+    simulation.setup_waveform(m, uut, dumpfile=vcd_name)
     simulation.setup_clock(m, clk)
     simulation.setup_reset(m, rst)
 

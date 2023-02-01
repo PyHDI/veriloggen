@@ -55,7 +55,7 @@ module test
   reg reset_done;
 
   initial begin
-    $dumpfile("uut.vcd");
+    $dumpfile("dataflow_fixed_add_shift_signed.vcd");
     $dumpvars(0, uut, xdata_orig, ydata_orig, zdata_orig);
   end
 

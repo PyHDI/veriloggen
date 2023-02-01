@@ -53,7 +53,7 @@ module test
   reg reset_done;
 
   initial begin
-    $dumpfile("uut.vcd");
+    $dumpfile("dataflow_reduceadd_valid_enable.vcd");
     $dumpvars(0, uut);
   end
 

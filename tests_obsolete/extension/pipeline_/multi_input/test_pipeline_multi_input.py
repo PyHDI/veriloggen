@@ -36,7 +36,7 @@ module test;
   reg reset_done;
 
   initial begin
-    $dumpfile("uut.vcd");
+    $dumpfile("pipeline_multi_input.vcd");
     $dumpvars(0, uut);
   end
 

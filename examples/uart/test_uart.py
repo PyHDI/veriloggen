@@ -162,7 +162,7 @@ module test;
 
 
   initial begin
-    $dumpfile("uut.vcd");
+    $dumpfile("uart.vcd");
     $dumpvars(0, mtx, mrx, CLK, RST, din, enable, ready, txd, dout, valid, rxd, txfsm, _tmp_0, rxfsm);
   end
 

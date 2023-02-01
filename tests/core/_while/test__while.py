@@ -6,11 +6,11 @@ import _while
 expected_verilog = """
 module test;
   reg CLK;
-  reg RST; 
+  reg RST;
   reg [32-1:0] count;
 
   initial begin
-    $dumpfile("uut.vcd");
+    $dumpfile("_while.vcd");
     $dumpvars(0, CLK, RST, count);
   end
 

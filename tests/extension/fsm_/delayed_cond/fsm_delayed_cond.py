@@ -66,7 +66,8 @@ def mkTest():
     uut = m.Instance(mkLed(), 'uut',
                      ports=(('CLK', clk), ('RST', rst), ('valid', valid)))
 
-    # simulation.setup_waveform(m, uut)
+    # vcd_name = os.path.splitext(os.path.basename(__file__))[0] + '.vcd'
+    # simulation.setup_waveform(m, uut, dumpfile=vcd_name)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, period=100)
 

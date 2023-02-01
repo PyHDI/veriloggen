@@ -96,7 +96,8 @@ def mkTest(baudrate=19200, clockfreq=19200 * 10):
     rx.assign(txd)
     rxd.assign(tx)
 
-    simulation.setup_waveform(m, uut, uart_tx, uart_rx)
+    vcd_name = os.path.splitext(os.path.basename(__file__))[0] + '.vcd'
+    simulation.setup_waveform(m, uut, uart_tx, uart_rx, dumpfile=vcd_name)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
@@ -140,7 +141,7 @@ def run(filename='tmp.v', simtype='iverilog'):
         test.to_verilog(filename)
 
     sim = simulation.Simulator(test, sim=simtype)
-    rslt = sim.run(outputfile=simtype + '.out')
+    rslt = sim.run()
     lines = rslt.splitlines()
     if simtype == 'verilator' and lines[-1].startswith('-'):
         rslt = '\n'.join(lines[:-1])

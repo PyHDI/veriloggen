@@ -247,7 +247,7 @@ module test
   reg reset_done;
 
   initial begin
-    $dumpfile("uut.vcd");
+    $dumpfile("dataflow_fftN.vcd");
     $dumpvars(0, uut, _din0re, _din0im, _din1re, _din1im, _din2re, _din2im, _din3re, _din3im, _din4re, _din4im, _din5re, _din5im, _din6re, _din6im, _din7re, _din7im, _dout0re, _dout0im, _dout1re, _dout1im, _dout2re, _dout2im, _dout3re, _dout3im, _dout4re, _dout4im, _dout5re, _dout5im, _dout6re, _dout6im, _dout7re, _dout7im, _weight0re, _weight0im, _weight1re, _weight1im, _weight2re, _weight2im, _weight3re, _weight3im, _weight4re, _weight4im, _weight5re, _weight5im, _weight6re, _weight6im, _weight7re, _weight7im, _weight8re, _weight8im, _weight9re, _weight9im, _weight10re, _weight10im, _weight11re, _weight11im);
   end
 

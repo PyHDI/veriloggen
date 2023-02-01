@@ -26,7 +26,7 @@ module test
 
 
   initial begin
-    $dumpfile("uut.vcd");
+    $dumpfile("dataflow_counter.vcd");
     $dumpvars(0, uut, CLK, RST, cdata, cvalid);
   end
 

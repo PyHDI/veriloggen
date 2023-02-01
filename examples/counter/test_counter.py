@@ -20,7 +20,7 @@ module test;
 
 
   initial begin
-    $dumpfile("uut.vcd");
+    $dumpfile("counter.vcd");
     $dumpvars(0, uut, CLK, RST, LED);
   end
 

@@ -24,7 +24,7 @@ module test;
   reg reset_done;
 
   initial begin
-    $dumpfile("uut.vcd");
+    $dumpfile("pipeline_acc_add.vcd");
     $dumpvars(0, uut);
   end
 
