@@ -195,7 +195,6 @@ LED:  5 count:        16
 LED:  5 count:        17
 LED:  5 count:        18
 LED:  5 count:        19
-LED:  5 count:        20
 """
 
 
@@ -203,5 +202,5 @@ def test():
     vg.reset()
     test_module = simulation_simulator_verilator.mkTest()
     sim = vg.simulation.Simulator(test_module, sim='verilator')
-    rslt = sim.run(sim_time=1000 * 2)
+    rslt = sim.run(sim_time=1000 * 2 - 5)
     assert(expected_rslt == rslt)
