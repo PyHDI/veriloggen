@@ -2549,19 +2549,17 @@ double sc_time_stamp(){
 int main(int argc, char** argv)
 {
   Verilated::commandArgs(argc, argv);
-  
+
   Top *top = new Top();
 
-#ifdef TRACE  
+#ifdef TRACE
   Verilated::traceEverOn(true);
   VerilatedVcdC* tfp = new VerilatedVcdC;
   top->trace(tfp, 99);
   tfp->open("simulation_verilator.vcd");
 #endif
   top->io_CLK = 0;
-  
   top->io_RST = 0;
-  
 
   // input initialization
 
@@ -2579,8 +2577,8 @@ int main(int argc, char** argv)
     // update input
 
     top->eval();
-    
-#ifdef TRACE    
+
+#ifdef TRACE
     tfp->dump(main_time);
 #endif
 
@@ -2592,10 +2590,10 @@ int main(int argc, char** argv)
     main_time += TIME_STEP;
   }
 
-#ifdef TRACE    
+#ifdef TRACE
   tfp->close();
 #endif
-  
+
   top->final();
 
   return 0;
