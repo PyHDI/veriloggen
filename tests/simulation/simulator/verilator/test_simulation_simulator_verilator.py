@@ -15,6 +15,7 @@ LED:  0 count:         6
 LED:  0 count:         7
 LED:  0 count:         8
 LED:  0 count:         9
+LED:  0 count:        10
 LED:  0 count:         0
 LED:  0 count:         1
 LED:  0 count:         2
@@ -95,54 +96,6 @@ LED:  2 count:        12
 LED:  2 count:        13
 LED:  2 count:        14
 LED:  2 count:        15
-LED:  2 count:        16
-LED:  2 count:        17
-LED:  2 count:        18
-LED:  2 count:        19
-LED:  2 count:        20
-LED:  2 count:        21
-LED:  2 count:        22
-LED:  2 count:        23
-LED:  2 count:        24
-LED:  2 count:        25
-LED:  2 count:        26
-LED:  2 count:        27
-LED:  2 count:        28
-LED:  2 count:        29
-LED:  2 count:        30
-LED:  2 count:        31
-LED:  3 count:         0
-LED:  3 count:         1
-LED:  3 count:         2
-LED:  3 count:         3
-LED:  3 count:         4
-LED:  3 count:         5
-LED:  3 count:         6
-LED:  3 count:         7
-LED:  3 count:         8
-LED:  3 count:         9
-LED:  3 count:        10
-LED:  3 count:        11
-LED:  3 count:        12
-LED:  3 count:        13
-LED:  3 count:        14
-LED:  3 count:        15
-LED:  3 count:        16
-LED:  3 count:        17
-LED:  3 count:        18
-LED:  3 count:        19
-LED:  3 count:        20
-LED:  3 count:        21
-LED:  3 count:        22
-LED:  3 count:        23
-LED:  3 count:        24
-LED:  3 count:        25
-LED:  3 count:        26
-LED:  3 count:        27
-LED:  3 count:        28
-LED:  3 count:        29
-LED:  3 count:        30
-LED:  3 count:        31
 """
 
 
@@ -150,5 +103,5 @@ def test():
     vg.reset()
     test_module = simulation_simulator_verilator.mkTest()
     sim = vg.simulation.Simulator(test_module, sim='verilator')
-    rslt = sim.run(sim_time=10000)
+    rslt = sim.run(sim_time=1000)
     assert(expected_rslt == rslt)

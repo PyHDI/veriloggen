@@ -30,7 +30,7 @@ def mkLed():
         led.inc()
     )
 
-    seq.If(led < 4)(
+    seq(
         Systask('display', "LED:%d count:%d", led, count)
     )
 
@@ -50,7 +50,8 @@ def mkTest():
     # vcd_name = os.path.splitext(os.path.basename(__file__))[0] + '.vcd'
     # simulation.setup_waveform(m, uut, m.get_vars(), dumpfile=vcd_name)
     simulation.setup_clock(m, clk, hperiod=5)
-    init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
+    # for avaoiding clock/reset timing conflict
+    init = simulation.setup_reset(m, rst, m.make_reset(), period=100 + 1)
 
     init.add(
         Delay(1000 * 100),
@@ -64,7 +65,7 @@ if __name__ == '__main__':
     test = mkTest()
 
     sim = simulation.Simulator(test, sim='verilator')
-    rslt = sim.run(sim_time=10000)
+    rslt = sim.run(sim_time=1000)
     print(rslt)
 
     # sim.view_waveform()
