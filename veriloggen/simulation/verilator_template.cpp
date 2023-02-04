@@ -22,10 +22,10 @@ double sc_time_stamp(){
 int main(int argc, char** argv)
 {
   Verilated::commandArgs(argc, argv);
-  
+
   Top *top = new Top();
 
-#ifdef TRACE  
+#ifdef TRACE
   Verilated::traceEverOn(true);
   VerilatedVcdC* tfp = new VerilatedVcdC;
   top->trace(tfp, 99);
@@ -34,17 +34,17 @@ int main(int argc, char** argv)
 
   {%- for clk in clks.keys() %}
   top->{{ clk }} = 0;
-  {% endfor %}
-  
+  {%- endfor %}
+
   {%- for rst, (period, positive) in rsts.items() %}
   top->{{ rst }} = {% if positive %}0{% else %}1{% endif %};
-  {% endfor %}
+  {%- endfor %}
 
   {%- for init_name, init_val in inits.items() %}
   top->{{ init_name }} = {{ init_val }};
-  {% endfor %}
+  {%- endfor %}
 
-  // input initialization 
+  // input initialization
   {%- for input_name in inputs %}
   top->{{ input_name }} = 0;
   {%- endfor %}
@@ -55,7 +55,7 @@ int main(int argc, char** argv)
       top->{{ clk }} = !top->{{ clk }};
     }
     {%- endfor %}
-    
+
     {%- for rst, (period, positive) in rsts.items() %}
     if(main_time == {{ period }}){
       top->{{ rst }} = {% if positive %}1{% else %}0{% endif %};
@@ -65,14 +65,14 @@ int main(int argc, char** argv)
     }
     {%- endfor %}
 
-    // update input 
+    // update input
     {%- for input_name in inputs %}
     top->{{ input_name }} = 0;
     {%- endfor %}
 
     top->eval();
-    
-#ifdef TRACE    
+
+#ifdef TRACE
     tfp->dump(main_time);
 #endif
 
@@ -84,10 +84,10 @@ int main(int argc, char** argv)
     main_time += TIME_STEP;
   }
 
-#ifdef TRACE    
+#ifdef TRACE
   tfp->close();
 #endif
-  
+
   top->final();
 
   return 0;
