@@ -30,7 +30,7 @@ def mkLed():
         led.inc()
     )
 
-    seq(
+    seq.If(led < 4)(
         Systask('display', "LED:%d count:%d", led, count)
     )
 
@@ -64,7 +64,7 @@ if __name__ == '__main__':
     test = mkTest()
 
     sim = simulation.Simulator(test, sim='verilator')
-    rslt = sim.run(sim_time=1000 * 2 - 5, outputfile='out')
+    rslt = sim.run(sim_time=10000)
     print(rslt)
 
     # sim.view_waveform()
