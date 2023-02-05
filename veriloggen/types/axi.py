@@ -1004,12 +1004,12 @@ class AxiLiteMaster(AxiMaster):
         self.outstanding_wcount = self.m.TmpReg(self.outstanding_wcount_width, initval=0,
                                                 prefix='outstanding_wcount')
 
-        self.seq.If(vtypes.Ands(self.wdata.wvalid, self.wdata.wready),
+        self.seq.If(vtypes.Ands(self.waddr.awvalid, self.waddr.awready),
                     vtypes.Not(vtypes.Ands(self.wresp.bvalid, self.wresp.bready)),
-                    self.outstanding_wcount < (2 ** self.outstanding_wcount_width - 1))(
+                    self.outstanding_wcount < 2 ** self.outstanding_wcount_width - 1)(
             self.outstanding_wcount.inc()
         )
-        self.seq.If(vtypes.Not(vtypes.Ands(self.wdata.wvalid, self.wdata.wready)),
+        self.seq.If(vtypes.Not(vtypes.Ands(self.waddr.awvalid, self.waddr.awready)),
                     vtypes.Ands(self.wresp.bvalid, self.wresp.bready),
                     self.outstanding_wcount > 0)(
             self.outstanding_wcount.dec()
@@ -1042,6 +1042,10 @@ class AxiLiteMaster(AxiMaster):
         self.rdata.rready.assign(0)
 
         self._read_disabled = True
+
+    def write_acceptable(self):
+        """ AXI-Lite Master must not issue any request until the previous request is completed."""
+        return self.outstanding_wcount == 0
 
     def write_request(self, addr, length=1, cond=None):
         """
@@ -1086,8 +1090,7 @@ class AxiLiteMaster(AxiMaster):
         if cond is not None:
             self.seq.If(cond)
 
-        ack = vtypes.Ands(self.write_acceptable(),
-                          vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid)))
+        ack = vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid))
 
         self.seq.If(ack)(
             self.wdata.wdata(data),
