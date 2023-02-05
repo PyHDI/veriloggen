@@ -322,7 +322,10 @@ class AXISLiteRegister(AXISLite):
                 self.flag[i](0)
             )
 
-        fsm.If(ack).goto_init()
+        fsm.If(ack).goto_next()
+
+        done = vtypes.Ands(self.rdata.rready, self.rdata.rvalid)
+        fsm.If(done).goto_init()
 
         # write
         write_state = fsm.current + 1
@@ -337,7 +340,10 @@ class AXISLiteRegister(AXISLite):
                 self.register[i](data)
             )
 
-        fsm.If(valid).goto_init()
+        fsm.If(valid).goto_next()
+
+        done = vtypes.Ands(self.wresp.bready, self.wresp.bvalid)
+        fsm.If(done).goto_init()
 
     def read(self, fsm, addr):
         if isinstance(addr, int):

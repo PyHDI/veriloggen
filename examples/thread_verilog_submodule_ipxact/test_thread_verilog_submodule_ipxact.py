@@ -507,7 +507,7 @@ module test;
   reg signed [32-1:0] _th_ctrl_araddr_17;
   reg __saxi_cond_8_1;
   reg signed [32-1:0] axim_rdata_37;
-  assign _saxi_rready = th_ctrl == 31;
+  assign _saxi_rready = th_ctrl == 39;
   reg signed [32-1:0] _th_ctrl_busy_18;
   reg signed [32-1:0] _th_ctrl_end_time_19;
   reg signed [32-1:0] _th_ctrl_time_20;
@@ -969,13 +969,13 @@ module test;
       if(__saxi_cond_8_1) begin
         _saxi_arvalid <= 0;
       end 
-      if(_saxi_wvalid && _saxi_wready && !(_saxi_bvalid && _saxi_bready) && (outstanding_wcount_23 < 7)) begin
+      if(_saxi_awvalid && _saxi_awready && !(_saxi_bvalid && _saxi_bready) && (outstanding_wcount_23 < 7)) begin
         outstanding_wcount_23 <= outstanding_wcount_23 + 1;
       end 
-      if(!(_saxi_wvalid && _saxi_wready) && (_saxi_bvalid && _saxi_bready) && (outstanding_wcount_23 > 0)) begin
+      if(!(_saxi_awvalid && _saxi_awready) && (_saxi_bvalid && _saxi_bready) && (outstanding_wcount_23 > 0)) begin
         outstanding_wcount_23 <= outstanding_wcount_23 - 1;
       end 
-      if((th_ctrl == 6) && ((outstanding_wcount_23 < 6) && (_saxi_awready || !_saxi_awvalid))) begin
+      if((th_ctrl == 6) && ((outstanding_wcount_23 == 0) && (_saxi_awready || !_saxi_awvalid))) begin
         _saxi_awaddr <= _th_ctrl_awaddr_13;
         _saxi_awvalid <= 1;
       end 
@@ -983,7 +983,7 @@ module test;
       if(_saxi_awvalid && !_saxi_awready) begin
         _saxi_awvalid <= _saxi_awvalid;
       end 
-      if((th_ctrl == 8) && ((outstanding_wcount_23 < 6) && (_saxi_wready || !_saxi_wvalid))) begin
+      if((th_ctrl == 8) && (_saxi_wready || !_saxi_wvalid)) begin
         _saxi_wdata <= 4096;
         _saxi_wvalid <= 1;
         _saxi_wstrb <= { 4{ 1'd1 } };
@@ -992,7 +992,7 @@ module test;
       if(_saxi_wvalid && !_saxi_wready) begin
         _saxi_wvalid <= _saxi_wvalid;
       end 
-      if((th_ctrl == 12) && ((outstanding_wcount_23 < 6) && (_saxi_awready || !_saxi_awvalid))) begin
+      if((th_ctrl == 14) && ((outstanding_wcount_23 == 0) && (_saxi_awready || !_saxi_awvalid))) begin
         _saxi_awaddr <= _th_ctrl_awaddr_13;
         _saxi_awvalid <= 1;
       end 
@@ -1000,7 +1000,7 @@ module test;
       if(_saxi_awvalid && !_saxi_awready) begin
         _saxi_awvalid <= _saxi_awvalid;
       end 
-      if((th_ctrl == 14) && ((outstanding_wcount_23 < 6) && (_saxi_wready || !_saxi_wvalid))) begin
+      if((th_ctrl == 16) && (_saxi_wready || !_saxi_wvalid)) begin
         _saxi_wdata <= _th_ctrl_src_offset_14;
         _saxi_wvalid <= 1;
         _saxi_wstrb <= { 4{ 1'd1 } };
@@ -1009,7 +1009,7 @@ module test;
       if(_saxi_wvalid && !_saxi_wready) begin
         _saxi_wvalid <= _saxi_wvalid;
       end 
-      if((th_ctrl == 18) && ((outstanding_wcount_23 < 6) && (_saxi_awready || !_saxi_awvalid))) begin
+      if((th_ctrl == 22) && ((outstanding_wcount_23 == 0) && (_saxi_awready || !_saxi_awvalid))) begin
         _saxi_awaddr <= _th_ctrl_awaddr_13;
         _saxi_awvalid <= 1;
       end 
@@ -1017,7 +1017,7 @@ module test;
       if(_saxi_awvalid && !_saxi_awready) begin
         _saxi_awvalid <= _saxi_awvalid;
       end 
-      if((th_ctrl == 20) && ((outstanding_wcount_23 < 6) && (_saxi_wready || !_saxi_wvalid))) begin
+      if((th_ctrl == 24) && (_saxi_wready || !_saxi_wvalid)) begin
         _saxi_wdata <= _th_ctrl_dst_offset_15;
         _saxi_wvalid <= 1;
         _saxi_wstrb <= { 4{ 1'd1 } };
@@ -1026,7 +1026,7 @@ module test;
       if(_saxi_wvalid && !_saxi_wready) begin
         _saxi_wvalid <= _saxi_wvalid;
       end 
-      if((th_ctrl == 24) && ((outstanding_wcount_23 < 6) && (_saxi_awready || !_saxi_awvalid))) begin
+      if((th_ctrl == 30) && ((outstanding_wcount_23 == 0) && (_saxi_awready || !_saxi_awvalid))) begin
         _saxi_awaddr <= _th_ctrl_awaddr_13;
         _saxi_awvalid <= 1;
       end 
@@ -1034,7 +1034,7 @@ module test;
       if(_saxi_awvalid && !_saxi_awready) begin
         _saxi_awvalid <= _saxi_awvalid;
       end 
-      if((th_ctrl == 26) && ((outstanding_wcount_23 < 6) && (_saxi_wready || !_saxi_wvalid))) begin
+      if((th_ctrl == 32) && (_saxi_wready || !_saxi_wvalid)) begin
         _saxi_wdata <= 1;
         _saxi_wvalid <= 1;
         _saxi_wstrb <= { 4{ 1'd1 } };
@@ -1043,7 +1043,7 @@ module test;
       if(_saxi_wvalid && !_saxi_wready) begin
         _saxi_wvalid <= _saxi_wvalid;
       end 
-      if((th_ctrl == 29) && (_saxi_arready || !_saxi_arvalid)) begin
+      if((th_ctrl == 37) && (_saxi_arready || !_saxi_arvalid)) begin
         _saxi_araddr <= _th_ctrl_araddr_17;
         _saxi_arvalid <= 1;
       end 
@@ -1103,6 +1103,14 @@ module test;
   localparam th_ctrl_38 = 38;
   localparam th_ctrl_39 = 39;
   localparam th_ctrl_40 = 40;
+  localparam th_ctrl_41 = 41;
+  localparam th_ctrl_42 = 42;
+  localparam th_ctrl_43 = 43;
+  localparam th_ctrl_44 = 44;
+  localparam th_ctrl_45 = 45;
+  localparam th_ctrl_46 = 46;
+  localparam th_ctrl_47 = 47;
+  localparam th_ctrl_48 = 48;
 
   always @(posedge uut_CLK) begin
     if(uut_RST) begin
@@ -1146,12 +1154,14 @@ module test;
           th_ctrl <= th_ctrl_6;
         end
         th_ctrl_6: begin
-          if((outstanding_wcount_23 < 6) && (_saxi_awready || !_saxi_awvalid)) begin
+          if((outstanding_wcount_23 == 0) && (_saxi_awready || !_saxi_awvalid)) begin
             th_ctrl <= th_ctrl_7;
           end 
         end
         th_ctrl_7: begin
-          th_ctrl <= th_ctrl_8;
+          if(_saxi_awvalid && _saxi_awready) begin
+            th_ctrl <= th_ctrl_8;
+          end 
         end
         th_ctrl_8: begin
           if(_saxi_wready || !_saxi_wvalid) begin
@@ -1159,139 +1169,187 @@ module test;
           end 
         end
         th_ctrl_9: begin
-          _th_ctrl_awaddr_13 <= 12;
-          th_ctrl <= th_ctrl_10;
+          if(_saxi_wvalid && _saxi_wready) begin
+            th_ctrl <= th_ctrl_10;
+          end 
         end
         th_ctrl_10: begin
-          _th_ctrl_src_offset_14 <= 0;
-          th_ctrl <= th_ctrl_11;
+          if(outstanding_wcount_23 == 0) begin
+            th_ctrl <= th_ctrl_11;
+          end 
         end
         th_ctrl_11: begin
-          $display("# src_offset = %d", _th_ctrl_src_offset_14);
+          _th_ctrl_awaddr_13 <= 12;
           th_ctrl <= th_ctrl_12;
         end
         th_ctrl_12: begin
-          if((outstanding_wcount_23 < 6) && (_saxi_awready || !_saxi_awvalid)) begin
-            th_ctrl <= th_ctrl_13;
-          end 
+          _th_ctrl_src_offset_14 <= 0;
+          th_ctrl <= th_ctrl_13;
         end
         th_ctrl_13: begin
+          $display("# src_offset = %d", _th_ctrl_src_offset_14);
           th_ctrl <= th_ctrl_14;
         end
         th_ctrl_14: begin
-          if(_saxi_wready || !_saxi_wvalid) begin
+          if((outstanding_wcount_23 == 0) && (_saxi_awready || !_saxi_awvalid)) begin
             th_ctrl <= th_ctrl_15;
           end 
         end
         th_ctrl_15: begin
-          _th_ctrl_awaddr_13 <= 16;
-          th_ctrl <= th_ctrl_16;
+          if(_saxi_awvalid && _saxi_awready) begin
+            th_ctrl <= th_ctrl_16;
+          end 
         end
         th_ctrl_16: begin
-          _th_ctrl_dst_offset_15 <= 8192;
-          th_ctrl <= th_ctrl_17;
+          if(_saxi_wready || !_saxi_wvalid) begin
+            th_ctrl <= th_ctrl_17;
+          end 
         end
         th_ctrl_17: begin
-          $display("# dst_offset = %d", _th_ctrl_dst_offset_15);
-          th_ctrl <= th_ctrl_18;
+          if(_saxi_wvalid && _saxi_wready) begin
+            th_ctrl <= th_ctrl_18;
+          end 
         end
         th_ctrl_18: begin
-          if((outstanding_wcount_23 < 6) && (_saxi_awready || !_saxi_awvalid)) begin
+          if(outstanding_wcount_23 == 0) begin
             th_ctrl <= th_ctrl_19;
           end 
         end
         th_ctrl_19: begin
+          _th_ctrl_awaddr_13 <= 16;
           th_ctrl <= th_ctrl_20;
         end
         th_ctrl_20: begin
-          if(_saxi_wready || !_saxi_wvalid) begin
-            th_ctrl <= th_ctrl_21;
-          end 
+          _th_ctrl_dst_offset_15 <= 8192;
+          th_ctrl <= th_ctrl_21;
         end
         th_ctrl_21: begin
-          _th_ctrl_awaddr_13 <= 0;
+          $display("# dst_offset = %d", _th_ctrl_dst_offset_15);
           th_ctrl <= th_ctrl_22;
         end
         th_ctrl_22: begin
-          _th_ctrl_start_time_16 <= counter;
-          th_ctrl <= th_ctrl_23;
+          if((outstanding_wcount_23 == 0) && (_saxi_awready || !_saxi_awvalid)) begin
+            th_ctrl <= th_ctrl_23;
+          end 
         end
         th_ctrl_23: begin
-          $display("# start time = %d", _th_ctrl_start_time_16);
-          th_ctrl <= th_ctrl_24;
+          if(_saxi_awvalid && _saxi_awready) begin
+            th_ctrl <= th_ctrl_24;
+          end 
         end
         th_ctrl_24: begin
-          if((outstanding_wcount_23 < 6) && (_saxi_awready || !_saxi_awvalid)) begin
+          if(_saxi_wready || !_saxi_wvalid) begin
             th_ctrl <= th_ctrl_25;
           end 
         end
         th_ctrl_25: begin
-          th_ctrl <= th_ctrl_26;
+          if(_saxi_wvalid && _saxi_wready) begin
+            th_ctrl <= th_ctrl_26;
+          end 
         end
         th_ctrl_26: begin
-          if(_saxi_wready || !_saxi_wvalid) begin
+          if(outstanding_wcount_23 == 0) begin
             th_ctrl <= th_ctrl_27;
           end 
         end
         th_ctrl_27: begin
-          _th_ctrl_araddr_17 <= 4;
+          _th_ctrl_awaddr_13 <= 0;
           th_ctrl <= th_ctrl_28;
         end
         th_ctrl_28: begin
-          if(1) begin
-            th_ctrl <= th_ctrl_29;
-          end else begin
-            th_ctrl <= th_ctrl_36;
-          end
+          _th_ctrl_start_time_16 <= counter;
+          th_ctrl <= th_ctrl_29;
         end
         th_ctrl_29: begin
-          if(_saxi_arready || !_saxi_arvalid) begin
-            th_ctrl <= th_ctrl_30;
-          end 
+          $display("# start time = %d", _th_ctrl_start_time_16);
+          th_ctrl <= th_ctrl_30;
         end
         th_ctrl_30: begin
-          th_ctrl <= th_ctrl_31;
+          if((outstanding_wcount_23 == 0) && (_saxi_awready || !_saxi_awvalid)) begin
+            th_ctrl <= th_ctrl_31;
+          end 
         end
         th_ctrl_31: begin
-          if(_saxi_rvalid) begin
-            axim_rdata_37 <= _saxi_rdata;
-          end 
-          if(_saxi_rvalid) begin
+          if(_saxi_awvalid && _saxi_awready) begin
             th_ctrl <= th_ctrl_32;
           end 
         end
         th_ctrl_32: begin
-          _th_ctrl_busy_18 <= axim_rdata_37;
-          th_ctrl <= th_ctrl_33;
+          if(_saxi_wready || !_saxi_wvalid) begin
+            th_ctrl <= th_ctrl_33;
+          end 
         end
         th_ctrl_33: begin
-          if(!_th_ctrl_busy_18) begin
+          if(_saxi_wvalid && _saxi_wready) begin
             th_ctrl <= th_ctrl_34;
-          end else begin
-            th_ctrl <= th_ctrl_35;
-          end
+          end 
         end
         th_ctrl_34: begin
-          th_ctrl <= th_ctrl_36;
+          if(outstanding_wcount_23 == 0) begin
+            th_ctrl <= th_ctrl_35;
+          end 
         end
         th_ctrl_35: begin
-          th_ctrl <= th_ctrl_28;
+          _th_ctrl_araddr_17 <= 4;
+          th_ctrl <= th_ctrl_36;
         end
         th_ctrl_36: begin
-          _th_ctrl_end_time_19 <= counter;
-          th_ctrl <= th_ctrl_37;
+          if(1) begin
+            th_ctrl <= th_ctrl_37;
+          end else begin
+            th_ctrl <= th_ctrl_44;
+          end
         end
         th_ctrl_37: begin
-          $display("# end time = %d", _th_ctrl_end_time_19);
-          th_ctrl <= th_ctrl_38;
+          if(_saxi_arready || !_saxi_arvalid) begin
+            th_ctrl <= th_ctrl_38;
+          end 
         end
         th_ctrl_38: begin
-          _th_ctrl_time_20 <= _th_ctrl_end_time_19 - _th_ctrl_start_time_16;
-          th_ctrl <= th_ctrl_39;
+          if(_saxi_arvalid && _saxi_arready) begin
+            th_ctrl <= th_ctrl_39;
+          end 
         end
         th_ctrl_39: begin
+          if(_saxi_rvalid) begin
+            axim_rdata_37 <= _saxi_rdata;
+          end 
+          if(_saxi_rvalid) begin
+            th_ctrl <= th_ctrl_40;
+          end 
+        end
+        th_ctrl_40: begin
+          _th_ctrl_busy_18 <= axim_rdata_37;
+          th_ctrl <= th_ctrl_41;
+        end
+        th_ctrl_41: begin
+          if(!_th_ctrl_busy_18) begin
+            th_ctrl <= th_ctrl_42;
+          end else begin
+            th_ctrl <= th_ctrl_43;
+          end
+        end
+        th_ctrl_42: begin
+          th_ctrl <= th_ctrl_44;
+        end
+        th_ctrl_43: begin
+          th_ctrl <= th_ctrl_36;
+        end
+        th_ctrl_44: begin
+          _th_ctrl_end_time_19 <= counter;
+          th_ctrl <= th_ctrl_45;
+        end
+        th_ctrl_45: begin
+          $display("# end time = %d", _th_ctrl_end_time_19);
+          th_ctrl <= th_ctrl_46;
+        end
+        th_ctrl_46: begin
+          _th_ctrl_time_20 <= _th_ctrl_end_time_19 - _th_ctrl_start_time_16;
+          th_ctrl <= th_ctrl_47;
+        end
+        th_ctrl_47: begin
           $display("# exec time = %d", _th_ctrl_time_20);
-          th_ctrl <= th_ctrl_40;
+          th_ctrl <= th_ctrl_48;
         end
       endcase
     end
@@ -1599,7 +1657,7 @@ module blinkled
                                 (axis_maskaddr_16 == 6)? _saxi_resetval_6 : 
                                 (axis_maskaddr_16 == 7)? _saxi_resetval_7 : 'hx;
   reg _saxi_cond_0_1;
-  assign saxi_wready = _saxi_register_fsm == 2;
+  assign saxi_wready = _saxi_register_fsm == 3;
   reg start;
   wire busy;
   reg [10-1:0] size;
@@ -2142,28 +2200,28 @@ module blinkled
         _saxi_register_7 <= axislite_resetval_19;
         _saxi_flag_7 <= 0;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_16 == 0)) begin
+      if((_saxi_register_fsm == 3) && saxi_wvalid && (axis_maskaddr_16 == 0)) begin
         _saxi_register_0 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_16 == 1)) begin
+      if((_saxi_register_fsm == 3) && saxi_wvalid && (axis_maskaddr_16 == 1)) begin
         _saxi_register_1 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_16 == 2)) begin
+      if((_saxi_register_fsm == 3) && saxi_wvalid && (axis_maskaddr_16 == 2)) begin
         _saxi_register_2 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_16 == 3)) begin
+      if((_saxi_register_fsm == 3) && saxi_wvalid && (axis_maskaddr_16 == 3)) begin
         _saxi_register_3 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_16 == 4)) begin
+      if((_saxi_register_fsm == 3) && saxi_wvalid && (axis_maskaddr_16 == 4)) begin
         _saxi_register_4 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_16 == 5)) begin
+      if((_saxi_register_fsm == 3) && saxi_wvalid && (axis_maskaddr_16 == 5)) begin
         _saxi_register_5 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_16 == 6)) begin
+      if((_saxi_register_fsm == 3) && saxi_wvalid && (axis_maskaddr_16 == 6)) begin
         _saxi_register_6 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_16 == 7)) begin
+      if((_saxi_register_fsm == 3) && saxi_wvalid && (axis_maskaddr_16 == 7)) begin
         _saxi_register_7 <= saxi_wdata;
       end 
       if((_saxi_register_0 == 1) && (th_memcpy == 2) && 1) begin
@@ -2259,6 +2317,8 @@ module blinkled
 
   localparam _saxi_register_fsm_1 = 1;
   localparam _saxi_register_fsm_2 = 2;
+  localparam _saxi_register_fsm_3 = 3;
+  localparam _saxi_register_fsm_4 = 4;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -2274,16 +2334,26 @@ module blinkled
             _saxi_register_fsm <= _saxi_register_fsm_1;
           end 
           if(writevalid_12) begin
-            _saxi_register_fsm <= _saxi_register_fsm_2;
+            _saxi_register_fsm <= _saxi_register_fsm_3;
           end 
         end
         _saxi_register_fsm_1: begin
           if(saxi_rready || !saxi_rvalid) begin
-            _saxi_register_fsm <= _saxi_register_fsm_init;
+            _saxi_register_fsm <= _saxi_register_fsm_2;
           end 
         end
         _saxi_register_fsm_2: begin
+          if(saxi_rready && saxi_rvalid) begin
+            _saxi_register_fsm <= _saxi_register_fsm_init;
+          end 
+        end
+        _saxi_register_fsm_3: begin
           if(saxi_wvalid) begin
+            _saxi_register_fsm <= _saxi_register_fsm_4;
+          end 
+        end
+        _saxi_register_fsm_4: begin
+          if(saxi_bready && saxi_bvalid) begin
             _saxi_register_fsm <= _saxi_register_fsm_init;
           end 
         end
