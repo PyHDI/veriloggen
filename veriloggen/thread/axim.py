@@ -1837,7 +1837,8 @@ class AXIMLite(axi.AxiLiteMaster, _MutexFunction):
         fsm.If(ack).goto_next()
 
         # state 1
-        fsm.goto_next()
+        done = vtypes.Ands(self.raddr.arvalid, self.raddr.arready)
+        fsm.If(done).goto_next()
 
         # state 2
         rcond = fsm.here
@@ -1863,7 +1864,8 @@ class AXIMLite(axi.AxiLiteMaster, _MutexFunction):
         fsm.If(ack).goto_next()
 
         # state 1
-        fsm.goto_next()
+        done = vtypes.Ands(self.waddr.awvalid, self.waddr.awready)
+        fsm.If(done).goto_next()
 
         # state 2
         wcond = fsm.here
@@ -1872,12 +1874,17 @@ class AXIMLite(axi.AxiLiteMaster, _MutexFunction):
         ack = vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid))
         fsm.If(ack).goto_next()
 
-    def write_fence(self, fsm, global_addr, value):
+        # state 3
+        done = vtypes.Ands(self.wdata.wvalid, self.wdata.wready)
+        fsm.If(done).goto_next()
 
-        self.write(fsm, global_addr, value)
-
+        # state 4
         res = self.write_completed()
         fsm.If(res).goto_next()
+
+    def write_fence(self, fsm, global_addr, value):
+        """ AXI-Lite Master must not issue any request until the previous request is completed."""
+        self.write(fsm, global_addr, value)
 
     def set_global_base_addr(self, fsm, addr):
 
@@ -1909,12 +1916,16 @@ class AXIMLiteVerify(AXIMLite):
         fsm.If(ack).goto_next()
 
         # state 1
+        done = vtypes.Ands(self.raddr.arvalid, self.raddr.arready)
+        fsm.If(done).goto_next()
+
+        # state 2
         fsm.If(delay_count > 0)(
             delay_count.dec()
         )
         fsm.If(delay_count == 0).goto_next()
 
-        # state 2
+        # state 3
         rcond = fsm.here
         rdata = self.m.TmpReg(self.datawidth, initval=0,
                               signed=True, prefix='axim_rdata')
@@ -1942,14 +1953,26 @@ class AXIMLiteVerify(AXIMLite):
         fsm.If(ack).goto_next()
 
         # state 1
+        done = vtypes.Ands(self.waddr.awvalid, self.waddr.awready)
+        fsm.If(done).goto_next()
+
+        # state 2
         fsm.If(delay_count > 0)(
             delay_count.dec()
         )
         fsm.If(delay_count == 0).goto_next()
 
-        # state 2
+        # state 3
         wcond = fsm.here
         wdata = value
         _ = self.write_data(wdata, cond=wcond)
         ack = vtypes.Ors(self.wdata.wready, vtypes.Not(self.wdata.wvalid))
         fsm.If(ack).goto_next()
+
+        # state 4
+        done = vtypes.Ands(self.wdata.wvalid, self.wdata.wready)
+        fsm.If(done).goto_next()
+
+        # state 5
+        res = self.write_completed()
+        fsm.If(res).goto_next()

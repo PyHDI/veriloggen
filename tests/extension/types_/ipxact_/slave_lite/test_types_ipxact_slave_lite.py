@@ -244,10 +244,10 @@ module test;
       if(__axi_cond_1_1) begin
         _axi_arvalid <= 0;
       end 
-      if(_axi_wvalid && _axi_wready && !(_axi_bvalid && _axi_bready) && (outstanding_wcount_0 < 7)) begin
+      if(_axi_awvalid && _axi_awready && !(_axi_bvalid && _axi_bready) && (outstanding_wcount_0 < 7)) begin
         outstanding_wcount_0 <= outstanding_wcount_0 + 1;
       end 
-      if(!(_axi_wvalid && _axi_wready) && (_axi_bvalid && _axi_bready) && (outstanding_wcount_0 > 0)) begin
+      if(!(_axi_awvalid && _axi_awready) && (_axi_bvalid && _axi_bready) && (outstanding_wcount_0 > 0)) begin
         outstanding_wcount_0 <= outstanding_wcount_0 - 1;
       end 
       _axi_awaddr <= 0;
