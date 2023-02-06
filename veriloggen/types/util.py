@@ -17,7 +17,7 @@ def swap_type(cls):
     return cls._O, cls._I
 
 
-def make_port(m, _type, *args, **kwargs):
+def make_port(m, _type, name, *args, **kwargs):
     if 'no_reg' in kwargs and kwargs['no_reg']:
         _type = _type.replace('Reg', '')
         if len(_type) == 0:
@@ -28,6 +28,9 @@ def make_port(m, _type, *args, **kwargs):
 
     if 'initval' in kwargs and 'Reg' not in _type:
         del kwargs['initval']
+
+    if 'Tmp' not in _type:
+        args = [name] + list(args)
 
     return getattr(m, _type)(*args, **kwargs)
 
