@@ -100,13 +100,13 @@ def generate_config(
     gnd: str | None = None,
 ):
     if pdk not in ['sky130', 'gf180mcu', 'sky130A', 'sky130B', 'gf180mcuA', 'gf180mcuB', 'gf180mcuC']:
-        raise ValueError('Invalid PDK:', pdk)
+        raise ValueError(f'Invalid PDK: {pdk}')
     if pdk == 'sky130':
         # sky130A is default for sky130
-        pdk = pdk + 'A'
+        pdk += 'A'
     if pdk == 'gf180mcu':
         # gf180mcuC is default for gf180mcu
-        pdk = pdk + 'C'
+        pdk += 'C'
 
     if (vdd is None) != (gnd is None):
         raise TypeError('Specify both or neither of `vdd` and `gnd`')

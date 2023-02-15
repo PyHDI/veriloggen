@@ -22,21 +22,22 @@ def pad(data, width):
         return vtypes.Cat(vtypes.Int(0, width - data.get_width()), data)
 
 
-def make_mux(
-    data,
-    select
-):
-    n = len(data)
+def make_mux_sub(data, select, index):
+    if index == 0:
+        return vtypes.Cond(select[0], data[1], data[0])
+    return vtypes.Cond(select[index],
+                       make_mux_sub(data[len(data) // 2:], select, index - 1),
+                       make_mux_sub(data[:len(data) // 2], select, index - 1))
+
+
+def make_mux(data_list, selector):
+    n = len(data_list)
     if n <= 1 or n & (n - 1) != 0:
         raise ValueError
-    if n == 2:
-        return vtypes.Cond(select, data[0], data[1])
     k = n.bit_length() - 1
-    if select.get_width() != k:
+    if selector.get_width() != k:
         raise ValueError
-    return vtypes.Cond(select[k - 1],
-                       make_mux(data[0:n//2], select[:k - 1]),
-                       make_mux(data[n//2:], select[:k - 1]))
+    return make_mux_sub(data_list, selector, k - 1)
 
 
 def make_decoder(data):
@@ -112,9 +113,9 @@ def make_sky130_sram(
                 macro_name = 'sky130_sram_1kbyte_1rw1r_32x256_8'
             if addrwidth < 1:
                 raise ValueError
-            mux_sel0 = m.Wire('mux_sel0')
+            mux_sel0 = m.Wire('mux_sel0', 1)
             mux_sel0.assign(addr0[0])
-            mux_sel1 = m.Wire('mux_sel1')
+            mux_sel1 = m.Wire('mux_sel1', 1)
             mux_sel1.assign(addr1[1])
             sram_addr0 = addr0[1:]
             sram_addr1 = addr1[1:]
@@ -223,22 +224,26 @@ def make_gf180mcu_sram(
                               ('D', tmp_in), ('Q', tmp_out)],
                        workaround=True)
     else:
+        sram_addr = m.Wire('sram_addr', 9)
+        sram_addr.assign(addr[:9])
+        mux_sel = m.Wire('mux_sel', addrwidth - 9)
+        mux_sel.assign(addr[9:])
         dout_list = [m.Wire(f'dout_{i}', datawidth)
                      for i in range(2**(addrwidth - 9))]
-        dout.assign(make_mux(dout_list, addr[9:]))
+        dout.assign(make_mux(dout_list, mux_sel))
         if datawidth % 8 != 0:
             tmp_in = m.Wire('tmp_in', 8)
             tmp_in.assign(vtypes.Cat(vtypes.Int(0, 8 - datawidth%8),
                                      din[datawidth // 8 * 8:]))
         for i in range(2**(addrwidth - 9)):
             seln = m.Wire(f'seln_{i}')
-            seln.assign(addr[9:] != i)
+            seln.assign(mux_sel != i)
             for j in range(datawidth // 8):
                 m.Instance('gf180mcu_fd_ip_sram__sram512x8m8wm1',
                            f'ram_{i}_{j}',
                            ports=[('CLK', clk), ('CEN', vtypes.Ors(cen, seln)),
                                   ('GWEN', vtypes.Ors(wen, seln)),
-                                  ('WEN', zero(8)), ('A', addr[:9]),
+                                  ('WEN', zero(8)), ('A', sram_addr),
                                   ('D', din[8*j:8*(j+1)]),
                                   ('Q', dout_list[i][8*j:8*(j+1)])],
                            workaround=True)
@@ -249,7 +254,7 @@ def make_gf180mcu_sram(
                            f'ram_{i}_{datawidth // 8}',
                            ports=[('CLK', clk), ('CEN', vtypes.Ors(cen, seln)),
                                   ('GWEN', vtypes.Ors(wen, seln)),
-                                  ('WEN', zero(8)), ('A', addr[:9]),
+                                  ('WEN', zero(8)), ('A', sram_addr),
                                   ('D', tmp_in), ('Q', tmp_out)],
                            workaround=True)
 
