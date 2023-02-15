@@ -1,4 +1,6 @@
 import json
+from typing import Literal
+from warnings import warn
 from pathlib import Path
 import re
 from rectpack import newPacker, SORT_NONE
@@ -90,11 +92,40 @@ def generate_config(
     clk: str,
     clock_period: int | float,
     die_shape: tuple[int | float, int | float],
-    pdk_local_path: str,
-    pdk_docker_path: str,
-    vdd: str = 'vccd1',
-    gnd: str = 'vssd1',
+    pdk: Literal['sky130', 'gf180mcu', 'sky130A', 'sky130B', 'gf180mcuA', 'gf180mcuB', 'gf180mcuC'],
+    pdk_root: str | None = None,
+    macro_local_path: str | None = None,
+    macro_docker_path: str | None = None,
+    vdd: str | None = None,
+    gnd: str | None = None,
 ):
+    if pdk not in ['sky130', 'gf180mcu', 'sky130A', 'sky130B', 'gf180mcuA', 'gf180mcuB', 'gf180mcuC']:
+        raise ValueError('Invalid PDK:', pdk)
+    if pdk == 'sky130':
+        # sky130A is default for sky130
+        pdk = pdk + 'A'
+    if pdk == 'gf180mcu':
+        # gf180mcuC is default for gf180mcu
+        pdk = pdk + 'C'
+
+    if (vdd is None) != (gnd is None):
+        raise TypeError('Specify both or neither of `vdd` and `gnd`')
+    if vdd is None and gnd is None:
+        if pdk.startswith('sky130'):
+            vdd = 'vccd1'
+            gnd = 'vssd1'
+        else:
+            vdd = 'VDD'
+            gnd = 'VSS'
+
+    if (macro_local_path is None) != (macro_docker_path is None):
+        raise TypeError('Specify both or neither of `macro_local_path` and `macro_docker_path`')
+    if macro_local_path is None and macro_docker_path is None:
+        if pdk_root is None:
+            raise TypeError('`pdk_root` must be specified if `macro_local_path` and `macro_docker_path` are not specified')
+        macro_local_path = str(Path(pdk_root) / pdk / 'libs.ref')
+        macro_docker_path = '/'.join(['/openlane/pdks', pdk, 'libs.ref'])
+
     with open(src_local_path) as f:
         src = f.read()
 
@@ -105,6 +136,7 @@ def generate_config(
 
     config_json = {}
 
+    config_json['PDK'] = pdk
     config_json['DESIGN_NAME'] = top
     config_json['VERILOG_FILES'] = 'dir::src/*.v'
     config_json['CLOCK_PORT'] = clk
@@ -121,9 +153,9 @@ def generate_config(
 
     config_json['MACRO_PLACEMENT_CFG'] = 'dir::macro_placement.cfg'
 
-    pdk_lefs = list(Path(pdk_local_path).glob('**/*.lef'))
-    pdk_gdss = list(Path(pdk_local_path).glob('**/*.gds'))
-    pdk_libs = list(Path(pdk_local_path).glob('**/*.lib'))
+    pdk_lefs = list(Path(macro_local_path).glob('**/*.lef'))
+    pdk_gdss = list(Path(macro_local_path).glob('**/*.gds'))
+    pdk_libs = list(Path(macro_local_path).glob('**/*.lib'))
     extra_lefs: list[str] = []
     extra_gds_files: list[str] = []
     extra_libs: list[str] = []
@@ -132,48 +164,45 @@ def generate_config(
         for lef in pdk_lefs:
             if lef.name.startswith(mod):
                 lefs.append(lef)
-        if len(lefs) == 0:
+        if not lefs:
             raise RuntimeError('No LEF file found')
-        elif len(lefs) > 1:
-            raise RuntimeError('More than one LEF files found:', lefs)
-        else:
-            extra_lefs.append(str(Path(pdk_docker_path) / lefs[0].relative_to(pdk_local_path)))
-            with lefs[0].open() as f:
-                for l in f:
-                    m = re.search(r'SIZE ([0-9\.]+) BY ([0-9\.]+)', l)
-                    if m:
-                        try:
-                            x = int(m[1])
-                        except ValueError:
-                            x = float(m[1])
-                        try:
-                            y = int(m[2])
-                        except ValueError:
-                            y = float(m[2])
-                        break
-                else:
-                    raise RuntimeError(f'The found LEF file ({lefs[0]}) does not contain size information')
-            macro_shapes[mod] = (x, y)
+        if len(lefs) > 1:
+            warn('\n'.join(['More than one LEF files found:'] + [str(lef) for lef in lefs]), RuntimeWarning)
+        extra_lefs.append(str(Path(macro_docker_path) / lefs[0].relative_to(macro_local_path)))
+        with lefs[0].open() as f:
+            for l in f:
+                m = re.search(r'SIZE ([0-9\.]+) BY ([0-9\.]+)', l)
+                if m:
+                    try:
+                        x = int(m[1])
+                    except ValueError:
+                        x = float(m[1])
+                    try:
+                        y = int(m[2])
+                    except ValueError:
+                        y = float(m[2])
+                    break
+            else:
+                raise RuntimeError(f'The found LEF file ({lefs[0]}) does not contain size information')
+        macro_shapes[mod] = (x, y)
         gdss: list[Path] = []
         for gds in pdk_gdss:
             if gds.name.startswith(mod):
                 gdss.append(gds)
-        if len(gdss) == 0:
+        if not gdss:
             raise RuntimeError('No GDS file found')
-        elif len(gdss) > 1:
-            raise RuntimeError('More than one GDS files found:', gdss)
-        else:
-            extra_gds_files.append(str(Path(pdk_docker_path) / gdss[0].relative_to(pdk_local_path)))
+        if len(gdss) > 1:
+            warn('\n'.join(['More than one GDS files found:'] + [str(gds) for gds in gdss]), RuntimeWarning)
+        extra_gds_files.append(str(Path(macro_docker_path) / gdss[0].relative_to(macro_local_path)))
         libs: list[Path] = []
         for lib in pdk_libs:
             if lib.name.startswith(mod):
                 libs.append(lib)
-        if len(libs) == 0:
+        if not libs:
             raise RuntimeError('No LIB file found')
-        # elif len(libs) > 1:
-        #     raise RuntimeError('More than one LIB files found:', libs)
-        else:
-            extra_libs.append(str(Path(pdk_docker_path) / libs[0].relative_to(pdk_local_path)))
+        if len(libs) > 1:
+            warn('\n'.join(['More than one LIB files found:'] + [str(lib) for lib in libs]), RuntimeWarning)
+        extra_libs.append(str(Path(macro_docker_path) / libs[0].relative_to(macro_local_path)))
     config_json['EXTRA_LEFS'] = ' '.join(extra_lefs)
     config_json['EXTRA_GDS_FILES'] = ' '.join(extra_gds_files)
     config_json['EXTRA_LIBS'] = ' '.join(extra_libs)
