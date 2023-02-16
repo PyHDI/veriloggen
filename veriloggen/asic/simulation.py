@@ -1,6 +1,11 @@
-from typing import Literal
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Literal
+    from veriloggen.core.module import Module
+
 from pathlib import Path
-from veriloggen.core.module import Module
 from veriloggen.simulation.simulation import run_iverilog
 
 

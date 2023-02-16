@@ -1,5 +1,10 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Literal
+
 import json
-from typing import Literal
 from warnings import warn
 from pathlib import Path
 import re
