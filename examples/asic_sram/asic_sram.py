@@ -1,5 +1,5 @@
 from veriloggen import *
-from veriloggen.asic import ASICSRAM, generate_config, asic_sim
+from veriloggen.asic import ASICSRAM, generate_configs, asic_sim
 from veriloggen.thread import Thread
 
 
@@ -78,7 +78,7 @@ def make_tb():
 
 def run():
     make_uut().to_verilog('asic_sram.v')
-    generate_config('asic_sram.v', 'asic_sram', 'clk',
+    generate_configs('asic_sram.v', 'asic_sram', 'clk',
                     clock_period, die_shape, pdk=pdk, pdk_root=pdk_root)
 
     print(asic_sim(make_tb(), pdk=pdk, pdk_root=pdk_root))

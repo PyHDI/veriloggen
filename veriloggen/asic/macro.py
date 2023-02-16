@@ -91,7 +91,7 @@ def extract_macros(verilog: str, top: str) -> list[tuple[str, str]]:
     return macros
 
 
-def generate_config(
+def generate_configs(
     src_local_path: str,
     top: str,
     clk: str,
@@ -123,13 +123,15 @@ def generate_config(
             vdd = 'VDD'
             gnd = 'VSS'
 
-    if (macro_local_path is None) != (macro_docker_path is None):
-        raise TypeError('Specify both or neither of `macro_local_path` and `macro_docker_path`')
     if macro_local_path is None and macro_docker_path is None:
         if pdk_root is None:
             raise TypeError('`pdk_root` must be specified if `macro_local_path` and `macro_docker_path` are not specified')
         macro_local_path = str(Path(pdk_root) / pdk / 'libs.ref')
         macro_docker_path = '/'.join(['/openlane/pdks', pdk, 'libs.ref'])
+    elif macro_docker_path is None:
+        macro_docker_path = macro_local_path
+    elif macro_local_path is None:
+        raise TypeError('It is invalid to specify `macro_docker_path` and not specify `macro_local_path`')
 
     with open(src_local_path) as f:
         src = f.read()
