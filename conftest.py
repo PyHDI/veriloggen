@@ -11,6 +11,8 @@ def clean():
     yield
     for p in Path('.').glob('*.out'):
         p.unlink()
+    for p in Path('.').glob('*.vcd'):
+        p.unlink()
     for p in Path('.').glob('**/*.pyc'):
         p.unlink()
     for p in Path('.').glob('**/__pycache__'):
