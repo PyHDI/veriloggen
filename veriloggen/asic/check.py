@@ -1,3 +1,10 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from typing import Any
+    from os import PathLike
+
 import json
 
 
@@ -230,23 +237,29 @@ valid_vars = [
 ]
 
 
-def check(key, value):
+def check_sub(key: Any, value: Any):
     if not isinstance(key, str):
         raise TypeError('key must be a string')
     if key.startswith(('pdk::', 'scl::')):
         if not isinstance(value, dict):
             raise TypeError('value must be a dictionary in conditional execution')
         for k, v in value.items():
-            check(k, v)
+            check_sub(k, v)
     elif key not in valid_vars:
-        raise ValueError('invalid variable name:', key)
+        raise ValueError(f'invalid variable name: {key}')
+
+
+def check_data(json_data: Any):
+    if not isinstance(json_data, dict):
+        raise TypeError('configuration must be a dictionary')
+    for k, v in json_data.items():
+        check_sub(k, v)
+
+
+def check_file(json_path: str | PathLike = 'config.json'):
+    with open(json_path) as f:
+        check_data(json.load(f))
 
 
 if __name__ == '__main__':
-    with open('config.json') as f:
-        cfg = json.load(f)
-        if not isinstance(cfg, dict):
-            raise TypeError('configuration must be a dictionary')
-        for k, v in cfg.items():
-            check(k, v)
-    print('OK')
+    check_file()
