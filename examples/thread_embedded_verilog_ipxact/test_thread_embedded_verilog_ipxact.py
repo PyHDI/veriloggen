@@ -1514,10 +1514,14 @@ module blinkled
   reg [32-1:0] _maxi_read_local_stride_buf;
   reg [33-1:0] _maxi_read_local_size_buf;
   reg [32-1:0] _maxi_read_local_blocksize_buf;
-  reg _maxi_read_req_idle;
-  reg _maxi_read_data_idle;
+  reg _maxi_read_req_busy;
+  reg _maxi_read_data_busy;
+  wire _maxi_read_req_idle;
+  wire _maxi_read_data_idle;
   wire _maxi_read_idle;
-  assign _maxi_read_idle = !_maxi_read_start && _maxi_read_req_idle && _maxi_read_req_fifo_empty && _maxi_read_data_idle;
+  assign _maxi_read_req_idle = !_maxi_read_start && !_maxi_read_req_busy;
+  assign _maxi_read_data_idle = _maxi_read_req_fifo_empty && !_maxi_read_data_busy;
+  assign _maxi_read_idle = _maxi_read_req_idle && _maxi_read_data_idle;
   reg _maxi_write_start;
   reg [8-1:0] _maxi_write_op_sel;
   reg [32-1:0] _maxi_write_global_addr;
@@ -1576,10 +1580,14 @@ module blinkled
   reg [32-1:0] _maxi_write_local_stride_buf;
   reg [33-1:0] _maxi_write_size_buf;
   reg [32-1:0] _maxi_write_local_blocksize_buf;
-  reg _maxi_write_req_idle;
-  reg _maxi_write_data_idle;
+  reg _maxi_write_req_busy;
+  reg _maxi_write_data_busy;
+  wire _maxi_write_req_idle;
+  wire _maxi_write_data_idle;
   wire _maxi_write_idle;
-  assign _maxi_write_idle = !_maxi_write_start && _maxi_write_req_idle && _maxi_write_req_fifo_empty && _maxi_write_data_idle;
+  assign _maxi_write_req_idle = !_maxi_write_start && !_maxi_write_req_busy;
+  assign _maxi_write_data_idle = _maxi_write_req_fifo_empty && !_maxi_write_data_busy;
+  assign _maxi_write_idle = _maxi_write_req_idle && _maxi_write_data_idle;
   assign saxi_bresp = 0;
   assign saxi_rresp = 0;
   reg signed [32-1:0] _saxi_register_0;
@@ -1728,7 +1736,7 @@ module blinkled
   reg _maxi_cond_0_1;
   reg [32-1:0] _maxi_read_data_fsm;
   localparam _maxi_read_data_fsm_init = 0;
-  assign _maxi_read_req_fifo_deq = ((_maxi_read_data_fsm == 0) && (_maxi_read_data_idle && !_maxi_read_req_fifo_empty && (_maxi_read_op_sel_fifo == 1)) && !_maxi_read_req_fifo_empty)? 1 : 0;
+  assign _maxi_read_req_fifo_deq = ((_maxi_read_data_fsm == 0) && (!_maxi_read_data_busy && !_maxi_read_req_fifo_empty && (_maxi_read_op_sel_fifo == 1)) && !_maxi_read_req_fifo_empty)? 1 : 0;
   reg [32-1:0] write_burst_fsm_0;
   localparam write_burst_fsm_0_init = 0;
   reg [10-1:0] write_burst_addr_42;
@@ -1827,7 +1835,7 @@ module blinkled
   wire [32-1:0] read_burst_rdata_83;
   assign read_burst_rdata_83 = ram_a_0_rdata;
   assign _maxi_write_req_fifo_deq = ((_maxi_write_data_fsm == 2) && (!_maxi_write_req_fifo_empty && (_maxi_write_size_buf == 0)) && !_maxi_write_req_fifo_empty)? 1 : 
-                                    ((_maxi_write_data_fsm == 0) && (_maxi_write_data_idle && !_maxi_write_req_fifo_empty && (_maxi_write_op_sel_fifo == 1)) && !_maxi_write_req_fifo_empty)? 1 : 0;
+                                    ((_maxi_write_data_fsm == 0) && (!_maxi_write_data_busy && !_maxi_write_req_fifo_empty && (_maxi_write_op_sel_fifo == 1)) && !_maxi_write_req_fifo_empty)? 1 : 0;
   reg _maxi_cond_2_1;
 
   always @(posedge CLK) begin
@@ -1851,13 +1859,13 @@ module blinkled
       _maxi_read_local_stride <= 0;
       _maxi_read_local_size <= 0;
       _maxi_read_local_blocksize <= 0;
-      _maxi_read_req_idle <= 1;
+      _maxi_read_req_busy <= 0;
       _maxi_read_cur_global_size <= 0;
       maxi_araddr <= 0;
       maxi_arlen <= 0;
       maxi_arvalid <= 0;
       _maxi_cond_0_1 <= 0;
-      _maxi_read_data_idle <= 1;
+      _maxi_read_data_busy <= 0;
       _maxi_read_op_sel_buf <= 0;
       _maxi_read_local_addr_buf <= 0;
       _maxi_read_local_stride_buf <= 0;
@@ -1870,13 +1878,13 @@ module blinkled
       _maxi_write_local_stride <= 0;
       _maxi_write_local_size <= 0;
       _maxi_write_local_blocksize <= 0;
-      _maxi_write_req_idle <= 1;
+      _maxi_write_req_busy <= 0;
       _maxi_write_cur_global_size <= 0;
       maxi_awaddr <= 0;
       maxi_awlen <= 0;
       maxi_awvalid <= 0;
       _maxi_cond_1_1 <= 0;
-      _maxi_write_data_idle <= 1;
+      _maxi_write_data_busy <= 0;
       _maxi_write_op_sel_buf <= 0;
       _maxi_write_local_addr_buf <= 0;
       _maxi_write_local_stride_buf <= 0;
@@ -1917,7 +1925,7 @@ module blinkled
         _maxi_read_local_blocksize <= 1;
       end 
       if((_maxi_read_req_fsm == 0) && _maxi_read_start) begin
-        _maxi_read_req_idle <= 0;
+        _maxi_read_req_busy <= 1;
       end 
       if(_maxi_read_start && _maxi_read_req_fifo_almost_full) begin
         _maxi_read_start <= 1;
@@ -1948,10 +1956,10 @@ module blinkled
         _maxi_read_global_addr <= _maxi_read_global_addr + (_maxi_read_cur_global_size << 2);
       end 
       if((_maxi_read_req_fsm == 1) && (maxi_arready || !maxi_arvalid) && (_maxi_read_global_size == 0)) begin
-        _maxi_read_req_idle <= 1;
+        _maxi_read_req_busy <= 0;
       end 
-      if((_maxi_read_data_fsm == 0) && (_maxi_read_data_idle && !_maxi_read_req_fifo_empty && (_maxi_read_op_sel_fifo == 1))) begin
-        _maxi_read_data_idle <= 0;
+      if((_maxi_read_data_fsm == 0) && (!_maxi_read_data_busy && !_maxi_read_req_fifo_empty && (_maxi_read_op_sel_fifo == 1))) begin
+        _maxi_read_data_busy <= 1;
         _maxi_read_op_sel_buf <= _maxi_read_op_sel_fifo;
         _maxi_read_local_addr_buf <= _maxi_read_local_addr_fifo;
         _maxi_read_local_stride_buf <= _maxi_read_local_stride_fifo;
@@ -1962,7 +1970,7 @@ module blinkled
         _maxi_read_local_size_buf <= _maxi_read_local_size_buf - 1;
       end 
       if((_maxi_read_data_fsm == 2) && maxi_rvalid && (_maxi_read_local_size_buf <= 1)) begin
-        _maxi_read_data_idle <= 1;
+        _maxi_read_data_busy <= 0;
       end 
       if((th_memcpy == 19) && _maxi_write_req_idle) begin
         _maxi_write_start <= 1;
@@ -1975,7 +1983,7 @@ module blinkled
         _maxi_write_local_blocksize <= 1;
       end 
       if((_maxi_write_req_fsm == 0) && _maxi_write_start) begin
-        _maxi_write_req_idle <= 0;
+        _maxi_write_req_busy <= 1;
       end 
       if(_maxi_write_start && _maxi_write_req_fifo_almost_full) begin
         _maxi_write_start <= 1;
@@ -2009,10 +2017,10 @@ module blinkled
         _maxi_write_global_addr <= _maxi_write_global_addr + (_maxi_write_cur_global_size << 2);
       end 
       if((_maxi_write_req_fsm == 1) && ((_maxi_write_req_fsm == 1) && !_maxi_write_req_fifo_almost_full && (maxi_awready || !maxi_awvalid) && (outstanding_wcount_0 < 6)) && (_maxi_write_global_size == 0)) begin
-        _maxi_write_req_idle <= 1;
+        _maxi_write_req_busy <= 0;
       end 
-      if((_maxi_write_data_fsm == 0) && (_maxi_write_data_idle && !_maxi_write_req_fifo_empty && (_maxi_write_op_sel_fifo == 1))) begin
-        _maxi_write_data_idle <= 0;
+      if((_maxi_write_data_fsm == 0) && (!_maxi_write_data_busy && !_maxi_write_req_fifo_empty && (_maxi_write_op_sel_fifo == 1))) begin
+        _maxi_write_data_busy <= 1;
         _maxi_write_op_sel_buf <= _maxi_write_op_sel_fifo;
         _maxi_write_local_addr_buf <= _maxi_write_local_addr_fifo;
         _maxi_write_local_stride_buf <= _maxi_write_local_stride_fifo;
@@ -2040,7 +2048,7 @@ module blinkled
         _maxi_write_size_buf <= _maxi_write_size_buf - 1;
       end 
       if((_maxi_write_data_fsm == 2) && ((_maxi_write_op_sel_buf == 1) && read_burst_rvalid_79 && ((maxi_wready || !maxi_wvalid) && (_maxi_write_size_buf > 0))) && read_burst_rlast_80) begin
-        _maxi_write_data_idle <= 1;
+        _maxi_write_data_busy <= 0;
       end 
     end
   end
@@ -2534,7 +2542,7 @@ module blinkled
     end else begin
       case(_maxi_read_data_fsm)
         _maxi_read_data_fsm_init: begin
-          if(_maxi_read_data_idle && !_maxi_read_req_fifo_empty && (_maxi_read_op_sel_fifo == 1)) begin
+          if(!_maxi_read_data_busy && !_maxi_read_req_fifo_empty && (_maxi_read_op_sel_fifo == 1)) begin
             _maxi_read_data_fsm <= _maxi_read_data_fsm_1;
           end 
         end
@@ -2633,7 +2641,7 @@ module blinkled
     end else begin
       case(_maxi_write_data_fsm)
         _maxi_write_data_fsm_init: begin
-          if(_maxi_write_data_idle && !_maxi_write_req_fifo_empty && (_maxi_write_op_sel_fifo == 1)) begin
+          if(!_maxi_write_data_busy && !_maxi_write_req_fifo_empty && (_maxi_write_op_sel_fifo == 1)) begin
             _maxi_write_data_fsm <= _maxi_write_data_fsm_1;
           end 
         end
