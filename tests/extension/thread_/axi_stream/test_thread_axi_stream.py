@@ -89,9 +89,11 @@ module blinkled
   reg [32-1:0] _axi_a_read_local_addr_buf;
   reg [32-1:0] _axi_a_read_local_stride_buf;
   reg [33-1:0] _axi_a_read_local_size_buf;
-  reg _axi_a_read_data_idle;
+  reg _axi_a_read_data_busy;
+  wire _axi_a_read_data_idle;
   wire _axi_a_read_idle;
-  assign _axi_a_read_idle = _axi_a_read_req_fifo_empty && _axi_a_read_data_idle;
+  assign _axi_a_read_data_idle = _axi_a_read_req_fifo_empty && !_axi_a_read_data_busy;
+  assign _axi_a_read_idle = _axi_a_read_data_idle;
   wire _axi_b_write_req_fifo_enq;
   wire [105-1:0] _axi_b_write_req_fifo_wdata;
   wire _axi_b_write_req_fifo_full;
@@ -140,9 +142,11 @@ module blinkled
   reg [32-1:0] _axi_b_write_local_addr_buf;
   reg [32-1:0] _axi_b_write_local_stride_buf;
   reg [33-1:0] _axi_b_write_size_buf;
-  reg _axi_b_write_data_idle;
+  reg _axi_b_write_data_busy;
+  wire _axi_b_write_data_idle;
   wire _axi_b_write_idle;
-  assign _axi_b_write_idle = _axi_b_write_req_fifo_empty && _axi_b_write_data_idle;
+  assign _axi_b_write_data_idle = _axi_b_write_req_fifo_empty && !_axi_b_write_data_busy;
+  assign _axi_b_write_idle = _axi_b_write_data_idle;
   assign saxi_bresp = 0;
   assign saxi_rresp = 0;
   reg signed [32-1:0] _saxi_register_0;
@@ -202,13 +206,13 @@ module blinkled
 
   always @(posedge CLK) begin
     if(RST) begin
-      _axi_a_read_data_idle <= 1;
+      _axi_a_read_data_busy <= 0;
     end else begin
-      if((th_comp == 7) && _axi_a_read_data_idle) begin
-        _axi_a_read_data_idle <= 0;
+      if((th_comp == 7) && _axi_a_read_idle) begin
+        _axi_a_read_data_busy <= 1;
       end 
       if((th_comp == 8) && axi_a_tvalid) begin
-        _axi_a_read_data_idle <= 1;
+        _axi_a_read_data_busy <= 0;
       end 
     end
   end
@@ -231,7 +235,7 @@ module blinkled
 
   always @(posedge CLK) begin
     if(RST) begin
-      _axi_b_write_data_idle <= 1;
+      _axi_b_write_data_busy <= 0;
       axi_b_tdata <= 0;
       axi_b_tvalid <= 0;
       axi_b_tlast <= 0;
@@ -241,8 +245,8 @@ module blinkled
         axi_b_tvalid <= 0;
         axi_b_tlast <= 0;
       end 
-      if((th_comp == 12) && _axi_b_write_data_idle) begin
-        _axi_b_write_data_idle <= 0;
+      if((th_comp == 12) && _axi_b_write_idle) begin
+        _axi_b_write_data_busy <= 1;
       end 
       if((th_comp == 13) && (axi_b_tready || !axi_b_tvalid)) begin
         axi_b_tdata <= _th_comp_b_4;
@@ -255,7 +259,7 @@ module blinkled
         axi_b_tlast <= axi_b_tlast;
       end 
       if((th_comp == 13) && (axi_b_tready || !axi_b_tvalid)) begin
-        _axi_b_write_data_idle <= 1;
+        _axi_b_write_data_busy <= 0;
       end 
     end
   end
@@ -511,7 +515,7 @@ module blinkled
           end
         end
         th_comp_7: begin
-          if(_axi_a_read_data_idle) begin
+          if(_axi_a_read_idle) begin
             th_comp <= th_comp_8;
           end 
         end
@@ -540,7 +544,7 @@ module blinkled
           th_comp <= th_comp_12;
         end
         th_comp_12: begin
-          if(_axi_b_write_data_idle) begin
+          if(_axi_b_write_idle) begin
             th_comp <= th_comp_13;
           end 
         end
