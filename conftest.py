@@ -17,5 +17,7 @@ def clean():
         p.unlink()
     for p in Path('.').glob('**/__pycache__'):
         p.rmdir()
-    for p in Path('.').glob('parsetab.py'):
+    for p in Path('.').glob('**/parser.out'):
+        p.unlink()
+    for p in Path('.').glob('**/parsetab.py'):
         p.unlink()

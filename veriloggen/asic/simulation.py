@@ -38,6 +38,6 @@ def asic_sim(
         macro_model_path = [macro_model_path]
 
     if macro_model_path is None:
-        return run_iverilog([test_bench])
+        return run_iverilog([test_bench], timescale=('1ns', '1ps'))
     else:
-        return run_iverilog([test_bench], libdir=macro_model_path)
+        return run_iverilog([test_bench], libdir=macro_model_path, timescale=('1ns', '1ps'))

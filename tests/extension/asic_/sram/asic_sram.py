@@ -17,12 +17,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
 
 
 from veriloggen import *
-from veriloggen.asic import ASICSRAM, asic_sim
+from veriloggen.asic import ASICSRAM, asic_sim, generate_configs
 from veriloggen.thread import Thread
-
-
-clock_period = 50
-simulation_time = 1_000_000
 
 
 def make_uut(pdk, datawidth, addrwidth):
@@ -67,7 +63,7 @@ def make_uut(pdk, datawidth, addrwidth):
     return m
 
 
-def make_tb(pdk, datawidth, addrwidth):
+def make_tb(pdk, datawidth, addrwidth, clock_period, simulation_time):
     m = Module('tb')
 
     uut = Submodule(m, make_uut(pdk, datawidth, addrwidth), 'uut')
@@ -75,9 +71,9 @@ def make_tb(pdk, datawidth, addrwidth):
     rst = uut['rst']
     ok = uut['ok']
 
-    simulation.setup_clock(m, clk, hperiod=clock_period)
+    simulation.setup_clock(m, clk, hperiod=clock_period / 2)
     init = simulation.setup_reset(m, rst, m.make_reset(),
-                                  period=10 * clock_period)
+                                  period=clock_period * 10)
     init.add(
         Delay(simulation_time),
         If(ok)(
@@ -93,10 +89,65 @@ def make_tb(pdk, datawidth, addrwidth):
 
 def run(
     pdk: Literal['sky130', 'gf180mcu'],
+    simulation_model_path: list[str],
     datawidth: int,
     addrwidth: int,
-    simulation_model_path: list[str],
+    clock_period: int | float,
+    simulation_time: int,
 ) -> str:
-    tb = make_tb(pdk, datawidth, addrwidth)
-    rslt = asic_sim(tb, pdk, macro_model_path=simulation_model_path)
+    """
+    Simulate.
+    Used for testing (through `pytest`).
+    """
+    tb = make_tb(pdk, datawidth, addrwidth, clock_period, simulation_time)
+    rslt = asic_sim(tb, macro_model_path=simulation_model_path)
     return rslt
+
+
+def sim(
+    pdk: Literal['sky130', 'gf180mcu'],
+    pdk_root: str,
+    datawidth: int,
+    addrwidth: int,
+    clock_period: int | float,
+    simulation_time: int,
+) -> str:
+    """
+    Simulate.
+    Used for standalone execution (`if __name__ == '__main__':`).
+    """
+    tb = make_tb(pdk, datawidth, addrwidth, clock_period, simulation_time)
+    rslt = asic_sim(tb, pdk, pdk_root)
+    return rslt
+
+
+def syn(
+    pdk: Literal['sky130', 'gf180mcu'],
+    pdk_root: str,
+    datawidth: int,
+    addrwidth: int,
+    clock_period: int | float,
+    die_shape: tuple[int | float, int | float],
+):
+    """
+    Generate an HDL file and configuration files.
+    Used for standalone execution (`if __name__ == '__main__':`).
+    """
+    make_uut(pdk, datawidth, addrwidth).to_verilog('asic_sram.v')
+    generate_configs('asic_sram.v', 'asic_sram', 'clk',
+                     clock_period, die_shape, pdk, pdk_root)
+
+
+if __name__ == '__main__':
+    pdk = 'sky130'  # sky130 or gf180mcu
+    pdk_root = '/Users/mu/research/google/OpenLane/pdks'  # change this path
+    datawidth = 16
+    addrwidth = 8
+    clock_period = 50  # in nanoseconds
+    simulation_time = 10_000_000  # in nanoseconds
+    die_shape = (1000, 1000)
+
+    syn(pdk, pdk_root, datawidth, addrwidth, clock_period, die_shape)
+    rslt = sim(pdk, pdk_root, datawidth, addrwidth,
+               clock_period, simulation_time)
+    print(rslt)
