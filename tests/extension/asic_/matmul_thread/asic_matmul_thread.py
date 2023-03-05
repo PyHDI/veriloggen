@@ -126,7 +126,7 @@ def make_tb(
                                   period=clockperiod * 10)
 
     init.add(
-        Delay(10_000_000_000),
+        Delay(100_000_000_000),
         Finish()
     )
 
@@ -235,8 +235,8 @@ if __name__ == '__main__':
     pdk = 'sky130'  # sky130 or gf180mcu
     pdk_root = '/Users/mu/research/google/OpenLane/pdks'  # change this path
     matrix_size = 15
-    baudrate = 20_000_000
-    clockfreq = 200_000_000
+    baudrate = 2_000_000
+    clockfreq = 20_000_000
     die_shape = (1000, 1000)
 
     syn(pdk, pdk_root, matrix_size, baudrate, clockfreq, die_shape)

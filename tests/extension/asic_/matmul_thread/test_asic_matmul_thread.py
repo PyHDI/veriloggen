@@ -18,6 +18,6 @@ def test(
     veriloggen.reset()
     rslt = asic_matmul_thread.run(
         pdk, simulation_model_path[pdk],
-        matrix_size=15, baudrate=20_000_000, clockfreq=200_000_000)
+        matrix_size=15, baudrate=2_000_000, clockfreq=20_000_000)
     verify_rslt = rslt.splitlines()[-1]
     assert verify_rslt == '# verify: PASSED'
