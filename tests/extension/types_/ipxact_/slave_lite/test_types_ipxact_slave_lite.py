@@ -57,106 +57,106 @@ module test;
   assign _axi_bready = 1;
   assign _axi_arcache = 3;
   assign _axi_arprot = 0;
-  reg [3-1:0] outstanding_wcount_0;
-  wire has_outstanding_write_1;
-  assign has_outstanding_write_1 = (outstanding_wcount_0 > 0) || _axi_awvalid;
-  wire [32-1:0] _tmp_2;
-  assign _tmp_2 = _axi_awaddr;
+  reg [3-1:0] __axi_outstanding_wcount;
+  wire __axi_has_outstanding_write;
+  assign __axi_has_outstanding_write = (__axi_outstanding_wcount > 0) || _axi_awvalid;
+  wire [32-1:0] _tmp_0;
+  assign _tmp_0 = _axi_awaddr;
 
   always @(*) begin
-    myaxi_awaddr = _tmp_2;
+    myaxi_awaddr = _tmp_0;
   end
 
-  wire [4-1:0] _tmp_3;
-  assign _tmp_3 = _axi_awcache;
+  wire [4-1:0] _tmp_1;
+  assign _tmp_1 = _axi_awcache;
 
   always @(*) begin
-    myaxi_awcache = _tmp_3;
+    myaxi_awcache = _tmp_1;
   end
 
-  wire [3-1:0] _tmp_4;
-  assign _tmp_4 = _axi_awprot;
+  wire [3-1:0] _tmp_2;
+  assign _tmp_2 = _axi_awprot;
 
   always @(*) begin
-    myaxi_awprot = _tmp_4;
+    myaxi_awprot = _tmp_2;
   end
 
-  wire _tmp_5;
-  assign _tmp_5 = _axi_awvalid;
+  wire _tmp_3;
+  assign _tmp_3 = _axi_awvalid;
 
   always @(*) begin
-    myaxi_awvalid = _tmp_5;
+    myaxi_awvalid = _tmp_3;
   end
 
   assign _axi_awready = myaxi_awready;
-  wire [32-1:0] _tmp_6;
-  assign _tmp_6 = _axi_wdata;
+  wire [32-1:0] _tmp_4;
+  assign _tmp_4 = _axi_wdata;
 
   always @(*) begin
-    myaxi_wdata = _tmp_6;
+    myaxi_wdata = _tmp_4;
   end
 
-  wire [4-1:0] _tmp_7;
-  assign _tmp_7 = _axi_wstrb;
+  wire [4-1:0] _tmp_5;
+  assign _tmp_5 = _axi_wstrb;
 
   always @(*) begin
-    myaxi_wstrb = _tmp_7;
+    myaxi_wstrb = _tmp_5;
   end
 
-  wire _tmp_8;
-  assign _tmp_8 = _axi_wvalid;
+  wire _tmp_6;
+  assign _tmp_6 = _axi_wvalid;
 
   always @(*) begin
-    myaxi_wvalid = _tmp_8;
+    myaxi_wvalid = _tmp_6;
   end
 
   assign _axi_wready = myaxi_wready;
   assign _axi_bresp = myaxi_bresp;
   assign _axi_bvalid = myaxi_bvalid;
-  wire _tmp_9;
-  assign _tmp_9 = _axi_bready;
+  wire _tmp_7;
+  assign _tmp_7 = _axi_bready;
 
   always @(*) begin
-    myaxi_bready = _tmp_9;
+    myaxi_bready = _tmp_7;
   end
 
-  wire [32-1:0] _tmp_10;
-  assign _tmp_10 = _axi_araddr;
+  wire [32-1:0] _tmp_8;
+  assign _tmp_8 = _axi_araddr;
 
   always @(*) begin
-    myaxi_araddr = _tmp_10;
+    myaxi_araddr = _tmp_8;
   end
 
-  wire [4-1:0] _tmp_11;
-  assign _tmp_11 = _axi_arcache;
+  wire [4-1:0] _tmp_9;
+  assign _tmp_9 = _axi_arcache;
 
   always @(*) begin
-    myaxi_arcache = _tmp_11;
+    myaxi_arcache = _tmp_9;
   end
 
-  wire [3-1:0] _tmp_12;
-  assign _tmp_12 = _axi_arprot;
+  wire [3-1:0] _tmp_10;
+  assign _tmp_10 = _axi_arprot;
 
   always @(*) begin
-    myaxi_arprot = _tmp_12;
+    myaxi_arprot = _tmp_10;
   end
 
-  wire _tmp_13;
-  assign _tmp_13 = _axi_arvalid;
+  wire _tmp_11;
+  assign _tmp_11 = _axi_arvalid;
 
   always @(*) begin
-    myaxi_arvalid = _tmp_13;
+    myaxi_arvalid = _tmp_11;
   end
 
   assign _axi_arready = myaxi_arready;
   assign _axi_rdata = myaxi_rdata;
   assign _axi_rresp = myaxi_rresp;
   assign _axi_rvalid = myaxi_rvalid;
-  wire _tmp_14;
-  assign _tmp_14 = _axi_rready;
+  wire _tmp_12;
+  assign _tmp_12 = _axi_rready;
 
   always @(*) begin
-    myaxi_rready = _tmp_14;
+    myaxi_rready = _tmp_12;
   end
 
   reg [32-1:0] fsm;
@@ -213,7 +213,7 @@ module test;
     _axi_wvalid = 0;
     _axi_araddr = 0;
     _axi_arvalid = 0;
-    outstanding_wcount_0 = 0;
+    __axi_outstanding_wcount = 0;
     fsm = fsm_init;
     __axi_cond_0_1 = 0;
     sum = 0;
@@ -229,7 +229,7 @@ module test;
 
   always @(posedge CLK) begin
     if(RST) begin
-      outstanding_wcount_0 <= 0;
+      __axi_outstanding_wcount <= 0;
       _axi_awaddr <= 0;
       _axi_awvalid <= 0;
       _axi_wdata <= 0;
@@ -246,11 +246,11 @@ module test;
       if(__axi_cond_1_1) begin
         _axi_arvalid <= 0;
       end 
-      if(_axi_awvalid && _axi_awready && !(_axi_bvalid && _axi_bready) && (outstanding_wcount_0 < 7)) begin
-        outstanding_wcount_0 <= outstanding_wcount_0 + 1;
+      if(_axi_awvalid && _axi_awready && !(_axi_bvalid && _axi_bready) && (__axi_outstanding_wcount < 7)) begin
+        __axi_outstanding_wcount <= __axi_outstanding_wcount + 1;
       end 
-      if(!(_axi_awvalid && _axi_awready) && (_axi_bvalid && _axi_bready) && (outstanding_wcount_0 > 0)) begin
-        outstanding_wcount_0 <= outstanding_wcount_0 - 1;
+      if(!(_axi_awvalid && _axi_awready) && (_axi_bvalid && _axi_bready) && (__axi_outstanding_wcount > 0)) begin
+        __axi_outstanding_wcount <= __axi_outstanding_wcount - 1;
       end 
       _axi_awaddr <= 0;
       _axi_awvalid <= 0;

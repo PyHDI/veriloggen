@@ -977,9 +977,9 @@ module main
   assign myaxi_arprot = 0;
   assign myaxi_arqos = 0;
   assign myaxi_aruser = 0;
-  reg [3-1:0] outstanding_wcount_0;
-  wire has_outstanding_write_1;
-  assign has_outstanding_write_1 = (outstanding_wcount_0 > 0) || myaxi_awvalid;
+  reg [3-1:0] _myaxi_outstanding_wcount;
+  wire _myaxi_has_outstanding_write;
+  assign _myaxi_has_outstanding_write = (_myaxi_outstanding_wcount > 0) || myaxi_awvalid;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
   reg _myaxi_cond_0_1;
@@ -989,7 +989,7 @@ module main
 
   always @(posedge CLK) begin
     if(RST) begin
-      outstanding_wcount_0 <= 0;
+      _myaxi_outstanding_wcount <= 0;
       myaxi_awaddr <= 0;
       myaxi_awlen <= 0;
       myaxi_awvalid <= 0;
@@ -1009,11 +1009,11 @@ module main
       if(_myaxi_cond_1_1) begin
         myaxi_arvalid <= 0;
       end 
-      if(myaxi_awvalid && myaxi_awready && !(myaxi_bvalid && myaxi_bready) && (outstanding_wcount_0 < 7)) begin
-        outstanding_wcount_0 <= outstanding_wcount_0 + 1;
+      if(myaxi_awvalid && myaxi_awready && !(myaxi_bvalid && myaxi_bready) && (_myaxi_outstanding_wcount < 7)) begin
+        _myaxi_outstanding_wcount <= _myaxi_outstanding_wcount + 1;
       end 
-      if(!(myaxi_awvalid && myaxi_awready) && (myaxi_bvalid && myaxi_bready) && (outstanding_wcount_0 > 0)) begin
-        outstanding_wcount_0 <= outstanding_wcount_0 - 1;
+      if(!(myaxi_awvalid && myaxi_awready) && (myaxi_bvalid && myaxi_bready) && (_myaxi_outstanding_wcount > 0)) begin
+        _myaxi_outstanding_wcount <= _myaxi_outstanding_wcount - 1;
       end 
       myaxi_awaddr <= 0;
       myaxi_awlen <= 0;
