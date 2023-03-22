@@ -60,7 +60,7 @@ module test;
   wire [4-1:0] memory_wstrb;
   wire memory_wlast;
   wire memory_wvalid;
-  reg memory_wready;
+  wire memory_wready;
   wire [2-1:0] memory_bresp;
   reg memory_bvalid;
   wire memory_bready;
@@ -140,6 +140,46 @@ module test;
   );
 
   reg [4-1:0] count__memory_rreq_fifo;
+  wire _memory_wdata_fifo_enq;
+  wire [37-1:0] _memory_wdata_fifo_wdata;
+  wire _memory_wdata_fifo_full;
+  wire _memory_wdata_fifo_almost_full;
+  wire _memory_wdata_fifo_deq;
+  wire [37-1:0] _memory_wdata_fifo_rdata;
+  wire _memory_wdata_fifo_empty;
+  wire _memory_wdata_fifo_almost_empty;
+
+  _memory_wdata_fifo
+  inst__memory_wdata_fifo
+  (
+    .CLK(CLK),
+    .RST(RST),
+    ._memory_wdata_fifo_enq(_memory_wdata_fifo_enq),
+    ._memory_wdata_fifo_wdata(_memory_wdata_fifo_wdata),
+    ._memory_wdata_fifo_full(_memory_wdata_fifo_full),
+    ._memory_wdata_fifo_almost_full(_memory_wdata_fifo_almost_full),
+    ._memory_wdata_fifo_deq(_memory_wdata_fifo_deq),
+    ._memory_wdata_fifo_rdata(_memory_wdata_fifo_rdata),
+    ._memory_wdata_fifo_empty(_memory_wdata_fifo_empty),
+    ._memory_wdata_fifo_almost_empty(_memory_wdata_fifo_almost_empty)
+  );
+
+  reg [4-1:0] count__memory_wdata_fifo;
+  assign memory_wready = !_memory_wdata_fifo_almost_full;
+  wire [32-1:0] pack_write_data_wdata_0;
+  wire [4-1:0] pack_write_data_wstrb_1;
+  wire [1-1:0] pack_write_data_wlast_2;
+  assign pack_write_data_wdata_0 = memory_wdata;
+  assign pack_write_data_wstrb_1 = memory_wstrb;
+  assign pack_write_data_wlast_2 = memory_wlast;
+  wire [37-1:0] pack_write_data_packed_3;
+  assign pack_write_data_packed_3 = { pack_write_data_wlast_2, pack_write_data_wstrb_1, pack_write_data_wdata_0 };
+  assign _memory_wdata_fifo_wdata = (memory_wvalid && memory_wready)? pack_write_data_packed_3 : 'hx;
+  assign _memory_wdata_fifo_enq = (memory_wvalid && memory_wready)? memory_wvalid && memory_wready && !_memory_wdata_fifo_almost_full : 0;
+  localparam _tmp_4 = 1;
+  wire [_tmp_4-1:0] _tmp_5;
+  assign _tmp_5 = !_memory_wdata_fifo_almost_full;
+  reg [_tmp_4-1:0] __tmp_5_1;
   reg [8-1:0] _memory_mem [0:2**20-1];
 
   initial begin
@@ -152,39 +192,50 @@ module test;
   reg [32-1:0] _read_addr;
   reg [33-1:0] _sleep_interval_count;
   reg [33-1:0] _keep_sleep_count;
-  wire [32-1:0] pack_write_req_global_addr_0;
-  wire [9-1:0] pack_write_req_size_1;
-  assign pack_write_req_global_addr_0 = memory_awaddr;
-  assign pack_write_req_size_1 = memory_awlen + 1;
-  wire [41-1:0] pack_write_req_packed_2;
-  assign pack_write_req_packed_2 = { pack_write_req_global_addr_0, pack_write_req_size_1 };
-  assign _memory_wreq_fifo_wdata = ((_memory_waddr_fsm == 11) && memory_awvalid && memory_awready)? pack_write_req_packed_2 : 'hx;
+  wire [32-1:0] pack_write_req_global_addr_6;
+  wire [9-1:0] pack_write_req_size_7;
+  assign pack_write_req_global_addr_6 = memory_awaddr;
+  assign pack_write_req_size_7 = memory_awlen + 1;
+  wire [41-1:0] pack_write_req_packed_8;
+  assign pack_write_req_packed_8 = { pack_write_req_global_addr_6, pack_write_req_size_7 };
+  assign _memory_wreq_fifo_wdata = ((_memory_waddr_fsm == 11) && memory_awvalid && memory_awready)? pack_write_req_packed_8 : 'hx;
   assign _memory_wreq_fifo_enq = ((_memory_waddr_fsm == 11) && memory_awvalid && memory_awready)? (_memory_waddr_fsm == 11) && memory_awvalid && memory_awready && !_memory_wreq_fifo_almost_full : 0;
-  localparam _tmp_3 = 1;
-  wire [_tmp_3-1:0] _tmp_4;
-  assign _tmp_4 = !_memory_wreq_fifo_almost_full;
-  reg [_tmp_3-1:0] __tmp_4_1;
-  wire [32-1:0] unpack_write_req_global_addr_5;
-  wire [9-1:0] unpack_write_req_size_6;
-  assign unpack_write_req_global_addr_5 = _memory_wreq_fifo_rdata[40:9];
-  assign unpack_write_req_size_6 = _memory_wreq_fifo_rdata[8:0];
+  localparam _tmp_9 = 1;
+  wire [_tmp_9-1:0] _tmp_10;
+  assign _tmp_10 = !_memory_wreq_fifo_almost_full;
+  reg [_tmp_9-1:0] __tmp_10_1;
+  wire [32-1:0] unpack_write_req_global_addr_11;
+  wire [9-1:0] unpack_write_req_size_12;
+  assign unpack_write_req_global_addr_11 = _memory_wreq_fifo_rdata[40:9];
+  assign unpack_write_req_size_12 = _memory_wreq_fifo_rdata[8:0];
   assign _memory_wreq_fifo_deq = ((_memory_wdata_fsm == 0) && !_memory_wreq_fifo_empty && !_memory_wreq_fifo_empty)? 1 : 0;
-  wire [32-1:0] pack_read_req_global_addr_7;
-  wire [9-1:0] pack_read_req_size_8;
-  assign pack_read_req_global_addr_7 = memory_araddr;
-  assign pack_read_req_size_8 = memory_arlen + 1;
-  wire [41-1:0] pack_read_req_packed_9;
-  assign pack_read_req_packed_9 = { pack_read_req_global_addr_7, pack_read_req_size_8 };
-  assign _memory_rreq_fifo_wdata = ((_memory_raddr_fsm == 1) && memory_arvalid && memory_arready)? pack_read_req_packed_9 : 'hx;
+  wire [32-1:0] pack_write_data_wdata_13;
+  wire [4-1:0] pack_write_data_wstrb_14;
+  wire [1-1:0] pack_write_data_wlast_15;
+  assign pack_write_data_wdata_13 = _memory_wdata_fifo_rdata[31:0];
+  assign pack_write_data_wstrb_14 = _memory_wdata_fifo_rdata[35:32];
+  assign pack_write_data_wlast_15 = _memory_wdata_fifo_rdata[36];
+  wire write_data_wvalid_16;
+  assign write_data_wvalid_16 = !_memory_wdata_fifo_empty;
+  wire write_data_wready_17;
+  assign write_data_wready_17 = (_memory_wdata_fsm == 1) && (_sleep_interval_count != 15);
+  assign _memory_wdata_fifo_deq = (write_data_wready_17 && !_memory_wdata_fifo_empty && !_memory_wdata_fifo_empty)? 1 : 0;
+  wire [32-1:0] pack_read_req_global_addr_18;
+  wire [9-1:0] pack_read_req_size_19;
+  assign pack_read_req_global_addr_18 = memory_araddr;
+  assign pack_read_req_size_19 = memory_arlen + 1;
+  wire [41-1:0] pack_read_req_packed_20;
+  assign pack_read_req_packed_20 = { pack_read_req_global_addr_18, pack_read_req_size_19 };
+  assign _memory_rreq_fifo_wdata = ((_memory_raddr_fsm == 1) && memory_arvalid && memory_arready)? pack_read_req_packed_20 : 'hx;
   assign _memory_rreq_fifo_enq = ((_memory_raddr_fsm == 1) && memory_arvalid && memory_arready)? (_memory_raddr_fsm == 1) && memory_arvalid && memory_arready && !_memory_rreq_fifo_almost_full : 0;
-  localparam _tmp_10 = 1;
-  wire [_tmp_10-1:0] _tmp_11;
-  assign _tmp_11 = !_memory_rreq_fifo_almost_full;
-  reg [_tmp_10-1:0] __tmp_11_1;
-  wire [32-1:0] unpack_read_req_global_addr_12;
-  wire [9-1:0] unpack_read_req_size_13;
-  assign unpack_read_req_global_addr_12 = _memory_rreq_fifo_rdata[40:9];
-  assign unpack_read_req_size_13 = _memory_rreq_fifo_rdata[8:0];
+  localparam _tmp_21 = 1;
+  wire [_tmp_21-1:0] _tmp_22;
+  assign _tmp_22 = !_memory_rreq_fifo_almost_full;
+  reg [_tmp_21-1:0] __tmp_22_1;
+  wire [32-1:0] unpack_read_req_global_addr_23;
+  wire [9-1:0] unpack_read_req_size_24;
+  assign unpack_read_req_global_addr_23 = _memory_rreq_fifo_rdata[40:9];
+  assign unpack_read_req_size_24 = _memory_rreq_fifo_rdata[8:0];
   assign _memory_rreq_fifo_deq = ((_memory_rdata_fsm == 0) && !_memory_rreq_fifo_empty && !_memory_rreq_fifo_empty)? 1 : 0;
   reg [32-1:0] _d1__memory_rdata_fsm;
   reg __memory_rdata_fsm_cond_11_0_1;
@@ -198,36 +249,36 @@ module test;
   assign memory_awqos = myaxi_awqos;
   assign memory_awuser = myaxi_awuser;
   assign memory_awvalid = myaxi_awvalid;
-  wire _tmp_14;
-  assign _tmp_14 = memory_awready;
+  wire _tmp_25;
+  assign _tmp_25 = memory_awready;
 
   always @(*) begin
-    myaxi_awready = _tmp_14;
+    myaxi_awready = _tmp_25;
   end
 
   assign memory_wdata = myaxi_wdata;
   assign memory_wstrb = myaxi_wstrb;
   assign memory_wlast = myaxi_wlast;
   assign memory_wvalid = myaxi_wvalid;
-  wire _tmp_15;
-  assign _tmp_15 = memory_wready;
+  wire _tmp_26;
+  assign _tmp_26 = memory_wready;
 
   always @(*) begin
-    myaxi_wready = _tmp_15;
+    myaxi_wready = _tmp_26;
   end
 
-  wire [2-1:0] _tmp_16;
-  assign _tmp_16 = memory_bresp;
+  wire [2-1:0] _tmp_27;
+  assign _tmp_27 = memory_bresp;
 
   always @(*) begin
-    myaxi_bresp = _tmp_16;
+    myaxi_bresp = _tmp_27;
   end
 
-  wire _tmp_17;
-  assign _tmp_17 = memory_bvalid;
+  wire _tmp_28;
+  assign _tmp_28 = memory_bvalid;
 
   always @(*) begin
-    myaxi_bvalid = _tmp_17;
+    myaxi_bvalid = _tmp_28;
   end
 
   assign memory_bready = myaxi_bready;
@@ -241,39 +292,39 @@ module test;
   assign memory_arqos = myaxi_arqos;
   assign memory_aruser = myaxi_aruser;
   assign memory_arvalid = myaxi_arvalid;
-  wire _tmp_18;
-  assign _tmp_18 = memory_arready;
+  wire _tmp_29;
+  assign _tmp_29 = memory_arready;
 
   always @(*) begin
-    myaxi_arready = _tmp_18;
+    myaxi_arready = _tmp_29;
   end
 
-  wire [32-1:0] _tmp_19;
-  assign _tmp_19 = memory_rdata;
+  wire [32-1:0] _tmp_30;
+  assign _tmp_30 = memory_rdata;
 
   always @(*) begin
-    myaxi_rdata = _tmp_19;
+    myaxi_rdata = _tmp_30;
   end
 
-  wire [2-1:0] _tmp_20;
-  assign _tmp_20 = memory_rresp;
+  wire [2-1:0] _tmp_31;
+  assign _tmp_31 = memory_rresp;
 
   always @(*) begin
-    myaxi_rresp = _tmp_20;
+    myaxi_rresp = _tmp_31;
   end
 
-  wire _tmp_21;
-  assign _tmp_21 = memory_rlast;
+  wire _tmp_32;
+  assign _tmp_32 = memory_rlast;
 
   always @(*) begin
-    myaxi_rlast = _tmp_21;
+    myaxi_rlast = _tmp_32;
   end
 
-  wire _tmp_22;
-  assign _tmp_22 = memory_rvalid;
+  wire _tmp_33;
+  assign _tmp_33 = memory_rvalid;
 
   always @(*) begin
-    myaxi_rvalid = _tmp_22;
+    myaxi_rvalid = _tmp_33;
   end
 
   assign memory_rready = myaxi_rready;
@@ -333,7 +384,6 @@ module test;
   initial begin
     RST = 0;
     memory_awready = 0;
-    memory_wready = 0;
     memory_bvalid = 0;
     memory_arready = 0;
     memory_rdata = 0;
@@ -345,14 +395,16 @@ module test;
     _memory_rdata_fsm = _memory_rdata_fsm_init;
     count__memory_wreq_fifo = 0;
     count__memory_rreq_fifo = 0;
+    count__memory_wdata_fifo = 0;
+    __tmp_5_1 = 0;
     _write_count = 0;
     _write_addr = 0;
     _read_count = 0;
     _read_addr = 0;
     _sleep_interval_count = 0;
     _keep_sleep_count = 0;
-    __tmp_4_1 = 0;
-    __tmp_11_1 = 0;
+    __tmp_10_1 = 0;
+    __tmp_22_1 = 0;
     _d1__memory_rdata_fsm = _memory_rdata_fsm_init;
     __memory_rdata_fsm_cond_11_0_1 = 0;
     #100;
@@ -381,17 +433,17 @@ module test;
       if((_keep_sleep_count == 3) && (_sleep_interval_count == 15)) begin
         _sleep_interval_count <= 0;
       end 
-      if((_memory_wdata_fsm == 1) && memory_wvalid && memory_wready && memory_wstrb[0]) begin
-        _memory_mem[_write_addr + 0] <= memory_wdata[7:0];
+      if((_memory_wdata_fsm == 1) && write_data_wvalid_16 && write_data_wready_17 && pack_write_data_wstrb_14[0]) begin
+        _memory_mem[_write_addr + 0] <= pack_write_data_wdata_13[7:0];
       end 
-      if((_memory_wdata_fsm == 1) && memory_wvalid && memory_wready && memory_wstrb[1]) begin
-        _memory_mem[_write_addr + 1] <= memory_wdata[15:8];
+      if((_memory_wdata_fsm == 1) && write_data_wvalid_16 && write_data_wready_17 && pack_write_data_wstrb_14[1]) begin
+        _memory_mem[_write_addr + 1] <= pack_write_data_wdata_13[15:8];
       end 
-      if((_memory_wdata_fsm == 1) && memory_wvalid && memory_wready && memory_wstrb[2]) begin
-        _memory_mem[_write_addr + 2] <= memory_wdata[23:16];
+      if((_memory_wdata_fsm == 1) && write_data_wvalid_16 && write_data_wready_17 && pack_write_data_wstrb_14[2]) begin
+        _memory_mem[_write_addr + 2] <= pack_write_data_wdata_13[23:16];
       end 
-      if((_memory_wdata_fsm == 1) && memory_wvalid && memory_wready && memory_wstrb[3]) begin
-        _memory_mem[_write_addr + 3] <= memory_wdata[31:24];
+      if((_memory_wdata_fsm == 1) && write_data_wvalid_16 && write_data_wready_17 && pack_write_data_wstrb_14[3]) begin
+        _memory_mem[_write_addr + 3] <= pack_write_data_wdata_13[31:24];
       end 
     end
   end
@@ -476,42 +528,33 @@ module test;
       memory_bvalid <= 0;
       _write_addr <= 0;
       _write_count <= 0;
-      memory_wready <= 0;
     end else begin
       case(_memory_wdata_fsm)
         _memory_wdata_fsm_init: begin
           memory_bvalid <= 0;
           if(!_memory_wreq_fifo_empty) begin
-            _write_addr <= unpack_write_req_global_addr_5;
-            _write_count <= unpack_write_req_size_6;
-            memory_wready <= 1;
+            _write_addr <= unpack_write_req_global_addr_11;
+            _write_count <= unpack_write_req_size_12;
           end 
           if(!_memory_wreq_fifo_empty) begin
             _memory_wdata_fsm <= _memory_wdata_fsm_1;
           end 
         end
         _memory_wdata_fsm_1: begin
-          if(memory_wvalid && memory_wready) begin
+          if(write_data_wvalid_16 && write_data_wready_17) begin
             _write_addr <= _write_addr + 4;
             _write_count <= _write_count - 1;
           end 
-          if(_sleep_interval_count == 15) begin
-            memory_wready <= 0;
-          end else begin
-            memory_wready <= 1;
-          end
-          if(memory_wvalid && memory_wready && (_write_count == 1)) begin
-            memory_wready <= 0;
+          if(write_data_wvalid_16 && write_data_wready_17 && (_write_count == 1)) begin
             memory_bvalid <= 1;
           end 
-          if(memory_wvalid && memory_wready && memory_wlast) begin
-            memory_wready <= 0;
+          if(write_data_wvalid_16 && write_data_wready_17 && pack_write_data_wlast_15) begin
             memory_bvalid <= 1;
           end 
-          if(memory_wvalid && memory_wready && (_write_count == 1)) begin
+          if(write_data_wvalid_16 && write_data_wready_17 && (_write_count == 1)) begin
             _memory_wdata_fsm <= _memory_wdata_fsm_init;
           end 
-          if(memory_wvalid && memory_wready && memory_wlast) begin
+          if(write_data_wvalid_16 && write_data_wready_17 && pack_write_data_wlast_15) begin
             _memory_wdata_fsm <= _memory_wdata_fsm_init;
           end 
         end
@@ -590,8 +633,8 @@ module test;
       case(_memory_rdata_fsm)
         _memory_rdata_fsm_init: begin
           if(!_memory_rreq_fifo_empty) begin
-            _read_addr <= unpack_read_req_global_addr_12;
-            _read_count <= unpack_read_req_size_13;
+            _read_addr <= unpack_read_req_global_addr_23;
+            _read_count <= unpack_read_req_size_24;
           end 
           if(!_memory_rreq_fifo_empty) begin
             _memory_rdata_fsm <= _memory_rdata_fsm_1;
@@ -666,7 +709,7 @@ module test;
   always @(posedge CLK) begin
     if(RST) begin
       count__memory_wreq_fifo <= 0;
-      __tmp_4_1 <= 0;
+      __tmp_10_1 <= 0;
     end else begin
       if(_memory_wreq_fifo_enq && !_memory_wreq_fifo_full && (_memory_wreq_fifo_deq && !_memory_wreq_fifo_empty)) begin
         count__memory_wreq_fifo <= count__memory_wreq_fifo;
@@ -675,7 +718,7 @@ module test;
       end else if(_memory_wreq_fifo_deq && !_memory_wreq_fifo_empty) begin
         count__memory_wreq_fifo <= count__memory_wreq_fifo - 1;
       end 
-      __tmp_4_1 <= _tmp_4;
+      __tmp_10_1 <= _tmp_10;
     end
   end
 
@@ -683,7 +726,7 @@ module test;
   always @(posedge CLK) begin
     if(RST) begin
       count__memory_rreq_fifo <= 0;
-      __tmp_11_1 <= 0;
+      __tmp_22_1 <= 0;
     end else begin
       if(_memory_rreq_fifo_enq && !_memory_rreq_fifo_full && (_memory_rreq_fifo_deq && !_memory_rreq_fifo_empty)) begin
         count__memory_rreq_fifo <= count__memory_rreq_fifo;
@@ -692,7 +735,24 @@ module test;
       end else if(_memory_rreq_fifo_deq && !_memory_rreq_fifo_empty) begin
         count__memory_rreq_fifo <= count__memory_rreq_fifo - 1;
       end 
-      __tmp_11_1 <= _tmp_11;
+      __tmp_22_1 <= _tmp_22;
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      count__memory_wdata_fifo <= 0;
+      __tmp_5_1 <= 0;
+    end else begin
+      if(_memory_wdata_fifo_enq && !_memory_wdata_fifo_full && (_memory_wdata_fifo_deq && !_memory_wdata_fifo_empty)) begin
+        count__memory_wdata_fifo <= count__memory_wdata_fifo;
+      end else if(_memory_wdata_fifo_enq && !_memory_wdata_fifo_full) begin
+        count__memory_wdata_fifo <= count__memory_wdata_fifo + 1;
+      end else if(_memory_wdata_fifo_deq && !_memory_wdata_fifo_empty) begin
+        count__memory_wdata_fifo <= count__memory_wdata_fifo - 1;
+      end 
+      __tmp_5_1 <= _tmp_5;
     end
   end
 
@@ -807,6 +867,59 @@ endmodule
 
 
 
+module _memory_wdata_fifo
+(
+  input CLK,
+  input RST,
+  input _memory_wdata_fifo_enq,
+  input [37-1:0] _memory_wdata_fifo_wdata,
+  output _memory_wdata_fifo_full,
+  output _memory_wdata_fifo_almost_full,
+  input _memory_wdata_fifo_deq,
+  output [37-1:0] _memory_wdata_fifo_rdata,
+  output _memory_wdata_fifo_empty,
+  output _memory_wdata_fifo_almost_empty
+);
+
+  reg [37-1:0] mem [0:8-1];
+  reg [3-1:0] head;
+  reg [3-1:0] tail;
+  wire is_empty;
+  wire is_almost_empty;
+  wire is_full;
+  wire is_almost_full;
+  assign is_empty = head == tail;
+  assign is_almost_empty = head == (tail + 1 & 7);
+  assign is_full = (head + 1 & 7) == tail;
+  assign is_almost_full = (head + 2 & 7) == tail;
+  wire [37-1:0] rdata;
+  assign _memory_wdata_fifo_full = is_full;
+  assign _memory_wdata_fifo_almost_full = is_almost_full || is_full;
+  assign _memory_wdata_fifo_empty = is_empty;
+  assign _memory_wdata_fifo_almost_empty = is_almost_empty || is_empty;
+  assign rdata = mem[tail];
+  assign _memory_wdata_fifo_rdata = rdata;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      head <= 0;
+      tail <= 0;
+    end else begin
+      if(_memory_wdata_fifo_enq && !is_full) begin
+        mem[head] <= _memory_wdata_fifo_wdata;
+        head <= head + 1;
+      end 
+      if(_memory_wdata_fifo_deq && !is_empty) begin
+        tail <= tail + 1;
+      end 
+    end
+  end
+
+
+endmodule
+
+
+
 module main
 (
   input CLK,
@@ -865,6 +978,8 @@ module main
   assign myaxi_arqos = 0;
   assign myaxi_aruser = 0;
   reg [3-1:0] outstanding_wcount_0;
+  wire has_outstanding_write_1;
+  assign has_outstanding_write_1 = (outstanding_wcount_0 > 0) || myaxi_awvalid;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
   reg _myaxi_cond_0_1;
