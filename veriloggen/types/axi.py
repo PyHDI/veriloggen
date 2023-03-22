@@ -599,8 +599,8 @@ class AxiMaster(object):
         if outstanding_wcount_width < 2:
             raise ValueError("outstanding_wcount_width must be 2 or more.")
         self.outstanding_wcount_width = outstanding_wcount_width
-        self.outstanding_wcount = self.m.TmpReg(self.outstanding_wcount_width, initval=0,
-                                                prefix='outstanding_wcount')
+        self.outstanding_wcount = self.m.Reg('_'.join(['', name, 'outstanding_wcount']),
+                                             self.outstanding_wcount_width, initval=0)
 
         self.seq.If(vtypes.Ands(self.waddr.awvalid, self.waddr.awready),
                     vtypes.Not(vtypes.Ands(self.wresp.bvalid, self.wresp.bready)),
@@ -613,7 +613,8 @@ class AxiMaster(object):
             self.outstanding_wcount.dec()
         )
 
-        self.has_outstanding_write = self.m.TmpWire(prefix='has_outstanding_write')
+        self.has_outstanding_write = self.m.Wire(
+            '_'.join(['', name, 'has_outstanding_write']))
         self.has_outstanding_write.assign(vtypes.Ors(self.outstanding_wcount > 0,
                                                      self.waddr.awvalid))
 
@@ -1005,8 +1006,8 @@ class AxiLiteMaster(AxiMaster):
         if outstanding_wcount_width < 2:
             raise ValueError("outstanding_wcount_width must be 2 or more.")
         self.outstanding_wcount_width = outstanding_wcount_width
-        self.outstanding_wcount = self.m.TmpReg(self.outstanding_wcount_width, initval=0,
-                                                prefix='outstanding_wcount')
+        self.outstanding_wcount = self.m.Reg('_'.join(['', name, 'outstanding_wcount']),
+                                             self.outstanding_wcount_width, initval=0)
 
         self.seq.If(vtypes.Ands(self.waddr.awvalid, self.waddr.awready),
                     vtypes.Not(vtypes.Ands(self.wresp.bvalid, self.wresp.bready)),
@@ -1019,7 +1020,8 @@ class AxiLiteMaster(AxiMaster):
             self.outstanding_wcount.dec()
         )
 
-        self.has_outstanding_write = self.m.TmpWire(prefix='has_outstanding_write')
+        self.has_outstanding_write = self.m.Wire(
+            '_'.join(['', name, 'has_outstanding_write']))
         self.has_outstanding_write.assign(vtypes.Ors(self.outstanding_wcount > 0,
                                                      self.waddr.awvalid))
 
