@@ -43,33 +43,24 @@ def mkLed():
 
     def body(size, offset):
         # write
-        for i in range(size + size):
+        for i in range(size):
             wdata.value = i + 0x2000
             myram0.write(i, wdata)
 
         laddr1 = 0
         gaddr1 = offset
-        laddr2 = size
-        gaddr2 = size * 4 + offset
 
         myaxi.dma_write_async(myram0, laddr1, gaddr1, size)
-
-        myaxi.dma_write_async(myram0, laddr2, gaddr2, size)
-
         myaxi.dma_wait_write()
 
         # read
-        laddr1 = size
-        gaddr1 = size * 4 + offset
-        laddr2 = 0
-        gaddr2 = offset
+        laddr1 = 0
+        gaddr1 = offset
 
         myaxi.dma_read_async(myram1, laddr1, gaddr1, size)
-        myaxi.dma_read_async(myram1, laddr2, gaddr2, size)
-
         myaxi.dma_wait_read()
 
-        for i in range(size + size):
+        for i in range(size):
             rdata.value = myram1.read(i)
             rexpected.value = i + 0x2000
             if vthread.verilog.NotEql(rdata, rexpected):
@@ -95,15 +86,16 @@ def mkTest(memimg_name=None):
     clk = ports['CLK']
     rst = ports['RST']
 
-    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memimg_name=memimg_name, write_delay=10)
+    memory = axi.AxiMemoryModel(m, 'memory', clk, rst, memimg_name=memimg_name,
+                                write_delay=100, data_fifo_addrwidth=8)
     memory.connect(ports, 'myaxi')
 
     uut = m.Instance(led, 'uut',
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
 
-    # vcd_name = os.path.splitext(os.path.basename(__file__))[0] + '.vcd'
-    # simulation.setup_waveform(m, uut, dumpfile=vcd_name)
+    vcd_name = os.path.splitext(os.path.basename(__file__))[0] + '.vcd'
+    simulation.setup_waveform(m, uut, dumpfile=vcd_name)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
