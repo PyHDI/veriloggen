@@ -599,8 +599,8 @@ class AxiMaster(object):
         if outstanding_wcount_width < 2:
             raise ValueError("outstanding_wcount_width must be 2 or more.")
         self.outstanding_wcount_width = outstanding_wcount_width
-        self.outstanding_wcount = self.m.TmpReg(self.outstanding_wcount_width, initval=0,
-                                                prefix='outstanding_wcount')
+        self.outstanding_wcount = self.m.Reg('_'.join(['', name, 'outstanding_wcount']),
+                                             self.outstanding_wcount_width, initval=0)
 
         self.seq.If(vtypes.Ands(self.waddr.awvalid, self.waddr.awready),
                     vtypes.Not(vtypes.Ands(self.wresp.bvalid, self.wresp.bready)),
@@ -612,6 +612,11 @@ class AxiMaster(object):
                     self.outstanding_wcount > 0)(
             self.outstanding_wcount.dec()
         )
+
+        self.has_outstanding_write = self.m.Wire(
+            '_'.join(['', name, 'has_outstanding_write']))
+        self.has_outstanding_write.assign(vtypes.Ors(self.outstanding_wcount > 0,
+                                                     self.waddr.awvalid))
 
         self._write_disabled = False
         self._read_disabled = False
@@ -755,7 +760,7 @@ class AxiMaster(object):
         return ack
 
     def write_completed(self):
-        return self.outstanding_wcount == 0
+        return vtypes.Not(self.has_outstanding_write)
 
     def read_request(self, addr, length=1, cond=None):
         """
@@ -1001,8 +1006,8 @@ class AxiLiteMaster(AxiMaster):
         if outstanding_wcount_width < 2:
             raise ValueError("outstanding_wcount_width must be 2 or more.")
         self.outstanding_wcount_width = outstanding_wcount_width
-        self.outstanding_wcount = self.m.TmpReg(self.outstanding_wcount_width, initval=0,
-                                                prefix='outstanding_wcount')
+        self.outstanding_wcount = self.m.Reg('_'.join(['', name, 'outstanding_wcount']),
+                                             self.outstanding_wcount_width, initval=0)
 
         self.seq.If(vtypes.Ands(self.waddr.awvalid, self.waddr.awready),
                     vtypes.Not(vtypes.Ands(self.wresp.bvalid, self.wresp.bready)),
@@ -1014,6 +1019,11 @@ class AxiLiteMaster(AxiMaster):
                     self.outstanding_wcount > 0)(
             self.outstanding_wcount.dec()
         )
+
+        self.has_outstanding_write = self.m.Wire(
+            '_'.join(['', name, 'has_outstanding_write']))
+        self.has_outstanding_write.assign(vtypes.Ors(self.outstanding_wcount > 0,
+                                                     self.waddr.awvalid))
 
         self._write_disabled = False
         self._read_disabled = False
@@ -1110,9 +1120,6 @@ class AxiLiteMaster(AxiMaster):
         )
 
         return ack
-
-    def write_completed(self):
-        return self.outstanding_wcount == 0
 
     def read_request(self, addr, length=1, cond=None):
         """
@@ -2287,7 +2294,7 @@ class AxiMemoryModel(AxiSlave):
                  raddr_user_width=2, rdata_user_width=0,
                  wresp_user_mode=xUSER_DEFAULT,
                  rdata_user_mode=xUSER_DEFAULT,
-                 req_fifo_addrwidth=3):
+                 req_fifo_addrwidth=3, data_fifo_addrwidth=3):
 
         if mem_datawidth % 8 != 0:
             raise ValueError('mem_datawidth must be a multiple of 8')
@@ -2310,11 +2317,12 @@ class AxiMemoryModel(AxiSlave):
 
         itype = util.t_Reg
         otype = util.t_Wire
+        wdata_itype = util.t_Wire
 
         self.waddr = AxiSlaveWriteAddress(m, name, datawidth, addrwidth,
                                           waddr_id_width, waddr_user_width, itype, otype)
         self.wdata = AxiSlaveWriteData(m, name, datawidth, addrwidth,
-                                       wdata_id_width, wdata_user_width, itype, otype)
+                                       wdata_id_width, wdata_user_width, wdata_itype, otype)
         self.wresp = AxiSlaveWriteResponse(m, name, datawidth, addrwidth,
                                            wresp_id_width, wresp_user_width, itype, otype)
         self.raddr = AxiSlaveReadAddress(m, name, datawidth, addrwidth,
@@ -2346,6 +2354,20 @@ class AxiMemoryModel(AxiSlave):
                               datawidth=addrwidth + 9 + waddr_id_width,
                               addrwidth=req_fifo_addrwidth,
                               sync=False)
+
+        self.wdata_fifo = FIFO(self.m, '_'.join(['', self.name, 'wdata_fifo']),
+                               clk, rst,
+                               datawidth=datawidth + int(datawidth / 8) + 1,
+                               addrwidth=data_fifo_addrwidth,
+                               sync=False)
+
+        self.wdata.wready.assign(vtypes.Not(self.wdata_fifo.almost_full))
+
+        enq_cond = vtypes.Ands(self.wdata.wvalid, self.wdata.wready)
+        self.wdata_fifo.enq_rtl(self.pack_write_data(self.wdata.wdata,
+                                                     self.wdata.wstrb,
+                                                     self.wdata.wlast),
+                                cond=enq_cond)
 
         if memimg is None:
             if memimg_name is None:
@@ -2482,7 +2504,6 @@ class AxiMemoryModel(AxiSlave):
         self.wdata_fsm.If(vtypes.Not(self.wreq_fifo.empty))(
             write_addr(_waddr),
             write_count(_size),
-            self.wdata.wready(1)
         )
         if self.wresp.bid is not None:
             self.wdata_fsm.If(vtypes.Not(self.wreq_fifo.empty))(
@@ -2492,36 +2513,40 @@ class AxiMemoryModel(AxiSlave):
         self.wdata_fsm.If(vtypes.Not(self.wreq_fifo.empty)).goto_next()
 
         # write
+        _wdata, _wstrb, _wlast = self.unpack_write_data(self.wdata_fifo.rdata)
+        _wvalid = self.m.TmpWire(prefix='write_data_wvalid')
+        _wvalid.assign(vtypes.Not(self.wdata_fifo.empty))
+
+        _wready = self.m.TmpWire(prefix='write_data_wready')
+        if sleep_interval > 0:
+            _wready.assign(vtypes.Ands(self.wdata_fsm.here,
+                                       sleep_interval_count != sleep_interval - 1))
+        else:
+            _wready.assign(self.wdata_fsm.here)
+
+        deq_cond = vtypes.Ands(_wready, vtypes.Not(self.wdata_fifo.empty))
+        _ = self.wdata_fifo.deq_rtl(cond=deq_cond)
+
         for i in range(int(self.datawidth / 8)):
             self.seq.If(self.wdata_fsm.here,
-                        self.wdata.wvalid, self.wdata.wready, self.wdata.wstrb[i])(
-                self.mem[write_addr + i](self.wdata.wdata[i * 8:i * 8 + 8])
+                        _wvalid, _wready, _wstrb[i])(
+                self.mem[write_addr + i](_wdata[i * 8:i * 8 + 8])
             )
 
-        self.wdata_fsm.If(self.wdata.wvalid, self.wdata.wready)(
+        self.wdata_fsm.If(_wvalid, _wready)(
             write_addr.add(int(self.datawidth / 8)),
             write_count.dec()
         )
 
-        # sleep_interval
-        if sleep_interval > 0:
-            self.wdata_fsm.If(sleep_interval_count == sleep_interval - 1)(
-                self.wdata.wready(0)
-            ).Else(
-                self.wdata.wready(1)
-            )
-
         # write complete
-        self.wdata_fsm.If(self.wdata.wvalid, self.wdata.wready, write_count == 1)(
-            self.wdata.wready(0),
+        self.wdata_fsm.If(_wvalid, _wready, write_count == 1)(
             self.wresp.bvalid(1)
         )
-        self.wdata_fsm.If(self.wdata.wvalid, self.wdata.wready, self.wdata.wlast)(
-            self.wdata.wready(0),
+        self.wdata_fsm.If(_wvalid, _wready, _wlast)(
             self.wresp.bvalid(1)
         )
-        self.wdata_fsm.If(self.wdata.wvalid, self.wdata.wready, write_count == 1).goto_init()
-        self.wdata_fsm.If(self.wdata.wvalid, self.wdata.wready, self.wdata.wlast).goto_init()
+        self.wdata_fsm.If(_wvalid, _wready, write_count == 1).goto_init()
+        self.wdata_fsm.If(_wvalid, _wready, _wlast).goto_init()
 
         # --------------------
         # raddr FSM
@@ -2708,6 +2733,38 @@ class AxiMemoryModel(AxiSlave):
 
         return 0
 
+    def pack_write_data(self, wdata, wstrb, wlast):
+        _wdata = self.m.TmpWire(self.datawidth, prefix='pack_write_data_wdata')
+        _wstrb = self.m.TmpWire(int(self.datawidth / 8), prefix='pack_write_data_wstrb')
+        _wlast = self.m.TmpWire(1, prefix='pack_write_data_wlast')
+        _wdata.assign(wdata)
+        _wstrb.assign(wstrb)
+        _wlast.assign(wlast)
+        packed_width = self.datawidth + int(self.datawidth / 8) + 1
+        packed = self.m.TmpWire(packed_width, prefix='pack_write_data_packed')
+        packed.assign(vtypes.Cat(_wlast, _wstrb, _wdata))
+        return packed
+
+    def unpack_write_data(self, v):
+        offset = 0
+
+        wdata = v[offset: offset + self.datawidth]
+        offset += self.datawidth
+
+        wstrb = v[offset: offset + int(self.datawidth / 8)]
+        offset += int(self.datawidth / 8)
+
+        wlast = v[offset]
+        offset += 1
+
+        _wdata = self.m.TmpWire(self.datawidth, prefix='pack_write_data_wdata')
+        _wstrb = self.m.TmpWire(int(self.datawidth / 8), prefix='pack_write_data_wstrb')
+        _wlast = self.m.TmpWire(1, prefix='pack_write_data_wlast')
+        _wdata.assign(wdata)
+        _wstrb.assign(wstrb)
+        _wlast.assign(wlast)
+        return _wdata, _wstrb, _wlast
+
     def pack_write_req(self, global_addr, size, wid=None):
         _global_addr = self.m.TmpWire(self.addrwidth, prefix='pack_write_req_global_addr')
         _size = self.m.TmpWire(9, prefix='pack_write_req_size')
@@ -2822,7 +2879,7 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
                  raddr_user_width=2, rdata_user_width=0,
                  wresp_user_mode=xUSER_DEFAULT,
                  rdata_user_mode=xUSER_DEFAULT,
-                 req_fifo_addrwidth=3):
+                 req_fifo_addrwidth=3, data_fifo_addrwidth=3):
 
         if mem_datawidth % 8 != 0:
             raise ValueError('mem_datawidth must be a multiple of 8')
@@ -2845,12 +2902,13 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
 
         itype = util.t_Reg
         otype = util.t_Wire
+        wdata_itype = util.t_Wire
 
         self.waddrs = [AxiSlaveWriteAddress(m, name + '_%d' % i, datawidth, addrwidth,
                                             waddr_id_width, waddr_user_width, itype, otype)
                        for i in range(numports)]
         self.wdatas = [AxiSlaveWriteData(m, name + '_%d' % i, datawidth, addrwidth,
-                                         wdata_id_width, wdata_user_width, itype, otype)
+                                         wdata_id_width, wdata_user_width, wdata_itype, otype)
                        for i in range(numports)]
         self.wresps = [AxiSlaveWriteResponse(m, name + '%d' % i, datawidth, addrwidth,
                                              wresp_id_width, wresp_user_width, itype, otype)
@@ -2897,6 +2955,22 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
                                 sync=False)
                            for i in range(numports)]
 
+        self.wdata_fifos = [FIFO(self.m, '_'.join(['', self.name, 'wdata_fifo_%d' % i]),
+                                 clk, rst,
+                                 datawidth=datawidth + int(datawidth / 8) + 1,
+                                 addrwidth=data_fifo_addrwidth,
+                                 sync=False)
+                            for i in range(numports)]
+
+        for wdata, wdata_fifo in zip(self.wdatas, self.wdata_fifos):
+            wdata.wready.assign(vtypes.Not(wdata_fifo.almost_full))
+
+            enq_cond = vtypes.Ands(wdata.wvalid, wdata.wready)
+            wdata_fifo.enq_rtl(self.pack_write_data(wdata.wdata,
+                                                    wdata.wstrb,
+                                                    wdata.wlast),
+                               cond=enq_cond)
+
         if memimg is None:
             if memimg_name is None:
                 memimg_name = get_memimg_name()
@@ -2936,10 +3010,10 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
     def _make_fsms(self, write_delay=10, read_delay=10, sleep_interval=16, keep_sleep=4):
 
         for i, (waddr_fsm, wdata_fsm, raddr_fsm, rdata_fsm,
-                wreq_fifo, rreq_fifo,
+                wreq_fifo, rreq_fifo, wdata_fifo,
                 waddr, wdata, wresp, raddr, rdata) in enumerate(
                 zip(self.waddr_fsms, self.wdata_fsms, self.raddr_fsms, self.rdata_fsms,
-                    self.wreq_fifos, self.rreq_fifos,
+                    self.wreq_fifos, self.rreq_fifos, self.wdata_fifos,
                     self.waddrs, self.wdatas, self.wresps, self.raddrs, self.rdatas)):
 
             write_count = self.m.Reg(
@@ -3022,7 +3096,6 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
             wdata_fsm.If(vtypes.Not(wreq_fifo.empty))(
                 write_addr(_waddr),
                 write_count(_size),
-                wdata.wready(1)
             )
             if wresp.bid is not None:
                 wdata_fsm.If(vtypes.Not(wreq_fifo.empty))(
@@ -3032,36 +3105,40 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
             wdata_fsm.If(vtypes.Not(wreq_fifo.empty)).goto_next()
 
             # write
+            _wdata, _wstrb, _wlast = self.unpack_write_data(wdata_fifo.rdata)
+            _wvalid = self.m.TmpWire(prefix='write_data_wvalid')
+            _wvalid.assign(vtypes.Not(wdata_fifo.empty))
+
+            _wready = self.m.TmpWire(prefix='write_data_wready')
+            if sleep_interval > 0:
+                _wready.assign(vtypes.Ands(wdata_fsm.here,
+                                           sleep_interval_count != sleep_interval - 1))
+            else:
+                _wready.assign(wdata_fsm.here)
+
+            deq_cond = vtypes.Ands(_wready, vtypes.Not(wdata_fifo.empty))
+            _ = wdata_fifo.deq_rtl(cond=deq_cond)
+
             for i in range(int(self.datawidth / 8)):
                 self.seq.If(wdata_fsm.here,
-                            wdata.wvalid, wdata.wready, wdata.wstrb[i])(
-                    self.mem[write_addr + i](wdata.wdata[i * 8:i * 8 + 8])
+                            _wvalid, _wready, _wstrb[i])(
+                    self.mem[write_addr + i](_wdata[i * 8:i * 8 + 8])
                 )
 
-            wdata_fsm.If(wdata.wvalid, wdata.wready)(
+            wdata_fsm.If(_wvalid, _wready)(
                 write_addr.add(int(self.datawidth / 8)),
                 write_count.dec()
             )
 
-            # sleep_interval
-            if sleep_interval > 0:
-                wdata_fsm.If(sleep_interval_count == sleep_interval - 1)(
-                    wdata.wready(0)
-                ).Else(
-                    wdata.wready(1)
-                )
-
             # write complete
-            wdata_fsm.If(wdata.wvalid, wdata.wready, write_count == 1)(
-                wdata.wready(0),
+            wdata_fsm.If(_wvalid, _wready, write_count == 1)(
                 wresp.bvalid(1)
             )
-            wdata_fsm.If(wdata.wvalid, wdata.wready, wdata.wlast)(
-                wdata.wready(0),
+            wdata_fsm.If(_wvalid, _wready, _wlast)(
                 wresp.bvalid(1)
             )
-            wdata_fsm.If(wdata.wvalid, wdata.wready, write_count == 1).goto_init()
-            wdata_fsm.If(wdata.wvalid, wdata.wready, wdata.wlast).goto_init()
+            wdata_fsm.If(_wvalid, _wready, write_count == 1).goto_init()
+            wdata_fsm.If(_wvalid, _wready, _wlast).goto_init()
 
             # --------------------
             # raddr FSM
