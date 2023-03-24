@@ -5,7 +5,7 @@ import initial
 
 expected_verilog = """
 module test #
-  ( 
+  (
    parameter WIDTH = 8
   )
   (
@@ -27,7 +27,7 @@ module test #
    );
 
   initial begin
-    $dumpfile("uut.vcd");
+    $dumpfile("initial.vcd");
     $dumpvars(0, uut);
   end
 

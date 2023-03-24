@@ -18,7 +18,11 @@ class FIFO(_MutexFunction):
                       'is_empty', 'is_almost_empty',
                       'is_full', 'is_almost_full') + _MutexFunction.__intrinsics__
 
-    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=4, sync=True):
+    def __init__(self, m, name, clk, rst,
+                 datawidth=32, addrwidth=4, sync=True,
+                 external_write=False, external_read=False,
+                 itype='Wire', otype='Wire',
+                 ext_itype='Input', ext_otype='Output'):
 
         self.m = m
         self.name = name
@@ -29,20 +33,44 @@ class FIFO(_MutexFunction):
         self.addrwidth = addrwidth
         self.sync = sync
 
-        self.wif = FifoWriteInterface(self.m, name, datawidth, itype='Wire', otype='Wire')
-        self.rif = FifoReadInterface(self.m, name, datawidth, itype='Wire', otype='Wire')
+        if external_write:
+            self.wif = FifoWriteInterface(self.m, name, datawidth,
+                                          itype=ext_itype, otype=ext_otype)
+        else:
+            self.wif = FifoWriteInterface(self.m, name, datawidth,
+                                          itype=itype, otype=otype)
+
+        if external_read:
+            self.rif = FifoReadInterface(self.m, name, datawidth,
+                                         itype=ext_itype, otype=ext_otype)
+        else:
+            self.rif = FifoReadInterface(self.m, name, datawidth,
+                                         itype=itype, otype=otype)
 
         # default values
-        self.wif.enq.assign(0)
-        self.wif.wdata.assign(vtypes.IntX())
-        self.rif.deq.assign(0)
+        if not external_write:
+            self.wif.enq.assign(0)
+            self.wif.wdata.assign(vtypes.IntX())
+
+        if not external_read:
+            self.rif.deq.assign(0)
 
         self.definition = mkFifoDefinition(name, datawidth, addrwidth, sync=sync)
 
         ports = collections.OrderedDict()
         ports['CLK'] = self.clk
         ports['RST'] = self.rst
-        ports.update(m.connect_ports(self.definition))
+
+        ports[name + '_enq'] = self.wif.enq
+        ports[name + '_wdata'] = self.wif.wdata
+        ports[name + '_full'] = self.wif.full
+        ports[name + '_almost_full'] = self.wif.almost_full
+
+        ports[name + '_deq'] = self.rif.deq
+        ports[name + '_rdata'] = self.rif.rdata
+        ports[name + '_empty'] = self.rif.empty
+        ports[name + '_almost_empty'] = self.rif.almost_empty
+
         self.inst = self.m.Instance(self.definition, 'inst_' + name,
                                     ports=ports)
 
@@ -69,6 +97,25 @@ class FIFO(_MutexFunction):
 
     def _id(self):
         return id(self)
+
+    def connect_enq_rtl(self, enq, wdata, full=None, almost_full=None):
+        """ connect native signals to the internal FIFO interface """
+        util.overwrite_assign(self.wif.enq, enq)
+        util.overwrite_assign(self.wif.wdata, wdata)
+        if full is not None:
+            full.connect(self.wif.full)
+        if almost_full is not None:
+            almost_full.connect(self.wif.almost_full)
+
+    def connect_deq_rtl(self, deq, rdata=None, empty=None, almost_empty=None):
+        """ connect native signals to the internal FIFO interface """
+        util.overwrite_assign(self.rif.deq, deq)
+        if rdata is not None:
+            rdata.connect(self.rif.rdata)
+        if empty is not None:
+            empty.connect(self.rif.empty)
+        if almost_empty is not None:
+            almost_empty.connect(self.rif.almost_empty)
 
     def enq_rtl(self, wdata, cond=None):
         """ Enque """
@@ -229,10 +276,16 @@ class FIFO(_MutexFunction):
 class FixedFIFO(FIFO):
 
     def __init__(self, m, name, clk, rst,
-                 datawidth=32, addrwidth=4, point=0):
+                 datawidth=32, addrwidth=4, point=0, sync=True,
+                 external_write=False, external_read=False,
+                 itype='Wire', otype='Wire',
+                 ext_itype='Input', ext_otype='Output'):
 
         FIFO.__init__(self, m, name, clk, rst,
-                      datawidth, addrwidth)
+                      datawidth, addrwidth, sync,
+                      external_read, external_write,
+                      itype, otype,
+                      ext_itype, ext_otype)
 
         self.point = point
 
@@ -264,3 +317,35 @@ class FixedFIFO(FIFO):
         if raw:
             return raw_data, raw_valid
         return fxd.reinterpret_cast_to_fixed(raw_data, self.point), raw_valid
+
+
+class ExtFIFO(FIFO):
+    """ Only external FIFO interface is synthesized. No FIFO instance is synthesized."""
+
+    def __init__(self, m, name, clk, rst,
+                 datawidth=32, addrwidth=4, sync=True,
+                 itype='Output', otype='Input'):
+
+        self.m = m
+        self.name = name
+        self.clk = clk
+        self.rst = rst
+
+        self.datawidth = datawidth
+        self.addrwidth = addrwidth
+        self.sync = sync
+
+        self.wif = FifoWriteInterface(self.m, name, datawidth,
+                                      itype=itype, otype=otype)
+
+        self.rif = FifoReadInterface(self.m, name, datawidth,
+                                     itype=itype, otype=otype)
+
+        # default values
+        self.wif.enq.assign(0)
+        self.wif.wdata.assign(vtypes.IntX())
+        self.rif.deq.assign(0)
+
+        self.seq = Seq(m, name, clk, rst)
+
+        self.mutex = None

@@ -226,7 +226,8 @@ def mkTest(n=8, datawidth=16, point=8):
         reset_stmt.append(re(fixed.to_fixed(wr, point)))
         reset_stmt.append(im(fixed.to_fixed(wi, point)))
 
-    simulation.setup_waveform(m, uut, *(_din + _dout + _weight))
+    vcd_name = os.path.splitext(os.path.basename(__file__))[0] + '.vcd'
+    simulation.setup_waveform(m, uut, *(_din + _dout + _weight), dumpfile=vcd_name)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, reset_stmt, period=100)
 

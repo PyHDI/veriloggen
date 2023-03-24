@@ -119,7 +119,7 @@ module test #
 
 
   initial begin
-    $dumpfile("uut.vcd");
+    $dumpfile("chatter_clear.vcd");
     $dumpvars(0, uut, CLK, RST, din, dout, fsm, _tmp_0);
   end
 

@@ -89,9 +89,11 @@ module blinkled
   reg [32-1:0] _axi_a_read_local_addr_buf;
   reg [32-1:0] _axi_a_read_local_stride_buf;
   reg [33-1:0] _axi_a_read_local_size_buf;
-  reg _axi_a_read_data_idle;
+  reg _axi_a_read_data_busy;
+  wire _axi_a_read_data_idle;
   wire _axi_a_read_idle;
-  assign _axi_a_read_idle = _axi_a_read_req_fifo_empty && _axi_a_read_data_idle;
+  assign _axi_a_read_data_idle = _axi_a_read_req_fifo_empty && !_axi_a_read_data_busy;
+  assign _axi_a_read_idle = _axi_a_read_data_idle;
   wire _axi_b_write_req_fifo_enq;
   wire [105-1:0] _axi_b_write_req_fifo_wdata;
   wire _axi_b_write_req_fifo_full;
@@ -140,9 +142,11 @@ module blinkled
   reg [32-1:0] _axi_b_write_local_addr_buf;
   reg [32-1:0] _axi_b_write_local_stride_buf;
   reg [33-1:0] _axi_b_write_size_buf;
-  reg _axi_b_write_data_idle;
+  reg _axi_b_write_data_busy;
+  wire _axi_b_write_data_idle;
   wire _axi_b_write_idle;
-  assign _axi_b_write_idle = _axi_b_write_req_fifo_empty && _axi_b_write_data_idle;
+  assign _axi_b_write_data_idle = _axi_b_write_req_fifo_empty && !_axi_b_write_data_busy;
+  assign _axi_b_write_idle = _axi_b_write_data_idle;
   assign saxi_bresp = 0;
   assign saxi_rresp = 0;
   reg signed [32-1:0] _saxi_register_0;
@@ -186,7 +190,7 @@ module blinkled
                                 (axis_maskaddr_13 == 2)? _saxi_resetval_2 : 
                                 (axis_maskaddr_13 == 3)? _saxi_resetval_3 : 'hx;
   reg _saxi_cond_0_1;
-  assign saxi_wready = _saxi_register_fsm == 2;
+  assign saxi_wready = _saxi_register_fsm == 3;
   reg [32-1:0] th_comp;
   localparam th_comp_init = 0;
   reg signed [32-1:0] _th_comp_size_0;
@@ -202,13 +206,13 @@ module blinkled
 
   always @(posedge CLK) begin
     if(RST) begin
-      _axi_a_read_data_idle <= 1;
+      _axi_a_read_data_busy <= 0;
     end else begin
-      if((th_comp == 7) && _axi_a_read_data_idle) begin
-        _axi_a_read_data_idle <= 0;
+      if((th_comp == 7) && _axi_a_read_idle) begin
+        _axi_a_read_data_busy <= 1;
       end 
       if((th_comp == 8) && axi_a_tvalid) begin
-        _axi_a_read_data_idle <= 1;
+        _axi_a_read_data_busy <= 0;
       end 
     end
   end
@@ -231,7 +235,7 @@ module blinkled
 
   always @(posedge CLK) begin
     if(RST) begin
-      _axi_b_write_data_idle <= 1;
+      _axi_b_write_data_busy <= 0;
       axi_b_tdata <= 0;
       axi_b_tvalid <= 0;
       axi_b_tlast <= 0;
@@ -241,8 +245,8 @@ module blinkled
         axi_b_tvalid <= 0;
         axi_b_tlast <= 0;
       end 
-      if((th_comp == 12) && _axi_b_write_data_idle) begin
-        _axi_b_write_data_idle <= 0;
+      if((th_comp == 12) && _axi_b_write_idle) begin
+        _axi_b_write_data_busy <= 1;
       end 
       if((th_comp == 13) && (axi_b_tready || !axi_b_tvalid)) begin
         axi_b_tdata <= _th_comp_b_4;
@@ -255,7 +259,7 @@ module blinkled
         axi_b_tlast <= axi_b_tlast;
       end 
       if((th_comp == 13) && (axi_b_tready || !axi_b_tvalid)) begin
-        _axi_b_write_data_idle <= 1;
+        _axi_b_write_data_busy <= 0;
       end 
     end
   end
@@ -340,16 +344,16 @@ module blinkled
         _saxi_register_3 <= axislite_resetval_16;
         _saxi_flag_3 <= 0;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_13 == 0)) begin
+      if((_saxi_register_fsm == 3) && saxi_wvalid && (axis_maskaddr_13 == 0)) begin
         _saxi_register_0 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_13 == 1)) begin
+      if((_saxi_register_fsm == 3) && saxi_wvalid && (axis_maskaddr_13 == 1)) begin
         _saxi_register_1 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_13 == 2)) begin
+      if((_saxi_register_fsm == 3) && saxi_wvalid && (axis_maskaddr_13 == 2)) begin
         _saxi_register_2 <= saxi_wdata;
       end 
-      if((_saxi_register_fsm == 2) && saxi_wvalid && (axis_maskaddr_13 == 3)) begin
+      if((_saxi_register_fsm == 3) && saxi_wvalid && (axis_maskaddr_13 == 3)) begin
         _saxi_register_3 <= saxi_wdata;
       end 
       if((_saxi_register_0 == 1) && (th_comp == 2) && 1) begin
@@ -401,6 +405,8 @@ module blinkled
 
   localparam _saxi_register_fsm_1 = 1;
   localparam _saxi_register_fsm_2 = 2;
+  localparam _saxi_register_fsm_3 = 3;
+  localparam _saxi_register_fsm_4 = 4;
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -416,16 +422,26 @@ module blinkled
             _saxi_register_fsm <= _saxi_register_fsm_1;
           end 
           if(writevalid_9) begin
-            _saxi_register_fsm <= _saxi_register_fsm_2;
+            _saxi_register_fsm <= _saxi_register_fsm_3;
           end 
         end
         _saxi_register_fsm_1: begin
           if(saxi_rready || !saxi_rvalid) begin
-            _saxi_register_fsm <= _saxi_register_fsm_init;
+            _saxi_register_fsm <= _saxi_register_fsm_2;
           end 
         end
         _saxi_register_fsm_2: begin
+          if(saxi_rready && saxi_rvalid) begin
+            _saxi_register_fsm <= _saxi_register_fsm_init;
+          end 
+        end
+        _saxi_register_fsm_3: begin
           if(saxi_wvalid) begin
+            _saxi_register_fsm <= _saxi_register_fsm_4;
+          end 
+        end
+        _saxi_register_fsm_4: begin
+          if(saxi_bready && saxi_bvalid) begin
             _saxi_register_fsm <= _saxi_register_fsm_init;
           end 
         end
@@ -499,7 +515,7 @@ module blinkled
           end
         end
         th_comp_7: begin
-          if(_axi_a_read_data_idle) begin
+          if(_axi_a_read_idle) begin
             th_comp <= th_comp_8;
           end 
         end
@@ -528,7 +544,7 @@ module blinkled
           th_comp <= th_comp_12;
         end
         th_comp_12: begin
-          if(_axi_b_write_data_idle) begin
+          if(_axi_b_write_idle) begin
             th_comp <= th_comp_13;
           end 
         end

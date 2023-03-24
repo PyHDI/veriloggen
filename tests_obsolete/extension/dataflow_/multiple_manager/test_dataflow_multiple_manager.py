@@ -23,7 +23,7 @@ module test
   reg reset_done;
 
   initial begin
-    $dumpfile("uut.vcd");
+    $dumpfile("dataflow_multiple_manager.vcd");
     $dumpvars(0, uut);
   end
 

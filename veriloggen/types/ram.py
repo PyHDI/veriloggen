@@ -164,7 +164,8 @@ class _RAM_RTL(object):
 
     def __init__(self, m, name, clk,
                  datawidth=32, addrwidth=10, numports=1,
-                 initvals=None, sync=True, with_enable=False):
+                 initvals=None, sync=True, with_enable=False,
+                 itype='Wire', otype='Wire'):
 
         self.m = m
         self.name = name
@@ -172,7 +173,7 @@ class _RAM_RTL(object):
         self.with_enable = with_enable
 
         self.interfaces = [RAMInterface(m, name + '_%d' % i, datawidth, addrwidth,
-                                        itype='Wire', otype='Wire', with_enable=with_enable)
+                                        itype=itype, otype=otype, with_enable=with_enable)
                            for i in range(numports)]
 
         ram_def = mkRAMDefinition(name, datawidth, addrwidth, numports,
@@ -180,7 +181,15 @@ class _RAM_RTL(object):
 
         ports = collections.OrderedDict()
         ports['CLK'] = self.clk
-        ports.update(m.connect_ports(ram_def))
+
+        for i, interface in enumerate(self.interfaces):
+            ports[name + '_%d_addr' % i] = interface.addr
+            ports[name + '_%d_rdata' % i] = interface.rdata
+            ports[name + '_%d_wdata' % i] = interface.wdata
+            ports[name + '_%d_wenable' % i] = interface.wenable
+            if with_enable:
+                ports[name + '_%d_enable' % i] = interface.enable
+
         self.m.Instance(ram_def, name,
                         params=(), ports=ports)
 
@@ -199,7 +208,9 @@ class SyncRAM(_RAM_RTL):
 
     def __init__(self, m, name, clk,
                  datawidth=32, addrwidth=10, numports=1,
-                 initvals=None, with_enable=False):
+                 initvals=None, with_enable=False,
+                 itype='Wire', otype='Wire'):
+
         _RAM_RTL.__init__(self, m, name, clk,
                           datawidth, addrwidth, numports,
                           initvals, sync=True, with_enable=with_enable)
@@ -209,7 +220,9 @@ class AsyncRAM(_RAM_RTL):
 
     def __init__(self, m, name, clk,
                  datawidth=32, addrwidth=10, numports=1,
-                 initvals=None, with_enable=False):
+                 initvals=None, with_enable=False,
+                 itype='Wire', otype='Wire'):
+
         _RAM_RTL.__init__(self, m, name, clk,
                           datawidth, addrwidth, numports,
                           initvals, sync=False)

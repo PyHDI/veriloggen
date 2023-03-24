@@ -22,7 +22,9 @@ class RAM(_MutexFunction):
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=10, numports=1,
                  initvals=None, nocheck_initvals=False,
-                 ram_style=None, external_ports=None):
+                 ram_style=None, external_ports=None,
+                 itype='Wire', otype='Wire',
+                 ext_itype='Input', ext_otype='Output'):
 
         self.m = m
         self.name = name
@@ -45,10 +47,10 @@ class RAM(_MutexFunction):
         for i in range(numports):
             if i in external_ports:
                 interface = RAMInterface(m, name + '_%d' % i, datawidth, addrwidth,
-                                         itype='Input', otype='Output', with_enable=True)
+                                         itype=ext_itype, otype=ext_otype, with_enable=True)
             else:
                 interface = RAMInterface(m, name + '_%d' % i, datawidth, addrwidth,
-                                         itype='Wire', otype='Wire', with_enable=True)
+                                         itype=itype, otype=otype, with_enable=True)
 
             self.interfaces.append(interface)
 
@@ -71,7 +73,14 @@ class RAM(_MutexFunction):
 
         ports = collections.OrderedDict()
         ports['CLK'] = self.clk
-        ports.update(m.connect_ports(self.definition))
+
+        for i, interface in enumerate(self.interfaces):
+            ports[name + '_%d_addr' % i] = interface.addr
+            ports[name + '_%d_rdata' % i] = interface.rdata
+            ports[name + '_%d_wdata' % i] = interface.wdata
+            ports[name + '_%d_wenable' % i] = interface.wenable
+            ports[name + '_%d_enable' % i] = interface.enable
+
         self.inst = self.m.Instance(self.definition, 'inst_' + name,
                                     ports=ports)
 
@@ -317,14 +326,19 @@ class FixedRAM(RAM):
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=10, numports=1, point=0,
                  initvals=None, nocheck_initvals=False, noconvert_initvals=False,
-                 ram_style=None, external_ports=None):
+                 ram_style=None, external_ports=None,
+                 itype='Wire', otype='Wire',
+                 ext_itype='Input', ext_otype='Output'):
 
         if initvals is not None and not noconvert_initvals:
             initvals = [fxd.to_fixed(initval, point) for initval in initvals]
 
         RAM.__init__(self, m, name, clk, rst,
                      datawidth, addrwidth, numports,
-                     initvals, nocheck_initvals, ram_style, external_ports)
+                     initvals, nocheck_initvals,
+                     ram_style, external_ports,
+                     itype, otype,
+                     ext_itype, ext_otype)
 
         self.point = point
 
@@ -369,7 +383,9 @@ class MultibankRAM(RAM):
 
     def __init__(self, m, name, clk, rst,
                  datawidth=32, addrwidth=10, numports=1, numbanks=2,
-                 ram_style=None, external_ports=None):
+                 ram_style=None, external_ports=None,
+                 itype='Wire', otype='Wire',
+                 ext_itype='Input', ext_otype='Output'):
 
         if numbanks < 2:
             raise ValueError('numbanks must be 2 or more')
@@ -390,7 +406,9 @@ class MultibankRAM(RAM):
         self.shift = util.log2(self.numbanks)
         self.rams = [RAM(m, '_'.join([name, '%d' % i]),
                          clk, rst, datawidth, addrwidth, numports,
-                         ram_style=ram_style, external_ports=external_ports)
+                         ram_style=ram_style, external_ports=external_ports,
+                         itype=itype, otype=otype,
+                         ext_itype=ext_itype, ext_otype=ext_otype)
                      for i in range(numbanks)]
         self.keep_hierarchy = False
         self.seq = None
@@ -976,3 +994,46 @@ def to_multibank_ram(rams, name=None, keep_hierarchy=False):
     multibank_ram_cache[ids] = ram
 
     return ram
+
+
+class ExtRAM(RAM):
+    """ Only external RAM interface is synthesized. No RAM instance is synthesized."""
+
+    def __init__(self, m, name, clk, rst,
+                 datawidth=32, addrwidth=10, numports=1,
+                 itype='Output', otype='Input'):
+
+        self.m = m
+        self.name = name
+        self.clk = clk
+        self.rst = rst
+
+        self.datawidth = datawidth
+        self.addrwidth = addrwidth
+
+        self.packed_datawidth = datawidth
+        self.packed_addrwidth = addrwidth
+
+        self.numports = numports
+
+        self.interfaces = []
+
+        for i in range(numports):
+            interface = RAMInterface(m, name + '_%d' % i, datawidth, addrwidth,
+                                     itype=itype, otype=otype, with_enable=True)
+
+            self.interfaces.append(interface)
+
+        for interface in self.interfaces:
+            interface.wdata.no_write_check = True
+
+        # default values
+        for i, interface in enumerate(self.interfaces):
+            interface.addr.assign(vtypes.IntX())
+            interface.wdata.assign(vtypes.IntX())
+            interface.wenable.assign(0)
+            interface.enable.assign(0)
+
+        self.seq = Seq(m, name, clk, rst)
+
+        self.mutex = None
