@@ -49,7 +49,7 @@ def Variable(data=None, width=32, point=0, signed=True):
 def Parameter(name, value, width=32, point=0, signed=True):
     """ parameter with an immediate value """
     if not isinstance(name, str):
-        raise TypeError("'name' must be str, not '%s'" % str(tyep(name)))
+        raise TypeError("'name' must be str, not '%s'" % str(type(name)))
     return _ParameterVariable(name, width, point, signed, value=value)
 
 

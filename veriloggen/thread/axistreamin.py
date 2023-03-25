@@ -80,11 +80,14 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
                                                         'read_local_size_buf']),
                                               self.addrwidth + 1, initval=0)
 
-        self.read_data_idle = self.m.Reg(
-            '_'.join(['', self.name, 'read_data_idle']), initval=1)
-
+        self.read_data_busy = self.m.Reg(
+            '_'.join(['', self.name, 'read_data_busy']), initval=0)
+        self.read_data_idle = self.m.Wire('_'.join(['', self.name, 'read_data_idle']))
         self.read_idle = self.m.Wire('_'.join(['', self.name, 'read_idle']))
-        self.read_idle.assign(vtypes.Ands(self.read_req_fifo.empty, self.read_data_idle))
+
+        self.read_data_idle.assign(vtypes.Ands(self.read_req_fifo.empty,
+                                               vtypes.Not(self.read_data_busy)))
+        self.read_idle.assign(self.read_data_idle)
 
         self.read_op_id_map = OrderedDict()
         self.read_op_id_count = 1
@@ -96,10 +99,10 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
 
     def read(self, fsm):
         # state 0
-        self.seq.If(fsm.here, self.read_data_idle)(
-            self.read_data_idle(0)
+        self.seq.If(fsm.here, self.read_idle)(
+            self.read_data_busy(1)
         )
-        fsm.If(self.read_data_idle).goto_next()
+        fsm.If(self.read_idle).goto_next()
 
         # state 1
         rcond = fsm.here
@@ -120,7 +123,7 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
                 tlast(self.tdata.tlast),
             )
         self.seq.If(fsm.here, self.tdata.tvalid)(
-            self.read_data_idle(1)
+            self.read_data_busy(0)
         )
         fsm.If(self.tdata.tvalid).goto_next()
 
@@ -227,11 +230,11 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
             self.read_data_fsm = data_fsm
 
         # Data state 0
-        cond = vtypes.Ands(self.read_data_idle,
+        cond = vtypes.Ands(vtypes.Not(self.read_data_busy),
                            vtypes.Not(self.read_req_fifo.empty),
                            self.read_op_sel_fifo == op_id)
         self.seq.If(data_fsm.here, cond)(
-            self.read_data_idle(0),
+            self.read_data_busy(1),
             self.read_op_sel_buf(self.read_op_sel_fifo),
             self.read_local_addr_buf(self.read_local_addr_fifo),
             self.read_local_stride_buf(self.read_local_stride_fifo),
@@ -257,7 +260,7 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
 
         data_fsm.If(self.tdata.tvalid, self.read_local_size_buf <= 1).goto_init()
         self.seq.If(data_fsm.here, self.tdata.tvalid, self.read_local_size_buf <= 1)(
-            self.read_data_idle(1)
+            self.read_data_busy(0)
         )
 
     def _synthesize_read_data_fsm_narrow(self, ram, port, ram_method, ram_datawidth):
@@ -290,11 +293,11 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
             self.read_data_narrow_fsm = data_fsm
 
         # Data state 0
-        cond = vtypes.Ands(self.read_data_idle,
+        cond = vtypes.Ands(vtypes.Not(self.read_data_busy),
                            vtypes.Not(self.read_req_fifo.empty),
                            self.read_op_sel_fifo == op_id)
         self.seq.If(data_fsm.here, cond)(
-            self.read_data_idle(0),
+            self.read_data_busy(1),
             self.read_op_sel_buf(self.read_op_sel_fifo),
             self.read_local_addr_buf(self.read_local_addr_fifo),
             self.read_local_stride_buf(self.read_local_stride_fifo),
@@ -346,7 +349,7 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
                     count == pack_size - 1).goto_init()
         self.seq.If(data_fsm.here, cond, self.tdata.tvalid, self.read_local_size_buf <= 1,
                     count == pack_size - 1)(
-            self.read_data_idle(1)
+            self.read_data_busy(0)
         )
 
     def _synthesize_read_data_fsm_wide(self, ram, port, ram_method, ram_datawidth):
@@ -379,11 +382,11 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
             self.read_data_wide_fsm = data_fsm
 
         # Data state 0
-        cond = vtypes.Ands(self.read_data_idle,
+        cond = vtypes.Ands(vtypes.Not(self.read_data_busy),
                            vtypes.Not(self.read_req_fifo.empty),
                            self.read_op_sel_fifo == op_id)
         self.seq.If(data_fsm.here, cond)(
-            self.read_data_idle(0),
+            self.read_data_busy(1),
             self.read_op_sel_buf(self.read_op_sel_fifo),
             self.read_local_addr_buf(self.read_local_addr_fifo),
             self.read_local_stride_buf(self.read_local_stride_fifo),
@@ -444,11 +447,11 @@ class AXIStreamIn(axi.AxiStreamIn, _MutexFunction):
                     cond, self.tdata.tvalid, count == 0).goto_init()
         self.seq.If(data_fsm.here, self.read_local_size_buf <= 1,
                     cond, count > 0)(
-            self.read_data_idle(1)
+            self.read_data_busy(0)
         )
         self.seq.If(data_fsm.here, self.read_local_size_buf <= 1,
                     cond, self.tdata.tvalid, count == 0)(
-            self.read_data_idle(1)
+            self.read_data_busy(0)
         )
 
     def _set_flag(self, fsm, prefix='axistreamin_flag'):
@@ -555,11 +558,14 @@ class AXIStreamInFifo(AXIStreamIn):
                                                         'read_local_size_buf']),
                                               self.addrwidth + 1, initval=0)
 
-        self.read_data_idle = self.m.Reg(
-            '_'.join(['', self.name, 'read_data_idle']), initval=1)
-
+        self.read_data_busy = self.m.Reg(
+            '_'.join(['', self.name, 'read_data_busy']), initval=0)
+        self.read_data_idle = self.m.Wire('_'.join(['', self.name, 'read_data_idle']))
         self.read_idle = self.m.Wire('_'.join(['', self.name, 'read_idle']))
-        self.read_idle.assign(vtypes.Ands(self.read_req_fifo.empty, self.read_data_idle))
+
+        self.read_data_idle.assign(vtypes.Ands(self.read_req_fifo.empty,
+                                               vtypes.Not(self.read_data_busy)))
+        self.read_idle.assign(self.read_data_idle)
 
         self.read_op_id_map = OrderedDict()
         self.read_op_id_count = 1
@@ -649,11 +655,11 @@ class AXIStreamInFifo(AXIStreamIn):
             self.read_data_fsm = data_fsm
 
         # Data state 0
-        cond = vtypes.Ands(self.read_data_idle,
+        cond = vtypes.Ands(vtypes.Not(self.read_data_busy),
                            vtypes.Not(self.read_req_fifo.empty),
                            self.read_op_sel_fifo == op_id)
         self.seq.If(data_fsm.here, cond)(
-            self.read_data_idle(0),
+            self.read_data_busy(1),
             self.read_op_sel_buf(self.read_op_sel_fifo),
             self.read_local_size_buf(self.read_local_size_fifo),
         )
@@ -679,7 +685,7 @@ class AXIStreamInFifo(AXIStreamIn):
 
         self.seq.If(data_fsm.here, self.tdata.tvalid, vtypes.Not(fifo.almost_full),
                     self.read_local_size_buf <= 1)(
-            self.read_data_idle(1)
+            self.read_data_busy(0)
         )
 
     def _synthesize_read_data_fsm_narrow(self, fifo, fifo_datawidth):
@@ -711,11 +717,11 @@ class AXIStreamInFifo(AXIStreamIn):
             self.read_data_narrow_fsm = data_fsm
 
         # Data state 0
-        cond = vtypes.Ands(self.read_data_idle,
+        cond = vtypes.Ands(vtypes.Not(self.read_data_busy),
                            vtypes.Not(self.read_req_fifo.empty),
                            self.read_op_sel_fifo == op_id)
         self.seq.If(data_fsm.here, cond)(
-            self.read_data_idle(0),
+            self.read_data_busy(1),
             self.read_op_sel_buf(self.read_op_sel_fifo),
             self.read_local_size_buf(self.read_local_size_fifo),
         )
@@ -764,7 +770,7 @@ class AXIStreamInFifo(AXIStreamIn):
                     count == pack_size - 1).goto_init()
         self.seq.If(data_fsm.here, cond, self.tdata.tvalid, self.read_local_size_buf <= 1,
                     count == pack_size - 1)(
-            self.read_data_idle(1)
+            self.read_data_busy(0)
         )
 
     def _synthesize_read_data_fsm_wide(self, fifo, fifo_datawidth):
@@ -796,11 +802,11 @@ class AXIStreamInFifo(AXIStreamIn):
             self.read_data_wide_fsm = data_fsm
 
         # Data state 0
-        cond = vtypes.Ands(self.read_data_idle,
+        cond = vtypes.Ands(vtypes.Not(self.read_data_busy),
                            vtypes.Not(self.read_req_fifo.empty),
                            self.read_op_sel_fifo == op_id)
         self.seq.If(data_fsm.here, cond)(
-            self.read_data_idle(0),
+            self.read_data_busy(1),
             self.read_op_sel_buf(self.read_op_sel_fifo),
             self.read_local_size_buf(self.read_local_size_fifo),
         )
@@ -859,7 +865,7 @@ class AXIStreamInFifo(AXIStreamIn):
                     cond, count == pack_size - 1).goto_init()
         self.seq.If(data_fsm.here, self.read_local_size_buf <= 1,
                     cond, count == pack_size - 1)(
-            self.read_data_idle(1)
+            self.read_data_busy(0)
         )
 
     def _get_read_op_id(self, fifo):

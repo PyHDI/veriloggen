@@ -89,15 +89,20 @@ class AXIM_for_AXIStreamIn(AXIM, axi.AxiMaster):
                                                         'read_local_size_buf']),
                                               self.addrwidth + 1, initval=0)
 
-        self.read_req_idle = self.m.Reg(
-            '_'.join(['', self.name, 'read_req_idle']), initval=1)
-        self.read_data_idle = self.m.Reg(
-            '_'.join(['', self.name, 'read_data_idle']), initval=1)
+        self.read_req_busy = self.m.Reg(
+            '_'.join(['', self.name, 'read_req_busy']), initval=0)
+        self.read_data_busy = self.m.Reg(
+            '_'.join(['', self.name, 'read_data_busy']), initval=0)
 
+        self.read_req_idle = self.m.Wire('_'.join(['', self.name, 'read_req_idle']))
+        self.read_data_idle = self.m.Wire('_'.join(['', self.name, 'read_data_idle']))
         self.read_idle = self.m.Wire('_'.join(['', self.name, 'read_idle']))
-        self.read_idle.assign(
-            vtypes.Ands(vtypes.Not(self.read_start), self.read_req_idle,
-                        self.read_req_fifo.empty, self.read_data_idle))
+
+        self.read_req_idle.assign(vtypes.Ands(vtypes.Not(self.read_start),
+                                              vtypes.Not(self.read_req_busy)))
+        self.read_data_idle.assign(vtypes.Ands(self.read_req_fifo.empty,
+                                               vtypes.Not(self.read_data_busy)))
+        self.read_idle.assign(vtypes.Ands(self.read_req_idle, self.read_data_idle))
 
         self.seq(
             self.read_start(0)
@@ -184,7 +189,7 @@ class AXIM_for_AXIStreamIn(AXIM, axi.AxiMaster):
 
         # Req state 0
         self.seq.If(req_fsm.here, self.read_start)(
-            self.read_req_idle(0)
+            self.read_req_busy(1)
         )
         self.seq.If(self.read_start, self.read_req_fifo.almost_full)(
             self.read_start(1)
@@ -214,7 +219,7 @@ class AXIM_for_AXIStreamIn(AXIM, axi.AxiMaster):
             cont(0)
         )
         self.seq.If(req_fsm.here, ack, self.read_global_size == 0)(
-            self.read_req_idle(1)
+            self.read_req_busy(0)
         )
         req_fsm.If(ack).goto_init()
 
@@ -229,10 +234,10 @@ class AXIM_for_AXIStreamIn(AXIM, axi.AxiMaster):
         self.read_data_fsm = data_fsm
 
         # Data state 0
-        cond = vtypes.Ands(self.read_data_idle,
+        cond = vtypes.Ands(vtypes.Not(self.read_data_busy),
                            vtypes.Not(self.read_req_fifo.empty))
         self.seq.If(data_fsm.here, cond)(
-            self.read_data_idle(0),
+            self.read_data_busy(1),
             self.read_local_size_buf(self.read_local_size_fifo),
         )
         deq_cond = vtypes.Ands(data_fsm.here, cond)
@@ -256,7 +261,7 @@ class AXIM_for_AXIStreamIn(AXIM, axi.AxiMaster):
 
         data_fsm.If(wcond, wlast).goto_init()
         self.seq.If(data_fsm.here, wcond, wlast)(
-            self.read_data_idle(1)
+            self.read_data_busy(0)
         )
 
 
@@ -332,15 +337,20 @@ class AXIM_for_AXIStreamOut(AXIM, axi.AxiMaster):
                                                    'write_size_buf']),
                                          self.addrwidth + 1, initval=0)
 
-        self.write_req_idle = self.m.Reg(
-            '_'.join(['', self.name, 'write_req_idle']), initval=1)
-        self.write_data_idle = self.m.Reg(
-            '_'.join(['', self.name, 'write_data_idle']), initval=1)
+        self.write_req_busy = self.m.Reg(
+            '_'.join(['', self.name, 'write_req_busy']), initval=0)
+        self.write_data_busy = self.m.Reg(
+            '_'.join(['', self.name, 'write_data_busy']), initval=0)
 
+        self.write_req_idle = self.m.Wire('_'.join(['', self.name, 'write_req_idle']))
+        self.write_data_idle = self.m.Wire('_'.join(['', self.name, 'write_data_idle']))
         self.write_idle = self.m.Wire('_'.join(['', self.name, 'write_idle']))
-        self.write_idle.assign(
-            vtypes.Ands(vtypes.Not(self.write_start), self.write_req_idle,
-                        self.write_req_fifo.empty, self.write_data_idle))
+
+        self.write_req_idle.assign(vtypes.Ands(vtypes.Not(self.write_start),
+                                               vtypes.Not(self.write_req_busy)))
+        self.write_data_idle.assign(vtypes.Ands(self.write_req_fifo.empty,
+                                                vtypes.Not(self.write_data_busy)))
+        self.write_idle.assign(vtypes.Ands(self.write_req_idle, self.write_data_idle))
 
         self.seq(
             self.write_start(0)
@@ -424,7 +434,7 @@ class AXIM_for_AXIStreamOut(AXIM, axi.AxiMaster):
 
         # Req state 0
         self.seq.If(req_fsm.here, self.write_start)(
-            self.write_req_idle(0)
+            self.write_req_busy(1)
         )
         self.seq.If(self.write_start, self.write_req_fifo.almost_full)(
             self.write_start(1)
@@ -464,7 +474,7 @@ class AXIM_for_AXIStreamOut(AXIM, axi.AxiMaster):
             cont(0)
         )
         self.seq.If(req_fsm.here, enq_cond, self.write_global_size == 0)(
-            self.write_req_idle(1)
+            self.write_req_busy(0)
         )
         req_fsm.If(enq_cond).goto_init()
 
@@ -479,12 +489,12 @@ class AXIM_for_AXIStreamOut(AXIM, axi.AxiMaster):
         self.write_data_fsm = data_fsm
 
         # Data state 0
-        cond = vtypes.Ands(self.write_data_idle,
+        cond = vtypes.Ands(vtypes.Not(self.write_data_busy),
                            vtypes.Not(self.write_req_fifo.empty))
         count = self.m.TmpReg(self.addrwidth + 1, initval=0,
                               prefix='_'.join(['', self.name, 'write_count']))
         self.seq.If(data_fsm.here, cond)(
-            self.write_data_idle(0),
+            self.write_data_busy(1),
             self.write_size_buf(0),
             count(self.write_size_fifo)
         )
@@ -516,5 +526,5 @@ class AXIM_for_AXIStreamOut(AXIM, axi.AxiMaster):
 
         data_fsm.If(wcond, count == 1).goto_init()
         self.seq.If(data_fsm.here, wcond, count == 1)(
-            self.write_data_idle(1)
+            self.write_data_busy(0)
         )
