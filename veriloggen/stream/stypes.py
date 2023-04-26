@@ -3630,7 +3630,7 @@ class Counter(_Accumulator):
         seq(count(next_count_value), cond=enable_cond)
 
 
-class Xorshift(_Accumulator):
+class RandXorshift(_Accumulator):
 
     def __init__(self, initval=0x12345678, dependency=None, enable=None, reset=None,
                  reg_initval=None, width=32):
@@ -3642,7 +3642,7 @@ class Xorshift(_Accumulator):
 
         _Accumulator.__init__(self, right, size, interval, initval, offset,
                               dependency, enable, reset, reg_initval, width, signed)
-        self.graph_label = 'XorShift'
+        self.graph_label = 'RandXorshift'
 
     def _implement(self, m, seq, svalid=None, senable=None):
         if self.latency != 1:
