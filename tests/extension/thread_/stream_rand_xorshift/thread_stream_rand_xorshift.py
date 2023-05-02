@@ -26,7 +26,7 @@ def mkLed():
     ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
-    rand_hard = strm.RandXorshift(initval=initval)
+    rand_hard = strm.RandXorshift(reg_initval=initval)
     a = strm.source('a')
     b = strm.source('b')
     c = a + b - a - b + rand_hard

@@ -3632,12 +3632,14 @@ class Counter(_Accumulator):
 
 class RandXorshift(_Accumulator):
 
-    def __init__(self, initval=0x12345678, dependency=None, enable=None, reset=None,
-                 reg_initval=None, width=32):
+    def __init__(self, reg_initval=0x12345678, dependency=None, enable=None, width=32):
+
         right = 0
         size = None
         interval = None
+        initval = None
         offset = None
+        reset = None
         signed = False
 
         _Accumulator.__init__(self, right, size, interval, initval, offset,
@@ -3649,7 +3651,6 @@ class RandXorshift(_Accumulator):
             raise ValueError("Latency mismatch '%d' vs '%s'" %
                              (self.latency, 1))
 
-        initval_data = self.initval.sig_data
         width = self.get_width()
         signed = self.get_signed()
 
@@ -3664,23 +3665,13 @@ class RandXorshift(_Accumulator):
         self.sig_data = data
 
         enabledata = self.enable.sig_data if self.enable is not None else None
-        resetdata = self.reset.sig_data if self.reset is not None else None
-
-        reset_cond = m.Wire(self.name('reset_cond'))
-        if self.reset is not None:
-            reset_cond.assign(resetdata)
-            current_randval = m.WireLike(randval, name=self.name('current_count'))
-            current_randval.assign(vtypes.Mux(reset_cond, initval_data, randval))
-        else:
-            reset_cond.assign(0)
-            current_randval = randval
         
         if width == 32:
-            next_value = current_randval ^ (current_randval << 13)
+            next_value = randval ^ (randval << 13)
             next_value = next_value ^ (next_value >> 17)
             next_value = next_value ^ (next_value << 5)
         elif width == 64:
-            next_value = current_randval ^ (current_randval << 13)
+            next_value = randval ^ (randval << 13)
             next_value = next_value ^ (next_value >> 7)
             next_value = next_value ^ (next_value << 17)
         else:
@@ -3688,15 +3679,10 @@ class RandXorshift(_Accumulator):
 
         enable_cond = _and_vars(svalid, senable)
 
-        if self.reset is not None:
-            enable_reset_cond = _and_vars(enable_cond, reset_cond)
-            seq(data(initval_data), cond=enable_reset_cond)
-
-        seq(data(current_randval), cond=enable_cond)
-
         if self.enable is not None:
             enable_cond = _and_vars(enable_cond, enabledata)
 
+        seq(data(randval), cond=enable_cond)
         seq(randval(next_value), cond=enable_cond)
 
 
