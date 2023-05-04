@@ -519,11 +519,11 @@ class AxiMasterWriteData(AxiWriteData):
         self.wvalid.assign(sb.valid)
 
         # save AXI-side references
-        self.orig_wdata = self.wdata
-        self.orig_wstrb = self.wstrb
-        self.orig_wlast = self.wlast
-        self.orig_wvalid = self.wvalid
-        self.orig_wready = self.wready
+        self.ext_wdata = self.wdata
+        self.ext_wstrb = self.wstrb
+        self.ext_wlast = self.wlast
+        self.ext_wvalid = self.wvalid
+        self.ext_wready = self.wready
 
         # update references for user-side
         self.wdata = wdata
@@ -584,13 +584,13 @@ class AxiMasterWriteData(AxiWriteData):
         wvalid = ports['_'.join([name, 'wvalid'])]
         wready = ports['_'.join([name, 'wready'])]
 
-        wdata.connect(self.wdata)
-        wstrb.connect(self.wstrb)
-        wlast.connect(self.wlast)
+        wdata.connect(self.ext_wdata)
+        wstrb.connect(self.ext_wstrb)
+        wlast.connect(self.ext_wlast)
         if wuser is not None:
             wuser.connect(self.wuser if self.wuser is not None else 0)
-        wvalid.connect(self.wvalid)
-        self.wready.connect(wready)
+        wvalid.connect(self.ext_wvalid)
+        self.ext_wready.connect(wready)
 
 
 class AxiMasterWriteResponse(AxiWriteResponse):
@@ -761,10 +761,10 @@ class AxiMasterReadData(AxiReadData):
         self.rready.assign(sb.ready)
 
         # save AXI-side references
-        self.orig_rdata = self.rdata
-        self.orig_rlast = self.rlast
-        self.orig_rvalid = self.rvalid
-        self.orig_rready = self.rready
+        self.ext_rdata = self.rdata
+        self.ext_rlast = self.rlast
+        self.ext_rvalid = self.rvalid
+        self.ext_rready = self.rready
 
         # update references for user-side
         self.rdata = rdata
@@ -807,13 +807,13 @@ class AxiMasterReadData(AxiReadData):
 
         if self.rid is not None:
             self.rid.connect(rid if rid is not None else 0)
-        self.rdata.connect(rdata)
+        self.ext_rdata.connect(rdata)
         self.rresp.connect(rresp)
-        self.rlast.connect(rlast)
+        self.ext_rlast.connect(rlast)
         if self.ruser is not None:
             self.ruser.connect(ruser if ruser is not None else 0)
-        self.rvalid.connect(rvalid)
-        rready.connect(self.rready)
+        self.ext_rvalid.connect(rvalid)
+        rready.connect(self.ext_rready)
 
 
 # AXI-Lite Master
@@ -914,10 +914,10 @@ class AxiLiteMasterWriteData(AxiLiteWriteData):
         self.wvalid.assign(sb.valid)
 
         # save AXI-side references
-        self.orig_wdata = self.wdata
-        self.orig_wstrb = self.wstrb
-        self.orig_wvalid = self.wvalid
-        self.orig_wready = self.wready
+        self.ext_wdata = self.wdata
+        self.ext_wstrb = self.wstrb
+        self.ext_wvalid = self.wvalid
+        self.ext_wready = self.wready
 
         # update references for user-side
         self.wdata = wdata
@@ -968,10 +968,10 @@ class AxiLiteMasterWriteData(AxiLiteWriteData):
         wvalid = ports['_'.join([name, 'wvalid'])]
         wready = ports['_'.join([name, 'wready'])]
 
-        wdata.connect(self.wdata)
-        wstrb.connect(self.wstrb)
-        wvalid.connect(self.wvalid)
-        self.wready.connect(wready)
+        wdata.connect(self.ext_wdata)
+        wstrb.connect(self.ext_wstrb)
+        wvalid.connect(self.ext_wvalid)
+        self.ext_wready.connect(wready)
 
 
 class AxiLiteMasterWriteResponse(AxiLiteWriteResponse):
@@ -1030,21 +1030,21 @@ class AxiLiteMasterReadAddress(AxiLiteReadAddress):
         if cond is not None:
             self.seq.If(cond)
 
-        ack = vtypes.Ors(self.raddr.arready, vtypes.Not(self.raddr.arvalid))
+        ack = vtypes.Ors(self.arready, vtypes.Not(self.arvalid))
 
         self.seq.If(ack)(
-            self.raddr.araddr(addr),
-            self.raddr.arvalid(1)
+            self.araddr(addr),
+            self.arvalid(1)
         )
 
         # de-assert
         self.seq.Delay(1)(
-            self.raddr.arvalid(0)
+            self.arvalid(0)
         )
 
         # retry
-        self.seq.If(vtypes.Ands(self.raddr.arvalid, vtypes.Not(self.raddr.arready)))(
-            self.raddr.arvalid(self.raddr.arvalid)
+        self.seq.If(vtypes.Ands(self.arvalid, vtypes.Not(self.arready)))(
+            self.arvalid(self.arvalid)
         )
 
         return ack
@@ -1090,9 +1090,9 @@ class AxiLiteMasterReadData(AxiLiteReadData):
         self.rready.assign(sb.ready)
 
         # save AXI-side references
-        self.orig_rdata = self.rdata
-        self.orig_rvalid = self.rvalid
-        self.orig_rready = self.rready
+        self.ext_rdata = self.rdata
+        self.ext_rvalid = self.rvalid
+        self.ext_rready = self.rready
 
         # update references for user-side
         self.rdata = rdata
@@ -1123,10 +1123,10 @@ class AxiLiteMasterReadData(AxiLiteReadData):
         rvalid = ports['_'.join([name, 'rvalid'])]
         rready = ports['_'.join([name, 'rready'])]
 
-        self.rdata.connect(rdata)
+        self.ext_rdata.connect(rdata)
         self.rresp.connect(rresp)
-        self.rvalid.connect(rvalid)
-        rready.connect(self.rready)
+        self.ext_rvalid.connect(rvalid)
+        rready.connect(self.ext_rready)
 
 
 # AXI-Full Slave
