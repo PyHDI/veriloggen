@@ -755,7 +755,7 @@ class AxiMasterReadData(AxiReadData):
 # AXI-Lite Master
 class AxiLiteMasterWriteAddress(AxiLiteWriteAddress):
 
-    def __init__(self, m, name=None, datawidth=32, addrwidth=32,
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
                  cache_mode=AxCACHE_NONCOHERENT, prot_mode=AxPROT_NONCOHERENT,
                  itype=None, otype=None):
 
@@ -821,7 +821,7 @@ class AxiLiteMasterWriteAddress(AxiLiteWriteAddress):
 
 class AxiLiteMasterWriteData(AxiLiteWriteData):
 
-    def __init__(self, m, name=None, datawidth=32, addrwidth=32,
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
                  itype=None, otype=None):
 
         AxiLiteWriteData.__init__(self, m, name, datawidth, addrwidth,
@@ -882,7 +882,7 @@ class AxiLiteMasterWriteData(AxiLiteWriteData):
 
 class AxiLiteMasterWriteResponse(AxiLiteWriteResponse):
 
-    def __init__(self, m, name=None, datawidth=32, addrwidth=32,
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
                  itype=None, otype=None):
 
         AxiLiteWriteResponse.__init__(self, m, name, datawidth, addrwidth,
@@ -906,7 +906,7 @@ class AxiLiteMasterWriteResponse(AxiLiteWriteResponse):
 
 class AxiLiteMasterReadAddress(AxiLiteReadAddress):
 
-    def __init__(self, m, name=None, datawidth=32, addrwidth=32,
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
                  cache_mode=AxCACHE_NONCOHERENT, prot_mode=AxPROT_NONCOHERENT,
                  itype=None, otype=None):
 
@@ -971,7 +971,7 @@ class AxiLiteMasterReadAddress(AxiLiteReadAddress):
 
 class AxiLiteMasterReadData(AxiLiteReadData):
 
-    def __init__(self, m, name=None, datawidth=32, addrwidth=32,
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
                  itype=None, otype=None):
 
         AxiLiteReadData.__init__(self, m, name, datawidth, addrwidth,
