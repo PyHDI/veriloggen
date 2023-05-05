@@ -97,6 +97,8 @@ def mkTest():
     fsm.If(Not(_axi.wdata.wvalid)).goto_next()
 
     # verify
+    fsm.If(_axi.write_completed()).goto_next()
+
     expected_sum = (((0 + awlen1 - 1) * awlen1) // 2 +
                     ((0 + awlen2 - 1) * awlen2) // 2)
     fsm(
@@ -113,7 +115,8 @@ def mkTest():
                      params=m.connect_params(main),
                      ports=m.connect_ports(main))
 
-    # simulation.setup_waveform(m, uut, m.get_vars())
+    # vcd_name = os.path.splitext(os.path.basename(__file__))[0] + '.vcd'
+    # simulation.setup_waveform(m, uut, m.get_vars(), dumpfile=vcd_name)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
