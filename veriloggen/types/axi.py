@@ -500,22 +500,26 @@ class AxiMasterWriteData(AxiWriteData):
             self.wuser.assign(user_mode)
 
         # user-side signals before skidbuffer
-        wdata = m.TmpRegLike(self.wdata, prefix='_'.join(['', name, 'wdata', 'sb']))
-        wstrb = m.TmpRegLike(self.wstrb, prefix='_'.join(['', name, 'wstrb', 'sb']))
-        wlast = m.TmpRegLike(self.wlast, prefix='_'.join(['', name, 'wlast', 'sb']))
-        wvalid = m.TmpRegLike(self.wvalid, prefix='_'.join(['', name, 'wvalid', 'sb']))
+        wdata = m.TmpRegLike(self.wdata, initval=0,
+                             prefix='_'.join(['', name, 'wdata', 'sb']))
+        wstrb = m.TmpRegLike(self.wstrb, initval=0,
+                             prefix='_'.join(['', name, 'wstrb', 'sb']))
+        wlast = m.TmpRegLike(self.wlast, initval=0,
+                             prefix='_'.join(['', name, 'wlast', 'sb']))
+        wvalid = m.TmpRegLike(self.wvalid, initval=0,
+                              prefix='_'.join(['', name, 'wvalid', 'sb']))
         wready = m.TmpWireLike(self.wready, prefix='_'.join(['', name, 'wready', 'sb']))
 
         # skidbuffer
         sb = SkidBuffer(m, clk, rst,
-                        wvalid, self.wready, *[wdata, wstrb, wlast],
+                        wvalid, self.wready, *[wlast, wstrb, wdata],
                         prefix='_'.join(['', 'sb', name, 'writedata']))
         wready.assign(sb.ready)
 
         # AXI-side signals after skidbuffer
-        self.wdata.assign(sb[0])
+        self.wdata.assign(sb[2])
         self.wstrb.assign(sb[1])
-        self.wlast.assign(sb[2])
+        self.wlast.assign(sb[0])
         self.wvalid.assign(sb.valid)
 
         # save AXI-side references
@@ -751,10 +755,10 @@ class AxiMasterReadData(AxiReadData):
 
         # skidbuffer
         sb = SkidBuffer(m, clk, rst,
-                        self.rvalid, rready, *[self.rdata, self.rlast],
+                        self.rvalid, rready, *[self.rlast, self.rdata],
                         prefix='_'.join(['', 'sb', name, 'readdata']))
-        rdata.assign(sb[0])
-        rlast.assign(sb[1])
+        rdata.assign(sb[1])
+        rlast.assign(sb[0])
         rvalid.assign(sb.valid)
 
         # AXI-side signals after skidbuffer
@@ -897,20 +901,23 @@ class AxiLiteMasterWriteData(AxiLiteWriteData):
         self.seq = Seq(m, name + '_wdata', clk, rst)
 
         # user-side signals before skidbuffer
-        wdata = m.TmpRegLike(self.wdata, prefix='_'.join(['', name, 'wdata', 'sb']))
-        wstrb = m.TmpRegLike(self.wstrb, prefix='_'.join(['', name, 'wstrb', 'sb']))
-        wvalid = m.TmpRegLike(self.wvalid, prefix='_'.join(['', name, 'wvalid', 'sb']))
+        wdata = m.TmpRegLike(self.wdata, initval=0,
+                             prefix='_'.join(['', name, 'wdata', 'sb']))
+        wstrb = m.TmpRegLike(self.wstrb, initval=0,
+                             prefix='_'.join(['', name, 'wstrb', 'sb']))
+        wvalid = m.TmpRegLike(self.wvalid, initval=0,
+                              prefix='_'.join(['', name, 'wvalid', 'sb']))
         wready = m.TmpWireLike(self.wready, prefix='_'.join(['', name, 'wready', 'sb']))
 
         # skidbuffer
         sb = SkidBuffer(m, clk, rst,
-                        wvalid, self.wready, *[wdata, wstrb],
+                        wvalid, self.wready, *[wstrb, wdata],
                         prefix='_'.join(['', 'sb', name, 'writedata']))
         wready.assign(sb.ready)
 
         # AXI-side signals after skidbuffer
-        self.wdata.assign(sb[0])
-        self.wstrb.assign(sb[1])
+        self.wdata.assign(sb[1])
+        self.wstrb.assign(sb[0])
         self.wvalid.assign(sb.valid)
 
         # save AXI-side references

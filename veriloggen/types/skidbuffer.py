@@ -24,23 +24,32 @@ class SkidBuffer(vtypes.VeriloggenNode):
         self.m_ready = m_ready
 
         width = 0
+        _s_values = []
         for s_value in s_values:
+            v = m.TmpWireLike(s_value, prefix=prefix + '_s_value')
+            v.assign(s_value)
+            _s_values.append(v)
             w = s_value.get_width()
             if w is None:
                 w = 1
             width += w
 
-        s_data = m.TmpWire(width, prefix=prefix + '_data')
-        s_data.assign(vtypes.Cat(*s_values))
+        _s_data = m.TmpWire(width, prefix=prefix + '_s_data')
+        _s_data.assign(vtypes.Cat(*_s_values))
+
+        _s_valid = m.TmpWire(prefix=prefix + '_s_valid')
+        _s_valid.assign(s_valid)
+        _m_ready = m.TmpWire(prefix=prefix + '_m_ready')
+        _m_ready.assign(m_ready)
 
         (m_data, m_valid, s_ready) = make_skidbuffer(m, clk, rst,
-                                                     s_data, s_valid, m_ready,
+                                                     _s_data, _s_valid, _m_ready,
                                                      prefix=prefix)
 
         self.m_values = []
         msb = width - 1
         for s_value in s_values:
-            v = m.TmpWireLike(s_value, prefix=prefix + '_value')
+            v = m.TmpWireLike(s_value, prefix=prefix + '_m_value')
             w = v.get_width()
             if w is None:
                 w = 1
@@ -78,12 +87,12 @@ def make_skidbuffer(m, clk, rst,
         else:
             prefix = 'skidbuffer'
 
-    m_data = m.TmpRegLike(s_data, prefix=prefix + '_data')
+    m_data = m.TmpRegLike(s_data, prefix=prefix + '_data', initval=0)
     m_valid = m.TmpReg(prefix=prefix + '_valid', initval=0)
 
     s_ready = m.TmpWire(prefix=prefix + '_ready')
 
-    tmp_data = m.TmpRegLike(s_data, prefix=prefix + '_tmp_data')
+    tmp_data = m.TmpRegLike(s_data, prefix=prefix + '_tmp_data', initval=0)
     tmp_valid = m.TmpReg(prefix=prefix + '_tmp_valid', initval=0)
 
     next_data = m.TmpWireLike(s_data, prefix=prefix + '_next_data')
