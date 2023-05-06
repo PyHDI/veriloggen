@@ -1620,7 +1620,7 @@ class AxiLiteSlaveReadData(AxiLiteReadData):
 class AxiStreamInData(AxiStreamInterfaceBase):
     _O = util.t_Output
 
-    def __init__(self, m, name=None, datawidth=32,
+    def __init__(self, m, name, clk, rst, datawidth=32,
                  with_last=True, with_strb=False,
                  id_width=0, user_width=0, dest_width=0,
                  itype=None, otype=None):
@@ -1628,6 +1628,10 @@ class AxiStreamInData(AxiStreamInterfaceBase):
         AxiStreamInterfaceBase.__init__(self, m, name, datawidth,
                                         id_width, user_width, dest_width,
                                         itype, otype)
+
+        self.clk = clk
+        self.rst = rst
+        self.seq = Seq(m, name, clk, rst)
 
         self.tdata = util.make_port(
             m, self.itype, name + '_tdata', self.datawidth, initval=0)
@@ -1666,10 +1670,273 @@ class AxiStreamInData(AxiStreamInterfaceBase):
             self.tdest = util.make_port(
                 m, self.itype, name + '_tdest', self.dest_width, initval=0)
 
+    def read_data(self, cond=None):
+        """
+        @return data, last, _id, user, dest, valid
+        """
+        ready = make_condition(cond)
+        val = 1 if ready is None else ready
+
+        _connect_ready(self.tready._get_module(), self.tready, val)
+
+        data = self.tdata
+        valid = self.tvalid
+        last = self.tlast
+        _id = self.tid
+        user = self.tuser
+        dest = self.tdest
+
+        return data, last, _id, user, dest, valid
+
+    def connect(self, ports, name):
+        tdata = ports['_'.join([name, 'tdata'])]
+        tvalid = ports['_'.join([name, 'tvalid'])]
+        tready = ports['_'.join([name, 'tready'])]
+
+        if '_'.join([name, 'tlast']) in ports:
+            tlast = ports['_'.join([name, 'tlast'])]
+        else:
+            tlast = None
+
+        if '_'.join([name, 'tid']) in ports:
+            tid = ports['_'.join([name, 'tid'])]
+        else:
+            tid = None
+
+        if '_'.join([name, 'tuser']) in ports:
+            tuser = ports['_'.join([name, 'tuser'])]
+        else:
+            tuser = None
+
+        if '_'.join([name, 'tdest']) in ports:
+            tdest = ports['_'.join([name, 'tdest'])]
+        else:
+            tdest = None
+
+        self.tdata.connect(tdata)
+        self.tvalid.connect(tvalid)
+        tready.connect(self.tready)
+
+        if self.tlast is not None:
+            self.tlast.connect(tlast if tlast is not None else 1)
+        if self.tid is not None:
+            self.tid.connect(tid if tid is not None else 0)
+        if self.tuser is not None:
+            self.tuser.connect(tuser if tuser is not None else 0)
+        if self.tdest is not None:
+            self.tdest.connect(tdest if tdest is not None else 0)
+
+    def connect_stream(self, outdata):
+        if not isinstance(outdata, AxiStreamOutData):
+            raise TypeError('outdata must be an instance of AxiStreamOutData.')
+
+        tdata = outdata.tdata
+        tvalid = outdata.tvalid
+        tready = outdata.tready
+
+        if outdata.tlast is not None:
+            tlast = outdata.tlast
+        else:
+            tlast = None
+
+        if outdata.tid is not None:
+            tid = outdata.tid
+        else:
+            tid = None
+
+        if outdata.tuser is not None:
+            tuser = outdata.tuser
+        else:
+            tuser = None
+
+        if outdata.tdest is not None:
+            tdest = outdata.tdest
+        else:
+            tdest = None
+
+        self.tdata.connect(tdata)
+        self.tvalid.connect(tvalid)
+        tready.connect(self.tready)
+
+        if self.tlast is not None:
+            self.tlast.connect(tlast if tlast is not None else 1)
+        if self.tid is not None:
+            self.tid.connect(tid if tid is not None else 0)
+        if self.tuser is not None:
+            self.tuser.connect(tuser if tuser is not None else 0)
+        if self.tdest is not None:
+            self.tdest.connect(tdest if tdest is not None else 0)
+
+    def connect_master_rdata(self, rdata):
+        if not isinstance(rdata, AxiMasterReadData):
+            raise TypeError('rdata must be an instance of AxiMasterReadData.')
+
+        tdata = rdata.rdata
+        tvalid = rdata.rvalid
+        tready = rdata.rready
+
+        tlast = 0
+
+        if rdata.rid is not None:
+            tid = rdata.rid
+        else:
+            tid = None
+
+        if rdata.ruser is not None:
+            tuser = rdata.ruser
+        else:
+            tuser = None
+
+        tdest = None
+
+        self.tdata.connect(tdata)
+        self.tvalid.connect(tvalid)
+        tready.connect(self.tready)
+
+        if self.tlast is not None:
+            self.tlast.connect(tlast if tlast is not None else 1)
+        if self.tid is not None:
+            self.tid.connect(tid if tid is not None else 0)
+        if self.tuser is not None:
+            self.tuser.connect(tuser if tuser is not None else 0)
+        if self.tdest is not None:
+            self.tdest.connect(tdest if tdest is not None else 0)
+
 
 class AxiStreamOutData(AxiStreamInData):
     _I = util.t_OutputReg
     _O = util.t_Input
+
+    def __init__(self, m, name, clk, rst, datawidth=32,
+                 with_last=True, with_strb=False,
+                 id_width=0, user_width=0, dest_width=0,
+                 itype=None, otype=None):
+
+        AxiStreamInData.__init__(self, m, name, clk, rst, datawidth,
+                                 with_last, with_strb,
+                                 id_width, user_width, dest_width,
+                                 itype, otype)
+
+        # default values
+        if self.tuser is not None:
+            self.tuser.assign(0)
+
+        if self.tid is not None:
+            self.tid.assign(0)
+
+    def write_data(self, data, last=None, _id=None, user=None, dest=None, cond=None):
+        """
+        @return ack
+        """
+        if cond is not None:
+            self.seq.If(cond)
+
+        ack = vtypes.Ors(self.tready, vtypes.Not(self.tvalid))
+
+        self.seq.If(ack)(
+            self.tdata(data),
+            self.tvalid(1),
+            self.tlast(last) if self.tlast is not None else (),
+            self.tid(_id) if self.tid is not None else (),
+            self.tuser(user) if self.tuser is not None else (),
+            self.tdest(dest) if self.tdest is not None else (),
+        )
+
+        # de-assert
+        self.seq.Delay(1)(
+            self.tvalid(0),
+            self.tlast(0) if self.tlast is not None else ()
+        )
+
+        # retry
+        self.seq.If(vtypes.Ands(self.tvalid, vtypes.Not(self.tready)))(
+            self.tvalid(self.tvalid),
+            self.tlast(self.tlast) if self.tlast is not None else ()
+        )
+
+        return ack
+
+    def connect(self, ports, name):
+        tdata = ports['_'.join([name, 'tdata'])]
+        tvalid = ports['_'.join([name, 'tvalid'])]
+        tready = ports['_'.join([name, 'tready'])]
+
+        if '_'.join([name, 'tlast']) in ports:
+            tlast = ports['_'.join([name, 'tlast'])]
+        else:
+            tlast = None
+
+        if '_'.join([name, 'tid']) in ports:
+            tid = ports['_'.join([name, 'tid'])]
+        else:
+            tid = None
+
+        if '_'.join([name, 'tuser']) in ports:
+            tuser = ports['_'.join([name, 'tuser'])]
+        else:
+            tuser = None
+
+        if '_'.join([name, 'tdest']) in ports:
+            tdest = ports['_'.join([name, 'tdest'])]
+        else:
+            tdest = None
+
+        tdata.connect(self.tdata)
+        tvalid.connect(self.tvalid)
+        self.tready.connect(tready)
+
+        if tlast is not None:
+            tlast.connect(self.tlast if self.tlast is not None else 1)
+
+        if tuser is not None:
+            tuser.connect(self.tuser if self.tuser is not None else 0)
+
+        if tid is not None:
+            tid.connect(self.tid if self.tid is not None else 0)
+
+        if tdest is not None:
+            tdest.connect(self.tdest if self.tdest is not None else 0)
+
+    def connect_stream(self, indata):
+        if not isinstance(indata, AxiStreamInData):
+            raise TypeError('indata must be an instance of AxiStreamInData.')
+
+        tdata = indata.tdata
+        tvalid = indata.tvalid
+        tready = indata.tready
+
+        if indata.tlast is not None:
+            tlast = indata.tlast
+        else:
+            tlast = None
+
+        if indata.tid is not None:
+            tid = indata.tid
+        else:
+            tid = None
+
+        if indata.tuser is not None:
+            tuser = indata.tuser
+        else:
+            tuser = None
+
+        if indata.tdest is not None:
+            tdest = indata.tdest
+        else:
+            tdest = None
+
+        tdata.connect(self.tdata)
+        tvalid.connect(self.tvalid)
+        self.tready.connect(tready)
+
+        if tlast is not None:
+            tlast.connect(self.tlast if self.tlast is not None else 1)
+        if tuser is not None:
+            tuser.connect(self.tuser if self.tuser is not None else 0)
+        if tid is not None:
+            tid.connect(self.tid if self.tid is not None else 0)
+        if tdest is not None:
+            tdest.connect(self.tdest if self.tdest is not None else 0)
 
 
 # AXI-Full
@@ -2485,7 +2752,7 @@ class AxiStreamIn(object):
         itype = util.t_Wire if noio else None
         otype = util.t_Wire if noio else None
 
-        self.tdata = AxiStreamInData(m, name, datawidth,
+        self.tdata = AxiStreamInData(m, name, clk, rst, datawidth,
                                      with_last, with_strb,
                                      id_width, user_width, dest_width,
                                      itype, otype)
@@ -2496,60 +2763,14 @@ class AxiStreamIn(object):
         """
         @return data, last, _id, user, dest, valid
         """
-        ready = make_condition(cond)
-        val = 1 if ready is None else ready
-
-        _connect_ready(self.tdata.tready._get_module(), self.tdata.tready, val)
-
-        data = self.tdata.tdata
-        valid = self.tdata.tvalid
-        last = self.tdata.tlast
-        _id = self.tdata.tid
-        user = self.tdata.tuser
-        dest = self.tdata.tdest
-
+        data, last, _id, user, dest, valid = self.tdata.read_data(cond)
         return data, last, _id, user, dest, valid
 
     def connect(self, ports, name):
         if not self.noio:
             raise ValueError('I/O ports can not be connected to others.')
 
-        tdata = ports['_'.join([name, 'tdata'])]
-        tvalid = ports['_'.join([name, 'tvalid'])]
-        tready = ports['_'.join([name, 'tready'])]
-
-        if '_'.join([name, 'tlast']) in ports:
-            tlast = ports['_'.join([name, 'tlast'])]
-        else:
-            tlast = None
-
-        if '_'.join([name, 'tid']) in ports:
-            tid = ports['_'.join([name, 'tid'])]
-        else:
-            tid = None
-
-        if '_'.join([name, 'tuser']) in ports:
-            tuser = ports['_'.join([name, 'tuser'])]
-        else:
-            tuser = None
-
-        if '_'.join([name, 'tdest']) in ports:
-            tdest = ports['_'.join([name, 'tdest'])]
-        else:
-            tdest = None
-
-        self.tdata.tdata.connect(tdata)
-        self.tdata.tvalid.connect(tvalid)
-        tready.connect(self.tdata.tready)
-
-        if self.tdata.tlast is not None:
-            self.tdata.tlast.connect(tlast if tlast is not None else 1)
-        if self.tdata.tid is not None:
-            self.tdata.tid.connect(tid if tid is not None else 0)
-        if self.tdata.tuser is not None:
-            self.tdata.tuser.connect(tuser if tuser is not None else 0)
-        if self.tdata.tdest is not None:
-            self.tdata.tdest.connect(tdest if tdest is not None else 0)
+        self.tdata.connect(ports, name)
 
     def connect_stream(self, stream):
         if not isinstance(stream, AxiStreamOut):
@@ -2558,42 +2779,8 @@ class AxiStreamIn(object):
         if not self.noio:
             raise ValueError('I/O ports can not be connected to others.')
 
-        tdata = stream.tdata.tdata
-        tvalid = stream.tdata.tvalid
-        tready = stream.tdata.tready
-
-        if stream.tdata.tlast is not None:
-            tlast = stream.tdata.tlast
-        else:
-            tlast = None
-
-        if stream.tdata.tid is not None:
-            tid = stream.tdata.tid
-        else:
-            tid = None
-
-        if stream.tdata.tuser is not None:
-            tuser = stream.tdata.tuser
-        else:
-            tuser = None
-
-        if stream.tdata.tdest is not None:
-            tdest = stream.tdata.tdest
-        else:
-            tdest = None
-
-        self.tdata.tdata.connect(tdata)
-        self.tdata.tvalid.connect(tvalid)
-        tready.connect(self.tdata.tready)
-
-        if self.tdata.tlast is not None:
-            self.tdata.tlast.connect(tlast if tlast is not None else 1)
-        if self.tdata.tid is not None:
-            self.tdata.tid.connect(tid if tid is not None else 0)
-        if self.tdata.tuser is not None:
-            self.tdata.tuser.connect(tuser if tuser is not None else 0)
-        if self.tdata.tdest is not None:
-            self.tdata.tdest.connect(tdest if tdest is not None else 0)
+        outdata = stream.tdata
+        self.tdata.connect_stream(outdata)
 
     def connect_master_rdata(self, master):
         if not isinstance(master, AxiMaster):
@@ -2602,36 +2789,8 @@ class AxiStreamIn(object):
         if not self.noio:
             raise ValueError('I/O ports can not be connected to others.')
 
-        tdata = master.rdata.rdata
-        tvalid = master.rdata.rvalid
-        tready = master.rdata.rready
-
-        tlast = 0
-
-        if master.rdata.rid is not None:
-            tid = master.rdata.rid
-        else:
-            tid = None
-
-        if master.rdata.ruser is not None:
-            tuser = master.rdata.ruser
-        else:
-            tuser = None
-
-        tdest = None
-
-        self.tdata.tdata.connect(tdata)
-        self.tdata.tvalid.connect(tvalid)
-        tready.connect(self.tdata.tready)
-
-        if self.tdata.tlast is not None:
-            self.tdata.tlast.connect(tlast if tlast is not None else 1)
-        if self.tdata.tid is not None:
-            self.tdata.tid.connect(tid if tid is not None else 0)
-        if self.tdata.tuser is not None:
-            self.tdata.tuser.connect(tuser if tuser is not None else 0)
-        if self.tdata.tdest is not None:
-            self.tdata.tdest.connect(tdest if tdest is not None else 0)
+        rdata = master.rdata
+        self.tdata.connect_master_rdata(rdata)
 
 
 class AxiStreamOut(object):
@@ -2659,95 +2818,25 @@ class AxiStreamOut(object):
         itype = util.t_Reg if noio else None
         otype = util.t_Wire if noio else None
 
-        self.tdata = AxiStreamOutData(m, name, datawidth,
+        self.tdata = AxiStreamOutData(m, name, clk, rst, datawidth,
                                       with_last, with_strb,
                                       id_width, user_width, dest_width,
                                       itype, otype)
 
         self.seq = Seq(m, name, clk, rst)
 
-        # default values
-        if self.tdata.tuser is not None:
-            self.tdata.tuser.assign(0)
-
-        if self.tdata.tid is not None:
-            self.tdata.tid.assign(0)
-
     def write_data(self, data, last=None, _id=None, user=None, dest=None, cond=None):
         """
         @return ack
         """
-        if cond is not None:
-            self.seq.If(cond)
-
-        ack = vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid))
-
-        self.seq.If(ack)(
-            self.tdata.tdata(data),
-            self.tdata.tvalid(1),
-            self.tdata.tlast(last) if self.tdata.tlast is not None else (),
-            self.tdata.tid(_id) if self.tdata.tid is not None else (),
-            self.tdata.tuser(user) if self.tdata.tuser is not None else (),
-            self.tdata.tdest(dest) if self.tdata.tdest is not None else (),
-        )
-
-        # de-assert
-        self.seq.Delay(1)(
-            self.tdata.tvalid(0),
-            self.tdata.tlast(0) if self.tdata.tlast is not None else ()
-        )
-
-        # retry
-        self.seq.If(vtypes.Ands(self.tdata.tvalid, vtypes.Not(self.tdata.tready)))(
-            self.tdata.tvalid(self.tdata.tvalid),
-            self.tdata.tlast(self.tdata.tlast) if self.tdata.tlast is not None else ()
-        )
-
+        ack = self.tdata.write_data(data, last, _id, user, dest, cond)
         return ack
 
     def connect(self, ports, name):
         if not self.noio:
             raise ValueError('I/O ports can not be connected to others.')
 
-        tdata = ports['_'.join([name, 'tdata'])]
-        tvalid = ports['_'.join([name, 'tvalid'])]
-        tready = ports['_'.join([name, 'tready'])]
-
-        if '_'.join([name, 'tlast']) in ports:
-            tlast = ports['_'.join([name, 'tlast'])]
-        else:
-            tlast = None
-
-        if '_'.join([name, 'tid']) in ports:
-            tid = ports['_'.join([name, 'tid'])]
-        else:
-            tid = None
-
-        if '_'.join([name, 'tuser']) in ports:
-            tuser = ports['_'.join([name, 'tuser'])]
-        else:
-            tuser = None
-
-        if '_'.join([name, 'tdest']) in ports:
-            tdest = ports['_'.join([name, 'tdest'])]
-        else:
-            tdest = None
-
-        tdata.connect(self.tdata.tdata)
-        tvalid.connect(self.tdata.tvalid)
-        self.tdata.tready.connect(tready)
-
-        if tlast is not None:
-            tlast.connect(self.tdata.tlast if self.tdata.tlast is not None else 1)
-
-        if tuser is not None:
-            tuser.connect(self.tdata.tuser if self.tdata.tuser is not None else 0)
-
-        if tid is not None:
-            tid.connect(self.tdata.tid if self.tdata.tid is not None else 0)
-
-        if tdest is not None:
-            tdest.connect(self.tdata.tdest if self.tdata.tdest is not None else 0)
+        self.tdata.connect(ports, name)
 
     def connect_stream(self, stream):
         if not isinstance(stream, AxiStreamIn):
@@ -2756,42 +2845,8 @@ class AxiStreamOut(object):
         if not self.noio:
             raise ValueError('I/O ports can not be connected to others.')
 
-        tdata = stream.tdata.tdata
-        tvalid = stream.tdata.tvalid
-        tready = stream.tdata.tready
-
-        if stream.tdata.tlast is not None:
-            tlast = stream.tdata.tlast
-        else:
-            tlast = None
-
-        if stream.tdata.tid is not None:
-            tid = stream.tdata.tid
-        else:
-            tid = None
-
-        if stream.tdata.tuser is not None:
-            tuser = stream.tdata.tuser
-        else:
-            tuser = None
-
-        if stream.tdata.tdest is not None:
-            tdest = stream.tdata.tdest
-        else:
-            tdest = None
-
-        tdata.connect(self.tdata.tdata)
-        tvalid.connect(self.tdata.tvalid)
-        self.tdata.tready.connect(tready)
-
-        if tlast is not None:
-            tlast.connect(self.tdata.tlast if self.tdata.tlast is not None else 1)
-        if tuser is not None:
-            tuser.connect(self.tdata.tuser if self.tdata.tuser is not None else 0)
-        if tid is not None:
-            tid.connect(self.tdata.tid if self.tdata.tid is not None else 0)
-        if tdest is not None:
-            tdest.connect(self.tdata.tdest if self.tdata.tdest is not None else 0)
+        indata = stream.tdata
+        self.tdata.connect_stream(indata)
 
 
 class AxiMemoryModel(AxiSlave):
