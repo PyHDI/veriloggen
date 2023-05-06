@@ -1141,25 +1141,288 @@ class AxiSlaveWriteAddress(AxiWriteAddress):
     _I = util.t_Output
     _O = util.t_Input
 
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
+                 id_width=0, user_width=2,
+                 itype=None, otype=None):
+
+        AxiWriteAddress.__init__(self, m, name, datawidth, addrwidth,
+                                 id_width, user_width, itype, otype)
+
+        self.clk = clk
+        self.rst = rst
+
+    def disable_write(self):
+        self.awready.assign(0)
+
+    def connect(self, ports, name):
+        if '_'.join([name, 'awid']) in ports:
+            awid = ports['_'.join([name, 'awid'])]
+        else:
+            awid = None
+        awaddr = ports['_'.join([name, 'awaddr'])]
+        awlen = ports['_'.join([name, 'awlen'])]
+        awsize = ports['_'.join([name, 'awsize'])]
+        awburst = ports['_'.join([name, 'awburst'])]
+        awlock = ports['_'.join([name, 'awlock'])]
+        awcache = ports['_'.join([name, 'awcache'])]
+        awprot = ports['_'.join([name, 'awprot'])]
+        awqos = ports['_'.join([name, 'awqos'])]
+        if '_'.join([name, 'awuser']) in ports:
+            awuser = ports['_'.join([name, 'awuser'])]
+        else:
+            awuser = None
+        awvalid = ports['_'.join([name, 'awvalid'])]
+        awready = ports['_'.join([name, 'awready'])]
+
+        if self.awid is not None:
+            self.awid.connect(awid if awid is not None else 0)
+        self.awaddr.connect(awaddr)
+        self.awlen.connect(awlen if awlen is not None else 0)
+        self.awsize.connect(awsize if awsize is not None else
+                                  int(math.log(self.datawidth // 8)))
+        self.awburst.connect(awburst if awburst is not None else BURST_INCR)
+        self.awlock.connect(awlock if awlock is not None else 0)
+        self.awcache.connect(awcache)
+        self.awprot.connect(awprot)
+        self.awqos.connect(awqos if awqos is not None else 0)
+        if self.awuser is not None:
+            self.awuser.connect(awuser if awuser is not None else 0)
+        self.awvalid.connect(awvalid)
+        awready.connect(self.awready)
+
 
 class AxiSlaveWriteData(AxiWriteData):
     _I = util.t_Output
     _O = util.t_Input
+
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
+                 id_width=0, user_width=0,
+                 itype=None, otype=None):
+
+        AxiWriteData.__init__(self, m, name, datawidth, addrwidth,
+                              id_width, user_width, itype, otype)
+
+        self.clk = clk
+        self.rst = rst
+
+    def disable_write(self):
+        self.wready.assign(0)
+
+    def pull_write_data(self, cond=None):
+        """
+        @return data, mask, valid, last
+        """
+        ready = make_condition(cond)
+        val = 1 if ready is None else ready
+
+        _connect_ready(self.wready._get_module(), self.wready, val)
+
+        data = self.wdata
+        mask = self.wstrb
+        valid = self.wvalid
+        last = self.wlast
+
+        return data, mask, valid, last
+
+    def connect(self, ports, name):
+        wdata = ports['_'.join([name, 'wdata'])]
+        wstrb = ports['_'.join([name, 'wstrb'])]
+        wlast = ports['_'.join([name, 'wlast'])]
+        if '_'.join([name, 'wuser']) in ports:
+            wuser = ports['_'.join([name, 'wuser'])]
+        else:
+            wuser = None
+        wvalid = ports['_'.join([name, 'wvalid'])]
+        wready = ports['_'.join([name, 'wready'])]
+
+        self.wdata.connect(wdata)
+        self.wstrb.connect(wstrb)
+        self.wlast.connect(wlast if wlast is not None else 1)
+        if self.wuser is not None:
+            self.wuser.connect(wuser if wuser is not None else 0)
+        self.wvalid.connect(wvalid)
+        wready.connect(self.wready)
 
 
 class AxiSlaveWriteResponse(AxiWriteResponse):
     _I = util.t_OutputReg
     _O = util.t_Input
 
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
+                 id_width=0, user_width=0,
+                 user_mode=xUSER_DEFAULT,
+                 itype=None, otype=None):
+
+        AxiWriteResponse.__init__(self, m, name, datawidth, addrwidth,
+                                  id_width, user_width, itype, otype)
+
+        self.clk = clk
+        self.rst = rst
+
+        # default values
+        self.bresp.assign(0)
+        if self.buser is not None:
+            self.buser.assign(user_mode)
+
+    def connect(self, ports, name):
+        if '_'.join([name, 'bid']) in ports:
+            bid = ports['_'.join([name, 'bid'])]
+        else:
+            bid = None
+        bresp = ports['_'.join([name, 'bresp'])]
+        if '_'.join([name, 'buser']) in ports:
+            buser = ports['_'.join([name, 'buser'])]
+        else:
+            buser = None
+        bvalid = ports['_'.join([name, 'bvalid'])]
+        bready = ports['_'.join([name, 'bready'])]
+
+        if bid is not None:
+            bid.connect(self.bid if self.bid is not None else 0)
+        bresp.connect(self.bresp)
+        if buser is not None:
+            buser.connect(self.buser if self.buser is not None else 0)
+        bvalid.connect(self.bvalid)
+        self.bready.connect(bready)
+
 
 class AxiSlaveReadAddress(AxiReadAddress):
     _I = util.t_Output
     _O = util.t_Input
 
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
+                 id_width=0, user_width=2,
+                 itype=None, otype=None):
+
+        AxiReadAddress.__init__(self, m, name, datawidth, addrwidth,
+                                id_width, user_width, itype, otype)
+
+        self.clk = clk
+        self.rst = rst
+
+    def disable_read(self):
+       self.arready.assign(0)
+
+    def connect(self, ports, name):
+        if '_'.join([name, 'arid']) in ports:
+            arid = ports['_'.join([name, 'arid'])]
+        else:
+            arid = None
+        araddr = ports['_'.join([name, 'araddr'])]
+        arlen = ports['_'.join([name, 'arlen'])]
+        arsize = ports['_'.join([name, 'arsize'])]
+        arburst = ports['_'.join([name, 'arburst'])]
+        arlock = ports['_'.join([name, 'arlock'])]
+        arcache = ports['_'.join([name, 'arcache'])]
+        arprot = ports['_'.join([name, 'arprot'])]
+        arqos = ports['_'.join([name, 'arqos'])]
+        if '_'.join([name, 'aruser']) in ports:
+            aruser = ports['_'.join([name, 'aruser'])]
+        else:
+            aruser = None
+        arvalid = ports['_'.join([name, 'arvalid'])]
+        arready = ports['_'.join([name, 'arready'])]
+
+        if self.arid is not None:
+            self.arid.connect(arid if arid is not None else 0)
+        self.araddr.connect(araddr)
+        self.arlen.connect(arlen if arlen is not None else 0)
+        self.arsize.connect(arsize if arsize is not None else
+                                  int(math.log(self.datawidth // 8)))
+        self.arburst.connect(arburst if arburst is not None else BURST_INCR)
+        self.arlock.connect(arlock if arlock is not None else 0)
+        self.arcache.connect(arcache)
+        self.arprot.connect(arprot)
+        self.arqos.connect(arqos if arqos is not None else 0)
+        if self.aruser is not None:
+            self.aruser.connect(aruser if aruser is not None else 0)
+        self.arvalid.connect(arvalid)
+        arready.connect(self.arready)
+
 
 class AxiSlaveReadData(AxiReadData):
     _I = util.t_OutputReg
     _O = util.t_Input
+
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
+                 id_width=0, user_width=0,
+                 user_mode=xUSER_DEFAULT,
+                 itype=None, otype=None):
+
+        AxiReadData.__init__(self, m, name, datawidth, addrwidth,
+                             id_width, user_width, itype, otype)
+
+        self.clk = clk
+        self.rst = rst
+        self.seq = Seq(m, name + '_rdata', clk, rst)
+
+        # default values
+        self.rresp.assign(0)
+        if self.ruser is not None:
+            self.ruser.assign(user_mode)
+
+    def disable_read(self):
+        ports = [self.rvalid(0),
+                 self.rlast(0)]
+
+        self.seq(
+            *ports
+        )
+
+    def push_read_data(self, data, last, cond=None):
+        """
+        @return ack
+        """
+        if cond is not None:
+            self.seq.If(cond)
+
+        ack = vtypes.Ors(self.rready, vtypes.Not(self.rvalid))
+
+        self.seq.If(ack)(
+            self.rdata(data),
+            self.rvalid(1),
+            self.rlast(last),
+        )
+
+        # de-assert
+        self.seq.Delay(1)(
+            self.rvalid(0),
+            self.rlast(0)
+        )
+
+        # retry
+        self.seq.If(vtypes.Ands(self.rvalid, vtypes.Not(self.rready)))(
+            self.rvalid(self.rvalid),
+            self.rlast(self.rlast)
+        )
+
+        return ack
+
+    def connect(self, ports, name):
+        if '_'.join([name, 'rid']) in ports:
+            rid = ports['_'.join([name, 'rid'])]
+        else:
+            rid = None
+        rdata = ports['_'.join([name, 'rdata'])]
+        rresp = ports['_'.join([name, 'rresp'])]
+        rlast = ports['_'.join([name, 'rlast'])]
+        if '_'.join([name, 'ruser']) in ports:
+            ruser = ports['_'.join([name, 'ruser'])]
+        else:
+            ruser = None
+        rvalid = ports['_'.join([name, 'rvalid'])]
+        rready = ports['_'.join([name, 'rready'])]
+
+        if rid is not None:
+            rid.connect(self.rid if self.rid is not None else 0)
+        rdata.connect(self.rdata)
+        rresp.connect(self.rresp)
+        if rlast is not None:
+            rlast.connect(self.rlast)
+        if ruser is not None:
+            ruser.connect(self.ruser if self.ruser is not None else 0)
+        rvalid.connect(self.rvalid)
+        self.rready.connect(rready)
 
 
 # AXI-Lite Slave
@@ -1167,25 +1430,191 @@ class AxiLiteSlaveWriteAddress(AxiLiteWriteAddress):
     _I = util.t_Output
     _O = util.t_Input
 
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
+                 itype=None, otype=None):
+
+        AxiLiteWriteAddress.__init__(self, m, name, datawidth, addrwidth,
+                                     itype, otype)
+
+        self.clk = clk
+        self.rst = rst
+
+    def disable_write(self):
+        self.awready.assign(0)
+
+    def connect(self, ports, name):
+        awaddr = ports['_'.join([name, 'awaddr'])]
+        awcache = ports['_'.join([name, 'awcache'])]
+        awprot = ports['_'.join([name, 'awprot'])]
+        awvalid = ports['_'.join([name, 'awvalid'])]
+        awready = ports['_'.join([name, 'awready'])]
+
+        self.awaddr.connect(awaddr)
+        self.awcache.connect(awcache)
+        self.awprot.connect(awprot)
+        self.awvalid.connect(awvalid)
+        awready.connect(self.awready)
+
 
 class AxiLiteSlaveWriteData(AxiLiteWriteData):
     _I = util.t_Output
     _O = util.t_Input
+
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
+                 itype=None, otype=None):
+
+        AxiLiteWriteData.__init__(self, m, name, datawidth, addrwidth,
+                                  itype, otype)
+
+        self.clk = clk
+        self.rst = rst
+
+    def disable_write(self):
+        self.wready.assign(0)
+
+    def pull_write_data(self, cond=None):
+        """
+        @return data, mask, valid
+        """
+        ready = make_condition(cond)
+        val = 1 if ready is None else ready
+
+        _connect_ready(self.wready._get_module(), self.wready, val)
+
+        data = self.wdata
+        mask = self.wstrb
+        valid = self.wvalid
+
+        return data, mask, valid
+
+    def connect(self, ports, name):
+        wdata = ports['_'.join([name, 'wdata'])]
+        wstrb = ports['_'.join([name, 'wstrb'])]
+        wvalid = ports['_'.join([name, 'wvalid'])]
+        wready = ports['_'.join([name, 'wready'])]
+
+        self.wdata.connect(wdata)
+        self.wstrb.connect(wstrb)
+        self.wvalid.connect(wvalid)
+        wready.connect(self.wready)
 
 
 class AxiLiteSlaveWriteResponse(AxiLiteWriteResponse):
     _I = util.t_OutputReg
     _O = util.t_Input
 
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
+                 itype=None, otype=None):
+
+        AxiLiteWriteResponse.__init__(self, m, name, datawidth, addrwidth,
+                                      itype, otype)
+
+        self.clk = clk
+        self.rst = rst
+
+        # default values
+        self.bresp.assign(0)
+
+    def connect(self, ports, name):
+        bresp = ports['_'.join([name, 'bresp'])]
+        bvalid = ports['_'.join([name, 'bvalid'])]
+        bready = ports['_'.join([name, 'bready'])]
+
+        bresp.connect(self.bresp)
+        bvalid.connect(self.bvalid)
+        self.bready.connect(bready)
+
 
 class AxiLiteSlaveReadAddress(AxiLiteReadAddress):
     _I = util.t_Output
     _O = util.t_Input
 
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
+                 itype=None, otype=None):
+
+        AxiLiteReadAddress.__init__(self, m, name, datawidth, addrwidth,
+                                    itype, otype)
+
+        self.clk = clk
+        self.rst = rst
+
+    def disable_read(self):
+        self.arready.assign(0)
+
+    def connect(self, ports, name):
+        araddr = ports['_'.join([name, 'araddr'])]
+        arcache = ports['_'.join([name, 'arcache'])]
+        arprot = ports['_'.join([name, 'arprot'])]
+        arvalid = ports['_'.join([name, 'arvalid'])]
+        arready = ports['_'.join([name, 'arready'])]
+
+        self.araddr.connect(araddr)
+        self.arcache.connect(arcache)
+        self.arprot.connect(arprot)
+        self.arvalid.connect(arvalid)
+        arready.connect(self.arready)
+
 
 class AxiLiteSlaveReadData(AxiLiteReadData):
     _I = util.t_OutputReg
     _O = util.t_Input
+
+    def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
+                 itype=None, otype=None):
+
+        AxiLiteReadData.__init__(self, m, name, datawidth, addrwidth,
+                                 itype, otype)
+
+        self.clk = clk
+        self.rst = rst
+        self.seq = Seq(m, name + '_rdata', clk, rst)
+
+        # default values
+        self.rresp.assign(0)
+
+    def disable_read(self):
+        ports = [self.rvalid(0)]
+
+        self.seq(
+            *ports
+        )
+
+    def push_read_data(self, data, cond=None):
+        """
+        @return ack
+        """
+        if cond is not None:
+            self.seq.If(cond)
+
+        ack = vtypes.Ors(self.rready, vtypes.Not(self.rvalid))
+
+        self.seq.If(ack)(
+            self.rdata(data),
+            self.rvalid(1)
+        )
+
+        # de-assert
+        self.seq.Delay(1)(
+            self.rvalid(0)
+        )
+
+        # retry
+        self.seq.If(vtypes.Ands(self.rvalid, vtypes.Not(self.rready)))(
+            self.rvalid(self.rvalid)
+        )
+
+        return ack
+
+    def connect(self, ports, name):
+        rdata = ports['_'.join([name, 'rdata'])]
+        rresp = ports['_'.join([name, 'rresp'])]
+        rvalid = ports['_'.join([name, 'rvalid'])]
+        rready = ports['_'.join([name, 'rready'])]
+
+        rdata.connect(self.rdata)
+        rresp.connect(self.rresp)
+        rvalid.connect(self.rvalid)
+        self.rready.connect(rready)
 
 
 class AxiStreamInData(AxiStreamInterfaceBase):
@@ -1606,26 +2035,20 @@ class AxiSlave(object):
         otype = util.t_Wire if noio else None
         rdata_itype = util.t_Reg if noio else None
 
-        self.waddr = AxiSlaveWriteAddress(m, name, datawidth, addrwidth,
+        self.waddr = AxiSlaveWriteAddress(m, name, clk, rst, datawidth, addrwidth,
                                           waddr_id_width, waddr_user_width, itype, otype)
-        self.wdata = AxiSlaveWriteData(m, name, datawidth, addrwidth,
+        self.wdata = AxiSlaveWriteData(m, name, clk, rst, datawidth, addrwidth,
                                        wdata_id_width, wdata_user_width, itype, otype)
-        self.wresp = AxiSlaveWriteResponse(m, name, datawidth, addrwidth,
-                                           wresp_id_width, wresp_user_width, itype, otype)
-        self.raddr = AxiSlaveReadAddress(m, name, datawidth, addrwidth,
+        self.wresp = AxiSlaveWriteResponse(m, name, clk, rst, datawidth, addrwidth,
+                                           wresp_id_width, wresp_user_width, wresp_user_mode,
+                                           itype, otype)
+        self.raddr = AxiSlaveReadAddress(m, name, clk, rst, datawidth, addrwidth,
                                          raddr_id_width, raddr_user_width, itype, otype)
-        self.rdata = AxiSlaveReadData(m, name, datawidth, addrwidth,
-                                      rdata_id_width, rdata_user_width, rdata_itype, otype)
+        self.rdata = AxiSlaveReadData(m, name, clk, rst, datawidth, addrwidth,
+                                      rdata_id_width, rdata_user_width, rdata_user_mode,
+                                      rdata_itype, otype)
 
         self.seq = Seq(m, name, clk, rst)
-
-        # default values
-        self.wresp.bresp.assign(0)
-        if self.wresp.buser is not None:
-            self.wresp.buser.assign(wresp_user_mode)
-        self.rdata.rresp.assign(0)
-        if self.rdata.ruser is not None:
-            self.rdata.ruser.assign(rdata_user_mode)
 
         # write response
         if self.wresp.bid is not None:
@@ -1649,21 +2072,13 @@ class AxiSlave(object):
         self._read_disabled = False
 
     def disable_write(self):
-        self.waddr.awready.assign(0)
-        self.wdata.wready.assign(0)
-
+        self.waddr.disable_write()
+        self.wdata.disable_write()
         self._write_disabled = True
 
     def disable_read(self):
-        self.raddr.arready.assign(0)
-
-        ports = [self.rdata.rvalid(0),
-                 self.rdata.rlast(0)]
-
-        self.seq(
-            *ports
-        )
-
+        self.raddr.disable_read()
+        self.rdata.disable_read()
         self._read_disabled = True
 
     def pull_request(self, cond):
@@ -1762,25 +2177,6 @@ class AxiSlave(object):
 
         return addr, length, valid
 
-    def pull_write_data(self, cond=None):
-        """
-        @return data, mask, valid, last
-        """
-        if self._write_disabled:
-            raise TypeError('Write disabled.')
-
-        ready = make_condition(cond)
-        val = 1 if ready is None else ready
-
-        _connect_ready(self.wdata.wready._get_module(), self.wdata.wready, val)
-
-        data = self.wdata.wdata
-        mask = self.wdata.wstrb
-        valid = self.wdata.wvalid
-        last = self.wdata.wlast
-
-        return data, mask, valid, last
-
     def pull_read_request(self, cond=None):
         """
         @return addr, length, valid
@@ -1817,6 +2213,16 @@ class AxiSlave(object):
 
         return addr, length, valid
 
+    def pull_write_data(self, cond=None):
+        """
+        @return data, mask, valid, last
+        """
+        if self._write_disabled:
+            raise TypeError('Write disabled.')
+
+        data, mask, valid, last = self.wdata.pull_write_data(cond)
+        return data, mask, valid, last
+
     def push_read_data(self, data, last, cond=None):
         """
         @return ack
@@ -1824,29 +2230,7 @@ class AxiSlave(object):
         if self._read_disabled:
             raise TypeError('Read disabled.')
 
-        if cond is not None:
-            self.seq.If(cond)
-
-        ack = vtypes.Ors(self.rdata.rready, vtypes.Not(self.rdata.rvalid))
-
-        self.seq.If(ack)(
-            self.rdata.rdata(data),
-            self.rdata.rvalid(1),
-            self.rdata.rlast(last),
-        )
-
-        # de-assert
-        self.seq.Delay(1)(
-            self.rdata.rvalid(0),
-            self.rdata.rlast(0)
-        )
-
-        # retry
-        self.seq.If(vtypes.Ands(self.rdata.rvalid, vtypes.Not(self.rdata.rready)))(
-            self.rdata.rvalid(self.rdata.rvalid),
-            self.rdata.rlast(self.rdata.rlast)
-        )
-
+        ack = self.rdata.push_read_data(data, last, cond)
         return ack
 
     def connect(self, ports, name):
@@ -1855,138 +2239,11 @@ class AxiSlave(object):
 
         ports = defaultdict(lambda: None, ports)
 
-        if '_'.join([name, 'awid']) in ports:
-            awid = ports['_'.join([name, 'awid'])]
-        else:
-            awid = None
-        awaddr = ports['_'.join([name, 'awaddr'])]
-        awlen = ports['_'.join([name, 'awlen'])]
-        awsize = ports['_'.join([name, 'awsize'])]
-        awburst = ports['_'.join([name, 'awburst'])]
-        awlock = ports['_'.join([name, 'awlock'])]
-        awcache = ports['_'.join([name, 'awcache'])]
-        awprot = ports['_'.join([name, 'awprot'])]
-        awqos = ports['_'.join([name, 'awqos'])]
-        if '_'.join([name, 'awuser']) in ports:
-            awuser = ports['_'.join([name, 'awuser'])]
-        else:
-            awuser = None
-        awvalid = ports['_'.join([name, 'awvalid'])]
-        awready = ports['_'.join([name, 'awready'])]
-
-        if self.waddr.awid is not None:
-            self.waddr.awid.connect(awid if awid is not None else 0)
-        self.waddr.awaddr.connect(awaddr)
-        self.waddr.awlen.connect(awlen if awlen is not None else 0)
-        self.waddr.awsize.connect(awsize if awsize is not None else
-                                  int(math.log(self.datawidth // 8)))
-        self.waddr.awburst.connect(awburst if awburst is not None else BURST_INCR)
-        self.waddr.awlock.connect(awlock if awlock is not None else 0)
-        self.waddr.awcache.connect(awcache)
-        self.waddr.awprot.connect(awprot)
-        self.waddr.awqos.connect(awqos if awqos is not None else 0)
-        if self.waddr.awuser is not None:
-            self.waddr.awuser.connect(awuser if awuser is not None else 0)
-        self.waddr.awvalid.connect(awvalid)
-        awready.connect(self.waddr.awready)
-
-        wdata = ports['_'.join([name, 'wdata'])]
-        wstrb = ports['_'.join([name, 'wstrb'])]
-        wlast = ports['_'.join([name, 'wlast'])]
-        if '_'.join([name, 'wuser']) in ports:
-            wuser = ports['_'.join([name, 'wuser'])]
-        else:
-            wuser = None
-        wvalid = ports['_'.join([name, 'wvalid'])]
-        wready = ports['_'.join([name, 'wready'])]
-
-        self.wdata.wdata.connect(wdata)
-        self.wdata.wstrb.connect(wstrb)
-        self.wdata.wlast.connect(wlast if wlast is not None else 1)
-        if self.wdata.wuser is not None:
-            self.wdata.wuser.connect(wuser if wuser is not None else 0)
-        self.wdata.wvalid.connect(wvalid)
-        wready.connect(self.wdata.wready)
-
-        if '_'.join([name, 'bid']) in ports:
-            bid = ports['_'.join([name, 'bid'])]
-        else:
-            bid = None
-        bresp = ports['_'.join([name, 'bresp'])]
-        if '_'.join([name, 'buser']) in ports:
-            buser = ports['_'.join([name, 'buser'])]
-        else:
-            buser = None
-        bvalid = ports['_'.join([name, 'bvalid'])]
-        bready = ports['_'.join([name, 'bready'])]
-
-        if bid is not None:
-            bid.connect(self.wresp.bid if self.wresp.bid is not None else 0)
-        bresp.connect(self.wresp.bresp)
-        if buser is not None:
-            buser.connect(self.wresp.buser if self.wresp.buser is not None else 0)
-        bvalid.connect(self.wresp.bvalid)
-        self.wresp.bready.connect(bready)
-
-        if '_'.join([name, 'arid']) in ports:
-            arid = ports['_'.join([name, 'arid'])]
-        else:
-            arid = None
-        araddr = ports['_'.join([name, 'araddr'])]
-        arlen = ports['_'.join([name, 'arlen'])]
-        arsize = ports['_'.join([name, 'arsize'])]
-        arburst = ports['_'.join([name, 'arburst'])]
-        arlock = ports['_'.join([name, 'arlock'])]
-        arcache = ports['_'.join([name, 'arcache'])]
-        arprot = ports['_'.join([name, 'arprot'])]
-        arqos = ports['_'.join([name, 'arqos'])]
-        if '_'.join([name, 'aruser']) in ports:
-            aruser = ports['_'.join([name, 'aruser'])]
-        else:
-            aruser = None
-        arvalid = ports['_'.join([name, 'arvalid'])]
-        arready = ports['_'.join([name, 'arready'])]
-
-        if self.raddr.arid is not None:
-            self.raddr.arid.connect(arid if arid is not None else 0)
-        self.raddr.araddr.connect(araddr)
-        self.raddr.arlen.connect(arlen if arlen is not None else 0)
-        self.raddr.arsize.connect(arsize if arsize is not None else
-                                  int(math.log(self.datawidth // 8)))
-        self.raddr.arburst.connect(arburst if arburst is not None else BURST_INCR)
-        self.raddr.arlock.connect(arlock if arlock is not None else 0)
-        self.raddr.arcache.connect(arcache)
-        self.raddr.arprot.connect(arprot)
-        self.raddr.arqos.connect(arqos if arqos is not None else 0)
-        if self.raddr.aruser is not None:
-            self.raddr.aruser.connect(aruser if aruser is not None else 0)
-        self.raddr.arvalid.connect(arvalid)
-        arready.connect(self.raddr.arready)
-
-        if '_'.join([name, 'rid']) in ports:
-            rid = ports['_'.join([name, 'rid'])]
-        else:
-            rid = None
-        rdata = ports['_'.join([name, 'rdata'])]
-        rresp = ports['_'.join([name, 'rresp'])]
-        rlast = ports['_'.join([name, 'rlast'])]
-        if '_'.join([name, 'ruser']) in ports:
-            ruser = ports['_'.join([name, 'ruser'])]
-        else:
-            ruser = None
-        rvalid = ports['_'.join([name, 'rvalid'])]
-        rready = ports['_'.join([name, 'rready'])]
-
-        if rid is not None:
-            rid.connect(self.rdata.rid if self.rdata.rid is not None else 0)
-        rdata.connect(self.rdata.rdata)
-        rresp.connect(self.rdata.rresp)
-        if rlast is not None:
-            rlast.connect(self.rdata.rlast)
-        if ruser is not None:
-            ruser.connect(self.rdata.ruser if self.rdata.ruser is not None else 0)
-        rvalid.connect(self.rdata.rvalid)
-        self.rdata.rready.connect(rready)
+        self.waddr.connect(ports, name)
+        self.wdata.connect(ports, name)
+        self.wresp.connect(ports, name)
+        self.raddr.connect(ports, name)
+        self.rdata.connect(ports, name)
 
 
 class AxiLiteSlave(AxiSlave):
@@ -2014,22 +2271,18 @@ class AxiLiteSlave(AxiSlave):
         otype = util.t_Wire if noio else None
         rdata_itype = util.t_Reg if noio else None
 
-        self.waddr = AxiLiteSlaveWriteAddress(m, name, datawidth, addrwidth,
+        self.waddr = AxiLiteSlaveWriteAddress(m, name, clk, rst, datawidth, addrwidth,
                                               itype, otype)
-        self.wdata = AxiLiteSlaveWriteData(m, name, datawidth, addrwidth,
+        self.wdata = AxiLiteSlaveWriteData(m, name, clk, rst, datawidth, addrwidth,
                                            itype, otype)
-        self.wresp = AxiLiteSlaveWriteResponse(m, name, datawidth, addrwidth,
+        self.wresp = AxiLiteSlaveWriteResponse(m, name, clk, rst, datawidth, addrwidth,
                                                itype, otype)
-        self.raddr = AxiLiteSlaveReadAddress(m, name, datawidth, addrwidth,
+        self.raddr = AxiLiteSlaveReadAddress(m, name, clk, rst, datawidth, addrwidth,
                                              itype, otype)
-        self.rdata = AxiLiteSlaveReadData(m, name, datawidth, addrwidth,
+        self.rdata = AxiLiteSlaveReadData(m, name, clk, rst, datawidth, addrwidth,
                                           rdata_itype, otype)
 
         self.seq = Seq(m, name, clk, rst)
-
-        # default values
-        self.wresp.bresp.assign(0)
-        self.rdata.rresp.assign(0)
 
         # write response
         self.seq.If(self.wresp.bvalid, self.wresp.bready)(
@@ -2043,20 +2296,13 @@ class AxiLiteSlave(AxiSlave):
         self._read_disabled = False
 
     def disable_write(self):
-        self.waddr.awready.assign(0)
-        self.wdata.wready.assign(0)
-
+        self.waddr.disable_write()
+        self.wdata.disable_write()
         self._write_disabled = True
 
     def disable_read(self):
-        self.raddr.arready.assign(0)
-
-        ports = [self.rdata.rvalid(0)]
-
-        self.seq(
-            *ports
-        )
-
+        self.raddr.disable_read()
+        self.rdata.disable_read()
         self._read_disabled = True
 
     def pull_request(self, cond):
@@ -2150,24 +2396,6 @@ class AxiLiteSlave(AxiSlave):
 
         return addr, valid
 
-    def pull_write_data(self, cond=None):
-        """
-        @return data, mask, valid
-        """
-        if self._write_disabled:
-            raise TypeError('Write disabled.')
-
-        ready = make_condition(cond)
-        val = 1 if ready is None else ready
-
-        _connect_ready(self.wdata.wready._get_module(), self.wdata.wready, val)
-
-        data = self.wdata.wdata
-        mask = self.wdata.wstrb
-        valid = self.wdata.wvalid
-
-        return data, mask, valid
-
     def pull_read_request(self, cond=None):
         """
         @return addr, valid
@@ -2201,6 +2429,16 @@ class AxiLiteSlave(AxiSlave):
 
         return addr, valid
 
+    def pull_write_data(self, cond=None):
+        """
+        @return data, mask, valid
+        """
+        if self._write_disabled:
+            raise TypeError('Write disabled.')
+
+        data, mask, valid = self.wdata.pull_write_data(cond)
+        return data, mask, valid
+
     def push_read_data(self, data, cond=None):
         """
         @return ack
@@ -2208,83 +2446,18 @@ class AxiLiteSlave(AxiSlave):
         if self._read_disabled:
             raise TypeError('Read disabled.')
 
-        if cond is not None:
-            self.seq.If(cond)
-
-        ack = vtypes.Ors(self.rdata.rready, vtypes.Not(self.rdata.rvalid))
-
-        self.seq.If(ack)(
-            self.rdata.rdata(data),
-            self.rdata.rvalid(1)
-        )
-
-        # de-assert
-        self.seq.Delay(1)(
-            self.rdata.rvalid(0)
-        )
-
-        # retry
-        self.seq.If(vtypes.Ands(self.rdata.rvalid, vtypes.Not(self.rdata.rready)))(
-            self.rdata.rvalid(self.rdata.rvalid)
-        )
-
+        ack = self.rdata.push_read_data(data, cond)
         return ack
 
     def connect(self, ports, name):
         if not self.noio:
             raise ValueError('I/O ports can not be connected to others.')
 
-        awaddr = ports['_'.join([name, 'awaddr'])]
-        awcache = ports['_'.join([name, 'awcache'])]
-        awprot = ports['_'.join([name, 'awprot'])]
-        awvalid = ports['_'.join([name, 'awvalid'])]
-        awready = ports['_'.join([name, 'awready'])]
-
-        self.waddr.awaddr.connect(awaddr)
-        self.waddr.awcache.connect(awcache)
-        self.waddr.awprot.connect(awprot)
-        self.waddr.awvalid.connect(awvalid)
-        awready.connect(self.waddr.awready)
-
-        wdata = ports['_'.join([name, 'wdata'])]
-        wstrb = ports['_'.join([name, 'wstrb'])]
-        wvalid = ports['_'.join([name, 'wvalid'])]
-        wready = ports['_'.join([name, 'wready'])]
-
-        self.wdata.wdata.connect(wdata)
-        self.wdata.wstrb.connect(wstrb)
-        self.wdata.wvalid.connect(wvalid)
-        wready.connect(self.wdata.wready)
-
-        bresp = ports['_'.join([name, 'bresp'])]
-        bvalid = ports['_'.join([name, 'bvalid'])]
-        bready = ports['_'.join([name, 'bready'])]
-
-        bresp.connect(self.wresp.bresp)
-        bvalid.connect(self.wresp.bvalid)
-        self.wresp.bready.connect(bready)
-
-        araddr = ports['_'.join([name, 'araddr'])]
-        arcache = ports['_'.join([name, 'arcache'])]
-        arprot = ports['_'.join([name, 'arprot'])]
-        arvalid = ports['_'.join([name, 'arvalid'])]
-        arready = ports['_'.join([name, 'arready'])]
-
-        self.raddr.araddr.connect(araddr)
-        self.raddr.arcache.connect(arcache)
-        self.raddr.arprot.connect(arprot)
-        self.raddr.arvalid.connect(arvalid)
-        arready.connect(self.raddr.arready)
-
-        rdata = ports['_'.join([name, 'rdata'])]
-        rresp = ports['_'.join([name, 'rresp'])]
-        rvalid = ports['_'.join([name, 'rvalid'])]
-        rready = ports['_'.join([name, 'rready'])]
-
-        rdata.connect(self.rdata.rdata)
-        rresp.connect(self.rdata.rresp)
-        rvalid.connect(self.rdata.rvalid)
-        self.rdata.rready.connect(rready)
+        self.waddr.connect(ports, name)
+        self.wdata.connect(ports, name)
+        self.wresp.connect(ports, name)
+        self.raddr.connect(ports, name)
+        self.rdata.connect(ports, name)
 
 
 class AxiStreamIn(object):
@@ -2661,26 +2834,21 @@ class AxiMemoryModel(AxiSlave):
         otype = util.t_Wire
         wdata_itype = util.t_Wire
 
-        self.waddr = AxiSlaveWriteAddress(m, name, datawidth, addrwidth,
+        self.waddr = AxiSlaveWriteAddress(m, name, clk, rst, datawidth, addrwidth,
                                           waddr_id_width, waddr_user_width, itype, otype)
-        self.wdata = AxiSlaveWriteData(m, name, datawidth, addrwidth,
+        self.wdata = AxiSlaveWriteData(m, name, clk, rst, datawidth, addrwidth,
                                        wdata_id_width, wdata_user_width, wdata_itype, otype)
-        self.wresp = AxiSlaveWriteResponse(m, name, datawidth, addrwidth,
-                                           wresp_id_width, wresp_user_width, itype, otype)
-        self.raddr = AxiSlaveReadAddress(m, name, datawidth, addrwidth,
+        self.wresp = AxiSlaveWriteResponse(m, name, clk, rst, datawidth, addrwidth,
+                                           wresp_id_width, wresp_user_width, wresp_user_mode,
+                                           itype, otype)
+        self.raddr = AxiSlaveReadAddress(m, name, clk, rst, datawidth, addrwidth,
                                          raddr_id_width, raddr_user_width, itype, otype)
-        self.rdata = AxiSlaveReadData(m, name, datawidth, addrwidth,
-                                      rdata_id_width, rdata_user_width, itype, otype)
-
-        # default values
-        self.wresp.bresp.assign(0)
-        if self.wresp.buser is not None:
-            self.wresp.buser.assign(wresp_user_mode)
-        self.rdata.rresp.assign(0)
-        if self.rdata.ruser is not None:
-            self.rdata.ruser.assign(rdata_user_mode)
+        self.rdata = AxiSlaveReadData(m, name, clk, rst, datawidth, addrwidth,
+                                      rdata_id_width, rdata_user_width, rdata_user_mode,
+                                      itype, otype)
 
         self.seq = Seq(self.m, '_'.join(['', self.name, 'seq']), clk, rst)
+
         self.waddr_fsm = FSM(self.m, '_'.join(['', self.name, 'waddr_fsm']), clk, rst)
         self.wdata_fsm = FSM(self.m, '_'.join(['', self.name, 'wdata_fsm']), clk, rst)
         self.raddr_fsm = FSM(self.m, '_'.join(['', self.name, 'raddr_fsm']), clk, rst)
@@ -3246,32 +3414,23 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
         otype = util.t_Wire
         wdata_itype = util.t_Wire
 
-        self.waddrs = [AxiSlaveWriteAddress(m, name + '_%d' % i, datawidth, addrwidth,
+        self.waddrs = [AxiSlaveWriteAddress(m, name + '_%d' % i, clk, rst, datawidth, addrwidth,
                                             waddr_id_width, waddr_user_width, itype, otype)
                        for i in range(numports)]
-        self.wdatas = [AxiSlaveWriteData(m, name + '_%d' % i, datawidth, addrwidth,
+        self.wdatas = [AxiSlaveWriteData(m, name + '_%d' % i, clk, rst, datawidth, addrwidth,
                                          wdata_id_width, wdata_user_width, wdata_itype, otype)
                        for i in range(numports)]
-        self.wresps = [AxiSlaveWriteResponse(m, name + '%d' % i, datawidth, addrwidth,
-                                             wresp_id_width, wresp_user_width, itype, otype)
+        self.wresps = [AxiSlaveWriteResponse(m, name + '_%d' % i, clk, rst, datawidth, addrwidth,
+                                             wresp_id_width, wresp_user_width, wresp_user_mode,
+                                             itype, otype)
                        for i in range(numports)]
-        self.raddrs = [AxiSlaveReadAddress(m, name + '_%d' % i, datawidth, addrwidth,
+        self.raddrs = [AxiSlaveReadAddress(m, name + '_%d' % i, clk, rst, datawidth, addrwidth,
                                            raddr_id_width, raddr_user_width, itype, otype)
                        for i in range(numports)]
-        self.rdatas = [AxiSlaveReadData(m, name + '_%d' % i, datawidth, addrwidth,
-                                        rdata_id_width, rdata_user_width, itype, otype)
+        self.rdatas = [AxiSlaveReadData(m, name + '_%d' % i, clk, rst, datawidth, addrwidth,
+                                        rdata_id_width, rdata_user_width, rdata_user_mode,
+                                        itype, otype)
                        for i in range(numports)]
-
-        # default values
-        for wresp in self.wresps:
-            wresp.bresp.assign(0)
-            if wresp.buser is not None:
-                wresp.buser.assign(wresp_user_mode)
-
-        for rdata in self.rdatas:
-            rdata.rresp.assign(0)
-            if rdata.ruser is not None:
-                rdata.ruser.assign(rdata_user_mode)
 
         self.seq = Seq(self.m, '_'.join(['', self.name, 'seq']), clk, rst)
 
@@ -3584,138 +3743,11 @@ class AxiMultiportMemoryModel(AxiMemoryModel):
 
         ports = defaultdict(lambda: None, ports)
 
-        if '_'.join([name, 'awid']) in ports:
-            awid = ports['_'.join([name, 'awid'])]
-        else:
-            awid = None
-        awaddr = ports['_'.join([name, 'awaddr'])]
-        awlen = ports['_'.join([name, 'awlen'])]
-        awsize = ports['_'.join([name, 'awsize'])]
-        awburst = ports['_'.join([name, 'awburst'])]
-        awlock = ports['_'.join([name, 'awlock'])]
-        awcache = ports['_'.join([name, 'awcache'])]
-        awprot = ports['_'.join([name, 'awprot'])]
-        awqos = ports['_'.join([name, 'awqos'])]
-        if '_'.join([name, 'awuser']) in ports:
-            awuser = ports['_'.join([name, 'awuser'])]
-        else:
-            awuser = None
-        awvalid = ports['_'.join([name, 'awvalid'])]
-        awready = ports['_'.join([name, 'awready'])]
-
-        if self.waddrs[index].awid is not None:
-            self.waddrs[index].awid.connect(awid if awid is not None else 0)
-        self.waddrs[index].awaddr.connect(awaddr)
-        self.waddrs[index].awlen.connect(awlen if awlen is not None else 0)
-        self.waddrs[index].awsize.connect(awsize if awsize is not None else
-                                          int(math.log(self.datawidth // 8)))
-        self.waddrs[index].awburst.connect(awburst if awburst is not None else BURST_INCR)
-        self.waddrs[index].awlock.connect(awlock if awlock is not None else 0)
-        self.waddrs[index].awcache.connect(awcache)
-        self.waddrs[index].awprot.connect(awprot)
-        self.waddrs[index].awqos.connect(awqos if awqos is not None else 0)
-        if self.waddrs[index].awuser is not None:
-            self.waddrs[index].awuser.connect(awuser if awuser is not None else 0)
-        self.waddrs[index].awvalid.connect(awvalid)
-        awready.connect(self.waddrs[index].awready)
-
-        wdata = ports['_'.join([name, 'wdata'])]
-        wstrb = ports['_'.join([name, 'wstrb'])]
-        wlast = ports['_'.join([name, 'wlast'])]
-        if '_'.join([name, 'wuser']) in ports:
-            wuser = ports['_'.join([name, 'wuser'])]
-        else:
-            wuser = None
-        wvalid = ports['_'.join([name, 'wvalid'])]
-        wready = ports['_'.join([name, 'wready'])]
-
-        self.wdatas[index].wdata.connect(wdata)
-        self.wdatas[index].wstrb.connect(wstrb)
-        self.wdatas[index].wlast.connect(wlast if wlast is not None else 1)
-        if self.wdatas[index].wuser is not None:
-            self.wdatas[index].wuser.connect(wuser if wuser is not None else 0)
-        self.wdatas[index].wvalid.connect(wvalid)
-        wready.connect(self.wdatas[index].wready)
-
-        if '_'.join([name, 'bid']) in ports:
-            bid = ports['_'.join([name, 'bid'])]
-        else:
-            bid = None
-        bresp = ports['_'.join([name, 'bresp'])]
-        if '_'.join([name, 'buser']) in ports:
-            buser = ports['_'.join([name, 'buser'])]
-        else:
-            buser = None
-        bvalid = ports['_'.join([name, 'bvalid'])]
-        bready = ports['_'.join([name, 'bready'])]
-
-        if bid is not None:
-            bid.connect(self.wresps[index].bid if self.wresps[index].bid is not None else 0)
-        bresp.connect(self.wresps[index].bresp)
-        if buser is not None:
-            buser.connect(self.wresps[index].buser if self.wresps[index].buser is not None else 0)
-        bvalid.connect(self.wresps[index].bvalid)
-        self.wresps[index].bready.connect(bready)
-
-        if '_'.join([name, 'arid']) in ports:
-            arid = ports['_'.join([name, 'arid'])]
-        else:
-            arid = None
-        araddr = ports['_'.join([name, 'araddr'])]
-        arlen = ports['_'.join([name, 'arlen'])]
-        arsize = ports['_'.join([name, 'arsize'])]
-        arburst = ports['_'.join([name, 'arburst'])]
-        arlock = ports['_'.join([name, 'arlock'])]
-        arcache = ports['_'.join([name, 'arcache'])]
-        arprot = ports['_'.join([name, 'arprot'])]
-        arqos = ports['_'.join([name, 'arqos'])]
-        if '_'.join([name, 'aruser']) in ports:
-            aruser = ports['_'.join([name, 'aruser'])]
-        else:
-            aruser = None
-        arvalid = ports['_'.join([name, 'arvalid'])]
-        arready = ports['_'.join([name, 'arready'])]
-
-        if self.raddrs[index].arid is not None:
-            self.raddrs[index].arid.connect(arid if arid is not None else 0)
-        self.raddrs[index].araddr.connect(araddr)
-        self.raddrs[index].arlen.connect(arlen if arlen is not None else 0)
-        self.raddrs[index].arsize.connect(arsize if arsize is not None else
-                                          int(math.log(self.datawidth // 8)))
-        self.raddrs[index].arburst.connect(arburst if arburst is not None else BURST_INCR)
-        self.raddrs[index].arlock.connect(arlock if arlock is not None else 0)
-        self.raddrs[index].arcache.connect(arcache)
-        self.raddrs[index].arprot.connect(arprot)
-        self.raddrs[index].arqos.connect(arqos if arqos is not None else 0)
-        if self.raddrs[index].aruser is not None:
-            self.raddrs[index].aruser.connect(aruser if aruser is not None else 0)
-        self.raddrs[index].arvalid.connect(arvalid)
-        arready.connect(self.raddrs[index].arready)
-
-        if '_'.join([name, 'rid']) in ports:
-            rid = ports['_'.join([name, 'rid'])]
-        else:
-            rid = None
-        rdata = ports['_'.join([name, 'rdata'])]
-        rresp = ports['_'.join([name, 'rresp'])]
-        rlast = ports['_'.join([name, 'rlast'])]
-        if '_'.join([name, 'ruser']) in ports:
-            ruser = ports['_'.join([name, 'ruser'])]
-        else:
-            ruser = None
-        rvalid = ports['_'.join([name, 'rvalid'])]
-        rready = ports['_'.join([name, 'rready'])]
-
-        if rid is not None:
-            rid.connect(self.rdatas[index].rid if self.rdatas[index].rid is not None else 0)
-        rdata.connect(self.rdatas[index].rdata)
-        rresp.connect(self.rdatas[index].rresp)
-        if rlast is not None:
-            rlast.connect(self.rdatas[index].rlast)
-        if ruser is not None:
-            ruser.connect(self.rdatas[index].ruser if self.rdatas[index].ruser is not None else 0)
-        rvalid.connect(self.rdatas[index].rvalid)
-        self.rdatas[index].rready.connect(rready)
+        self.waddrs[index].connect(ports, name)
+        self.wdatas[index].connect(ports, name)
+        self.wresps[index].connect(ports, name)
+        self.raddrs[index].connect(ports, name)
+        self.rdatas[index].connect(ports, name)
 
 
 class AxiSerialMemoryModel(AxiSlave):
@@ -3759,19 +3791,13 @@ class AxiSerialMemoryModel(AxiSlave):
         self.wdata = AxiSlaveWriteData(m, name, datawidth, addrwidth,
                                        wdata_id_width, wdata_user_width, itype, otype)
         self.wresp = AxiSlaveWriteResponse(m, name, datawidth, addrwidth,
-                                           wresp_id_width, wresp_user_width, itype, otype)
+                                           wresp_id_width, wresp_user_width, wresp_user_mode,
+                                           itype, otype)
         self.raddr = AxiSlaveReadAddress(m, name, datawidth, addrwidth,
                                          raddr_id_width, raddr_user_width, itype, otype)
         self.rdata = AxiSlaveReadData(m, name, datawidth, addrwidth,
-                                      rdata_id_width, rdata_user_width, itype, otype)
-
-        # default values
-        self.wresp.bresp.assign(0)
-        if self.wresp.buser is not None:
-            self.wresp.buser.assign(wresp_user_mode)
-        self.rdata.rresp.assign(0)
-        if self.rdata.ruser is not None:
-            self.rdata.ruser.assign(rdata_user_mode)
+                                      rdata_id_width, rdata_user_width, rdata_user_mode,
+                                      itype, otype)
 
         self.fsm = FSM(self.m, '_'.join(['', self.name, 'fsm']), clk, rst)
         self.seq = self.fsm.seq
@@ -4135,32 +4161,23 @@ class AxiSerialMultiportMemoryModel(AxiSerialMemoryModel):
         itype = util.t_Reg
         otype = util.t_Wire
 
-        self.waddrs = [AxiSlaveWriteAddress(m, name + '_%d' % i, datawidth, addrwidth,
+        self.waddrs = [AxiSlaveWriteAddress(m, name + '_%d' % i, clk, rst, datawidth, addrwidth,
                                             waddr_id_width, waddr_user_width, itype, otype)
                        for i in range(numports)]
-        self.wdatas = [AxiSlaveWriteData(m, name + '_%d' % i, datawidth, addrwidth,
+        self.wdatas = [AxiSlaveWriteData(m, name + '_%d' % i, clk, rst, datawidth, addrwidth,
                                          wdata_id_width, wdata_user_width, itype, otype)
                        for i in range(numports)]
-        self.wresps = [AxiSlaveWriteResponse(m, name + '%d' % i, datawidth, addrwidth,
-                                             wresp_id_width, wresp_user_width, itype, otype)
+        self.wresps = [AxiSlaveWriteResponse(m, name + '_%d' % i, clk, rst, datawidth, addrwidth,
+                                             wresp_id_width, wresp_user_width, wresp_user_mode,
+                                             itype, otype)
                        for i in range(numports)]
-        self.raddrs = [AxiSlaveReadAddress(m, name + '_%d' % i, datawidth, addrwidth,
+        self.raddrs = [AxiSlaveReadAddress(m, name + '_%d' % i, clk, rst, datawidth, addrwidth,
                                            raddr_id_width, raddr_user_width, itype, otype)
                        for i in range(numports)]
-        self.rdatas = [AxiSlaveReadData(m, name + '_%d' % i, datawidth, addrwidth,
-                                        rdata_id_width, rdata_user_width, itype, otype)
+        self.rdatas = [AxiSlaveReadData(m, name + '_%d' % i, clk, rst, datawidth, addrwidth,
+                                        rdata_id_width, rdata_user_width, rdata_user_mode,
+                                        itype, otype)
                        for i in range(numports)]
-
-        # default values
-        for wresp in self.wresps:
-            wresp.bresp.assign(0)
-            if wresp.buser is not None:
-                wresp.buser.assign(wresp_user_mode)
-
-        for rdata in self.rdatas:
-            rdata.rresp.assign(0)
-            if rdata.ruser is not None:
-                rdata.ruser.assign(rdata_user_mode)
 
         self.seq = Seq(self.m, '_'.join(['', self.name, 'seq']), clk, rst)
         self.fsms = [FSM(self.m, '_'.join(['', self.name, 'fsm_%d' % i]), clk, rst)
@@ -4396,138 +4413,11 @@ class AxiSerialMultiportMemoryModel(AxiSerialMemoryModel):
 
         ports = defaultdict(lambda: None, ports)
 
-        if '_'.join([name, 'awid']) in ports:
-            awid = ports['_'.join([name, 'awid'])]
-        else:
-            awid = None
-        awaddr = ports['_'.join([name, 'awaddr'])]
-        awlen = ports['_'.join([name, 'awlen'])]
-        awsize = ports['_'.join([name, 'awsize'])]
-        awburst = ports['_'.join([name, 'awburst'])]
-        awlock = ports['_'.join([name, 'awlock'])]
-        awcache = ports['_'.join([name, 'awcache'])]
-        awprot = ports['_'.join([name, 'awprot'])]
-        awqos = ports['_'.join([name, 'awqos'])]
-        if '_'.join([name, 'awuser']) in ports:
-            awuser = ports['_'.join([name, 'awuser'])]
-        else:
-            awuser = None
-        awvalid = ports['_'.join([name, 'awvalid'])]
-        awready = ports['_'.join([name, 'awready'])]
-
-        if self.waddrs[index].awid is not None:
-            self.waddrs[index].awid.connect(awid if awid is not None else 0)
-        self.waddrs[index].awaddr.connect(awaddr)
-        self.waddrs[index].awlen.connect(awlen if awlen is not None else 0)
-        self.waddrs[index].awsize.connect(awsize if awsize is not None else
-                                          int(math.log(self.datawidth // 8)))
-        self.waddrs[index].awburst.connect(awburst if awburst is not None else BURST_INCR)
-        self.waddrs[index].awlock.connect(awlock if awlock is not None else 0)
-        self.waddrs[index].awcache.connect(awcache)
-        self.waddrs[index].awprot.connect(awprot)
-        self.waddrs[index].awqos.connect(awqos if awqos is not None else 0)
-        if self.waddrs[index].awuser is not None:
-            self.waddrs[index].awuser.connect(awuser if awuser is not None else 0)
-        self.waddrs[index].awvalid.connect(awvalid)
-        awready.connect(self.waddrs[index].awready)
-
-        wdata = ports['_'.join([name, 'wdata'])]
-        wstrb = ports['_'.join([name, 'wstrb'])]
-        wlast = ports['_'.join([name, 'wlast'])]
-        if '_'.join([name, 'wuser']) in ports:
-            wuser = ports['_'.join([name, 'wuser'])]
-        else:
-            wuser = None
-        wvalid = ports['_'.join([name, 'wvalid'])]
-        wready = ports['_'.join([name, 'wready'])]
-
-        self.wdatas[index].wdata.connect(wdata)
-        self.wdatas[index].wstrb.connect(wstrb)
-        self.wdatas[index].wlast.connect(wlast if wlast is not None else 1)
-        if self.wdatas[index].wuser is not None:
-            self.wdatas[index].wuser.connect(wuser if wuser is not None else 0)
-        self.wdatas[index].wvalid.connect(wvalid)
-        wready.connect(self.wdatas[index].wready)
-
-        if '_'.join([name, 'bid']) in ports:
-            bid = ports['_'.join([name, 'bid'])]
-        else:
-            bid = None
-        bresp = ports['_'.join([name, 'bresp'])]
-        if '_'.join([name, 'buser']) in ports:
-            buser = ports['_'.join([name, 'buser'])]
-        else:
-            buser = None
-        bvalid = ports['_'.join([name, 'bvalid'])]
-        bready = ports['_'.join([name, 'bready'])]
-
-        if bid is not None:
-            bid.connect(self.wresps[index].bid if self.wresps[index].bid is not None else 0)
-        bresp.connect(self.wresps[index].bresp)
-        if buser is not None:
-            buser.connect(self.wresps[index].buser if self.wresps[index].buser is not None else 0)
-        bvalid.connect(self.wresps[index].bvalid)
-        self.wresps[index].bready.connect(bready)
-
-        if '_'.join([name, 'arid']) in ports:
-            arid = ports['_'.join([name, 'arid'])]
-        else:
-            arid = None
-        araddr = ports['_'.join([name, 'araddr'])]
-        arlen = ports['_'.join([name, 'arlen'])]
-        arsize = ports['_'.join([name, 'arsize'])]
-        arburst = ports['_'.join([name, 'arburst'])]
-        arlock = ports['_'.join([name, 'arlock'])]
-        arcache = ports['_'.join([name, 'arcache'])]
-        arprot = ports['_'.join([name, 'arprot'])]
-        arqos = ports['_'.join([name, 'arqos'])]
-        if '_'.join([name, 'aruser']) in ports:
-            aruser = ports['_'.join([name, 'aruser'])]
-        else:
-            aruser = None
-        arvalid = ports['_'.join([name, 'arvalid'])]
-        arready = ports['_'.join([name, 'arready'])]
-
-        if self.raddrs[index].arid is not None:
-            self.raddrs[index].arid.connect(arid if arid is not None else 0)
-        self.raddrs[index].araddr.connect(araddr)
-        self.raddrs[index].arlen.connect(arlen if arlen is not None else 0)
-        self.raddrs[index].arsize.connect(arsize if arsize is not None else
-                                          int(math.log(self.datawidth // 8)))
-        self.raddrs[index].arburst.connect(arburst if arburst is not None else BURST_INCR)
-        self.raddrs[index].arlock.connect(arlock if arlock is not None else 0)
-        self.raddrs[index].arcache.connect(arcache)
-        self.raddrs[index].arprot.connect(arprot)
-        self.raddrs[index].arqos.connect(arqos if arqos is not None else 0)
-        if self.raddrs[index].aruser is not None:
-            self.raddrs[index].aruser.connect(aruser if aruser is not None else 0)
-        self.raddrs[index].arvalid.connect(arvalid)
-        arready.connect(self.raddrs[index].arready)
-
-        if '_'.join([name, 'rid']) in ports:
-            rid = ports['_'.join([name, 'rid'])]
-        else:
-            rid = None
-        rdata = ports['_'.join([name, 'rdata'])]
-        rresp = ports['_'.join([name, 'rresp'])]
-        rlast = ports['_'.join([name, 'rlast'])]
-        if '_'.join([name, 'ruser']) in ports:
-            ruser = ports['_'.join([name, 'ruser'])]
-        else:
-            ruser = None
-        rvalid = ports['_'.join([name, 'rvalid'])]
-        rready = ports['_'.join([name, 'rready'])]
-
-        if rid is not None:
-            rid.connect(self.rdatas[index].rid if self.rdatas[index].rid is not None else 0)
-        rdata.connect(self.rdatas[index].rdata)
-        rresp.connect(self.rdatas[index].rresp)
-        if rlast is not None:
-            rlast.connect(self.rdatas[index].rlast)
-        if ruser is not None:
-            ruser.connect(self.rdatas[index].ruser if self.rdatas[index].ruser is not None else 0)
-        rvalid.connect(self.rdatas[index].rvalid)
-        self.rdatas[index].rready.connect(rready)
+        self.waddrs[index].connect(ports, name)
+        self.wdatas[index].connect(ports, name)
+        self.wresps[index].connect(ports, name)
+        self.raddrs[index].connect(ports, name)
+        self.rdatas[index].connect(ports, name)
 
 
 def make_memory_image(filename, length, pattern='inc', dtype=None,
