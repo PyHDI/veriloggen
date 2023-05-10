@@ -486,7 +486,11 @@ class AxiMasterWriteData(AxiWriteData):
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
                  id_width=0, user_width=0,
                  user_mode=xUSER_DEFAULT,
+                 sb_depth=1,
                  itype=None, otype=None):
+
+        if sb_depth < 1:
+            raise ValueError('sb_depth must be equal to or greater than 1.')
 
         AxiWriteData.__init__(self, m, name, datawidth, addrwidth,
                               id_width, user_width, itype, otype)
@@ -499,42 +503,53 @@ class AxiMasterWriteData(AxiWriteData):
         if self.wuser is not None:
             self.wuser.assign(user_mode)
 
-        # user-side signals before skidbuffer
-        wdata = m.TmpRegLike(self.wdata, initval=0,
-                             prefix='_'.join(['', name, 'wdata', 'sb']))
-        wstrb = m.TmpRegLike(self.wstrb, initval=0,
-                             prefix='_'.join(['', name, 'wstrb', 'sb']))
-        wlast = m.TmpRegLike(self.wlast, initval=0,
-                             prefix='_'.join(['', name, 'wlast', 'sb']))
-        wvalid = m.TmpRegLike(self.wvalid, initval=0,
-                              prefix='_'.join(['', name, 'wvalid', 'sb']))
-        wready = m.TmpWireLike(self.wready, prefix='_'.join(['', name, 'wready', 'sb']))
-
-        # skidbuffer
-        sb = SkidBuffer(m, clk, rst,
-                        wvalid, self.wready, *[wlast, wstrb, wdata],
-                        prefix='_'.join(['', 'sb', name, 'writedata']))
-        wready.assign(sb.ready)
-
-        # AXI-side signals after skidbuffer
-        self.wdata.assign(sb[2])
-        self.wstrb.assign(sb[1])
-        self.wlast.assign(sb[0])
-        self.wvalid.assign(sb.valid)
-
-        # save AXI-side references
+        # save AXI-side references for skid buffer
         self.ext_wdata = self.wdata
         self.ext_wstrb = self.wstrb
         self.ext_wlast = self.wlast
         self.ext_wvalid = self.wvalid
         self.ext_wready = self.wready
 
-        # update references for user-side
-        self.wdata = wdata
-        self.wstrb = wstrb
-        self.wlast = wlast
-        self.wvalid = wvalid
-        self.wready = wready
+        # multi-stage skid buffer
+        for i in range(sb_depth):
+            # user-side signals before skidbuffer
+            method = m.WireLike if i < sb_depth - 1 else m.RegLike
+            kwargs = {} if i < sb_depth - 1 else {'initval': 0}
+            index = str(sb_depth - i - 1)
+
+            wdata = method(self.wdata,
+                           name='_'.join(['', name, 'wdata', 'sb', index]),
+                           **kwargs)
+            wstrb = method(self.wstrb,
+                           name='_'.join(['', name, 'wstrb', 'sb', index]),
+                           **kwargs)
+            wlast = method(self.wlast,
+                           name='_'.join(['', name, 'wlast', 'sb', index]),
+                           **kwargs)
+            wvalid = method(self.wvalid,
+                            name='_'.join(['', name, 'wvalid', 'sb', index]),
+                            **kwargs)
+            wready = m.WireLike(self.wready,
+                                name='_'.join(['', name, 'wready', 'sb', index]))
+
+            # skidbuffer
+            sb = SkidBuffer(m, clk, rst,
+                            wvalid, self.wready, *[wlast, wstrb, wdata],
+                            prefix='_'.join(['', 'sb', name, 'writedata']))
+            wready.assign(sb.ready)
+
+            # AXI-side signals after skidbuffer
+            self.wdata.assign(sb[2])
+            self.wstrb.assign(sb[1])
+            self.wlast.assign(sb[0])
+            self.wvalid.assign(sb.valid)
+
+            # update references for user-side
+            self.wdata = wdata
+            self.wstrb = wstrb
+            self.wlast = wlast
+            self.wvalid = wvalid
+            self.wready = wready
 
     def disable_write(self):
         ports = [self.wdata(0),
@@ -739,7 +754,11 @@ class AxiMasterReadData(AxiReadData):
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
                  id_width=0, user_width=0,
+                 sb_depth=1,
                  itype=None, otype=None):
+
+        if sb_depth < 1:
+            raise ValueError('sb_depth must be equal to or greater than 1.')
 
         AxiReadData.__init__(self, m, name, datawidth, addrwidth,
                              id_width, user_width, itype, otype)
@@ -747,34 +766,42 @@ class AxiMasterReadData(AxiReadData):
         self.clk = clk
         self.rst = rst
 
-        # user-side signals before skidbuffer
-        rdata = m.TmpWireLike(self.rdata, prefix='_'.join(['', name, 'rdata', 'sb']))
-        rlast = m.TmpWireLike(self.rlast, prefix='_'.join(['', name, 'rlast', 'sb']))
-        rvalid = m.TmpWireLike(self.rvalid, prefix='_'.join(['', name, 'rvalid', 'sb']))
-        rready = m.TmpWireLike(self.rready, prefix='_'.join(['', name, 'rready', 'sb']))
-
-        # skidbuffer
-        sb = SkidBuffer(m, clk, rst,
-                        self.rvalid, rready, *[self.rlast, self.rdata],
-                        prefix='_'.join(['', 'sb', name, 'readdata']))
-        rdata.assign(sb[1])
-        rlast.assign(sb[0])
-        rvalid.assign(sb.valid)
-
-        # AXI-side signals after skidbuffer
-        self.rready.assign(sb.ready)
-
-        # save AXI-side references
+        # save AXI-side references for skid buffer
         self.ext_rdata = self.rdata
         self.ext_rlast = self.rlast
         self.ext_rvalid = self.rvalid
         self.ext_rready = self.rready
 
-        # update references for user-side
-        self.rdata = rdata
-        self.rlast = rlast
-        self.rvalid = rvalid
-        self.rready = rready
+        # multi-stage skid buffer
+        for i in range(sb_depth):
+            # user-side signals before skidbuffer
+            index = str(sb_depth - i - 1)
+
+            rdata = m.WireLike(self.rdata,
+                               name='_'.join(['', name, 'rdata', 'sb', index]))
+            rlast = m.WireLike(self.rlast,
+                               name='_'.join(['', name, 'rlast', 'sb', index]))
+            rvalid = m.WireLike(self.rvalid,
+                                name='_'.join(['', name, 'rvalid', 'sb', index]))
+            rready = m.WireLike(self.rready,
+                                name='_'.join(['', name, 'rready', 'sb', index]))
+
+            # skidbuffer
+            sb = SkidBuffer(m, clk, rst,
+                            self.rvalid, rready, *[self.rlast, self.rdata],
+                            prefix='_'.join(['', 'sb', name, 'readdata']))
+            rdata.assign(sb[1])
+            rlast.assign(sb[0])
+            rvalid.assign(sb.valid)
+
+            # AXI-side signals after skidbuffer
+            self.rready.assign(sb.ready)
+
+            # update references for user-side
+            self.rdata = rdata
+            self.rlast = rlast
+            self.rvalid = rvalid
+            self.rready = rready
 
     def disable_read(self):
         self.rready.assign(0)
@@ -891,7 +918,11 @@ class AxiLiteMasterWriteData(AxiLiteWriteData):
     _O = util.t_Output
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
+                 sb_depth=1,
                  itype=None, otype=None):
+
+        if sb_depth < 1:
+            raise ValueError('sb_depth must be equal to or greater than 1.')
 
         AxiLiteWriteData.__init__(self, m, name, datawidth, addrwidth,
                                   itype, otype)
@@ -900,37 +931,47 @@ class AxiLiteMasterWriteData(AxiLiteWriteData):
         self.rst = rst
         self.seq = Seq(m, name + '_wdata', clk, rst)
 
-        # user-side signals before skidbuffer
-        wdata = m.TmpRegLike(self.wdata, initval=0,
-                             prefix='_'.join(['', name, 'wdata', 'sb']))
-        wstrb = m.TmpRegLike(self.wstrb, initval=0,
-                             prefix='_'.join(['', name, 'wstrb', 'sb']))
-        wvalid = m.TmpRegLike(self.wvalid, initval=0,
-                              prefix='_'.join(['', name, 'wvalid', 'sb']))
-        wready = m.TmpWireLike(self.wready, prefix='_'.join(['', name, 'wready', 'sb']))
-
-        # skidbuffer
-        sb = SkidBuffer(m, clk, rst,
-                        wvalid, self.wready, *[wstrb, wdata],
-                        prefix='_'.join(['', 'sb', name, 'writedata']))
-        wready.assign(sb.ready)
-
-        # AXI-side signals after skidbuffer
-        self.wdata.assign(sb[1])
-        self.wstrb.assign(sb[0])
-        self.wvalid.assign(sb.valid)
-
-        # save AXI-side references
+        # save AXI-side references for skid buffer
         self.ext_wdata = self.wdata
         self.ext_wstrb = self.wstrb
         self.ext_wvalid = self.wvalid
         self.ext_wready = self.wready
 
-        # update references for user-side
-        self.wdata = wdata
-        self.wstrb = wstrb
-        self.wvalid = wvalid
-        self.wready = wready
+        # multi-stage skid buffer
+        for i in range(sb_depth):
+            # user-side signals before skidbuffer
+            method = m.WireLike if i < sb_depth - 1 else m.RegLike
+            kwargs = {} if i < sb_depth - 1 else {'initval': 0}
+            index = str(sb_depth - i - 1)
+
+            wdata = method(self.wdata,
+                           name='_'.join(['', name, 'wdata', 'sb', index]),
+                           **kwargs)
+            wstrb = method(self.wstrb,
+                           name='_'.join(['', name, 'wstrb', 'sb', index]),
+                           **kwargs)
+            wvalid = method(self.wvalid,
+                            name='_'.join(['', name, 'wvalid', 'sb', index]),
+                            **kwargs)
+            wready = m.WireLike(self.wready,
+                                name='_'.join(['', name, 'wready', 'sb', index]))
+
+            # skidbuffer
+            sb = SkidBuffer(m, clk, rst,
+                            wvalid, self.wready, *[wstrb, wdata],
+                            prefix='_'.join(['', 'sb', name, 'writedata']))
+            wready.assign(sb.ready)
+
+            # AXI-side signals after skidbuffer
+            self.wdata.assign(sb[1])
+            self.wstrb.assign(sb[0])
+            self.wvalid.assign(sb.valid)
+
+            # update references for user-side
+            self.wdata = wdata
+            self.wstrb = wstrb
+            self.wvalid = wvalid
+            self.wready = wready
 
     def disable_write(self):
         ports = [self.wdata(0),
@@ -1073,7 +1114,11 @@ class AxiLiteMasterReadAddress(AxiLiteReadAddress):
 class AxiLiteMasterReadData(AxiLiteReadData):
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
+                 sb_depth=1,
                  itype=None, otype=None):
+
+        if sb_depth < 1:
+            raise ValueError('sb_depth must be equal to or greater than 1.')
 
         AxiLiteReadData.__init__(self, m, name, datawidth, addrwidth,
                                  itype, otype)
@@ -1081,30 +1126,37 @@ class AxiLiteMasterReadData(AxiLiteReadData):
         self.clk = clk
         self.rst = rst
 
-        # user-side signals before skidbuffer
-        rdata = m.TmpWireLike(self.rdata, prefix='_'.join(['', name, 'rdata', 'sb']))
-        rvalid = m.TmpWireLike(self.rvalid, prefix='_'.join(['', name, 'rvalid', 'sb']))
-        rready = m.TmpWireLike(self.rready, prefix='_'.join(['', name, 'rready', 'sb']))
-
-        # skidbuffer
-        sb = SkidBuffer(m, clk, rst,
-                        self.rvalid, rready, *[self.rdata],
-                        prefix='_'.join(['', 'sb', name, 'readdata']))
-        rdata.assign(sb[0])
-        rvalid.assign(sb.valid)
-
-        # AXI-side signals after skidbuffer
-        self.rready.assign(sb.ready)
-
-        # save AXI-side references
+        # save AXI-side references for skid buffer
         self.ext_rdata = self.rdata
         self.ext_rvalid = self.rvalid
         self.ext_rready = self.rready
 
-        # update references for user-side
-        self.rdata = rdata
-        self.rvalid = rvalid
-        self.rready = rready
+        # multi-stage skid buffer
+        for i in range(sb_depth):
+            # user-side signals before skidbuffer
+            index = str(sb_depth - i - 1)
+
+            rdata = m.WireLike(self.rdata,
+                               name='_'.join(['', name, 'rdata', 'sb', index]))
+            rvalid = m.WireLike(self.rvalid,
+                                name='_'.join(['', name, 'rvalid', 'sb', index]))
+            rready = m.WireLike(self.rready,
+                                name='_'.join(['', name, 'rready', 'sb', index]))
+
+            # skidbuffer
+            sb = SkidBuffer(m, clk, rst,
+                            self.rvalid, rready, *[self.rdata],
+                            prefix='_'.join(['', 'sb', name, 'readdata']))
+            rdata.assign(sb[0])
+            rvalid.assign(sb.valid)
+
+            # AXI-side signals after skidbuffer
+            self.rready.assign(sb.ready)
+
+            # update references for user-side
+            self.rdata = rdata
+            self.rvalid = rvalid
+            self.rready = rready
 
     def disable_read(self):
         self.rready.assign(0)
@@ -1179,7 +1231,7 @@ class AxiSlaveWriteAddress(AxiWriteAddress):
         self.awaddr.connect(awaddr)
         self.awlen.connect(awlen if awlen is not None else 0)
         self.awsize.connect(awsize if awsize is not None else
-                                  int(math.log(self.datawidth // 8)))
+                            int(math.log(self.datawidth // 8)))
         self.awburst.connect(awburst if awburst is not None else BURST_INCR)
         self.awlock.connect(awlock if awlock is not None else 0)
         self.awcache.connect(awcache)
@@ -1301,7 +1353,7 @@ class AxiSlaveReadAddress(AxiReadAddress):
         self.rst = rst
 
     def disable_read(self):
-       self.arready.assign(0)
+        self.arready.assign(0)
 
     def connect(self, ports, name):
         if '_'.join([name, 'arid']) in ports:
@@ -1328,7 +1380,7 @@ class AxiSlaveReadAddress(AxiReadAddress):
         self.araddr.connect(araddr)
         self.arlen.connect(arlen if arlen is not None else 0)
         self.arsize.connect(arsize if arsize is not None else
-                                  int(math.log(self.datawidth // 8)))
+                            int(math.log(self.datawidth // 8)))
         self.arburst.connect(arburst if arburst is not None else BURST_INCR)
         self.arlock.connect(arlock if arlock is not None else 0)
         self.arcache.connect(arcache)
@@ -1954,7 +2006,7 @@ class AxiMaster(object):
                  waddr_prot_mode=AxPROT_NONCOHERENT, raddr_prot_mode=AxPROT_NONCOHERENT,
                  waddr_user_mode=AxUSER_NONCOHERENT, wdata_user_mode=xUSER_DEFAULT,
                  raddr_user_mode=AxUSER_NONCOHERENT,
-                 noio=False, outstanding_wcount_width=3):
+                 noio=False, outstanding_wcount_width=3, sb_depth=1):
 
         self.m = m
         self.name = name
@@ -1984,7 +2036,7 @@ class AxiMaster(object):
                                            itype, otype)
         self.wdata = AxiMasterWriteData(m, name, clk, rst, datawidth, addrwidth,
                                         wdata_id_width, wdata_user_width,
-                                        wdata_user_mode,
+                                        wdata_user_mode, sb_depth,
                                         itype, wdata_otype)
         self.wresp = AxiMasterWriteResponse(m, name, clk, rst, datawidth, addrwidth,
                                             wresp_id_width, wresp_user_width, itype, otype)
@@ -1994,7 +2046,9 @@ class AxiMaster(object):
                                           raddr_prot_mode, raddr_user_mode,
                                           itype, otype)
         self.rdata = AxiMasterReadData(m, name, clk, rst, datawidth, addrwidth,
-                                       rdata_id_width, rdata_user_width, itype, rdata_otype)
+                                       rdata_id_width, rdata_user_width,
+                                       sb_depth,
+                                       itype, rdata_otype)
 
         self.seq = Seq(m, name, clk, rst)
 
@@ -2135,7 +2189,7 @@ class AxiLiteMaster(AxiMaster):
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
                  waddr_cache_mode=AxCACHE_NONCOHERENT, raddr_cache_mode=AxCACHE_NONCOHERENT,
                  waddr_prot_mode=AxPROT_NONCOHERENT, raddr_prot_mode=AxPROT_NONCOHERENT,
-                 noio=False, outstanding_wcount_width=3):
+                 noio=False, outstanding_wcount_width=3, sb_depth=1):
 
         self.m = m
         self.name = name
@@ -2162,6 +2216,7 @@ class AxiLiteMaster(AxiMaster):
                                                waddr_cache_mode, waddr_prot_mode,
                                                itype, otype)
         self.wdata = AxiLiteMasterWriteData(m, name, clk, rst, datawidth, addrwidth,
+                                            sb_depth,
                                             itype, wdata_otype)
         self.wresp = AxiLiteMasterWriteResponse(m, name, clk, rst, datawidth, addrwidth,
                                                 itype, otype)
@@ -2169,6 +2224,7 @@ class AxiLiteMaster(AxiMaster):
                                               raddr_cache_mode, raddr_prot_mode,
                                               itype, otype)
         self.rdata = AxiLiteMasterReadData(m, name, clk, rst, datawidth, addrwidth,
+                                           sb_depth,
                                            itype, rdata_otype)
 
         self.seq = Seq(m, name, clk, rst)

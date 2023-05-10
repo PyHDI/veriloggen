@@ -43,10 +43,12 @@ class AXIM(axi.AxiMaster, _MutexFunction):
                  waddr_prot_mode=axi.AxPROT_NONCOHERENT, raddr_prot_mode=axi.AxPROT_NONCOHERENT,
                  waddr_user_mode=axi.AxUSER_NONCOHERENT, wdata_user_mode=axi.xUSER_DEFAULT,
                  raddr_user_mode=axi.AxUSER_NONCOHERENT,
-                 noio=False,
+                 noio=False, sb_depth=1,
                  use_global_base_addr=False,
-                 op_sel_width=8, req_fifo_addrwidth=3, fsm_as_module=False):
+                 op_sel_width=8, req_fifo_addrwidth=3,
+                 fsm_as_module=False):
 
+        outstanding_wcount_width = req_fifo_addrwidth
         axi.AxiMaster.__init__(self, m, name, clk, rst, datawidth, addrwidth,
                                waddr_id_width, wdata_id_width, wresp_id_width,
                                raddr_id_width, rdata_id_width,
@@ -57,7 +59,7 @@ class AXIM(axi.AxiMaster, _MutexFunction):
                                waddr_prot_mode, raddr_prot_mode,
                                waddr_user_mode, wdata_user_mode,
                                raddr_user_mode,
-                               noio, req_fifo_addrwidth)
+                               noio, outstanding_wcount_width, sb_depth)
 
         self.use_global_base_addr = use_global_base_addr
         self.op_sel_width = op_sel_width
@@ -1807,14 +1809,15 @@ class AXIMLite(axi.AxiLiteMaster, _MutexFunction):
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=32,
                  waddr_cache_mode=axi.AxCACHE_NONCOHERENT, raddr_cache_mode=axi.AxCACHE_NONCOHERENT,
                  waddr_prot_mode=axi.AxPROT_NONCOHERENT, raddr_prot_mode=axi.AxPROT_NONCOHERENT,
-                 noio=False,
+                 noio=False, sb_depth=1,
                  use_global_base_addr=False,
                  fsm_as_module=False):
 
+        outstanding_wcount_width = 3
         axi.AxiLiteMaster.__init__(self, m, name, clk, rst, datawidth, addrwidth,
                                    waddr_cache_mode, raddr_cache_mode,
                                    waddr_prot_mode, raddr_prot_mode,
-                                   noio)
+                                   noio, outstanding_wcount_width, sb_depth)
 
         self.use_global_base_addr = use_global_base_addr
         self.fsm_as_module = fsm_as_module
