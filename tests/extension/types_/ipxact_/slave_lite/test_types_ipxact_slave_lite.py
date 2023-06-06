@@ -36,135 +36,193 @@ module test;
   wire [3-1:0] _axi_awprot;
   reg _axi_awvalid;
   wire _axi_awready;
-  reg [32-1:0] _axi_wdata;
-  reg [4-1:0] _axi_wstrb;
-  reg _axi_wvalid;
+  assign _axi_awcache = 3;
+  assign _axi_awprot = 0;
+  wire [32-1:0] _axi_wdata;
+  wire [4-1:0] _axi_wstrb;
+  wire _axi_wvalid;
   wire _axi_wready;
+  reg [32-1:0] __axi_wdata_sb_0;
+  reg [4-1:0] __axi_wstrb_sb_0;
+  reg __axi_wvalid_sb_0;
+  wire __axi_wready_sb_0;
+  wire [4-1:0] _sb__axi_writedata_s_value_0;
+  assign _sb__axi_writedata_s_value_0 = __axi_wstrb_sb_0;
+  wire [32-1:0] _sb__axi_writedata_s_value_1;
+  assign _sb__axi_writedata_s_value_1 = __axi_wdata_sb_0;
+  wire [36-1:0] _sb__axi_writedata_s_data_2;
+  assign _sb__axi_writedata_s_data_2 = { _sb__axi_writedata_s_value_0, _sb__axi_writedata_s_value_1 };
+  wire _sb__axi_writedata_s_valid_3;
+  assign _sb__axi_writedata_s_valid_3 = __axi_wvalid_sb_0;
+  wire _sb__axi_writedata_m_ready_4;
+  assign _sb__axi_writedata_m_ready_4 = _axi_wready;
+  reg [36-1:0] _sb__axi_writedata_data_5;
+  reg _sb__axi_writedata_valid_6;
+  wire _sb__axi_writedata_ready_7;
+  reg [36-1:0] _sb__axi_writedata_tmp_data_8;
+  reg _sb__axi_writedata_tmp_valid_9;
+  wire [36-1:0] _sb__axi_writedata_next_data_10;
+  wire _sb__axi_writedata_next_valid_11;
+  assign _sb__axi_writedata_ready_7 = !_sb__axi_writedata_tmp_valid_9;
+  assign _sb__axi_writedata_next_data_10 = (_sb__axi_writedata_tmp_valid_9)? _sb__axi_writedata_tmp_data_8 : _sb__axi_writedata_s_data_2;
+  assign _sb__axi_writedata_next_valid_11 = _sb__axi_writedata_tmp_valid_9 || _sb__axi_writedata_s_valid_3;
+  wire [4-1:0] _sb__axi_writedata_m_value_12;
+  assign _sb__axi_writedata_m_value_12 = _sb__axi_writedata_data_5[35:32];
+  wire [32-1:0] _sb__axi_writedata_m_value_13;
+  assign _sb__axi_writedata_m_value_13 = _sb__axi_writedata_data_5[31:0];
+  assign __axi_wready_sb_0 = _sb__axi_writedata_ready_7;
+  assign _axi_wdata = _sb__axi_writedata_m_value_13;
+  assign _axi_wstrb = _sb__axi_writedata_m_value_12;
+  assign _axi_wvalid = _sb__axi_writedata_valid_6;
   wire [2-1:0] _axi_bresp;
   wire _axi_bvalid;
   wire _axi_bready;
+  assign _axi_bready = 1;
   reg [32-1:0] _axi_araddr;
   wire [4-1:0] _axi_arcache;
   wire [3-1:0] _axi_arprot;
   reg _axi_arvalid;
   wire _axi_arready;
+  assign _axi_arcache = 3;
+  assign _axi_arprot = 0;
   wire [32-1:0] _axi_rdata;
   wire [2-1:0] _axi_rresp;
   wire _axi_rvalid;
   wire _axi_rready;
-  assign _axi_awcache = 3;
-  assign _axi_awprot = 0;
-  assign _axi_bready = 1;
-  assign _axi_arcache = 3;
-  assign _axi_arprot = 0;
+  wire [32-1:0] __axi_rdata_sb_0;
+  wire __axi_rvalid_sb_0;
+  wire __axi_rready_sb_0;
+  wire [32-1:0] _sb__axi_readdata_s_value_14;
+  assign _sb__axi_readdata_s_value_14 = _axi_rdata;
+  wire [32-1:0] _sb__axi_readdata_s_data_15;
+  assign _sb__axi_readdata_s_data_15 = { _sb__axi_readdata_s_value_14 };
+  wire _sb__axi_readdata_s_valid_16;
+  assign _sb__axi_readdata_s_valid_16 = _axi_rvalid;
+  wire _sb__axi_readdata_m_ready_17;
+  assign _sb__axi_readdata_m_ready_17 = __axi_rready_sb_0;
+  reg [32-1:0] _sb__axi_readdata_data_18;
+  reg _sb__axi_readdata_valid_19;
+  wire _sb__axi_readdata_ready_20;
+  reg [32-1:0] _sb__axi_readdata_tmp_data_21;
+  reg _sb__axi_readdata_tmp_valid_22;
+  wire [32-1:0] _sb__axi_readdata_next_data_23;
+  wire _sb__axi_readdata_next_valid_24;
+  assign _sb__axi_readdata_ready_20 = !_sb__axi_readdata_tmp_valid_22;
+  assign _sb__axi_readdata_next_data_23 = (_sb__axi_readdata_tmp_valid_22)? _sb__axi_readdata_tmp_data_21 : _sb__axi_readdata_s_data_15;
+  assign _sb__axi_readdata_next_valid_24 = _sb__axi_readdata_tmp_valid_22 || _sb__axi_readdata_s_valid_16;
+  wire [32-1:0] _sb__axi_readdata_m_value_25;
+  assign _sb__axi_readdata_m_value_25 = _sb__axi_readdata_data_18[31:0];
+  assign __axi_rdata_sb_0 = _sb__axi_readdata_m_value_25;
+  assign __axi_rvalid_sb_0 = _sb__axi_readdata_valid_19;
+  assign _axi_rready = _sb__axi_readdata_ready_20;
   reg [3-1:0] __axi_outstanding_wcount;
   wire __axi_has_outstanding_write;
   assign __axi_has_outstanding_write = (__axi_outstanding_wcount > 0) || _axi_awvalid;
-  wire [32-1:0] _tmp_0;
-  assign _tmp_0 = _axi_awaddr;
+  wire [32-1:0] _tmp_26;
+  assign _tmp_26 = _axi_awaddr;
 
   always @(*) begin
-    myaxi_awaddr = _tmp_0;
+    myaxi_awaddr = _tmp_26;
   end
 
-  wire [4-1:0] _tmp_1;
-  assign _tmp_1 = _axi_awcache;
+  wire [4-1:0] _tmp_27;
+  assign _tmp_27 = _axi_awcache;
 
   always @(*) begin
-    myaxi_awcache = _tmp_1;
+    myaxi_awcache = _tmp_27;
   end
 
-  wire [3-1:0] _tmp_2;
-  assign _tmp_2 = _axi_awprot;
+  wire [3-1:0] _tmp_28;
+  assign _tmp_28 = _axi_awprot;
 
   always @(*) begin
-    myaxi_awprot = _tmp_2;
+    myaxi_awprot = _tmp_28;
   end
 
-  wire _tmp_3;
-  assign _tmp_3 = _axi_awvalid;
+  wire _tmp_29;
+  assign _tmp_29 = _axi_awvalid;
 
   always @(*) begin
-    myaxi_awvalid = _tmp_3;
+    myaxi_awvalid = _tmp_29;
   end
 
   assign _axi_awready = myaxi_awready;
-  wire [32-1:0] _tmp_4;
-  assign _tmp_4 = _axi_wdata;
+  wire [32-1:0] _tmp_30;
+  assign _tmp_30 = _axi_wdata;
 
   always @(*) begin
-    myaxi_wdata = _tmp_4;
+    myaxi_wdata = _tmp_30;
   end
 
-  wire [4-1:0] _tmp_5;
-  assign _tmp_5 = _axi_wstrb;
+  wire [4-1:0] _tmp_31;
+  assign _tmp_31 = _axi_wstrb;
 
   always @(*) begin
-    myaxi_wstrb = _tmp_5;
+    myaxi_wstrb = _tmp_31;
   end
 
-  wire _tmp_6;
-  assign _tmp_6 = _axi_wvalid;
+  wire _tmp_32;
+  assign _tmp_32 = _axi_wvalid;
 
   always @(*) begin
-    myaxi_wvalid = _tmp_6;
+    myaxi_wvalid = _tmp_32;
   end
 
   assign _axi_wready = myaxi_wready;
   assign _axi_bresp = myaxi_bresp;
   assign _axi_bvalid = myaxi_bvalid;
-  wire _tmp_7;
-  assign _tmp_7 = _axi_bready;
+  wire _tmp_33;
+  assign _tmp_33 = _axi_bready;
 
   always @(*) begin
-    myaxi_bready = _tmp_7;
+    myaxi_bready = _tmp_33;
   end
 
-  wire [32-1:0] _tmp_8;
-  assign _tmp_8 = _axi_araddr;
+  wire [32-1:0] _tmp_34;
+  assign _tmp_34 = _axi_araddr;
 
   always @(*) begin
-    myaxi_araddr = _tmp_8;
+    myaxi_araddr = _tmp_34;
   end
 
-  wire [4-1:0] _tmp_9;
-  assign _tmp_9 = _axi_arcache;
+  wire [4-1:0] _tmp_35;
+  assign _tmp_35 = _axi_arcache;
 
   always @(*) begin
-    myaxi_arcache = _tmp_9;
+    myaxi_arcache = _tmp_35;
   end
 
-  wire [3-1:0] _tmp_10;
-  assign _tmp_10 = _axi_arprot;
+  wire [3-1:0] _tmp_36;
+  assign _tmp_36 = _axi_arprot;
 
   always @(*) begin
-    myaxi_arprot = _tmp_10;
+    myaxi_arprot = _tmp_36;
   end
 
-  wire _tmp_11;
-  assign _tmp_11 = _axi_arvalid;
+  wire _tmp_37;
+  assign _tmp_37 = _axi_arvalid;
 
   always @(*) begin
-    myaxi_arvalid = _tmp_11;
+    myaxi_arvalid = _tmp_37;
   end
 
   assign _axi_arready = myaxi_arready;
   assign _axi_rdata = myaxi_rdata;
   assign _axi_rresp = myaxi_rresp;
   assign _axi_rvalid = myaxi_rvalid;
-  wire _tmp_12;
-  assign _tmp_12 = _axi_rready;
+  wire _tmp_38;
+  assign _tmp_38 = _axi_rready;
 
   always @(*) begin
-    myaxi_rready = _tmp_12;
+    myaxi_rready = _tmp_38;
   end
 
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
-  reg __axi_cond_0_1;
+  reg __axi_raddr_cond_0_1;
   reg [32-1:0] sum;
-  reg __axi_cond_1_1;
-  assign _axi_rready = (fsm == 1) || (fsm == 3);
+  reg __axi_raddr_cond_1_1;
+  assign __axi_rready_sb_0 = (fsm == 1) || (fsm == 3);
 
   main
   uut
@@ -208,16 +266,24 @@ module test;
     RST = 0;
     _axi_awaddr = 0;
     _axi_awvalid = 0;
-    _axi_wdata = 0;
-    _axi_wstrb = 0;
-    _axi_wvalid = 0;
+    __axi_wdata_sb_0 = 0;
+    __axi_wstrb_sb_0 = 0;
+    __axi_wvalid_sb_0 = 0;
+    _sb__axi_writedata_data_5 = 0;
+    _sb__axi_writedata_valid_6 = 0;
+    _sb__axi_writedata_tmp_data_8 = 0;
+    _sb__axi_writedata_tmp_valid_9 = 0;
     _axi_araddr = 0;
     _axi_arvalid = 0;
+    _sb__axi_readdata_data_18 = 0;
+    _sb__axi_readdata_valid_19 = 0;
+    _sb__axi_readdata_tmp_data_21 = 0;
+    _sb__axi_readdata_tmp_valid_22 = 0;
     __axi_outstanding_wcount = 0;
     fsm = fsm_init;
-    __axi_cond_0_1 = 0;
+    __axi_raddr_cond_0_1 = 0;
     sum = 0;
-    __axi_cond_1_1 = 0;
+    __axi_raddr_cond_1_1 = 0;
     #100;
     RST = 1;
     #100;
@@ -229,39 +295,68 @@ module test;
 
   always @(posedge CLK) begin
     if(RST) begin
-      __axi_outstanding_wcount <= 0;
       _axi_awaddr <= 0;
       _axi_awvalid <= 0;
-      _axi_wdata <= 0;
-      _axi_wstrb <= 0;
-      _axi_wvalid <= 0;
+    end else begin
+      _axi_awaddr <= 0;
+      _axi_awvalid <= 0;
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      __axi_wdata_sb_0 <= 0;
+      __axi_wstrb_sb_0 <= 0;
+      __axi_wvalid_sb_0 <= 0;
+    end else begin
+      __axi_wdata_sb_0 <= 0;
+      __axi_wstrb_sb_0 <= 0;
+      __axi_wvalid_sb_0 <= 0;
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _sb__axi_writedata_data_5 <= 0;
+      _sb__axi_writedata_valid_6 <= 0;
+      _sb__axi_writedata_tmp_data_8 <= 0;
+      _sb__axi_writedata_tmp_valid_9 <= 0;
+    end else begin
+      if(_sb__axi_writedata_m_ready_4 || !_sb__axi_writedata_valid_6) begin
+        _sb__axi_writedata_data_5 <= _sb__axi_writedata_next_data_10;
+        _sb__axi_writedata_valid_6 <= _sb__axi_writedata_next_valid_11;
+      end 
+      if(!_sb__axi_writedata_tmp_valid_9 && _sb__axi_writedata_valid_6 && !_sb__axi_writedata_m_ready_4) begin
+        _sb__axi_writedata_tmp_data_8 <= _sb__axi_writedata_s_data_2;
+        _sb__axi_writedata_tmp_valid_9 <= _sb__axi_writedata_s_valid_3;
+      end 
+      if(_sb__axi_writedata_tmp_valid_9 && _sb__axi_writedata_m_ready_4) begin
+        _sb__axi_writedata_tmp_valid_9 <= 0;
+      end 
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
       _axi_araddr <= 0;
       _axi_arvalid <= 0;
-      __axi_cond_0_1 <= 0;
-      __axi_cond_1_1 <= 0;
+      __axi_raddr_cond_0_1 <= 0;
+      __axi_raddr_cond_1_1 <= 0;
     end else begin
-      if(__axi_cond_0_1) begin
+      if(__axi_raddr_cond_0_1) begin
         _axi_arvalid <= 0;
       end 
-      if(__axi_cond_1_1) begin
+      if(__axi_raddr_cond_1_1) begin
         _axi_arvalid <= 0;
       end 
-      if(_axi_awvalid && _axi_awready && !(_axi_bvalid && _axi_bready) && (__axi_outstanding_wcount < 7)) begin
-        __axi_outstanding_wcount <= __axi_outstanding_wcount + 1;
-      end 
-      if(!(_axi_awvalid && _axi_awready) && (_axi_bvalid && _axi_bready) && (__axi_outstanding_wcount > 0)) begin
-        __axi_outstanding_wcount <= __axi_outstanding_wcount - 1;
-      end 
-      _axi_awaddr <= 0;
-      _axi_awvalid <= 0;
-      _axi_wdata <= 0;
-      _axi_wstrb <= 0;
-      _axi_wvalid <= 0;
       if((fsm == 0) && (_axi_arready || !_axi_arvalid)) begin
         _axi_araddr <= 1024;
         _axi_arvalid <= 1;
       end 
-      __axi_cond_0_1 <= 1;
+      __axi_raddr_cond_0_1 <= 1;
       if(_axi_arvalid && !_axi_arready) begin
         _axi_arvalid <= _axi_arvalid;
       end 
@@ -269,9 +364,45 @@ module test;
         _axi_araddr <= 2048;
         _axi_arvalid <= 1;
       end 
-      __axi_cond_1_1 <= 1;
+      __axi_raddr_cond_1_1 <= 1;
       if(_axi_arvalid && !_axi_arready) begin
         _axi_arvalid <= _axi_arvalid;
+      end 
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _sb__axi_readdata_data_18 <= 0;
+      _sb__axi_readdata_valid_19 <= 0;
+      _sb__axi_readdata_tmp_data_21 <= 0;
+      _sb__axi_readdata_tmp_valid_22 <= 0;
+    end else begin
+      if(_sb__axi_readdata_m_ready_17 || !_sb__axi_readdata_valid_19) begin
+        _sb__axi_readdata_data_18 <= _sb__axi_readdata_next_data_23;
+        _sb__axi_readdata_valid_19 <= _sb__axi_readdata_next_valid_24;
+      end 
+      if(!_sb__axi_readdata_tmp_valid_22 && _sb__axi_readdata_valid_19 && !_sb__axi_readdata_m_ready_17) begin
+        _sb__axi_readdata_tmp_data_21 <= _sb__axi_readdata_s_data_15;
+        _sb__axi_readdata_tmp_valid_22 <= _sb__axi_readdata_s_valid_16;
+      end 
+      if(_sb__axi_readdata_tmp_valid_22 && _sb__axi_readdata_m_ready_17) begin
+        _sb__axi_readdata_tmp_valid_22 <= 0;
+      end 
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      __axi_outstanding_wcount <= 0;
+    end else begin
+      if(_axi_awvalid && _axi_awready && !(_axi_bvalid && _axi_bready) && (__axi_outstanding_wcount < 7)) begin
+        __axi_outstanding_wcount <= __axi_outstanding_wcount + 1;
+      end 
+      if(!(_axi_awvalid && _axi_awready) && (_axi_bvalid && _axi_bready) && (__axi_outstanding_wcount > 0)) begin
+        __axi_outstanding_wcount <= __axi_outstanding_wcount - 1;
       end 
     end
   end
@@ -294,10 +425,10 @@ module test;
           end 
         end
         fsm_1: begin
-          if(_axi_rready && _axi_rvalid) begin
-            sum <= sum + _axi_rdata;
+          if(__axi_rready_sb_0 && __axi_rvalid_sb_0) begin
+            sum <= sum + __axi_rdata_sb_0;
           end 
-          if(_axi_rready && _axi_rvalid) begin
+          if(__axi_rready_sb_0 && __axi_rvalid_sb_0) begin
             fsm <= fsm_2;
           end 
         end
@@ -307,10 +438,10 @@ module test;
           end 
         end
         fsm_3: begin
-          if(_axi_rready && _axi_rvalid) begin
-            sum <= sum + _axi_rdata;
+          if(__axi_rready_sb_0 && __axi_rvalid_sb_0) begin
+            sum <= sum + __axi_rdata_sb_0;
           end 
-          if(_axi_rready && _axi_rvalid) begin
+          if(__axi_rready_sb_0 && __axi_rvalid_sb_0) begin
             fsm <= fsm_4;
           end 
         end
@@ -371,7 +502,28 @@ module main
   reg prev_arvalid_2;
   assign myaxi_arready = (fsm == 0) && !valid_1 && prev_arvalid_2;
   reg [32-1:0] rdata;
-  reg _myaxi_cond_0_1;
+  reg _myaxi_rdata_cond_0_1;
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      myaxi_rdata <= 0;
+      myaxi_rvalid <= 0;
+      _myaxi_rdata_cond_0_1 <= 0;
+    end else begin
+      if(_myaxi_rdata_cond_0_1) begin
+        myaxi_rvalid <= 0;
+      end 
+      if((fsm == 1) && (myaxi_rready || !myaxi_rvalid)) begin
+        myaxi_rdata <= rdata;
+        myaxi_rvalid <= 1;
+      end 
+      _myaxi_rdata_cond_0_1 <= 1;
+      if(myaxi_rvalid && !myaxi_rready) begin
+        myaxi_rvalid <= myaxi_rvalid;
+      end 
+    end
+  end
+
 
   always @(posedge CLK) begin
     if(RST) begin
@@ -379,13 +531,7 @@ module main
       prev_arvalid_2 <= 0;
       valid_1 <= 0;
       addr_0 <= 0;
-      myaxi_rdata <= 0;
-      myaxi_rvalid <= 0;
-      _myaxi_cond_0_1 <= 0;
     end else begin
-      if(_myaxi_cond_0_1) begin
-        myaxi_rvalid <= 0;
-      end 
       if(myaxi_bvalid && myaxi_bready) begin
         myaxi_bvalid <= 0;
       end 
@@ -397,14 +543,6 @@ module main
       if(myaxi_arready && myaxi_arvalid) begin
         addr_0 <= myaxi_araddr;
         valid_1 <= 1;
-      end 
-      if((fsm == 1) && (myaxi_rready || !myaxi_rvalid)) begin
-        myaxi_rdata <= rdata;
-        myaxi_rvalid <= 1;
-      end 
-      _myaxi_cond_0_1 <= 1;
-      if(myaxi_rvalid && !myaxi_rready) begin
-        myaxi_rvalid <= myaxi_rvalid;
       end 
     end
   end
