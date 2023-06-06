@@ -64,6 +64,7 @@ module test;
   wire [2-1:0] memory_bresp;
   reg memory_bvalid;
   wire memory_bready;
+  assign memory_bresp = 0;
   wire [32-1:0] memory_araddr;
   wire [8-1:0] memory_arlen;
   wire [3-1:0] memory_arsize;
@@ -80,7 +81,6 @@ module test;
   reg memory_rlast;
   reg memory_rvalid;
   wire memory_rready;
-  assign memory_bresp = 0;
   assign memory_rresp = 0;
   reg [32-1:0] _memory_waddr_fsm;
   localparam _memory_waddr_fsm_init = 0;
@@ -936,10 +936,10 @@ module main
   output [2-1:0] myaxi_awuser,
   output reg myaxi_awvalid,
   input myaxi_awready,
-  output reg [32-1:0] myaxi_wdata,
-  output reg [4-1:0] myaxi_wstrb,
-  output reg myaxi_wlast,
-  output reg myaxi_wvalid,
+  output [32-1:0] myaxi_wdata,
+  output [4-1:0] myaxi_wstrb,
+  output myaxi_wlast,
+  output myaxi_wvalid,
   input myaxi_wready,
   input [2-1:0] myaxi_bresp,
   input myaxi_bvalid,
@@ -969,6 +969,44 @@ module main
   assign myaxi_awprot = 0;
   assign myaxi_awqos = 0;
   assign myaxi_awuser = 0;
+  reg [32-1:0] _myaxi_wdata_sb_0;
+  reg [4-1:0] _myaxi_wstrb_sb_0;
+  reg _myaxi_wlast_sb_0;
+  reg _myaxi_wvalid_sb_0;
+  wire _myaxi_wready_sb_0;
+  wire _sb_myaxi_writedata_s_value_0;
+  assign _sb_myaxi_writedata_s_value_0 = _myaxi_wlast_sb_0;
+  wire [4-1:0] _sb_myaxi_writedata_s_value_1;
+  assign _sb_myaxi_writedata_s_value_1 = _myaxi_wstrb_sb_0;
+  wire [32-1:0] _sb_myaxi_writedata_s_value_2;
+  assign _sb_myaxi_writedata_s_value_2 = _myaxi_wdata_sb_0;
+  wire [37-1:0] _sb_myaxi_writedata_s_data_3;
+  assign _sb_myaxi_writedata_s_data_3 = { _sb_myaxi_writedata_s_value_0, _sb_myaxi_writedata_s_value_1, _sb_myaxi_writedata_s_value_2 };
+  wire _sb_myaxi_writedata_s_valid_4;
+  assign _sb_myaxi_writedata_s_valid_4 = _myaxi_wvalid_sb_0;
+  wire _sb_myaxi_writedata_m_ready_5;
+  assign _sb_myaxi_writedata_m_ready_5 = myaxi_wready;
+  reg [37-1:0] _sb_myaxi_writedata_data_6;
+  reg _sb_myaxi_writedata_valid_7;
+  wire _sb_myaxi_writedata_ready_8;
+  reg [37-1:0] _sb_myaxi_writedata_tmp_data_9;
+  reg _sb_myaxi_writedata_tmp_valid_10;
+  wire [37-1:0] _sb_myaxi_writedata_next_data_11;
+  wire _sb_myaxi_writedata_next_valid_12;
+  assign _sb_myaxi_writedata_ready_8 = !_sb_myaxi_writedata_tmp_valid_10;
+  assign _sb_myaxi_writedata_next_data_11 = (_sb_myaxi_writedata_tmp_valid_10)? _sb_myaxi_writedata_tmp_data_9 : _sb_myaxi_writedata_s_data_3;
+  assign _sb_myaxi_writedata_next_valid_12 = _sb_myaxi_writedata_tmp_valid_10 || _sb_myaxi_writedata_s_valid_4;
+  wire _sb_myaxi_writedata_m_value_13;
+  assign _sb_myaxi_writedata_m_value_13 = _sb_myaxi_writedata_data_6[36:36];
+  wire [4-1:0] _sb_myaxi_writedata_m_value_14;
+  assign _sb_myaxi_writedata_m_value_14 = _sb_myaxi_writedata_data_6[35:32];
+  wire [32-1:0] _sb_myaxi_writedata_m_value_15;
+  assign _sb_myaxi_writedata_m_value_15 = _sb_myaxi_writedata_data_6[31:0];
+  assign _myaxi_wready_sb_0 = _sb_myaxi_writedata_ready_8;
+  assign myaxi_wdata = _sb_myaxi_writedata_m_value_15;
+  assign myaxi_wstrb = _sb_myaxi_writedata_m_value_14;
+  assign myaxi_wlast = _sb_myaxi_writedata_m_value_13;
+  assign myaxi_wvalid = _sb_myaxi_writedata_valid_7;
   assign myaxi_bready = 1;
   assign myaxi_arsize = 2;
   assign myaxi_arburst = 1;
@@ -977,57 +1015,118 @@ module main
   assign myaxi_arprot = 0;
   assign myaxi_arqos = 0;
   assign myaxi_aruser = 0;
+  wire [32-1:0] _myaxi_rdata_sb_0;
+  wire _myaxi_rlast_sb_0;
+  wire _myaxi_rvalid_sb_0;
+  wire _myaxi_rready_sb_0;
+  wire _sb_myaxi_readdata_s_value_16;
+  assign _sb_myaxi_readdata_s_value_16 = myaxi_rlast;
+  wire [32-1:0] _sb_myaxi_readdata_s_value_17;
+  assign _sb_myaxi_readdata_s_value_17 = myaxi_rdata;
+  wire [33-1:0] _sb_myaxi_readdata_s_data_18;
+  assign _sb_myaxi_readdata_s_data_18 = { _sb_myaxi_readdata_s_value_16, _sb_myaxi_readdata_s_value_17 };
+  wire _sb_myaxi_readdata_s_valid_19;
+  assign _sb_myaxi_readdata_s_valid_19 = myaxi_rvalid;
+  wire _sb_myaxi_readdata_m_ready_20;
+  assign _sb_myaxi_readdata_m_ready_20 = _myaxi_rready_sb_0;
+  reg [33-1:0] _sb_myaxi_readdata_data_21;
+  reg _sb_myaxi_readdata_valid_22;
+  wire _sb_myaxi_readdata_ready_23;
+  reg [33-1:0] _sb_myaxi_readdata_tmp_data_24;
+  reg _sb_myaxi_readdata_tmp_valid_25;
+  wire [33-1:0] _sb_myaxi_readdata_next_data_26;
+  wire _sb_myaxi_readdata_next_valid_27;
+  assign _sb_myaxi_readdata_ready_23 = !_sb_myaxi_readdata_tmp_valid_25;
+  assign _sb_myaxi_readdata_next_data_26 = (_sb_myaxi_readdata_tmp_valid_25)? _sb_myaxi_readdata_tmp_data_24 : _sb_myaxi_readdata_s_data_18;
+  assign _sb_myaxi_readdata_next_valid_27 = _sb_myaxi_readdata_tmp_valid_25 || _sb_myaxi_readdata_s_valid_19;
+  wire _sb_myaxi_readdata_m_value_28;
+  assign _sb_myaxi_readdata_m_value_28 = _sb_myaxi_readdata_data_21[32:32];
+  wire [32-1:0] _sb_myaxi_readdata_m_value_29;
+  assign _sb_myaxi_readdata_m_value_29 = _sb_myaxi_readdata_data_21[31:0];
+  assign _myaxi_rdata_sb_0 = _sb_myaxi_readdata_m_value_29;
+  assign _myaxi_rlast_sb_0 = _sb_myaxi_readdata_m_value_28;
+  assign _myaxi_rvalid_sb_0 = _sb_myaxi_readdata_valid_22;
+  assign myaxi_rready = _sb_myaxi_readdata_ready_23;
   reg [3-1:0] _myaxi_outstanding_wcount;
   wire _myaxi_has_outstanding_write;
   assign _myaxi_has_outstanding_write = (_myaxi_outstanding_wcount > 0) || myaxi_awvalid;
   reg [32-1:0] fsm;
   localparam fsm_init = 0;
-  reg _myaxi_cond_0_1;
+  reg _myaxi_raddr_cond_0_1;
   reg [32-1:0] sum;
-  reg _myaxi_cond_1_1;
-  assign myaxi_rready = (fsm == 1) || (fsm == 3);
+  reg _myaxi_raddr_cond_1_1;
+  assign _myaxi_rready_sb_0 = (fsm == 1) || (fsm == 3);
 
   always @(posedge CLK) begin
     if(RST) begin
-      _myaxi_outstanding_wcount <= 0;
       myaxi_awaddr <= 0;
       myaxi_awlen <= 0;
       myaxi_awvalid <= 0;
-      myaxi_wdata <= 0;
-      myaxi_wstrb <= 0;
-      myaxi_wlast <= 0;
-      myaxi_wvalid <= 0;
+    end else begin
+      myaxi_awaddr <= 0;
+      myaxi_awlen <= 0;
+      myaxi_awvalid <= 0;
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _myaxi_wdata_sb_0 <= 0;
+      _myaxi_wstrb_sb_0 <= 0;
+      _myaxi_wlast_sb_0 <= 0;
+      _myaxi_wvalid_sb_0 <= 0;
+    end else begin
+      _myaxi_wdata_sb_0 <= 0;
+      _myaxi_wstrb_sb_0 <= 0;
+      _myaxi_wlast_sb_0 <= 0;
+      _myaxi_wvalid_sb_0 <= 0;
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _sb_myaxi_writedata_data_6 <= 0;
+      _sb_myaxi_writedata_valid_7 <= 0;
+      _sb_myaxi_writedata_tmp_data_9 <= 0;
+      _sb_myaxi_writedata_tmp_valid_10 <= 0;
+    end else begin
+      if(_sb_myaxi_writedata_m_ready_5 || !_sb_myaxi_writedata_valid_7) begin
+        _sb_myaxi_writedata_data_6 <= _sb_myaxi_writedata_next_data_11;
+        _sb_myaxi_writedata_valid_7 <= _sb_myaxi_writedata_next_valid_12;
+      end 
+      if(!_sb_myaxi_writedata_tmp_valid_10 && _sb_myaxi_writedata_valid_7 && !_sb_myaxi_writedata_m_ready_5) begin
+        _sb_myaxi_writedata_tmp_data_9 <= _sb_myaxi_writedata_s_data_3;
+        _sb_myaxi_writedata_tmp_valid_10 <= _sb_myaxi_writedata_s_valid_4;
+      end 
+      if(_sb_myaxi_writedata_tmp_valid_10 && _sb_myaxi_writedata_m_ready_5) begin
+        _sb_myaxi_writedata_tmp_valid_10 <= 0;
+      end 
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
       myaxi_araddr <= 0;
       myaxi_arlen <= 0;
       myaxi_arvalid <= 0;
-      _myaxi_cond_0_1 <= 0;
-      _myaxi_cond_1_1 <= 0;
+      _myaxi_raddr_cond_0_1 <= 0;
+      _myaxi_raddr_cond_1_1 <= 0;
     end else begin
-      if(_myaxi_cond_0_1) begin
+      if(_myaxi_raddr_cond_0_1) begin
         myaxi_arvalid <= 0;
       end 
-      if(_myaxi_cond_1_1) begin
+      if(_myaxi_raddr_cond_1_1) begin
         myaxi_arvalid <= 0;
       end 
-      if(myaxi_awvalid && myaxi_awready && !(myaxi_bvalid && myaxi_bready) && (_myaxi_outstanding_wcount < 7)) begin
-        _myaxi_outstanding_wcount <= _myaxi_outstanding_wcount + 1;
-      end 
-      if(!(myaxi_awvalid && myaxi_awready) && (myaxi_bvalid && myaxi_bready) && (_myaxi_outstanding_wcount > 0)) begin
-        _myaxi_outstanding_wcount <= _myaxi_outstanding_wcount - 1;
-      end 
-      myaxi_awaddr <= 0;
-      myaxi_awlen <= 0;
-      myaxi_awvalid <= 0;
-      myaxi_wdata <= 0;
-      myaxi_wstrb <= 0;
-      myaxi_wlast <= 0;
-      myaxi_wvalid <= 0;
       if((fsm == 0) && (myaxi_arready || !myaxi_arvalid)) begin
         myaxi_araddr <= 1024;
         myaxi_arlen <= 63;
         myaxi_arvalid <= 1;
       end 
-      _myaxi_cond_0_1 <= 1;
+      _myaxi_raddr_cond_0_1 <= 1;
       if(myaxi_arvalid && !myaxi_arready) begin
         myaxi_arvalid <= myaxi_arvalid;
       end 
@@ -1036,9 +1135,45 @@ module main
         myaxi_arlen <= 127;
         myaxi_arvalid <= 1;
       end 
-      _myaxi_cond_1_1 <= 1;
+      _myaxi_raddr_cond_1_1 <= 1;
       if(myaxi_arvalid && !myaxi_arready) begin
         myaxi_arvalid <= myaxi_arvalid;
+      end 
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _sb_myaxi_readdata_data_21 <= 0;
+      _sb_myaxi_readdata_valid_22 <= 0;
+      _sb_myaxi_readdata_tmp_data_24 <= 0;
+      _sb_myaxi_readdata_tmp_valid_25 <= 0;
+    end else begin
+      if(_sb_myaxi_readdata_m_ready_20 || !_sb_myaxi_readdata_valid_22) begin
+        _sb_myaxi_readdata_data_21 <= _sb_myaxi_readdata_next_data_26;
+        _sb_myaxi_readdata_valid_22 <= _sb_myaxi_readdata_next_valid_27;
+      end 
+      if(!_sb_myaxi_readdata_tmp_valid_25 && _sb_myaxi_readdata_valid_22 && !_sb_myaxi_readdata_m_ready_20) begin
+        _sb_myaxi_readdata_tmp_data_24 <= _sb_myaxi_readdata_s_data_18;
+        _sb_myaxi_readdata_tmp_valid_25 <= _sb_myaxi_readdata_s_valid_19;
+      end 
+      if(_sb_myaxi_readdata_tmp_valid_25 && _sb_myaxi_readdata_m_ready_20) begin
+        _sb_myaxi_readdata_tmp_valid_25 <= 0;
+      end 
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _myaxi_outstanding_wcount <= 0;
+    end else begin
+      if(myaxi_awvalid && myaxi_awready && !(myaxi_bvalid && myaxi_bready) && (_myaxi_outstanding_wcount < 7)) begin
+        _myaxi_outstanding_wcount <= _myaxi_outstanding_wcount + 1;
+      end 
+      if(!(myaxi_awvalid && myaxi_awready) && (myaxi_bvalid && myaxi_bready) && (_myaxi_outstanding_wcount > 0)) begin
+        _myaxi_outstanding_wcount <= _myaxi_outstanding_wcount - 1;
       end 
     end
   end
@@ -1061,10 +1196,10 @@ module main
           end 
         end
         fsm_1: begin
-          if(myaxi_rvalid) begin
-            sum <= sum + myaxi_rdata;
+          if(_myaxi_rvalid_sb_0) begin
+            sum <= sum + _myaxi_rdata_sb_0;
           end 
-          if(myaxi_rvalid && myaxi_rlast) begin
+          if(_myaxi_rvalid_sb_0 && _myaxi_rlast_sb_0) begin
             fsm <= fsm_2;
           end 
         end
@@ -1074,10 +1209,10 @@ module main
           end 
         end
         fsm_3: begin
-          if(myaxi_rvalid) begin
-            sum <= sum + myaxi_rdata;
+          if(_myaxi_rvalid_sb_0) begin
+            sum <= sum + _myaxi_rdata_sb_0;
           end 
-          if(myaxi_rvalid && myaxi_rlast) begin
+          if(_myaxi_rvalid_sb_0 && _myaxi_rlast_sb_0) begin
             fsm <= fsm_4;
           end 
         end
