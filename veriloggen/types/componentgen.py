@@ -315,12 +315,16 @@ class ComponentGen(object):
     def mkPhysicalPortMemory(self, obj, attr):
         if hasattr(obj.waddr, attr.lower()):
             name = getattr(obj.waddr, attr.lower()).name
+        elif hasattr(obj.wdata, 'ext_' + attr.lower()):
+            name = getattr(obj.wdata, 'ext_' + attr.lower()).name
         elif hasattr(obj.wdata, attr.lower()):
             name = getattr(obj.wdata, attr.lower()).name
         elif hasattr(obj.wresp, attr.lower()):
             name = getattr(obj.wresp, attr.lower()).name
         elif hasattr(obj.raddr, attr.lower()):
             name = getattr(obj.raddr, attr.lower()).name
+        elif hasattr(obj.rdata, 'ext_' + attr.lower()):
+            name = getattr(obj.rdata, 'ext_' + attr.lower()).name
         elif hasattr(obj.rdata, attr.lower()):
             name = getattr(obj.rdata, attr.lower()).name
         else:
