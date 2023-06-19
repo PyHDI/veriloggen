@@ -27,7 +27,7 @@ def mkLed():
     a = strm.source('a') + 1000
     size = strm.parameter('size')
     sum, sum_valid = strm.ReduceAddValid(a, size)
-    sum.iteration_interval = 5
+    sum.initiation_interval = 5
     strm.sink(sum, 'sum', when=sum_valid, when_name='sum_valid')
 
     def comp_stream(size, offset):
