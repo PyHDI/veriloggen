@@ -948,7 +948,7 @@ class _PackedMultibankRAM(MultibankRAM):
             if not isinstance(ram, MultibankRAM) and isinstance(first, MultibankRAM):
                 raise ValueError('RAM type must be same')
             if (isinstance(ram, MultibankRAM) and isinstance(first, MultibankRAM) and
-                ram.numbanks != first.numbanks):
+                    ram.numbanks != first.numbanks):
                 raise ValueError('numbanks must be same')
 
         self.m = src[0].m

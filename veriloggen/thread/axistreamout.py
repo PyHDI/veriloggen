@@ -58,7 +58,7 @@ class AXIStreamOut(axi.AxiStreamOut, _MutexFunction):
                                                              'write_local_stride_fifo']),
                                                    self.addrwidth)
         self.write_size_fifo = self.m.Wire('_'.join(['', self.name,
-                                                           'write_size_fifo']),
+                                                     'write_size_fifo']),
                                            self.addrwidth + 1)
 
         write_unpack_values = self.unpack_write_req(self.write_req_fifo.rdata)
@@ -539,7 +539,7 @@ class AXIStreamOutFifo(AXIStreamOut):
                                                        'write_op_sel_fifo']),
                                              self.op_sel_width)
         self.write_size_fifo = self.m.Wire('_'.join(['', self.name,
-                                                           'write_size_fifo']),
+                                                     'write_size_fifo']),
                                            self.addrwidth + 1)
 
         write_unpack_values = self.unpack_write_req(self.write_req_fifo.rdata)
@@ -615,7 +615,7 @@ class AXIStreamOutFifo(AXIStreamOut):
                                vtypes.Not(self.write_req_fifo.almost_full))
 
         _ = self.write_req_fifo.enq_rtl(self.pack_write_req(op_id,
-                                                          local_size),
+                                                            local_size),
                                         cond=enq_cond)
 
     def _synthesize_write_data_fsm(self, fifo, fifo_datawidth):
@@ -669,7 +669,7 @@ class AXIStreamOutFifo(AXIStreamOut):
 
         # Data state 1
         cur_rvalid = self.m.TmpWire(prefix='cur_rvalid')
-        #rready = vtypes.Ands(vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid)),
+        # rready = vtypes.Ands(vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid)),
         #                     self.write_size_buf > 0)
         rready = vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid))
         deq_cond = vtypes.Ands(data_fsm.here, vtypes.Not(fifo.empty),
@@ -751,7 +751,7 @@ class AXIStreamOutFifo(AXIStreamOut):
 
         # Data state 1
         cur_rvalid = self.m.TmpWire(prefix='cur_rvalid')
-        #rready = vtypes.Ands(vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid)),
+        # rready = vtypes.Ands(vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid)),
         #                     self.write_size_buf > 0)
         rready = vtypes.Ors(self.tdata.tready, vtypes.Not(self.tdata.tvalid))
         deq_cond = vtypes.Ands(data_fsm.here, vtypes.Not(fifo.empty),

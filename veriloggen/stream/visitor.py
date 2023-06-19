@@ -111,7 +111,7 @@ class InputVisitor(_Visitor):
         reset = (self.visit(node.reset)
                  if node.reset is not None else set())
         reg_initval = (self.visit(node.reg_initval)
-                   if node.reg_initval is not None else set())
+                       if node.reg_initval is not None else set())
         return right | size | interval | initval | offset | dependency | enable | reset | reg_initval
 
     def visit__ParameterVariable(self, node):
@@ -163,7 +163,7 @@ class OutputVisitor(_Visitor):
         reset = (self.visit(node.reset)
                  if node.reset is not None else set())
         reg_initval = (self.visit(node.reg_initval)
-                   if node.reg_initval is not None else set())
+                       if node.reg_initval is not None else set())
         mine = set([node]) if node._has_output() else set()
         return right | size | interval | initval | offset | dependency | enable | reset | reg_initval | mine
 
@@ -219,7 +219,7 @@ class OperatorVisitor(_Visitor):
         reset = (self.visit(node.reset)
                  if node.reset is not None else set())
         reg_initval = (self.visit(node.reg_initval)
-                   if node.reg_initval is not None else set())
+                       if node.reg_initval is not None else set())
         mine = set([node])
         return right | size | interval | initval | offset | dependency | enable | reset | reg_initval | mine
 
