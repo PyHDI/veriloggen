@@ -19,7 +19,7 @@ def mkLed():
     datawidth = 32
     addrwidth = 4
     myfifo = vthread.FIFO(m, 'myfifo', clk, rst, datawidth, addrwidth,
-                        itype='TmpWire', otype='TmpWire')
+                          itype='TmpWire', otype='TmpWire')
 
     def blink(times):
         for i in range(times):
@@ -90,9 +90,7 @@ def run(filename='tmp.v', simtype='iverilog', outputfile=None):
 
     sim = simulation.Simulator(test, sim=simtype)
     rslt = sim.run(outputfile=outputfile)
-    lines = rslt.splitlines()
-    if simtype == 'verilator' and lines[-1].startswith('-'):
-        rslt = '\n'.join(lines[:-1])
+
     return rslt
 
 

@@ -179,7 +179,7 @@ def mkTest(memimg_name=None):
 if __name__ == '__main__':
     test = mkTest()
     #verilog = test.to_verilog('tmp.v')
-    #print(verilog)
+    # print(verilog)
 
     sim = simulation.Simulator(test, sim='verilator')
     rslt = sim.run(outputfile='verilator.out')

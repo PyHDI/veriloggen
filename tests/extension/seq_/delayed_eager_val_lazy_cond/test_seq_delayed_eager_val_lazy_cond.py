@@ -213,6 +213,7 @@ module blinkled
 endmodule
 """
 
+
 def test():
     veriloggen.reset()
     test_module = seq_delayed_eager_val_lazy_cond.mkTest()

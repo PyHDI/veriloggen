@@ -160,6 +160,8 @@ module main
 endmodule
 
 """
+
+
 def test():
     veriloggen.reset()
     test_module = dataflow_counter.mkTest()

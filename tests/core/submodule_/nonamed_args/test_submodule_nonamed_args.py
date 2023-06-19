@@ -89,6 +89,7 @@ module blinkled #
 endmodule
 """
 
+
 def test():
     test_module = submodule_nonamed_args.mkTop()
     code = test_module.to_verilog()

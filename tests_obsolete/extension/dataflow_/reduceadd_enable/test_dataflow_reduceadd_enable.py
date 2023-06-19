@@ -436,6 +436,7 @@ endmodule
 
 """
 
+
 def test():
     veriloggen.reset()
     test_module = dataflow_reduceadd_enable.mkTest()

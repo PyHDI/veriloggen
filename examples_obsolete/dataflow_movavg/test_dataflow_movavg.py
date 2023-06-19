@@ -459,6 +459,8 @@ module movavg
 endmodule
 
 """
+
+
 def test():
     veriloggen.reset()
     test_module = dataflow_movavg.mkTest()

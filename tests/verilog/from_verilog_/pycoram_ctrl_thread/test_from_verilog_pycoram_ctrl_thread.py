@@ -244,10 +244,11 @@ module ctrl_thread
 endmodule
 """
 
+
 def test():
     veriloggen.reset()
     modules = from_verilog_pycoram_ctrl_thread.mkThread()
-    code = ''.join([ m.to_verilog() for m in modules.values() ])
+    code = ''.join([m.to_verilog() for m in modules.values()])
 
     from pyverilog.vparser.parser import VerilogParser
     from pyverilog.ast_code_generator.codegen import ASTCodeGenerator

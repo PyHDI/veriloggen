@@ -668,6 +668,8 @@ module main
 endmodule
 
 """
+
+
 def test():
     veriloggen.reset()
     test_module = dataflow_two_outputs_addsub.mkTest()

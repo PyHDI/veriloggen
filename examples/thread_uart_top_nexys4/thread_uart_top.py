@@ -142,9 +142,7 @@ def run(filename='tmp.v', simtype='iverilog'):
 
     sim = simulation.Simulator(test, sim=simtype)
     rslt = sim.run()
-    lines = rslt.splitlines()
-    if simtype == 'verilator' and lines[-1].startswith('-'):
-        rslt = '\n'.join(lines[:-1])
+
     return rslt
 
 

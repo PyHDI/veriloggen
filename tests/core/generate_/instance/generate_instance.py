@@ -4,9 +4,11 @@ import sys
 import os
 
 # the next line can be removed after installation
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
 
 from veriloggen import *
+
 
 def mkSubmod():
     m = Module('submod')
@@ -25,8 +27,9 @@ def mkSubmod():
                 count(count + 1)
             )
         ))
-    m.Assign( led(count[pos]) )
+    m.Assign(led(count[pos]))
     return m
+
 
 def mkLed():
     m = Module('blinkled')
@@ -37,16 +40,17 @@ def mkLed():
 
     # genvar i;
     i = m.Genvar('i')
-    
+
     # generate for(i=0; i<WIDTH; i=i+1) begin: gen_for;
-    gen_for = m.GenerateFor(i(0), i<width, i(i+1), scope='gen_for')
+    gen_for = m.GenerateFor(i(0), i < width, i(i + 1), scope='gen_for')
     submod = mkSubmod()
-    params = [ ('POS', i+2) ]
-    ports = [ ('CLK', clk), ('RST', rst), ('LED', led[i]) ]
+    params = [('POS', i + 2)]
+    ports = [('CLK', clk), ('RST', rst), ('LED', led[i])]
     gen_for.Instance(submod, 'inst_submod', params, ports)
     # ... end endgenerate
-    
+
     return m
+
 
 if __name__ == '__main__':
     led = mkLed()

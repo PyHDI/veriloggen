@@ -296,10 +296,11 @@ module CoramChannel #
 endmodule
 """
 
+
 def test():
     veriloggen.reset()
     modules = from_verilog_pycoram_object.mkUserlogic()
-    code = ''.join([ m.to_verilog() for m in modules.values() if not m.used ])
+    code = ''.join([m.to_verilog() for m in modules.values() if not m.used])
 
     from pyverilog.vparser.parser import VerilogParser
     from pyverilog.ast_code_generator.codegen import ASTCodeGenerator

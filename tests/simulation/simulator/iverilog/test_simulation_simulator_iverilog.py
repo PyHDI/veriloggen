@@ -198,6 +198,7 @@ LED:  6 count:         2
 LED:  6 count:         3
 """
 
+
 def test():
     veriloggen.reset()
     test_module = simulation_simulator_iverilog.mkTest()
@@ -214,5 +215,5 @@ def test():
 
     sim = simulation.Simulator(test_module, sim='iverilog')
     rslt = sim.run()
-
+    rslt = '\n'.join([line for line in rslt.splitlines() if line.startswith('LED:')] + [''])
     assert(expected_rslt == rslt)

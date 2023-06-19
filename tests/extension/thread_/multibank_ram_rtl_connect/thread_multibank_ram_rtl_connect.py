@@ -74,7 +74,7 @@ def mkLed():
     fsm.Delay(2)(
         sum.add(rdata),
         Display('rdata =  %d', rdata),
-        If(NotEql(rdata,i))(all_ok(0)),
+        If(NotEql(rdata, i))(all_ok(0)),
         i.inc(),
     )
     fsm.If(addr == read_size - 2).goto_next()
@@ -155,9 +155,7 @@ def run(filename='tmp.v', simtype='iverilog', outputfile=None):
 
     sim = simulation.Simulator(test, sim=simtype)
     rslt = sim.run(outputfile=outputfile)
-    lines = rslt.splitlines()
-    if simtype == 'verilator' and lines[-1].startswith('-'):
-        rslt = '\n'.join(lines[:-1])
+
     return rslt
 
 
