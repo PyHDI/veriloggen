@@ -185,6 +185,7 @@ module chatter_clear #
 endmodule
 """
 
+
 def test():
     veriloggen.reset()
     test_module = chatter_clear.mkTest()

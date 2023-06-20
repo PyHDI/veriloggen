@@ -161,7 +161,7 @@ module blinkled
                                (axis_maskaddr_5 == 1)? _saxi_resetval_1 : 
                                (axis_maskaddr_5 == 2)? _saxi_resetval_2 : 
                                (axis_maskaddr_5 == 3)? _saxi_resetval_3 : 'hx;
-  reg _saxi_cond_0_1;
+  reg _saxi_rdata_cond_0_1;
   assign saxi_wready = _saxi_register_fsm == 3;
   reg _mystream_stream_ivalid;
   wire _mystream_stream_oready;
@@ -332,15 +332,33 @@ module blinkled
 
   always @(posedge CLK) begin
     if(RST) begin
+      saxi_rdata <= 0;
+      saxi_rvalid <= 0;
+      _saxi_rdata_cond_0_1 <= 0;
+    end else begin
+      if(_saxi_rdata_cond_0_1) begin
+        saxi_rvalid <= 0;
+      end 
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid)) begin
+        saxi_rdata <= axislite_rdata_6;
+        saxi_rvalid <= 1;
+      end 
+      _saxi_rdata_cond_0_1 <= 1;
+      if(saxi_rvalid && !saxi_rready) begin
+        saxi_rvalid <= saxi_rvalid;
+      end 
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
       saxi_bvalid <= 0;
       prev_awvalid_3 <= 0;
       prev_arvalid_4 <= 0;
       writevalid_1 <= 0;
       readvalid_2 <= 0;
       addr_0 <= 0;
-      saxi_rdata <= 0;
-      saxi_rvalid <= 0;
-      _saxi_cond_0_1 <= 0;
       _saxi_register_0 <= 0;
       _saxi_flag_0 <= 0;
       _saxi_register_1 <= 0;
@@ -350,9 +368,6 @@ module blinkled
       _saxi_register_3 <= 0;
       _saxi_flag_3 <= 0;
     end else begin
-      if(_saxi_cond_0_1) begin
-        saxi_rvalid <= 0;
-      end 
       if(saxi_bvalid && saxi_bready) begin
         saxi_bvalid <= 0;
       end 
@@ -369,14 +384,6 @@ module blinkled
       end else if(saxi_arready && saxi_arvalid) begin
         addr_0 <= saxi_araddr;
         readvalid_2 <= 1;
-      end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid)) begin
-        saxi_rdata <= axislite_rdata_6;
-        saxi_rvalid <= 1;
-      end 
-      _saxi_cond_0_1 <= 1;
-      if(saxi_rvalid && !saxi_rready) begin
-        saxi_rvalid <= saxi_rvalid;
       end 
       if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_7 && (axis_maskaddr_5 == 0)) begin
         _saxi_register_0 <= axislite_resetval_8;

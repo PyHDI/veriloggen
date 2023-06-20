@@ -35,127 +35,185 @@ module test;
   wire [3-1:0] _saxi_awprot;
   reg _saxi_awvalid;
   wire _saxi_awready;
-  reg [32-1:0] _saxi_wdata;
-  reg [4-1:0] _saxi_wstrb;
-  reg _saxi_wvalid;
+  assign _saxi_awcache = 3;
+  assign _saxi_awprot = 0;
+  wire [32-1:0] _saxi_wdata;
+  wire [4-1:0] _saxi_wstrb;
+  wire _saxi_wvalid;
   wire _saxi_wready;
+  reg [32-1:0] __saxi_wdata_sb_0;
+  reg [4-1:0] __saxi_wstrb_sb_0;
+  reg __saxi_wvalid_sb_0;
+  wire __saxi_wready_sb_0;
+  wire [4-1:0] _sb__saxi_writedata_s_value_0;
+  assign _sb__saxi_writedata_s_value_0 = __saxi_wstrb_sb_0;
+  wire [32-1:0] _sb__saxi_writedata_s_value_1;
+  assign _sb__saxi_writedata_s_value_1 = __saxi_wdata_sb_0;
+  wire [36-1:0] _sb__saxi_writedata_s_data_2;
+  assign _sb__saxi_writedata_s_data_2 = { _sb__saxi_writedata_s_value_0, _sb__saxi_writedata_s_value_1 };
+  wire _sb__saxi_writedata_s_valid_3;
+  assign _sb__saxi_writedata_s_valid_3 = __saxi_wvalid_sb_0;
+  wire _sb__saxi_writedata_m_ready_4;
+  assign _sb__saxi_writedata_m_ready_4 = _saxi_wready;
+  reg [36-1:0] _sb__saxi_writedata_data_5;
+  reg _sb__saxi_writedata_valid_6;
+  wire _sb__saxi_writedata_ready_7;
+  reg [36-1:0] _sb__saxi_writedata_tmp_data_8;
+  reg _sb__saxi_writedata_tmp_valid_9;
+  wire [36-1:0] _sb__saxi_writedata_next_data_10;
+  wire _sb__saxi_writedata_next_valid_11;
+  assign _sb__saxi_writedata_ready_7 = !_sb__saxi_writedata_tmp_valid_9;
+  assign _sb__saxi_writedata_next_data_10 = (_sb__saxi_writedata_tmp_valid_9)? _sb__saxi_writedata_tmp_data_8 : _sb__saxi_writedata_s_data_2;
+  assign _sb__saxi_writedata_next_valid_11 = _sb__saxi_writedata_tmp_valid_9 || _sb__saxi_writedata_s_valid_3;
+  wire [4-1:0] _sb__saxi_writedata_m_value_12;
+  assign _sb__saxi_writedata_m_value_12 = _sb__saxi_writedata_data_5[35:32];
+  wire [32-1:0] _sb__saxi_writedata_m_value_13;
+  assign _sb__saxi_writedata_m_value_13 = _sb__saxi_writedata_data_5[31:0];
+  assign __saxi_wready_sb_0 = _sb__saxi_writedata_ready_7;
+  assign _saxi_wdata = _sb__saxi_writedata_m_value_13;
+  assign _saxi_wstrb = _sb__saxi_writedata_m_value_12;
+  assign _saxi_wvalid = _sb__saxi_writedata_valid_6;
   wire [2-1:0] _saxi_bresp;
   wire _saxi_bvalid;
   wire _saxi_bready;
+  assign _saxi_bready = 1;
   reg [32-1:0] _saxi_araddr;
   wire [4-1:0] _saxi_arcache;
   wire [3-1:0] _saxi_arprot;
   reg _saxi_arvalid;
   wire _saxi_arready;
+  assign _saxi_arcache = 3;
+  assign _saxi_arprot = 0;
   wire [32-1:0] _saxi_rdata;
   wire [2-1:0] _saxi_rresp;
   wire _saxi_rvalid;
   wire _saxi_rready;
-  assign _saxi_awcache = 3;
-  assign _saxi_awprot = 0;
-  assign _saxi_bready = 1;
-  assign _saxi_arcache = 3;
-  assign _saxi_arprot = 0;
+  wire [32-1:0] __saxi_rdata_sb_0;
+  wire __saxi_rvalid_sb_0;
+  wire __saxi_rready_sb_0;
+  wire [32-1:0] _sb__saxi_readdata_s_value_14;
+  assign _sb__saxi_readdata_s_value_14 = _saxi_rdata;
+  wire [32-1:0] _sb__saxi_readdata_s_data_15;
+  assign _sb__saxi_readdata_s_data_15 = { _sb__saxi_readdata_s_value_14 };
+  wire _sb__saxi_readdata_s_valid_16;
+  assign _sb__saxi_readdata_s_valid_16 = _saxi_rvalid;
+  wire _sb__saxi_readdata_m_ready_17;
+  assign _sb__saxi_readdata_m_ready_17 = __saxi_rready_sb_0;
+  reg [32-1:0] _sb__saxi_readdata_data_18;
+  reg _sb__saxi_readdata_valid_19;
+  wire _sb__saxi_readdata_ready_20;
+  reg [32-1:0] _sb__saxi_readdata_tmp_data_21;
+  reg _sb__saxi_readdata_tmp_valid_22;
+  wire [32-1:0] _sb__saxi_readdata_next_data_23;
+  wire _sb__saxi_readdata_next_valid_24;
+  assign _sb__saxi_readdata_ready_20 = !_sb__saxi_readdata_tmp_valid_22;
+  assign _sb__saxi_readdata_next_data_23 = (_sb__saxi_readdata_tmp_valid_22)? _sb__saxi_readdata_tmp_data_21 : _sb__saxi_readdata_s_data_15;
+  assign _sb__saxi_readdata_next_valid_24 = _sb__saxi_readdata_tmp_valid_22 || _sb__saxi_readdata_s_valid_16;
+  wire [32-1:0] _sb__saxi_readdata_m_value_25;
+  assign _sb__saxi_readdata_m_value_25 = _sb__saxi_readdata_data_18[31:0];
+  assign __saxi_rdata_sb_0 = _sb__saxi_readdata_m_value_25;
+  assign __saxi_rvalid_sb_0 = _sb__saxi_readdata_valid_19;
+  assign _saxi_rready = _sb__saxi_readdata_ready_20;
   reg [3-1:0] __saxi_outstanding_wcount;
   wire __saxi_has_outstanding_write;
   assign __saxi_has_outstanding_write = (__saxi_outstanding_wcount > 0) || _saxi_awvalid;
-  wire [32-1:0] _tmp_0;
-  assign _tmp_0 = _saxi_awaddr;
+  wire [32-1:0] _tmp_26;
+  assign _tmp_26 = _saxi_awaddr;
 
   always @(*) begin
-    saxi_awaddr = _tmp_0;
+    saxi_awaddr = _tmp_26;
   end
 
-  wire [4-1:0] _tmp_1;
-  assign _tmp_1 = _saxi_awcache;
+  wire [4-1:0] _tmp_27;
+  assign _tmp_27 = _saxi_awcache;
 
   always @(*) begin
-    saxi_awcache = _tmp_1;
+    saxi_awcache = _tmp_27;
   end
 
-  wire [3-1:0] _tmp_2;
-  assign _tmp_2 = _saxi_awprot;
+  wire [3-1:0] _tmp_28;
+  assign _tmp_28 = _saxi_awprot;
 
   always @(*) begin
-    saxi_awprot = _tmp_2;
+    saxi_awprot = _tmp_28;
   end
 
-  wire _tmp_3;
-  assign _tmp_3 = _saxi_awvalid;
+  wire _tmp_29;
+  assign _tmp_29 = _saxi_awvalid;
 
   always @(*) begin
-    saxi_awvalid = _tmp_3;
+    saxi_awvalid = _tmp_29;
   end
 
   assign _saxi_awready = saxi_awready;
-  wire [32-1:0] _tmp_4;
-  assign _tmp_4 = _saxi_wdata;
+  wire [32-1:0] _tmp_30;
+  assign _tmp_30 = _saxi_wdata;
 
   always @(*) begin
-    saxi_wdata = _tmp_4;
+    saxi_wdata = _tmp_30;
   end
 
-  wire [4-1:0] _tmp_5;
-  assign _tmp_5 = _saxi_wstrb;
+  wire [4-1:0] _tmp_31;
+  assign _tmp_31 = _saxi_wstrb;
 
   always @(*) begin
-    saxi_wstrb = _tmp_5;
+    saxi_wstrb = _tmp_31;
   end
 
-  wire _tmp_6;
-  assign _tmp_6 = _saxi_wvalid;
+  wire _tmp_32;
+  assign _tmp_32 = _saxi_wvalid;
 
   always @(*) begin
-    saxi_wvalid = _tmp_6;
+    saxi_wvalid = _tmp_32;
   end
 
   assign _saxi_wready = saxi_wready;
   assign _saxi_bresp = saxi_bresp;
   assign _saxi_bvalid = saxi_bvalid;
-  wire _tmp_7;
-  assign _tmp_7 = _saxi_bready;
+  wire _tmp_33;
+  assign _tmp_33 = _saxi_bready;
 
   always @(*) begin
-    saxi_bready = _tmp_7;
+    saxi_bready = _tmp_33;
   end
 
-  wire [32-1:0] _tmp_8;
-  assign _tmp_8 = _saxi_araddr;
+  wire [32-1:0] _tmp_34;
+  assign _tmp_34 = _saxi_araddr;
 
   always @(*) begin
-    saxi_araddr = _tmp_8;
+    saxi_araddr = _tmp_34;
   end
 
-  wire [4-1:0] _tmp_9;
-  assign _tmp_9 = _saxi_arcache;
+  wire [4-1:0] _tmp_35;
+  assign _tmp_35 = _saxi_arcache;
 
   always @(*) begin
-    saxi_arcache = _tmp_9;
+    saxi_arcache = _tmp_35;
   end
 
-  wire [3-1:0] _tmp_10;
-  assign _tmp_10 = _saxi_arprot;
+  wire [3-1:0] _tmp_36;
+  assign _tmp_36 = _saxi_arprot;
 
   always @(*) begin
-    saxi_arprot = _tmp_10;
+    saxi_arprot = _tmp_36;
   end
 
-  wire _tmp_11;
-  assign _tmp_11 = _saxi_arvalid;
+  wire _tmp_37;
+  assign _tmp_37 = _saxi_arvalid;
 
   always @(*) begin
-    saxi_arvalid = _tmp_11;
+    saxi_arvalid = _tmp_37;
   end
 
   assign _saxi_arready = saxi_arready;
   assign _saxi_rdata = saxi_rdata;
   assign _saxi_rresp = saxi_rresp;
   assign _saxi_rvalid = saxi_rvalid;
-  wire _tmp_12;
-  assign _tmp_12 = _saxi_rready;
+  wire _tmp_38;
+  assign _tmp_38 = _saxi_rready;
 
   always @(*) begin
-    saxi_rready = _tmp_12;
+    saxi_rready = _tmp_38;
   end
 
   reg [32-1:0] counter;
@@ -164,18 +222,18 @@ module test;
   reg signed [32-1:0] _th_ctrl_i_3;
   reg signed [32-1:0] _th_ctrl_awaddr_4;
   reg signed [32-1:0] _th_ctrl_sleep_5;
-  reg __saxi_cond_0_1;
-  reg __saxi_cond_1_1;
+  reg __saxi_waddr_cond_0_1;
+  reg __saxi_wdata_cond_0_1;
   reg signed [32-1:0] _th_ctrl_size_6;
-  reg __saxi_cond_2_1;
-  reg __saxi_cond_3_1;
+  reg __saxi_waddr_cond_1_1;
+  reg __saxi_wdata_cond_1_1;
   reg signed [32-1:0] _th_ctrl_start_time_7;
-  reg __saxi_cond_4_1;
-  reg __saxi_cond_5_1;
+  reg __saxi_waddr_cond_2_1;
+  reg __saxi_wdata_cond_2_1;
   reg signed [32-1:0] _th_ctrl_araddr_8;
-  reg __saxi_cond_6_1;
-  reg signed [32-1:0] axim_rdata_13;
-  assign _saxi_rready = th_ctrl == 32;
+  reg __saxi_raddr_cond_0_1;
+  reg signed [32-1:0] axim_rdata_39;
+  assign __saxi_rready_sb_0 = th_ctrl == 32;
   reg signed [32-1:0] _th_ctrl_busy_9;
   reg signed [32-1:0] _th_ctrl_end_time_10;
   reg signed [32-1:0] _th_ctrl_time_11;
@@ -228,28 +286,36 @@ module test;
     RST = 0;
     _saxi_awaddr = 0;
     _saxi_awvalid = 0;
-    _saxi_wdata = 0;
-    _saxi_wstrb = 0;
-    _saxi_wvalid = 0;
+    __saxi_wdata_sb_0 = 0;
+    __saxi_wstrb_sb_0 = 0;
+    __saxi_wvalid_sb_0 = 0;
+    _sb__saxi_writedata_data_5 = 0;
+    _sb__saxi_writedata_valid_6 = 0;
+    _sb__saxi_writedata_tmp_data_8 = 0;
+    _sb__saxi_writedata_tmp_valid_9 = 0;
     _saxi_araddr = 0;
     _saxi_arvalid = 0;
+    _sb__saxi_readdata_data_18 = 0;
+    _sb__saxi_readdata_valid_19 = 0;
+    _sb__saxi_readdata_tmp_data_21 = 0;
+    _sb__saxi_readdata_tmp_valid_22 = 0;
     __saxi_outstanding_wcount = 0;
     counter = 0;
     th_ctrl = th_ctrl_init;
     _th_ctrl_i_3 = 0;
     _th_ctrl_awaddr_4 = 0;
     _th_ctrl_sleep_5 = 0;
-    __saxi_cond_0_1 = 0;
-    __saxi_cond_1_1 = 0;
+    __saxi_waddr_cond_0_1 = 0;
+    __saxi_wdata_cond_0_1 = 0;
     _th_ctrl_size_6 = 0;
-    __saxi_cond_2_1 = 0;
-    __saxi_cond_3_1 = 0;
+    __saxi_waddr_cond_1_1 = 0;
+    __saxi_wdata_cond_1_1 = 0;
     _th_ctrl_start_time_7 = 0;
-    __saxi_cond_4_1 = 0;
-    __saxi_cond_5_1 = 0;
+    __saxi_waddr_cond_2_1 = 0;
+    __saxi_wdata_cond_2_1 = 0;
     _th_ctrl_araddr_8 = 0;
-    __saxi_cond_6_1 = 0;
-    axim_rdata_13 = 0;
+    __saxi_raddr_cond_0_1 = 0;
+    axim_rdata_39 = 0;
     _th_ctrl_busy_9 = 0;
     _th_ctrl_end_time_10 = 0;
     _th_ctrl_time_11 = 0;
@@ -264,107 +330,172 @@ module test;
 
   always @(posedge CLK) begin
     if(RST) begin
-      __saxi_outstanding_wcount <= 0;
       _saxi_awaddr <= 0;
       _saxi_awvalid <= 0;
-      __saxi_cond_0_1 <= 0;
-      _saxi_wdata <= 0;
-      _saxi_wvalid <= 0;
-      _saxi_wstrb <= 0;
-      __saxi_cond_1_1 <= 0;
-      __saxi_cond_2_1 <= 0;
-      __saxi_cond_3_1 <= 0;
-      __saxi_cond_4_1 <= 0;
-      __saxi_cond_5_1 <= 0;
-      _saxi_araddr <= 0;
-      _saxi_arvalid <= 0;
-      __saxi_cond_6_1 <= 0;
+      __saxi_waddr_cond_0_1 <= 0;
+      __saxi_waddr_cond_1_1 <= 0;
+      __saxi_waddr_cond_2_1 <= 0;
     end else begin
-      if(__saxi_cond_0_1) begin
+      if(__saxi_waddr_cond_0_1) begin
         _saxi_awvalid <= 0;
       end 
-      if(__saxi_cond_1_1) begin
-        _saxi_wvalid <= 0;
-      end 
-      if(__saxi_cond_2_1) begin
+      if(__saxi_waddr_cond_1_1) begin
         _saxi_awvalid <= 0;
       end 
-      if(__saxi_cond_3_1) begin
-        _saxi_wvalid <= 0;
-      end 
-      if(__saxi_cond_4_1) begin
+      if(__saxi_waddr_cond_2_1) begin
         _saxi_awvalid <= 0;
-      end 
-      if(__saxi_cond_5_1) begin
-        _saxi_wvalid <= 0;
-      end 
-      if(__saxi_cond_6_1) begin
-        _saxi_arvalid <= 0;
-      end 
-      if(_saxi_awvalid && _saxi_awready && !(_saxi_bvalid && _saxi_bready) && (__saxi_outstanding_wcount < 7)) begin
-        __saxi_outstanding_wcount <= __saxi_outstanding_wcount + 1;
-      end 
-      if(!(_saxi_awvalid && _saxi_awready) && (_saxi_bvalid && _saxi_bready) && (__saxi_outstanding_wcount > 0)) begin
-        __saxi_outstanding_wcount <= __saxi_outstanding_wcount - 1;
       end 
       if((th_ctrl == 7) && ((__saxi_outstanding_wcount == 0) && (_saxi_awready || !_saxi_awvalid))) begin
         _saxi_awaddr <= _th_ctrl_awaddr_4;
         _saxi_awvalid <= 1;
       end 
-      __saxi_cond_0_1 <= 1;
+      __saxi_waddr_cond_0_1 <= 1;
       if(_saxi_awvalid && !_saxi_awready) begin
         _saxi_awvalid <= _saxi_awvalid;
-      end 
-      if((th_ctrl == 9) && (_saxi_wready || !_saxi_wvalid)) begin
-        _saxi_wdata <= _th_ctrl_sleep_5;
-        _saxi_wvalid <= 1;
-        _saxi_wstrb <= { 4{ 1'd1 } };
-      end 
-      __saxi_cond_1_1 <= 1;
-      if(_saxi_wvalid && !_saxi_wready) begin
-        _saxi_wvalid <= _saxi_wvalid;
       end 
       if((th_ctrl == 15) && ((__saxi_outstanding_wcount == 0) && (_saxi_awready || !_saxi_awvalid))) begin
         _saxi_awaddr <= _th_ctrl_awaddr_4;
         _saxi_awvalid <= 1;
       end 
-      __saxi_cond_2_1 <= 1;
+      __saxi_waddr_cond_1_1 <= 1;
       if(_saxi_awvalid && !_saxi_awready) begin
         _saxi_awvalid <= _saxi_awvalid;
-      end 
-      if((th_ctrl == 17) && (_saxi_wready || !_saxi_wvalid)) begin
-        _saxi_wdata <= _th_ctrl_size_6;
-        _saxi_wvalid <= 1;
-        _saxi_wstrb <= { 4{ 1'd1 } };
-      end 
-      __saxi_cond_3_1 <= 1;
-      if(_saxi_wvalid && !_saxi_wready) begin
-        _saxi_wvalid <= _saxi_wvalid;
       end 
       if((th_ctrl == 23) && ((__saxi_outstanding_wcount == 0) && (_saxi_awready || !_saxi_awvalid))) begin
         _saxi_awaddr <= _th_ctrl_awaddr_4;
         _saxi_awvalid <= 1;
       end 
-      __saxi_cond_4_1 <= 1;
+      __saxi_waddr_cond_2_1 <= 1;
       if(_saxi_awvalid && !_saxi_awready) begin
         _saxi_awvalid <= _saxi_awvalid;
       end 
-      if((th_ctrl == 25) && (_saxi_wready || !_saxi_wvalid)) begin
-        _saxi_wdata <= 1;
-        _saxi_wvalid <= 1;
-        _saxi_wstrb <= { 4{ 1'd1 } };
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      __saxi_wdata_sb_0 <= 0;
+      __saxi_wvalid_sb_0 <= 0;
+      __saxi_wstrb_sb_0 <= 0;
+      __saxi_wdata_cond_0_1 <= 0;
+      __saxi_wdata_cond_1_1 <= 0;
+      __saxi_wdata_cond_2_1 <= 0;
+    end else begin
+      if(__saxi_wdata_cond_0_1) begin
+        __saxi_wvalid_sb_0 <= 0;
       end 
-      __saxi_cond_5_1 <= 1;
-      if(_saxi_wvalid && !_saxi_wready) begin
-        _saxi_wvalid <= _saxi_wvalid;
+      if(__saxi_wdata_cond_1_1) begin
+        __saxi_wvalid_sb_0 <= 0;
+      end 
+      if(__saxi_wdata_cond_2_1) begin
+        __saxi_wvalid_sb_0 <= 0;
+      end 
+      if((th_ctrl == 9) && (__saxi_wready_sb_0 || !__saxi_wvalid_sb_0)) begin
+        __saxi_wdata_sb_0 <= _th_ctrl_sleep_5;
+        __saxi_wvalid_sb_0 <= 1;
+        __saxi_wstrb_sb_0 <= { 4{ 1'd1 } };
+      end 
+      __saxi_wdata_cond_0_1 <= 1;
+      if(__saxi_wvalid_sb_0 && !__saxi_wready_sb_0) begin
+        __saxi_wvalid_sb_0 <= __saxi_wvalid_sb_0;
+      end 
+      if((th_ctrl == 17) && (__saxi_wready_sb_0 || !__saxi_wvalid_sb_0)) begin
+        __saxi_wdata_sb_0 <= _th_ctrl_size_6;
+        __saxi_wvalid_sb_0 <= 1;
+        __saxi_wstrb_sb_0 <= { 4{ 1'd1 } };
+      end 
+      __saxi_wdata_cond_1_1 <= 1;
+      if(__saxi_wvalid_sb_0 && !__saxi_wready_sb_0) begin
+        __saxi_wvalid_sb_0 <= __saxi_wvalid_sb_0;
+      end 
+      if((th_ctrl == 25) && (__saxi_wready_sb_0 || !__saxi_wvalid_sb_0)) begin
+        __saxi_wdata_sb_0 <= 1;
+        __saxi_wvalid_sb_0 <= 1;
+        __saxi_wstrb_sb_0 <= { 4{ 1'd1 } };
+      end 
+      __saxi_wdata_cond_2_1 <= 1;
+      if(__saxi_wvalid_sb_0 && !__saxi_wready_sb_0) begin
+        __saxi_wvalid_sb_0 <= __saxi_wvalid_sb_0;
+      end 
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _sb__saxi_writedata_data_5 <= 0;
+      _sb__saxi_writedata_valid_6 <= 0;
+      _sb__saxi_writedata_tmp_data_8 <= 0;
+      _sb__saxi_writedata_tmp_valid_9 <= 0;
+    end else begin
+      if(_sb__saxi_writedata_m_ready_4 || !_sb__saxi_writedata_valid_6) begin
+        _sb__saxi_writedata_data_5 <= _sb__saxi_writedata_next_data_10;
+        _sb__saxi_writedata_valid_6 <= _sb__saxi_writedata_next_valid_11;
+      end 
+      if(!_sb__saxi_writedata_tmp_valid_9 && _sb__saxi_writedata_valid_6 && !_sb__saxi_writedata_m_ready_4) begin
+        _sb__saxi_writedata_tmp_data_8 <= _sb__saxi_writedata_s_data_2;
+        _sb__saxi_writedata_tmp_valid_9 <= _sb__saxi_writedata_s_valid_3;
+      end 
+      if(_sb__saxi_writedata_tmp_valid_9 && _sb__saxi_writedata_m_ready_4) begin
+        _sb__saxi_writedata_tmp_valid_9 <= 0;
+      end 
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _saxi_araddr <= 0;
+      _saxi_arvalid <= 0;
+      __saxi_raddr_cond_0_1 <= 0;
+    end else begin
+      if(__saxi_raddr_cond_0_1) begin
+        _saxi_arvalid <= 0;
       end 
       if((th_ctrl == 30) && (_saxi_arready || !_saxi_arvalid)) begin
         _saxi_araddr <= _th_ctrl_araddr_8;
         _saxi_arvalid <= 1;
       end 
-      __saxi_cond_6_1 <= 1;
+      __saxi_raddr_cond_0_1 <= 1;
       if(_saxi_arvalid && !_saxi_arready) begin
         _saxi_arvalid <= _saxi_arvalid;
+      end 
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _sb__saxi_readdata_data_18 <= 0;
+      _sb__saxi_readdata_valid_19 <= 0;
+      _sb__saxi_readdata_tmp_data_21 <= 0;
+      _sb__saxi_readdata_tmp_valid_22 <= 0;
+    end else begin
+      if(_sb__saxi_readdata_m_ready_17 || !_sb__saxi_readdata_valid_19) begin
+        _sb__saxi_readdata_data_18 <= _sb__saxi_readdata_next_data_23;
+        _sb__saxi_readdata_valid_19 <= _sb__saxi_readdata_next_valid_24;
+      end 
+      if(!_sb__saxi_readdata_tmp_valid_22 && _sb__saxi_readdata_valid_19 && !_sb__saxi_readdata_m_ready_17) begin
+        _sb__saxi_readdata_tmp_data_21 <= _sb__saxi_readdata_s_data_15;
+        _sb__saxi_readdata_tmp_valid_22 <= _sb__saxi_readdata_s_valid_16;
+      end 
+      if(_sb__saxi_readdata_tmp_valid_22 && _sb__saxi_readdata_m_ready_17) begin
+        _sb__saxi_readdata_tmp_valid_22 <= 0;
+      end 
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      __saxi_outstanding_wcount <= 0;
+    end else begin
+      if(_saxi_awvalid && _saxi_awready && !(_saxi_bvalid && _saxi_bready) && (__saxi_outstanding_wcount < 7)) begin
+        __saxi_outstanding_wcount <= __saxi_outstanding_wcount + 1;
+      end 
+      if(!(_saxi_awvalid && _saxi_awready) && (_saxi_bvalid && _saxi_bready) && (__saxi_outstanding_wcount > 0)) begin
+        __saxi_outstanding_wcount <= __saxi_outstanding_wcount - 1;
       end 
     end
   end
@@ -429,7 +560,7 @@ module test;
       _th_ctrl_size_6 <= 0;
       _th_ctrl_start_time_7 <= 0;
       _th_ctrl_araddr_8 <= 0;
-      axim_rdata_13 <= 0;
+      axim_rdata_39 <= 0;
       _th_ctrl_busy_9 <= 0;
       _th_ctrl_end_time_10 <= 0;
       _th_ctrl_time_11 <= 0;
@@ -476,12 +607,12 @@ module test;
           end 
         end
         th_ctrl_9: begin
-          if(_saxi_wready || !_saxi_wvalid) begin
+          if(__saxi_wready_sb_0 || !__saxi_wvalid_sb_0) begin
             th_ctrl <= th_ctrl_10;
           end 
         end
         th_ctrl_10: begin
-          if(_saxi_wvalid && _saxi_wready) begin
+          if(__saxi_wvalid_sb_0 && __saxi_wready_sb_0) begin
             th_ctrl <= th_ctrl_11;
           end 
         end
@@ -513,12 +644,12 @@ module test;
           end 
         end
         th_ctrl_17: begin
-          if(_saxi_wready || !_saxi_wvalid) begin
+          if(__saxi_wready_sb_0 || !__saxi_wvalid_sb_0) begin
             th_ctrl <= th_ctrl_18;
           end 
         end
         th_ctrl_18: begin
-          if(_saxi_wvalid && _saxi_wready) begin
+          if(__saxi_wvalid_sb_0 && __saxi_wready_sb_0) begin
             th_ctrl <= th_ctrl_19;
           end 
         end
@@ -550,12 +681,12 @@ module test;
           end 
         end
         th_ctrl_25: begin
-          if(_saxi_wready || !_saxi_wvalid) begin
+          if(__saxi_wready_sb_0 || !__saxi_wvalid_sb_0) begin
             th_ctrl <= th_ctrl_26;
           end 
         end
         th_ctrl_26: begin
-          if(_saxi_wvalid && _saxi_wready) begin
+          if(__saxi_wvalid_sb_0 && __saxi_wready_sb_0) begin
             th_ctrl <= th_ctrl_27;
           end 
         end
@@ -586,15 +717,15 @@ module test;
           end 
         end
         th_ctrl_32: begin
-          if(_saxi_rvalid) begin
-            axim_rdata_13 <= _saxi_rdata;
+          if(__saxi_rvalid_sb_0) begin
+            axim_rdata_39 <= __saxi_rdata_sb_0;
           end 
-          if(_saxi_rvalid) begin
+          if(__saxi_rvalid_sb_0) begin
             th_ctrl <= th_ctrl_33;
           end 
         end
         th_ctrl_33: begin
-          _th_ctrl_busy_9 <= axim_rdata_13;
+          _th_ctrl_busy_9 <= axim_rdata_39;
           th_ctrl <= th_ctrl_34;
         end
         th_ctrl_34: begin
@@ -705,7 +836,7 @@ module blinkled
                                (axis_maskaddr_5 == 1)? _saxi_resetval_1 : 
                                (axis_maskaddr_5 == 2)? _saxi_resetval_2 : 
                                (axis_maskaddr_5 == 3)? _saxi_resetval_3 : 'hx;
-  reg _saxi_cond_0_1;
+  reg _saxi_rdata_cond_0_1;
   assign saxi_wready = _saxi_register_fsm == 3;
   reg [32-1:0] th_blink;
   localparam th_blink_init = 0;
@@ -716,15 +847,33 @@ module blinkled
 
   always @(posedge CLK) begin
     if(RST) begin
+      saxi_rdata <= 0;
+      saxi_rvalid <= 0;
+      _saxi_rdata_cond_0_1 <= 0;
+    end else begin
+      if(_saxi_rdata_cond_0_1) begin
+        saxi_rvalid <= 0;
+      end 
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid)) begin
+        saxi_rdata <= axislite_rdata_6;
+        saxi_rvalid <= 1;
+      end 
+      _saxi_rdata_cond_0_1 <= 1;
+      if(saxi_rvalid && !saxi_rready) begin
+        saxi_rvalid <= saxi_rvalid;
+      end 
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
       saxi_bvalid <= 0;
       prev_awvalid_3 <= 0;
       prev_arvalid_4 <= 0;
       writevalid_1 <= 0;
       readvalid_2 <= 0;
       addr_0 <= 0;
-      saxi_rdata <= 0;
-      saxi_rvalid <= 0;
-      _saxi_cond_0_1 <= 0;
       _saxi_register_0 <= 0;
       _saxi_flag_0 <= 0;
       _saxi_register_1 <= 0;
@@ -734,9 +883,6 @@ module blinkled
       _saxi_register_3 <= 0;
       _saxi_flag_3 <= 0;
     end else begin
-      if(_saxi_cond_0_1) begin
-        saxi_rvalid <= 0;
-      end 
       if(saxi_bvalid && saxi_bready) begin
         saxi_bvalid <= 0;
       end 
@@ -753,14 +899,6 @@ module blinkled
       end else if(saxi_arready && saxi_arvalid) begin
         addr_0 <= saxi_araddr;
         readvalid_2 <= 1;
-      end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid)) begin
-        saxi_rdata <= axislite_rdata_6;
-        saxi_rvalid <= 1;
-      end 
-      _saxi_cond_0_1 <= 1;
-      if(saxi_rvalid && !saxi_rready) begin
-        saxi_rvalid <= saxi_rvalid;
       end 
       if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_7 && (axis_maskaddr_5 == 0)) begin
         _saxi_register_0 <= axislite_resetval_8;

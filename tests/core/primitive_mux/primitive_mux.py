@@ -4,26 +4,29 @@ import sys
 import os
 
 # the next line can be removed after installation
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
 from veriloggen import *
 
 prim_mux = None
 
+
 def mkPrimMux():
     global prim_mux
     if prim_mux is not None:
         return prim_mux
-    
+
     m = Module('prim_mux')
     width = m.Parameter('WIDTH', 1)
     sel = m.Input('sel')
     ina = m.Input('ina', width=width)
     inb = m.Input('inb', width=width)
     out = m.Output('out', width=width)
-    m.Assign( out(Mux(sel, ina, inb)) )
+    m.Assign(out(Mux(sel, ina, inb)))
     prim_mux = m
     return m
+
 
 def Pmux(m, cond, true_value, false_value, width=32):
     mux = mkPrimMux()
@@ -38,7 +41,8 @@ def Pmux(m, cond, true_value, false_value, width=32):
                params=[('WIDTH', width)],
                ports=[sel, ina, inb, out])
     return out
-    
+
+
 def mkLed():
     m = Module('blinkled')
     width = m.Parameter('WIDTH', 8)
@@ -51,17 +55,18 @@ def mkLed():
         If(rst)(
             count(0)
         ).Else(
-            count( Pmux(m, count==1023, 0, count + 1, width=32) )
+            count(Pmux(m, count == 1023, 0, count + 1, width=32))
         ))
-    
+
     m.Always(Posedge(clk))(
         If(rst)(
             led(0)
         ).Else(
-            led( Pmux(m, count==1024-1, led+1, led, width=width) )
+            led(Pmux(m, count == 1024 - 1, led + 1, led, width=width))
         ))
-    
+
     return m
+
 
 if __name__ == '__main__':
     led = mkLed()

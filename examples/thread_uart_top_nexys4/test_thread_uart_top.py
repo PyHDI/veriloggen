@@ -12,5 +12,5 @@ def test(request):
 
     rslt = thread_uart_top.run(filename=None, simtype=simtype)
 
-    verify_rslt = rslt.splitlines()[-1]
+    verify_rslt = [line for line in rslt.splitlines() if line.startswith('# verify:')][0]
     assert(verify_rslt == '# verify: PASSED')

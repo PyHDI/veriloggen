@@ -238,7 +238,7 @@ module blinkled
                                 (axis_maskaddr_17 == 1)? _saxi_resetval_1 : 
                                 (axis_maskaddr_17 == 2)? _saxi_resetval_2 : 
                                 (axis_maskaddr_17 == 3)? _saxi_resetval_3 : 'hx;
-  reg _saxi_cond_0_1;
+  reg _saxi_rdata_cond_0_1;
   assign saxi_wready = _saxi_register_fsm == 3;
   wire [10-1:0] ram_a_0_addr;
   wire [32-1:0] ram_a_0_rdata;
@@ -657,11 +657,6 @@ module blinkled
 
   always @(posedge CLK) begin
     if(RST) begin
-      _axi_c_write_data_busy <= 0;
-      _axi_c_write_op_sel_buf <= 0;
-      _axi_c_write_local_addr_buf <= 0;
-      _axi_c_write_local_stride_buf <= 0;
-      _axi_c_write_size_buf <= 0;
       axi_c_tdata <= 0;
       axi_c_tvalid <= 0;
       axi_c_tlast <= 0;
@@ -670,13 +665,6 @@ module blinkled
       if(_axi_c_cond_0_1) begin
         axi_c_tvalid <= 0;
         axi_c_tlast <= 0;
-      end 
-      if((_axi_c_write_data_fsm == 0) && (!_axi_c_write_data_busy && !_axi_c_write_req_fifo_empty && (_axi_c_write_op_sel_fifo == 1))) begin
-        _axi_c_write_data_busy <= 1;
-        _axi_c_write_op_sel_buf <= _axi_c_write_op_sel_fifo;
-        _axi_c_write_local_addr_buf <= _axi_c_write_local_addr_fifo;
-        _axi_c_write_local_stride_buf <= _axi_c_write_local_stride_fifo;
-        _axi_c_write_size_buf <= _axi_c_write_size_fifo;
       end 
       if((_axi_c_write_op_sel_buf == 1) && read_burst_rvalid_86 && (axi_c_tready || !axi_c_tvalid) && (axi_c_tready || !axi_c_tvalid)) begin
         axi_c_tdata <= read_burst_rdata_90;
@@ -687,6 +675,25 @@ module blinkled
       if(axi_c_tvalid && !axi_c_tready) begin
         axi_c_tvalid <= axi_c_tvalid;
         axi_c_tlast <= axi_c_tlast;
+      end 
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
+      _axi_c_write_data_busy <= 0;
+      _axi_c_write_op_sel_buf <= 0;
+      _axi_c_write_local_addr_buf <= 0;
+      _axi_c_write_local_stride_buf <= 0;
+      _axi_c_write_size_buf <= 0;
+    end else begin
+      if((_axi_c_write_data_fsm == 0) && (!_axi_c_write_data_busy && !_axi_c_write_req_fifo_empty && (_axi_c_write_op_sel_fifo == 1))) begin
+        _axi_c_write_data_busy <= 1;
+        _axi_c_write_op_sel_buf <= _axi_c_write_op_sel_fifo;
+        _axi_c_write_local_addr_buf <= _axi_c_write_local_addr_fifo;
+        _axi_c_write_local_stride_buf <= _axi_c_write_local_stride_fifo;
+        _axi_c_write_size_buf <= _axi_c_write_size_fifo;
       end 
       if((_axi_c_write_data_fsm == 2) && ((_axi_c_write_op_sel_buf == 1) && read_burst_rvalid_86 && (axi_c_tready || !axi_c_tvalid))) begin
         _axi_c_write_size_buf <= _axi_c_write_size_buf - 1;
@@ -717,15 +724,33 @@ module blinkled
 
   always @(posedge CLK) begin
     if(RST) begin
+      saxi_rdata <= 0;
+      saxi_rvalid <= 0;
+      _saxi_rdata_cond_0_1 <= 0;
+    end else begin
+      if(_saxi_rdata_cond_0_1) begin
+        saxi_rvalid <= 0;
+      end 
+      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid)) begin
+        saxi_rdata <= axislite_rdata_18;
+        saxi_rvalid <= 1;
+      end 
+      _saxi_rdata_cond_0_1 <= 1;
+      if(saxi_rvalid && !saxi_rready) begin
+        saxi_rvalid <= saxi_rvalid;
+      end 
+    end
+  end
+
+
+  always @(posedge CLK) begin
+    if(RST) begin
       saxi_bvalid <= 0;
       prev_awvalid_15 <= 0;
       prev_arvalid_16 <= 0;
       writevalid_13 <= 0;
       readvalid_14 <= 0;
       addr_12 <= 0;
-      saxi_rdata <= 0;
-      saxi_rvalid <= 0;
-      _saxi_cond_0_1 <= 0;
       _saxi_register_0 <= 0;
       _saxi_flag_0 <= 0;
       _saxi_register_1 <= 0;
@@ -735,9 +760,6 @@ module blinkled
       _saxi_register_3 <= 0;
       _saxi_flag_3 <= 0;
     end else begin
-      if(_saxi_cond_0_1) begin
-        saxi_rvalid <= 0;
-      end 
       if(saxi_bvalid && saxi_bready) begin
         saxi_bvalid <= 0;
       end 
@@ -754,14 +776,6 @@ module blinkled
       end else if(saxi_arready && saxi_arvalid) begin
         addr_12 <= saxi_araddr;
         readvalid_14 <= 1;
-      end 
-      if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid)) begin
-        saxi_rdata <= axislite_rdata_18;
-        saxi_rvalid <= 1;
-      end 
-      _saxi_cond_0_1 <= 1;
-      if(saxi_rvalid && !saxi_rready) begin
-        saxi_rvalid <= saxi_rvalid;
       end 
       if((_saxi_register_fsm == 1) && (saxi_rready || !saxi_rvalid) && axislite_flag_19 && (axis_maskaddr_17 == 0)) begin
         _saxi_register_0 <= axislite_resetval_20;

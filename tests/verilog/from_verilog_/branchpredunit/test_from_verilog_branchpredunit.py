@@ -534,26 +534,27 @@ endmodule
 `default_nettype wire
 """
 
+
 def test():
     veriloggen.reset()
     test_modules = from_verilog_branchpredunit.mkMips()
-    code = ''.join([ m.to_verilog() for m in test_modules.values() if not m.used ])
+    code = ''.join([m.to_verilog() for m in test_modules.values() if not m.used])
 
     from pyverilog.vparser.parser import parse
     from pyverilog.ast_code_generator.codegen import ASTCodeGenerator
     import sys
     import tempfile
-    
+
     # encoding: 'utf-8' ?
     encode = sys.getdefaultencoding()
-    
+
     tmp = tempfile.NamedTemporaryFile()
     tmp.write(expected_verilog.encode(encode))
     tmp.read()
     filename = tmp.name
     print(filename)
-    
-    expected_ast, _ = parse([ filename ])
+
+    expected_ast, _ = parse([filename])
     codegen = ASTCodeGenerator()
     expected_code = codegen.visit(expected_ast)
 

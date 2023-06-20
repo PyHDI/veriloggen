@@ -540,6 +540,7 @@ module UartRx
 endmodule
 """
 
+
 def test():
     veriloggen.reset()
     test_module = uart.mkTest()

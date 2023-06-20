@@ -40,6 +40,7 @@ module blinkled #
 endmodule
 """
 
+
 def test():
     veriloggen.reset()
     test_module = _slice.mkLed()

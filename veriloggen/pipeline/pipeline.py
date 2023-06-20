@@ -63,7 +63,7 @@ class Pipeline(vtypes.VeriloggenNode):
 
         self.done = False
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def input(self, data, valid=None, ready=None, width=None):
         if ready is not None and not isinstance(ready, (vtypes.Wire, vtypes.Output)):
             raise TypeError('ready port of PipelineVariable must be Wire., not %s' %
@@ -73,7 +73,7 @@ class Pipeline(vtypes.VeriloggenNode):
         self.vars.append(ret)
         return ret
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # self.__call__() calls this method
     def stage(self, data, initval=0, width=None, preg=None):
         if width is None:
@@ -96,7 +96,7 @@ class Pipeline(vtypes.VeriloggenNode):
 
         return ret
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # Accumulator
     def acc_and(self, data, initval=0, resetcond=None, width=None):
         return self._accumulate([vtypes.And], data, width, initval, resetcond)
@@ -146,7 +146,7 @@ class Pipeline(vtypes.VeriloggenNode):
             ops = [ops]
         return self._accumulate(ops, data, width, initval, resetcond, label)
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def make_always(self, reset=(), body=()):
         if self.done:
             raise ValueError('make_always() has been already called.')
@@ -165,19 +165,19 @@ class Pipeline(vtypes.VeriloggenNode):
                 self.make_code()
             ))
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def make_reset(self):
         return self.seq.make_reset()
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def make_code(self):
         return self.seq.make_code()
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def draw_graph(self, filename='out.png', prog='dot'):
         _draw_graph(self, filename, prog)
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _accumulate(self, ops, data, width=None, initval=0, resetcond=None, oplabel=None):
         if width is None:
             width = self.width
@@ -197,7 +197,7 @@ class Pipeline(vtypes.VeriloggenNode):
 
         return ret
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _add_reg(self, prefix, count, width=None, initval=0):
         tmp_name = '_'.join(['', self.name, prefix, str(count)])
         tmp = self.m.Reg(tmp_name, width, initval=initval)
@@ -208,7 +208,7 @@ class Pipeline(vtypes.VeriloggenNode):
         tmp = self.m.Wire(tmp_name, width)
         return tmp
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _make_tmp(self, data, valid, ready, width=None, initval=0, acc_ops=()):
         tmp_data = self._add_reg(
             'data', self.tmp_count, width=width, initval=initval)
@@ -298,7 +298,7 @@ class Pipeline(vtypes.VeriloggenNode):
 
         return tmp_data, tmp_valid, tmp_ready
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _make_prev(self, data, valid, ready, width=None, initval=0):
         tmp_data = self._add_reg(
             'data', self.tmp_count, width=width, initval=initval)
@@ -320,11 +320,11 @@ class Pipeline(vtypes.VeriloggenNode):
 
         return tmp_data, tmp_valid, tmp_ready
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def __call__(self, data, initval=0, width=None):
         return self.stage(data, initval=initval, width=width)
 
-#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 
 
 class _PipelineInterface(object):
@@ -339,7 +339,7 @@ class _PipelineInterface(object):
         args = [self.data, self.valid, self.ready]
         return ','.join([str(arg) for arg in args])
 
-#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 
 
 class _PipelineNumeric(vtypes._Numeric):
@@ -451,7 +451,7 @@ class _PipelineVariable(_PipelineNumeric):
             return self
         return self.preg_dict[stage_id]
 
-#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 
 
 class _PipelineVisitor(object):
@@ -520,7 +520,7 @@ class _PipelineVisitor(object):
     def visit_float(self, node):
         raise NotImplementedError('visit__Constant() must be implemented')
 
-#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 
 
 class DataVisitor(_PipelineVisitor):
@@ -655,7 +655,7 @@ class DataVisitor(_PipelineVisitor):
     def visit_float(self, node):
         return (None, vtypes.Float(node), None, [])
 
-#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 
 
 def _draw_graph(df, filename='out.png', prog='dot'):

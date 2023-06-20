@@ -650,6 +650,7 @@ module reg_chain
 endmodule
 """
 
+
 def test():
     veriloggen.reset()
     test_module = regchain.mkRegChain(length=120)

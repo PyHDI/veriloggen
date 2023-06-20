@@ -27,7 +27,7 @@ def mkLed():
     a = strm.source('a') + 1000
     size = strm.parameter('size')
     sum, sum_valid = strm.ReduceAddValid(a, size)
-    sum.iteration_interval = 5
+    sum.initiation_interval = 5
     strm.sink(sum, 'sum', when=sum_valid, when_name='sum_valid')
 
     def comp_stream(size, offset):
@@ -129,9 +129,7 @@ def run(filename='tmp.v', simtype='iverilog', outputfile=None):
 
     sim = simulation.Simulator(test, sim=simtype)
     rslt = sim.run(outputfile=outputfile)
-    lines = rslt.splitlines()
-    if simtype == 'verilator' and lines[-1].startswith('-'):
-        rslt = '\n'.join(lines[:-1])
+
     return rslt
 
 

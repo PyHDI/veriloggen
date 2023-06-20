@@ -321,6 +321,7 @@ registers_2:         99
 registers_3:        100
 """
 
+
 def test():
     veriloggen.reset()
     sort_module = sort.mkSimSort()

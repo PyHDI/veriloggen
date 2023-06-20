@@ -4,9 +4,11 @@ import sys
 import os
 
 # the next line can be removed after installation
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
 
 from veriloggen import *
+
 
 def mkLed():
     m = Module('blinkled')
@@ -24,38 +26,39 @@ def mkLed():
             count += 1
         led += 1
     """
-    
+
     fsm = FSM(m, 'fsm', clk, rst)
 
-    fsm( led(0) )
+    fsm(led(0))
     fsm.goto_next()
-    
+
     init = fsm.current
-    fsm( count(0) )
+    fsm(count(0))
     fsm.goto_next()
-    
+
     head = fsm.current
     cond = count < 1024
     fsm.goto_next(cond=cond)
-    
-    fsm( count.inc() )
+
+    fsm(count.inc())
     fsm.goto_next()
-    
-    fsm( count.inc() )
+
+    fsm(count.inc())
     fsm.goto(head)
     fsm.inc()
-    
+
     tail = fsm.current
     fsm.goto_from(head, tail, cond=Not(cond))
-    
-    fsm( led.inc() )
+
+    fsm(led.inc())
     fsm.goto(init)
-    
-    #fsm.make_always()
+
+    # fsm.make_always()
     # make_alway() is called when to_veirlog() is called.
     m.add_hook(fsm.make_always, args=(), kwargs={})
-    
+
     return m
+
 
 def mkTop():
     m = Module('top')
@@ -66,6 +69,7 @@ def mkTop():
                connect_same_name(*params.values()),
                connect_same_name(*ports.values()))
     return m
+
 
 if __name__ == '__main__':
     top = mkTop()

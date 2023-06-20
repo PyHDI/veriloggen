@@ -40,6 +40,7 @@ module test;
 endmodule
 """
 
+
 def test():
     veriloggen.reset()
     test_module = _while.mkTest()

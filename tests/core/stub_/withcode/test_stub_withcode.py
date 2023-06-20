@@ -62,6 +62,7 @@ module blinkled #
 endmodule
 """
 
+
 def test():
     veriloggen.reset()
     test_module = stub_withcode.mkTop()

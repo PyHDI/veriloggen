@@ -174,7 +174,7 @@ class Thread(vtypes.VeriloggenNode):
 
         return self.return_value
 
-    #--------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
     def add_function(self, func):
         name = func.__name__
         if name in self.function_lib:

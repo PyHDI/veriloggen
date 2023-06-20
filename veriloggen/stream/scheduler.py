@@ -90,8 +90,8 @@ class ASAPScheduler(_Scheduler):
         node._set_start_stage(mine)
         if getattr(node, 'variable_latency', None):
             node.latency = getattr(node, node.variable_latency)()
-        if getattr(node, 'variable_iteration_interval', None):
-            node.iteration_interval = getattr(node, node.variable_iteration_interval)()
+        if getattr(node, 'variable_initiation_interval', None):
+            node.initiation_interval = getattr(node, node.variable_initiation_interval)()
         end = self.next_stage(node, mine)
         node._set_end_stage(end)
         return end
@@ -107,8 +107,8 @@ class ASAPScheduler(_Scheduler):
         node._set_start_stage(mine)
         if getattr(node, 'variable_latency', None):
             node.latency = getattr(node, node.variable_latency)()
-        if getattr(node, 'variable_iteration_interval', None):
-            node.iteration_interval = getattr(node, node.variable_iteration_interval)()
+        if getattr(node, 'variable_initiation_interval', None):
+            node.initiation_interval = getattr(node, node.variable_initiation_interval)()
         end = self.next_stage(node, mine)
         node._set_end_stage(end)
         return end
@@ -127,8 +127,8 @@ class ASAPScheduler(_Scheduler):
         node._set_start_stage(mine)
         if getattr(node, 'variable_latency', None):
             node.latency = getattr(node, node.variable_latency)()
-        if getattr(node, 'variable_iteration_interval', None):
-            node.iteration_interval = getattr(node, node.variable_iteration_interval)()
+        if getattr(node, 'variable_initiation_interval', None):
+            node.initiation_interval = getattr(node, node.variable_initiation_interval)()
         end = self.next_stage(node, mine)
         node._set_end_stage(end)
         return end
@@ -167,8 +167,8 @@ class ASAPScheduler(_Scheduler):
         node._set_start_stage(mine)
         if getattr(node, 'variable_latency', None):
             node.latency = getattr(node, node.variable_latency)()
-        if getattr(node, 'variable_iteration_interval', None):
-            node.iteration_interval = getattr(node, node.variable_iteration_interval)()
+        if getattr(node, 'variable_initiation_interval', None):
+            node.initiation_interval = getattr(node, node.variable_initiation_interval)()
         end = self.next_stage(node, mine)
         node._set_end_stage(end)
         return end

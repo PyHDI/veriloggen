@@ -80,4 +80,3 @@ print(expected[-16:])
 
 diff_sum = np.sum(expected - b)
 print(diff_sum)
-

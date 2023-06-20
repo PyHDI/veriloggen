@@ -169,6 +169,7 @@ endmodule
 
 """
 
+
 def test():
     veriloggen.reset()
     test_module = dataflow_pass_nocontrol.mkTest()

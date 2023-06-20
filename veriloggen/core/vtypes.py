@@ -151,6 +151,7 @@ def get_value(obj):
         return obj.value
     return None
 
+
 def get_initval(obj):
     if hasattr(obj, 'initval'):
         return obj.initval
