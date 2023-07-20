@@ -27,7 +27,7 @@ def mkLed():
                 print()
                 print('led = %0d (%b)' % (led, led))
                 print(f'{cnt = :0d} ({cnt:b})')
-                print(f'clk + led = {clk + led}')
+                print(f'cnt + led = {cnt + led}')
 
     th = vthread.Thread(m, 'th_blink', clk, rst, blink)
     fsm = th.start()
