@@ -116,7 +116,7 @@ module blinkled
           th_blink <= th_blink_9;
         end
         th_blink_9: begin
-          $display("clk + led = %d", (CLK + LED));
+          $display("cnt + led = %d", (CNT + LED));
           th_blink <= th_blink_10;
         end
         th_blink_10: begin
