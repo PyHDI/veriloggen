@@ -23,9 +23,10 @@ setup(name='veriloggen',
                     'veriloggen.simulation': ['*.cpp'],
                     },
       install_requires=['pyverilog>=1.3.0',
-                        'numpy>=1.17'],
+                        'numpy>=1.17',
+                        'rectpack>=0.2.2'],
       extras_require={
-          'test': ['pytest>=3.8.1', 'pytest-pythonpath>=0.7.3'],
+          'test': ['pytest>=7.0.0'],
           'graph': ['pygraphviz>=1.3.1'],
       },
       )
