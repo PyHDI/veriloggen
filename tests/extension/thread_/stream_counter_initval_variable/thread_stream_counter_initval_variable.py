@@ -45,7 +45,7 @@ def mkLed():
         strm.join()
 
     def comp_sequential(size, offset):
-        cnt_size= 8
+        cnt_size = 8
         cnt_initval = 4
         cnt = cnt_initval
         for i in range(size):
@@ -139,9 +139,7 @@ def run(filename='tmp.v', simtype='iverilog', outputfile=None):
 
     sim = simulation.Simulator(test, sim=simtype)
     rslt = sim.run(outputfile=outputfile)
-    lines = rslt.splitlines()
-    if simtype == 'verilator' and lines[-1].startswith('-'):
-        rslt = '\n'.join(lines[:-1])
+
     return rslt
 
 

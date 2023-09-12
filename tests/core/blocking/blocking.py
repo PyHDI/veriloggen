@@ -4,9 +4,11 @@ import sys
 import os
 
 # the next line can be removed after installation
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
 from veriloggen import *
+
 
 def mkLed():
     m = Module('blinkled')
@@ -26,12 +28,13 @@ def mkLed():
                 count(count + 1)
             )
         ))
-    
+
     m.Always()(
         led(count, blk=True)
     )
 
     return m
+
 
 if __name__ == '__main__':
     led = mkLed()

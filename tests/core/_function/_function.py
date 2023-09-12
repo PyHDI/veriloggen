@@ -4,11 +4,14 @@ import sys
 import os
 
 # the next line can be removed after installation
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
 from veriloggen import *
 
 # external function definition
+
+
 def get_ext():
     ext = Function('ext_inc', 32)
     ext_v = ext.Input('v', 32)
@@ -19,7 +22,8 @@ def get_ext():
         ext(ext_tmp)
     )
     return ext
-    
+
+
 def mkLed():
     m = Module('blinkled')
     width = m.Parameter('WIDTH', 8)
@@ -39,7 +43,7 @@ def mkLed():
 
     # import an external function definition
     m.add_function(get_ext())
-    
+
     m.Always(Posedge(clk))(
         If(rst)(
             count(0)
@@ -48,21 +52,22 @@ def mkLed():
                 count(0)
             ).Else(
                 #count( FunctionCall(inc, count, 1) + 1 - 1 )
-                count( inc.call(count, 1) + 1 - 1 )
+                count(inc.call(count, 1) + 1 - 1)
             )
         ))
-    
+
     m.Always(Posedge(clk))(
         If(rst)(
             led(1)
         ).Else(
             If(count == 1024 - 1)(
-                led[0](led[width-1]),
-                led[1:width](led[0:width-1])
+                led[0](led[width - 1]),
+                led[1:width](led[0:width - 1])
             )
         ))
 
     return m
+
 
 if __name__ == '__main__':
     led = mkLed()

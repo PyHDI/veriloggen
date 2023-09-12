@@ -10115,5 +10115,5 @@ def test():
     sim = simulation.Simulator(test_module, sim='iverilog')
     libdir = os.path.dirname(os.path.abspath(__file__)) + '/subdir/'
     rslt = sim.run(libdir=libdir)
-
+    rslt = '\n'.join([line for line in rslt.splitlines() if line.startswith('LED:')] + [''])
     assert(expected_rslt == rslt)

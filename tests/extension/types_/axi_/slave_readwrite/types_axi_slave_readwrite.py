@@ -159,7 +159,8 @@ def mkTest():
                      params=m.connect_params(main),
                      ports=m.connect_ports(main))
 
-    # simulation.setup_waveform(m, uut, m.get_vars())
+    # vcd_name = os.path.splitext(os.path.basename(__file__))[0] + '.vcd'
+    # simulation.setup_waveform(m, uut, m.get_vars(), dumpfile=vcd_name)
     simulation.setup_clock(m, clk, hperiod=5)
     init = simulation.setup_reset(m, rst, m.make_reset(), period=100)
 
@@ -186,9 +187,7 @@ def run(filename='tmp.v', simtype='iverilog', outputfile=None):
 
     sim = simulation.Simulator(test, sim=simtype)
     rslt = sim.run(outputfile=outputfile)
-    lines = rslt.splitlines()
-    if simtype == 'verilator' and lines[-1].startswith('-'):
-        rslt = '\n'.join(lines[:-1])
+
     return rslt
 
 

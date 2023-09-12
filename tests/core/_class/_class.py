@@ -4,9 +4,11 @@ import sys
 import os
 
 # the next line can be removed after installation
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
 from veriloggen import *
+
 
 class Led(Module):
     def __init__(self, name='blinkled'):
@@ -27,7 +29,7 @@ class Led(Module):
                     self.count(self.count + 1)
                 )
             ))
-        
+
         self.Always(Posedge(self.clk))(
             If(self.rst)(
                 self.led(0)
@@ -36,7 +38,8 @@ class Led(Module):
                     self.led(self.led + 1)
                 )
             ))
-        
+
+
 if __name__ == '__main__':
     led = Led()
     verilog = led.to_verilog()

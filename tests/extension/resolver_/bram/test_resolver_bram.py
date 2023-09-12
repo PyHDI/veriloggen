@@ -126,6 +126,7 @@ module BRAM2 #
 endmodule
 """
 
+
 def test():
     veriloggen.reset()
     test_module = resolver_bram.mkOrig()

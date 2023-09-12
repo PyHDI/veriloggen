@@ -14,5 +14,5 @@ def test(request):
     rslt = thread_stream_read_modify_write_stall.run(filename=None, simtype=simtype,
                                                      outputfile=os.path.splitext(os.path.basename(__file__))[0] + '.out')
 
-    verify_rslt = rslt.splitlines()[-1]
+    verify_rslt = [line for line in rslt.splitlines() if line.startswith('# verify:')][0]
     assert(verify_rslt == '# verify: PASSED')

@@ -26,6 +26,7 @@ module top #
 endmodule
 """
 
+
 def test():
     veriloggen.reset()
     test_module = stub_str.mkTop()

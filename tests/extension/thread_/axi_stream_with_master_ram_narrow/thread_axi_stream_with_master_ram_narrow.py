@@ -62,7 +62,8 @@ def mkLed(word_datawidth=128):
         for i in range(size):
             wdata.value = 0
             for j in range(word_datawidth // datawidth):
-                wdata.value = (i + 0x1000 * j) << (word_datawidth - datawidth) | (wdata.value >> datawidth)
+                wdata.value = (i + 0x1000 * j) << (word_datawidth -
+                                                   datawidth) | (wdata.value >> datawidth)
             myram.write(i, wdata)
 
         laddr = 0
@@ -149,9 +150,7 @@ def run(filename='tmp.v', simtype='iverilog', outputfile=None):
 
     sim = simulation.Simulator(test, sim=simtype)
     rslt = sim.run(outputfile=outputfile)
-    lines = rslt.splitlines()
-    if simtype == 'verilator' and lines[-1].startswith('-'):
-        rslt = '\n'.join(lines[:-1])
+
     return rslt
 
 

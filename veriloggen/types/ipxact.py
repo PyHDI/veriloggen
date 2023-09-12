@@ -53,9 +53,9 @@ def to_ipxact(m, ip_name=None, ip_ver='1.0',
 
     if not os.path.exists(dirname):
         os.mkdir(dirname)
-    #if not os.path.exists(dirname + '/' + 'data'):
+    # if not os.path.exists(dirname + '/' + 'data'):
     #    os.mkdir(dirname + '/' + 'data')
-    #if not os.path.exists(dirname + '/' + 'bd'):
+    # if not os.path.exists(dirname + '/' + 'bd'):
     #    os.mkdir(dirname + '/' + 'bd')
     if not os.path.exists(dirname + '/' + 'xgui'):
         os.mkdir(dirname + '/' + 'xgui')
@@ -109,19 +109,19 @@ def to_ipxact(m, ip_name=None, ip_ver='1.0',
     f.write(xml_code)
     f.close()
 
-    ## xdc
+    # xdc
     #xdc_code = open(TEMPLATE_DIR + 'ipxact.xdc', 'r').read()
 
     #f = open(xdcpath + xdcname, 'w')
-    #f.write(xdc_code)
-    #f.close()
+    # f.write(xdc_code)
+    # f.close()
 
-    ## bd
+    # bd
     #bd_code = open(TEMPLATE_DIR + 'bd.tcl', 'r').read()
 
     #f = open(bdpath + bdname, 'w')
-    #f.write(bd_code)
-    #f.close()
+    # f.write(bd_code)
+    # f.close()
 
     # xgui file
     xgui_code = open(TEMPLATE_DIR + 'xgui_tcl.txt', 'r').read()

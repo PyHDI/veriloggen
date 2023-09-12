@@ -4,9 +4,11 @@ import sys
 import os
 
 # the next line can be removed after installation
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
 
 from veriloggen import *
+
 
 def mkLed():
     m = Module('blinkled')
@@ -23,17 +25,17 @@ def mkLed():
     fsm(
         Systask('display', 'LED:%d count:%d', led, count)
     )
-    
-    fsm.If(count<interval-1)(
+
+    fsm.If(count < interval - 1)(
         count(count + 1)
-    ).Elif(count==100)(
+    ).Elif(count == 100)(
         count(101),
         tmp.inc()
     ).Else(
         count(0)
     )
 
-    # recall the last condition by 'Then()' 
+    # recall the last condition by 'Then()'
     fsm.Then().goto_next()
 
     fsm(
@@ -41,28 +43,29 @@ def mkLed():
     )
 
     fsm.Then().goto_init()
-    
+
     fsm.make_always()
-    
+
     return m
+
 
 def mkTest():
     m = Module('test')
 
     # target instance
     led = mkLed()
-    
+
     # copy paras and ports
     params = m.copy_params(led)
     ports = m.copy_sim_ports(led)
 
     clk = ports['CLK']
     rst = ports['RST']
-    
+
     uut = m.Instance(led, 'uut',
                      params=m.connect_params(led),
                      ports=m.connect_ports(led))
-    
+
     # vcd_name = os.path.splitext(os.path.basename(__file__))[0] + '.vcd'
     # simulation.setup_waveform(m, uut, dumpfile=vcd_name)
     simulation.setup_clock(m, clk, hperiod=5)
@@ -74,7 +77,8 @@ def mkTest():
     )
 
     return m
-    
+
+
 if __name__ == '__main__':
     test = mkTest()
     verilog = test.to_verilog()

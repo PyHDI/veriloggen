@@ -15,10 +15,11 @@ def mkLed():
     width = m.Parameter('WIDTH', 8)
     a = m.Input('A', 32)
     b = m.Output('B', width)
-    
-    b.assign(a[32-width:32])
+
+    b.assign(a[32 - width:32])
 
     return m
+
 
 if __name__ == '__main__':
     led = mkLed()

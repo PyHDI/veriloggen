@@ -83,7 +83,7 @@ Requirements
 --------------------
 
 - Python: 3.7.7 or later
-    - Python 3.9.5 (via pyenv) is recommended for macOS with Apple Silicon.
+    - Python 3.9.5 or later version is recommended for macOS with Apple Silicon.
 - Icarus Verilog: 10.1 or later
 
 ```

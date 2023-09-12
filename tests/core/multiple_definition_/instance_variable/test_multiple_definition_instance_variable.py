@@ -6,16 +6,17 @@ import multiple_definition_instance_variable
 expected_verilog = """
 """
 
+
 def test():
     veriloggen.reset()
     try:
         test_module = multiple_definition_instance_variable.mkLed()
     except ValueError as e:
         assert(e.args[0] == "Object 'inst_sub' is already defined.")
-        return 
+        return
 
     assert(False)
-        
+
     #code = test_module.to_verilog()
 
     #from pyverilog.vparser.parser import VerilogParser

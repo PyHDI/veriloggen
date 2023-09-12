@@ -275,6 +275,7 @@ endmodule
 
 """
 
+
 def test():
     veriloggen.reset()
     test_module = dataflow_counter_reset.mkTest()

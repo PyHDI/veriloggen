@@ -104,4 +104,5 @@ def test():
     test_module = simulation_simulator_verilator.mkTest()
     sim = vg.simulation.Simulator(test_module, sim='verilator')
     rslt = sim.run(sim_time=1000)
+    rslt = '\n'.join([line for line in rslt.splitlines() if line.startswith('LED:')] + [''])
     assert(expected_rslt == rslt)

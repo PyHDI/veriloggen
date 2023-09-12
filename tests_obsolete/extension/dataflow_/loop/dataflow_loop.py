@@ -62,6 +62,7 @@ def mkTest():
 
     return m
 
+
 if __name__ == '__main__':
     try:
         test = mkTest()

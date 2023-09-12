@@ -4,9 +4,11 @@ import sys
 import os
 
 # the next line can be removed after installation
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
 
 from veriloggen import *
+
 
 def mkSub():
     m = Module('blinkled')
@@ -25,6 +27,7 @@ def mkSub():
         ))
     return m
 
+
 def mkLed():
     m = Module('blinkled')
     width = m.Parameter('WIDTH', 8)
@@ -35,10 +38,10 @@ def mkLed():
 
     sub = mkSub()
     m.Instance(sub, 'inst_sub', m.connect_params(sub), m.connect_ports(sub))
-    
+
     # by multiple definition, throws an exception here
     m.Instance(sub, 'inst_sub', m.connect_params(sub), m.connect_ports(sub))
-    
+
     m.Always(Posedge(clk))(
         If(rst)(
             led(0)
@@ -49,6 +52,7 @@ def mkLed():
         ))
 
     return m
+
 
 if __name__ == '__main__':
     try:
@@ -61,4 +65,4 @@ if __name__ == '__main__':
     raise ValueError("Multiple definition was not detected.")
 
     #verilog = led.to_verilog()
-    #print(verilog)
+    # print(verilog)

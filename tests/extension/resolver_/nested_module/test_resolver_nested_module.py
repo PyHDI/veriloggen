@@ -128,6 +128,7 @@ module sub_blinkled_copy_0 #
 endmodule
 """
 
+
 def test():
     veriloggen.reset()
     test_module = resolver_nested_module.mkLed()

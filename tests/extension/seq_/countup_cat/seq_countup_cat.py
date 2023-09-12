@@ -26,13 +26,13 @@ def mkLed():
         Systask('display', 'LED:%d count0:%d count1:%d', led, count0, count1)
     )
 
-    seq.If(Cat(count0, count1) < interval-1)(
+    seq.If(Cat(count0, count1) < interval - 1)(
         Cat(count0, count1[0:4])(Cat(count0, count1) + 1)
     )
-    seq.If(Cat(count0, count1) == interval-1)(
+    seq.If(Cat(count0, count1) == interval - 1)(
         Cat(count0, count1[0:4])(0)
     )
-    seq.If(Cat(count0, count1) == interval-1)(
+    seq.If(Cat(count0, count1) == interval - 1)(
         led(led + 1)
     )
 

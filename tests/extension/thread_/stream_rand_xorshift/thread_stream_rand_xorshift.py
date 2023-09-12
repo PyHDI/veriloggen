@@ -19,36 +19,43 @@ def mkLed():
 
     datawidth = 32
     addrwidth = 10
+    initval = 0x12345678
     myaxi = vthread.AXIM(m, 'myaxi', clk, rst, datawidth)
     ram_a = vthread.RAM(m, 'ram_a', clk, rst, datawidth, addrwidth)
     ram_b = vthread.RAM(m, 'ram_b', clk, rst, datawidth, addrwidth)
+    ram_c = vthread.RAM(m, 'ram_c', clk, rst, datawidth, addrwidth)
 
     strm = vthread.Stream(m, 'mystream', clk, rst)
-    a = strm.source('a') + 1000
-    size = strm.parameter('size')
-    sum, sum_valid = strm.ReduceAddValid(a, size)
-    sum.iteration_interval = 5
-    strm.sink(sum, 'sum', when=sum_valid, when_name='sum_valid')
+    rand_hard = strm.RandXorshift(reg_initval=initval)
+    a = strm.source('a')
+    b = strm.source('b')
+    c = a + b - a - b + rand_hard
+    strm.sink(c, 'c')
 
     def comp_stream(size, offset):
         strm.set_source('a', ram_a, offset, size)
-        strm.set_parameter('size', size)
-        strm.set_sink('sum', ram_b, offset, 1)
+        strm.set_source('b', ram_b, offset, size)
+        strm.set_sink('c', ram_c, offset, size)
         strm.run()
         strm.join()
 
     def comp_sequential(size, offset):
-        sum = 0
+        rand_soft = initval
         for i in range(size):
-            a = ram_a.read(i + offset) + 1000
-            sum += a
-        ram_b.write(offset, sum)
+            a = ram_a.read(i + offset)
+            b = ram_b.read(i + offset)
+            sum = a + b - a - b + rand_soft
+            ram_c.write(i + offset, sum)
+
+            rand_soft = (rand_soft ^ (rand_soft << 13)) & ((1 << datawidth) - 1)
+            rand_soft = rand_soft ^ ((rand_soft >> 17) & ((1 << datawidth - 17) - 1))
+            rand_soft = (rand_soft ^ (rand_soft << 5)) & ((1 << datawidth) - 1)
 
     def check(size, offset_stream, offset_seq):
         all_ok = True
         for i in range(size):
-            st = ram_b.read(i + offset_stream)
-            sq = ram_b.read(i + offset_seq)
+            st = ram_c.read(i + offset_stream)
+            sq = ram_c.read(i + offset_seq)
             if vthread.verilog.NotEql(st, sq):
                 all_ok = False
         if all_ok:
@@ -60,19 +67,19 @@ def mkLed():
         # stream
         offset = 0
         myaxi.dma_read(ram_a, offset, 0, size)
+        myaxi.dma_read(ram_b, offset, 512, size)
         comp_stream(size, offset)
-        myaxi.dma_write(ram_b, offset, 1024, 1)
+        myaxi.dma_write(ram_c, offset, 1024, size)
 
         # sequential
         offset = size
         myaxi.dma_read(ram_a, offset, 0, size)
+        myaxi.dma_read(ram_b, offset, 512, size)
         comp_sequential(size, offset)
-        myaxi.dma_write(ram_b, offset, 1024 * 2, 1)
+        myaxi.dma_write(ram_c, offset, 1024 * 2, size)
 
         # verification
-        myaxi.dma_read(ram_b, 0, 1024, 1)
-        myaxi.dma_read(ram_b, offset, 1024 * 2, 1)
-        check(1, 0, offset)
+        check(size, 0, offset)
 
         vthread.finish()
 
@@ -129,9 +136,7 @@ def run(filename='tmp.v', simtype='iverilog', outputfile=None):
 
     sim = simulation.Simulator(test, sim=simtype)
     rslt = sim.run(outputfile=outputfile)
-    lines = rslt.splitlines()
-    if simtype == 'verilator' and lines[-1].startswith('-'):
-        rslt = '\n'.join(lines[:-1])
+
     return rslt
 
 

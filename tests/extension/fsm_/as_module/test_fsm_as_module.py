@@ -119,6 +119,7 @@ module sub_fsm #
 endmodule
 """
 
+
 def test():
     veriloggen.reset()
     test_module = fsm_as_module.mkLed()

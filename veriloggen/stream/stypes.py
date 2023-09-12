@@ -97,7 +97,7 @@ class _Node(object):
 
 class _Numeric(_Node):
     latency = 0
-    iteration_interval = 1
+    initiation_interval = 1
 
     def __hash__(self):
         object_id = self.object_id if hasattr(self, 'object_id') else None
@@ -457,7 +457,7 @@ class _Numeric(_Node):
 
 class _Operator(_Numeric):
     latency = 1
-    iteration_interval = 1
+    initiation_interval = 1
 
     def _implement(self, m, seq, svalid=None, senable=None):
         raise NotImplementedError('_implement() is not implemented.')
@@ -500,7 +500,7 @@ class _BinaryOperator(_Operator):
                                  lpoint, rpoint, signed)
 
         enable_cond = senable
-        if self.iteration_interval != 1:
+        if self.initiation_interval != 1:
             enable_cond = _and_vars(enable_cond, svalid)
 
         if self.latency == 0:
@@ -514,9 +514,9 @@ class _BinaryOperator(_Operator):
             seq(data(self.op(ldata, rdata)), cond=enable_cond)
 
             # multicycle control
-            if self.iteration_interval != 1:
+            if self.initiation_interval != 1:
                 ii_count = m.Reg(self.name('ii_count'),
-                                 int(ceil(log(self.iteration_interval, 2))) + 1, initval=0)
+                                 int(ceil(log(self.initiation_interval, 2))) + 1, initval=0)
                 ii_stall_cond = m.Wire(self.name('ii_stall_cond'))
                 ii_stall_cond.assign(ii_count > 0)
                 util.add_disable_cond(self.strm.internal_oready,
@@ -528,7 +528,7 @@ class _BinaryOperator(_Operator):
                 seq.If(ii_count > 0)(
                     ii_count.inc()
                 )
-                seq.If(ii_count == self.iteration_interval - 1)(
+                seq.If(ii_count == self.initiation_interval - 1)(
                     ii_count(0)
                 )
 
@@ -576,7 +576,7 @@ class _UnaryOperator(_Operator):
         rdata = self.right.sig_data
 
         enable_cond = senable
-        if self.iteration_interval != 1:
+        if self.initiation_interval != 1:
             enable_cond = _and_vars(enable_cond, svalid)
 
         if self.latency == 0:
@@ -590,9 +590,9 @@ class _UnaryOperator(_Operator):
             seq(data(self.op(rdata)), cond=enable_cond)
 
             # multicycle control
-            if self.iteration_interval != 1:
+            if self.initiation_interval != 1:
                 ii_count = m.Reg(self.name('ii_count'),
-                                 int(ceil(log(self.iteration_interval, 2))) + 1, initval=0)
+                                 int(ceil(log(self.initiation_interval, 2))) + 1, initval=0)
                 ii_stall_cond = m.Wire(self.name('ii_stall_cond'))
                 ii_stall_cond.assign(ii_count > 0)
                 util.add_disable_cond(self.strm.internal_oready,
@@ -604,7 +604,7 @@ class _UnaryOperator(_Operator):
                 seq.If(ii_count > 0)(
                     ii_count.inc()
                 )
-                seq.If(ii_count == self.iteration_interval - 1)(
+                seq.If(ii_count == self.initiation_interval - 1)(
                     ii_count(0)
                 )
 
@@ -837,8 +837,8 @@ class Mod(_BinaryOperator):
 
 class DivideMultiCycle(_BinaryOperator):
     latency = 1
-    iteration_interval = 32 + 2
-    variable_iteration_interval = 'get_latency'
+    initiation_interval = 32 + 2
+    variable_initiation_interval = 'get_latency'
 
     def get_latency(self):
         return self.get_width() + 2
@@ -869,7 +869,7 @@ class DivideMultiCycle(_BinaryOperator):
         enable_cond = _and_vars(senable, svalid)
 
         ii_count = m.Reg(self.name('ii_count'),
-                         int(ceil(log(self.iteration_interval, 2))) + 1, initval=0)
+                         int(ceil(log(self.initiation_interval, 2))) + 1, initval=0)
         ii_stall_cond = m.Wire(self.name('ii_stall_cond'))
         ii_stall_cond.assign(ii_count > 0)
         util.add_disable_cond(self.strm.internal_oready, ii_stall_cond, vtypes.Int(0))
@@ -880,7 +880,7 @@ class DivideMultiCycle(_BinaryOperator):
         seq.If(ii_count > 0)(
             ii_count.inc()
         )
-        seq.If(ii_count == self.iteration_interval - 1)(
+        seq.If(ii_count == self.initiation_interval - 1)(
             ii_count(0)
         )
 
@@ -1530,7 +1530,7 @@ class _SpecialOperator(_Operator):
         arg_data = [arg.sig_data for arg in self.args]
 
         enable_cond = senable
-        if self.iteration_interval != 1:
+        if self.initiation_interval != 1:
             enable_cond = _and_vars(enable_cond, svalid)
 
         if self.latency == 0:
@@ -1544,9 +1544,9 @@ class _SpecialOperator(_Operator):
             seq(data(self.op(*arg_data)), cond=enable_cond)
 
             # multicycle control
-            if self.iteration_interval != 1:
+            if self.initiation_interval != 1:
                 ii_count = m.Reg(self.name('ii_count'),
-                                 int(ceil(log(self.iteration_interval, 2))) + 1, initval=0)
+                                 int(ceil(log(self.initiation_interval, 2))) + 1, initval=0)
                 ii_stall_cond = m.Wire(self.name('ii_stall_cond'))
                 ii_stall_cond.assign(ii_count > 0)
                 util.add_disable_cond(self.strm.internal_oready,
@@ -1558,7 +1558,7 @@ class _SpecialOperator(_Operator):
                 seq.If(ii_count > 0)(
                     ii_count.inc()
                 )
-                seq.If(ii_count == self.iteration_interval - 1)(
+                seq.If(ii_count == self.initiation_interval - 1)(
                     ii_count(0)
                 )
 
@@ -3017,12 +3017,12 @@ class _Accumulator(_Operator):
             raise ValueError("Latency must be '%d', not '%d'" %
                              (self.latency, 1))
 
-        if self.iteration_interval != 1 and self.latency != 1:
-            raise ValueError("When iteration_interval != 1, latency must be '%d', not '%d'" %
+        if self.initiation_interval != 1 and self.latency != 1:
+            raise ValueError("When initiation_interval != 1, latency must be '%d', not '%d'" %
                              (self.latency, 1))
 
-        if self.iteration_interval != 1 and self.strm is None:
-            raise ValueError("When iteration_interval != 1, strm must be assigned.")
+        if self.initiation_interval != 1 and self.strm is None:
+            raise ValueError("When initiation_interval != 1, strm must be assigned.")
 
         size_data = self.size.sig_data if self.size is not None else None
         interval_data = self.interval.sig_data if self.interval is not None else None
@@ -3130,9 +3130,9 @@ class _Accumulator(_Operator):
         seq(data(value), cond=enable_cond)
 
         # multicycle control
-        if self.iteration_interval != 1:
+        if self.initiation_interval != 1:
             ii_count = m.Reg(self.name('ii_count'),
-                             int(ceil(log(self.iteration_interval, 2))) + 1, initval=0)
+                             int(ceil(log(self.initiation_interval, 2))) + 1, initval=0)
             ii_stall_cond = m.Wire(self.name('ii_stall_cond'))
             ii_stall_cond.assign(ii_count > 0)
             util.add_disable_cond(self.strm.internal_oready, ii_stall_cond, vtypes.Int(0))
@@ -3143,7 +3143,7 @@ class _Accumulator(_Operator):
             seq.If(ii_count > 0)(
                 ii_count.inc()
             )
-            seq.If(ii_count == self.iteration_interval - 1)(
+            seq.If(ii_count == self.initiation_interval - 1)(
                 ii_count(0)
             )
 
@@ -3187,7 +3187,7 @@ class ReduceSub(_Accumulator):
 
 class ReduceMul(_Accumulator):
     latency = 1
-    iteration_interval = 2 + 1
+    initiation_interval = 2 + 1
     ops = ()
 
     def __init__(self, right, size=None, interval=None, initval=0,
@@ -3203,12 +3203,12 @@ class ReduceMul(_Accumulator):
             raise ValueError("Latency must be '%d', not '%d'" %
                              (self.latency, 1))
 
-        if self.iteration_interval != 1 and self.latency != 1:
-            raise ValueError("When iteration_interval != 1, latency must be '%d', not '%d'" %
+        if self.initiation_interval != 1 and self.latency != 1:
+            raise ValueError("When initiation_interval != 1, latency must be '%d', not '%d'" %
                              (self.latency, 1))
 
-        if self.iteration_interval != 1 and self.strm is None:
-            raise ValueError("When iteration_interval != 1, strm must be assigned.")
+        if self.initiation_interval != 1 and self.strm is None:
+            raise ValueError("When initiation_interval != 1, strm must be assigned.")
 
         size_data = self.size.sig_data if self.size is not None else None
         interval_data = self.interval.sig_data if self.interval is not None else None
@@ -3297,7 +3297,7 @@ class ReduceMul(_Accumulator):
 
         # multicycle control
         ii_count = m.Reg(self.name('ii_count'),
-                         int(ceil(log(self.iteration_interval, 2))) + 1, initval=0)
+                         int(ceil(log(self.initiation_interval, 2))) + 1, initval=0)
         ii_stall_cond = m.Wire(self.name('ii_stall_cond'))
         ii_stall_cond.assign(ii_count > 0)
         util.add_disable_cond(self.strm.internal_oready, ii_stall_cond, vtypes.Int(0))
@@ -3308,13 +3308,13 @@ class ReduceMul(_Accumulator):
         seq.If(ii_count > 0)(
             ii_count.inc()
         )
-        seq.If(ii_count == self.iteration_interval - 1)(
+        seq.If(ii_count == self.initiation_interval - 1)(
             ii_count(0)
         )
 
         comp_cond = vtypes.Ors(enable_cond, ii_stall_cond)
 
-        depth = self.iteration_interval - 1
+        depth = self.initiation_interval - 1
 
         inst = mul.get_mul(width, width, signed, rsigned, depth)
         clk = m._clock
@@ -3336,13 +3336,13 @@ class ReduceMul(_Accumulator):
         else:
             value = odata
 
-        seq(data(value), cond=ii_count == self.iteration_interval - 1)
+        seq(data(value), cond=ii_count == self.initiation_interval - 1)
 
 
 class ReduceDiv(_Accumulator):
     latency = 1
-    iteration_interval = 32 + 3
-    variable_iteration_interval = 'get_latency'
+    initiation_interval = 32 + 3
+    variable_initiation_interval = 'get_latency'
     ops = ()
 
     def get_latency(self):
@@ -3361,12 +3361,12 @@ class ReduceDiv(_Accumulator):
             raise ValueError("Latency must be '%d', not '%d'" %
                              (self.latency, 1))
 
-        if self.iteration_interval != 1 and self.latency != 1:
-            raise ValueError("When iteration_interval != 1, latency must be '%d', not '%d'" %
+        if self.initiation_interval != 1 and self.latency != 1:
+            raise ValueError("When initiation_interval != 1, latency must be '%d', not '%d'" %
                              (self.latency, 1))
 
-        if self.iteration_interval != 1 and self.strm is None:
-            raise ValueError("When iteration_interval != 1, strm must be assigned.")
+        if self.initiation_interval != 1 and self.strm is None:
+            raise ValueError("When initiation_interval != 1, strm must be assigned.")
 
         size_data = self.size.sig_data if self.size is not None else None
         interval_data = self.interval.sig_data if self.interval is not None else None
@@ -3462,7 +3462,7 @@ class ReduceDiv(_Accumulator):
 
         # multicycle control
         ii_count = m.Reg(self.name('ii_count'),
-                         int(ceil(log(self.iteration_interval, 2))) + 1, initval=0)
+                         int(ceil(log(self.initiation_interval, 2))) + 1, initval=0)
         ii_stall_cond = m.Wire(self.name('ii_stall_cond'))
         ii_stall_cond.assign(ii_count > 0)
         util.add_disable_cond(self.strm.internal_oready, ii_stall_cond, vtypes.Int(0))
@@ -3473,7 +3473,7 @@ class ReduceDiv(_Accumulator):
         seq.If(ii_count > 0)(
             ii_count.inc()
         )
-        seq.If(ii_count == self.iteration_interval - 1)(
+        seq.If(ii_count == self.initiation_interval - 1)(
             ii_count(0)
         )
 
@@ -3504,7 +3504,7 @@ class ReduceDiv(_Accumulator):
 
         value = odata
 
-        seq(data(value), cond=ii_count == self.iteration_interval - 1)
+        seq(data(value), cond=ii_count == self.initiation_interval - 1)
 
 
 class ReduceMax(_Accumulator):
@@ -3628,6 +3628,62 @@ class Counter(_Accumulator):
             enable_cond = _and_vars(enable_cond, interval_enable)
 
         seq(count(next_count_value), cond=enable_cond)
+
+
+class RandXorshift(_Accumulator):
+
+    def __init__(self, reg_initval=0x12345678, dependency=None, enable=None, width=32):
+
+        right = 0
+        size = None
+        interval = None
+        initval = None
+        offset = None
+        reset = None
+        signed = False
+
+        _Accumulator.__init__(self, right, size, interval, initval, offset,
+                              dependency, enable, reset, reg_initval, width, signed)
+        self.graph_label = 'RandXorshift'
+
+    def _implement(self, m, seq, svalid=None, senable=None):
+        if self.latency != 1:
+            raise ValueError("Latency mismatch '%d' vs '%s'" %
+                             (self.latency, 1))
+
+        width = self.get_width()
+        signed = self.get_signed()
+
+        reg_initval_data = self.reg_initval.sig_data
+
+        data = m.Reg(self.name('data'), width,
+                     initval=reg_initval_data, signed=signed)
+
+        randval = m.Reg(self.name('randval'), width,
+                      initval=reg_initval_data, signed=signed)
+
+        self.sig_data = data
+
+        enabledata = self.enable.sig_data if self.enable is not None else None
+        
+        if width == 32:
+            next_value = randval ^ (randval << 13)
+            next_value = next_value ^ (next_value >> 17)
+            next_value = next_value ^ (next_value << 5)
+        elif width == 64:
+            next_value = randval ^ (randval << 13)
+            next_value = next_value ^ (next_value >> 7)
+            next_value = next_value ^ (next_value << 17)
+        else:
+            raise ValueError("Invalid width value '%d', please specify 32 or 64" % width)
+
+        enable_cond = _and_vars(svalid, senable)
+
+        if self.enable is not None:
+            enable_cond = _and_vars(enable_cond, enabledata)
+
+        seq(data(randval), cond=enable_cond)
+        seq(randval(next_value), cond=enable_cond)
 
 
 class Pulse(_Accumulator):
@@ -3801,7 +3857,7 @@ class _CustomCounter(_SpecialOperator):
         arg_data = [arg.sig_data for arg in self.args]
 
         enable_cond = senable
-        if self.iteration_interval != 1:
+        if self.initiation_interval != 1:
             enable_cond = _and_vars(enable_cond, svalid)
 
         resetdata = arg_data[-1] if self.reset is not None else None
@@ -3832,9 +3888,9 @@ class _CustomCounter(_SpecialOperator):
                 seq(var(initval), cond=reset_cond)
 
         # multicycle control
-        if self.iteration_interval != 1:
+        if self.initiation_interval != 1:
             ii_count = m.Reg(self.name('ii_count'),
-                             int(ceil(log(self.iteration_interval, 2))) + 1, initval=0)
+                             int(ceil(log(self.initiation_interval, 2))) + 1, initval=0)
             ii_stall_cond = m.Wire(self.name('ii_stall_cond'))
             ii_stall_cond.assign(ii_count > 0)
             util.add_disable_cond(self.strm.internal_oready,
@@ -3846,7 +3902,7 @@ class _CustomCounter(_SpecialOperator):
             seq.If(ii_count > 0)(
                 ii_count.inc()
             )
-            seq.If(ii_count == self.iteration_interval - 1)(
+            seq.If(ii_count == self.initiation_interval - 1)(
                 ii_count(0)
             )
 
@@ -3989,9 +4045,9 @@ class SubstreamMultiCycle(Substream):
         self.graph_label = child.name if hasattr(child, 'name') else 'SubstreamMultiCycle'
 
         # conservative scheduling
-        # self.iteration_interval = self.latency - 1
+        # self.initiation_interval = self.latency - 1
         # aggressive scheduling
-        self.iteration_interval = self.latency - 1 - 1
+        self.initiation_interval = self.latency - 1 - 1
         self.latency = 1 + 1
 
     def _implement(self, m, seq, svalid=None, senable=None):
@@ -3999,7 +4055,7 @@ class SubstreamMultiCycle(Substream):
 
         # multicycle control
         ii_count = m.Reg(self.name('ii_count'),
-                         int(ceil(log(self.iteration_interval, 2))) + 1, initval=0)
+                         int(ceil(log(self.initiation_interval, 2))) + 1, initval=0)
         ii_stall_cond = m.Wire(self.name('ii_stall_cond'))
         ii_stall_cond.assign(ii_count > 0)
         util.add_disable_cond(self.strm.internal_oready, ii_stall_cond, vtypes.Int(0))
@@ -4023,7 +4079,7 @@ class SubstreamMultiCycle(Substream):
         seq.If(ii_count > 0, self.child.internal_oready)(
             ii_count.inc()
         )
-        seq.If(ii_count == self.iteration_interval - 1, self.child.internal_oready)(
+        seq.If(ii_count == self.initiation_interval - 1, self.child.internal_oready)(
             ii_count(0)
         )
 
