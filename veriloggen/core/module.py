@@ -47,46 +47,46 @@ class Module(vtypes.VeriloggenNode):
     # -------------------------------------------------------------------------
     # User interface for variables
     # -------------------------------------------------------------------------
-    def Input(self, name, width=None, dims=None, signed=False, value=None):
+    def Input(self, name, width=None, dims=None, signed=False, value=None, raw_width=None, raw_dims=None):
 
-        t = vtypes.Input(width, dims, signed, value, name=name, module=self)
+        t = vtypes.Input(width, dims, signed, value, name=name, raw_width=raw_width, raw_dims=raw_dims, module=self)
         self.check_existing_identifier(name, vtypes.Wire)
         self.io_variable[name] = t
         self.items.append(t)
         return t
 
-    def Output(self, name, width=None, dims=None, signed=False, value=None):
+    def Output(self, name, width=None, dims=None, signed=False, value=None, raw_width=None, raw_dims=None):
 
-        t = vtypes.Output(width, dims, signed, value, name=name, module=self)
+        t = vtypes.Output(width, dims, signed, value, name=name, raw_width=raw_width, raw_dims=raw_dims, module=self)
         self.check_existing_identifier(name, vtypes.Wire, vtypes.Reg)
         self.io_variable[name] = t
         self.items.append(t)
         return t
 
     def OutputReg(self, name, width=None, dims=None, signed=False, value=None,
-                  initval=None):
+                  initval=None, raw_width=None, raw_dims=None):
 
-        t = vtypes.Output(width, dims, signed, value, name=name, module=self)
+        t = vtypes.Output(width, dims, signed, value, name=name, raw_width=raw_width, raw_dims=raw_dims, module=self)
         self.check_existing_identifier(name)
         self.io_variable[name] = t
         self.items.append(t)
         t = vtypes.Reg(width, dims, signed, value,
-                       initval, name=name, module=self)
+                       initval, name=name, raw_width=raw_width, raw_dims=raw_dims, module=self)
         self.variable[name] = t
         self.items.append(t)
         return t
 
-    def Inout(self, name, width=None, dims=None, signed=False, value=None):
+    def Inout(self, name, width=None, dims=None, signed=False, value=None, raw_width=None, raw_dims=None):
 
-        t = vtypes.Inout(width, dims, signed, value, name=name, module=self)
+        t = vtypes.Inout(width, dims, signed, value, name=name, raw_width=raw_width, raw_dims=raw_dims, module=self)
         self.check_existing_identifier(name, vtypes.Wire)
         self.io_variable[name] = t
         self.items.append(t)
         return t
 
-    def Wire(self, name, width=None, dims=None, signed=False, value=None):
+    def Wire(self, name, width=None, dims=None, signed=False, value=None, raw_width=None, raw_dims=None):
 
-        t = vtypes.Wire(width, dims, signed, value, name=name, module=self)
+        t = vtypes.Wire(width, dims, signed, value, name=name, raw_width=raw_width, raw_dims=raw_dims, module=self)
         self.check_existing_identifier(name, vtypes.Input, vtypes.Output)
         if self.is_reg(name):
             raise ValueError("Object '%s' is already defined." % name)
@@ -95,82 +95,82 @@ class Module(vtypes.VeriloggenNode):
         return t
 
     def TmpWire(self, width=None, dims=None, signed=False, value=None,
-                prefix=None):
+                prefix=None, raw_width=None, raw_dims=None):
 
         if prefix is None:
             prefix = self.tmp_prefix
         name = '_'.join([prefix, str(self.get_tmp())])
-        return self.Wire(name, width, dims, signed, value)
+        return self.Wire(name, width, dims, signed, value, raw_width, raw_dims)
 
     def Reg(self, name, width=None, dims=None, signed=False, value=None,
-            initval=None):
+            initval=None, raw_width=None, raw_dims=None):
 
         t = vtypes.Reg(width, dims, signed, value,
-                       initval, name=name, module=self)
+                       initval, name=name, raw_width=raw_width, raw_dims=raw_dims, module=self)
         self.check_existing_identifier(name, vtypes.Output)
         self.variable[name] = t
         self.items.append(t)
         return t
 
     def TmpReg(self, width=None, dims=None, signed=False, value=None,
-               initval=None, prefix=None):
+               initval=None, prefix=None, raw_width=None, raw_dims=None):
 
         if prefix is None:
             prefix = self.tmp_prefix
         name = '_'.join([prefix, str(self.get_tmp())])
-        return self.Reg(name, width, dims, signed, value, initval)
+        return self.Reg(name, width, dims, signed, value, initval, raw_width, raw_dims)
 
     def Integer(self, name, width=None, dims=None, signed=False, value=None,
-                initval=None):
+                initval=None, raw_width=None, raw_dims=None):
 
         t = vtypes.Integer(width, dims, signed, value,
-                           initval, name=name, module=self)
+                           initval, name=name, raw_width=raw_width, raw_dims=raw_dims, module=self)
         self.check_existing_identifier(name)
         self.variable[name] = t
         self.items.append(t)
         return t
 
     def TmpInteger(self, width=None, dims=None, signed=False, value=None,
-                   initval=None, prefix=None):
+                   initval=None, prefix=None, raw_width=None, raw_dims=None):
 
         if prefix is None:
             prefix = self.tmp_prefix
         name = '_'.join([prefix, str(self.get_tmp())])
-        return self.Integer(name, width, dims, signed, value, initval)
+        return self.Integer(name, width, dims, signed, value, initval, raw_width, raw_dims)
 
     def Real(self, name, width=None, dims=None, signed=False, value=None,
-             initval=None):
+             initval=None, raw_width=None, raw_dims=None):
 
         t = vtypes.Real(width, dims, signed, value,
-                        initval, name=name, module=self)
+                        initval, name=name, raw_width=raw_width, raw_dims=raw_dims, module=self)
         self.check_existing_identifier(name)
         self.variable[name] = t
         self.items.append(t)
         return t
 
     def TmpReal(self, width=None, dims=None, signed=False, value=None,
-                initval=None, prefix=None):
+                initval=None, prefix=None, raw_width=None, raw_dims=None):
 
         if prefix is None:
             prefix = self.tmp_prefix
         name = '_'.join([prefix, str(self.get_tmp())])
-        return self.Real(name, width, dims, signed, value, initval)
+        return self.Real(name, width, dims, signed, value, initval, raw_width, raw_dims)
 
-    def Genvar(self, name, width=None, dims=None, signed=False, value=None):
+    def Genvar(self, name, width=None, dims=None, signed=False, value=None, raw_width=None, raw_dims=None):
 
-        t = vtypes.Genvar(width, dims, signed, value, name=name, module=self)
+        t = vtypes.Genvar(width, dims, signed, value, name=name, raw_width=raw_width, raw_dims=raw_dims, module=self)
         self.check_existing_identifier(name)
         self.variable[name] = t
         self.items.append(t)
         return t
 
     def TmpGenvar(self, width=None, dims=None, signed=False, value=None,
-                  prefix=None):
+                  prefix=None, raw_width=None, raw_dims=None):
 
         if prefix is None:
             prefix = self.tmp_prefix
         name = '_'.join([prefix, str(self.get_tmp())])
-        return self.Genvar(name, width, dims, signed, value)
+        return self.Genvar(name, width, dims, signed, value, raw_width, raw_dims)
 
     def Parameter(self, name, value, width=None, signed=False, dims=None):
 
@@ -198,7 +198,7 @@ class Module(vtypes.VeriloggenNode):
 
     # -------------------------------------------------------------------------
     def InputLike(self, src, name=None, width=None, dims=None,
-                  signed=None, value=None):
+                  signed=None, value=None, raw_width=None, raw_dims=None):
 
         if name is None:
             if not hasattr(src, 'name'):
@@ -212,10 +212,14 @@ class Module(vtypes.VeriloggenNode):
             signed = vtypes.get_signed(src)
         if value is None:
             value = vtypes.get_value(src)
-        return self.Input(name, width, dims, signed, value)
+        if raw_width is None:
+            raw_width = vtypes.get_raw_width(src)
+        if raw_dims is None:
+            raw_dims = vtypes.get_raw_dims(src)
+        return self.Input(name, width, dims, signed, value, raw_width, raw_dims)
 
     def OutputLike(self, src, name=None, width=None, dims=None,
-                   signed=None, value=None):
+                   signed=None, value=None, raw_width=None, raw_dims=None):
 
         if name is None:
             if not hasattr(src, 'name'):
@@ -229,10 +233,14 @@ class Module(vtypes.VeriloggenNode):
             signed = vtypes.get_signed(src)
         if value is None:
             value = vtypes.get_value(src)
-        return self.Output(name, width, dims, signed, value)
+        if raw_width is None:
+            raw_width = vtypes.get_raw_width(src)
+        if raw_dims is None:
+            raw_dims = vtypes.get_raw_dims(src)
+        return self.Output(name, width, dims, signed, value, raw_width, raw_dims)
 
     def OutputRegLike(self, src, name=None, width=None, dims=None,
-                      signed=None, value=None, initval=None):
+                      signed=None, value=None, initval=None, raw_width=None, raw_dims=None):
 
         if name is None:
             if not hasattr(src, 'name'):
@@ -248,10 +256,14 @@ class Module(vtypes.VeriloggenNode):
             value = vtypes.get_value(src)
         if initval is None:
             initval = vtypes.get_initval(src)
-        return self.OutputReg(name, width, dims, signed, value, initval)
+        if raw_width is None:
+            raw_width = vtypes.get_raw_width(src)
+        if raw_dims is None:
+            raw_dims = vtypes.get_raw_dims(src)
+        return self.OutputReg(name, width, dims, signed, value, initval, raw_width, raw_dims)
 
     def InoutLike(self, src, name=None, width=None, dims=None,
-                  signed=None, value=None):
+                  signed=None, value=None, raw_width=None, raw_dims=None):
 
         if name is None:
             if not hasattr(src, 'name'):
@@ -265,10 +277,14 @@ class Module(vtypes.VeriloggenNode):
             signed = vtypes.get_signed(src)
         if value is None:
             value = vtypes.get_value(src)
-        return self.Inout(name, width, dims, signed, value)
+        if raw_width is None:
+            raw_width = vtypes.get_raw_width(src)
+        if raw_dims is None:
+            raw_dims = vtypes.get_raw_dims(src)
+        return self.Inout(name, width, dims, signed, value, raw_width, raw_dims)
 
     def WireLike(self, src, name=None, width=None, dims=None,
-                 signed=None, value=None):
+                 signed=None, value=None, raw_width=None, raw_dims=None):
 
         if name is None:
             if not hasattr(src, 'name'):
@@ -282,10 +298,14 @@ class Module(vtypes.VeriloggenNode):
             signed = vtypes.get_signed(src)
         if value is None:
             value = vtypes.get_value(src)
-        return self.Wire(name, width, dims, signed, value)
+        if raw_width is None:
+            raw_width = vtypes.get_raw_width(src)
+        if raw_dims is None:
+            raw_dims = vtypes.get_raw_dims(src)
+        return self.Wire(name, width, dims, signed, value, raw_width, raw_dims)
 
     def TmpWireLike(self, src, width=None, dims=None,
-                    signed=None, value=None, prefix=None):
+                    signed=None, value=None, prefix=None, raw_width=None, raw_dims=None):
 
         if width is None:
             width = vtypes.get_width(src)
@@ -295,10 +315,14 @@ class Module(vtypes.VeriloggenNode):
             signed = vtypes.get_signed(src)
         if value is None:
             value = vtypes.get_value(src)
-        return self.TmpWire(width, dims, signed, value, prefix)
+        if raw_width is None:
+            raw_width = vtypes.get_raw_width(src)
+        if raw_dims is None:
+            raw_dims = vtypes.get_raw_dims(src)
+        return self.TmpWire(width, dims, signed, value, prefix, raw_width, raw_dims)
 
     def RegLike(self, src, name=None, width=None, dims=None,
-                signed=None, value=None, initval=None):
+                signed=None, value=None, initval=None, raw_width=None, raw_dims=None):
 
         if name is None:
             if not hasattr(src, 'name'):
@@ -314,10 +338,14 @@ class Module(vtypes.VeriloggenNode):
             value = vtypes.get_value(src)
         if initval is None:
             initval = vtypes.get_initval(src)
-        return self.Reg(name, width, dims, signed, value, initval)
+        if raw_width is None:
+            raw_width = vtypes.get_raw_width(src)
+        if raw_dims is None:
+            raw_dims = vtypes.get_raw_dims(src)
+        return self.Reg(name, width, dims, signed, value, initval, raw_width, raw_dims)
 
     def TmpRegLike(self, src, width=None, dims=None,
-                   signed=None, value=None, initval=None, prefix=None):
+                   signed=None, value=None, initval=None, prefix=None, raw_width=None, raw_dims=None):
 
         if width is None:
             width = vtypes.get_width(src)
@@ -329,10 +357,14 @@ class Module(vtypes.VeriloggenNode):
             value = vtypes.get_value(src)
         if initval is None:
             initval = vtypes.get_initval(src)
-        return self.TmpReg(width, dims, signed, value, initval, prefix)
+        if raw_width is None:
+            raw_width = vtypes.get_raw_width(src)
+        if raw_dims is None:
+            raw_dims = vtypes.get_raw_dims(src)
+        return self.TmpReg(width, dims, signed, value, initval, prefix, raw_width, raw_dims)
 
     def IntegerLike(self, src, name=None, width=None, dims=None,
-                    signed=None, value=None, initval=None):
+                    signed=None, value=None, initval=None, raw_width=None, raw_dims=None):
 
         if name is None:
             if not hasattr(src, 'name'):
@@ -348,10 +380,14 @@ class Module(vtypes.VeriloggenNode):
             value = vtypes.get_value(src)
         if initval is None:
             initval = vtypes.get_initval(src)
-        return self.Integer(name, width, dims, signed, value, initval)
+        if raw_width is None:
+            raw_width = vtypes.get_raw_width(src)
+        if raw_dims is None:
+            raw_dims = vtypes.get_raw_dims(src)
+        return self.Integer(name, width, dims, signed, value, initval, raw_width, raw_dims)
 
     def TmpIntegerLike(self, src, width=None, dims=None,
-                       signed=None, value=None, initval=None, prefix=None):
+                       signed=None, value=None, initval=None, prefix=None, raw_width=None, raw_dims=None):
 
         if width is None:
             width = vtypes.get_width(src)
@@ -363,10 +399,14 @@ class Module(vtypes.VeriloggenNode):
             value = vtypes.get_value(src)
         if initval is None:
             initval = vtypes.get_initval(src)
-        return self.TmpInteger(width, dims, signed, value, initval, prefix)
+        if raw_width is None:
+            raw_width = vtypes.get_raw_width(src)
+        if raw_dims is None:
+            raw_dims = vtypes.get_raw_dims(src)
+        return self.TmpInteger(width, dims, signed, value, initval, prefix, raw_width, raw_dims)
 
     def RealLike(self, src, name=None, width=None, dims=None,
-                 signed=None, value=None, initval=None):
+                 signed=None, value=None, initval=None, raw_width=None, raw_dims=None):
 
         if name is None:
             if not hasattr(src, 'name'):
@@ -382,10 +422,14 @@ class Module(vtypes.VeriloggenNode):
             value = vtypes.get_value(src)
         if initval is None:
             initval = vtypes.get_initval(src)
-        return self.Real(name, width, dims, signed, value, initval)
+        if raw_width is None:
+            raw_width = vtypes.get_raw_width(src)
+        if raw_dims is None:
+            raw_dims = vtypes.get_raw_dims(src)
+        return self.Real(name, width, dims, signed, value, initval, raw_width, raw_dims)
 
     def TmpRealLike(self, src, width=None, dims=None,
-                    signed=None, value=None, initval=None, prefix=None):
+                    signed=None, value=None, initval=None, prefix=None, raw_width=None, raw_dims=None):
 
         if width is None:
             width = vtypes.get_width(src)
@@ -397,10 +441,14 @@ class Module(vtypes.VeriloggenNode):
             value = vtypes.get_value(src)
         if initval is None:
             initval = vtypes.get_initval(src)
-        return self.TmpReal(width, dims, signed, value, initval, prefix)
+        if raw_width is None:
+            raw_width = vtypes.get_raw_width(src)
+        if raw_dims is None:
+            raw_dims = vtypes.get_raw_dims(src)
+        return self.TmpReal(width, dims, signed, value, initval, prefix, raw_width, raw_dims)
 
     def GenvarLike(self, src, name=None, width=None, dims=None,
-                   signed=None, value=None):
+                   signed=None, value=None, raw_width=None, raw_dims=None):
 
         if name is None:
             if not hasattr(src, 'name'):
@@ -414,10 +462,14 @@ class Module(vtypes.VeriloggenNode):
             signed = vtypes.get_signed(src)
         if value is None:
             value = vtypes.get_value(src)
-        return self.Genvar(name, width, dims, signed, value)
+        if raw_width is None:
+            raw_width = vtypes.get_raw_width(src)
+        if raw_dims is None:
+            raw_dims = vtypes.get_raw_dims(src)
+        return self.Genvar(name, width, dims, signed, value, raw_width, raw_dims)
 
     def TmpGenvarLike(self, src, width=None, dims=None,
-                      signed=None, value=None, prefix=None):
+                      signed=None, value=None, prefix=None, raw_width=None, raw_dims=None):
 
         if width is None:
             width = vtypes.get_width(src)
@@ -427,7 +479,11 @@ class Module(vtypes.VeriloggenNode):
             signed = vtypes.get_signed(src)
         if value is None:
             value = vtypes.get_value(src)
-        return self.TmpGenvar(width, dims, signed, value, prefix)
+        if raw_width is None:
+            raw_width = vtypes.get_raw_width(src)
+        if raw_dims is None:
+            raw_dims = vtypes.get_raw_dims(src)
+        return self.TmpGenvar(width, dims, signed, value, prefix, raw_width, raw_dims)
 
     def ParameterLike(self, src, name=None, value=None, width=None,
                       signed=False, dims=None):

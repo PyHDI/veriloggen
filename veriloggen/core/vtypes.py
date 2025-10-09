@@ -158,6 +158,18 @@ def get_initval(obj):
     return None
 
 
+def get_raw_width(obj):
+    if hasattr(obj, 'raw_width'):
+        return obj.raw_width
+    return None
+
+
+def get_raw_dims(obj):
+    if hasattr(obj, 'raw_dims'):
+        return obj.raw_dims
+    return None
+
+
 def max_width(left, right):
     if left is None and right is None:
         return None
