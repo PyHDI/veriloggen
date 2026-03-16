@@ -555,7 +555,7 @@ class Module(vtypes.VeriloggenNode):
         return t
 
     # -------------------------------------------------------------------------
-    def Instance(self, module, instname, params=None, ports=None):
+    def Instance(self, module, instname, params=None, ports=None, workaround=False):
 
         if isinstance(module, str):
             module = StubModule(module)
@@ -566,6 +566,9 @@ class Module(vtypes.VeriloggenNode):
         t = Instance(module, instname, params, ports)
         self.instance[instname] = t
         self.items.append(t)
+
+        if workaround:
+            return t
 
         mod = self.find_module(module.name)
         if mod is None:

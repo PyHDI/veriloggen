@@ -125,7 +125,7 @@ def _to_code(objs):
 
 
 def run_iverilog(objs, display=False, top=None, outputfile=None,
-                 include=None, define=None, libdir=None):
+                 include=None, define=None, libdir=None, timescale=None):
 
     if not isinstance(objs, (tuple, list)):
         objs = [objs]
@@ -177,6 +177,11 @@ def run_iverilog(objs, display=False, top=None, outputfile=None,
     encoding = sys.getdefaultencoding()
 
     code = _to_code(objs)
+
+    if timescale is not None:
+        if isinstance(timescale, tuple):
+            timescale = timescale[0] + '/' + timescale[1]
+        code = '`timescale ' + timescale + '\n\n' + code
 
     if os.name == 'nt':
         fd, path = tempfile.mkstemp()
