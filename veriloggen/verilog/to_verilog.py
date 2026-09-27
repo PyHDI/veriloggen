@@ -767,7 +767,7 @@ class VerilogModuleVisitor(VerilogCommonVisitor):
         module = node.module.name
         parameterlist = [vast.ParamArg(
             p, self.bind_visitor.visit(a)) for p, a in node.params]
-        portlist = [vast.PortArg(p, self.bind_visitor.visit(a))
+        portlist = [vast.PortArg(p, self.bind_visitor.visit(a) if a is not None else None)
                     for p, a in node.ports]
         name = node.instname
         instance = vast.Instance(module, name, portlist, parameterlist)
